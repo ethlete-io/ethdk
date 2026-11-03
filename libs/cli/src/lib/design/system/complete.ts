@@ -266,6 +266,28 @@ export const controlStateGapsOf = (options: {
   }));
 };
 
+/**
+ * The `CONTROL-STATE` gaps render check fails a part on. Only a sketch variant fails, and only on interaction states
+ * its base part, `base`, does not already draw as a gap: product check leaves those gaps to `design complete`.
+ */
+export const introducedControlStateGapsOf = (options: {
+  part: string;
+  controls: unknown;
+  states: string[];
+  sketch: boolean;
+  base: { controls: unknown; states: string[] } | null;
+}): CompletenessGap[] => {
+  const { part, controls, states, sketch, base } = options;
+
+  if (!sketch) return [];
+
+  const inherited = new Set(
+    base && !isControlPart({ part, controls: base.controls }) ? base.states.filter(isInteractionState) : [],
+  );
+
+  return controlStateGapsOf({ part, controls, states: states.filter((state) => !inherited.has(state)) });
+};
+
 /** How much of its frame one rest state changes against `base`, the first state of its part, from 0 to 1. */
 export type StateChange = { state: string; base: string; share: number };
 

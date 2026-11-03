@@ -10,24 +10,17 @@ import {
   contrastExceptionsOf,
   contrastPairsOf,
 } from './contrast-check';
-import {
-  controlStateGapsOf,
-  isInteractionState,
-  isControlPart,
-  PLAIN_CONTROL_SELECTOR,
-  SDK_CONTROLS,
-} from './complete';
+import { introducedControlStateGapsOf, PLAIN_CONTROL_SELECTOR, SDK_CONTROLS } from './complete';
 import { ACTION_UNDECLARED_STATEMENTS, CLICK_LISTENER_INIT_SCRIPT } from './action-undeclared';
 import { DISABLED_INTERACTION_STATEMENTS } from './disabled-interaction';
 import { classesOf, cssBlocksOf } from './css-source';
 import { createDesignServer } from '../serve';
-import { createPartShooter, emptySlotsScriptOf, PartAddress, partFrameOf, viewportOf } from '../shot';
+import { emptySlotsScriptOf, PartAddress, partFrameOf, viewportOf } from '../shot';
 import { awaitSettled, Browser, createDrawQueue, openFrame, ThumbUnavailableError } from '../thumb';
 import { gridReportOf } from './list-system';
 import { watchSdkErrorLines } from './sdk-errors';
 import { partKeyOf } from './resolve-product';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
-import { unchangedStatesOf } from './sketch/unchanged-states';
 import { optionValuesChecker } from './rules/option-values';
 import { SEE_THROUGH_STATEMENTS } from './see-through';
 import { NESTED_SCROLL_RULE, NESTED_SCROLL_STATEMENTS } from './nested-scroll';
@@ -654,7 +647,6 @@ export const renderIssuesOf = async (options: {
 
   const queue = createDrawQueue({ target, chromiumOf: resolveChromium });
   const server = await createDesignServer({ target, config, listen: true, port: 0 });
-  let shots: ReturnType<typeof createPartShooter> | undefined;
 
   try {
     await server.listen();
@@ -662,7 +654,6 @@ export const renderIssuesOf = async (options: {
     const { port } = server.httpServer?.address() as AddressInfo;
     const base = `http://localhost:${port}`;
     const system = createSystemModules({ target, config });
-    shots = createPartShooter({ target, base, system, queue });
     const frames: Frame[] = [];
     const issues: RenderIssue[] = [];
     const grids: RenderedGrid[] = [];
@@ -740,31 +731,18 @@ export const renderIssuesOf = async (options: {
           });
         }
 
-        const compare =
-          sketch && states.some(isInteractionState) && !isControlPart({ part: key, controls: definition?.controls });
-        const baseline = compare ? system.productOf(product) : null;
-        const foundSketch = compare
-          ? system.sketchesOf(product).find((candidate) => candidate.target === sketch.target)
-          : null;
-        const unchanged =
-          baseline && foundSketch && sketch
-            ? await unchangedStatesOf({
-                product: baseline,
-                sketch: foundSketch,
-                variant: sketch.variant,
-                part: key,
-                compareFrames: false,
-                states: states.filter(isInteractionState),
-                pictureOf: shots.pictureOf,
-                load: ({ file, product: name, sketch: variant }) =>
-                  server.ssrLoadModule(productModuleIdOf({ file, product: name, sketch: variant })),
-              })
+        const mergedStates =
+          mergedDefinition?.states && typeof mergedDefinition.states === 'object'
+            ? Object.keys(mergedDefinition.states)
             : [];
+        const base = mergedPart ? { controls: mergedDefinition?.controls, states: mergedStates } : null;
 
-        for (const gap of controlStateGapsOf({
+        for (const gap of introducedControlStateGapsOf({
           part: key,
           controls: definition?.controls,
-          states: sketch ? states.filter((state) => !unchanged.includes(state)) : [],
+          states,
+          sketch: !!sketch,
+          base,
         }))
           issues.push({
             rule: gap.code,
@@ -820,10 +798,6 @@ export const renderIssuesOf = async (options: {
         framed.set(JSON.stringify([product, key, sketch]), typeof definition?.frame === 'function');
 
         if (merged && mergedPart && !baselines.has(baselineKey)) {
-          const mergedStates =
-            mergedDefinition?.states && typeof mergedDefinition.states === 'object'
-              ? Object.keys(mergedDefinition.states)
-              : [];
           const mergedContrast = {
             exceptions: contrastExceptionsOf(mergedDefinition?.contrast?.exceptions).selectors,
             pairs: contrastPairsOf(mergedDefinition?.contrast?.pairs),
@@ -972,6 +946,6 @@ export const renderIssuesOf = async (options: {
 
     throw error;
   } finally {
-    await Promise.all([shots ? shots.close() : queue.close(), server.close()]);
+    await Promise.all([queue.close(), server.close()]);
   }
 };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { controlStateGapsOf, isInteractionState } from './complete';
+import { controlStateGapsOf, introducedControlStateGapsOf, isInteractionState } from './complete';
 
 describe('control state matching', () => {
   it('counts an interaction word only as the last word or the whole name', () => {
@@ -30,5 +30,41 @@ describe('control state matching', () => {
     expect(detailOf('elements/shell', undefined)).toContain('- extract the row as its own control part');
     expect(detailOf('components/odd', { odd: { kind: 'slider' } })).not.toContain('Q164');
     expect(detailOf('pages/home', undefined)).toContain('a page is no control part - extract the row');
+  });
+
+  describe('in render check', () => {
+    const part = 'pages/system';
+    const base = { controls: undefined, states: ['default', 'part-focus-visible', 'points-closed-focus-visible'] };
+    const elementsOf = (gaps: { detail: string }[]) => gaps.map((gap) => /extract the (\S+) as/u.exec(gap.detail)?.[1]);
+
+    it('does not fail a sketch on a gap its base part already has', () => {
+      expect(
+        introducedControlStateGapsOf({ part, controls: undefined, states: base.states, sketch: true, base }),
+      ).toEqual([]);
+    });
+
+    it('fails a sketch on a gap the variant introduces', () => {
+      const states = [...base.states, 'comment-hover'];
+
+      expect(
+        elementsOf(introducedControlStateGapsOf({ part, controls: undefined, states, sketch: true, base })),
+      ).toEqual(['comment']);
+    });
+
+    it('counts every gap of a part the sketch adds', () => {
+      expect(
+        elementsOf(
+          introducedControlStateGapsOf({ part, controls: undefined, states: base.states, sketch: true, base: null }),
+        ),
+      ).toEqual(['part', 'points-closed']);
+    });
+
+    it('agrees with product check on the gaps of the base', () => {
+      const states = base.states;
+
+      expect(introducedControlStateGapsOf({ part, controls: undefined, states, sketch: true, base })).toEqual(
+        introducedControlStateGapsOf({ part, controls: undefined, states, sketch: false, base: null }),
+      );
+    });
   });
 });

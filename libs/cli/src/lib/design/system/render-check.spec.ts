@@ -510,7 +510,7 @@ describe('renderIssuesOf', () => {
     expect(rendered.drawn).toHaveLength(1);
   });
 
-  it('blocks only interaction states added or changed by a sketch', async (context) => {
+  it('blocks only interaction states a sketch adds, not merged ones it redraws', async (context) => {
     const target = checkout({
       'elements/shell': {
         body: '<p style="margin: 0">Shell</p>',
@@ -561,10 +561,7 @@ describe('renderIssuesOf', () => {
       rendered.issues
         .filter((issue) => issue.rule === 'CONTROL-STATE')
         .map((issue) => `${issue.sketch?.variant}: ${issue.detail.split(' - ').at(-1)}`),
-    ).toEqual([
-      'added: extract the collapse as its own control part and draw this state there',
-      'changed: extract the row as its own control part and draw this state there',
-    ]);
+    ).toEqual(['added: extract the collapse as its own control part and draw this state there']);
   }, 120_000);
 
   it('hints unmarked controls of merged parts and blocks only those a sketch adds', async (context) => {
@@ -669,7 +666,7 @@ describe('renderIssuesOf', () => {
     ]);
   }, 120_000);
 
-  it('compares pixels of merged interaction states when sketch CSS changes', async (context) => {
+  it('does not block merged interaction states when sketch CSS restyles them', async (context) => {
     const target = checkout({
       'components/shell': {
         body: '<div class="shell">Shell</div>',
@@ -710,7 +707,7 @@ describe('renderIssuesOf', () => {
 
     expect(
       rendered.issues.filter((issue) => issue.rule === 'CONTROL-STATE').map((issue) => issue.sketch?.variant),
-    ).toEqual(['changed']);
+    ).toEqual([]);
   }, 120_000);
 
   it('answers why it can not draw when no browser resolves', async () => {
