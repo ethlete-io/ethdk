@@ -4134,6 +4134,20 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      never enters `part.problems`, with a mutation that lets one in and turns it red. The same slice gives
      system-tree.spec a red proof by mutation, since its red-check on 117eb20bb only fails to load.
 
+329. Cause of the B240 render errors Tom saw (finding 325). Variant b's code is fine. The Studio sketch view of
+     pages/sketches mounts all 84-91 iframes at once; each loads an unbundled Vite page graph, and Chromium (and CEF in
+     the Linux app) refuses requests past its per-renderer budget: 450-1200 net::ERR_INSUFFICIENT_RESOURCES on
+     /__design/render and /@fs, frames fail with "Failed to fetch dynamically imported module". A refused import fails
+     its frame for the document's lifetime, and the B254 retry fires only on the next design-server change, so the
+     frames stay red. Every state renders alone. Why no tool caught it: render-check.ts opens one frame at a time in
+     one page, so sketch check, sketch ready and the shots never load at Studio's concurrency; the check and the view
+     take different loading paths. Finding 306's import failure on this sketch was most likely the same cause. Fix:
+     (1) the sketch view loads frames through a bounded queue (src set only while fewer than N frames load; a frame
+     leaves on its first height message or a timeout); (2) a Studio e2e opens the real many-state sketch view and fails
+     on any errored frame or render-error badge, red today. Decision (technical): (3) check and ready load a sketch's
+     frames through the same queue module with the same N as Studio, not one at a time and not all at once, so the
+     check takes Studio's path; a mutation that unbounds N must turn a check spec red. B240 merges after (1) and (2).
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
