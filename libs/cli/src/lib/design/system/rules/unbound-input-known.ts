@@ -15,7 +15,6 @@ export const KNOWN_UNBOUND_INPUTS: KnownUnboundInput[] = [
   { file: 'apps/ethlete-studio/src/app/design-parts/shell-main/shell-main.component.ts', input: 'fill' },
   { file: 'apps/ethlete-studio/src/app/design-parts/studio-menu/studio-menu.component.ts', input: 'bare' },
   { file: 'apps/ethlete-studio/src/app/design-parts/inbox/inbox.component.ts', input: 'openOn' },
-  { file: 'apps/ethlete-studio/src/app/design-parts/inbox/inbox.component.ts', input: 'draft' },
   { file: 'apps/ethlete-studio/src/app/design-parts/inbox/inbox.component.ts', input: 'entry' },
   { file: 'apps/ethlete-studio/src/app/design-parts/sketches/sketches.component.ts', input: 'camera' },
   { file: 'apps/ethlete-studio/src/app/design-parts/sketches/sketches.component.ts', input: 'reason' },
