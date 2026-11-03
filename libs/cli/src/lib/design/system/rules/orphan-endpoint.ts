@@ -30,6 +30,16 @@ const declarationsOf = (source: string) => {
   }));
 };
 
+const writerStateOf = (writer: string, sources: string[]) => {
+  const code = sources.map((source) => source.replace(/^import\s[^;]*;/gmu, ''));
+  const mention = new RegExp(`(?<![\\w$])${escaped(writer)}(?![\\w$])`, 'u');
+  const declaration = code.flatMap((source) => declarationsOf(source)).find(({ name }) => name === writer);
+
+  if (!declaration) return 'missing' as const;
+
+  return code.some((source) => mention.test(source.split(declaration.text).join(''))) ? 'called' : 'uncalled';
+};
+
 const isCalledIn = (path: string, sources: string[]) => {
   const tail = path.slice(SERVED_PREFIX.length);
   const direct = new RegExp(`/__design/${tail}(?![\\w-])|\\bpath\\s*:\\s*['"\`]${tail}['"\`]`, 'u');
@@ -86,7 +96,7 @@ const servedPathsOf = (): string[] => {
 
 const pathOf = (problem: Problem) => problem.message.slice(0, problem.message.indexOf(':'));
 
-/** Splits the orphans of an app into the unlisted ones and the listed ones (errors), and into warnings for the listed ones; a listed path that is no longer an orphan is an error. */
+/** Splits the orphans of an app into errors (unlisted) and warnings (listed as never written). A known entry whose state no longer holds is an error: a never-written path that has a caller, or a written-by path whose writer is gone, uncalled or not writing it. */
 export const orphanEndpointVerdictOf = (options: {
   served: string[];
   appDir: string;
@@ -96,27 +106,56 @@ export const orphanEndpointVerdictOf = (options: {
   const orphans = orphanEndpointsOf(options);
   const dir = relative(options.checkout, options.appDir);
   const backlogOf = new Map(options.known.map(({ path, backlog }) => [path, backlog]));
+  const neverWritten = new Map(
+    options.known.flatMap(({ path, backlog, state }) =>
+      state.kind === 'never-written' ? [[path, backlog] as const] : [],
+    ),
+  );
   const orphanPaths = new Set(orphans.map((problem) => pathOf(problem)));
   const checked = sourcesCallDesign(options.appDir);
 
   const errors = orphans.filter((problem) => !backlogOf.has(pathOf(problem)));
   const warnings = orphans.flatMap((problem) => {
     const path = pathOf(problem);
-    const backlog = backlogOf.get(path);
+    const backlog = neverWritten.get(path);
 
     return backlog ? [{ ...problem, message: `${path}: orphan endpoint, known and tracked in ${backlog}` }] : [];
   });
+  const sources = checked ? sourcesOf(options.appDir) : [];
+  const drifted = checked
+    ? options.known.flatMap(({ path, state }) => {
+        if (state.kind !== 'written-by') return [];
+
+        const writerState = writerStateOf(state.writer, sources);
+        const problem = (message: string) => [{ rule: 'ORPHAN-ENDPOINT', file: dir, message: `${path}: ${message}` }];
+
+        if (writerState === 'missing')
+          return problem(
+            `listed as written by ${state.writer}, which no longer exists in ${dir} - fix the entry or call the endpoint again`,
+          );
+        if (writerState === 'uncalled')
+          return problem(
+            `listed as written by ${state.writer}, which no app file calls any more - fix the entry or call the writer again`,
+          );
+        if (orphanPaths.has(path))
+          return problem(
+            `listed as written by ${state.writer}, but ${dir} does not write it - fix the entry or the writer`,
+          );
+
+        return [];
+      })
+    : [];
   const stale = checked
     ? options.known
-        .filter(({ path }) => !orphanPaths.has(path))
+        .filter(({ path, state }) => state.kind === 'never-written' && !orphanPaths.has(path))
         .map(({ path, backlog }) => ({
           rule: 'ORPHAN-ENDPOINT',
           file: dir,
-          message: `${path}: listed as a known orphan (${backlog}) but it has a caller again - remove it from KNOWN_ORPHAN_ENDPOINTS`,
+          message: `${path}: listed as never written (${backlog}) but it has a caller again - remove it from KNOWN_ORPHAN_ENDPOINTS`,
         }))
     : [];
 
-  return { errors: [...errors, ...stale], warnings };
+  return { errors: [...errors, ...drifted, ...stale], warnings };
 };
 
 const verdictsOf = (product: ResolvedProduct) => {
@@ -132,7 +171,7 @@ const verdictsOf = (product: ResolvedProduct) => {
   );
 };
 
-/** A served path the app its parts implement never calls and the known list does not carry, or a listed path that has a caller again (`ORPHAN-ENDPOINT`); nothing for a product without such an app. */
+/** A served path the app its parts implement never calls and the known list does not carry, or a known entry whose expected state no longer holds (`ORPHAN-ENDPOINT`); nothing for a product without such an app. */
 export const orphanEndpointProblemsOf = (product: ResolvedProduct): Problem[] =>
   verdictsOf(product).flatMap((verdict) => verdict.errors);
 

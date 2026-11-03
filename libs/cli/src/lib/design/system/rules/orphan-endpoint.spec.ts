@@ -4,7 +4,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { orphanEndpointsOf, orphanEndpointVerdictOf } from './orphan-endpoint';
-import { KNOWN_ORPHAN_ENDPOINTS } from './orphan-endpoint-known';
+import { KNOWN_ORPHAN_ENDPOINTS, KnownOrphan } from './orphan-endpoint-known';
 
 const checkoutWith = (files: Record<string, string>) => {
   const checkout = mkdtempSync(join(tmpdir(), 'cli-orphan-'));
@@ -46,7 +46,7 @@ describe('orphanEndpointsOf', () => {
 });
 
 describe('orphanEndpointVerdictOf', () => {
-  const verdictOf = (source: string, known: { path: string; backlog: string }[]) => {
+  const verdictOf = (source: string, known: KnownOrphan[]) => {
     const checkout = checkoutWith({ 'app/src/host/design.ts': source });
 
     return orphanEndpointVerdictOf({ served, appDir: join(checkout, 'app/src'), checkout, known });
@@ -55,7 +55,9 @@ describe('orphanEndpointVerdictOf', () => {
   const textsOf = (problems: { message: string }[]) => problems.map(({ message }) => message);
 
   it('warns once for a listed orphan and does not fail', () => {
-    const { errors, warnings } = verdictOf(calls, [{ path: '/__design/comment', backlog: 'B145' }]);
+    const { errors, warnings } = verdictOf(calls, [
+      { path: '/__design/comment', backlog: 'B145', state: { kind: 'never-written' } },
+    ]);
 
     expect(errors).toEqual([]);
     expect(textsOf(warnings)).toEqual(['/__design/comment: orphan endpoint, known and tracked in B145']);
@@ -70,13 +72,66 @@ describe('orphanEndpointVerdictOf', () => {
 
   it('fails a listed path that has a caller again', () => {
     const { errors, warnings } = verdictOf(`${calls} fetch('/__design/comment');`, [
-      { path: '/__design/comment', backlog: 'B145' },
+      { path: '/__design/comment', backlog: 'B145', state: { kind: 'never-written' } },
     ]);
 
     expect(textsOf(errors)).toEqual([
-      '/__design/comment: listed as a known orphan (B145) but it has a caller again - remove it from KNOWN_ORPHAN_ENDPOINTS',
+      '/__design/comment: listed as never written (B145) but it has a caller again - remove it from KNOWN_ORPHAN_ENDPOINTS',
     ]);
     expect(warnings).toEqual([]);
+  });
+});
+
+describe('a known entry written by a function', () => {
+  const entry: KnownOrphan = {
+    path: '/__design/comment',
+    backlog: 'B195',
+    state: { kind: 'written-by', writer: 'writeComment$' },
+  };
+  const helper = 'const productUrl = (a: string, path: string) => `http://h/__design/${path}?product=${a}`;';
+  const writer = "export const writeComment$ = (a: string) => post(productUrl(a, 'comment'));";
+  const verdictOf = (files: Record<string, string>) => {
+    const checkout = checkoutWith(files);
+
+    return orphanEndpointVerdictOf({
+      served: ['/__design/comment'],
+      appDir: join(checkout, 'app/src'),
+      checkout,
+      known: [entry],
+    });
+  };
+  const textsOf = (problems: { message: string }[]) => problems.map(({ message }) => message);
+
+  it('stays silent while the writer exists and the app calls it', () => {
+    const { errors, warnings } = verdictOf({
+      'app/src/host/design.ts': `${helper}\n${writer}`,
+      'app/src/app/store.ts': "import { writeComment$ } from '../host/design';\nwriteComment$('x');",
+    });
+
+    expect(errors).toEqual([]);
+    expect(warnings).toEqual([]);
+  });
+
+  it('fails when the writer was removed', () => {
+    const { errors } = verdictOf({
+      'app/src/host/design.ts': `${helper}\nexport const listed$ = (a: string) => get(productUrl(a, 'comments'));`,
+      'app/src/app/store.ts': "import { listed$ } from '../host/design';\nlisted$('x');",
+    });
+
+    expect(textsOf(errors)).toEqual([
+      '/__design/comment: listed as written by writeComment$, which no longer exists in app/src - fix the entry or call the endpoint again',
+    ]);
+  });
+
+  it('fails when the writer lost its app caller', () => {
+    const { errors } = verdictOf({
+      'app/src/host/design.ts': `${helper}\n${writer}`,
+      'app/src/app/store.ts': "import { writeComment$ } from '../host/design';",
+    });
+
+    expect(textsOf(errors)).toEqual([
+      '/__design/comment: listed as written by writeComment$, which no app file calls any more - fix the entry or call the writer again',
+    ]);
   });
 });
 

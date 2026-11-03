@@ -387,6 +387,13 @@ A go also stores `actions`, the sorted `data-et-action` keys every state of the 
 dropping it is not. A new go of the part stores its current keys and so confirms the removal. A go stored before
 `actions` is not checked.
 
+A product can list what its users can do in `.ethlete/design/<product>/capabilities.json`: a `capabilities` array of
+`{ "id", "label", "place" }`, where `place` is `{ "part", "action" }`, the part and the `data-et-action` key that draw
+the capability. `et design check` fails `CAPABILITY-PLACE` for a place whose part does not declare that action, and for
+an entry without a place. An entry without a place that names its backlog item in `missing` (`"missing": "B157"`) is a
+warning instead, so the list of known gaps can only shrink: a new entry needs a place or a backlog item, and an entry
+that has a place again must drop `missing`.
+
 An agent that prepares Tom's goes writes a go list, a JSON array, and Tom runs `et design go --batch <file>`:
 
 ```json
@@ -629,6 +636,13 @@ no state of a part that `sketch preview` lists under `shows` changes either. Oth
 stays ready, and the output names each changed part and state. A state that looks changed is drawn once more on both sides first, so one odd picture under load does not stop the merge. A frame that never draws fails the drawing with its URL instead of giving a blank picture.
 Every variant must draw the same; one changed variant is enough to stop it. A variant draws its
 own part stylesheets, also where the product stylesheet `@import`s the merged file.
+
+When `sketch ready` merges a sketch by itself it writes the shared files `merged.json` and `accepted.json` (and the base's
+`merged.json`), and prints one `et design commit-hunks <file> --part <part>` line for each file it changed. That command
+commits only the entries of the named part (an object key, or the list entries whose `part` it is; repeat `--part` for
+several) as HEAD plus those entries for that path, and leaves the entries of every other part uncommitted in the working
+file. `--message` sets the commit message; the default is `chore(repo): Record <part> in <file>`. It works on `go.json`,
+`implemented.json`, `ready.json`, `pictures.json` and the other part-keyed files too. There is no auto-commit in `ready`.
 
 A problem the product already had does not fail a variant: `sketch check` and `sketch ready` print one count line per
 variant, `NOTE elements/hero a: 2 problems were there before (design check lists them)`.
