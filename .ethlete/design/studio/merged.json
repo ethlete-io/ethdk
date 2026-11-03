@@ -31,7 +31,12 @@
   "foundations/spacing": "b8821653c3476a2d",
   "foundations/type": "55cbe2495f74530a",
   "pages/flows": "63515abbdba01fbd",
-  "pages/inbox": "b3278d38d7dc4a9f",
+  "pages/inbox": {
+    "hash": "d0e85e46cbdf0e66",
+    "variant": "a",
+    "decidedBy": "user",
+    "at": "2026-11-03T16:36:01.971Z"
+  },
   "pages/inventory": "a050641c3c773f51",
   "pages/merge": "c017306ebbc49a60",
   "pages/sketches": "203084c9f0b43dd0",
