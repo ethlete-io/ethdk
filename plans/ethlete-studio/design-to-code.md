@@ -3700,3 +3700,14 @@ studio` on the new commits.
 - Tom: an agent-withdrawn variant is hidden by default in the Studio sketch view and in the shot. A toggle in
   Studio (`--all` on the CLI) shows it again, labelled "withdrawn by agent: <reason>", so Tom can reopen it. Part
   of B240.
+
+293. Tom's title-bar merge failed in Studio (2026-11-03, 13:13 CET). Tom picked f and the merge failed, and the
+     error text is lost: Studio holds the design server's log in a pipe that nothing can read later. Likely cause,
+     unproven: the sketch was older than the merged title-bar (the rebase came at 13:50), so mergeSketch answered 422
+     "changed" (needsRebase). Why no tool caught it: Studio offered the merge button on a stale base (B220b), and a
+     failed Studio action leaves no readable trace. Fix (B241, decided, technical): Studio writes each refused design
+     action (command, part, status, message) to the host log file, and the builder can read it afterwards. At Tom's
+     request the builder merged f via the CLI (72ecd0adb). merged.json now holds `{variant: "f", decidedBy: "user",
+at: 12:13:42Z}` and the sketch dir is gone, so B228 is proven on the real case. B240's shot part is
+     behaviourally red-checked. B240 Studio toggle: where the toggle goes is a look question, so the builder sketches
+     it on design-parts/sketches, and Tom picks.
