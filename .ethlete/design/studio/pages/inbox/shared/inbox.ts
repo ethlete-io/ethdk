@@ -1,7 +1,5 @@
 import { definePart, drawing, html, slot, withAction } from '@design-system';
 import { control } from '@ethlete/components/design/control';
-import anchoredDialog from '@system/components/anchored-dialog';
-import { commentDraft } from '@system/components/comment-draft';
 import { commentPinMark } from '@system/components/comment-pin';
 import { commentRow, commentRowStyles, type Thread } from '@system/components/comment-row';
 import button from '@system/components/button';
@@ -23,6 +21,8 @@ type Props = {
 };
 
 type Comment = Thread & { id: string; cell?: number };
+
+type CommentEditor = (text: string) => Promise<{ body: string; styles: string }>;
 
 const COMMENTS: Comment[] = [
   {
@@ -233,7 +233,7 @@ const activeOnly: Props = { showResolved: false, openOn: 'active' };
 const activeClear: Props = { showResolved: false, openOn: 'others' };
 const allClear: Props = { showResolved: false, openOn: 'none' };
 
-export const inbox = () =>
+export const inbox = (commentEditor: CommentEditor) =>
   definePart<Props>({
     note: 'Inbox, flat: every thread of the product, newest first, in two groups: the part on the canvas on top, all others below, showing its latest message: mostly the exchange between the user and their AI agent (Claude, Codex and Gemini in this sample), plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin. A click on a row, or Enter or Space on the focused row, selects its comment and opens its place on the canvas; for a comment on another part the canvas switches to that part first. States cover open comments only on the active part, an active part with no open comments, no open comments at all, the list while it loads, a load error with a retry, and a list longer than the panel, which scrolls. The comment editor is open only while focus is within it; moving focus between its controls keeps it open, and leaving the editor closes it.',
     madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
@@ -263,20 +263,12 @@ export const inbox = () =>
         attributes: 'aria-label="Erledigte zeigen" data-et-action="emit:showResolvedChange"',
       });
       const controls = html`<span class="ib-control inline-flex">${control(resolved.body, 'resolved')}</span>`;
-      const writing =
+      const dialog =
         draft || entry
-          ? await commentDraft({
-              text: draft ? 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.' : '',
-            })
+          ? await commentEditor(
+              draft ? 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.' : '',
+            )
           : null;
-      const dialog = writing
-        ? await anchoredDialog.render({
-            label: 'Kommentar',
-            modal: false,
-            placement: 'bottom-start',
-            content: writing.body,
-          })
-        : null;
       const editor = dialog
         ? html`<div class="fixed top-46.75 left-152.25 w-80 z-10 text-ui-sm">
             ${commentPinMark({ author: 'Tom Bornholdt', initials: 'TB', selected: true })}
@@ -392,7 +384,6 @@ export const inbox = () =>
           menu.styles +
           canvasFrameStyles +
           (dialog?.styles ?? '') +
-          (writing?.styles ?? '') +
           commentRowStyles +
           resolved.styles +
           styles,
