@@ -4269,6 +4269,16 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      pick. Order: B286 (disclosure gets an option without data-et-action, the product and all variants pass it)
      comes before the pages/sketches merge, together with finding 325.
 
+340. Tom asked to push `next` at the end of 2026-11-03 (686 commits ahead). The pre-push hook's Studio
+     visible-change gate failed: 4 parts look different in e3914fb4e..HEAD without a picked sketch, 7 states unjudged:
+     elements/canvas-frames (selected, active, load-failed, loading, rounds, round-folded) and pages/system (the harness
+     finds no "49 offen" button to force focus-visible on for part-focus-visible). Nothing was pushed. Why no tool
+     caught it: the gate runs only at push, and the day's slices were reported done on red-check and e2e-check
+     alone, so a day of visible drift piled up unseen. Fix: every view slice report also quotes the visible-change
+     gate for its range (`node tools/scripts/prepush-checks.mjs visible <base> <head>`), and the builder runs it
+     before reporting a merge; a state the harness cannot drive (missing focus target) is a check problem on the
+     part, not an unjudged push failure. First item tomorrow, before A10: make the push pass.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
