@@ -3881,6 +3881,29 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
      (tree-row-item.component.ts:59). Fix (B255, decided, technical): the tree warning title names the rule and the
      owner, so the user can tell an open-list entry from a render warning.
 
+307. B248a as built (builder, 2026-11-03). e7c26984e: the sdk button design mock gets `loading` (real loader
+     markup, spinner sized from BUTTON_SPINNER_CONFIG), red-check RED. 27804bf45: the page-local controls move into the
+     new parts components/comment-row, list-row, hold-trigger and comment-target (comment-target is declared a
+     control); the sdk switch passes options.attributes through; the merge/system `loading` regexes and the
+     capabilities.ts act/titled regexes are gone; all 10 B248a OPEN_INLINE_UI entries are removed in the same commit.
+     red-check says NOT RED (no spec changed), so the gate is the rule: INLINE-UI-IN-PAGE went from 10 listed hits to 0,
+     leaving the 5 B248b warnings. Pixel proof by `design shot --states` from HEAD vs tree: 0 px on inbox, sketches,
+     system, sdk button and sdk switch. merge differs in one band of the embedded thumbnails, but two HEAD-only runs
+     differ in the same band. Three new defects:
+     (a) Stale mocks: the design server reads the mocks from dist/libs/components/design, and the agent copied the new
+     button.ts there by hand. A check on a stale dist renders the old mock without a word. Why no tool caught it: nothing
+     compares libs/components/design with dist. Fix (B256, decided, technical): a problem, not a warning (finding 295).
+     `design check`, `sketch check`/`ready` and `design shot` refuse to run on a stale dist and print the build command,
+     and the design server shows the same refusal as a banner in Studio.
+     (b) Restyled embed: the sdk switch part draws an unchecked-track border that the inbox switch never had. The page
+     embeds the part but passes switchStyles to stay pixel-identical, so the page and the part look different. Why no tool
+     caught it: no rule flags an embed that overrides the embedded part's look. Fix (B257): a sketch for Tom on the sdk
+     switch, with and without the border; after his pick, the page drops switchStyles. Whether a style override on an
+     embed becomes a rule is decided after B257.
+     (c) Flaky picture: merge shots differ between two runs of the same files, so no pixel proof on merge can be trusted.
+     Fix (B258, decided, technical): find the nondeterministic source in the merge thumbnails and make it stable.
+     `design shot` runs each state twice and reports a part whose two runs differ as a problem.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
