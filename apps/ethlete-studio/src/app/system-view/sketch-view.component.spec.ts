@@ -416,10 +416,25 @@ describe('SketchViewComponent', () => {
     );
     stalled.fixture.destroy();
 
-    const silent = await render({ ...open, report: null }, noComments);
+    const silent = await render(
+      {
+        ...open,
+        report: null,
+        variantInfo: { a: { authors: ['claude-sonnet-5-5'] }, b: { authors: ['claude-opus-5-5'] } },
+      },
+      noComments,
+    );
+    const silentHead = silent.root.querySelector('header')?.textContent ?? '';
 
     expect(badgeOf(silent.root)).toBe(status.idle);
+    expect(silentHead).toContain('Letzte Änderung von Opus 5.5');
+    expect(silentHead).not.toContain(' · ');
     silent.fixture.destroy();
+
+    const unknown = await render({ ...open, report: null }, noComments);
+
+    expect(unknown.root.querySelector('header')?.textContent).not.toContain('Letzte Änderung');
+    unknown.fixture.destroy();
 
     const ready = await render({ ...SKETCH, decision: undefined }, noComments);
 

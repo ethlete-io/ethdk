@@ -453,12 +453,22 @@ export class SketchViewComponent {
       ),
   );
 
+  private newestAuthor = computed(() => {
+    const { variants, variantInfo } = this.sketch();
+
+    return variants
+      .map((variant) => variantInfo?.[variant]?.authors?.[0])
+      .filter(Boolean)
+      .at(-1);
+  });
+
   protected lastChange = computed<SketchIdle>(() => {
     const report = this.sketch().report;
     const at = report ? Date.parse(report.updatedAt) : NaN;
+    const author = report?.author ?? this.newestAuthor();
 
     return {
-      by: report?.author ? modelNameOf(report.author) : '',
+      by: author ? modelNameOf(author) : '',
       since: Number.isNaN(at) ? '' : STUDIO_LABELS.sketches.since(minutesSince(at)),
     };
   });

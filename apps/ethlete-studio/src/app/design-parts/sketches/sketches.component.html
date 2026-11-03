@@ -67,9 +67,9 @@
             <div class="flex flex-wrap items-center">
               <et-badge variant="tonal" size="sm">{{ LABELS.status.idle }}</et-badge>
             </div>
-            <span class="text-ui-sm whitespace-nowrap text-et-surface-muted">{{
-              LABELS.lastChange(idle().by, idle().since)
-            }}</span>
+            @if (LABELS.lastChange(idle().by, idle().since); as lastChange) {
+              <span class="text-ui-sm whitespace-nowrap text-et-surface-muted">{{ lastChange }}</span>
+            }
           </span>
         }
       }

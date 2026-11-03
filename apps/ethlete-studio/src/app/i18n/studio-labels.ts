@@ -49,7 +49,8 @@ export const STUDIO_LABELS = {
     fresh: 'neu',
     status: { drawing: 'zeichnet', waiting: 'Wartet auf deine Wahl', paused: 'Pausiert', idle: 'Keine Aktivität' },
     holdUntil: (until: string) => `Wartet auf ${until}`,
-    lastChange: (by: string, since: string) => `Letzte Änderung von ${by} · ${since}`,
+    lastChange: (by: string, since: string) =>
+      by || since ? [by ? `Letzte Änderung von ${by}` : 'Letzte Änderung', since].filter(Boolean).join(' · ') : '',
     since: (minutes: number) => `seit ${minutes} Min`,
     roundSelect: 'Runde',
     round: (number: number, title: string) => [`Runde ${number}`, title].filter(Boolean).join(' · '),
