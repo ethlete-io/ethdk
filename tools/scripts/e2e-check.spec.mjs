@@ -105,7 +105,7 @@ test('the result line carries the sha the suite ran at and no worktree is left b
 });
 
 test('a suite that goes silent is killed after the idle limit and names the last case it reached', async () => {
-  const result = await run(`console.log('PASS  first case'); await new Promise(() => setInterval(() => {}, 1000));`, {
+  const result = await run(`console.log('PASS  first case'); await new Promise((r) => setTimeout(r, 6000));`, {
     idleMs: 300,
   });
   assert.equal(result.ok, false);
