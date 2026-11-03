@@ -49,6 +49,24 @@ export const withPartHunks = (options: { head: unknown; work: unknown; parts: st
 
 const git = (cwd: string, args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: 'pipe' });
 
+const LOCK_TRIES = 10;
+
+const gitLocked = (error: unknown) => /index\.lock/u.test(String((error as { stderr?: unknown }).stderr ?? ''));
+
+const wait = (ms: number) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+
+const gitRetrying = (cwd: string, args: string[]) => {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return git(cwd, args);
+    } catch (error) {
+      if (attempt >= LOCK_TRIES || !gitLocked(error)) throw error;
+
+      wait(attempt * 100);
+    }
+  }
+};
+
 const fail = (message: string) => {
   console.error(message);
 
@@ -108,7 +126,7 @@ export const designCommitHunks = (options: { target: string; argv: string[]; inv
   writeFileSync(absolute, jsonLayoutOf(composed));
 
   try {
-    git(target, ['commit', '-m', message, '--', file]);
+    gitRetrying(target, ['commit', '-m', message, '--', file]);
   } catch (error) {
     const output = error as { stdout?: string; stderr?: string };
 

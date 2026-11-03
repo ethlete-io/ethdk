@@ -541,7 +541,7 @@ that exist only outside the sketch do not count: the sketch itself, no `implemen
 
 A sketch goes to `ready` only when no change to it waits on anything. `et design sketch hold components/button --until
 "the radius token lands" --by <model id>` records the wait in `sketch.json`: a `ready` sketch goes back to in progress
-and leaves the merge queue, and `sketch ready` refuses with the `--until` text. Make the change, then
+and leaves the merge queue, and `sketch ready` refuses with the `--until` text and the `et design sketch release <part> --by <name>` command. Make the change, then
 `et design sketch release components/button --by <model id>` removes the hold. `sketch list` and `sketch check` show it.
 
 `sketch ready` also refuses (rule `UNUSED`) while the files of a live variant, with the `shared/` files they import, keep
@@ -634,7 +634,7 @@ When `sketch ready` merges a sketch by itself it writes the shared files `merged
 `merged.json`), and prints one `et design commit-hunks <file> --part <part>` line for each file it changed. That command
 commits only the entries of the named part (an object key, or the list entries whose `part` it is; repeat `--part` for
 several) as HEAD plus those entries for that path, and leaves the entries of every other part uncommitted in the working
-file. `--message` sets the commit message; the default is `chore(repo): Record <part> in <file>`. It works on `go.json`,
+file. A locked `.git/index.lock` is retried with a short backoff, up to ten times. `--message` sets the commit message; the default is `chore(repo): Record <part> in <file>`. It works on `go.json`,
 `implemented.json`, `ready.json`, `pictures.json` and the other part-keyed files too. There is no auto-commit in `ready`.
 
 A problem the product already had does not fail a variant: `sketch check` and `sketch ready` print one count line per

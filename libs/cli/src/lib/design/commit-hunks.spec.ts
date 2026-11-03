@@ -1,4 +1,4 @@
-import { execFileSync } from 'child_process';
+import { execFileSync, spawn } from 'child_process';
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -100,6 +100,23 @@ describe('designCommitHunks', () => {
     expect(log.mock.calls.flat().join('\n')).toContain('holds no uncommitted entry of components/x');
     expect(run(target, 'p/merged.json')).toBe(1);
     expect(run(target, 'p/merged.json', '--part', 'nope')).toBe(1);
+  });
+});
+
+describe('designCommitHunks with a locked index', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('waits for index.lock to go and then commits', () => {
+    const target = repo({ 'p/merged.json': { 'components/x': '1' } });
+    const lock = join(target, '.git/index.lock');
+
+    write(target, 'p/merged.json', { 'components/x': '2' });
+    writeFileSync(lock, '');
+    spawn('sh', ['-c', `sleep 0.5; rm -f '${lock}'`], { detached: true, stdio: 'ignore' }).unref();
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    expect(run(target, 'p/merged.json', '--part', 'components/x')).toBe(0);
+    expect(JSON.parse(git(target, 'show', 'HEAD:p/merged.json'))).toEqual({ 'components/x': '2' });
   });
 });
 

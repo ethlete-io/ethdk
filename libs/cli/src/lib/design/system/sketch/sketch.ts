@@ -849,7 +849,9 @@ export const markSketchReady = (options: { checkout: string; sketch: Sketch; aut
 
 /** Why a held sketch cannot be ready, or `null` when it holds nothing. */
 export const heldProblemOf = (sketch: Pick<Sketch, 'target' | 'hold'>) =>
-  sketch.hold ? `${sketch.target} is held until: ${sketch.hold.until} - make the change, then sketch release it` : null;
+  sketch.hold
+    ? `${sketch.target} is held until: ${sketch.hold.until} - make the change, then run \`et design sketch release ${sketch.target} --by <name>\``
+    : null;
 
 /**
  * Holds a sketch until a change that waits on something is made: it goes back to in progress, which drops a pick

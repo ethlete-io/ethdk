@@ -1067,7 +1067,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toBe(
-      'components/button is held until: the radius token lands - make the change, then sketch release it',
+      'components/button is held until: the radius token lands - make the change, then run `et design sketch release components/button --by <name>`',
     );
     expect(statusOf()).toBe('in progress');
 
