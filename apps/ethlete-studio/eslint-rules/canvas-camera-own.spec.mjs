@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import tseslint from 'typescript-eslint';
 import { CANVAS_CAMERA_KNOWN } from './canvas-camera-known.mjs';
-import rule from './canvas-camera-own.mjs';
+import { canvasCameraOwn as rule } from './canvas-camera-own.mjs';
 
 RuleTester.describe = describe;
 RuleTester.it = it;

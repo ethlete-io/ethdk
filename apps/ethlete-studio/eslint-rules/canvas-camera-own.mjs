@@ -101,7 +101,7 @@ const isClampCall = (node) => {
 };
 
 /** @type {import('eslint').Rule.RuleModule} */
-export default {
+export const canvasCameraOwn = {
   meta: {
     type: 'problem',
     docs: {

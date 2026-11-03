@@ -2,7 +2,7 @@ import ethlete from '@ethlete/eslint-plugin';
 import nx from '@nx/eslint-plugin';
 import baseConfig from '../../eslint.config.mjs';
 import { CANVAS_CAMERA_KNOWN } from './eslint-rules/canvas-camera-known.mjs';
-import canvasCameraOwn from './eslint-rules/canvas-camera-own.mjs';
+import { canvasCameraOwn } from './eslint-rules/canvas-camera-own.mjs';
 
 export default [
   { ignores: ['src-tauri/target', 'src/styles/*.d.ts'] },
