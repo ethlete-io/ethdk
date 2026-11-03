@@ -17,7 +17,7 @@ import { actionsRerunOf, readyPartsOf } from './part-ready';
 import { staleLineOf, stalePartsOf, upgradeLegacyMarksOf } from './stale-parts';
 import { Problem } from './problem';
 import { staleDistWarningsOf } from './stale-dist';
-import { readOpenPoints, unlinkedPartsOf } from './read-open-points';
+import { instantLinesOf, readOpenPoints, unlinkedPartsOf } from './read-open-points';
 import { partKeyOf, resolveProduct, ResolvedProduct } from './resolve-product';
 import { canonicalClassesOf } from './rules/canonical-class';
 import { componentCopiesOf } from './rules/component-copy';
@@ -450,6 +450,13 @@ const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[]
     const unlinked = unlinkedPartsOf(product).filter((part) => !options.part || part === options.part);
 
     if (unlinked.length > 0) console.log(`UNLINKED ${name}: ${unlinked.join(', ')}`);
+
+    instantLinesOf(
+      product,
+      options.part
+        ? [options.part]
+        : product.parts.filter((part) => part.origin !== 'base').map((part) => partKeyOf(part)),
+    ).forEach((line) => console.log(line));
 
     const upgraded = upgradeLegacyMarksOf({ product, only: options.part });
 

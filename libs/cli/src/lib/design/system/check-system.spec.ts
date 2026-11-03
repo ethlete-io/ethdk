@@ -414,7 +414,7 @@ describe('checkDesign', () => {
     const config = readConfig(target) ?? {};
     const product = resolveProduct({ target, name: 'acme', config: config.products?.['acme'] ?? {} });
 
-    markPartGo({ product, part: 'elements/hero', by: 'tom' });
+    markPartGo({ product, part: 'elements/hero', by: 'tom', via: 'design go' });
 
     const lines = output();
 
@@ -594,6 +594,31 @@ describe('checkDesign', () => {
     expect(lines).toContain('ok');
   }, 60_000);
 
+  it('prints the instant line of a part that declares instant switches, like sketch ready', async () => {
+    const target = acme();
+    const lines = output();
+    const home = join(target, DESIGN_DIR, 'acme/pages/home/home.ts');
+
+    writeFileSync(
+      home,
+      readFileSync(home, 'utf8').replace(
+        'definePart<HomeProps>({',
+        "definePart<HomeProps>({ instant: 'The page swaps without motion.',",
+      ),
+    );
+
+    await checkDesign({ target, argv: ['--product', 'acme', '--part', 'pages/home'], invocation: 'et design' });
+
+    expect(lines).toContain(
+      'pages/home declares instant state switches (no motion between its states): The page swaps without motion.',
+    );
+
+    lines.length = 0;
+    await checkDesign({ target, argv: ['--product', 'acme', '--part', 'components/button'], invocation: 'et design' });
+
+    expect(lines.some((line) => line.includes('declares instant'))).toBe(false);
+  }, 60_000);
+
   it('lists the contrasts the render found and the missing states', async (context) => {
     const target = acme();
     const lines = output();
@@ -670,7 +695,7 @@ describe('checkDesign', () => {
     const config = readConfig(target) ?? {};
     const product = resolveProduct({ target, name: 'acme', config: config.products?.['acme'] ?? {} });
 
-    markPartGo({ product, part: 'elements/hero', by: 'tom' });
+    markPartGo({ product, part: 'elements/hero', by: 'tom', via: 'design go' });
     lines.length = 0;
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
