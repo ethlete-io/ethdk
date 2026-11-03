@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { suitesForFiles } from './precommit-specs.mjs';
+import { isDocsOnly, suitesForFiles, timedOutSpecs } from './precommit-specs.mjs';
 
 const sdk = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
@@ -114,4 +114,27 @@ test('adds the source-wide specs for any staged cli source', () => {
     'libs/cli/src/w.spec.ts',
   ]);
   assert.deepEqual(suitesForFiles(['libs/cli/package.json'], map)[0].files, ['libs/cli/package.json']);
+});
+
+test('treats plans, docs, markdown and changesets as docs-only', () => {
+  assert.equal(isDocsOnly(['plans/a/b.md', 'apps/docs/cli/index.md', '.changeset/x.md', 'README.md']), true);
+  assert.equal(isDocsOnly(['plans/a/b.md', 'libs/cli/src/a.ts']), false);
+});
+
+test('finds the specs that failed only by timeout', () => {
+  const timeout = ' FAIL  src/a.spec.ts > x\nError: Test timed out in 5000ms.\n';
+  assert.deepEqual(timedOutSpecs(timeout), ['src/a.spec.ts']);
+  assert.deepEqual(timedOutSpecs(`${timeout} FAIL  src/b.spec.ts > y\nAssertionError: expected 1 to be 2\n`), []);
+  assert.deepEqual(timedOutSpecs(''), []);
+});
+
+test('a docs-only staged commit starts no vitest', () => {
+  const repo = repoWithValueSpec();
+  write(repo, 'plans/p.md', 'x\n');
+  assert.equal(sh(repo, 'git', ['add', 'plans/p.md']).status, 0);
+  const started = Date.now();
+  const hook = sh(repo, 'sh', ['.husky/pre-commit']);
+  assert.equal(hook.status, 0, hook.stdout + hook.stderr);
+  assert.doesNotMatch(hook.stdout + hook.stderr, /vitest|RUN/i);
+  assert.ok(Date.now() - started < 3000);
 });

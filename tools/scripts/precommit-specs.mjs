@@ -38,6 +38,29 @@ export const suitesForFiles = (files, relatedMap) => {
   ].filter(Boolean);
 };
 
+const DOCS_ONLY = /^(plans\/|apps\/docs\/|\.changeset\/)|\.md$/;
+
+export const isDocsOnly = (files) => files.every((file) => DOCS_ONLY.test(file));
+
+export const timedOutSpecs = (output) => {
+  const failures = output.match(/^\s*(?:Error|AssertionError|TypeError)\b.*$/gm) ?? [];
+  const specs = [...output.matchAll(/^\s*FAIL\s+(\S+\.spec\.\w+)/gm)].map((match) => match[1]);
+  const onlyTimeouts = failures.length > 0 && failures.every((line) => /timed out in \d+ms/.test(line));
+  return onlyTimeouts ? [...new Set(specs)] : [];
+};
+
+const runVitest = (cwd, args) => {
+  const result = spawnSync('npx', ['vitest', ...args], {
+    cwd,
+    env: withoutGitEnv(),
+    encoding: 'utf8',
+    maxBuffer: 256 * 1024 * 1024,
+  });
+  process.stdout.write(result.stdout ?? '');
+  process.stderr.write(result.stderr ?? '');
+  return { status: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` };
+};
+
 const stagedRelatedMap = (root) => {
   const map = spawnSync('git', ['show', ':libs/cli/related-map.json'], { cwd: root, encoding: 'utf8' });
   return map.status === 0 ? JSON.parse(map.stdout) : {};
@@ -45,6 +68,7 @@ const stagedRelatedMap = (root) => {
 
 export const runStagedSpecs = (root) => {
   const files = git(root, ['diff', '--cached', '--name-only', '--diff-filter=ACM', '-z']).split('\0').filter(Boolean);
+  if (!files.length || isDocsOnly(files)) return 0;
   const suites = suitesForFiles(files, stagedRelatedMap(root));
   if (!suites.length) return 0;
 
@@ -55,18 +79,20 @@ export const runStagedSpecs = (root) => {
     linkNodeModules(root, checkout);
 
     for (const suite of suites) {
-      const status = spawnSync(
-        'npx',
-        [
-          'vitest',
-          'related',
-          '--run',
-          '--passWithNoTests',
-          ...suite.args,
-          ...suite.files.map((file) => join(checkout, file)),
-        ],
-        { cwd: join(checkout, suite.cwd), env: withoutGitEnv(), stdio: 'inherit' },
-      ).status;
+      const run = runVitest(join(checkout, suite.cwd), [
+        'related',
+        '--run',
+        '--passWithNoTests',
+        ...suite.args,
+        ...suite.files.map((file) => join(checkout, file)),
+      ]);
+      let status = run.status;
+      const slow = status === 0 ? [] : timedOutSpecs(run.output);
+
+      if (slow.length) {
+        console.error(`pre-commit: ${slow.join(', ')} failed only by timeout; re-running alone once.`);
+        status = runVitest(join(checkout, suite.cwd), ['run', ...suite.args, ...slow]).status;
+      }
 
       if (status !== 0) {
         console.error(`pre-commit: a ${suite.name} spec related to the staged files fails (FAIL lines above name it).`);
