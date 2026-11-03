@@ -3786,3 +3786,13 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
      (refreshedBy "design check", the decided B219/B223 carry), and the builder left that refresh uncommitted. Why
      no tool caught it: check writes go.json silently and no commit gate sees an uncommitted refresh. Recommended
      B246, sent to the grill session.
+
+301. Uncommitted go refresh (2026-11-03). After the B242 tidy a62942f0c, the builder's check rewrote go.json at
+     14:25:20 for elements/shell-main and pages/inventory, which embed title-bar. It was the decided carry
+     (accepted-pictures.ts, B219/B223: the design hash changed and no state picture changed, so the go keeps `by` and
+     gets auto:true, refreshedBy "design check"), not a new go. The refresh was left uncommitted, and Tom found an
+     unexplained go in his tree. Why no tool caught it: check writes go.json silently, and nothing flags an
+     uncommitted refresh before the next commit. Fix (B246, decided, technical): the check prints each go it
+     refreshed with the commit-hunks command to run, and `yarn commit` refuses while a refreshed go of a part in the
+     commit is uncommitted. Who may commit a carry refresh is Tom's call (asked 2026-11-03). B245b built in
+     004169aa0: `yarn commit` reads the test:tools globs from package.json.
