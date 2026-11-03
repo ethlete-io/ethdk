@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, cpSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { specsForFiles } from './cli-related-map.mjs';
@@ -95,6 +95,40 @@ const runSuites = (checkout, suites) => {
   return 0;
 };
 
+/** The `tsconfig.lib.json` and `tsconfig.spec.json` of each `libs/<name>` that `files` touch, as repo-relative paths. */
+export const typeProjectsForFiles = (root, files) =>
+  [...new Set(files.map((file) => file.match(/^libs\/[^/]+\//)?.[0]).filter(Boolean))].flatMap((lib) =>
+    ['tsconfig.lib.json', 'tsconfig.spec.json']
+      .map((name) => `${lib}${name}`)
+      .filter((project) => existsSync(join(root, project))),
+  );
+
+/** Error lines of a `tsc` run that block the commit; a spec project only blocks on errors in `files`, since HEAD's specs carry older ones. */
+export const blockingTypeErrors = (output, project, files) =>
+  output
+    .split('\n')
+    .filter((line) => / error TS\d+:/.test(line))
+    .filter((line) => !project.endsWith('tsconfig.spec.json') || files.some((file) => line.startsWith(`${file}(`)));
+
+const runTypeChecks = (checkout, projects, files) => {
+  for (const project of projects) {
+    const run = spawnSync('npx', ['tsc', '--noEmit', '--pretty', 'false', '-p', project], {
+      cwd: checkout,
+      env: withoutGitEnv(),
+      encoding: 'utf8',
+    });
+    const errors = blockingTypeErrors(run.stdout + run.stderr, project, files);
+    if (errors.length) {
+      console.error(errors.join('\n'));
+      console.error(
+        `pre-commit: ${project} has type errors (above); vitest does not type-check, so the commit stops here.`,
+      );
+      return 1;
+    }
+  }
+  return 0;
+};
+
 export const TESTED_TREE_ENV = 'PRECOMMIT_SPECS_TREE';
 
 const treeOfIndex = (root, index) => {
@@ -147,8 +181,10 @@ export const runPathSpecs = (root, paths) => {
       [],
     );
   const files = changes.filter((change) => change.status !== 'D').map((change) => change.file);
-  if (selectsNoSpecs(root, files, tree)) return { status: 0, tree };
-  const suites = suitesForFiles(files, relatedMapAt(root, tree));
+  const projects = typeProjectsForFiles(root, files);
+  const noSpecs = selectsNoSpecs(root, files, tree);
+  if (noSpecs && projects.length === 0) return { status: 0, tree };
+  const suites = noSpecs ? [] : suitesForFiles(files, relatedMapAt(root, tree));
 
   const worktree = join(mkdtempSync(join(tmpdir(), 'yarn-commit-')), 'tree');
   const cleanup = () => removeWorktree(root, worktree);
@@ -172,7 +208,8 @@ export const runPathSpecs = (root, paths) => {
       cpSync(join(root, file), join(worktree, file), { verbatimSymlinks: true });
     }
     linkNodeModules(root, worktree);
-    return { status: runSuites(worktree, suites), tree };
+    const typed = runTypeChecks(worktree, projects, files);
+    return { status: typed === 0 ? runSuites(worktree, suites) : typed, tree };
   } finally {
     signals.forEach((signal) => process.off(signal, onSignal));
     cleanup();

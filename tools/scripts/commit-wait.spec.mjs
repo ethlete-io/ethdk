@@ -205,3 +205,51 @@ test('re-runs a spec that failed only by timeout alone once, end to end', () => 
   assert.equal(worktrees(), 1);
   assert.deepEqual(leftovers(tmp), []);
 });
+
+test('a type error vitest passes blocks the commit, an older one in an untouched spec does not', () => {
+  const { repo, run, yarnCommit } = repoWithCommitTool();
+  put(
+    repo,
+    'libs/cli/tsconfig.spec.json',
+    JSON.stringify({
+      compilerOptions: {
+        strict: true,
+        noEmit: true,
+        module: 'esnext',
+        moduleResolution: 'bundler',
+        target: 'es2022',
+        skipLibCheck: true,
+        types: [],
+      },
+      include: ['src/**/*.ts'],
+    }),
+  );
+  put(
+    repo,
+    'libs/cli/src/old.spec.ts',
+    "import { test } from 'vitest';\n\nconst old: number = 'old' as unknown as string;\ntest('old', () => void old);\n",
+  );
+  run('git', ['add', '--', 'libs/cli/tsconfig.spec.json', 'libs/cli/src/old.spec.ts']);
+  run('git', ['commit', '-qm', 'old type error', '--no-verify']);
+  const head = run('git', ['rev-parse', 'HEAD']).stdout;
+
+  put(
+    repo,
+    'libs/cli/src/value.spec.ts',
+    "import { expect, test } from 'vitest';\nimport { value } from './value';\n\nconst typed: number = 'one' as unknown as string;\ntest('value', () => expect(value + Number(typed)).toBeNaN());\n",
+  );
+  const refused = yarnCommit(['-qm', 'typed', '--', 'libs/cli/src/value.spec.ts']);
+  assert.notEqual(refused.status, 0, refused.stdout + refused.stderr);
+  assert.match(refused.stderr, /libs\/cli\/src\/value\.spec\.ts\(4,7\): error TS2322/);
+  assert.match(refused.stderr, /libs\/cli\/tsconfig\.spec\.json has type errors/);
+  assert.doesNotMatch(refused.stderr, /old\.spec\.ts/);
+  assert.equal(run('git', ['rev-parse', 'HEAD']).stdout, head);
+
+  put(
+    repo,
+    'libs/cli/src/value.spec.ts',
+    "import { expect, test } from 'vitest';\nimport { value } from './value';\n\ntest('value', () => expect(value).toBe(1));\ntest('more', () => expect(value + 1).toBe(2));\n",
+  );
+  const passed = yarnCommit(['-qm', 'clean', '--', 'libs/cli/src/value.spec.ts']);
+  assert.equal(passed.status, 0, passed.stdout + passed.stderr);
+});
