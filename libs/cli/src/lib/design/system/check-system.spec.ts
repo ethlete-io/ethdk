@@ -257,7 +257,9 @@ describe('checkDesign', () => {
     if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip('no browser');
 
     expect(code).toBe(1);
-    expect(lines).toContainEqual(expect.stringMatching(/^RENDER acme elements\/hero broken at /));
+    expect(lines).toContainEqual(
+      expect.stringMatching(/^RENDER acme elements\/hero broken at .*failed - state will not draw$/),
+    );
     expect(lines.filter((line) => line.startsWith('NOT CHECKED'))).toEqual([
       'NOT CHECKED acme render rules on elements/hero state broken - it did not draw, see RENDER above',
       'NOT CHECKED acme render rules on elements/hero state gone - it did not draw, see RENDER above',

@@ -155,7 +155,7 @@ const inspectFrame = (options: {
 }) => `((options) => {
   const root = document.getElementById('root');
   const refused = root.innerText.trim();
-  if (refused.startsWith('design-explore:')) return options.sdkStylesOnly ? [] : [{ rule: 'RENDER', path: '#root', detail: refused.split('\\n')[0] }];
+  if (refused.startsWith('design-explore:')) return options.sdkStylesOnly ? [] : [{ rule: 'RENDER', path: '#root', detail: refused.split('\\n').map((line) => line.trim()).filter(Boolean).join(' - ') }];
 
   const found = [];
   const seen = new Set();

@@ -9,7 +9,7 @@ import { capabilityPlaceOf } from './rules/capability-place';
 import { actionUndeclaredUnderGoOf } from './action-undeclared';
 import { bespokeControlProblemsOf } from './bespoke-controls';
 import { droppedPropProblemsOf } from './dropped-props';
-import { DrawnFindings, drawnFindingsFrom, statefulPartsOf } from './drawn-open-points';
+import { DrawnFindings, drawnFindingsFrom, isPartUndrawn, isStateUndrawn, statefulPartsOf } from './drawn-open-points';
 import { openPointsText } from './open-points';
 import { goMarkOf, goPartsOf, goStateOf } from './part-go';
 import { doneParts } from './part-task';
@@ -489,16 +489,10 @@ const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[]
 const notCheckedLineOf = (options: { product: string; parts: string; why: string }) =>
   `NOT CHECKED ${options.product} render rules on ${options.parts} - ${options.why}`;
 
-const isUndrawn = (issue: RenderIssue) =>
-  issue.rule === 'RENDER' && issue.state === '-' && !issue.detail.startsWith('logged SDK error');
-
-const isStateUndrawn = (issue: RenderIssue) =>
-  issue.rule === 'RENDER' && issue.state !== '-' && issue.detail.startsWith('design-explore:');
-
 const printUndrawn = (issues: RenderIssue[]) => {
   for (const product of new Set(issues.map((issue) => issue.product))) {
     const own = issues.filter((issue) => issue.product === product);
-    const parts = [...new Set(own.filter(isUndrawn).map((issue) => issue.part))];
+    const parts = [...new Set(own.filter(isPartUndrawn).map((issue) => issue.part))];
     const states = [
       ...new Set(
         own
@@ -592,7 +586,7 @@ const renderSystem = async (
     console.error(renderIssueLineOf(issue));
     tallyOf(options.tally, { product: issue.product, part: ownerPartOf(issue) })?.problems.push(issue.rule);
   });
-  printUndrawn(issues.filter((issue) => isUndrawn(issue) || isStateUndrawn(issue)));
+  printUndrawn(issues.filter((issue) => isPartUndrawn(issue) || isStateUndrawn(issue)));
 
   if (!options.part)
     for (const product of resolved)

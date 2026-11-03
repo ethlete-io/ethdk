@@ -7,6 +7,24 @@ import { partKeyOf, ResolvedProduct } from './resolve-product';
 
 export type DrawnFindings = Required<Pick<OpenPointsInput, 'missingStates' | 'contrasts'>>;
 
+/** Whether a render issue says a whole part did not draw. */
+export const isPartUndrawn = (issue: RenderIssue) =>
+  issue.rule === 'RENDER' && issue.state === '-' && !issue.detail.startsWith('logged SDK error');
+
+/** Whether a render issue says one state of a part did not draw. */
+export const isStateUndrawn = (issue: RenderIssue) =>
+  issue.rule === 'RENDER' && issue.state !== '-' && issue.detail.startsWith('design-explore:');
+
+const undrawnLinesOf = (issues: RenderIssue[]) => [
+  ...new Set(
+    issues.flatMap((issue) => {
+      if (isPartUndrawn(issue)) return [`${issue.part}: ${issue.detail}`];
+
+      return isStateUndrawn(issue) ? [`${issue.part}: state ${issue.state} did not draw - ${issue.detail}`] : [];
+    }),
+  ),
+];
+
 /** The parts of a product whose control states the completeness check draws, of `parts` when given. */
 export const statefulPartsOf = (product: ResolvedProduct, parts: string[] | null) =>
   product.parts
@@ -16,7 +34,8 @@ export const statefulPartsOf = (product: ResolvedProduct, parts: string[] | null
 
 /**
  * The open-point findings of a drawn product: the contrasts its render `issues` found, the missing control states in
- * the `gaps` of its completeness check, and one `<part>: <why>` line per stateful part the check could not draw.
+ * the `gaps` of its completeness check, and one `<part>: <why>` line per part or state the render issues say did not
+ * draw and per stateful part the completeness check could not draw.
  */
 export const drawnFindingsFrom = (options: {
   product: ResolvedProduct;
@@ -25,13 +44,17 @@ export const drawnFindingsFrom = (options: {
   stateful: string[];
 }): DrawnFindings & { failed: string[] } => {
   const { product, issues, gaps, stateful } = options;
+  const own = issues.filter((issue) => issue.product === product.name && issue.sketch === null);
 
   return {
-    contrasts: contrastsOf(issues.filter((issue) => issue.product === product.name && issue.sketch === null)),
+    contrasts: contrastsOf(own),
     missingStates: gaps ? missingStatesOf(gaps) : [],
-    failed: [...(gaps ?? [])].flatMap(([part, found]) =>
-      typeof found === 'string' && stateful.includes(part) ? [`${part}: ${found}`] : [],
-    ),
+    failed: [
+      ...undrawnLinesOf(own),
+      ...[...(gaps ?? [])].flatMap(([part, found]) =>
+        typeof found === 'string' && stateful.includes(part) ? [`${part}: ${found}`] : [],
+      ),
+    ],
   };
 };
 

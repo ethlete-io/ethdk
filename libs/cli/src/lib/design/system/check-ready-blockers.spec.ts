@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../paths';
 import { checkSystemRendered } from './check-system';
 import { partsCompletenessOf } from './complete';
-import { drawnFindingsFrom } from './drawn-open-points';
+import { drawnFindingsFrom, drawnFindingsOf } from './drawn-open-points';
 import { renderIssuesOf } from './render-check';
 import { resolveProduct } from './resolve-product';
 
@@ -88,6 +88,43 @@ describe('design check shows what design ready refuses', () => {
     );
     expect(lines.filter((line) => line.startsWith('  elements/hero'))).toEqual([
       expect.stringMatching(/1 missing state \(cta\); 1 contrast under the rule \(state default\)/),
+    ]);
+  }, 120_000);
+
+  it('refuses ready on a state that did not draw, and check names it as a part ready refuses', async () => {
+    const target = acme();
+    const config = readConfig(target) ?? {};
+    const product = resolveProduct({ target, name: 'acme', config: config.products?.['acme'] ?? {} });
+    const undrawn = {
+      ...contrast,
+      rule: 'RENDER',
+      part: 'pages/home',
+      state: 'empty',
+      path: '#root',
+      detail: 'design-explore: state "empty" of "pages/home" failed - films is undefined',
+    };
+
+    vi.mocked(renderIssuesOf).mockResolvedValue({
+      issues: [undrawn, { ...undrawn, size: 'phone' }],
+      warnings: [],
+    } as never);
+    vi.mocked(partsCompletenessOf).mockResolvedValue({ gaps: new Map(), exceptions: [], hints: new Map() });
+
+    expect(await drawnFindingsOf({ target, config, product, parts: ['pages/home'] })).toEqual({
+      unavailable:
+        'pages/home: state empty did not draw - design-explore: state "empty" of "pages/home" failed - films is undefined',
+    });
+
+    const lines: string[] = [];
+    const push = (line: unknown) => void lines.push(String(line));
+
+    vi.spyOn(console, 'log').mockImplementation(push);
+    vi.spyOn(console, 'error').mockImplementation(push);
+    vi.spyOn(console, 'warn').mockImplementation(push);
+
+    expect(await checkSystemRendered({ target, config, products: ['acme'], part: 'pages/home' })).toBe(1);
+    expect(lines.filter((line) => line.startsWith('CANNOT DRAW'))).toEqual([
+      'CANNOT DRAW acme pages/home: state empty did not draw - design-explore: state "empty" of "pages/home" failed - films is undefined - et design ready refuses the part until it draws',
     ]);
   }, 120_000);
 
