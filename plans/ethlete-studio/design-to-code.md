@@ -4026,6 +4026,17 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
      canvas "ctrl-wheel keeps the world point" (171 px). Behaviour cases are not excused by load: each must pass 3 of 3
      at a load below the core count, or it is a defect with a finding.
 
+319. The clean-worktree e2e-check may be red on any sha (builder, 2026-11-03, B232 rerun on the B259 script). `yarn
+e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no case reached (the old B254 symptom,
+     now on another sha), and sketches-tree "first sketch row after reload" 5831/3134/3215 ms against 2000 ms, while warm
+     reruns on the main tree take about 700 ms. Hypothesis, not verified: the fresh worktree builds cold, the build
+     prints nothing for over 180 s, and the first reloads hit uncompiled chunks. Why no tool caught it: the watchdog
+     cannot tell a silent build from a hung suite, and a timing case has no warm-up. Decision (technical): verify
+     first, by two runs in a row plus the time of each suite server's ready line. If confirmed, B270 also does this:
+     the build phase has its own limit and message ("BUILD TIMEOUT", not a suite timeout), the idle watchdog starts at
+     the server's ready line, and each timing case does exactly one warm-up load outside the budget. Until then a
+     canvas TIMEOUT with no case reached proves nothing about the sha, which also applies to the B254 hang.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
