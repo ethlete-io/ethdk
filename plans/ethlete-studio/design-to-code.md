@@ -3290,7 +3290,10 @@ ready` prints that command for every file it wrote; the brief uses it. Not an au
      real gap: a known entry silenced a regression - an endpoint that had a writer and lost it looked the same as one
      that never had one. Lesson: a known entry names the state it expects. Fix: B195 (technical) - each ORPHAN-ENDPOINT
      known entry says "never written" or "written by <fn>"; losing a writer reports the endpoint again. The builder
-     lists the other known lists where an entry can hide the same flip. B190 still landed (calls resolved through
+     lists the other known lists where an entry can hide the same flip.
+     Builder list (de36e4795): `unbound-input-known.ts` (UNBOUND-INPUT) and `sample-default-known.ts`
+     (SAMPLE-DEFAULT) hide the same flip - an input fixed and then regressed reads as a known warning. Fix: B202
+     (technical) - their entries carry the expected state too, and a regression after a fix fails again. B190 still landed (calls resolved through
      the host functions; an import no longer counts).
 255. B180 could not reproduce the `--out` + `--variants` refusal from finding 244: the source already accepted it
      (now pinned by a spec). The refusal came from the shared cli `dist/`, which predates B172 (it still checked
