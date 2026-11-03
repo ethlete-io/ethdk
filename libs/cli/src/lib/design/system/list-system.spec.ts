@@ -4,6 +4,7 @@ import { dirname, join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../paths';
 import { createDesignServer } from '../serve';
+import { warningProblemsOf } from './check-system';
 import { gridReportOf, listSystem } from './list-system';
 import { resolveProduct } from './resolve-product';
 import { createSketch, variantDirOf } from './sketch/sketch';
@@ -170,6 +171,19 @@ describe('listSystem', () => {
       expect.objectContaining({ rule: 'LOAD', message: expect.stringContaining('broken on load') }),
     ]);
     expect(problemsOf('home')).toEqual([]);
+  });
+
+  it('keeps a warning-rule problem out of the problems of every part and product', async () => {
+    const target = acme();
+
+    write(target, 'acme/elements/hero/shared/helpers.ts', 'export const unusedHelper = 1;\n');
+
+    const config = readConfig(target) ?? {};
+    const warned = warningProblemsOf(resolveProduct({ target, name: 'acme', config: config.products?.['acme'] ?? {} }));
+    const [product] = await list(target, ['acme']);
+
+    expect(warned.map((problem) => problem.rule)).toEqual(expect.arrayContaining(['UNUSED-EXPORT', 'TOKEN-SELECTOR']));
+    expect([...(product?.problems ?? []), ...(product?.parts.flatMap((part) => part.problems) ?? [])]).toEqual([]);
   });
 
   it('lists the component file a part implements, by its own path or by its route link', async () => {
