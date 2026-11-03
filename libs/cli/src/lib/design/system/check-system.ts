@@ -41,7 +41,7 @@ import { staleReplacesOf } from './rules/stale-replace';
 import { CHECK_RULES } from './check-rules';
 import { unusedSharedExportsOf } from './rules/unused-shared-export';
 import { utilityCssOf } from './rules/utility-css';
-import { orphanEndpointProblemsOf } from './rules/orphan-endpoint';
+import { orphanEndpointProblemsOf, orphanEndpointWarningsOf } from './rules/orphan-endpoint';
 import { uncoveredViewsOf, uncoveredViewsText } from './rules/view-coverage';
 import { badWidthsOf } from './rules/widths';
 import { typecheckVariant } from './sketch/check-sketches';
@@ -84,6 +84,7 @@ export const warningProblemsOf = (product: ResolvedProduct): Problem[] => [
   ...staleReplacesOf(product),
   ...tokenSelectorsOf(product),
   ...gluedInterpolationsOf(product),
+  ...orphanEndpointWarningsOf(product),
 ];
 
 export const ruleLinesOf = (target: string, product: ResolvedProduct) =>
@@ -268,7 +269,7 @@ const printBaseFindings = (product: ResolvedProduct, rules: string[]) => {
   );
 };
 
-const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: string[] }) => {
+const reportSystem = (options: CheckOptions & { warn?: boolean }): { code: number; fatal: boolean } => {
   const { target, config, products } = options;
   const declared = config.products ?? {};
   let failed = false;
@@ -282,7 +283,6 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: strin
 
     console.error(line);
     failed = true;
-    options.blocking?.push(problem.rule);
     tallyOf(options.tally, { product: product.name, part: partOfFile(product, problem.file) })?.problems.push(
       problem.rule,
     );
@@ -294,7 +294,7 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: strin
     if (!entry) {
       console.error(`NO PRODUCT "${name}" - config.json declares ${Object.keys(declared).join(', ') || 'none'}.`);
 
-      return 1;
+      return { code: 1, fatal: true };
     }
 
     const product = resolveProduct({ target, name, config: entry });
@@ -302,7 +302,7 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: strin
     if (options.part && !product.parts.some((part) => partKeyOf(part) === options.part)) {
       console.error(`NO PART "${options.part}" in product ${name}.`);
 
-      return 1;
+      return { code: 1, fatal: true };
     }
 
     if (options.warn && !options.part) warnChangedOutsideSketch(product);
@@ -337,7 +337,7 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: strin
     if (result.kind === 'unavailable') {
       console.error(result.message);
 
-      return 1;
+      return { code: 1, fatal: true };
     }
 
     if (result.kind === 'failed')
@@ -353,7 +353,7 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: strin
       }).forEach((problem) => report(problem, product));
   }
 
-  return failed ? 1 : 0;
+  return { code: failed ? 1 : 0, fatal: false };
 };
 
 /**
@@ -362,7 +362,7 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: strin
  * product takes from its base are counted in one line and do not fail it.
  */
 export const checkSystem = (options: CheckOptions) => {
-  const code = reportSystem(options);
+  const { code } = reportSystem(options);
 
   if (code === 0) console.log('ok');
 
@@ -479,23 +479,32 @@ const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[]
   }
 };
 
-const countsOf = (values: string[]) =>
-  [...new Set(values)].map((value) => `${value} ${values.filter((other) => other === value).length}`).join(', ');
+const notCheckedLineOf = (options: { product: string; parts: string; why: string }) =>
+  `NOT CHECKED ${options.product} render rules on ${options.parts} - ${options.why}`;
 
-const blockedRenderLineOf = (blocking: string[]) =>
-  `RENDER CHECK NOT RUN - ${blocking.length} problem${blocking.length === 1 ? '' : 's'} above stop it (${countsOf(blocking)}); the open points list no contrasts or missing states until they are fixed`;
+const isUndrawn = (issue: RenderIssue) =>
+  issue.rule === 'RENDER' && issue.state === '-' && !issue.detail.startsWith('logged SDK error');
+
+const printUndrawn = (issues: RenderIssue[]) => {
+  for (const product of new Set(issues.map((issue) => issue.product))) {
+    const parts = [...new Set(issues.filter((issue) => issue.product === product).map((issue) => issue.part))];
+
+    console.log(
+      notCheckedLineOf({
+        product,
+        parts: `${countText(parts.length, 'part')}: ${parts.join(', ')}`,
+        why: `${parts.length === 1 ? 'it' : 'they'} did not draw, see RENDER above`,
+      }),
+    );
+  }
+};
 
 const renderSystem = async (
   options: CheckOptions,
 ): Promise<{ code: number; rendered: RenderIssue[] | null; notDrawn?: string }> => {
-  const blocking: string[] = [];
-  const code = reportSystem({ ...options, warn: true, blocking });
+  const { code, fatal } = reportSystem({ ...options, warn: true });
 
-  if (code !== 0) {
-    if (blocking.length > 0) console.error(blockedRenderLineOf(blocking));
-
-    return { code, rendered: null };
-  }
+  if (fatal) return { code, rendered: null };
 
   const rendered = await renderIssuesOf({
     ...options,
@@ -503,17 +512,33 @@ const renderSystem = async (
     jobs: options.products.map((product) => ({ product, sketch: null, parts: options.part ? [options.part] : null })),
   });
 
-  if ('unavailable' in rendered) {
-    console.log(`RENDER CHECK SKIPPED - ${rendered.unavailable}`);
-
-    return { code: 0, rendered: null, notDrawn: rendered.unavailable };
-  }
-
   const resolved = options.products.flatMap((name) => {
     const entry = options.config.products?.[name];
 
     return entry ? [resolveProduct({ target: options.target, name, config: entry })] : [];
   });
+
+  if ('unavailable' in rendered) {
+    console.log(`RENDER CHECK SKIPPED - ${rendered.unavailable}`);
+
+    for (const product of resolved) {
+      const parts = product.parts
+        .filter((part) => part.origin !== 'base')
+        .map(partKeyOf)
+        .filter((key) => !options.part || key === options.part);
+
+      if (parts.length > 0)
+        console.log(
+          notCheckedLineOf({
+            product: product.name,
+            parts: parts.length === 1 ? `1 part: ${parts[0]}` : `all ${parts.length} parts`,
+            why: rendered.unavailable,
+          }),
+        );
+    }
+
+    return { code, rendered: null, notDrawn: rendered.unavailable };
+  }
   const isInBase = (issue: RenderIssue) =>
     resolved.some((product) => product.name === issue.product && isBasePartKey(product, ownerPartOf(issue)));
   const underGo = actionUndeclaredUnderGoOf({
@@ -544,6 +569,7 @@ const renderSystem = async (
     console.error(renderIssueLineOf(issue));
     tallyOf(options.tally, { product: issue.product, part: ownerPartOf(issue) })?.problems.push(issue.rule);
   });
+  printUndrawn(issues.filter(isUndrawn));
 
   if (!options.part)
     for (const product of resolved)
@@ -552,12 +578,13 @@ const renderSystem = async (
         rendered.issues.filter((issue) => issue.product === product.name && isInBase(issue)).map((issue) => issue.rule),
       );
 
-  return { code: issues.length > 0 ? 1 : 0, rendered: issues };
+  return { code: code !== 0 || issues.length > 0 ? 1 : 0, rendered: issues };
 };
 
 /**
  * Checks as `checkSystem` does, then draws every state in a headless browser and prints one line per
- * render rule a drawing breaks, and warns of each merged part that changed outside a sketch. Without a browser it prints one skip line and passes on the other checks.
+ * render rule a drawing breaks, also when a static rule failed, and warns of each merged part that changed outside a sketch. A part that does not
+ * draw, or every part without a browser, gets one `NOT CHECKED` line; without a browser it passes on the other checks.
  * It then lists the open points of each product's parts, with the contrasts the drawing found and the missing states
  * of each component part as `design complete` draws them, the blockers `design ready` refuses on; they do not change
  * the exit code.

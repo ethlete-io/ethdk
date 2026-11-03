@@ -320,8 +320,10 @@ comment the user has not resolved (an addressed one too, listed as `c-2 addresse
 not an open point: `et design check` lists those on one `UNLINKED <product>: <part>, ...` line. Outside `foundations/` and `pages/`, every ordered pair of a part's states needs a
 motion unless it is `unreachable` or a state name contains `focus`, for example `no motion collapsed -> expanded`, and
 a state whose name contains `loading`, `pending`, `busy`, `progress`, `indeterminate` or `spinner` needs a looping
-motion: `no looping motion in loading`. The list does not change the exit code. When a check fails, the render step does not run and
-`RENDER CHECK NOT RUN` names the rules that stopped it, so the list has no contrasts and no missing states. A
+motion: `no looping motion in loading`. The list does not change the exit code. The render step runs even when a static rule fails, so both
+kinds of findings show in one run. A part that does not load or draw gets no render rule checked: one line names
+it, for example `NOT CHECKED studio render rules on 1 part: components/menu - it did not draw, see RENDER above`,
+and without a browser one line counts every part, `NOT CHECKED studio render rules on all 80 parts - <why>`. A
 finding in a part the product takes from its base, before or in the render, does not fail the product: one line
 counts them, for example `94 findings in base product sdk (UTILITY-CSS 94) - they do not block this product; run et design check --product sdk for the base's own`. A part the product
 overrides is checked as its own.

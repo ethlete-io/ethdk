@@ -43,6 +43,14 @@ const withoutOpenPoints = (lines: string[]) =>
       !line.startsWith('check complete:'),
   );
 
+const withoutBrowserLines = (lines: string[]) =>
+  withoutOpenPoints(lines).filter(
+    (line) =>
+      !line.startsWith('RENDER CHECK SKIPPED') &&
+      !line.startsWith('NOT CHECKED') &&
+      !line.startsWith('CONTROL-UNDECLARED'),
+  );
+
 const renderWarningsOf = (lines: string[]) =>
   lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))
     ? []
@@ -178,14 +186,53 @@ describe('checkDesign', () => {
     const target = acme();
     const lines = output();
 
-    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { color: #fff; }');
+    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { border-color: #fff; }');
 
     expect(await checkDesign({ target, argv: [], invocation: 'et design' })).toBe(1);
-    expect(withoutOpenPoints(lines)).toEqual([
-      expect.stringMatching(/^HARD-CODED-COLOUR .*hero\.css: #fff/),
-      'RENDER CHECK NOT RUN - 1 problem above stop it (HARD-CODED-COLOUR 1); the open points list no contrasts or missing states until they are fixed',
-    ]);
+    expect(withoutBrowserLines(lines)).toEqual([expect.stringMatching(/^HARD-CODED-COLOUR .*hero\.css: #fff/)]);
   }, 60_000);
+
+  it('runs the render check past a static failure and reports both', async (context) => {
+    const target = acme();
+    const lines = output();
+    const hero = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
+
+    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { color: #fff; }');
+    writeFileSync(
+      hero,
+      readFileSync(hero, 'utf8').replace(
+        'styles: styles + play.styles,',
+        "styles: styles + play.styles, setup: (root) => root.querySelector('h1')?.addEventListener('click', () => undefined),",
+      ),
+    );
+
+    const code = await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' });
+
+    if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip('no browser');
+
+    expect(code).toBe(1);
+    expect(lines).toContainEqual(expect.stringMatching(/^HARD-CODED-COLOUR .*hero\.css: #fff/));
+    expect(lines).toContainEqual(expect.stringMatching(/^ACTION-UNDECLARED acme elements\/hero default at /));
+    expect(lines.filter((line) => line.startsWith('RENDER CHECK NOT RUN'))).toEqual([]);
+  }, 120_000);
+
+  it('names a part that does not draw as not checked by the render rules', async (context) => {
+    const target = acme();
+    const lines = output();
+    const hero = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
+
+    writeFileSync(hero, `if (Date.now() > 0) throw new Error('hero will not load');\n${readFileSync(hero, 'utf8')}`);
+
+    const code = await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' });
+
+    if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip('no browser');
+
+    expect(code).toBe(1);
+    expect(lines).toContainEqual(expect.stringMatching(/^RENDER acme elements\/hero - at -: - - .*hero will not load/));
+    expect(lines.filter((line) => line.startsWith('NOT CHECKED'))).toEqual([
+      'NOT CHECKED acme render rules on 2 parts: elements/hero, pages/home - they did not draw, see RENDER above',
+    ]);
+  }, 120_000);
 
   it('leaves the problems of a base part to the base, and checks a part the product overrides as its own', async () => {
     const target = acme();
@@ -336,9 +383,8 @@ describe('checkDesign', () => {
     );
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
-    expect(withoutOpenPoints(lines)).toEqual([
+    expect(withoutBrowserLines(lines)).toEqual([
       expect.stringMatching(/^TYPE-ERROR .*sketches\/elements-hero\/b: \n[^]*TS2322/),
-      expect.stringMatching(/^RENDER CHECK NOT RUN - 1 problem above stop it \(TYPE-ERROR 1\)/),
     ]);
   }, 60_000);
 
@@ -353,9 +399,8 @@ describe('checkDesign', () => {
     writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { padding: 0; }');
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'yarn design' })).toBe(1);
-    expect(withoutOpenPoints(lines)).toEqual([
+    expect(withoutBrowserLines(lines)).toEqual([
       'SKETCH-BASE-STALE acme elements/hero: elements/hero changed since the sketch was drawn - bring each variant up to date, then run yarn design sketch rebase elements/hero --product acme --by <model id>',
-      expect.stringMatching(/^RENDER CHECK NOT RUN - 1 problem above stop it \(SKETCH-BASE-STALE 1\)/),
     ]);
 
     rebaseSketch({ product, sketch });
@@ -575,21 +620,18 @@ describe('checkDesign', () => {
     );
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
-    expect(withoutOpenPoints(lines)).toEqual([
-      expect.stringMatching(/^IMPLEMENTS-MISSING .*hero\.ts: "src\/gone/),
-      expect.stringMatching(/^RENDER CHECK NOT RUN - 1 problem above stop it \(IMPLEMENTS-MISSING 1\)/),
-    ]);
+    expect(withoutBrowserLines(lines)).toEqual([expect.stringMatching(/^IMPLEMENTS-MISSING .*hero\.ts: "src\/gone/)]);
   }, 60_000);
 
   it('ends with one line per part with findings and the count of the clean parts', async () => {
     const target = acme();
     const lines = output();
 
-    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { color: #fff; }');
+    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { border-color: #fff; }');
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
     expect(lines.filter((line) => line.startsWith('PART'))).toEqual([
-      'PART acme components/button: 3 open points',
+      `PART acme components/button: ${renderWarningsOf(lines).length > 0 ? '1 warning, ' : ''}3 open points`,
       'PART acme elements/hero: 1 problem (HARD-CODED-COLOUR), 1 open point',
       'PART acme components/card: 3 open points',
       'PARTS acme: 2 of 4 clean',
@@ -600,7 +642,7 @@ describe('checkDesign', () => {
     const target = acme();
     const lines = output();
 
-    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { color: #fff; }');
+    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { border-color: #fff; }');
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
     expect(lines).toContain('HARD-CODED-COLOUR 1');
@@ -614,7 +656,7 @@ describe('checkDesign', () => {
     const target = acme();
     const lines = output();
 
-    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { color: #fff; }');
+    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { border-color: #fff; }');
     writeFileSync(join(target, DESIGN_DIR, 'acme/components/button/button.css'), '.acme-button { color: #000; }');
 
     expect(
