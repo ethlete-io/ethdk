@@ -212,6 +212,69 @@ describe('designShot', () => {
     expect((await run(['components/button', '--variants', '--crop', 'changed'])).text).toContain('no config at');
   });
 
+  describe('flag combinations', () => {
+    const accepted: string[][] = [
+      ['--states'],
+      ['--variants'],
+      ['--states', '--variants'],
+      ['--state', 'rest'],
+      ['--state', 'rest', '--out', 'a.png'],
+      ['--state', 'rest,busy'],
+      ['--states', '--state', 'rest,busy'],
+      ['--variants', '--state', 'rest'],
+      ['--variants', '--out', 'a.png'],
+      ['--states', '--variants', '--out', 'a.png'],
+      ['--variants', '--round', 'r1', '--variant', 'a'],
+      ['--variants', '--at', 'HEAD'],
+      ['--variants', '--diff-props'],
+      ['--variants', '--crop', 'changed'],
+      ['--states', '--crop', '0,0,10,10'],
+      ['--states', '--interaction', 'hover', '--scheme', 'dark', '--scale', '2'],
+      ['--states', '--preset', 'phone'],
+      ['--states', '--width', '300'],
+      ['--states', '--product', 'studio', '--surface', 'a', '--color', 'b'],
+    ];
+
+    it.each(accepted.map((flags) => [flags]))('accepts %j', async (flags) => {
+      const { code, text } = await run(['components/button', ...flags]);
+
+      expect(code).toBe(1);
+      expect(text).toContain('no config at');
+    });
+
+    const refused: [string[], string][] = [
+      [[], '--states, --variants or --state'],
+      [['--out', 'a.png'], '--states, --variants or --state'],
+      [['--states', '--at', 'HEAD'], '--at needs --variants'],
+      [['--states', '--diff-props'], '--diff-props needs --variants'],
+      [['--states', '--round', 'r2'], '--round needs --variants'],
+      [['--states', '--variant', 'i'], '--variant needs --variants'],
+      [['--states', '--crop', 'changed'], '--crop changed needs --variants'],
+      [['--states', '--crop', '1,2,3'], '--crop takes'],
+      [['--states', '--preset', 'phone', '--width', '300'], '--preset and --width'],
+      [['--states', '--width', 'wide'], '--width takes'],
+      [['--states', '--scale', '9'], '--scale takes'],
+      [['--states', '--interaction', 'wiggle'], '--interaction takes'],
+      [['--states', '--scheme', 'dusk'], '--scheme takes'],
+    ];
+
+    it.each(refused)('refuses %j and names %s', async (flags, named) => {
+      const { code, text } = await run(['components/button', ...flags]);
+
+      expect(code).toBe(2);
+      expect(text).toContain(named);
+      expect(text).toContain('usage: et design shot');
+    });
+
+    it('refuses a missing part and an extra positional', async () => {
+      const missing = await run(['--states']);
+      const extra = await run(['components/button', 'components/tabs', '--states']);
+
+      expect(missing.text).toContain('needs a <layer>/<name> part');
+      expect(extra.text).toContain('takes one <layer>/<name> part');
+    });
+  });
+
   it('says so when the checkout has no design config', async () => {
     const { code, text } = await run(['components/button', '--states']);
 

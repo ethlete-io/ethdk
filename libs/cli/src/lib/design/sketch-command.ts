@@ -913,13 +913,16 @@ const checked = async (context: Context) => {
 
   if (asked !== undefined && named.length === 0) return fail(`NO SKETCH on ${asked} in ${product.name}`);
 
-  const isWithdrawn = ({ sketch, variant }: { sketch: Sketch; variant: string }) =>
-    rejectionOf(sketch, variant)?.status === 'withdrawn';
-  const chosen = named.filter((entry) => !isWithdrawn(entry));
+  const isSkipped = ({ sketch, variant }: { sketch: Sketch; variant: string }) => Boolean(rejectionOf(sketch, variant));
+  const chosen = named.filter((entry) => !isSkipped(entry));
 
   named
-    .filter(isWithdrawn)
-    .forEach(({ sketch, variant }) => console.log(`NOTE ${sketch.target} ${variant}: withdrawn, not checked`));
+    .filter(isSkipped)
+    .forEach(({ sketch, variant }) =>
+      console.log(
+        `NOTE ${sketch.target} ${variant}: ${rejectionOf(sketch, variant)?.status === 'withdrawn' ? 'withdrawn' : 'rejected'}, not checked`,
+      ),
+    );
 
   if (args.flags.has('--fix'))
     new Set(chosen.map((entry) => entry.sketch)).forEach((sketch) =>

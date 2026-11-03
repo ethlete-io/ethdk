@@ -846,6 +846,37 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines.some((line) => line.startsWith('NOTE components/button b: withdrawn'))).toBe(true);
   });
 
+  it('checks no rejected variant either: it gets the same NOTE line', async () => {
+    const target = acme();
+    const lines = output();
+
+    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    expect(run(target, 'reject', 'components/button', '--variant', 'b', '--by', 'designer', '--product', 'acme')).toBe(
+      0,
+    );
+    vi.mocked(renderIssuesOf).mockImplementationOnce(async ({ jobs }) => ({
+      issues: jobs
+        .filter((job) => job.sketch?.variant === 'b')
+        .map((job) => ({
+          rule: 'CLIPPED',
+          product: job.product,
+          part: 'components/button',
+          state: 'default',
+          size: 'fitted',
+          path: 'button',
+          detail: 'clipped',
+          sketch: job.sketch,
+        })),
+      warnings: [],
+      grids: [],
+      drawn: [],
+    }));
+
+    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines.some((line) => line.includes('CLIPPED'))).toBe(false);
+    expect(lines).toContain('NOTE components/button b: rejected, not checked');
+  });
+
   it('refuses a reject with a --by that is neither designer nor a model id', () => {
     const target = acme();
     const lines = output();

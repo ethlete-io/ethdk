@@ -270,6 +270,51 @@ export const shotProductOf = (options: {
 
 const CROP_CHANGED = 'changed';
 
+/** The reason a combination of shot flags is refused, naming the flags, or null when it is valid. */
+export const shotRefusalOf = (options: {
+  part: string | undefined;
+  extra: string[];
+  states: boolean;
+  variants: boolean;
+  asked: string[];
+  values: Record<string, string | undefined>;
+  diffProps: boolean;
+  onlyRounds: string[];
+  onlyVariants: string[];
+  width: number | null;
+  preset: string | null;
+  scale: number;
+  interaction: string | null;
+  cropChanged: boolean;
+}): string | null => {
+  const { part, extra, states, variants, asked, values, diffProps, onlyRounds, onlyVariants, width, preset } = options;
+  const { scale, interaction, cropChanged } = options;
+
+  if (!part) return 'shot needs a <layer>/<name> part';
+  if (extra.length > 0) return `shot takes one <layer>/<name> part, got ${[part, ...extra].join(', ')}`;
+  if (!states && !variants && asked.length === 0) return 'shot needs --states, --variants or --state <name>';
+  if (!variants) {
+    if (values['--at'] !== undefined) return '--at needs --variants';
+    if (diffProps) return '--diff-props needs --variants';
+    if (onlyRounds.length > 0) return '--round needs --variants';
+    if (onlyVariants.length > 0) return '--variant needs --variants';
+    if (cropChanged) return '--crop changed needs --variants';
+  }
+
+  if (width !== null && !(Number.isInteger(width) && width > 0))
+    return `--width takes a whole number of pixels, got ${values['--width']}`;
+  if (preset && width !== null) return '--preset and --width cannot be combined';
+  if (!(Number.isInteger(scale) && scale >= 1 && scale <= 4))
+    return `--scale takes a whole number from 1 to 4, got ${values['--scale']}`;
+  if (!cropChanged && cropOf(values['--crop']) === undefined)
+    return `--crop takes <x,y,width,height> or changed, got ${values['--crop']}`;
+  if (interaction !== null && !(INTERACTIONS as readonly string[]).includes(interaction))
+    return `--interaction takes ${INTERACTIONS.join(', ')}, got ${interaction}`;
+  if (!isSchemeFlag(values['--scheme'])) return `--scheme takes light or dark, got ${values['--scheme']}`;
+
+  return null;
+};
+
 /**
  * One crop per cluster of the pixels a variant cell changes from the merged cell of its state, or of the first merged
  * state for a state the merged part does not draw, in CSS pixels inside the largest picture; empty when no variant
@@ -347,7 +392,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     return 2;
   }
 
-  const [part, ...extra] = args.positional;
+  const [part = '', ...extra] = args.positional;
   const asked = args.values['--state']?.split(',').filter(Boolean) ?? [];
   const states = args.flags.has('--states') || asked.length > 1;
   const variants = args.flags.has('--variants');
@@ -360,20 +405,25 @@ export const designShot = async (options: { target: string; argv: string[]; invo
   const interaction = args.values['--interaction'] ?? null;
   const cropChanged = args.values['--crop'] === CROP_CHANGED;
 
-  if (
-    !part ||
-    extra.length > 0 ||
-    (!states && !variants) ||
-    ((args.values['--at'] !== undefined || diffProps || onlyRounds.length > 0 || onlyVariants.length > 0) &&
-      !variants) ||
-    (width !== null && !(Number.isInteger(width) && width > 0)) ||
-    (preset && width) ||
-    !(Number.isInteger(scale) && scale >= 1 && scale <= 4) ||
-    (cropChanged ? !variants : cropOf(args.values['--crop']) === undefined) ||
-    (interaction !== null && !(INTERACTIONS as readonly string[]).includes(interaction)) ||
-    !isSchemeFlag(args.values['--scheme'])
-  ) {
-    console.error(usage);
+  const refusal = shotRefusalOf({
+    part,
+    extra,
+    states,
+    variants,
+    asked,
+    values: args.values,
+    diffProps,
+    onlyRounds,
+    onlyVariants,
+    width,
+    preset,
+    scale,
+    interaction,
+    cropChanged,
+  });
+
+  if (refusal) {
+    console.error(`${refusal}\n${usage}`);
 
     return 2;
   }
