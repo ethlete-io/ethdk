@@ -14,11 +14,11 @@ export default definePart<Props>({
   },
   render: ({ title, body }) =>
     drawing({
-      body: `<article class="lab-card"><h3>${title}</h3><p>${body}</p></article>`,
+      body: `<article class="lab-card box-border"><h3 class="m-0">${title}</h3><p class="m-0">${body}</p></article>`,
       styles: `
-        .lab-card { box-sizing: border-box; padding: 32px; border-radius: 10px; background: var(--lab-surface); color: var(--lab-ink); font-family: sans-serif; }
-        .lab-card h3 { margin: 0 0 6px; font-size: 16px; }
-        .lab-card p { margin: 0; font-size: 14px; }
+        .lab-card { padding: 32px; border-radius: 10px; background: var(--lab-surface); color: var(--lab-ink); font-family: sans-serif; }
+        .lab-card h3 { margin-bottom: 6px; font-size: 16px; }
+        .lab-card p { font-size: 14px; }
       `,
     }),
 });
