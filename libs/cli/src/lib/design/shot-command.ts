@@ -16,7 +16,7 @@ import { createSystemModules, productModuleIdOf, SketchVariant } from './system/
 import { createDrawQueue, ThumbUnavailableError } from './thumb';
 import { BoxOf } from './variant-diff';
 
-export const SHOT_USAGE = `shot <layer>/<name> --states [--variants [--round <key>[,<key>...]] [--variant <name>[,<name>...]] [--at <commit>] [--diff-props]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--crop <x,y,width,height> | --crop changed] [--product <name>] [--surface <name>] [--color <name>] [--scheme <light|dark>] [--out <file>]`;
+export const SHOT_USAGE = `shot <layer>/<name> --states [--variants [--round <key>[,<key>...]] [--variant <name>[,<name>...]] [--all] [--at <commit>] [--diff-props]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--crop <x,y,width,height> | --crop changed] [--product <name>] [--surface <name>] [--color <name>] [--scheme <light|dark>] [--out <file>]`;
 
 /** The state names a shot of a part can draw: every state it defines, so the grid's interaction cells of an unchanged row draw too. */
 export const shotStateNamesOf = async (definition: unknown): Promise<string[]> => {
@@ -212,14 +212,17 @@ export const rowsOf = (options: {
 
 /**
  * The variants of a sketch that a shot draws: all of them, or only those in the named rounds and among the named
- * variants. A string names a round or a variant the sketch does not have, or says that none is left.
+ * variants. A variant its agent withdrew draws only with `all` or when `variants` names it. A string names a round or
+ * a variant the sketch does not have, or says that none is left.
  */
 export const shownVariantsOf = (options: {
-  sketch: Pick<Sketch, 'variants' | 'rounds' | 'variantInfo'>;
+  sketch: Pick<Sketch, 'variants' | 'rounds' | 'variantInfo'> & Partial<Pick<Sketch, 'rejections'>>;
   rounds: string[];
   variants: string[];
+  all?: boolean;
 }): string[] | string => {
-  const { sketch, rounds, variants } = options;
+  const { sketch, rounds, variants, all = false } = options;
+  const withdrawn = (name: string) => rejectionOf(sketch, name)?.status === 'withdrawn';
   const known = sketch.rounds.map((round) => round.key);
   const unknownRounds = rounds.filter((key) => !known.includes(key));
   const unknownVariants = variants.filter((name) => !sketch.variants.includes(name));
@@ -233,8 +236,12 @@ export const shownVariantsOf = (options: {
       (rounds.length === 0 || rounds.includes(sketch.variantInfo[name]?.round ?? '')) &&
       (variants.length === 0 || variants.includes(name)),
   );
+  const visible = all || variants.length > 0 ? shown : shown.filter((name) => !withdrawn(name));
 
-  return shown.length > 0 ? shown : `no variant is in round ${rounds.join(', ')} and named ${variants.join(', ')}`;
+  if (visible.length === 0 && shown.length > 0)
+    return `only variants its agent withdrew (${shown.join(', ')}) - pass --all to draw them`;
+
+  return visible.length > 0 ? visible : `no variant is in round ${rounds.join(', ')} and named ${variants.join(', ')}`;
 };
 
 /** The diff lines of the sheet, a line per new state, and the PNG path last. */
@@ -489,7 +496,9 @@ export const designShot = async (options: { target: string; argv: string[]; invo
   }
 
   const shownVariants =
-    variants && sketch ? shownVariantsOf({ sketch, rounds: onlyRounds, variants: onlyVariants }) : null;
+    variants && sketch
+      ? shownVariantsOf({ sketch, rounds: onlyRounds, variants: onlyVariants, all: args.flags.has('--all') })
+      : null;
 
   if (typeof shownVariants === 'string') {
     console.error(`design-explore: ${part} has ${shownVariants}`);

@@ -340,6 +340,26 @@ describe('shotReportOf', () => {
 });
 
 describe('shownVariantsOf', () => {
+  it('leaves out a variant its agent withdrew, unless --all or --variant asks for it', () => {
+    const withdrawn = {
+      by: 'agent',
+      decidedAt: '2026-11-03T10:00:00.000Z',
+      status: 'withdrawn',
+      withdrawnBy: 'm',
+    } as const;
+    const sketch = {
+      variants: ['a', 'b', 'c'],
+      rounds: [{ key: 'r1', title: 'r1', note: '' }],
+      variantInfo: {},
+      rejections: { b: [withdrawn], c: [{ by: 'designer' as const, decidedAt: '2026-11-03T10:00:00.000Z' }] },
+    };
+
+    expect(shownVariantsOf({ sketch, rounds: [], variants: [] })).toEqual(['a', 'c']);
+    expect(shownVariantsOf({ sketch, rounds: [], variants: [], all: true })).toEqual(['a', 'b', 'c']);
+    expect(shownVariantsOf({ sketch, rounds: [], variants: ['b'] })).toEqual(['b']);
+    expect(shownVariantsOf({ sketch: { ...sketch, variants: ['b'] }, rounds: [], variants: [] })).toContain('--all');
+  });
+
   const sketch = {
     variants: ['a', 'b', 'i', 'j'],
     rounds: [
