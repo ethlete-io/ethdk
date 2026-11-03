@@ -97,7 +97,7 @@ export const canvasFrameHead = (name: string, width = '', extra = '') =>
 
 /** The box of a frame: a hairline-edged surface around the body, with an optional head above it and extra classes and attributes on the box. */
 export const canvasFrameBox = (body: string, head = '', { class: extra = '', attrs = '' } = {}) =>
-  html`<figure class="st-cframe relative m-0 bg-et-surface-bg${extra ? ` ${extra}` : ''}" ${attrs ? ` ${attrs}` : ''}>
+  html`<figure class="st-cframe relative m-0 bg-et-surface-bg ${extra}" ${attrs ? ` ${attrs}` : ''}>
     ${head}${body}
   </figure>`;
 
