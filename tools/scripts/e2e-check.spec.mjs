@@ -3,7 +3,9 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { judgeSuiteRun, runSuite } from './e2e-check.mjs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
+import { createRevisionWorktree, judgeSuiteRun, runSuite } from './e2e-check.mjs';
 import { mapChanged } from './e2e-map.mjs';
 
 const fixture = (body) => {
@@ -60,4 +62,34 @@ test('sketch, design-canvas and system-view files map to canvas', () => {
   ]);
   assert.ok(suites.includes('canvas'));
   assert.deepEqual(mapChanged([`${base}/system-view/x.ts`]).suites, ['canvas']);
+});
+
+const sh = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
+
+test('the worktree is the named revision, not the dirty main tree, and is removed afterwards', () => {
+  const repo = mkdtempSync(join(tmpdir(), 'e2e-check-repo-'));
+  sh(repo, 'init', '-q');
+  sh(repo, 'config', 'user.email', 'a@b.c');
+  sh(repo, 'config', 'user.name', 'x');
+  writeFileSync(join(repo, 'file.txt'), 'committed');
+  sh(repo, 'add', 'file.txt');
+  sh(repo, 'commit', '-q', '-m', 'one');
+  const sha = sh(repo, 'rev-parse', 'HEAD');
+  writeFileSync(join(repo, 'file.txt'), 'dirty');
+  writeFileSync(join(repo, 'new.txt'), 'untracked');
+  const indexBefore = sh(repo, 'status', '--porcelain');
+  const tree = createRevisionWorktree(repo, sha);
+
+  try {
+    assert.equal(tree.sha, sha);
+    assert.equal(sh(tree.dir, 'rev-parse', 'HEAD'), sha);
+    assert.equal(readFileSync(join(tree.dir, 'file.txt'), 'utf8'), 'committed');
+    assert.equal(existsSync(join(tree.dir, 'new.txt')), false);
+    assert.equal(sh(repo, 'status', '--porcelain'), indexBefore);
+  } finally {
+    tree.remove();
+  }
+
+  assert.equal(existsSync(tree.dir), false);
+  assert.ok(!sh(repo, 'worktree', 'list').includes(tree.dir));
 });

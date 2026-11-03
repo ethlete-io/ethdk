@@ -1,8 +1,9 @@
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { selectE2eFolders, readIndex, ALL } from '../../apps/storybook-e2e/affected.mjs';
+import { linkNodeModules } from './link-node-modules.mjs';
 import { mapChanged, STUDIO_E2E } from './e2e-map.mjs';
 
 const SUITE_TIMEOUT_MS = 15 * 60 * 1000;
@@ -13,6 +14,30 @@ const changedFilesOf = (repo, commit) =>
   git(repo, 'diff-tree', '--no-commit-id', '--name-only', '-r', '--no-renames', '--root', commit)
     .split('\n')
     .filter(Boolean);
+
+export const createRevisionWorktree = (repo, commit) => {
+  const dir = join(mkdtempSync(join(tmpdir(), 'e2e-check-tree-')), 'tree');
+  git(repo, 'worktree', 'add', '--detach', dir, commit);
+  linkNodeModules(repo, dir);
+  if (existsSync(join(repo, 'dist'))) symlinkSync(join(repo, 'dist'), join(dir, 'dist'));
+
+  let removed = false;
+  const remove = () => {
+    if (removed) return;
+    removed = true;
+    try {
+      git(repo, 'worktree', 'remove', '--force', dir);
+    } catch {
+      rmSync(dir, { recursive: true, force: true });
+      try {
+        git(repo, 'worktree', 'prune');
+      } catch {}
+    }
+    rmSync(join(dir, '..'), { recursive: true, force: true });
+  };
+
+  return { dir, sha: git(dir, 'rev-parse', 'HEAD'), remove };
+};
 
 const HEARTBEAT_MS = 30 * 1000;
 const CASE_LINE = /^(PASS|FAIL)\b/m;
@@ -86,12 +111,24 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     process.exit(2);
   }
 
-  const repo = git(process.cwd(), 'rev-parse', '--show-toplevel');
-  const files = changedFilesOf(repo, commit);
+  const mainRepo = git(process.cwd(), 'rev-parse', '--show-toplevel');
+  const files = changedFilesOf(mainRepo, commit);
+  const tree = createRevisionWorktree(mainRepo, commit);
+  const repo = tree.dir;
+  const cleanup = () => tree.remove();
+  process.on('exit', cleanup);
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+    process.on(signal, () => {
+      cleanup();
+      process.exit(130);
+    });
+  }
   const { suites, components, uncovered } = mapChanged(files);
   const results = [];
 
-  console.log(`e2e-check ${commit.slice(0, 9)}: ${files.length} changed file${files.length === 1 ? '' : 's'}`);
+  console.log(
+    `e2e-check ${commit.slice(0, 9)} (suite sha ${tree.sha}): ${files.length} changed file${files.length === 1 ? '' : 's'}`,
+  );
   uncovered.forEach((file) => console.log(`no e2e covers ${file}`));
 
   if (suites.length) {
@@ -161,9 +198,13 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const passed = results.filter((r) => r.status === 'pass').length;
 
   if (!results.length) console.log(`NO E2E: ${uncovered.length} changed file(s) have no e2e`);
-  else if (failed) console.log(`E2E FAIL: ${failed} failed, ${passed} passed, ${skipped} skipped`);
-  else if (skipped) console.log(`E2E INCOMPLETE: ${passed} passed, ${skipped} skipped (see above)`);
-  else console.log(`E2E OK: ${passed} passed${dry ? ' (listed only)' : ''}`);
+  else if (failed)
+    console.log(`E2E FAIL: ${failed} failed, ${passed} passed, ${skipped} skipped (suite sha ${tree.sha})`);
+  else if (skipped)
+    console.log(`E2E INCOMPLETE: ${passed} passed, ${skipped} skipped (suite sha ${tree.sha}, see above)`);
+  else console.log(`E2E OK: ${passed} passed${dry ? ' (listed only)' : ''} (suite sha ${tree.sha})`);
+
+  cleanup();
 
   process.exit(failed || skipped ? 1 : 0);
 }
