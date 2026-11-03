@@ -3219,3 +3219,17 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      valid flag combination the tool refuses must say which combination and why, and each documented combination
      gets a spec. Fix: B180 (technical) - accept both combinations, skip rejected variants with the withdrawn NOTE,
      and a usage refusal names the conflicting flags.
+245. B158's reach check found that `emit:merge` and `emit:discard` appear in none of the 21 pages/sketches states
+     (builder, 2026-11-03). Likely cause: `pages/sketches/shared/sketch-rows.ts` adds the action with
+     `replace(/<button\b/, ...)` and `sketches.ts` with `act(discard.body, 'discard')`, and neither matches the SDK
+     button markup, so the attribute is silently never added. Compare never checked these two actions either, and
+     stayed green: an action that is never declared has no misses. Lesson: a helper that marks nothing must fail, not
+     return its input unchanged. Fix: B181 (technical) - a design helper `withAction(markup, action)` that throws when
+     nothing matched, used everywhere actions are added; pages/sketches merge/discard fixed with it (no visual
+     change); red on the two Übernehmen cases afterwards.
+246. Specs cannot render a real Studio part from source: "Cannot find module .../render-worker.js", and only the
+     first error line reaches the RENDER issue, so a spec against a real design passes with 0 findings (builder,
+     2026-11-03). A check that cannot run reports the same as a check that found nothing. Lesson: a render failure is
+     never zero findings, and its full error must reach the report. Fix: B182 (technical) - vitest global setup
+     builds the render worker once into a private dir; RENDER detail prints the full error. Probably the same family
+     as the private-build "Transform failed" after B155 (cause checked in the B169 slice).
