@@ -49,9 +49,11 @@ export const staleDesignMocksOf = (options: { target: string }): StaleDesignMock
 const GUARDED = new Set(['check', 'shot']);
 const GUARDED_SKETCH = new Set(['check', 'ready']);
 
-/** Whether `et design <argv>` draws with the built mocks and must refuse while they are stale. */
+/** Whether `et design <argv>` draws with the built mocks and must refuse while they are stale. `check --app-classes` reads only the app source. */
 export const guardsDesignMocks = (argv: string[]) =>
-  argv[0] === 'sketch' ? GUARDED_SKETCH.has(argv[1] ?? '') : GUARDED.has(argv[0] ?? '');
+  argv[0] === 'sketch'
+    ? GUARDED_SKETCH.has(argv[1] ?? '')
+    : GUARDED.has(argv[0] ?? '') && !(argv[0] === 'check' && argv.includes('--app-classes'));
 
 /** Prints the refusal and answers false while the mocks are stale. */
 export const designMocksFresh = (options: { target: string }) => {

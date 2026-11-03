@@ -53,6 +53,7 @@ describe('guardsDesignMocks', () => {
     expect(guardsDesignMocks(['sketch', 'ready', 'a'])).toBe(true);
     expect(guardsDesignMocks(['sketch', 'list'])).toBe(false);
     expect(guardsDesignMocks(['compare', 'x/y'])).toBe(false);
+    expect(guardsDesignMocks(['check', '--product', 'studio', '--app-classes'])).toBe(false);
   });
 });
 
