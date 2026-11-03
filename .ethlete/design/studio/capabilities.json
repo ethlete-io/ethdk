@@ -1,0 +1,535 @@
+{
+  "capabilities": [
+    {
+      "id": "comment-write",
+      "label": "Kommentar schreiben",
+      "place": null,
+      "confirmed": false,
+      "why": "pages/inbox draws the draft (state comment-draft) and its send button as control \"send\", but with no data-et-action; the full flow (comment-mode, emit:sendComment) is drawn only in the open sketch pages-system/a"
+    },
+    {
+      "id": "comment-reply",
+      "label": "Auf Kommentar antworten",
+      "place": null,
+      "confirmed": false,
+      "why": "/__design/comment-reply is served, called nowhere in the app and drawn nowhere (B145)"
+    },
+    {
+      "id": "comment-done",
+      "label": "Kommentar erledigen",
+      "place": null,
+      "confirmed": false,
+      "why": "/__design/comment-done is served, called nowhere in the app and drawn nowhere (B145)"
+    },
+    {
+      "id": "comment-withdraw",
+      "label": "Kommentar zurückziehen",
+      "place": null,
+      "confirmed": false,
+      "why": "/__design/comment-withdraw is served, called nowhere in the app and drawn nowhere (B145)"
+    },
+    {
+      "id": "comment-open",
+      "label": "Kommentar öffnen",
+      "place": {
+        "part": "pages/inbox",
+        "action": "emit:pick"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "comments-show-resolved",
+      "label": "Erledigte zeigen",
+      "place": {
+        "part": "pages/inbox",
+        "action": "emit:showResolvedChange"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "comments-retry",
+      "label": "Kommentare erneut laden",
+      "place": null,
+      "confirmed": false,
+      "why": "the app's inbox has a retry button (retry.emit); pages/inbox draws no retry action"
+    },
+    {
+      "id": "comment-pin-toggle",
+      "label": "Kommentar-Pin umschalten",
+      "place": {
+        "part": "components/comment-pin",
+        "action": "emit:pinToggle"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "note-write",
+      "label": "Notiz schreiben",
+      "place": null,
+      "confirmed": false,
+      "why": "/__design/note is served, called nowhere in the app and drawn nowhere (B148)"
+    },
+    {
+      "id": "note-change",
+      "label": "Notiz ändern",
+      "place": null,
+      "confirmed": false,
+      "why": "/__design/note-change is served, called nowhere in the app and drawn nowhere (B148)"
+    },
+    {
+      "id": "note-delete",
+      "label": "Notiz löschen",
+      "place": null,
+      "confirmed": false,
+      "why": "/__design/note-delete is served, called nowhere in the app and drawn nowhere (B148)"
+    },
+    {
+      "id": "flow-note-write",
+      "label": "Flow-Notiz schreiben",
+      "place": null,
+      "confirmed": false,
+      "why": "/__design/flow-note(-change|-delete) are served, called nowhere in the app and drawn nowhere (B148)"
+    },
+    {
+      "id": "go-give",
+      "label": "Go geben",
+      "place": null,
+      "confirmed": false,
+      "why": "system-view/part-approval.component.ts calls /__design/part-go; no design part draws it"
+    },
+    {
+      "id": "edit-accept",
+      "label": "Änderung annehmen",
+      "place": null,
+      "confirmed": false,
+      "why": "system-view/part-approval.component.ts calls /__design/part-accept; no design part draws it"
+    },
+    {
+      "id": "exception-approve",
+      "label": "Ausnahme freigeben",
+      "place": null,
+      "confirmed": false,
+      "why": "system-view/exception-list.component.ts calls /__design/exception-approve; no design part draws it"
+    },
+    {
+      "id": "inventory-approve",
+      "label": "Inventory freigeben",
+      "place": null,
+      "confirmed": false,
+      "why": "pages/inventory draws the button as control \"approve\", but with no data-et-action"
+    },
+    {
+      "id": "inventory-reload",
+      "label": "Inventory neu laden",
+      "place": null,
+      "confirmed": false,
+      "why": "pages/inventory draws the button as control \"reload\", but with no data-et-action"
+    },
+    {
+      "id": "inventory-toggle",
+      "label": "Inventory ein- und ausblenden",
+      "place": null,
+      "confirmed": false,
+      "why": "pages/inventory draws the toggle as control \"toggle\", but with no data-et-action"
+    },
+    {
+      "id": "sketch-open-merge",
+      "label": "Sketch zum Mergen öffnen",
+      "place": {
+        "part": "pages/sketches",
+        "action": "emit:merge"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "sketch-merge",
+      "label": "Sketch mergen",
+      "place": {
+        "part": "pages/merge",
+        "action": "emit:merge"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "merge-pick-change",
+      "label": "Änderung im Merge wählen",
+      "place": {
+        "part": "pages/merge",
+        "action": "emit:pick"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "merge-back",
+      "label": "Zurück zu den Sketches",
+      "place": {
+        "part": "pages/merge",
+        "action": "emit:back"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "sketch-discard",
+      "label": "Sketch verwerfen",
+      "place": {
+        "part": "pages/sketches",
+        "action": "emit:discard"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "sketch-same-toggle",
+      "label": "Unveränderte Teile auf- und zuklappen",
+      "place": {
+        "part": "pages/sketches",
+        "action": "emit:sameToggle"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "sketch-paused-reason",
+      "label": "Pausengrund zeigen",
+      "place": {
+        "part": "pages/sketches",
+        "action": "paused-reason"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "sketch-round",
+      "label": "Runde wählen",
+      "place": null,
+      "confirmed": false,
+      "why": "the app's sketches part has a round select (selectRound); pages/sketches draws no round action"
+    },
+    {
+      "id": "sketch-diff",
+      "label": "Geänderte Fläche im Merge zeigen",
+      "place": null,
+      "confirmed": false,
+      "missing": "B151"
+    },
+    {
+      "id": "sketch-crop",
+      "label": "Ausschnitt der geänderten Fläche zeigen",
+      "place": null,
+      "confirmed": false,
+      "missing": "B151"
+    },
+    {
+      "id": "motion",
+      "label": "Motion-Streifen in der Teilansicht",
+      "place": null,
+      "confirmed": false,
+      "missing": "B151"
+    },
+    {
+      "id": "call-transfer",
+      "label": "Auftrag als übertragen markieren",
+      "place": null,
+      "confirmed": false,
+      "why": "system-view.component.ts calls transferCall$ (markTransferred); no design part draws it"
+    },
+    {
+      "id": "theme-pick",
+      "label": "Theme wählen",
+      "place": null,
+      "confirmed": false,
+      "why": "system-view.component.ts has a theme switch (pickTheme); no design part draws it"
+    },
+    {
+      "id": "preset-pick",
+      "label": "Viewport wählen",
+      "place": null,
+      "confirmed": false,
+      "why": "flow-view.component.ts picks a viewport preset (presetChange); pages/flows draws no preset action"
+    },
+    {
+      "id": "open-points-toggle",
+      "label": "Offene Punkte auf- und zuklappen",
+      "place": {
+        "part": "pages/system",
+        "action": "points-closed"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "prompt-copy-start",
+      "label": "Prompt kopieren (Start)",
+      "place": {
+        "part": "pages/start",
+        "action": "emit:copyPrompt"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "prompt-copy-system",
+      "label": "Prompt kopieren (leeres Produkt)",
+      "place": {
+        "part": "pages/system",
+        "action": "emit:copyPrompt"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "prompt-copy-flows",
+      "label": "Prompt kopieren (keine Flows)",
+      "place": null,
+      "confirmed": false,
+      "why": "the app's flows page has a copy-prompt button; pages/flows draws no copyPrompt action"
+    },
+    {
+      "id": "repo-open",
+      "label": "Repo öffnen",
+      "place": {
+        "part": "pages/start",
+        "action": "emit:openRepo"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "repo-other",
+      "label": "Anderes Repo",
+      "place": {
+        "part": "pages/start",
+        "action": "emit:otherRepo"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "project-switch",
+      "label": "Projekt wechseln",
+      "place": {
+        "part": "components/shell-project-switch",
+        "action": "emit:projectChange"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "project-open",
+      "label": "Projekt öffnen",
+      "place": {
+        "part": "components/shell-project-switch",
+        "action": "emit:openProject"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "product-switch",
+      "label": "Produkt wechseln",
+      "place": {
+        "part": "elements/shell-main",
+        "action": "emit:productChange"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "section-switch",
+      "label": "Bereich wechseln",
+      "place": {
+        "part": "elements/shell-main",
+        "action": "emit:sectionChange"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "sidebar-toggle",
+      "label": "Seitenleiste ein- und ausklappen",
+      "place": {
+        "part": "components/shell-collapse",
+        "action": "emit:collapse"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "studio-menu-open",
+      "label": "Studio-Menü öffnen",
+      "place": {
+        "part": "elements/studio-menu",
+        "action": "open"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "server-start",
+      "label": "Design-Server starten",
+      "place": {
+        "part": "elements/studio-menu",
+        "action": "emit:serverAction"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "server-stop",
+      "label": "Design-Server stoppen",
+      "place": {
+        "part": "elements/studio-menu",
+        "action": "emit:serverAction"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "server-restart",
+      "label": "Design-Server neu starten",
+      "place": {
+        "part": "elements/shell-main",
+        "action": "emit:restartServer"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "part-pick",
+      "label": "Teil wählen",
+      "place": {
+        "part": "elements/part-tree",
+        "action": "emit:activate"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "tree-expand",
+      "label": "Gruppe auf- und zuklappen",
+      "place": {
+        "part": "elements/part-tree",
+        "action": "emit:expandedChange"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "flow-pick",
+      "label": "Flow wählen",
+      "place": {
+        "part": "pages/flows",
+        "action": "emit:rowPress"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "zoom-in",
+      "label": "Hineinzoomen",
+      "place": {
+        "part": "components/zoom-chip",
+        "action": "emit:zoomIn"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "zoom-out",
+      "label": "Herauszoomen",
+      "place": {
+        "part": "components/zoom-chip",
+        "action": "emit:zoomOut"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "zoom-reset",
+      "label": "Zoom zurücksetzen",
+      "place": {
+        "part": "components/zoom-chip",
+        "action": "emit:zoomReset"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "zoom-fit",
+      "label": "Alles einpassen",
+      "place": {
+        "part": "components/zoom-chip",
+        "action": "emit:fit"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "frame-select",
+      "label": "Frame wählen",
+      "place": null,
+      "confirmed": false,
+      "why": "the app's canvas frames select and activate on click and double click; elements/canvas-frames draws only the zoom actions"
+    },
+    {
+      "id": "frame-resize",
+      "label": "Frame-Größe ändern",
+      "place": null,
+      "confirmed": false,
+      "why": "the app's canvas frames resize (widthChange, heightChange, cellsChange); no design part draws it"
+    },
+    {
+      "id": "grid-columns-toggle",
+      "label": "Spalten und Gruppen im Raster umschalten",
+      "place": null,
+      "confirmed": false,
+      "why": "design-canvas.component.html toggles columns and switches groups; no design part draws it"
+    },
+    {
+      "id": "frame-reload",
+      "label": "Frame neu laden",
+      "place": null,
+      "confirmed": false,
+      "why": "canvas-frame.component.ts has a reload button for a failed frame; no design part draws it"
+    },
+    {
+      "id": "error-dismiss",
+      "label": "Fehlermeldung schließen",
+      "place": {
+        "part": "components/error-toast",
+        "action": "emit:dismiss"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "window-minimize",
+      "label": "Fenster minimieren",
+      "place": {
+        "part": "components/title-bar",
+        "action": "emit:minimize"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "window-maximize",
+      "label": "Fenster maximieren",
+      "place": {
+        "part": "components/title-bar",
+        "action": "emit:maximize"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "window-close",
+      "label": "Fenster schließen",
+      "place": {
+        "part": "components/title-bar",
+        "action": "emit:close"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "update-open",
+      "label": "Update öffnen",
+      "place": {
+        "part": "components/title-bar",
+        "action": "emit:update"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "update-restart",
+      "label": "Neu starten (Update)",
+      "place": {
+        "part": "components/update-dialog",
+        "action": "emit:restart"
+      },
+      "confirmed": false
+    },
+    {
+      "id": "update-later",
+      "label": "Später (Update)",
+      "place": {
+        "part": "components/update-dialog",
+        "action": "emit:later"
+      },
+      "confirmed": false
+    }
+  ]
+}
