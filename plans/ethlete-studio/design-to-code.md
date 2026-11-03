@@ -3109,3 +3109,11 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      (B150, technical): the render check runs even when a static rule fails; if a rule really cannot run, the report
      names it as "not checked" with the parts it skipped. Product fix (B149): a one-variant sketch that sets the text
      to the product's text token at AA, for Tom's pick in Studio.
+
+233. The B145 comment sketch (5caf55609, pages/system variant a) could not be marked ready: `sketch check` failed on
+     CONTROL-STATE for the merged states `part-focus-visible` and `points-closed-focus-visible` (the open-points chip
+     focus ring), which the variant did not touch; the product check does not report them (builder, 2026-11-03). Why:
+     `controlStateGapsOf` judges by state name, and sketch check does not separate gaps the variant introduces from
+     gaps already in the base. Lesson: two checks that judge the same input differently block work for a reason the
+     user cannot act on. Tool fix (B152, technical): sketch check and ready count a gap only when the variant adds it
+     (unchanged-since-base logic as in the ratchet), and the sketch and product checks agree on the same input.
