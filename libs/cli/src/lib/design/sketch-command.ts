@@ -909,9 +909,17 @@ const checked = async (context: Context) => {
 
   const asked = args.positional[0];
   const { unreadable, variants } = openSketchProblemsOf(product);
-  const chosen = asked === undefined ? variants : variants.filter((entry) => entry.sketch.target === asked);
+  const named = asked === undefined ? variants : variants.filter((entry) => entry.sketch.target === asked);
 
-  if (asked !== undefined && chosen.length === 0) return fail(`NO SKETCH on ${asked} in ${product.name}`);
+  if (asked !== undefined && named.length === 0) return fail(`NO SKETCH on ${asked} in ${product.name}`);
+
+  const isWithdrawn = ({ sketch, variant }: { sketch: Sketch; variant: string }) =>
+    rejectionOf(sketch, variant)?.status === 'withdrawn';
+  const chosen = named.filter((entry) => !isWithdrawn(entry));
+
+  named
+    .filter(isWithdrawn)
+    .forEach(({ sketch, variant }) => console.log(`NOTE ${sketch.target} ${variant}: withdrawn, not checked`));
 
   if (args.flags.has('--fix'))
     new Set(chosen.map((entry) => entry.sketch)).forEach((sketch) =>
