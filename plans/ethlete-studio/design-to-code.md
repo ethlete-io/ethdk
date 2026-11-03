@@ -3426,6 +3426,12 @@ ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketc
      merge. Fix: the builder rebases the sketch and keeps pick b; B220 (technical) - Studio marks a sketch with a stale
      base (also a child part) "braucht Rebase" before the pick and `sketch ready` refuses it; when only a child part no
      variant touches changed, the tool rebases on its own and keeps the pick.
+     After the rebase (builder, 2026-11-03): `sketch check` fails a and b - "drops the state send-rejected that
+     pages/system has in studio". acd6ce0bf (Tom's comment error texts) added that state to the merged part while the
+     sketch was open; `sketch rebase` moves the baseline but does not port new merged states into the variants, and a
+     `git apply --3way` of the diff conflicts. Lesson: a design change to a part with an open sketch reaches the sketch
+     in the same step. B220 grows: `sketch rebase` ports new merged states into every variant (3-way; on conflict it
+     lists the conflicts and stops), and a design commit on a part with an open sketch names that sketch.
 270. `server-identity.spec` "reports no installed cli when the project has none" fails on a clean HEAD worktree too
      (builder, 2026-11-03). The worktree used the symlinked node_modules, which may supply the installed cli, so the
      spec depends on its environment. Why no tool caught it: specs run only in the main checkout, where the result
