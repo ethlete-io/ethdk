@@ -3153,3 +3153,13 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      source is mapped to none of them (builder, 2026-11-03). Lesson: a spec that guards all sources of a lib must run
      for any change in that lib; a related map that only knows direct relations hides it. Fix: B156, the related map
      lists source-wide specs (studio-api-level) as related to every cli source file, new ones included.
+237. pages/sketches: the matrix state-name gutter (`data-sk-gutter`, design sketches.ts `gutter()`, app
+     sketches.component.html) is an opaque sticky column as tall as the whole variant row; on horizontal pan it slides
+     over variant a's canvas and hides it, holding only the state key ("part" on pages/system) (Tom, 2026-11-03: "sieht
+     echt ugly aus"). Compare was green because the r2 design itself draws the opaque gutter; no rule asks whether an
+     opaque element covers content, and CUT-CONTROL looks only at clipped controls. Same family as 228/235 (Übernehmen
+     under Verwerfen, same screenshot). Lesson: a design can be wrong in a way design-vs-app compare never sees; an
+     occlusion check must judge the render itself, at every pan/zoom state. Fix: B158, CUT-CONTROL grows into COVERED
+     (hit-test controls and canvas regions; an opaque element of another subtree on top is red), red first on both real
+     cases; look fix as a Studio sketch inside B142(b) (gutter only label height, translucent; a second variant if a
+     real alternative exists, Tom picks in Studio).
