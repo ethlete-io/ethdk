@@ -3723,13 +3723,22 @@ components/title-bar --prodct studio`. The behavioural red is quoted. Why no too
 
 295. Title-bar f merge, 0c full studio check (builder, 2026-11-03, after 72ecd0adb): exit 1, 29 parts, 270
      findings. components/title-bar has 0 problems and 1 warning: CLASS-GLUED-INTERPOLATION in title-bar.ts, where
-     `gap-2` is glued to a `${...}`, so Tailwind emits no CSS and the merged f draws without that gap. Why no tool
+     `gap-2` is glued to a `${...}`, a latent dropped class (296 corrects the effect). Why no tool
      caught it: the code is only a warning, so sketch check, ready and merge let the variant through, although a
      glued class in a design file is always a dropped class. Fix (B242, decided, technical): CLASS-GLUED-INTERPOLATION
      is a problem in design files and blocks ready and merge. The f defect itself is fixed in a tidy commit before
-     Tom's go: it restores the gap the variant already declares, so it is no look choice, and Tom sees it at the go.
+     Tom's go.
      20 embedding parts went stale with the merge (shell-main, flows, inbox, inventory, merge, sketches, system, ...).
      "No new problem from the merge" is unproven: the pre-merge run was lost, and nothing kept a baseline. Why no
      tool caught it: a merge does not name the parts it makes stale, and does not check them. Fix (B243, decided,
      technical, extends B236): a merge prints the embedding parts it made stale and checks them before and after,
      reporting only the new problem codes.
+
+296. B238 close-out + B242 (builder, 2026-11-03). B238 d154e79ce: readVitestReport/verdictOf, with the fixture
+     red-check.vitest-report.json captured from a real vitest run (crash only gives RED BY CRASH; crash plus
+     assertion stays RED). B242: a62942f0c un-glues title-bar.ts:74, 8833cb290 makes CLASS-GLUED-INTERPOLATION a
+     problem (blocks sketch ready, merge and prepush, behavioural red). With the rule on, it found one more case:
+     canvas-frames.ts:100 `bg-et-surface-bg${extra}`, fixed in 706f18805. Now 0 in the repo. Correction to 295: no
+     drawing changed. Both classes are also used unglued elsewhere, so Tailwind emitted their CSS anyway, and compare
+     and pictures saw no difference. The defect was latent, and the only signal was a warning nothing blocked on.
+     Both tidy fixes change no pixel, so neither needs a sketch.
