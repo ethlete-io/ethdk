@@ -3,9 +3,10 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
-import { createRevisionWorktree, judgeSuiteRun, runSuite } from './e2e-check.mjs';
+import * as check from './e2e-check.mjs';
+import { judgeSuiteRun, runSuite } from './e2e-check.mjs';
 import { mapChanged } from './e2e-map.mjs';
 
 const fixture = (body) => {
@@ -78,7 +79,7 @@ test('the worktree is the named revision, not the dirty main tree, and is remove
   writeFileSync(join(repo, 'file.txt'), 'dirty');
   writeFileSync(join(repo, 'new.txt'), 'untracked');
   const indexBefore = sh(repo, 'status', '--porcelain');
-  const tree = createRevisionWorktree(repo, sha);
+  const tree = check.createRevisionWorktree(repo, sha);
 
   try {
     assert.equal(tree.sha, sha);
@@ -92,4 +93,13 @@ test('the worktree is the named revision, not the dirty main tree, and is remove
 
   assert.equal(existsSync(tree.dir), false);
   assert.ok(!sh(repo, 'worktree', 'list').includes(tree.dir));
+});
+
+test('the result line carries the sha the suite ran at and no worktree is left behind', () => {
+  const repo = sh(process.cwd(), 'rev-parse', '--show-toplevel');
+  const sha = sh(repo, 'rev-parse', '9e7ebf434');
+  const before = sh(repo, 'worktree', 'list');
+  const out = spawnSync('node', ['tools/scripts/e2e-check.mjs', sha, '--list'], { cwd: repo, encoding: 'utf8' }).stdout;
+  assert.ok(out.split('\n').some((line) => line.startsWith('E2E ') && line.includes(`suite sha ${sha}`)));
+  assert.equal(sh(repo, 'worktree', 'list'), before);
 });
