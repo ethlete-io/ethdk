@@ -1,6 +1,6 @@
 import { chromium, type Browser } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { awaitOutput, EMIT_WAIT_MS, settle, watchMutations } from './action-press';
+import { awaitOutput, dropKeyboardFocus, EMIT_WAIT_MS, settle, watchMutations } from './action-press';
 
 describe('settle', () => {
   let browser: Browser | undefined;
@@ -110,4 +110,40 @@ describe('awaitOutput', () => {
     expect(waited).toBeGreaterThanOrEqual(EMIT_WAIT_MS - 20);
     expect(waited).toBeLessThan(EMIT_WAIT_MS + 1000);
   });
+}, 30_000);
+
+describe('dropKeyboardFocus', () => {
+  let browser: Browser | undefined;
+
+  beforeAll(async () => {
+    browser = await chromium.launch().catch(() => undefined);
+  });
+
+  afterAll(async () => {
+    await browser?.close();
+  });
+
+  const TOGGLE = `<style>button:focus-visible { outline: 3px solid red }</style>
+    <button aria-expanded="false" onclick="this.ariaExpanded = String(this.ariaExpanded !== 'true'); reason.hidden = !reason.hidden">Pausiert</button>
+    <span id="reason" hidden>Wartet</span>`;
+
+  it.each(['Enter', 'Space'])(
+    'takes the focus ring off a toggle pressed with %s and keeps the state it reached',
+    async (key, context) => {
+      if (!browser) return context.skip('no browser');
+
+      const page = await browser.newPage();
+
+      await page.setContent(TOGGLE);
+      await page.keyboard.press('Shift');
+      await page.locator('button').focus();
+      await page.keyboard.press(key);
+      await dropKeyboardFocus(page);
+
+      expect(await page.evaluate('document.querySelectorAll(":focus-visible").length')).toBe(0);
+      expect(await page.locator('button').getAttribute('aria-expanded')).toBe('true');
+      expect(await page.locator('#reason').isVisible()).toBe(true);
+      await page.close();
+    },
+  );
 }, 30_000);

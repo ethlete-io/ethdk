@@ -70,3 +70,14 @@ export const awaitOutput = async (page: Page, output: string | null) => {
     .catch(() => undefined);
   await page.evaluate('window.__etMutations?.disconnect()');
 };
+
+/**
+ * Blurs the element that shows a keyboard focus ring, so a picture after a key press compares against a goal state
+ * the design draws unfocused.
+ */
+export const dropKeyboardFocus = (page: Page) =>
+  page.evaluate(`(() => {
+    const focused = document.activeElement;
+
+    if (focused instanceof HTMLElement && focused.matches(':focus-visible')) focused.blur();
+  })()`);

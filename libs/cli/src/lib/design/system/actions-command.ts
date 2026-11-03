@@ -28,7 +28,7 @@ import {
   resolveActionOf,
   targetStateOf,
 } from './actions';
-import { awaitOutput, INIT_SCRIPT, OVERLAY_ROOTS, settle, watchMutations } from './action-press';
+import { awaitOutput, dropKeyboardFocus, INIT_SCRIPT, OVERLAY_ROOTS, settle, watchMutations } from './action-press';
 import { compareFrameOf } from './compare-command';
 import { checkLiveActions, liveLineOf, liveStateCompareOf, LiveLine } from './live-actions';
 import { pointerFocusVerdictOf, probePointerFocus } from './pointer-focus';
@@ -140,6 +140,7 @@ export const runActionInput = async (options: {
   listen?: string[];
   expanded?: boolean;
   output?: string | null;
+  focused?: boolean;
 }) => {
   const { browser, url, start, pick, input, size, shoot, timeout, listen = [], expanded = false } = options;
   const room = !!shoot && !size && shoot.room;
@@ -199,6 +200,11 @@ export const runActionInput = async (options: {
 
     await awaitOutput(page, options.output ?? null);
     await settle(page, timeout);
+
+    if (shoot && input !== 'click' && !options.focused) {
+      await dropKeyboardFocus(page);
+      await settle(page, timeout);
+    }
 
     const emitted = (await page.evaluate('(window.__etDesignEmits ?? []).map((emit) => emit.output)')) as string[];
     const embedded = listened > 0 ? ((await page.evaluate('window.__etEmbeddedEmits')) as string[]) : [];
@@ -616,6 +622,7 @@ export const checkActions = async (options: {
                   listen: action.kind === 'emit' ? listen : [],
                   output: action.kind === 'emit' ? action.output : null,
                   expanded: !!embeddedState && action.kind === 'state',
+                  focused: goal.endsWith('-focus-visible'),
                 }),
               );
               const result = goalPicture && run.app ? comparePngs({ design: goalPicture.png, app: run.app }) : null;
