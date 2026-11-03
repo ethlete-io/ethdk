@@ -482,7 +482,9 @@ runs too and its output starts with an `unapproved:` line, because only `task --
 go gate. For each state it draws the design frame and
 opens `<url>/__design-harness?part=<part>&state=<state>&props=<JSON>` in the same Chromium, with the same viewport and
 device scale, and shoots the `[data-design-harness-host]` element. The app owns that dev-only route and mounts the
-`implements` component with the state's props inside the host. Pixels compare at tolerance 0, and a size mismatch
+`implements` component with the state's props inside the host. Compare sets the host to the design frame root's font
+family, size, weight, style, line height and letter spacing, so a part that inherits its type is judged in the design's
+type, not the app body's. Pixels compare at tolerance 0, and a size mismatch
 fails too. It prints one line per state, `default ok`, `removable DIFF 12 px` or `removable SIZE 120x32 vs 118x32`, and
 keeps the design, app and diff pictures of each failing state in a temp folder it prints. It exits 0 only when every
 state is ok, and names the URL when the page shows no host element. Without `--url` it builds the

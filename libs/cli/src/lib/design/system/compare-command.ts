@@ -5,7 +5,7 @@ import { join } from 'path';
 import { chromiumOf } from '../browser';
 import { DesignConfig, DesignPreset } from '../paths';
 import { createDesignServer } from '../serve';
-import { checkerScriptOf, createPartShooter, pixelBoxOf, viewportOf } from '../shot';
+import { checkerScriptOf, createPartShooter, pixelBoxOf, TextAmbient, viewportOf } from '../shot';
 import { awaitFonts, Browser, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
 import { partActionFailuresOf } from './actions-command';
 import { harnessStaleOf } from './harness-map';
@@ -268,6 +268,8 @@ export const harnessShotOf = async (options: {
   panes?: number;
   frozen?: FrozenAnimation[];
   timeout?: number;
+  /** The design frame root's text style, set on the host so a part that inherits its type draws in the design's, not the app body's. */
+  ambient?: TextAmbient;
   /** Fails with the props the mounted component has no input for, but `designOnly`; skipped in a production build. */
   props?: { sent: unknown; designOnly: ReadonlySet<string> };
 }) => {
@@ -300,6 +302,11 @@ export const harnessShotOf = async (options: {
     if (width)
       await page.evaluate(
         `document.querySelector(${JSON.stringify(HARNESS_HOST_SELECTOR)}).style.width = '${width}px'`,
+      );
+
+    if (options.ambient)
+      await page.evaluate(
+        `Object.assign(document.querySelector(${JSON.stringify(HARNESS_HOST_SELECTOR)}).style, ${JSON.stringify(options.ambient)})`,
       );
 
     await awaitFonts(page);
@@ -520,6 +527,7 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
           roomAbove: (design.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
           panes: drawnPaneCountOf(design.markup ?? ''),
           frozen: frozenAnimationsOf(design.markup ?? ''),
+          ...(design.ambient ? { ambient: design.ambient } : {}),
           ...(open ? { opened: { control: open.control, markup: design.markup ?? '' } } : {}),
         }).catch((error: unknown) => {
           if (error instanceof DroppedPropsError) return { problem: error.message };

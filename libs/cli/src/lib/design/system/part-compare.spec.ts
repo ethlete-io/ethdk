@@ -7,6 +7,7 @@ import { chromium, type Browser } from 'playwright';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { crc32, deflateSync } from 'zlib';
 import { DESIGN_DIR } from '../paths';
+import type { TextAmbient } from '../shot';
 import {
   compareFrameOf,
   comparePart,
@@ -392,7 +393,12 @@ describe('part compare', () => {
     expect(await compare(['--url', 'http://localhost:9'])).toBe(1);
     expect(lines.join('\n')).toContain('has no go');
 
-    markPartGo({ product: resolveProduct({ target, name: 'app-a', config: {} }), part: 'components/chip', by: 'tom', via: 'design go' });
+    markPartGo({
+      product: resolveProduct({ target, name: 'app-a', config: {} }),
+      part: 'components/chip',
+      by: 'tom',
+      via: 'design go',
+    });
 
     expect(await compare(['--url', 'http://localhost:9', '--state', 'default'])).toBe(0);
     expect(shoot).toHaveBeenCalledWith(
@@ -431,7 +437,12 @@ describe('part compare', () => {
         actions,
       });
 
-    markPartGo({ product: resolveProduct({ target, name: 'app-a', config: {} }), part: 'components/chip', by: 'tom', via: 'design go' });
+    markPartGo({
+      product: resolveProduct({ target, name: 'app-a', config: {} }),
+      part: 'components/chip',
+      by: 'tom',
+      via: 'design go',
+    });
 
     expect(await compare()).toBe(0);
     expect(actions).toHaveBeenCalledWith(
@@ -533,7 +544,12 @@ describe('part compare', () => {
     }));
     const argv = ['components/chip', '--product', 'app-a', '--url', 'http://localhost:9'];
 
-    markPartGo({ product: resolveProduct({ target, name: 'app-a', config: {} }), part: 'components/chip', by: 'tom', via: 'design go' });
+    markPartGo({
+      product: resolveProduct({ target, name: 'app-a', config: {} }),
+      part: 'components/chip',
+      by: 'tom',
+      via: 'design go',
+    });
     expect(await designCompare({ target, argv, invocation: 'et design', shoot, actions: async () => [] })).toBe(0);
     expect(lines.join('\n')).not.toContain('unapproved');
 
@@ -564,7 +580,12 @@ describe('part compare', () => {
         actions: async () => [],
       });
 
-    markPartGo({ product: resolveProduct({ target, name: 'app-a', config: {} }), part: 'components/chip', by: 'tom', via: 'design go' });
+    markPartGo({
+      product: resolveProduct({ target, name: 'app-a', config: {} }),
+      part: 'components/chip',
+      by: 'tom',
+      via: 'design go',
+    });
 
     expect(await compare()).toBe(0);
     expect(start).toHaveBeenCalledWith(expect.objectContaining({ target }));
@@ -596,34 +617,41 @@ describe('harnessShotOf', () => {
     browser = await chromium.launch().catch(() => undefined);
     server = createServer((request, response) => {
       response.setHeader('content-type', 'text/html');
+      const em = (size: number) =>
+        `<body style="margin:0;font:${size}px/${size}px monospace"><div data-design-harness-host style="display:flow-root;width:fit-content"><span style="display:inline-block;width:1em;height:1em;background:#0000ff"></span></div></body>`;
+
       response.end(
-        request.url?.includes('components%2Finputs')
-          ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><i></i></div><script>window.ng={getComponent:()=>({}),getDirectiveMetadata:()=>({inputs:{label:"label"}})};</script></body>'
-          : request.url?.includes('components%2Ferroring')
-            ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div><script>console.error("ERROR", new Error("ET1234: The control has no accessible name."));console.error("plain error");</script></body>'
-            : request.url?.includes('components%2Fclear')
-              ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"></div></body>'
-              : request.url?.includes('components%2Fupward')
-                ? "<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;width:7px;height:4px;background:#ff0000}</style><body style=\"margin:0\"><div data-design-harness-host style=\"width:7px;height:5px\"><button aria-expanded=\"false\" onclick=\"const {top,left}=this.getBoundingClientRect();this.setAttribute('aria-expanded', 'true');document.body.insertAdjacentHTML('beforeend', '<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane style=top:'+(top>=4?top-4:top+5)+'px;left:'+(left>=2?left-2:left)+'px></div></div>')\">Pick</button></div></body>"
-                : request.url?.includes('components%2Ffraction')
-                  ? '<body style="margin:0"><div data-design-harness-host style="width:7.25px;height:5px;background:#0000ff"></div></body>'
-                  : request.url?.includes('components%2Fbadge')
-                    ? '<body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><span style="position:absolute;left:5px;top:-2px;width:4px;height:3px;background:#ff0000"></span></div></body>'
-                    : request.url?.includes('components%2Fpicker')
-                      ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}button[aria-expanded=true]{background:#ff0000}button:hover{background:#00ff00}button:focus-visible{background:#00ffff}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-expanded="false" onclick="this.setAttribute(\'aria-expanded\', \'true\')">Pick</button></div></body>'
-                      : request.url?.includes('components%2Fpaned')
-                        ? "<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;width:7px;height:4px;background:#ff0000}</style><body style=\"margin:0\"><div data-design-harness-host style=\"width:7px;height:5px\"><button aria-expanded=\"false\" onclick=\"this.setAttribute('aria-expanded', 'true');document.body.insertAdjacentHTML('beforeend', '<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane style=top:'+this.getBoundingClientRect().bottom+'px;left:'+this.getBoundingClientRect().left+'px></div></div>')\">Pick</button></div></body>"
-                        : request.url?.includes('components%2Fportal')
-                          ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent}.et-overlay-runtime-root{position:absolute;top:0;left:0}.et-overlay-runtime-root button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><div class="et-overlay-runtime-root"><button> G o </button></div></div><p><button>Go</button></p></body>'
-                          : request.url?.includes('components%2Ftwice')
-                            ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><button>Go</button><button>Go</button></div></body>'
-                            : request.url?.includes('components%2Fhover')
-                              ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
-                              : request.url?.startsWith('/__design-harness') && request.url.includes('layout=page')
-                                ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
-                                : request.url?.startsWith('/__design-harness')
-                                  ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
-                                  : '<body>no harness</body>',
+        request.url?.includes('components%2Fambient')
+          ? em(20)
+          : request.url?.includes('components%2Fnative')
+            ? em(5)
+            : request.url?.includes('components%2Finputs')
+              ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><i></i></div><script>window.ng={getComponent:()=>({}),getDirectiveMetadata:()=>({inputs:{label:"label"}})};</script></body>'
+              : request.url?.includes('components%2Ferroring')
+                ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div><script>console.error("ERROR", new Error("ET1234: The control has no accessible name."));console.error("plain error");</script></body>'
+                : request.url?.includes('components%2Fclear')
+                  ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"></div></body>'
+                  : request.url?.includes('components%2Fupward')
+                    ? "<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;width:7px;height:4px;background:#ff0000}</style><body style=\"margin:0\"><div data-design-harness-host style=\"width:7px;height:5px\"><button aria-expanded=\"false\" onclick=\"const {top,left}=this.getBoundingClientRect();this.setAttribute('aria-expanded', 'true');document.body.insertAdjacentHTML('beforeend', '<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane style=top:'+(top>=4?top-4:top+5)+'px;left:'+(left>=2?left-2:left)+'px></div></div>')\">Pick</button></div></body>"
+                    : request.url?.includes('components%2Ffraction')
+                      ? '<body style="margin:0"><div data-design-harness-host style="width:7.25px;height:5px;background:#0000ff"></div></body>'
+                      : request.url?.includes('components%2Fbadge')
+                        ? '<body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><span style="position:absolute;left:5px;top:-2px;width:4px;height:3px;background:#ff0000"></span></div></body>'
+                        : request.url?.includes('components%2Fpicker')
+                          ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}button[aria-expanded=true]{background:#ff0000}button:hover{background:#00ff00}button:focus-visible{background:#00ffff}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-expanded="false" onclick="this.setAttribute(\'aria-expanded\', \'true\')">Pick</button></div></body>'
+                          : request.url?.includes('components%2Fpaned')
+                            ? "<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;width:7px;height:4px;background:#ff0000}</style><body style=\"margin:0\"><div data-design-harness-host style=\"width:7px;height:5px\"><button aria-expanded=\"false\" onclick=\"this.setAttribute('aria-expanded', 'true');document.body.insertAdjacentHTML('beforeend', '<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane style=top:'+this.getBoundingClientRect().bottom+'px;left:'+this.getBoundingClientRect().left+'px></div></div>')\">Pick</button></div></body>"
+                            : request.url?.includes('components%2Fportal')
+                              ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent}.et-overlay-runtime-root{position:absolute;top:0;left:0}.et-overlay-runtime-root button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><div class="et-overlay-runtime-root"><button> G o </button></div></div><p><button>Go</button></p></body>'
+                              : request.url?.includes('components%2Ftwice')
+                                ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><button>Go</button><button>Go</button></div></body>'
+                                : request.url?.includes('components%2Fhover')
+                                  ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
+                                  : request.url?.startsWith('/__design-harness') && request.url.includes('layout=page')
+                                    ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
+                                    : request.url?.startsWith('/__design-harness')
+                                      ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
+                                      : '<body>no harness</body>',
       );
     });
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -660,6 +688,33 @@ describe('harnessShotOf', () => {
     await expect(shoot({ label: 'Go', server: 'stopped' })).rejects.toThrow(
       'the design prop server has no input on the app component',
     );
+  });
+
+  it("draws a part that inherits its type in the design frame's text style, not the app body's", async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const shoot = (part: string, ambient?: TextAmbient) =>
+      harnessShotOf({
+        browser: browser as Browser,
+        url: harnessUrlOf({ url, part, state: 'a', props: {} }),
+        ...(ambient ? { ambient } : {}),
+      });
+    const native = await shoot('components/native');
+
+    expect(comparePngs({ design: native, app: await shoot('components/ambient') })).not.toMatchObject({ kind: 'ok' });
+    expect(
+      comparePngs({
+        design: native,
+        app: await shoot('components/ambient', {
+          fontFamily: 'monospace',
+          fontSize: '5px',
+          fontWeight: '400',
+          fontStyle: 'normal',
+          lineHeight: '5px',
+          letterSpacing: 'normal',
+        }),
+      }),
+    ).toMatchObject({ kind: 'ok' });
   });
 
   it('rounds a fractional host to whole pixels as the design picture does', async (context) => {

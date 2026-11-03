@@ -136,7 +136,26 @@ export type PartMark = { parts: string[]; x: number; y: number; width: number; h
 /** Where a shot response's picture came from: the disk store, the in-memory cache or a fresh draw. */
 export type ShotSource = 'disk' | 'memory' | 'drawn';
 
-export type Picture = { png: Buffer; marks: PartMark[]; markup?: string };
+export const TEXT_AMBIENT_PROPERTIES = [
+  'fontFamily',
+  'fontSize',
+  'fontWeight',
+  'fontStyle',
+  'lineHeight',
+  'letterSpacing',
+] as const;
+
+/** The inherited text style the frame root hands to a part: font family, size, weight, style, line height and letter spacing. */
+export type TextAmbient = Record<(typeof TEXT_AMBIENT_PROPERTIES)[number], string>;
+
+export type Picture = { png: Buffer; marks: PartMark[]; markup?: string; ambient?: TextAmbient };
+
+const AMBIENT_SCRIPT = `(() => {
+  const root = document.getElementById('root');
+  if (!root) return null;
+  const style = getComputedStyle(root);
+  return Object.fromEntries(${JSON.stringify(TEXT_AMBIENT_PROPERTIES)}.map((name) => [name, style[name]]));
+})()`;
 
 /** A box in CSS pixels rounded to whole pixels, the clip of a fitted design picture and of the app shot compare diffs it with. */
 export const pixelBoxOf = (box: { x: number; y: number; width: number; height: number }) => ({
@@ -490,11 +509,13 @@ export const createPartShooter = (options: {
         }
 
         const markup: unknown = await page.evaluate("document.getElementById('root')?.innerHTML ?? null");
+        const ambient: unknown = await page.evaluate(AMBIENT_SCRIPT);
 
         return {
           png,
           marks: Array.isArray(marks) ? (marks as PartMark[]) : [],
           ...(typeof markup === 'string' ? { markup } : {}),
+          ...(ambient && typeof ambient === 'object' ? { ambient: ambient as TextAmbient } : {}),
         };
       },
     );
