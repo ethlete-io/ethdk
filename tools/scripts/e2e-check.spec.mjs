@@ -172,8 +172,8 @@ const fakeTree = ({ recorded, hashOf = 'h1', link }) => {
   writeFileSync(join(dist, 'src/index.js'), '');
   writeFileSync(join(dist, 'src/lib/source-hash.js'), `exports.cliSourceHash = () => ${JSON.stringify(hashOf)};`);
   writeFileSync(join(dist, 'build-info.json'), JSON.stringify({ sourceHash: recorded }));
-  mkdirSync(join(dir, 'libs/cli/scripts'), { recursive: true });
-  writeFileSync(join(dir, 'libs/cli/scripts/write-build-info.mts'), '');
+  mkdirSync(join(dir, 'libs/cli/src/lib'), { recursive: true });
+  writeFileSync(join(dir, 'libs/cli/src/lib/source-hash.ts'), '');
   if (link) {
     mkdirSync(join(dir, 'dist/libs'), { recursive: true });
     symlinkSync(link, join(dir, 'dist/libs/cli'));
@@ -199,4 +199,11 @@ test('cliBuildProblem fails for a dist symlinked out of the tree', () => {
   assert.match(check.cliBuildProblem(dir), /resolves outside/);
   rmSync(dir, { recursive: true, force: true });
   rmSync(outside, { recursive: true, force: true });
+});
+
+test('cliBuildProblem skips the hash for a revision before the guard', () => {
+  const dir = fakeTree({ recorded: 'other' });
+  rmSync(join(dir, 'libs/cli/src/lib/source-hash.ts'));
+  assert.equal(check.cliBuildProblem(dir), undefined);
+  rmSync(dir, { recursive: true, force: true });
 });
