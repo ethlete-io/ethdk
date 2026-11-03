@@ -30,11 +30,32 @@ const definitionOf = (source: string) => {
 const nameOf = (name: ts.PropertyName) =>
   ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isNumericLiteral(name) ? name.text : null;
 
+/** The top-level `definePart` fields this file reads. Each must be a key of `Part`, which a spec checks. */
+export const PARSED_PART_FIELDS = [
+  'states',
+  'note',
+  'madeBy',
+  'widths',
+  'interactions',
+  'controls',
+  'motions',
+  'rules',
+  'unreachable',
+  'instant',
+  'implements',
+] as const;
+
+type ParsedPartField = (typeof PARSED_PART_FIELDS)[number];
+
 const propertyOf = (definition: ts.ObjectLiteralExpression, name: string) =>
   definition.properties.find(
     (property): property is ts.PropertyAssignment =>
       ts.isPropertyAssignment(property) && nameOf(property.name) === name,
   );
+
+const fieldOf = (definition: ts.ObjectLiteralExpression, name: ParsedPartField) => propertyOf(definition, name);
+
+const fieldName = (name: ParsedPartField) => name;
 
 /**
  * The state names a part file declares in `definePart({ states: { … } })`, read without running it.
@@ -42,7 +63,7 @@ const propertyOf = (definition: ts.ObjectLiteralExpression, name: string) =>
  */
 export const stateNamesOf = (source: string): string[] | null => {
   const { definition } = definitionOf(source);
-  const states = definition ? propertyOf(definition, 'states')?.initializer : undefined;
+  const states = definition ? fieldOf(definition, 'states')?.initializer : undefined;
 
   if (!states || !ts.isObjectLiteralExpression(states)) return null;
 
@@ -58,7 +79,7 @@ export const stateNamesOf = (source: string): string[] | null => {
 /** The model ids in the `madeBy` literal of a part file; none when it has no such array of strings. */
 export const madeByOf = (source: string): string[] => {
   const { definition } = definitionOf(source);
-  const current = definition ? propertyOf(definition, 'madeBy')?.initializer : undefined;
+  const current = definition ? fieldOf(definition, 'madeBy')?.initializer : undefined;
 
   if (!current || !ts.isArrayLiteralExpression(current)) return [];
 
@@ -68,7 +89,7 @@ export const madeByOf = (source: string): string[] => {
 /** The `note` literal of a part file's `definePart({ … })`; `null` when it holds none. */
 export const noteOf = (source: string): string | null => {
   const { definition } = definitionOf(source);
-  const current = definition ? propertyOf(definition, 'note')?.initializer : undefined;
+  const current = definition ? fieldOf(definition, 'note')?.initializer : undefined;
 
   return current && (ts.isStringLiteral(current) || ts.isNoSubstitutionTemplateLiteral(current)) ? current.text : null;
 };
@@ -78,7 +99,7 @@ const quoted = (text: string) => `'${text.replace(/\\/gu, '\\\\').replace(/'/gu,
 /** The part file with its `note` replaced, or `null` when it holds no `definePart({ note: '…' })` literal. */
 export const withNote = (source: string, note: string): string | null => {
   const { file, definition } = definitionOf(source);
-  const current = definition ? propertyOf(definition, 'note')?.initializer : undefined;
+  const current = definition ? fieldOf(definition, 'note')?.initializer : undefined;
 
   if (!current || !(ts.isStringLiteral(current) || ts.isNoSubstitutionTemplateLiteral(current))) return null;
 
@@ -97,11 +118,11 @@ const lineStartOf = (source: string, position: number) => {
  */
 export const withMadeBy = (source: string, madeBy: string[]): string | null => {
   const { file, definition } = definitionOf(source);
-  const note = definition ? propertyOf(definition, 'note') : undefined;
+  const note = definition ? fieldOf(definition, 'note') : undefined;
 
   if (!definition || !note) return null;
 
-  const current = propertyOf(definition, 'madeBy');
+  const current = fieldOf(definition, 'madeBy');
   const value = `madeBy: [${madeBy.map(quoted).join(', ')}]`;
 
   if (current) {
@@ -139,7 +160,7 @@ const isPositiveNumber = (node: ts.Expression) => ts.isNumericLiteral(node) && N
  */
 export const hasBadWidths = (source: string) => {
   const { definition } = definitionOf(source);
-  const widths = definition ? propertyOf(definition, 'widths')?.initializer : undefined;
+  const widths = definition ? fieldOf(definition, 'widths')?.initializer : undefined;
 
   if (!widths) return false;
   if (ts.isArrayLiteralExpression(widths))
@@ -154,7 +175,7 @@ export const hasBadWidths = (source: string) => {
  */
 export const widthsOf = (source: string): number[] | null => {
   const { definition } = definitionOf(source);
-  const widths = definition ? propertyOf(definition, 'widths')?.initializer : undefined;
+  const widths = definition ? fieldOf(definition, 'widths')?.initializer : undefined;
 
   if (!widths) return [];
   if (!ts.isArrayLiteralExpression(widths) || !widths.elements.every(ts.isNumericLiteral)) return null;
@@ -168,7 +189,7 @@ export const widthsOf = (source: string): number[] | null => {
  */
 export const interactionNamesOf = (source: string): string[] => {
   const { definition } = definitionOf(source);
-  const interactions = definition ? propertyOf(definition, 'interactions')?.initializer : undefined;
+  const interactions = definition ? fieldOf(definition, 'interactions')?.initializer : undefined;
 
   if (!interactions || !ts.isArrayLiteralExpression(interactions)) return [];
 
@@ -183,7 +204,9 @@ export const interactionNamesOf = (source: string): string[] => {
  */
 export const declaresControlsOf = (source: string) => {
   const { definition } = definitionOf(source);
-  const property = definition?.properties.find((candidate) => candidate.name && nameOf(candidate.name) === 'controls');
+  const property = definition?.properties.find(
+    (candidate) => candidate.name && nameOf(candidate.name) === fieldName('controls'),
+  );
 
   if (!property) return false;
 
@@ -203,8 +226,8 @@ const literalOf = (node: ts.Expression | undefined) =>
  */
 export const motionRefsOf = (source: string) => {
   const { definition } = definitionOf(source);
-  const motions = definition ? propertyOf(definition, 'motions')?.initializer : undefined;
-  const rules = definition ? propertyOf(definition, 'rules')?.initializer : undefined;
+  const motions = definition ? fieldOf(definition, 'motions')?.initializer : undefined;
+  const rules = definition ? fieldOf(definition, 'rules')?.initializer : undefined;
 
   return {
     motions:
@@ -253,7 +276,7 @@ const isStringLiteral = (node: ts.Expression) => ts.isStringLiteral(node) || ts.
 export const unreachableOf = (source: string): UnreachableSource[] | null => {
   const { definition } = definitionOf(source);
   const property = definition?.properties.find(
-    (candidate) => candidate.name && nameOf(candidate.name) === 'unreachable',
+    (candidate) => candidate.name && nameOf(candidate.name) === fieldName('unreachable'),
   );
 
   if (!property) return [];
@@ -284,7 +307,7 @@ export type InstantSource = { kind: 'none' } | { kind: 'declared'; reason: strin
 
 export const instantOf = (source: string): InstantSource => {
   const { definition } = definitionOf(source);
-  const value = definition ? propertyOf(definition, 'instant')?.initializer : undefined;
+  const value = definition ? fieldOf(definition, 'instant')?.initializer : undefined;
 
   if (!value) return { kind: 'none' };
 
@@ -305,7 +328,7 @@ export type PartLinkSource =
 
 export const partLinkOf = (source: string): PartLinkSource => {
   const { definition } = definitionOf(source);
-  const link = definition ? propertyOf(definition, 'implements')?.initializer : undefined;
+  const link = definition ? fieldOf(definition, 'implements')?.initializer : undefined;
 
   if (!link) return { kind: 'none' };
 

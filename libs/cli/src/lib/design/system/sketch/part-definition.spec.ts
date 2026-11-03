@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
+import { definePart, type Part } from '../../../../../design/define-part';
 import {
+  PARSED_PART_FIELDS,
   declaresControlsOf,
   instantOf,
   stateNamesOf,
@@ -109,5 +111,30 @@ describe('instantOf', () => {
     });
     expect(instantOf(withInstant('true'))).toEqual({ kind: 'unreadable' });
     expect(instantOf(withInstant("' '"))).toEqual({ kind: 'unreadable' });
+  });
+});
+
+describe('PARSED_PART_FIELDS', () => {
+  it('names only fields the Part type has', () => {
+    expectTypeOf<(typeof PARSED_PART_FIELDS)[number]>().toExtend<keyof Part<unknown>>();
+  });
+
+  it('types a part that writes every parsed field', () => {
+    const written = definePart({
+      note: 'Every field.',
+      madeBy: ['model'],
+      states: { rest: { open: false }, open: { open: true } },
+      widths: [320],
+      interactions: ['hover'],
+      controls: { toggle: { kind: 'button', input: ['pointer'] } },
+      motions: { opening: { from: 'rest', to: 'open' } },
+      rules: [],
+      unreachable: [{ from: 'open', to: 'rest', reason: 'Closes by reload.' }],
+      instant: 'The app swaps the state.',
+      implements: 'apps/x/every.component.ts',
+      render: () => ({ body: '<div></div>', styles: '' }),
+    });
+
+    expect(PARSED_PART_FIELDS.filter((field) => !(field in written))).toEqual([]);
   });
 });
