@@ -3,10 +3,8 @@
     {
       "id": "comment-write",
       "label": "Kommentar schreiben",
-      "place": null,
-      "confirmed": true,
-      "why": "pages/inbox draws the draft (state comment-draft) and its send button as control \"send\", but with no data-et-action; the full flow (comment-mode, emit:sendComment) is drawn only in the open sketch pages-system/a",
-      "missing": "B173"
+      "place": { "part": "pages/inbox", "action": "emit:send" },
+      "confirmed": true
     },
     {
       "id": "comment-reply",
@@ -124,26 +122,20 @@
     {
       "id": "inventory-approve",
       "label": "Inventory freigeben",
-      "place": null,
-      "confirmed": true,
-      "why": "pages/inventory draws the button as control \"approve\", but with no data-et-action",
-      "missing": "B173"
+      "place": { "part": "pages/inventory", "action": "emit:approveInventory" },
+      "confirmed": true
     },
     {
       "id": "inventory-reload",
       "label": "Inventory neu laden",
-      "place": null,
-      "confirmed": true,
-      "why": "pages/inventory draws the button as control \"reload\", but with no data-et-action",
-      "missing": "B173"
+      "place": { "part": "pages/inventory", "action": "emit:reloadInventory" },
+      "confirmed": true
     },
     {
       "id": "inventory-toggle",
       "label": "Inventory ein- und ausblenden",
-      "place": null,
-      "confirmed": true,
-      "why": "pages/inventory draws the toggle as control \"toggle\", but with no data-et-action",
-      "missing": "B173"
+      "place": { "part": "pages/inventory", "action": "emit:toggleInventory" },
+      "confirmed": true
     },
     {
       "id": "sketch-open-merge",
