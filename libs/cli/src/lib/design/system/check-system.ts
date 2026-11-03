@@ -491,16 +491,32 @@ const notCheckedLineOf = (options: { product: string; parts: string; why: string
 const isUndrawn = (issue: RenderIssue) =>
   issue.rule === 'RENDER' && issue.state === '-' && !issue.detail.startsWith('logged SDK error');
 
+const isStateUndrawn = (issue: RenderIssue) =>
+  issue.rule === 'RENDER' && issue.state !== '-' && issue.detail.startsWith('design-explore:');
+
 const printUndrawn = (issues: RenderIssue[]) => {
   for (const product of new Set(issues.map((issue) => issue.product))) {
-    const parts = [...new Set(issues.filter((issue) => issue.product === product).map((issue) => issue.part))];
+    const own = issues.filter((issue) => issue.product === product);
+    const parts = [...new Set(own.filter(isUndrawn).map((issue) => issue.part))];
+    const states = [
+      ...new Set(
+        own
+          .filter((issue) => isStateUndrawn(issue) && !parts.includes(issue.part))
+          .map((issue) => `${issue.part} state ${issue.state}`),
+      ),
+    ];
 
-    console.log(
-      notCheckedLineOf({
-        product,
-        parts: `${countText(parts.length, 'part')}: ${parts.join(', ')}`,
-        why: `${parts.length === 1 ? 'it' : 'they'} did not draw, see RENDER above`,
-      }),
+    if (parts.length > 0)
+      console.log(
+        notCheckedLineOf({
+          product,
+          parts: `${countText(parts.length, 'part')}: ${parts.join(', ')}`,
+          why: `${parts.length === 1 ? 'it' : 'they'} did not draw, see RENDER above`,
+        }),
+      );
+
+    states.forEach((state) =>
+      console.log(notCheckedLineOf({ product, parts: state, why: 'it did not draw, see RENDER above' })),
     );
   }
 };
@@ -575,7 +591,7 @@ const renderSystem = async (
     console.error(renderIssueLineOf(issue));
     tallyOf(options.tally, { product: issue.product, part: ownerPartOf(issue) })?.problems.push(issue.rule);
   });
-  printUndrawn(issues.filter(isUndrawn));
+  printUndrawn(issues.filter((issue) => isUndrawn(issue) || isStateUndrawn(issue)));
 
   if (!options.part)
     for (const product of resolved)
@@ -590,7 +606,7 @@ const renderSystem = async (
 /**
  * Checks as `checkSystem` does, then draws every state in a headless browser and prints one line per
  * render rule a drawing breaks, also when a static rule failed, and warns of each merged part that changed outside a sketch. A part that does not
- * draw, or every part without a browser, gets one `NOT CHECKED` line; without a browser it passes on the other checks.
+ * draw, each state that does not draw, or every part without a browser, gets one `NOT CHECKED` line; without a browser it passes on the other checks.
  * It then lists the open points of each product's parts, with the contrasts the drawing found and the missing states
  * of each component part as `design complete` draws them, the blockers `design ready` refuses on; they do not change
  * the exit code.

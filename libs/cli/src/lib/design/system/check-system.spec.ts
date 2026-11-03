@@ -234,6 +234,36 @@ describe('checkDesign', () => {
     ]);
   }, 120_000);
 
+  it('names each state that does not draw as not checked by the render rules', async (context) => {
+    const target = acme();
+    const lines = output();
+    const hero = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
+
+    writeFileSync(
+      hero,
+      readFileSync(hero, 'utf8')
+        .replace(
+          "states: { default: { film: films[0] ?? { title: '' } } },",
+          "states: { default: { film: films[0] ?? { title: '' } }, broken: { film: { title: 'boom' } }, gone: { film: { title: 'boom' } } },",
+        )
+        .replace(
+          'render: async ({ film }) => {',
+          "render: async ({ film }) => {\n    if (film.title === 'boom') throw new Error('state will not draw');",
+        ),
+    );
+
+    const code = await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' });
+
+    if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip('no browser');
+
+    expect(code).toBe(1);
+    expect(lines).toContainEqual(expect.stringMatching(/^RENDER acme elements\/hero broken at /));
+    expect(lines.filter((line) => line.startsWith('NOT CHECKED'))).toEqual([
+      'NOT CHECKED acme render rules on elements/hero state broken - it did not draw, see RENDER above',
+      'NOT CHECKED acme render rules on elements/hero state gone - it did not draw, see RENDER above',
+    ]);
+  }, 120_000);
+
   it('leaves the problems of a base part to the base, and checks a part the product overrides as its own', async () => {
     const target = acme();
     const lines = output();
