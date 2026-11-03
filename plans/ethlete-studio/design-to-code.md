@@ -3263,3 +3263,17 @@ ready` prints that command for every file it wrote; the brief uses it. Not an au
      the chip (builder, 2026-11-03). A hand offset is right for one layout only and no check compares arrow tip with
      anchor centre. Fix: B188 (technical, SDK) - an anchor option on the components anchored-dialog that points the
      arrow at a given element; the render check measures arrow tip vs anchor centre. Changeset + docs guide.
+253. B145 step 2 (builder, 2026-11-03) brought the comment write path back, but the designs leave gaps the builder
+     would otherwise have had to invent: thread, reply, resolve and withdraw are drawn nowhere (comment-reply, -done
+     and -withdraw have no caller), the draft field is drawn unfocused, and leaving comment mode by key (Esc, `C`) is
+     not drawn. The capability list (B157) names these actions, but a capability without a drawn place only shows as
+     "missing", not as a blocker of the slice that builds next to it. Fix: B189 - one Studio sketch (opened pin as a
+     thread card in pages/system and pages/inbox with reply/resolve/withdraw, the draft drawn focused, the key exit),
+     variants where there is a choice; Tom picks. The inbox "Senden" button that the live inbox does not wire is
+     B173.
+254. ORPHAN-ENDPOINT (B147) missed `/__design/comment` after 8cf715654 deleted `writeComment$` (builder,
+     2026-11-03): the app builds the path from a bare segment (`productUrl(address, 'comment')`), so a grep for the
+     full path finds no caller and none is missed either - the check matched strings, not calls. Lesson: a caller
+     check resolves calls through the functions that build the path, not text. Fix: B190 (technical) - resolve
+     callers through the host functions that call `designAnswer$` with the segment; a spec on the 8cf715654 tree
+     reports all four comment endpoints, and after 4221e7cb3 still reports reply, done and withdraw (known list).
