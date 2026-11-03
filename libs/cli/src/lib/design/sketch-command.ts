@@ -70,7 +70,7 @@ import {
 } from './system/sketch/sketch';
 
 export const SKETCH_USAGE = [
-  'sketch new <layer>/<name> [<layer>/<name>…] --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--round <title>] [--note <text>] [--variant-note <variant>=<text>]… [--override | --into-base] [--product <name>]',
+  'sketch new <layer>/<name> [<layer>/<name>…] --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--name <sketch name>] [--round <title>] [--note <text>] [--variant-note <variant>=<text>]… [--override | --into-base] [--product <name>]',
   'sketch variant <layer>/<name> <variant>[,<variant>…] --from <variant> --by <model id> [--round <title> --note <why the running round lost> [--round-note <what the new round shows>]] [--product <name>]',
   'sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] --by <model id> [--product <name>]',
   'sketch note <layer>/<name> <variant> <text> --by <model id> [--product <name>]',
@@ -95,6 +95,8 @@ const FLAG_HELP: Record<string, string> = {
   '--variant-note':
     "the note of one variant, kept in sketch.json apart from the part's merged note; repeat it per variant: a=<text>",
   '--by': 'the exact model id the coordinator gave you, e.g. claude-opus-5-5',
+  '--name':
+    'a second sketch on a part that has one: it lives in its own folder and is addressed as <layer>/<name>@<sketch name>',
   '--like': 'start each variant from another part, or from a variant of the open sketch on it',
   '--override':
     'on a base part: merge into a product copy that overrides the base, not into the base; on a product override: sketch that copy',
@@ -251,6 +253,11 @@ const created = (context: Context) => {
   if (typeof unknown === 'string') return fail(unknown);
   if (parsed === undefined || typeof parsed === 'string') return fail(SKETCH_USAGE[0] ?? '');
 
+  const name = args.values['--name'];
+  const named = name === undefined ? parsed : parseTarget(`${parsed.layer}/${parsed.name}@${name}`);
+
+  if (typeof named === 'string') return fail(named);
+
   const variants = (args.values['--variants'] ?? '').split(',').filter((variant) => variant !== '');
   const notes = variantNotesOf(args.repeated['--variant-note'] ?? [], variants);
 
@@ -271,7 +278,7 @@ const created = (context: Context) => {
 
   const sketch = createSketch({
     product,
-    sketch: parsed,
+    sketch: named,
     others: others.filter((entry) => typeof entry !== 'string'),
     variants,
     roundTitle: args.values['--round'],
@@ -1215,6 +1222,7 @@ export const designSketch = (options: { target: string; argv: string[]; invocati
     '--round-note',
     '--title',
     '--like',
+    '--name',
     '--drops',
     '--variant-note',
     '--reason',

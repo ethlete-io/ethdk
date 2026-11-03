@@ -9,7 +9,7 @@ const nameOf = (state: FlowState) => `${state.part} "${state.state}"`;
 
 const sketchOnlyOf = (product: ResolvedProduct, key: string) =>
   listSketches({ productDir: product.dir, product: product.name }).find(
-    (sketch): sketch is Sketch => typeof sketch !== 'string' && sketch.target === key && sketch.variants.length > 0,
+    (sketch): sketch is Sketch => typeof sketch !== 'string' && sketch.targets[0] === key && sketch.variants.length > 0,
   );
 
 /** Why a frame points at nothing; a part the product lacks is looked up in the first variant of its open sketch. */

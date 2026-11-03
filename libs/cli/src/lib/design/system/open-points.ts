@@ -118,7 +118,7 @@ export const openPointsOf = (input: OpenPointsInput): PartOpenPoints[] =>
         .map((sketch) => ({
           kind: 'unmerged-sketch' as const,
           sketch: sketch.name,
-          primary: sketch.target === key,
+          primary: sketch.targets[0] === key,
           status: sketch.status,
           decision: sketch.decision,
         })),

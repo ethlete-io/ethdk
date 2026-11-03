@@ -98,7 +98,7 @@ export const sketchedPartsOf = (product: ResolvedProduct) =>
       typeof sketch === 'string'
         ? []
         : [
-            sketch.target,
+            partKeyOf(sketch),
             ...sketch.variants.flatMap((variant) => partFilesOf(variantDirOf(sketch, variant)).parts.map(partKeyOf)),
           ],
     ),

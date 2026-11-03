@@ -85,12 +85,12 @@ export const aktuellPlaceholderWarningsOf = async (options: {
       variants.push(compared);
 
       if (unchangedWarning !== null)
-        warnings.push(`${sketch.target} ${variant}${part === sketch.target ? '' : ` ${part}`}: ${unchangedWarning}`);
+        warnings.push(`${sketch.target} ${variant}${part === partKeyOf(sketch) ? '' : ` ${part}`}: ${unchangedWarning}`);
     }
 
     const warning = aktuellPlaceholderWarningOf({ current: current.states, variants });
 
-    if (warning !== null) warnings.push(`${sketch.target}${part === sketch.target ? '' : ` ${part}`}: ${warning}`);
+    if (warning !== null) warnings.push(`${sketch.target}${part === partKeyOf(sketch) ? '' : ` ${part}`}: ${warning}`);
   }
 
   return warnings;

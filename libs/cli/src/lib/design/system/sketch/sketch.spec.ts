@@ -792,3 +792,46 @@ describe('sketch new --like', () => {
     expect(sketchSourceOf({ product, like: 'hero' })).toContain('names no part');
   });
 });
+
+describe('two sketches on one part', () => {
+  it('keeps each in its own folder with its own sketch.json and id', () => {
+    const target = acme();
+    const productDir = join(target, DESIGN_DIR, 'acme');
+
+    open(target, 'components/card');
+    open(target, 'components/card@alt', ['x']);
+
+    expect(sketchJson(target, 'components-card').target).toBe('components/card');
+    expect(sketchJson(target, 'components-card.alt').target).toBe('components/card@alt');
+    expect(existsSync(join(productDir, 'sketches/components-card/a'))).toBe(true);
+    expect(existsSync(join(productDir, 'sketches/components-card.alt/x'))).toBe(true);
+    expect(existsSync(join(productDir, 'sketches/components-card/x'))).toBe(false);
+  });
+
+  it('finds each by its address and never takes the named one for the unnamed', () => {
+    const target = acme();
+    const productDir = join(target, DESIGN_DIR, 'acme');
+    const card = { layer: 'components', name: 'card' } as const;
+
+    open(target, 'components/card@alt', ['x']);
+
+    expect(findSketch({ productDir, product: 'acme', sketch: card })).toBeNull();
+    expect(
+      (findSketch({ productDir, product: 'acme', sketch: { ...card, sketch: 'alt' } }) as Sketch).variants,
+    ).toEqual(['x']);
+
+    open(target, 'components/card');
+
+    expect((findSketch({ productDir, product: 'acme', sketch: card }) as Sketch).variants).toEqual(['a', 'b']);
+  });
+
+  it('refuses a second sketch of the same name and a bad name', () => {
+    const target = acme();
+
+    open(target, 'components/card@alt');
+
+    expect(() => open(target, 'components/card@alt')).toThrow('components/card@alt already has an open sketch');
+    expect(parseTarget('components/card@Alt')).toEqual(expect.stringContaining('is no target'));
+    expect(parseTarget('components/card@a@b')).toEqual(expect.stringContaining('is no target'));
+  });
+});

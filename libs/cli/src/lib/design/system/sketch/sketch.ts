@@ -24,7 +24,8 @@ export const SKETCH_STATUSES = ['in progress', 'ready'] as const;
 
 export type SketchStatus = (typeof SKETCH_STATUSES)[number];
 
-export type SketchTarget = { layer: Layer; name: string };
+/** A part, and `sketch` when it names one of several sketches on that part; a sketch without a name is the part's only one. */
+export type SketchTarget = { layer: Layer; name: string; sketch?: string };
 
 /** What the user decided in Studio: a variant to merge, or the whole sketch to drop. */
 export type SketchDecision =
@@ -107,7 +108,10 @@ export const SKETCH_FILE = 'sketch.json';
 
 export const sketchesDirOf = (productDir: string) => resolve(productDir, 'sketches');
 
-export const sketchFolderOf = (target: SketchTarget) => `${target.layer}-${target.name}`;
+export const sketchFolderOf = (target: SketchTarget) =>
+  `${target.layer}-${target.name}${target.sketch ? `.${target.sketch}` : ''}`;
+
+export const sketchIdOf = (target: SketchTarget) => `${partKeyOf(target)}${target.sketch ? `@${target.sketch}` : ''}`;
 
 export const sketchDirOf = (options: { productDir: string; sketch: SketchTarget }) =>
   resolve(sketchesDirOf(options.productDir), sketchFolderOf(options.sketch));
@@ -182,12 +186,19 @@ const sharedClashOf = (parts: ({ layer: string; name: string; file: string } | u
 
 /** Reads `<layer>/<name>` as a sketch target, or answers with why it is not one. */
 export const parseTarget = (value: string | undefined): SketchTarget | string => {
-  const [layer = '', name = '', ...rest] = (value ?? '').split('/');
+  const [asked = '', sketch, ...more] = (value ?? '').split('@');
+  const [layer = '', name = '', ...rest] = asked.split('/');
 
-  if (!isLayer(layer) || !NAME.test(name) || rest.length > 0)
-    return `"${value ?? ''}" is no target - pass <layer>/<name>, the layer one of foundations, components, elements, pages`;
+  if (
+    !isLayer(layer) ||
+    !NAME.test(name) ||
+    rest.length > 0 ||
+    more.length > 0 ||
+    (sketch !== undefined && !NAME.test(sketch))
+  )
+    return `"${value ?? ''}" is no target - pass <layer>/<name>[@<sketch name>], the layer one of foundations, components, elements, pages`;
 
-  return { layer, name };
+  return sketch === undefined ? { layer, name } : { layer, name, sketch };
 };
 
 export const isVariantName = (name: string) => NAME.test(name) && name !== SHARED_FOLDER;
@@ -403,14 +414,19 @@ export const findSketch = (options: { productDir: string; product: string; sketc
 
   return (
     listSketches(options).find(
-      (sketch): sketch is Sketch => typeof sketch !== 'string' && sketch.targets.includes(key),
+      (sketch): sketch is Sketch =>
+        typeof sketch !== 'string' &&
+        sketch.targets.includes(key) &&
+        parseSketchName(sketch.target) === options.sketch.sketch,
     ) ?? null
   );
 };
 
+const parseSketchName = (target: string) => target.split('@')[1];
+
 export const writeSketchFile = (sketch: Sketch) => {
   const file: SketchFile = {
-    target: partKeyOf(sketch),
+    target: sketch.target,
     ...(sketch.targets.length > 1 ? { targets: sketch.targets } : {}),
     status: sketch.status,
     createdAt: sketch.createdAt,
@@ -575,7 +591,7 @@ const seedTarget = (options: {
  * author. Each variant starts from `like` when given - renamed to the target, without its `madeBy`, and with its
  * sketch's `shared/` folder - else from the part the product resolves for the target, or from an empty part when the
  * target is new. A part's own `shared/` folder becomes the sketch's, imported as `@shared/`. A target holds one open
- * sketch at a time. Each of `others` joins every variant the same way, as a further target; `like` takes one target only.
+ * sketch at a time, or one per sketch name when `sketch.sketch` names it. Each of `others` joins every variant the same way, as a further target; `like` takes one target only.
  * A target the product overrides in its base needs `merge`: `override` or `into-base`.
  */
 export const createSketch = (options: {
@@ -592,8 +608,7 @@ export const createSketch = (options: {
 }): Sketch | string => {
   const { product, sketch, variants, roundTitle, roundNote, author, like, variantNotes, merge } = options;
   const dir = sketchDirOf({ productDir: product.dir, sketch });
-  const key = partKeyOf(sketch);
-  const all = [sketch, ...(options.others ?? [])];
+  const all = [sketch, ...(options.others ?? []).map((other) => ({ ...other, sketch: sketch.sketch }))];
   const targets = all.map(partKeyOf);
 
   if (new Set(targets).size !== targets.length) return 'name each target once';
@@ -604,7 +619,7 @@ export const createSketch = (options: {
   );
 
   if (existsSync(dir) || taken)
-    return `${partKeyOf(taken ?? sketch)} already has an open sketch - merge or discard it first`;
+    return `${sketchIdOf(taken ?? sketch)} already has an open sketch - merge or discard it first`;
   if (variants.length === 0) return 'name at least one variant';
 
   const mergeProblem = mergeProblemOf({ product, targets, merge });
@@ -632,7 +647,7 @@ export const createSketch = (options: {
   if (like?.shared) cpSync(like.shared, resolve(dir, SHARED_FOLDER), { recursive: true });
 
   const created: Sketch = {
-    target: key,
+    target: sketchIdOf(sketch),
     targets,
     status: 'in progress',
     createdAt: new Date().toISOString(),
@@ -672,7 +687,11 @@ export const addTarget = (options: {
 
   if (sketch.targets.includes(key)) return `${sketch.target} targets ${key} already`;
 
-  const taken = findSketch({ productDir: product.dir, product: product.name, sketch: part });
+  const taken = findSketch({
+    productDir: product.dir,
+    product: product.name,
+    sketch: { ...part, sketch: parseSketchName(sketch.target) },
+  });
 
   if (taken !== null) return `${key} already has an open sketch - merge or discard it first`;
 

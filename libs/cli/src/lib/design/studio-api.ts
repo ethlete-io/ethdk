@@ -372,7 +372,7 @@ export const sketchCompareAnswer = withSketch('GET', async ({ asked, product, sk
  */
 export const sketchDiffAnswer = withSketch('GET', async ({ asked, product, sketch }) => {
   const variant = asked.url.searchParams.get('variant') ?? '';
-  const part = asked.url.searchParams.get('part') ?? sketch.target;
+  const part = asked.url.searchParams.get('part') ?? (sketch.targets[0] as string);
   const { load, pictureOf, boxOf } = asked;
 
   if (!sketch.variants.includes(variant)) return failure(404, `${sketch.target} has no variant "${variant}"`);

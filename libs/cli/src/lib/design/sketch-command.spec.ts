@@ -1759,3 +1759,27 @@ describe('sketch target add', () => {
     expect(acmeWrite(target, 'target', 'add', 'components/nothing', 'components/x')).toBe(1);
   });
 });
+
+describe('sketch new --name', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('opens a second sketch on a part and addresses each by its own id', () => {
+    const target = acme();
+    const lines = output();
+    const sketches = join(target, DESIGN_DIR, 'acme/sketches');
+    const open = (...argv: string[]) => write(target, 'new', 'components/card', ...argv, '--product', 'acme');
+
+    expect(open('--variants', 'a')).toBe(0);
+    expect(open('--variants', 'x', '--name', 'alt')).toBe(0);
+    expect(lines.some((line) => line.includes('sketch ready components/card@alt --product acme'))).toBe(true);
+    expect(JSON.parse(readFileSync(join(sketches, 'components-card/sketch.json'), 'utf8')).target).toBe(
+      'components/card',
+    );
+    expect(JSON.parse(readFileSync(join(sketches, 'components-card.alt/sketch.json'), 'utf8')).target).toBe(
+      'components/card@alt',
+    );
+    expect(open('--variants', 'y', '--name', 'alt')).toBe(1);
+    expect(write(target, 'report', 'components/card@alt', '--variant', 'x', '--done', '--product', 'acme')).toBe(0);
+    expect(write(target, 'report', 'components/card@nope', '--variant', 'x', '--done', '--product', 'acme')).toBe(1);
+  });
+});

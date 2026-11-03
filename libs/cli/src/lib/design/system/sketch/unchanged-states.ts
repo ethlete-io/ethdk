@@ -154,7 +154,7 @@ export const unchangedStatesOf = async (options: {
     load,
     pictureOf,
     keepPictures = false,
-    part: compared = sketch.target,
+    part: compared = partKeyOf(sketch),
     compareFrames = true,
     states,
   } = options;
