@@ -97,10 +97,15 @@ const mergedOf = (options: { scratch: string; ours: Buffer; base: Buffer; theirs
  * Ports the changes the product made to each part the sketch's variants replace since its baseline into those
  * variants: a 3-way merge per file of the variant, the part as the baseline held it (found in git history by its
  * hash) and the part now. Writes nothing when any file conflicts or a baseline state is not in history, and then
- * answers with the conflicts.
+ * answers with the conflicts; with `keepConflicts` it keeps the variant's version of those and ports the rest.
  */
-export const portBaseChanges = (options: { target: string; product: ResolvedProduct; sketch: Sketch }): BasePort => {
-  const { target, product, sketch } = options;
+export const portBaseChanges = (options: {
+  target: string;
+  product: ResolvedProduct;
+  sketch: Sketch;
+  keepConflicts?: boolean;
+}): BasePort => {
+  const { target, product, sketch, keepConflicts } = options;
   const baseline = sketch.baseline ?? {};
   let top: string | null = null;
   const scratch = mkdtempSync(resolve(tmpdir(), 'et-sketch-rebase-'));
@@ -170,7 +175,7 @@ export const portBaseChanges = (options: { target: string; product: ResolvedProd
       }
     }
 
-    if (conflicts.length > 0) return { ported: [], conflicts };
+    if (conflicts.length > 0 && !keepConflicts) return { ported: [], conflicts };
 
     for (const { path, content } of writes) {
       if (content === null) rmSync(path, { force: true });

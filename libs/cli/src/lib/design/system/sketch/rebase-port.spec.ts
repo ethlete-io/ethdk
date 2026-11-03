@@ -115,4 +115,18 @@ describe('portBaseChanges', () => {
       'a: elements/hero - no commit holds the state the baseline recorded, port it by hand',
     ]);
   });
+
+  it('keeps a conflicting file that was ported by hand and ports the rest', () => {
+    const { target, sketch } = sketched();
+
+    edit(variantFile(sketch, 'a', 'hero.ts'), 'One featured film', 'A featured film');
+    changeProduct(target, 'hero.ts', 'One featured film', 'The featured film');
+
+    const port = portBaseChanges({ target, product: resolveAcme(target), sketch, keepConflicts: true });
+
+    expect(port.conflicts).toEqual(['a: elements/hero/hero.ts - the variant and the product both changed it']);
+    expect(port.ported.map(({ variant, how }) => `${variant} ${how}`)).toEqual(['b taken']);
+    expect(readFileSync(variantFile(sketch, 'a', 'hero.ts'), 'utf8')).toContain('A featured film');
+    expect(readFileSync(variantFile(sketch, 'b', 'hero.ts'), 'utf8')).toContain('The featured film');
+  });
 });

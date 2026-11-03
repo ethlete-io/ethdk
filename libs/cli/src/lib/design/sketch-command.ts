@@ -84,7 +84,7 @@ export const SKETCH_USAGE = [
   'sketch release <layer>/<name> --by <model id> [--product <name>]',
   'sketch check [<layer>/<name>] [--fix] [--product <name>]',
   'sketch preview <layer>/<name> <variant> [--product <name>] [--json]',
-  'sketch rebase <layer>/<name> --by <model id> [--product <name>]',
+  'sketch rebase <layer>/<name> [--ported] --by <model id> [--product <name>]',
   'sketch merge <layer>/<name> [--note <reason> [--replace-note]] [--variant <key> --allowed-by <plan ref>] --by <model id> [--product <name>]',
   'sketch discard <layer>/<name> --by <model id> [--product <name>]',
   'sketch reject <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
@@ -104,6 +104,7 @@ const FLAG_HELP: Record<string, string> = {
     'on a base part: merge into a product copy that overrides the base, not into the base; on a product override: sketch that copy',
   '--into-base':
     'on a part the product overrides: start from the product copy, merge into the base and remove the copy',
+  '--ported': 'on rebase: the conflicting files hold the product change already, ported by hand - keep them and rebase',
   '--round': 'the title of a new round',
   '--round-note': 'what the new round shows',
   '--from': 'the variant to copy',
@@ -850,9 +851,11 @@ const readyRefusalOf = (
 
 const rebased = (context: Context) =>
   withSketch(context, ({ product, sketch }) => {
-    const { ported, conflicts } = portBaseChanges({ target: context.target, product, sketch });
+    const kept = context.args.flags.has('--ported');
+    const { ported, conflicts } = portBaseChanges({ target: context.target, product, sketch, keepConflicts: kept });
 
-    if (conflicts.length > 0)
+    if (kept) conflicts.forEach((line) => console.log(`KEPT ${line} (ported by hand)`));
+    else if (conflicts.length > 0)
       return fail(
         `${conflicts.join('\n')}\n${sketch.target} not rebased - port these by hand, then run sketch rebase again`,
       );
