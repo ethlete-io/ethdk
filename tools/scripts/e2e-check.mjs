@@ -1,6 +1,6 @@
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { availableParallelism, loadavg, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { selectE2eFolders, readIndex, ALL } from '../../apps/storybook-e2e/affected.mjs';
 import { linkNodeModules } from './link-node-modules.mjs';
@@ -42,15 +42,27 @@ export const createRevisionWorktree = (repo, commit) => {
 const HEARTBEAT_MS = 30 * 1000;
 export const IDLE_MS = Number(process.env['E2E_CHECK_IDLE_MS']) || 3 * 60 * 1000;
 const CASE_LINE = /^(PASS|FAIL)\b/m;
+const START_LINE = /^RUN\b/;
+const FAIL_LINE = /^FAIL\b/;
+const TIMING_FAIL_LINE = /^FAIL\s+\[timing\]/;
 const TOTAL_LINE = /^(\d+)\/(\d+) passed/m;
 
-export const judgeSuiteRun = ({ status, timedOut, idle, output }) => {
+export const sampleLoad = () => ({ load: loadavg()[0], cores: availableParallelism() });
+
+const onlyTimingFailures = (text) => {
+  const failed = text.split('\n').filter((line) => FAIL_LINE.test(line));
+  return failed.length > 0 && failed.every((line) => TIMING_FAIL_LINE.test(line));
+};
+
+export const judgeSuiteRun = ({ status, timedOut, idle, output, load = 0, cores = Infinity }) => {
   const text = output.trim();
   const total = TOTAL_LINE.exec(text);
 
   if (idle) return { ok: false, reason: `no output for ${Math.round(idle / 1000)}s` };
   if (timedOut) return { ok: false, reason: 'timed out' };
   if (total && Number(total[2]) === 0) return { ok: false, reason: 'ran zero cases' };
+  if (status !== 0 && load > cores && onlyTimingFailures(text))
+    return { ok: false, notMeasured: true, reason: `NOT MEASURED (load ${load.toFixed(1)})` };
   if (status !== 0) return { ok: false, reason: CASE_LINE.test(text) ? 'failed' : 'crashed before its first case' };
   if (!text) return { ok: false, reason: 'produced no output' };
 
@@ -61,7 +73,7 @@ export const runSuite = (
   repo,
   suite,
   built,
-  { script, onLine = () => {}, heartbeatMs = HEARTBEAT_MS, idleMs = IDLE_MS } = {},
+  { script, onLine = () => {}, heartbeatMs = HEARTBEAT_MS, idleMs = IDLE_MS, sample = sampleLoad } = {},
 ) =>
   new Promise((resolve) => {
     const started = Date.now();
@@ -83,10 +95,8 @@ export const runSuite = (
       const lines = pending.split('\n');
       pending = lines.pop();
       for (const line of lines) {
-        if (CASE_LINE.test(line)) {
-          cases++;
-          lastCase = line;
-        }
+        if (CASE_LINE.test(line)) cases++;
+        if (CASE_LINE.test(line) || START_LINE.test(line)) lastCase = line;
         onLine(line);
       }
     };
@@ -115,8 +125,11 @@ export const runSuite = (
       clearInterval(beat);
       clearInterval(watchdog);
       clearTimeout(timer);
+      const { load, cores } = sample();
       resolve({
-        ...judgeSuiteRun({ status, timedOut, idle, output }),
+        ...judgeSuiteRun({ status, timedOut, idle, output, load, cores }),
+        load,
+        cores,
         timedOut: timedOut || idle > 0,
         lastCase,
         seconds: (Date.now() - started) / 1000,
@@ -176,14 +189,15 @@ if (import.meta.url === `file://${process.argv[1]}`) {
           const run = await runSuite(repo, suite, scratch, {
             onLine: (line) => console.log(`  [${suite}] ${line}`),
           });
+          const label = run.ok ? 'PASS' : run.notMeasured ? 'NOT MEASURED' : run.timedOut ? 'TIMEOUT' : 'FAIL';
           console.log(
-            `${run.ok ? 'PASS' : run.timedOut ? 'TIMEOUT' : 'FAIL'} ${suite} (${run.seconds.toFixed(0)}s)${run.ok ? '' : ` - ${run.reason}`}`,
+            `${label} ${suite} (${run.seconds.toFixed(0)}s, load ${run.load.toFixed(1)}/${run.cores} cores)${run.ok ? '' : ` - ${run.reason}`}`,
           );
           if (!run.ok)
             console.log(
               `  last case reached: ${run.lastCase}\n  suite sha ${tree.sha}\n${run.tail.replace(/^/gm, '  ')}`,
             );
-          results.push({ suite, status: run.ok ? 'pass' : 'fail' });
+          results.push({ suite, status: run.ok ? 'pass' : run.notMeasured ? 'unmeasured' : 'fail' });
         }
       } catch (error) {
         console.log(`FAIL studio build: ${error.message.split('\n')[0]}`);
@@ -222,16 +236,21 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   const failed = results.filter((r) => r.status === 'fail').length;
   const skipped = results.filter((r) => r.status === 'skipped').length;
+  const unmeasured = results.filter((r) => r.status === 'unmeasured').length;
   const passed = results.filter((r) => r.status === 'pass').length;
 
   if (!results.length) console.log(`NO E2E: ${uncovered.length} changed file(s) have no e2e`);
   else if (failed)
     console.log(`E2E FAIL: ${failed} failed, ${passed} passed, ${skipped} skipped (suite sha ${tree.sha})`);
+  else if (unmeasured)
+    console.log(
+      `E2E NOT MEASURED: ${unmeasured} timing case(s) failed under load, ${passed} passed, ${skipped} skipped - the slice stays unverified until a run under the core count passes (suite sha ${tree.sha})`,
+    );
   else if (skipped)
     console.log(`E2E INCOMPLETE: ${passed} passed, ${skipped} skipped (suite sha ${tree.sha}, see above)`);
   else console.log(`E2E OK: ${passed} passed${dry ? ' (listed only)' : ''} (suite sha ${tree.sha})`);
 
   cleanup();
 
-  process.exit(failed || skipped ? 1 : 0);
+  process.exit(failed || skipped || unmeasured ? 1 : 0);
 }

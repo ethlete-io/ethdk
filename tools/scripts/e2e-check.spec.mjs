@@ -1,16 +1,25 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { test } from 'node:test';
+import { after, test } from 'node:test';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import * as check from './e2e-check.mjs';
 import { judgeSuiteRun, runSuite } from './e2e-check.mjs';
 import { mapChanged } from './e2e-map.mjs';
 
+const scratchDirs = [];
+const scratch = (prefix) => {
+  const dir = mkdtempSync(join(tmpdir(), prefix));
+  scratchDirs.push(dir);
+  return dir;
+};
+
+after(() => scratchDirs.forEach((dir) => rmSync(dir, { recursive: true, force: true })));
+
 const fixture = (body) => {
-  const file = join(mkdtempSync(join(tmpdir(), 'e2e-check-spec-')), 'suite.e2e.mjs');
+  const file = join(scratch('e2e-check-spec-'), 'suite.e2e.mjs');
   writeFileSync(file, body);
   return file;
 };
@@ -68,7 +77,7 @@ test('sketch, design-canvas and system-view files map to canvas', () => {
 const sh = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 
 test('the worktree is the named revision, not the dirty main tree, and is removed afterwards', () => {
-  const repo = mkdtempSync(join(tmpdir(), 'e2e-check-repo-'));
+  const repo = scratch('e2e-check-repo-');
   sh(repo, 'init', '-q');
   sh(repo, 'config', 'user.email', 'a@b.c');
   sh(repo, 'config', 'user.name', 'x');
@@ -111,4 +120,47 @@ test('a suite that goes silent is killed after the idle limit and names the last
   assert.equal(result.ok, false);
   assert.match(result.reason, /^no output for \d+s$/);
   assert.equal(result.lastCase, 'PASS  first case');
+});
+
+const TIMING_FAIL = `console.log('PASS  a'); console.log('FAIL  [timing] b (budget 2000 ms)'); process.exit(1);`;
+
+test('every run reports the load and core count sampled at the end', async () => {
+  const result = await run(`console.log('PASS  a'); console.log('\\n1/1 passed');`, {
+    sample: () => ({ load: 3.5, cores: 8 }),
+  });
+  assert.equal(result.load, 3.5);
+  assert.equal(result.cores, 8);
+});
+
+test('a timing case that fails above the core count is not measured', async () => {
+  const result = await run(TIMING_FAIL, { sample: () => ({ load: 12, cores: 8 }) });
+  assert.equal(result.ok, false);
+  assert.equal(result.notMeasured, true);
+  assert.equal(result.reason, 'NOT MEASURED (load 12.0)');
+});
+
+test('a timing case that fails at or below the core count is a real failure', async () => {
+  const result = await run(TIMING_FAIL, { sample: () => ({ load: 8, cores: 8 }) });
+  assert.equal(result.notMeasured, undefined);
+  assert.equal(result.reason, 'failed');
+});
+
+test('a behaviour case that fails under load is still a failure', async () => {
+  const result = await run(`console.log('FAIL  [timing] a'); console.log('FAIL  b'); process.exit(1);`, {
+    sample: () => ({ load: 99, cores: 8 }),
+  });
+  assert.equal(result.notMeasured, undefined);
+  assert.equal(result.reason, 'failed');
+});
+
+test('a suite that goes idle under load is a timeout, not NOT MEASURED', () => {
+  const result = judgeSuiteRun({ status: null, idle: 5000, output: 'FAIL  [timing] a', load: 99, cores: 8 });
+  assert.equal(result.notMeasured, undefined);
+});
+
+test('a started case is the last case reached when the suite then goes silent', async () => {
+  const result = await run(`console.log('RUN   [timing] slow one'); await new Promise((r) => setTimeout(r, 6000));`, {
+    idleMs: 300,
+  });
+  assert.equal(result.lastCase, 'RUN   [timing] slow one');
 });

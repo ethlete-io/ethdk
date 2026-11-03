@@ -46,10 +46,16 @@ const result = await withStudio(
       { checkout: root, systemProduct: product, systemEntry: `sketch:${first.target}` },
     );
 
+    console.log('RUN   first sketch row after cold load');
     const cold = await open();
+    console.log(`cold load: first sketch row after ${cold} ms`);
     const reloads = [];
 
-    for (let i = 0; i < RELOADS; i++) reloads.push(await open());
+    console.log('RUN   [timing] first sketch row after reload');
+    for (let i = 0; i < RELOADS; i++) {
+      reloads.push(await open());
+      console.log(`reload ${i + 1}/${RELOADS}: ${reloads[i]} ms`);
+    }
 
     return { cold, reloads };
   },
@@ -59,8 +65,7 @@ const result = await withStudio(
 const worst = Math.max(...result.reloads);
 const ok = worst <= BUDGET_MS;
 
-console.log(`cold load: first sketch row after ${result.cold} ms`);
 console.log(
-  `${ok ? 'PASS' : 'FAIL'}  first sketch row after reload: ${result.reloads.join(' / ')} ms (budget ${BUDGET_MS} ms)`,
+  `${ok ? 'PASS' : 'FAIL'}  [timing] first sketch row after reload: ${result.reloads.join(' / ')} ms (budget ${BUDGET_MS} ms)`,
 );
 process.exit(ok ? 0 : 1);
