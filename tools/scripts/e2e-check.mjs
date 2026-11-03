@@ -40,13 +40,15 @@ export const createRevisionWorktree = (repo, commit) => {
 };
 
 const HEARTBEAT_MS = 30 * 1000;
+export const IDLE_MS = Number(process.env['E2E_CHECK_IDLE_MS']) || 3 * 60 * 1000;
 const CASE_LINE = /^(PASS|FAIL)\b/m;
 const TOTAL_LINE = /^(\d+)\/(\d+) passed/m;
 
-export const judgeSuiteRun = ({ status, timedOut, output }) => {
+export const judgeSuiteRun = ({ status, timedOut, idle, output }) => {
   const text = output.trim();
   const total = TOTAL_LINE.exec(text);
 
+  if (idle) return { ok: false, reason: `no output for ${Math.round(idle / 1000)}s` };
   if (timedOut) return { ok: false, reason: 'timed out' };
   if (total && Number(total[2]) === 0) return { ok: false, reason: 'ran zero cases' };
   if (status !== 0) return { ok: false, reason: CASE_LINE.test(text) ? 'failed' : 'crashed before its first case' };
@@ -55,7 +57,12 @@ export const judgeSuiteRun = ({ status, timedOut, output }) => {
   return { ok: true, reason: '' };
 };
 
-export const runSuite = (repo, suite, built, { script, onLine = () => {}, heartbeatMs = HEARTBEAT_MS } = {}) =>
+export const runSuite = (
+  repo,
+  suite,
+  built,
+  { script, onLine = () => {}, heartbeatMs = HEARTBEAT_MS, idleMs = IDLE_MS } = {},
+) =>
   new Promise((resolve) => {
     const started = Date.now();
     const child = spawn('node', [script ?? `${STUDIO_E2E}/${suite}.e2e.mjs`, ...(built ? ['--built', built] : [])], {
@@ -65,14 +72,21 @@ export const runSuite = (repo, suite, built, { script, onLine = () => {}, heartb
     let pending = '';
     let cases = 0;
     let timedOut = false;
+    let idle = 0;
+    let lastCase = '(none yet)';
+    let lastOutputAt = Date.now();
 
     const take = (chunk) => {
+      lastOutputAt = Date.now();
       output += chunk;
       pending += chunk;
       const lines = pending.split('\n');
       pending = lines.pop();
       for (const line of lines) {
-        if (CASE_LINE.test(line)) cases++;
+        if (CASE_LINE.test(line)) {
+          cases++;
+          lastCase = line;
+        }
         onLine(line);
       }
     };
@@ -84,6 +98,14 @@ export const runSuite = (repo, suite, built, { script, onLine = () => {}, heartb
       () => onLine(`... running, ${((Date.now() - started) / 1000).toFixed(0)}s, ${cases} case(s) done`),
       heartbeatMs,
     );
+    const watchdog = setInterval(
+      () => {
+        if (Date.now() - lastOutputAt < idleMs) return;
+        idle = Date.now() - lastOutputAt;
+        child.kill('SIGKILL');
+      },
+      Math.max(10, Math.min(idleMs / 4, 5000)),
+    );
     const timer = setTimeout(() => {
       timedOut = true;
       child.kill('SIGKILL');
@@ -91,10 +113,12 @@ export const runSuite = (repo, suite, built, { script, onLine = () => {}, heartb
 
     child.on('close', (status) => {
       clearInterval(beat);
+      clearInterval(watchdog);
       clearTimeout(timer);
       resolve({
-        ...judgeSuiteRun({ status, timedOut, output }),
-        timedOut,
+        ...judgeSuiteRun({ status, timedOut, idle, output }),
+        timedOut: timedOut || idle > 0,
+        lastCase,
         seconds: (Date.now() - started) / 1000,
         tail: output.trim().split('\n').slice(-6).join('\n'),
       });
@@ -155,7 +179,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
           console.log(
             `${run.ok ? 'PASS' : run.timedOut ? 'TIMEOUT' : 'FAIL'} ${suite} (${run.seconds.toFixed(0)}s)${run.ok ? '' : ` - ${run.reason}`}`,
           );
-          if (!run.ok) console.log(run.tail.replace(/^/gm, '  '));
+          if (!run.ok)
+            console.log(
+              `  last case reached: ${run.lastCase}\n  suite sha ${tree.sha}\n${run.tail.replace(/^/gm, '  ')}`,
+            );
           results.push({ suite, status: run.ok ? 'pass' : 'fail' });
         }
       } catch (error) {

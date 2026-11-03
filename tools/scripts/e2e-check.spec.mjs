@@ -103,3 +103,12 @@ test('the result line carries the sha the suite ran at and no worktree is left b
   assert.ok(out.split('\n').some((line) => line.startsWith('E2E ') && line.includes(`suite sha ${sha}`)));
   assert.equal(sh(repo, 'worktree', 'list'), before);
 });
+
+test('a suite that goes silent is killed after the idle limit and names the last case it reached', async () => {
+  const result = await run(`console.log('PASS  first case'); await new Promise(() => setInterval(() => {}, 1000));`, {
+    idleMs: 300,
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /^no output for \d+s$/);
+  assert.equal(result.lastCase, 'PASS  first case');
+});
