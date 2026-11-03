@@ -4037,6 +4037,20 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      the server's ready line, and each timing case does exactly one warm-up load outside the budget. Until then a
      canvas TIMEOUT with no case reached proves nothing about the sha, which also applies to the B254 hang.
 
+320. Sketching the variant-cell loading state (B253, 421c6cfaa, builder, 2026-11-03) hit four tool gaps.
+     (1) Variant b wants the canvas-frames loading mark, but an element may not import from another element and
+     canvas-frames exports no loadingBadge, so b copies the spinner markup. Decision (technical): if Tom picks b, the
+     merge first extracts components/loading-mark (pixel-free) and both canvas-frames and variant-cell use it; no copy
+     is merged. (2) There is no `sketch target remove`: a second target that the layer rule refuses stays in the sketch
+     and blocks ready as "draws the same pixels as Aktuell", so the agent edited sketch.json and deleted files by hand.
+     Decision B272: `sketch target remove <part>`, and `sketch target add` refuses a target that would break the layer
+     rule up front; spec: add then remove gives an identical sketch.json. (3) "no looping motion in loading" does not
+     say how to fix it. Decision: the refusal prints the exact `motions` line to add; folded into B264. (4) The 14 px
+     SDK spinner reports CLIPPED on its own internals and needed data-et-skip. Decision B273: verify whether the clip is
+     inside the SDK component; if so, CLIPPED does not descend into SDK component hosts and the skip is removed. Low
+     priority, not queued: a change that only touches a part's declaration (B269's `controls: {}`) still needs a
+     manual copy into every open variant plus `sketch rebase --ported`.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
