@@ -322,6 +322,10 @@ when such an input defaults to sample data, an `…_SAMPLE` or `…_ROWS` identi
 `libs/cli/src/lib/design/system/rules/*-known.ts` and print as `(known)` warnings; a listed input that is bound or fixed
 again fails until it comes off the list.
 
+`et design check` fails with `ORPHAN-ENDPOINT` when the design server answers an endpoint that no app code calls. An
+endpoint built from a bare segment, `productUrl(address, 'comment')`, counts as called only when an app file calls the
+host function that builds it; an import alone does not count.
+
 After the checks, `et design check` lists the open points of each product: one line per part, with the total,
 for example `components/tree-row: 1 open comment (c-1); sketch ready, not merged`. A point is a
 comment the user has not resolved (an addressed one too, listed as `c-2 addressed, waits on the user`), or a sketch on the part that is not merged yet. A part outside `foundations/` without `implements` is
