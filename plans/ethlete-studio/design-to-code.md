@@ -4665,6 +4665,17 @@ none` on html, body and every element (the property is not inherited); the Tauri
      Same on `pages/system@pages-system-build-ready` (Tom, minutes later): 3 variants x 26 states = 78 frames. So
      Tom can judge no open sketch until B329.
 
+385. Tom (2026-11-04): the doc agent asked again whether a sketch round shows only the states it is about. Tom
+     decided that on 2026-10-30 (render-checks.md 4.48, option 1: a round opens with its question shown and only
+     the states it changes open at a readable scale; unchanged states fold behind a count with "Show all
+     states"). The fold part was built, the focus part was not, and finding 384 is the result. Why no tool caught
+     it: decisions live in several plan files (design-to-code.md, decisions-latest.md,
+     design-system-actions/*.md) and nothing makes a grill agent search them before it asks, and no check links a
+     decision to the slice that builds it. Tool fix: the doc-agent skill searches all `plans/ethlete-studio/**`
+     decisions for the topic before every grill question; B329 builds 4.48 option 1 in full, so the focus view is
+     the default and the live-frame cap is the guard; a decided-but-unbuilt decision gets a STATUS row the day it
+     is decided.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
