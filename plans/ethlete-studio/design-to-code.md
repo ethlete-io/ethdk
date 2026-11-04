@@ -4519,6 +4519,13 @@ the shot route answers an unclear text for a state the part lacks. Why no tool c
 part, but not a missing state. Fix (B341): a state the part lacks at HEAD answers 404 with "state <s> not in part <p>
 at HEAD".
 
+407\. Builder (2026-11-04, after B339 part 1, c0035f241): `studio:e2e` is 109/112. Three cases went red that were green
+after B321 (c348db743): Sketches and Large "pan beyond every edge of the content" (bottom edge), and Chip "first load
+creates one iframe per frame and aborts no frame request" (6 aborted requests). Suspects, not triaged: tonight's merges
+(fold-question b, title-bar c, system a), the frame cap's far cells, or the B339 commit. Why no tool caught it: finding
+395 again; no gate ran `studio:e2e` after a merge. Fix: B339's CI job, plus a post-merge run of the e2e cases for the
+merged part (B349). Decision (grill session, Tom afk): triage before B343; no case is rewritten without Tom's OK.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
