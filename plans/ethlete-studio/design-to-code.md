@@ -4512,10 +4512,11 @@ none` on html, body and every element (the property is not inherited); the Tauri
      `catchError(() => of([]))`. When the full listing failed or hit the 120 s timeout (`host/design.ts`), the empty
      fallback replaced the quick result that was already on screen. Fix a36530087: `sketchRead$` in
      `sketch-read.ts` keeps the last items on a failed listing and carries the error as `sketchesError`. Why no tool
-     caught it: no spec fails the full listing after a good quick listing, and nothing flags a `catchError` that
-     turns an error into an empty value. Tool fix (B316): a spec for "quick ok, full fails" that expects the items
-     and the error; a lint rule for the Studio app that rejects a `catchError` which returns an empty array, `of()`
-     or `EMPTY` without an error value.
+     caught it: the lint rule `ethlete/no-silent-catch-error` saw the bug, but Studio runs it as `warn`, and a
+     disable comment ("no listed sketches render as the existing empty list") silenced it; 28 such comments exist
+     in `apps/ethlete-studio/src`. The spec "quick ok, full fails" came only with a36530087
+     (`sketch-read.spec.ts`). Tool fix (B316, decided): the rule becomes `error` in Studio, and one pass reviews all
+     28 disable comments (error value or an accepted reason).
 
 371. Builder (2026-11-04, cause for the slow first sketch listing after finding 365): the quick listing takes about
      14 ms on an idle server, but it waits behind a running full listing. The full listing runs its rule checks
@@ -4527,6 +4528,21 @@ none` on html, body and every element (the property is not inherited); the Tauri
      B311 listing slice): the checks run in a worker thread with a 50 ms block budget for 200 sketches; a spec that
      times the quick listing during a full listing; a closed request aborts its server work; the frame grid draws
      from the quick listing targets.
+
+372. Tom (2026-11-04, about 15:05): after a full manual Studio restart on the dd708ee4a host, "Neu starten" showed
+     "Design-Server gestoppt" with the same English stale-build text as finding 369. Cause (builder): the host ran
+     the sha copy `tmp/studio-cli/5639952…` (`design_server.rs` start -> `studio_code.rs` cli_copy ->
+     `tools/scripts/studio-code.mjs cli-copy`). That copy came from an earlier script version (14:41), had no
+     `pinned-commit` file and so the old stale guard (`source-hash.ts`), which compared it with the dirty
+     `libs/cli`. With `libs/cli` dirty, `cliCopyPlan()` keeps the current copy, so it never builds a newer commit
+     while agents have uncommitted CLI work, which is the normal state. Recovery: the builder moved the copy to
+     `/tmp/studio-cli-stale/` and built 5bec01b89 into `tmp/studio-cli/` in a temp worktree. Why no tool caught it:
+     `studio-code.spec.mjs` tests `cliCopyPlan` only as a pure decision; no spec starts a copy against a dirty
+     `libs/cli`; the plan trusts any 40-hex directory; dd708ee4a was not run end to end ("Not verified: the real
+     Studio flow"). Tool fix (B318): a copy without `pinned-commit` counts as absent; with `libs/cli` dirty the plan
+     still builds the latest commit when the kept copy is older; a node spec that starts the copy against a temp
+     repo with a dirty `libs/cli` and expects a listening server; the stop text in German plus a recovery action
+     (the finding-369 sketch).
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 

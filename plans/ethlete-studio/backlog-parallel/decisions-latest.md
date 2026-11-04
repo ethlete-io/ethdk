@@ -1,5 +1,16 @@
 # Parallel backlog - latest decisions (Q203 and later)
 
+### Silent catchError decisions (Tom, 2026-11-04, finding 370)
+
+1. **Rule to error, one review pass:** `ethlete/no-silent-catch-error` goes from `warn` to `error` in
+   `apps/ethlete-studio/eslint.config.mjs`. One pass checks all 28 disable comments in `apps/ethlete-studio/src`:
+   each site either carries an error value (like `sketchRead$` in `sketch-read.ts`) or keeps a disable comment
+   whose reason a reviewer accepts (an empty list that is the real answer, for example "no open points"). Disable
+   comments stay allowed.
+2. **Uncommitted design files:** `.ethlete/design/studio/merged.json` and `pictures.json` (written 13:47 by a
+   design command after bbbc9d27f changed the `implements` path of `components/canvas-viewport`) are committed by
+   the builder as a follow-up of bbbc9d27f.
+
 ### UI without a design (Tom, 2026-11-04, finding 368)
 
 The interim failed-listing look (636234e22: "Vergleich fehlgeschlagen: <message>" per row, "Erneut laden" in the
