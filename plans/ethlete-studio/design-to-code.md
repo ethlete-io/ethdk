@@ -4440,6 +4440,20 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      server that restarts or times out. Tool fix (B310, after the cause): a scenario that restarts and slows the
      design server under a running Studio and fails on a busy main thread.
 
+365. Tom (2026-11-04, 14:04): after a Studio restart, Studio draws no frame content. pages/sketches r1 shows empty
+     cells with "vergleicht ..." forever; pages/system@pages-system-build-ready shows variant heads, no frames, but
+     "Wartet auf deine Wahl". curl gets `/__design/sketches?product=studio` with 200; inside the WKWebView the same
+     request and about 11 `comment-events` requests time out, and the vite HMR client reconnects many times.
+     WebContent is idle (0 % CPU), so no live JS loop. A later console showed about 170 failures "Fetch API cannot load http://localhost:4402/__design/render due to access
+     control checks" (define-call.ts:65) and about 100 vite HMR reconnects. Cause open; hypotheses: leaked `comment-events` EventSource
+     streams fill WebKit's per-host connection slots; the server holds SSE headers; the sketches listing blocks the
+     Node event loop. Why no tool caught it: no design-server log file; no headless way to read the WebView console
+     or network; every frame check runs in Chromium only (the Playwright WebKit build does not match), so a
+     WebKit-only fault passes; an empty cell has no failure state; `designAnswer$`
+     (apps/ethlete-studio/src/host/design.ts) has no timeout and swallows errors. Tool fix (B311): a design-server
+     log file; a headless WKWebView harness that reports console and network; a timeout and an error state for
+     every design request and every empty cell; the root-cause fix when proven.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
