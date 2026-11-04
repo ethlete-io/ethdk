@@ -54,10 +54,7 @@ These pains came from how the agent worked, not from the tool. Each one has a ru
   principle each reference contributes, what is specific to Studio and how the alternatives
   differ in concept. Review the candidates beside the reference to catch literal imitation.
   This supports human design judgment; no pixel-difference or render gate proves originality.
-- **Decision (Tom, 2026-10-30):** option 1, as a rule in the `ethlete-design-exploration` skill:
-  before a reference-led round is shown, the agent states the problem each reference solves, the
-  principle it takes from it, and how each variant differs in concept, then reviews the variants
-  beside the reference for literal copies. No fixed visual rubric.
+- ADR 0158: [A reference informs a design round, it is not a template](../../../apps/ethlete-studio/docs/adr/0158-a-reference-informs-a-design-round-it-is-not-a-template.md)
 - **Action at that turn:** record the negative feedback in the round note and handoff, leave
   the product unmerged and do not extend I/J into more states. This did not create a real
   rejection decision: I/J remained selectable. Tom corrected this false completion report;
