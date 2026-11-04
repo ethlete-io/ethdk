@@ -3,7 +3,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseStatusRows } from './studio-status.mjs';
 
-const FINDING_START = /^(\d+)\. /;
+const FINDING_START = /^(\d+)\\\. /;
 const DATE = /\b(\d{4})-(\d{2})-\d{2}\b/;
 
 export const doneFindingNumbers = (rows) => {
@@ -24,11 +24,7 @@ export const splitFindings = (planText) => {
       continue;
     }
     let end = i + 1;
-    while (end < lines.length) {
-      if (/^\s+\S/.test(lines[end])) end++;
-      else if (lines[end].trim() === '' && end + 1 < lines.length && /^\s+\S/.test(lines[end + 1])) end++;
-      else break;
-    }
+    while (end < lines.length && lines[end].trim() !== '' && !FINDING_START.test(lines[end])) end++;
     blocks.push({ number: Number(start[1]), from: i, to: end, lines: lines.slice(i, end) });
     i = end;
   }

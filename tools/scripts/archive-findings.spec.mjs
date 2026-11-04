@@ -22,19 +22,21 @@ const status = `| ID | Was | Stand | Wo |
 
 const plan = `# Plan
 
-10. Tom (2026-10-31): first finding
-    continues here.
+10\\. Tom (2026-10-31): first finding
+continues here.
 
-    second paragraph.
+11\\. Tom (2026-11-02): second
+body.
 
-11. Tom (2026-11-02): second
-    body.
+12\\. Tom (2026-11-02): shared with an open row.
 
-12. Tom (2026-11-02): shared with an open row.
-13. Tom (2026-11-03): not referenced.
+13\\. Tom (2026-11-03): not referenced.
 
-20. Tom (2026-11-03): range start.
-21. Tom (2026-11-03): range end.
+20\\. Tom (2026-11-03): range start.
+
+21\\. Tom (2026-11-03): range end.
+
+1. A decision list item.
 
 Prose after.
 `;
@@ -53,9 +55,24 @@ test('parses rows with ranges and slashes', () => {
   assert.deepEqual([...doneFindingNumbers(rows)].sort(), [10, 11, 20, 21]);
 });
 
-test('keeps multi-paragraph blocks together', () => {
+test('a finding runs to its blank line, and list items are no findings', () => {
   const blocks = splitFindings(plan);
-  assert.equal(blocks[0].lines.length, 4);
+  assert.deepEqual(
+    blocks.map((b) => b.number),
+    [10, 11, 12, 13, 20, 21],
+  );
+  assert.deepEqual(blocks[0].lines, ['10\\. Tom (2026-10-31): first finding', 'continues here.']);
+});
+
+test('reads a prettier-formatted plan', () => {
+  const formatted = readFileSync(
+    join(import.meta.dirname, 'fixtures/studio-findings/ok/plans/ethlete-studio/design-to-code.md'),
+    'utf8',
+  );
+  assert.deepEqual(
+    splitFindings(formatted).map((b) => b.number),
+    [157, 159, 160],
+  );
 });
 
 test('moves done findings, keeps open ones and the order', () => {
@@ -69,17 +86,18 @@ test('moves done findings, keeps open ones and the order', () => {
       [21, '2026-11'],
     ],
   );
-  assert.match(rest, /12\. Tom/);
-  assert.match(rest, /13\. Tom/);
+  assert.match(rest, /12\\\. Tom/);
+  assert.match(rest, /13\\\. Tom/);
   assert.match(rest, /Prose after\./);
-  assert.doesNotMatch(rest, /first finding|second paragraph|range start/);
+  assert.match(rest, /1\. A decision/);
+  assert.doesNotMatch(rest, /first finding|continues here|range start/);
 });
 
 test('appends to an existing month file', () => {
   const dir = mkdtempSync(join(tmpdir(), 'archive-'));
-  writeArchive(dir, [{ number: 1, month: '2026-11', text: '1. a' }]);
-  writeArchive(dir, [{ number: 2, month: '2026-11', text: '2. b' }]);
-  assert.equal(readFileSync(join(dir, 'findings-2026-11.md'), 'utf8'), '# Findings 2026-11\n\n1. a\n\n2. b\n');
+  writeArchive(dir, [{ number: 1, month: '2026-11', text: '1\\. a' }]);
+  writeArchive(dir, [{ number: 2, month: '2026-11', text: '2\\. b' }]);
+  assert.equal(readFileSync(join(dir, 'findings-2026-11.md'), 'utf8'), '# Findings 2026-11\n\n1\\. a\n\n2\\. b\n');
 });
 
 test('lists dated findings that no row cites', () => {
