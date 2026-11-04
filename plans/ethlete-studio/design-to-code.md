@@ -4325,6 +4325,14 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      one end-to-end hook run ("not verified" in the report). Lesson: a change to a git hook is done only after one
      real run of that hook; B295 shrinks the hook, so it carries this check.
 
+349. SDK fixer (2026-11-04, D11): `design check --product sdk` reports 5247 open points in 50 of 57 parts; 5104 are
+     missing motions between every pair of showcase states (for example badge filled -> tonal). Why it matters: the
+     noise hides the 143 real points, so nobody reads the list. Tool fix (technical, queued as B297): ask a motion
+     only for state pairs that a control or an interaction connects, or let a part mark states as showcase variants.
+350. SDK fixer (2026-11-04, D11): the check's auto-rebuild of a stale CLI went through the nx cache, restored the old
+     dist and then refused on it. Why no tool caught it: the B293 stale guard has no spec for a cache-restored dist.
+     Tool fix (technical, queued as B298): rebuild with --skip-nx-cache, with a spec.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
