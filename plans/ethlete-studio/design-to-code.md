@@ -4777,6 +4777,12 @@ than its frame). Why no tool caught it: the e2e checks the live frame count and 
 paints the same as its picture. Fix (B365): the e2e asserts for every live frame scrollLeft = scrollTop = 0 and iframe
 width = frame width, and compares the live paint with its picture once ready. App: a live frame counts as ready (ADR 0186) only if it matches its picture, and the cells of one state never mix live and picture.
 
+433\. Tom (2026-11-04, screenshot of `comparing-narrow` in `pages/sketches@merge-port`): "und hier? ist doch beides
+gleich". In this state the sample shows "vergleicht …" and no marks at all, so the new sample marks never paint, and
+"Aktuell" and "Variante a" look the same. Still the listing counts the state as changed (one of the 12 narrow states).
+Cause not yet known (asked the builder; suspect: the change mark comes from a changed source or data hash, not from a
+pixel difference). Why no tool caught it, and the fix: pending the cause.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
