@@ -521,3 +521,16 @@ Verified: the component spec. Not verified: the look against a design part, beca
   "Identical content in the part's own file" passed before already (the old code compared bytes).
 - Open: Studio does not draw the "Agent portiert nach Merge von <part>" mark; no design part draws it, so it needs a
   sketch. The mark is in the sketch listing (`portAfterMerge`).
+
+## As built: B351 (finding 410)
+
+- A missing `dist` of a `render.packages` folder fails at once: `entryOf` throws
+  ``design-explore: <dir> missing, run `nx build <folder name>`.``. The 60 s poll (`entryOfBuilt`,
+  `entryOfBuiltAsync`, `BUILD_WAIT_*`) is gone; the render worker's resolve hook and `mappedSubpathOf` call `entryOf`.
+  An installed package (`node_modules`) keeps its old "has no package.json" message.
+- Why the poll existed: commit 1d116d6b8 added it so a render survives a package that is mid-rebuild while the
+  server runs. Dropped by decision; the file watcher redraws after the rebuild settles.
+- Cache scope: none. The check is one `existsSync` per import, never stale, so a later build is picked up at once.
+- Specs (`render.spec.ts`, `node-modules-base.spec.ts`): message, 30 modules of a missing-dist fixture under 5 s,
+  a late build is picked up, installed message unchanged. The budget spec cannot start the compiled worker (needs
+  `nx build cli`); it runs the resolve path the worker calls.

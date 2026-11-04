@@ -7,7 +7,7 @@ import { buildFields } from './render-fields';
 import { keepCustomPropertyCase, quietDevModeNotice, shimMutationObserver } from './ssr-shims';
 import { parentPort, workerData } from 'worker_threads';
 import {
-  entryOfBuilt,
+  entryOf,
   extractRender,
   lookupImports,
   mapPackage,
@@ -56,7 +56,7 @@ registerHooks({
     const mapped = mapPackage({ specifier, packages, target });
 
     if (mapped) {
-      const url = pathToFileURL(entryOfBuilt(mapped)).href;
+      const url = pathToFileURL(entryOf(mapped)).href;
       watch(url);
 
       return { url, shortCircuit: true };

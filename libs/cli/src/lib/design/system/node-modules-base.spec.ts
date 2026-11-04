@@ -12,7 +12,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../paths';
-import { entryOfBuilt } from '../render-packages';
+import { entryOf } from '../render-packages';
 import { createDesignServer } from '../serve';
 import { resolveProduct } from './resolve-product';
 import { typecheckProduct, writeEditorTsconfig, writeSystemTsconfig } from './system-tsconfig';
@@ -77,19 +77,12 @@ describe('a base installed in node_modules', () => {
     expect(pathsOf()['@ethlete/components/design/*']).toBeUndefined();
   });
 
-  it('fails at once for a mapped package that is not installed, instead of waiting for a build', () => {
+  it('fails at once for a mapped package that is not installed', () => {
     const target = consumer();
 
-    expect(() =>
-      entryOfBuilt(
-        { dir: join(target, 'node_modules/@ethlete/query'), subpath: './design' },
-        {
-          sleep: () => {
-            throw new Error('waited');
-          },
-        },
-      ),
-    ).toThrow(/has no package\.json/);
+    expect(() => entryOf({ dir: join(target, 'node_modules/@ethlete/query'), subpath: './design' })).toThrow(
+      /has no package\.json/,
+    );
   });
 
   it('writes no editor tsconfig into the installed base, only into the product of the checkout', () => {
