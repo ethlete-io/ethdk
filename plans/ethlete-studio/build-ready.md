@@ -338,9 +338,7 @@ On the `studio-serve` tmux server (:4402), after S6b:
 
 ### Edit sketch decisions (2026-11-04)
 
-- A `<part>@edit` sketch (old/new after a direct edit) has no "Verwerfen" button. Picking `old` is the discard: the
-  merge writes the HEAD copy back into the part folder and records the hash, so the sketch does not reopen. Known
-  limit: `shared/` files are the working ones in both variants, so `old` does not undo a `shared/` edit.
+- ADR 0135: [Picking old is the discard of an edit sketch](../../apps/ethlete-studio/docs/adr/0135-picking-old-is-the-discard-of-an-edit-sketch.md)
 
 ## As built: B311 event-stream heartbeat (finding 365, part 1)
 
@@ -411,7 +409,7 @@ On the `studio-serve` tmux server (:4402), after S6b:
 - B318 4c1667672: a copy without `pinned-commit` counts as absent; a dirty `libs/cli` builds the last CLI commit
   when no copy of it exists; ensureCliCopy removes an unpinned directory of the same sha first. Tom: the
   "Neu starten" click is the approval of that build (32bdcdfe5). Verified: `node --test
-  tools/scripts/studio-code.spec.mjs` (end-to-end case with a fake build). Not verified: the real `nx build cli` path.
+tools/scripts/studio-code.spec.mjs` (end-to-end case with a fake build). Not verified: the real `nx build cli` path.
   Open: a clean tree without `dist/libs/cli` plans `copy` and copyDist throws - fix with the next slice in that file.
 - B319 a148d713e (cli b, c) + 7581b65e1 (studio a): `sketchPartOf()` resolves the part from `targetParts[0]`; `old`
   keeps HEAD's `shared/`; baselineOf uses review/go only at `merged[part]`, else draws HEAD and closes the edit sketch
