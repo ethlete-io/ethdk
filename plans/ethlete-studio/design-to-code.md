@@ -4369,6 +4369,20 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      machine-wide lock for heavy runs (pre-commit specs, `nx test`, `design check`), so a second run waits in a queue;
      the Studio start prints the load average and the heavy runs in progress when the dev server is late.
 
+355. Tom (2026-11-04): after the dev server came up, Studio showed only "Design-Server startet" for more than a
+     minute. Cause: the debug build sees an outdated `dist/libs/cli` (other sessions edit libs/cli) and first runs
+     `nx build cli`; under load that takes minutes. Why no tool caught it: the status has one word for every start
+     phase, so a rebuild looks like a hung server. Tool fix (technical, B303): the status names the phase ("CLI wird
+     gebaut", "Design-Server startet") and shows the elapsed time; a failed rebuild shows its error.
+
+356. Builder (2026-11-04, CI triage): the Studio gates failed in CI on pages/system. Pick b (c02c7aede) made the
+     open-points chip count the exceptions too ("49 offen" = 47 + 2); the app still drew "47 offen", so the
+     focus-visible states found no "49 offen" button. Why no tool caught it earlier: the visible gate classed such a
+     state as `undrivable` ("a problem of the part") and never failed on it; 1eb7277e8 brought that in with this exact
+     case in its spec, and the new VISIBLE-CHANGE slow rule also dropped undrivable states. Tool fix (done, 4d78306ab):
+     an undrivable state is a VISIBLE-CHANGE problem, and the part is not build-ready. Open app work: the live view
+     passes the real exception count to the chip (now 0); the other app lag from pick b goes into S6b.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
