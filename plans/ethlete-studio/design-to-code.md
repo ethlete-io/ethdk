@@ -4622,6 +4622,15 @@ on the picked variant of a decided sketch is allowed and keeps the decision.
 change on both sides). Why no tool caught it: `--ported` takes no variant and checks nothing. Fix (B344): `--ported
 <variant>`, or a refusal while an unported variant still conflicts, unless it is withdrawn or the sketch is picked.
 
+417\. Mac perf session (2026-11-04, B348, built Studio, pages/sketches with 100 cells, headless Chromium): zoom and pan
+are not slow on the Mac (p95 24 ms, no long task). Opening the sketch is: first cell 5.5-5.9 s on the Mac, 1.9 s on the
+desk, about 95 % server time. The page asks for `/__design/system` twice (4.0 s Mac / 1.3 s desk), and two
+`/__design/stamp` calls queue behind the first. Likely cause: the system build runs synchronous on the server thread
+(finding 409). Runs with the CDP profiler on are not valid as times (open 37 s, zoom p95 up to 225 ms on the Mac); use
+them for attribution only. Why no tool caught it: no check counts the requests a page makes before its first content.
+Fix (B350): one `/__design/system` request until the first cell, at most 300 ms on a warm server, and the
+`/@vite/client` ping stays under 100 ms during the open.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
