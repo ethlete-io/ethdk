@@ -4361,6 +4361,14 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      Tool fix (technical, B301): the hash covers only committed sources (git ls-files + HEAD blobs), so a dist built
      from HEAD passes while others edit; every agent brief forbids edits to build-info.json.
 
+354. Tom (2026-11-04): Studio did not start. `tauri dev` stopped with "Could not connect to http://localhost:4221/
+     after 180s". Cause: load average about 350 on the Mac. Many vitest runs at the same time: one pre-commit spec run
+     per commit of each session and subagent, plus a full `nx test cli`. The Angular dev server could not compile in
+     180 s. Why no tool caught it: each session and hook starts vitest on its own; nothing limits the number of test
+     runs on one machine, and the Studio start shows only the timeout, not the load. Tool fix (technical, B302): one
+     machine-wide lock for heavy runs (pre-commit specs, `nx test`, `design check`), so a second run waits in a queue;
+     the Studio start prints the load average and the heavy runs in progress when the dev server is late.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
