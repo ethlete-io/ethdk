@@ -44,8 +44,7 @@
   Toggle off gives today's full-page columns. Variant notes move under their column, so the
   header holds only the round title and the toggle. Open point: the trigger threshold.
   Recommended: half of the frame area, because a larger crop gains little.
-- **Decided (Tom, 2026-10-30):** build the Studio toggle as proposed. It is on by default when
-  the crop is less than half of the frame area.
+- ADR 0125: [A sketch round has a Changed area toggle](../../../apps/ethlete-studio/docs/adr/0125-a-sketch-round-has-a-changed-area-toggle.md)
 - **Studio built (2026-10-30, `claude-sdk58`):** "Changed area" button in each round header,
   crop from the new route `/__design/sketch-crop`. Specs only, not seen rendered. Pins, the
   changed-box outline and comment drafts follow the crop. Known gaps: below 25 % zoom the
@@ -56,10 +55,7 @@
   each round is stored in the sketch view state for the sketch's `createdAt`. A click on the
   whole-page thumbnail drafts at that page point, and a pin outside the crop sits on the
   thumbnail. Specs only, not seen rendered.
-- **Decision (Tom, 2026-10-30, crop size):** since 4.60 each change cluster has its own crop, and enlarging each
-  to the column width blurred small crops up to 33x. Keep the cap from `cbba0051d`: a crop is enlarged at most 2x
-  (`CROP_MAX_SCALE`) and keeps its own width; narrow crops leave empty space at the right. This replaces
-  "enlarged to the column width" above.
+- ADR 0126: [A changed-area crop is enlarged at most 2x](../../../apps/ethlete-studio/docs/adr/0126-a-changed-area-crop-is-enlarged-at-most-2x.md)
 
 ### 4.47 No enforceable design-completeness check for controls and their surfaces - open
 
@@ -186,23 +182,10 @@
        the first control with unreachable combinations.
   - **Rollout:** `controls` + `design complete` for `disclosure` on `pages/merge`, then
     discovery, the other kinds, exceptions, SDK reuse, and the `handoff` status with CI.
-- **Decided (Tom, 2026-10-30):** the proposal as written, with the recommendation for open
-  points 1, 2 and 4 to 6. Exceptions differ from point 3: no keychain signature. Only the
-  approve button in Studio writes an approval, and git shows every change to it.
-- **Decided (Tom, 2026-10-30), control ownership:** a control that a page draws through an embedded part
-  belongs to that part, automatically. Every rendered part root carries `data-et-part`; discovery gives each
-  control inside it to that part. A page declares only its own controls, and the owning part must pass
-  `design complete` itself. A page that restyles an owned control with its own CSS fails as
-  `CONTROL-OVERRIDDEN` and must declare that control. Merged parts change only through sketches after this.
-- **Decided (Tom, 2026-10-30), inventory approval view:** Studio shows the page's rest frame with a numbered
-  box over each control (green declared, red undeclared, amber unclassified) and a list beside it: number, id,
-  kind, inputs, surfaces, state count. One "approve inventory" button below. The approval stores the control
-  ids and the part hash in `.ethlete/design/<product>/inventory.json`; a new or removed control or a part edit
-  reopens it. A page with a red or amber box cannot be approved. No keychain signature.
-- **Decided (Tom, 2026-10-30), base part sketches:** a sketch made from an SDK base part
-  (`.ethlete/design/sdk/...`) merges into the base by default. A product override needs an explicit
-  `sketch new --override`. Next: a new sketch moves the `components/button` controls into the base, and the
-  studio copy `.ethlete/design/studio/components/button/button.ts` from `e304eb3d0` goes away.
+- ADR 0127: [Controls are declared, discovered and gated by design complete](../../../apps/ethlete-studio/docs/adr/0127-controls-are-declared-discovered-and-gated-by-design-complete.md)
+- ADR 0128: [A control drawn through an embedded part belongs to that part](../../../apps/ethlete-studio/docs/adr/0128-a-control-drawn-through-an-embedded-part-belongs-to-that-part.md)
+- ADR 0129: [The inventory approval view](../../../apps/ethlete-studio/docs/adr/0129-the-inventory-approval-view.md)
+- ADR 0130: [A sketch of an SDK base part merges into the base](../../../apps/ethlete-studio/docs/adr/0130-a-sketch-of-an-sdk-base-part-merges-into-the-base.md)
 - **Status:** slice 1 built: `definePart({ controls })`, the `data-et-control` and
   `data-et-surface` markers, and `design complete <layer>/<name>` for `disclosure` (hover,
   focus-visible, collapsed, visible body; a forced frame must differ from rest in the control's
@@ -219,9 +202,7 @@
   The page only draws what depends on its placement: the open body. A page control without
   `part` fails. Then `components/disclosure` gets the unchanged line, and `pages/merge` loses
   its two interaction states.
-- **Decided (Tom, 2026-10-30):** build the proposal. Built in `0788954d7` (`part` on a control,
-  `CONTROL-PART-MISSING`, `CONTROL-PART-INCOMPLETE`). `components/disclosure` is merged and
-  design complete (`826738337`).
+- ADR 0131: [Interactions belong to the component that draws the control](../../../apps/ethlete-studio/docs/adr/0131-interactions-belong-to-the-component-that-draws-the-control.md)
 - **Feedback (Tom, 2026-10-30):** the disclosure toggle lacks an `active` state. Pointer input
   should require `active` as well as `hover`.
 - **Status:** `pointer` requires `hover` and `active` (`INPUT_INTERACTIONS` in
@@ -396,9 +377,7 @@
 - **Status:** unchanged-row detection is fixed and live-verified below. Composer placement
   remains undecided. Further focus-region metadata and useful initial detail scale remain
   proposals, related to 4.43; the live API check does not verify those design requirements.
-- **Decision (Tom, 2026-10-30):** option 1. A sketch round opens with its question shown in
-  Studio and only the states it changes open at a readable scale; unchanged states fold behind a
-  count with "Show all states".
+- ADR 0132: [A sketch round opens on its question and the states it changes](../../../apps/ethlete-studio/docs/adr/0132-a-sketch-round-opens-on-its-question-and-the-states-it-changes.md)
 - **Live diagnosis (2026-10-30, during round 2):** a read-only request to Tom's
   `:4402/__design/sketches?product=studio` returned `targets[].unchanged: []` for A/B/C and
   the newly created D/E/F. The UI therefore receives no evidence to fold the old state rows;
@@ -432,10 +411,5 @@
   for a control kind that changes layout, for example a disclosure or a selection indicator.
 - **Open:** whether a still pair of states is enough evidence, or whether Studio must play the
   transition; and which kinds need one.
-- **Decision (Tom, 2026-10-30):** a still pair of states plus a `transitions` declaration is
-  enough evidence for now; Studio plays the transition in a later slice. The declaration is
-  optional: `design complete` requires it for no control kind until a concrete kind needs it.
-- **Amended (Tom, 2026-10-30):** the motion model of `plans/ethlete-studio/motion.md`
-  (2026-10-27) applies. The declaration is its `motions` field, not a new `transitions` field.
-  This finding is that plan's slice 1 (`motions`, the morph, `ctx` and the check rules); shots
-  and the Studio timeline follow as its later slices.
+- ADR 0133: [A still pair of states plus a transitions declaration is enough motion evidence](../../../apps/ethlete-studio/docs/adr/0133-a-still-pair-of-states-plus-a-transitions-declaration-is-enough-motion.md)
+- ADR 0134: [Motion between states is declared with the motions field](../../../apps/ethlete-studio/docs/adr/0134-motion-between-states-is-declared-with-the-motions-field.md)
