@@ -4,6 +4,7 @@ import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CALL_STAGES, newCall } from './new-call';
 import { statusPath } from './status';
+import { callTopLevelAwaitsOf } from './system/rules/top-level-await';
 
 const calls = (target: string) => join(target, '.ethlete/design/calls');
 
@@ -133,7 +134,8 @@ describe('newCall', () => {
     newCall({ target, argv: ['bare/one', '--stage', 'component'], invocation: 'et design' });
 
     expect(readFileSync(join(calls(target), 'app/one/variant-a.ts'), 'utf8')).toContain("imports: ['BUTTON_IMPORTS']");
-    expect(readFileSync(join(calls(target), 'bare/one/variant-a.ts'), 'utf8')).not.toContain('await ng(');
+    expect(readFileSync(join(calls(target), 'bare/one/variant-a.ts'), 'utf8')).not.toContain(' ng(');
+    expect(callTopLevelAwaitsOf(calls(target))).toEqual([]);
     expect(warn).toHaveBeenCalledOnce();
     expect(warn.mock.calls[0]?.[0]).toContain('`providers`');
   });

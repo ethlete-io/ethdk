@@ -36,6 +36,7 @@ import { unknownInteractionsOf } from './rules/interactions';
 import { kitOutsidePagesOf } from './rules/kit-outside-pages';
 import { inlineUiInPageProblemsOf, inlineUiInPageWarningsOf } from './rules/inline-ui-in-page';
 import { inlineSvgsOf } from './rules/inline-svg';
+import { topLevelAwaitsOf } from './rules/top-level-await';
 import { badMotionsOf, badUnreachableOf, hardCodedMotionOf, scriptedMotionOf } from './rules/motion';
 import { goneSketchCommentWarningsOf, staleCommentsOf, staleNotesOf } from './rules/stale-comment';
 import { gluedInterpolationsOf } from './rules/glued-interpolation';
@@ -83,6 +84,7 @@ const RULES = [
   flowProblemsOf,
   badSvgAssetsOf,
   inlineSvgsOf,
+  topLevelAwaitsOf,
   canonicalClassesOf,
   undefinedClassesOf,
   deniedClassesOf,

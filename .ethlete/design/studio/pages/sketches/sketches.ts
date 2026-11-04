@@ -33,7 +33,8 @@ import {
   rowHead,
   rowsOf,
   sameLabel,
-  takeStyles,
+  takeAction,
+  takeButton,
   wrapColumns,
   withSame,
   wrapStage,
@@ -54,7 +55,7 @@ type Props = {
   withdrawn?: Withdrawn;
 };
 
-type View = { selected?: RowKey; status: SketchStatus; comparing: boolean; withdrawn?: Withdrawn };
+type View = { selected?: RowKey; status: SketchStatus; comparing: boolean; withdrawn?: Withdrawn; take: string };
 
 const DRAWN: RowKey = 'b';
 
@@ -78,8 +79,6 @@ const treeOf = (selected: string) =>
     ],
   });
 
-const discard = await button.render({ label: 'Verwerfen', variant: 'transparent', size: 'sm', color: 'danger' });
-const chip = await zoomChip.render({ percent: 100, class: 'absolute right-space-3 bottom-space-3 z-3' });
 const pagePin = commentPinMark(pinProps(PAGE_PIN));
 
 const pickerOf = async (label: string) => {
@@ -94,22 +93,28 @@ const pickerOf = async (label: string) => {
     body: withAction(picker.body, { action: 'emit:roundChange', on: '.et-select-trigger' }),
   };
 };
-const pickers = {
-  wide: await pickerOf('Runde 1 · Suche und Update'),
-  narrow: await pickerOf('Runde 1 · Reset control: SDK button or own part'),
-};
 
 const tag = async (label: string) =>
   (await badge.render({ badges: [{ label, variant: 'tonal', size: 'sm' }] })) as { body: string; styles: string };
-const tags = {
-  drawing: await sketchStatusBadge('drawing'),
-  waiting: await sketchStatusBadge('waiting'),
-  paused: await sketchStatusBadge('paused'),
-  idle: await sketchStatusBadge('idle'),
-  fresh: await tag('neu'),
-};
+const controlsOf = async () => ({
+  discard: await button.render({ label: 'Verwerfen', variant: 'transparent', size: 'sm', color: 'danger' }),
+  chip: await zoomChip.render({ percent: 100, class: 'absolute right-space-3 bottom-space-3 z-3' }),
+  pickers: {
+    wide: await pickerOf('Runde 1 · Suche und Update'),
+    narrow: await pickerOf('Runde 1 · Reset control: SDK button or own part'),
+  },
+  tags: {
+    drawing: await sketchStatusBadge('drawing'),
+    waiting: await sketchStatusBadge('waiting'),
+    paused: await sketchStatusBadge('paused'),
+    idle: await sketchStatusBadge('idle'),
+    fresh: await tag('neu'),
+  },
+});
 
-const statusMarkup = (status: SketchStatus, reason: boolean) => {
+type Tags = Awaited<ReturnType<typeof controlsOf>>['tags'];
+
+const statusMarkup = (status: SketchStatus, reason: boolean, tags: Tags) => {
   if (status === 'paused') {
     return html`<span class="flex min-w-0 items-center gap-space-2">
       ${holdTrigger({ content: tags.paused.body, open: reason, action: reason ? 'paused' : 'paused-reason' })}
@@ -150,7 +155,7 @@ const pinFor = (row: Row) =>
 
 const headOf = (row: Row, view: View) => {
   const drawn = view.status === 'drawing' && row.key === DRAWN;
-  const action = drawn ? drawingMark : view.status === 'waiting' ? undefined : '';
+  const action = drawn ? drawingMark : view.status === 'waiting' ? view.take : '';
   const mark = view.comparing && row.key !== 'current' ? comparingMark : '';
   if (isWithdrawn(row, view.withdrawn)) return rowHead(row, withdrawnMark, mark);
   return rowHead(row, action, mark) + (drawn ? '' : pinFor(row));
@@ -300,6 +305,8 @@ export default definePart<Props>({
     sameOpen = false,
     withdrawn,
   }) => {
+    const { discard, chip, pickers, tags } = await controlsOf();
+    const take = await takeButton();
     const part = withSame(PARTS[kind], comparing ? [] : sameKeys);
     const rowStyles = await prepareShots(part);
     const side = await treeOf(part.key.replace('components/', ''));
@@ -308,7 +315,7 @@ export default definePart<Props>({
     const hiddenCount = withdrawnCount(all, withdrawn);
     const same = comparing ? [] : rows.filter(isSame);
     const shown = rows.filter((row) => !same.includes(row));
-    const view: View = { selected, status, comparing, withdrawn };
+    const view: View = { selected, status, comparing, withdrawn, take: takeAction(take.body) };
     const showWithdrawn =
       hiddenCount > 0
         ? ((await switchPart.render({
@@ -332,7 +339,7 @@ export default definePart<Props>({
         class="absolute z-3 top-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] right-space-5 flex items-center gap-space-3"
       >
         <span class="text-ui-lg font-ui-strong">${part.key}</span>
-        ${fresh ? tags.fresh.body : ''} ${statusMarkup(status, reason)}
+        ${fresh ? tags.fresh.body : ''} ${statusMarkup(status, reason, tags)}
         <span class="flex-1"></span>
         <span class="w-56 flex-none" data-sk-view-toggle-room></span>
         ${withAction(discard.body, 'emit:discard')}
@@ -386,7 +393,7 @@ export default definePart<Props>({
         pickers.wide.styles +
         showWithdrawn.styles +
         (toggle as { styles: string }).styles +
-        takeStyles +
+        take.styles +
         rowStyles +
         Object.values(tags)
           .map((entry) => entry.styles)

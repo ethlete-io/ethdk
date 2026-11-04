@@ -14,22 +14,20 @@ const OTHER_FLOWS = ['Kommentar beantworten', 'Produkt anlegen'];
 const shot = (step: Step, scale: number) =>
   embedPage(step.page, { state: step.state, width: 1440, height: 900, scale }).body;
 
-const picker = await select.render({
-  label: '',
-  size: 'sm',
-  value: 'desktop',
-  options: [{ value: 'desktop', label: 'Desktop · 1440 × 900' }],
-});
+export const presetPickerOf = async () => {
+  const picker = await select.render({
+    label: '',
+    size: 'sm',
+    value: 'desktop',
+    options: [{ value: 'desktop', label: 'Desktop · 1440 × 900' }],
+  });
 
-export const presetPicker = withAction(picker.body, { action: 'emit:presetChange', on: '.et-select-trigger' });
-
-export const presetPickerStyles = picker.styles;
+  return { ...picker, body: withAction(picker.body, { action: 'emit:presetChange', on: '.et-select-trigger' }) };
+};
 
 const caption = (text: string) => html`<span class="text-et-surface-muted text-ui-sm">${text}</span>`;
 
-const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
-
-export const emptyStyles = copy.styles;
+export const copyButton = () => button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
 
 const prompt = html`<p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
   Zeichne den Flow „Sketch prüfen“: von der Inbox über den Sketch bis zum gemergten Teil.
@@ -37,19 +35,20 @@ const prompt = html`<p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-
 const ghostBox = '<span class="block w-24 h-15 rounded-sm outline outline-et-surface-border bg-et-surface-bg"></span>';
 const ghostLine = '<span class="block w-10 h-px bg-et-surface-border"></span>';
 
-export const emptyCanvas = html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)">
-  <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
-    <div class="flex items-center gap-space-2" aria-hidden="true">
-      ${ghostBox}${ghostLine}${ghostBox}${ghostLine}${ghostBox}
+export const emptyCanvasOf = (copy: string) =>
+  html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)">
+    <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
+      <div class="flex items-center gap-space-2" aria-hidden="true">
+        ${ghostBox}${ghostLine}${ghostBox}${ghostLine}${ghostBox}
+      </div>
+      <p class="m-0 text-et-surface font-ui-strong text-ui-md">Noch keine Flows</p>
+      <p class="m-0 text-et-surface-muted">
+        Ein Flow verbindet Seiten und ihre Zustände zu einem Weg, den du von links nach rechts liest. Dein Agent legt
+        ihn an. Bitte ihn zum Beispiel so:
+      </p>
+      ${prompt} ${withAction(copy, 'emit:copyPrompt')}
     </div>
-    <p class="m-0 text-et-surface font-ui-strong text-ui-md">Noch keine Flows</p>
-    <p class="m-0 text-et-surface-muted">
-      Ein Flow verbindet Seiten und ihre Zustände zu einem Weg, den du von links nach rechts liest. Dein Agent legt ihn
-      an. Bitte ihn zum Beispiel so:
-    </p>
-    ${prompt} ${withAction(copy.body, 'emit:copyPrompt')}
-  </div>
-</div>`;
+  </div>`;
 
 export const emptySide = html`<p class="px-space-3 py-space-2 text-et-surface-muted text-ui-sm">Noch keine Flows.</p>`;
 

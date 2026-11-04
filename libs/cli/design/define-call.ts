@@ -372,7 +372,8 @@ export type CallVariant = {
   verdict?: 'chosen' | 'rejected';
   /** The `key` of the round that drew it. Left out by a call that runs no rounds. */
   round?: string;
-  load: () => Promise<{ default: Drawing }>;
+  /** A drawing that needs `ng()` default-exports a promise of it: a top-level `await` can hang WebKit when its frame is removed. */
+  load: () => Promise<{ default: Drawing | Promise<Drawing> }>;
 };
 
 /**

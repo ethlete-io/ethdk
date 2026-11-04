@@ -1,7 +1,6 @@
 import { embedPage, html, slot } from '@design-system';
 import { disclosureBodyClass } from '@system/components/disclosure';
 import canvasFrames from '@system/elements/canvas-frames';
-import partTree from '@system/elements/part-tree';
 
 export type Row = {
   part: string;
@@ -15,36 +14,32 @@ export type Row = {
 
 export const TARGET = { part: 'components/button', name: 'button', variant: 'b', note: 'Pill-Radius in jeder Größe' };
 
-const frames = await canvasFrames.render(canvasFrames.states.default);
 const emptySystem = embedPage('pages/system', { state: 'empty', width: 1440, height: 900 });
 
-export const CHANGED: Row[] = [
-  { part: 'elements/canvas-frames', state: 'default', instances: 18, width: 1440, height: 560, body: frames.body },
-  { part: 'pages/system', state: 'empty', instances: 1, width: 1440, height: 900, body: emptySystem.body },
-  {
-    part: 'pages/system',
-    state: 'onboarding',
-    instances: 1,
-    width: 1440,
-    height: 900,
-    body: emptySystem.body,
-    missing: 'now',
-  },
-];
+export const changedOf = async (): Promise<{ rows: Row[]; styles: string }> => {
+  const frames = await canvasFrames.render(canvasFrames.states.default);
+
+  return {
+    rows: [
+      { part: 'elements/canvas-frames', state: 'default', instances: 18, width: 1440, height: 560, body: frames.body },
+      { part: 'pages/system', state: 'empty', instances: 1, width: 1440, height: 900, body: emptySystem.body },
+      {
+        part: 'pages/system',
+        state: 'onboarding',
+        instances: 1,
+        width: 1440,
+        height: 900,
+        body: emptySystem.body,
+        missing: 'now',
+      },
+    ],
+    styles: frames.styles,
+  };
+};
 
 export const UNCHANGED = { part: 'pages/inbox', states: ['all', 'none'] };
 
 export const unchangedLabel = `${UNCHANGED.states.length} Zustände von ${UNCHANGED.part} ohne sichtbare Änderung`;
-
-export const rowStyles = frames.styles;
-
-export const buttonTree = await partTree.render({
-  layers: [
-    { title: 'Components', open: true, parts: [{ name: 'button', leaf: true, selected: true }] },
-    { title: 'Elements', open: false, parts: [] },
-    { title: 'Pages', open: false, parts: [] },
-  ],
-});
 
 export const shot = (row: Row, side: 'now' | 'after', scale: number, projected = true) =>
   html`<div

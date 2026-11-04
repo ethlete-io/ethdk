@@ -63,14 +63,16 @@ ${PLACEHOLDER_STYLES}
 const ngVariantFile = (key: string) => `import { css, drawing, html, ng } from '@design-explore';
 import { FIXTURE } from './fixture';
 
-const button = await ng(html\`<button et-button type="button">\${FIXTURE.title} · variant ${key}</button>\`, {
+const button = ng(html\`<button et-button type="button">\${FIXTURE.title} · variant ${key}</button>\`, {
   imports: ['BUTTON_IMPORTS'],
 });
 
-export default drawing({
-  body: html\`<div class="placeholder">\${button}</div>\`,
+export default button.then((markup) =>
+  drawing({
+    body: html\`<div class="placeholder">\${markup}</div>\`,
 ${PLACEHOLDER_STYLES}
-});
+  }),
+);
 `;
 
 /**

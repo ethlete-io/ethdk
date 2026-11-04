@@ -262,6 +262,10 @@ folder, writes an `<svg>` inline. Put the icon in `assets/` and draw it with a h
 foundations part exports. An `<svg>` that the code computes, for example the edges of a flow
 diagram, passes with a `data-et-drawing` attribute.
 
+`et design check` fails with `TOP-LEVEL-AWAIT` when a module a frame loads awaits at the top level: a part, a
+file it reaches, or a call variant. WebKit can hang for good when a frame is removed while such a module evaluates.
+A part awaits inside its `render`; a call variant default-exports a promise of its drawing.
+
 `et design check` fails with `INLINE-UI-IN-PAGE` when a page, a file its folder holds, or a `shared/` file it imports
 writes interactive UI as markup instead of embedding an element or component part: a `<button>`, `<input>`, `<select>`
 or `<textarea>`, a raw SDK tag such as `<et-switch>` or attribute such as `et-button`, or bare markup with an interactive

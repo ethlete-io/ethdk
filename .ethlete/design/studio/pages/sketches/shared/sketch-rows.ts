@@ -145,14 +145,15 @@ export const wrapStage = (part: SketchPart, row: Row, pending = false) =>
 export const wrapColumns = (part: SketchPart) =>
   Math.max(1, Math.min(4, part.states.length, Math.floor(1440 / part.width)));
 
-const take = await button.render({ label: 'Übernehmen', variant: 'outline', size: 'sm' });
-export const takeStyles = take.styles;
+export const takeButton = () => button.render({ label: 'Übernehmen', variant: 'outline', size: 'sm' });
+
+export const takeAction = (take: string) => html`<span class="flex">${withAction(take, 'emit:merge')}</span>`;
 
 export const comparingMark = html`<span class="text-ui-xs text-et-surface-muted whitespace-nowrap" data-sk-comparing
   >vergleicht …</span
 >`;
 
-export const rowHead = (row: Row, action?: string, mark = '') =>
+export const rowHead = (row: Row, action: string, mark = '') =>
   html`<div class="flex min-w-0 flex-col gap-space-2 in-data-sk-head-hidden:invisible" data-sk-row-head>
     <div class="flex flex-wrap items-center gap-x-space-2 gap-y-space-1">
       ${
@@ -174,7 +175,7 @@ export const rowHead = (row: Row, action?: string, mark = '') =>
     <p class="m-0 text-(length:--sk-note) leading-[1.35] text-et-surface-muted wrap-anywhere" data-sk-note>
       ${row.note}
     </p>
-    ${row.key === 'current' ? '' : (action ?? html`<span class="flex">${withAction(take.body, 'emit:merge')}</span>`)}
+    ${row.key === 'current' ? '' : action}
   </div>`;
 
 export type Zoom = 'fit' | number;

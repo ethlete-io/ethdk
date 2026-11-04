@@ -121,6 +121,21 @@ describe('checkDesign', () => {
 });
 
 describe('checkDesign --tsconfig', () => {
+  it('fails a call variant that awaits at the top level before it types the calls', async () => {
+    const target = checkout();
+
+    mkdirSync(join(target, '.ethlete/design/calls/app/one'), { recursive: true });
+    writeFileSync(join(target, '.ethlete/design/calls/app/one/variant-a.ts'), 'export const a = await 1;\n');
+
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await expect(checkDesign({ target, argv: ['--tsconfig'], invocation: 'et design' })).resolves.toBe(1);
+    expect(errors.mock.calls.flat().join('\n')).toContain(
+      'TOP-LEVEL-AWAIT .ethlete/design/calls/app/one/variant-a.ts: design module uses top-level await (line 1)',
+    );
+    errors.mockRestore();
+  });
+
   it('types each variant of an open sketch and prints the tsc output of the one that fails', async () => {
     const target = mkdtempSync(join(tmpdir(), 'cli-design-check-sketch-'));
 

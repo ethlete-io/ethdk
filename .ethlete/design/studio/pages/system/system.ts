@@ -21,24 +21,23 @@ import {
 } from './shared/open-points';
 import { approvalControl, buttonExceptions, callView, exceptionRows, type Approval } from './shared/capabilities';
 
-const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
-
 const ghostBox = '<span class="block w-15 h-10 rounded-sm outline outline-et-surface-border bg-et-surface-bg"></span>';
 
-const emptyCanvas = html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)">
-  <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
-    <div class="grid grid-cols-2 gap-space-2" aria-hidden="true">${ghostBox}${ghostBox}${ghostBox}${ghostBox}</div>
-    <p class="m-0 text-et-surface font-ui-strong text-ui-md">Noch keine Teile</p>
-    <p class="m-0 text-et-surface-muted">
-      Das Design-System eines Produkts wächst in Schichten: Foundations, Components, Elements und Pages. Dein Agent
-      zeichnet jeden Teil als Sketch, du wählst unter Sketches. Bitte ihn zum Beispiel so:
-    </p>
-    <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
-      Lege die Foundations für studio an: Farben, Schrift und Abstände.
-    </p>
-    ${withAction(copy.body, 'emit:copyPrompt')}
-  </div>
-</div>`;
+const emptyCanvasOf = (copy: string) =>
+  html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)">
+    <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
+      <div class="grid grid-cols-2 gap-space-2" aria-hidden="true">${ghostBox}${ghostBox}${ghostBox}${ghostBox}</div>
+      <p class="m-0 text-et-surface font-ui-strong text-ui-md">Noch keine Teile</p>
+      <p class="m-0 text-et-surface-muted">
+        Das Design-System eines Produkts wächst in Schichten: Foundations, Components, Elements und Pages. Dein Agent
+        zeichnet jeden Teil als Sketch, du wählst unter Sketches. Bitte ihn zum Beispiel so:
+      </p>
+      <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
+        Lege die Foundations für studio an: Farben, Schrift und Abstände.
+      </p>
+      ${withAction(copy, 'emit:copyPrompt')}
+    </div>
+  </div>`;
 
 const chip = async (open: PartOpenPoints, pressed: boolean, focused: boolean, acting: boolean, exceptions: number) => {
   const count = open.points.length + exceptions;
@@ -322,13 +321,14 @@ export default definePart<{
     }
 
     if (empty) {
+      const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
       const menu = await studioMenu({ open: false });
       const shell = await shellMain.render({
         studio: menu.body,
         section: 'System',
         product: 'studio',
         side: emptySide,
-        content: emptyCanvas,
+        content: emptyCanvasOf(copy.body),
       });
 
       return drawing({ body: shell.body, setup: menu.setup, styles: shell.styles + menu.styles + copy.styles });

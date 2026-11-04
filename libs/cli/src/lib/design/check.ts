@@ -1,14 +1,15 @@
 import { execFileSync } from 'child_process';
 import { mkdirSync, writeFileSync } from 'fs';
-import { dirname, relative } from 'path';
+import { dirname, relative, resolve } from 'path';
 import { chromiumOf } from './browser';
 import { writeCallsTsconfig } from './calls-tsconfig';
-import { DEFAULT_PORT, DesignConfig, portOf, readConfig } from './paths';
+import { callsRootOf, DEFAULT_PORT, DesignConfig, portOf, readConfig } from './paths';
 import { buildStampOf, serverProblemOf } from './stamp';
 import { holdStatus, writeStatus } from './status';
 import { checkSystemRendered } from './system/check-system';
 import { liveUncoveredOf, uncoveredFindingLineOf } from './system/live-uncovered';
 import { appCanonicalClassesOf } from './system/rules/canonical-class';
+import { callTopLevelAwaitsOf } from './system/rules/top-level-await';
 import { partKeyOf, resolveProduct } from './system/resolve-product';
 import { typecheckVariant } from './system/sketch/check-sketches';
 import { listSketches, Sketch } from './system/sketch/sketch';
@@ -270,6 +271,14 @@ const runChecks = async (options: {
     } catch (error) {
       return fail(`LINT\n${outputOf(error) || processFailureOf(error)}`);
     }
+  }
+
+  const awaits = callTopLevelAwaitsOf(slug ? resolve(callsRootOf(target), slug) : callsRootOf(target));
+
+  if (awaits.length > 0) {
+    return fail(
+      awaits.map((problem) => `${problem.rule} ${relative(target, problem.file)}: ${problem.message}`).join('\n'),
+    );
   }
 
   if (tsconfig) {

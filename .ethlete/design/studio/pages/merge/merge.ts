@@ -7,17 +7,7 @@ import disclosureStyles from '@system/components/disclosure.css?inline';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import { icon } from '@system/foundations/icons';
-import {
-  CHANGED,
-  TARGET,
-  type Row,
-  picked,
-  rowCaption,
-  rowStyles,
-  shot,
-  unchangedBody,
-  unchangedLabel,
-} from './merge-data';
+import { TARGET, changedOf, type Row, picked, rowCaption, shot, unchangedBody, unchangedLabel } from './merge-data';
 import kit from './merge-kit.css?inline';
 import styles from './merge.css?inline';
 
@@ -26,30 +16,34 @@ type Props = { unchanged: boolean; error?: string; selected?: number; merging?: 
 const SCALE = 0.37;
 const CROP_SCALE = 2;
 
-const merge = await button.render({ label: 'Merge', variant: 'filled', size: 'sm' });
-const mergeBusy = await button.render({ label: 'Merge', variant: 'filled', size: 'sm', loading: true });
 const ARROW = icon('arrow-left', { size: 14 });
-const back = await button.render({
-  label: `${ARROW}<span>Zurück zum Sketch</span>`,
-  variant: 'transparent',
-  size: 'sm',
-});
-const instance = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
 
-const crop: Row = {
+const buttonsOf = async () => ({
+  merge: await button.render({ label: 'Merge', variant: 'filled', size: 'sm' }),
+  mergeBusy: await button.render({ label: 'Merge', variant: 'filled', size: 'sm', loading: true }),
+  back: await button.render({
+    label: `${ARROW}<span>Zurück zum Sketch</span>`,
+    variant: 'transparent',
+    size: 'sm',
+  }),
+  instance: await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' }),
+});
+
+type Buttons = Awaited<ReturnType<typeof buttonsOf>>;
+
+const cropRowOf = (instance: string): Row => ({
   part: 'pages/system',
   state: 'empty',
   instances: 1,
   width: 266,
   height: 64,
   body: html`<div class="contents" ${slot('crop')}>
-    <div class="flex items-center justify-center w-full h-full" data-et-demo>${instance.body}</div>
+    <div class="flex items-center justify-center w-full h-full" data-et-demo>${instance}</div>
   </div>`,
-};
+});
 
-const noCrop: Row = { ...crop, body: '' };
-
-const cropOf = (row: Row, side: 'now' | 'after') => shot(row.missing === side ? noCrop : crop, side, CROP_SCALE, false);
+const cropOf = (row: Row, side: 'now' | 'after', crop: Row) =>
+  shot(row.missing === side ? { ...crop, body: '' } : crop, side, CROP_SCALE, false);
 
 const addedShot = (row: Row) =>
   html`<div
@@ -62,9 +56,16 @@ const addedShot = (row: Row) =>
 
 const ERROR = `${TARGET.part} hat sich seit dem Sketch geändert. Lass deinen Agent den Sketch rebasen.`;
 
-const panelOf = (unchanged: boolean, error: string, selected: Row, merging: boolean) =>
+const panelOf = (
+  buttons: Buttons,
+  changed: Row[],
+  unchanged: boolean,
+  error: string,
+  selected: Row,
+  merging: boolean,
+) =>
   html`<div class="flex flex-col gap-space-2 h-full box-border px-space-1 pt-space-1 pb-space-2">
-    <div class="mg-d-back flex">${withAction(back.body, 'emit:back')}</div>
+    <div class="mg-d-back flex">${withAction(buttons.back.body, 'emit:back')}</div>
     <div class="flex flex-col gap-space-2 pb-space-3 border-b border-et-surface-border">
       <span class="font-code text-(length:--text-sm)">${TARGET.part}</span>
       <span class="flex items-center gap-space-2 text-et-surface-muted text-ui-xs"
@@ -73,14 +74,14 @@ const panelOf = (unchanged: boolean, error: string, selected: Row, merging: bool
     </div>
     <span class="text-et-surface-muted text-ui-xs">Geändert</span>
     <ul class="flex flex-col gap-0.5 m-0 p-0 list-none">
-      ${CHANGED.map((row) => listRow({ content: rowCaption(row, true), selected: row === selected })).join('')}
+      ${changed.map((row) => listRow({ content: rowCaption(row, true), selected: row === selected })).join('')}
     </ul>
     <div data-et-skip="WRAP">
       ${disclosure({ label: unchangedLabel, body: unchangedBody, open: unchanged, size: 'xs' })}
     </div>
     <span class="flex-1"></span>
     <div class="flex flex-col gap-space-3 pt-space-3 border-t border-et-surface-border">
-      ${withAction(merging ? mergeBusy.body : merge.body, 'emit:merge')}${error ? html`<p class="m-0 text-et-theme-ink text-ui-xs" data-et-semantic-color="error">${error}</p>` : ''}
+      ${withAction(merging ? buttons.mergeBusy.body : buttons.merge.body, 'emit:merge')}${error ? html`<p class="m-0 text-et-theme-ink text-ui-xs" data-et-semantic-color="error">${error}</p>` : ''}
     </div>
   </div>`;
 
@@ -101,7 +102,10 @@ export default definePart<Props>({
     row: { kind: 'row', part: 'components/list-row' },
   },
   render: async ({ unchanged, error = '', selected = 1, merging = false }) => {
-    const row = CHANGED[selected] ?? CHANGED[0];
+    const changed = await changedOf();
+    const buttons = await buttonsOf();
+    const crop = cropRowOf(buttons.instance.body);
+    const row = changed.rows[selected] ?? changed.rows[0];
     const content = row
       ? html`<div class="mg-c-page flex flex-col gap-space-5 h-full box-border overflow-hidden">
           <header class="flex flex-col gap-space-1">
@@ -122,7 +126,7 @@ export default definePart<Props>({
           </div>
           <div class="flex flex-col gap-space-2">
             <span class="text-et-surface-muted text-ui-xs">Instanz 1 von ${row.instances} · 200 %</span>
-            <div class="flex gap-space-4">${cropOf(row, 'now')}${cropOf(row, 'after')}</div>
+            <div class="flex gap-space-4">${cropOf(row, 'now', crop)}${cropOf(row, 'after', crop)}</div>
           </div>
         </div>`
       : '';
@@ -133,7 +137,7 @@ export default definePart<Props>({
       studio: menu.body,
       section: 'Sketches',
       product: 'studio',
-      side: row ? panelOf(unchanged, error, row, merging) : '',
+      side: row ? panelOf(buttons, changed.rows, unchanged, error, row, merging) : '',
       content,
     });
 
@@ -143,11 +147,11 @@ export default definePart<Props>({
       styles:
         shell.styles +
         menu.styles +
-        back.styles +
-        merge.styles +
-        instance.styles +
+        buttons.back.styles +
+        buttons.merge.styles +
+        buttons.instance.styles +
         loaderStyles +
-        rowStyles +
+        changed.styles +
         disclosureStyles +
         kit +
         styles,

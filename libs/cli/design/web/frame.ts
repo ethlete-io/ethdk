@@ -114,10 +114,13 @@ const drawCall = async (): Promise<Drawing | null> => {
   const variant: CallVariant | undefined = (await call()).default.variants.find((o) => o.key === key);
   if (!variant) return failMissing(`design-explore: call "${slug}" has no variant "${key}"`);
 
-  return variant.load().then(
-    (module) => withNgStyles(module.default),
-    (error: unknown) => fail(`design-explore: variant "${key}" failed\n${messageOf(error)}`),
-  );
+  return variant
+    .load()
+    .then((module) => module.default)
+    .then(
+      (drawn) => withNgStyles(drawn),
+      (error: unknown) => fail(`design-explore: variant "${key}" failed\n${messageOf(error)}`),
+    );
 };
 
 const composeParam = product ? params.get('compose') : null;

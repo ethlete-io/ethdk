@@ -73,10 +73,16 @@ you draw a part, look for it in this order, and draw new only when none of them 
 2. The real SDK components, rendered on the design server with `ng()` from `@design-explore`:
 
    ```ts
-   const field = await ng(`<et-form-field><et-label>Name</et-label><et-input /></et-form-field>`, {
+   const field = ng(`<et-form-field><et-label>Name</et-label><et-input /></et-form-field>`, {
      imports: ['FORM_FIELD_IMPORTS', 'INPUT_IMPORTS'],
    });
+
+   export default field.then((body) => drawing({ body }));
    ```
+
+   Never `await` at the top level of a design module: WebKit can hang for good when a frame is
+   removed while the module evaluates, and `et design check` fails it with `TOP-LEVEL-AWAIT`. A
+   call default-exports a promise of its drawing; a part awaits inside its `render`.
 
    The template is a real Angular template, and `imports` names exports of
    `@ethlete/components`. The project's `providers` module in `config.json` supplies the themes.
@@ -90,13 +96,10 @@ you draw a part, look for it in this order, and draw new only when none of them 
    field shows its errors only when it is touched:
 
    ```ts
-   const form = await ng(
-     `<et-form-field><et-label>Email</et-label><et-input [formField]="fields.email" /></et-form-field>`,
-     {
-       imports: ['FORM_FIELD_IMPORTS', 'INPUT_IMPORTS'],
-       fields: { email: { value: 'ada@', errors: [{ kind: 'email', message: 'Not an email' }], touched: true } },
-     },
-   );
+   const form = ng(`<et-form-field><et-label>Email</et-label><et-input [formField]="fields.email" /></et-form-field>`, {
+     imports: ['FORM_FIELD_IMPORTS', 'INPUT_IMPORTS'],
+     fields: { email: { value: 'ada@', errors: [{ kind: 'email', message: 'Not an email' }], touched: true } },
+   });
    ```
 
 3. Only then a new drawing. Build it from the two above, and say in the variant's `claim`
