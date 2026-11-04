@@ -4449,6 +4449,12 @@ name in the wrong form. Fix (B341): the route accepts the folder name as a sketc
 "no sketch <x>; did you mean <id>" from the listing. Lesson: an error must name the input it could not resolve, not a
 cause further down.
 
+397\. Builder (2026-11-04, B323): the ready sketch `components/title-bar@code-notice` has a round note that says
+"b = Punkt am Update-Bereich", but variant b draws the dot on the "Neu starten" button. Why no tool caught it:
+`sketch ready` does not compare the round note with the variants, and that is not checkable by a tool; and no command
+corrects a round note without reopening the sketch. Fix: the `sketch note --round` part of B114 edits a round note
+of a ready sketch and keeps it ready. Until then the doc agent tells Tom the correct text when it shows the sketch.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
