@@ -6,6 +6,11 @@
    the real event stream of `et design serve` for 90 s and fails on any close. The job runs only when
    `apps/ethlete-studio` or the design CLI change (path filter). No local-only hook, because WebKit faults only show
    on a Mac and a hook can be skipped.
+2. **Slow machines through budgets, not speed:** checks assert work budgets that hold on any machine, not wall-clock
+   speed: the design server stays responsive during a listing, and no synchronous block exceeds 50 ms on a
+   deliberately large fixture (about 200 sketches), so the fault shows on a fast CI runner too. No artificial CPU or
+   network throttle (slow and flaky). Tom's 2019 Intel MacBook Pro (i7-9750H) stays the natural slow-machine test:
+   every fault found only there becomes a new budget check.
 
 ### Person names in the product (Tom, 2026-11-04, finding 362)
 
