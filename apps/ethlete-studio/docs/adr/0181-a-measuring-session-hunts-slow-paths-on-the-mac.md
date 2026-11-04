@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B348
+open: none
 decided: 2026-11-04
 source: grill session 2026-11-04, Tom: "mein rechner hier ist ja ziemlich stark, das hat kaum einer. der mac ist eher ein realer testcase"
 ---
