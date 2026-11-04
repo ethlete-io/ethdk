@@ -27,7 +27,21 @@ import {
   enableAnchoredOverlayPositionExtras,
 } from '@ethlete/core';
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
-import { Subject, filter, fromEvent, map, merge, switchMap, takeUntil, tap, timer } from 'rxjs';
+import {
+  EMPTY,
+  Subject,
+  defer,
+  filter,
+  fromEvent,
+  map,
+  merge,
+  mergeMap,
+  switchMap,
+  take,
+  takeUntil,
+  tap,
+  timer,
+} from 'rxjs';
 import { OverlayConfig, OverlayRef, anchoredOverlayStrategy } from '../../overlay';
 import { mountFloatingPanelStyles } from '../../overlay/floating-panel-styles.component';
 import { mountFloatingTipStyles } from '../../overlay/floating-tip-styles.component';
@@ -303,19 +317,36 @@ export class TooltipDirective {
       .subscribe();
   }
 
-  /**
-   * Escape is consumed here rather than left to the runtime: a shown tooltip counts as the topmost
-   * overlay, so a dialog beneath it would otherwise ignore the key - and a hover-shown tooltip has no
-   * focused host for a host listener to catch it on.
-   */
   private dismissOnEscape(overlayRef: OverlayRef<TooltipComponent, unknown>) {
+    const root = this.document.documentElement;
+
     fromEvent<KeyboardEvent>(this.document, 'keydown', { capture: true })
       .pipe(
         takeUntil(overlayRef.afterClosed()),
         filter((event) => event.key === 'Escape' && !event.defaultPrevented),
-        tap((event) => {
-          event.preventDefault();
-          this.hide();
+        mergeMap((event) => {
+          if (event.target === this.document) {
+            event.preventDefault();
+            this.hide();
+
+            return EMPTY;
+          }
+
+          // Prevented on the root element, after the hosts on the path have seen an unprevented
+          // Escape but before the overlay runtime's document listener, so a dialog beneath stays open.
+          // The root listener must be subscribed before hide() can complete this stream.
+          return merge(
+            fromEvent<KeyboardEvent>(root, 'keydown').pipe(
+              take(1),
+              filter((rootEvent) => rootEvent === event),
+              tap((rootEvent) => rootEvent.preventDefault()),
+            ),
+            defer(() => {
+              this.hide();
+
+              return EMPTY;
+            }),
+          );
         }),
         takeUntilDestroyed(this.destroyRef),
       )

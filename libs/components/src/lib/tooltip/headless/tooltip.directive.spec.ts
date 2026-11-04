@@ -254,7 +254,7 @@ describe('TooltipDirective inside a modal overlay', () => {
 
     expect(tooltipCount()).toBe(1);
 
-    return { closedVia: () => closedVia };
+    return { closedVia: () => closedVia, trigger };
   };
 
   it('Escape dismisses a hover-shown tooltip and leaves the dialog beneath it open', async () => {
@@ -271,6 +271,21 @@ describe('TooltipDirective inside a modal overlay', () => {
     await driver.settle();
 
     expect(closedVia()).toBe('escape');
+  });
+
+  it('leaves Escape unprevented for the host it bubbles through and still keeps the dialog open', async () => {
+    const { closedVia, trigger } = await openDialogWithHoveredTooltip();
+    let preventedAtHost: boolean | null = null;
+
+    trigger.addEventListener('keydown', (event) => (preventedAtHost = event.defaultPrevented));
+
+    const event = pressKey(trigger, 'Escape');
+    await driver.settle();
+
+    expect(preventedAtHost).toBe(false);
+    expect(event.defaultPrevented).toBe(true);
+    expect(tooltipCount()).toBe(0);
+    expect(closedVia()).toBeNull();
   });
 
   it('a backdrop press closes the dialog while a tooltip is shown inside it', async () => {
