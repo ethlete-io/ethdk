@@ -11,6 +11,7 @@ import {
   input,
   numberAttribute,
   signal,
+  untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -83,6 +84,8 @@ export class CarouselDirective {
     },
   );
 
+  private pendingGoToIndex = signal<number | null>(null);
+
   items = contentChildren(CAROUSEL_ITEM_TOKEN);
 
   activeItem = computed(() => this.items()[this.activeIndex()] || null);
@@ -152,6 +155,18 @@ export class CarouselDirective {
   });
 
   constructor() {
+    effect(() => {
+      if (this.isNavigationLocked()) return;
+
+      const pending = this.pendingGoToIndex();
+      if (pending === null) return;
+
+      untracked(() => {
+        this.pendingGoToIndex.set(null);
+        this.goTo(pending);
+      });
+    });
+
     effect(() => {
       const entries = this.hostElementIntersection();
       if (!this.pauseAutoPlayOnHidden()) {
@@ -240,7 +255,12 @@ export class CarouselDirective {
   }
 
   goTo(index: number) {
-    if (this.isNavigationLocked()) return;
+    if (this.isNavigationLocked()) {
+      this.pendingGoToIndex.set(index);
+      return;
+    }
+
+    this.pendingGoToIndex.set(null);
 
     this.transitionDirection.set(this.activeIndex() < index ? 'right' : 'left');
 
