@@ -3,8 +3,7 @@
 - **Pain:** variant c of "Many states" groups rows ("States by interaction", "Rest only") by
   inference; a grouping by kind and end mark cannot be declared.
 - **Fix option:** optional `groups` on `StateGrid`, only if Tom picks a grouped look.
-- **Decision (Tom, 2026-10-30):** not built. Folded unchanged states and the question-first
-  review view (4.48) already give the overview.
+- ADR 0137: [StateGrid gets no row groups](../../apps/ethlete-studio/docs/adr/0137-stategrid-gets-no-row-groups.md)
 
 ### 5.50 Studio's danger colour fails contrast on its dark surfaces - fixed
 
