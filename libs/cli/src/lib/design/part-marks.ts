@@ -19,7 +19,9 @@ export const markPartSource = (options: { code: string; key: string; marker: str
 
   const named = Array.from(code.matchAll(NAMED_EXPORT), ([, , name]) => name ?? '');
   const reexports = named
-    .map((name) => `const __etNamed_${name} = __etMarkNamed(${name}, ${JSON.stringify(key)});\n`)
+    .map(
+      (name) => `const __etNamed_${name} = __etMarkNamed(${name}, { key: ${JSON.stringify(key)}, part: __etPart });\n`,
+    )
     .join('');
   const exported = named.map((name) => `__etNamed_${name} as ${name}`).join(', ');
 

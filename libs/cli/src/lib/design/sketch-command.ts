@@ -29,6 +29,7 @@ import {
   aktuellPlaceholderWarnings,
   identicalRenderLines,
   identicalRenders,
+  sampleMarkDriftLines,
   shotsShowNoChange,
   variantsThatDoNotLoad,
 } from './ready-shots';
@@ -694,6 +695,13 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
 
   if (unloaded.length > 0) return fail(`${unloaded.join('\n')}\n${sketch.target} does not load - fix it before ready`);
 
+  const drifts = await sampleMarkDriftLines({ target: context.target, config: context.config, product, sketch });
+
+  if (drifts.length > 0)
+    return fail(
+      `${drifts.join('\n')}\n${sketch.target} draws one sample with different marks - align them before ready`,
+    );
+
   const identical = await identicalRenderLines({ target: context.target, config: context.config, product, sketch });
 
   if (identical.length > 0)
@@ -1149,7 +1157,10 @@ const checked = async (context: Context) => {
       ...[roundNoteRefusalOf(sketch) ?? []].flat(),
     ]);
 
-    if (!failed && unloaded.length === 0) refuse(await identicalRenderLines({ target, config, product, sketch }));
+    if (!failed && unloaded.length === 0) {
+      refuse(await sampleMarkDriftLines({ target, config, product, sketch }));
+      refuse(await identicalRenderLines({ target, config, product, sketch }));
+    }
 
     if (!failed && refused === before) {
       const problem = roundNotReadyProblemOf(sketch);

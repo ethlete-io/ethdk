@@ -16,6 +16,7 @@ import { renderIssuesOf } from './system/render-check';
 vi.mock('./ready-shots', () => ({
   aktuellPlaceholderWarnings: vi.fn(async (): Promise<string[]> => []),
   identicalRenderLines: vi.fn(async (): Promise<string[]> => []),
+  sampleMarkDriftLines: vi.fn(async (): Promise<string[]> => []),
   identicalRenders: vi.fn(async (): Promise<{ variant: string; sibling: string | null; line: string }[]> => []),
   shotsShowNoChange: vi.fn(async (): Promise<true | string> => 'variant a changes default'),
   variantsThatDoNotLoad: vi.fn(async (): Promise<string[]> => []),

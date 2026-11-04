@@ -623,6 +623,11 @@ without a visible difference, which `sketch ready` merges by itself. The Studio 
 state (the current part's states first), so `sketch ready` also refuses a variant whose first shown state draws like
 the current part's or an earlier variant's: make a state the variant changes its first state.
 
+`sketch ready` also refuses (`SAMPLE-MARK-DRIFT`) while one sample carries different marks in two states of a
+target. A part opts in with `sample: { id: 'sample', marks: ['same', 'look'] }`: every instance a host draws with a
+prop `sample` is identified by that value, and its `marks` props must be equal in every state of the host. A host state
+that shows another sample passes another id. The line names the part, the id, both states and the differing marks.
+
 The agent that drew such a variant takes it out of the open set with `et design sketch withdraw <part> --variant <key>
 --by <model id>`. It refuses unless `--by` is a model id (not `designer`) that drew the variant, and the variant draws
 the same pixels as a sibling variant in its first changed state. `sketch.json` keeps it as a rejection with the status
@@ -632,7 +637,7 @@ nor a model id (`claude-…`, `gpt-…`, `gemini-…`, `codex-…`).
 
 `sketch check` skips a withdrawn or rejected variant and prints one `NOTE <target> <variant>: withdrawn, not checked` (or `rejected, not checked`) line for it. `sketch check` fails on the same `UNUSED` problems. It warns of every other reason `sketch ready` would refuse that
 does not depend on the sketch's status, as `ready will refuse: <reason>` lines, and still passes: a variant that does
-not load, an open point a live variant adds, a running round without a note, and a variant that adds nothing visible
+not load, an open point a live variant adds, a running round without a note, a sample whose marks drift, and a variant that adds nothing visible
 or that the sketch view shows like another. Its last line then reads `check ok - ready will refuse <count> (see
 above)`. A hold and an already `ready` sketch are refused only by `sketch ready`.
 

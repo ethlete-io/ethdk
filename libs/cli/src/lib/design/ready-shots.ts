@@ -6,6 +6,7 @@ import { ResolvedProduct } from './system/resolve-product';
 import { aktuellPlaceholderWarningsOf } from './system/sketch/aktuell-placeholders';
 import { IdenticalRender, identicalRendersOf } from './system/sketch/identical-renders';
 import { sketchShowsNoChange, variantLoadProblemsOf } from './system/sketch/no-visible-change';
+import { sampleMarkDriftLinesOf } from './system/sketch/sample-mark-drift';
 import { Sketch } from './system/sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
 
@@ -35,6 +36,34 @@ export const variantsThatDoNotLoad = async (options: {
     });
   } catch (error) {
     return [`the variants failed to load: ${error instanceof Error ? error.message : String(error)}`];
+  } finally {
+    await server?.close();
+  }
+};
+
+/** Renders each target of each live variant on a render server of its own; see `sampleMarkDriftLinesOf`. */
+export const sampleMarkDriftLines = async (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  sketch: Sketch;
+}): Promise<string[]> => {
+  const { target, config, product, sketch } = options;
+  let server: Awaited<ReturnType<typeof createDesignServer>> | undefined;
+
+  try {
+    const live = await createDesignServer({ target, config, listen: false });
+
+    server = live;
+
+    return await sampleMarkDriftLinesOf({
+      product,
+      sketch,
+      load: ({ file, product: name, sketch: drawn }) =>
+        live.ssrLoadModule(productModuleIdOf({ file, product: name, sketch: drawn })),
+    });
+  } catch (error) {
+    return [couldNotRender(sketch, error)];
   } finally {
     await server?.close();
   }

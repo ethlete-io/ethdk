@@ -7,6 +7,7 @@ import {
   aktuellPlaceholderWarnings,
   identicalRenderLines,
   identicalRenders,
+  sampleMarkDriftLines,
   shotsShowNoChange,
   variantsThatDoNotLoad,
 } from './ready-shots';
@@ -20,6 +21,7 @@ vi.mock('./ready-shots', () => ({
   aktuellPlaceholderWarnings: vi.fn(async (): Promise<string[]> => []),
   identicalRenderLines: vi.fn(async (): Promise<string[]> => []),
   identicalRenders: vi.fn(async (): Promise<{ variant: string; sibling: string | null; line: string }[]> => []),
+  sampleMarkDriftLines: vi.fn(async (): Promise<string[]> => []),
   shotsShowNoChange: vi.fn(async (): Promise<true | string> => 'variant a changes default'),
   variantsThatDoNotLoad: vi.fn(async (): Promise<string[]> => []),
 }));
@@ -434,6 +436,29 @@ describe('designSketch', { timeout: 120_000 }, () => {
 
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines.some((line) => line.includes('ROUND-NOT-READY'))).toBe(false);
+  });
+
+  it('refuses ready while a sample draws different marks in two states, and check warns of it', async () => {
+    const target = acme();
+    const lines = output();
+    const drift =
+      'SAMPLE-MARK-DRIFT components/button a components/button: elements/cell "a hover" draws same=false in narrow but same=true in merged - give it the same marks in every state, or another id where the state shows another sample';
+
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void lines.push(String(line)));
+    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    vi.mocked(sampleMarkDriftLines).mockResolvedValueOnce([drift]);
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines.at(-1)).toBe(
+      `${drift}\ncomponents/button draws one sample with different marks - align them before ready`,
+    );
+
+    vi.mocked(sampleMarkDriftLines).mockResolvedValueOnce([drift]);
+    lines.length = 0;
+
+    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines).toContain(`ready will refuse: ${drift}`);
+    expect(lines.at(-1)).toBe('check ok - ready will refuse 1 (see above)');
   });
 
   it('refuses ready while a variant adds nothing visible, and check warns of it', async () => {

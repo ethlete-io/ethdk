@@ -47,6 +47,7 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  * `data-et-skip="CLIPPED"` on it; the check then ignores that element and everything inside it.
  * `contrast` feeds the contrast check of `design check`, see `PartContrast`.
  * `implements` links the part to the code that builds it, see `PartLink`.
+ * `sample` makes an embedded instance of the part comparable across the states of its host, see `PartSample`.
  */
 export type Part<TProps, TState extends string = string> = {
   note: string;
@@ -66,6 +67,7 @@ export type Part<TProps, TState extends string = string> = {
   omits?: { option: keyof TProps & string; value: string; reason: string }[];
   rules?: PartRule<TState>[];
   implements?: PartLink;
+  sample?: PartSample<TProps>;
   render: (props: TProps, options?: RenderOptions) => DrawnPart | Promise<DrawnPart>;
 };
 
@@ -74,6 +76,14 @@ export type Part<TProps, TState extends string = string> = {
  * names its route and, for `design compare`, the presentational `component` it renders. `design check` fails on a
  * path that does not exist, and lists a part without a link as open.
  */
+/**
+ * The prop `id` a host passes to name an embedded instance, and the props `marks` that carry its sample marks. Every
+ * state of one host that draws the same `id` must pass the same `marks`: `design sketch check` warns and
+ * `design sketch ready` refuses with `SAMPLE-MARK-DRIFT` otherwise. A host state that shows another sample passes
+ * another `id`.
+ */
+export type PartSample<TProps> = { id: keyof TProps & string; marks: readonly (keyof TProps & string)[] };
+
 export type PartLink = `${string}.component.ts` | { route: `/${string}`; component?: `${string}.component.ts` };
 
 /** What `play` of a motion may use, so Studio controls time: `at` schedules `fn` at `ms` into the motion on the tool's clock, `random` is seeded, `rect` measures a selector in the `from` state. */
@@ -160,8 +170,9 @@ export type RenderOptions = { interaction?: Interaction };
 
 type PartSource<TProps, TState extends string, TColumn extends string> = Omit<
   Part<TProps, TState>,
-  'states' | 'grid' | 'controls' | 'motions' | 'rules' | 'render' | 'frame'
+  'states' | 'grid' | 'controls' | 'motions' | 'rules' | 'render' | 'frame' | 'sample'
 > & {
+  sample?: PartSample<NoInfer<TProps>>;
   frame?: (body: string, props: NoInfer<TProps>) => string;
   motions?: Record<string, Motion<NoInfer<TState>>>;
   rules?: PartRule<NoInfer<TState>>[];

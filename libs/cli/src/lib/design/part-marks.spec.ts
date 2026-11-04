@@ -70,7 +70,7 @@ describe('markPartSource', () => {
         'const __etPart = definePart({});\n' +
         'import { markNamed as __etMarkNamed, markPart as __etMarkPart } from "/m.ts";\n' +
         'export default __etMarkPart(__etPart, "a/b");\n' +
-        'const __etNamed_a = __etMarkNamed(a, "a/b");\nconst __etNamed_b = __etMarkNamed(b, "a/b");\n' +
+        'const __etNamed_a = __etMarkNamed(a, { key: "a/b", part: __etPart });\nconst __etNamed_b = __etMarkNamed(b, { key: "a/b", part: __etPart });\n' +
         'export { __etNamed_a as a, __etNamed_b as b };\n',
     );
   });

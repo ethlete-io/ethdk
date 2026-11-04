@@ -125,6 +125,23 @@ const slotProps = (value: unknown, { key, depth = 0 }: { key: string; depth?: nu
   return value;
 };
 
+const SAMPLES = Symbol.for('@ethlete/cli/design/samples');
+
+/** Reports `props` to the sample recorder a check installs, when the part declares a `sample` and the props carry its `id`. */
+const recordSample = ({ key, part }: { key: string; part: unknown }, props: unknown) => {
+  const record = (globalThis as Record<symbol, unknown>)[SAMPLES];
+  const sample = isPlainObject(part) ? part['sample'] : undefined;
+
+  if (typeof record !== 'function' || !isPlainObject(sample) || !isPlainObject(props)) return;
+
+  const id = props[String(sample['id'])];
+  const marks = Array.isArray(sample['marks']) ? (sample['marks'] as unknown[]).map(String) : [];
+
+  if (typeof id !== 'string' || id === '') return;
+
+  record({ part: key, id, marks: Object.fromEntries(marks.map((mark) => [mark, props[mark] ?? null])) });
+};
+
 const markDrawing = <TDrawing extends Drawing>(drawn: TDrawing, key: string): TDrawing =>
   typeof drawn?.body === 'string' ? { ...drawn, body: markBody(drawn.body, key) } : drawn;
 
@@ -143,6 +160,8 @@ export const markPart = <TProps, TState extends string>(
   return {
     ...part,
     render: (props: TProps, options?: RenderOptions) => {
+      recordSample({ key, part }, props);
+
       const drawn = render.call(part, slotProps(props, { key }) as TProps, options);
 
       return drawn instanceof Promise ? drawn.then((done) => markDrawing(done, key)) : markDrawing(drawn, key);
@@ -156,12 +175,14 @@ const markOutput = (output: unknown, key: string) =>
 /**
  * `value` as a named export of the part `key`: a function whose markup, or drawing body, comes back with its first
  * element marked as the root of `key`, and the markup of its arguments as slotted into `key`. Any other value, a
- * class included, stays as it is.
+ * class included, stays as it is. A call whose first argument carries the `sample` id of `part` is reported as a sample.
  */
-export const markNamed = <T>(value: T, key: string): T => {
+export const markNamed = <T>(value: T, { key, part }: { key: string; part?: unknown }): T => {
   if (typeof value !== 'function' || /^class\b/u.test(Function.prototype.toString.call(value))) return value;
 
   return function (this: unknown, ...args: unknown[]) {
+    recordSample({ key, part }, args[0]);
+
     const output = value.apply(
       this,
       args.map((arg) => slotProps(arg, { key })),
