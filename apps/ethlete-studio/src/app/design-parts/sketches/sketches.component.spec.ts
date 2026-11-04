@@ -209,6 +209,15 @@ describe('SketchesComponent', () => {
     expect(root.querySelector<HTMLElement>('[data-sk-stage]')?.style.gridTemplateColumns).toBe('repeat(1, 1440px)');
   });
 
+  it('turns the rows into columns for a wide part, but not for a width no frame has reported yet', async () => {
+    const wide = ROWS.map((row) => ({ ...row, width: 4000 }));
+    const sized: HTMLElement = (await render({ rows: wide })).nativeElement;
+    const unsized: HTMLElement = (await render({ rows: wide.map((row) => ({ ...row, sized: false })) })).nativeElement;
+
+    expect(sized.querySelector('[data-sk-matrix]')).not.toBeNull();
+    expect(unsized.querySelector('[data-sk-matrix]')).toBeNull();
+  });
+
   it('shows a state neither dimmed nor first changed while its compare is pending', async () => {
     const pending = ROWS.map((row) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: null })) }));
     const root: HTMLElement = (await render({ camera: '100', rows: pending })).nativeElement;

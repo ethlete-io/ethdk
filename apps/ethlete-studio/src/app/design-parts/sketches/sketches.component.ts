@@ -243,7 +243,10 @@ export class SketchesComponent {
   private widest = computed(() => Math.max(1, ...this.shownRows().map((row) => row.width)));
   private listWidth = computed(() => this.listSize().client?.width ?? 0);
   protected listMeasured = computed(() => this.listWidth() > 0);
-  public transposed = computed(() => this.listWidth() > 0 && this.widest() > this.listWidth() / TRANSPOSE_SHARE);
+  private sizedWidest = computed(() =>
+    Math.max(0, ...this.shownRows().flatMap((row) => (row.sized === false ? [] : [row.width]))),
+  );
+  public transposed = computed(() => this.listWidth() > 0 && this.sizedWidest() > this.listWidth() / TRANSPOSE_SHARE);
   protected matrixStates = computed(() => [
     ...new Set(this.shownRows().flatMap((row) => row.shots.map((shot) => shot.state))),
   ]);

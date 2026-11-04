@@ -10,6 +10,7 @@ export type SketchRow = {
   note: string;
   model?: SketchModel;
   width: number;
+  sized?: boolean;
   shots: SketchShot[];
 };
 

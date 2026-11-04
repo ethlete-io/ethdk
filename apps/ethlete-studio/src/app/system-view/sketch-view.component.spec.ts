@@ -192,6 +192,18 @@ describe('SketchViewComponent', () => {
     expect(root.querySelectorAll('img[data-shot-picture]').length).toBe(94);
   });
 
+  it('makes no frame live while the listing names the sketch without its targets', async () => {
+    const { fixture, root } = await render({ ...ROUNDED, targets: undefined }, noComments);
+
+    expect(root.querySelectorAll('[data-shot]').length).toBeGreaterThan(0);
+    expect(root.querySelectorAll('iframe[data-state]').length).toBe(0);
+
+    fixture.componentRef.setInput('sketch', ROUNDED);
+    await settle(fixture);
+
+    expect(root.querySelectorAll('iframe[data-state]').length).toBeGreaterThan(0);
+  });
+
   it('lists the near keys in row order up to the cap', () => {
     expect(liveShotsOf({ order: ['a 1', 'a 2', 'b 1', 'b 2'], near: new Set(['b 2', 'a 2', 'b 1']), cap: 2 })).toEqual([
       'a 2',

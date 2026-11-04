@@ -453,10 +453,12 @@ export class SketchViewComponent {
   protected liveShots = computed(
     () =>
       new Set(
-        liveShotsOf({
-          order: this.sketchRows().flatMap((row) => row.shots.map((shot) => `${row.key} ${shot.state}`)),
-          near: this.nearShots(),
-        }),
+        this.sketch().targets === undefined && this.listError() === null
+          ? []
+          : liveShotsOf({
+              order: this.sketchRows().flatMap((row) => row.shots.map((shot) => `${row.key} ${shot.state}`)),
+              near: this.nearShots(),
+            }),
       ),
   );
 
@@ -506,6 +508,13 @@ export class SketchViewComponent {
     const sketch = this.sketch();
     const measured = this.measured();
     const ratios = this.pictureRatios();
+    const sizes = Object.entries(measured);
+    const tallestOf = (state?: string) =>
+      widestOf(
+        sizes.filter(([key]) => state === undefined || key.endsWith(` ${state}`)).map(([, size]) => size.height),
+      );
+    const tallest = tallestOf();
+    const partWidth = widestOf(sizes.map(([, size]) => size.width));
 
     return this.sketchRows().map((row) => {
       const author = row.key === CURRENT ? undefined : sketch.variantInfo?.[row.key]?.authors?.[0];
@@ -513,7 +522,8 @@ export class SketchViewComponent {
       const sizeOf = (state: string) => measured[`${row.key} ${state}`];
       const when = sketch.report?.variant === row.key ? whenOf(sketch.report.updatedAt) : undefined;
 
-      const width = row.width ?? widestOf(row.shots.map((shot) => sizeOf(shot.state)?.width)) ?? FALLBACK_SIZE.width;
+      const known = row.width ?? widestOf(row.shots.map((shot) => sizeOf(shot.state)?.width)) ?? partWidth;
+      const width = known ?? FALLBACK_SIZE.width;
 
       return {
         key: row.key,
@@ -522,13 +532,16 @@ export class SketchViewComponent {
           ? { model: { short: modelNameOf(author), id: author, agent, ...(when ? { when } : {}) } }
           : {}),
         width,
+        sized: known !== undefined,
         shots: row.shots.map(({ state, changed }) => {
           const ratio = ratios[`${row.key} ${state}`];
 
           return {
             state,
             changed,
-            height: sizeOf(state)?.height ?? (ratio ? Math.round(ratio * width) : MEASURING_HEIGHT),
+            height:
+              sizeOf(state)?.height ??
+              (ratio ? Math.round(ratio * width) : (tallestOf(state) ?? tallest ?? MEASURING_HEIGHT)),
           };
         }),
       };
