@@ -29,6 +29,7 @@
     "et:design": "node tools/scripts/et-design.mjs",
     "lint:changesets": "node ./tools/scripts/lint-changesets.js && node ./tools/scripts/check-changeset-coverage.js",
     "lint:cli-related-map": "node ./tools/scripts/cli-related-map.mjs check",
+    "lint:studio-label-specs": "node ./tools/scripts/studio-label-specs.mjs",
     "lint:css-properties": "node ./tools/scripts/lint-css-properties.js",
     "lint:size": "node ./tools/scripts/check-size-budget.mjs",
     "prepare": "husky",
