@@ -1,13 +1,15 @@
 {
   "components/error-toast": {
-    "hash": "6c84f7059293204c",
+    "hash": "3025b6195c76a889",
     "files": {
       ".ethlete/design/studio/components/error-toast/error-toast.ts": "23790e62a432eeb0",
-      "libs/components/design/button.ts": "ce30348dc93a258d",
+      "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/icon.ts": "829a95253b948ba9",
+      "libs/components/design/loader.ts": "05dd66f547119eb5",
       "libs/components/design/notification.ts": "66f46c03a15c6daa",
       "libs/components/src/lib/button/button-properties-styles.component.css": "83b177f186fcba5e",
-      "libs/components/src/lib/button/button.component.css": "a001a99c33842289",
+      "libs/components/src/lib/button/button.component.css": "3fdffd80ea5224a1",
+      "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
       "libs/components/src/lib/button/icon-button.component.css": "5078362cb58dd2df",
       "libs/components/src/lib/button/text-button.component.css": "9a6a4820c65b5c58",
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "9d05c7ab83fe167d",
@@ -17,29 +19,34 @@
       "libs/components/src/lib/icon/headless/icon-styles.component.css": "c137a7a10599dc3f",
       "libs/components/src/lib/icon/headless/times-icon.ts": "52047c20b1cf421d",
       "libs/components/src/lib/icon/headless/triangle-exclamation-icon.ts": "2ddf3400138f653a",
+      "libs/components/src/lib/loader/brand-loader/brand-loader.component.css": "0451148d909d800c",
+      "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "37abbab5cfec62a0",
       "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "7b1734d6a041ee8f",
-      "libs/components/src/lib/notification/notification.component.css": "0b65a939252b001a",
+      "libs/components/src/lib/notification/notification.component.css": "83e9531f127def4f",
       "libs/core/design/interactive-styles.ts": "781528322bd34499",
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "8baece3a25375ed8",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
     },
-    "by": "claude-opus-5-5",
-    "at": "2026-11-01T21:48:15.197Z"
+    "at": "2026-11-04T22:16:15.862Z"
   },
   "components/zoom-chip": {
-    "hash": "4ef6e54e4c50c89c",
+    "hash": "9c7c17809d132757",
     "files": {
-      ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "10cf796195954e40",
-      "libs/components/design/button.ts": "ce30348dc93a258d",
+      ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "19bbff1fd616fad7",
+      "libs/components/design/button.ts": "48f441533cf5bb8f",
+      "libs/components/design/loader.ts": "05dd66f547119eb5",
       "libs/components/src/lib/button/button-properties-styles.component.css": "83b177f186fcba5e",
-      "libs/components/src/lib/button/button.component.css": "a001a99c33842289",
+      "libs/components/src/lib/button/button.component.css": "3fdffd80ea5224a1",
+      "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
       "libs/components/src/lib/button/icon-button.component.css": "5078362cb58dd2df",
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "9d05c7ab83fe167d",
+      "libs/components/src/lib/loader/brand-loader/brand-loader.component.css": "0451148d909d800c",
+      "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "37abbab5cfec62a0",
+      "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "7b1734d6a041ee8f",
       "libs/core/design/interactive-styles.ts": "781528322bd34499",
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "8baece3a25375ed8",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
     },
-    "by": "claude-opus-5-5",
-    "at": "2026-11-01T20:57:33.936Z"
+    "at": "2026-11-04T22:16:36.062Z"
   }
 }

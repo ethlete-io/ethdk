@@ -136,6 +136,7 @@ export const cell = (part: SketchPart, row: Row, state: string, place = '', pend
     same: !pending && unchanged(row, state),
     first: !pending && state === firstChanged(row),
     place,
+    sample: pending ? undefined : `${part.key} ${row.key} ${state}${isSame(row) ? ' unchanged' : ''}`,
   });
 
 export const wrapStage = (part: SketchPart, row: Row, pending = false) =>

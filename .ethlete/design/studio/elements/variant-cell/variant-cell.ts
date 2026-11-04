@@ -11,6 +11,7 @@ type Props = {
   first?: boolean;
   place?: string;
   loading?: boolean;
+  sample?: string;
 };
 
 export const variantCellStyles = styles + loaderStyles;
@@ -84,6 +85,7 @@ export default definePart({
   },
   motions: { loading: { from: 'loading', to: 'loading' } },
   controls: {},
+  sample: { id: 'sample', marks: ['look', 'same', 'first'] },
   instant: 'A cell dims or gains its mark at once when the comparison ends.',
   frame: (body) =>
     html`<div
