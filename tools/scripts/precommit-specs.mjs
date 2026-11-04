@@ -46,7 +46,10 @@ const DOCS_ONLY = /^(plans\/|apps\/docs\/|\.changeset\/)|\.md$/;
 
 export const isDocsOnly = (files) => files.every((file) => DOCS_ONLY.test(file));
 
-export const timedOutSpecs = (output) => {
+const ANSI = /\x1b\[[0-9;]*m/g;
+
+export const timedOutSpecs = (rawOutput) => {
+  const output = rawOutput.replace(ANSI, '');
   const failures = output.match(/^\s*(?:Error|AssertionError|TypeError)\b.*$/gm) ?? [];
   const specs = [...output.matchAll(/^\s*FAIL\s+(?:\|[^|\s]+\|\s+)?(\S+\.spec\.\w+)/gm)].map((match) => match[1]);
   const onlyTimeouts = failures.length > 0 && failures.every((line) => /timed out in \d+ms/.test(line));
