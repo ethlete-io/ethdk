@@ -4314,6 +4314,17 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      (technical): the CLI rebuilds or refuses when its dist is older than the libs/cli sources, as the gate does for
      the libs, with a spec. Built as B293. B287 closed with no app change.
 
+347. Builder (2026-11-04, B254, 5a28fbee9): when the design server cannot load a variant's part module, the variant has
+     no frames, so Studio showed no render-error badge and still offered Übernehmen on the broken variant. Fixed:
+     erroredVariantsOf also counts targets with `error`. Why no tool caught it: `sketch ready`/`sketch check` reject an
+     unloadable variant only at ready time, on the CLI's own server; a variant that breaks later shows nothing in
+     Studio. Tool fix (technical, queued as B296): Studio treats every server-reported part error as pick-blocking
+     through one frame-error path, not per view.
+348. Builder (2026-11-04, B291 push 1): B292's parallel VitePress build writes apps/docs/.vitepress/.temp while
+     `docs:lint` reads it (ENOENT); fixed in 2a06c3914. Why no tool caught it: the hook change was committed without
+     one end-to-end hook run ("not verified" in the report). Lesson: a change to a git hook is done only after one
+     real run of that hook; B295 shrinks the hook, so it carries this check.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
