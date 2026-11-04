@@ -3,7 +3,7 @@
 # Handoff: grill/docs session (doc-agent), 2026-11-04 late evening
 
 Talk to Tom in German (`/doc-agent` skill). Builder: `ethlete-sdk-02` (English, SendMessage). Findings go to
-`plans/ethlete-studio/design-to-code.md` as `N\. ` paragraphs (last is 423), rows in `STATUS.md` (last is B362).
+`plans/ethlete-studio/design-to-code.md` as `N\. ` paragraphs (last is 424), rows in `STATUS.md` (last is B363).
 Latest ADR is 0184. Done rows are deleted from STATUS.md; an ADR's `open: B<row>` becomes `built: <sha>`.
 
 ## Rules Tom set today
@@ -24,3 +24,5 @@ B341, B342, B344, B347, B349, B355, B358, B359) follow in the builder's order.
 
 - B343 is built (46177c36b) but not verified live: the builder checks it on the next real stale sketch.
 - The Mac perf session (B348, ADR 0181) is finished; its probes and logs stay untracked in `tmp/mac-perf`.
+- Port-mark sketch `pages/sketches@merge-port` (variant a, ef2d01315) waits for Tom's pick by merge. B357 stays open:
+  narrow-part and comparing-narrow still differ (finding 424, B363).

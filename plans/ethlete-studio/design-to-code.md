@@ -4686,6 +4686,12 @@ zeichnet diese Variante". The same state stands twice in one variant. Why no too
 status shown twice in one view. Fix: the B346 sketch draws the header without the line (Tom picks); the check joins
 B362 as a rule.
 
+424\. Builder (2026-11-04, port-mark sketch `pages/sketches@merge-port`): ADR 0183 says the same state of the same
+variant carries the same sample marks in every page state. After B357, `narrow-part` and `comparing-narrow` still mark
+the fit-* states of variant a as changed. Why no tool caught it: the sketch check does not compare the marks of one
+variant state across the page states of a design. Fix (B363): a sketch check rule that warns when the same variant
+state carries different sample marks in two page states. B357 stays open until all page states match.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
