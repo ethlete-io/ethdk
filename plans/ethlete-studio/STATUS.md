@@ -509,7 +509,6 @@ sketch` zeigen ihn (Befund 180).
 - **D9** Studio: 8 Teile ohne App-Code; canvas-frames und studio-view sauber zuordnen (Q247, Q248).
 - **D10** Die Matrix „Aktuell“ nur einmal, für App und CLI (Q124).
 - **D11** 48 SDK-Teile haben noch offene Punkte.
-- **D16** components select: `open()` während der Schließ-Animation wird ignoriert; Schließen abbrechen (fifagg). Kein Repro auf next (components und cdk öffnen in der Leave-Animation neu); wartet auf Schritte von fifagg.
 
 ## E. Fragen und Entwürfe für Tom
 
