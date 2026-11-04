@@ -4492,6 +4492,13 @@ readable at the zoom Studio opens with. Fix (B345): a round opens each changed s
 differs from HEAD, with a margin and a switch to the whole screen; states whose cropped change is identical show
 once with a count; a check fails a round whose changed region renders below a readable size at the opening zoom.
 
+403\. Tom (2026-11-04, screenshots of the same sketch): (1) the variant header card ("Variante a · Opus 5.5", note,
+"Übernehmen") keeps its size when he zooms out, so at 30 % it is a large empty teal frame above the grid; (2) in the
+first column a black block labelled "part" covers the frames, likely the frame cap's empty far cell. Cause not yet
+confirmed by the builder. Why no tool caught it: the sketch-view e2e measures frames, not the chrome around them at
+other zoom levels. Fix (B346): the header card and the empty far cell follow the canvas zoom or collapse below a
+readable size, and the e2e takes the sketch view at 30 % and 100 % and fails on a box with no visible content.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
