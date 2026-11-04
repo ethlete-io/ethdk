@@ -274,6 +274,7 @@ const partTargetsOf = async ({
   load,
   pictureOf,
   signal,
+  compare,
 }: {
   product: ResolvedProduct;
   sketch: Sketch;
@@ -281,6 +282,7 @@ const partTargetsOf = async ({
   load?: VariantPartLoader;
   pictureOf?: PictureOf;
   signal?: AbortSignal;
+  compare: boolean;
 }) => {
   const currentFile = product.parts.find((entry) => partKeyOf(entry) === part)?.file;
   const current =
@@ -316,9 +318,13 @@ const partTargetsOf = async ({
       states,
       ...('widths' in widths ? { widths: widths.widths } : {}),
       interactions,
-      unchanged: problem
-        ? []
-        : await unchangedStatesOf({ product, sketch, variant, load, pictureOf, keepPictures: true, part }),
+      ...(compare
+        ? {
+            unchanged: problem
+              ? []
+              : await unchangedStatesOf({ product, sketch, variant, load, pictureOf, keepPictures: true, part }),
+          }
+        : {}),
       ...(problem || !current || current.problem
         ? {}
         : { changes: variantChangesOf({ current, drawn: { states, note } }) }),
@@ -333,6 +339,7 @@ const targetsOf = async (options: {
   load?: VariantPartLoader;
   pictureOf?: PictureOf;
   signal?: AbortSignal;
+  compare: boolean;
 }) =>
   (
     await inTurns({ items: options.sketch.targets, signal: options.signal }, (part) =>
@@ -378,9 +385,16 @@ const listingOf = async ({
                   variant: entry.variant,
                   problems: entry.problems.map((p) => problemOf({ target, problem: p })),
                 })),
-              targets: await targetsOf({ product, sketch, load: asked.load, pictureOf: asked.pictureOf, signal }),
             }
           : {}),
+        targets: await targetsOf({
+          product,
+          sketch,
+          load: asked.load,
+          pictureOf: asked.pictureOf,
+          signal,
+          compare: !light,
+        }),
         report: readSketchReport({ checkout: target, sketch }),
       })),
       unreadable: unreadable.map((problem) => problemOf({ target, problem })),
@@ -421,7 +435,7 @@ const startedListing = ({
  * draws it (`targets`, one entry per part and variant, tagged with `part`, the first part's entries first), with the states it
  * draws the same as the product now (`unchanged`), the states it adds and drops and its part note when that differs
  * from the product's (`changes`), and the live report
- * of the agent (`report`, `null` when none runs). `?unchanged=no` answers the list only, without `problems` and `targets`: no rule check, no part module loads.
+ * of the agent (`report`, `null` when none runs). `?unchanged=no` answers without `problems` and the `unchanged` of each target: no rule check, no pictures.
  * A listing asked while the same one runs gets that one's answer; it stops when every client that asked for it has closed its request.
  */
 export const sketchesAnswer = withProduct('GET', ({ asked, product }) => {

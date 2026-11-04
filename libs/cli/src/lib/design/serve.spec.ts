@@ -1003,7 +1003,7 @@ describe('the design server for sketches and comments', () => {
     ]);
   });
 
-  it('answers the quick sketch list without loading a part module, and the full one with the targets', async () => {
+  it('answers the quick sketch list with the targets but without problems or pictures, and the full one with both', async () => {
     const target = acme();
 
     readySketch(target);
@@ -1015,21 +1015,33 @@ describe('the design server for sketches and comments', () => {
       return { default: { states: { one: {} } } };
     });
     type Listed = {
-      sketches: { target: string; variants: string[]; problems?: unknown[]; targets?: { states: string[] }[] }[];
+      sketches: {
+        target: string;
+        variants: string[];
+        problems?: unknown[];
+        targets?: { variant: string; states: string[]; unchanged?: string[] }[];
+      }[];
     };
     const quick = (await ask('/__design/sketches', '?product=acme&unchanged=no')).body as Listed;
 
-    expect(loaded).toEqual([]);
     expect(quick.sketches.map(({ target, variants }) => ({ target, variants }))).toEqual([
       { target: 'components/card', variants: ['a', 'b'] },
     ]);
-    expect(quick.sketches[0]?.targets).toBeUndefined();
+    expect(
+      quick.sketches[0]?.targets?.map(({ variant, states, unchanged }) => ({ variant, states, unchanged })),
+    ).toEqual([
+      { variant: 'a', states: ['one'], unchanged: undefined },
+      { variant: 'b', states: ['one'], unchanged: undefined },
+    ]);
     expect(quick.sketches[0]?.problems).toBeUndefined();
+    expect(loaded).toHaveLength(3);
 
     const full = (await ask('/__design/sketches', '?product=acme')).body as Listed;
 
-    expect(loaded.length).toBeGreaterThan(0);
-    expect(full.sketches[0]?.targets?.length).toBeGreaterThan(0);
+    expect(full.sketches[0]?.targets?.map(({ unchanged }) => unchanged)).toEqual([
+      expect.any(Array),
+      expect.any(Array),
+    ]);
     expect(full.sketches[0]?.problems).toEqual(expect.any(Array));
   });
 

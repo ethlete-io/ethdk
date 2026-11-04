@@ -421,7 +421,7 @@ export type ListedSketch = {
   targetParts?: string[];
   /** Missing from the quick list (`quick: true`) and from an `@ethlete/cli` older than it. */
   problems?: { variant: string; problems: SystemProblem[] }[];
-  /** Each target part as each variant draws it, the first target's entries first. Missing from the quick list and from an `@ethlete/cli` older than the sketch matrix. */
+  /** Each target part as each variant draws it, the first target's entries first. Missing from an `@ethlete/cli` older than the sketch matrix, and from its quick list before the one that lists them. */
   targets?: SketchTarget[];
   /** What the agent draws right now, `null` when it reports nothing. */
   report?: SketchReport | null;
@@ -457,7 +457,7 @@ export type SketchTarget = {
   widths?: number[];
   /** Missing from an `@ethlete/cli` older than interactions. */
   interactions?: string[];
-  /** The states this variant draws as the part is now. Missing from an `@ethlete/cli` older than folded states. */
+  /** The states this variant draws as the part is now. Missing from the quick list and from an `@ethlete/cli` older than folded states. */
   unchanged?: string[];
   /** The states this variant adds and drops against the part now, and its part note when that differs. Missing from an `@ethlete/cli` older than this field. */
   changes?: SketchTargetChanges;
