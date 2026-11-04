@@ -11,6 +11,23 @@
 3. **Order:** A40 (new product form) right after the sidebar block (A5-A7); A38 (Git in Studio) and A39 (import
    existing code) after A37 (design editor).
 
+### Solo focus, sketch view, behavior tests and pre-push decisions (Tom, 2026-11-04)
+
+- **Multi-user (E8) parked.** Studio is a solo-user tool first. No presence, roles, rights or real-time sync until
+  Tom reopens the topic.
+- **No "Ablehnen" in the sketch view (E7).** Tom's comment or pick says which variants are out; "keine passt" means
+  round 2 brings all new variants. Notes and diff lists do not come back unless Tom misses them.
+- **Switch e2e:** delete `choice-inputs.e2e.ts:633` ("a hover on the off track transitions its edge"); 10d428faa
+  removed the edge on purpose.
+- **Scheduler e2e locators:** change the 8 `[title="..."]` locators to `[aria-label="..."]`, assertions unchanged.
+- **Scheduler tooltip vs edit surface:** the scheduler closes the appointment tooltip when it opens the edit surface
+  (component fix; tests 225, 238, 484 stay as they are).
+- **Tooltip and Escape:** the tooltip still shows on keyboard focus, but it does not consume Escape. One Escape closes
+  the tooltip and lets the grid return focus to the cell (test 302 unchanged). Fix it in the tooltip, so every grid
+  with tooltips gains.
+- **No e2e in pre-push.** The hooks are already too slow. CI is the gate for the behavior suites; a red CI run is
+  builder work at once. Small, scoped checks such as the 13 s VitePress build on apps/docs pushes stay.
+
 ### Studio order, explorer, merge canvas and "build-ready" decisions (Tom, 2026-11-02)
 
 1. **Order of list A:** A1 title bar, A36 explorer, A8 SDK tooltips, then A9 merge canvas and A10 build-ready, then
