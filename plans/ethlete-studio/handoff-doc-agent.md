@@ -89,3 +89,12 @@ B323 landed on next as be8aa16b7 (code notice, restart while the server runs, AP
 `apps/ethlete-studio/src/app/design-parts/shell-main/*`, `tools/scripts/verify-webkit-studio.*`,
 `tools/scripts/verify-studio-headless.mjs` and `tools/scripts/b333-map.mjs`. B323 still open: sketch
 `components/title-bar --name code-notice`, the "needs approval" note in build-ready.md, the STATUS row.
+
+## Open topic from Tom (2026-11-04): split Studio, timetrack and the design CLI out of this repo?
+
+Tom: "umso mehr wir hier machen umso falscher fühlt es sich an das alles in diesem repo zu haben ... wenn ich mir
+die ci mittlerweile so ansehe". Not decided. Doc agent's proposal: measure first, then grill. (1) CI minutes per
+area (SDK libs vs Studio/timetrack/cli design) from the last ~50 runs of `next`; (2) coupling: share of commits
+since 2026-10-01 that touch an SDK lib AND apps/ethlete-studio|apps/timetrack|libs/timetrack|libs/cli/src/lib/design.
+Low coupling -> split into the SDK repo and a tools repo (Studio, timetrack, design CLI) that consumes `next`
+pre-releases; the release-helper part of libs/cli stays. High coupling -> first separate CI workflows per area.
