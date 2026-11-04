@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B321
+built: c348db743
 decided: 2026-11-04
 source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Pixel check and blocker wording" (findings 374, 375) item 1
 ---
