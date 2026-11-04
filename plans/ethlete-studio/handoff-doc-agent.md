@@ -24,6 +24,8 @@ B341, B342, B344, B347, B349, B355, B358, B359) follow in the builder's order.
 
 - B343 is built (46177c36b) but not verified live: the builder checks it on the next real stale sketch.
 - The Mac perf session (B348, ADR 0181) is finished; its probes and logs stay untracked in `tmp/mac-perf`.
-- Port-mark sketch `pages/sketches@merge-port` (variant a, 6f4b45040) is ready again; "merge ok" sent to Tom.
+- Port-mark sketch `pages/sketches@merge-port` (variant a, 6f4b45040) is ready again; "merge ok" sent to Tom. After his merge:
+  delete row B357, ADR 0183 `open: B357` -> `built: <merge sha>`. Builder does B363 meanwhile (finding 401 blocks a second
+  sketch on pages/sketches).
 - Finding 427 (wheel over a tree row): not proved; Tom runs the CEF debug build. Asked Tom: measure before B345?
 - Finding 427 (explorer swallows wheel events, then scrolls late): the cause is asked from the builder.
