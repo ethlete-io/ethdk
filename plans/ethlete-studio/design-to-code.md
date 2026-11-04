@@ -4671,7 +4671,10 @@ check warns when the samples do not cover the real range. The layout itself goes
 422\. Tom (2026-11-04, screenshot of the sketch view zoomed far out): "noch nen ui ding bei extrem zoom". A frame
 that an agent still draws shows its placeholder ("Opus 5.5 zeichnet diese Variante", "Der Rahmen füllt sich, sobald
 die erste Ansicht steht.") at full screen size next to a tiny finished frame. The placeholder card is larger than the
-frame it stands for, and its title wraps into three lines. Cause (builder): the canvas zoom sets each frame's width and
+frame it stands for, and its title wraps into three lines. Second screenshot (Tom: "das sieht auch wild aus"): next
+to a column of 12 finished frames, the variant that an agent still draws is one tall empty card over all 12 state rows.
+The title wraps into three lines in the middle of the card, and the pulse dot stands outside the card's left edge.
+Cause (builder): the canvas zoom sets each frame's width and
 height to part size × scale (`applyScale`) and uses no CSS scale. The placeholder is a card with fixed type sizes
 (`text-ui-lg`, `text-ui-sm`) and a fixed `min-h-24` that the zoom never touches, in a column only a few px wide. The
 design (`drawingStage()`) draws the same card, but only at `camera: 'fit'`, so the compare check stayed green. Why no
