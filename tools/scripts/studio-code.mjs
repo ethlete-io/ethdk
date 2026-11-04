@@ -25,6 +25,20 @@ export const AREAS = {
 
 const CACHE = 'tmp/studio-cli';
 
+export const APP_SOURCES = [
+  'apps/ethlete-studio',
+  ':!apps/ethlete-studio/src-tauri',
+  '.ethlete/design/studio',
+  'libs/bracket',
+  'libs/components',
+  'libs/core',
+  'libs/query',
+  'libs/types',
+  'package.json',
+  'tsconfig.base.json',
+  'yarn.lock',
+];
+
 export const APP_CACHE = 'tmp/studio-app';
 
 const git = (root, args) => {
@@ -35,7 +49,7 @@ const git = (root, args) => {
   return result.stdout.trim();
 };
 
-export const lastCommitOf = (root, path) => git(root, ['log', '-1', '--format=%H', '--', path]) || null;
+export const lastCommitOf = (root, ...paths) => git(root, ['log', '-1', '--format=%H', '--', ...paths]) || null;
 
 export const isDirty = (root, path) => git(root, ['status', '--porcelain', '--', path]) !== '';
 
@@ -180,14 +194,14 @@ export const currentAppCopy = (root) => {
 };
 
 /**
- * Builds the last commit that touched the Studio frontend into `tmp/studio-app/<sha>` and points
+ * Builds the last commit that touched the Studio app or a source it imports into `tmp/studio-app/<sha>` and points
  * `tmp/studio-app/current` at it. Uncommitted frontend edits never reach the copy.
  */
 export const ensureAppCopy = (root, { log = (line) => console.error(line), build = buildAppWithNx } = {}) => {
   const cache = join(root, APP_CACHE);
-  const sha = lastCommitOf(root, AREAS.frontend);
+  const sha = lastCommitOf(root, ...APP_SOURCES);
 
-  if (!sha) throw new Error(`${AREAS.frontend} has no commit to build.`);
+  if (!sha) throw new Error('The Studio app has no commit to build.');
 
   mkdirSync(cache, { recursive: true });
 
@@ -203,6 +217,12 @@ export const ensureAppCopy = (root, { log = (line) => console.error(line), build
   }
 
   writeFileSync(join(cache, 'current'), `${sha}\n`);
+
+  for (const name of readdirSync(cache)) {
+    if (/^[0-9a-f]{40}$/.test(name) && name !== sha && name !== previous) {
+      rmSync(join(cache, name), { recursive: true, force: true });
+    }
+  }
 
   return { dir: target, sha, switched: previous !== null && previous !== sha };
 };

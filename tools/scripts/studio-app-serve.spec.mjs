@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -70,6 +70,53 @@ test('an uncommitted Studio app edit never reaches the served app', async () => 
     assert.equal(second.switched, true);
     assert.equal((await served(root, '/main.js')).body, 'committed two\n');
     assert.equal(ensureAppCopy(root, { log: quiet, build: () => assert.fail('rebuilt') }).switched, false);
+  } finally {
+    spawnSync('git', ['worktree', 'prune'], { cwd: root });
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('a libs-only commit switches the copy and only the current and previous copies stay', () => {
+  const root = mkdtempSync(join(tmpdir(), 'studio-app-spec-'));
+  const core = join(root, 'libs/core/index.ts');
+  const hostFile = join(root, 'apps/ethlete-studio/src-tauri/main.rs');
+
+  try {
+    git(root, 'init', '-q');
+    git(root, 'config', 'user.email', 'spec@example.com');
+    git(root, 'config', 'user.name', 'spec');
+    mkdirSync(join(root, 'apps/ethlete-studio/src-tauri'), { recursive: true });
+    mkdirSync(join(root, 'apps/ethlete-studio/src'), { recursive: true });
+    mkdirSync(join(root, 'libs/core'), { recursive: true });
+    writeFileSync(join(root, 'apps/ethlete-studio/src/main.ts'), 'app\n');
+    writeFileSync(core, 'one\n');
+    writeFileSync(hostFile, 'one\n');
+    git(root, 'add', '.');
+    git(root, 'commit', '-qm', 'one');
+
+    const first = ensureAppCopy(root, { log: quiet, build: fakeBuild });
+
+    writeFileSync(core, 'two\n');
+    git(root, 'commit', '-qam', 'two');
+
+    const second = ensureAppCopy(root, { log: quiet, build: fakeBuild });
+
+    assert.equal(second.switched, true);
+    assert.equal(second.sha, git(root, 'rev-parse', 'HEAD'));
+
+    writeFileSync(hostFile, 'two\n');
+    git(root, 'commit', '-qam', 'host only');
+
+    assert.equal(ensureAppCopy(root, { log: quiet, build: fakeBuild }).sha, second.sha);
+
+    writeFileSync(core, 'three\n');
+    git(root, 'commit', '-qam', 'three');
+
+    const third = ensureAppCopy(root, { log: quiet, build: fakeBuild });
+    const copies = readdirSync(join(root, 'tmp/studio-app')).filter((name) => /^[0-9a-f]{40}$/.test(name));
+
+    assert.deepEqual(copies.sort(), [second.sha, third.sha].sort());
+    assert.notEqual(first.sha, second.sha);
   } finally {
     spawnSync('git', ['worktree', 'prune'], { cwd: root });
     rmSync(root, { recursive: true, force: true });
