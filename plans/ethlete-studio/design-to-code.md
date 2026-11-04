@@ -4491,7 +4491,7 @@ none` on html, body and every element (the property is not inherited); the Tauri
      one "Erneut laden" button; the final look comes from an error-state sketch that Tom picks. Why no tool caught
      it: the state checks (`system/open-points.ts`, `reached-state.ts`) only see states the design declares, so
      nothing can flag a state the design never declared. Tool fix (B314 = B251): a part that loads data or lists is
-     build-ready only with declared loading, error and empty states.
+     build-ready only with declared loading, error and empty states. The interim look itself reached the app without a sketch round (the doc agent asked for it), and no gate checks that the app shows only what the design has. Second tool fix (in B251): a design compare is required for every Studio UI commit, enforced in the pre-push hook.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
