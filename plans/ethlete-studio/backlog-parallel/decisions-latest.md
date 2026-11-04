@@ -49,6 +49,8 @@
   on that part right now, for example "Agent untersucht", "Agent behebt" (words not final). It is a second signal and
   does not replace the build-ready status. The S6a sketch shows it with variants; the agent states match the chat
   agent states of A25 (working, waiting, interrupted, failed), so both read from one source.
+  Shown in both places at once (Tom): in the sketch view (agent builds the variants or a new round) and in the
+  build-ready popover on the part (agent fixes the code towards the design). Sketch the sketch-view placement too.
 
 ### Studio order, explorer, merge canvas and "build-ready" decisions (Tom, 2026-11-02)
 
