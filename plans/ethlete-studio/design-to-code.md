@@ -4438,7 +4438,11 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      microtask loop in the Studio frontend (sample: /tmp/studio-freeze-webcontent.txt). Cause not known yet; likely
      a retry or poll loop after the server restart (see 363). Why no tool caught it: no check runs Studio against a
      server that restarts or times out. Tool fix (B310, after the cause): a scenario that restarts and slows the
-     design server under a running Studio and fails on a busy main thread.
+     design server under a running Studio and fails on a busy main thread. A second freeze (14:17) was again the microtask loop
+     (1618 of 1651 samples, /tmp/studio-freeze3-webcontent.txt); the open Web Inspector closed before a pause, so
+     no JS stack exists. Second tool fix (B310): a main-thread watchdog in the Studio host. A host thread (not the
+     WebView main thread) pings with `evaluateJavaScript` and a timeout; on a miss it writes one log entry per freeze
+     to the Studio log dir, with the WebContent pid, a 3 s `sample`, and the current route.
 
 365. Tom (2026-11-04, 14:04): after a Studio restart, Studio draws no frame content. pages/sketches r1 shows empty
      cells with "vergleicht ..." forever; pages/system@pages-system-build-ready shows variant heads, no frames, but
