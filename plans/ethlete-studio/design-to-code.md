@@ -4741,9 +4741,14 @@ code. Fix (B364): every sketch subcommand exits 1 on a usage error, with a spec 
 430\. Tom (2026-11-04): "das wir nun ständig die frames 'laden' die im viewport sind ist super nervig. ständig
 verschwindet das bild und kommt wieder beim scrollen. man scrollt wie durch so ein laggy netscape browser window wo
 gerade 17kb an bild übers modem laden müssen." When a frame scrolls into the viewport, its picture is gone and then
-appears again. Cause not yet known (asked the builder; suspect: frames outside the viewport drop their picture, and a
-frame that comes back renders again instead of showing its last picture). Why no tool caught it, and the fix: pending
-the cause. Joins B365 (scroll in the CEF build).
+appears again. Probable cause (builder, code read; B365 measures it): b9367d285, refined by 52d7d2b55. The sketch view
+renders a live iframe for at most 6 near shots, an `<img>` for other shots within 400 px of the viewport, and nothing
+farther away. Two paths blank a frame on scroll: a shot leaves the 400 px margin and its `<img>` is removed, so on
+return it is empty until it decodes; or the live set follows the near set, so a shot flips from `<img>` to a new
+iframe that is blank until its document loads. Why no tool caught it: the canvas e2e specs check frame count, marks
+and the live cap on a still view; none scrolls. Fix (B365): an e2e that scrolls a long sketch step by step and fails
+on any cell that had a picture or a loaded frame before and now shows neither. App: keep the last picture under a
+frame until its iframe reports loaded, and keep a far shot's picture instead of removing it.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 

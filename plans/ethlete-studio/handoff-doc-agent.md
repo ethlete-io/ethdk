@@ -29,4 +29,3 @@ B341, B342, B344, B347, B349, B355, B358, B359) follow in the builder's order.
   sketch on pages/sketches).
 - Finding 427: B365 measures it right after B363, before B345/B346 (ADR 0185).
 - Finding 427 (explorer swallows wheel events, then scrolls late): the cause is asked from the builder.
-- Finding 430 (frame pictures vanish and come back on scroll): cause asked from the builder; joins B365.
