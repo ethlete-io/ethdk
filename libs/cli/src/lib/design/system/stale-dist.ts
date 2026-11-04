@@ -61,7 +61,7 @@ const staleLibsOf = (options: { target: string; config: DesignConfig | null }): 
 };
 
 /** The shell command that rebuilds the build folder of the checkout lib `name`. */
-export const libBuildCommandOf = (name: string) => `NX_NO_CLOUD=true npx nx build ${name}`;
+export const libBuildCommandOf = (name: string) => `NX_NO_CLOUD=true npx nx build ${name} --skip-nx-cache`;
 
 /**
  * One warning line per checkout lib the drawings load from a build folder (the render modules and their `@ethlete/*`
@@ -76,7 +76,7 @@ export const staleDistWarningsOf = (options: { target: string; config: DesignCon
 export type LibBuildRunner = (options: { target: string; name: string; dir: string }) => boolean;
 
 const runLibBuild: LibBuildRunner = ({ target, name, dir }) => {
-  const result = spawnSync('npx', ['nx', 'build', name], {
+  const result = spawnSync('npx', ['nx', 'build', name, '--skip-nx-cache'], {
     cwd: target,
     env: { ...process.env, NX_NO_CLOUD: 'true' },
     stdio: ['ignore', 2, 2],

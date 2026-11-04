@@ -44,7 +44,10 @@ describe('et design shot on a stale SDK dist', () => {
 
     await expect(designCommand({ root: target, argv: ['shot', 'x/y'], invocation: 'et design' })).resolves.toBe(0);
 
-    expect(vi.mocked(spawnSync).mock.calls[0]?.slice(0, 2)).toEqual(['npx', ['nx', 'build', 'core']]);
+    expect(vi.mocked(spawnSync).mock.calls[0]?.slice(0, 2)).toEqual([
+      'npx',
+      ['nx', 'build', 'core', '--skip-nx-cache'],
+    ]);
     expect(statSync(join(target, 'dist/libs/core/package.json')).mtimeMs).toBeGreaterThan(NEW * 1000);
     expect(designShot).toHaveBeenCalledTimes(1);
     error.mockRestore();
@@ -59,7 +62,7 @@ describe('et design shot on a stale SDK dist', () => {
     await expect(designCommand({ root: target, argv: ['shot', 'x/y'], invocation: 'et design' })).resolves.toBe(1);
 
     expect(error.mock.calls.flat().join('\n')).toContain(
-      'REFUSED STALE BUILD @ethlete/core - the build failed; fix it and run NX_NO_CLOUD=true npx nx build core',
+      'REFUSED STALE BUILD @ethlete/core - the build failed; fix it and run NX_NO_CLOUD=true npx nx build core --skip-nx-cache',
     );
     expect(designShot).not.toHaveBeenCalled();
     error.mockRestore();

@@ -76,7 +76,7 @@ describe('rebuildStaleDist', () => {
 
     expect(rebuildStaleDist({ target, config, build: () => false })).toBe(false);
     expect(errors.mock.calls.flat().join('\n')).toContain(
-      'REFUSED STALE BUILD @ethlete/types - the build failed; fix it and run NX_NO_CLOUD=true npx nx build types',
+      'REFUSED STALE BUILD @ethlete/types - the build failed; fix it and run NX_NO_CLOUD=true npx nx build types --skip-nx-cache',
     );
     errors.mockRestore();
   });
@@ -86,7 +86,7 @@ describe('rebuildStaleDist', () => {
     const target = checkout({ coreSource: 1_000, coreBuild: 2_000 });
 
     expect(rebuildStaleDist({ target, config, build: () => true })).toBe(false);
-    expect(errors.mock.calls.flat().join('\n')).toContain('run NX_NO_CLOUD=true npx nx build types');
+    expect(errors.mock.calls.flat().join('\n')).toContain('run NX_NO_CLOUD=true npx nx build types --skip-nx-cache');
     errors.mockRestore();
   });
 
