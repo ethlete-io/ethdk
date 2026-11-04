@@ -4696,8 +4696,14 @@ state carries different sample marks in two page states. B357 stays open until a
 zeit immer alle zustände bis wohl die berechnung durch ist welche varianten nicht verändert sind und dann springen die
 raus." At first the view shows every state, most of them as empty frames. After a short time "27 unveränderte Zustände
 eingeklappt" appears, and the folded states jump out of the layout. Above the frames stands a large empty band. Cause
-not yet known (asked the builder). Why no tool caught it, and the fix: pending the cause; joins B345 (folded changed
-states). The look while the fold is not yet known goes into the B345 sketch (Tom picks).
+(builder, code read): the first listing has no `targets`, so every shot has `changed: null`. `foldedStatesOf` folds
+only states where every variant has `changed === false`, and `null` never folds. When the full listing arrives, 27
+states turn `false` and fold in one step; `sameRows` has the same delay. The empty band is probably the placeholder
+height of unmeasured rows (`tallestOf(state)` or `MEASURING_HEIGHT`); the B345 build proves it. Why no tool caught
+it: the design states and the e2e specs wait for the settled listing, and no check compares the first paint with the
+settled one. Fix (B362): a coverage rule that a view which reads an async mark draws the "mark unknown" state, plus an
+e2e that fails when the frame count drops after the first paint. The look while the fold is unknown goes into the
+B345 sketch (Tom picks).
 
 426\. Grill (2026-11-04): `pages/sketches@merge-port` shows "Wartet auf deine Wahl", but the builder plans to align the
 sample marks of `narrow-part` and `comparing-narrow` after Tom's pick (finding 424). A sketch is ready only when no

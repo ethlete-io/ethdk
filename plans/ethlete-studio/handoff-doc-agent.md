@@ -27,4 +27,3 @@ B341, B342, B344, B347, B349, B355, B358, B359) follow in the builder's order.
 - Port-mark sketch `pages/sketches@merge-port` (variant a, ef2d01315) is not mergeable yet: the builder aligns the last
   sample marks first, then shot + ready (finding 426). B357 stays open:
   narrow-part and comparing-narrow still differ (finding 424, B363).
-- Finding 425 (all states render, then the unchanged ones jump out): the cause is asked from the builder.
