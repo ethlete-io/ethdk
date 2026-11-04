@@ -4699,6 +4699,11 @@ eingeklappt" appears, and the folded states jump out of the layout. Above the fr
 not yet known (asked the builder). Why no tool caught it, and the fix: pending the cause; joins B345 (folded changed
 states). The look while the fold is not yet known goes into the B345 sketch (Tom picks).
 
+426\. Grill (2026-11-04): `pages/sketches@merge-port` shows "Wartet auf deine Wahl", but the builder plans to align the
+sample marks of `narrow-part` and `comparing-narrow` after Tom's pick (finding 424). A sketch is ready only when no
+change to it waits (rule "ready means final"). Why no tool caught it: `sketch ready` does not run the sample-mark rule.
+Fix: the B363 rule runs in `sketch ready` and blocks there, not only as a warning in the sketch check.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
