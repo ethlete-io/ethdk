@@ -37,4 +37,10 @@ B375 -> B376 -> B368 -> B371 -> B377 -> B378 -> rest as listed.
   B367b; small fix -> own slice, else B365 keeps its place. Waiting for the cause.
 - B367 built (e459da21e, 3c67d2143); ADR 0187 built. Its e2e cases do not bite (finding 441, B378).
 - Builder commits after 5524606cf are not pushed (3ba59b681, e459da21e, 3c67d2143, ...). Push after CI green.
-- No open grill question. No open builder question.
+- No open builder question.
+
+## Collected questions for Tom (ask when he is back, one round)
+
+- Q: B377 earlier? ADR 0191 kept B377 after B376 on the basis "full suite over 6.5 min". The full B367b run took
+  12 min 10 s (114/114, 23:23:40-23:35:50, /tmp/b367b-e2e.log), once per batch before a push. Recommendation: move B377
+  right after CI green, because every push batch now waits 12 min; supersede ADR 0191 if Tom agrees.
