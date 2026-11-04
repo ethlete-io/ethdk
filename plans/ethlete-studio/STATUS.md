@@ -281,7 +281,6 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **A18** Kommentar-Pins auch für gemergte Sketches und erledigte Kommentare in Sketches (Befund 122).
 - **A19** Inbox: echte Benutzer statt „Du“, Zustand „unterbrochen“, echte Fehlermeldung (Q18, Q19, Q26).
 - **A20** Eigener Baum für Flows; Abschnitte im Teil-Baum (Q22, Q60).
-- **A21** Sketch-Ansicht: Variante ablehnen und wieder öffnen, Notizen, Diff-Listen – kommen sie zurück? (Q55; E7)
 - **A22** Flows: Pins, Notizen (verschieben per Ziehen, Liste verwaister Notizen), Entwürfe, `jumpTo`; richtiges Seitenverhältnis je Preset; der eine Canvas (Q66, Q75, Q125).
 - **A23** „Verwerfen“ mit Rückfrage (Q70).
 - **A24** Merge-Seite zeigt alle unveränderten Teile, nicht nur das erste (Q72).
@@ -296,7 +295,6 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **A30** Zeilen im Popup „Offene Punkte“ anklickbar.
 - **A31** Gleiche Darstellung aller Zellen im Raster mit Live-iframes; vorher Kosten messen.
 - **A32** Sketch zeigt bei einer Änderung auch die Nachbarschaft (ganze Zeile, Zelle markiert).
-- **A33** Zwei Designer in einem Projekt (E8).
 - **A34** Übersetzung (i18n); die deutsche Label-Liste ist der Anfang (Q42).
 - **A35** Motion-Editor.
 - **A37** Design-Editor nach A35: der Designer passt im Sketch selbst an (echte Editor-Controls). Dazu Komfort wie in
