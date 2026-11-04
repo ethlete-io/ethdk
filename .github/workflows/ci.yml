@@ -358,12 +358,71 @@ jobs:
       # lockfile. A cache hit would hide an advisory published since the last run.
       - run: yarn nx run timetrack-app:audit-rust
 
+  design-changes:
+    name: Design server changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.diff.outputs.changed }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+
+      - id: diff
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE" ] || [ "$BASE" = 0000000000000000000000000000000000000000 ] || ! git cat-file -e "$BASE^{commit}"; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          elif git diff --quiet "$BASE" HEAD -- apps/ethlete-studio libs/cli/src/lib/design; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  webkit-design-events:
+    name: WebKit design event stream
+    needs: design-changes
+    if: needs.design-changes.outputs.changed == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+        with:
+          nx-cache-key: webkit-design-events
+
+      - run: yarn nx build cli
+
+      # WKWebView drops an SSE response that sends no bytes for 60 s; Chromium does not.
+      - run: node tools/scripts/verify-webkit-design-events.mjs
+
   verified:
     name: Verified
     # A single check for a branch rule or a Mergify condition to name. Skipped jobs pass: a run
     # that leaves out Storybook on purpose is still a green run.
     if: always()
-    needs: [checks, studio, test, build, storybook, storybook-test, storybook-e2e, timetrack-e2e, csp-e2e, rust]
+    needs:
+      [
+        checks,
+        studio,
+        test,
+        build,
+        storybook,
+        storybook-test,
+        storybook-e2e,
+        timetrack-e2e,
+        csp-e2e,
+        rust,
+        webkit-design-events,
+      ]
     runs-on: ubuntu-latest
     steps:
       - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')

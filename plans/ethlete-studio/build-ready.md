@@ -353,3 +353,12 @@ On the `studio-serve` tmux server (:4402), after S6b:
 - Verified: the heartbeat spec. Not verified: in Studio (needs a CLI build and a server restart).
 - Open: run `openSketchProblemsOf` off the event loop; reconnect without a pid change must not remount frames;
   `designAnswer$` must surface errors; server spec for frame.html latency during a listing; WKWebView soak check.
+
+## As built: B311 WebKit event-stream soak check (finding 365, tool fix c)
+
+- Built: `tools/scripts/verify-webkit-design-events.{mjs,swift}` start `et design serve` from `dist/libs/cli`, hold
+  `/__design/comment-events` in an offscreen WKWebView (x -20000) for 90 s and fail on any close. CI: a
+  `design-changes` diff job and a `webkit-design-events` job on `macos-latest`, gated on `apps/ethlete-studio` or
+  `libs/cli/src/lib/design`; listed in `verified.needs`, not in `deploy.needs`.
+- Verified locally: pass against the heartbeat build (90 s open); fail against a silent stand-in SSE server (closed at
+  60.0 s). Not verified: the job on a real macOS runner.
