@@ -48,7 +48,9 @@
       "defaultConfiguration": "development",
       "continuous": true,
       "options": {
-        "port": 4221
+        "port": 4221,
+        "hmr": false,
+        "liveReload": false
       },
       "configurations": {
         "production": {
@@ -115,7 +117,7 @@
     "tauri:dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tauri dev",
+        "command": "tauri dev --no-watch",
         "cwd": "apps/ethlete-studio"
       }
     },

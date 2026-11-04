@@ -17,6 +17,8 @@ fn main() {
             "design_server_restart",
             "design_server_state",
             "design_server_stop",
+            "studio_code_state",
+            "studio_quit_for_rebuild",
             "update_ready",
             "update_restart",
             "window_chrome_watch",

@@ -29,6 +29,13 @@ describe('staleCliBuildMessage', () => {
     expect(staleCliBuildMessage({ root, buildDir })).toBeUndefined();
   });
 
+  it('accepts a copy built from a commit while the sources have uncommitted edits', () => {
+    write(join(buildDir, 'pinned-commit'), 'a'.repeat(40));
+    write(join(root, 'libs/cli/src/index.ts'), 'export const a = 2;');
+
+    expect(staleCliBuildMessage({ root, buildDir })).toBeUndefined();
+  });
+
   it('refuses after a source edit and names the build command', () => {
     write(join(root, 'libs/cli/src/index.ts'), 'export const a = 2;');
 

@@ -7,6 +7,12 @@ export const STUDIO_LABELS = {
     starting: 'Design-Server startet',
     restartButton: 'Neu starten',
   },
+  code: {
+    host: 'Host geändert - Studio neu starten',
+    cli: 'CLI geändert - neu starten',
+    cliDirty: (sha: string) => `CLI hat uncommittete Änderungen, Studio läuft auf Stand ${sha}`,
+    frontend: 'Oberfläche geändert - neu laden',
+  },
   openFolder: {
     refusedTitle: 'Ordner nicht geöffnet',
     refusedMessage: 'In diesem Ordner liegt keine Design-Arbeit.',

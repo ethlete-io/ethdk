@@ -6,6 +6,7 @@ mod design_action_log;
 mod design_roots;
 mod design_server;
 mod error;
+mod studio_code;
 mod update;
 #[cfg(target_os = "macos")]
 mod webview_rebuild;
@@ -201,6 +202,8 @@ pub fn run() {
             design_server::design_server_state,
             design_server::design_server_stop,
             design_server::design_server_restart,
+            studio_code::studio_code_state,
+            studio_code::studio_quit_for_rebuild,
             update::update_ready,
             update::update_restart,
             window_chrome::window_chrome_watch,

@@ -23,6 +23,8 @@
     "allow-design-server-state",
     "allow-design-server-stop",
     "allow-update-ready",
+    "allow-studio-code-state",
+    "allow-studio-quit-for-rebuild",
     "allow-update-restart",
     "allow-window-chrome-watch",
     "allow-workspace-check",

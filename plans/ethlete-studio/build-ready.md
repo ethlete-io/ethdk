@@ -391,3 +391,17 @@ On the `studio-serve` tmux server (:4402), after S6b:
   `design check`/compare of the sketches part.
 - Why no check flagged it: B251 (declared loading/error/empty states for data parts) is unbuilt; the state checks
   only see states the design declares.
+
+## As built: Studio runs committed code only + B309
+
+- Built: `tools/scripts/studio-code.mjs` builds the CLI from the last `libs/cli` commit into `tmp/studio-cli` (kept
+  while `libs/cli` is dirty); the host (`studio_code.rs`, `design_server.rs`) starts the design server from it, and
+  `startedByStudio()` turns off reload-on-rebuild. `yarn studio` runs `tauri dev --no-watch` via `studio-dev.mjs`, the
+  dev server has no HMR/live reload; `yarn et:design` runs a design command from the committed copy (B309).
+  `code-watch.ts` polls the host every 10 s and derives the notice (`codeNoticeOf`, labels, `quitForRebuild$`).
+- Verified: `studio-code.spec.mjs`, `started-by-studio.spec.ts`, `source-hash.spec.ts`, `code-watch.spec.ts`;
+  `cargo check`, `cargo fmt --check`, lint, `tsc`. Not verified: the real Studio flow, the worktree build, the
+  restart/reload clicks, the `yarn studio` rebuild loop.
+- Open: the title-bar notice is not rendered and waits on a sketch of the title-bar design part; frontend reload and
+  host rebuild still use the working tree; `tmp/studio-cli` is never pruned; the 10 s poll cost; skills and docs do
+  not mention `yarn et:design` yet.

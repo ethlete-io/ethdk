@@ -16,6 +16,7 @@ import { designMcp, MCP_USAGE } from './mcp-command';
 import { designMotion, MOTION_USAGE } from './motion-command';
 import { designSketch, SKETCH_USAGE, sketchFlagHelpOf } from './sketch-command';
 import { buildStampOf } from './stamp';
+import { startedByStudio } from './started-by-studio';
 import { runningCliStaleWarning } from './stale-cli-dist';
 import { CALL_STATES, designStatus } from './status';
 import { designPart, PART_USAGE } from './system/part-command';
@@ -517,5 +518,9 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     return 2;
   }
 
-  return serveDesign({ target: positional ? resolve(root, positional) : target, host, reloadOnRebuild: true });
+  return serveDesign({
+    target: positional ? resolve(root, positional) : target,
+    host,
+    reloadOnRebuild: !startedByStudio(),
+  });
 };

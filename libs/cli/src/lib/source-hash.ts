@@ -2,6 +2,9 @@ import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 
+// Must match PINNED_FILE in tools/scripts/studio-code.mjs.
+const PINNED_COMMIT_FILE = 'pinned-commit';
+
 const SOURCE_DIRS = ['src', 'design', 'playwright'];
 const IGNORED_SUFFIXES = ['.spec.ts', '.md'];
 
@@ -45,7 +48,7 @@ export const staleCliBuildMessage = (options: { root: string; buildDir: string }
   const cliRoot = cliRootAbove(options.root);
   const infoPath = join(options.buildDir, 'build-info.json');
 
-  if (!cliRoot) return undefined;
+  if (!cliRoot || existsSync(join(options.buildDir, PINNED_COMMIT_FILE))) return undefined;
 
   let recorded: unknown;
 

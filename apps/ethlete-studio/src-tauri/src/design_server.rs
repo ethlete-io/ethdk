@@ -96,6 +96,7 @@ struct Server {
     child: Child,
     _stdin: Option<ChildStdin>,
     log: Arc<Mutex<Log>>,
+    cli_sha: Option<String>,
 }
 
 #[derive(Default, Clone)]
@@ -103,6 +104,16 @@ pub struct DesignServers {
     table: Arc<Mutex<HashMap<String, Server>>>,
     /// Stale verdicts per checkout and port, kept until the port stops answering or Studio starts a server on it.
     verdicts: Arc<Mutex<HashMap<(String, u16), bool>>>,
+}
+
+impl DesignServers {
+    pub fn cli_sha(&self) -> Option<String> {
+        self.table
+            .lock()
+            .ok()?
+            .values()
+            .find_map(|server| server.cli_sha.clone())
+    }
 }
 
 fn port_of_checkout(checkout: &str) -> StudioResult<u16> {
@@ -470,20 +481,44 @@ fn collect<R: AsyncRead + Unpin + Send + 'static>(source: R, log: Arc<Mutex<Log>
     });
 }
 
-/// Studio runs the design tool itself, so a checkout needs no script and no design tooling of its
-/// own. Node is the one thing the machine must still carry.
-fn spawn(servers: &DesignServers, checkout: &str, preface: Vec<String>) -> StudioResult<()> {
-    let entry = cli_entry(Path::new(checkout)).ok_or_else(|| {
+fn reachable_cli(checkout: &str) -> StudioResult<PathBuf> {
+    cli_entry(Path::new(checkout)).ok_or_else(|| {
         StudioError::Rejected(format!(
             "No copy of @ethlete/cli is reachable for {checkout}. Build one with \
              `npx nx build cli`, or point ETHLETE_CLI at a src/index.js."
         ))
-    })?;
+    })
+}
 
+fn spawn(servers: &DesignServers, checkout: &str, preface: Vec<String>) -> StudioResult<()> {
+    spawn_from(servers, checkout, &reachable_cli(checkout)?, preface, None)
+}
+
+/// Starts the checkout's server. Started from this repository, it runs from a copy of the committed
+/// CLI build, never from the build agents rewrite in the working tree.
+async fn start(servers: &DesignServers, checkout: &str) -> StudioResult<()> {
+    if !crate::studio_code::starts_from_repo_build(Path::new(checkout)) {
+        return spawn(servers, checkout, Vec::new());
+    }
+
+    let (copy, preface) = crate::studio_code::cli_copy().await?;
+
+    spawn_from(servers, checkout, &copy.entry, preface, Some(copy.sha))
+}
+
+/// Studio runs the design tool itself, so a checkout needs no script and no design tooling of its
+/// own. Node is the one thing the machine must still carry.
+fn spawn_from(
+    servers: &DesignServers,
+    checkout: &str,
+    entry: &Path,
+    preface: Vec<String>,
+    cli_sha: Option<String>,
+) -> StudioResult<()> {
     let mut command = crate::child_env::command("node");
 
     command
-        .arg(&entry)
+        .arg(entry)
         .arg("design")
         .arg(checkout)
         .current_dir(checkout)
@@ -522,49 +557,11 @@ fn spawn(servers: &DesignServers, checkout: &str, preface: Vec<String>) -> Studi
             child,
             _stdin: stdin,
             log,
+            cli_sha,
         },
     );
 
     Ok(())
-}
-
-#[cfg(debug_assertions)]
-async fn build_cli() -> StudioResult<Vec<String>> {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
-    let output = crate::child_env::command("npx")
-        .args(["nx", "build", "cli"])
-        .current_dir(root)
-        .env("NX_NO_CLOUD", "true")
-        .output()
-        .await
-        .map_err(|error| match error.kind() {
-            std::io::ErrorKind::NotFound => StudioError::NotInstalled("npx".to_owned()),
-            _ => StudioError::Io(error),
-        })?;
-
-    let mut lines = vec!["Building the CLI…".to_owned()];
-
-    for stream in [&output.stdout, &output.stderr] {
-        lines.extend(String::from_utf8_lossy(stream).lines().map(str::to_owned));
-    }
-
-    let overflow = lines.len().saturating_sub(LOG_LINES);
-
-    lines.drain(..overflow);
-
-    if output.status.success() {
-        return Ok(lines);
-    }
-
-    Err(StudioError::Rejected(format!(
-        "Building the CLI failed, the server was not started.\n{}",
-        lines.join("\n")
-    )))
-}
-
-#[cfg(not(debug_assertions))]
-async fn build_cli() -> StudioResult<Vec<String>> {
-    Ok(Vec::new())
 }
 
 async fn await_listening(servers: &DesignServers, checkout: &str, port: u16) {
@@ -655,7 +652,7 @@ pub async fn design_server_start(
         return Ok(current);
     }
 
-    spawn(servers.inner(), &checkout, Vec::new())?;
+    start(servers.inner(), &checkout).await?;
     forget_verdict(servers.inner(), &checkout, port)?;
     await_listening(servers.inner(), &checkout, port).await;
 
@@ -709,9 +706,7 @@ pub async fn design_server_restart(
         )));
     }
 
-    let preface = build_cli().await?;
-
-    spawn(servers.inner(), &checkout, preface)?;
+    start(servers.inner(), &checkout).await?;
     forget_verdict(servers.inner(), &checkout, port)?;
     await_listening(servers.inner(), &checkout, port).await;
 
