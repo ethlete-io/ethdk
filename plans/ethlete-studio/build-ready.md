@@ -232,5 +232,14 @@ On the `studio-serve` tmux server (:4402), after S6b:
 - `ci.yml` has a new `studio` job ("Studio gates") that runs `tools/scripts/prepush-checks.mjs`
   `specs|design|live|visible` over `NX_BASE..NX_HEAD`; every gate runs even when an earlier one fails. `verified` and
   `deploy` need it.
-- Not done yet from the S7 entry above: deleting `prepush-checks.mjs` and `prepush-*.ts` (CI now calls them), the
-  "Studio rules" job on `design check --slow`, and dropping `GO_JSON` from `git-safety.py`.
+- The `studio` job is now "Studio rules": it builds the CLI, then runs `design check --product studio` and
+  `design check --product studio --slow --base "$NX_BASE"` (the second runs even when the first fails). `verified` and
+  `deploy` still need it. `tools/scripts/prepush-checks.mjs` and `libs/cli/src/lib/design/prepush-*.ts` (+ specs) are
+  deleted; `touchedPartsOf` and the `PrepushChange` type, which `system/visible-change-parts.ts` used, moved to
+  `system/touched-parts.ts` with their spec. `ci-check` skill updated; changeset `cli-studio-rules-ci.md` (none).
+- Verified: `touched-parts` and `visible-change-parts` specs pass, `nx lint cli` passed, `lint:cli-related-map`, ci.yml
+  parses as YAML, prettier. Not verified: `nx test cli` in full and the local run of the two `design check` commands
+  (the CLI build was blocked by another agent's unfinished `ready-command.ts`, and the machine load ruled out heavy
+  runs); `tsc` on the spec config reports only the `by` error in `part-compare.spec.ts` from that same edit. The job has
+  never run in CI.
+- Not done yet from the S7 entry: dropping `GO_JSON` from `git-safety.py` (goes with S4).

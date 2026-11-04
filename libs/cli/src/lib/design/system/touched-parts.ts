@@ -1,14 +1,14 @@
 import { existsSync, readFileSync } from 'fs';
-import { dirname, isAbsolute, relative, resolve } from 'path';
-import { addedPartsOf, changedPartsOf, DrawnPart } from './changed-parts';
-import { DESIGN_DIR, DesignConfig, readConfig } from './paths';
-import { PrepushChange } from './prepush-changes';
-import { repoInvocation } from '../invocation';
-import { ruleProblemsOf, partOfFile, staleSketchBasesOf } from './system/check-system';
-import { Problem } from './system/problem';
-import { partKeyOf, resolveProduct, ResolvedProduct } from './system/resolve-product';
-import { createSystemModules, fileOfModuleId, productModuleIdOf, SystemModules } from './system/system-modules';
-import { importsOf } from './system/ts-source';
+import { isAbsolute, relative, resolve } from 'path';
+import { addedPartsOf, changedPartsOf, DrawnPart } from '../changed-parts';
+import { DESIGN_DIR, DesignConfig } from '../paths';
+import { partOfFile } from './check-system';
+import { partKeyOf } from './resolve-product';
+import { createSystemModules, fileOfModuleId, productModuleIdOf, SystemModules } from './system-modules';
+import { importsOf } from './ts-source';
+
+/** One file a push changes, as `git diff --name-status --no-renames` prints it, relative to the checkout. */
+export type PrepushChange = { status: 'A' | 'M' | 'D'; file: string };
 
 const SOURCE_FILE = /\.[cm]?tsx?$/u;
 
@@ -152,44 +152,4 @@ export const touchedPartsOf = (options: {
   }
 
   return touched;
-};
-
-const isInBasePart = (product: ResolvedProduct, file: string) =>
-  product.parts.some((part) => part.origin === 'base' && isInside(dirname(part.file), file));
-
-/**
- * The static `design check` rules (no browser, no tsc) over the parts a push touches, for the pre-push hook.
- * Prints nothing and passes when no change reaches a design part; fails on any rule problem in a touched part.
- */
-export const prepushDesignCheck = (options: { target: string; changes: PrepushChange[] }) => {
-  const { target, changes } = options;
-  const config = readConfig(target);
-  const touched = config ? touchedPartsOf({ target, config, changes }) : new Map<string, Set<string>>();
-  const invocation = repoInvocation({ root: target, subcommand: 'design' });
-  const lines: string[] = [];
-  const changed = new Set(changes.map(({ file }) => resolve(target, file)));
-  let failed = 0;
-
-  for (const [name, parts] of touched) {
-    const entry = config?.products?.[name];
-
-    if (!entry) continue;
-
-    const product = resolveProduct({ target, name, config: entry });
-    const isOwn = (problem: Problem) =>
-      !isInBasePart(product, problem.file) &&
-      (parts.has(partOfFile(product, problem.file)) || changed.has(resolve(problem.file)));
-    const problems = ruleProblemsOf(product).filter(isOwn);
-
-    lines.push(`design check ${name}: ${parts.size} touched part${parts.size === 1 ? '' : 's'}`);
-    const stale = staleSketchBasesOf({ product, parts, invocation });
-
-    problems.forEach((problem) => lines.push(`${problem.rule} ${relative(target, problem.file)}: ${problem.message}`));
-    stale.forEach(({ line }) => lines.push(line));
-    failed += problems.length + stale.length;
-  }
-
-  if (touched.size > 0) lines.push(failed === 0 ? 'ok' : `${failed} design problem${failed === 1 ? '' : 's'}`);
-
-  return { code: failed === 0 ? 0 : 1, lines };
 };

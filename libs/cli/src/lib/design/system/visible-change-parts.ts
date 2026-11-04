@@ -1,8 +1,7 @@
 import { readFileSync } from 'fs';
 import { dirname, isAbsolute, relative, resolve } from 'path';
 import { DesignConfig } from '../paths';
-import { PrepushChange } from '../prepush-changes';
-import { touchedPartsOf } from '../prepush-design';
+import { PrepushChange, touchedPartsOf } from './touched-parts';
 import { harnessEntriesOf, harnessOf } from './harness-map';
 import { resolveProduct } from './resolve-product';
 import { importsOf } from './ts-source';
