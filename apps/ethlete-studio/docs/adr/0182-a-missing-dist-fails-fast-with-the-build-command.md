@@ -1,6 +1,7 @@
 ---
 status: accepted
 built: 7a7c37b30
+open: B361
 decided: 2026-11-04
 source: grill session 2026-11-04, finding 410
 ---
@@ -16,3 +17,6 @@ This applies only to a checkout whose config maps to its own `dist` (the SDK rep
 wenn ich studio nachher installiere dann sollte das kein fehler sein".
 
 Queue (Tom, same round): B351 right after B343; B317 and B350 after B345/B346.
+
+Amendment (Tom, same evening, "q1ok"): while a build of that package runs, the frame shows "wird gebaut …" instead of
+the red error; the red error shows only when no build runs. The watcher redraws the frame after the build.
