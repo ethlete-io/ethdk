@@ -4605,6 +4605,30 @@ none` on html, body and every element (the property is not inherited); the Tauri
      (B323): render the title-bar notice in the running state as an interim "needs approval" notice that opens its
      sketch (finding-368 flow); a spec for the running state with a newer CLI commit.
 
+379. Tom (2026-11-04, about 16:45, server on copy 1cf06ce2d): after the restart the Sketches group in the part tree
+     still appears only after a long wait. Measured on that server: quick listing (`&unchanged=no`) 0.03 s, full
+     listing over 90 s (curl timeout; 33 s on a148d713e), machine load 32 from builder test runs. So the tree still
+     waits for the full listing, or the quick listing does not feed the tree. Why no tool caught it: B317 specs
+     time the endpoints, not the time until the tree shows the group in the real app under load. Tool fix (B324):
+     the tree renders from the quick listing only; a spec with a full listing that never answers asserts that the
+     Sketches group still renders.
+380. Tom (2026-11-04, same screenshot): `pages/flows@edit` now draws "new", but "old" ("the design at HEAD") fails
+     with `Importing binding name 'emptyCanvas' is not found`, and both variants show "Vergleich fehlgeschlagen:
+     Load failed". Cause (doc agent, from the files): the sketch is from 13:53, before B319. Its `old/` holds a
+     flows.ts that imports `emptyCanvas`, but its `shared/` is the current copy, which exports `emptyCanvasOf`
+     (5bec01b89). pages/flows has no uncommitted change, so the sketch has no direct edit at all. Texts are still
+     English ("the edit made outside a sketch", "the design at HEAD"). Why no tool caught it: B319 fixed new
+     sketches only; nothing re-checks a stored `old/` against its `shared/`, and the B319 follow-up (1cf06ce2d)
+     compares by drawing `old`, which cannot render here. Tool fix (B325): the re-check draws HEAD fresh, not the
+     stored `old/`; an `old` that fails to render while the working part equals HEAD closes the sketch as HELD; a
+     render error in an edit sketch's `old` is a check problem, not a silent frame; German variant notes; a spec
+     with a stale `old/` against a renamed `shared/` export.
+381. Tom (2026-11-04): on the Mac the frames (iframes) eat the two-finger trackpad pan of the canvas. A wheel event
+     over an iframe goes to the iframe document and never reaches the canvas. Why no tool caught it: the canvas
+     behavior tests pan on empty canvas only, never with the pointer over a frame. Tool fix (B326): frames do not
+     take wheel and pointer input while the canvas is in pan mode (shield over the frame or forwarded wheel), and
+     a storybook-e2e or Studio headless test that pans with the pointer over a frame.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
