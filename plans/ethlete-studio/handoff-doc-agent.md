@@ -4,7 +4,7 @@
 
 Talk to Tom in German (`/doc-agent` skill). Builder: `ethlete-sdk-02` (English, SendMessage). Findings go to
 `plans/ethlete-studio/design-to-code.md` as `N\. ` paragraphs (last is 431), rows in `STATUS.md` (last is B365).
-Latest ADR is 0185. Done rows are deleted from STATUS.md; an ADR's `open: B<row>` becomes `built: <sha>`.
+Latest ADR is 0186. Done rows are deleted from STATUS.md; an ADR's `open: B<row>` becomes `built: <sha>`.
 
 ## Rules Tom set today
 
