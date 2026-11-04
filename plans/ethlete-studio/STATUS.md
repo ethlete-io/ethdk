@@ -21,7 +21,7 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 ## Gerade in Arbeit
 
 **Reihenfolge (04.11. nachts, ADR 0189):** B367b → B372 → B369 → Port in der App (`portAfterMerge`) → B345/B346
-(erst Design-Session) → B365 → B370 → B373 → B375 → B376 → B368 → B371 → B362 → B364 → B361 + B360 → B317 + B350 →
+(erst Design-Session) → A10 (B249 + B295, ADR 0190) → B365 → B370 → B373 → B375 → B376 → B368 → B371 → B362 → B364 → B361 + B360 → B317 + B350 →
 B353/B354 → B356 → Refresh-Icon-Sketch + Code-Notice c + B352 → B334, B335, B336 → B332, B327, S4, S6b, S8 → B340 →
 B297, A36, A25. Ohne Platz: B339-Rest, B341, B342, B344, B347, B349, B355, B358, B359.
 
