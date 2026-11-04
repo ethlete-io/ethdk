@@ -58,6 +58,7 @@ import {
   isSectionOpen,
   partKeyOf,
   sketchKeyOf,
+  isSketchKey,
   pickedPartKeyOf,
   treeOf,
 } from './system-tree';
@@ -193,6 +194,8 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
           } @else if (sketchShown()) {
           } @else if (flowShown()) {
           } @else if (awaitingPicked()) {
+          } @else if (sketchMissing()) {
+            <p [class]="NOTE" data-sketch-missing>{{ EMPTY_LABELS.sketchMissing }}</p>
           } @else if (part(); as partShown) {
             <div class="absolute top-space-3 right-space-3 z-1 flex gap-2">
               @if (port(); as port) {
@@ -729,15 +732,29 @@ export class SystemViewComponent {
     return picked !== null && !this.listsRead() && !this.nodes().entries.has(picked);
   });
 
+  private pickedPart = computed(() => {
+    const parts = this.product()?.parts ?? [];
+    const picked = this.picked();
+
+    return (
+      parts.find((candidate) => partKeyOf(candidate) === picked) ??
+      (this.awaitingPicked() ? undefined : parts.find((candidate) => partKeyOf(candidate) === pickedPartKeyOf(picked)))
+    );
+  });
+
+  /** True once the lists are read and the picked sketch key matches neither a listed sketch nor its target part. */
+  protected sketchMissing = computed(
+    () => isSketchKey(this.picked()) && this.listsRead() && !this.sketch() && !this.pickedPart(),
+  );
+
   protected part = computed(() => {
     const parts = this.product()?.parts ?? [];
     const first = treeOf(parts)[0]?.entries[0]?.key;
     const listed =
-      parts.find((candidate) => partKeyOf(candidate) === this.picked()) ??
-      (this.awaitingPicked()
+      this.pickedPart() ??
+      (this.awaitingPicked() || this.sketchMissing()
         ? undefined
-        : (parts.find((candidate) => partKeyOf(candidate) === pickedPartKeyOf(this.picked())) ??
-          parts.find((candidate) => partKeyOf(candidate) === first)));
+        : parts.find((candidate) => partKeyOf(candidate) === first));
 
     return listed ? { key: partKeyOf(listed), listed } : null;
   });

@@ -134,9 +134,11 @@ const PRODUCT_KEY = 'product';
 
 export const sketchKeyOf = (target: string) => `${SKETCH_KEY}${target}`;
 
-/** The part a picked entry shows when no listed sketch has it: the part itself, or the target of a sketch key. */
+export const isSketchKey = (key: string | null) => !!key?.startsWith(SKETCH_KEY);
+
+/** The part a picked entry shows when no listed sketch has it: the part itself, or the target part of a sketch key. */
 export const pickedPartKeyOf = (picked: string | null) =>
-  picked?.startsWith(SKETCH_KEY) ? picked.slice(SKETCH_KEY.length) : picked;
+  picked && isSketchKey(picked) ? picked.slice(SKETCH_KEY.length).split('@')[0] : picked;
 
 const sketchEntryOf = (
   sketch: ListedSketch,
@@ -145,14 +147,19 @@ const sketchEntryOf = (
   key: sketchKeyOf(sketch.target),
   name: sketch.name,
   title:
-    (sketch.problems ?? [])
-      .flatMap(({ variant, problems }) => problems.map((found) => `${variant}: ${found.rule}: ${found.message}`))
-      .join('\n') || sketch.target,
+    [
+      ...(sketch.targets ?? []).flatMap(({ variant, error }) => (error ? [`${variant}: ${error}`] : [])),
+      ...(sketch.problems ?? []).flatMap(({ variant, problems }) =>
+        problems.map((found) => `${variant}: ${found.rule}: ${found.message}`),
+      ),
+    ].join('\n') || sketch.target,
   ...commentsOf(sketch.target, marks),
   badges: [
     merging ? 'merging' : sketch.status,
     ...commentBadgesOf(sketch.target, marks),
-    ...(sketch.problems?.some((entry) => entry.problems.length > 0) ? (['error'] as const) : []),
+    ...(sketch.problems?.some((entry) => entry.problems.length > 0) || sketch.targets?.some((entry) => entry.error)
+      ? (['error'] as const)
+      : []),
   ],
 });
 

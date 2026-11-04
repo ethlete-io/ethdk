@@ -630,6 +630,23 @@ describe('sketches in the tree', () => {
     expect(sketches?.entries[0]?.title).toBe('b: LAYER: uses a page\nb: HARD-CODED-COLOUR: #fff');
   });
 
+  it('marks a sketch with a variant that fails to render, and titles it with the reason', () => {
+    const [, sketches] = treeOf([part()], {
+      sketches: [
+        sketch({
+          problems: [],
+          targets: [
+            { variant: 'old', states: [], error: 'old fails to render' },
+            { variant: 'new', states: ['default'] },
+          ],
+        }),
+      ],
+    });
+
+    expect(sketches?.entries[0]?.title).toBe('old: old fails to render');
+    expect(sketches?.entries[0]?.badges).toContain('error');
+  });
+
   it('marks a sketch only with the comments made in it, not those of an earlier sketch on its target', () => {
     const onVariant = (createdAt: string) => ({
       part: 'components/button',

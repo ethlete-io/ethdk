@@ -2,7 +2,8 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
-import { ListedComment, ListedPart, ListedProduct, ListedSketch } from '../../host/design';
+import { ListedCall, ListedComment, ListedPart, ListedProduct, ListedSketch } from '../../host/design';
+import { ListedFlow } from '../../host/design-flows';
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 import { Camera } from '../components/design-canvas/canvas-math';
 import { THEMES } from '../../themes';
@@ -1209,5 +1210,132 @@ describe('SystemViewComponent on a flow', () => {
     await settle(fixture);
 
     expect(shown()).toBe(1);
+  });
+});
+
+describe('SystemViewComponent on a tree pick', () => {
+  const EDIT: ListedSketch = {
+    target: 'elements/rating@edit',
+    targetParts: ['elements/rating'],
+    status: 'ready',
+    createdAt: '2026-11-04T13:53:56.932Z',
+    product: 'web',
+    layer: 'elements',
+    name: 'rating',
+    dir: 'rating.edit',
+    variants: ['old', 'new'],
+    problems: [
+      { variant: 'old', problems: [{ rule: 'LOAD', file: 'rating.edit/old/rating.ts', message: 'no export' }] },
+    ],
+    targets: [
+      { part: 'elements/rating', variant: 'old', states: [], error: 'old fails to render' },
+      { part: 'elements/rating', variant: 'new', states: ['default'] },
+    ],
+  };
+  const FLOW: ListedFlow = {
+    name: 'sign-in',
+    file: 'web/flows/sign-in.json',
+    frames: [],
+    lines: [],
+    notes: [],
+    problems: [],
+  };
+  const CALL: ListedCall = { slug: 'web/start', project: 'web', error: 'unreadable call' };
+
+  beforeEach(() => {
+    localStorage.clear();
+    vi.stubGlobal('EventSource', SilentEventSource);
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/sketches')) return json({ sketches: [EDIT], unreadable: [] });
+      if (url.includes('/__design/flows')) return json({ flows: [FLOW], unreadable: [] });
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([CALL]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+
+  const pick = async (fixture: ComponentFixture<SystemViewComponent>, group: string, name: string) => {
+    const rows = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
+        'aside [role="tree"] [role="treeitem"][ethlete-tree-row-item]',
+      ),
+    ];
+    const start = rows.findIndex((row) => row.dataset['kind'] === 'group' && row.textContent?.trim() === group);
+    const row = rows.slice(start + 1).find((candidate) => candidate.textContent?.trim() === name);
+
+    expect(row).toBeDefined();
+    row?.click();
+    await settle(fixture);
+  };
+
+  it('opens the part canvas with its actions on a part row', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'foundations/tokens' });
+    const element: HTMLElement = fixture.nativeElement;
+
+    await pick(fixture, 'Elements', 'rating');
+
+    expect(rememberedView().systemEntry).toBe('elements/rating');
+    expect(element.querySelector('ethlete-open-points-chip')).not.toBeNull();
+    expect(element.querySelector('ethlete-sketch-view')).toBeNull();
+  });
+
+  it('opens the sketch view on a sketch row whose old variant fails to render', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
+    const element: HTMLElement = fixture.nativeElement;
+
+    await pick(fixture, 'Sketches', 'rating');
+
+    expect(rememberedView().systemEntry).toBe('sketch:elements/rating@edit');
+    expect(element.querySelector('ethlete-sketch-view')).not.toBeNull();
+    expect(element.querySelector('ethlete-open-points-chip')).toBeNull();
+  });
+
+  it('opens the flow view on a flow row', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
+    const element: HTMLElement = fixture.nativeElement;
+
+    await pick(fixture, 'Flows', 'sign-in');
+
+    expect(rememberedView().systemEntry).toBe('flow:sign-in');
+    expect(element.querySelector('ethlete-flow-view')).not.toBeNull();
+    expect(element.querySelector('ethlete-open-points-chip')).toBeNull();
+  });
+
+  it('opens the call with its header on a call row', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating', openGroups: { legacy: true } });
+    const element: HTMLElement = fixture.nativeElement;
+
+    await pick(fixture, 'Legacy', 'start');
+
+    expect(rememberedView().systemEntry).toBe('legacy:web/start');
+    expect(element.querySelector('main header')?.textContent).toContain('web/start');
+    expect(element.querySelector('ethlete-open-points-chip')).toBeNull();
+  });
+
+  it('says the sketch is not found once the lists are read without it, instead of showing another part', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'sketch:elements/gone' });
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('[data-sketch-missing]')?.textContent?.trim()).toBe(
+      STUDIO_LABELS.system.sketchMissing,
+    );
+    expect(element.querySelector('ethlete-open-points-chip')).toBeNull();
+  });
+
+  it('shows the target part of a gone edit sketch', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'sketch:elements/rating@other' });
+
+    expect(fixture.componentInstance['part']()?.key).toBe('elements/rating');
+    expect(fixture.nativeElement.querySelector('[data-sketch-missing]')).toBeNull();
   });
 });
