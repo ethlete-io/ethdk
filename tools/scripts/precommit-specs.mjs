@@ -66,6 +66,20 @@ export const timedOutSpecs = (rawOutput) => {
   return onlyTimeouts ? [...new Set(specs)] : [];
 };
 
+const NO_SPECS_RAN = /No (?:affected )?test files found/;
+
+export const ranNoSpecs = (output) => NO_SPECS_RAN.test(output.replace(ANSI, ''));
+
+const SPEC_FILE = /\.spec\.[cm]?[jt]sx?$/;
+
+const siblingSpec = (file) => file.replace(/\.[cm]?[jt]sx?$/, (ext) => `.spec${ext}`);
+
+/** Files among `files` that are a spec or have a spec beside them in `root`; a vitest run that finds none for them is a broken gate. */
+export const filesExpectingSpecs = (root, files) =>
+  files.filter(
+    (file) => SPEC_FILE.test(file) || (file !== siblingSpec(file) && existsSync(join(root, siblingSpec(file)))),
+  );
+
 const runVitest = (cwd, args) => {
   const result = spawnSync('npx', ['vitest', ...args], {
     cwd,
@@ -102,7 +116,10 @@ const runNodeTests = (checkout, glob) => {
   const specs = readdirSync(join(checkout, dirname(glob)))
     .filter((file) => name.test(file))
     .map((file) => join(dirname(glob), file));
-  if (!specs.length) return 0;
+  if (!specs.length) {
+    console.error(`pre-commit: ${glob} matches no spec file, so ${dirname(glob)} was not tested.`);
+    return 1;
+  }
   const env = withoutGitEnv();
   delete env.NODE_TEST_CONTEXT;
   const result = spawnSync('node', ['--test', ...specs], {
@@ -134,6 +151,16 @@ const runSuites = (checkout, suites) => {
       ...suite.files.map((file) => join(checkout, file)),
     ]);
     let status = run.status;
+
+    if (status === 0 && ranNoSpecs(run.output)) {
+      const expected = filesExpectingSpecs(checkout, suite.files);
+      if (expected.length) {
+        console.error(
+          `pre-commit: vitest ran no spec for ${suite.name} although ${expected.join(', ')} has one; the gate is broken, not the code.`,
+        );
+        return 1;
+      }
+    }
     const slow = status === 0 ? [] : timedOutSpecs(run.output);
 
     if (slow.length) {
@@ -177,6 +204,26 @@ const runTypeChecks = (checkout, projects) => {
     }
   }
   return 0;
+};
+
+const TOOL_SOURCE = /^tools\/scripts\/[^/]+\.[cm]?js$/;
+
+/** The changed `tools/scripts` files eslint should check. */
+export const toolFilesToLint = (files) => files.filter((file) => TOOL_SOURCE.test(file));
+
+const runToolLint = (checkout, files) => {
+  if (!files.length) return 0;
+  const run = spawnSync('npx', ['eslint', '--no-warn-ignored', ...files], {
+    cwd: checkout,
+    env: withoutGitEnv(),
+    encoding: 'utf8',
+    maxBuffer: 256 * 1024 * 1024,
+  });
+  if (run.status === 0) return 0;
+  process.stdout.write(run.stdout ?? '');
+  process.stderr.write(run.stderr ?? '');
+  console.error('pre-commit: eslint fails in tools/scripts (above).');
+  return 1;
 };
 
 const owningProject = (root, file) => {
@@ -274,8 +321,9 @@ export const runPathSpecs = (root, paths) => {
   const files = changes.filter((change) => change.status !== 'D').map((change) => change.file);
   const projects = typeProjectsForFiles(root, files);
   const linted = lintProjectsForFiles(root, files);
+  const tools = toolFilesToLint(files);
   const noSpecs = selectsNoSpecs(root, files, tree);
-  if (noSpecs && projects.length === 0 && linted.length === 0) return { status: 0, tree };
+  if (noSpecs && projects.length === 0 && linted.length === 0 && tools.length === 0) return { status: 0, tree };
   const suites = noSpecs ? [] : suitesForFiles(files, relatedMapAt(root, tree), toolSpecGlobsAt(root, tree));
 
   // vitest related resolves the spec graph by real path; under a symlinked TMPDIR (macOS /var) it matches nothing and passes.
@@ -301,7 +349,11 @@ export const runPathSpecs = (root, paths) => {
       cpSync(join(root, file), join(worktree, file), { verbatimSymlinks: true });
     }
     linkNodeModules(root, worktree);
-    const status = runTypeChecks(worktree, projects) || runLint(root, worktree, linted) || runSuites(worktree, suites);
+    const status =
+      runTypeChecks(worktree, projects) ||
+      runLint(root, worktree, linted) ||
+      runToolLint(worktree, tools) ||
+      runSuites(worktree, suites);
     return { status, tree };
   } finally {
     signals.forEach((signal) => process.off(signal, onSignal));
@@ -328,7 +380,13 @@ const alreadyTested = (root) => {
     return true;
   }
   const changed = changedSinceTested(root, tested, staged);
-  if (!changed || !selectsNoSpecs(root, changed, staged) || lintProjectsForFiles(root, changed).length) return false;
+  if (
+    !changed ||
+    !selectsNoSpecs(root, changed, staged) ||
+    lintProjectsForFiles(root, changed).length ||
+    toolFilesToLint(changed).length
+  )
+    return false;
   console.error(
     `pre-commit: specs already ran in yarn commit; the ${changed.length} files committed since select no specs; skipping them.`,
   );
@@ -340,8 +398,9 @@ export const runStagedSpecs = (root) => {
 
   const files = git(root, ['diff', '--cached', '--name-only', '--diff-filter=ACM', '-z']).split('\0').filter(Boolean);
   const linted = lintProjectsForFiles(root, files);
+  const tools = toolFilesToLint(files);
   const noSpecs = selectsNoSpecs(root, files, '');
-  if (noSpecs && !linted.length) return 0;
+  if (noSpecs && !linted.length && !tools.length) return 0;
   const suites = noSpecs ? [] : suitesForFiles(files, relatedMapAt(root, ''), toolSpecGlobsAt(root, ''));
 
   const checkout = realpathSync(mkdtempSync(join(tmpdir(), 'pre-commit-')));
@@ -349,7 +408,7 @@ export const runStagedSpecs = (root) => {
   try {
     git(root, ['checkout-index', '--all', `--prefix=${checkout}/`]);
     linkNodeModules(root, checkout);
-    return runLint(root, checkout, linted) || runSuites(checkout, suites);
+    return runLint(root, checkout, linted) || runToolLint(checkout, tools) || runSuites(checkout, suites);
   } finally {
     rmSync(checkout, { recursive: true, force: true });
   }

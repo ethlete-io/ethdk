@@ -5,7 +5,16 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { blockingTypeErrors, isDocsOnly, suitesForFiles, timedOutSpecs } from './precommit-specs.mjs';
+import { libsWithChangedDependencies } from './lib-build-gate.mjs';
+import {
+  blockingTypeErrors,
+  filesExpectingSpecs,
+  isDocsOnly,
+  ranNoSpecs,
+  suitesForFiles,
+  timedOutSpecs,
+  toolFilesToLint,
+} from './precommit-specs.mjs';
 
 const sdk = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
@@ -162,4 +171,74 @@ test('blockingTypeErrors blocks on every tsc error, in spec files the commit doe
   assert.deepEqual(blockingTypeErrors(output), [
     'libs/cli/src/a.spec.ts(1,1): error TS2532: Object is possibly undefined.',
   ]);
+});
+
+test('recognizes a vitest run that found no spec, also in colored output', () => {
+  assert.equal(ranNoSpecs('No affected test files found\n'), true);
+  assert.equal(ranNoSpecs('\x1b[33mNo test files found\x1b[39m, exiting with code 0'), true);
+  assert.equal(ranNoSpecs(' Test Files  1 passed (1)\n'), false);
+});
+
+test('expects specs for a spec file and for a source with a spec beside it, not for the rest', () => {
+  const repo = repoWithValueSpec();
+  assert.deepEqual(
+    filesExpectingSpecs(repo, ['libs/cli/src/value.ts', 'libs/cli/src/value.spec.ts', 'libs/cli/vitest.config.mts']),
+    ['libs/cli/src/value.ts', 'libs/cli/src/value.spec.ts'],
+  );
+});
+
+test('lints only changed top-level tools/scripts sources', () => {
+  assert.deepEqual(
+    toolFilesToLint([
+      'tools/scripts/a.mjs',
+      'tools/scripts/b.js',
+      'tools/scripts/x/c.mjs',
+      'libs/a.mjs',
+      'tools/scripts/d.md',
+    ]),
+    ['tools/scripts/a.mjs', 'tools/scripts/b.js'],
+  );
+});
+
+test('a staged tools/scripts file with a lint error blocks the commit', () => {
+  const repo = repoWithValueSpec();
+  write(repo, 'eslint.config.mjs', "export default [{ rules: { 'no-control-regex': 'error' } }];\n");
+  write(repo, 'tools/scripts/bad.mjs', 'export const bad = /\\x1b/;\n');
+  assert.equal(sh(repo, 'git', ['add', '.']).status, 0);
+  const hook = sh(repo, 'sh', ['.husky/pre-commit']);
+  assert.notEqual(hook.status, 0, hook.stdout + hook.stderr);
+  assert.match(hook.stderr, /eslint fails in tools\/scripts/);
+});
+
+test('a vitest run that selects no spec for a source with a spec fails the gate', () => {
+  const repo = repoWithValueSpec();
+  write(
+    repo,
+    'libs/cli/vitest.config.mts',
+    "import { defineConfig } from 'vitest/config';\n\nexport default defineConfig({ test: { include: ['nothing/**/*.spec.ts'] } });\n",
+  );
+  write(repo, 'libs/cli/src/value.ts', 'export const value = 1 + 0;\n');
+  assert.equal(sh(repo, 'git', ['add', '.']).status, 0);
+  const hook = sh(repo, 'sh', ['.husky/pre-commit']);
+  assert.notEqual(hook.status, 0, hook.stdout + hook.stderr);
+  assert.match(hook.stderr, /ran no spec for cli/);
+});
+
+test('finds the libs whose dependency fields changed between two revisions', () => {
+  const repo = mkdtempSync(join(tmpdir(), 'lib-build-gate-'));
+  repos.push(repo);
+  const manifest = (dependencies, version) => JSON.stringify({ version, dependencies }) + '\n';
+  write(repo, 'libs/a/package.json', manifest({ x: '1' }, '1'));
+  write(repo, 'libs/b/package.json', manifest({ y: '1' }, '1'));
+  const commit = (message) => {
+    assert.equal(sh(repo, 'git', ['add', '.']).status, 0);
+    assert.equal(sh(repo, 'git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', message]).status, 0);
+    return sh(repo, 'git', ['rev-parse', 'HEAD']).stdout.trim();
+  };
+  assert.equal(sh(repo, 'git', ['init', '-q']).status, 0);
+  const base = commit('base');
+  write(repo, 'libs/a/package.json', manifest({ x: '2' }, '1'));
+  write(repo, 'libs/b/package.json', manifest({ y: '1' }, '2'));
+  const head = commit('change');
+  assert.deepEqual(libsWithChangedDependencies(repo, base, head), ['a']);
 });
