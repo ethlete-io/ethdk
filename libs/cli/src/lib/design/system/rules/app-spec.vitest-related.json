@@ -1,0 +1,46 @@
+{
+  "success": false,
+  "testResults": [
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["chip"],
+          "fullName": "chip draws",
+          "status": "failed",
+          "title": "draws",
+          "duration": 4.351324000000005,
+          "failureMessages": [
+            "AssertionError: expected 1 to be 2 // Object.is equality\n    at /tmp/s3cap/src/chip.spec.ts:4:36\n    at file:///home/tom/dev/ethlete-sdk/node_modules/vitest/dist/chunks/run.BPv-BBRv.js:1632:35\n    at file:///home/tom/dev/ethlete-sdk/node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:26\n    at file:///home/tom/dev/ethlete-sdk/node_modules/vitest/dist/chunks/run.BPv-BBRv.js:3338:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///home/tom/dev/ethlete-sdk/node_modules/vitest/dist/chunks/run.BPv-BBRv.js:3333:10)\n    at file:///home/tom/dev/ethlete-sdk/node_modules/vitest/dist/chunks/run.BPv-BBRv.js:3318:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///home/tom/dev/ethlete-sdk/node_modules/vitest/dist/chunks/run.BPv-BBRv.js:3276:10)\n    at file:///home/tom/dev/ethlete-sdk/node_modules/vitest/dist/chunks/run.BPv-BBRv.js:3904:64"
+          ],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["chip"],
+          "fullName": "chip passes",
+          "status": "passed",
+          "title": "passes",
+          "duration": 0.20715400000000272,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1793784271360,
+      "endTime": 1793784271365.2073,
+      "status": "failed",
+      "message": "",
+      "name": "/tmp/s3cap/src/chip.spec.ts"
+    },
+    {
+      "assertionResults": [],
+      "startTime": 1793784271269,
+      "endTime": 1793784271269,
+      "status": "failed",
+      "message": "Cannot find module './missing' imported from /tmp/s3cap/src/tag.spec.ts",
+      "name": "/tmp/s3cap/src/tag.spec.ts"
+    }
+  ]
+}

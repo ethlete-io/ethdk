@@ -31,8 +31,6 @@ import {
   visibleChangeVerdictOf,
 } from './visible-change';
 
-const DEFAULT_BASE = 'origin/next';
-
 const git = (cwd: string, args: string[]) =>
   execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024 });
 
@@ -44,11 +42,20 @@ const gitOrNull = (cwd: string, args: string[]) => {
   }
 };
 
-/** The commit the gate compares HEAD with: `--base`, else the merge base of HEAD and origin/next. */
-export const baseCommitOf = (options: { root: string; base: string | undefined }) => {
-  const rev = options.base ?? gitOrNull(options.root, ['merge-base', 'HEAD', DEFAULT_BASE])?.trim();
+/**
+ * The commit the gate compares HEAD with: `base`, else the merge base of HEAD and `branch` (a product's
+ * `harness.baseBranch`), else of HEAD and the branch `origin/HEAD` names.
+ */
+export const baseCommitOf = (options: { root: string; base: string | undefined; branch?: string }) => {
+  const branch =
+    options.branch ??
+    gitOrNull(options.root, ['symbolic-ref', '--quiet', '--short', 'refs/remotes/origin/HEAD'])?.trim();
 
-  if (!rev) return `no merge base of HEAD and ${DEFAULT_BASE} - pass --base <rev>`;
+  if (!options.base && !branch) return 'no origin/HEAD to compare with - pass --base <rev> or set harness.baseBranch';
+
+  const rev = options.base ?? gitOrNull(options.root, ['merge-base', 'HEAD', branch ?? ''])?.trim();
+
+  if (!rev) return `no merge base of HEAD and ${branch} - pass --base <rev>`;
 
   return (
     gitOrNull(options.root, ['rev-parse', '--verify', '--quiet', `${rev}^{commit}`])?.trim() || `no commit "${rev}"`
@@ -234,6 +241,8 @@ export const checkVisibleChange = async (options: {
   parts?: string[];
   shoot?: ShootStates;
   start?: StartHarnessServer;
+  onVerdict?: (options: { product: string; verdict: VisibleChangeVerdict; line: string }) => void;
+  onProblem?: (options: { product: string; line: string }) => void;
 }): Promise<number> => {
   const { target, config } = options;
   const shoot = options.shoot ?? shootStates;
@@ -246,10 +255,14 @@ export const checkVisibleChange = async (options: {
     return 1;
   }
 
-  const commit = baseCommitOf({ root, base: options.base });
+  const branch = options.products
+    .map((name) => config.products?.[name]?.harness?.baseBranch)
+    .find((candidate) => candidate !== undefined);
+  const commit = baseCommitOf({ root, base: options.base, branch });
 
   if (!/^[0-9a-f]{40}$/.test(commit)) {
     console.log(commit);
+    options.products.forEach((product) => options.onProblem?.({ product, line: commit }));
 
     return 1;
   }
@@ -267,9 +280,14 @@ export const checkVisibleChange = async (options: {
     for (const name of options.products) {
       const entry = config.products?.[name];
 
-      if (!entry) {
-        console.log(`NO PRODUCT "${name}" in config.json.`);
+      const problem = (line: string) => {
+        console.log(line);
+        options.onProblem?.({ product: name, line });
         problems++;
+      };
+
+      if (!entry) {
+        problem(`NO PRODUCT "${name}" in config.json.`);
         continue;
       }
 
@@ -281,19 +299,17 @@ export const checkVisibleChange = async (options: {
         continue;
       }
 
-      const problem = typeof harness === 'string' ? harness : harnessStaleOf({ target, product });
+      const stale = typeof harness === 'string' ? harness : harnessStaleOf({ target, product });
 
-      if (typeof harness === 'string' || problem !== null) {
-        console.log(`${name}: ${problem}`);
-        problems++;
+      if (typeof harness === 'string' || stale !== null) {
+        problem(`${name}: ${stale}`);
         continue;
       }
 
       const entries = harnessEntriesOf({ target, product, map: harness.map });
 
       if (typeof entries === 'string') {
-        console.log(`${name}: ${entries}`);
-        problems++;
+        problem(`${name}: ${entries}`);
         continue;
       }
 
@@ -307,8 +323,7 @@ export const checkVisibleChange = async (options: {
       for (const server of [head, base]) if (server && typeof server !== 'string') servers.push(server);
 
       if (typeof head === 'string') {
-        console.log(`${name}: the HEAD harness app did not start: ${head}`);
-        problems++;
+        problem(`${name}: the HEAD harness app did not start: ${head}`);
         continue;
       }
 
@@ -340,7 +355,10 @@ export const checkVisibleChange = async (options: {
         const diff: PartDiff = { part, states };
         const verdict = visibleChangeVerdictOf({ diff, sketched });
 
-        console.log(`${name}: ${verdictLineOf(verdict, range)}`);
+        const line = verdictLineOf(verdict, range);
+
+        console.log(`${name}: ${line}`);
+        options.onVerdict?.({ product: name, verdict, line });
 
         for (const state of states) {
           if (state.kind === 'same') continue;

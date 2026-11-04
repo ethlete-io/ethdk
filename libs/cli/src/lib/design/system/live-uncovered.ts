@@ -11,6 +11,9 @@ import { partCoverOf, regionTextOf, UncoveredRegion, uncoveredRegionsOnPage } fr
 
 export type UncoveredFinding = { region: UncoveredRegion; states: string[] };
 
+/** The regions one live state of a page part shows, or why that state did not open. */
+export type UncoveredState = { page: string; state: string } & ({ regions: UncoveredRegion[] } | { problem: string });
+
 /** Groups the regions each live state reports, so a region every state shows is one finding listing those states. */
 export const uncoveredFindingsOf = (found: { state: string; regions: UncoveredRegion[] }[]): UncoveredFinding[] => {
   const findings = new Map<string, UncoveredFinding>();
@@ -41,7 +44,8 @@ export const liveUncoveredOf = async (options: {
   product: ResolvedProduct;
   url?: string;
   start?: StartHarnessServer;
-}): Promise<{ findings: UncoveredFinding[]; problems: string[] } | string> => {
+  pages?: string[];
+}): Promise<{ findings: UncoveredFinding[]; problems: string[]; states: UncoveredState[] } | string> => {
   const { target, config, product } = options;
   const live = liveSpecOf({ target, product });
 
@@ -72,8 +76,11 @@ export const liveUncoveredOf = async (options: {
         const base = `http://localhost:${(server.httpServer?.address() as AddressInfo).port}`;
         const found: { state: string; regions: UncoveredRegion[] }[] = [];
         const problems: string[] = [];
+        const states: UncoveredState[] = [];
 
-        for (const [name, page] of Object.entries(spec.pages))
+        for (const [name, page] of Object.entries(spec.pages).filter(
+          ([name]) => !options.pages || options.pages.includes(name),
+        ))
           for (const [stateName, state] of Object.entries(page.states)) {
             const label = `${name} ${stateName}`;
             const regions = await queue
@@ -112,11 +119,16 @@ export const liveUncoveredOf = async (options: {
               })
               .catch((error: unknown) => (error instanceof LiveError ? error.message : Promise.reject(error)));
 
-            if (typeof regions === 'string') problems.push(`${label}: ${regions}`);
-            else found.push({ state: label, regions });
+            if (typeof regions === 'string') {
+              problems.push(`${label}: ${regions}`);
+              states.push({ page: name, state: stateName, problem: regions });
+            } else {
+              found.push({ state: label, regions });
+              states.push({ page: name, state: stateName, regions });
+            }
           }
 
-        return { findings: uncoveredFindingsOf(found), problems };
+        return { findings: uncoveredFindingsOf(found), problems, states };
       } finally {
         await queue.close();
         await server.close();

@@ -126,6 +126,7 @@ import {
   readConfig,
   viteCacheOf,
 } from './paths';
+import { startSlowRunner } from './system/slow-run';
 import { relaunch, RELOAD_EXIT_CODE, superviseReloads, SUPERVISED_ENV, watchBuild } from './build-watch';
 
 type ViteDevServer = import('vite', { with: { 'resolution-mode': 'import' } }).ViteDevServer;
@@ -1124,6 +1125,13 @@ export const serveDesign = async (options: {
     );
   }
   server.printUrls();
+
+  if (process.env['ETHLETE_DESIGN_SLOW_CHECKS'] !== 'off')
+    startSlowRunner({
+      target,
+      configOf: () => readConfig(target),
+      log: (line) => console.log(`design-explore: ${line}`),
+    });
 
   if (ownedByStudio) {
     exitWhenStdinCloses(server);

@@ -62,6 +62,34 @@ describe('sketchEvidenceOf', () => {
   });
 });
 
+describe('baseCommitOf', () => {
+  it('defaults to the merge base of HEAD with the branch origin/HEAD names, or the branch the harness names', () => {
+    const { root, git, write } = repoOf();
+
+    try {
+      write('a.json', 1);
+      git('add', '.');
+      git('commit', '--quiet', '-m', 'one');
+      const first = git('rev-parse', 'HEAD');
+
+      git('update-ref', 'refs/remotes/origin/main', first);
+      git('symbolic-ref', 'refs/remotes/origin/HEAD', 'refs/remotes/origin/main');
+      write('a.json', 2);
+      git('commit', '--quiet', '-am', 'two');
+      const second = git('rev-parse', 'HEAD');
+
+      git('update-ref', 'refs/remotes/origin/next', second);
+      write('a.json', 3);
+      git('commit', '--quiet', '-am', 'three');
+
+      expect(baseCommitOf({ root, base: undefined })).toBe(first);
+      expect(baseCommitOf({ root, base: undefined, branch: 'origin/next' })).toBe(second);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('mergedInRangeOf', () => {
   it('finds a part a merge recorded in merged.json in base..HEAD with no sketch.json ever committed', () => {
     const { root, git, write } = repoOf();

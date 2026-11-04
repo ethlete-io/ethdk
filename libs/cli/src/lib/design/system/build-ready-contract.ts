@@ -22,4 +22,4 @@ export const SDK_ERROR_RULE = 'SDK-ERROR';
 export const blockerKindOfRule = (rule: string): BlockerKind =>
   rule === COMPARE_RULE ? 'compare' : rule === SDK_ERROR_RULE ? 'sdk-error' : 'problem';
 
-export const slowProblemsOf: SlowProblemsOf = () => [];
+export { slowProblemsOf } from './slow-checks';

@@ -12,6 +12,7 @@ import { appCanonicalClassesOf } from './system/rules/canonical-class';
 import { partKeyOf, resolveProduct } from './system/resolve-product';
 import { typecheckVariant } from './system/sketch/check-sketches';
 import { listSketches, Sketch } from './system/sketch/sketch';
+import { checkSlow } from './system/slow-run';
 import { checkVisibleChange } from './system/visible-change-command';
 import { inventoryWarningOf, stageProblemOf, systemWarningOf } from './system-use';
 import { binaryOf, outputOf, processFailureOf, trim, typecheck } from './typecheck';
@@ -421,6 +422,7 @@ const MODE_FLAGS: Record<string, string[]> = {
   '--visible-change': ['--product', '--part', '--base'],
   '--app-classes': ['--product'],
   '--live': ['--product'],
+  '--slow': ['--product', '--part', '--base'],
 };
 
 const CALL_FLAGS = ['--lint', '--tsconfig', '--call', '--variant'];
@@ -452,6 +454,7 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
   const appClasses = options.argv.includes('--app-classes');
   const live = options.argv.includes('--live');
   const visibleChange = options.argv.includes('--visible-change');
+  const slow = options.argv.includes('--slow');
   const baseAt = options.argv.indexOf('--base');
   const base = baseAt === -1 ? undefined : options.argv[baseAt + 1];
   const argv = options.argv.filter(
@@ -459,6 +462,7 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
       argument !== '--app-classes' &&
       argument !== '--live' &&
       argument !== '--visible-change' &&
+      argument !== '--slow' &&
       (baseAt === -1 || (index !== baseAt && index !== baseAt + 1)),
   );
   const unread = unreadArgumentOf(options.argv);
@@ -486,6 +490,9 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
   }
 
   const parts = positionals.length === 1 ? positionals : flags['--part'];
+
+  if (slow && products && products.length > 0)
+    return checkSlow({ target, config: readConfig(target) ?? {}, products, parts, base });
 
   if (visibleChange && products && products.length > 0)
     return checkVisibleChange({ target, config: readConfig(target) ?? {}, products, base, parts });
