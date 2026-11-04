@@ -4379,6 +4379,19 @@ alone; `yarn lint:studio-adrs` fails on a list item numbered 100 or more, a dupl
 and a "Bef. N" with no finding N, and its spec runs a prettier-renumbered fixture as the red case. Lesson: a number
 that other text points at must not be one a formatter computes.
 
+388\. Builder (2026-11-04, B325): 5fd088c7c (A10 S2) removed `go` from the open-points answer, but two cli specs
+still expected it. They failed at HEAD and blocked every later cli commit until 586c115a9. Why no tool caught it: the
+pre-commit gate runs only the specs related to the staged files, and these two specs read the answer through a path
+the related map does not link. Fix (B334): a field name or string literal that the staged diff removes pulls every
+spec that contains it into the gate run, as finding 376 does for labels. Also seen: `list-system.spec.ts` failed once
+under load; if it is bound to wall-clock time, it goes into the B268 fake-clock work.
+
+389\. Builder (2026-11-04, B325): dd708ee4a committed `started-by-studio.spec.ts` with a type error;
+`tsc -p libs/cli/tsconfig.spec.json` fails. Why no tool caught it: vitest does not typecheck, the pre-commit gate
+runs only vitest, and S7 moved typecheck to CI. Fix (B334): when a staged file is a spec, the gate also runs
+`tsc --noEmit -p <lib>/tsconfig.spec.json` for that lib, inside the 60 s budget of S7; if it does not fit, it runs
+only the staged specs through vitest typecheck mode.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
