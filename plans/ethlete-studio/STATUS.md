@@ -509,6 +509,7 @@ sketch` zeigen ihn (Befund 180).
 - **D9** Studio: 8 Teile ohne App-Code; canvas-frames und studio-view sauber zuordnen (Q247, Q248).
 - **D10** Die Matrix „Aktuell“ nur einmal, für App und CLI (Q124).
 - **D11** SDK-Teile: 5239 offene Punkte in 50 von 57 Teilen; 5104 davon fehlende Motions (B297). Rest: 85 fehlende Zustände, 29 ohne Controls, 20 Kontraste, 6 Kommentare; Design-Arbeit, keine Prio (Tom, 04.11.). Offen für Tom: menu item-active Kurzbefehl 4.10:1 (Empf. volle Textfarbe), chart bar-/pie-empty Umriss (Empf. contrast.exceptions).
+- **D18** agent-rules sync schreibt .mcp.json nicht im Prettier-Format (fifagg CI rot); allgemein: ein gemeinsamer JSON-Writer mit Prettier-Config für alles, was sync und CLI in ein Repo schreiben (wie go.json, 6f384a43f). ethlete-sdk-ed.
 
 ## E. Fragen und Entwürfe für Tom
 
