@@ -1,6 +1,6 @@
 # Studio – Status
 
-Stand: 02.11.2026, abends
+Stand: 04.11.2026, nachts
 
 ## Ziel
 
@@ -20,7 +20,12 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 
 ## Gerade in Arbeit
 
-**Reihenfolge (Tom, 04.11.): nach dem Push A10 (B249 + B295), dann A36 mit Chat-Entwürfen (A25) parallel; A37 später.**
+**Reihenfolge (04.11. nachts, ADR 0189):** B367b → B372 → B369 → Port in der App (`portAfterMerge`) → B345/B346
+(erst Design-Session) → B365 → B370 → B373 → B375 → B376 → B368 → B371 → B362 → B364 → B361 + B360 → B317 + B350 →
+B353/B354 → B356 → Refresh-Icon-Sketch + Code-Notice c + B352 → B334, B335, B336 → B332, B327, S4, S6b, S8 → B340 →
+B297, A36, A25. Ohne Platz: B339-Rest, B341, B342, B344, B347, B349, B355, B358, B359.
+
+Ältere 🔨-Zeilen unten sind noch nicht gegen git geprüft (Stand der Zeile kann veraltet sein).
 
 Stand der aktuellen Welle. ✅ fertig (lokal, ungepusht), 🔨 läuft, ⏳ geplant, ⛔ hakt, ⏸️ geparkt. Die Grill-Session hält die
 Tabelle nach jedem Bericht des Builders aktuell; fertige Zeilen fallen beim Push weg.
