@@ -68,7 +68,6 @@ type Props = {
   fold?: number;
   question?: string;
   port?: MergePort;
-  steady?: string[];
 };
 
 type View = { selected?: RowKey; status: SketchStatus; comparing: boolean; withdrawn?: Withdrawn; take: string };
@@ -190,8 +189,6 @@ const MERGE_PORTS: Record<MergePort, { merged: string[]; since: string }> = {
   two: { merged: ['components/sketch-status-badge', 'elements/variant-cell'], since: 'seit 1 Min' },
 };
 
-const STEADY = ['fit-hover', 'fit-active', 'fit-focus-visible'];
-
 const portLine = (port: MergePort) =>
   html`<span
     class="flex min-w-0 items-center gap-space-2 text-ui-sm text-et-surface-muted whitespace-nowrap"
@@ -206,11 +203,6 @@ const portLine = (port: MergePort) =>
     >
     <span>· ${MERGE_PORTS[port].since}</span>
   </span>`;
-
-const withSteady = (part: SketchPart, steady: string[]): SketchPart => ({
-  ...part,
-  rows: part.rows.map((row) => ({ ...row, changed: row.changed.filter((state) => !steady.includes(state)) })),
-});
 
 const pinFor = (row: Row) =>
   row.key === 'a'
@@ -356,13 +348,13 @@ export default definePart<Props>({
     'unchanged-matrix-open': { camera: { zoom: 0.25, x: -4000, y: 0 }, same: ['b', 'c'], sameOpen: true },
     'withdrawn-hidden': { camera: 'fit', part: 'narrow', withdrawn: 'hidden' },
     'withdrawn-shown': { camera: 'fit', part: 'narrow', withdrawn: 'shown' },
-    'agent-round': { camera: 'fit', part: 'narrow', agent: 'round', steady: STEADY },
+    'agent-round': { camera: 'fit', part: 'narrow', agent: 'round' },
     'agent-variant': { camera: 'fit', part: 'narrow', agent: 'variant' },
     'agent-failed': { camera: 'fit', part: 'narrow', agent: 'failed' },
     folded: { camera: 'fit', part: 'narrow', fold: 3, question: QUESTION },
     'question-only': { camera: 'fit', part: 'narrow', question: QUESTION },
-    'port-after-merge': { camera: 'fit', part: 'narrow', port: 'one', steady: STEADY },
-    'port-after-merge-long': { camera: 'fit', part: 'narrow', port: 'two', steady: STEADY },
+    'port-after-merge': { camera: 'fit', part: 'narrow', port: 'one' },
+    'port-after-merge-long': { camera: 'fit', part: 'narrow', port: 'two' },
   },
   render: async ({
     camera,
@@ -379,12 +371,11 @@ export default definePart<Props>({
     fold = 0,
     question = '',
     port,
-    steady = [],
   }) => {
     const { discard, chip, pickers, tags } = await controlsOf();
     const take = await takeButton();
     const run = agent ? AGENT_RUNS[agent] : undefined;
-    const full = withSteady(withSame(PARTS[kind], comparing ? [] : sameKeys), steady);
+    const full = withSame(PARTS[kind], comparing ? [] : sameKeys);
     const rowStyles = await prepareShots(full);
     const part = fold > 0 ? { ...full, states: full.states.slice(0, full.states.length - fold) } : full;
     const side = await treeOf(part.key.replace('components/', ''));

@@ -40,6 +40,7 @@ type ZoomChipProps = Parameters<typeof zoomChip.render>[0];
 const titleBarStates = titleBar.states as Record<string, TitleBarProps>;
 const zoomChipStates = zoomChip.states as Record<string, ZoomChipProps>;
 
+const STEADY = ['fit-hover', 'fit-active', 'fit-focus-visible'];
 const NARROW_STATES = Object.keys(zoomChipStates).filter((name) => name.startsWith('reset') || name.startsWith('fit'));
 
 export const PARTS: Record<PartKind, SketchPart> = {
@@ -84,7 +85,7 @@ export const PARTS: Record<PartKind, SketchPart> = {
         key: 'a',
         note: 'Chip als Pille, die Knöpfe rücken enger zusammen.',
         model: { ...OPUS, when: '02.11. 11:02' },
-        changed: NARROW_STATES.filter((name) => name.startsWith('fit')),
+        changed: NARROW_STATES.filter((name) => name.startsWith('fit') && !STEADY.includes(name)),
         look: '**:data-canvas-zoom:rounded-full',
       },
       {
