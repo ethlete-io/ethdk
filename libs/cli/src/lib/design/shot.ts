@@ -360,7 +360,8 @@ export const partFrameOf = (options: PartAddress & { system: SystemModules }) =>
     checker,
     pan,
   } = options;
-  const file = system.partOf({ product, part, sketch })?.file;
+  const drawn = sketch ? system.drawnOf(product, sketch) : null;
+  const file = drawn && 'sketchGone' in drawn ? undefined : system.partOf({ product, part, sketch })?.file;
   const size = preset ? system.productOf(product)?.presets[preset] : width ? { width } : null;
 
   if (!file)

@@ -90,7 +90,10 @@ export const createSystemModules = (options: { target: string; config: DesignCon
       : [];
   };
 
-  /** The product as it draws, or as one variant of one of its sketches draws it; `null` when either is missing. */
+  /**
+   * The product as it draws, or as one variant of one of its sketches draws it. A sketch that is gone (merged or
+   * discarded) draws as the product with `sketchGone` set; `null` when the product or the variant is missing.
+   */
   const drawnOf = (name: string, sketch?: SketchVariant | null) => {
     const product = productOf(name);
 
@@ -105,10 +108,12 @@ export const createSystemModules = (options: { target: string; config: DesignCon
       typeof target === 'string'
         ? null
         : findSketch({ productDir: sketchesRoot ?? product.dir, product: name, sketch: target });
-    const drawn =
-      found && typeof found !== 'string' && found.variants.includes(sketch.variant)
-        ? overlaySketch({ product, sketch: found, variant: sketch.variant })
-        : null;
+
+    if (!found || typeof found === 'string') return { ...product, sketchGone: sketch };
+
+    const drawn = found.variants.includes(sketch.variant)
+      ? overlaySketch({ product, sketch: found, variant: sketch.variant })
+      : null;
 
     sketched.set(key, drawn);
 

@@ -93,7 +93,31 @@ describe('createSystemModules', () => {
 
     expect(system.sketchesOf('acme')).toHaveLength(1);
     expect(elsewhere.sketchesOf('acme')).toEqual([]);
-    expect(elsewhere.partOf({ product: 'acme', part: 'components/button', sketch })).toBeNull();
+    expect(elsewhere.drawnOf('acme', sketch)).toMatchObject({ sketchGone: sketch });
+  });
+
+  it('draws a sketch that is gone as the product with a note, and notices when the sketch comes back', () => {
+    const { target, system } = acme();
+    const product = system.productOf('acme');
+    const parsed = parseTarget('components/button');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    const sketch = { target: 'components/button', variant: 'a' };
+    const merged = system.partOf({ product: 'acme', part: 'components/button' });
+
+    expect(system.drawnOf('acme', sketch)).toMatchObject({ sketchGone: sketch });
+    expect(system.partOf({ product: 'acme', part: 'components/button', sketch })?.file).toBe(merged?.file);
+    expect(
+      system.resolveId(
+        '@system/components/button',
+        productModuleIdOf({ file: join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts'), product: 'acme', sketch }),
+      ),
+    ).toBe(productModuleIdOf({ file: merged?.file ?? '', product: 'acme', sketch }));
+
+    createSketch({ merge: 'override', product, sketch: parsed, variants: ['a'] });
+
+    expect(system.drawnOf('acme', sketch)).not.toHaveProperty('sketchGone');
   });
 
   it("resolves @shared/ inside a sketch variant to the sketch's shared folder, and keeps a relative helper in the product", () => {

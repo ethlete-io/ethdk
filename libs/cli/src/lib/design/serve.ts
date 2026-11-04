@@ -605,10 +605,11 @@ const designExplore = ({
 
         return `http://localhost:${address && typeof address === 'object' ? address.port : portOf(config)}`;
       };
-      const ledger = createDrawLedger(
-        Date.now,
-        ({ sketch }) => !sketch || system.drawnOf(sketch.product, sketch) !== null,
-      );
+      const ledger = createDrawLedger(Date.now, ({ sketch }) => {
+        const drawn = sketch && system.drawnOf(sketch.product, sketch);
+
+        return !sketch || (!!drawn && !('sketchGone' in drawn));
+      });
       const thumbs = createThumbnailer({ target, base, ledger });
       const inventoryDraws = createDrawQueue({ target, ledger });
       const sketchChecker = checkSketches ? undefined : createSketchChecker();

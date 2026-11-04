@@ -50,6 +50,10 @@ Builder handoff (2026-11-04, ethlete-sdk-d0, context full). Grill/docs session: 
 
 Commit: the one that holds this section (`feat(repo): Guard sketch merge against a dirty product`). `mergeSketch` refuses before any write on uncommitted git edits in the product outside `sketches/` and the merged parts, naming the files; a failed check whose type errors all lie outside the merged paths answers "product broken outside this sketch: <file>". Two specs in `merge.spec.ts`, both fail on the old `merge.ts`. Verified: design and sketch specs, spec tsc, lint. Not verified: a live `et design sketch merge` in a real checkout; a product outside git skips the dirty check.
 
+## As built: B367a gone sketch (finding 435)
+
+Commit: the one that holds this section (`fix(repo): Draw a gone sketch as the product`). `drawnOf` returns `{ ...product, sketchGone: <the SketchVariant> }` when the sketch is not found, and does not cache it (a missing variant of a found sketch still returns null). `partOf`, `resolveId` and the sketch registry therefore resolve `@system/...` against the product; `serve.ts` (draw ledger) and `shot.ts` still treat a gone sketch as missing (404). New spec in `system-modules.spec.ts` fails on the old `system-modules.ts`; the sketchesRoot spec changed to expect `sketchGone`. Verified: cli tests, spec tsc, lint. Not verified: a live frame of a merged sketch in a running Studio; no frame note is rendered yet (part b uses `sketchGone`).
+
 ---
 
 ## As built: B339 Sketches e2e rule (2026-11-04)
