@@ -427,3 +427,13 @@ tools/scripts/studio-code.spec.mjs` (end-to-end case with a fake build). Not ver
 - B321: cause and fix in finding 375 report; fix uncommitted in `apps/ethlete-studio/src/app/design-parts/shell-main/`
   (copy /tmp/b321-shell-stacking-fix.patch) until the new `paint` check (uncommitted, verify-webkit-studio.swift)
   fails on HEAD and passes with the fix in Tom's quiet window.
+
+## As built: B325 rest
+
+- 296429625 had items 1, 2 and 4 (re-check rebuilds `old/` from HEAD, `EDIT-OLD-NOT-DRAWN`, stale-export spec).
+- 842fce846: the re-check also rewrites the English notes of an open edit sketch into German (shared constants).
+- 586c115a9: `part-ready.spec.ts` / `part-go.spec.ts` no longer expect `go` in the open-points answer (they failed
+  at HEAD and blocked every cli commit).
+- Verified: new specs fail without the fix; cli gate 1002 tests green at commit; eslint, prettier clean.
+- Not verified: proof run (needs a CLI build). Open: `tsc -p libs/cli/tsconfig.spec.json` fails on
+  `started-by-studio.spec.ts` (from dd708ee4a); `list-system.spec.ts` failed once under load ("not a git repository").
