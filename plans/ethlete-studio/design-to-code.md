@@ -4598,6 +4598,13 @@ none` on html, body and every element (the property is not inherited); the Tauri
      frontend from a sha-keyed build of HEAD like the CLI copy, switched on Tom's click; a scenario that an
      uncommitted `apps/ethlete-studio` edit does not reach the served app.
 
+378. Tom (2026-11-04, about 15:55): while the server runs, Studio shows no "Neu starten" (only in the stopped
+     state), and the title-bar code notice is built but not rendered. So a new CLI commit reaches Tom only by a
+     kill of the server or a full Studio restart. Why no tool caught it: the committed-code-only slice tested the
+     restart flow only from the stopped state; no spec renders the running state with a newer commit. Tool fix
+     (B323): render the title-bar notice in the running state as an interim "needs approval" notice that opens its
+     sketch (finding-368 flow); a spec for the running state with a newer CLI commit.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
