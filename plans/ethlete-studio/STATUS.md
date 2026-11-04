@@ -509,11 +509,7 @@ sketch` zeigen ihn (Befund 180).
 - **D9** Studio: 8 Teile ohne App-Code; canvas-frames und studio-view sauber zuordnen (Q247, Q248).
 - **D10** Die Matrix „Aktuell“ nur einmal, für App und CLI (Q124).
 - **D11** 48 SDK-Teile haben noch offene Punkte.
-- **D12** agent-rules `content/rules/nx-layout.md:35`: Nx 24 hat kein `@nx/eslint:lint` und kein `@nx/jest:jest`; Regel auf inferierte Targets umstellen (fifagg).
-- **D13** contentful: `@contentful/rich-text-types` ist Pflicht-Peer; Dependency, wenn zur Laufzeit importiert, sonst optionaler Peer (fifagg).
-- **D14** cdk `CarouselDirective`: `goTo()` in der 450-ms-Sperre nach dem Erstellen geht still verloren; einreihen oder Signal anbieten (fifagg).
-- **D15** cdk `createOverlayHandlerWithQueryParamLifecycle`: `close()` navigiert und bricht eine laufende routerLink-Navigation ab (fifagg).
-- **D16** components select: `open()` während der Schließ-Animation wird ignoriert; Schließen abbrechen (fifagg).
+- **D16** components select: `open()` während der Schließ-Animation wird ignoriert; Schließen abbrechen (fifagg). Kein Repro auf next (components und cdk öffnen in der Leave-Animation neu); wartet auf Schritte von fifagg.
 
 ## E. Fragen und Entwürfe für Tom
 
