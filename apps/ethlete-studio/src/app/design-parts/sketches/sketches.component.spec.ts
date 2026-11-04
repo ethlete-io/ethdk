@@ -58,7 +58,7 @@ describe('SketchesComponent', () => {
   });
 
   it('draws one row per variant with every state, dims the unchanged ones and marks the first change', async () => {
-    const root: HTMLElement = (await render({ camera: '100' })).nativeElement;
+    const root: HTMLElement = (await render({ camera: '100', statesOpen: true })).nativeElement;
     const variant = root.querySelector('[data-sk-row="x"]');
     const states = [...(variant?.querySelectorAll('[data-sk-state]') ?? [])];
 
@@ -72,6 +72,63 @@ describe('SketchesComponent', () => {
     expect(textOf(variant?.querySelector('[data-sk-first-change]'))).toBe(LABELS.firstChange);
     expect(root.querySelector('[data-sk-row="current"] [data-sk-first-change]')).toBeNull();
     expect(root.querySelector('[data-sk-row="current"] .opacity-50')).toBeNull();
+  });
+
+  it('folds the states every variant draws like Aktuell, never a pending one, and shows all from the toggle', async () => {
+    const rows: SketchRow[] = [
+      ...ROWS.slice(0, 1).map((row) => ({
+        ...row,
+        shots: [...row.shots, { state: 'busy', changed: false, height: 90 }],
+      })),
+      {
+        ...ROWS[1]!,
+        shots: [
+          { state: 'rest', changed: false, height: 100 },
+          { state: 'open', changed: true, height: 240 },
+          { state: 'busy', changed: null, height: 90 },
+        ],
+      },
+      {
+        key: 'y',
+        note: 'Ruhiger',
+        width: 400,
+        shots: [
+          { state: 'rest', changed: false, height: 100 },
+          { state: 'open', changed: false, height: 200 },
+          { state: 'busy', changed: false, height: 90 },
+        ],
+      },
+    ];
+    const fixture = await render({
+      rows,
+      camera: '100',
+      rounds: [{ value: 'r1', label: 'Runde 1', note: 'Wo steht der Status?' }],
+      round: 'r1',
+    });
+    const root: HTMLElement = fixture.nativeElement;
+    const framesOf = () =>
+      [...root.querySelectorAll('[data-sk-row="x"] [data-sk-frame]')].map((frame) =>
+        frame.getAttribute('data-sk-frame'),
+      );
+
+    expect(framesOf()).toEqual(['x open', 'x busy']);
+    expect(root.querySelector('[data-sk-row="current"] [data-sk-frame="current rest"]')).toBeNull();
+    expect(textOf(root.querySelector('[data-sk-folded] > span'))).toBe(LABELS.foldedStates(1));
+    expect(textOf(root.querySelector('[data-sk-folded] button'))).toBe(LABELS.showAllStates);
+    expect(textOf(root.querySelector('[data-sk-question]'))).toBe('Wo steht der Status?');
+
+    root.querySelector<HTMLButtonElement>('[data-sk-folded] button')?.click();
+    await fixture.whenStable();
+
+    expect(framesOf()).toEqual(['x rest', 'x open', 'x busy']);
+  });
+
+  it('folds no state when every state draws like Aktuell', async () => {
+    const rows = ROWS.map((row) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: false })) }));
+    const root: HTMLElement = (await render({ rows, camera: '100', sameOpen: true })).nativeElement;
+
+    expect(root.querySelector('[data-sk-folded]')).toBeNull();
+    expect(root.querySelectorAll('[data-sk-row="x"] [data-sk-frame]').length).toBe(2);
   });
 
   it('shows the short model name with the full id and time as its title', async () => {
@@ -136,7 +193,7 @@ describe('SketchesComponent', () => {
   });
 
   it('sizes each frame to the part width times the zoom and wraps narrow parts into columns', async () => {
-    const root: HTMLElement = (await render({ camera: '100' })).nativeElement;
+    const root: HTMLElement = (await render({ camera: '100', statesOpen: true })).nativeElement;
     const frame = root.querySelector<HTMLElement>('[data-sk-row="x"] [data-sk-frame="x open"]');
     const stage = root.querySelector<HTMLElement>('[data-sk-row="x"] [data-sk-stage]');
 
@@ -332,7 +389,7 @@ describe('SketchesComponent', () => {
   });
 
   it('opens at a restored camera and selects a clicked frame', async () => {
-    const fixture = await render({ restoredCamera: { zoom: 0.5, x: -40, y: -60 } });
+    const fixture = await render({ restoredCamera: { zoom: 0.5, x: -40, y: -60 }, statesOpen: true });
     const root: HTMLElement = fixture.nativeElement;
     const frame = root.querySelector<HTMLElement>('[data-sk-frame="x rest"]');
 

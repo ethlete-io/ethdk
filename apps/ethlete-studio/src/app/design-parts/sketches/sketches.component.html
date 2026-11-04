@@ -102,7 +102,9 @@
         {{ LABELS.discard }}
       </button>
     </header>
-    <div class="absolute top-14 left-[calc(var(--st-shell-inset-left)+var(--space-5))] z-2 [&_.et-form-field]:w-auto">
+    <div
+      class="absolute top-14 right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] z-2 flex items-center gap-space-4 [&_.et-form-field]:w-auto"
+    >
       <et-form-field size="sm">
         <et-select [value]="round()" [aria-label]="LABELS.roundSelect" (valueChange)="selectRound($event)">
           @for (option of rounds(); track option.value) {
@@ -110,6 +112,15 @@
           }
         </et-select>
       </et-form-field>
+      @if (question()) {
+        <span class="min-w-0 truncate text-ui-sm text-et-surface-muted" data-sk-question>{{ question() }}</span>
+      }
+      @if (foldedStates().size > 0) {
+        <span class="ml-auto flex flex-none items-center gap-space-3" data-sk-folded>
+          <span class="text-ui-sm text-et-surface-muted">{{ LABELS.foldedStates(foldedStates().size) }}</span>
+          <ethlete-disclosure [(open)]="statesOpen" [label]="LABELS.showAllStates" size="xs" />
+        </span>
+      }
     </div>
     <div class="absolute top-27 right-space-5 bottom-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))]">
       <ethlete-canvas-viewport #list class="size-full [--st-shell-inset-left:0px]" data-sk-rows>

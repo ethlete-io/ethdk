@@ -5,7 +5,7 @@ import { ListedPart, ListedProduct, ListedSketch } from '../../host/design';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { THEMES } from '../../themes';
 import { injectCommentStore, provideCommentStore } from './comment-store';
-import { SketchViewComponent } from './sketch-view.component';
+import { SketchViewComponent, liveShotsOf } from './sketch-view.component';
 
 const PRODUCT: ListedProduct = { name: 'web', base: null, presets: {}, parts: [], problems: [] };
 
@@ -35,6 +35,31 @@ class SilentResizeObserver {
 
   public disconnect() {
     return undefined;
+  }
+}
+
+class NearIntersectionObserver {
+  public constructor(private callback: IntersectionObserverCallback) {}
+
+  public observe(target: Element) {
+    setTimeout(() =>
+      this.callback(
+        [{ target, isIntersecting: true, intersectionRatio: 1 } as unknown as IntersectionObserverEntry],
+        this as unknown as IntersectionObserver,
+      ),
+    );
+  }
+
+  public unobserve() {
+    return undefined;
+  }
+
+  public disconnect() {
+    return undefined;
+  }
+
+  public takeRecords() {
+    return [];
   }
 }
 
@@ -120,6 +145,7 @@ describe('SketchViewComponent', () => {
     localStorage.clear();
     vi.stubGlobal('EventSource', SilentEventSource);
     vi.stubGlobal('ResizeObserver', SilentResizeObserver);
+    vi.stubGlobal('IntersectionObserver', NearIntersectionObserver);
     vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
       return this.hasAttribute('data-sk-rows') ? LIST_WIDTH : 0;
     });
@@ -145,6 +171,31 @@ describe('SketchViewComponent', () => {
       ...new Set([...root.querySelectorAll('iframe')].map((frame) => new URL(frame.src).searchParams.get('variant'))),
     ]).toEqual([null, 'b']);
     expect(root.textContent).toContain('Calmer');
+  });
+
+  it('keeps at most six near cells live and shows the stored picture in the other near cells', async () => {
+    const states = Array.from({ length: 25 }, (_, index) => `state-${index}`);
+    const wide = {
+      ...SKETCH,
+      variants: ['a', 'b', 'c'],
+      targets: ['a', 'b', 'c'].map((variant) => ({ variant, states, interactions: [] })),
+    } satisfies ListedSketch;
+
+    const { fixture, root } = await render(wide, noComments);
+
+    fixture.componentRef.setInput('part', { ...CARD, states });
+    await settle(fixture);
+
+    expect(root.querySelectorAll('[data-shot]').length).toBe(100);
+    expect(root.querySelectorAll('iframe[data-state]').length).toBe(6);
+    expect(root.querySelectorAll('img[data-shot-picture]').length).toBe(94);
+  });
+
+  it('lists the near keys in row order up to the cap', () => {
+    expect(liveShotsOf({ order: ['a 1', 'a 2', 'b 1', 'b 2'], near: new Set(['b 2', 'a 2', 'b 1']), cap: 2 })).toEqual([
+      'a 2',
+      'b 1',
+    ]);
   });
 
   it('switches the round from the select, remembers it, and follows a new round', async () => {

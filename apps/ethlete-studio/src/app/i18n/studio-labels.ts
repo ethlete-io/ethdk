@@ -52,6 +52,9 @@ export const STUDIO_LABELS = {
     reload: 'Erneut laden',
     sameVariants: (keys: string[]) => `Unverändert: ${keys.map((key) => `Variante ${key}`).join(', ')}`,
     firstChange: 'erste Änderung',
+    foldedStates: (count: number) =>
+      count === 1 ? '1 unveränderter Zustand eingeklappt' : `${count} unveränderte Zustände eingeklappt`,
+    showAllStates: 'Alle Zustände zeigen',
     drawingMark: 'zeichnet',
     drawingVariant: 'zeichnet diese Variante',
     drawingHint: 'Der Rahmen füllt sich, sobald die erste Ansicht steht.',
@@ -77,6 +80,7 @@ export const STUDIO_LABELS = {
   },
   system: {
     none: 'Noch keine Teile.',
+    sketchMissing: 'Sketch nicht gefunden',
     emptyTitle: 'Noch keine Teile',
     emptyExplainer:
       'Das Design-System eines Produkts wächst in Schichten: Foundations, Components, Elements und Pages. Dein Agent zeichnet jeden Teil als Sketch, du wählst unter Sketches. Bitte ihn zum Beispiel so:',

@@ -19,7 +19,7 @@ export type SketchHold = { until: string; by: SketchModel; since: string };
 
 export type SketchIdle = { by: string; since: string };
 
-export type SketchRound = { value: string; label: string };
+export type SketchRound = { value: string; label: string; note?: string };
 
 export type SketchPin = {
   variant: string;

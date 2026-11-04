@@ -61,6 +61,22 @@ export type SketchShotContext = { $implicit: SketchRow; state: string };
 
 const ZOOM_STEP = 1.5;
 
+/**
+ * The states every variant row draws the same as Current (`changed === false`), unless that is every state; a state
+ * still compared (`null`) never folds.
+ */
+export const foldedStatesOf = (rows: readonly SketchRow[]): ReadonlySet<string> => {
+  const variants = rows.filter((row) => row.key !== SKETCH_CURRENT);
+  const states = [...new Set(rows.flatMap((row) => row.shots.map((shot) => shot.state)))];
+  const folded = states.filter(
+    (state) =>
+      variants.length > 0 &&
+      variants.every((row) => row.shots.some((shot) => shot.state === state && shot.changed === false)),
+  );
+
+  return new Set(folded.length === states.length ? [] : folded);
+};
+
 const WRAP_WIDTH = 1440;
 
 const MAX_COLUMNS = 4;
@@ -160,6 +176,7 @@ export class SketchesComponent {
   public round = input(SKETCH_ROUNDS[0]?.value ?? '');
   public pins = input<SketchPin[]>(SKETCH_PINS);
   public sameOpen = model(false);
+  public statesOpen = model(false);
 
   public shot = input<TemplateRef<SketchShotContext> | null>(null);
   public tree = input(SKETCH_TREE);
@@ -204,9 +221,18 @@ export class SketchesComponent {
     return typeof camera === 'object' ? { x: camera.x, y: camera.y } : { x: 0, y: 0 };
   });
   private userCamera$ = new Subject<Camera | null>();
-  public shownRows = computed(() =>
+  private listedRows = computed(() =>
     this.fresh() ? this.rows().filter((row) => row.key !== SKETCH_CURRENT) : this.rows(),
   );
+  protected foldedStates = computed(() => foldedStatesOf(this.listedRows()));
+  public shownRows = computed(() => {
+    const folded = this.foldedStates();
+
+    if (this.statesOpen() || folded.size === 0) return this.listedRows();
+
+    return this.listedRows().map((row) => ({ ...row, shots: row.shots.filter((shot) => !folded.has(shot.state)) }));
+  });
+  protected question = computed(() => this.rounds().find((option) => option.value === this.round())?.note ?? '');
   public columns = computed(() => {
     const rows = this.shownRows();
     const widest = Math.max(1, ...rows.map((row) => row.width));

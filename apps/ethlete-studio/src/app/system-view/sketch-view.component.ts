@@ -13,6 +13,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { signalElementIntersection } from '@ethlete/core';
 import { DOCUMENT } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import {
@@ -92,6 +93,21 @@ const minutesSince = (at: number) => Math.max(0, Math.round((Date.now() - at) / 
 
 const FALLBACK_SIZE = { width: 1440, height: 900 };
 
+const NEAR_MARGIN = '400px';
+
+const LIVE_SHOT_CAP = 6;
+
+/** The keys of `near` that stay live frames: at most `cap`, in the order of `order`. */
+export const liveShotsOf = ({
+  order,
+  near,
+  cap = LIVE_SHOT_CAP,
+}: {
+  order: readonly string[];
+  near: ReadonlySet<string>;
+  cap?: number;
+}) => order.filter((key) => near.has(key)).slice(0, cap);
+
 @Component({
   selector: 'ethlete-sketch-view',
   template: `
@@ -114,6 +130,7 @@ const FALLBACK_SIZE = { width: 1440, height: 900 };
     } @else {
       <ethlete-sketches
         [(sameOpen)]="sameOpen"
+        [(statesOpen)]="statesOpen"
         [part]="sketch().target"
         [rows]="rows()"
         [fresh]="!part()"
@@ -158,16 +175,31 @@ const FALLBACK_SIZE = { width: 1440, height: 900 };
     </ng-template>
 
     <ng-template #shot let-row let-state="state">
-      @if (rowShots().get(row.key + ' ' + state); as src) {
-        <iframe
-          #shotFrame
-          [src]="src"
-          [title]="row.key + ' ' + state"
-          [attr.data-variant]="row.key"
-          [attr.data-state]="state"
-          class="block size-full border-0 scheme-normal"
-        ></iframe>
-      }
+      @let key = row.key + ' ' + state;
+      <div #shotCell [attr.data-shot]="key" class="size-full">
+        @if (liveShots().has(key)) {
+          @if (rowShots().get(key); as src) {
+            <iframe
+              #shotFrame
+              [src]="src"
+              [title]="key"
+              [attr.data-variant]="row.key"
+              [attr.data-state]="state"
+              class="block size-full border-0 scheme-normal"
+            ></iframe>
+          }
+        } @else if (nearShots().has(key)) {
+          @if (shotPictures().get(key); as picture) {
+            <img
+              [src]="picture"
+              [alt]="key"
+              (load)="pictureLoaded(key, $event)"
+              class="block w-full"
+              data-shot-picture
+            />
+          }
+        }
+      </div>
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -209,6 +241,23 @@ export class SketchViewComponent {
 
   private shotFrames = viewChildren<ElementRef<HTMLIFrameElement>>('shotFrame');
 
+  private shotCellRefs = viewChildren<ElementRef<HTMLElement>>('shotCell');
+
+  private shotCells = signalElementIntersection(this.shotCellRefs, {
+    rootMargin: NEAR_MARGIN,
+  });
+
+  protected nearShots = computed(
+    () =>
+      new Set(
+        this.shotCells()
+          .filter((entry) => entry.isIntersecting)
+          .map((entry) => (entry.target as HTMLElement).dataset['shot'] ?? ''),
+      ),
+  );
+
+  private pictureRatios = signal<Record<string, number>>({});
+
   private safeUrls = new Map<string, SafeResourceUrl>();
 
   protected busy = signal<Busy | null>(null);
@@ -245,6 +294,7 @@ export class SketchViewComponent {
       .map(({ round, index }) => ({
         value: round.key,
         label: STUDIO_LABELS.sketches.round(index + 1, round.title),
+        note: round.note,
       })),
   );
 
@@ -395,6 +445,21 @@ export class SketchViewComponent {
     }),
   );
 
+  protected liveShots = computed(
+    () =>
+      new Set(
+        liveShotsOf({
+          order: this.sketchRows().flatMap((row) => row.shots.map((shot) => `${row.key} ${shot.state}`)),
+          near: this.nearShots(),
+        }),
+      ),
+  );
+
+  protected shotPictures = computed(
+    () =>
+      new Map(this.sketchRows().flatMap((row) => row.shots.map((shot) => [`${row.key} ${shot.state}`, shot.picture]))),
+  );
+
   private measured = toSignal(
     fromEvent<MessageEvent>(this.document.defaultView ?? [], 'message').pipe(
       map((event) => ({ shot: this.shotShowing(event.source), message: frameMessageOf(event.data) })),
@@ -435,6 +500,7 @@ export class SketchViewComponent {
   protected rows = computed<SketchRow[]>(() => {
     const sketch = this.sketch();
     const measured = this.measured();
+    const ratios = this.pictureRatios();
 
     return this.sketchRows().map((row) => {
       const author = row.key === CURRENT ? undefined : sketch.variantInfo?.[row.key]?.authors?.[0];
@@ -442,18 +508,24 @@ export class SketchViewComponent {
       const sizeOf = (state: string) => measured[`${row.key} ${state}`];
       const when = sketch.report?.variant === row.key ? whenOf(sketch.report.updatedAt) : undefined;
 
+      const width = row.width ?? widestOf(row.shots.map((shot) => sizeOf(shot.state)?.width)) ?? FALLBACK_SIZE.width;
+
       return {
         key: row.key,
         note: row.key === CURRENT ? '' : (sketch.variantInfo?.[row.key]?.note ?? ''),
         ...(author && agent
           ? { model: { short: modelNameOf(author), id: author, agent, ...(when ? { when } : {}) } }
           : {}),
-        width: row.width ?? widestOf(row.shots.map((shot) => sizeOf(shot.state)?.width)) ?? FALLBACK_SIZE.width,
-        shots: row.shots.map(({ state, changed }) => ({
-          state,
-          changed,
-          height: sizeOf(state)?.height ?? MEASURING_HEIGHT,
-        })),
+        width,
+        shots: row.shots.map(({ state, changed }) => {
+          const ratio = ratios[`${row.key} ${state}`];
+
+          return {
+            state,
+            changed,
+            height: sizeOf(state)?.height ?? (ratio ? Math.round(ratio * width) : MEASURING_HEIGHT),
+          };
+        }),
       };
     });
   });
@@ -529,6 +601,8 @@ export class SketchViewComponent {
   });
 
   protected sameOpen = signal(false);
+
+  protected statesOpen = signal(false);
 
   protected drawnVariant = computed(() => this.matrix().columns.find((column) => column.drawing)?.key ?? null);
 
@@ -631,6 +705,14 @@ export class SketchViewComponent {
 
   protected discard() {
     this.run('discard', discardSketch$(this.address()));
+  }
+
+  protected pictureLoaded(key: string, event: Event) {
+    const { naturalWidth, naturalHeight } = event.target as HTMLImageElement;
+
+    if (naturalWidth === 0 || this.pictureRatios()[key] === naturalHeight / naturalWidth) return;
+
+    this.pictureRatios.update((ratios) => ({ ...ratios, [key]: naturalHeight / naturalWidth }));
   }
 
   private safeUrlOf(src: string) {
