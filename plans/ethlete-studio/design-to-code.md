@@ -4656,6 +4656,11 @@ the spec typecheck for every staged spec file.
 `design/web/rebuild-probe-*.txt`). Why no tool caught it: the spec shares a probe path with the tree it runs in, and no
 check runs a spec in both trees. Fix (B359): the probe tolerates a missing file, or the spec uses its own temp dir.
 
+421\. Tom (2026-11-04, screenshot of the port-mark sketch on pages/sketches): "wann kümmern wir uns um diese ugly ui
+hier?" The state labels (`agent-round`, `port-after-merge`, `port-after-merge-long`) float in plain monospace far left
+of their frames on the empty dot grid, and the frames stand cut off at the right. Cause not yet known (asked the
+builder). Why no tool caught it, and the fix: pending the cause; joins B346 (sketch view chrome at other zoom levels).
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
