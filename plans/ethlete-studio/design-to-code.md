@@ -4526,6 +4526,26 @@ creates one iframe per frame and aborts no frame request" (6 aborted requests). 
 395 again; no gate ran `studio:e2e` after a merge. Fix: B339's CI job, plus a post-merge run of the e2e cases for the
 merged part (B349). Decision (grill session, Tom afk): triage before B343; no case is rewritten without Tom's OK.
 
+408\. Mac perf session (2026-11-04, B348, next@ee7ab1de7, product studio with 1 sketch): the first
+`/__design/sketches` listing after a server start takes 240.8 s on the Mac and stalls the design server for up to
+33.5 s at a time; the second request takes 23 ms. Desk: 580 ms with a warm harness cache. Likely cause: the first
+listing starts `nx run ethlete-studio:build:development --skipNxCache` harness builds (3 in one cold run, 25-85 s each
+on the Mac), and the cache key (`harnessBuildKeyOf`) hashes every tracked file, so any commit anywhere forces new
+builds. Why no tool caught it: the desk always has a warm cache and is fast enough to hide the stalls; no check measures
+a cold start or the server stall. Fix (B317, extended): with a cold cache (empty ET tmpdir, one sketch), the longest
+event-loop stall during the first listing stays under 50 ms (20 ms ping route), the listing answers within 1 s without
+waiting for a harness build, and a cold start runs at most 1 harness build.
+
+409\. Mac perf session (2026-11-04, B348): `GET /__design/system?product=studio` takes 61 s on the Mac on every call,
+also warm; the server stalls up to 1 s during it. Desk: 2 s. The sketch view (pages/sketches) showed no cell within
+180 s on the Mac; desk 3.3 s. Likely cause: no result cache, each call redoes the product analysis (vite/rollup chunk
+code, TypeScript scan, file reads, a postcss `CssSyntaxError` thrown and caught in a loop), plus synchronous child
+processes (`execFileSync` in the canonical-class rule `classFactsOf` 4.6 s, git calls in `headOf`, `gitOrNull`,
+`workTreeFilesOf`, `defaultBaseOf`). Why no tool caught it: 2 s on the desk looks fine, and no check measures a repeated
+call or the server stall. Fix (B350): the second call on a warm server answers within 200 ms from a cache keyed on its
+inputs; the longest stall during the first call stays under 50 ms, with the Tailwind and git calls as async child
+processes; zero `CssSyntaxError` throws per call.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
