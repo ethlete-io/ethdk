@@ -57,6 +57,11 @@
     "decidedBy": "user",
     "at": "2026-11-03T22:33:37.374Z"
   },
-  "pages/start": "18019d23722921e9",
+  "pages/start": {
+    "hash": "5074133a3524678e",
+    "variant": "new",
+    "decidedBy": "user",
+    "at": "2026-11-04T14:48:14.692Z"
+  },
   "pages/system": "c9f5b714b0ebd634"
 }
