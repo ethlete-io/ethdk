@@ -1,0 +1,5 @@
+@layer components {
+  .zr-picker .et-form-field {
+    inline-size: auto;
+  }
+}
