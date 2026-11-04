@@ -5,17 +5,36 @@ Status: planned 2026-11-04, not built. Sources: `backlog-parallel/decisions-late
 
 ## In progress
 
-Builder: ethlete-sdk-d0 (2026-11-04, after b3). Grill/docs session: ethlete-sdk-e4. SDK fixer: ethlete-sdk-ed.
+Builder handoff (2026-11-04, ethlete-sdk-d0, context full). Grill/docs session: ethlete-sdk-e4.
 
-- Done: S3 and S7 (slim pre-push) committed and pushed; the push of `next` went through.
-- In progress (d0): S1 build-ready core on the contract 943e84cad; S2 and S5 start after S1. S7 rest: a CI
-  "Studio rules" job on `design check --slow`, delete the `prepush-*` scripts. Triage of the last CI run on `next`.
-- S6a: sketch of the popover footer (status words final: Baubereit, Nicht baubereit (n), Wird geprüft) plus an agent-progress signal ("Agent untersucht", "Agent behebt"; second signal, not a replacement). Tom picks the variant.
-- Sketch on pages/sketches: agent progress in the sketch view ("Agent baut Runde 2"). Tom picks.
-- Open design task (builder decides): one source of agent state (working, waiting, interrupted, failed, plus what it does on which part) that both displays and the A25 chat read. Proposal: the agent reports through a CLI/MCP command that writes a gitignored state file per product; Studio reads it through the design server.
-- Decisions: Q1, Q3 (changed: S8 adds an `et update` migration that deletes go.json and accepted.json), Q4, Q5 (base = `harness.baseBranch`, origin/next here), Q7, Q8 taken. Q2 decided (words above). Q6: Studio creates the old/new sketch by itself. B296 (every server-reported part error blocks the pick through one path) goes into S6b.
-- Re-run `sketch check` on pages/sketches r1 (6279f63f3) with a checkout-built CLI before it counts as ready. Queued, not started: B300 (TEXT-TRUNCATED), B301 (stale hash over HEAD blobs), D19 (part-ready.ts uses writeJsonFile; S1 got the note).
-- After A10: B297 (missing-motion only for connected state pairs), then A36 explorer with A25 chat sketches.
+- Done, not pushed (17 commits on `next`): S1 8675cccbb, S2 5fd088c7c, S5 598e0b2bd, S7 rest dbd6de8e6; CI fixes
+  45f505995 (contentful), 62c79da3b (ANSI in precommit-specs), 99905988b (shell-logo timeout; ET1234 absent in a
+  green run), 4d78306ab (pages/system chip counts exceptions; undrivable states are a VISIBLE-CHANGE problem).
+- Not verified anywhere: the full `nx test cli` on a quiet machine. Run it once, `--maxWorkers=2`, only while Tom
+  does not use Studio. Then push and triage CI.
+- S4 parked half-done: `.claude/handoffs/s4-parked/s4.patch` (+ `leftover-files.ts/.spec.ts`), applied over
+  5fd088c7c. It does not compile yet. The patch holds the deletions and merged-parts/accepted-pictures cleanup. The
+  remaining steps: check-system GO block + leftover warning + harness map after build-ready, the actions writer in
+  the record, action-lost/action-undeclared, dom-command, studio-api/serve (apiLevel 5), design-command, mcp `go`,
+  commit-hunks, sketch-command, stage-design-base.mjs, related-map, specs, the writer->reader round-trip spec
+  (finding 361), GO_JSON in git-safety.py. Work it in a git worktree: an uncompilable libs/cli in the shared
+  checkout breaks Studio's restart and `sketch check` ("CLI build is stale").
+- Load rule: one heavy run at a time; no `nx build cli` while Tom works in Studio (serve's `watchBuild` restarts
+  his server on every dist change, see below).
+- S6b waits on Tom's S6a footer pick. S6b also: no Verwerfen on `<part>@edit` sketches, and the server refuses
+  `sketch discard` on them with "pick old". Studio app knows no `direct-edit` kind yet. part-approval reads `go`,
+  which is gone, so the footer shows "Go geben" until S6b.
+- S8: data migration (Studio go.json holds 7 actions, ready.json none), docs (`apps/docs/cli/index.md:402`
+  `ready --by`), pictures.json kinds to `record`.
+- Studio render bug of 13:30-14:00 (both sketches empty): load + serve self-restart, not the sketches. Tool fixes,
+  queued: (1) "Wartet auf deine Wahl" only when every live variant drew frames without error
+  (`sketch-view.component.ts:530`); (2) no `watchBuild` self-restart when Studio owns the server, show "CLI
+  geändert - neu starten"; (3) `design_server_restart` builds before it stops the old server; (4) frame error text
+  through `canvas-frame.ts` to the chip; (5) per-shot timeout in `sketch check`. The valid `sketch check` on
+  pages/sketches r1 is still open (needs a build, so only when Tom agrees).
+- Queue after A10: B302 (machine lock for heavy runs), B303, B304 (traffic lights), B305 (hook matches command
+  position only), B306, B307 (parser fixtures from real runs), B308 (person-name check; role `human`), B300,
+  B301, B297, then A36 with A25.
 
 ## Current state
 
