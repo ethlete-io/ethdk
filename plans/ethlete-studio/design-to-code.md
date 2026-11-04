@@ -4472,7 +4472,9 @@ has no nowrap and likely wraps in Studio; it is fixed with Tom's pick (finding 3
 `components/title-bar@code-notice` (20:17) changed a part that pages/sketches draws, three minutes after the sketch
 was ready. Why no tool caught it: the stale text names the sketch's own part, not the changed dependency, and a merge
 does not say which open sketches it makes stale. Fix (B343): the stale text names the changed parts from the
-baseline diff ("components/title-bar wurde gemergt"), and a merge lists the open sketches it makes stale.
+baseline diff ("components/title-bar wurde gemergt"), and a merge lists the open sketches it makes stale. The same
+happened to `pages/system@pages-system-build-ready` minutes later, so a merge also rebases every open sketch it makes
+stale by itself when the rebase applies cleanly; only a conflict reaches a person.
 
 401\. Builder (2026-11-04): Tom picked variant a of `pages/sketches` ("Agent-Fortschritt in der Sketch-Ansicht"),
 then merged `pages/sketches@fold-question` b, which changed the same files. `sketch rebase` refused and asked for a
