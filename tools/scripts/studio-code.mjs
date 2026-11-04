@@ -45,15 +45,9 @@ export const areaState = (root) => ({
 
 /**
  * Picks the committed build to run. A dirty `libs/cli` never yields a copy of the working build;
- * Studio then keeps the copy it runs, while an agent's command runs the last commit.
+ * the last commit that touched the CLI is built when no copy of it exists yet.
  */
-export const cliCopyPlan = ({ latest, dirty, copies, current, distMatches, keepWhenDirty = true }) => {
-  if (dirty && keepWhenDirty) {
-    const kept = copies.includes(current) ? current : copies.at(-1);
-
-    return kept ? { action: 'use', sha: kept } : { action: 'build', sha: latest };
-  }
-
+export const cliCopyPlan = ({ latest, dirty, copies, distMatches }) => {
   if (copies.includes(latest)) return { action: 'use', sha: latest };
 
   return { action: distMatches && !dirty ? 'copy' : 'build', sha: latest };
@@ -78,7 +72,7 @@ const recordedHashOf = (buildDir) => {
 const copiesOf = (cache) =>
   existsSync(cache)
     ? readdirSync(cache)
-        .filter((name) => /^[0-9a-f]{40}$/.test(name))
+        .filter((name) => /^[0-9a-f]{40}$/.test(name) && existsSync(join(cache, name, PINNED_FILE)))
         .sort((a, b) => statSync(join(cache, a)).mtimeMs - statSync(join(cache, b)).mtimeMs)
     : [];
 
@@ -96,7 +90,21 @@ const settle = (staging, target, sha) => {
   }
 };
 
-const buildInWorktree = (root, sha, target, log) => {
+const buildWithNx = (root, tree, log) => {
+  symlinkSync(join(root, 'node_modules'), join(tree, 'node_modules'), 'dir');
+
+  const build = spawnSync('npx', ['nx', 'build', 'cli'], {
+    cwd: tree,
+    encoding: 'utf8',
+    env: { ...process.env, NX_NO_CLOUD: 'true', NX_DAEMON: 'false' },
+  });
+
+  log(`${build.stdout}${build.stderr}`.trim());
+
+  if (build.status !== 0) throw new Error('Building the CLI failed.');
+};
+
+const buildInWorktree = (root, sha, target, log, build) => {
   const scratch = mkdtempSync(join(tmpdir(), 'studio-cli-'));
   const tree = join(scratch, 'tree');
 
@@ -104,17 +112,7 @@ const buildInWorktree = (root, sha, target, log) => {
   git(root, ['worktree', 'add', '--detach', tree, sha]);
 
   try {
-    symlinkSync(join(root, 'node_modules'), join(tree, 'node_modules'), 'dir');
-
-    const build = spawnSync('npx', ['nx', 'build', 'cli'], {
-      cwd: tree,
-      encoding: 'utf8',
-      env: { ...process.env, NX_NO_CLOUD: 'true', NX_DAEMON: 'false' },
-    });
-
-    log(`${build.stdout}${build.stderr}`.trim());
-
-    if (build.status !== 0) throw new Error(`Building the CLI at ${sha.slice(0, 7)} failed.`);
+    build(root, tree, log);
 
     const staging = `${target}.partial-${process.pid}`;
 
@@ -143,20 +141,23 @@ const copyDist = (root, target, sha) => {
   return true;
 };
 
-export const ensureCliCopy = (root, { keepWhenDirty = true, log = (line) => console.error(line) } = {}) => {
+export const ensureCliCopy = (
+  root,
+  { keepWhenDirty = true, log = (line) => console.error(line), build = buildWithNx } = {},
+) => {
   const cache = join(root, CACHE);
   const currentFile = join(cache, 'current');
   const { latest, dirty } = areaState(root).cli;
   mkdirSync(cache, { recursive: true });
 
   const copies = copiesOf(cache);
-  const current = existsSync(currentFile) ? readFileSync(currentFile, 'utf8').trim() : null;
   const distMatches = !dirty && recordedHashOf(join(root, 'dist/libs/cli')) === sourceHashOf(root);
-  const plan = cliCopyPlan({ latest, dirty, copies, current, distMatches, keepWhenDirty });
+  const plan = cliCopyPlan({ latest, dirty, copies, distMatches });
   const target = join(cache, plan.sha);
 
-  if (plan.action === 'copy' && !copyDist(root, target, plan.sha)) buildInWorktree(root, plan.sha, target, log);
-  if (plan.action === 'build') buildInWorktree(root, plan.sha, target, log);
+  if (plan.action !== 'use') rmSync(target, { recursive: true, force: true });
+  if (plan.action === 'copy' && !copyDist(root, target, plan.sha)) buildInWorktree(root, plan.sha, target, log, build);
+  if (plan.action === 'build') buildInWorktree(root, plan.sha, target, log, build);
 
   if (keepWhenDirty) writeFileSync(currentFile, `${plan.sha}\n`);
 
