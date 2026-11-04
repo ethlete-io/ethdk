@@ -1,5 +1,12 @@
 # Parallel backlog - latest decisions (Q203 and later)
 
+### WebKit soak check decisions (Tom, 2026-11-04, finding 365)
+
+1. **CI gate on macOS:** a new CI job on a macOS runner runs the WKWebView soak check: an offscreen WKWebView holds
+   the real event stream of `et design serve` for 90 s and fails on any close. The job runs only when
+   `apps/ethlete-studio` or the design CLI change (path filter). No local-only hook, because WebKit faults only show
+   on a Mac and a hook can be skipped.
+
 ### Person names in the product (Tom, 2026-11-04, finding 362)
 
 1. **Check scope:** a check fails on person names (from `git config user.name` plus a list of known names) in source
