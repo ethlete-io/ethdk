@@ -4525,6 +4525,12 @@ creates one iframe per frame and aborts no frame request" (6 aborted requests). 
 (fold-question b, title-bar c, system a), the frame cap's far cells, or the B339 commit. Why no tool caught it: finding
 395 again; no gate ran `studio:e2e` after a merge. Fix: B339's CI job, plus a post-merge run of the e2e cases for the
 merged part (B349). Decision (grill session, Tom afk): triage before B343; no case is rewritten without Tom's OK.
+Triage (52d7d2b55, `studio:e2e` 112/112): none of tonight's merges. The cause is b9367d285 (frame cap). Pan: a far
+frame had a 150 px placeholder height and grew on load, so the content grew while panning (Large: 2 570 -> 7 710 px).
+Chip: frames went live on the names-only first listing, then folded kept states moved the live slots, and a
+content-sized part used a 1 440 px stand-in width that flipped the layout when the real width came, so every iframe
+was rebuilt. Fix: no frame goes live before the sketch has targets; a far frame takes a measured height; the column
+switch counts only rows with a known width. The "green after c348db743" baseline was false (finding 414).
 
 408\. Mac perf session (2026-11-04, B348, next@ee7ab1de7, product studio with 1 sketch): the first
 `/__design/sketches` listing after a server start takes 240.8 s on the Mac and stalls the design server for up to
@@ -4598,6 +4604,13 @@ the server thread: Studio freezes for that time. Why no tool caught it: no budge
 stall during a merge, and the desk is fast enough to hide both. Fix (B354): `sketch ready` on this fixture under 60 s
 on CI, affected parts with no pixel change skipped or sampled, one Vite server and Chromium shared by all phases, and
 progress output; the merge keeps the longest `/@vite/client` ping under 100 ms.
+
+414\. Builder (2026-11-04, triage of finding 407): the baseline "only the known case red after c348db743" was false.
+At c348db743 the known-red case crashed the whole e2e runner (`route.fulfill: Route is already handled!`), so every
+later case never ran and looked green. Why no tool caught it: the runner reports the crash, but not the cases it
+skipped, and nothing compares the case count with the last run. Fix (B355): an async throw in a case marks that case
+FAIL and the runner goes on; the summary names every case that did not run; a run with fewer cases than the file
+declares fails. Also (B339): `studio:e2e` runs as a gate on commits that touch `system-view` or `design-parts/sketches`.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
