@@ -1,5 +1,17 @@
 # Parallel backlog - latest decisions (Q203 and later)
 
+### UI without a design (Tom, 2026-11-04, finding 368)
+
+The interim failed-listing look (636234e22: "Vergleich fehlgeschlagen: <message>" per row, "Erneut laden" in the
+sketches head) reached the app without a sketch round; the doc agent told the builder to ship it before the pick.
+
+1. **Keep it, open the sketch now:** the built look stays, marked as needing approval, and a sketch on the sketches
+   part opens at once with the built look as variant a plus two alternatives (per-row retry; one head banner). This
+   is the missing-state flow of the build-ready decisions (item 6); only the immediate sketch was missing.
+2. **Gate against UI without a design (part of B251):** a commit that changes UI in `apps/ethlete-studio` needs a
+   green design compare; an element the design lacks passes only when its state is marked as needing approval and
+   has an open sketch. The pre-push hook fails a push without a green compare.
+
 ### Studio runs committed code only (Tom, 2026-11-04, findings 363-365)
 
 Rule: only committed code reaches the running Studio, and only after Tom's click. Agents build half-done states
