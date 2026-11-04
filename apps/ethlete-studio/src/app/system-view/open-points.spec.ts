@@ -42,8 +42,11 @@ describe('openPointGroupsOf', () => {
       {
         icon: 'error',
         lines: [
-          { text: 'no check record at the current design', detail: 'stale-record' },
-          { text: 'elements/icon is not build-ready', detail: 'elements/icon' },
+          {
+            text: 'Kein Prüfstand zum aktuellen Design - Design-Check oder Design-Ready ausführen',
+            detail: 'stale-record',
+          },
+          { text: 'elements/icon ist noch nicht baubereit', detail: 'elements/icon' },
         ],
       },
       { icon: 'flow', lines: [{ text: 'rest → hover', detail: 'motion' }] },
@@ -52,5 +55,28 @@ describe('openPointGroupsOf', () => {
 
   it('has no group without a point on a build-ready part', () => {
     expect(openPointGroupsOf({ points: [], buildReady: { ready: true } })).toEqual([]);
+  });
+});
+
+describe('openPointGroupsOf blockers', () => {
+  const linesOf = (blocker: { kind: string; text: string; part?: string }) =>
+    openPointGroupsOf({ points: [], buildReady: { ready: false, blockers: [blocker] } })[0]?.lines;
+
+  it('translates a pending slow check', () => {
+    expect(linesOf({ kind: 'pending', text: 'the slow checks have not run on the current inputs' })).toEqual([
+      { text: 'Die langsamen Prüfungen sind für den aktuellen Stand noch nicht gelaufen', detail: 'pending' },
+    ]);
+  });
+
+  it('keeps the CLI text of a kind without a label', () => {
+    expect(linesOf({ kind: 'problem', text: 'contrast: too low' })).toEqual([
+      { text: 'contrast: too low', detail: 'problem' },
+    ]);
+  });
+
+  it('keeps the CLI text of an embedded blocker without a part', () => {
+    expect(linesOf({ kind: 'embedded', text: 'x is not build-ready' })).toEqual([
+      { text: 'x is not build-ready', detail: 'embedded' },
+    ]);
   });
 });

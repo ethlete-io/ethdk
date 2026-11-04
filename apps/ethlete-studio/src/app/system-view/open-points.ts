@@ -1,4 +1,4 @@
-import { OpenPoint, PartOpenPoints } from '../../host/design-open-points';
+import { BuildReadyBlocker, OpenPoint, PartOpenPoints } from '../../host/design-open-points';
 import { OpenPointGroup, OpenPointIcon } from '../design-parts/system-page/system-page-sample';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 
@@ -37,12 +37,25 @@ const lineOf = (point: OpenPoint): OpenPointGroup['lines'][number] => {
   }
 };
 
+const blockerTextOf = (blocker: BuildReadyBlocker) => {
+  switch (blocker.kind) {
+    case 'stale-record':
+      return LABELS.recordStale;
+    case 'pending':
+      return LABELS.slowChecksPending;
+    case 'embedded':
+      return blocker.part ? LABELS.embeddedNotReady(blocker.part) : blocker.text;
+    default:
+      return blocker.text;
+  }
+};
+
 const blockerLinesOf = ({ buildReady }: PartOpenPoints): OpenPointGroup['lines'] =>
   buildReady.ready
     ? []
     : buildReady.blockers
         .filter((blocker) => blocker.kind !== 'open-point')
-        .map((blocker) => ({ text: blocker.text, detail: blocker.part ?? blocker.kind }));
+        .map((blocker) => ({ text: blockerTextOf(blocker), detail: blocker.part ?? blocker.kind }));
 
 /**
  * The open points of a part grouped by icon, in the order the chip popover lists them; the build-ready blockers that
