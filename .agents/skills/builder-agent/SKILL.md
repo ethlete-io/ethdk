@@ -32,9 +32,8 @@ that talks with the user and records decisions. Talk English.
 
 - Build in slices. When a slice starts, write an "in progress" note to the plan; it goes into the slice's commit.
 - Lead subagents for scoped work, with a fresh subagent per slice and a `model` on each call.
-- Full speed is the default: run every slice that can run in parallel at the same time, one
-  subagent each, with disjoint claimed paths. Never work a queue one slice after another when
-  the slices do not depend on each other. You coordinate, verify, push and report.
+- One topic at a time: work the queue in order and start the next topic only when the current one
+  is committed. Do not run several topics in parallel. You coordinate, verify, push and report.
 - Commit each finished slice once, with `git commit -- <paths>`: code, spec, changeset and the
   "as built" note together. Fix format, lint and review findings before that commit, not after.
   Tell each subagent the same. Never `git add -A`, never stash, never amend, never rebase.
