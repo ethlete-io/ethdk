@@ -405,3 +405,23 @@ On the `studio-serve` tmux server (:4402), after S6b:
 - Open: the title-bar notice is not rendered and waits on a sketch of the title-bar design part; frontend reload and
   host rebuild still use the working tree; `tmp/studio-cli` is never pruned; the 10 s poll cost; skills and docs do
   not mention `yarn et:design` yet.
+
+## As built: B318, B319, B320 (findings 372-374, 2026-11-04 afternoon)
+
+- B318 4c1667672: a copy without `pinned-commit` counts as absent; a dirty `libs/cli` builds the last CLI commit
+  when no copy of it exists; ensureCliCopy removes an unpinned directory of the same sha first. Tom: the
+  "Neu starten" click is the approval of that build (32bdcdfe5). Verified: `node --test
+  tools/scripts/studio-code.spec.mjs` (end-to-end case with a fake build). Not verified: the real `nx build cli` path.
+  Open: a clean tree without `dist/libs/cli` plans `copy` and copyDist throws - fix with the next slice in that file.
+- B319 a148d713e (cli b, c) + 7581b65e1 (studio a): `sketchPartOf()` resolves the part from `targetParts[0]`; `old`
+  keeps HEAD's `shared/`; baselineOf uses review/go only at `merged[part]`, else draws HEAD and closes the edit sketch
+  as HELD when every state draws the same. Verified: the touched specs, tsc on libs/cli. Not verified: a real drawing,
+  live Studio. Open (sent to grill): the three wrong @edit sketches stay open (`changedOutsideSketchOf` skips parts
+  with an open sketch); merged.json holds `partHashOf`, pictures hold `designHashOf`, so the hash check never
+  matches; `record` has no hash check.
+- B320 598973423: real-design open-point budget spec (ratchet per product, part, kind; growth checked by hand: a
+  lowered budget fails). 52d23cfc2 + 996b339ef: German blocker texts (`stale-record` = "Kein Prüfergebnis ...",
+  `pending`, `embedded`). 16a3d8214 fixed the system-view spec that 52d23cfc2 broke (only the module spec ran).
+- B321: cause and fix in finding 375 report; fix uncommitted in `apps/ethlete-studio/src/app/design-parts/shell-main/`
+  (copy /tmp/b321-shell-stacking-fix.patch) until the new `paint` check (uncommitted, verify-webkit-studio.swift)
+  fails on HEAD and passes with the fix in Tom's quiet window.
