@@ -4394,6 +4394,22 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      not free text that only names the command. Tool fix (technical, B305): the hook matches the command position
      only; the spec gets cases with the words in a heredoc, a quoted string and a commit message.
 
+359. Tom (2026-11-04): every frame in Studio showed the browser's broken-image icon and an endless "Rendering" chip
+     (foundations/agent-logos and others), while the part head said "Nichts offen". Cause: load about 256 from a full
+     `nx test cli` with coverage plus other vitest runs; the design server did not answer within 5 s. Why no tool
+     caught it: a failed or timed-out shot has no state of its own, and "Nichts offen" counts only known problems,
+     not missing shots. Tool fix (technical, B306): a shot that fails or times out shows an error state with the
+     cause and a retry; a part with missing shots never shows "Nichts offen"; with B302 a full test run waits while
+     Studio renders.
+
+360. Builder (2026-11-04, CI triage): `commit-wait.spec` looked timing-flaky in CI. Cause: vitest prints ANSI
+     colours in CI, and `timedOutSpecs` in precommit-specs.mjs anchors `^\s*Error` / `^\s*FAIL`, so it never saw a
+     timeout and never re-ran the spec. Fixed in 62c79da3b (strip ANSI first). Why no tool caught it: the parser spec
+     used a hand-written fixture, against the AGENTS.md rule that a parser of tool output takes its fixture from a
+     captured real run. Tool fix (technical, B307): precommit-specs fixtures come from a captured CI log; check the
+     other tool-output parsers in tools/scripts and libs/cli for hand-written fixtures. Related: 99905988b raised the
+     shell-logo.spec timeout to 30 s; that ET1234 ("control has no accessible name") is teardown noise is not proven.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
