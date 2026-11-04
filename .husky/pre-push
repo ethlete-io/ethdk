@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Runs the CI "Checks" job, plus the Studio specs, the static design check of the parts the pushed changes reach and,
+# Runs the CI "Checks" job, plus the VitePress docs build when the push changes apps/docs, plus the Studio specs, the static design check of the parts the pushed changes reach and,
 # when the push changes Studio or the design system, the live check for Studio app regions no part covers and the
 # visible-change gate for Studio parts that look different without a picked sketch,
 # over the committed state of HEAD in a throwaway clone, so a push never lands code that job rejects and other
@@ -32,6 +32,11 @@ node tools/scripts/prepush-checks.mjs specs "$base" "$head" "$tmp/vitest-cache" 
 pids="$pids $!:studio-specs"
 node tools/scripts/prepush-checks.mjs design "$base" "$head" >"$tmp/design-check.log" 2>&1 &
 pids="$pids $!:design-check"
+
+if git diff --name-only "$base" "$head" | grep -q '^apps/docs/'; then
+  yarn vitepress build apps/docs >"$tmp/docs-build.log" 2>&1 &
+  pids="$pids $!:docs-build"
+fi
 
 failed=0
 yarn nx format:check --base="$base" --head=HEAD || failed=1
