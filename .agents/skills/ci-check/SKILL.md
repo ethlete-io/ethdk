@@ -49,6 +49,17 @@ yarn nx run ethlete-studio:test-rust      # 19. cargo test
 yarn nx e2e timetrack-e2e                 # 20. timetrack app e2e, against the host fakes
 ```
 
+The workflow's `studio` job runs the Studio gates over `NX_BASE..NX_HEAD`; locally pass the range yourself:
+
+```bash
+base=$(git merge-base HEAD origin/next)
+for gate in specs design live visible; do node tools/scripts/prepush-checks.mjs "$gate" "$base" HEAD; done
+```
+
+The `.husky/pre-push` hook runs only the cheap part: a format check of the committed files in the pushed
+range, `lint:changesets` and the other sub-second checks, and the VitePress build when `apps/docs` changed.
+Lint, typecheck and the Studio gates are CI's.
+
 Step 11 is the slowest by far. Skip steps 11 and 12 only when the change touches no component
 source and no story - and say so rather than reporting a clean run you didn't do. Step 12 serves
 `dist/storybook` itself; to run it against the dev server instead, set
