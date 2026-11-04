@@ -10,6 +10,7 @@ import {
   symlinkSync,
   writeFileSync,
 } from 'fs';
+import { EventEmitter } from 'events';
 import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
 import { setTimeout as delay } from 'timers/promises';
@@ -395,14 +396,21 @@ const serveAcme = async (
 
   plugin?.configureServer(vite);
 
+  const opened: EventEmitter[] = [];
   const ask = (path: string, query = '', method = 'GET', body?: unknown) =>
     new Promise<{ status: number; body: unknown; headers: Record<string, string> }>((done) => {
       const headers: Record<string, string> = {};
-      const response = {
+      const response = Object.assign(new EventEmitter(), {
         statusCode: 200,
+        writableFinished: false,
         setHeader: (name: string, value: string) => (headers[name] = value),
-        end: (body: string) => done({ status: response.statusCode, body: JSON.parse(body) as unknown, headers }),
-      };
+        end: (body: string) => {
+          response.writableFinished = true;
+          done({ status: response.statusCode, body: JSON.parse(body) as unknown, headers });
+        },
+      });
+
+      opened.push(response);
 
       const request = {
         url: query,
@@ -418,6 +426,7 @@ const serveAcme = async (
   return {
     plugin,
     ask,
+    closeAsked: (index: number) => opened[index]?.emit('close'),
     handlers,
     watchers,
     sent,
@@ -1022,6 +1031,59 @@ describe('the design server for sketches and comments', () => {
     expect(loaded.length).toBeGreaterThan(0);
     expect(full.sketches[0]?.targets?.length).toBeGreaterThan(0);
     expect(full.sketches[0]?.problems).toEqual(expect.any(Array));
+  });
+
+  const gatedSketchModules = () => {
+    let release = () => undefined as void;
+    const gate = new Promise<void>((done) => (release = done));
+    const moduleOf = (id: string) =>
+      id.includes('design-sketch') ? gate.then(() => ({ default: { note: 'n', states: { one: {} } } })) : undefined;
+
+    return { moduleOf, release };
+  };
+
+  it('finishes a shared full listing while one client that asked for it still waits', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { moduleOf, release } = gatedSketchModules();
+    const { ask, closeAsked, loaded } = await serveAcme(target, moduleOf);
+    const first = ask('/__design/sketches', '?product=acme');
+    const second = ask('/__design/sketches', '?product=acme');
+
+    await vi.waitFor(() => expect(loaded.some((id) => id.includes('design-sketch'))).toBe(true));
+    closeAsked(0);
+    release();
+
+    const answered = await second;
+
+    expect(answered.status).toBe(200);
+    expect((answered.body as { sketches: { targets?: unknown[] }[] }).sketches[0]?.targets).toHaveLength(2);
+    expect((await first).status).toBe(200);
+  });
+
+  it('stops a full listing once every client that asked for it closed its request', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { moduleOf, release } = gatedSketchModules();
+    const { ask, closeAsked, loaded } = await serveAcme(target, moduleOf);
+    const first = ask('/__design/sketches', '?product=acme');
+    const second = ask('/__design/sketches', '?product=acme');
+
+    await vi.waitFor(() => expect(loaded.some((id) => id.includes('design-sketch'))).toBe(true));
+
+    const started = loaded.length;
+
+    closeAsked(0);
+    closeAsked(1);
+    release();
+
+    expect((await first).status).toBe(500);
+    expect((await second).status).toBe(500);
+    expect(loaded).toHaveLength(started);
   });
 
   it('registers the parts of each sketch variant, resolved through that variant', async () => {

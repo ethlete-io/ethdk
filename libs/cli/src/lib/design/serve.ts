@@ -773,9 +773,20 @@ const designExplore = ({
       };
 
       const answer =
-        (handle: (url: URL, request: IncomingMessage) => Promise<{ status: number; body: unknown }>) =>
-        (request: IncomingMessage, response: ServerResponse) =>
-          void handle(new URL(request.url ?? '', 'http://localhost'), request).then(
+        (
+          handle: (
+            url: URL,
+            asked: { request: IncomingMessage; signal: AbortSignal },
+          ) => Promise<{ status: number; body: unknown }>,
+        ) =>
+        (request: IncomingMessage, response: ServerResponse) => {
+          const closed = new AbortController();
+
+          response.once('close', () => {
+            if (!response.writableFinished) closed.abort();
+          });
+
+          void handle(new URL(request.url ?? '', 'http://localhost'), { request, signal: closed.signal }).then(
             (answered) => sendJson(response, answered),
             (error: unknown) =>
               sendJson(response, {
@@ -783,6 +794,7 @@ const designExplore = ({
                 body: { error: error instanceof Error ? error.message : String(error) },
               }),
           );
+        };
 
       vite.middlewares.use(STAMP_PATH, (_request: unknown, response: ServerResponse) => {
         response.setHeader('content-type', 'application/json');
@@ -839,7 +851,7 @@ const designExplore = ({
       );
       vite.middlewares.use(
         PRODUCT_PATH,
-        answer(async (_url, request) => {
+        answer(async (_url, { request }) => {
           const created = await newProductAnswer({ target, request });
 
           if (created.status === 201) reloadConfig();
@@ -856,7 +868,7 @@ const designExplore = ({
       );
       vite.middlewares.use(
         TRANSFER_PATH,
-        answer(async (url, request) => {
+        answer(async (url, { request }) => {
           if (request.method !== 'POST') return { status: 405, body: { error: 'POST only' } };
 
           const result = markTransferred({ target, slug: url.searchParams.get('call') ?? '' });
@@ -871,11 +883,12 @@ const designExplore = ({
       ) =>
         vite.middlewares.use(
           path,
-          answer(async (url, request) =>
+          answer(async (url, { request, signal }) =>
             handle({
               target,
               url,
               request,
+              signal,
               load: ({ file, product, sketch }) => vite.ssrLoadModule(productModuleIdOf({ file, product, sketch })),
               pictureOf: shots.pictureOf,
               boxOf: shots.changedBoxesOf,

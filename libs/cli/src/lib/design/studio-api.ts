@@ -1,6 +1,7 @@
 import { execFileSync } from 'child_process';
 import { IncomingMessage } from 'http';
 import { relative } from 'path';
+import { fromEvent, take } from 'rxjs';
 import { setImmediate } from 'timers/promises';
 import { repoInvocation } from '../invocation';
 import { DesignConfig, readConfig } from './paths';
@@ -117,6 +118,8 @@ type Asked = {
   inventoryOf?: (options: { product: ResolvedProduct; part: string }) => Promise<Inventory | string>;
   drawStates?: DrawStates;
   checkSketches?: CheckSketches;
+  /** Aborts when the client closes the request before it has its answer. */
+  signal?: AbortSignal;
 };
 
 const failure = (status: number, message: string): Answer => ({ status, body: { error: message } });
@@ -173,6 +176,28 @@ const withProduct = (method: 'GET' | 'POST', run: (found: Found) => Answer | Pro
   return isAnswer(found) ? found : run({ ...found, asked });
 };
 
+const stopping =
+  <TArgs extends unknown[], TResult>(signal: AbortSignal, run: (...args: TArgs) => Promise<TResult>) =>
+  async (...args: TArgs) => {
+    signal.throwIfAborted();
+
+    return run(...args);
+  };
+
+/** `asked` with its loaders refusing to start a module load or a picture once `signal` aborts. */
+const stoppingOn = (asked: Asked, signal: AbortSignal | undefined): Asked => {
+  if (!signal) return asked;
+
+  const { load, pictureOf, boxOf } = asked;
+
+  return {
+    ...asked,
+    ...(load ? { load: stopping(signal, load) } : {}),
+    ...(pictureOf ? { pictureOf: stopping(signal, pictureOf) } : {}),
+    ...(boxOf ? { boxOf: stopping(signal, boxOf) } : {}),
+  };
+};
+
 const withSketch = (method: 'GET' | 'POST', run: (found: Found & { sketch: Sketch }) => Answer | Promise<Answer>) =>
   withProduct(method, (found) => {
     const parsed = parseTarget(found.asked.url.searchParams.get('sketch') ?? undefined);
@@ -184,7 +209,7 @@ const withSketch = (method: 'GET' | 'POST', run: (found: Found & { sketch: Sketc
     if (sketch === null) return failure(404, `no sketch on ${parsed.layer}/${parsed.name} in ${found.product.name}`);
     if (typeof sketch === 'string') return failure(422, sketch);
 
-    return run({ ...found, sketch });
+    return run({ ...found, asked: stoppingOn(found.asked, found.asked.signal), sketch });
   });
 
 const problemOf = ({ target, problem }: { target: string; problem: Problem }) => ({
@@ -226,12 +251,16 @@ const variantChangesOf = ({ current, drawn }: { current: PartFacts; drawn: PartF
   note: drawn.note === current.note ? null : { before: current.note, after: drawn.note },
 });
 
-/** Maps `items` one after another, letting the server answer other requests before each. */
-const inTurns = async <TItem, TResult>(items: readonly TItem[], run: (item: TItem) => Promise<TResult>) => {
+/** Maps `items` one after another, letting the server answer other requests before each, and stops once `signal` aborts. */
+const inTurns = async <TItem, TResult>(
+  { items, signal }: { items: readonly TItem[]; signal?: AbortSignal | undefined },
+  run: (item: TItem) => Promise<TResult>,
+) => {
   const results: TResult[] = [];
 
   for (const item of items) {
     await setImmediate();
+    signal?.throwIfAborted();
     results.push(await run(item));
   }
 
@@ -244,12 +273,14 @@ const partTargetsOf = async ({
   part,
   load,
   pictureOf,
+  signal,
 }: {
   product: ResolvedProduct;
   sketch: Sketch;
   part: string;
   load?: VariantPartLoader;
   pictureOf?: PictureOf;
+  signal?: AbortSignal;
 }) => {
   const currentFile = product.parts.find((entry) => partKeyOf(entry) === part)?.file;
   const current =
@@ -261,7 +292,7 @@ const partTargetsOf = async ({
         })
       : null;
 
-  return inTurns(sketch.variants, async (variant) => {
+  return inTurns({ items: sketch.variants, signal }, async (variant) => {
     const file = overlaySketch({ product, sketch, variant }).parts.find((entry) => partKeyOf(entry) === part)?.file;
 
     if (!file || !load)
@@ -301,9 +332,25 @@ const targetsOf = async (options: {
   sketch: Sketch;
   load?: VariantPartLoader;
   pictureOf?: PictureOf;
-}) => (await inTurns(options.sketch.targets, (part) => partTargetsOf({ ...options, part }))).flat();
+  signal?: AbortSignal;
+}) =>
+  (
+    await inTurns({ items: options.sketch.targets, signal: options.signal }, (part) =>
+      partTargetsOf({ ...options, part }),
+    )
+  ).flat();
 
-const listingOf = async ({ asked, product, light }: { asked: Asked; product: ResolvedProduct; light: boolean }) => {
+const listingOf = async ({
+  asked,
+  product,
+  light,
+  signal,
+}: {
+  asked: Asked;
+  product: ResolvedProduct;
+  light: boolean;
+  signal: AbortSignal;
+}) => {
   const { target } = asked;
   const listed = await listSketchesInTurns({ productDir: product.dir, product: product.name });
   const sketches = listed.filter((sketch): sketch is Sketch => typeof sketch !== 'string');
@@ -321,7 +368,7 @@ const listingOf = async ({ asked, product, light }: { asked: Asked; product: Res
   return {
     status: 200,
     body: {
-      sketches: await inTurns(sketches, async (sketch) => ({
+      sketches: await inTurns({ items: sketches, signal }, async (sketch) => ({
         ...sketchOf({ sketch, target }),
         ...(checked
           ? {
@@ -331,7 +378,7 @@ const listingOf = async ({ asked, product, light }: { asked: Asked; product: Res
                   variant: entry.variant,
                   problems: entry.problems.map((p) => problemOf({ target, problem: p })),
                 })),
-              targets: await targetsOf({ product, sketch, load: asked.load, pictureOf: asked.pictureOf }),
+              targets: await targetsOf({ product, sketch, load: asked.load, pictureOf: asked.pictureOf, signal }),
             }
           : {}),
         report: readSketchReport({ checkout: target, sketch }),
@@ -341,7 +388,32 @@ const listingOf = async ({ asked, product, light }: { asked: Asked; product: Res
   };
 };
 
-const runningListings = new Map<string, Promise<Answer>>();
+const runningListings = new Map<string, { answer: Promise<Answer>; askers: number; stop: AbortController }>();
+
+const startedListing = ({
+  key,
+  asked,
+  product,
+  light,
+}: {
+  key: string;
+  asked: Asked;
+  product: ResolvedProduct;
+  light: boolean;
+}) => {
+  const stop = new AbortController();
+  const listing = {
+    askers: 0,
+    stop,
+    answer: listingOf({ asked: stoppingOn(asked, stop.signal), product, light, signal: stop.signal }).finally(() => {
+      if (runningListings.get(key) === listing) runningListings.delete(key);
+    }),
+  };
+
+  runningListings.set(key, listing);
+
+  return listing;
+};
 
 /**
  * The open sketches of `?product=`, each with its target parts (`targetParts`, the first one first), variants, status,
@@ -350,20 +422,27 @@ const runningListings = new Map<string, Promise<Answer>>();
  * draws the same as the product now (`unchanged`), the states it adds and drops and its part note when that differs
  * from the product's (`changes`), and the live report
  * of the agent (`report`, `null` when none runs). `?unchanged=no` answers the list only, without `problems` and `targets`: no rule check, no part module loads.
- * A listing asked while the same one runs gets that one's answer.
+ * A listing asked while the same one runs gets that one's answer; it stops when every client that asked for it has closed its request.
  */
 export const sketchesAnswer = withProduct('GET', ({ asked, product }) => {
   const light = asked.url.searchParams.get('unchanged') === 'no';
   const key = JSON.stringify([asked.target, product.name, light]);
-  const running = runningListings.get(key);
+  const listing = runningListings.get(key) ?? startedListing({ key, asked, product, light });
+  const leave = () => {
+    listing.askers -= 1;
 
-  if (running) return running;
+    if (listing.askers > 0) return;
 
-  const listing = listingOf({ asked, product, light }).finally(() => runningListings.delete(key));
+    listing.stop.abort();
+    if (runningListings.get(key) === listing) runningListings.delete(key);
+  };
 
-  runningListings.set(key, listing);
+  listing.askers += 1;
 
-  return listing;
+  if (asked.signal?.aborted) leave();
+  else if (asked.signal) fromEvent(asked.signal, 'abort').pipe(take(1)).subscribe(leave);
+
+  return listing.answer;
 });
 
 /** `?product=&sketch=<layer>/<name>&variant=`: the parts a merge of that variant changes and the elements and pages that show them. */
