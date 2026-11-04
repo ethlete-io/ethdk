@@ -1,5 +1,14 @@
 # Parallel backlog - latest decisions (Q203 and later)
 
+### Person names in the product (Tom, 2026-11-04, finding 362)
+
+1. **Check scope:** a check fails on person names (from `git config user.name` plus a list of known names) in source
+   under `libs/` and `apps/`, in `apps/docs`, and in the files the CLI writes (`.ethlete/design/**`). `plans/` stays
+   free: there "Tom decided" is a source note. Fix every current hit (`--by tom` in the CLI docs, the
+   "allowed by Tom chat" notes, any identifier or string with a name); S8 deletes accepted.json anyway.
+2. **The person in the product is "human":** code, commands, flags and written records use the role `human` for
+   the person who confirms or picks (for example `--by human`), never a name and not "designer".
+
 ### Commit volume decisions (Tom, 2026-11-04)
 
 Fact: 350-800 commits a day since 2026-10-29; since 2026-11-03 about half are `docs(repo)` commits that record one

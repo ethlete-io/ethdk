@@ -4415,6 +4415,12 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      lesson as 360. Tool fix (S4): the record writer stores declared actions, plus a writer-to-reader round-trip spec
      (check writes the record of a part with actions; ACTION-LOST, doneParts and stale-parts read it back).
 
+362. Tom (2026-11-04): product code named one user. b873da3ee0 (2026-11-01) added `TomPrompt` in
+     libs/cli/.../tom-confirm.ts ("Confirm design go and accept by Tom"); the file is gone now, but
+     `.ethlete/design/sdk/accepted.json` notes say "allowed by Tom chat" and apps/docs/cli shows `ready --by tom`.
+     Studio and the CLI are built for every user, not for one person. Why no tool caught it: no check knows person
+     names, and a review saw the name as the plan's wording. Tool fix (B308): see "Person names" decisions below.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
