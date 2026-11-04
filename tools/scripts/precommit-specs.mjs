@@ -56,7 +56,7 @@ const DOCS_ONLY = /^(plans\/|apps\/docs\/|\.changeset\/)|\.md$/;
 
 export const isDocsOnly = (files) => files.every((file) => DOCS_ONLY.test(file));
 
-const ANSI = /\x1b\[[0-9;]*m/g;
+const ANSI = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g');
 
 export const timedOutSpecs = (rawOutput) => {
   const output = rawOutput.replace(ANSI, '');
