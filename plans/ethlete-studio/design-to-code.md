@@ -4483,6 +4483,15 @@ know that a pick makes the other variants dead. Fix (B344): after a pick, `sketc
 variant and drops the others; and two open sketches on one part warn at the first merge that the other one needs a
 port.
 
+402\. Tom (2026-11-04, screenshot of `pages/system@pages-system-build-ready`): "echt viel, extrem viele Screens, das
+macht es hart zu vergleichen". The round is about the popover footer, but it shows about 29 changed states as whole
+pages; at 30 % zoom the footer is unreadable, and most crops would look the same. There is also an empty teal frame
+above the grid. Why no tool caught it: decision 4.48 option 1 (2026-10-30) says the changed states open "at a
+readable scale"; B329 built the fold, not the readable scale, and no check measures whether a round's change is
+readable at the zoom Studio opens with. Fix (B345): a round opens each changed state cropped to the region that
+differs from HEAD, with a margin and a switch to the whole screen; states whose cropped change is identical show
+once with a count; a check fails a round whose changed region renders below a readable size at the opening zoom.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
