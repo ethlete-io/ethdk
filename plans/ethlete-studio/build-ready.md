@@ -5,9 +5,9 @@ Status: planned 2026-11-04, not built. Sources: `backlog-parallel/decisions-late
 
 ## In progress
 
-Builder ethlete-sdk-02 (2026-11-04 19:00, PC tank), grill/docs ethlete-sdk-9e. Running in parallel, one subagent
-each: B333 (finding numbers), B329 rest (frame cap + fold), B331 (sketch row opens nothing), B325 (edit-sketch
-re-check draws HEAD), B321 pixel check on ethlete-mac, B326 trackpad pan. State of each: `handoff-builder.md`.
+Builder ethlete-sdk-02 (2026-11-04 20:00, PC tank, after a restart), grill/docs ethlete-sdk-9e. One topic at a time.
+Now: B323 rest (sketch components/title-bar --name code-notice, "needs approval" note, STATUS row). Then the fold
+toggle + question line sketch (B329) and sketch-frame-cap.e2e in studio:e2e. B321 waits on Tom's paint check.
 
 Builder handoff (2026-11-04, ethlete-sdk-d0, context full). Grill/docs session: ethlete-sdk-e4.
 
@@ -437,6 +437,14 @@ tools/scripts/studio-code.spec.mjs` (end-to-end case with a fake build). Not ver
 - Verified: new specs fail without the fix; cli gate 1002 tests green at commit; eslint, prettier clean.
 - Not verified: proof run (needs a CLI build). Open: `tsc -p libs/cli/tsconfig.spec.json` fails on
   `started-by-studio.spec.ts` (from dd708ee4a); `list-system.spec.ts` failed once under load ("not a git repository").
+
+## As built: interim code notice (B323)
+
+Commit be8aa16b7. The title bar shows a code notice left of the Update control: muted text "Oberfläche geändert - neu starten" and a tonal brand xs `et-button` "Neu starten" (component `apps/ethlete-studio/src/app/components/code-notice/`). It appears while the running server is older than the latest commit.
+
+Needs approval: Tom picks a variant of sketch components/title-bar code-notice (a = as built, b = quiet button with a brand dot, c = compact pill with icon); until then the notice is interim.
+
+Verified: the component spec. Not verified: the look against a design part, because none drew it until the sketch.
 
 ## As built: B333, B329 rest, B331 (2026-11-04 evening)
 
