@@ -43,7 +43,7 @@ describe('openPointGroupsOf', () => {
         icon: 'error',
         lines: [
           {
-            text: 'Kein Prüfstand zum aktuellen Design - Design-Check oder Design-Ready ausführen',
+            text: 'Kein Prüfergebnis zum aktuellen Design - Design-Check oder Design-Ready ausführen',
             detail: 'stale-record',
           },
           { text: 'elements/icon ist noch nicht baubereit', detail: 'elements/icon' },

@@ -96,7 +96,7 @@ export const STUDIO_LABELS = {
     sketchOpen: 'Sketch noch nicht gemergt',
     noGo: 'Noch kein Go',
     staleGo: 'Go ist veraltet',
-    recordStale: 'Kein Prüfstand zum aktuellen Design - Design-Check oder Design-Ready ausführen',
+    recordStale: 'Kein Prüfergebnis zum aktuellen Design - Design-Check oder Design-Ready ausführen',
     slowChecksPending: 'Die langsamen Prüfungen sind für den aktuellen Stand noch nicht gelaufen',
     embeddedNotReady: (part: string) => `${part} ist noch nicht baubereit`,
     comment: 'Kommentar',
