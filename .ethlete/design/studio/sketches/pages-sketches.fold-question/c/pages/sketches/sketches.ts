@@ -358,7 +358,7 @@ export default definePart<Props>({
         ${withAction(discard.body, 'emit:discard')}
       </header>
       <div
-        class="zr-picker absolute z-2 top-14 right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] flex items-center gap-space-3"
+        class="zr-picker absolute z-2 top-14 right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] flex items-center gap-space-4"
       >
         ${pickers[kind].body}
         ${showWithdrawn.body ? withAction(showWithdrawn.body, { action: 'emit:withdrawnToggle', on: '.et-switch' }) : ''}

@@ -365,7 +365,7 @@ export default definePart<Props>({
         ${
           fold > 0
             ? html`<span class="ml-auto flex flex-none items-center gap-space-3" data-sk-folded>
-                <span class="text-ui-sm text-et-surface-muted">${foldedLabel(fold)}</span>
+                <span class="text-ui-sm whitespace-nowrap text-et-surface-muted">${foldedLabel(fold)}</span>
                 ${disclosure({ label: 'Alle Zustände zeigen', body: '', open: false, size: 'xs', action: 'emit:statesToggle' })}
               </span>`
             : ''
