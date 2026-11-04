@@ -449,3 +449,13 @@ tools/scripts/studio-code.spec.mjs` (end-to-end case with a fake build). Not ver
 - B331: not reproduced on HEAD. 885b0eada: "Sketch nicht gefunden" instead of a silent part fallback, `x@edit` falls
   back to `x`, failing-variant reason in the tree title, per-group pick specs. Open: `selectMerged` sets `picked` to
   the raw `@edit` target; open-points entry for a sketch needs a design.
+
+## As built: B326
+
+- 7658705c1: `ethlete-frame-shield` (transparent cover after an iframe) on Sketches and merge shots and flow frames;
+  the design canvas cover also covers the live frame during a wheel gesture (`data-wheeling`, 200 ms) or a drag.
+  New canvas e2e case forces `iframe { pointer-events: auto }` (as WKWebView routes): fails without the fix on
+  Sketches, Chip, Large; passes with it. Specs for the covers fail on the old source.
+- Not verified: real WKWebView routing. `tools/scripts/verify-webkit-frame-wheel.swift` (never compiled) delivers
+  wheel gestures in-process to its own WKWebView (`web.scrollWheel(with:)`, no global event post).
+- Pre-existing e2e failure: "Sketches: no state is marked before the compare answers" (fails on the old build too).
