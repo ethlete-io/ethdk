@@ -1,5 +1,22 @@
 # Parallel backlog - latest decisions (Q203 and later)
 
+### Studio runs committed code only (Tom, 2026-11-04, findings 363-365)
+
+Rule: only committed code reaches the running Studio, and only after Tom's click. Agents build half-done states
+into the shared checkout (dist/libs/cli was rebuilt at 14:21 by an unknown run), and every reload remounts all
+frames, which can trigger the WebKit freeze of finding 364.
+
+1. **CLI:** Studio starts the design server from its own copy of the CLI build, keyed by commit. It takes a build
+   only when `libs/cli` has no uncommitted changes. With uncommitted changes it keeps the last copy and shows "CLI
+   hat uncommittete Änderungen, Studio läuft auf Stand <sha>"; with no copy yet it builds the HEAD state.
+2. **No self-restart** (as decided for finding 363, B309): after a commit in `libs/cli`, Studio shows "CLI geändert
+   - neu starten"; only the click restarts the server from the new copy.
+3. **Frontend:** no vite HMR. After a commit in `apps/ethlete-studio/src`, Studio shows "Oberfläche geändert - neu
+   laden"; only the click reloads the page.
+4. **Rust host:** `yarn studio` runs `tauri dev --no-watch`. After a commit in `apps/ethlete-studio/src-tauri`,
+   Studio shows "Host geändert - Studio neu starten"; the click quits the app, and `yarn studio` rebuilds it from
+   the committed state and starts it again.
+
 ### WebKit soak check decisions (Tom, 2026-11-04, finding 365)
 
 1. **CI gate on macOS:** a new CI job on a macOS runner runs the WKWebView soak check: an offscreen WKWebView holds
