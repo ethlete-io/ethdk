@@ -4392,6 +4392,23 @@ runs only vitest, and S7 moved typecheck to CI. Fix (B334): when a staged file i
 `tsc --noEmit -p <lib>/tsconfig.spec.json` for that lib, inside the 60 s budget of S7; if it does not fit, it runs
 only the staged specs through vitest typecheck mode.
 
+390\. Builder (2026-11-04, B333): `commit-wait.spec` was red since 2bad713a6 (B328), which added an eslint run over
+staged tools/scripts files; the spec's temp repo had no eslint config (fixed in 9f0d70e47). It blocked every later
+tools/scripts commit. The gate selects the whole tools/scripts suite for such a commit, so on 2bad713a6 and six later
+commits made on the Mac (421d2fee8 to be8aa16b7) the hooks most likely did not run: several carry the scope
+`ethlete-studio`, which commitlint never allowed. How the hooks were bypassed is not verified (`--no-verify`,
+`HUSKY=0`, or no hooksPath in the Mac checkout). Why no tool caught it: nothing checks after the fact that the local
+hooks ran. Fix (B335): a CI job runs commitlint and `yarn test:tools` over the pushed range, and pre-push checks
+commitlint for each commit in the range; the builder checks the hooksPath of the Mac checkout.
+
+391\. Builder (2026-11-04, B329): the slice built UI that no design draws (the fold toggle "Alle Zustände zeigen" and
+the round note as a question line). No check refused it, because none ran: `design compare` of the sketches part
+would show the extra UI, and S3's UNCOVERED-REGION too, but S7 moved the Studio rules out of the hooks into CI, and
+nothing was pushed. The builder's brief also allowed "keep it minimal" when no design exists. Fix (B336): the commit
+gate refuses a staged change to an app component with an `implements` link unless `design compare <part>` is green
+at the staged tree, cached per part hash, for the touched parts only; a builder brief never permits undrawn UI, and a
+missing design becomes a sketch first.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
