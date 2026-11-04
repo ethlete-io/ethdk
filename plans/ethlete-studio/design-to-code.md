@@ -4497,6 +4497,16 @@ none` on html, body and every element (the property is not inherited); the Tauri
      slice): the sha-keyed CLI copy also serves the design commands agents run (sketch, task, check). The "needs
      approval" mark of a state is the open sketch alone; no new field.
 
+369. Tom (2026-11-04, about 15:00): Tom clicked "neu starten" in Studio. The old host restarted the design server
+     from the dirty tree, the stale-build guard stopped it, and Studio showed "Design-Server gestoppt" with an
+     English developer message ("This CLI build is stale ... npx nx build cli"). Tom had no design server and no
+     action in the UI to recover. An agent recovered it by hand: a CLI build at HEAD in a clean worktree, started on
+     :4402 with cwd in that worktree. Why no tool caught it: the restart button could not rebuild, no check runs the
+     restart against a dirty `libs/cli`, and the stopped state has no recovery action. Tool fix (B315, mostly in
+     dd708ee4a "Studio runs committed code only"): restart only from the sha-keyed copy; a scenario that clicks
+     restart with a dirty `libs/cli` and expects a running server; a stopped server shows a German message and a
+     recovery button.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
