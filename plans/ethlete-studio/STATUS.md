@@ -498,7 +498,6 @@ sketch` zeigen ihn (Befund 180).
 
 ## D. SDK und Libs
 
-- **D1** libs/components: 71 Import-Zyklen auflösen (Q116).
 - **D2** Controls der fünf SDK-Teile carousel, scrollable, match, table, bracket.
 - **D3** Fokus-Rahmen als API: `focusRingStyles`, öffentliche Tokens (E11).
 - **D4** SDK-Teil `checkbox` (Studio nutzt noch die native Checkbox).

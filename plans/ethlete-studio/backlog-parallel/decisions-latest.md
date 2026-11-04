@@ -27,6 +27,10 @@
   with tooltips gains.
 - **No e2e in pre-push.** The hooks are already too slow. CI is the gate for the behavior suites; a red CI run is
   builder work at once. Small, scoped checks such as the 13 s VitePress build on apps/docs pushes stay.
+- **Import cycles in libs/components (refines Impl Q116):** the target is 0 runtime cycles (imports that survive TS
+  emit). Type-only cycles stay; no interfaces only to break them (80 left on purpose).
+  `libs/components/src/import-cycles.spec.ts` guards runtime cycles (2ad7291ac, c63a0f089).
+- **Tooltip in a dialog:** two Escapes; the first hides the tooltip, the second closes the dialog (722bfb421).
 
 ### Studio order, explorer, merge canvas and "build-ready" decisions (Tom, 2026-11-02)
 
