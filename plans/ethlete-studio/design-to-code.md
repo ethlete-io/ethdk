@@ -4421,6 +4421,25 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      Studio and the CLI are built for every user, not for one person. Why no tool caught it: no check knows person
      names, and a review saw the name as the plan's wording. Tool fix (B308): see "Person names" decisions below.
 
+363. Tom (2026-11-04): pages/sketches r1 drew empty cells with "Render-Fehler" and "vergleicht ..." forever, and
+     the S6a sketch on pages/system drew no frames but said "Wartet auf deine Wahl". Cause: (a) load 140-256 from a
+     full cli suite made `/__design/sketches` time out at 90 s; (b) `serve.ts` `watchBuild` (`reloadOnRebuild`)
+     restarts the server on every dist/libs/cli change and kills shots in flight; system-view's concat(quick, full)
+     never got the full answer. The sketches themselves were fine. Why no tool caught it: "Wartet auf deine Wahl"
+     reads only sketch.json `status`; the frame error text stays inside the frame; `sketch check` renders on its own
+     server one frame at a time and has no per-shot timeout (hung 19 min). Tool fix (B309): pick state only when
+     every live variant drew frames without error, else a loading or error state without "Übernehmen"; no
+     self-restart of a Studio-owned server, a "CLI geändert - neu starten" hint instead; `design_server_restart`
+     builds first and stops the old server only after a good build; the error text reaches chip and head
+     ("variant · state: message"); a per-shot timeout in `sketch check`.
+
+364. Tom (2026-11-04, 14:00): Studio froze completely. The WebContent process ran at 99 % CPU with about 1 GB, the
+     design server was idle; `sample` shows the time in `WebCore::MicrotaskQueue::runJSMicrotask`, so a
+     microtask loop in the Studio frontend (sample: /tmp/studio-freeze-webcontent.txt). Cause not known yet; likely
+     a retry or poll loop after the server restart (see 363). Why no tool caught it: no check runs Studio against a
+     server that restarts or times out. Tool fix (B310, after the cause): a scenario that restarts and slows the
+     design server under a running Studio and fails on a busy main thread.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
