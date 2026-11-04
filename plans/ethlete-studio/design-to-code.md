@@ -4658,8 +4658,27 @@ check runs a spec in both trees. Fix (B359): the probe tolerates a missing file,
 
 421\. Tom (2026-11-04, screenshot of the port-mark sketch on pages/sketches): "wann kümmern wir uns um diese ugly ui
 hier?" The state labels (`agent-round`, `port-after-merge`, `port-after-merge-long`) float in plain monospace far left
-of their frames on the empty dot grid, and the frames stand cut off at the right. Cause not yet known (asked the
-builder). Why no tool caught it, and the fix: pending the cause; joins B346 (sketch view chrome at other zoom levels).
+of their frames on the empty dot grid, and the frames stand cut off at the right. Cause (builder): a part wider than
+1/4 of the view uses the transposed matrix (`isTransposed`, `shared/sketch-rows.ts`). The design draws the state names
+as a `font-code` gutter column, each centred on its state row. The design's only sample for this layout is the 32 px
+tall title-bar, so for a page-sized frame of about 900 px the label sits at the middle of a tall frame. The cut-off is
+likely `matrixFit`: it fits 2 columns after the label column and does not count the `auto` column of folded variants
+(not measured). The app matches the design, so the compare check stayed green. Why no tool caught it: no check
+compares the sample shapes of a design with the real input range of the product. Fix (B362): a design-coverage check.
+For each layout branch of a part, the design draws the widest and the tallest real input from the listing, and the
+check warns when the samples do not cover the real range. The layout itself goes into the B346 sketch (Tom picks).
+
+422\. Tom (2026-11-04, screenshot of the sketch view zoomed far out): "noch nen ui ding bei extrem zoom". A frame
+that an agent still draws shows its placeholder ("Opus 5.5 zeichnet diese Variante", "Der Rahmen füllt sich, sobald
+die erste Ansicht steht.") at full screen size next to a tiny finished frame. The placeholder card is larger than the
+frame it stands for, and its title wraps into three lines. Cause not yet known (asked the builder). Why no tool caught
+it, and the fix: pending the cause; joins B346 (an e2e at 30 % and 100 % zoom).
+
+423\. Tom (2026-11-04, screenshot of variant a while the agent draws it): "die zeichnet line oben im variant header
+kann dann wohl weg?" The variant header shows "● zeichnet" in its own line, and the frame below shows "● Opus 5.5
+zeichnet diese Variante". The same state stands twice in one variant. Why no tool caught it: no check finds the same
+status shown twice in one view. Fix: the B346 sketch draws the header without the line (Tom picks); the check joins
+B362 as a rule.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
