@@ -3,7 +3,7 @@
 # Handoff: grill/docs session (doc-agent), 2026-11-04 late night
 
 Talk to Tom in German (`/doc-agent` skill). Builder: `ethlete-sdk-02` (English, SendMessage). Findings go to
-`plans/ethlete-studio/design-to-code.md` as `N\. ` paragraphs (last is 440), rows in `STATUS.md` (last is B377).
+`plans/ethlete-studio/design-to-code.md` as `N\. ` paragraphs (last is 441), rows in `STATUS.md` (last is B378).
 Latest ADR is 0191. Done rows are deleted from STATUS.md; an ADR's `open: B<row>` becomes `built: <sha>`.
 The queue now lives at the top of STATUS.md ("Reihenfolge"); keep it there, not only in a handoff.
 
@@ -22,19 +22,19 @@ Collect design questions, no grill round, one short line per event. Sound only i
 
 ## Queue (top of STATUS.md)
 
-B367b (running) -> CI green (run 41924354824) -> B372 -> B369 -> port app build -> B345/B346 (design session first,
+CI green (run 41924354824) -> B372 -> B369 -> port app build -> B345/B346 (design session first,
 sketch with variants; never revive the old changed-area code) -> A10 (B249 + B295, ADR 0190) -> B365 -> B370 -> B373 ->
-B375 -> B376 -> B368 -> B371 -> B377 -> rest as listed.
+B375 -> B376 -> B368 -> B371 -> B377 -> B378 -> rest as listed.
 
 ## Open
 
-- CI: triage of run 41924354824 is with the builder: (1) Studio rules: stale design mocks, job builds only cli before
+- CI: the fresh builder (restarted after B367b) fixes run 41924354824 as its next slice: (1) Studio rules: stale design mocks, job builds only cli before
   `design check` (same in previous run); (2) Build: bundle goldens, table/password-input/stream-with-pip ~+20 KB, told
   the builder to diagnose, not update (a real growth goes to Tom); (3) WebKit: `cat /etc/machine-id` on macOS in
   `.github/actions/setup/action.yml`, from e6b59bdf4. Unit tests not inspected. Record a finding per job once the
   builder says why pre-push missed it.
 - B365 explorer wheel lag is a regression from today (Tom). Suspect 7658705c1. Builder checks the diff for 10 min after
   B367b; small fix -> own slice, else B365 keeps its place. Waiting for the cause.
-- B367a built (e459da21e); B367b = the view opens the part after merge/discard (ADR 0187), running now.
-- Builder commits after 5524606cf are not pushed (3ba59b681, e459da21e, c431d0e50, ...). Push after CI green.
+- B367 built (e459da21e, 3c67d2143); ADR 0187 built. Its e2e cases do not bite (finding 441, B378).
+- Builder commits after 5524606cf are not pushed (3ba59b681, e459da21e, 3c67d2143, ...). Push after CI green.
 - No open grill question. No open builder question.

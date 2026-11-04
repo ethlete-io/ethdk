@@ -4553,6 +4553,12 @@ c431d0e50, so the filter went unused. Why no tool caught it: nothing tells a sli
 the skill did not name the filter. Tool fix: the builder-agent skill names `--case` for a slice (builder, next commit);
 parallel cases for the full suite are B377 (ADR 0191).
 
+441\. B367b (3c67d2143, builder 2026-11-04): the two new e2e cases "Merge" and "Discard" pass, but they also pass on the
+old view code, so they do not bite. Only the new vitest spec fails without the fix. Cause: part a (e459da21e, CLI) already
+stops the overlay, and the e2e always runs the current CLI. Why no tool caught it: the bite rule covers specs, and the e2e
+harness has no way to run a case against an old build. Tool fix (B378, builder default): for a bite run the harness takes
+`STUDIO_CLI_ENTRY` from a CLI copy built before the fix, so a new e2e case must fail there first.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
