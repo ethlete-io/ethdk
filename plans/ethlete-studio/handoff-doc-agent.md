@@ -3,7 +3,7 @@
 # Handoff: grill/docs session (doc-agent), 2026-11-04 late evening
 
 Talk to Tom in German (`/doc-agent` skill). Builder: `ethlete-sdk-02` (English, SendMessage). Findings go to
-`plans/ethlete-studio/design-to-code.md` as `N\. ` paragraphs (last is 420), rows in `STATUS.md` (last is B361).
+`plans/ethlete-studio/design-to-code.md` as `N\. ` paragraphs (last is 421), rows in `STATUS.md` (last is B361).
 Latest ADR is 0183. Done rows are deleted from STATUS.md; an ADR's `open: B<row>` becomes `built: <sha>`.
 
 ## Rules Tom set today
@@ -24,4 +24,6 @@ B341, B342, B344, B347, B349, B355, B358, B359) follow in the builder's order.
 
 - B343 is built (46177c36b) but not verified live: the builder checks it on the next real stale sketch.
 - The Mac perf session (B348, ADR 0181) is finished; its probes and logs stay untracked in `tmp/mac-perf`.
-- No open grill question for Tom.
+- Tom asked "wann kümmern wir uns um diese ugly ui hier?" (finding 421: state labels float far left of their frames in
+  the sketch view). The cause is asked from the builder. Then ask Tom with the round format: pull B345/B346 (+ 421)
+  forward to right after B357; recommendation yes.
