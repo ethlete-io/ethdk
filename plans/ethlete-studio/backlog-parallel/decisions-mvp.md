@@ -87,21 +87,17 @@ machen".
 From input r2 (`6760644ee`, checkbox/radio `93a856190`), textarea r2 (`478d57480`) and builder 57's dogfood run.
 Tom took every recommendation.
 
-- Q140 focus colour, input and textarea alike: the surface text colour (17.9 light / 17.2 dark) for the 2px focus
-  frame (input variant e, textarea variant d). The theme ink (5.48 light) loses to the light hover (6.69), against
-  Q111.
-- Q141 readonly signal: dashed frame (variant d). No lock icon; the lock already means "secret" on the API key field.
-- Q142 readonly focus: a 2px dashed frame in the focus colour (Q140). Today the lib draws no focus frame there.
-- Q143 rest frame: input and textarea use the same value, the input one (4.74 light / 6.94 dark).
-- Q144 textarea resize grip in the corner (variant d), so text scrolls to the frame edge (Q118).
-- Q145 Studio brief for the chat agent through `--append-system-prompt` in `agent_claude.rs`: how to check a change
-  (`et design check`, a shot), no changeset for design files, use the product type tokens. Rust edit, Studio restarts.
-- Q146 the brief points at the foundations/type part (`font-ui-medium`, `font-ui-strong`). No check warning yet; add
-  one only if the agent still uses raw font classes.
-- Q147 chat messages render a markdown subset: code, bold, lists. No tables, no images.
-- Q148 a click on a part grid cell selects that state; the context line names the state.
-- Q149 a sketch selection label reads like `pages/system · desktop (context)`, no repeats.
-- Q150 opening the chat keeps Tom's zoom; Studio re-fits only when the view was fitted before.
+- ADR 0160: [Input and textarea focus in the surface text colour](../../../apps/ethlete-studio/docs/adr/0160-input-and-textarea-focus-in-the-surface-text-colour.md)
+- ADR 0161: [Readonly shows as a dashed frame](../../../apps/ethlete-studio/docs/adr/0161-readonly-shows-as-a-dashed-frame.md)
+- ADR 0162: [Readonly focus is a dashed frame in the focus colour](../../../apps/ethlete-studio/docs/adr/0162-readonly-focus-is-a-dashed-frame-in-the-focus-colour.md)
+- ADR 0163: [Input and textarea share the rest frame value](../../../apps/ethlete-studio/docs/adr/0163-input-and-textarea-share-the-rest-frame-value.md)
+- ADR 0164: [The textarea resize grip sits in the corner](../../../apps/ethlete-studio/docs/adr/0164-the-textarea-resize-grip-sits-in-the-corner.md)
+- ADR 0165: [The chat agent gets a Studio brief](../../../apps/ethlete-studio/docs/adr/0165-the-chat-agent-gets-a-studio-brief.md)
+- ADR 0166: [The brief names the foundations/type tokens; no check warning yet](../../../apps/ethlete-studio/docs/adr/0166-the-brief-names-the-foundations-type-tokens-no-check-warning-yet.md)
+- ADR 0167: [Chat messages render a markdown subset](../../../apps/ethlete-studio/docs/adr/0167-chat-messages-render-a-markdown-subset.md)
+- ADR 0168: [A click on a part grid cell selects that state](../../../apps/ethlete-studio/docs/adr/0168-a-click-on-a-part-grid-cell-selects-that-state.md)
+- ADR 0169: [Sketch selection labels name part, size and context once](../../../apps/ethlete-studio/docs/adr/0169-sketch-selection-labels-name-part-size-and-context-once.md)
+- ADR 0170: [Opening the chat keeps the zoom](../../../apps/ethlete-studio/docs/adr/0170-opening-the-chat-keeps-the-zoom.md)
   As built Q145-Q150 (builder 57, 2026-10-31):
   - Q145/Q146 `e902ae12a`: `STUDIO_BRIEF` in `agent_claude.rs` goes in through `--append-system-prompt` on runs
     without a tool server (the chat). Call runs get none. It names `npx et design check`, `npx et design shot
