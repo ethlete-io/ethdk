@@ -6,7 +6,7 @@ export type WindowButton = 'minimize' | 'maximize' | 'close';
 
 type Os = 'linux' | 'windows' | 'macos';
 
-type TitleBarControl = 'update' | WindowButton;
+type TitleBarControl = 'update' | 'notice' | WindowButton;
 
 type TitleBarInteraction = 'hover' | 'active' | 'focus-visible';
 
@@ -15,6 +15,7 @@ export type Props = {
   left: WindowButton[];
   right: WindowButton[];
   update: boolean;
+  notice?: boolean;
   product: string;
   part: string;
   force?: { control: TitleBarControl; interaction: TitleBarInteraction };
@@ -60,6 +61,8 @@ export const grid = {
 export const states = {
   ...(Object.assign({}, ...rows.map((row) => row.states)) as Record<StateName, Props>),
   'linux-full': LINUX_FULL,
+  'linux-full-notice': { ...LINUX_FULL, update: true, notice: true },
+  'windows-notice': { ...WINDOWS, update: true, notice: true },
   'linux-close-update': { ...LINUX_CLOSE, update: true },
   macos: MACOS,
   'macos-update': { ...MACOS, update: true },
@@ -77,6 +80,7 @@ const BUTTON = { kind: 'button' as const, input: ['pointer' as const, 'keyboard'
 export const controls = {
   search: { kind: 'button' as const, part: 'components/title-search' as const },
   update: BUTTON,
+  notice: BUTTON,
   minimize: BUTTON,
   maximize: BUTTON,
   close: BUTTON,
