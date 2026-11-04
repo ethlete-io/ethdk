@@ -4738,6 +4738,13 @@ new ones stand.
 agent sees success. Why no tool caught it: no spec runs a sketch subcommand with missing arguments and checks the exit
 code. Fix (B364): every sketch subcommand exits 1 on a usage error, with a spec per subcommand.
 
+430\. Tom (2026-11-04): "das wir nun ständig die frames 'laden' die im viewport sind ist super nervig. ständig
+verschwindet das bild und kommt wieder beim scrollen. man scrollt wie durch so ein laggy netscape browser window wo
+gerade 17kb an bild übers modem laden müssen." When a frame scrolls into the viewport, its picture is gone and then
+appears again. Cause not yet known (asked the builder; suspect: frames outside the viewport drop their picture, and a
+frame that comes back renders again instead of showing its last picture). Why no tool caught it, and the fix: pending
+the cause. Joins B365 (scroll in the CEF build).
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
