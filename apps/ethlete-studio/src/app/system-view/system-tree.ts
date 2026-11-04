@@ -1390,7 +1390,8 @@ export const callFramesOf = ({
   });
 };
 
-export type SketchRowShot = { state: string; changed: boolean | null; src: string };
+/** `picture` is the stored PNG of the state, shown in place of the live `src` frame when the frame is not live. */
+export type SketchRowShot = { state: string; changed: boolean | null; src: string; picture: string };
 
 export type SketchRowOf = { key: string; width: number | null; shots: SketchRowShot[] };
 
@@ -1426,10 +1427,8 @@ export const sketchRowsOf = ({
     return {
       key,
       width: cell.width ?? null,
-      shots: states.map((state) => ({
-        state,
-        changed: key === CURRENT ? false : target?.unchanged ? !target.unchanged.includes(state) : null,
-        src: partFrameUrl({
+      shots: states.map((state) => {
+        const address = {
           port,
           product: product.name,
           part: partKey,
@@ -1440,9 +1439,15 @@ export const sketchRowsOf = ({
           surface,
           color,
           ...(key === CURRENT ? {} : { sketch: sketch.target, variant: key }),
-          ...(size === null ? { fit: true } : {}),
-        }),
-      })),
+        };
+
+        return {
+          state,
+          changed: key === CURRENT ? false : target?.unchanged ? !target.unchanged.includes(state) : null,
+          src: partFrameUrl({ ...address, ...(size === null ? { fit: true } : {}) }),
+          picture: partShotUrl({ ...address, preset: cell.preset, width: cell.width }),
+        };
+      }),
     };
   };
 

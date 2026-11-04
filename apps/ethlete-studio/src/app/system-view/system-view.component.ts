@@ -12,6 +12,7 @@ import {
   linkedSignal,
   output,
   signal,
+  Signal,
   untracked,
   viewChild,
 } from '@angular/core';
@@ -72,7 +73,7 @@ import { injectCommentStore, provideCommentStore } from './comment-store';
 import { SketchViewComponent } from './sketch-view.component';
 import { FlowRead, flowRead$, keepLastFlows } from './flow-read';
 import { keptRead$ } from './kept-read';
-import { sketchRead$ } from './sketch-read';
+import { SketchRead, sketchRead$ } from './sketch-read';
 import { FlowViewComponent } from './flow-view.component';
 import { InventoryViewComponent } from './inventory-view.component';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
@@ -504,7 +505,7 @@ export class SystemViewComponent {
 
   public productNames = computed(() => this.products().map((listed) => listed.name));
 
-  private sketchRead = toSignal(
+  private sketchRead: Signal<SketchRead | null> = toSignal(
     toObservable(
       computed(() => ({
         port: this.port(),
@@ -514,11 +515,17 @@ export class SystemViewComponent {
         reloads: this.sketchReloads(),
         statusChanges: this.statusChanges(),
       })),
-    ).pipe(switchMap(({ port, product }) => (port && product ? sketchRead$({ port, product }) : of(null)))),
+    ).pipe(
+      switchMap(({ port, product }) =>
+        port && product
+          ? sketchRead$({ port, product, listed: untracked((): boolean => this.sketchList() !== null) })
+          : of(null),
+      ),
+    ),
     { initialValue: null },
   );
 
-  private sketchList = computed(() => itemsOf(this.sketchRead(), this.product()?.name));
+  private sketchList = computed((): SketchRead['items'] | null => itemsOf(this.sketchRead(), this.product()?.name));
 
   public sketchesError = computed(() => {
     const read = this.sketchRead();
