@@ -1,13 +1,20 @@
 import { execFileSync } from 'child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { dirname, relative, resolve } from 'path';
 import { filesBelow } from '../assets';
 import { repoRootOf } from '../reachable-files';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { EDIT_SKETCH } from './merged-parts';
-import { createSketch, markSketchReady, rewriteSharedImports, Sketch } from './sketch';
+import {
+  createSketch,
+  markSketchReady,
+  rewriteSharedImports,
+  SHARED_FOLDER,
+  Sketch,
+  variantSharedDirOf,
+} from './sketch';
 
-const OLD = 'old';
+export const EDIT_OLD = 'old';
 const NEW = 'new';
 
 const git = (root: string, args: string[]) =>
@@ -57,11 +64,11 @@ export const openEditSketch = (options: {
   const created = createSketch({
     product,
     sketch: { layer: resolved.layer, name: resolved.name, sketch: EDIT_SKETCH },
-    variants: [NEW, OLD],
+    variants: [NEW, EDIT_OLD],
     roundTitle: 'Direct edit',
     roundNote: `${part} changed outside a sketch and looks different - pick the design at HEAD or the edit`,
     variantNotes: new Map([
-      [OLD, 'the design at HEAD'],
+      [EDIT_OLD, 'the design at HEAD'],
       [NEW, 'the edit made outside a sketch'],
     ]),
     author: options.author,
@@ -70,7 +77,7 @@ export const openEditSketch = (options: {
 
   if (typeof created === 'string') return created;
 
-  const oldDir = resolve(created.dir, OLD, resolved.layer, resolved.name);
+  const oldDir = resolve(created.dir, EDIT_OLD, resolved.layer, resolved.name);
 
   rmSync(oldDir, { recursive: true, force: true });
 
@@ -81,9 +88,10 @@ export const openEditSketch = (options: {
     writeFileSync(file, source);
   }
 
-  if (existsSync(resolve(oldDir, 'shared'))) {
+  if (existsSync(resolve(oldDir, SHARED_FOLDER))) {
     rewriteSharedImports(oldDir);
-    rmSync(resolve(oldDir, 'shared'), { recursive: true });
+    cpSync(resolve(oldDir, SHARED_FOLDER), variantSharedDirOf(created, EDIT_OLD), { recursive: true });
+    rmSync(resolve(oldDir, SHARED_FOLDER), { recursive: true });
   }
 
   return markSketchReady({ checkout: target, sketch: created, author: options.author });

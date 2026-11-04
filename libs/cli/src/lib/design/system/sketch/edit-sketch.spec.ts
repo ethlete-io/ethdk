@@ -1,5 +1,5 @@
 import { execFileSync } from 'child_process';
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
@@ -13,11 +13,12 @@ import { decideSketch, Sketch } from './sketch';
 
 const HERO = 'elements/hero';
 
-const acme = () => {
+const acme = (seed?: (heroDir: string) => void) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-edit-sketch-'));
 
   cpSync(join(__dirname, '..', '__fixtures__'), target, { recursive: true });
   writeFileSync(join(target, '.prettierrc'), '{ "singleQuote": true }');
+  seed?.(join(resolveAcme(target).dir, HERO));
 
   const product = resolveAcme(target);
   const css = join(product.dir, HERO, 'hero.css');
@@ -74,6 +75,26 @@ describe('openEditSketch', () => {
     expect(readFileSync(css, 'utf8')).toBe(head);
     expect(changedOutsideSketchOf(resolveAcme(target))).toEqual([]);
     expect(Object.keys(readMerged(join(target, DESIGN_DIR, 'acme')))).toContain(HERO);
+  });
+
+  it('keeps the shared files at HEAD for old when the edit changed them', () => {
+    const { target } = acme((heroDir) => {
+      mkdirSync(join(heroDir, 'shared'));
+      writeFileSync(join(heroDir, 'shared', 'tone.ts'), "export const tone = 'head';\n");
+      writeFileSync(
+        join(heroDir, 'hero.ts'),
+        `import { tone } from './shared/tone';\n${readFileSync(join(heroDir, 'hero.ts'), 'utf8')}`,
+      );
+    });
+    const tone = join(resolveAcme(target).dir, HERO, 'shared', 'tone.ts');
+
+    writeFileSync(tone, "export const tone = 'edit';\n");
+
+    const sketch = openEditSketch({ target, product: resolveAcme(target), part: HERO }) as Sketch;
+
+    expect(readFileSync(join(sketch.dir, 'old', 'shared', 'tone.ts'), 'utf8')).toBe("export const tone = 'head';\n");
+    expect(readFileSync(join(sketch.dir, 'shared', 'tone.ts'), 'utf8')).toBe("export const tone = 'edit';\n");
+    expect(readFileSync(join(sketch.dir, 'old', HERO, 'hero.ts'), 'utf8')).toContain("from '@shared/tone'");
   });
 
   it('opens no sketch when HEAD holds the edit already', () => {

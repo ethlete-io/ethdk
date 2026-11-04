@@ -12,9 +12,11 @@ import { designHashOf, sha16 } from './design-hash';
 import { partOwnerOf } from './inventory-approval';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
-import { openEditSketch } from './sketch/edit-sketch';
+import { EDIT_OLD, openEditSketch } from './sketch/edit-sketch';
+import { discardSketch } from './sketch/merge';
 import { changedOutsideSketchOf, readMerged, recordMerged } from './sketch/merged-parts';
-import { createSystemModules, productModuleIdOf } from './system-modules';
+import { Sketch } from './sketch/sketch';
+import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
 import { drawnStateNamesOf } from './unchanged-rows';
 
 export const PICTURES_FILE = 'pictures.json';
@@ -46,6 +48,7 @@ export type DrawStates = (options: {
   product: ResolvedProduct;
   parts: string[];
   expected?: Record<string, StatePictures>;
+  sketch?: SketchVariant;
 }) => Promise<Map<string, StatePictures | string>>;
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -111,7 +114,7 @@ export const changedStatesOf = (before: StatePictures, now: StatePictures) =>
     .filter((state) => before[state] !== now[state])
     .sort((a, b) => a.localeCompare(b));
 
-export const drawStatePictures: DrawStates = async ({ target, config, product, parts, expected }) => {
+export const drawStatePictures: DrawStates = async ({ target, config, product, parts, expected, sketch }) => {
   const drawn = new Map<string, StatePictures | string>();
 
   if (parts.length === 0) return drawn;
@@ -130,12 +133,8 @@ export const drawStatePictures: DrawStates = async ({ target, config, product, p
     await server.listen();
 
     const { port } = server.httpServer?.address() as AddressInfo;
-    const pictures = createPartShooter({
-      target,
-      base: `http://localhost:${port}`,
-      system: createSystemModules({ target, config }),
-      queue,
-    });
+    const system = createSystemModules({ target, config });
+    const pictures = createPartShooter({ target, base: `http://localhost:${port}`, system, queue });
 
     shooter = pictures;
 
@@ -148,14 +147,16 @@ export const drawStatePictures: DrawStates = async ({ target, config, product, p
           continue;
         }
 
-        const file = product.parts.find((candidate) => partKeyOf(candidate) === part)?.file;
+        const file = sketch
+          ? system.partOf({ product: product.name, part, sketch })?.file
+          : product.parts.find((candidate) => partKeyOf(candidate) === part)?.file;
 
         if (!file) {
           drawn.set(part, `product "${product.name}" has no part "${part}"`);
           continue;
         }
 
-        const module = (await server.ssrLoadModule(productModuleIdOf({ file, product: product.name }))) as {
+        const module = (await server.ssrLoadModule(productModuleIdOf({ file, product: product.name, sketch }))) as {
           default?: { states?: unknown };
         };
         const states = await drawnStateNamesOf(module.default);
@@ -168,7 +169,7 @@ export const drawStatePictures: DrawStates = async ({ target, config, product, p
                 state,
                 preset: frame.preset,
                 width: null,
-                sketch: null,
+                sketch: sketch ?? null,
                 interaction: null,
                 bare: true,
                 emptySlots: false,
@@ -242,21 +243,21 @@ export const storePictures = async (options: {
 export const newStatesLineOf = ({ product, part, states }: { product: string; part: string; states: string[] }) =>
   `NEW STATES ${product} ${part}: ${states.join(', ')} - for Tom's next review`;
 
-/** The pictures a direct edit of the part is compared with: its `record`, else `review` at the merged hash, else `go`. */
+/** The pictures a direct edit of the part is compared with: its `record`, else `review` or `go` at the merged hash. */
 const baselineOf = (pictures: PartPictures, merged: string | undefined) =>
   pictures.record ??
-  (pictures.review && pictures.review.hash === merged ? pictures.review : null) ??
-  pictures.go ??
+  [pictures.review, pictures.go].find((stored) => stored !== undefined && stored.hash === merged) ??
   null;
 
-type Need = { part: ResolvedPart; design: string; baseline: AcceptedPictures | null };
+type Need = { part: ResolvedPart; design: string; baseline: AcceptedPictures | null; sketch?: Sketch };
 
 /**
  * The work of `design check` on the pictures of each merged part, or of `parts`: draws the `record` pictures of a part
  * unchanged since its merge when none are stored at its design hash, and resolves a direct edit of a part changed
- * outside a sketch. A direct edit that draws every state as before holds at once (its new hash goes to `merged.json`);
- * one that draws a state differently, or has no pictures to compare with, opens the old/new edit sketch. Answers with
- * one line per part it drew or decided.
+ * outside a sketch. A direct edit is compared with its pictures at the merged hash, else with the `old` variant of the
+ * old/new edit sketch, which holds the design at HEAD. One that draws every state as before holds at once (its new hash
+ * goes to `merged.json`, and the edit sketch closes); one that draws a state differently leaves the edit sketch open.
+ * Answers with one line per part it drew or decided.
  */
 export const autoAcceptOf = async (options: {
   target: string;
@@ -272,15 +273,15 @@ export const autoAcceptOf = async (options: {
   const records: Need[] = [];
   const edits: Need[] = [];
   const lines: string[] = [];
-  const opened = (part: string) => {
-    const sketch = openEditSketch({ target, product, part, author: 'design check' });
-
+  const draw = options.draw ?? drawStatePictures;
+  const heads: { part: ResolvedPart; design: string; sketch: Sketch }[] = [];
+  const opened = (part: string, sketch: Sketch | string) =>
     lines.push(
       typeof sketch === 'string'
         ? `DIRECT EDIT ${product.name} ${part}: changed outside a sketch, no old/new sketch: ${sketch}`
         : `DIRECT EDIT ${product.name} ${part}: changed outside a sketch - pick old or new in sketch ${sketch.target}`,
     );
-  };
+  const open = (part: string) => openEditSketch({ target, product, part, author: 'design check' });
 
   for (const resolved of product.parts) {
     const part = partKeyOf(resolved);
@@ -294,16 +295,34 @@ export const autoAcceptOf = async (options: {
     if (edited.has(part)) {
       const baseline = baselineOf(pictures, merged[part]);
 
-      if (baseline) edits.push({ part: resolved, design, baseline });
-      else opened(part);
+      if (baseline) {
+        edits.push({ part: resolved, design, baseline });
+        continue;
+      }
+
+      const sketch = open(part);
+
+      if (typeof sketch === 'string') opened(part, sketch);
+      else heads.push({ part: resolved, design, sketch });
     } else if (pictures.record?.hash !== design) records.push({ part: resolved, design, baseline: null });
+  }
+
+  for (const { part: resolved, design, sketch } of heads) {
+    const part = partKeyOf(resolved);
+    const old = (
+      await draw({ target, config, product, parts: [part], sketch: { target: sketch.target, variant: EDIT_OLD } })
+    ).get(part);
+
+    if (old === undefined || typeof old === 'string') opened(part, sketch);
+    else
+      edits.push({ part: resolved, design, baseline: { hash: merged[part] ?? '', states: old, slots: true }, sketch });
   }
 
   const needs = [...edits, ...records];
 
   if (needs.length === 0) return lines;
 
-  const drawn = await (options.draw ?? drawStatePictures)({
+  const drawn = await draw({
     target,
     config,
     product,
@@ -313,17 +332,21 @@ export const autoAcceptOf = async (options: {
     ),
   });
 
-  for (const { part: resolved, design, baseline } of needs) {
+  for (const { part: resolved, design, baseline, sketch } of needs) {
     const part = partKeyOf(resolved);
     const states = drawn.get(part);
+    const notDrawn = (why: string) => {
+      lines.push(`PICTURES NOT DRAWN ${product.name} ${part}: ${why}`);
+      if (sketch) opened(part, sketch);
+    };
 
     if (states === undefined || typeof states === 'string') {
-      lines.push(`PICTURES NOT DRAWN ${product.name} ${part}: ${states ?? 'no drawing'}`);
+      notDrawn(states ?? 'no drawing');
       continue;
     }
 
     if (designHashOf({ product, part: resolved }).hash !== design) {
-      lines.push(`PICTURES NOT DRAWN ${product.name} ${part}: changed while it was drawn`);
+      notDrawn('changed while it was drawn');
       continue;
     }
 
@@ -331,9 +354,11 @@ export const autoAcceptOf = async (options: {
 
     if (baseline && changed.length > 0) {
       lines.push(`PICTURES CHANGED ${product.name} ${part}: ${changed.join(', ')}`);
-      opened(part);
+      opened(part, sketch ?? open(part));
       continue;
     }
+
+    if (sketch) discardSketch({ target, sketch, author: 'design check' });
 
     if (baseline) {
       recordMerged({ product, parts: [part] });

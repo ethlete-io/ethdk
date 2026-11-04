@@ -9,7 +9,7 @@ import { autoAcceptOf, DrawStates, readPictures, StatePictures } from './accepte
 import { designHashOf } from './design-hash';
 import { partPointsOf, readOpenPoints } from './read-open-points';
 import { partKeyOf, resolveProduct } from './resolve-product';
-import { changedOutsideSketchOf, readMerged, recordMerged } from './sketch/merged-parts';
+import { changedOutsideSketchOf, directEditsOf, readMerged, recordMerged } from './sketch/merged-parts';
 
 const CHIP = 'components/chip';
 
@@ -44,14 +44,16 @@ const designHashOfChip = (target: string) => {
 
 const drawing = (initial: StatePictures) => {
   const calls: string[][] = [];
-  const pictures = { now: initial };
-  const draw: DrawStates = async ({ parts }) => {
+  const variants: (string | null)[] = [];
+  const pictures: { now: StatePictures; head?: StatePictures } = { now: initial };
+  const draw: DrawStates = async ({ parts, sketch }) => {
     calls.push(parts);
+    variants.push(sketch?.variant ?? null);
 
-    return new Map(parts.map((part) => [part, { ...pictures.now }]));
+    return new Map(parts.map((part) => [part, { ...(sketch ? (pictures.head ?? pictures.now) : pictures.now) }]));
   };
 
-  return { draw, calls, pictures };
+  return { draw, calls, variants, pictures };
 };
 
 const autoAccept = (target: string, draw: DrawStates) =>
@@ -131,9 +133,9 @@ describe('autoAcceptOf', () => {
     expect(Object.keys(readPictures(dir)[CHIP] ?? {})).toEqual(['record']);
   });
 
-  it('opens the old/new sketch without drawing when no pictures drawn with slots exist', async () => {
+  it('compares a direct edit with the design at HEAD when no pictures drawn with slots exist', async () => {
     const { target, dir, chip } = checkout();
-    const { draw, calls } = drawing({ default: 'a1', hover: 'b2' });
+    const { draw, variants } = drawing({ default: 'a1', hover: 'b2' });
 
     recordMerged({ product: productOf(target), parts: [CHIP] });
     writeFileSync(
@@ -143,9 +145,45 @@ describe('autoAcceptOf', () => {
     appendFileSync(chip, '// edit inside a slot\n');
 
     expect(await autoAccept(target, draw)).toEqual([
+      `HELD app-a ${CHIP}: changed outside a sketch, every state draws as before`,
+    ]);
+    expect(variants).toEqual(['old', null]);
+    expect(directEditsOf(productOf(target))).toEqual([]);
+  });
+
+  it('compares a direct edit with the design at HEAD, not with go pictures of an older hash', async () => {
+    const { target, dir, chip } = checkout();
+    const { draw } = drawing({ default: 'a1', hover: 'b2' });
+
+    recordMerged({ product: productOf(target), parts: [CHIP] });
+    writeFileSync(
+      join(dir, 'pictures.json'),
+      JSON.stringify({ [CHIP]: { go: { hash: 'cccece47', states: { default: 'x9', hover: 'y8' }, slots: true } } }),
+    );
+    appendFileSync(chip, '// attribute-only edit\n');
+
+    expect(await autoAccept(target, draw)).toEqual([
+      `HELD app-a ${CHIP}: changed outside a sketch, every state draws as before`,
+    ]);
+    expect(directEditsOf(productOf(target))).toEqual([]);
+  });
+
+  it('leaves the old/new sketch open when the edit draws a state differently from HEAD', async () => {
+    const { target, chip } = checkout();
+    const { draw, pictures } = drawing({ default: 'a1', hover: 'c3' });
+
+    pictures.head = { default: 'a1', hover: 'b2' };
+    recordMerged({ product: productOf(target), parts: [CHIP] });
+    appendFileSync(chip, '// visible edit\n');
+
+    expect(await autoAccept(target, draw)).toEqual([
+      `PICTURES CHANGED app-a ${CHIP}: hover`,
       `DIRECT EDIT app-a ${CHIP}: changed outside a sketch - pick old or new in sketch ${CHIP}@edit`,
     ]);
-    expect(calls).toEqual([]);
+    expect(partPointsOf(readOpenPoints(productOf(target)), CHIP)).toContainEqual({
+      kind: 'direct-edit',
+      sketch: `${CHIP}@edit`,
+    });
   });
 
   it('stores pictures after design accept', async () => {
