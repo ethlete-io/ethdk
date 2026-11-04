@@ -62,38 +62,16 @@ must store a state.
 
 ### Slice 1 decisions (2026-10-27)
 
-- Folder layout: `.ethlete/design/<product>/<layer>/<part>/<part>.ts` plus `<part>.css`, with
-  `<product>/fixtures.ts` at the product root. Layer folders: `foundations`, `components`,
-  `elements`, `pages`. `calls/` stays as it is.
-- Config: `config.json` gets a `products` key. An entry holds the render settings of a project
-  (`styles`, `head`, `providers`, `themes`) plus `base` and `presets`. The old `projects` key
-  stays readable and unchanged until slice 2 moves Studio.
-- The note with the reason for a part's shape is a required `note` field in the part's TS
-  definition.
-- `base` is a path to another product folder. Its settings come from the `config.json` of the
-  workspace that holds it. The name `@ethlete/components` is a built-in base: the SDK system
-  that ships in `@ethlete/cli`.
-- A part imports another part as `@system/<layer>/<name>`, and fixtures as `@system/fixtures`.
-  The product resolves the name: its own part, else the base part. So an override also
-  replaces the part inside base parts.
-- There is no `product.ts`. The `products` entry in `config.json` holds `base` and `presets`.
-  The Rust side of Studio can read it as JSON.
-- The built-in base `@ethlete/components` lives in `libs/cli/design/systems/ethlete-components/`,
-  with a `config.json` next to it. It has the same shape as a workspace, so one loader reads both.
-- A part imports the part API as `@design-system` (`libs/cli/design/define-part.ts`). The core
-  writes a tsconfig per product, with one explicit `paths` entry for each resolved part.
-- `et design check --product <name>` checks one product: the rules, then `tsc`. `et design check`
-  with no flag checks every product. The old flags of `check` work as before.
-- Base parts are checked as part of the product that uses them.
-- Rule details:
-  - Hard-coded colour: hex values and colour functions (`rgb()`, `hsl()`, `oklch()`, `color()`
-    and the others) in the CSS and TS of a part outside foundations. A fallback in
-    `var(--x, #fff)` counts too.
-  - Copy of a component: an element or page CSS rule names a class from a component's CSS, or
-    element or page markup uses such a class without an import of that component.
-  - Motion: a part calls `requestAnimationFrame` or `setInterval`.
-  - A relative import out of the part's own folder fails. Import another part as
-    `@system/<layer>/<name>`.
+- ADR 0171: [A design part lives in its product, layer and part folder](../../../apps/ethlete-studio/docs/adr/0171-a-design-part-lives-in-its-product-layer-and-part-folder.md)
+- ADR 0172: [config.json holds products with their render settings](../../../apps/ethlete-studio/docs/adr/0172-config-json-holds-products-with-their-render-settings.md)
+- ADR 0173: [Every part carries a required note on its shape](../../../apps/ethlete-studio/docs/adr/0173-every-part-carries-a-required-note-on-its-shape.md)
+- ADR 0174: [A product names its base by path; @ethlete/components is built in](../../../apps/ethlete-studio/docs/adr/0174-a-product-names-its-base-by-path-ethlete-components-is-built-in.md)
+- ADR 0175: [Parts import parts through @system, resolved by the product](../../../apps/ethlete-studio/docs/adr/0175-parts-import-parts-through-system-resolved-by-the-product.md)
+- ADR 0176: [There is no product.ts](../../../apps/ethlete-studio/docs/adr/0176-there-is-no-product-ts.md)
+- ADR 0177: [The built-in SDK base has the shape of a workspace](../../../apps/ethlete-studio/docs/adr/0177-the-built-in-sdk-base-has-the-shape-of-a-workspace.md)
+- ADR 0178: [Parts import the part API as @design-system](../../../apps/ethlete-studio/docs/adr/0178-parts-import-the-part-api-as-design-system.md)
+- ADR 0179: [design check runs per product](../../../apps/ethlete-studio/docs/adr/0179-design-check-runs-per-product.md)
+- ADR 0180: [The first design check rules](../../../apps/ethlete-studio/docs/adr/0180-the-first-design-check-rules.md)
 
 - Built in slice 1, in `libs/cli/src/lib/design/system/`:
   - The check prints one line per problem: `<RULE> <file>: <message>`. The rules are `IMPORT`,
