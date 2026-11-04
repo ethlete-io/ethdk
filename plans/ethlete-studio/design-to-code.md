@@ -4671,8 +4671,14 @@ check warns when the samples do not cover the real range. The layout itself goes
 422\. Tom (2026-11-04, screenshot of the sketch view zoomed far out): "noch nen ui ding bei extrem zoom". A frame
 that an agent still draws shows its placeholder ("Opus 5.5 zeichnet diese Variante", "Der Rahmen füllt sich, sobald
 die erste Ansicht steht.") at full screen size next to a tiny finished frame. The placeholder card is larger than the
-frame it stands for, and its title wraps into three lines. Cause not yet known (asked the builder). Why no tool caught
-it, and the fix: pending the cause; joins B346 (an e2e at 30 % and 100 % zoom).
+frame it stands for, and its title wraps into three lines. Cause (builder): the canvas zoom sets each frame's width and
+height to part size × scale (`applyScale`) and uses no CSS scale. The placeholder is a card with fixed type sizes
+(`text-ui-lg`, `text-ui-sm`) and a fixed `min-h-24` that the zoom never touches, in a column only a few px wide. The
+design (`drawingStage()`) draws the same card, but only at `camera: 'fit'`, so the compare check stayed green. Why no
+tool caught it: the design states cross the zoom extremes (below-fit, far-out) only with finished frames, never with a
+status state. Fix (B362): the coverage check also crosses the status states (drawing, paused, failed) with the zoom
+extremes a part declares. The look (placeholder scales with the zoom, below a readable size only the pulse dot and the
+model logo) goes into the B346 sketch (Tom picks).
 
 423\. Tom (2026-11-04, screenshot of variant a while the agent draws it): "die zeichnet line oben im variant header
 kann dann wohl weg?" The variant header shows "● zeichnet" in its own line, and the frame below shows "● Opus 5.5

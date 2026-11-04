@@ -24,4 +24,3 @@ B341, B342, B344, B347, B349, B355, B358, B359) follow in the builder's order.
 
 - B343 is built (46177c36b) but not verified live: the builder checks it on the next real stale sketch.
 - The Mac perf session (B348, ADR 0181) is finished; its probes and logs stay untracked in `tmp/mac-perf`.
-- Finding 422 (drawing placeholder at full size at far zoom): the cause is asked from the builder.
