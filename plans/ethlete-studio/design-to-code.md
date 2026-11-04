@@ -4535,6 +4535,11 @@ builds. Why no tool caught it: the desk always has a warm cache and is fast enou
 a cold start or the server stall. Fix (B317, extended): with a cold cache (empty ET tmpdir, one sketch), the longest
 event-loop stall during the first listing stays under 50 ms (20 ms ping route), the listing answers within 1 s without
 waiting for a harness build, and a cold start runs at most 1 harness build.
+Correction (second runs, fresh scratch checkouts on both machines): cold listing Mac 120.7 s, desk 120.6 s; the stall
+is Mac 35.5 s, desk 10.3 s. Near-equal times on a 4x slower machine point to a fixed wait of about 60 s (likely a timeout
+on a render worker or a harness build wait, not proven), so the slow answer hits the desk too. The Mac-specific part is
+the stall length. Budget (updated): in a fresh checkout with a cold cache the first listing answers in under 2 s
+without waiting on a timeout, and the longest stall stays under 50 ms (20 ms ping to `/@vite/client`).
 
 409\. Mac perf session (2026-11-04, B348): `GET /__design/system?product=studio` takes 61 s on the Mac on every call,
 also warm; the server stalls up to 1 s during it. Desk: 2 s. The sketch view (pages/sketches) showed no cell within
@@ -4545,6 +4550,9 @@ processes (`execFileSync` in the canonical-class rule `classFactsOf` 4.6 s, git 
 call or the server stall. Fix (B350): the second call on a warm server answers within 200 ms from a cache keyed on its
 inputs; the longest stall during the first call stays under 50 ms, with the Tailwind and git calls as async child
 processes; zero `CssSyntaxError` throws per call.
+Correction (second runs): the 61 s warm call did not repeat; drop "on every call". Cold: Mac 66.5 s, desk 61.8 s
+(the same fixed wait as finding 408). Warm: Mac 1.05 s (stall 1.04 s), desk 0.35 s (stall 0.34 s). Budget (updated):
+the first system answer in a fresh checkout under 5 s, the warm call under 200 ms, the longest stall under 50 ms.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
