@@ -52,7 +52,8 @@ const checkout = () => {
 
 const productOf = (target: string) => resolveProduct({ target, name: 'app-a', config: {} });
 
-const go = (target: string, part = 'components/chip') => markPartGo({ product: productOf(target), part, by: 'tom', via: 'design go' });
+const go = (target: string, part = 'components/chip') =>
+  markPartGo({ product: productOf(target), part, by: 'tom', via: 'design go' });
 
 const output = () => {
   const lines: string[] = [];

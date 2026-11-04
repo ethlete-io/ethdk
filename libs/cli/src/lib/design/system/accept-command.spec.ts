@@ -33,7 +33,8 @@ const editedHero = () => {
 
 const draw: DrawStates = async ({ parts }) => new Map(parts.map((part) => [part, { default: 'a1' }]));
 
-const accept = (target: string, argv: string[]) => designAccept({ target, argv, invocation: 'et design', draw, prompt: { isTTY: true, ask: async () => 'y' } });
+const accept = (target: string, argv: string[]) =>
+  designAccept({ target, argv, invocation: 'et design', draw, prompt: { isTTY: true, ask: async () => 'y' } });
 
 const FULL = ['elements/hero', '--product', 'acme', '--by', 'tom', '--note', 'Tom approved the cleanup'];
 
@@ -60,7 +61,12 @@ describe('designAccept', () => {
 
     const { target, productDir } = editedHero();
 
-    expect(await accept(target, FULL.map((arg) => (arg === 'tom' ? 'claude-opus-5-5' : arg)))).toBe(1);
+    expect(
+      await accept(
+        target,
+        FULL.map((arg) => (arg === 'tom' ? 'claude-opus-5-5' : arg)),
+      ),
+    ).toBe(1);
     expect(errors.join('\n')).toContain('only Tom grants an accept');
     expect(existsSync(join(productDir, ACCEPTED_FILE))).toBe(false);
   });
