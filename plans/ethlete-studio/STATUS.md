@@ -20,6 +20,8 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 
 ## Gerade in Arbeit
 
+**Reihenfolge (Tom, 04.11.): nach dem Push A10 (B249 + B295), dann A36 mit Chat-Entwürfen (A25) parallel; A37 später.**
+
 Stand der aktuellen Welle. ✅ fertig (lokal, ungepusht), 🔨 läuft, ⏳ geplant, ⛔ hakt, ⏸️ geparkt. Die Grill-Session hält die
 Tabelle nach jedem Bericht des Builders aktuell; fertige Zeilen fallen beim Push weg.
 
