@@ -4456,6 +4456,17 @@ cause further down.
 corrects a round note without reopening the sketch. Fix: the `sketch note --round` part of B114 edits a round note
 of a ready sketch and keeps it ready. Until then the doc agent tells Tom the correct text when it shows the sketch.
 
+398\. Builder (2026-11-04, B329 sketch `pages/sketches@fold-question`): `sketch ready` passed variant c although it
+changed two states the round did not touch (withdrawn-shown and withdrawn-hidden: gap 3 instead of 4, toggle moved);
+only an "auto-merge skipped" line named them. The builder found it in the shots and had it fixed. Why no tool caught
+it: no check compares the states outside a round's new and changed states with HEAD. Fix (B342): `sketch check` fails
+a variant whose untouched states differ from HEAD, unless the round note names them.
+
+399\. Builder (2026-11-04, same sketch): `sketch report` on a ready sketch was refused without naming `--reopen`, so
+the agent edited first and reported after. Why no tool caught it: the refusal text does not say how to go on. Fix
+(B342): the refusal names `--reopen`. The same sketch showed that the app's fold label (B329, built without a design)
+has no nowrap and likely wraps in Studio; it is fixed with Tom's pick (finding 391 covers why no gate saw it).
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
