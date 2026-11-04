@@ -34,6 +34,8 @@ import {
 } from './ready-shots';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { mergeAndRecord } from './system/sketch/merge-step';
+import { staleSketchBasesOf } from './system/check-system';
+import { repoInvocation } from '../invocation';
 import { MERGED_FILE } from './system/sketch/merged-parts';
 import { BusyState, groupedIssueLinesOf, renderIssueLineOf, renderIssuesOf } from './system/render-check';
 import { mergePreviewOf } from './system/sketch/merge-preview';
@@ -170,7 +172,7 @@ const WRITES = new Set([
   ...VERDICTS,
 ]);
 
-type Context = { target: string; config: DesignConfig; args: Args; noSketchHint?: string };
+type Context = { target: string; config: DesignConfig; args: Args; invocation?: string; noSketchHint?: string };
 
 const fail = (message: string) => {
   console.error(message);
@@ -1070,6 +1072,15 @@ const checked = async (context: Context) => {
     if (sketch.hold) console.warn(`HELD ${sketch.target}: until ${sketch.hold.until}`);
   });
 
+  const stale = staleSketchBasesOf({
+    product,
+    invocation: context.invocation ?? repoInvocation({ root: target, subcommand: 'design' }),
+    targets: new Set(chosen.map((entry) => entry.sketch.target)),
+  });
+
+  stale.forEach((problem) => console.error(problem.line));
+  failed ||= stale.length > 0;
+
   for (const { sketch, variant, problems, before } of chosen) {
     const typed = typecheckVariant({ target, product, sketch, variant });
 
@@ -1388,5 +1399,5 @@ export const designSketch = (options: { target: string; argv: string[]; invocati
 
   if (typeof config === 'string') return fail(config);
 
-  return run({ target, config, args });
+  return run({ target, config, args, invocation });
 };

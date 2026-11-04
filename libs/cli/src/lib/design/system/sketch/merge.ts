@@ -9,11 +9,13 @@ import { ASSETS_FOLDER, filesBelow } from '../assets';
 import { fixturesOf, partFilesOf } from '../product';
 import { isBuiltInBase } from '../base';
 import { partKeyOf, ResolvedPart, ResolvedProduct, resolveProduct } from '../resolve-product';
+import { rebaseAfterMerge } from './after-merge';
 import { conflictsOf } from './baseline';
 import { prettierBinOf } from '../prettier';
 import { carryShared, productSharedChangesOf, sharedPlanOf } from './merge-shared';
 import { forgetMerged, recordMerged, rerecordChangedMerged, unchangedMergedOf } from './merged-parts';
 import { madeByOf, noteOf, withMadeBy, withNote } from './part-definition';
+import { staleEmbeddedOf } from './stale-base';
 import { authorsOf, clearSketchReport, rejectedProblemOf, Sketch, variantDirOf } from './sketch';
 
 const swap = (entries: { from: string | null; to: string }[]) => {
@@ -192,7 +194,12 @@ const mergeOrReason = (options: {
       changed: [],
     };
 
-  const conflicts = conflictsOf({ product, baseline: sketch.baseline, parts, fixtures: fixtures !== null });
+  const conflicts = [
+    ...new Set([
+      ...conflictsOf({ product, baseline: sketch.baseline, parts, fixtures: fixtures !== null }),
+      ...staleEmbeddedOf({ product, sketch, variants: [variant] }),
+    ]),
+  ];
 
   if (conflicts.length > 0)
     return {
@@ -299,7 +306,16 @@ const mergeOrReason = (options: {
   rmSync(sketch.dir, { recursive: true, force: true });
   clearSketchReport({ checkout: target, sketch });
 
-  return [...new Set([...inheritedKeys, ...parts.map(partKeyOf)])];
+  const mergedParts = [...new Set([...inheritedKeys, ...parts.map(partKeyOf)])];
+
+  rebaseAfterMerge({
+    target,
+    product: resolveProduct({ target, name: product.name, config: product.config }),
+    merged: sketch.targets,
+    before: sketch.baseline,
+  }).forEach((line) => console.log(line));
+
+  return mergedParts;
 };
 
 /**

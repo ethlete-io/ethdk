@@ -1,7 +1,7 @@
 import { relative } from 'path';
 import { DesignConfig } from '../../paths';
 import { productDirOf } from '../product';
-import { staleBaselineOf } from '../sketch/baseline';
+import { staleBaseOf } from '../sketch/stale-base';
 import { oneProductOf } from '../sketch/cli-args';
 import { listSketches } from '../sketch/sketch';
 import { DesignComment, lastWordOf, listComments, REST, ThreadState, threadStateOf } from './comment';
@@ -62,7 +62,7 @@ export const inboxOf = (options: { target: string; config: DesignConfig; product
         continue;
       }
 
-      const changed = resolved && typeof resolved !== 'string' ? staleBaselineOf({ product: resolved, sketch }) : null;
+      const changed = resolved && typeof resolved !== 'string' ? staleBaseOf({ product: resolved, sketch }) : null;
 
       if (changed) items.push({ kind: 'rebase', product, target: sketch.target, changed, at: sketch.createdAt });
       if (!sketch.decision) continue;

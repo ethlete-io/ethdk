@@ -1597,6 +1597,19 @@ describe('designSketch', { timeout: 120_000 }, () => {
     );
   }, 120_000);
 
+  it('fails a sketch whose embedded part changed in the product and names that part', async () => {
+    const target = acme();
+    const lines = output();
+
+    write(target, 'new', 'pages/home', '--variants', 'a', '--note', 'n', '--product', 'acme');
+    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { padding: 0; }');
+
+    expect(await run(target, 'check', '--product', 'acme')).toBe(1);
+    expect(lines).toContain(
+      'SKETCH-BASE-STALE acme pages/home: elements/hero changed since the sketch was drawn - bring each variant up to date, then run et design sketch rebase pages/home --product acme --by <model id>',
+    );
+  }, 120_000);
+
   it('warns without failing when the Aktuell column shows only placeholders', async () => {
     const target = acme();
     const warnings: string[] = [];

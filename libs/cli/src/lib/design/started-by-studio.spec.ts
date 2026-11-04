@@ -2,12 +2,11 @@ import { mkdtempSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { designCommand } from './design-command';
 
 const serveDesign = vi.hoisted(() => vi.fn(async () => 0));
 
 vi.mock('./serve', () => ({ serveDesign }));
-
-const { designCommand } = await import('./design-command');
 
 describe('a design server Studio starts', () => {
   const root = mkdtempSync(join(tmpdir(), 'started-by-studio-'));

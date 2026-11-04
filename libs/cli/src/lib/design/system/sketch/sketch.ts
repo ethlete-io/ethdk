@@ -66,6 +66,9 @@ export type SketchRound = { key: string; title: string; note: string; lost?: str
 /** A change to the sketch that waits on something; while it holds, the sketch stays in progress and cannot be ready. */
 export type SketchHold = { until: string; by: string; heldAt: string };
 
+/** A rebase after the merge of `merged` that could not port `parts` by itself; the sketch's agent ports `reasons` by hand. */
+export type SketchPortMark = { merged: string[]; parts: string[]; reasons: string[]; at: string };
+
 export type SketchFile = {
   target: string;
   /** Every part the sketch targets, `target` first; absent on a sketch with one target. */
@@ -85,6 +88,7 @@ export type SketchFile = {
    */
   merge?: SketchMerge;
   hold?: SketchHold;
+  portAfterMerge?: SketchPortMark;
 };
 
 export const SKETCH_MERGES = ['override', 'into-base'] as const;
@@ -127,31 +131,34 @@ export const sharedDirOf = (sketch: Pick<Sketch, 'dir'>) => resolve(sketch.dir, 
 export const variantSharedDirOf = (sketch: Sketch, variant: string) =>
   resolve(variantDirOf(sketch, variant), SHARED_FOLDER);
 
-const SOURCE = /\.(?:ts|js|mjs)$/u;
+export const SOURCE_FILE = /\.(?:ts|js|mjs)$/u;
 
 export const sourceFilesIn = (dir: string) =>
   existsSync(dir)
     ? (readdirSync(dir, { recursive: true }) as string[])
-        .filter((path) => SOURCE.test(path))
+        .filter((path) => SOURCE_FILE.test(path))
         .map((path) => resolve(dir, path))
     : [];
 
-/** Rewrites the relative imports of the part's own `shared/` folder in its files to `@shared/`. */
-export const rewriteSharedImports = (partDir: string) => {
+/** `source`, the file `file` of the part in `partDir`, with its relative imports of the part's own `shared/` folder as `@shared/`. */
+export const withSharedImports = (options: { source: string; file: string; partDir: string }) => {
+  const { source, file, partDir } = options;
   const shared = resolve(partDir, SHARED_FOLDER);
 
+  return source.replace(/(['"])(\.{1,2}\/[^'"]+)\1/gu, (...[match = '', quote = '', specifier = '']: string[]) => {
+    const path = relative(shared, resolve(dirname(file), specifier));
+
+    return path.startsWith('..') || isAbsolute(path)
+      ? match
+      : `${quote}${SHARED_PREFIX}${path.split(sep).join('/')}${quote}`;
+  });
+};
+
+/** Rewrites the relative imports of the part's own `shared/` folder in its files to `@shared/`. */
+export const rewriteSharedImports = (partDir: string) => {
   for (const file of sourceFilesIn(partDir)) {
     const source = readFileSync(file, 'utf8');
-    const rewritten = source.replace(
-      /(['"])(\.{1,2}\/[^'"]+)\1/gu,
-      (...[match = '', quote = '', specifier = '']: string[]) => {
-        const path = relative(shared, resolve(dirname(file), specifier));
-
-        return path.startsWith('..') || isAbsolute(path)
-          ? match
-          : `${quote}${SHARED_PREFIX}${path.split(sep).join('/')}${quote}`;
-      },
-    );
+    const rewritten = withSharedImports({ source, file, partDir });
 
     if (rewritten !== source) writeFileSync(file, rewritten);
   }
@@ -307,6 +314,21 @@ const isHold = (value: unknown): value is SketchHold => {
   );
 };
 
+const isStringList = (value: unknown) => Array.isArray(value) && value.every((entry) => typeof entry === 'string');
+
+const isPortMark = (value: unknown): value is SketchPortMark => {
+  const mark = value as Partial<Record<keyof SketchPortMark, unknown>> | null;
+
+  return (
+    typeof mark === 'object' &&
+    mark !== null &&
+    isStringList(mark.merged) &&
+    isStringList(mark.parts) &&
+    isStringList(mark.reasons) &&
+    typeof mark.at === 'string'
+  );
+};
+
 const FIRST_ROUND = 'r1';
 
 const firstRoundOf = (title = '', note = ''): SketchRound => ({ key: FIRST_ROUND, title, note: note.trim() });
@@ -378,6 +400,8 @@ export const readSketch = (options: { product: string; dir: string }): Sketch | 
     return `${file}: merge must be one of ${SKETCH_MERGES.join(', ')}`;
   if (parsed.hold !== undefined && !isHold(parsed.hold)) return `${file}: hold must be { until, by, heldAt }`;
   if (parsed.hold !== undefined && parsed.status !== 'in progress') return `${file}: a held sketch must be in progress`;
+  if (parsed.portAfterMerge !== undefined && !isPortMark(parsed.portAfterMerge))
+    return `${file}: portAfterMerge must be { merged: string[], parts: string[], reasons: string[], at }`;
 
   const rounds = parsed.rounds ?? [firstRoundOf()];
   const running = runningRoundOf({ rounds }).key;
@@ -456,6 +480,7 @@ export const writeSketchFile = (sketch: Sketch) => {
     ...(sketch.rejections && Object.keys(sketch.rejections).length > 0 ? { rejections: sketch.rejections } : {}),
     ...(sketch.merge ? { merge: sketch.merge } : {}),
     ...(sketch.hold ? { hold: sketch.hold } : {}),
+    ...(sketch.portAfterMerge ? { portAfterMerge: sketch.portAfterMerge } : {}),
   };
 
   writeFileSync(resolve(sketch.dir, SKETCH_FILE), jsonLayoutOf(file));
@@ -1071,7 +1096,8 @@ export const decideSketch = (options: { sketch: Sketch; decision: SketchDecision
  * up to date with the parts that changed in the product since the sketch was created.
  */
 export const rebaseSketch = (options: { product: ResolvedProduct; sketch: Sketch }): Sketch => {
-  const rebased: Sketch = { ...options.sketch, baseline: baselineOf(options.product) };
+  const { portAfterMerge: _ported, ...sketch } = options.sketch;
+  const rebased: Sketch = { ...sketch, baseline: baselineOf(options.product) };
 
   writeSketchFile(rebased);
 

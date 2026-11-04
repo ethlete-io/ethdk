@@ -6,7 +6,15 @@ import { filesBelow } from '../assets';
 import { fixturesOf, partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { conflictsOf, FIXTURES_KEY, partHashOf } from './baseline';
-import { Sketch, variantDirOf } from './sketch';
+import {
+  SHARED_FOLDER,
+  sharedDirOf,
+  Sketch,
+  SOURCE_FILE,
+  variantDirOf,
+  variantSharedDirOf,
+  withSharedImports,
+} from './sketch';
 
 const CANDIDATE_COMMITS = 60;
 
@@ -24,6 +32,29 @@ const posix = (path: string) => path.split(sep).join('/');
 const readOrNull = (path: string) => (existsSync(path) ? readFileSync(path) : null);
 
 const sameBytes = (a: Buffer | null, b: Buffer | null) => (a === null || b === null ? a === b : a.equals(b));
+
+const heldPathOf = (options: { name: string; heldDir: string; sharedDirs: string[] }) => {
+  const { name, heldDir, sharedDirs } = options;
+  const own = resolve(heldDir, name);
+  const prefix = `${SHARED_FOLDER}${sep}`;
+
+  if (!name.startsWith(prefix) || existsSync(own)) return own;
+
+  const lifted = sharedDirs.map((dir) => resolve(dir, name.slice(prefix.length)));
+
+  return lifted.find((path) => existsSync(path)) ?? own;
+};
+
+const asHeldOf = (options: { name: string; heldDir: string }) => (content: Buffer | null) =>
+  content && SOURCE_FILE.test(options.name)
+    ? Buffer.from(
+        withSharedImports({
+          source: content.toString('utf8'),
+          file: resolve(options.heldDir, options.name),
+          partDir: options.heldDir,
+        }),
+      )
+    : content;
 
 /**
  * The folder of `part` as the commit whose state hashes to `hash` held it, extracted below `scratch`, or `null` when
@@ -109,7 +140,7 @@ export const portBaseChanges = (options: {
   const baseline = sketch.baseline ?? {};
   let top: string | null = null;
   const scratch = mkdtempSync(resolve(tmpdir(), 'et-sketch-rebase-'));
-  const writes: Write[] = [];
+  const writes = new Map<string, Write>();
   const ported: PortedFile[] = [];
   const conflicts: string[] = [];
 
@@ -147,17 +178,20 @@ export const portBaseChanges = (options: {
           ...new Set([oldDir, partDir].flatMap((dir) => filesBelow(dir).map((file) => relative(dir, file)))),
         ].sort();
 
+        const sharedDirs = [variantSharedDirOf(sketch, variant), sharedDirOf(sketch)];
+
         for (const name of names) {
-          const old = readOrNull(resolve(oldDir, name));
-          const fresh = readOrNull(resolve(partDir, name));
-          const mine = readOrNull(resolve(heldDir, name));
-          const path = resolve(heldDir, name);
+          const asHeld = asHeldOf({ name, heldDir });
+          const old = asHeld(readOrNull(resolve(oldDir, name)));
+          const fresh = asHeld(readOrNull(resolve(partDir, name)));
+          const path = heldPathOf({ name, heldDir, sharedDirs });
+          const mine = readOrNull(path);
           const file = `${part}/${posix(name)}`;
 
           if (sameBytes(old, fresh) || sameBytes(mine, fresh)) continue;
 
           if (sameBytes(mine, old)) {
-            writes.push({ path, content: fresh });
+            writes.set(path, { path, content: fresh });
             ported.push({ variant, part, file, how: fresh === null ? 'deleted' : 'taken' });
             continue;
           }
@@ -171,7 +205,7 @@ export const portBaseChanges = (options: {
 
           if (merged.equals(mine as Buffer)) continue;
 
-          writes.push({ path, content: merged });
+          writes.set(path, { path, content: merged });
           ported.push({ variant, part, file, how: 'merged' });
         }
       }
@@ -179,7 +213,7 @@ export const portBaseChanges = (options: {
 
     if (conflicts.length > 0 && !keepConflicts) return { ported: [], conflicts };
 
-    for (const { path, content } of writes) {
+    for (const { path, content } of writes.values()) {
       if (content === null) rmSync(path, { force: true });
       else {
         mkdirSync(dirname(path), { recursive: true });

@@ -1,5 +1,5 @@
 import { execFileSync } from 'child_process';
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -26,11 +26,17 @@ const variantFile = (sketch: Sketch, variant: string, file: string) => join(sket
 const edit = (file: string, from: string, to: string) =>
   writeFileSync(file, readFileSync(file, 'utf8').replace(from, to));
 
-const sketched = () => {
+const sketched = (options: { sharedLabel?: boolean } = {}) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-rebase-port-'));
 
   targets.push(target);
   cpSync(join(__dirname, '..', '__fixtures__'), target, { recursive: true });
+
+  if (options.sharedLabel) {
+    mkdirSync(join(heroDir(target), 'shared'));
+    writeFileSync(join(heroDir(target), 'shared/label.ts'), "export const label = 'One featured film';\n");
+  }
+
   git(target, 'init', '-q');
   git(target, 'add', '-A');
   git(target, 'commit', '-qm', 'base');
@@ -95,6 +101,43 @@ describe('portBaseChanges', () => {
     expect(port.ported).toEqual([]);
     expect(port.conflicts).toEqual(['a: elements/hero/hero.ts - the variant and the product both changed it']);
     expect(readFileSync(variantFile(sketch, 'b', 'hero.ts'), 'utf8')).toContain('One featured film');
+  });
+
+  it('counts a file the variant already holds as the product now has it as clean', () => {
+    const { target, sketch } = sketched();
+
+    edit(variantFile(sketch, 'a', 'hero.ts'), 'One featured film', 'The featured film');
+    changeProduct(target, 'hero.ts', 'One featured film', 'The featured film');
+
+    const port = portBaseChanges({ target, product: resolveAcme(target), sketch });
+
+    expect(port.conflicts).toEqual([]);
+    expect(port.ported.map(({ variant, how }) => `${variant} ${how}`)).toEqual(['b taken']);
+  });
+
+  it('compares a part shared file with the copy the sketch lifted into its shared folder', () => {
+    const { target, sketch } = sketched({ sharedLabel: true });
+    const lifted = join(sketch.dir, 'shared/label.ts');
+
+    expect(existsSync(variantFile(sketch, 'a', 'shared/label.ts'))).toBe(false);
+
+    edit(lifted, 'One featured film', 'The featured film');
+    changeProduct(target, 'shared/label.ts', 'One featured film', 'The featured film');
+
+    expect(portBaseChanges({ target, product: resolveAcme(target), sketch })).toEqual({ ported: [], conflicts: [] });
+  });
+
+  it('ports a product change of a part shared file into the lifted copy', () => {
+    const { target, sketch } = sketched({ sharedLabel: true });
+    const lifted = join(sketch.dir, 'shared/label.ts');
+
+    changeProduct(target, 'shared/label.ts', 'One featured film', 'The featured film');
+
+    const port = portBaseChanges({ target, product: resolveAcme(target), sketch });
+
+    expect(port.conflicts).toEqual([]);
+    expect(readFileSync(lifted, 'utf8')).toContain('The featured film');
+    expect(existsSync(variantFile(sketch, 'a', 'shared/label.ts'))).toBe(false);
   });
 
   it('refuses when no commit holds the state the baseline recorded', () => {

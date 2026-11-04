@@ -500,3 +500,24 @@ Verified: the component spec. Not verified: the look against a design part, beca
 1. Code notice icon: Tom merged title-bar@code-notice variant c (tonal pill). The `up-down` icon reads as "sort", so a
    refresh icon is added to the icon set and replaces it in c, through a small sketch with the new icon.
 2. Push timing: push after the gates B334, B335 and B336, before S4 to S8; then triage the red CI on `next`.
+
+## As built: B343 (findings 400, 404)
+
+- Stale counts embedded parts: `sketch/stale-base.ts` finds every product part a variant's held parts reach through
+  imports; a change there makes the sketch stale. `design check`, `sketch check` (new: prints `SKETCH-BASE-STALE`
+  and fails) and the inbox name that part, and the merge refusal (Studio "… hat sich seit dem Sketch geändert") names
+  it too, not the sketch's own target.
+- Every merge (`mergeSketch`, the one path of CLI merge, Studio merge button, merge step and auto-merge) calls
+  `rebaseAfterMerge`: each undiscarded sketch whose stale parts the merge changed is ported and rebased, re-checked
+  when files were ported, and keeps its status (`REBASED <product> <sketch> after the merge of <part>`). On a
+  conflict or a failing re-check it gets `portAfterMerge` in `sketch.json` (merged parts, parts, reasons) and the
+  merge prints `AGENT PORTS …`; the inbox still lists it as a rebase item. `sketch rebase` clears the mark.
+- `sketch rebase`: a part `shared/` file is compared with the copy the sketch lifted into its `shared/` folder, and
+  relative shared imports are compared as `@shared/` (cause of finding 404: the variant held the change, but in the
+  lifted copy, so the rebase saw a deleted file).
+- Specs (each failed before the code): `after-merge.spec.ts` (embedded merge rebases and keeps ready; conflict marks
+  and prints), `rebase-port.spec.ts` (lifted shared file identical is clean; product change ports into the lifted
+  copy), `sketch-command.spec.ts` (embedded change: `sketch check` prints SKETCH-BASE-STALE naming elements/hero).
+  "Identical content in the part's own file" passed before already (the old code compared bytes).
+- Open: Studio does not draw the "Agent portiert nach Merge von <part>" mark; no design part draws it, so it needs a
+  sketch. The mark is in the sketch listing (`portAfterMerge`).
