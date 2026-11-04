@@ -1,5 +1,25 @@
 # Parallel backlog - latest decisions (Q203 and later)
 
+### Decision records and plan size (Tom, 2026-11-04, finding 385)
+
+Tom: "daran erkennt man dass unser plan system offensichtlich nicht gut funktioniert ... das doc ist ja auch
+mittlerweile meterlang". Facts: decisions sit in 25 of 57 plan files (134 decision blocks); design-to-code.md has
+4713 lines and 385 findings; the Q227 size budget (2026-10-31) covers only 5 index files.
+
+1. **ADRs for every Studio decision:** one ADR per decision in `apps/ethlete-studio/docs/adr/NNNN-slug.md`, in the
+   `ethlete-domain-modeling` format, small decisions as a one-sentence ADR. Frontmatter carries the build state:
+   `built: <sha>` or `open: B<row>`, plus `status: accepted | superseded by NNNN`. Tom's words stay verbatim. A
+   glossary `apps/ethlete-studio/CONTEXT.md` names the terms (sketch, round, variant, edit sketch, HELD, ...).
+   ADR 0001 records the deviation from the skill rule that only hard-to-reverse decisions get an ADR. The old
+   decision blocks move there once; the old place keeps only a link. New decisions go only there, never again
+   into decisions-latest.md or a finding.
+2. **Open findings only:** design-to-code.md keeps only open findings. A finding whose STATUS row is done moves to
+   `plans/ethlete-studio/archive/findings-YYYY-MM.md` by a script, not by hand. design-to-code.md and STATUS.md
+   join the size budget.
+3. **Push check:** every ADR has a build state; an `open:` ADR needs an open STATUS row, and a STATUS row that
+   names an ADR must match it. A missing or stale link fails the push.
+4. **Grill rule:** before every grill question the doc agent searches the ADRs (title and body) for the topic.
+
 ### Pixel check and blocker wording (Tom, 2026-11-04, findings 374 and 375)
 
 1. **B313/B321 pixel check runs locally first:** an agent writes the WebKit pixel check now (explorer pixels under
