@@ -4554,6 +4554,18 @@ Correction (second runs): the 61 s warm call did not repeat; drop "on every call
 (the same fixed wait as finding 408). Warm: Mac 1.05 s (stall 1.04 s), desk 0.35 s (stall 0.34 s). Budget (updated):
 the first system answer in a fresh checkout under 5 s, the warm call under 200 ms, the longest stall under 50 ms.
 
+410\. Mac perf session (2026-11-04, B348): the ~60 s waits of findings 408 and 409 are a missing `dist`, not a cold
+cache. `render.packages` maps `@ethlete/*` to `dist/libs/*`; when that folder is missing, `render-packages.ts` polls
+every 500 ms up to `BUILD_WAIT_TIMEOUT_MS = 60_000` (`entryOfBuilt` with `Atomics.wait` in the render worker,
+`entryOfBuiltAsync` in Vite `resolveId`), then throws. Nothing starts a build, so the wait always runs to the timer,
+once per drawing module, and the Vite SSR transport times out after another 60 s while the worker blocks: about 120 s
+for the first listing. With a full `dist` and a cold harness cache the desk answers in 651 ms (listing) and 2 s
+(system). It hits every fresh clone and every consumer repo that maps to an unbuilt `dist`. Why no tool caught it: the
+desk checkout always has a built `dist`, and the wait logs only a "waiting for the build" line, no error. Fix (B351):
+a missing `dist` fails fast with an error that names the package and the build command (`nx build <pkg>`), one check
+per package, not per module; budget: a fixture with `render.packages` on a missing `dist` answers the first listing
+within 5 s with that error.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
