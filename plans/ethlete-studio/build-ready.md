@@ -453,7 +453,7 @@ Verified: the component spec. Not verified: the look against a design part, beca
   keeps the numbers; finding specs 16/16; `node --test tools/scripts/*.spec.mjs` green.
 - B329: b9367d285 (6 live frames, pictures for near cells, fold of unchanged states, round note), 4ebc754ca
   (`sketch-frame-cap.e2e.mjs`: PASS 6 live of 101 cells on pages/sketches). Not verified: fold in the live app,
-  Tauri memory; the fold controls have no design yet.
+  Tauri memory; sketch pages/sketches@fold-question (a = built look) waits for Tom's pick.
 - B331: not reproduced on HEAD. 885b0eada: "Sketch nicht gefunden" instead of a silent part fallback, `x@edit` falls
   back to `x`, failing-variant reason in the tree title, per-group pick specs. Open: `selectMerged` sets `picked` to
   the raw `@edit` target; open-points entry for a sketch needs a design.
