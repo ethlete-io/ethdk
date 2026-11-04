@@ -1,5 +1,11 @@
 # Parallel backlog - latest decisions (Q203 and later)
 
+### CLI copy build at restart (Tom, 2026-11-04, finding 372)
+
+1. **The click is the approval:** when a newer `libs/cli` commit has no copy yet, "Neu starten" builds it on its
+   own (`tools/scripts/studio-code.mjs`, B318, 4c1667672; about 1-2 min in a temp worktree). Only committed code,
+   never the working tree. The rule "Tom approves each CLI build" applies only to builds an agent starts by hand.
+
 ### Silent catchError decisions (Tom, 2026-11-04, finding 370)
 
 1. **Rule to error, one review pass:** `ethlete/no-silent-catch-error` goes from `warn` to `error` in

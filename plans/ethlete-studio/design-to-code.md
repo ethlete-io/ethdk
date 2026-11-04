@@ -4561,6 +4561,21 @@ none` on html, body and every element (the property is not inherited); the Tauri
      three wrong edit sketches must close themselves through the fixed check (the proof), not by hand. The German
      texts (kind `direct-edit` mapped to STUDIO_LABELS) and a "variant draws no states" look go to Tom as a sketch.
 
+374. Tom (2026-11-04, parked for later): components/textarea shows "508 offen". Cause (builder): `missingMotionsOf`
+     (`libs/cli/src/lib/design/system/open-points.ts:87-106`, since 97ab889ed) emits one point per undeclared state
+     pair, N\*(N-1) per part; Studio lists the raw pairs, while the CLI text already folds them. The stale-record
+     text is English (`part-build-ready.ts:37`), and the explorer rows read "empty · width" without the value
+     (`system-tree.ts:443`, lead only). Why no tool caught it: specs use 2-4 state fixtures; no spec runs against
+     the real design system or sets a budget. Tool fix (B320): an open-point budget spec over the real parts;
+     German stale-record text through STUDIO_LABELS. Open for Tom later: folding the pairs (sketch) and whether
+     `motion.instant` is the default for components.
+
+375. Tom (2026-11-04, about 15:35): finding 367 is back. While the WebContent process hangs, the frames of the
+     first canvas column ("Rendering" chips, borders, text) paint on top of the explorer tree. So `isolate` and
+     `contain-paint` (de2b83743) do not hold in WKWebView under load. Why no tool caught it: the B313 pixel check
+     under frame churn is not built, and the de2b83743 spec checks the classes only. Cause: open (builder). Tool
+     fix: B313 first, so the check fails on this state before the next fix lands.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
