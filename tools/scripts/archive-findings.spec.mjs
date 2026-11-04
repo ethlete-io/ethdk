@@ -1,0 +1,77 @@
+import assert from 'node:assert/strict';
+import { mkdtempSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { test } from 'node:test';
+import { archiveFindings, doneFindingNumbers, splitFindings, writeArchive } from './archive-findings.mjs';
+import { parseStatusRows } from './studio-status.mjs';
+
+const status = `| ID | Was | Stand | Wo |
+| -- | -- | -- | -- |
+| B1 | one (Bef. 10) | ✅ | |
+| B2 | two (Bef. 11/12) | ✅ | |
+| B3 | three (Bef. 12) | ⏳ | |
+| B4 | range (Bef. 20-21) | ✅ | |
+`;
+
+const plan = `# Plan
+
+10. Tom (2026-10-31): first finding
+    continues here.
+
+    second paragraph.
+
+11. Tom (2026-11-02): second
+    body.
+
+12. Tom (2026-11-02): shared with an open row.
+13. Tom (2026-11-03): not referenced.
+
+20. Tom (2026-11-03): range start.
+21. Tom (2026-11-03): range end.
+
+Prose after.
+`;
+
+test('parses rows with ranges and slashes', () => {
+  const rows = parseStatusRows(status);
+  assert.deepEqual(
+    rows.map((r) => [r.id, r.done]),
+    [
+      ['B1', true],
+      ['B2', true],
+      ['B3', false],
+      ['B4', true],
+    ],
+  );
+  assert.deepEqual([...doneFindingNumbers(rows)].sort(), [10, 11, 20, 21]);
+});
+
+test('keeps multi-paragraph blocks together', () => {
+  const blocks = splitFindings(plan);
+  assert.equal(blocks[0].lines.length, 4);
+});
+
+test('moves done findings, keeps open ones and the order', () => {
+  const { plan: rest, moved } = archiveFindings(plan, status);
+  assert.deepEqual(
+    moved.map((m) => [m.number, m.month]),
+    [
+      [10, '2026-10'],
+      [11, '2026-11'],
+      [20, '2026-11'],
+      [21, '2026-11'],
+    ],
+  );
+  assert.match(rest, /12\. Tom/);
+  assert.match(rest, /13\. Tom/);
+  assert.match(rest, /Prose after\./);
+  assert.doesNotMatch(rest, /first finding|second paragraph|range start/);
+});
+
+test('appends to an existing month file', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'archive-'));
+  writeArchive(dir, [{ number: 1, month: '2026-11', text: '1. a' }]);
+  writeArchive(dir, [{ number: 2, month: '2026-11', text: '2. b' }]);
+  assert.equal(readFileSync(join(dir, 'findings-2026-11.md'), 'utf8'), '# Findings 2026-11\n\n1. a\n\n2. b\n');
+});
