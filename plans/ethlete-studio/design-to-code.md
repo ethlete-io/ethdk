@@ -4407,8 +4407,13 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      timeout and never re-ran the spec. Fixed in 62c79da3b (strip ANSI first). Why no tool caught it: the parser spec
      used a hand-written fixture, against the AGENTS.md rule that a parser of tool output takes its fixture from a
      captured real run. Tool fix (technical, B307): precommit-specs fixtures come from a captured CI log; check the
-     other tool-output parsers in tools/scripts and libs/cli for hand-written fixtures. Related: 99905988b raised the
-     shell-logo.spec timeout to 30 s; that ET1234 ("control has no accessible name") is teardown noise is not proven.
+     other tool-output parsers in tools/scripts and libs/cli for hand-written fixtures. Related: 99905988b raised the shell-logo.spec timeout to 30 s. A green run under load ~42 has no ET1234, so ET1234 comes only from the teardown after a timeout. The cold first test takes about 6 s (speed, not a11y).
+
+361. Builder (2026-11-04, S2): nothing wrote `actions` into the build-ready record (ready.json), while ACTION-LOST
+     reads them there; Studio's go.json holds 7 actions, ready.json none. Why no tool caught it: the ACTION-LOST spec
+     seeded ready.json by hand, and the writer specs never asserted `actions`, so each side was green alone. Same
+     lesson as 360. Tool fix (S4): the record writer stores declared actions, plus a writer-to-reader round-trip spec
+     (check writes the record of a part with actions; ACTION-LOST, doneParts and stale-parts read it back).
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
