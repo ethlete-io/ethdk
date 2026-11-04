@@ -4507,6 +4507,27 @@ none` on html, body and every element (the property is not inherited); the Tauri
      restart with a dirty `libs/cli` and expects a running server; a stopped server shows a German message and a
      recovery button.
 
+370. Tom (2026-11-04, during finding 365): the sketches tree on the System canvas vanished and came back only
+     after a reload. Cause (builder): `system-view.component.ts` did `concat(quick listing, full listing)` with
+     `catchError(() => of([]))`. When the full listing failed or hit the 120 s timeout (`host/design.ts`), the empty
+     fallback replaced the quick result that was already on screen. Fix a36530087: `sketchRead$` in
+     `sketch-read.ts` keeps the last items on a failed listing and carries the error as `sketchesError`. Why no tool
+     caught it: no spec fails the full listing after a good quick listing, and nothing flags a `catchError` that
+     turns an error into an empty value. Tool fix (B316): a spec for "quick ok, full fails" that expects the items
+     and the error; a lint rule for the Studio app that rejects a `catchError` which returns an empty array, `of()`
+     or `EMPTY` without an error value.
+
+371. Builder (2026-11-04, cause for the slow first sketch listing after finding 365): the quick listing takes about
+     14 ms on an idle server, but it waits behind a running full listing. The full listing runs its rule checks
+     synchronously (`studio-api.ts` `sketchesAnswer` -> `openSketchProblemsOf`: 22 s cold with jiti, 1.5-2 s warm
+     per product and again per variant; `unchangedStatesOf` baselines 300-450 ms per variant). A `switchMap`
+     restart cancels only the client request; the server work goes on and blocks. The frame grid ("vergleicht
+     ...") also waits for the targets of the full listing. Why no tool caught it: no check measures the quick
+     listing while a full listing runs, and a cancelled request does not stop server work. Tool fix (B317, with the
+     B311 listing slice): the checks run in a worker thread with a 50 ms block budget for 200 sketches; a spec that
+     times the quick listing during a full listing; a closed request aborts its server work; the frame grid draws
+     from the quick listing targets.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
