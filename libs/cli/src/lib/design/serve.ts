@@ -4,7 +4,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { AddressInfo, createServer as createNetServer } from 'net';
 import { setTimeout as delay } from 'timers/promises';
 import { basename, dirname, join, relative, resolve, sep } from 'path';
-import { interval, Subscription } from 'rxjs';
+import { interval, Subscription, tap } from 'rxjs';
 import { CALLS_PATH, callSlugsOf, listCalls } from './calls';
 import { writeCallsTsconfig } from './calls-tsconfig';
 import { markTransferred, TRANSFER_PATH } from './legacy';
@@ -335,6 +335,38 @@ const systemRegistry = (system: SystemModules) =>
 const sendJson = (response: ServerResponse, answer: { status: number; body: unknown }) => {
   response.setHeader('access-control-allow-origin', '*');
   send(response, { status: answer.status, type: 'application/json', body: JSON.stringify(answer.body) });
+};
+
+export const KEEP_ALIVE_MS = 15_000;
+
+/**
+ * Sends `answered` as JSON, and a space every `KEEP_ALIVE_MS` while it is pending: WebKit fails a fetch with "Load
+ * failed" when no byte arrives for 60 s. Once a space went out the status is 200, so a later failure arrives as its
+ * body alone.
+ */
+export const sendHeldJson = (response: ServerResponse, answered: Promise<{ status: number; body: unknown }>) => {
+  let started = false;
+  const tick = interval(KEEP_ALIVE_MS)
+    .pipe(
+      tap(() => {
+        if (!started) {
+          started = true;
+          response.writeHead(200, { 'access-control-allow-origin': '*', 'content-type': 'application/json' });
+        }
+
+        response.write(' ');
+      }),
+    )
+    .subscribe();
+
+  response.once('close', () => tick.unsubscribe());
+
+  return answered.then((answer) => {
+    tick.unsubscribe();
+
+    if (started) response.end(JSON.stringify(answer.body));
+    else sendJson(response, answer);
+  });
 };
 
 const isCommentFile = (file: string) => file.endsWith('.json') && basename(dirname(file)) === 'comments';
@@ -778,6 +810,7 @@ const designExplore = ({
             url: URL,
             asked: { request: IncomingMessage; signal: AbortSignal },
           ) => Promise<{ status: number; body: unknown }>,
+          held = false,
         ) =>
         (request: IncomingMessage, response: ServerResponse) => {
           const closed = new AbortController();
@@ -786,14 +819,15 @@ const designExplore = ({
             if (!response.writableFinished) closed.abort();
           });
 
-          void handle(new URL(request.url ?? '', 'http://localhost'), { request, signal: closed.signal }).then(
-            (answered) => sendJson(response, answered),
-            (error: unknown) =>
-              sendJson(response, {
-                status: 500,
-                body: { error: error instanceof Error ? error.message : String(error) },
-              }),
-          );
+          const answered = handle(new URL(request.url ?? '', 'http://localhost'), {
+            request,
+            signal: closed.signal,
+          }).catch((error: unknown) => ({
+            status: 500,
+            body: { error: error instanceof Error ? error.message : String(error) },
+          }));
+
+          void (held ? sendHeldJson(response, answered) : answered.then((answer) => sendJson(response, answer)));
         };
 
       vite.middlewares.use(STAMP_PATH, (_request: unknown, response: ServerResponse) => {
@@ -883,26 +917,28 @@ const designExplore = ({
       ) =>
         vite.middlewares.use(
           path,
-          answer(async (url, { request, signal }) =>
-            handle({
-              target,
-              url,
-              request,
-              signal,
-              load: ({ file, product, sketch }) => vite.ssrLoadModule(productModuleIdOf({ file, product, sketch })),
-              pictureOf: shots.pictureOf,
-              boxOf: shots.changedBoxesOf,
-              checkSketches: checkSketches ?? sketchChecker,
-              inventoryOf: ({ product, part }) =>
-                inventoryOf({
-                  product,
-                  part,
-                  system,
-                  base: base(),
-                  load: (id) => vite.ssrLoadModule(id),
-                  draw: (job) => inventoryDraws.run(job),
-                }),
-            }),
+          answer(
+            async (url, { request, signal }) =>
+              handle({
+                target,
+                url,
+                request,
+                signal,
+                load: ({ file, product, sketch }) => vite.ssrLoadModule(productModuleIdOf({ file, product, sketch })),
+                pictureOf: shots.pictureOf,
+                boxOf: shots.changedBoxesOf,
+                checkSketches: checkSketches ?? sketchChecker,
+                inventoryOf: ({ product, part }) =>
+                  inventoryOf({
+                    product,
+                    part,
+                    system,
+                    base: base(),
+                    load: (id) => vite.ssrLoadModule(id),
+                    draw: (job) => inventoryDraws.run(job),
+                  }),
+              }),
+            path === SKETCHES_PATH,
           ),
         );
 

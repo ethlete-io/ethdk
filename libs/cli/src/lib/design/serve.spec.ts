@@ -17,7 +17,7 @@ import { setTimeout as delay } from 'timers/promises';
 import { basename, dirname, join, resolve } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, installedAssetRoot, readConfig } from './paths';
-import { DESIGN_EVENTS_HEARTBEAT_MS, createDesignServer, serveDesign } from './serve';
+import { DESIGN_EVENTS_HEARTBEAT_MS, KEEP_ALIVE_MS, createDesignServer, sendHeldJson, serveDesign } from './serve';
 import { resolveProduct } from './system/resolve-product';
 import { createSketch, markSketchReady, parseTarget, Sketch } from './system/sketch/sketch';
 import { CheckSketches, openSketchListingAt } from './system/sketch/sketch-checker';
@@ -1386,5 +1386,56 @@ describe('the design server for sketches and comments', () => {
     expect((await ask('/__design/flow-note-delete', '?product=acme&flow=browse', 'POST', { id })).status).toBe(200);
     expect((await ask('/__design/flow-note-delete', '?product=acme&flow=browse', 'POST', { id })).status).toBe(404);
     expect(JSON.parse(readFileSync(join(dir, 'browse.json'), 'utf8'))).toEqual(flow);
+  });
+});
+
+describe('sendHeldJson', () => {
+  const fakeResponse = () => {
+    const sent: string[] = [];
+    const response = Object.assign(new EventEmitter(), {
+      statusCode: 0,
+      headers: {} as Record<string, unknown>,
+      writeHead: vi.fn((status: number, headers: Record<string, unknown>) => {
+        response.statusCode = status;
+        Object.assign(response.headers, headers);
+      }),
+      setHeader: vi.fn((name: string, value: unknown) => (response.headers[name] = value)),
+      write: vi.fn((chunk: string) => sent.push(chunk)),
+      end: vi.fn((chunk?: string) => sent.push(chunk ?? '')),
+    });
+
+    return { response, sent };
+  };
+
+  afterEach(() => vi.useRealTimers());
+
+  it('sends a space while a slow answer is pending, so WebKit does not fail the fetch after 60 s', async () => {
+    vi.useFakeTimers();
+    const { response, sent } = fakeResponse();
+    let resolveAnswer: (answer: { status: number; body: unknown }) => void = () => undefined;
+    const done = sendHeldJson(
+      response as unknown as ServerResponse,
+      new Promise((resolve) => (resolveAnswer = resolve)),
+    );
+
+    await vi.advanceTimersByTimeAsync(KEEP_ALIVE_MS * 5);
+    resolveAnswer({ status: 404, body: { error: 'gone' } });
+    await done;
+
+    expect(response.statusCode).toBe(200);
+    expect(sent.slice(0, 5)).toEqual([' ', ' ', ' ', ' ', ' ']);
+    expect(JSON.parse(sent.join(''))).toEqual({ error: 'gone' });
+  });
+
+  it('answers a quick answer with its own status and no padding', async () => {
+    const { response, sent } = fakeResponse();
+
+    await sendHeldJson(
+      response as unknown as ServerResponse,
+      Promise.resolve({ status: 404, body: { error: 'gone' } }),
+    );
+
+    expect(response.statusCode).toBe(404);
+    expect(sent).toEqual([JSON.stringify({ error: 'gone' })]);
   });
 });

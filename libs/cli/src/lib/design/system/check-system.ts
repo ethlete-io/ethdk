@@ -676,13 +676,18 @@ export const checkSystemRendered = async (options: CheckOptions) => {
 
   for (const line of staleDistWarningsOf(options)) console.warn(line);
 
+  const editProblems = new Map<string, Problem[]>();
+
   for (const name of options.products) {
     const entry = options.config.products?.[name];
 
     if (!entry) continue;
 
     const product = resolveProduct({ target: options.target, name, config: entry });
-    const lines = await autoAcceptOf({ ...options, product, only: options.part, draw: options.drawPictures });
+    const problems: Problem[] = [];
+    const lines = await autoAcceptOf({ ...options, product, only: options.part, draw: options.drawPictures, problems });
+
+    editProblems.set(name, problems);
 
     lines.forEach((line) => console.log(line));
   }
@@ -720,6 +725,7 @@ export const checkSystemRendered = async (options: CheckOptions) => {
         invocation: options.invocation ?? repoInvocation({ root: options.target, subcommand: 'design' }),
       })),
       ...capabilities.errors,
+      ...(editProblems.get(name) ?? []),
     ].filter(isWanted);
 
     for (const problem of problems) {

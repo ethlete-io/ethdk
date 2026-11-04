@@ -589,7 +589,16 @@ export const listedSketches$ = ({
 }): Observable<ListedSketches> =>
   designAnswer$<ListedSketches>(
     `http://localhost:${port}/__design/sketches?product=${encodeURIComponent(product)}${quick ? '&unchanged=no' : ''}`,
-  ).pipe(timeout(LISTED_SKETCHES_TIMEOUT_MS));
+  ).pipe(
+    map((listed) => {
+      if (Array.isArray(listed?.sketches)) return listed;
+
+      const error = (listed as { error?: unknown } | null)?.error;
+
+      throw new Error(typeof error === 'string' ? error : 'the design server answered no sketch listing');
+    }),
+    timeout(LISTED_SKETCHES_TIMEOUT_MS),
+  );
 
 export const sketchPreview$ = (address: SketchAddress & { variant: string }): Observable<MergePreview> =>
   designAnswer$<MergePreview>(

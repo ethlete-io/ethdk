@@ -1,5 +1,5 @@
 import { execFileSync } from 'child_process';
-import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -7,6 +7,7 @@ import { DESIGN_DIR } from '../paths';
 import { designAccept } from './accept-command';
 import { autoAcceptOf, DrawStates, readPictures, StatePictures } from './accepted-pictures';
 import { designHashOf } from './design-hash';
+import { Problem } from './problem';
 import { partPointsOf, readOpenPoints } from './read-open-points';
 import { partKeyOf, resolveProduct } from './resolve-product';
 import { changedOutsideSketchOf, directEditsOf, readMerged, recordMerged } from './sketch/merged-parts';
@@ -287,6 +288,86 @@ describe('autoAcceptOf', () => {
       expect(await autoAccept(target, draw)).toEqual([]);
       expect(existsSync(file)).toBe(true);
       expect(variants).not.toContain('old');
+    });
+
+    it('draws old from HEAD, not from a stored old/ that imports an export its shared/ has renamed since', async () => {
+      const { target, dir, chip } = checkout();
+      const sketchDir = join(dir, 'sketches', 'components-chip.edit');
+      const shared = join(dirname(chip), 'shared', 'canvas.ts');
+      const commit = () => {
+        execFileSync('git', ['add', '.'], { cwd: target });
+        execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'next'], { cwd: target });
+      };
+      const partOf = (name: string) =>
+        `import { ${name} } from './shared/canvas';\nexport default definePart({ states: { default: {}, hover: {} } });\n`;
+      const draw: DrawStates = async ({ parts, sketch }) => {
+        if (!sketch) return new Map(parts.map((part) => [part, { default: 'a1', hover: 'b2' }]));
+
+        const source = readFileSync(join(sketchDir, 'old', 'components', 'chip', 'chip.ts'), 'utf8');
+        const name = /import \{ (\w+) \}/u.exec(source)?.[1] ?? '';
+        const ownShared = join(sketchDir, 'old', 'shared', 'canvas.ts');
+        const exported = readFileSync(
+          existsSync(ownShared) ? ownShared : join(sketchDir, 'shared', 'canvas.ts'),
+          'utf8',
+        );
+
+        return new Map(
+          parts.map((part) => [
+            part,
+            exported.includes(`export const ${name} `)
+              ? { default: 'a1', hover: 'b2' }
+              : `Importing binding name '${name}' is not found.`,
+          ]),
+        );
+      };
+
+      mkdirSync(dirname(shared), { recursive: true });
+      writeFileSync(shared, 'export const emptyCanvas = 1;\n');
+      writeFileSync(chip, partOf('emptyCanvas'));
+      commit();
+      recordMerged({ product: productOf(target), parts: [CHIP] });
+      appendFileSync(chip, '// visible edit\n');
+      const opening = drawing({ default: 'a1', hover: 'c3' });
+
+      opening.pictures.head = { default: 'a1', hover: 'b2' };
+      await autoAccept(target, opening.draw);
+      expect(existsSync(join(sketchDir, 'sketch.json'))).toBe(true);
+
+      writeFileSync(shared, 'export const emptyCanvasOf = 1;\n');
+      writeFileSync(join(sketchDir, 'shared', 'canvas.ts'), 'export const emptyCanvasOf = 1;\n');
+      rmSync(join(sketchDir, 'old', 'shared'), { recursive: true, force: true });
+      writeFileSync(chip, partOf('emptyCanvasOf'));
+      commit();
+
+      const problems: Problem[] = [];
+
+      expect(await autoAcceptOf({ target, config: {}, product: productOf(target), draw, problems })).toEqual([
+        `HELD app-a ${CHIP}: changed outside a sketch, every state draws as before`,
+      ]);
+      expect(problems).toEqual([]);
+      expect(existsSync(join(sketchDir, 'sketch.json'))).toBe(false);
+    });
+
+    it('reports an old that does not draw as a check problem, not as a pick', async () => {
+      const { target, dir, draw: drawOpen } = await openSketch();
+      const problems: Problem[] = [];
+      const draw: DrawStates = async (options) =>
+        options.sketch
+          ? new Map(options.parts.map((part) => [part, "Importing binding name 'emptyCanvas' is not found."]))
+          : drawOpen(options);
+
+      expect(await autoAcceptOf({ target, config: {}, product: productOf(target), draw, problems })).toEqual([]);
+      expect(problems).toEqual([
+        {
+          rule: 'EDIT-OLD-NOT-DRAWN',
+          file: join(dir, 'components', 'chip', 'chip.ts'),
+          message: `variant old of ${CHIP}@edit (the part at HEAD) does not draw: Importing binding name 'emptyCanvas' is not found.`,
+        },
+      ]);
+      expect(existsSync(sketchFileOf(dir))).toBe(true);
+      expect(await autoAccept(target, draw)).toEqual([
+        `EDIT-OLD-NOT-DRAWN app-a ${CHIP}: variant old of ${CHIP}@edit (the part at HEAD) does not draw: Importing binding name 'emptyCanvas' is not found.`,
+      ]);
     });
   });
 

@@ -22,4 +22,18 @@ describe('sketchRead$', () => {
       { product: 'p', items: [sketch], error: 'Failed to fetch' },
     ]);
   });
+
+  it('carries the error of a full listing that failed after the server held the request open', async () => {
+    let calls = 0;
+
+    vi.stubGlobal('fetch', async () =>
+      ++calls === 2
+        ? new Response(`   ${JSON.stringify({ error: 'product "p" is gone' })}`)
+        : new Response(JSON.stringify({ sketches: [sketch], unreadable: [] })),
+    );
+
+    const reads = await firstValueFrom(sketchRead$({ port: 1, product: 'p' }).pipe(toArray()));
+
+    expect(reads.at(-1)).toEqual({ product: 'p', items: [sketch], error: 'product "p" is gone' });
+  });
 });
