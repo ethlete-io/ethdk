@@ -4579,6 +4579,14 @@ pending state; an e2e helper `expectFeedbackWithin(click, 100 ms)` covers every 
 dialog, server panel, merge); a sketch of the pending state on the button (spinner, disabled) and an error toast on a
 failed restart.
 
+412\. Mac perf session (2026-11-04, B348, full `dist`): `et design check --product studio` takes 1 083 s on the Mac and
+615 s on the desk (36 parts, 767 findings). The per-part loop is 694 s vs 410 s; the slowest parts (Mac/desk) are
+pages/sketches 97/33 s, textarea 36/11 s, slider 35/17 s. Likely cause: render-check `inspect()` runs every frame in
+sequence in one Chromium page (~0.5 s per frame on the desk; pages/sketches has ~50 frames), and Node waits idle on the
+round trips. Why no tool caught it: no budget on the check's own run time, and the frame count per part is not logged,
+so a growing state matrix looks like a slow machine. Fix (B353): frames render in parallel pages; budget at a fixed
+commit: no part over 20 s, the full check under 300 s on CI; the check logs and caps the frame count per part.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
