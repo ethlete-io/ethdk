@@ -205,7 +205,7 @@ export class V2BearerAuthProvider<T extends AnyV2QueryCreator> implements AuthPr
       this._config.refreshConfig.cookieName,
       this.tokens.refreshToken,
       this._config.refreshConfig.cookieExpiresInDays,
-      this._config.refreshConfig.cookieDomain ?? null,
+      this._config.refreshConfig.cookieDomain,
       this._config.refreshConfig.cookiePath,
       this._config.refreshConfig.cookieSameSite,
     );
@@ -217,7 +217,7 @@ export class V2BearerAuthProvider<T extends AnyV2QueryCreator> implements AuthPr
     deleteCookie(
       this._config.refreshConfig.cookieName,
       this._config.refreshConfig.cookiePath,
-      this._config.refreshConfig.cookieDomain ?? null,
+      this._config.refreshConfig.cookieDomain,
     );
   }
 

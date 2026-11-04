@@ -513,7 +513,6 @@ sketch` zeigen ihn (Befund 180).
 - **D14** cdk `CarouselDirective`: `goTo()` in der 450-ms-Sperre nach dem Erstellen geht still verloren; einreihen oder Signal anbieten (fifagg).
 - **D15** cdk `createOverlayHandlerWithQueryParamLifecycle`: `close()` navigiert und bricht eine laufende routerLink-Navigation ab (fifagg).
 - **D16** components select: `open()` während der Schließ-Animation wird ignoriert; Schließen abbrechen (fifagg).
-- **D17** query `V2BearerAuthProvider` (`libs/query/src/lib/legacy/auth/bearer-auth-provider.ts:208,220`): `cookieDomain ?? null` erzwingt ein Host-Cookie, core leitet die Eltern-Domain nur bei `undefined` ab; Login-Schleife über Subdomains. `cookieDomain` unverändert durchreichen, Query-Szenario dazu (fifagg).
 
 ## E. Fragen und Entwürfe für Tom
 

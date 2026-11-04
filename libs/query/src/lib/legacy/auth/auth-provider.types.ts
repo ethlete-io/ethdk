@@ -92,7 +92,7 @@ export type BearerRefreshConfig<T extends AnyV2QueryCreator> = {
   cookieName?: string;
 
   /**
-   * The domain of the cookie. If not set, a host-only cookie is used.
+   * The domain of the cookie. If not set, the cookie goes on the parent domain of the host, so sibling subdomains share it.
    */
   cookieDomain?: string;
 

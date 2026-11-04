@@ -1,7 +1,7 @@
 import { inject, Injectable, InjectionToken, Injector } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, map, Observable, of, startWith, Subject, switchMap, takeUntil, tap } from 'rxjs';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   AnyLegacyQuery,
   AnyLegacyQueryCreator,
@@ -404,5 +404,31 @@ describe.each(LEGACY_CLIENT_KINDS)('bearer auth through a query collection on th
     again.logout();
     c2.destroy();
     reloaded.destroy();
+  });
+
+  it.runIf(kind === 'native')('writes the refresh cookie on the parent domain, so sibling subdomains share it', () => {
+    const { s, app, c, service } = setup();
+    const setSpy = vi.spyOn(document, 'cookie', 'set');
+
+    service.loginWithUsernameAndPassword({ username: 'ada', password: 'secret' });
+    s.flush();
+
+    const loginWrites = setSpy.mock.calls
+      .map(([value]) => value)
+      .filter((value) => value.startsWith(`${COOKIE_NAME}=`));
+    expect(loginWrites.some((value) => !value.includes('1970') && value.includes('domain=localhost'))).toBe(true);
+
+    setSpy.mockClear();
+    service.logout();
+    s.flush();
+
+    const logoutWrites = setSpy.mock.calls
+      .map(([value]) => value)
+      .filter((value) => value.startsWith(`${COOKIE_NAME}=`));
+    expect(logoutWrites.some((value) => value.includes('1970') && value.includes('domain=localhost'))).toBe(true);
+
+    setSpy.mockRestore();
+    c.destroy();
+    app.destroy();
   });
 });

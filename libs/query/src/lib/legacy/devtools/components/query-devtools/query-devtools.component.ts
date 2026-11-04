@@ -211,7 +211,7 @@ export class QueryDevtoolsComponent {
             refreshOnUnauthorizedResponse: refreshCfg?.refreshOnUnauthorizedResponse ?? 'true (default)',
             token: refreshCfg?.token,
             cookieName: refreshCfg?.cookieName,
-            cookieDomain: refreshCfg?.cookieDomain ?? 'current origin (default)',
+            cookieDomain: refreshCfg?.cookieDomain ?? 'parent domain (default)',
             cookieExpiresInDays: refreshCfg?.cookieExpiresInDays ?? '30 (default)',
             cookiePath: refreshCfg?.cookiePath ?? '/ (default)',
             cookieEnabled: refreshCfg?.cookieEnabled ?? 'true (default)',
