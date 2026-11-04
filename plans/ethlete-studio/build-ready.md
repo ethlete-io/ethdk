@@ -5,6 +5,10 @@ Status: planned 2026-11-04, not built. Sources: `backlog-parallel/decisions-late
 
 ## In progress
 
+Builder ethlete-sdk-02 (2026-11-04 19:00, PC tank), grill/docs ethlete-sdk-9e. Running in parallel, one subagent
+each: B333 (finding numbers), B329 rest (frame cap + fold), B331 (sketch row opens nothing), B325 (edit-sketch
+re-check draws HEAD), B321 pixel check on ethlete-mac, B326 trackpad pan. State of each: `handoff-builder.md`.
+
 Builder handoff (2026-11-04, ethlete-sdk-d0, context full). Grill/docs session: ethlete-sdk-e4.
 
 - First, before S4: finding 364 / B310. Studio froze at 14:00 in a frontend microtask loop (WebContent 99 % CPU,
