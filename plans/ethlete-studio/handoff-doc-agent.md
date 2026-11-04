@@ -3,7 +3,7 @@
 # Handoff: grill/docs session (doc-agent), 2026-11-04 late evening
 
 Talk to Tom in German (`/doc-agent` skill). Builder: `ethlete-sdk-02` (English, SendMessage). Findings go to
-`plans/ethlete-studio/design-to-code.md` as `N\. ` paragraphs (last is 427), rows in `STATUS.md` (last is B363).
+`plans/ethlete-studio/design-to-code.md` as `N\. ` paragraphs (last is 428), rows in `STATUS.md` (last is B363).
 Latest ADR is 0184. Done rows are deleted from STATUS.md; an ADR's `open: B<row>` becomes `built: <sha>`.
 
 ## Rules Tom set today
@@ -28,3 +28,4 @@ B341, B342, B344, B347, B349, B355, B358, B359) follow in the builder's order.
   sample marks first, then shot + ready (finding 426). B357 stays open:
   narrow-part and comparing-narrow still differ (finding 424, B363).
 - Finding 427 (explorer swallows wheel events, then scrolls late): the cause is asked from the builder.
+- Finding 428 (shots vanish during a new agent round): the cause is asked from the builder.

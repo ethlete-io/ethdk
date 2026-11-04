@@ -4721,6 +4721,12 @@ for a moment and then scrolls late. "nun" points to a recent change. Tom, with a
 check of the wheel shields from finding 393 and of main-thread stalls such as B317). Why no tool caught it, and the
 fix: pending the cause.
 
+428\. Tom (2026-11-04, screenshot of `pages/sketches@merge-port` far zoomed out, while the builder aligns the sample
+marks): "und dann waren die bilder auf einmal weg". A moment before, the column showed 12 finished frames. Now it
+shows 28 state rows, and all but four frames are empty boxes. The fold is gone again, and the drawing card stands over
+all rows. Cause not yet known (asked the builder; suspect: a new agent round drops the old shots instead of keeping
+them until the new shot stands). Why no tool caught it, and the fix: pending the cause.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
