@@ -4546,6 +4546,13 @@ Correction (builder): the hook already runs only `vitest related` plus a typeche
 changes; the waste was the builder briefs that ran the full suite. Fixed in the builder-agent skill (c431d0e50), with
 the B372 slice-end check rule. The ~100 s hook run itself is B376.
 
+440\. Tom (2026-11-04): "The e2e run is still going; I'm waiting for the monitor notification before committing. es
+ist extrem schleppend". The B367b subagent ran the full serial `yarn studio:e2e` (over 6.5 min) inside the slice.
+Cause (builder): `canvas.e2e.mjs` already has `--case <text>`; the brief said "run all cases", written before
+c431d0e50, so the filter went unused. Why no tool caught it: nothing tells a slice which e2e cases its change needs, and
+the skill did not name the filter. Tool fix: the builder-agent skill names `--case` for a slice (builder, next commit);
+parallel cases for the full suite are B377 (ADR 0191).
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
