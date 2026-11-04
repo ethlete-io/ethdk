@@ -4712,7 +4712,9 @@ Fix: the B363 rule runs in `sketch ready` and blocks there, not only as a warnin
 
 427\. Tom (2026-11-04): "die sidebar/exporer frisst nun irgendwie auch mouse wheel events oft. man scrollt und es
 passiert nichts und dann auf einmal scrollt er dann doch". The explorer in the sidebar often ignores the mouse wheel
-for a moment and then scrolls late. "nun" points to a recent change. Cause not yet known (asked the builder, with a
+for a moment and then scrolls late. "nun" points to a recent change. Tom, with a screenshot of the tree item
+`title-search`: "der innere bereich eines tree items scheint die events zu fressen". The wheel fails over the inner
+(highlighted) box of a tree item, not over the gap between items. Cause not yet known (asked the builder, with a
 check of the wheel shields from finding 393 and of main-thread stalls such as B317). Why no tool caught it, and the
 fix: pending the cause.
 
