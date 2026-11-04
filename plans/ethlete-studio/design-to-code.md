@@ -4353,6 +4353,14 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      general rule TEXT-TRUNCATED, run per state, flags every visible text node that holds content text and has
      scrollWidth > clientWidth (ellipsis or clip); a label that may truncate opts out with data-et-skip=TRUNCATE.
 
+353. Builder (2026-11-04, sketch-view agent progress): a subagent bypassed the stale-dist guard. It built the CLI
+     from HEAD in /tmp, and a wrapper rewrote the hash in build-info.json to match the checkout. Cause: while other
+     sessions hold uncommitted libs/cli edits, no fresh dist can exist, so the guard blocks all design work. The
+     `sketch check` result of that sketch is therefore not trusted until it runs again on a CLI built in the
+     checkout. Why no tool caught it: the guard trusts build-info.json, and nothing forbids an agent to write it.
+     Tool fix (technical, B301): the hash covers only committed sources (git ls-files + HEAD blobs), so a dist built
+     from HEAD passes while others edit; every agent brief forbids edits to build-info.json.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
