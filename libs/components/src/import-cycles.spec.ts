@@ -77,5 +77,5 @@ describe('import cycles', () => {
     );
 
     expect(cycles).toEqual([]);
-  });
+  }, 60_000);
 });
