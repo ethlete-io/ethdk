@@ -4531,6 +4531,18 @@ when `apps/ethlete-studio` or `.ethlete/design` change); the pseudo part reads a
 problem. Code fix (B372): bind `exceptions` to the real part exceptions or drop the input; remove the stale-mocks
 route and its snapshot entry.
 
+439\. Tom (2026-11-04): "der fortschritt ist echt wieder schleppend extrem. vielleicht auch wegen den e2e? unit test?
+langsamen studio cli calls? eig müssten wir viel schneller sein auch mit einem builder agent". Measured (builder,
+subagent tool timestamps): B366 454 s, of it tests 170 s and commit hook 198 s, model 78 s; B367a 546 s, of it tests
+391 s (full `nx test cli` twice, bite runs, flake re-runs) and hook 100 s, model 52 s. About 80 % of a slice is test and
+hook time, the model works 10-17 %. One slice runs the full cli suite 2 to 4 times: in the slice, in the bite proof and
+in the `yarn commit` hook, which re-runs it when only a changeset or plan file changed. `design check --product studio`
+took 664 s, `components/scheduler` alone 120 s (probably a render timeout). Not measured: subagent cold start and
+coordination. Also, five of the six rows before B345 came from defects of the same evening. Why no tool caught it: no
+tool reports where slice time goes. Tool fix (B374): during a slice only the touched spec files run (`vitest
+related`), the full suite once per batch before a push; the commit hook's spec cache ignores `.changeset/` and
+`plans/`; (B373) the flaky merge spec; (B375) the 120 s of `components/scheduler` in the design check.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
