@@ -46,6 +46,12 @@ Builder handoff (2026-11-04, ethlete-sdk-d0, context full). Grill/docs session: 
   position only), B306, B307 (parser fixtures from real runs), B308 (person-name check; role `human`), B300,
   B301, B297, then A36 with A25.
 
+## As built: B366 merge guards (finding 434)
+
+Commit: the one that holds this section (`feat(repo): Guard sketch merge against a dirty product`). `mergeSketch` refuses before any write on uncommitted git edits in the product outside `sketches/` and the merged parts, naming the files; a failed check whose type errors all lie outside the merged paths answers "product broken outside this sketch: <file>". Two specs in `merge.spec.ts`, both fail on the old `merge.ts`. Verified: design and sketch specs, spec tsc, lint. Not verified: a live `et design sketch merge` in a real checkout; a product outside git skips the dirty check.
+
+---
+
 ## As built: B339 Sketches e2e rule (2026-11-04)
 
 Commit: the one that holds this section (`test(repo): Allow kept unchanged marks before the full sketch compare`).

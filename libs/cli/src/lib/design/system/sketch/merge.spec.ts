@@ -1,4 +1,5 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { spawnSync } from 'child_process';
 import { IncomingMessage } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -351,6 +352,50 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     expect(readFileSync(join(heroOf(target), 'hero.ts'), 'utf8')).toBe(before);
     expect(readFileSync(join(heroOf(target), 'hero.css'), 'utf8')).not.toContain('#fff');
     expect(existsSync(join(target, DESIGN_DIR, 'acme/components/badge'))).toBe(false);
+    expect(existsSync(found.sketch.dir)).toBe(true);
+  }, 120_000);
+
+  it('refuses before any write when the product has uncommitted edits outside the sketch', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const target = acme();
+    const git = (...args: string[]) =>
+      spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: target, encoding: 'utf8' });
+
+    git('init');
+    git('add', '.');
+    git('commit', '-m', 'base');
+
+    const ready = readySketch(target);
+    const found = { ...ready, sketch: picked(ready.sketch) };
+    const before = readFileSync(join(heroOf(target), 'hero.ts'), 'utf8');
+
+    writeFileSync(join(target, DESIGN_DIR, 'acme/pages/home/home.css'), '.acme-home { margin: 0; }');
+
+    const reason = merge(target, found);
+
+    expect(reason).toContain('uncommitted edits outside elements/hero');
+    expect(reason).toContain(join(DESIGN_DIR, 'acme/pages/home/home.css'));
+    expect(readFileSync(join(heroOf(target), 'hero.ts'), 'utf8')).toBe(before);
+    expect(existsSync(found.sketch.dir)).toBe(true);
+  }, 120_000);
+
+  it('names the file outside the sketch when the check fails on it', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const target = acme();
+    const ready = readySketch(target);
+    const found = { ...ready, sketch: picked(ready.sketch) };
+    const button = join(target, DESIGN_DIR, 'acme/pages/home/home.ts');
+
+    writeFileSync(button, `${readFileSync(button, 'utf8')}\nexport const broken: number = 'x';\n`);
+
+    const reason = merge(target, found);
+
+    expect(reason).toContain('product broken outside this sketch');
+    expect(reason).toContain(join(DESIGN_DIR, 'acme/pages/home/home.ts'));
     expect(existsSync(found.sketch.dir)).toBe(true);
   }, 120_000);
 

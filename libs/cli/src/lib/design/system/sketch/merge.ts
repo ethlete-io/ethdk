@@ -16,7 +16,7 @@ import { carryShared, productSharedChangesOf, sharedPlanOf } from './merge-share
 import { forgetMerged, recordMerged, rerecordChangedMerged, unchangedMergedOf } from './merged-parts';
 import { madeByOf, noteOf, withMadeBy, withNote } from './part-definition';
 import { staleEmbeddedOf } from './stale-base';
-import { authorsOf, clearSketchReport, rejectedProblemOf, Sketch, variantDirOf } from './sketch';
+import { authorsOf, clearSketchReport, rejectedProblemOf, Sketch, sketchesDirOf, variantDirOf } from './sketch';
 
 const swap = (entries: { from: string | null; to: string }[]) => {
   const backup = mkdtempSync(join(tmpdir(), 'ethlete-sketch-merge-'));
@@ -136,6 +136,34 @@ const formatFiles = (target: string, files: string[]) => {
     console.warn(`Could not format the merged files: ${(formatted.stderr || formatted.error?.message || '').trim()}`);
 };
 
+const dirtyOutsideOf = (options: { target: string; productDir: string; ignored: string[] }) => {
+  const root = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: options.target, encoding: 'utf8' });
+  const status = spawnSync('git', ['status', '--porcelain', '-z', '--untracked-files=all', '--', options.productDir], {
+    cwd: options.target,
+    encoding: 'utf8',
+  });
+
+  if (root.status !== 0 || status.status !== 0) return [];
+
+  const top = root.stdout.trim();
+  const entries = status.stdout.split('\0').filter(Boolean);
+  const files = entries.flatMap((entry, index) =>
+    /^[RC]/.test(entry) ? [entry.slice(3)] : /^[RC]/.test(entries[index - 1] ?? '') ? [] : [entry.slice(3)],
+  );
+
+  return files
+    .map((file) => resolve(top, file))
+    .filter((file) => !options.ignored.some((path) => file === path || file.startsWith(`${path}/`)))
+    .map((file) => relative(options.target, file));
+};
+
+const typeErrorFilesOf = (options: { target: string; failures: string[] }) =>
+  options.failures
+    .filter((line) => line.startsWith('TYPE-ERROR'))
+    .flatMap((line) =>
+      [...line.matchAll(/^(\S+?)\(\d+,\d+\): error TS/gm)].map((match) => resolve(options.target, match[1] ?? '')),
+    );
+
 const withPrintedErrors = (run: () => number) => {
   const failures: string[] = [];
   const printError = console.error;
@@ -254,6 +282,15 @@ const mergeOrReason = (options: {
     ...sharedChanges,
   ]);
 
+  const dirty = dirtyOutsideOf({
+    target,
+    productDir: product.dir,
+    ignored: [sketchesDirOf(product.dir), ...mergedKeys.map((key) => resolve(rootOf(key), key))],
+  });
+
+  if (dirty.length > 0)
+    return `${product.name} has uncommitted edits outside ${sketch.target}, so a failed check could not tell them from this merge - commit or revert them first: ${dirty.join(', ')}`;
+
   for (const { noteFile, noted } of notedTargets) writeFileSync(noteFile, noted);
 
   for (const { targetDir, paths } of shared.carry) {
@@ -268,6 +305,21 @@ const mergeOrReason = (options: {
 
   if (code !== 0) {
     swapped.restore();
+
+    const changed = [
+      ...mergedKeys.map((key) => resolve(rootOf(key), key)),
+      ...sharedChanges.map(({ to }) => to),
+      ...(fixtures ? [resolve(product.dir, 'fixtures.ts')] : []),
+      resolve(product.dir, ASSETS_FOLDER),
+    ];
+    const typeErrors = typeErrorFilesOf({ target, failures });
+    const outside = typeErrors.filter((file) => !changed.some((path) => file === path || file.startsWith(`${path}/`)));
+
+    if (outside.length > 0 && outside.length === typeErrors.length)
+      return {
+        reason: `product broken outside this sketch: ${[...new Set(outside.map((file) => relative(target, file)))].join(', ')} - the merge of ${sketch.target} variant "${variant}" did not change it, the product's old files are back, the sketch stays`,
+        findings: failures,
+      };
 
     return {
       reason: `the check failed after the merge of ${sketch.target} variant "${variant}" - the product's old files are back, the sketch stays`,
