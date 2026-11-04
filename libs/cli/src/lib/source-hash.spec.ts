@@ -1,6 +1,6 @@
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cliSourceHash, staleCliBuildMessage } from './source-hash';
 
@@ -94,5 +94,13 @@ describe('staleCliBuildMessage', () => {
     rmSync(join(root, 'libs'), { recursive: true });
 
     expect(staleCliBuildMessage({ root, buildDir })).toBeUndefined();
+  });
+});
+
+describe('cliSourceHash fixture', () => {
+  it('matches the hash the Studio host checks against', () => {
+    const fixtures = resolve(__dirname, '../../fixtures/source-hash');
+
+    expect(cliSourceHash(join(fixtures, 'cli'))).toBe(readFileSync(join(fixtures, 'expected-hash.txt'), 'utf8').trim());
   });
 });

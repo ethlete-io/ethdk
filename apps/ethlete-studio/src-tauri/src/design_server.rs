@@ -9,6 +9,8 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use serde::Serialize;
+use serde_json::Value;
+use sha2::{Digest, Sha256};
 use tokio::io::{AsyncBufReadExt, AsyncRead, BufReader};
 use tokio::process::{Child, ChildStdin};
 
@@ -41,12 +43,9 @@ const POLL: Duration = Duration::from_millis(250);
 
 const STOP_GRACE: Duration = Duration::from_secs(3);
 
-/// Must name everything `npx nx build cli` builds the cli out of.
-const CLI_SOURCES: [&str; 3] = ["libs/cli/src", "libs/cli/design", "libs/cli/package.json"];
+const CLI_SOURCE_DIRS: [&str; 3] = ["src", "design", "playwright"];
 
-const BUILT_CLI: &str = "dist/libs/cli/src/index.js";
-
-const SOURCE_SCAN_LIMIT: usize = 5000;
+const BUILD_INFO: &str = "dist/libs/cli/build-info.json";
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -308,58 +307,80 @@ async fn judged(
 
 fn built_cli_outdated() -> bool {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
-    let sources: Vec<_> = CLI_SOURCES.iter().map(|source| root.join(source)).collect();
 
-    source_newer_than(&root.join(BUILT_CLI), &sources, SOURCE_SCAN_LIMIT)
+    cli_build_is_stale(&root.join("libs/cli"), &root.join(BUILD_INFO))
 }
 
-fn source_newer_than(built: &Path, sources: &[std::path::PathBuf], limit: usize) -> bool {
-    let Ok(built) = std::fs::metadata(built).and_then(|meta| meta.modified()) else {
+/// A missing or unreadable build-info.json is not stale: there is no build to compare with.
+fn cli_build_is_stale(cli_root: &Path, build_info: &Path) -> bool {
+    let Ok(text) = std::fs::read_to_string(build_info) else {
+        return false;
+    };
+    let Ok(info) = serde_json::from_str::<Value>(&text) else {
         return false;
     };
 
-    let mut pending = sources.to_vec();
-    let mut seen = 0;
+    info.get("sourceHash").and_then(Value::as_str) != Some(cli_source_hash(cli_root).as_str())
+}
 
-    while let Some(path) = pending.pop() {
-        seen += 1;
+fn source_files(dir: &Path) -> Vec<PathBuf> {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return Vec::new();
+    };
 
-        if seen > limit {
-            return false;
+    entries
+        .flatten()
+        .filter(|entry| entry.file_name() != "node_modules")
+        .flat_map(|entry| {
+            let path = entry.path();
+
+            if path.is_dir() {
+                source_files(&path)
+            } else {
+                vec![path]
+            }
+        })
+        .filter(|file| {
+            let name = file.to_string_lossy();
+
+            !name.ends_with(".spec.ts") && !name.ends_with(".md")
+        })
+        .collect()
+}
+
+/// Mirrors `cliSourceHash` in libs/cli/src/lib/source-hash.ts.
+fn cli_source_hash(cli_root: &Path) -> String {
+    let mut hash = Sha256::new();
+
+    for dir in CLI_SOURCE_DIRS {
+        let path = cli_root.join(dir);
+
+        if !path.exists() {
+            continue;
         }
 
-        let Ok(meta) = std::fs::metadata(&path) else {
-            continue;
-        };
+        let mut files = source_files(&path);
 
-        let name = path.file_name().and_then(|name| name.to_str()).unwrap_or_default();
+        files.sort_by_key(|file| file.to_string_lossy().into_owned());
 
-        if meta.is_dir() {
-            if name == "node_modules" || name.starts_with('.') {
+        for file in files {
+            let Ok(content) = std::fs::read(&file) else {
                 continue;
-            }
+            };
 
-            if meta.modified().is_ok_and(|modified| modified > built) {
-                return true;
-            }
-
-            if let Ok(entries) = std::fs::read_dir(&path) {
-                pending.extend(entries.flatten().map(|entry| entry.path()));
-            }
-
-            continue;
-        }
-
-        if name.contains(".spec.") {
-            continue;
-        }
-
-        if meta.modified().is_ok_and(|modified| modified > built) {
-            return true;
+            hash.update(
+                file.strip_prefix(cli_root)
+                    .unwrap_or(&file)
+                    .to_string_lossy()
+                    .as_bytes(),
+            );
+            hash.update([0]);
+            hash.update(content);
+            hash.update([0]);
         }
     }
 
-    false
+    hash.finalize().iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
 fn pids_on_port(port: u16) -> Vec<i32> {
@@ -738,48 +759,39 @@ pub fn cli_entry(checkout: &Path) -> Option<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::Value;
     use tokio::process::Command;
 
+    fn fixture() -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../libs/cli/fixtures/source-hash")
+    }
+
     #[test]
-    fn a_cli_source_newer_than_its_build_reads_as_outdated() {
-        let root = std::env::temp_dir().join(format!("ethlete-studio-{}-cli-source", std::process::id()));
-        let built = root.join("dist/index.js");
-        let source = root.join("src/lib/design/serve.ts");
-        let spec = root.join("src/lib/design/serve.spec.ts");
+    fn the_cli_source_hash_matches_the_typescript_one() {
+        let expected = std::fs::read_to_string(fixture().join("expected-hash.txt")).expect("an expected hash");
 
-        for file in [&built, &source, &spec] {
-            std::fs::create_dir_all(file.parent().expect("a parent")).expect("a directory");
-            std::fs::write(file, "").expect("a file");
-        }
+        assert_eq!(cli_source_hash(&fixture().join("cli")), expected.trim());
+    }
 
-        let at = |file: &Path, seconds: u64| {
-            std::fs::File::options()
-                .read(true)
-                .open(file)
-                .and_then(|handle| handle.set_modified(std::time::UNIX_EPOCH + Duration::from_secs(seconds)))
-                .expect("an mtime");
-        };
+    #[test]
+    fn a_cli_build_is_stale_when_its_recorded_hash_differs_from_the_sources() {
+        let root = std::env::temp_dir().join(format!("ethlete-studio-{}-cli-build", std::process::id()));
+        let info = root.join("build-info.json");
+        let expected = std::fs::read_to_string(fixture().join("expected-hash.txt")).expect("an expected hash");
 
-        let sources = [root.join("src")];
-        let dirs = [root.join("src"), root.join("src/lib"), root.join("src/lib/design")];
+        std::fs::create_dir_all(&root).expect("a directory");
 
-        at(&built, 2_000);
-        at(&source, 1_000);
-        at(&spec, 3_000);
-        for dir in &dirs {
-            at(dir, 1_000);
-        }
-        assert!(!source_newer_than(&built, &sources, 100));
+        let cli = fixture().join("cli");
 
-        at(&dirs[2], 3_000);
-        assert!(source_newer_than(&built, &sources, 100));
-        at(&dirs[2], 1_000);
+        assert!(!cli_build_is_stale(&cli, &info));
 
-        at(&source, 3_000);
-        assert!(source_newer_than(&built, &sources, 100));
-        assert!(!source_newer_than(&built, &sources, 2));
-        assert!(!source_newer_than(&root.join("dist/missing.js"), &sources, 100));
+        std::fs::write(&info, format!(r#"{{"sourceHash":"{}"}}"#, expected.trim())).expect("a file");
+        assert!(!cli_build_is_stale(&cli, &info));
+
+        std::fs::write(&info, r#"{"sourceHash":"other"}"#).expect("a file");
+        assert!(cli_build_is_stale(&cli, &info));
+
+        std::fs::write(&info, "{}").expect("a file");
+        assert!(cli_build_is_stale(&cli, &info));
 
         std::fs::remove_dir_all(&root).expect("cleaned up");
     }

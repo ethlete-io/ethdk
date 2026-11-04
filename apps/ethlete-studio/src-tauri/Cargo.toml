@@ -18,6 +18,7 @@ fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", rev = "c
 notify = "8.2.0"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
+sha2 = "0.10.9"
 tauri = { version = "2.11.5", features = [] }
 # GTK 3 cannot start in the GTK 4 process of the CEF runtime, so Linux dialogs go through the portal.
 tauri-plugin-dialog = { version = "2", default-features = false, features = ["xdg-portal"] }
