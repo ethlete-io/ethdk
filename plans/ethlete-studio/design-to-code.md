@@ -4440,7 +4440,8 @@ tiers) lets the quick listing return `unchanged` states kept from an earlier ful
 (`keptUnchangedStatesOf`), so Studio marks them early on purpose, and B329's fold depends on it; 2a1a52628 is a weaker
 candidate. Why no tool caught it: `canvas.e2e.mjs` runs only through a manual `yarn studio:e2e`, in no hook and not in
 CI; CI on `next` was red on other jobs at that time and nobody triaged it. Fix (B339): `studio:e2e` runs as a CI job.
-Open for Tom: whether kept marks may show before the full listing; until he answers, the case stays as written.
+Tom (2026-11-04): kept `unchanged` marks from the last full comparison may show from the quick listing; a new mark
+shows only after the full listing. The case is updated to this rule and still fails on an early new mark.
 
 396\. Builder (2026-11-04, B323): `GET /__design/shot` with `sketch=components/title-bar.code-notice` (the sketch's
 folder name) answered 404 "variant a ... has no part components/title-bar", a wrong cause: the sketch exists, only
