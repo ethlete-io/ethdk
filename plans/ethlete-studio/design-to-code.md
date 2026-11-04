@@ -4498,6 +4498,20 @@ first column a black block labelled "part" covers the frames, likely the frame c
 confirmed by the builder. Why no tool caught it: the sketch-view e2e measures frames, not the chrome around them at
 other zoom levels. Fix (B346): the header card and the empty far cell follow the canvas zoom or collapse below a
 readable size, and the e2e takes the sketch view at 30 % and 100 % and fails on a box with no visible content.
+Builder (S6a check): the empty cell in Tom's screenshot is not a missing state (all 26 states ok in a/b/c); it is
+the frame cap's far cell, an empty div at 10 % zoom. Suspect for the "part" block: a near cell past the cap renders
+`<img [alt]="key">`, and a picture that does not load shows its alt text on a dark block. Step 1 of B346 confirms it
+with a 30 % shot.
+
+404\. Builder (2026-11-04, S6a merge 2e70dc149): `pages/system@pages-system-build-ready` showed "stale since
+5bec01b89" and `sketch rebase` reported a conflict, but all three variants already held 5bec01b89's change, identical to
+the product. No port was needed. Why no tool caught it: `sketch rebase` calls a file a conflict when variant and product
+both changed it, without comparing the content. Fix (B343): identical content counts as clean, so this case rebases on
+its own and never reaches Tom as stale.
+
+405\. Builder (2026-11-04): `yarn commit -- <paths>` joins the paths into one string, so it works only with a few path
+arguments. Why no tool caught it: the commit script has no test with many paths. Fix (B347): pass the paths to git as
+an array, with a spec that commits more than ten paths.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
