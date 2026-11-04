@@ -1341,7 +1341,7 @@ describe('picking a variant', () => {
   it('leaves out a variant its agent withdrew when asked to, and shows it again once reopened', () => {
     const decidedAt = '2026-10-30T11:00:00.000Z';
     const button = part();
-    const withdrawn = { by: 'agent', decidedAt, status: 'withdrawn' as const, withdrawnBy: 'model-x' };
+    const withdrawn = { by: 'agent' as const, decidedAt, status: 'withdrawn' as const, withdrawnBy: 'model-x' };
     const keysOf = (judged: ReturnType<typeof sketch>, hideWithdrawn: boolean) =>
       sketchMatrixOf({
         port: 4400,
