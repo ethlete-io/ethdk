@@ -4590,6 +4590,14 @@ none` on html, body and every element (the property is not inherited); the Tauri
      every spec that imports `studio-labels`, and a check fails when a spec asserts a label text that no longer
      exists.
 
+377. Builder (2026-11-04, about 15:50): the Studio frontend dev server (`nx serve ethlete-studio`, `hmr: false`,
+     `liveReload: false`) still watches and rebuilds the working tree, so a window reload brings uncommitted agent
+     edits into Tom's Studio (at that time the unverified B321 stacking fix). This breaks the decided rule "only
+     committed code reaches the running Studio, after Tom's click"; dd708ee4a covered only the CLI copy. Why no
+     tool caught it: the committed-code-only slice had no check for the frontend path. Tool fix (B322): serve the
+     frontend from a sha-keyed build of HEAD like the CLI copy, switched on Tom's click; a scenario that an
+     uncommitted `apps/ethlete-studio` edit does not reach the served app.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
