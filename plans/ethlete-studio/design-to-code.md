@@ -4652,6 +4652,17 @@ none` on html, body and every element (the property is not inherited); the Tauri
      Tool fixes (B328): a gate that ran zero specs for a non-empty related set fails instead of passing; a
      lib-build gate for libs whose package.json dependencies changed; lint of tools/scripts at commit time.
 
+384. Tom (2026-11-04, about 16:55): opening the `pages/sketches` sketch ("Agent-Fortschritt in der Sketch-Ansicht")
+     froze Studio until it recovered by itself. Facts: 3 variants x 25 states = 75 live frames at 1440, each a full
+     Studio page that draws its own sketch grid; the WebContent process held 2.6 GB. The round asks only about the
+     three `agent-*` states; the other 22 states are unchanged and would fold, but the fold data comes from the full
+     listing (over 90 s, finding 379), so the view first loads every frame. Why no tool caught it: no budget for
+     live frames per sketch view, no check of frame count or memory when a sketch is made, and the fold waits for
+     the slow listing. Tool fix (B329): live frames only near the viewport, the rest as stored pictures or
+     placeholders, with a cap on live frames; unchanged states fold before any frame loads (fold data from the
+     quick path, not the full listing); a sketch check that warns when variants x states x widths passes a budget;
+     a Studio headless test that opens a 75-frame sketch and asserts the cap and a usable frame rate.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
