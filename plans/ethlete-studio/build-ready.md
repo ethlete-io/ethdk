@@ -437,3 +437,15 @@ tools/scripts/studio-code.spec.mjs` (end-to-end case with a fake build). Not ver
 - Verified: new specs fail without the fix; cli gate 1002 tests green at commit; eslint, prettier clean.
 - Not verified: proof run (needs a CLI build). Open: `tsc -p libs/cli/tsconfig.spec.json` fails on
   `started-by-studio.spec.ts` (from dd708ee4a); `list-system.spec.ts` failed once under load ("not a git repository").
+
+## As built: B333, B329 rest, B331 (2026-11-04 evening)
+
+- B333: 319c4a832 (numbers restored, findings as `N\. ` paragraphs), ab06d7bc6 (`lint:studio-adrs` number checks,
+  prettier-renumbered red fixture), 9f0d70e47 (commit-wait spec temp repo gets an eslint config). Verified: prettier
+  keeps the numbers; finding specs 16/16; `node --test tools/scripts/*.spec.mjs` green.
+- B329: b9367d285 (6 live frames, pictures for near cells, fold of unchanged states, round note), 4ebc754ca
+  (`sketch-frame-cap.e2e.mjs`: PASS 6 live of 101 cells on pages/sketches). Not verified: fold in the live app,
+  Tauri memory; the fold controls have no design yet.
+- B331: not reproduced on HEAD. 885b0eada: "Sketch nicht gefunden" instead of a silent part fallback, `x@edit` falls
+  back to `x`, failing-variant reason in the tree title, per-group pick specs. Open: `selectMerged` sets `picked` to
+  the raw `@edit` target; open-points entry for a sketch needs a design.
