@@ -4802,6 +4802,19 @@ file the merge did not change reads "product broken outside this sketch: <file>"
 each. Process: no agent edits product files under `.ethlete/design` while a sketch waits for Tom; every subagent
 brief says so.
 
+435\. Tom (2026-11-04, screenshot after merge aa8c96889): every frame, the sample too, shows the Vite overlay
+`Failed to resolve import "@system/foundations/icons" from ".../components/tree-row/shared/tree-row.ts?design-product=studio&design-sketch=pages%2Fsketches%40merge-port&design-variant=a"`.
+Tom guessed the parallel Studio build; it is not. Cause (builder, code read): the listing has no sketch any more, but
+the frames still request the merged sketch. The server resolves imports of a module with `design-sketch=` through
+`drawnOf` (`libs/cli/src/lib/design/system/system-modules.ts:94`); for a gone sketch it returns null and caches the
+miss, so `@system/...` has no resolution. The sketch query spreads to product files, so every frame breaks. Probable,
+not proved: Tom's view still held the sketch frames, and Vite HMR reloaded them with their old URLs after the merge.
+Why no tool caught it: no spec or e2e requests a frame of a sketch after its merge or discard; the merge e2e ends at
+the merge result. Tool fix (B367): (a) `drawnOf` resolves a gone sketch to the product, does not cache the miss, and
+the frame shows a plain note instead of a Vite error; a spec. (b) Studio: when the open sketch drops from the
+listing, the sketch view leaves it and drops the old frames; an e2e merges a fixture sketch with its view open and
+asserts no error overlay and that the view leaves.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
