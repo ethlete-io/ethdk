@@ -12,10 +12,16 @@ import {
   SHARED_FOLDER,
   Sketch,
   variantSharedDirOf,
+  writeSketchFile,
 } from './sketch';
 
 export const EDIT_OLD = 'old';
 const NEW = 'new';
+const EDIT_ROUND_TITLE = 'Direkte Änderung';
+const EDIT_VARIANT_NOTES = { [EDIT_OLD]: 'der Stand von HEAD', [NEW]: 'die Änderung außerhalb eines Sketches' };
+
+const editRoundNoteOf = (part: string) =>
+  `${part} wurde außerhalb eines Sketches geändert und sieht anders aus - wähle den Stand von HEAD oder die Änderung`;
 
 const git = (root: string, args: string[]) =>
   execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: 'pipe', maxBuffer: 64 * 1024 * 1024 });
@@ -63,12 +69,9 @@ export const openEditSketch = (options: {
     product,
     sketch: { layer: resolved.layer, name: resolved.name, sketch: EDIT_SKETCH },
     variants: [NEW, EDIT_OLD],
-    roundTitle: 'Direkte Änderung',
-    roundNote: `${part} wurde außerhalb eines Sketches geändert und sieht anders aus - wähle den Stand von HEAD oder die Änderung`,
-    variantNotes: new Map([
-      [EDIT_OLD, 'der Stand von HEAD'],
-      [NEW, 'die Änderung außerhalb eines Sketches'],
-    ]),
+    roundTitle: EDIT_ROUND_TITLE,
+    roundNote: editRoundNoteOf(part),
+    variantNotes: new Map(Object.entries(EDIT_VARIANT_NOTES)),
     author: options.author,
     merge: resolved.origin === 'overridden' ? 'override' : undefined,
   });
@@ -82,7 +85,7 @@ export const openEditSketch = (options: {
 
 /**
  * Rewrites the `old` variant of an edit sketch from the part at HEAD, so `old` draws against the sketch's `shared/` of
- * today. Answers why it cannot, else null.
+ * today, and its round and variant notes in today's wording. Answers why it cannot, else null.
  */
 export const refreshEditOld = ({ product, sketch }: { product: ResolvedProduct; sketch: Sketch }): string | null => {
   const resolved = product.parts.find((candidate) => partKeyOf(candidate) === partKeyOf(sketch));
@@ -94,8 +97,25 @@ export const refreshEditOld = ({ product, sketch }: { product: ResolvedProduct; 
   if (typeof head === 'string') return head;
 
   writeOld({ sketch, resolved }, head);
+  rewordEditNotes(sketch);
 
   return null;
+};
+
+const rewordEditNotes = (sketch: Sketch) => {
+  const [first, ...later] = sketch.rounds;
+  const rounds = first
+    ? [{ ...first, title: EDIT_ROUND_TITLE, note: editRoundNoteOf(partKeyOf(sketch)) }, ...later]
+    : sketch.rounds;
+  const variantInfo = Object.fromEntries(
+    Object.entries(sketch.variantInfo).map(([variant, info]) => [
+      variant,
+      variant === EDIT_OLD || variant === NEW ? { ...info, note: EDIT_VARIANT_NOTES[variant] } : info,
+    ]),
+  );
+  const reworded = { ...sketch, rounds, variantInfo };
+
+  if (JSON.stringify(reworded) !== JSON.stringify(sketch)) writeSketchFile(reworded);
 };
 
 const headOf = (product: ResolvedProduct, resolved: ResolvedPart): Map<string, string> | string => {

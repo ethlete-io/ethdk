@@ -369,6 +369,31 @@ describe('autoAcceptOf', () => {
         `EDIT-OLD-NOT-DRAWN app-a ${CHIP}: variant old of ${CHIP}@edit (the part at HEAD) does not draw: Importing binding name 'emptyCanvas' is not found.`,
       ]);
     });
+
+    it('rewords the English notes of a sketch opened before they were German', async () => {
+      const { target, dir, draw } = await openSketch();
+      const stored = JSON.parse(readFileSync(sketchFileOf(dir), 'utf8'));
+
+      stored.rounds[0] = {
+        ...stored.rounds[0],
+        title: 'Direct edit',
+        note: `${CHIP} changed outside a sketch and looks different - pick the design at HEAD or the edit`,
+      };
+      stored.variantInfo.new.note = 'the edit made outside a sketch';
+      stored.variantInfo.old.note = 'the design at HEAD';
+      writeFileSync(sketchFileOf(dir), JSON.stringify(stored));
+
+      await autoAccept(target, draw);
+
+      const { rounds, variantInfo } = JSON.parse(readFileSync(sketchFileOf(dir), 'utf8'));
+
+      expect(rounds[0]).toMatchObject({
+        title: 'Direkte Änderung',
+        note: `${CHIP} wurde außerhalb eines Sketches geändert und sieht anders aus - wähle den Stand von HEAD oder die Änderung`,
+      });
+      expect(variantInfo.new.note).toBe('die Änderung außerhalb eines Sketches');
+      expect(variantInfo.old.note).toBe('der Stand von HEAD');
+    });
   });
 
   it('stores pictures after design accept', async () => {
