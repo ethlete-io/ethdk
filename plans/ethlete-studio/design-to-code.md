@@ -4544,6 +4544,23 @@ none` on html, body and every element (the property is not inherited); the Tauri
      repo with a dirty `libs/cli` and expects a listening server; the stop text in German plus a recovery action
      (the finding-369 sketch).
 
+373. Tom (2026-11-04, about 15:15): `pages/flows@edit` ("Runde 1 · Direct edit", variants "new"/"old") shows no
+     frame, no "vergleicht ..." and no error, with English texts in the German UI. The direct-edit check ran at
+     13:53:56Z on the uncommitted TLA edit of an agent, 17 s before 5bec01b89, and also opened `pages-merge.edit`
+     and `pages-start.edit`. Causes (builder, read-only): (a) Studio uses `sketch.target` (`pages/flows@edit`) as a
+     part key (`system-view.component.ts:616`, `system-tree.ts:1420`), so no state matches and no iframe renders;
+     the listing already sends `targetParts`. (b) `edit-sketch.ts:84-87` points the `old` variant at the new
+     `shared/` copy, so `old` fails once frames render. (c) Likely, not proven: `baselineOf`
+     (`accepted-pictures.ts:246-250`) uses the stored `go` pictures without a hash check (`go` hash cccece47, merged
+     hash 63515abb), so a change with no picture change opened a sketch instead of the automatic merge. (d)
+     `edit-sketch.ts` writes English round and variant texts into `sketch.json`, and Studio shows them verbatim.
+     Why no tool caught it: no Studio fixture has a named sketch target; `edit-sketch.spec.ts` has no case with a
+     changed `shared/`; `accepted-pictures.spec` has no stale-`go` case; nothing flags server free text in the German
+     UI; a variant with zero states has no failure state. Tool fix (B319): resolve the part from `targetParts`; HEAD
+     `shared/` for `old`; the baseline only from pictures at the merged hash, else draw HEAD; a spec for each; the
+     three wrong edit sketches must close themselves through the fixed check (the proof), not by hand. The German
+     texts (kind `direct-edit` mapped to STUDIO_LABELS) and a "variant draws no states" look go to Tom as a sketch.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
