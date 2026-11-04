@@ -4410,7 +4410,8 @@ missing design becomes a sketch first.
 
 392\. Builder (2026-11-04, B321 on the Mac): the pixel check run lacked two build steps the handoff did not name
 (`nx build cli`, the components build); without `dist/libs/components` the design server hangs on `/__design/system`
-instead of failing. The paint check then failed over SSH, because the Screen Recording permission holds only for a
+instead of failing (the exact wait point is not traced; the CLI guard `guardsDesignMocks` covers `design`, not this
+serve path). The paint check then failed over SSH, because the Screen Recording permission holds only for a
 GUI terminal. Why no tool caught it: the server does not check its build inputs, and the verify script starts
 without a check of what it needs. Fix (B337): the design server answers with an error that names the missing dist,
 and `verify-webkit-studio.mjs` checks its build inputs before it starts; a Mac check that needs Tom ships as one
