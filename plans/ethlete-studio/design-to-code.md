@@ -4383,6 +4383,17 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      an undrivable state is a VISIBLE-CHANGE problem, and the part is not build-ready. Open app work: the live view
      passes the real exception count to the chip (now 0); the other app lag from pick b goes into S6b.
 
+357. Tom (2026-11-04, for later): on macOS the native traffic lights are not centred vertically in Studio's title
+     bar (screenshots of pages/sketches and pages/system). Why no tool caught it: the native controls are not part of
+     any design drawing or headless compare; the design only reserves their space, and nothing checks the real Tauri
+     window. Tool fix (technical, B304): derive the traffic-light position from the title-bar height token of the
+     design, and add a macOS window check that measures the traffic-light centre against the title-bar centre.
+
+358. Builder (2026-11-04, S1): a PreToolUse hook blocks every Bash call whose text contains "design ready", also a
+     heredoc or a commit message. Why no tool caught it: the hook spec tests only commands that should be blocked,
+     not free text that only names the command. Tool fix (technical, B305): the hook matches the command position
+     only; the spec gets cases with the words in a heredoc, a quoted string and a commit message.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
