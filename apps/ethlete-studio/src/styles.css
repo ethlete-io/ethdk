@@ -116,6 +116,14 @@ html {
   font-size: 62.5%;
 }
 
+@layer base {
+  html,
+  body,
+  * {
+    overscroll-behavior: none;
+  }
+}
+
 body {
   margin: 0;
   background-color: var(--surface);

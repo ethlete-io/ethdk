@@ -211,10 +211,11 @@ const isInteractive = (target: EventTarget | null) => {
   hostDirectives: [FocusRingDirective],
   host: {
     class:
-      'group/canvas relative block h-full touch-none overscroll-none text-text transition-[outline-color] duration-(--duration-state) ease-(--ease-standard) select-none [--_et-focus-ring-offset:-2px] data-pointer-focus:outline-transparent',
+      'group/canvas relative isolate block h-full touch-none overscroll-none text-text transition-[outline-color] duration-(--duration-state) ease-(--ease-standard) select-none [--_et-focus-ring-offset:-2px] data-pointer-focus:outline-transparent',
     tabindex: '0',
     'aria-label': STUDIO_LABELS.canvas.label,
     '[class.overflow-hidden]': 'clip()',
+    '[class.contain-paint]': 'clip()',
     '[class.cursor-grab]': 'spaceHeld() && !panning()',
     '[class.cursor-grabbing]': 'panning()',
     '[attr.data-dragging]': '(spaceHeld() || panning()) || null',

@@ -23,6 +23,12 @@ const compileStyles = () =>
   );
 
 describe('styles.css', () => {
+  it('turns off overscroll on the root and on every scroll container', () => {
+    const css = compileStyles();
+
+    expect(css).toMatch(/@layer base\s*{[\s\S]*html,\s*body,\s*\*\s*{\s*overscroll-behavior: none;/);
+  });
+
   it('loads the merged Studio product tokens in the lowest layer', () => {
     const css = compileStyles();
 

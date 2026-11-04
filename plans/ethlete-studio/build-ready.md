@@ -373,3 +373,11 @@ On the `studio-serve` tmux server (:4402), after S6b:
   studio-view specs green (253); lint; `tsc -p tsconfig.app.json`. Not verified: in Studio/WebKit; the timeout has no
   spec; two stamp fetches per reconnect.
 - Open: no UI shows `sketchesError` yet (design question to the grill session); `flowRead` still swallows errors.
+
+## As built: Studio overscroll and canvas paint clip (Tom's reports 14:3x)
+
+- Built: `styles.css` `overscroll-behavior: none` on html, body and every element (not inherited, so one rule covers
+  all shell scroll containers); `design-canvas` host gets `isolate` and `contain-paint` next to `overflow-hidden`.
+- Verified: `styles.spec.ts` (compiled CSS holds the rule) and `design-canvas.component.spec.ts` (host classes), both
+  fail without the change; lint. Not verified: in Studio/WKWebView; the frame-over-explorer cause (WebKit compositing
+  under load) is an assumption; no WKWebView host setting changed.

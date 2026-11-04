@@ -784,6 +784,15 @@ describe('DesignCanvasComponent', () => {
     expect(isLive(second)).toBe(false);
   });
 
+  it('clips and isolates its own paint so no frame can paint outside the pane', async () => {
+    const fixture = await render([{ id: 'a', src: 'http://localhost:1/frame.html', label: 'a', width: 320 }]);
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(host.classList).toContain('isolate');
+    expect(host.classList).toContain('overflow-hidden');
+    expect(host.classList).toContain('contain-paint');
+  });
+
   it('draws the page of a live frame whose height follows its content in the viewport of a shot, clipped to the frame', async () => {
     const frames = [
       { id: 'followed', src: 'http://localhost:1/frame.html', label: 'followed', width: 320 },
