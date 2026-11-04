@@ -31,8 +31,11 @@ libs/
   reason, such as size or build time, and name that reason to the user.
   Never put features, queries, shared UI or theme in the app project.
 - Do not add Nx `feature/ui/data-access/util` folders or `type:*` tags.
-- Every lib has `src/index.ts` and explicit `build` (`@nx/angular:ng-packagr-lite`), `lint`
-  and `test` targets in `project.json`. Keep `plugins: []` in `nx.json`.
+- Every lib has `src/index.ts` and an explicit `build` target in `project.json`
+  (`@nx/angular:ng-packagr-lite`). `lint` and `test` are inferred by the plugins in `nx.json`
+  (`@nx/eslint/plugin`, and `@nx/vite/plugin` or `@nx/jest/plugin` for the test runner), so
+  do not write `@nx/eslint:lint` or `@nx/jest:jest` executor targets by hand. Nx 24 has no
+  such executors. Run `npx nx show project <name>` to see the inferred targets.
 - Alias = path with slashes: `@acme/domain/admin`, `@acme/queries`, `@acme/types`,
   `@acme/uikit`, `@acme/env`. Project name = path with dashes (`domain-admin`).
   Component `prefix` = the repo abbreviation.
