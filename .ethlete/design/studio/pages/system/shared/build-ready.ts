@@ -1,7 +1,7 @@
 import { html } from '@design-system';
 import { icon, type IconName } from '@system/foundations/icons';
 import { agentLogo } from '@system/foundations/agent-logos';
-import { checkIcon } from '@shared/open-points';
+import { checkIcon } from './open-points';
 
 type BlockerKind = 'direct-edit' | 'open-point' | 'embedded' | 'problem' | 'compare' | 'sdk-error' | 'stale-record';
 

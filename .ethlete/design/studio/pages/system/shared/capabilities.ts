@@ -6,28 +6,6 @@ import { canvasFrame, canvasView } from '@system/elements/canvas-frames';
 
 type Drawn = { body: string; styles: string };
 
-export type Approval = 'go' | 'go-given' | 'accept' | 'accepted';
-
-const quiet = (text: string, data: string) =>
-  html`<span class="self-center text-et-surface-muted text-ui-sm" ${data}>${text}</span>`;
-
-export const approvalControl = async (approval: Approval, size: 'sm' | 'xs' = 'sm'): Promise<Drawn> => {
-  if (approval === 'go-given') return { body: quiet('Go erteilt', 'data-part-go-given'), styles: '' };
-  if (approval === 'accepted') return { body: quiet('Änderung abgenommen', 'data-part-accepted'), styles: '' };
-
-  const go = approval === 'go';
-  const drawn = await button.render({ label: go ? 'Go geben' : 'Änderung abnehmen', variant: 'filled', size });
-  const title = go
-    ? 'Gibt diesen Teil in seinem jetzigen Stand zur Umsetzung frei'
-    : 'Nimmt die direkte Änderung an diesem gemergten Teil ab';
-  const acting = control(withAction(drawn.body, go ? 'emit:giveGo' : 'emit:accept'), go ? 'give-go' : 'accept');
-
-  return {
-    body: html`<span class="contents" title="${title}">${acting}</span>`,
-    styles: drawn.styles,
-  };
-};
-
 type PartException = { rule: string; reason: string; reopened: boolean };
 
 export const buttonExceptions: PartException[] = [

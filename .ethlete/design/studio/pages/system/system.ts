@@ -19,7 +19,19 @@ import {
   type PartOpenPoints,
   type PointGroup,
 } from './shared/open-points';
-import { approvalControl, buttonExceptions, callView, exceptionRows, type Approval } from './shared/capabilities';
+import { buttonExceptions, callView, exceptionRows } from './shared/capabilities';
+import {
+  agentOnReadyPart,
+  agentSamples,
+  directEditBlocker,
+  embeddedBlocker,
+  manyBlockers,
+  slowRules,
+  type AgentProgress,
+  type AgentState,
+  type BuildReady,
+} from './shared/build-ready';
+import { buildReadyView } from './build-ready-footer';
 
 const ghostBox = '<span class="block w-15 h-10 rounded-sm outline outline-et-surface-border bg-et-surface-bg"></span>';
 
@@ -105,15 +117,16 @@ const exceptionGroup = async () => {
   };
 };
 
-const popover = async (open: PartOpenPoints, approval: Approval, withExceptions: boolean) => {
+const popover = async (
+  open: PartOpenPoints,
+  status: BuildReady,
+  agent: AgentProgress | undefined,
+  withExceptions: boolean,
+  blockersOpen: boolean,
+) => {
   const groups = groupsOf(open);
   const exceptions = withExceptions ? await exceptionGroup() : undefined;
-  const approve = await approvalControl(approval, 'xs');
-  const footer = html`<footer
-    class="flex items-center justify-end gap-space-2 border-t border-(--et-surface-border-solid) px-space-3 py-space-2"
-  >
-    ${approve.body}
-  </footer>`;
+  const build = await buildReadyView(status, agent, blockersOpen);
   const list = groups.length
     ? html`<ul class="m-0 p-0 py-space-1 list-none divide-y divide-(--et-surface-border-solid)">
         ${groups.map((group) => `<li><ul class="m-0 p-0 py-space-1 list-none">${pointLines(group)}</ul></li>`).join('')}
@@ -135,7 +148,7 @@ const popover = async (open: PartOpenPoints, approval: Approval, withExceptions:
         >
         <span class="ms-auto font-code text-(--et-surface-color-muted-solid) text-ui-xs">${open.part}</span>
       </header>
-      ${list}${exceptions?.body ?? ''}${footer}
+      ${build.before}${list}${exceptions?.body ?? ''}${build.footer}
     </div>`,
   });
   return {
@@ -145,7 +158,7 @@ const popover = async (open: PartOpenPoints, approval: Approval, withExceptions:
     >
       ${dialog.body}
     </div>`,
-    styles: dialog.styles + (exceptions?.styles ?? '') + approve.styles,
+    styles: dialog.styles + (exceptions?.styles ?? '') + build.styles,
   };
 };
 
@@ -220,10 +233,12 @@ export default definePart<{
   draft?: string;
   send?: SendPhase;
   reason?: string;
-  approval?: Approval;
+  build?: 'one-blocker' | 'checking' | 'direct-edit';
+  blockersOpen?: boolean;
+  agent?: AgentState;
   call?: 'open' | 'transferred';
 }>({
-  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text: a network or server error shows "Kommentar nicht gesendet. Erneut versuchen." under the field and turns Senden into Erneut senden; a send the server refuses with a 4xx shows the server reason there and keeps Senden, with no retry. The open-points popover also lists the exceptions of the part as an Ausnahmen group, each with its reason, state and a Freigeben button, and ends in a footer with Go geben (Go erteilt once given), or Änderung abnehmen for a direct edit of a merged part (Änderung abgenommen once done); the chip counts the exceptions with the points. A legacy call shows a header with its slug and headline, the surface and colour theme switches, and Als übertragen markieren, which turns into an übertragen badge.',
+  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text: a network or server error shows "Kommentar nicht gesendet. Erneut versuchen." under the field and turns Senden into Erneut senden; a send the server refuses with a 4xx shows the server reason there and keeps Senden, with no retry. The open-points popover also lists the exceptions of the part as an Ausnahmen group, each with its reason, state and a Freigeben button, and ends in a footer with the computed build-ready status as a badge (Baubereit, Nicht baubereit (n) in the warning colour, Wird geprüft while slow rules run) and, beside it, the progress of the agent as a second badge (Agent behebt, Agent wartet, Agent unterbrochen, Agent fehlgeschlagen in the error colour, the detail as its title); Gründe opens the blockers grouped by kind, and a direct edit offers Sketch öffnen; the chip counts the exceptions with the points. A legacy call shows a header with its slug and headline, the surface and colour theme switches, and Als übertragen markieren, which turns into an übertragen badge.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6'],
   implements: {
     route: '/',
@@ -264,9 +279,16 @@ export default definePart<{
       send: 'rejected',
       reason: REFUSED,
     },
-    'go-given': { approval: 'go-given' },
-    'direct-edit': { approval: 'accept' },
-    'edit-accepted': { approval: 'accepted' },
+    'one-blocker': { nothingOpen: true, build: 'one-blocker' },
+    checking: { nothingOpen: true, build: 'checking' },
+    'direct-edit': { build: 'direct-edit', blockersOpen: true },
+    'blockers-open': { blockersOpen: true },
+    'agent-working': { agent: 'working' },
+    'agent-working-ready': { nothingOpen: true, agent: 'working' },
+    'agent-failed': { agent: 'failed' },
+    'agent-failed-ready': { nothingOpen: true, agent: 'failed' },
+    'agent-waiting': { agent: 'waiting' },
+    'agent-interrupted': { agent: 'interrupted' },
     call: { call: 'open' },
     'call-transferred': { call: 'transferred' },
   },
@@ -276,8 +298,8 @@ export default definePart<{
     'comment-send': { kind: 'button', part: 'components/button' },
     'comment-target': { kind: 'button', part: 'components/comment-target' },
     'open-points': { kind: 'button', part: 'components/button' },
-    'give-go': { kind: 'button', part: 'components/button' },
-    accept: { kind: 'button', part: 'components/button' },
+    'open-edit-sketch': { kind: 'button', part: 'components/button' },
+    toggle: { kind: 'disclosure', part: 'components/disclosure', surfaces: { body: 'blockers-open' } },
     'exception-approve': { kind: 'button', part: 'components/button' },
     transfer: { kind: 'button', part: 'components/button' },
     theme: { kind: 'button', part: 'components/button' },
@@ -294,7 +316,9 @@ export default definePart<{
     draft,
     send,
     reason,
-    approval = 'go',
+    build,
+    blockersOpen = false,
+    agent,
     call,
   }) => {
     if (call) {
@@ -351,7 +375,28 @@ export default definePart<{
     const exceptionCount = clear ? 0 : buttonExceptions.length;
     const toggle = await chip(points, !closed, chipFocus, acting && !commentMode, exceptionCount);
     const comment = await commentButton(commentMode, acting);
-    const dialog = closed ? undefined : await popover(points, approval, exceptionCount > 0);
+    const status: BuildReady =
+      build === 'checking'
+        ? { state: 'checking', rules: slowRules }
+        : build === 'one-blocker'
+          ? { state: 'blocked', blockers: [embeddedBlocker] }
+          : build === 'direct-edit'
+            ? {
+                state: 'blocked',
+                blockers: [directEditBlocker, ...manyBlockers(points.points.length + exceptionCount)],
+              }
+            : clear
+              ? { state: 'ready' }
+              : { state: 'blocked', blockers: manyBlockers(points.points.length + exceptionCount) };
+    const dialog = closed
+      ? undefined
+      : await popover(
+          points,
+          status,
+          agent === undefined ? undefined : clear && agent === 'working' ? agentOnReadyPart : agentSamples[agent],
+          exceptionCount > 0,
+          blockersOpen,
+        );
     const menu = await studioMenu({ open: false });
     const shell = await shellMain.render({
       studio: menu.body,

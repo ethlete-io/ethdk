@@ -12,7 +12,7 @@ import {
   statusLabel,
   type AgentProgress,
   type BuildReady,
-} from '@shared/build-ready';
+} from './shared/build-ready';
 
 const check = SDK_ICONS.find((each) => each.name === 'et-check');
 
