@@ -42,7 +42,7 @@
   "foundations/motion": "7d6fb324da3cced7",
   "foundations/spacing": "b8821653c3476a2d",
   "foundations/type": "55cbe2495f74530a",
-  "pages/flows": "63515abbdba01fbd",
+  "pages/flows": "f2b79652c713867b",
   "pages/inbox": {
     "hash": "d0e85e46cbdf0e66",
     "variant": "a",
@@ -50,7 +50,7 @@
     "at": "2026-11-03T16:36:01.971Z"
   },
   "pages/inventory": "a050641c3c773f51",
-  "pages/merge": "c017306ebbc49a60",
+  "pages/merge": "44fd8307ce8b2ab0",
   "pages/sketches": {
     "hash": "74e64fe41fe24daa",
     "variant": "b",
