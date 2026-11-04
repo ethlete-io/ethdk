@@ -208,3 +208,19 @@ On the `studio-serve` tmux server (:4402), after S6b:
   committed blobs (`git show HEAD:<file> | prettier --stdin-filepath`) of base..HEAD; no clone.
 - **Q8 Slow-rule cost in serve.** Recommend reruns only for parts whose input hash changed, one browser at a time, and
   `APP-SPEC` through `vitest related` with the existing module cache.
+
+## As built: S7 (pulled to the front)
+
+- `.husky/pre-push` checks each pushed ref over `<remote sha>..<local sha>` (merge base with `origin/main` for a new
+  branch), no clone: `.husky/format-check-committed.mjs` runs Prettier on the committed blobs of the changed files,
+  then `lint:changesets`, `versions:check`, `lint:size`, `lint:cli-related-map`, `docs:error-codes:check`,
+  `sdk:tokens:check` (each under 1 s), and `yarn vitepress build apps/docs` only when the range touches `apps/docs/`.
+  About 3 s without the docs build, about 20 s with it.
+- Dropped from the hook: the clone, typecheck, lint, `agents:check` (it builds agent-rules from the working tree, so
+  another session's half-done edit fails it), `test:tools`, the export-coverage and `studio:classes:check` scripts,
+  and the four Studio gates. CI's "Checks" job already ran all of them except the gates.
+- `ci.yml` has a new `studio` job ("Studio gates") that runs `tools/scripts/prepush-checks.mjs`
+  `specs|design|live|visible` over `NX_BASE..NX_HEAD`; every gate runs even when an earlier one fails. `verified` and
+  `deploy` need it.
+- Not done yet from the S7 entry above: deleting `prepush-checks.mjs` and `prepush-*.ts` (CI now calls them), the
+  "Studio rules" job on `design check --slow`, and dropping `GO_JSON` from `git-safety.py`.
