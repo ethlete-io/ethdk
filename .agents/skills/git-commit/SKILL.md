@@ -35,4 +35,14 @@ Commits in this repo are **lean** and follow the **commitlint rules**
   first. Pass a formatter or `eslint --fix` the exact paths you changed, never a
   list from `git diff` or `git status` - that list holds other sessions' files.
 - `yarn commit -m "..." -- <paths>` takes the same arguments as `git commit`: it runs the related specs first in a throwaway worktree of HEAD plus those paths, before it takes `.git/index.lock`, and the pre-commit hook then skips them for that exact tree (a plain `git commit` still runs them in the hook).
+- **Few commits.** One commit per finished slice of work: the code, its specs, its
+  changeset and its plan note ("as built") go in together. Fix format, lint and
+  review findings before that commit, not in a follow-up commit.
+- **Notes are not commits of their own.** A plan, finding or status note rides
+  with the slice it belongs to; a note-only session commits once per finished
+  round, never once per finding or status line.
+- **Sketches:** one commit per finished round and one per merge.
+- **Never rewrite shared history.** No rebase, no `--fixup`, no `--amend` in a
+  checkout that other sessions share: it rewrites their commits too.
+- Brief every subagent with these commit rules.
 - Don't push unless asked.
