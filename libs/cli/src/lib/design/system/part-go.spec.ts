@@ -1,5 +1,5 @@
 import { execFileSync } from 'child_process';
-import { appendFileSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { IncomingMessage } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -252,6 +252,7 @@ describe('part go', () => {
 
     expect(answer.status).toBe(200);
     expect(readGo(dir)['components/chip']?.actions).toEqual(['closed', 'emit:remove']);
+    expect(readFileSync(join(dir, 'go.json'), 'utf8')).toContain('"actions": ["closed", "emit:remove"]');
   });
 
   it('et design go --by tom refuses without a TTY and records nothing unless Tom answers yes', async () => {

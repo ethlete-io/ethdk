@@ -2,6 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
 import { designHashOf, FileHashes, isOptionalFileHashes, recordHolds } from './design-hash';
 import { partOwnerOf } from './inventory-approval';
+import { formattedTextOf } from './prettier';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 
 export const GO_FILE = 'go.json';
@@ -146,5 +147,9 @@ export const writeGo = (options: { dir: string; part: string; go: PartGo }) => {
     a.localeCompare(b),
   );
 
-  writeFileSync(goFileOf(options.dir), `${JSON.stringify(Object.fromEntries(entries), null, 2)}\n`);
+  const file = goFileOf(options.dir);
+  const text = `${JSON.stringify(Object.fromEntries(entries), null, 2)}\n`;
+  const formatted = formattedTextOf({ target: options.dir, file, text });
+
+  writeFileSync(file, typeof formatted === 'string' ? formatted : text);
 };
