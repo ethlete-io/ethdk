@@ -7,6 +7,16 @@ Status: planned 2026-11-04, not built. Sources: `backlog-parallel/decisions-late
 
 Builder handoff (2026-11-04, ethlete-sdk-d0, context full). Grill/docs session: ethlete-sdk-e4.
 
+- First, before S4: finding 364 / B310. Studio froze at 14:00 in a frontend microtask loop (WebContent 99 % CPU,
+  about 1 GB; sample in /tmp/studio-freeze-webcontent.txt), probably a retry or poll loop after the design server
+  restart. Find the loop and fix it. The render-bug tool fixes are finding 363 / B309. Then the person-name check
+  B308 (finding 362, decisions-latest.md "Person names in the product"), and the edit-sketch decision below (S6b).
+
+- First, before S4: finding 364 / B310. Studio froze at 14:00: WebContent at 99% CPU, ~1 GB RSS, server idle.
+  `sample` (`/tmp/studio-freeze-webcontent.txt`) shows a microtask loop (`WebCore::MicrotaskQueue::runJSMicrotask`)
+  in the Studio frontend, probably a retry/poll loop after the 13:48 server restart. Find the loop. Tool fix: a
+  scenario that restarts and slows the design server under a running Studio and fails on a busy main thread.
+
 - Done, not pushed (17 commits on `next`): S1 8675cccbb, S2 5fd088c7c, S5 598e0b2bd, S7 rest dbd6de8e6; CI fixes
   45f505995 (contentful), 62c79da3b (ANSI in precommit-specs), 99905988b (shell-logo timeout; ET1234 absent in a
   green run), 4d78306ab (pages/system chip counts exceptions; undrivable states are a VISIBLE-CHANGE problem).
