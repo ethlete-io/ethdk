@@ -2,7 +2,7 @@
 status: accepted
 open: none
 decided: 2026-10-30
-source: plans/ethlete-studio/design-system-actions/studio-app.md, finding 1.x, close
+source: plans/ethlete-studio/design-system-actions/studio-app.md, finding 1.2, close
 ---
 
 # The WebKit frame-replacement hang is closed as not reproduced

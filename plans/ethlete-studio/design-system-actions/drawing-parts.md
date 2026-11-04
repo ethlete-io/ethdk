@@ -8,7 +8,7 @@
   frames with a CSS override of the radius.
 - **Fix option:** an alias such as `@sketch/components/button:b`. Low priority: only drawings of
   Studio itself need it.
-- **Decision (Tom, 2026-10-30):** parked. Do not build it until a second case needs it.
+- ADR 0152: [A sketch cannot draw another part at a sketch variant, parked](../../../apps/ethlete-studio/docs/adr/0152-a-sketch-cannot-draw-another-part-at-a-sketch-variant-parked.md)
 
 ### 5.23 The SDK hover token draws light on Studio's dark frames - open
 
@@ -17,9 +17,7 @@
 - **Fix options:** 1. a part frame gets the product's dark surface context, so SDK surface tokens
   resolve as in the app (recommended, check first why it does not). 2. `design check` warns on an
   SDK surface token in a product without that context.
-- **Decision (Tom, 2026-10-30):** neither now. Treat it as a likely design issue in the SDK, not a
-  Studio defect. Once Studio is ready, it is the tool that finds such SDK issues, this case
-  included. No Studio workaround and no `design check` warning.
+- ADR 0153: [A light SDK hover token on dark frames is an SDK design issue](../../../apps/ethlete-studio/docs/adr/0153-a-light-sdk-hover-token-on-dark-frames-is-an-sdk-design-issue.md)
 
 ### 5.24 A component sketch does not see what its hosts draw - open
 
@@ -30,8 +28,7 @@
 - **Fix options:** 1. `sketch new` on a component lists the parts whose markup it will replace, and
   the brief says to draw every case they draw (recommended, a skill rule). 2. a CLI check that
   compares the classes a host uses with the component's states.
-- **Rule (Tom, 2026-10-29):** a part becomes a component only when two hosts draw the same case.
-  Option 1 is in the `design-exploration` skill under "The order of a design".
+- ADR 0154: [A part becomes a component only when two hosts draw the same case](../../../apps/ethlete-studio/docs/adr/0154-a-part-becomes-a-component-only-when-two-hosts-draw-the-same-case.md)
 
 ### 5.31 Studio has no pressed surface token - open
 
@@ -39,24 +36,13 @@
   `--surface-sunken`, written in the component.
 - **Fix option:** a `foundations/tokens` sketch that adds a pressed surface, once a second control
   needs a pressed state.
-- **Decision (Tom, 2026-10-30):** the condition is met: `design complete` now requires an active
-  state for pointer input (`e52f43d59`), and `components/disclosure` needs one. Add a
-  `--surface-pressed` foundation token with the `tree-row` value
-  (`color-mix(in oklch, var(--surface-raised), var(--surface-sunken) 30%)`); `tree-row` and the
-  disclosure use it. It lands with the disclosure merge.
+- ADR 0155: [A pressed surface token with the tree-row value](../../../apps/ethlete-studio/docs/adr/0155-a-pressed-surface-token-with-the-tree-row-value.md)
 - **Reopened (2026-10-30), do not build yet:** the disclosure is already merged (`31a6708e1`,
   `7441190de`) with `color-mix(in oklch, var(--text) 10%, transparent)`. The `tree-row` value was
   nearly invisible on the toggle, which has no background at rest. Tom chooses between one
   text-tint token for any surface and two tokens.
-- **Decision (Tom, 2026-10-30), replaces the first one:** one token `--surface-pressed` as a text
-  tint that works on any surface, with the disclosure value
-  `color-mix(in oklch, var(--text) 10%, transparent)`. `tree-row` and the disclosure use it. The
-  `tree-row` press may change slightly; show Tom the before and after, and keep it visible.
-- **`comment-pin` (Tom, 2026-10-30):** the pin moves to the token too. `comment-pin.css:71` and
-  `:108` still mix `--surface-raised` with `--surface-sunken`; the token is a translucent text
-  tint, so the move changes pixels. The pin layers the token over its face:
-  `linear-gradient(var(--surface-pressed), var(--surface-pressed)), var(--surface-raised)`. A
-  sketch shows before and after, with no auto-merge; Tom picks in Studio.
+- ADR 0156: [The pressed surface token is a text tint for any surface](../../../apps/ethlete-studio/docs/adr/0156-the-pressed-surface-token-is-a-text-tint-for-any-surface.md)
+- ADR 0157: [The comment pin uses the pressed token over its face](../../../apps/ethlete-studio/docs/adr/0157-the-comment-pin-uses-the-pressed-token-over-its-face.md)
 
 ### 5.32 A page cannot reuse the canvas frame chrome - open
 
