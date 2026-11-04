@@ -438,6 +438,16 @@ tools/scripts/studio-code.spec.mjs` (end-to-end case with a fake build). Not ver
 - Not verified: proof run (needs a CLI build). Open: `tsc -p libs/cli/tsconfig.spec.json` fails on
   `started-by-studio.spec.ts` (from dd708ee4a); `list-system.spec.ts` failed once under load ("not a git repository").
 
+## As built: B321 panel stacking in WebKit (2026-11-04)
+
+- Fix: `shell-main.component.html` gives the canvas `main` `isolate` and the explorer `aside` `z-1` +
+  `will-change-transform`, so WebKit keeps the panel above the frame iframes while WebContent hangs. Spec covers the classes.
+- Check: `tools/scripts/verify-webkit-studio.{swift,mjs}` (WKWebView, 24 main-thread hangs over churned frames, pixel
+  compare of the explorer) and a reusable `verify-studio-headless.mjs`.
+- Verified: on ethlete-mac the check FAILs at HEAD (184190 explorer pixels changed, hang 2 of 24) and PASSes with the fix
+  (47 captures); shell-main spec (7) green; `sketches-tree.e2e.mjs` and `yarn studio:e2e` on tank green.
+- Not verified: the fix in the Tauri app itself; the check runs only on macOS with Screen Recording (no gate runs it, B337).
+
 ## As built: interim code notice (B323)
 
 Commit be8aa16b7. The title bar shows a code notice left of the Update control: muted text "Oberfläche geändert - neu starten" and a tonal brand xs `et-button` "Neu starten" (component `apps/ethlete-studio/src/app/components/code-notice/`). It appears while the running server is older than the latest commit.

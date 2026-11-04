@@ -20,10 +20,11 @@ const TYPES = {
 export const phaseLine = (phase, startedAt, now = Date.now()) =>
   `[studio-headless ${new Date(now).toISOString()} +${((now - startedAt) / 1000).toFixed(1)}s] ${phase}`;
 
-const listen = (server) => new Promise((done) => server.listen(0, '::1', () => done(server.address().port)));
+export const listen = (server) => new Promise((done) => server.listen(0, '::1', () => done(server.address().port)));
 
-const serveStatic = (dir) =>
-  createServer((request, response) => {
+export const serveStatic = (dir, answer) =>
+  createServer(async (request, response) => {
+    if (await answer?.(request, response)) return;
     const file = resolve(dir, `.${decodeURIComponent(new URL(request.url, 'http://x').pathname)}`);
     const path = file.startsWith(dir) && existsSync(file) && extname(file) ? file : join(dir, 'index.html');
 
@@ -31,7 +32,7 @@ const serveStatic = (dir) =>
     response.end(readFileSync(path));
   });
 
-const startDesignServer = (checkout, stamp) =>
+export const startDesignServer = (checkout, stamp) =>
   new Promise((resolvePort, reject) => {
     stamp(`design server starting in ${checkout}`);
     const child = spawn(process.execPath, [cliEntry, 'design', checkout], {
@@ -55,6 +56,38 @@ const startDesignServer = (checkout, stamp) =>
     child.stderr.on('data', onData);
     child.on('exit', (code) => reject(new Error(`design server exited with ${code}\n${output}`)));
   });
+
+export const studioHostAnswer = async (command, checkout, designPort) => {
+  if (command === 'design_roots') return { search: '', roots: [checkout] };
+  if (command === 'design_project') {
+    const calls = await (await fetch(`http://[::1]:${designPort}/__design/calls`)).json();
+    const config = JSON.parse(readFileSync(join(checkout, '.ethlete/design/config.json'), 'utf8'));
+    const themes = Object.fromEntries(
+      Object.keys(config.projects ?? {}).map((name) => [name, { surface: [], color: [] }]),
+    );
+
+    return {
+      callsRoot: join(checkout, '.ethlete/design/calls'),
+      port: designPort,
+      defaultCall: config.defaultCall ?? null,
+      themes,
+      calls,
+    };
+  }
+  if (command.startsWith('design_server_')) {
+    return {
+      port: designPort,
+      listening: true,
+      managed: false,
+      foreign: false,
+      stale: false,
+      exited: false,
+      log: [],
+    };
+  }
+
+  throw new Error(`verify-studio-headless: host command ${command} is not stubbed`);
+};
 
 /**
  * The design server listens on `::1` only, so every address here is `[::1]`: `localhost` and `127.0.0.1` are refused from Node.
@@ -95,7 +128,6 @@ export const withStudio = async (run, { checkout = root, build = true, built, ch
     const app = serveStatic(join(built ?? scratch, 'browser'));
     servers.push(app);
     const studioPort = await listen(app);
-    const designUrl = `http://[::1]:${design.port}`;
 
     stamp('chromium launching');
     const { chromium } = await import('playwright');
@@ -103,37 +135,7 @@ export const withStudio = async (run, { checkout = root, build = true, built, ch
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     stamp('chromium launched');
 
-    await page.exposeFunction('__studioHost', async (command) => {
-      if (command === 'design_roots') return { search: '', roots: [checkout] };
-      if (command === 'design_project') {
-        const calls = await (await fetch(`${designUrl}/__design/calls`)).json();
-        const config = JSON.parse(readFileSync(join(checkout, '.ethlete/design/config.json'), 'utf8'));
-        const themes = Object.fromEntries(
-          Object.keys(config.projects ?? {}).map((name) => [name, { surface: [], color: [] }]),
-        );
-
-        return {
-          callsRoot: join(checkout, '.ethlete/design/calls'),
-          port: design.port,
-          defaultCall: config.defaultCall ?? null,
-          themes,
-          calls,
-        };
-      }
-      if (command.startsWith('design_server_')) {
-        return {
-          port: design.port,
-          listening: true,
-          managed: false,
-          foreign: false,
-          stale: false,
-          exited: false,
-          log: [],
-        };
-      }
-
-      throw new Error(`verify-studio-headless: host command ${command} is not stubbed`);
-    });
+    await page.exposeFunction('__studioHost', (command) => studioHostAnswer(command, checkout, design.port));
     await page.addInitScript((chrome) => {
       const callbacks = new Map();
       let lastCallback = 0;

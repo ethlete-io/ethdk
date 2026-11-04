@@ -129,7 +129,7 @@
       [class]="
         panel() === 'hidden' ? '[--st-shell-inset-left:0px]' : '[--st-shell-inset-left:calc(248px+var(--space-3))]'
       "
-      class="absolute inset-0 min-w-0 overflow-hidden bg-et-surface-bg bg-[radial-gradient(circle,var(--et-surface-border-solid)_1px,transparent_1.2px)] bg-size-[16px_16px] bg-position-[8px_8px]"
+      class="absolute inset-0 isolate min-w-0 overflow-hidden bg-et-surface-bg bg-[radial-gradient(circle,var(--et-surface-border-solid)_1px,transparent_1.2px)] bg-size-[16px_16px] bg-position-[8px_8px]"
     >
       @if (server(); as server) {
         <div class="box-border size-full overflow-auto pl-(--st-shell-inset-left)">
@@ -166,8 +166,10 @@
       }
     </main>
     @if (panel() !== 'hidden') {
+      <!-- WebKit composites the canvas iframes and only lifts the panel above them through overlap testing, which
+           lags while the WebContent process hangs; its own layer and z-index keep it on top (findings 367, 375). -->
       <aside
-        class="absolute top-space-3 bottom-space-3 left-space-3 flex min-h-0 w-62 flex-col overflow-hidden rounded-control-lg bg-et-surface-bg shadow-[inset_0_0_0_1px_var(--et-surface-border-solid),0_12px_32px_var(--surface-shadow)]"
+        class="absolute top-space-3 bottom-space-3 left-space-3 z-1 flex will-change-transform min-h-0 w-62 flex-col overflow-hidden rounded-control-lg bg-et-surface-bg shadow-[inset_0_0_0_1px_var(--et-surface-border-solid),0_12px_32px_var(--surface-shadow)]"
       >
         <header class="box-border flex h-12 items-center justify-between border-b border-et-surface-border pl-space-4">
           <span class="font-ui-strong text-ui-lg">{{ product() }}</span>

@@ -26,10 +26,21 @@ const setup = async (panel: 'open' | 'hidden') => {
   const click = (label: string) =>
     (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(`nav button[aria-label="${label}"]`)?.click();
 
-  return { events, click };
+  return { events, click, host: fixture.nativeElement as HTMLElement };
 };
 
 describe('ShellMainComponent', () => {
+  it('stacks the panel on its own layer above the isolated content', async () => {
+    const { host } = await setup('open');
+    const main = host.querySelector('main');
+    const aside = host.querySelector('aside');
+
+    expect(main?.classList).toContain('isolate');
+    expect(aside?.classList).toContain('z-1');
+    expect(aside?.classList).toContain('will-change-transform');
+    expect(main?.nextElementSibling).toBe(aside);
+  });
+
   it('hides the open panel when the active section is clicked', async () => {
     const { events, click } = await setup('open');
 
