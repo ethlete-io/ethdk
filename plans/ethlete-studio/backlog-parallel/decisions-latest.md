@@ -43,6 +43,12 @@
 - **Product order after the B291 push (Tom wants visible progress, out of the bug-hunt loop):** 1. A10 build-ready
   instead of go (B249 with B295); 2. A36 explorer rework, with the chat drafts (A25) as sketches in parallel;
   3. A37 design editor later, with its own grill round. D2-D7, D9 and other design side topics: no priority now.
+- **Build-ready status words (A10):** "Baubereit", "Nicht baubereit (n)" (n = red checks), "Wird geprüft"; the look
+  comes from the S6a popover sketch.
+- **Agent progress on the part (Tom):** next to the computed build-ready status, Studio shows what an agent is doing
+  on that part right now, for example "Agent untersucht", "Agent behebt" (words not final). It is a second signal and
+  does not replace the build-ready status. The S6a sketch shows it with variants; the agent states match the chat
+  agent states of A25 (working, waiting, interrupted, failed), so both read from one source.
 
 ### Studio order, explorer, merge canvas and "build-ready" decisions (Tom, 2026-11-02)
 
