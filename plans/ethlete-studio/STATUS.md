@@ -528,5 +528,4 @@ sketch` zeigen ihn (Befund 180).
 - **E12** canvas-frames umbenennen und mit shell-main verknüpfen (Q248).
 - **E13** Toms gesammelte Runde nach dem MVP (Q25, Q38): Status und Kommentar-Zahlen im Baum, Problemtext als Warnung,
   deutsche Tooltips am Zoom-Chip (Q41).
-- **E14** Was zählt als „sehr wahrscheinlich automatisch gemergt“?
 - **E15** Codex-Agenten: über die tmux-Mailbox oder über einen Wrapper? (backlog-parallel/decisions-studio-ui.md)
