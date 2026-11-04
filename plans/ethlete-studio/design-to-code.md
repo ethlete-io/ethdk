@@ -4768,8 +4768,14 @@ funktioniert die unveränderte screens erkennung noch nicht korrekt. bzw screens
 right: in both states, "Aktuell" marks fit-hover, fit-active and fit-focus-visible of sample variant a as changed, and
 "Variante a" marks them "unverändert" (the B357 change). But the "Aktuell" frame is cut at the left: the icon rail and
 most of the explorer are missing, and the page starts about 180 px into the frame, while the "Variante a" frame shows
-the whole page. Such a cut makes two shots look like different screens. Cause not yet known (asked the builder). Why no
-tool caught it, and the fix: pending the cause; possibly the same fit math as the cut-off in finding 421.
+the whole page. Such a cut makes two shots look like different screens. Cause (builder, partly proved): the compare
+saw the full pictures (both server shots 1440×900 from x=0), so the unchanged detection is right and nothing is mixed.
+The cut is in the sketch view: `liveShotsOf` makes the first 6 near shots in listing order live iframes, and the
+"Aktuell" row comes first. So in one state "Aktuell" was a live iframe and "Variante a" a picture, and the live
+document was shifted left about 250 px (why is not proved: a scroll inside the iframe document, or an iframe narrower
+than its frame). Why no tool caught it: the e2e checks the live frame count and the marks, never that a live frame
+paints the same as its picture. Fix (B365): the e2e asserts for every live frame scrollLeft = scrollTop = 0 and iframe
+width = frame width, and compares the live paint with its picture once ready. App: a live frame counts as ready (ADR 0186) only if it matches its picture, and the cells of one state never mix live and picture.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
