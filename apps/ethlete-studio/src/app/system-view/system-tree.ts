@@ -13,6 +13,7 @@ import {
   partFrameUrl,
   partShotUrl,
   rejectionOf,
+  sketchPartOf,
 } from '../../host/design';
 import { CanvasFrame, ColorScheme, FramePlace, REST } from '../components/design-canvas/canvas-frame';
 import { CanvasRowHead } from '../components/design-canvas/design-canvas.component';
@@ -270,7 +271,7 @@ export const treeOf = (
     merging?: string | null;
   } = {},
 ): TreeGroup[] => {
-  const sketched = new Set(sketches.map((sketch) => sketch.target));
+  const sketched = new Set(sketches.flatMap((sketch) => sketch.targetParts ?? [sketch.target]));
   const marksOf = (onSketch: boolean): CommentMarks => {
     const own = comments.filter((comment) =>
       comment.sketch
@@ -394,7 +395,7 @@ export const sketchUsingPagesOf = ({
   const pages = targets.flatMap((key) =>
     usingPagesOf(
       product,
-      key === sketch.target ? part : (product.parts.find((candidate) => partKeyOf(candidate) === key) ?? null),
+      key === sketchPartOf(sketch) ? part : (product.parts.find((candidate) => partKeyOf(candidate) === key) ?? null),
     ),
   );
 
@@ -712,10 +713,10 @@ export const sketchStateKeyOf = ({
   part,
   state,
 }: {
-  sketch: Pick<ListedSketch, 'target'>;
+  sketch: Pick<ListedSketch, 'target' | 'targetParts'>;
   part: string;
   state: string;
-}) => (part === sketch.target ? state : `${part} ${state}`);
+}) => (part === sketchPartOf(sketch) ? state : `${part} ${state}`);
 
 const roundNameOf = ({ key, title }: SketchRound) => [key, title].filter(Boolean).join(' · ');
 
@@ -852,8 +853,8 @@ export const sketchMatrixOf = ({
   const drawing = silent ? null : reported;
   const idOf = (column: string, { stateKey, state, interaction: shown }: MatrixRow) =>
     [column, stateKey ?? state ?? '', ...(shown === REST ? [] : [shown])].join(' ');
-  const targetOf = (variant: string, key = sketch.target) =>
-    sketch.targets?.find((target) => target.variant === variant && (target.part ?? sketch.target) === key);
+  const targetOf = (variant: string, key = sketchPartOf(sketch)) =>
+    sketch.targets?.find((target) => target.variant === variant && (target.part ?? sketchPartOf(sketch)) === key);
   const several = (sketch.targetParts?.length ?? 1) > 1;
   const roundsGrouped = rounds.length > 1 || rounds.some((round) => round.title !== '');
   const newestFirst = [...rounds].reverse().filter((round) => round.variants.length > 0);
@@ -937,7 +938,7 @@ export const sketchMatrixOf = ({
   };
   const variantColumns = columns.filter((column) => column.key !== CURRENT);
   const blockOf = (key: string) => {
-    const primary = key === sketch.target;
+    const primary = key === sketchPartOf(sketch);
     const listed = primary ? part : (product.parts.find((candidate) => partKeyOf(candidate) === key) ?? null);
     const stateKeyOf = (state: string) => sketchStateKeyOf({ sketch, part: key, state });
     const factsOf = (column: (typeof columns)[number]) => {
@@ -1414,11 +1415,12 @@ export const sketchRowsOf = ({
 }): SketchRowOf[] => {
   const size = sketchSizesOf({ product, sketch, part })[0] ?? null;
   const cell = cellSizeOf(product, size);
+  const partKey = sketchPartOf(sketch);
   const rowOf = (key: string): SketchRowOf => {
     const target =
       key === CURRENT
         ? undefined
-        : sketch.targets?.find((entry) => entry.variant === key && (entry.part ?? sketch.target) === sketch.target);
+        : sketch.targets?.find((entry) => entry.variant === key && (entry.part ?? partKey) === partKey);
     const states = (key === CURRENT ? part?.states : (target?.states ?? part?.states)) ?? [];
 
     return {
@@ -1430,7 +1432,7 @@ export const sketchRowsOf = ({
         src: partFrameUrl({
           port,
           product: product.name,
-          part: sketch.target,
+          part: partKey,
           state,
           epoch,
           revision,

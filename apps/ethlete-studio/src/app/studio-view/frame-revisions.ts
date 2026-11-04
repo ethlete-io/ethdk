@@ -108,12 +108,15 @@ export const revisionOf = (
 /** The revision of a sketch's frames: its target as the product has it, and every part any of its variants draws. */
 export const sketchRevisionOf = (
   revisions: FrameRevisions,
-  sketch: { product: string; target: string; errored?: boolean },
+  sketch: { product: string; target: string; part?: string; errored?: boolean },
 ) => {
   const shown = (key: string) => {
     const [product, part, target] = JSON.parse(key) as [string, string, string | null];
 
-    return product === sketch.product && (target === sketch.target || (target === null && part === sketch.target));
+    return (
+      product === sketch.product &&
+      (target === sketch.target || (target === null && part === (sketch.part ?? sketch.target)))
+    );
   };
   const fails = sketch.errored || failsSince(revisions, shown);
 

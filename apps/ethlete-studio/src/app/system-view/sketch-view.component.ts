@@ -45,6 +45,7 @@ import {
   decideSketch$,
   discardSketch$,
   mergeSketch$,
+  sketchPartOf,
   sketchPreview$,
 } from '../../host/design';
 import { MergeComponent } from '../design-parts/merge/merge.component';
@@ -296,7 +297,7 @@ export class SketchViewComponent {
   );
 
   protected mergeTarget = computed<MergeTarget>(() => {
-    const part = this.sketch().target;
+    const part = sketchPartOf(this.sketch());
     const variant = this.mergeVariant() ?? '';
 
     return { part, name: partNameOf(part), variant, note: this.sketch().variantInfo?.[variant]?.note ?? '' };

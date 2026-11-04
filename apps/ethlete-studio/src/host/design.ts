@@ -435,6 +435,10 @@ export type ListedSketch = {
   hold?: { until: string; by: string; heldAt: string };
 };
 
+/** The key of the sketch's first target part; `target` names the sketch, as `pages/flows@edit` does for a direct edit. */
+export const sketchPartOf = (sketch: Pick<ListedSketch, 'target' | 'targetParts'>) =>
+  sketch.targetParts?.[0] ?? sketch.target;
+
 /** The rejection that holds on a variant now, or `null` when it is live. */
 export const rejectionOf = (sketch: Pick<ListedSketch, 'rejections'>, variant: string): SketchRejection | null => {
   const last = sketch.rejections?.[variant]?.at(-1);

@@ -1074,6 +1074,34 @@ describe('sketchMatrixOf', () => {
     });
   });
 
+  describe('a sketch named apart from its part', () => {
+    const button = part({ states: ['default', 'hover'] });
+    const edit = sketch({
+      target: 'components/button@edit',
+      variants: ['new', 'old'],
+      targetParts: ['components/button'],
+      targets: [
+        { part: 'components/button', variant: 'new', states: ['default', 'hover'] },
+        { part: 'components/button', variant: 'old', states: ['default', 'hover'] },
+      ],
+    });
+
+    it('draws the target part in every column, as the sketch for each variant', () => {
+      const matrix = sketchMatrixOf({ ...source, product: product([button]), part: button, sketch: edit });
+      const variantFrames = matrix.frames.filter((frame) => frame.column === 'new' || frame.column === 'old');
+
+      expect([...new Set(matrix.frames.map((frame) => frame.row))]).toEqual(['default', 'hover']);
+      expect(matrix.frames.every((frame) => frame.rowGroup === undefined && frame.empty === undefined)).toBe(true);
+      expect(variantFrames.map((frame) => frame.place?.sketch)).toEqual(
+        variantFrames.map((frame) => ({ target: 'components/button@edit', variant: frame.column })),
+      );
+      expect(variantFrames.every((frame) => frame.place?.part === 'components/button')).toBe(true);
+      expect(variantFrames.every((frame) => new URL(frame.src).searchParams.get('part') === 'components/button')).toBe(
+        true,
+      );
+    });
+  });
+
   describe('rounds', () => {
     const rounded = sketch({
       status: 'ready',

@@ -28,6 +28,7 @@ import {
   listedCalls$,
   designStatusChanges$,
   listedSystem$,
+  sketchPartOf,
   transferCall$,
 } from '../../host/design';
 import { placeableFramesOf } from '../components/design-canvas/canvas-frame';
@@ -619,7 +620,7 @@ export class SystemViewComponent {
       port,
       product,
       sketch,
-      part: product.parts.find((candidate) => partKeyOf(candidate) === sketch.target) ?? null,
+      part: product.parts.find((candidate) => partKeyOf(candidate) === sketchPartOf(sketch)) ?? null,
     };
   });
 
@@ -633,6 +634,7 @@ export class SystemViewComponent {
     return sketchRevisionOf(this.frameRevisions(), {
       product: product.name,
       target: sketch.target,
+      part: sketchPartOf(sketch),
       errored:
         failsToLoad(part?.problems ?? []) ||
         (sketch.targets ?? []).some((target) => !!target.error) ||
