@@ -37,7 +37,8 @@ that talks with the user and records decisions. Talk English.
 - Commit each finished slice once, with `git commit -- <paths>`: code, spec, changeset and the
   "as built" note together. Fix format, lint and review findings before that commit, not after.
   Tell each subagent the same. Never `git add -A`, never stash, never amend, never rebase.
-- A slice runs only the spec files it touched, and the bite proof runs only the new specs. `yarn commit`
+- A slice runs only the spec files it touched, and only its own e2e cases (`yarn studio:e2e --case <name>`).
+  The bite proof runs only the new specs. `yarn commit`
   already runs the specs related to the staged files and the typecheck. Run the full suite (`nx test cli`,
   `yarn studio:e2e`) once per batch before a push, not in each slice. Tell each subagent the same.
 - A slice that changes `apps/<app>` or `.ethlete/design` ends with `design check --product <p>` in the
