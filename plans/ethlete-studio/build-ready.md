@@ -477,3 +477,9 @@ Verified: the component spec. Not verified: the look against a design part, beca
 - Not verified: real WKWebView routing. `tools/scripts/verify-webkit-frame-wheel.swift` (never compiled) delivers
   wheel gestures in-process to its own WKWebView (`web.scrollWheel(with:)`, no global event post).
 - Pre-existing e2e failure: "Sketches: no state is marked before the compare answers" (fails on the old build too).
+
+### Code notice and push decisions (2026-11-04)
+
+1. Code notice icon: Tom merged title-bar@code-notice variant c (tonal pill). The `up-down` icon reads as "sort", so a
+   refresh icon is added to the icon set and replaces it in c, through a small sketch with the new icon.
+2. Push timing: push after the gates B334, B335 and B336, before S4 to S8; then triage the red CI on `next`.

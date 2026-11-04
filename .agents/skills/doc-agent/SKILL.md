@@ -46,6 +46,8 @@ output; the designed Studio is the side product.
   ad-hoc one that comes up mid-conversation, for example from a screenshot. Never free bullets.
 - Builder messages with design questions go into the next round. Never answer a design
   question for the user.
+- An open question stays open until the user answers it. Repeat it in full, in its own message, with the round
+  format. Never a "Q1 and Q2 are still open" line under a status.
 - A question about how something looks (layout, background, placement, sticking) is never a grill question in
   chat. Studio exists for it: send it to the builder as a sketch, with variants when there is a choice. The
   grill round is for tool, process and product decisions only.
