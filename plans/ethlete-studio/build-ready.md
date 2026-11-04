@@ -5,7 +5,17 @@ Status: planned 2026-11-04, not built. Sources: `backlog-parallel/decisions-late
 
 ## In progress
 
-- 2026-11-04: S1, S3 and S6a run in parallel (builder ethlete-sdk-b3). Technical defaults taken: Q1, Q3, Q4, Q5, Q7, Q8 as recommended. Q2 and Q6 are with Tom.
+Builder handoff (2026-11-04, ethlete-sdk-b3, context full). Grill/docs session: ethlete-sdk-d0. SDK fixer: ethlete-sdk-ed.
+
+- Push blocked: about 55 commits wait on `next`. The old pre-push hook outlasts GitHub's SSH idle timeout (finding 351). Push only after S7 is committed, with the new hook; report the hook time.
+- S7 (slim pre-push, Studio gates as CI jobs, time budget under 60 s, AGENTS.md + ci-check skill): subagent ran; check `git log` for its commit and "As built: S7". If missing, redo S7 from this plan plus finding 351.
+- S3: code done; a subagent commits it, builds the CLI, times `design check --product studio --slow`, and writes "As built: S3". If missing, see the S3 next steps in `git log` / this plan.
+- S1: subagent ran; interface 943e84cad. Check "As built: S1"; S2 and S5 start after S1.
+- S6a: sketch of the popover footer (status words final: Baubereit, Nicht baubereit (n), Wird geprüft) plus an agent-progress signal ("Agent untersucht", "Agent behebt"; second signal, not a replacement). Tom picks the variant.
+- Sketch on pages/sketches: agent progress in the sketch view ("Agent baut Runde 2"). Tom picks.
+- Open design task (builder decides): one source of agent state (working, waiting, interrupted, failed, plus what it does on which part) that both displays and the A25 chat read. Proposal: the agent reports through a CLI/MCP command that writes a gitignored state file per product; Studio reads it through the design server.
+- Decisions: Q1, Q3 (changed: S8 adds an `et update` migration that deletes go.json and accepted.json), Q4, Q5 (base = `harness.baseBranch`, origin/next here), Q7, Q8 taken. Q2 decided (words above). Q6: Studio creates the old/new sketch by itself. B296 (every server-reported part error blocks the pick through one path) goes into S6b.
+- After A10: B297 (missing-motion only for connected state pairs), then A36 explorer with A25 chat sketches.
 
 ## Current state
 
