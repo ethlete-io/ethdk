@@ -4780,8 +4780,12 @@ width = frame width, and compares the live paint with its picture once ready. Ap
 433\. Tom (2026-11-04, screenshot of `comparing-narrow` in `pages/sketches@merge-port`): "und hier? ist doch beides
 gleich". In this state the sample shows "vergleicht …" and no marks at all, so the new sample marks never paint, and
 "Aktuell" and "Variante a" look the same. Still the listing counts the state as changed (one of the 12 narrow states).
-Cause not yet known (asked the builder; suspect: the change mark comes from a changed source or data hash, not from a
-pixel difference). Why no tool caught it, and the fix: pending the cause.
+Cause (builder, pixel diff of the two server shots): the compare is right. 1358 pixels differ in a 575×45 px strip
+(x 842-1416, y 371-415), the sample variant-a cells fit-hover, fit-active and fit-focus-visible. The sample applies
+variant a's pill look only to its changed states (`cell()` in `shared/sketch-rows.ts`), so the B357 alignment
+(6f4b45040) took the pill corners away with the mark. In a comparing state no marks paint, so only a corner radius
+differs, invisible at 24 %. No compare fix. Fix (B345): the cut-out shows such a strip enlarged at fit, and the state
+says why it changed when the diff is small (for example "1358 px in 3 Zellen").
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
