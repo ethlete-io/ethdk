@@ -4484,6 +4484,15 @@ none` on html, body and every element (the property is not inherited); the Tauri
      and none runs under load; the new spec checks the classes only. Tool fix (B313): the macOS WebKit job takes a
      screenshot under frame churn and fails when the explorer pixel area changes.
 
+368. Builder (2026-11-04, during finding 365): a failed sketch listing had no visual, so a compare row could show
+     "vergleicht ..." forever. Cause: the design `.ethlete/design/studio/pages/sketches/sketches.ts` declares only
+     the `comparing` state, and `designAnswer$` turned every error into an empty list. Interim fix 636234e22: a
+     pending row shows "Vergleich fehlgeschlagen: <message>" in the merge-error style, and the sketches head shows
+     one "Erneut laden" button; the final look comes from an error-state sketch that Tom picks. Why no tool caught
+     it: the state checks (`system/open-points.ts`, `reached-state.ts`) only see states the design declares, so
+     nothing can flag a state the design never declared. Tool fix (B314 = B251): a part that loads data or lists is
+     build-ready only with declared loading, error and empty states.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
