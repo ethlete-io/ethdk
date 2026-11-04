@@ -243,6 +243,7 @@ export class SketchViewComponent {
 
   /** The sketch's target once its merge succeeded. */
   public mergeComplete = output<string>();
+  public discardComplete = output<string>();
 
   private shotFrames = viewChildren<ElementRef<HTMLIFrameElement>>('shotFrame');
 
@@ -722,7 +723,9 @@ export class SketchViewComponent {
   }
 
   protected discard() {
-    this.run('discard', discardSketch$(this.address()));
+    const address = this.address();
+
+    this.run('discard', discardSketch$(address).pipe(tap(() => this.discardComplete.emit(address.sketch))));
   }
 
   protected pictureLoaded(key: string, event: Event) {

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { execFileSync } from 'node:child_process';
 import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -11,7 +12,17 @@ const only = args.includes('--case') ? args[args.indexOf('--case') + 1] : undefi
 
 process.env['DE_PORT'] ??= '4473';
 
+const cliEntry = resolve(root, process.env['STUDIO_CLI_ENTRY'] ?? 'dist/libs/cli/src/index.js');
+
+const GONE_TARGETS = { Merge: 'components/title-bar', Discard: 'components/tree-row' };
+
 const PAGES = [
+  ...Object.entries(GONE_TARGETS).map(([name, target]) => ({
+    name,
+    view: { systemProduct: 'studio', systemEntry: `sketch:${target}` },
+    shows: 'ethlete-sketch-view ethlete-sketches',
+    hides: 'ethlete-system-view [data-sketch-missing]',
+  })),
   {
     name: 'System',
     view: { systemProduct: 'studio', systemEntry: 'pages/system' },
@@ -273,7 +284,77 @@ const settled = async (page, selector) => {
   }
 };
 
+const goneSketchLeavesToThePart = async (page, { designPort }, target, decide) => {
+  const part = GONE_TARGETS[target.name];
+  const ask = (path, body) =>
+    fetch(`http://[::1]:${designPort}/__design/${path}?product=studio&sketch=${encodeURIComponent(part)}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  const overlays = () =>
+    Promise.all(page.frames().map((frame) => frame.locator('vite-error-overlay').count())).then((counts) =>
+      counts.reduce((sum, count) => sum + count, 0),
+    );
+
+  const answer = await decide(ask);
+
+  if (!answer.ok) return { ok: false, detail: `the design server refused: ${answer.status} ${await answer.text()}` };
+
+  try {
+    await page.waitForFunction(() => !document.querySelector('ethlete-sketch-view'), undefined, { timeout: 30000 });
+  } catch {
+    return { ok: false, detail: 'the sketch view stays open after the sketch dropped from the listing' };
+  }
+
+  await page.waitForTimeout(3000);
+
+  const shown = await page.evaluate((part) => {
+    const frames = [...document.querySelectorAll('iframe')].map((frame) => new URL(frame.src, location.href));
+
+    return {
+      partFrames: frames.filter((url) => url.searchParams.get('part') === part && !url.searchParams.has('sketch'))
+        .length,
+      sketchFrames: frames.filter((url) => url.searchParams.has('sketch')).length,
+      missing: !!document.querySelector('[data-sketch-missing]'),
+      blank: !document.querySelector('ethlete-system-view'),
+    };
+  }, part);
+  const overlayCount = await overlays();
+
+  return {
+    ok: shown.partFrames > 0 && !shown.sketchFrames && !shown.missing && !shown.blank && overlayCount === 0,
+    detail: `frames of ${part}: ${shown.partFrames}, frames of the gone sketch: ${shown.sketchFrames}, not-found note: ${shown.missing}, blank: ${shown.blank}, error overlays: ${overlayCount}`,
+  };
+};
+
 const CASES = [
+  {
+    name: 'a sketch merged while its view is open opens the part view of the target',
+    pages: ['Merge'],
+    run: (page, _state, target, context) =>
+      goneSketchLeavesToThePart(page, context, target, async (ask) => {
+        execFileSync(
+          process.execPath,
+          [cliEntry, 'design', 'sketch', 'rebase', GONE_TARGETS.Merge, '--product', 'studio', '--by', 'canvas-e2e'],
+          { cwd: checkout, stdio: 'pipe' },
+        );
+
+        const picked = await ask('sketch-decision', { kind: 'pick', variant: 'a' });
+
+        return picked.ok ? ask('sketch-merge', {}) : picked;
+      }),
+  },
+  {
+    name: 'a sketch discarded while its view is open opens the part view of the target',
+    pages: ['Discard'],
+    run: (page, _state, target, context) =>
+      goneSketchLeavesToThePart(page, context, target, async () => {
+        await page.locator('ethlete-sketches button', { hasText: 'Verwerfen' }).first().click();
+
+        return { ok: true };
+      }),
+  },
   {
     name: 'wheel and ctrl-wheel over a frame centre move the camera',
     pages: ['System', 'Sketches', 'Inbox', 'Flow'],
@@ -1329,7 +1410,7 @@ cpSync(join(root, '.ethlete/design'), join(checkout, '.ethlete/design'), { recur
 
 rmSync(join(checkout, '.ethlete/design/studio/sketches'), { recursive: true, force: true });
 
-for (const target of ['pages/system', 'components/zoom-chip', 'elements/shell-main']) {
+for (const target of ['pages/system', 'components/zoom-chip', 'elements/shell-main', ...Object.values(GONE_TARGETS)]) {
   const folder = join(checkout, '.ethlete/design/studio/sketches', target.replace('/', '-'));
 
   mkdirSync(join(folder, 'a', dirname(target)), { recursive: true });
@@ -1357,7 +1438,7 @@ for (const target of ['pages/system', 'components/zoom-chip', 'elements/shell-ma
 }
 
 const results = await withStudio(
-  async ({ page, studioUrl }) => {
+  async ({ page, studioUrl, designPort }) => {
     const rows = [];
 
     for (const target of PAGES) {
@@ -1395,7 +1476,7 @@ const results = await withStudio(
           result = !shown
             ? { ok: false, detail: `the page does not show ${target.shows}` }
             : state
-              ? await testCase.run(page, state, target)
+              ? await testCase.run(page, state, target, { designPort })
               : { ok: false, detail: 'no canvas' };
         } catch (error) {
           result = { ok: false, detail: String(error).split('\n')[0] };

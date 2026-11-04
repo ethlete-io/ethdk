@@ -874,6 +874,44 @@ describe('SystemViewComponent on a merge', () => {
     expect(view['selectedKey']()).toBe('elements/rating');
   });
 
+  it('opens the target part and draws no frame of the sketch at once when the open sketch is discarded, before the listing drops it', async () => {
+    const sketch: ListedSketch = {
+      target: 'elements/rating',
+      status: 'ready',
+      createdAt: '2026-10-27T10:00:00Z',
+      product: 'web',
+      layer: 'elements',
+      name: 'rating',
+      dir: 'rating',
+      variants: ['a', 'b'],
+      problems: [],
+    };
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/sketch-discard')) return json({ ok: true });
+      if (url.includes('/__design/sketches')) return json({ sketches: [sketch], unreadable: [] });
+      if (url.includes('/__design/flows')) return json({ flows: [], unreadable: [] });
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'sketch:elements/rating' });
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('ethlete-sketch-view')).not.toBeNull();
+
+    fixture.debugElement.query(By.directive(SketchViewComponent)).componentInstance['discard']();
+    await settle(fixture);
+
+    expect(element.querySelector('ethlete-sketch-view')).toBeNull();
+    expect(element.querySelector('iframe[src*="sketch="]')).toBeNull();
+    expect(fixture.componentInstance['part']()?.key).toBe('elements/rating');
+    expect(fixture.componentInstance['selectedKey']()).toBe('elements/rating');
+  });
+
   it('lists the sketches in the tree from the quick answer without problems and targets', async () => {
     const sketch: ListedSketch = {
       target: 'elements/rating',

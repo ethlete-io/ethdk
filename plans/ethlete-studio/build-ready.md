@@ -56,6 +56,12 @@ Commit: the one that holds this section (`fix(repo): Draw a gone sketch as the p
 
 ---
 
+## As built: B367b leave a gone sketch (finding 435)
+
+Commit: the one that holds this section (`fix(repo): Leave the Studio sketch view at once on a discard`). A list drop of the open sketch (merge or discard elsewhere) already showed the target part through `pickedPart`/`sketchMissing`; the gap was the in-view discard, which kept the deleted sketch's frames until the listing reloaded. `SketchViewComponent` now emits `discardComplete` after a successful discard, and `SystemViewComponent.leaveGone` (renamed from `selectMerged`, shared with `mergeComplete`) hides the sketch and picks the target part. New spec in `system-view.component.spec.ts` fails on the old code (the sketch view stays open). Two canvas e2e cases (`Merge`, `Discard` pages, own fixture sketches `components/title-bar`, `components/tree-row`) assert no sketch view, no frame of the sketch, no error overlay, frames of the target part. Verified: app specs, spec tsc, lint, studio e2e. Not verified: the e2e cases pass on the old code too for a merge and an external drop (no regression bite there); the transient Vite overlay window between file removal and listing is only covered by part a.
+
+---
+
 ## As built: B339 Sketches e2e rule (2026-11-04)
 
 Commit: the one that holds this section (`test(repo): Allow kept unchanged marks before the full sketch compare`).

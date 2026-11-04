@@ -337,7 +337,8 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         (retry)="reloadSketches()"
         (decide)="reloadSketches()"
         (merging)="mergingSketch.set($event ? shown.sketch.target : null)"
-        (mergeComplete)="selectMerged($event)"
+        (mergeComplete)="leaveGone($event)"
+        (discardComplete)="leaveGone($event)"
         (expandedChange)="rememberOpen($event)"
         (cameraChange)="rememberCamera($event)"
         (shellAction)="runShellAction($event)"
@@ -1169,7 +1170,7 @@ export class SystemViewComponent {
       .subscribe();
   }
 
-  protected selectMerged(target: string) {
+  protected leaveGone(target: string) {
     this.mergedSketches.update((merged) => [...merged, target]);
     this.picked.set(target);
     rememberView({ systemEntry: target });
