@@ -14,8 +14,8 @@ import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
 import { EDIT_OLD, openEditSketch } from './sketch/edit-sketch';
 import { discardSketch } from './sketch/merge';
-import { changedOutsideSketchOf, readMerged, recordMerged } from './sketch/merged-parts';
-import { Sketch } from './sketch/sketch';
+import { changedOutsideSketchOf, EDIT_SKETCH, readMerged, recordMerged } from './sketch/merged-parts';
+import { listSketches, Sketch } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
 import { drawnStateNamesOf } from './unchanged-rows';
 
@@ -25,10 +25,11 @@ export const PICTURES_FILE = 'pictures.json';
 export type StatePictures = Record<string, string>;
 
 /**
- * The pictures of a part's states at a hash. Pictures without `slots` were drawn with slots emptied and cannot prove
- * that slot content is unchanged, so they are read as missing.
+ * The pictures of a part's states at a hash, and `partHash`, the part hash `merged.json` keeps, they were drawn at.
+ * Pictures without `slots` were drawn with slots emptied and cannot prove that slot content is unchanged, so they are
+ * read as missing.
  */
-export type AcceptedPictures = { hash: string; states: StatePictures; slots: true };
+export type AcceptedPictures = { hash: string; states: StatePictures; slots: true; partHash?: string };
 
 /**
  * `record` is drawn at the part's design hash while it is merged and unchanged since. `review` (at the merged hash)
@@ -58,11 +59,12 @@ const picturesFileOf = (dir: string) => resolve(dir, PICTURES_FILE);
 const isAccepted = (value: unknown): value is AcceptedPictures => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
 
-  const { hash, states, slots } = value as Record<string, unknown>;
+  const { hash, states, slots, partHash } = value as Record<string, unknown>;
 
   return (
     typeof hash === 'string' &&
     slots === true &&
+    (partHash === undefined || typeof partHash === 'string') &&
     !!states &&
     typeof states === 'object' &&
     !Array.isArray(states) &&
@@ -229,13 +231,18 @@ export const storePictures = async (options: {
 
   const design = designHashOf({ product, part: resolved }).hash;
   const drawn = (await (options.draw ?? drawStatePictures)({ target, config, product, parts: [part] })).get(part);
-  const now = kind === 'review' ? partHashOf({ product, dir: dirname(resolved.file) }) : design;
+  const partHash = partHashOf({ product, dir: dirname(resolved.file) });
+  const now = kind === 'review' ? partHash : design;
 
   if (drawn === undefined || typeof drawn === 'string') return drawn ?? `${part} was not drawn`;
   if (now !== hash || designHashOf({ product, part: resolved }).hash !== design)
     return `${part} changed while it was drawn`;
 
-  writePictures({ dir: partOwnerOf({ product, part: resolved }).dir, part, pictures: { hash: design, states: drawn } });
+  writePictures({
+    dir: partOwnerOf({ product, part: resolved }).dir,
+    part,
+    pictures: { hash: design, states: drawn, partHash },
+  });
 
   return null;
 };
@@ -243,20 +250,31 @@ export const storePictures = async (options: {
 export const newStatesLineOf = ({ product, part, states }: { product: string; part: string; states: string[] }) =>
   `NEW STATES ${product} ${part}: ${states.join(', ')} - for Tom's next review`;
 
-/** The pictures a direct edit of the part is compared with: its `record`, else `review` or `go` at the merged hash. */
+/**
+ * The pictures a direct edit of the part is compared with: its `record` or `review` drawn at the merged part hash. A
+ * `go` carries only a design hash, which cannot show that it was drawn at the merged part hash.
+ */
 const baselineOf = (pictures: PartPictures, merged: string | undefined) =>
-  pictures.record ??
-  [pictures.review, pictures.go].find((stored) => stored !== undefined && stored.hash === merged) ??
+  (merged !== undefined && pictures.record?.partHash === merged ? pictures.record : undefined) ??
+  (merged !== undefined && pictures.review?.hash === merged ? pictures.review : undefined) ??
   null;
+
+const isUndecidedEditSketch = (sketch: Sketch) =>
+  sketch.target === `${partKeyOf(sketch)}@${EDIT_SKETCH}` &&
+  sketch.status === 'ready' &&
+  !sketch.decision &&
+  !sketch.hold &&
+  Object.values(sketch.rejections ?? {}).every((rejections) => rejections.length === 0);
 
 type Need = { part: ResolvedPart; design: string; baseline: AcceptedPictures | null; sketch?: Sketch };
 
 /**
  * The work of `design check` on the pictures of each merged part, or of `parts`: draws the `record` pictures of a part
  * unchanged since its merge when none are stored at its design hash, and resolves a direct edit of a part changed
- * outside a sketch. A direct edit is compared with its pictures at the merged hash, else with the `old` variant of the
- * old/new edit sketch, which holds the design at HEAD. One that draws every state as before holds at once (its new hash
- * goes to `merged.json`, and the edit sketch closes); one that draws a state differently leaves the edit sketch open.
+ * outside a sketch, and of a part whose old/new edit sketch is open without a decision. A direct edit is compared with
+ * its pictures at the merged hash, else with the `old` variant of the old/new edit sketch, which holds the design at
+ * HEAD. One that draws every state as before holds at once (its new hash goes to `merged.json`, and the edit sketch
+ * closes); one that draws a state differently leaves the edit sketch open.
  * Answers with one line per part it drew or decided.
  */
 export const autoAcceptOf = async (options: {
@@ -269,6 +287,11 @@ export const autoAcceptOf = async (options: {
 }): Promise<string[]> => {
   const { target, config, product, only } = options;
   const edited = new Set(changedOutsideSketchOf(product));
+  const editSketches = new Map(
+    listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) =>
+      typeof sketch !== 'string' && isUndecidedEditSketch(sketch) ? [[partKeyOf(sketch), sketch] as const] : [],
+    ),
+  );
   const merged = readMerged(product.dir);
   const records: Need[] = [];
   const edits: Need[] = [];
@@ -291,6 +314,7 @@ export const autoAcceptOf = async (options: {
 
     const pictures = readPictures(partOwnerOf({ product, part: resolved }).dir)[part] ?? {};
     const design = designHashOf({ product, part: resolved }).hash;
+    const editSketch = editSketches.get(part);
 
     if (edited.has(part)) {
       const baseline = baselineOf(pictures, merged[part]);
@@ -304,7 +328,8 @@ export const autoAcceptOf = async (options: {
 
       if (typeof sketch === 'string') opened(part, sketch);
       else heads.push({ part: resolved, design, sketch });
-    } else if (pictures.record?.hash !== design) records.push({ part: resolved, design, baseline: null });
+    } else if (editSketch) heads.push({ part: resolved, design, sketch: editSketch });
+    else if (pictures.record?.hash !== design) records.push({ part: resolved, design, baseline: null });
   }
 
   for (const { part: resolved, design, sketch } of heads) {
@@ -365,7 +390,11 @@ export const autoAcceptOf = async (options: {
       lines.push(`HELD ${product.name} ${part}: changed outside a sketch, every state draws as before`);
     }
 
-    writePictures({ dir: partOwnerOf({ product, part: resolved }).dir, part, pictures: { hash: design, states } });
+    writePictures({
+      dir: partOwnerOf({ product, part: resolved }).dir,
+      part,
+      pictures: { hash: design, states, partHash: partHashOf({ product, dir: dirname(resolved.file) }) },
+    });
   }
 
   return lines;

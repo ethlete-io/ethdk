@@ -1,5 +1,5 @@
 import { execFileSync } from 'child_process';
-import { appendFileSync, existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -70,7 +70,12 @@ describe('autoAcceptOf', () => {
 
     expect(await autoAccept(target, draw)).toEqual([]);
     expect(readPictures(dir)[CHIP]).toEqual({
-      record: { hash: designHashOfChip(target), states: { default: 'a1', hover: 'b2' }, slots: true },
+      record: {
+        hash: designHashOfChip(target),
+        states: { default: 'a1', hover: 'b2' },
+        slots: true,
+        partHash: readMerged(dir)[CHIP],
+      },
     });
     expect(await autoAccept(target, draw)).toEqual([]);
     expect(calls).toHaveLength(1);
@@ -78,7 +83,7 @@ describe('autoAcceptOf', () => {
 
   it('holds a direct edit at once when every state draws as before, without accepted.json or a sketch', async () => {
     const { target, dir, chip } = checkout();
-    const { draw } = drawing({ default: 'a1', hover: 'b2' });
+    const { draw, variants } = drawing({ default: 'a1', hover: 'b2' });
 
     recordMerged({ product: productOf(target), parts: [CHIP] });
     await autoAccept(target, draw);
@@ -88,6 +93,7 @@ describe('autoAcceptOf', () => {
     expect(await autoAccept(target, draw)).toEqual([
       `HELD app-a ${CHIP}: changed outside a sketch, every state draws as before`,
     ]);
+    expect(variants).toEqual([null, null]);
     expect(changedOutsideSketchOf(productOf(target))).toEqual([]);
     expect(readPictures(dir)[CHIP]?.record?.hash).toBe(designHashOfChip(target));
     expect(existsSync(join(dir, 'accepted.json'))).toBe(false);
@@ -168,6 +174,46 @@ describe('autoAcceptOf', () => {
     expect(directEditsOf(productOf(target))).toEqual([]);
   });
 
+  it('compares a direct edit with the design at HEAD, not with a record drawn at another part hash', async () => {
+    const { target, dir, chip } = checkout();
+    const { draw, variants } = drawing({ default: 'a1', hover: 'b2' });
+
+    recordMerged({ product: productOf(target), parts: [CHIP] });
+    writeFileSync(
+      join(dir, 'pictures.json'),
+      JSON.stringify({
+        [CHIP]: {
+          record: { hash: 'd1', states: { default: 'x9', hover: 'y8' }, slots: true, partHash: 'stale' },
+        },
+      }),
+    );
+    appendFileSync(chip, '// attribute-only edit\n');
+
+    expect(await autoAccept(target, draw)).toEqual([
+      `HELD app-a ${CHIP}: changed outside a sketch, every state draws as before`,
+    ]);
+    expect(variants).toEqual(['old', null]);
+  });
+
+  it('compares a direct edit with the design at HEAD, not with go pictures at the merged hash', async () => {
+    const { target, dir, chip } = checkout();
+    const { draw, variants } = drawing({ default: 'a1', hover: 'b2' });
+
+    recordMerged({ product: productOf(target), parts: [CHIP] });
+    writeFileSync(
+      join(dir, 'pictures.json'),
+      JSON.stringify({
+        [CHIP]: { go: { hash: readMerged(dir)[CHIP], states: { default: 'x9', hover: 'y8' }, slots: true } },
+      }),
+    );
+    appendFileSync(chip, '// attribute-only edit\n');
+
+    expect(await autoAccept(target, draw)).toEqual([
+      `HELD app-a ${CHIP}: changed outside a sketch, every state draws as before`,
+    ]);
+    expect(variants).toEqual(['old', null]);
+  });
+
   it('leaves the old/new sketch open when the edit draws a state differently from HEAD', async () => {
     const { target, chip } = checkout();
     const { draw, pictures } = drawing({ default: 'a1', hover: 'c3' });
@@ -183,6 +229,64 @@ describe('autoAcceptOf', () => {
     expect(partPointsOf(readOpenPoints(productOf(target)), CHIP)).toContainEqual({
       kind: 'direct-edit',
       sketch: `${CHIP}@edit`,
+    });
+  });
+
+  describe('an open edit sketch', () => {
+    const sketchFileOf = (dir: string) => join(dir, 'sketches', 'components-chip.edit', 'sketch.json');
+
+    const openSketch = async () => {
+      const { target, dir, chip } = checkout();
+      const drawn = drawing({ default: 'a1', hover: 'c3' });
+
+      drawn.pictures.head = { default: 'a1', hover: 'b2' };
+      recordMerged({ product: productOf(target), parts: [CHIP] });
+      appendFileSync(chip, '// visible edit\n');
+      await autoAccept(target, drawn.draw);
+      expect(existsSync(sketchFileOf(dir))).toBe(true);
+
+      return { target, dir, ...drawn };
+    };
+
+    it('closes as held when every state now draws the same as HEAD', async () => {
+      const { target, dir, draw, pictures } = await openSketch();
+
+      pictures.now = { default: 'a1', hover: 'b2' };
+
+      expect(await autoAccept(target, draw)).toEqual([
+        `HELD app-a ${CHIP}: changed outside a sketch, every state draws as before`,
+      ]);
+      expect(existsSync(sketchFileOf(dir))).toBe(false);
+      expect(directEditsOf(productOf(target))).toEqual([]);
+    });
+
+    it('stays open while a state draws differently from HEAD', async () => {
+      const { target, dir, draw } = await openSketch();
+
+      expect(await autoAccept(target, draw)).toEqual([
+        `PICTURES CHANGED app-a ${CHIP}: hover`,
+        `DIRECT EDIT app-a ${CHIP}: changed outside a sketch - pick old or new in sketch ${CHIP}@edit`,
+      ]);
+      expect(existsSync(sketchFileOf(dir))).toBe(true);
+    });
+
+    it('stays open untouched once the user decided it', async () => {
+      const { target, dir, draw, pictures, variants } = await openSketch();
+      const file = sketchFileOf(dir);
+
+      writeFileSync(
+        file,
+        JSON.stringify({
+          ...JSON.parse(readFileSync(file, 'utf8')),
+          decision: { kind: 'pick', variant: 'new', decidedAt: '2026-11-04T00:00:00.000Z' },
+        }),
+      );
+      pictures.now = { default: 'a1', hover: 'b2' };
+      variants.length = 0;
+
+      expect(await autoAccept(target, draw)).toEqual([]);
+      expect(existsSync(file)).toBe(true);
+      expect(variants).not.toContain('old');
     });
   });
 
@@ -208,6 +312,7 @@ describe('autoAcceptOf', () => {
       hash: designHashOfChip(target),
       states: { default: 'a1', hover: 'b2' },
       slots: true,
+      partHash: readMerged(dir)[CHIP],
     });
   });
 });
