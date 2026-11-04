@@ -947,6 +947,37 @@ describe('DesignCanvasComponent', () => {
     expect(fixture.componentInstance.selectedCellId()).toBeNull();
   });
 
+  it('marks the canvas wheeling during a wheel gesture so the shield also covers the active frame', async () => {
+    const fixture = await render([FITTED]);
+    const host = fixture.nativeElement as HTMLElement;
+
+    fixture.componentInstance.activate(FITTED.id);
+    await fixture.whenStable();
+    vi.useFakeTimers();
+
+    const shield = host.querySelector('ethlete-frame-shield');
+
+    expect(shield?.classList.contains('hidden')).toBe(true);
+    expect(shield?.className).toContain('group-data-wheeling/canvas:block');
+
+    host.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 40 }));
+    fixture.detectChanges();
+
+    expect(host.hasAttribute('data-wheeling')).toBe(true);
+
+    vi.advanceTimersByTime(150);
+    host.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 40 }));
+    vi.advanceTimersByTime(150);
+    fixture.detectChanges();
+
+    expect(host.hasAttribute('data-wheeling')).toBe(true);
+
+    vi.advanceTimersByTime(100);
+    fixture.detectChanges();
+
+    expect(host.hasAttribute('data-wheeling')).toBe(false);
+  });
+
   it('selects the cell under a click that lands on the shield over an inactive grid frame', async () => {
     const cell = (id: string) => ({ id, row: 'filled', column: id, label: id, src: 'about:blank', width: 100 });
     const fixture = await render([
@@ -959,9 +990,7 @@ describe('DesignCanvasComponent', () => {
     ]);
     const host = fixture.nativeElement as HTMLElement;
     const frame = host.querySelector('ethlete-canvas-frame');
-    const shield = [...(frame?.children ?? [])].find(
-      (child) => child.className === 'absolute inset-0 size-full border-0',
-    );
+    const shield = [...(frame?.children ?? [])].find((child) => child.localName === 'ethlete-frame-shield');
     const cellB = host.querySelector('[data-cell-id="b"]');
 
     expect(shield).toBeDefined();

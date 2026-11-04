@@ -19,7 +19,7 @@ import {
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS, FocusRingDirective } from '@ethlete/components';
 import { dragGestureFrom, signalElementDimensions } from '@ethlete/core';
-import { EMPTY, Subject, buffer, debounceTime, exhaustMap, switchMap, tap, timer } from 'rxjs';
+import { EMPTY, Subject, buffer, debounceTime, exhaustMap, map, startWith, switchMap, tap, timer } from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
 import { CanvasFrameDirective } from './canvas-frame.directive';
 import {
@@ -100,6 +100,7 @@ const MIN_FRAME_ROW_HEIGHT = 64;
 const LIVE_MARGIN = 400;
 const LIVE_MIN_ZOOM = 0.5;
 const LIVE_REST_MS = 250;
+const WHEEL_GESTURE_GAP_MS = 200;
 const LIVE_GRACE_MS = 5000;
 const MAX_LIVE_FRAMES = 6;
 const LABEL_MIN_ZOOM = 0.25;
@@ -219,6 +220,7 @@ const isInteractive = (target: EventTarget | null) => {
     '[class.cursor-grab]': 'spaceHeld() && !panning()',
     '[class.cursor-grabbing]': 'panning()',
     '[attr.data-dragging]': '(spaceHeld() || panning()) || null',
+    '[attr.data-wheeling]': 'wheeling() || null',
     '[attr.data-pointer-focus]': 'pointerFocus() || null',
     '(blur)': 'clearPointerFocus()',
     '(wheel)': 'moveCameraByWheel($event)',
@@ -342,6 +344,18 @@ export class DesignCanvasComponent {
   public activeId = signal<string | null>(null);
   protected spaceHeld = signal(false);
   protected panning = signal(false);
+  private wheel$ = new Subject<void>();
+  protected wheeling = toSignal(
+    this.wheel$.pipe(
+      switchMap(() =>
+        timer(WHEEL_GESTURE_GAP_MS).pipe(
+          map(() => false),
+          startWith(true),
+        ),
+      ),
+    ),
+    { initialValue: false },
+  );
   protected pointerFocus = signal(false);
   private measured = linkedSignal<string | null, Record<string, FrameSize>>({
     source: this.cameraKey,
@@ -946,6 +960,7 @@ export class DesignCanvasComponent {
 
   protected moveCameraByWheel(event: WheelEvent) {
     event.preventDefault();
+    this.wheel$.next();
     this.moveCamera(cameraAfterWheel({ camera: this.camera(), wheel: event, point: this.pointerPosition(event) }));
   }
 

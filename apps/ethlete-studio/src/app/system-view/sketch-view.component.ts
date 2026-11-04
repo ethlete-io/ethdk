@@ -60,6 +60,7 @@ import { injectCommentStore } from './comment-store';
 import { modelNameOf, senderOf } from './inbox-comments';
 import { MergeColumn, mergeFrameIdOf, partNameOf, sketchCompare$ } from './merge-preview';
 import { refusalMessageOf } from './inventory';
+import { FrameShieldComponent } from '../components/design-canvas/partials/frame-shield.component';
 import { PageShell, PageShellAction } from './page-shell';
 import {
   NO_SKETCH_FRAME_RETRIES,
@@ -164,19 +165,22 @@ export const liveShotsOf = ({
 
     <ng-template #mergeShot let-row let-src="src">
       @if (shotSources().get(src); as safe) {
-        <iframe
-          [src]="safe"
-          [title]="row.part + ' ' + row.state"
-          [style.width.px]="row.width"
-          [style.height.px]="row.height"
-          class="block border-0 scheme-normal"
-        ></iframe>
+        <div class="relative w-fit">
+          <iframe
+            [src]="safe"
+            [title]="row.part + ' ' + row.state"
+            [style.width.px]="row.width"
+            [style.height.px]="row.height"
+            class="block border-0 scheme-normal"
+          ></iframe>
+          <ethlete-frame-shield class="pointer-events-auto" />
+        </div>
       }
     </ng-template>
 
     <ng-template #shot let-row let-state="state">
       @let key = row.key + ' ' + state;
-      <div #shotCell [attr.data-shot]="key" class="size-full">
+      <div #shotCell [attr.data-shot]="key" class="relative size-full">
         @if (liveShots().has(key)) {
           @if (rowShots().get(key); as src) {
             <iframe
@@ -187,6 +191,7 @@ export const liveShotsOf = ({
               [attr.data-state]="state"
               class="block size-full border-0 scheme-normal"
             ></iframe>
+            <ethlete-frame-shield class="pointer-events-auto" />
           }
         } @else if (nearShots().has(key)) {
           @if (shotPictures().get(key); as picture) {
@@ -203,7 +208,7 @@ export const liveShotsOf = ({
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [SketchesComponent, MergeComponent],
+  imports: [SketchesComponent, MergeComponent, FrameShieldComponent],
   host: { class: 'block size-full' },
 })
 export class SketchViewComponent {

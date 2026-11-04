@@ -15,6 +15,7 @@ import {
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { rememberFlowPreset, rememberedView } from '../studio-view/remembered';
 import { flowFramesOf, flowKeyOf } from './flow-frames';
+import { FrameShieldComponent } from '../components/design-canvas/partials/frame-shield.component';
 import { PageShell, PageShellAction } from './page-shell';
 
 @Component({
@@ -39,20 +40,23 @@ import { PageShell, PageShellAction } from './page-shell';
 
     <ng-template #frame let-box>
       @if (sources().get(box.id); as shown) {
-        <iframe
-          [src]="shown.src"
-          [title]="box.title"
-          [style.width.px]="shown.width"
-          [style.height.px]="shown.height"
-          [style.transform]="'scale(' + shown.scale + ')'"
-          class="block origin-top-left border-0 scheme-normal"
-          tabindex="-1"
-        ></iframe>
+        <div class="relative size-full">
+          <iframe
+            [src]="shown.src"
+            [title]="box.title"
+            [style.width.px]="shown.width"
+            [style.height.px]="shown.height"
+            [style.transform]="'scale(' + shown.scale + ')'"
+            class="block origin-top-left border-0 scheme-normal"
+            tabindex="-1"
+          ></iframe>
+          <ethlete-frame-shield class="pointer-events-auto" />
+        </div>
       }
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [FlowsPageComponent],
+  imports: [FlowsPageComponent, FrameShieldComponent],
   host: { class: 'block size-full' },
 })
 export class FlowViewComponent {

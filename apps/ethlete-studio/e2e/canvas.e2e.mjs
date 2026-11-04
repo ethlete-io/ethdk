@@ -316,6 +316,49 @@ const CASES = [
     },
   },
   {
+    name: 'wheel over an iframe pans when iframes take pointer events, as in WKWebView',
+    pages: ['System', 'Sketches', 'Flow'],
+    run: async (page, state) => {
+      const { view } = state;
+      const point = await page.evaluate(
+        ({ CANVAS, view }) => {
+          const canvas = document.querySelector(CANVAS);
+
+          for (const iframe of canvas?.querySelectorAll('iframe') ?? []) {
+            if (iframe.closest('[data-active]')) continue;
+
+            const box = iframe.getBoundingClientRect();
+            const x = Math.max(box.left, view.left) / 2 + Math.min(box.right, view.right) / 2;
+            const y = Math.max(box.top, view.top) / 2 + Math.min(box.bottom, view.bottom) / 2;
+
+            if (box.width > 8 && x > view.left + 4 && x < view.right - 4 && y > view.top + 4 && y < view.bottom - 4)
+              return { x, y };
+          }
+
+          return null;
+        },
+        { CANVAS, view },
+      );
+
+      if (!point) return { ok: false, detail: 'no iframe in view' };
+
+      const style = await page.addStyleTag({ content: 'iframe { pointer-events: auto !important; }' });
+
+      try {
+        const before = (await probe(page)).camera;
+        await page.mouse.move(point.x, point.y);
+        await page.mouse.wheel(0, point.y < (view.top + view.bottom) / 2 ? -120 : 120);
+        await settle(page);
+        const after = (await probe(page)).camera;
+        const moved = Math.abs(after.x - before.x) + Math.abs(after.y - before.y);
+
+        return { ok: moved > 20, detail: `camera moved ${moved.toFixed(0)}px with the pointer over an iframe` };
+      } finally {
+        await style.evaluate((element) => element.remove());
+      }
+    },
+  },
+  {
     name: 'ctrl-wheel keeps the world point under the pointer',
     pages: ['System', 'Sketches', 'Inbox', 'Flow'],
     run: async (page, state, target) => {

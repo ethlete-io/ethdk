@@ -52,6 +52,7 @@ import { FrameLoad, designServerBack$, failedLoadReason$, frameLoad$ } from '../
 import { RenderSlotState, injectFrameRenderQueue } from '../frame-render-queue';
 import { CanvasFrameBorderComponent } from './canvas-frame-border.component';
 import { CanvasFrameGridComponent } from './canvas-frame-grid.component';
+import { FrameShieldComponent } from './frame-shield.component';
 import { FAILED_SHOT_SIZE, ShotStateComponent, ShotStateDirective } from './shot-state';
 
 type HeightMessage = Extract<FrameMessage, { type: 'height' }>;
@@ -274,9 +275,10 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         </span>
       </div>
     }
-    @if (!active()) {
-      <div class="absolute inset-0 size-full border-0"></div>
-    }
+    <ethlete-frame-shield
+      [class.hidden]="active()"
+      class="group-data-dragging/canvas:block group-data-wheeling/canvas:block"
+    />
     @if (failure(); as reason) {
       <div
         [etProvideColor]="errorTheme()"
@@ -307,6 +309,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     ProvideColorDirective,
     CanvasFrameBorderComponent,
     CanvasFrameGridComponent,
+    FrameShieldComponent,
     ShotStateDirective,
     ShotStateComponent,
   ],

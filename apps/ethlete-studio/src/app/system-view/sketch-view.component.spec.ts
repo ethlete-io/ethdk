@@ -188,6 +188,7 @@ describe('SketchViewComponent', () => {
 
     expect(root.querySelectorAll('[data-shot]').length).toBe(100);
     expect(root.querySelectorAll('iframe[data-state]').length).toBe(6);
+    expect(root.querySelectorAll('iframe[data-state] + ethlete-frame-shield.pointer-events-auto').length).toBe(6);
     expect(root.querySelectorAll('img[data-shot-picture]').length).toBe(94);
   });
 
@@ -283,6 +284,7 @@ describe('SketchViewComponent', () => {
 
     expect(frames.map((frame) => frame.searchParams.get('part'))).toEqual(['pages/home', 'pages/home']);
     expect(frames.map((frame) => frame.searchParams.get('variant'))).toEqual([null, 'a']);
+    expect(root.querySelectorAll('ethlete-merge iframe + ethlete-frame-shield.pointer-events-auto').length).toBe(2);
 
     buttonNamed(root, STUDIO_LABELS.merge.back)?.click();
     await settle(fixture);
