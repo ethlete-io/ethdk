@@ -4303,42 +4303,49 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      state where it is scrollable. Open: give the scrollable parts an explicit scrolled state, and make iframe and
      static cells size the same content the same way, so the scrollbar only shows in the state that asks for it.
 
-345. Builder (2026-11-04, B291): docs:build failed with "Element is missing end tag". c922a8e65 wrapped a code span
+344. Builder (2026-11-04, B291): docs:build failed with "Element is missing end tag". c922a8e65 wrapped a code span
      so a line in apps/docs/cli/index.md started with `<sketch> <part> ...`, and VitePress read it as raw HTML. Fixed
      in dc936b68e. Why no tool caught it: pre-push runs no docs build. Tool fix (technical, grill decided): pre-push
      runs `docs:build` when the push changes apps/docs (about 1 min). Built as B292.
-346. Builder (2026-11-04, B287): the title-search gate was red (459-1048 px off), but with a freshly built CLI compare
+345. Builder (2026-11-04, B287): the title-search gate was red (459-1048 px off), but with a freshly built CLI compare
      is 0 px in all 8 states and the app component is unchanged since 6e3c4f00b. Most likely cause (not proven, does
      not reproduce): a stale dist/libs/cli from before 0ddbcc120. Why no tool caught it: `design compare` and
      `design check` run dist/libs/cli without a stale check, so a stale CLI reports gaps HEAD does not have. Tool fix
      (technical): the CLI rebuilds or refuses when its dist is older than the libs/cli sources, as the gate does for
      the libs, with a spec. Built as B293. B287 closed with no app change.
 
-347. Builder (2026-11-04, B254, 5a28fbee9): when the design server cannot load a variant's part module, the variant has
+346. Builder (2026-11-04, B254, 5a28fbee9): when the design server cannot load a variant's part module, the variant has
      no frames, so Studio showed no render-error badge and still offered Übernehmen on the broken variant. Fixed:
      erroredVariantsOf also counts targets with `error`. Why no tool caught it: `sketch ready`/`sketch check` reject an
      unloadable variant only at ready time, on the CLI's own server; a variant that breaks later shows nothing in
      Studio. Tool fix (technical, queued as B296): Studio treats every server-reported part error as pick-blocking
      through one frame-error path, not per view.
-348. Builder (2026-11-04, B291 push 1): B292's parallel VitePress build writes apps/docs/.vitepress/.temp while
+347. Builder (2026-11-04, B291 push 1): B292's parallel VitePress build writes apps/docs/.vitepress/.temp while
      `docs:lint` reads it (ENOENT); fixed in 2a06c3914. Why no tool caught it: the hook change was committed without
      one end-to-end hook run ("not verified" in the report). Lesson: a change to a git hook is done only after one
      real run of that hook; B295 shrinks the hook, so it carries this check.
 
-349. SDK fixer (2026-11-04, D11): `design check --product sdk` reports 5247 open points in 50 of 57 parts; 5104 are
+348. SDK fixer (2026-11-04, D11): `design check --product sdk` reports 5247 open points in 50 of 57 parts; 5104 are
      missing motions between every pair of showcase states (for example badge filled -> tonal). Why it matters: the
      noise hides the 143 real points, so nobody reads the list. Tool fix (technical, queued as B297): ask a motion
      only for state pairs that a control or an interaction connects, or let a part mark states as showcase variants.
-350. SDK fixer (2026-11-04, D11): the check's auto-rebuild of a stale CLI went through the nx cache, restored the old
+349. SDK fixer (2026-11-04, D11): the check's auto-rebuild of a stale CLI went through the nx cache, restored the old
      dist and then refused on it. Why no tool caught it: the B293 stale guard has no spec for a cache-restored dist.
      Tool fix (technical, queued as B298): rebuild with --skip-nx-cache, with a spec.
 
-351. Builder (2026-11-04, B291 push 2): the hook passed, then the push died with "Connection to ssh.github.com closed
+350. Builder (2026-11-04, B291 push 2): the hook passed, then the push died with "Connection to ssh.github.com closed
      by remote host". Cause: git opens the SSH connection before pre-push; the old hook (clone, lint, typecheck,
      Studio gates; several minutes) outlasts GitHub's SSH idle timeout, so a green hook still ends in a failed push.
      This also explains the end of push 1 and why pushes went out with --no-verify. Why no tool caught it: nothing
      bounds the hook's run time. Tool fix: S7 (short hook, Tom 04.11.); the hook gets a time budget well under the
      SSH idle timeout, and the S7 end-to-end run measures it.
+
+351. Builder (2026-11-04, S7): tools/scripts/e2e-check.spec.mjs "the result line carries the sha" fails inside the
+     pre-commit index checkout (git rev-parse --show-toplevel runs outside a repo), so every commit that stages a file
+     under tools/scripts fails. Also: the grill session's own plan edits were not Prettier-formatted and blocked the
+     push. Why no tool caught it: the spec assumes a git checkout, and plan edits by script skip the formatter. Tool
+     fix (technical, B299): the hook passes the sha to the spec by env or arg; the grill session formats every plan
+     file it writes before the commit.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 

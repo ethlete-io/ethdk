@@ -41,8 +41,7 @@
   when apps/docs changes. Lint and typecheck move to CI only; no throwaway clone for them.
 - **go.json commit hook:** unchanged; it goes away with go.json in B249. Until then Tom commits go.json himself.
 - **Product order after the B291 push (Tom wants visible progress, out of the bug-hunt loop):** 1. A10 build-ready
-  instead of go (B249 with B295); 2. A36 explorer rework, with the chat drafts (A25) as sketches in parallel;
-  3. A37 design editor later, with its own grill round. D2-D7, D9 and other design side topics: no priority now.
+  instead of go (B249 with B295); 2. A36 explorer rework, with the chat drafts (A25) as sketches in parallel; 3. A37 design editor later, with its own grill round. D2-D7, D9 and other design side topics: no priority now.
 - **Build-ready status words (A10):** "Baubereit", "Nicht baubereit (n)" (n = red checks), "Wird geprüft"; the look
   comes from the S6a popover sketch.
 - **Agent progress on the part (Tom):** next to the computed build-ready status, Studio shows what an agent is doing
