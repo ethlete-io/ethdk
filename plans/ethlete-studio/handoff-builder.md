@@ -355,3 +355,7 @@ Commits: none. Both plan files are untouched.
 2. Update the parsing in archive-findings.mjs, studio-status.mjs and check-studio-adrs.mjs, and their specs.
 3. Add the uniqueness / increasing / "Bef. N" resolves check to `yarn lint:studio-adrs`, with fixtures, including a prettier-renumbered fixture that must fail.
 4. Add finding 387, row B333 (done) and row B332 (open: a design check rule that resolves each sketch variant's imports; finding 380 / 296429625).
+
+## B321 pixel check over SSH
+
+Tom's PC `tank` reaches this Mac with `ssh ethlete-mac`. Run the B321 commands there. The paint check captures the screen, so it needs a logged-in GUI session on the Mac and Screen Recording for the process that runs it. An SSH shell may not get that grant: if the capture fails, run the check in a terminal on the Mac desktop (for example through screen sharing). The parked fix is on `wip/b321-stacking-fix`; the old worktree `/tmp/wip-b321` on the Mac holds the same commit.
