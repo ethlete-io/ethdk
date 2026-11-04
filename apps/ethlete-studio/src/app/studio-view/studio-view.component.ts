@@ -36,6 +36,7 @@ import { SystemViewComponent } from '../system-view/system-view.component';
 import { ShellAction, ShellPageComponent } from '../design-parts/shell-main/shell-page.component';
 import { DesignServerAction } from '../design-parts/studio-menu/studio-menu.component';
 import { injectUpdateCheck } from '../update-check';
+import { injectCodeWatch } from '../code-watch';
 import { createCheckouts, folderNameOf } from './checkouts';
 import { NO_FRAME_REVISIONS, frameReports$, frameRevisionsWith, frameRevisionsWithReport } from './frame-revisions';
 import { NO_LIST_REVISIONS, listRevisionsWith } from './list-revisions';
@@ -169,6 +170,13 @@ export class StudioViewComponent {
       .pipe(
         switchMap((port) => (port === null ? EMPTY : designServerReplaced$(port))),
         tap(() => this.epoch.update((value) => value + 1)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    injectCodeWatch()
+      .serverRestarts$.pipe(
+        tap(() => this.restartServer()),
         takeUntilDestroyed(),
       )
       .subscribe();

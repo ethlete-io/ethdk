@@ -10,6 +10,7 @@ import {
 import { catchError, EMPTY, fromEvent, startWith, switchMap } from 'rxjs';
 import { isWindowMaximized$, WindowButton, WindowChrome } from '../../../host/window';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { CodeNoticeComponent } from '../code-notice/code-notice.component';
 import { TitleSearchComponent } from '../title-search/title-search.component';
 
 @Component({
@@ -30,6 +31,7 @@ import { TitleSearchComponent } from '../title-search/title-search.component';
       <ethlete-title-search [product]="product()" [part]="part()" [os]="os()" />
 
       <div class="flex items-center justify-end gap-2">
+        <ethlete-code-notice />
         @if (update()) {
           <button (click)="updatePress.emit($event)" et-button type="button" variant="filled" color="brand" size="xs">
             {{ LABELS.update }}
@@ -129,7 +131,7 @@ import { TitleSearchComponent } from '../title-search/title-search.component';
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, NgTemplateOutlet, TitleSearchComponent],
+  imports: [BUTTON_IMPORTS, CodeNoticeComponent, NgTemplateOutlet, TitleSearchComponent],
   host: { class: 'block shrink-0' },
 })
 export class TitleBarComponent {

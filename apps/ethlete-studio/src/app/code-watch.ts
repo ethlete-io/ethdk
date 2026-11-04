@@ -1,13 +1,13 @@
 import { computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
-import { EMPTY, catchError, exhaustMap, tap, timer } from 'rxjs';
-import { StudioCodeState, studioCodeState$ } from '../host/studio-code';
+import { EMPTY, Subject, catchError, exhaustMap, tap, timer } from 'rxjs';
+import { StudioCodeState, quitForRebuild$, studioCodeState$ } from '../host/studio-code';
 import { STUDIO_LABELS } from './i18n/studio-labels';
 
 export const CODE_WATCH_INTERVAL_MS = 10_000;
 
-export type CodeAction = 'restartStudio' | 'restartServer' | 'reload';
+export type CodeAction = 'restartStudio' | 'restartServer';
 
 export type CodeNotice = { text: string; action: CodeAction | null };
 
@@ -28,7 +28,7 @@ export const codeNoticeOf = (state: StudioCodeState | null, pageLoadedAt: string
   if (cli.running && cli.latest && cli.running !== cli.latest) return { text: labels.cli, action: 'restartServer' };
 
   if (pageLoadedAt && frontend.latest && pageLoadedAt !== frontend.latest) {
-    return { text: labels.frontend, action: 'reload' };
+    return { text: labels.frontend, action: 'restartServer' };
   }
 
   return null;
@@ -54,8 +54,22 @@ const CODE_WATCH_DEF = /* @__PURE__ */ defineRootProvider(() => {
     )
     .subscribe();
 
+  const serverRestartRequests$ = new Subject<void>();
+
+  const act = (action: CodeAction) => {
+    if (action === 'restartStudio') {
+      quitForRebuild$().subscribe();
+
+      return;
+    }
+
+    serverRestartRequests$.next();
+  };
+
   return {
     notice: computed(() => codeNoticeOf(state(), pageLoadedAt())),
+    act,
+    serverRestarts$: serverRestartRequests$.asObservable(),
   };
 });
 

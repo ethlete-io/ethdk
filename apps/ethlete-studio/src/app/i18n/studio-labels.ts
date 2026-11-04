@@ -11,7 +11,8 @@ export const STUDIO_LABELS = {
     host: 'Host geändert - Studio neu starten',
     cli: 'CLI geändert - neu starten',
     cliDirty: (sha: string) => `CLI hat uncommittete Änderungen, Studio läuft auf Stand ${sha}`,
-    frontend: 'Oberfläche geändert - neu laden',
+    frontend: 'Oberfläche geändert - neu starten',
+    restart: 'Neu starten',
   },
   openFolder: {
     refusedTitle: 'Ordner nicht geöffnet',

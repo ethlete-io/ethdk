@@ -17,12 +17,6 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const AREAS = {
-  cli: 'libs/cli',
-  frontend: 'apps/ethlete-studio/src',
-  host: 'apps/ethlete-studio/src-tauri',
-};
-
 const CACHE = 'tmp/studio-cli';
 
 export const APP_SOURCES = [
@@ -38,6 +32,12 @@ export const APP_SOURCES = [
   'tsconfig.base.json',
   'yarn.lock',
 ];
+
+export const AREAS = {
+  cli: 'libs/cli',
+  frontend: APP_SOURCES,
+  host: 'apps/ethlete-studio/src-tauri',
+};
 
 export const APP_CACHE = 'tmp/studio-app';
 
@@ -55,7 +55,7 @@ export const isDirty = (root, path) => git(root, ['status', '--porcelain', '--',
 
 export const areaState = (root) => ({
   cli: { latest: lastCommitOf(root, AREAS.cli), dirty: isDirty(root, AREAS.cli) },
-  frontend: { latest: lastCommitOf(root, AREAS.frontend) },
+  frontend: { latest: lastCommitOf(root, ...AREAS.frontend) },
   host: { latest: lastCommitOf(root, AREAS.host) },
 });
 
@@ -199,7 +199,7 @@ export const currentAppCopy = (root) => {
  */
 export const ensureAppCopy = (root, { log = (line) => console.error(line), build = buildAppWithNx } = {}) => {
   const cache = join(root, APP_CACHE);
-  const sha = lastCommitOf(root, ...APP_SOURCES);
+  const sha = lastCommitOf(root, ...AREAS.frontend);
 
   if (!sha) throw new Error('The Studio app has no commit to build.');
 
