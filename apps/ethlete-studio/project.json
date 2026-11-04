@@ -99,6 +99,13 @@
         "command": "cargo test"
       }
     },
+    "serve-committed": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "options": {
+        "command": "node tools/scripts/studio-code.mjs app-copy && node tools/scripts/studio-app-serve.mjs"
+      }
+    },
     "cli-runtime": {
       "executor": "nx:run-commands",
       "outputs": ["{workspaceRoot}/dist/apps/ethlete-studio/cli-runtime"],

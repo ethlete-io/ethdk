@@ -3,7 +3,7 @@ use std::process::Stdio;
 use std::sync::OnceLock;
 
 use serde::{Deserialize, Serialize};
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 
 use crate::design_server::DesignServers;
 use crate::error::{StudioError, StudioResult};
@@ -114,6 +114,26 @@ pub async fn cli_copy() -> StudioResult<(CliCopy, Vec<String>)> {
     lines.drain(..lines.len().saturating_sub(PREFACE_LINES));
 
     Ok((parsed(&stdout)?, lines))
+}
+
+#[derive(Deserialize)]
+pub struct AppCopy {
+    pub switched: bool,
+}
+
+pub async fn app_copy() -> StudioResult<AppCopy> {
+    parsed(&run_script("app-copy").await?.0)
+}
+
+/// Reloads every window once `app-copy` points the frontend server at another commit.
+pub fn reload_on_switch(app: &AppHandle, copy: &AppCopy) {
+    if !copy.switched {
+        return;
+    }
+
+    for window in app.webview_windows().values() {
+        let _ = window.reload();
+    }
 }
 
 pub fn starts_from_repo_build(checkout: &Path) -> bool {

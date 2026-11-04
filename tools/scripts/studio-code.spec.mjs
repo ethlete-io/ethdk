@@ -46,6 +46,8 @@ test('a clean libs/cli whose build does not match builds the commit', () => {
   });
 });
 
+const quiet = () => undefined;
+
 const git = (cwd, ...args) => {
   const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
 
@@ -114,7 +116,7 @@ test('a dirty libs/cli with a copy without a pinned commit still serves the last
     writeFileSync(join(unpinned, 'src/index.js'), 'throw new Error("stale copy");\n');
     writeFileSync(join(root, 'libs/cli/file.txt'), 'two\n');
 
-    const copy = ensureCliCopy(root, { log: () => {}, build: fakeBuild });
+    const copy = ensureCliCopy(root, { log: quiet, build: fakeBuild });
 
     assert.equal(copy.sha, latest);
     assert.equal(copy.dirty, true);
@@ -127,6 +129,29 @@ test('a dirty libs/cli with a copy without a pinned commit still serves the last
     assert.equal(await waitForPort(port), true);
   } finally {
     server?.kill();
+    spawnSync('git', ['worktree', 'prune'], { cwd: root });
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('a clean libs/cli without dist/libs/cli builds the last commit', () => {
+  const root = mkdtempSync(join(tmpdir(), 'studio-code-spec-'));
+
+  try {
+    git(root, 'init', '-q');
+    git(root, 'config', 'user.email', 'spec@example.com');
+    git(root, 'config', 'user.name', 'spec');
+    mkdirSync(join(root, 'libs/cli'), { recursive: true });
+    writeFileSync(join(root, 'libs/cli/file.txt'), 'one\n');
+    git(root, 'add', '.');
+    git(root, 'commit', '-qm', 'init');
+
+    const copy = ensureCliCopy(root, { log: quiet, build: fakeBuild });
+
+    assert.equal(copy.sha, git(root, 'rev-parse', 'HEAD'));
+    assert.equal(copy.dirty, false);
+    assert.ok(existsSync(copy.entry));
+  } finally {
     spawnSync('git', ['worktree', 'prune'], { cwd: root });
     rmSync(root, { recursive: true, force: true });
   }

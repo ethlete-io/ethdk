@@ -25,6 +25,8 @@ export const AREAS = {
 
 const CACHE = 'tmp/studio-cli';
 
+export const APP_CACHE = 'tmp/studio-app';
+
 const git = (root, args) => {
   const result = spawnSync('git', args, { cwd: root, encoding: 'utf8' });
 
@@ -90,10 +92,10 @@ const settle = (staging, target, sha) => {
   }
 };
 
-const buildWithNx = (root, tree, log) => {
+const nxBuild = (label, args) => (root, tree, log) => {
   symlinkSync(join(root, 'node_modules'), join(tree, 'node_modules'), 'dir');
 
-  const build = spawnSync('npx', ['nx', 'build', 'cli'], {
+  const build = spawnSync('npx', ['nx', 'build', ...args], {
     cwd: tree,
     encoding: 'utf8',
     env: { ...process.env, NX_NO_CLOUD: 'true', NX_DAEMON: 'false' },
@@ -101,14 +103,18 @@ const buildWithNx = (root, tree, log) => {
 
   log(`${build.stdout}${build.stderr}`.trim());
 
-  if (build.status !== 0) throw new Error('Building the CLI failed.');
+  if (build.status !== 0) throw new Error(`Building ${label} failed.`);
 };
 
-const buildInWorktree = (root, sha, target, log, build) => {
-  const scratch = mkdtempSync(join(tmpdir(), 'studio-cli-'));
+const buildWithNx = nxBuild('the CLI', ['cli']);
+
+const buildAppWithNx = nxBuild('the Studio app', ['ethlete-studio', '--configuration=development']);
+
+const buildInWorktree = (root, sha, target, log, build, { label = 'the CLI', output = 'dist/libs/cli' } = {}) => {
+  const scratch = mkdtempSync(join(tmpdir(), 'studio-code-'));
   const tree = join(scratch, 'tree');
 
-  log(`Building the CLI at ${sha.slice(0, 7)} in a temporary worktree…`);
+  log(`Building ${label} at ${sha.slice(0, 7)} in a temporary worktree…`);
   git(root, ['worktree', 'add', '--detach', tree, sha]);
 
   try {
@@ -116,7 +122,7 @@ const buildInWorktree = (root, sha, target, log, build) => {
 
     const staging = `${target}.partial-${process.pid}`;
 
-    cpSync(join(tree, 'dist/libs/cli'), staging, { recursive: true });
+    cpSync(join(tree, output), staging, { recursive: true });
     settle(staging, target, sha);
   } finally {
     spawnSync('git', ['worktree', 'remove', '--force', tree], { cwd: root });
@@ -151,7 +157,8 @@ export const ensureCliCopy = (
   mkdirSync(cache, { recursive: true });
 
   const copies = copiesOf(cache);
-  const distMatches = !dirty && recordedHashOf(join(root, 'dist/libs/cli')) === sourceHashOf(root);
+  const expected = dirty ? null : sourceHashOf(root);
+  const distMatches = expected !== null && recordedHashOf(join(root, 'dist/libs/cli')) === expected;
   const plan = cliCopyPlan({ latest, dirty, copies, distMatches });
   const target = join(cache, plan.sha);
 
@@ -164,6 +171,42 @@ export const ensureCliCopy = (
   return { entry: join(target, 'src/index.js'), sha: plan.sha, dirty };
 };
 
+export const currentAppCopy = (root) => {
+  try {
+    return readFileSync(join(root, APP_CACHE, 'current'), 'utf8').trim() || null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Builds the last commit that touched the Studio frontend into `tmp/studio-app/<sha>` and points
+ * `tmp/studio-app/current` at it. Uncommitted frontend edits never reach the copy.
+ */
+export const ensureAppCopy = (root, { log = (line) => console.error(line), build = buildAppWithNx } = {}) => {
+  const cache = join(root, APP_CACHE);
+  const sha = lastCommitOf(root, AREAS.frontend);
+
+  if (!sha) throw new Error(`${AREAS.frontend} has no commit to build.`);
+
+  mkdirSync(cache, { recursive: true });
+
+  const target = join(cache, sha);
+  const previous = currentAppCopy(root);
+
+  if (!copiesOf(cache).includes(sha)) {
+    rmSync(target, { recursive: true, force: true });
+    buildInWorktree(root, sha, target, log, build, {
+      label: 'the Studio app',
+      output: 'dist/apps/ethlete-studio/browser',
+    });
+  }
+
+  writeFileSync(join(cache, 'current'), `${sha}\n`);
+
+  return { dir: target, sha, switched: previous !== null && previous !== sha };
+};
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
   const [command] = process.argv.slice(2);
@@ -172,8 +215,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     console.log(JSON.stringify(areaState(root)));
   } else if (command === 'cli-copy') {
     console.log(JSON.stringify(ensureCliCopy(root)));
+  } else if (command === 'app-copy') {
+    console.log(JSON.stringify(ensureAppCopy(root)));
   } else {
-    console.error('usage: studio-code.mjs <state|cli-copy>');
+    console.error('usage: studio-code.mjs <state|cli-copy|app-copy>');
     process.exit(2);
   }
 }

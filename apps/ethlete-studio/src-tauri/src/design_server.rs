@@ -495,15 +495,19 @@ fn spawn(servers: &DesignServers, checkout: &str, preface: Vec<String>) -> Studi
 }
 
 /// Starts the checkout's server. Started from this repository, it runs from a copy of the committed
-/// CLI build, never from the build agents rewrite in the working tree.
-async fn start(servers: &DesignServers, checkout: &str) -> StudioResult<()> {
+/// CLI build, never from the build agents rewrite in the working tree, and the frontend server
+/// switches to the build of the last committed frontend.
+async fn start(servers: &DesignServers, checkout: &str) -> StudioResult<Option<crate::studio_code::AppCopy>> {
     if !crate::studio_code::starts_from_repo_build(Path::new(checkout)) {
-        return spawn(servers, checkout, Vec::new());
+        return spawn(servers, checkout, Vec::new()).map(|()| None);
     }
 
     let (copy, preface) = crate::studio_code::cli_copy().await?;
+    let app_copy = crate::studio_code::app_copy().await?;
 
-    spawn_from(servers, checkout, &copy.entry, preface, Some(copy.sha))
+    spawn_from(servers, checkout, &copy.entry, preface, Some(copy.sha))?;
+
+    Ok(Some(app_copy))
 }
 
 /// Studio runs the design tool itself, so a checkout needs no script and no design tooling of its
@@ -642,6 +646,7 @@ pub async fn design_server_state(
 /// already listens is left alone, whoever started it.
 #[tauri::command]
 pub async fn design_server_start(
+    app: tauri::AppHandle,
     servers: tauri::State<'_, DesignServers>,
     checkout: String,
 ) -> StudioResult<ServerState> {
@@ -652,11 +657,17 @@ pub async fn design_server_start(
         return Ok(current);
     }
 
-    start(servers.inner(), &checkout).await?;
+    let app_copy = start(servers.inner(), &checkout).await?;
     forget_verdict(servers.inner(), &checkout, port)?;
     await_listening(servers.inner(), &checkout, port).await;
 
-    state(servers.inner(), &checkout, port, None).await
+    let answer = state(servers.inner(), &checkout, port, None).await;
+
+    if let Some(copy) = app_copy {
+        crate::studio_code::reload_on_switch(&app, &copy);
+    }
+
+    answer
 }
 
 /// Stops the server this Studio started. A server somebody else started stays up.
@@ -682,6 +693,7 @@ pub async fn design_server_stop(
 /// Stops whatever listens on the checkout's port, then starts the server Studio owns.
 #[tauri::command]
 pub async fn design_server_restart(
+    app: tauri::AppHandle,
     servers: tauri::State<'_, DesignServers>,
     checkout: String,
 ) -> StudioResult<ServerState> {
@@ -706,11 +718,17 @@ pub async fn design_server_restart(
         )));
     }
 
-    start(servers.inner(), &checkout).await?;
+    let app_copy = start(servers.inner(), &checkout).await?;
     forget_verdict(servers.inner(), &checkout, port)?;
     await_listening(servers.inner(), &checkout, port).await;
 
-    judged(servers.inner(), &checkout, port, None).await
+    let answer = judged(servers.inner(), &checkout, port, None).await;
+
+    if let Some(copy) = app_copy {
+        crate::studio_code::reload_on_switch(&app, &copy);
+    }
+
+    answer
 }
 
 /// The copy of the design tool this app ships, or `None` when the app runs from a build that never

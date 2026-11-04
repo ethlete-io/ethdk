@@ -6,7 +6,7 @@
   "build": {
     "frontendDist": "../../../dist/apps/ethlete-studio/browser",
     "devUrl": "http://localhost:4221",
-    "beforeDevCommand": "npx nx cli-runtime ethlete-studio && npx nx serve ethlete-studio",
+    "beforeDevCommand": "npx nx cli-runtime ethlete-studio && npx nx serve-committed ethlete-studio",
     "beforeBuildCommand": "npx nx build ethlete-studio && npx nx cli-runtime ethlete-studio"
   },
   "app": {
