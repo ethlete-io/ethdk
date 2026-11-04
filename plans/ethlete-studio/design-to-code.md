@@ -4566,6 +4566,19 @@ a missing `dist` fails fast with an error that names the package and the build c
 per package, not per module; budget: a fixture with `render.packages` on a missing `dist` answers the first listing
 within 5 s with that error.
 
+411\. Tom (2026-11-04): "der neu starten button tut nach klick nichts. wenns ne weile dauert sollten wir da nen spinner
+zeigen". Builder (code read, not reproduced): almost surely the title-bar code notice ("CLI geändert - neu starten");
+the "Design-Server gestoppt" panel shares its handler. The click runs host `design_server_restart`, which answers only
+after the old server is killed, the new one listens (up to 90 s) and is judged. The button has no pending state;
+`server()` keeps the old "listening" state until the answer, so the "starting" screen does not show; a second click
+returns silently; `catchError(() => of(null))` swallows a refusal (finding 145). Duration not measured. Why no tool
+caught it: no gate asserts that a click shows a visible change, the title-bar design draws the button at rest, hover,
+pressed and focus but not pending, so compare has nothing to compare, and no e2e case clicks the code notice. Fix
+(B352): a design check rule warns on an `emit:` action with an async handler (host invoke or HTTP) whose part draws no
+pending state; an e2e helper `expectFeedbackWithin(click, 100 ms)` covers every async button (code notice, update
+dialog, server panel, merge); a sketch of the pending state on the button (spinner, disabled) and an error toast on a
+failed restart.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
