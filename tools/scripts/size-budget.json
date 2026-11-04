@@ -12,7 +12,13 @@
         "plans/ethlete-studio/studio-wireframes-handoff.md"
       ],
       "budget": 6000
-    }
+    },
+    {
+      "name": "finding log",
+      "files": ["plans/ethlete-studio/design-to-code.md"],
+      "budget": 440000
+    },
+    { "name": "status", "files": ["plans/ethlete-studio/STATUS.md"], "budget": 230000 }
   ],
   "overrides": {
     ".agents/skills/ethlete-timetrack/SKILL.md": 25000,
