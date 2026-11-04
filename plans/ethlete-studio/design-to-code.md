@@ -4629,6 +4629,29 @@ none` on html, body and every element (the property is not inherited); the Tauri
      take wheel and pointer input while the canvas is in pan mode (shield over the frame or forwarded wheel), and
      a storybook-e2e or Studio headless test that pans with the pointer over a frame.
 
+382. Tom (2026-11-04, 15:48): "pages start merged". Tom picked "new" in `pages/start@edit` (merged.json:
+     `decidedBy: user`). The merge left the tree uncommitted (merged.json, pages/start/start.ts, the deleted sketch
+     folder), and its only change to the part is `madeBy` gaining `'design check'`. Cause (doc agent, from the
+     code): accepted-pictures.ts:307 opens the edit sketch with `author: 'design check'`, and the merge adds the
+     sketch author to `madeBy`. So a check tool is recorded as a maker, and Tom was asked to pick between two
+     variants that differ in no picture. Why no tool caught it: no spec asserts that a merge adds only human or
+     agent makers, and the build-ready rule "an automatic merge only when no picture changes" is not applied to
+     edit sketches. Tool fix (B327): an edit sketch whose variants draw the same pictures merges itself as HELD
+     without a pick; a tool author is never written to `madeBy`; Studio commits a merge it makes (or names the
+     uncommitted files); specs for both.
+383. Builder CI triage of run 41811275798 (at 68fbfd019). Four of five failures were fixed by later commits.
+     (a) test:tools: `timedOutSpecs` did not strip ANSI colour from GitHub output (fix 62c79da3b); missed because
+     pre-push does not run test:tools. (b) shell-logo.spec 5 s timeout on the slow runner (fix 99905988b);
+     CI-only timing. (c) contentful build: ng-packagr needs `allowedNonPeerDependencies` after 7711a8616 (fix
+     45f505995); no local gate builds a lib, and `@nx/dependency-checks` asked for the move that ng-packagr
+     rejects. (d) Visible-change gate on pages/system: design chip counted exceptions, app chip did not (probably
+     4d78306ab, the next CI run confirms). (e) Correction to finding 376: the `yarn commit` gate made its worktree
+     under `os.tmpdir()`, a symlink on macOS; vitest resolved the real path, printed "No affected test files
+     found" and exited 0, so on this Mac the gate ran no spec for any commit (fix ae388f531 with realpathSync and
+     a symlink-TMPDIR spec). Open: 62c79da3b adds an eslint `no-control-regex` error in precommit-specs.mjs.
+     Tool fixes (B328): a gate that ran zero specs for a non-empty related set fails instead of passing; a
+     lib-build gate for libs whose package.json dependencies changed; lint of tools/scripts at commit time.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
