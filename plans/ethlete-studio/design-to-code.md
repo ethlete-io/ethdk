@@ -4417,6 +4417,15 @@ without a check of what it needs. Fix (B337): the design server answers with an 
 and `verify-webkit-studio.mjs` checks its build inputs before it starts; a Mac check that needs Tom ships as one
 prepared command, not a list of steps.
 
+393\. Builder (2026-11-04, B326): on the Mac the frames ate the two-finger trackpad pan (finding 381). Cause, inferred
+and not run on WebKit: the Sketches, merge and flow pages kept wheel input out of their iframes only with
+`pointer-events: none` on a wrapper, and WKWebView still routes a trackpad wheel into the iframe; the System canvas
+cover did not cover the live frame. Why no tool caught it: the canvas e2e wheeled over a frame, but only in Chromium,
+where `pointer-events: none` is enough. Fix (built in 7658705c1): a transparent frame shield on those pages, the
+cover also over the live frame, and an e2e case that forces `iframe { pointer-events: auto }` as WebKit does; plus
+`verify-webkit-frame-wheel.swift` for a real WebKit run. Lesson: an e2e that stands in for another engine must
+model that engine's difference, not only run the gesture.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
