@@ -505,7 +505,6 @@ sketch` zeigen ihn (Befund 180).
 - **D5** Eigener Sketch für ein randloses, gedämpftes Select (Q231).
 - **D6** Rahmen von `components/floating-action` (E10).
 - **D7** Button-Farben gibt es zweimal (Design-Teil und libs/components); Checkbox und Radio-Group nachziehen.
-- **D8** Aktive Farbe in icon-button und split-button (Q245), vielleicht schon erledigt.
 - **D9** Studio: 8 Teile ohne App-Code; canvas-frames und studio-view sauber zuordnen (Q247, Q248).
 - **D10** Die Matrix „Aktuell“ nur einmal, für App und CLI (Q124).
 - **D11** 48 SDK-Teile haben noch offene Punkte.
