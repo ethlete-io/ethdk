@@ -4692,6 +4692,13 @@ the fit-* states of variant a as changed. Why no tool caught it: the sketch chec
 variant state across the page states of a design. Fix (B363): a sketch check rule that warns when the same variant
 state carries different sample marks in two page states. B357 stays open until all page states match.
 
+425\. Tom (2026-11-04, two screenshots of `pages/sketches@merge-port` at 24 %): "zudem rendert die app für eine gewisse
+zeit immer alle zustände bis wohl die berechnung durch ist welche varianten nicht verändert sind und dann springen die
+raus." At first the view shows every state, most of them as empty frames. After a short time "27 unveränderte Zustände
+eingeklappt" appears, and the folded states jump out of the layout. Above the frames stands a large empty band. Cause
+not yet known (asked the builder). Why no tool caught it, and the fix: pending the cause; joins B345 (folded changed
+states). The look while the fold is not yet known goes into the B345 sketch (Tom picks).
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
