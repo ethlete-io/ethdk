@@ -4434,6 +4434,14 @@ it: the harness has no positive control, so a blind run looks like a result. Fix
 its control target (here the unshielded canvas) gets no event, and never PASS or FAIL; build it with the B321
 WebKit tooling once wip/b321 lands. B326 stays verified in Chromium only.
 
+395\. Builder (2026-11-04, B326): the Studio e2e case "Sketches: no state is marked before the compare answers"
+(21dcfc17f, 2026-11-03) fails, also on the build before B326. Inferred cause, not run: d2eaac782 (B329/B324 listing
+tiers) lets the quick listing return `unchanged` states kept from an earlier full comparison
+(`keptUnchangedStatesOf`), so Studio marks them early on purpose, and B329's fold depends on it; 2a1a52628 is a weaker
+candidate. Why no tool caught it: `canvas.e2e.mjs` runs only through a manual `yarn studio:e2e`, in no hook and not in
+CI; CI on `next` was red on other jobs at that time and nobody triaged it. Fix (B339): `studio:e2e` runs as a CI job.
+Open for Tom: whether kept marks may show before the full listing; until he answers, the case stays as written.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
