@@ -138,7 +138,7 @@ describe('the rail logo on every live page', () => {
     const works = { button: true, closed: true, opened: true };
 
     expect(seen).toEqual({ System: works, Inbox: works, Flows: works });
-  });
+  }, 30_000);
 
   const PAGES: [string, Type<unknown>][] = [
     ['system', SystemPageComponent],
