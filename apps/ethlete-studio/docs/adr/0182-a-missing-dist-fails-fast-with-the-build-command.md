@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B351
+built: 7a7c37b30
 decided: 2026-11-04
 source: grill session 2026-11-04, finding 410
 ---

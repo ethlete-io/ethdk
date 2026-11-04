@@ -4573,6 +4573,10 @@ desk checkout always has a built `dist`, and the wait logs only a "waiting for t
 a missing `dist` fails fast with an error that names the package and the build command (`nx build <pkg>`), one check
 per package, not per module; budget: a fixture with `render.packages` on a missing `dist` answers the first listing
 within 5 s with that error.
+Built (B351, 7a7c37b30): a missing `dist` throws at once with "<dir> missing, run `nx build <folder>`"; the poll is gone.
+The poll came from 1d116d6b8, so a render survived a package mid-rebuild; now such a render fails once and the watcher
+redraws after the rebuild. Gap: the 5 s budget runs on the resolve path only, not through the compiled render worker or
+a real Vite listing. Fix (B360): a check or e2e runs the real render path against a fixture whose `dist` is missing.
 
 411\. Tom (2026-11-04): "der neu starten button tut nach klick nichts. wenns ne weile dauert sollten wir da nen spinner
 zeigen". Builder (code read, not reproduced): almost surely the title-bar code notice ("CLI geändert - neu starten");
