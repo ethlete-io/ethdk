@@ -4347,6 +4347,12 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      fix (technical, B299): the hook passes the sha to the spec by env or arg; the grill session formats every plan
      file it writes before the commit.
 
+352. Builder (2026-11-04, S6a round r1): in variant C's direct-edit state the first blocker text is cut off by an
+     ellipsis. `sketch check` and `sketch ready` were clean; a subagent saw it only on the CLI contact sheet. Why no
+     tool caught it: no rule looks at clipped text, and the contact sheet is not 1:1. Tool fix (technical, B300): a
+     general rule TEXT-TRUNCATED, run per state, flags every visible text node that holds content text and has
+     scrollWidth > clientWidth (ellipsis or clip); a label that may truncate opts out with data-et-skip=TRUNCATE.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
