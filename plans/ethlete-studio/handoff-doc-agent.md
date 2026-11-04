@@ -76,6 +76,8 @@ blocked by a PreToolUse hook.
 
 ## Machine change (2026-11-04)
 
-Work continues on another machine, not the Mac. The B321 pixel check (WebKit, ScreenCaptureKit) needs a Mac and
-cannot run there; the uncommitted B321 stacking fix is on branch `wip/b321-stacking-fix` if the builder pushed it.
+Work continues on the PC `tank`, not the Mac. `tank` reaches this Mac by `ssh ethlete-mac` (checkout
+`~/dev/ethlete-sdk`). So the gitignored files can be copied with `scp ethlete-mac:dev/ethlete-sdk/.claude/handoffs/<file> .claude/handoffs/`,
+and the B321 pixel check can run on the Mac over SSH when Tom names a quiet window (Screen Recording must be
+granted to the terminal app on the Mac itself). The B321 pixel check (WebKit, ScreenCaptureKit) needs the Mac; the uncommitted B321 stacking fix is on branch `wip/b321-stacking-fix` if the builder pushed it.
 To resume: copy this file to `.claude/handoffs/doc-agent-studio.md`, then run `/handoff resume doc-agent-studio`.
