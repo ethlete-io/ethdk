@@ -4469,6 +4469,21 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      `et design serve` for 90 s and fails on a close; a design-server log file; a local WebKit probe opens its
      window off-screen, never on the user's screen.
 
+366. Tom (2026-11-04, 14:30): the Studio shell rubber-bands at the scroll edges (macOS elastic scroll; Edge does
+     it too now). Cause: no `overscroll-behavior` anywhere except the canvas. Fix de2b83743: `overscroll-behavior:
+none` on html, body and every element (the property is not inherited); the Tauri host needs no WKWebView
+     setting while Safari 16+ honors the CSS. Why no tool caught it: every check runs in Chromium or jsdom, and no
+     check asserts overscroll; the new spec checks the CSS rule, not the computed style. Tool fix (B312): a
+     scroll-to-edge probe in the macOS WebKit job that fails on any bounce offset.
+
+367. Tom (2026-11-04, 14:35): under load, canvas frames paint over the explorer panel (the colors frame shows on
+     top of the explorer tree). Cause (builder, the compositor part assumed, not reproduced): the canvas host
+     clipped only with `overflow-hidden`, which makes no stacking context and no paint containment, so WebKit's
+     compositor drew a scaled iframe layer outside the pane. Fix de2b83743: `isolate` and `contain-paint` on the
+     canvas host. Why no tool caught it: every check runs in Chromium or jsdom, no check asserts paint containment,
+     and none runs under load; the new spec checks the classes only. Tool fix (B313): the macOS WebKit job takes a
+     screenshot under frame churn and fails when the explorer pixel area changes.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
