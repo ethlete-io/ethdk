@@ -35,3 +35,27 @@ export const toggleHold = (root: HTMLElement) => {
     trigger.setAttribute('aria-expanded', String(!reason.hidden));
   });
 };
+
+export type AgentRun = 'round' | 'variant' | 'failed';
+
+export type AgentProgress = {
+  by: Model;
+  task: string;
+  step: string;
+  since: string;
+  coming: string[];
+  failed?: boolean;
+};
+
+export const AGENT_RUNS: Record<AgentRun, AgentProgress> = {
+  round: { by: OPUS, task: 'baut Runde 2', step: 'Variante c, 1 von 2', since: 'seit 4 Min', coming: ['c', 'd'] },
+  variant: { by: SOL, task: 'baut Variante c', step: 'Zustand reset-hover', since: 'seit 2 Min', coming: ['c'] },
+  failed: {
+    by: OPUS,
+    task: 'Runde 2 fehlgeschlagen',
+    step: 'tsc-Fehler in Variante d, zoom-chip.ts:14',
+    since: 'vor 3 Min',
+    coming: ['c', 'd'],
+    failed: true,
+  },
+};

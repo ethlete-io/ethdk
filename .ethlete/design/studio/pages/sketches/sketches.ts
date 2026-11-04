@@ -16,7 +16,16 @@ import { PAGE_PIN, pinProps } from './sketch-data';
 import kit from './sketch-data.css?inline';
 import styles from './sketches.css?inline';
 import below from './below.css?inline';
-import { HOLD, IDLE, drawingPlaceholder, modelName, toggleHold } from './shared/sketch-status';
+import {
+  AGENT_RUNS,
+  type AgentProgress,
+  type AgentRun,
+  HOLD,
+  IDLE,
+  drawingPlaceholder,
+  modelName,
+  toggleHold,
+} from './shared/sketch-status';
 import {
   PARTS,
   type PartKind,
@@ -53,6 +62,7 @@ type Props = {
   same?: RowKey[];
   sameOpen?: boolean;
   withdrawn?: Withdrawn;
+  agent?: AgentRun;
   fold?: number;
   question?: string;
 };
@@ -154,6 +164,22 @@ const drawingStage = (row: Row, place = '') =>
   >
     ${row.model ? drawingPlaceholder({ name: row.model.short, agent: row.model.agent }) : ''}
   </div>`;
+
+const agentLine = (run: AgentProgress) =>
+  html`<span
+    class="flex min-w-0 items-center gap-space-2 text-ui-sm text-et-surface-muted whitespace-nowrap"
+    data-sk-agent
+    ${run.failed ? 'data-et-semantic-color="error"' : ''}
+  >
+    <span
+      class="size-2 flex-none rounded-full bg-(--et-theme-color-primary-solid) ${run.failed ? '' : 'animate-pulse'}"
+    ></span>
+    ${modelName(run.by)}
+    <span class="font-ui-medium ${run.failed ? 'text-(--et-theme-color-primary-solid)' : 'text-et-surface'}"
+      >${run.task}</span
+    >
+    <span>· ${run.step} · ${run.since}</span>
+  </span>`;
 
 const pinFor = (row: Row) =>
   row.key === 'a'
@@ -299,6 +325,9 @@ export default definePart<Props>({
     'unchanged-matrix-open': { camera: { zoom: 0.25, x: -4000, y: 0 }, same: ['b', 'c'], sameOpen: true },
     'withdrawn-hidden': { camera: 'fit', part: 'narrow', withdrawn: 'hidden' },
     'withdrawn-shown': { camera: 'fit', part: 'narrow', withdrawn: 'shown' },
+    'agent-round': { camera: 'fit', part: 'narrow', agent: 'round' },
+    'agent-variant': { camera: 'fit', part: 'narrow', agent: 'variant' },
+    'agent-failed': { camera: 'fit', part: 'narrow', agent: 'failed' },
     folded: { camera: 'fit', part: 'narrow', fold: 3, question: QUESTION },
     'question-only': { camera: 'fit', part: 'narrow', question: QUESTION },
   },
@@ -313,11 +342,13 @@ export default definePart<Props>({
     same: sameKeys = [],
     sameOpen = false,
     withdrawn,
+    agent,
     fold = 0,
     question = '',
   }) => {
     const { discard, chip, pickers, tags } = await controlsOf();
     const take = await takeButton();
+    const run = agent ? AGENT_RUNS[agent] : undefined;
     const full = withSame(PARTS[kind], comparing ? [] : sameKeys);
     const rowStyles = await prepareShots(full);
     const part = fold > 0 ? { ...full, states: full.states.slice(0, full.states.length - fold) } : full;
@@ -351,7 +382,7 @@ export default definePart<Props>({
         class="absolute z-3 top-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] right-space-5 flex items-center gap-space-3"
       >
         <span class="text-ui-lg font-ui-strong">${part.key}</span>
-        ${fresh ? tags.fresh.body : ''} ${statusMarkup(status, reason, tags)}
+        ${fresh ? tags.fresh.body : ''} ${statusMarkup(run && !run.failed ? 'drawing' : status, reason, tags)}
         <span class="flex-1"></span>
         <span class="w-56 flex-none" data-sk-view-toggle-room></span>
         ${withAction(discard.body, 'emit:discard')}
@@ -369,7 +400,7 @@ export default definePart<Props>({
       <div
         class="zr-picker absolute z-2 ${question ? 'top-24' : 'top-14'} left-[calc(var(--st-shell-inset-left)+var(--space-5))] flex items-center gap-space-4"
       >
-        ${pickers[kind].body}
+        ${pickers[kind].body} ${run ? agentLine(run) : ''}
         ${showWithdrawn.body ? withAction(showWithdrawn.body, { action: 'emit:withdrawnToggle', on: '.et-switch' }) : ''}
       </div>
       <div
