@@ -4542,6 +4542,9 @@ coordination. Also, five of the six rows before B345 came from defects of the sa
 tool reports where slice time goes. Tool fix (B374): during a slice only the touched spec files run (`vitest
 related`), the full suite once per batch before a push; the commit hook's spec cache ignores `.changeset/` and
 `plans/`; (B373) the flaky merge spec; (B375) the 120 s of `components/scheduler` in the design check.
+Correction (builder): the hook already runs only `vitest related` plus a typecheck and skips plan and changeset
+changes; the waste was the builder briefs that ran the full suite. Fixed in the builder-agent skill (c431d0e50), with
+the B372 slice-end check rule. The ~100 s hook run itself is B376.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
