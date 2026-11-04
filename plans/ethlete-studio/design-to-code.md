@@ -4726,8 +4726,17 @@ marks): "und dann waren die bilder auf einmal weg". A moment before, the column 
 shows 28 state rows, and all but four frames are empty boxes. The fold is gone again, and the drawing card stands over
 all rows. A short time later (Tom: "und wieder da") the 12 folded frames with their images are back. So each
 refresh of the listing seems to repeat the first paint of finding 425 (no marks yet, so nothing folds and the shots
-are not shown). Cause not yet known (asked the builder; suspect: a refreshed listing drops the old shots and marks
-instead of keeping them until the new ones stand). Why no tool caught it, and the fix: pending the cause.
+are not shown). Cause (builder, code read): the quick listing carries the kept `unchanged` marks (c0035f241) only
+while the sketch content equals the kept comparison. The builder's edits changed the sketch, so the next listing had no
+valid marks: every shot got `changed: null`, nothing folded, and the frames re-rendered without a picture until the
+full compare answered. Finding 425 is probably the same path with a cold cache (not proved). Why no tool caught it:
+the c0035f241 e2e only proves that a quick mark equals the full mark, not the frame count or the pictures across a
+refresh. Fix: the B362 e2e also edits the sketch after the first paint; B345 keeps the last shots and marks until the
+new ones stand.
+
+429\. Builder (2026-11-04): `sketch ready` without `--by` printed only the usage text and exited 0, so a script or an
+agent sees success. Why no tool caught it: no spec runs a sketch subcommand with missing arguments and checks the exit
+code. Fix (B364): every sketch subcommand exits 1 on a usage error, with a spec per subcommand.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 

@@ -3,7 +3,7 @@
 # Handoff: grill/docs session (doc-agent), 2026-11-04 late evening
 
 Talk to Tom in German (`/doc-agent` skill). Builder: `ethlete-sdk-02` (English, SendMessage). Findings go to
-`plans/ethlete-studio/design-to-code.md` as `N\. ` paragraphs (last is 428), rows in `STATUS.md` (last is B363).
+`plans/ethlete-studio/design-to-code.md` as `N\. ` paragraphs (last is 429), rows in `STATUS.md` (last is B364).
 Latest ADR is 0184. Done rows are deleted from STATUS.md; an ADR's `open: B<row>` becomes `built: <sha>`.
 
 ## Rules Tom set today
@@ -24,8 +24,6 @@ B341, B342, B344, B347, B349, B355, B358, B359) follow in the builder's order.
 
 - B343 is built (46177c36b) but not verified live: the builder checks it on the next real stale sketch.
 - The Mac perf session (B348, ADR 0181) is finished; its probes and logs stay untracked in `tmp/mac-perf`.
-- Port-mark sketch `pages/sketches@merge-port` (variant a, ef2d01315) is not mergeable yet: the builder aligns the last
-  sample marks first, then shot + ready (finding 426). B357 stays open:
-  narrow-part and comparing-narrow still differ (finding 424, B363).
+- Port-mark sketch `pages/sketches@merge-port` (variant a, 6f4b45040) is ready again; "merge ok" sent to Tom.
+- Finding 427 (wheel over a tree row): not proved; Tom runs the CEF debug build. Asked Tom: measure before B345?
 - Finding 427 (explorer swallows wheel events, then scrolls late): the cause is asked from the builder.
-- Finding 428 (shots vanish during a new agent round): the cause is asked from the builder.
