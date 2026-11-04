@@ -4580,6 +4580,16 @@ none` on html, body and every element (the property is not inherited); the Tauri
      Tool fix: B313 first, so the check fails on this state; then `isolate` on `<main>` and an own layer for the
      explorer.
 
+376. Builder (2026-11-04): 52d23cfc2 (German blocker texts) broke a system-view spec that expected the English
+     text; fixed in 16a3d8214. The agent ran only the spec file of the changed module. Also for finding 373: the
+     hash in `merged.json` (`partHashOf`, folder hash) and the picture hash (`designHashOf`) are different kinds and
+     never match, so `go`/review never served as a baseline; `record` was used without a hash check. B319 fixed
+     this (a148d713e, 7581b65e1): one hash kind on both sides, `record` checked too, and design check re-checks open
+     undecided edit sketches and closes them as held when old and new draw the same. Why no tool caught the spec
+     break: no check links a label change to the specs that assert the old text. Tool fix: the agent briefs run
+     every spec that imports `studio-labels`, and a check fails when a spec asserts a label text that no longer
+     exists.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
