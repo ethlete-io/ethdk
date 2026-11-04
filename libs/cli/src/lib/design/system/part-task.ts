@@ -7,8 +7,8 @@ import { appFilesOf } from './app-files';
 import { changedFilesOf, FileHashes, isOptionalFileHashes } from './design-hash';
 import { DESIGN_DIR } from '../paths';
 import { matchesPattern } from './harness-config';
-import { goPartOf, goStateOf, readGo } from './part-go';
-import { readyMarkOf } from './part-ready';
+import { buildReadyOf, BuildReadyInputs } from './part-build-ready';
+import { readyMarkOf, readyPartOf } from './part-ready';
 import { repoRootOf } from './reachable-files';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { partLinkOf } from './sketch/part-definition';
@@ -21,7 +21,7 @@ export const IMPLEMENTED_FILE = 'implemented.json';
  */
 export type PartImplemented = { hash: string; at: string; states: Record<string, string>; app?: FileHashes };
 
-/** A part a task can build: its go hash, the component path its `implements` names, and the directory of its go.json. */
+/** A part a task can build: its design hash, the component path its `implements` names, and the directory of its records. */
 export type TaskPart = { part: string; hash: string; dir: string; component: string };
 
 /** The states a task names: added since the implemented record, with changed props, or all when only the rest changed. */
@@ -79,7 +79,7 @@ export const markImplemented = (options: {
   app?: FileHashes;
   at?: string;
 }): PartImplemented | string => {
-  const found = goPartOf({ product: options.product, part: options.part });
+  const found = readyPartOf({ product: options.product, part: options.part });
 
   if (typeof found === 'string') return found;
 
@@ -102,19 +102,14 @@ export const markImplemented = (options: {
   return implemented;
 };
 
-/** The part a task builds, or why it cannot get one: unknown part, no or a route-only `implements`, no or a stale go. */
-export const taskPartOf = (options: {
-  product: ResolvedProduct;
-  part: string;
-  allowStale?: boolean;
-}): (TaskPart & { unapproved?: true }) | string => {
-  const { product, part, allowStale } = options;
-  const found = goPartOf({ product, part });
+/** The part an `implements` link names at its current design hash, or why a task cannot build it: unknown part, no or a route-only link. */
+export const linkedTaskPartOf = (options: { product: ResolvedProduct; part: string }): TaskPart | string => {
+  const { product, part } = options;
+  const found = readyPartOf({ product, part });
 
   if (typeof found === 'string') return found;
 
-  const source = product.parts.find((candidate) => partKeyOf(candidate) === part)?.source ?? '';
-  const link = partLinkOf(source);
+  const link = partLinkOf(found.resolved.source);
 
   if (link.kind === 'none') return `${part} has no implements link - a task needs the component it builds`;
   if (link.kind === 'unreadable') return `${part} has an implements link the task cannot read - make it a literal`;
@@ -124,18 +119,38 @@ export const taskPartOf = (options: {
   if (component === null)
     return `${part} links only its route - add the presentational component it renders for compare (Q195): implements: { route: '/…', component: '<repo path>.component.ts' }`;
 
-  const go = goStateOf({ product, part });
+  return { part, hash: found.hash, dir: found.dir, component };
+};
 
-  if (go === 'missing') return `${part} has no go - run design go first`;
-  if (go === 'stale' && !allowStale) return `${part} changed since its go - it needs a new go first`;
+/** The part a task builds, or why not: what `linkedTaskPartOf` refuses, or each blocker while the part is not build-ready. */
+export const taskPartOf = (options: {
+  product: ResolvedProduct;
+  part: string;
+  inputs: BuildReadyInputs;
+}): TaskPart | string => {
+  const linked = linkedTaskPartOf(options);
 
-  return {
-    ...(go === 'stale' ? { unapproved: true as const } : {}),
-    part,
-    hash: found.hash,
-    dir: found.dir,
-    component,
-  };
+  if (typeof linked === 'string') return linked;
+
+  const ready = buildReadyOf(options);
+
+  return ready.ready
+    ? linked
+    : [
+        `${options.part} is not build-ready:`,
+        ...ready.blockers.map((blocker) => `  ${blocker.kind}: ${blocker.text}`),
+      ].join('\n');
+};
+
+/** The part `task --verify` checks, or why not: what `linkedTaskPartOf` refuses, or a check record that does not hold. */
+export const verifiedTaskPartOf = (options: { product: ResolvedProduct; part: string }): TaskPart | string => {
+  const linked = linkedTaskPartOf(options);
+
+  if (typeof linked === 'string') return linked;
+
+  return readyMarkOf(options) === null
+    ? `${options.part} has no check record at its current design - run design check first`
+    : linked;
 };
 
 /** The states added or changed since the implemented record; without a record every state is added. */
@@ -346,22 +361,17 @@ export const changedAppFilesOf = (options: { product: ResolvedProduct; part: str
 };
 
 /**
- * The parts of a product whose implemented record matches their go entry, whose app files did not change since, and
- * whose ready mark still holds.
+ * The parts of a product whose implemented record is at the hash of their holding check record, and whose app files did
+ * not change since.
  */
 export const doneParts = (options: { product: ResolvedProduct; parts: string[] }) =>
   options.parts.filter((part) => {
-    const found = goPartOf({ product: options.product, part });
+    const found = readyPartOf({ product: options.product, part });
+    const mark = readyMarkOf({ product: options.product, part });
 
-    if (typeof found === 'string') return false;
+    if (typeof found === 'string' || mark === null) return false;
 
-    const goHash = readGo(found.dir)[part]?.hash;
     const record = readImplemented(found.dir)[part];
 
-    return (
-      goHash !== undefined &&
-      record?.hash === goHash &&
-      readyMarkOf({ product: options.product, part }) !== null &&
-      changedAppFilesOf({ product: options.product, part, record }).length === 0
-    );
+    return record?.hash === mark.hash && changedAppFilesOf({ product: options.product, part, record }).length === 0;
   });

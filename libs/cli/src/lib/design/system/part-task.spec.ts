@@ -1,10 +1,10 @@
-import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../paths';
-import { markPartGo } from './part-go';
-import { markPartReady, readyPartOf } from './part-ready';
+import { BuildReadyInputs } from './part-build-ready';
+import { markPartReady, readyPartOf, writePartRecord } from './part-ready';
 import {
   allowedFilesOf,
   doneParts,
@@ -52,8 +52,9 @@ const checkout = () => {
 
 const productOf = (target: string) => resolveProduct({ target, name: 'app-a', config: {} });
 
-const go = (target: string, part = 'components/chip') =>
-  markPartGo({ product: productOf(target), part, by: 'tom', via: 'design go' });
+const record = (target: string, part = 'components/chip') => writePartRecord({ product: productOf(target), part });
+
+const GREEN: BuildReadyInputs = { pointsOf: () => [], problemsOf: () => [], slowOf: () => [] };
 
 const output = () => {
   const lines: string[] = [];
@@ -72,6 +73,7 @@ const task = (
   compare: ComparePart = vi.fn(async () => 'compare must not run'),
   start: StartHarnessServer = vi.fn(async () => 'no server must start'),
   actions: PartActionFailures = vi.fn(async () => []),
+  inputs: BuildReadyInputs = GREEN,
 ) =>
   designTask({
     target,
@@ -82,6 +84,7 @@ const task = (
     compare,
     start,
     actions,
+    inputs: () => inputs,
   });
 
 describe('part task', () => {
@@ -206,23 +209,33 @@ describe('part task', () => {
     expect(stateHashOf({ a: 1, b: { c: 2, d: 3 } })).toBe(stateHashOf({ b: { d: 3, c: 2 }, a: 1 }));
   });
 
-  it('refuses a part without a link, with a route-only link, without a go and with a stale go', () => {
-    const { target, chip } = checkout();
-    const refusal = (part: string) => taskPartOf({ product: productOf(target), part });
+  it('refuses a part without a link, with a route-only link, and a part that is not build-ready, listing its blockers', () => {
+    const { target, chip, dir } = checkout();
+    const refusal = (part: string, inputs = GREEN) => taskPartOf({ product: productOf(target), part, inputs });
 
     expect(refusal('components/tag')).toContain('has no implements link');
-    go(target, 'pages/inbox');
+    record(target, 'pages/inbox');
     expect(refusal('pages/inbox')).toContain('links only its route - add the presentational component');
-    go(target, 'pages/outbox');
+    record(target, 'pages/outbox');
     expect(refusal('pages/outbox')).toMatchObject({ component: 'src/outbox/outbox.component.ts' });
     expect(allowedFilesOf({ product: 'app-a', component: 'src/outbox/outbox.component.ts', harnessMap: null })).toEqual(
       ['src/outbox/**', '.changeset/*.md'],
     );
-    expect(refusal('components/chip')).toContain('has no go');
-    go(target);
+    expect(refusal('components/chip')).toContain(
+      'components/chip is not build-ready:\n  stale-record: no check record',
+    );
+    record(target);
     expect(refusal('components/chip')).toMatchObject({ component: 'libs/chip/chip.component.ts' });
+    expect(existsSync(join(dir, 'go.json'))).toBe(false);
+    expect(
+      refusal('components/chip', {
+        ...GREEN,
+        problemsOf: (part) =>
+          part === 'components/chip' ? [{ rule: 'HARDCODED-COLOR', file: chip, message: 'uses #fff' }] : [],
+      }),
+    ).toBe('components/chip is not build-ready:\n  problem: HARDCODED-COLOR: uses #fff');
     appendFileSync(chip, '// changed\n');
-    expect(refusal('components/chip')).toContain('changed since its go');
+    expect(refusal('components/chip')).toContain('stale-record');
   });
 
   it('writes implemented.json sorted with a props hash per state, and reads it back', () => {
@@ -247,15 +260,16 @@ describe('part task', () => {
     const lines = output();
 
     expect(await task(target, [])).toBe(1);
-    expect(lines.join('\n')).toContain('has no go');
+    expect(lines.join('\n')).toContain('components/chip is not build-ready');
 
-    const marked = go(target);
+    const marked = record(target);
 
     lines.length = 0;
     expect(await task(target, [])).toBe(0);
+    expect(existsSync(join(dir, 'go.json'))).toBe(false);
     expect(lines).toEqual([
       'part components/chip in app-a',
-      `go ${'hash' in marked ? marked.hash : ''}`,
+      `design ${marked?.hash ?? ''}`,
       'implements libs/chip/chip.component.ts',
       'states:',
       '  default {"label":"Tag"}',
@@ -300,7 +314,7 @@ describe('part task', () => {
       chip,
       "export default definePart({ implements: 'libs/chip/chip.component.ts', states: { default: {} }, render: () => ({ body: '<div data-et-auto-surface><p data-et-semantic-color=\"warning\"></p></div>' }) });\n",
     );
-    go(target);
+    record(target);
 
     expect(await task(target, [])).toBe(0);
     expect(lines.slice(lines.indexOf('theming directives (@ethlete/core):'))).toEqual([
@@ -312,11 +326,31 @@ describe('part task', () => {
     ]);
   });
 
+  it('verifies only while the check record holds, whatever the slow results say', async () => {
+    const { target, dir } = checkout();
+    const lines = output();
+    const inside = vi.fn(() => ['libs/chip/chip.component.ts']);
+    const green = vi.fn<ComparePart>(async () => ({ green: true, states: CHIP_STATES }));
+    const verify = () =>
+      task(target, ['--verify', '--url', 'http://localhost:9'], inside, green, undefined, undefined, {
+        ...GREEN,
+        slowOf: () => 'pending',
+      });
+
+    expect(await verify()).toBe(1);
+    expect(lines.join('\n')).toContain('components/chip has no check record at its current design - run design check');
+    expect(green).not.toHaveBeenCalled();
+
+    record(target);
+    expect(await verify()).toBe(0);
+    expect(readImplemented(dir)['components/chip']?.hash).toBe(record(target)?.hash);
+  });
+
   it('fails the verify when the actions check misses or cannot run, and records nothing', async () => {
     const { target, dir } = checkout();
     const lines = output();
 
-    go(target);
+    record(target);
 
     const inside = vi.fn(() => ['libs/chip/chip.component.ts']);
     const green = vi.fn<ComparePart>(async () => ({ green: true, states: CHIP_STATES }));
@@ -347,7 +381,7 @@ describe('part task', () => {
     const { target, dir } = checkout();
     const lines = output();
 
-    go(target);
+    record(target);
 
     const inside = vi.fn(() => ['libs/chip/chip.component.ts', 'libs/chip/chip.component.css']);
 
@@ -456,7 +490,7 @@ describe('part task', () => {
         join(dir, 'sketches.ts'),
         `export default definePart({ implements: { route: '/', component: '${component}' }, states: { default: {} } });\n`,
       );
-      go(target, 'pages/sketches');
+      record(target, 'pages/sketches');
 
       return target;
     };
@@ -472,6 +506,7 @@ describe('part task', () => {
         compare,
         start: vi.fn(async () => 'no server must start'),
         actions: vi.fn(async () => []),
+        inputs: () => GREEN,
       });
 
     it('exits 1 on a refusal and never runs compare', async () => {
@@ -574,7 +609,7 @@ describe('part task', () => {
 });
 
 describe('doneParts', () => {
-  it('counts a part only with an implemented record at its go hash and a ready mark', async () => {
+  it('counts a part only with an implemented record at the hash of its holding check record', async () => {
     const { target, chip } = checkout();
     const product = () => productOf(target);
     const ready = (part: string) =>
@@ -590,17 +625,12 @@ describe('doneParts', () => {
 
       return typeof found === 'string' ? found : found.hash;
     };
-    const go = (part: string) => markPartGo({ product: product(), part, by: 'tom', via: 'design go' });
     const tag = join(chip, '../../tag/tag.ts');
 
-    go('components/chip');
-    go('components/tag');
-    go('pages/inbox');
     markImplemented({ product: product(), part: 'components/chip', states: CHIP_STATES });
     markImplemented({ product: product(), part: 'components/tag', states: { default: {} } });
     markImplemented({ product: product(), part: 'pages/inbox', states: { default: {} } });
     appendFileSync(tag, '// edited\n');
-    go('components/tag');
     await ready('components/chip');
     await ready('components/tag');
 

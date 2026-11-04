@@ -12,9 +12,9 @@ import { bespokeControlProblemsOf } from './bespoke-controls';
 import { droppedPropProblemsOf } from './dropped-props';
 import { DrawnFindings, drawnFindingsFrom, isPartUndrawn, isStateUndrawn, statefulPartsOf } from './drawn-open-points';
 import { openPointsText, PartOpenPoints } from './open-points';
-import { goMarkOf, goPartsOf, goStateOf } from './part-go';
+import { goMarkOf, goPartsOf } from './part-go';
 import { doneParts } from './part-task';
-import { actionsRerunOf, readyPartsOf } from './part-ready';
+import { actionsRerunOf, readyMarkOf, readyPartsOf } from './part-ready';
 import { BuildReadyInputs, recordBuildReady } from './part-build-ready';
 import { partActionFailuresOf } from './actions-command';
 import { staleLineOf, stalePartsOf, upgradeLegacyMarksOf } from './stale-parts';
@@ -625,7 +625,7 @@ const renderSystem = async (
     isGo: ({ product, part }) => {
       const found = resolved.find((candidate) => candidate.name === product);
 
-      return found !== undefined && goStateOf({ product: found, part }) === 'current';
+      return found !== undefined && readyMarkOf({ product: found, part }) !== null;
     },
   });
   const { issues } = underGo;

@@ -185,8 +185,8 @@ describe('SystemViewComponent on a reload', () => {
           points: [
             { kind: 'missing-motion', from: 'rest', to: 'hover' },
             { kind: 'contrast', state: 'hover', path: 'label' },
-            { kind: 'no-go' },
           ],
+          buildReady: { ready: false, blockers: [{ kind: 'stale-record', text: 'no check record' }] },
         });
       }
       if (url.includes('/__design/system')) return json([PRODUCT]);
@@ -214,7 +214,7 @@ describe('SystemViewComponent on a reload', () => {
 
     expect(lines).toEqual([
       ['label liegt unter der Kontrastregel', 'hover'],
-      ['Noch kein Go', 'go'],
+      ['no check record', 'stale-record'],
       ['rest → hover', 'motion'],
     ]);
   });

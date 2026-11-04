@@ -11,7 +11,8 @@ import { Readable } from 'stream';
 import { IncomingMessage } from 'http';
 import { partGoAnswer } from '../studio-api';
 import { goStepOf } from './go-step';
-import { goMarkOf, goPartOf, markPartGo } from './part-go';
+import { goMarkOf, goPartOf } from './part-go';
+import { writePartRecord } from './part-ready';
 import { resolveProduct } from './resolve-product';
 import { designTask } from './task-command';
 
@@ -176,7 +177,7 @@ describe('et design harness', () => {
     const compare = vi.fn(async () => ({ green: true, states: {} }));
     const shoot = vi.fn(async () => 'shoot must not run');
 
-    expect(markPartGo({ product, part: 'components/chip', by: 'tom', via: 'design go' })).not.toBeTypeOf('string');
+    expect(writePartRecord({ product, part: 'components/chip' })).not.toBeNull();
 
     const stale = 'the harness map apps/app-a/src/harness/parts.ts is stale - run et design harness --product app-a';
     const argv = ['components/chip', '--product', 'app-a', '--url', 'http://localhost:1'];
@@ -224,13 +225,11 @@ describe('task --verify and the app stylesheet', () => {
     write('apps/app-a/project.json', JSON.stringify({ targets: { build: { options: { styles: [stylesheet] } } } }));
     expect(harness(target)).toBe(0);
     expect(
-      markPartGo({
+      writePartRecord({
         product: resolveProduct({ target, name: 'app-a', config: { harness: HARNESS } }),
         part: 'components/chip',
-        by: 'tom',
-        via: 'design go',
       }),
-    ).not.toBeTypeOf('string');
+    ).not.toBeNull();
 
     expect(await verify("-@source inline('w-12');\n+@source inline('w-12 w-128');\n")).toBe(0);
     expect(await verify("-@source inline('w-12');\n+@source inline('w-12');\n+body { margin: 0; }\n")).toBe(1);

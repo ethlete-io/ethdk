@@ -56,7 +56,6 @@ describe('openPointsAnswer', () => {
         part: 'pages/home',
         hash: expect.any(String),
         ready: null,
-        go: null,
         directEdit: false,
         buildReady: {
           ready: false,
@@ -78,7 +77,6 @@ describe('openPointsAnswer', () => {
         part: 'components/chip',
         hash: expect.any(String),
         ready: null,
-        go: null,
         directEdit: false,
         buildReady: {
           ready: false,

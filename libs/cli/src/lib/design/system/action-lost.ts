@@ -1,7 +1,7 @@
 import { resolve } from 'path';
 import { DesignConfig } from '../paths';
 import { createDesignServer } from '../serve';
-import { GO_FILE, readGo } from './part-go';
+import { READY_FILE, readReady } from './part-ready';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { productModuleIdOf } from './system-modules';
@@ -96,9 +96,8 @@ export const withPartLoader = async <T>(
 };
 
 /**
- * An ACTION-LOST problem for every action key a go in the product's go.json recorded that no part of the product
- * declares now, at the part's file. A go without recorded actions is skipped; a new go of the part records its current
- * actions and so confirms the removal.
+ * An ACTION-LOST problem for every action key a check record in the product's ready.json holds that no part of the
+ * product declares now, at the part's file. A record without actions is skipped.
  */
 export const actionLostOf = (options: {
   product: ResolvedProduct;
@@ -108,18 +107,18 @@ export const actionLostOf = (options: {
 }): Problem[] => {
   const { product, declared, invocation } = options;
 
-  return Object.entries(readGo(product.dir))
+  return Object.entries(readReady(product.dir))
     .filter(([part]) => !options.part || part === options.part)
-    .flatMap(([part, go]) => {
+    .flatMap(([part, record]) => {
       const file =
-        product.parts.find((candidate) => partKeyOf(candidate) === part)?.file ?? resolve(product.dir, GO_FILE);
+        product.parts.find((candidate) => partKeyOf(candidate) === part)?.file ?? resolve(product.dir, READY_FILE);
 
-      return (go.actions ?? [])
+      return (record.actions ?? [])
         .filter((key) => !declared.has(key))
         .map((key) => ({
           rule: ACTION_LOST_RULE,
           file,
-          message: `action "${key}" was declared at the go of ${part} on ${go.at.slice(0, 10)} and exists nowhere in ${product.name} now - draw it again, or confirm the removal with a new go: ${invocation} go ${part} --product ${product.name} --by <name>`,
+          message: `action "${key}" is in the check record of ${part} from ${record.at.slice(0, 10)} and exists nowhere in ${product.name} now - draw it again, or confirm the removal: delete it from the actions of ${part} in ${READY_FILE} and run ${invocation} check --product ${product.name}`,
         }));
     });
 };
@@ -133,7 +132,7 @@ export const actionLostProblemsOf = async (options: {
   part?: string;
   load?: PartModuleLoader;
 }) => {
-  const recorded = Object.values(readGo(options.product.dir)).some((go) => (go.actions ?? []).length > 0);
+  const recorded = Object.values(readReady(options.product.dir)).some((record) => (record.actions ?? []).length > 0);
 
   if (!recorded) return [];
 

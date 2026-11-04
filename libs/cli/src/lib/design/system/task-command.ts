@@ -3,9 +3,11 @@ import { createDesignServer } from '../serve';
 import { partActionFailuresOf } from './actions-command';
 import { appFilesOf } from './app-files';
 import { comparePart, ComparePart } from './compare-command';
+import { buildReadyInputsOf } from './check-system';
 import { appStylesheetOf } from './harness-config';
 import { harnessStaleOf } from './harness-map';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
+import { BuildReadyInputs } from './part-build-ready';
 import {
   allowedFilesOf,
   changesOnlySourceLines,
@@ -21,6 +23,7 @@ import {
   themingDirectivesOf,
   taskPartOf,
   taskStatesOf,
+  verifiedTaskPartOf,
   verifyRangeOf,
   wiringFilesOf,
 } from './part-task';
@@ -78,8 +81,8 @@ const verifyOf = (argv: string[]) => {
 };
 
 /**
- * `et design task <layer>/<name> …` prints what implementing a part with a current go takes; `--verify [<rev>]`
- * checks the files of a commit or range against the files the task allows, runs compare and the actions check, and records the part as
+ * `et design task <layer>/<name> …` prints what implementing a build-ready part takes, or its blockers; `--verify [<rev>]`
+ * needs a holding check record and checks the files of a commit or range against the files the task allows, runs compare and the actions check, and records the part as
  * implemented when all pass.
  */
 export const designTask = async (options: {
@@ -94,6 +97,7 @@ export const designTask = async (options: {
   compare?: ComparePart;
   start?: StartHarnessServer;
   actions?: PartActionFailures;
+  inputs?: (product: ResolvedProduct) => BuildReadyInputs;
 }) => {
   const { target, invocation } = options;
   const { rest, rev } = verifyOf(options.argv);
@@ -124,7 +128,11 @@ export const designTask = async (options: {
     return 1;
   }
 
-  const task = taskPartOf({ product, part: partKeyOf(parsed) });
+  const part = partKeyOf(parsed);
+  const task =
+    rev === null
+      ? taskPartOf({ product, part, inputs: (options.inputs ?? buildReadyInputsOf)(product) })
+      : verifiedTaskPartOf({ product, part });
 
   if (typeof task === 'string') {
     console.error(task);
@@ -280,7 +288,7 @@ export const designTask = async (options: {
   const since = taskStatesOf({ states, hash: task.hash, record });
 
   console.log(`part ${task.part} in ${product.name}`);
-  console.log(`go ${task.hash}`);
+  console.log(`design ${task.hash}`);
   console.log(`implements ${task.component}`);
   console.log('states:');
   Object.entries(states).forEach(([state, props]) => console.log(`  ${state} ${JSON.stringify(props) ?? 'undefined'}`));

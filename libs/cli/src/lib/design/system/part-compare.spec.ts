@@ -32,7 +32,6 @@ import {
   pointerOpensOf,
   slotOnlyStatesOf,
 } from './part-compare';
-import { markPartGo } from './part-go';
 import { markPartReady, readyPartOf } from './part-ready';
 import { markImplemented } from './part-task';
 import { resolveProduct } from './resolve-product';
@@ -390,15 +389,7 @@ describe('part compare', () => {
       });
 
     expect(await compare(['--state'])).toBe(2);
-    expect(await compare(['--url', 'http://localhost:9'])).toBe(1);
-    expect(lines.join('\n')).toContain('has no go');
-
-    markPartGo({
-      product: resolveProduct({ target, name: 'app-a', config: {} }),
-      part: 'components/chip',
-      by: 'tom',
-      via: 'design go',
-    });
+    expect(await compare(['--url', 'http://localhost:9'])).toBe(0);
 
     expect(await compare(['--url', 'http://localhost:9', '--state', 'default'])).toBe(0);
     expect(shoot).toHaveBeenCalledWith(
@@ -436,13 +427,6 @@ describe('part compare', () => {
         shoot,
         actions,
       });
-
-    markPartGo({
-      product: resolveProduct({ target, name: 'app-a', config: {} }),
-      part: 'components/chip',
-      by: 'tom',
-      via: 'design go',
-    });
 
     expect(await compare()).toBe(0);
     expect(actions).toHaveBeenCalledWith(
@@ -507,7 +491,6 @@ describe('part compare', () => {
     expect(await all(same)).toBe(0);
     expect(lines).toEqual(['app-a: no done parts to compare']);
 
-    markPartGo({ product: product(), part: 'components/chip', by: 'tom', via: 'design go' });
     markImplemented({ product: product(), part: 'components/chip', states: { default: {} } });
 
     const found = readyPartOf({ product: product(), part: 'components/chip' });
@@ -534,7 +517,7 @@ describe('part compare', () => {
     ).toBe(2);
   });
 
-  it('compares a part changed since its go and marks the result unapproved', async () => {
+  it('compares a part without a check record and with a changed design, with no gate note', async () => {
     const target = checkout();
     const lines = output();
     const shoot = vi.fn<ShootStates>(async () => ({
@@ -543,21 +526,14 @@ describe('part compare', () => {
     }));
     const argv = ['components/chip', '--product', 'app-a', '--url', 'http://localhost:9'];
 
-    markPartGo({
-      product: resolveProduct({ target, name: 'app-a', config: {} }),
-      part: 'components/chip',
-      by: 'tom',
-      via: 'design go',
-    });
     expect(await designCompare({ target, argv, invocation: 'et design', shoot, actions: async () => [] })).toBe(0);
-    expect(lines.join('\n')).not.toContain('unapproved');
 
     const source = join(target, DESIGN_DIR, 'app-a/components/chip/chip.ts');
 
     writeFileSync(source, `${readFileSync(source, 'utf8')}// changed\n`);
     lines.length = 0;
     expect(await designCompare({ target, argv, invocation: 'et design', shoot, actions: async () => [] })).toBe(0);
-    expect(lines[0]).toContain('unapproved: components/chip changed since its go');
+    expect(lines.join('\n')).not.toContain('unapproved');
   });
 
   it('without --url starts the harness app, compares against it and always stops it', async () => {
@@ -578,13 +554,6 @@ describe('part compare', () => {
         start,
         actions: async () => [],
       });
-
-    markPartGo({
-      product: resolveProduct({ target, name: 'app-a', config: {} }),
-      part: 'components/chip',
-      by: 'tom',
-      via: 'design go',
-    });
 
     expect(await compare()).toBe(0);
     expect(start).toHaveBeenCalledWith(expect.objectContaining({ target }));

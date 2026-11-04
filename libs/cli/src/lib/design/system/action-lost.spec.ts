@@ -10,17 +10,16 @@ import {
   declaredActionsOf,
   productActionsOf,
 } from './action-lost';
-import { PartGo } from './part-go';
+import { PartReady } from './part-ready';
 import { resolveProduct } from './resolve-product';
 
-const go = (actions?: string[]): PartGo => ({
+const record = (actions?: string[]): PartReady => ({
   hash: 'h',
-  by: 'tom',
   at: '2026-10-01T09:00:00.000Z',
   ...(actions ? { actions } : {}),
 });
 
-const checkout = (gos: Record<string, PartGo>) => {
+const checkout = (records: Record<string, PartReady>) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-action-lost-'));
   const dir = join(target, DESIGN_DIR, 'app-a');
 
@@ -30,7 +29,7 @@ const checkout = (gos: Record<string, PartGo>) => {
   }
 
   writeFileSync(join(target, DESIGN_DIR, 'config.json'), JSON.stringify({ products: { 'app-a': {} } }));
-  writeFileSync(join(dir, 'go.json'), JSON.stringify(gos));
+  writeFileSync(join(dir, 'ready.json'), JSON.stringify(records));
 
   return { target, product: resolveProduct({ target, name: 'app-a', config: {} }) };
 };
@@ -75,11 +74,11 @@ describe('ACTION-LOST', () => {
     expect([...declared].sort()).toEqual(['emit:remove', 'open']);
   });
 
-  it('fails a key a go recorded that no part declares now, and allows a key moved to another part', () => {
+  it('fails a key a check record holds that no part declares now, and allows a key moved to another part', () => {
     const { target, product } = checkout({
-      'components/chip': go(['emit:remove', 'open']),
-      'pages/home': go(),
-      'components/gone': go(['emit:dismiss']),
+      'components/chip': record(['emit:remove', 'open']),
+      'pages/home': record(),
+      'components/gone': record(['emit:dismiss']),
     });
     const lostOf = (declared: string[], part?: string) =>
       actionLostOf({ product, declared: new Set(declared), invocation: 'et design', part }).map((problem) => ({
@@ -90,20 +89,20 @@ describe('ACTION-LOST', () => {
     expect(lostOf(['open', 'emit:remove'])).toEqual([
       {
         rule: 'ACTION-LOST',
-        file: '.ethlete/design/app-a/go.json',
+        file: '.ethlete/design/app-a/ready.json',
         message:
-          'action "emit:dismiss" was declared at the go of components/gone on 2026-10-01 and exists nowhere in app-a now - draw it again, or confirm the removal with a new go: et design go components/gone --product app-a --by <name>',
+          'action "emit:dismiss" is in the check record of components/gone from 2026-10-01 and exists nowhere in app-a now - draw it again, or confirm the removal: delete it from the actions of components/gone in ready.json and run et design check --product app-a',
       },
     ]);
     expect(lostOf(['open']).map((problem) => problem.file)).toEqual([
       '.ethlete/design/app-a/components/chip/chip.ts',
-      '.ethlete/design/app-a/go.json',
+      '.ethlete/design/app-a/ready.json',
     ]);
     expect(lostOf(['open'], 'components/chip')).toHaveLength(1);
   });
 
-  it('reads no part when no go recorded actions', async () => {
-    const { target, product } = checkout({ 'pages/home': go() });
+  it('reads no part when no check record holds actions', async () => {
+    const { target, product } = checkout({ 'pages/home': record() });
     const load = vi.fn();
 
     expect(await actionLostProblemsOf({ target, config: {}, product, invocation: 'et design', load })).toEqual([]);

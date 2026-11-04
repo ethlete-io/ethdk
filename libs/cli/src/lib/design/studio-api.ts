@@ -31,7 +31,7 @@ import { buildReadyInputsOf } from './system/check-system';
 import { buildReadyOf } from './system/part-build-ready';
 import { drawnPartPointsOf, readyMarkOf, readyPartOf } from './system/part-ready';
 import { refreshHarnessMap } from './system/harness-map';
-import { goMarkOf, markPartGo } from './system/part-go';
+import { markPartGo } from './system/part-go';
 import { partActionsOf } from './system/action-lost';
 import { partPointsOf, readOpenPoints } from './system/read-open-points';
 import { staleDesignMocksOf } from './system/stale-design-mocks';
@@ -473,7 +473,7 @@ export const sketchMergeAnswer = withSketch('POST', async ({ asked, config, prod
   if (Array.isArray(merged)) refreshHarnessMap({ target: asked.target, product });
 
   if (Array.isArray(merged) && note?.trim())
-    for (const part of sketch.targets) recordMergeReason({ product, part, by: 'user', reason: note.trim() });
+    for (const part of sketch.targets) recordMergeReason({ product, part, reason: note.trim() });
 
   if (Array.isArray(merged)) return { status: 200, body: { merged } };
   if (merged.findings)
@@ -842,8 +842,6 @@ export const openPointsAnswer = withProduct('GET', async (found) => {
   const located = readyPartOf({ product: found.product, part });
   const hash = typeof located === 'string' ? null : located.hash;
   const ready = readyMarkOf({ product: found.product, part });
-
-  const go = goMarkOf({ product: found.product, part });
   const directEdit = changedOutsideSketchOf(found.product).includes(part);
   const inputs = buildReadyInputsOf(found.product);
   const buildReady = buildReadyOf({
@@ -852,7 +850,7 @@ export const openPointsAnswer = withProduct('GET', async (found) => {
     inputs: { ...inputs, pointsOf: (key) => (key === part ? points : inputs.pointsOf(key)) },
   });
 
-  return { status: 200, body: { part, hash, ready, go, directEdit, buildReady, drawn: draw === 'true', points } };
+  return { status: 200, body: { part, hash, ready, directEdit, buildReady, drawn: draw === 'true', points } };
 });
 
 const STUDIO_CLICK = 'user';

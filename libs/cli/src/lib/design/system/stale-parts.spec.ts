@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR } from '../paths';
 import { appFilesOf } from './app-files';
 import { designHashOf } from './design-hash';
-import { goStateOf, markPartGo } from './part-go';
+import { readyMarkOf, writePartRecord } from './part-ready';
 import { doneParts, markImplemented } from './part-task';
 import { partKeyOf, resolveProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
@@ -91,12 +91,10 @@ describe('transitive part hash', () => {
     ]);
   });
 
-  it('marks a go stale and names the file when an imported part changes, though the folder did not', () => {
+  it('marks a check record stale and names the file when an imported part changes, though the folder did not', () => {
     const { target, dir } = checkout();
 
-    expect(markPartGo({ product: productOf(target), part: CHIP, by: 'tom', via: 'design go' })).not.toHaveProperty(
-      'status',
-    );
+    expect(writePartRecord({ product: productOf(target), part: CHIP })).not.toBeNull();
     markImplemented({ product: productOf(target), part: CHIP, states: { default: {} } });
 
     const folder = partHashOf({ product: productOf(target), dir: join(dir, 'components/chip') });
@@ -105,7 +103,7 @@ describe('transitive part hash', () => {
     appendFileSync(join(dir, 'elements/icon/icon.ts'), '// moved\n');
 
     expect(partHashOf({ product: productOf(target), dir: join(dir, 'components/chip') })).toBe(folder);
-    expect(goStateOf({ product: productOf(target), part: CHIP })).toBe('stale');
+    expect(readyMarkOf({ product: productOf(target), part: CHIP })).toBeNull();
     expect(stalePartsOf({ product: productOf(target) })).toEqual([
       { part: CHIP, design: [`${DESIGN_DIR}/app-a/elements/icon/icon.ts`, 'libs/kit/design/index.ts'], app: [] },
     ]);
@@ -126,7 +124,7 @@ describe('transitive part hash', () => {
   it('marks a done part stale when a file its app component reaches changes', () => {
     const { target } = checkout();
 
-    markPartGo({ product: productOf(target), part: CHIP, by: 'tom', via: 'design go' });
+    writePartRecord({ product: productOf(target), part: CHIP });
     markImplemented({
       product: productOf(target),
       part: CHIP,
@@ -148,7 +146,7 @@ describe('transitive part hash', () => {
     expect(doneParts({ product: productOf(target), parts: [CHIP] })).toEqual([]);
   });
 
-  it('moves a go stored before file lists to the design hash while its folder hash holds, else lists it stale', () => {
+  it('moves a check record stored before file lists to the design hash while its folder hash holds, else lists it stale', () => {
     const { target, dir } = checkout();
     const legacy = partHashOf({ product: productOf(target), dir: join(dir, 'components/chip') });
     const at = '2026-10-01T00:00:00.000Z';
@@ -157,25 +155,23 @@ describe('transitive part hash', () => {
     commitAt(target, '2026-09-01T00:00:00Z');
 
     writeFileSync(
-      join(dir, 'go.json'),
-      JSON.stringify({ [CHIP]: { hash: legacy, by: 'tom', at }, 'elements/icon': { hash: 'old', by: 'tom', at } }),
+      join(dir, 'ready.json'),
+      JSON.stringify({ [CHIP]: { hash: legacy, at }, 'elements/icon': { hash: 'old', by: 'tom', at } }),
     );
     writeFileSync(join(dir, 'implemented.json'), JSON.stringify({ [CHIP]: { hash: legacy, at, states: {} } }));
-    writeFileSync(join(dir, 'ready.json'), JSON.stringify({ 'elements/icon': { hash: 'old', by: 'tom', at } }));
 
-    expect(goStateOf({ product: productOf(target), part: CHIP })).toBe('current');
     expect(upgradeLegacyMarksOf({ product: productOf(target) })).toEqual([
-      { part: CHIP, marks: ['go', 'implemented'] },
+      { part: CHIP, marks: ['ready', 'implemented'] },
     ]);
 
     const now = designHashOf(chipOf(target));
-    const go = JSON.parse(readFileSync(join(dir, 'go.json'), 'utf8')) as Record<string, unknown>;
+    const ready = JSON.parse(readFileSync(join(dir, 'ready.json'), 'utf8')) as Record<string, unknown>;
     const implemented = JSON.parse(readFileSync(join(dir, 'implemented.json'), 'utf8')) as Record<string, unknown>;
 
-    expect(go[CHIP]).toEqual({ hash: now.hash, files: now.files, by: 'tom', at });
-    expect(go['elements/icon']).toEqual({ hash: 'old', by: 'tom', at });
+    expect(ready[CHIP]).toEqual({ hash: now.hash, files: now.files, at });
+    expect(ready['elements/icon']).toEqual({ hash: 'old', by: 'tom', at });
     expect(implemented[CHIP]).toEqual({ hash: now.hash, at, states: {}, app: expect.any(Object) });
-    expect(goStateOf({ product: productOf(target), part: CHIP })).toBe('current');
+    expect(readyMarkOf({ product: productOf(target), part: CHIP })).not.toBeNull();
     expect(stalePartsOf({ product: productOf(target) })).toEqual([
       { part: 'elements/icon', design: [UNLISTED_FILES], app: [] },
     ]);
@@ -188,11 +184,11 @@ describe('transitive part hash', () => {
 
     execFileSync('git', ['init', '-q'], { cwd: target });
     commitAt(target, '2026-09-01T00:00:00Z');
-    writeFileSync(join(dir, 'go.json'), JSON.stringify({ [CHIP]: { hash: legacy, by: 'tom', at } }));
+    writeFileSync(join(dir, 'ready.json'), JSON.stringify({ [CHIP]: { hash: legacy, by: 'tom', at } }));
     appendFileSync(join(dir, 'elements/icon/icon.ts'), '// moved\n');
     commitAt(target, '2026-10-15T00:00:00Z');
 
     expect(upgradeLegacyMarksOf({ product: productOf(target) })).toEqual([]);
-    expect(JSON.parse(readFileSync(join(dir, 'go.json'), 'utf8'))[CHIP]).toEqual({ hash: legacy, by: 'tom', at });
+    expect(JSON.parse(readFileSync(join(dir, 'ready.json'), 'utf8'))[CHIP]).toEqual({ hash: legacy, by: 'tom', at });
   });
 });

@@ -1,4 +1,4 @@
-import { OpenPoint } from '../../host/design-open-points';
+import { OpenPoint, PartOpenPoints } from '../../host/design-open-points';
 import { OpenPointGroup, OpenPointIcon } from '../design-parts/system-page/system-page-sample';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 
@@ -15,9 +15,6 @@ const iconOf = (point: OpenPoint): OpenPointIcon => {
       return 'warning';
     case 'open-comment':
       return 'comment';
-    case 'no-go':
-    case 'stale-go':
-      return 'error';
     case 'missing-motion':
       return 'flow';
   }
@@ -35,19 +32,28 @@ const lineOf = (point: OpenPoint): OpenPointGroup['lines'][number] => {
       return { text: point.answered ? LABELS.commentAnswered : LABELS.commentWaiting, detail: point.state };
     case 'unmerged-sketch':
       return { text: point.decision === 'pick' ? LABELS.sketchPicked : LABELS.sketchOpen, detail: 'sketch' };
-    case 'no-go':
-      return { text: LABELS.noGo, detail: 'go' };
-    case 'stale-go':
-      return { text: LABELS.staleGo, detail: 'go' };
     case 'missing-motion':
       return { text: `${point.from} → ${point.to}`, detail: 'motion' };
   }
 };
 
-/** The open points of a part grouped by icon, in the order the chip popover lists them. */
-export const openPointGroupsOf = (points: OpenPoint[]): OpenPointGroup[] =>
+const blockerLinesOf = ({ buildReady }: PartOpenPoints): OpenPointGroup['lines'] =>
+  buildReady.ready
+    ? []
+    : buildReady.blockers
+        .filter((blocker) => blocker.kind !== 'open-point')
+        .map((blocker) => ({ text: blocker.text, detail: blocker.part ?? blocker.kind }));
+
+/**
+ * The open points of a part grouped by icon, in the order the chip popover lists them; the build-ready blockers that
+ * are no open point list as errors.
+ */
+export const openPointGroupsOf = (answer: PartOpenPoints): OpenPointGroup[] =>
   ICONS.flatMap((icon) => {
-    const lines = points.filter((point) => iconOf(point) === icon).map(lineOf);
+    const lines = [
+      ...answer.points.filter((point) => iconOf(point) === icon).map(lineOf),
+      ...(icon === 'error' ? blockerLinesOf(answer) : []),
+    ];
 
     return lines.length > 0 ? [{ icon, lines }] : [];
   });

@@ -287,3 +287,26 @@ On the `studio-serve` tmux server (:4402), after S6b:
 - Follow-ups: S6b shows `direct-edit` (Studio app readers do not know the kind yet). S4 removes `acceptPart`,
   `readAccepted`, `ACCEPTED_FILE` and the `kind` argument of `storePictures`. Discarding an edit sketch reopens it on
   the next poll. S8 migrates `pictures.json` through `writePictures`.
+
+## As built: S2
+
+- `part-task.ts`: `linkedTaskPartOf` (part + `implements` link, current design hash, no gate) for compare;
+  `taskPartOf({ product, part, inputs })` refuses a part that is not build-ready with one `  <kind>: <text>` line per
+  blocker; `verifiedTaskPartOf` for `task --verify` needs only a holding check record (slow results go pending once the
+  app files change, so verify does not wait on them). `allowStale` and `unapproved` are gone (also from
+  `compare-command.ts`). `doneParts` compares `implemented.json` with the hash of the holding check record. The task
+  prints `design <hash>` instead of `go <hash>`; `designTask` takes `inputs` for specs.
+- `stale-parts.ts`: design staleness from the check record only; the legacy upgrade moves ready.json and
+  implemented.json, not go.json. `action-lost.ts` reads `actions` from the product's ready.json.
+- `check-system.ts`: ACTION-UNDECLARED turns into a warning on a part whose check record holds (was: current go).
+- Open-points answer drops `go`. Studio: `partOpenPoints$` returns `{ points, buildReady }`; the chip lists every
+  blocker except `open-point` in the error group (CLI text, detail = embedded part or kind).
+- Verified: part-task, stale-parts, action-lost, part-compare, open-points-answer, harness-map (S2 cases) specs; the
+  app open-points and system-view specs; `tsc` on the cli spec config; lint cli and ethlete-studio.
+- Not verified: `nx test cli` / `nx test ethlete-studio` in full; the browser case in `check-system.spec.ts` (warning
+  under a check record); a live `design task`. The two `design go with a stale harness map` cases in
+  `harness-map.spec.ts` fail locally with "Impl Q9 is not committed yet" - go path, untouched here.
+- Follow-ups (S4): nothing writes `actions` into a check record yet (`writePartRecord` only carries them over), and
+  go.json holds the only recorded actions today - migrate them before go.json goes, or ACTION-LOST stays silent;
+  `action-undeclared.ts` still says "unchanged since its go"; `GoActionsOf`/`goActionsOf` in `action-lost.ts` serve
+  only go-step; `part-approval` reads `go` from the answer, now always absent, so it shows Go geben (S6b).

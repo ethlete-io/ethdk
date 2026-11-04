@@ -7,6 +7,7 @@ import { checkDesign } from '../check';
 import { DESIGN_DIR, readConfig } from '../paths';
 import { checkSystem, checkSystemRendered, summaryText } from './check-system';
 import { markPartGo } from './part-go';
+import { writePartRecord } from './part-ready';
 import { resolveProduct } from './resolve-product';
 import { recordMerged } from './sketch/merged-parts';
 import { createSketch, decideSketch, rebaseSketch, variantDirOf } from './sketch/sketch';
@@ -676,7 +677,7 @@ describe('checkDesign', () => {
     expect(await checkDesign({ target, argv: ['--product', 'acme-base'], invocation: 'et design' })).toBe(1);
   }, 120_000);
 
-  it('fails on an element without an action in a part with no go, and warns once for a part with a go', async (context) => {
+  it('fails on an element without an action in a part with no check record, and warns once for a part with one', async (context) => {
     const target = acme();
     const lines = output();
     const hero = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
@@ -700,7 +701,7 @@ describe('checkDesign', () => {
     const config = readConfig(target) ?? {};
     const product = resolveProduct({ target, name: 'acme', config: config.products?.['acme'] ?? {} });
 
-    markPartGo({ product, part: 'elements/hero', by: 'tom', via: 'design go' });
+    writePartRecord({ product, part: 'elements/hero' });
     lines.length = 0;
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
