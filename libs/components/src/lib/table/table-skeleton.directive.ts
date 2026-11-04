@@ -2,6 +2,7 @@ import { afterEveryRender, computed, Directive, inject, Injector, input, signal,
 import { SkeletonItemComponent } from '../skeleton/skeleton-item.component';
 import { injectTableFeatureHost, TableFeatureConfig, tableFeatureConfig } from './headless/table-features';
 import { TableSkeletonRowsComponent } from './table-skeleton-rows.component';
+import { TABLE_SKELETON_TOKEN } from './table-feature.tokens';
 
 /** Options for {@link TableSkeletonDirective}. */
 export type TableSkeletonConfig = TableFeatureConfig & {
@@ -24,6 +25,7 @@ export type TableSkeletonConfig = TableFeatureConfig & {
 @Directive({
   selector: '[etTableSkeleton]',
   exportAs: 'etTableSkeleton',
+  providers: [{ provide: TABLE_SKELETON_TOKEN, useExisting: TableSkeletonDirective }],
 })
 export class TableSkeletonDirective {
   private table = injectTableFeatureHost('etTableSkeleton');

@@ -1,5 +1,5 @@
 import { Component, inject, ViewEncapsulation } from '@angular/core';
-import { TableReorderDirective } from './table-reorder.directive';
+import { TABLE_REORDER_TOKEN } from './table-feature.tokens';
 
 /**
  * The reorder drag ghost, stamped into the table as a layer by `etTableReorder` (see `registerLayer`).
@@ -27,5 +27,5 @@ import { TableReorderDirective } from './table-reorder.directive';
   encapsulation: ViewEncapsulation.None,
 })
 export class TableReorderOverlayComponent {
-  protected reorder = inject(TableReorderDirective);
+  protected reorder = inject(TABLE_REORDER_TOKEN);
 }

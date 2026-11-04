@@ -2,7 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, effect, inject, input, untracked, ViewEncapsulation } from '@angular/core';
 import { signalHostElementDimensions } from '@ethlete/core';
 import { injectTableFeatureHost } from './headless/table-features';
-import { TableRowExpansionDirective } from './table-row-expansion.directive';
+import { TABLE_ROW_EXPANSION_TOKEN } from './table-feature.tokens';
 
 /**
  * The detail row of an expanded row: the table's `expandedRowTemplate` in a full-width row under the
@@ -40,7 +40,7 @@ import { TableRowExpansionDirective } from './table-row-expansion.directive';
   },
 })
 export class TableRowDetailComponent {
-  private expansion = inject(TableRowExpansionDirective);
+  private expansion = inject(TABLE_ROW_EXPANSION_TOKEN);
   protected table = injectTableFeatureHost('etTableRowExpansion');
 
   /** The row this detail row belongs to. Set by the table (see {@link TableRowDetail}). */

@@ -7,6 +7,7 @@ import {
 } from './headless/table-features';
 import { TableColumnMenuTriggerComponent } from './table-column-menu-trigger.component';
 import { TableColumnPin } from './table.types';
+import { TABLE_COLUMN_MENU_TOKEN } from './table-feature.tokens';
 
 /** Options for {@link TableColumnMenuDirective}. */
 export type TableColumnMenuConfig = TableFeatureConfig & {
@@ -37,6 +38,7 @@ export type TableColumnMenuConfig = TableFeatureConfig & {
 @Directive({
   selector: '[etTableColumnMenu]',
   exportAs: 'etTableColumnMenu',
+  providers: [{ provide: TABLE_COLUMN_MENU_TOKEN, useExisting: TableColumnMenuDirective }],
 })
 export class TableColumnMenuDirective {
   public table = injectTableFeatureHost('etTableColumnMenu');

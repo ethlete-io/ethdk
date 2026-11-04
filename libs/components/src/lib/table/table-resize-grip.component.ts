@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { DragHandleDirective } from '@ethlete/core';
 import { TableColumnMeta } from './headless/table-features';
-import { TableResizeDirective } from './table-resize.directive';
+import { TABLE_RESIZE_TOKEN } from './table-feature.tokens';
 
 /**
  * The grip at one header cell's trailing edge, stamped there by `etTableResize`: a focusable
@@ -49,7 +49,7 @@ import { TableResizeDirective } from './table-resize.directive';
   imports: [DragHandleDirective],
 })
 export class TableResizeGripComponent {
-  protected resize = inject(TableResizeDirective);
+  protected resize = inject(TABLE_RESIZE_TOKEN);
   private injector = inject(Injector);
 
   /** The column this grip resizes. Set by the table (see {@link TableHeaderAdornment}). */

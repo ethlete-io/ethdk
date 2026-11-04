@@ -7,6 +7,7 @@ import {
   tableFeatureConfig,
 } from './headless/table-features';
 import { TableFilterOption, TableFilterOptionsProvider } from './table.types';
+import { TABLE_FILTERS_TOKEN } from './table-feature.tokens';
 
 /** Options for {@link TableFiltersDirective}. */
 export type TableFiltersConfig = TableFeatureConfig;
@@ -28,6 +29,7 @@ export type TableFiltersConfig = TableFeatureConfig;
 @Directive({
   selector: '[etTableFilters]',
   exportAs: 'etTableFilters',
+  providers: [{ provide: TABLE_FILTERS_TOKEN, useExisting: TableFiltersDirective }],
 })
 export class TableFiltersDirective {
   /** The host table this feature registered with - filter state lives there, so it serializes. */

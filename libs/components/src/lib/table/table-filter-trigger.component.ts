@@ -17,7 +17,7 @@ import {
 } from '../menu';
 import { TableColumnMeta } from './headless/table-features';
 import { TableFilterOptionContext, TableFilterSelection } from './table.types';
-import { TableFiltersDirective } from './table-filters.directive';
+import { TABLE_FILTERS_TOKEN } from './table-feature.tokens';
 
 /**
  * The filter menu for one column's header cell, stamped there by `etTableFilters` (see
@@ -50,7 +50,7 @@ import { TableFiltersDirective } from './table-filters.directive';
   providers: [provideIcons(FILTER_ICON)],
 })
 export class TableFilterTriggerComponent {
-  protected filters = inject(TableFiltersDirective);
+  protected filters = inject(TABLE_FILTERS_TOKEN);
 
   /** The column this trigger belongs to. Set by the table (see {@link TableHeaderAdornment}). */
   public column = input.required<TableColumnMeta>();

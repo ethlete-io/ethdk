@@ -4,7 +4,7 @@ import { provideIcons } from '../icon/headless/icon-provider';
 import { IconDirective } from '../icon/headless/icon.directive';
 import { TRIANGLE_EXCLAMATION_ICON } from '../icon/headless/triangle-exclamation-icon';
 import { TooltipDirective } from '../tooltip/headless/tooltip.directive';
-import { TableCellErrorTooltipDirective } from './table-cell-error-tooltip.directive';
+import { TABLE_CELL_ERROR_TOOLTIP_TOKEN } from './table-feature.tokens';
 
 /**
  * The mark drawn in a failed cell when `etTableCellErrorTooltip` is imported: the same glyph the base
@@ -34,7 +34,7 @@ import { TableCellErrorTooltipDirective } from './table-cell-error-tooltip.direc
   providers: [provideIcons(TRIANGLE_EXCLAMATION_ICON)],
 })
 export class TableCellErrorMarkComponent {
-  protected feature = inject(TableCellErrorTooltipDirective);
+  protected feature = inject(TABLE_CELL_ERROR_TOOLTIP_TOKEN);
 
   /** What went wrong, from the cell's `cellState`. Set by the table. */
   public message = input<string | null>(null);

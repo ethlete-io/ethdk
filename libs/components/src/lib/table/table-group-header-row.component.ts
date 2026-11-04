@@ -1,7 +1,7 @@
 import { Component, computed, ElementRef, inject, viewChildren, ViewEncapsulation } from '@angular/core';
 import { signalElementDimensions } from '@ethlete/core';
 import { injectTableFeatureHost } from './headless/table-features';
-import { TableGroupHeadersDirective } from './table-group-headers.directive';
+import { TABLE_GROUP_HEADERS_TOKEN } from './table-feature.tokens';
 
 /**
  * The spanning group-header row, stamped by the table through `registerHeaderRow`. It is
@@ -46,7 +46,7 @@ import { TableGroupHeadersDirective } from './table-group-headers.directive';
   },
 })
 export class TableGroupHeaderRowComponent {
-  protected feature = inject(TableGroupHeadersDirective);
+  protected feature = inject(TABLE_GROUP_HEADERS_TOKEN);
   protected table = injectTableFeatureHost('etTableGroupHeaders');
 
   // Measured so the column-header row can stick just below this one - see the feature's host binding.

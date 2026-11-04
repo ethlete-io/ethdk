@@ -3,7 +3,7 @@ import { Component, computed, inject, TemplateRef, ViewEncapsulation } from '@an
 import { SkeletonItemComponent } from '../skeleton/skeleton-item.component';
 import { TableCardSurfaceDirective } from './table-card-surface.directive';
 import { injectTableFeatureHost } from './headless/table-features';
-import { TableSkeletonDirective } from './table-skeleton.directive';
+import { TABLE_SKELETON_TOKEN } from './table-feature.tokens';
 import { TableCellSkeletonContext } from './table.types';
 
 /**
@@ -79,7 +79,7 @@ type SkeletonRowVm = {
   host: { class: 'et-table-skeleton-rows' },
 })
 export class TableSkeletonRowsComponent {
-  protected feature = inject(TableSkeletonDirective);
+  protected feature = inject(TABLE_SKELETON_TOKEN);
   protected table = injectTableFeatureHost('etTableSkeleton');
 
   protected rows = computed<SkeletonRowVm[]>(() => {

@@ -11,7 +11,7 @@ import { THUMBTACK_ICON } from '../icon/headless/thumbtack-icon';
 import { TIMES_ICON } from '../icon/headless/times-icon';
 import { MenuComponent, MenuDirective, MenuItemComponent, MenuSeparatorComponent, MenuSurfaceDirective } from '../menu';
 import { MenuTriggerDirective } from '../menu/headless';
-import { TableColumnMenuDirective } from './table-column-menu.directive';
+import { TABLE_COLUMN_MENU_TOKEN } from './table-feature.tokens';
 import { TableColumnMeta } from './headless/table-features';
 
 /**
@@ -51,7 +51,7 @@ import { TableColumnMeta } from './headless/table-features';
   ],
 })
 export class TableColumnMenuTriggerComponent {
-  protected menu = inject(TableColumnMenuDirective);
+  protected menu = inject(TABLE_COLUMN_MENU_TOKEN);
 
   /** The column this menu acts on. Set by the table (see {@link TableHeaderAdornment}). */
   public column = input.required<TableColumnMeta>();

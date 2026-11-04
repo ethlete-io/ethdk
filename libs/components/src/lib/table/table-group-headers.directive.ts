@@ -2,6 +2,7 @@ import { computed, Directive, inject, Injector, input, Signal, signal } from '@a
 import { injectTableFeatureHost, TableFeatureConfig, tableFeatureConfig } from './headless/table-features';
 import { TableGroupHeaderRowComponent } from './table-group-header-row.component';
 import { TableHeaderGroup } from './table.types';
+import { TABLE_GROUP_HEADERS_TOKEN } from './table-feature.tokens';
 
 /** Options for {@link TableGroupHeadersDirective}. */
 export type TableGroupHeadersConfig = TableFeatureConfig;
@@ -22,6 +23,7 @@ export type TableGroupHeadersConfig = TableFeatureConfig;
 @Directive({
   selector: '[etTableGroupHeaders]',
   exportAs: 'etTableGroupHeaders',
+  providers: [{ provide: TABLE_GROUP_HEADERS_TOKEN, useExisting: TableGroupHeadersDirective }],
   host: {
     // What the column-header row offsets its own sticky position by, so it pins just below the group
     // row. The base sheet falls back to 0, which is what a table without this feature gets.

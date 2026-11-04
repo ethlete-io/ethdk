@@ -3,7 +3,7 @@ import { CHEVRON_ICON } from '../icon/headless/chevron-icon';
 import { provideIcons } from '../icon/headless/icon-provider';
 import { IconDirective } from '../icon/headless/icon.directive';
 import { injectTableFeatureHost } from './headless/table-features';
-import { TableRowExpansionDirective } from './table-row-expansion.directive';
+import { TABLE_ROW_EXPANSION_TOKEN } from './table-feature.tokens';
 
 /**
  * The row expander, stamped into the lead column `etTableRowExpansion` registers. Its styles travel
@@ -33,7 +33,7 @@ import { TableRowExpansionDirective } from './table-row-expansion.directive';
   providers: [provideIcons(CHEVRON_ICON)],
 })
 export class TableExpanderCellComponent {
-  protected expansion = inject<TableRowExpansionDirective<unknown>>(TableRowExpansionDirective);
+  protected expansion = inject(TABLE_ROW_EXPANSION_TOKEN);
   protected table = injectTableFeatureHost('etTableRowExpansion');
 
   /** The row this cell belongs to. Set by the table (see {@link TableLeadCellComponent}). */

@@ -6,6 +6,7 @@ import { injectTableFeatureHost, TableFeatureConfig, tableFeatureConfig } from '
 import { TableDetailStylesComponent } from './table-detail-styles.component';
 import { TableExpanderCellComponent } from './table-expander-cell.component';
 import { TableRowDetailComponent } from './table-row-detail.component';
+import { TABLE_ROW_EXPANSION_TOKEN } from './table-feature.tokens';
 
 /** Covers the 0.18s detail-row enter/leave animations in the CSS - see {@link TableRowExpansionDirective.animates}. */
 const DETAIL_ANIMATION_MS = 200;
@@ -47,6 +48,7 @@ export type TableRowExpansionConfig<T> = TableFeatureConfig & {
 @Directive({
   selector: '[etTableRowExpansion]',
   exportAs: 'etTableRowExpansion',
+  providers: [{ provide: TABLE_ROW_EXPANSION_TOKEN, useExisting: TableRowExpansionDirective }],
 })
 export class TableRowExpansionDirective<T> {
   private table = injectTableFeatureHost('etTableRowExpansion');

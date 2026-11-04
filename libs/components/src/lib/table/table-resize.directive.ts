@@ -7,6 +7,7 @@ import {
   tableFeatureConfig,
 } from './headless/table-features';
 import { TableResizeGripComponent } from './table-resize-grip.component';
+import { TABLE_RESIZE_TOKEN } from './table-feature.tokens';
 
 const KEYBOARD_STEP = 10;
 const KEYBOARD_LARGE_STEP = 50;
@@ -46,6 +47,7 @@ export type TableResizeConfig = TableFeatureConfig;
 @Directive({
   selector: '[etTableResize]',
   exportAs: 'etTableResize',
+  providers: [{ provide: TABLE_RESIZE_TOKEN, useExisting: TableResizeDirective }],
 })
 export class TableResizeDirective {
   public table = injectTableFeatureHost('etTableResize');

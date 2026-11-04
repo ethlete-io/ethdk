@@ -2,6 +2,7 @@ import { computed, Directive, inject, Injector, input } from '@angular/core';
 import { TableCellErrorMarkComponent } from './table-cell-error-mark.component';
 import { injectTableFeatureHost, TableFeatureConfig, tableFeatureConfig } from './headless/table-features';
 import { injectHostTable } from './table-feature-host-utils';
+import { TABLE_CELL_ERROR_TOOLTIP_TOKEN } from './table-feature.tokens';
 
 /** Options for {@link TableCellErrorTooltipDirective}. */
 export type TableCellErrorTooltipConfig = TableFeatureConfig;
@@ -19,6 +20,7 @@ export type TableCellErrorTooltipConfig = TableFeatureConfig;
 @Directive({
   selector: '[etTableCellErrorTooltip]',
   exportAs: 'etTableCellErrorTooltip',
+  providers: [{ provide: TABLE_CELL_ERROR_TOOLTIP_TOKEN, useExisting: TableCellErrorTooltipDirective }],
 })
 export class TableCellErrorTooltipDirective {
   /** The host table this feature registered with. */

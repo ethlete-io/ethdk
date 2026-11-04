@@ -1,6 +1,7 @@
 import { computed, Directive, inject, Injector, input, signal, WritableSignal } from '@angular/core';
 import { injectTableFeatureHost, TableFeatureConfig, tableFeatureConfig } from './headless/table-features';
 import { TableSelectAllCellComponent, TableSelectCellComponent } from './table-select-cell.component';
+import { TABLE_SELECTION_TOKEN } from './table-feature.tokens';
 
 /** Options for {@link TableSelectionDirective}. */
 export type TableSelectionConfig<T> = TableFeatureConfig & {
@@ -41,6 +42,7 @@ export type TableSelectionConfig<T> = TableFeatureConfig & {
 @Directive({
   selector: '[etTableSelection]',
   exportAs: 'etTableSelection',
+  providers: [{ provide: TABLE_SELECTION_TOKEN, useExisting: TableSelectionDirective }],
 })
 export class TableSelectionDirective<T> {
   private table = injectTableFeatureHost('etTableSelection');

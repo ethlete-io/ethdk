@@ -1,6 +1,6 @@
 import { Component, inject, input, ViewEncapsulation } from '@angular/core';
 import { CheckboxComponent } from '../forms/checkbox';
-import { TableSelectionDirective } from './table-selection.directive';
+import { TABLE_SELECTION_TOKEN } from './table-feature.tokens';
 
 /**
  * The select-all checkbox in the selection column's header cell, stamped there by
@@ -23,7 +23,7 @@ import { TableSelectionDirective } from './table-selection.directive';
   imports: [CheckboxComponent],
 })
 export class TableSelectAllCellComponent {
-  protected selection = inject<TableSelectionDirective<unknown>>(TableSelectionDirective);
+  protected selection = inject(TABLE_SELECTION_TOKEN);
 }
 
 /**
@@ -48,7 +48,7 @@ export class TableSelectAllCellComponent {
   imports: [CheckboxComponent],
 })
 export class TableSelectCellComponent {
-  protected selection = inject<TableSelectionDirective<unknown>>(TableSelectionDirective);
+  protected selection = inject(TABLE_SELECTION_TOKEN);
 
   /** The row this checkbox selects. Set by the table (see {@link TableLeadCellComponent}). */
   public row = input.required<unknown>();

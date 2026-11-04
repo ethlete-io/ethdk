@@ -29,6 +29,7 @@ import {
 } from 'rxjs';
 import { injectTableFeatureHost, TableFeatureConfig, tableFeatureConfig } from './headless/table-features';
 import { TableReorderOverlayComponent } from './table-reorder-overlay.component';
+import { TABLE_REORDER_TOKEN } from './table-feature.tokens';
 
 const INTERACTIVE = 'button, a[href], input, select, textarea, [role="button"], [contenteditable="true"]';
 
@@ -107,6 +108,7 @@ const runningOffsets = (order: readonly string[], widths: ReadonlyMap<string, nu
 @Directive({
   selector: '[etTableReorder]',
   exportAs: 'etTableReorder',
+  providers: [{ provide: TABLE_REORDER_TOKEN, useExisting: TableReorderDirective }],
 })
 export class TableReorderDirective {
   public table = injectTableFeatureHost('etTableReorder');
