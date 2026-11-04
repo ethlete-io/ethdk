@@ -11,7 +11,7 @@ import {
   untracked,
 } from '@angular/core';
 import { AutoSurfaceDirective, COLOR_PROVIDER, ProvideColorDirective } from '@ethlete/core';
-import { ToggletipContent } from './headless/toggletip.directive';
+import { ToggletipContent } from './headless/toggletip.types';
 
 @Component({
   selector: 'et-toggletip',

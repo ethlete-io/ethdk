@@ -9,6 +9,7 @@ import {
 import { injectReportError } from '../../internals/report-error';
 import { ChartRect, ChartTableModel, ChartTooltipPlacement } from '../chart.types';
 import { injectChartLabels, SankeyChartLinkKeyHint } from './chart-labels';
+import { SankeyChartDirection } from './sankey-chart.types';
 import { CHART_PLOT_HOST, ChartPlotDirective, ChartPlotHost } from './chart-plot.directive';
 import { ChartValueFormatter, resolveChartValueFormatter } from './internals/chart-format';
 import { assertChartPlot } from './internals/chart-plot-check';
@@ -34,9 +35,6 @@ export type SankeyChartLinkInput = {
 
 /** Formats a value for the tooltips and the table. */
 export type SankeyChartValueFormatter = ChartValueFormatter;
-
-/** Which way the flow runs: left to right in columns, or top to bottom in rows. */
-export type SankeyChartDirection = 'horizontal' | 'vertical';
 
 /** Where a node's label sits along the flow: before the node (first column), after it, or on a chip centred on it (large middle-column nodes). */
 export type SankeyChartLabelSide = 'start' | 'end' | 'center';

@@ -6,7 +6,8 @@ import '../../../test-helpers';
 import { flushFrames, pointerEvent } from '../../testing/driver-core';
 import { fakeLayout } from '../../testing/fake-layout';
 import { createOverlayDriver } from '../../testing/overlay-driver';
-import { ToggletipContent, ToggletipDirective } from './toggletip.directive';
+import { ToggletipDirective } from './toggletip.directive';
+import { ToggletipContent } from './toggletip.types';
 
 @Component({
   template: `

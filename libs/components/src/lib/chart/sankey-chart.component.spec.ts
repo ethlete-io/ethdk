@@ -6,12 +6,8 @@ import { provideColorPalette } from '@ethlete/core';
 import '../../test-helpers';
 import { defaultSankeyChartLinkKeyHint, SankeyChartLinkKeyHint } from './headless/chart-labels';
 import { ChartPlotDirective } from './headless/chart-plot.directive';
-import {
-  SankeyChartDirection,
-  SankeyChartDirective,
-  SankeyChartLinkInput,
-  SankeyChartNodeInput,
-} from './headless/sankey-chart.directive';
+import { SankeyChartDirective, SankeyChartLinkInput, SankeyChartNodeInput } from './headless/sankey-chart.directive';
+import { SankeyChartDirection } from './headless/sankey-chart.types';
 import { SankeyChartComponent, SankeyChartMarkActivateEvent } from './sankey-chart.component';
 
 @Component({

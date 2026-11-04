@@ -5,6 +5,7 @@ export * from './select-labels';
 export * from './select-option-group.component';
 export * from './select-option.component';
 export * from './select-options-from-query';
+export * from './select-options-from-query.types';
 export * from './select-options-from-v2-query';
 export * from './select-panel.component';
 export * from './select-virtual-option.component';

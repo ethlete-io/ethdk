@@ -3,7 +3,7 @@ import { outputToObservable, takeUntilDestroyed } from '@angular/core/rxjs-inter
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { tap } from 'rxjs';
 import { SELECT_ERROR_CODES } from '../select-errors';
-import { SelectOptionsFromQuery } from '../select-options-from-query';
+import { SelectOptionsFromQuery } from '../select-options-from-query.types';
 import { SelectDirective } from './select.directive';
 
 /**

@@ -2,7 +2,7 @@ import { ApplicationRef, Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
 import '../../../../test-helpers';
-import { SelectOptionsFromQuery } from '../select-options-from-query';
+import { SelectOptionsFromQuery } from '../select-options-from-query.types';
 import { SELECT_IMPORTS } from '../select.imports';
 import { SelectDirective } from './select.directive';
 import { SelectOptionData } from './select.tokens';

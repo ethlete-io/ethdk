@@ -12,7 +12,7 @@ import {
   queryComputed,
   queryStateSignal,
 } from '@ethlete/query';
-import { SelectOptionsFromQuery } from './select-options-from-query';
+import { SelectOptionsFromQuery } from './select-options-from-query.types';
 import { createSelectOptionsPaging } from './select-options-paging';
 
 /** The args accepted by the creator's `prepare()` - includes `mock`/`config` extras. */

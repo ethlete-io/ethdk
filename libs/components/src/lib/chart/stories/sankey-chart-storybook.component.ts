@@ -1,5 +1,6 @@
 import { Component, computed, input, ViewEncapsulation } from '@angular/core';
-import { SankeyChartDirection, SankeyChartLinkInput, SankeyChartNodeInput } from '../headless/sankey-chart.directive';
+import { SankeyChartLinkInput, SankeyChartNodeInput } from '../headless/sankey-chart.directive';
+import { SankeyChartDirection } from '../headless/sankey-chart.types';
 import { SankeyChartComponent } from '../sankey-chart.component';
 
 export type SankeyChartStoryDataset = 'match-day' | 'budget' | 'traffic';

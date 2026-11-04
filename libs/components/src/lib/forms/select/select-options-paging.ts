@@ -2,7 +2,7 @@ import { Signal, computed, effect, linkedSignal, signal, untracked } from '@angu
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { equal } from '@ethlete/core';
 import { debounceTime as rxDebounceTime } from 'rxjs';
-import { SelectOptionsFromQuery } from './select-options-from-query';
+import { SelectOptionsFromQuery } from './select-options-from-query.types';
 import { injectSelectLabels } from './select-labels';
 
 type PageState<TItem> = {

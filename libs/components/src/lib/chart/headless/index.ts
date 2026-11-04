@@ -7,3 +7,4 @@ export * from './line-chart.directive';
 export * from './pie-chart.directive';
 export * from './sankey-chart-mark.directive';
 export * from './sankey-chart.directive';
+export * from './sankey-chart.types';

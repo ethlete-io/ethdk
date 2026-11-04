@@ -1,5 +1,5 @@
 import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
-import { SankeyChartDirection } from './sankey-chart.directive';
+import { SankeyChartDirection } from './sankey-chart.types';
 
 /** Where a keyboard-focused link sits among its source's outgoing links. `position` counts from 1. */
 export type SankeyChartLinkKeyHintContext = {

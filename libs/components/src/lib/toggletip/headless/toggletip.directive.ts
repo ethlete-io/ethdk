@@ -25,8 +25,7 @@ import { injectOverlayManager } from '../../overlay/overlay-manager';
 import { TOGGLETIP_ERROR_CODES } from '../toggletip-errors';
 import { ToggletipComponent } from '../toggletip.component';
 import { createIdFactory } from '../../internals/id-factory';
-
-export type ToggletipContent = string | TemplateRef<unknown>;
+import { ToggletipContent } from './toggletip.types';
 
 const createToggletipId = /* @__PURE__ */ createIdFactory('et-toggletip');
 

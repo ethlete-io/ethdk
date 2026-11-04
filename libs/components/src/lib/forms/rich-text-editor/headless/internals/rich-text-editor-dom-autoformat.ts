@@ -1,12 +1,18 @@
 import { HEADING_SELECTOR, RichTextEditorDomCore, HeadingTag, InlineTag } from './rich-text-editor-dom-core';
-import { RichTextEditorDomFeatures } from './rich-text-editor-dom-features';
+import { RichTextEditorDomBlockquote } from './rich-text-editor-dom-blockquote';
+import { RichTextEditorDomCodeBlock } from './rich-text-editor-dom-code-block';
+import { RichTextEditorDomHeadings } from './rich-text-editor-dom-headings';
 import { RichTextEditorDomLists } from './rich-text-editor-dom-lists';
 
 export const createRichTextEditorAutoformat = (
   core: RichTextEditorDomCore,
   deps: {
     lists: RichTextEditorDomLists;
-    features: RichTextEditorDomFeatures;
+    features: {
+      headings?: RichTextEditorDomHeadings;
+      blockquote?: RichTextEditorDomBlockquote;
+      codeBlock?: RichTextEditorDomCodeBlock;
+    };
   },
 ) => {
   const {
