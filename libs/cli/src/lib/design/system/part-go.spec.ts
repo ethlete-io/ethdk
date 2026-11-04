@@ -103,7 +103,7 @@ describe('part go', () => {
     expect(readGo(dir)).toEqual({});
   });
 
-  it('answers the go of a part with its open points', async () => {
+  it('answers the open points of a part with a go', async () => {
     const { target } = checkout();
 
     await post(target, { part: 'components/chip', hash: hashOf(target) });
@@ -114,7 +114,8 @@ describe('part go', () => {
       request: request('GET'),
     });
 
-    expect(answer.body).toMatchObject({ go: { by: 'user' }, directEdit: false, points: [] });
+    expect(answer.body).toMatchObject({ directEdit: false, points: [] });
+    expect(answer.body).not.toHaveProperty('go');
   });
 
   it('et design go stores a go, and refuses an unknown part and a missing author', async () => {

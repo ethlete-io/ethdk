@@ -183,7 +183,6 @@ describe('part ready', () => {
       part: 'components/chip',
       hash,
       ready: { hash, files: expect.any(Object), at: expect.any(String) },
-      go: { hash, files: expect.any(Object), by: 'tom', at: expect.any(String), via: 'design go' },
       directEdit: false,
       buildReady: expect.any(Object),
       drawn: false,
