@@ -4587,6 +4587,18 @@ round trips. Why no tool caught it: no budget on the check's own run time, and t
 so a growing state matrix looks like a slow machine. Fix (B353): frames render in parallel pages; budget at a fixed
 commit: no part over 20 s, the full check under 300 s on CI; the check logs and caps the frame count per part.
 
+413\. Mac perf session (2026-11-04, B348, scratch copies, one-variant sketch of components/tree-row): `sketch ready`
+takes 284 s on the Mac and 117 s on the desk. Phase 1, the render check (`renderIssuesOf`), is 238/98.5 s: tree-row
+itself is 7 s (53 frames), the rest re-inspects every part that contains tree-row (pages/sketches 50 frames,
+pages/system 52, pages/inventory 8, pages/flows 4), one frame after another (proven on the desk from the goto log; Node
+idle 96 of 117 s). Phase 2 (identical renders) 20/10.5 s and phase 3 (no-change check for the auto-merge) 16/4 s each
+start their own Vite server and Chromium, share no pictures, and redraw states phase 1 drew. No progress output
+(`onProgress` not passed), so the desk shows 111 s of silence. The merge takes 4.97/1.85 s and runs fully synchronous on
+the server thread: Studio freezes for that time. Why no tool caught it: no budget on `sketch ready` or on the server
+stall during a merge, and the desk is fast enough to hide both. Fix (B354): `sketch ready` on this fixture under 60 s
+on CI, affected parts with no pixel change skipped or sampled, one Vite server and Chromium shared by all phases, and
+progress output; the merge keeps the longest `/@vite/client` ping under 100 ms.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
