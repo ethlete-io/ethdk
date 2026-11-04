@@ -1,7 +1,7 @@
 {
   "components/canvas-viewport": "24c59621b0af790a",
   "components/comment-draft": {
-    "hash": "c0099831240764a9",
+    "hash": "46eb057ae9d8ab10",
     "variant": "a",
     "decidedBy": "user",
     "at": "2026-11-03T15:47:12.853Z"
@@ -51,7 +51,12 @@
   },
   "pages/inventory": "a050641c3c773f51",
   "pages/merge": "c017306ebbc49a60",
-  "pages/sketches": "203084c9f0b43dd0",
+  "pages/sketches": {
+    "hash": "74e64fe41fe24daa",
+    "variant": "b",
+    "decidedBy": "user",
+    "at": "2026-11-03T22:33:37.374Z"
+  },
   "pages/start": "18019d23722921e9",
-  "pages/system": "535fe4a53bd18844"
+  "pages/system": "c9f5b714b0ebd634"
 }

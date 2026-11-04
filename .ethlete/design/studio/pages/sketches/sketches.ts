@@ -1,12 +1,13 @@
 import { definePart, drawing, html, withAction } from '@design-system';
 import button from '@system/components/button';
 import select from '@system/components/select';
+import switchPart from '@system/components/switch';
 import badge from '@system/components/badge';
 import { commentPinMark } from '@system/components/comment-pin';
-import partTree from '@system/elements/part-tree';
 import { holdTrigger } from '@system/components/hold-trigger';
 import { type SketchStatus, sketchStatusBadge } from '@system/components/sketch-status-badge';
 import { variantCellStyles } from '@system/elements/variant-cell';
+import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import zoomChip from '@system/components/zoom-chip';
@@ -37,6 +38,7 @@ import {
   withSame,
   wrapStage,
 } from './shared/sketch-rows';
+import { type Withdrawn, isWithdrawn, visibleRows, withdrawnCount, withdrawnMark } from './shared/withdrawn';
 import { type Camera } from 'ethlete-studio/canvas';
 
 type Props = {
@@ -49,9 +51,10 @@ type Props = {
   comparing?: boolean;
   same?: RowKey[];
   sameOpen?: boolean;
+  withdrawn?: Withdrawn;
 };
 
-type View = { selected?: RowKey; status: SketchStatus; comparing: boolean };
+type View = { selected?: RowKey; status: SketchStatus; comparing: boolean; withdrawn?: Withdrawn };
 
 const DRAWN: RowKey = 'b';
 
@@ -149,6 +152,7 @@ const headOf = (row: Row, view: View) => {
   const drawn = view.status === 'drawing' && row.key === DRAWN;
   const action = drawn ? drawingMark : view.status === 'waiting' ? undefined : '';
   const mark = view.comparing && row.key !== 'current' ? comparingMark : '';
+  if (isWithdrawn(row, view.withdrawn)) return rowHead(row, withdrawnMark, mark);
   return rowHead(row, action, mark) + (drawn ? '' : pinFor(row));
 };
 
@@ -160,7 +164,9 @@ const gridRow = (part: SketchPart, row: Row, view: View) => {
     ${row.key === view.selected ? ' data-selected' : ''}
   >
     <div class="relative min-w-0">${headOf(row, view)}</div>
-    <div class="min-w-0">${drawn ? drawingStage(row) : wrapStage(part, row, view.comparing)}</div>
+    <div class="min-w-0 ${isWithdrawn(row, view.withdrawn) ? 'opacity-60' : ''}">
+      ${drawn ? drawingStage(row) : wrapStage(part, row, view.comparing)}
+    </div>
   </section>`;
 };
 
@@ -279,6 +285,8 @@ export default definePart<Props>({
     'all-unchanged': { camera: 'fit', part: 'narrow', same: ['a', 'b'] },
     'unchanged-matrix': { camera: { zoom: 0.25, x: -4000, y: 0 }, same: ['b', 'c'] },
     'unchanged-matrix-open': { camera: { zoom: 0.25, x: -4000, y: 0 }, same: ['b', 'c'], sameOpen: true },
+    'withdrawn-hidden': { camera: 'fit', part: 'narrow', withdrawn: 'hidden' },
+    'withdrawn-shown': { camera: 'fit', part: 'narrow', withdrawn: 'shown' },
   },
   render: async ({
     camera,
@@ -290,14 +298,25 @@ export default definePart<Props>({
     comparing = false,
     same: sameKeys = [],
     sameOpen = false,
+    withdrawn,
   }) => {
     const part = withSame(PARTS[kind], comparing ? [] : sameKeys);
     const rowStyles = await prepareShots(part);
     const side = await treeOf(part.key.replace('components/', ''));
-    const rows = rowsOf(part, fresh);
+    const all = rowsOf(part, fresh);
+    const rows = visibleRows(all, withdrawn);
+    const hiddenCount = withdrawnCount(all, withdrawn);
     const same = comparing ? [] : rows.filter(isSame);
     const shown = rows.filter((row) => !same.includes(row));
-    const view: View = { selected, status, comparing };
+    const view: View = { selected, status, comparing, withdrawn };
+    const showWithdrawn =
+      hiddenCount > 0
+        ? ((await switchPart.render({
+            label: `Zurückgezogene (${hiddenCount})`,
+            size: 'sm',
+            checked: withdrawn === 'shown',
+          })) as { body: string; styles: string })
+        : { body: '', styles: '' };
     const transposed = isTransposed(part, LIST_WIDTH);
     const columns = transposed && sameOpen ? rows.length : shown.length;
     const world = transposed
@@ -318,8 +337,11 @@ export default definePart<Props>({
         <span class="w-56 flex-none" data-sk-view-toggle-room></span>
         ${withAction(discard.body, 'emit:discard')}
       </header>
-      <div class="zr-picker absolute z-2 top-14 left-[calc(var(--st-shell-inset-left)+var(--space-5))]">
+      <div
+        class="zr-picker absolute z-2 top-14 left-[calc(var(--st-shell-inset-left)+var(--space-5))] flex items-center gap-space-4"
+      >
         ${pickers[kind].body}
+        ${showWithdrawn.body ? withAction(showWithdrawn.body, { action: 'emit:withdrawnToggle', on: '.et-switch' }) : ''}
       </div>
       <div
         class="absolute top-27 right-space-5 bottom-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] overflow-clip [overflow-clip-margin:4px]"
@@ -362,6 +384,7 @@ export default definePart<Props>({
         side.styles +
         discard.styles +
         pickers.wide.styles +
+        showWithdrawn.styles +
         (toggle as { styles: string }).styles +
         takeStyles +
         rowStyles +

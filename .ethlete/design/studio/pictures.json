@@ -11,7 +11,7 @@
   },
   "components/comment-draft": {
     "review": {
-      "hash": "c0099831240764a9",
+      "hash": "46eb057ae9d8ab10",
       "states": {
         "empty": "4f82a9613c1d95de",
         "typed": "4098af9e0e52d16e",
@@ -134,7 +134,7 @@
   },
   "components/disclosure": {
     "go": {
-      "hash": "1d927e19f6ea69ca",
+      "hash": "9adea6074b258b00",
       "states": {
         "rest": "050eac4e15569696",
         "rest-hover": "add2de56fedc0630",
@@ -223,6 +223,17 @@
     }
   },
   "components/sketch-status-badge": {
+    "review": {
+      "hash": "87c9680992712dee",
+      "states": {
+        "drawing": "df183268126c9953",
+        "waiting": "e3e17b69ccfcde66",
+        "paused": "691875f9133f7e6e",
+        "idle": "7f328f824721f024",
+        "failed": "588f64fd65554c00"
+      },
+      "slots": true
+    },
     "go": {
       "hash": "a8dd348740787e1f",
       "states": {
@@ -610,6 +621,16 @@
     }
   },
   "elements/variant-cell": {
+    "review": {
+      "hash": "db45fed51718d389",
+      "states": {
+        "changed": "11b6e396b2fe0f43",
+        "first": "4ec4023ba5acebb1",
+        "unchanged": "9d51588045becee5",
+        "loading": "0ee24850343e3e04"
+      },
+      "slots": true
+    },
     "go": {
       "hash": "48579bdc8e44919c",
       "states": {
@@ -702,23 +723,23 @@
   },
   "pages/inbox": {
     "review": {
-      "hash": "906d659aaeb8d41a",
+      "hash": "d0e85e46cbdf0e66",
       "states": {
-        "open": "a57d89e2d6e4d79d",
-        "with-resolved": "6b5abbe813919065",
-        "active-only": "04c38b47e6547ce5",
-        "active-clear": "152c02f9525baf06",
-        "all-clear": "e82e0036e225c6c1",
-        "comment-draft": "cf2723a4c9ddadb5",
-        "comment-entry": "1cfd6b1549b60ed5",
-        "loading": "12404fa9d33c97ea",
-        "load-error": "e9109d9cfe666091",
-        "long-list": "9c089f40313c1b53"
+        "open": "60e6013a47fa76cf",
+        "with-resolved": "7c6c1cf0783c5686",
+        "active-only": "92b605d56df4ea67",
+        "active-clear": "800223be72392ba7",
+        "all-clear": "0b981efb75a99d26",
+        "comment-draft": "478c7e6c0fb1289e",
+        "comment-entry": "db6a29556a905fbe",
+        "loading": "9f10902d6cd4fef8",
+        "load-error": "31cd51221347e001",
+        "long-list": "8827de88f1a13954"
       },
       "slots": true
     },
     "go": {
-      "hash": "092daf9df54cb933",
+      "hash": "83a651a93d085c54",
       "states": {
         "open": "60e6013a47fa76cf",
         "with-resolved": "7c6c1cf0783c5686",
@@ -761,44 +782,60 @@
   },
   "pages/sketches": {
     "review": {
-      "hash": "4e3b1022c85e4d70",
+      "hash": "74e64fe41fe24daa",
       "states": {
-        "page-sketch": "201170a9b79c85aa",
-        "page-100": "4e1d6832b25987f0",
-        "zoomed-page": "889a4b7c00d8a7c9",
-        "drawing": "73162f1a5a471224",
-        "paused": "18fb403cac6107eb",
-        "paused-reason": "143ebb4738922c19",
-        "idle": "401186f14f975f73",
-        "new-part": "dd2615ce93895ce2",
-        "narrow-part": "29c91a19e1ecfcaa"
-      },
-      "slots": true
-    },
-    "go": {
-      "hash": "134687c94e2fb9b8",
-      "states": {
-        "page-sketch": "526c87c635023710",
-        "page-100": "38e1e7756513ce5a",
-        "zoomed-page": "19a53d343ec981ec",
-        "drawing": "9ba8741649bee117",
-        "paused": "9f43e40547da1fd6",
-        "paused-reason": "063cf3703233bcd4",
-        "idle": "6a918d049c3970f9",
-        "new-part": "e8de2b2420723f98",
+        "page-sketch": "a51c2ad4ff93335e",
+        "page-100": "d5f65b6e6c5b2c06",
+        "zoomed-page": "4c2bc56281d3f5ce",
+        "drawing": "77582694367ef6df",
+        "paused": "8c42525e50f0b3aa",
+        "paused-reason": "8d4160fbbf6b7972",
+        "idle": "bf1d5273097c1d44",
+        "new-part": "ccc1d39c1ce01e52",
         "narrow-part": "81103298ac18340f",
-        "sticky-names": "954ea2e986e863ee",
-        "comparing": "b7208eceddb2b09f",
+        "sticky-names": "2de7ab6d99a58f1e",
+        "comparing": "60029b387771a72a",
         "comparing-narrow": "ed194f892c77a596",
-        "below-fit": "b0b113db20cc17a2",
-        "far-out": "9fb29501c8fc5e6d",
+        "below-fit": "ac1b550b1bf52f81",
+        "far-out": "c53928a9fc5545a3",
         "narrow-below-fit": "c732f4daa05c6dd3",
         "narrow-far-out": "f5468505b4333c3e",
         "unchanged": "a1faa28d082d5e73",
         "unchanged-open": "734671f2b17b5a6c",
         "all-unchanged": "8b33fd29baef623a",
-        "unchanged-matrix": "9fe6cd5adb071ba2",
-        "unchanged-matrix-open": "fb567247e94101ea"
+        "unchanged-matrix": "4934854c1d3da0f4",
+        "unchanged-matrix-open": "b971d32e063ec242",
+        "withdrawn-hidden": "c8bfabd81d3a1d41",
+        "withdrawn-shown": "17059009c1e18ef5"
+      },
+      "slots": true
+    },
+    "go": {
+      "hash": "908764a310ed8406",
+      "states": {
+        "page-sketch": "a51c2ad4ff93335e",
+        "page-100": "d5f65b6e6c5b2c06",
+        "zoomed-page": "4c2bc56281d3f5ce",
+        "drawing": "77582694367ef6df",
+        "paused": "8c42525e50f0b3aa",
+        "paused-reason": "8d4160fbbf6b7972",
+        "idle": "bf1d5273097c1d44",
+        "new-part": "ccc1d39c1ce01e52",
+        "narrow-part": "81103298ac18340f",
+        "sticky-names": "2de7ab6d99a58f1e",
+        "comparing": "60029b387771a72a",
+        "comparing-narrow": "ed194f892c77a596",
+        "below-fit": "ac1b550b1bf52f81",
+        "far-out": "c53928a9fc5545a3",
+        "narrow-below-fit": "c732f4daa05c6dd3",
+        "narrow-far-out": "f5468505b4333c3e",
+        "unchanged": "a1faa28d082d5e73",
+        "unchanged-open": "734671f2b17b5a6c",
+        "all-unchanged": "8b33fd29baef623a",
+        "unchanged-matrix": "4934854c1d3da0f4",
+        "unchanged-matrix-open": "b971d32e063ec242",
+        "withdrawn-hidden": "c8bfabd81d3a1d41",
+        "withdrawn-shown": "17059009c1e18ef5"
       },
       "slots": true
     }
@@ -823,7 +860,7 @@
   },
   "pages/system": {
     "review": {
-      "hash": "535fe4a53bd18844",
+      "hash": "c9f5b714b0ebd634",
       "states": {
         "part": "df23c311d17aea1b",
         "empty": "f932d40afa6126cc",
@@ -848,7 +885,7 @@
       "slots": true
     },
     "go": {
-      "hash": "0ceac56c458efee4",
+      "hash": "51e08a6b58683e35",
       "states": {
         "part": "df23c311d17aea1b",
         "empty": "f932d40afa6126cc",
