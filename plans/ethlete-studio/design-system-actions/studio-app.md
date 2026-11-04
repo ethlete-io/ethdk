@@ -12,7 +12,7 @@
 - **Open:** a 100-cycle run started, but nobody recorded the result. Run it again.
 - **Options not taken:** a bounded log of module-load failures with the active frame; a native
   menu item that creates the webview again.
-- **Decision (Tom, 2026-10-29):** run the 100-cycle test over SSH on ethlete-mac when it is on.
+- ADR 0138: [The WebKit frame-replacement hang test runs over SSH on ethlete-mac](../../../apps/ethlete-studio/docs/adr/0138-the-webkit-frame-replacement-hang-test-runs-over-ssh-on-ethlete-mac.md)
 - **Result (2026-10-29, ethlete-mac, macOS 15.7.7):** 100 cycles with 3 frames: 1 hang in 4 runs
   (after batch 80, WebContent at 100% CPU until the watchdog). 40 cycles passed. Other sessions
   loaded the Mac at the time. Next: 10 runs of 100 on an idle Mac after a fresh `nx build cli`.
@@ -43,8 +43,7 @@
 - **Recommendation:** close as not reproduced; no workaround and no upstream repro without a
   reproducing case. Reopen with a `sample` of WebContent if Studio hangs again. A hang plus a
   manual WebContent kill during a pinch can also cause finding 1.1.
-- **Decision (Tom, 2026-10-30):** close as not reproduced. Reopen with a WebContent `sample` at
-  the next hang.
+- ADR 0139: [The WebKit frame-replacement hang is closed as not reproduced](../../../apps/ethlete-studio/docs/adr/0139-the-webkit-frame-replacement-hang-is-closed-as-not-reproduced.md)
 
 ### 1.5 Studio logs a nested Tokio runtime panic - open
 
