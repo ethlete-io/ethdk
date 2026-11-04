@@ -8,8 +8,6 @@ export const OPEN_POINT_KINDS = [
   'open-comment',
   'unmerged-sketch',
   'plan-question',
-  'no-go',
-  'stale-go',
   'missing-motion',
 ] as const;
 
@@ -36,8 +34,6 @@ export type OpenPoint =
       status: SketchStatus;
       decision: SketchDecision['kind'] | null;
     }
-  | { kind: 'no-go' }
-  | { kind: 'stale-go' }
   | { kind: 'missing-motion'; from: string; to: string };
 
 /** The state pairs of a part as its file declares them, read without running it. */
@@ -58,8 +54,6 @@ export type OpenPointsInput = {
   parts: {
     key: string;
     layer: Layer;
-    linked: boolean;
-    go?: 'current' | 'missing' | 'stale';
     controls: boolean;
     declaredNoControls?: boolean;
     motion?: PartMotions;
@@ -114,7 +108,7 @@ const rankOf = (point: OpenPoint) => OPEN_POINT_KINDS.indexOf(point.kind);
 
 /** The open points of each part that has any, in the order of `parts`, each list in the order of `OPEN_POINT_KINDS`. */
 export const openPointsOf = (input: OpenPointsInput): PartOpenPoints[] =>
-  input.parts.flatMap(({ key, layer, linked, go, controls, declaredNoControls, motion }) => {
+  input.parts.flatMap(({ key, layer, controls, declaredNoControls, motion }) => {
     const stateful = !STATELESS_LAYERS.includes(layer);
     const points: OpenPoint[] = [
       ...(stateful && !controls && !declaredNoControls ? [{ kind: 'missing-state' as const, control: null }] : []),
@@ -124,8 +118,6 @@ export const openPointsOf = (input: OpenPointsInput): PartOpenPoints[] =>
       ...(input.contrasts ?? [])
         .filter((contrast) => contrast.part === key)
         .map(({ state, path }) => ({ kind: 'contrast' as const, state, path })),
-      ...(linked && go === 'missing' ? [{ kind: 'no-go' as const }] : []),
-      ...(linked && go === 'stale' ? [{ kind: 'stale-go' as const }] : []),
       ...missingMotionsOf({
         layer,
         motion,
@@ -262,12 +254,16 @@ const groupText = (kind: OpenPointKind, points: OpenPoint[]) => {
     return `${ids.length} open comment${ids.length === 1 ? '' : 's'} (${ids.join(', ')})`;
   }
 
-  if (kind === 'no-go') return 'no go';
-
-  if (kind === 'stale-go') return 'go is stale - the design changed since the go';
-
   return points.map((point) => (point.kind === 'unmerged-sketch' ? sketchText(point) : point.kind)).join('; ');
 };
+
+/** One text per kind of open point in `points`, in the order of `OPEN_POINT_KINDS`. */
+export const openPointGroupsOf = (points: OpenPoint[]): string[] =>
+  OPEN_POINT_KINDS.flatMap((kind) => {
+    const ofKind = points.filter((point) => point.kind === kind);
+
+    return ofKind.length > 0 ? [groupText(kind, ofKind)] : [];
+  });
 
 /** One header line with the total, then one line per part with its points, as `design check` prints them. */
 export const openPointsText = (product: string, list: PartOpenPoints[]): string[] => {
@@ -278,13 +274,7 @@ export const openPointsText = (product: string, list: PartOpenPoints[]): string[
   return [
     `OPEN POINTS ${product}: ${total} in ${list.length} part${list.length === 1 ? '' : 's'}`,
     ...list.map(({ part, points }) => {
-      const groups = OPEN_POINT_KINDS.flatMap((kind) => {
-        const ofKind = points.filter((point) => point.kind === kind);
-
-        return ofKind.length > 0 ? [groupText(kind, ofKind)] : [];
-      });
-
-      return `  ${part}: ${groups.join('; ')}`;
+      return `  ${part}: ${openPointGroupsOf(points).join('; ')}`;
     }),
   ];
 };

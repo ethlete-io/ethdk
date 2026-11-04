@@ -8,7 +8,6 @@ import {
   sketchAddedPointsOf,
   SKETCH_KINDS,
 } from './open-points';
-import { goStateOf } from './part-go';
 import { RenderIssue } from './render-check';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import {
@@ -45,8 +44,6 @@ const partInputsOf = (product: ResolvedProduct): OpenPointsInput['parts'] =>
   product.parts.map((part) => ({
     key: partKeyOf(part),
     layer: part.layer,
-    linked: partLinkOf(part.source).kind !== 'none',
-    go: goStateOf({ product, part: partKeyOf(part) }),
     controls: declaresControlsOf(part.source),
     declaredNoControls: declaresNoControlsOf(part.source),
     ...motionOf(part.source),

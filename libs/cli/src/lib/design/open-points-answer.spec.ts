@@ -47,10 +47,7 @@ describe('openPointsAnswer', () => {
       status: 200,
       body: {
         drawn: false,
-        parts: [
-          { part: 'components/chip', points: [{ kind: 'no-go' }] },
-          { part: 'pages/home', points: [{ kind: 'no-go' }] },
-        ],
+        parts: [],
       },
     });
     expect(await openPointsAnswer(ask(target, '/?product=app-a&part=pages/home'))).toEqual({
@@ -61,8 +58,12 @@ describe('openPointsAnswer', () => {
         ready: null,
         go: null,
         directEdit: false,
+        buildReady: {
+          ready: false,
+          blockers: expect.arrayContaining([expect.objectContaining({ kind: 'stale-record' })]),
+        },
         drawn: false,
-        points: [{ kind: 'no-go' }],
+        points: [],
       },
     });
     expect(drawnFindingsOf).not.toHaveBeenCalled();
@@ -79,11 +80,17 @@ describe('openPointsAnswer', () => {
         ready: null,
         go: null,
         directEdit: false,
+        buildReady: {
+          ready: false,
+          blockers: expect.arrayContaining([
+            expect.objectContaining({ kind: 'open-point' }),
+            expect.objectContaining({ kind: 'stale-record' }),
+          ]),
+        },
         drawn: true,
         points: [
           { kind: 'missing-state', control: 'remove' },
           { kind: 'contrast', state: 'default', path: 'span' },
-          { kind: 'no-go' },
         ],
       },
     });

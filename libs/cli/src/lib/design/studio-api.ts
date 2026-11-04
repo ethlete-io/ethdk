@@ -27,6 +27,8 @@ import {
 } from './system/notes/note';
 import { approveException, listExceptions } from './system/exceptions';
 import { approveInventory, Inventory } from './system/inventory';
+import { buildReadyInputsOf } from './system/check-system';
+import { buildReadyOf } from './system/part-build-ready';
 import { drawnPartPointsOf, readyMarkOf, readyPartOf } from './system/part-ready';
 import { refreshHarnessMap } from './system/harness-map';
 import { goMarkOf, markPartGo } from './system/part-go';
@@ -814,7 +816,8 @@ const drawnPointsOf = async ({ asked, config, product }: Found, part: string) =>
 /**
  * GET `?product=&part=&draw=`: the open points of one part, or of every part without `part`. Contrasts and missing
  * control states need a draw: only `draw=true` with a `part` lists them, and `drawn` says whether they are in.
- * `directEdit` says whether the merged part changed outside a sketch and waits for an accept.
+ * `directEdit` says whether the merged part changed outside a sketch and waits for an accept; `buildReady` whether the
+ * part may be built now, or its blockers.
  */
 export const openPointsAnswer = withProduct('GET', async (found) => {
   const { url } = found.asked;
@@ -842,8 +845,14 @@ export const openPointsAnswer = withProduct('GET', async (found) => {
 
   const go = goMarkOf({ product: found.product, part });
   const directEdit = changedOutsideSketchOf(found.product).includes(part);
+  const inputs = buildReadyInputsOf(found.product);
+  const buildReady = buildReadyOf({
+    product: found.product,
+    part,
+    inputs: { ...inputs, pointsOf: (key) => (key === part ? points : inputs.pointsOf(key)) },
+  });
 
-  return { status: 200, body: { part, hash, ready, go, directEdit, drawn: draw === 'true', points } };
+  return { status: 200, body: { part, hash, ready, go, directEdit, buildReady, drawn: draw === 'true', points } };
 });
 
 const STUDIO_CLICK = 'user';

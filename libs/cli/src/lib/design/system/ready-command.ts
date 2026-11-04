@@ -1,25 +1,29 @@
 import { PART_HARNESS_ONLY, partActionFailuresOf } from './actions-command';
 import { openPointsText } from './open-points';
 import { drawnPartPointsOf, markPartReady, readyPartOf } from './part-ready';
+import { buildReadyInputsOf } from './check-system';
+import { checkBlockersOf } from './part-build-ready';
 import { partKeyOf } from './resolve-product';
+import { runSlowChecks } from './slow-run';
+import { slowProblemsOf } from './slow-checks';
 import { staleDistWarningsOf } from './stale-dist';
-import { argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf } from './sketch/cli-args';
+import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
 import { parseTarget } from './sketch/sketch';
 
-export const READY_USAGE = 'ready <layer>/<name> --product <name> --by <name> [--url <app dev server url>]';
+export const READY_USAGE = 'ready <layer>/<name> --product <name> [--url <app dev server url>]';
 
 /**
- * `et design ready <layer>/<name> …` marks a part ready, and exits 1 with its open points or its failed `design actions`
- * lines while it has any.
+ * `et design ready <layer>/<name> …` checks a part and writes its check record, and exits 1 with its open points, its
+ * other blockers or its failed `design actions` lines while it has any. It runs the slow rules of the part first when
+ * their result is missing or stale.
  */
 export const designReady = async (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, { values: ['--product', '--by', '--url'], switches: [] });
+  const args = argsOf(argv, { values: ['--product', '--url'], switches: [] });
   const usage = `usage: ${invocation} ${READY_USAGE}`;
 
-  if (typeof args === 'string' || authorOf(args) === null || args.positional.length !== 1) {
+  if (typeof args === 'string' || args.positional.length !== 1) {
     if (typeof args === 'string') console.error(args);
-    else if (authorOf(args) === null) console.error(`ready ${NEEDS_AUTHOR}`);
 
     console.error(usage);
 
@@ -51,11 +55,16 @@ export const designReady = async (options: { target: string; argv: string[]; inv
     product,
     part,
     hash: typeof located === 'string' ? '-' : located.hash,
-    by: authorOf(args),
     pointsOf: async () => {
       const points = await drawnPartPointsOf({ target, config, product, part });
 
       return 'unavailable' in points ? { status: 503, error: `cannot draw ${part}: ${points.unavailable}` } : points;
+    },
+    blockersOf: async () => {
+      if (slowProblemsOf({ product, part }) === 'pending')
+        await runSlowChecks({ target, config, product, parts: [part] });
+
+      return checkBlockersOf({ product, part, inputs: { ...buildReadyInputsOf(product), pointsOf: () => [] } });
     },
     actionsOf: async () => {
       const failures = await partActionFailuresOf({ target, config, product, part, url: args.values['--url'] });
@@ -71,6 +80,9 @@ export const designReady = async (options: { target: string; argv: string[]; inv
     if (marked.points)
       openPointsText(product.name, [{ part, points: marked.points }]).forEach((line) => console.error(line));
 
+    marked.blockers?.forEach((blocker) =>
+      console.error(`  ${blocker.kind}: ${blocker.text}${blocker.part ? ` (${blocker.part})` : ''}`),
+    );
     marked.actions?.forEach((line) => console.error(`  ${line}`));
 
     console.error(marked.error);
@@ -78,7 +90,7 @@ export const designReady = async (options: { target: string; argv: string[]; inv
     return 1;
   }
 
-  console.log(`${part} is ready in ${product.name}`);
+  console.log(`${part} is build-ready in ${product.name}`);
 
   return 0;
 };

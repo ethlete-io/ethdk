@@ -243,3 +243,23 @@ On the `studio-serve` tmux server (:4402), after S6b:
   runs); `tsc` on the spec config reports only the `by` error in `part-compare.spec.ts` from that same edit. The job has
   never run in CI.
 - Not done yet from the S7 entry: dropping `GO_JSON` from `git-safety.py` (goes with S4).
+
+## As built: S1
+
+- `system/part-build-ready.ts`: `buildReadyOf` (record holds, embedded unchanged since the actions, open points, rule
+  problems, `slowProblemsOf`, every embedded part ready) and `recordBuildReady`, which writes or drops the records of
+  the checked parts, embedded parts first. Inputs come from `buildReadyInputsOf` in `check-system.ts` (open points plus
+  static rules; `design check` adds the rules it tallied).
+- `ready.json` entries: `{ hash, files, embedded?, actions?, at }`, written through `writeJsonFile` (D19); `by` is
+  optional on read. `writePartRecord` / `dropPartRecord` in `part-ready.ts`.
+- `et design ready <part>`: no `--by` (passing it exits 2); runs the slow rules of the part when pending, then refuses on
+  open points, other blockers, failed actions.
+- `design check` writes a record only when the part has none (or its embedded parts changed) and the actions pass; the
+  actions run only when the check could draw. It drops a record only on a checked blocker: a pending slow result or
+  actions that did not run keep it.
+- Open-points answer gains `buildReady`; `no-go` / `stale-go` and the `linked` / `go` open-point inputs are gone.
+- Verified: the S1 specs, `tsc` on the spec config, lint, `nx test cli`. Not verified: a live `design check` /
+  `design ready` in a real repo, and the Studio app, which still knows `no-go` / `stale-go`
+  (`apps/ethlete-studio/src/app/system-view/open-points.ts`, `src/host/design-open-points.ts`) - S5.
+- Follow-ups: `apps/docs/cli/index.md` still shows `design ready --by` (docs); `embedded-actions.spec.ts` now expects
+  check to drop the record of a part with a rule problem instead of printing `ACTIONS RERUN` for it.

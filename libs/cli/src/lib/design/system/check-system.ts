@@ -11,14 +11,16 @@ import { actionUndeclaredUnderGoOf } from './action-undeclared';
 import { bespokeControlProblemsOf } from './bespoke-controls';
 import { droppedPropProblemsOf } from './dropped-props';
 import { DrawnFindings, drawnFindingsFrom, isPartUndrawn, isStateUndrawn, statefulPartsOf } from './drawn-open-points';
-import { openPointsText } from './open-points';
+import { openPointsText, PartOpenPoints } from './open-points';
 import { goMarkOf, goPartsOf, goStateOf } from './part-go';
 import { doneParts } from './part-task';
 import { actionsRerunOf, readyPartsOf } from './part-ready';
+import { BuildReadyInputs, recordBuildReady } from './part-build-ready';
+import { partActionFailuresOf } from './actions-command';
 import { staleLineOf, stalePartsOf, upgradeLegacyMarksOf } from './stale-parts';
 import { Problem } from './problem';
 import { staleDistWarningsOf } from './stale-dist';
-import { instantLinesOf, readOpenPoints, unlinkedPartsOf } from './read-open-points';
+import { instantLinesOf, partPointsOf, readOpenPoints, unlinkedPartsOf } from './read-open-points';
 import { partKeyOf, resolveProduct, ResolvedProduct } from './resolve-product';
 import { canonicalClassesOf } from './rules/canonical-class';
 import { componentCopiesOf } from './rules/component-copy';
@@ -110,6 +112,33 @@ export const ruleProblemsOf = (product: ResolvedProduct): Problem[] => [
   ...product.problems,
   ...RULES.flatMap((rule) => rule(product)),
 ];
+
+/** Build-ready inputs from the open points of `points`, read without a draw by default, and the static rules. */
+export const buildReadyInputsOf = (
+  product: ResolvedProduct,
+  points: PartOpenPoints[] = readOpenPoints(product),
+): BuildReadyInputs => {
+  const problems = ruleProblemsOf(product);
+
+  return {
+    pointsOf: (part) => partPointsOf(points, part),
+    problemsOf: (part) => problems.filter((problem) => partOfFile(product, problem.file) === part),
+  };
+};
+
+const withTalliedProblems = (
+  inputs: BuildReadyInputs,
+  tally: Map<string, PartTally> | undefined,
+): BuildReadyInputs => ({
+  ...inputs,
+  problemsOf: (part) => {
+    const own = inputs.problemsOf(part);
+    const ruled = new Set(own.map((problem) => problem.rule));
+    const tallied = [...new Set(tally?.get(part)?.problems ?? [])].filter((rule) => !ruled.has(rule));
+
+    return [...own, ...tallied.map((rule) => ({ rule, file: '', message: 'found by design check' }))];
+  },
+});
 
 const lineOf = (target: string, problem: Problem) =>
   `${problem.rule} ${relative(target, problem.file)}: ${problem.message}`;
@@ -446,7 +475,8 @@ const printOpenPoints = async (
 
     if (rendered === null && options.notDrawn) countCannotDraw({ ...options, product, why: options.notDrawn });
 
-    const points = readOpenPoints(product, findings).filter(({ part }) => !options.part || part === options.part);
+    const allPoints = readOpenPoints(product, findings);
+    const points = allPoints.filter(({ part }) => !options.part || part === options.part);
 
     for (const { part, points: ofPart } of points) {
       const counted = tallyOf(options.tally, { product: name, part });
@@ -473,6 +503,17 @@ const printOpenPoints = async (
 
     if (upgraded.length > 0)
       console.log(`REHASHED ${name}: ${upgraded.map(({ part, marks }) => `${part} (${marks.join(', ')})`).join(', ')}`);
+
+    await recordBuildReady({
+      product,
+      parts: options.part
+        ? [options.part]
+        : product.parts.filter((part) => part.origin !== 'base').map((part) => partKeyOf(part)),
+      inputs: withTalliedProblems(buildReadyInputsOf(product, allPoints), options.tally?.get(name)),
+      ...(rendered === null
+        ? {}
+        : { actionsOf: (part: string) => partActionFailuresOf({ target, config, product, part }) }),
+    });
 
     const ready = readyPartsOf(product).filter((key) => !options.part || key === options.part);
 

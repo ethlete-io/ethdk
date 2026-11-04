@@ -1,6 +1,8 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
+import { writeJsonFile } from '../../json-file';
 import { DesignConfig } from '../paths';
+import { Blocker } from './build-ready-contract';
 import { designHashOf, FileHashes, isOptionalFileHashes, recordHolds } from './design-hash';
 import { drawnFindingsOf } from './drawn-open-points';
 import { actionsRerunReasonOf, changedEmbeddedOf, EmbeddedHashes, embeddedHashesOf } from './embedded-actions';
@@ -12,26 +14,41 @@ import { partKeyOf, ResolvedProduct } from './resolve-product';
 export const READY_FILE = 'ready.json';
 
 /**
- * Who marked a part ready, and at which design hash, with the hash of each file it covers; the mark holds only while the
- * hash does. `embedded` holds the app hash of each embedded part its actions ran against.
+ * The check record of a build-ready part: the design hash it was checked at, with the hash of each file it covers; it
+ * holds only while the hash does. `embedded` holds the app hash of each embedded part its actions ran against. `by`
+ * appears only in records written before the record became tool-written.
  */
-export type PartReady = { hash: string; files?: FileHashes; embedded?: EmbeddedHashes; by: string; at: string };
+export type PartReady = {
+  hash: string;
+  files?: FileHashes;
+  embedded?: EmbeddedHashes;
+  actions?: string[];
+  at: string;
+  by?: string;
+};
 
-export type ReadyRefusal = { status: number; error: string; points?: OpenPoint[]; actions?: string[] };
+export type ReadyRefusal = {
+  status: number;
+  error: string;
+  points?: OpenPoint[];
+  actions?: string[];
+  blockers?: Blocker[];
+};
 
 const readyFileOf = (dir: string) => resolve(dir, READY_FILE);
 
 const isReady = (value: unknown): value is PartReady => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
 
-  const { hash, by, at, files, embedded } = value as Record<string, unknown>;
+  const { hash, by, at, files, embedded, actions } = value as Record<string, unknown>;
 
   return (
     typeof hash === 'string' &&
-    typeof by === 'string' &&
+    (by === undefined || typeof by === 'string') &&
     typeof at === 'string' &&
     isOptionalFileHashes(files) &&
-    isOptionalFileHashes(embedded)
+    isOptionalFileHashes(embedded) &&
+    (actions === undefined || (Array.isArray(actions) && actions.every((key) => typeof key === 'string')))
   );
 };
 
@@ -107,26 +124,68 @@ export const drawnPartPointsOf = async (options: {
 export const readyPartsOf = (product: ResolvedProduct) =>
   product.parts.map(partKeyOf).filter((part) => readyMarkOf({ product, part }) !== null);
 
+const writeReady = (dir: string, records: Record<string, PartReady>) =>
+  writeJsonFile({
+    file: readyFileOf(dir),
+    value: Object.fromEntries(Object.entries(records).sort(([a], [b]) => a.localeCompare(b))),
+  });
+
+/** Writes the check record of a part at its current design hash; a record already at that hash keeps its `at`. */
+export const writePartRecord = (options: { product: ResolvedProduct; part: string; at?: string }): PartReady | null => {
+  const found = readyPartOf(options);
+
+  if (typeof found === 'string') return null;
+
+  const existing = readReady(found.dir);
+  const previous = existing[options.part];
+  const embedded = embeddedHashesOf({ product: options.product, part: found.resolved });
+  const record: PartReady = {
+    hash: found.hash,
+    files: found.design.files,
+    ...(Object.keys(embedded).length > 0 ? { embedded } : {}),
+    ...(previous?.actions ? { actions: previous.actions } : {}),
+    at: (previous?.hash === found.hash ? previous.at : undefined) ?? options.at ?? new Date().toISOString(),
+  };
+
+  writeReady(found.dir, { ...existing, [options.part]: record });
+
+  return record;
+};
+
+/** Drops the check record of a part, whatever hash it holds; true when there was one. */
+export const dropPartRecord = (options: { product: ResolvedProduct; part: string }) => {
+  const found = readyPartOf(options);
+
+  if (typeof found === 'string') return false;
+
+  const existing = readReady(found.dir);
+
+  if (!(options.part in existing)) return false;
+
+  writeReady(found.dir, Object.fromEntries(Object.entries(existing).filter(([key]) => key !== options.part)));
+
+  return true;
+};
+
 /**
- * Marks a part ready at `hash`, or answers why not: 400 without `by` or `hash`, 404 for an unknown part, 409 when the
- * part changed since `hash`, 422 while `pointsOf` lists any open point or `actionsOf` any failed action check.
- * The failed-actions refusal names the embedded parts whose app files changed since the last ready.
- * A part already marked at the same hash keeps its `by` and `at`; only the embedded record is refreshed.
- * `pointsOf` runs only after the hash holds, `actionsOf` only after the open-point list is empty.
+ * Checks a part at `hash` and writes its check record, or answers why not: 400 without `hash`, 404 for an unknown
+ * part, 409 when the part changed since `hash`, 422 while `pointsOf` lists any open point, `blockersOf` any other
+ * blocker or `actionsOf` any failed action check. The failed-actions refusal names the embedded parts whose app files
+ * changed since the last record. `pointsOf` runs only after the hash holds, `blockersOf` only after the open-point list
+ * is empty, `actionsOf` only after the blocker list is.
  */
 export const markPartReady = async (options: {
   product: ResolvedProduct;
   part: string;
   hash: unknown;
-  by: unknown;
   pointsOf: () => Promise<OpenPoint[] | ReadyRefusal>;
+  blockersOf?: () => Promise<Blocker[]>;
   actionsOf: () => Promise<string[] | ReadyRefusal>;
   actionsNote?: string;
   at?: string;
 }): Promise<PartReady | ReadyRefusal> => {
-  const { product, part, hash, by } = options;
+  const { product, part, hash } = options;
 
-  if (typeof by !== 'string' || by.trim() === '') return { status: 400, error: 'by is required' };
   if (typeof hash !== 'string' || hash === '') return { status: 400, error: 'hash is required' };
 
   const found = readyPartOf({ product, part });
@@ -145,8 +204,16 @@ export const markPartReady = async (options: {
       points,
     };
 
+  const blockers = (await options.blockersOf?.()) ?? [];
+
+  if (blockers.length > 0)
+    return {
+      status: 422,
+      error: `${part} has ${blockers.length} blocker${blockers.length === 1 ? '' : 's'} - fix them before ready`,
+      blockers,
+    };
+
   const rerun = actionsRerunOf({ product, part });
-  const embedded = embeddedHashesOf({ product, part: found.resolved });
   const actions = await options.actionsOf();
   const notes = [
     ...(rerun.length > 0 ? [actionsRerunReasonOf(rerun)] : []),
@@ -161,19 +228,5 @@ export const markPartReady = async (options: {
       actions,
     };
 
-  const existing = readReady(found.dir);
-  const previous = existing[part];
-  const kept = previous?.hash === hash ? previous : undefined;
-  const mark: PartReady = {
-    hash,
-    files: found.design.files,
-    ...(Object.keys(embedded).length > 0 ? { embedded } : {}),
-    by: kept?.by ?? by.trim(),
-    at: kept?.at ?? options.at ?? new Date().toISOString(),
-  };
-  const marks = Object.entries({ ...existing, [part]: mark }).sort(([a], [b]) => a.localeCompare(b));
-
-  writeFileSync(readyFileOf(found.dir), `${JSON.stringify(Object.fromEntries(marks), null, 2)}\n`);
-
-  return mark;
+  return writePartRecord({ product, part, at: options.at }) ?? { status: 404, error: `unknown part ${part}` };
 };

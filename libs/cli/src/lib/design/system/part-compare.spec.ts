@@ -516,7 +516,6 @@ describe('part compare', () => {
       product: product(),
       part: 'components/chip',
       hash: typeof found === 'string' ? found : found.hash,
-      by: 'tom',
       pointsOf: async () => [],
       actionsOf: async () => [],
     });

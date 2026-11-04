@@ -590,10 +590,10 @@ describe('checkDesign', () => {
     expect(
       lines.filter((line) => line.startsWith('OPEN POINTS ') || line.startsWith('UNLINKED ') || line.startsWith('  ')),
     ).toEqual([
-      'OPEN POINTS acme: 9 in 3 parts',
+      'OPEN POINTS acme: 8 in 3 parts',
       '  components/button: no controls declared; 1 open comment (c-1); 2 missing motions (default -> long, long -> default)',
       '  components/card: no controls declared; 2 missing motions (default -> long, long -> default)',
-      '  elements/hero: no controls declared; no go',
+      '  elements/hero: no controls declared',
       'UNLINKED acme: components/button, pages/home',
     ]);
     expect(lines).toContain('ok');

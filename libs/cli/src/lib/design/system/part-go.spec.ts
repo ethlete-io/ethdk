@@ -9,9 +9,7 @@ import { DESIGN_DIR } from '../paths';
 import { openPointsAnswer, partGoAnswer } from '../studio-api';
 import { designGo } from './go-command';
 import { TomPrompt } from './tom-confirm';
-import { openPointsText } from './open-points';
 import { goPartOf, goPartsOf, goStateOf, readGo } from './part-go';
-import { readOpenPoints } from './read-open-points';
 import { resolveProduct } from './resolve-product';
 
 const checkout = () => {
@@ -47,9 +45,6 @@ const request = (method: string, body?: unknown) =>
 
 const post = (target: string, body: unknown) =>
   partGoAnswer({ target, url: new URL('http://localhost/?product=app-a'), request: request('POST', body) });
-
-const chipPointsOf = (target: string) =>
-  readOpenPoints(productOf(target)).find((entry) => entry.part === 'components/chip')?.points ?? [];
 
 const output = () => {
   const lines: string[] = [];
@@ -106,26 +101,6 @@ describe('part go', () => {
       body: { reason: 'changed' },
     });
     expect(readGo(dir)).toEqual({});
-  });
-
-  it('lists a linked part without a go, or with a stale one, as an open point', async () => {
-    const { target, dir } = checkout();
-
-    expect(chipPointsOf(target)).toEqual([{ kind: 'no-go' }]);
-    expect(readOpenPoints(productOf(target)).find((entry) => entry.part === 'components/tag')?.points).toEqual([
-      { kind: 'missing-state', control: null },
-    ]);
-
-    await post(target, { part: 'components/chip', hash: hashOf(target) });
-
-    expect(chipPointsOf(target)).toEqual([]);
-
-    appendFileSync(join(dir, 'components/chip/chip.ts'), '// changed\n');
-
-    expect(chipPointsOf(target)).toEqual([{ kind: 'stale-go' }]);
-    expect(openPointsText('app-a', [{ part: 'components/chip', points: [{ kind: 'stale-go' }] }])).toContain(
-      '  components/chip: go is stale - the design changed since the go',
-    );
   });
 
   it('answers the go of a part with its open points', async () => {

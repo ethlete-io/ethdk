@@ -25,6 +25,11 @@ vi.mock('./actions-command', async (importOriginal) => {
   return { ...original, partActionFailuresOf: vi.fn(async () => []) };
 });
 
+vi.mock('./slow-checks', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./slow-checks')>()),
+  slowProblemsOf: vi.fn(() => []),
+}));
+
 const checkout = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-part-ready-'));
   const design = join(target, DESIGN_DIR);
@@ -39,6 +44,8 @@ const checkout = () => {
   );
   part('components/tag', 'export default definePart({ states: { default: {} } });\n');
   writeFileSync(join(design, 'config.json'), JSON.stringify({ products: { 'app-a': {} } }));
+  mkdirSync(join(target, 'libs'), { recursive: true });
+  writeFileSync(join(target, 'libs/chip.component.ts'), 'export class Chip {}\n');
 
   return { target, dir: join(design, 'app-a') };
 };
@@ -54,14 +61,13 @@ const hashOf = (target: string, part = 'components/chip') => {
 const goOf = (target: string, part = 'components/chip') =>
   markPartGo({ product: productOf(target), part, by: 'tom', via: 'design go' });
 
-const post = async (target: string, body: { part?: string; hash?: string; by?: string }) => {
+const post = async (target: string, body: { part?: string; hash?: string }) => {
   const product = productOf(target);
   const part = body.part ?? '';
   const marked = await markPartReady({
     product,
     part,
     hash: body.hash,
-    by: body.by,
     pointsOf: async () => {
       const points = await drawnPartPointsOf({ target, config: {}, product, part });
 
@@ -109,11 +115,11 @@ describe('part ready', () => {
     goOf(target);
 
     const hash = hashOf(target);
-    const answer = await post(target, { part: 'components/chip', hash, by: 'tom' });
+    const answer = await post(target, { part: 'components/chip', hash });
 
     expect(answer.status).toBe(200);
     expect(readReady(dir)).toEqual({
-      'components/chip': { hash, files: expect.any(Object), by: 'tom', at: expect.any(String) },
+      'components/chip': { hash, files: expect.any(Object), at: expect.any(String) },
     });
     expect(readyPartsOf(productOf(target))).toEqual(['components/chip']);
 
@@ -133,31 +139,28 @@ describe('part ready', () => {
       busyStates: [],
     });
 
-    expect(await post(target, { part: 'components/chip', hash: hashOf(target), by: 'tom' })).toEqual({
+    expect(await post(target, { part: 'components/chip', hash: hashOf(target) })).toEqual({
       status: 422,
       body: {
         error: 'components/chip has 1 open point - close them before ready',
         points: [{ kind: 'contrast', state: 'default', path: 'span' }],
       },
     });
-    expect(
-      (await post(target, { part: 'components/tag', hash: hashOf(target, 'components/tag'), by: 'tom' })).status,
-    ).toBe(422);
+    expect((await post(target, { part: 'components/tag', hash: hashOf(target, 'components/tag') })).status).toBe(422);
     expect(readReady(dir)).toEqual({});
   });
 
-  it('answers 400 without by or hash, 404 for an unknown part, 409 on a stale hash and 503 without a draw', async () => {
+  it('answers 400 without a hash, 404 for an unknown part, 409 on a stale hash and 503 without a draw', async () => {
     const { target, dir } = checkout();
     const hash = hashOf(target);
 
-    expect((await post(target, { part: 'components/chip', hash })).status).toBe(400);
-    expect((await post(target, { part: 'components/chip', by: 'tom' })).status).toBe(400);
-    expect((await post(target, { part: 'components/gone', hash, by: 'tom' })).status).toBe(404);
-    expect((await post(target, { part: 'components/chip', hash: 'stale', by: 'tom' })).status).toBe(409);
+    expect((await post(target, { part: 'components/chip' })).status).toBe(400);
+    expect((await post(target, { part: 'components/gone', hash })).status).toBe(404);
+    expect((await post(target, { part: 'components/chip', hash: 'stale' })).status).toBe(409);
 
     vi.mocked(drawnFindingsOf).mockResolvedValueOnce({ unavailable: 'no playwright' });
 
-    expect((await post(target, { part: 'components/chip', hash, by: 'tom' })).status).toBe(503);
+    expect((await post(target, { part: 'components/chip', hash })).status).toBe(503);
     expect(readReady(dir)).toEqual({});
   });
 
@@ -168,7 +171,7 @@ describe('part ready', () => {
 
     const hash = hashOf(target);
 
-    await post(target, { part: 'components/chip', hash, by: 'tom' });
+    await post(target, { part: 'components/chip', hash });
 
     const answer = await openPointsAnswer({
       target,
@@ -179,9 +182,10 @@ describe('part ready', () => {
     expect(answer.body).toEqual({
       part: 'components/chip',
       hash,
-      ready: { hash, files: expect.any(Object), by: 'tom', at: expect.any(String) },
+      ready: { hash, files: expect.any(Object), at: expect.any(String) },
       go: { hash, files: expect.any(Object), by: 'tom', at: expect.any(String), via: 'design go' },
       directEdit: false,
+      buildReady: expect.any(Object),
       drawn: false,
       points: [],
     });
@@ -195,13 +199,13 @@ describe('part ready', () => {
 
     const ready = (...argv: string[]) => designReady({ target, argv, invocation: 'et design' });
 
-    expect(await ready('components/tag', '--product', 'app-a')).toBe(2);
-    expect(await ready('components/tag', '--product', 'app-a', '--by', 'tom')).toBe(1);
+    expect(await ready('components/tag', '--product', 'app-a', '--by', 'tom')).toBe(2);
+    expect(await ready('components/tag', '--product', 'app-a')).toBe(1);
     expect(lines).toContain('  components/tag: no controls declared');
     expect(lines).toContain('components/tag has 1 open point - close them before ready');
 
-    expect(await ready('components/chip', '--product', 'app-a', '--by', 'tom')).toBe(0);
-    expect(lines.at(-1)).toBe('components/chip is ready in app-a');
+    expect(await ready('components/chip', '--product', 'app-a')).toBe(0);
+    expect(lines.at(-1)).toBe('components/chip is build-ready in app-a');
     expect(Object.keys(readReady(dir))).toEqual(['components/chip']);
   });
 
@@ -213,7 +217,7 @@ describe('part ready', () => {
     goOf(target);
     vi.mocked(partActionFailuresOf).mockResolvedValueOnce(failed);
 
-    expect(await post(target, { part: 'components/chip', hash: hashOf(target), by: 'tom' })).toEqual({
+    expect(await post(target, { part: 'components/chip', hash: hashOf(target) })).toEqual({
       status: 422,
       body: {
         error: `components/chip fails 1 action check - fix them before ready (${PART_HARNESS_ONLY})`,
@@ -226,7 +230,7 @@ describe('part ready', () => {
     expect(
       await designReady({
         target,
-        argv: ['components/chip', '--product', 'app-a', '--by', 'tom'],
+        argv: ['components/chip', '--product', 'app-a'],
         invocation: 'et design',
       }),
     ).toBe(1);
@@ -238,7 +242,7 @@ describe('part ready', () => {
     expect(
       await designReady({
         target,
-        argv: ['components/chip', '--product', 'app-a', '--by', 'tom', '--url', 'http://localhost:1'],
+        argv: ['components/chip', '--product', 'app-a', '--url', 'http://localhost:1'],
         invocation: 'et design',
       }),
     ).toBe(1);
@@ -247,7 +251,7 @@ describe('part ready', () => {
 
     vi.mocked(partActionFailuresOf).mockResolvedValueOnce({ unavailable: 'no harness' });
 
-    expect(await post(target, { part: 'components/chip', hash: hashOf(target), by: 'tom' })).toEqual({
+    expect(await post(target, { part: 'components/chip', hash: hashOf(target) })).toEqual({
       status: 503,
       body: { error: 'cannot check the actions of components/chip: no harness' },
     });
@@ -405,23 +409,22 @@ describe('ready on an unchanged part', () => {
     return target;
   };
 
-  const readyAs = (target: string, by: string, at: string) =>
+  const readyAs = (target: string, at: string) =>
     markPartReady({
       product: productOf(target),
       part: 'pages/inbox',
       hash: hashOf(target, 'pages/inbox'),
-      by,
       at,
       pointsOf: async () => [],
       actionsOf: async () => [],
     });
 
-  it('keeps by and at and refreshes the embedded record, and writes a new mark when the part changed', async () => {
+  it('keeps at and refreshes the embedded record, and writes a new mark when the part changed', async () => {
     const target = embeddingCheckout();
     const dir = join(target, DESIGN_DIR, 'app-a');
-    const first = await readyAs(target, 'tom', '2026-01-01T00:00:00.000Z');
+    const first = await readyAs(target, '2026-01-01T00:00:00.000Z');
 
-    expect(first).toMatchObject({ by: 'tom' });
+    expect(first).not.toHaveProperty('by');
 
     const marks = readReady(dir);
 
@@ -430,18 +433,15 @@ describe('ready on an unchanged part', () => {
       JSON.stringify({ ...marks, 'pages/inbox': { ...marks['pages/inbox'], embedded: undefined } }),
     );
 
-    const again = await readyAs(target, 'claude-opus-5-5', '2026-02-02T00:00:00.000Z');
+    const again = await readyAs(target, '2026-02-02T00:00:00.000Z');
 
-    expect(again).toMatchObject({ by: 'tom', at: '2026-01-01T00:00:00.000Z' });
+    expect(again).toMatchObject({ at: '2026-01-01T00:00:00.000Z' });
     expect(again).toHaveProperty('embedded');
-    expect(readReady(dir)['pages/inbox']).toMatchObject({ by: 'tom', at: '2026-01-01T00:00:00.000Z' });
+    expect(readReady(dir)['pages/inbox']).toMatchObject({ at: '2026-01-01T00:00:00.000Z' });
     expect(readReady(dir)['pages/inbox']).toHaveProperty('embedded');
 
     appendFileSync(join(dir, 'pages/inbox/inbox.ts'), 'export const more = 1;\n');
 
-    expect(await readyAs(target, 'claude-opus-5-5', '2026-03-03T00:00:00.000Z')).toMatchObject({
-      by: 'claude-opus-5-5',
-      at: '2026-03-03T00:00:00.000Z',
-    });
+    expect(await readyAs(target, '2026-03-03T00:00:00.000Z')).toMatchObject({ at: '2026-03-03T00:00:00.000Z' });
   });
 });

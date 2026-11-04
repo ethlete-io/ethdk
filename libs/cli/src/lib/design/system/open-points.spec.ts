@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { openPointsOf, openPointsText, OpenPointsInput, sketchAddedPointsOf } from './open-points';
+import { OPEN_POINT_KINDS, openPointsOf, openPointsText, OpenPointsInput, sketchAddedPointsOf } from './open-points';
 
 const input = (overrides: Partial<OpenPointsInput>): OpenPointsInput => ({
   parts: [],
@@ -17,15 +17,18 @@ const comment = (id: string, part: string, flags: { answered?: boolean; resolved
 });
 
 describe('openPointsOf', () => {
-  it('lists no open point for an unlinked part', () => {
+  it('lists no open point for a part with controls, linked or not, and has no go kinds', () => {
+    expect(OPEN_POINT_KINDS).not.toContain('no-go');
+    expect(OPEN_POINT_KINDS).not.toContain('stale-go');
+
     expect(
       openPointsOf(
         input({
           parts: [
-            { key: 'components/a', layer: 'components', linked: false, controls: true },
-            { key: 'components/b', layer: 'components', linked: true, controls: true },
-            { key: 'foundations/c', layer: 'foundations', linked: false, controls: true },
-            { key: 'pages/d', layer: 'pages', linked: false, controls: true },
+            { key: 'components/a', layer: 'components', controls: true },
+            { key: 'components/b', layer: 'components', controls: true },
+            { key: 'foundations/c', layer: 'foundations', controls: true },
+            { key: 'pages/d', layer: 'pages', controls: true },
           ],
         }),
       ),
@@ -35,7 +38,7 @@ describe('openPointsOf', () => {
   it('orders the points by kind: open comment, unmerged sketch', () => {
     const [part] = openPointsOf(
       input({
-        parts: [{ key: 'components/a', layer: 'components', linked: false, controls: true }],
+        parts: [{ key: 'components/a', layer: 'components', controls: true }],
         sketches: [
           {
             name: 'components-x',
@@ -56,7 +59,7 @@ describe('openPointsOf', () => {
     const parts = (['components', 'elements', 'pages', 'foundations'] as const).map((layer) => ({
       key: `${layer}/a`,
       layer,
-      linked: true,
+
       controls: false,
     }));
 
@@ -70,7 +73,7 @@ describe('openPointsOf', () => {
     const part = (key: string, declaredNoControls?: boolean) => ({
       key,
       layer: 'components' as const,
-      linked: true,
+
       controls: false,
       declaredNoControls,
     });
@@ -88,8 +91,8 @@ describe('openPointsOf', () => {
       openPointsOf(
         input({
           parts: [
-            { key: 'components/a', layer: 'components', linked: true, controls: true },
-            { key: 'pages/b', layer: 'pages', linked: true, controls: true },
+            { key: 'components/a', layer: 'components', controls: true },
+            { key: 'pages/b', layer: 'pages', controls: true },
           ],
           missingStates: [
             { part: 'components/a', control: 'trigger.hover' },
@@ -108,7 +111,7 @@ describe('openPointsOf', () => {
     expect(
       openPointsOf(
         input({
-          parts: [{ key: 'components/a', layer: 'components', linked: true, controls: true }],
+          parts: [{ key: 'components/a', layer: 'components', controls: true }],
           comments: [
             comment('answered', 'components/a', { answered: true }),
             comment('resolved', 'components/a', { answered: true, resolved: true }),
@@ -127,7 +130,7 @@ describe('openPointsOf', () => {
           {
             key: 'components/a',
             layer: 'components',
-            linked: true,
+
             controls: true,
             motion: {
               states: ['closed', 'open', 'focus-visible', 'pending'],
@@ -141,21 +144,21 @@ describe('openPointsOf', () => {
           {
             key: 'pages/b',
             layer: 'pages',
-            linked: true,
+
             controls: true,
             motion: { states: ['default', 'empty'], motions: [], unreachable: [] },
           },
           {
             key: 'foundations/c',
             layer: 'foundations',
-            linked: true,
+
             controls: true,
             motion: { states: ['light', 'dark'], motions: [], unreachable: [] },
           },
           {
             key: 'components/d',
             layer: 'components',
-            linked: true,
+
             controls: true,
             motion: { states: ['busy-row'], motions: [], unreachable: [] },
           },
@@ -187,8 +190,8 @@ describe('openPointsText', () => {
     const list = openPointsOf(
       input({
         parts: [
-          { key: 'components/a', layer: 'components', linked: false, controls: true },
-          { key: 'components/b', layer: 'components', linked: true, controls: true },
+          { key: 'components/a', layer: 'components', controls: true },
+          { key: 'components/b', layer: 'components', controls: true },
         ],
         sketches: [
           {
@@ -228,8 +231,8 @@ describe('openPointsText', () => {
     const list = openPointsOf(
       input({
         parts: [
-          { key: 'components/a', layer: 'components', linked: true, controls: false },
-          { key: 'components/b', layer: 'components', linked: true, controls: true },
+          { key: 'components/a', layer: 'components', controls: false },
+          { key: 'components/b', layer: 'components', controls: true },
         ],
         missingStates: [
           { part: 'components/b', control: 'trigger.hover' },
@@ -257,7 +260,7 @@ describe('openPointsText', () => {
           {
             key: 'components/a',
             layer: 'components',
-            linked: true,
+
             controls: true,
             motion: {
               states: ['collapsed', 'expanded'],
@@ -268,7 +271,7 @@ describe('openPointsText', () => {
           {
             key: 'components/b',
             layer: 'components',
-            linked: true,
+
             controls: true,
             motion: { states, motions: [], unreachable: [] },
           },
@@ -290,7 +293,7 @@ describe('openPointsText', () => {
           {
             key: 'components/b',
             layer: 'components',
-            linked: true,
+
             controls: true,
             motion: { states: ['loading', 'pending'], motions: [], unreachable: [], instant: true },
           },
@@ -363,7 +366,7 @@ describe('sketchAddedPointsOf', () => {
             {
               key: 'components/a',
               layer: 'components',
-              linked: true,
+
               controls: true,
               motion: { states: ['closed', 'open', 'pending'], motions: [], unreachable: [], instant: true },
             },
@@ -381,7 +384,7 @@ describe('sketchAddedPointsOf', () => {
             {
               key: 'components/comment-draft',
               layer: 'components',
-              linked: false,
+
               controls: true,
               motion: { states: ['empty', 'typed', 'sending', 'error'], motions: [], unreachable: [], instant: true },
             },

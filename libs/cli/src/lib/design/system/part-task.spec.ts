@@ -582,7 +582,6 @@ describe('doneParts', () => {
         product: product(),
         part,
         hash: readyHash(part),
-        by: 'tom',
         pointsOf: async () => [],
         actionsOf: async () => [],
       });
