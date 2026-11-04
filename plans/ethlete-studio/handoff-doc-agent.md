@@ -3,7 +3,7 @@
 # Handoff: grill/docs session (doc-agent), 2026-11-04 late evening
 
 Talk to Tom in German (`/doc-agent` skill). Builder: `ethlete-sdk-02` (English, SendMessage). Findings go to
-`plans/ethlete-studio/design-to-code.md` as `N\. ` paragraphs (last is 431), rows in `STATUS.md` (last is B365).
+`plans/ethlete-studio/design-to-code.md` as `N\. ` paragraphs (last is 432), rows in `STATUS.md` (last is B365).
 Latest ADR is 0186. Done rows are deleted from STATUS.md; an ADR's `open: B<row>` becomes `built: <sha>`.
 
 ## Rules Tom set today
@@ -29,3 +29,4 @@ B341, B342, B344, B347, B349, B355, B358, B359) follow in the builder's order.
   sketch on pages/sketches).
 - Finding 427: B365 measures it right after B363, before B345/B346 (ADR 0185).
 - Finding 427 (explorer swallows wheel events, then scrolls late): the cause is asked from the builder.
+- Finding 432 (the "Aktuell" frame is cut at the left): cause asked from the builder.

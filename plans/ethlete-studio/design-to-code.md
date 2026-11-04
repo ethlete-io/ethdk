@@ -4763,6 +4763,14 @@ change, check "change readable on open"); (2) B346: the state name keeps a floor
 sketch gives the sample other variant names (Tom picks), and B362 gets a rule that a part which draws the tool itself
 uses sample labels that differ from the live chrome.
 
+432\. Tom (2026-11-04, screenshot of `agent-failed` and `question-only` in `pages/sketches@merge-port`): "dann
+funktioniert die unveränderte screens erkennung noch nicht korrekt. bzw screens wurden mixed". The compare itself is
+right: in both states, "Aktuell" marks fit-hover, fit-active and fit-focus-visible of sample variant a as changed, and
+"Variante a" marks them "unverändert" (the B357 change). But the "Aktuell" frame is cut at the left: the icon rail and
+most of the explorer are missing, and the page starts about 180 px into the frame, while the "Variante a" frame shows
+the whole page. Such a cut makes two shots look like different screens. Cause not yet known (asked the builder). Why no
+tool caught it, and the fix: pending the cause; possibly the same fit math as the cut-off in finding 421.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
