@@ -69,6 +69,7 @@ const repoWithCommitTool = () => {
   }
   symlinkSync(join(sdk, 'node_modules'), join(repo, 'node_modules'));
   put(repo, '.gitignore', 'node_modules\n');
+  put(repo, 'eslint.config.mjs', 'export default [];\n');
   put(
     repo,
     'libs/cli/vitest.config.mts',
