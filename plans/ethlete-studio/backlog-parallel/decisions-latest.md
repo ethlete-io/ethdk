@@ -1,5 +1,14 @@
 # Parallel backlog - latest decisions (Q203 and later)
 
+### Pixel check and blocker wording (Tom, 2026-11-04, findings 374 and 375)
+
+1. **B313/B321 pixel check runs locally first:** an agent writes the WebKit pixel check now (explorer pixels under
+   frame churn plus a 1.5-3 s main-thread busy loop, ScreenCaptureKit capture) without a run. Tom names a quiet
+   window and grants Screen Recording to the harness; then it runs once on HEAD (must fail) and once with the
+   shell-main stacking fix (must pass). The macOS CI job is a follow-up check.
+2. **Wording:** the `stale-record` blocker reads "Kein Prüfergebnis zum aktuellen Design - Design-Check oder
+   Design-Ready ausführen" (not "Prüfstand").
+
 ### CLI copy build at restart (Tom, 2026-11-04, finding 372)
 
 1. **The click is the approval:** when a newer `libs/cli` commit has no copy yet, "Neu starten" builds it on its

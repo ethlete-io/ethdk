@@ -4573,8 +4573,12 @@ none` on html, body and every element (the property is not inherited); the Tauri
 375. Tom (2026-11-04, about 15:35): finding 367 is back. While the WebContent process hangs, the frames of the
      first canvas column ("Rendering" chips, borders, text) paint on top of the explorer tree. So `isolate` and
      `contain-paint` (de2b83743) do not hold in WKWebView under load. Why no tool caught it: the B313 pixel check
-     under frame churn is not built, and the de2b83743 spec checks the classes only. Cause: open (builder). Tool
-     fix: B313 first, so the check fails on this state before the next fix lands.
+     under frame churn is not built, and the de2b83743 spec checks the classes only. Cause (builder): in
+     `shell-main.component.html` the canvas `<main>` and the explorer `<aside>` are absolute siblings without a
+     stacking context, the explorer is on top only by DOM order, and the canvas reaches under the explorer on
+     purpose, so a canvas-side `isolate` cannot hold; WKWebView lags in its overlap check while WebContent hangs.
+     Tool fix: B313 first, so the check fails on this state; then `isolate` on `<main>` and an own layer for the
+     explorer.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
