@@ -4787,6 +4787,21 @@ variant a's pill look only to its changed states (`cell()` in `shared/sketch-row
 differs, invisible at 24 %. No compare fix. Fix (B345): the cut-out shows such a strip enlarged at fit, and the state
 says why it changed when the diff is small (for example "1358 px in 3 Zellen").
 
+434\. Tom (2026-11-04, merge of `pages/sketches@merge-port` variant a): "immer. wieder. fehler. beim. mergen." The check
+after the merge failed with `TYPE-ERROR ... elements/variant-cell/variant-cell.ts:88:3 TS2353 'sample' does not exist
+in type 'PartSource<...>'`; the product files rolled back and the sketch stayed. Cause (builder): the B363 subagent
+edited product files (`variant-cell.ts`, both `shared/sketch-rows.ts`, a baseline in the ready `merge-port/sketch.json`)
+without committing; its brief did not forbid it. The :4402 server runs `serve-committed`, so the merge check
+type-checks with the committed CLI copy, whose `define-part` has no `sample`. `variant-cell` is not part of the merge,
+so the check covers more than the merged files, and Tom's merge carried the blame for an agent's half edit. The
+subagent's edits were intact; the builder saved them to `/tmp/b363-product/product.patch` and restored HEAD.
+Why no tool caught it: the merge writes before it looks at the tree; nothing marks product edits outside the sketch;
+the check reports any type error as a failed merge of the sketch. Tool fix (B366): (a) the merge refuses before it
+writes anything when the product has uncommitted edits outside the sketch, and names the files; (b) a type error in a
+file the merge did not change reads "product broken outside this sketch: <file>", not a failed merge; a spec for
+each. Process: no agent edits product files under `.ethlete/design` while a sketch waits for Tom; every subagent
+brief says so.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
