@@ -5,7 +5,7 @@ import { connect, createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { cliCopyPlan, ensureCliCopy } from './studio-code.mjs';
+import { APP_SOURCES, AREAS, areaState, cliCopyPlan, ensureCliCopy } from './studio-code.mjs';
 
 const A = 'a'.repeat(40);
 const B = 'b'.repeat(40);
@@ -153,6 +153,38 @@ test('a clean libs/cli without dist/libs/cli builds the last commit', () => {
     assert.ok(existsSync(copy.entry));
   } finally {
     spawnSync('git', ['worktree', 'prune'], { cwd: root });
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('the frontend area is the path list the app copy is built from', () => {
+  assert.equal(AREAS.frontend, APP_SOURCES);
+});
+
+test('a commit to a lib the app imports moves the frontend, a host commit does not', () => {
+  const root = mkdtempSync(join(tmpdir(), 'studio-code-spec-'));
+  const commit = (path, text) => {
+    mkdirSync(join(root, path, '..'), { recursive: true });
+    writeFileSync(join(root, path), text);
+    git(root, 'add', '.');
+    git(root, 'commit', '-qm', path);
+
+    return git(root, 'rev-parse', 'HEAD');
+  };
+
+  try {
+    git(root, 'init', '-q');
+    git(root, 'config', 'user.email', 'spec@example.com');
+    git(root, 'config', 'user.name', 'spec');
+
+    commit('apps/ethlete-studio/src/main.ts', 'one\n');
+
+    const lib = commit('libs/core/index.ts', 'one\n');
+
+    commit('apps/ethlete-studio/src-tauri/main.rs', 'one\n');
+
+    assert.equal(areaState(root).frontend.latest, lib);
+  } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });

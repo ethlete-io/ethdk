@@ -37,10 +37,10 @@ describe('codeNoticeOf', () => {
     });
   });
 
-  it('asks to reload after a commit in the page', () => {
+  it('asks to restart the server after a commit to the app copy', () => {
     expect(codeNoticeOf({ ...settled, frontend: { latest: B } }, A)).toEqual({
-      text: 'Oberfläche geändert - neu laden',
-      action: 'reload',
+      text: 'Oberfläche geändert - neu starten',
+      action: 'restartServer',
     });
   });
 
