@@ -349,6 +349,9 @@ const isSketchFile = (designRoot: string, file: string) => {
   return !!product && product !== '..' && folder === 'sketches' && inside.length > 0;
 };
 
+// Workaround: WebKit drops an event stream that sends nothing for 60 seconds.
+export const DESIGN_EVENTS_HEARTBEAT_MS = 20_000;
+
 /**
  * A server-sent event stream for Studio: `comments`, `notes`, `flows`, `calls` and `sketches` when a file of that
  * kind changed, and `parts` with the parts a design system change redraws and the revision it gave them. A `parts`
@@ -356,6 +359,11 @@ const isSketchFile = (designRoot: string, file: string) => {
  */
 const createDesignEvents = () => {
   const listeners = new Set<ServerResponse>();
+  let heartbeat: ReturnType<typeof setInterval> | undefined;
+
+  const beat = () => {
+    for (const response of listeners) response.write(': heartbeat\n\n');
+  };
 
   return {
     middleware: (request: IncomingMessage, response: ServerResponse) => {
@@ -367,12 +375,22 @@ const createDesignEvents = () => {
       });
       response.write(': open\n\n');
       listeners.add(response);
-      request.on('close', () => listeners.delete(response));
+      heartbeat ??= setInterval(beat, DESIGN_EVENTS_HEARTBEAT_MS).unref();
+      request.on('close', () => {
+        listeners.delete(response);
+
+        if (listeners.size === 0) {
+          clearInterval(heartbeat);
+          heartbeat = undefined;
+        }
+      });
     },
     signal: (event: 'comments' | 'notes' | 'flows' | 'calls' | 'sketches' | 'parts', data: object = {}) => {
       for (const response of listeners) response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
     },
     close: () => {
+      clearInterval(heartbeat);
+      heartbeat = undefined;
       for (const response of listeners) response.end();
       listeners.clear();
     },

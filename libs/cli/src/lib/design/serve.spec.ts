@@ -15,7 +15,7 @@ import { tmpdir } from 'os';
 import { basename, dirname, join, resolve } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, installedAssetRoot, readConfig } from './paths';
-import { createDesignServer, serveDesign } from './serve';
+import { DESIGN_EVENTS_HEARTBEAT_MS, createDesignServer, serveDesign } from './serve';
 import { resolveProduct } from './system/resolve-product';
 import { createSketch, markSketchReady, parseTarget, Sketch } from './system/sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
@@ -715,6 +715,32 @@ describe('the design server for a design system', () => {
       'event: sketches\ndata: {}\n\n',
       'event: sketches\ndata: {}\n\n',
     ]);
+  });
+
+  it('keeps a quiet event stream alive with a heartbeat until the last listener leaves', async () => {
+    const { handlers } = await serveAcme(acme());
+    const written: string[] = [];
+    const closes: (() => void)[] = [];
+
+    vi.useFakeTimers();
+
+    try {
+      handlers.get('/__design/comment-events')?.(
+        { on: (_event: string, close: () => void) => closes.push(close) } as unknown as IncomingMessage,
+        { writeHead: () => undefined, write: (chunk: string) => written.push(chunk) } as unknown as ServerResponse,
+      );
+      vi.advanceTimersByTime(DESIGN_EVENTS_HEARTBEAT_MS);
+
+      expect(DESIGN_EVENTS_HEARTBEAT_MS).toBeLessThan(60_000);
+      expect(written).toEqual([': open\n\n', ': heartbeat\n\n']);
+
+      closes.forEach((close) => close());
+      vi.advanceTimersByTime(DESIGN_EVENTS_HEARTBEAT_MS * 3);
+
+      expect(written).toHaveLength(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

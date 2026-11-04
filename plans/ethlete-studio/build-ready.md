@@ -341,3 +341,15 @@ On the `studio-serve` tmux server (:4402), after S6b:
 - A `<part>@edit` sketch (old/new after a direct edit) has no "Verwerfen" button. Picking `old` is the discard: the
   merge writes the HEAD copy back into the part folder and records the hash, so the sketch does not reopen. Known
   limit: `shared/` files are the working ones in both variants, so `old` does not undo a `shared/` edit.
+
+## As built: B311 event-stream heartbeat (finding 365, part 1)
+
+- Cause: WKWebView drops an SSE response after 60 s of silence; `comment-events` was silent. Each reconnect made
+  Studio remount every frame and restart the full sketches listing, which blocks the Node event loop of :4402 for
+  12-30 s, so frame.html, `/__design/render` and shots timed out. Proven with an offscreen WKWebView probe (closed at
+  exactly 60.0 s without a heartbeat, open 139 s with one) and curl (frame.html 11.7 s behind a listing).
+- Built: `DESIGN_EVENTS_HEARTBEAT_MS` (20 s) heartbeat in `serve.ts` `createDesignEvents`, spec in `serve.spec.ts`
+  (fails without the fix).
+- Verified: the heartbeat spec. Not verified: in Studio (needs a CLI build and a server restart).
+- Open: run `openSketchProblemsOf` off the event loop; reconnect without a pid change must not remount frames;
+  `designAnswer$` must surface errors; server spec for frame.html latency during a listing; WKWebView soak check.
