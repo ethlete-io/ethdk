@@ -4312,6 +4312,17 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      (RUSTSEC-2026-0429) and a yanked crate; external, no hook would have caught it at push time. Open: the tool
      change that runs the affected behavior suites before a component change is pushed (Tom's call).
 
+345. Builder (2026-11-04, B291): docs:build failed with "Element is missing end tag". c922a8e65 wrapped a code span
+     so a line in apps/docs/cli/index.md started with `<sketch> <part> ...`, and VitePress read it as raw HTML. Fixed
+     in dc936b68e. Why no tool caught it: pre-push runs no docs build. Tool fix (technical, grill decided): pre-push
+     runs `docs:build` when the push changes apps/docs (about 1 min). Built as B292.
+346. Builder (2026-11-04, B287): the title-search gate was red (459-1048 px off), but with a freshly built CLI compare
+     is 0 px in all 8 states and the app component is unchanged since 6e3c4f00b. Most likely cause (not proven, does
+     not reproduce): a stale dist/libs/cli from before 0ddbcc120. Why no tool caught it: `design compare` and
+     `design check` run dist/libs/cli without a stale check, so a stale CLI reports gaps HEAD does not have. Tool fix
+     (technical): the CLI rebuilds or refuses when its dist is older than the libs/cli sources, as the gate does for
+     the libs, with a spec. Built as B293. B287 closed with no app change.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
