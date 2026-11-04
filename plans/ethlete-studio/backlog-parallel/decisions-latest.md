@@ -31,6 +31,15 @@
   emit). Type-only cycles stay; no interfaces only to break them (80 left on purpose).
   `libs/components/src/import-cycles.spec.ts` guards runtime cycles (2ad7291ac, c63a0f089).
 - **Tooltip in a dialog:** two Escapes; the first hides the tooltip, the second closes the dialog (722bfb421).
+- **Studio checks leave the git hook (Tom: "we built a check system in Studio, why rely on git hooks").** The four
+  Studio gates in `.husky/pre-push` (studio specs, static design check of reached parts, live check of regions no
+  part covers, visible-change gate) become rules of Studio's check system; their hits show as problems on the part.
+- **What stops a defect without the hook:** a part with an open problem is not build-ready, and the builder reports a
+  slice done only when its parts are build-ready. CI runs the same rules as the backstop. Tom: this belongs to the
+  go-system rework (build-ready replaces go, B249); build it there.
+- **Pre-push keeps only fast checks that prevent a certain CI failure:** format, changesets and the VitePress build
+  when apps/docs changes. Lint and typecheck move to CI only; no throwaway clone for them.
+- **go.json commit hook:** unchanged; it goes away with go.json in B249. Until then Tom commits go.json himself.
 
 ### Studio order, explorer, merge canvas and "build-ready" decisions (Tom, 2026-11-02)
 
