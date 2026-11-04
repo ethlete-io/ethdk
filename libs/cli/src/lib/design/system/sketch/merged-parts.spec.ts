@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -6,11 +6,14 @@ import { DESIGN_DIR, readConfig } from '../../paths';
 import { resolveProduct } from '../resolve-product';
 import {
   changedOutsideSketchOf,
+  directEditsOf,
   forgetMerged,
   MERGED_FILE,
   readMergeDecision,
+  readMergeNote,
   readMerged,
   recordMerged,
+  recordMergeReason,
 } from './merged-parts';
 import { createSketch } from './sketch';
 
@@ -132,5 +135,49 @@ describe('merge decisions', () => {
 
     expect(Object.keys(readMerged(productDir(target)))).toEqual(['elements/hero']);
     expect(readMergeDecision(productDir(target), 'elements/hero')).toEqual(decision);
+  });
+});
+
+describe('recordMergeReason', () => {
+  const decision = { variant: 'b', decidedBy: 'plan: A10 S5', at: '2026-11-04T00:00:00.000Z' };
+
+  it("notes the plan ref and reason in the part's merged.json entry, not in accepted.json", () => {
+    const target = acme();
+    const product = resolveAcme(target);
+
+    recordMerged({ product, parts: ['elements/hero'], decision });
+    recordMergeReason({ product, part: 'elements/hero', planRef: 'A10 S5', reason: 'calmer' });
+
+    expect(readMergeNote(productDir(target), 'elements/hero')).toBe(
+      'merged without a pick: allowed by A10 S5 - merged: calmer',
+    );
+    expect(readMergeDecision(productDir(target), 'elements/hero')).toEqual(decision);
+    expect(existsSync(join(productDir(target), 'accepted.json'))).toBe(false);
+  });
+
+  it('keeps the note when a part is recorded again and drops it on the next merge decision', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+
+    recordMerged({ product, parts: ['elements/hero'], decision });
+    recordMergeReason({ product, part: 'elements/hero', reason: 'calmer' });
+    recordMerged({ product, parts: ['elements/hero'] });
+
+    expect(readMergeNote(productDir(target), 'elements/hero')).toBe('merged: calmer');
+
+    recordMerged({ product, parts: ['elements/hero'], decision });
+
+    expect(readMergeNote(productDir(target), 'elements/hero')).toBeNull();
+  });
+});
+
+describe('directEditsOf', () => {
+  it('lists a merged part changed outside a sketch without a sketch yet', () => {
+    const target = acme();
+
+    recordMerged({ product: resolveAcme(target), parts: ['elements/hero'] });
+    changeHero(target);
+
+    expect(directEditsOf(resolveAcme(target))).toEqual([{ part: 'elements/hero', sketch: null }]);
   });
 });

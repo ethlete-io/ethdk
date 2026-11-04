@@ -7,6 +7,7 @@ export const OPEN_POINT_KINDS = [
   'contrast',
   'open-comment',
   'unmerged-sketch',
+  'direct-edit',
   'plan-question',
   'missing-motion',
 ] as const;
@@ -20,7 +21,8 @@ export const SKETCH_KINDS: readonly OpenPointKind[] = ['missing-state', 'contras
  * Something that keeps a part from being done. `missing-state` is a control without a drawn state (`control` null when
  * the part declares no controls); `contrast` is a drawn state under the contrast rule; `open-comment` is a thread the
  * user has not resolved, `answered` when it waits on the user; `unmerged-sketch` is a sketch on the part that is still
- * there, picked or not; `missing-motion` is a pair of states without a motion between them, or, with `from` equal to
+ * there, picked or not; `direct-edit` is a merged part changed outside a sketch, with the old/new sketch it waits on
+ * (`sketch` null until one is open); `missing-motion` is a pair of states without a motion between them, or, with `from` equal to
  * `to`, an ongoing-work state without its looping motion.
  */
 export type OpenPoint =
@@ -34,6 +36,7 @@ export type OpenPoint =
       status: SketchStatus;
       decision: SketchDecision['kind'] | null;
     }
+  | { kind: 'direct-edit'; sketch: string | null }
   | { kind: 'missing-motion'; from: string; to: string };
 
 /** The state pairs of a part as its file declares them, read without running it. */
@@ -69,6 +72,7 @@ export type OpenPointsInput = {
   missingStates?: { part: string; control: string }[];
   contrasts?: { part: string; state: string; path: string }[];
   busyStates?: { part: string; state: string }[];
+  directEdits?: { part: string; sketch: string | null }[];
 };
 
 const STATELESS_LAYERS: Layer[] = ['foundations', 'pages'];
@@ -123,6 +127,9 @@ export const openPointsOf = (input: OpenPointsInput): PartOpenPoints[] =>
         motion,
         busy: (input.busyStates ?? []).filter((busy) => busy.part === key).map(({ state }) => state),
       }),
+      ...(input.directEdits ?? [])
+        .filter((edit) => edit.part === key)
+        .map(({ sketch }) => ({ kind: 'direct-edit' as const, sketch })),
       ...input.sketches
         .filter((sketch) => sketch.targets.includes(key))
         .map((sketch) => ({
@@ -155,6 +162,8 @@ const subjectOf = (point: OpenPoint) => {
       return `${point.from} -> ${point.to}`;
     case 'open-comment':
       return point.comment;
+    case 'direct-edit':
+      return point.sketch ?? '';
     default:
       return '';
   }
@@ -253,6 +262,15 @@ const groupText = (kind: OpenPointKind, points: OpenPoint[]) => {
 
     return `${ids.length} open comment${ids.length === 1 ? '' : 's'} (${ids.join(', ')})`;
   }
+
+  if (kind === 'direct-edit')
+    return points
+      .map((point) =>
+        point.kind === 'direct-edit' && point.sketch
+          ? `changed outside a sketch - pick old or new in sketch ${point.sketch}`
+          : 'changed outside a sketch - design check draws it',
+      )
+      .join('; ');
 
   return points.map((point) => (point.kind === 'unmerged-sketch' ? sketchText(point) : point.kind)).join('; ');
 };

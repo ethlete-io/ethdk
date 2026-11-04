@@ -19,6 +19,7 @@ import {
   stateNamesOf,
   unreachableOf,
 } from './sketch/part-definition';
+import { directEditsOf } from './sketch/merged-parts';
 import { listSketches } from './sketch/sketch';
 
 const isPair = <T extends { from: string | null; to: string | null }>(
@@ -58,6 +59,8 @@ export const readOpenPoints = (
   rendered: Pick<OpenPointsInput, 'missingStates' | 'contrasts' | 'busyStates'> = {},
 ): PartOpenPoints[] => {
   const source = { productDir: product.dir, product: product.name };
+  const directEdits = directEditsOf(product);
+  const editSketches = new Set(directEdits.flatMap(({ sketch }) => (sketch ? [sketch] : [])));
 
   return openPointsOf({
     parts: partInputsOf(product),
@@ -69,7 +72,7 @@ export const readOpenPoints = (
       resolved: comment.resolved !== undefined,
     })),
     sketches: listSketches(source).flatMap((sketch) =>
-      typeof sketch === 'string'
+      typeof sketch === 'string' || editSketches.has(sketch.target)
         ? []
         : [
             {
@@ -81,6 +84,7 @@ export const readOpenPoints = (
             },
           ],
     ),
+    directEdits,
     ...rendered,
   });
 };

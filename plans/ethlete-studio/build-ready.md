@@ -263,3 +263,27 @@ On the `studio-serve` tmux server (:4402), after S6b:
   (`apps/ethlete-studio/src/app/system-view/open-points.ts`, `src/host/design-open-points.ts`) - S5.
 - Follow-ups: `apps/docs/cli/index.md` still shows `design ready --by` (docs); `embedded-actions.spec.ts` now expects
   check to drop the record of a part with a rule problem instead of printing `ACTIONS RERUN` for it.
+
+## As built: S5
+
+- `system/sketch/edit-sketch.ts` `openEditSketch`: a ready `<part>@edit` sketch, variants `new` (working part) and `old`
+  (the part folder at HEAD, its `shared/` imports rewritten to `@shared/`; a changed shared file shows the new one in
+  both). Refuses when the part is not in HEAD or HEAD already holds the edit.
+- `accepted-pictures.ts` `autoAcceptOf` (name kept, `check-system.ts` untouched): stores one kind, `record`, at the
+  design hash of a merged part unchanged since its merge; a direct edit compares with `record`, else `review` at the
+  merged hash, else `go`. Same pictures: `recordMerged` (holds, `HELD` line). Changed: `PICTURES CHANGED` +
+  `DIRECT EDIT` line and the edit sketch. No pictures to compare with: the edit sketch, no drawing. The go carry is gone.
+- Serve hook: `system/slow-run.ts` `startSlowRunner` resolves each settled direct edit (hash still for one poll) of every
+  product before the slow rules, in the same one-run-at-a-time poll.
+- Open point `direct-edit { sketch: string | null }` (`open-points.ts`); `read-open-points.ts` reads it through
+  `directEditsOf` (`merged-parts.ts`) and hides the edit sketch's `unmerged-sketch` point.
+- `merged.json` entries take `note`: `recordMergeReason` writes plan ref and reason there (Q4); a new merge decision
+  drops it. `recordAutoMerge` / `recordAutoReview` are gone; auto-merge and `--allowed-by` write no `accepted.json`.
+  `acceptPart` still logs it until S4 deletes it.
+- Verified: specs `accepted-pictures`, `sketch/edit-sketch`, `sketch/merged-parts`, `sketch-command`, `open-points`,
+  `accept-command`, `part-accept`; `tsc` on the spec config; `nx lint cli` (no new warnings); prettier.
+- Not verified: the slow-runner hook (no spec, no live serve run), a real browser drawing, the Studio app on the new
+  kind, `nx test cli` in full. Red-first was not kept: specs were written with the code.
+- Follow-ups: S6b shows `direct-edit` (Studio app readers do not know the kind yet). S4 removes `acceptPart`,
+  `readAccepted`, `ACCEPTED_FILE` and the `kind` argument of `storePictures`. Discarding an edit sketch reopens it on
+  the next poll. S8 migrates `pictures.json` through `writePictures`.

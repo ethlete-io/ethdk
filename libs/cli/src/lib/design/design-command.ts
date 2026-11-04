@@ -122,7 +122,7 @@ const helpOf = (invocation: string) =>
     '  Set the note of one variant in sketch.json, the one sketch new sets with --variant-note.',
     '',
     `${invocation} sketch merge <layer>/<name> [--note <reason> [--replace-note]] --by <model id> | sketch discard <layer>/<name> --by <model id>`,
-    '  Merge the variant the user picked, log --note in accepted.json (the part note stays; --replace-note writes it',
+    '  Merge the variant the user picked, note --note in merged.json (the part note stays; --replace-note writes it',
     '  over), set madeBy (its authors) on the target, then check and',
     '  restore the old files on failure. Or drop the sketch. Both resolve the addressed comments on its variants and mark the open ones addressed;',
     '  a merge keeps a thread open that has no reply yet or whose last entry asks a question. Studio runs',

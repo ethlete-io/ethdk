@@ -1,13 +1,15 @@
-import { appendFileSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { execFileSync } from 'child_process';
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../paths';
 import { designAccept } from './accept-command';
 import { autoAcceptOf, DrawStates, readPictures, StatePictures } from './accepted-pictures';
-import { goStateOf, markPartGo, readGo } from './part-go';
-import { resolveProduct } from './resolve-product';
-import { acceptPart, changedOutsideSketchOf, readAccepted, readMerged, recordMerged } from './sketch/merged-parts';
+import { designHashOf } from './design-hash';
+import { partPointsOf, readOpenPoints } from './read-open-points';
+import { partKeyOf, resolveProduct } from './resolve-product';
+import { changedOutsideSketchOf, readMerged, recordMerged } from './sketch/merged-parts';
 
 const CHIP = 'components/chip';
 
@@ -24,11 +26,21 @@ const checkout = () => {
     'export default definePart({ states: { default: {}, hover: {} } });\n',
   );
   writeFileSync(join(design, 'config.json'), JSON.stringify({ products: { 'app-a': {} } }));
+  execFileSync('git', ['init', '-q'], { cwd: target });
+  execFileSync('git', ['add', '.'], { cwd: target });
+  execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'base'], { cwd: target });
 
   return { target, dir: join(design, 'app-a'), chip: join(design, 'app-a/components/chip/chip.ts') };
 };
 
 const productOf = (target: string) => resolveProduct({ target, name: 'app-a', config: {} });
+
+const designHashOfChip = (target: string) => {
+  const product = productOf(target);
+  const part = product.parts.find((candidate) => partKeyOf(candidate) === CHIP);
+
+  return part ? designHashOf({ product, part }).hash : '';
+};
 
 const drawing = (initial: StatePictures) => {
   const calls: string[][] = [];
@@ -48,174 +60,92 @@ const autoAccept = (target: string, draw: DrawStates) =>
 describe('autoAcceptOf', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it('stores the pictures of a go that holds, and carries the go when every state draws the same', async () => {
-    const { target, dir, chip } = checkout();
+  it('stores the record pictures of a merged part at its design hash and draws them once', async () => {
+    const { target, dir } = checkout();
     const { draw, calls } = drawing({ default: 'a1', hover: 'b2' });
-    const go = markPartGo({ product: productOf(target), part: CHIP, by: 'tom', via: 'design go', note: 'Impl Q1' });
+
+    recordMerged({ product: productOf(target), parts: [CHIP] });
 
     expect(await autoAccept(target, draw)).toEqual([]);
-    expect(readPictures(dir)[CHIP]?.go).toEqual({
-      hash: 'hash' in go ? go.hash : '',
-      states: { default: 'a1', hover: 'b2' },
-      slots: true,
+    expect(readPictures(dir)[CHIP]).toEqual({
+      record: { hash: designHashOfChip(target), states: { default: 'a1', hover: 'b2' }, slots: true },
     });
     expect(await autoAccept(target, draw)).toEqual([]);
     expect(calls).toHaveLength(1);
-
-    appendFileSync(chip, '// attribute-only edit\n');
-
-    expect(goStateOf({ product: productOf(target), part: CHIP })).toBe('stale');
-    expect(await autoAccept(target, draw)).toEqual([
-      `AUTO ACCEPTED app-a ${CHIP} (go): every state draws as at the last acceptance`,
-    ]);
-    expect(goStateOf({ product: productOf(target), part: CHIP })).toBe('current');
-    expect(readGo(dir)[CHIP]).toMatchObject({
-      by: 'tom',
-      via: 'design go',
-      note: 'Impl Q1',
-      auto: true,
-      refreshedBy: 'design check',
-      cause: 'design hash changed, no state picture changed',
-    });
-    expect(readPictures(dir)[CHIP]?.go?.hash).toBe(readGo(dir)[CHIP]?.hash);
   });
 
-  it('leaves by and via of a studio-click go untouched on a refresh and names the refresher apart', async () => {
-    const { target, dir, chip } = checkout();
-    const { draw } = drawing({ default: 'a1', hover: 'b2' });
-
-    markPartGo({ product: productOf(target), part: CHIP, by: 'user', via: 'studio click', note: 'studio click' });
-    await autoAccept(target, draw);
-    appendFileSync(chip, '// attribute-only edit\n');
-    await autoAccept(target, draw);
-
-    expect(readGo(dir)[CHIP]).toMatchObject({
-      by: 'user',
-      via: 'studio click',
-      note: 'studio click',
-      auto: true,
-      refreshedBy: 'design check',
-    });
-  });
-
-  it('records the command on every go write', () => {
-    const { target, dir } = checkout();
-
-    markPartGo({ product: productOf(target), part: CHIP, by: 'tom', via: 'design go' });
-
-    expect(readGo(dir)[CHIP]?.via).toBe('design go');
-  });
-
-  it('keeps a go stale when a state draws differently or a state is gone', async () => {
-    const { target, dir, chip } = checkout();
-    const { draw, pictures } = drawing({ default: 'a1', hover: 'b2' });
-
-    markPartGo({ product: productOf(target), part: CHIP, by: 'tom', via: 'design go' });
-    await autoAccept(target, draw);
-    appendFileSync(chip, '// visible edit\n');
-    pictures.now = { default: 'a1', hover: 'c3' };
-
-    expect(await autoAccept(target, draw)).toEqual([`PICTURES CHANGED app-a ${CHIP}: hover`]);
-    expect(goStateOf({ product: productOf(target), part: CHIP })).toBe('stale');
-
-    pictures.now = { default: 'a1' };
-
-    expect(await autoAccept(target, draw)).toEqual([`PICTURES CHANGED app-a ${CHIP}: hover`]);
-    expect(goStateOf({ product: productOf(target), part: CHIP })).toBe('stale');
-    expect(readGo(dir)[CHIP]?.auto).toBeUndefined();
-  });
-
-  it('carries a go past a new state and keeps the new state for the next review', async () => {
-    const { target, dir, chip } = checkout();
-    const { draw, pictures } = drawing({ default: 'a1', hover: 'b2' });
-
-    markPartGo({ product: productOf(target), part: CHIP, by: 'tom', via: 'design go' });
-    await autoAccept(target, draw);
-    appendFileSync(chip, '// new state\n');
-    pictures.now = { default: 'a1', hover: 'b2', focus: 'd4' };
-
-    expect(await autoAccept(target, draw)).toEqual([
-      `AUTO ACCEPTED app-a ${CHIP} (go): every state draws as at the last acceptance`,
-      `NEW STATES app-a ${CHIP}: focus - for Tom's next review`,
-    ]);
-    expect(goStateOf({ product: productOf(target), part: CHIP })).toBe('current');
-    expect(readGo(dir)[CHIP]).toMatchObject({ by: 'tom', auto: true, review: ['focus'] });
-
-    appendFileSync(chip, '// another new state\n');
-    pictures.now = { default: 'a1', hover: 'b2', focus: 'd4', open: 'e5' };
-
-    await autoAccept(target, draw);
-
-    expect(readGo(dir)[CHIP]?.review).toEqual(['focus', 'open']);
-
-    markPartGo({ product: productOf(target), part: CHIP, by: 'tom', via: 'design go' });
-
-    expect(readGo(dir)[CHIP]?.review).toBeUndefined();
-  });
-
-  it('never carries a stale go that has no pictures from while it held', async () => {
-    const { target, chip } = checkout();
-    const { draw, calls } = drawing({ default: 'a1', hover: 'b2' });
-
-    markPartGo({ product: productOf(target), part: CHIP, by: 'tom', via: 'design go' });
-    appendFileSync(chip, '// edit before any pictures\n');
-
-    expect(await autoAccept(target, draw)).toEqual([]);
-    expect(calls).toEqual([]);
-    expect(goStateOf({ product: productOf(target), part: CHIP })).toBe('stale');
-  });
-
-  it('never carries a go from pictures drawn with the slots emptied', async () => {
-    const { target, dir, chip } = checkout();
-    const { draw, calls } = drawing({ default: 'a1', hover: 'b2' });
-    const go = markPartGo({ product: productOf(target), part: CHIP, by: 'tom', via: 'design go' });
-
-    writeFileSync(
-      join(dir, 'pictures.json'),
-      JSON.stringify({ [CHIP]: { go: { hash: 'hash' in go ? go.hash : '', states: { default: 'a1', hover: 'b2' } } } }),
-    );
-    appendFileSync(chip, '// edit inside a slot\n');
-
-    expect(await autoAccept(target, draw)).toEqual([]);
-    expect(calls).toEqual([]);
-    expect(goStateOf({ product: productOf(target), part: CHIP })).toBe('stale');
-    expect(readGo(dir)[CHIP]?.auto).toBeUndefined();
-  });
-
-  it('accepts a direct edit by itself when every state draws as at the last review', async () => {
+  it('holds a direct edit at once when every state draws as before, without accepted.json or a sketch', async () => {
     const { target, dir, chip } = checkout();
     const { draw } = drawing({ default: 'a1', hover: 'b2' });
 
     recordMerged({ product: productOf(target), parts: [CHIP] });
     await autoAccept(target, draw);
-
-    expect(readPictures(dir)[CHIP]?.review?.hash).toBe(readMerged(dir)[CHIP]);
-
     appendFileSync(chip, '// attribute-only edit\n');
 
     expect(changedOutsideSketchOf(productOf(target))).toEqual([CHIP]);
     expect(await autoAccept(target, draw)).toEqual([
-      `AUTO ACCEPTED app-a ${CHIP} (review): every state draws as at the last acceptance`,
+      `HELD app-a ${CHIP}: changed outside a sketch, every state draws as before`,
     ]);
     expect(changedOutsideSketchOf(productOf(target))).toEqual([]);
-    expect(readAccepted(dir)).toEqual([
-      expect.objectContaining({ part: CHIP, by: 'design check', auto: true, hash: readMerged(dir)[CHIP] }),
-    ]);
+    expect(readPictures(dir)[CHIP]?.record?.hash).toBe(designHashOfChip(target));
+    expect(existsSync(join(dir, 'accepted.json'))).toBe(false);
+    expect(existsSync(join(dir, 'sketches'))).toBe(false);
   });
 
-  it('keeps the by of the last acceptance when it accepts a direct edit by itself', async () => {
+  it('opens the old/new sketch for a direct edit that changes a picture', async () => {
+    const { target, dir, chip } = checkout();
+    const { draw, pictures } = drawing({ default: 'a1', hover: 'b2' });
+
+    recordMerged({ product: productOf(target), parts: [CHIP] });
+    await autoAccept(target, draw);
+    appendFileSync(chip, '// visible edit\n');
+    pictures.now = { default: 'a1', hover: 'c3' };
+
+    expect(await autoAccept(target, draw)).toEqual([
+      `PICTURES CHANGED app-a ${CHIP}: hover`,
+      `DIRECT EDIT app-a ${CHIP}: changed outside a sketch - pick old or new in sketch ${CHIP}@edit`,
+    ]);
+    expect(partPointsOf(readOpenPoints(productOf(target)), CHIP)).toContainEqual({
+      kind: 'direct-edit',
+      sketch: `${CHIP}@edit`,
+    });
+    expect(existsSync(join(dir, 'accepted.json'))).toBe(false);
+  });
+
+  it('compares a direct edit with the older review pictures at the merged hash', async () => {
     const { target, dir, chip } = checkout();
     const { draw } = drawing({ default: 'a1', hover: 'b2' });
 
     recordMerged({ product: productOf(target), parts: [CHIP] });
-    appendFileSync(chip, '// direct edit\n');
-    expect(acceptPart({ product: productOf(target), part: CHIP, by: 'tom', note: 'Impl Q7' })).toBeNull();
-    await autoAccept(target, draw);
-
+    writeFileSync(
+      join(dir, 'pictures.json'),
+      JSON.stringify({
+        [CHIP]: { review: { hash: readMerged(dir)[CHIP], states: { default: 'a1', hover: 'b2' }, slots: true } },
+      }),
+    );
     appendFileSync(chip, '// attribute-only edit\n');
-    await autoAccept(target, draw);
 
-    expect(readAccepted(dir).at(-1)).toMatchObject({ part: CHIP, by: 'tom', auto: true });
+    expect(await autoAccept(target, draw)).toEqual([
+      `HELD app-a ${CHIP}: changed outside a sketch, every state draws as before`,
+    ]);
+    expect(Object.keys(readPictures(dir)[CHIP] ?? {})).toEqual(['record']);
+  });
+
+  it('opens the old/new sketch without drawing when no pictures drawn with slots exist', async () => {
+    const { target, dir, chip } = checkout();
+    const { draw, calls } = drawing({ default: 'a1', hover: 'b2' });
+
+    recordMerged({ product: productOf(target), parts: [CHIP] });
+    writeFileSync(
+      join(dir, 'pictures.json'),
+      JSON.stringify({ [CHIP]: { review: { hash: readMerged(dir)[CHIP], states: { default: 'a1' } } } }),
+    );
+    appendFileSync(chip, '// edit inside a slot\n');
+
+    expect(await autoAccept(target, draw)).toEqual([
+      `DIRECT EDIT app-a ${CHIP}: changed outside a sketch - pick old or new in sketch ${CHIP}@edit`,
+    ]);
+    expect(calls).toEqual([]);
   });
 
   it('stores pictures after design accept', async () => {
@@ -236,8 +166,8 @@ describe('autoAcceptOf', () => {
         prompt: { isTTY: true, ask: async () => 'y' },
       }),
     ).toBe(0);
-    expect(readPictures(dir)[CHIP]?.review).toEqual({
-      hash: readMerged(dir)[CHIP],
+    expect(readPictures(dir)[CHIP]?.record).toEqual({
+      hash: designHashOfChip(target),
       states: { default: 'a1', hover: 'b2' },
       slots: true,
     });

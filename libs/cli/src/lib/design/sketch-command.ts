@@ -33,7 +33,7 @@ import {
 } from './ready-shots';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { mergeAndRecord } from './system/sketch/merge-step';
-import { ACCEPTED_FILE, MERGED_FILE, recordAutoMerge } from './system/sketch/merged-parts';
+import { MERGED_FILE } from './system/sketch/merged-parts';
 import { BusyState, groupedIssueLinesOf, renderIssueLineOf, renderIssuesOf } from './system/render-check';
 import { mergePreviewOf } from './system/sketch/merge-preview';
 import { openPointsText, PartOpenPoints } from './system/open-points';
@@ -115,7 +115,7 @@ const FLAG_HELP: Record<string, string> = {
   '--drops': 'the states the round drops on purpose, a comma list',
   '--variant': 'the variant the command is about; on merge, the only live variant of a sketch with no pick',
   '--allowed-by':
-    'the plan entry that lets the merge go without a pick in Studio; logged in accepted.json, needs --variant',
+    'the plan entry that lets the merge go without a pick in Studio; noted in merged.json, needs --variant',
   '--replace-note': "on merge: also write --note over each target part's note",
   '--reason':
     'why; on reject of a variant that is rejected already it sets the reason of that rejection; stored with who wrote it',
@@ -134,7 +134,7 @@ const NOTE_HELP: Record<string, string> = {
   new: 'what the first round shows',
   variant: 'why the running round lost; needed with --round',
   round: 'what the round shows',
-  merge: "why this variant; logged in accepted.json, the part's note stays",
+  merge: "why this variant; noted in merged.json, the part's note stays",
 };
 
 /** One line per flag the usage line names, for `sketch <command> --help`. */
@@ -332,7 +332,7 @@ const nextStepsOf = (sketch: Sketch, product: string) => {
     `  sketch check ${at}`,
     `  sketch ready ${at} --by <model id>`,
     `  sketch report ${at} --variant ${first} --by <model id> --done              after ready, once you stop drawing a variant; no report runs yet, so none is needed now`,
-    `  a shared JSON file ready wrote (merged.json, accepted.json, go.json): commit it with \`et design commit-hunks <file> --part ${sketch.targets[0]}\`, never as a whole file another session also edits`,
+    `  a shared JSON file ready wrote (merged.json, go.json): commit it with \`et design commit-hunks <file> --part ${sketch.targets[0]}\`, never as a whole file another session also edits`,
     THEMING_TEXT,
   ];
 };
@@ -760,7 +760,6 @@ const autoMerged = async (options: { context: Context; product: ResolvedProduct;
     return 0;
   }
 
-  for (const part of sketch.targets) recordAutoMerge({ product, part, by: author ?? 'user' });
   console.log(`No visible change in any state: merged ${sketch.targets.join(', ')} automatically.`);
   commitHunksLines({
     target: context.target,
@@ -775,7 +774,6 @@ const contentOf = (file: string) => (existsSync(file) ? readFileSync(file, 'utf8
 
 const sharedFilesOf = (product: ResolvedProduct) => [
   resolve(product.dir, MERGED_FILE),
-  resolve(product.dir, ACCEPTED_FILE),
   ...(product.base ? [resolve(product.base.dir, MERGED_FILE)] : []),
 ];
 

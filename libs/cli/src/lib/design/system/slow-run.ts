@@ -1,5 +1,5 @@
 import { exhaustMap, from, interval } from 'rxjs';
-import { relative } from 'path';
+import { relative, resolve } from 'path';
 import { DesignConfig } from '../paths';
 import { COMPARE_RULE, SDK_ERROR_RULE } from './build-ready-contract';
 import { shootStates, ShootStates } from './compare-command';
@@ -14,6 +14,9 @@ import { APP_SPEC_RULE, appSpecProblemsOf, RunRelatedSpecs, runRelatedSpecs } fr
 import { UNCOVERED_REGION_RULE, uncoveredRegionProblemsOf } from './rules/uncovered-region';
 import { VISIBLE_CHANGE_RULE, visibleChangeProblemsOf } from './rules/visible-change';
 import { sdkErrorLineOf } from './sdk-errors';
+import { autoAcceptOf } from './accepted-pictures';
+import { partHashOf } from './sketch/baseline';
+import { changedOutsideSketchOf } from './sketch/merged-parts';
 import { linkedComponentOf, PRODUCT_PART, readSlowCache, slowInputsOf, writeSlowResults } from './slow-checks';
 
 /** What a slow run calls out to; tests swap these for fakes. */
@@ -243,9 +246,21 @@ export const checkSlow = async (options: {
 
 const SLOW_POLL_MS = 15_000;
 
+const settledEditsOf = (product: ResolvedProduct, seen: Map<string, string>) =>
+  changedOutsideSketchOf(product).filter((part) => {
+    const key = `edit\0${product.name}\0${part}`;
+    const hash = partHashOf({ product, dir: resolve(product.dir, part) });
+    const settled = seen.get(key) === hash;
+
+    seen.set(key, hash);
+
+    return settled;
+  });
+
 /**
  * Keeps the slow results of every harness product fresh while the design server runs: each poll reruns the parts whose
- * inputs changed and then held still for one poll, one run at a time.
+ * inputs changed and then held still for one poll, one run at a time. Before them it resolves each direct edit of a
+ * merged part that held still for one poll: it holds, or it opens the old/new edit sketch.
  */
 export const startSlowRunner = (options: {
   target: string;
@@ -263,6 +278,14 @@ export const startSlowRunner = (options: {
 
     try {
       const config = options.configOf() ?? {};
+
+      for (const [name, entry] of Object.entries(config.products ?? {})) {
+        const edited = resolveProduct({ target: options.target, name, config: entry });
+        const edits = settledEditsOf(edited, seen);
+
+        if (edits.length > 0)
+          (await autoAcceptOf({ target: options.target, config, product: edited, parts: edits })).forEach(options.log);
+      }
 
       for (const [name, entry] of Object.entries(config.products ?? {})) {
         if (!entry.harness) continue;

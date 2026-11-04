@@ -135,11 +135,9 @@ export const sourceFilesIn = (dir: string) =>
         .map((path) => resolve(dir, path))
     : [];
 
-const liftShared = (options: { partDir: string; sketchSharedDir: string }) => {
-  const { partDir, sketchSharedDir } = options;
+/** Rewrites the relative imports of the part's own `shared/` folder in its files to `@shared/`. */
+export const rewriteSharedImports = (partDir: string) => {
   const shared = resolve(partDir, SHARED_FOLDER);
-
-  if (!existsSync(shared)) return;
 
   for (const file of sourceFilesIn(partDir)) {
     const source = readFileSync(file, 'utf8');
@@ -156,7 +154,15 @@ const liftShared = (options: { partDir: string; sketchSharedDir: string }) => {
 
     if (rewritten !== source) writeFileSync(file, rewritten);
   }
+};
 
+const liftShared = (options: { partDir: string; sketchSharedDir: string }) => {
+  const { partDir, sketchSharedDir } = options;
+  const shared = resolve(partDir, SHARED_FOLDER);
+
+  if (!existsSync(shared)) return;
+
+  rewriteSharedImports(partDir);
   cpSync(shared, sketchSharedDir, { recursive: true });
   rmSync(shared, { recursive: true });
 };

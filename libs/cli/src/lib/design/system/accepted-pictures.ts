@@ -8,12 +8,12 @@ import { createDesignServer } from '../serve';
 import { createPartShooter } from '../shot';
 import { createDrawQueue } from '../thumb';
 import { compareFrameOf } from './compare-command';
-import { designHashOf, recordHolds, sha16 } from './design-hash';
+import { designHashOf, sha16 } from './design-hash';
 import { partOwnerOf } from './inventory-approval';
-import { PartGo, readGo, writeGo } from './part-go';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
-import { changedOutsideSketchOf, readAccepted, readMerged, recordAutoReview } from './sketch/merged-parts';
+import { openEditSketch } from './sketch/edit-sketch';
+import { changedOutsideSketchOf, readMerged, recordMerged } from './sketch/merged-parts';
 import { createSystemModules, productModuleIdOf } from './system-modules';
 import { drawnStateNamesOf } from './unchanged-rows';
 
@@ -23,12 +23,16 @@ export const PICTURES_FILE = 'pictures.json';
 export type StatePictures = Record<string, string>;
 
 /**
- * The pictures of a part's states at the hash its review (`merged.json`) or its go held at. Pictures without `slots`
- * were drawn with slots emptied and cannot prove that slot content is unchanged, so they are read as missing.
+ * The pictures of a part's states at a hash. Pictures without `slots` were drawn with slots emptied and cannot prove
+ * that slot content is unchanged, so they are read as missing.
  */
 export type AcceptedPictures = { hash: string; states: StatePictures; slots: true };
 
-export type PictureKind = 'review' | 'go';
+/**
+ * `record` is drawn at the part's design hash while it is merged and unchanged since. `review` (at the merged hash)
+ * and `go` (at the go's design hash) are older kinds, still read.
+ */
+export type PictureKind = 'record' | 'review' | 'go';
 
 export type PartPictures = Partial<Record<PictureKind, AcceptedPictures>>;
 
@@ -43,14 +47,6 @@ export type DrawStates = (options: {
   parts: string[];
   expected?: Record<string, StatePictures>;
 }) => Promise<Map<string, StatePictures | string>>;
-
-/** Who an automatic review or go is recorded for: the `by` of the acceptance or go it carries forward. */
-const causeOf = (fresh: string[]) =>
-  fresh.length > 0
-    ? `new states without a known picture: ${fresh.join(', ')}`
-    : 'design hash changed, no state picture changed';
-
-export const autoAcceptBy = (previous: string | undefined) => previous ?? 'design check';
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -71,6 +67,8 @@ const isAccepted = (value: unknown): value is AcceptedPictures => {
   );
 };
 
+const KINDS: PictureKind[] = ['record', 'review', 'go'];
+
 export const readPictures = (dir: string): Record<string, PartPictures> => {
   const file = picturesFileOf(dir);
 
@@ -83,9 +81,12 @@ export const readPictures = (dir: string): Record<string, PartPictures> => {
 
     return Object.fromEntries(
       Object.entries(parsed).map(([part, entry]) => {
-        const { review, go } = (entry ?? {}) as Record<string, unknown>;
+        const kinds = (entry ?? {}) as Record<string, unknown>;
 
-        return [part, { ...(isAccepted(review) ? { review } : {}), ...(isAccepted(go) ? { go } : {}) }];
+        return [
+          part,
+          Object.fromEntries(KINDS.flatMap((kind) => (isAccepted(kinds[kind]) ? [[kind, kinds[kind]]] : []))),
+        ];
       }),
     );
   } catch {
@@ -93,17 +94,12 @@ export const readPictures = (dir: string): Record<string, PartPictures> => {
   }
 };
 
-/** Writes the pictures of one kind for one part into the pictures.json in `dir`, sorted by part. */
-export const writePictures = (options: {
-  dir: string;
-  part: string;
-  kind: PictureKind;
-  pictures: Omit<AcceptedPictures, 'slots'>;
-}) => {
-  const { dir, part, kind, pictures } = options;
+/** Writes the `record` pictures of one part into the pictures.json in `dir`, dropping its older kinds, sorted by part. */
+export const writePictures = (options: { dir: string; part: string; pictures: Omit<AcceptedPictures, 'slots'> }) => {
+  const { dir, part, pictures } = options;
   const all = readPictures(dir);
-  const entries = Object.entries({ ...all, [part]: { ...all[part], [kind]: { ...pictures, slots: true } } }).sort(
-    ([a], [b]) => a.localeCompare(b),
+  const entries = Object.entries({ ...all, [part]: { record: { ...pictures, slots: true } } }).sort(([a], [b]) =>
+    a.localeCompare(b),
   );
 
   writeJsonFile({ file: picturesFileOf(dir), value: Object.fromEntries(entries) });
@@ -113,16 +109,6 @@ export const writePictures = (options: {
 export const changedStatesOf = (before: StatePictures, now: StatePictures) =>
   [...new Set([...Object.keys(before), ...Object.keys(now)])]
     .filter((state) => before[state] !== now[state])
-    .sort((a, b) => a.localeCompare(b));
-
-const lostStatesOf = (before: StatePictures, now: StatePictures) =>
-  Object.keys(before)
-    .filter((state) => before[state] !== now[state])
-    .sort((a, b) => a.localeCompare(b));
-
-const addedStatesOf = (before: StatePictures, now: StatePictures) =>
-  Object.keys(now)
-    .filter((state) => !(state in before))
     .sort((a, b) => a.localeCompare(b));
 
 export const drawStatePictures: DrawStates = async ({ target, config, product, parts, expected }) => {
@@ -223,15 +209,15 @@ export const drawStatePictures: DrawStates = async ({ target, config, product, p
 };
 
 /**
- * Draws a part and stores its pictures of `kind` at `hash`, after a go or an acceptance. Answers with why nothing was
- * stored, or `null`; `design check` draws the pictures later when they are missing.
+ * Draws a part and stores its `record` pictures at its design hash, after a go or an acceptance verified `hash` (of
+ * `kind`). Answers with why nothing was stored, or `null`; `design check` draws the pictures later when they are missing.
  */
 export const storePictures = async (options: {
   target: string;
   config: DesignConfig;
   product: ResolvedProduct;
   part: string;
-  kind: PictureKind;
+  kind: 'review' | 'go';
   hash: string;
   draw?: DrawStates;
 }) => {
@@ -240,12 +226,15 @@ export const storePictures = async (options: {
 
   if (!resolved) return `product "${product.name}" has no part "${part}"`;
 
+  const design = designHashOf({ product, part: resolved }).hash;
   const drawn = (await (options.draw ?? drawStatePictures)({ target, config, product, parts: [part] })).get(part);
+  const now = kind === 'review' ? partHashOf({ product, dir: dirname(resolved.file) }) : design;
 
   if (drawn === undefined || typeof drawn === 'string') return drawn ?? `${part} was not drawn`;
-  if (currentHashOf({ product, resolved, kind: kind }) !== hash) return `${part} changed while it was drawn`;
+  if (now !== hash || designHashOf({ product, part: resolved }).hash !== design)
+    return `${part} changed while it was drawn`;
 
-  writePictures({ dir: partOwnerOf({ product, part: resolved }).dir, part, kind, pictures: { hash, states: drawn } });
+  writePictures({ dir: partOwnerOf({ product, part: resolved }).dir, part, pictures: { hash: design, states: drawn } });
 
   return null;
 };
@@ -253,85 +242,79 @@ export const storePictures = async (options: {
 export const newStatesLineOf = ({ product, part, states }: { product: string; part: string; states: string[] }) =>
   `NEW STATES ${product} ${part}: ${states.join(', ')} - for Tom's next review`;
 
-type Need = { kind: PictureKind; hash: string; now: string; carry: AcceptedPictures | null };
+/** The pictures a direct edit of the part is compared with: its `record`, else `review` at the merged hash, else `go`. */
+const baselineOf = (pictures: PartPictures, merged: string | undefined) =>
+  pictures.record ??
+  (pictures.review && pictures.review.hash === merged ? pictures.review : null) ??
+  pictures.go ??
+  null;
 
-const currentHashOf = (options: { product: ResolvedProduct; resolved: ResolvedPart; kind: PictureKind }) => {
-  const { product, resolved, kind } = options;
-
-  return kind === 'review'
-    ? partHashOf({ product, dir: dirname(resolved.file) })
-    : designHashOf({ product, part: resolved }).hash;
-};
+type Need = { part: ResolvedPart; design: string; baseline: AcceptedPictures | null };
 
 /**
- * The work of `design check` on the pictures of each part: stores the pictures of a review or go that holds and has
- * none at its hash, and carries a review or go whose hash moved to the new hash, as an `auto` acceptance, when every
- * state still draws as in the pictures stored while it held. Answers with one line per part it drew.
+ * The work of `design check` on the pictures of each merged part, or of `parts`: draws the `record` pictures of a part
+ * unchanged since its merge when none are stored at its design hash, and resolves a direct edit of a part changed
+ * outside a sketch. A direct edit that draws every state as before holds at once (its new hash goes to `merged.json`);
+ * one that draws a state differently, or has no pictures to compare with, opens the old/new edit sketch. Answers with
+ * one line per part it drew or decided.
  */
 export const autoAcceptOf = async (options: {
   target: string;
   config: DesignConfig;
   product: ResolvedProduct;
   only?: string;
+  parts?: string[];
   draw?: DrawStates;
 }): Promise<string[]> => {
   const { target, config, product, only } = options;
-  const unreviewed = new Set(changedOutsideSketchOf(product));
+  const edited = new Set(changedOutsideSketchOf(product));
   const merged = readMerged(product.dir);
-  const needs = new Map<string, Need[]>();
+  const records: Need[] = [];
+  const edits: Need[] = [];
+  const lines: string[] = [];
+  const opened = (part: string) => {
+    const sketch = openEditSketch({ target, product, part, author: 'design check' });
+
+    lines.push(
+      typeof sketch === 'string'
+        ? `DIRECT EDIT ${product.name} ${part}: changed outside a sketch, no old/new sketch: ${sketch}`
+        : `DIRECT EDIT ${product.name} ${part}: changed outside a sketch - pick old or new in sketch ${sketch.target}`,
+    );
+  };
 
   for (const resolved of product.parts) {
     const part = partKeyOf(resolved);
 
-    if (only && part !== only) continue;
+    if ((only && part !== only) || (options.parts && !options.parts.includes(part))) continue;
+    if (resolved.origin === 'base' || merged[part] === undefined) continue;
 
-    const { dir } = partOwnerOf({ product, part: resolved });
-    const pictures = readPictures(dir)[part] ?? {};
-    const ofPart: Need[] = [];
-    const reviewed = merged[part];
+    const pictures = readPictures(partOwnerOf({ product, part: resolved }).dir)[part] ?? {};
+    const design = designHashOf({ product, part: resolved }).hash;
 
-    if (resolved.origin !== 'base' && reviewed !== undefined) {
-      const now = currentHashOf({ product, resolved, kind: 'review' });
+    if (edited.has(part)) {
+      const baseline = baselineOf(pictures, merged[part]);
 
-      if (reviewed === now) {
-        if (pictures.review?.hash !== reviewed) ofPart.push({ kind: 'review', hash: reviewed, now, carry: null });
-      } else if (pictures.review?.hash === reviewed && unreviewed.has(part))
-        ofPart.push({ kind: 'review', hash: reviewed, now, carry: pictures.review });
-    }
-
-    const go = readGo(dir)[part];
-
-    if (go) {
-      const design = designHashOf({ product, part: resolved });
-
-      if (recordHolds(go, design)) {
-        if (pictures.go?.hash !== go.hash) ofPart.push({ kind: 'go', hash: go.hash, now: design.hash, carry: null });
-      } else if (pictures.go?.hash === go.hash)
-        ofPart.push({ kind: 'go', hash: go.hash, now: design.hash, carry: pictures.go });
-    }
-
-    if (ofPart.length > 0) needs.set(part, ofPart);
+      if (baseline) edits.push({ part: resolved, design, baseline });
+      else opened(part);
+    } else if (pictures.record?.hash !== design) records.push({ part: resolved, design, baseline: null });
   }
 
-  if (needs.size === 0) return [];
+  const needs = [...edits, ...records];
 
-  const expected = Object.fromEntries(
-    [...needs].flatMap(([part, ofPart]) => {
-      const carry = ofPart.find((need) => need.carry)?.carry;
+  if (needs.length === 0) return lines;
 
-      return carry ? [[part, carry.states]] : [];
-    }),
-  );
   const drawn = await (options.draw ?? drawStatePictures)({
     target,
     config,
     product,
-    parts: [...needs.keys()],
-    expected,
+    parts: needs.map(({ part }) => partKeyOf(part)),
+    expected: Object.fromEntries(
+      edits.flatMap(({ part, baseline }) => (baseline ? [[partKeyOf(part), baseline.states]] : [])),
+    ),
   });
-  const lines: string[] = [];
 
-  for (const [part, ofPart] of needs) {
+  for (const { part: resolved, design, baseline } of needs) {
+    const part = partKeyOf(resolved);
     const states = drawn.get(part);
 
     if (states === undefined || typeof states === 'string') {
@@ -339,76 +322,25 @@ export const autoAcceptOf = async (options: {
       continue;
     }
 
-    const resolved = product.parts.find((candidate) => partKeyOf(candidate) === part);
-
-    if (!resolved) continue;
-
-    const { dir } = partOwnerOf({ product, part: resolved });
-    const carried: PictureKind[] = [];
-    const changed = new Set<string>();
-    const added: string[] = [];
-
-    for (const need of ofPart) {
-      if (currentHashOf({ product, resolved, kind: need.kind }) !== need.now) {
-        lines.push(`PICTURES NOT DRAWN ${product.name} ${part}: changed while it was drawn`);
-        continue;
-      }
-
-      if (!need.carry) {
-        writePictures({ dir, part, kind: need.kind, pictures: { hash: need.hash, states } });
-        continue;
-      }
-
-      const differs =
-        need.kind === 'go' ? lostStatesOf(need.carry.states, states) : changedStatesOf(need.carry.states, states);
-
-      if (differs.length > 0) {
-        differs.forEach((state) => changed.add(state));
-        continue;
-      }
-
-      if (need.kind === 'review') {
-        const previous = readAccepted(product.dir)
-          .filter((entry) => entry.part === part)
-          .pop()?.by;
-
-        recordAutoReview({ product, part, by: autoAcceptBy(previous) });
-        writePictures({ dir, part, kind: 'review', pictures: { hash: need.now, states } });
-      } else {
-        const previous = readGo(dir)[part];
-
-        if (!previous || previous.hash !== need.hash) continue;
-
-        const fresh = addedStatesOf(need.carry.states, states);
-        const review = [...new Set([...(previous.review ?? []), ...fresh])].sort((a, b) => a.localeCompare(b));
-        const go: PartGo = {
-          ...previous,
-          ...(review.length > 0 ? { review } : {}),
-          hash: need.now,
-          files: designHashOf({ product, part: resolved }).files,
-          at: new Date().toISOString(),
-          auto: true,
-          refreshedBy: 'design check',
-          cause: causeOf(fresh),
-        };
-
-        writeGo({ dir, part, go });
-        added.push(...fresh);
-        writePictures({ dir, part, kind: 'go', pictures: { hash: need.now, states } });
-      }
-
-      carried.push(need.kind);
+    if (designHashOf({ product, part: resolved }).hash !== design) {
+      lines.push(`PICTURES NOT DRAWN ${product.name} ${part}: changed while it was drawn`);
+      continue;
     }
 
-    if (carried.length > 0)
-      lines.push(
-        `AUTO ACCEPTED ${product.name} ${part} (${carried.join(', ')}): every state draws as at the last acceptance`,
-      );
-    if (added.length > 0) lines.push(newStatesLineOf({ product: product.name, part, states: added }));
-    if (changed.size > 0)
-      lines.push(
-        `PICTURES CHANGED ${product.name} ${part}: ${[...changed].sort((a, b) => a.localeCompare(b)).join(', ')}`,
-      );
+    const changed = baseline ? changedStatesOf(baseline.states, states) : [];
+
+    if (baseline && changed.length > 0) {
+      lines.push(`PICTURES CHANGED ${product.name} ${part}: ${changed.join(', ')}`);
+      opened(part);
+      continue;
+    }
+
+    if (baseline) {
+      recordMerged({ product, parts: [part] });
+      lines.push(`HELD ${product.name} ${part}: changed outside a sketch, every state draws as before`);
+    }
+
+    writePictures({ dir: partOwnerOf({ product, part: resolved }).dir, part, pictures: { hash: design, states } });
   }
 
   return lines;

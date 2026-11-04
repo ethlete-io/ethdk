@@ -111,12 +111,12 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines).toContain('No visible change in any state: merged components/button automatically.');
     expect(lines.filter((line) => line.startsWith('  et design commit-hunks'))).toEqual([
       '  et design commit-hunks .ethlete/design/acme/merged.json --part components/button',
-      '  et design commit-hunks .ethlete/design/acme/accepted.json --part components/button',
     ]);
     expect(existsSync(join(product, 'sketches/components-button'))).toBe(false);
-    expect(JSON.parse(readFileSync(join(product, 'accepted.json'), 'utf8'))).toMatchObject([
-      { part: 'components/button', by: 'claude-opus-5-5', auto: true },
-    ]);
+    expect(existsSync(join(product, 'accepted.json'))).toBe(false);
+    expect(JSON.parse(readFileSync(join(product, 'merged.json'), 'utf8'))).toMatchObject({
+      'components/button': { decidedBy: 'auto: no visible change' },
+    });
   });
 
   const newButton = (target: string) =>
@@ -494,10 +494,11 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(await write(target, 'ready', 'elements/hero', '--product', 'acme')).toBe(0);
     expect(lines).toContain('No visible change in any state: merged components/button, elements/hero automatically.');
     expect(existsSync(join(product, 'sketches/components-button'))).toBe(false);
-    expect(JSON.parse(readFileSync(join(product, 'accepted.json'), 'utf8'))).toMatchObject([
-      { part: 'components/button', auto: true },
-      { part: 'elements/hero', auto: true },
-    ]);
+    expect(existsSync(join(product, 'accepted.json'))).toBe(false);
+    expect(JSON.parse(readFileSync(join(product, 'merged.json'), 'utf8'))).toMatchObject({
+      'components/button': { decidedBy: 'auto: no visible change' },
+      'elements/hero': { decidedBy: 'auto: no visible change' },
+    });
   });
 
   it('names in preview and ready each part a shared/ edit reaches', async () => {
@@ -1717,7 +1718,7 @@ export default definePart({
 
     const sketchDir = (target: string) => join(target, DESIGN_DIR, 'acme/sketches/components-button');
 
-    it('merges the only live variant without a pick and logs the plan in accepted.json', async () => {
+    it("merges the only live variant without a pick and notes the plan in the part's merged.json entry", async () => {
       const { target, lines } = await readied('a');
 
       expect(
@@ -1726,12 +1727,13 @@ export default definePart({
       expect(lines.pop()).toContain('merged components/button variant a into acme');
       expect(existsSync(sketchDir(target))).toBe(false);
       expect(readFileSync(join(target, DESIGN_DIR, 'acme/components/button/button.ts'), 'utf8')).not.toContain(PLAN);
-      expect(JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/accepted.json'), 'utf8'))).toMatchObject([
-        { part: 'components/button', note: `merged without a pick: allowed by ${PLAN}` },
-      ]);
+      expect(existsSync(join(target, DESIGN_DIR, 'acme/accepted.json'))).toBe(false);
+      expect(JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/merged.json'), 'utf8'))).toMatchObject({
+        'components/button': { decidedBy: `plan: ${PLAN}`, note: `merged without a pick: allowed by ${PLAN}` },
+      });
     });
 
-    it("logs the --note reason in accepted.json and keeps the part's note", async () => {
+    it("notes the --note reason in merged.json and keeps the part's note", async () => {
       const { target } = await readied('a');
       const buttonFile = join(target, DESIGN_DIR, 'acme/components/button/button.ts');
       const noteLine = /note: .*/u.exec(readFileSync(buttonFile, 'utf8'))?.[0];
@@ -1752,9 +1754,9 @@ export default definePart({
         ),
       ).toBe(0);
       expect(/note: .*/u.exec(readFileSync(buttonFile, 'utf8'))?.[0]).toBe(noteLine);
-      expect(JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/accepted.json'), 'utf8'))).toMatchObject([
-        { part: 'components/button', note: `merged without a pick: allowed by ${PLAN} - merged: calmer` },
-      ]);
+      expect(JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/merged.json'), 'utf8'))).toMatchObject({
+        'components/button': { note: `merged without a pick: allowed by ${PLAN} - merged: calmer` },
+      });
     });
 
     it('writes the --note over the part note with --replace-note', async () => {

@@ -54,8 +54,7 @@ export const mergeAndRecord = (options: {
   const reason = note?.trim() || undefined;
 
   if (allowed || reason)
-    for (const part of sketch.targets)
-      recordMergeReason({ product, part, by: by ?? 'user', planRef: allowed?.planRef.trim(), reason });
+    for (const part of sketch.targets) recordMergeReason({ product, part, planRef: allowed?.planRef.trim(), reason });
 
   return { variant: decided.decision?.kind === 'pick' ? decided.decision.variant : '', parts: result };
 };

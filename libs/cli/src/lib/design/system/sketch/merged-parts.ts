@@ -13,7 +13,7 @@ const mergedFileOf = (productDir: string) => resolve(productDir, MERGED_FILE);
 /** Who picked the variant a part's last sketch merge took, which variant, and when it was picked. */
 export type MergeDecision = { variant: string; decidedBy: string; at: string };
 
-type MergedEntry = { hash: string; decision: MergeDecision | null };
+type MergedEntry = { hash: string; decision: MergeDecision | null; note?: string };
 
 const decisionOf = (value: Record<string, unknown>): MergeDecision | null => {
   const { variant, decidedBy, at } = value;
@@ -29,7 +29,11 @@ const entryOf = (value: unknown): MergedEntry | null => {
 
   const record = value as Record<string, unknown>;
 
-  return typeof record['hash'] === 'string' ? { hash: record['hash'], decision: decisionOf(record) } : null;
+  if (typeof record['hash'] !== 'string') return null;
+
+  const note = record['note'];
+
+  return { hash: record['hash'], decision: decisionOf(record), ...(typeof note === 'string' ? { note } : {}) };
 };
 
 const readEntries = (productDir: string): Record<string, MergedEntry> => {
@@ -57,7 +61,10 @@ const readEntries = (productDir: string): Record<string, MergedEntry> => {
 const writeEntries = (productDir: string, entries: Record<string, MergedEntry>) => {
   const sorted = Object.entries(entries)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([part, { hash, decision }]) => [part, decision ? { hash, ...decision } : hash]);
+    .map(([part, { hash, decision, note }]) => [
+      part,
+      decision || note ? { hash, ...decision, ...(note ? { note } : {}) } : hash,
+    ]);
 
   writeJsonFile({ file: mergedFileOf(productDir), value: Object.fromEntries(sorted) });
 };
@@ -72,20 +79,28 @@ export const readMergeDecision = (productDir: string, part: string): MergeDecisi
 
 type HashedProduct = Pick<ResolvedProduct, 'dir' | 'base'> & Partial<Pick<ResolvedProduct, 'config'>>;
 
+/** The note of the part's last sketch merge: the plan that allowed it without a pick, the merge reason, or both. */
+export const readMergeNote = (productDir: string, part: string): string | null =>
+  readEntries(productDir)[part]?.note ?? null;
+
 /**
  * Records the current content hash of each named part of the product as merged, with `decision` when a sketch merge
- * records it. Without one, a part keeps the decision of its last merge.
+ * records it. Without one, a part keeps the decision and note of its last merge.
  */
 export const recordMerged = (options: { product: HashedProduct; parts: string[]; decision?: MergeDecision }) => {
   const { product, parts, decision } = options;
   const productDir = product.dir;
   const entries = readEntries(productDir);
 
-  for (const part of parts)
+  for (const part of parts) {
+    const note = decision ? undefined : entries[part]?.note;
+
     entries[part] = {
       hash: partHashOf({ product, dir: resolve(productDir, part) }),
       decision: decision ?? entries[part]?.decision ?? null,
+      ...(note ? { note } : {}),
     };
+  }
 
   writeEntries(productDir, entries);
 };
@@ -174,6 +189,25 @@ export const changedOutsideSketchOf = (product: ResolvedProduct): string[] => {
   return changed.map(partKeyOf).filter((key) => !sketched.has(key));
 };
 
+/** The sketch name of the old/new sketch a direct edit of a merged part opens. */
+export const EDIT_SKETCH = 'edit';
+
+const editSketchIdOf = (part: string) => `${part}@${EDIT_SKETCH}`;
+
+/**
+ * The direct edits of a product's merged parts: each part with an open edit sketch, with its id, and each part changed
+ * outside a sketch that has none yet (`sketch: null`).
+ */
+export const directEditsOf = (product: ResolvedProduct): { part: string; sketch: string | null }[] => {
+  const open = listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) =>
+    typeof sketch !== 'string' && sketch.target === editSketchIdOf(partKeyOf(sketch))
+      ? [{ part: partKeyOf(sketch), sketch: sketch.target }]
+      : [],
+  );
+
+  return [...open, ...changedOutsideSketchOf(product).map((part) => ({ part, sketch: null }))];
+};
+
 export const ACCEPTED_FILE = 'accepted.json';
 
 export type Acceptance = { part: string; by: string; note: string; hash: string; at: string; auto?: true };
@@ -195,61 +229,32 @@ export const readAccepted = (productDir: string): Acceptance[] => {
 const logAcceptance = (productDir: string, entry: Acceptance) =>
   writeJsonFile({ file: resolve(productDir, ACCEPTED_FILE), value: [...readAccepted(productDir), entry] });
 
-/** Logs a sketch merged by itself because no state showed a visible change, as an `auto` entry in `accepted.json`. */
-export const recordAutoMerge = (options: { product: HashedProduct; part: string; by: string }) => {
-  const { part, by } = options;
-  const product = holderOf(options);
-
-  logAcceptance(product.dir, {
-    part,
-    by,
-    note: 'merged automatically: no visible change in any state',
-    hash: partHashOf({ product, dir: resolve(product.dir, part) }),
-    at: new Date().toISOString(),
-    auto: true,
-  });
-};
-
 /**
- * Records a part changed outside a sketch whose states all draw as at its last acceptance: writes its hash to
- * `merged.json` and logs an `auto` entry in `accepted.json`.
- */
-export const recordAutoReview = (options: { product: HashedProduct; part: string; by: string }) => {
-  const { product, part, by } = options;
-
-  recordMerged({ product, parts: [part] });
-  logAcceptance(product.dir, {
-    part,
-    by,
-    note: 'accepted automatically: every state draws as at the last acceptance',
-    hash: readMerged(product.dir)[part] ?? '',
-    at: new Date().toISOString(),
-    auto: true,
-  });
-};
-
-/**
- * Logs a sketch merge with a reason in `accepted.json`: the plan entry that let it go without a pick in Studio
- * (`planRef`), the merge reason (`reason`), or both.
+ * Notes why a sketch merge went the way it did in the part's `merged.json` entry: the plan entry that let it go without
+ * a pick in Studio (`planRef`), the merge reason (`reason`), or both.
  */
 export const recordMergeReason = (options: {
   product: HashedProduct;
   part: string;
-  by: string;
   planRef?: string;
   reason?: string;
 }) => {
-  const { part, by, planRef, reason } = options;
+  const { part, planRef, reason } = options;
   const product = holderOf(options);
-  const allowed = planRef ? `merged without a pick: allowed by ${planRef}` : '';
+  const note = [planRef ? `merged without a pick: allowed by ${planRef}` : '', reason ? `merged: ${reason}` : '']
+    .filter(Boolean)
+    .join(' - ');
+  const entries = readEntries(product.dir);
 
-  logAcceptance(product.dir, {
-    part,
-    by,
-    note: [allowed, reason ? `merged: ${reason}` : ''].filter(Boolean).join(' - '),
-    hash: partHashOf({ product, dir: resolve(product.dir, part) }),
-    at: new Date().toISOString(),
-  });
+  if (note === '') return;
+
+  entries[part] = {
+    hash: entries[part]?.hash ?? partHashOf({ product, dir: resolve(product.dir, part) }),
+    decision: entries[part]?.decision ?? null,
+    note,
+  };
+
+  writeEntries(product.dir, entries);
 };
 
 export type AcceptRefusal = { reason: 'unknown-part' | 'open-sketch' | 'nothing-to-accept'; error: string };
