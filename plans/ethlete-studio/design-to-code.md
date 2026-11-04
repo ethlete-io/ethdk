@@ -4815,6 +4815,14 @@ the frame shows a plain note instead of a Vite error; a spec. (b) Studio: when t
 listing, the sketch view leaves it and drops the old frames; an e2e merges a fixture sketch with its view open and
 asserts no error overlay and that the view leaves.
 
+436\. Builder (2026-11-04): the handoff said "restart studio-serve" to load the B363 CLI, but :4402 runs inside Tom's
+Studio app (pid 670846, parent `target/debug/ethlete-studio`) on the older copy `tmp/studio-cli/842fce846`; the tmux
+session `studio-serve` does not own the port. Only the Studio command `design_server_restart` restarts it, and a kill
+would leave Tom without a server. So the B363 product opt-in waits for Tom to press restart in Studio. Why no tool
+caught it: nothing tells an agent who owns the design port or which CLI copy it serves. Tool fix (B368): `et design`
+prints the serve state: the port owner (Studio app or terminal), the served CLI commit against HEAD, and how to
+restart it.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
