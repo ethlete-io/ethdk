@@ -93,6 +93,20 @@ describe('query param overlay opener', () => {
     fixture.destroy();
   });
 
+  it('does not cancel a pending navigation that drops the param when closed', async () => {
+    const fixture = await createHost();
+
+    await setParam('42');
+
+    const navigation = TestBed.inject(Router).navigateByUrl('/elsewhere');
+    fixture.componentInstance.product.close();
+
+    expect(await navigation).toBe(true);
+    expect(TestBed.inject(Router).url).toBe('/elsewhere');
+
+    fixture.destroy();
+  });
+
   it('closes an open overlay when the opener is destroyed', async () => {
     const fixture = await createHost();
 

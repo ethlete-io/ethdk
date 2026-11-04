@@ -315,8 +315,21 @@ const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
       });
   };
 
+  const pendingNavigationDropsParam = () => {
+    // eslint-disable-next-line ethlete/no-angular-router-api -- needs the in-flight target URL synchronously; no router signal exposes it
+    const navigation = router.currentNavigation();
+
+    return !!navigation && !navigation.extractedUrl.queryParamMap.has(definition.queryParamKey);
+  };
+
   const clearQueryParam = () => {
     if (untracked(queryParamValue) === null) return;
+
+    if (pendingNavigationDropsParam()) {
+      ownEntryUrl = null;
+
+      return;
+    }
 
     const stepBack = ownsTopEntry();
 

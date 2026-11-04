@@ -199,6 +199,10 @@ export const createOverlayHandlerWithQueryParamLifecycle = <
   let router: Router | null = null;
 
   const updateQueryParam = (value: TQueryParam | null) => {
+    const navigation = router?.currentNavigation();
+
+    if (value === null && navigation && !navigation.extractedUrl.queryParamMap.has(config.queryParamKey)) return;
+
     router?.navigate([], {
       queryParams: {
         [config.queryParamKey]: value,
