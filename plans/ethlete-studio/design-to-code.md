@@ -4303,15 +4303,6 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      state where it is scrollable. Open: give the scrollable parts an explicit scrolled state, and make iframe and
      static cells size the same content the same way, so the scrollbar only shows in the state that asks for it.
 
-344. Builder (2026-11-04, B291, CI run 41741888275 red after Tom's push without hooks): component behavior tests
-     1-3 fail on two component commits that left apps/storybook-e2e stale. 10d428faa removed the switch off-track
-     edge but kept choice-inputs.e2e.ts:633; e73234f6e moved scheduler appointments from [attr.title] to
-     aria-label + etTooltip, so 8 tests still locate [title=...], and the new tooltip stays open next to the edit
-     surface and eats the first Escape in month view. Why no tool caught it: pre-push runs no Playwright suite, and
-     the component-behavior-tests skill is a rule an agent can skip. Rust host failed on a new cargo audit advisory
-     (RUSTSEC-2026-0429) and a yanked crate; external, no hook would have caught it at push time. Open: the tool
-     change that runs the affected behavior suites before a component change is pushed (Tom's call).
-
 345. Builder (2026-11-04, B291): docs:build failed with "Element is missing end tag". c922a8e65 wrapped a code span
      so a line in apps/docs/cli/index.md started with `<sketch> <part> ...`, and VitePress read it as raw HTML. Fixed
      in dc936b68e. Why no tool caught it: pre-push runs no docs build. Tool fix (technical, grill decided): pre-push
