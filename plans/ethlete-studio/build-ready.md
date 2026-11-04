@@ -46,6 +46,23 @@ Builder handoff (2026-11-04, ethlete-sdk-d0, context full). Grill/docs session: 
   position only), B306, B307 (parser fixtures from real runs), B308 (person-name check; role `human`), B300,
   B301, B297, then A36 with A25.
 
+## As built: B339 Sketches e2e rule (2026-11-04)
+
+Commit: the one that holds this section (`test(repo): Allow kept unchanged marks before the full sketch compare`).
+
+- The case "no state is marked before the compare answers" now runs on the Chip page only. Its fixture is the
+  scratch checkout's `components/zoom-chip` sketch whose variant a sets `reset` to 110 %, so 4 states differ and 12 are
+  unchanged. No real sketch is needed; the old `pages/system` sketch dependency is gone from this case.
+- It first asks the design server for a full listing (the kept comparison), reloads with the full listing held and the
+  quick listing let through, and passes when every mark shown before the full listing answers equals what that earlier
+  full listing says for the same state. A mark that listing does not produce is a new mark and fails. After the full
+  listing it waits for that answer itself (the old wait on "pending" marks returned too early and left `listed` unset,
+  which was the "no listed sketch" message) and then checks every mark against the full listing as before.
+- Bites: a temporary route patch dropped `fit` from the quick listing's `unchanged`; the case failed with
+  `a/fit marked true before the compare`. The patch is reverted and not committed.
+- Not verified: the CI job for `studio:e2e` (B339 stays open for it); the `pages/system` and `shell-main` pages no
+  longer run this case, as their sketches are all-unchanged copies and show no variant marks.
+
 ## Current state
 
 **Three human-or-agent records per product dir** (`.ethlete/design/<product>/`):

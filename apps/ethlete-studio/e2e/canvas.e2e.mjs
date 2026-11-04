@@ -531,10 +531,31 @@ const CASES = [
   {
     name: 'no state is marked before the compare answers',
     pages: ['Sketches'],
+    labels: ['Chip'],
     run: async (page, _state, target) => {
       const sketch = target.view.systemEntry.slice('sketch:'.length);
+      const listing = `http://localhost:${process.env['DE_PORT']}/__design/sketches?product=${target.view.systemProduct}`;
+      const entryOf = (answer) => answer?.sketches?.find((candidate) => candidate.target === sketch);
+      const listedTargetOf = (entry, variant) =>
+        entry?.targets?.find(
+          (candidate) => candidate.variant === variant && (candidate.part ?? entry.target) === entry.target,
+        );
+      const cells = () =>
+        page.evaluate(() =>
+          [...document.querySelectorAll('[data-sk-variant][data-sk-changed]')]
+            .filter((cell) => cell.getAttribute('data-sk-variant') !== 'current')
+            .map((cell) => ({
+              variant: cell.getAttribute('data-sk-variant'),
+              state: cell.getAttribute('data-sk-state'),
+              changed: cell.getAttribute('data-sk-changed'),
+            })),
+        );
+
+      const primed = entryOf(await (await page.request.get(listing)).json());
       let release;
       const held = new Promise((resolve) => (release = resolve));
+      let answered;
+      const fullAnswered = new Promise((resolve) => (answered = resolve));
       let listed;
 
       await page.route('**/__design/sketches?*', async (route) => {
@@ -545,47 +566,58 @@ const CASES = [
 
         listed = await response.json();
         await route.fulfill({ response, json: listed });
+        answered();
       });
+      const quickAnswered = page.waitForResponse(
+        (response) => /unchanged=no$/.test(response.url()) && response.url().includes('/__design/sketches?'),
+        { timeout: 30000 },
+      );
+
       await page.reload();
       await page.waitForSelector('[data-sk-state]', { timeout: 30000 });
+      await quickAnswered;
       await settle(page);
 
-      const early = await page.evaluate(() => ({
-        marked: document.querySelectorAll('[data-sk-changed="false"]:not([data-sk-variant="current"])').length,
-        first: document.querySelectorAll('[data-sk-first-change]').length,
-      }));
+      const early = await cells();
+      const first = await page.evaluate(() => document.querySelectorAll('[data-sk-first-change]').length);
+      const kept = early.filter(({ changed }) => changed !== 'pending');
+      const fresh = kept.filter(
+        ({ variant, state, changed }) =>
+          changed !== String(!(listedTargetOf(primed, variant)?.unchanged ?? []).includes(state)),
+      );
 
       release();
+      await fullAnswered;
       await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
         timeout: 60000,
       });
       await page.unroute('**/__design/sketches?*');
 
-      const entry = listed?.sketches?.find((candidate) => candidate.target === sketch);
-      const marks = await page.evaluate(() =>
-        [...document.querySelectorAll('[data-sk-variant][data-sk-changed]')].map((cell) => ({
-          variant: cell.getAttribute('data-sk-variant'),
-          state: cell.getAttribute('data-sk-state'),
-          changed: cell.getAttribute('data-sk-changed'),
-        })),
-      );
+      const entry = entryOf(listed);
+      const marks = await cells();
       const wrong = marks.filter(({ variant, state, changed }) => {
-        const listedTarget = entry?.targets?.find(
-          (candidate) => candidate.variant === variant && (candidate.part ?? entry.target) === entry.target,
-        );
+        const listedTarget = listedTargetOf(entry, variant);
 
         if (!listedTarget) return false;
 
         return changed !== String(!(listedTarget.unchanged ?? []).includes(state));
       });
       const faults = [
-        ...(early.marked ? [`${early.marked} marked unchanged before the compare`] : []),
-        ...(early.first ? ['"erste Änderung" before the compare'] : []),
+        ...(primed?.targets?.some((candidate) => candidate.unchanged?.length)
+          ? []
+          : [`the earlier full listing of ${sketch} kept no unchanged state`]),
+        ...fresh
+          .slice(0, 3)
+          .map(({ variant, state, changed }) => `${variant}/${state} marked ${changed} before the compare`),
+        ...(first && !kept.some(({ changed }) => changed === 'true') ? ['"erste Änderung" before any kept mark'] : []),
         ...(entry ? [] : [`no listed sketch ${sketch}`]),
         ...wrong.slice(0, 3).map(({ variant, state, changed }) => `${variant}/${state} shows ${changed}`),
       ];
 
-      return { ok: faults.length === 0, detail: faults.join('; ') || `${marks.length} marks match the compare` };
+      return {
+        ok: faults.length === 0,
+        detail: faults.join('; ') || `${kept.length} kept marks before the compare, ${marks.length} marks match it`,
+      };
     },
   },
   {
@@ -1302,6 +1334,15 @@ for (const target of ['pages/system', 'components/zoom-chip', 'elements/shell-ma
 
   mkdirSync(join(folder, 'a', dirname(target)), { recursive: true });
   cpSync(join(root, '.ethlete/design/studio', target), join(folder, 'a', target), { recursive: true });
+
+  if (target === 'components/zoom-chip') {
+    const variantFile = join(folder, 'a', target, 'zoom-chip.ts');
+
+    writeFileSync(
+      variantFile,
+      readFileSync(variantFile, 'utf8').replace('reset: { percent: 100 }', 'reset: { percent: 110 }'),
+    );
+  }
   writeFileSync(
     join(folder, 'sketch.json'),
     JSON.stringify({
