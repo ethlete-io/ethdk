@@ -1,5 +1,21 @@
 # Parallel backlog - latest decisions (Q203 and later)
 
+### Commit volume decisions (Tom, 2026-11-04)
+
+Fact: 350-800 commits a day since 2026-10-29; since 2026-11-03 about half are `docs(repo)` commits that record one
+finding, decision or status line each.
+
+1. **Plan and finding commits:** one commit per grill round or per finished slice, not one per finding, decision or
+   status line. The message names everything in it ("Record the S6a footer decision and findings 355-357").
+2. **Code commits:** one commit per slice: code, spec, changeset and the "as built" note together. Fix format, lint
+   and review findings before the commit, not in follow-up commits. No rebase or `--fixup` squash: several sessions
+   share one checkout and one branch, so a rewrite of unpushed history would also rewrite the other sessions'
+   commits. Never rewrite pushed commits.
+3. **Sketch commits:** one commit for a finished sketch round and one for its merge, not one per interim state.
+4. **Where the rule lives:** the `git-commit` skill (source in `libs/agent-rules/content/skills/git-commit/`) and the
+   `builder-agent` and `doc-agent` skills. A commit-rate hook only if the count does not drop clearly within a week
+   (check on 2026-11-11).
+
 ### Variant notes, model name and order of the recovered wishes (Tom, 2026-11-02)
 
 1. **Variant and part notes:** written in Studio's language (German), short enough to show without truncation, and

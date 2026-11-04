@@ -72,6 +72,7 @@ output; the designed Studio is the side product.
   `### <Topic> decisions (<date>)` section.
 - Commit only plan and docs files: `git commit -- <paths>`. Never `git add -A`, never
   stash, never amend.
+- One commit per grill round, not one per finding or decision. The message names all of them.
 - Send each decision to the builder at once with `SendMessage`, in English, concrete
   enough to build from.
 
