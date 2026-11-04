@@ -2906,7 +2906,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@contentful/rich-text-types@npm:17.2.7":
+"@contentful/rich-text-types@npm:17.2.7, @contentful/rich-text-types@npm:^17.0.0":
   version: 17.2.7
   resolution: "@contentful/rich-text-types@npm:17.2.7"
   checksum: 10c0/fddf495bb3d16cbf18a8ce41572351de08602398d4d292698b432528d8a2b19d6e08b2cded671aab49605be3b3bfed3bb286260d56c3207c08446b31a6a849b3
@@ -4368,11 +4368,12 @@ __metadata:
 "@ethlete/contentful@workspace:libs/contentful":
   version: 0.0.0-use.local
   resolution: "@ethlete/contentful@workspace:libs/contentful"
+  dependencies:
+    "@contentful/rich-text-types": "npm:^17.0.0"
   peerDependencies:
     "@angular/common": ^22.1.0
     "@angular/core": ^22.1.0
     "@angular/router": ^22.1.0
-    "@contentful/rich-text-types": ^17.0.0
     "@ethlete/components": ^1.0.0-next.32
     "@ethlete/core": ^5.0.0-beta.11
     "@ethlete/query": ^6.0.0-beta.8
