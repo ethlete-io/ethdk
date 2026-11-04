@@ -245,7 +245,13 @@ describe('visibleChangeVerdictOf', () => {
         ]),
         sketched: new Set(),
       }),
-    ).toMatchObject({ pass: true, why: 'invisible', unjudged: [], undrivable: ['focus-visible'] });
+    ).toMatchObject({
+      pass: true,
+      why: 'invisible',
+      unjudged: [],
+      undrivable: ['focus-visible'],
+      undrivableReasons: ['no button'],
+    });
   });
 });
 
@@ -258,6 +264,7 @@ describe('visibleChangeSummaryOf', () => {
     unjudged,
     reasons: [],
     undrivable: [] as string[],
+    undrivableReasons: [] as string[],
   });
 
   it('lists every unjudged state of a pass', () => {

@@ -8,7 +8,7 @@ import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../sh
 import { SystemEmptyComponent } from './system-empty.component';
 import { CommentDraftComponent, CommentSendPhase } from './comment-draft.component';
 import { OpenPointsChipComponent } from './open-points-chip.component';
-import { MANY_STATES_LAYERS, OPEN_POINTS_SAMPLE, SYSTEM_LAYERS } from './system-page-sample';
+import { MANY_STATES_LAYERS, OPEN_POINTS_SAMPLE, PART_EXCEPTIONS_SAMPLE, SYSTEM_LAYERS } from './system-page-sample';
 
 export const FRAME_CLASS = 'relative m-0 bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border-solid)]';
 
@@ -104,7 +104,12 @@ export const FRAME_HEAD_CLASS =
           >
             {{ LABELS.comment }}
           </button>
-          <ethlete-open-points-chip [(closed)]="closed" [part]="part()" [groups]="groups()" />
+          <ethlete-open-points-chip
+            [(closed)]="closed"
+            [part]="part()"
+            [groups]="groups()"
+            [exceptionCount]="openExceptions().length"
+          />
         </div>
       }
     </ethlete-shell-page>
@@ -146,6 +151,7 @@ export class SystemPageComponent {
   public shot = input<TemplateRef<{ $implicit: string }> | null>(null);
   public part = input('components/button');
   public openPoints = input(OPEN_POINTS_SAMPLE);
+  public exceptions = input(PART_EXCEPTIONS_SAMPLE);
   public shellAction = output<ShellAction>();
 
   public activate = output<string>();
@@ -162,6 +168,7 @@ export class SystemPageComponent {
   protected readonly FRAME_HEAD_CLASS = FRAME_HEAD_CLASS;
 
   public groups = computed(() => (this.nothingOpen() ? [] : this.openPoints()));
+  public openExceptions = computed(() => (this.nothingOpen() ? [] : this.exceptions()));
 
   protected toggleComments() {
     const on = !this.commentMode();

@@ -4,6 +4,17 @@ export type OpenPointIcon = 'grid' | 'warning' | 'comment' | 'error' | 'flow';
 
 export type OpenPointGroup = { icon: OpenPointIcon; lines: { text: string; detail: string }[] };
 
+export type PartExceptionSample = { rule: string; reason: string; reopened: boolean };
+
+export const PART_EXCEPTIONS_SAMPLE: PartExceptionSample[] = [
+  { rule: 'filled/UNBOUND-INPUT', reason: 'Das Label kommt im Harness aus einem Beispieltext.', reopened: false },
+  {
+    rule: 'outline/CONTRAST',
+    reason: 'Die Kontur liegt bewusst unter 3:1, der Text trägt den Kontrast.',
+    reopened: true,
+  },
+];
+
 export const SYSTEM_LAYERS: PartTreeLayer[] = [
   { title: 'Foundations', open: false, parts: [] },
   { title: 'Elements', open: false, parts: [] },

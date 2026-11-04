@@ -77,12 +77,15 @@ export class OpenPointsChipComponent {
   protected warningTheme = injectSemanticColorTheme('warning');
   public part = input.required<string>();
   public groups = input.required<OpenPointGroup[]>();
+  public exceptionCount = input(0);
   public closed = model(true);
 
   private chip = viewChild.required('chip', { read: ElementRef<HTMLElement> });
   protected readonly LABELS = STUDIO_LABELS.system;
 
-  protected count = computed(() => this.groups().reduce((sum, group) => sum + group.lines.length, 0));
+  protected count = computed(() =>
+    this.groups().reduce((sum, group) => sum + group.lines.length, this.exceptionCount()),
+  );
 
   constructor() {
     toObservable(this.closed)

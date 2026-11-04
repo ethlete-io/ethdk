@@ -23,6 +23,7 @@ export type VisibleChangeVerdict = {
   unjudged: string[];
   reasons: string[];
   undrivable: string[];
+  undrivableReasons: string[];
 };
 
 const DIFF_RED = 0xff0000ff;
@@ -134,7 +135,11 @@ export const visibleChangeVerdictOf = (options: { diff: PartDiff; sketched: Set<
   const unjudgedStates = states.filter((state) => state.kind === 'unjudged');
   const unjudged = unjudgedStates.map((state) => state.state);
   const reasons = [...new Set(unjudgedStates.map((state) => (state.kind === 'unjudged' ? state.problem : '')))];
-  const undrivable = states.filter((state) => state.kind === 'undrivable').map((state) => state.state);
+  const undrivableStates = states.filter((state) => state.kind === 'undrivable');
+  const undrivable = undrivableStates.map((state) => state.state);
+  const undrivableReasons = [
+    ...new Set(undrivableStates.map((state) => (state.kind === 'undrivable' ? state.problem : ''))),
+  ];
   const verdict = (pass: boolean, why: VisibleChangeVerdict['why']): VisibleChangeVerdict => ({
     part,
     pass,
@@ -143,6 +148,7 @@ export const visibleChangeVerdictOf = (options: { diff: PartDiff; sketched: Set<
     unjudged,
     reasons,
     undrivable,
+    undrivableReasons,
   });
 
   if (changed.some((state) => state.kind === 'broken')) return verdict(false, 'broken');

@@ -8,7 +8,8 @@ export const VISIBLE_CHANGE_RULE = 'VISIBLE-CHANGE';
 
 /**
  * One `VISIBLE-CHANGE` problem per harness part whose app looks different from the base without a picked or merged
- * sketch, and one on `(product)` for a run that could not judge the product.
+ * sketch, one per part with a state neither app can be driven into, and one on `(product)` for a run that could not
+ * judge the product.
  */
 export const visibleChangeProblemsOf = async (options: {
   target: string;
@@ -37,6 +38,11 @@ export const visibleChangeProblemsOf = async (options: {
     start: options.start,
     onVerdict: ({ verdict, line }) => {
       if (!verdict.pass) add(verdict.part, line.replace(/^FAIL [^:]+: /u, ''));
+      if (verdict.undrivable.length > 0)
+        add(
+          verdict.part,
+          `${verdict.undrivable.length} state(s) the app cannot be driven into (${verdict.undrivable.join(', ')}): ${verdict.undrivableReasons.join('; ')}`,
+        );
     },
     onProblem: ({ line }) => add('(product)', line),
   });
