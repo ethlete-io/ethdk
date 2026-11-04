@@ -3,6 +3,10 @@
 Status: planned 2026-11-04, not built. Sources: `backlog-parallel/decisions-latest.md` ("build-ready" decisions
 2026-11-02, point 5; "Solo focus" 2026-11-04, Studio checks leave the git hook), `STATUS.md` B249, B295 and A10.
 
+## In progress
+
+- 2026-11-04: S1, S3 and S6a run in parallel (builder ethlete-sdk-b3). Technical defaults taken: Q1, Q3, Q4, Q5, Q7, Q8 as recommended. Q2 and Q6 are with Tom.
+
 ## Current state
 
 **Three human-or-agent records per product dir** (`.ethlete/design/<product>/`):
