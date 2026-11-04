@@ -85,6 +85,19 @@
       @if (error(); as error) {
         <p [etProvideColor]="errorTheme()" class="m-0 text-ui-xs text-et-theme-ink" role="alert">{{ error }}</p>
       }
+      @if (listError()) {
+        <button
+          (click)="retry.emit()"
+          et-button
+          type="button"
+          variant="outline"
+          color="surface"
+          size="sm"
+          data-sk-retry
+        >
+          {{ LABELS.reload }}
+        </button>
+      }
       <button [color]="errorTheme()" (click)="discard.emit()" et-button type="button" variant="transparent" size="sm">
         {{ LABELS.discard }}
       </button>
@@ -283,7 +296,19 @@
         >
       }
       @if (isPending(row)) {
-        <span class="text-ui-xs whitespace-nowrap text-et-surface-muted" data-sk-comparing>{{ LABELS.comparing }}</span>
+        @if (listError(); as message) {
+          <span
+            [etProvideColor]="errorTheme()"
+            class="text-ui-xs text-et-theme-ink"
+            role="alert"
+            data-sk-compare-failed
+            >{{ LABELS.compareFailed(message) }}</span
+          >
+        } @else {
+          <span class="text-ui-xs whitespace-nowrap text-et-surface-muted" data-sk-comparing>{{
+            LABELS.comparing
+          }}</span>
+        }
       }
     </div>
     <p

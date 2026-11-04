@@ -292,6 +292,26 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-same]')).toBeNull();
   });
 
+  it('shows the failed listing instead of the pending mark and a retry that emits', async () => {
+    const pending = ROWS.map((row) =>
+      row.key === 'x' ? { ...row, shots: row.shots.map((shot) => ({ ...shot, changed: null })) } : row,
+    );
+    const fixture = await render({ camera: '100', rows: pending, listError: 'Failed to fetch' });
+    const root: HTMLElement = fixture.nativeElement;
+    const retried = vi.fn();
+
+    fixture.componentInstance.retry.subscribe(retried);
+
+    expect(textOf(root.querySelector('[data-sk-row="x"] [data-sk-compare-failed]'))).toBe(
+      LABELS.compareFailed('Failed to fetch'),
+    );
+    expect(root.querySelector('[data-sk-row="x"] [data-sk-comparing]')).toBeNull();
+
+    (root.querySelector('[data-sk-retry]') as HTMLButtonElement).click();
+
+    expect(retried).toHaveBeenCalledTimes(1);
+  });
+
   it('offers Übernehmen only while the sketch waits for a pick', async () => {
     const waiting: HTMLElement = (await render({ camera: '100', status: 'waiting' })).nativeElement;
     const idle: HTMLElement = (await render({ camera: '100', status: 'idle' })).nativeElement;

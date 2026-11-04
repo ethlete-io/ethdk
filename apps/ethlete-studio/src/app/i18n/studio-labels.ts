@@ -41,6 +41,8 @@ export const STUDIO_LABELS = {
     unchanged: 'unverändert',
     stateSeparator: ' · ',
     comparing: 'vergleicht …',
+    compareFailed: (message: string) => `Vergleich fehlgeschlagen: ${message}`,
+    reload: 'Erneut laden',
     sameVariants: (keys: string[]) => `Unverändert: ${keys.map((key) => `Variante ${key}`).join(', ')}`,
     firstChange: 'erste Änderung',
     drawingMark: 'zeichnet',

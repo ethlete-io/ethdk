@@ -164,6 +164,8 @@ export class SketchesComponent {
   public shot = input<TemplateRef<SketchShotContext> | null>(null);
   public tree = input(SKETCH_TREE);
   public error = input<string | null>(null);
+  public listError = input<string | null>(null);
+  public retry = output();
   public shellAction = output<ShellAction>();
   public discard = output();
   public merge = output<string>();

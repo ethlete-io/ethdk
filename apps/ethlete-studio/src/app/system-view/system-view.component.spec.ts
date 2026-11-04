@@ -618,6 +618,55 @@ describe('SystemViewComponent on a named list change', () => {
   });
 });
 
+describe('SystemViewComponent on a failed listing', () => {
+  let sketchRequests = 0;
+
+  beforeEach(() => {
+    localStorage.clear();
+    sketchRequests = 0;
+    vi.stubGlobal('EventSource', SilentEventSource);
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      if (url.includes('/__design/sketches')) {
+        sketchRequests++;
+
+        return Promise.reject(new TypeError('Failed to fetch'));
+      }
+
+      if (url.includes('/__design/flows')) return Promise.reject(new TypeError('Flows down'));
+
+      return new Promise(() => undefined);
+    });
+    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+
+  it('exposes the sketch listing error and reads again on a retry', async () => {
+    const fixture = await mount({});
+    const before = sketchRequests;
+
+    expect(fixture.componentInstance.sketchesError()).toBe('Failed to fetch');
+
+    (fixture.componentInstance as unknown as { reloadSketches: () => void }).reloadSketches();
+    await settle(fixture);
+
+    expect(sketchRequests).toBeGreaterThan(before);
+  });
+
+  it('exposes the flow listing error', async () => {
+    const fixture = await mount({});
+
+    expect(fixture.componentInstance.flowsError()).toBe('Flows down');
+  });
+});
+
 describe('SystemViewComponent on a sketch report change', () => {
   beforeEach(() => {
     localStorage.clear();

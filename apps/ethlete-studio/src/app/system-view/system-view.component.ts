@@ -69,6 +69,7 @@ import { ShellPageComponent } from '../design-parts/shell-main/shell-page.compon
 import { inboxCommentOf, inboxPartOf } from './inbox-comments';
 import { injectCommentStore, provideCommentStore } from './comment-store';
 import { SketchViewComponent } from './sketch-view.component';
+import { FlowRead, flowRead$, keepLastFlows } from './flow-read';
 import { sketchRead$ } from './sketch-read';
 import { FlowViewComponent } from './flow-view.component';
 import { InventoryViewComponent } from './inventory-view.component';
@@ -82,7 +83,7 @@ import { OpenPointsChipComponent } from '../design-parts/system-page/open-points
 import { CommentDraftComponent } from '../design-parts/system-page/comment-draft.component';
 import { DesignServerAction } from '../design-parts/studio-menu/studio-menu.component';
 import { flowKeyOf, withFlowGroup } from './flow-frames';
-import { ListedFlow, flowChanges$, listedFlows$ } from '../../host/design-flows';
+import { ListedFlow, flowChanges$ } from '../../host/design-flows';
 import { NO_FRAME_REVISIONS, revisionOf, sketchRevisionOf } from '../studio-view/frame-revisions';
 import { NO_LIST_REVISIONS } from '../studio-view/list-revisions';
 
@@ -326,6 +327,8 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [cameraKey]="cameraKey()"
         [restoredCamera]="restoredCamera()"
         [shell]="pageShell()"
+        [listError]="sketchesError()"
+        (retry)="reloadSketches()"
         (decide)="reloadSketches()"
         (merging)="mergingSketch.set($event ? shown.sketch.target : null)"
         (mergeComplete)="selectMerged($event)"
@@ -550,21 +553,19 @@ export class SystemViewComponent {
         flows: this.flowChanges(),
       })),
     ).pipe(
-      switchMap(({ port, product }) =>
-        port && product
-          ? listedFlows$({ port, product }).pipe(
-              map(({ flows }) => flows),
-              // eslint-disable-next-line ethlete/no-silent-catch-error -- no listed flows render as the existing empty list
-              catchError(() => of<ListedFlow[]>([])),
-              map((items) => ({ product, items })),
-            )
-          : of(null),
-      ),
+      switchMap(({ port, product }) => (port && product ? flowRead$({ port, product }) : of(null))),
+      scan(keepLastFlows, null as FlowRead | null),
     ),
     { initialValue: null },
   );
 
   private flowList = computed(() => itemsOf(this.flowRead(), this.product()?.name));
+
+  public flowsError = computed(() => {
+    const read = this.flowRead();
+
+    return read && read.product === this.product()?.name ? read.error : null;
+  });
 
   private listsRead = computed(
     () => this.callList() !== null && this.sketchList() !== null && this.flowList() !== null,

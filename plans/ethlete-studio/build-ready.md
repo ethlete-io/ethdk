@@ -381,3 +381,13 @@ On the `studio-serve` tmux server (:4402), after S6b:
 - Verified: `styles.spec.ts` (compiled CSS holds the rule) and `design-canvas.component.spec.ts` (host classes), both
   fail without the change; lint. Not verified: in Studio/WKWebView; the frame-over-explorer cause (WebKit compositing
   under load) is an assumption; no WKWebView host setting changed.
+
+## As built: interim failed-listing state (finding 365 follow-up)
+
+- Built: a pending compare row shows "Vergleich fehlgeschlagen: <message>" (merge-error style) and the sketches head
+  one "Erneut laden" et-button while the listing failed; `flowRead$` keeps the last flows and exposes `flowsError`
+  (no UI, flows have no pending state). Interim look (a), not in the design; Tom's sketch pick replaces it.
+- Verified: sketches, system-view and sketch-read specs (56), lint, tsc. Not verified: fail-without proof, Studio,
+  `design check`/compare of the sketches part.
+- Why no check flagged it: B251 (declared loading/error/empty states for data parts) is unbuilt; the state checks
+  only see states the design declares.

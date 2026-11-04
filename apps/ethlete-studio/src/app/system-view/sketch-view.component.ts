@@ -126,10 +126,12 @@ const FALLBACK_SIZE = { width: 1440, height: 900 };
         [selected]="picked() ?? undefined"
         [errored]="erroredVariants()"
         [error]="mergeError()"
+        [listError]="listError()"
         [shot]="shot"
         [tree]="shell().tree"
         [shell]="shell()"
         [restoredCamera]="openedCamera()"
+        (retry)="retry.emit()"
         (cameraChange)="cameraChange.emit($event)"
         (discard)="discard()"
         (merge)="openMerge($event)"
@@ -189,6 +191,8 @@ export class SketchViewComponent {
   public cameraKey = input<string | null>(null);
   public restoredCamera = input<Camera | null>(null);
   public shell = input.required<PageShell>();
+  public listError = input<string | null>(null);
+  public retry = output();
   public shellAction = output<PageShellAction>();
   public cameraChange = output<Camera | null>();
 
