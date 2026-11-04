@@ -4750,6 +4750,19 @@ and the live cap on a still view; none scrolls. Fix (B365): an e2e that scrolls 
 on any cell that had a picture or a loaded frame before and now shows neither. App: keep the last picture under a
 frame until its iframe reports loaded, and keep a far shot's picture instead of removing it.
 
+431\. Tom (2026-11-04, `pages/sketches@merge-port`): "ich seh da zudem keinen unterschied zwischen a und b. ich glaub b
+hat a übernommen und nur noch mehr states hinzugefügt oder? das erklärt so einiges". Facts (builder, live listing): the
+sketch has one variant; the columns are "Aktuell" and "Variante a". 16 of 30 states fold; 14 differ: the 2 new port
+states, and 12 states whose only change is three dimmed "unverändert" sample cells. Three causes: (1) a changed state
+shows whole at fit (about 24 %), so a change in three 3 px cells is invisible; (2) at fit the state names (13 px ×
+zoom, about 3 px) hide below the 9 px floor, so no row tells which state it is, while the column heads keep a 12 px
+floor; (3) every frame draws the sample Sketches page, whose own rows read "Aktuell", "Variante a", "Variante b", the
+same words as the real columns. Why no tool caught it: no check measures whether a change is readable at the zoom the
+view opens with, and no check flags sample text that repeats the live chrome around it. Fix: (1) B345 (cut-out of the
+change, check "change readable on open"); (2) B346: the state name keeps a floor like the column heads; (3) the B346
+sketch gives the sample other variant names (Tom picks), and B362 gets a rule that a part which draws the tool itself
+uses sample labels that differ from the live chrome.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
