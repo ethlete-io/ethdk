@@ -207,6 +207,21 @@ test('re-runs a spec that failed only by timeout alone once, end to end', () => 
   assert.deepEqual(leftovers(tmp), []);
 });
 
+test('runs the related specs when TMPDIR is a symlink', () => {
+  const { repo, tmp, run, yarnCommit } = repoWithCommitTool();
+  const link = `${tmp}-link`;
+  symlinkSync(tmp, link);
+  created.push(link);
+  const head = run('git', ['rev-parse', 'HEAD']).stdout;
+  put(repo, 'libs/cli/src/value.ts', 'export const value = 2;\n');
+
+  const result = yarnCommit(['-qm', 'broken', '--', 'libs/cli/src/value.ts'], { TMPDIR: link });
+
+  assert.notEqual(result.status, 0, result.stdout + result.stderr);
+  assert.match(result.stdout + result.stderr, /value\.spec\.ts/);
+  assert.equal(run('git', ['rev-parse', 'HEAD']).stdout, head);
+});
+
 test('a type error vitest passes blocks the commit, an older one in an untouched spec too', () => {
   const { repo, run, yarnCommit } = repoWithCommitTool();
   put(

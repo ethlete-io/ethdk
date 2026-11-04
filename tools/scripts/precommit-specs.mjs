@@ -1,5 +1,15 @@
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import {
+  copyFileSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { specsForFiles } from './cli-related-map.mjs';
@@ -268,7 +278,8 @@ export const runPathSpecs = (root, paths) => {
   if (noSpecs && projects.length === 0 && linted.length === 0) return { status: 0, tree };
   const suites = noSpecs ? [] : suitesForFiles(files, relatedMapAt(root, tree), toolSpecGlobsAt(root, tree));
 
-  const worktree = join(mkdtempSync(join(tmpdir(), 'yarn-commit-')), 'tree');
+  // vitest related resolves the spec graph by real path; under a symlinked TMPDIR (macOS /var) it matches nothing and passes.
+  const worktree = join(realpathSync(mkdtempSync(join(tmpdir(), 'yarn-commit-'))), 'tree');
   const cleanup = () => removeWorktree(root, worktree);
   const onSignal = (signal) => {
     cleanup();
@@ -333,7 +344,7 @@ export const runStagedSpecs = (root) => {
   if (noSpecs && !linted.length) return 0;
   const suites = noSpecs ? [] : suitesForFiles(files, relatedMapAt(root, ''), toolSpecGlobsAt(root, ''));
 
-  const checkout = mkdtempSync(join(tmpdir(), 'pre-commit-'));
+  const checkout = realpathSync(mkdtempSync(join(tmpdir(), 'pre-commit-')));
 
   try {
     git(root, ['checkout-index', '--all', `--prefix=${checkout}/`]);
