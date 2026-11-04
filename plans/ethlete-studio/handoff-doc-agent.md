@@ -98,3 +98,5 @@ area (SDK libs vs Studio/timetrack/cli design) from the last ~50 runs of `next`;
 since 2026-10-01 that touch an SDK lib AND apps/ethlete-studio|apps/timetrack|libs/timetrack|libs/cli/src/lib/design.
 Low coupling -> split into the SDK repo and a tools repo (Studio, timetrack, design CLI) that consumes `next`
 pre-releases; the release-helper part of libs/cli stays. High coupling -> first separate CI workflows per area.
+
+Parked (Tom, 2026-11-04): no measurement for now. Do not start it until Tom brings the topic up again.
