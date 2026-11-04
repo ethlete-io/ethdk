@@ -53,6 +53,16 @@ export const archiveFindings = (planText, statusText) => {
   return { plan, moved };
 };
 
+export const orphanFindings = (planText, statusText) => {
+  const cited = new Set(parseStatusRows(statusText).flatMap((row) => [...row.findings]));
+  return splitFindings(planText).flatMap((block) => {
+    const date = DATE.exec(block.lines.join('\n'));
+    if (!date || cited.has(block.number)) return [];
+    const title = block.lines[0].replace(FINDING_START, '').slice(0, 100);
+    return [{ number: block.number, title, date: date[0] }];
+  });
+};
+
 export const writeArchive = (archiveDir, moved) => {
   mkdirSync(archiveDir, { recursive: true });
   const months = [...new Set(moved.map((m) => m.month))].sort();
@@ -84,5 +94,15 @@ export const run = (root) => {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+  if (process.argv.includes('--orphans')) {
+    const studio = join(root, 'plans/ethlete-studio');
+    const orphans = orphanFindings(
+      readFileSync(join(studio, 'design-to-code.md'), 'utf8'),
+      readFileSync(join(studio, 'STATUS.md'), 'utf8'),
+    );
+    for (const o of orphans) console.log(`${o.number}\t${o.date}\t${o.title}`);
+    console.log(`${orphans.length} orphans`);
+    process.exit(0);
+  }
   console.log(`moved ${run(root)} findings`);
 }

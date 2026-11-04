@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { orphanFindings } from './archive-findings.mjs';
 import { parseStatusRows } from './studio-status.mjs';
 
 const STATUS_VALUE = /^(accepted|superseded by \d{4})$/;
@@ -45,15 +46,23 @@ export const checkAdr = (name, text, rows) => {
   return { errors, warnings };
 };
 
+const ORPHAN_AFTER = '2026-11-04';
+
+export const orphanWarnings = (planText, statusText) =>
+  orphanFindings(planText, statusText)
+    .filter((o) => o.date > ORPHAN_AFTER)
+    .map((o) => `finding ${o.number} (${o.date}) is cited by no STATUS row: ${o.title}`);
+
 export const checkAdrs = (root) => {
-  const dir = join(root, 'apps/ethlete-studio/docs/adr');
-  if (!existsSync(dir)) return { errors: [], warnings: [] };
-  const files = readdirSync(dir).filter((f) => f.endsWith('.md'));
-  if (!files.length) return { errors: [], warnings: [] };
   const statusFile = join(root, 'plans/ethlete-studio/STATUS.md');
-  const rows = existsSync(statusFile) ? parseStatusRows(readFileSync(statusFile, 'utf8')) : [];
+  const planFile = join(root, 'plans/ethlete-studio/design-to-code.md');
+  const statusText = existsSync(statusFile) ? readFileSync(statusFile, 'utf8') : '';
+  const warnings = existsSync(planFile) ? orphanWarnings(readFileSync(planFile, 'utf8'), statusText) : [];
+  const dir = join(root, 'apps/ethlete-studio/docs/adr');
+  const files = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.md')) : [];
+  const rows = parseStatusRows(statusText);
   const results = files.map((f) => checkAdr(f, readFileSync(join(dir, f), 'utf8'), rows));
-  return { errors: results.flatMap((r) => r.errors), warnings: results.flatMap((r) => r.warnings) };
+  return { errors: results.flatMap((r) => r.errors), warnings: [...warnings, ...results.flatMap((r) => r.warnings)] };
 };
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

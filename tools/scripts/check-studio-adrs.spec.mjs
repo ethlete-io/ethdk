@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { checkAdr, checkAdrs } from './check-studio-adrs.mjs';
+import { checkAdr, checkAdrs, orphanWarnings } from './check-studio-adrs.mjs';
 import { parseStatusRows } from './studio-status.mjs';
 
 const rows = parseStatusRows(`| ID | Was | Stand |
@@ -50,4 +50,11 @@ test('reads ADR files against STATUS.md from disk', () => {
   writeFileSync(join(root, 'plans/ethlete-studio/STATUS.md'), '| B1 | x | ✅ |\n');
   writeFileSync(join(root, 'apps/ethlete-studio/docs/adr/0001-a.md'), adr('status: accepted\nopen: B1'));
   assert.equal(checkAdrs(root).errors.length, 1);
+});
+
+test('warns only on orphans dated after 2026-11-04', () => {
+  const plan = '1. Tom (2026-11-04): old orphan\n2. Tom (2026-11-05): new orphan\n3. Tom (2026-11-06): cited\n';
+  const warnings = orphanWarnings(plan, '| B1 | x (Bef. 3) | ⏳ |\n');
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /finding 2 /);
 });
