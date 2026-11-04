@@ -4612,6 +4612,16 @@ skipped, and nothing compares the case count with the last run. Fix (B355): an a
 FAIL and the runner goes on; the summary names every case that did not run; a run with fewer cases than the file
 declares fails. Also (B339): `studio:e2e` runs as a gate on commits that touch `system-view` or `design-parts/sketches`.
 
+415\. Builder (2026-11-04, port of Tom's pick a of pages/sketches, e0f6a4396): `sketch report` refuses on a picked
+sketch even with `--reopen` ("is decided (pick) - a report would reopen it"), so the rule "report before a variant edit"
+cannot be followed for a port. Why no tool caught it: no test covers a report on a decided sketch. Fix (B342): a report
+on the picked variant of a decided sketch is allowed and keeps the decision.
+
+416\. Builder (2026-11-04, same port): `rebase --ported` marks every variant ported, also the unported b and c; only
+`sketch check` noticed (STATES errors). The same port also hit finding 404 a second time (`sketch-rows.ts`, identical
+change on both sides). Why no tool caught it: `--ported` takes no variant and checks nothing. Fix (B344): `--ported
+<variant>`, or a refusal while an unported variant still conflicts, unless it is withdrawn or the sketch is picked.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
