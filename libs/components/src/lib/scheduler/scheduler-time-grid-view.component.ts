@@ -119,6 +119,7 @@ export class SchedulerTimeGridViewComponent {
   private slotItems = viewChildren<ElementRef<HTMLElement>>('slotItem');
   private allDayCellElements = viewChildren<ElementRef<HTMLElement>>('allDayCell');
   private allDayItems = viewChildren<ElementRef<HTMLElement>>('allDayItem');
+  private appointmentTooltips = viewChildren(TooltipDirective);
   private readonly ID_PREFIX = `et-scheduler-time-grid-${uniqueIdCounter++}`;
 
   protected canDragAppointments = computed(() => this.appointmentDrag?.isEnabled() ?? false);
@@ -293,6 +294,8 @@ export class SchedulerTimeGridViewComponent {
 
   protected select(appointment: Appointment, element: HTMLElement) {
     if (this.hasDragged) return;
+
+    for (const tooltip of this.appointmentTooltips()) tooltip.hide();
 
     this.scheduler?.surfaceAnchor.set(element);
 

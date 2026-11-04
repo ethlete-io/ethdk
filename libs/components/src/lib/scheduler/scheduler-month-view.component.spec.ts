@@ -1,8 +1,10 @@
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { addDays, differenceInCalendarDays, isSameDay, startOfWeek } from 'date-fns';
 import '../../test-helpers';
 import { injectOverlayManager } from '../overlay';
 import { pressKey } from '../testing/driver-core';
+import { TooltipDirective } from '../tooltip';
 import { schedulerTestDriver, testAppointment } from './testing/scheduler-driver';
 
 describe('SchedulerMonthViewComponent keyboard', () => {
@@ -187,6 +189,42 @@ describe('SchedulerMonthViewComponent after a drag', () => {
     driver.clickAppointment('b');
 
     expect(driver.editSurface()).toHaveLength(1);
+  });
+});
+
+describe('SchedulerMonthViewComponent appointment tooltip', () => {
+  let driver: ReturnType<typeof schedulerTestDriver>;
+
+  beforeEach(() => {
+    driver = schedulerTestDriver({
+      appointments: [testAppointment('a'), testAppointment('b')],
+      focusedDate: new Date(2026, 6, 15),
+    });
+  });
+
+  afterEach(() => {
+    for (const overlay of TestBed.runInInjectionContext(() => injectOverlayManager()).openOverlays()) {
+      overlay.close();
+    }
+
+    driver.fixture.destroy();
+  });
+
+  it('closes the appointment tooltip when the edit surface opens', () => {
+    const tooltip = driver.fixture.debugElement
+      .queryAll(By.directive(TooltipDirective))
+      .find((debugElement) => debugElement.nativeElement.getAttribute('aria-label') === 'a')
+      ?.injector.get(TooltipDirective);
+
+    tooltip?.show();
+    driver.detectChanges();
+
+    expect(document.querySelectorAll('[role="tooltip"]')).toHaveLength(1);
+
+    driver.clickAppointment('a');
+
+    expect(driver.editSurface()).toHaveLength(1);
+    expect(document.querySelectorAll('[role="tooltip"]')).toHaveLength(0);
   });
 });
 

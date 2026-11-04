@@ -59,6 +59,7 @@ export class SchedulerMonthViewComponent {
   private weekRows = viewChildren<ElementRef<HTMLElement>>('weekRow');
   private cells = viewChildren<ElementRef<HTMLElement>>('cell');
   private cellItems = viewChildren<ElementRef<HTMLElement>>('cellItem');
+  private appointmentTooltips = viewChildren(TooltipDirective);
   public draftAnchor = viewChild<ElementRef<HTMLElement>>('draftAnchor');
 
   protected canDragAppointments = computed(() => this.appointmentDrag?.isEnabled() ?? false);
@@ -112,6 +113,8 @@ export class SchedulerMonthViewComponent {
 
   protected select(appointment: Appointment, element: HTMLElement | null = null) {
     if (this.hasDragged) return;
+
+    for (const tooltip of this.appointmentTooltips()) tooltip.hide();
 
     this.scheduler?.surfaceAnchor.set(element);
 
