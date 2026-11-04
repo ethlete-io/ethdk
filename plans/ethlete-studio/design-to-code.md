@@ -4517,6 +4517,20 @@ Tom's instance); a host e2e sends SIGINT to the debug binary and asserts exit an
 today; the host installs its own SIGINT/SIGTERM handler that calls `app.exit(0)`, with a 5 s watchdog that runs
 `stop_every` and exits; the B368 serve state shows the owner pid.
 
+438\. Tom (2026-11-04): the system view reports SAMPLE_DEFAULT, UNBOUND-INPUT, and on "Produkt/studio" ("was auch immer
+das ist") ORPHAN_ENDPOINT `design/stale-mocks`; "und vor allem; wieso hat er das nicht selbst entdeckt." Cause
+(builder): all three are real; `design check --product studio` exits 1 on them since 2026-11-04 13:25.
+SAMPLE-DEFAULT and UNBOUND-INPUT come from 4d78306ab: `system-page.component.ts:154` has
+`exceptions = input(PART_EXCEPTIONS_SAMPLE)` and no template binds it, so the live open-points chip probably counts
+sample exceptions. ORPHAN-ENDPOINT: 0f6e6682d removed the only caller of `/__design/stale-mocks` and kept the route.
+"Produkt/studio" is a pseudo part for problems in app code outside any design part. Why no tool caught it: no slice
+runs `design check --product <p>` at its end (CLI slices run tests, tsc, lint; product slices run compare; app slices
+ran Angular specs only), and no gate reads the check. Tool fix (B372): every slice ends with `design check --product
+<p>` and fails on any new problem, with the same list as the system view (builder-agent skill, every brief, pre-push
+when `apps/ethlete-studio` or `.ethlete/design` change); the pseudo part reads as app code with the file of each
+problem. Code fix (B372): bind `exceptions` to the real part exceptions or drop the input; remove the stale-mocks
+route and its snapshot entry.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
