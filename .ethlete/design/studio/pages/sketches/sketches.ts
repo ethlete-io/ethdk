@@ -51,6 +51,8 @@ import {
 import { type Withdrawn, isWithdrawn, visibleRows, withdrawnCount, withdrawnMark } from './shared/withdrawn';
 import { type Camera } from 'ethlete-studio/canvas';
 
+type MergePort = 'one' | 'two';
+
 type Props = {
   camera: 'fit' | '100' | Camera;
   selected?: RowKey;
@@ -65,6 +67,7 @@ type Props = {
   agent?: AgentRun;
   fold?: number;
   question?: string;
+  port?: MergePort;
 };
 
 type View = { selected?: RowKey; status: SketchStatus; comparing: boolean; withdrawn?: Withdrawn; take: string };
@@ -179,6 +182,26 @@ const agentLine = (run: AgentProgress) =>
       >${run.task}</span
     >
     <span>· ${run.step} · ${run.since}</span>
+  </span>`;
+
+const MERGE_PORTS: Record<MergePort, { merged: string[]; since: string }> = {
+  one: { merged: ['components/button'], since: 'seit 1 Min' },
+  two: { merged: ['components/sketch-status-badge', 'elements/variant-cell'], since: 'seit 1 Min' },
+};
+
+const portLine = (port: MergePort) =>
+  html`<span
+    class="flex min-w-0 items-center gap-space-2 text-ui-sm text-et-surface-muted whitespace-nowrap"
+    data-sk-merge-port
+  >
+    <span
+      class="size-2 flex-none rounded-full bg-(--et-theme-color-primary-solid)"
+      data-et-semantic-color="warning"
+    ></span>
+    <span class="truncate font-ui-medium text-et-surface"
+      >Agent portiert nach Merge von ${MERGE_PORTS[port].merged.join(', ')}</span
+    >
+    <span>· ${MERGE_PORTS[port].since}</span>
   </span>`;
 
 const pinFor = (row: Row) =>
@@ -330,6 +353,8 @@ export default definePart<Props>({
     'agent-failed': { camera: 'fit', part: 'narrow', agent: 'failed' },
     folded: { camera: 'fit', part: 'narrow', fold: 3, question: QUESTION },
     'question-only': { camera: 'fit', part: 'narrow', question: QUESTION },
+    'port-after-merge': { camera: 'fit', part: 'narrow', port: 'one' },
+    'port-after-merge-long': { camera: 'fit', part: 'narrow', port: 'two' },
   },
   render: async ({
     camera,
@@ -345,6 +370,7 @@ export default definePart<Props>({
     agent,
     fold = 0,
     question = '',
+    port,
   }) => {
     const { discard, chip, pickers, tags } = await controlsOf();
     const take = await takeButton();
@@ -382,7 +408,7 @@ export default definePart<Props>({
         class="absolute z-3 top-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] right-space-5 flex items-center gap-space-3"
       >
         <span class="text-ui-lg font-ui-strong">${part.key}</span>
-        ${fresh ? tags.fresh.body : ''} ${statusMarkup(run && !run.failed ? 'drawing' : status, reason, tags)}
+        ${fresh ? tags.fresh.body : ''} ${statusMarkup((run && !run.failed) || port ? 'drawing' : status, reason, tags)}
         <span class="flex-1"></span>
         <span class="w-56 flex-none" data-sk-view-toggle-room></span>
         ${withAction(discard.body, 'emit:discard')}
@@ -400,7 +426,7 @@ export default definePart<Props>({
       <div
         class="zr-picker absolute z-2 ${question ? 'top-24' : 'top-14'} left-[calc(var(--st-shell-inset-left)+var(--space-5))] flex items-center gap-space-4"
       >
-        ${pickers[kind].body} ${run ? agentLine(run) : ''}
+        ${pickers[kind].body} ${run ? agentLine(run) : ''} ${port ? portLine(port) : ''}
         ${showWithdrawn.body ? withAction(showWithdrawn.body, { action: 'emit:withdrawnToggle', on: '.et-switch' }) : ''}
       </div>
       <div
