@@ -332,3 +332,26 @@ My design servers, the swift probes and the repro static server (:4291) are stop
 ## B321 patch
 
 The patch equals the shell-main.component.{html,spec.ts} diff on wip/b321-stacking-fix. In step 4 of the B321 commands, use `git diff next wip/b321-stacking-fix -- apps/ethlete-studio/src/app/design-parts/shell-main > /tmp/b321-shell-stacking-fix.patch`.
+
+## Agent result: b333
+
+The map script `b333-map.mjs` is on branch `wip/b321-stacking-fix` at `tools/scripts/b333-map.mjs`.
+
+### B333 result: not committed (time limit)
+
+Commits: none. Both plan files are untouched.
+
+#### What I found
+
+- The archive `plans/ethlete-studio/archive/findings-2026-11.md` is fine: all 54 numbers match their numbers at 3decc21bb^ (I matched on the first 50 chars of the text). It has not changed since 3decc21bb.
+- In `design-to-code.md`, 3decc21bb itself renumbered the list: prettier ran before that commit. 138 findings are now off. The shift starts at today's 158, which was 159 (158 went to the archive). The tail today reads 372..385 = 384..385 at the old offset, and the last item, "374." (Sketches group, screenshot), is really 386 (added in 784a4c141).
+- A map by text restores all of them. I wrote the script to `.claude/handoffs/agent-results/b333-map.mjs`; run it with the archive path and the plan path. It writes `/tmp/b333-restored.md`. It needs `git show 3decc21bb^:plans/ethlete-studio/design-to-code.md > /tmp/b333-old.md` first. Unmapped items get 386. Check that only the last item is unmapped.
+- Blocker 1: `prettier --write` renumbers the restored file again (159 -> 158), so restoring the numbers alone is not green. The numbers have to be in a prettier-proof format in the same commit.
+- Blocker 2: the findings range (line 562 to "1. Build-ready") has other top-level ordered lists in it (they restart at "1. The MVP goal", "1. Studio gets its own title bar", "1. From 70 %", "1. Repo switch", "1. Go last", "1. Now, in the MVP", "1. Push:"). The check and the format conversion have to tell findings apart from these lists, for example by number > 100 or by position after the findings heading. Look at each spot before converting.
+
+#### Remaining steps
+
+1. Restore the numbers with b333-map.mjs and convert every finding in both files to `#### F<N>` or `N\.` (decide after looking at nested sublists and code blocks inside findings; `N\.` turns the item into a paragraph, so check that indented continuation lines and nested lists still render). Run prettier and confirm the numbers survive. Spot-check 382 (edit sketch merge), 384 (75 live frames), 386 (Sketches row leaves the canvas empty).
+2. Update the parsing in archive-findings.mjs, studio-status.mjs and check-studio-adrs.mjs, and their specs.
+3. Add the uniqueness / increasing / "Bef. N" resolves check to `yarn lint:studio-adrs`, with fixtures, including a prettier-renumbered fixture that must fail.
+4. Add finding 387, row B333 (done) and row B332 (open: a design check rule that resolves each sketch variant's imports; finding 380 / 296429625).
