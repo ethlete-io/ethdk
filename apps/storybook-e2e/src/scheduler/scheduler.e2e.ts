@@ -372,7 +372,7 @@ test.describe('scheduler / drag', () => {
 
   test('dragging an appointment down the day column reschedules it to a later time', async ({ page }) => {
     const root = await openStory(page, WEEK_ID);
-    const block = root.locator('.et-scheduler-time-grid-block[title="Daily standup"]');
+    const block = root.locator('.et-scheduler-time-grid-block[aria-label="Daily standup"]');
 
     await block.scrollIntoViewIfNeeded();
     const before = await block.locator('.et-scheduler-appointment-time-range').textContent();
@@ -394,7 +394,7 @@ test.describe('scheduler / drag', () => {
 
   test('the without-appointment-drag story does not move an appointment on the same drag', async ({ page }) => {
     const root = await openStory(page, WITHOUT_DRAG_ID);
-    const block = root.locator('.et-scheduler-time-grid-block[title="Daily standup"]');
+    const block = root.locator('.et-scheduler-time-grid-block[aria-label="Daily standup"]');
 
     await block.scrollIntoViewIfNeeded();
     const before = await block.locator('.et-scheduler-appointment-time-range').textContent();
@@ -414,7 +414,7 @@ test.describe('scheduler / drag', () => {
 
   test('the without-appointment-drag story renders no resize handles', async ({ page }) => {
     const root = await openStory(page, WITHOUT_DRAG_ID);
-    const block = root.locator('.et-scheduler-time-grid-block[title="Daily standup"]');
+    const block = root.locator('.et-scheduler-time-grid-block[aria-label="Daily standup"]');
 
     await expect(block.locator('.et-scheduler-time-grid-block-resize')).toHaveCount(0);
     await expect(block).not.toHaveAttribute('data-draggable', '');
@@ -443,7 +443,7 @@ test.describe('scheduler / touch', () => {
 
   test('a long-press-then-drag on an appointment reschedules it', async ({ page }) => {
     const root = await openStory(page, WEEK_ID);
-    const call = root.locator('.et-scheduler-time-grid-block[title="Daily standup"]');
+    const call = root.locator('.et-scheduler-time-grid-block[aria-label="Daily standup"]');
 
     await call.scrollIntoViewIfNeeded();
     const before = await call.locator('.et-scheduler-appointment-time-range').textContent();
@@ -610,7 +610,7 @@ test.describe('scheduler / resize', () => {
   test('dragging the bottom edge down by an hour lengthens the block without opening the surface', async ({ page }) => {
     const root = await openStory(page, WEEK_ID);
     const hour = await hourRowHeight(root);
-    const block = root.locator('.et-scheduler-time-grid-block[title="Launch project"]');
+    const block = root.locator('.et-scheduler-time-grid-block[aria-label="Launch project"]');
     const before = await boxOf(block);
     const edge = await boxOf(block.locator('.et-scheduler-time-grid-block-resize[data-edge="end"]'));
     const from = { x: edge.x + edge.width / 2, y: edge.y + edge.height / 2 };
@@ -625,7 +625,7 @@ test.describe('scheduler / resize', () => {
   test('an edge dragged past the other end stops at one 15-minute slot', async ({ page }) => {
     const root = await openStory(page, WEEK_ID);
     const hour = await hourRowHeight(root);
-    const block = root.locator('.et-scheduler-time-grid-block[title="Launch project"]');
+    const block = root.locator('.et-scheduler-time-grid-block[aria-label="Launch project"]');
     const before = await boxOf(block);
     const edge = await boxOf(block.locator('.et-scheduler-time-grid-block-resize[data-edge="end"]'));
     const from = { x: edge.x + edge.width / 2, y: edge.y + edge.height / 2 };
@@ -691,7 +691,7 @@ test.describe('scheduler / edit surface presentation', () => {
     await pressKey(page, 'Escape');
     await expect(pane).toHaveCount(0);
 
-    const block = root.locator('.et-scheduler-time-grid-block[title="Daily standup"]');
+    const block = root.locator('.et-scheduler-time-grid-block[aria-label="Daily standup"]');
     await block.click();
     await waitForEntered(page);
 
@@ -723,7 +723,7 @@ test.describe('scheduler / touch surfaces and gestures', () => {
     const root = await openStory(page, WEEK_ID);
     const pane = page.locator(PANE);
 
-    await root.locator('.et-scheduler-time-grid-block[title="Launch project"]').tap();
+    await root.locator('.et-scheduler-time-grid-block[aria-label="Launch project"]').tap();
     await waitForEntered(page);
     await expect(pane).toHaveClass(/et-overlay--full-screen-dialog/);
     await expectFullScreen(pane, page);
