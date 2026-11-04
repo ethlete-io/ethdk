@@ -4513,6 +4513,12 @@ its own and never reaches Tom as stale.
 arguments. Why no tool caught it: the commit script has no test with many paths. Fix (B347): pass the paths to git as
 an array, with a spec that commits more than ten paths.
 
+406\. Builder (2026-11-04, S6a check): the product shot of `blockers-open` answered a non-image before the merge, so
+the builder could not compare that state. Likely cause (not proven): the product had no `blockers-open` state yet, and
+the shot route answers an unclear text for a state the part lacks. Why no tool caught it: the route names a missing
+part, but not a missing state. Fix (B341): a state the part lacks at HEAD answers 404 with "state <s> not in part <p>
+at HEAD".
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
