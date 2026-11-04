@@ -4823,6 +4823,18 @@ caught it: nothing tells an agent who owns the design port or which CLI copy it 
 prints the serve state: the port owner (Studio app or terminal), the served CLI commit against HEAD, and how to
 restart it.
 
+437\. Tom (2026-11-04): "ich bekomm ihn nicht tot. ctrl c tut nichts" in the `nx tauri:dev ethlete-studio` terminal.
+`target/debug/ethlete-studio` (pid 36678, 4 h old) was in state R; Tom ended it with `kill -TERM`. Cause (builder,
+code read, not proved, no log): the host has no SIGINT or SIGTERM handler of its own; its only clean-up is
+`RunEvent::Exit` (`apps/ethlete-studio/src-tauri/src/lib.rs:218`, `stop_every`). The design server runs in its own
+process group (`design_server.rs:540`), so Ctrl+C never reaches it. Hypothesis: CEF's browser process turns
+SIGINT/SIGTERM into a shutdown task on the UI thread; a spinning UI thread (state R, the stalls of finding 427) never
+runs it. Why no tool caught it: no test sends a signal to the real host binary; the studio e2e harness stops only its
+own group. Tool fix (B370): first prove it on a second debug instance (strace for signals, gdb main-thread stack, never
+Tom's instance); a host e2e sends SIGINT to the debug binary and asserts exit and a free :4402 within 5 s, failing
+today; the host installs its own SIGINT/SIGTERM handler that calls `app.exit(0)`, with a 5 s watchdog that runs
+`stop_every` and exits; the B368 serve state shows the owner pid.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
