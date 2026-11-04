@@ -4,6 +4,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { AddressInfo, createServer as createNetServer } from 'net';
 import { setTimeout as delay } from 'timers/promises';
 import { basename, dirname, join, relative, resolve, sep } from 'path';
+import { interval, Subscription } from 'rxjs';
 import { CALLS_PATH, callSlugsOf, listCalls } from './calls';
 import { writeCallsTsconfig } from './calls-tsconfig';
 import { markTransferred, TRANSFER_PATH } from './legacy';
@@ -108,6 +109,7 @@ import {
 import { KIT_SPECIFIER } from './system/kit';
 import { DESIGN_SYSTEM_SPECIFIER, writeEditorTsconfig } from './system/system-tsconfig';
 import { SKETCH_FILE } from './system/sketch/sketch';
+import { CheckSketches, createSketchChecker } from './system/sketch/sketch-checker';
 import { forgetUnchangedStates } from './system/sketch/unchanged-states';
 import { inventoryOf } from './system/inventory';
 import { createDrawQueue, createThumbnailer, send, THUMB_PATH, ThumbMissingError } from './thumb';
@@ -359,7 +361,7 @@ export const DESIGN_EVENTS_HEARTBEAT_MS = 20_000;
  */
 const createDesignEvents = () => {
   const listeners = new Set<ServerResponse>();
-  let heartbeat: ReturnType<typeof setInterval> | undefined;
+  let heartbeat: Subscription | undefined;
 
   const beat = () => {
     for (const response of listeners) response.write(': heartbeat\n\n');
@@ -375,12 +377,12 @@ const createDesignEvents = () => {
       });
       response.write(': open\n\n');
       listeners.add(response);
-      heartbeat ??= setInterval(beat, DESIGN_EVENTS_HEARTBEAT_MS).unref();
+      heartbeat ??= interval(DESIGN_EVENTS_HEARTBEAT_MS).subscribe(beat);
       request.on('close', () => {
         listeners.delete(response);
 
         if (listeners.size === 0) {
-          clearInterval(heartbeat);
+          heartbeat?.unsubscribe();
           heartbeat = undefined;
         }
       });
@@ -389,7 +391,7 @@ const createDesignEvents = () => {
       for (const response of listeners) response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
     },
     close: () => {
-      clearInterval(heartbeat);
+      heartbeat?.unsubscribe();
       heartbeat = undefined;
       for (const response of listeners) response.end();
       listeners.clear();
@@ -496,12 +498,14 @@ const designExplore = ({
   system,
   stylesheetImports,
   shotCacheDir,
+  checkSketches,
 }: {
   target: string;
   config: DesignConfig;
   system: SystemModules;
   stylesheetImports: StylesheetImports;
   shotCacheDir: string | null;
+  checkSketches?: CheckSketches;
 }) => {
   const renderer = createRenderer({ target, config });
   const transform = withAssetUrls(system);
@@ -575,6 +579,7 @@ const designExplore = ({
       );
       const thumbs = createThumbnailer({ target, base, ledger });
       const inventoryDraws = createDrawQueue({ target, ledger });
+      const sketchChecker = checkSketches ? undefined : createSketchChecker();
       const shots = createPartShooter({
         target,
         base,
@@ -874,6 +879,7 @@ const designExplore = ({
               load: ({ file, product, sketch }) => vite.ssrLoadModule(productModuleIdOf({ file, product, sketch })),
               pictureOf: shots.pictureOf,
               boxOf: shots.changedBoxesOf,
+              checkSketches: checkSketches ?? sketchChecker,
               inventoryOf: ({ product, part }) =>
                 inventoryOf({
                   product,
@@ -920,7 +926,7 @@ const designExplore = ({
       vite.httpServer?.on('close', () => {
         events.close();
         settling?.abort();
-        void Promise.all([thumbs.close(), shots.close(), inventoryDraws.close()]);
+        void Promise.all([thumbs.close(), shots.close(), inventoryDraws.close(), sketchChecker?.close()]);
       });
       vite.watcher.add([designRoot, ...baseDirs, ...packageDirs()]);
       vite.watcher.on('add', (file: string) => (isPackageFile(file) ? packageChanged(file) : refresh(file)));
@@ -977,8 +983,9 @@ export const createDesignServer = async (options: {
   listenOn?: number;
   host?: string;
   sketchesRoot?: string;
+  checkSketches?: CheckSketches;
 }) => {
-  const { target, config, listen, sketchesRoot } = options;
+  const { target, config, listen, sketchesRoot, checkSketches } = options;
   const host = options.host || process.env['DE_HOST'] || undefined;
   const own = listen && options.port !== undefined;
   const port = own ? await freePortOf() : options.listenOn;
@@ -1050,6 +1057,7 @@ export const createDesignServer = async (options: {
         system,
         stylesheetImports,
         shotCacheDir: listen && !own ? viteCacheOf(target, 'shots') : null,
+        checkSketches,
       }),
     ],
     ...(listen ? {} : { appType: 'custom' as const }),
@@ -1110,8 +1118,9 @@ export const serveDesign = async (options: {
   target: string;
   host?: string;
   reloadOnRebuild?: boolean;
+  checkSketches?: CheckSketches;
 }): Promise<number> => {
-  const { target, host, reloadOnRebuild } = options;
+  const { target, host, reloadOnRebuild, checkSketches } = options;
   const config = readConfig(target);
 
   if (!config) {
@@ -1133,6 +1142,7 @@ export const serveDesign = async (options: {
     listen: true,
     host,
     listenOn: portPinned ? undefined : await freePortOf(),
+    checkSketches,
   });
 
   await server.listen();

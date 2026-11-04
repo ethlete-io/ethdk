@@ -1,6 +1,7 @@
 import { execFileSync } from 'child_process';
 import { IncomingMessage } from 'http';
 import { relative } from 'path';
+import { setImmediate } from 'timers/promises';
 import { repoInvocation } from '../invocation';
 import { DesignConfig, readConfig } from './paths';
 import {
@@ -38,7 +39,8 @@ import { staleDesignMocksOf } from './system/stale-design-mocks';
 import { flowProblemsOf } from './system/rules/flow';
 import { Problem } from './system/problem';
 import { ResolvedProduct } from './system/resolve-product';
-import { openSketchProblemsOf } from './system/sketch/check-sketches';
+import { openSketchListingOf } from './system/sketch/check-sketches';
+import { CheckSketches } from './system/sketch/sketch-checker';
 import { oneProductOf } from './system/sketch/cli-args';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { changedOutsideSketchOf, recordMergeReason } from './system/sketch/merged-parts';
@@ -53,7 +55,7 @@ import {
   decideSketch,
   findSketch,
   SketchDecisionInput,
-  listSketches,
+  listSketchesInTurns,
   parseTarget,
   readSketchReport,
   Sketch,
@@ -114,6 +116,7 @@ type Asked = {
   boxOf?: BoxOf;
   inventoryOf?: (options: { product: ResolvedProduct; part: string }) => Promise<Inventory | string>;
   drawStates?: DrawStates;
+  checkSketches?: CheckSketches;
 };
 
 const failure = (status: number, message: string): Answer => ({ status, body: { error: message } });
@@ -223,6 +226,18 @@ const variantChangesOf = ({ current, drawn }: { current: PartFacts; drawn: PartF
   note: drawn.note === current.note ? null : { before: current.note, after: drawn.note },
 });
 
+/** Maps `items` one after another, letting the server answer other requests before each. */
+const inTurns = async <TItem, TResult>(items: readonly TItem[], run: (item: TItem) => Promise<TResult>) => {
+  const results: TResult[] = [];
+
+  for (const item of items) {
+    await setImmediate();
+    results.push(await run(item));
+  }
+
+  return results;
+};
+
 const partTargetsOf = async ({
   product,
   sketch,
@@ -246,41 +261,39 @@ const partTargetsOf = async ({
         })
       : null;
 
-  return Promise.all(
-    sketch.variants.map(async (variant) => {
-      const file = overlaySketch({ product, sketch, variant }).parts.find((entry) => partKeyOf(entry) === part)?.file;
+  return inTurns(sketch.variants, async (variant) => {
+    const file = overlaySketch({ product, sketch, variant }).parts.find((entry) => partKeyOf(entry) === part)?.file;
 
-      if (!file || !load)
-        return {
-          part,
-          variant,
-          states: [],
-          interactions: [],
-          ...(file ? {} : { error: `variant ${variant} has no part ${part}` }),
-        };
-
-      const { states, interactions, problem, note, ...widths } = await readPartModule({
-        part: { file },
-        product: product.name,
-        load: () => load({ file, product: product.name, sketch: { target: sketch.target, variant } }),
-      });
-
+    if (!file || !load)
       return {
         part,
         variant,
-        states,
-        ...('widths' in widths ? { widths: widths.widths } : {}),
-        interactions,
-        unchanged: problem
-          ? []
-          : await unchangedStatesOf({ product, sketch, variant, load, pictureOf, keepPictures: true, part }),
-        ...(problem || !current || current.problem
-          ? {}
-          : { changes: variantChangesOf({ current, drawn: { states, note } }) }),
-        ...(problem ? { error: problem } : {}),
+        states: [],
+        interactions: [],
+        ...(file ? {} : { error: `variant ${variant} has no part ${part}` }),
       };
-    }),
-  );
+
+    const { states, interactions, problem, note, ...widths } = await readPartModule({
+      part: { file },
+      product: product.name,
+      load: () => load({ file, product: product.name, sketch: { target: sketch.target, variant } }),
+    });
+
+    return {
+      part,
+      variant,
+      states,
+      ...('widths' in widths ? { widths: widths.widths } : {}),
+      interactions,
+      unchanged: problem
+        ? []
+        : await unchangedStatesOf({ product, sketch, variant, load, pictureOf, keepPictures: true, part }),
+      ...(problem || !current || current.problem
+        ? {}
+        : { changes: variantChangesOf({ current, drawn: { states, note } }) }),
+      ...(problem ? { error: problem } : {}),
+    };
+  });
 };
 
 const targetsOf = async (options: {
@@ -288,22 +301,17 @@ const targetsOf = async (options: {
   sketch: Sketch;
   load?: VariantPartLoader;
   pictureOf?: PictureOf;
-}) => (await Promise.all(options.sketch.targets.map((part) => partTargetsOf({ ...options, part })))).flat();
+}) => (await inTurns(options.sketch.targets, (part) => partTargetsOf({ ...options, part }))).flat();
 
-/**
- * The open sketches of `?product=`, each with its target parts (`targetParts`, the first one first), variants, status,
- * decision, the rule problems of every variant, the states, widths and interactions of each target part as each variant
- * draws it (`targets`, one entry per part and variant, tagged with `part`, the first part's entries first), with the states it
- * draws the same as the product now (`unchanged`), the states it adds and drops and its part note when that differs
- * from the product's (`changes`), and the live report
- * of the agent (`report`, `null` when none runs). `?unchanged=no` answers the list only, without `problems` and `targets`: no rule check, no part module loads.
- */
-export const sketchesAnswer = withProduct('GET', async ({ asked, product }) => {
+const listingOf = async ({ asked, product, light }: { asked: Asked; product: ResolvedProduct; light: boolean }) => {
   const { target } = asked;
-  const light = asked.url.searchParams.get('unchanged') === 'no';
-  const listed = listSketches({ productDir: product.dir, product: product.name });
+  const listed = await listSketchesInTurns({ productDir: product.dir, product: product.name });
   const sketches = listed.filter((sketch): sketch is Sketch => typeof sketch !== 'string');
-  const checked = light ? null : openSketchProblemsOf(product);
+  const checked = light
+    ? null
+    : asked.checkSketches
+      ? await asked.checkSketches({ target, product: product.name })
+      : openSketchListingOf(product);
   const unreadable =
     checked?.unreadable ??
     listed.flatMap((sketch): Problem[] =>
@@ -313,26 +321,49 @@ export const sketchesAnswer = withProduct('GET', async ({ asked, product }) => {
   return {
     status: 200,
     body: {
-      sketches: await Promise.all(
-        sketches.map(async (sketch) => ({
-          ...sketchOf({ sketch, target }),
-          ...(checked
-            ? {
-                problems: checked.variants
-                  .filter((entry) => entry.sketch.target === sketch.target)
-                  .map((entry) => ({
-                    variant: entry.variant,
-                    problems: entry.problems.map((p) => problemOf({ target, problem: p })),
-                  })),
-                targets: await targetsOf({ product, sketch, load: asked.load, pictureOf: asked.pictureOf }),
-              }
-            : {}),
-          report: readSketchReport({ checkout: target, sketch }),
-        })),
-      ),
+      sketches: await inTurns(sketches, async (sketch) => ({
+        ...sketchOf({ sketch, target }),
+        ...(checked
+          ? {
+              problems: checked.variants
+                .filter((entry) => entry.target === sketch.target)
+                .map((entry) => ({
+                  variant: entry.variant,
+                  problems: entry.problems.map((p) => problemOf({ target, problem: p })),
+                })),
+              targets: await targetsOf({ product, sketch, load: asked.load, pictureOf: asked.pictureOf }),
+            }
+          : {}),
+        report: readSketchReport({ checkout: target, sketch }),
+      })),
       unreadable: unreadable.map((problem) => problemOf({ target, problem })),
     },
   };
+};
+
+const runningListings = new Map<string, Promise<Answer>>();
+
+/**
+ * The open sketches of `?product=`, each with its target parts (`targetParts`, the first one first), variants, status,
+ * decision, the rule problems of every variant, the states, widths and interactions of each target part as each variant
+ * draws it (`targets`, one entry per part and variant, tagged with `part`, the first part's entries first), with the states it
+ * draws the same as the product now (`unchanged`), the states it adds and drops and its part note when that differs
+ * from the product's (`changes`), and the live report
+ * of the agent (`report`, `null` when none runs). `?unchanged=no` answers the list only, without `problems` and `targets`: no rule check, no part module loads.
+ * A listing asked while the same one runs gets that one's answer.
+ */
+export const sketchesAnswer = withProduct('GET', ({ asked, product }) => {
+  const light = asked.url.searchParams.get('unchanged') === 'no';
+  const key = JSON.stringify([asked.target, product.name, light]);
+  const running = runningListings.get(key);
+
+  if (running) return running;
+
+  const listing = listingOf({ asked, product, light }).finally(() => runningListings.delete(key));
+
+  runningListings.set(key, listing);
+
+  return listing;
 });
 
 /** `?product=&sketch=<layer>/<name>&variant=`: the parts a merge of that variant changes and the elements and pages that show them. */

@@ -12,12 +12,14 @@ import {
 } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
+import { setTimeout as delay } from 'timers/promises';
 import { basename, dirname, join, resolve } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, installedAssetRoot, readConfig } from './paths';
 import { DESIGN_EVENTS_HEARTBEAT_MS, createDesignServer, serveDesign } from './serve';
 import { resolveProduct } from './system/resolve-product';
 import { createSketch, markSketchReady, parseTarget, Sketch } from './system/sketch/sketch';
+import { CheckSketches, openSketchListingAt } from './system/sketch/sketch-checker';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
 
 type ServerOptions = {
@@ -318,10 +320,40 @@ const acme = () => {
   return target;
 };
 
-const serveAcme = async (target: string, moduleOf?: (id: string) => unknown) => {
+const checkSketchesHere: CheckSketches = async (request) => {
+  const listing = openSketchListingAt(request);
+
+  if (typeof listing === 'string') throw new Error(listing);
+
+  return listing;
+};
+
+// Thread CPU time, not wall time: a loaded machine deschedules the thread, which a wall-clock bar would count as a block.
+const watchLongestBlock = () => {
+  let longest = 0;
+  let last = process.threadCpuUsage();
+  const tick = setInterval(() => {
+    const spent = process.threadCpuUsage(last);
+
+    longest = Math.max(longest, (spent.user + spent.system) / 1000);
+    last = process.threadCpuUsage();
+  }, 5);
+
+  return () => {
+    clearInterval(tick);
+
+    return longest;
+  };
+};
+
+const serveAcme = async (
+  target: string,
+  moduleOf?: (id: string) => unknown,
+  checkSketches: CheckSketches = checkSketchesHere,
+) => {
   vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-  expect(await serveDesign({ target })).toBe(0);
+  expect(await serveDesign({ target, checkSketches })).toBe(0);
 
   const plugin = created[created.length - 1]?.plugins[0];
   const handlers = new Map<string, Handler>();
@@ -848,6 +880,61 @@ describe('the design server for sketches and comments', () => {
     expect((await ask('/__design/sketches', '')).status).toBe(400);
     expect((await ask('/__design/sketches', '?product=acme', 'POST')).status).toBe(405);
   });
+
+  it('keeps answering other requests while it checks two hundred sketches, without a block over 50 ms', async () => {
+    const target = acme();
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+    const targets = Array.from({ length: 200 }, (_, index) => `components/card@s${String(index).padStart(3, '0')}`);
+    const problem = { rule: 'SKETCH', file: join(target, 'card.ts'), message: 'checked off the event loop' };
+
+    for (const name of targets) {
+      const parsed = parseTarget(name);
+      const created = typeof parsed === 'string' ? parsed : createSketch({ product, sketch: parsed, variants: ['a'] });
+
+      if (typeof created === 'string') throw new Error(created);
+    }
+
+    const checked = {
+      unreadable: [],
+      variants: targets.map((name) => ({ target: name, variant: 'a', problems: [problem] })),
+    };
+    let checks = 0;
+    const { ask } = await serveAcme(
+      target,
+      (id) =>
+        id.includes('/calls/')
+          ? undefined
+          : { default: { note: 'n', states: { one: {} }, render: () => ({ body: '<p></p>', styles: '' }) } },
+      async () => {
+        checks++;
+        await delay(100);
+
+        return checked;
+      },
+    );
+    let listedAt = Infinity;
+    let callsAt = Infinity;
+    const longestBlock = watchLongestBlock();
+    const listings = Promise.all([
+      ask('/__design/sketches', '?product=acme'),
+      ask('/__design/sketches', '?product=acme'),
+    ]).finally(() => (listedAt = performance.now()));
+    const calls = delay(10)
+      .then(() => ask('/__design/calls'))
+      .finally(() => (callsAt = performance.now()));
+    const [[first, second], called] = await Promise.all([listings, calls]);
+    const longest = longestBlock();
+
+    expect(called.status).toBe(200);
+    expect(first.status).toBe(200);
+    expect(second.body).toEqual(first.body);
+    expect(
+      (first.body as { sketches: { problems: unknown[] }[] }).sketches.map(({ problems }) => problems.length),
+    ).toEqual(Array.from({ length: 200 }, () => 1));
+    expect(checks).toBe(1);
+    expect(callsAt).toBeLessThan(listedAt);
+    expect(longest).toBeLessThan(50);
+  }, 60_000);
 
   it('lists the states of every target part of a sketch, the first target first', async () => {
     const target = acme();

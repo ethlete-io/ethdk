@@ -171,6 +171,21 @@ export const openSketchProblemsOf = (product: ResolvedProduct) => {
   };
 };
 
+export type OpenSketchListing = {
+  unreadable: Problem[];
+  variants: { target: string; variant: string; problems: Problem[] }[];
+};
+
+/** `openSketchProblemsOf` as plain data a worker can post: each variant names its sketch by target. */
+export const openSketchListingOf = (product: ResolvedProduct): OpenSketchListing => {
+  const { unreadable, variants } = openSketchProblemsOf(product);
+
+  return {
+    unreadable,
+    variants: variants.map(({ sketch, variant, problems }) => ({ target: sketch.target, variant, problems })),
+  };
+};
+
 /** Runs `tsc` over one variant laid over the product, with a tsconfig of its own. */
 export const typecheckVariant = (options: {
   target: string;

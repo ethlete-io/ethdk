@@ -10,6 +10,7 @@ import {
   writeFileSync,
 } from 'fs';
 import { dirname, isAbsolute, relative, resolve, sep } from 'path';
+import { setImmediate } from 'timers/promises';
 import { jsonLayoutOf } from '../../json-layout';
 import { statusPath } from '../../status';
 import { ASSETS_FOLDER, filesBelow } from '../assets';
@@ -409,6 +410,18 @@ export const listSketches = (options: { productDir: string; product: string }) =
   foldersOf(sketchesDirOf(options.productDir)).map((folder) =>
     readSketch({ product: options.product, dir: resolve(sketchesDirOf(options.productDir), folder) }),
   );
+
+/** `listSketches`, letting the server answer other requests before each sketch it reads. */
+export const listSketchesInTurns = async (options: { productDir: string; product: string }) => {
+  const listed: ReturnType<typeof readSketch>[] = [];
+
+  for (const folder of foldersOf(sketchesDirOf(options.productDir))) {
+    await setImmediate();
+    listed.push(readSketch({ product: options.product, dir: resolve(sketchesDirOf(options.productDir), folder) }));
+  }
+
+  return listed;
+};
 
 /** The open sketch that targets `sketch`, found by its first target or by any other it names; `null` when none does. */
 export const findSketch = (options: { productDir: string; product: string; sketch: SketchTarget }) => {

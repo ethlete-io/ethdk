@@ -1,6 +1,7 @@
 import { createHash } from 'crypto';
 import { readFileSync } from 'fs';
 import { dirname, relative, resolve } from 'path';
+import { setImmediate } from 'timers/promises';
 import { DesignProduct } from '../../paths';
 import { ASSETS_PREFIX, filesBelow, importedAssetsOf } from '../assets';
 import { importedSharedOf, SHARED_PREFIX } from '../imports';
@@ -52,6 +53,9 @@ export const partInputsOf = (options: { product: HashedProduct; dir: string }) =
   return { files, shared, assets, generated };
 };
 
+const fixturesHashOf = (product: ResolvedProduct): Record<string, string> =>
+  product.fixtures ? { [FIXTURES_KEY]: hashOf({ root: dirname(product.fixtures), files: [product.fixtures] }) } : {};
+
 /**
  * The content hash of each part the product resolves (its folder and the assets it imports), and of its fixture set,
  * under the part key and `fixtures.ts`. A sketch keeps it to tell when a part it replaces changed in the product.
@@ -60,10 +64,20 @@ export const baselineOf = (product: ResolvedProduct): Record<string, string> => 
   ...Object.fromEntries(
     product.parts.map((part) => [partKeyOf(part), partHashOf({ product, dir: dirname(part.file) })]),
   ),
-  ...(product.fixtures
-    ? { [FIXTURES_KEY]: hashOf({ root: dirname(product.fixtures), files: [product.fixtures] }) }
-    : {}),
+  ...fixturesHashOf(product),
 });
+
+/** `baselineOf`, letting the server answer other requests before each part it hashes. */
+export const baselineInTurnsOf = async (product: ResolvedProduct): Promise<Record<string, string>> => {
+  const hashes: Record<string, string> = {};
+
+  for (const part of product.parts) {
+    await setImmediate();
+    hashes[partKeyOf(part)] = partHashOf({ product, dir: dirname(part.file) });
+  }
+
+  return { ...hashes, ...fixturesHashOf(product) };
+};
 
 /**
  * The parts, and `fixtures.ts`, a variant replaces whose state in the product differs from the

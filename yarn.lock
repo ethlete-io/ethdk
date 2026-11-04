@@ -4305,6 +4305,7 @@ __metadata:
   dependencies:
     "@tailwindcss/node": "npm:4.3.3"
     "@tailwindcss/postcss": "npm:4.3.3"
+    jiti: "npm:2.7.0"
     postcss: "npm:8.5.32"
     postcss-selector-parser: "npm:7.1.7"
     rxjs: "npm:^7.8.0"

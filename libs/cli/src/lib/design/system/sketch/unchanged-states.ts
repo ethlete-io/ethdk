@@ -4,7 +4,7 @@ import { drawnPair, PictureOf } from '../../merge-compare';
 import { productStylesheetFilesOf } from '../product-stylesheets';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { SketchVariant } from '../system-modules';
-import { baselineOf, partHashOf } from './baseline';
+import { baselineInTurnsOf, partHashOf } from './baseline';
 import { overlaySketch } from './overlay';
 import { sharedDirOf, Sketch, variantDirOf } from './sketch';
 
@@ -170,8 +170,8 @@ export const unchangedStatesOf = async (options: {
       sketch.dir,
       compared,
       variant,
-      baselineOf(product),
-      baselineOf(overlaid),
+      await baselineInTurnsOf(product),
+      await baselineInTurnsOf(overlaid),
       partHashOf({ product, dir: sharedDirOf(sketch) }),
       partHashOf({ product, dir: variantDirOf(sketch, variant) }),
       !!pictureOf,
