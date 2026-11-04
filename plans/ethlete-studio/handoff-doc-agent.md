@@ -81,3 +81,11 @@ Work continues on the PC `tank`, not the Mac. `tank` reaches this Mac by `ssh et
 and the B321 pixel check can run on the Mac over SSH when Tom names a quiet window (Screen Recording must be
 granted to the terminal app on the Mac itself). The B321 pixel check (WebKit, ScreenCaptureKit) needs the Mac; the uncommitted B321 stacking fix is on branch `wip/b321-stacking-fix` if the builder pushed it.
 To resume: copy this file to `.claude/handoffs/doc-agent-studio.md`, then run `/handoff resume doc-agent-studio`.
+
+## WIP branch (final state, 2026-11-04)
+
+B323 landed on next as be8aa16b7 (code notice, restart while the server runs, APP_SOURCES list). Its copy on
+`wip/b321-stacking-fix` (e8bc0d1e6) is an older duplicate. From that branch take only
+`apps/ethlete-studio/src/app/design-parts/shell-main/*`, `tools/scripts/verify-webkit-studio.*`,
+`tools/scripts/verify-studio-headless.mjs` and `tools/scripts/b333-map.mjs`. B323 still open: sketch
+`components/title-bar --name code-notice`, the "needs approval" note in build-ready.md, the STATUS row.
