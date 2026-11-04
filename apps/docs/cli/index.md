@@ -340,6 +340,29 @@ again fails until it comes off the list.
 endpoint built from a bare segment, `productUrl(address, 'comment')`, counts as called only when an app file calls the
 host function that builds it; an import alone does not count.
 
+### Slow rules
+
+Some rules need the app running in a browser, so they do not run with the static checks.
+`et design check --product <name> --slow [--part <layer>/<name>…] [--base <rev>]` runs them on a product with a
+`harness`, prints each problem as `<product> <part>: <RULE> <file>: <message>`, and exits 1 on a problem:
+
+- `APP-SPEC` runs the specs related to each part's app files with the vitest config in `harness.specs`. A failing
+  spec counts on the innermost part whose app files hold the file it tests, else on `(product)`. Without
+  `harness.specs` the rule is off.
+- `UNCOVERED-REGION` opens every state of the `harness.live` spec and reports each visible region no part covers, on
+  the page part of that live page, else on `(product)`.
+- `VISIBLE-CHANGE` draws each harness part in the app at the base and at HEAD and fails a part that looks different
+  without a picked or merged sketch in between. The base is `--base`, else the merge base of HEAD and
+  `harness.baseBranch`, else of the branch `origin/HEAD` names. CI passes the pull request's base.
+- `COMPARE` and `SDK-ERROR` compare a part implemented at its current design with its design, and report an SDK error
+  the harness page logs.
+
+Each part's result is stored in `node_modules/.cache/ethlete-design/<product>/slow-checks.json` with the hash of its
+inputs: its design, its app files and their specs, the live spec, and the base. A part whose stored result is missing
+or has other inputs is pending, so it is not build-ready yet. `et design serve` keeps the results fresh: every 15
+seconds it reruns the parts whose inputs changed and then held still, one run at a time. Set
+`ETHLETE_DESIGN_SLOW_CHECKS=off` to turn that off.
+
 After the checks, `et design check` lists the open points of each product: one line per part, with the total,
 for example `components/tree-row: 1 open comment (c-1); sketch ready, not merged`. A point is a
 comment the user has not resolved (an addressed one too, listed as `c-2 addressed, waits on the user`), or a sketch on the part that is not merged yet. A part outside `foundations/` without `implements` is
