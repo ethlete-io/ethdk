@@ -4433,16 +4433,22 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      builds first and stops the old server only after a good build; the error text reaches chip and head
      ("variant · state: message"); a per-shot timeout in `sketch check`.
 
-364. Tom (2026-11-04, 14:00): Studio froze completely. The WebContent process ran at 99 % CPU with about 1 GB, the
-     design server was idle; `sample` shows the time in `WebCore::MicrotaskQueue::runJSMicrotask`, so a
-     microtask loop in the Studio frontend (sample: /tmp/studio-freeze-webcontent.txt). Cause not known yet; likely
-     a retry or poll loop after the server restart (see 363). Why no tool caught it: no check runs Studio against a
-     server that restarts or times out. Tool fix (B310, after the cause): a scenario that restarts and slows the
-     design server under a running Studio and fails on a busy main thread. A second freeze (14:17) was again the microtask loop
-     (1618 of 1651 samples, /tmp/studio-freeze3-webcontent.txt); the open Web Inspector closed before a pause, so
-     no JS stack exists. Second tool fix (B310): a main-thread watchdog in the Studio host. A host thread (not the
-     WebView main thread) pings with `evaluateJavaScript` and a timeout; on a miss it writes one log entry per freeze
-     to the Studio log dir, with the WebContent pid, a 3 s `sample`, and the current route.
+364. Tom (2026-11-04, 14:00, again 14:17): Studio froze completely. The WebContent process ran at 99 % CPU with
+     about 1 GB, the design server was idle; `sample` shows the time in `WebCore::MicrotaskQueue::runJSMicrotask`
+     (samples: /tmp/studio-freeze-webcontent.txt, /tmp/studio-freeze3-webcontent.txt). Cause (builder, proven with a
+     native WKWebView repro): a WebKit engine bug. Removing an iframe while a module with top-level await still
+     evaluates can hang WebContent for good in `JSC::moduleLoaderEvaluate`. All samples show `moduleLoaderEvaluate`
+     -> `ScriptModuleLoader::evaluate`. The fix 2032f0928 removed top-level await only from frame.ts; about 25
+     design sources in .ethlete/design/studio still had a module-level `await <part>.render(...)`. Repro: 6 frames
+     replaced every 150 ms pass 640 batches without top-level await and hang at batch 15-265 with it (also with
+     `await <sync value>` in a shared dependency). The hang is random, and each mass frame remount rolls the dice:
+     both freezes followed one (the server restart of 363, the SSE drops of 365). Why no tool caught it: the
+     top-level-await rule existed only as a one-off fix in frame.ts, no check scans design modules, and every frame
+     check runs in Chromium. Tool fix (B310): remove every module-level await from the design sources; a parse-based
+     guard with a spec that reports top-level await in any frame-loaded design module; a WebKit frame-churn soak
+     (the repro, off-screen, 300+ batches) in the macOS CI job; a main-thread watchdog in the Studio host. A host
+     thread (not the WebView main thread) pings with `evaluateJavaScript` and a timeout; on a miss it writes one log
+     entry per freeze to the Studio log dir, with the WebContent pid, a 3 s `sample`, and the current route.
 
 365. Tom (2026-11-04, 14:04): after a Studio restart, Studio draws no frame content. pages/sketches r1 shows empty
      cells with "vergleicht ..." forever; pages/system@pages-system-build-ready shows variant heads, no frames, but
