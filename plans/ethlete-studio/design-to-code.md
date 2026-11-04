@@ -4467,6 +4467,13 @@ the agent edited first and reported after. Why no tool caught it: the refusal te
 (B342): the refusal names `--reopen`. The same sketch showed that the app's fold label (B329, built without a design)
 has no nowrap and likely wraps in Studio; it is fixed with Tom's pick (finding 391 covers why no gate saw it).
 
+400\. Tom (2026-11-04, 20:20): Studio said "pages/sketches hat sich seit dem Sketch geändert" for
+`pages/sketches@fold-question`, but no commit changed pages/sketches. Cause: Tom's merge of
+`components/title-bar@code-notice` (20:17) changed a part that pages/sketches draws, three minutes after the sketch
+was ready. Why no tool caught it: the stale text names the sketch's own part, not the changed dependency, and a merge
+does not say which open sketches it makes stale. Fix (B343): the stale text names the changed parts from the
+baseline diff ("components/title-bar wurde gemergt"), and a merge lists the open sketches it makes stale.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
