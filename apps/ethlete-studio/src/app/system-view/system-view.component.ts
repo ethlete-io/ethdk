@@ -70,6 +70,7 @@ import { inboxCommentOf, inboxPartOf } from './inbox-comments';
 import { injectCommentStore, provideCommentStore } from './comment-store';
 import { SketchViewComponent } from './sketch-view.component';
 import { FlowRead, flowRead$, keepLastFlows } from './flow-read';
+import { keptRead$ } from './kept-read';
 import { sketchRead$ } from './sketch-read';
 import { FlowViewComponent } from './flow-view.component';
 import { InventoryViewComponent } from './inventory-view.component';
@@ -456,12 +457,17 @@ export class SystemViewComponent {
         revision: this.callsRevision(),
         reloads: this.callReloads(),
       })),
-      // eslint-disable-next-line ethlete/no-silent-catch-error -- no listed calls render as the existing empty list
-    ).pipe(switchMap(({ port }) => (port ? listedCalls$(port).pipe(catchError(() => of<ListedCall[]>([]))) : of([])))),
+    ).pipe(
+      keptRead$({
+        read: ({ port }) => (port ? listedCalls$(port) : of<ListedCall[]>([])),
+        empty: [] as ListedCall[],
+        subjectOf: ({ port }) => port,
+      }),
+    ),
     { initialValue: null },
   );
 
-  public calls = computed(() => this.callList() ?? []);
+  public calls = computed(() => this.callList()?.items ?? []);
 
   private sketchReloads = signal(0);
 
@@ -727,7 +733,7 @@ export class SystemViewComponent {
     return listed ? { key: partKeyOf(listed), listed } : null;
   });
 
-  protected openPointGroups = toSignal(
+  private openPointReads = toSignal(
     toObservable(
       computed(() => {
         const port = this.port();
@@ -739,18 +745,16 @@ export class SystemViewComponent {
           : null;
       }),
     ).pipe(
-      switchMap((asked) =>
-        asked
-          ? partOpenPoints$(asked.address, asked.part).pipe(
-              map(openPointGroupsOf),
-              // eslint-disable-next-line ethlete/no-silent-catch-error -- no open points render as the existing empty list
-              catchError(() => of([])),
-            )
-          : of([]),
-      ),
+      keptRead$({
+        read: (asked) => (asked ? partOpenPoints$(asked.address, asked.part).pipe(map(openPointGroupsOf)) : of([])),
+        empty: [] as ReturnType<typeof openPointGroupsOf>,
+        subjectOf: (asked) => asked && `${asked.address.port}/${asked.address.product}/${asked.part}`,
+      }),
     ),
-    { initialValue: [] },
+    { initialValue: null },
   );
+
+  protected openPointGroups = computed(() => this.openPointReads()?.items ?? []);
 
   public selectedKey = computed(() => {
     const call = this.call();
