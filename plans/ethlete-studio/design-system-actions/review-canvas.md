@@ -9,5 +9,4 @@
 - **Fix done:** the shared canvas element (2.1). No check for repeated markup.
 - **Check (2026-10-29):** works, but the chip is drawn twice: app `− | 100 % | + | Fit`, drawing
   `Fit | 24%`. Tom still decides which chip both use.
-- **Decision (Tom, 2026-10-30):** both use the app chip `− | 100 % | + | Fit`; the
-  `canvas-frames` drawing adopts it.
+- ADR 0136: [Sketches and the app use the app zoom chip](../../../apps/ethlete-studio/docs/adr/0136-sketches-and-the-app-use-the-app-zoom-chip.md)
