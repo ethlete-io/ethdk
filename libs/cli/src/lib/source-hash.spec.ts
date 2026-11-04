@@ -35,6 +35,15 @@ describe('staleCliBuildMessage', () => {
     expect(staleCliBuildMessage({ root, buildDir })).toContain('NX_NO_CLOUD=true npx nx build cli');
   });
 
+  it('refuses after a source edit when run from a subfolder of the checkout', () => {
+    write(join(root, 'libs/cli/src/index.ts'), 'export const a = 2;');
+    mkdirSync(join(root, 'apps/studio'), { recursive: true });
+
+    expect(staleCliBuildMessage({ root: join(root, 'apps/studio'), buildDir })).toContain(
+      'NX_NO_CLOUD=true npx nx build cli',
+    );
+  });
+
   it('refuses after an edit in design/', () => {
     write(join(root, 'libs/cli/design/part.ts'), 'export const b = 2;');
 

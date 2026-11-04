@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 
 const SOURCE_DIRS = ['src', 'design', 'playwright'];
 const IGNORED_SUFFIXES = ['.spec.ts', '.md'];
@@ -31,12 +31,21 @@ export const cliSourceHash = (cliRoot: string) => {
   return hash.digest('hex');
 };
 
-/** The refusal text when the libs/cli sources of `root` differ from what `buildDir` was built from, else undefined. */
+const cliRootAbove = (start: string): string | undefined => {
+  const dir = resolve(start);
+  const cliRoot = join(dir, 'libs', 'cli');
+
+  if (existsSync(join(cliRoot, 'src'))) return cliRoot;
+
+  return dirname(dir) === dir ? undefined : cliRootAbove(dirname(dir));
+};
+
+/** The refusal text when the libs/cli sources of the checkout at or above `root` differ from what `buildDir` was built from, else undefined. */
 export const staleCliBuildMessage = (options: { root: string; buildDir: string }) => {
-  const cliRoot = join(options.root, 'libs', 'cli');
+  const cliRoot = cliRootAbove(options.root);
   const infoPath = join(options.buildDir, 'build-info.json');
 
-  if (!existsSync(join(cliRoot, 'src'))) return undefined;
+  if (!cliRoot) return undefined;
 
   let recorded: unknown;
 
