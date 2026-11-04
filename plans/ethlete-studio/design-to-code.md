@@ -4396,10 +4396,9 @@ only the staged specs through vitest typecheck mode.
 staged tools/scripts files; the spec's temp repo had no eslint config (fixed in 9f0d70e47). It blocked every later
 tools/scripts commit. The gate selects the whole tools/scripts suite for such a commit, so on 2bad713a6 and six later
 commits made on the Mac (421d2fee8 to be8aa16b7) the hooks most likely did not run: several carry the scope
-`ethlete-studio`, which commitlint never allowed. How the hooks were bypassed is not verified (`--no-verify`,
-`HUSKY=0`, or no hooksPath in the Mac checkout). Why no tool caught it: nothing checks after the fact that the local
+`ethlete-studio`, which commitlint never allowed. Verified cause: the Mac checkout never installed husky (`core.hooksPath` unset, no `.husky/_`), so no git hook ran there. Why no tool caught it: nothing checks after the fact that the local
 hooks ran. Fix (B335): a CI job runs commitlint and `yarn test:tools` over the pushed range, and pre-push checks
-commitlint for each commit in the range; the builder checks the hooksPath of the Mac checkout.
+commitlint for each commit in the range; `yarn commit` and the agent session start refuse when `core.hooksPath` is not `.husky/_`; the Mac checkout gets husky installed.
 
 391\. Builder (2026-11-04, B329): the slice built UI that no design draws (the fold toggle "Alle Zustände zeigen" and
 the round note as a question line). No check refused it, because none ran: `design compare` of the sketches part
