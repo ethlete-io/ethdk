@@ -4662,6 +4662,8 @@ none` on html, body and every element (the property is not inherited); the Tauri
      placeholders, with a cap on live frames; unchanged states fold before any frame loads (fold data from the
      quick path, not the full listing); a sketch check that warns when variants x states x widths passes a budget;
      a Studio headless test that opens a 75-frame sketch and asserts the cap and a usable frame rate.
+     Same on `pages/system@pages-system-build-ready` (Tom, minutes later): 3 variants x 26 states = 78 frames. So
+     Tom can judge no open sketch until B329.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
