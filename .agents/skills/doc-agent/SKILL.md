@@ -38,6 +38,9 @@ output; the designed Studio is the side product.
 
 ## Grill
 
+- Before every grill question, search the Studio ADRs (`apps/ethlete-studio/docs/adr/`, title and body) and, until
+  the migration is done, every `plans/ethlete-studio/**` decision block for the topic. If Tom already decided it,
+  do not ask: name the ADR and send it to the builder. A repeated question is a finding.
 - Load the `ethlete-grilling` skill before the first question. Every design question uses its
   round format (`❓ **Q1** - **Title**: …` then `➡️ <recommendation>`, `---` between), also an
   ad-hoc one that comes up mid-conversation, for example from a screenshot. Never free bullets.
@@ -68,8 +71,8 @@ output; the designed Studio is the side product.
 
 ## Record
 
-- After the user confirms a short summary, write the decision into the plan in English, as a
-  `### <Topic> decisions (<date>)` section.
+- After the user confirms a short summary, write each decision as an ADR in `apps/ethlete-studio/docs/adr/`
+  (English, Tom's words verbatim, frontmatter `built: <sha>` or `open: B<row>`). Never in a plan section.
 - Commit only plan and docs files: `git commit -- <paths>`. Never `git add -A`, never
   stash, never amend.
 - One commit per grill round, not one per finding or decision. The message names all of them.
