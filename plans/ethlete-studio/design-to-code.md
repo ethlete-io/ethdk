@@ -4333,6 +4333,13 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      dist and then refused on it. Why no tool caught it: the B293 stale guard has no spec for a cache-restored dist.
      Tool fix (technical, queued as B298): rebuild with --skip-nx-cache, with a spec.
 
+351. Builder (2026-11-04, B291 push 2): the hook passed, then the push died with "Connection to ssh.github.com closed
+     by remote host". Cause: git opens the SSH connection before pre-push; the old hook (clone, lint, typecheck,
+     Studio gates; several minutes) outlasts GitHub's SSH idle timeout, so a green hook still ends in a failed push.
+     This also explains the end of push 1 and why pushes went out with --no-verify. Why no tool caught it: nothing
+     bounds the hook's run time. Tool fix: S7 (short hook, Tom 04.11.); the hook gets a time budget well under the
+     SSH idle timeout, and the S7 end-to-end run measures it.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
