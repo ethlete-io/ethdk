@@ -53,6 +53,8 @@ type Props = {
   same?: RowKey[];
   sameOpen?: boolean;
   withdrawn?: Withdrawn;
+  fold?: number;
+  question?: string;
 };
 
 type View = { selected?: RowKey; status: SketchStatus; comparing: boolean; withdrawn?: Withdrawn; take: string };
@@ -60,6 +62,11 @@ type View = { selected?: RowKey; status: SketchStatus; comparing: boolean; withd
 const DRAWN: RowKey = 'b';
 
 const LIST_WIDTH = 1100;
+
+const QUESTION = 'Wo soll der Reset-Knopf der Zoom-Pille stehen?';
+
+const foldedLabel = (count: number) =>
+  count === 1 ? '1 unveränderter Zustand eingeklappt' : `${count} unveränderte Zustände eingeklappt`;
 
 const treeOf = (selected: string) =>
   partTree.render({
@@ -292,6 +299,8 @@ export default definePart<Props>({
     'unchanged-matrix-open': { camera: { zoom: 0.25, x: -4000, y: 0 }, same: ['b', 'c'], sameOpen: true },
     'withdrawn-hidden': { camera: 'fit', part: 'narrow', withdrawn: 'hidden' },
     'withdrawn-shown': { camera: 'fit', part: 'narrow', withdrawn: 'shown' },
+    folded: { camera: 'fit', part: 'narrow', fold: 3, question: QUESTION },
+    'question-only': { camera: 'fit', part: 'narrow', question: QUESTION },
   },
   render: async ({
     camera,
@@ -304,11 +313,14 @@ export default definePart<Props>({
     same: sameKeys = [],
     sameOpen = false,
     withdrawn,
+    fold = 0,
+    question = '',
   }) => {
     const { discard, chip, pickers, tags } = await controlsOf();
     const take = await takeButton();
-    const part = withSame(PARTS[kind], comparing ? [] : sameKeys);
-    const rowStyles = await prepareShots(part);
+    const full = withSame(PARTS[kind], comparing ? [] : sameKeys);
+    const rowStyles = await prepareShots(full);
+    const part = fold > 0 ? { ...full, states: full.states.slice(0, full.states.length - fold) } : full;
     const side = await treeOf(part.key.replace('components/', ''));
     const all = rowsOf(part, fresh);
     const rows = visibleRows(all, withdrawn);
@@ -344,14 +356,24 @@ export default definePart<Props>({
         <span class="w-56 flex-none" data-sk-view-toggle-room></span>
         ${withAction(discard.body, 'emit:discard')}
       </header>
+      ${
+        question
+          ? html`<p
+              class="absolute z-2 top-14 right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] m-0 truncate text-ui-md font-ui-medium text-et-surface"
+              data-sk-question
+            >
+              ${question}
+            </p>`
+          : ''
+      }
       <div
-        class="zr-picker absolute z-2 top-14 left-[calc(var(--st-shell-inset-left)+var(--space-5))] flex items-center gap-space-4"
+        class="zr-picker absolute z-2 ${question ? 'top-24' : 'top-14'} left-[calc(var(--st-shell-inset-left)+var(--space-5))] flex items-center gap-space-4"
       >
         ${pickers[kind].body}
         ${showWithdrawn.body ? withAction(showWithdrawn.body, { action: 'emit:withdrawnToggle', on: '.et-switch' }) : ''}
       </div>
       <div
-        class="absolute top-27 right-space-5 bottom-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] overflow-clip [overflow-clip-margin:4px]"
+        class="absolute ${question ? 'top-37' : 'top-27'} right-space-5 bottom-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] overflow-clip [overflow-clip-margin:4px]"
         data-sk-rows
       >
         <div
@@ -361,6 +383,13 @@ export default definePart<Props>({
           data-cols="${transposed ? columns : wrapColumns(part)}"
         >
           ${world}
+          ${
+            fold > 0
+              ? html`<section class="sk-same rounded-control-md p-space-2" data-sk-folded>
+                  ${disclosure({ label: foldedLabel(fold), body: '', open: false, size: 'xs', action: 'emit:statesToggle' })}
+                </section>`
+              : ''
+          }
         </div>
       </div>
       ${chip.body}
