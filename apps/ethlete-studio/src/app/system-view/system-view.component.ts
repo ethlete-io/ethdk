@@ -19,16 +19,14 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { BUTTON_IMPORTS, TreeNode } from '@ethlete/components';
 import { PartTreeComponent, PartTreeLayer, PartTreePart } from '../design-parts/part-tree/part-tree.component';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
-import { EMPTY, catchError, concat, debounceTime, finalize, from, map, of, scan, switchMap } from 'rxjs';
+import { EMPTY, catchError, debounceTime, finalize, from, map, of, scan, switchMap } from 'rxjs';
 import {
   ListedCall,
   ListedComment,
   ListedProduct,
-  ListedSketch,
   Themes,
   listedCalls$,
   designStatusChanges$,
-  listedSketches$,
   listedSystem$,
   transferCall$,
 } from '../../host/design';
@@ -71,6 +69,7 @@ import { ShellPageComponent } from '../design-parts/shell-main/shell-page.compon
 import { inboxCommentOf, inboxPartOf } from './inbox-comments';
 import { injectCommentStore, provideCommentStore } from './comment-store';
 import { SketchViewComponent } from './sketch-view.component';
+import { sketchRead$ } from './sketch-read';
 import { FlowViewComponent } from './flow-view.component';
 import { InventoryViewComponent } from './inventory-view.component';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
@@ -505,22 +504,17 @@ export class SystemViewComponent {
         reloads: this.sketchReloads(),
         statusChanges: this.statusChanges(),
       })),
-    ).pipe(
-      switchMap(({ port, product }) =>
-        port && product
-          ? concat(listedSketches$({ port, product, quick: true }), listedSketches$({ port, product })).pipe(
-              map(({ sketches }) => sketches),
-              // eslint-disable-next-line ethlete/no-silent-catch-error -- no listed sketches render as the existing empty list
-              catchError(() => of<ListedSketch[]>([])),
-              map((items) => ({ product, items })),
-            )
-          : of(null),
-      ),
-    ),
+    ).pipe(switchMap(({ port, product }) => (port && product ? sketchRead$({ port, product }) : of(null)))),
     { initialValue: null },
   );
 
   private sketchList = computed(() => itemsOf(this.sketchRead(), this.product()?.name));
+
+  public sketchesError = computed(() => {
+    const read = this.sketchRead();
+
+    return read && read.product === this.product()?.name ? read.error : null;
+  });
 
   private mergedSketches = signal<string[]>([]);
 

@@ -362,3 +362,14 @@ On the `studio-serve` tmux server (:4402), after S6b:
   `libs/cli/src/lib/design`; listed in `verified.needs`, not in `deploy.needs`.
 - Verified locally: pass against the heartbeat build (90 s open); fail against a silent stand-in SSE server (closed at
   60.0 s). Not verified: the job on a real macOS runner.
+
+## As built: B311 reconnect keeps frames, listing errors (finding 365, Studio side)
+
+- Built: `reconnects$` compares the `/__design/stamp` pid; same pid gives `relisted` (lists only, no frame remount),
+  another or unreadable pid keeps `all`. `flow-view` caches `SafeResourceUrl` per src. `sketchRead$`
+  (`system-view/sketch-read.ts`) keeps the quick items and emits an error on a failed or timed-out full listing
+  (`LISTED_SKETCHES_TIMEOUT_MS` 120 s); `system-view` exposes `sketchesError`.
+- Verified: new specs `design-changes.spec.ts` (fails without the fix), `sketch-read.spec.ts`; host, system-view and
+  studio-view specs green (253); lint; `tsc -p tsconfig.app.json`. Not verified: in Studio/WebKit; the timeout has no
+  spec; two stamp fetches per reconnect.
+- Open: no UI shows `sketchesError` yet (design question to the grill session); `flowRead` still swallows errors.

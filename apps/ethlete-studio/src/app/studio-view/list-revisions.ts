@@ -7,6 +7,7 @@ export const NO_LIST_REVISIONS: ListRevisions = { all: 0, products: 0, calls: 0,
 
 const LISTS_OF: Record<DesignChange['kind'], (keyof ListRevisions)[]> = {
   all: ['all', 'products', 'calls', 'sketches', 'flows'],
+  relisted: ['all', 'products', 'calls', 'sketches', 'flows'],
   parts: ['products', 'sketches', 'flows'],
   calls: ['calls'],
   sketches: ['sketches'],

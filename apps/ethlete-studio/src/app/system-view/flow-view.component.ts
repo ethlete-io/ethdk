@@ -1,6 +1,6 @@
 import { Component, DestroyRef, ViewEncapsulation, computed, inject, input, linkedSignal, output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DomSanitizer } from '@angular/platform-browser';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { catchError, from, of } from 'rxjs';
 import { ListedProduct, ListedSketch } from '../../host/design';
 import { ListedFlow } from '../../host/design-flows';
@@ -58,6 +58,7 @@ import { PageShell, PageShellAction } from './page-shell';
 export class FlowViewComponent {
   private destroyRef = inject(DestroyRef);
   private sanitizer = inject(DomSanitizer);
+
   public port = input.required<number>();
   public product = input.required<ListedProduct>();
   public flows = input.required<ListedFlow[]>();
@@ -69,8 +70,9 @@ export class FlowViewComponent {
   public surface = input<string | undefined>(undefined);
   public color = input<string | undefined>(undefined);
   public shell = input.required<PageShell>();
-
   public shellAction = output<PageShellAction>();
+
+  private safeUrls = new Map<string, SafeResourceUrl>();
 
   protected flowNames = computed(() => this.flows().map((listed) => listed.name));
 
@@ -154,7 +156,7 @@ export class FlowViewComponent {
         return [
           frame.id,
           {
-            src: this.sanitizer.bypassSecurityTrustResourceUrl(frame.src),
+            src: this.safeUrlOf(frame.src),
             width,
             height: frame.height ?? boxHeight / scale,
             scale,
@@ -179,5 +181,16 @@ export class FlowViewComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
+  }
+
+  private safeUrlOf(src: string) {
+    let safe = this.safeUrls.get(src);
+
+    if (!safe) {
+      safe = this.sanitizer.bypassSecurityTrustResourceUrl(src);
+      this.safeUrls.set(src, safe);
+    }
+
+    return safe;
   }
 }

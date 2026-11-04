@@ -1,5 +1,5 @@
 import { Channel, invoke } from '@tauri-apps/api/core';
-import { EMPTY, Observable, defer, from, map, merge, of, switchMap, throwError } from 'rxjs';
+import { EMPTY, Observable, defer, from, map, merge, of, switchMap, throwError, timeout } from 'rxjs';
 import { fromFetch } from 'rxjs/fetch';
 import { designEvents$, designStreamIsOpen } from './design-events';
 import { preferredScheme } from './color-scheme';
@@ -571,6 +571,9 @@ export const designAnswer$ = <TResult>(url: string, init?: RequestInit): Observa
 // A string body goes as text/plain, a simple request: the design server answers no CORS preflight.
 const postJson = (body: unknown): RequestInit => ({ method: 'POST', body: JSON.stringify(body) });
 
+/** A full sketch listing renders and compares every variant, which takes 30 s and more on a cold server. */
+export const LISTED_SKETCHES_TIMEOUT_MS = 120_000;
+
 export const listedSketches$ = ({
   port,
   product,
@@ -582,7 +585,7 @@ export const listedSketches$ = ({
 }): Observable<ListedSketches> =>
   designAnswer$<ListedSketches>(
     `http://localhost:${port}/__design/sketches?product=${encodeURIComponent(product)}${quick ? '&unchanged=no' : ''}`,
-  );
+  ).pipe(timeout(LISTED_SKETCHES_TIMEOUT_MS));
 
 export const sketchPreview$ = (address: SketchAddress & { variant: string }): Observable<MergePreview> =>
   designAnswer$<MergePreview>(

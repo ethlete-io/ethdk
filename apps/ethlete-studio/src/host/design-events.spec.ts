@@ -98,7 +98,7 @@ describe('the shared design event stream', () => {
     expect(lateError).toHaveBeenCalledTimes(1);
   });
 
-  it('names a call, sketch or parts change, and reads all again after a reconnect or an unreadable parts event', () => {
+  it('names a call, sketch or parts change, and reads all again after a reconnect to an unreadable server or an unreadable parts event', async () => {
     const changes: DesignChange[] = [];
 
     designChanges$(1).subscribe((change) => changes.push(change));
@@ -110,6 +110,7 @@ describe('the shared design event stream', () => {
     first().emit('parts', 'not json');
     first().emit('error');
     first().emit('open');
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     expect(changes).toEqual([
       { kind: 'calls' },

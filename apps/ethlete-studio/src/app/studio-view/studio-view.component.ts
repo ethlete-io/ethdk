@@ -148,7 +148,7 @@ export class StudioViewComponent {
           return changes$.pipe(buffer(changes$.pipe(debounceTime(SETTLE_MS))));
         }),
         tap((changes) => this.absorbChanges(changes)),
-        filter((changes) => changes.some((change) => change.kind === 'all')),
+        filter((changes) => changes.some((change) => change.kind === 'all' || change.kind === 'relisted')),
         switchMap(() => {
           const checkout = this.checkout();
 
