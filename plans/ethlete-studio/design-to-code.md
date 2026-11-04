@@ -4508,6 +4508,8 @@ with a 30 % shot.
 the product. No port was needed. Why no tool caught it: `sketch rebase` calls a file a conflict when variant and product
 both changed it, without comparing the content. Fix (B343): identical content counts as clean, so this case rebases on
 its own and never reaches Tom as stale.
+Real cause (B343, 46177c36b): a sketch moves the part's own `shared/` files into the sketch's `shared/`, and rebase
+looked for them in the part folder, so it called every such file a conflict.
 
 405\. Builder (2026-11-04): `yarn commit -- <paths>` joins the paths into one string, so it works only with a few path
 arguments. Why no tool caught it: the commit script has no test with many paths. Fix (B347): pass the paths to git as
@@ -4640,6 +4642,15 @@ scaled cells on the main thread, plus layout reads per step (`holdAnchor` in `fr
 perf check runs in Chromium, the engine Tom's desk e2e uses, not in the engine of the shipped app. Fix (B356): a
 WebKit zoom budget on this fixture (rAF frame interval over 90 wheel-zoom steps, p50 at most 20 ms, p95 at most
 33 ms) on a CI image with the WebKit libs (Fedora lacks them without sudo), and the zoom fixed to meet it.
+
+419\. Builder (2026-11-04, B343): a top-level await in `libs/cli/src/lib/design/started-by-studio.spec.ts` (dd708ee4a)
+broke `tsc -p libs/cli/tsconfig.spec.json`, which then blocked every cli commit in the hook. Why no tool caught it: no
+gate ran the spec typecheck on the commit that added it (vitest does not typecheck). Fix (B358): the commit gate runs
+the spec typecheck for every staged spec file.
+
+420\. Builder (2026-11-04, B343): `list-system.spec.ts` fails only in the pre-commit temp tree (ENOENT on
+`design/web/rebuild-probe-*.txt`). Why no tool caught it: the spec shares a probe path with the tree it runs in, and no
+check runs a spec in both trees. Fix (B359): the probe tolerates a missing file, or the spec uses its own temp dir.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
