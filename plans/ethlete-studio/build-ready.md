@@ -15,6 +15,7 @@ Builder handoff (2026-11-04, ethlete-sdk-b3, context full). Grill/docs session: 
 - Sketch on pages/sketches: agent progress in the sketch view ("Agent baut Runde 2"). Tom picks.
 - Open design task (builder decides): one source of agent state (working, waiting, interrupted, failed, plus what it does on which part) that both displays and the A25 chat read. Proposal: the agent reports through a CLI/MCP command that writes a gitignored state file per product; Studio reads it through the design server.
 - Decisions: Q1, Q3 (changed: S8 adds an `et update` migration that deletes go.json and accepted.json), Q4, Q5 (base = `harness.baseBranch`, origin/next here), Q7, Q8 taken. Q2 decided (words above). Q6: Studio creates the old/new sketch by itself. B296 (every server-reported part error blocks the pick through one path) goes into S6b.
+- First for the next builder: Tom pushes (no SSH agent here); then triage CI run 41742121947. Re-run `sketch check` on pages/sketches r1 (6279f63f3) with a checkout-built CLI before it counts as ready. Queued, not started: B300 (TEXT-TRUNCATED), B301 (stale hash over HEAD blobs), D19 (part-ready.ts uses writeJsonFile; S1 got the note).
 - After A10: B297 (missing-motion only for connected state pairs), then A36 explorer with A25 chat sketches.
 
 ## Current state
