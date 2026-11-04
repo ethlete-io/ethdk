@@ -4447,16 +4447,21 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
 365. Tom (2026-11-04, 14:04): after a Studio restart, Studio draws no frame content. pages/sketches r1 shows empty
      cells with "vergleicht ..." forever; pages/system@pages-system-build-ready shows variant heads, no frames, but
      "Wartet auf deine Wahl". curl gets `/__design/sketches?product=studio` with 200; inside the WKWebView the same
-     request and about 11 `comment-events` requests time out, and the vite HMR client reconnects many times.
-     WebContent is idle (0 % CPU), so no live JS loop. A later console showed about 170 failures "Fetch API cannot load http://localhost:4402/__design/render due to access
-     control checks" (define-call.ts:65) and about 100 vite HMR reconnects. Cause open; hypotheses: leaked `comment-events` EventSource
-     streams fill WebKit's per-host connection slots; the server holds SSE headers; the sketches listing blocks the
-     Node event loop. Why no tool caught it: no design-server log file; no headless way to read the WebView console
-     or network; every frame check runs in Chromium only (the Playwright WebKit build does not match), so a
-     WebKit-only fault passes; an empty cell has no failure state; `designAnswer$`
-     (apps/ethlete-studio/src/host/design.ts) has no timeout and swallows errors. Tool fix (B311): a design-server
-     log file; a headless WKWebView harness that reports console and network; a timeout and an error state for
-     every design request and every empty cell; the root-cause fix when proven.
+     request, about 11 `comment-events` requests and about 170 `/__design/render` fetches fail ("access control
+     checks" is WebKit's text for any failed fetch, not CORS). Cause (builder, proven with an offscreen WKWebView
+     probe): WKWebView drops an SSE response after 60 s without bytes, and `comment-events` (serve.ts
+     createDesignEvents) sent only `: open`. Each reconnect emits `all` on `reconnects$`
+     (apps/ethlete-studio/src/host/design-changes.ts), so every frame revision bumps, every iframe remounts, and the
+     sketch listing restarts. The full listing (`openSketchProblemsOf`) runs sync and blocks the Node event loop for
+     12-30 s, so frame.html, render and shots time out; a frame gives up after one retry (empty cell) and the full
+     listing never lands ("vergleicht ..."). Why no tool caught it: every check runs in Chromium (no SSE idle
+     timeout), on an idle server, one request at a time, under 60 s; no design-server log file; no headless view of
+     the WebView console or network; an empty cell has no failure state; `designAnswer$` has no timeout and swallows
+     errors. Tool fix (B311): a 20 s heartbeat with a spec that fails without it (563995251); the listing off the
+     event loop with a spec that fails on a blocked server; a reconnect to the same server pid remounts no frame;
+     `designAnswer$` and `listedSketches$` show errors; a WKWebView soak check that holds the real event stream of
+     `et design serve` for 90 s and fails on a close; a design-server log file; a local WebKit probe opens its
+     window off-screen, never on the user's screen.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
