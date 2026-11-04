@@ -4724,8 +4724,10 @@ fix: pending the cause.
 428\. Tom (2026-11-04, screenshot of `pages/sketches@merge-port` far zoomed out, while the builder aligns the sample
 marks): "und dann waren die bilder auf einmal weg". A moment before, the column showed 12 finished frames. Now it
 shows 28 state rows, and all but four frames are empty boxes. The fold is gone again, and the drawing card stands over
-all rows. Cause not yet known (asked the builder; suspect: a new agent round drops the old shots instead of keeping
-them until the new shot stands). Why no tool caught it, and the fix: pending the cause.
+all rows. A short time later (Tom: "und wieder da") the 12 folded frames with their images are back. So each
+refresh of the listing seems to repeat the first paint of finding 425 (no marks yet, so nothing folds and the shots
+are not shown). Cause not yet known (asked the builder; suspect: a refreshed listing drops the old shots and marks
+instead of keeping them until the new ones stand). Why no tool caught it, and the fix: pending the cause.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
