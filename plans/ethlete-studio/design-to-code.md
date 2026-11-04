@@ -4474,6 +4474,13 @@ was ready. Why no tool caught it: the stale text names the sketch's own part, no
 does not say which open sketches it makes stale. Fix (B343): the stale text names the changed parts from the
 baseline diff ("components/title-bar wurde gemergt"), and a merge lists the open sketches it makes stale.
 
+401\. Builder (2026-11-04): Tom picked variant a of `pages/sketches` ("Agent-Fortschritt in der Sketch-Ansicht"),
+then merged `pages/sketches@fold-question` b, which changed the same files. `sketch rebase` refused and asked for a
+hand port of all three variants, although only the picked one will be merged. Why no tool caught it: rebase does not
+know that a pick makes the other variants dead. Fix (B344): after a pick, `sketch rebase` ports only the picked
+variant and drops the others; and two open sketches on one part warn at the first merge that the other one needs a
+port.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
