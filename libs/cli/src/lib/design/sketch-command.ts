@@ -8,6 +8,7 @@ import { productDirOf } from './system/product';
 import { Problem } from './system/problem';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { formatProblemsOf, formatSketch } from './system/sketch/check-format';
+import { frameBudgetWarningsOf } from './system/sketch/frame-budget';
 import {
   openSketchProblemsOf,
   typecheckVariant,
@@ -1109,6 +1110,15 @@ const checked = async (context: Context) => {
         drawn: true,
       });
   const busy = rendered !== null && 'issues' in rendered ? (rendered.busy ?? []) : [];
+
+  if (rendered !== null && 'issues' in rendered)
+    frameBudgetWarningsOf({
+      drawn: rendered.drawn,
+      targets: [...new Set(chosen.map((entry) => entry.sketch))].map((sketch) => ({
+        target: sketch.target,
+        part: sketch.targets[0] ?? sketch.target,
+      })),
+    }).forEach((warning) => console.warn(warning));
 
   let refused = 0;
   let notReady = false;

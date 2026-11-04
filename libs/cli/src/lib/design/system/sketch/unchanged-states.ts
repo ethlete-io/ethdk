@@ -126,6 +126,65 @@ const drawsTheSame = async (options: {
   }
 };
 
+const keyOf = async (options: {
+  product: ResolvedProduct;
+  overlaid: ResolvedProduct;
+  sketch: Sketch;
+  variant: string;
+  compared: string;
+  pictured: boolean;
+  compareFrames: boolean;
+  states: string[] | undefined;
+}) => {
+  const { product, overlaid, sketch, variant, compared, pictured, compareFrames, states } = options;
+
+  return hashOf(
+    JSON.stringify([
+      sketch.dir,
+      compared,
+      variant,
+      await baselineInTurnsOf(product),
+      await baselineInTurnsOf(overlaid),
+      partHashOf({ product, dir: sharedDirOf(sketch) }),
+      partHashOf({ product, dir: variantDirOf(sketch, variant) }),
+      pictured,
+      compareFrames,
+      states,
+    ]),
+  );
+};
+
+/**
+ * The states `unchangedStatesOf` found unchanged for the same sources with `keepPictures`, or `null` while no such
+ * comparison is kept. It renders and draws nothing.
+ */
+export const keptUnchangedStatesOf = async (options: {
+  product: ResolvedProduct;
+  sketch: Sketch;
+  variant: string;
+  pictured: boolean;
+  part?: string;
+}): Promise<string[] | null> => {
+  const { product, sketch, variant, pictured, part: compared = partKeyOf(sketch) } = options;
+  const overlaid = overlaySketch({ product, sketch, variant });
+
+  if (!product.parts.some((part) => partKeyOf(part) === compared)) return null;
+  if (!overlaid.parts.some((part) => partKeyOf(part) === compared)) return null;
+
+  const key = await keyOf({
+    product,
+    overlaid,
+    sketch,
+    variant,
+    compared,
+    pictured,
+    compareFrames: true,
+    states: undefined,
+  });
+
+  return cache.get(key) ?? null;
+};
+
 /**
  * The states of the sketch's target, or of the part `part` names, that `variant` renders to the same markup and styles as the product
  * does now, with the same widths and interactions, so every frame of them matches, unless the variant changes a
@@ -165,20 +224,16 @@ export const unchangedStatesOf = async (options: {
 
   if (!merged || !drawn) return [];
 
-  const key = hashOf(
-    JSON.stringify([
-      sketch.dir,
-      compared,
-      variant,
-      await baselineInTurnsOf(product),
-      await baselineInTurnsOf(overlaid),
-      partHashOf({ product, dir: sharedDirOf(sketch) }),
-      partHashOf({ product, dir: variantDirOf(sketch, variant) }),
-      !!pictureOf,
-      compareFrames,
-      states,
-    ]),
-  );
+  const key = await keyOf({
+    product,
+    overlaid,
+    sketch,
+    variant,
+    compared,
+    pictured: !!pictureOf,
+    compareFrames,
+    states,
+  });
   const keeps = !pictureOf || keepPictures;
   const known = keeps ? cache.get(key) : undefined;
 

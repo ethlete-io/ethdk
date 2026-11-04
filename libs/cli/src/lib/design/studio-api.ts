@@ -62,7 +62,7 @@ import {
   Sketch,
 } from './system/sketch/sketch';
 import { partKeyOf } from './system/resolve-product';
-import { unchangedStatesOf } from './system/sketch/unchanged-states';
+import { keptUnchangedStatesOf, unchangedStatesOf } from './system/sketch/unchanged-states';
 import { SketchVariant } from './system/system-modules';
 
 export const SKETCHES_PATH = '/__design/sketches';
@@ -267,6 +267,19 @@ const inTurns = async <TItem, TResult>(
   return results;
 };
 
+const keptOf = async (options: {
+  product: ResolvedProduct;
+  sketch: Sketch;
+  variant: string;
+  part: string;
+  pictured: boolean;
+  problem: unknown;
+}) => {
+  const unchanged = options.problem ? null : await keptUnchangedStatesOf(options);
+
+  return unchanged ? { unchanged } : {};
+};
+
 const partTargetsOf = async ({
   product,
   sketch,
@@ -324,7 +337,7 @@ const partTargetsOf = async ({
               ? []
               : await unchangedStatesOf({ product, sketch, variant, load, pictureOf, keepPictures: true, part }),
           }
-        : {}),
+        : await keptOf({ product, sketch, variant, part, pictured: !!pictureOf, problem })),
       ...(problem || !current || current.problem
         ? {}
         : { changes: variantChangesOf({ current, drawn: { states, note } }) }),
@@ -359,6 +372,7 @@ const listingOf = async ({
   signal: AbortSignal;
 }) => {
   const { target } = asked;
+  const listOnly = light && asked.url.searchParams.get('targets') === 'no';
   const listed = await listSketchesInTurns({ productDir: product.dir, product: product.name });
   const sketches = listed.filter((sketch): sketch is Sketch => typeof sketch !== 'string');
   const checked = light
@@ -387,14 +401,18 @@ const listingOf = async ({
                 })),
             }
           : {}),
-        targets: await targetsOf({
-          product,
-          sketch,
-          load: asked.load,
-          pictureOf: asked.pictureOf,
-          signal,
-          compare: !light,
-        }),
+        ...(listOnly
+          ? {}
+          : {
+              targets: await targetsOf({
+                product,
+                sketch,
+                load: asked.load,
+                pictureOf: asked.pictureOf,
+                signal,
+                compare: !light,
+              }),
+            }),
         report: readSketchReport({ checkout: target, sketch }),
       })),
       unreadable: unreadable.map((problem) => problemOf({ target, problem })),
@@ -435,12 +453,13 @@ const startedListing = ({
  * draws it (`targets`, one entry per part and variant, tagged with `part`, the first part's entries first), with the states it
  * draws the same as the product now (`unchanged`), the states it adds and drops and its part note when that differs
  * from the product's (`changes`), and the live report
- * of the agent (`report`, `null` when none runs). `?unchanged=no` answers without `problems` and the `unchanged` of each target: no rule check, no pictures.
+ * of the agent (`report`, `null` when none runs). `?unchanged=no` answers without `problems`, and with the `unchanged` of a target only
+ * while a full listing's comparison of the same sources is kept: no rule check, no pictures. `&targets=no` also leaves out `targets`: no part module loads.
  * A listing asked while the same one runs gets that one's answer; it stops when every client that asked for it has closed its request.
  */
 export const sketchesAnswer = withProduct('GET', ({ asked, product }) => {
   const light = asked.url.searchParams.get('unchanged') === 'no';
-  const key = JSON.stringify([asked.target, product.name, light]);
+  const key = JSON.stringify([asked.target, product.name, light, asked.url.searchParams.get('targets') === 'no']);
   const listing = runningListings.get(key) ?? startedListing({ key, asked, product, light });
   const leave = () => {
     listing.askers -= 1;
