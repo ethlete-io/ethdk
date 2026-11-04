@@ -1,4 +1,5 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
+import { writeJsonFile } from '../../json-file';
 import { dirname, resolve } from 'path';
 import { partOwnerOf } from './inventory-approval';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
@@ -62,7 +63,7 @@ export const readExceptions = (productDir: string): Record<string, DesignExcepti
 const writeExceptions = (productDir: string, exceptions: Record<string, DesignException>) => {
   const sorted = Object.fromEntries(Object.entries(exceptions).sort(([a], [b]) => a.localeCompare(b)));
 
-  writeFileSync(exceptionsFileOf(productDir), `${JSON.stringify(sorted, null, 2)}\n`);
+  writeJsonFile({ file: exceptionsFileOf(productDir), value: sorted });
 };
 
 const ownedPartOf = (options: { product: ResolvedProduct; key: string }) => {

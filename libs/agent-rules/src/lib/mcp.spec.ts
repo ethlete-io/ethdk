@@ -1,9 +1,10 @@
 import { mkdtempSync, readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { check as prettierCheck, resolveConfig } from 'prettier';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CONFIG_FILE_NAME } from './config';
-import { sync } from './sync';
+import { check, sync } from './sync';
 
 const repo = (options: { cli: boolean; targets?: string[]; packageManager?: string }) => {
   const root = mkdtempSync(join(tmpdir(), 'agent-rules-mcp-'));
@@ -40,6 +41,19 @@ describe('et design mcp registration', () => {
 
     expect(existsSync(join(root, '.mcp.json'))).toBe(false);
     expect(existsSync(join(root, '.codex/config.toml'))).toBe(false);
+  });
+
+  it('writes .mcp.json in the format of the checkout Prettier config', async () => {
+    const root = repo({ cli: true });
+    const file = join(root, '.mcp.json');
+
+    writeFileSync(join(root, '.prettierrc'), JSON.stringify({ printWidth: 120 }), 'utf8');
+    run(root);
+
+    const config = await resolveConfig(file);
+
+    expect(await prettierCheck(readFileSync(file, 'utf8'), { ...config, filepath: file })).toBe(true);
+    expect(check({ root })).toBe(0);
   });
 
   it('registers the server for Claude Code and Codex', () => {

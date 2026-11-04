@@ -1,6 +1,6 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
-import { formattedTextOf } from './prettier';
+import { writeJsonFile } from '../../json-file';
 import { ResolvedPart, ResolvedProduct } from './resolve-product';
 
 export const INVENTORY_FILE = 'inventory.json';
@@ -59,11 +59,7 @@ export const writeInventoryApproval = (options: { productDir: string; part: stri
   const approvals = { ...readInventory(productDir), [part]: { ...approval, ids: [...approval.ids].sort() } };
   const sorted = Object.fromEntries(Object.entries(approvals).sort(([a], [b]) => a.localeCompare(b)));
 
-  const file = inventoryFileOf(productDir);
-  const text = `${JSON.stringify(sorted, null, 2)}\n`;
-  const formatted = formattedTextOf({ target: productDir, file, text });
-
-  writeFileSync(file, typeof formatted === 'string' ? formatted : text);
+  writeJsonFile({ file: inventoryFileOf(productDir), value: sorted });
 };
 
 export const inventoryStateOf = (options: {

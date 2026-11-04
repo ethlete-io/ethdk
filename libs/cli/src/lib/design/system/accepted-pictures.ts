@@ -1,4 +1,5 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
+import { writeJsonFile } from '../../json-file';
 import { AddressInfo } from 'net';
 import { dirname, resolve } from 'path';
 import { chromiumOf } from '../browser';
@@ -105,7 +106,7 @@ export const writePictures = (options: {
     ([a], [b]) => a.localeCompare(b),
   );
 
-  writeFileSync(picturesFileOf(dir), `${JSON.stringify(Object.fromEntries(entries), null, 2)}\n`);
+  writeJsonFile({ file: picturesFileOf(dir), value: Object.fromEntries(entries) });
 };
 
 /** The states whose picture differs between two drawings, added and removed states included, sorted. */

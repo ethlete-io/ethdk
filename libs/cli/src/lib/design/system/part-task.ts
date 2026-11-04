@@ -1,6 +1,7 @@
 import { execFileSync } from 'child_process';
+import { writeJsonFile } from '../../json-file';
 import { createHash } from 'crypto';
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { posix, resolve } from 'path';
 import { appFilesOf } from './app-files';
 import { changedFilesOf, FileHashes, isOptionalFileHashes } from './design-hash';
@@ -96,7 +97,7 @@ export const markImplemented = (options: {
     a.localeCompare(b),
   );
 
-  writeFileSync(implementedFileOf(found.dir), `${JSON.stringify(Object.fromEntries(entries), null, 2)}\n`);
+  writeJsonFile({ file: implementedFileOf(found.dir), value: Object.fromEntries(entries) });
 
   return implemented;
 };

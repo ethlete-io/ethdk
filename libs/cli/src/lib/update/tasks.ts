@@ -1,4 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { writeJsonFile } from '../json-file';
 import { join } from 'path';
 import { instructionsPath } from './migration-manifest';
 import { PackageManager } from './package-manager';
@@ -370,7 +371,7 @@ export const refreshUpdateTasks = (root: string): UpdateTask[] | undefined => {
     }).trimEnd()}\n`,
     'utf8',
   );
-  writeFileSync(join(root, UPDATE_DIR, TASKS_DATA_FILE), `${JSON.stringify({ ...data, tasks }, null, 2)}\n`, 'utf8');
+  writeJsonFile({ file: join(root, UPDATE_DIR, TASKS_DATA_FILE), value: { ...data, tasks } });
 
   return tasks;
 };

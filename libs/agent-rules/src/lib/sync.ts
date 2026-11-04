@@ -3,6 +3,7 @@ import { dirname, isAbsolute, join, relative, resolve } from 'path';
 import { AgentTarget, loadConfig } from './config';
 import { collectOwnedPaths } from './owned-paths';
 import { buildPlan, SyncPlan } from './plan';
+import { formattedJsonTextOf } from './prettier';
 
 export type RunOptions = {
   root: string;
@@ -14,6 +15,13 @@ type Change = {
   path: string;
   action: 'write' | 'update' | 'delete';
 };
+
+const plannedFilesOf = (options: { root: string; plan: SyncPlan }) =>
+  options.plan.files.map((file) =>
+    file.path.endsWith('.json')
+      ? { ...file, contents: formattedJsonTextOf({ target: options.root, file: file.path, text: file.contents }) }
+      : file,
+  );
 
 const readIfPresent = (absolute: string) => (existsSync(absolute) ? readFileSync(absolute, 'utf8') : null);
 
@@ -81,7 +89,7 @@ const reportPlan = (plan: SyncPlan) => {
 export const sync = (options: RunOptions) => {
   const config = loadConfig({ root: options.root, targetOverride: options.targets });
   const plan = buildPlan({ config });
-  const { files } = plan;
+  const files = plannedFilesOf({ root: options.root, plan });
   const changes = diffPlan({ root: options.root, files, owned: collectOwnedPaths(options.root) });
 
   console.log(`Targets: ${config.targets.join(', ')}`);
@@ -129,7 +137,11 @@ export const sync = (options: RunOptions) => {
 export const check = (options: RunOptions) => {
   const config = loadConfig({ root: options.root, targetOverride: options.targets });
   const plan = buildPlan({ config });
-  const changes = diffPlan({ root: options.root, files: plan.files, owned: collectOwnedPaths(options.root) });
+  const changes = diffPlan({
+    root: options.root,
+    files: plannedFilesOf({ root: options.root, plan }),
+    owned: collectOwnedPaths(options.root),
+  });
 
   reportPlan(plan);
 

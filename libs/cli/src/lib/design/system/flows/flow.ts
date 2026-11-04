@@ -1,4 +1,5 @@
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync } from 'fs';
+import { writeJsonFile } from '../../../json-file';
 import { resolve } from 'path';
 import { CommentPoint, isPoint } from '../comments/comment';
 import { newNoteId } from '../notes/note';
@@ -160,7 +161,7 @@ const withFlowNotes = <T>(options: {
     ),
   );
 
-  writeFileSync(read.file, `${JSON.stringify(written, null, 2)}\n`);
+  writeJsonFile({ file: read.file, value: written });
 
   return updated.answer;
 };

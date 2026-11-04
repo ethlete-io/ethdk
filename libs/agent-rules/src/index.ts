@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { existsSync, writeFileSync } from 'fs';
+import { existsSync } from 'fs';
+import { writeJsonFile } from './lib/prettier';
 import { join } from 'path';
 import { CommandArgs, parseCommandArgs } from './lib/cli-args';
 import { AGENT_TARGETS, CONFIG_FILE_NAME, detectTargets, resolveRepoRoot } from './lib/config';
@@ -72,7 +73,7 @@ const init = (root: string) => {
     hooks: [],
   };
 
-  writeFileSync(path, `${JSON.stringify(template, null, 2)}\n`, 'utf8');
+  writeJsonFile({ file: path, value: template });
   console.log(
     `Wrote ${CONFIG_FILE_NAME}. Check the commands in "vars" (${Object.keys(vars).join(', ')}) against your repo, then run \`ethlete-agents sync\`.`,
   );

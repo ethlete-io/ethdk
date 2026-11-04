@@ -1,5 +1,5 @@
 import { execFileSync } from 'child_process';
-import { writeFileSync } from 'fs';
+import { writeJsonFile } from '../../json-file';
 import { dirname, relative, resolve, sep } from 'path';
 import { appFilesOf } from './app-files';
 import { changedFilesOf, designHashOf, DesignHash, HashRecord, recordHolds } from './design-hash';
@@ -56,7 +56,7 @@ export const staleLineOf = (product: string, stale: StalePart) =>
 const rewrite = (file: string, entries: Record<string, unknown>) => {
   const sorted = Object.entries(entries).sort(([a], [b]) => a.localeCompare(b));
 
-  writeFileSync(file, `${JSON.stringify(Object.fromEntries(sorted), null, 2)}\n`);
+  writeJsonFile({ file: file, value: Object.fromEntries(sorted) });
 };
 
 const newerThanOf = ({ root, paths, at }: { root: string; paths: string[]; at: string }) => {

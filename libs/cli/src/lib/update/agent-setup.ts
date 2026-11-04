@@ -1,4 +1,5 @@
-import { accessSync, constants, writeFileSync } from 'fs';
+import { accessSync, constants } from 'fs';
+import { writeJsonFile } from '../json-file';
 import { delimiter, join } from 'path';
 import { LEGACY_LOCAL_CONFIG_FILE_NAME, LOCAL_CONFIG_FILE_NAME, readLocalConfigFile } from '../config/local-config';
 import { askQuestion } from '../utils';
@@ -152,11 +153,7 @@ export const setUpAgentCommand = async (options: {
     return undefined;
   }
 
-  writeFileSync(
-    join(root, target.fileName),
-    `${JSON.stringify({ ...target.config, [AGENT_COMMAND_KEY]: command }, null, 2)}\n`,
-    'utf8',
-  );
+  writeJsonFile({ file: join(root, target.fileName), value: { ...target.config, [AGENT_COMMAND_KEY]: command } });
   console.log(`\n  Saved "${AGENT_COMMAND_KEY}": "${command}" in ${target.fileName}.`);
 
   if (ignoreEntry({ root, entry: target.fileName })) console.log(`  Added ${target.fileName} to .gitignore.`);

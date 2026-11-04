@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync } from 'fs';
+import { writeJsonFile } from '../json-file';
 import { dirname, join } from 'path';
 
 export const MIGRATION_RECORD_FILE = join('.ethlete', 'migrations.json');
@@ -64,5 +65,5 @@ export const writeMigrationRun = (options: { root: string; packageName: string; 
   const sorted = Object.fromEntries(Object.entries(runs).sort(([left], [right]) => left.localeCompare(right)));
 
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, `${JSON.stringify({ runs: sorted }, null, 2)}\n`, 'utf8');
+  writeJsonFile({ file: path, value: { runs: sorted } });
 };

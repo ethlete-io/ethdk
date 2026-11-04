@@ -1,4 +1,5 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
+import { writeJsonFile } from '../../../json-file';
 import { dirname, resolve } from 'path';
 import { partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
@@ -58,7 +59,7 @@ const writeEntries = (productDir: string, entries: Record<string, MergedEntry>) 
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([part, { hash, decision }]) => [part, decision ? { hash, ...decision } : hash]);
 
-  writeFileSync(mergedFileOf(productDir), `${JSON.stringify(Object.fromEntries(sorted), null, 2)}\n`);
+  writeJsonFile({ file: mergedFileOf(productDir), value: Object.fromEntries(sorted) });
 };
 
 /** The content hash of each part, its folder and the assets it imports, as its last sketch merge left it, under the part key. */
@@ -192,10 +193,7 @@ export const readAccepted = (productDir: string): Acceptance[] => {
 };
 
 const logAcceptance = (productDir: string, entry: Acceptance) =>
-  writeFileSync(
-    resolve(productDir, ACCEPTED_FILE),
-    `${JSON.stringify([...readAccepted(productDir), entry], null, 2)}\n`,
-  );
+  writeJsonFile({ file: resolve(productDir, ACCEPTED_FILE), value: [...readAccepted(productDir), entry] });
 
 /** Logs a sketch merged by itself because no state showed a visible change, as an `auto` entry in `accepted.json`. */
 export const recordAutoMerge = (options: { product: HashedProduct; part: string; by: string }) => {

@@ -21,7 +21,7 @@ vi.mock('child_process', async (importOriginal) => {
   return {
     ...actual,
     spawnSync: (binary: string, args: string[], options?: { env?: NodeJS.ProcessEnv }) =>
-      binary === 'git' && REAL_GIT.includes(args[0] ?? '')
+      (binary === 'git' && REAL_GIT.includes(args[0] ?? '')) || args[0]?.endsWith('prettier.cjs')
         ? actual.spawnSync(binary, args, options)
         : spawnSync(binary, args, options),
     spawn: (command: string, options?: { env?: NodeJS.ProcessEnv }) => {

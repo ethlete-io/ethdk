@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, rmSync } from 'fs';
+import { writeJsonFile } from '../json-file';
 import { join } from 'path';
 import { CommitState, DirtySnapshot } from './commits';
 import { UPDATE_DIR } from './tasks';
@@ -39,7 +40,7 @@ export const writePendingUpdate = (options: { root: string; pending: PendingUpda
   const { root, pending } = options;
 
   mkdirSync(join(root, UPDATE_DIR), { recursive: true });
-  writeFileSync(join(root, PENDING_FILE), `${JSON.stringify(pending, null, 2)}\n`, 'utf8');
+  writeJsonFile({ file: join(root, PENDING_FILE), value: pending });
 };
 
 const readStringRecord = (value: unknown): DirtySnapshot | undefined =>

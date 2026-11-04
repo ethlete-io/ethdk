@@ -9,6 +9,7 @@ import {
   writeFileSync,
 } from 'fs';
 import { dirname, join, relative } from 'path';
+import { writeJsonFile } from './prettier';
 import { AgentTarget, CONFIG_FILE_NAME, loadConfig } from './config';
 import { claudeMdImportsAgentsMd } from './plan';
 import { END_MARKER, START_MARKER } from './render';
@@ -174,7 +175,7 @@ const migrateConfig = (options: { root: string; dryRun: boolean }) => {
 
   log(`write  ${CONFIG_FILE_NAME} — codex target + claudeMdImportsAgentsMd`);
 
-  if (!dryRun) writeFileSync(path, `${JSON.stringify(raw, null, 2)}\n`, 'utf8');
+  if (!dryRun) writeJsonFile({ file: path, value: raw });
 };
 
 /**

@@ -1,5 +1,6 @@
 import { randomBytes } from 'crypto';
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { writeJsonFile } from '../../../json-file';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'fs';
 import { resolve } from 'path';
 import { CommentPoint, CommentSize, FITTED, goneSizeOf, goneStateOf, isPoint, isSize } from '../comments/comment';
 import { ResolvedProduct } from '../resolve-product';
@@ -47,7 +48,7 @@ export const noteProblemOf = (options: { product: ResolvedProduct; note: NoteFil
   );
 };
 
-const writeNote = (file: string, note: NoteFile) => writeFileSync(file, `${JSON.stringify(note, null, 2)}\n`);
+const writeNote = (file: string, note: NoteFile) => writeJsonFile({ file: file, value: note });
 
 /** Every note on a state of a product, `<product>/notes/<id>.json`; a file that cannot be read answers with its problem. */
 export const listNotes = (productDir: string) => {
