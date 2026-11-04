@@ -4426,6 +4426,14 @@ cover also over the live frame, and an e2e case that forces `iframe { pointer-ev
 `verify-webkit-frame-wheel.swift` for a real WebKit run. Lesson: an e2e that stands in for another engine must
 model that engine's difference, not only run the gesture.
 
+394\. Builder (2026-11-04, B326): `verify-webkit-frame-wheel.swift` ran over SSH on the Mac but no setup got any event
+(canvas 0 of 10, iframe 0 in all six rows), and it still printed "FAIL the shielded iframe took wheel events".
+Cause: events sent with `web.scrollWheel(with:)` reached neither document, likely because a process started over SSH
+has no key window or event routing; the verdict logic read zero events as a failure of the fix. Why no tool caught
+it: the harness has no positive control, so a blind run looks like a result. Fix (B338): a check reports BLIND when
+its control target (here the unshielded canvas) gets no event, and never PASS or FAIL; build it with the B321
+WebKit tooling once wip/b321 lands. B326 stays verified in Chromium only.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
