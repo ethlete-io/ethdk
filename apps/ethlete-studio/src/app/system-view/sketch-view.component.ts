@@ -62,6 +62,7 @@ import { PageShell, PageShellAction } from './page-shell';
 import {
   NO_SKETCH_FRAME_RETRIES,
   SketchFrameEvent,
+  erroredVariantsOf,
   retriedSrcOf,
   sketchFrameRetriesWith,
 } from './sketch-frame-retries';
@@ -469,11 +470,11 @@ export class SketchViewComponent {
   );
 
   protected erroredVariants = computed(() => {
-    const { failing } = this.frameRetries();
-
-    return this.sketchRows()
-      .filter((row) => row.shots.some((shot) => `${row.key} ${shot.state}` in failing))
-      .map((row) => row.key);
+    return erroredVariantsOf({
+      rows: this.sketchRows(),
+      failing: this.frameRetries().failing,
+      targets: this.sketch().targets,
+    });
   });
 
   protected rowShots = computed(() => {

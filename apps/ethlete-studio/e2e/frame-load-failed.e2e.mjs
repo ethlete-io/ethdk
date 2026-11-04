@@ -26,6 +26,10 @@ const SKETCH_VIEW = { systemProduct: 'studio', systemEntry: `sketch:${SKETCH_TAR
 const SKETCH_MODULE = `/sketches/components-zoom-chip/a/${SKETCH_TARGET}/zoom-chip.ts`;
 const UNRELATED_PART = '.ethlete/design/studio/components/error-toast/error-toast.ts';
 const FAILED_TIMEOUT_MS = 60000;
+const PAGE_TARGET = 'pages/sketches';
+const PAGE_SKETCH_VIEW = { systemProduct: 'studio', systemEntry: `sketch:${PAGE_TARGET}` };
+const PAGE_VARIANTS = ['a', 'b', 'c'];
+const DRAWN_TIMEOUT_MS = 180000;
 const SILENT_PAGE = '<!doctype html><html><body></body></html>';
 
 const checkout = mkdtempSync(join(tmpdir(), 'studio-frame-load-failed-e2e-'));
@@ -55,6 +59,34 @@ writeFileSync(
     createdAt: '2026-01-01T00:00:00.000Z',
     rounds: [{ key: 'r1', title: '', note: 'frame-load-failed e2e' }],
     variantInfo: { a: { authors: ['frame-load-failed-e2e'], round: 'r1' } },
+  }),
+);
+
+const pageSketchFolder = join(checkout, '.ethlete/design/studio/sketches', PAGE_TARGET.replace('/', '-'));
+
+for (const variant of PAGE_VARIANTS) {
+  cpSync(join(root, '.ethlete/design/studio', PAGE_TARGET), join(pageSketchFolder, variant, PAGE_TARGET), {
+    recursive: true,
+  });
+
+  const pageFile = join(pageSketchFolder, variant, PAGE_TARGET, 'sketches.ts');
+
+  writeFileSync(
+    pageFile,
+    readFileSync(pageFile, 'utf8').replace("label: 'Verwerfen'", `label: 'Verwerfen ${variant}'`),
+  );
+}
+writeFileSync(
+  join(pageSketchFolder, 'sketch.json'),
+  JSON.stringify({
+    target: PAGE_TARGET,
+    targets: [PAGE_TARGET],
+    status: 'ready',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    rounds: [{ key: 'r1', title: '', note: 'frame-load-failed e2e' }],
+    variantInfo: Object.fromEntries(
+      PAGE_VARIANTS.map((variant) => [variant, { authors: ['frame-load-failed-e2e'], round: 'r1' }]),
+    ),
   }),
 );
 
@@ -122,6 +154,21 @@ const failedSketchModule = async (context) => {
 
   const badge = (await page.locator('[data-sk-render-error]').textContent())?.trim() ?? '';
   const mergeWhileFailed = await page.locator('[data-sk-row="a"] [data-sk-merge]').count();
+  const failedFrames = async () => {
+    const frames = await Promise.all((await page.$$(variantFrames)).map((frame) => frame.contentFrame()));
+    const texts = await Promise.all(
+      frames.map((frame) => frame?.evaluate(() => document.body?.innerText ?? '').catch(() => '') ?? ''),
+    );
+
+    return { all: texts.length, failed: texts.filter((text) => text.trim().startsWith('design-explore:')).length };
+  };
+  const failDeadline = Date.now() + FAILED_TIMEOUT_MS;
+  let failedBefore = await failedFrames();
+
+  while (failedBefore.failed < failedBefore.all && Date.now() < failDeadline) {
+    await page.waitForTimeout(250);
+    failedBefore = await failedFrames();
+  }
 
   await page.unroute(isSketchModule, fail);
   appendFileSync(join(checkout, UNRELATED_PART), '\n');
@@ -135,13 +182,65 @@ const failedSketchModule = async (context) => {
     recovered = false;
   }
 
-  const retried = await page.$$eval(variantFrames, (frames) =>
-    frames.every((frame) => new URL(frame.src).searchParams.has('retry')),
+  const retried = await page.$$eval(
+    variantFrames,
+    (frames) => frames.filter((frame) => new URL(frame.src).searchParams.has('retry')).length,
   );
 
   return {
-    ok: badge === 'Render-Fehler in dieser Runde' && mergeWhileFailed === 0 && recovered && retried,
-    detail: `badge "${badge}", Übernehmen while failed ${mergeWhileFailed}, recovered after a change ${recovered}, variant frames retried ${retried}`,
+    ok:
+      badge === 'Render-Fehler in dieser Runde' &&
+      mergeWhileFailed === 0 &&
+      failedBefore.all > 0 &&
+      failedBefore.failed === failedBefore.all &&
+      recovered &&
+      retried === failedBefore.all,
+    detail: `badge "${badge}", Übernehmen while failed ${mergeWhileFailed}, frames failed ${failedBefore.failed}/${failedBefore.all}, recovered after a change ${recovered}, variant frames retried ${retried}/${failedBefore.all}`,
+  };
+};
+
+const everyPageFrameDraws = async (context) => {
+  const { page, designPort } = context;
+  const listed = await (await fetch(`http://[::1]:${designPort}/__design/sketches?product=studio`)).json();
+  const sketch = listed.sketches.find((candidate) => candidate.target === PAGE_TARGET);
+  const unloaded = sketch.targets
+    .filter((target) => target.error)
+    .map((target) => `${target.variant}: ${target.error}`);
+  const expected =
+    sketch.targets.reduce((sum, target) => sum + target.states.length, 0) + sketch.targets[0].states.length;
+
+  await openView(context, PAGE_SKETCH_VIEW);
+
+  const deadline = Date.now() + DRAWN_TIMEOUT_MS;
+  let seen = { frames: 0, drawn: 0, failed: [] };
+
+  while (Date.now() < deadline) {
+    const shots = page.frames().filter((frame) => new URL(frame.url()).searchParams.get('part') === PAGE_TARGET);
+    const texts = await Promise.all(
+      shots.map((frame) =>
+        frame
+          .evaluate(() => (document.body?.innerText ?? '').trim())
+          .then((text) => ({ text, at: new URL(frame.url()).searchParams }))
+          .catch(() => ({ text: '', at: new URL(frame.url()).searchParams })),
+      ),
+    );
+    const failed = texts
+      .filter(({ text }) => text.startsWith('design-explore:'))
+      .map(({ at, text }) => `${at.get('variant') ?? 'current'} ${at.get('state')}: ${text.split('\n').at(-1)}`);
+
+    seen = { frames: expected, drawn: texts.filter(({ text }) => text.length > 0).length - failed.length, failed };
+
+    if (failed.length || (await page.locator('[data-sk-render-error]').count())) break;
+    if (expected > 0 && seen.drawn >= expected) break;
+
+    await page.waitForTimeout(1000);
+  }
+
+  const badge = (await page.locator('[data-sk-render-error]').allTextContents()).join(' ').trim();
+
+  return {
+    ok: !unloaded.length && seen.frames > 0 && seen.drawn >= seen.frames && !seen.failed.length && !badge,
+    detail: `${seen.drawn}/${seen.frames} frames drawn, badge "${badge}", failed ${seen.failed.length}${seen.failed.length ? ': ' + seen.failed.slice(0, 4).join('; ') : ''}, unloaded variants ${unloaded.length}${unloaded.length ? ': ' + unloaded.join('; ').slice(0, 300) : ''}`,
   };
 };
 
@@ -150,6 +249,10 @@ const CASES = [
   {
     name: 'a sketch variant whose module fails shows a render error, no Übernehmen, and recovers on the next change',
     run: failedSketchModule,
+  },
+  {
+    name: 'a sketch view of a page with many states draws every frame without a render error',
+    run: everyPageFrameDraws,
   },
 ];
 

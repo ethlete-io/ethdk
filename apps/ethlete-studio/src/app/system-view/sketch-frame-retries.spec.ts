@@ -1,6 +1,7 @@
 import {
   NO_SKETCH_FRAME_RETRIES,
   SketchFrameEvent,
+  erroredVariantsOf,
   retriedSrcOf,
   sketchFrameRetriesWith,
 } from './sketch-frame-retries';
@@ -69,5 +70,22 @@ describe('sketch frame retries', () => {
     expect(retriedSrcOf('http://[::1]:4402/frame.html?product=studio', undefined)).toBe(
       'http://[::1]:4402/frame.html?product=studio',
     );
+  });
+
+  it('marks a variant whose part module fails on the design server, though it has no frame to report', () => {
+    const rows = [
+      { key: 'current', shots: [{ state: 'default' }] },
+      { key: 'a', shots: [{ state: 'default' }] },
+      { key: 'b', shots: [] },
+      { key: 'c', shots: [{ state: 'default' }] },
+    ];
+
+    expect(
+      erroredVariantsOf({
+        rows,
+        failing: { 'c default': 1 },
+        targets: [{ variant: 'a' }, { variant: 'b', error: 'Failed to load url ./missing.ts' }, { variant: 'c' }],
+      }),
+    ).toEqual(['b', 'c']);
   });
 });

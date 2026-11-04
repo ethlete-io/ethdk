@@ -45,3 +45,19 @@ export const retriedSrcOf = (src: string, retry: number | undefined) => {
 
   return url.toString();
 };
+
+export const erroredVariantsOf = ({
+  rows,
+  failing,
+  targets = [],
+}: {
+  rows: { key: string; shots: { state: string }[] }[];
+  failing: SketchFrameRetries['failing'];
+  targets?: { variant: string; error?: string }[];
+}) => {
+  const unloaded = new Set(targets.filter((entry) => entry.error).map((entry) => entry.variant));
+
+  return rows
+    .filter((row) => unloaded.has(row.key) || row.shots.some((shot) => `${row.key} ${shot.state}` in failing))
+    .map((row) => row.key);
+};
