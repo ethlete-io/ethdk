@@ -214,7 +214,7 @@ describe('SystemViewComponent on a reload', () => {
 
     expect(lines).toEqual([
       ['label liegt unter der Kontrastregel', 'hover'],
-      ['no check record', 'stale-record'],
+      ['Kein Prüfergebnis zum aktuellen Design - Design-Check oder Design-Ready ausführen', 'stale-record'],
       ['rest → hover', 'motion'],
     ]);
   });
