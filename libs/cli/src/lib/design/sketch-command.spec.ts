@@ -8,7 +8,7 @@ import {
   identicalRenderLines,
   identicalRenders,
   sampleMarkDriftLines,
-  shotsShowNoChange,
+  variantChangesShown,
   variantsThatDoNotLoad,
 } from './ready-shots';
 import { designSketch } from './sketch-command';
@@ -16,13 +16,16 @@ import { THEMING_TEXT } from './system/theming-text';
 import { sketchOpenPointsOf } from './system/read-open-points';
 import { renderIssuesOf } from './system/render-check';
 import { findSketch, readSketchReport, Sketch } from './system/sketch/sketch';
+import { recordShotViewed, unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots';
 
 vi.mock('./ready-shots', () => ({
   aktuellPlaceholderWarnings: vi.fn(async (): Promise<string[]> => []),
   identicalRenderLines: vi.fn(async (): Promise<string[]> => []),
   identicalRenders: vi.fn(async (): Promise<{ variant: string; sibling: string | null; line: string }[]> => []),
   sampleMarkDriftLines: vi.fn(async (): Promise<string[]> => []),
-  shotsShowNoChange: vi.fn(async (): Promise<true | string> => 'variant a changes default'),
+  variantChangesShown: vi.fn(async (): Promise<VariantChange[] | string> => [
+    { variant: 'a', change: 'variant a changes default' },
+  ]),
   variantsThatDoNotLoad: vi.fn(async (): Promise<string[]> => []),
 }));
 
@@ -34,6 +37,11 @@ vi.mock('./system/render-check', async (importOriginal) => ({
     grids: [],
     drawn: [],
   })),
+}));
+
+vi.mock('./system/sketch/viewed-shots', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./system/sketch/viewed-shots')>()),
+  unviewedShotLinesOf: vi.fn((): string[] => []),
 }));
 
 vi.mock('./system/read-open-points', async (importOriginal) => ({
@@ -85,14 +93,22 @@ export default definePart({
 };
 
 describe('designSketch', { timeout: 120_000 }, () => {
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.mocked(unviewedShotLinesOf).mockReset().mockReturnValue([]);
+    vi.mocked(variantChangesShown)
+      .mockReset()
+      .mockResolvedValue([{ variant: 'a', change: 'variant a changes default' }]);
+  });
 
   it('merges a ready sketch by itself and logs it auto when no state shows a change', async () => {
     const target = acme();
     const lines = output();
     const product = join(target, DESIGN_DIR, 'acme');
 
-    vi.mocked(shotsShowNoChange).mockResolvedValueOnce(true);
+    vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) =>
+      sketch.variants.map((variant) => ({ variant, change: null })),
+    );
 
     write(
       target,
@@ -531,7 +547,9 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const lines = output();
     const product = join(target, DESIGN_DIR, 'acme');
 
-    vi.mocked(shotsShowNoChange).mockResolvedValueOnce(true);
+    vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) =>
+      sketch.variants.map((variant) => ({ variant, change: null })),
+    );
 
     expect(
       write(
@@ -622,7 +640,9 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines.pop()).toBe('components/button is still ready');
 
-    vi.mocked(shotsShowNoChange).mockResolvedValueOnce(true);
+    vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) =>
+      sketch.variants.map((variant) => ({ variant, change: null })),
+    );
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     expect(existsSync(join(product, 'sketches/components-button'))).toBe(false);
@@ -652,6 +672,89 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines.pop()).toBe('auto-merge skipped: variant a changes default');
   });
 
+  it('refuses ready while a variant with a pixel diff has no shot viewed since its last edit', async () => {
+    const target = acme();
+    const lines = output();
+    const actual = await vi.importActual<typeof import('./system/sketch/viewed-shots')>('./system/sketch/viewed-shots');
+
+    vi.mocked(unviewedShotLinesOf).mockImplementation(actual.unviewedShotLinesOf);
+    write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--round',
+      'Diff',
+      '--note',
+      'changes',
+      '--product',
+      'acme',
+    );
+    vi.mocked(variantChangesShown).mockResolvedValue([
+      { variant: 'a', change: 'variant a changes default' },
+      { variant: 'b', change: null },
+    ]);
+
+    const sketch = () => {
+      const found = findSketch({
+        productDir: join(target, DESIGN_DIR, 'acme'),
+        product: 'acme',
+        sketch: { layer: 'components', name: 'button' },
+      });
+
+      if (!found || typeof found === 'string') throw new Error('no sketch');
+
+      return found;
+    };
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines.pop()?.split('\n')).toEqual([
+      'SHOT-NOT-VIEWED variant a changes default - no shot of variant a was viewed since its last edit: `et design shot components/button --states --variants --variant a --product acme`, or GET /__design/shot?product=acme&part=components/button&sketch=components/button&variant=a&state=<state>',
+      'components/button draws a pixel diff - view its shot before ready',
+    ]);
+    expect(sketch().status).toBe('in progress');
+
+    recordShotViewed({ target, sketch: sketch(), variant: 'a' });
+    writeFileSync(join(sketch().dir, 'a/components/button/button.css'), '.et-button { color: red; }\n');
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+
+    recordShotViewed({ target, sketch: sketch(), variant: 'a' });
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(sketch().status).toBe('ready');
+    expect(lines.pop()).toBe('auto-merge skipped: variant a changes default');
+  });
+
+  it('readies a sketch whose variants draw no pixel diff without a viewed shot', async () => {
+    const target = acme();
+    const actual = await vi.importActual<typeof import('./system/sketch/viewed-shots')>('./system/sketch/viewed-shots');
+
+    vi.mocked(unviewedShotLinesOf).mockImplementation(actual.unviewedShotLinesOf);
+    vi.mocked(variantChangesShown).mockResolvedValueOnce([
+      { variant: 'a', change: null },
+      { variant: 'b', change: null },
+    ]);
+    write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--round',
+      'Same',
+      '--note',
+      'none',
+      '--product',
+      'acme',
+    );
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+  });
+
   it('skips automatic merge for a new part without comparing shots', async () => {
     const target = acme();
     const lines = output();
@@ -668,11 +771,11 @@ describe('designSketch', { timeout: 120_000 }, () => {
       '--product',
       'acme',
     );
-    vi.mocked(shotsShowNoChange).mockClear();
+    vi.mocked(variantChangesShown).mockClear();
 
     expect(await write(target, 'ready', 'components/new-part', '--product', 'acme')).toBe(0);
     expect(lines.pop()).toBe('auto-merge skipped: new part, the user merges');
-    expect(shotsShowNoChange).not.toHaveBeenCalled();
+    expect(variantChangesShown).not.toHaveBeenCalled();
   });
 
   it('names an unknown command and prints the usage', () => {
@@ -1151,6 +1254,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       expect.stringContaining('sketch report components/button --product acme --variant a --by <model id> "'),
       expect.stringContaining('sketch round components/button r1 --product acme --note'),
       '  sketch check components/button --product acme',
+      '  shot components/button --states --variants --product acme   look at it: ready refuses a pixel diff without a viewed shot',
       '  sketch ready components/button --product acme --by <model id>',
       expect.stringMatching(/sketch report .* --done .*none is needed now/u),
       expect.stringContaining('et design commit-hunks <file> --part components/button'),
@@ -1608,7 +1712,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(
       write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme'),
     ).toBe(0);
-    expect(lines.splice(lines.indexOf('Next:')).length).toBe(7);
+    expect(lines.splice(lines.indexOf('Next:')).length).toBe(8);
     expect(lines.splice(-3)).toEqual([
       `components/button in progress: ${DESIGN_DIR}/acme/sketches/components-button with a, b`,
       `  a: ${DESIGN_DIR}/acme/sketches/components-button/a/components/button/button.ts  assets: ${DESIGN_DIR}/acme/sketches/components-button/a/assets/`,
@@ -1760,7 +1864,9 @@ export default definePart({
 
     wideHero(target, 'class="acme-hero" data-et-skip="WRAP"');
     vi.mocked(renderIssuesOf).mockImplementationOnce(await actualRender());
-    vi.mocked(shotsShowNoChange).mockResolvedValueOnce(true);
+    vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) =>
+      sketch.variants.map((variant) => ({ variant, change: null })),
+    );
 
     expect(await write(target, 'ready', 'elements/hero', '--product', 'acme')).toBe(0);
   }, 120_000);

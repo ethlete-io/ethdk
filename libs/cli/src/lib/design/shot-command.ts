@@ -10,6 +10,7 @@ import { extractSketchAt } from './sketch-at';
 import { productDirOf } from './system/product';
 import { ResolvedProduct } from './system/resolve-product';
 import { findSketch, parseTarget, rejectionOf, Sketch, SketchRejection } from './system/sketch/sketch';
+import { recordShotViewed } from './system/sketch/viewed-shots';
 import { createPartShooter, cropOf, drawParamsOf, isSchemeFlag, PartAddress } from './shot';
 import { gridOf, ListedGrid } from './system/list-system';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';
@@ -694,6 +695,9 @@ export const designShot = async (options: { target: string; argv: string[]; invo
         writeFileSync(out, png);
         for (const line of shotReportOf({ out, diffs, sheet: shown })) console.log(line);
       }
+
+      if (at === undefined && sketch)
+        for (const variant of shownVariants ?? []) recordShotViewed({ target, sketch, variant });
 
       for (const line of unstableReportOf(unstable)) console.error(line);
 

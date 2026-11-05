@@ -623,6 +623,13 @@ without a visible difference, which `sketch ready` merges by itself. The Studio 
 state (the current part's states first), so `sketch ready` also refuses a variant whose first shown state draws like
 the current part's or an earlier variant's: make a state the variant changes its first state.
 
+`sketch ready` also refuses (`SHOT-NOT-VIEWED`) while a live variant draws a pixel diff against the product (the
+same diff that stops the merge on its own, below) and no shot of that variant was handed out since the variant last
+changed. `et design shot <layer>/<name> --states --variants` records a view for each variant on its sheet, and so does
+`GET /__design/shot?...&sketch=<target>&variant=<key>` without `priority=low`; an edit of the variant's files or of the
+sketch's `shared/` folder makes the view stale. The views live in `node_modules/.design-explore/viewed-shots/`, per
+checkout. A sketch whose variants draw like the product, and a new part, are not held back.
+
 `sketch ready` also refuses (`SAMPLE-MARK-DRIFT`) while one sample carries different marks in two states of a
 target. A part opts in with `sample: { id: 'sample', marks: ['same', 'look'] }`: every instance a host draws with a
 prop `sample` is identified by that value, and its `marks` props must be equal in every state of the host. A host state

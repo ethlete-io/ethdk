@@ -603,3 +603,11 @@ contain the target, so a skip on an occluder (the frozen `span.sk-gutter`) works
 ancestors of the covered element. Verified: reach.spec fixture `components/reach-skipped-cover` fails without the
 change; `design check --part elements/variant-cell` is clean (3 COVERED before). Not verified: the UNREACHABLE path,
 which shares `coverOf`.
+
+Finding 464 gate: `sketch ready` refuses with `SHOT-NOT-VIEWED` while a live variant draws a pixel diff (the auto-merge
+diff, rendered once before the ready mark) and no shot of it was fetched since its last edit. A view is recorded per
+checkout in `node_modules/.design-explore/viewed-shots/` with the variant content hash (variant folder + `shared/`), by
+`GET /__design/shot` with `sketch` and `variant` (not `priority=low`) and by `design shot --variants`. Verified: specs
+bite (shot.spec, sketch-command.spec); real run: title-bar `notice-shape` refused, then passed after `design shot`.
+Not verified: the Studio server route records only after Studio runs this build. A new-part sketch is not gated. The
+gate records a handed-out shot, not a look.

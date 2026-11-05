@@ -5,9 +5,10 @@ import { DesignConfig } from './paths';
 import { ResolvedProduct } from './system/resolve-product';
 import { aktuellPlaceholderWarningsOf } from './system/sketch/aktuell-placeholders';
 import { IdenticalRender, identicalRendersOf } from './system/sketch/identical-renders';
-import { sketchShowsNoChange, variantLoadProblemsOf } from './system/sketch/no-visible-change';
+import { variantChangesOf, variantLoadProblemsOf } from './system/sketch/no-visible-change';
 import { sampleMarkDriftLinesOf } from './system/sketch/sample-mark-drift';
 import { Sketch } from './system/sketch/sketch';
+import { VariantChange } from './system/sketch/viewed-shots';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
 
 const couldNotRender = (sketch: Sketch, error: unknown) =>
@@ -71,14 +72,15 @@ export const sampleMarkDriftLines = async (options: {
 
 /**
  * Shoots every state of every variant of the sketch and of the product's part on a render server of its own
- * (a free port). `true` when all of them match pixel for pixel; otherwise why not, a failure to shoot included.
+ * (a free port). What each live variant draws differently, `null` when it matches pixel for pixel; a failure to shoot
+ * answers why.
  */
-export const shotsShowNoChange = async (options: {
+export const variantChangesShown = async (options: {
   target: string;
   config: DesignConfig;
   product: ResolvedProduct;
   sketch: Sketch;
-}): Promise<true | string> => {
+}): Promise<VariantChange[] | string> => {
   const { target, config, product, sketch } = options;
   let server: Awaited<ReturnType<typeof createDesignServer>> | undefined;
 
@@ -95,7 +97,7 @@ export const shotsShowNoChange = async (options: {
     });
 
     try {
-      return await sketchShowsNoChange({
+      return await variantChangesOf({
         product,
         sketch,
         pictureOf: shooter.pictureOf,

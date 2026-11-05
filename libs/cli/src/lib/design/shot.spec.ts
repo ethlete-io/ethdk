@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { cpSync, mkdtempSync, realpathSync, rmSync } from 'fs';
+import { cpSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -11,6 +11,7 @@ import { createDesignServer } from './serve';
 import { createPartShooter, dependentIdsOf } from './shot';
 import { DRAWS_AT_ONCE } from './thumb';
 import { createSketch, parseTarget } from './system/sketch/sketch';
+import { unviewedShotLinesOf } from './system/sketch/viewed-shots';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
 
 const goto = vi.fn<(url: string, options?: unknown) => Promise<void>>(async () => undefined);
@@ -231,6 +232,37 @@ describe('createPartShooter', () => {
     expect(await ask(shots, part)).toMatchObject(want);
     expect(await ask(shots, `${part}&variant=z`)).toMatchObject(want);
     expect(drawnUrls()).toEqual([]);
+  });
+
+  it('records a view of a sketch variant it hands out without priority=low, until the variant changes', async () => {
+    const { target, config, shots } = acme();
+    const product = createSystemModules({ target, config }).productOf('acme');
+    const parsed = parseTarget('components/button');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    const sketch = createSketch({ merge: 'override', product, sketch: parsed, variants: ['a', 'b'] });
+
+    if (typeof sketch === 'string') throw new Error(sketch);
+
+    const changes = [
+      { variant: 'a', change: 'variant a changes default' },
+      { variant: 'b', change: 'variant b changes default' },
+    ];
+    const unviewed = () =>
+      unviewedShotLinesOf({ target, invocation: 'et design', sketch, changes }).map((line) => line.split(' - ')[0]);
+    const part = 'product=acme&part=components/button&state=default&sketch=components/button';
+
+    expect(await ask(shots, `${part}&variant=a`)).toMatchObject({ status: 200 });
+    expect(await ask(shots, `${part}&variant=b&priority=low`)).toMatchObject({ status: 200 });
+    expect(unviewed()).toEqual(['SHOT-NOT-VIEWED variant b changes default']);
+
+    writeFileSync(join(sketch.dir, 'a/components/button/button.css'), '.et-button { color: red; }\n');
+
+    expect(unviewed()).toEqual([
+      'SHOT-NOT-VIEWED variant a changes default',
+      'SHOT-NOT-VIEWED variant b changes default',
+    ]);
   });
 
   it('draws a state at a container width, cropped to the height of its content', async () => {

@@ -120,7 +120,7 @@ export const createSystemModules = (options: { target: string; config: DesignCon
     return drawn;
   };
 
-  const sketchVariantsOf = (name: string, sketchTarget: string) => {
+  const sketchOf = (name: string, sketchTarget: string): Sketch | null => {
     const product = productOf(name);
     const target = parseTarget(sketchTarget);
 
@@ -128,8 +128,10 @@ export const createSystemModules = (options: { target: string; config: DesignCon
 
     const found = findSketch({ productDir: sketchesRoot ?? product.dir, product: name, sketch: target });
 
-    return !found || typeof found === 'string' ? null : found.variants;
+    return !found || typeof found === 'string' ? null : found;
   };
+
+  const sketchVariantsOf = (name: string, sketchTarget: string) => sketchOf(name, sketchTarget)?.variants ?? null;
 
   const partOf = (options: { product: string; part: string; sketch?: SketchVariant | null }) =>
     drawnOf(options.product, options.sketch)?.parts.find((part) => partKeyOf(part) === options.part) ?? null;
@@ -261,6 +263,7 @@ export const createSystemModules = (options: { target: string; config: DesignCon
     productOf,
     sketchesOf,
     drawnOf,
+    sketchOf,
     sketchVariantsOf,
     partOf,
     tokenStylesheetsOf,

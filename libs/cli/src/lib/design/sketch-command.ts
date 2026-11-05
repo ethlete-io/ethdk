@@ -30,9 +30,11 @@ import {
   identicalRenderLines,
   identicalRenders,
   sampleMarkDriftLines,
-  shotsShowNoChange,
+  variantChangesShown,
   variantsThatDoNotLoad,
 } from './ready-shots';
+import { noChangeOf } from './system/sketch/no-visible-change';
+import { unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { mergeAndRecord } from './system/sketch/merge-step';
 import { staleSketchBasesOf } from './system/check-system';
@@ -334,6 +336,7 @@ const nextStepsOf = (sketch: Sketch, product: string) => {
         ]
       : []),
     `  sketch check ${at}`,
+    `  shot ${sketch.targets[0]} --states --variants --product ${product}   look at it: ready refuses a pixel diff without a viewed shot`,
     `  sketch ready ${at} --by <model id>`,
     `  sketch report ${at} --variant ${first} --by <model id> --done              after ready, once you stop drawing a variant; no report runs yet, so none is needed now`,
     `  a shared JSON file ready wrote (merged.json, go.json): commit it with \`et design commit-hunks <file> --part ${sketch.targets[0]}\`, never as a whole file another session also edits`,
@@ -707,6 +710,21 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
   if (identical.length > 0)
     return fail(`${identical.join('\n')}\n${sketch.target} draws variants alike - fix them before ready`);
 
+  const changes = sketch.targets.every((key) => product.parts.some((part) => partKeyOf(part) === key))
+    ? await variantChangesShown({ target: context.target, config: context.config, product, sketch })
+    : null;
+  const unviewed = Array.isArray(changes)
+    ? unviewedShotLinesOf({
+        target: context.target,
+        invocation: context.invocation ?? repoInvocation({ root: context.target, subcommand: 'design' }),
+        sketch,
+        changes,
+      })
+    : [];
+
+  if (unviewed.length > 0)
+    return fail(`${unviewed.join('\n')}\n${sketch.target} draws a pixel diff - view its shot before ready`);
+
   const ready =
     sketch.status === 'ready'
       ? sketch
@@ -714,7 +732,7 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
 
   if (typeof ready === 'string') return fail(ready);
 
-  return autoMerged({ context, product, sketch: ready, again: sketch.status === 'ready' });
+  return autoMerged({ context, product, sketch: ready, again: sketch.status === 'ready', changes });
 };
 
 const stillReady = (options: { sketch: Sketch; again: boolean }) => {
@@ -723,8 +741,14 @@ const stillReady = (options: { sketch: Sketch; again: boolean }) => {
   return 0;
 };
 
-const autoMerged = async (options: { context: Context; product: ResolvedProduct; sketch: Sketch; again: boolean }) => {
-  const { context, product, sketch, again } = options;
+const autoMerged = (options: {
+  context: Context;
+  product: ResolvedProduct;
+  sketch: Sketch;
+  again: boolean;
+  changes: VariantChange[] | string | null;
+}) => {
+  const { context, product, sketch, again, changes } = options;
 
   if (!again) console.log(`${sketch.target} is ready`);
 
@@ -734,13 +758,13 @@ const autoMerged = async (options: { context: Context; product: ResolvedProduct;
     if (shared.length > 0) console.log(`variant ${variant}: a shared/ edit reaches ${shared.join(', ')}`);
   }
 
-  if (!sketch.targets.every((key) => product.parts.some((part) => partKeyOf(part) === key))) {
+  if (changes === null) {
     console.log('auto-merge skipped: new part, the user merges');
 
     return stillReady({ sketch, again });
   }
 
-  const noChange = await shotsShowNoChange({ target: context.target, config: context.config, product, sketch });
+  const noChange = typeof changes === 'string' ? changes : noChangeOf(changes);
 
   if (noChange !== true) {
     console.log(`auto-merge skipped: ${noChange}`);

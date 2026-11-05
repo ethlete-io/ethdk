@@ -8,6 +8,7 @@ import { DrawnPart, PartsChange, redraws } from './changed-parts';
 import { DesignPreset } from './paths';
 import { DrawLedger } from './draw-ledger';
 import { fileOfModuleId, SketchVariant, SystemModules } from './system/system-modules';
+import { recordShotViewed } from './system/sketch/viewed-shots';
 import {
   Browser,
   callDrawsFrom,
@@ -675,6 +676,12 @@ export const createPartShooter = (options: {
     });
   };
 
+  const viewed = ({ product, target, variant }: SketchVariant & { product: string }) => {
+    const sketch = system.sketchOf(product, target);
+
+    if (sketch) recordShotViewed({ target: options.target, sketch, variant });
+  };
+
   return {
     middleware: (request: IncomingMessage, response: ServerResponse) => {
       const params = new URL(request.url ?? '', 'http://localhost').searchParams;
@@ -802,7 +809,11 @@ export const createPartShooter = (options: {
             params,
             want,
             onSource,
-          }).then((picture) => picture.png),
+          }).then((picture) => {
+            if (sketchVariant && want.priority === 'high') viewed({ product, ...sketchVariant });
+
+            return picture.png;
+          }),
           (failure) =>
             options.ledger?.fail({
               part: `${product}/${part}`,

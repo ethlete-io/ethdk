@@ -3,13 +3,6 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from './paths';
-import {
-  aktuellPlaceholderWarnings,
-  identicalRenderLines,
-  identicalRenders,
-  shotsShowNoChange,
-  variantsThatDoNotLoad,
-} from './ready-shots';
 import { designSketch } from './sketch-command';
 import { renderIssuesOf } from './system/render-check';
 
@@ -18,8 +11,13 @@ vi.mock('./ready-shots', () => ({
   identicalRenderLines: vi.fn(async (): Promise<string[]> => []),
   sampleMarkDriftLines: vi.fn(async (): Promise<string[]> => []),
   identicalRenders: vi.fn(async (): Promise<{ variant: string; sibling: string | null; line: string }[]> => []),
-  shotsShowNoChange: vi.fn(async (): Promise<true | string> => 'variant a changes default'),
+  variantChangesShown: vi.fn(async () => [{ variant: 'a', change: 'variant a changes default' }]),
   variantsThatDoNotLoad: vi.fn(async (): Promise<string[]> => []),
+}));
+
+vi.mock('./system/sketch/viewed-shots', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./system/sketch/viewed-shots')>()),
+  unviewedShotLinesOf: vi.fn((): string[] => []),
 }));
 
 vi.mock('./system/render-check', async (importOriginal) => ({

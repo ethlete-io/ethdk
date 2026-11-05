@@ -6,6 +6,7 @@ import { mergePreviewOf } from './merge-preview';
 import { overlaySketch } from './overlay';
 import { rejectionOf, Sketch, variantDirOf } from './sketch';
 import { SketchPartLoader, unchangedStatesOf } from './unchanged-states';
+import { VariantChange } from './viewed-shots';
 
 const affectedChangeOf = async (options: {
   product: ResolvedProduct;
@@ -114,14 +115,32 @@ export const sketchShowsNoChange = async (options: {
   load: SketchPartLoader;
   pictureOf: PictureOf;
 }): Promise<true | string> => {
+  const changes = await variantChangesOf(options);
+
+  return typeof changes === 'string' ? changes : noChangeOf(changes);
+};
+
+/** What each live variant of the sketch draws differently, as `sketchShowsNoChange` judges it; why not when it has none. */
+export const variantChangesOf = async (options: {
+  product: ResolvedProduct;
+  sketch: Sketch;
+  load: SketchPartLoader;
+  pictureOf: PictureOf;
+}): Promise<VariantChange[] | string> => {
   const { sketch } = options;
 
   const live = sketch.variants.filter((variant) => !rejectionOf(sketch, variant));
 
   if (live.length === 0) return 'the sketch has no live variant';
 
-  const changes = await Promise.all(live.map((variant) => variantChangeOf({ ...options, variant })));
-  const found = changes.filter((change) => change !== null);
+  return Promise.all(
+    live.map(async (variant) => ({ variant, change: await variantChangeOf({ ...options, variant }) })),
+  );
+};
+
+/** `true` when no variant changes anything; otherwise every change, joined. */
+export const noChangeOf = (changes: VariantChange[]): true | string => {
+  const found = changes.flatMap(({ change }) => (change === null ? [] : [change]));
 
   return found.length === 0 ? true : found.join('; ');
 };
