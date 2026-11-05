@@ -15,9 +15,19 @@ Grill/docs session: ethlete-sdk-ea (restarted, resumes from handoff-doc-agent.md
 
 ## Next
 
-1. Watch CI 42073982842 (59c0e0745) and 42076042344 (9c687f280, Tom's PR #3168, contains everything). Fix red jobs.
-   Local next has unpushed commits and origin has 2 new: use `git pull --no-rebase` (never rebase), then push.
-2. Tool fix 472 (builder default): add query:export-coverage and core:export-coverage to the pre-push checks; run the
+1. CI 42073982842 (59c0e0745): green incl. publish. Check 42076042344 (9c687f280, Tom's PR #3168, contains
+   everything) and report it to the grill session. Fix red jobs.
+2. Unpushed ff batch: 8c060133c, 088ef29fb, 69b6f2adc (devtools mount runtime), 00137ba55 (devtools migrator), plus
+   0d9802845 and plan commits. Checks passed before the last two ff commits: lint:changesets, export coverage, lint,
+   typecheck, test for query, query-devtools, cli. The full local ci-check (ci-check skill steps 1-10 + csp-e2e;
+   csp-e2e) was stopped for the PC shutdown: run it again, then `git pull --no-rebase` (never rebase), then push and
+   watch CI.
+3. B396 / ADR 0197 (slow design check out of CI (Next) into its own path-filtered workflow, timeout-minutes per job):
+   the auto mode classifier denied it as "CI Bypass" because the order came from a peer. Wait for Tom to confirm it
+   in this session; do not work around the denial.
+4. Finding 474: find which cache key let node_modules/.vitest-cache serve a stale libs/query generators spec; send
+   the cause to the grill session. Tool fix: fresh or source-keyed cache per run.
+5. Tool fix 472 (builder default): add query:export-coverage and core:export-coverage to the pre-push checks; run the
    devtools e2e cases in pre-push when libs/query-devtools changes.
 3. Then 469 cause, 468 causes, as in the section below.
 
