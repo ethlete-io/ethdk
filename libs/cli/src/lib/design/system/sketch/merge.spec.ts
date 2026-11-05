@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { spawnSync } from 'child_process';
 import { IncomingMessage } from 'http';
 import { tmpdir } from 'os';
@@ -801,6 +801,84 @@ describe('mergeSketch of a part that imports a file outside its folder', () => {
     expect(merge(target, { ...ready, sketch: picked(ready.sketch) })).toEqual(['elements/hero']);
     expect(readFileSync(hero, 'utf8')).toContain(`from '${specifier}'`);
   }, 120_000);
+});
+
+describe('a part round trip through new, check and ready, per import form', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const forms: Record<string, { line: string; files?: Record<string, string> }> = {
+    'an @shared alias of the part shared folder': {
+      line: "import { shared } from './shared/util';",
+      files: { 'shared/util.ts': 'export const shared = 1;\n' },
+    },
+    'a relative import inside the part': {
+      line: "import { inside } from './inside';",
+      files: { 'inside.ts': 'export const inside = 1;\n' },
+    },
+    'a relative import to another part': {
+      line: "import otherButton from '../../components/button/button';\nexport const other = otherButton;",
+    },
+    'a relative import out of the design tree': {
+      line: "import { logo } from '../../../../../apps/app/logos';",
+      files: { '../../../../../../apps/app/logos.ts': "export const logo = 'logo';\n" },
+    },
+    'an import type': { line: "import type { Film as Shape } from '@system/fixtures';" },
+    'a re-export': { line: "export { logo as reLogo } from '../../../../../apps/app/logos';" },
+    'a dynamic import': { line: "export const later = () => import('../../../../../apps/app/logos');" },
+  };
+
+  it.each(Object.entries(forms))(
+    'keeps the part unchanged with %s',
+    (_name, form) => {
+      vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+      const target = acme();
+      const configFile = join(target, DESIGN_DIR, 'config.json');
+      const config = JSON.parse(readFileSync(configFile, 'utf8'));
+      const hero = join(heroOf(target), 'hero.ts');
+
+      config.products.acme.harness = { app: 'apps/app', map: 'apps/app/parts.ts', shared: ['apps/app/logos.ts'] };
+      writeFileSync(configFile, JSON.stringify(config));
+      mkdirSync(join(target, 'apps/app'), { recursive: true });
+      writeFileSync(join(target, 'apps/app/logos.ts'), "export const logo = 'logo';\n");
+
+      for (const [path, body] of Object.entries(form.files ?? {})) {
+        if (path.startsWith('..')) continue;
+
+        mkdirSync(join(heroOf(target), path, '..'), { recursive: true });
+        writeFileSync(join(heroOf(target), path), body);
+      }
+
+      writeFileSync(hero, `${form.line}\n${readFileSync(hero, 'utf8')}`);
+
+      const original = new Map(
+        readdirSync(heroOf(target), { recursive: true, withFileTypes: true })
+          .filter((entry) => entry.isFile())
+          .map((entry) => [
+            join(entry.parentPath, entry.name),
+            readFileSync(join(entry.parentPath, entry.name), 'utf8'),
+          ]),
+      );
+      const ready = readySketch(target);
+
+      expect(merge(target, { ...ready, sketch: picked(ready.sketch) })).toEqual(['elements/hero']);
+
+      const merged = new Map(
+        readdirSync(heroOf(target), { recursive: true, withFileTypes: true })
+          .filter((entry) => entry.isFile())
+          .map((entry) => [
+            join(entry.parentPath, entry.name),
+            readFileSync(join(entry.parentPath, entry.name), 'utf8'),
+          ]),
+      );
+
+      expect([...merged.keys()].sort()).toEqual([...original.keys()].sort());
+
+      for (const [path, source] of original)
+        expect(merged.get(path)?.replace(/note: '[^']*'/u, 'N')).toBe(source.replace(/note: '[^']*'/u, 'N'));
+    },
+    120_000,
+  );
 });
 
 describe('mergeSketch of a base part', () => {
