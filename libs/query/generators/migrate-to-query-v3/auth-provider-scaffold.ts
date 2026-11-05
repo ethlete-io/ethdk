@@ -296,7 +296,7 @@ export const renderAuthProviderBody = (config: V2BearerAuthConfig | undefined) =
   if (config.responseAdapter) {
     refreshEntries.push(
       '      extractTokens: (response) => {',
-      `        const { token, refreshToken } = (${config.responseAdapter})(response);`,
+      `        const { token, refreshToken } = (${config.responseAdapter})(response) as { token: string; refreshToken: string };`,
       '',
       '        return { accessToken: token, refreshToken };',
       '      },',

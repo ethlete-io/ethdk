@@ -66,7 +66,7 @@ export const getMe = apiClient.get({ route: '/me', secure: true });
     const client = readFile('client.ts');
 
     expect(client).toContain(
-      'const { token, refreshToken } = ((response) => ({ token: response.token, refreshToken: response.refresh }))(response);',
+      'const { token, refreshToken } = ((response) => ({ token: response.token, refreshToken: response.refresh }))(response) as { token: string; refreshToken: string };',
     );
     expect(client).toContain('return { accessToken: token, refreshToken };');
     expect(client).toContain('defaultRememberMe: true,');
