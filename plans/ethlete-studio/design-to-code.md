@@ -4658,6 +4658,12 @@ caught it: no gate runs the slow compare when only the design side of a part cha
 default): a design-only change to a part also runs the visible-change gate for that part, and a merge that adds a
 state the app cannot drive (missing trigger) fails and names the app row to build.
 
+455\. The grill session closed B377 in `STATUS.md`, but ADR 0192 still had `open: B377`. The pre-push check found it
+only at push time, and the builder fixed it in de53d8571. Why no tool caught it earlier: the check that matches ADR
+`open:` rows against `STATUS.md` runs at pre-push, not when a plan file is committed. Tool fix (B395, builder
+default): run that check at commit time for commits that touch `STATUS.md` or an ADR, and the doc-agent skill says to
+set `built: <sha>` in the same commit that closes a row.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
