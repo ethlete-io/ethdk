@@ -4734,14 +4734,28 @@ marked ready. Tool fix (builder default): a fill over a patterned parent is a re
 `elements-shell-main`, which sits on the same canvas. Process lesson: a sketch with a pixel diff is ready only after
 its shot is looked at.
 Built (builder): ca3f6804c, LOST-SURFACE skips a card over a patterned backdrop (an ancestor, or a sibling under the
-card centre through `elementsFromPoint`); the sketch is discarded (aa17e7815). Open: whether `sketch ready` refuses
-while a pixel diff has no viewed shot (next builder decides in B388).
+card centre through `elementsFromPoint`); the sketch is discarded (aa17e7815). Built (65ee4694c): `sketch ready` refuses with
+SHOT-NOT-VIEWED while a live variant draws a pixel diff and no shot of it was fetched since its last edit (views per
+checkout in `node_modules/.design-explore/viewed-shots/`, by `design shot --variants` or `/__design/shot` with sketch
+and variant). A look through Tom's :4402 server records nothing until it runs this build.
 
 465\. `sketch check` prints no `before` lines, so it does not show if the product part itself still has the problem
 the sketch should fix. For `elements-shell-main` and `components-comment-draft` no variant shows LOST-SURFACE, but
 whether the product aside still trips the rule after ca3f6804c is unknown until a full run. Why no tool caught it: the
 sketch check reports only the variants. Tool fix (builder default, open): the sketch check also checks the product
 part and prints its problems as `before` lines.
+Built (builder, 8d5c00594); verified on the foundations sketch, where the `before` lines showed all three product
+problems and the variant none.
+
+466\. The auto-merge diff counts sub-visible anti-alias noise as a picture change. `pages/system@check-fixes` drops
+a fill that looks the same (bbox 287x29 px, 0 pixels with a channel delta over 8), but it cannot auto-merge. Why no
+tool caught it: the diff has no tolerance, and no spec covers an anti-alias change on a rounded border. Tool fix
+(builder default): a pixel counts as changed only above a small channel tolerance (for example 8 of 255), with that
+spec.
+
+467\. The pre-commit spec run for 65ee4694c reported 1 failure in `embedded-actions.spec.ts`, but the commit passed.
+Why no tool caught it: the hook does not fail the commit on a failed spec (cause to confirm by the builder). Tool fix
+(builder default): a failed spec in the pre-commit run fails the commit.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
