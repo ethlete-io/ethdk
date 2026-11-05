@@ -126,7 +126,7 @@ Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61). Full list wi
 
 ## 9. Tom's answers on the v3 behaviour changes (through fifagg-frontend-c3, 2026-11-05)
 
-- **Cross-host cookie is a v3 gap (B387):** `withPersistentAuth` stores the cookie with a per-origin key, so apps on
+- **Cross-host cookie is a v3 gap (B387, built f0561a80e + 3bf4f45db, unpushed):** `withPersistentAuth` stores the cookie with a per-origin key, so apps on
   sibling hosts under one parent domain cannot share a login. v2 `cookieDomain` could. v3 must support it again; the
   SDK session proposes the design before it builds. The section 8 task for `cookieDomain` stays until then.
   Design proposal (ff, 2026-11-05): `withPersistentAuth` already has `cookie.domain` (default host-only); with
@@ -209,7 +209,7 @@ all five fifagg apps build on `chore/query-v3-migration`.
   the root component through a dynamic import; it sits in the same production gate as `provideQueryDevtools()`, so no
   template element is needed and nothing ships in production. The migrator removes `<et-query-devtools-lazy>` and the
   import, and adds the provider inside the existing gate. Docs show it as the default. Name and shape: ff.
-- **15. Legacy creators report every error to `ErrorHandler` (fifagg-frontend-3d):** v3 `http-request.ts:682` calls
+- **15. Legacy creators report every error to `ErrorHandler` (fifagg-frontend-3d, built f0561a80e, unpushed):** v3 `http-request.ts:682` calls
   `ngErrorHandler.handleError` unless `reportErrors === false`. `createLegacyQueryCreator`
   (`legacy/interop/legacy-query-creator.ts:272-280`) does not pass `reportErrors: false`, and the migrator does not add
   it. v2 never reported. About 73 fifagg E2E tests fail on "Console errors or 5xx" (401 on `POST /auth/login`, 404 on
