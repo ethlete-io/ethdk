@@ -64,7 +64,7 @@ const themeSwitch = async (): Promise<Drawn> => {
       );
       return {
         body: html`<div
-          class="flex gap-0.5 rounded-control-lg border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-0.5"
+          class="flex gap-0.5 rounded-control-lg border border-(--et-surface-border-solid) p-0.5"
           role="group"
           aria-label="${label}"
         >
