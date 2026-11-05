@@ -569,3 +569,20 @@ Verified: the component spec. Not verified: the look against a design part, beca
 - Flaky cases: Sketches "pan beyond every edge" and Large "a variant equal to Aktuell" passed in all 3 parallel runs.
 - cli vitest: no config change. Default (31 forks) 97 s, `--maxWorkers=16` 91 s; CPU about 50 % idle in both. The run is bound by `check-system.spec.ts` alone (89-95 s); splitting that file is the lever.
 - Not verified: a serial run of the new runner (only the B367b number as "before"), more than one run per worker count.
+
+## In progress: B388 (finding 449, ADR 0195)
+
+Builder ethlete-sdk-0d, 2026-11-05. Step 1: a full `design check --product studio` run, log in
+`/tmp/b388/full-check.log`. Step 2: group the render problems by code and part, and sort them into real defects and
+rule noise. Step 3: fix per group, one commit per group. Step 4: CI runs the full check again.
+
+Triage (opus subagent, from `/tmp/b388/full-check.log`, run 10:46 min, 798 findings): the count is doubled. Render
+issues are kept once per colour scheme (render-check.ts:982), so the real number is about 412. Slices, rule fixes first:
+(1) de-dup per scheme; (2) `edged()` in surface-nesting.ts:30 counts a one-side border as a card edge (133 LOST-SURFACE
+noise, title-bar root); (3) SKIP-SCOPE once per part+path, skips moved onto the clipped children (81); (4) COVERED
+exempts aria-hidden decoration and an open layer over its anchor, plus `pointer-events-none` on the comment-pin badge
+(34); (5) the CLI token and icon sheets drop their redundant fill (15); (6) small drawing edits (mg-shot fill,
+co-surface skip, inbox NESTED-SCROLL skip, sketches far-out pin, gutter COVERED skip, logo NESTED-SURFACE); (7) design
+call with Tom: raised surface for `aside.st-shell-side` and comment-draft (96, asked the grill session); (8) CONTROL-STATE
+in studio (3); (9) DROPPED-PROP (27) are missing app inputs and stay warnings. The SDK CONTROL-STATE hints print without
+a prefix.

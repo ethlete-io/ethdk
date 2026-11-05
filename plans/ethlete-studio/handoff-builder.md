@@ -1,3 +1,39 @@
+# Builder handoff (2026-11-05 ~16:30, builder ethlete-sdk-0d, B388 in progress)
+
+Grill/docs session: ethlete-sdk-ea. Nothing pushed this session. Plan section: build-ready.md "In progress: B388".
+
+## B388 done (all committed, specs bite, not pushed)
+
+- Rule fixes: 8134c8d50 (de-dup per scheme, 456), 7826ed3b9 (one-side border is no card), 9821804fb (SKIP-SCOPE once
+  per part), 6bd22437f (COVERED: aria-hidden + pointer-events-none, aria-modal), 53a355a56 (token/icon sheet fill),
+  c649a9d08 (SKIP-SCOPE ignores [inert]), 09953108c (sketch new/merge rebase outside imports, 459), f0d66e7bd + 9980d1092
+  (CLIPPED pan/scroll ring, scale, clip-margin, 460), 8ce03448c (DENIED-CLASS foundations copy, 461), 690029daa (shared
+  reachable-controls helper), 4cde1f8c4 (import round-trip spec), exemptions one source (commit after 4cde1f8c4),
+  c465c3a75 (sketch ready guard before swap, 458), d7fc506b1 (render worker restarts when a missing build appears, 462),
+  ca3f6804c (LOST-SURFACE: patterned backdrop incl. sibling under the card, 464), 9caf87997 (shot route 400 for a
+  sketch without variant, 463).
+- Drawings auto-merged: comment-pin badge, comment-draft role=dialog, inbox NESTED-SCROLL skip, canvas-frames,
+  pages-sketches (subject of 9bf563df5 is not accurate). pages-merge sketch withdrawn (aa17e7815); its CLIPPED skip
+  move from `.mg-shot` to `.mg-shot-page` is not redone - re-check in the full run.
+- Measured: full check 798 -> 190 after the first rule fixes (/tmp/b388/full-check-2.log). Not measured since.
+
+## Next
+
+1. Run the full `design check --product studio` in the background (build cli first; ~11 min, log /tmp/b388/full-check-3.log).
+   Tell the grill session whether LOST-SURFACE still fires on the PRODUCT `aside.st-shell-side` (shell-main) and on
+   comment-draft - it waits for that before it lists comment-draft, shell-main and foundations-colors for Tom.
+   Shots: Studio is dark-only; shell-main `raised` = clearly lighter panel, `edge` shifts text by 1px; comment-draft
+   `raised` recommended; foundations-colors no visible difference.
+2. Triage what is left of the full run; CONTROL-STATE (3, studio: shell bubble as own control part, title-bar notice
+   through SDK props) and the SDK CONTROL-STATE hints without a prefix (prefix them as HINT). DROPPED-PROP (27) stays a warning.
+3. Tool fix for 464's process lesson (builder call): `sketch ready` refuses while a variant has a pixel diff whose
+   shot nobody looked at - decide and build, or give it a STATUS row.
+4. CI: make the "Static design rules" step run the full check again with render rules fatal, DROPPED-PROP as warning
+   (6915b243e made it `--rules` only). Then as-built note in build-ready.md, full `nx test cli` + `yarn studio:e2e`,
+   push the batch, watch CI.
+5. Port backlog: comment-draft role=dialog in apps/ethlete-studio.
+6. Queue after B388: B391 -> B392 -> B393 -> B394 -> B395 -> B369.
+
 # Builder handoff (2026-11-05, builder ethlete-sdk-0d)
 
 Grill/docs session: ethlete-sdk-ea. SDK migration session: ethlete-sdk-ff (commits on next, does not push).
