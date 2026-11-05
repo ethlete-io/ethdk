@@ -163,6 +163,27 @@ describe('deniedClassesOf', { timeout: 30_000 }, () => {
   });
 });
 
+describe('a sketch on a foundations part', { timeout: 30_000 }, () => {
+  it('exempts the sketched copy like the part', () => {
+    const target = acme();
+
+    write(target, 'acme/foundations/palette/palette.ts', part('<div style="background: var(--accent)"></div>'));
+
+    const product = resolveAcme(target);
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'foundations', name: 'palette' },
+      variants: ['a'],
+    }) as Sketch;
+
+    const denied = openSketchProblemsOf(product).variants.flatMap(({ problems }) =>
+      problems.filter((problem) => problem.rule === 'DENIED-CLASS' && problem.file.startsWith(sketch.dir)),
+    );
+
+    expect(denied).toEqual([]);
+  });
+});
+
 describe('a denied class in the flows', () => {
   const heroSketch = (target: string) => {
     const sketch = createSketch({

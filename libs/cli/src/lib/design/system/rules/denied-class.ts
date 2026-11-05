@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { relative, resolve } from 'path';
+import { dirname, relative, resolve } from 'path';
 import postcss from 'postcss';
 import { SharedDirs } from '../imports';
 import { Problem } from '../problem';
@@ -52,8 +52,11 @@ const varsIn = (text: string) => [...text.matchAll(/(?:var\(\s*|-\()(--[\w-]+)/g
 
 const denialOf = (denials: Denial[], used: string) => denials.find(({ test }) => test.test(used));
 
+const isInside = (dir: string, file: string) => !relative(dir, file).startsWith('..');
+
 const isInFoundations = (product: ResolvedProduct, file: string) =>
-  !relative(resolve(product.dir, 'foundations'), file).startsWith('..');
+  isInside(resolve(product.dir, 'foundations'), file) ||
+  product.parts.some((part) => part.layer === 'foundations' && isInside(dirname(part.file), file));
 
 const partProblemsOf = (product: ResolvedProduct & SharedDirs, denials: Denial[]): Problem[] => {
   const files = (partClassesOf(product)?.files ?? []).map(({ file, source, classes }) => ({
