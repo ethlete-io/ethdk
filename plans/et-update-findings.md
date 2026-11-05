@@ -136,3 +136,6 @@ Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61). Full list wi
 - **Devtools always lazy (Tom, 2026-11-05, B385):** "ich denke auch wir sollten immer zu query devtools lazy migrieren".
   The v3 codemod rewrites the legacy `QueryDevtoolsComponent` to the `@ethlete/query-devtools/lazy` entry point, not to
   the eager one.
+- **V2 client loses its legacy panel (f29e3f679, open question to Tom):** the codemod rewrites every legacy
+  `QueryDevtoolsComponent` and `<et-query-devtools>` to the lazy shell. A client that stays on `V2QueryClient` after
+  the migration loses its panel; the docs tell the user to mount it by hand.

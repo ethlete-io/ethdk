@@ -4617,6 +4617,15 @@ re-run twice with a stable name (the same id Nx uses on the Mac). Why no tool ca
 awk on one sample line, not two runs with a real hyphenated id. Tool fix (B389, builder default): the builder skill
 says a CI step that renames or caches is run twice with real data, on each OS it has a branch for.
 
+451\. The `merge.spec.ts` flake (B373) has its cause: the check found the right TYPE-ERROR in `home.ts`, but tsc
+printed the path inside ANSI colour codes, so merge did not see the file as "outside this sketch" and gave the
+generic reason. Colour depends on the env of the test worker, so it failed only in the full `nx test cli` run (1 of
+2553). The builder fixes it in product code (no colour in captured tsc output, match without ANSI) with a spec that
+bites. Why no tool caught it: specs run tsc in a no-colour env when they run alone, and nothing asserts that captured
+tool output is plain text. Tool fix (B390, builder default): every captured child-process output in `libs/cli` goes
+through one helper that sets `NO_COLOR` and `--pretty false` and strips ANSI, with a spec that runs it under
+`FORCE_COLOR=1`.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
