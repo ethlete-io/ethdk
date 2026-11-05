@@ -4787,6 +4787,10 @@ CLI. Studio's half merge deleted `components/title-bar/shared/chrome.ts`; the CL
 may run an older CLI copy (not verified). Cause lead (not verified): in `merge.ts` the swap runs at line 293 and only a
 check failure restores (line 327); an exception between the swap and `recordMerged` (line 361) leaves the files
 swapped, with no `merged.json` entry and the sketch folder still there. Next: the Studio server log of 15:36-15:38Z.
+State (builder, paused for CI): the :4402 server runs the old CLI copy `tmp/studio-cli/9d788d831` (without c465c3a75
+and 09953108c). Its stderr goes to a pipe of the Tauri app, and `serve.ts` turns a throw into a 500 and logs nothing,
+so no server log exists. Second tool gap: a Studio server error leaves no trace. In `/tmp/b469` the old copy restored
+correctly on a failed check; a throw after the swap stays the lead, repro not done.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
