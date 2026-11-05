@@ -294,6 +294,8 @@ all five fifagg apps build on `chore/query-v3-migration`.
   return the identical JWT (whole-second `iat`, no `jti`); then no retry runs, no error surfaces, and the app's loader
   waits forever. Rare in production, but the silent hang is the defect. Fix (ff): a failed or same-token refresh
   surfaces the original 401 as an error; scenario with a same-token refresh. fifagg works around it in one e2e spec.
+  Not reproduced (ff): same token, refresh 500 and a delayed 401 all end with `error().code` 401 and loading false
+  (`auth-secure-query.scenario.spec.ts:90`). Asked fifagg for the build, the waiting loader, and legacy or native.
 - **Devtools mount (ff item 000):** part 1 built fc98d3dae (`navigator.webdriver` hides panel, lazy shell and pills;
   provider option `showInAutomation`), per Tom's item 20 decision. Part 2 open: a new entry point with a dynamic
   import plus a codemod for `<et-query-devtools-lazy>`; ff proposes the name `@ethlete/query-devtools/mount`. Open
