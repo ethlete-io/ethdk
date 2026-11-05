@@ -1,3 +1,26 @@
+# Builder handoff (2026-11-05 ~18:30, builder ethlete-sdk-0d, CI-green push for the release)
+
+Grill/docs session: ethlete-sdk-ea (restarted, resumes from handoff-doc-agent.md). Query session: ethlete-sdk-ff.
+
+## Done
+
+- Tom's order: CI green for a release. Pushed de53d8571..5337f6ab3: CI 42062197881 green. 5f105b30d builds the
+  pages/system build-ready footer (B288 partial: no agent badge, no Ausnahmen group, openEditSketch unhandled) and makes
+  `clickOpen` in compare-command.ts search overlay roots. Finding 470 = that cause.
+- 4694460df finding 471: tmux self-restart text in context-warning.py.
+- Pushed ..3fd1c625b: CI 42069094444 red from ff's fc98d3dae (devtools hidden under navigator.webdriver; export
+  without scenario). ff fixed forward 59c0e0745, pushed. Finding 472.
+- 469: stopped. Lead only: the :4402 server ran the old CLI copy tmp/studio-cli/9d788d831, stderr to the Tauri pipe,
+  serve.ts turns a throw into a 500 without a log. Scratch repo /tmp/b469 (old CLI restores on a failed check).
+
+## Next
+
+1. Watch CI 42073982842 (59c0e0745) and 42076042344 (9c687f280, Tom's PR #3168, contains everything). Fix red jobs.
+   Local next has unpushed commits and origin has 2 new: use `git pull --no-rebase` (never rebase), then push.
+2. Tool fix 472 (builder default): add query:export-coverage and core:export-coverage to the pre-push checks; run the
+   devtools e2e cases in pre-push when libs/query-devtools changes.
+3. Then 469 cause, 468 causes, as in the section below.
+
 # Builder handoff (2026-11-05 ~17:50, builder ethlete-sdk-0d, B388 in progress)
 
 Grill/docs session: ethlete-sdk-ea. Nothing pushed. Plan: build-ready.md "In progress: B388" (as-built notes at its end).
