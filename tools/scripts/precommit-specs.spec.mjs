@@ -129,6 +129,17 @@ test('adds the source-wide specs for any staged cli source', () => {
   assert.deepEqual(suitesForFiles(['libs/cli/package.json'], map)[0].files, ['libs/cli/package.json']);
 });
 
+test('selects the update specs that read a staged migrations.json or generators.json', () => {
+  const map = JSON.parse(readFileSync('libs/cli/related-map.json', 'utf8'));
+  const files = (file) => suitesForFiles([file], map)[0]?.files ?? [];
+
+  assert.ok(files('libs/query/migrations.json').includes('libs/cli/src/lib/update/query-migrations.spec.ts'));
+  assert.ok(
+    files('libs/query/generators/generators.json').includes('libs/cli/src/lib/update/query-migrations.spec.ts'),
+  );
+  assert.ok(files('libs/core/migrations.json').includes('libs/cli/src/lib/update/generator-requirements.spec.ts'));
+});
+
 test('treats plans, docs, markdown and changesets as docs-only', () => {
   assert.equal(isDocsOnly(['plans/a/b.md', 'apps/docs/cli/index.md', '.changeset/x.md', 'README.md']), true);
   assert.equal(isDocsOnly(['plans/a/b.md', 'libs/cli/src/a.ts']), false);

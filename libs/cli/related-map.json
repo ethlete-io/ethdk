@@ -16,5 +16,19 @@
     "libs/cli/src/lib/design/system/nested-scroll.ts",
     "libs/cli/src/lib/design/system/bespoke-controls.ts",
     "libs/cli/src/lib/design/system/action-lost.ts"
+  ],
+  "src/lib/update/generator-requirements.spec.ts": ["libs/*/migrations.json", "libs/*/generators/generators.json"],
+  "src/lib/update/query-migrations.spec.ts": ["libs/query/migrations.json", "libs/query/generators/generators.json"],
+  "src/lib/update/contentful-migrations.spec.ts": [
+    "libs/contentful/migrations.json",
+    "libs/contentful/generators/generators.json"
+  ],
+  "src/lib/update/components-migrations.spec.ts": [
+    "libs/components/migrations.json",
+    "libs/components/generators/generators.json"
+  ],
+  "src/lib/update/agent-rules-migrations.spec.ts": [
+    "libs/agent-rules/migrations.json",
+    "libs/agent-rules/generators/generators.json"
   ]
 }
