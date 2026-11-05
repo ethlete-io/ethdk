@@ -295,17 +295,27 @@ const inspectFrame = (options: {
   }
 
   const clips = (value) => value === 'hidden' || value === 'clip';
+  const isMoved = (style) => style.transform !== 'none' || (style.translate && style.translate !== 'none');
+  const isPanned = (style) => (style.translate && style.translate !== 'none') || style.transform.startsWith('matrix(1, 0, 0, 1,');
+  const scaledChildOf = (element) =>
+    [...element.children].find((child) => {
+      const style = getComputedStyle(child);
+      return isMoved(style) && !isPanned(style);
+    });
   const drawnSizeOf = (element) => {
-    if (!element.hasAttribute('data-et-embed-box')) return { width: element.scrollWidth, height: element.scrollHeight };
-    const rect = element.firstElementChild.getBoundingClientRect();
+    const scaled = element.hasAttribute('data-et-embed-box') ? element.firstElementChild : scaledChildOf(element);
+    if (!scaled) return { width: element.scrollWidth, height: element.scrollHeight };
+    const rect = scaled.getBoundingClientRect();
     return { width: Math.floor(rect.width), height: Math.floor(rect.height) };
   };
+  const clipMarginOf = (style, axis) => (style[axis] === 'clip' ? parseFloat((style.overflowClipMargin ?? '').split(' ').pop()) || 0 : 0);
+  const pans = (element, style) => /^grab/.test(style.cursor) || [...element.children].some((child) => isPanned(getComputedStyle(child)));
   for (const element of root.querySelectorAll('*')) {
     const style = getComputedStyle(element);
     const drawn = drawnSizeOf(element);
-    const cutX = clips(style.overflowX) && drawn.width > element.clientWidth;
-    const cutY = clips(style.overflowY) && drawn.height > element.clientHeight;
-    const cutsOnPurpose = style.textOverflow === 'ellipsis' || style.webkitLineClamp !== 'none';
+    const cutX = clips(style.overflowX) && drawn.width > element.clientWidth + clipMarginOf(style, 'overflowX');
+    const cutY = clips(style.overflowY) && drawn.height > element.clientHeight + clipMarginOf(style, 'overflowY');
+    const cutsOnPurpose = style.textOverflow === 'ellipsis' || style.webkitLineClamp !== 'none' || pans(element, style);
     if ((cutX || cutY) && !cutsOnPurpose) report('CLIPPED', element, 'content ' + drawn.width + 'x' + drawn.height + ' in ' + element.clientWidth + 'x' + element.clientHeight);
   }
 ${NESTED_SCROLL_STATEMENTS}
@@ -324,11 +334,13 @@ ${NESTED_SCROLL_STATEMENTS}
       const rect = at.getBoundingClientRect();
       const left = rect.left + at.clientLeft;
       const top = rect.top + at.clientTop;
+      const marginX = clipMarginOf(style, 'overflowX');
+      const marginY = clipMarginOf(style, 'overflowY');
       const box = {
-        left: style.overflowX === 'visible' ? -Infinity : left,
-        right: style.overflowX === 'visible' ? Infinity : left + at.clientWidth,
-        top: style.overflowY === 'visible' ? -Infinity : top,
-        bottom: style.overflowY === 'visible' ? Infinity : top + at.clientHeight,
+        left: style.overflowX === 'visible' ? -Infinity : left - marginX,
+        right: style.overflowX === 'visible' ? Infinity : left + at.clientWidth + marginX,
+        top: style.overflowY === 'visible' ? -Infinity : top - marginY,
+        bottom: style.overflowY === 'visible' ? Infinity : top + at.clientHeight + marginY,
       };
       return { name: pathOf(at), box, style, element: at };
     }
@@ -337,7 +349,7 @@ ${NESTED_SCROLL_STATEMENTS}
   const movedBetween = (from, clipper) => {
     for (let at = from; at && at !== clipper; at = at.parentElement) {
       const style = getComputedStyle(at);
-      if (style.transform !== 'none' || (style.translate && style.translate !== 'none')) return true;
+      if (isMoved(style)) return true;
     }
     return false;
   };

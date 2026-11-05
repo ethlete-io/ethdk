@@ -592,6 +592,51 @@ describe('renderIssuesOf', () => {
     ]);
   }, 120_000);
 
+  it('does not flag content inside the clip margin, a grab-to-pan box or a box whose content is moved by a transform', async (context) => {
+    const box = (style: string, inner: string) => `<div style="width: 100px; height: 40px; ${style}">${inner}</div>`;
+    const ring = '<div style="width: 100px; height: 40px; outline: 2px solid currentColor; outline-offset: 2px"></div>';
+    const wide = '<div style="width: 300px; height: 40px"></div>';
+    const target = checkout({
+      'components/clip-margin': {
+        body: box('overflow: clip; overflow-clip-margin: 8px', ring + '<div style="width: 104px"></div>'),
+      },
+      'components/clip-margin-short': { body: box('overflow: clip; overflow-clip-margin: 2px', wide) },
+      'components/grab-pan': { body: box('overflow: hidden; cursor: grab', wide) },
+      'components/translated': {
+        body: box('overflow: hidden', '<div style="width: 300px; height: 40px; translate: -60px 0"></div>'),
+      },
+      'components/scaled-cut': {
+        body: box(
+          'overflow: hidden',
+          '<div style="width: 300px; height: 120px; transform: scale(0.5); transform-origin: 0 0"></div>',
+        ),
+      },
+      'components/scaled': {
+        body: box(
+          'overflow: hidden',
+          '<div style="width: 300px; height: 120px; transform: scale(0.33); transform-origin: 0 0"></div>',
+        ),
+      },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(
+      rendered.issues
+        .filter((issue) => issue.rule === 'CLIPPED')
+        .map((issue) => `${issue.part}: ${issue.path} - ${issue.detail.split(';')[0]}`),
+    ).toEqual([
+      'components/clip-margin-short: div[data-et-part=components/clip-margin-short] - content 300x40 in 100x40',
+      'components/scaled-cut: div[data-et-part=components/scaled-cut] - content 150x60 in 100x40',
+    ]);
+  }, 120_000);
+
   it('flags an SDK component whose styles rode in a slot the picture empties', async (context) => {
     const hidden =
       '.et-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }';
