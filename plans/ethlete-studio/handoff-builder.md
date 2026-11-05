@@ -1,3 +1,37 @@
+# Builder handoff (2026-11-05 ~17:50, builder ethlete-sdk-0d, B388 in progress)
+
+Grill/docs session: ethlete-sdk-ea. Nothing pushed. Plan: build-ready.md "In progress: B388" (as-built notes at its end).
+Findings 468 and 469 are in design-to-code.md (grill commits 55f9d25ec, b2d24296a).
+
+## Done since the last handoff (committed)
+
+- 2e5d9fa36 finding 466: merge pixel diff tolerance 8/255 (`looksTheSame` in merge-compare.ts).
+- 9e1a7b94a finding 467: cause = timeout under load, re-run alone passed (as built); hook now prints a "passed when
+  re-run alone" line.
+- baa5b8810: a refused auto-merge in `sketch ready` writes sketch.json back (no stray `pick`).
+- 48fcbae1b + 066f1514b: Tom's Studio picks (comment-draft raised, title-bar@notice-shape no-pill) merged with the CLI.
+  Studio had left both half done (files swapped, no merged.json, sketch folder kept); saved diff
+  /tmp/b388/tom-merge/before.diff. Studio's half merge deleted title-bar/shared/chrome.ts, the CLI merge kept it.
+
+## Next
+
+1. Finding 469 cause (grill wants it first): why did Studio's merge stop half done? merge.ts swaps at ~line 293 and
+   restores only on a check failure (~327); an exception before recordMerged (~361) leaves it half done. Check the
+   :4402 server log (tmux studio-serve) for 15:36-15:38Z and which CLI copy that server runs. Fix: restore on any
+   throw after the swap; spec with two merges in a row. Report cause + tool fix to the grill session.
+2. Finding 468 causes, read-only, from /tmp/finding-468 (copies + full.diff). Do not change go/ready/pictures.json:
+   Tom decides. Leads: go.json entries "at" 11:24:48Z = this builder's `yarn studio:e2e`/`nx test cli` at 11:21-11:25Z
+   (a test writing the real go.json?); ready.json canvas-viewport "at" 14:53:59Z, no agent CLI call then (Studio
+   server/app?); foundations pick 14:58:51Z = confirmed: `sketch merge --variant a` wrote the pick, the dirty guard
+   refused, the pick stayed (same class as baa5b8810, other path: fix it too); pictures.json not checked.
+   Note: Studio's pick route (studio-api.ts sketchDecisionAnswer) writes a pick without `by`.
+3. Tool fix 468 (builder default): pick or ready mark only with `by` from a human action; a write without it is
+   refused; spec.
+4. Then: `sketch ready pages/system@check-fixes` again (466 says no visible change; it was blocked by the dirty
+   ready.json) and the foundations merge, once Tom decided about the four files.
+5. Old queue: CI "Static design rules" full check, the dynamic-import RENDER flake, shell rail bubble control part,
+   B391 -> B392 -> B393 -> B394 -> B395 -> B369. Full `nx test cli` + `yarn studio:e2e` once before the batch push.
+
 # Builder handoff (2026-11-05 ~17:40, builder ethlete-sdk-0d, B388 in progress)
 
 Grill/docs session: ethlete-sdk-ea. Nothing pushed. Plan: build-ready.md "In progress: B388" (as-built notes at its end).
