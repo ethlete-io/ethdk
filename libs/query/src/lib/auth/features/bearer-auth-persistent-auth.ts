@@ -1,4 +1,4 @@
-import { Signal, effect, runInInjectionContext, signal } from '@angular/core';
+import { Signal, effect, runInInjectionContext, signal, untracked } from '@angular/core';
 import { deleteCookie as coreDeleteCookie, getCookie, injectRoute, setCookie } from '@ethlete/core';
 import { RequestArgs } from '../../http';
 import {
@@ -242,6 +242,16 @@ const buildPersistentAuthFeature = <
 
   adoptOtherScopeCookie();
 
+  let lastHeldToken: string | null = null;
+  let retriedState: ReturnType<typeof executionState> = null;
+
+  const readFresherCookieToken = () => {
+    const storedToken = getCookie(cookieName);
+    const revealedToken = storedToken ? deobfuscateToken(storedToken) : null;
+
+    return revealedToken && revealedToken !== lastHeldToken ? revealedToken : null;
+  };
+
   effect(() => {
     const token = refreshToken();
     const rememberMe = rememberMeSignal();
@@ -257,6 +267,7 @@ const buildPersistentAuthFeature = <
     // that actually end a session instead, below.
     if (!token) return;
 
+    lastHeldToken = token;
     removeOtherScopeCookies();
     writeCookie(obfuscateToken(token), cookieExpiry(rememberMe));
   });
@@ -264,7 +275,16 @@ const buildPersistentAuthFeature = <
   effect(() => {
     const endCause = context.sessionEndCause();
 
-    if (endCause && !context.isTabLocalSession()) removeCookie();
+    if (!endCause || context.isTabLocalSession()) return;
+
+    if (endCause === 'expired' && readFresherCookieToken()) {
+      retriedState = untracked(executionState);
+      exchangeCookie();
+
+      return;
+    }
+
+    removeCookie();
   });
 
   effect(() => {
@@ -279,7 +299,15 @@ const buildPersistentAuthFeature = <
       (state.type === 'tokenRefresh' || state.type === 'autoLogin') &&
       (state.error.code === 401 || state.error.code === 403);
 
-    if (wasRejected && !context.isTabLocalSession()) removeCookie();
+    if (!wasRejected || context.isTabLocalSession() || state === retriedState) return;
+
+    if (readFresherCookieToken()) {
+      exchangeCookie();
+
+      return;
+    }
+
+    removeCookie();
   });
 
   const autoLoginBuilder = context.queryBuilders.find((builder) => builder.key === config.autoLogin.queryKey);
@@ -301,6 +329,8 @@ const buildPersistentAuthFeature = <
     const revealedToken = deobfuscateToken(storedToken);
 
     if (!revealedToken) return;
+
+    lastHeldToken = revealedToken;
 
     const args = buildAutoLoginArgs(revealedToken);
 

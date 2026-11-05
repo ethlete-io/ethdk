@@ -759,6 +759,53 @@ describe('withPersistentAuth', () => {
     tab.destroy();
   });
 
+  it('a refresh the server rejects retries once with the token a sibling host wrote to the shared cookie', async () => {
+    const s = scenario();
+    const valid = new Set<string>();
+    const issue = () => {
+      const refreshToken = mintToken({ expiresInMs: 60 * 60 * 1000 });
+      valid.add(refreshToken);
+
+      return { accessToken: mintToken({ expiresInMs: 20000 }), refreshToken };
+    };
+
+    s.api.on('POST', '/auth/login', () => ({ body: issue() }));
+    s.api.on('POST', '/auth/refresh', ({ body }) => {
+      const token = (body as TokenArgs['body']).token ?? '';
+
+      if (!valid.delete(token)) return { status: 401, body: { message: 'spent token' } };
+
+      return { body: issue() };
+    });
+
+    const hostB = boot(s, { features: [persistentAuth()] });
+    await login(s, hostB);
+
+    const hostA = boot(s, { features: [persistentAuth()] });
+    await s.settle();
+    s.flush();
+    await s.settle();
+
+    expect(hostA.auth.sessionStatus()).toBe('authenticated');
+    hostA.destroy();
+
+    const tokenHostBHolds = hostB.auth.refreshToken();
+
+    await s.settle(10001);
+    s.tick(1);
+    await s.settle();
+
+    s.expectError(is401);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(3);
+    expect(hostB.auth.sessionEndCause()).toBeNull();
+    expect(hostB.auth.sessionStatus()).toBe('authenticated');
+    expect(hostB.auth.refreshToken()).not.toBe(tokenHostBHolds);
+    expect(hasCookie()).toBe(true);
+
+    hostB.destroy();
+  });
+
   it('writes a host-only cookie with a 30 day lifetime, sameSite lax, and an obfuscated value', async () => {
     const s = scenario();
 
