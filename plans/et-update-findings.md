@@ -133,3 +133,6 @@ Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61). Full list wi
   (`libs/query/src/lib/auth/bearer-auth-query-builders.ts:102`, `:293`) has no stated reason. The docs name the reason,
   and the generator's scaffold writes `maxAttempts` explicitly so the app sees it.
 - **Secure queries wait for a token:** accepted as an improvement. No finding.
+- **Devtools always lazy (Tom, 2026-11-05, B385):** "ich denke auch wir sollten immer zu query devtools lazy migrieren".
+  The v3 codemod rewrites the legacy `QueryDevtoolsComponent` to the `@ethlete/query-devtools/lazy` entry point, not to
+  the eager one.
