@@ -72,7 +72,7 @@ runs:
         [ -n "${machine_id:-}" ] || { echo "::warning::no machine id on $RUNNER_OS, the restored Nx database stays unused"; exit 0; }
         for file in .nx/workspace-data/*.db .nx/workspace-data/*.db-wal .nx/workspace-data/*.db-shm; do
           [ -e "$file" ] || continue
-          name=${file##*/}
-          target=".nx/workspace-data/${machine_id}-${name#*-}"
+          [[ "${file##*/}" =~ (-v[0-9]+\.db(-wal|-shm)?)$ ]] || continue
+          target=".nx/workspace-data/${machine_id}${BASH_REMATCH[1]}"
           [ "$file" = "$target" ] || mv -- "$file" "$target"
         done
