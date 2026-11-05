@@ -4638,6 +4638,16 @@ no tool caught it: no spec compares a stored picture height with the live height
 the starving order as expected. Tool fix (B391, builder default): fill the live-frame cap by distance to the view, a
 spec that compares picture and live height, and a check of the fold-equal path under load.
 
+453\. CI 42016914765: 5 scheduler cases in the component behavior tests time out or fail (drag, long-press drag, tap
+opens the surface, no resize handles). Lead, not verified: the tooltip revert 40a92b60b put the scheduler back to the
+native `title`, and the cases may depend on the tooltip markup. Cause and lesson: open until the builder reports.
+
+454\. CI 42016914765, Studio rules: the `--slow` step finds that the direct-edit state of `pages/system` has no
+"Gründe" trigger. Cause: B372 (8f059ae72) replaced the sample input `exceptions` with `exceptionCount`, so the harness
+page lost the list. Why no tool caught it: B372 ran `--rules` and the full check before the push, but not `--slow`,
+and the pre-push gate runs only `--rules`. Tool fix (B393, builder default): the design-rules pre-push gate and the
+slice-end check also run the `--slow` visible-change gate for the parts the slice touched.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
