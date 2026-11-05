@@ -124,3 +124,13 @@ Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61). Full list wi
 - **Docs (`apps/docs/query/migrating-from-v2.md`):** name two behaviour changes: proactive refresh retries up to 8 times
   with backoff and ends the session only on a definite failure (v2 dropped tokens and cookie on any failure); secure
   queries wait for a token instead of going out without one (check what the guide already says).
+
+## 9. Tom's answers on the v3 behaviour changes (through fifagg-frontend-c3, 2026-11-05)
+
+- **Cross-host cookie is a v3 gap (B387):** `withPersistentAuth` stores the cookie with a per-origin key, so apps on
+  sibling hosts under one parent domain cannot share a login. v2 `cookieDomain` could. v3 must support it again; the
+  SDK session proposes the design before it builds. The section 8 task for `cookieDomain` stays until then.
+- **Refresh `maxAttempts` 8 (B385):** v3's retry is right, but the default 8
+  (`libs/query/src/lib/auth/bearer-auth-query-builders.ts:102`, `:293`) has no stated reason. The docs name the reason,
+  and the generator's scaffold writes `maxAttempts` explicitly so the app sees it.
+- **Secure queries wait for a token:** accepted as an improvement. No finding.
