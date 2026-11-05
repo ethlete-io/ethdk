@@ -85,7 +85,7 @@ Reported on 2026-10-30 by the session `fifagg-frontend-a5`, with `@ethlete/cli` 
 ## 7. `migrate-to-query-v3` leaves 141 TS errors in fifagg - open (B385)
 
 Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61, 462 files, exit 0; all 5 apps fail to build). Log:
-`fifagg-frontend/.claude/handoffs/query-v3/build.clean.log`, branch `chore/query-v3-migration`. Not triaged by fifagg.
+`/home/tom/dev/fifagg/fifagg-frontend/.claude/handoffs/query-v3/build.clean.log`, branch `chore/query-v3-migration`. Not triaged by fifagg.
 
 - **Auth wiring:** call sites of `QueryClientRef.setAuthProvider` (12), `clearAuthProvider` (8) and `authProvider$` (8)
   stay as they are (fifagg `libs/core/src/lib/auth/auth.ts`, `libs/store/src/lib/interceptors/jwt.interceptor.ts`, which
@@ -105,7 +105,7 @@ Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61, 462 files, ex
 ## 8. More `migrate-to-query-v3` gaps from fifagg - open (B385)
 
 Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61). Full list with file:line:
-`fifagg-frontend/.claude/handoffs/query-v3/findings.md` (9 items; 1, 5 and 8 repeat section 7).
+`/home/tom/dev/fifagg/fifagg-frontend/.claude/handoffs/query-v3/findings.md` (9 items; 1, 5 and 8 repeat section 7).
 
 - **Token mapping:** the scaffold's `extractTokens` returns `{ token, refreshToken }`; it must map the v2
   `responseAdapter` to `{ accessToken, refreshToken }`. `buildArgs` reads `token.refreshToken` on a string.
