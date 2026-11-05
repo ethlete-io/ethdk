@@ -45,7 +45,7 @@ export class DemoComponent {
     expect(result).toContain("import { Injector, inject } from '@angular/core';");
     expect(result).toContain('private injector = inject(Injector);');
     expect(result).toContain('injector: this.injector');
-    expect(result).toContain('config: { destroyOnResponse: true }');
+    expect(result).not.toContain('destroyOnResponse');
   });
 
   it('should migrate a prepare call in an anonymous default-exported class', async () => {
@@ -310,6 +310,90 @@ export class DemoComponent {
     });
   });
 
+  describe('destroyOnResponse for a query kept in a variable', () => {
+    const migrateMethodBody = async (body: string) => {
+      tree.write(
+        'component.ts',
+        `
+import { createLegacyQueryCreator } from '@ethlete/query';
+
+const getUsers = {} as never;
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
+
+export class DemoComponent {
+  query = null as unknown;
+  queries = [] as unknown[];
+
+  load() {
+    ${body}
+  }
+}
+        `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      return readFile('component.ts');
+    };
+
+    it('adds it to a local variable executed once and never used otherwise', async () => {
+      const result = await migrateMethodBody(
+        'const query = legacyGetUsers.prepare({ id: 1 });\n    query.onSuccess(() => 1);\n    query.execute();',
+      );
+
+      expect(result).toContain('destroyOnResponse: true');
+    });
+
+    it('adds it to a local variable that holds the executed chain', async () => {
+      const result = await migrateMethodBody('const query = legacyGetUsers.prepare({ id: 1 }).execute();');
+
+      expect(result).toContain('destroyOnResponse: true');
+    });
+
+    it.each([
+      [
+        'a variable executed twice',
+        'const query = legacyGetUsers.prepare({ id: 1 });\n    query.execute();\n    query.execute();',
+      ],
+      [
+        'a variable returned',
+        'const query = legacyGetUsers.prepare({ id: 1 });\n    query.execute();\n    return query;',
+      ],
+      [
+        'a variable stored on the class',
+        'const query = legacyGetUsers.prepare({ id: 1 });\n    this.query = query;\n    query.execute();',
+      ],
+      [
+        'a variable pushed into a container',
+        'const query = legacyGetUsers.prepare({ id: 1 });\n    this.queries.push(query);',
+      ],
+      ['a returned prepare call', 'return legacyGetUsers.prepare({ id: 1 });'],
+      ['a prepare call assigned to a property', 'this.query = legacyGetUsers.prepare({ id: 1 });'],
+    ])('does not add it to %s', async (_label, body) => {
+      expect(await migrateMethodBody(body)).not.toContain('destroyOnResponse');
+    });
+
+    it('does not add it to a class property', async () => {
+      tree.write(
+        'component.ts',
+        `
+import { createLegacyQueryCreator } from '@ethlete/query';
+
+const getUsers = {} as never;
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
+
+export class DemoComponent {
+  users = legacyGetUsers.prepare({ id: 1 }).execute();
+}
+        `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      expect(readFile('component.ts')).not.toContain('destroyOnResponse');
+    });
+  });
+
   it('does not add destroyOnResponse to a query a later method polls through this', async () => {
     tree.write(
       'component.ts',
@@ -417,7 +501,7 @@ export class DemoComponent {
 
     expect(result).toContain('injector: this.myInjector');
     expect(result).not.toContain('private injector');
-    expect(result).toContain('config: {\n    cacheAdapter,\n    x: 1,\n    destroyOnResponse: true\n  }');
+    expect(result).toContain('config: { cacheAdapter, x: 1 }');
   });
 
   it('treats getters and setters as methods', async () => {
@@ -498,15 +582,11 @@ export class DemoComponent {
     };
 
     it('spreads an argument that is not an object literal', async () => {
-      expect(await migrateArgument('args')).toContain(
-        'legacyGetUsers.prepare({ ...args, injector: this.injector, config: { destroyOnResponse: true } })',
-      );
+      expect(await migrateArgument('args')).toContain('legacyGetUsers.prepare({ ...args, injector: this.injector })');
     });
 
     it('keeps a spread and the properties next to it', async () => {
-      expect(await migrateArgument('{ ...base, id }')).toContain(
-        '{\n  ...base,\n  id,\n  injector: this.injector,\n  config: { destroyOnResponse: true }\n}',
-      );
+      expect(await migrateArgument('{ ...base, id }')).toContain('{ ...base, id, injector: this.injector }');
     });
 
     it('keeps a config that is not an object literal as it is', async () => {
@@ -608,7 +688,7 @@ export class DemoComponent {
 
     expect(result).toContain('users = legacyGetUsers.prepare({ id: 1 });');
     expect(result).toContain('this.form.prepare({ id: 2 });');
-    expect(result).toContain('id: 3,\n  injector: this.injector');
+    expect(result).toContain('legacyGetUsers.prepare({ id: 3, injector: this.injector })');
   });
 
   it('asks for a manual review of a call at module level', async () => {

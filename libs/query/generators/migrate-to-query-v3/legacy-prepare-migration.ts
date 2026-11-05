@@ -885,6 +885,7 @@ const transformSinglePrepareCall = (
     queryVariableName,
     pollingInfo,
     isDiscardedPrepareCall(callNode),
+    isOneShotLocalVariable(callNode),
   );
 
   if (existingConfig && ts.isObjectLiteralExpression(existingConfig.initializer)) {
@@ -1209,16 +1210,82 @@ const isDiscardedPrepareCall = (callNode: ts.CallExpression) => {
   return false;
 };
 
+const ONE_SHOT_QUERY_MEMBERS: readonly string[] = ['execute', 'onSuccess', 'onFailure'];
+
+const isOneShotLocalVariable = (callNode: ts.CallExpression) => {
+  let chainEnd: ts.Node = callNode;
+  let executeCalls = 0;
+
+  while (chainEnd.parent) {
+    const parent: ts.Node = chainEnd.parent;
+
+    if (ts.isPropertyAccessExpression(parent) && parent.expression === chainEnd) {
+      if (!ONE_SHOT_QUERY_MEMBERS.includes(parent.name.text)) return false;
+      if (parent.name.text === 'execute') executeCalls++;
+
+      chainEnd = parent;
+      continue;
+    }
+
+    if (ts.isCallExpression(parent) && parent.expression === chainEnd) {
+      chainEnd = parent;
+      continue;
+    }
+
+    break;
+  }
+
+  const declaration = chainEnd.parent;
+
+  if (
+    !declaration ||
+    !ts.isVariableDeclaration(declaration) ||
+    declaration.initializer !== chainEnd ||
+    !ts.isIdentifier(declaration.name)
+  ) {
+    return false;
+  }
+
+  const scope = declaration.parent.parent.parent;
+
+  if (!ts.isVariableStatement(declaration.parent.parent) || !ts.isBlock(scope)) return false;
+
+  const variableName = declaration.name.text;
+  let isOneShot = executeCalls <= 1;
+
+  const visit = (node: ts.Node) => {
+    if (!isOneShot) return;
+
+    if (ts.isIdentifier(node) && node.text === variableName && node !== declaration.name) {
+      const parent = node.parent;
+
+      if (
+        ts.isPropertyAccessExpression(parent) &&
+        parent.expression === node &&
+        ONE_SHOT_QUERY_MEMBERS.includes(parent.name.text)
+      ) {
+        if (parent.name.text === 'execute') executeCalls++;
+        if (executeCalls > 1) isOneShot = false;
+      } else if (!(ts.isPropertyAccessExpression(parent) && parent.name === node)) {
+        isOneShot = false;
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(scope);
+
+  return isOneShot;
+};
+
 const shouldAddDestroyOnResponse = (
   queryVariableName: string | undefined,
   pollingInfo: Map<string, QueryPollingInfo>,
   isDiscarded: boolean,
+  isOneShotLocal: boolean,
 ) => {
-  if (!queryVariableName) {
-    // A discarded query is the one case where nothing else can clean it up: no variable for a container
-    // to hold, no caller to destroy it. That is exactly what `destroyOnResponse` is for.
-    return isDiscarded;
-  }
+  if (queryVariableName && pollingInfo.get(queryVariableName)?.hasPolling) return false;
 
-  return !pollingInfo.get(queryVariableName)?.hasPolling;
+  return isDiscarded || isOneShotLocal;
 };
