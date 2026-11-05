@@ -4757,6 +4757,13 @@ spec.
 Why no tool caught it: the hook does not fail the commit on a failed spec (cause to confirm by the builder). Tool fix
 (builder default): a failed spec in the pre-commit run fails the commit.
 
+468\. Decision files changed with no human decision. Uncommitted: a ready mark for `components/canvas-viewport` in
+`ready.json` (15:54), a `decision: pick a` with no `by` in the sketch `foundations-colors.foundations-check-fixes`
+(14:58Z), hash refreshes in `go.json` (12:24) and `pictures.json` (15:44). Tom: "weder noch" - he marked nothing
+ready and picked nothing; he pressed go once by mistake much earlier. No agent says it wrote them. Why no tool caught
+it: open - the builder finds the writer of each file. Tool fix (builder default once the cause is known): only a
+human action writes a pick or a ready mark, each carries `by`, and a tool write without `by` is refused.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
