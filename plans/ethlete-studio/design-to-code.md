@@ -3429,6 +3429,15 @@ keeps the action visible; (3) a folded unchanged variant never hides the merge o
 all-equal pictures either merges itself or shows the action plus the reason. The look of (3) goes to Tom as a sketch
 with variants.
 
+476\. The "Aktuell" column of a sketch (`foundations/colors@foundations-check-fixes`, `pages/system@check-fixes`) still
+draws every state while the variant rows fold their unchanged states. Tom (2026-11-05): "in aktuell sollten eig dann
+auch nur die screens zu sehen sein die durch varianten änderungen bekämen?". ADR 0132 already decided it (only the
+states a round changes, the rest folds behind a count), so this is a defect, not a question. Why no tool caught it:
+the fold spec checks the variant rows only; nothing asserts that `Aktuell` and the variant rows draw the same state
+set. Tool fix: one shared function lists the shown states for `Aktuell` and every variant row; a sketch whose states
+are all unchanged shows only the question, the count and the action; spec: same state set per column, also for the
+all-unchanged case.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
