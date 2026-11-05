@@ -1,3 +1,18 @@
+# Builder handoff (2026-11-05, builder ethlete-sdk-0d)
+
+Grill/docs session: ethlete-sdk-ea. SDK migration session: ethlete-sdk-ff (commits on next, does not push).
+
+## Done this session
+
+- CI run 41924354824 fixes: f30bb3b81 + c8d05a4a0 (machine id per OS; tested twice on ethlete-mac), b770d4222 (motion-shot fixture), 4de41ac2e + 6915b243e (Studio rules builds cli,components and runs `design check --rules`, ADR 0195).
+- 40a92b60b revert of the SDK tooltip swap (ADR 0194). B372 8f059ae72. B373 9d788d831. B377 221073493 (not pushed).
+- Pushed 5524606cf..8fe0309a0. CI run 42016914765: Component behavior tests shards 2/3 and 3/3 failed; logs only after the run ends (`gh run view --job <id> --log-failed`). Watch log: /tmp/b372/ci-watch.log.
+
+## Next
+
+1. Diagnose the behavior-test failures of 42016914765 (suspect the tooltip revert 40a92b60b or c84605c22 revert; check whether apps/storybook-e2e cases expect the SDK tooltip). Fix, push with 221073493, report to the grill session.
+2. Queue: B388 -> B391 -> B392 -> B369 -> rest per STATUS.md order line.
+
 # Builder handoff (moved from .claude/handoffs, 2026-11-04 evening)
 
 Uncommitted work (B321 stacking fix, verify-webkit-studio.*, verify-studio-headless.mjs refactor, B323 code notice) is on branch `wip/b321-stacking-fix`, one commit on top of next. Do not merge it as is: split it into the slices below.
