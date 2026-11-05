@@ -279,3 +279,32 @@ test('finds the libs whose dependency fields changed between two revisions', () 
   const head = commit('change');
   assert.deepEqual(libsWithChangedDependencies(repo, base, head), ['a']);
 });
+
+test('every gate vitest run gets its own empty module cache path', () => {
+  const repo = repoWithValueSpec();
+  const shim = mkdtempSync(join(tmpdir(), 'precommit-npx-'));
+  repos.push(shim);
+  const log = join(shim, 'calls.log');
+  const realNpx = sh(repo, 'which', ['npx']).stdout.trim();
+  writeFileSync(
+    join(shim, 'npx'),
+    `#!/bin/sh\nif [ "$1" = vitest ]; then\n  while [ $# -gt 0 ]; do\n    if [ "$1" = --fsModuleCachePath ]; then echo "$2 $(ls -A "$2" | wc -l)" >> "${log}"; fi\n    shift\n  done\n  echo "Tests  1 passed (1)"\n  exit 0\nfi\nexec "${realNpx}" "$@"\n`,
+    { mode: 0o755 },
+  );
+  const staged = 'export const value = 2 - 1;\n';
+  write(repo, 'libs/cli/src/value.ts', staged);
+  assert.equal(sh(repo, 'git', ['add', 'libs/cli/src/value.ts']).status, 0);
+  const hook = spawnSync('sh', ['.husky/pre-commit'], {
+    cwd: repo,
+    env: { ...env, PATH: `${shim}:${env.PATH}` },
+    encoding: 'utf8',
+  });
+  assert.equal(hook.status, 0, hook.stdout + hook.stderr);
+  const calls = readFileSync(log, 'utf8').trim().split('\n');
+  assert.ok(calls.length >= 1, 'the gate passed no --fsModuleCachePath');
+  assert.ok(
+    calls.every((call) => call.endsWith(' 0')),
+    `a cache path was not empty: ${calls}`,
+  );
+  assert.equal(new Set(calls.map((call) => call.split(' ')[0])).size, calls.length);
+});

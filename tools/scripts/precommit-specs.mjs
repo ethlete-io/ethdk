@@ -81,16 +81,21 @@ export const filesExpectingSpecs = (root, files) =>
   );
 
 const runVitest = (cwd, args) => {
-  const result = spawnSync('npx', ['vitest', ...args], {
-    cwd,
-    env: withoutGitEnv(),
-    encoding: 'utf8',
-    maxBuffer: 256 * 1024 * 1024,
-    timeout: Number(process.env.PRECOMMIT_SPECS_TIMEOUT_MS ?? 20 * 60 * 1000),
-  });
-  process.stdout.write(result.stdout ?? '');
-  process.stderr.write(result.stderr ?? '');
-  return { status: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` };
+  const cache = mkdtempSync(join(tmpdir(), 'precommit-vitest-cache-'));
+  try {
+    const result = spawnSync('npx', ['vitest', ...args, '--fsModuleCachePath', cache], {
+      cwd,
+      env: withoutGitEnv(),
+      encoding: 'utf8',
+      maxBuffer: 256 * 1024 * 1024,
+      timeout: Number(process.env.PRECOMMIT_SPECS_TIMEOUT_MS ?? 20 * 60 * 1000),
+    });
+    process.stdout.write(result.stdout ?? '');
+    process.stderr.write(result.stderr ?? '');
+    return { status: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` };
+  } finally {
+    rmSync(cache, { recursive: true, force: true });
+  }
 };
 
 /** The spec globs `yarn test:tools` passes to `node --test`, read from package.json at `rev`. */
