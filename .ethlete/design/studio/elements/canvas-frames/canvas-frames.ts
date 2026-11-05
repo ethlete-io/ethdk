@@ -126,9 +126,7 @@ export const canvasView = async (
     ${chip.body}`;
   const classes = `st-canvas relative h-full min-h-120 overflow-hidden ${extra}`;
 
-  return focusable
-    ? canvasViewport({ class: classes, attrs: 'data-et-skip="CLIPPED"', body })
-    : html`<div class="${classes}" data-et-skip="CLIPPED">${body}</div>`;
+  return focusable ? canvasViewport({ class: classes, body }) : html`<div class="${classes}">${body}</div>`;
 };
 
 type Props = {
@@ -170,7 +168,7 @@ const buttonGrid = async (states: string[], columns: readonly Interaction[] = in
 
 const loadingBody = `<div class="h-72 w-4xl" aria-busy="true" data-loading></div>`;
 
-const loadingBadge = `<span class="flex shrink-0 items-center gap-space-1 text-et-surface-muted" data-loading-badge>${spinner({ diameter: 14, strokeWidth: 1.75 })}Lädt</span>`;
+const loadingBadge = `<span class="flex shrink-0 items-center gap-space-1 text-et-surface-muted" data-loading-badge data-et-skip="CLIPPED">${spinner({ diameter: 14, strokeWidth: 1.75 })}Lädt</span>`;
 
 const markedFrame = async (name: string, body: string, mark?: FrameMark) => {
   const action = MARK_ACTION[mark ?? 'rest'];
