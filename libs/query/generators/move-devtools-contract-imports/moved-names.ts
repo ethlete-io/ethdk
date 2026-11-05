@@ -31,6 +31,7 @@ export const MOVED_DEVTOOLS_CONTRACT_NAMES: ReadonlySet<string> = new Set([
   'hasQueryDevtoolsOverridesAtPath',
   'isDateShapedLeaf',
   'isQueryDevtoolsEnabled',
+  'isQueryDevtoolsHiddenInAutomation',
   'isQueryDevtoolsFaultArmed',
   'isQueryDevtoolsRepositoryLive',
   'JsonPath',
