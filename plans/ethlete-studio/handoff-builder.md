@@ -10,8 +10,8 @@ Grill/docs session: ethlete-sdk-ea. SDK migration session: ethlete-sdk-ff (commi
 
 ## Next
 
-1. CI 42016914765 red: behavior shards fixed in aff13b991 (scheduler locators back to [title], after the revert missed 80d8d2b8c). Studio rules --slow fails on pages/system direct-edit: the app has no build-ready footer ("Gründe"), open row B288; not caused by B372. Asked the grill session: build the B288 footer now (recommended) or accept red; and whether to push aff13b991 + 221073493 now. Act on the answer.
-2. Queue: B388 -> B391 -> B392 -> B393 -> B394 -> B369 -> rest per the STATUS.md order line.
+1. CI 42025926914 (de53d8571): all green except Studio rules --slow on pages/system direct-edit ("Gründe" footer missing in the app, row B288). Known red by ADR 0196; B288 keeps its place (Tom: stay on the sketch view focus).
+2. Queue: B388 -> B391 -> B392 -> B393 -> B394 -> B395 -> B369 -> rest per the STATUS.md order line. Nothing unpushed from this session.
 
 # Builder handoff (moved from .claude/handoffs, 2026-11-04 evening)
 
