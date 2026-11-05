@@ -3429,6 +3429,11 @@ keeps the action visible; (3) a folded unchanged variant never hides the merge o
 all-equal pictures either merges itself or shows the action plus the reason. The look of (3) goes to Tom as a sketch
 with variants.
 
+Cause (verified by the builder from a run): `sketch ready` on `pages/system@check-fixes` printed "shows no visible change
+but did not merge: studio has uncommitted edits outside ..." (the dirty guard `dirtyOutsideOf` in merge.ts). The reason
+went only to stderr, never onto the sketch, so Studio showed "Wartet auf deine Wahl" without a reason. The foreign
+`ready.json` mark did not block (`.ethlete` was clean). The colors merge then dirtied the tree, which blocked system.
+
 476\. The "Aktuell" column of a sketch (`foundations/colors@foundations-check-fixes`, `pages/system@check-fixes`) still
 draws every state while the variant rows fold their unchanged states. Tom (2026-11-05): "in aktuell sollten eig dann
 auch nur die screens zu sehen sein die durch varianten änderungen bekämen?". ADR 0132 already decided it (only the
@@ -3446,6 +3451,13 @@ Cause open (asked the builder for a measurement, not a guess). Tool fix: (1) mea
 phase first (suspects: a full draw of every variant and state, the full listing, a cold CLI build, a repeated
 compare); (3) every design command prints its duration, and a spec or a budget list fails when a command passes its
 budget on a fixed fixture.
+
+478\. After an automatic merge, `sketch ready` printed "ENOENT ... foundations-colors.foundations-check-fixes/sketch.json"
+and never printed "merged automatically", although the merge was complete (commit 479bdace3, builder, 2026-11-05).
+Why no tool caught it: no spec runs `sketch ready` to the end for an auto-merging sketch and asserts a clean exit and
+the message. Tool fix: find the step that reads `sketch.json` after the sketch folder is removed; a spec for the
+auto-merge path with exit code 0 and the "merged automatically" line. Also: an automatic merge commits its own
+result, so it never leaves a dirty tree that blocks the next sketch.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
