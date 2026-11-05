@@ -4598,6 +4598,12 @@ without `.git`, and the spec calls `git rev-parse` in `process.cwd()`. The spec 
 the spec was only run in the repo, never in the gate's copy. Tool fix (ethlete-sdk-ff, own commit before B383): the
 gate passes the repo root by env var and the spec uses it; no skip, because a skip hides the spec in the gate.
 
+448\. The pre-commit gate passed c874d9dd2, but its `color-theme-variants` entry broke the guard spec
+`generator-requirements.spec.ts` (the generator imports `ts-morph` and the entry had no `requires`). Fixed in e02da0aaa;
+ethlete-sdk-ff caught it with the whole cli update suite. Why no tool caught it: the gate picks related specs by import
+graph, and a guard spec that reads `libs/*/migrations.json` does not import it. Tool fix (B386, builder default): the gate
+maps data files (`migrations.json`, `generators.json`) to the specs that read them.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.

@@ -67,7 +67,7 @@ Reported on 2026-10-30 by the session `fifagg-frontend-a5`, with `@ethlete/cli` 
   `"scaffold": true`. `tools/scripts/check-migration-entries.mjs` runs in CI; the pre-push line comes after the
   builder commits its `.husky/pre-push` hunk. 93e816bec fixed the pre-commit spec copy (finding 447). Not pushed.
 
-## 6. `migrate-to-query-v3` imports `@ethlete/query-devtools` but does not add it - open (B384)
+## 6. `migrate-to-query-v3` imports `@ethlete/query-devtools` but does not add it - done, narrowing open (B384)
 
 - **Pain (fifagg-frontend-c3, 2026-11-05, query 6.0.0-next.61):** the codemod rewrites
   `import { QueryDevtoolsComponent } from '@ethlete/query'` to `'@ethlete/query-devtools'` in three app components,
@@ -75,6 +75,12 @@ Reported on 2026-10-30 by the session `fifagg-frontend-a5`, with `@ethlete/cli` 
 - **Fix:** the migration declares the package it needs (like `requires: ["ts-morph"]` in finding 1), and `et update`
   adds it with the same tag as `@ethlete/query` before the codemod; if the add fails, the codemod prints a manual
   task that names the package.
+
+- **As built (2026-11-05, d98b915e4):** a migration lists the packages its output imports in `adds` (separate from
+  `requires`, which fails the codemod). `et update` adds a missing one as a dev dependency first; an `@ethlete/*`
+  package gets the dist tag of the migrating package. A failed add prints "Adding <pkg> failed: ... Add it as a dev
+  dependency yourself" and the codemod still runs. Documented in `apps/docs/cli/update.md`. Open (doc agent decision):
+  add the package only when the codemod rewrote an import to it, not in every repo.
 
 ## 7. `migrate-to-query-v3` leaves 141 TS errors in fifagg - open (B385)
 
