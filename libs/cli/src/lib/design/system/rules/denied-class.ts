@@ -6,6 +6,7 @@ import { Problem } from '../problem';
 import { productStylesheetFilesOf } from '../product-stylesheets';
 import { ResolvedProduct } from '../resolve-product';
 import { partClassesOf } from './tailwind-classes';
+import { isExemptFrom } from './exemptions';
 
 type Denial = { test: RegExp; fix: string };
 
@@ -56,7 +57,7 @@ const isInside = (dir: string, file: string) => !relative(dir, file).startsWith(
 
 const isInFoundations = (product: ResolvedProduct, file: string) =>
   isInside(resolve(product.dir, 'foundations'), file) ||
-  product.parts.some((part) => part.layer === 'foundations' && isInside(dirname(part.file), file));
+  product.parts.some((part) => isExemptFrom('DENIED-CLASS', part) && isInside(dirname(part.file), file));
 
 const partProblemsOf = (product: ResolvedProduct & SharedDirs, denials: Denial[]): Problem[] => {
   const files = (partClassesOf(product)?.files ?? []).map(({ file, source, classes }) => ({

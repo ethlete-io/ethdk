@@ -3,6 +3,7 @@ import { cssBlocksOf, declarationValueOf } from '../css-source';
 import { Problem } from '../problem';
 import { ResolvedPart, ResolvedProduct } from '../resolve-product';
 import { textsOf } from '../ts-source';
+import { isExemptFrom } from './exemptions';
 
 const valueColoursOf = (css: string) =>
   cssBlocksOf(css).declarations.flatMap((declaration) => coloursIn(declarationValueOf(declaration) ?? ''));
@@ -30,4 +31,4 @@ const partProblemsOf = (part: ResolvedPart) => [
  * CSS or in the markup and inline CSS of its TS. A fallback inside `var()` counts.
  */
 export const hardCodedColoursOf = (product: ResolvedProduct): Problem[] =>
-  product.parts.filter((part) => part.layer !== 'foundations').flatMap(partProblemsOf);
+  product.parts.filter((part) => !isExemptFrom('HARD-CODED-COLOUR', part)).flatMap(partProblemsOf);

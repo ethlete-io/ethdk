@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { Problem } from '../problem';
 import { ResolvedProduct } from '../resolve-product';
+import { isExemptFrom } from './exemptions';
 
 const SVG_TAG = /<svg\b[^>]*>/gu;
 const DRAWING = /\sdata-et-drawing\b/u;
@@ -21,7 +22,9 @@ const tsFilesIn = (dir: string) =>
 export const inlineSvgsOf = (product: ResolvedProduct): Problem[] =>
   [
     ...new Set(
-      product.parts.filter((part) => part.layer !== 'foundations').flatMap((part) => tsFilesIn(dirname(part.file))),
+      product.parts
+        .filter((part) => !isExemptFrom('INLINE-SVG', part))
+        .flatMap((part) => tsFilesIn(dirname(part.file))),
     ),
   ]
     .filter((file) => [...readFileSync(file, 'utf8').matchAll(SVG_TAG)].some(([tag]) => !DRAWING.test(tag)))

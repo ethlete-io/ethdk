@@ -3,6 +3,7 @@ import { Problem } from '../problem';
 import { ResolvedProduct } from '../resolve-product';
 import { instantOf, motionRefsOf, stateNamesOf, unreachableOf } from '../sketch/part-definition';
 import { calledNamesOf, textsOf } from '../ts-source';
+import { isExemptFrom } from './exemptions';
 
 const TIMED = ['requestAnimationFrame', 'setInterval', 'setTimeout'];
 
@@ -115,7 +116,7 @@ const timingProblemsOf = (file: string, literals: string[]): Problem[] =>
 /** A literal duration, delay or easing in a transition or animation of a part outside foundations, in its CSS or in the CSS of its TS. */
 export const hardCodedMotionOf = (product: ResolvedProduct): Problem[] =>
   product.parts
-    .filter((part) => part.layer !== 'foundations')
+    .filter((part) => !isExemptFrom('HARD-CODED-MOTION', part))
     .flatMap((part) => [
       ...timingProblemsOf(part.file, textsOf(part.source).flatMap(literalTimingsOf)),
       ...(part.css && part.cssSource ? timingProblemsOf(part.css, literalTimingsOf(part.cssSource)) : []),

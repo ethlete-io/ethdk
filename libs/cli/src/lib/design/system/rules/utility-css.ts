@@ -7,6 +7,7 @@ import { ownSharedFilesOf, SharedDirs } from '../imports';
 import { Problem } from '../problem';
 import { ResolvedProduct } from '../resolve-product';
 import { textsOf } from '../ts-source';
+import { isExemptFrom } from './exemptions';
 
 const ALIGN = ['start', 'end', 'center', 'stretch', 'baseline', 'flex-start', 'flex-end', 'normal'];
 const DISTRIBUTE = [...ALIGN, 'space-between', 'space-around', 'space-evenly'];
@@ -320,7 +321,7 @@ const problemsUnder = ({
  * checked under the stylesheets of the base alone.
  */
 export const utilityCssOf = (product: ResolvedProduct & SharedDirs): Problem[] => {
-  const parts = product.parts.filter((part) => part.layer !== 'foundations');
+  const parts = product.parts.filter((part) => !isExemptFrom('UTILITY-CSS', part));
   const own = problemsUnder({
     utilities: utilitiesOf([product, ...(product.base ? [product.base] : [])]),
     sharedSource: product,
