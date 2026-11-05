@@ -15,3 +15,6 @@ is a known red in CI.
 
 The builder pushes aff13b991 (scheduler locator fix) and 221073493 (B377) now, although Studio rules stays red: the
 red is already on `next`, and the push adds no new failure. Tom: "q2ok".
+
+"Focus sketch view" does not move the sketch view ahead of B388: asked whether B388 or the sketch view comes first,
+Tom answered "ok" to the recommendation that B388 stays first, as ADR 0195 says.
