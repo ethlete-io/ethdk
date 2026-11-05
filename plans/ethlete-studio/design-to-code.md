@@ -4640,7 +4640,14 @@ spec that compares picture and live height, and a check of the fold-equal path u
 
 453\. CI 42016914765: 5 scheduler cases in the component behavior tests time out or fail (drag, long-press drag, tap
 opens the surface, no resize handles). Lead, not verified: the tooltip revert 40a92b60b put the scheduler back to the
-native `title`, and the cases may depend on the tooltip markup. Cause and lesson: open until the builder reports.
+native `title`, and the cases may depend on the tooltip markup. Cause: 80d8d2b8c (after the tooltip swap) moved 8
+scheduler e2e locators from `[title=…]` to `[aria-label=…]`. The revert 40a92b60b brought back `[attr.title]` but did
+not revert 80d8d2b8c, so the locators matched nothing. Fixed in aff13b991: the 8 locators are back to `[title=…]`,
+exactly as before 80d8d2b8c; assertions unchanged. 45 scheduler cases pass, desktop and touch. Why no tool caught it:
+the revert ran only unit specs, and the search for later commits looked only at the reverted files, while 80d8d2b8c
+touched `apps/storybook-e2e`. Tool fix (B394, builder default): a revert also reverts or checks every later commit
+that names the reverted change or matches its markup (grep the e2e for the attributes the revert removes), and
+pre-push runs the behavior suites of the components whose files the pushed range changes.
 
 454\. CI 42016914765, Studio rules: the `--slow` step finds that the direct-edit state of `pages/system` has no
 "Gründe" trigger. Cause: B372 (8f059ae72) replaced the sample input `exceptions` with `exceptionCount`, so the harness
