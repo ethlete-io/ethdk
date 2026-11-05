@@ -4709,6 +4709,12 @@ two checks gave different results for the same file. Why no tool caught it: no s
 before, and the sketch check and the product check keep their own path exemptions. Tool fix (builder, 8ce03448c): the
 sketch copy of a foundations part is exempt too; the spec fails without it.
 
+462\. The `/__design/shot` route on :4402 returns 500 with "dist/libs/query missing, run `nx build query`" for
+`elements-shell-main` and `pages-merge`, but `dist/libs/query/package.json` exists (rebuilt 14:21). In the same
+session, `scheme=light` returns the dark picture. The builder could not review those two sketches before Tom's pick.
+Cause: unknown, an opus subagent diagnoses it (hypothesis: the render worker keeps a stale failure from the moment of
+the rebuild). Why no tool caught it and the tool fix: pending the diagnosis.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
