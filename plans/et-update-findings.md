@@ -129,6 +129,14 @@ Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61). Full list wi
 - **Cross-host cookie is a v3 gap (B387):** `withPersistentAuth` stores the cookie with a per-origin key, so apps on
   sibling hosts under one parent domain cannot share a login. v2 `cookieDomain` could. v3 must support it again; the
   SDK session proposes the design before it builds. The section 8 task for `cookieDomain` stays until then.
+  Design proposal (ff, 2026-11-05): `withPersistentAuth` already has `cookie.domain` (default host-only); with
+  `domain: '.fifa.gg'` sibling hosts share the cookie, and other scopes are adopted on start (a5f32c6a0). Only the
+  migration scaffold sets no domain (warning QV3-054). Not solved by the cookie: multi-tab leadership and
+  BroadcastChannel are per origin; remember-me is in per-origin localStorage; a refresh token that rotates on host A
+  makes host B fail its next refresh with 401 and delete the shared cookie. Open grill questions for Tom (collected
+  while afk): Q1 share on load only (migration writes `cookie.domain` from v2 `cookieDomain`) or live sync; Q2 on a
+  refresh 401, re-read the cookie and retry once; Q3 share remember-me through a second cookie. ff recommends: load
+  only, yes, no.
 - **Refresh `maxAttempts` 8 (B385):** v3's retry is right, but the default 8
   (`libs/query/src/lib/auth/bearer-auth-query-builders.ts:102`, `:293`) has no stated reason. The docs name the reason,
   and the generator's scaffold writes `maxAttempts` explicitly so the app sees it.
