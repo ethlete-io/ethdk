@@ -246,7 +246,11 @@ all five fifagg apps build on `chore/query-v3-migration`.
   the success callback returns null and `.onSuccess` gets no response. fifagg: broadcast create
   (`create-broadcast-overlay.component.ts:236`, dialog stays open), admin "New Collection", probably the
   competition-manager "without a reload" tests. Workaround fda4c3d8ad (the fifagg legacy helper waits for the store
-  write). Fix (ff): v2 order in the interop layer, with a scenario on both clients.
+  write). Fix (ff): v2 order in the interop layer, with a scenario on both clients. Root cause (fifagg-frontend-3d, item 22): `legacy-query.ts:238`
+  creates the store sync effect without `injector: newQuery.subtle.injector`, so it runs as a view effect after the
+  root `destroyOnResponse` effect (`legacy-query-creator.ts:295`); the query is destroyed before the store `set`, and
+  the success is never published. One chain with 21. fifagg workaround now 6a2535c739 (store write once per response
+  in `get`), proven in E2E.
 - **19. Legacy `prepare()` returns a new wrapper for the same arguments (fifagg-frontend-3d, not yet proven in E2E):**
   v2 returned the cached one. A `queryComputed` fed a fresh object on every check loops (NG0103).
   fifagg: `competition-consistency-rank.component.ts:50`, fed by a getter at `layout-dynamic-types.component.ts:112`.
@@ -257,3 +261,13 @@ all five fifagg apps build on `chore/query-v3-migration`.
   load devtools only when `ngDevMode` and not `navigator.webdriver`. **Decision (Tom, 2026-11-05, "q3ok"):** the SDK does not show the devtools when
   `navigator.webdriver` is true; an option on the devtools provider switches them on again. The docs name the
   behaviour.
+- **21. Migrator adds `destroyOnResponse` wrongly (fifagg-frontend-3d, proven in E2E):**
+  `legacy-prepare-migration.ts:1212-1223` `shouldAddDestroyOnResponse` checks only for polling, so a query kept in a
+  signal, executed again, or bound to a template still gets `config: { destroyOnResponse: true }`; after the first
+  response every later `execute()` does nothing. fifagg: `competition-data-participants.service.ts:107`
+  (refreshQualificationSpots and Retry do nothing, hand fix eb1e122834, 3 E2E tests), `broadcast-live-layouts.component.ts:82`;
+  56 sites got it, not audited. Fix (ff): add it only where the query is provably one-shot (not stored, not executed
+  again, not in a template); otherwise leave it out, with a spec per shape.
+- **Open (fifagg-frontend-3d):** `match-lobby-dispute.spec.ts:65` regression, cause not found; suspect the next-match
+  collection signal (`createQueryCollectionSignal` + `queryStateResponseSignal`, `match-lobby.component.ts:~359/:382`).
+  Question to ff: does `queryStateResponseSignal` give a response for a legacy query that is replaced while loading?
