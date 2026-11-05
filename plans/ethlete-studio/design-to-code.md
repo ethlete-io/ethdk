@@ -3418,6 +3418,17 @@ half-written save, or the Angular plugin hiding a dependency; not reproduced). T
 pre-commit spec gate runs with a fresh `--fsModuleCachePath` in a tmp dir, so a gate pass never rests on the cache.
 Not decided: `fsModuleCache: false` for all of `libs/query` (slower runs for an unproven cause).
 
+475\. Sketches `foundations/colors@foundations-check-fixes` (rule-only fix, Tom picked `a`) and `pages/system@check-fixes` (Tom: "gleiches bei system", with a screenshot) show every state as
+unchanged ("Unverändert: Variante a" folded), yet it did not merge itself, and the Merge button sits behind the folded
+"Unverändert" block, so Tom cannot find it (Tom, 2026-11-05, with a screenshot: "sollte das dann nicht auto mergen?").
+Why no tool caught it: no spec opens a sketch whose variants all draw the same pictures and asserts that it either
+closes itself or shows its merge action. Likely cause (not verified): the auto-merge refused on the dirty guard
+(uncommitted `ready.json`, see 468) and left the sketch open without saying so. Tool fix: (1) the builder finds the
+cause and reports it; (2) a refused auto-merge writes its reason on the sketch ("Auto-Merge verweigert: ...") and
+keeps the action visible; (3) a folded unchanged variant never hides the merge or pick action; (4) spec: a sketch with
+all-equal pictures either merges itself or shows the action plus the reason. The look of (3) goes to Tom as a sketch
+with variants.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
