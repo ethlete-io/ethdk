@@ -31,12 +31,12 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
   console.log(`   Scope: ${scope.describe()}`);
 
   const report = new QueryV3MigrationReport();
-  const { queryClientFiles, variableRenames } = migrateQueryClients(tree, report, scope);
+  const { queryClientFiles, variableRenames, gqlGetClients } = migrateQueryClients(tree, report, scope);
 
   if (queryClientFiles.size > 0) {
     generateProviderAliases(tree, queryClientFiles);
     generateQueryCreators(tree, queryClientFiles);
-    createNewQueryCreators(tree, queryClientFiles, report, scope);
+    createNewQueryCreators(tree, queryClientFiles, report, scope, gqlGetClients);
     updateLegacyCreatorImportsAndUsages(tree, scope, report);
   }
 

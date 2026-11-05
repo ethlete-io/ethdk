@@ -284,6 +284,10 @@ patchOpportunityPerson(
 );
 ```
 
+### GraphQL creators are rewritten by hand
+
+The generator does not rewrite `client.gqlQuery()` and `client.gqlMutate()` creators. Each one gets a task that names the replacement: `createGqlQueryViaPost`, `createGqlMutationViaPost`, or `createGqlQueryViaGet` for a query on a client that set `request.gql.transferVia: 'GET'`. v3 has no client-level transfer option, so the choice moves to the creator. See [GraphQL](/query/gql).
+
 ### Reactive-forms async validators
 
 [`validateWithQuery`](/query/errors#validating-against-the-server-as-the-user-types) is for signal forms only. A reactive-forms `AsyncValidatorFn` that ran a v2 query keeps working on the interop query. To move it to the current system, create the query once in an injection context and run it with `executeUntilSettled$` (a function route also needs `silenceMissingWithArgsFeatureError: true`):

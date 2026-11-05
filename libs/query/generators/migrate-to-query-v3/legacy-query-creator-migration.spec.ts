@@ -505,4 +505,41 @@ export const getGqlUser = apiClient.gqlQuery({ query: USER_QUERY });
     expect(report).toContain('Rewrite the GraphQL creator getGqlUser by hand');
     expect(report).toContain('createGqlQueryViaPost');
   });
+
+  it('points a gql creator at ViaGet when the v2 client set transferVia GET, and a mutation at ViaPost', async () => {
+    tree.write(
+      'client.ts',
+      `
+import { V2QueryClient } from '@ethlete/query';
+
+export const cmsClient = new V2QueryClient({
+  baseRoute: 'https://api.example.com',
+  request: { gql: { transferVia: 'GET' } },
+});
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+    );
+
+    tree.write(
+      'queries.ts',
+      `
+import { apiClient, cmsClient } from './client';
+
+export const getPage = cmsClient.gqlQuery({ query: PAGE_QUERY });
+export const getUser = apiClient.gqlQuery({ query: USER_QUERY });
+export const saveUser = apiClient.gqlMutate({ query: SAVE_USER });
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const report = readFile('query-v3-migration-tasks.md');
+    const section = (name: string) => report.slice(report.indexOf(`Rewrite the GraphQL creator ${name} by hand`));
+
+    expect(section('getPage').split('###')[0]).toContain('createGqlQueryViaGet');
+    expect(section('getPage').split('###')[0]).toContain('transferVia');
+    expect(section('getUser').split('###')[0]).toContain('createGqlQueryViaPost');
+    expect(section('saveUser').split('###')[0]).toContain('createGqlMutationViaPost');
+    expect(report).not.toContain('Reconfigure dropped query client option "request.gql"');
+  });
 });

@@ -55,6 +55,7 @@ export const createNewQueryCreators = (
   queryClientFiles: Map<string, string[]>,
   report: QueryV3MigrationReport,
   scope: MigrationScope,
+  gqlGetClients: ReadonlySet<string> = new Set(),
 ) => {
   const createdFiles: string[] = [];
   const authProvidersNeeded = new Map<string, string>();
@@ -78,7 +79,7 @@ export const createNewQueryCreators = (
       return;
     }
 
-    const legacyCreators = analyzeLegacyQueryCreators(content, queryClientFiles, filePath, report);
+    const legacyCreators = analyzeLegacyQueryCreators(content, queryClientFiles, filePath, report, gqlGetClients);
 
     if (legacyCreators.length === 0) {
       return;
@@ -330,6 +331,7 @@ const analyzeLegacyQueryCreators = (
   queryClientFiles: Map<string, string[]>,
   filePath: string,
   report: QueryV3MigrationReport,
+  gqlGetClients: ReadonlySet<string>,
 ) => {
   const sourceFile = createSourceFile(content, filePath);
   const creators: LegacyQueryCreatorInfo[] = [];
@@ -356,10 +358,14 @@ const analyzeLegacyQueryCreators = (
       }
 
       if (oldClientNames.has(objectExpression.text) && LEGACY_GQL_METHODS.includes(methodExpression.text)) {
+        const isQuery = methodExpression.text === 'gqlQuery';
+        const viaGet = isQuery && gqlGetClients.has(objectExpression.text);
+        const creator = isQuery ? `createGqlQueryVia${viaGet ? 'Get' : 'Post'}` : 'createGqlMutationViaPost';
+
         report.addManualReview({
           title: `Rewrite the GraphQL creator ${node.name.text} by hand`,
-          summary: `${node.name.text} is built with \`${objectExpression.text}.${methodExpression.text}()\`. The migration only rewrites REST creators, so this one still calls a method the migrated client no longer has.`,
-          action: `Rebuild it on the v3 client with \`${methodExpression.text === 'gqlQuery' ? 'createGqlQueryViaPost' : 'createGqlMutationViaPost'}\` (or the \`ViaGet\` variant) and a \`gql\` document, then wrap it in \`createLegacyQueryCreator\` if its call sites stay on v2. See https://ethlete-sdk-docs.web.app/query/gql.`,
+          summary: `${node.name.text} is built with \`${objectExpression.text}.${methodExpression.text}()\`. The migration only rewrites REST creators, so this one still calls a method the migrated client no longer has.${viaGet ? " The v2 client sent GraphQL queries with `request.gql.transferVia: 'GET'`, which v3 sets per creator." : ''}`,
+          action: `Rebuild it on the v3 client with \`${creator}\` and a \`gql\` document, then wrap it in \`createLegacyQueryCreator\` if its call sites stay on v2. See https://ethlete-sdk-docs.web.app/query/gql.`,
           locations: [{ filePath, line: sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1 }],
           source: 'legacy-query-creator-migration',
           dedupeKey: `gql-creator:${filePath}:${node.name.text}`,

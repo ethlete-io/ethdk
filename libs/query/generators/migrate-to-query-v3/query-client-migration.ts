@@ -21,12 +21,14 @@ export type ClientVariableRenames = Map<string, { originalContent: string; renam
 export type QueryClientMigrationResult = {
   queryClientFiles: Map<string, string[]>;
   variableRenames: ClientVariableRenames;
+  gqlGetClients: Set<string>;
 };
 
 type MigrateSingleClientOptions = {
   content: string;
   filePath: string;
   renamesOut?: Map<string, string>;
+  gqlGetClientsOut?: Set<string>;
   report: QueryV3MigrationReport;
 };
 
@@ -37,6 +39,7 @@ export const migrateQueryClients = (
 ): QueryClientMigrationResult => {
   const queryClientFiles = new Map<string, string[]>();
   const variableRenames: ClientVariableRenames = new Map();
+  const gqlGetClients = new Set<string>();
 
   scope.visit(tree, (filePath) => {
     if (!filePath.endsWith('.ts')) {
@@ -50,7 +53,13 @@ export const migrateQueryClients = (
     }
 
     const renames = new Map<string, string>();
-    const nextContent = migrateQueryClientToConfig({ content, filePath, renamesOut: renames, report });
+    const nextContent = migrateQueryClientToConfig({
+      content,
+      filePath,
+      renamesOut: renames,
+      gqlGetClientsOut: gqlGetClients,
+      report,
+    });
 
     if (renames.size > 0) {
       variableRenames.set(filePath, { originalContent: content, renames });
@@ -74,7 +83,7 @@ export const migrateQueryClients = (
     });
   }
 
-  return { queryClientFiles, variableRenames };
+  return { queryClientFiles, variableRenames, gqlGetClients };
 };
 
 export const generateProviderAliases = (tree: Tree, queryClientFiles: Map<string, string[]>) => {
@@ -230,7 +239,13 @@ const hasQueryClientInstantiation = (content: string) => {
   return hasQueryClientImport && hasNewQueryClient;
 };
 
-const migrateQueryClientToConfig = ({ content, filePath, renamesOut, report }: MigrateSingleClientOptions) => {
+const migrateQueryClientToConfig = ({
+  content,
+  filePath,
+  renamesOut,
+  gqlGetClientsOut,
+  report,
+}: MigrateSingleClientOptions) => {
   const sourceFile = createSourceFile(content, filePath);
   const replacements: Array<{ start: number; end: number; replacement: string }> = [];
   const variableRenames = new Map<string, string>();
@@ -255,6 +270,10 @@ const migrateQueryClientToConfig = ({ content, filePath, renamesOut, report }: M
         });
       } else {
         const oldVariableName = getVariableNameForQueryClient(node);
+
+        if (oldVariableName && gqlGetClientsOut && usesGqlTransferViaGet(configArgument)) {
+          gqlGetClientsOut.add(oldVariableName);
+        }
         const newVariableName = oldVariableName && ensureConfigSuffix(oldVariableName);
 
         if (oldVariableName && newVariableName && oldVariableName !== newVariableName) {
@@ -548,6 +567,10 @@ const reportDroppedClientOptions = ({
           return;
         }
 
+        if (name === 'request' && nested.name.text === 'gql' && isGqlTransferViaGetOnly(nested)) {
+          return;
+        }
+
         if (
           name === 'request' &&
           nested.name.text in V2_ON_BY_DEFAULT_REQUEST_OPTIONS &&
@@ -680,6 +703,35 @@ const getPropertyValueText = (property: ts.ObjectLiteralElementLike, sourceFile:
   }
 
   return ts.isPropertyAssignment(property) ? property.initializer.getText(sourceFile) : undefined;
+};
+
+const isGqlTransferViaGetOnly = (property: ts.ObjectLiteralElementLike) =>
+  ts.isPropertyAssignment(property) &&
+  ts.isObjectLiteralExpression(property.initializer) &&
+  property.initializer.properties.length === 1 &&
+  isTransferViaGet(property.initializer.properties[0]!);
+
+const isTransferViaGet = (property: ts.ObjectLiteralElementLike) =>
+  ts.isPropertyAssignment(property) &&
+  ts.isIdentifier(property.name) &&
+  property.name.text === 'transferVia' &&
+  ts.isStringLiteralLike(property.initializer) &&
+  property.initializer.text === 'GET';
+
+const usesGqlTransferViaGet = (configArgument: ts.ObjectLiteralExpression) => {
+  const request = findProperty(configArgument, 'request');
+  const gql =
+    request &&
+    ts.isPropertyAssignment(request) &&
+    ts.isObjectLiteralExpression(request.initializer) &&
+    findProperty(request.initializer, 'gql');
+
+  return (
+    !!gql &&
+    ts.isPropertyAssignment(gql) &&
+    ts.isObjectLiteralExpression(gql.initializer) &&
+    gql.initializer.properties.some(isTransferViaGet)
+  );
 };
 
 const findProperty = (objectLiteral: ts.ObjectLiteralExpression, name: string) =>
