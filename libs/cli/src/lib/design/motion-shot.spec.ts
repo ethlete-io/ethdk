@@ -69,10 +69,10 @@ export default definePart({
 });
 `;
 
-const EMBEDDED = `<style>body{margin:0}.b{width:20px;height:20px;background:white;transition:background-color 10s linear}.b.on{background:black}</style><div class="b"></div><script>const b=document.querySelector('.b');b.addEventListener('transitionend',()=>parent.document.querySelector('.flag').classList.add('done'));requestAnimationFrame(()=>requestAnimationFrame(()=>b.classList.add('on')));</script>`;
+const EMBEDDED = `<style>body{margin:0}.b{width:20px;height:20px;background:white;transition:background-color 10s linear}.b.on{background:black}</style><div class="b"></div><script>const b=document.querySelector('.b');b.addEventListener('transitionend',()=>parent.document.documentElement.classList.add('done'));requestAnimationFrame(()=>requestAnimationFrame(()=>b.classList.add('on')));</script>`;
 
 const FRAMED_STYLES = [
-  '.flag { width: 40px; height: 4px; } .flag.done { width: 300px; }',
+  '.flag { width: 40px; height: 4px; } :root.done .flag { width: 300px; }',
   '.dot { width: 40px; height: 20px; transition: transform 1000ms linear; } .dot--open { transform: translateX(10px); }',
 ].join('\n');
 

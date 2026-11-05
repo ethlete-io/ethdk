@@ -392,9 +392,12 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
 
     writeFileSync(button, `${readFileSync(button, 'utf8')}\nexport const broken: number = 'x';\n`);
 
-    const reason = merge(target, found);
+    const result = mergeResult(target, found);
+    const reason = reasonOf(result);
 
-    expect(reason).toContain('product broken outside this sketch');
+    expect(reason, JSON.stringify(Array.isArray(result) ? [] : result.findings)).toContain(
+      'product broken outside this sketch',
+    );
     expect(reason).toContain(join(DESIGN_DIR, 'acme/pages/home/home.ts'));
     expect(existsSync(found.sketch.dir)).toBe(true);
   }, 120_000);
