@@ -158,7 +158,11 @@ all five fifagg apps build on `chore/query-v3-migration`.
   Not reproducible (ff, e1f1aa645: specs for property value, shorthand, argument, array element, barrel all pass).
   In fifagg's generator commit 6ff3142096 the consumer file was not touched at all; the later `legacy*` call sites
   are hand edits. Suspects: the migration scope excluded the app, or module resolution failed for a creator built by
-  a typed generic wrapper. Open: the exact generator options (asked fifagg-frontend-3d).
+  a typed generic wrapper. fifagg-frontend-3d: whole-workspace scope, `match.queries.ts` was updated,
+  `match-rail.component.ts` has no log line. ff, bbe25129c: a spec with the exact fifagg shape (v2 creator with
+  `secure: false` and types, barrel `export *`, only reference `queryCreator: getX` in a computed) passes. The rename
+  scoping fix 3a9faa92d (2026-09-27) may be missing from the build fifagg ran. Open: ff runs the current generator on
+  a throwaway copy of fifagg at fed560695e (outside the repo, no worktree) and checks `match-rail` - next ff session.
 - **12. Wrong creator set into a signal:** a PATCH query goes into a signal made from a POST creator. v2 typing allowed
   it; `LegacyQuery` args typing does not. Not a generator bug. The generator could list `createSignal()` signals that
   get `.set()` with the query of another creator.
