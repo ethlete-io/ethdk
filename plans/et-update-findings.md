@@ -156,7 +156,7 @@ Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61). Full list wi
   is a migrator defect, not a supported state: the docs stop describing it as one, and the migration report flags a
   leftover `V2QueryClient` as a migrator error to report.
 
-## 10. More migrator findings from fifagg, items 10-22 (fifagg-frontend-c3 and -3d, 2026-11-05) - open
+## 10. More migrator findings from fifagg, items 10-24 (fifagg-frontend-c3 and -3d, 2026-11-05) - open
 
 Full text with file:line in `fifagg-frontend/.claude/handoffs/query-v3/findings.md`, items 10 to 13. After hand fixes,
 all five fifagg apps build on `chore/query-v3-migration`.
@@ -278,3 +278,12 @@ all five fifagg apps build on `chore/query-v3-migration`.
   opens; 22 GETs to `.../competition-match/<id>/match-streams` in about 1s, in three runs. Suspect:
   `match-vod-with-card.component.ts:47-54` (`queryComputed` around `prepare().execute()`). File:line of the loop
   follows.
+- **23. `toQuerySignal` subscribes a cold source twice (fifagg-frontend-3d, read-only audit, untested):**
+  `data.utils.ts:277-279`. The template shows an unmanaged query; the container manages a second query that never
+  executes. In fifagg: per keystroke on 3 filter-overlay pages and on 5 navigation cards (8 call sites). Fix: share
+  the source in the SDK; fifagg's workaround is `queryComputed`.
+- **24. Question: `queryComputed` and two changes in one tick (fifagg-frontend-3d, untested):** `toObservable` plus
+  `pairwise` may drop an intermediate query; that query is then never destroyed. Needs a scenario.
+- **21b. Migrator, extends 21 (fifagg-frontend-3d):** it leaves `prepare()` in a plain `computed` (about 8 sites, one
+  unmanaged query per input change) and in async validators (a POST per keystroke) with no `destroyOnResponse` and no
+  container. fifagg fixes its sites by hand.
