@@ -77,6 +77,7 @@ import {
   EMPTY_QUERY_DEVTOOLS_FAULT,
   isQueryDevtoolsEnabled,
   isQueryDevtoolsFaultArmed,
+  isQueryDevtoolsHiddenInAutomation,
   isQueryDevtoolsRepositoryLive,
   measureQueryDevtoolsPayload,
   queryDevtoolsAbout,
@@ -658,6 +659,7 @@ let warnedMissingProvider = false;
   host: {
     class: 'et-query-devtools-host',
     '[attr.data-dock]': 'dock()',
+    '[style.display]': 'hiddenInAutomation ? "none" : null',
     // Every overlay opened from inside the panel - its menus, its tooltips - mounts one level above
     // the panel's own z-index, which is itself above the default overlay layer. Both numbers live in
     // query-devtools.component.css; keep them in step.
@@ -1225,6 +1227,8 @@ export class QueryDevtoolsComponent implements OnInit {
   });
 
   protected readonly DROP_RESTORED_OVERRIDES = clearRestoredQueryDevtoolsOverrides;
+
+  protected readonly hiddenInAutomation = isQueryDevtoolsHiddenInAutomation();
 
   protected readonly FLOAT_RESIZE_EDGES: ResizeEdge[] = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 

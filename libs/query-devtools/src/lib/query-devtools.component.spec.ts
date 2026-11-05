@@ -86,6 +86,30 @@ describe('QueryDevtoolsComponent', () => {
     warn.mockRestore();
   }, 30_000);
 
+  it('should hide its host under navigator.webdriver unless showInAutomation is set', () => {
+    Object.defineProperty(navigator, 'webdriver', { configurable: true, value: true });
+
+    try {
+      const hidden = mount(false);
+
+      expect((hidden.nativeElement as HTMLElement).style.display).toBe('none');
+      hidden.destroy();
+
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+      ɵresetQueryDevtoolsForTesting();
+      TestBed.configureTestingModule({ providers: [provideQueryDevtools({ showInAutomation: true })] });
+
+      const shown = mount(false);
+
+      expect((shown.nativeElement as HTMLElement).style.display).not.toBe('none');
+      shown.destroy();
+    } finally {
+      Object.defineProperty(navigator, 'webdriver', { configurable: true, value: undefined });
+      ɵresetQueryDevtoolsForTesting();
+    }
+  });
+
   it('should report a socket that refuses a message apart from invalid JSON', () => {
     const fixture = mount(false);
     const panel = fixture.componentInstance;

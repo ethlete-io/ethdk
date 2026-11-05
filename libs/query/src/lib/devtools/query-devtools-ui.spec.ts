@@ -1,7 +1,9 @@
 import {
   markQueryDevtoolsAppSettled,
   onQueryDevtoolsUiChange,
+  isQueryDevtoolsHiddenInAutomation,
   queryDevtoolsPillsAllowed,
+  setQueryDevtoolsShowInAutomation,
   setQueryDevtoolsUiMounted,
 } from './query-devtools-ui';
 
@@ -28,5 +30,34 @@ describe('query devtools ui presence', () => {
     expect(queryDevtoolsPillsAllowed()).toBe(true);
 
     expect(listener).toHaveBeenCalledTimes(7);
+  });
+
+  describe('automation', () => {
+    const setWebdriver = (value: boolean | undefined) =>
+      Object.defineProperty(navigator, 'webdriver', { configurable: true, value });
+
+    afterEach(() => {
+      setWebdriver(undefined);
+      setQueryDevtoolsShowInAutomation(false);
+    });
+
+    it('hides the devtools UI and the pills under navigator.webdriver, unless showInAutomation is set', () => {
+      setQueryDevtoolsUiMounted(true);
+
+      expect(isQueryDevtoolsHiddenInAutomation()).toBe(false);
+      expect(queryDevtoolsPillsAllowed()).toBe(true);
+
+      setWebdriver(true);
+
+      expect(isQueryDevtoolsHiddenInAutomation()).toBe(true);
+      expect(queryDevtoolsPillsAllowed()).toBe(false);
+
+      setQueryDevtoolsShowInAutomation(true);
+
+      expect(isQueryDevtoolsHiddenInAutomation()).toBe(false);
+      expect(queryDevtoolsPillsAllowed()).toBe(true);
+
+      setQueryDevtoolsUiMounted(false);
+    });
   });
 });

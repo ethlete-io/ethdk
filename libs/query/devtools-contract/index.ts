@@ -31,6 +31,7 @@ export {
   ɵhasQueryDevtoolsOverridesAtPath as hasQueryDevtoolsOverridesAtPath,
   ɵisDateShapedLeaf as isDateShapedLeaf,
   ɵisQueryDevtoolsEnabled as isQueryDevtoolsEnabled,
+  ɵisQueryDevtoolsHiddenInAutomation as isQueryDevtoolsHiddenInAutomation,
   ɵisQueryDevtoolsFaultArmed as isQueryDevtoolsFaultArmed,
   ɵisQueryDevtoolsRepositoryLive as isQueryDevtoolsRepositoryLive,
   type ɵJsonPath as JsonPath,

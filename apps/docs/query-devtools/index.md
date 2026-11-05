@@ -151,6 +151,16 @@ it on arrival rather than waiting for a second click:
 }
 ```
 
+## Automated browsers
+
+When the browser is driven by automation (`navigator.webdriver` is `true`, as in Playwright, Selenium and Puppeteer), the panel, the floating toggle and the API env and session pills hide themselves. An end-to-end run then never clicks a devtools element by accident.
+
+To keep them visible, pass `showInAutomation`:
+
+```ts
+provideQueryDevtools({ showInAutomation: true });
+```
+
 ## Live demo
 
 @example query-devtools/devtools-default 520px

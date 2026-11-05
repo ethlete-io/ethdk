@@ -44,7 +44,7 @@ import {
   withQueryDevtoolsOverridePersistence,
 } from './query-devtools-override-persistence';
 import { createQueryDevtoolsOverrides } from './query-devtools-overrides';
-import { markQueryDevtoolsAppSettled } from './query-devtools-ui';
+import { markQueryDevtoolsAppSettled, setQueryDevtoolsShowInAutomation } from './query-devtools-ui';
 import { initQueryDevtoolsMocks, resolveQueryDevtoolsMockForAttempt } from './query-devtools-mocks';
 import { QueryDevtoolsSchemaLoaders, setQueryDevtoolsSchemaLoader } from './query-devtools-schema';
 import { initQueryDevtoolsSettings } from './query-devtools-settings';
@@ -331,6 +331,13 @@ export type QueryDevtoolsOptions = {
    * one's. Accounts are not offered at all while an `apiEnvs` env marked `production` is the pick.
    */
   authAccounts?: QueryDevtoolsAuthAccount[];
+
+  /**
+   * Keeps the panel, the toggle and the floating pills visible when the browser is driven by automation
+   * (`navigator.webdriver`, as in Playwright or Selenium). They hide there by default so an end-to-end run
+   * never clicks a devtools element by accident. Defaults to `false`.
+   */
+  showInAutomation?: boolean;
 };
 
 let queryDevtoolsInitialized = false;
@@ -338,7 +345,7 @@ let queryDevtoolsInitialized = false;
 /** How long after the first paint the pills wait for a devtools UI that a lazy route mounts. */
 const PILL_SETTLE_GRACE_MS = 500;
 
-const ONE_TIME_OPTIONS = ['about', 'apiEnvs', 'authAccounts', 'responseHistory', 'schema'] as const;
+const ONE_TIME_OPTIONS = ['about', 'apiEnvs', 'authAccounts', 'responseHistory', 'schema', 'showInAutomation'] as const;
 
 // The floating pills paint before this - before `bootstrapApplication`, so a boot that hangs on the
 // backend it was just pointed at can still be pointed somewhere else. Once the application has painted
@@ -374,6 +381,7 @@ const warnAboutIgnoredOptions = (options: QueryDevtoolsOptions | undefined) => {
  */
 export const ɵresetQueryDevtoolsForTesting = () => {
   queryDevtoolsInitialized = false;
+  setQueryDevtoolsShowInAutomation(false);
   setQueryDevtoolsRegistrar(null);
 };
 
@@ -416,6 +424,7 @@ export const provideQueryDevtools = (options?: QueryDevtoolsOptions): Environmen
   initQueryDevtoolsFaults();
   setQueryDevtoolsSchemaLoader(options?.schema);
   setQueryDevtoolsApiEnvs(options?.apiEnvs);
+  setQueryDevtoolsShowInAutomation(options?.showInAutomation ?? false);
   initQueryDevtoolsAuthSessions(options?.authAccounts);
   setQueryDevtoolsAuthSeedReader(readQueryDevtoolsAuthSeedFor);
   setQueryDevtoolsAuthProviderRegistrar(trackQueryDevtoolsAuthProvider);

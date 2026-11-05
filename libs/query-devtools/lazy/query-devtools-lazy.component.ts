@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { setQueryDevtoolsUiMounted } from '@ethlete/query';
 import {
   isQueryDevtoolsEnabled,
+  isQueryDevtoolsHiddenInAutomation,
   queryDevtoolsArmedMocks,
   queryDevtoolsEntries,
   queryDevtoolsFaults,
@@ -25,7 +26,8 @@ let warnedMissingProvider = false;
  * of `<et-query-devtools>` to keep the panel out of the bundle an application ships to its users.
  *
  * Without `provideQueryDevtools()` it renders nothing at all - no toggle, no shortcut, and the panel
- * chunk is never requested - so it can be left mounted in a production build.
+ * chunk is never requested - so it can be left mounted in a production build. It also renders nothing in
+ * a browser driven by automation (`navigator.webdriver`) unless `provideQueryDevtools({ showInAutomation: true })`.
  *
  * Everything else is identical - the same toggle, the same `Ctrl/Cmd + Alt + Q` shortcut, and a panel
  * that was open when the tab last stored its state comes back open without a click.
@@ -61,7 +63,7 @@ export class QueryDevtoolsLazyComponent {
    * stored view state read, the shortcut listener and the template - so a build that ships the shell
    * without the provider renders nothing and can never load the panel.
    */
-  protected enabled = isQueryDevtoolsEnabled();
+  protected enabled = isQueryDevtoolsEnabled() && !isQueryDevtoolsHiddenInAutomation();
 
   /**
    * Whether the panel is wanted. Whether it was already open has to be answered before the panel exists,
@@ -88,7 +90,7 @@ export class QueryDevtoolsLazyComponent {
 
   constructor() {
     if (!this.enabled) {
-      if (ngDevMode && !warnedMissingProvider) {
+      if (ngDevMode && !warnedMissingProvider && !isQueryDevtoolsEnabled()) {
         warnedMissingProvider = true;
         console.warn(
           "<et-query-devtools-lazy>: provideQueryDevtools() is not in the application providers, so the devtools render nothing. Add it to bootstrapApplication's providers.",

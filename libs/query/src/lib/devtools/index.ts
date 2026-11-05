@@ -5,7 +5,10 @@ export { type QueryDevtoolsFeatureDescriber, type QueryDevtoolsFeatureDetail } f
 export { provideQueryDevtools, type QueryDevtoolsOptions } from './query-devtools-registry';
 export { type QueryDevtoolsSchemaLoader, type QueryDevtoolsSchemaLoaders } from './query-devtools-schema';
 export { clearQueryDevtoolsTokenTtl, setQueryDevtoolsTokenTtl } from './query-devtools-token-ttl';
-export { setQueryDevtoolsUiMounted } from './query-devtools-ui';
+export {
+  isQueryDevtoolsHiddenInAutomation as ɵisQueryDevtoolsHiddenInAutomation,
+  setQueryDevtoolsUiMounted,
+} from './query-devtools-ui';
 
 // The ɵ names are re-exported unprefixed by @ethlete/query/devtools-contract. They cannot live in that
 // entry point alone: ng-packagr bundles each entry point separately, so the devtools state would exist twice.

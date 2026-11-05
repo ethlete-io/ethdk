@@ -7,6 +7,7 @@
 let mounted = 0;
 let settled = false;
 let notify: (() => void) | null = null;
+let showInAutomation = false;
 
 /**
  * Declares a devtools UI on the page, and takes the declaration back when it goes. The floating pills
@@ -36,7 +37,26 @@ export const markQueryDevtoolsAppSettled = () => {
  * for.
  * @internal
  */
-export const queryDevtoolsPillsAllowed = () => mounted > 0 || !settled;
+export const queryDevtoolsPillsAllowed = () => !isQueryDevtoolsHiddenInAutomation() && (mounted > 0 || !settled);
+
+/**
+ * Sets whether the devtools UI stays visible in a browser under automation. Called by `provideQueryDevtools()`.
+ * @internal
+ */
+export const setQueryDevtoolsShowInAutomation = (show: boolean) => {
+  showInAutomation = show;
+  notify?.();
+};
+
+/**
+ * Whether the page is driven by automation (`navigator.webdriver`) and the application did not opt in with
+ * `showInAutomation`. The panel, the toggle and the pills hide themselves then, so they never cover or
+ * intercept clicks in an end-to-end run.
+ *
+ * Part of the devtools contract. **Not part of the general public contract.**
+ */
+export const isQueryDevtoolsHiddenInAutomation = () =>
+  !showInAutomation && typeof navigator !== 'undefined' && navigator.webdriver === true;
 
 /** Hands the pills a way to repaint on a change here. Called by the pill renderer. @internal */
 export const onQueryDevtoolsUiChange = (listener: () => void) => {
