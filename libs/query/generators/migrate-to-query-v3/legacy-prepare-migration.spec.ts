@@ -106,9 +106,9 @@ export class DemoComponent {
       tree.write(
         'component.ts',
         `
-import { computed, effect } from '@angular/core';
+import { computed, effect, inject, Injector } from '@angular/core';
 import { createLegacyQueryCreator, queryComputed } from '@ethlete/query';
-import { map, switchMap } from 'rxjs';
+import { map, switchMap, tap } from 'rxjs';
 
 const getUsers = {} as never;
 export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
@@ -147,6 +147,55 @@ ${body}
       await migration(tree, { skipFormat: true });
 
       expect(readFile('component.ts')).toContain('injector: this.injector');
+    });
+
+    it('migrates a container factory called from an rxjs callback in a setter', async () => {
+      writeComponent(`  private injector = inject(Injector);
+
+  set stage(value: number) {
+    this.source$.pipe(tap(() => (this.users = legacyGetUsers.createSubject()))).subscribe();
+  }
+
+  users: unknown;
+  source$ = {} as never;`);
+
+      await migration(tree, { skipFormat: true });
+
+      expect(readFile('component.ts')).toContain('legacyGetUsers.createSubject(null, { injector: this.injector })');
+    });
+
+    it('adds the injector to a container factory config and keeps the initial value', async () => {
+      writeComponent(`  load() {
+    return [legacyGetUsers.createSignal(first, { destroyOnResponse: true }), legacyGetUsers.behaviorSubject(first, cfg)];
+  }`);
+
+      await migration(tree, { skipFormat: true });
+
+      const result = readFile('component.ts');
+
+      expect(result).toContain(
+        'legacyGetUsers.createSignal(first, { destroyOnResponse: true, injector: this.injector })',
+      );
+      expect(result).toContain('legacyGetUsers.behaviorSubject(first, { ...cfg, injector: this.injector })');
+    });
+
+    it('leaves a container factory that already passes an injector alone', async () => {
+      writeComponent(`  load() {
+    return legacyGetUsers.createSubject(null, { injector: someInjector });
+  }`);
+
+      await migration(tree, { skipFormat: true });
+
+      expect(readFile('component.ts')).toContain('createSubject(null, { injector: someInjector })');
+      expect(readFile('component.ts')).not.toContain('this.injector');
+    });
+
+    it('leaves a container factory at a class field alone', async () => {
+      writeComponent(`  users = legacyGetUsers.createSubject();`);
+
+      await migration(tree, { skipFormat: true });
+
+      expect(readFile('component.ts')).toContain('users = legacyGetUsers.createSubject();');
     });
 
     it('migrates a callback nested inside queryComputed', async () => {

@@ -318,7 +318,7 @@ Two failure modes, both now reported clearly instead of as a bare `NG0203` / `NG
 - **No injector at all** throws an `ET950` error naming the creator - by its `name`, or by the endpoint it was built from (`GET /person`) when it has none. Only Angular's NG0203 is translated this way; any other DI failure (an injector mid-teardown, a missing provider) surfaces unchanged, because "called outside of an injection context" would send you after the wrong thing.
 - **A destroyed injector** - a captured component injector used by a callback that outlived the component, e.g. a debounced search resolving after navigation - logs a dev-mode warning and returns an **inert query**: it never executes, its signals stay empty, and tearing it down is a no-op. That is deliberate; a search firing during teardown is not a programming error worth crashing over. If you see the warning regularly, guard the call site with `DestroyRef.onDestroy` or capture an injector that outlives it.
 
-`nx g @ethlete/query:migrate-to-query-v3` threads the injector for you, and
+`nx g @ethlete/query:migrate-to-query-v3` threads the injector for you into `prepare()`, `createSubject()`, `createSignal()` and `behaviorSubject()` calls on a `legacy*` creator, and
 [`ethlete/no-legacy-prepare-without-injector`](/eslint/rules#no-legacy-prepare-without-injector) keeps the
 next callback you write from regressing - both classify by the **innermost** function boundary, so a
 `prepare()` inside a `computed()` at a class field counts as needing one even though the field initializer

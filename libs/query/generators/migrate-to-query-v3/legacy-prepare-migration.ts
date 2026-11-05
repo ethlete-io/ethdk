@@ -13,11 +13,15 @@ import {
 type LegacyCreatorUsage = {
   filePath: string;
   creatorName: string;
+  method: string;
   line: number;
   position: { start: number; end: number };
   context: 'class-field' | 'constructor' | 'method' | 'queryComputed' | 'injection-context' | 'function' | 'unknown';
   hasExistingInjector: boolean;
 };
+
+/** The creator methods that resolve an injector, and so throw `ET950` when called without one. */
+const INJECTOR_METHODS = new Set(['prepare', 'createSubject', 'createSignal', 'behaviorSubject']);
 
 /** `default` can never be a class name, so it cannot collide with a named class of the same file. */
 const ANONYMOUS_DEFAULT_CLASS_KEY = 'default';
@@ -114,13 +118,14 @@ const findLegacyCreatorUsages = (content: string, filePath: string) => {
     if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
       const propertyAccess = node.expression;
 
-      if (ts.isIdentifier(propertyAccess.name) && propertyAccess.name.text === 'prepare') {
+      if (ts.isIdentifier(propertyAccess.name) && INJECTOR_METHODS.has(propertyAccess.name.text)) {
         const creatorName = ts.isIdentifier(propertyAccess.expression) ? propertyAccess.expression.text : undefined;
 
         if (creatorName && legacyCreatorNames.has(creatorName)) {
           usages.push({
             filePath,
             creatorName,
+            method: propertyAccess.name.text,
             line: getLineNumber(node, sourceFile),
             position: {
               start: node.getStart(sourceFile),
@@ -527,7 +532,7 @@ const transformLegacyCreatorPrepareCalls = (
 
     const content = tree.read(filePath, 'utf-8');
 
-    if (!content || !content.includes('.prepare(')) {
+    if (!content || !/\.(prepare|createSubject|createSignal|behaviorSubject)\(/.test(content)) {
       return;
     }
 
@@ -586,7 +591,7 @@ const transformPrepareCallsInFile = (
     if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
       const propertyAccess = node.expression;
 
-      if (ts.isIdentifier(propertyAccess.name) && propertyAccess.name.text === 'prepare') {
+      if (ts.isIdentifier(propertyAccess.name) && INJECTOR_METHODS.has(propertyAccess.name.text)) {
         const creatorName = ts.isIdentifier(propertyAccess.expression) ? propertyAccess.expression.text : undefined;
 
         if (!creatorName || !legacyCreatorNames.has(creatorName)) {
@@ -612,7 +617,7 @@ const transformPrepareCallsInFile = (
             return;
           }
 
-          const transformedCall = transformSinglePrepareCall(node, `this.${injectorMember}`, sourceFile, pollingInfo);
+          const transformedCall = transformCall(node, `this.${injectorMember}`, sourceFile, pollingInfo);
 
           if (transformedCall) {
             replacements.push({
@@ -654,7 +659,7 @@ const transformPrepareCallsInFile = (
           }
 
           const injectorName = functionsNeedingInjector.get(functionPosition)?.injectorName ?? 'injector';
-          const transformedCall = transformSinglePrepareCall(node, injectorName, sourceFile, pollingInfo);
+          const transformedCall = transformCall(node, injectorName, sourceFile, pollingInfo);
 
           if (transformedCall) {
             replacements.push({
@@ -795,6 +800,39 @@ const findContainingClass = (node: ts.Node) => {
   }
 
   return undefined;
+};
+
+const transformCall = (
+  callNode: ts.CallExpression,
+  injectorReference: string,
+  sourceFile: ts.SourceFile,
+  pollingInfo: Map<string, QueryPollingInfo>,
+) =>
+  (callNode.expression as ts.PropertyAccessExpression).name.text === 'prepare'
+    ? transformSinglePrepareCall(callNode, injectorReference, sourceFile, pollingInfo)
+    : transformContainerCall(callNode, injectorReference, sourceFile);
+
+const transformContainerCall = (callNode: ts.CallExpression, injectorReference: string, sourceFile: ts.SourceFile) => {
+  const propertyAccess = callNode.expression as ts.PropertyAccessExpression;
+  const initialValue = callNode.arguments[0]?.getText(sourceFile) ?? 'null';
+  const config = callNode.arguments[1];
+  let nextConfig = `{ injector: ${injectorReference} }`;
+
+  if (config && ts.isObjectLiteralExpression(config)) {
+    const hasInjector = config.properties.some(
+      (property) => !!property.name && ts.isIdentifier(property.name) && property.name.text === 'injector',
+    );
+
+    if (hasInjector) {
+      return undefined;
+    }
+
+    nextConfig = `{ ${[...config.properties.map((property) => property.getText(sourceFile)), `injector: ${injectorReference}`].join(', ')} }`;
+  } else if (config) {
+    nextConfig = `{ ...${config.getText(sourceFile)}, injector: ${injectorReference} }`;
+  }
+
+  return `${propertyAccess.expression.getText(sourceFile)}.${propertyAccess.name.text}(${initialValue}, ${nextConfig})`;
 };
 
 const transformSinglePrepareCall = (
@@ -966,8 +1004,8 @@ const reportManualReviewLocations = (tree: Tree, allUsages: LegacyCreatorUsage[]
 
       if (foundFunctionWithoutInject) {
         report.addManualReview({
-          title: `Review standalone prepare() usage for ${usage.creatorName}`,
-          summary: `${usage.creatorName}.prepare() is used in a standalone function without an obvious injection context.`,
+          title: `Review standalone ${usage.method}() usage for ${usage.creatorName}`,
+          summary: `${usage.creatorName}.${usage.method}() is used in a standalone function without an obvious injection context.`,
           action:
             'Pass an Injector explicitly, move the call into queryComputed(), or wrap the logic in a function that already uses inject().',
           locations: [{ filePath: usage.filePath, line: usage.line }],
@@ -980,7 +1018,7 @@ const reportManualReviewLocations = (tree: Tree, allUsages: LegacyCreatorUsage[]
     if (usage.context === 'unknown') {
       report.addManualReview({
         title: `Verify execution context for ${usage.creatorName}`,
-        summary: `The migration could not classify the execution context of ${usage.creatorName}.prepare().`,
+        summary: `The migration could not classify the execution context of ${usage.creatorName}.${usage.method}().`,
         action:
           'Inspect the surrounding code and confirm that the generated injector handling and destroyOnResponse behavior are correct.',
         locations: [{ filePath: usage.filePath, line: usage.line }],
