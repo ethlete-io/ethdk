@@ -174,7 +174,7 @@ all five fifagg apps build on `chore/query-v3-migration`.
   synthetic specs (e1f1aa645, bbe25129c) each had one creator per name and passed; only the run on the real repo
   found the name clash. A migrator finding that does not reproduce in a spec gets a run on a copy of the real repo
   before it is called not reproducible.
-- **12. Wrong creator set into a signal:** a PATCH query goes into a signal made from a POST creator. v2 typing allowed
+- **12. Wrong creator set into a signal (no migrator fix: the generators parse with `ts.createSourceFile`, no Program, and `tsc` already flags it; ff, 2026-11-05):** a PATCH query goes into a signal made from a POST creator. v2 typing allowed
   it; `LegacyQuery` args typing does not. Not a generator bug. The generator could list `createSignal()` signals that
   get `.set()` with the query of another creator.
 - **13. Devtools in the initial bundle:** the codemod keeps a static `QueryDevtoolsComponent` import. The panel ships
@@ -286,6 +286,9 @@ all five fifagg apps build on `chore/query-v3-migration`.
   points at the wrong line: 3 lint errors plus an unused-directive warning
   (`navigation-cards/{country,nation,organizer}-navigation-card/*.component.ts:30-33`, fixed by hand 7374cc7b95).
   Fix (ff): insert the field before the leading comments of the next member, with a spec.
+- **Receiver gap (item 14), decided by ff and the doc agent:** no type checker in the migrator. It reports every
+  `.prepare` / `.createSignal` / `.behaviorSubject` whose receiver ends in a property named `legacy*`, with file:line
+  and the action "pass `{ injector }` or add `provideLegacyPrepareFallback()`". Built after item 26.
 - **26. A 401 hangs when the refresh returns the same token (fifagg-frontend-3d, their item 14):** the v3 client
   retries a 401 only when the access token changed (dist `ethlete-query.mjs:4675`). A refresh in the same second can
   return the identical JWT (whole-second `iat`, no `jti`); then no retry runs, no error surfaces, and the app's loader
