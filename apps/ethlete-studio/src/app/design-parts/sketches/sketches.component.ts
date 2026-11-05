@@ -61,20 +61,28 @@ export type SketchShotContext = { $implicit: SketchRow; state: string };
 
 const ZOOM_STEP = 1.5;
 
-/**
- * The states every variant row draws the same as Current (`changed === false`), unless that is every state; a state
- * still compared (`null`) never folds.
- */
+const statesOf = (rows: readonly SketchRow[]) => [
+  ...new Set(rows.flatMap((row) => row.shots.map((shot) => shot.state))),
+];
+
+/** The states every variant row draws the same as Current (`changed === false`); a state still compared (`null`) never folds. */
 export const foldedStatesOf = (rows: readonly SketchRow[]): ReadonlySet<string> => {
   const variants = rows.filter((row) => row.key !== SKETCH_CURRENT);
-  const states = [...new Set(rows.flatMap((row) => row.shots.map((shot) => shot.state)))];
-  const folded = states.filter(
-    (state) =>
-      variants.length > 0 &&
-      variants.every((row) => row.shots.some((shot) => shot.state === state && shot.changed === false)),
-  );
 
-  return new Set(folded.length === states.length ? [] : folded);
+  return new Set(
+    statesOf(rows).filter(
+      (state) =>
+        variants.length > 0 &&
+        variants.every((row) => row.shots.some((shot) => shot.state === state && shot.changed === false)),
+    ),
+  );
+};
+
+/** The states Current and every variant row draw: all of them while `open`, else only the ones a variant changes. */
+export const shownStatesOf = (rows: readonly SketchRow[], open: boolean): string[] => {
+  const folded = open ? new Set<string>() : foldedStatesOf(rows);
+
+  return statesOf(rows).filter((state) => !folded.has(state));
 };
 
 const WRAP_WIDTH = 1440;
@@ -168,6 +176,7 @@ export class SketchesComponent {
   public fresh = input(false);
   public status = input<SketchStatus>('waiting');
   public errored = input<readonly string[]>([]);
+  public mergeHold = input<string | null>(null);
   public drawn = input<string | null>(SKETCH_DRAWN);
   public hold = input<SketchHold>(SKETCH_HOLD);
   public idle = input<SketchIdle>(SKETCH_IDLE);
@@ -226,11 +235,14 @@ export class SketchesComponent {
   );
   protected foldedStates = computed(() => foldedStatesOf(this.listedRows()));
   public shownRows = computed(() => {
-    const folded = this.foldedStates();
+    const rows = this.listedRows();
+    const shown = new Set(shownStatesOf(rows, this.statesOpen()));
 
-    if (this.statesOpen() || folded.size === 0) return this.listedRows();
+    if (shown.size === statesOf(rows).length) return rows;
 
-    return this.listedRows().map((row) => ({ ...row, shots: row.shots.filter((shot) => !folded.has(shot.state)) }));
+    return rows
+      .map((row) => ({ ...row, shots: row.shots.filter((shot) => shown.has(shot.state)) }))
+      .filter((row) => shown.size > 0 || row.key !== SKETCH_CURRENT);
   });
   protected question = computed(() => this.rounds().find((option) => option.value === this.round())?.note ?? '');
   public columns = computed(() => {

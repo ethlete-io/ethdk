@@ -123,12 +123,74 @@ describe('SketchesComponent', () => {
     expect(framesOf()).toEqual(['x rest', 'x open', 'x busy']);
   });
 
-  it('folds no state when every state draws like Aktuell', async () => {
-    const rows = ROWS.map((row) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: false })) }));
-    const root: HTMLElement = (await render({ rows, camera: '100', sameOpen: true })).nativeElement;
+  it('draws the same state set in Aktuell and every variant row', async () => {
+    const rows: SketchRow[] = [
+      { ...ROWS[0]!, shots: [...ROWS[0]!.shots, { state: 'busy', changed: false, height: 90 }] },
+      { ...ROWS[1]!, shots: [...ROWS[1]!.shots, { state: 'busy', changed: false, height: 90 }] },
+    ];
+    const statesOf = (root: HTMLElement, key: string) =>
+      [...root.querySelectorAll(`[data-sk-row="${key}"] [data-sk-state]`)].map((cell) =>
+        cell.getAttribute('data-sk-state'),
+      );
+    const changed: HTMLElement = (await render({ rows, camera: '100' })).nativeElement;
 
-    expect(root.querySelector('[data-sk-folded]')).toBeNull();
-    expect(root.querySelectorAll('[data-sk-row="x"] [data-sk-frame]').length).toBe(2);
+    expect(statesOf(changed, 'current')).toEqual(['open']);
+    expect(statesOf(changed, 'x')).toEqual(statesOf(changed, 'current'));
+
+    const unchanged = rows.map((row) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: false })) }));
+    const same: HTMLElement = (await render({ rows: unchanged, camera: '100' })).nativeElement;
+
+    expect(statesOf(same, 'current')).toEqual([]);
+    expect(statesOf(same, 'x')).toEqual(statesOf(same, 'current'));
+  });
+
+  it('shows only the question, the folded count and Übernehmen when every state draws like Aktuell', async () => {
+    const rows = ROWS.map((row) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: false })) }));
+    const fixture = await render({
+      rows,
+      camera: '100',
+      status: 'waiting',
+      rounds: [{ value: 'r1', label: 'Runde 1', note: 'Wo steht der Status?' }],
+      round: 'r1',
+    });
+    const root: HTMLElement = fixture.nativeElement;
+
+    expect(textOf(root.querySelector('[data-sk-question]'))).toBe('Wo steht der Status?');
+    expect(textOf(root.querySelector('[data-sk-folded] > span'))).toBe(LABELS.foldedStates(2));
+    expect(root.querySelector('[data-sk-state]')).toBeNull();
+    expect(root.querySelector('[data-sk-stage]')).toBeNull();
+    expect(root.querySelector('[data-sk-row="current"]')).toBeNull();
+    expect(textOf(root.querySelector('[data-sk-row="x"] [data-sk-merge]'))).toBe(LABELS.merge);
+
+    root.querySelector<HTMLButtonElement>('[data-sk-folded] button')?.click();
+    await fixture.whenStable();
+
+    expect(root.querySelectorAll('[data-sk-row="current"] [data-sk-state]').length).toBe(2);
+    expect(textOf(root.querySelector('[data-sk-same-action="x"] [data-sk-merge]'))).toBe(LABELS.merge);
+  });
+
+  it('keeps Übernehmen of a folded unchanged variant visible and emits it', async () => {
+    const same: SketchRow = { ...ROWS[1]!, key: 'y', shots: ROWS[0]!.shots };
+    const fixture = await render({ camera: '100', status: 'waiting', rows: [...ROWS, same] });
+    const root: HTMLElement = fixture.nativeElement;
+    const merged: string[] = [];
+
+    fixture.componentInstance.merge.subscribe((variant) => merged.push(variant));
+
+    expect(root.querySelector('[data-sk-row="y"]')).toBeNull();
+    root.querySelector<HTMLButtonElement>('[data-sk-same-action="y"] [data-sk-merge]')?.click();
+
+    expect(merged).toEqual(['y']);
+  });
+
+  it('says why the sketch did not merge itself next to Übernehmen', async () => {
+    const root: HTMLElement = (
+      await render({ camera: '100', status: 'waiting', mergeHold: 'studio has uncommitted edits' })
+    ).nativeElement;
+
+    expect(textOf(root.querySelector('[data-sk-row="x"] [data-sk-merge-hold]'))).toBe(
+      LABELS.mergeHold('studio has uncommitted edits'),
+    );
   });
 
   it('shows the short model name with the full id and time as its title', async () => {

@@ -433,6 +433,8 @@ export type ListedSketch = {
   rejections?: Record<string, SketchRejection[]>;
   /** Set while `sketch hold` pauses the sketch: what it waits on, the model id that held it and when. */
   hold?: { until: string; by: string; heldAt: string };
+  /** Set while a ready sketch with no visible change could not merge itself: why, and when it tried. */
+  mergeHold?: { reason: string; at: string };
 };
 
 /** The key of the sketch's first target part; `target` names the sketch, as `pages/flows@edit` does for a direct edit. */

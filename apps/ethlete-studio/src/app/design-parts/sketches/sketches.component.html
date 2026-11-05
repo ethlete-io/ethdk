@@ -195,10 +195,15 @@
                   <div
                     [style.grid-column]="sameColumn()"
                     [style.grid-row]="'1 / span ' + (matrixStates().length * 2 + 1)"
-                    class="w-36 rounded-control-md p-space-1 shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+                    class="flex w-36 flex-col gap-space-2 rounded-control-md p-space-1 shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
                     data-sk-same
                   >
                     <ethlete-disclosure [(open)]="sameOpen" [label]="sameLabel()" size="xs" />
+                    @for (row of sameRows(); track row.key) {
+                      <span [attr.data-sk-same-action]="row.key" class="flex">
+                        <ng-container *ngTemplateOutlet="mergeTemplate; context: { $implicit: row }" />
+                      </span>
+                    }
                   </div>
                 }
               }
@@ -222,6 +227,13 @@
                     </div>
                   }
                 </ethlete-disclosure>
+                @if (!sameOpen()) {
+                  @for (row of sameRows(); track row.key) {
+                    <span [attr.data-sk-same-action]="row.key" class="flex pt-space-2">
+                      <ng-container *ngTemplateOutlet="mergeTemplate; context: { $implicit: row }" />
+                    </span>
+                  }
+                }
               </section>
             }
           }
@@ -253,7 +265,7 @@
     <div class="min-w-0">
       @if (drawn) {
         <ng-container *ngTemplateOutlet="placeholderTemplate; context: { $implicit: row }" />
-      } @else {
+      } @else if (row.shots.length > 0) {
         <div
           #stage
           [style.grid-template-columns]="gridOf(row)"
@@ -270,6 +282,26 @@
       }
     </div>
   </section>
+</ng-template>
+<ng-template #mergeTemplate let-row>
+  @if (status() === 'waiting' && !errored().includes(row.key)) {
+    <span class="flex flex-wrap items-center gap-space-2">
+      <button
+        [attr.aria-label]="LABELS.variant(row.key) + ' ' + LABELS.merge"
+        (click)="merge.emit(row.key)"
+        et-button
+        type="button"
+        variant="outline"
+        size="sm"
+        data-sk-merge
+      >
+        {{ LABELS.merge }}
+      </button>
+      @if (mergeHold(); as reason) {
+        <span class="text-ui-sm text-et-surface-muted" data-sk-merge-hold>{{ LABELS.mergeHold(reason) }}</span>
+      }
+    </span>
+  }
 </ng-template>
 <ng-template #placeholderTemplate let-row>
   <div
@@ -336,12 +368,8 @@
           ><span class="size-1.5 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></span
           >{{ LABELS.drawingMark }}</span
         >
-      } @else if (status() === 'waiting' && !errored().includes(row.key)) {
-        <span class="flex">
-          <button (click)="merge.emit(row.key)" et-button type="button" variant="outline" size="sm" data-sk-merge>
-            {{ LABELS.merge }}
-          </button>
-        </span>
+      } @else {
+        <ng-container *ngTemplateOutlet="mergeTemplate; context: { $implicit: row }" />
       }
     }
   </div>

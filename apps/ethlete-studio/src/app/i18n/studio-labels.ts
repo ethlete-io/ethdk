@@ -41,6 +41,7 @@ export const STUDIO_LABELS = {
   sketches: {
     discard: 'Verwerfen',
     merge: 'Übernehmen',
+    mergeHold: (reason: string) => `Nicht automatisch gemerged: ${reason}`,
     variant: (label: string) => `Variante ${label}`,
     fitHint: 'Doppelklick zum Einpassen',
     current: 'Aktuell',

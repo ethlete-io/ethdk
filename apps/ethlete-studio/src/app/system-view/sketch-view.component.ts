@@ -144,6 +144,7 @@ export const liveShotsOf = ({
         [pins]="variantPins()"
         [selected]="picked() ?? undefined"
         [errored]="erroredVariants()"
+        [mergeHold]="sketch().mergeHold?.reason ?? null"
         [error]="mergeError()"
         [listError]="listError()"
         [shot]="shot"
