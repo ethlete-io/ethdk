@@ -1,10 +1,10 @@
 {
   "components/canvas-viewport": "a1b78e29542a5eb7",
   "components/comment-draft": {
-    "hash": "6fe22d60361aa471",
-    "variant": "a",
-    "decidedBy": "auto: no visible change",
-    "at": "2026-11-05T13:34:32.688Z"
+    "hash": "ad14ceb6f41d913d",
+    "variant": "raised",
+    "decidedBy": "user",
+    "at": "2026-11-05T15:36:53.628Z"
   },
   "components/comment-pin": {
     "hash": "615fc830d7b00fa4",
