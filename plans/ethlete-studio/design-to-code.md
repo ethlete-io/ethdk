@@ -3448,7 +3448,11 @@ dringend schneller werden, der und ich glaub auch weitere befehle sind echt lahm
 command has a time budget, and nothing records how long a command ran, so a slow command looks like a working one.
 First measure (builder, idle machine, 1-variant sketch on a 1-state part): `sketch new` 0.6 s, `sketch check` 5.7 s,
 `sketch ready` 6.7 s, `design check --rules` 2.2 s. The small case is fast; the slowness is per state and frame
-(`pages/system`: 26 states x 3 widths). The biggest phase is not named yet: per-phase timing comes next. Cause open. Tool fix: (1) measure `sketch ready`, `sketch check`,
+(`pages/system`: 26 states x 3 widths). The biggest phase is not named yet: per-phase timing comes next. Cause found (builder, 6d1b0868c): phase timing prints with `ETHLETE_DESIGN_PHASES=1` (stderr). The biggest phase is
+render-check, 22 s on a `pages/system` sketch (1 variant, 26 states): it drew the sketch, then the merged part, one after
+the other. The merged part now draws at the same time: `sketch ready` 44 s to 35 s (in a /tmp clone). Other phases
+(ready): identical 11.4 s, changes-shot 5.5 s, gates 2.4 s, auto-merge 2.0 s. Next target: `identical` shoots states one
+by one. A budget spec counts browser contexts (max 2 at once). Merge timing and CI not verified. Tool fix: (1) measure `sketch ready`, `sketch check`,
 `sketch merge`, `sketch new` and `design check` on a real sketch, with the time of each phase; (2) fix the biggest
 phase first (suspects: a full draw of every variant and state, the full listing, a cold CLI build, a repeated
 compare); (3) every design command prints its duration, and a spec or a budget list fails when a command passes its
