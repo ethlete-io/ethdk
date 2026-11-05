@@ -18,8 +18,6 @@ export type Props = {
 const label = ({ author, count, resolved }: Props) =>
   `Comment by ${author}${count && count > 1 ? `, ${count} messages` : ''}${resolved ? ', resolved' : ''}`;
 
-type CountPlacement = 'beside' | 'inside';
-
 const shape = 'rounded-[50%_50%_50%_0]';
 
 const pinBase = `group/pin relative inline-flex size-5.5 cursor-pointer items-center justify-center ${shape} border-0 p-0 text-ui-xs font-ui-strong leading-none focus-visible:outline-2 focus-visible:outline-focus-ring`;
@@ -51,16 +49,15 @@ const mark = (p: Props) => {
   return p.agent ? agentLogo(p.agent, 'size-3') : (p.initials ?? '');
 };
 
-const face = (p: Props, inner = '') => `<span class="${faceClass(p)}">${mark(p)}${inner}</span>`;
+const face = (p: Props) => `<span class="${faceClass(p)}">${mark(p)}</span>`;
 
 const countBadge = ({ count, resolved }: Props) =>
   !resolved && count && count > 1
-    ? `<span aria-hidden="true" class="absolute -top-1.5 left-4.5 box-border flex h-4 min-w-4 items-center justify-center rounded-pill bg-et-theme px-1 text-ui-xs font-ui-strong leading-none text-et-on-theme tabular-nums ring-2 ring-et-surface-bg">${count}</span>`
+    ? `<span aria-hidden="true" class="pointer-events-none absolute -top-1.5 left-4.5 box-border flex h-4 min-w-4 items-center justify-center rounded-pill bg-et-theme px-1 text-ui-xs font-ui-strong leading-none text-et-on-theme tabular-nums ring-2 ring-et-surface-bg">${count}</span>`
     : '';
 
-export const pin = (p: Props, placement: CountPlacement = 'beside') => {
+export const pin = (p: Props) => {
   const badge = countBadge(p);
-  const inside = placement === 'inside';
   const markup = `<button
         type="button"
         class="${pinClass(p)}"
@@ -69,11 +66,11 @@ export const pin = (p: Props, placement: CountPlacement = 'beside') => {
         data-et-action="emit:pinToggle"
         aria-label="${label(p)}"
         ${p.selected ? 'aria-pressed="true"' : ''}
-      >${face(p, inside ? badge : '')}</button>`;
+      >${face(p)}</button>`;
   const marked = control(markup, 'pin');
   const button = p.interaction ? forceInteraction(marked, p.interaction) : marked;
 
-  return inside || !badge ? button : `<span class="relative inline-flex">${button}${badge}</span>`;
+  return !badge ? button : `<span class="relative inline-flex">${button}${badge}</span>`;
 };
 
 const tom: Props = { author: 'Tom', initials: 'TB' };
