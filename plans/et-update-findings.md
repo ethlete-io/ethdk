@@ -251,10 +251,14 @@ all five fifagg apps build on `chore/query-v3-migration`.
   root `destroyOnResponse` effect (`legacy-query-creator.ts:295`); the query is destroyed before the store `set`, and
   the success is never published. One chain with 21. fifagg workaround now 6a2535c739 (store write once per response
   in `get`), proven in E2E.
-- **19. Legacy `prepare()` returns a new wrapper for the same arguments (fifagg-frontend-3d, not yet proven in E2E):**
+- **19. Legacy `prepare()` returns a new wrapper for the same arguments (fifagg-frontend-3d, built in the working tree, commit after the push):**
   v2 returned the cached one. A `queryComputed` fed a fresh object on every check loops (NG0103).
   fifagg: `competition-consistency-rank.component.ts:50`, fed by a getter at `layout-dynamic-types.component.ts:112`.
   Workaround bdfe14a6cc (string ids). Fix (ff): v2 cache parity for equal arguments, with a scenario on both clients.
+  Built rules (ff): reuse only inside one injector scope (WeakMap keyed by the host DestroyRef), only when `canBeCached`
+  and not `skipQueryStore`; key = `queryStoreCacheKey` + sorted args without authorization; the entry leaves when the
+  query's own injector DestroyRef fires. v2 `query.ts:228` refetch on an expired success already matches v3, so
+  `execute()` is unchanged.
 - **20. Devtools pill over app buttons in E2E (fifagg-frontend-3d):** `#et-query-devtools-pill`
   (`query-devtools-pills.ts`) sits on the body at the top z-index, bottom-right, over Save and Submit; hiding
   `et-query-devtools` does not hide it. About 25 E2E tests failed on blocked clicks. Workaround 76e304cb41: the apps
