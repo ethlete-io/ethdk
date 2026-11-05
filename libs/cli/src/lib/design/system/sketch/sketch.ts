@@ -154,6 +154,43 @@ export const withSharedImports = (options: { source: string; file: string; partD
   });
 };
 
+const insideOf = (dir: string, path: string) => {
+  const rest = relative(dir, path);
+
+  return !rest.startsWith('..') && !isAbsolute(rest);
+};
+
+export const relativeSpecifierOf = (options: { from: string; to: string }) => {
+  const path = relative(dirname(options.from), options.to).split(sep).join('/');
+
+  return path.startsWith('.') ? path : `./${path}`;
+};
+
+/**
+ * Rewrites the relative imports of the files in `dir`, a copy of the folder `from`, that leave `from` - and `within`,
+ * when given - so they reach the same files from `dir`.
+ */
+export const rebaseOutsideImports = (options: { dir: string; from: string; within?: string }) => {
+  const { dir, from, within } = options;
+
+  for (const file of sourceFilesIn(dir)) {
+    const original = resolve(from, relative(dir, file));
+    const source = readFileSync(file, 'utf8');
+    const rewritten = source.replace(
+      /(['"])(\.{1,2}\/[^'"]+)\1/gu,
+      (...[match = '', quote = '', specifier = '']: string[]) => {
+        const path = resolve(dirname(original), specifier);
+
+        return insideOf(from, path) || (within !== undefined && insideOf(within, path))
+          ? match
+          : `${quote}${relativeSpecifierOf({ from: file, to: path })}${quote}`;
+      },
+    );
+
+    if (rewritten !== source) writeFileSync(file, rewritten);
+  }
+};
+
 /** Rewrites the relative imports of the part's own `shared/` folder in its files to `@shared/`. */
 export const rewriteSharedImports = (partDir: string) => {
   for (const file of sourceFilesIn(partDir)) {
@@ -617,9 +654,11 @@ const seedTarget = (options: {
 
   if (like) {
     copyPartAs({ from: like, to: folder, name: target.name });
+    rebaseOutsideImports({ dir: folder, from: like.folder });
     liftShared({ partDir: folder, sketchSharedDir: resolve(dir, SHARED_FOLDER) });
   } else if (existing) {
     cpSync(resolve(existing.file, '..'), folder, { recursive: true });
+    rebaseOutsideImports({ dir: folder, from: resolve(existing.file, '..') });
     liftShared({ partDir: folder, sketchSharedDir: resolve(dir, SHARED_FOLDER) });
   } else if (target.layer === 'pages') {
     const widths = [...new Set(Object.values(product.presets).map((preset) => preset.width))].sort((a, b) => a - b);

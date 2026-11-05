@@ -17,7 +17,15 @@ import { forgetMerged, recordMerged, rerecordChangedMerged, unchangedMergedOf } 
 import { madeByOf, noteOf, withMadeBy, withNote } from './part-definition';
 import { staleEmbeddedOf } from './stale-base';
 import { ROOT_DECISION_FILES } from '../uncommitted-decisions';
-import { authorsOf, clearSketchReport, rejectedProblemOf, Sketch, sketchesDirOf, variantDirOf } from './sketch';
+import {
+  authorsOf,
+  clearSketchReport,
+  rebaseOutsideImports,
+  rejectedProblemOf,
+  Sketch,
+  sketchesDirOf,
+  variantDirOf,
+} from './sketch';
 
 const swap = (entries: { from: string | null; to: string }[]) => {
   const backup = mkdtempSync(join(tmpdir(), 'ethlete-sketch-merge-'));
@@ -297,6 +305,13 @@ const mergeOrReason = (options: {
   ]);
 
   for (const { noteFile, noted } of notedTargets) writeFileSync(noteFile, noted);
+
+  for (const part of parts)
+    rebaseOutsideImports({
+      dir: resolve(rootOf(partKeyOf(part)), part.layer, part.name),
+      from: dirname(part.file),
+      within: sketch.dir,
+    });
 
   for (const { targetDir, paths } of shared.carry) {
     const key = relative(product.dir, targetDir);

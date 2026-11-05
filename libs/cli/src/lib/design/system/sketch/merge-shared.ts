@@ -5,7 +5,7 @@ import { ProductSource } from '../base';
 import { productSharedDirsOf, SHARED_FOLDER, SHARED_PREFIX, sharedFileOf } from '../imports';
 import { partKeyOf } from '../resolve-product';
 import { importsOf } from '../ts-source';
-import { sharedDirOf, Sketch, sourceFilesIn, variantSharedDirOf } from './sketch';
+import { relativeSpecifierOf, sharedDirOf, Sketch, sourceFilesIn, variantSharedDirOf } from './sketch';
 
 type PartFile = { layer: string; name: string; file: string };
 type SharedProduct = Pick<ProductSource, 'dir'> & { base: Pick<ProductSource, 'dir'> | null };
@@ -149,12 +149,6 @@ export const editedSharedPathsOf = (options: { sketch: Sketch; variant: string; 
 
     return own && readFileSync(own, 'utf8') !== readFileSync(file, 'utf8') ? [path.split(sep).join('/')] : [];
   });
-};
-
-const relativeSpecifierOf = (options: { from: string; to: string }) => {
-  const path = relative(dirname(options.from), options.to).split(sep).join('/');
-
-  return path.startsWith('.') ? path : `./${path}`;
 };
 
 /**

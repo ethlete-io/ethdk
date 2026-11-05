@@ -682,6 +682,26 @@ describe('the shared folder of a sketch', () => {
   });
 });
 
+describe('a sketch on a part that imports a file outside its folder', () => {
+  it('rewrites the import so it reaches the same file from the sketch', () => {
+    const target = acme();
+    const hero = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
+
+    mkdirSync(join(target, 'apps/app'), { recursive: true });
+    writeFileSync(join(target, 'apps/app/logos.ts'), "export const logo = 'logo';\n");
+    writeFileSync(hero, `import { logo } from '../../../../../apps/app/logos';\n${readFileSync(hero, 'utf8')}`);
+
+    const sketch = open(target, 'elements/hero');
+
+    for (const variant of ['a', 'b']) {
+      const source = readFileSync(join(sketch.dir, variant, 'elements/hero/hero.ts'), 'utf8');
+
+      expect(source).toContain("from '../../../../../../../../apps/app/logos'");
+      expect(source).toContain("from './hero.css?inline'");
+    }
+  });
+});
+
 describe('a sketch on a part with a shared folder', () => {
   it("moves the part's shared folder into the sketch's and imports it as @shared/", () => {
     const target = acme();

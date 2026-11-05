@@ -775,6 +775,34 @@ describe('mergeSketch with a shared folder', () => {
   });
 });
 
+describe('mergeSketch of a part that imports a file outside its folder', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('rewrites the import back so it reaches the same file from the target', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const target = acme();
+    const configFile = join(target, DESIGN_DIR, 'config.json');
+    const config = JSON.parse(readFileSync(configFile, 'utf8'));
+    const hero = join(heroOf(target), 'hero.ts');
+    const specifier = '../../../../../apps/app/logos';
+
+    config.products.acme.harness = { app: 'apps/app', map: 'apps/app/parts.ts', shared: ['apps/app/logos.ts'] };
+    writeFileSync(configFile, JSON.stringify(config));
+    mkdirSync(join(target, 'apps/app'), { recursive: true });
+    writeFileSync(join(target, 'apps/app/logos.ts'), "export const logo = 'logo';\n");
+    writeFileSync(
+      hero,
+      `import { logo } from '${specifier}';\n${readFileSync(hero, 'utf8')}\nexport const heroLogo = logo;\n`,
+    );
+
+    const ready = readySketch(target);
+
+    expect(merge(target, { ...ready, sketch: picked(ready.sketch) })).toEqual(['elements/hero']);
+    expect(readFileSync(hero, 'utf8')).toContain(`from '${specifier}'`);
+  }, 120_000);
+});
+
 describe('mergeSketch of a base part', () => {
   afterEach(() => vi.restoreAllMocks());
 
