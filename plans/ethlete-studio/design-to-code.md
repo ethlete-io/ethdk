@@ -3380,6 +3380,15 @@ checks only parts whose app files change (B393), so the local hook never ran `pa
 search overlay roots (fixed in 5f105b30d with the footer). Process lesson: a red CI on `next` stops all finding work
 until it is green; the doc agent checks `gh run list` at session start and reports a red run to Tom at once.
 
+471\. Sessions in tmux do not clear and restart themselves. They ask Tom to run `/clear` or `/handoff`, though the
+`ethlete-agent-sessions` `restart` command clears the caller's own session and types a resume prompt. Tom: "viele
+sessions checken noch nicht dass sie in tmux mit agent sessions skill sind selbst clearen und neustarten können das
+nervt". Why no tool caught it: the context-warning hook (`libs/agent-rules/content/hooks/context-warning.py`,
+`act_now`, `recommend`) tells the agent to "recommend the user run /handoff" and never checks `$TMUX_PANE` or the
+skill. Tool fix (builder default): when `$TMUX_PANE` is set and the agent-sessions skill is installed, the hook text
+says: save the handoff, then run `agent-sessions.mjs restart <own name> "/handoff resume"` yourself, end the turn,
+never ask the user to clear; the skill description names self-restart as a trigger; a hook spec covers both texts.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
