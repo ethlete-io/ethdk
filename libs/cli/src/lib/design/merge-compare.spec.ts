@@ -2,7 +2,8 @@ import { cpSync, mkdtempSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
-import { compareMerge, PictureOf } from './merge-compare';
+import { compareMerge, drawnPair, looksTheSame, PictureOf } from './merge-compare';
+import { encodePng } from './system/part-compare';
 import { readConfig } from './paths';
 import { resolveProduct } from './system/resolve-product';
 import { createSketch, Sketch, SketchTarget } from './system/sketch/sketch';
@@ -210,5 +211,45 @@ describe('compareMerge', () => {
       changed: [{ part: 'pages/home', state: '', error: 'syntax error' }],
       unchanged: [],
     });
+  });
+});
+
+const pillOf = (options: { edge: number; width?: number }) => {
+  const width = options.width ?? 12;
+  const height = 6;
+  const data = Buffer.alloc(width * height * 4);
+
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++) {
+      const at = (y * width + x) * 4;
+      const corner = (x === 0 || x === width - 1) && (y === 0 || y === height - 1);
+      const value = corner ? options.edge : 200;
+
+      data.fill(value, at, at + 3);
+      data[at + 3] = 255;
+    }
+
+  return encodePng({ width, height, data });
+};
+
+describe('looksTheSame', () => {
+  it('takes an anti-alias shift of up to 8 of 255 on a rounded border for the same picture', () => {
+    expect(looksTheSame(pillOf({ edge: 120 }), pillOf({ edge: 128 }))).toBe(true);
+  });
+
+  it('takes a shift over 8, or another size, for a change', () => {
+    expect(looksTheSame(pillOf({ edge: 120 }), pillOf({ edge: 129 }))).toBe(false);
+    expect(looksTheSame(pillOf({ edge: 120 }), pillOf({ edge: 120, width: 13 }))).toBe(false);
+  });
+
+  it('compares a picture that does not decode byte for byte', () => {
+    expect(looksTheSame(Buffer.from('now'), Buffer.from('now'))).toBe(true);
+    expect(looksTheSame(Buffer.from('now'), Buffer.from('after'))).toBe(false);
+  });
+
+  it('lets drawnPair call an anti-alias shift no change', async () => {
+    const draw = async (sketch: unknown) => ({ png: pillOf({ edge: sketch ? 126 : 120 }), marks: [] });
+
+    expect((await drawnPair(draw, { target: 'elements/pill', variant: 'a' })).same).toBe(true);
   });
 });

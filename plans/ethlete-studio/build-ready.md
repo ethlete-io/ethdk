@@ -611,3 +611,8 @@ checkout in `node_modules/.design-explore/viewed-shots/` with the variant conten
 bite (shot.spec, sketch-command.spec); real run: title-bar `notice-shape` refused, then passed after `design shot`.
 Not verified: the Studio server route records only after Studio runs this build. A new-part sketch is not gated. The
 gate records a handed-out shot, not a look.
+
+Finding 466: `drawnPair` (merge compare and auto-merge) uses `looksTheSame`: same size and no channel delta over 8 of
+255; a picture that does not decode compares byte for byte. Verified: merge-compare.spec fails with tolerance 0
+(rounded-border anti-alias case), passes with 8; no-visible-change.spec passes. Not verified yet: the real
+`sketch merge pages/system@check-fixes` (next step).

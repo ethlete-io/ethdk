@@ -1,4 +1,5 @@
 import { PartMark, Picture } from './shot';
+import { decodePng } from './system/part-compare';
 import { readPartModule } from './system/list-system';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { mergePreviewOf } from './system/sketch/merge-preview';
@@ -39,6 +40,30 @@ export type PictureOf = (options: {
   fresh?: boolean;
 }) => Promise<Picture>;
 
+const ANTI_ALIAS_TOLERANCE = 8;
+
+/**
+ * `true` when two pictures have the same size and no channel of any pixel differs by more than 8 of 255, so an
+ * anti-alias shift on a rounded edge is no change. A picture that does not decode is the same only byte for byte.
+ */
+export const looksTheSame = (a: Buffer, b: Buffer) => {
+  if (a.equals(b)) return true;
+
+  try {
+    const left = decodePng(a);
+    const right = decodePng(b);
+
+    if (left.width !== right.width || left.height !== right.height) return false;
+
+    for (let at = 0; at < left.data.length; at++)
+      if (Math.abs(left.data.readUInt8(at) - right.data.readUInt8(at)) > ANTI_ALIAS_TOLERANCE) return false;
+
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 /**
  * Draws a state without and with `merged`. A pair that differs is drawn once more, bypassing any kept picture,
  * and only that second pair counts, so one odd picture under load is not taken for a change.
@@ -50,9 +75,9 @@ export const drawnPair = async (
   const both = (fresh: boolean) => Promise.all([draw(null, fresh), draw(merged, fresh)]);
   let [now, after] = await both(false);
 
-  if (!now.png.equals(after.png)) [now, after] = await both(true);
+  if (!looksTheSame(now.png, after.png)) [now, after] = await both(true);
 
-  return { now, after, same: now.png.equals(after.png) };
+  return { now, after, same: looksTheSame(now.png, after.png) };
 };
 
 export type PartModuleLoader = (options: {
