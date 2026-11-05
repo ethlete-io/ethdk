@@ -101,7 +101,7 @@ export const REACH_STATEMENTS = `
       return null;
     };
     const previewed = (element) => element.closest('[data-et-projected]')?.parentElement?.closest('[data-et-projected]');
-    const actions = [...root.querySelectorAll('[data-et-action]')].filter((element) => !element.closest('[inert], [aria-hidden="true"]') && !previewed(element));
+    const actions = reachableControlsOf(root, '[data-et-action]', true).filter((element) => !previewed(element));
     const shownActions = [];
     for (const element of actions) {
       const hidden = hiddenOf(element);

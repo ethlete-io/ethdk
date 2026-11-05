@@ -27,6 +27,7 @@ import { LOST_SURFACE_RULE, NESTED_SURFACE_RULE, SURFACE_STATEMENTS } from './su
 import { NESTED_SCROLL_RULE, NESTED_SCROLL_STATEMENTS } from './nested-scroll';
 import { INTERACTIVE_SELECTOR } from './actions';
 import { REACH_STATEMENTS } from './reach';
+import { REACHABLE_CONTROLS_STATEMENTS } from './reachable-controls';
 
 /** One drawing of one state that breaks a render rule. `path` is a short selector path to the element. */
 export type RenderIssue = {
@@ -408,8 +409,9 @@ ${NESTED_SCROLL_STATEMENTS}
     for (let at = element; at && at !== root; at = at.parentElement) if (getComputedStyle(at).opacity === '0') return true;
     return false;
   };
+${REACHABLE_CONTROLS_STATEMENTS}
   const interactive = ${JSON.stringify(INTERACTIVE_SELECTOR)};
-  for (const element of root.querySelectorAll(interactive)) {
+  for (const element of reachableControlsOf(root, interactive)) {
     const rect = element.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) continue;
     const clip = clipOf(element.parentElement);
@@ -425,7 +427,7 @@ ${NESTED_SCROLL_STATEMENTS}
     if (cuts.length) report('CUT-CONTROL', element, cuts.join(' and ') + ' is cut by ' + clip.name + ', so the control is only partly reachable');
   }
   for (const element of root.querySelectorAll('[data-et-skip~="CLIPPED"]')) {
-    if (![...element.querySelectorAll(interactive)].some((control) => !control.closest('[inert]'))) continue;
+    if (reachableControlsOf(element, interactive).length === 0) continue;
     const path = pathOf(element);
     if (seen.has('SKIP-SCOPE' + path)) continue;
     seen.add('SKIP-SCOPE' + path);
