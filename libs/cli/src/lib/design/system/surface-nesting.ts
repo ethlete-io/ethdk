@@ -28,8 +28,9 @@ export const SURFACE_STATEMENTS = `
     const opaque = (colour) => rgbaOf(colour)[3] / 255 >= ${OPAQUE};
     const same = (a, b) => rgbaOf(a).every((value, index) => Math.abs(value - rgbaOf(b)[index]) <= 1);
     const edged = (style) =>
-      ['Top', 'Right', 'Bottom', 'Left'].some((side) => parseFloat(style['border' + side + 'Width']) > 0 && style['border' + side + 'Style'] !== 'none' && rgbaOf(style['border' + side + 'Color'])[3] > 0) ||
-      (style.boxShadow !== 'none' && style.boxShadow.split(/,(?![^(]*\\))/).some((shadow) => rgbaOf(shadow.match(/(rgba?|oklch|oklab|lab|lch|hsla?|color)\\([^)]*\\)/)?.[0] ?? 'transparent')[3] > 0));
+      ['Top', 'Right', 'Bottom', 'Left'].every((side) => parseFloat(style['border' + side + 'Width']) > 0 && style['border' + side + 'Style'] !== 'none' && rgbaOf(style['border' + side + 'Color'])[3] > 0) ||
+      (style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0 && rgbaOf(style.outlineColor)[3] > 0) ||
+      (style.boxShadow !== 'none' && style.boxShadow.split(/,(?![^(]*\\))/).some((shadow) => !/\\binset\\b/.test(shadow) && rgbaOf(shadow.match(/(rgba?|oklch|oklab|lab|lch|hsla?|color)\\([^)]*\\)/)?.[0] ?? 'transparent')[3] > 0));
     const surfaceOf = (element) => {
       for (let at = element.parentElement; at; at = at.parentElement) {
         const fill = getComputedStyle(at).backgroundColor;

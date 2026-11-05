@@ -434,6 +434,27 @@ describe('renderIssuesOf', () => {
     ]);
   }, 120_000);
 
+  it('does not flag a full-width bar with a one-side divider as a lost surface, but a boxed one', async (context) => {
+    const bar = (edge: string) =>
+      `<div class="bar" style="width: 300px; background: rgb(255 255 255); ${edge}; padding: 8px"><p style="margin: 0">Titel</p></div>`;
+    const target = checkout({
+      'components/title-bar': { body: bar('border-bottom: 1px solid rgb(90 90 90)') },
+      'components/boxed-bar': { body: bar('border: 1px solid rgb(90 90 90)') },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(rendered.issues.filter((issue) => issue.rule === 'LOST-SURFACE').map((issue) => issue.part)).toEqual([
+      'components/boxed-bar',
+    ]);
+  }, 120_000);
+
   it('finds the drawings the other checks pass: overflow, clipping, wrapping and zero size', async (context) => {
     const target = checkout();
     const config = readConfig(target) ?? {};
