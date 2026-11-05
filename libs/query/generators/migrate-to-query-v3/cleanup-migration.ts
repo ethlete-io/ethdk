@@ -56,6 +56,18 @@ export const migrateDevtoolsUsage = (tree: Tree, scope: MigrationScope, report: 
   const filesNeedingDevtoolsPackage: string[] = [];
 
   scope.visit(tree, (filePath) => {
+    if (filePath.endsWith('.html')) {
+      const html = tree.read(filePath, 'utf-8');
+      const nextHtml = html && selectLazyDevtools(html);
+
+      if (nextHtml && nextHtml !== html) {
+        tree.write(filePath, nextHtml);
+        updatedFiles.push(filePath);
+      }
+
+      return;
+    }
+
     if (!filePath.endsWith('.ts')) {
       return;
     }
@@ -97,7 +109,7 @@ export const migrateDevtoolsUsage = (tree: Tree, scope: MigrationScope, report: 
     report.addManualReview({
       title: 'Add @ethlete/query-devtools for the query devtools',
       summary:
-        '`QueryDevtoolsComponent` now lives in `@ethlete/query-devtools`. The imports were rewritten, but the package may not be a dependency of these projects yet.',
+        '`QueryDevtoolsComponent` is now `QueryDevtoolsLazyComponent` from `@ethlete/query-devtools/lazy`, and `<et-query-devtools>` is `<et-query-devtools-lazy>`. The imports and templates were rewritten, but the package may not be a dependency of these projects yet.',
       action:
         'Run `yarn add @ethlete/query-devtools` where needed, then `yarn install` and re-lint the affected libs so the `@nx/dependency-checks` rule sees the new dependency.',
       locations: filesNeedingDevtoolsPackage.map((filePath) => ({ filePath })),
@@ -176,8 +188,36 @@ export const migrateEmptyPrepareCalls = (tree: Tree, scope: MigrationScope, repo
 type DevtoolsFileMigration = {
   content: string;
 
-  /** Whether the file now imports `QueryDevtoolsComponent` from `@ethlete/query-devtools`. */
+  /** Whether the file now imports `QueryDevtoolsLazyComponent` from `@ethlete/query-devtools/lazy`. */
   importsComponent: boolean;
+};
+
+const LAZY_DEVTOOLS_COMPONENT = 'QueryDevtoolsLazyComponent';
+
+const selectLazyDevtools = (content: string) =>
+  content.replace(/(<\/?)et-query-devtools(?![\w-])/g, '$1et-query-devtools-lazy');
+
+const renameIdentifiers = (content: string, names: ReadonlySet<string>, replacement: string) => {
+  const sourceFile = createSourceFile(content);
+  const ranges: Array<{ start: number; end: number }> = [];
+
+  const visit = (node: ts.Node) => {
+    if (ts.isImportDeclaration(node)) {
+      return;
+    }
+
+    if (ts.isIdentifier(node) && names.has(node.text)) {
+      ranges.push({ start: node.getStart(sourceFile), end: node.getEnd() });
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+
+  return ranges
+    .sort((left, right) => right.start - left.start)
+    .reduce((result, { start, end }) => result.slice(0, start) + replacement + result.slice(end), content);
 };
 
 const migrateDevtoolsInFile = (content: string): DevtoolsFileMigration => {
@@ -198,12 +238,11 @@ const migrateDevtoolsInFile = (content: string): DevtoolsFileMigration => {
   }
 
   if (componentNames.length > 0) {
+    result = selectLazyDevtools(renameIdentifiers(result, new Set(componentNames), LAZY_DEVTOOLS_COMPONENT));
     result = ensureNamedImports({
       content: result,
-      importsNeeded: componentNames.map((name) =>
-        name === 'QueryDevtoolsComponent' ? name : `QueryDevtoolsComponent as ${name}`,
-      ),
-      moduleSpecifier: '@ethlete/query-devtools',
+      importsNeeded: [LAZY_DEVTOOLS_COMPONENT],
+      moduleSpecifier: '@ethlete/query-devtools/lazy',
     });
   }
 

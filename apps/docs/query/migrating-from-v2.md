@@ -230,14 +230,15 @@ protected matches = createPagedQueryStack({
 
 Drop the `@if (canLoadMore && !loading)` around the trigger: it waits for a loading page and fetches again while it stays in view. Inside an `et-scrollable` it measures against the track, so `rootMargin` pre-fetches in a horizontal rail. A trigger on a `<button>` becomes `(click)="matches.fetchNextPage()"` with [`[etQueryButton]`](/components/button#query-button), and `infinityQueryOverride` becomes a stack switch in the binding: `[etPagedQueryTrigger]="upcoming.isLastPageLoaded() ? completed : upcoming"`.
 
-### Devtools keep their markup
+### Devtools move to the lazy shell
 
-Both versions render `<et-query-devtools>`, so templates need no change. Only two things move, and the generator does both:
+The generator moves the devtools component to the lazy shell, which loads the panel on first open instead of with the app. It does three things:
 
 - the per-client `provideQueryClientForDevtools({ client, displayName })` calls collapse into a single `provideQueryDevtools()` - v3 registers every client and auth provider at once;
-- `QueryDevtoolsComponent` is imported from `@ethlete/query-devtools` instead of `@ethlete/query`, so that package has to be a dependency of the app.
+- `QueryDevtoolsComponent` from `@ethlete/query` becomes `QueryDevtoolsLazyComponent` from `@ethlete/query-devtools/lazy`, so that package has to be a dependency of the app;
+- `<et-query-devtools>` in a template, inline or in an `.html` file, becomes `<et-query-devtools-lazy>`.
 
-The two panels do not merge. The current one lists current-system queries, and the `legacy*` interop queries, which are real queries underneath; a client still on `V2QueryClient` only shows up in the legacy panel. Both panels use the `et-query-devtools` selector, so one template cannot import both. While some clients are still on v2, mount the current panel through its [lazy shell](/query-devtools/), `<et-query-devtools-lazy>`, next to the legacy `<et-query-devtools>`. The two keep their settings under different storage keys.
+The two panels do not merge. The current one lists current-system queries, and the `legacy*` interop queries, which are real queries underneath; a client still on `V2QueryClient` only shows up in the legacy panel. The generator rewrites a template that still uses the legacy panel, so a client that stays on `V2QueryClient` needs the legacy panel mounted by hand: the two selectors, `et-query-devtools` for the legacy panel and `et-query-devtools-lazy` for the current one, can sit side by side. See the [lazy shell](/query-devtools/). The two keep their settings under different storage keys.
 
 ### Query collections
 

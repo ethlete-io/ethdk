@@ -70,15 +70,34 @@ export const component = {
     expect(appConfig).toContain('somethingElse(),');
     expect(appConfig).not.toContain(',,');
 
-    // The component only changed packages - it stays in the imports array.
-    expect(component).toContain("import { QueryDevtoolsComponent } from '@ethlete/query-devtools';");
+    expect(component).toContain("import { QueryDevtoolsLazyComponent } from '@ethlete/query-devtools/lazy';");
     expect(component).not.toContain("from '@ethlete/query'");
-    expect(component).toContain('imports: [QueryDevtoolsComponent]');
+    expect(component).toContain('imports: [QueryDevtoolsLazyComponent]');
 
-    // Both versions use the same selector, so the markup must survive untouched.
-    expect(readFile('component.html')).toContain('<et-query-devtools />');
+    expect(readFile('component.html')).toContain('<et-query-devtools-lazy />');
 
     expect(report).toContain('Add @ethlete/query-devtools for the query devtools');
+  });
+
+  it('moves an aliased component with an inline template to the lazy entry point', async () => {
+    tree.write(
+      'inline.ts',
+      `
+import { QueryDevtoolsComponent as Devtools } from '@ethlete/query';
+
+@Component({ imports: [Devtools], template: '<et-query-devtools></et-query-devtools>' })
+export class Shell {}
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const inline = readFile('inline.ts');
+
+    expect(inline).toContain("import { QueryDevtoolsLazyComponent } from '@ethlete/query-devtools/lazy';");
+    expect(inline).toContain('imports: [QueryDevtoolsLazyComponent]');
+    expect(inline).toContain('<et-query-devtools-lazy></et-query-devtools-lazy>');
+    expect(inline).not.toContain('Devtools]');
   });
 
   it('imports QueryDevtoolsComponent from @ethlete/query-devtools', async () => {
@@ -98,7 +117,7 @@ export const component = {
     const component = readFile('component.ts');
     const report = readFile('query-v3-migration-tasks.md');
 
-    expect(component).toContain("import { QueryDevtoolsComponent } from '@ethlete/query-devtools';");
+    expect(component).toContain("import { QueryDevtoolsLazyComponent } from '@ethlete/query-devtools/lazy';");
     expect(component).not.toContain('@ethlete/components');
     expect(report).toContain('@ethlete/query-devtools');
     expect(report).not.toContain('@ethlete/components');
@@ -370,7 +389,8 @@ export const component = {
 
     const result = readFile('app.component.ts');
 
-    expect(result).toContain("import { QueryDevtoolsComponent as Devtools } from '@ethlete/query-devtools';");
+    expect(result).toContain("import { QueryDevtoolsLazyComponent } from '@ethlete/query-devtools/lazy';");
+    expect(result).toContain('imports: [QueryDevtoolsLazyComponent]');
     expect(result).toContain("import { provideQueryDevtools } from '@ethlete/query';");
     expect(result).not.toContain('QueryDevtoolsComponent as Devtools, provideQueryClientForDevtools');
   });
