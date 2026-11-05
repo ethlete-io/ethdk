@@ -4679,6 +4679,19 @@ in the CLI sheets, a HINT prefix for CONTROL-STATE. 27 DROPPED-PROP (missing app
 inputs exist. 96 LOST-SURFACE are real: the floating side panel `aside.st-shell-side` and the comment-draft popover
 have the canvas fill and no visible shadow; the builder sends both to Tom as sketches.
 
+458\. `sketch ready` checked for a dirty product after `swap()` and returned without a restore. A foreign uncommitted
+`go.json` therefore left `components/comment-pin` half-swapped, and every part that uses it broke (a builder subagent
+restored it with `git checkout`). Why no tool caught it: the old spec used variant files equal to the product, so a
+swap without a restore left no trace. Tool fix (builder, c465c3a75): the guard runs before the swap and ignores the
+decision files; two specs with variant files that differ from the product fail without the fix.
+
+459\. `sketch new` copies a part without a rewrite of relative imports that leave the part folder, so the copy of
+`agent-logos` fails with an IMPORT error on `../../apps/...`. It holds four sketches (elements-canvas-frames,
+pages-sketches, pages-merge, foundations-colors.foundations-check-fixes), together with two more CLI gaps: SKIP-SCOPE
+does not ignore `[inert]` (CUT-CONTROL does), and CLIPPED fires on a pan viewport. Tool fix (in B388, builder
+default): `sketch new` rewrites those imports; SKIP-SCOPE skips `[inert]`; CLIPPED spares a pan viewport. Why no tool
+caught it: asked the builder.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
