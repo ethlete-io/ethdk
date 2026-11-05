@@ -69,6 +69,9 @@ export type SketchHold = { until: string; by: string; heldAt: string };
 /** A rebase after the merge of `merged` that could not port `parts` by itself; the sketch's agent ports `reasons` by hand. */
 export type SketchPortMark = { merged: string[]; parts: string[]; reasons: string[]; at: string };
 
+/** Why the last `sketch ready` run left a ready sketch for the user to merge; only a ready sketch keeps it. */
+export type SketchMergeHold = { reason: string; at: string };
+
 export type SketchFile = {
   target: string;
   /** Every part the sketch targets, `target` first; absent on a sketch with one target. */
@@ -89,6 +92,7 @@ export type SketchFile = {
   merge?: SketchMerge;
   hold?: SketchHold;
   portAfterMerge?: SketchPortMark;
+  mergeHold?: SketchMergeHold;
 };
 
 export const SKETCH_MERGES = ['override', 'into-base'] as const;
@@ -353,6 +357,12 @@ const isHold = (value: unknown): value is SketchHold => {
 
 const isStringList = (value: unknown) => Array.isArray(value) && value.every((entry) => typeof entry === 'string');
 
+const isMergeHold = (value: unknown): value is SketchMergeHold => {
+  const hold = value as Partial<Record<keyof SketchMergeHold, unknown>> | null;
+
+  return typeof hold === 'object' && hold !== null && typeof hold.reason === 'string' && typeof hold.at === 'string';
+};
+
 const isPortMark = (value: unknown): value is SketchPortMark => {
   const mark = value as Partial<Record<keyof SketchPortMark, unknown>> | null;
 
@@ -439,6 +449,8 @@ export const readSketch = (options: { product: string; dir: string }): Sketch | 
   if (parsed.hold !== undefined && parsed.status !== 'in progress') return `${file}: a held sketch must be in progress`;
   if (parsed.portAfterMerge !== undefined && !isPortMark(parsed.portAfterMerge))
     return `${file}: portAfterMerge must be { merged: string[], parts: string[], reasons: string[], at }`;
+  if (parsed.mergeHold !== undefined && !isMergeHold(parsed.mergeHold))
+    return `${file}: mergeHold must be { reason, at }`;
 
   const rounds = parsed.rounds ?? [firstRoundOf()];
   const running = runningRoundOf({ rounds }).key;
@@ -518,6 +530,7 @@ export const writeSketchFile = (sketch: Sketch) => {
     ...(sketch.merge ? { merge: sketch.merge } : {}),
     ...(sketch.hold ? { hold: sketch.hold } : {}),
     ...(sketch.portAfterMerge ? { portAfterMerge: sketch.portAfterMerge } : {}),
+    ...(sketch.mergeHold && sketch.status === 'ready' ? { mergeHold: sketch.mergeHold } : {}),
   };
 
   writeFileSync(resolve(sketch.dir, SKETCH_FILE), jsonLayoutOf(file));

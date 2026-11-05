@@ -178,6 +178,126 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const sketchFile = JSON.parse(readFileSync(join(product, 'sketches/components-button/sketch.json'), 'utf8'));
 
     expect(sketchFile.decision).toBeUndefined();
+    expect(sketchFile.mergeHold.reason).toContain('has uncommitted edits outside components/button');
+  });
+
+  const sameButton = (target: string) =>
+    write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a',
+      '--round',
+      'Same',
+      '--note',
+      'no change',
+      '--product',
+      'acme',
+    );
+
+  const gitRepo = (target: string) => {
+    const git = (...args: string[]) =>
+      spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: target, encoding: 'utf8' });
+
+    git('init');
+    git('config', 'user.name', 't');
+    git('config', 'user.email', 't@t');
+    git('add', '.');
+    git('commit', '-m', 'base');
+
+    return git;
+  };
+
+  it('writes why the auto-merge was skipped on the sketch', async () => {
+    const target = acme();
+
+    output();
+    sameButton(target);
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+
+    const sketchFile = JSON.parse(
+      readFileSync(join(target, DESIGN_DIR, 'acme/sketches/components-button/sketch.json'), 'utf8'),
+    );
+
+    expect(sketchFile.mergeHold).toEqual({
+      reason: expect.stringContaining('variant a changes default'),
+      at: expect.any(String),
+    });
+  });
+
+  it('refuses cleanly when another run merged the sketch while this one checked it', async () => {
+    const target = acme();
+    const lines = output();
+    const sketchDir = join(target, DESIGN_DIR, 'acme/sketches/components-button');
+
+    sameButton(target);
+    vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) => {
+      rmSync(sketchDir, { recursive: true, force: true });
+
+      return sketch.variants.map((variant) => ({ variant, change: null }));
+    });
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines).toContain('components/button is gone: another run merged or discarded it while this one checked it');
+  });
+
+  it('refuses a second ready run on the same sketch while the first one runs', async () => {
+    const target = acme();
+    const lines = output();
+    const unlock = vi.fn();
+
+    sameButton(target);
+    vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) => {
+      lines.push(`second run: ${await write(target, 'ready', 'components/button', '--product', 'acme')}`);
+      unlock();
+
+      return sketch.variants.map((variant) => ({ variant, change: 'variant a changes default' }));
+    });
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(unlock).toHaveBeenCalled();
+    expect(lines).toContain('another sketch ready run on components/button is going - wait for it');
+    expect(lines).toContain('second run: 1');
+  });
+
+  it('commits its own auto-merge when the product was clean beside the sketch', async () => {
+    const target = acme();
+    const lines = output();
+    const git = gitRepo(target);
+
+    vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) =>
+      sketch.variants.map((variant) => ({ variant, change: null })),
+    );
+    sameButton(target);
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines).toContain('Committed: feat(repo): Merge components/button, no visible change');
+    expect(lines.filter((line) => line.startsWith('  et design commit-hunks'))).toEqual([]);
+    expect(git('log', '-1', '--format=%s').stdout.trim()).toBe(
+      'feat(repo): Merge components/button, no visible change',
+    );
+    expect(git('status', '--porcelain', '--', DESIGN_DIR).stdout).toBe('');
+  });
+
+  it('leaves its auto-merge uncommitted when a shared file was dirty before', async () => {
+    const target = acme();
+    const lines = output();
+    const git = gitRepo(target);
+    const merged = join(target, DESIGN_DIR, 'acme/merged.json');
+
+    vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) =>
+      sketch.variants.map((variant) => ({ variant, change: null })),
+    );
+    writeFileSync(merged, '{}\n');
+    sameButton(target);
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines).toContain('No visible change in any state: merged components/button automatically.');
+    expect(lines).toContain('  et design commit-hunks .ethlete/design/acme/merged.json --part components/button');
+    expect(git('log', '-1', '--format=%s').stdout.trim()).toBe('base');
   });
 
   const newButton = (target: string) =>

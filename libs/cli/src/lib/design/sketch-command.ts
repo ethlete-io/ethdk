@@ -1,5 +1,8 @@
 import { unusedInVariantOf } from './system/sketch/unused-closure';
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { spawnSync } from 'child_process';
+import { createHash } from 'crypto';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
 import { relative, resolve } from 'path';
 import { DesignConfig } from './paths';
 import { ASSETS_FOLDER } from './system/assets';
@@ -77,6 +80,7 @@ import {
   SketchVerdictBy,
   sourceFilesIn,
   withdrawVariant,
+  writeSketchFile,
   SKETCH_FILE,
 } from './system/sketch/sketch';
 
@@ -657,6 +661,30 @@ const targetAdded = (context: Context) => {
   });
 };
 
+const readyLockOf = (sketch: Sketch) =>
+  resolve(tmpdir(), `et-sketch-ready-${createHash('sha256').update(sketch.dir).digest('hex').slice(0, 16)}.lock`);
+
+const isRunning = (pid: number) => {
+  try {
+    process.kill(pid, 0);
+
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const lockedReady = (sketch: Sketch) => {
+  const lock = readyLockOf(sketch);
+  const holder = Number(contentOf(lock));
+
+  if (holder > 0 && isRunning(holder)) return null;
+
+  writeFileSync(lock, String(process.pid));
+
+  return () => rmSync(lock, { force: true });
+};
+
 const readied = (context: Context) => {
   const found = productAndSketchOf(context);
 
@@ -670,7 +698,11 @@ const readied = (context: Context) => {
 
   if (refused !== null) return refused;
 
-  return renderedAndReady(context, found);
+  const unlock = lockedReady(found.sketch);
+
+  if (!unlock) return fail(`another sketch ready run on ${found.sketch.target} is going - wait for it`);
+
+  return renderedAndReady(context, found).finally(unlock);
 };
 
 const renderedAndReady = async (context: Context, found: { product: ResolvedProduct; sketch: Sketch }) => {
@@ -726,6 +758,9 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
   if (unviewed.length > 0)
     return fail(`${unviewed.join('\n')}\n${sketch.target} draws a pixel diff - view its shot before ready`);
 
+  if (!existsSync(resolve(sketch.dir, SKETCH_FILE)))
+    return fail(`${sketch.target} is gone: another run merged or discarded it while this one checked it`);
+
   const ready =
     sketch.status === 'ready'
       ? sketch
@@ -736,10 +771,59 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
   return autoMerged({ context, product, sketch: ready, again: sketch.status === 'ready', changes });
 };
 
-const stillReady = (options: { sketch: Sketch; again: boolean }) => {
+const stillReady = (options: { sketch: Sketch; again: boolean; reason: string }) => {
+  writeSketchFile({ ...options.sketch, mergeHold: { reason: options.reason, at: new Date().toISOString() } });
+
   if (options.again) console.log(`${options.sketch.target} is still ready`);
 
   return 0;
+};
+
+const gitIn = (target: string, ...args: string[]) => spawnSync('git', args, { cwd: target, encoding: 'utf8' });
+
+const mergeDirsOf = (product: ResolvedProduct) => [product.dir, ...(product.base ? [product.base.dir] : [])];
+
+const cleanBesideSketch = (options: { target: string; product: ResolvedProduct; sketch: Sketch }) => {
+  const status = gitIn(
+    options.target,
+    'status',
+    '--porcelain',
+    '-z',
+    '--untracked-files=all',
+    '--',
+    ...mergeDirsOf(options.product),
+  );
+  const root = gitIn(options.target, 'rev-parse', '--show-toplevel');
+
+  if (status.status !== 0 || root.status !== 0) return false;
+
+  const top = root.stdout.trim();
+
+  return status.stdout
+    .split('\0')
+    .filter((entry) => /^.. /.test(entry))
+    .every((entry) => resolve(top, entry.slice(3)).startsWith(`${options.sketch.dir}/`));
+};
+
+const committedMerge = (options: { target: string; product: ResolvedProduct; sketch: Sketch }) => {
+  const dirs = mergeDirsOf(options.product);
+  const added = gitIn(options.target, 'add', '--all', '--', ...dirs);
+  const committed =
+    added.status === 0
+      ? gitIn(
+          options.target,
+          'commit',
+          '-m',
+          `feat(repo): Merge ${options.sketch.target}, no visible change`,
+          '--',
+          ...dirs,
+        )
+      : added;
+
+  if (committed.status !== 0)
+    console.warn(`Could not commit the merge: ${(committed.stderr || committed.stdout).trim()}`);
+
+  return committed.status === 0;
 };
 
 const autoMerged = (options: {
@@ -759,24 +843,18 @@ const autoMerged = (options: {
     if (shared.length > 0) console.log(`variant ${variant}: a shared/ edit reaches ${shared.join(', ')}`);
   }
 
-  if (changes === null) {
-    console.log('auto-merge skipped: new part, the user merges');
-
-    return stillReady({ sketch, again });
-  }
-
-  const noChange = typeof changes === 'string' ? changes : noChangeOf(changes);
+  const noChange =
+    changes === null ? 'new part, the user merges' : typeof changes === 'string' ? changes : noChangeOf(changes);
 
   if (noChange !== true) {
     console.log(`auto-merge skipped: ${noChange}`);
 
-    return stillReady({ sketch, again });
+    return stillReady({ sketch, again, reason: noChange });
   }
 
   const author = authorOf(context.args) ?? undefined;
   const variant = sketch.variants.find((candidate) => !rejectionOf(sketch, candidate)) ?? '';
-  const sketchFile = resolve(sketch.dir, SKETCH_FILE);
-  const undecided = readFileSync(sketchFile, 'utf8');
+  const commit = cleanBesideSketch({ target: context.target, product, sketch });
   const decided = decideSketch({ sketch, decision: { kind: 'pick', variant } });
 
   if (typeof decided === 'string') return fail(decided);
@@ -793,13 +871,20 @@ const autoMerged = (options: {
   });
 
   if (!Array.isArray(result)) {
-    writeFileSync(sketchFile, undecided);
+    writeSketchFile({ ...sketch, mergeHold: { reason: result.reason, at: new Date().toISOString() } });
     console.warn(`${sketch.target} shows no visible change but did not merge: ${result.reason}`);
 
     return 0;
   }
 
   console.log(`No visible change in any state: merged ${sketch.targets.join(', ')} automatically.`);
+
+  if (commit && committedMerge({ target: context.target, product, sketch })) {
+    console.log(`Committed: feat(repo): Merge ${sketch.target}, no visible change`);
+
+    return 0;
+  }
+
   commitHunksLines({
     target: context.target,
     files: written.filter((file, index) => contentOf(file) !== before[index]),
