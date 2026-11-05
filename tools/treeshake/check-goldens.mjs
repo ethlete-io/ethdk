@@ -15,6 +15,9 @@
  * An entry with `"initialChunk": true` keeps every dynamic `import()` external, so it measures what a
  * consumer downloads up front and not the chunks a `@defer` loads later.
  *
+ * An entry with `"forbidInitial": ["@ethlete/components"]` also fails when any listed package puts bytes
+ * into the bundle. Pair it with `initialChunk`: a lazy entry must not pull the package in up front.
+ *
  * Usage:
  *   npx nx build core query components
  *   node tools/treeshake/check-goldens.mjs [--update] [--dist <dist/libs>] [--cache <dir>] [--json]
@@ -51,7 +54,7 @@ const externalizeDynamicImports = {
   },
 };
 
-const measure = async (name, code, aliases, workDir, withThirdParty, initialChunk) => {
+const measure = async (name, code, aliases, workDir, withThirdParty, initialChunk, forbidden) => {
   const entry = join(workDir, `golden-${name}.mjs`);
   await writeFile(entry, code.endsWith('\n') ? code : `${code}\n`, 'utf8');
 
@@ -59,6 +62,7 @@ const measure = async (name, code, aliases, workDir, withThirdParty, initialChun
     ...esbuildBase(),
     entryPoints: [entry],
     minify: true,
+    metafile: true,
     alias: aliases,
     plugins: [
       ...(initialChunk ? [externalizeDynamicImports] : []),
@@ -66,7 +70,20 @@ const measure = async (name, code, aliases, workDir, withThirdParty, initialChun
     ],
   });
 
-  return gzipSync(Buffer.from(result.outputFiles[0].contents), { level: 9 }).byteLength;
+  const forbiddenFiles = forbidden.map((pkg) => aliases[pkg]).filter(Boolean);
+  const present = Object.entries(result.metafile.outputs[Object.keys(result.metafile.outputs)[0]].inputs)
+    .filter(
+      ([path, { bytesInOutput }]) =>
+        bytesInOutput > 0 && forbiddenFiles.some((file) => file.endsWith(path) || path.endsWith(file)),
+    )
+    .map(([path]) => path);
+
+  return {
+    size: gzipSync(Buffer.from(result.outputFiles[0].contents), { level: 9 }).byteLength,
+    forbiddenPresent: forbidden.filter((pkg) =>
+      present.some((path) => aliases[pkg]?.endsWith(path) || path.endsWith(aliases[pkg] ?? '\0')),
+    ),
+  };
 };
 
 /** Deterministic linking still moves a few bytes on a dependency bump, hence a floor as well as a %. */
@@ -90,18 +107,26 @@ const main = async () => {
   const rows = [];
 
   for (const [name, golden] of Object.entries(goldens.entries)) {
-    const actual = await measure(
+    const { size: actual, forbiddenPresent } = await measure(
       name,
       golden.entry,
       aliases,
       workDir,
       golden.thirdParty === true,
       golden.initialChunk === true,
+      golden.forbidInitial ?? [],
     );
     const expected = golden.gzip;
     const limit = allowance(expected, goldens.tolerance);
     // A brand-new golden (`0`) is recorded, never failed — that is how an entry is added.
-    const status = expected === 0 ? 'new' : Math.abs(actual - expected) <= limit ? 'ok' : 'fail';
+    const status =
+      forbiddenPresent.length > 0
+        ? 'fail'
+        : expected === 0
+          ? 'new'
+          : Math.abs(actual - expected) <= limit
+            ? 'ok'
+            : 'fail';
 
     rows.push({
       name,
@@ -110,6 +135,7 @@ const main = async () => {
       delta: actual - expected,
       limit,
       status,
+      forbiddenPresent,
       thirdParty: golden.thirdParty === true,
     });
 
@@ -136,6 +162,10 @@ const main = async () => {
         `${mark} ${label(row).padEnd(width)} ${String(row.expected).padStart(8)} B ${String(row.actual).padStart(8)} B ${delta.padStart(10)}`,
       );
     }
+  }
+
+  for (const row of rows.filter((r) => r.forbiddenPresent.length > 0)) {
+    console.error(`\n${row.name}: the initial chunk contains code from ${row.forbiddenPresent.join(', ')}.`);
   }
 
   const failed = rows.filter((row) => row.status === 'fail');
