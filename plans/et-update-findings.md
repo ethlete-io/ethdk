@@ -155,6 +155,10 @@ all five fifagg apps build on `chore/query-v3-migration`.
 - **11. Creator as a property value:** `queryCreator: getCompetitionMatches` (passed to `createInfinityQueryConfig`)
   keeps the v3 name, while every `.prepare` and `.createSignal` call site gets `legacyX`. Fix: rename every value
   reference to a migrated creator, not only member access.
+  Not reproducible (ff, e1f1aa645: specs for property value, shorthand, argument, array element, barrel all pass).
+  In fifagg's generator commit 6ff3142096 the consumer file was not touched at all; the later `legacy*` call sites
+  are hand edits. Suspects: the migration scope excluded the app, or module resolution failed for a creator built by
+  a typed generic wrapper. Open: the exact generator options (asked fifagg-frontend-3d).
 - **12. Wrong creator set into a signal:** a PATCH query goes into a signal made from a POST creator. v2 typing allowed
   it; `LegacyQuery` args typing does not. Not a generator bug. The generator could list `createSignal()` signals that
   get `.set()` with the query of another creator.
