@@ -165,6 +165,11 @@ all five fifagg apps build on `chore/query-v3-migration`.
   `@ethlete/components` barrel. fifagg fixed it with a dynamic import behind `ngDevMode` and `NgComponentOutlet`. SDK
   fix: import from a leaf entry point. Generator fix: emit the dynamic-import form, or a task that names the bundle
   cost. SDK fix f4cd1b908 (toggle leaf import; a spec fails on any `@ethlete/components` import in `toggle/` or `lazy/`); finding 10 fixed by ff, not pushed. Cause, measured by fifagg-frontend-c3 on 319a70679c (esbuild metafile): the barrel was shaken (5 MB flat file to a 248 kB shared initial chunk); most of it came from the eager panel `ethlete-query-devtools.mjs` (14 menu and select symbols), which the codemod had kept as a static import. The toggle added only `detectKbdPlatform`; contentful adds `PictureComponent`. The earlier claim "lazy did not help" came from an unmeasured subagent run, so the golden had no gap. The real fix is the lazy rewrite in f29e3f679; the toggle leaf import is hygiene. Tool fix (ff default): a golden that fails when any `@ethlete/components` module is in the initial chunk of the lazy entry: built in 3ac97382b (`forbidInitial` in `goldens.json`); it failed on the old dist and passes after the fix. Goldens now lazy 4002 B, toggle 1782 B gz.
+- **14. Legacy `prepare()` outside an injection context (fifagg-frontend-3d):** a full E2E run (`clock.runFor`) throws
+  ET950: `"legacyGetNewsListByIds".prepare() was called outside of an injection context`. v2 needed no injector there;
+  the legacy interop layer does. The codemod does not warn, and the migration doc does not list it as a behaviour
+  difference. Call site not found yet. Open: wrap such calls in `runInInjectionContext` in the migrator, or let the
+  legacy layer take an injector argument (ff proposes).
 - Bundle cost of v3 over `next`: about 90 kB `@ethlete/query` and 50 kB `@ethlete/core`.
 - **Decision (Tom, 2026-11-05): the devtools panel mounts itself from a provider.** A first answer ("q1c ist
   tatsächlich smart": a `devOnly` helper) was reopened by Tom: apps already gate the provider in app config
