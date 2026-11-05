@@ -4592,6 +4592,12 @@ and in core `migrate-create-destroy`, `migrate-color-theme-variants`, `migrate-l
 default): a check in the pre-push Checks and in CI that fails when a generator is neither in `migrations.json` nor marked as a
 scaffold generator in `generators.json`; its message names both ways out.
 
+447\. The pre-commit gate blocks every commit that touches `tools/scripts` (ethlete-sdk-ff, 2026-11-05): it runs
+`tools/scripts/e2e-check.spec.mjs` ("the result line carries the sha the suite ran at") in a `/tmp/pre-commit-*` copy
+without `.git`, and the spec calls `git rev-parse` in `process.cwd()`. The spec passes in the repo. Why no tool caught it:
+the spec was only run in the repo, never in the gate's copy. Tool fix (ethlete-sdk-ff, own commit before B383): the
+gate passes the repo root by env var and the spec uses it; no skip, because a skip hides the spec in the gate.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
