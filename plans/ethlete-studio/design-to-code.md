@@ -4754,8 +4754,9 @@ tool caught it: the diff has no tolerance, and no spec covers an anti-alias chan
 spec.
 
 467\. The pre-commit spec run for 65ee4694c reported 1 failure in `embedded-actions.spec.ts`, but the commit passed.
-Why no tool caught it: the hook does not fail the commit on a failed spec (cause to confirm by the builder). Tool fix
-(builder default): a failed spec in the pre-commit run fails the commit.
+Why no tool caught it: the hook does not fail the commit on a failed spec (cause to confirm by the builder). Cause (builder): the spec timed out under load (5000 ms), and the hook re-ran it alone
+(1003 ms, passed) as designed; a real failure always failed the commit, but the output showed only the first summary.
+Fix 9e1a7b94a: the hook prints "<spec> passed when re-run alone".
 
 468\. Decision files changed with no human decision. Uncommitted: a ready mark for `components/canvas-viewport` in
 `ready.json` (15:54), a `decision: pick a` with no `by` in the sketch `foundations-colors.foundations-check-fixes`
@@ -4766,11 +4767,16 @@ human action writes a pick or a ready mark, each carries `by`, and a tool write 
 Tom's merge of `components-comment-draft` was then refused ("studio has uncommitted edits outside
 components/comment-draft") by these files: the merge guard treats `go.json`, `pictures.json` and `ready.json` as
 product edits. The doc agent saved them to `/tmp/finding-468/` and restored them to HEAD (Tom's merge needed it).
+First cause (builder): the sketch decision came from the old builder's `sketch merge ... --variant a` at 14:58:48Z;
+merge with `--variant` writes the pick, then the dirty-file guard refused and the pick stayed. Same class as
+baa5b8810 (a refused auto-merge left a pick; now restored on refusal). Studio's pick route also writes no `by`
+(`studio-api.ts` `sketchDecisionAnswer`), so "no `by`" does not mean "no human". Other three files: open.
 
 469\. A Studio merge leaves its result uncommitted. After Tom merged `components-comment-draft`, its
 `comment-draft.ts` edit blocked his next merge (`components/title-bar@notice-shape`) with the same guard. Tom:
-"mergen wird langsam echt witzlos". Why no tool caught it: the guard was tested one merge at a time, never two merges
-in a row. Tool fix (builder default): a merge commits its own result, or the guard ignores the files of earlier
+"mergen wird langsam echt witzlos". Builder: Studio left both merges half done (part files swapped, no `merged.json` entry, sketch folders still
+there); it reset them and re-ran them with the CLI `sketch merge`. Why no tool caught it: the guard was tested one
+merge at a time, never two merges in a row, and no spec checks that a Studio merge completes. Tool fix (builder default): a merge commits its own result, or the guard ignores the files of earlier
 picks; a spec runs two merges in a row.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
