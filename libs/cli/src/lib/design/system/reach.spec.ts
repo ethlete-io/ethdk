@@ -87,6 +87,11 @@ describe('reach check', () => {
       'components/reach-empty': `<div><p>Row</p>${take('width: 0; height: 0; padding: 0; border: 0; overflow: hidden')}</div>`,
       'components/reach-inert': `<div inert style="visibility: hidden">${take()}</div>`,
       'components/reach-gutter': `<div style="position: relative; width: 300px; height: 60px">${take('position: absolute; left: 0; top: 0')}<span style="position: absolute; left: 0; top: 0; width: 60px; height: 60px; background: white; pointer-events: none">name</span></div>`,
+      'components/reach-badge': `<div style="position: relative; width: 300px; height: 60px">${take('position: absolute; left: 0; top: 0')}<span aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 20px; height: 20px; background: white; pointer-events: none">3</span></div>`,
+      'components/reach-badge-click': `<div style="position: relative; width: 300px; height: 60px">${take('position: absolute; left: 0; top: 0')}<span aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 20px; height: 20px; background: white">3</span></div>`,
+      'components/reach-dialog': `<div style="position: relative; width: 300px; height: 60px">${take('position: absolute; left: 0; top: 0')}<div role="dialog" style="position: absolute; left: 0; top: 0; width: 40px; height: 60px; background: white">Hinweis</div></div>`,
+      'components/reach-modal': `<div style="position: relative; width: 300px; height: 60px">${take('position: absolute; left: 0; top: 0')}<section aria-modal="true" style="position: absolute; left: 0; top: 0; width: 40px; height: 60px; background: white">Hinweis</section></div>`,
+      'components/reach-plain': `<div style="position: relative; width: 300px; height: 60px">${take('position: absolute; left: 0; top: 0')}<div style="position: absolute; left: 0; top: 0; width: 40px; height: 60px; background: white">Hinweis</div></div>`,
       'components/reach-under': `<div style="position: relative; width: 300px; height: 60px">${take('position: absolute; left: 0; top: 0')}<button data-et-action="emit:discard" style="position: absolute; left: 0; top: 0; width: 200px; height: 60px; background: transparent">Verwerfen</button></div>`,
       'components/reach-region': `<div data-et-projected="canvas" style="position: relative; width: 300px; height: 100px"><div data-et-projected="shot" style="width: 300px; height: 100px"></div><span style="position: absolute; left: 0; top: 0; width: 80px; height: 100px; background: white">state</span></div>`,
       'components/reach-chrome': `<div style="position: relative; width: 300px; height: 100px"><div data-et-projected="canvas" style="width: 300px; height: 100px"></div><aside style="position: absolute; left: 0; top: 0; width: 80px; height: 100px; background: white">panel</aside></div>`,
@@ -108,10 +113,12 @@ describe('reach check', () => {
     if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
 
     expect(reachLinesOf(rendered.issues)).toEqual([
+      'COVERED components/reach-badge-click default: "Übernehmen" (emit:merge): 3 of 9 points lie under the opaque div[data-et-part=components/reach-badge-click] > span',
       'COVERED components/reach-gutter default: "Übernehmen" (emit:merge): 6 of 9 points lie under the opaque div[data-et-part=components/reach-gutter] > span',
       'COVERED components/reach-pan-gutter default: "Übernehmen" (emit:merge): 3 of 9 points lie under the opaque div[data-et-part=components/reach-pan-gutter] > span when div[data-et-part=components/reach-pan-gutter] is panned 384px right',
       'COVERED components/reach-pan-header default: "Übernehmen" (emit:merge): 3 of 9 points lie under the opaque div[data-et-part=components/reach-pan-header] > header when div[data-et-part=components/reach-pan-header] is panned 128px down',
       'COVERED components/reach-pane default: "Übernehmen" (emit:merge): 3 of 9 points lie under the opaque div[data-et-part=components/reach-pane] > div',
+      'COVERED components/reach-plain default: "Übernehmen" (emit:merge): 6 of 9 points lie under the opaque div[data-et-part=components/reach-plain] > div',
       'COVERED components/reach-preview default: the projected region "shot": 25 of 25 points lie under the opaque div[data-et-part=components/reach-preview] > span',
       'COVERED components/reach-region default: the projected region "shot": 5 of 25 points lie under the opaque div[data-et-part=components/reach-region] > span',
       'COVERED components/reach-see-through default: "Übernehmen" (emit:merge): 3 of 9 points lie under div[data-et-part=components/reach-see-through] > button:nth-of-type(2), which takes the click there',

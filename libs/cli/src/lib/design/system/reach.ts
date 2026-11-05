@@ -39,8 +39,11 @@ export const REACH_STATEMENTS = `
       const paints = element.matches('img, video, canvas, iframe, object, embed') || style.backgroundImage !== 'none' || alphaOf(style.backgroundColor) >= ${OPAQUE};
       return paints && style.visibility === 'visible' && opacityOf(element) >= ${OPAQUE};
     };
+    const layer = '[aria-modal="true"]';
+    let passive = new Set();
     const coverOf = (hit, target, opaqueOnly, within) => {
-      if (!hit || target.contains(hit) || hit.contains(target) || hit.closest(floating) || !within.contains(hit)) return null;
+      if (!hit || target.contains(hit) || hit.contains(target) || hit.closest(floating) || hit.closest(layer) || !within.contains(hit)) return null;
+      if (passive.has(hit) && hit.closest('[aria-hidden="true"]')) return null;
       for (let at = hit; at && !at.contains(target); at = at.parentElement) if (!opaqueOnly || solid(at)) return at;
       return null;
     };
@@ -109,6 +112,7 @@ export const REACH_STATEMENTS = `
     const force = document.createElement('style');
     force.textContent = '* { pointer-events: auto !important; }';
     const judge = (pose) => {
+      passive = new Set([...root.querySelectorAll('*')].filter((element) => getComputedStyle(element).pointerEvents === 'none'));
       const sampled = [];
       for (const element of shownActions) {
         const box = visibleBoxOf(element);
