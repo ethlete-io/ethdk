@@ -289,7 +289,7 @@ all five fifagg apps build on `chore/query-v3-migration`.
 - **E2E proof (fifagg-frontend-3d, MR !1978):** 765 passed, 9 failed (7 WebKit environment, 2 season-wrap-up 500s
   from old API data). Items 15 to 21 are proven with the app workarounds (reportErrors helper, store write in get,
   devtools off under webdriver, destroyOnResponse removed at 36 sites).
-- **23. `toQuerySignal` subscribes a cold source twice (fifagg-frontend-3d, read-only audit, untested):**
+- **23. `toQuerySignal` subscribes a cold source twice (fifagg-frontend-3d; built by ff in the working tree, `shareReplay` with refCount, scenario on both clients; commit after the push):**
   `data.utils.ts:277-279`. The template shows an unmanaged query; the container manages a second query that never
   executes. In fifagg: per keystroke on 3 filter-overlay pages and on 5 navigation cards (8 call sites). Fix: share
   the source in the SDK; fifagg's workaround is `queryComputed`.
