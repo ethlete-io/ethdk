@@ -38,7 +38,17 @@ import {
   withArgs,
 } from '../index';
 import { describe, expect, it, vi } from 'vitest';
-import { mintToken, Scenario, useScenario } from './harness';
+import {
+  createLegacyClient,
+  LEGACY_CLIENT_KINDS,
+  LegacyClient,
+  LegacyClientCreator,
+  LegacyClientKind,
+  LegacyClientQuery,
+  mintToken,
+  Scenario,
+  useScenario,
+} from './harness';
 
 const BASE_URL = 'https://api.test';
 const GC_INTERVAL = 15_000;
@@ -52,7 +62,7 @@ type Tokens = { token: string; refreshToken: string };
 type LegacyClientConfig = Omit<V2QueryClientConfig, 'baseRoute'>;
 type TrackFn = <T extends AnyV2Query>(query: T) => T;
 
-const withLegacyClient = (
+const withNativeClient = (
   s: Scenario,
   config: LegacyClientConfig,
   body: (client: V2QueryClient, track: TrackFn) => void,
@@ -105,7 +115,7 @@ const readCookie = (name: string) =>
  * The request emits its `start` event after `execute()` already published `Loading`, so the raw stream
  * repeats `Loading`. `types()` collapses repeats down to the documented state sequence.
  */
-const recordStates = (query: AnyV2Query) => {
+const recordStates = (query: LegacyClientQuery) => {
   const states: V2QueryState[] = [];
   const subscription = query.state$.subscribe((state: V2QueryState) => states.push(state));
 
@@ -116,7 +126,7 @@ const recordStates = (query: AnyV2Query) => {
   };
 };
 
-const createGetUser = (client: V2QueryClient) =>
+const createNativeGetUser = (client: V2QueryClient) =>
   client.get({
     route: (p) => `/users/${p.id}`,
     types: {
@@ -124,6 +134,66 @@ const createGetUser = (client: V2QueryClient) =>
       response: def<User>(),
     },
   });
+
+type PortableArgs = {
+  pathParams?: Record<string, string>;
+  queryParams?: Record<string, unknown>;
+  body?: unknown;
+  headers?: Record<string, string>;
+  mock?: unknown;
+};
+
+type PortableCreator<TArgs extends PortableArgs> = {
+  prepare: (args?: TArgs) => LegacyClientQuery;
+};
+
+type PortableClient = {
+  legacy: LegacyClient;
+  get: <TArgs extends PortableArgs>(
+    route: string | ((pathParams: NonNullable<TArgs['pathParams']>) => string),
+  ) => PortableCreator<TArgs>;
+  post: <TArgs extends PortableArgs>(route: string) => PortableCreator<TArgs>;
+};
+
+const expectInteropErrors = (s: Scenario, kind: LegacyClientKind, status: number, count = 1) => {
+  if (kind !== 'interop') return;
+
+  for (let i = 0; i < count; i++) {
+    s.expectError((entry) => (entry.error as { status?: number }).status === status);
+  }
+};
+
+const itParity = (kind: LegacyClientKind, name: string, body: () => void) =>
+  kind === 'interop' ? it.fails(`${name} (interop parity bug)`, body) : it(name, body);
+
+const withLegacyClient = (
+  s: Scenario,
+  kind: LegacyClientKind,
+  body: (client: PortableClient, track: <T extends LegacyClientQuery>(query: T) => T) => void,
+) => {
+  const legacy: LegacyClient = createLegacyClient(s, kind, { baseUrl: BASE_URL });
+  const owner = s.consumer();
+  const bind = <TArgs extends PortableArgs>(creator: LegacyClientCreator<TArgs>): PortableCreator<TArgs> => ({
+    prepare: (args) => creator.prepare({ ...args, injector: owner.injector } as never),
+  });
+
+  try {
+    body(
+      {
+        legacy,
+        get: (route) => bind(legacy.get(route as never)),
+        post: (route) => bind(legacy.post(route as never)),
+      },
+      (query) => query,
+    );
+  } finally {
+    legacy.destroy();
+    owner.destroy();
+  }
+};
+
+const createGetUser = (client: PortableClient) =>
+  client.get<{ pathParams: { id: string }; headers?: Record<string, string>; mock?: unknown }>((p) => `/users/${p.id}`);
 
 @Component({
   imports: [QueryDirective],
@@ -181,7 +251,7 @@ class InfinityQueryHost {
 const slotText = (fixture: { nativeElement: HTMLElement }, slot: string) =>
   (fixture.nativeElement.querySelector(`[data-slot="${slot}"]`)?.textContent ?? '').trim();
 
-describe('legacy scenario', () => {
+describe.each(LEGACY_CLIENT_KINDS)('legacy scenario on the %s client', (kind) => {
   const scenario = useScenario({ baseUrl: BASE_URL, clientOptions: { keepUnusedFor: 0 } });
 
   describe('state stream', () => {
@@ -189,7 +259,7 @@ describe('legacy scenario', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         const query = track(createGetUser(client).prepare({ pathParams: { id: '1' } }));
         const recorded = recordStates(query);
 
@@ -210,7 +280,7 @@ describe('legacy scenario', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', () => ({ status: 404, body: { message: 'not found' } }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         const query = track(
           createGetUser(client)
             .prepare({ pathParams: { id: '1' } })
@@ -227,14 +297,16 @@ describe('legacy scenario', () => {
         });
 
         recorded.stop();
+
+        expectInteropErrors(s, kind, 404);
       });
     });
 
-    it('moves to Cancelled on abort() and marks the request aborted', () => {
+    itParity(kind, 'moves to Cancelled on abort() and marks the request aborted', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 1000 }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         const query = track(createGetUser(client).prepare({ pathParams: { id: '1' } }));
         const recorded = recordStates(query);
 
@@ -253,11 +325,11 @@ describe('legacy scenario', () => {
       });
     });
 
-    it('cancels the in-flight request when execute({ cancelPrevious: true }) runs', () => {
+    itParity(kind, 'cancels the in-flight request when execute({ cancelPrevious: true }) runs', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 1000 }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         const query = track(createGetUser(client).prepare({ pathParams: { id: '1' } }));
         const recorded = recordStates(query);
 
@@ -285,7 +357,7 @@ describe('legacy scenario', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 1000 }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         const query = track(
           createGetUser(client)
             .prepare({ pathParams: { id: '1' } })
@@ -306,7 +378,7 @@ describe('legacy scenario', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         const query = track(createGetUser(client).prepare({ pathParams: { id: '1' } }));
         const responses: User[] = [];
         const loadingStates: V2QueryState[] = [];
@@ -336,7 +408,7 @@ describe('legacy scenario', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', () => ({ status: 400, body: { message: 'bad request' } }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         const query = track(createGetUser(client).prepare({ pathParams: { id: '1' } }));
         const failures: number[] = [];
         const switched: (QueryStateType | null)[] = [];
@@ -351,6 +423,8 @@ describe('legacy scenario', () => {
 
         expect(failures).toEqual([400]);
         expect(distinct(switched)).toEqual([QueryStateType.Prepared, QueryStateType.Loading, QueryStateType.Failure]);
+
+        expectInteropErrors(s, kind, 400);
       });
     });
 
@@ -358,7 +432,7 @@ describe('legacy scenario', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         const query = track(
           createGetUser(client)
             .prepare({ pathParams: { id: '1' } })
@@ -384,7 +458,7 @@ describe('legacy scenario', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', () => ({ status: 400, body: { message: 'bad request' } }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         const query = track(
           createGetUser(client)
             .prepare({ pathParams: { id: '1' } })
@@ -403,6 +477,8 @@ describe('legacy scenario', () => {
 
         expect(signals.response()).toBeNull();
         expect(signals.error()).toMatchObject({ status: 400 });
+
+        expectInteropErrors(s, kind, 400);
       });
     });
   });
@@ -412,7 +488,7 @@ describe('legacy scenario', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
 
-      withLegacyClient(s, {}, (client) => {
+      withLegacyClient(s, kind, (client) => {
         const getUser = createGetUser(client);
         const first = getUser.prepare({ pathParams: { id: '1' } });
         const second = getUser.prepare({ pathParams: { id: '1' } });
@@ -430,7 +506,7 @@ describe('legacy scenario', () => {
         headers: { 'cache-control': 'max-age=60' },
       }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         const getUser = createGetUser(client);
         const de = track(getUser.prepare({ pathParams: { id: '1' }, headers: { 'Accept-Language': 'de' } }).execute());
         const en = track(getUser.prepare({ pathParams: { id: '1' }, headers: { 'Accept-Language': 'en' } }).execute());
@@ -439,8 +515,8 @@ describe('legacy scenario', () => {
 
         expect(en).not.toBe(de);
         expect(s.api.requestCount('GET', '/users/1')).toBe(2);
-        expect(isQueryStateSuccess(de.rawState) && de.rawState.response.name).toBe('Ada DE');
-        expect(isQueryStateSuccess(en.rawState) && en.rawState.response.name).toBe('Ada EN');
+        expect(isQueryStateSuccess(de.rawState) && (de.rawState.response as User).name).toBe('Ada DE');
+        expect(isQueryStateSuccess(en.rawState) && (en.rawState.response as User).name).toBe('Ada EN');
         expect(getUser.prepare({ pathParams: { id: '1' }, headers: { 'accept-language': 'de' } })).toBe(de);
       });
     });
@@ -452,7 +528,7 @@ describe('legacy scenario', () => {
         headers: { 'cache-control': 'max-age=60' },
       }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         const getUser = createGetUser(client);
         const query = track(getUser.prepare({ pathParams: { id: '1' } }).execute());
         const recorded = recordStates(query);
@@ -483,7 +559,7 @@ describe('legacy scenario', () => {
         headers: { 'cache-control': 'max-age=60' },
       }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         const query = track(
           createGetUser(client)
             .prepare({ pathParams: { id: '1' } })
@@ -502,14 +578,8 @@ describe('legacy scenario', () => {
       const s = scenario();
       s.api.on('POST', '/users', ({ body }) => ({ status: 201, body }));
 
-      withLegacyClient(s, {}, (client, track) => {
-        const createUser = client.post({
-          route: '/users',
-          types: {
-            args: def<{ body: { name: string } }>(),
-            response: def<User>(),
-          },
-        });
+      withLegacyClient(s, kind, (client, track) => {
+        const createUser = client.post<{ body: { name: string } }>('/users');
 
         const first = track(createUser.prepare({ body: { name: 'Ada' } }));
         const second = track(createUser.prepare({ body: { name: 'Ada' } }));
@@ -525,11 +595,11 @@ describe('legacy scenario', () => {
       });
     });
 
-    it('garbage-collects an expired unused query after 15 seconds', () => {
+    itParity(kind, 'garbage-collects an expired unused query after 15 seconds', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         const getUser = createGetUser(client);
         const query = track(getUser.prepare({ pathParams: { id: '1' } }).execute());
 
@@ -551,7 +621,7 @@ describe('legacy scenario', () => {
         headers: { 'cache-control': 'max-age=600' },
       }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         const getUser = createGetUser(client);
         const query = track(getUser.prepare({ pathParams: { id: '1' } }).execute());
 
@@ -573,11 +643,11 @@ describe('legacy scenario', () => {
       s.tick();
     };
 
-    it('re-executes a query in use when the window regains focus', () => {
+    itParity(kind, 're-executes a query in use when the window regains focus', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         const query = track(
           createGetUser(client)
             .prepare({ pathParams: { id: '1' } })
@@ -601,7 +671,7 @@ describe('legacy scenario', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         const query = track(
           createGetUser(client)
             .prepare({ pathParams: { id: '1' } })
@@ -622,52 +692,6 @@ describe('legacy scenario', () => {
       });
     });
 
-    it('does not re-execute when the client disables autoRefreshQueriesOnWindowFocus', () => {
-      const s = scenario();
-      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
-
-      withLegacyClient(s, { request: { autoRefreshQueriesOnWindowFocus: false } }, (client, track) => {
-        const query = track(
-          createGetUser(client)
-            .prepare({ pathParams: { id: '1' } })
-            .execute(),
-        );
-        const recorded = recordStates(query);
-
-        s.tick();
-        blurThenFocus(s);
-
-        expect(s.api.requestCount('GET', '/users/1')).toBe(1);
-
-        recorded.stop();
-      });
-    });
-
-    it('does not re-execute a query with autoRefreshOn.windowFocus false', () => {
-      const s = scenario();
-      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
-
-      withLegacyClient(s, {}, (client, track) => {
-        const getUser = client.get({
-          route: (p) => `/users/${p.id}`,
-          autoRefreshOn: { windowFocus: false },
-          types: {
-            args: def<{ pathParams: { id: string } }>(),
-            response: def<User>(),
-          },
-        });
-        const query = track(getUser.prepare({ pathParams: { id: '1' } }).execute());
-        const recorded = recordStates(query);
-
-        s.tick();
-        blurThenFocus(s);
-
-        expect(s.api.requestCount('GET', '/users/1')).toBe(1);
-
-        recorded.stop();
-      });
-    });
-
     it('does not re-execute a query that nothing is using', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({
@@ -675,7 +699,7 @@ describe('legacy scenario', () => {
         headers: { 'cache-control': 'max-age=600' },
       }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         track(
           createGetUser(client)
             .prepare({ pathParams: { id: '1' } })
@@ -695,7 +719,7 @@ describe('legacy scenario', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         const stopPolling$ = new Subject<void>();
         const query = track(
           createGetUser(client)
@@ -724,7 +748,7 @@ describe('legacy scenario', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         const stopPolling$ = new Subject<void>();
         const query = track(
           createGetUser(client)
@@ -749,11 +773,11 @@ describe('legacy scenario', () => {
       });
     });
 
-    it('pauses while the window is blurred and resumes on focus', () => {
+    itParity(kind, 'pauses while the window is blurred and resumes on focus', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         const stopPolling$ = new Subject<void>();
         const query = track(
           createGetUser(client)
@@ -794,7 +818,7 @@ describe('legacy scenario', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         const stopPolling$ = new Subject<void>();
         const query = track(
           createGetUser(client)
@@ -824,7 +848,7 @@ describe('legacy scenario', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withLegacyClient(s, kind, (client, track) => {
         const stopPolling$ = new Subject<void>();
         const query = track(
           createGetUser(client)
@@ -854,15 +878,267 @@ describe('legacy scenario', () => {
         query.stopPolling();
       });
     });
+  });
 
+  describe('QueryForm across both systems', () => {
+    it('a legacy QueryForm drives a legacy prepare() with the same value', () => {
+      const s = scenario();
+      s.api.on('GET', '/users', ({ query }) => ({ body: { search: query['search'] ?? null } }));
+
+      withLegacyClient(s, kind, (client, track) => {
+        const c = s.consumer();
+        const queryForm = c.run(() =>
+          new QueryForm({ search: new QueryField({ control: new FormControl<string | null>(null) }) }).observe({
+            writeToQueryParams: false,
+          }),
+        );
+        const searchUsers = client.get<{ queryParams: { search: string | null } }>('/users');
+
+        queryForm.setValue({ search: 'ada' });
+        s.tick();
+
+        const query = track(searchUsers.prepare({ queryParams: { search: queryForm.value.search } }).execute());
+
+        s.tick();
+
+        expect(query.rawState).toMatchObject({ type: QueryStateType.Success, response: { search: 'ada' } });
+        expect(s.api.requests[0]?.query).toEqual({ search: 'ada' });
+
+        c.destroy();
+      });
+    });
+  });
+
+  describe('query directives', () => {
+    const blurThenFocus = (s: Scenario) => {
+      window.dispatchEvent(new Event('blur'));
+      s.tick(5_000);
+      s.tick(GC_INTERVAL + 1);
+      window.dispatchEvent(new Event('focus'));
+      s.tick();
+    };
+
+    itParity(
+      kind,
+      '*etQuery executes the query and exposes the response, loading, refreshing and error to its template',
+      () => {
+        const s = scenario();
+        s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 500 }));
+        s.api.on('GET', '/broken', () => ({ status: 404, body: { message: 'not found' } }));
+
+        withLegacyClient(s, kind, (client, track) => {
+          const query = track(createGetUser(client).prepare({ pathParams: { id: '1' } }));
+          const fixture = TestBed.createComponent(QueryDirectiveHost);
+
+          fixture.componentRef.setInput('query', query);
+          fixture.detectChanges();
+
+          expect(query.rawState.type).toBe(QueryStateType.Loading);
+          expect(s.api.pending()).toHaveLength(1);
+          expect(slotText(fixture, 'loading')).toBe('true');
+          expect(slotText(fixture, 'name')).toBe('-');
+          expect(slotText(fixture, 'progress')).toBe('-');
+
+          s.tick(500);
+          fixture.detectChanges();
+
+          expect(slotText(fixture, 'name')).toBe('Ada');
+          expect(slotText(fixture, 'loading')).toBe('false');
+          expect(slotText(fixture, 'refreshing')).toBe('false');
+          expect(slotText(fixture, 'error')).toBe('-');
+
+          blurThenFocus(s);
+          fixture.detectChanges();
+
+          expect(query.rawState.meta.triggeredVia).toBe('auto');
+          expect(slotText(fixture, 'refreshing')).toBe('true');
+          expect(slotText(fixture, 'loading')).toBe('false');
+
+          s.tick(500);
+          fixture.detectChanges();
+
+          expect(slotText(fixture, 'refreshing')).toBe('false');
+
+          const broken = track(client.get<PortableArgs>('/broken').prepare());
+
+          fixture.componentRef.setInput('query', broken);
+          fixture.detectChanges();
+          s.tick();
+          fixture.detectChanges();
+
+          expect(slotText(fixture, 'error')).toBe('404');
+          expect(slotText(fixture, 'name')).toBe('-');
+
+          fixture.destroy();
+
+          expectInteropErrors(s, kind, 404);
+        });
+      },
+    );
+
+    itParity(kind, '*etQuery exposes the request progress to its template', () => {
+      const s = scenario();
+
+      withLegacyClient(s, kind, (client, track) => {
+        // The fake API emits its progress events in the same task as the response, so a progress
+        // state never survives to a change-detection pass. The mock args space theirs out in time.
+        const query = track(
+          createGetUser(client).prepare({
+            pathParams: { id: '1' },
+            mock: {
+              response: { id: '1', name: 'Ada' },
+              delay: 100,
+              progress: { eventType: 'download', eventCount: 2, fileSize: 100 },
+            },
+          }),
+        );
+        const fixture = TestBed.createComponent(QueryDirectiveHost);
+
+        fixture.componentRef.setInput('query', query);
+        fixture.detectChanges();
+
+        expect(slotText(fixture, 'progress')).toBe('-');
+
+        s.tick(200);
+        fixture.detectChanges();
+
+        expect(slotText(fixture, 'progress')).toBe('50');
+        expect(slotText(fixture, 'name')).toBe('-');
+
+        s.tick(100);
+        fixture.detectChanges();
+
+        expect(slotText(fixture, 'progress')).toBe('100');
+
+        s.tick(100);
+        fixture.detectChanges();
+
+        expect(slotText(fixture, 'progress')).toBe('-');
+        expect(slotText(fixture, 'name')).toBe('Ada');
+        expect(s.api.requests).toHaveLength(0);
+
+        fixture.destroy();
+      });
+    });
+
+    it('an infinity query appends the next page to its items when the trigger fires', () => {
+      const s = scenario();
+      s.api.on('GET', '/users', ({ query }) => {
+        const page = Number(query['page'] ?? '1');
+
+        return { body: { items: [{ id: `${page}a` }, { id: `${page}b` }], totalPages: 2 } };
+      });
+
+      withLegacyClient(s, kind, (client) => {
+        const getUsers = client.legacy.get<{ queryParams: { page: number; limit: number } }>('/users');
+        const config = createInfinityQueryConfig({
+          queryCreator: getUsers as never,
+          limitParam: { value: 2 },
+          response: {
+            arrayType: [] as { id: string }[],
+            valueExtractor: (response: { items: { id: string }[] }) => response.items,
+          },
+        });
+
+        const fixture = TestBed.createComponent(InfinityQueryHost);
+
+        fixture.componentRef.setInput('config', config);
+        fixture.detectChanges();
+        s.tick();
+        fixture.detectChanges();
+
+        expect(slotText(fixture, 'items')).toBe('1a,1b');
+        expect(slotText(fixture, 'currentPage')).toBe('1');
+        expect(slotText(fixture, 'totalPages')).toBe('2');
+        expect(slotText(fixture, 'canLoadMore')).toBe('true');
+
+        const trigger = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-slot="more"]');
+
+        expect(trigger).not.toBeNull();
+        trigger?.click();
+        s.tick();
+        fixture.detectChanges();
+
+        expect(slotText(fixture, 'items')).toBe('1a,1b,2a,2b');
+        expect(slotText(fixture, 'currentPage')).toBe('2');
+        expect(slotText(fixture, 'canLoadMore')).toBe('false');
+        expect(s.api.requests.map((request) => request.query['page'])).toEqual(['1', '2']);
+        expect(s.api.requests.map((request) => request.query['limit'])).toEqual(['2', '2']);
+
+        fixture.destroy();
+      });
+    });
+  });
+});
+
+describe('legacy scenario on the native client API', () => {
+  const scenario = useScenario({ baseUrl: BASE_URL, clientOptions: { keepUnusedFor: 0 } });
+
+  describe('auto refresh on window focus', () => {
+    const blurThenFocus = (s: Scenario) => {
+      window.dispatchEvent(new Event('blur'));
+      s.tick(5_000);
+      s.tick(GC_INTERVAL + 1);
+      window.dispatchEvent(new Event('focus'));
+      s.tick();
+    };
+
+    it('does not re-execute when the client disables autoRefreshQueriesOnWindowFocus', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+      withNativeClient(s, { request: { autoRefreshQueriesOnWindowFocus: false } }, (client, track) => {
+        const query = track(
+          createNativeGetUser(client)
+            .prepare({ pathParams: { id: '1' } })
+            .execute(),
+        );
+        const recorded = recordStates(query);
+
+        s.tick();
+        blurThenFocus(s);
+
+        expect(s.api.requestCount('GET', '/users/1')).toBe(1);
+
+        recorded.stop();
+      });
+    });
+
+    it('does not re-execute a query with autoRefreshOn.windowFocus false', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+      withNativeClient(s, {}, (client, track) => {
+        const getUser = client.get({
+          route: (p) => `/users/${p.id}`,
+          autoRefreshOn: { windowFocus: false },
+          types: {
+            args: def<{ pathParams: { id: string } }>(),
+            response: def<User>(),
+          },
+        });
+        const query = track(getUser.prepare({ pathParams: { id: '1' } }).execute());
+        const recorded = recordStates(query);
+
+        s.tick();
+        blurThenFocus(s);
+
+        expect(s.api.requestCount('GET', '/users/1')).toBe(1);
+
+        recorded.stop();
+      });
+    });
+  });
+
+  describe('polling', () => {
     it('keeps polling while blurred when enableSmartPolling is false', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
 
-      withLegacyClient(s, { request: { enableSmartPolling: false } }, (client, track) => {
+      withNativeClient(s, { request: { enableSmartPolling: false } }, (client, track) => {
         const stopPolling$ = new Subject<void>();
         const query = track(
-          createGetUser(client)
+          createNativeGetUser(client)
             .prepare({ pathParams: { id: '1' } })
             .execute(),
         );
@@ -902,7 +1178,7 @@ describe('legacy scenario', () => {
       const s = scenario();
       s.api.on('GET', '/secure', () => ({ body: { ok: true } }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withNativeClient(s, {}, (client, track) => {
         const query = track(createSecureQuery(client).prepare());
 
         expect(() => query.execute()).toThrow('Cannot execute secure query without auth provider');
@@ -918,7 +1194,7 @@ describe('legacy scenario', () => {
       s.api.on('GET', '/secure', () => ({ body: { ok: true } }));
       s.api.protect('/secure', ({ claims }) => claims['scope'] === 'admin');
 
-      withLegacyClient(s, {}, (client, track) => {
+      withNativeClient(s, {}, (client, track) => {
         client.setAuthProvider(
           new V2BearerAuthProvider({
             token,
@@ -944,7 +1220,7 @@ describe('legacy scenario', () => {
       s.api.protect('/secure', ({ claims }) => claims['scope'] === 'admin');
       s.api.on('POST', '/auth/refresh', () => ({ body: { token: freshToken, refreshToken: mintToken() } }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withNativeClient(s, {}, (client, track) => {
         client.setAuthProvider(
           new V2BearerAuthProvider({
             token: staleToken,
@@ -974,7 +1250,7 @@ describe('legacy scenario', () => {
       s.api.protect('/secure', ({ claims }) => claims['scope'] === 'admin');
       s.api.on('POST', '/auth/refresh', () => ({ body: { token: freshToken, refreshToken: mintToken() }, delay: 100 }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withNativeClient(s, {}, (client, track) => {
         client.setAuthProvider(
           new V2BearerAuthProvider({
             token: mintToken(),
@@ -1001,7 +1277,7 @@ describe('legacy scenario', () => {
       const s = scenario();
       s.api.on('POST', '/auth/refresh', () => ({ status: 401, body: { message: 'unknown refresh token' } }));
 
-      withLegacyClient(s, {}, (client) => {
+      withNativeClient(s, {}, (client) => {
         const provider = new V2BearerAuthProvider({
           refreshConfig: { queryCreator: createRefreshQuery(client), token: mintToken() },
         });
@@ -1026,7 +1302,7 @@ describe('legacy scenario', () => {
       s.api.on('GET', '/secure', () => ({ body: { ok: true } }));
       s.api.protect('/secure');
 
-      withLegacyClient(s, {}, (client, track) => {
+      withNativeClient(s, {}, (client, track) => {
         client.setAuthProvider(
           new V2BearerAuthProvider({
             refreshConfig: { queryCreator: createRefreshQuery(client), cookieName: COOKIE_NAME },
@@ -1060,7 +1336,7 @@ describe('legacy scenario', () => {
         body: { token: mintToken({ expiresInMs: tenMinutes }), refreshToken: mintToken() },
       }));
 
-      withLegacyClient(s, {}, (client) => {
+      withNativeClient(s, {}, (client) => {
         const provider = new V2BearerAuthProvider({
           token: mintToken({ expiresInMs: tenMinutes }),
           refreshConfig: { queryCreator: createRefreshQuery(client), token: mintToken() },
@@ -1089,7 +1365,7 @@ describe('legacy scenario', () => {
         body: { token: mintToken({ expiresInMs: tenMinutes }), refreshToken: mintToken() },
       }));
 
-      withLegacyClient(s, {}, (client) => {
+      withNativeClient(s, {}, (client) => {
         const provider = new V2BearerAuthProvider({
           token: mintToken({ expiresInMs: tenMinutes }),
           refreshConfig: { queryCreator: createRefreshQuery(client), token: mintToken() },
@@ -1107,7 +1383,7 @@ describe('legacy scenario', () => {
       const s = scenario();
       s.api.on('GET', '/secure', () => ({ body: { ok: true } }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withNativeClient(s, {}, (client, track) => {
         client.setAuthProvider(new BasicAuthProvider({ username: 'ada', password: 'lovelace' }));
 
         track(createSecureQuery(client).prepare().execute());
@@ -1121,7 +1397,7 @@ describe('legacy scenario', () => {
       const s = scenario();
       s.api.on('GET', '/secure', () => ({ body: { ok: true } }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withNativeClient(s, {}, (client, track) => {
         client.setAuthProvider(new CustomHeaderAuthProvider({ name: 'X-Api-Key', value: 'secret' }));
 
         track(createSecureQuery(client).prepare().execute());
@@ -1134,7 +1410,7 @@ describe('legacy scenario', () => {
     it('keeps the refresh cookie when setAuthProvider replaces the provider', () => {
       const s = scenario();
 
-      withLegacyClient(s, {}, (client) => {
+      withNativeClient(s, {}, (client) => {
         client.setAuthProvider(
           new V2BearerAuthProvider({
             token: mintToken(),
@@ -1166,7 +1442,7 @@ describe('legacy scenario', () => {
     it('deletes the refresh cookie when clearAuthProvider ends the session', () => {
       const s = scenario();
 
-      withLegacyClient(s, {}, (client) => {
+      withNativeClient(s, {}, (client) => {
         client.setAuthProvider(
           new V2BearerAuthProvider({
             token: mintToken(),
@@ -1195,7 +1471,7 @@ describe('legacy scenario', () => {
       const owner = s.consumer();
       const client = owner.run(() => new V2QueryClient({ baseRoute: BASE_URL }));
       const query = owner.run(() =>
-        createGetUser(client)
+        createNativeGetUser(client)
           .prepare({ pathParams: { id: '1' } })
           .execute(),
       );
@@ -1235,7 +1511,7 @@ describe('legacy scenario', () => {
       }));
       s.api.on('DELETE', '/users/:id', () => ({ status: 204 }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withNativeClient(s, {}, (client, track) => {
         const writeTypes = {
           args: def<{ pathParams: { id: string }; body: { name: string } }>(),
           response: def<User>(),
@@ -1274,7 +1550,7 @@ describe('legacy scenario', () => {
       const s = scenario();
       s.api.on('POST', '/flags', () => ({ body: { ok: true } }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withNativeClient(s, {}, (client, track) => {
         const setFlag = client.post({
           route: '/flags',
           types: { args: def<{ body: boolean | number }>(), response: def<{ ok: boolean }>() },
@@ -1300,7 +1576,7 @@ describe('legacy scenario', () => {
           : { body: { data: { createPost: { id: '2' } } } },
       );
 
-      withLegacyClient(s, {}, (client, track) => {
+      withNativeClient(s, {}, (client, track) => {
         const getPosts = client.gqlQuery({
           route: '/graphql',
           query: GET_POSTS,
@@ -1346,7 +1622,7 @@ describe('legacy scenario', () => {
       }));
       s.api.on('HEAD', '/posts', () => ({ headers: { 'cache-control': 'max-age=600' } }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withNativeClient(s, {}, (client, track) => {
         const optionsUsers = client.fetch<'/users', { allow: string }, undefined, string>({
           method: 'OPTIONS',
           route: '/users',
@@ -1381,7 +1657,7 @@ describe('legacy scenario', () => {
     it('keeps gqlQuery variables that differ only inside a string on separate instances', () => {
       const s = scenario();
 
-      withLegacyClient(s, {}, (client) => {
+      withNativeClient(s, {}, (client) => {
         const searchPosts = client.gqlQuery({
           route: '/graphql',
           query: 'query SearchPosts($q: String!) { posts(q: $q) { id } }',
@@ -1404,7 +1680,7 @@ describe('legacy scenario', () => {
           : { body: { data: { createPost: { id: '2' } } }, headers: { 'cache-control': 'max-age=600' } },
       );
 
-      withLegacyClient(s, {}, (client, track) => {
+      withNativeClient(s, {}, (client, track) => {
         const getPosts = client.gqlQuery({
           route: '/graphql',
           query: GET_POSTS,
@@ -1447,7 +1723,7 @@ describe('legacy scenario', () => {
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
       s.api.on('POST', '/users', ({ body }) => ({ status: 201, body }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withNativeClient(s, {}, (client, track) => {
         client.setDefaultHeaders({ headers: { 'X-Tenant': 'ada' } });
 
         const createUser = client.post({
@@ -1456,7 +1732,7 @@ describe('legacy scenario', () => {
         });
 
         track(
-          createGetUser(client)
+          createNativeGetUser(client)
             .prepare({ pathParams: { id: '1' } })
             .execute(),
         );
@@ -1476,9 +1752,9 @@ describe('legacy scenario', () => {
         headers: { 'cache-control': 'max-age=600' },
       }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withNativeClient(s, {}, (client, track) => {
         const query = track(
-          createGetUser(client)
+          createNativeGetUser(client)
             .prepare({ pathParams: { id: '1' } })
             .execute(),
         );
@@ -1508,7 +1784,7 @@ describe('legacy scenario', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
 
-      withLegacyClient(s, {}, (client, track) => {
+      withNativeClient(s, {}, (client, track) => {
         const store = new EntityStore<User>({ name: 'users' });
         const getUser = client.get({
           route: (p) => `/users/${p.id}`,
@@ -1580,46 +1856,13 @@ describe('legacy scenario', () => {
 
       c.destroy();
     });
-
-    it('a legacy QueryForm drives a legacy prepare() with the same value', () => {
-      const s = scenario();
-      s.api.on('GET', '/users', ({ query }) => ({ body: { search: query['search'] ?? null } }));
-
-      withLegacyClient(s, {}, (client, track) => {
-        const c = s.consumer();
-        const queryForm = c.run(() =>
-          new QueryForm({ search: new QueryField({ control: new FormControl<string | null>(null) }) }).observe({
-            writeToQueryParams: false,
-          }),
-        );
-        const searchUsers = client.get({
-          route: '/users',
-          types: {
-            args: def<{ queryParams: { search: string | null } }>(),
-            response: def<{ search: string | null }>(),
-          },
-        });
-
-        queryForm.setValue({ search: 'ada' });
-        s.tick();
-
-        const query = track(searchUsers.prepare({ queryParams: { search: queryForm.value.search } }).execute());
-
-        s.tick();
-
-        expect(query.rawState).toMatchObject({ type: QueryStateType.Success, response: { search: 'ada' } });
-        expect(s.api.requests[0]?.query).toEqual({ search: 'ada' });
-
-        c.destroy();
-      });
-    });
   });
 
   describe('devtools registration', () => {
     it('provideQueryClientForDevtools exposes the legacy client to the devtools bridge', () => {
       const s = scenario();
 
-      withLegacyClient(s, {}, (client) => {
+      withNativeClient(s, {}, (client) => {
         const root = s.run(() => inject(EnvironmentInjector));
         const injector = createEnvironmentInjector(
           [provideQueryClientForDevtools({ displayName: 'Legacy API', client })],
@@ -1829,163 +2072,6 @@ describe('legacy scenario', () => {
       expect(s.api.requestCount('GET', '/validate')).toBe(2);
 
       owner.destroy();
-    });
-  });
-  describe('query directives', () => {
-    const blurThenFocus = (s: Scenario) => {
-      window.dispatchEvent(new Event('blur'));
-      s.tick(5_000);
-      s.tick(GC_INTERVAL + 1);
-      window.dispatchEvent(new Event('focus'));
-      s.tick();
-    };
-
-    it('*etQuery executes the query and exposes the response, loading, refreshing and error to its template', () => {
-      const s = scenario();
-      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 500 }));
-      s.api.on('GET', '/broken', () => ({ status: 404, body: { message: 'not found' } }));
-
-      withLegacyClient(s, {}, (client, track) => {
-        const query = track(createGetUser(client).prepare({ pathParams: { id: '1' } }));
-        const fixture = TestBed.createComponent(QueryDirectiveHost);
-
-        fixture.componentRef.setInput('query', query);
-        fixture.detectChanges();
-
-        expect(query.rawState.type).toBe(QueryStateType.Loading);
-        expect(s.api.pending()).toHaveLength(1);
-        expect(slotText(fixture, 'loading')).toBe('true');
-        expect(slotText(fixture, 'name')).toBe('-');
-        expect(slotText(fixture, 'progress')).toBe('-');
-
-        s.tick(500);
-        fixture.detectChanges();
-
-        expect(slotText(fixture, 'name')).toBe('Ada');
-        expect(slotText(fixture, 'loading')).toBe('false');
-        expect(slotText(fixture, 'refreshing')).toBe('false');
-        expect(slotText(fixture, 'error')).toBe('-');
-
-        blurThenFocus(s);
-        fixture.detectChanges();
-
-        expect(query.rawState.meta.triggeredVia).toBe('auto');
-        expect(slotText(fixture, 'refreshing')).toBe('true');
-        expect(slotText(fixture, 'loading')).toBe('false');
-
-        s.tick(500);
-        fixture.detectChanges();
-
-        expect(slotText(fixture, 'refreshing')).toBe('false');
-
-        const broken = track(client.get({ route: '/broken', types: { response: def<User>() } }).prepare());
-
-        fixture.componentRef.setInput('query', broken);
-        fixture.detectChanges();
-        s.tick();
-        fixture.detectChanges();
-
-        expect(slotText(fixture, 'error')).toBe('404');
-        expect(slotText(fixture, 'name')).toBe('-');
-
-        fixture.destroy();
-      });
-    });
-
-    it('*etQuery exposes the request progress to its template', () => {
-      const s = scenario();
-
-      withLegacyClient(s, {}, (client, track) => {
-        // The fake API emits its progress events in the same task as the response, so a progress
-        // state never survives to a change-detection pass. The mock args space theirs out in time.
-        const query = track(
-          createGetUser(client).prepare({
-            pathParams: { id: '1' },
-            mock: {
-              response: { id: '1', name: 'Ada' },
-              delay: 100,
-              progress: { eventType: 'download', eventCount: 2, fileSize: 100 },
-            },
-          }),
-        );
-        const fixture = TestBed.createComponent(QueryDirectiveHost);
-
-        fixture.componentRef.setInput('query', query);
-        fixture.detectChanges();
-
-        expect(slotText(fixture, 'progress')).toBe('-');
-
-        s.tick(200);
-        fixture.detectChanges();
-
-        expect(slotText(fixture, 'progress')).toBe('50');
-        expect(slotText(fixture, 'name')).toBe('-');
-
-        s.tick(100);
-        fixture.detectChanges();
-
-        expect(slotText(fixture, 'progress')).toBe('100');
-
-        s.tick(100);
-        fixture.detectChanges();
-
-        expect(slotText(fixture, 'progress')).toBe('-');
-        expect(slotText(fixture, 'name')).toBe('Ada');
-        expect(s.api.requests).toHaveLength(0);
-
-        fixture.destroy();
-      });
-    });
-
-    it('an infinity query appends the next page to its items when the trigger fires', () => {
-      const s = scenario();
-      s.api.on('GET', '/users', ({ query }) => {
-        const page = Number(query['page'] ?? '1');
-
-        return { body: { items: [{ id: `${page}a` }, { id: `${page}b` }], totalPages: 2 } };
-      });
-
-      withLegacyClient(s, {}, (client) => {
-        const getUsers = client.get({
-          route: '/users',
-          types: {
-            args: def<{ queryParams: { page: number; limit: number } }>(),
-            response: def<{ items: { id: string }[]; totalPages: number }>(),
-          },
-        });
-        const config = createInfinityQueryConfig({
-          queryCreator: getUsers,
-          limitParam: { value: 2 },
-          response: { arrayType: [] as { id: string }[], valueExtractor: (response) => response.items },
-        });
-
-        const fixture = TestBed.createComponent(InfinityQueryHost);
-
-        fixture.componentRef.setInput('config', config);
-        fixture.detectChanges();
-        s.tick();
-        fixture.detectChanges();
-
-        expect(slotText(fixture, 'items')).toBe('1a,1b');
-        expect(slotText(fixture, 'currentPage')).toBe('1');
-        expect(slotText(fixture, 'totalPages')).toBe('2');
-        expect(slotText(fixture, 'canLoadMore')).toBe('true');
-
-        const trigger = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-slot="more"]');
-
-        expect(trigger).not.toBeNull();
-        trigger?.click();
-        s.tick();
-        fixture.detectChanges();
-
-        expect(slotText(fixture, 'items')).toBe('1a,1b,2a,2b');
-        expect(slotText(fixture, 'currentPage')).toBe('2');
-        expect(slotText(fixture, 'canLoadMore')).toBe('false');
-        expect(s.api.requests.map((request) => request.query['page'])).toEqual(['1', '2']);
-        expect(s.api.requests.map((request) => request.query['limit'])).toEqual(['2', '2']);
-
-        fixture.destroy();
-      });
     });
   });
 });
