@@ -234,4 +234,4 @@ all five fifagg apps build on `chore/query-v3-migration`.
   the migrator never saw it. The standalone shapes (gamer-tag validator, edit-match-data provider, playtime-tracker,
   upload-handler) get a manual-review task each, by design: a function with no `inject()` call can run outside an
   injection context, so the migrator cannot add one safely. Remaining work (ff): the task text proposes the concrete
-  fix, `const injector = inject(Injector)` at the top of the factory and `{ injector }` at the call. Then 17 closes.
+  fix, `const injector = inject(Injector)` at the top of the factory and `{ injector }` at the call. **Closed in 0289807a8 (ff):** the task text now names this fix, with the caller injector, `queryComputed()` and `provideLegacyPrepareFallback()` as the other ways; the spec checks the text.
