@@ -225,7 +225,12 @@ all five fifagg apps build on `chore/query-v3-migration`.
   Asked again; Tom: "q1ok" to the recommendation. `@ethlete/query-devtools` gets a provider that attaches the panel to
   the root component through a dynamic import; it sits in the same production gate as `provideQueryDevtools()`, so no
   template element is needed and nothing ships in production. The migrator removes `<et-query-devtools-lazy>` and the
-  import, and adds the provider inside the existing gate. Docs show it as the default. Name and shape: ff.
+  import, and adds the provider inside the existing gate. Docs show it as the default. Name and shape: ff. Built (ff,
+  69b6f2adc, unpushed): runtime part. `provideQueryDevtools()` cannot import `@ethlete/query-devtools` (nx task-graph
+  cycle query -> query-devtools -> query), so the app passes a loader: `provideQueryDevtools({ ui: () =>
+import('@ethlete/query-devtools/lazy') })`; new export `mountQueryDevtools` in `/lazy` mounts after the first render
+  and skips when a devtools UI is on the page (spec bites). Devtools e2e not run. Next: the migrator writes the `ui`
+  option and removes the tag and its import.
 - **15. Legacy creators report every error to `ErrorHandler` (fifagg-frontend-3d, built f0561a80e, unpushed):** v3 `http-request.ts:682` calls
   `ngErrorHandler.handleError` unless `reportErrors === false`. `createLegacyQueryCreator`
   (`legacy/interop/legacy-query-creator.ts:272-280`) does not pass `reportErrors: false`, and the migrator does not add
