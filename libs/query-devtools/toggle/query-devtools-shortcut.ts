@@ -1,11 +1,12 @@
-import { detectKbdPlatform } from '@ethlete/components';
+const isApplePlatform = () =>
+  typeof navigator !== 'undefined' && /mac|iphone|ipad|ipod/i.test(navigator.platform || navigator.userAgent);
 
 /**
  * The global devtools toggle shortcut, rendered for the current platform (`⌘⌥Q` on Apple, where the
  * symbols are the convention, `Ctrl+Alt+Q` everywhere else). Shown on both the floating toggle and
  * the panel's close button so the shortcut is discoverable without reading the docs.
  */
-export const queryDevtoolsShortcutLabel = () => (detectKbdPlatform() === 'apple' ? '⌘⌥Q' : 'Ctrl+Alt+Q');
+export const queryDevtoolsShortcutLabel = () => (isApplePlatform() ? '⌘⌥Q' : 'Ctrl+Alt+Q');
 
 /**
  * Whether a `keydown` is the devtools toggle shortcut (`Ctrl/Cmd + Alt + Q`). AltGr is rejected: Windows
