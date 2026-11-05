@@ -112,7 +112,7 @@
     "edge": {
       "authors": ["claude-opus-5-5"],
       "round": "r1",
-      "note": "The panel keeps the canvas fill; a stronger 1px border and the shadow carry its edge. Trips LOST-SURFACE by rule design, so it carries a skip."
+      "note": "The panel keeps the canvas fill; a stronger 1px border and the shadow carry its edge. Trips LOST-SURFACE by rule design, so it passes only through data-et-skip='LOST-SURFACE' (the check is bypassed, not satisfied)."
     }
   }
 }
