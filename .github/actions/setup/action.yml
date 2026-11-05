@@ -64,7 +64,12 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        machine_id=$(cat /var/lib/dbus/machine-id 2>/dev/null || cat /etc/machine-id)
+        case "$RUNNER_OS" in
+          Linux) machine_id=$(cat /var/lib/dbus/machine-id 2>/dev/null || cat /etc/machine-id) ;;
+          macOS) machine_id=$(ioreg -rd1 -c IOPlatformExpertDevice | awk -F'"' '/IOPlatformUUID/ { print $4 }') ;;
+          Windows) machine_id=$(reg query 'HKLM\SOFTWARE\Microsoft\Cryptography' //v MachineGuid | awk '/MachineGuid/ { print $3 }' | tr -d '\r') ;;
+        esac
+        [ -n "${machine_id:-}" ] || { echo "::warning::no machine id on $RUNNER_OS, the restored Nx database stays unused"; exit 0; }
         for file in .nx/workspace-data/*.db .nx/workspace-data/*.db-wal .nx/workspace-data/*.db-shm; do
           [ -e "$file" ] || continue
           name=${file##*/}
