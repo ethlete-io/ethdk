@@ -3446,11 +3446,18 @@ all-unchanged case.
 477\. `sketch ready` is very slow, and Tom thinks other design commands are too (Tom, 2026-11-05: "sketch ready muss auch
 dringend schneller werden, der und ich glaub auch weitere befehle sind echt lahm"). Why no tool caught it: no
 command has a time budget, and nothing records how long a command ran, so a slow command looks like a working one.
-Cause open (asked the builder for a measurement, not a guess). Tool fix: (1) measure `sketch ready`, `sketch check`,
+First measure (builder, idle machine, 1-variant sketch on a 1-state part): `sketch new` 0.6 s, `sketch check` 5.7 s,
+`sketch ready` 6.7 s, `design check --rules` 2.2 s. The small case is fast; the slowness is per state and frame
+(`pages/system`: 26 states x 3 widths). The biggest phase is not named yet: per-phase timing comes next. Cause open. Tool fix: (1) measure `sketch ready`, `sketch check`,
 `sketch merge`, `sketch new` and `design check` on a real sketch, with the time of each phase; (2) fix the biggest
 phase first (suspects: a full draw of every variant and state, the full listing, a cold CLI build, a repeated
 compare); (3) every design command prints its duration, and a spec or a budget list fails when a command passes its
 budget on a fixed fixture.
+
+479\. A fresh sketch of a part that has a `.css` file (`components/kbd`, `components/divider`) fails `UTILITY-CSS` in
+`sketch check`, so `sketch ready` refuses after 2.5 s (builder measure, 2026-11-05). Why no tool caught it: no spec
+creates a sketch for a part with a `.css` file and runs `check`. Tool fix: `sketch new` copies the part so that it
+passes `check`, or says in German why it cannot; spec with a part that has a `.css` file.
 
 478\. After an automatic merge, `sketch ready` printed "ENOENT ... foundations-colors.foundations-check-fixes/sketch.json"
 and never printed "merged automatically", although the merge was complete (commit 479bdace3, builder, 2026-11-05).
