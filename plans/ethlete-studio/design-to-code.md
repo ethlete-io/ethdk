@@ -4589,7 +4589,8 @@ paths outside them (for example `libs/` in an `apps/` slice).
 `@ethlete/query:migrate-from-ngrx-toolkit` (reported by the fifagg session, 475 files still on `@tomtomb/ngrx-toolkit`),
 and in core `migrate-create-destroy`, `migrate-color-theme-variants`, `migrate-legacy-color-themes` (doc agent check,
 2026-11-05). Why no tool caught it: nothing compares `generators.json` with `migrations.json`. Tool fix (B383, builder
-default): a check that fails when a generator is neither in `migrations.json` nor marked as a scaffold generator.
+default): a check in the pre-push Checks and in CI that fails when a generator is neither in `migrations.json` nor marked as a
+scaffold generator in `generators.json`; its message names both ways out.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 

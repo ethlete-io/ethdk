@@ -51,3 +51,22 @@ Reported on 2026-10-30 by the session `fifagg-frontend-a5`, with `@ethlete/cli` 
   `theme`, `[theme]`, `altTheme`, `[altTheme]` only in start tags with `et-button`, `et-fab`, `et-icon-button` or
   `et-text-button` (the only SDK hosts that had `theme`), in `.html` and inline templates. The other renames are
   SDK-only names. Verified: specs that fail without the fix. Not verified: a run on fifagg-frontend.
+
+## 5. `et migrations` does not list four migration generators - open (B383)
+
+- **Pain (fifagg-frontend-c3, 2026-11-05):** `yarn et migrations` does not show `@ethlete/query:migrate-from-ngrx-toolkit`;
+  fifagg still has `@tomtomb/ngrx-toolkit` in 475 files.
+- **Cause:** no entry in `libs/query/migrations.json`. The same holds for core `migrate-create-destroy`,
+  `migrate-color-theme-variants` and `migrate-legacy-color-themes`.
+- **Fix (Tom OK):** an entry for each (`optional` while the old API still works, else `required`), and a check in the
+  pre-push Checks and CI that fails on a generator that is neither in `migrations.json` nor marked as a scaffold
+  generator in `generators.json`.
+
+## 6. `migrate-to-query-v3` imports `@ethlete/query-devtools` but does not add it - open (B384)
+
+- **Pain (fifagg-frontend-c3, 2026-11-05, query 6.0.0-next.61):** the codemod rewrites
+  `import { QueryDevtoolsComponent } from '@ethlete/query'` to `'@ethlete/query-devtools'` in three app components,
+  but `package.json` does not get the package. The build fails on an unresolved import.
+- **Fix:** the migration declares the package it needs (like `requires: ["ts-morph"]` in finding 1), and `et update`
+  adds it with the same tag as `@ethlete/query` before the codemod; if the add fails, the codemod prints a manual
+  task that names the package.
