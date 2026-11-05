@@ -4576,6 +4576,15 @@ stale dist mocks. Fixed in 4de41ac2e (builds `cli,components` first). The check 
 problems of finding 438. Why pre-push missed it: no local gate runs `design check`. Tool fix: part of B372 (slice end
 and pre-push run `design check --product <p>`). Tom (2026-11-05): B372 comes before the push and before B377 (ADR 0193).
 
+445\. The tooltip swap for Studio (finding 116, row A8) also changed `libs/components` (e73234f6e, 661ce4cca, Tom
+2026-11-05: "das war nie der plan"). Several bundles grew by up to 23 KB. Cause (builder): 4c60be59e added
+`ethlete/no-native-title` as an error to the plugin's recommended template config, which `libs/components` also uses.
+Lint then failed on the lib templates, and e73234f6e "fixed" them 26 minutes later. aa6fcba2f took the rule out of
+recommended but left the lib edits. Reverted in 40a92b60b (ADR 0194). Why no tool caught it: a slice has no declared
+path scope, and nothing stops a lint-driven fix from leaving it. Tool fix (B382, builder default): a new lint rule for app
+code starts in an opt-in config; a slice brief names its allowed paths, and the commit gate warns when a commit touches
+paths outside them (for example `libs/` in an `apps/` slice).
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
