@@ -395,6 +395,21 @@ export const component = {
     expect(result).not.toContain('QueryDevtoolsComponent as Devtools, provideQueryClientForDevtools');
   });
 
+  it('reports a V2QueryClient the migration could not move', async () => {
+    tree.write(
+      'client.ts',
+      `
+import { V2QueryClient } from '@ethlete/query';
+
+export const odd = new V2QueryClient(buildConfig());
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    expect(readFile('query-v3-migration-tasks.md')).toContain('Migrator error: a V2QueryClient is left');
+  });
+
   it('keeps AnyV2Query where the file already names AnyLegacyQuery', async () => {
     tree.write(
       'types.ts',

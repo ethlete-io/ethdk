@@ -146,6 +146,33 @@ export const replaceAnyQueryWithLegacy = (tree: Tree, scope: MigrationScope) => 
   }
 };
 
+export const reportLeftoverV2Clients = (tree: Tree, scope: MigrationScope, report: QueryV3MigrationReport) => {
+  scope.visit(tree, (filePath) => {
+    if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) {
+      return;
+    }
+
+    const content = tree.read(filePath, 'utf-8');
+    const index = content?.search(/new\s+V2QueryClient\s*[(<]/);
+
+    if (!content || index === undefined || index < 0) {
+      return;
+    }
+
+    const line = content.slice(0, index).split('\n').length;
+
+    report.addManualReview({
+      title: 'Migrator error: a V2QueryClient is left',
+      summary:
+        'The migration should leave no `V2QueryClient` behind, so it missed this client. Report this case as a migrator bug.',
+      action: 'Migrate the client by hand to `createQueryClient`, then report the shape the migration did not handle.',
+      locations: [{ filePath, line }],
+      source: 'cleanup-migration',
+      dedupeKey: `leftover-v2-client:${filePath}:${line}`,
+    });
+  });
+};
+
 export const migrateEmptyPrepareCalls = (tree: Tree, scope: MigrationScope, report: QueryV3MigrationReport) => {
   const updatedFiles: string[] = [];
   const graph = createModuleGraph(tree);

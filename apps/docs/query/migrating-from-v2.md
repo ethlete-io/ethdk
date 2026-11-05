@@ -238,7 +238,7 @@ The generator moves the devtools component to the lazy shell, which loads the pa
 - `QueryDevtoolsComponent` from `@ethlete/query` becomes `QueryDevtoolsLazyComponent` from `@ethlete/query-devtools/lazy`, so that package has to be a dependency of the app;
 - `<et-query-devtools>` in a template, inline or in an `.html` file, becomes `<et-query-devtools-lazy>`.
 
-The two panels do not merge. The current one lists current-system queries, and the `legacy*` interop queries, which are real queries underneath; a client still on `V2QueryClient` only shows up in the legacy panel. The generator rewrites a template that still uses the legacy panel, so a client that stays on `V2QueryClient` needs the legacy panel mounted by hand: the two selectors, `et-query-devtools` for the legacy panel and `et-query-devtools-lazy` for the current one, can sit side by side. See the [lazy shell](/query-devtools/). The two keep their settings under different storage keys.
+The generator moves every client, so no `V2QueryClient` is left after a run. A client it reports as `Migrator error: a V2QueryClient is left` is a bug in the migration: move it by hand and report the case. The panel lists current-system queries and the `legacy*` interop queries, which are real queries underneath. See the [lazy shell](/query-devtools/).
 
 ### Query collections
 

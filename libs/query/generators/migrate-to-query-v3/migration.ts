@@ -1,6 +1,7 @@
 import { Tree, formatFiles } from '@nx/devkit';
 import {
   migrateDevtoolsUsage,
+  reportLeftoverV2Clients,
   migrateEmptyPrepareCalls,
   replaceAnyQueryWithLegacy,
   reportRemovedExperimentalQueryHelpers,
@@ -47,6 +48,7 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
   migrateEmptyPrepareCalls(tree, scope, report);
   migrateLegacyPrepareCalls(tree, report, scope);
   reportRemovedExperimentalQueryHelpers(tree, scope, report);
+  reportLeftoverV2Clients(tree, scope, report);
 
   if (queryClientFiles.size > 0) {
     reportMissingHttpClientProviders(tree, report, scope);
