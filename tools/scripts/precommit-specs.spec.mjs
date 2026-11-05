@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { after, test } from 'node:test';
@@ -208,6 +208,32 @@ test('a staged tools/scripts file with a lint error blocks the commit', () => {
   const hook = sh(repo, 'sh', ['.husky/pre-commit']);
   assert.notEqual(hook.status, 0, hook.stdout + hook.stderr);
   assert.match(hook.stderr, /eslint fails in tools\/scripts/);
+});
+
+test('a tools spec in the index copy finds the real repo root through ETHLETE_REPO_ROOT', () => {
+  const repo = repoWithValueSpec();
+  write(repo, 'eslint.config.mjs', 'export default [];\n');
+  write(repo, 'package.json', JSON.stringify({ scripts: { 'test:tools': 'node --test tools/scripts/*.spec.mjs' } }));
+  write(
+    repo,
+    'tools/scripts/root.spec.mjs',
+    `import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { realpathSync } from 'node:fs';
+import { test } from 'node:test';
+
+test('root', () => {
+  const top = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: process.env.ETHLETE_REPO_ROOT ?? process.cwd(), encoding: 'utf8' }).trim();
+  assert.equal(realpathSync(top), realpathSync(${JSON.stringify(repo)}));
+});
+`,
+  );
+  assert.equal(sh(repo, 'git', ['add', '-A']).status, 0);
+  assert.equal(sh(repo, 'git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'tools']).status, 0);
+  write(repo, 'tools/scripts/root.spec.mjs', readFileSync(join(repo, 'tools/scripts/root.spec.mjs'), 'utf8') + '\n');
+  assert.equal(sh(repo, 'git', ['add', 'tools/scripts/root.spec.mjs']).status, 0);
+  const hook = sh(repo, 'sh', ['.husky/pre-commit']);
+  assert.equal(hook.status, 0, hook.stdout + hook.stderr);
 });
 
 test('a vitest run that selects no spec for a source with a spec fails the gate', () => {

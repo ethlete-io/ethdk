@@ -111,7 +111,7 @@ const selectsNoSpecs = (root, files, rev) =>
   isDocsOnly(files) ||
   !suitesForFiles(files, relatedMapAt(root, rev), toolSpecGlobsAt(root, rev)).length;
 
-const runNodeTests = (checkout, glob) => {
+const runNodeTests = (root, checkout, glob) => {
   const name = new RegExp(`^${basename(glob).replace(/[.]/g, '\\.').replace(/\*/g, '.*')}$`);
   const specs = readdirSync(join(checkout, dirname(glob)))
     .filter((file) => name.test(file))
@@ -122,6 +122,7 @@ const runNodeTests = (checkout, glob) => {
   }
   const env = withoutGitEnv();
   delete env.NODE_TEST_CONTEXT;
+  env.ETHLETE_REPO_ROOT = root;
   const result = spawnSync('node', ['--test', ...specs], {
     cwd: checkout,
     env,
@@ -134,10 +135,10 @@ const runNodeTests = (checkout, glob) => {
   return result.status;
 };
 
-const runSuites = (checkout, suites) => {
+const runSuites = (root, checkout, suites) => {
   for (const suite of suites) {
     if (suite.node) {
-      if (runNodeTests(checkout, suite.node) !== 0) {
+      if (runNodeTests(root, checkout, suite.node) !== 0) {
         console.error(`pre-commit: a ${suite.name} spec fails (the ✖ lines above name it).`);
         return 1;
       }
@@ -353,7 +354,7 @@ export const runPathSpecs = (root, paths) => {
       runTypeChecks(worktree, projects) ||
       runLint(root, worktree, linted) ||
       runToolLint(worktree, tools) ||
-      runSuites(worktree, suites);
+      runSuites(root, worktree, suites);
     return { status, tree };
   } finally {
     signals.forEach((signal) => process.off(signal, onSignal));
@@ -408,7 +409,7 @@ export const runStagedSpecs = (root) => {
   try {
     git(root, ['checkout-index', '--all', `--prefix=${checkout}/`]);
     linkNodeModules(root, checkout);
-    return runLint(root, checkout, linted) || runToolLint(checkout, tools) || runSuites(checkout, suites);
+    return runLint(root, checkout, linted) || runToolLint(checkout, tools) || runSuites(root, checkout, suites);
   } finally {
     rmSync(checkout, { recursive: true, force: true });
   }
