@@ -1,5 +1,31 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.32
+
+### Minor Changes
+
+- Add the `background-design-commands` hook: it denies a Bash call that runs a long design command (`design check`, `compare`, `ready`, `sketch ready`, `harness`, `studio:e2e`, `--visible-change`) without `run_in_background`.
+- Add the `git-safety` hook: it denies `git add -A`, `git stash`, `git commit --amend`, a `git commit` without a pathspec and any `go.json` in a commit.
+
+### Patch Changes
+
+- Add `--role builder` to the agent-sessions `run` command and a `builder-chat-words` Stop hook that logs the chat words of each builder turn.
+- `ethlete-agents sync` and `et` write their JSON files (`.mcp.json`, design and update state) in the checkout's Prettier format.
+- The git-commit skill asks for one commit per finished slice (code, specs, changeset and plan note together), one per sketch round or merge, and no history rewrites in a shared checkout.
+- The design-exploration skill tells parts to use `data-et-auto-surface` and `data-et-surface-interactive` instead of a picked `et-surface--<name>` class.
+- The design-exploration skill keeps its hard rules in SKILL.md and moves the command details into reference files, and the subagent rule says a job of under about 10 tool calls stays in the session.
+- The design-exploration skill tells parts to use `data-et-semantic-color="<type>"` instead of a picked `et-color--<name>` class.
+- The design-exploration skill tells an agent to take every colour from the SDK surface and colour theming, never from its own tokens.
+- The `handoff` skill spawns no sub-agent from 70 %, and a self-restart no longer waits for sub-agents that report into a result file.
+- Fix the nx-layout rule to describe inferred lint and test targets instead of the removed `@nx/eslint:lint` and `@nx/jest:jest` executors.
+- The context-warning hook tells an agent in a tmux pane with the agent-sessions skill to save the handoff and run `restart` on its own session, instead of asking the user to clear. The skill description names self-restart.
+- Let `git stash list` and `git stash show` through the git-safety hook. Every writing stash subcommand stays refused, and the refusal names it.
+- `sync` keeps the existing order of hook events and entries in `.claude/settings.json` and only updates, appends or removes its own entries, so a second run is a no-op.
+- The design skill now says visible UI is built only from a picked sketch, and the grilling skill says to decide technical questions yourself.
+- The agent-sessions skill notes that `yarn commit` runs the related specs before it takes the index lock.
+- `et design check` fails a frame-loaded design module that awaits at the top level (`TOP-LEVEL-AWAIT`), which can hang WebKit; a call variant may default-export a promise of its drawing instead.
+- `et design sketch report` refuses a ready sketch. Add `--reopen` to move it back to in progress when the user asks for a change.
+
 ## 0.1.0-next.31
 
 ### Minor Changes

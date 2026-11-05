@@ -1,5 +1,12 @@
 # @ethlete/cdk
 
+## 5.0.0-next.48
+
+### Patch Changes
+
+- Apply a carousel `goTo()` called during the navigation lock once the lock ends instead of dropping it.
+- Closing a query-param overlay no longer cancels a pending navigation that already drops its query param, such as a `routerLink` inside the overlay.
+
 ## 5.0.0-next.47
 
 ### Patch Changes
