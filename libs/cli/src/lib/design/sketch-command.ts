@@ -1,5 +1,5 @@
 import { unusedInVariantOf } from './system/sketch/unused-closure';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { relative, resolve } from 'path';
 import { DesignConfig } from './paths';
 import { ASSETS_FOLDER } from './system/assets';
@@ -77,6 +77,7 @@ import {
   SketchVerdictBy,
   sourceFilesIn,
   withdrawVariant,
+  SKETCH_FILE,
 } from './system/sketch/sketch';
 
 export const SKETCH_USAGE = [
@@ -774,6 +775,8 @@ const autoMerged = (options: {
 
   const author = authorOf(context.args) ?? undefined;
   const variant = sketch.variants.find((candidate) => !rejectionOf(sketch, candidate)) ?? '';
+  const sketchFile = resolve(sketch.dir, SKETCH_FILE);
+  const undecided = readFileSync(sketchFile, 'utf8');
   const decided = decideSketch({ sketch, decision: { kind: 'pick', variant } });
 
   if (typeof decided === 'string') return fail(decided);
@@ -790,6 +793,7 @@ const autoMerged = (options: {
   });
 
   if (!Array.isArray(result)) {
+    writeFileSync(sketchFile, undecided);
     console.warn(`${sketch.target} shows no visible change but did not merge: ${result.reason}`);
 
     return 0;

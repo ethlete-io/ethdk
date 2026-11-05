@@ -1,4 +1,5 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { spawnSync } from 'child_process';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -135,6 +136,48 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(JSON.parse(readFileSync(join(product, 'merged.json'), 'utf8'))).toMatchObject({
       'components/button': { decidedBy: 'auto: no visible change' },
     });
+  });
+
+  it('leaves the sketch undecided when the auto-merge is refused', async () => {
+    const target = acme();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    output();
+    const product = join(target, DESIGN_DIR, 'acme');
+    const git = (...args: string[]) =>
+      spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: target, encoding: 'utf8' });
+
+    vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) =>
+      sketch.variants.map((variant) => ({ variant, change: null })),
+    );
+    git('init');
+    git('add', '.');
+    git('commit', '-m', 'base');
+
+    write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a',
+      '--round',
+      'Same',
+      '--note',
+      'no change',
+      '--product',
+      'acme',
+    );
+    const home = join(product, 'pages/home/home.ts');
+
+    writeFileSync(home, `${readFileSync(home, 'utf8')}\nexport const edited = true;\n`);
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('shows no visible change but did not merge'));
+
+    const sketchFile = JSON.parse(readFileSync(join(product, 'sketches/components-button/sketch.json'), 'utf8'));
+
+    expect(sketchFile.decision).toBeUndefined();
   });
 
   const newButton = (target: string) =>

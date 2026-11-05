@@ -624,4 +624,4 @@ fail the commit.` Verified: commit-wait.spec fails without the line. A real fail
 
 Finding 466 real run: `sketch ready pages/system@check-fixes` now reports no visible change, but the merge refuses on
 the uncommitted `ready.json` (same block as the foundations merge). The refused auto-merge left a `pick` decision in
-`sketch.json`; I restored the file (finding 468).
+`sketch.json`; I restored the file. Fix: a refused auto-merge writes `sketch.json` back as it was (sketch-command.spec bites).
