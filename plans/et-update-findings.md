@@ -52,7 +52,7 @@ Reported on 2026-10-30 by the session `fifagg-frontend-a5`, with `@ethlete/cli` 
   `et-text-button` (the only SDK hosts that had `theme`), in `.html` and inline templates. The other renames are
   SDK-only names. Verified: specs that fail without the fix. Not verified: a run on fifagg-frontend.
 
-## 5. `et migrations` does not list four migration generators - done except pre-push (B383)
+## 5. `et migrations` does not list four migration generators - done
 
 - **Pain (fifagg-frontend-c3, 2026-11-05):** `yarn et migrations` does not show `@ethlete/query:migrate-from-ngrx-toolkit`;
   fifagg still has `@tomtomb/ngrx-toolkit` in 475 files.
@@ -64,8 +64,7 @@ Reported on 2026-10-30 by the session `fifagg-frontend-a5`, with `@ethlete/cli` 
 
 - **As built (2026-11-05, c874d9dd2):** three optional entries (core `create-destroy`, `color-theme-variants`; query
   `from-ngrx-toolkit`); `legacy-color-themes` was already listed through its scan entry. Five generators carry
-  `"scaffold": true`. `tools/scripts/check-migration-entries.mjs` runs in CI; the pre-push line comes after the
-  builder commits its `.husky/pre-push` hunk. 93e816bec fixed the pre-commit spec copy (finding 447). Not pushed.
+  `"scaffold": true`. `tools/scripts/check-migration-entries.mjs` runs in CI; pre-push runs `yarn lint:migration-entries` (054231e81). 93e816bec fixed the pre-commit spec copy (finding 447). Not pushed.
 
 ## 6. `migrate-to-query-v3` imports `@ethlete/query-devtools` but does not add it - done
 
