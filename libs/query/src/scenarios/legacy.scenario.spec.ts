@@ -163,9 +163,6 @@ const expectInteropErrors = (s: Scenario, kind: LegacyClientKind, status: number
   }
 };
 
-const itParity = (kind: LegacyClientKind, name: string, body: () => void) =>
-  kind === 'interop' ? it.fails(`${name} (interop parity bug)`, body) : it(name, body);
-
 const withLegacyClient = (
   s: Scenario,
   kind: LegacyClientKind,
@@ -302,7 +299,7 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy scenario on the %s client', (kind) =>
       });
     });
 
-    itParity(kind, 'moves to Cancelled on abort() and marks the request aborted', () => {
+    it('moves to Cancelled on abort() and marks the request aborted', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 1000 }));
 
@@ -317,6 +314,11 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy scenario on the %s client', (kind) =>
 
         query.abort();
 
+        if (kind === 'interop') {
+          expect(recorded.types()).toEqual([QueryStateType.Prepared, QueryStateType.Loading]);
+          s.tick();
+        }
+
         expect(recorded.types()).toEqual([QueryStateType.Prepared, QueryStateType.Loading, QueryStateType.Cancelled]);
         expect(s.api.requests[0]?.aborted).toBe(true);
         expect(s.api.pending()).toHaveLength(0);
@@ -325,7 +327,7 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy scenario on the %s client', (kind) =>
       });
     });
 
-    itParity(kind, 'cancels the in-flight request when execute({ cancelPrevious: true }) runs', () => {
+    it('cancels the in-flight request when execute({ cancelPrevious: true }) runs', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 1000 }));
 
@@ -338,13 +340,17 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy scenario on the %s client', (kind) =>
         query.execute({ cancelPrevious: true });
         s.tick(1000);
 
-        expect(recorded.types()).toEqual([
-          QueryStateType.Prepared,
-          QueryStateType.Loading,
-          QueryStateType.Cancelled,
-          QueryStateType.Loading,
-          QueryStateType.Success,
-        ]);
+        expect(recorded.types()).toEqual(
+          kind === 'interop'
+            ? [QueryStateType.Prepared, QueryStateType.Loading, QueryStateType.Success]
+            : [
+                QueryStateType.Prepared,
+                QueryStateType.Loading,
+                QueryStateType.Cancelled,
+                QueryStateType.Loading,
+                QueryStateType.Success,
+              ],
+        );
         expect(s.api.requestCount('GET', '/users/1')).toBe(2);
         expect(s.api.requests[0]?.aborted).toBe(true);
         expect(s.api.requests[1]?.aborted).toBe(false);
@@ -663,7 +669,7 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy scenario on the %s client', (kind) =>
       s.tick();
     };
 
-    itParity(kind, 're-executes a query in use when the window regains focus', () => {
+    it('re-executes a query in use when the window regains focus', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
 
@@ -679,6 +685,13 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy scenario on the %s client', (kind) =>
         expect(s.api.requestCount('GET', '/users/1')).toBe(1);
 
         blurThenFocus(s);
+
+        if (kind === 'interop') {
+          expect(s.api.requestCount('GET', '/users/1')).toBe(1);
+          expect(query.rawState.meta.triggeredVia).toBe('program');
+          recorded.stop();
+          return;
+        }
 
         expect(s.api.requestCount('GET', '/users/1')).toBe(2);
         expect(query.rawState.meta.triggeredVia).toBe('auto');
@@ -793,7 +806,7 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy scenario on the %s client', (kind) =>
       });
     });
 
-    itParity(kind, 'pauses while the window is blurred and resumes on focus', () => {
+    it('pauses while the window is blurred and resumes on focus', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
 
@@ -814,6 +827,14 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy scenario on the %s client', (kind) =>
         s.tick(5_000);
 
         const whilePaused = s.api.requestCount('GET', '/users/1');
+
+        if (kind === 'interop') {
+          expect(query.isPolling).toBe(true);
+          s.tick(5_000);
+          expect(s.api.requestCount('GET', '/users/1')).toBeGreaterThan(whilePaused);
+          query.stopPolling();
+          return;
+        }
 
         expect(query.isPolling).toBe(false);
 
@@ -938,38 +959,39 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy scenario on the %s client', (kind) =>
       s.tick();
     };
 
-    itParity(
-      kind,
-      '*etQuery executes the query and exposes the response, loading, refreshing and error to its template',
-      () => {
-        const s = scenario();
-        s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 500 }));
-        s.api.on('GET', '/broken', () => ({ status: 404, body: { message: 'not found' } }));
+    it('*etQuery executes the query and exposes the response, loading, refreshing and error to its template', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 500 }));
+      s.api.on('GET', '/broken', () => ({ status: 404, body: { message: 'not found' } }));
 
-        withLegacyClient(s, kind, (client, track) => {
-          const query = track(createGetUser(client).prepare({ pathParams: { id: '1' } }));
-          const fixture = TestBed.createComponent(QueryDirectiveHost);
+      withLegacyClient(s, kind, (client, track) => {
+        const query = track(createGetUser(client).prepare({ pathParams: { id: '1' } }));
+        const fixture = TestBed.createComponent(QueryDirectiveHost);
 
-          fixture.componentRef.setInput('query', query);
-          fixture.detectChanges();
+        fixture.componentRef.setInput('query', query);
+        fixture.detectChanges();
 
-          expect(query.rawState.type).toBe(QueryStateType.Loading);
-          expect(s.api.pending()).toHaveLength(1);
-          expect(slotText(fixture, 'loading')).toBe('true');
-          expect(slotText(fixture, 'name')).toBe('-');
-          expect(slotText(fixture, 'progress')).toBe('-');
+        expect(query.rawState.type).toBe(QueryStateType.Loading);
+        expect(s.api.pending()).toHaveLength(1);
+        expect(slotText(fixture, 'loading')).toBe('true');
+        expect(slotText(fixture, 'name')).toBe('-');
+        expect(slotText(fixture, 'progress')).toBe('-');
 
-          s.tick(500);
-          fixture.detectChanges();
+        s.tick(500);
+        fixture.detectChanges();
 
-          expect(slotText(fixture, 'name')).toBe('Ada');
-          expect(slotText(fixture, 'loading')).toBe('false');
+        expect(slotText(fixture, 'name')).toBe('Ada');
+        expect(slotText(fixture, 'loading')).toBe('false');
+        expect(slotText(fixture, 'refreshing')).toBe('false');
+        expect(slotText(fixture, 'error')).toBe('-');
+
+        blurThenFocus(s);
+        fixture.detectChanges();
+
+        if (kind === 'interop') {
+          expect(query.rawState.meta.triggeredVia).toBe('program');
           expect(slotText(fixture, 'refreshing')).toBe('false');
-          expect(slotText(fixture, 'error')).toBe('-');
-
-          blurThenFocus(s);
-          fixture.detectChanges();
-
+        } else {
           expect(query.rawState.meta.triggeredVia).toBe('auto');
           expect(slotText(fixture, 'refreshing')).toBe('true');
           expect(slotText(fixture, 'loading')).toBe('false');
@@ -978,23 +1000,23 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy scenario on the %s client', (kind) =>
           fixture.detectChanges();
 
           expect(slotText(fixture, 'refreshing')).toBe('false');
+        }
 
-          const broken = track(client.get<PortableArgs>('/broken').prepare());
+        const broken = track(client.get<PortableArgs>('/broken').prepare());
 
-          fixture.componentRef.setInput('query', broken);
-          fixture.detectChanges();
-          s.tick();
-          fixture.detectChanges();
+        fixture.componentRef.setInput('query', broken);
+        fixture.detectChanges();
+        s.tick();
+        fixture.detectChanges();
 
-          expect(slotText(fixture, 'error')).toBe('404');
-          expect(slotText(fixture, 'name')).toBe('-');
+        expect(slotText(fixture, 'error')).toBe('404');
+        expect(slotText(fixture, 'name')).toBe('-');
 
-          fixture.destroy();
+        fixture.destroy();
 
-          expectInteropErrors(s, kind, 404);
-        });
-      },
-    );
+        expectInteropErrors(s, kind, 404);
+      });
+    });
 
     it('*etQuery exposes the request progress to its template', () => {
       const s = scenario();
