@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { PictureOf } from '../../merge-compare';
 import { BoxOf } from '../../variant-diff';
 import { readConfig } from '../../paths';
+import { DRAWS_AT_ONCE } from '../../thumb';
 import { resolveProduct } from '../resolve-product';
 import { identicalRenderLinesOf } from './identical-renders';
 import { createSketch, Sketch } from './sketch';
@@ -170,5 +171,36 @@ describe('identicalRenderLinesOf', () => {
     };
 
     expect(await identicalRenderLinesOf({ product, sketch, load: wide, pictureOf, boxOf })).toEqual([]);
+  });
+
+  it('shoots up to DRAWS_AT_ONCE states at once and keeps their order', async () => {
+    const { product, sketch } = acme(['a', 'b']);
+    const names = Array.from({ length: DRAWS_AT_ONCE * 2 }, (_, at) => `s${at}`);
+    const many: SketchPartLoader = async () => ({
+      default: {
+        note: 'n',
+        states: Object.fromEntries(names.map((name) => [name, {}])),
+        render: () => ({ body: '', styles: '' }),
+      },
+    });
+    let running = 0;
+    let most = 0;
+    const pictureOf: PictureOf = async ({ sketch: drawn, state }) => {
+      running++;
+      most = Math.max(most, running);
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      running--;
+
+      if (state === 's1') throw new Error('broken');
+
+      return { png: Buffer.from([drawn?.variant === 'now' || !drawn ? 0 : 1]), marks: [] };
+    };
+
+    const lines = await identicalRenderLinesOf({ product, sketch, load: many, pictureOf, boxOf });
+
+    expect(most).toBe(DRAWS_AT_ONCE);
+    expect(lines).toEqual([
+      `elements/hero variant b draws the same pixels as variant a in every state (${names.filter((name) => name !== 's1').join(', ')}) - it adds nothing visible: withdraw it with \`sketch withdraw elements/hero --variant b --by <model id>\` or redraw it`,
+    ]);
   });
 });

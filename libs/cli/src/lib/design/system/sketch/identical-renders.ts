@@ -1,6 +1,8 @@
 import { createHash } from 'crypto';
 import { PictureOf } from '../../merge-compare';
+import { DRAWS_AT_ONCE } from '../../thumb';
 import { BoxOf } from '../../variant-diff';
+import { inOrderAtOnce } from '../in-order-at-once';
 import { readPartModule } from '../list-system';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { SketchVariant } from '../system-modules';
@@ -36,25 +38,28 @@ const drawingOf = async (options: {
     { widths: 'widths' in read ? read.widths : undefined, interactions: read.interactions },
     layer === 'pages' ? Object.keys(product.presets) : null,
   );
-  const states = new Map<string, DrawnState>();
+  const drawn = await inOrderAtOnce({
+    items: read.states,
+    limit: DRAWS_AT_ONCE,
+    run: async (state): Promise<[string, DrawnState] | null> => {
+      try {
+        const pictures = await Promise.all(
+          frames.map((frame) =>
+            pictureOf({ product: product.name, part, state, ...frame, sketch, params: new URLSearchParams() }),
+          ),
+        );
+        const hash = createHash('sha256');
 
-  for (const state of read.states) {
-    try {
-      const pictures = await Promise.all(
-        frames.map((frame) =>
-          pictureOf({ product: product.name, part, state, ...frame, sketch, params: new URLSearchParams() }),
-        ),
-      );
-      const hash = createHash('sha256');
+        frames.forEach((frame, index) => hash.update(JSON.stringify(frame)).update(pictures[index]?.png ?? ''));
 
-      frames.forEach((frame, index) => hash.update(JSON.stringify(frame)).update(pictures[index]?.png ?? ''));
-      states.set(state, { hash: hash.digest('hex'), shot: pictures[0]?.png ?? Buffer.alloc(0) });
-    } catch {
-      continue;
-    }
-  }
+        return [state, { hash: hash.digest('hex'), shot: pictures[0]?.png ?? Buffer.alloc(0) }];
+      } catch {
+        return null;
+      }
+    },
+  });
 
-  return states;
+  return new Map(drawn.filter((entry) => entry !== null));
 };
 
 const sameInEveryState = (drawn: Drawn, other: Drawn) =>
