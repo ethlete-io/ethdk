@@ -44,6 +44,8 @@ export const REACH_STATEMENTS = `
     const coverOf = (hit, target, opaqueOnly, within) => {
       if (!hit || target.contains(hit) || hit.contains(target) || hit.closest(floating) || hit.closest(layer) || !within.contains(hit)) return null;
       if (passive.has(hit) && hit.closest('[aria-hidden="true"]')) return null;
+      const skip = hit.closest('[data-et-skip~="COVERED"]');
+      if (skip && !skip.contains(target)) return null;
       for (let at = hit; at && !at.contains(target); at = at.parentElement) if (!opaqueOnly || solid(at)) return at;
       return null;
     };

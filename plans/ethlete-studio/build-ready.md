@@ -597,3 +597,9 @@ B388 full run 3 (`/tmp/b388/full-check-3.log`): 190 -> 47 findings. LOST-SURFACE
 `aside.st-shell-side`, so the shell-main sketch is discarded (907495e9f). HINT prefix: the non-blocking CONTROL-STATE,
 CONTROL-UNDECLARED and OPTION-VALUE-MISSING hints print as `HINT ...` (complete.ts, one place for all three printers).
 Verified: complete.spec and check-system.spec pass; complete.spec fails 3 cases without the change.
+
+COVERED skip on the cover: `coverOf` (reach.ts) ignores a hit inside a `data-et-skip~="COVERED"` element that does not
+contain the target, so a skip on an occluder (the frozen `span.sk-gutter`) works. Before, `skipsOf` read only the
+ancestors of the covered element. Verified: reach.spec fixture `components/reach-skipped-cover` fails without the
+change; `design check --part elements/variant-cell` is clean (3 COVERED before). Not verified: the UNREACHABLE path,
+which shares `coverOf`.
