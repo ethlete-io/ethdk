@@ -1,3 +1,23 @@
+# Builder handoff (2026-11-05 ~23:55, builder ethlete-sdk-d7)
+
+Grill/docs session: ethlete-sdk-62. NO PUSH until Tom says the release CI is done. Full local ci-check: 12 of 13 green, format fixed (handoff-builder.md; libs/query/.vitest is untracked output, not CI).
+
+## Done
+
+- 706414324 finding 474: pre-commit vitest runs use a fresh `--fsModuleCachePath` (spec bites with a fake npx). Cause of the stale cache not proven; reopen if a stale pass shows again.
+- 479bdace3 + a673739fa finding 475: foundations/colors and pages/system check-fixes merged (no visible change). Cause: the dirty guard (uncommitted foundations merge) refused pages/system; the reason went only to stderr.
+- faa6b4f70 slice A: `mergeHold` on the sketch, per-sketch `sketch ready` lock (478a was two concurrent ready runs by this builder), auto-merge commits its own result (478b).
+- 477 first measure: new 0.6 s, check 5.7 s, ready 6.7 s, design check --rules 2.2 s on a 1-state part. Biggest phase unknown.
+
+## Next
+
+1. Slice B (agent a614eb65286ba7b36, Studio UI: action never hidden by the fold, mergeHold reason in German, shared state set for Aktuell and variant rows = 475(3) + 476). Check its commit; no live Studio shot was made: take one (GET /__design/shot on :4402) before saying "ok".
+2. 477: per-phase duration output in sketch ready/check/merge, run it on pages/system size, fix the biggest phase, budget spec on a fixed fixture.
+3. 479: `sketch new` of a part with a .css fails UTILITY-CSS in check (components/kbd, components/divider).
+4. Tool fix 472: add query:export-coverage and core:export-coverage to pre-push; run the devtools e2e cases in pre-push when libs/query-devtools changes.
+5. B396 / ADR 0197 stays blocked until Tom confirms in this session.
+6. Before any push: `git pull --no-rebase`, full `nx test cli` + `yarn studio:e2e` once.
+
 # Builder handoff (2026-11-05 ~18:30, builder ethlete-sdk-0d, CI-green push for the release)
 
 Grill/docs session: ethlete-sdk-ea (restarted, resumes from handoff-doc-agent.md). Query session: ethlete-sdk-ff.
