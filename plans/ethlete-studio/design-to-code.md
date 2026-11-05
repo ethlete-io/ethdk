@@ -4604,6 +4604,19 @@ ethlete-sdk-ff caught it with the whole cli update suite. Why no tool caught it:
 graph, and a guard spec that reads `libs/*/migrations.json` does not import it. Tool fix (B386, builder default): the gate
 maps data files (`migrations.json`, `generators.json`) to the specs that read them.
 
+449\. After B372 (8f059ae72) the full `design check --product studio` still exits 1 after 605 s with about 800 render
+problems (LOST-SURFACE in foundations/*, title-bar 265, shell-main 248, canvas-viewport SKIP-SCOPE 92, comment-pin
+COVERED 52, DROPPED-PROP and more). The list was the same before B372. Why no tool caught it: the CI step refused early
+on stale mocks, so the full check never ran to its end in CI, and no local gate runs it. Builder default 6915b243e: the
+CI step "Static design rules" runs `--rules` only. Tool fix (B388): triage the render problems into real defects and
+rule noise, fix both, then CI runs the full check again.
+
+450\. The macOS branch of the machine-id fix f30bb3b81 broke on the second run: the id has hyphens and `${name#*-}`
+cut only its first part, so the cache file became `<id>-C7CC-...-cache.db`. Found on ethlete-mac, fixed in c8d05a4a0,
+re-run twice with a stable name (the same id Nx uses on the Mac). Why no tool caught it: the CI subagent tested the
+awk on one sample line, not two runs with a real hyphenated id. Tool fix (B389, builder default): the builder skill
+says a CI step that renames or caches is run twice with real data, on each OS it has a branch for.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
