@@ -281,11 +281,15 @@ all five fifagg apps build on `chore/query-v3-migration`.
   `pollingStop$` starts a timer after every match success; for a match whose expected end is past it fires at once,
   and the refresh at :740-745 executes the match query again. v2 refetched too; v3's ET800 check exposes the old
   hidden loop. Fixed in fifagg 31f009d9aa. Docs task (ff): the migration guide says that ET800 can surface old loops.
-- **25. Codemod splits an eslint-disable comment from its member (fifagg-frontend-3d):** the injector field goes
+- **25. Codemod splits an eslint-disable comment from its member (fifagg-frontend-3d; built 35bc8ca58 with the ET800 guide line):** the injector field goes
   between `// eslint-disable-next-line @angular-eslint/no-input-rename` and the aliased `@Input`, so the directive
   points at the wrong line: 3 lint errors plus an unused-directive warning
   (`navigation-cards/{country,nation,organizer}-navigation-card/*.component.ts:30-33`, fixed by hand 7374cc7b95).
   Fix (ff): insert the field before the leading comments of the next member, with a spec.
+- **Devtools mount (ff item 000):** part 1 built fc98d3dae (`navigator.webdriver` hides panel, lazy shell and pills;
+  provider option `showInAutomation`), per Tom's item 20 decision. Part 2 open: a new entry point with a dynamic
+  import plus a codemod for `<et-query-devtools-lazy>`; ff proposes the name `@ethlete/query-devtools/mount`. Open
+  grill question for Tom (collected while afk): the entry point name.
 - **E2E proof (fifagg-frontend-3d, MR !1978):** 765 passed, 9 failed (7 WebKit environment, 2 season-wrap-up 500s
   from old API data). Items 15 to 21 are proven with the app workarounds (reportErrors helper, store write in get,
   devtools off under webdriver, destroyOnResponse removed at 36 sites).
@@ -293,8 +297,8 @@ all five fifagg apps build on `chore/query-v3-migration`.
   `data.utils.ts:277-279`. The template shows an unmanaged query; the container manages a second query that never
   executes. In fifagg: per keystroke on 3 filter-overlay pages and on 5 navigation cards (8 call sites). Fix: share
   the source in the SDK; fifagg's workaround is `queryComputed`.
-- **24. Question: `queryComputed` and two changes in one tick (fifagg-frontend-3d, untested):** `toObservable` plus
+- **24. Question: `queryComputed` and two changes in one tick (fifagg-frontend-3d; answered 083d98174: no leak on both clients, no code change):** `toObservable` plus
   `pairwise` may drop an intermediate query; that query is then never destroyed. Needs a scenario.
-- **21b. Migrator, extends 21 (fifagg-frontend-3d):** it leaves `prepare()` in a plain `computed` (about 8 sites, one
+- **21b. Migrator, extends 21 (fifagg-frontend-3d; built 8985c2711: computed -> `queryComputed`, async validator -> `destroyOnResponse`):** it leaves `prepare()` in a plain `computed` (about 8 sites, one
   unmanaged query per input change) and in async validators (a POST per keystroke) with no `destroyOnResponse` and no
   container. fifagg fixes its sites by hand.
