@@ -45,10 +45,25 @@
     "decidedBy": "user",
     "at": "2026-11-03T17:00:29.098Z"
   },
-  "foundations/agent-logos": "46bcf29865e6c1f4",
-  "foundations/colors": "bc0d499f48f9253f",
+  "foundations/agent-logos": {
+    "hash": "d8ad620ff101ae06",
+    "variant": "a",
+    "decidedBy": "auto: no visible change",
+    "at": "2026-11-05T22:45:06.717Z"
+  },
+  "foundations/colors": {
+    "hash": "97f8b2eb627962a4",
+    "variant": "a",
+    "decidedBy": "auto: no visible change",
+    "at": "2026-11-05T22:45:06.717Z"
+  },
   "foundations/icons": "9ed1f1902cc38349",
-  "foundations/logo": "99753939ebe518a9",
+  "foundations/logo": {
+    "hash": "1bc6c33e87b3dda6",
+    "variant": "a",
+    "decidedBy": "auto: no visible change",
+    "at": "2026-11-05T22:45:06.717Z"
+  },
   "foundations/motion": "7d6fb324da3cced7",
   "foundations/spacing": "b8821653c3476a2d",
   "foundations/type": "55cbe2495f74530a",

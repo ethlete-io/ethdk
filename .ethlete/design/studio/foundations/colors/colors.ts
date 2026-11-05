@@ -95,7 +95,7 @@ const swatchOf = (name: string) => {
 };
 
 const surfaceCard = (surface: string) =>
-  html`<div class="co-surface" style="background: var(--${surface})">
+  html`<div class="co-surface" data-et-skip="LOST-SURFACE" style="background: var(--${surface})">
     <span class="co-surface-name">${surface}</span>
     <span>Text on ${surface}</span>
     <span class="co-muted">Muted on ${surface}</span>
@@ -103,7 +103,7 @@ const surfaceCard = (surface: string) =>
   </div>`;
 
 const accentCard = (surface: string) =>
-  html`<div class="co-surface" style="background: var(--${surface})">
+  html`<div class="co-surface" data-et-skip="LOST-SURFACE" style="background: var(--${surface})">
     <span class="co-surface-name">${surface}</span>
     <span class="co-cluster"
       ><span class="co-fill">Merge</span><span class="co-fill co-fill--hover">Hover</span
@@ -146,7 +146,7 @@ const markRows = html`<span class="co-trows">
 </span>`;
 
 const warningCard = (surface: string) =>
-  html`<div class="co-surface" style="background: var(--${surface})">
+  html`<div class="co-surface" data-et-skip="LOST-SURFACE" style="background: var(--${surface})">
     <span class="co-surface-name">${surface}</span>
     ${markRows}
     <span class="co-cluster"
@@ -162,7 +162,7 @@ const warningCard = (surface: string) =>
   </div>`;
 
 const errorCard = (surface: string) =>
-  html`<div class="co-surface" style="background: var(--${surface})">
+  html`<div class="co-surface" data-et-skip="LOST-SURFACE" style="background: var(--${surface})">
     <span class="co-surface-name">${surface}</span>
     ${markRows}
     <span class="co-cluster"

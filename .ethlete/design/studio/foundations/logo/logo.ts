@@ -17,9 +17,7 @@ const sizes = logoSheet({
 });
 
 const sidebar = html`<div class="flex flex-col gap-space-4 p-space-6 bg-et-surface-bg text-text font-ui text-ui-md">
-  <aside
-    class="flex flex-col w-60 h-80 bg-et-surface-bg border border-et-surface-border rounded-control-lg overflow-hidden"
-  >
+  <aside class="flex flex-col w-60 h-80 border border-et-surface-border rounded-control-lg overflow-hidden">
     <header class="flex items-center gap-space-2 h-11 px-space-3 border-b border-et-surface-border">
       ${studioMark(20)}<span class="text-ui-lg font-ui-strong">Studio</span>
     </header>
