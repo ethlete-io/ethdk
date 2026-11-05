@@ -533,6 +533,9 @@ describe('renderIssuesOf', () => {
       'components/pan-sticky': {
         body: '<div style="width: 300px; height: 80px; overflow: auto"><div style="display: flex; width: 600px"><button style="position: sticky; left: 0">Übernehmen</button></div></div>',
       },
+      'components/pan-skip-over-inert': {
+        body: pan('overflow: clip', '<div inert><button>Übernehmen</button></div>', ' data-et-skip="CLIPPED"'),
+      },
       'components/pan-skip-on-clip': {
         body: '<div><div data-et-skip="CLIPPED" style="width: 100px; overflow: hidden"><div style="width: 300px">Wide</div></div></div>',
       },

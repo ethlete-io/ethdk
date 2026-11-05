@@ -392,7 +392,7 @@ ${NESTED_SCROLL_STATEMENTS}
     if (cuts.length) report('CUT-CONTROL', element, cuts.join(' and ') + ' is cut by ' + clip.name + ', so the control is only partly reachable');
   }
   for (const element of root.querySelectorAll('[data-et-skip~="CLIPPED"]')) {
-    if (!element.querySelector(interactive)) continue;
+    if (![...element.querySelectorAll(interactive)].some((control) => !control.closest('[inert]'))) continue;
     const path = pathOf(element);
     if (seen.has('SKIP-SCOPE' + path)) continue;
     seen.add('SKIP-SCOPE' + path);
