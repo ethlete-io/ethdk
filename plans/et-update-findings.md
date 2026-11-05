@@ -81,7 +81,7 @@ Reported on 2026-10-30 by the session `fifagg-frontend-a5`, with `@ethlete/cli` 
   dependency yourself" and the codemod still runs. Documented in `apps/docs/cli/update.md`. Narrowed in b478e76d2:
   `addsWhenFound` adds it only when a `.ts` file names `QueryDevtoolsComponent`.
 
-## 7. `migrate-to-query-v3` leaves 141 TS errors in fifagg - open (B385)
+## 7. `migrate-to-query-v3` leaves 141 TS errors in fifagg - mostly done (B385)
 
 Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61, 462 files, exit 0; all 5 apps fail to build). Log:
 `/home/tom/dev/fifagg/fifagg-frontend/.claude/handoffs/query-v3/build.clean.log`, branch `chore/query-v3-migration`. Not triaged by fifagg.
@@ -101,7 +101,13 @@ Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61, 462 files, ex
   a task per old auth call site, define or import every name the scaffold uses, migrate or task `gqlQuery`, dedupe
   imports. Goal: the codemod leaves no TS error it does not name in a task.
 
-## 8. More `migrate-to-query-v3` gaps from fifagg - open (B385)
+Audit (ff, 2026-11-05): done - auth hook call-site tasks (4d824041d), scaffold imports and locals for
+`postRefreshToken` and `AUTH_COOKIE_DOMAIN`, the duplicate `AnyLegacyQuery` import (3f23222d4). Partly - `gqlQuery`
+gets a task only for `const x = <client>.gqlQuery(...)`; inline calls, class properties, calls in functions and client
+aliases get none, and TS7006 is not named (ff builds it). Open - "Property 'token' does not exist on type '{}'" from
+the untyped response in `auth-provider-scaffold.ts:299` (ff builds it).
+
+## 8. More `migrate-to-query-v3` gaps from fifagg - mostly done (B385)
 
 Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61). Full list with file:line:
 `/home/tom/dev/fifagg/fifagg-frontend/.claude/handoffs/query-v3/findings.md` (9 items; 1, 5 and 8 repeat section 7).
@@ -120,6 +126,10 @@ Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61). Full list wi
 - **GraphQL:** `client.gqlQuery` calls (9) are not migrated, and v2 `request.gql.transferVia: 'GET'` is dropped
   silently; pick `createGqlQueryViaGet` from it.
 - **Contentful client:** the generator adds `withEthleteApiErrors()` to a non-Ethlete GraphQL client (Contentful).
+- **Done (ff audit):** token mapping, `defaultRememberMe`, interceptor tasks, the `retryFn` task (bcc5b4440),
+  `transferVia: 'GET'` to `createGqlQueryViaGet` (0c02de9b1), no `withEthleteApiErrors` on Contentful, Shopify and
+  Bynder clients (bcc5b4440), the docs bullet below (`migrating-from-v2.md:389-392`). The cookie bullet is superseded
+  by B387 in section 9: `cookie.domain` shares on load (f0561a80e, a5f32c6a0), so the docs line 392 is right.
 - **Docs (`apps/docs/query/migrating-from-v2.md`):** name two behaviour changes: proactive refresh retries up to 8 times
   with backoff and ends the session only on a definite failure (v2 dropped tokens and cookie on any failure); secure
   queries wait for a token instead of going out without one (check what the guide already says).
