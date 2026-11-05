@@ -4559,6 +4559,23 @@ stops the overlay, and the e2e always runs the current CLI. Why no tool caught i
 harness has no way to run a case against an old build. Tool fix (B378, builder default): for a bite run the harness takes
 `STUDIO_CLI_ENTRY` from a CLI copy built before the fix, so a new e2e case must fail there first.
 
+442\. CI run 41924354824, job WebKit (builder, 2026-11-05): `.github/actions/setup/action.yml` read `/etc/machine-id` on
+the macOS runner (from e6b59bdf4). Fixed in f30bb3b81 (machine id per `RUNNER_OS`, macOS through `ioreg`; only the
+Linux branch and the fallback were run). Why pre-push missed it: no local gate runs a macOS step. Tool fix (B379,
+builder default): a lint check for `.github/actions` and workflows that flags Linux-only paths (`/etc`, `/proc`) outside
+a `RUNNER_OS` branch.
+
+443\. CI run 41924354824, job Unit tests (builder, 2026-11-05): only `cli` failed. The `motion-shot.spec` fixture raced a
+re-render under load (reproduced with a 300 ms delay; the repro bites on the old code). The `merge.spec` flake (B373)
+did not come back in 24 local runs; its assertion now prints the check findings. Fixed in b770d4222. Why pre-push missed
+it: CI is much slower (the merge spec file takes 17 s locally and 143 s in CI). Tool fix (B380, builder default): a
+stress script that runs the touched specs N times in parallel under CPU load, part of the slice end.
+
+444\. CI run 41924354824, job Studio rules (builder, 2026-11-05): the job built only `cli`, so `design check` refused on
+stale dist mocks. Fixed in 4de41ac2e (builds `cli,components` first). The check now runs and fails on the 3 real
+problems of finding 438. Why pre-push missed it: no local gate runs `design check`. Tool fix: part of B372 (slice end
+and pre-push run `design check --product <p>`). Tom (2026-11-05): B372 comes before the push and before B377 (ADR 0193).
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
