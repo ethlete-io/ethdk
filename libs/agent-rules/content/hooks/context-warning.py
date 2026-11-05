@@ -258,37 +258,65 @@ def handoff_skill(root):
 
 
 SELF_RESTART = (
-    "you run in an agent-sessions tmux session, so do not hand this step to the user: apply the {handoff} skill's save "
-    "test, save if it calls for a file, then follow its 'Clear and resume on your own' section "
-    "and restart this session yourself with the agent-sessions `restart` command - with no file, "
+    "you run in an agent-sessions tmux session, so do not hand this step to the user and never ask them to clear: "
+    "apply the {handoff} skill's save test and save the handoff if it calls for a file, then run "
+    '`node {script} restart {name} "/{handoff} resume"` yourself and end the turn - with no file, '
     "restart with a prompt that names the next step"
+)
+SELF_RESTART_ACT_NOW = (
+    "Save the handoff, then run `node {script} restart {name} \"/{handoff} resume\"` yourself and end the turn. "
+    "Never ask the user to clear."
 )
 USER_DIRECTED_KEYS = ("recommend", "suggest", "save_now", "save_at_stop")
 
 
-def can_self_restart(root):
-    """True only in a tmux session the agent-sessions `restart` command can find and drive."""
-    if not os.environ.get("TMUX") or not root:
-        return False
-    if not any(
-        os.path.isfile(os.path.join(root, ".agents/skills", name, "agent-sessions.mjs"))
-        for name in ("ethlete-agent-sessions", "agent-sessions")
-    ):
-        return False
+def self_restart_target(root):
+    """The agent-sessions script path and own session name, or None outside a tmux session `restart` can drive."""
+    pane = os.environ.get("TMUX_PANE")
+    if not pane or not root:
+        return None
+    script = next(
+        (
+            path
+            for path in (
+                os.path.join(".agents/skills", name, "agent-sessions.mjs")
+                for name in ("ethlete-agent-sessions", "agent-sessions")
+            )
+            if os.path.isfile(os.path.join(root, path))
+        ),
+        None,
+    )
+    if not script:
+        return None
     try:
         session = subprocess.run(
-            ["tmux", "display-message", "-p", "#S"], capture_output=True, text=True, timeout=2
+            ["tmux", "display-message", "-p", "-t", pane, "#{session_name}"],
+            capture_output=True,
+            text=True,
+            timeout=2,
         ).stdout.strip()
     except (OSError, subprocess.SubprocessError):
-        return False
-    return session.endswith("@" + re.sub(r"[.:]", "-", os.path.basename(os.path.normpath(root))))
+        return None
+    if not session:
+        return None
+    slug = re.sub(r"[.:]", "-", os.path.basename(os.path.normpath(root)))
+    return {"script": script, "name": session.removesuffix("@" + slug)}
 
 
-def resolve_profile(profile, skill, self_restart=False):
+def resolve_profile(profile, skill, self_restart=None):
     """Fills the installed handoff skill's name into a profile's message fragments."""
-    resolved = {**profile, **{key: SELF_RESTART for key in USER_DIRECTED_KEYS}} if self_restart else profile
+    resolved = profile
+    if self_restart:
+        resolved = {
+            **profile,
+            **{key: SELF_RESTART for key in USER_DIRECTED_KEYS},
+            "act_now": SELF_RESTART_ACT_NOW,
+        }
+    values = {"handoff": skill, **(self_restart or {})}
     return {
-        key: value.replace("{handoff}", skill) if isinstance(value, str) else value
+        key: re.sub(r"\{(handoff|script|name)\}", lambda m: values.get(m.group(1), m.group(0)), value)
+        if isinstance(value, str)
+        else value
         for key, value in resolved.items()
     }
 
@@ -851,7 +879,7 @@ def main():
     if disabled_locally(local_config):
         return
 
-    profile = resolve_profile(profile, handoff_skill(root), self_restart=can_self_restart(root))
+    profile = resolve_profile(profile, handoff_skill(root), self_restart=self_restart_target(root))
 
     claude_subagent = agent == "claude" and bool(data.get("agent_id"))
     if claude_subagent:

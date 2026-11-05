@@ -97,7 +97,7 @@ const runClaudeHook = (options: RunClaudeHookOptions) => {
 
   const output = execFileSync('python3', [hookPath, '--agent', 'claude'], {
     encoding: 'utf8',
-    env: { ...process.env, TMUX: '', ...env, ...setupEnv },
+    env: { ...process.env, TMUX: '', TMUX_PANE: '', ...env, ...setupEnv },
     input: JSON.stringify({
       cwd: root,
       ...(agentId ? { agent_id: agentId } : {}),
@@ -200,29 +200,63 @@ describe('context-warning handoff mode', () => {
     expect(context).toContain('recommend the user run /');
   });
 
-  it('tells the agent to restart itself in an agent-sessions tmux session', () => {
-    const run = (session: string) =>
-      runClaudeHook({
-        env: { TMUX: '/tmp/tmux-test,1,0' },
+  describe('in a tmux pane', () => {
+    const run = (tokens: number, options: { session?: string; skill?: boolean; pane?: boolean } = {}) => {
+      const { session = 'claude@<repo>', skill = true, pane = true } = options;
+
+      const output = runClaudeHook({
+        env: pane ? { TMUX_PANE: '%7' } : {},
         permissionMode: 'default',
         setup: (root) => {
           const bin = join(root, 'bin');
-          mkdirSync(join(root, '.agents/skills/ethlete-agent-sessions'), { recursive: true });
-          writeFileSync(join(root, '.agents/skills/ethlete-agent-sessions/agent-sessions.mjs'), '');
+          if (skill) {
+            mkdirSync(join(root, '.agents/skills/ethlete-agent-sessions'), { recursive: true });
+            writeFileSync(join(root, '.agents/skills/ethlete-agent-sessions/agent-sessions.mjs'), '');
+          }
           mkdirSync(bin);
           writeFileSync(join(bin, 'tmux'), `#!/bin/sh\necho '${session.replace('<repo>', basename(root))}'\n`, {
             mode: 0o755,
           });
           return { PATH: `${bin}:${process.env['PATH']}` };
         },
-        tokens: 175_000,
-      })?.hookSpecificOutput.additionalContext ?? '';
+        tokens,
+      });
 
-    const inSession = run('claude@<repo>');
-    expect(inSession).toContain('restart this session yourself with the agent-sessions `restart` command');
-    expect(inSession).not.toContain('recommend the user run /');
+      return `${output?.systemMessage ?? ''}\n${output?.hookSpecificOutput.additionalContext ?? ''}`;
+    };
 
-    expect(run('some-other-session')).toContain('recommend the user run /');
+    it('tells the agent to restart itself instead of asking the user to clear (recommend text)', () => {
+      const context = run(175_000);
+
+      expect(context).toContain(
+        'node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs restart claude "/ethlete-handoff resume"',
+      );
+      expect(context).toContain('never ask them to clear');
+      expect(context).not.toContain('recommend the user run /');
+    });
+
+    it('tells the agent to restart itself at the act-now tier', () => {
+      const context = run(175_000);
+
+      expect(context).toContain(
+        'node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs restart claude "/ethlete-handoff resume"',
+      );
+      expect(context).toContain('Never ask the user to clear.');
+      expect(context).not.toContain('Run /ethlete-handoff now');
+    });
+
+    it('keeps the user-directed texts without the skill, without TMUX_PANE', () => {
+      expect(run(175_000, { skill: false })).toContain('recommend the user run /');
+      expect(run(175_000, { pane: false })).toContain('recommend the user run /');
+      expect(run(175_000, { skill: false })).toContain('Run /ethlete-handoff now');
+      expect(run(175_000, { pane: false })).toContain('Run /ethlete-handoff now');
+    });
+
+    it('passes a session name that is not suffixed with the repo as the own name', () => {
+      expect(run(175_000, { session: 'some-other-session' })).toContain(
+        'restart some-other-session "/ethlete-handoff resume"',
+      );
+    });
   });
 
   it('takes the choice away at the final tier', () => {

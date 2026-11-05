@@ -1,6 +1,6 @@
 ---
 name: agent-sessions
-description: Run agents in tmux sessions of one checkout, message them, wake idle ones, restart a session with a prompt, and claim paths so two agents do not overwrite each other. Read before you edit a shared file while another agent may be active, and when the user says "mailbox", "coordinate with the other agent", "claim a file", "hand off to the other agent", or "restart the session".
+description: Run agents in tmux sessions of one checkout, message them, wake idle ones, restart a session with a prompt (also your own, to clear yourself and resume after a handoff), and claim paths so two agents do not overwrite each other. Read before you edit a shared file while another agent may be active, and when the user says "mailbox", "coordinate with the other agent", "claim a file", "hand off to the other agent", or "restart the session".
 kind: skill
 scope: both
 ---
