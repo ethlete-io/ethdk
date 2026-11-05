@@ -27,7 +27,7 @@
     },
     "trayIcon": {
       "id": "main",
-      "iconPath": "icons/icon.png",
+      "iconPath": "icons/tray.png",
       "iconAsTemplate": true
     }
   },
