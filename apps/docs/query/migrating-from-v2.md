@@ -126,6 +126,10 @@ Two layout rules follow from this:
 - **Auth queries belong in the client file.** The provider needs the login and refresh creators, and the secure creators need the provider. If the creators stay in a separate `auth.queries.ts` that imports the client, the two files form an import cycle. Define them above the provider, and let `auth.queries.ts` import them back for its `legacy*` wrappers.
 - **Nothing goes into `app.config.ts`.** Both the client and the auth provider are root-provided the moment something injects them; the `provide` member of the definition exists for tests and overrides.
 
+### Auth call sites and interceptors
+
+The generator does not rewrite the code around the provider. It reports every use of `setAuthProvider`, `clearAuthProvider`, `authProvider$` and `isBearerAuthProvider`, because a v3 auth provider has no member of these names. It also reports each `HttpInterceptor` that sets an `Authorization` header: a v3 query sends its own bearer token, so a request that passes through the interceptor carries the header twice.
+
 ### Default headers move onto the client
 
 `setDefaultHeaders({ headers, refreshQueriesInUse })` has no method equivalent. Client-wide headers are configuration now, and a function form re-reads on every request - so a signal can drive them:

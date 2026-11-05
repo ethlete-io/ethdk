@@ -1,4 +1,5 @@
 import { Tree, formatFiles } from '@nx/devkit';
+import { reportAuthConsumers } from './auth-consumers-migration.js';
 import {
   migrateDevtoolsUsage,
   reportLeftoverV2Clients,
@@ -49,6 +50,7 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
   migrateLegacyPrepareCalls(tree, report, scope);
   reportRemovedExperimentalQueryHelpers(tree, scope, report);
   reportLeftoverV2Clients(tree, scope, report);
+  reportAuthConsumers(tree, scope, report);
 
   if (queryClientFiles.size > 0) {
     reportMissingHttpClientProviders(tree, report, scope);

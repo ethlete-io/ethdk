@@ -534,7 +534,7 @@ export const rewriteConsumer = (
   };
 };
 
-const isInterceptor = (node: ts.Node, sourceFile: ts.SourceFile) => {
+export const isInterceptor = (node: ts.Node, sourceFile: ts.SourceFile) => {
   if (ts.isClassDeclaration(node)) {
     return !!node.heritageClauses?.some((clause) =>
       clause.types.some((type) => type.expression.getText(sourceFile) === 'HttpInterceptor'),
