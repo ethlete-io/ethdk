@@ -2,6 +2,8 @@ import { Tree, addProjectConfiguration } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import migration from './migration';
 
+const UI_CALL = "provideQueryDevtools({ ui: () => import('@ethlete/query-devtools/lazy') })";
+
 describe('migrate-to-query-v3 reporting and scope', () => {
   let tree: Tree;
 
@@ -97,7 +99,7 @@ export const appConfig = { providers: [provideQueryClientForDevtools({ client: a
 
     await migration(tree, { skipFormat: true });
 
-    expect(readFile('app.config.ts')).toContain('provideQueryDevtools()');
+    expect(readFile('app.config.ts')).toContain(UI_CALL);
     expect(readFile('query-v3-migration-tasks.md')).not.toContain('Re-add the query devtools');
   });
 

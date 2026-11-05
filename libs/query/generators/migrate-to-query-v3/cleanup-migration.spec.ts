@@ -2,6 +2,8 @@ import { Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import migration from './migration';
 
+const UI_CALL = "provideQueryDevtools({ ui: () => import('@ethlete/query-devtools/lazy') })";
+
 describe('migrate-to-query-v3 cleanup passes', () => {
   let tree: Tree;
 
@@ -66,17 +68,49 @@ export const component = {
     // Per-client registrations collapse into the one call v3 needs, in place.
     expect(appConfig).not.toContain('provideQueryClientForDevtools');
     expect(appConfig).toContain("import { provideQueryDevtools } from '@ethlete/query';");
-    expect(appConfig.match(/provideQueryDevtools\(\)/g)).toHaveLength(1);
+    expect(appConfig.match(/provideQueryDevtools\(/g)).toHaveLength(1);
     expect(appConfig).toContain('somethingElse(),');
     expect(appConfig).not.toContain(',,');
 
-    expect(component).toContain("import { QueryDevtoolsLazyComponent } from '@ethlete/query-devtools/lazy';");
+    expect(component).not.toContain('QueryDevtools');
     expect(component).not.toContain("from '@ethlete/query'");
-    expect(component).toContain('imports: [QueryDevtoolsLazyComponent]');
+    expect(component).toContain('imports: []');
 
-    expect(readFile('component.html')).toContain('<et-query-devtools-lazy />');
+    expect(readFile('component.html')).not.toContain('et-query-devtools');
+    expect(readFile('component.html')).toContain('<section>');
 
     expect(report).toContain('Add @ethlete/query-devtools for the query devtools');
+  });
+
+  it('removes a devtools tag with attributes from an inline template when a provider mounts the devtools', async () => {
+    tree.write(
+      'app.config.ts',
+      `
+import { provideQueryClientForDevtools } from '@ethlete/query';
+
+export const appConfig = { providers: [provideQueryClientForDevtools({ client: apiClient })] };
+      `.trim(),
+    );
+    tree.write(
+      'shell.ts',
+      `
+import { QueryDevtoolsComponent } from '@ethlete/query';
+
+@Component({
+  imports: [QueryDevtoolsComponent, Other],
+  template: '<main></main><et-query-devtools [startOpen]="true" />',
+})
+export class Shell {}
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const shell = readFile('shell.ts');
+
+    expect(shell).toContain('imports: [Other]');
+    expect(shell).toContain("template: '<main></main>'");
+    expect(shell).not.toContain('et-query-devtools');
   });
 
   it('moves an aliased component with an inline template to the lazy entry point', async () => {
@@ -139,7 +173,7 @@ export const appConfig = {
 
     const appConfig = readFile('app.config.ts');
 
-    expect(appConfig).toContain('providers: [provideQueryDevtools(), somethingElse()]');
+    expect(appConfig).toContain('providers: [' + UI_CALL + ', somethingElse()]');
     expect(appConfig).toContain('provideQueryDevtools');
     expect(appConfig).toContain('somethingElse');
   });
@@ -201,7 +235,7 @@ export const appConfig = {
 
     const appConfig = readFile('app.config.ts');
 
-    expect(appConfig).toContain('providers: [provideQueryDevtools()]');
+    expect(appConfig).toContain('providers: [' + UI_CALL + ']');
     expect(appConfig).toContain("import { provideQueryDevtools } from '@ethlete/query';");
   });
 
@@ -222,7 +256,7 @@ export const appConfig = {
 
     const appConfig = readFile('app.config.ts');
 
-    expect(appConfig).toContain('providers: [provideQueryClient(apiClient), provideQueryDevtools()]');
+    expect(appConfig).toContain('providers: [provideQueryClient(apiClient), ' + UI_CALL + ']');
     expect(appConfig).toMatch(
       /import \{[^}]*provideQueryClient[^}]*provideQueryDevtools[^}]*\} from '@ethlete\/query';/,
     );
@@ -242,7 +276,7 @@ export const appConfig = {
 
     await migration(tree, { skipFormat: true });
 
-    expect(readFile('app.config.ts')).toContain('providers: [provideQueryDevtools()]');
+    expect(readFile('app.config.ts')).toContain('providers: [' + UI_CALL + ']');
   });
 
   it('removes the last devtools provider of a multi-line array without a trailing comma', async () => {
@@ -262,7 +296,7 @@ export const appConfig = {
 
     await migration(tree, { skipFormat: true });
 
-    expect(readFile('app.config.ts')).toContain('providers: [\n    provideQueryDevtools()\n  ]');
+    expect(readFile('app.config.ts')).toContain('providers: [\n    ' + UI_CALL + '\n  ]');
   });
 
   it('removes a devtools provider that is the only entry of another providers array', async () => {
@@ -285,8 +319,8 @@ export const cmsConfig = {
 
     const appConfig = readFile('app.config.ts');
 
-    expect(appConfig.match(/provideQueryDevtools\(\)/g)).toHaveLength(1);
-    expect(appConfig).toContain('providers: [provideQueryDevtools()]');
+    expect(appConfig.match(/provideQueryDevtools\(/g)).toHaveLength(1);
+    expect(appConfig).toContain('providers: [' + UI_CALL + ']');
     expect(appConfig).toContain('providers: []');
   });
 
@@ -309,7 +343,7 @@ export const cmsConfig = {
 
     expect(appConfig).not.toContain('provideQueryClientForDevtools');
     expect(appConfig).toContain("import { provideQueryDevtools } from '@ethlete/query';");
-    expect(appConfig).toContain('providers: [provideQueryDevtools()]');
+    expect(appConfig).toContain('providers: [' + UI_CALL + ']');
   });
 
   it('skips empty files', async () => {
@@ -389,8 +423,8 @@ export const component = {
 
     const result = readFile('app.component.ts');
 
-    expect(result).toContain("import { QueryDevtoolsLazyComponent } from '@ethlete/query-devtools/lazy';");
-    expect(result).toContain('imports: [QueryDevtoolsLazyComponent]');
+    expect(result).not.toContain('QueryDevtoolsLazyComponent');
+    expect(result).toContain('imports: []');
     expect(result).toContain("import { provideQueryDevtools } from '@ethlete/query';");
     expect(result).not.toContain('QueryDevtoolsComponent as Devtools, provideQueryClientForDevtools');
   });

@@ -241,8 +241,9 @@ Drop the `@if (canLoadMore && !loading)` around the trigger: it waits for a load
 The generator moves the devtools component to the lazy shell, which loads the panel on first open instead of with the app. It does three things:
 
 - the per-client `provideQueryClientForDevtools({ client, displayName })` calls collapse into a single `provideQueryDevtools()` - v3 registers every client and auth provider at once;
-- `QueryDevtoolsComponent` from `@ethlete/query` becomes `QueryDevtoolsLazyComponent` from `@ethlete/query-devtools/lazy`, so that package has to be a dependency of the app;
-- `<et-query-devtools>` in a template, inline or in an `.html` file, becomes `<et-query-devtools-lazy>`.
+- the provider call becomes `provideQueryDevtools({ ui: () => import('@ethlete/query-devtools/lazy') })`, which mounts the devtools itself, so `@ethlete/query-devtools` has to be a dependency of the app;
+- `QueryDevtoolsComponent` is removed from every `imports` array, and `<et-query-devtools>` from every template, inline or in an `.html` file;
+- where no legacy provider call exists in the project, `QueryDevtoolsComponent` becomes `QueryDevtoolsLazyComponent` and `<et-query-devtools>` becomes `<et-query-devtools-lazy>` instead.
 
 The generator moves every client, so no `V2QueryClient` is left after a run. A client it reports as `Migrator error: a V2QueryClient is left` is a bug in the migration: move it by hand and report the case. The panel lists current-system queries and the `legacy*` interop queries, which are real queries underneath. See the [lazy shell](/query-devtools/).
 

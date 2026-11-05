@@ -54,11 +54,18 @@ export const reportRemovedExperimentalQueryHelpers = (
 export const migrateDevtoolsUsage = (tree: Tree, scope: MigrationScope, report: QueryV3MigrationReport) => {
   const updatedFiles: string[] = [];
   const filesNeedingDevtoolsPackage: string[] = [];
+  let mountsFromProvider = false;
+
+  scope.visit(tree, (filePath) => {
+    if (filePath.endsWith('.ts') && tree.read(filePath, 'utf-8')?.includes('provideQueryClientForDevtools')) {
+      mountsFromProvider = true;
+    }
+  });
 
   scope.visit(tree, (filePath) => {
     if (filePath.endsWith('.html')) {
       const html = tree.read(filePath, 'utf-8');
-      const nextHtml = html && selectLazyDevtools(html);
+      const nextHtml = html && (mountsFromProvider ? removeDevtoolsTags(html) : selectLazyDevtools(html));
 
       if (nextHtml && nextHtml !== html) {
         tree.write(filePath, nextHtml);
@@ -81,7 +88,8 @@ export const migrateDevtoolsUsage = (tree: Tree, scope: MigrationScope, report: 
       return;
     }
 
-    const { content: nextContent, importsComponent } = migrateDevtoolsInFile(content);
+    const { content: migrated, importsComponent, mountsDevtools } = migrateDevtoolsInFile(content, mountsFromProvider);
+    const nextContent = mountsFromProvider ? removeDevtoolsTags(migrated) : migrated;
 
     if (nextContent === content) {
       return;
@@ -90,7 +98,7 @@ export const migrateDevtoolsUsage = (tree: Tree, scope: MigrationScope, report: 
     tree.write(filePath, nextContent);
     updatedFiles.push(filePath);
 
-    if (importsComponent) {
+    if (importsComponent || mountsDevtools) {
       filesNeedingDevtoolsPackage.push(filePath);
     }
   });
@@ -109,7 +117,7 @@ export const migrateDevtoolsUsage = (tree: Tree, scope: MigrationScope, report: 
     report.addManualReview({
       title: 'Add @ethlete/query-devtools for the query devtools',
       summary:
-        '`QueryDevtoolsComponent` is now `QueryDevtoolsLazyComponent` from `@ethlete/query-devtools/lazy`, and `<et-query-devtools>` is `<et-query-devtools-lazy>`. The imports and templates were rewritten, but the package may not be a dependency of these projects yet.',
+        "`provideQueryDevtools()` now mounts the devtools through `ui: () => import('@ethlete/query-devtools/lazy')`, so `<et-query-devtools>` and its component import were removed. Where no devtools provider was found, `QueryDevtoolsLazyComponent` and `<et-query-devtools-lazy>` replace them. The package may not be a dependency of these projects yet.",
       action:
         'Run `yarn add @ethlete/query-devtools` where needed, then `yarn install` and re-lint the affected libs so the `@nx/dependency-checks` rule sees the new dependency.',
       locations: filesNeedingDevtoolsPackage.map((filePath) => ({ filePath })),
@@ -247,12 +255,51 @@ type DevtoolsFileMigration = {
 
   /** Whether the file now imports `QueryDevtoolsLazyComponent` from `@ethlete/query-devtools/lazy`. */
   importsComponent: boolean;
+
+  /** Whether the file now passes `ui` to `provideQueryDevtools()`. */
+  mountsDevtools: boolean;
 };
 
 const LAZY_DEVTOOLS_COMPONENT = 'QueryDevtoolsLazyComponent';
 
+const DEVTOOLS_UI_PROVIDER_CALL = "provideQueryDevtools({ ui: () => import('@ethlete/query-devtools/lazy') })";
+
 const selectLazyDevtools = (content: string) =>
   content.replace(/(<\/?)et-query-devtools(?![\w-])/g, '$1et-query-devtools-lazy');
+
+const removeDevtoolsTags = (content: string) =>
+  content.replace(/[ \t]*<et-query-devtools(?![\w-])[^>]*?(?:\/>|>\s*<\/et-query-devtools>)[ \t]*\n?/g, '');
+
+const removeFromImportsArrays = (content: string, names: ReadonlySet<string>) => {
+  const sourceFile = createSourceFile(content);
+  const ranges: Array<{ start: number; end: number }> = [];
+
+  const visit = (node: ts.Node) => {
+    if (
+      ts.isPropertyAssignment(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === 'imports' &&
+      ts.isArrayLiteralExpression(node.initializer)
+    ) {
+      node.initializer.elements
+        .filter((element) => ts.isIdentifier(element) && names.has(element.text))
+        .forEach((element) => {
+          const range = withSurroundingComma(content, element.getStart(sourceFile), element.getEnd());
+          const padding = content[range.start - 1] === '[' ? (/^[ \t]*/.exec(content.slice(range.end))?.[0] ?? '') : '';
+
+          ranges.push({ start: range.start, end: range.end + padding.length });
+        });
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+
+  return ranges
+    .sort((left, right) => right.start - left.start)
+    .reduce((result, { start, end }) => result.slice(0, start) + result.slice(end), content);
+};
 
 const renameIdentifiers = (content: string, names: ReadonlySet<string>, replacement: string) => {
   const sourceFile = createSourceFile(content);
@@ -277,16 +324,18 @@ const renameIdentifiers = (content: string, names: ReadonlySet<string>, replacem
     .reduce((result, { start, end }) => result.slice(0, start) + replacement + result.slice(end), content);
 };
 
-const migrateDevtoolsInFile = (content: string): DevtoolsFileMigration => {
+const migrateDevtoolsInFile = (content: string, mountsFromProvider: boolean): DevtoolsFileMigration => {
   const componentNames = localNamesImportedFromQuery(content, 'QueryDevtoolsComponent');
   const providerNames = new Set([
     'provideQueryClientForDevtools',
     ...localNamesImportedFromQuery(content, 'provideQueryClientForDevtools'),
   ]);
 
-  let result = replaceDevtoolsProviderCalls(content, providerNames);
+  const providerCall = mountsFromProvider ? DEVTOOLS_UI_PROVIDER_CALL : 'provideQueryDevtools()';
 
-  const hasProvider = result.includes('provideQueryDevtools()');
+  let result = replaceDevtoolsProviderCalls(content, providerNames, providerCall);
+
+  const hasProvider = result.includes(providerCall);
 
   result = dropLegacyDevtoolsImports(result);
 
@@ -294,7 +343,9 @@ const migrateDevtoolsInFile = (content: string): DevtoolsFileMigration => {
     result = ensureImportFromQuery(result, ['provideQueryDevtools']);
   }
 
-  if (componentNames.length > 0) {
+  if (componentNames.length > 0 && mountsFromProvider) {
+    result = removeFromImportsArrays(result, new Set(componentNames));
+  } else if (componentNames.length > 0) {
     result = selectLazyDevtools(renameIdentifiers(result, new Set(componentNames), LAZY_DEVTOOLS_COMPONENT));
     result = ensureNamedImports({
       content: result,
@@ -303,7 +354,11 @@ const migrateDevtoolsInFile = (content: string): DevtoolsFileMigration => {
     });
   }
 
-  return { content: result, importsComponent: componentNames.length > 0 };
+  return {
+    content: result,
+    importsComponent: componentNames.length > 0 && !mountsFromProvider,
+    mountsDevtools: hasProvider && mountsFromProvider,
+  };
 };
 
 const queryImports = (sourceFile: ts.SourceFile) =>
@@ -336,7 +391,7 @@ const localNamesImportedFromQuery = (content: string, name: string) =>
  * first call site keeps its position - it is already where the app wanted its devtools - and the
  * rest are removed along with the comma that separated them.
  */
-const replaceDevtoolsProviderCalls = (content: string, providerNames: ReadonlySet<string>) => {
+const replaceDevtoolsProviderCalls = (content: string, providerNames: ReadonlySet<string>, providerCall: string) => {
   const sourceFile = createSourceFile(content);
   const calls: ts.CallExpression[] = [];
 
@@ -359,7 +414,7 @@ const replaceDevtoolsProviderCalls = (content: string, providerNames: ReadonlySe
     const end = call.getEnd();
 
     if (index === 0) {
-      return { start, end, replacement: 'provideQueryDevtools()' };
+      return { start, end, replacement: providerCall };
     }
 
     return { ...withSurroundingComma(content, start, end), replacement: '' };
