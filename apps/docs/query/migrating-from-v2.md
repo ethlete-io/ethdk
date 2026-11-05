@@ -84,7 +84,7 @@ See [HTTP queries](/query/http#interceptors).
 
 ### Retries and error parsing are opt-in
 
-In v2, a failed request was retried and a Symfony or HTML error body was parsed by default. In v3 both are client [`features`](/query/errors). The generator adds `withEthleteApiErrors()` to every client it migrates, so both stay on. The retry policy is still not the one v2 used, and the task file says so:
+In v2, a failed request was retried and a Symfony or HTML error body was parsed by default. In v3 both are client [`features`](/query/errors). The generator adds `withEthleteApiErrors()` to every client it migrates, so both stay on. A client whose `baseRoute` or name mentions Contentful, Shopify or Bynder is not an Ethlete API: it gets no feature, and the task file asks you to choose one. The retry policy is still not the one v2 used, and the task file says so:
 
 | v2                                                    | v3 `withEthleteApiErrors()`                                           |
 | ----------------------------------------------------- | --------------------------------------------------------------------- |
@@ -92,7 +92,7 @@ In v2, a failed request was retried and a Symfony or HTML error body was parsed 
 | any 5xx, `500` included, plus 408, 425 and 429        | 408, 425, 429 and 5xx above `500`, plus a connection failure          |
 | up to four retries, linear delay (1 s, 2 s, 3 s, 4 s) | three retries, exponential jittered delay                             |
 
-Configure the difference with `withEthleteApiErrors({ retry: { … } })` (see [retries](/query/errors)), or narrow the feature to the parts your API needs. A client that sets its own `retryFn` keeps it, and that `retryFn` wins over the feature's policy. For `createQueryClient` calls the generator did not write, for example clients migrated before the error pipeline became opt-in, run:
+Configure the difference with `withEthleteApiErrors({ retry: { … } })` (see [retries](/query/errors)), or narrow the feature to the parts your API needs. A client that sets its own v2 `retryFn` loses it: the v2 `RequestRetryFn` type does not fit the v3 `retryFn`, so the generator emits a task to port it. For `createQueryClient` calls the generator did not write, for example clients migrated before the error pipeline became opt-in, run:
 
 ```bash
 yarn nx g @ethlete/query:migrate-query-opt-in-features

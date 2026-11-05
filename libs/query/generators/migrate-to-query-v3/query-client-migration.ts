@@ -235,6 +235,7 @@ const migrateQueryClientToConfig = ({ content, filePath, renamesOut, report }: M
   const replacements: Array<{ start: number; end: number; replacement: string }> = [];
   const variableRenames = new Map<string, string>();
   let hasUnmigratedClient = false;
+  let needsErrorFeature = false;
 
   const visit = (node: ts.Node) => {
     if (ts.isNewExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'V2QueryClient') {
@@ -278,12 +279,18 @@ const migrateQueryClientToConfig = ({ content, filePath, renamesOut, report }: M
         }
 
         reportDroppedClientOptions({ configArgument, sourceFile, filePath, report });
-        reportChangedClientDefaults({ configArgument, sourceFile, filePath, report });
+        const isThirdParty = isThirdPartyClient(configArgument, node, sourceFile);
+
+        reportChangedClientDefaults({ configArgument, sourceFile, filePath, report, isThirdParty });
+
+        if (!isThirdParty) {
+          needsErrorFeature = true;
+        }
 
         replacements.push({
           start: node.getStart(sourceFile),
           end: node.getEnd(),
-          replacement: migrateConfigObject(configArgument, node, sourceFile),
+          replacement: migrateConfigObject(configArgument, node, sourceFile, isThirdParty),
         });
       }
     }
@@ -301,12 +308,12 @@ const migrateQueryClientToConfig = ({ content, filePath, renamesOut, report }: M
     result = result.slice(0, start) + replacement + result.slice(end);
   });
 
-  result = removeQueryClientImport(result, hasUnmigratedClient);
+  result = removeQueryClientImport(result, hasUnmigratedClient, needsErrorFeature);
 
   return renameVariables(result, variableRenames);
 };
 
-const removeQueryClientImport = (content: string, keepLegacyClient: boolean) => {
+const removeQueryClientImport = (content: string, keepLegacyClient: boolean, needsErrorFeature: boolean) => {
   const sourceFile = createSourceFile(content);
   let queryImportNode: ts.ImportDeclaration | undefined;
 
@@ -331,7 +338,7 @@ const removeQueryClientImport = (content: string, keepLegacyClient: boolean) => 
     'createPostQuery',
     'createPutQuery',
     'createQueryClient',
-    CLIENT_FEATURE,
+    ...(needsErrorFeature ? [CLIENT_FEATURE] : []),
   ];
 
   if (!queryImportNode?.importClause?.namedBindings || !ts.isNamedImports(queryImportNode.importClause.namedBindings)) {
@@ -458,6 +465,17 @@ type ReportDroppedClientOptionsInput = {
   report: QueryV3MigrationReport;
 };
 
+type ReportChangedClientDefaultsInput = ReportDroppedClientOptionsInput & { isThirdParty: boolean };
+
+const THIRD_PARTY_API_PATTERN = /contentful|shopify|bynder/i;
+
+const isThirdPartyClient = (configArgument: ts.ObjectLiteralExpression, node: ts.Node, sourceFile: ts.SourceFile) => {
+  const baseRoute = findProperty(configArgument, 'baseRoute');
+  const baseRouteText = (baseRoute && getPropertyValueText(baseRoute, sourceFile)) ?? '';
+
+  return THIRD_PARTY_API_PATTERN.test(`${baseRouteText} ${getVariableNameForQueryClient(node) ?? ''}`);
+};
+
 const reportDroppedClientOptions = ({
   configArgument,
   sourceFile,
@@ -556,7 +574,8 @@ const reportChangedClientDefaults = ({
   sourceFile,
   filePath,
   report,
-}: ReportDroppedClientOptionsInput) => {
+  isThirdParty,
+}: ReportChangedClientDefaultsInput) => {
   const location = {
     filePath,
     line: sourceFile.getLineAndCharacterOfPosition(configArgument.getStart(sourceFile)).line + 1,
@@ -571,14 +590,41 @@ const reportChangedClientDefaults = ({
   const hasUnreadableRequestConfig =
     (!!requestProperty && !requestConfig) || !!requestConfig?.properties.some(ts.isSpreadAssignment);
 
-  reportClientErrorPipelineAdded(
-    report,
-    location,
-    'query-client-migration',
-    `\`${CLIENT_FEATURE}()\` was added so failed requests still retry and Symfony / HTML error bodies are still parsed, as they were by default in v2.`,
-  );
+  const retryFn = requestConfig && findProperty(requestConfig, 'retryFn');
 
-  if (!requestConfig || !findProperty(requestConfig, 'retryFn')) {
+  if (retryFn) {
+    report.addWarning({
+      title: 'Port the v2 retryFn of the migrated client',
+      summary:
+        'The v2 `retryFn` has the v2 `RequestRetryFn` type and was not carried over: the v3 `retryFn` takes different arguments, so a copy does not compile.',
+      action:
+        'Rewrite it as a v3 `retryFn` on `createQueryClient`, or express it with `withEthleteApiErrors({ retry: { maxAttempts, retryableStatusCodes } })` where the client uses that feature.',
+      locations: [{ filePath, line: sourceFile.getLineAndCharacterOfPosition(retryFn.getStart(sourceFile)).line + 1 }],
+      source: 'query-client-migration',
+      dedupeKey: `ported-retry-fn:${filePath}:${retryFn.getStart(sourceFile)}`,
+    });
+  }
+
+  if (isThirdParty) {
+    report.addWarning({
+      title: 'Choose the error handling of a third-party client',
+      summary: `The client talks to a third-party API (Contentful, Shopify or Bynder). \`${CLIENT_FEATURE}()\` parses Symfony error bodies, which that API does not send, so the migration did not add it. v2 retried and parsed errors on every client.`,
+      action:
+        'Add `withHtmlErrorParsing()` if a proxy in front of the API answers HTML, and `withDefaultRetry()` if failed requests should retry themselves.',
+      locations: [location],
+      source: 'query-client-migration',
+      dedupeKey: `third-party-client-errors:${filePath}:${location.line}`,
+    });
+  } else {
+    reportClientErrorPipelineAdded(
+      report,
+      location,
+      'query-client-migration',
+      `\`${CLIENT_FEATURE}()\` was added so failed requests still retry and Symfony / HTML error bodies are still parsed, as they were by default in v2.`,
+    );
+  }
+
+  if (!isThirdParty && !retryFn) {
     report.addWarning({
       title: 'Check the retry behaviour of the migrated client',
       summary:
@@ -645,7 +691,12 @@ const findProperty = (objectLiteral: ts.ObjectLiteralExpression, name: string) =
     );
   });
 
-const migrateConfigObject = (configArgument: ts.ObjectLiteralExpression, node: ts.Node, sourceFile: ts.SourceFile) => {
+const migrateConfigObject = (
+  configArgument: ts.ObjectLiteralExpression,
+  node: ts.Node,
+  sourceFile: ts.SourceFile,
+  isThirdParty: boolean,
+) => {
   const variableName = getVariableNameForQueryClient(node) ?? 'client';
   const nextConfig: string[] = [];
 
@@ -670,7 +721,6 @@ const migrateConfigObject = (configArgument: ts.ObjectLiteralExpression, node: t
     for (const [from, to] of [
       ['queryParams', 'queryString'],
       ['cacheAdapter', 'cacheAdapter'],
-      ['retryFn', 'retryFn'],
     ] as const) {
       const property = findProperty(requestConfig, from);
       const valueText = property && getPropertyValueText(property, sourceFile);
@@ -681,7 +731,9 @@ const migrateConfigObject = (configArgument: ts.ObjectLiteralExpression, node: t
     }
   }
 
-  nextConfig.push(`features: [${CLIENT_FEATURE}()]`);
+  if (!isThirdParty) {
+    nextConfig.push(`features: [${CLIENT_FEATURE}()]`);
+  }
 
   return `createQueryClient({\n  ${nextConfig.join(',\n  ')}\n})`;
 };

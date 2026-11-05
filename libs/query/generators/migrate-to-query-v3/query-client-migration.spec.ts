@@ -126,7 +126,7 @@ export const registry = { apiClient: apiClient };
     expect(readFile('client.ts')).toContain('registry = { apiClient: apiClientConfig }');
   });
 
-  it('reports unknown client options with a generic action and migrates retryFn', async () => {
+  it('reports unknown client options with a generic action and does not copy the v2 retryFn', async () => {
     tree.write(
       'client.ts',
       `
@@ -147,7 +147,8 @@ export const apiClient = new V2QueryClient({
 
     const report = readFile('query-v3-migration-tasks.md');
 
-    expect(readFile('client.ts')).toContain('retryFn: myRetry');
+    expect(readFile('client.ts')).not.toContain('retryFn');
+    expect(report).toContain('Port the v2 retryFn of the migrated client');
     expect(report).toContain('Reconfigure dropped query client option "authProvider"');
     expect(report).toContain('Reconfigure dropped query client option "request.timeout"');
     expect(report).toContain('Check whether the behaviour is still needed and reimplement it.');
@@ -336,7 +337,7 @@ export const apiClient = new V2QueryClient({
 
     const report = readFile('query-v3-migration-tasks.md');
 
-    expect(readFile('client.ts')).toContain('retryFn: retryFn');
+    expect(readFile('client.ts')).not.toContain('retryFn');
     expect(report).toContain('Reconfigure spread query client options "...sharedOptions"');
     expect(report).toContain('Reconfigure spread query client options "...sharedRequest"');
     expect(report).toContain('- client.ts:4');
@@ -491,7 +492,7 @@ export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com
     expect(report).toContain('never retries a `POST`, a `PATCH` or a plain `500`');
   });
 
-  it('does not report the retry difference for a client with its own retryFn', async () => {
+  it('replaces the retry difference with a retryFn task for a client with its own retryFn', async () => {
     tree.write(
       'client.ts',
       `
@@ -503,9 +504,50 @@ export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com
 
     await migration(tree, { skipFormat: true });
 
-    expect(readFile('client.ts')).toContain('retryFn: myRetry');
+    expect(readFile('client.ts')).not.toContain('retryFn');
     expect(readFile('client.ts')).toContain('features: [withEthleteApiErrors()]');
+    expect(readFile('query-v3-migration-tasks.md')).toContain('Port the v2 retryFn of the migrated client');
     expect(readFile('query-v3-migration-tasks.md')).not.toContain('Check the retry behaviour of the migrated client');
+  });
+
+  it('adds no error feature to a third-party client and reports a task instead', async () => {
+    tree.write(
+      'client.ts',
+      `
+import { V2QueryClient } from '@ethlete/query';
+
+export const cmsClient = new V2QueryClient({ baseRoute: \`\${env.contentful.url}/spaces\` });
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const client = readFile('client.ts');
+    const report = readFile('query-v3-migration-tasks.md');
+
+    expect(client).not.toContain('withEthleteApiErrors');
+    expect(client).not.toContain('features');
+    expect(report).toContain('Choose the error handling of a third-party client');
+    expect(report).not.toContain('Client kept the full error pipeline');
+  });
+
+  it('keeps the error feature for an Ethlete API client next to a third-party one', async () => {
+    tree.write(
+      'client.ts',
+      `
+import { V2QueryClient } from '@ethlete/query';
+
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
+export const shopClient = new V2QueryClient({ baseRoute: 'https://shopify.example.com' });
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const client = readFile('client.ts');
+
+    expect(client.match(/withEthleteApiErrors\(\)/g)).toHaveLength(1);
+    expect(client).toMatch(/import \{[^}]*withEthleteApiErrors[^}]*\} from '@ethlete\/query';/);
   });
 
   it('carries a cacheAdapter over and points at keepUnusedFor and the HttpHeaders shape', async () => {
