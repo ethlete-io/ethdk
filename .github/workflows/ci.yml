@@ -106,7 +106,7 @@ jobs:
       - run: yarn nx run-many -t build -p cli,components
 
       - name: Static design rules
-        run: node dist/libs/cli/src/index.js design check --product studio
+        run: node dist/libs/cli/src/index.js design check --product studio --rules
 
       - name: Slow design rules against the pull request base
         if: success() || failure()
