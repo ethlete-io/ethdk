@@ -3412,8 +3412,11 @@ fails loudly when crossed.
 474\. A vitest run in `libs/query` (generators spec) served a stale copy of the spec once from
 `node_modules/.vitest-cache`, so the run tested old code (ff, 2026-11-05, B385); ff worked around it with
 `--fsModuleCachePath /tmp/<dir>`. Why no tool caught it: nothing checks that the module cache matches the source on
-disk, and a stale pass looks like a real pass. Cause open (asked the builder). Tool fix: find the cache key that missed
-the change, then give each run a fresh or source-keyed cache, so a spec edit always reaches the run.
+disk, and a stale pass looks like a real pass. Cause not proven (builder read vitest 5.0.5: the key is sha1 of module
+id, file content and env hash; fixtures are read at run time and are not the cause; suspects: a read during a
+half-written save, or the Angular plugin hiding a dependency; not reproduced). Tool fix (decided, builder default): the
+pre-commit spec gate runs with a fresh `--fsModuleCachePath` in a tmp dir, so a gate pass never rests on the cache.
+Not decided: `fsModuleCache: false` for all of `libs/query` (slower runs for an unproven cause).
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
