@@ -166,3 +166,8 @@ all five fifagg apps build on `chore/query-v3-migration`.
   fix: import from a leaf entry point. Generator fix: emit the dynamic-import form, or a task that names the bundle
   cost. SDK fix f4cd1b908 (toggle leaf import; a spec fails on any `@ethlete/components` import in `toggle/` or `lazy/`); finding 10 fixed by ff, not pushed. Why the `query-devtools-lazy` golden (5246 B gz) did not catch it: the harness bundles with a `sideEffects: false` shim and shakes the barrel down to `detectKbdPlatform`; the fifagg build did not shake it. The cause in fifagg is not proven (fifagg-frontend-c3 checks its build stats). Tool fix (ff default): a golden that fails when any `@ethlete/components` module is in the initial chunk of the lazy entry: built in 3ac97382b (`forbidInitial` in `goldens.json`); it failed on the old dist and passes after the fix. Goldens now lazy 4002 B, toggle 1782 B gz.
 - Bundle cost of v3 over `next`: about 90 kB `@ethlete/query` and 50 kB `@ethlete/core`.
+- **Decision (Tom, 2026-11-05): dev-only devtools as an SDK helper.** Asked: keep the static lazy shell (~4 kB in
+  production), emit an `ngDevMode` dynamic import in every app, or ship one SDK helper. Tom: "q1c ist tatsächlich
+  smart". The SDK gets one helper that keeps the devtools out of production builds (the
+  example name was `provideQueryDevtools({ devOnly: true })`; name and shape are ff's call), and the migrator emits it
+  instead of the static lazy shell. The docs show it as the default way to mount the devtools.
