@@ -3373,6 +3373,13 @@ and 09953108c). Its stderr goes to a pipe of the Tauri app, and `serve.ts` turns
 so no server log exists. Second tool gap: a Studio server error leaves no trace. In `/tmp/b469` the old copy restored
 correctly on a failed check; a throw after the swap stays the lead, repro not done.
 
+470\. CI on `next` stayed red from 2026-11-04 15:23 to the evening of 2026-11-05, and 92 commits stayed unpushed. The
+Studio rules job failed: `pages/system` state `direct-edit` was unjudged, because the gate clicks the "Gründe" trigger
+and the app had no footer. Tom: "die ci ist NOCH IMMER rot?" - a release waits. Why no tool caught it: the slow gate
+checks only parts whose app files change (B393), so the local hook never ran `pages/system`; `clickOpen` did not
+search overlay roots (fixed in 5f105b30d with the footer). Process lesson: a red CI on `next` stops all finding work
+until it is green; the doc agent checks `gh run list` at session start and reports a red run to Tom at once.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
