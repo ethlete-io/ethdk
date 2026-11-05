@@ -5,6 +5,7 @@ import { QueryV3MigrationReport } from './report.js';
 import {
   createSourceFile,
   ensureAngularCoreImports,
+  ensureImportFromQuery,
   getIndentation,
   getLineNumber,
   getLineNumberFromPosition,
@@ -574,6 +575,7 @@ const transformPrepareCallsInFile = (
   const replacements: Array<{ start: number; end: number; replacement: string }> = [];
   const legacyCreatorNames = findLegacyCreatorNames(sourceFile);
   const classNameToInjector = new Map<string, string>();
+  const rewrittenComputeds = new Set<ts.CallExpression>();
   const functionsNeedingInjector = new Map<
     number,
     { injectorName: string; bodyStart: number; needsDeclaration: boolean }
@@ -601,6 +603,27 @@ const transformPrepareCallsInFile = (
 
         const context = determineUsageContext(node);
 
+        const computedHost = findReturningPlainComputed(node);
+
+        const rewriteComputed = (injectorExpression: string) => {
+          if (!computedHost || rewrittenComputeds.has(computedHost)) return;
+
+          rewrittenComputeds.add(computedHost);
+          replacements.push({
+            start: computedHost.expression.getStart(sourceFile),
+            end: computedHost.expression.getEnd(),
+            replacement: 'queryComputed',
+          });
+
+          if (computedHost.arguments.length === 1) {
+            replacements.push({
+              start: computedHost.arguments[0]!.getEnd(),
+              end: computedHost.arguments[0]!.getEnd(),
+              replacement: `, { injector: ${injectorExpression} }`,
+            });
+          }
+        };
+
         if (CONTEXTS_WITH_INJECTOR.includes(context)) {
           ts.forEachChild(node, visit);
           return;
@@ -616,6 +639,8 @@ const transformPrepareCallsInFile = (
             ts.forEachChild(node, visit);
             return;
           }
+
+          rewriteComputed(`this.${injectorMember}`);
 
           const transformedCall = transformCall(node, `this.${injectorMember}`, sourceFile, pollingInfo);
 
@@ -659,6 +684,9 @@ const transformPrepareCallsInFile = (
           }
 
           const injectorName = functionsNeedingInjector.get(functionPosition)?.injectorName ?? 'injector';
+
+          rewriteComputed(injectorName);
+
           const transformedCall = transformCall(node, injectorName, sourceFile, pollingInfo);
 
           if (transformedCall) {
@@ -710,7 +738,7 @@ const transformPrepareCallsInFile = (
       result = result.slice(0, start + adjustment) + replacement + result.slice(end + adjustment);
     });
 
-  return result;
+  return rewrittenComputeds.size > 0 ? ensureImportFromQuery(result, ['queryComputed']) : result;
 };
 
 const findInjectorParameter = (func: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression) => {
@@ -885,7 +913,7 @@ const transformSinglePrepareCall = (
     queryVariableName,
     pollingInfo,
     isDiscardedPrepareCall(callNode),
-    isOneShotLocalVariable(callNode),
+    isOneShotLocalVariable(callNode) || isInsideAsyncValidator(callNode),
   );
 
   if (existingConfig && ts.isObjectLiteralExpression(existingConfig.initializer)) {
@@ -1205,6 +1233,119 @@ const isDiscardedPrepareCall = (callNode: ts.CallExpression) => {
     }
 
     return ts.isExpressionStatement(parent);
+  }
+
+  return false;
+};
+
+const unwrapChainEnd = (callNode: ts.CallExpression) => {
+  let current: ts.Node = callNode;
+
+  while (current.parent) {
+    const parent: ts.Node = current.parent;
+
+    if (ts.isParenthesizedExpression(parent) || ts.isNonNullExpression(parent)) {
+      current = parent;
+      continue;
+    }
+
+    const call = parent.parent;
+
+    if (
+      ts.isPropertyAccessExpression(parent) &&
+      parent.expression === current &&
+      parent.name.text === 'execute' &&
+      call &&
+      ts.isCallExpression(call) &&
+      call.expression === parent
+    ) {
+      current = call;
+      continue;
+    }
+
+    break;
+  }
+
+  return current;
+};
+
+/**
+ * The Angular `computed(() => legacy.prepare(...).execute())` whose callback returns the prepared query.
+ * Such a computed builds one unmanaged query per input change, so it becomes `queryComputed`, whose
+ * container destroys the superseded one.
+ */
+const findReturningPlainComputed = (callNode: ts.CallExpression) => {
+  const chainEnd = unwrapChainEnd(callNode);
+  const callback = chainEnd.parent;
+
+  if (!callback || !ts.isArrowFunction(callback) || callback.body !== chainEnd) {
+    const returnStatement = chainEnd.parent;
+
+    if (!returnStatement || !ts.isReturnStatement(returnStatement)) return undefined;
+
+    let fn: ts.Node | undefined = returnStatement.parent;
+
+    while (fn && !isCallbackFunction(fn)) fn = fn.parent;
+
+    return fn && isCallbackFunction(fn) ? getPlainComputedHost(fn) : undefined;
+  }
+
+  return getPlainComputedHost(callback);
+};
+
+const getPlainComputedHost = (node: FunctionLike) => {
+  const host = getCallbackHost(node);
+
+  if (!host || !ts.isIdentifier(host.expression) || host.expression.text !== 'computed' || host.arguments[0] !== node) {
+    return undefined;
+  }
+
+  return host;
+};
+
+const ASYNC_VALIDATOR_PROPERTIES = new Set(['asyncValidator', 'asyncValidators']);
+const ASYNC_VALIDATOR_SETTERS = new Set(['setAsyncValidators', 'addAsyncValidators']);
+
+/**
+ * Whether the innermost function around the call is an Angular async validator: a value of an
+ * `asyncValidator(s)` property or setter argument, an `AsyncValidatorFn`, or `validate` of an `AsyncValidator`.
+ */
+const isInsideAsyncValidator = (callNode: ts.CallExpression) => {
+  let fn: ts.Node | undefined = callNode.parent;
+
+  while (fn && !isCallbackFunction(fn) && !ts.isMethodDeclaration(fn)) fn = fn.parent;
+
+  if (!fn) return false;
+
+  if (ts.isMethodDeclaration(fn)) {
+    const owner = fn.parent;
+
+    return (
+      ts.isIdentifier(fn.name) &&
+      fn.name.text === 'validate' &&
+      ts.isClassDeclaration(owner) &&
+      !!owner.heritageClauses?.some((clause) =>
+        clause.types.some((type) => type.expression.getText() === 'AsyncValidator'),
+      )
+    );
+  }
+
+  let value: ts.Node = fn;
+
+  if (ts.isArrayLiteralExpression(value.parent)) value = value.parent;
+
+  const parent = value.parent;
+
+  if (ts.isPropertyAssignment(parent) && ts.isIdentifier(parent.name)) {
+    return ASYNC_VALIDATOR_PROPERTIES.has(parent.name.text);
+  }
+
+  if (ts.isCallExpression(parent) && ts.isPropertyAccessExpression(parent.expression)) {
+    return ASYNC_VALIDATOR_SETTERS.has(parent.expression.name.text);
+  }
+
+  if ((ts.isVariableDeclaration(parent) || ts.isPropertyDeclaration(parent)) && parent.type) {
+    return parent.type.getText().includes('AsyncValidatorFn');
   }
 
   return false;

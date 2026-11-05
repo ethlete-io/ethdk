@@ -149,6 +149,57 @@ ${body}
       expect(readFile('component.ts')).toContain('injector: this.injector');
     });
 
+    it('turns a plain computed that returns the prepared query into a queryComputed', async () => {
+      writeComponent(`  page = signal(1);
+  users = computed(() => legacyGetUsers.prepare({ queryParams: { page: this.page() } }).execute());`);
+
+      await migration(tree, { skipFormat: true });
+
+      const result = readFile('component.ts');
+
+      expect(result).toContain('queryComputed(() => legacyGetUsers.prepare(');
+      expect(result).toContain('.execute(), { injector: this.injector })');
+      expect(result).not.toContain(' computed(');
+      expect(result).toMatch(/import \{[^}]*queryComputed[^}]*\} from '@ethlete\/query'/);
+    });
+
+    it('keeps the options of a plain computed that returns the prepared query', async () => {
+      writeComponent(`  users = computed(() => legacyGetUsers.prepare({}).execute(), { equal: () => false });`);
+
+      await migration(tree, { skipFormat: true });
+
+      expect(readFile('component.ts')).toContain('queryComputed(() => legacyGetUsers.prepare(');
+      expect(readFile('component.ts')).toContain('{ equal: () => false })');
+    });
+
+    it('leaves a plain computed alone when it only reads the query result', async () => {
+      writeComponent(`  count = computed(() => legacyGetUsers.prepare({}).execute().rawState);`);
+
+      await migration(tree, { skipFormat: true });
+
+      expect(readFile('component.ts')).toContain(' computed(');
+    });
+
+    it('adds destroyOnResponse to a prepare call in an async validator', async () => {
+      writeComponent(`  control = new FormControl('', {
+    asyncValidators: [(control: AbstractControl) => legacyGetUsers.prepare({ body: { name: control.value } }).execute().state$],
+  });`);
+
+      await migration(tree, { skipFormat: true });
+
+      expect(readFile('component.ts')).toContain('destroyOnResponse: true');
+    });
+
+    it('adds no destroyOnResponse to a prepare call in an ordinary callback', async () => {
+      writeComponent(`  config = {
+    searchPreviewQueryFn: (term: string) => legacyGetUsers.prepare({ queryParams: { term } }).execute(),
+  };`);
+
+      await migration(tree, { skipFormat: true });
+
+      expect(readFile('component.ts')).not.toContain('destroyOnResponse');
+    });
+
     it('migrates a prepare call in a callback config function at a class field', async () => {
       writeComponent(`  config = {
     searchPreviewQueryFn: (term: string) => legacyGetUsers.prepare({ queryParams: { term } }).execute(),
