@@ -4723,7 +4723,8 @@ CLI copy and gets the fix at its next restart; the builder unblocked it with a `
 
 463\. `/__design/shot` with `&sketch=<target>` and no `&variant=` silently returns the product picture. The first shot
 review of `pages-merge` compared the product with itself. Why no tool caught it: the route has no error for a sketch
-that has variants and names none. Tool fix (builder default): the route answers 400 in that case.
+that has variants and names none. Tool fix (builder, 9caf87997): the route answers 400 for a sketch without a known variant (before: 404 for an
+unknown one).
 
 464\. LOST-SURFACE compares only `background-color`. The `mg-shot` fill in `pages-merge` sits over the canvas dot
 pattern (`background-image`), so the rule called it redundant; without it the dots show through the shot boxes (states
@@ -4732,6 +4733,15 @@ patterned parent, and the auto-merge refused only on the pixel diff, which nobod
 marked ready. Tool fix (builder default): a fill over a patterned parent is a real surface, with that fixture; re-run
 `elements-shell-main`, which sits on the same canvas. Process lesson: a sketch with a pixel diff is ready only after
 its shot is looked at.
+Built (builder): ca3f6804c, LOST-SURFACE skips a card over a patterned backdrop (an ancestor, or a sibling under the
+card centre through `elementsFromPoint`); the sketch is discarded (aa17e7815). Open: whether `sketch ready` refuses
+while a pixel diff has no viewed shot (next builder decides in B388).
+
+465\. `sketch check` prints no `before` lines, so it does not show if the product part itself still has the problem
+the sketch should fix. For `elements-shell-main` and `components-comment-draft` no variant shows LOST-SURFACE, but
+whether the product aside still trips the rule after ca3f6804c is unknown until a full run. Why no tool caught it: the
+sketch check reports only the variants. Tool fix (builder default, open): the sketch check also checks the product
+part and prints its problems as `before` lines.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
