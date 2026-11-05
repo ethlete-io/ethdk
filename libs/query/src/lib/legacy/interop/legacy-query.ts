@@ -8,7 +8,6 @@ import {
   Observable,
   of,
   ReplaySubject,
-  shareReplay,
   startWith,
   Subscription,
   switchMap,
@@ -234,7 +233,6 @@ export class LegacyQuery<
       distinctUntilChanged(),
       map((execState) => this.toQueryState(execState)),
       switchMap((s) => this._transformState(s)),
-      shareReplay({ bufferSize: 1, refCount: true }),
     );
 
     this.storeSyncEffect = effect(() => {
