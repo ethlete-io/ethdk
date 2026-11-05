@@ -1,4 +1,5 @@
 import { DesignConfig } from '../../paths';
+import { timedPhase } from '../../phase-timing';
 import { DesignStep } from '../tom-confirm';
 import { refreshHarnessMap } from '../harness-map';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
@@ -34,20 +35,22 @@ export const mergeAndRecord = (options: {
 
   if (typeof decided === 'string') return decided;
 
-  const result = mergeSketch({
-    target,
-    config,
-    product,
-    sketch: decided,
-    note,
-    replaceNote,
-    author: by,
-    ...(allowed ? { decidedBy: `plan: ${allowed.planRef.trim()}` } : {}),
-  });
+  const result = timedPhase('merge-files', () =>
+    mergeSketch({
+      target,
+      config,
+      product,
+      sketch: decided,
+      note,
+      replaceNote,
+      author: by,
+      ...(allowed ? { decidedBy: `plan: ${allowed.planRef.trim()}` } : {}),
+    }),
+  );
 
   if (!Array.isArray(result)) return result.reason;
 
-  const refreshed = refreshHarnessMap({ target, product });
+  const refreshed = timedPhase('harness-map', () => refreshHarnessMap({ target, product }));
 
   if (typeof refreshed === 'string') console.error(`merged, but the harness map is still stale: ${refreshed}`);
 

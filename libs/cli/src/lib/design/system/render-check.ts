@@ -998,6 +998,21 @@ export const renderIssuesOf = async (options: {
       }
     }
 
+    const asked = new Set((options.before ?? []).map(({ product, part }) => JSON.stringify([product, part])));
+    const inspectBaselineOf = (keys: string[]) => {
+      const baseline = keys.flatMap((key) =>
+        (baselines.get(key) ?? []).map((frame) => ({
+          ...frame,
+          skips: { ...frame.skips, [frame.address.part]: mergedSkips.get(key) ?? [] },
+        })),
+      );
+
+      return baseline.length > 0 ? queue.run((browser) => inspect({ browser, base, frames: baseline })) : [];
+    };
+    const askedInProduct = Promise.resolve(inspectBaselineOf([...asked]));
+
+    askedInProduct.catch(() => undefined);
+
     const all = await queue.run((browser) =>
       inspectRetryingTimeouts({
         browser,
@@ -1011,14 +1026,13 @@ export const renderIssuesOf = async (options: {
     const inspected = uniqueIssuesOf(all.filter((issue) => issue.rule !== BUSY_MARK));
     const isInput = (issue: RenderIssue) => issue.rule === 'CONTROL-PART-INPUT';
     const sketched = inspected.filter((issue) => issue.sketch && !WARNING_RULES.has(issue.rule));
-    const asked = new Set((options.before ?? []).map(({ product, part }) => JSON.stringify([product, part])));
-    const compared = [...new Set([...sketched.map((issue) => JSON.stringify([issue.product, issue.part])), ...asked])];
-    const baseline = compared.flatMap((key) =>
-      (baselines.get(key) ?? []).map((frame) => ({
-        ...frame,
-        skips: { ...frame.skips, [frame.address.part]: mergedSkips.get(key) ?? [] },
-      })),
-    );
+    const keyOf = (issue: RenderIssue) => JSON.stringify([issue.product, issue.part]);
+    const compared = [...new Set([...sketched.map(keyOf), ...asked])];
+    const comparedAt = new Map(compared.map((key, index) => [key, index]));
+    const inProduct = [
+      ...(await askedInProduct),
+      ...(await inspectBaselineOf(compared.filter((key) => !asked.has(key)))),
+    ].sort((a, b) => (comparedAt.get(keyOf(a)) ?? 0) - (comparedAt.get(keyOf(b)) ?? 0));
     const elementOf = (issue: RenderIssue) => JSON.stringify([issue.product, issue.part, issue.path]);
     const sameIssueOf = (issue: RenderIssue, inFrame: boolean | null) =>
       JSON.stringify([
@@ -1030,8 +1044,6 @@ export const renderIssuesOf = async (options: {
       ]);
     const framedOf = (issue: RenderIssue, sketch: SketchVariant | null) =>
       framed.get(JSON.stringify([issue.product, issue.part, sketch])) ?? false;
-    const inProduct =
-      baseline.length > 0 ? await queue.run((browser) => inspect({ browser, base, frames: baseline })) : [];
     const existing = new Set(
       inProduct.flatMap((issue) => [sameIssueOf(issue, null), sameIssueOf(issue, framedOf(issue, null))]),
     );

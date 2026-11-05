@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { Chromium, chromiumOf } from '../browser';
 import { DESIGN_DIR, readConfig } from '../paths';
 import { checkSystem } from './check-system';
 import { completenessOf } from './complete';
@@ -892,6 +893,69 @@ describe('renderIssuesOf', () => {
     expect(
       rendered.before?.map((issue) => `${issue.sketch?.variant ?? '-'} ${issue.rule}: ${issue.detail.split(' ')[0]}`),
     ).toEqual(['- CONTRAST: "Low"']);
+  }, 120_000);
+
+  it('draws the product part asked for before alongside the sketch, in one pass instead of two', async (context) => {
+    const target = checkout({
+      'components/card': { body: '<p style="margin: 0; color: #f00">Low</p>', states: 'default: {}, other: {}' },
+    });
+    const shop = join(target, DESIGN_DIR, 'shop');
+    const dir = join(shop, 'sketches', 'components-card');
+    const source = readFileSync(join(shop, 'components/card/card.ts'), 'utf8');
+
+    mkdirSync(join(dir, 'fixed', 'components/card'), { recursive: true });
+    writeFileSync(join(dir, 'fixed', 'components/card/card.ts'), source.replace('color: #f00', 'color: #000'));
+    writeFileSync(join(dir, 'sketch.json'), JSON.stringify({ target: 'components/card', status: 'ready' }));
+
+    let open = 0;
+    let mostOpen = 0;
+    const countingChromiumOf: typeof chromiumOf = async (at) => {
+      const resolved = await chromiumOf(at);
+
+      if (!resolved) return null;
+
+      const launch = resolved.chromium.launch.bind(resolved.chromium);
+      const chromium = Object.create(resolved.chromium) as Chromium;
+
+      chromium.launch = async (...args) => {
+        const browser = await launch(...args);
+        const newContext = browser.newContext.bind(browser);
+
+        browser.newContext = async (...contextArgs) => {
+          const created = await newContext(...contextArgs);
+          const close = created.close.bind(created);
+
+          mostOpen = Math.max(mostOpen, ++open);
+          created.close = async (...closeArgs) => {
+            open--;
+
+            return close(...closeArgs);
+          };
+
+          return created;
+        };
+
+        return browser;
+      };
+
+      return { ...resolved, chromium };
+    };
+
+    const rendered = await renderIssuesOf({
+      target,
+      config: readConfig(target) ?? {},
+      jobs: [{ product: 'shop', sketch: { target: 'components/card', variant: 'fixed' }, parts: null }],
+      before: [{ product: 'shop', part: 'components/card' }],
+      chromiumOf: countingChromiumOf,
+    });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(rendered.before?.map((issue) => `${issue.state} ${issue.rule}`)).toEqual([
+      'default CONTRAST',
+      'other CONTRAST',
+    ]);
+    expect(mostOpen).toBe(2);
   }, 120_000);
 
   it('does not block merged interaction states when sketch CSS restyles them', async (context) => {

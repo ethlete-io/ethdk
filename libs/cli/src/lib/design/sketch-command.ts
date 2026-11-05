@@ -5,6 +5,7 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { relative, resolve } from 'path';
 import { DesignConfig } from './paths';
+import { timedPhase } from './phase-timing';
 import { ASSETS_FOLDER } from './system/assets';
 import { addressSketchComments, commentsOnSketch } from './system/comments/comment';
 import { productDirOf } from './system/product';
@@ -694,7 +695,7 @@ const readied = (context: Context) => {
 
   if (hold !== null) return fail(hold);
 
-  const refused = readyRefusalOf(context, found);
+  const refused = timedPhase('gates', () => readyRefusalOf(context, found));
 
   if (refused !== null) return refused;
 
@@ -707,13 +708,17 @@ const readied = (context: Context) => {
 
 const renderedAndReady = async (context: Context, found: { product: ResolvedProduct; sketch: Sketch }) => {
   const { product, sketch } = found;
-  const rendered = await renderedVariantsOf({
-    target: context.target,
-    config: context.config,
-    product,
-    entries: sketch.variants.filter((variant) => !rejectionOf(sketch, variant)).map((variant) => ({ sketch, variant })),
-    drawn: false,
-  });
+  const rendered = await timedPhase('render-check', () =>
+    renderedVariantsOf({
+      target: context.target,
+      config: context.config,
+      product,
+      entries: sketch.variants
+        .filter((variant) => !rejectionOf(sketch, variant))
+        .map((variant) => ({ sketch, variant })),
+      drawn: false,
+    }),
+  );
 
   if ('issues' in rendered && rendered.issues.length > 0)
     return fail(`${sketch.target} has problems - fix them before ready`);
@@ -727,24 +732,32 @@ const renderedAndReady = async (context: Context, found: { product: ResolvedProd
 };
 
 const loadedAndReady = async (context: Context, { product, sketch }: { product: ResolvedProduct; sketch: Sketch }) => {
-  const unloaded = await unloadedLinesOf({ target: context.target, config: context.config, product, sketch });
+  const unloaded = await timedPhase('load', () =>
+    unloadedLinesOf({ target: context.target, config: context.config, product, sketch }),
+  );
 
   if (unloaded.length > 0) return fail(`${unloaded.join('\n')}\n${sketch.target} does not load - fix it before ready`);
 
-  const drifts = await sampleMarkDriftLines({ target: context.target, config: context.config, product, sketch });
+  const drifts = await timedPhase('mark-drift', () =>
+    sampleMarkDriftLines({ target: context.target, config: context.config, product, sketch }),
+  );
 
   if (drifts.length > 0)
     return fail(
       `${drifts.join('\n')}\n${sketch.target} draws one sample with different marks - align them before ready`,
     );
 
-  const identical = await identicalRenderLines({ target: context.target, config: context.config, product, sketch });
+  const identical = await timedPhase('identical', () =>
+    identicalRenderLines({ target: context.target, config: context.config, product, sketch }),
+  );
 
   if (identical.length > 0)
     return fail(`${identical.join('\n')}\n${sketch.target} draws variants alike - fix them before ready`);
 
   const changes = sketch.targets.every((key) => product.parts.some((part) => partKeyOf(part) === key))
-    ? await variantChangesShown({ target: context.target, config: context.config, product, sketch })
+    ? await timedPhase('changes-shot', () =>
+        variantChangesShown({ target: context.target, config: context.config, product, sketch }),
+      )
     : null;
   const unviewed = Array.isArray(changes)
     ? unviewedShotLinesOf({
@@ -768,7 +781,9 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
 
   if (typeof ready === 'string') return fail(ready);
 
-  return autoMerged({ context, product, sketch: ready, again: sketch.status === 'ready', changes });
+  return timedPhase('auto-merge', () =>
+    autoMerged({ context, product, sketch: ready, again: sketch.status === 'ready', changes }),
+  );
 };
 
 const stillReady = (options: { sketch: Sketch; again: boolean; reason: string }) => {
@@ -1177,7 +1192,7 @@ const checked = async (context: Context) => {
   if (typeof product === 'string') return fail(product);
 
   const asked = args.positional[0];
-  const { unreadable, variants } = openSketchProblemsOf(product);
+  const { unreadable, variants } = timedPhase('gates', () => openSketchProblemsOf(product));
   const named = asked === undefined ? variants : variants.filter((entry) => entry.sketch.target === asked);
 
   if (asked !== undefined && named.length === 0) return fail(`NO SKETCH on ${asked} in ${product.name}`);
@@ -1219,7 +1234,7 @@ const checked = async (context: Context) => {
   failed ||= stale.length > 0;
 
   for (const { sketch, variant, problems, before } of chosen) {
-    const typed = typecheckVariant({ target, product, sketch, variant });
+    const typed = timedPhase(`tsc ${variant}`, () => typecheckVariant({ target, product, sketch, variant }));
 
     noteProblemsBefore({ target, sketch, variant, before });
 
@@ -1244,19 +1259,21 @@ const checked = async (context: Context) => {
 
   if (!failed)
     for (const sketch of new Set(chosen.map((entry) => entry.sketch)))
-      (await aktuellPlaceholderWarnings({ target, config, product, sketch })).forEach((warning) =>
-        console.warn(warning),
+      (await timedPhase('aktuell', () => aktuellPlaceholderWarnings({ target, config, product, sketch }))).forEach(
+        (warning) => console.warn(warning),
       );
 
   const rendered = failed
     ? null
-    : await renderedVariantsOf({
-        target,
-        config,
-        product,
-        entries: chosen,
-        drawn: true,
-      });
+    : await timedPhase('render-check', () =>
+        renderedVariantsOf({
+          target,
+          config,
+          product,
+          entries: chosen,
+          drawn: true,
+        }),
+      );
   const busy = rendered !== null && 'issues' in rendered ? (rendered.busy ?? []) : [];
 
   if (rendered !== null && 'issues' in rendered)
@@ -1276,7 +1293,7 @@ const checked = async (context: Context) => {
   };
 
   for (const sketch of new Set(chosen.map((entry) => entry.sketch))) {
-    const unloaded = await unloadedLinesOf({ target, config, product, sketch });
+    const unloaded = await timedPhase('load', () => unloadedLinesOf({ target, config, product, sketch }));
 
     const before = refused;
 
@@ -1287,8 +1304,8 @@ const checked = async (context: Context) => {
     ]);
 
     if (!failed && unloaded.length === 0) {
-      refuse(await sampleMarkDriftLines({ target, config, product, sketch }));
-      refuse(await identicalRenderLines({ target, config, product, sketch }));
+      refuse(await timedPhase('mark-drift', () => sampleMarkDriftLines({ target, config, product, sketch })));
+      refuse(await timedPhase('identical', () => identicalRenderLines({ target, config, product, sketch })));
     }
 
     if (!failed && refused === before) {
@@ -1353,16 +1370,18 @@ const merged = (context: Context) =>
       flagVariant !== undefined && planRef !== undefined && sketch.decision?.kind !== 'pick'
         ? { variant: flagVariant, planRef }
         : undefined;
-    const result = mergeAndRecord({
-      target: context.target,
-      config: context.config,
-      product,
-      sketch,
-      note,
-      replaceNote,
-      by,
-      allowed,
-    });
+    const result = timedPhase('merge', () =>
+      mergeAndRecord({
+        target: context.target,
+        config: context.config,
+        product,
+        sketch,
+        note,
+        replaceNote,
+        by,
+        allowed,
+      }),
+    );
 
     if (typeof result === 'string') return fail(result);
 
