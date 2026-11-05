@@ -410,6 +410,50 @@ export const odd = new V2QueryClient(buildConfig());
     expect(readFile('query-v3-migration-tasks.md')).toContain('Migrator error: a V2QueryClient is left');
   });
 
+  it('reports a legacy devtools tag the migration could not move', async () => {
+    tree.write(
+      'shell.component.ts',
+      `
+import { Component } from '@angular/core';
+import { SharedDevtools } from './shared-devtools';
+
+@Component({
+  selector: 'app-shell',
+  imports: [SharedDevtools],
+  template: '<et-query-devtools />',
+})
+export class ShellComponent {}
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    expect(readFile('query-v3-migration-tasks.md')).toContain('Migrator error: legacy devtools usage is left');
+  });
+
+  it('reports no leftover once the devtools usage was migrated', async () => {
+    tree.write(
+      'app.component.ts',
+      `
+import { Component } from '@angular/core';
+import { QueryDevtoolsComponent } from '@ethlete/query';
+
+@Component({
+  selector: 'app-root',
+  imports: [QueryDevtoolsComponent],
+  template: '<et-query-devtools />',
+})
+export class AppComponent {}
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    expect(tree.exists('query-v3-migration-tasks.md') ? readFile('query-v3-migration-tasks.md') : '').not.toContain(
+      'legacy devtools usage is left',
+    );
+  });
+
   it('keeps AnyV2Query where the file already names AnyLegacyQuery', async () => {
     tree.write(
       'types.ts',

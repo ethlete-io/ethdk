@@ -173,6 +173,36 @@ export const reportLeftoverV2Clients = (tree: Tree, scope: MigrationScope, repor
   });
 };
 
+export const reportLeftoverLegacyDevtools = (tree: Tree, scope: MigrationScope, report: QueryV3MigrationReport) => {
+  scope.visit(tree, (filePath) => {
+    if (filePath.endsWith('.spec.ts') || (!filePath.endsWith('.ts') && !filePath.endsWith('.html'))) {
+      return;
+    }
+
+    const content = tree.read(filePath, 'utf-8');
+    const index = content?.search(
+      /<et-query-devtools(?![\w-])|\b(QueryDevtoolsComponent|provideQueryClientForDevtools)\b/,
+    );
+
+    if (!content || index === undefined || index < 0) {
+      return;
+    }
+
+    const line = content.slice(0, index).split('\n').length;
+
+    report.addManualReview({
+      title: 'Migrator error: legacy devtools usage is left',
+      summary:
+        'The migration should leave no legacy `<et-query-devtools>`, `QueryDevtoolsComponent` or `provideQueryClientForDevtools` behind, so it missed this one. Report this case as a migrator bug.',
+      action:
+        'Switch it by hand to `provideQueryDevtools()` and `QueryDevtoolsLazyComponent` from `@ethlete/query-devtools/lazy`, then report the shape the migration did not handle.',
+      locations: [{ filePath, line }],
+      source: 'cleanup-migration',
+      dedupeKey: `leftover-legacy-devtools:${filePath}:${line}`,
+    });
+  });
+};
+
 export const migrateEmptyPrepareCalls = (tree: Tree, scope: MigrationScope, report: QueryV3MigrationReport) => {
   const updatedFiles: string[] = [];
   const graph = createModuleGraph(tree);
