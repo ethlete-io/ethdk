@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef, createEnvironmentInjector, EnvironmentInjector, Injector } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { firstValueFrom, NEVER } from 'rxjs';
+import { NEVER } from 'rxjs';
 import { createQueryClient, createQueryCreator, QueryClientRef, QueryRuntimeErrorCode } from '../../http';
 import { EntityStore } from '../entity';
 import { filterSuccess, QueryStateType } from '../query';
@@ -267,7 +267,9 @@ describe('LegacyQueryCreator.prepare', () => {
     it('reads the response back through the store', async () => {
       const query = TestBed.runInInjectionContext(() => makeEntityCreator({ withGet: true }).prepare({}));
       const names: string[] = [];
-      const subscription = query.state$.pipe(filterSuccess()).subscribe((state) => names.push(state.response.name));
+      const subscription = query.state$
+        .pipe(filterSuccess())
+        .subscribe((state) => names.push(state.response?.name ?? ''));
 
       query.execute();
       httpTesting.expectOne('https://api.example.com/person').flush({ id: 1, name: 'Ada' });
