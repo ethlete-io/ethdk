@@ -254,4 +254,6 @@ all five fifagg apps build on `chore/query-v3-migration`.
 - **20. Devtools pill over app buttons in E2E (fifagg-frontend-3d):** `#et-query-devtools-pill`
   (`query-devtools-pills.ts`) sits on the body at the top z-index, bottom-right, over Save and Submit; hiding
   `et-query-devtools` does not hide it. About 25 E2E tests failed on blocked clicks. Workaround 76e304cb41: the apps
-  load devtools only when `ngDevMode` and not `navigator.webdriver`. Open: grill question for Tom.
+  load devtools only when `ngDevMode` and not `navigator.webdriver`. **Decision (Tom, 2026-11-05, "q3ok"):** the SDK does not show the devtools when
+  `navigator.webdriver` is true; an option on the devtools provider switches them on again. The docs name the
+  behaviour.
