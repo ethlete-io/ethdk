@@ -395,7 +395,7 @@ export const component = {
     expect(result).not.toContain('QueryDevtoolsComponent as Devtools, provideQueryClientForDevtools');
   });
 
-  it('does not import AnyLegacyQuery twice after renaming AnyV2Query', async () => {
+  it('keeps AnyV2Query where the file already names AnyLegacyQuery', async () => {
     tree.write(
       'types.ts',
       `
@@ -409,8 +409,8 @@ export type Both = AnyLegacyQuery | AnyV2Query;
 
     const result = readFile('types.ts');
 
-    expect(result.match(/AnyLegacyQuery/g)).toHaveLength(3);
-    expect(result).toContain("import type { AnyLegacyQuery } from '@ethlete/query';");
+    expect(result).toContain("import type { AnyLegacyQuery, AnyV2Query } from '@ethlete/query';");
+    expect(result).toContain('AnyLegacyQuery | AnyV2Query');
   });
 
   it('keeps the type-only @ethlete/query import when dropping the devtools names', async () => {

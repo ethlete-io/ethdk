@@ -380,9 +380,22 @@ const replaceAnyQueryInFile = (content: string) => {
   const sourceFile = createSourceFile(content);
   const replacements: Array<{ start: number; end: number; replacement: string }> = [];
 
+  const names = new Set<string>();
+
+  const collect = (node: ts.Node) => {
+    if (ts.isIdentifier(node)) names.add(node.text);
+
+    ts.forEachChild(node, collect);
+  };
+
+  collect(sourceFile);
+
+  const renamesQuery = !names.has('AnyLegacyQuery');
+  const renamesCreator = !names.has('AnyLegacyQueryCreator');
+
   const visit = (node: ts.Node) => {
     if (ts.isIdentifier(node)) {
-      if (node.text === 'AnyV2Query') {
+      if (renamesQuery && node.text === 'AnyV2Query') {
         replacements.push({
           start: node.getStart(sourceFile),
           end: node.getEnd(),
@@ -390,7 +403,7 @@ const replaceAnyQueryInFile = (content: string) => {
         });
       }
 
-      if (node.text === 'AnyV2QueryCreator') {
+      if (renamesCreator && node.text === 'AnyV2QueryCreator') {
         replacements.push({
           start: node.getStart(sourceFile),
           end: node.getEnd(),
@@ -412,31 +425,7 @@ const replaceAnyQueryInFile = (content: string) => {
     result = result.slice(0, start) + replacement + result.slice(end);
   });
 
-  return dedupeNamedImports(result);
-};
-
-const dedupeNamedImports = (content: string) => {
-  const sourceFile = createSourceFile(content);
-  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
-
-  for (const node of sourceFile.statements) {
-    if (!ts.isImportDeclaration(node)) continue;
-
-    const texts = namedImportElements(node).map((element) => element.getText(sourceFile));
-    const unique = [...new Set(texts)];
-
-    if (unique.length === texts.length) continue;
-
-    replacements.push({
-      start: node.getStart(sourceFile),
-      end: node.getEnd(),
-      replacement: printImportDeclaration(node, sourceFile, unique),
-    });
-  }
-
-  return replacements
-    .sort((left, right) => right.start - left.start)
-    .reduce((result, { start, end, replacement }) => result.slice(0, start) + replacement + result.slice(end), content);
+  return result;
 };
 
 type PrepareReceiverKind = 'query' | 'foreign' | 'unknown';

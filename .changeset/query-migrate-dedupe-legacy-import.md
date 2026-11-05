@@ -2,4 +2,4 @@
 '@ethlete/query': patch
 ---
 
-The `migrate-to-query-v3` generator no longer imports `AnyLegacyQuery` twice when a file imported both `AnyLegacyQuery` and `AnyV2Query`.
+The `migrate-to-query-v3` generator keeps `AnyV2Query` in a file that already names `AnyLegacyQuery`, so a union of both no longer collapses into one type with a duplicate import.
