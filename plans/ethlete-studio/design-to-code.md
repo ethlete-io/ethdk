@@ -3402,6 +3402,13 @@ and build only. Why no tool caught it: the pre-push "Checks" scripts leave out `
 `navigator.webdriver` turns it on (`showInAutomation`) in the repo's own e2e hosts in the same commit, and the
 pre-push hook runs the devtools e2e cases when `libs/query-devtools` changes.
 
+473\. The CI step "Slow design rules against the pull request base" (`ci.yml:111-113`, `design check --product studio
+--slow --base "$NX_BASE"`) ran 11m 32s and was still running; it blocks every `next` run, also SDK-only pushes, and a
+release waits for it. Tom: "das ist keine lösung für die ci. das ist viel zu langsam". Why no tool caught it: no step
+has a time budget, and the job has no path filter, so a query-only push pays the full Studio compare. Tool fix: open
+grill question (path filter plus a separate non-blocking workflow, or sharding), and a time budget per CI step that
+fails loudly when crossed.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
