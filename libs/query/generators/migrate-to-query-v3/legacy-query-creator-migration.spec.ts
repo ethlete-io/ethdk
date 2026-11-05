@@ -542,4 +542,81 @@ export const saveUser = apiClient.gqlMutate({ query: SAVE_USER });
     expect(section('saveUser').split('###')[0]).toContain('createGqlMutationViaPost');
     expect(report).not.toContain('Reconfigure dropped query client option "request.gql"');
   });
+
+  it('renames a creator passed as an object property value, a shorthand and an argument', async () => {
+    tree.write(
+      'client.ts',
+      `
+import { V2QueryClient } from '@ethlete/query';
+
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+    );
+
+    tree.write(
+      'queries.ts',
+      `
+import { apiClient } from './client';
+
+export const getMatches = apiClient.get({ route: '/matches' });
+      `.trim(),
+    );
+
+    tree.write(
+      'rail.ts',
+      `
+import { getMatches } from './queries';
+
+export const config = createInfinityQueryConfig({ queryCreator: getMatches, size: 3 });
+export const shorthand = { getMatches };
+export const list = [getMatches];
+export const call = register(getMatches);
+export const prepared = getMatches.prepare({});
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const rail = readFile('rail.ts');
+
+    expect(rail).toContain('queryCreator: legacyGetMatches');
+    expect(rail).toContain('getMatches: legacyGetMatches');
+    expect(rail).toContain('[legacyGetMatches]');
+    expect(rail).toContain('register(legacyGetMatches)');
+    expect(rail).toContain('legacyGetMatches.prepare(');
+    expect(rail).not.toMatch(/[^y]GetMatches\b|\bgetMatches\b[^:]/);
+  });
+
+  it('renames a creator value reference reached through a directory barrel', async () => {
+    tree.write(
+      'app/queries/client.ts',
+      `
+import { V2QueryClient } from '@ethlete/query';
+
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+    );
+    tree.write(
+      'app/queries/match.queries.ts',
+      `import { apiClient } from './client';\n\nexport const getMatches = apiClient.get({ route: '/matches' });`,
+    );
+    tree.write('app/queries/index.ts', `export * from './client';\nexport * from './match.queries';`);
+    tree.write(
+      'app/components/rail/rail.ts',
+      `
+import { getMatches } from '../../queries';
+
+export const config = createInfinityQueryConfig({ queryCreator: getMatches });
+export const prepared = getMatches.prepare({});
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const rail = readFile('app/components/rail/rail.ts');
+
+    expect(rail).toContain("import { legacyGetMatches } from '../../queries';");
+    expect(rail).toContain('queryCreator: legacyGetMatches');
+    expect(rail).toContain('legacyGetMatches.prepare(');
+  });
 });
