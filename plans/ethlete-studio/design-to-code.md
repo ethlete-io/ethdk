@@ -3465,6 +3465,11 @@ Why no tool caught it: no spec runs `sketch ready` to the end for an auto-mergin
 the message. Tool fix: find the step that reads `sketch.json` after the sketch folder is removed; a spec for the
 auto-merge path with exit code 0 and the "merged automatically" line. Also: an automatic merge commits its own
 result, so it never leaves a dirty tree that blocks the next sketch.
+Cause (corrected by the builder, faa6b4f70): two `sketch ready` runs on the same sketch at the same time; one merged, the
+other hit ENOENT. Not a merge-path bug. Fixed: a per-sketch lock (the second run fails with a clear message) and a
+check that `sketch.json` still exists; the auto-merge commits its own result when the product folder is clean apart from
+the sketch's own folder. Finding 475(2) is built: a refused or skipped auto-merge writes `mergeHold {reason, at}` on the
+sketch.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
