@@ -1,7 +1,10 @@
 import { execFileSync } from 'child_process';
 import { ResolvedProduct } from './resolve-product';
 
-const DECISION_FILES = ['go.json', 'accepted.json', 'merged.json', 'pictures.json', ':(glob)sketches/*/sketch.json'];
+/** The decision files at the root of a product folder; none of them is an input of a drawing. */
+export const ROOT_DECISION_FILES = ['go.json', 'accepted.json', 'merged.json', 'pictures.json'];
+
+const DECISION_FILES = [...ROOT_DECISION_FILES, ':(glob)sketches/*/sketch.json'];
 
 const gitLines = (cwd: string, args: string[]) =>
   execFileSync('git', [...args, '--', ...DECISION_FILES], {

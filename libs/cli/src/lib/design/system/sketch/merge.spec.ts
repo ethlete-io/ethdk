@@ -370,7 +370,9 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     const ready = readySketch(target);
     const found = { ...ready, sketch: picked(ready.sketch) };
     const before = readFileSync(join(heroOf(target), 'hero.ts'), 'utf8');
+    const cssBefore = readFileSync(join(heroOf(target), 'hero.css'), 'utf8');
 
+    writeFileSync(join(found.sketch.dir, 'b/elements/hero/hero.css'), '.acme-hero { color: #fff; }');
     writeFileSync(join(target, DESIGN_DIR, 'acme/pages/home/home.css'), '.acme-home { margin: 0; }');
 
     const reason = merge(target, found);
@@ -378,7 +380,28 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     expect(reason).toContain('uncommitted edits outside elements/hero');
     expect(reason).toContain(join(DESIGN_DIR, 'acme/pages/home/home.css'));
     expect(readFileSync(join(heroOf(target), 'hero.ts'), 'utf8')).toBe(before);
+    expect(readFileSync(join(heroOf(target), 'hero.css'), 'utf8')).toBe(cssBefore);
     expect(existsSync(found.sketch.dir)).toBe(true);
+  }, 120_000);
+
+  it('merges while only a decision file of the product is uncommitted', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const target = acme();
+    const git = (...args: string[]) =>
+      spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: target, encoding: 'utf8' });
+
+    git('init');
+    git('add', '.');
+    git('commit', '-m', 'base');
+
+    const ready = readySketch(target);
+    const found = { ...ready, sketch: picked(ready.sketch) };
+
+    writeFileSync(join(target, DESIGN_DIR, 'acme/go.json'), '{}\n');
+
+    expect(merge(target, found)).toEqual(['elements/hero']);
   }, 120_000);
 
   it('names the file outside the sketch when the check fails on it', () => {

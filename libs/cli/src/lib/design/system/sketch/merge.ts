@@ -16,6 +16,7 @@ import { carryShared, productSharedChangesOf, sharedPlanOf } from './merge-share
 import { forgetMerged, recordMerged, rerecordChangedMerged, unchangedMergedOf } from './merged-parts';
 import { madeByOf, noteOf, withMadeBy, withNote } from './part-definition';
 import { staleEmbeddedOf } from './stale-base';
+import { ROOT_DECISION_FILES } from '../uncommitted-decisions';
 import { authorsOf, clearSketchReport, rejectedProblemOf, Sketch, sketchesDirOf, variantDirOf } from './sketch';
 
 const swap = (entries: { from: string | null; to: string }[]) => {
@@ -268,6 +269,19 @@ const mergeOrReason = (options: {
       : null;
   const known = [...ruleLinesOf(target, product), ...(baseProduct ? ruleLinesOf(target, baseProduct) : [])];
 
+  const dirty = dirtyOutsideOf({
+    target,
+    productDir: product.dir,
+    ignored: [
+      sketchesDirOf(product.dir),
+      ...ROOT_DECISION_FILES.map((file) => resolve(product.dir, file)),
+      ...mergedKeys.map((key) => resolve(rootOf(key), key)),
+    ],
+  });
+
+  if (dirty.length > 0)
+    return `${product.name} has uncommitted edits outside ${sketch.target}, so a failed check could not tell them from this merge - commit or revert them first: ${dirty.join(', ')}`;
+
   const swapped = swap([
     ...notedTargets.flatMap(({ inherited, targetDir }) =>
       inherited ? [{ from: dirname(inherited.file), to: targetDir }] : [],
@@ -281,15 +295,6 @@ const mergeOrReason = (options: {
     })),
     ...sharedChanges,
   ]);
-
-  const dirty = dirtyOutsideOf({
-    target,
-    productDir: product.dir,
-    ignored: [sketchesDirOf(product.dir), ...mergedKeys.map((key) => resolve(rootOf(key), key))],
-  });
-
-  if (dirty.length > 0)
-    return `${product.name} has uncommitted edits outside ${sketch.target}, so a failed check could not tell them from this merge - commit or revert them first: ${dirty.join(', ')}`;
 
   for (const { noteFile, noted } of notedTargets) writeFileSync(noteFile, noted);
 
