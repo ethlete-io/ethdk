@@ -3459,6 +3459,14 @@ budget on a fixed fixture.
 creates a sketch for a part with a `.css` file and runs `check`. Tool fix: `sketch new` copies the part so that it
 passes `check`, or says in German why it cannot; spec with a part that has a `.css` file.
 
+480\. Live check of slice B (builder, db25edee8, 2026-11-06): (1) at "Fit" in the wide layout the fold column is off-screen
+(x=1432), `matrixFit` ignores it; (2) the fold label wraps to 3 lines with a lone "c"; (3) `compare` gives DIFF 157142px
+in the `unchanged` state and flags 58 missed actions (a new aria-label): the app drifted from the merged design and
+nothing ran it. Why no tool caught it: no spec checks the fit width with a fold column, and `check --rules` does not
+look at an implemented app file that changed after its design merged. Tool fix: `check --rules` flags a changed
+implemented app file when `compare` would fail (cheap path, builder decides how); a spec for the fit width with a fold
+column and for a fold label at the narrowest width.
+
 478\. After an automatic merge, `sketch ready` printed "ENOENT ... foundations-colors.foundations-check-fixes/sketch.json"
 and never printed "merged automatically", although the merge was complete (commit 479bdace3, builder, 2026-11-05).
 Why no tool caught it: no spec runs `sketch ready` to the end for an auto-merging sketch and asserts a clean exit and
