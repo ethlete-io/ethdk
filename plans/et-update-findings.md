@@ -139,6 +139,10 @@ Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61). Full list wi
 - **V2 client loses its legacy panel (f29e3f679, open question to Tom):** the codemod rewrites every legacy
   `QueryDevtoolsComponent` and `<et-query-devtools>` to the lazy shell. A client that stays on `V2QueryClient` after
   the migration loses its panel; the docs tell the user to mount it by hand.
+- **Decision (Tom, 2026-11-05): keep it as built.** "es sollte nach der migration kein v2 mehr geben sonst hat die
+  migration fehler gemacht". The codemod always rewrites to the lazy panel. A `V2QueryClient` left after the migration
+  is a migrator defect, not a supported state: the docs stop describing it as one, and the migration report flags a
+  leftover `V2QueryClient` as a migrator error to report.
 
 ## 10. More migrator findings from fifagg, items 10-13 (fifagg-frontend-c3, 2026-11-05) - open
 
