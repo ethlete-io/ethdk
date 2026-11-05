@@ -95,3 +95,26 @@ Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61, 462 files, ex
 - **Fix direction:** reproduce each error class on a fixture taken from the fifagg shape (generic names), then: emit
   a task per old auth call site, define or import every name the scaffold uses, migrate or task `gqlQuery`, dedupe
   imports. Goal: the codemod leaves no TS error it does not name in a task.
+
+## 8. More `migrate-to-query-v3` gaps from fifagg - open (B385)
+
+Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61). Full list with file:line:
+`fifagg-frontend/.claude/handoffs/query-v3/findings.md` (9 items; 1, 5 and 8 repeat section 7).
+
+- **Token mapping:** the scaffold's `extractTokens` returns `{ token, refreshToken }`; it must map the v2
+  `responseAdapter` to `{ accessToken, refreshToken }`. `buildArgs` reads `token.refreshToken` on a string.
+- **Remember-me:** the scaffold omits `defaultRememberMe: true`. v2 wrote a 30-day cookie by default, v3 a session
+  cookie. Set it when v2 had `cookieEnabled` unset or true.
+- **Shared cookie across sibling hosts:** the generator maps v2 `cookieDomain` to `cookie.domain` silently, but v3
+  obfuscates the cookie with a per-origin localStorage key, so a sibling host cannot read it. At least a task that
+  names the behaviour change; whether v3 should support it is a product question for Tom.
+- **Auth interceptors:** an `HttpInterceptor` that sets `Authorization` now also sees query requests and sends the
+  bearer twice. Emit a task per such interceptor.
+- **Client `retryFn`:** the v2 `RequestRetryFn` is copied unchanged into `createQueryClient` (type error). Port it or
+  emit a task.
+- **GraphQL:** `client.gqlQuery` calls (9) are not migrated, and v2 `request.gql.transferVia: 'GET'` is dropped
+  silently; pick `createGqlQueryViaGet` from it.
+- **Contentful client:** the generator adds `withEthleteApiErrors()` to a non-Ethlete GraphQL client (Contentful).
+- **Docs (`apps/docs/query/migrating-from-v2.md`):** name two behaviour changes: proactive refresh retries up to 8 times
+  with backoff and ends the session only on a definite failure (v2 dropped tokens and cookie on any failure); secure
+  queries wait for a token instead of going out without one (check what the guide already says).
