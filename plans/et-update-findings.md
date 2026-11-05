@@ -318,10 +318,17 @@ all five fifagg apps build on `chore/query-v3-migration`.
   throws with the interop client: by design under Tom's "no V2 after the migration" decision (section 9). Open grill
   question for Tom (collected while afk): does the interop client get v2's focus refetch and blur polling pause (4, 5,
   6), and v2's synchronous state order (1, 2)? Recommendation: yes for both, so a migrated app keeps its behaviour.
+  **Decision (Tom, 2026-11-05):** no parity for 4, 5, 6 - "neuladen und polling pause wurde in jedem projekt
+  deaktiviert". 1, 2 ("q2bok"): keep the interop behaviour; the two specs pin it and the migration guide names it in
+  one sentence.
 - **Devtools mount (ff item 000):** part 1 built fc98d3dae (`navigator.webdriver` hides panel, lazy shell and pills;
   provider option `showInAutomation`), per Tom's item 20 decision. Part 2 open: a new entry point with a dynamic
   import plus a codemod for `<et-query-devtools-lazy>`; ff proposes the name `@ethlete/query-devtools/mount`. Open
   grill question for Tom (collected while afk): the entry point name.
+  **Decision (Tom, 2026-11-05, "q1ok"):** `provideQueryDevtools()` mounts the panel itself with a dynamic import; the
+  migrator removes `<et-query-devtools-lazy>` from templates. Tom: "ist devtools nicht schon ein eigenes package?" -
+  the entry-point shape (a fourth entry or a mount export from `/lazy`) is ff's call by the bundle goldens; `/toggle`
+  never imports `/lazy`.
 - **E2E proof (fifagg-frontend-3d, MR !1978):** 765 passed, 9 failed (7 WebKit environment, 2 season-wrap-up 500s
   from old API data). Items 15 to 21 are proven with the app workarounds (reportErrors helper, store write in get,
   devtools off under webdriver, destroyOnResponse removed at 36 sites).
