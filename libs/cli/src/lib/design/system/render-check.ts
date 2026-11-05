@@ -330,9 +330,30 @@ ${NESTED_SCROLL_STATEMENTS}
         top: style.overflowY === 'visible' ? -Infinity : top,
         bottom: style.overflowY === 'visible' ? Infinity : top + at.clientHeight,
       };
-      return { name: pathOf(at), box, style };
+      return { name: pathOf(at), box, style, element: at };
     }
     return frameBox();
+  };
+  const movedBetween = (from, clipper) => {
+    for (let at = from; at && at !== clipper; at = at.parentElement) {
+      const style = getComputedStyle(at);
+      if (style.transform !== 'none' || (style.translate && style.translate !== 'none')) return true;
+    }
+    return false;
+  };
+  const ringClipOf = (element) => {
+    const clip = clipOf(element.parentElement);
+    if (!clip.element) return clip;
+    const moved = movedBetween(element, clip.element);
+    const panX = moved || clip.element.scrollWidth > clip.element.clientWidth;
+    const panY = moved || clip.element.scrollHeight > clip.element.clientHeight;
+    const box = {
+      left: panX ? -Infinity : clip.box.left,
+      right: panX ? Infinity : clip.box.right,
+      top: panY ? -Infinity : clip.box.top,
+      bottom: panY ? Infinity : clip.box.bottom,
+    };
+    return { ...clip, box };
   };
   const pastOf = (rect, reach, box) =>
     Math.max(
@@ -363,7 +384,7 @@ ${NESTED_SCROLL_STATEMENTS}
     if (rect.width === 0 && rect.height === 0) continue;
     const outline = style.outlineStyle !== 'none' && !invisible(style.outlineColor) ? Math.max(0, px(style.outlineWidth) + px(style.outlineOffset)) : 0;
     const shadow = shadowReachOf(style.boxShadow);
-    const clip = clipOf(element.parentElement);
+    const clip = ringClipOf(element);
     const outlinePast = outline > 0 ? pastOf(rect, { left: outline, right: outline, top: outline, bottom: outline }, clip.box) : 0;
     const shadowPast = pastOf(rect, shadow, clip.box);
     if (outlinePast > 1) report('CLIPPED', element, 'outline ' + Math.round(outlinePast) + 'px past ' + clip.name);

@@ -560,6 +560,38 @@ describe('renderIssuesOf', () => {
     ]);
   }, 120_000);
 
+  it('does not flag a ring cut at the edge of a pan or scroll container, but one cut by a box its content fits', async (context) => {
+    const ring = '<figure style="margin: 0; width: 100px; height: 40px; box-shadow: 0 0 0 2px currentColor"></figure>';
+    const target = checkout({
+      'components/ring-panned': {
+        body: `<div style="width: 300px; height: 80px; overflow: hidden"><div style="transform: translate(0px, 0px)">${ring}</div></div>`,
+      },
+      'components/ring-scrolled': {
+        body: `<div style="width: 300px; height: 80px; overflow: hidden"><div style="height: 200px; padding: 0 8px">${ring}</div></div>`,
+      },
+      'components/ring-fits': {
+        body: `<div style="width: 300px; height: 80px; overflow: hidden">${ring}</div>`,
+      },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(
+      rendered.issues
+        .filter((issue) => issue.rule === 'CLIPPED')
+        .map((issue) => `${issue.part}: ${issue.path} - ${issue.detail.split(';')[0]}`),
+    ).toEqual([
+      'components/ring-fits: div[data-et-part=components/ring-fits] > figure - box-shadow 2px past div[data-et-part=components/ring-fits]',
+      'components/ring-scrolled: div[data-et-part=components/ring-scrolled] - content 300x200 in 300x80',
+    ]);
+  }, 120_000);
+
   it('flags an SDK component whose styles rode in a slot the picture empties', async (context) => {
     const hidden =
       '.et-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }';
