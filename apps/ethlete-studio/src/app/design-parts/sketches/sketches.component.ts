@@ -124,6 +124,7 @@ type FitDom = {
   labelRows: HTMLElement[];
   gutters: HTMLElement[];
   matrix: HTMLElement | null;
+  fold: HTMLElement | null;
 };
 
 type Pan = { x: number; y: number };
@@ -203,6 +204,8 @@ export class SketchesComponent {
   public cameraChange = output<Camera | null>();
   private list = viewChild.required('list', { read: ElementRef<HTMLElement> });
   private matrix = viewChild('matrix', { read: ElementRef<HTMLElement> });
+
+  private fold = viewChild('fold', { read: ElementRef<HTMLElement> });
   private stages = viewChildren('stage', { read: ElementRef<HTMLElement> });
   private sections = viewChildren('section', { read: ElementRef<HTMLElement> });
   private frames = viewChildren('frame', { read: ElementRef<HTMLElement> });
@@ -360,6 +363,7 @@ export class SketchesComponent {
         labelRows: elementsOf(this.labelRows()),
         gutters: elementsOf(this.gutters()),
         matrix: this.matrix()?.nativeElement ?? null,
+        fold: this.fold()?.nativeElement ?? null,
       };
 
       untracked(() => {
@@ -445,12 +449,16 @@ export class SketchesComponent {
     return scale;
   }
 
-  private matrixFit(matrix: HTMLElement, { columns, list, sections }: FitDom) {
+  private matrixFit(matrix: HTMLElement, { columns, list, sections, fold }: FitDom) {
     const first = sections[0];
     const lead = first ? first.getBoundingClientRect().left - matrix.getBoundingClientRect().left : 0;
     const shown = Math.max(1, Math.min(FIT_COLUMNS, columns));
+    const foldWidth = fold ? fold.offsetWidth + COLUMN_GAP : 0;
 
-    return Math.min(1, (list.clientWidth - lead - (shown - 1) * COLUMN_GAP - FIT_PADDING) / (shown * this.widest()));
+    return Math.min(
+      1,
+      (list.clientWidth - lead - foldWidth - (shown - 1) * COLUMN_GAP - FIT_PADDING) / (shown * this.widest()),
+    );
   }
 
   private applyScale(

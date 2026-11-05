@@ -280,6 +280,32 @@ describe('SketchesComponent', () => {
     expect(unsized.querySelector('[data-sk-matrix]')).toBeNull();
   });
 
+  it('keeps a variant name in the fold label on one line so no letter is left alone', () => {
+    const label = LABELS.sameVariants(['a', 'b']);
+
+    expect(label.split(/ /).every((part) => part.length > 1)).toBe(true);
+  });
+
+  it('keeps the fold column inside the viewport when fitting the matrix', async () => {
+    const wide = [...ROWS, { ...ROWS[1]!, key: 'y', shots: ROWS[0]!.shots }].map((row) => ({ ...row, width: 4950 }));
+    const columnsAt = async (foldWidth: number) => {
+      vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (this: HTMLElement) {
+        return this.hasAttribute('data-sk-same') ? foldWidth : 0;
+      });
+      const root: HTMLElement = (await render({ rows: wide, camera: 'fit' })).nativeElement;
+
+      return root.querySelector<HTMLElement>('[data-sk-matrix]')?.style.gridTemplateColumns;
+    };
+    const without = await columnsAt(0);
+    const withFold = await columnsAt(144);
+    const widthOf = (columns: string | undefined) =>
+      parseFloat(columns?.match(/repeat\(\d+, ([\d.]+)px\)/)?.[1] ?? '0');
+
+    expect(widthOf(withFold)).toBeGreaterThan(0);
+    expect(widthOf(withFold)).toBeLessThan(widthOf(without));
+    expect(widthOf(withFold) * 2 + 24 + 144 + 24 + 16).toBeLessThanOrEqual(LIST_WIDTH + 1);
+  });
+
   it('shows a state neither dimmed nor first changed while its compare is pending', async () => {
     const pending = ROWS.map((row) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: null })) }));
     const root: HTMLElement = (await render({ camera: '100', rows: pending })).nativeElement;
@@ -331,7 +357,7 @@ describe('SketchesComponent', () => {
     const root: HTMLElement = fixture.nativeElement;
     const bar = root.querySelector<HTMLButtonElement>('[data-sk-same] button');
 
-    expect(textOf(bar)).toBe(LABELS.sameVariants(['y', 'z']));
+    expect(textOf(bar)).toBe(LABELS.sameVariants(['y', 'z']).replace(/\s/g, ' '));
     expect(root.querySelector('[data-sk-row="y"]')).toBeNull();
     expect(root.querySelector('[data-sk-row="x"]')).not.toBeNull();
 
@@ -362,7 +388,7 @@ describe('SketchesComponent', () => {
     fixture.componentRef.setInput('rows', [...ROWS, same].map(unknown));
     await fixture.whenStable();
 
-    expect(textOf(root.querySelector('[data-sk-same] button'))).toBe(LABELS.sameVariants(['y']));
+    expect(textOf(root.querySelector('[data-sk-same] button'))).toBe(LABELS.sameVariants(['y']).replace(/\s/g, ' '));
     expect(root.querySelector('[data-sk-row="y"]')).toBeNull();
     expect(root.querySelector('[data-sk-row="x"]')).not.toBeNull();
 
