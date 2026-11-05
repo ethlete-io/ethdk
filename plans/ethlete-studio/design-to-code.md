@@ -4688,9 +4688,15 @@ decision files; two specs with variant files that differ from the product fail w
 459\. `sketch new` copies a part without a rewrite of relative imports that leave the part folder, so the copy of
 `agent-logos` fails with an IMPORT error on `../../apps/...`. It holds four sketches (elements-canvas-frames,
 pages-sketches, pages-merge, foundations-colors.foundations-check-fixes), together with two more CLI gaps: SKIP-SCOPE
-does not ignore `[inert]` (CUT-CONTROL does), and CLIPPED fires on a pan viewport. Tool fix (in B388, builder
-default): `sketch new` rewrites those imports; SKIP-SCOPE skips `[inert]`; CLIPPED spares a pan viewport. Why no tool
-caught it: asked the builder.
+does not ignore `[inert]` (CUT-CONTROL does), and CLIPPED fires on a pan viewport. Fixes (builder, each spec fails without it): c649a9d08 SKIP-SCOPE counts only controls outside `[inert]`; 09953108c
+`sketch new` rebases relative imports that leave the part and merge rebases them back; f0d66e7bd CLIPPED does not
+report a ring cut at the edge of a pan or scroll container on its pan axis (a ring cut by a box that fits its content
+still reports, spec `ring-fits`; a container skip was rejected because it hides focus rings). Why no tool caught it:
+the SKIP-SCOPE spec had no inert fixture, and CUT-CONTROL had its own inert exemption with no shared helper, so the
+two rules drifted; the sketch specs used only parts with `@shared` imports and no spec ran new, check and ready on a
+part that imports out of itself; no fixture had a pan container, and the full check never ran to its end in CI
+(finding 449). Tool fixes (builder default): one shared "reachable controls" helper for every render rule; a
+round-trip spec over every import form.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
