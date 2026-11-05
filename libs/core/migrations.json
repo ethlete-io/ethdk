@@ -70,6 +70,7 @@
       "level": "optional",
       "description": "Rewrite surface theme colorTheme and semanticColorThemes into colorThemeVariants.",
       "generator": "@ethlete/core:migrate-color-theme-variants",
+      "requires": ["ts-morph"],
       "docs": "/core/theming"
     }
   ]
