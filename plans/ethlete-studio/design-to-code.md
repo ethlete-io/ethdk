@@ -3466,6 +3466,12 @@ nothing ran it. Why no tool caught it: no spec checks the fit width with a fold 
 look at an implemented app file that changed after its design merged. Tool fix: `check --rules` flags a changed
 implemented app file when `compare` would fail (cheap path, builder decides how); a spec for the fit width with a fold
 column and for a fold label at the narrowest width.
+Built by the builder: 70488a4d9 (fit width counts the fold column, non-breaking space in the fold label, the extra
+aria-label is dropped from the app, the design stays as merged), 5273e92bf (`design check --rules --base <range>` fails
+with IMPLEMENTATION-UNCOMPARED for an implemented app file that changed after its recorded hash; the pre-push gate passes
+base..head; bite proof done). Open: `pages/sketches` cannot be cleared (`task --verify`: "no check record at its current
+design"; `design check` leaves 9 DROPPED-PROP findings, so no record is written), and the next push is flagged until it
+is. Risk of the new check: a shared file such as `studio-labels.ts` flags 7 parts.
 
 478\. After an automatic merge, `sketch ready` printed "ENOENT ... foundations-colors.foundations-check-fixes/sketch.json"
 and never printed "merged automatically", although the merge was complete (commit 479bdace3, builder, 2026-11-05).
