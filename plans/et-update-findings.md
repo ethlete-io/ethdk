@@ -241,7 +241,7 @@ all five fifagg apps build on `chore/query-v3-migration`.
   upload-handler) get a manual-review task each, by design: a function with no `inject()` call can run outside an
   injection context, so the migrator cannot add one safely. Remaining work (ff): the task text proposes the concrete
   fix, `const injector = inject(Injector)` at the top of the factory and `{ injector }` at the call. **Closed in 0289807a8 (ff):** the task text now names this fix, with the caller injector, `queryComputed()` and `provideLegacyPrepareFallback()` as the other ways; the spec checks the text.
-- **18. Legacy success before the store write (fifagg-frontend-3d, not yet proven in E2E):**
+- **18. Legacy success before the store write (fifagg-frontend-3d, built a05cd7282, unpushed):**
   `legacy/interop/legacy-query.ts:230-258` announces success before the entity store is written, so a store read in
   the success callback returns null and `.onSuccess` gets no response. fifagg: broadcast create
   (`create-broadcast-overlay.component.ts:236`, dialog stays open), admin "New Collection", probably the
@@ -261,7 +261,7 @@ all five fifagg apps build on `chore/query-v3-migration`.
   load devtools only when `ngDevMode` and not `navigator.webdriver`. **Decision (Tom, 2026-11-05, "q3ok"):** the SDK does not show the devtools when
   `navigator.webdriver` is true; an option on the devtools provider switches them on again. The docs name the
   behaviour.
-- **21. Migrator adds `destroyOnResponse` wrongly (fifagg-frontend-3d, proven in E2E):**
+- **21. Migrator adds `destroyOnResponse` wrongly (fifagg-frontend-3d, built 1bcd056ba + c034f6726, unpushed):**
   `legacy-prepare-migration.ts:1212-1223` `shouldAddDestroyOnResponse` checks only for polling, so a query kept in a
   signal, executed again, or bound to a template still gets `config: { destroyOnResponse: true }`; after the first
   response every later `execute()` does nothing. fifagg: `competition-data-participants.service.ts:107`
