@@ -6,7 +6,12 @@
     "decidedBy": "user",
     "at": "2026-11-03T15:47:12.853Z"
   },
-  "components/comment-pin": "60a213cdfc41a3e3",
+  "components/comment-pin": {
+    "hash": "615fc830d7b00fa4",
+    "variant": "a",
+    "decidedBy": "auto: no visible change",
+    "at": "2026-11-05T13:32:20.803Z"
+  },
   "components/disclosure": "92834053fa3147f5",
   "components/shell-collapse": "fd8adc8a7443f113",
   "components/shell-project-switch": "9306921f2b0a9db8",
