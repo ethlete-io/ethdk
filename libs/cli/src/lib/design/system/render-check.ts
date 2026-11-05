@@ -524,6 +524,29 @@ const firstOfEach = (issues: RenderIssue[]) => {
   });
 };
 
+export const uniqueIssuesOf = (issues: RenderIssue[]) => {
+  const seen = new Set<string>();
+
+  return issues.filter((issue) => {
+    const key = JSON.stringify([
+      issue.product,
+      issue.part,
+      issue.sketch,
+      issue.state,
+      issue.size,
+      issue.rule,
+      issue.path,
+      issue.detail,
+    ]);
+
+    if (seen.has(key)) return false;
+
+    seen.add(key);
+
+    return true;
+  });
+};
+
 const widthsOf = (value: unknown) =>
   Array.isArray(value)
     ? value.filter((width): width is number => typeof width === 'number' && Number.isInteger(width) && width > 0)
@@ -947,7 +970,7 @@ export const renderIssuesOf = async (options: {
           options.onProgress?.(`[${done}/${total}] ${part} ${Math.round(ms / 1000)}s`),
       }),
     );
-    const inspected = all.filter((issue) => issue.rule !== BUSY_MARK);
+    const inspected = uniqueIssuesOf(all.filter((issue) => issue.rule !== BUSY_MARK));
     const isInput = (issue: RenderIssue) => issue.rule === 'CONTROL-PART-INPUT';
     const sketched = inspected.filter((issue) => issue.sketch && !WARNING_RULES.has(issue.rule));
     const compared = [...new Set(sketched.map((issue) => JSON.stringify([issue.product, issue.part])))];

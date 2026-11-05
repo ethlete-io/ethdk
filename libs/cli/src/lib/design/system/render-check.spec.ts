@@ -6,7 +6,7 @@ import { DESIGN_DIR, readConfig } from '../paths';
 import { checkSystem } from './check-system';
 import { completenessOf } from './complete';
 import { resolveProduct } from './resolve-product';
-import { groupedIssueLinesOf, renderIssueLineOf, renderIssuesOf } from './render-check';
+import { groupedIssueLinesOf, renderIssueLineOf, renderIssuesOf, uniqueIssuesOf } from './render-check';
 
 const skipWithoutBrowser = (context: { skip: (note?: string) => never }, reason: string) => {
   if (process.env['CI']) throw new Error(`No browser in CI: ${reason}`);
@@ -957,5 +957,26 @@ export default definePart({
       'elements/shell a, b: CONTRAST studio pages/inbox open, empty at desktop: nav.rail - border 1.63:1 in the light and dark scheme, needs 3.00:1 (4 times)',
       'elements/shell b: CONTRAST studio pages/inbox open at desktop: nav.rail - border 2.10:1 in the light scheme, needs 3.00:1',
     ]);
+  });
+});
+
+describe('uniqueIssuesOf', () => {
+  const issue = {
+    rule: 'LOST-SURFACE',
+    product: 'app',
+    part: 'card',
+    state: 'default',
+    size: 'md',
+    path: 'div > span',
+    detail: 'surface lost',
+    sketch: null,
+  };
+
+  it('keeps one issue found in both colour schemes', () => {
+    expect(uniqueIssuesOf([issue, { ...issue }])).toEqual([issue]);
+  });
+
+  it('keeps issues whose detail differs', () => {
+    expect(uniqueIssuesOf([issue, { ...issue, detail: 'other colour' }])).toHaveLength(2);
   });
 });
