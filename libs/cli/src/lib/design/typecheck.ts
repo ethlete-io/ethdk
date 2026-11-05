@@ -46,7 +46,7 @@ export const processFailureOf = (error: unknown) => {
 export type TypecheckResult =
   { kind: 'ok' } | { kind: 'unavailable'; message: string } | { kind: 'failed'; output: string };
 
-/** Runs `tsc --noEmit -p <tsconfig>` from the checkout. */
+/** Runs `tsc --noEmit --pretty false -p <tsconfig>` from the checkout. */
 export const typecheck = (options: { target: string; tsconfig: string }): TypecheckResult => {
   const { target, tsconfig } = options;
   /**
@@ -63,8 +63,8 @@ export const typecheck = (options: { target: string; tsconfig: string }): Typech
     };
 
   const command = native
-    ? { file: 'npx', args: ['-y', native, '--noEmit', '-p', tsconfig] }
-    : { file: process.execPath, args: [tsc as string, '--noEmit', '-p', tsconfig] };
+    ? { file: 'npx', args: ['-y', native, '--noEmit', '--pretty', 'false', '-p', tsconfig] }
+    : { file: process.execPath, args: [tsc as string, '--noEmit', '--pretty', 'false', '-p', tsconfig] };
 
   try {
     execFileSync(command.file, command.args, { cwd: target, encoding: 'utf8', stdio: 'pipe' });

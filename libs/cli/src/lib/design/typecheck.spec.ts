@@ -55,6 +55,27 @@ describe('typecheck', { timeout: 60_000 }, () => {
     expect(result.kind === 'failed' && result.output).toContain('TS2322');
   });
 
+  it('prints a diagnostic as plain file(line,col) text even when colour is forced', () => {
+    const target = checkout();
+    const previousForce = process.env['FORCE_COLOR'];
+
+    writeFileSync(join(target, 'broken.ts'), 'export const value: number = "text";\n');
+    writeFileSync(
+      join(target, 'tsconfig.json'),
+      JSON.stringify({ compilerOptions: { strict: true, noEmit: true }, files: ['broken.ts'] }),
+    );
+    process.env['FORCE_COLOR'] = '1';
+
+    try {
+      const result = typecheck({ target, tsconfig: 'tsconfig.json' });
+
+      expect(result.kind === 'failed' && result.output).toMatch(/^broken\.ts\(1,14\): error TS2322/m);
+    } finally {
+      if (previousForce === undefined) delete process.env['FORCE_COLOR'];
+      else process.env['FORCE_COLOR'] = previousForce;
+    }
+  });
+
   it('reports a checker that printed nothing as not run, with the process error', () => {
     const target = checkout();
 
@@ -64,7 +85,7 @@ describe('typecheck', { timeout: 60_000 }, () => {
     expect(typecheck({ target, tsconfig: 'tsconfig.json' })).toEqual({
       kind: 'unavailable',
       message:
-        'TYPE CHECKER DID NOT RUN - npx -y @typescript/native-preview --noEmit -p tsconfig.json printed nothing (EPERM - spawnSync npx EPERM).',
+        'TYPE CHECKER DID NOT RUN - npx -y @typescript/native-preview --noEmit --pretty false -p tsconfig.json printed nothing (EPERM - spawnSync npx EPERM).',
     });
   });
 });
