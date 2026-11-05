@@ -60,7 +60,6 @@ const notice = (props: Props) =>
         color: 'brand',
         size: 'xs',
         icon: icon('up-down', { size: 12 }),
-        class: 'rounded-full',
       }),
       'emit:restart',
     ),
