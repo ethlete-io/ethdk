@@ -7,9 +7,15 @@ import {
   def,
   InfinityQueryDirective,
   InfinityQueryTriggerDirective,
-  V2QueryClient,
 } from '../index';
-import { Scenario, useScenario } from './harness';
+import {
+  createLegacyClient,
+  LEGACY_CLIENT_KINDS,
+  LegacyClient,
+  LegacyClientKind,
+  Scenario,
+  useScenario,
+} from './harness';
 
 const BASE_URL = 'https://api.test';
 
@@ -109,38 +115,27 @@ class FakeIntersectionObserver {
 const slotText = (fixture: { nativeElement: HTMLElement }, slot: string) =>
   (fixture.nativeElement.querySelector(`[data-slot="${slot}"]`)?.textContent ?? '').trim();
 
-const withLegacyClient = (s: Scenario, body: (client: V2QueryClient) => void) => {
-  const owner = s.consumer();
-  const client = owner.run(() => new V2QueryClient({ baseRoute: BASE_URL }));
+const withLegacyClient = (s: Scenario, kind: LegacyClientKind, body: (client: LegacyClient) => void) => {
+  const client = createLegacyClient(s, kind, { baseUrl: BASE_URL });
 
   try {
     body(client);
   } finally {
-    client._store.forEach((query, key) => {
-      query.stopPolling();
-      query.abort();
-      client._store.remove(key);
-    });
-
-    client.clearAuthProvider();
-    owner.destroy();
+    client.destroy();
   }
 };
 
-const pagedUsers = (client: V2QueryClient) =>
+const pagedUsers = (client: LegacyClient) =>
   createInfinityQueryConfig({
-    queryCreator: client.get({
-      route: '/users',
-      types: {
-        args: def<{ queryParams: { page: number; limit: number } }>(),
-        response: def<{ items: { id: string }[]; totalPages: number }>(),
-      },
-    }),
+    queryCreator: client.get<{ queryParams: { page: number; limit: number } }>('/users') as never,
     limitParam: { value: 2 },
-    response: { arrayType: [] as { id: string }[], valueExtractor: (response) => response.items },
+    response: {
+      arrayType: [] as { id: string }[],
+      valueExtractor: (response: { items: { id: string }[] }) => response.items,
+    },
   });
 
-describe('legacy infinity query trigger scenario', () => {
+describe.each(LEGACY_CLIENT_KINDS)('legacy infinity query trigger scenario on the %s client', (kind) => {
   const scenario = useScenario({ baseUrl: BASE_URL, clientOptions: { keepUnusedFor: 0 } });
 
   const answerPages = (s: Scenario) =>
@@ -162,7 +157,7 @@ describe('legacy infinity query trigger scenario', () => {
         return { body: { items: [{ id: `${page}a` }, { id: `${page}b` }], totalPages: 3 }, delay: 100 };
       });
 
-      withLegacyClient(s, (client) => {
+      withLegacyClient(s, kind, (client) => {
         const fixture = TestBed.createComponent(ObservedTriggerHost);
 
         fixture.componentRef.setInput('config', pagedUsers(client));
@@ -191,7 +186,7 @@ describe('legacy infinity query trigger scenario', () => {
         return { body: { items: [{ id: `${page}a` }, { id: `${page}b` }], totalPages: 2 }, delay: 100 };
       });
 
-      withLegacyClient(s, (client) => {
+      withLegacyClient(s, kind, (client) => {
         const fixture = TestBed.createComponent(GuardedObservedTriggerHost);
 
         fixture.componentRef.setInput('config', pagedUsers(client));
@@ -217,6 +212,11 @@ describe('legacy infinity query trigger scenario', () => {
         expect(FakeIntersectionObserver.instances).toHaveLength(1);
         expect(s.api.requests.map((request) => request.query['page'])).toEqual(['1', '2', '2']);
 
+        if (kind === 'interop') {
+          s.expectError((entry) => (entry.error as { status?: number }).status === 400);
+          s.expectError((entry) => (entry.error as { status?: number }).status === 400);
+        }
+
         fixture.destroy();
       });
     });
@@ -226,7 +226,7 @@ describe('legacy infinity query trigger scenario', () => {
     const s = scenario();
     answerPages(s);
 
-    withLegacyClient(s, (client) => {
+    withLegacyClient(s, kind, (client) => {
       const fixture = TestBed.createComponent(PlainTriggerHost);
 
       fixture.componentRef.setInput('config', pagedUsers(client));
@@ -250,7 +250,7 @@ describe('legacy infinity query trigger scenario', () => {
     const s = scenario();
     answerPages(s);
 
-    withLegacyClient(s, (client) => {
+    withLegacyClient(s, kind, (client) => {
       const fixture = TestBed.createComponent(GuardedTriggerHost);
 
       fixture.componentRef.setInput('config', pagedUsers(client));
