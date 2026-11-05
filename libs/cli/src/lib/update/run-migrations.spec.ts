@@ -4,7 +4,13 @@ import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { Migration } from './migration-manifest';
 import { PackageManager } from './package-manager';
-import { generatorArgs, hasNx, manualGeneratorCommand, runPendingMigrations } from './run-migrations';
+import {
+  generatorArgs,
+  hasNx,
+  manualGeneratorCommand,
+  missingRequirements,
+  runPendingMigrations,
+} from './run-migrations';
 
 const yarn: PackageManager = { name: 'yarn', install: ['yarn', 'install'], run: ['yarn'] };
 
@@ -84,5 +90,43 @@ describe('runPendingMigrations', () => {
     });
 
     expect(outcomes[0]).toMatchObject({ state: 'unsupported' });
+  });
+});
+
+describe('missingRequirements', () => {
+  const withCore = (version: string) => {
+    const root = makeRoot();
+
+    mkdirSync(join(root, 'node_modules', '@ethlete', 'core'), { recursive: true });
+    writeFileSync(
+      join(root, 'node_modules', '@ethlete', 'core', 'package.json'),
+      JSON.stringify({ name: '@ethlete/core', version, peerDependencies: { 'ts-morph': '^28.0.0' } }),
+    );
+
+    return root;
+  };
+
+  const pending = (overrides: Partial<Migration>) => [
+    { packageName: '@ethlete/core', migration: migration(overrides) },
+  ];
+
+  it('adds an @ethlete package at the dist tag of the migrating package', () => {
+    expect(
+      missingRequirements({ root: withCore('5.0.0-next.46'), pending: pending({ adds: ['@ethlete/extra'] }) }),
+    ).toEqual(['@ethlete/extra@next']);
+    expect(missingRequirements({ root: withCore('5.2.0'), pending: pending({ adds: ['@ethlete/extra'] }) })).toEqual([
+      '@ethlete/extra@latest',
+    ]);
+  });
+
+  it('keeps the peer range for a required package and skips an installed one', () => {
+    const root = withCore('5.0.0-next.46');
+
+    mkdirSync(join(root, 'node_modules', '@ethlete', 'extra'), { recursive: true });
+    writeFileSync(join(root, 'node_modules', '@ethlete', 'extra', 'package.json'), '{}');
+
+    expect(
+      missingRequirements({ root, pending: pending({ requires: ['ts-morph'], adds: ['@ethlete/extra'] }) }),
+    ).toEqual(['ts-morph@^28.0.0']);
   });
 });

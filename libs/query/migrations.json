@@ -7,6 +7,7 @@
       "level": "optional",
       "description": "Move the legacy query system onto the new one through the interop layer.",
       "generator": "@ethlete/query:migrate-to-query-v3",
+      "adds": ["@ethlete/query-devtools"],
       "docs": "/query/migrating-from-v2"
     },
     {

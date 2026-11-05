@@ -706,6 +706,32 @@ describe('the commits of et update', { timeout: 20_000 }, () => {
     );
   });
 
+  it('names a package a codemod adds when it could not be added, and runs the codemod anyway', async () => {
+    const root = makeGitRepo();
+
+    requireTsMorph(root);
+    writeJson(join(root, 'node_modules', 'ts-morph', 'package.json'), { name: 'ts-morph' });
+    writeJson(join(root, 'node_modules', '@ethlete', 'core', 'migrations.json'), {
+      migrations: [
+        {
+          name: 'first',
+          version: '5.2.0',
+          kind: 'auto',
+          description: 'Rewrite first',
+          generator: '@ethlete/core:first',
+          adds: ['@ethlete/extra'],
+        },
+      ],
+    });
+    stubRegistry('5.2.0');
+    spawnSync.mockImplementation((binary, args) => ({ status: binary === 'yarn' && args[0] === 'add' ? 1 : 0 }));
+
+    expect(await updateCommand({ argv: ['--force'], root })).toBe(0);
+    expect(spawnSync).toHaveBeenCalledWith('yarn', ['add', '--dev', '@ethlete/extra@latest'], expect.anything());
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Adding @ethlete/extra@latest failed'));
+    expect(generatorsRun()).toEqual(['@ethlete/core:first']);
+  });
+
   it('commits an agent task that ends done, and not one that stays open', async () => {
     const root = withAgent(makeGitRepo());
 

@@ -33,6 +33,12 @@ export type Migration = {
    */
   requires?: string[];
   /**
+   * `auto` only: packages the generator's output imports, which the consuming repo may lack. `et update` adds a
+   * missing one as a dev dependency before the generator, at the dist tag of the migrating package for an
+   * `@ethlete/*` name. The generator runs even when the add fails.
+   */
+  adds?: string[];
+  /**
    * An Nx generator that finds the files the migration would touch and changes none. `et migrations` runs it
    * with `--dry-run`, the migration's `options` and the env var `ETHLETE_SCAN_FILE` set to a path, and the
    * generator writes a JSON array of the affected workspace-relative paths to that file.
@@ -142,6 +148,7 @@ const parseEntry = (options: { value: unknown; origin: string; index: number }) 
       generator,
       options: readOptions(value['options']),
       requires: readStrings(value['requires']),
+      adds: readStrings(value['adds']),
       scan: readString(value, 'scan'),
       instructions,
       docs: readString(value, 'docs'),

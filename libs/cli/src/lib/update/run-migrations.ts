@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { prereleaseTag } from './semver';
 import { Migration } from './migration-manifest';
 import { PackageManager, PackageManagerName, installEnv, nxCommand, spawnPackageManager } from './package-manager';
 import { PendingMigration } from './plan';
@@ -93,9 +94,34 @@ const peerRange = (options: { root: string; packageName: string; name: string })
 const missingRequirement = (options: { root: string; migration: Migration }) =>
   options.migration.requires?.find((name) => !isInstalled({ root: options.root, name }));
 
+const installedVersion = (options: { root: string; name: string }) => {
+  try {
+    const manifest = JSON.parse(
+      readFileSync(join(options.root, 'node_modules', options.name, 'package.json'), 'utf8'),
+    ) as {
+      version?: string;
+    };
+
+    return manifest.version;
+  } catch {
+    return undefined;
+  }
+};
+
+const addRange = (options: { root: string; packageName: string; name: string }) => {
+  const range = peerRange(options);
+
+  if (range || !options.name.startsWith('@ethlete/')) return range;
+
+  const version = installedVersion({ root: options.root, name: options.packageName });
+
+  return version === undefined ? undefined : (prereleaseTag(version) ?? 'latest');
+};
+
 /**
- * The packages the pending generators import that this repo lacks, as `add` specs at the range the migrating
- * package's `peerDependencies` names, for example `ts-morph@^28.0.0`.
+ * The packages the pending generators import or add that this repo lacks, as `add` specs. A package the migrating
+ * package names in `peerDependencies` gets that range, for example `ts-morph@^28.0.0`. An `@ethlete/*` package
+ * without one gets the dist tag of the migrating package, for example `@ethlete/query-devtools@next`.
  */
 export const missingRequirements = (options: { root: string; pending: readonly PendingMigration[] }) => {
   const specs = new Map<string, string>();
@@ -103,10 +129,10 @@ export const missingRequirements = (options: { root: string; pending: readonly P
   for (const { packageName, migration } of options.pending) {
     if (migration.kind !== 'auto') continue;
 
-    for (const name of migration.requires ?? []) {
+    for (const name of [...(migration.requires ?? []), ...(migration.adds ?? [])]) {
       if (specs.has(name) || isInstalled({ root: options.root, name })) continue;
 
-      const range = peerRange({ root: options.root, packageName, name });
+      const range = addRange({ root: options.root, packageName, name });
 
       specs.set(name, range ? `${name}@${range}` : name);
     }

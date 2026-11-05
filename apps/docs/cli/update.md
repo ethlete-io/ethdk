@@ -182,6 +182,7 @@ Repos that use `@ethlete/agent-rules` also get the `sdk-update` skill, which tea
   The install reads the same files: yarn 1 exports its default registry to `yarn et update` as `npm_config_registry`, and `et update` drops that variable before it installs.
 - Nx, for the codemods. The migrations ship as Nx generators, so a repo without Nx gets each one reported as a command instead. Everything else works.
 - Some codemods import an optional peer dependency, such as `ts-morph`. Before it runs one, `et update` adds a missing one as a dev dependency with the repo's package manager, at the range the migrating package's `peerDependencies` names. When that add fails, the codemod fails with the package to add by hand.
+- A codemod can also rewrite imports to a package the repo may lack, and its migration lists that package in `adds`. `et update` adds a missing one as a dev dependency before the codemod, at the dist tag of the migrating package for an `@ethlete/*` name (`@ethlete/query-devtools@next` for `@ethlete/query` on `next`). When that add fails, `et update` names the package to add by hand and the codemod still runs.
 
 ## Authoring a migration
 
@@ -226,6 +227,7 @@ A package declares its migrations in `migrations.json` at its own root, and poin
 | `generator`    | `auto` only: the Nx generator that rewrites the code.                                                    |
 | `options`      | `auto` only: flags handed to the generator, for example `{ "skipFormat": true }`.                        |
 | `requires`     | `auto` only: packages the generator imports that a consumer may lack, for example `["ts-morph"]`.        |
+| `adds`         | `auto` only: packages the generator's output imports, for example `["@ethlete/query-devtools"]`.         |
 | `scan`         | An Nx generator that finds the affected files and changes none. See [scan](#scan).                       |
 | `instructions` | A markdown file next to the manifest: the recommendation for `manual`, the prompt for `assisted`.        |
 | `docs`         | A path on this site, for example `/components/button`.                                                   |
