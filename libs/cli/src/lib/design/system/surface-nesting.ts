@@ -13,7 +13,8 @@ const OPAQUE = 0.95;
 /**
  * The statements of the surface checks inside the frame script of `render-check`. They use `root` and `report` of
  * that script. A card is a box with a fill and a border or shadow; its surface is the nearest ancestor with an opaque
- * fill, or the page canvas.
+ * fill, or the page canvas. A card over a patterned backdrop (a `background-image` between it and its surface, or on a
+ * sibling painted under its centre) hides the pattern, so its fill is a surface of its own.
  */
 export const SURFACE_STATEMENTS = `
   {
@@ -32,11 +33,24 @@ export const SURFACE_STATEMENTS = `
       (style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0 && rgbaOf(style.outlineColor)[3] > 0) ||
       (style.boxShadow !== 'none' && style.boxShadow.split(/,(?![^(]*\\))/).some((shadow) => !/\\binset\\b/.test(shadow) && rgbaOf(shadow.match(/(rgba?|oklch|oklab|lab|lch|hsla?|color)\\([^)]*\\)/)?.[0] ?? 'transparent')[3] > 0));
     const surfaceOf = (element) => {
+      let patterned = false;
       for (let at = element.parentElement; at; at = at.parentElement) {
-        const fill = getComputedStyle(at).backgroundColor;
-        if (opaque(fill)) return { pane: root.contains(at) && at !== root ? at : null, fill };
+        const style = getComputedStyle(at);
+        patterned ||= style.backgroundImage !== 'none';
+        if (opaque(style.backgroundColor)) return { pane: root.contains(at) && at !== root ? at : null, fill: style.backgroundColor, patterned };
       }
-      return { pane: null, fill: 'rgb(255, 255, 255)' };
+      return { pane: null, fill: 'rgb(255, 255, 255)', patterned };
+    };
+    const patternedBackdrop = (card, rect) => {
+      const below = document.elementsFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      if (!below.includes(card)) return false;
+      for (const at of below.slice(below.indexOf(card) + 1)) {
+        if (at.contains(card)) continue;
+        const style = getComputedStyle(at);
+        if (style.backgroundImage !== 'none') return true;
+        if (opaque(style.backgroundColor)) return false;
+      }
+      return false;
     };
     const onlyContentOf = (pane, card) => {
       for (const element of pane.querySelectorAll('*')) {
@@ -55,7 +69,7 @@ export const SURFACE_STATEMENTS = `
       const style = getComputedStyle(card);
       if (style.visibility !== 'visible' || !opaque(style.backgroundColor) || !edged(style)) continue;
       const surface = surfaceOf(card);
-      if (!same(style.backgroundColor, surface.fill)) continue;
+      if (!same(style.backgroundColor, surface.fill) || surface.patterned) continue;
       const fill = style.backgroundColor;
       if (surface.pane && onlyContentOf(surface.pane, card)) {
         const outer = surface.pane.getBoundingClientRect();
@@ -65,6 +79,7 @@ export const SURFACE_STATEMENTS = `
           continue;
         }
       }
+      if (patternedBackdrop(card, rect)) continue;
       report(${JSON.stringify(LOST_SURFACE_RULE)}, card, 'fills with ' + fill + ', the fill of ' + (surface.pane ? pathOf(surface.pane) : 'the canvas') + ' around it, so only its edge shows the card - give it the surface it is placed on (data-et-auto-surface) or drop the fill');
     }
   }

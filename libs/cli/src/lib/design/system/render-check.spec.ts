@@ -434,6 +434,35 @@ describe('renderIssuesOf', () => {
     ]);
   }, 120_000);
 
+  it('does not flag a card that hides the dot pattern of the surface around it as a lost surface', async (context) => {
+    const card = `<div class="card" style="width: 200px; background: rgb(30 30 30); border: 1px solid rgb(90 90 90); padding: 8px"><p style="margin: 0">Shot</p></div>`;
+    const dots =
+      'background-color: rgb(30 30 30); background-image: radial-gradient(rgb(90 90 90) 1px, transparent 1px); background-size: 8px 8px';
+    const target = checkout({
+      'components/on-dots': {
+        body: `<div style="width: 300px; padding: 12px; ${dots}"><h2 style="margin: 0">Titel</h2>${card}</div>`,
+      },
+      'components/on-plain': {
+        body: `<div style="width: 300px; padding: 12px; background: rgb(30 30 30)"><h2 style="margin: 0">Titel</h2>${card}</div>`,
+      },
+      'components/over-dotted-sibling': {
+        body: `<div style="position: relative; width: 300px; height: 120px; background: rgb(30 30 30)"><main style="position: absolute; inset: 0; ${dots}"></main><aside style="position: absolute; top: 12px; left: 12px">${card}</aside></div>`,
+      },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(rendered.issues.filter((issue) => issue.rule === 'LOST-SURFACE').map((issue) => issue.part)).toEqual([
+      'components/on-plain',
+    ]);
+  }, 120_000);
+
   it('does not flag a full-width bar with a one-side divider as a lost surface, but a boxed one', async (context) => {
     const bar = (edge: string) =>
       `<div class="bar" style="width: 300px; background: rgb(255 255 255); ${edge}; padding: 8px"><p style="margin: 0">Titel</p></div>`;
