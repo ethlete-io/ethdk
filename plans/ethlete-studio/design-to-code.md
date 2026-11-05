@@ -3473,6 +3473,14 @@ base..head; bite proof done). Open: `pages/sketches` cannot be cleared (`task --
 design"; `design check` leaves 9 DROPPED-PROP findings, so no record is written), and the next push is flagged until it
 is. Risk of the new check: a shared file such as `studio-labels.ts` flags 7 parts.
 
+481\. `pages/sketches` carries 9 DROPPED-PROP findings that predate slice B: the design states withdrawn, agent, fold,
+question and port were merged earlier (62812a4c3, e0f6a4396, aa8c96889) without the matching `input()` on the app
+component (builder, 2026-11-06). Why no tool caught it: DROPPED-PROP stays a warning, so a merge of a design whose props
+the implemented app lacks passes, and the debt only shows when a check record is wanted. Tool fix: a sketch merge for
+an implemented part that adds props the app has no input for opens a port item (STATUS row or `design task`) at merge
+time; builder decides how, or gives it a STATUS row. The `pictures.json` entry written by a builder `design check` run
+is a check record, not a decision (committed 0a9bf6117).
+
 478\. After an automatic merge, `sketch ready` printed "ENOENT ... foundations-colors.foundations-check-fixes/sketch.json"
 and never printed "merged automatically", although the merge was complete (commit 479bdace3, builder, 2026-11-05).
 Why no tool caught it: no spec runs `sketch ready` to the end for an auto-merging sketch and asserts a clean exit and
