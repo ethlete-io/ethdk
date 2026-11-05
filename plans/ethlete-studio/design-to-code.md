@@ -4650,10 +4650,13 @@ that names the reverted change or matches its markup (grep the e2e for the attri
 pre-push runs the behavior suites of the components whose files the pushed range changes.
 
 454\. CI 42016914765, Studio rules: the `--slow` step finds that the direct-edit state of `pages/system` has no
-"Gründe" trigger. Cause: B372 (8f059ae72) replaced the sample input `exceptions` with `exceptionCount`, so the harness
-page lost the list. Why no tool caught it: B372 ran `--rules` and the full check before the push, but not `--slow`,
-and the pre-push gate runs only `--rules`. Tool fix (B393, builder default): the design-rules pre-push gate and the
-slice-end check also run the `--slow` visible-change gate for the parts the slice touched.
+"Gründe" trigger. Cause (the first lead, B372, was wrong): the design state draws the build-ready footer with a "Gründe"
+disclosure since 2e70dc149 (merge pick a of the build-ready sketch, design files only). The app never had it; building
+it is row B288. The slow gate compares only parts whose app files change, so it first ran when 8f059ae72 touched
+`system-page.component.ts`. Every app commit on `pages/system` fails this way until the footer exists. Why no tool
+caught it: no gate runs the slow compare when only the design side of a part changes. Tool fix (B393, builder
+default): a design-only change to a part also runs the visible-change gate for that part, and a merge that adds a
+state the app cannot drive (missing trigger) fails and names the app row to build.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
