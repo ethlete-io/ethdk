@@ -174,7 +174,14 @@ all five fifagg apps build on `chore/query-v3-migration`.
   codemod cannot wrap a call in `runInInjectionContext`, because a DOM handler or RxJS callback has no injector. Fix:
   the migrator reports each `.prepare(`, `.createSignal(` and `.behaviorSubject(` on a migrated creator outside a
   constructor, field initializer or `inject()` function, with the action "pass `{ injector }` or add
-  `provideLegacyPrepareFallback()`". Tom (2026-11-05): "der migrator macht das schon nur wohl noch nicht gründlich genug der case muss also untersucht und ergänzt werden". ff finds what the migrator already does for out-of-context calls, why the `tap()` call site slipped through, and extends that handling to cover it.
+  `provideLegacyPrepareFallback()`". Tom (2026-11-05): "der migrator macht das schon nur wohl noch nicht gründlich genug der case muss also untersucht und ergänzt werden". ff finds what the migrator already does for out-of-context calls, why the `tap()` call site slipped through, and extends that handling to cover it. Result (ff): `legacy-prepare-migration.ts` already adds `injector: this.injector` by the innermost callback (the
+  ESLint rule `no-legacy-prepare-without-injector` uses the same classification); the `tap()` shape is covered. The
+  fifagg site slipped because fifagg commit 9482f80947 renamed gql consumers to `legacy*` by hand after the generator
+  run (finding 8), so the prepare migration never saw them; a generator re-run fixes them. The `queryComputed` site is
+  in context. Real gaps: `createSubject`, `createSignal` and `behaviorSubject` threw the same ET950 and were ignored
+  (fixed in f9357ecbb, spec bites); a receiver that is not a plain `legacy*` identifier (`this.creators.legacyX`) is
+  not seen (open, needs type info). B385 f gql part: 0c02de9b1 (`createGqlQueryViaGet` when v2 used `transferVia:
+'GET'`).
 - Bundle cost of v3 over `next`: about 90 kB `@ethlete/query` and 50 kB `@ethlete/core`.
 - **Decision (Tom, 2026-11-05): the devtools panel mounts itself from a provider.** A first answer ("q1c ist
   tatsächlich smart": a `devOnly` helper) was reopened by Tom: apps already gate the provider in app config
