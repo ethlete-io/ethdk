@@ -10,8 +10,8 @@ Grill/docs session: ethlete-sdk-ea. SDK migration session: ethlete-sdk-ff (commi
 
 ## Next
 
-1. Diagnose the behavior-test failures of 42016914765 (suspect the tooltip revert 40a92b60b or c84605c22 revert; check whether apps/storybook-e2e cases expect the SDK tooltip). Fix, push with 221073493, report to the grill session.
-2. Queue: B388 -> B391 -> B392 -> B369 -> rest per STATUS.md order line.
+1. CI 42016914765 red: behavior shards fixed in aff13b991 (scheduler locators back to [title], after the revert missed 80d8d2b8c). Studio rules --slow fails on pages/system direct-edit: the app has no build-ready footer ("Gründe"), open row B288; not caused by B372. Asked the grill session: build the B288 footer now (recommended) or accept red; and whether to push aff13b991 + 221073493 now. Act on the answer.
+2. Queue: B388 -> B391 -> B392 -> B393 -> B394 -> B369 -> rest per the STATUS.md order line.
 
 # Builder handoff (moved from .claude/handoffs, 2026-11-04 evening)
 
