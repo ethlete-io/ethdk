@@ -69,6 +69,7 @@ export const migrateLegacyPrepareCalls = (tree: Tree, report: QueryV3MigrationRe
     }
 
     allUsages.push(...findLegacyCreatorUsages(content, filePath));
+    reportUnresolvedReceivers(content, filePath, report);
   });
 
   if (allUsages.length === 0) {
@@ -145,6 +146,45 @@ const findLegacyCreatorUsages = (content: string, filePath: string) => {
   visit(sourceFile);
 
   return usages;
+};
+
+const LEGACY_PROPERTY_NAME = /^legacy[A-Z]/;
+
+const reportUnresolvedReceivers = (content: string, filePath: string, report: QueryV3MigrationReport) => {
+  if (!/\blegacy[A-Z]\w*\s*\.(prepare|createSubject|createSignal|behaviorSubject)\(/.test(content)) {
+    return;
+  }
+
+  const sourceFile = createSourceFile(content, filePath);
+
+  const visit = (node: ts.Node) => {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      ts.isIdentifier(node.expression.name) &&
+      INJECTOR_METHODS.has(node.expression.name.text) &&
+      ts.isPropertyAccessExpression(node.expression.expression) &&
+      LEGACY_PROPERTY_NAME.test(node.expression.expression.name.text) &&
+      !CONTEXTS_WITH_INJECTOR.includes(determineUsageContext(node))
+    ) {
+      const line = getLineNumber(node, sourceFile);
+      const receiver = node.expression.expression.getText(sourceFile);
+
+      report.addManualReview({
+        title: `Check the injector of ${receiver}.${node.expression.name.text}()`,
+        summary: `${receiver}.${node.expression.name.text}() is called on a creator the migration cannot resolve, because the receiver is not a plain legacy* identifier. The call may run outside an injection context and then throws ET950.`,
+        action:
+          'Pass `{ injector }` to the call, or add provideLegacyPrepareFallback() to the app providers. A call in a constructor, a field initializer or an inject() function needs nothing.',
+        locations: [{ filePath, line }],
+        source: 'legacy-prepare-migration',
+        dedupeKey: `unresolved-receiver:${filePath}:${line}`,
+      });
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
 };
 
 const findLegacyCreatorNames = (sourceFile: ts.SourceFile) => {

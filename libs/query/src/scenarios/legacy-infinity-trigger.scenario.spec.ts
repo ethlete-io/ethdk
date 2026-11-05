@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   AnyInfinityQueryConfig,
   createInfinityQueryConfig,
-  def,
   InfinityQueryDirective,
   InfinityQueryTriggerDirective,
 } from '../index';

@@ -324,6 +324,8 @@ next callback you write from regressing - both classify by the **innermost** fun
 `prepare()` inside a `computed()` at a class field counts as needing one even though the field initializer
 itself has a context.
 
+A call whose receiver is not a plain `legacy*` identifier (`this.creators.legacyX.prepare()`) cannot be resolved without type information. The generator reports each such call outside a constructor, field initializer or `inject()` function in the migration tasks, with `file:line`. Pass `{ injector }` there by hand.
+
 The container factories take the same escape hatch, in their config rather than their args - `createSubject`,
 `createSignal` and `behaviorSubject` all accept `{ injector }`, and throw the same named `ET950` without one:
 

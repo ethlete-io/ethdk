@@ -21,6 +21,46 @@ describe('migrate-to-query-v3 prepare migration', () => {
     vi.restoreAllMocks();
   });
 
+  it('reports a prepare call whose receiver is a property named legacy*, outside an injection context', async () => {
+    tree.write(
+      'component.ts',
+      `
+export class DemoComponent {
+  private creators = {} as { legacyGetUsers: { prepare: (args: unknown) => unknown } };
+
+  loadUsers() {
+    return this.creators.legacyGetUsers.prepare({ queryParams: { page: 1 } });
+  }
+}
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const tasks = readFile('query-v3-migration-tasks.md');
+
+    expect(tasks).toContain('Check the injector of this.creators.legacyGetUsers.prepare()');
+    expect(tasks).toContain('component.ts:5');
+  });
+
+  it('does not report a property receiver called in a field initializer', async () => {
+    tree.write(
+      'component.ts',
+      `
+export class DemoComponent {
+  private creators = {} as { legacyGetUsers: { prepare: (args: unknown) => unknown } };
+  query = this.creators.legacyGetUsers.prepare({ queryParams: { page: 1 } });
+}
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    expect(tree.exists('query-v3-migration-tasks.md') ? readFile('query-v3-migration-tasks.md') : '').not.toContain(
+      'Check the injector of',
+    );
+  });
+
   it('should add an injector member and wire it into class-based prepare calls', async () => {
     tree.write(
       'component.ts',
