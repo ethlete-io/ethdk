@@ -647,6 +647,7 @@ export const loadUsers = () => legacyGetUsers.prepare({ queryParams: { page: 1 }
     const report = readFile('query-v3-migration-tasks.md');
 
     expect(report).toContain('Review standalone prepare() usage for legacyGetUsers');
-    expect(report).toContain('Pass an Injector explicitly');
+    expect(report).toContain('add `const injector = inject(Injector);` at the top of the factory');
+    expect(report).toContain('provideLegacyPrepareFallback()');
   });
 });

@@ -1007,7 +1007,7 @@ const reportManualReviewLocations = (tree: Tree, allUsages: LegacyCreatorUsage[]
           title: `Review standalone ${usage.method}() usage for ${usage.creatorName}`,
           summary: `${usage.creatorName}.${usage.method}() is used in a standalone function without an obvious injection context.`,
           action:
-            'Pass an Injector explicitly, move the call into queryComputed(), or wrap the logic in a function that already uses inject().',
+            'If the factory that returns this function runs in an injection context, add `const injector = inject(Injector);` at the top of the factory and pass `{ injector }` to the call. Otherwise pass an Injector from the caller, move the call into queryComputed(), or add provideLegacyPrepareFallback() to the app providers.',
           locations: [{ filePath: usage.filePath, line: usage.line }],
           source: 'legacy-prepare-migration',
           dedupeKey: `manual-review:${usage.filePath}:${usage.line}:${usage.creatorName}`,
