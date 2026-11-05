@@ -327,7 +327,8 @@ all five fifagg apps build on `chore/query-v3-migration`.
   6), and v2's synchronous state order (1, 2)? Recommendation: yes for both, so a migrated app keeps its behaviour.
   **Decision (Tom, 2026-11-05):** no parity for 4, 5, 6 - "neuladen und polling pause wurde in jedem projekt
   deaktiviert". 1, 2 ("q2bok"): keep the interop behaviour; the two specs pin it and the migration guide names it in
-  one sentence.
+  one sentence. Built (ff, 088ef29fb, unpushed): gaps 1, 2, 4, 5, 6 are pinned as passing interop specs in
+  `legacy.scenario.spec.ts` (88 passed, 2 skipped), with a bullet in `migrating-from-v2.md`; lint and tsc not run yet.
 - **Devtools mount (ff item 000):** part 1 built fc98d3dae (`navigator.webdriver` hides panel, lazy shell and pills;
   provider option `showInAutomation`), per Tom's item 20 decision. Part 2 open: a new entry point with a dynamic
   import plus a codemod for `<et-query-devtools-lazy>`; ff proposes the name `@ethlete/query-devtools/mount`. Open
