@@ -412,7 +412,31 @@ const replaceAnyQueryInFile = (content: string) => {
     result = result.slice(0, start) + replacement + result.slice(end);
   });
 
-  return result;
+  return dedupeNamedImports(result);
+};
+
+const dedupeNamedImports = (content: string) => {
+  const sourceFile = createSourceFile(content);
+  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+
+  for (const node of sourceFile.statements) {
+    if (!ts.isImportDeclaration(node)) continue;
+
+    const texts = namedImportElements(node).map((element) => element.getText(sourceFile));
+    const unique = [...new Set(texts)];
+
+    if (unique.length === texts.length) continue;
+
+    replacements.push({
+      start: node.getStart(sourceFile),
+      end: node.getEnd(),
+      replacement: printImportDeclaration(node, sourceFile, unique),
+    });
+  }
+
+  return replacements
+    .sort((left, right) => right.start - left.start)
+    .reduce((result, { start, end, replacement }) => result.slice(0, start) + replacement + result.slice(end), content);
 };
 
 type PrepareReceiverKind = 'query' | 'foreign' | 'unknown';

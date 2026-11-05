@@ -395,6 +395,24 @@ export const component = {
     expect(result).not.toContain('QueryDevtoolsComponent as Devtools, provideQueryClientForDevtools');
   });
 
+  it('does not import AnyLegacyQuery twice after renaming AnyV2Query', async () => {
+    tree.write(
+      'types.ts',
+      `
+import type { AnyLegacyQuery, AnyV2Query } from '@ethlete/query';
+
+export type Both = AnyLegacyQuery | AnyV2Query;
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const result = readFile('types.ts');
+
+    expect(result.match(/AnyLegacyQuery/g)).toHaveLength(3);
+    expect(result).toContain("import type { AnyLegacyQuery } from '@ethlete/query';");
+  });
+
   it('keeps the type-only @ethlete/query import when dropping the devtools names', async () => {
     tree.write(
       'app.config.ts',
