@@ -1,6 +1,7 @@
 {
   "generators": {
     "component": {
+      "scaffold": true,
       "factory": "./component/generator",
       "schema": "./component/schema.json",
       "description": "Scaffold a component domain following the three-tier architecture (folder layout, headless + default split, styles, spec, stories, docs page, barrel wiring)"
@@ -101,6 +102,7 @@
       "description": "Remove the spinner determinate and progress bar indeterminate inputs in templates"
     },
     "icons": {
+      "scaffold": true,
       "factory": "./icons/generator",
       "schema": "./icons/schema.json",
       "description": "Generate etIcon IconDefinitions and typed names from an installed SVG icon source (auto-detects Font Awesome)"

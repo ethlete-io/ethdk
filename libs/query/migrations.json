@@ -82,6 +82,15 @@
       "description": "Import the devtools contract (the names @ethlete/query-devtools reads) from @ethlete/query/devtools-contract instead of @ethlete/query.",
       "generator": "@ethlete/query:move-devtools-contract-imports",
       "docs": "/query-devtools/#the-devtools-contract"
+    },
+    {
+      "name": "from-ngrx-toolkit",
+      "version": "6.0.0-next.52",
+      "kind": "auto",
+      "level": "optional",
+      "description": "Move @tomtomb/ngrx-toolkit features onto v3 query creators and the @ethlete/query/ngrx-toolkit interop.",
+      "generator": "@ethlete/query:migrate-from-ngrx-toolkit",
+      "docs": "/query/migrating-from-ngrx-toolkit"
     }
   ]
 }

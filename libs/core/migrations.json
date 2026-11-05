@@ -54,6 +54,23 @@
       "scan": "@ethlete/core:migrate-legacy-color-themes",
       "instructions": "./migrations/legacy-color-themes.md",
       "docs": "/core/theming#migrating-from-runtime-theming"
+    },
+    {
+      "name": "create-destroy",
+      "version": "5.0.0-next.62",
+      "kind": "auto",
+      "level": "optional",
+      "description": "Rewrite takeUntil(this.destroy$) on a createDestroy() field into takeUntilDestroyed().",
+      "generator": "@ethlete/core:migrate-create-destroy"
+    },
+    {
+      "name": "color-theme-variants",
+      "version": "5.0.0-next.64",
+      "kind": "auto",
+      "level": "optional",
+      "description": "Rewrite surface theme colorTheme and semanticColorThemes into colorThemeVariants.",
+      "generator": "@ethlete/core:migrate-color-theme-variants",
+      "docs": "/core/theming"
     }
   ]
 }

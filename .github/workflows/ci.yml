@@ -61,6 +61,7 @@ jobs:
       # Only unreleased entries are checked - anything listed in .changeset/pre.json is locked.
       - run: yarn lint:changesets
       - run: yarn lint:size
+      - run: node tools/scripts/check-migration-entries.mjs
       - run: yarn test:tools
 
       # Every error code defined in components, core, bracket and contentful needs a row on its docs page.
