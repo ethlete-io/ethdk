@@ -194,6 +194,21 @@ export type LegacyQueryPrepareFn<
   args: Arguments & WithHeaders & WithLegacyConfig & WithInjector,
 ) => LegacyQuery<Response, Arguments, Route, Store, Data, Id, TNewQuery>;
 
+const stableStringify = (value: unknown): string =>
+  JSON.stringify(value, (_key, nested: unknown) =>
+    nested && typeof nested === 'object' && !Array.isArray(nested)
+      ? Object.fromEntries(Object.entries(nested).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+      : nested,
+  );
+
+const cacheableHeaders = (headers: HttpHeaders) =>
+  Object.fromEntries(
+    headers
+      .keys()
+      .filter((name) => name.toLowerCase() !== 'authorization')
+      .map((name) => [name.toLowerCase(), headers.getAll(name)]),
+  );
+
 /**
  * @deprecated Part of the legacy (v2) query system. Migrate to the current query API - see https://ethlete-sdk-docs.web.app/query/migrating-from-v2, and run `nx g @ethlete/query:migrate-to-query-v3` to rewrite the mechanical parts. Intent to remove in v7.
  */
@@ -267,6 +282,21 @@ export class LegacyQueryCreator<
       >(createInertQuery<TArgs>(), queryArgs, this.options.entity, true, this.canBeCached);
     }
 
+    const scope = injector.get(DestroyRef);
+    const reuseKey =
+      this.canBeCached && !args?.config?.skipQueryStore
+        ? (args?.config?.queryStoreCacheKey ?? '') +
+          stableStringify({ ...queryArgs, headers: cacheableHeaders(headers) })
+        : null;
+
+    if (reuseKey !== null) {
+      const existing = this.preparedQueries.get(scope)?.get(reuseKey);
+
+      if (existing && !existing.newQuery.subtle.injector.get(DestroyRef).destroyed) {
+        return existing as never;
+      }
+    }
+
     return runInInjectionContext(injector, () => {
       return untracked(() => {
         const settleScope = this.canBeCached ? null : createSettleScope(injector);
@@ -291,6 +321,22 @@ export class LegacyQueryCreator<
         >(newQuery, queryArgs, this.options.entity, false, this.canBeCached);
 
         settleScope?.bind(legacyQuery, newQuery.subtle.injector);
+
+        if (reuseKey !== null) {
+          let scoped = this.preparedQueries.get(scope);
+
+          if (!scoped) {
+            scoped = new Map();
+            this.preparedQueries.set(scope, scoped);
+          }
+
+          scoped.set(reuseKey, legacyQuery);
+          newQuery.subtle.injector.get(DestroyRef).onDestroy(() => {
+            if (scoped.get(reuseKey) === legacyQuery) {
+              scoped.delete(reuseKey);
+            }
+          });
+        }
 
         if (args?.config?.destroyOnResponse) {
           // Owned by the query's own injector, not the caller's. Call sites are told to pass an injector
@@ -331,6 +377,8 @@ export class LegacyQueryCreator<
   };
 
   behaviorSubject = this.createSubject;
+  private readonly preparedQueries = new WeakMap<DestroyRef, Map<string, AnyLegacyQuery>>();
+
   constructor(public options: CreateLegacyQueryCreatorOptions<TArgs, Response, Store, Data, Id>) {}
 
   /**

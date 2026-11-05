@@ -323,7 +323,7 @@ describe('LegacyQueryCreator.prepare', () => {
       expect(first.isPolling).toBe(true);
 
       first.execute();
-      subject.next(creator.prepare({ injector }));
+      subject.next(creator.prepare({ injector, queryParams: { page: 2 } }));
 
       // `cleanQuery` gates both branches on `canBeCached`, so with the old hardcoded `false` a superseded
       // cacheable query kept polling and was never aborted.
@@ -364,7 +364,7 @@ describe('LegacyQueryCreator.prepare', () => {
       const alive = trackAlive(first);
 
       subject.next(first);
-      subject.next(creator.prepare({ injector }));
+      subject.next(creator.prepare({ injector, queryParams: { page: 2 } }));
       await stable();
 
       expect(alive.current).toBe(false);
