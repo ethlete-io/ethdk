@@ -164,5 +164,5 @@ all five fifagg apps build on `chore/query-v3-migration`.
   did not help: `libs/query-devtools/toggle/query-devtools-shortcut.ts:1` imports `detectKbdPlatform` from the
   `@ethlete/components` barrel. fifagg fixed it with a dynamic import behind `ngDevMode` and `NgComponentOutlet`. SDK
   fix: import from a leaf entry point. Generator fix: emit the dynamic-import form, or a task that names the bundle
-  cost. Open: why the `query-devtools-lazy` treeshake golden (~5 kB up front) did not catch it.
+  cost. SDK fix f4cd1b908 (toggle leaf import; a spec fails on any `@ethlete/components` import in `toggle/` or `lazy/`); finding 10 fixed by ff, not pushed. Why the `query-devtools-lazy` golden (5246 B gz) did not catch it: the harness bundles with a `sideEffects: false` shim and shakes the barrel down to `detectKbdPlatform`; the fifagg build did not shake it. The cause in fifagg is not proven (fifagg-frontend-c3 checks its build stats). Tool fix (ff default): a golden that fails when any `@ethlete/components` module is in the initial chunk of the lazy entry (esbuild metafile).
 - Bundle cost of v3 over `next`: about 90 kB `@ethlete/query` and 50 kB `@ethlete/core`.
