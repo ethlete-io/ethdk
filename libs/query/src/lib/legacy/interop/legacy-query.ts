@@ -223,9 +223,36 @@ export class LegacyQuery<
       return;
     }
 
+    // Runs before the `toObservable` effect below, on the query's own injector: `state$` subscribers
+    // (`onSuccess`) must find the response in the store when they see the Success.
+    this.storeSyncEffect = effect(
+      () => {
+        // Gated on the execution state, not on the response being non-null: the effect runs once on
+        // creation, and `response()` is null until the first one arrives - `id`/`set` are typed
+        // non-nullable, so an unguarded write feeds `null` through them on every `prepare()`. A plain
+        // null-check would be wrong the other way: a 204 is a success whose body is legitimately null.
+        const execState = this.newQuery.executionState();
+
+        untracked(() => {
+          if (execState?.type !== 'success' || !this.entity?.set) return;
+
+          const res = execState.response;
+          const id = this.entity.id({ args: this._arguments, response: res });
+
+          this.entity.set({
+            args: this._arguments,
+            response: res,
+            id,
+            store: this.entity.store,
+          });
+        });
+      },
+      { injector: this.newQuery.subtle.injector },
+    );
+
     // `toObservable` first emits from an effect, so a subscriber that attaches and calls `execute()` in the
     // same turn would otherwise never see the Prepared state `legacy.md` promises. The source is created
-    // here, not inside the `defer`: its effect has to be registered before `storeSyncEffect` and the
+    // here, not inside the `defer`: its effect has to be registered before the
     // `destroyOnResponse` teardown below, or a self-destroying query dies before its Success is published.
     const executionState$ = toObservable(this.newQuery.executionState, { injector: this.newQuery.subtle.injector });
 
@@ -234,28 +261,6 @@ export class LegacyQuery<
       map((execState) => this.toQueryState(execState)),
       switchMap((s) => this._transformState(s)),
     );
-
-    this.storeSyncEffect = effect(() => {
-      // Gated on the execution state, not on the response being non-null: the effect runs once on
-      // creation, and `response()` is null until the first one arrives - `id`/`set` are typed
-      // non-nullable, so an unguarded write feeds `null` through them on every `prepare()`. A plain
-      // null-check would be wrong the other way: a 204 is a success whose body is legitimately null.
-      const execState = this.newQuery.executionState();
-
-      untracked(() => {
-        if (execState?.type !== 'success' || !this.entity?.set) return;
-
-        const res = execState.response;
-        const id = this.entity.id({ args: this._arguments, response: res });
-
-        this.entity.set({
-          args: this._arguments,
-          response: res,
-          id,
-          store: this.entity.store,
-        });
-      });
-    });
 
     // Tear down only what this wrapper owns. The underlying query is already being destroyed when this fires, so
     // destroying it again would call `R3Injector.destroy()` on an injector that is mid-teardown, which throws

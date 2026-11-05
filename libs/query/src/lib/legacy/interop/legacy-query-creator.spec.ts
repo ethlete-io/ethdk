@@ -266,14 +266,19 @@ describe('LegacyQueryCreator.prepare', () => {
 
     it('reads the response back through the store', async () => {
       const query = TestBed.runInInjectionContext(() => makeEntityCreator({ withGet: true }).prepare({}));
-      const success = firstValueFrom(query.state$.pipe(filterSuccess()));
+      const names: string[] = [];
+      const subscription = query.state$.pipe(filterSuccess()).subscribe((state) => names.push(state.response.name));
 
       query.execute();
       httpTesting.expectOne('https://api.example.com/person').flush({ id: 1, name: 'Ada' });
+      await stable();
 
       store.set(1, { id: 1, name: 'Ada Lovelace' });
+      await stable();
 
-      await expect(success).resolves.toMatchObject({ response: { name: 'Ada Lovelace' } });
+      expect(names).toEqual(['Ada', 'Ada Lovelace']);
+
+      subscription.unsubscribe();
     });
   });
 
