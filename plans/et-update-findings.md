@@ -299,6 +299,15 @@ all five fifagg apps build on `chore/query-v3-migration`.
   Interop repro as fifagg described (ff): after 8 s `loading()` and `response()` are null, the 401 settles as the
   error state, no hang. The fifagg loader treats an empty response as loading and never reads the error. Closed as an
   app defect: read `queryStateErrorSignal` or `state$`. The receiver-gap report is built (6aeabe6ff).
+- **27. Interop parity audit (ff, 6d8a002e9, unpushed):** `legacy.scenario.spec.ts` runs 28 tests on both clients;
+  interop passes 21, the 7 gaps are pinned with `it.fails`: (1) `abort()` shows Cancelled only after a tick; (2)
+  `execute({ cancelPrevious: true })` in one tick drops the Cancelled and the second Loading state (the request does
+  abort); (3) an expired unused query stays `isInUse` until its prepare injector dies; (4) no refetch on window focus;
+  (5) smart polling does not pause on blur; (6) `*etQuery` `triggeredVia` is `program`, not `auto` (cause of 4); (7)
+  `prepare()` ignores the `mock` arg. 3 is by design; 7 is a defect (ff fixes it). The legacy `<et-query-devtools>`
+  throws with the interop client: by design under Tom's "no V2 after the migration" decision (section 9). Open grill
+  question for Tom (collected while afk): does the interop client get v2's focus refetch and blur polling pause (4, 5,
+  6), and v2's synchronous state order (1, 2)? Recommendation: yes for both, so a migrated app keeps its behaviour.
 - **Devtools mount (ff item 000):** part 1 built fc98d3dae (`navigator.webdriver` hides panel, lazy shell and pills;
   provider option `showInAutomation`), per Tom's item 20 decision. Part 2 open: a new entry point with a dynamic
   import plus a codemod for `<et-query-devtools-lazy>`; ff proposes the name `@ethlete/query-devtools/mount`. Open
