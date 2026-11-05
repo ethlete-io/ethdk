@@ -66,8 +66,10 @@ export const getMe = apiClient.get({ route: '/me', secure: true });
     const client = readFile('client.ts');
 
     expect(client).toContain(
-      'extractTokens: (response) => ({ token: response.token, refreshToken: response.refresh }),',
+      'const { token, refreshToken } = ((response) => ({ token: response.token, refreshToken: response.refresh }))(response);',
     );
+    expect(client).toContain('return { accessToken: token, refreshToken };');
+    expect(client).toContain('defaultRememberMe: true,');
     expect(client).toContain('buildArgs: (tokens) => ({ body: { refresh: tokens.refreshToken } }),');
     expect(client).toContain("expiresInPropertyName: 'expires_in',");
     expect(client).toContain("name: 'et-auth',");

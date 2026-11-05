@@ -180,8 +180,11 @@ export const renderAuthProviderBody = (config: V2BearerAuthConfig | undefined) =
 
   if (config.responseAdapter) {
     refreshEntries.push(
-      `      // TODO(query-v3): v2 responseAdapter. It must return { accessToken, refreshToken } - v2 returned { token, refreshToken }.`,
-      `      extractTokens: ${config.responseAdapter},`,
+      '      extractTokens: (response) => {',
+      `        const { token, refreshToken } = (${config.responseAdapter})(response);`,
+      '',
+      '        return { accessToken: token, refreshToken };',
+      '      },',
     );
   }
 
@@ -258,6 +261,7 @@ export const renderAuthProviderBody = (config: V2BearerAuthConfig | undefined) =
     '      cookie: {',
     ...cookieEntries,
     '      },',
+    '      defaultRememberMe: true,',
     '      autoLogin: {',
     `        queryKey: '${REFRESH_QUERY_KEY}',`,
     `        // TODO(query-v3): shape the auto-login request from the cookie value.`,
