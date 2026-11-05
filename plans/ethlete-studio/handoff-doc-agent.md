@@ -2,7 +2,7 @@
 
 # Handoff: grill/docs session (doc-agent), 2026-11-06 night
 
-Tom was afk and stopped for the day. No open design question is collected. Findings: last is 479 (design-to-code.md),
+Tom was afk and stopped for the day. No open design question is collected. Findings: last is 482 (design-to-code.md),
 last STATUS row B396, last ADR 0197.
 
 - B396 (ADR 0197) still needs Tom's confirmation directly in the builder session. Tell him at once.
@@ -16,3 +16,8 @@ last STATUS row B396, last ADR 0197.
 - Tom's order: no push while the release CI runs; ask Tom before the push. Unpushed: ff batch and the slices above.
 - Builder restarts from its own handoff (handoff-builder.md, commit 9ca7eb1d7): it may have a new session name. Run
   `ListAgents` first.
+- Tom answered Q1 (B396 ok) and Q2 (pictures.json: committed as a check record, 0a9bf6117). B396 still needs Tom's "ok" in
+  the builder session (classifier). Finding 482: sketch pages-sketches is discarded, an unchanged sketch never offers a
+  manual merge; slice B is reworked by the builder (retry of the refused auto-merge, one notice). "ok" only after a live
+  shot. 480 (IMPLEMENTATION-UNCOMPARED) is built (5273e92bf); pages/sketches needs its 9 DROPPED-PROP props (481) and
+  `task --verify` before the next push.
