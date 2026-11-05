@@ -997,6 +997,12 @@ describe('uniqueIssuesOf', () => {
     expect(uniqueIssuesOf([issue, { ...issue }])).toEqual([issue]);
   });
 
+  it('keeps one SKIP-SCOPE for a skip site found in two states', () => {
+    const skip = { ...issue, rule: 'SKIP-SCOPE' };
+
+    expect(uniqueIssuesOf([skip, { ...skip, state: 'hover', size: 'lg' }])).toEqual([skip]);
+  });
+
   it('keeps issues whose detail differs', () => {
     expect(uniqueIssuesOf([issue, { ...issue, detail: 'other colour' }])).toHaveLength(2);
   });

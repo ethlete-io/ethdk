@@ -528,12 +528,13 @@ export const uniqueIssuesOf = (issues: RenderIssue[]) => {
   const seen = new Set<string>();
 
   return issues.filter((issue) => {
+    const perState = issue.rule !== 'SKIP-SCOPE';
     const key = JSON.stringify([
       issue.product,
       issue.part,
       issue.sketch,
-      issue.state,
-      issue.size,
+      perState ? issue.state : null,
+      perState ? issue.size : null,
       issue.rule,
       issue.path,
       issue.detail,
