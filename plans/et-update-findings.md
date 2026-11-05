@@ -220,3 +220,10 @@ all five fifagg apps build on `chore/query-v3-migration`.
   (`gamer-tag.async.validator.ts:24`), in a plain `computed` (`edit-match-data.provider`), or in callback config
   functions (`events.component` `searchPreviewQueryFn`). Hand fixes in fifagg c9170f0d06. Fix (ff): extend
   `legacy-prepare-migration.ts` to these shapes, or report each one it cannot fix.
+  **Result (ff):** the class shapes (`ngOnInit` RxJS callback, plain `computed` in a method, callback config function
+  in a class field) already pass with the current generator on a fifagg copy at 6ff3142096~1; fifagg probably ran a
+  build from before f9357ecbb. `widget-link.component.ts` uses a gql creator that fifagg rewrote by hand (QV3-046), so
+  the migrator never saw it. The standalone shapes (gamer-tag validator, edit-match-data provider, playtime-tracker,
+  upload-handler) get a manual-review task each, by design: a function with no `inject()` call can run outside an
+  injection context, so the migrator cannot add one safely. Remaining work (ff): the task text proposes the concrete
+  fix, `const injector = inject(Injector)` at the top of the factory and `{ injector }` at the call. Then 17 closes.
