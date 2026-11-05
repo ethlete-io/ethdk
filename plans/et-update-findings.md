@@ -156,7 +156,7 @@ Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61). Full list wi
   is a migrator defect, not a supported state: the docs stop describing it as one, and the migration report flags a
   leftover `V2QueryClient` as a migrator error to report.
 
-## 10. More migrator findings from fifagg, items 10-24 (fifagg-frontend-c3 and -3d, 2026-11-05) - open
+## 10. More migrator findings from fifagg, items 10-25 (fifagg-frontend-c3 and -3d, 2026-11-05) - open
 
 Full text with file:line in `fifagg-frontend/.claude/handoffs/query-v3/findings.md`, items 10 to 13. After hand fixes,
 all five fifagg apps build on `chore/query-v3-migration`.
@@ -277,11 +277,18 @@ all five fifagg apps build on `chore/query-v3-migration`.
   fire-and-forget sites keep it.
 - **Not an SDK defect:** `match-lobby-dispute.spec.ts:65` is no migration regression. It comes from fifagg commit
   826a6c6473 on `next` (elimination guidance needs a confirmation), fixed on the branch in 581a73f544.
-- **22. Legacy query executes in a loop (fifagg-frontend-3d, their item 23, cause open):** `embeds.spec.ts:140` throws
-  pageerror ET800 (a query executed more than 5 times in 100ms) from `LegacyQuery.execute` when `?match-details=`
-  opens; 22 GETs to `.../competition-match/<id>/match-streams` in about 1s, in three runs. Suspect:
-  `match-vod-with-card.component.ts:47-54` (`queryComputed` around `prepare().execute()`). File:line of the loop
-  follows.
+- **22. ET800 loop is an app defect (fifagg-frontend-3d), no SDK fix:** `match-overlay-host.component.ts:542`
+  `pollingStop$` starts a timer after every match success; for a match whose expected end is past it fires at once,
+  and the refresh at :740-745 executes the match query again. v2 refetched too; v3's ET800 check exposes the old
+  hidden loop. Fixed in fifagg 31f009d9aa. Docs task (ff): the migration guide says that ET800 can surface old loops.
+- **25. Codemod splits an eslint-disable comment from its member (fifagg-frontend-3d):** the injector field goes
+  between `// eslint-disable-next-line @angular-eslint/no-input-rename` and the aliased `@Input`, so the directive
+  points at the wrong line: 3 lint errors plus an unused-directive warning
+  (`navigation-cards/{country,nation,organizer}-navigation-card/*.component.ts:30-33`, fixed by hand 7374cc7b95).
+  Fix (ff): insert the field before the leading comments of the next member, with a spec.
+- **E2E proof (fifagg-frontend-3d, MR !1978):** 765 passed, 9 failed (7 WebKit environment, 2 season-wrap-up 500s
+  from old API data). Items 15 to 21 are proven with the app workarounds (reportErrors helper, store write in get,
+  devtools off under webdriver, destroyOnResponse removed at 36 sites).
 - **23. `toQuerySignal` subscribes a cold source twice (fifagg-frontend-3d, read-only audit, untested):**
   `data.utils.ts:277-279`. The template shows an unmanaged query; the container manages a second query that never
   executes. In fifagg: per keystroke on 3 filter-overlay pages and on 5 navigation cards (8 call sites). Fix: share
