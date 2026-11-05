@@ -586,3 +586,9 @@ co-surface skip, inbox NESTED-SCROLL skip, sketches far-out pin, gutter COVERED 
 call with Tom: raised surface for `aside.st-shell-side` and comment-draft (96, asked the grill session); (8) CONTROL-STATE
 in studio (3); (9) DROPPED-PROP (27) are missing app inputs and stay warnings. The SDK CONTROL-STATE hints print without
 a prefix.
+
+Finding 465 (builder, after the handoff): `sketch check` also draws the product part of each sketch target and prints
+its problems as `<target> before: ...` lines on stdout; they do not change the exit code. The render check reuses the
+baseline draw it already did for old-problem filtering (`renderIssuesOf` option `before`). Verified: two new specs
+bite (sketch-command.spec.ts with mocked render, render-check.spec.ts in real Chromium), tsc and lint clean. Not
+verified: a real `sketch check` on studio. A new part (not in the product yet) gets no `before` lines.

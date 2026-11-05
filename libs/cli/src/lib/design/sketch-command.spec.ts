@@ -412,6 +412,43 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines).not.toContain(problem);
   });
 
+  it('check prints the problems the product part has now as before lines, and does not fail on them', async () => {
+    const target = acme();
+    const lines = output();
+
+    vi.spyOn(console, 'error').mockImplementation((line: unknown) => void lines.push(String(line)));
+    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    vi.mocked(renderIssuesOf).mockClear();
+    vi.mocked(renderIssuesOf).mockResolvedValueOnce({
+      issues: [],
+      warnings: [],
+      grids: [],
+      drawn: [],
+      before: [
+        {
+          rule: 'OVERFLOW',
+          product: 'acme',
+          part: 'components/button',
+          state: 'default',
+          size: 'phone',
+          path: '#root > button',
+          detail: 'sticks out',
+          sketch: null,
+        },
+      ],
+    });
+    lines.length = 0;
+
+    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
+    expect(vi.mocked(renderIssuesOf).mock.calls[0]?.[0].before).toEqual([
+      { product: 'acme', part: 'components/button' },
+    ]);
+    expect(lines).toContain(
+      'components/button before: OVERFLOW acme components/button default at phone: #root > button - sticks out',
+    );
+  });
+
   it('report --done refuses a drawn round that is neither ready nor on hold', async () => {
     const target = acme();
     const lines = output();

@@ -743,6 +743,7 @@ export const renderIssuesOf = async (options: {
   target: string;
   config: DesignConfig;
   jobs: RenderJob[];
+  before?: Pick<RenderIssue, 'product' | 'part'>[];
   chromiumOf?: typeof chromiumOf;
   partTimeoutMs?: number;
   onProgress?: (line: string) => void;
@@ -753,6 +754,7 @@ export const renderIssuesOf = async (options: {
       grids: RenderedGrid[];
       drawn: RenderedState[];
       busy?: BusyState[];
+      before?: RenderIssue[];
     }
   | { unavailable: string }
 > => {
@@ -1009,7 +1011,8 @@ export const renderIssuesOf = async (options: {
     const inspected = uniqueIssuesOf(all.filter((issue) => issue.rule !== BUSY_MARK));
     const isInput = (issue: RenderIssue) => issue.rule === 'CONTROL-PART-INPUT';
     const sketched = inspected.filter((issue) => issue.sketch && !WARNING_RULES.has(issue.rule));
-    const compared = [...new Set(sketched.map((issue) => JSON.stringify([issue.product, issue.part])))];
+    const asked = new Set((options.before ?? []).map(({ product, part }) => JSON.stringify([product, part])));
+    const compared = [...new Set([...sketched.map((issue) => JSON.stringify([issue.product, issue.part])), ...asked])];
     const baseline = compared.flatMap((key) =>
       (baselines.get(key) ?? []).map((frame) => ({
         ...frame,
@@ -1027,10 +1030,10 @@ export const renderIssuesOf = async (options: {
       ]);
     const framedOf = (issue: RenderIssue, sketch: SketchVariant | null) =>
       framed.get(JSON.stringify([issue.product, issue.part, sketch])) ?? false;
+    const inProduct =
+      baseline.length > 0 ? await queue.run((browser) => inspect({ browser, base, frames: baseline })) : [];
     const existing = new Set(
-      (baseline.length > 0 ? await queue.run((browser) => inspect({ browser, base, frames: baseline })) : []).flatMap(
-        (issue) => [sameIssueOf(issue, null), sameIssueOf(issue, framedOf(issue, null))],
-      ),
+      inProduct.flatMap((issue) => [sameIssueOf(issue, null), sameIssueOf(issue, framedOf(issue, null))]),
     );
     const isOld = (issue: RenderIssue) =>
       existing.has(sameIssueOf(issue, null)) ||
@@ -1054,6 +1057,15 @@ export const renderIssuesOf = async (options: {
       ],
       grids,
       busy: busyStatesOf(all),
+      before: uniqueIssuesOf(
+        inProduct.filter(
+          (issue) =>
+            asked.has(JSON.stringify([issue.product, issue.part])) &&
+            issue.rule !== BUSY_MARK &&
+            !WARNING_RULES.has(issue.rule) &&
+            !isInput(issue),
+        ),
+      ),
       drawn: frames
         .filter(({ contrast }) => contrast.scheme !== 'dark')
         .map(({ address }) => ({

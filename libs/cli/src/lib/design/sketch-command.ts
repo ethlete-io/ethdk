@@ -38,7 +38,7 @@ import { mergeAndRecord } from './system/sketch/merge-step';
 import { staleSketchBasesOf } from './system/check-system';
 import { repoInvocation } from '../invocation';
 import { MERGED_FILE } from './system/sketch/merged-parts';
-import { BusyState, groupedIssueLinesOf, renderIssueLineOf, renderIssuesOf } from './system/render-check';
+import { BusyState, groupedIssueLinesOf, RenderIssue, renderIssueLineOf, renderIssuesOf } from './system/render-check';
 import { mergePreviewOf } from './system/sketch/merge-preview';
 import { openPointsText, PartOpenPoints } from './system/open-points';
 import { instantLinesOf, sketchOpenPointsOf } from './system/read-open-points';
@@ -978,6 +978,15 @@ const released = (context: Context) =>
     return 0;
   });
 
+export const beforeLinesOf = ({ sketches, before }: { sketches: Sketch[]; before: RenderIssue[] }) =>
+  [...new Set(sketches)].flatMap((sketch) =>
+    groupedIssueLinesOf(
+      before
+        .filter((issue) => sketch.targets.includes(issue.part))
+        .map((issue) => ({ ...issue, sketch: { target: sketch.target, variant: 'before' } })),
+    ),
+  );
+
 const renderedVariantsOf = async ({
   target,
   config,
@@ -1003,6 +1012,10 @@ const renderedVariantsOf = async ({
         parts: [...preview.changed, ...preview.affected],
       };
     }),
+    before: [...new Set(entries.flatMap(({ sketch }) => sketch.targets))].map((part) => ({
+      product: product.name,
+      part,
+    })),
   });
 
   if ('unavailable' in rendered) console.log(`RENDER CHECK SKIPPED - ${rendered.unavailable}`);
@@ -1036,6 +1049,9 @@ const renderedVariantsOf = async ({
       console.warn(`${issue.sketch?.target ?? ''} ${issue.sketch?.variant ?? ''}: WARNING ${renderIssueLineOf(issue)}`),
     );
     groupedIssueLinesOf(rendered.issues).forEach((line) => console.error(line));
+    beforeLinesOf({ sketches: entries.map((entry) => entry.sketch), before: rendered.before ?? [] }).forEach((line) =>
+      console.log(line),
+    );
   }
 
   return rendered;

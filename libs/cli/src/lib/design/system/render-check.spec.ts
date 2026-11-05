@@ -867,6 +867,33 @@ describe('renderIssuesOf', () => {
     ]);
   }, 120_000);
 
+  it('answers the issues the product part has now when asked for them before a sketch that fixes them', async (context) => {
+    const target = checkout({
+      'components/card': { body: '<p style="margin: 0; color: #f00">Low</p>' },
+    });
+    const shop = join(target, DESIGN_DIR, 'shop');
+    const dir = join(shop, 'sketches', 'components-card');
+    const source = readFileSync(join(shop, 'components/card/card.ts'), 'utf8');
+
+    mkdirSync(join(dir, 'fixed', 'components/card'), { recursive: true });
+    writeFileSync(join(dir, 'fixed', 'components/card/card.ts'), source.replace('color: #f00', 'color: #000'));
+    writeFileSync(join(dir, 'sketch.json'), JSON.stringify({ target: 'components/card', status: 'ready' }));
+
+    const rendered = await renderIssuesOf({
+      target,
+      config: readConfig(target) ?? {},
+      jobs: [{ product: 'shop', sketch: { target: 'components/card', variant: 'fixed' }, parts: null }],
+      before: [{ product: 'shop', part: 'components/card' }],
+    });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(rendered.issues).toEqual([]);
+    expect(
+      rendered.before?.map((issue) => `${issue.sketch?.variant ?? '-'} ${issue.rule}: ${issue.detail.split(' ')[0]}`),
+    ).toEqual(['- CONTRAST: "Low"']);
+  }, 120_000);
+
   it('does not block merged interaction states when sketch CSS restyles them', async (context) => {
     const target = checkout({
       'components/shell': {
