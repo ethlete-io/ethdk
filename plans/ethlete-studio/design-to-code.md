@@ -3388,6 +3388,10 @@ nervt". Why no tool caught it: the context-warning hook (`libs/agent-rules/conte
 skill. Tool fix (builder default): when `$TMUX_PANE` is set and the agent-sessions skill is installed, the hook text
 says: save the handoff, then run `agent-sessions.mjs restart <own name> "/handoff resume"` yourself, end the turn,
 never ask the user to clear; the skill description names self-restart as a trigger; a hook spec covers both texts.
+Cause (builder): a self-restart text existed since 216d90f05, but it was gated on `$TMUX` plus a session named
+`<name>@<repo>`, never replaced `act_now`, and named no script path and no session name. Built 4694460df: gate on
+`TMUX_PANE` and `agent-sessions.mjs` on disk, name from the tmux `session_name` minus `@<repo>`, every text gives the
+full `restart` command; spec 45/45 (4 new cases). Not verified: a live self-restart in tmux.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
