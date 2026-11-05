@@ -550,3 +550,11 @@ Verified: the component spec. Not verified: the look against a design part, beca
 - Specs (`render.spec.ts`, `node-modules-base.spec.ts`): message, 30 modules of a missing-dist fixture under 5 s,
   a late build is picked up, installed message unchanged. The budget spec cannot start the compiled worker (needs
   `nx build cli`); it runs the resolve path the worker calls.
+
+## As built: CI run 41924354824
+
+- f30bb3b81: the setup action reads the Nx machine id per `RUNNER_OS` (macOS `ioreg`, Windows registry, else a warning). Verified: Linux branch and fallback in bash. Not verified: a real macOS runner.
+- b770d4222: `motion-shot.spec.ts` fixture sets its class on `:root`, so a re-render does not clear it (repro with a 300 ms delay; still bites on the old `motion-shot.ts`). `merge.spec.ts` flake (B373) not reproduced; the assertion now prints the check findings.
+- 66a4de23f: the base table error mark uses `title` again; the tooltip stays opt-in. Table goldens back inside tolerance.
+- 4de41ac2e: the Studio rules job builds `cli,components` before `design check`. The check now runs, but finds 3 problems from finding 438 (B372).
+- Open: B372 must land before CI can be green. Bundle growth from the tooltip swap (password-input, stream-with-pip, scheduler, cascader) waits for Tom. Nothing pushed.
