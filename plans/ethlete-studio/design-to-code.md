@@ -4763,6 +4763,15 @@ Why no tool caught it: the hook does not fail the commit on a failed spec (cause
 ready and picked nothing; he pressed go once by mistake much earlier. No agent says it wrote them. Why no tool caught
 it: open - the builder finds the writer of each file. Tool fix (builder default once the cause is known): only a
 human action writes a pick or a ready mark, each carries `by`, and a tool write without `by` is refused.
+Tom's merge of `components-comment-draft` was then refused ("studio has uncommitted edits outside
+components/comment-draft") by these files: the merge guard treats `go.json`, `pictures.json` and `ready.json` as
+product edits. The doc agent saved them to `/tmp/finding-468/` and restored them to HEAD (Tom's merge needed it).
+
+469\. A Studio merge leaves its result uncommitted. After Tom merged `components-comment-draft`, its
+`comment-draft.ts` edit blocked his next merge (`components/title-bar@notice-shape`) with the same guard. Tom:
+"mergen wird langsam echt witzlos". Why no tool caught it: the guard was tested one merge at a time, never two merges
+in a row. Tool fix (builder default): a merge commits its own result, or the guard ignores the files of earlier
+picks; a spec runs two merges in a row.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
