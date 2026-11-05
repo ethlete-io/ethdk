@@ -174,7 +174,7 @@ all five fifagg apps build on `chore/query-v3-migration`.
   codemod cannot wrap a call in `runInInjectionContext`, because a DOM handler or RxJS callback has no injector. Fix:
   the migrator reports each `.prepare(`, `.createSignal(` and `.behaviorSubject(` on a migrated creator outside a
   constructor, field initializer or `inject()` function, with the action "pass `{ injector }` or add
-  `provideLegacyPrepareFallback()`". Open to Tom: may the migrator add the fallback provider by itself?
+  `provideLegacyPrepareFallback()`". Tom (2026-11-05): "der migrator macht das schon nur wohl noch nicht gründlich genug der case muss also untersucht und ergänzt werden". ff finds what the migrator already does for out-of-context calls, why the `tap()` call site slipped through, and extends that handling to cover it.
 - Bundle cost of v3 over `next`: about 90 kB `@ethlete/query` and 50 kB `@ethlete/core`.
 - **Decision (Tom, 2026-11-05): the devtools panel mounts itself from a provider.** A first answer ("q1c ist
   tatsächlich smart": a `devOnly` helper) was reopened by Tom: apps already gate the provider in app config
