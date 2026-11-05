@@ -76,6 +76,10 @@ export const getMe = apiClient.get({ route: '/me', secure: true });
     expect(client).toContain('refreshStrategy: 1000,');
     expect(client).not.toContain('refreshBuffer');
     expect(client).toContain('// Derived from the v2 BearerAuthProvider in auth.ts:4.');
+    expect(client).toContain('retryConfig: { maxAttempts: 8 },');
+    expect(readFile('query-v3-migration-tasks.md')).toContain(
+      'Check the cookieDomain: v3 keeps the login cookie per host',
+    );
   });
 
   it('falls back to an empty provider when no v2 config names a refresh creator', async () => {
@@ -106,6 +110,9 @@ export const provider = new V2BearerAuthProvider({
 
     expect(client).toContain('withPersistentAuth({');
     expect(client).toContain('name: cookieName,');
+    expect(readFile('query-v3-migration-tasks.md')).toContain(
+      'Check the cookie host: v3 keeps the login cookie per host',
+    );
   });
   it('pins a non-literal refreshBuffer, maps the cookie options and warns about cookieEnabled', async () => {
     writeAuth(`export const provider = new V2BearerAuthProvider({
