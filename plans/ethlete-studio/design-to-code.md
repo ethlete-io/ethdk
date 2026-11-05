@@ -4710,10 +4710,28 @@ before, and the sketch check and the product check keep their own path exemption
 sketch copy of a foundations part is exempt too; the spec fails without it.
 
 462\. The `/__design/shot` route on :4402 returns 500 with "dist/libs/query missing, run `nx build query`" for
-`elements-shell-main` and `pages-merge`, but `dist/libs/query/package.json` exists (rebuilt 14:21). In the same
-session, `scheme=light` returns the dark picture. The builder could not review those two sketches before Tom's pick.
-Cause: unknown, an opus subagent diagnoses it (hypothesis: the render worker keeps a stale failure from the moment of
-the rebuild). Why no tool caught it and the tool fix: pending the diagnosis.
+`elements-shell-main` and `pages-merge`, but `dist/libs/query/package.json` exists (rebuilt 14:21). The builder could not
+review those two sketches before Tom's pick. Cause: a render ran at 14:21 while another session rebuilt the SDK libs
+(core was back, query not yet). The render worker kept the failure (a rejected `angular ??=` promise in
+`render-worker.ts` and Node's module cache), and the host replaces the worker only when a watched file changes; a
+missing build was never watched. Every Angular render failed from then on, also on Tom's live canvas. Why no tool
+caught it: the specs cover `entryOf` alone, not a long-lived worker that fails and then sees the build appear, and no
+health check tells a persistent render failure from one that clears. Tool fix (builder, d7fc506b1): a missing build
+is watched (-1), so the worker restarts when the build appears; the spec fails without it. Tom's server runs a frozen
+CLI copy and gets the fix at its next restart; the builder unblocked it with a `touch` on the core build.
+(`scheme=light` returning the dark picture is no defect: Studio has no light CSS.)
+
+463\. `/__design/shot` with `&sketch=<target>` and no `&variant=` silently returns the product picture. The first shot
+review of `pages-merge` compared the product with itself. Why no tool caught it: the route has no error for a sketch
+that has variants and names none. Tool fix (builder default): the route answers 400 in that case.
+
+464\. LOST-SURFACE compares only `background-color`. The `mg-shot` fill in `pages-merge` sits over the canvas dot
+pattern (`background-image`), so the rule called it redundant; without it the dots show through the shot boxes (states
+open and added, diff 1080x500 px). The sketch is withdrawn. Why no tool caught it: the rule has no fixture with a
+patterned parent, and the auto-merge refused only on the pixel diff, which nobody looked at before the sketch was
+marked ready. Tool fix (builder default): a fill over a patterned parent is a real surface, with that fixture; re-run
+`elements-shell-main`, which sits on the same canvas. Process lesson: a sketch with a pixel diff is ready only after
+its shot is looked at.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
