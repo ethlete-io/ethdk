@@ -4664,6 +4664,21 @@ only at push time, and the builder fixed it in de53d8571. Why no tool caught it 
 default): run that check at commit time for commits that touch `STATUS.md` or an ADR, and the doc-agent skill says to
 set `built: <sha>` in the same commit that closes a row.
 
+456\. B388 triage of the full studio check (798 problems, 10:46 min): the check renders each part in light and dark
+and does not de-duplicate render problems across the schemes, so the count doubles (about 412 real). Why no tool
+caught it: no spec renders one part with a problem in both schemes and counts the result. Tool fix (in B388, builder
+default): de-duplicate per scheme at `render-check.ts:982`, with that spec.
+
+457\. Rule noise in the same run: 133 LOST-SURFACE because `edged()` (`surface-nesting.ts:30`) takes a one-side
+`border-b` for a card edge (title-bar root on every shell page); 81 SKIP-SCOPE from 5 skip sites, repeated per state;
+COVERED without exemptions for `aria-hidden` decoration and an open layer over its anchor; 15 LOST-SURFACE from the
+CLI's own token and icon sheets; SDK CONTROL-STATE lines print without a prefix. Why no tool caught it: CI never ran
+the full render rules (finding 449), so nobody saw the noise. Tool fixes (in B388, builder default): one-side borders
+are no edge, report SKIP-SCOPE once per part and path, the two COVERED exemptions, no redundant `var(--surface)` fill
+in the CLI sheets, a HINT prefix for CONTROL-STATE. 27 DROPPED-PROP (missing app inputs) stay a CI warning until the
+inputs exist. 96 LOST-SURFACE are real: the floating side panel `aside.st-shell-side` and the comment-draft popover
+have the canvas fill and no visible shadow; the builder sends both to Tom as sketches.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
