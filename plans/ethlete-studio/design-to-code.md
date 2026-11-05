@@ -4771,6 +4771,10 @@ First cause (builder): the sketch decision came from the old builder's `sketch m
 merge with `--variant` writes the pick, then the dirty-file guard refused and the pick stayed. Same class as
 baa5b8810 (a refused auto-merge left a pick; now restored on refusal). Studio's pick route also writes no `by`
 (`studio-api.ts` `sketchDecisionAnswer`), so "no `by`" does not mean "no human". Other three files: open.
+Leads (builder, not verified): the changed `go.json` entries carry `at` 11:24:48Z, when the builder ran
+`yarn studio:e2e` and `nx test cli`, so a test run may write `go.json` in the real repo. The `canvas-viewport` ready
+mark (14:53:59Z) matches no agent CLI call in any session log, so the Studio server or the app may have written it.
+`pictures.json`: not checked yet.
 
 469\. A Studio merge leaves its result uncommitted. After Tom merged `components-comment-draft`, its
 `comment-draft.ts` edit blocked his next merge (`components/title-bar@notice-shape`) with the same guard. Tom:
@@ -4778,6 +4782,11 @@ baa5b8810 (a refused auto-merge left a pick; now restored on refusal). Studio's 
 there); it reset them and re-ran them with the CLI `sketch merge`. Why no tool caught it: the guard was tested one
 merge at a time, never two merges in a row, and no spec checks that a Studio merge completes. Tool fix (builder default): a merge commits its own result, or the guard ignores the files of earlier
 picks; a spec runs two merges in a row.
+Shas: 48fcbae1b (comment-draft, pick `raised`), 066f1514b (title-bar@notice-shape, pick `no-pill`), both through the
+CLI. Studio's half merge deleted `components/title-bar/shared/chrome.ts`; the CLI merge keeps it, so the :4402 server
+may run an older CLI copy (not verified). Cause lead (not verified): in `merge.ts` the swap runs at line 293 and only a
+check failure restores (line 327); an exception between the swap and `recordMerged` (line 361) leaves the files
+swapped, with no `merged.json` entry and the sketch folder still there. Next: the Studio server log of 15:36-15:38Z.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 

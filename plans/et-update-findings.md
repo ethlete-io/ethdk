@@ -156,7 +156,7 @@ Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61). Full list wi
   is a migrator defect, not a supported state: the docs stop describing it as one, and the migration report flags a
   leftover `V2QueryClient` as a migrator error to report.
 
-## 10. More migrator findings from fifagg, items 10-20 (fifagg-frontend-c3 and -3d, 2026-11-05) - open
+## 10. More migrator findings from fifagg, items 10-22 (fifagg-frontend-c3 and -3d, 2026-11-05) - open
 
 Full text with file:line in `fifagg-frontend/.claude/handoffs/query-v3/findings.md`, items 10 to 13. After hand fixes,
 all five fifagg apps build on `chore/query-v3-migration`.
@@ -268,6 +268,13 @@ all five fifagg apps build on `chore/query-v3-migration`.
   (refreshQualificationSpots and Retry do nothing, hand fix eb1e122834, 3 E2E tests), `broadcast-live-layouts.component.ts:82`;
   56 sites got it, not audited. Fix (ff): add it only where the query is provably one-shot (not stored, not executed
   again, not in a template); otherwise leave it out, with a spec per shape.
-- **Open (fifagg-frontend-3d):** `match-lobby-dispute.spec.ts:65` regression, cause not found; suspect the next-match
-  collection signal (`createQueryCollectionSignal` + `queryStateResponseSignal`, `match-lobby.component.ts:~359/:382`).
-  Question to ff: does `queryStateResponseSignal` give a response for a legacy query that is replaced while loading?
+  Audit (fifagg-frontend-3d, 816193c23a, not yet proven in E2E): `shouldAddDestroyOnResponse` returns `!hasPolling`
+  and ignores containers, templates, return values and re-execution. 36 sites in 23 files were wrong; about 20 local
+  fire-and-forget sites keep it.
+- **Not an SDK defect:** `match-lobby-dispute.spec.ts:65` is no migration regression. It comes from fifagg commit
+  826a6c6473 on `next` (elimination guidance needs a confirmation), fixed on the branch in 581a73f544.
+- **22. Legacy query executes in a loop (fifagg-frontend-3d, their item 23, cause open):** `embeds.spec.ts:140` throws
+  pageerror ET800 (a query executed more than 5 times in 100ms) from `LegacyQuery.execute` when `?match-details=`
+  opens; 22 GETs to `.../competition-match/<id>/match-streams` in about 1s, in three runs. Suspect:
+  `match-vod-with-card.component.ts:47-54` (`queryComputed` around `prepare().execute()`). File:line of the loop
+  follows.
