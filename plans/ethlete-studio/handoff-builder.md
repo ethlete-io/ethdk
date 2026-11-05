@@ -7,12 +7,12 @@ Grill/docs session: ethlete-sdk-62. NO PUSH until Tom says the release CI is don
 - 70488a4d9 slice B defects: `matrixFit` counts the fold column, fold label has a non-breaking space, extra aria-label dropped (design stays as merged). Not verified live on :4402.
 - 5273e92bf finding 480 tool fix: `design check --rules --base <range>` fails IMPLEMENTATION-UNCOMPARED for an implemented app file changed after its recorded hash; pre-push gate passes base..head. Clear with `design task <part> --verify`.
 - 0a9bf6117 pictures.json: the pages/sketches check record my own `design check` wrote.
-- 477 per-phase timing: subagent a08463b2dc399e724 was running; its result is NOT in this note. Check `git status` for uncommitted libs/cli changes before you start; review, spec, commit them or discard with the grill session.
+- 6d1b0868c 477: `ETHLETE_DESIGN_PHASES=1` prints phase times (check, ready, merge). Biggest phase render-check (22 s on pages/system): the merged part now draws beside the sketch, ready 44 s to 35 s. Budget spec counts browser contexts. Next target: `identical` (11.4 s, shoots states one by one).
 
 ## Next (in order)
 
 1. Slice B rework per finding 482: (a) `sketch discard pages-sketches` (Tom decided; states unchanged-hold, unchanged-matrix-hold go with it); (b) an unchanged sketch never offers manual pick/merge/Übernehmen: remove the per-variant fold actions slice B put in `sketches.component.html`; (c) a refused auto-merge shows ONE notice with the reason and what clears it, and the auto-merge retries by itself when the guard clears (in `sketch ready`, in Studio, when the tree gets clean); (d) 476 stays; (e) read the grill round note about the cause of a state before drawing variants. Specs, then a live shot on :4402 (GET /__design/shot) before you say ok.
-2. 477: finish per-phase timing (see above), biggest phase fix, budget spec by call count.
+2. 477 follow-up: `identical` phase (11.4 s) shoots states one by one; fix and add a call-count spec.
 3. Finding 481: 9 DROPPED-PROP on pages/sketches (app has no inputs for withdrawn, agent, fold, question, port; predates slice B). Add the inputs or drop the props, then `design check pages/sketches --product studio` and `design task pages/sketches --product studio --verify HEAD` (needs a check record; findings block it). Tool fix 481: a merge that adds props for an implemented part without app inputs opens a port item at merge time (build or STATUS row).
 4. Shared-file flood: IMPLEMENTATION-UNCOMPARED names a changed file once, not once per part (spec).
 5. 479: `sketch new` of a part with a .css fails UTILITY-CSS in check (components/kbd, components/divider).
