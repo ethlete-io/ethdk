@@ -6,7 +6,15 @@ import { Readable } from 'stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mountDrawing, ng, unseenStyles, withNgStyles, type Drawing } from '../../../design/define-call';
 import { forceMiddleware, isStale, renderMiddleware } from './render';
-import { entryOf, extractRender, lookupImports, mappedSubpathOf, mapPackage, typePathsOf } from './render-packages';
+import {
+  entryOf,
+  extractRender,
+  lookupImports,
+  mappedSubpathOf,
+  mapPackage,
+  typePathsOf,
+  watchedEntryOf,
+} from './render-packages';
 
 const packages = { '@ethlete/*': 'dist/libs/*', 'exact-pkg': 'vendor/exact' };
 
@@ -103,6 +111,20 @@ describe('a missing dist', () => {
     writeFileSync(join(dir, 'package.json'), JSON.stringify({ exports: { '.': './fesm2022/pkg.mjs' } }), 'utf8');
 
     expect(entryOf({ dir, subpath: '.' })).toBe(join(dir, 'fesm2022/pkg.mjs'));
+  });
+
+  it('marks a worker stale once a build that was missing when it loaded appears', () => {
+    const dir = join(mkdtempSync(join(tmpdir(), 'cli-render-')), 'dist/libs/query');
+    const watched: Record<string, number> = {};
+
+    expect(() => watchedEntryOf({ dir, subpath: '.' }, watched)).toThrow('nx build query');
+    expect(isStale(watched)).toBe(false);
+
+    mkdirSync(join(dir, 'fesm2022'), { recursive: true });
+    writeFileSync(join(dir, 'fesm2022/pkg.mjs'), '', 'utf8');
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ exports: { '.': './fesm2022/pkg.mjs' } }), 'utf8');
+
+    expect(isStale(watched)).toBe(true);
   });
 
   it('keeps the installed message for a package missing from node_modules', () => {

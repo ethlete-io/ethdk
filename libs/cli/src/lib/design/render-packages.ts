@@ -1,5 +1,6 @@
-import { existsSync, readdirSync, readFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { basename, resolve, sep } from 'path';
+import { pathToFileURL } from 'url';
 import { DesignConfig } from './paths';
 import { FieldSpec } from './render-fields';
 
@@ -133,6 +134,25 @@ export const entryOf = (mapped: MappedPackage) => {
   if (!file) throw new Error(`design-explore: ${dir} exports no "${subpath}".`);
 
   return resolve(dir, file);
+};
+
+/**
+ * The URL of a mapped package's entry, recorded in `watched` with its mtime. A build that is missing
+ * is recorded as -1, so the worker counts as stale once that build appears.
+ */
+export const watchedEntryOf = (mapped: MappedPackage, watched: Record<string, number>) => {
+  let path = resolve(mapped.dir, 'package.json');
+
+  try {
+    path = entryOf(mapped);
+    watched[path] ??= statSync(path).mtimeMs;
+
+    return pathToFileURL(path).href;
+  } catch (error) {
+    watched[path] ??= -1;
+
+    throw error;
+  }
 };
 
 /**
