@@ -117,6 +117,8 @@ The generator scaffolds a [`createBearerAuthProvider`](/query/auth) from your `V
 | `cookieEnabled`                 | no switch - `setRememberMe(false)` only makes it a session cookie |
 | `strategy` / `refreshBuffer`    | `refreshStrategy: refreshBuffer` - see below                      |
 
+The generator also carries the imports the copied adapters and cookie options need into the client file, and rebases relative paths. A name that the v2 file declares at its top level, not imports, goes into the report: move it into the client file or export it.
+
 `refreshBuffer` and `refreshStrategy` use different units. `refreshBuffer` is always milliseconds before expiry (default 5 minutes). A `refreshStrategy` number above `1` is also milliseconds before expiry, but a number from `0` to `1` is the fraction of the token lifetime to use before refreshing. Without either setting, v3 refreshes at 75% of the lifetime, and the buffer is kept between 1 and 10 minutes. The generator copies a literal `refreshBuffer` above `1` as is. For any other value it writes `{ minBufferMs: x, maxBufferMs: x }`, which pins the buffer to exactly `x` milliseconds.
 
 Two layout rules follow from this:

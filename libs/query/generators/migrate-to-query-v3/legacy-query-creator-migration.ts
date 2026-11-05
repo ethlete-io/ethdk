@@ -1,6 +1,11 @@
 import { Tree } from '@nx/devkit';
 import * as ts from 'typescript';
-import { V2BearerAuthConfig, collectV2BearerAuthConfigs, renderAuthProviderBody } from './auth-provider-scaffold.js';
+import {
+  V2BearerAuthConfig,
+  collectV2BearerAuthConfigs,
+  rebaseModuleSpecifier,
+  renderAuthProviderBody,
+} from './auth-provider-scaffold.js';
 import { MigrationScope } from './migration-scope.js';
 import { createModuleGraph } from './module-graph.js';
 import { pruneUnusedNamedImports, renameImportedReferences } from './rename-symbols.js';
@@ -804,7 +809,10 @@ const createAuthProviders = ({
     );
 
     const body = renderAuthProviderBody(v2Config);
-    const nextContent = generateSecureQueryCreators(addAuthProviderToFile(content, clientName, body), clientName);
+    const nextContent = generateSecureQueryCreators(
+      addAuthProviderToFile(content, clientName, body, v2Config, filePath),
+      clientName,
+    );
 
     if (nextContent === content) {
       return;
@@ -812,6 +820,17 @@ const createAuthProviders = ({
 
     tree.write(filePath, nextContent);
     createdProviders.push(filePath);
+
+    if (v2Config && v2Config.localNames.length > 0) {
+      report.addWarning({
+        title: 'Import the names the scaffolded auth provider copied',
+        summary: `The scaffolded provider uses ${v2Config.localNames.join(', ')}, declared in ${v2Config.filePath} and not exported to ${filePath}.`,
+        action: 'Move each declaration into the provider file, or export it and import it there.',
+        locations: [{ filePath }, { filePath: v2Config.filePath, line: v2Config.line }],
+        source: 'legacy-query-creator-migration',
+        dedupeKey: `auth-provider-local-names:${filePath}:${authProviderName}`,
+      });
+    }
 
     body.warnings.forEach((warning) => {
       report.addWarning({
@@ -863,14 +882,58 @@ const createAuthProviders = ({
   }
 };
 
+const addCopiedImports = (content: string, v2Config: V2BearerAuthConfig | undefined, filePath: string) => {
+  if (!v2Config || v2Config.filePath === filePath) {
+    return content;
+  }
+
+  const sourceFile = createSourceFile(content);
+  const bound = new Set<string>();
+  let lastImportEnd = 0;
+
+  sourceFile.statements.forEach((statement) => {
+    if (!ts.isImportDeclaration(statement)) {
+      return;
+    }
+
+    lastImportEnd = Math.max(lastImportEnd, statement.getEnd());
+
+    const clause = statement.importClause;
+
+    if (clause?.name) bound.add(clause.name.text);
+    if (clause?.namedBindings && ts.isNamespaceImport(clause.namedBindings)) bound.add(clause.namedBindings.name.text);
+    if (clause?.namedBindings && ts.isNamedImports(clause.namedBindings)) {
+      clause.namedBindings.elements.forEach((element) => bound.add(element.name.text));
+    }
+  });
+
+  const statements = v2Config.copiedImports
+    .filter(({ names }) => names.every((name) => !bound.has(name)))
+    .map(({ moduleSpecifier, statement }) =>
+      statement(rebaseModuleSpecifier(moduleSpecifier, v2Config.filePath, filePath)),
+    );
+
+  if (statements.length === 0) {
+    return content;
+  }
+
+  return content.slice(0, lastImportEnd) + `\n${statements.join('\n')}` + content.slice(lastImportEnd);
+};
+
 const addAuthProviderToFile = (
   content: string,
   clientName: string,
   body: ReturnType<typeof renderAuthProviderBody>,
+  v2Config: V2BearerAuthConfig | undefined,
+  filePath: string,
 ) => {
-  const nextContent = ensureImportFromEthleteCore(
-    ensureImportFromQuery(content, ['createBearerAuthProvider', ...body.importsNeeded]),
-    ['toInjectFn', 'toProvideFn'],
+  const nextContent = addCopiedImports(
+    ensureImportFromEthleteCore(ensureImportFromQuery(content, ['createBearerAuthProvider', ...body.importsNeeded]), [
+      'toInjectFn',
+      'toProvideFn',
+    ]),
+    v2Config,
+    filePath,
   );
   const sourceFile = createSourceFile(nextContent);
   const configName = ensureConfigSuffix(clientName);

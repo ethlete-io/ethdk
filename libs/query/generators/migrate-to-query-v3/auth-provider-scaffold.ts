@@ -1,4 +1,5 @@
 import { Tree } from '@nx/devkit';
+import { dirname, join, relative } from 'node:path/posix';
 import * as ts from 'typescript';
 import { MigrationScope } from './migration-scope.js';
 import { createSourceFile } from './shared.js';
@@ -39,6 +40,12 @@ export type V2BearerAuthConfig = {
   cookieSameSite?: string;
   cookieEnabled?: string;
   refreshBuffer?: string;
+
+  /** Import declarations of the v2 file that bind a name the copied expressions use, narrowed to those names. */
+  copiedImports: { moduleSpecifier: string; names: string[]; statement: (moduleSpecifier: string) => string }[];
+
+  /** Names the copied expressions use that the v2 file declares at its top level instead of importing. */
+  localNames: string[];
 };
 
 export type AuthScaffoldWarning = {
@@ -108,7 +115,10 @@ const readConfig = (
   const config: V2BearerAuthConfig = {
     filePath,
     line: sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1,
+    copiedImports: [],
+    localNames: [],
   };
+  const copiedNodes: ts.Node[] = [];
 
   const refreshConfig = configArgument.properties.find(
     (property) =>
@@ -147,10 +157,115 @@ const readConfig = (
       return;
     }
 
-    config[key as Exclude<keyof V2BearerAuthConfig, 'filePath' | 'line' | 'refreshCreatorName'>] = text;
+    config[key as CopiedConfigKey] = text;
+    copiedNodes.push(value);
   });
 
+  resolveCopiedNames(config, copiedNodes, sourceFile);
+
   return config;
+};
+
+type CopiedConfigKey = Exclude<
+  keyof V2BearerAuthConfig,
+  'filePath' | 'line' | 'refreshCreatorName' | 'copiedImports' | 'localNames'
+>;
+
+const collectIdentifierNames = (node: ts.Node, names: Set<string>) => {
+  if (ts.isIdentifier(node)) {
+    const parent = node.parent;
+    const isMemberName =
+      (ts.isPropertyAccessExpression(parent) && parent.name === node) ||
+      (ts.isPropertyAssignment(parent) && parent.name === node);
+
+    if (!isMemberName) {
+      names.add(node.text);
+    }
+  }
+
+  ts.forEachChild(node, (child) => collectIdentifierNames(child, names));
+};
+
+const resolveCopiedNames = (config: V2BearerAuthConfig, copiedNodes: ts.Node[], sourceFile: ts.SourceFile) => {
+  const used = new Set<string>();
+  copiedNodes.forEach((node) => collectIdentifierNames(node, used));
+
+  const importedNames = new Set<string>();
+
+  sourceFile.statements.forEach((statement) => {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) {
+      return;
+    }
+
+    const clause = statement.importClause;
+
+    if (!clause || clause.isTypeOnly) {
+      return;
+    }
+
+    const names: string[] = [];
+    const defaultName = clause.name && used.has(clause.name.text) ? clause.name.text : undefined;
+    const namedBindings = clause.namedBindings;
+    let namedText: string | undefined;
+
+    if (defaultName) names.push(defaultName);
+
+    if (namedBindings && ts.isNamespaceImport(namedBindings) && used.has(namedBindings.name.text)) {
+      names.push(namedBindings.name.text);
+      namedText = `* as ${namedBindings.name.text}`;
+    } else if (namedBindings && ts.isNamedImports(namedBindings)) {
+      const elements = namedBindings.elements.filter((element) => !element.isTypeOnly && used.has(element.name.text));
+
+      elements.forEach((element) => names.push(element.name.text));
+
+      if (elements.length > 0) {
+        namedText = `{ ${elements.map((element) => element.getText(sourceFile)).join(', ')} }`;
+      }
+    }
+
+    if (names.length === 0) {
+      return;
+    }
+
+    names.forEach((name) => importedNames.add(name));
+
+    const bindings = [defaultName, namedText].filter(Boolean).join(', ');
+
+    config.copiedImports.push({
+      moduleSpecifier: statement.moduleSpecifier.text,
+      names,
+      statement: (moduleSpecifier) => `import ${bindings} from '${moduleSpecifier}';`,
+    });
+  });
+
+  sourceFile.statements.forEach((statement) => {
+    const declared: string[] = [];
+
+    if (ts.isVariableStatement(statement)) {
+      statement.declarationList.declarations.forEach((declaration) => {
+        if (ts.isIdentifier(declaration.name)) declared.push(declaration.name.text);
+      });
+    } else if ((ts.isFunctionDeclaration(statement) || ts.isClassDeclaration(statement)) && statement.name) {
+      declared.push(statement.name.text);
+    }
+
+    declared.forEach((name) => {
+      if (used.has(name) && !importedNames.has(name) && !config.localNames.includes(name)) {
+        config.localNames.push(name);
+      }
+    });
+  });
+};
+
+/** Re-points a relative specifier of the v2 file at the file that now holds the provider. */
+export const rebaseModuleSpecifier = (moduleSpecifier: string, fromFilePath: string, toFilePath: string) => {
+  if (!moduleSpecifier.startsWith('.')) {
+    return moduleSpecifier;
+  }
+
+  const rebased = relative(dirname(toFilePath), join(dirname(fromFilePath), moduleSpecifier));
+
+  return rebased.startsWith('.') ? rebased : `./${rebased}`;
 };
 
 const REFRESH_QUERY_KEY = 'tokenRefresh';

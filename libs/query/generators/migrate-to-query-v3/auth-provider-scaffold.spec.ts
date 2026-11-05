@@ -137,4 +137,42 @@ export const provider = new V2BearerAuthProvider({
     expect(client).toContain("sameSite: 'strict',");
     expect(readFile('query-v3-migration-tasks.md')).toContain('Replace the v2 cookieEnabled switch');
   });
+
+  it('imports the names the copied config uses from the v2 file and reports local declarations', async () => {
+    tree.write(
+      'config/auth-constants.ts',
+      `export const AUTH_COOKIE_DOMAIN = '.example.com';\nexport const AUTH_COOKIE = 'et-auth';\n`,
+    );
+    tree.write(
+      'config/refresh.ts',
+      `export const postRefreshToken = (r: { t: string }) => ({ token: r.t, refreshToken: r.t });\n`,
+    );
+    tree.write(
+      'config/auth.ts',
+      `import { V2BearerAuthProvider } from '@ethlete/query';
+import { refresh } from '../queries';
+import { AUTH_COOKIE, AUTH_COOKIE_DOMAIN } from './auth-constants';
+import { postRefreshToken } from './refresh';
+
+const localDays = 30;
+
+export const provider = new V2BearerAuthProvider({
+  refreshConfig: {
+    queryCreator: refresh,
+    responseAdapter: postRefreshToken,
+    cookieName: AUTH_COOKIE,
+    cookieDomain: AUTH_COOKIE_DOMAIN,
+    cookieExpiresInDays: localDays,
+  },
+});`,
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const client = readFile('client.ts');
+
+    expect(client).toContain("import { AUTH_COOKIE, AUTH_COOKIE_DOMAIN } from './config/auth-constants';");
+    expect(client).toContain("import { postRefreshToken } from './config/refresh';");
+    expect(readFile('query-v3-migration-tasks.md')).toContain('localDays');
+  });
 });
