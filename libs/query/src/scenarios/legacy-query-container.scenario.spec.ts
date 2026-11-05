@@ -3,16 +3,19 @@ import { Subject } from 'rxjs';
 import { describe, expect, it } from 'vitest';
 import {
   AnyLegacyQuery,
-  AnyV2Query,
   createLegacyQueryCreator,
   createQueryCollectionSignal,
-  def,
   queryComputed,
   QueryStateType,
-  V2QueryClient,
-  V2QueryClientConfig,
 } from '../index';
-import { Scenario, useScenario } from './harness';
+import {
+  createLegacyClient,
+  LEGACY_CLIENT_KINDS,
+  LegacyClientKind,
+  LegacyClientQuery,
+  Scenario,
+  useScenario,
+} from './harness';
 
 const BASE_URL = 'https://api.test';
 
@@ -20,69 +23,39 @@ type User = { id: string; name: string };
 type GetUserArgs = { response: User; pathParams: { id: string } };
 type CreateUserArgs = { response: User; body: { name: string } };
 
-type LegacyClientConfig = Omit<V2QueryClientConfig, 'baseRoute'>;
-type TrackFn = <T extends AnyV2Query>(query: T) => T;
+type GetUserArgs0 = { pathParams: { id: string } };
 
 const withLegacyClient = (
   s: Scenario,
-  config: LegacyClientConfig,
-  body: (client: V2QueryClient, track: TrackFn) => void,
+  kind: LegacyClientKind,
+  body: (prepare: (id: string) => LegacyClientQuery) => void,
 ) => {
+  const client = createLegacyClient(s, kind, { baseUrl: BASE_URL });
   const owner = s.consumer();
-  const client = owner.run(() => new V2QueryClient({ baseRoute: BASE_URL, ...config }));
-  const tracked: AnyV2Query[] = [];
+  const getUser = client.get<GetUserArgs0>((p) => `/users/${p.id}`);
 
   try {
-    body(client, (query) => {
-      tracked.push(query);
-
-      return query;
-    });
+    body((id) => getUser.prepare({ pathParams: { id }, injector: owner.injector }));
   } finally {
-    for (const query of tracked) {
-      query.stopPolling();
-      query.abort();
-    }
-
-    client._store.forEach((query, key) => {
-      query.stopPolling();
-      query.abort();
-      client._store.remove(key);
-    });
-
-    client.clearAuthProvider();
+    client.destroy();
     owner.destroy();
   }
 };
 
-const createGetUser = (client: V2QueryClient) =>
-  client.get({
-    route: (p) => `/users/${p.id}`,
-    types: {
-      args: def<{ pathParams: { id: string } }>(),
-      response: def<User>(),
-    },
-  });
-
-const holdQuery = (injector: Injector, source: () => AnyV2Query | AnyLegacyQuery | null) =>
-  queryComputed(source, { injector });
+const holdQuery = (injector: Injector, source: () => LegacyClientQuery | null) => queryComputed(source, { injector });
 
 const isUnderlyingQueryDestroyed = (query: AnyLegacyQuery) =>
   (query.newQuery.subtle.injector as unknown as { destroyed: boolean }).destroyed;
 
-describe('legacy query container scenario', () => {
+describe.each(LEGACY_CLIENT_KINDS)('legacy query container scenario on the %s client', (kind) => {
   const scenario = useScenario({ baseUrl: BASE_URL, clientOptions: { keepUnusedFor: 0 } });
 
   it('aborts the in-flight request when its only container is destroyed', () => {
     const s = scenario();
     s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 1_000 }));
 
-    withLegacyClient(s, {}, (client, track) => {
-      const query = track(
-        createGetUser(client)
-          .prepare({ pathParams: { id: '1' } })
-          .execute(),
-      );
+    withLegacyClient(s, kind, (prepare) => {
+      const query = prepare('1').execute();
 
       const consumer = s.consumer();
       holdQuery(consumer.injector, () => query);
@@ -102,12 +75,8 @@ describe('legacy query container scenario', () => {
     const s = scenario();
     s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 1_000 }));
 
-    withLegacyClient(s, {}, (client, track) => {
-      const query = track(
-        createGetUser(client)
-          .prepare({ pathParams: { id: '1' } })
-          .execute(),
-      );
+    withLegacyClient(s, kind, (prepare) => {
+      const query = prepare('1').execute();
 
       const first = s.consumer();
       const second = s.consumer();
@@ -133,12 +102,8 @@ describe('legacy query container scenario', () => {
     const s = scenario();
     s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 1_000 }));
 
-    withLegacyClient(s, {}, (client, track) => {
-      const query = track(
-        createGetUser(client)
-          .prepare({ pathParams: { id: '1' } })
-          .execute(),
-      );
+    withLegacyClient(s, kind, (prepare) => {
+      const query = prepare('1').execute();
 
       const holder = s.consumer();
       holdQuery(holder.injector, () => query);
@@ -164,11 +129,10 @@ describe('legacy query container scenario', () => {
     const s = scenario();
     s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
 
-    withLegacyClient(s, {}, (client, track) => {
-      const getUser = createGetUser(client);
-      const polled = track(getUser.prepare({ pathParams: { id: '1' } }).execute());
-      const next = track(getUser.prepare({ pathParams: { id: '2' } }));
-      const selected = signal<AnyV2Query | null>(polled);
+    withLegacyClient(s, kind, (prepare) => {
+      const polled = prepare('1').execute();
+      const next = prepare('2');
+      const selected = signal<LegacyClientQuery | null>(polled);
 
       const consumer = s.consumer();
       holdQuery(consumer.injector, () => selected());
@@ -196,12 +160,11 @@ describe('legacy query container scenario', () => {
     const s = scenario();
     s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
 
-    withLegacyClient(s, {}, (client, track) => {
-      const getUser = createGetUser(client);
-      const polled = track(getUser.prepare({ pathParams: { id: '1' } }).execute());
-      const next = track(getUser.prepare({ pathParams: { id: '2' } }));
-      const switched = signal<AnyV2Query | null>(polled);
-      const kept = signal<AnyV2Query | null>(polled);
+    withLegacyClient(s, kind, (prepare) => {
+      const polled = prepare('1').execute();
+      const next = prepare('2');
+      const switched = signal<LegacyClientQuery | null>(polled);
+      const kept = signal<LegacyClientQuery | null>(polled);
 
       const switching = s.consumer();
       const keeping = s.consumer();
@@ -234,12 +197,8 @@ describe('legacy query container scenario', () => {
     const s = scenario();
     s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
 
-    withLegacyClient(s, {}, (client, track) => {
-      const polled = track(
-        createGetUser(client)
-          .prepare({ pathParams: { id: '1' } })
-          .execute(),
-      );
+    withLegacyClient(s, kind, (prepare) => {
+      const polled = prepare('1').execute();
 
       const consumer = s.consumer();
       holdQuery(consumer.injector, () => polled);
@@ -260,6 +219,10 @@ describe('legacy query container scenario', () => {
       expect(s.api.requestCount('GET', '/users/1')).toBe(polledCount);
     });
   });
+});
+
+describe('legacy query container scenario on interop creators', () => {
+  const scenario = useScenario({ baseUrl: BASE_URL, clientOptions: { keepUnusedFor: 0 } });
 
   it('keeps a shared query alive when one of two containers switches away', () => {
     const s = scenario();
