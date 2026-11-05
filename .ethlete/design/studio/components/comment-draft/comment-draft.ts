@@ -48,6 +48,8 @@ export const commentDraft = async ({ text = '', phase, reason = '' }: Props) => 
   return {
     body: html`<div
       class="relative z-20 flex w-80 flex-col gap-space-2 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-space-3 shadow-lg"
+      role="dialog"
+      aria-label="Kommentar schreiben"
     >
       ${field.body}${phase === 'error' ? problem('Kommentar nicht gesendet. Erneut versuchen.') : phase === 'rejected' ? problem(reason) : ''}
       <div class="flex justify-end gap-space-2">
@@ -60,7 +62,7 @@ export const commentDraft = async ({ text = '', phase, reason = '' }: Props) => 
 
 export default definePart({
   note: 'Shared comment draft after the system page: a bordered card with a three-row textarea, Abbrechen and a filled Senden, and the send error line. It stacks at z-20 so a canvas frame overlay no longer covers it.',
-  madeBy: ['claude-sonnet-5-5'],
+  madeBy: ['claude-sonnet-5-5', 'claude-opus-5-5'],
   widths: [360],
   motions: { busy: { from: 'busy', to: 'busy' } },
   instant: 'Typing and the error line change the draft at once; only the Senden spinner loops while busy.',
