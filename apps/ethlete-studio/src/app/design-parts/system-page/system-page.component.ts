@@ -6,6 +6,7 @@ import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component'
 import { PartTreeComponent } from '../part-tree/part-tree.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { SystemEmptyComponent } from './system-empty.component';
+import { BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
 import { CommentDraftComponent, CommentSendPhase } from './comment-draft.component';
 import { OpenPointsChipComponent } from './open-points-chip.component';
 import { MANY_STATES_LAYERS, OPEN_POINTS_SAMPLE, SYSTEM_LAYERS } from './system-page-sample';
@@ -106,9 +107,12 @@ export const FRAME_HEAD_CLASS =
           </button>
           <ethlete-open-points-chip
             [(closed)]="closed"
+            [(blockersOpen)]="blockersOpen"
             [part]="part()"
             [groups]="groups()"
             [exceptionCount]="openExceptionCount()"
+            [buildReady]="buildReady()"
+            (openEditSketch)="openEditSketch.emit($event)"
           />
         </div>
       }
@@ -152,6 +156,8 @@ export class SystemPageComponent {
   public part = input('components/button');
   public openPoints = input(OPEN_POINTS_SAMPLE);
   public exceptionCount = input(0);
+  public buildReady = input<BuildReadyStatus | null>(null);
+  public blockersOpen = model(false);
   public shellAction = output<ShellAction>();
 
   public activate = output<string>();
@@ -162,6 +168,7 @@ export class SystemPageComponent {
   public zoomIn = output();
   public fitAll = output();
   public sendComment = output<string>();
+  public openEditSketch = output<BuildBlocker>();
 
   protected readonly LABELS = STUDIO_LABELS.system;
   protected readonly FRAME_CLASS = FRAME_CLASS;

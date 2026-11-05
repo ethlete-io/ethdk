@@ -1,4 +1,5 @@
 import { PartTreeLayer } from '../part-tree/part-tree.component';
+import { BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
 
 export type OpenPointIcon = 'grid' | 'warning' | 'comment' | 'error' | 'flow';
 
@@ -62,3 +63,36 @@ export const OPEN_POINTS_SAMPLE: OpenPointGroup[] = [
     ),
   },
 ];
+
+const EMBEDDED_BLOCKER: BuildBlocker = {
+  kind: 'embedded',
+  text: 'components/badge ist nicht baubereit',
+  part: 'components/badge',
+};
+
+const manyBlockers = (openCount: number): BuildBlocker[] => [
+  { kind: 'open-point', text: `${openCount} offene Punkte und Ausnahmen` },
+  EMBEDDED_BLOCKER,
+  { kind: 'problem', text: 'APP-SPEC: button.component.spec.ts schlägt fehl' },
+  { kind: 'compare', text: 'hover weicht vom Design ab' },
+];
+
+export type BuildReadySample = 'one-blocker' | 'checking' | 'direct-edit' | 'ready' | 'blocked';
+
+export const buildReadySampleOf = (sample: BuildReadySample, openCount: number): BuildReadyStatus => {
+  switch (sample) {
+    case 'checking':
+      return { state: 'checking' };
+    case 'ready':
+      return { state: 'ready' };
+    case 'one-blocker':
+      return { state: 'blocked', blockers: [EMBEDDED_BLOCKER] };
+    case 'direct-edit':
+      return {
+        state: 'blocked',
+        blockers: [{ kind: 'direct-edit', text: 'Bild ohne Sketch geändert' }, ...manyBlockers(openCount)],
+      };
+    case 'blocked':
+      return { state: 'blocked', blockers: manyBlockers(openCount) };
+  }
+};

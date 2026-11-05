@@ -107,6 +107,22 @@ export const STUDIO_LABELS = {
     comment: 'Kommentar',
     commentOn: (frame: string) => `Kommentar zu ${frame}`,
   },
+  buildReady: {
+    ready: 'Baubereit',
+    checking: 'Wird geprüft',
+    blocked: (count: number) => `Nicht baubereit (${count})`,
+    reasons: 'Gründe',
+    openEditSketch: 'Sketch öffnen',
+    groups: {
+      'direct-edit': 'Direkte Änderung',
+      'open-point': 'Offene Punkte',
+      embedded: 'Eingebettete Teile',
+      problem: 'Regeln',
+      compare: 'Vergleich mit der App',
+      'sdk-error': 'SDK-Fehler',
+      'stale-record': 'Prüfstand',
+    },
+  },
   commentDraft: {
     comment: 'Kommentar',
     placeholder: 'Enter sendet, Umschalt+Enter macht einen Zeilenumbruch',

@@ -157,12 +157,16 @@ const clickOpen = async (options: {
   if (name === null)
     throw new HarnessError(`the design picture has no [data-et-control="${control}"] trigger to click open`);
 
-  const triggers = host.locator('[aria-expanded]');
-  const trigger = (
-    name.label === null
+  const triggerIn = (scope: ReturnType<Page['locator']>) => {
+    const triggers = scope.locator('[aria-expanded]');
+
+    return name.label === null
       ? triggers.filter({ hasText: name.text })
-      : triggers.and(host.locator(`[aria-label=${JSON.stringify(name.label)}]`))
-  ).first();
+      : triggers.and(scope.locator(`[aria-label=${JSON.stringify(name.label)}]`));
+  };
+  const trigger = triggerIn(host)
+    .or(triggerIn(page.locator(OVERLAY_ROOTS)))
+    .first();
   const named = name.label ?? name.text;
 
   await trigger.waitFor({ state: 'visible', timeout }).catch(() => {

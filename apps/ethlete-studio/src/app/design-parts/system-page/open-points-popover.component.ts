@@ -1,5 +1,6 @@
-import { Component, computed, input, ViewEncapsulation } from '@angular/core';
+import { Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { BuildBlocker, BuildReadyFooterComponent, BuildReadyStatus } from './build-ready-footer.component';
 import { OpenPointGroup } from './system-page-sample';
 
 const SHOWN_LINES = 3;
@@ -93,13 +94,24 @@ const SHOWN_LINES = 3;
           <span class="text-(--et-surface-color-muted-solid)">{{ LABELS.allDone }}</span>
         </div>
       }
+      @if (buildReady(); as status) {
+        <ethlete-build-ready-footer
+          [(blockersOpen)]="blockersOpen"
+          [status]="status"
+          (openEditSketch)="openEditSketch.emit($event)"
+        />
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
+  imports: [BuildReadyFooterComponent],
 })
 export class OpenPointsPopoverComponent {
   public part = input.required<string>();
   public groups = input.required<OpenPointGroup[]>();
+  public buildReady = input<BuildReadyStatus | null>(null);
+  public blockersOpen = model(false);
+  public openEditSketch = output<BuildBlocker>();
 
   protected readonly LABELS = STUDIO_LABELS.system;
 

@@ -40,4 +40,6 @@ export const KNOWN_UNBOUND_INPUTS: KnownUnboundInput[] = [
     file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts',
     input: 'exceptionCount',
   },
+  { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'buildReady' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'blockersOpen' },
 ];

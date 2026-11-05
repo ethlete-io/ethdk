@@ -5,6 +5,9 @@ import {
   inputBinding,
   input,
   model,
+  output,
+  outputBinding,
+  twoWayBinding,
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
@@ -13,6 +16,7 @@ import { anchoredDialogOverlayStrategy, BUTTON_IMPORTS, injectOverlayManager } f
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { defer, EMPTY, finalize, switchMap, tap } from 'rxjs';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
 import { OpenPointsPopoverComponent } from './open-points-popover.component';
 import { OpenPointGroup } from './system-page-sample';
 
@@ -78,7 +82,10 @@ export class OpenPointsChipComponent {
   public part = input.required<string>();
   public groups = input.required<OpenPointGroup[]>();
   public exceptionCount = input(0);
+  public buildReady = input<BuildReadyStatus | null>(null);
   public closed = model(true);
+  public blockersOpen = model(false);
+  public openEditSketch = output<BuildBlocker>();
 
   private chip = viewChild.required('chip', { read: ElementRef<HTMLElement> });
   protected readonly LABELS = STUDIO_LABELS.system;
@@ -101,7 +108,13 @@ export class OpenPointsChipComponent {
                   ariaLabel: this.LABELS.openPoints,
                   autoFocus: false,
                   strategies: anchoredDialogOverlayStrategy(),
-                  bindings: [inputBinding('part', this.part), inputBinding('groups', this.groups)],
+                  bindings: [
+                    inputBinding('part', this.part),
+                    inputBinding('groups', this.groups),
+                    inputBinding('buildReady', this.buildReady),
+                    twoWayBinding('blockersOpen', this.blockersOpen),
+                    outputBinding<BuildBlocker>('openEditSketch', (blocker) => this.openEditSketch.emit(blocker)),
+                  ],
                 });
 
                 return ref.beforeClosed().pipe(finalize(() => ref.close()));
