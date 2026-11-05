@@ -1,3 +1,25 @@
+# Builder handoff (2026-11-06 ~01:00, builder ethlete-sdk-d7)
+
+Grill/docs session: ethlete-sdk-62. NO PUSH until Tom says the release CI is done and you ask Tom first.
+
+## Done
+
+- 70488a4d9 slice B defects: `matrixFit` counts the fold column, fold label has a non-breaking space, extra aria-label dropped (design stays as merged). Not verified live on :4402.
+- 5273e92bf finding 480 tool fix: `design check --rules --base <range>` fails IMPLEMENTATION-UNCOMPARED for an implemented app file changed after its recorded hash; pre-push gate passes base..head. Clear with `design task <part> --verify`.
+- 0a9bf6117 pictures.json: the pages/sketches check record my own `design check` wrote.
+- 477 per-phase timing: subagent a08463b2dc399e724 was running; its result is NOT in this note. Check `git status` for uncommitted libs/cli changes before you start; review, spec, commit them or discard with the grill session.
+
+## Next (in order)
+
+1. Slice B rework per finding 482: (a) `sketch discard pages-sketches` (Tom decided; states unchanged-hold, unchanged-matrix-hold go with it); (b) an unchanged sketch never offers manual pick/merge/Übernehmen: remove the per-variant fold actions slice B put in `sketches.component.html`; (c) a refused auto-merge shows ONE notice with the reason and what clears it, and the auto-merge retries by itself when the guard clears (in `sketch ready`, in Studio, when the tree gets clean); (d) 476 stays; (e) read the grill round note about the cause of a state before drawing variants. Specs, then a live shot on :4402 (GET /__design/shot) before you say ok.
+2. 477: finish per-phase timing (see above), biggest phase fix, budget spec by call count.
+3. Finding 481: 9 DROPPED-PROP on pages/sketches (app has no inputs for withdrawn, agent, fold, question, port; predates slice B). Add the inputs or drop the props, then `design check pages/sketches --product studio` and `design task pages/sketches --product studio --verify HEAD` (needs a check record; findings block it). Tool fix 481: a merge that adds props for an implemented part without app inputs opens a port item at merge time (build or STATUS row).
+4. Shared-file flood: IMPLEMENTATION-UNCOMPARED names a changed file once, not once per part (spec).
+5. 479: `sketch new` of a part with a .css fails UTILITY-CSS in check (components/kbd, components/divider).
+6. Tool fix 472: query:export-coverage and core:export-coverage in pre-push; devtools e2e cases when libs/query-devtools changes.
+7. B396 / ADR 0197 (slow design check into its own path-filtered workflow): Tom confirmed to the grill session, but the auto-mode classifier needs Tom's word in THIS builder session. Try once; if denied, wait.
+8. Before any push: `git pull --no-rebase`, full `nx test cli` + `yarn studio:e2e` once, ask Tom.
+
 # Builder handoff (2026-11-05 ~23:55, builder ethlete-sdk-d7)
 
 Grill/docs session: ethlete-sdk-62. NO PUSH until Tom says the release CI is done. Full local ci-check: 12 of 13 green, format fixed (handoff-builder.md; libs/query/.vitest is untracked output, not CI).
