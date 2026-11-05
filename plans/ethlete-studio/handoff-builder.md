@@ -11,7 +11,7 @@ Grill/docs session: ethlete-sdk-62. NO PUSH until Tom says the release CI is don
 
 ## Next
 
-1. Slice B (agent a614eb65286ba7b36, Studio UI: action never hidden by the fold, mergeHold reason in German, shared state set for Aktuell and variant rows = 475(3) + 476). Check its commit; no live Studio shot was made: take one (GET /__design/shot on :4402) before saying "ok".
+1. Slice B is committed: db25edee8 (475(3) + 476, `shownStatesOf`, `[data-sk-merge]`, `[data-sk-same-action]`, `[data-sk-merge-hold]`). Not verified: no live Studio shot (GET /__design/shot on :4402), no ngc check, no sketch-view spec for the mergeHold pass-through. Do these. The placement of the action and the repeated reason go to Tom as a sketch with variants a,b (`yarn et:design sketch new ...`), not a silent choice. Then run the full `nx test cli` and `nx lint cli` / ethlete-studio on the changed files before A+B count as done.
 2. 477: per-phase duration output in sketch ready/check/merge, run it on pages/system size, fix the biggest phase, budget spec on a fixed fixture.
 3. 479: `sketch new` of a part with a .css fails UTILITY-CSS in check (components/kbd, components/divider).
 4. Tool fix 472: add query:export-coverage and core:export-coverage to pre-push; run the devtools e2e cases in pre-push when libs/query-devtools changes.
