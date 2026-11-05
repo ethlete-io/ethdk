@@ -248,6 +248,7 @@ export class LegacyQueryCreator<
     }
 
     const variables = (args as { variables?: unknown } | undefined)?.variables;
+    const mock = (args as { mock?: unknown } | undefined)?.mock;
 
     const queryArgs = {
       // Presence, not truthiness: `0`, `''` and `false` are bodies, and dropping them silently sends a
@@ -256,6 +257,7 @@ export class LegacyQueryCreator<
       ...(args?.pathParams ? { pathParams: args.pathParams } : {}),
       ...(args?.queryParams ? { queryParams: args.queryParams } : {}),
       ...(variables !== undefined ? { variables } : {}),
+      ...(mock ? { mock } : {}),
       headers,
     } as RequestArgs<TArgs>;
 

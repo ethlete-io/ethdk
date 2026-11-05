@@ -1,9 +1,11 @@
-import { EffectRef, effect, untracked } from '@angular/core';
+import { EffectRef, effect, signal, untracked } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import {
+  combineLatest,
   defer,
   distinctUntilChanged,
   filter,
+  interval,
   map,
   Observable,
   of,
@@ -28,6 +30,7 @@ import {
   Loading,
   PollConfig,
   Prepared,
+  QueryMockConfig,
   QueryAutoRefreshConfig,
   QueryEntityConfig,
   QueryStateMeta,
@@ -193,6 +196,10 @@ export class LegacyQuery<
 
   private _wasAborted = false;
 
+  private _mockState = signal<V2QueryState<unknown> | null>(null);
+
+  private _mockSubscription: Subscription | null = null;
+
   state$: Observable<V2QueryState<Data>>;
 
   constructor(
@@ -234,17 +241,7 @@ export class LegacyQuery<
         const execState = this.newQuery.executionState();
 
         untracked(() => {
-          if (execState?.type !== 'success' || !this.entity?.set) return;
-
-          const res = execState.response;
-          const id = this.entity.id({ args: this._arguments, response: res });
-
-          this.entity.set({
-            args: this._arguments,
-            response: res,
-            id,
-            store: this.entity.store,
-          });
+          if (execState?.type === 'success') this.syncEntity(execState.response);
         });
       },
       { injector: this.newQuery.subtle.injector },
@@ -255,11 +252,16 @@ export class LegacyQuery<
     // here, not inside the `defer`: its effect has to be registered before the
     // `destroyOnResponse` teardown below, or a self-destroying query dies before its Success is published.
     const executionState$ = toObservable(this.newQuery.executionState, { injector: this.newQuery.subtle.injector });
+    const mockState$ = toObservable(this._mockState, { injector: this.newQuery.subtle.injector });
 
-    this.state$ = defer(() => executionState$.pipe(startWith(untracked(this.newQuery.executionState)))).pipe(
-      distinctUntilChanged(),
-      map((execState) => this.toQueryState(execState)),
-      switchMap((s) => this._transformState(s)),
+    this.state$ = defer(() =>
+      combineLatest([
+        mockState$.pipe(startWith(untracked(this._mockState)), distinctUntilChanged()),
+        executionState$.pipe(startWith(untracked(this.newQuery.executionState)), distinctUntilChanged()),
+      ]),
+    ).pipe(
+      map(([mock, execState]) => mock ?? this.toQueryState(execState)),
+      switchMap((s) => this._transformState(s as V2QueryState<Response>)),
     );
 
     // Tear down only what this wrapper owns. The underlying query is already being destroyed when this fires, so
@@ -274,7 +276,15 @@ export class LegacyQuery<
   }
 
   get rawState() {
-    return this.toQueryState(this.newQuery.executionState());
+    return this._mockState() ?? this.toQueryState(this.newQuery.executionState());
+  }
+
+  private syncEntity(response: unknown) {
+    if (!this.entity?.set) return;
+
+    const id = this.entity.id({ args: this._arguments, response: response as Response });
+
+    this.entity.set({ args: this._arguments, response: response as Response, id, store: this.entity.store });
   }
 
   /**
@@ -372,7 +382,11 @@ export class LegacyQuery<
   }
 
   get _isInMockMode() {
-    return false;
+    return !!this.mockConfig;
+  }
+
+  private get mockConfig() {
+    return (this._arguments as { mock?: QueryMockConfig<unknown> } | undefined)?.mock;
   }
 
   destroy() {
@@ -405,6 +419,12 @@ export class LegacyQuery<
     this._responseAtExecute = untracked(this.newQuery.response);
     this._errorAtExecute = untracked(this.newQuery.error);
 
+    if (this.mockConfig) {
+      this.startMock(this.mockConfig);
+
+      return this;
+    }
+
     untracked(() =>
       // v2 had a single `skipCache` for every method, so this cannot tell whether the underlying request is
       // cacheable. The creator is built with `silenceUncacheableAllowCacheError`, which makes `allowCache` inert
@@ -425,9 +445,63 @@ export class LegacyQuery<
     }
 
     this._wasAborted = true;
+    this._mockSubscription?.unsubscribe();
+    this._mockSubscription = null;
+    untracked(() => this._mockState.set(null));
     this.newQuery.reset();
 
     return this;
+  }
+
+  private startMock({ delay = 200, error, response, retryIntoResponse = false, progress }: QueryMockConfig<unknown>) {
+    this._mockSubscription?.unsubscribe();
+
+    const meta: QueryStateMeta = { id: -1, triggeredVia: this._triggeredVia };
+    const loading = (extra: Partial<Loading> = {}) =>
+      this._mockState.set({ type: QueryStateType.Loading, meta, ...extra });
+    const settle = () => {
+      if (error) {
+        this._mockState.set({ type: QueryStateType.Failure, meta, error } as Failure);
+
+        return;
+      }
+
+      this.syncEntity(response);
+      this._mockState.set({ type: QueryStateType.Success, meta, headers: {}, response });
+    };
+
+    untracked(() => {
+      loading();
+
+      if (progress) {
+        const fileSize = progress.fileSize ?? 1_000_000;
+        const eventCount = progress.eventCount ?? 5;
+
+        this._mockSubscription = interval(delay)
+          .pipe(takeWhile((a) => a < eventCount + 1, true))
+          .subscribe((a) => {
+            if (a === eventCount + 1) return settle();
+
+            const current = Math.min(fileSize * a, fileSize * eventCount);
+
+            loading({
+              progress: {
+                current,
+                ...(progress.omitTotal
+                  ? {}
+                  : { percentage: (current / (fileSize * eventCount)) * 100, total: fileSize }),
+              },
+              ...(progress.omitPartialText ? {} : { partialText: `Partial text ${a}` }),
+            });
+          });
+      } else if (retryIntoResponse) {
+        this._mockSubscription = interval(delay)
+          .pipe(takeWhile((a) => a < 3, true))
+          .subscribe((a) => (a === 3 ? settle() : loading()));
+      } else {
+        this._mockSubscription = timer(delay).subscribe(() => settle());
+      }
+    });
   }
 
   poll(config: PollConfig) {
@@ -553,6 +627,8 @@ export class LegacyQuery<
     this.isDestroyed = true;
     this._pollingSubscription?.unsubscribe();
     this._pollingSubscription = null;
+    this._mockSubscription?.unsubscribe();
+    this._mockSubscription = null;
     this._dependentsChanged$.complete();
     this.storeSyncEffect?.destroy();
   }

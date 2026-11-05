@@ -595,7 +595,7 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy scenario on the %s client', (kind) =>
       });
     });
 
-    itParity(kind, 'garbage-collects an expired unused query after 15 seconds', () => {
+    (kind === 'native' ? it : it.skip)('garbage-collects an expired unused query after 15 seconds', () => {
       const s = scenario();
       s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
 
@@ -613,6 +613,26 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy scenario on the %s client', (kind) =>
         expect(getUser.prepare({ pathParams: { id: '1' } })).not.toBe(query);
       });
     });
+
+    (kind === 'interop' ? it : it.skip)(
+      'keeps an expired query in use and reused until its injector is destroyed',
+      () => {
+        const s = scenario();
+        s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+        withLegacyClient(s, kind, (client, track) => {
+          const getUser = createGetUser(client);
+          const query = track(getUser.prepare({ pathParams: { id: '1' } }).execute());
+
+          s.tick();
+          s.tick(GC_INTERVAL);
+
+          expect(query.isExpired).toBe(true);
+          expect(query.isInUse).toBe(true);
+          expect(getUser.prepare({ pathParams: { id: '1' } })).toBe(query);
+        });
+      },
+    );
 
     it('keeps an unexpired unused query across a collector run', () => {
       const s = scenario();
@@ -976,7 +996,7 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy scenario on the %s client', (kind) =>
       },
     );
 
-    itParity(kind, '*etQuery exposes the request progress to its template', () => {
+    it('*etQuery exposes the request progress to its template', () => {
       const s = scenario();
 
       withLegacyClient(s, kind, (client, track) => {
