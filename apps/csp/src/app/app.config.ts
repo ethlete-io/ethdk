@@ -16,6 +16,7 @@ export const appConfig: ApplicationConfig = {
     ...provideSurfaceThemesWithTailwind4(APP_SURFACE_THEMES),
     ...provideColorThemesWithTailwind4(APP_COLOR_THEMES),
     provideQueryDevtools({
+      showInAutomation: true,
       apiEnvs: [
         {
           name: 'App API',

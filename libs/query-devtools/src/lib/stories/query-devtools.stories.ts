@@ -15,6 +15,7 @@ export default {
         // The query-form card syncs its fields to the URL, which needs a router.
         provideRouter([{ path: '**', children: [] }], withHashLocation()),
         provideQueryDevtools({
+          showInAutomation: true,
           about: { version: '1.4.2', sha: 'a3f9c1e', environment: 'storybook' },
           schema: () => QUERY_DEVTOOLS_DEMO_SCHEMA,
           apiEnvs: [

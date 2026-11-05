@@ -141,6 +141,7 @@
   "query/devtools-contract:generateQueryDevtoolsStringPreset": "spec: libs/query/src/lib/devtools/query-devtools-overrides.spec.ts",
   "query/devtools-contract:hasQueryDevtoolsOverridesAtPath": "spec: libs/query/src/lib/devtools/query-devtools-overrides.spec.ts",
   "query/devtools-contract:isDateShapedLeaf": "spec: libs/query/src/lib/devtools/query-devtools-overrides.spec.ts",
+  "query/devtools-contract:isQueryDevtoolsHiddenInAutomation": "spec: libs/query/src/lib/devtools/query-devtools-ui.spec.ts",
   "query/devtools-contract:isQueryDevtoolsFaultArmed": "spec: libs/query/src/lib/devtools/query-devtools-faults.spec.ts",
   "query/devtools-contract:matchesQueryDevtoolsMockPattern": "spec: libs/query/src/lib/devtools/query-devtools-mocks.spec.ts",
   "query/devtools-contract:matchesQueryDevtoolsMockQuery": "spec: libs/query/src/lib/devtools/query-devtools-mocks.spec.ts",
