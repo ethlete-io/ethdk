@@ -34,3 +34,8 @@ the `--slow` compare moves to its own path-filtered workflow that blocks no rele
 ## Done this session
 
 `idle_prompt` removed from the Notification sound hook in `~/.claude/settings.json` (Tom: sound only when needed).
+
+## Blocked
+
+B396 (ADR 0197): the builder auto-mode classifier denied the CI change because the order came from a peer session.
+Tom must confirm B396 directly in ethlete-sdk-0d. Tell him when he is back. Never route it around the classifier.
