@@ -137,6 +137,10 @@ Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61). Full list wi
   while afk): Q1 share on load only (migration writes `cookie.domain` from v2 `cookieDomain`) or live sync; Q2 on a
   refresh 401, re-read the cookie and retry once; Q3 share remember-me through a second cookie. ff recommends: load
   only, yes, no.
+  **Decision (Tom, 2026-11-05, "q2ok"): share on load only.** No live sync across hosts; the migration writes
+  `cookie.domain` from v2 `cookieDomain` into the scaffold. Technical defaults (doc agent, Tom did not object): on a
+  refresh 401, re-read the cookie and retry once with the fresh token before the cookie is deleted (test: two hosts, A
+  rotates, B refreshes); remember-me is not shared across hosts.
 - **Refresh `maxAttempts` 8 (B385):** v3's retry is right, but the default 8
   (`libs/query/src/lib/auth/bearer-auth-query-builders.ts:102`, `:293`) has no stated reason. The docs name the reason,
   and the generator's scaffold writes `maxAttempts` explicitly so the app sees it.
@@ -210,7 +214,9 @@ all five fifagg apps build on `chore/query-v3-migration`.
   (`legacy/interop/legacy-query-creator.ts:272-280`) does not pass `reportErrors: false`, and the migrator does not add
   it. v2 never reported. About 73 fifagg E2E tests fail on "Console errors or 5xx" (401 on `POST /auth/login`, 404 on
   public queries; `libs/queries/src/lib/gg-api/auth/auth.queries.ts:18`). fifagg workaround b30a5fba72: a helper that
-  clones with `reportErrors: false`. Open: grill question for Tom (default of legacy creators).
+  clones with `reportErrors: false`. **Decision (Tom, 2026-11-05, "q1ok"):** the migrator writes
+  `reportErrors: false` visibly into every migrated creator (v2 behaviour, explicit in code, a team can switch it on
+  per creator); the legacy interop default does not change.
 - **16. Legacy `state$` replays a stale Success after `execute()` (fifagg-frontend-3d, not yet confirmed in a
   browser):** `legacy/interop/legacy-query.ts:231-238` builds `state$` from `toObservable(executionState)` plus
   `shareReplay`. A new subscriber right after `execute()` gets the old Success; v2 switched to Loading synchronously.
