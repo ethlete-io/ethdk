@@ -3438,6 +3438,15 @@ set. Tool fix: one shared function lists the shown states for `Aktuell` and ever
 are all unchanged shows only the question, the count and the action; spec: same state set per column, also for the
 all-unchanged case.
 
+477\. `sketch ready` is very slow, and Tom thinks other design commands are too (Tom, 2026-11-05: "sketch ready muss auch
+dringend schneller werden, der und ich glaub auch weitere befehle sind echt lahm"). Why no tool caught it: no
+command has a time budget, and nothing records how long a command ran, so a slow command looks like a working one.
+Cause open (asked the builder for a measurement, not a guess). Tool fix: (1) measure `sketch ready`, `sketch check`,
+`sketch merge`, `sketch new` and `design check` on a real sketch, with the time of each phase; (2) fix the biggest
+phase first (suspects: a full draw of every variant and state, the full listing, a cold CLI build, a repeated
+compare); (3) every design command prints its duration, and a spec or a budget list fails when a command passes its
+budget on a fixed fixture.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
