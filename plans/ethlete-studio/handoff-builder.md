@@ -29,7 +29,7 @@ Grill/docs session: ethlete-sdk-ea (restarted, resumes from handoff-doc-agent.md
    the cause to the grill session. Tool fix: fresh or source-keyed cache per run.
 5. Tool fix 472 (builder default): add query:export-coverage and core:export-coverage to the pre-push checks; run the
    devtools e2e cases in pre-push when libs/query-devtools changes.
-3. Then 469 cause, 468 causes, as in the section below.
+6. Then 469 cause, 468 causes, as in the section below.
 
 # Builder handoff (2026-11-05 ~17:50, builder ethlete-sdk-0d, B388 in progress)
 
