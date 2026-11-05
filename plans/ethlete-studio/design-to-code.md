@@ -3409,6 +3409,12 @@ has a time budget, and the job has no path filter, so a query-only push pays the
 ADR 0197 (B396): a separate path-filtered workflow that blocks no release, and a time budget per CI step that
 fails loudly when crossed.
 
+474\. A vitest run in `libs/query` (generators spec) served a stale copy of the spec once from
+`node_modules/.vitest-cache`, so the run tested old code (ff, 2026-11-05, B385); ff worked around it with
+`--fsModuleCachePath /tmp/<dir>`. Why no tool caught it: nothing checks that the module cache matches the source on
+disk, and a stale pass looks like a real pass. Cause open (asked the builder). Tool fix: find the cache key that missed
+the change, then give each run a fresh or source-keyed cache, so a spec edit always reaches the run.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.

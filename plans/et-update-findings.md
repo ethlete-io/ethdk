@@ -81,7 +81,7 @@ Reported on 2026-10-30 by the session `fifagg-frontend-a5`, with `@ethlete/cli` 
   dependency yourself" and the codemod still runs. Documented in `apps/docs/cli/update.md`. Narrowed in b478e76d2:
   `addsWhenFound` adds it only when a `.ts` file names `QueryDevtoolsComponent`.
 
-## 7. `migrate-to-query-v3` leaves 141 TS errors in fifagg - mostly done (B385)
+## 7. `migrate-to-query-v3` leaves 141 TS errors in fifagg - done (B385)
 
 Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61, 462 files, exit 0; all 5 apps fail to build). Log:
 `/home/tom/dev/fifagg/fifagg-frontend/.claude/handoffs/query-v3/build.clean.log`, branch `chore/query-v3-migration`. Not triaged by fifagg.
@@ -106,6 +106,13 @@ Audit (ff, 2026-11-05): done - auth hook call-site tasks (4d824041d), scaffold i
 gets a task only for `const x = <client>.gqlQuery(...)`; inline calls, class properties, calls in functions and client
 aliases get none, and TS7006 is not named (ff builds it). Open - "Property 'token' does not exist on type '{}'" from
 the untyped response in `auth-provider-scaffold.ts:299` (ff builds it).
+
+Done (ff, 2026-11-05, not pushed): 0d9802845 - the scaffold's `extractTokens` casts the adapter result to
+`{ token: string; refreshToken: string }` (spec checks the emitted text; not compiled against fifagg). 8c060133c -
+every v2 `gqlQuery`/`gqlMutate` call shape (variable, inline property, class property, in a function or arrow, import or
+local alias, untraceable ref wrapper) gets a "Rewrite the GraphQL creator X by hand" task that names TS7006, and
+`createGqlQueryViaGet` when GET applies. The GraphQL part is task-only; the migration is REST-only. Next for ff: item 27
+pins (gaps 1, 2, 4, 5, 6), then 000 part 2.
 
 ## 8. More `migrate-to-query-v3` gaps from fifagg - mostly done (B385)
 
