@@ -3393,6 +3393,15 @@ Cause (builder): a self-restart text existed since 216d90f05, but it was gated o
 `TMUX_PANE` and `agent-sessions.mjs` on disk, name from the tmux `session_name` minus `@<repo>`, every text gives the
 full `restart` command; spec 45/45 (4 new cases). Not verified: a live self-restart in tmux.
 
+472\. CI went red again right after the green run (42069094444 on 3fd1c625b): ff's fc98d3dae hides the devtools UI
+under `navigator.webdriver`, Playwright sets it, so the devtools cases in the Strict CSP e2e and storybook-e2e found no
+toggle; the new export had no scenario (`query:export-coverage`). The builder's local batch ran typecheck, lint, test
+and build only. Why no tool caught it: the pre-push "Checks" scripts leave out `query:export-coverage` and
+`core:export-coverage`, and the e2e suites run only in CI, so an automation-gated UI passes every local hook. Tool fix
+(builder default): add both export-coverage scripts to the pre-push checks; a change that gates UI on
+`navigator.webdriver` turns it on (`showInAutomation`) in the repo's own e2e hosts in the same commit, and the
+pre-push hook runs the devtools e2e cases when `libs/query-devtools` changes.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
