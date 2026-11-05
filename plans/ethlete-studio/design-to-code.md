@@ -4698,6 +4698,17 @@ part that imports out of itself; no fixture had a pan container, and the full ch
 (finding 449). Tool fixes (builder default): one shared "reachable controls" helper for every render rule; a
 round-trip spec over every import form.
 
+460\. CLIPPED measured a scaled child at its full `scrollWidth`, ignored `overflow-clip-margin`, and reported the
+content of grab-to-pan and translated pan boxes. Why no tool caught it: every part had a broad CLIPPED skip, so the
+rule never ran there. A broad skip hides the rule's own false positives. Tool fix (builder, 9980d1092): measure the
+scaled and panned content and the clip margin; the spec fails without it. The broad skips in canvas frames and the
+Sketches page shrank to the loading badge, the gutter and far-out pins (491a945e8, 9bf563df5).
+
+461\. DENIED-CLASS checked the sketch copy of a foundations part, but the product check exempts `foundations/`. The
+two checks gave different results for the same file. Why no tool caught it: no sketch targeted a foundations part
+before, and the sketch check and the product check keep their own path exemptions. Tool fix (builder, 8ce03448c): the
+sketch copy of a foundations part is exempt too; the spec fails without it.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
