@@ -39,6 +39,12 @@ export type Migration = {
    */
   adds?: string[];
   /**
+   * `auto` only: like `adds`, but per package, and only when a `.ts` file of the repo contains one of the listed
+   * names, for example `{ "@ethlete/query-devtools": ["QueryDevtoolsComponent"] }`. A repo that is not a git
+   * checkout counts as a match.
+   */
+  addsWhenFound?: Record<string, string[]>;
+  /**
    * An Nx generator that finds the files the migration would touch and changes none. `et migrations` runs it
    * with `--dry-run`, the migration's `options` and the env var `ETHLETE_SCAN_FILE` set to a path, and the
    * generator writes a JSON array of the affected workspace-relative paths to that file.
@@ -95,6 +101,20 @@ const readStrings = (value: unknown) => {
   return strings.length > 0 ? strings : undefined;
 };
 
+const readStringLists = (value: unknown) => {
+  if (!isRecord(value)) return undefined;
+
+  const lists: Record<string, string[]> = {};
+
+  for (const [key, entry] of Object.entries(value)) {
+    const strings = readStrings(entry);
+
+    if (strings) lists[key] = strings;
+  }
+
+  return Object.keys(lists).length > 0 ? lists : undefined;
+};
+
 const parseEntry = (options: { value: unknown; origin: string; index: number }) => {
   const { value, origin, index } = options;
   const at = `${origin} entry ${index}`;
@@ -149,6 +169,7 @@ const parseEntry = (options: { value: unknown; origin: string; index: number }) 
       options: readOptions(value['options']),
       requires: readStrings(value['requires']),
       adds: readStrings(value['adds']),
+      addsWhenFound: readStringLists(value['addsWhenFound']),
       scan: readString(value, 'scan'),
       instructions,
       docs: readString(value, 'docs'),

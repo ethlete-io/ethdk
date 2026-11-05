@@ -1,3 +1,4 @@
+import { execFileSync } from 'child_process';
 import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -117,6 +118,20 @@ describe('missingRequirements', () => {
     expect(missingRequirements({ root: withCore('5.2.0'), pending: pending({ adds: ['@ethlete/extra'] }) })).toEqual([
       '@ethlete/extra@latest',
     ]);
+  });
+
+  it('adds an addsWhenFound package only when a source file names one of its identifiers', () => {
+    const root = withCore('5.0.0-next.46');
+    const entry = pending({ addsWhenFound: { '@ethlete/extra': ['ExtraComponent'] } });
+
+    execFileSync('git', ['init', '-q'], { cwd: root });
+    writeFileSync(join(root, 'app.ts'), 'export const a = 1;\n');
+
+    expect(missingRequirements({ root, pending: entry })).toEqual([]);
+
+    writeFileSync(join(root, 'page.ts'), "import { ExtraComponent } from 'somewhere';\n");
+
+    expect(missingRequirements({ root, pending: entry })).toEqual(['@ethlete/extra@next']);
   });
 
   it('keeps the peer range for a required package and skips an installed one', () => {

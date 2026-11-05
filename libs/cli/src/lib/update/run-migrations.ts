@@ -1,3 +1,4 @@
+import { spawnSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { prereleaseTag } from './semver';
@@ -118,6 +119,24 @@ const addRange = (options: { root: string; packageName: string; name: string }) 
   return version === undefined ? undefined : (prereleaseTag(version) ?? 'latest');
 };
 
+const sourceNames = (options: { root: string; names: readonly string[] }) => {
+  const result = spawnSync(
+    'git',
+    ['grep', '-q', '-F', '--untracked', ...options.names.flatMap((name) => ['-e', name]), '--', '*.ts'],
+    { cwd: options.root, stdio: 'ignore' },
+  );
+
+  return result.status !== 1;
+};
+
+const requiredNames = (migration: Migration, root: string) => [
+  ...(migration.requires ?? []),
+  ...(migration.adds ?? []),
+  ...Object.entries(migration.addsWhenFound ?? {})
+    .filter(([, names]) => sourceNames({ root, names }))
+    .map(([name]) => name),
+];
+
 /**
  * The packages the pending generators import or add that this repo lacks, as `add` specs. A package the migrating
  * package names in `peerDependencies` gets that range, for example `ts-morph@^28.0.0`. An `@ethlete/*` package
@@ -129,7 +148,7 @@ export const missingRequirements = (options: { root: string; pending: readonly P
   for (const { packageName, migration } of options.pending) {
     if (migration.kind !== 'auto') continue;
 
-    for (const name of [...(migration.requires ?? []), ...(migration.adds ?? [])]) {
+    for (const name of requiredNames(migration, options.root)) {
       if (specs.has(name) || isInstalled({ root: options.root, name })) continue;
 
       const range = addRange({ root: options.root, packageName, name });
