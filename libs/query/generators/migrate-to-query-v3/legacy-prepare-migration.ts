@@ -482,6 +482,14 @@ const createInjectorMembers = (tree: Tree, classInjectors: Map<string, ClassWith
   }
 };
 
+const getMemberStartWithComments = (content: string, member: ts.ClassElement) => {
+  const ownLineComment = ts
+    .getLeadingCommentRanges(content, member.getFullStart())
+    ?.find((range) => /\n[ \t]*$/.test(content.slice(0, range.pos)));
+
+  return ownLineComment?.pos ?? member.getStart();
+};
+
 const addInjectorMemberToClass = (content: string, classInfo: ClassWithInjector) => {
   const sourceFile = createSourceFile(content);
   let targetClass: ts.ClassDeclaration | undefined;
@@ -501,7 +509,9 @@ const addInjectorMemberToClass = (content: string, classInfo: ClassWithInjector)
   }
 
   const classBodyStart =
-    targetClass.members.length > 0 ? targetClass.members[0]!.getStart(sourceFile) : targetClass.getEnd() - 1;
+    targetClass.members.length > 0
+      ? getMemberStartWithComments(content, targetClass.members[0]!)
+      : targetClass.getEnd() - 1;
 
   const indentation = getIndentation(content, classBodyStart);
   const injectorMember = `private ${classInfo.injectorMemberName} = inject(Injector);\n\n${indentation}`;

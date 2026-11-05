@@ -526,6 +526,34 @@ export class DemoComponent {
     );
   });
 
+  it('inserts the injector member before the leading comments of the first member', async () => {
+    tree.write(
+      'component.ts',
+      `
+import { Input } from '@angular/core';
+import { createLegacyQueryCreator } from '@ethlete/query';
+
+const getUsers = {} as never;
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
+
+export class DemoComponent { // header
+  // eslint-disable-next-line @angular-eslint/no-input-rename
+  @Input('userId') id = 1;
+
+  loadUsers() {
+    return legacyGetUsers.prepare({ id: this.id });
+  }
+}
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    expect(readFile('component.ts')).toContain(
+      "{ // header\n  private injector = inject(Injector);\n\n  // eslint-disable-next-line @angular-eslint/no-input-rename\n  @Input('userId') id = 1;",
+    );
+  });
+
   it('reuses an existing injector member under its own name', async () => {
     tree.write(
       'component.ts',
