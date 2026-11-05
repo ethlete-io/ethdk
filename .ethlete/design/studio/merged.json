@@ -62,10 +62,10 @@
   "pages/inventory": "a050641c3c773f51",
   "pages/merge": "44fd8307ce8b2ab0",
   "pages/sketches": {
-    "hash": "95dc908c73b3bb99",
+    "hash": "e53138328f230d88",
     "variant": "a",
-    "decidedBy": "user",
-    "at": "2026-11-04T21:46:56.027Z"
+    "decidedBy": "auto: no visible change",
+    "at": "2026-11-05T14:13:51.860Z"
   },
   "pages/start": {
     "hash": "5074133a3524678e",
