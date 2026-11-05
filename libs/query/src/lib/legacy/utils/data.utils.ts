@@ -15,7 +15,7 @@ import {
 import { createWatch } from '@angular/core/primitives/signals';
 import { ToObservableOptions, ToSignalOptions, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { computedTillTruthy, createDestroy } from '@ethlete/core';
-import { Observable, Subscribable, of, pairwise, startWith, switchMap, takeUntil, tap } from 'rxjs';
+import { Observable, Subscribable, of, pairwise, shareReplay, startWith, switchMap, takeUntil, tap } from 'rxjs';
 import { AnyLegacyQuery } from '../interop';
 import { destroyOnceSettled } from './destroy-once-settled.util';
 import {
@@ -273,10 +273,13 @@ export function toQuerySignal<T extends AnyV2Query | AnyLegacyQuery | null, U = 
   source: Observable<T> | Subscribable<T>,
   options?: ToSignalOptions<T | U> & { initialValue?: U } & QueryContainerConfig,
 ): Signal<T | U> {
+  const shared = (
+    source instanceof Observable ? source : new Observable<T>((subscriber) => source.subscribe(subscriber))
+  ).pipe(shareReplay({ bufferSize: 1, refCount: true }));
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const s = toSignal(source, options as any);
+  const s = toSignal(shared, options as any);
 
-  addQueryContainerHandling(source as Observable<T>, () => s() as T, options);
+  addQueryContainerHandling(shared as Observable<T>, () => s() as T, options);
 
   return s as Signal<T | U>;
 }
