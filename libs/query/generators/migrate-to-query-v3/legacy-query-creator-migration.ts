@@ -134,7 +134,7 @@ export const updateLegacyCreatorImportsAndUsages = (
   scope: MigrationScope,
   report: QueryV3MigrationReport,
 ) => {
-  const legacyCreators = new Map<string, LegacyWrapperRegistration>();
+  const legacyCreators = new Map<string, LegacyWrapperRegistration[]>();
   const updatedFiles: string[] = [];
 
   scope.visit(tree, (filePath) => {
@@ -149,7 +149,10 @@ export const updateLegacyCreatorImportsAndUsages = (
     }
 
     findLegacyWrappers(content).forEach((legacyName, originalName) => {
-      legacyCreators.set(originalName, { legacyName, definedIn: filePath });
+      legacyCreators.set(originalName, [
+        ...(legacyCreators.get(originalName) ?? []),
+        { legacyName, definedIn: filePath },
+      ]);
     });
   });
 
@@ -201,7 +204,7 @@ export const updateLegacyCreatorImportsAndUsages = (
 type PointFileAtLegacyWrappersOptions = {
   content: string;
   filePath: string;
-  legacyCreators: Map<string, LegacyWrapperRegistration>;
+  legacyCreators: Map<string, LegacyWrapperRegistration[]>;
   moduleGraph: ReturnType<typeof createModuleGraph>;
   report: QueryV3MigrationReport;
 };
@@ -239,9 +242,11 @@ const pointFileAtLegacyWrappers = ({
 
     const nextElements = elements.map((element) => {
       const importedName = element.propertyName?.text ?? element.name.text;
-      const registration = legacyCreators.get(importedName);
+      const registration = legacyCreators
+        .get(importedName)
+        ?.find((candidate) => resolvesToWrapper(moduleSpecifier, importedName, candidate));
 
-      if (!registration || !resolvesToWrapper(moduleSpecifier, importedName, registration)) {
+      if (!registration) {
         return element.getText(sourceFile);
       }
 
@@ -314,7 +319,7 @@ const pointFileAtLegacyWrappers = ({
     report.addManualReview({
       title: `Point ${name} at its legacy wrapper by hand`,
       summary: `${filePath} imports the migrated creator \`${name}\` but also declares something with that name, so the migration left its usages alone to avoid rewriting the wrong symbol.`,
-      action: `Rename the local declaration or the import alias, then point the query usages at \`${legacyCreators.get(name)?.legacyName ?? `legacy${capitalizeFirstLetter(name)}`}\`.`,
+      action: `Rename the local declaration or the import alias, then point the query usages at \`${legacyCreators.get(name)?.[0]?.legacyName ?? `legacy${capitalizeFirstLetter(name)}`}\`.`,
       locations: [{ filePath }],
       source: 'legacy-query-creator-migration',
       dedupeKey: `shadowed-rename:${filePath}:${name}`,

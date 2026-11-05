@@ -650,4 +650,31 @@ export const config = computed(() => ({ queryCreator: getMatches, size: 3 }));
     expect(rail).toContain("import { legacyGetMatches } from '../../queries';");
     expect(rail).toContain('queryCreator: legacyGetMatches');
   });
+
+  it('rewrites a consumer when another project declares a creator with the same name', async () => {
+    const clientSource = `import { V2QueryClient } from '@ethlete/query';\n\nexport const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });`;
+
+    tree.write('apps/web/src/app/queries/client.ts', clientSource);
+    tree.write(
+      'apps/web/src/app/queries/match.queries.ts',
+      `import { apiClient } from './client';\n\nexport const getMatches = apiClient.get({ route: '/matches' });`,
+    );
+    tree.write('apps/web/src/app/queries/index.ts', `export * from './client';\nexport * from './match.queries';`);
+    tree.write('libs/queries/src/client.ts', clientSource);
+    tree.write(
+      'libs/queries/src/match.queries.ts',
+      `import { apiClient } from './client';\n\nexport const getMatches = apiClient.get({ route: '/matches' });`,
+    );
+    tree.write(
+      'apps/web/src/app/components/rail.component.ts',
+      `import { getMatches } from '../queries';\n\nexport const config = { queryCreator: getMatches };`,
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const rail = readFile('apps/web/src/app/components/rail.component.ts');
+
+    expect(rail).toContain("import { legacyGetMatches } from '../queries';");
+    expect(rail).toContain('queryCreator: legacyGetMatches');
+  });
 });
