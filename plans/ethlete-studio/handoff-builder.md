@@ -1,3 +1,29 @@
+# Builder handoff (2026-11-05 ~17:40, builder ethlete-sdk-0d, B388 in progress)
+
+Grill/docs session: ethlete-sdk-ea. Nothing pushed. Plan: build-ready.md "In progress: B388" (as-built notes at its end).
+
+## Done since the last handoff (committed)
+
+- 8d5c00594 finding 465 (`sketch check` prints `before` lines). 2ebbded59 HINT prefix for SDK hints. aa7d11275 COVERED
+  skip on the covering element. 65ee4694c finding 464 gate (`sketch ready` SHOT-NOT-VIEWED). 907495e9f shell-main
+  sketch discarded. f5bf4cf22 sketches `components/title-bar@notice-shape` (ready, for Tom) and
+  `pages/system@check-fixes` (ready; auto-merge skipped on anti-alias noise). 916d45534 nx.json maxCacheSize (also
+  fut-frontend c6124a817, not pushed).
+- Full run 3: 190 -> 47 findings (/tmp/b388/full-check-3.log). Triage table was sent to the grill session.
+
+## Next
+
+1. Wait for the grill decision on finding 466 (auto-merge diff counts anti-alias noise; recommended: per-channel
+   tolerance ~8/255, spec with a border anti-alias change). If yes, build it, then `sketch merge pages/system@check-fixes`.
+2. Foundations sketch `foundations/colors@foundations-check-fixes`: merge approved (rule-only fix, Tom picked `a`), but
+   `sketch merge` refuses while `.ethlete/design/studio/ready.json` has an uncommitted canvas-viewport mark that is not
+   ours. The grill session asked Tom: do not commit or revert ready.json until it answers.
+3. Check embedded-actions.spec.ts: the pre-commit run of 65ee4694c showed 1 failed test there (commit still passed).
+4. Handoff steps not done: CI "Static design rules" full check (old step 4), comment-draft role=dialog port (step 5),
+   the dynamic-import RENDER flake (optional retry window in libs/cli/design/web/frame.ts:97).
+5. After B388: shell rail bubble as its own control part (2 CONTROL-STATE, own sketch), then B391 -> B392 -> B393 ->
+   B394 -> B395 -> B369. Full `nx test cli` + `yarn studio:e2e` once before the batch push.
+
 # Builder handoff (2026-11-05 ~16:30, builder ethlete-sdk-0d, B388 in progress)
 
 Grill/docs session: ethlete-sdk-ea. Nothing pushed this session. Plan section: build-ready.md "In progress: B388".
