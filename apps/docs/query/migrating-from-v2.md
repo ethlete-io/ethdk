@@ -286,7 +286,7 @@ patchOpportunityPerson(
 
 ### GraphQL creators are rewritten by hand
 
-The generator does not rewrite `client.gqlQuery()` and `client.gqlMutate()` creators. Each one gets a task that names the replacement: `createGqlQueryViaPost`, `createGqlMutationViaPost`, or `createGqlQueryViaGet` for a query on a client that set `request.gql.transferVia: 'GET'`. v3 has no client-level transfer option, so the choice moves to the creator. See [GraphQL](/query/gql).
+The generator does not rewrite `client.gqlQuery()` and `client.gqlMutate()` creators. Each one gets a task that names the replacement: `createGqlQueryViaPost`, `createGqlMutationViaPost`, or `createGqlQueryViaGet` for a query on a client that set `request.gql.transferVia: 'GET'`. v3 has no client-level transfer option, so the choice moves to the creator. The task covers every call on a migrated client or an alias of it, inline, in a class property or inside a function, and warns that the callback parameters in its config turn into implicit-any errors (TS7006) until the creator is rebuilt. See [GraphQL](/query/gql).
 
 ### Reactive-forms async validators
 

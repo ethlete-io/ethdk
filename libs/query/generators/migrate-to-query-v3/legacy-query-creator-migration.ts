@@ -362,21 +362,6 @@ const analyzeLegacyQueryCreators = (
         return;
       }
 
-      if (oldClientNames.has(objectExpression.text) && LEGACY_GQL_METHODS.includes(methodExpression.text)) {
-        const isQuery = methodExpression.text === 'gqlQuery';
-        const viaGet = isQuery && gqlGetClients.has(objectExpression.text);
-        const creator = isQuery ? `createGqlQueryVia${viaGet ? 'Get' : 'Post'}` : 'createGqlMutationViaPost';
-
-        report.addManualReview({
-          title: `Rewrite the GraphQL creator ${node.name.text} by hand`,
-          summary: `${node.name.text} is built with \`${objectExpression.text}.${methodExpression.text}()\`. The migration only rewrites REST creators, so this one still calls a method the migrated client no longer has.${viaGet ? " The v2 client sent GraphQL queries with `request.gql.transferVia: 'GET'`, which v3 sets per creator." : ''}`,
-          action: `Rebuild it on the v3 client with \`${creator}\` and a \`gql\` document, then wrap it in \`createLegacyQueryCreator\` if its call sites stay on v2. See https://ethlete-sdk-docs.web.app/query/gql.`,
-          locations: [{ filePath, line: sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1 }],
-          source: 'legacy-query-creator-migration',
-          dedupeKey: `gql-creator:${filePath}:${node.name.text}`,
-        });
-      }
-
       if (!oldClientNames.has(objectExpression.text) || !isLegacyHttpMethod(methodExpression.text)) {
         ts.forEachChild(node, visit);
         return;
@@ -544,8 +529,146 @@ const analyzeLegacyQueryCreators = (
   };
 
   visit(sourceFile);
+  reportLegacyGqlCalls(sourceFile, filePath, oldClientNames, gqlGetClients, report);
 
   return creators;
+};
+
+const collectClientAliases = (sourceFile: ts.SourceFile, oldClientNames: ReadonlySet<string>) => {
+  const aliases = new Map<string, string>();
+  const resolve = (expression: ts.Expression): string | undefined => {
+    if (!ts.isIdentifier(expression)) {
+      return undefined;
+    }
+
+    return aliases.get(expression.text) ?? (oldClientNames.has(expression.text) ? expression.text : undefined);
+  };
+
+  const visitImports = (node: ts.Node) => {
+    if (ts.isImportSpecifier(node) && node.propertyName && oldClientNames.has(node.propertyName.text)) {
+      aliases.set(node.name.text, node.propertyName.text);
+    }
+
+    ts.forEachChild(node, visitImports);
+  };
+
+  visitImports(sourceFile);
+
+  const aliasDeclarations: Array<{ name: string; initializer: ts.Expression }> = [];
+
+  const collectDeclarations = (node: ts.Node) => {
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer) {
+      aliasDeclarations.push({ name: node.name.text, initializer: node.initializer });
+    }
+
+    ts.forEachChild(node, collectDeclarations);
+  };
+
+  collectDeclarations(sourceFile);
+
+  const addAlias = ({ name, initializer }: { name: string; initializer: ts.Expression }) => {
+    const clientName = resolve(initializer);
+
+    if (!clientName || clientName === name || aliases.has(name)) {
+      return false;
+    }
+
+    aliases.set(name, clientName);
+
+    return true;
+  };
+
+  while (aliasDeclarations.filter(addAlias).length > 0) {
+    continue;
+  }
+
+  return resolve;
+};
+
+const describeGqlCall = (call: ts.CallExpression, sourceFile: ts.SourceFile) => {
+  const path: string[] = [];
+  let node: ts.Node = call;
+
+  while (node.parent && !ts.isSourceFile(node.parent)) {
+    node = node.parent;
+
+    if (ts.isPropertyAssignment(node)) {
+      path.unshift(node.name.getText(sourceFile));
+      continue;
+    }
+
+    if (ts.isVariableDeclaration(node) || ts.isFunctionDeclaration(node)) {
+      if (node.name && ts.isIdentifier(node.name)) {
+        path.unshift(node.name.text);
+      }
+
+      break;
+    }
+
+    if (ts.isPropertyDeclaration(node) || ts.isMethodDeclaration(node)) {
+      path.unshift(node.name.getText(sourceFile));
+
+      if (ts.isClassLike(node.parent) && node.parent.name) {
+        path.unshift(node.parent.name.text);
+      }
+
+      break;
+    }
+  }
+
+  return path.length > 0
+    ? path.join('.')
+    : `at line ${sourceFile.getLineAndCharacterOfPosition(call.getStart(sourceFile)).line + 1}`;
+};
+
+const reportLegacyGqlCalls = (
+  sourceFile: ts.SourceFile,
+  filePath: string,
+  oldClientNames: ReadonlySet<string>,
+  gqlGetClients: ReadonlySet<string>,
+  report: QueryV3MigrationReport,
+) => {
+  const resolveClient = collectClientAliases(sourceFile, oldClientNames);
+
+  const visit = (node: ts.Node) => {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      LEGACY_GQL_METHODS.includes(node.expression.name.text)
+    ) {
+      const receiver = node.expression.expression;
+      const receiverText = receiver.getText(sourceFile);
+      const method = node.expression.name.text;
+      const clientName = resolveClient(receiver);
+      const name = describeGqlCall(node, sourceFile);
+      const isQuery = method === 'gqlQuery';
+      const viaGet = isQuery && !!clientName && gqlGetClients.has(clientName);
+      const creator = !isQuery
+        ? '`createGqlMutationViaPost`'
+        : viaGet
+          ? '`createGqlQueryViaGet`'
+          : clientName || gqlGetClients.size === 0
+            ? '`createGqlQueryViaPost`'
+            : "`createGqlQueryViaPost` (or `createGqlQueryViaGet` if its client set `request.gql.transferVia: 'GET'`)";
+      const builtWith = clientName
+        ? `\`${receiverText}.${method}()\``
+        : `\`${receiverText}.${method}()\`, which the migration takes for a v2 query client`;
+      const line = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
+
+      report.addManualReview({
+        title: `Rewrite the GraphQL creator ${name} by hand`,
+        summary: `${name} is built with ${builtWith}. The migration only rewrites REST creators, so this one still calls a method the migrated client no longer has, and the callback parameters in its config lose their types: expect implicit-any errors (TS7006) there until it is rebuilt.${viaGet ? " The v2 client sent GraphQL queries with `request.gql.transferVia: 'GET'`, which v3 sets per creator." : ''}`,
+        action: `Rebuild it on the v3 client with ${creator} and a \`gql\` document, then wrap it in \`createLegacyQueryCreator\` if its call sites stay on v2. See https://ethlete-sdk-docs.web.app/query/gql.`,
+        locations: [{ filePath, line }],
+        source: 'legacy-query-creator-migration',
+        dedupeKey: `gql-creator:${filePath}:${name}:${line}`,
+      });
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
 };
 
 const extractTypeFromDef = (node: ts.Expression, sourceFile: ts.SourceFile) => {

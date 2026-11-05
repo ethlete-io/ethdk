@@ -549,6 +549,72 @@ export const saveUser = apiClient.gqlMutate({ query: SAVE_USER });
     expect(report).not.toContain('Reconfigure dropped query client option "request.gql"');
   });
 
+  it('names every gql call on a v2 client in a task, whatever shape reaches the client', async () => {
+    tree.write(
+      'src/app/api/client.ts',
+      `
+import { V2QueryClient } from '@ethlete/query';
+
+export const apiClient = new V2QueryClient({
+  baseRoute: 'https://api.example.com',
+  request: { gql: { transferVia: 'GET' } },
+});
+export const apiClientRef = { client: apiClient };
+      `.trim(),
+    );
+
+    tree.write(
+      'src/app/gg-graphql/catalog/catalog.queries.ts',
+      `
+import { apiClient, apiClientRef, apiClient as aliasedClient } from '../../api/client';
+
+const localClient = apiClient;
+
+export const inlineCreators = { list: apiClient.gqlQuery({ query: LIST_QUERY }) };
+export const getViaAlias = aliasedClient.gqlQuery({ query: ALIAS_QUERY });
+export const getViaLocal = localClient.gqlMutate({ query: LOCAL_MUTATION });
+export const getViaRef = apiClientRef.client.gqlQuery({ query: REF_QUERY });
+
+export class CatalogQueries {
+  readonly items = apiClient.gqlQuery({
+    query: ITEMS_QUERY,
+    response: { transform: ({ items }) => items.map((country) => country.name) },
+  });
+}
+
+export function buildCountryQuery() {
+  return apiClient.gqlQuery({ query: COUNTRY_QUERY });
+}
+
+export const buildRegionQuery = () => apiClient.gqlMutate({ query: REGION_MUTATION });
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const report = readFile('query-v3-migration-tasks.md');
+    const section = (name: string) =>
+      report.slice(report.indexOf(`Rewrite the GraphQL creator ${name} by hand`)).split('###')[0];
+
+    for (const name of [
+      'inlineCreators.list',
+      'getViaAlias',
+      'getViaLocal',
+      'getViaRef',
+      'CatalogQueries.items',
+      'buildCountryQuery',
+      'buildRegionQuery',
+    ]) {
+      expect(report).toContain(`Rewrite the GraphQL creator ${name} by hand`);
+      expect(section(name)).toContain('TS7006');
+    }
+
+    expect(section('getViaAlias')).toContain('createGqlQueryViaGet');
+    expect(section('getViaRef')).toContain('createGqlQueryViaGet');
+    expect(section('CatalogQueries.items')).toContain('createGqlQueryViaGet');
+    expect(section('getViaLocal')).toContain('createGqlMutationViaPost');
+  });
+
   it('renames a creator passed as an object property value, a shorthand and an argument', async () => {
     tree.write(
       'client.ts',
