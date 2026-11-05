@@ -101,7 +101,8 @@ jobs:
 
       - run: yarn playwright install --with-deps chromium
 
-      - run: yarn nx build cli
+      # The drawings render `@ethlete/*` from dist, and `design check` refuses while the component mocks are unbuilt.
+      - run: yarn nx run-many -t build -p cli,components
 
       - name: Static design rules
         run: node dist/libs/cli/src/index.js design check --product studio
