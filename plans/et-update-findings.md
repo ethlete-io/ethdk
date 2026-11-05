@@ -156,7 +156,7 @@ Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61). Full list wi
   is a migrator defect, not a supported state: the docs stop describing it as one, and the migration report flags a
   leftover `V2QueryClient` as a migrator error to report.
 
-## 10. More migrator findings from fifagg, items 10-25 (fifagg-frontend-c3 and -3d, 2026-11-05) - open
+## 10. More migrator findings from fifagg, items 10-26 (fifagg-frontend-c3 and -3d, 2026-11-05) - open
 
 Full text with file:line in `fifagg-frontend/.claude/handoffs/query-v3/findings.md`, items 10 to 13. After hand fixes,
 all five fifagg apps build on `chore/query-v3-migration`.
@@ -286,6 +286,11 @@ all five fifagg apps build on `chore/query-v3-migration`.
   points at the wrong line: 3 lint errors plus an unused-directive warning
   (`navigation-cards/{country,nation,organizer}-navigation-card/*.component.ts:30-33`, fixed by hand 7374cc7b95).
   Fix (ff): insert the field before the leading comments of the next member, with a spec.
+- **26. A 401 hangs when the refresh returns the same token (fifagg-frontend-3d, their item 14):** the v3 client
+  retries a 401 only when the access token changed (dist `ethlete-query.mjs:4675`). A refresh in the same second can
+  return the identical JWT (whole-second `iat`, no `jti`); then no retry runs, no error surfaces, and the app's loader
+  waits forever. Rare in production, but the silent hang is the defect. Fix (ff): a failed or same-token refresh
+  surfaces the original 401 as an error; scenario with a same-token refresh. fifagg works around it in one e2e spec.
 - **Devtools mount (ff item 000):** part 1 built fc98d3dae (`navigator.webdriver` hides panel, lazy shell and pills;
   provider option `showInAutomation`), per Tom's item 20 decision. Part 2 open: a new entry point with a dynamic
   import plus a codemod for `<et-query-devtools-lazy>`; ff proposes the name `@ethlete/query-devtools/mount`. Open
