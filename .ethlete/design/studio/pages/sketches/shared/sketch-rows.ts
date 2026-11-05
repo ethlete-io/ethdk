@@ -217,6 +217,7 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
     world.style.setProperty('--sk-label', `${text}px`);
     world.toggleAttribute('data-sk-labels-hidden', text < MIN_LABEL);
     world.toggleAttribute('data-sk-head-hidden', note < MIN_LABEL);
+    world.querySelectorAll<HTMLElement>('[data-sk-pin]').forEach((pin) => (pin.hidden = note < MIN_LABEL));
     world.querySelectorAll<HTMLElement>('[data-sk-frame]').forEach((element) => {
       const inner = element.querySelector<HTMLElement>('[data-sk-fit-inner]');
       if (inner) element.style.height = `${inner.offsetHeight * scale}px`;

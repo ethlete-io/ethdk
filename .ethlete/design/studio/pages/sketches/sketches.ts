@@ -206,7 +206,9 @@ const portLine = (port: MergePort) =>
 
 const pinFor = (row: Row) =>
   row.key === 'a'
-    ? html`<span class="absolute top-space-1 right-space-1 z-1 flex in-data-sk-head-hidden:hidden">${pagePin}</span>`
+    ? html`<span class="absolute top-space-1 right-space-1 z-1 flex in-data-sk-head-hidden:hidden" data-sk-pin
+        >${pagePin}</span
+      >`
     : '';
 
 const headOf = (row: Row, view: View) => {
@@ -254,6 +256,7 @@ const gutter = (part: SketchPart, top: number) =>
         html`<span
           class="sk-gutter relative z-2 flex items-center self-stretch bg-et-surface-bg pr-space-3 font-code text-(length:--sk-note) leading-[1.35] text-et-surface in-data-sk-head-hidden:text-transparent"
           data-sk-gutter
+          data-et-skip="COVERED"
           style="grid-column: 1; grid-row: ${top + 1 + index * 2} / span 2"
           >${state}</span
         >`,
@@ -402,7 +405,6 @@ export default definePart<Props>({
     const content = html`<div
       class="relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))]"
       data-sketches-page
-      data-et-skip="CLIPPED"
     >
       <header
         class="absolute z-3 top-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] right-space-5 flex items-center gap-space-3"
