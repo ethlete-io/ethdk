@@ -168,8 +168,13 @@ all five fifagg apps build on `chore/query-v3-migration`.
 - **14. Legacy `prepare()` outside an injection context (fifagg-frontend-3d):** a full E2E run (`clock.runFor`) throws
   ET950: `"legacyGetNewsListByIds".prepare() was called outside of an injection context`. v2 needed no injector there;
   the legacy interop layer does. The codemod does not warn, and the migration doc does not list it as a behaviour
-  difference. Call site not found yet. Open: wrap such calls in `runInInjectionContext` in the migrator, or let the
-  legacy layer take an injector argument (ff proposes).
+  difference. Call site not found yet. No API change (ff): `prepare({ injector })`, `createSignal` and
+  `behaviorSubject` already take `{ injector }`, and `provideLegacyPrepareFallback()` already stashes the root injector
+  (browser only; the query then lives as long as the app). The docs list it (`migrating-from-v2.md:304-352`). A
+  codemod cannot wrap a call in `runInInjectionContext`, because a DOM handler or RxJS callback has no injector. Fix:
+  the migrator reports each `.prepare(`, `.createSignal(` and `.behaviorSubject(` on a migrated creator outside a
+  constructor, field initializer or `inject()` function, with the action "pass `{ injector }` or add
+  `provideLegacyPrepareFallback()`". Open to Tom: may the migrator add the fallback provider by itself?
 - Bundle cost of v3 over `next`: about 90 kB `@ethlete/query` and 50 kB `@ethlete/core`.
 - **Decision (Tom, 2026-11-05): the devtools panel mounts itself from a provider.** A first answer ("q1c ist
   tatsächlich smart": a `devOnly` helper) was reopened by Tom: apps already gate the provider in app config
