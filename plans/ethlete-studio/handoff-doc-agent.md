@@ -21,3 +21,4 @@ last STATUS row B396, last ADR 0197.
   manual merge; slice B is reworked by the builder (retry of the refused auto-merge, one notice). "ok" only after a live
   shot. 480 (IMPLEMENTATION-UNCOMPARED) is built (5273e92bf); pages/sketches needs its 9 DROPPED-PROP props (481) and
   `task --verify` before the next push.
+- 477: render-check (6d1b0868c) and `identical` (1256d2786) fixed; measure the new seconds first. Builder stopped; its handoff is final. No push.
