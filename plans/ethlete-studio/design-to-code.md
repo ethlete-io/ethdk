@@ -4626,6 +4626,18 @@ tool output is plain text. Tool fix (B390, builder default): every captured chil
 through one helper that sets `NO_COLOR` and `--pretty false` and strips ANSI, with a spec that runs it under
 `FORCE_COLOR=1`.
 
+Fixed in 9d788d831: design typecheck runs tsc with `--pretty false`; a spec under `FORCE_COLOR=1` fails without the
+fix, and the full `nx test cli` passed (2553). B373 is closed.
+
+452\. Two Studio e2e cases fail only in the full `yarn studio:e2e` run (112/114) and pass alone, also after other pages:
+(1) Sketches "pan beyond every edge": the content grew taller while it panned. Likely cause, not verified: far frames
+use a stored picture height, and the live iframe is taller. (2) Large "a variant equal to Aktuell keeps its iframes":
+variant a got 0 iframes. Likely cause: `liveShotsOf` (`sketch-view.component.ts`) fills the cap of 6 live frames in
+row order, Aktuell first, so cells near Aktuell starve variant a; under CPU load, a is also never folded as equal. Why
+no tool caught it: no spec compares a stored picture height with the live height, and the `liveShotsOf` spec fixes
+the starving order as expected. Tool fix (B391, builder default): fill the live-frame cap by distance to the view, a
+spec that compares picture and live height, and a check of the fold-equal path under load.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
