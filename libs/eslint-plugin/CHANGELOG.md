@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0-next.30
+
+### Minor Changes
+
+- Add `ethlete/no-native-title`, off in `recommendedTemplate` until projects opt in: it reports a native `title` attribute (`title="…"`, `[title]`, `[attr.title]`) on HTML elements, because the SDK tooltip replaces it. Components with a dash in their name keep their own `title` input.
+- Add the opt-in `no-silent-catch-error` rule, which flags a `catchError` handler that ignores the error and returns `of()`, `EMPTY` or `NEVER`.
+
 ## 1.0.0-next.29
 
 ### Patch Changes

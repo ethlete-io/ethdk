@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.0.0-next.80
+
+### Minor Changes
+
+- Add a `stretchContents` input to `et-button`: the label box fills the button beside the icon, so a wide button can push a trailing element to its far edge.
+- Add the `anchoredDialog()` design renderer, and draw the dialog, menu, select panel and tooltip panes of the design renderers with `data-et-auto-surface` when no `surface` is passed.
+- Add the `--et-kbd-color` custom property to `et-kbd` to set the key text colour.
+- Add a `shape` input to the window control button: `round` draws a GNOME (Adwaita) style circle next to the default `square` tile.
+
+### Patch Changes
+
+- The off switch track draws no edge and a 38% surface-interaction fill, and keeps that look on hover.
+- The pressed filled button now darkens only slightly, so it keeps clear contrast with its label, and a loading or disabled button no longer lights up while pressed.
+- The button design mock draws the busy state with its spinner when `loading` is set.
+- The `tooltip()` design renderer keeps `et-surface--inherited` on the inner `et-tooltip`, like the real component, and puts `data-et-auto-surface` on the pane only.
+- The pressed filled icon button, and so the split button trigger, darkens less and keeps its disabled colour when inactive.
+- The notification takes `--et-font-family` when it is set, like the menu and the tooltip, and the notification design mock draws its surface one elevation above its parent when no `surface` is given, as the component forces elevation 1.
+- Table: the stamped feature cells inject their feature through a token, so no table file imports itself in a cycle.
+- The textarea design mock takes an `ariaLabel` for a field without a visible label.
+- Button, icon button, chip and calendar nav buttons no longer change their background on hover or press while disabled.
+- The `menu()` design mock takes `activeSource` on a row and draws it as `data-active-source`, so a forced focus-visible row with `activeSource: 'keyboard'` shows the keyboard highlight the real menu paints.
+- The notification dismiss icon now meets the 3:1 non-text contrast minimum at rest.
+- `et-select` and `et-menu` show the option focus ring only during keyboard use; a click open or a mouse move shows none.
+- Closing a query-param overlay no longer cancels a pending navigation that already drops its query param, such as a `routerLink` inside the overlay.
+- Escape that hides an `etTooltip` now also reaches the trigger's own key handlers; a dialog beneath it still stays open.
+
 ## 1.0.0-next.79
 
 ### Minor Changes

@@ -1,5 +1,18 @@
 # @ethlete/core
 
+## 5.0.0-next.73
+
+### Minor Changes
+
+- The theme generators write a color theme's `type` as `--et-color-theme-type` and a surface's `colorThemeVariants` as `--et-surface-color-theme-variants`, so design frames can resolve semantic colors and surface swaps.
+
+### Patch Changes
+
+- The `color-theme-variants` migration declares `ts-morph`, so `et update` adds it before the codemod runs.
+- `AnimatedLifecycleDirective` no longer throws `Cannot read properties of undefined (reading 'directive')` when a bundle evaluates `AnimatableDirective` first, for example in a lazy chunk that uses `NotificationComponent`.
+- Removes every circular import inside the package, so no module can be read before it has finished loading, and adds a test that fails on a new one.
+- `et migrations` now lists `migrate-create-destroy`, `migrate-color-theme-variants` and `migrate-from-ngrx-toolkit`, all at level `optional`.
+
 ## 5.0.0-next.72
 
 ### Patch Changes

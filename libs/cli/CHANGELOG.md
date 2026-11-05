@@ -1,5 +1,333 @@
 # @ethlete/cli
 
+## 3.0.0-next.27
+
+### Minor Changes
+
+- `et design check` treats a busy drawing as ongoing work and fails with `STATE-NOT-IN-COMPONENT` when a state is not named after the app phase it sets.
+- `et design check` and `et design part-check` name the `motions` entry a missing looping motion needs, and `et design sketch check` and `sketch ready` count a state the variant draws busy as ongoing work.
+- The design check now flags doubled and lost card surfaces, and a page or sketch that rewrites an imported part's markup.
+- Add `design sketch target remove`, and make `sketch target add` refuse a part that would break the layer rule (UPWARD-DEPENDENCY) up front.
+- Add the manifest field `addsWhenFound`: `et update` adds a package only when a `.ts` file names one of the listed identifiers. The `to-query-v3` migration adds `@ethlete/query-devtools` only for repos that use `QueryDevtoolsComponent`.
+- `et design ready` drops `--by` and writes a tool-checked build-ready record that `design check` keeps current; the open-points answer gains `buildReady`, and the `no-go` / `stale-go` points are gone.
+- `design commit-hunks` now splits every shared JSON under `.ethlete/design` per entry (`--part`, or `--id` for `capabilities.json`), writes keys sorted, refuses files it cannot split, and waits for a held index lock.
+- Add `et design commit-hunks <file> --part <p>`, which commits only the entries of one part from a shared JSON file; `sketch ready` prints it for each shared file it wrote.
+- Add `et design actions --live`, which checks the shell controls on the app's real pages; `et design ready --url` runs it too.
+- New `et design actions` checks that each control reaches the state or fires the output its design declares in `data-et-action`; `et design complete` fails an undeclared one.
+- `design go` and `design accept` store a picture hash per state in `pictures.json`; `design check` carries a review or go to a part's new hash as an `auto` acceptance when every state draws pixel-identical.
+- Design frames resolve `data-et-auto-surface` by elevation like `etAutoSurface` and style `data-et-surface-interactive` like `etSurfaceInteractive`; `et design task` maps both attributes to the `@ethlete/core` directives.
+- `design check` prints a `DONE <product>: n of m` line counting the parts implemented at their go hash and marked ready.
+- `et design check` now lists the missing control states and undrawable parts `et design ready` refuses on without `--complete`, which is no longer needed.
+- `design check --product <name> --rules` runs only the static design rules, in seconds.
+- `et design check` reports `CLASS-UNDEFINED` for a Tailwind class in a design part that compiles to no CSS against the product's stylesheets. A sketch fails only on a class it adds.
+- `design compare --all --product <name>` compares every done part and exits 1 on any deviation or part it cannot compare. `design compare` on a foundation part prints that there is nothing to compare and exits 0.
+- `et design compare` and `et design task --verify` no longer need `--url`: without it they start the harness app's dev server on a free port and stop it afterwards.
+- Add `et design compare`, which shoots each part state against the app's `/__design-harness` route at 0 px. `task --verify --url` records the implementation when compare is green, and a page link may name its `component`.
+- `et design check` warns with `DENIED-CLASS` and `DENIED-STYLESHEET` when a part, or the product's stylesheet, uses a class or `var()` that the product's `deniedClasses` patterns deny.
+- `et design go` and `et design accept` with `--by tom` need a confirm at a terminal; `et design go --batch <file>` confirms a go list at once.
+- `et design go --by tom` needs `--note "Impl Qnn"` naming a committed plan decision, and refuses when the part's design changed after that decision. The note is stored in the go entry.
+- `design compare --live --sketch <variant>` compares live states against a sketch variant, `design sketch check` flags live-spec design states that do not exist, and an old record no longer absorbs a changed imported part.
+- Add `definePart({ frame })`: a demo frame that wraps only the part's own states. A part that calls `render` of another part gets it without the frame.
+- Add `et design go`, a go per design part that stores the released design. A linked part without a current go lists the open points `no go` and `go is stale`.
+- Add `et design task`, which prints what implementing a part with a current go takes: its states, the states changed since the last implementation, and the allowed files. `--verify` rejects a commit that changes other files.
+- `et design actions` and `et design actions --live` click each focusable element with a real mouse click and fail when it shows a focus ring afterwards. A missing ring on keyboard focus is reported as a warning.
+- Design frames resolve `data-et-semantic-color="<type>"` to the colour theme of that type and apply the surface's `colorThemeVariants` swap on auto surfaces; `et design task` maps it to `injectSemanticColorTheme`.
+- `slot(name)` from `@design-system` marks a part's region whose content the implementing component projects with `<ng-content>`. `et design compare` empties every such region in the design picture, as the harness projects nothing.
+- `et design` part hashes cover every imported file and the app component's files, and `design check` names what made a ready or done part `STALE`.
+- A grid row that forces only plain SDK components the part does not style draws at rest only; shot, compare and the visible-change gate skip its interaction states.
+- `et design check --product <name> --visible-change [--base <rev>]` fails a harness part whose app looks different since the merge base, unless a picked or merged sketch of it is in the range or it moved closer to its design.
+- A visible edit of a merged design part outside a sketch now opens an old/new sketch to pick in Studio, and merges no longer write `accepted.json`.
+- `et design go --batch` takes `"action": "merge"` entries: a sketch merge as Tom, checked with every other entry before the one prompt. The merge refusal for a sketch in progress names the `sketch ready` command.
+- `design check` keeps a go when a design change adds a state but leaves every existing state pixel-identical, and lists the new state for the next review.
+- `design check` and sketch variants fail with `INLINE-UI-IN-PAGE` when a page writes interactive markup instead of embedding a part.
+- A design part can declare `instant: 'reason'` when its states switch without motion, instead of listing every pair as `unreachable`; `design sketch ready` prints a NOTE for it.
+- `design check --product <name> --live` and `design compare --live` report visible app regions no part covers (UNCOVERED), unless the live spec lists them under `partless`.
+- `ORPHAN-ENDPOINT` known entries now name the state they expect, and fail when the code no longer matches it.
+- The render check fails `UNREACHABLE` on a declared action a state hides, fades out, shrinks to nothing or buries under
+  another element, and `COVERED` on an action or a nested projected region an opaque element of another subtree paints
+  over.
+- `et design ready` and `POST /__design/part-ready` refuse a part while `et design actions` fails for it, and list the failed checks. `et design ready` takes `--url` for a running harness app.
+- `design check` SAMPLE-DEFAULT also flags an implementing app component that falls back to a sample constant (`_SAMPLE`, `_ROWS` or a literal `UPPER_CASE` class field of the file) via `??`, `||` or a ternary.
+- Add `et design sketch new --name <n>`: a second sketch on a part gets its own folder, `sketch.json` and id (`<layer>/<name>@<n>`), and the unnamed single-sketch layout is unchanged.
+- `et design sketch report` refuses a ready sketch. Add `--reopen` to move it back to in progress when the user asks for a change.
+- Add `design sketch withdraw` for an agent to retract its own identical variant; verdict commands now refuse an unknown `--by`.
+- Studio can now record a go and accept a direct edit by a click (new `/__design/part-accept` route).
+- New slow design rules `APP-SPEC`, `UNCOVERED-REGION` and `VISIBLE-CHANGE` run with `et design check --product <name> --slow` and in the background of `et design serve`; their results feed build-ready.
+- `et design task` starts only on a build-ready part and lists its blockers; done, STALE and ACTION-LOST read the check record instead of go.json.
+- `et design check` now fails on CLASS-UNDEFINED, DENIED-CLASS and DENIED-STYLESHEET findings, and `design accept` refuses a part with a check finding.
+- `design sketch check` warns `VARIANT-UNCHANGED` when every state of a live variant draws the same pixels as Aktuell.
+- `design compare pages/<name> --live` compares a page design with the app's real page, run on the fixed sample the product names in `harness.live`.
+- `design compare` now runs on a part that changed since its go and marks its output `unapproved`. `design task --verify`, `ready` and `accept` still require a current go.
+- `et design harness --product <name>` generates the design harness part map from the parts' `implements` links; `compare` and `task --verify` refuse a stale map.
+- The design system listing flags a base part no part of the product imports with `unusedInProduct`, and Studio lists those parts in a folded "Not used in <product>" group.
+- `design shot --variants` leaves out variants their agent withdrew; `--all` or `--variant <name>` draws them.
+- `design sketch merge` records the picked variant, who decided it and when in `merged.json`, next to the part's hash. Hash-only entries still read.
+- `design sketch rebase --ported` keeps files already ported by hand and ports the rest.
+- `design sketch rebase` merges the product's changes into each variant and stops on a conflict; `sketch ready` on a ready sketch exits 0.
+
+### Patch Changes
+
+- The design action check drops the keyboard focus ring of a control pressed with Enter or Space before comparing
+  against a goal state drawn unfocused, so an in-place toggle reaches its state.
+- `ethlete-agents sync` and `et` write their JSON files (`.mcp.json`, design and update state) in the checkout's Prettier format.
+- A refused auto-merge in `design sketch ready` no longer leaves a `pick` decision in `sketch.json`.
+- `design sketch check` and `ready` print each pre-existing problem as its own line, and the "no looping motion" refusal names the `motions` entry to add.
+- Do not refuse `design` for a checkout whose `dist/libs/cli` is a symlink into another checkout, as in the e2e-check worktrees.
+- Settle the embedded frames of a part before a motion shot, so an animation inside an iframe is finished in every keyframe.
+- The stale cli build refusal now also compares the source hash when `dist/libs/cli` is symlinked from outside the checkout: a matching build runs, a build from other sources is refused.
+- The stale cli build refusal of `et design` now also applies when it runs from a subfolder of the checkout, so `compare`, `check` and every other design command refuse a build made from other `libs/cli` sources.
+- The System page popover ends in a build-ready footer with a Gründe disclosure, and `design compare` now clicks open a trigger that sits inside an overlay.
+- The action check checks only the elements a part draws itself, leaving an embedded part's to its own check, and prints a `host` line only when it skipped one.
+- `design actions` checks an action declared inside an embedded part against that part's own app component, not the host page.
+- `design actions` and `design live-actions` name the state a missed press reaches instead when only `aria-expanded` can tell the states apart.
+- `design actions` names what a missed state action reached instead: "reaches state X instead" when the app drawing matches another declared state, or "reaches no declared state (closest X, N px)" otherwise.
+- `design actions` expects a surface opened from another state over that state, and resolves a state an embedded part already draws against the page.
+- `design actions` presses at the frame size and no longer fails elements that differ only in tag, accessible name, or an action their embedded part owns.
+- `et design actions` and the live action check press a switch, checkbox or radio with click and Space only, as a native checkbox; Enter no longer counts as a missed action on them.
+- `design actions` prints each action check as soon as it is known instead of all at the end, so a killed run keeps its results.
+- `design actions` waits for the part to mount on a page-layout harness before it scans its controls.
+- A spec now fails when a Studio-server route changes without a bump of the Studio API level.
+- `et design check --app-classes` no longer refuses while the design mocks are unbuilt, since it reads only the app source.
+- `design check` no longer carries a go past a change inside a slot.
+- Drop the INLINE-UI-IN-PAGE open entries the Studio pages no longer need.
+- Empty the INLINE-UI-IN-PAGE open list: the inbox and system pages embed the comment-draft part.
+- The refusal of a second sketch on a target with an open sketch names the way out: extract the region into a part and sketch that.
+- `design complete` accepts a bare `data-et-surface` on a part's root element as the part's own surface, with no control declaration. A bare one anywhere else is still a gap.
+- The cli build now writes its build time into a shipped build-info.json, so the design server can tell a newer install from an older one even when the package files all carry the same timestamp.
+- `design check` runs the `CAPABILITY-PLACE` rule: a capability no design action draws fails the check, and one listed as `missing` prints a warning.
+- `et design check` ends with one count line per rule, zeros included, then `check complete: <n> parts, <m> findings`, so a log read mid-run no longer looks clean.
+- `design check` names every stateful part that `design ready` cannot draw, also when the render check is skipped or blocked, so it lists the same refusal reasons as `ready`.
+- `design check` prints the instant line of a part that declares instant state switches, like `sketch ready`.
+- `et design check` runs the render check even when a static rule fails, and names each part it could not draw in a `NOT CHECKED` line.
+- A part whose drawing times out in `design check` is drawn once more alone, and a second timeout reports `RENDER-TIMEOUT` instead of `RENDER`.
+- `design check` now reports every SDK error (`ET` code) a part logs while it draws as a `RENDER` issue.
+- `design ready` refuses a part with a state that does not draw, and `design check` names it as a part ready refuses. The `RENDER` line of an undrawn state now carries the error that stopped it.
+- `design check <layer>/<name>` reports only that part, and a flag `design check` does not read fails with exit code 2.
+- The design check no longer reports the string options of a design renderer call, such as a dialog placement, as undefined classes; only the class option and HTML content are read.
+- `CLASS-UNDEFINED` no longer reads the option values of a `part.render({ ... })` call on an `@system/` part as classes.
+- `et design check` prints `CLASS-UNDEFINED` as a warning for now, so a product can migrate its classes; a sketch still fails on a class it adds.
+- The design server stops a sketch listing, compare or diff once every client that asked for it has closed its request, instead of drawing the remaining pictures.
+- `et design commit-hunks` waits for a held `.git/index.lock` and retries, and the `sketch ready` refusal on a held sketch names the `sketch release` command.
+- `design compare` opens each state a part's `controls` name as a surface by a real pointer click on the app trigger, from the state whose props differ least, instead of passing the open props to the harness.
+- `design compare` fails a state whose harness page or live page logs an SDK error (`ET` code), and names each code and message.
+- `design compare` hovers, presses or keyboard-focuses each element the design picture forces, found in the app by its `aria-label`, before it shoots the harness.
+- `design compare` and the `DROPPED-PROP` check accept a design prop that the harness `DESIGN_HARNESS_SAMPLES` function of the part consumes, even without a matching input.
+- `et design compare` shoots a fitted app part with its overflowing positioned content and the design's pixel rounding, and a forced press also forces hover, as a real pointer press does.
+- `design compare` draws a part that declares `widths` at its first width, in the design and in the app's harness host, instead of fitting the app component to its content.
+- `design compare` no longer fails a state on a design prop that no state differs by, or that only forcing states set.
+- `design compare` lets the harness drop a design prop set to `selected` in a state whose design draws a selected option, as the app draws that look from its own value.
+- `design compare` fails a state it cannot check: one that differs from another only inside emptied slots, or one with a design prop the app component has no input for.
+- `design compare` no longer fails when the app opens fewer overlay panes than the design draws, such as a static dialog. It waits 3 seconds for the panes, then shoots anyway so the pixel compare decides.
+- `design compare` waits until the app opened and settled as many overlay panes as the design picture draws before it shoots the app, so a popover that opens on mount is no longer missing from the app picture.
+- The COVERED rule no longer flags an aria-hidden decoration with pointer-events none or an aria-modal layer over its anchor.
+- `DENIED-CLASS` also matches the Tailwind short form of a variable, such as `text-(--warning)`.
+- A product's `harness.hosts` declares the app's shared host components by accessible name. The action check skips them and prints one `host <name>: not checked` line per run instead of a miss in every state.
+- `et design check` reports ACTION-LOST for an action a part's go recorded that no part of the product draws any more; a new go of the part confirms the removal.
+- `design go` and the Studio go record the action keys a part declares, so a later check can report an action that was released with a go and is gone from the product.
+- `design check`, `design sketch check` and `sketch ready` now report an interactive design element (button, `[aria-expanded]`, interactive role, click listener) without `data-et-action` as ACTION-UNDECLARED while drawing.
+- `design check` now reports ACTION-UNDECLARED in a part whose go still holds as one warning line per part, with the hit count and first element. A part without a go, or changed since it, still fails.
+- `design actions` exempts a part from declaring its actions when another part declares it as a control's `part`; that embedding part declares the actions.
+- `design actions` runs about four times faster, with the same results and output order.
+- `design actions --live` clicks every control that opens an overlay three times and fails when its `aria-pressed` or `aria-expanded` no longer matches whether the overlay is open.
+- The design server serves frames from a checkout whose `node_modules` is a symlink, instead of answering `403 Restricted`. The studio canvas e2e checks that a frame shows content.
+- A design product can list its user capabilities in `capabilities.json`, and the `CAPABILITY-PLACE` rule reports each one without a design action place.
+- `design check` no longer reports each render finding twice, once per colour scheme.
+- `design check` prints a progress line per part and reports a part stuck for 120 s as a `RENDER` issue; the design frame no longer logs a ResizeObserver loop error.
+- The design server's comments list carries the checkout's `git config user.name`, and the Studio inbox shows it as the author of the user's comments instead of "Du".
+- `design compare` on one part also runs the action check that `design task --verify` runs and fails on a miss. When the check cannot run it fails with `actions not checked: <reason>` instead of passing.
+- `design compare` empties only the `slot()` regions the compared part draws itself, no longer those of the parts it embeds, so a page keeps the content of its shell.
+- `design compare` no longer flips an overlay that opens above a fitted part below it.
+- Read the harness room from the compared part's own design mark in `design compare`.
+- `et design check --complete` no longer stops on a forced control clipped outside the page, and reports a frame it cannot draw as a RENDER finding instead of crashing.
+- `design check` now fails with CUT-CONTROL when a control is partly clipped, and with SKIP-SCOPE when `data-et-skip="CLIPPED"` covers interactive controls.
+- `design complete` refuses a part whose drawing root paints the fill of the surface it sits on (`DEMO-BACKDROP`): a demo backdrop the app part does not draw. Pages are exempt.
+- The design tool no longer forces hover, active or focus-visible on a disabled element: `interactionRows` draws a row with `disabled: true` only at rest, and `forceInteraction` and the frame leave a `disabled` or `aria-disabled="true"` root alone.
+- `design dom --app` refuses a state it cannot render (a forced hover, active or focus state, or a state a click opens) instead of printing idle or closed HTML.
+- Add `design dom <layer>/<name>`, which prints the pretty-printed HTML of a part state: its rendered design, or with `--app` the app harness element that compare shoots.
+- Send a heartbeat on the design server's event stream every 20 seconds. WebKit dropped the quiet stream after 60 seconds. Studio then reloaded every list and frame after each reconnect, so Studio on macOS showed no frames.
+- `design check` reports `CLASS-GLUED-INTERPOLATION` as a problem, not a warning, so a class glued to an interpolation blocks `sketch ready` and a merge.
+- The design server now marks the markup of a part's exported helpers as that part, and slots their arguments. A page control declared with `part` also counts on the root of that part.
+- A design render of a `render.packages` folder whose `dist` is missing now fails at once, naming the folder and `nx build <package>`, instead of waiting 60 seconds per module.
+- `design` pictures keep SDK component styles when the first render sits in an emptied slot, and `design check` flags SDK markup drawn without its CSS.
+- `et design check` reports ORPHAN-ENDPOINT for a path the design server serves that the product's app never calls.
+- `design check` carries a shrink-only list of known orphan Studio API endpoints, each tied to a backlog id: a listed one is a warning, a new orphan or a listed path with a caller again fails.
+- `et design` restarts itself on the same port when the cli is rebuilt or reinstalled, so a running server never draws with old frame or rule code.
+- `design check` and the pre-push check now fail with SKETCH-BASE-STALE while an open sketch's base part changed since it was drawn, naming the `sketch rebase` command.
+- SKETCH-BASE-STALE now also reports a picked sketch, skips only a discarded one, and prints the repo's own `design` invocation.
+- `et design check` and `et design ready` warn when a lib the drawings load from `dist/libs` has source changes newer than its build.
+- `et design task --verify` now also allows a changeset and the generated harness map of the product, for every product.
+- `et design sketch new` and `et design task` now name the SDK surface and colour theming systems and point to the `theming` skill.
+- `et design check` fails a frame-loaded design module that awaits at the top level (`TOP-LEVEL-AWAIT`), which can hang WebKit; a call variant may default-export a promise of its drawing instead.
+- Add the UNBOUND-INPUT and SAMPLE-DEFAULT rules for inputs of app components that implement a part, ratcheted by known lists.
+- `design product`, `new`, `system` and every `sketch` command refuse an unknown flag with exit code 2 and list only their own flags. `commit-hunks` exits 2 on bad usage.
+- Design subcommands refuse an unknown flag with exit code 2 and list the flags they take, instead of ignoring it.
+- `et design check` no longer counts a part without an `implements` link as an open point. It lists those parts on one `UNLINKED <product>: <part>, ...` line, and they stay clean and ready.
+- Every wait in `et design` now has a limit and names what it waited for when it times out.
+- Add the `withAction(markup, action)` design helper: it declares a `data-et-action` on the first `<button>` (or the element `{ action, on }` names) and throws when nothing matches, instead of a string replace that silently adds nothing.
+- `CONTROL-PART-INPUT` treats a `dialog` or `alertdialog` pane with `tabindex="-1"` as a focus container, not a control.
+- The design check no longer asks for hover, active or focus cells on a disabled control row, and it reports a disabled control whose hover or active look differs from its plain look as DISABLED-INTERACTION.
+- When an embedded part's app files change, `design check` asks for a re-run of the embedding parts' action checks, and `design ready` names that reason.
+- `et design go` writes `go.json` in the checkout's Prettier format.
+- Opening a design frame now fails with the URL and HTTP status when the design server answered 400 or above (such as Vite's 403 for a file outside `server.fs.allow`), instead of measuring the error page.
+- `design go` and `design accept` refuse every `--by` but `tom`: only Tom grants a go or an accept, and agents report ready instead.
+- A refused `design go --batch` without a terminal now prints the exact command to run in your own terminal.
+- The Studio go answer now reports a failed harness map regeneration as `harness`.
+- Every `go.json` entry records the command that wrote it in `via` (`design go` or `studio click`). An automatic refresh of its hash keeps `by` and `via` and adds `refreshedBy` and `cause`.
+- `et design` reuses the last harness app build while none of its inputs changed (tracked and untracked files, installed packages, Node version, build command) and rebuilds only when one did.
+- The harness build cache key no longer includes plans, changesets and the design sketches and comments, which the build does not read, so editing them keeps the cached build.
+- `design compare` draws a part that inherits its text style in the design frame's type, not the app body's.
+- `design sketch ready` compares each variant at its own first changed state and names that state when it draws like an earlier variant's first change, so reordering a variant's states now clears the refusal.
+- `definePart` accepts the `instant` field that `design check` already reads, so a part that declares it type-checks.
+- The design control inventory marks a control another element fully covers as covered. Studio lists it but draws no outline or number badge for it.
+- The quick sketch list (`/__design/sketches?unchanged=no`) answers without `problems` and `targets`: it runs no rule check and loads no part module, so it returns in milliseconds.
+- `design actions --live` ends its wait after a press as soon as the declared output fired or the page went quiet, instead of always waiting 400 ms.
+- The sketch check prints `NOTE <part>: live states not checked: spread states` when it skips the live state check of a
+  part whose state names cannot be read statically.
+- The live check counts an app region as designed when an open sketch targets the part that covers it.
+- Stop the LOST-SURFACE render rule from flagging a bar with a one-side divider; only a box with a border on all four sides, a shadow or an outline counts as a card.
+- The merge preview also draws a state that only the merged variant has, or that the merge removes, as a change drawn on its one side.
+- The merge preview draws each sketched element and page itself, so a page sketch shows its before and after instead of an empty canvas.
+- A design sketch merge keeps a comment thread open when it has no reply yet or its last entry asks a question, and `design check` lists an addressed thread as waiting on the user.
+- `design compare` and `design actions` count a `model()` of the app component as an input plus a `<name>Change` output, so a two-way bound toggle reaches its declared emit.
+- A named sketch (`sketch new --name`) is now checked against its own part: the metadata check of sketch check and ready,
+  and the variant diff, compare the part key instead of the sketch id.
+- Add the opt-in `NATIVE-TITLE` rule to `design check`: a product config with `nativeTitle: 'deny'` fails on a native `title` attribute in the design markup
+- `design check` prints a `NOT CHECKED` line for each state that does not draw, not only for a whole part.
+- `design compare --live` fails a state as OCCLUDED when a shell panel covers a design frame (opt out per live state with `"occluded": true`), and waits for overlay panes to end their enter animation before each shot.
+- The open point of an unmerged sketch names the sketch, for example "sketch pages-system is ready, not merged", and adds "(it also targets this part)" on a part that is not the sketch's main target.
+- A part that declares an explicit `controls: {}` no longer gets a "no controls declared" open point; a part without a
+  `controls` key keeps it.
+- The ORPHAN-ENDPOINT rule counts an endpoint that a host function builds from a bare segment (`productUrl(address, 'comment')`) as used only when an app file calls that function. The unwritten comment reply, done and withdraw endpoints are tracked as known orphans.
+- Page parts no longer list missing motions as open points; their states are data scenarios, like the missing states they already skip.
+- The pointer-focus check accepts a ring that a key after the click brings up on a control, as browsers draw it on a plain button.
+- The pointer-focus check presses Shift after the click and fails when the ring shows up then.
+- The pre-push live check counts the working tree's uncommitted open sketches, so a part an open sketch targets no longer fails the push as uncovered.
+- Add the pre-push helpers that pick the Studio specs and the design parts a push reaches, so the hook runs `vitest related` on those specs and the static design rules on those parts.
+- The quick sketch listing carries each variant's states, widths and interactions, so the Studio sketch grid shows them before the pictures are compared.
+- The render rules that walk controls (`CUT-CONTROL`, `SKIP-SCOPE`, `UNREACHABLE`) share one reachable-controls helper, so they agree on inert, hidden and `display: none` subtrees.
+- `design ready` on a part that is already ready at the same hash keeps the mark's `by` and `at` and only refreshes the embedded record.
+- `design sketch ready` takes each variant's first changed state from the pixel diff `design shot` uses, at the frame a shot draws, so ready and shot no longer disagree on which state a variant changes first.
+- `et design` rebuilds a stale lib with `--skip-nx-cache`, so nx no longer restores the old cached build.
+- `design check`, `design sketch check`, `design sketch ready` and `design shot` now refuse while `libs/components/design` differs from its build in `dist/libs/components/design`, and print the build command that refreshes it.
+- `design` refuses to run from a build whose libs/cli sources changed since it was built, and names `NX_NO_CLOUD=true npx nx build cli`. The build records a content hash of the sources in `build-info.json`.
+- The `POST /__design/part-ready` Studio endpoint is removed (no app called it; `et design ready` stays) and the Studio API level moves to 3.
+- `et design check` now fails with exit 1 and names the browser it looked for when no Chromium is usable on a dev machine. Under `CI` it still prints `RENDER CHECK SKIPPED` and passes.
+- A render server that fails to start is now reported by `design sketch ready` and `check` ("could not render ...") instead of passing silently.
+- The design render check reports NESTED-SCROLL when a box in a design frame scrolls content that does not fit it, and measures the contrast of text inside `inert` previews.
+- The design render check reports SEE-THROUGH when text under an open overlay pane (overlay, popover, menu or dialog) shows through it, or when text outside any overlay paints over the pane.
+- Fix the types of the render-timeout key so the cli compiles again.
+- The design render worker restarts once a package build that was missing when it loaded appears, so a render that ran
+  during an SDK rebuild no longer keeps failing with "missing, run `nx build ...`" until the server restarts.
+- `design sketch check` fails with `ROUND-NOT-READY` on a drawn round that is neither ready nor on hold, and `sketch report --done` and the pre-commit hook refuse it too.
+- `design sketch check` warns `ROUND-NOT-READY` when a sketch's round is fully drawn but still in progress.
+- Declare `rxjs` as a dependency; `design check` uses it for the per-part timeout.
+- `design sketch ready` refuses, and `sketch check` warns, when one sample a part opts into with `sample` carries different marks in two states of a host (`SAMPLE-MARK-DRIFT`).
+- The design server's stamp route now also reports its API level, build time, project and the cli installed in that project, and a new judge function tells Studio whether to restart the server or update the cli.
+- `design compare` and `design actions` no longer wait out their settle timeout on a scroll-driven animation (an open SDK menu's scroll fade), which made `design actions` and `design ready` look hung.
+- The token and icon sheets no longer repaint the page fill on their bordered panels, which tripped LOST-SURFACE in every product's foundations.
+- `design shot` finishes the transitions of embedded frames before it draws, and draws each state twice: a state whose two renders differ is reported with its changed pixel count and box, and the command exits non-zero.
+- `design shot` draws the hover, active and focus-visible cells of a grid row the grid leaves out as unchanged, instead of printing "not drawn".
+- `design shot --state <name>` draws an interaction state of a grid row the grid leaves out as unchanged, and `design sketch check` no longer checks a withdrawn variant: it prints a `NOTE` line.
+- `sketch check` reports, as `ready will refuse:` lines, a variant that does not load, an open point a live variant adds and a running round without a note, so it fails on what `sketch ready` refuses.
+- `sketch check` reports the unused imports, parameters and classes that `sketch ready` refuses, so the two no longer disagree.
+- `design sketch check` and `sketch ready` fail a variant on `CONTROL-STATE` only for an interaction state its base part does not already draw, so they agree with the product check.
+- `sketch ready` refuses a variant that draws like another variant or the current part in every state; `sketch check` now warns of ready refusals instead of failing.
+- `et design serve` checks the sketches of a full listing in a worker and lists them in turns, so frames and renders keep answering while it runs; listings asked at once share one check.
+- The sketch listing answers `&targets=no` without loading part modules, and `sketch check` warns when a sketch draws more than 24 frames.
+- A sketch merge refused for a dirty product no longer leaves the sketch half-merged, and uncommitted decision files such as `go.json` no longer block it.
+- `design sketch merge` refuses before writing when the product has uncommitted edits outside the sketch, and names a type error in a file the merge did not change as "product broken outside this sketch".
+- `design sketch merge --note` keeps each target part's note and logs the reason in `accepted.json`; `--replace-note` writes the note over the part's note as before.
+- `sketch check` and `sketch ready` catch rule problems in the sketch's `shared/` files that only the post-merge check used to find, and a refused merge answers Studio with the check's findings.
+- `sketch new` now lists `sketch ready` before `sketch report --done` in its next steps.
+- `et design sketch ready` no longer refuses on a render issue the merged part already shows; new issues still block.
+- `design sketch ready` no longer refuses a sketch because of problems in its rejected variants.
+- The sketch check reports a parameter of a `shared/` function as unused only when no call in any variant passes it. A parameter that only some variants pass no longer reports.
+- The SKIP-SCOPE rule reports a skip site once per part instead of once per rendered state.
+- `et design` run from a repo checkout prints a WARN on stderr as its first line when the built cli is older than `libs/cli/src`. It names the build time, the newest source time and the rebuild command, and never refuses.
+- The design server answers `/__design/stale-mocks` with the design mocks whose build is stale and the command that
+  rebuilds them (Studio API level 4).
+- The design check no longer reports a stale replace on markup that a package draws in one branch of a conditional.
+- The design server's `/__design/stamp` answer now carries the `pid` of the serving process, so a client can tell a restarted server from the one it talked to before.
+- `design compare` clicks a surface state open from the first of equally close states when they all share the same props, instead of stopping as ambiguous.
+- `design task --verify` now also runs the actions check and fails when an action misses or the check cannot run, so a part with a dead control is no longer recorded as implemented.
+- The design type check runs `tsc` with `--pretty false`, so a forced colour setting no longer hides the failing file from the sketch merge.
+- Drop the Studio inbox `draft` input from the known unbound inputs; the inbox binds it again.
+- The check command warns per product of decision files (go.json, accepted.json, merged.json, pictures.json, sketch.json) that differ from HEAD, and honours a positional part like `--part`.
+- The `VISIBLE-CHANGE` slow rule reports a state the app cannot be driven into as a problem of its part, so the part is not build-ready.
+- The design system no longer folds a base part under "Not used in Studio" when a product part names it in a `controls` entry or draws its SDK component through `ng(…, { imports })`.
+- `UTILITY-CSS` checks a part inherited from a base product under the stylesheets of that base, not of the inheriting product.
+- The cli spec run now prints how many browser specs were skipped for a missing Chromium and, in GitHub Actions, emits a warning annotation.
+- The visible-change gate counts a sketch merge recorded only in `merged.json`, still judges states that compare cannot check against their design, and lists a state neither app can be driven into as a problem of the part.
+- The visible-change gate passes a state without a base picture when the app at HEAD matches its design, and prints how many pixels such a state is off its design.
+- `et design check --visible-change` takes `--part <layer>/<name>…` to draw only those parts.
+- The visible-change gate fails a part with unjudged states and names each state with its reason. The pre-push live check builds components too, so a fresh clone judges the design side instead of waiting.
+- `et design check --visible-change` ends with every state it could not judge, so a pass that judged nothing no longer reads as a clean pass.
+- `design check` runs `UNBOUND-INPUT` and `SAMPLE-DEFAULT`, and both rules cover inputs declared with `model()`.
+- The `WRAP` render check skips text with a `line-clamp`, because clamped text is multi-line on purpose.
+- `CLIPPED` no longer reports an outline or box-shadow cut at the edge of a clip box whose content outgrows it or is moved by a transform, since content there is cut by panning or scrolling.
+- `CLIPPED` measures content scaled by a transform at its drawn size, honours `overflow-clip-margin`, and no longer reports the content of a grab-to-pan box or one whose content is moved by a translation.
+- `design compare` now shoots the design and the app over the same fixed checkerboard instead of a transparent background, so a background a part adds or drops shows as a pixel difference.
+- `et design compare` shoots a fitted part without the frame padding, and draws a `pages` part at a product preset (`--preset`, default the first) against a harness host that fills that viewport (`layout=page`).
+- `design compare` waits until menu and select panes have settled before the shot, and holds the app's spinners, progress bars and brand loaders at the frame their design mock is frozen at.
+- The COVERED render rule ignores a cover marked `data-et-skip="COVERED"`.
+- `DENIED-CLASS` exempts the copy of a foundations part in a sketch, like the part itself.
+- `design check` now fails a part with several controls when one of them is drawn markup instead of an SDK component or embedded part (`CONTROL-STATE`).
+- `design check` now fails a part whose design states set a prop the app component has no input for and compare cannot reproduce, the same finding compare reports as dropped props.
+- `design check --part <layer>/<name>` keeps only that part's findings, and `design check` ends with one line per part with findings plus a count of the clean parts.
+- `design check` lists each view of a product's harness app (`*-view.component.ts`) that no part names in `implements` as an open point.
+- `et design compare` no longer clicks a surface open from a state whose design picture already draws that surface.
+- `et design compare` keeps the pointer off rest shots, finds forced elements by accessible name in the host or an overlay root, and opens a surface state from a state of the same interaction.
+- `design complete` counts a control that a host declares with `part` as drawn when it sits anywhere inside that embedded part, not only on its root.
+- `CONTRAST` no longer checks the outer border of a floating panel: an SDK overlay pane, or an element with its own surface step and a shadow.
+- The CONTROL-PART-INPUT warning names a control by its `aria-label` first, and its text no longer includes inline `style`, `script` or `template` content.
+- A design frame that does not draw within the timeout gets one reload before the shot or check fails, so a check under load no longer aborts on one slow frame.
+- `design go` and `design sketch merge` now regenerate a stale harness map instead of leaving `design compare` to refuse it.
+- Fix the design server breaking every frame after a sketch is merged or discarded: a gone sketch now draws as the product, with a `sketchGone` note.
+- Without `--url`, `et design compare` and `task --verify` build and serve the harness app themselves, so they work next to a running dev server of the same app.
+- The design inventory no longer counts a disabled control with `pointer-events: none` as covered, so it keeps its outline and number.
+- The design reach check now also flags actions that a transparent element covers, or that a sticky column or header covers after a canvas pans.
+- `et design` commands that draw now rebuild a stale `dist/libs/<lib>` first, and refuse with the build command when the rebuild fails, instead of drawing from the old build.
+- The product check and the sketch check read the foundations exemption of `HARD-CODED-COLOUR`, `HARD-CODED-MOTION`, `INLINE-SVG`, `UTILITY-CSS` and `DENIED-CLASS` from one place, so a sketched copy of a part passes or fails like the part.
+- The design check reads the tokens that an imported `@ethlete/<lib>/design` module defines in its stylesheets, so `var(--_et-focus-ring-width)` from `buttonStyles` no longer shows as UNDEFINED-TOKEN.
+- Design task verify and check accept the app files a product's harness shares, and compare shoots open states and their overlays like a real pointer.
+- `et design task --verify` skips files under `.ethlete/design` with one summary line and allows the part's wiring files (the app files importing the part and their direct imports), which `et design task` now lists.
+- `design check` rewords the round and variant notes of an old/new edit sketch opened before they were German.
+- A direct edit without pictures at its merged hash is now compared with the design at HEAD instead of older `go` pictures, and the `old` variant of an edit sketch keeps the shared files at HEAD.
+- `design check` draws an open edit sketch's `old` variant from HEAD and fails an `old` that does not draw as `EDIT-OLD-NOT-DRAWN`. Studio's full sketch listing no longer fails in WebKit after 60 s.
+- `design check` re-checks open edit sketches without a decision and closes them as held when every state draws as at HEAD. A direct edit compares only `record` pictures drawn at the merged part hash.
+- A migration can list `adds`, packages its codemod imports. `et update` adds a missing one before the codemod, and `to-query-v3` adds `@ethlete/query-devtools`.
+- The design check warns with `CLASS-GLUED-INTERPOLATION` for a class written directly against a `${...}` interpolation in a part's class attribute, which Tailwind's scanner reads as one candidate and emits no CSS for.
+- The design pictures now cancel running infinite animations, as the app pictures already do, so an `animate-pulse` or a looping CSS animation no longer fails the compare as a pixel diff.
+- Write the approved control inventory (`inventory.json`) the way Prettier formats it, so the repo's format check no longer fails on it.
+- An inventory label uses the visible text of a control, so a select no longer lists its hidden options.
+- A page's control inventory lists the controls an embedded part draws as `owned by <part>`. They no longer vanish, and they do not block the approval.
+- A page's inventory numbers two controls at the same place apart by their label, and the list shows each label.
+- A page's inventory also lists an owned control that carries its own part's control mark, for example every SDK button.
+- `design compare --live` reads an optional fixed `now` from the live spec, so relative times draw the same on every run, and waits for a drawn page host before it sizes the viewport.
+- `design compare --live` draws the same fixed frame content on both sides and can compare a page with its shell panel hidden.
+- `design compare --live` waits for the app page's requests to settle before it shoots, so canvas frames that load late are in the picture.
+- `LOST-SURFACE` no longer flags a card whose fill hides a patterned backdrop, such as a dot grid behind it.
+- The sketch merge compare and the auto-merge count a pixel as changed only when a channel differs by more than 8 of 255, so anti-alias noise no longer blocks an auto-merge.
+- `design sketch check` warns when the Aktuell column of the Studio sketch view would show only placeholders.
+- `design shot` names the missing or conflicting flag when it refuses a flag combination, and every documented
+  combination has a spec. `design sketch check` skips rejected variants with the same NOTE as withdrawn ones.
+- `/__design/shot` with a `sketch` but a missing or unknown `variant` answers 400 with the sketch's variants instead of the product picture.
+- `design sketch check` also checks the product part a sketch targets and prints its problems as `before` lines, which do not fail the check.
+- `design check` and `design complete` print the non-blocking CONTROL-STATE, CONTROL-UNDECLARED and OPTION-VALUE-MISSING hints with a `HINT` prefix, like the small-change hints.
+- Skip the live state check of a sketched part whose states are spread from another file instead of reporting false LIVE errors.
+- `design sketch ready` refuses while a variant that changes pixels has no shot viewed since its last edit.
+- A sketch merge rebases the other open sketches it makes stale and marks the conflicting ones for their agent; `sketch check` reports a sketch whose embedded part changed.
+- `design sketch new` rewrites a part's relative imports that leave its folder so they resolve from the sketch, and the merge rewrites them back.
+- `SKIP-SCOPE` no longer counts controls inside an `[inert]` subtree.
+- `et design check --product <name> --app-classes` now reports Tailwind classes in the harness app source that have a canonical form.
+- Studio now judges a stale cli build by the same source hash the cli guards itself with, instead of file modification times.
+- Studio starts its design server from a CLI copy built from the last `libs/cli` commit and no longer restarts it on a rebuild; `yarn et:design` runs design commands from that copy.
+- The part tree shows every listed problem, and the system listing names the component each part implements.
+- `design task --verify` now also accepts commit files that import the part, such as a live wrapper.
+- Design task wiring files now also include the non-spec app files a part's direct importers import, one level only.
+- `et design task` now counts every non-spec app file that imports the part, directly or through other importers, as wiring, plus the part's own spec. What a spec imports no longer becomes wiring.
+- `design shot` and the Studio sketch view label a variant its agent withdrew as "withdrawn by agent" with its reason, and keep "rejected" for a designer's rejection.
+
 ## 3.0.0-next.26
 
 ### Minor Changes
