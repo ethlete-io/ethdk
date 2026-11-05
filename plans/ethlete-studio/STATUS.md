@@ -20,7 +20,7 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 
 ## Gerade in Arbeit
 
-**Reihenfolge (05.11., ADR 0189, 0192, 0193, 0195):** CI grün (Lauf 41924354824), danach Push → B388 (ADR 0195) → B391 → B369 → Port in der App (`portAfterMerge`) → B345/B346
+**Reihenfolge (05.11., ADR 0189, 0192, 0193, 0195):** CI grün bis auf `pages/system` --slow (Lauf 42025926914, ADR 0196) → B388 (ADR 0195) → B391 → B369 → Port in der App (`portAfterMerge`) → B345/B346
 (erst Design-Session) → A10 (B249 + B295, ADR 0190) → B365 → B370 → B375 → B376 → B368 → B371 → B378 → B362 → B364 → B361 + B360 → B317 + B350 →
 B353/B354 → B356 → Refresh-Icon-Sketch + Code-Notice c + B352 → B334, B335, B336 → B332, B327, S4, S6b, S8 → B340 →
 B297, A36, A25. Ohne Platz: B339-Rest, B341, B342, B344, B347, B349, B355, B358, B359.
