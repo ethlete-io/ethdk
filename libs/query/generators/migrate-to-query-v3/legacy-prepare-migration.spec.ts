@@ -127,6 +127,38 @@ ${body}
       expect(readFile('component.ts')).toContain('injector: this.injector');
     });
 
+    it('migrates a prepare call in an rxjs callback inside ngOnInit', async () => {
+      writeComponent(`  source$ = {} as never;
+
+  ngOnInit() {
+    this.source$.pipe(switchMap(() => legacyGetUsers.prepare({ queryParams: { page: 1 } }).execute())).subscribe();
+  }`);
+
+      await migration(tree, { skipFormat: true });
+
+      expect(readFile('component.ts')).toContain('injector: this.injector');
+    });
+
+    it('migrates a prepare call in a plain computed inside a method', async () => {
+      writeComponent(`  build() {
+    return computed(() => legacyGetUsers.prepare({ queryParams: { page: 1 } }).execute());
+  }`);
+
+      await migration(tree, { skipFormat: true });
+
+      expect(readFile('component.ts')).toContain('injector: this.injector');
+    });
+
+    it('migrates a prepare call in a callback config function at a class field', async () => {
+      writeComponent(`  config = {
+    searchPreviewQueryFn: (term: string) => legacyGetUsers.prepare({ queryParams: { term } }).execute(),
+  };`);
+
+      await migration(tree, { skipFormat: true });
+
+      expect(readFile('component.ts')).toContain('injector: this.injector');
+    });
+
     it('migrates an effect inside the constructor', async () => {
       writeComponent(`  constructor() {
     effect(() => legacyGetUsers.prepare({}));
