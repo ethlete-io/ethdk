@@ -70,3 +70,23 @@ Reported on 2026-10-30 by the session `fifagg-frontend-a5`, with `@ethlete/cli` 
 - **Fix:** the migration declares the package it needs (like `requires: ["ts-morph"]` in finding 1), and `et update`
   adds it with the same tag as `@ethlete/query` before the codemod; if the add fails, the codemod prints a manual
   task that names the package.
+
+## 7. `migrate-to-query-v3` leaves 141 TS errors in fifagg - open (B385)
+
+Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61, 462 files, exit 0; all 5 apps fail to build). Log:
+`fifagg-frontend/.claude/handoffs/query-v3/build.clean.log`, branch `chore/query-v3-migration`. Not triaged by fifagg.
+
+- **Auth wiring:** call sites of `QueryClientRef.setAuthProvider` (12), `clearAuthProvider` (8) and `authProvider$` (8)
+  stay as they are (fifagg `libs/core/src/lib/auth/auth.ts`, `libs/store/src/lib/interceptors/jwt.interceptor.ts`, which
+  mix V2Query and LegacyQuery). The scaffolded auth provider in `gg-api.client.ts` names `postRefreshToken` and
+  `AUTH_COOKIE_DOMAIN` without importing or defining them; also "Property 'token' does not exist on type '{}'" and
+  `RequestRetryFn` vs `ShouldRetryRequestFn`. The guide ("Configure the auth provider") says the adapters come behind
+  TODOs, so the provider is partly a known manual step; the old call sites with no task and the undefined names are
+  codemod gaps.
+- **GraphQL:** `gqlQuery` is missing on the migrated client ref (36 errors, `gg-graphql/*/*.queries.ts`); the `country`
+  params become implicit any (TS7006).
+- **Duplicate import:** TS2300 "Duplicate identifier 'AnyLegacyQuery'" (6): the codemod adds an import that exists.
+- **Task list:** `query-v3-migration-tasks.md` has 68 tasks, none for the auth wiring call sites.
+- **Fix direction:** reproduce each error class on a fixture taken from the fifagg shape (generic names), then: emit
+  a task per old auth call site, define or import every name the scaffold uses, migrate or task `gqlQuery`, dedupe
+  imports. Goal: the codemod leaves no TS error it does not name in a task.
