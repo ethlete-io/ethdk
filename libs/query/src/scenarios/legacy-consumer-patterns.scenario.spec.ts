@@ -113,6 +113,37 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy consumer patterns on the %s client', 
       legacy.destroy();
     });
 
+    it('runs the computation once and leaks no query when the id changes twice in one tick', () => {
+      const s = scenario();
+      const legacy = createLegacyClient(s, kind);
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 100 }));
+
+      const id = signal<string | null>('1');
+      const c = s.consumer([
+        { provide: GET_USER, useValue: legacy.get<GetUserArgs>((p) => `/users/${p.id}`) },
+        { provide: USER_ID, useValue: id },
+      ]);
+      const ref = s.mount(UserHost, c.injector);
+
+      s.tick(10);
+
+      id.set('2');
+      id.set('3');
+      s.tick(10);
+
+      expect(s.api.requestCount('GET', '/users/2')).toBe(0);
+      expect(legacy.prepared()).toHaveLength(2);
+      expect(legacy.liveQueries()).toEqual([ref.instance.query()]);
+
+      s.tick(1000);
+      ref.destroy();
+
+      expect(legacy.liveQueries()).toEqual([]);
+
+      c.destroy();
+      legacy.destroy();
+    });
+
     it('toggles a null-guarded GET between null and a value with one request per value', () => {
       const s = scenario();
       const legacy = createLegacyClient(s, kind);
