@@ -144,7 +144,7 @@ Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61). Full list wi
   is a migrator defect, not a supported state: the docs stop describing it as one, and the migration report flags a
   leftover `V2QueryClient` as a migrator error to report.
 
-## 10. More migrator findings from fifagg, items 10-13 (fifagg-frontend-c3, 2026-11-05) - open
+## 10. More migrator findings from fifagg, items 10-17 (fifagg-frontend-c3 and -3d, 2026-11-05) - open
 
 Full text with file:line in `fifagg-frontend/.claude/handoffs/query-v3/findings.md`, items 10 to 13. After hand fixes,
 all five fifagg apps build on `chore/query-v3-migration`.
@@ -198,3 +198,20 @@ all five fifagg apps build on `chore/query-v3-migration`.
   the root component through a dynamic import; it sits in the same production gate as `provideQueryDevtools()`, so no
   template element is needed and nothing ships in production. The migrator removes `<et-query-devtools-lazy>` and the
   import, and adds the provider inside the existing gate. Docs show it as the default. Name and shape: ff.
+- **15. Legacy creators report every error to `ErrorHandler` (fifagg-frontend-3d):** v3 `http-request.ts:682` calls
+  `ngErrorHandler.handleError` unless `reportErrors === false`. `createLegacyQueryCreator`
+  (`legacy/interop/legacy-query-creator.ts:272-280`) does not pass `reportErrors: false`, and the migrator does not add
+  it. v2 never reported. About 73 fifagg E2E tests fail on "Console errors or 5xx" (401 on `POST /auth/login`, 404 on
+  public queries; `libs/queries/src/lib/gg-api/auth/auth.queries.ts:18`). fifagg workaround b30a5fba72: a helper that
+  clones with `reportErrors: false`. Open: grill question for Tom (default of legacy creators).
+- **16. Legacy `state$` replays a stale Success after `execute()` (fifagg-frontend-3d, not yet confirmed in a
+  browser):** `legacy/interop/legacy-query.ts:231-238` builds `state$` from `toObservable(executionState)` plus
+  `shareReplay`. A new subscriber right after `execute()` gets the old Success; v2 switched to Loading synchronously.
+  fifagg: `libs/core/src/lib/auth/user-state.ts:102` (`refreshUserSuccessfully` with `take(1)` takes the old roles),
+  used in `create-team-with-organization-overlay.component.ts:407-420`; `dashboard.spec.ts:178` fails. Fix (ff): v2
+  parity in the interop layer, with a query scenario that bites.
+- **17. More out-of-context `prepare()` shapes (fifagg-frontend-3d, extends 14):** no injector is added for
+  `prepare()` in `ngOnInit` (`widget-link.component.ts:59`), in async validators after `timer`/`switchMap`
+  (`gamer-tag.async.validator.ts:24`), in a plain `computed` (`edit-match-data.provider`), or in callback config
+  functions (`events.component` `searchPreviewQueryFn`). Hand fixes in fifagg c9170f0d06. Fix (ff): extend
+  `legacy-prepare-migration.ts` to these shapes, or report each one it cannot fix.
