@@ -152,7 +152,7 @@ Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61). Full list wi
   is a migrator defect, not a supported state: the docs stop describing it as one, and the migration report flags a
   leftover `V2QueryClient` as a migrator error to report.
 
-## 10. More migrator findings from fifagg, items 10-17 (fifagg-frontend-c3 and -3d, 2026-11-05) - open
+## 10. More migrator findings from fifagg, items 10-20 (fifagg-frontend-c3 and -3d, 2026-11-05) - open
 
 Full text with file:line in `fifagg-frontend/.claude/handoffs/query-v3/findings.md`, items 10 to 13. After hand fixes,
 all five fifagg apps build on `chore/query-v3-migration`.
@@ -235,3 +235,17 @@ all five fifagg apps build on `chore/query-v3-migration`.
   upload-handler) get a manual-review task each, by design: a function with no `inject()` call can run outside an
   injection context, so the migrator cannot add one safely. Remaining work (ff): the task text proposes the concrete
   fix, `const injector = inject(Injector)` at the top of the factory and `{ injector }` at the call. **Closed in 0289807a8 (ff):** the task text now names this fix, with the caller injector, `queryComputed()` and `provideLegacyPrepareFallback()` as the other ways; the spec checks the text.
+- **18. Legacy success before the store write (fifagg-frontend-3d, not yet proven in E2E):**
+  `legacy/interop/legacy-query.ts:230-258` announces success before the entity store is written, so a store read in
+  the success callback returns null and `.onSuccess` gets no response. fifagg: broadcast create
+  (`create-broadcast-overlay.component.ts:236`, dialog stays open), admin "New Collection", probably the
+  competition-manager "without a reload" tests. Workaround fda4c3d8ad (the fifagg legacy helper waits for the store
+  write). Fix (ff): v2 order in the interop layer, with a scenario on both clients.
+- **19. Legacy `prepare()` returns a new wrapper for the same arguments (fifagg-frontend-3d, not yet proven in E2E):**
+  v2 returned the cached one. A `queryComputed` fed a fresh object on every check loops (NG0103).
+  fifagg: `competition-consistency-rank.component.ts:50`, fed by a getter at `layout-dynamic-types.component.ts:112`.
+  Workaround bdfe14a6cc (string ids). Fix (ff): v2 cache parity for equal arguments, with a scenario on both clients.
+- **20. Devtools pill over app buttons in E2E (fifagg-frontend-3d):** `#et-query-devtools-pill`
+  (`query-devtools-pills.ts`) sits on the body at the top z-index, bottom-right, over Save and Submit; hiding
+  `et-query-devtools` does not hide it. About 25 E2E tests failed on blocked clicks. Workaround 76e304cb41: the apps
+  load devtools only when `ngDevMode` and not `navigator.webdriver`. Open: grill question for Tom.
