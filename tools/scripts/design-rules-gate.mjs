@@ -56,7 +56,16 @@ export const checkDesignRules = (root, base, head) => {
     return 1;
   }
 
-  const check = run(root, 'node', [CLI, 'design', 'check', '--product', ...products, '--rules']);
+  const check = run(root, 'node', [
+    CLI,
+    'design',
+    'check',
+    '--product',
+    ...products,
+    '--rules',
+    '--base',
+    `${base}..${head}`,
+  ]);
 
   if (check.status === 0) return 0;
 

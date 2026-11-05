@@ -6,6 +6,7 @@ import { changedFilesOf, designHashOf, DesignHash, HashRecord, recordHolds } fro
 import { partOwnerOf } from './inventory-approval';
 import { READY_FILE, readReady } from './part-ready';
 import { changedAppFilesOf, IMPLEMENTED_FILE, linkedComponentOf, readImplemented } from './part-task';
+import { Problem } from './problem';
 import { repoRootOf } from './reachable-files';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 
@@ -48,6 +49,39 @@ export const staleLineOf = (product: string, stale: StalePart) =>
   ]
     .filter(Boolean)
     .join('; ')}`;
+
+export const UNCOMPARED_RULE = 'IMPLEMENTATION-UNCOMPARED';
+
+/**
+ * One problem per file in `changed` that an implemented part's app component reaches and that moved since the part's
+ * implemented record, so an app edit cannot land without a fresh compare.
+ */
+export const uncomparedAppProblemsOf = (options: {
+  product: ResolvedProduct;
+  changed: string[];
+  invocation: string;
+}): Problem[] => {
+  const { product, invocation } = options;
+  const changed = new Set(options.changed);
+  const root = repoRootOf(product);
+
+  return product.parts
+    .filter((resolved) => resolved.origin !== 'base')
+    .flatMap((resolved) => {
+      const part = partKeyOf(resolved);
+      const record = readImplemented(partOwnerOf({ product, part: resolved }).dir)[part];
+
+      if (!record?.app || !Object.keys(record.app).some((file) => changed.has(file))) return [];
+
+      return changedAppFilesOf({ product, part, record })
+        .filter((file) => changed.has(file))
+        .map((file) => ({
+          rule: UNCOMPARED_RULE,
+          file: resolve(root, file),
+          message: `changed since ${part} was recorded as implemented (${record.at}) - run ${invocation} compare ${part} --product ${product.name}, then ${invocation} task ${part} --product ${product.name} --verify <rev> to record it`,
+        }));
+    });
+};
 
 const rewrite = (file: string, entries: Record<string, unknown>) => {
   const sorted = Object.entries(entries).sort(([a], [b]) => a.localeCompare(b));

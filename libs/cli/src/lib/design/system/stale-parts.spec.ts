@@ -2,9 +2,10 @@ import { execFileSync } from 'child_process';
 import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../paths';
 import { appFilesOf } from './app-files';
+import { checkRules } from './check-system';
 import { designHashOf } from './design-hash';
 import { readyMarkOf, writePartRecord } from './part-ready';
 import { doneParts, markImplemented } from './part-task';
@@ -190,5 +191,40 @@ describe('transitive part hash', () => {
 
     expect(upgradeLegacyMarksOf({ product: productOf(target) })).toEqual([]);
     expect(JSON.parse(readFileSync(join(dir, 'ready.json'), 'utf8'))[CHIP]).toEqual({ hash: legacy, by: 'tom', at });
+  });
+
+  it('fails check --rules --base on an app file of an implemented part changed in the range since its record', () => {
+    const { target } = checkout();
+
+    writePartRecord({ product: productOf(target), part: CHIP });
+    markImplemented({
+      product: productOf(target),
+      part: CHIP,
+      states: { default: {} },
+      app: appFilesOf({ root: target, component: 'apps/a/chip/chip.component.ts' }),
+    });
+    execFileSync('git', ['init', '-q'], { cwd: target });
+    commitAt(target, '2026-09-01T00:00:00Z');
+    appendFileSync(join(target, 'apps/a/chip/chip.component.html'), '<b aria-label="x"></b>\n');
+    appendFileSync(join(target, 'libs/lib/src/unused.ts'), '// not reached\n');
+    commitAt(target, '2026-09-02T00:00:00Z');
+
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const config = { products: { 'app-a': {} } };
+    const run = (base?: string) => {
+      errors.mockClear();
+      checkRules({ target, config, products: ['app-a'], base, invocation: 'et design' });
+
+      return errors.mock.calls.map(([line]) => String(line)).filter((line) => line.startsWith('IMPLEMENTATION-'));
+    };
+
+    expect(run()).toEqual([]);
+    expect(run('HEAD~1..HEAD')).toEqual([
+      `IMPLEMENTATION-UNCOMPARED apps/a/chip/chip.component.html: changed since ${CHIP} was recorded as implemented (${
+        JSON.parse(readFileSync(join(target, DESIGN_DIR, 'app-a/implemented.json'), 'utf8'))[CHIP].at
+      }) - run et design compare ${CHIP} --product app-a, then et design task ${CHIP} --product app-a --verify <rev> to record it`,
+    ]);
+    vi.restoreAllMocks();
   });
 });

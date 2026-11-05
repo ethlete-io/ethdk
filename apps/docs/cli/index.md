@@ -334,6 +334,11 @@ linked component takes as `input()` or `model()` (a type named `…Phase` or `�
 named `phase` or `state`) but is not named after that value: `sending: { phase: 'busy' }` must be the state `busy`
 (`busy-long` is fine).
 
+`et design check --product <name> --rules --base <rev|range>` also fails with `IMPLEMENTATION-UNCOMPARED` on each file
+`git diff <base>` names that the app component of an implemented part reaches and that changed since the part's
+`implemented.json` record. The pre-push hook passes the pushed range. `et design task <part> --verify <rev>` reruns
+compare and records the part again, which clears it.
+
 `et design check` fails with `UNBOUND-INPUT` when an `input()` or `model()` of an app component that implements a part is
 bound by no template of the app (a consumer binds it with `[x]`, `[(x)]` or a plain attribute), and with `SAMPLE-DEFAULT`
 when such an input defaults to sample data, an `…_SAMPLE` or `…_ROWS` identifier. Known hits sit on lists in

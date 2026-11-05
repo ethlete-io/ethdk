@@ -13,11 +13,11 @@ import { droppedPropProblemsOf } from './dropped-props';
 import { DrawnFindings, drawnFindingsFrom, isPartUndrawn, isStateUndrawn, statefulPartsOf } from './drawn-open-points';
 import { openPointsText, PartOpenPoints } from './open-points';
 import { goMarkOf, goPartsOf } from './part-go';
-import { doneParts } from './part-task';
+import { doneParts, gitDiffFilesOf } from './part-task';
 import { actionsRerunOf, readyMarkOf, readyPartsOf } from './part-ready';
 import { BuildReadyInputs, recordBuildReady } from './part-build-ready';
 import { partActionFailuresOf } from './actions-command';
-import { staleLineOf, stalePartsOf, upgradeLegacyMarksOf } from './stale-parts';
+import { staleLineOf, stalePartsOf, uncomparedAppProblemsOf, upgradeLegacyMarksOf } from './stale-parts';
 import { Problem } from './problem';
 import { staleDistWarningsOf } from './stale-dist';
 import { instantLinesOf, partPointsOf, readOpenPoints, unlinkedPartsOf } from './read-open-points';
@@ -109,9 +109,20 @@ export const warningProblemsOf = (product: ResolvedProduct): Problem[] => [
 export const ruleLinesOf = (target: string, product: ResolvedProduct) =>
   ruleProblemsOf(product).map((problem) => lineOf(target, problem));
 
-/** Runs only the static rules of `products` - no draw, no tsc - and prints each problem a product's own files hold; exits 1 on one. */
-export const checkRules = (options: { target: string; config: DesignConfig; products: string[] }) => {
-  const { target, config } = options;
+/**
+ * Runs only the static rules of `products` - no draw, no tsc - and prints each problem a product's own files hold; exits
+ * 1 on one. With `base`, it also flags each app file changed since `base` that moved since its part's implemented record.
+ */
+export const checkRules = (options: {
+  target: string;
+  config: DesignConfig;
+  products: string[];
+  base?: string;
+  invocation?: string;
+}) => {
+  const { target, config, base } = options;
+  const changed = base === undefined ? [] : gitDiffFilesOf({ root: target, range: base });
+  const invocation = options.invocation ?? repoInvocation({ root: target, subcommand: 'design' });
   let failed = 0;
 
   for (const name of options.products) {
@@ -124,7 +135,10 @@ export const checkRules = (options: { target: string; config: DesignConfig; prod
     }
 
     const product = resolveProduct({ target, name, config: entry });
-    const problems = ruleProblemsOf(product).filter((problem) => !isInBasePart(product, problem.file));
+    const problems = [
+      ...ruleProblemsOf(product),
+      ...(changed.length > 0 ? uncomparedAppProblemsOf({ product, changed, invocation }) : []),
+    ].filter((problem) => !isInBasePart(product, problem.file));
 
     problems.forEach((problem) => console.error(lineOf(target, problem)));
     failed += problems.length;

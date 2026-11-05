@@ -430,7 +430,7 @@ const VALUE_FLAGS = ['--lint', '--tsconfig', '--call', '--variant', '--product',
 const MODE_FLAGS: Record<string, string[]> = {
   '--visible-change': ['--product', '--part', '--base'],
   '--app-classes': ['--product'],
-  '--rules': ['--product'],
+  '--rules': ['--product', '--base'],
   '--live': ['--product'],
   '--slow': ['--product', '--part', '--base'],
 };
@@ -525,7 +525,7 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
     }
 
     if (appClasses) return checkAppClasses({ target, config: readConfig(target) ?? {}, products });
-    if (rules) return checkRules({ target, config: readConfig(target) ?? {}, products });
+    if (rules) return checkRules({ target, config: readConfig(target) ?? {}, products, base, invocation });
     if (live) return checkLive({ target, config: readConfig(target) ?? {}, products });
 
     return checkSystemRendered({ target, config: readConfig(target) ?? {}, products, part, invocation });
