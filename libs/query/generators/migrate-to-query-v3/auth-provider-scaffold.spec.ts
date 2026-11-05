@@ -79,9 +79,7 @@ export const getMe = apiClient.get({ route: '/me', secure: true });
     expect(client).not.toContain('refreshBuffer');
     expect(client).toContain('// Derived from the v2 BearerAuthProvider in auth.ts:4.');
     expect(client).toContain('retryConfig: { maxAttempts: 8 },');
-    expect(readFile('query-v3-migration-tasks.md')).toContain(
-      'Check the cookieDomain: v3 keeps the login cookie per host',
-    );
+    expect(readFile('query-v3-migration-tasks.md')).not.toContain('Check the cookie');
   });
 
   it('falls back to an empty provider when no v2 config names a refresh creator', async () => {

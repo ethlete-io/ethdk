@@ -733,8 +733,11 @@ const generateNewQueryCreator = (creator: LegacyQueryCreatorInfo) => {
     ? `${clientBaseName}${capitalizedMethod}Secure`
     : `${clientBaseName}${capitalizedMethod}`;
   const typeParameter = getTypeParameter(creator);
-  const options = Array.from(creator.httpOptions.entries()).map(([key, value]) => `${key}: ${value}`);
-  const optionsBlock = options.length > 0 ? `, {\n  ${options.join(',\n  ')}\n}` : '';
+  const options = [
+    'reportErrors: false',
+    ...Array.from(creator.httpOptions.entries()).map(([key, value]) => `${key}: ${value}`),
+  ];
+  const optionsBlock = `, {\n  ${options.join(',\n  ')}\n}`;
 
   return `${creatorFunction}${typeParameter}(${creator.route}${optionsBlock})`;
 };

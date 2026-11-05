@@ -56,7 +56,9 @@ export const getUsers = apiClient.get({
 
     expect(queries).toContain("import { apiGet } from './client';");
     expect(queries).toContain('createLegacyQueryCreator');
-    expect(queries).toContain("export const getUsers = apiGet<{ response: User[] }>('/users');");
+    expect(queries).toContain(
+      "export const getUsers = apiGet<{ response: User[] }>('/users', {\n  reportErrors: false\n});",
+    );
     expect(queries).toContain(
       "export const legacyGetUsers = createLegacyQueryCreator({ name: 'legacyGetUsers', creator: getUsers });",
     );
@@ -106,7 +108,7 @@ export const getUsers = apiClient.get({
     expect(client).toContain(
       'export const apiGetSecure = createSecureGetQuery(apiClientConfig, apiClientAuthProvider);',
     );
-    expect(queries).toContain("export const getUsers = apiGetSecure('/users');");
+    expect(queries).toContain("export const getUsers = apiGetSecure('/users', {\n  reportErrors: false\n});");
     expect(report).toContain('Configure auth queries for apiClientAuthProvider');
     expect(report).toContain('authQuery/tokenRefreshQuery builders');
   });
@@ -185,15 +187,19 @@ export const deleteAll = apiClient.delete({ route: '/all' });
     const queries = readOrEmpty('queries.ts');
 
     expect(queries).toContain(
-      'export const postUser = apiPost<Args & { body: { name: string }; response: { id: string } }>((p) => `/users/${p.id}`, {\n  reportProgress: true,\n  withCredentials: true\n});',
+      'export const postUser = apiPost<Args & { body: { name: string }; response: { id: string } }>((p) => `/users/${p.id}`, {\n  reportErrors: false,\n  reportProgress: true,\n  withCredentials: true\n});',
     );
-    expect(queries).toContain("export const getOne = apiGet<Args>('/one');");
-    expect(queries).toContain("export const putBody = apiPut<{ body: { name: string } }>('/body');");
+    expect(queries).toContain("export const getOne = apiGet<Args>('/one', {\n  reportErrors: false\n});");
     expect(queries).toContain(
-      "export const patchWithResponse = apiPatch<Args & { response: { id: string } }>('/patch');",
+      "export const putBody = apiPut<{ body: { name: string } }>('/body', {\n  reportErrors: false\n});",
     );
-    expect(queries).toContain("export const postWithBody = apiPost<Args & { body: { name: string } }>('/post');");
-    expect(queries).toContain("export const deleteAll = apiDelete('/all');");
+    expect(queries).toContain(
+      "export const patchWithResponse = apiPatch<Args & { response: { id: string } }>('/patch', {\n  reportErrors: false\n});",
+    );
+    expect(queries).toContain(
+      "export const postWithBody = apiPost<Args & { body: { name: string } }>('/post', {\n  reportErrors: false\n});",
+    );
+    expect(queries).toContain("export const deleteAll = apiDelete('/all', {\n  reportErrors: false\n});");
     expect(queries).toContain("import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from './client';");
   });
 
@@ -221,7 +227,7 @@ export const getUser = apiClient.get({
 
     await migration(tree, { skipFormat: true });
 
-    expect(readOrEmpty('queries.ts')).toContain("export const getUser = apiGet('/user');");
+    expect(readOrEmpty('queries.ts')).toContain("export const getUser = apiGet('/user', {\n  reportErrors: false\n});");
 
     const report = readOrEmpty('query-v3-migration-tasks.md');
 
@@ -268,7 +274,7 @@ export const getReal = apiClient.get({ ...shared, route: '/real' });
     const queries = readOrEmpty('queries.ts');
 
     expect(queries).not.toContain('apiClientConfig.get(');
-    expect(queries).toContain('export const getUsers = apiGet(route);');
+    expect(queries).toContain('export const getUsers = apiGet(route, {\n  reportErrors: false\n});');
     expect(queries).toContain('export const legacyGetUsers = createLegacyQueryCreator(');
   });
 
@@ -381,7 +387,7 @@ export const getUsers = apiClient.get({ ...sharedOptions, route: '/users' });
     const queries = readOrEmpty('queries.ts');
 
     expect(queries).not.toContain("from './options'");
-    expect(queries).toContain("export const getUsers = apiGet('/users');");
+    expect(queries).toContain("export const getUsers = apiGet('/users', {\n  reportErrors: false\n});");
   });
 
   it('should not silently drop options spread into a creator config', async () => {
@@ -396,7 +402,7 @@ export const getUsers = apiClient.get({ ...sharedOptions, route: '/users' });
     const queries = readOrEmpty('queries.ts');
     const report = readOrEmpty('query-v3-migration-tasks.md');
 
-    expect(queries).toContain("export const getUsers = apiGet('/users');");
+    expect(queries).toContain("export const getUsers = apiGet('/users', {\n  reportErrors: false\n});");
     expect(report).toContain('Restore the spread config of getUsers');
     expect(report).toContain('spreads `shared` into its v2 config');
   });
@@ -446,8 +452,8 @@ export const getUsers = apiClient.get({ ...sharedOptions, route: '/users' });
 
     const queries = readOrEmpty('queries.ts');
 
-    expect(queries).toContain("getA = apiGet('/a')");
-    expect(queries).toContain("getB = apiGet('/b')");
+    expect(queries).toContain("getA = apiGet('/a', {");
+    expect(queries).toContain("getB = apiGet('/b', {");
     expect(queries).toContain('export const legacyGetB = createLegacyQueryCreator(');
   });
 
@@ -463,7 +469,7 @@ export const getUsers = apiClient.get({ ...sharedOptions, route: '/users' });
     const queries = readOrEmpty('queries.ts');
 
     expect(queries).not.toMatch(/createLookup\(\) \{[^}]*export const/);
-    expect(queries).toContain("const getA = apiGet('/a');");
+    expect(queries).toContain("const getA = apiGet('/a', {\n  reportErrors: false\n});");
     expect(queries).toContain('const legacyGetA = createLegacyQueryCreator(');
   });
   it('moves an entity config onto the legacy wrapper and reports gql creators it cannot rewrite', async () => {

@@ -329,22 +329,13 @@ export const renderAuthProviderBody = (config: V2BearerAuthConfig | undefined) =
 
   refreshEntries.push('      retryConfig: { maxAttempts: 8 },');
 
-  if (config.cookieName) {
-    warnings.push(
-      config.cookieDomain
-        ? {
-            title: 'Check the cookieDomain: v3 keeps the login cookie per host',
-            summary: `The v2 provider set \`cookieDomain: ${config.cookieDomain}\`, so every sibling host shared one login. \`withPersistentAuth\` keys the cookie per origin and copies \`domain\` only into the cookie it writes: a sibling host does not read the login of another host.`,
-            action:
-              'If the app signs in on one host and reads the session on another, keep both hosts on one origin until cross-host login returns to v3.',
-          }
-        : {
-            title: 'Check the cookie host: v3 keeps the login cookie per host',
-            summary:
-              'The v2 provider set no `cookieDomain`. `withPersistentAuth` keys the cookie per origin, so a login does not reach a sibling host.',
-            action: 'If the app runs on more than one host, check that each host signs in on its own.',
-          },
-    );
+  if (config.cookieName && !config.cookieDomain) {
+    warnings.push({
+      title: 'Check the cookie host: v3 keeps the login cookie per host',
+      summary:
+        'The v2 provider set no `cookieDomain`. `withPersistentAuth` keys the cookie per origin, so a login does not reach a sibling host.',
+      action: 'If the app runs on more than one host, check that each host signs in on its own.',
+    });
   }
 
   const queries = [
