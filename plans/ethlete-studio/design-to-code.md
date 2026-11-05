@@ -3406,7 +3406,7 @@ pre-push hook runs the devtools e2e cases when `libs/query-devtools` changes.
 --slow --base "$NX_BASE"`) ran 11m 32s and was still running; it blocks every `next` run, also SDK-only pushes, and a
 release waits for it. Tom: "das ist keine lösung für die ci. das ist viel zu langsam". Why no tool caught it: no step
 has a time budget, and the job has no path filter, so a query-only push pays the full Studio compare. Tool fix: open
-grill question (path filter plus a separate non-blocking workflow, or sharding), and a time budget per CI step that
+ADR 0197 (B396): a separate path-filtered workflow that blocks no release, and a time budget per CI step that
 fails loudly when crossed.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
