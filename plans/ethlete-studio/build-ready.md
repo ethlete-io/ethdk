@@ -558,3 +558,14 @@ Verified: the component spec. Not verified: the look against a design part, beca
 - 66a4de23f: the base table error mark uses `title` again; the tooltip stays opt-in. Table goldens back inside tolerance.
 - 4de41ac2e: the Studio rules job builds `cli,components` before `design check`. The check now runs, but finds 3 problems from finding 438 (B372).
 - Open: B372 must land before CI can be green. Bundle growth from the tooltip swap (password-input, stream-with-pip, scheduler, cascader) waits for Tom. Nothing pushed.
+
+## As built: B377 (ADR 0192)
+
+- `yarn studio:e2e` builds Studio once, then runs the cases on workers: each a forked process with its own scratch checkout, design server (free port via `DE_PORT`) and Chromium. Workers pull cases from one queue, slowest first by the timings of the last run (`node_modules/.cache/studio-e2e/canvas-timings.json`). Every case already reloads the page and clears localStorage, and the only shared state is the checkout, so any case can run on any worker.
+- Default: `min(8, cores / 4)` workers (8 here); `--workers <n>` or `STUDIO_E2E_WORKERS` overrule it. `--case <name>` still works. The workers run with `ETHLETE_DESIGN_SLOW_CHECKS=off`.
+- The run ends with the time per page group and per case, slowest first.
+- `tools/scripts/verify-studio-headless.mjs` exports `ensureCli` and `buildStudio`.
+- Wall time: 12 min 10 s serial (B367b) -> 2 min 27 s (8 workers, slow checks on, 113/114: System "a frame renders real content" saw empty frames), 1 min 56 s (12 workers, load peak 46, 113/114: Sketches "ctrl-wheel keeps the world point" drifted 86 px), 2 min 9 s (8 workers, final, load peak 38, 114/114).
+- Flaky cases: Sketches "pan beyond every edge" and Large "a variant equal to Aktuell" passed in all 3 parallel runs.
+- cli vitest: no config change. Default (31 forks) 97 s, `--maxWorkers=16` 91 s; CPU about 50 % idle in both. The run is bound by `check-system.spec.ts` alone (89-95 s); splitting that file is the lever.
+- Not verified: a serial run of the new runner (only the B367b number as "before"), more than one run per worker count.

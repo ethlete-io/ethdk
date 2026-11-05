@@ -57,6 +57,24 @@ export const startDesignServer = (checkout, stamp) =>
     child.on('exit', (code) => reject(new Error(`design server exited with ${code}\n${output}`)));
   });
 
+export const ensureCli = () => {
+  if (!existsSync(cliEntry)) execFileSync('npx', ['nx', 'build', 'cli'], { cwd: root, stdio: 'inherit' });
+};
+
+export const buildStudio = (outputPath, stamp) => {
+  stamp('studio build starting');
+  execFileSync(
+    'npx',
+    ['nx', 'build', 'ethlete-studio', `--outputPath=${outputPath}`, '--excludeTaskDependencies', '--skip-nx-cache'],
+    {
+      cwd: root,
+      stdio: 'inherit',
+      env: { ...process.env, NX_NO_CLOUD: 'true' },
+    },
+  );
+  stamp('studio build done');
+};
+
 export const studioHostAnswer = async (command, checkout, designPort) => {
   if (command === 'design_roots') return { search: '', roots: [checkout] };
   if (command === 'design_project') {
@@ -107,21 +125,9 @@ export const withStudio = async (run, { checkout = root, build = true, built, ch
   let browser;
 
   try {
-    if (!existsSync(cliEntry)) execFileSync('npx', ['nx', 'build', 'cli'], { cwd: root, stdio: 'inherit' });
+    ensureCli();
 
-    if (build && !built) {
-      stamp('studio build starting');
-      execFileSync(
-        'npx',
-        ['nx', 'build', 'ethlete-studio', `--outputPath=${scratch}`, '--excludeTaskDependencies', '--skip-nx-cache'],
-        {
-          cwd: root,
-          stdio: 'inherit',
-          env: { ...process.env, NX_NO_CLOUD: 'true' },
-        },
-      );
-      stamp('studio build done');
-    }
+    if (build && !built) buildStudio(scratch, stamp);
 
     design = await startDesignServer(checkout, stamp);
 

@@ -1,16 +1,28 @@
 #!/usr/bin/env node
-import { execFileSync } from 'node:child_process';
-import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { execFileSync, fork } from 'node:child_process';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
+import { createServer } from 'node:net';
+import { availableParallelism, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
+import { fileURLToPath } from 'node:url';
+import { buildStudio, ensureCli, withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
 const args = process.argv.slice(2);
 const built = args.includes('--built') ? resolve(args[args.indexOf('--built') + 1]) : undefined;
 const only = args.includes('--case') ? args[args.indexOf('--case') + 1] : undefined;
 
-process.env['DE_PORT'] ??= '4473';
+const TIMINGS_FILE = join(root, 'node_modules/.cache/studio-e2e/canvas-timings.json');
 
 const cliEntry = resolve(root, process.env['STUDIO_CLI_ENTRY'] ?? 'dist/libs/cli/src/index.js');
 
@@ -1400,103 +1412,232 @@ const CASES = [
   },
 ];
 
-const checkout = mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-'));
+let checkout;
 
-for (const entry of readdirSync(root)) {
-  if (entry !== '.ethlete' && entry !== '.git') symlinkSync(join(root, entry), join(checkout, entry));
-}
+const prepareCheckout = () => {
+  const dir = mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-'));
 
-cpSync(join(root, '.ethlete/design'), join(checkout, '.ethlete/design'), { recursive: true });
+  for (const entry of readdirSync(root)) {
+    if (entry !== '.ethlete' && entry !== '.git') symlinkSync(join(root, entry), join(dir, entry));
+  }
 
-rmSync(join(checkout, '.ethlete/design/studio/sketches'), { recursive: true, force: true });
+  cpSync(join(root, '.ethlete/design'), join(dir, '.ethlete/design'), { recursive: true });
 
-for (const target of ['pages/system', 'components/zoom-chip', 'elements/shell-main', ...Object.values(GONE_TARGETS)]) {
-  const folder = join(checkout, '.ethlete/design/studio/sketches', target.replace('/', '-'));
+  rmSync(join(dir, '.ethlete/design/studio/sketches'), { recursive: true, force: true });
 
-  mkdirSync(join(folder, 'a', dirname(target)), { recursive: true });
-  cpSync(join(root, '.ethlete/design/studio', target), join(folder, 'a', target), { recursive: true });
+  for (const target of [
+    'pages/system',
+    'components/zoom-chip',
+    'elements/shell-main',
+    ...Object.values(GONE_TARGETS),
+  ]) {
+    const folder = join(dir, '.ethlete/design/studio/sketches', target.replace('/', '-'));
 
-  if (target === 'components/zoom-chip') {
-    const variantFile = join(folder, 'a', target, 'zoom-chip.ts');
+    mkdirSync(join(folder, 'a', dirname(target)), { recursive: true });
+    cpSync(join(root, '.ethlete/design/studio', target), join(folder, 'a', target), { recursive: true });
 
+    if (target === 'components/zoom-chip') {
+      const variantFile = join(folder, 'a', target, 'zoom-chip.ts');
+
+      writeFileSync(
+        variantFile,
+        readFileSync(variantFile, 'utf8').replace('reset: { percent: 100 }', 'reset: { percent: 110 }'),
+      );
+    }
     writeFileSync(
-      variantFile,
-      readFileSync(variantFile, 'utf8').replace('reset: { percent: 100 }', 'reset: { percent: 110 }'),
+      join(folder, 'sketch.json'),
+      JSON.stringify({
+        target,
+        targets: [target],
+        status: 'ready',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        rounds: [{ key: 'r1', title: '', note: 'canvas e2e' }],
+        variantInfo: { a: { authors: ['canvas-e2e'], round: 'r1' } },
+      }),
     );
   }
-  writeFileSync(
-    join(folder, 'sketch.json'),
-    JSON.stringify({
-      target,
-      targets: [target],
-      status: 'ready',
-      createdAt: '2026-01-01T00:00:00.000Z',
-      rounds: [{ key: 'r1', title: '', note: 'canvas e2e' }],
-      variantInfo: { a: { authors: ['canvas-e2e'], round: 'r1' } },
-    }),
+
+  return dir;
+};
+
+const runCase = async (page, studioUrl, designPort, target, testCase) => {
+  await page.goto(studioUrl);
+  await page.evaluate(
+    ({ view, checkout }) => {
+      localStorage.clear();
+      localStorage.setItem('ethlete-studio.call-view', JSON.stringify({ checkout, ...view }));
+    },
+    { view: target.view, checkout },
   );
-}
+  await page.setViewportSize(testCase.viewport ?? NARROW);
+  await page.goto(studioUrl);
+  await page.waitForFunction(
+    ({ CANVAS, FRAME }) => document.querySelector(CANVAS)?.querySelector(FRAME),
+    { CANVAS, FRAME: target.frame ?? FRAME },
+    { timeout: 30000 },
+  );
+  await page.waitForTimeout(2500);
+  await settled(page, target.frame ?? FRAME);
 
-const results = await withStudio(
-  async ({ page, studioUrl, designPort }) => {
-    const rows = [];
+  const shown = await page.evaluate(
+    ({ shows, hides }) => !!document.querySelector(shows) && !(hides && document.querySelector(hides)),
+    { shows: target.shows, hides: target.hides ?? null },
+  );
+  const state = await probe(page);
 
-    for (const target of PAGES) {
-      for (const testCase of CASES) {
-        if (!(testCase.pages ?? ['System', 'Sketches']).includes(target.name)) continue;
-        if (testCase.labels && !testCase.labels.includes(target.label)) continue;
-        if (only && !testCase.name.includes(only)) continue;
+  return !shown
+    ? { ok: false, detail: `the page does not show ${target.shows}` }
+    : state
+      ? await testCase.run(page, state, target, { designPort })
+      : { ok: false, detail: 'no canvas' };
+};
 
-        await page.goto(studioUrl);
-        await page.evaluate(
-          ({ view, checkout }) => {
-            localStorage.clear();
-            localStorage.setItem('ethlete-studio.call-view', JSON.stringify({ checkout, ...view }));
-          },
-          { view: target.view, checkout },
-        );
-        await page.setViewportSize(testCase.viewport ?? NARROW);
-        await page.goto(studioUrl);
-        await page.waitForFunction(
-          ({ CANVAS, FRAME }) => document.querySelector(CANVAS)?.querySelector(FRAME),
-          { CANVAS, FRAME: target.frame ?? FRAME },
-          { timeout: 30000 },
-        );
-        await page.waitForTimeout(2500);
-        await settled(page, target.frame ?? FRAME);
+const nextJob = () =>
+  new Promise((done) => {
+    process.once('message', done);
+    process.send({ type: 'next' });
+  });
 
-        const shown = await page.evaluate(
-          ({ shows, hides }) => !!document.querySelector(shows) && !(hides && document.querySelector(hides)),
-          { shows: target.shows, hides: target.hides ?? null },
-        );
-        const state = await probe(page);
+const work = async () => {
+  checkout = prepareCheckout();
+
+  await withStudio(
+    async ({ page, studioUrl, designPort }) => {
+      for (let { job } = await nextJob(); job; { job } = await nextJob()) {
+        const startedAt = performance.now();
         let result;
 
         try {
-          result = !shown
-            ? { ok: false, detail: `the page does not show ${target.shows}` }
-            : state
-              ? await testCase.run(page, state, target, { designPort })
-              : { ok: false, detail: 'no canvas' };
+          result = await runCase(page, studioUrl, designPort, PAGES[job.target], CASES[job.case]);
         } catch (error) {
           result = { ok: false, detail: String(error).split('\n')[0] };
         }
 
-        const pageName = target.label ?? target.name;
-
-        rows.push({ page: pageName, case: testCase.name, ...result });
-        console.log(
-          `${result.ok ? 'PASS' : 'FAIL'}  ${pageName.padEnd(9)} ${testCase.name.padEnd(36)} ${result.detail}`,
-        );
+        process.send({ type: 'result', ok: result.ok, detail: result.detail, ms: performance.now() - startedAt });
       }
-    }
+    },
+    { built, checkout },
+  ).finally(() => rmSync(checkout, { recursive: true, force: true }));
 
-    return rows;
-  },
-  { built, checkout },
-).finally(() => rmSync(checkout, { recursive: true, force: true }));
+  process.exit(0);
+};
 
-const failed = results.filter((row) => !row.ok);
+const freePort = () =>
+  new Promise((done, fail) => {
+    const server = createServer();
 
-console.log(`\n${results.length - failed.length}/${results.length} passed`);
-process.exit(failed.length || !results.length ? 1 : 0);
+    server.on('error', fail);
+    server.listen(0, '::1', () => {
+      const { port } = server.address();
+
+      server.close(() => done(port));
+    });
+  });
+
+const keyOf = (job) => `${job.page} :: ${job.name}`;
+const seconds = (ms) => `${(ms / 1000).toFixed(1)}s`.padStart(7);
+
+const workerCount = () => {
+  const asked = Number(
+    args.includes('--workers') ? args[args.indexOf('--workers') + 1] : process.env['STUDIO_E2E_WORKERS'],
+  );
+
+  return asked >= 1 ? Math.floor(asked) : Math.max(1, Math.min(8, Math.floor(availableParallelism() / 4)));
+};
+
+const lead = async () => {
+  const runStartedAt = performance.now();
+  const known = existsSync(TIMINGS_FILE) ? JSON.parse(readFileSync(TIMINGS_FILE, 'utf8')) : {};
+  const queue = PAGES.flatMap((target, targetIndex) =>
+    CASES.flatMap((testCase, caseIndex) =>
+      (testCase.pages ?? ['System', 'Sketches']).includes(target.name) &&
+      (!testCase.labels || testCase.labels.includes(target.label)) &&
+      (!only || testCase.name.includes(only))
+        ? [{ target: targetIndex, case: caseIndex, page: target.label ?? target.name, name: testCase.name }]
+        : [],
+    ),
+  ).sort((a, b) => (known[keyOf(b)] ?? Infinity) - (known[keyOf(a)] ?? Infinity));
+  const total = queue.length;
+  const workers = Math.min(total, workerCount());
+  const rows = [];
+  const scratch = built ? undefined : mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-build-'));
+  const record = (job, result) => {
+    rows.push({ ...job, ...result });
+    console.log(
+      `${result.ok ? 'PASS' : 'FAIL'}  ${job.page.padEnd(9)} ${job.name.padEnd(36)} ${result.detail} (${seconds(result.ms ?? 0).trim()})`,
+    );
+  };
+
+  try {
+    ensureCli();
+    if (scratch) buildStudio(scratch, (phase) => console.log(`[canvas-e2e] ${phase}`));
+    console.log(`[canvas-e2e] ${total} cases on ${workers} worker(s)`);
+
+    await Promise.all(
+      Array.from({ length: workers }, async (_, index) => {
+        const port = await freePort();
+        const child = fork(fileURLToPath(import.meta.url), ['--worker', '--built', built ?? scratch], {
+          env: { ETHLETE_DESIGN_SLOW_CHECKS: 'off', ...process.env, DE_PORT: String(port) },
+          stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+        });
+        let output = '';
+        let current;
+
+        child.stdout.on('data', (chunk) => (output += chunk));
+        child.stderr.on('data', (chunk) => (output += chunk));
+        child.on('message', (message) => {
+          if (message.type === 'result') {
+            record(current, message);
+            current = undefined;
+          }
+          if (message.type === 'next') {
+            current = queue.shift();
+            child.send({ job: current ?? null });
+          }
+        });
+
+        const code = await new Promise((done) => child.on('exit', done));
+
+        if (code !== 0 || current) {
+          console.log(`[canvas-e2e] worker ${index} on port ${port} exited with ${code}\n${output.slice(-4000)}`);
+          if (current) record(current, { ok: false, detail: `worker exited with ${code}` });
+        }
+      }),
+    );
+  } finally {
+    if (scratch) rmSync(scratch, { recursive: true, force: true });
+  }
+
+  const groups = Object.entries(Object.groupBy(rows, (row) => row.page)).map(([page, pageRows]) => ({
+    page,
+    ms: pageRows.reduce((sum, row) => sum + (row.ms ?? 0), 0),
+    count: pageRows.length,
+  }));
+
+  console.log('\nTime per page group, slowest first:');
+  for (const group of groups.sort((a, b) => b.ms - a.ms)) {
+    console.log(`${seconds(group.ms)}  ${group.page} (${group.count} cases)`);
+  }
+  console.log('\nTime per case, slowest first:');
+  for (const row of rows.toSorted((a, b) => (b.ms ?? 0) - (a.ms ?? 0))) {
+    console.log(`${seconds(row.ms ?? 0)}  ${row.page.padEnd(9)} ${row.name}`);
+  }
+
+  mkdirSync(dirname(TIMINGS_FILE), { recursive: true });
+  writeFileSync(
+    TIMINGS_FILE,
+    JSON.stringify({
+      ...known,
+      ...Object.fromEntries(rows.filter((row) => row.ms).map((row) => [keyOf(row), Math.round(row.ms)])),
+    }),
+  );
+
+  const failed = rows.filter((row) => !row.ok);
+
+  console.log(
+    `\n${rows.length - failed.length}/${total} passed in ${seconds(performance.now() - runStartedAt).trim()} on ${workers} worker(s)`,
+  );
+  process.exit(failed.length || rows.length < total || !total ? 1 : 0);
+};
+
+await (args.includes('--worker') ? work() : lead());
