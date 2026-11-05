@@ -13,7 +13,10 @@ Grill/docs session: ethlete-sdk-ea. Nothing pushed. Plan: build-ready.md "In pro
 
 ## Next
 
-1. Wait for the grill decision on finding 466 (auto-merge diff counts anti-alias noise; recommended: per-channel
+0. Grill decisions (7ab426115): 466 yes - build it, then pages/system auto-merges. New finding 467: the pre-commit spec
+   run of 65ee4694c reported 1 failed in embedded-actions.spec.ts but the commit passed - find the cause, make a failed
+   spec fail the commit. title-bar@notice-shape is with Tom. ready.json: still no answer, do not touch.
+1. Finding 466 (auto-merge diff counts anti-alias noise; recommended: per-channel
    tolerance ~8/255, spec with a border anti-alias change). If yes, build it, then `sketch merge pages/system@check-fixes`.
 2. Foundations sketch `foundations/colors@foundations-check-fixes`: merge approved (rule-only fix, Tom picked `a`), but
    `sketch merge` refuses while `.ethlete/design/studio/ready.json` has an uncommitted canvas-viewport mark that is not
