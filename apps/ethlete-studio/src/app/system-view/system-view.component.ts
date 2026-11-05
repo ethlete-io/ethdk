@@ -83,6 +83,7 @@ import { ExceptionListComponent } from './exception-list.component';
 import { PartApprovalComponent } from './part-approval.component';
 import { openPointGroupsOf } from './open-points';
 import { partOpenPoints$ } from '../../host/design-open-points';
+import { openExceptionsOf } from '../../host/design-exceptions';
 import { OpenPointsChipComponent } from '../design-parts/system-page/open-points-chip.component';
 import { CommentDraftComponent } from '../design-parts/system-page/comment-draft.component';
 import { DesignServerAction } from '../design-parts/studio-menu/studio-menu.component';
@@ -238,7 +239,11 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
               >
                 {{ EMPTY_LABELS.comment }}
               </button>
-              <ethlete-open-points-chip [part]="partShown.key" [groups]="openPointGroups()" />
+              <ethlete-open-points-chip
+                [part]="partShown.key"
+                [groups]="openPointGroups()"
+                [exceptionCount]="exceptionCount()"
+              />
             </div>
             <ethlete-design-canvas
               #partCanvas
@@ -411,6 +416,8 @@ export class SystemViewComponent {
   public partCanvas = viewChild<DesignCanvasComponent>('partCanvas');
 
   private sketchView = viewChild<SketchViewComponent>('sketchView');
+
+  private exceptionList = viewChild(ExceptionListComponent);
 
   protected productsRevision = computed(() => this.lists().products);
 
@@ -782,6 +789,13 @@ export class SystemViewComponent {
   );
 
   protected openPointGroups = computed(() => this.openPointReads()?.items ?? []);
+
+  protected exceptionCount = computed(() => {
+    const part = this.part()?.key;
+    const listed = this.exceptionList()?.listed();
+
+    return part && listed ? openExceptionsOf(listed, part).length : 0;
+  });
 
   public selectedKey = computed(() => {
     const call = this.call();

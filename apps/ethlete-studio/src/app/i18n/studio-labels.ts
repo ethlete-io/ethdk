@@ -160,6 +160,7 @@ export const STUDIO_LABELS = {
   systemTree: {
     notUsed: 'Nicht verwendet',
     product: 'Produkt',
+    appCode: 'App-Code',
     notUsedIn: (name: string) => `Nicht verwendet in ${name}`,
     legacy: 'Legacy',
     pending: 'Agent zeichnet noch',

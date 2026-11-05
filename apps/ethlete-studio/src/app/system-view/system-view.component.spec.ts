@@ -174,6 +174,30 @@ describe('SystemViewComponent on a reload', () => {
     );
   });
 
+  it('counts the open exceptions of the shown part in the open-points chip', async () => {
+    TestBed.configureTestingModule({ providers: provideColorThemesWithTailwind4(THEMES) });
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/open-points'))
+        return json({ points: [{ kind: 'contrast', state: 'hover', path: 'label' }], buildReady: { ready: true } });
+      if (url.includes('/__design/exceptions'))
+        return json([
+          { key: 'elements/rating.star.focus', state: 'pending', reason: 'never takes focus' },
+          { key: 'elements/rating.star.hover', state: 'approved', reason: 'static' },
+          { key: 'components/button.label.focus', state: 'pending', reason: 'another part' },
+        ]);
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
+    const chip = (fixture.nativeElement as HTMLElement).querySelector('[data-open-points-chip]');
+
+    expect(chip?.textContent?.trim()).toBe('2 offen');
+  });
+
   it('shows the open points of the shown part in a chip at the top right, and lists them in its popover', async () => {
     const asked: string[] = [];
 

@@ -36,4 +36,8 @@ export const KNOWN_UNBOUND_INPUTS: KnownUnboundInput[] = [
   { file: 'apps/ethlete-studio/src/app/design-parts/shell-main/shell-main.component.ts', input: 'projectPicker' },
   { file: 'apps/ethlete-studio/src/app/design-parts/merge/merge.component.ts', input: 'unchanged' },
   { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'closed' },
+  {
+    file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts',
+    input: 'exceptionCount',
+  },
 ];

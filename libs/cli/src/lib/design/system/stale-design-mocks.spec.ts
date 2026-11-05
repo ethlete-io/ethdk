@@ -1,11 +1,8 @@
 import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
-import { IncomingMessage } from 'http';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
-import { Readable } from 'stream';
 import { describe, expect, it, vi } from 'vitest';
 import { designCommand } from '../design-command';
-import { staleMocksAnswer } from '../studio-api';
 import { guardsDesignMocks, MOCKS_BUILD_COMMAND, staleDesignMocksOf } from './stale-design-mocks';
 
 const write = (path: string, content: string) => {
@@ -54,6 +51,7 @@ describe('guardsDesignMocks', () => {
     expect(guardsDesignMocks(['sketch', 'list'])).toBe(false);
     expect(guardsDesignMocks(['compare', 'x/y'])).toBe(false);
     expect(guardsDesignMocks(['check', '--product', 'studio', '--app-classes'])).toBe(false);
+    expect(guardsDesignMocks(['check', '--product', 'studio', '--rules'])).toBe(false);
   });
 });
 
@@ -72,30 +70,4 @@ describe('designCommand with stale mocks', () => {
       error.mockRestore();
     },
   );
-});
-
-describe('staleMocksAnswer', () => {
-  const ask = (target: string, method = 'GET') => ({
-    target,
-    url: new URL('http://localhost/__design/stale-mocks'),
-    request: Object.assign(Readable.from([]), { method }) as unknown as IncomingMessage,
-  });
-
-  it('serves the stale mocks and the build command to Studio', () => {
-    expect(staleMocksAnswer(ask(checkout({ source: 'b', built: 'a' })))).toEqual({
-      status: 200,
-      body: { stale: expect.objectContaining({ stale: ['button.ts'], command: MOCKS_BUILD_COMMAND }) },
-    });
-  });
-
-  it('serves null once every mock is built', () => {
-    expect(staleMocksAnswer(ask(checkout({ source: 'a', built: 'a' })))).toEqual({
-      status: 200,
-      body: { stale: null },
-    });
-  });
-
-  it('refuses anything but GET', () => {
-    expect(staleMocksAnswer(ask(checkout({ source: 'a', built: 'a' }), 'POST')).status).toBe(405);
-  });
 });

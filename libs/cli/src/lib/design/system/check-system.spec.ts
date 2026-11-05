@@ -799,6 +799,20 @@ describe('checkDesign', () => {
     ]);
   }, 60_000);
 
+  it('runs only the static rules with --rules, and fails on a problem', async () => {
+    const target = acme();
+    const lines = output();
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme', '--rules'], invocation: 'et design' })).toBe(0);
+    expect(lines).toEqual(['No static design rule finds a problem.']);
+
+    lines.length = 0;
+    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { border-color: #fff; }');
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme', '--rules'], invocation: 'et design' })).toBe(1);
+    expect(lines).toEqual([expect.stringMatching(/^HARD-CODED-COLOUR .*hero\.css: #fff/), '1 problem(s).']);
+  }, 60_000);
+
   it('finds the product of a part without --product, and refuses an unknown part', async () => {
     const lines = output();
 
@@ -813,6 +827,22 @@ describe('summaryText', () => {
   it('prints a clean line for the one part asked for', () => {
     expect(summaryText({ product: 'acme', parts: ['pages/home'], tally: new Map(), only: 'pages/home' })).toEqual([
       'PART acme pages/home: clean',
+    ]);
+  });
+
+  it('names the file of app code outside every part, and leaves it out of the clean count', () => {
+    const tally = new Map([
+      [
+        'acme',
+        new Map([
+          ['app code:apps/acme/src/shell.ts', { problems: ['UNBOUND-INPUT', 'SAMPLE-DEFAULT'], warnings: 1, open: 0 }],
+        ]),
+      ],
+    ]);
+
+    expect(summaryText({ product: 'acme', parts: ['a/x'], tally })).toEqual([
+      'APP CODE acme apps/acme/src/shell.ts: 2 problems (UNBOUND-INPUT, SAMPLE-DEFAULT), 1 warning',
+      'PARTS acme: 1 of 1 clean',
     ]);
   });
 

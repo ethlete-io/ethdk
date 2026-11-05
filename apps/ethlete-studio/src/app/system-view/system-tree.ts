@@ -132,6 +132,49 @@ const SKETCH_KEY = 'sketch:';
 
 const PRODUCT_KEY = 'product';
 
+const APP_CODE_KEY = 'app-code';
+
+const DESIGN_DIR = '.ethlete/design/';
+
+/** The problems no part owns: those in the design files as one product row, those in app code as one row per file. */
+const productProblemGroupsOf = (product: string, unowned: SystemProblem[]): TreeGroup[] => {
+  const design = unowned.filter((problem) => problem.file.startsWith(DESIGN_DIR));
+  const app = unowned.filter((problem) => !problem.file.startsWith(DESIGN_DIR));
+
+  return [
+    ...(design.length > 0
+      ? [
+          {
+            key: PRODUCT_KEY,
+            label: STUDIO_LABELS.systemTree.product,
+            entries: [
+              {
+                key: `${PRODUCT_KEY}:${product}`,
+                name: product,
+                title: problemTitleOf(design),
+                badges: ['error' as const],
+              },
+            ],
+          },
+        ]
+      : []),
+    ...(app.length > 0
+      ? [
+          {
+            key: APP_CODE_KEY,
+            label: STUDIO_LABELS.systemTree.appCode,
+            entries: [...new Set(app.map((problem) => problem.file))].map((file) => ({
+              key: `${APP_CODE_KEY}:${file}`,
+              name: file,
+              title: problemTitleOf(app.filter((problem) => problem.file === file)),
+              badges: ['error' as const],
+            })),
+          },
+        ]
+      : []),
+  ];
+};
+
 export const sketchKeyOf = (target: string) => `${SKETCH_KEY}${target}`;
 
 export const isSketchKey = (key: string | null) => !!key?.startsWith(SKETCH_KEY);
@@ -302,23 +345,7 @@ export const treeOf = (
   const partMarks = marksOf(false);
   const sketchMarks = marksOf(true);
   const { owned, unowned } = productProblemsOf(parts, product?.problems ?? []);
-  const productGroups: TreeGroup[] =
-    product && unowned.length > 0
-      ? [
-          {
-            key: PRODUCT_KEY,
-            label: STUDIO_LABELS.systemTree.product,
-            entries: [
-              {
-                key: `${PRODUCT_KEY}:${product.name}`,
-                name: product.name,
-                title: problemTitleOf(unowned),
-                badges: ['error'],
-              },
-            ],
-          },
-        ]
-      : [];
+  const productGroups: TreeGroup[] = product && unowned.length > 0 ? productProblemGroupsOf(product.name, unowned) : [];
 
   const groups = SYSTEM_GROUPS.flatMap(({ key, label, holds }) => {
     if (key === 'legacy') return legacyGroupsOf(calls);

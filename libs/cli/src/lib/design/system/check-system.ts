@@ -109,6 +109,32 @@ export const warningProblemsOf = (product: ResolvedProduct): Problem[] => [
 export const ruleLinesOf = (target: string, product: ResolvedProduct) =>
   ruleProblemsOf(product).map((problem) => lineOf(target, problem));
 
+/** Runs only the static rules of `products` - no draw, no tsc - and prints each problem a product's own files hold; exits 1 on one. */
+export const checkRules = (options: { target: string; config: DesignConfig; products: string[] }) => {
+  const { target, config } = options;
+  let failed = 0;
+
+  for (const name of options.products) {
+    const entry = config.products?.[name];
+
+    if (!entry) {
+      console.error(`NO PRODUCT "${name}" in config.json.`);
+      failed++;
+      continue;
+    }
+
+    const product = resolveProduct({ target, name, config: entry });
+    const problems = ruleProblemsOf(product).filter((problem) => !isInBasePart(product, problem.file));
+
+    problems.forEach((problem) => console.error(lineOf(target, problem)));
+    failed += problems.length;
+  }
+
+  console.log(failed === 0 ? 'No static design rule finds a problem.' : `${failed} problem(s).`);
+
+  return failed === 0 ? 0 : 1;
+};
+
 /** Every problem the rules find in a resolved product, its resolution problems first. */
 export const ruleProblemsOf = (product: ResolvedProduct): Problem[] => [
   ...product.problems,
@@ -166,12 +192,22 @@ type CheckOptions = {
 
 const PRODUCT_LEVEL = '(product)';
 
+const APP_CODE = 'app code:';
+
 /** The key of the part whose folder holds `file`, the innermost one, or `(product)` for a file outside every part. */
 export const partOfFile = (product: ResolvedProduct, file: string): string =>
   product.parts
     .map((part) => ({ key: partKeyOf(part), dir: dirname(part.file) }))
     .filter(({ dir }) => !relative(dir, file).startsWith('..'))
     .sort((a, b) => b.dir.length - a.dir.length)[0]?.key ?? PRODUCT_LEVEL;
+
+/** The tally key of `file`: its part, `(product)` for a design file outside every part, or `app code:<file>` for app code. */
+const tallyKeyOf = (target: string, { product, file }: { product: ResolvedProduct; file: string }) => {
+  const part = partOfFile(product, file);
+  const inDesign = [product.dir, product.base?.dir].some((dir) => dir && !relative(dir, file).startsWith('..'));
+
+  return part !== PRODUCT_LEVEL || inDesign ? part : `${APP_CODE}${relative(target, file) || '.'}`;
+};
 
 const tallyOf = (tally: Tally | undefined, at: { product: string; part: string }) => {
   const { product, part } = at;
@@ -211,13 +247,19 @@ export const summaryText = (options: {
       ...(entry?.open ? [countText(entry.open, 'open point')] : []),
     ];
 
-    return items.length > 0 ? `PART ${options.product} ${key}: ${items.join(', ')}` : null;
+    if (items.length === 0) return null;
+
+    return key.startsWith(APP_CODE)
+      ? `APP CODE ${options.product} ${key.slice(APP_CODE.length)}: ${items.join(', ')}`
+      : `PART ${options.product} ${key}: ${items.join(', ')}`;
   };
   const lines = keys.map((key) => ({ key, line: lineOf(key) }));
 
   if (options.only) return [lines[0]?.line ?? `PART ${options.product} ${options.only}: clean`];
 
-  const clean = lines.filter(({ key, line }) => line === null && key !== PRODUCT_LEVEL).length;
+  const clean = lines.filter(
+    ({ key, line }) => line === null && key !== PRODUCT_LEVEL && !key.startsWith(APP_CODE),
+  ).length;
 
   return [
     ...lines.flatMap(({ line }) => (line ? [line] : [])),
@@ -332,9 +374,10 @@ const reportSystem = (options: CheckOptions & { warn?: boolean }): { code: numbe
 
     console.error(line);
     failed = true;
-    tallyOf(options.tally, { product: product.name, part: partOfFile(product, problem.file) })?.problems.push(
-      problem.rule,
-    );
+    tallyOf(options.tally, {
+      product: product.name,
+      part: tallyKeyOf(target, { product, file: problem.file }),
+    })?.problems.push(problem.rule);
   };
 
   for (const name of products) {
@@ -368,7 +411,10 @@ const reportSystem = (options: CheckOptions & { warn?: boolean }): { code: numbe
 
     warnings.filter(isOwn).forEach((problem) => {
       console.warn(`WARNING ${lineOf(target, problem)}`);
-      const counted = tallyOf(options.tally, { product: name, part: partOfFile(product, problem.file) });
+      const counted = tallyOf(options.tally, {
+        product: name,
+        part: tallyKeyOf(target, { product, file: problem.file }),
+      });
 
       if (counted) counted.warnings += 1;
     });
@@ -714,7 +760,10 @@ export const checkSystemRendered = async (options: CheckOptions) => {
 
     capabilities.warnings.filter(isWanted).forEach((warning) => {
       console.warn(`WARNING ${lineOf(options.target, warning)}`);
-      const counted = tallyOf(tally, { product: name, part: partOfFile(resolved, warning.file) });
+      const counted = tallyOf(tally, {
+        product: name,
+        part: tallyKeyOf(options.target, { product: resolved, file: warning.file }),
+      });
 
       if (counted) counted.warnings += 1;
     });
@@ -732,7 +781,10 @@ export const checkSystemRendered = async (options: CheckOptions) => {
 
     for (const problem of problems) {
       console.error(lineOf(options.target, problem));
-      tallyOf(tally, { product: name, part: partOfFile(resolved, problem.file) })?.problems.push(problem.rule);
+      tallyOf(tally, {
+        product: name,
+        part: tallyKeyOf(options.target, { product: resolved, file: problem.file }),
+      })?.problems.push(problem.rule);
     }
 
     failed += problems.length;

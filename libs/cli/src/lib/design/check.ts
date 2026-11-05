@@ -6,7 +6,7 @@ import { writeCallsTsconfig } from './calls-tsconfig';
 import { callsRootOf, DEFAULT_PORT, DesignConfig, portOf, readConfig } from './paths';
 import { buildStampOf, serverProblemOf } from './stamp';
 import { holdStatus, writeStatus } from './status';
-import { checkSystemRendered } from './system/check-system';
+import { checkRules, checkSystemRendered } from './system/check-system';
 import { liveUncoveredOf, uncoveredFindingLineOf } from './system/live-uncovered';
 import { appCanonicalClassesOf } from './system/rules/canonical-class';
 import { callTopLevelAwaitsOf } from './system/rules/top-level-await';
@@ -430,6 +430,7 @@ const VALUE_FLAGS = ['--lint', '--tsconfig', '--call', '--variant', '--product',
 const MODE_FLAGS: Record<string, string[]> = {
   '--visible-change': ['--product', '--part', '--base'],
   '--app-classes': ['--product'],
+  '--rules': ['--product'],
   '--live': ['--product'],
   '--slow': ['--product', '--part', '--base'],
 };
@@ -461,6 +462,7 @@ const unreadArgumentOf = (argv: string[]) => {
 const checkWithStatus = async (options: { target: string; argv: string[]; invocation: string }): Promise<number> => {
   const { target, invocation } = options;
   const appClasses = options.argv.includes('--app-classes');
+  const rules = options.argv.includes('--rules');
   const live = options.argv.includes('--live');
   const visibleChange = options.argv.includes('--visible-change');
   const slow = options.argv.includes('--slow');
@@ -469,6 +471,7 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
   const argv = options.argv.filter(
     (argument, index) =>
       argument !== '--app-classes' &&
+      argument !== '--rules' &&
       argument !== '--live' &&
       argument !== '--visible-change' &&
       argument !== '--slow' &&
@@ -522,6 +525,7 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
     }
 
     if (appClasses) return checkAppClasses({ target, config: readConfig(target) ?? {}, products });
+    if (rules) return checkRules({ target, config: readConfig(target) ?? {}, products });
     if (live) return checkLive({ target, config: readConfig(target) ?? {}, products });
 
     return checkSystemRendered({ target, config: readConfig(target) ?? {}, products, part, invocation });

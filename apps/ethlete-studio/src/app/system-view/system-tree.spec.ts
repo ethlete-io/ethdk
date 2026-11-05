@@ -139,15 +139,46 @@ describe('product problems in the tree', () => {
     ]);
   });
 
-  it('gives the problems no part owns one product row', () => {
+  it('keeps the design files no part owns in one product row, apart from the app code', () => {
     const parts = [part({ implements: 'app/button/button.component.ts' })];
     const tree = treeOf(parts, {
-      product: { ...product(parts), problems: [problem('app/shell.ts', 'a'), problem('app/other.ts', 'b')] },
+      product: {
+        ...product(parts),
+        problems: [problem('.ethlete/design/acme/styles.css', 'a'), problem('app/shell.ts', 'b')],
+      },
     });
 
-    expect(tree.map((group) => group.key)).toEqual(['product', 'components']);
+    expect(tree.map((group) => [group.key, group.label])).toEqual([
+      ['product', 'Produkt'],
+      ['app-code', 'App-Code'],
+      ['components', 'Components'],
+    ]);
     expect(tree[0]?.entries).toEqual([
-      { key: 'product:acme', name: 'acme', title: 'UNBOUND-INPUT: a\nUNBOUND-INPUT: b', badges: ['error'] },
+      { key: 'product:acme', name: 'acme', title: 'UNBOUND-INPUT: a', badges: ['error'] },
+    ]);
+  });
+
+  it('lists the problems no part owns as app code, one row per file', () => {
+    const parts = [part({ implements: 'app/button/button.component.ts' })];
+    const tree = treeOf(parts, {
+      product: {
+        ...product(parts),
+        problems: [problem('app/shell.ts', 'a'), problem('app/other.ts', 'b'), problem('app/shell.ts', 'c')],
+      },
+    });
+
+    expect(tree.map((group) => [group.key, group.label])).toEqual([
+      ['app-code', 'App-Code'],
+      ['components', 'Components'],
+    ]);
+    expect(tree[0]?.entries).toEqual([
+      {
+        key: 'app-code:app/shell.ts',
+        name: 'app/shell.ts',
+        title: 'UNBOUND-INPUT: a\nUNBOUND-INPUT: c',
+        badges: ['error'],
+      },
+      { key: 'app-code:app/other.ts', name: 'app/other.ts', title: 'UNBOUND-INPUT: b', badges: ['error'] },
     ]);
     expect(tree[1]?.entries[0]?.badges).toEqual([]);
   });

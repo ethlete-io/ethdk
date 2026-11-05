@@ -85,7 +85,6 @@ export class ExceptionListComponent {
   /** Lists the exceptions anew on each change. */
   public revision = input(0);
   protected readonly LABELS = STUDIO_LABELS.exceptions;
-
   public reading = toSignal(
     toObservable(computed(() => ({ port: this.port(), product: this.product(), revision: this.revision() }))).pipe(
       switchMap((address) =>
@@ -99,6 +98,8 @@ export class ExceptionListComponent {
   );
 
   private exceptions = linkedSignal(() => this.reading().exceptions);
+
+  public listed = this.exceptions.asReadonly();
 
   private approveError = linkedSignal<Reading, string | null>({ source: this.reading, computation: () => null });
 

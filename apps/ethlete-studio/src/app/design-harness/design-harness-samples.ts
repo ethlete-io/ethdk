@@ -1,3 +1,4 @@
+import { PART_EXCEPTIONS_SAMPLE } from '../design-parts/system-page/system-page-sample';
 import { SKETCH_CURRENT, SKETCH_NARROW_SAMPLE, SKETCH_ROWS, SketchRow } from '../design-parts/sketches/sketches-sample';
 
 type Props = Record<string, unknown>;
@@ -28,4 +29,5 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
 
     return { ...props, ...sample, rows };
   },
+  'pages/system': (props) => ({ exceptionCount: PART_EXCEPTIONS_SAMPLE.length, ...props }),
 };

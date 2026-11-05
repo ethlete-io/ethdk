@@ -132,7 +132,8 @@ patterns), see the **`styleguide`** skill.
 To run what CI runs before pushing - format, changesets, lint, test, build, bundle-size
 goldens, Storybook build - use the **`ci-check`** skill (`.agents/skills/ci-check/`). The
 `.husky/pre-push` hook runs format (on the committed files of the pushed range, so uncommitted edits never
-count), changesets, the sub-second "Checks" scripts and, when `apps/docs` changes, the VitePress build; lint,
+count), changesets, the sub-second "Checks" scripts, `design check --rules` for each design product the range
+touches, and, when `apps/docs` changes, the VitePress build; lint,
 typecheck and the Studio gates run in CI. Fix what the hook reports rather than skipping it.
 
 ## Agent rules & skills for other repos
