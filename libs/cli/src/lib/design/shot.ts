@@ -733,6 +733,18 @@ export const createPartShooter = (options: {
       const pixels = width === null ? null : Number(width);
       const presetWidth = preset && product ? system.productOf(product)?.presets[preset]?.width : undefined;
 
+      const sketchVariants = sketch && product ? system.sketchVariantsOf(product, sketch) : null;
+
+      if (sketch && sketchVariants?.length && (!variant || !sketchVariants.includes(variant))) {
+        send(response, {
+          status: 400,
+          type: 'text/plain; charset=utf-8',
+          body: `design-explore: pass variant=<one of: ${sketchVariants.join(', ')}> with sketch=${sketch}`,
+        });
+
+        return;
+      }
+
       const sketchVariant = sketch && variant ? { target: sketch, variant } : null;
 
       if (product && part && !state && statesOf) {

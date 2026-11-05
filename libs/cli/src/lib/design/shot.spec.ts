@@ -214,7 +214,23 @@ describe('createPartShooter', () => {
       '?product=acme&part=elements%2Fhero&state=default&sketch=components%2Fbutton&variant=a',
       '?product=acme&part=elements%2Fhero&state=default',
     ]);
-    expect((await ask(shots, `${part}&sketch=components/button&variant=z`)).status).toBe(404);
+  });
+
+  it('answers 400 with the variants when the address names a sketch without one of its variants', async () => {
+    const { target, config, shots } = acme();
+    const product = createSystemModules({ target, config }).productOf('acme');
+    const parsed = parseTarget('components/button');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    createSketch({ merge: 'override', product, sketch: parsed, variants: ['a', 'b'] });
+
+    const part = 'product=acme&part=elements/hero&state=default&preset=phone&sketch=components/button';
+    const want = { status: 400, body: 'design-explore: pass variant=<one of: a, b> with sketch=components/button' };
+
+    expect(await ask(shots, part)).toMatchObject(want);
+    expect(await ask(shots, `${part}&variant=z`)).toMatchObject(want);
+    expect(drawnUrls()).toEqual([]);
   });
 
   it('draws a state at a container width, cropped to the height of its content', async () => {
