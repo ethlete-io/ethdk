@@ -2,6 +2,7 @@ import {
   afterNextRender,
   CSP_NONCE,
   DestroyRef,
+  EnvironmentInjector,
   EnvironmentProviders,
   inject,
   isDevMode,
@@ -44,7 +45,11 @@ import {
   withQueryDevtoolsOverridePersistence,
 } from './query-devtools-override-persistence';
 import { createQueryDevtoolsOverrides } from './query-devtools-overrides';
-import { markQueryDevtoolsAppSettled, setQueryDevtoolsShowInAutomation } from './query-devtools-ui';
+import {
+  isQueryDevtoolsUiMounted,
+  markQueryDevtoolsAppSettled,
+  setQueryDevtoolsShowInAutomation,
+} from './query-devtools-ui';
 import { initQueryDevtoolsMocks, resolveQueryDevtoolsMockForAttempt } from './query-devtools-mocks';
 import { QueryDevtoolsSchemaLoaders, setQueryDevtoolsSchemaLoader } from './query-devtools-schema';
 import { initQueryDevtoolsSettings } from './query-devtools-settings';
@@ -338,7 +343,21 @@ export type QueryDevtoolsOptions = {
    * never clicks a devtools element by accident. Defaults to `false`.
    */
   showInAutomation?: boolean;
+
+  /**
+   * Mounts the devtools UI for you, so no `<et-query-devtools-lazy>` is needed in a template. Pass the
+   * lazy entry point as a dynamic import; it loads once the application has rendered, and not at all
+   * when a devtools UI is already on the page.
+   *
+   * @example
+   * ```ts
+   * provideQueryDevtools({ ui: () => import('@ethlete/query-devtools/lazy') })
+   * ```
+   */
+  ui?: QueryDevtoolsUiLoader;
 };
+
+export type QueryDevtoolsUiLoader = () => Promise<{ mountQueryDevtools: (injector: EnvironmentInjector) => unknown }>;
 
 let queryDevtoolsInitialized = false;
 
@@ -352,13 +371,19 @@ const ONE_TIME_OPTIONS = ['about', 'apiEnvs', 'authAccounts', 'responseHistory',
 // they follow the devtools trigger instead, and an app that renders none shows no pills. Never wait for
 // `ApplicationRef.whenStable()` here: under zone.js an application that polls or holds a session keeps a
 // repeating timer, so it is never stable and the pills would never go.
-const settleThePillsOnFirstRender = () =>
+const settleThePillsOnFirstRender = (ui?: QueryDevtoolsUiLoader) =>
   provideEnvironmentInitializer(() => {
     const destroyRef = inject(DestroyRef);
 
     setQueryDevtoolsPillNonce(inject(CSP_NONCE, { optional: true }));
 
+    const injector = inject(EnvironmentInjector);
+
     afterNextRender(() => {
+      if (ui && !isQueryDevtoolsUiMounted()) {
+        ui().then((m) => m.mountQueryDevtools(injector));
+      }
+
       const settle = setTimeout(markQueryDevtoolsAppSettled, PILL_SETTLE_GRACE_MS);
 
       destroyRef.onDestroy(() => clearTimeout(settle));
@@ -407,7 +432,7 @@ export const provideQueryDevtools = (options?: QueryDevtoolsOptions): Environmen
   if (queryDevtoolsInitialized) {
     warnAboutIgnoredOptions(options);
 
-    return makeEnvironmentProviders([settleThePillsOnFirstRender()]);
+    return makeEnvironmentProviders([settleThePillsOnFirstRender(options?.ui)]);
   }
 
   queryDevtoolsInitialized = true;
@@ -442,5 +467,5 @@ export const provideQueryDevtools = (options?: QueryDevtoolsOptions): Environmen
     );
   }
 
-  return makeEnvironmentProviders([settleThePillsOnFirstRender()]);
+  return makeEnvironmentProviders([settleThePillsOnFirstRender(options?.ui)]);
 };

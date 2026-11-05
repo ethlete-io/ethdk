@@ -21,6 +21,9 @@ export const setQueryDevtoolsUiMounted = (isMounted: boolean) => {
   notify?.();
 };
 
+/** Whether a devtools UI is on the page. @internal */
+export const isQueryDevtoolsUiMounted = () => mounted > 0;
+
 /**
  * Says the application has rendered and settled, which is what lets the pills stop painting where no
  * devtools UI is mounted. Called by `provideQueryDevtools()`.

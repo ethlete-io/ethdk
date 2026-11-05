@@ -50,6 +50,12 @@ toggle button and downloads the panel the first time it is opened - see
 from `@ethlete/query-devtools` is the same panel loaded eagerly, if you would rather
 not have a chunk boundary there.
 
+To skip the template tag, pass `ui` to the provider:
+`provideQueryDevtools({ ui: () => import('@ethlete/query-devtools/lazy') })`. Once the application has
+rendered, it mounts `<et-query-devtools-lazy>` on the document body and removes it with the application.
+It mounts nothing when a devtools UI is already on the page. `ui` takes a loader, not a package name,
+because `@ethlete/query` cannot import `@ethlete/query-devtools` - the reverse dependency already exists.
+
 `provideQueryDevtools()` also takes `about` (build info for the
 [About tab](#about-which-build-is-running)), `responseHistory` (how many bodies each query keeps),
 `schema` (your API description, one loader or one per query client, for
