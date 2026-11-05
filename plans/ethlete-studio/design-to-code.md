@@ -4585,6 +4585,12 @@ path scope, and nothing stops a lint-driven fix from leaving it. Tool fix (B382,
 code starts in an opt-in config; a slice brief names its allowed paths, and the commit gate warns when a commit touches
 paths outside them (for example `libs/` in an `apps/` slice).
 
+446\. Four migration generators have no `migrations.json` entry, so `et migrations` does not list them:
+`@ethlete/query:migrate-from-ngrx-toolkit` (reported by the fifagg session, 475 files still on `@tomtomb/ngrx-toolkit`),
+and in core `migrate-create-destroy`, `migrate-color-theme-variants`, `migrate-legacy-color-themes` (doc agent check,
+2026-11-05). Why no tool caught it: nothing compares `generators.json` with `migrations.json`. Tool fix (B383, builder
+default): a check that fails when a generator is neither in `migrations.json` nor marked as a scaffold generator.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
