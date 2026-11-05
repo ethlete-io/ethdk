@@ -209,6 +209,12 @@ all five fifagg apps build on `chore/query-v3-migration`.
   fifagg: `libs/core/src/lib/auth/user-state.ts:102` (`refreshUserSuccessfully` with `take(1)` takes the old roles),
   used in `create-team-with-organization-overlay.component.ts:407-420`; `dashboard.spec.ts:178` fails. Fix (ff): v2
   parity in the interop layer, with a query scenario that bites.
+  **Closed, fixed in 3ade7f27f (ff).** Cause: the `shareReplay` buffer on legacy `state$` held the old Success until
+  the `toObservable` effect ran; the native v2 client already gave Loading. Fix: no `shareReplay`, so each subscriber
+  starts from the current execution state. Scenario `libs/query/src/scenarios/legacy-state-replay.scenario.spec.ts`
+  runs on both clients and failed on interop before. Lesson: no scenario compared the interop layer with the native
+  v2 client, so a parity gap showed up only in a consumer E2E run. A legacy interop behaviour gets a scenario that
+  runs on both clients.
 - **17. More out-of-context `prepare()` shapes (fifagg-frontend-3d, extends 14):** no injector is added for
   `prepare()` in `ngOnInit` (`widget-link.component.ts:59`), in async validators after `timer`/`switchMap`
   (`gamer-tag.async.validator.ts:24`), in a plain `computed` (`edit-match-data.provider`), or in callback config
