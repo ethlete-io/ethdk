@@ -31,7 +31,7 @@ const SHEET_STYLES = `
   .ics-cell { display: flex; }
   .ics-construction { display: grid; gap: var(--space-5, 2rem); }
   .ics-item { display: flex; flex-direction: column; align-items: center; gap: var(--space-2, 0.8rem); }
-  .ics-frame { position: relative; display: flex; border: 1px solid var(--surface-border, oklch(0.34 0 0)); background: var(--surface, oklch(0.17 0 0)); }
+  .ics-frame { position: relative; display: flex; border: 1px solid var(--surface-border, oklch(0.34 0 0)); }
   .ics-icon { position: relative; }
   .ics-guides { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--accent, oklch(0.7 0.15 250)); pointer-events: none; }
   .ics-guides path, .ics-guides rect { vector-effect: non-scaling-stroke; stroke-width: 1px; }

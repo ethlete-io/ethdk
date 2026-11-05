@@ -19,6 +19,12 @@ const draw = (options: Partial<IconSheetOptions>) => {
 };
 
 describe('iconSheet', () => {
+  it('paints no page fill on its bordered frames', () => {
+    const styles = iconSheet({ view: 'catalogue', title: 'Icons', icons }).styles ?? '';
+
+    expect(/\.ics-frame \{[^}]*background/.test(styles)).toBe(false);
+  });
+
   it('draws every icon at each size with its name in the catalogue, one group per grid', () => {
     const root = draw({ sizes: [12, 20] });
 

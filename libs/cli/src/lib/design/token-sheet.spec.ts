@@ -12,6 +12,10 @@ describe('tokenSheet', () => {
     expect(styles).toContain('var(--space-4, 1.6rem)');
   });
 
+  it('paints no page fill on its bordered panels', () => {
+    expect(/\.ts-panel \{[^}]*background/.test(styles)).toBe(false);
+  });
+
   const draw = (options: { scope?: string; note?: string }) => {
     const sheet = tokenSheet({ title: 't', css: '--tone: x;', sample: '', sampleOf: () => '', ...options });
     const root = document.createElement('div');
