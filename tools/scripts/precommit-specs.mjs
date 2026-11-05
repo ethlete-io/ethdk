@@ -167,6 +167,10 @@ const runSuites = (root, checkout, suites) => {
     if (slow.length) {
       console.error(`pre-commit: ${slow.join(', ')} failed only by timeout; re-running alone once.`);
       status = runVitest(join(checkout, suite.cwd), ['run', ...suite.args, ...slow]).status;
+      if (status === 0)
+        console.error(
+          `pre-commit: ${slow.join(', ')} passed when re-run alone; the timeout above does not fail the commit.`,
+        );
     }
 
     if (status !== 0) {

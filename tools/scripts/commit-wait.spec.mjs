@@ -203,6 +203,7 @@ test('re-runs a spec that failed only by timeout alone once, end to end', () => 
 
   assert.equal(result.status, 0, result.stdout + result.stderr);
   assert.match(result.stderr, /slow\.spec\.ts failed only by timeout; re-running alone once/);
+  assert.match(result.stderr, /slow\.spec\.ts passed when re-run alone; the timeout above does not fail the commit/);
   assert.match(result.stderr, /specs already ran for this exact tree/);
   assert.equal(worktrees(), 1);
   assert.deepEqual(leftovers(tmp), []);

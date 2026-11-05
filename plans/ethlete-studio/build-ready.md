@@ -616,3 +616,12 @@ Finding 466: `drawnPair` (merge compare and auto-merge) uses `looksTheSame`: sam
 255; a picture that does not decode compares byte for byte. Verified: merge-compare.spec fails with tolerance 0
 (rounded-border anti-alias case), passes with 8; no-visible-change.spec passes. Not verified yet: the real
 `sketch merge pages/system@check-fixes` (next step).
+
+Finding 467: cause confirmed in /tmp/b388/commit-464.log. `embedded-actions.spec.ts` timed out at 5000 ms under the
+full related run; the hook re-ran it alone (1003 ms, passed), as built. The agent grep for `failed` saw only the first
+summary. Tool fix: after a passing re-run the hook prints `<spec> passed when re-run alone; the timeout above does not
+fail the commit.` Verified: commit-wait.spec fails without the line. A real failure already failed the commit.
+
+Finding 466 real run: `sketch ready pages/system@check-fixes` now reports no visible change, but the merge refuses on
+the uncommitted `ready.json` (same block as the foundations merge). The refused auto-merge left a `pick` decision in
+`sketch.json`; I restored the file (finding 468).
