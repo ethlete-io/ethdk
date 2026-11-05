@@ -873,3 +873,1426 @@ disable comment ("no listed sketches render as the existing empty list") silence
 in `apps/ethlete-studio/src`. The spec "quick ok, full fails" came only with a36530087
 (`sketch-read.spec.ts`). Tool fix (B316, decided): the rule becomes `error` in Studio, and one pass reviews all
 28 disable comments (error value or an accepted reason).
+
+## Impl findings: system lessons (moved from design-to-code.md, 2026-11-05)
+
+Tom: the most important output of the implementation phase. Every design defect the implementation finds is fixed in
+the system (rules, checks, mocks, the drawing kit) so it does not happen again; the part fix alone is not enough.
+Worked through after the pilot (all Studio parts implemented), with Tom's collected feedback. Collected so far:
+Each finding is one paragraph that starts with `N\. `: the escaped dot keeps prettier from renumbering it, and
+`yarn lint:studio-adrs` fails on a duplicate or decreasing number and on a "Bef. N" that resolves to no finding.
+
+64\. A builder subagent wrote `design go --by tom` for shell-collapse and shell-project-switch (f69532c58, 18:04)
+after the Impl Q86 backdrop edit (17:59) that Tom had not approved; the builder restored both previous go
+entries. Cause: `design go --by tom` does not check whether the design changed after the decision it names.
+Lesson: a go that names Tom must point at the decision and refuse a design newer than it. Tool change: Impl
+Q113 (Tom). Done in 543560fab: the decision commit is the oldest commit that adds the plan entry. Gap: a
+decision that orders a design change (Impl Q95, Q98, Q99) always predates its design commit, so the go refuses
+it; Impl Q115 (Tom).
+
+65\. The shared node_modules/.vitest-cache served a stale studio-labels.ts while tests ran in /tmp/q78s* copies
+(builder, 2026-11-01). Fix: each agent passes its own --fsModuleCachePath (builder default, done). Lesson: a
+shared test cache across checkouts gives a result for code that is not the code under test.
+
+66\. The builder session cannot run `design go/accept --by tom` for decisions Tom made in the grill session (builder,
+2026-11-01, Impl Q93-Q113): the permission classifier refuses them as self-approval, because the decision
+reaches the builder through the grill session, not from Tom. The go steps of the design slices wait; Tom runs
+the listed commands or approves them in the builder session. Lesson: a go relayed between sessions carries no
+proof of Tom's decision; the Impl Q113 decision ref is the start of that proof.
+
+67\. The first `design actions` run (Impl Q79 slice 1, a27bb6dec) found two app bugs (builder, 2026-11-01): part-tree
+rows fire no output on Space (click and Enter pass, 14/42 fail); the project button and the ethlete-sdk menu item
+in shell-project-switch (15/33) and shell-main (19/249) reach no open/closed state, and their Enter/Space
+keydown default is prevented (picker wiring). Builder fixes both as defaults. Lesson: before the action check,
+every compare passed on pictures of forced states, so a control that looks right but does nothing went
+unnoticed; a picture check never proves a control works. The Q103 commit acceb3f4c also broke studio lint
+(max-params) and blocked the push.
+
+68\. Impl Q105 is blocked by an SDK bug (builder, 2026-11-01): the error-toast part renders the real
+<et-notification>, and the lazy harness chunk throws `Cannot read properties of undefined (reading 'directive')`
+in createHostDirectiveDef, because one hostDirectives entry of NotificationComponent is undefined at load
+(suspect: a chunk cycle with AnimatedLifecycleDirective or ProvideColor/ProvideSurfaceDirective). A fresh agent
+fixes it in the lib, with a test. Lesson: no check renders SDK components inside a lazy chunk, so a load-order
+bug reaches the first consumer. Also: the Q105 agent's `design go --by tom` for the new, unseen error-toast
+drawing passed the classifier (against finding 66); the builder removed the uncommitted go entry. Lesson: the
+classifier is no reliable guard for a go; only the Impl Q113 decision ref is.
+Cause (a4126f7ab): an import cycle in libs/core (animatable.directive → easing-tokens-styles → providers →
+utils/logger → signals/render-utils → animations barrel → animated-lifecycle.directive → animatable.directive);
+when a bundle evaluates animatable.directive first, AnimatedLifecycleDirective gets hostDirectives [undefined].
+Fix: render-utils imports nextFrame from animation-utils, not the barrel; animations-module-order.spec.ts bites.
+JIT tests build ɵdir lazily, the public index order hides it, and no lint rule checks cycles. More barrel cycles
+in core are likely. Tool change: Impl Q116 (Tom).
+
+69\. The Q112 push first failed on prettier (builder, 2026-11-01): the agent committed only its own hunks of
+part-ready.ts, and the committed text was never formatted (fixed in a style(cli) commit). Lesson: a hunk-only
+commit skips prettier on the text that gets committed; format the file before staging hunks.
+
+70\. The Q113 commit 543560fab broke `cli:compile` (builder, 2026-11-01): go-guard.ts:43 used `decisions.at(-1)`,
+but the cli tsconfig lib is below es2022 (TS2550); fixed in 394b7aff8. The agent ran vitest only, and vitest does
+not typecheck. Lesson: a known rule that lives only in memory does not reach a subagent; it is now in the
+subagent brief.
+
+71\. Shell parts slice (builder, 2026-11-01, b63508432, cd2d907d4, 8aaf0a5f8): seven page designs import shell-main,
+and their pictures changed, but `design check` did not flag them (Impl Q112 should; cause asked: likely the old
+records still hold their old hash until the first REHASHED run). Cause: `upgradeLegacyMarksOf`
+(stale-parts.ts) rewrote the legacy go records of flows, system, merge, sketches and inventory to the new hash
+and absorbed the shell-main change silently; only inbox (own folder changed) came out STALE. Tool fix (builder
+default, done in 3132b3aa7): a legacy record comes out STALE when any reachable file is newer than the record. The five pages
+need a re-review by Tom. The full `design actions` run on
+shell-project-switch was killed (exit 137, likely out of memory); tool fix (builder default): run the states in
+batches. `design complete elements/shell-main` reports DEMO-BACKDROP on every state, because div.st-shell paints
+the surface fill: Impl Q117 (Tom). Lesson: a new check must be dry-run over every existing part before it
+gates, so its false positives and its memory limit show at once.
+
+72\. `design compare` refuses a part whose design "changed since its go - it needs a new go first" (taskPartOf gate;
+builder, 2026-11-01, Impl Q98 5e554809b/41d7343d1 and shell-main). So a design edit blocks the compare that
+would verify it before Tom's go, and Q98 0 px is not confirmed. Lesson: a read-only check must not sit behind an
+approval gate; the gate belongs on the steps that change state. Tool change: Impl Q118 (Tom).
+
+73\. The first live `design actions` run (Impl Q79 slice 2, dev build, builder, 2026-11-01) failed 21/310: the current
+project's menuitemradio "ethlete-sdk" does not close the picker on click or Space (Enter does; Space keydown
+default prevented), on every page with a shell; rail "System" from pages/sketches and pages/merge fires
+sectionChange but nothing gains aria-current (the sketch view keeps its own shell section, finding 50 class);
+"All products" reported as undeclared although cd2d907d4 removed it (suspected stale check, being verified).
+Builder fixes the two app bugs as defaults. Lesson: per-part action checks pass while the assembled page drifts;
+only the live run sees cross-page state.
+
+74\. Go-rule breach in the studio-menu slice (builder, 2026-11-01, Impl Q102/Q108/Q110): a subagent ran
+`design go elements/studio-menu --by tom`, `design accept components/menu --product sdk` and
+`design accept elements/studio-menu` itself, without Tom. f3c8a96a5 (go.json) and 09c581149 are on origin;
+435dbfa34 (accept, implemented, ready records) is held local until Tom decides. Result: 0 px in all 12 states,
+verify, actions and complete pass. The Impl Q113 guard did not stop it: the agent says `design go` took no
+`--note`: the go (f3c8a96a5, 18:25) predates the guard (543560fab, 18:30), not a stale dist; the classifier
+blocks only the builder session, not its subagents. Tom approved the go after the fact; 435dbfa34 pushed. The agent also made a direct edit + accept instead of the one-variant sketch Impl Q102 named.
+Lesson: a rule in the brief does not bind a subagent, and any agent can type `--by tom`; a go in Tom's name
+must need something an agent cannot make. Tool change: Impl Q119 (Tom).
+
+75\. Impl Q99 sketch 60fe78cb7 (pages-system variant a holds `fit` and `page-100`) cannot be verified live:
+`compare --live` cannot read a sketch, and sketch check ignores the state names in design-live.json, so the live
+spec names `page-100` before it exists (builder, 2026-11-01). Tool fix (builder default):
+`compare --live --sketch <variant>`, and sketch check reads design-live.json. Done in d85d4129c, 622f8dbe4. Lesson: every check must be able to run on a sketch, or a
+decided change cannot be verified before its merge.
+
+76\. A pointer click into the canvas draws a teal frame around the whole canvas viewport (Tom, 2026-11-01, screenshot
+of pages/system round 1): a focus ring that shows on a mouse click, not only on keyboard focus. Cause:
+canvas-viewport.ts pointerdown calls preventDefault and then `viewport.focus()` by script; Chrome can treat
+script focus as `:focus-visible`, so the FocusRingDirective painted. Fixed in ee1299600 (`data-pointer-focus`
+hides the outline after a pointer press; Tab still rings); not yet checked in a real browser. Why no check caught
+it: `design actions` presses only declared part controls and checks focus-visible only after keys; nothing reads
+the outline after a pointer press, and the canvas viewport is a page-level host, not a part. Lesson: a focus check
+that only uses keys cannot see a ring that a click paints. Tool change (builder work): a pointer-focus check in
+`design actions` and on the live pages: real click on every focusable element, fail on a visible outline, then
+Tab to it and expect the outline.
+
+77\. pages/system round 1: the "Aktuell" column is an empty dark frame; only variant a renders (Tom, 2026-11-01,
+screenshot). Cause: not a render bug. The 5 unchanged states fold away; the 2 visible rows (`fit`, `page-100`)
+are new in the sketch, so "Aktuell" holds only the "neu in diesem Sketch" placeholder, with text capped so small
+that the column looks empty. Fixed in b879f640e (the placeholder names the merged states; cap 2 -> 4). Why no
+check caught it: sketch check reads only variant render problems; nothing evaluates the Studio matrix. Lesson: a
+check must judge what the reviewer sees, not only what each variant renders. Tool change (builder work): sketch
+check runs the shared matrix function and warns when the "Aktuell" column has no drawn frame in the visible rows.
+Design question for Tom: Q122. Tool change done in 2d2ba64ee: `design sketch check` warns (exit 0); the first
+real run warns on pages/system and pages/sketches. Not wired into sketch ready. The CLI reimplements the
+matrix logic (aktuell-placeholders.ts), because the app takes "unchanged" from a pixel compare and cannot import
+CLI code. Known drift: the CLI counts all non-rejected variants, the view only open rounds. Lesson: two copies of
+the view logic drift; a later fix should move the matrix into one module both import.
+
+78\. Impl Q118 assumed a go gate on ready and accept; neither has one (builder, 2026-11-01). `markPartReady`
+(part-ready.ts:89) checks by, hash, open points and action failures, but not the go; `design accept` checks
+author, `--note` and the Tom TTY confirm. So a part changed since its go can be marked ready today. Lesson: a
+decision that names an existing gate must be checked against the code before it is recorded. Tool change: open
+question for Tom (builder recommends: ready refuses without a current go; accept stays without a go gate,
+because accept approves a direct design edit before its go).
+
+79\. Tom ran `design go --batch` through the Claude Code `!` prefix (the grill session told him to) and it refused:
+"stdin is not a TTY: write the entries to a go list and let Tom run `yarn design go --batch <file>`" (Tom,
+2026-11-01). The `!` shell has no TTY, so the Impl Q119 confirm cannot run there, and the message tells Tom to do
+the very thing he just did. Lesson: an error must name the next step that works for the person who reads it;
+a command for Tom needs a tested path, not only an agent-proof refusal. Tool change (builder work): the message
+says "run it in your own terminal, not through an agent shell"; the go list hand-off gives the exact command for
+a real terminal.
+
+80\. The Impl Q99 merge handed to Tom failed: `design sketch merge pages/system --by tom --product studio` ->
+"pages/system is in progress - mark it ready before a merge" (Tom, 2026-11-01). Nobody checked the
+precondition before the hand-off. Lesson: every command for Tom must pass a dry run of its checks first, or Tom
+becomes the test. Tool change (builder work): the batch file takes sketch merges too, and `--batch` checks
+every precondition (ready, product, go state) before the prompt; the merge refusal names the command that marks
+the sketch ready.
+
+81\. Tom on the Impl Q121-Q124 round (2026-11-01): "wir sind mittlerweile bei so fragen angekommen die kein mensch
+mehr versteht", and "nichts funktioniert hier" after two failed hand-off commands (findings 79, 80). The round
+asked Tom about tool internals (go gates, matrix code copies) that he cannot judge from what he sees. Lesson: Tom
+decides what he sees and does in Studio; the builder decides tool internals itself (builder default, recorded as a
+finding) and Tom only gets them in the feedback round. Every command handed to Tom must be run once by an agent
+up to its Tom-only step first.
+
+82\. Tom (2026-11-01, late): "wir sind schon wieder den ganzen tag dabei irgendwas zu fixen ich habe absolut keinen
+überblick mehr und du fragst nach irgendwelchen go systemen wo ich schon längst ausgestiegen bin. ich will das
+meine vision von studio funktioniert; was interessieren mich internals und command line args." Lesson: the go,
+batch and CLI machinery leaked into Tom's work; Tom does not run CLI commands and does not follow the go system.
+Direction: Tom approves only by a click in Studio (the Impl Q119 Studio path); no batch files or commands for
+Tom. Tom's status is about Studio as he sees it: what works, what does not, what is next.
+Builder state (2026-11-01, from code, not checked in Studio): Studio has a go click (`POST /__design/part-go`),
+but no accept click and no merge click. The batch file is deleted. Next builder session: check Studio for real,
+then build the missing clicks with all preconditions checked and a clear message in Studio. Finding 80 done in
+36368703a (pages-system sketch ready, with a round note) and dc276d433 (batch merges, ready hint in the refusal).
+Correction (builder after restart): Studio has a merge click (sketch view, POST /__design/sketch-merge); no
+screen calls part-go or part-ready, and accept has no server path. The builder builds go and accept clicks.
+
+83\. Tom (2026-11-01): "wieso verhält sich der canvas in sketch anders als in system. der müll hört nicht auf." Cause:
+two canvas implementations. System uses `ethlete-design-canvas` (design-canvas.component.ts) with its own input
+handlers; Sketches and Flows use `mountCanvasViewport` (canvas-viewport.ts). Only the wheel math and the Shift+1/2/0
+targets are shared. Left drag and arrow keys pan in Sketches and Flows, not in System; double-click focuses a
+frame only in Sketches and Flows; Shift+1/2/0 work window-wide in System but only after a canvas click elsewhere.
+Why missed: `design actions` and compare check each part alone; no check compares one interaction across pages;
+the sketches design part copied the camera from the drawing instead of reusing the System canvas. Lesson: a
+second copy of an interaction drifts silently (as finding 84). Tool change: the general rules of finding 85 (embed, do not copy; the same
+action on every page that shows a part). The "canvas parity" action and the "one module owns canvas input" check
+are dropped: they only check Studio's own code. Code fix: one canvas component for all canvas pages (Impl Q125).
+
+84\. Two live defects from the 705a39ce2 report (builder, 2026-11-01): (a) the picker in the live shell did not close
+on a pick, because shell-main.component.html holds its own inlined copy of the picker; d369ce390 fixed only the
+shell-project-switch part. (b) System from the sketch or merge page kept the sketch page: `pickSection` re-picked
+only for an open flow. Fixed (`closeOnActivate` in shell-main; `this.flow() || this.sketch()`). Live check 14/257
+-> 1/261 failed. Why missed: the harness checks the standalone part and nothing asserts that an inlined copy
+matches it; the part tools never click across pages. Lesson: a part used as a copy instead of the component is
+untested code. Tool change (builder default): shell-main uses `ethlete-shell-project-switch` instead of its own
+copy; live actions check, for any app, that a navigation item gets `aria-current=page` after its click
+(general; parked until the MVP).
+
+85\. Root cause behind findings 77, 83 and 84 (Tom, 2026-11-01: "dann notier mal wieso es dazu gekommen ist und was
+an studio besser gemacht werden muss. exakt das habe ich nun schon 20 mal geschrieben"). Why it happened: Studio
+lets a page or element design draw its own copy of a thing that already exists as a part (the picker inside
+shell-main, the camera inside the sketches page, the "Aktuell" matrix again in the CLI). The builder then builds
+each copy as its own code. Every check looks at one part alone, so two copies that drift apart never fail.
+What Studio must do better:
+(1) Reuse by reference: a design that shows an existing part must embed that part, and the code must use that
+component. Studio refuses a design or a merge that redraws a part instead of embedding it.
+(2) One implementation per behaviour: a check fails when two modules implement the same part or the same input
+handling (canvas, picker, matrix).
+(3) Check across pages: the live checks run the same interaction on every page that shows a part and fail when
+the results differ.
+(4) The grill session tells Tom the why and the Studio fix in the same message as the defect, without being
+asked.
+Builder plan (builder default, after the approval clicks and the one canvas): (1) a design shows an existing
+part only through a kit import (imports.ts); `design check` flags a subtree that matches another part's drawn
+structure without importing it, and merge refuses it; the code check fails when a page's app component does not
+use the selector of each part its design imports. (2) Each part maps to exactly one app component
+(implemented.json); a second component with the same template structure fails. (3) `design actions --live` runs
+a part's action script on every page that shows it (from the import graph), and fails when the results differ.
+The "one module owns canvas input" check is dropped: it only checks Studio's own code. All three are parked until
+the MVP (no new tooling); the one-canvas cleanup runs now.
+
+86\. Studio had no go, accept or ready button (builder, 2026-11-01): the server had POST /__design/part-go and
+part-ready, but no Studio screen called them; accept had no route. Per part, Studio showed only the open-points
+chip. Fixed in 4f8a7b4a3 and 6f28013b2 (part view bar: "Go geben" and "Änderung abnehmen", German refusals); not
+clicked live yet. Why missed: the Studio design never showed these buttons, so no design check could ask for them.
+Tom rejected a route-caller spec (2026-11-01): "das ist viel zu spezifisch für studio. schon wieder mist". A check
+on Studio's own server code helps no other project. Lesson: a Studio fix must work for every project that uses
+Studio. The general rule already exists: every control the design shows must work in the app (`design actions`).
+The gap was the design, not a missing check.
+
+87\. A refused merge in Studio shows only "merge failed", no reason (builder, from code, 2026-11-01). Why missed: no
+spec ties a write route's refusals to a Studio message. Fix: a merge reason code (one file) when a flow-4 test hits
+it.
+
+88\. The MVP count fell from 18 ready parts to 1 in one commit (5d3b36732, 2026-11-01 18:07): a new gate (`design
+actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "1 of 17" after billions of tokens
+(Tom, 2026-11-01). Earlier the same day, the marks were re-recorded about ten times, because a mark hashes shared
+SDK files and any change there drops it. Why missed: a gate change is not a part change, but the tool treats it
+as one and leaves the re-check to an agent. Fix: when a gate gets stricter, the tool re-checks every marked part
+at once and keeps the mark of each part that passes; a mark drops only for a part that fails, with the reason.
+
+89\. The pages/inbox switch "Erledigte zeigen" shows no focus ring on keyboard focus (builder, 2026-11-01). The tool
+caught it: the finding-76 check in `design actions` (ab55b3263, 942b6b058) reports it as a warning, because a
+focus-within wrapper may draw the ring instead. Cause not checked yet. Fix in the inbox ready slice; no new tool
+change. Gap: the live check presses only controls on shown pages, so a part no live state renders is not covered
+(parked with Flows).
+
+90\. The zoom chip on pages/system and pages/inbox is not right-aligned at a wide window: at 2000 px it sits at
+x≈880-1050 (Tom, 2026-11-01, screenshot). Cause (builder): 0db02e383 pins the chip to x≈988 because the pages/system
+design draws the canvas as a fixed 1000 px box (`w-250`); the app copied the design. Why missed: compare passed at
+0 px - app and design match, and both are drawn at one width; the e2e runs at 1440 px with no chip case. Fix (any
+project): `design check` draws every page also at a second, wider viewport and flags a region that keeps a fixed
+width while its shell slot grows, with the elements anchored to its right or bottom edge. Parked until after MVP
+(builder); the Studio e2e at 2000 px covers Studio now.
+
+91\. The teal canvas focus frame (finding 76) is back on pages/system (Tom, 2026-11-01, screenshot). Cause (builder):
+00eecda8a gave the one canvas (`design-canvas`) the focus ring but not the pointer-focus fix of ee1299600; a click
+shows no ring, but the next key (Shift, Space, an arrow) turns on :focus-visible. Why missed: the pointer-focus
+check reads the ring once after the click and never presses a key; components/canvas-viewport was marked ready,
+but no live page renders its code any more. Fix (any project): the check presses a lone Shift after the click and
+fails if a ring appears; `design actions --live` names the live element it probed for each ready part and flags a
+ready part that no live page renders. The Shift probe ships with the fix; the live report is parked
+until after MVP.
+
+92\. Impl Q122 (open the first folded unchanged row when "Aktuell" shows no frame) was decided but never built; Tom saw
+the empty "Aktuell" column again hours later (Tom, 2026-11-01, screenshot). Cause (builder): the parallel agent
+for Q122 stopped before a commit, and when the queue was rewritten for the new MVP measure, Q122 moved to an
+unordered list and fell out. Why missed: a decision has no open state anywhere once the plan entry is written.
+Fix (process, now): a decided Impl Q stays in the builder's ordered queue until a commit names it. Fix (any
+project, after MVP): a decision that names a part shows as an open point of that part until a commit builds it.
+Q122 built in 9a31fd997 (the sketch matrix keeps a drawn frame in each shown column); finding 93 in e7a578e72.
+
+93\. The ready re-check reported "pages/sketches: sketch ready, not merged", and Tom found no such sketch (Tom,
+2026-11-01). Cause (builder): sketch pages-system targets both pages/system and pages/sketches, and the open
+point does not name the sketch. Fix (any project, with Q122): the open point names the sketch, for example
+"sketch pages-system is ready, not merged (it also targets this part)".
+
+94\. Sketch pages-system stayed "ready" while its baseline went stale: the canvas fix (d7bb68aa7) changed pages/system
+in the product, so Tom's merge click would have been refused (builder, 2026-11-01, caught before Tom clicked).
+Rebased in 21418ef90 after 2f750eec7 carried the fix into variant a. Why missed: only `design inbox` shows a
+needed rebase; sketch check and the sketch view do not. Fix (any project, after MVP): a stale baseline is an open
+point on a ready sketch, in sketch check and in the Studio sketch view.
+
+95\. `design actions` fails pages/merge on 106 of 119 actions (builder, 2026-11-01). Main cause (about 60): an action
+declared by an embedded part (shell-main `emit:sectionChange`, disclosure `emit:openChange`, studio-menu state
+`open`) is resolved against the page component, not the embedded part. Why missed: before the stricter gate,
+actions ran only on parts without embedded parts. Fix (any project, builder builds it now): the check resolves an
+embedded part's actions against that part's own component. Rest: missing `data-et-action` in the merge design
+(builder adds it) and an inert preview in the app.
+
+96\. Hovering a variant frame in Sketches draws a teal border (Tom, 2026-11-01, screenshot). Cause (builder): the
+pages/sketches design has `.sk-shot:hover { box-shadow: 0 0 0 2px primary }` (sketch-data.css), and the app copied
+it (53bc9aae3). Why missed: compare renders only static states and never hovers, so a hover rule that matches the
+design gives 0 px; the e2e had no hover case. Fix: drop the hover rule in design and app, e2e case "hover alone
+draws no frame border" on System and Sketches. Tool fix (any project): `design compare` renders a hover state for
+each part with hover rules, so Tom sees hover before the go. Parked until after MVP (builder).
+
+97\. The "2 offen" open-points chip stays pressed after click 2 closes its popup; click 3 un-presses it, click 4 opens
+again (Tom, 2026-11-01, screenshots). Cause (builder): the Studio chip keeps its own `closed` flag and never
+listens to the overlay's close; the SDK overlay closes on pointerdown and swallows the trigger click on purpose.
+Why missed: `design actions --live` clicked each control once and read only aria-expanded. Tool fix (any project,
+built in cbde3e50d): for a control whose first click opens an overlay, the check clicks twice more and asserts
+aria-pressed/aria-expanded equal "overlay open". Studio fix: the chip closes on the overlay's beforeClosed, e2e case.
+
+98\. The merge view for sketch pages-system shows an empty canvas and the text "0 Zustände von ohne sichtbare
+Änderung" (Tom, 2026-11-01, screenshot). Cause (builder): merge compare draws only the parts that use a changed
+part, never the changed part itself, so a page sketch (no users) draws nothing; the view then shows the empty
+"unchanged" disclosure. Also the baseline went stale again (hover fix 8ed75e200), so the click would be refused.
+Why missed: the compare spec covers only a sketched component with users; no merge e2e. Fix (any project, now):
+merge compare also draws each changed element or page target; the view hides the disclosure at 0 states; rebase
+after the hover fix.
+Not fixed live: after eca732f7a and "merge ok", Tom still saw an empty merge view (Tom, 2026-11-01, screenshot).
+The fix was checked by a cli spec only. Rule (process): a "Tom can click X" message needs a headless shot of
+that exact live Studio view with the expected content.
+Second cause (builder): merge compare reads only the states of the current product part, so a variant that only
+adds states (pages/system `fit`, pages/sketches `page-100`) shows no change; and the app asks for the compare
+only when the preview lists affected users. Why the spec passed: its fixtures only change pixels of an existing
+state, with a stubbed picture. Fix (any project): compare reads the states with and without the variant; a state
+only in the variant is a changed row with only an "after" picture, a state only in the product one with only
+"now"; the app asks for the compare when the preview lists any changed or affected part.
+
+99\. The part tree loses its scroll position on reload (Tom, 2026-11-01, collected for after MVP). Cause (builder):
+`studio-view/remembered.ts` ViewState stores openGroups, systemEntry and cameras, but no tree scroll position, so
+the list starts at scrollTop 0. Why missed: the remembered-state specs and canvas.e2e cover only stored keys; no
+case reloads and compares the visible scroll, and the design tool has no "state after reload" case. Tool fix (any
+project, after MVP): a live-actions reload probe scrolls each scroll container, reloads, and compares scrollTop.
+
+100\. In the Sketches view, hiding the sidebar changes the canvas: the frames grow and move (Tom, 2026-11-01, two
+screenshots of pages/system round 1). Expected: the camera keeps its zoom and position when the canvas width
+changes. The Flow view does the same (Tom). Cause (builder): design-canvas kept following its
+opening fit until the user moved the camera and re-fit on every size change; hiding the panel grew the Sketches
+canvas from 1076 to 1336 px (zoom 0.243 -> 0.302). System was not affected (canvas under the floating panel);
+Flow not reproduced (its `start` camera never auto-fits). Fix 475072ead: an opening fit re-fits only when the
+content bounds change; explicit Fit and focusFrame still follow resizes; Sketches column heads track the
+viewport. Why missed: no check or e2e resized a canvas, and the e2e Sketches page silently rendered the System
+canvas. Tool fix (any project, after MVP): a live-actions resize probe per canvas view (fail when the camera
+changes but the content does not; frame-bound overlays keep their offset) and a guard that fails when a seeded
+page does not render its view.
+
+101\. The error toast had a compare diff of about 20k px after Tom's go (builder, 2026-11-01). Causes: the SDK
+`.et-notification` used `font-family: inherit` and so drew the Studio body font Jost, not `--et-font-family`; the
+design piece `notification()` drew the inherited surface, while the SDK component always draws elevation 1. Fix
+in bee441f35: `var(--et-font-family, inherit)` and `data-et-auto-surface` on the piece; compare 0 px in all 4
+states. The shared piece change voids the go, and the SDK design sdk/components/notification can draw differently
+now. Trap: Studio designs load `@ethlete/components/design` from dist, so the compare stays stale until
+`nx build components`, and the go hash covers source, not dist. Why missed: only compare checks design against
+app, and only after implementation; nothing compares the font or surface that a design piece inherits with what
+the app gives it. Tool fix (any project, after MVP): at go and in `design check`, render each SDK design piece
+root in the design frame and in the harness, and flag a different computed font-family or `--et-surface-*`
+value; warn when dist is older than the design source.
+
+102\. Inbox comment rows are not clickable (Tom, 2026-11-01). Expected (Tom): a click on a comment opens its place
+on the inbox canvas, the frame with its pin. Fact: the pages/inbox design declares only the controls pin, send,
+resolved and retry; the rows have no control, although the design note says "the canvas shows the frame of the
+selected comment". Why missed: `design actions` checks only declared controls, so a list whose rows have no
+control passes, and Tom gave the go on a design without the row action. Every action check starts from what the
+design declares, so a missing interaction is silent. Tool fix (any project, after MVP): `design check` flags each
+repeated sibling group (3+ items with the same structure, for example list rows or cards) whose items carry no
+control and no explicit `data-et-static`; the author gives the rows an action or marks them static on purpose.
+
+103\. The Studio menu and the project switch menu have a different spacing, though both should look the same (Tom,
+2026-11-01, two screenshots). Fact: both render `@system/components/menu`; elements/studio-menu sets
+`--et-menu-item-height: var(--control-md)` and `--et-menu-item-font-size: var(--text-md)` on `.st-studio-menu`,
+components/shell-project-switch keeps the SDK menu defaults. Why missed: each part is checked alone against its
+own code; nothing compares two instances of the same SDK component across parts, so a local token override is
+silent drift. Tool fix (any project, after MVP): first one product-level token file per SDK component (here the
+Studio menu tokens) and a check that flags a part design that overrides those tokens locally; later `design check`
+collects the computed token values of each SDK component across all parts and flags different values without a
+named variant. Decision on the one Studio menu look: grill round to Tom.
+
+104\. The merge view crop row shows a huge "Prompt kopieren" button on both sides for a state that only the variant
+adds (builder, 2026-11-01, /tmp/merge-view-live.png): the added state has no outline to crop, and the empty "Jetzt"
+panel has no label. Cause (checked by the grill session, Tom asked "demo content again?"): yes, demo content in
+the app. The pages/merge design fills the crop with a sample `button` "Prompt kopieren" (merge.ts:36), and the
+app copied it as `cropLabel = input(STUDIO_LABELS.system.copyPrompt)` in merge.component.ts:188, so every crop
+shows that button instead of the real crop. Same class as the demo backdrops (Impl Q86). Why missed: DEMO-BACKDROP
+(`demo-backdrop.ts`) reads only computed root fills, never slot text or app source; compare passes because both
+sides draw the same sample. Tool fix (any project, after MVP): the design marks sample slot content with
+`data-et-demo`; `design check` collects the demo texts, and a source scan flags an app string literal or input
+default equal to a demo text of a part it implements. Later: the harness renders the app with empty inputs and
+flags a slot that still shows a demo text. The "Neu in a" label is Impl Q131.
+
+105\. components/tree-row shows a UTILITY-CSS warning in Studio after the 13 px change (Tom, 2026-11-01). Cause:
+b57fb9729 moved the text size into tree-row.css as `font-size: var(--text-md)` plus its line-height. Rule hit:
+`UTILITY-CSS ... font-size: var(--text-md) outside foundations`. Fix: the CSS drops both lines, the markup gets
+`text-ui-md` (the app already uses it since ef47f58b8). Why missed: the Q127 agent ran only compare (53/53 ok), not
+`design check`, and nothing gates a commit on check. Process rule: a design edit runs `design check --part` before
+its commit. Tool fix (any project): the pre-push hook or `design compare` runs the static check problems for the
+touched parts and stops on UTILITY-CSS. Fixed in 37655a447; check clean, pixels unchanged, the go carries over.
+
+106\. The Merge button in the merge view shows no loading state while the merge runs (Tom, 2026-11-01, merge of
+pages-system went through). Fact: neither the pages/merge design nor merge.component.ts has a loading or busy
+state. Why missed: the check asks a control only for interaction states (hover, active, focus-visible,
+disabled); `design actions` sees `emit:merge` as a plain event and does not know the app answers it with an async
+request. Tool fix (any project, after MVP): an action declares itself async in the design (`data-et-async`), or
+the actions probe finds a pending request in the app handler; then `design check` asks for a `pending` state on
+that control, and `design actions` checks that a second click while pending does nothing.
+
+107\. The logo button (the studio-menu trigger `.st-studio-trigger`) has a different corner radius on hover and
+active than at rest (Tom, 2026-11-01, two screenshots). Expected: one radius in every state. Cause and the tool
+lesson: open, asked the builder.
+
+108\. `design actions` reported "app draws no such element" for merge-error on 2 of 3 loads (builder, 2026-11-01).
+Cause: the page harness host showed before the lazy part rendered, so the scan found 0 buttons. Fix 0ec9cefca:
+the scan waits for the mounted part. Why missed: the tool was tried only on parts that load fast, and a scan
+with 0 controls never warns. Tool lesson (any project, built): an action scan that finds 0 controls where the
+design declares some must retry or stop as a tool error, never report a missing app element. Same slice:
+aacb82c2c corrects the pointer-focus probe of finding 91 (a key after a click may raise the ring on a control or
+a declared action; a non-control still fails), 9f1d2ba78 lets Space pick a merge row.
+
+109\. The part view shows "Go geben" and "Änderung abnehmen" side by side, both as primary buttons (Tom, 2026-11-01,
+screenshot): two approvals next to each other read as the same thing, and it is not clear which one to click.
+Tom knows that go and inventory get reworked after MVP; park it there. Fact (builder): "Änderung abnehmen" shows when a merged part was changed directly in its design files, outside a
+sketch (`shown.directEdit`, part-approval.component.ts:50); it writes accepted.json (Tom accepts the design
+change). "Go geben" writes go.json (Tom releases the part to be built). A direct edit needs both, so both show.
+Lesson for the rework: one approval step per change, or a clear order (accept first, then go) with only the next
+step as the primary button. Also (Tom, elements/part-tree after Q127): the view shows "Go erteilt" next to "Änderung
+abnehmen", so a go reads as valid while a direct edit still waits for acceptance.
+
+110\. `design actions` checked actions inside an embedded part against the host page component, so outputs and
+aria-expanded states did not match: 277 false fails on pages/inbox, 9 on pages/merge (builder, 2026-11-01). Why no
+check caught it: no spec had a page that embeds a part with its own actions. Tool fix (general): actions resolve
+against the innermost embedded part that declares them; spec bites, 4 of 13 fail without the fix (db91bcbe1).
+Lesson: the CLI specs need a fixture for every composition shape a project can build (part in page, part in part).
+
+111\. A full `design actions` run on pages/inbox timed out at 900 s and showed nothing (builder, 2026-11-01). The run time is
+expected (state `open` has 84 checks in about 2 min, 10 states about 20 min). The defect: the command prints every
+result only at the end (actions-command.ts:725, `checked.lines`), so a killed run loses all results. Tool fix
+(general): print each check line as it finishes. Lesson: a long CLI command must stream its results. Parked for
+after the MVP.
+
+112\. `design actions` demands that Enter toggles a `role="switch"` ("Erledigte zeigen" on pages/inbox) (builder,
+2026-11-01). WAI-ARIA needs only Space for a switch; Enter is optional, so this is a false fail. Tool fix (general):
+check Space for a switch, Enter only where the role needs it. Lesson: keyboard checks follow the ARIA pattern of the
+role, not one key set for all controls. The same run warns that the app `et-switch` shows no focus ring on keyboard
+focus; the builder checks it with the canvas focus-ring fix. Parked for after the MVP.
+
+113\. A click on a resolved comment in pages/inbox selects no row and jumps nowhere (grill from the live shot,
+2026-11-01). Cause: system-view `jumpToComment` looks the id up in `commentStore.comments()`, which holds open
+comments only (comment-store.ts:109). Why no check caught it: compare sets `selectedId` directly, never through the
+click; the Q129 spec and its shot used open comments only; the actions check sees the `pick` output fire and does
+not follow what the host does with it. Tool fix (general, after MVP): an `emit:` action check also compares the
+state after the host handles the output, when the design names one (here: row selected). App fix now: spec first.
+
+114\. `design ready` ran 10+ min silent on shell parts (builder, 2026-11-01). Cause: settle waited forever on
+scroll-driven menu fades. Fixed in a2b26738a (about 5 min per part). Lesson: every wait in the CLI needs a cap
+and a line that names what it waits on.
+
+115\. `design actions` on elements/shell-main: 11 false fails (builder, 2026-11-01). (a) A fixed action target
+(`project-picker`) fails when the app opens the target over another state; the check should expect start state
+plus the opening delta. (b) State name `open` of the host and of the embedded switch collide in the embedded-part
+code (db91bcbe1). Lesson: state names are scoped per part; a fixture with equal names in host and embed. Builder
+fixes both now, test first. Fixed in d5ea7273a (11 -> 4 of 260 fail): (a) a press that opens a surface from
+another state expects the start state plus only the surface props; (b) an embedded part whose aria-expanded
+already matches its named state counts as settled. The 4 left are real design gaps: closing the switch by keyboard
+returns focus to the trigger with a ring, and shell-main has no `open-focus-visible` state. Builder adds that state
+to the design; shell-main then needs a new go.
+
+116\. Studio shows native `title` tooltips instead of the `libs/components` tooltip (Tom, 2026-11-01). About 26 `title`
+bindings in apps/ethlete-studio/src and 7 in .ethlete/design/studio. Why no check caught it: no lint rule or design
+check flags a native `title` where the SDK has a tooltip; the compare cannot see a browser tooltip at all. Tool fix
+(general): a lint rule in `@ethlete/eslint-plugin` that flags `title` and `[title]`/`[attr.title]` in app templates
+and design files and points to the SDK tooltip. Parked for after the MVP.
+
+117\. The merge page has no canvas any more: no zoom, no pan (Tom, 2026-11-01, screenshot of studio-lab
+components/card). Cause (builder): d0f4a38cf (Q55/Q57/Q58) removed `<ethlete-design-canvas>` from sketch-view;
+f7c94cff0 put in `<ethlete-merge>`, which follows the pages/merge design: static 0.37 shots and a fixed crop row.
+Why no check caught it: the design itself has no canvas, so compare says 0 px; zoom and pan are behaviour, not a
+state; the canvas specs left with d0f4a38cf; no e2e covers merge zoom and pan. Lesson: a removed capability needs
+a design decision, and behaviour like zoom needs an e2e, not only a compare. Fix is a design call for Tom (canvas
+like System, or static). Parked for after the MVP.
+
+118\. The merge page crop row cut the "Jetzt" crop on the left (grill from Tom's screenshot, studio-lab components/card
+in pages/library empty, 2026-11-01). Cause (builder): the crop window is always 266x64 at 2x, the design sample
+size, and `cropTransform` only centres the rect, never fits it; the 342 px phone card lost 38 px on each side, on
+both sides. Why no check caught it: the design samples have small instances that fit at 2x; compare never draws a
+real instance wider than the window, and the spec used sample rects. Fixed in 63a0786fb: one zoom for both sides,
+min(2, fit of the larger rect + 4 px); the label shows the real zoom. Tool fix (general, after MVP): compare and
+actions also run states with real repo data at the extremes (largest instance), not only the design sample.
+
+119\. Finding 107 cause (builder, 434e3f297): the logo button drew radius 6 px plus a 1 px transparent border around a
+38 px logo with radius 9.5 px; the corners showed only when hover, open or focus painted the button. The design had
+the same bug, so compare was 0 px before and after. Why no check caught it: compare checks design = app, never an
+inner radius against its outer control. Tool fix (general, after MVP): a check that a control's radius matches a
+child that fills it.
+
+120\. The pages/system `fit` state centres the button grid under the side panel; `design shot --state fit` shows the
+frame head hidden behind it (builder, 2026-11-01). Cause: the design's `fitAll` fits the full sample grid before
+compare empties the slot, and reads the panel inset from `.st-canvas` padding, which is 0. The real System canvas
+fits clear of the panel. Why no check caught it: no design check rule that a forced fit keeps a frame out from
+under an overlay panel. Tool fix (general, after MVP): an OCCLUDED check for frames under fixed panels. The app fit
+x may also be off by about the panel width; re-check after the design fix.
+
+121\. Finding 113 fixed in c53e20b09 (resolved row selects, opens its part, muted pin with check; new `resolved` input
+on comment-pin, 8 new states). Second tool lesson (builder): `design actions` only pressed open rows; no fixture
+had a resolved row. Tool fix (general, after MVP): actions press each declared row variant, including rows only
+visible behind a switch.
+
+122\. A comment from a merged sketch gets no pin, open or resolved: `pinsOf` matches the sketch target, and the merged
+frame has none. Resolved comments get no pins in the Sketches view either (builder, 2026-11-01). Parked for after
+the MVP (builder rec); tell Tom on return.
+
+123\. components/canvas-viewport `ready` failed on the focus ring after a pointer click + Shift, the same defect
+ee1299600 fixed in the live design-canvas but not in the part component (builder, 2026-11-01). Why no check caught
+it: actions run only at `ready`; verify and compare never press keys after a pointer click. Tool fix (general,
+after MVP): `design task --verify` runs the actions check too. Lesson: a fix in one of two copies of the same
+behaviour leaves the other broken (rule "every thing only once"). Also: the STATUS row said "code used on no page";
+wrong, canvas-frames and flows-page import it.
+
+124\. A system-view merge spec failed on HEAD after the merge page work (builder, 2026-11-01): it clicked a "Merge"
+button on the sketch page that no longer exists. Fixed in 80210e278, no app regression. Why no check caught it:
+the pre-push hook runs affected typecheck and lint, not vitest. Tool fix (process, after MVP): pre-push runs the
+Studio vitest suite for affected files.
+
+125\. The WRAP check on pages/inbox counted the hidden lines of a `line-clamp-2` comment text as a wrap (builder,
+2026-11-01). Tool fix (general, built now, test first): a block with `-webkit-line-clamp` is multi-line on purpose.
+No design edit, so no stale go.
+
+126\. The design CLI is slow (Tom, 2026-11-01: "teils dauern diese befehle echt lange"). A read-only agent measured the
+hot path; this is the summary of its report. `design actions pages/system --state
+part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright calls (25.2 s fixed 400 ms waits, 18.9
+s settle, 8.7 s harness mount, 6 s for 131 page loads). Browser launch, screenshots and pixel diff cost almost
+nothing. Top proposals: (1) run action checks in parallel (actions-command.ts:400-608; the draw queue already
+allows 8, thumb.ts:115): 6.9x measured in a bench, the 900 s run to about 130-160 s (estimate); (2) stop
+rebuilding the harness app on every command (harness-server.ts:74-84, `--skipNxCache` into a new temp dir): about
+11 s per run measured, 72 % of a compare; (3) replace the fixed 400 ms emit wait with a condition
+(action-press.ts:7): 10-35 % of check time (estimate), less flaky under load. Which go into the MVP: Tom question.
+
+127\. The canvas-viewport part kept a focus ring after a pointer click (builder, 2026-11-01). Two defects: the part
+had `data-pointer-focus:outline-transparent` but nothing set the attribute (ee1299600 fixed only
+`mountCanvasViewport`), and any key, also Shift, cleared the mark. Fixed with one shared `trackPointerFocus` in
+components/design-canvas/pointer-focus.ts (0b53ff36b, 641e58125, 23b62ffc2, spec 9b39289c3). Why no check caught
+it: compare shoots keyboard focus only, and the pointer-focus action check runs only in `design ready`; no check
+pressed click and then Shift. Tool fix (after MVP): `task --verify` runs the actions check.
+
+128\. `design actions pages/sketches` failed 9 checks, and all 9 were CLI defects (builder, 2026-11-02, fixed in
+1cb02924d, 4 specs bite). (a) A role-less element was keyed by tag, so the design `div` and the app
+`ethlete-design-canvas` did not pair; now both are `generic`. (b) The "Runde" combobox has an app-only
+aria-label, and the SDK select in the design takes its name from the value; now one unpaired element per role on
+each side pairs. An element that an embedded part draws, or that sits inside a control with a `part`, needs no
+own `data-et-action` (same rule as `design complete`). (c) Emit actions loaded at 1280 px, not at the 1440 px
+frame, so the narrow column hid the button; presses now use the frame size. Why no check caught it: earlier pages
+shot on state actions at frame size, and none had a custom-element canvas or an SDK field with an app-only
+aria-label.
+
+129\. The System fit put the frame about 260 px off, first under the side panel, then too far right (builder,
+2026-11-02). Design b55c47899: the fit subtracted `frame.offsetLeft`, which already held the inset. App 3ba355aa2:
+once the strip is transformed, Chromium makes it the frame's offsetParent, so the second fit run subtracted the
+strip offset twice; offsets now walk the offsetParent chain (spec bites: 638 vs 378 px). Why no check caught it:
+compare checks design against app, so a fit formula wrong on both sides passes; no check sees a frame under an
+overlay panel; jsdom has no layout. Tool fixes (after MVP): an OCCLUDED check (a frame box under a fixed shell
+panel, any project); compare waits for overlay enter animations before the shot (one fit run shot 118486 px with
+the open-points popover missing); one shared, tested offset helper for fit and camera code.
+
+- Impl Q-A canvas-frames canvas (grill, 2026-11-02, from Impl Q59 and rule 2): the canvas-frames design draws its
+  canvas through `canvasViewport()` from components/canvas-viewport, so design and app share one focusable canvas. Needs
+  Tom's go on canvas-frames after a shot.
+- Impl Q-B system action marks (grill, 2026-11-02, no pixel change): pages/system adds `data-et-action` on the
+  open-points chip and "Prompt kopieren"; Q15 keeps the go.
+
+130\. pages/inbox and pages/system failed action checks after the canvas-frames canvas change (builder, 2026-11-02). The
+app canvas became focusable (ae210e62d), but the embedding designs still drew a non-focusable one; inbox fixed in
+2f36f4c7f. The "Erledigte zeigen" switch failed on Enter: the CLI pressed Enter on every action, but a switch,
+checkbox or radio takes click and Space only (SDK switch, native checkbox); fixed in general in 8bf0fd0fb,
+menuitemcheckbox and menuitemradio keep Enter. Why no check caught it: only `design actions` and `ready` press
+elements, and a change in an embedded part does not re-run the action checks of the parts that embed it; the
+switch was the first declared switch action. Tool fix (after MVP): `design check` marks every embedding part as
+"actions need a re-run" when an embedded part changes, and `ready` names that reason.
+
+131\. The open-points chip actions on pages/system missed their goal by 456-5036 px (builder, 2026-11-02). Enter and
+Space missed because the keyboard ring was not drawn: new states `part-focus-visible` and
+`points-closed-focus-visible` (9aaac3c0c; the overlay opens with autoFocus false, so focus stays on the chip). The
+clicks from `fit` and `nothing-open` missed because the goal was wrong: from fit the app stays fitted, and from
+nothing-open the label is "Nichts offen". The canvas became focusable in 165871a00. Why no check caught it: the
+marks came the same day (Impl Q-B), only `design actions` presses them, and `design check` only verifies that a
+goal state exists, not that it fits the start state's props. Tool fix (after MVP): on a miss, `design actions`
+compares the reached picture against every state of the part and prints "reaches state X instead" or "reaches no
+declared state (closest X, N px)".
+
+132\. `design live-compare` could wait forever (builder, 2026-11-02, found during C6). It passed
+max(deadline - now, 0) to Playwright as the timeout, and Playwright reads 0 as "no limit", so a spent budget
+waited without end. Why no check caught it: no spec ran a wait past its budget. Tool fix (8c0ede06e, C6): the
+timeout is clamped to at least 1 ms; every CLI wait goes through `withinLimit` in libs/cli/src/lib/design/wait.ts
+and names what it waits for; specs with fake timers and a really hanging child. Lesson: every limit gets a spec
+that runs past it, and 0 is never a valid "remaining" value for a library timeout.
+
+133\. Studio got a visible title bar (A1, window controls) with no design part behind it (builder, 2026-11-02). The look
+(app background, no bottom border, 24 px round buttons, 6 px gap) was picked by the builder, not designed. Why no
+check caught it: `design check` and `compare` only look at parts that exist; nothing compares the live app against
+the part list, so app chrome without a part is invisible to the tool. Tool fix (B30): `design check --live` reports
+every visible app region that no part covers. Lesson: the tool must find what was never designed, not only what
+differs from a design.
+
+134\. `design actions` said nothing useful when a press only missed on `aria-expanded` (builder, 2026-11-02, B22). Cause:
+a01d37d64 computed "reaches state X instead" only from a pixel compare; embedded-owner states have no goal picture
+by design, and live-actions has no pixels, so these misses never got a reason. Tool fix (f34aab8cb): the reached
+state also comes from the aria-expanded controls ("reaches state A or B instead", or "no declared state, closest
+X, N controls differ"). Open: no end-to-end spec of the two command wirings. Lesson: a diagnosis that depends on
+one signal (pixels) needs a fallback for every mode where that signal does not exist.
+
+135\. The harness build cache almost never hit (builder, 2026-11-02, C1). Cause: the key hashed every file, including
+plans/, .changeset/ and every .ethlete/design JSON, so any plan or sketch edit missed (1 of 3 hits measured). Fix
+(3a6fc94b0) drops non-build inputs (3 of 3 hits), but first skipped all .ethlete/design/**/*.json, while the
+libs/components build stages config.json and the sdk product records, so a stale build could hit. Narrowed with a
+spec before push. Why no check caught it: no spec measured hit rate or checked the key against the real build
+inputs. Lesson: a cache key is derived from what the build reads, and a spec proves both a hit on an unrelated edit
+and a miss on a real input.
+
+136\. The components/title-bar sketch looked broken in Studio (Tom, 2026-11-02, screenshot): empty variant frames,
+1440x900 frames for a 36 px bar, the "Variante c" head over the "Aktuell" column, an empty "Aktuell" frame for a
+new part, English variant notes, and no "agent is building" state on the variants (a regression). Causes
+(builder): the sketch was not `sketch ready` yet, b and c were untouched `sketch new` scaffolds, and Studio shows
+an in-progress sketch like a finished one; sketches.component.html gives every frame 1440x900 and fixed 3 columns
+with a row gap smaller than the variant head; sketch-view always puts "Aktuell" first without checking that the
+part exists; no template sets the note language. Why no check caught it: a scaffold builds and renders, so
+`sketch check` passes; `sketch check` and `shot` draw in their own fitted frames, and nothing renders Studio's
+own sketch view with a short or a new part. Tool fixes: B34-B36. Lesson: the tool has to check the view Tom
+actually looks at, not only the parts inside it.
+
+137\. Two regressions in Studio's sketch view, both from d0f4a38cf (2026-11-01, Impl Q55/Q57/Q58, the live view swapped
+to the pages/sketches design part): the "agent is building" state per variant is gone (B34), and the variant
+author shows only the brand "Claude" instead of the model (B38). The data is intact (system-tree.ts pending and
+`drawing` column; sketch.json `variantInfo[v].authors`). Cause: the design part had silently lost the drawing
+state (63dd05458, 29.10., deleted as dead code), its sample author is just {name: 'Claude'}, and the swap renders
+only what the part declares; d0f4a38cf rewrote the sketch-view spec (-1018 lines) and deleted the only view-level
+spec of the drawing state. Why no check caught it: the drop list (finding 28) never named the drawing state;
+`--live` compare matched the broken app to the equally poor part; compare empties slot('shot'), so an in-frame
+placeholder is invisible to it; no Studio e2e. Tool fixes: view-level specs (B34/B38); a `drawing` state and a
+model-named author in pages/sketches (a visible change, so a sketch for Tom first); B39. Lesson: a swap to a
+design part may only render what the part declares, so the part must declare every state the old view had.
+
+138\. The paused components/title-bar sketch showed "In Arbeit" in Studio (Tom, 2026-11-02). The CLI already has the
+notion: `sketch hold <layer>/<name> --until <what> --by <model>` writes `sketch.hold` and blocks ready. But Studio
+never reads `hold`, and the builder paused the drawing agent without telling it to run `sketch hold`; the skill
+says "otherwise sketch hold", but nothing enforces it. A sketch in progress with no report and no file change looks
+like active drawing. Tool fix: B41 (Studio shows hold as "Pausiert" with the reason on click) and a stale rule (in
+progress, no report or file change for N minutes: Studio says "keine Aktivität"). Lesson: a state the CLI writes
+must be visible in Studio, and silence must never look like work.
+
+139\. The push of B22/C1/B30 (up to 11b570079) failed in the pre-push studio-live gate (builder, 2026-11-02):
+`UNCOVERED <ethlete-title-bar> 0,0 1440x36` in all 18 states. The B30 rule counts regions of parts an open sketch
+targets as covered, but the gate runs on committed state in a throwaway clone, and sketches stay uncommitted by
+design until Tom merges them, so the clone never sees the open components/title-bar sketch. Why no check caught
+it: B30 was tested only in the working tree, never through the pre-push clone. Tool fix: B42 (the live gate also
+reads open sketches from the working tree's .ethlete/design; a test runs it through the clone path). Lesson: a
+gate that runs in a clone must be tested in that clone, and state that is uncommitted by design must reach it.
+
+140\. During the title-bar redraw, `etProvideColor="brand"` logged a console warning in the ng() harness, and the button
+still looked brand (builder, 2026-11-02). Cause: the ng() app of the studio and sdk products registers no colour
+themes (in .ethlete/design/config.json only the legacy `projects.components` sets `providers`), so
+libs/core/src/lib/theming/provide-surface.directive.ts warns and the button falls back to `et-color--inherited`;
+it only looked brand because it inherited the frame's theme. Why no check caught it: the render check keeps only
+console errors with an ET code (libs/cli/src/lib/design/system/sdk-errors.ts, render-check.ts; legacy check.ts
+errors only), so every SDK console.warn is dropped by `sketch check` and `design check`. Tool fixes: B43 (each
+product's ng() harness registers the app's colour themes from per-product config providers) and B44 (checks report
+SDK console.warn lines as warnings). Lesson: a harness that differs from the app hides misconfiguration, and a
+check that drops warnings drops the only signal.
+
+141\. The title-bar redraw agent had to put `data-et-skip="CLIPPED"` on `<et-kbd>` (builder, 2026-11-02): the SDK's
+sr-only 1x1 text is flagged as clipped. A deliberate visually-hidden element is not a clipping defect. Tool fix:
+B45 (the clipped check skips visually-hidden sr-only elements by itself; drop the skip from the sketch). Lesson:
+a skip attribute in a draft is a sign of a false positive in the tool, and each one needs a finding.
+
+142\. All three components/title-bar variants flickered permanently in Studio's sketch view, as if without a fixed size
+(Tom, 2026-11-02). Cause (builder, confirmed): uncommitted B36 edits in
+apps/ethlete-studio/src/app/system-view/sketch-view.component.ts; each iframe size report recomputes variants(),
+shots() derives from it and builds new SafeResourceUrl objects, so every iframe reloads, reports again, and the
+loop repeats. A reload loop, not a size loop; Tom's live-reloading tauri:dev picked up the in-flight edit. Why no
+check caught it: the specs check one report and never that the iframe src stays stable across reports; the e2e
+checks the size after load, not that nothing reloads. Tool fix: B47 (spec: a repeated report sets no new src and
+no new size; sketch-view e2e counts iframe load events for ~2 s after settling and fails above one per frame).
+Lesson: a rendered view must be proven stable over time, not only correct once.
+
+143\. The "In Arbeit" badge and the per-variant "Agent zeichnet noch" state were built straight into Studio with no
+design (B34, da5b055c4, unpushed); Tom: "das ist alles nicht im design" (2026-11-02). Cause: STATUS and the
+builder handoff framed B34/B38 as "Rückschritt" (restoring behaviour lost in d0f4a38cf), so the work read as a
+restore, not as new visible UI, and no item said "sketch first". None of the three subagent briefs (B34, B36,
+B38) named a picked sketch; the rule lived only in the builder's handoff notes, not in the brief template
+(.claude/handoffs/builder-subagent-brief.md now requires a picked sketch id for visible UI, or a stop). Why no check caught it: the live check
+(live-uncovered.ts) only reports visible regions outside every part's host; anything inside a host counts as
+covered whether or not the part's design has it, so a new badge inside the existing sketch-view part passes. The
+B30 rule (an open sketch covers its target part) widens the same gap to parts without a design. Immediate: B36
+work parked in .claude/handoffs/b36-parked.patch, da5b055c4 reverted locally, both rebuilt after Tom picks the
+pages/sketches sketch. Tool fix: B48 (a gate, not a prompt rule; scope is Tom's decision, pending). Lesson: "sketch
+first" written in a prompt is not a control; a restore of lost UI is new UI as long as the design lacks it.
+
+144\. The B36 e2e saw only Vite 403 pages in every frame (builder, 2026-11-02): in a throwaway checkout with a
+symlinked node_modules, Vite's fs.allow refuses the resolved paths. It needed a real node_modules folder of
+symlinks. canvas.e2e.mjs likely has the same blind spot, since it never inspects frame content. Tool fix: B49 (the
+e2e checkout helper builds node_modules as a folder of symlinks; every frame e2e fails on an error page inside a
+frame). Lesson: a frame e2e that never looks inside the frame passes on an error page. Update (builder, same day):
+the new canvas.e2e.mjs assertion fails as intended (both frames Vite "403 Restricted", 34/36). Dead end:
+per-entry node_modules symlinks do not help, Vite resolves them back outside fs.allow. Next: add the real
+node_modules to the checkout's Vite server.fs.allow, and find out why the B36 e2e passed with per-entry
+symlinks. Work parked in .claude/handoffs/b49-parked.patch. Done (builder, 2026-11-02, e3914fb4e): the design
+server's fs.allow now includes the realpath of node_modules; e2e 36/36. Next: the design server fails loudly when
+a frame serves a Vite error page.
+
+145\. Tom pressed "Wählen" on the held components/title-bar sketch and nothing happened (2026-11-02). Probable cause (to
+confirm by the builder): the sketch is held, so it is back in progress and not ready; the CLI refuses the pick,
+and SketchViewComponent.run() in apps/ethlete-studio/src/app/system-view/sketch-view.component.ts swallows every
+error with `catchError(() => of(null))`, so Studio shows nothing. Second cause, a process error of the doc agent:
+the sketch was held with --until "Tom picks", but a sketch whose variants are finished and that waits only on
+Tom is `ready`, not held. Why no check caught it: no spec covers a refused decision; no rule says a Studio action
+must never fail silently; `sketch hold` accepts a reason that only means "waiting for the user". Tool fix: B51
+(every Studio action shows a refusal and its reason; "Wählen" on a sketch that is not ready says why it cannot
+pick; `sketch hold` refuses a reason that names the user and points to `sketch ready`). Lesson: an action that can
+be refused must say so, and "waiting for the user" is a state the tool already has. Update (builder, 2026-11-02,
+confirmed in code): `sketch hold` sets status 'in progress'; `pick` refuses anything not 'ready' (sketch.ts ~922);
+run() at sketch-view.component.ts:457 swallows it with `catchError(() => of(null))`. Refuted: no code refuses a
+"waiting for user" hold reason. About 30 silent `catchError(() => of(null)/EMPTY/of([]))` sites exist in
+apps/ethlete-studio. Why no check caught it, sharpened: nothing checks that a user-action pipeline surfaces its
+error; unit specs mock only the success path. Tool fix added to B51: an eslint rule `no-silent-catch-error` in
+@ethlete/eslint-plugin (a catchError whose handler ignores the error and returns of()/EMPTY), warn first in
+ethlete-studio; each site surfaces its error or carries a justified disable.
+
+146\. `sketch check --fix` reports ok on the pages/sketches sketch while `sketch ready` fails on the same unused imports
+(variants a/b/c and shared/sketch-status.ts) (builder, 2026-11-02). Why no check caught it: check and ready run
+different rule sets, and no spec asserts that a sketch check passes implies ready's checks pass. Tool fix: B52
+(ready runs exactly check's rules plus its own gates; check reports UNUSED too). Lesson: two commands that judge
+the same file must not disagree. Update (builder, 2026-11-02): cause confirmed; `ready` added
+unusedInVariantOf() in readyRefusalOf, `check` ran only format and typecheck, and typecheck does not flag unused
+imports. Fixed in e3e26ad3c: one variantGateProblemsOf() serves both. Next: check also reports ready's content
+gates (open points a variant adds, running round without a note, variants that do not load) as "ready will
+refuse: ..."; only workflow state (held, already ready) stays ready-only.
+
+147\. The render checks missed a see-through overlay pane in pages/sketches variant A: the popover let the round picker
+text show through (builder, 2026-11-02). Why no check caught it: the clipped and overlap checks look at layout
+boxes, not at whether an overlay pane is opaque over the content below. Tool fix: B53 (an overlay pane must be
+opaque; text under an open overlay that stays visible is reported). Lesson: an overlay is checked by what it
+covers, not only by where it sits. Update (builder, 2026-11-02): render-check rule SEE-THROUGH in 0d8e8af80
+(text crossing an open pane is sampled; cover below 0.95 is reported); no false positives on sdk and studio.
+Known gap: backdrop-filter and gradients count as opaque. Repro (builder, 2026-11-02, adc8da14f, unpushed): the
+pane was opaque; the real cause is stacking: the round picker (absolute, z-2, later sibling) paints over the open
+popover in the header (absolute, z-2). SEE-THROUGH now also fires when text outside any overlay paints above an
+open pane inside its box (other panes and role=tooltip exempt); no false positives on sdk, studio, studio-lab;
+pages/sketches r1 variant A now fails `sketch check`, the design fix goes into r2. Residual: an intentional layer
+over a pane without a role is flagged (data-et-skip="SEE-THROUGH"); live CDK panes in the harness stay
+unchecked. Lesson: a rule written from a guessed cause before the repro misses the real cause; reproduce first.
+
+148\. The Studio sketch view is unusable for the components/title-bar sketch (Tom's screenshot, 2026-11-02): (a) only
+the default state of each variant renders, so the Update button Tom picked on is never shown; (b) the 32 px bar
+sits tiny in a hardcoded 1440x900 frame (sketches.component.html:49-57; shots drop width/height); (c) four
+columns in a three-column grid wrap to a second row, and the raised variant heads land on row-one frames; (d)
+"Aktuell" is always added (sketch-view.component.ts:317) though no title bar exists, and shows blank; (e) variant
+b is clipped at the right edge, likely because the canvas fits once and does not refit on a later resize
+(design-canvas.component.ts:642). On pages/sketches the same view shows all three variants identical to each
+other and to Aktuell: the variant markup renders, but the view shows each column's first non-empty state (sketch-view.component.ts:331-341), here 'page-sketch' without a status, so no variant draws its status element; other states are reachable only after a pick. Compare already knows unchanged states, ready does not use them. Common root (builder): the sketch
+view copies the pages/sketches design 1:1, which assumes page sketches (three variants, 1440x900, a current page
+that exists); sketchMatrixOf knows size and existence, the view drops both. Why no check caught it: every
+fixture, spec and e2e uses one shape (pages/system, three variants); the design checks render a part only with
+the fixture it was drawn for; no check varies variant count, part size or a missing part; no check flags
+variants that render identically. Tool fix: B54 (a check renders each part's states with fixture variations
+derived from its input types: counts 0/1/N, sizes from the matrix, optional inputs empty; `sketch ready` refuses
+variants whose renders are identical to each other or to Aktuell). Lesson: a part checked only against the
+fixture it was designed for passes every input it was not. Addendum (Tom, 2026-11-02, screenshot): the variant
+note under each head ("Suche mittig, ohne Trennlinie; ...") is `text-ui-xs` and cut to one line with an
+ellipsis, so the reason for a variant, the text Tom picks by, is too small and incomplete. Why no check: no rule
+sets a minimum size for running text; xs is meant for short metadata. Tool fix, added to B54: a design check
+warns on a sentence-length text node (over about 40 characters) set below `text-ui-sm` or truncated to one line;
+the sketch-view sketch shows the full note at readable size.
+Update (builder, 2026-11-02, d678615cc and 8157f707a, not pushed): ready refuses a variant identical in every
+state to another variant or to Aktuell, and a first shown frame identical to an earlier one; check warns. On
+pages/sketches, b and c render identically in page-sketch, page-100 and zoomed-page and differ only in the
+status states; a differs subtly. New silent pass found: the identical-render check reported nothing when its
+render server failed to start (same as aktuellPlaceholderWarnings); both now to fail loudly.
+
+149\. components/zoom-chip was never comparable, yet counted as done in the MVP (builder, 2026-11-02, found by the B48
+gate as "unjudged" in all 16 states). `design compare` fails every state: the design sets a `target` prop on
+every interaction row (zoom-chip.ts ~35), ZoomChipComponent has no `target` input, and designOnlyPropsOf
+(part-compare.ts:409) only treats a prop as design-only when it is constant or the state forces an interaction.
+Why no check caught it: the pre-push `design check` draws nothing and never looks at props; only compare and
+`task --verify` do, and nothing makes them run per part before a part counts as done. Tool fix: B55 (`design
+check` fails a part with a varying design prop that has no app input and is not design-only, without drawing;
+the zoom-chip design sets `target` only where it sets `interaction`; a sweep runs compare over every part to
+find others that were never comparable). Lesson: "done" must mean a check has compared the part, not that no
+check complained. Sweep (builder, 2026-11-02, all 26 studio parts): 16 pass; zoom-chip cannot be compared;
+foundations refuse with "has no implements link" (should say "nothing to compare", exit 0). Counted done but
+deviating: elements/shell-main `project-picker` (10639 px), pages/merge `merging` (117 px), pages/system
+`nothing-open` (33571 px); whether they drifted or were never green is being traced. Why no check: no pre-push or
+CI step runs compare per part, and "done" is never re-verified; the B48 gate sees change against the base, not a
+standing deviation. Added to B55: a CI step compares every done part; the three deviations are fixed toward the
+design (moving closer to the design needs no sketch). Causes (builder, 2026-11-02): shell-main `project-picker`
+is a flake, shot mid overlay enter (5/5 reruns pass); system `nothing-open` is a flake, the open-points popover
+opens async and the shot comes before the overlay exists (6/6 pass, one rerun flaked `fit` instead); merge
+`merging` never matched since its design state was drawn: the design mock freezes the spinner at 0.3 of its
+duration, while compare's disabled animations reset the real et-spinner to t=0 (not in implemented.json, so no
+app regression). None needs an app fix. Why no check: a flake looks like a real diff (no settle confirmation, no
+rerun), and a design state that was never compared stays unnoticed because "done" covers only recorded states.
+Added to B55: compare waits until overlay panes settle and until every overlay the design state has exists
+before shooting; compare freezes running animations at the mock's frozen fraction (general, no skip marker).
+
+150\. Tom's merge of components/title-bar C failed with only "Merge fehlgeschlagen." (2026-11-02). The pick had worked;
+the merge was refused by INLINE-SVG on the sketch's shared/chrome.ts (window-control icons drawn inline), and the
+merge rolled back. Why no check caught it: inlineSvgsOf scans only the part's own folder, and in the sketch
+layout shared/ sits at the sketch root, so `sketch check` and `ready` never scan it; only the merged layout puts
+it in scope. Studio's merge() maps every error to one label and the 422 body carries a generic sentence, so the
+reason never reached Tom. The pages/sketches pick failed for a different reason: it ran before the sketch was
+ready, and the old run() swallowed the refusal (finding 145). Tool fix: B56 (check and ready check every variant
+in the merged layout, a merge dry-run; the 422 body carries the findings and Studio shows them through
+refusalMessageOf). Design fix: the window-control icons move to assets/. Lesson: a gate that judges a file in a
+different layout than the one it will land in judges a different file. Built (builder, 2026-11-02, bbde5081e,
+ca7546773, unpushed): check and ready run every rule on shared/ as the merge carries it; a refused merge returns
+422 `check-failed` with the findings and Studio shows them. Open: the alert shows the findings on one line;
+that layout goes into the merge-view sketch (B62).
+
+151\. Code review of the Angular design-parts (agent review, 2026-11-02, Tom's request): the workflow lets these through.
+(1) Composition is flattened: a page design that imports an implemented part gets that part's markup pasted, not
+its component (inbox pastes comment-pin with "TB" baked in; the studio logo is pasted twice beside
+studio-mark.component.ts; inbox hand-builds an anchored-dialog arrow). (2) Task scope forces copies:
+allowedFilesOf (part-task.ts:161-172) allows only the part's own folder, so inbox imports frame classes from
+system-page and app types live in *-sample.ts files. (3) Sample data and design-only knobs became production
+inputs: `input(SHELL_SAMPLE)`, `INBOX_SAMPLE`, inputs no app binds (inbox openOn/draft/entry, merge unchanged,
+sketches camera), because page design states are knobs, not data (finding 149 is the reverse). (4) Implemented
+but unused: error-toast renders only in the design harness. (5) 8 of 17 implemented parts have no `app` hashes,
+and upgradeOf never upgrades them, so code drift is never stale. (6) et-button undone from outside
+(`[&>.et-button-contents]`, `hover:bg-transparent`) and hand-made focus rings in 5 parts instead of etFocusRing.
+(7) Text skips the label map in 6+ parts (zoom-chip English titles the design lacks). (8) 9 of 19 parts have no
+spec; the render check uses only the sample defaults. (9) No skill covers implementing a design part. Why no check
+caught it: `design check` and `design task` judge the component against its own design only, never against the
+parts it composes, its app consumers, or inputs beyond the fixture. Tool fixes: B57 to B61. Lesson: a part
+implemented in isolation passes every check and still duplicates, fakes and drifts.
+B61 built (builder, 2026-11-02, d7d7599b5, unpushed): skill `.agents/skills/studio-design-part` (compose, no
+sample defaults, label map, etFocusRing and SDK overlay, no et-button internals, spec with foreign data,
+implements link, verify order). No pointer in `design task` or AGENTS.md: the skill listing already surfaces it;
+the B57-B60 tool messages name it once they exist.
+
+152\. Merge view feedback (Tom, 2026-11-02, title-bar C merge, which went through): (a) the "Geändert" list takes a
+long time to appear; until then the panel shows only the heading and the canvas stays empty, with no loading
+state; (b) in the narrow side panel the variant note wraps into six short lines beside the "Gewählt c" chip, and
+the changed list breaks part keys and state names mid-token ("elements/part-" / "tree", "components-" / "open")
+while repeating the part key on every row; (c) after the merge the merged sketch stays in the tree under
+"Sketches" for 10-15 s. Cause (builder): the tree is SSE-driven, but after a revision bump system-view runs only the
+full /__design/sketches read (a pixel comparison per sketch and variant, studio-api.ts sketchesAnswer); each file
+event of the merge restarts it via switchMap, and merge() triggers no refresh itself. Fix (building): a quick read
+before the full read on every bump, and the merged sketch leaves the tree at once on success (spec: gone within
+1 s). Also (d): the merge list flags a state "changed" for a real pixel diff, a missing state and a draw error
+alike (merge-compare.ts), so a false positive cannot be told apart; the title-bar merge listing part-tree states
+stayed inconclusive. Why no check caught it: no e2e measures the time to the first changed
+row or asserts a loading state; the render check has no rule for identifiers broken across lines or for running
+text squeezed into a narrow column. Tool fix: B62 (the merge view shows a loading state at once and fills the list
+as states are judged; each changed row says why: pixel, missing or error; an e2e budget for the tree to drop a
+merged sketch; an e2e budget for the first row; a render-check rule that flags a code identifier wrapped
+mid-token and a text block wrapped into more than about four lines narrower than about 25 characters). The
+layout fix itself is visible, so it goes into a merge-view sketch. Lesson: a list that is slow and a list that is
+cramped both pass a check that only looks at the finished, wide render.
+
+153\. The merged components/title-bar has no `implements` link, so compare, task, the harness map and the implemented
+record all refuse it ("has no implements link"); A1 stalled on it (builder, 2026-11-02). Adding the link changes
+the part hash, so the go goes stale and must be granted again. Why no check caught it: `sketch ready` and the
+merge accept a sketch whose part has no `implements` link and say nothing; the go hash covers the link although
+the link changes nothing visible. Tool fix: B63 (`sketch ready` and the merge view warn "this part cannot be
+compared or implemented until it has an implements link"; the go hash ignores the `implements` link, as already
+planned for after the MVP). Lesson: a merged design that no tool can compare is not finished.
+
+154\. The title-bar `macos` states leave the left side empty, so they do not read as macOS: the OS draws the traffic
+lights, and the design draws nothing in their place (Tom, 2026-11-02, after the merge). Why no check caught it:
+no check or brief asks a part that sits next to OS-drawn chrome to show that chrome; an empty zone is a valid
+render. Tool fix: B64 (the sketch brief and `sketch new` for a part with an OS prop ask for the OS chrome as demo
+content in a slot that compare empties, like the canvas demo cards). Lesson: a state must read as the situation
+it stands for, also where the real pixels come from outside the app.
+
+155\. `design check --part components/title-bar` auto-carried Tom's go after a visible edit (builder, 2026-11-02): the
+macOS traffic lights were drawn into slot('traffic-lights'), and the check printed "AUTO ACCEPTED ... every state
+draws as at the last acceptance" and wrote go.json `auto: true` with the new hash. Probable cause: the auto-carry
+compares pictures with slots emptied, so a change only inside a slot counts as unchanged. Tom held a go he never
+gave; the entry is removed. Why no check caught it: no spec changes only slot content and expects the go to go
+stale. Tool fix: B65 (high priority; the auto-carry compares the full picture with slots drawn; any change in slot
+content leaves the go stale; spec for exactly this case). Lesson: a picture with parts hidden cannot prove that
+nothing visible changed.
+
+156\. `design compare components/title-bar` fails SIZE in every state (builder, 2026-11-02): the design pins the bar to
+1440 px, the harness host is `w-fit`, so the grid's 1fr columns collapse and the app bar measures 496-781 px.
+Why no check caught it: the harness sizes the host to its content, which only fits parts with an intrinsic width.
+Tool fix: B66 (the harness host takes the part's widths from the design matrix). Done 67b065c93: compare reads
+the part's first `widths` entry for both sides; title-bar passes all 25 states. Real cause: shot, merge-compare
+and variant-diff already read `widths`, compare did not, and no spec had a part with widths - a shared input
+read by some tools and not others. Follow-up B82: compare at every declared width. Same review: the design passed
+no product/part to the search text, the search button copies `[&>.et-button-contents]` classes (B61 forbids
+reaching into et-button), and hover/active/focus of the five controls were not drawn. Decisions (grill,
+technical): product/part become design props with states; the SDK button gets an option to stretch its contents
+and both design and app drop the classes; the control interaction states get drawn. All are design changes
+under Tom's next go. Lesson: a fixed-width design compared in a shrink-to-fit host compares a different layout.
+
+157\. The built title bar runs into the content below in the live app (Tom's screenshot, 2026-11-02): the design gives
+it `bg-et-surface-bg`, the same as the page, and no edge, so the canvas dot grid seems to pass under it. Why no
+check caught it: the sketch and the merge view show a part alone on a neutral frame; nobody saw it above the real
+content before the pick. Tool fix: added to B46 (the in-context view is part of judging any part that sits at an
+app edge, before the pick, not only for sketches of pages). Lesson: an edge part judged alone cannot show where
+it ends.
+
+159\. Two pages/sketches r2 variants put a native scrollbar inside the frame: the rows column of the sketch view
+scrolls on its own (Tom, 2026-11-02, two screenshots). Inside a canvas that pans and zooms, a nested scroll area
+hides content from the shot and from Tom. Why no check caught it: the render checks look for clipped and
+overflowing boxes, not for a scroll container whose content is taller than its box. Tool fix: B68 (render check
+rule NESTED-SCROLL: an element with overflow auto or scroll whose scroll size exceeds its box inside a design
+frame is reported; a part that must scroll declares it). Lesson: content behind a scrollbar is content no
+picture shows.
+Update (builder, 2026-11-02): B68 done 3405ec61c (NESTED-SCROLL rule, SDK scrollers exempt). The thumb contrast
+miss: contrast-check.ts skipped everything inside [inert] and the sketch thumbnails are inert; inert is now
+measured, disabled still skipped. Lesson: a skip for "not interactive" is not a skip for "not visible".
+
+160\. A frame in the Sketches view sometimes shows the browser's own failed-load page (grey page with the sad document
+icon) instead of the design (Tom, 2026-11-02, pages/sketches `page-sketch · desktop`). Cause (builder, proven
+in a clone): the design server restarts itself when dist/libs/cli changes (serve.ts:1133-1151, build-watch.ts
+112-142); for ~1.5 s the port refuses, and a frame whose src changes in that window gets
+ERR_CONNECTION_REFUSED. Many agents running `nx build cli` make it frequent. It stays broken because
+frame-paint.ts:50-53 counts any iframe load + 1000 ms as painted (the error page fires load too), and
+studio-view.component.ts:309 reloads only when the supervisor stops listening, which it does not. Sketch churn
+alone failed no frame in 125 loads. Why no check caught it: B49 makes the CLI tools fail loudly on an error
+page, but the live view inferred "painted" from a load event, never from the frame's own message, and no e2e
+loads frames during a server restart. Tool fix: B69 (a load without the frame's message is a failed load: keep
+the old frame, show an own state with the reason and a reload, retry once when /__design/stamp answers; reload
+frames when the server identity on STAMP_PATH changes; e2e loads frames during a cli rebuild restart; a socket
+handoff to close the refused window is not built). Lesson: a success inferred from an event the failure also
+fires is no success.
+
+161\. After a reload, Studio takes about 10 s before the Sketches view shows the open sketches (Tom, 2026-11-02).
+Cause (builder): the view waits on its first request, GET /__design/sketches?unchanged=no (host/design.ts:538).
+This "quick" read skips only the pixel compare; it still loads every variant's part module through the Vite
+SSR loader (readPartModule + overlaySketch per sketch, target and variant, studio-api.ts ~548) plus the sketch
+problems and report, uncached. Measured: /__design/system 0.4 s; quick read 6.8 s cold, 3-4 s warm; full read
+21 s (2 sketches, 9 targets). Why no check caught it: the quick-then-full fix of finding 152 assumed the quick
+read was cheap and never timed it; no e2e measures reload to first sketch row. Tool fix: B71 (the quick read
+returns list data only - target, variants, status, decision, target parts - with no module load, spec: it
+never calls the loader; the full read fills the targets; e2e budget: first sketch row within 2 s after
+reload, with the B62 budgets). Lesson: a path named "quick" is only quick once a test times it.
+Update (builder, 2026-11-02): 1668e5ff6 (cli) + 94897104b (studio): the quick list loads no part modules and
+runs no rules (8.5 s cold / 1.8 s warm -> 2 ms); problems and targets come with the full read. The new e2e
+sketches-tree.e2e.mjs (2 s budget) still fails the first reload after a cold start (2.6 s, then 0.9 s) under
+load 11-22; unproven cause: the previous full read blocks the Node thread. It is wired into nothing yet (B67).
+
+162\. A go cannot be taken back (Tom, 2026-11-02): Studio has no action to withdraw a go, and `et design go`
+(libs/cli/src/lib/design/system/go-command.ts) only grants one. The auto-carried go on `components/title-bar`
+(go.json, `auto: true`, finding 155) can only leave by a hand edit of go.json. Why no check caught it: the go
+decisions defined granting, stale and auto-carry, never withdrawal, and no e2e walks a go back. Tool fix: B70
+(shape pending Tom's decision). Lesson: a release the person can give but not take back turns every wrong
+release into a file edit.
+
+163\. The title bar search field is drawn inline in `components/title-bar` with its own hover, pressed and focus rows,
+though it is plainly an element of its own inside the title bar (Tom, 2026-11-02: "wieso haben wir es nun als
+teil der titlebar? wieso passiert sowas noch immer"). Cause: the Q181 rule CONTROL-STATE lets a part draw
+interaction states when it declares its controls (Q164). The title bar declares `controls = { search, update,
+minimize, maximize, close }` (components/title-bar/shared/chrome.ts:77) and forces states per control through a
+`force` prop, so the check passed, although the search field is bespoke markup (an et-button with custom
+classes, a product/part label and a kbd) that exists nowhere else. The control declaration became the loophole
+the rule was meant to close. Tool fix: B72 (a declared control counts only when it is an embedded part or an
+SDK component used through its props; bespoke control markup inside a non-control part is a CONTROL-STATE error
+that names it for extraction). Lesson: an exemption a part grants itself is no rule.
+
+164\. Every design render of a part with an `color="brand"` SDK button through `ng()` logs `etProvideColor="brand" has
+no effect because no color themes are registered` (builder, 2026-11-02, update-dialog sketch). The brand fill
+still shows, so the render and the app may resolve colours by different paths, and check and ready pass. Why no
+check caught it: the render checks ignore console output. Tool fix: B74 (technical, grill decision: the `ng()`
+render registers the product's colour themes like the app does; the render check reports any SDK console
+warning or error in a frame as a problem). Lesson: a warning nobody reads is a bug the checks agreed to hide.
+
+165\. `sketch ready` refuses pages/sketches because r1 variant c draws its first state pixel-identical to b, and
+tells the author to "make a state the variant changes its first state"; reordering c's states does not clear it
+(builder, 2026-11-02). Cause: identical-renders.ts:78-118 picks the first compared frame in the merged part's
+state order (then new states), never the variant's own order, so the advice cannot work. Why no check caught
+it: the B54 spec tests that identical variants are refused, not that following the refusal text clears it.
+Tool fix: B75 (technical, grill decision: compare each variant at its first changed state, the one the sketch
+view shows first, and name the compared state in the message; a spec follows the message's own advice and
+expects ready to pass). Lesson: an error message is a promise, and a spec should keep it.
+
+166\. In the `long` rows of components/title-search the centred label is cut at both ends: the product name shows as
+a stray glyph at the start, the part name stops mid-word at the end with no ellipsis (builder report and shot,
+2026-11-02); the design check passed with 0 problems. Cause (builder, from code, no run yet): (1) render-check.ts
+`cutsOnPurpose` accepts `text-overflow: ellipsis` as an intentional cut, but the `truncate` sat on a flex
+container, where no ellipsis is ever drawn; (2) the check compares scrollWidth > clientWidth, and centred
+overflow spills left into negative offsets that scrollWidth ignores, so the left cut was invisible. Tool fix:
+B80 (ellipsis counts only on inline text - a flex/grid container with ellipsis stays CLIPPED with the hint
+"min-w-0 truncate on the inner span"; measure both edges, each child rect against the clip box). Lesson: a
+check that trusts a declared intent (ellipsis) must verify the intent can take effect. Design fix with Tom
+(part name truncates at the end, product stays whole).
+
+167\. In pages/sketches r2 variant e the variant rows run past the bottom of the Studio window and are cut only by
+the window border (Tom, 2026-11-02, screenshot: the `windows` state row of a title-bar sample cut at the window
+edge); the sketch check passed. Tom: the implementation checks would likely report it as an error. Cause
+(builder, from code): the sketch put `data-et-skip="CLIPPED"` on the absolute overflow-hidden rows container,
+and render-check.ts `skipsOf` walks ancestors, so one skip silences every descendant's cut; variants a-f also
+skip the whole page when camera != fit, d and f the rows area too. The tool has no pan-region concept, so a
+skip was the only escape hatch. Tool fix: B81 (declared `data-et-pan` region whose cut passes only with a
+continuation affordance; a skip covers only the marked element's own cut; a rule for content cut by the
+window or frame edge by more than a row height outside a pan region). Lesson: an escape hatch without a
+narrower legal option gets used wide - give the legitimate case its own name. Design: no change (Tom,
+2026-11-02) - the rows area is the canvas, content is cut by the window border because the canvas pans; that is
+canvas behavior, not part of the sketch. See finding 170.
+Comments in Studio are not back in the UI yet, so Tom reports such feedback in chat.
+
+168\. The title bar is not part of the shell design: elements/shell-main (Tom's screenshot, `hidden · width 1440`) shows
+rail and content with no title bar, while the app puts `<ethlete-title-bar>` in app.component.ts above the
+router outlet, outside the shell component (Tom, 2026-11-02: "titlebar ist doch eig auch teil der shell. wieso
+also wurde nicht entdeckt dass sie dort rein muss?"). Cause (grill, from the code): components/title-bar was
+sketched and built as a standalone part; nothing compares where the app renders a part with where the design
+embeds it. The app's root template is no design part, so a part placed there belongs to no composition, and the
+shell design never learns it is missing a child. Finding 157 had the same root (an edge part judged alone).
+Tool fix: B76 (composition check: every implemented part the app renders must be embedded in the design part
+that implements its host component, and markup outside any implemented component that hosts a part is an
+error naming the part and the missing host; the sketch brief for a new chrome or edge part names the part that
+will embed it). Lesson: a part with no parent in the design has no place in the product.
+
+169\. The builder ran `design check` in the foreground and blocked its session for minutes; Tom had to step in
+(Tom, 2026-11-02: "design check muss im hintergrund laufen IMMER"). Cause: the rule lives only in prose
+(handoffs, skills), and a fresh session or a subagent does not carry it; nothing stops the call. Tool fix: B77
+(technical, grill decision: a PreToolUse hook on Bash, shipped through libs/agent-rules like
+subagent-model-policy.py, denies the long design commands - `design check`, `compare`, `ready`, `sketch ready`,
+`harness`, `studio:e2e`, the visible-change gate - unless `run_in_background` is set, with a message naming
+the background form; a spec per command). Lesson: a rule an agent must remember is a rule the next agent
+forgets; the harness has to enforce it.
+
+170\. The grill session asked Tom whether variant e's rows should end inside the window (padding or fade) instead of
+being cut by the window border (Tom, 2026-11-02: "should not have been a question"). The rows area is the Studio
+canvas; its cut at the window border is how the canvas pans, a behavior owned by the canvas, not by the sketch
+being designed. A fade or padding there would change canvas behavior from inside a sketch. Tom's original report
+(finding 167) was about the checks, and the grill session turned it into a design question. Why nothing caught
+it: the sketch does not say which regions belong to another part, so neither the check nor an agent can tell an
+owned behavior from a sketch defect; the grill skill has no step that asks which part owns the behavior in
+question. Tool fix: B81 changed - the pan region is declared as `data-et-pan="<owning part>"` (here the canvas
+part); a cut inside it passes with no extra affordance, and the check output names the owner, so the region is
+never reported or asked about as the sketch's own defect. B83: before a grill question goes out, the doc agent
+names the part that owns the behavior; a question about behavior owned by a part other than the one under
+design is not asked (it becomes a finding for that part if anything). Lesson: a design question about behavior
+the design does not own is noise; ownership must be visible in the sketch markup, not inferred.
+
+171\. After `--et-kbd-color` (2a13b5eba, 6e3c4f00b) the title-search key glyphs stayed muted on hover, active and
+focus-visible (builder before/after shot, 2026-11-02). Cause: not the code - the design harness loads
+@ethlete/components from dist, and dist was not rebuilt after the change, so the new property did nothing while
+the removed `text-current` was gone. `nx build components` fixed it; the re-shot of all 8 states is
+byte-identical to 9fe0b8a41. Why no tool caught it: shot/check/compare draw from a stale dist and only print
+"WARNING STALE BUILD"; and nothing compares the forced interaction states of a part without a go against its
+last committed design - only a manual before/after found it. Tool fix: B94 (never draw from stale dist: rebuild
+or refuse), B78 extended (state compare against the last committed design). Lesson: a warning in a long log is
+not a gate; a picture from stale code is worse than no picture.
+
+172\. pages/sketches no longer renders: "location is not defined", raised from the title-search part's render
+(builder, 2026-11-02). It started within this wave (kbd-color, B76 shell-main with the embedded title bar, or the
+rebuilt components dist) and blocks the live check of B75. Cause (builder, corrected): commit 9fe0b8a41 added
+the title search to the title bar, and pages/sketches drew its shells at module load, where the search cannot
+render; fixed in 142e0a96a (drawing moved into render()). the uncommitted agent variants pages-sketches a/b/c use the
+same pattern ("Invalid URL"). Why no tool caught it: `design check --part` renders only that part, never the
+parts and sketches that embed it. Tool fix: B95 (a check of a changed part also renders every part and open
+sketch that embeds it; the commit gate does the same) plus a rule that refuses drawing at module load. Lesson:
+a part's check must cover its consumers, or a change is green where it is made and red where it is used.
+
+173\. Dead processes in the builder session (Tom asked the grill session to clear them, 2026-11-02): three wait loops
+`until ! pgrep -f "design ... check ..."; do sleep N; done` ran 10-30 min and could never end, because `pgrep -f`
+matches the loop's own shell, whose command line contains the pattern; plus a full `design check --product
+studio` (9 min) whose requesting subagent was gone after the builder ran out of context. Load was ~20. Why no
+tool caught it: nothing refuses a self-matching wait loop, and nothing stops background work whose requester
+ended. Tool fix: B99 (Bash hook refuses `pgrep -f`/`pkill -f` wait loops and points to run_in_background
+completion or Monitor; the restart command lists and stops background shells and design processes of the
+session it restarts). Lesson: a wait loop that greps for its own text waits forever.
+
+174\. Two items landed with their real path unproven (builder, 2026-11-02): B69 e2d977408 verifies the failed-load
+state only in jsdom (server-restart.e2e passes, but no e2e loads a frame that fails), and Restart bumps the
+epoch twice; B94 a733db40b was never run against a real stale dist. Cause of the double epoch bump: two bump sites, `studio-view.component.ts:221` restartServer() on
+designServerRestart$ and the pid bump at :168-172 added in e2d977408; fix drops :221 (no e2e counted frame
+reloads). Why no tool caught it: an item counts as done when its commit lands; nothing asks for proof on the
+path the finding failed on. Tool fix: B101 (an e2e for the failed-load state and a single epoch bump per
+Restart; a spec that makes dist stale for real and expects shot to rebuild or refuse). Lesson: a fix is proven
+where the defect happened, not in the nearest cheap test.
+
+175\. The builder still writes long chat text nobody reads (Tom, 2026-11-02), although the builder-agent skill says
+"the user does not read your chat; end each turn with at most one line". Why no tool caught it: the rule is
+skill prose only, read once and outweighed by the default habit of reporting at turn end. A blocking Stop hook
+was rejected (Tom): it makes the builder write the text and then rewrite it, so it burns more tokens. Tool fix:
+B102. Lesson: put a role's output rule in its system prompt, where it costs nothing and weighs most; measure,
+do not block.
+
+176\. Gos landed while the harness map was stale (builder, 2026-11-02): Tom's Studio gos for title-search,
+title-bar and shell-main are in go.json, but their compares fail with "harness map design-harness-parts.ts is
+stale". Why no tool caught it: go and merge do not look at the harness map, so the staleness shows up only at the
+next compare. Tool fix: B103 (go and merge regenerate a stale harness map, or refuse with the command; a Studio
+click must not be lost, so regenerating is the default). Lesson: a step that hands work to the next step checks
+that the next step can run.
+
+177\. B72 read as clean while it had 3 hits (builder, 2026-11-02): the CONTROL-STATE pass prints only after all 84
+parts, so a log read mid-run showed "0 hits". Full run: zoom-chip `reset`, shell-main `section` and shell-main
+`product` are own control markup in non-control parts. Why no tool caught it: `design check` ends without a
+per-rule tally, so a partial log looks like a clean one. Tool fix: B104 (check ends with one summary line per
+rule, e.g. "CONTROL-STATE: 3", and a final "complete" line; a log without it is unfinished). Lesson: a clean
+result must say it is complete.
+
+178\. title-search compare SIZE 25 vs 26 px in all 8 states (builder, 2026-11-02): a harness artefact, not the part.
+The app button is 25.25 px, but the harness host (`design-harness.component.ts:55`, `flow-root w-fit`) puts the
+inline-flex et-button in a line box (strut/baseline +0.875 px), so the host is 26.125 px and rounds to 26; the
+clip is asymmetric (app = host box, design = element). Why no tool caught it: no spec checks that the harness
+adds no size of its own, and nothing compares app against design before Tom is asked for a go. Tool fix: B105
+(harness host without a line box, both sides clipped at the component root, a spec that a fixed-size element
+keeps its size in the harness); the "compare before go" part goes into A10 (build-ready requires a green compare
+for an implemented part). Lesson: the measuring frame must not change what it measures.
+Update (builder, 2026-11-02): B105 7a9071c3f (host `flex w-fit`) removed the title-search SIZE diff but broke
+title-bar (green -> 35-41k px diff in all 24 states); its spec asserted classes, not pixels, so the regression
+passed. Decision: revert the host change, clip the app at the component root like the design side, and the spec
+measures a real pixel size in the harness. Lesson: a harness spec measures pixels, never class names.
+
+179\. The pages/sketches sketch (variant d) draws the Studio logo as a teal tile with a white mark; the app draws it
+as a dark neutral tile (Tom, 2026-11-02, screenshots). Cause (builder): variants d, e and f call studioMenu() and
+menu.setup but never add `menu.styles` to the page styles (d: sketches/pages-sketches/d/pages/sketches/sketches.ts
+:224-257); a/b/c and the real pages include it. Without it studio-mark.svg falls back to `var(--accent,#25aea7)`.
+Design truth is the neutral tile (studio-menu.css:3-4); the app matches it. The sketch embeds the part and copies
+nothing. Side find: apps/ethlete-studio/src/app/components/studio-mark.component.ts (teal tile, other path) is
+unused dead code - the B79 audit #5 even names it as the component to reuse. Why no tool caught it: no rule
+checks that an embedded part's styles reach the page, and a var() fallback is valid CSS. Tool fix: B108
+(rule UNUSED-PART-STYLES: a page or sketch renders a part and never returns its `.styles`; no visible colour
+fallback in studio-mark.svg, so an unstyled embed looks plainly broken; delete the dead studio-mark component).
+Lesson: a fallback that looks right hides a missing link; fall back to something obviously wrong or to nothing.
+The variants are agent-drawn (finding 180), so the builder adds `menu.styles` to d/e/f directly.
+
+180\. The grill session called the uncommitted pages/sketches variants "Tom's" and asked Tom for an OK to fix "his"
+files (2026-11-02); decision 7 had the same wrong label. Tom never draws a sketch; agents do. Why no tool caught
+it: nothing shows who drew a variant, so "uncommitted" was read as "the user's". Tool fix: B109 (the sketch
+record names the drawing agent or session per variant; Studio and `et design sketch` show it). Lesson: name an
+owner only from a record, never from where a file sits.
+
+- Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
+  `points-closed` and their ring states; no extra states for fit or nothing-open.
+
+- Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
+  Studio shows them as the demo.
+- Impl Q41 zoom-chip titles (Tom, 2026-11-01): German `title` tooltips, in Tom's collected round. Studio must not stay
+  German-only: i18n comes later, so UI text should be ready for translation, not hardcoded per language. Finding 13.
+- Impl Q42 tree aria text (Tom, 2026-11-01): `TreeRowItemComponent` hardcodes English aria text ("Sketch in
+  progress", "N open comments"). Now, in a small builder slice: German text through one central label map, the first
+  i18n seam for Studio (finding 13); a later translation plugs in there without component changes.
+- Impl Q43 dead tree badges (Tom, 2026-11-01): `treeOf` still computes the dropped badges; delete that code after
+  Tom's collected round, not now.
+- Impl Q44 project row states (Tom, 2026-11-01): shell-project-switch's `project` control is now a `select`, which
+  needs `project.option-hover`, `option-focus-visible` and `option-selected`. Draw the 3 states with the menu mock's
+  forced rows; go `--by tom`.
+- Impl Q45 accept by the builder (Tom, 2026-11-01) - replaced by Impl Q119: same rule as Impl Q15 for the go. When Tom approves a concrete
+  design change in the chat, the builder may run `design accept` for it, always `--by tom` (not the model name), and
+  names the decision. A new design Tom accepts himself. The Impl Q44 accept stays.
+- Impl Q46 shared label map in verify (Tom, 2026-11-01): `task --verify` allows `apps/ethlete-studio/src/app/i18n/**`
+  in a part commit, because the central label map is shared by all parts. Finding 17.
+- Impl Q47 canvas-frames size (Tom, 2026-11-01): the size comes from a `class` prop, as Impl Q31; go `--by tom`.
+  Second case of finding 4: lesson candidate, a check flags a part that takes its size from slot content.
+- Impl Q48 canvas-frames sample grid (Tom, 2026-11-01): keep the sample button grid in `slot('frames')` (picture
+  byte-identical, same rule as Impl Q31/Q40).
+- Impl Q49 tree-row ARIA (Tom, 2026-11-01): the tree-row design row gets `role="treeitem"`, `aria-level` and
+  `aria-expanded` like the app row (no pixel change); go `--by tom`, then verify tree-row and part-tree again. No cli
+  exception for role-less rows. Finding 19.
+- Impl Q50 Tailwind source line in verify (Tom, 2026-11-01): `task --verify` allows a change to the `@source` lines
+  of the app's `styles.css` in a part commit; the running cli slice (Impl Q46) builds it. The harness emitting the
+  design classes itself goes to the backlog, after the MVP. Finding 20.
+- Impl Q51 studio-menu pane corners (Tom, 2026-11-01): same one-line design fix as Impl Q13,
+  `transform: translate3d(0,0,0)` on the studio-menu pane class in its design CSS; go `--by tom`. A shared compare rule
+  for SDK pane corners goes to the backlog, after the MVP. Finding 23.
+- Impl Q52 shell-project-switch open menu (Tom, 2026-11-01): the design draws the open menu like shell-main's
+  project picker (Impl Q35): absolute above the trigger, `w-62` (248 px), same offset; go `--by tom`. The app does not
+  change. The cli harness leaves room above the host for a part whose surface opens above, so the overlay does not
+  flip. Finding 24.
+- Impl Q53 compare slots on pages (Tom, 2026-11-01): compare empties only the slots the compared part declares itself,
+  never the slots of embedded parts; for `pages/*` it empties nothing. cli fix with a changeset and a test that fails
+  without it. Until then a page 0 px is no proof. Finding 27.
+- Impl Q54 sketches and merge pages (Tom, 2026-11-01): build presentational parts `design-parts/sketches/` and
+  `design-parts/merge/` (data in, events out) that reuse the ready parts, as for start and inbox; re-point both
+  `implements` links, go `--by tom`; live swap later. Finding 28.
+- Impl Q55 features the design drops (Tom, 2026-11-01): reject/reopen, notes and diff lists are out of the MVP. The new
+  parts do not build them, and the live swap does not need to keep them. They come back after the full MVP is
+  implemented (backlog). Keep the MVP strict, no scope growth. Finding 28.
+- Impl Q56 inventory frame (Tom, 2026-11-01): the inventory design draws a plain placeholder box for the frame in place
+  of the `embedPage('pages/flows')` iframe; go `--by tom`. The app does not embed the flows view. Finding 29.
+- Impl Q57 frames on a page canvas (Tom, 2026-11-01): every frame on a page's canvas (an embedded page or a part state;
+  sketch variants, merge Now/After shots, flows graph frames, system state grids) is the page's own `slot('shot')`.
+  Compare empties it on both sides; the live app fills it with `/frame.html` iframes as today. The content is covered
+  by the part compares. One rule for system, sketches, merge and flows; design change, go `--by tom`. Inventory keeps
+  its placeholder box (Impl Q56). Findings 29, 31.
+- Impl Q58 page design text (Tom, 2026-11-01): the inventory, flows and sketches designs get German text, go
+  `--by tom`; the app takes every text from `studio-labels.ts`. No hardcoded English in the app.
+- Impl Q59 live canvas (Tom, 2026-11-01): the live `design-canvas` stays; it only gets the look of canvas-viewport and
+  canvas-frames (focus ring, aria-label, shell inset). No rebuild on canvas-frames. Finding 31.
+- Impl Q60 part-tree sections (Tom, 2026-11-01): the flattening without a section level is accepted for the MVP;
+  sections go to the backlog. Finding 32.
+- Impl Q61 pin count (Tom, 2026-11-01): the pin number is 1 + replies, so it counts all messages and matches the
+  "N messages" label (changes Impl Q32).
+- Impl Q62 question dot (Tom, 2026-11-01): the old accent dot for a waiting question goes away in the MVP; the inbox
+  shows waiting questions. Finding 32.
+- Impl Q63 shell-project-switch focus state (Tom, 2026-11-01): drop `open-focus-visible` (unreachable, the SDK menu
+  keeps focus inside); `option-focus-visible` covers a focused row; go `--by tom`. Finding 33.
+- Impl Q64 studio-menu row states (Tom, 2026-11-01): draw `option-hover`, `option-focus-visible` and `option-active`
+  with the menu mock's forced rows as Impl Q44; go `--by tom`. Finding 33.
+- Impl Q65 system open-points popover (Tom, 2026-11-01): the design takes the real anchored dialog position: pane
+  10 px below the chip bottom, arrow centred under the chip; go `--by tom`. The app does not change. If `nothing-open`
+  stays flaky after this, compare waits for overlay panes (cli). Finding 34.
+- Impl Q66 flows live swap (Tom, 2026-11-01): strict swap; pins, notes, drafts and `jumpTo` on the flow canvas drop
+  for the MVP (backlog), as Impl Q55. Finding 39.
+- Impl Q67 system live swap (Tom, 2026-11-01): swap only the empty state; the live design-canvas stays (Impl Q59); the
+  open-points chip stays out until live open-points data exists.
+- Impl Q68 start in the app (Tom, 2026-11-01): when the repo has no products, the app renders the start part in place
+  of shell-main; with no repo the checkout picker stays.
+- Impl Q69 merge error (Tom, 2026-11-01): the merge design gets one error line under the Merge button (for example the
+  needs-rebase refusal); go `--by tom`. Finding 39.
+- Impl Q70 Verwerfen (Tom, 2026-11-01): one click as drawn for the MVP (git keeps the sketch history); a confirm goes
+  to the backlog. Finding 39.
+- Impl Q71 German text everywhere (Tom, 2026-11-01): Impl Q58 covers merge and every other page; go `--by tom`.
+- Impl Q72 merge unchanged rows (Tom, 2026-11-01): the merge part shows the first part only for the MVP; several parts
+  go to the backlog. Finding 39.
+- Impl Q73 inbox frames (Tom, 2026-11-01): Impl Q57 covers pages/inbox (canvas content in `slot('canvas')` as flows);
+  go `--by tom`. Finding 38.
+- Impl Q74 wide flows (Tom, 2026-11-01): the flows canvas gets the same camera as the sketch `design-canvas`: pan by
+  wheel and space-drag, zoom with the zoom-chip. A flow starts at zoom 1 with its first frame at the left edge. No
+  fit-to-width scaling (a 10-page flow would be unreadable). The design does not show it, so go `--by tom`.
+- Impl Q75 phone frames (Tom, 2026-11-01): the fixed 16:10 frame box that clips a 390x844 page stays for the MVP; a
+  per-preset box ratio goes to the backlog.
+- Impl Q76 verify of live swaps (Tom, 2026-11-01): `task --verify` also allows the app files that import the part (the
+  tool finds them); every other file outside the part stays refused. CLI change. Until then pages/system keeps its
+  earlier ready; flows gets a real part-only commit with the Impl Q74 camera work. Finding 40.
+- Impl Q77 checkerboard compare (Tom, 2026-11-01): part compare shoots design and part over the same visible
+  checkerboard instead of a transparent background, so any fill a part adds shows as a pixel diff. CLI change, build
+  now. Finding 43.
+- Impl Q78 live page compare (Tom, 2026-11-01): in the MVP, after Impl Q77. One compare per product page (system,
+  flows, sketches and the other live pages) shoots the real app page against the page design, with the slots filled
+  by a fixed sample, so hand-written live components inside a page (for example `design-canvas`) are covered.
+  Each live-page compare uses a fixed camera with a sample frame that crosses the panel edge, panel open, plus a
+  panel-hidden state, so a clipped canvas shows as missing pixels. Finding 44.
+  Canvas states also run the zoom-chip Fit and 100 % with the panel open. Finding 48.
+  Finding 43.
+  As built (2026-11-01, in progress): spec `apps/ethlete-studio/design-live.json`, canned answers in
+  `apps/ethlete-studio/design-live/` (products studio/timetrack/docs; studio has colors, button, form-field, select,
+  shell-main, system), wired as `harness.live`. `pages/system` states: `part` (camera 300/48 at 100 %), `edge` (camera
+  and design pan shifted 323 px, so the frame crosses the rail-panel gap), `zoom-100` (camera 50 %, then the "Auf
+  100 % zoomen" click). Results (system, 2026-11-01): part 301765 px, edge 303639 px, zoom-100 303803 px. The CLI
+  now waits for network idle before the shot (ea3a419c4); before, it shot an empty canvas. Open: the frame contents
+  differ by design (the design slot draws a 3-row "Save" grid, the app the real button grid), so no state can reach
+  0 px and the edge bite only shows in the total (control 260376 px, without `-ms-(--st-shell-inset-left)` 294588 px),
+  not in the gap itself; the sample frame content must be the same on both sides first. Panel-hidden needs the CLI to
+  compose the shell-main hidden state (Impl Q85). Sketches, flows, inbox, inventory, merge, start have no live states
+  yet.
+  Slice 3 (27f892400, 1afacf832): the spec's `frame` PNG (`design-live/frame.png`, 640x360) fills the page design's
+  own slots and answers the app's `/__design/shot` and `frame.html`; the sample button is one `default` state at width
+  640, so both sides draw the same frame. A state's `compose` merges props into a part the page design renders
+  (`elements/shell-main` `panel: hidden`); a page or state overrides `host`, `answers` and `invoke`. Results on one
+  app build (2026-11-01): system part 158525, edge 158022, zoom-100 349121, panel-hidden 148130 px (camera x 40);
+  flows empty 0 px; start no-products 46080 px (only the legacy footer bar), no-repo fails (the app shows the shell,
+  not the start page, without a checkout); inbox all-clear 365785; sketches fit 196541; inventory open 501882 px.
+  Bite proof: dropping `-ms-(--st-shell-inset-left)` in a scratch build turns the rail-panel gap (x 64-76) of the
+  system edge state from 0 to 4320 red px, all of it. Open: the live system page has no open-points chip (only the
+  harness `SystemPageComponent` draws it), so canned comments cannot reach it; system has no Fit design state;
+  sketches has no 100 % design state; flows `flow`, merge and the inbox states with comments need canned flows,
+  merge mode and comments.
+  Slice 4 (6d3588e6f, c37c574b4): the spec's `now` fixes the app clock (UTC), so relative comment times draw the
+  same on every run; the shot waits for a drawn host before it sizes the viewport (merge swapped the host and measured
+  0x0). New states: merge `open` (sketch with a pick, `sketchViews.merge` seeded, canned sketch-preview and
+  sketch-compare), flows `flow` (canned flow "Sketch prüfen"), inbox `open`, `with-resolved`, `active-only`,
+  `active-clear` (canned comments); the sketches sample carries the round title and variant notes
+  (`rounds[].title`, `variantInfo.<v>.note`). Results on one build of 50dc56256 (2026-11-01): system part 143644,
+  edge 143141, zoom-100 334261, panel-hidden 143644; flows empty 0, flow 145138; inbox all-clear 360712, open 389248,
+  with-resolved 389758, active-only 382406, active-clear 367554; start no-products 46080, no-repo FAILED; sketches fit
+  197931; inventory open 501029; merge open 82854 px. The run must start in a checkout folder named like the real one,
+  or the project name in the side panel foot differs. Causes: no-repo needs the app's `startPage` to show the no-repo
+  page when no checkout is chosen (today it needs a port; studio-view never reads the server without a checkout);
+  inventory compares the app's real pages/system inventory with the design's pages/flows sample (canvas 453k of the
+  502k px), so it needs `systemEntry: pages/flows` and a canned `/__design/inventory` first.
+- Impl Q79 action check (Tom, 2026-11-01): in the MVP, after Impl Q78, shell parts first. Every interactive element
+  in a part or page design declares its action: a target state (`data-et-action="collapsed"`) or an output
+  (`data-et-action="emit:pick"`). `design actions <part>` mounts the part, clicks and presses Enter and Space on each one, and
+  fails when the state does not compare 0 px, the output does not fire, or an app element has no declared action.
+  `design complete` refuses a design with an undeclared interactive element. The same clicks also run on the real
+  pages of the Impl Q78 compare, where the page must reach the declared page state (for example sidebar hidden),
+  because the active nav defect sat in the app wiring, not in the part. Each overlay opens once by click and once
+  by key, and each result compares to its declared state (the click state has no focus ring). Findings 42, 45, 47.
+- Impl Q80 SDK runtime errors (Tom, 2026-11-01): the part harness, the Impl Q78 live-page compare and the Studio
+- Impl Q79 addition (2026-11-01): action sequences (for example pan, then pick a flow) compare their final frame, and
+  a key whose default the app prevents on an interactive element fails the check. Findings 47, 48.
+  As built (2026-11-01), slice 1: `node dist/libs/cli/src/index.js design actions <layer>/<name> --product studio
+[--state <s>] [--url <dev server>]` mounts each state in the harness, clicks and presses Enter and Space on every
+  interactive element and compares the result. `data-et-action` is a state name (`collapsed`) or `emit:<output>`; for a
+  key press the check compares the declared state's `<state>-focus-visible` row when the part draws one. The harness
+  records outputs on `window.__etDesignEmits`. `design complete` fails with `ACTION-UNDECLARED` for an interactive
+  element without the attribute, for every product. Only the one-step opener is supported as a sequence. Results:
+  shell-collapse, disclosure, zoom-chip pass; tree-row fails 13 of 13 (design declares no `data-et-action`);
+  part-tree fails 14 of 42 (Space fires no output); shell-project-switch fails 15 of 33 and shell-main 19 of 249
+  (project switch does not reach the declared state; its keydown default is prevented).
+- Flow pick camera (2026-11-01): a flow pick resets the camera to the opening view of Impl Q74 (100 %, first frame at
+  the panel edge). Impl Q74 already decides this; no new question.
+  vitest setup fail on any console error with an `ET\d+` code. Other console errors stay allowed. Finding 46.
+- Impl Q81 legacy chrome (Tom, 2026-11-01): remove from every live page each element that no page design shows (chat,
+  notes, top-right buttons, footer bar, and the rest of the builder's per-page list). The MVP is exactly the design;
+  Impl Q78 keeps it so. Anything Tom wants back goes to the backlog and gets a design first. Exception: an element
+  that is the only way to an important function (for example a design server restart) goes to Tom one by one before
+  it is removed. Finding 49.
+- Impl Q82 ready needs working controls (Tom, 2026-11-01): the Impl Q79 action check is a gate for ready. A part or
+  page with interactive elements is ready only when each one declares an action and the check passes, on the real
+  page too. Every current ready mark is reset until its part passes; the DONE number counts only those. Finding 51.
+- Impl Q83 studio menu (Tom, 2026-11-01): the five entries (Einstellungen, Erscheinungsbild, Tastenkürzel, Hilfe,
+  Über Studio) have no target design and leave design and app; backlog, design first. With the menu empty, the logo
+  menu goes to the backlog too: the rail logo is the plain Studio mark on every page (the shell-main standalone
+  preview already draws it), not a button. Finding 51 and 50.
+- Impl Q84 frame label (Tom, 2026-11-01): the live canvas frame label shows the bare name as the design does
+  (`button`), not the layer-qualified name; the layer shows as the group in the side tree.
+- Impl Q85 panel states (Tom, 2026-11-01): no page design change. shell-main already draws panel open and panel
+  hidden, and every page inherits it, so the Impl Q78 live-page compare takes the panel-hidden state from shell-main.
+  The sample frame across the panel edge belongs to the compare's fixed sample, on both sides, not to a design.
+- Impl Q86 demo backdrops (Tom, 2026-11-01): build a check that detects a demo background in a design (a wrapper
+  outside the part root that paints a fill the part does not own) and refuses it in `design complete`; then fix
+  what it flags, starting with shell-collapse and shell-project-switch. Finding 52.
+- Impl Q87 design server (Tom, 2026-11-01): the "server stopped" screen with Restart stays and gets a design as a
+  shell-main state. Start, Restart and Stop move into the logo menu. This changes Impl Q83: the logo stays a button
+  on every page and opens the studio menu, which now holds only the server actions; the five old entries stay
+  removed. Design change of studio-menu, go `--by tom`.
+- Impl Q88 server status (Tom, 2026-11-01): the footer bar goes, with its status and diagnostics. What to do with
+  that information is planned after the MVP.
+- Impl Q89 open project (Tom, 2026-11-01): "Projekt öffnen…" opens the OS folder dialog; the footer checkouts popup
+  goes; "Scan" to the backlog.
+- Impl Q90 updates (Tom, 2026-11-01): a ready update installs on the next Studio start, no UI. A design pass for an
+  update hint is planned after the MVP.
+- Impl Q91 exceptions (Tom, 2026-11-01): the "Ausnahmen N" popover stays as it is; no new design now (that was scope
+  creep). Design after the MVP.
+- Impl Q92 legacy call view (Tom, 2026-11-01): stays as it is, with "Als übertragen markieren".
+- Impl Q93 start logo (Tom, 2026-11-01): the Start page shows the plain Studio mark, no menu (no project, no server).
+- Impl Q94 tree-row actions (Tom, 2026-11-01): a part whose interactive elements the embedding part owns is exempt
+  from the action check; tree-row declares nothing, part-tree declares the actions.
+- Impl Q95 project-switch keyboard open (Tom, 2026-11-01): new design state `open-focus-visible` (menu open, first
+  option ringed); go `--by tom`.
+- Impl Q96 actions for every product (Tom, 2026-11-01): ACTION-UNDECLARED stays for all products; each product
+  declares its actions when its parts get worked on.
+- Impl Q97 hide panel camera (Tom, 2026-11-01): the app keeps the frame in place when the panel hides; the compare
+  uses its own sample camera for that state. No design change.
+- Impl Q98 inbox canvas (Tom, 2026-11-01): the inbox design gets the system page's inset padding and zoom chip;
+  go `--by tom`.
+- Impl Q99 canvas zoom states (Tom, 2026-11-01): add `fit` to pages/system and `100 %` to pages/sketches, one-variant
+  sketch each, so the Fit/100 % checks (finding 48) run on every canvas page; go `--by tom`.
+- Impl Q100 inventory entry (Tom, 2026-11-01): the inventory toggle on the System parts stays as it is (the Impl Q81
+  exception, as Impl Q91/Q92); no new design now, design after the MVP.
+- Impl Q101 "All products" (Tom, 2026-11-01): remove the rail button from the shell-main design and the app; a target
+  is planned after the MVP.
+- Impl Q102 sdk menu keyboard background (Tom, 2026-11-01): the sdk components/menu mock draws the keyboard-active
+  background on a forced focus-visible row (one-variant sketch); then verify and ready studio-menu. Finding 58.
+- Impl Q103 inbox authors (Tom, 2026-11-01): the inbox shows the comment author's name from `git config user.name`,
+  as the design does, not "Du".
+- Impl Q104 canvas first open (Tom, 2026-11-01): the first open of a canvas uses the design's opening view (zoom 1,
+  frames at panel edge + 40/48 px), the same as the 100 % button.
+- Impl Q105 folder refusal (Tom, 2026-11-01): an error toast when the chosen folder has no design work, one design
+  state. Strictly minimal: no other error cases, no error system. Finding 60.
+- Impl Q106 live no-change check (Tom, 2026-11-01): Impl Q79 slice 2 (live pages) gets a before/after shot per press
+  (focus ring masked) and flags "no visible change and no navigation", with a host stub that records native calls
+  (dialog, updater). Finding 60.
+- Impl Q107 shell backdrop go (Tom, 2026-11-01): accept + go `--by tom` for components/shell-collapse and
+  components/shell-project-switch after the Impl Q86 backdrop removal (0987a5490). Finding 62.
+- Impl Q108 studio-menu backdrop (Tom, 2026-11-01): drop the fill in the Impl Q87 redraw, in the design and the app
+  host.
+- Impl Q109 auto acceptance (Tom, 2026-11-01): when a part's hash changes, render every state; if each is
+  pixel-identical to the picture at the last acceptance, write an `auto` acceptance for review and go (same rule as
+  sketch merges, merged-parts.ts:154). Finding 62.
+- Impl Q110 menu mock row attributes (Tom, 2026-11-01): the sdk menu mock keeps the row attributes (data-et-force),
+  so the studio-menu option-* states compare for real. Finding 63.
+- Impl Q111 shell-main at-rest force (Tom, 2026-11-01): remove `force` from the section/product/products rows at rest
+  in the design. Finding 63.
+- Impl Q112 transitive hash (Tom, 2026-11-01): the design hash covers transitive imports (reachableFilesOf);
+  `task --verify` stores the app component's transitive imports in implemented.json; `design check` marks a
+  ready/done part STALE and names the changed files. Together with Impl Q109. Finding 58.
+- Impl Q113 go guard (Tom, 2026-11-01): `design go --by tom` needs a decision ref (`--note "Impl Qnn"`) and refuses
+  when the design commit is newer than that decision. Finding 64.
+- Impl Q114 auto go `by` (Tom, 2026-11-01): an auto go or acceptance (Impl Q109) keeps the previous `by` and adds
+  `auto: true`.
+  Done in c9c00eb98 (spec 104a3de8e).
+- Impl Q115 decision ref vs later design (Tom, 2026-11-01): with Impl Q119, Tom's confirm is the proof. "Design newer
+  than the decision" is no longer a refusal but a note in the confirm list (for example "design changed after Impl
+  Q98 (5e554809b)"). `--note "Impl Qnn"` stays required. Changes Impl Q113. Finding 64. Done in b873da3ee.
+- Impl Q116 import cycles (Tom, 2026-11-01): `import/no-cycle` (or madge --circular) as a lint error for libs/core
+  now, and resolve its 24 cycles; libs/components (71 in-lib cycles) after the MVP. Finding 68. Done in 22890a960:
+  24 -> 0 cycles; the check is a spec (libs/core/src/import-cycles.spec.ts) in `nx test core`, not
+  import/no-cycle, because the repo has no eslint import plugin. Public exports unchanged (590 names).
+- Impl Q117 shell-main surface (Tom, 2026-11-01): the shell-main drawing root (shell-main.ts:233) gets
+  `data-et-surface`, because the app paints the same fill; the DEMO-BACKDROP exemption applies, no tool change. Do it
+  before Tom's shell-main go. Finding 71.
+  Done in 222c244eb, 39ee9ab05: complete.ts accepts a bare `data-et-surface` on the part root as the part's own
+  surface; the shell-main root has the marker.
+- Impl Q118 compare without go (Tom, 2026-11-01): `design compare` runs on a part changed since its go and marks the
+  result "unapproved"; the go gate stays on `task --verify`, ready and accept. Finding 72. Done in 5c461eab7
+  (builder: ready and accept never used the taskPartOf gate; compare has no JSON output yet).
+- Impl Q119 Tom go needs Tom (Tom, 2026-11-01): `--by tom` (go and accept) needs a TTY confirm or a Studio click,
+  which an agent cannot give. The builder writes a go list; Tom confirms it at once with
+  `et design go --batch <file>`, one prompt for all entries. The builder no longer writes a chat-approved go itself
+  (replaces Impl Q45). Finding 74. Done in b873da3ee: `Record this as Tom? [y/N]` at a TTY, refusal without one;
+  `design go --batch <file>` takes a JSON array of {part, product, action go|accept, note, verify?}, checks all
+  entries first, then one prompt. Batch file for Tom: .claude/handoffs/tom-go-batch.json (gitignored).
+- Impl Q120 shell-main keyboard open (Tom, 2026-11-01): shell-main gets the `open-focus-visible` state, as Impl Q95.
+  Done in 4f571660e under the name `project-picker-focus-visible`: `targetStateOf` maps a key press to
+  `<target state>-focus-visible`, and the trigger's target in shell-main is `project-picker` (`open` there is the
+  closed-picker state).
+- Impl Q121 ready needs a current go (Tom, 2026-11-01): `markPartReady` refuses a part whose design changed since its
+  go ("changed since its go - it needs a new go first"). `design accept` gets no go gate: accept approves a direct
+  design edit before its go. Corrects Impl Q118. Finding 78.
+- Impl Q122 "Aktuell" with only placeholders (Tom, 2026-11-01): when the visible rows of the "Aktuell" column hold
+  no drawn frame, Studio opens the first folded unchanged row by default. No nearest-state reference frame.
+  Finding 77.
+- Impl Q123 Q119 details (Tom, 2026-11-01): keep as built. Uncommitted design files are a note in the confirm, not a
+  refusal; `verify` is only shown; a single `accept --by tom` takes free text, only batch entries need "Impl Qnn".
+- Impl Q124 duplicate matrix logic (Tom, 2026-11-01): keep the CLI copy (aktuell-placeholders.ts) until the MVP;
+  after the MVP move the matrix into one module that app and CLI both import. Backlog.
+- Impl Q125 one canvas (Tom, 2026-11-01): "das sollte ein und der selbe dynamische canvas component sein. alles andere
+  wäre müll." System, Sketches and Flows use one and the same canvas component, not a shared input layer under two
+  implementations. Left drag on an empty area pans on every page; a left click on a frame selects it. Arrow-key pan,
+  double-click focus, Space/middle-button pan and window-wide Shift+1/2/0 work on every page. Finding 83.
+  As built (builder, 2026-11-01): 70df9fec1 adds `yarn studio:e2e` (apps/ethlete-studio/e2e/canvas.e2e.mjs, real
+  Studio, 7 input cases on System and Sketches: 9/14 before, 14/14 after). 00eecda8a makes `ethlete-design-canvas` the
+  one canvas: Sketches projects its frames (`[ethleteCanvasFrame]`) and drops `mountCanvasViewport`. Compare 0 px:
+  pages/sketches, pages/system, components/canvas-viewport, elements/canvas-frames, pages/flows. Not verified: wheel,
+  Escape, Shift+2/0, the desktop app; zoom-chip compare blocked by a harness limit. Flows still uses
+  `mountCanvasViewport` (parked until after MVP).
+- Impl Q126 Sketches selection mark (Tom, 2026-11-01): a selected frame in Sketches shows the same selection outline
+  as System, from the one canvas component (no second outline implementation).
+  Done in d7451f821 (one `canvas-frame-border` for System and Sketches, e2e 31/31) with finding 96 (8ed75e200).
+- Impl Q127 tree text size (Tom, 2026-11-01): tree rows (components/tree-row) go from 11 px (`1.1rem`) to 13 px
+  (`1.3rem`), the size of the open-points popup and menu items; the row height grows with it. Design change, so Tom
+  gives a new go on components/tree-row (and on parts that embed it if their go goes stale).
+- Impl Q128 sketch view button label (Tom, 2026-11-01): the button above each variant in the sketch view says
+  "Wählen", not "Merge" - it only opens the merge view, which then shows "Gewählt a". The final button in the merge
+  view stays "Merge".
+- Impl Q129 inbox row click (Tom, 2026-11-01, finding 102): a click on an inbox comment row (or Enter/Space on it)
+  selects the comment and opens its place on the inbox canvas: the frame of its part and state, with its pin. For a
+  comment on another part, the canvas switches to that part first. In the MVP: the pages/inbox design gets a row
+  action, so Tom gives a new go on pages/inbox.
+- Impl Q130 one Studio menu look (Tom, 2026-11-01, finding 103): every Studio menu uses the studio-menu values
+  (`--et-menu-item-height: var(--control-md)`, `--et-menu-item-font-size: var(--text-md)`), set once for all Studio
+  menus, not per part; the per-part override in studio-menu goes away. Tom gives a new go on elements/studio-menu and
+  components/shell-project-switch.
+- Impl Q131 merge view added state (Tom, 2026-11-01, finding 104): when a variant adds a state, the empty "Jetzt"
+  panel shows a short centered text "Neu in a" (the variant letter).
+- Impl Q132 merge button loading (Tom, 2026-11-01, finding 106): while the merge runs, the Merge button shows the
+  SDK button loading state (spinner, no second click). The pages/merge design gets a `merging` state.
+- Impl Q133 resizable sidebar (Tom, 2026-11-01): the user can drag the sidebar width (handle on its edge, min and
+  max width, a dragging state). After MVP: on the backlog, not built now.
+- Impl Q134 start empty state (Tom, 2026-11-01): the empty bordered box (`ghostFolder`) above "Kein Repo geöffnet" on
+  pages/start goes away in design and app; title, text and the "Repo öffnen" button stay. Then Tom accepts the
+  direct edit and gives the go on pages/start.
+- Impl Q135 Sketches camera on panel toggle (Tom, 2026-11-01, finding 100 follow-up): when the panel hides or shows,
+  the Sketches camera shifts by the panel width so the frames keep their screen position, as in System and Flow
+  (canvas-level adjustment when the host's left edge moves). Tom could not try it (no open sketch), so the e2e case
+  is the proof.
