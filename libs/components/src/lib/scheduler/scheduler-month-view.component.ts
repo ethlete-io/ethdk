@@ -29,7 +29,6 @@ import { SchedulerAppointmentStylesComponent } from './scheduler-appointment-sty
 import { SCHEDULER_FALLBACK_BADGE_ADORNMENTS } from './scheduler-fallback-badge-adornments';
 import { injectSchedulerLabels } from './scheduler-labels';
 import { Appointment } from './scheduler.types';
-import { TooltipDirective } from '../tooltip';
 
 /** The default month grid: one day cell per day, appointments as one-line badges with a "+N more" overflow. */
 @Component({
@@ -37,7 +36,7 @@ import { TooltipDirective } from '../tooltip';
   templateUrl: './scheduler-month-view.component.html',
   styleUrl: './scheduler-month-view.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [...MENU_IMPORTS, ProvideColorDirective, NgComponentOutlet, TooltipDirective],
+  imports: [...MENU_IMPORTS, ProvideColorDirective, NgComponentOutlet],
   hostDirectives: [SchedulerMonthDirective],
   host: {
     class: 'et-scheduler-month-view',
@@ -59,7 +58,6 @@ export class SchedulerMonthViewComponent {
   private weekRows = viewChildren<ElementRef<HTMLElement>>('weekRow');
   private cells = viewChildren<ElementRef<HTMLElement>>('cell');
   private cellItems = viewChildren<ElementRef<HTMLElement>>('cellItem');
-  private appointmentTooltips = viewChildren(TooltipDirective);
   public draftAnchor = viewChild<ElementRef<HTMLElement>>('draftAnchor');
 
   protected canDragAppointments = computed(() => this.appointmentDrag?.isEnabled() ?? false);
@@ -113,8 +111,6 @@ export class SchedulerMonthViewComponent {
 
   protected select(appointment: Appointment, element: HTMLElement | null = null) {
     if (this.hasDragged) return;
-
-    for (const tooltip of this.appointmentTooltips()) tooltip.hide();
 
     this.scheduler?.surfaceAnchor.set(element);
 

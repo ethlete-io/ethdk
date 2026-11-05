@@ -24,7 +24,6 @@ import { injectCascaderLabels } from './cascader-labels';
 import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
 import { FIELD_STATE_INPUTS } from '../form-field/headless/field-state-control.directive';
 import { SemanticThemesDirective } from '../../internals/semantic-themes.directive';
-import { TooltipDirective } from '../../tooltip';
 
 @Component({
   selector: 'et-cascader',
@@ -41,7 +40,6 @@ import { TooltipDirective } from '../../tooltip';
     CascaderSearchOptionDirective,
     CascaderPanelComponent,
     IconDirective,
-    TooltipDirective,
     NgTemplateOutlet,
     ScrollbarComponent,
     SpinnerComponent,

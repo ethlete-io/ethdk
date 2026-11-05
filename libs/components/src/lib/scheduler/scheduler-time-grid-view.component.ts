@@ -38,7 +38,6 @@ import { SchedulerAppointmentStylesComponent } from './scheduler-appointment-sty
 import { SCHEDULER_FALLBACK_BADGE_ADORNMENTS } from './scheduler-fallback-badge-adornments';
 import { injectSchedulerLabels } from './scheduler-labels';
 import { Appointment, SchedulerAppointmentDragMode } from './scheduler.types';
-import { TooltipDirective } from '../tooltip';
 
 const HOURS = /* @__PURE__ */ Array.from({ length: 24 }, (_, hour) => hour);
 
@@ -93,7 +92,7 @@ const blockStartHour = (block: SchedulerTimeGridBlock) =>
   templateUrl: './scheduler-time-grid-view.component.html',
   styleUrl: './scheduler-time-grid-view.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [ProvideColorDirective, NgComponentOutlet, ScrollbarComponent, TooltipDirective],
+  imports: [ProvideColorDirective, NgComponentOutlet, ScrollbarComponent],
   hostDirectives: [SchedulerTimeGridDirective],
   host: {
     class: 'et-scheduler-time-grid-view',
@@ -119,7 +118,6 @@ export class SchedulerTimeGridViewComponent {
   private slotItems = viewChildren<ElementRef<HTMLElement>>('slotItem');
   private allDayCellElements = viewChildren<ElementRef<HTMLElement>>('allDayCell');
   private allDayItems = viewChildren<ElementRef<HTMLElement>>('allDayItem');
-  private appointmentTooltips = viewChildren(TooltipDirective);
   private readonly ID_PREFIX = `et-scheduler-time-grid-${uniqueIdCounter++}`;
 
   protected canDragAppointments = computed(() => this.appointmentDrag?.isEnabled() ?? false);
@@ -294,8 +292,6 @@ export class SchedulerTimeGridViewComponent {
 
   protected select(appointment: Appointment, element: HTMLElement) {
     if (this.hasDragged) return;
-
-    for (const tooltip of this.appointmentTooltips()) tooltip.hide();
 
     this.scheduler?.surfaceAnchor.set(element);
 

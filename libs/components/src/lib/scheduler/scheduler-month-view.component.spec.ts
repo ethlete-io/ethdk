@@ -1,10 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
 import { addDays, differenceInCalendarDays, isSameDay, startOfWeek } from 'date-fns';
 import '../../test-helpers';
 import { injectOverlayManager } from '../overlay';
 import { pressKey } from '../testing/driver-core';
-import { TooltipDirective } from '../tooltip';
 import { schedulerTestDriver, testAppointment } from './testing/scheduler-driver';
 
 describe('SchedulerMonthViewComponent keyboard', () => {
@@ -108,16 +106,16 @@ describe('SchedulerMonthViewComponent keyboard', () => {
     focusCell(new Date(2026, 6, 15));
 
     pressKey(active(), 'Enter');
-    expect(active().getAttribute('aria-label')).toBe('a');
+    expect(active().getAttribute('title')).toBe('a');
 
     pressKey(active(), 'ArrowDown');
-    expect(active().getAttribute('aria-label')).toBe('b');
+    expect(active().getAttribute('title')).toBe('b');
 
     pressKey(active(), 'ArrowDown');
-    expect(active().getAttribute('aria-label')).toBe('b');
+    expect(active().getAttribute('title')).toBe('b');
 
     pressKey(active(), 'ArrowUp');
-    expect(active().getAttribute('aria-label')).toBe('a');
+    expect(active().getAttribute('title')).toBe('a');
 
     pressKey(active(), 'Escape');
     expect(active()).toBe(day);
@@ -150,7 +148,7 @@ describe('SchedulerMonthViewComponent keyboard', () => {
 describe('SchedulerMonthViewComponent after a drag', () => {
   let driver: ReturnType<typeof schedulerTestDriver>;
 
-  const badge = (id: string) => driver.query(`.et-scheduler-appointment[aria-label="${id}"]`);
+  const badge = (id: string) => driver.query(`.et-scheduler-appointment[title="${id}"]`);
 
   const drag = (element: HTMLElement | null) => {
     element?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, button: 0 }));
@@ -189,42 +187,6 @@ describe('SchedulerMonthViewComponent after a drag', () => {
     driver.clickAppointment('b');
 
     expect(driver.editSurface()).toHaveLength(1);
-  });
-});
-
-describe('SchedulerMonthViewComponent appointment tooltip', () => {
-  let driver: ReturnType<typeof schedulerTestDriver>;
-
-  beforeEach(() => {
-    driver = schedulerTestDriver({
-      appointments: [testAppointment('a'), testAppointment('b')],
-      focusedDate: new Date(2026, 6, 15),
-    });
-  });
-
-  afterEach(() => {
-    for (const overlay of TestBed.runInInjectionContext(() => injectOverlayManager()).openOverlays()) {
-      overlay.close();
-    }
-
-    driver.fixture.destroy();
-  });
-
-  it('closes the appointment tooltip when the edit surface opens', () => {
-    const tooltip = driver.fixture.debugElement
-      .queryAll(By.directive(TooltipDirective))
-      .find((debugElement) => debugElement.nativeElement.getAttribute('aria-label') === 'a')
-      ?.injector.get(TooltipDirective);
-
-    tooltip?.show();
-    driver.detectChanges();
-
-    expect(document.querySelectorAll('[role="tooltip"]')).toHaveLength(1);
-
-    driver.clickAppointment('a');
-
-    expect(driver.editSurface()).toHaveLength(1);
-    expect(document.querySelectorAll('[role="tooltip"]')).toHaveLength(0);
   });
 });
 
@@ -289,7 +251,7 @@ describe('SchedulerMonthViewComponent keyboard after a drag', () => {
   });
 
   it('activates a badge from the keyboard once the drag has settled', async () => {
-    const badge = driver.query('.et-scheduler-appointment[aria-label="a"]');
+    const badge = driver.query('.et-scheduler-appointment[title="a"]');
 
     badge?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, button: 0 }));
     document.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 1, clientX: 40, clientY: 40 }));
@@ -302,12 +264,12 @@ describe('SchedulerMonthViewComponent keyboard after a drag', () => {
 
     cell?.focus();
     pressKey(active(), 'Enter');
-    expect(active().getAttribute('aria-label')).toBeTruthy();
+    expect(active().getAttribute('title')).toBeTruthy();
 
     active().click();
     driver.detectChanges();
 
-    expect(driver.scheduler().headless.selectedAppointmentId()).toBe(active().getAttribute('aria-label'));
+    expect(driver.scheduler().headless.selectedAppointmentId()).toBe(active().getAttribute('title'));
   });
 });
 

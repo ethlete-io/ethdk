@@ -9,7 +9,6 @@ import {
 import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
 import { NormalizedMatchParticipant } from '../../match';
 import { STANDINGS_PICK_IMPORTS } from '../standings.imports';
-import { TooltipDirective } from '../../tooltip';
 
 @Component({
   selector: 'et-sb-standings-pick',
@@ -35,7 +34,7 @@ import { TooltipDirective } from '../../tooltip';
                 @if (marks()[row.participant.id]; as mark) {
                   <span
                     [etProvideColor]="mark.color"
-                    [etTooltip]="mark.outcome"
+                    [title]="mark.outcome"
                     class="text-small"
                     style="color: var(--et-theme-color-ink-solid)"
                   >
@@ -54,7 +53,7 @@ import { TooltipDirective } from '../../tooltip';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [STANDINGS_PICK_IMPORTS, ProvideSurfaceDirective, ProvideColorDirective, TooltipDirective],
+  imports: [STANDINGS_PICK_IMPORTS, ProvideSurfaceDirective, ProvideColorDirective],
 })
 export class StandingsPickStorybookComponent {
   public surface = input('dark');
