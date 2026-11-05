@@ -296,6 +296,9 @@ all five fifagg apps build on `chore/query-v3-migration`.
   surfaces the original 401 as an error; scenario with a same-token refresh. fifagg works around it in one e2e spec.
   Not reproduced (ff): same token, refresh 500 and a delayed 401 all end with `error().code` 401 and loading false
   (`auth-secure-query.scenario.spec.ts:90`). Asked fifagg for the build, the waiting loader, and legacy or native.
+  Interop repro as fifagg described (ff): after 8 s `loading()` and `response()` are null, the 401 settles as the
+  error state, no hang. The fifagg loader treats an empty response as loading and never reads the error. Closed as an
+  app defect: read `queryStateErrorSignal` or `state$`. The receiver-gap report is built (6aeabe6ff).
 - **Devtools mount (ff item 000):** part 1 built fc98d3dae (`navigator.webdriver` hides panel, lazy shell and pills;
   provider option `showInAutomation`), per Tom's item 20 decision. Part 2 open: a new entry point with a dynamic
   import plus a codemod for `<et-query-devtools-lazy>`; ff proposes the name `@ethlete/query-devtools/mount`. Open
