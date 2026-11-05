@@ -3481,6 +3481,17 @@ an implemented part that adds props the app has no input for opens a port item (
 time; builder decides how, or gives it a STATUS row. The `pictures.json` entry written by a builder `design check` run
 is a check record, not a decision (committed 0a9bf6117).
 
+482\. The builder made a sketch with two variants for the state "all variants unchanged, auto-merge refused" and put it
+in front of Tom. Tom (2026-11-06): "die beiden varianten für den pages/sketches sind doch beide quatsch. wieso sollte es
+jemals zu diesem state kommen. wieso sollte jemals der user manuell einen unveränderten sketch mergen." He is right:
+variants that draw the same pictures offer no choice, and the user never merges them by hand. The state exists only
+because the auto-merge was refused (dirty guard, 475) and nothing retried it. Why no tool caught it: nothing asks
+whether a state can happen before it is designed, and the refusal had no recovery path, so the UI invented a manual
+one. Tool fix: (1) an unchanged sketch never offers a manual pick or merge; (2) a refused auto-merge shows a notice with
+the reason and what clears it, and the CLI and Studio retry the auto-merge by themselves when the guard clears (clean
+tree); (3) the sketch `pages-sketches` is discarded; (4) the builder lists the cause of a state in the sketch round note
+before it draws variants for it.
+
 478\. After an automatic merge, `sketch ready` printed "ENOENT ... foundations-colors.foundations-check-fixes/sketch.json"
 and never printed "merged automatically", although the merge was complete (commit 479bdace3, builder, 2026-11-05).
 Why no tool caught it: no spec runs `sketch ready` to the end for an auto-merging sketch and asserts a clean exit and
