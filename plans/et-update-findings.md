@@ -139,3 +139,26 @@ Reported by fifagg-frontend-c3 on 2026-11-05 (query 6.0.0-next.61). Full list wi
 - **V2 client loses its legacy panel (f29e3f679, open question to Tom):** the codemod rewrites every legacy
   `QueryDevtoolsComponent` and `<et-query-devtools>` to the lazy shell. A client that stays on `V2QueryClient` after
   the migration loses its panel; the docs tell the user to mount it by hand.
+
+## 10. More migrator findings from fifagg, items 10-13 (fifagg-frontend-c3, 2026-11-05) - open
+
+Full text with file:line in `fifagg-frontend/.claude/handoffs/query-v3/findings.md`, items 10 to 13. After hand fixes,
+all five fifagg apps build on `chore/query-v3-migration`.
+
+- **10. Union rename:** the codemod renames `AnyV2Query` to `AnyLegacyQuery` also inside `AnyV2Query | AnyLegacyQuery`.
+  The result is a duplicate import and a narrowed type. Fix: keep `AnyV2Query` where the union already names
+  `AnyLegacyQuery`.
+- **11. Creator as a property value:** `queryCreator: getCompetitionMatches` (passed to `createInfinityQueryConfig`)
+  keeps the v3 name, while every `.prepare` and `.createSignal` call site gets `legacyX`. Fix: rename every value
+  reference to a migrated creator, not only member access.
+- **12. Wrong creator set into a signal:** a PATCH query goes into a signal made from a POST creator. v2 typing allowed
+  it; `LegacyQuery` args typing does not. Not a generator bug. The generator could list `createSignal()` signals that
+  get `.set()` with the query of another creator.
+- **13. Devtools in the initial bundle:** the codemod keeps a static `QueryDevtoolsComponent` import. The panel ships
+  in production even behind `@if (isDev)` and pulls about 240 kB of `@ethlete/components` into the initial bundle
+  (public 5.47 MB, admin 5.41 MB; budget 5 MB; on `next` 4.69 and 4.72 MB). `@defer` with `<et-query-devtools-lazy>`
+  did not help: `libs/query-devtools/toggle/query-devtools-shortcut.ts:1` imports `detectKbdPlatform` from the
+  `@ethlete/components` barrel. fifagg fixed it with a dynamic import behind `ngDevMode` and `NgComponentOutlet`. SDK
+  fix: import from a leaf entry point. Generator fix: emit the dynamic-import form, or a task that names the bundle
+  cost. Open: why the `query-devtools-lazy` treeshake golden (~5 kB up front) did not catch it.
+- Bundle cost of v3 over `next`: about 90 kB `@ethlete/query` and 50 kB `@ethlete/core`.
