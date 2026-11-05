@@ -917,7 +917,7 @@ describe('completenessOf', () => {
     if ('problem' in result) throw new Error(result.problem);
 
     expect(result.gaps).toEqual([]);
-    expect(result.hints).toEqual([expect.stringMatching(/^CONTROL-STATE elements\/legacy - state hover /)]);
+    expect(result.hints).toEqual([expect.stringMatching(/^HINT CONTROL-STATE elements\/legacy - state hover /)]);
   }, 120_000);
 
   it('hints a state that changes a small share of the frame, without failing the part', async (context) => {
@@ -1178,15 +1178,15 @@ export default definePart({
         },
       ],
       hints: [
-        'CONTROL-UNDECLARED components/undeclared - button at div > button in rest - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls',
+        'HINT CONTROL-UNDECLARED components/undeclared - button at div > button in rest - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls',
       ],
     });
     expect(await lines('components/focus-containers')).toEqual([
-      'CONTROL-UNDECLARED components/focus-containers - button at div > div > button in rest - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls',
-      'CONTROL-UNDECLARED components/focus-containers - li[role="option"] at div > ul > li in rest - mark it with data-et-control and declare it in controls',
+      'HINT CONTROL-UNDECLARED components/focus-containers - button at div > div > button in rest - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls',
+      'HINT CONTROL-UNDECLARED components/focus-containers - li[role="option"] at div > ul > li in rest - mark it with data-et-control and declare it in controls',
     ]);
     expect(await lines('components/focusable-box')).toEqual([
-      'CONTROL-UNDECLARED components/focusable-box - div[tabindex] at div > div in rest - mark it with data-et-control and declare it in controls',
+      'HINT CONTROL-UNDECLARED components/focusable-box - div[tabindex] at div > div in rest - mark it with data-et-control and declare it in controls',
     ]);
     expect(await lines('components/pointer')).toEqual([
       'CONTROL-UNCLASSIFIED components/pointer - div with cursor: pointer at div > div in rest - draw it as a native control or give it an interactive role and declare it, or drop the pointer cursor and :hover style',
@@ -1194,7 +1194,7 @@ export default definePart({
     ]);
     expect(await lines('pages/inner')).toEqual([
       'INVENTORY-UNAPPROVED pages/inner - its control inventory is not approved - check and approve it in Studio',
-      'CONTROL-UNDECLARED pages/inner - button at main > button in rest - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls',
+      'HINT CONTROL-UNDECLARED pages/inner - button at main > button in rest - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls',
     ]);
     approve({ product, part: 'pages/host', ids: [] });
     expect(await lines('pages/host')).toEqual([]);
@@ -1217,14 +1217,14 @@ export default definePart({
     expect(await completenessOf({ target, config, product, part: 'pages/slotted' })).toEqual({
       gaps: [expect.objectContaining({ code: 'INVENTORY-UNAPPROVED' })],
       hints: [
-        'CONTROL-UNDECLARED pages/slotted - button at div.aa-slot > section > button.aa-own in rest - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls',
+        'HINT CONTROL-UNDECLARED pages/slotted - button at div.aa-slot > section > button.aa-own in rest - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls',
       ],
     });
     expect(await completenessOf({ target, config, product, part: 'elements/slot' })).toEqual({
       gaps: [],
       hints: [
         expect.stringMatching(
-          /^CONTROL-UNDECLARED elements\/slot - button at div\.aa-slot > button\.aa-menu in rest - /,
+          /^HINT CONTROL-UNDECLARED elements\/slot - button at div\.aa-slot > button\.aa-menu in rest - /,
         ),
       ],
     });

@@ -1782,13 +1782,17 @@ export const partsCompletenessOf = async (options: {
 
       hints.set(key, [
         ...smallChangeHintsOf({ part: key, controls: definition?.controls, changes }),
-        ...controlStateGapsOf({ part: key, controls: definition?.controls, states }).map(completenessGapLineOf),
-        ...discoveryGapsOf({ part: key, declared: declaredControlsOf(definition?.controls) ?? {}, frames: seen })
-          .filter(isUndeclaredControlGap)
-          .map(completenessGapLineOf),
-        ...optionProblems
-          .filter((gap) => gap.code === 'OPTION-VALUE-MISSING')
-          .map((gap) => completenessGapLineOf({ ...gap, target: key })),
+        ...[
+          ...controlStateGapsOf({ part: key, controls: definition?.controls, states }),
+          ...discoveryGapsOf({
+            part: key,
+            declared: declaredControlsOf(definition?.controls) ?? {},
+            frames: seen,
+          }).filter(isUndeclaredControlGap),
+          ...optionProblems
+            .filter((gap) => gap.code === 'OPTION-VALUE-MISSING')
+            .map((gap) => ({ ...gap, target: key })),
+        ].map((gap) => `HINT ${completenessGapLineOf(gap)}`),
       ]);
       const sketched = product.parts.find((candidate) => partKeyOf(candidate) === key)?.file !== resolved.file;
       const reviewed = sketched || readMerged(owner.dir)[key] === hash;

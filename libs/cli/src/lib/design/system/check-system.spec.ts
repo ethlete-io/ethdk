@@ -47,9 +47,7 @@ const withoutOpenPoints = (lines: string[]) =>
 const withoutBrowserLines = (lines: string[]) =>
   withoutOpenPoints(lines).filter(
     (line) =>
-      !/^RENDER CHECK (SKIPPED|FAILED)/.test(line) &&
-      !line.startsWith('NOT CHECKED') &&
-      !line.startsWith('CONTROL-UNDECLARED'),
+      !/^RENDER CHECK (SKIPPED|FAILED)/.test(line) && !line.startsWith('NOT CHECKED') && !line.startsWith('HINT '),
   );
 
 const noBrowser = async () => null;
@@ -547,7 +545,7 @@ describe('checkDesign', () => {
     expect(await checkDesign({ target: acme(), argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
     expect(
       withoutOpenPoints(lines).filter(
-        (line) => !/^RENDER CHECK (SKIPPED|FAILED)/.test(line) && !line.startsWith('CONTROL-UNDECLARED'),
+        (line) => !/^RENDER CHECK (SKIPPED|FAILED)/.test(line) && !line.startsWith('HINT '),
       ),
     ).toEqual(['ok']);
   }, 60_000);
