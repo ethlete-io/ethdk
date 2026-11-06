@@ -3831,3 +3831,14 @@ STATUS row in the same commit as the finding.
 ist? ist das hier star wars?" Why no tool caught it: the session names carry no role, and the doc-agent skill does not
 say to name roles. Fix: messages to Tom name the role (Tool-Builder, UI-Builder), never the id (ADR 0207); with two
 sessions (ADR 0207) the builder is "der Builder".
+
+507\. `verify pages/start` reported NO RECORD: five merged studio parts (components/disclosure,
+components/update-dialog, elements/shell-main, pages/inventory, pages/start) had a design hash that no longer matched
+`merged.json`. Source-only commits changed them and never re-ran the picture check: the withAction refactors
+d961cb00d, b826f7096, 4bbd88e03, 32aaf6552, 5bec01b89, and the chore fea9ac862, which did change shell-main's look (it
+embeds the title bar, so pages/start moves with it). Why no tool caught it: pre-push runs only `design check --rules`,
+and no rule compares a merged part's hash with `merged.json`. Fix (B412, ADR 0036/0037: a check-system rule, not a
+hook gate): a rule reports DIRECT-EDIT-PENDING on every merged part whose hash moved without a `merged.json` record;
+it shows as a problem on the part (not build-ready) and fails `--rules` in pre-push and CI. The five parts are closed
+by `design check --product studio --part <each>`: auto-accept for the four with no visible change, an old/new edit
+sketch for shell-main (and start through the embed) that waits for Tom's pick (ADR 0135).
