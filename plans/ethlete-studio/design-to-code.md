@@ -4320,3 +4320,12 @@ design `pan()`), 1d776832f (`no-silent-catch-error` gets `{ tryCatch: true }`; c
 visited RxJS `catchError`, never a `CatchClause`). Doc agent decision, applying ADR 0008: `tryCatch` is on as an error
 in apps/ethlete-studio (30 sites, each gets an error value or a disable comment with a reason, as in ADR 0008) and in
 libs/cli for `design/system/rules`; the rest of the repo stays off. Load reached 215 on 12 cores during these runs.
+
+551\. Builder (2026-11-07), `sketch check pages/sketches@all-states` (850 s at load 118): ready refused because variants
+b and c "first change zoomed-page" with the same pixels as a. Cause: the sketch carries its own copy of
+`shared/sketch-rows.ts`, made before 1afe49a71; the base now snaps the camera, the copy does not. Why no tool caught it:
+a base change after `sketch new` never reaches the sketch's shared copies, and the check blames a variant for a
+difference no variant made. Doc agent decision (technical): `sketch check` compares each shared copy with the base file
+it came from (hash in sketch.json) and names a stale copy with the base commit; `sketch rebase` brings unchanged copies
+forward. Base problems reported the same in a/b/c (UNREACHABLE "Übernehmen" in far-out, CUT-CONTROL 64 px in
+unchanged-matrix-open, 90 frames over the 24 budget) are the base part's open points and do not block the sketch.
