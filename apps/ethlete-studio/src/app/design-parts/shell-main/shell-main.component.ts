@@ -1,7 +1,8 @@
-import { booleanAttribute, Component, input, model, output, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective } from '@ethlete/core';
 import { WindowChrome } from '../../../host/window';
+import { injectCodeWatch } from '../../code-watch';
 import { TitleBarComponent } from '../../components/title-bar/title-bar.component';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { ShellCollapseComponent } from '../shell-collapse/shell-collapse.component';
@@ -35,6 +36,7 @@ const HOVER_PRESS_RAISED =
   host: { '[class]': "fill() ? 'block size-full' : 'block h-225 w-360'" },
 })
 export class ShellMainComponent {
+  private codeWatch = injectCodeWatch();
   public fill = input(false, { transform: booleanAttribute });
   public section = input<ShellSection>('System');
   public product = input('studio');
@@ -46,8 +48,8 @@ export class ShellMainComponent {
   public server = input<'stopped' | 'starting' | null>(null);
   public log = input<readonly string[]>([]);
   public chrome = input<Pick<WindowChrome, 'os' | 'left' | 'right'> | null>(null);
-  public update = input(false);
 
+  public update = input(false);
   public sectionChange = output<ShellSection>();
   public productChange = output<string>();
   public collapse = output();
@@ -57,10 +59,19 @@ export class ShellMainComponent {
   public updateRequest = output<MouseEvent>();
   public minimizeRequest = output();
   public maximizeRequest = output();
-  public closeRequest = output();
 
+  public closeRequest = output();
   protected readonly SECTIONS = SECTIONS;
+
   protected readonly LABELS = STUDIO_LABELS.designServer;
+  protected codeNoticeText = computed(() => this.codeWatch.notice()?.text ?? null);
+  protected codeNoticeAction = computed(() => this.codeWatch.notice()?.action ?? null);
+
+  protected restartCode() {
+    const action = this.codeNoticeAction();
+
+    if (action) this.codeWatch.act(action);
+  }
 
   protected sectionClass(active: boolean) {
     if (active && this.panel() !== 'hidden')

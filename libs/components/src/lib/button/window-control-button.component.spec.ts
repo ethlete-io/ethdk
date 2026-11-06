@@ -77,6 +77,12 @@ describe('WindowControlButtonComponent', () => {
       fixture.detectChanges();
       expect(host.getAttribute('data-shape')).toBe('round');
     });
+
+    it('reflects caption shape in data-shape', () => {
+      fixture.componentRef.setInput('shape', WINDOW_CONTROL_BUTTON_SHAPES.CAPTION);
+      fixture.detectChanges();
+      expect(host.getAttribute('data-shape')).toBe('caption');
+    });
   });
 
   describe('loading state', () => {

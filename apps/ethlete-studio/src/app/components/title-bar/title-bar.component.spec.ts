@@ -1,15 +1,24 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { of } from 'rxjs';
 import { WindowChrome } from '../../../host/window';
+import { THEMES } from '../../../themes';
 import { TitleBarComponent } from './title-bar.component';
 
 vi.mock('../../../host/window', () => ({ isWindowMaximized$: () => of(false) }));
 
-type Props = Omit<WindowChrome, 'preferNoCsd'> & { update?: boolean; product?: string; part?: string };
+type Props = Omit<WindowChrome, 'preferNoCsd'> & {
+  update?: boolean;
+  notice?: boolean;
+  product?: string;
+  part?: string;
+};
 
 const render = (props: Props) => {
-  TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+  TestBed.configureTestingModule({
+    providers: [provideZonelessChangeDetection(), provideColorThemesWithTailwind4(THEMES)],
+  });
 
   const fixture = TestBed.createComponent(TitleBarComponent);
 
@@ -41,11 +50,13 @@ describe('TitleBarComponent', () => {
     expect(bar?.firstElementChild?.querySelectorAll('[data-window-button]').length).toBe(2);
   });
 
-  it('draws square tiles on Windows', () => {
-    const { buttons, names } = render({ os: 'windows', left: [], right: ['minimize', 'maximize', 'close'] });
+  it('draws caption tiles on Windows, the close tile on the error colour', () => {
+    const { buttons, names } = render({ os: 'windows', left: ['close'], right: ['minimize', 'maximize'] });
 
-    expect(names).toEqual(['minimize', 'maximize', 'close']);
-    expect(buttons.every((button) => button.dataset['shape'] === 'square')).toBe(true);
+    expect(names).toEqual(['close', 'minimize', 'maximize']);
+    expect(buttons.every((button) => button.dataset['shape'] === 'caption')).toBe(true);
+    expect(buttons[0]?.parentElement?.classList).toContain('contents');
+    expect(buttons[0]?.parentElement?.className).toContain('--et-window-control-button-close-background');
   });
 
   it('reserves the traffic light space on macOS and draws no buttons', () => {
@@ -97,5 +108,26 @@ describe('TitleBarComponent', () => {
     bar?.lastElementChild?.querySelector<HTMLElement>('button')?.click();
 
     expect(events).toHaveLength(1);
+  });
+
+  it('fires restart from the notice button and hides Update without an update', () => {
+    const { fixture, bar } = render({ os: 'windows', left: [], right: ['close'], notice: true, update: false });
+    const restarts: unknown[] = [];
+
+    fixture.componentInstance.restart.subscribe(() => restarts.push(null));
+
+    const actions = [...(bar?.lastElementChild?.querySelectorAll<HTMLElement>('button[et-button]') ?? [])];
+
+    expect(actions.map((button) => button.textContent?.trim())).toEqual(['Neu starten']);
+
+    actions[0]?.click();
+
+    expect(restarts).toHaveLength(1);
+  });
+
+  it('draws no restart button without a notice', () => {
+    const { bar } = render({ ...linux([], ['close']), update: true });
+
+    expect(bar?.lastElementChild?.textContent).not.toContain('Neu starten');
   });
 });

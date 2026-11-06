@@ -2,7 +2,20 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { EMPTY, of } from 'rxjs';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
+import { StudioCodeState } from '../../../host/studio-code';
 import { THEMES } from '../../../themes';
+import { injectCodeWatch } from '../../code-watch';
+
+const code = vi.hoisted(() => ({ state: null as StudioCodeState | null, quit: vi.fn() }));
+
+vi.mock('../../../host/studio-code', () => ({
+  studioCodeState$: () => of(code.state),
+  quitForRebuild$: () => {
+    code.quit();
+
+    return of(undefined);
+  },
+}));
 
 vi.mock('../../../host/window', () => ({
   closeWindow$: () => EMPTY,
@@ -110,5 +123,75 @@ describe('ShellMainComponent', () => {
     await fixture.whenStable();
 
     expect((fixture.nativeElement as HTMLElement).querySelector('ethlete-title-bar')).toBeNull();
+  });
+
+  describe('code notice', () => {
+    const OLD = 'a'.repeat(40);
+    const NEW = 'b'.repeat(40);
+    const running: StudioCodeState = {
+      cli: { running: OLD, latest: OLD, dirty: false },
+      frontend: { latest: OLD },
+      host: { running: OLD, latest: OLD },
+    };
+
+    const renderWith = async (state: StudioCodeState) => {
+      code.state = state;
+      code.quit.mockClear();
+      TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+
+      const fixture = TestBed.createComponent(ShellMainComponent);
+      const restarts = vi.fn();
+
+      fixture.componentRef.setInput('chrome', { os: 'linux', left: [], right: ['close'] });
+      TestBed.runInInjectionContext(() => injectCodeWatch()).serverRestarts$.subscribe(restarts);
+      await new Promise((resolve) => setTimeout(resolve));
+      await fixture.whenStable();
+
+      const element = fixture.nativeElement as HTMLElement;
+      const restart = [...element.querySelectorAll<HTMLButtonElement>('ethlete-title-bar button')].find(
+        (button) => button.textContent?.trim() === 'Neu starten',
+      );
+
+      const text = element.querySelector('[data-code-notice]')?.textContent?.trim();
+
+      return { restart, restarts, text };
+    };
+
+    it('draws no restart while the server runs the latest commit', async () => {
+      const { restart } = await renderWith(running);
+
+      expect(restart).toBeUndefined();
+    });
+
+    it('restarts the server after a cli commit', async () => {
+      const { restart, restarts } = await renderWith({ ...running, cli: { ...running.cli, latest: NEW } });
+
+      restart?.click();
+
+      expect(restarts).toHaveBeenCalledTimes(1);
+      expect(code.quit).not.toHaveBeenCalled();
+    });
+
+    it('quits for a rebuild after a host commit', async () => {
+      const { restart, restarts } = await renderWith({ ...running, host: { running: OLD, latest: NEW } });
+
+      restart?.click();
+
+      expect(code.quit).toHaveBeenCalledTimes(1);
+      expect(restarts).not.toHaveBeenCalled();
+    });
+
+    it('names the cause next to the restart', async () => {
+      const { text } = await renderWith({ ...running, cli: { ...running.cli, latest: NEW } });
+
+      expect(text).toBe('CLI geändert - neu starten');
+    });
+
+    it('draws only the hint while the cli has uncommitted changes', async () => {
+      const { restart, text } = await renderWith({ ...running, cli: { ...running.cli, dirty: true } });
+
+      expect(restart).toBeUndefined();
+      expect(text).toBe('CLI hat uncommittete Änderungen, Studio läuft auf Stand aaaaaaa');
+    });
   });
 });

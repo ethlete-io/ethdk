@@ -23,6 +23,7 @@ export type WindowControlButtonKind = (typeof WINDOW_CONTROL_BUTTON_KINDS)[keyof
 export const WINDOW_CONTROL_BUTTON_SHAPES = {
   SQUARE: 'square',
   ROUND: 'round',
+  CAPTION: 'caption',
 } as const;
 
 export type WindowControlButtonShape = (typeof WINDOW_CONTROL_BUTTON_SHAPES)[keyof typeof WINDOW_CONTROL_BUTTON_SHAPES];
@@ -83,7 +84,10 @@ export class WindowControlButtonComponent {
   public size = input<WindowControlButtonSize>(WINDOW_CONTROL_BUTTON_SIZES.MD);
   public kind = input<WindowControlButtonKind>(WINDOW_CONTROL_BUTTON_KINDS.DEFAULT);
 
-  /** `square` is a Windows-style tile with a red close hover; `round` is a GNOME (Adwaita) style circle. */
+  /**
+   * `square` is a Windows-style tile with a red close hover; `round` is a GNOME (Adwaita) style circle;
+   * `caption` is a 46px wide, full-height Windows caption tile with a 10px glyph.
+   */
   public shape = input<WindowControlButtonShape>(WINDOW_CONTROL_BUTTON_SHAPES.SQUARE);
 
   public canAnimate = createCanAnimateSignal();
