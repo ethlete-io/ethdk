@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0207
 open: B398
 decided: 2026-11-06
 source: grill session 2026-11-06
