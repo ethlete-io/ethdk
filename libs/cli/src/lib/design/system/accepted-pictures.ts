@@ -407,7 +407,10 @@ export const autoAcceptOf = async (options: {
 
     if (baseline && changed.length > 0) {
       lines.push(`PICTURES CHANGED ${product.name} ${part}: ${changed.join(', ')}`);
-      opened(part, sketch ?? open(part));
+      const editSketch = sketch ?? open(part);
+
+      if (isNotFound(editSketch)) problem(resolved, editSketch);
+      else opened(part, editSketch);
       continue;
     }
 
