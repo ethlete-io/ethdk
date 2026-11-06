@@ -454,8 +454,8 @@ features, 151 creators written, 98 tasks. Built by the third session of ADR 0200
   uikit-mocks). Doc agent decision: the generator reads each affected project's effective `moduleResolution` and emits
   a named task (`NTK-MODULE-RESOLUTION`, with the tsconfig path) for `node`/`node10`; it does not edit tsconfigs.
 - **T3 (medium): `NTK-FACADE-ON` has no interop replacement** (13 tasks, 31 type errors). fifagg built the same small
-  service twice (emit when a handle's `callState$` reaches SUCCESS). Open for Tom: a public interop helper or a guide
-  recipe.
+  service twice (emit when a handle's `callState$` reaches SUCCESS). Tom decided (ADR 0214): a public interop helper
+  (`toolkitOnSuccess(handle)`), and the generator rewrites `NTK-FACADE-ON` sites to it.
 - **T4 (low-medium): ET800 hits a test with fast `skipCache` reloads** (11 faked errors, each `reload()` ->
   `execute({ skipCache: true })`; the 7th request never went out, 5 of 8 runs red). The guide line on ET800 exists
   (35bc8ca58). Doc agent decision: no runtime change; the ET800 message names the query and says that repeated
