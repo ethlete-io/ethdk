@@ -13,6 +13,7 @@ import { ToolkitConsumerStats, migrateToolkitConsumers } from './consumers.js';
 import { rewriteFacade } from './facade.js';
 import { ToolkitFeature, discoverFeatures } from './feature.js';
 import { TOOLKIT_TASK, ToolkitMigrationReport } from './report.js';
+import { reportLegacyModuleResolution } from './module-resolution.js';
 import { removeFeatureStores } from './store-removal.js';
 
 export type ToolkitMigrationOptions = MigrationScopeOptions & {
@@ -196,6 +197,8 @@ export const migrateToolkitStores = (
     ready.map((feature) => feature.files.facade).filter((file): file is string => !!file),
   );
   const consumers = migrateToolkitConsumers(tree, createModuleGraph(tree), inScope, report, migratedFacades);
+
+  reportLegacyModuleResolution(tree, inScope, report);
 
   return {
     featuresFound: discovered.features.length,
