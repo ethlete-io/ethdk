@@ -4506,3 +4506,15 @@ on a fresh tree, where a run's own writes become the next run's inputs. Tool fix
 check, then an unchanged rerun on a fresh worktree must redraw 0 parts - and the cache key of a part holds only the
 registry slice it reads, never a module that a check run rewrites. Done when the zoom-chip edit redraws exactly
 zoom-chip, canvas-viewport, pages/sketches, flows, system, merge and inbox, also after `yarn et:design stop`.
+538 causes and first fix (c0, 72457e493): auto-accept opens and closes `<part>.edit` sketches on every run
+(`openEditSketch`), which adds and removes `<part>@edit` in the global modules; the render worker's id counters keep
+growing (`et-label-30` -> 33), so the same template never hashed equal. Entries now key on a per-frame registry slice
+(the frame's product parts, tokens, stylesheets, named sketch variants), and SDK render ids are renumbered before
+hashing. Fresh worktree: cold 346.5 s; unchanged rerun 51.6 s, 0 of 167 entries rewritten, 0 null hashes; zoom-chip
+edit 103.6 s, exactly 9 entries rewritten (zoom-chip and elements/canvas-frames, render of the five pages that embed
+canvas-frames). Still open: a resident restart redraws everything (322.5 s) - `/@vite/client` holds a per-start
+`wsToken` and an inline sourcemap. The new `/__design/registry-slice` route raises STUDIO_API_LEVEL 6 -> 7, so an
+older resident restarts once (doc agent: accepted, Studio does not read the level). Doc agent for S7b-5: the spec
+"hits after a resident restart on another port" failed once under load; it is fixed or made deterministic in S7b-5,
+not rerun until green. For S7c: a check must not create and remove `.edit` sketches in the checkout on every run;
+auto-accept works on the picture cache without opening an edit sketch.
