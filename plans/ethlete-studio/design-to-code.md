@@ -4251,3 +4251,19 @@ gate; the draft PR's CI runs it and stays red until fixed; pushes to `next` and 
 Built (2026-11-06, Mac): a277e1c3e, the pre-push hook skips only the design gate for `refs/heads/slice/*` with a
 printed line (finding 545, ADR 0216). First real `yarn push:slice`: `slice/mac-push-safety`, draft PR #3170 into
 `next`, hook ran without `--no-verify`; its CI design gate is expected red until the five parts pass.
+
+Built (2026-11-06, Mac): 41b71448d, the sketches harness renders the app TitleBar and ZoomChip per state
+(DesignHarnessSketchShotsComponent); title-bar root gets `st-title-bar`, zoom-chip buttons sit in `data-camera-*`
+spans, the rows container clips. Compare after: 14 title-bar states smaller DIFF, 16 narrow states FAILED, none ok.
+Open code gap: the app `SketchesComponent.move` does not clamp the start camera like the design `pan()` in
+sketch-rows.ts (sticky-names 76k, zoomed-page 62k px).
+
+546\. Builder (2026-11-06), sketches compare after the frames render: (a) 16 narrow states FAIL because compare tries
+to drive forced hover/active/focus states that sit inside an embedded frame as page interactions; (b) the macOS frames
+differ by ~720 px because compare keeps the stand-in traffic lights of an embedded title bar's `slot('traffic-lights')`,
+while macOS draws them natively; (c) a look that targets a class the app lacks (`st-title-bar`) or a
+`display: contents` span draws nothing, so the part's own compare could not see the missing look hook. Why no tool
+caught it: the empty frames dominated every diff and hid all three. Doc agent decisions (technical): (a) compare does
+not drive forced states inside an embedded `shot`; the app harness renders them with the same forced-state hook as the
+design; (b) compare masks a slot stand-in of an embedded part exactly as it masks it on the part itself; (c) compare
+fails when a selector a sketch look targets has no match in the app DOM. All three in libs/cli compare (builder).
