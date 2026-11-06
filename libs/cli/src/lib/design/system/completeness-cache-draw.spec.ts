@@ -36,6 +36,10 @@ const served = new Map<string, string>();
 const states = new Map<string, Record<string, unknown>>();
 const printed: string[] = [];
 
+vi.mock('../code-hash', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../code-hash')>()),
+  completenessCodeOf: () => 'code',
+}));
 vi.mock('../thumb', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../thumb')>()),
   openFrame: async (page: { goto: (url: string) => Promise<unknown> }, url: string) => page.goto(url),

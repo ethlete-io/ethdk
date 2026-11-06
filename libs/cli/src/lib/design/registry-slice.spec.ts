@@ -167,3 +167,31 @@ describe('the hash of an SDK render', () => {
     expect(await hashedAfter('/part.ts', [markup(30, 'Plan'), markup(33, 'Plan')])).toBe(false);
   });
 });
+
+describe('the hash of a served module across a server restart', () => {
+  const hashedAfter = async (url: string, answers: [string, string]) => {
+    const served = (answer: string) =>
+      createServedHashes('http://[::1]:5173', async () => ({ body: Buffer.from(answer), lines: [] }));
+    const [input] = await served(answers[0]).inputsOf([{ url, accept: null }]);
+
+    return served(answers[1]).unchanged(input ? [input] : []);
+  };
+  const client = (token: string, code: string) =>
+    `const wsToken = "${token}";\n${code}\n//# sourceMappingURL=data:application/json;base64,${token}`;
+
+  it('ignores the Vite client token and inline source maps', async () => {
+    expect(await hashedAfter('/@vite/client', [client('A_r1Q2', 'connect()'), client('cLbwa_', 'connect()')])).toBe(
+      true,
+    );
+    expect(
+      await hashedAfter('/part.ts', ['x()\n//# sourceMappingURL=data:a', 'x()\n//# sourceMappingURL=data:b']),
+    ).toBe(true);
+  });
+
+  it('still sees a code change, and a token outside the Vite client', async () => {
+    expect(await hashedAfter('/@vite/client', [client('A_r1Q2', 'connect()'), client('cLbwa_', 'reconnect()')])).toBe(
+      false,
+    );
+    expect(await hashedAfter('/part.ts', [client('A_r1Q2', 'connect()'), client('cLbwa_', 'connect()')])).toBe(false);
+  });
+});

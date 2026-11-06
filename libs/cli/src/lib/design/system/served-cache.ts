@@ -40,7 +40,25 @@ export const withStableIds = (text: string) => {
   return order.size === 0 ? text : text.replace(/\bet-[a-z-]+-\d+\b/g, (id) => order.get(id) ?? id);
 };
 
-const isRender = (url: string) => new URL(url, 'http://registry.invalid').pathname === RENDER_PATH;
+const pathOf = (url: string) => new URL(url, 'http://registry.invalid').pathname;
+
+const INLINE_SOURCE_MAP = /\n\/\/# sourceMappingURL=data:[^\n]*/g;
+
+const VITE_CLIENT_PATH = '/@vite/client';
+
+const VITE_WS_TOKEN = /\bconst wsToken = "[^"]*"/;
+
+/**
+ * `text` without what a server start alone changes: inline source maps, which embed host and token, and the
+ * `/@vite/client` websocket token, which Vite draws at random per server start.
+ */
+export const withoutStartNoise = (url: string, text: string) => {
+  const mapless = text.replace(INLINE_SOURCE_MAP, '');
+
+  return pathOf(url) === VITE_CLIENT_PATH ? mapless.replace(VITE_WS_TOKEN, 'const wsToken = ""') : mapless;
+};
+
+const isRender = (url: string) => pathOf(url) === RENDER_PATH;
 
 const SLICE_PARAMS = ['product', 'call', 'sketch', 'variant', 'props', 'props-variant'];
 
@@ -131,7 +149,7 @@ export const createServedHashes = (base: string, fetchServed: FetchServed = fetc
     const hashed = fetchServed(request).then((served) => {
       if (!served) recordNullHashes(1);
 
-      const text = served?.body.toString('latin1').replace(ownHost, '') ?? null;
+      const text = served ? withoutStartNoise(request.url, served.body.toString('latin1').replace(ownHost, '')) : null;
 
       return {
         hash:
