@@ -3554,6 +3554,16 @@ CI (done in this commit); (2) tool: `design check --product <p> --base <ref>` ch
 implemented app files changed since `<ref>`, plus the parts that embed them, and prints which parts it chose. Built in
 the performance block of ADR 0199.
 
+487\. The documented scenario command `npx vitest run --config vitest.projects.ts --project query ...` (skill
+query-scenario-tests) fails before it collects a test: "Project name "storybook" from apps/storybook/vitest.config.mts is
+not unique", and apps/timetrack has the same pair (vite.config.mts from abc5bda5a plus vitest.config.mts, both
+timetrack-app) (doc agent, 2026-11-06). The root glob takes every `vite.config.*` and every `vitest.config.*`, so an app
+that adds a plain Vite config next to its Vitest config breaks the whole root run. Why no tool caught it: CI and the
+hooks run tests through nx per project, and nothing runs the root projects file that the skill tells agents to use.
+Tool fix (technical, decided): the root projects file takes `vite.config.*` only where no `vitest.config.*` sits in
+the same folder, and the sub-second pre-push "Checks" run `vitest list --config vitest.projects.ts --project query`
+so a name clash fails the push.
+
 486\. `design compare pages/sketches` lists 16 missed actions: the app shows a combobox "Runde" in every state and a
 disclosure "Alle Zustände zeigen", and the design draws neither (builder ethlete-sdk-c0, 2026-11-06). The app grew
 controls without a design; compare only lists them, and `check --rules` and the pre-push gate pass. Same class as 484
