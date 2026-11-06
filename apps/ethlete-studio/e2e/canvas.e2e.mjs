@@ -34,7 +34,16 @@ const WIDE_SKETCH = { part: 'components/title-bar', name: 'notice-hint', variant
 const EDITED_PART = 'components/disclosure';
 const EDITED_PART_TIMEOUT_MS = 30000;
 
-const PAGE_SWITCHES = ['foundations/icons', 'foundations/logo', 'foundations/icons', 'foundations/logo'];
+const PAGE_SWITCHES = [
+  'foundations/icons',
+  'foundations/logo',
+  'foundations/icons',
+  'foundations/logo',
+  'foundations/icons',
+  'elements/shell-main',
+  'foundations/icons',
+  'elements/shell-main',
+];
 const PAGE_SWITCH_TIMEOUT_MS = 15000;
 const PAGE_SWITCH_SETTLE_MS = 1500;
 
@@ -210,6 +219,94 @@ const probe = (page) =>
   );
 
 const settle = (page) => page.waitForTimeout(SETTLE_MS);
+
+const SCROLL_STEP_PX = 300;
+const SCROLL_SAMPLES_MS = [30, 300];
+const SKETCH_CSS = {
+  current: 'elements/shell-main/shell-main.css',
+  a: 'sketches/elements-shell-main/a/elements/shell-main/shell-main.css',
+};
+
+const drawnIn = async (iframe) => {
+  const frame = await iframe.contentFrame();
+
+  if (!frame) return false;
+
+  return Promise.race([
+    frame
+      .evaluate(
+        () =>
+          document.readyState !== 'loading' &&
+          [...(document.body?.children ?? [])].some(
+            (child) => child.tagName !== 'SCRIPT' && child.getBoundingClientRect().height > 0,
+          ),
+      )
+      .catch(() => false),
+    new Promise((done) => setTimeout(() => done(false), 250)),
+  ]);
+};
+
+const sketchCells = async (page) => {
+  const cells = await page.evaluate(
+    ({ CANVAS }) => {
+      const shots = [...document.querySelectorAll('ethlete-sketch-view [data-shot]')];
+      const view = shots[0]?.closest(CANVAS)?.getBoundingClientRect();
+      const showing = (node) => {
+        const style = node && getComputedStyle(node);
+
+        return !!style && style.opacity !== '0' && style.visibility !== 'hidden' && style.display !== 'none';
+      };
+
+      return shots.map((cell, index) => {
+        const box = cell.getBoundingClientRect();
+        const img = cell.querySelector('img');
+        const iframe = cell.querySelector('iframe');
+
+        if (iframe) iframe.dataset['census'] = String(index);
+
+        return {
+          index,
+          key: cell.dataset['shot'],
+          top: box.top - view.top,
+          below: box.bottom - view.bottom,
+          visible:
+            box.height > 0 &&
+            box.bottom > view.top &&
+            box.top < view.bottom &&
+            box.right > view.left &&
+            box.left < view.right,
+          picture: !!img && img.complete && img.naturalWidth > 0 && showing(img),
+          pictureSrc: img?.src ?? null,
+          framed: !!iframe && showing(iframe),
+        };
+      });
+    },
+    { CANVAS },
+  );
+
+  for (const cell of cells) {
+    const iframe = cell.visible && cell.framed && (await page.$(`iframe[data-census="${cell.index}"]`));
+
+    cell.drawn = iframe ? await drawnIn(iframe) : false;
+    cell.shows = cell.framed ? cell.drawn : cell.picture;
+  }
+
+  return cells;
+};
+
+const showAllStates = async (page) => {
+  const button = page.getByRole('button', { name: 'Alle Zustände zeigen' });
+
+  await button.waitFor({ timeout: EDITED_PART_TIMEOUT_MS }).catch(() => undefined);
+  if (await button.count()) await button.first().click();
+};
+
+const wheelCanvas = async (page, deltaY) => {
+  const box = await page.locator(`ethlete-sketch-view :is(${CANVAS})`).first().boundingBox();
+
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, deltaY);
+};
 
 const ringOf = (page) =>
   page.evaluate(
@@ -1016,6 +1113,161 @@ const CASES = [
     },
   },
   {
+    name: 'a sketch scroll never empties a cell that had a picture',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const had = new Set();
+      const loadedPictures = new Set();
+      const note = (cells) =>
+        cells.forEach((cell) => {
+          if ((cell.visible && cell.shows) || cell.picture) had.add(cell.key);
+          if (cell.picture) loadedPictures.add(cell.pictureSrc);
+        });
+      const steps = [];
+      const empties = [];
+
+      await showAllStates(page);
+
+      let first = await sketchCells(page);
+
+      for (const until = Date.now() + EDITED_PART_TIMEOUT_MS; Date.now() < until; first = await sketchCells(page)) {
+        const visible = first.filter((cell) => cell.visible);
+
+        if (visible.length > 0 && visible.every((cell) => cell.shows)) break;
+        await page.waitForTimeout(250);
+      }
+      const scrollSteps = Math.ceil(Math.max(...first.map((cell) => cell.below)) / SCROLL_STEP_PX);
+
+      note(first);
+      if (had.size === 0) {
+        return {
+          ok: false,
+          detail: `no visible cell shows a picture or a drawn frame: ${first
+            .filter((cell) => cell.visible)
+            .map(
+              (cell) =>
+                `${cell.key} ${cell.framed ? 'iframe' : '-'}/${cell.drawn ? 'drawn' : '-'}/${cell.pictureSrc ? (cell.picture ? 'picture' : 'pending') : '-'}`,
+            )
+            .join(
+              ', ',
+            )} of ${first.length} cells; ${await page.evaluate(() => (document.querySelector('ethlete-sketch-view')?.textContent ?? 'no sketch view').replace(/\s+/gu, ' ').slice(0, 300))}`,
+        };
+      }
+      if (scrollSteps < 3)
+        return { ok: false, detail: `the sketch is ${scrollSteps} scroll steps tall, not 3 or more` };
+
+      for (const [name, by] of [
+        ['down', SCROLL_STEP_PX],
+        ['up', -SCROLL_STEP_PX],
+      ]) {
+        for (let step = 1; step <= scrollSteps; step++) {
+          let waited = 0;
+          const counts = [];
+
+          await wheelCanvas(page, by);
+          for (const at of SCROLL_SAMPLES_MS) {
+            await page.waitForTimeout(at - waited);
+            waited = at;
+
+            const cells = await sketchCells(page);
+            const visible = cells.filter((cell) => cell.visible);
+            const empty = visible.filter(
+              (cell) => !cell.shows && (had.has(cell.key) || loadedPictures.has(cell.pictureSrc)),
+            );
+
+            counts.push(`${empty.length}/${visible.length}`);
+            empties.push(
+              ...empty.map((cell) => `${name}${step}+${at} ${cell.key}${cell.framed ? ' (blank iframe)' : ''}`),
+            );
+            note(cells);
+          }
+          steps.push(`${name}${step} ${counts.join(' ')}`);
+        }
+      }
+
+      return {
+        ok: empties.length === 0,
+        detail: `empty/visible cells per step at +${SCROLL_SAMPLES_MS.join(' +')} ms: ${steps.join(', ')}${empties.length ? `; first: ${empties.slice(0, 6).join(' | ')}` : ''}`,
+      };
+    },
+  },
+  {
+    name: 'a sketch cell edited on disk while scrolled away shows its new picture on return',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const cellOf = async (key) => (await sketchCells(page)).find((cell) => cell.key === key);
+      const away = Math.ceil((2 * (NARROW.height + 400)) / SCROLL_STEP_PX);
+      const loadedCell = async (key, accept) => {
+        for (const until = Date.now() + EDITED_PART_TIMEOUT_MS; Date.now() < until;) {
+          const cell = await cellOf(key);
+
+          if (
+            cell?.pictureSrc &&
+            (await page.evaluate(
+              (src) => [...document.images].some((img) => img.src === src && img.complete && img.naturalWidth > 0),
+              cell.pictureSrc,
+            )) &&
+            accept(cell)
+          )
+            return cell;
+          await page.waitForTimeout(250);
+        }
+
+        return null;
+      };
+      const tagOf = async (src) => (await page.request.get(src)).headers()['etag'];
+
+      await showAllStates(page);
+      await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
+      const top = (await sketchCells(page)).filter((cell) => cell.visible).sort((a, b) => a.top - b.top)[0];
+
+      if (!top) return { ok: false, detail: 'no visible sketch cell' };
+
+      const before = await loadedCell(top.key, () => true);
+
+      if (!before) return { ok: false, detail: `${top.key} loads no picture` };
+
+      const tag = await tagOf(before.pictureSrc);
+      const stylesheet = join(checkout, '.ethlete/design/studio', SKETCH_CSS[top.key.split(' ')[0]]);
+      const original = readFileSync(stylesheet, 'utf8');
+
+      for (let step = 0; step < away; step++) {
+        await wheelCanvas(page, SCROLL_STEP_PX);
+        await page.waitForTimeout(100);
+      }
+
+      const gone = await cellOf(top.key);
+
+      if (gone?.visible) return { ok: false, detail: `${top.key} still visible after ${away} steps` };
+
+      try {
+        writeFileSync(
+          stylesheet,
+          `${original}\n.st-shell { outline: 12px solid rgb(255 0 0); outline-offset: -12px; }\n`,
+        );
+        await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
+        for (let step = 0; step < away; step++) {
+          await wheelCanvas(page, -SCROLL_STEP_PX);
+          await page.waitForTimeout(100);
+        }
+
+        const after = await loadedCell(top.key, (cell) => cell.pictureSrc !== before.pictureSrc);
+        const newTag = after && (await tagOf(after.pictureSrc));
+
+        return {
+          ok: !!after && newTag !== tag,
+          detail: after
+            ? `${top.key}: new picture URL, ETag ${newTag === tag ? 'unchanged' : 'changed'}`
+            : `${top.key} kept its old picture URL for ${EDITED_PART_TIMEOUT_MS} ms after the edit`,
+        };
+      } finally {
+        writeFileSync(stylesheet, original);
+      }
+    },
+  },
+  {
     name: 'page switch time is logged to the design timings',
     pages: ['System'],
     run: async (page) => {
@@ -1039,9 +1291,12 @@ const CASES = [
         page.evaluate(
           ({ part, timeoutMs }) =>
             new Promise((done) => {
-              const leaf = [...document.querySelectorAll('[role="treeitem"][data-kind="leaf"]')].find(
-                (candidate) => candidate.textContent.trim() === part.split('/')[1],
-              );
+              const named = [
+                ...document.querySelectorAll(
+                  '[role="treeitem"][data-kind="part"], [role="treeitem"][data-kind="leaf"]',
+                ),
+              ].filter((candidate) => candidate.textContent.trim() === part.split('/')[1]);
+              const leaf = named.find((candidate) => candidate.dataset.kind === 'part') ?? named[0];
 
               if (!leaf) return done({ error: `no part ${part} in the tree` });
 
@@ -1066,8 +1321,18 @@ const CASES = [
                 if (frames.length > 0 && painted.length === frames.length) {
                   done({ ...times, all: now, frames: frames.length, clickedAt: performance.timeOrigin + started });
                 } else if (now > timeoutMs) {
+                  const marked = [...document.querySelectorAll('img, iframe')].filter((node) =>
+                    (node.getAttribute('src') ?? '').includes(marker),
+                  );
+                  const chain = [];
+
+                  for (let node = marked[0]?.parentElement; node; node = node.parentElement) {
+                    if (node.localName.startsWith('ethlete-')) chain.push(node.localName);
+                  }
+
                   done({
                     ...times,
+                    dom: `${marked.length} marked img/iframe, ${document.querySelectorAll('ethlete-canvas-frame').length} canvas frames, first in ${chain.slice(0, 6).join('<')}; shots ${[...document.querySelectorAll('img[src*="/__design/shot?"]')].map((img) => new URL(img.src).searchParams.get('part')).slice(0, 3)}; ${[...document.querySelectorAll('[role="treeitem"]')].filter((row) => row.textContent.trim() === part.split('/')[1]).map((row) => `leaf ${row.dataset.kind}${row.hasAttribute('data-selected') ? ' selected' : ''}`)}; views ${[...new Set([...document.querySelectorAll('[class*="view"], ethlete-system-view *')].map((node) => node.localName).filter((tag) => tag.startsWith('ethlete-')))].slice(0, 25)}`,
                     frames: frames.length,
                     painted: painted.length,
                     clickedAt: performance.timeOrigin + started,
@@ -1117,6 +1382,7 @@ const CASES = [
             first: result.first,
             frames: result.frames,
             paintedFrames: result.painted,
+            dom: result.dom,
             asked,
           });
           await recordPageSwitch({
@@ -1143,7 +1409,7 @@ const CASES = [
       const detail = rows
         .map(
           (row) =>
-            `${row.from.split('/')[1]}->${row.to.split('/')[1]} ${row.seen ? 'seen' : 'first'}: mount ${round(row.mounted)}, first ${round(row.first)}, all ${row.painted ? round(row.ms) : `NOT (${row.paintedFrames} painted)`} ms (${row.frames} frames; ${row.asked.length} shots${row.asked.length ? ` ${row.asked.map((shot) => `${shot.source} +${shot.ms}/${shot.wait}`).join(' ')}` : ''})`,
+            `${row.from.split('/')[1]}->${row.to.split('/')[1]} ${row.seen ? 'seen' : 'first'}: mount ${round(row.mounted)}, first ${round(row.first)}, all ${row.painted ? round(row.ms) : `NOT (${row.paintedFrames} painted; ${row.dom})`} ms (${row.frames} frames; ${row.asked.length} shots${row.asked.length ? ` ${row.asked.map((shot) => `${shot.source} +${shot.ms}/${shot.wait}`).join(' ')}` : ''})`,
         )
         .join(' | ');
 

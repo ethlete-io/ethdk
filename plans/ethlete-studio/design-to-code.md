@@ -4405,3 +4405,10 @@ edit-while-away e2e before it is called done.
 (found while building the read-tracked key, not perf). Why no tool caught it: the rule specs only use fixtures where
 every linked app exists. Tool fix (queued after S7): the rule reports a missing app folder as a finding instead of
 throwing, with a spec for it.
+
+Studio frame C (as built, 2026-11-06): ADR 0186 in the sketch view. Every cell keeps its stored `<img>` (with
+`ethleteShotRank`); a live cell lays its iframe over it, hidden until `FramePaintedDirective` (`paintedFrame$`, shared
+with the part-page frame) reports the page painted. canvas e2e: the sketch scroll case (fails on the old view with
+blank iframes on the way back up, 0 now), the edit-while-away sketch case (fails with the sketch revision held), and
+`elements/shell-main` in `PAGE_SWITCHES`. Finding 530's cause was the e2e: it clicked the sketch leaf `shell-main`
+under the part row, which opens the sketch view, not the part page.

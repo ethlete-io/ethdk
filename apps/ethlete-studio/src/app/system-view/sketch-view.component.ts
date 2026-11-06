@@ -61,6 +61,7 @@ import { modelNameOf, senderOf } from './inbox-comments';
 import { MergeColumn, mergeFrameIdOf, partNameOf, sketchCompare$ } from './merge-preview';
 import { refusalMessageOf } from './inventory';
 import { FrameShieldComponent } from '../components/design-canvas/partials/frame-shield.component';
+import { FramePaintedDirective } from '../components/design-canvas/partials/frame-painted';
 import { ShotRankDirective } from '../components/design-canvas/partials/shot-rank';
 import { PageShell, PageShellAction } from './page-shell';
 import {
@@ -183,35 +184,38 @@ export const liveShotsOf = ({
     <ng-template #shot let-row let-state="state">
       @let key = row.key + ' ' + state;
       <div #shotCell [attr.data-shot]="key" class="relative size-full">
+        @if (shotPictures().get(key); as picture) {
+          <img
+            [src]="picture"
+            [ethleteShotRank]="picture"
+            [alt]="key"
+            [class.opacity-0]="paintedShots().has(key)"
+            (load)="pictureLoaded(key, $event)"
+            class="block w-full"
+            data-shot-picture
+          />
+        }
         @if (liveShots().has(key)) {
           @if (rowShots().get(key); as src) {
             <iframe
               #shotFrame
               [src]="src"
+              [ethleteFramePainted]="src"
               [title]="key"
               [attr.data-variant]="row.key"
               [attr.data-state]="state"
-              class="block size-full border-0 scheme-normal"
+              [class.opacity-0]="!paintedShots().has(key)"
+              (paintedChange)="framePainted({ key, frame: shotFrame, painted: $event })"
+              class="absolute inset-0 block size-full border-0 scheme-normal"
             ></iframe>
             <ethlete-frame-shield class="pointer-events-auto" />
-          }
-        } @else if (nearShots().has(key)) {
-          @if (shotPictures().get(key); as picture) {
-            <img
-              [src]="picture"
-              [ethleteShotRank]="picture"
-              [alt]="key"
-              (load)="pictureLoaded(key, $event)"
-              class="block w-full"
-              data-shot-picture
-            />
           }
         }
       </div>
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [SketchesComponent, MergeComponent, FrameShieldComponent, ShotRankDirective],
+  imports: [SketchesComponent, MergeComponent, FrameShieldComponent, ShotRankDirective, FramePaintedDirective],
   host: { class: 'block size-full' },
 })
 export class SketchViewComponent {
@@ -255,7 +259,7 @@ export class SketchViewComponent {
     rootMargin: NEAR_MARGIN,
   });
 
-  protected nearShots = computed(
+  public nearShots = computed(
     () =>
       new Set(
         this.shotCells()
@@ -461,6 +465,14 @@ export class SketchViewComponent {
             }),
       ),
   );
+
+  private paintedFrames = signal<ReadonlyMap<string, HTMLIFrameElement>>(new Map());
+
+  protected paintedShots = computed(() => {
+    const mounted = new Set(this.shotFrames().map(({ nativeElement }) => nativeElement));
+
+    return new Set([...this.paintedFrames()].flatMap(([key, frame]) => (mounted.has(frame) ? [key] : [])));
+  });
 
   protected shotPictures = computed(
     () =>
@@ -725,6 +737,19 @@ export class SketchViewComponent {
     const address = this.address();
 
     this.run('discard', discardSketch$(address).pipe(tap(() => this.discardComplete.emit(address.sketch))));
+  }
+
+  protected framePainted({ key, frame, painted }: { key: string; frame: HTMLIFrameElement; painted: boolean }) {
+    this.paintedFrames.update((frames) => {
+      if (!painted && frames.get(key) !== frame) return frames;
+
+      const next = new Map(frames);
+
+      if (painted) next.set(key, frame);
+      else next.delete(key);
+
+      return next;
+    });
   }
 
   protected pictureLoaded(key: string, event: Event) {

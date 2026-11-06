@@ -173,7 +173,7 @@ describe('SketchViewComponent', () => {
     expect(root.textContent).toContain('Calmer');
   });
 
-  it('keeps at most six near cells live and shows the stored picture in the other near cells', async () => {
+  it('keeps at most six near cells live and the stored picture in every cell', async () => {
     const states = Array.from({ length: 25 }, (_, index) => `state-${index}`);
     const wide = {
       ...SKETCH,
@@ -189,7 +189,25 @@ describe('SketchViewComponent', () => {
     expect(root.querySelectorAll('[data-shot]').length).toBe(100);
     expect(root.querySelectorAll('iframe[data-state]').length).toBe(6);
     expect(root.querySelectorAll('iframe[data-state] + ethlete-frame-shield.pointer-events-auto').length).toBe(6);
-    expect(root.querySelectorAll('img[data-shot-picture]').length).toBe(94);
+    expect(root.querySelectorAll('img[data-shot-picture]').length).toBe(100);
+  });
+
+  it('shows a live frame over its picture only once its page painted', async () => {
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => window.setTimeout(callback, 0));
+    const { fixture, root } = await render(ROUNDED, noComments);
+    const iframe = root.querySelector<HTMLIFrameElement>('iframe[data-state]')!;
+    const picture = () => iframe.parentElement!.querySelector('img[data-shot-picture]')!;
+
+    expect(iframe.classList).toContain('opacity-0');
+    expect(picture().classList).not.toContain('opacity-0');
+
+    window.dispatchEvent(
+      new MessageEvent('message', { source: iframe.contentWindow, data: { type: 'design-explore:painted' } }),
+    );
+    await settle(fixture);
+
+    expect(iframe.classList).not.toContain('opacity-0');
+    expect(picture().classList).toContain('opacity-0');
   });
 
   it('makes no frame live while the listing names the sketch without its targets', async () => {
