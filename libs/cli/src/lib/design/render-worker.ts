@@ -4,7 +4,8 @@ import { resolve } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { missingPackageMessage } from './missing-package';
 import { buildFields } from './render-fields';
-import { keepCustomPropertyCase, quietDevModeNotice, shimMutationObserver } from './ssr-shims';
+import { DEV_MODE_NOTICE, keepCustomPropertyCase, quietDevModeNotice, shimMutationObserver } from './ssr-shims';
+import { format } from 'util';
 import { parentPort, workerData } from 'worker_threads';
 import {
   extractRender,
@@ -176,8 +177,35 @@ const render = async (request: RenderRequest): Promise<RenderResult> => {
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
+const LOGGED = ['log', 'info', 'warn', 'error'] as const;
+
+const loggedWhile = async <T>(run: () => Promise<T>) => {
+  const lines: string[] = [];
+  const kept = LOGGED.map((name) => [name, console[name]] as const);
+
+  for (const [name] of kept)
+    console[name] = (...args: unknown[]) => {
+      if (name === 'log' && args.length === 1 && args[0] === DEV_MODE_NOTICE) return;
+
+      lines.push(format(...args));
+    };
+
+  try {
+    return { result: await run(), lines };
+  } finally {
+    for (const [name, log] of kept) console[name] = log;
+  }
+};
+
+let rendering: Promise<unknown> = Promise.resolve();
+
 parentPort?.on('message', (request: RenderRequest) => {
-  void render(request)
-    .catch((error: unknown) => ({ error: messageOf(error) }))
-    .then((result) => parentPort?.postMessage({ ...result, id: request.id, watched } satisfies RenderResponse));
+  const rendered = rendering.then(() =>
+    loggedWhile(() => render(request).catch((error: unknown) => ({ error: messageOf(error) }))),
+  );
+
+  rendering = rendered;
+  void rendered.then(({ result, lines }) =>
+    parentPort?.postMessage({ ...result, lines, id: request.id, watched } satisfies RenderResponse),
+  );
 });

@@ -122,6 +122,13 @@ export const renderInspectCodeOf = () =>
     assets: assetRoot(),
   });
 
+/** @internal The code the completeness check draws and sees a part with, the frame assets included. */
+export const completenessCodeOf = () =>
+  codeHashOf({
+    entries: [...DESIGN_PICTURE_MODULES, 'system/complete', 'system/served-cache'],
+    assets: assetRoot(),
+  });
+
 /** @internal The code an app picture is drawn and kept with. */
 export const appPictureCodeOf = () => codeHashOf({ entries: ['system/harness-shot', 'system/compare-cache'] });
 

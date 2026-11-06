@@ -31,7 +31,15 @@ import { INTERACTIVE_SELECTOR } from './actions';
 import { REACH_STATEMENTS } from './reach';
 import { REACHABLE_CONTROLS_STATEMENTS } from './reachable-controls';
 import { browserVersionOf, cacheKeyOf } from './compare-cache';
-import { createServedCache, createServedHashes, ServedCacheRun, ServedRequest, servedHitOf } from './served-cache';
+import {
+  createServedCache,
+  createServedHashes,
+  recordRequests,
+  ServedCacheRun,
+  ServedRequest,
+  servedHitOf,
+  writeServed,
+} from './served-cache';
 import { renderInspectCodeOf } from '../code-hash';
 
 /** One drawing of one state that breaks a render rule. `path` is a short selector path to the element. */
@@ -677,10 +685,7 @@ const inspect = async (options: {
 
   await context.addInitScript(CLICK_LISTENER_INIT_SCRIPT);
 
-  if (cache)
-    context.on('request', (request) =>
-      requested.push({ url: request.url(), accept: request.headers()['accept'] ?? null }),
-    );
+  if (cache) recordRequests(context, () => requested);
 
   const issues: RenderIssue[] = [];
   const groups = new Map<string, Frame[]>();
@@ -776,8 +781,7 @@ const inspect = async (options: {
 
         issues.push(...groupIssues);
 
-        if (cache && key)
-          cache.store.write(key, { inputs: await cache.served.inputsOf(requested), value: groupIssues });
+        if (cache && key) await writeServed(cache, { key, requested, value: groupIssues });
       }
 
       done++;

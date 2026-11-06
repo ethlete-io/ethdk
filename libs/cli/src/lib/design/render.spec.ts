@@ -326,7 +326,10 @@ describe('mountDrawing', () => {
 
 const post = (body: string, middleware: (request: IncomingMessage, response: ServerResponse) => void) =>
   new Promise<{ status: number; body: string }>((settle) => {
-    const request = Object.assign(Readable.from([Buffer.from(body)]), { method: 'POST' }) as unknown as IncomingMessage;
+    const request = Object.assign(Readable.from([Buffer.from(body)]), {
+      method: 'POST',
+      headers: {},
+    }) as unknown as IncomingMessage;
     const response = {
       statusCode: 200,
       setHeader: () => undefined,

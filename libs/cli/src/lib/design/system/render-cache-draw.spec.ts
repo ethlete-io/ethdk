@@ -2,12 +2,15 @@ import { mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { QUIET_HEADER, SERVED_LINES_HEADER } from '../render';
 import { WarmDraw } from '../warm-draw';
 import { createDrawCount, drawnMoreThanOnce } from './draw-count.test';
 import { renderIssuesOf } from './render-check';
 
 const draws = createDrawCount();
-const BASE = 'http://localhost:1';
+const RENDERED = { path: '/__design/render', body: '{"call":"b","template":"<et-card />"}' };
+const WARNING = 'etProvideColor="brand" has no effect because no color themes are registered.';
+const printed: string[] = [];
 
 const SHARED = [
   '/src/shared.ts',
@@ -54,13 +57,28 @@ vi.mock('./system-modules', async (importOriginal) => ({
   }),
 }));
 
-type Listener = (request: { url: () => string; headers: () => Record<string, string> }) => void;
+type Listener = (request: {
+  url: () => string;
+  headers: () => Record<string, string>;
+  method: () => string;
+  postData: () => string | null;
+}) => void;
 
-const fakeBrowser = () => ({
+const fakeBrowser = (base: string) => ({
   newContext: async () => {
     const listeners: Listener[] = [];
-    const request = (url: string) =>
-      listeners.forEach((listener) => listener({ url: () => `${BASE}${url}`, headers: () => ({ accept: '*/*' }) }));
+    const request = (url: string, post: string | null = null) => {
+      if (post !== null) printed.push(WARNING);
+
+      listeners.forEach((listener) =>
+        listener({
+          url: () => `${base}${url}`,
+          headers: () => ({ accept: '*/*' }),
+          method: () => (post === null ? 'GET' : 'POST'),
+          postData: () => post,
+        }),
+      );
+    };
 
     return {
       addInitScript: async () => undefined,
@@ -79,30 +97,37 @@ const fakeBrowser = () => ({
 
           draws.drawn('design', `${part} ${search.get('state')}`);
           request('/frame.html');
-          (SERVED_BY[part] ?? []).forEach(request);
+          (SERVED_BY[part] ?? []).forEach((file) => request(file));
+
+          if (part === 'b') request(RENDERED.path, RENDERED.body);
         },
       }),
     };
   },
 });
 
-const warm = {
-  server: async () => ({
-    httpServer: { address: () => ({ port: 1 }) },
-    ssrLoadModule: async (id: string) => ({ default: { states: states.get(id.split('?')[0] ?? '') ?? {} } }),
-  }),
-  queue: () => ({ run: <T>(draw: (browser: unknown) => Promise<T>) => draw(fakeBrowser()) }),
-} as unknown as WarmDraw;
+const warmOn = (port: number) =>
+  ({
+    server: async () => ({
+      httpServer: { address: () => ({ port }) },
+      ssrLoadModule: async (id: string) => ({ default: { states: states.get(id.split('?')[0] ?? '') ?? {} } }),
+    }),
+    queue: () => ({
+      run: <T>(draw: (browser: unknown) => Promise<T>) => draw(fakeBrowser(`http://localhost:${port}`)),
+    }),
+  }) as unknown as WarmDraw;
 
 let target = '';
 
-const check = async () => {
+const run = async (port = 1) => {
+  printed.length = 0;
+
   const result = await renderIssuesOf({
     target,
     config: {} as never,
     jobs: [{ product: 'studio', sketch: null, parts: null }],
     chromiumOf: async () => ({ chromium: {} as never, from: '/playwright' }),
-    warm,
+    warm: warmOn(port),
     cached: true,
   });
 
@@ -112,8 +137,13 @@ const check = async () => {
 
   expect(drawnMoreThanOnce(counts)).toEqual([]);
 
-  return [...new Set([...counts.keys()].map((key) => key.split(' ')[1]))].sort();
+  return {
+    redrawn: [...new Set([...counts.keys()].map((key) => key.split(' ')[1]))].sort(),
+    output: JSON.stringify({ printed, result }),
+  };
 };
+
+const check = async (port = 1) => (await run(port)).redrawn;
 
 describe('render inspect cache', () => {
   beforeEach(() => {
@@ -123,15 +153,42 @@ describe('render inspect cache', () => {
     for (const url of ['/frame.html', ...Object.values(SERVED_BY).flat()]) served.set(url, `v1 ${url}`);
     for (const name of Object.keys(SERVED_BY)) states.set(`/design/${name}.ts`, { default: {}, open: {} });
 
-    vi.stubGlobal('fetch', async (url: URL) => {
-      const body = served.get(url.pathname);
+    served.set(RENDERED.path, '<et-card />');
 
-      return body === undefined ? new Response('missing', { status: 404 }) : new Response(body);
+    vi.stubGlobal('fetch', async (url: URL, init?: { headers?: Record<string, string>; body?: string }) => {
+      const body = served.get(url.pathname);
+      const posted = init?.body !== undefined;
+
+      if (body === undefined) return new Response('missing', { status: 404 });
+      if (posted && init?.headers?.[QUIET_HEADER] !== '1') printed.push(WARNING);
+
+      return new Response(`${body} served by http://${url.host}`, {
+        headers: posted ? { [SERVED_LINES_HEADER]: encodeURIComponent(JSON.stringify([WARNING])) } : {},
+      });
     });
+    vi.spyOn(console, 'warn').mockImplementation((line: string) => printed.push(line));
     draws.take();
   });
 
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('prints the same output warm as cold, the lines the server logged while drawing included', async () => {
+    const cold = await run();
+    const warm = await run();
+
+    expect(warm.redrawn).toEqual([]);
+    expect(cold.output).toContain('has no effect');
+    expect(warm.output).toEqual(cold.output);
+  });
+
+  it('hits after a resident restart on another port, whose host is in urls and bodies', async () => {
+    await check(1);
+
+    expect(await check(2)).toEqual([]);
+  });
 
   it('draws each frame once cold, nothing warm, and only the edited part after a part edit', async () => {
     expect(await check()).toEqual(['a', 'b', 'c']);
@@ -152,6 +209,7 @@ describe('render inspect cache', () => {
     ['a frame asset', '/frame.html', ['a', 'b', 'c']],
     ['the sdk dist css', '/sdk/index.css', ['a', 'b']],
     ['the sdk dist js', '/sdk/index.js', ['a', 'b']],
+    ['the sdk markup the render worker answers', RENDERED.path, ['b']],
   ])('an edit of %s redraws exactly the parts that loaded it', async (_what, url, redrawn) => {
     await check();
 

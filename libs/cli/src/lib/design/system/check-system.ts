@@ -518,7 +518,7 @@ const drawnFindingsFor = async (
   let gaps: Map<string, CompletenessGap[] | string> | null = null;
 
   if (stateful.length > 0) {
-    const checked = await partsCompletenessOf({ ...options, parts: stateful });
+    const checked = await partsCompletenessOf({ ...options, parts: stateful, cached: true });
 
     if ('unavailable' in checked) {
       console.log(`COMPLETE CHECK SKIPPED - ${checked.unavailable}`);

@@ -18,7 +18,7 @@ export type RenderRequest = {
 
 export type RenderResult = { markup: string; styles: string[] } | { error: string };
 
-export type RenderResponse = RenderResult & { id: number; watched: Record<string, number> };
+export type RenderResponse = RenderResult & { id: number; watched: Record<string, number>; lines: string[] };
 
 export type MappedPackage = { dir: string; subpath: string };
 

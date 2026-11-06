@@ -19,6 +19,12 @@ export const RENDER_PATH = '/__design/render';
 
 export const FORCE_PATH = '/__design/force';
 
+/** The header a render answer carries the worker's logged lines in, as an encoded JSON string array. */
+export const SERVED_LINES_HEADER = 'x-et-lines';
+
+/** A render asked with this header does not print what the worker logged. */
+export const QUIET_HEADER = 'x-et-quiet';
+
 const mtimeOf = (path: string) => {
   try {
     return statSync(path).mtimeMs;
@@ -45,6 +51,9 @@ export type RenderAsk = {
  */
 export const RENDER_TIMEOUT_MS = 120_000;
 
+/** A render's result with every line the worker logged while drawing it. */
+export type Rendered = RenderResult & { lines?: string[] };
+
 export const createRenderer = (options: { target: string; config: DesignConfig; timeout?: number }) => {
   const { target, config, timeout = RENDER_TIMEOUT_MS } = options;
   const workerDataOf = (): RenderWorkerData => ({
@@ -53,7 +62,7 @@ export const createRenderer = (options: { target: string; config: DesignConfig; 
     modules: config.render?.modules ?? DEFAULT_RENDER_MODULES,
   });
   let startedWith = '';
-  const pending = new Map<number, (result: RenderResult) => void>();
+  const pending = new Map<number, (result: Rendered) => void>();
   const sentTo = new Map<number, Worker>();
   let worker: Worker | null = null;
   let watched: Record<string, number> = {};
@@ -64,7 +73,7 @@ export const createRenderer = (options: { target: string; config: DesignConfig; 
     pending.clear();
     sentTo.clear();
   };
-  const answer = (id: number, result: RenderResult) => {
+  const answer = (id: number, result: Rendered) => {
     pending.get(id)?.(result);
     pending.delete(id);
     sentTo.delete(id);
@@ -78,10 +87,10 @@ export const createRenderer = (options: { target: string; config: DesignConfig; 
     const started = new Worker(packageFileOf(resolve(__dirname, 'render-worker.js')), { workerData });
 
     started.on('message', (response: RenderResponse) => {
-      const { id, watched: loaded, ...result } = response;
+      const { id, watched: loaded, lines, ...result } = response;
 
       if (started === worker) watched = { ...loaded };
-      answer(id, result);
+      answer(id, { ...result, lines });
     });
     started.on('error', (error) =>
       settleAll(`design-explore: the render worker failed: ${error instanceof Error ? error.message : String(error)}`),
@@ -98,7 +107,7 @@ export const createRenderer = (options: { target: string; config: DesignConfig; 
     return started;
   };
 
-  const render = (ask: RenderAsk) => {
+  const render = (ask: RenderAsk, options: { quiet?: boolean } = {}) => {
     if (worker && (isStale(watched) || startedWith !== JSON.stringify(workerDataOf()))) {
       void worker.terminate();
       worker = null;
@@ -116,7 +125,7 @@ export const createRenderer = (options: { target: string; config: DesignConfig; 
       fields: ask.fields ?? null,
       providers: providers ? resolve(target, providers) : null,
     };
-    const result = new Promise<RenderResult>((settle) => pending.set(request.id, settle));
+    const result = new Promise<Rendered>((settle) => pending.set(request.id, settle));
     const sent = worker;
 
     sentTo.set(request.id, sent);
@@ -126,18 +135,24 @@ export const createRenderer = (options: { target: string; config: DesignConfig; 
       ms: timeout,
       what: `the render worker to draw ${ask.call}`,
       announceAfterMs: 10_000,
-    }).catch((error: unknown): RenderResult => {
-      const message = error instanceof Error ? error.message : String(error);
+    })
+      .then((rendered) => {
+        if (!options.quiet) for (const line of rendered.lines ?? []) console.warn(line);
 
-      answer(request.id, { error: message });
+        return rendered;
+      })
+      .catch((error: unknown): Rendered => {
+        const message = error instanceof Error ? error.message : String(error);
 
-      if (sent === worker) {
-        worker = null;
-        void sent.terminate();
-      }
+        answer(request.id, { error: message });
 
-      return { error: message };
-    });
+        if (sent === worker) {
+          worker = null;
+          void sent.terminate();
+        }
+
+        return { error: message };
+      });
   };
 
   const close = async () => {
@@ -165,7 +180,8 @@ const readBody = (request: IncomingMessage) =>
  * can force their interactions, or a 500 with the error.
  */
 export const renderMiddleware =
-  (render: (ask: RenderAsk) => Promise<RenderResult>) => (request: IncomingMessage, response: ServerResponse) => {
+  (render: (ask: RenderAsk, options: { quiet?: boolean }) => Promise<Rendered>) =>
+  (request: IncomingMessage, response: ServerResponse) => {
     if (request.method !== 'POST') {
       response.statusCode = 405;
       response.end();
@@ -174,9 +190,11 @@ export const renderMiddleware =
     }
 
     void readBody(request)
-      .then((body) => render(JSON.parse(body) as RenderAsk))
-      .catch((error: unknown) => ({ error: error instanceof Error ? error.message : String(error) }))
-      .then((result) => {
+      .then((body) => render(JSON.parse(body) as RenderAsk, { quiet: request.headers[QUIET_HEADER] === '1' }))
+      .catch((error: unknown): Rendered => ({ error: error instanceof Error ? error.message : String(error) }))
+      .then(({ lines, ...result }) => {
+        response.setHeader(SERVED_LINES_HEADER, encodeURIComponent(JSON.stringify(lines ?? [])));
+
         if ('error' in result) {
           response.statusCode = 500;
           response.setHeader('content-type', 'text/plain; charset=utf-8');

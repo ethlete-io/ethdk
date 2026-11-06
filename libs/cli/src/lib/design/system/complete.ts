@@ -3,7 +3,7 @@ import { AddressInfo } from 'net';
 import { dirname, join } from 'path';
 import { chromiumOf } from '../browser';
 import { INTERACTIONS } from '../force-interactions';
-import { DesignConfig } from '../paths';
+import { DesignConfig, viteCacheOf } from '../paths';
 import { createDesignServer } from '../serve';
 import { partFrameOf, viewportOf } from '../shot';
 import { awaitSettled, Browser, createDrawQueue, openFrame, ThumbUnavailableError } from '../thumb';
@@ -19,6 +19,17 @@ import { ListedException, readExceptions, withExceptions } from './exceptions';
 import { inventoryReasonOf, InventoryState, inventoryStateOf, partOwnerOf, readInventory } from './inventory-approval';
 import { optionValuesChecker } from './rules/option-values';
 import { demoBackdropGapsOf, findDemoBackdrop } from './demo-backdrop';
+import { completenessCodeOf } from '../code-hash';
+import { browserVersionOf, cacheKeyOf } from './compare-cache';
+import {
+  createServedCache,
+  createServedHashes,
+  recordRequests,
+  ServedCacheRun,
+  ServedRequest,
+  servedHitOf,
+  writeServed,
+} from './served-cache';
 
 /** One requirement of a part that `design complete` finds without evidence. `target` is `<part>[.<control>[.<requirement>]]`. */
 export type CompletenessGap = { code: string; target: string; detail: string };
@@ -1423,15 +1434,20 @@ const seeFrames = async (options: {
   part: string;
   ownCss: string[];
   controlParts: Record<string, string>;
-}) => {
-  const { browser, base, frames, part, ownCss, controlParts } = options;
+  requested?: ServedRequest[];
+}): Promise<Sight> => {
+  const { browser, base, frames, part, ownCss, controlParts, requested } = options;
   const context = await browser.newContext();
   const seen: SeenFrame[] = [];
   const refused: string[] = [];
   const shots: { state: string; png: Buffer }[] = [];
 
+  if (requested) recordRequests(context, () => requested);
+
   try {
     const page = await context.newPage();
+
+    if (requested) await (await context.newCDPSession(page)).send('Network.setCacheDisabled', { cacheDisabled: true });
 
     const seeOne = async (frame: CompleteFrame) => {
       await page.setViewportSize(viewportOf(frame.size));
@@ -1565,6 +1581,22 @@ const seeFrames = async (options: {
   };
 };
 
+/** What drawing a part's frames showed. */
+export type Sight = { seen: SeenFrame[]; refused: string[]; changes: StateChange[] };
+
+/** The completeness drawings of a run kept on disk, by part, frames and the code that draws them. */
+export type CompletenessCache = ServedCacheRun<Sight>;
+
+const COMPLETENESS_SIGHTS = 'completeness-sights';
+
+const COMPLETENESS_SIGHTS_LIMIT = 64 * 1024 * 1024;
+
+const completenessCacheOf = (options: { target: string; base: string; from: string }): CompletenessCache => ({
+  store: createServedCache(viteCacheOf(options.target, COMPLETENESS_SIGHTS), COMPLETENESS_SIGHTS_LIMIT),
+  served: createServedHashes(options.base),
+  salt: `${completenessCodeOf()} ${browserVersionOf(options.from)}`,
+});
+
 type PartModule = {
   default?: { states?: unknown; interactions?: unknown; widths?: unknown; controls?: unknown; grid?: unknown };
 };
@@ -1585,8 +1617,9 @@ export const seePart = async (options: {
   draw: <T>(job: (browser: Browser) => Promise<T>) => Promise<T>;
   restOnly?: boolean;
   sketch?: SketchVariant | null;
+  cache?: CompletenessCache;
 }) => {
-  const { product, part, system, base, load, draw, restOnly = false, sketch = null } = options;
+  const { product, part, system, base, load, draw, restOnly = false, sketch = null, cache } = options;
   const key = partKeyOf(part);
   const loaded = await load(productModuleIdOf({ file: part.file, product: product.name, sketch }))
     .then((module) => ({ module: module as PartModule }))
@@ -1640,9 +1673,19 @@ export const seePart = async (options: {
       control.part === null ? [] : [[id, control.part]],
     ),
   );
-  const { seen, refused, changes } = await draw((browser) =>
-    seeFrames({ browser, base, frames, part: key, ownCss, controlParts }),
-  );
+  const cacheKey = cache ? cacheKeyOf([cache.salt, product.name, sketch, key, frames, ownCss, controlParts]) : null;
+  const held = cache && cacheKey ? await servedHitOf(cache, cacheKey) : null;
+  const requested: ServedRequest[] = [];
+  const drawn = async (): Promise<Sight> => {
+    const sight = await draw((browser) =>
+      seeFrames({ browser, base, frames, part: key, ownCss, controlParts, requested: cache ? requested : undefined }),
+    );
+
+    if (cache && cacheKey) await writeServed(cache, { key: cacheKey, requested, value: sight });
+
+    return sight;
+  };
+  const { seen, refused, changes } = held ?? (await drawn());
   const owner = partOwnerOf({ product, part });
 
   return {
@@ -1727,6 +1770,7 @@ export const partsCompletenessOf = async (options: {
   sketch?: SketchVariant | null;
   chromiumOf?: typeof chromiumOf;
   warm?: WarmDraw;
+  cached?: boolean;
 }): Promise<
   | { gaps: Map<string, CompletenessGap[] | string>; exceptions: ListedException[]; hints: Map<string, string[]> }
   | { unavailable: string }
@@ -1736,9 +1780,9 @@ export const partsCompletenessOf = async (options: {
   const system = createSystemModules({ target, config });
   const parts = (sketch ? system.drawnOf(product.name, sketch) : product)?.parts ?? [];
   const optionValuesOf = optionValuesChecker({ target, config, parts });
+  const chromium = await resolveChromium(target);
 
-  if (!(await resolveChromium(target)))
-    return { unavailable: 'neither the checkout nor this package resolves playwright or playwright-core' };
+  if (!chromium) return { unavailable: 'neither the checkout nor this package resolves playwright or playwright-core' };
 
   const queue = warm ? warm.queue() : createDrawQueue({ target, chromiumOf: resolveChromium });
   const server = warm ? await warm.server(config) : await createDesignServer({ target, config, listen: true, port: 0 });
@@ -1747,6 +1791,8 @@ export const partsCompletenessOf = async (options: {
     if (!warm) await server.listen();
 
     const { port } = server.httpServer?.address() as AddressInfo;
+    const base = `http://localhost:${port}`;
+    const cache = options.cached ? completenessCacheOf({ target, base, from: chromium.from }) : undefined;
 
     const checked = new Map<string, CompletenessGap[] | string>();
     const exceptions: ListedException[] = [];
@@ -1772,10 +1818,11 @@ export const partsCompletenessOf = async (options: {
         product,
         part: resolved,
         system,
-        base: `http://localhost:${port}`,
+        base,
         load: (id) => server.ssrLoadModule(id),
         draw: (job) => queue.run(job),
         sketch,
+        cache,
       });
 
       if (typeof sight === 'string') return [{ code: 'RENDER', target: key, detail: sight.split('\n')[0] ?? '' }];

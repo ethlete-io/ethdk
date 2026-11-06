@@ -147,7 +147,7 @@ export const shimMutationObserver = (scope: { MutationObserver?: unknown }) => {
   scope.MutationObserver ??= NoopMutationObserver;
 };
 
-const DEV_MODE_NOTICE = 'Angular is running in development mode.';
+export const DEV_MODE_NOTICE = 'Angular is running in development mode.';
 
 /** Drops the line Angular logs on every bootstrap in development mode, which would repeat once per drawn frame. */
 export const quietDevModeNotice = (target: Pick<Console, 'log'>) => {
