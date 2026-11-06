@@ -108,7 +108,7 @@ describe('ET800 on the interop client', () => {
     s.api.on('GET', '/me', () => ({ body: { id: 'me' } }));
 
     const c = s.consumer([{ provide: GET_ITEMS, useValue: legacy.get<object>('/me') }]);
-    const query = c.run(() => c.injector.get(GET_ITEMS).prepare());
+    const query = c.run(() => c.injector.get(GET_ITEMS).prepare({}));
 
     expect(() => {
       for (let i = 0; i < 5; i++) {
