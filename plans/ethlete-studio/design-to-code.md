@@ -4194,3 +4194,11 @@ message, fifagg section 12 work): `legacy-state-replay.scenario.spec.ts:111` cal
 Fixed in 263654c41. Why no tool caught it: the pre-push hook leaves typecheck to CI, and with the push parked (ADR 0213) no CI ran for 259 commits, so a type error stayed hidden for hours. Tool fix (ADR 0216): while a push is held, the builder pushes each slice to its own branch with a draft pull request so the full CI runs. Also: the vitest
 cache `libs/query/.vitest/` is untracked and not ignored, so local `format:check` fails on it; `**/.vitest/` goes into
 `.gitignore` (builder).
+
+541\. Doc agent (2026-11-06), push of `next` (264 commits): the pre-push design gate refused seven parts with
+IMPLEMENTATION-UNCOMPARED. Compared: pages/flows and elements/studio-menu ok and verified; pages/inventory and
+pages/start compare ok but `--verify` needs a check record; pages/merge `merge-error DIFF 2 px`; pages/sketches 13
+states DIFF (up to 135 661 px) and 2 missed actions ("Alle Zustände zeigen"); pages/system 10+ states DIFF and 6
+missed actions ("Kommentar", "49 offen", "Gründe"). Why no tool caught it earlier: the gate runs only at push time, and
+the push was held for hours (ADR 0213), so app changes piled up uncompared. Tool fix: ADR 0216 (draft PR with full CI
+per slice while a push is held); the design-rules gate is part of that CI.
