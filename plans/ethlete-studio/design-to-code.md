@@ -4242,6 +4242,17 @@ changed that order, and part-ready.spec's `vi.mock` got the real `slowProblemsOf
 `VISIBLE_CHANGE_RULE` to `system/build-ready-contract.ts`. The spec caught it; the cause is that specs depend on module
 load order. Tool fix (queued after the perf block, low priority): a lint rule that an import of a constant or type
 from a rules/command module fails; shared constants live in a contract file.
+B416 after-edit floor measured (c0, resident, HEAD 1b7621867, load 4.8-15, report
+`.claude/handoffs/agent-results/after-edit-floor.md`): typical edit (sketch-status-badge, one state of pages/sketches)
+design 6.9 s median (6.1-8.2) meets 10 s, app 10.8 s median (10.3-11.8) misses; worst case zoom-chip design 10.7-11.3
+s, app 9.0-9.6 s; the next run 2.6-3.0 s. compare-actions has no bug: a one-state design edit re-runs only that state,
+an app edit re-runs all 14 because the key holds the built app hash; the unchanged-matrix pair is the critical path
+(1.5-1.8 s each). compare-pixels ~1.1-1.5 s uncached on every run, and actions wait for it. Design shots: all 30
+re-shot after a one-state edit (shot key = the part module's whole dep file list, `serve.ts:454-505`), saturating at 4
+(design-server bound). Building: actions overlapped with shots/pixels, the slow pair first; compare-pixels cached on
+(design hash, app hash, pixel code hash); expected app edit 6.5-8.5 s. Doc agent: cut 2 (reuse design shots when the
+renderer's markup and styles match, ~-3 s on design edits) waits until after the Studio frame slices, since the design
+gate is met.
 
 B416 slice 2 (as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06): each on-disk compare
 cache is keyed on the cli code that changes its result, not the whole cli build (`code-hash.ts`): the import graph of
@@ -4260,3 +4271,9 @@ part-build-ready into slow-checks' own load. Measured (pages/sketches, no reside
 cold 29.8 s, timed out (harness build 15.7 s); warm 2.9 s, 105/105 hits; an unrelated built file edited, 3.0 s, 105 hits;
 `harness-shot` edited, 9.0 s, 44 misses (app pictures and actions; design pictures hit); `shot` edited, 14.1 s, 74
 misses. Details: `.claude/handoffs/agent-results/b416-slice2.md`.
+
+B416 after-edit floor (in progress, c0, 2026-11-06): measured first (resident, load 4.8-15): a single-state edit
+(sketch-status-badge, state idle) - design edit 6.9 s median meets 10 s, app edit 10.8 s median misses; zoom-chip
+worst case 9.0-11.3 s. compare-actions re-checks only changed states (no bug; an app edit re-runs all by its built-app
+key). Building: compare-actions overlapped with compare-states/pixels, slow unchanged-matrix states first; compare-pixels
+cached by (design picture hash, app picture hash, pixel code hash). Deferred: reuse design shots by render output.
