@@ -4034,3 +4034,16 @@ how long a branch has been unpushed or that its push gate is red; a blocked push
 Fix: process - a red push gate goes first in the builder queue, ahead of any feature slice; the builder runs the gate
 after each slice and pushes when it is green. Tool fix (B415): `design status` (and Studio) shows the unpushed
 commit count, the age of the oldest one and the gate result of the range.
+
+521\. Tom (2026-11-06, screenshots of the builder's shells): "6 minuten hard blocking auf dem builder ist inakzeptabel.
+das tooling muss schneller werden". The builder ran nine `compare` runs one after another in the foreground for the
+push gate (finding 520); warm resident, still 47-106 s each. `design timings`: `compare-app-shots` 21-51 s per part
+(design shots 1-3 s), `harness-watch-wait` 19-22 s on the first two runs, image cache 0 hits (S4 not built). A second
+shell of the builder polled a scratch file with `until ... sleep 2` for 27 min with no timeout; the file never came.
+Why no tool caught it: S2/S6 measured warm speed only on a small studio-lab part and an unchanged design, never on a
+real studio page; `design timings` knows the targets but nobody reads it unless asked, and no target exists for compare
+per part. Fixes (B416, ahead of every other slice after the push): (a) app shots of one compare draw in parallel pages
+of the warm Chromium, like the render check (`INSPECTS_AT_ONCE`); (b) S4 image cache by input hash, so an unchanged
+state is never shot again; (c) a compare of several parts in one call shares one harness wait; (d) target: a warm
+compare of a studio page <= 10 s, and a run over target prints its slowest phase at the end. Process: the builder
+never blocks on a batch of heavy runs in the foreground, and every wait loop has a timeout.
