@@ -3793,3 +3793,41 @@ in the sketch view and asserts that every variant column is inside the viewport 
 variant frames, not the view Tom picks in; no check flags a variant whose subject sits outside the visible part of its column. Fix: c8 takes
 `pages/sketches` out of the baseline first (fit width, top gap, Aktuell crop, activity state), with a Studio e2e that
 opens a wide-part sketch at Fit and asserts every column visible.
+
+501\. The B401 baseline (d2c0425e6) lists four DROPPED-PROP hits on `elements/canvas-frames`, where a state drops a
+design prop: `load-failed` and `loading` drop `mark`, `rounds` and `round-folded` drop `heads`. Why no tool caught them:
+no gate ran the draw rules (finding 489); B401 now runs them in `--slow` and fails on each new hit. Fix (ADR 0201): one
+sketch `elements/canvas-frames@dropped-props` for an app input per prop or a state that does not set it; the four
+baseline entries point here.
+
+502\. The same baseline lists nine DROPPED-PROP hits on `pages/sketches`: `withdrawn-hidden` and `withdrawn-shown` drop
+`withdrawn`, `agent-round`, `agent-variant` and `agent-failed` drop `agent`, `folded` drops `fold` and `question`,
+`question-only` drops `question`, `port-after-merge` and `port-after-merge-long` drop `port`. Cause and tool fix as 501.
+Fix: one sketch `pages/sketches@dropped-props`, together with the Fit fix of finding 500.
+
+503\. The same baseline lists eight DROPPED-PROP hits on `pages/system`: `agent-working`, `agent-working-ready`,
+`agent-failed`, `agent-failed-ready`, `agent-waiting` and `agent-interrupted` drop `agent`, `call` and
+`call-transferred` drop `call`. Cause and tool fix as 501. Fix: one sketch `pages/system@dropped-props`.
+
+504\. S3 (793daca83, harness watch build) broke the resident compare: after the watch build it fails with "the
+ethlete-studio:build:development output does not serve /__design-harness" (`harness-watch.ts:263`); the in-process
+compare works (14.8 s). Every compare runs with `ETHLETE_DESIGN_RESIDENT=0` until the fix. Why no tool caught it: no
+spec drives the real watch build output through the static harness server; the slice was committed with unit specs
+only. Tool fix (c0): a spec that serves the real watch output and loads `/__design-harness`; a resident slice is done
+only with one real compare through the resident process in its as-built note.
+
+505\. Tom's merge of `components/title-bar@notice-hint` (pick b) was refused a third time (findings 434, 468): "studio has
+uncommitted edits outside components/title-bar@notice-hint ... ready.json, rule-baseline.json". `rule-baseline.json`
+was cb's staged B401; `ready.json` held a `components/canvas-viewport` ready mark at 09:44:55Z that no running session
+wrote (likely c0's `sketch ready` measurements on `pages/system` before its restart). The doc agent saved both to its
+scratchpad, reset them, Tom merged (332e49626), and `rule-baseline.json` went back byte-identical. Why no tool caught
+it: the merge checks the whole tree, so any foreign uncommitted file blocks it, and the process rule of finding 434 did
+not hold with three builders; the `by` field decided in finding 468 was never built because the finding got no STATUS
+row. Tool fix: the merge checks in a clean copy of HEAD plus the sketch (ADR 0206, B406); every ready-mark and pick
+write carries `by`, `cmd` and pid, and one without `by` is refused (B407). Process fix: a finding's tool fix gets its
+STATUS row in the same commit as the finding.
+
+506\. The doc agent named sessions by their ids (c0, cb, c8) in German text for Tom. Tom: "woher soll ich wissen wer cb
+ist? ist das hier star wars?" Why no tool caught it: the session names carry no role, and the doc-agent skill does not
+say to name roles. Fix: messages to Tom name the role (Tool-Builder, UI-Builder), never the id (ADR 0207); with two
+sessions (ADR 0207) the builder is "der Builder".
