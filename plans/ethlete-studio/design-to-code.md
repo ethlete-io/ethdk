@@ -4475,3 +4475,16 @@ again; a spec compares the full output of a cold and a warm run. Also in S7b-2: 
 restart on another port (the host is stripped from the recorded URLs, untested).
 
 S7b-2 as built (6f2061c10, 52c079983, 2026-11-06), partly: `design check` caches each part's completeness drawing (`seeFrames`: seen, refused, changes) on the S7b-1 infra (`completeness-sights`, key = code hash, Playwright version, product, sketch, part, frames, own CSS, control parts); everything after the drawing (merged, exceptions, inventory, part hash, option values, recursion into embedded parts) still runs live each time, so config, capabilities, merged.json, pictures.json and sketch edits redraw nothing yet change the result, and an embedding part redraws because its drawing loaded the embedded module. POST requests (the `/__design/render` SDK renders) are now recorded with their body and fetched again with it, so SDK markup from the render worker is in the key (S7b-1 refetched them as a GET: a fixed 405). The worker returns what it logged per render; an entry keeps those lines and a hit prints them. Found with the real-edit run: every S7b-1 and S7b-2 input hash on disk was null - Node's fetch went to 127.0.0.1 while Vite listened on ::1 - and null == null counted as unchanged, so an edit of components/zoom-chip in a scratch worktree redrew nothing (render 0.78 s, completeness 0.31 s). Fixed in 52c079983 (fetch the listen address, a null hash never hits). The numbers measured before the fix are not valid: 6f2061c10 run 1 310.8 s, run 2 48.4 s (completeness 0.28 s), both with nothing verified. Also, in those runs the entries kept no lines, so the 30 warnings were still missing on run 2. Open: measure again after 52c079983 (two runs plus the worktree edit), and check that entries keep lines and the full logs match.
+
+537\. c0 (2026-11-06), S7b-2 real-edit run: the S7b-1 render cache and the new completeness cache never verified
+anything. Node re-fetched the recorded URLs on 127.0.0.1 while Vite listened on ::1, so every input hash was null
+(14 814 render, 5 612 completeness entries), and null == null counted as unchanged: every entry always hit. A scratch
+edit of zoom-chip ('Fit' -> 'Fitting') redrew nothing. SDK renders (`POST /__design/render`) were re-fetched as GET and
+always got the same 405, so SDK markup was never in the key. The S7b-1 numbers (205 s warm) and the first S7b-2
+numbers (48.4 s warm) are invalid. Why no tool caught it: every cache spec used a fake server with a fetchable URL, none
+ran against a real Vite listen address, no spec required non-null input hashes for a hit, and S7b-1 reported its
+numbers before a real-edit run (rule of finding 519). Tool fix: built in 52c079983 (fetch the server's own listen
+address, a null hash never counts as unchanged, render requests re-posted with their recorded body, specs for each).
+Doc agent adds: the cache writes no entry unless every input hash is non-null; `design timings` shows the null-hash
+count per run and flags any above 0; and a cache slice reports no numbers and is not done until a real edit in a
+scratch worktree has redrawn exactly the edited part and its embedders.
