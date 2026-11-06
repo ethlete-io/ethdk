@@ -438,7 +438,7 @@ Source: `plans/fifagg-sdk-findings-2026-11-06.md` (consumer handoff, German; del
 - **No SDK work:** 26 (consumer must read the error state), 22, 12, Swiss seeding, the V2 bearer cookie domain, 27
   (accepted interop differences).
 
-## 12. fifagg ngrx-toolkit migration (fifagg-sdk-findings-2026-11-06-ngrx-toolkit.md, 2026-11-06) - done but the v3 subpath follow-up
+## 12. fifagg ngrx-toolkit migration (fifagg-sdk-findings-2026-11-06-ngrx-toolkit.md, 2026-11-06) - done (db01f3653)
 
 Source: `plans/fifagg-sdk-findings-2026-11-06-ngrx-toolkit.md` (consumer handoff, German). query 6.0.0-next.62,
 generator `@ethlete/query:migrate-from-ngrx-toolkit` on fifagg `chore/ngrx-toolkit-to-query-v3` (MR !1978): 44 of 49
@@ -545,3 +545,9 @@ features, 151 creators written, 98 tasks. Built by the third session of ADR 0200
   node-resolving consumers, covered by 5 new `NTK-MODULE-RESOLUTION` rows (env, queries, uikit/mocks); the PhaseId
   mismatch row is gone. The toolkit part of section 12 is done; open: the v3 subpath follow-up (every `@ethlete/*`
   subpath needs `bundler`/`node16`/`nodenext` resolution, task from `migrate-to-query-v3`). Nothing pushed.
+- **v3 subpath follow-up as built (db01f3653):** `migrate-to-query-v3/module-resolution.ts`
+  (`findLegacyModuleResolutions`) is shared with the toolkit generator; v3 reports each node-resolving tsconfig that
+  imports, or reaches through a `paths` alias, any `@ethlete/*` subpath, after its own rewrites (so it also sees the
+  `@ethlete/query-devtools/lazy` import it adds). Guide: migrating-from-v2 step 2, "Subpath imports need
+  `moduleResolution: bundler`". Dry run on the replay: 5 tasks (env lib+spec, queries lib, uikit/mocks lib+spec).
+  Toolkit replay unchanged (6 new errors, 78 tasks). Section closed; nothing pushed.
