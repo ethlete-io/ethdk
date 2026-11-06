@@ -802,17 +802,24 @@ describe('checkDesign', () => {
   }, 60_000);
 
   it('runs only the static rules with --rules, and fails on a problem', async () => {
+    vi.stubEnv('CI', '');
+
     const target = acme();
     const lines = output();
+    const unskipped = () => lines.filter((line) => !line.startsWith('skipped '));
 
     expect(await checkDesign({ target, argv: ['--product', 'acme', '--rules'], invocation: 'et design' })).toBe(0);
-    expect(lines).toEqual(['No static design rule finds a problem.']);
+    expect(unskipped()).toEqual(['No static design rule finds a problem.']);
+    expect(lines).toContain('skipped IMPLEMENTATION-UNCOMPARED for acme: no --base given');
 
     lines.length = 0;
     writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { border-color: #fff; }');
 
     expect(await checkDesign({ target, argv: ['--product', 'acme', '--rules'], invocation: 'et design' })).toBe(1);
-    expect(lines).toEqual([expect.stringMatching(/^HARD-CODED-COLOUR .*hero\.css: #fff/), '1 problem(s) in acme.']);
+    expect(unskipped()).toEqual([
+      expect.stringMatching(/^HARD-CODED-COLOUR .*hero\.css: #fff/),
+      '1 problem(s) in acme.',
+    ]);
 
     lines.length = 0;
 

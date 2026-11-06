@@ -4,7 +4,15 @@ import { Problem } from '../problem';
 import { appStylesheetOf } from '../harness-config';
 import { harnessOf } from '../harness-map';
 import { ResolvedProduct } from '../resolve-product';
-import { appClassesOf, ClassFacts, classFactsOf, partClassesOf, tailwindFailureOf } from './tailwind-classes';
+import { skipRule } from '../rule-skips';
+import {
+  appClassesOf,
+  ClassFacts,
+  classFactsOf,
+  NO_STYLES,
+  partClassesOf,
+  tailwindFailureOf,
+} from './tailwind-classes';
 
 /**
  * A Tailwind class in the markup of a part that has a canonical form under the product's stylesheets, as
@@ -14,7 +22,13 @@ import { appClassesOf, ClassFacts, classFactsOf, partClassesOf, tailwindFailureO
 export const canonicalClassesOf = (product: ResolvedProduct & SharedDirs): Problem[] => {
   const classes = partClassesOf(product);
 
-  return classes ? canonicalProblemsOf({ holder: product, classes }) : [];
+  if (!classes) {
+    skipRule({ rule: 'CANONICAL-CLASS', product: product.name, kind: 'not-applicable', reason: NO_STYLES });
+
+    return [];
+  }
+
+  return canonicalProblemsOf({ holder: product, classes });
 };
 
 /** Canonical-class problems in the `.html` templates and `.ts` class strings of the product's harness app, under the stylesheet that app builds with. */

@@ -27,6 +27,7 @@ import {
   upgradeLegacyMarksOf,
 } from './stale-parts';
 import { Problem } from './problem';
+import { collectingSkips, isCiEnv, isFailingSkip, RuleSkip, skipLineOf } from './rule-skips';
 import { staleDistWarningsOf } from './stale-dist';
 import { instantLinesOf, partPointsOf, readOpenPoints, unlinkedPartsOf } from './read-open-points';
 import { partKeyOf, partOfFile, PRODUCT_PART_KEY, resolveProduct, ResolvedProduct } from './resolve-product';
@@ -122,6 +123,7 @@ export const ruleLinesOf = (target: string, product: ResolvedProduct) =>
 /**
  * Runs only the static rules of `products` - no draw, no tsc - and prints each problem a product's own files hold
  * that its rule baseline does not list, and each baselined hit; exits 1 on a problem. With `base`, it also flags each app file changed since `base` that moved since its part's implemented record.
+ * Prints one line per rule that did not run; under `CI` a rule skipped for a missing input, such as no `base`, fails.
  */
 export const checkRules = (options: {
   target: string;
@@ -133,6 +135,7 @@ export const checkRules = (options: {
   const { target, config, base } = options;
   const changed = base === undefined ? [] : gitDiffFilesOf({ root: target, range: base });
   const invocation = options.invocation ?? repoInvocation({ root: target, subcommand: 'design' });
+  const ci = isCiEnv();
   let failed = 0;
   const failing: string[] = [];
 
@@ -148,23 +151,31 @@ export const checkRules = (options: {
 
     const product = resolveProduct({ target, name, config: entry });
     const isStatic = (rule: string) => !isSlowRule(rule) && rule !== UNCOMPARED_RULE;
-    const baselined = ruleBaselineOf({
-      product,
-      problems: ruleProblemsOf(product).filter((problem) => !isInBasePart(product, problem.file)),
-      checked: isStatic,
-    });
+    const { result: own, skips } = collectingSkips(() =>
+      ruleProblemsOf(product).filter((problem) => !isInBasePart(product, problem.file)),
+    );
+    const baselined = ruleBaselineOf({ product, problems: own, checked: isStatic });
     const problems = [
       ...baselined.problems.filter((problem) => !isInBasePart(product, problem.file)),
       ...uncomparedOf({ product, changed, invocation }),
     ];
+    const allSkips: RuleSkip[] = [
+      ...skips,
+      ...(base === undefined
+        ? [{ rule: UNCOMPARED_RULE, product: name, kind: 'missing-input' as const, reason: 'no --base given' }]
+        : []),
+    ];
+    const failingSkips = allSkips.filter((skip) => isFailingSkip(skip, ci));
 
     [...baselined.lines, ...ruleBaselineLinesOf(product, (rule) => !isStatic(rule))].forEach((line) =>
       console.log(line),
     );
+    allSkips.filter((skip) => !isFailingSkip(skip, ci)).forEach((skip) => console.log(skipLineOf(skip, ci)));
     problems.forEach((problem) => console.error(lineOf(target, problem)));
-    failed += problems.length;
+    failingSkips.forEach((skip) => console.error(skipLineOf(skip, ci)));
+    failed += problems.length + failingSkips.length;
 
-    if (problems.length > 0) failing.push(name);
+    if (problems.length + failingSkips.length > 0) failing.push(name);
   }
 
   console.log(

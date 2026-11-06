@@ -1,7 +1,15 @@
 import { SharedDirs } from '../imports';
 import { Problem } from '../problem';
 import { ResolvedProduct } from '../resolve-product';
-import { ClassFacts, classFactsOf, partClassesOf, stylesheetClassesOf } from './tailwind-classes';
+import { skipRule } from '../rule-skips';
+import {
+  ClassFacts,
+  classFactsOf,
+  NO_STYLES,
+  partClassesOf,
+  stylesheetClassesOf,
+  tailwindFailureOf,
+} from './tailwind-classes';
 
 const definedIn = (name: string, source: string) =>
   new RegExp(`\\.${name.replace(/[.*+?^${}()|[\]\\/]/gu, '\\$&')}(?![\\w-])`, 'u').test(source);
@@ -14,13 +22,24 @@ const definedIn = (name: string, source: string) =>
 export const undefinedClassesOf = (product: ResolvedProduct & SharedDirs): Problem[] => {
   const classes = partClassesOf(product);
 
-  if (!classes) return [];
+  if (!classes) {
+    skipRule({ rule: 'CLASS-UNDEFINED', product: product.name, kind: 'not-applicable', reason: NO_STYLES });
+
+    return [];
+  }
 
   let facts: Map<string, ClassFacts>;
 
   try {
     facts = classFactsOf({ product, classes });
-  } catch {
+  } catch (error) {
+    skipRule({
+      rule: 'CLASS-UNDEFINED',
+      product: product.name,
+      kind: 'missing-input',
+      reason: `Tailwind did not compile the classes: ${tailwindFailureOf(error)}`,
+    });
+
     return [];
   }
 

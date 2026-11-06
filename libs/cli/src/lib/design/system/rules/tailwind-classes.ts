@@ -22,6 +22,8 @@ __unstable__loadDesignSystem(css, { base })
 
 const DEFAULT_REM = 16;
 
+export const NO_STYLES = 'the product and its base list no styles in config.json';
+
 /** What Tailwind makes of a class under a product's stylesheets: its canonical form, and whether it parses as a utility with a value that emits no CSS. */
 export type ClassFacts = { canonical: string; emitsNothing: boolean };
 

@@ -3,6 +3,7 @@ import { resolve } from 'path';
 import ts from 'typescript';
 import { Problem } from '../problem';
 import { ResolvedProduct } from '../resolve-product';
+import { skipRule } from '../rule-skips';
 import { sourceFileOf } from '../ts-source';
 
 const HOLE = '\u0001';
@@ -65,13 +66,23 @@ const nativeTitleLinesIn = (source: string) => {
  * A native `title` attribute on an HTML element in the design markup of a product whose config sets
  * `nativeTitle: 'deny'`. Elements with a dash in their name are components and pass.
  */
-export const nativeTitlesOf = (product: ResolvedProduct): Problem[] =>
-  product.config.nativeTitle !== 'deny'
-    ? []
-    : tsFilesIn(product.dir).flatMap((file) =>
-        nativeTitleLinesIn(readFileSync(file, 'utf8')).map((line) => ({
-          rule: 'NATIVE-TITLE',
-          file,
-          message: `line ${line}: a native \`title\` attribute shows an unstyled browser tooltip - use the SDK tooltip`,
-        })),
-      );
+export const nativeTitlesOf = (product: ResolvedProduct): Problem[] => {
+  if (product.config.nativeTitle !== 'deny') {
+    skipRule({
+      rule: 'NATIVE-TITLE',
+      product: product.name,
+      kind: 'not-applicable',
+      reason: 'config.json does not set nativeTitle: "deny"',
+    });
+
+    return [];
+  }
+
+  return tsFilesIn(product.dir).flatMap((file) =>
+    nativeTitleLinesIn(readFileSync(file, 'utf8')).map((line) => ({
+      rule: 'NATIVE-TITLE',
+      file,
+      message: `line ${line}: a native \`title\` attribute shows an unstyled browser tooltip - use the SDK tooltip`,
+    })),
+  );
+};

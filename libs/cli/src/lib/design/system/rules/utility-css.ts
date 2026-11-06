@@ -6,6 +6,7 @@ import { cssBlocksOf, declarationValueOf } from '../css-source';
 import { ownSharedFilesOf, SharedDirs } from '../imports';
 import { Problem } from '../problem';
 import { ResolvedProduct } from '../resolve-product';
+import { skipRule } from '../rule-skips';
 import { textsOf } from '../ts-source';
 import { isExemptFrom } from './exemptions';
 
@@ -322,8 +323,18 @@ const problemsUnder = ({
  */
 export const utilityCssOf = (product: ResolvedProduct & SharedDirs): Problem[] => {
   const parts = product.parts.filter((part) => !isExemptFrom('UTILITY-CSS', part));
+  const utilities = utilitiesOf([product, ...(product.base ? [product.base] : [])]);
+
+  if (!utilities.tailwind)
+    skipRule({
+      rule: 'UTILITY-CSS',
+      product: product.name,
+      kind: 'not-applicable',
+      reason: 'no stylesheet of the product imports tailwindcss',
+    });
+
   const own = problemsUnder({
-    utilities: utilitiesOf([product, ...(product.base ? [product.base] : [])]),
+    utilities,
     sharedSource: product,
     parts: parts.filter((part) => part.origin !== 'base'),
   });
