@@ -3716,3 +3716,10 @@ caught it: nothing re-compares an implemented part after its app files change, a
 commit a part drifts, so the builder guessed. Tool fix (technical): ADR 0203's commit check covers the first part;
 `compare` prints for each drifting part the last commit that matched and the commits since then that touched its app
 files.
+
+496\. c0, 2026-11-06, live check of the 494 fix: `compare pages/flows` prints `flow combobox "Bildschirmgröße" FAILED
+the design draws no such element, so it declares no action` and still exits 0. The app has a control the design never
+drew (same class as the "Runde" combobox of finding 486). Why no tool caught it: a FAILED action line does not fail the
+command, so the gate, the builder and the verify step read the run as clean. Tool fix (technical): `compare` exits
+non-zero on any FAILED action; a part whose app has an undeclared control gets a sketch for the control (UI item for
+c8, `pages/flows` "Bildschirmgröße").
