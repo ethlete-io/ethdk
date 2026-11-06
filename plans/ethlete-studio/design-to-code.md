@@ -3530,6 +3530,16 @@ Applied for A1: the three restart cases follow the design (button only); the CLI
 as the built look, marked, with a sketch on `components/title-bar` (variant a built text, b cause as tooltip, c no
 hint).
 
+485\. The UI builder ran the full `design check --product studio` (about 7 minutes) at the end of the A1 slice, which
+only touched `components/title-bar` (ethlete-sdk-c8, 2026-11-06). Tom: "das dauert halt echt ewig. das frisst den halben
+tag". Cause: the builder-agent skill told every slice that changes `apps/<app>` or `.ethlete/design` to end with the full
+product check; no gate asked for it. Why no tool caught it: `design check` has no scope for "what this slice changed",
+so a builder must either pick the parts and their hosts by hand or run everything. Fix: (1) the builder-agent skill now
+names a part-scoped check for each touched part and each part that embeds one, and keeps the full run for pre-push and
+CI (done in this commit); (2) tool: `design check --product <p> --base <ref>` checks only the parts whose design or
+implemented app files changed since `<ref>`, plus the parts that embed them, and prints which parts it chose. Built in
+the performance block of ADR 0199.
+
 478\. After an automatic merge, `sketch ready` printed "ENOENT ... foundations-colors.foundations-check-fixes/sketch.json"
 and never printed "merged automatically", although the merge was complete (commit 479bdace3, builder, 2026-11-05).
 Why no tool caught it: no spec runs `sketch ready` to the end for an auto-merging sketch and asserts a clean exit and

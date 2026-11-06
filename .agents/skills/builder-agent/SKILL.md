@@ -41,8 +41,9 @@ that talks with the user and records decisions. Talk English.
   The bite proof runs only the new specs. `yarn commit`
   already runs the specs related to the staged files and the typecheck. Run the full suite (`nx test cli`,
   `yarn studio:e2e`) once per batch before a push, not in each slice. Tell each subagent the same.
-- A slice that changes `apps/<app>` or `.ethlete/design` ends with `design check --product <p>` in the
-  background. A problem that is not known and was not there before the slice fails the slice.
+- A slice that changes `apps/<app>` or `.ethlete/design` ends with `design check --product <p> --part <part>` for each
+  part it touched and each part that embeds one, in the background. A problem that is not known and was not there
+  before the slice fails the slice. The full `design check --product <p>` runs in pre-push and CI only.
 - After a slice, write an "as built" section in the plan: what was built, the commits, and
   what you verified and what you did not verify.
 
