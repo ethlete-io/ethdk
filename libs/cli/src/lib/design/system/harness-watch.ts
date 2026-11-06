@@ -1,5 +1,5 @@
 import { ChildProcess, spawn } from 'child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, utimesSync } from 'fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, utimesSync } from 'fs';
 import { Server } from 'http';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
@@ -28,12 +28,13 @@ const SETTLE_MS = 1_000;
 const SLACK_MS = 50;
 const FAILED_LOG_MS = 200;
 const POLL_MS = 25;
+const OUTPUT_QUIET_MS = 200;
 
 export type WatchLine = 'start' | 'built' | 'failed' | 'busy';
 
 const LINES: [RegExp, WatchLine][] = [
   [NX_BUSY, 'busy'],
-  [/Application bundle generation complete\./u, 'built'],
+  [/Output location: /u, 'built'],
   [/Application bundle generation failed\./u, 'failed'],
   [/(?:❯|>) (?:Building|Changes detected)/u, 'start'],
 ];
@@ -113,6 +114,23 @@ const touch = (file: string) => {
   }
 };
 
+const newestChangeOf = (dir: string) => {
+  const root = statSync(dir, { throwIfNoEntry: false });
+
+  if (!root) return 0;
+
+  try {
+    let newest = root.ctimeMs;
+
+    for (const entry of readdirSync(dir, { recursive: true, withFileTypes: true }))
+      newest = Math.max(newest, statSync(join(entry.parentPath, entry.name), { throwIfNoEntry: false })?.ctimeMs ?? 0);
+
+    return newest;
+  } catch {
+    return Date.now();
+  }
+};
+
 type Watch = {
   key: string;
   app: string;
@@ -121,7 +139,7 @@ type Watch = {
   stop: () => Promise<void>;
 };
 
-const startWatch = (options: {
+export const startWatch = (options: {
   target: string;
   root: string;
   app: string;
@@ -251,20 +269,25 @@ const startWatch = (options: {
     return stopped;
   };
 
-  const served = async () => {
-    if (url) return url;
+  const served = async (): Promise<{ url: string } | string> => {
+    if (url) return { url };
 
     const browser = join(outputPath, 'browser');
     const port = await freePortOf();
     const started = `http://127.0.0.1:${port}`;
 
-    server = await serveStatic(existsSync(browser) ? browser : outputPath, port);
+    const serving = await serveStatic(existsSync(browser) ? browser : outputPath, port);
 
-    if (!(await servingOf(started))) return `the ${task} output does not serve ${HARNESS_PATH} on ${started}`;
+    if (!(await servingOf(started))) {
+      await new Promise((done) => serving.close(done));
 
+      return `the ${task} output does not serve ${HARNESS_PATH} on ${started}`;
+    }
+
+    server = serving;
     url = started;
 
-    return url;
+    return { url };
   };
 
   const wait = async (inputs: ReadonlyMap<string, string>): Promise<{ url: string } | string> => {
@@ -286,11 +309,14 @@ const startWatch = (options: {
           continue;
         }
         if (!state.last.ok) return `${task} failed:\n${state.last.log.join('\n').slice(-2_000).trim()}`;
+        // Angular logs the output location just before it writes the files.
+        if (now - Math.max(state.last.endedAt, newestChangeOf(outputPath)) < OUTPUT_QUIET_MS) {
+          await delay(POLL_MS);
+          continue;
+        }
 
         try {
-          const at = await served();
-
-          return typeof at === 'string' ? at : { url: at };
+          return await served();
         } catch (error) {
           return `cannot serve the ${task} output: ${error instanceof Error ? error.message : String(error)}`;
         }

@@ -1,5 +1,9 @@
+import { mkdtempSync, rmSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { changedAtOf, isWatchBuildCurrent, WatchState, watchLineOf } from './harness-watch';
+import { changedAtOf, isWatchBuildCurrent, startWatch, WatchState, watchLineOf } from './harness-watch';
+import { HARNESS_PATH } from './part-compare';
 
 describe('watchLineOf', () => {
   it.each([
@@ -7,7 +11,8 @@ describe('watchLineOf', () => {
     ['ethlete-studio: ✔ Building...', null],
     ['ethlete-studio: ❯ Changes detected. Rebuilding...', 'start'],
     ['ethlete-studio: ✔ Changes detected. Rebuilding...', null],
-    ['ethlete-studio: Application bundle generation complete. [0.907 seconds] - 2026-11-06T11:00:17.449Z', 'built'],
+    ['ethlete-studio: Application bundle generation complete. [0.907 seconds] - 2026-11-06T11:00:17.449Z', null],
+    ['ethlete-studio: Output location: /tmp/et-design-harness-watch-6r2KgG/out', 'built'],
     ['ethlete-studio: Application bundle generation failed. [0.879 seconds] - 2026-11-06T11:00:23.419Z', 'failed'],
     [
       "ethlete-studio: ✘ [ERROR] TS2322: Type 'string' is not assignable to type 'number'. [plugin angular-compiler]",
@@ -98,5 +103,50 @@ describe('changedAtOf', () => {
 
   it('is now for a removed input', () => {
     expect(changedAtOf({ confirmed, inputs: new Map([['a.ts', '1']]), mtimeOf, now: 99 })).toBe(99);
+  });
+});
+
+const ANGULAR_WATCH = `
+const { mkdirSync, writeFileSync } = require('fs');
+const { join } = require('path');
+const out = process.argv[1];
+console.log('app: ❯ Building...');
+console.log('app: Application bundle generation complete. [0.100 seconds]');
+setTimeout(() => {
+  console.log('app: Output location: ' + out);
+  setTimeout(() => {
+    mkdirSync(join(out, 'browser'), { recursive: true });
+    writeFileSync(join(out, 'browser', 'index.html'), '<!doctype html>');
+  }, 20);
+}, 400);
+setInterval(() => undefined, 1_000);
+`;
+
+describe('startWatch', () => {
+  it('serves the browser output that Angular writes after it logs the output location', async () => {
+    const target = mkdtempSync(join(tmpdir(), 'et-harness-watch-spec-'));
+    const watch = startWatch({
+      target,
+      root: target,
+      app: 'app',
+      project: 'app',
+      key: 'key',
+      inputs: new Map(),
+      commandOf: ({ outputPath }) => ({ command: process.execPath, args: ['-e', ANGULAR_WATCH, outputPath] }),
+      settle: 1_000,
+      timeout: 10_000,
+    });
+
+    try {
+      if (typeof watch === 'string') throw new Error(watch);
+
+      const served = await watch.wait(new Map());
+
+      if (typeof served === 'string') throw new Error(served);
+      expect((await fetch(`${served.url}${HARNESS_PATH}`)).status).toBe(200);
+    } finally {
+      if (typeof watch !== 'string') await watch.stop();
+      rmSync(target, { recursive: true, force: true });
+    }
   });
 });
