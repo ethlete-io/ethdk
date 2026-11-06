@@ -267,6 +267,23 @@ describe('createShotStore', () => {
     expect(store().read('key', address)).toBeNull();
   });
 
+  it('keeps the text style of the frame root, which compare sets on the app host', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'cli-shot-store-'));
+    const store = createShotStore({ dir, salt: 's', inputsOf: () => [], scopeOf: () => '' });
+    const ambient = {
+      fontFamily: 'Inter',
+      fontSize: '14px',
+      fontWeight: '400',
+      fontStyle: 'normal',
+      lineHeight: '20px',
+      letterSpacing: '0',
+    };
+
+    store.write('key', { address, picture: { ...picture, ambient } });
+
+    expect(store.read('key', address)).toEqual({ ...picture, ambient });
+  });
+
   it('drops the oldest entries past its limit', () => {
     const dir = mkdtempSync(join(tmpdir(), 'cli-shot-store-'));
     const store = createShotStore({ dir, salt: 's', inputsOf: () => [], scopeOf: () => '', limit: 120 });

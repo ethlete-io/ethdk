@@ -16,6 +16,7 @@ vi.mock('../serve', () => ({
     listen: async () => undefined,
     close: async () => undefined,
     httpServer: { address: () => ({ port: 1 }) },
+    shotStore: () => undefined,
     ssrLoadModule: async () => ({ default: { states: { rest: {} } } }),
   }),
 }));

@@ -4,9 +4,10 @@ import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { chromiumOf } from '../browser';
 import { timedPhase } from '../phase-timing';
-import { DesignConfig, DesignPreset } from '../paths';
+import { DesignConfig, DesignPreset, viteCacheOf } from '../paths';
 import { createDesignServer } from '../serve';
 import { checkerScriptOf, createPartShooter, Picture, pixelBoxOf, viewportOf } from '../shot';
+import { browserVersionOf, COMPARE_DESIGN_SHOTS } from './compare-cache';
 import { awaitFonts, Browser, createDrawQueue, DRAW_TIMEOUT_MS, DRAWS_AT_ONCE } from '../thumb';
 import {
   actionInputsOf,
@@ -245,9 +246,12 @@ export const checkActions = async (options: {
   const frame = compareFrameOf({ presets: product.presets, part, preset: null });
 
   if (typeof frame === 'string') return frame;
-  if (!(await chromiumOf(target))) return 'actions needs playwright or playwright-core in the checkout';
+  const chromium = await chromiumOf(target);
+
+  if (!chromium) return 'actions needs playwright or playwright-core in the checkout';
 
   const server = await createDesignServer({ target, config, listen: true, port: 0 });
+  const store = server.shotStore(viteCacheOf(target, COMPARE_DESIGN_SHOTS), browserVersionOf(chromium.from));
   let browser: { queue: ReturnType<typeof createDrawQueue>; shooter: ReturnType<typeof createPartShooter> } | undefined;
   const closeBrowser = async () => {
     const open = browser;
@@ -267,7 +271,10 @@ export const checkActions = async (options: {
 
       const queue = createDrawQueue({ target });
 
-      browser = { queue, shooter: createPartShooter({ target, base: `http://localhost:${port}`, system, queue }) };
+      browser = {
+        queue,
+        shooter: createPartShooter({ target, base: `http://localhost:${port}`, system, queue, store }),
+      };
 
       return browser;
     };

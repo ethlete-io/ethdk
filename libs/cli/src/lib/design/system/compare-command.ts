@@ -1,15 +1,27 @@
+import { createHash } from 'crypto';
 import { mkdtempSync, writeFileSync } from 'fs';
 import { AddressInfo } from 'net';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { chromiumOf } from '../browser';
-import { DesignConfig, DesignPreset } from '../paths';
+import { DesignConfig, DesignPreset, viteCacheOf } from '../paths';
 import { createDesignServer } from '../serve';
 import { timedPhase } from '../phase-timing';
+import { buildStampOf } from '../stamp';
+import { recordCache } from '../timings';
 import { WarmDraw } from '../warm-draw';
 import { checkerScriptOf, createPartShooter, pixelBoxOf, TextAmbient, viewportOf } from '../shot';
 import { awaitFonts, Browser, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
 import { partActionFailuresOf } from './actions-command';
+import {
+  AppShotCache,
+  browserVersionOf,
+  builtAppHashOf,
+  cacheKeyOf,
+  COMPARE_APP_SHOTS,
+  COMPARE_DESIGN_SHOTS,
+  createAppShotCache,
+} from './compare-cache';
 import { harnessStaleOf } from './harness-map';
 import { productSampledPropsOf } from './harness-samples';
 import { shootLiveStates } from './live-compare';
@@ -60,6 +72,8 @@ export type ShootStates = (options: {
   sketch?: string | null;
   /** Draws the app even for a state compare cannot check against its design: one that differs only inside slots, or sends props the app has no input for. */
   appOnly?: boolean;
+  /** The folder of the built harness app `url` serves; without it no app picture is cached. */
+  appRoot?: string | null;
 }) => Promise<{ states: Record<string, unknown>; shots: StateShot[] } | string>;
 
 export type ComparePart = (options: {
@@ -71,6 +85,7 @@ export type ComparePart = (options: {
   only: string | null;
   preset?: string | null;
   sketch?: string | null;
+  appRoot?: string | null;
   shoot?: ShootStates;
 }) => Promise<{ green: boolean; states: Record<string, unknown> } | string>;
 
@@ -469,6 +484,72 @@ export const harnessShotOf = async (options: {
 
 type DesignServer = Awaited<ReturnType<typeof createDesignServer>>;
 
+type HarnessShot = Omit<Parameters<typeof harnessShotOf>[0], 'browser' | 'phase' | 'onMissingPanes' | 'timeout'>;
+
+const sha256Of = (text: string) => createHash('sha256').update(text).digest('hex');
+
+/**
+ * @internal The disk cache key of an app picture: `salt` (the cli and browser versions), the hash of the built app,
+ * and every option the shot is drawn with but the harness origin, whose port changes from run to run.
+ */
+export const appShotKeyOf = (options: { salt: string; app: string; shot: HarnessShot }) => {
+  const { url, opened, props, ...rest } = options.shot;
+  const { pathname, search } = new URL(url);
+
+  return cacheKeyOf([
+    options.salt,
+    options.app,
+    `${pathname}${search}`,
+    opened ? { control: opened.control, markup: sha256Of(opened.markup) } : null,
+    props ? { sent: props.sent ?? null, designOnly: [...props.designOnly].sort() } : null,
+    rest,
+  ]);
+};
+
+/** @internal The disk caches of one compare: design pictures by the files they are drawn from, app pictures by `appShotKeyOf`. */
+export const compareCachesOf = (options: {
+  target: string;
+  server: DesignServer;
+  browser: string;
+  appRoot: string | null;
+}) => {
+  const { target, server, appRoot } = options;
+  const stamp = buildStampOf();
+  const salt = `${stamp.version} ${stamp.build} ${options.browser}`;
+
+  return {
+    design: server.shotStore(viteCacheOf(target, COMPARE_DESIGN_SHOTS), options.browser),
+    app: appRoot
+      ? {
+          salt,
+          built: timedPhase('compare-app-hash', () => builtAppHashOf(appRoot)),
+          cache: createAppShotCache(viteCacheOf(target, COMPARE_APP_SHOTS)),
+        }
+      : null,
+  };
+};
+
+/** @internal The app picture of `shot` from `cache`, or drawn by `draw` and kept there; without a cache always drawn. */
+export const cachedAppShotOf = async (options: {
+  cache: { salt: string; built: string; cache: AppShotCache } | null;
+  shot: HarnessShot;
+  draw: () => Promise<{ app: Buffer; note?: string }>;
+}) => {
+  const { cache } = options;
+  const key = cache ? appShotKeyOf({ salt: cache.salt, app: cache.built, shot: options.shot }) : null;
+  const kept = key && cache ? cache.cache.read(key) : null;
+
+  recordCache(!!kept);
+
+  if (kept) return kept;
+
+  const drawn = await options.draw();
+
+  if (key) cache?.cache.write(key, drawn);
+
+  return drawn;
+};
+
 /** A listening design server and a draw queue that outlive one compare; the owner closes them. */
 
 const ownDraw = async (target: string, config: DesignConfig) => {
@@ -488,11 +569,14 @@ const ownDraw = async (target: string, config: DesignConfig) => {
 /** `shootStates` drawing on `warm`, or on a design server and Chromium of its own when there is none. */
 export const shootStatesWith =
   (warm?: WarmDraw): ShootStates =>
-  async ({ target, config, product, part, url, only, preset, appOnly }) => {
+  async ({ target, config, product, part, url, only, preset, appOnly, appRoot }) => {
     const frame = compareFrameOf({ presets: product.presets, part, preset: preset ?? null });
 
     if (typeof frame === 'string') return frame;
-    if (!(await chromiumOf(target))) return 'compare needs playwright or playwright-core in the checkout';
+
+    const browser = await chromiumOf(target);
+
+    if (!browser) return 'compare needs playwright or playwright-core in the checkout';
 
     const queue = warm ? warm.queue() : createDrawQueue({ target });
     let server: DesignServer | undefined;
@@ -505,8 +589,14 @@ export const shootStatesWith =
 
       const { port } = server.httpServer?.address() as AddressInfo;
       const system = createSystemModules({ target, config });
+      const caches = compareCachesOf({
+        target,
+        server,
+        browser: browserVersionOf(browser.from),
+        appRoot: appRoot ?? null,
+      });
 
-      shooter = createPartShooter({ target, base: `http://localhost:${port}`, system, queue });
+      shooter = createPartShooter({ target, base: `http://localhost:${port}`, system, queue, store: caches.design });
 
       const file = product.parts.find((candidate) => partKeyOf(candidate) === part)?.file ?? '';
       const module = (await server.ssrLoadModule(productModuleIdOf({ file, product: product.name }))) as {
@@ -580,57 +670,65 @@ export const shootStatesWith =
           shoot: ({ state, design, open }) => {
             const sent = open?.props ?? states[open?.from ?? state];
             const forced = forcedElementsOf(design.markup ?? '');
-            let note: string | undefined;
-
-            return timedPhase(`compare-app-shot ${state}`, () =>
-              queue.run((browser) =>
-                harnessShotOf({
-                  browser,
-                  phase: `compare-app-shot ${state}`,
-                  onMissingPanes: (problem) => (note = problem),
-                  url: harnessUrlOf({
-                    url,
-                    part,
-                    state,
-                    props: sent,
-                    layout: frame.layout,
+            const shot: HarnessShot = {
+              url: harnessUrlOf({
+                url,
+                part,
+                state,
+                props: sent,
+                layout: frame.layout,
+              }),
+              size: frame.size,
+              width,
+              forced,
+              ...(appOnly
+                ? {}
+                : {
+                    props: {
+                      sent,
+                      designOnly: new Set([
+                        ...designOnlyPropsOf({
+                          states,
+                          opens,
+                          state,
+                          forced: forced.map(({ interaction }) => interaction),
+                          forcing,
+                          selected: drawsSelectedOf(design.markup ?? ''),
+                        }),
+                        ...sampled,
+                      ]),
+                    },
                   }),
-                  size: frame.size,
-                  width,
-                  forced,
-                  ...(appOnly
-                    ? {}
-                    : {
-                        props: {
-                          sent,
-                          designOnly: new Set([
-                            ...designOnlyPropsOf({
-                              states,
-                              opens,
-                              state,
-                              forced: forced.map(({ interaction }) => interaction),
-                              forcing,
-                              selected: drawsSelectedOf(design.markup ?? ''),
-                            }),
-                            ...sampled,
-                          ]),
-                        },
-                      }),
-                  roomAbove: (design.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
-                  panes: drawnPaneCountOf(design.markup ?? ''),
-                  frozen: frozenAnimationsOf(design.markup ?? ''),
-                  ...(design.ambient ? { ambient: design.ambient } : {}),
-                  ...(open ? { opened: { control: open.control, markup: design.markup ?? '' } } : {}),
-                })
-                  .then((app): AppShot => (note === undefined ? { app } : { app, note }))
-                  .catch((error: unknown) => {
-                    if (error instanceof DroppedPropsError) return { problem: error.message };
-                    if (error instanceof UndrivableError) return { problem: error.message, undrivable: true as const };
+              roomAbove: (design.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
+              panes: drawnPaneCountOf(design.markup ?? ''),
+              frozen: frozenAnimationsOf(design.markup ?? ''),
+              ...(design.ambient ? { ambient: design.ambient } : {}),
+              ...(open ? { opened: { control: open.control, markup: design.markup ?? '' } } : {}),
+            };
 
-                    throw error;
-                  }),
-              ),
-            );
+            return cachedAppShotOf({
+              cache: caches.app,
+              shot,
+              draw: () => {
+                let note: string | undefined;
+
+                return timedPhase(`compare-app-shot ${state}`, () =>
+                  queue.run((browser) =>
+                    harnessShotOf({
+                      ...shot,
+                      browser,
+                      phase: `compare-app-shot ${state}`,
+                      onMissingPanes: (problem) => (note = problem),
+                    }).then((app) => (note === undefined ? { app } : { app, note })),
+                  ),
+                );
+              },
+            }).catch((error: unknown): AppShot => {
+              if (error instanceof DroppedPropsError) return { problem: error.message };
+              if (error instanceof UndrivableError) return { problem: error.message, undrivable: true as const };
+
+              throw error;
+            });
           },
         }),
       );
@@ -805,7 +903,7 @@ export const designCompare = async (options: {
     product,
     url: args.values['--url'],
     start: options.start,
-    run: async (url) => {
+    run: async (url, root) => {
       for (const task of pending) {
         if (all) console.log(`== ${task.part}`);
 
@@ -818,6 +916,7 @@ export const designCompare = async (options: {
           only: args.values['--state'] ?? null,
           preset: args.values['--preset'] ?? null,
           sketch: args.values['--sketch'] ?? null,
+          appRoot: root,
           shoot: options.shoot ?? (live ? shootLiveStates : undefined),
         });
 

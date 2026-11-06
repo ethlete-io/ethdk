@@ -4085,3 +4085,16 @@ for a counter bug. Why no tool caught it: the counter was never checked against 
 mock. Agreed by the doc agent: note until the counter is fixed (spec on the sketches markup), then a failure; the fix
 is perf work (each wrong count costs the 1 s cap per shot) and runs right after S4. Not in the perf block, queued:
 pages/sketches differs on every state (far-out 2446 px), the same before the slice.
+B416 phase 3 = S4 (in progress, then as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06):
+compare keeps its pictures on disk under `node_modules/.design-explore/compare-{design,app}-shots-<hash>`. A design
+picture uses the design server's shot store (`server.shotStore`): its key is the frame (part, state, preset, width, bare,
+emptySlots, checker, theme), it is valid while every file it was drawn from is unchanged (part source, embedded parts and
+kit, styles, tokens, config), and the salt is the cli build and the Playwright version; the store now keeps the frame's
+text ambient. An app picture's key is the sha256 of the cli build, the Playwright version, the hash of every built
+harness file, the harness path and query (part, state, props, layout) and every other shot option (size, width,
+forced, opened control and its markup, room, panes, frozen, ambient, prop check). No app cache for `--url`. A hit skips
+the shot and counts in `design timings`; the action check reuses the design store. Numbers (studio, read-only, resident
+off): pages/sketches cold 21.1 s, warm 8.0 s (91 hits, 0 misses; compare-states 0.7 s, compare-actions 3.9 s, ~3 s
+process start); every design picture invalidated 14.4 s, the built app invalidated 13.6 s; pages/start 2.7 s cold, 1.8 s
+warm. Floor after an edit: 30 design or app shots 6-7 s; compare-actions 3.5-3.9 s, mostly `actions-state` per state
+(matrix states ~1.9 s).

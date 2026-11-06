@@ -134,7 +134,7 @@ const newestChangeOf = (dir: string) => {
 type Watch = {
   key: string;
   app: string;
-  wait: (inputs: ReadonlyMap<string, string>) => Promise<{ url: string } | string>;
+  wait: (inputs: ReadonlyMap<string, string>) => Promise<{ url: string; root: string } | string>;
   dead: () => boolean;
   stop: () => Promise<void>;
 };
@@ -269,14 +269,16 @@ export const startWatch = (options: {
     return stopped;
   };
 
-  const served = async (): Promise<{ url: string } | string> => {
-    if (url) return { url };
+  const browser = join(outputPath, 'browser');
+  const rootOf = () => (existsSync(browser) ? browser : outputPath);
 
-    const browser = join(outputPath, 'browser');
+  const served = async (): Promise<{ url: string; root: string } | string> => {
+    if (url) return { url, root: rootOf() };
+
     const port = await freePortOf();
     const started = `http://127.0.0.1:${port}`;
 
-    const serving = await serveStatic(existsSync(browser) ? browser : outputPath, port);
+    const serving = await serveStatic(rootOf(), port);
 
     if (!(await servingOf(started))) {
       await new Promise((done) => serving.close(done));
@@ -287,10 +289,10 @@ export const startWatch = (options: {
     server = serving;
     url = started;
 
-    return { url };
+    return { url, root: rootOf() };
   };
 
-  const wait = async (inputs: ReadonlyMap<string, string>): Promise<{ url: string } | string> => {
+  const wait = async (inputs: ReadonlyMap<string, string>): Promise<{ url: string; root: string } | string> => {
     const waitingSince = Date.now();
 
     for (;;) {
@@ -332,7 +334,7 @@ export const startWatch = (options: {
 };
 
 export type HarnessWatch = {
-  current: (product: ResolvedProduct) => Promise<{ url: string } | string | null>;
+  current: (product: ResolvedProduct) => Promise<{ url: string; root: string } | string | null>;
   stop: () => Promise<void>;
 };
 

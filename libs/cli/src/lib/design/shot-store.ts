@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import { mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, utimesSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { PartAddress, PartMark, Picture } from './shot';
+import { PartAddress, PartMark, Picture, TextAmbient } from './shot';
 
 /** The part of a shot address that decides which files a shot draws from. */
 export type StoredAddress = Pick<PartAddress, 'product' | 'part' | 'sketch' | 'props'>;
@@ -20,6 +20,7 @@ type Entry = {
   png: string;
   marks: PartMark[];
   markup?: string;
+  ambient?: TextAmbient;
 };
 
 const SHOT_STORE_LIMIT = 512 * 1024 * 1024;
@@ -131,6 +132,7 @@ export const createShotStore = (options: {
           png: Buffer.from(entry.png, 'base64'),
           marks: entry.marks,
           ...(typeof entry.markup === 'string' ? { markup: entry.markup } : {}),
+          ...(entry.ambient ? { ambient: entry.ambient } : {}),
         };
       } catch {
         return null;
@@ -152,6 +154,7 @@ export const createShotStore = (options: {
           png: picture.png.toString('base64'),
           marks: picture.marks,
           ...(picture.markup === undefined ? {} : { markup: picture.markup }),
+          ...(picture.ambient === undefined ? {} : { ambient: picture.ambient }),
         };
         const text = JSON.stringify(entry);
         const known = sizesOf();

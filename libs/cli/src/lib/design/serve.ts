@@ -1138,6 +1138,20 @@ export const createDesignServer = async (options: {
     });
 
   return Object.assign(server, {
+    /** A disk store of this server's part pictures under `dir`; an entry is served while every file it was drawn from is unchanged. */
+    shotStore: (dir: string, salt: string) => {
+      const stamp = buildStampOf();
+
+      return shotStoreOf({
+        target,
+        config,
+        system,
+        stylesheetImports,
+        dir,
+        salt: `${stamp.version} ${stamp.build} ${salt}`,
+        moduleById: (id) => server.moduleGraph.getModuleById(id),
+      });
+    },
     /** Forgets every loaded part, sketch and module, so the next draw reads the files as they are now: a server started with `port` does not watch them. */
     forgetDrawn: () => {
       system.forget();

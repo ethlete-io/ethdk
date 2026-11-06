@@ -19,7 +19,8 @@ export const RESERVED_PORTS: readonly number[] = [4221, 4400, 4402, 4403, 4492];
 const BUILD_TIMEOUT_MS = 300_000;
 const STOP_TIMEOUT_MS = 10_000;
 
-export type HarnessServer = { url: string; stop: () => Promise<void> };
+/** A served harness app; `root` is the folder of built files it serves, absent for a dev server. */
+export type HarnessServer = { url: string; stop: () => Promise<void>; root?: string };
 
 export type StartHarnessServer = (options: {
   target: string;
@@ -336,7 +337,7 @@ const serveBuild = async (options: {
     return `the ${task} output does not serve ${HARNESS_PATH} on ${url}`;
   }
 
-  return { url, stop };
+  return { url, stop, root };
 };
 
 /** Runs `run` with `url`, or without one with the URL of a harness server it starts and always stops afterwards. */
@@ -345,9 +346,9 @@ export const withHarnessUrl = async <T>(options: {
   product: ResolvedProduct;
   url: string | undefined;
   start?: StartHarnessServer;
-  run: (url: string) => Promise<T>;
+  run: (url: string, root: string | null) => Promise<T>;
 }): Promise<T | string> => {
-  if (options.url) return options.run(options.url);
+  if (options.url) return options.run(options.url, null);
 
   const server = await timedPhase('harness-start', () =>
     (options.start ?? startHarnessServer)({ target: options.target, product: options.product }),
@@ -358,7 +359,7 @@ export const withHarnessUrl = async <T>(options: {
   console.log(`started the harness app on ${server.url}`);
 
   try {
-    return await options.run(server.url);
+    return await options.run(server.url, server.root ?? null);
   } finally {
     await timedPhase('harness-stop', () => server.stop());
   }

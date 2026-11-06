@@ -553,9 +553,8 @@ export const createPartShooter = (options: {
     const key = JSON.stringify([...options.key, theme.surface, theme.color, theme.fill, scale, crop, scheme]);
     const kept = options.fresh ? undefined : cache.get(key);
 
-    recordCache(kept !== undefined);
-
     if (kept) {
+      recordCache(true);
       options.onSource?.('memory');
 
       drawQueue.join(kept.shot, options.want);
@@ -564,6 +563,8 @@ export const createPartShooter = (options: {
     }
 
     const stored = !options.fresh && options.address ? store?.read(key, options.address) : null;
+
+    recordCache(!!stored);
 
     if (stored) {
       options.onSource?.('disk');

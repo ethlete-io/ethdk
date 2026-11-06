@@ -71,7 +71,7 @@ export const createWarmRuns = (options: { target: string }) => {
 
     if (served === null) return startHarnessServer({ target, product });
 
-    return typeof served === 'string' ? served : { url: served.url, stop: async () => undefined };
+    return typeof served === 'string' ? served : { url: served.url, root: served.root, stop: async () => undefined };
   };
 
   const refresh = async (config: DesignConfig | null) => {
