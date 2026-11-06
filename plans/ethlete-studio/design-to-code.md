@@ -4264,6 +4264,16 @@ check did not wait for compare's design shots); only the per-phase measurement s
 caught it: compare specs check results and order, not how often a picture is drawn. Tool fix (before S7, so the S7
 number is trustworthy): a draw-count invariant in the compare specs - each design and app picture is drawn at most once
 per run.
+Studio frame B (as built in 600073630, c0, 2026-11-06): a warm `?part=` open-points call spent ~535 ms in the static
+rules over the whole product (`ruleProblemsOf` via `buildReadyInputsOf`), ~39 ms in `readOpenPoints`; system-view and
+part-approval fetched the same URL at once. Now `open-points-cache.ts` keys the rule result on a stat fingerprint of
+~1300 files (6-8 ms); ready mark, hash, direct edit, slow results and build-ready stay live; Studio shares one in-flight
+request per URL. Repeat call icons 520 -> 14-18 ms, shell-main ~650 -> ~42 ms (22 ms live build-ready of embedded
+parts); first call after server start ~2-2.7 s unchanged. e2e "a part switch asks for its open points once" failed
+before (2+2). Why no tool caught the double request: no e2e counted requests per switch. Doc agent: the hand-made
+folder fingerprint is not accepted - it misses inputs outside the folders (an `implements` target in another app, the
+tailwind version) and then shows stale open points. The key records every file the rules actually read, like the
+compare-actions cache does, and a spec edits a file outside the old folder list.
 
 B416 slice 2 (as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06): each on-disk compare
 cache is keyed on the cli code that changes its result, not the whole cli build (`code-hash.ts`): the import graph of
