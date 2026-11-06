@@ -77,7 +77,7 @@ If the types really differ (a missing query param, an array response on one side
 ## 4. Check the result
 
 - `tsc` over every affected project, then the build. `vitest` does not typecheck.
-- `@ethlete/query/ngrx-toolkit` is a subpath export, so a project needs `moduleResolution: bundler` (or `node16` / `nodenext`). A project that still resolves with `node` gets an `NTK-MODULE-RESOLUTION` task naming its tsconfig.
+- `@ethlete/query/ngrx-toolkit` is a subpath export, so a project needs `moduleResolution: bundler` (or `node16` / `nodenext`). A project that still resolves with `node` gets an `NTK-MODULE-RESOLUTION` task naming its tsconfig - also when the subpath import sits in another project it reaches through a `paths` alias, and then the task names that alias.
 - Open the main screens. Loading, errors, and a `refresh()` from another component are what the interop has to get right.
 - Search for `@tomtomb/ngrx-toolkit` imports. Each one left should have a task in the file.
 - Delete the bearer token interceptor if the app has one (`NTK-AUTH-INTERCEPTOR` below). Leaving it sends the token twice on secure queries and to third-party hosts.
@@ -121,11 +121,11 @@ The feature is untouched. Fix the cause, then re-run the generator.
 
 ### Leftovers
 
-| Task                      | What to do                                                                                                                                                                                                                     |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `NTK-FACADE-WITHOUT-HTTP` | A facade extends `FacadeBase` but has no action groups. Drop `FacadeBase` and its store wiring once nothing reads its state.                                                                                                   |
-| `NTK-COMMENTED-FEATURE`   | The feature only exists as comments. Delete the folder or restore it.                                                                                                                                                          |
-| `NTK-MODULE-RESOLUTION`   | The listed tsconfig resolves modules with `node` / `node10`, which ignores the `exports` map, so `@ethlete/query/ngrx-toolkit` does not resolve. Set `moduleResolution: bundler` there or in the base config it inherits from. |
+| Task                      | What to do                                                                                                                                                                                                                                                                                                                      |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NTK-FACADE-WITHOUT-HTTP` | A facade extends `FacadeBase` but has no action groups. Drop `FacadeBase` and its store wiring once nothing reads its state.                                                                                                                                                                                                    |
+| `NTK-COMMENTED-FEATURE`   | The feature only exists as comments. Delete the folder or restore it.                                                                                                                                                                                                                                                           |
+| `NTK-MODULE-RESOLUTION`   | The listed tsconfig resolves modules with `node` / `node10`, which ignores the `exports` map, so `@ethlete/query/ngrx-toolkit` does not resolve - in its own files or in a project it imports through a `paths` alias (the task names the alias). Set `moduleResolution: bundler` there or in the base config it inherits from. |
 
 ## How the interop behaves
 

@@ -198,7 +198,7 @@ export const migrateToolkitStores = (
   );
   const consumers = migrateToolkitConsumers(tree, createModuleGraph(tree), inScope, report, migratedFacades);
 
-  reportLegacyModuleResolution(tree, inScope, report);
+  reportLegacyModuleResolution(tree, createModuleGraph(tree), inScope, report);
 
   return {
     featuresFound: discovered.features.length,
