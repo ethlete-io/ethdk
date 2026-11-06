@@ -309,7 +309,11 @@ describe('part compare', () => {
 
     expect(diff).toMatchObject({ kind: 'diff', pixels: 2 });
     expect('diff' in diff && decodePng(diff.diff).width).toBe(4);
-    expect(comparePngs({ design, app: pngOf(4, 3, () => RED - 1) })).toMatchObject({ kind: 'diff', pixels: 12 });
+    expect(comparePngs({ design, app: pngOf(4, 3, () => RED + 0x0100) })).toEqual({ kind: 'ok' });
+    expect(comparePngs({ design, app: pngOf(4, 3, () => RED + 0x0100 * 9) })).toMatchObject({
+      kind: 'diff',
+      pixels: 12,
+    });
     expect(comparePngs({ design, app: pngOf(4, 4, () => RED) })).toMatchObject({
       kind: 'size',
       design: { width: 4, height: 3 },

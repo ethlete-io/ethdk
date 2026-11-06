@@ -1,4 +1,5 @@
 import { crc32, deflateSync, inflateSync } from 'zlib';
+import { pixelsDiffer } from './anti-alias';
 
 export const HARNESS_PATH = '/__design-harness';
 
@@ -338,7 +339,7 @@ export const encodePng = (pixels: Pixels) => {
   ]);
 };
 
-/** How the app's picture of a state matches the design's at tolerance 0: `ok`, a size mismatch, or a count of differing pixels, with a diff picture unless `ok`. */
+/** How the app's picture of a state matches the design's within the anti-alias tolerance: `ok`, a size mismatch, or a count of differing pixels, with a diff picture unless `ok`. */
 export type PixelCompare =
   | { kind: 'ok' }
   | { kind: 'size'; design: Size; app: Size; diff: Buffer }
@@ -363,7 +364,9 @@ export const comparePngs = (options: { design: Buffer; app: Buffer }): PixelComp
       const from = pixelAt(design, { x, y });
       const to = (y * width + x) * 4;
 
-      if (from !== null && from === pixelAt(app, { x, y })) {
+      const other = pixelAt(app, { x, y });
+
+      if (from !== null && other !== null && !pixelsDiffer(from, other)) {
         design.data.copy(data, to, (y * design.width + x) * 4, (y * design.width + x) * 4 + 3);
         data[to + 3] = (design.data[(y * design.width + x) * 4 + 3] ?? 0) >> 2;
 

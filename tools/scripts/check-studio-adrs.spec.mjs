@@ -18,6 +18,13 @@ test('accepts built and open ADRs', () => {
   assert.deepEqual(checkAdr('a', adr('status: superseded by 0004\nopen: B1'), rows).errors, []);
 });
 
+test('open: none is refused on a new ADR and grandfathered on an old one', () => {
+  const text = adr('status: accepted\nopen: none');
+
+  assert.match(checkAdr('0205-new.md', text, rows).errors[0], /needs a "built/);
+  assert.deepEqual(checkAdr('0204-old.md', text, rows).errors, []);
+});
+
 test('open: none passes with a warning', () => {
   const result = checkAdr('a', adr('status: accepted\nopen: none'), rows);
   assert.deepEqual(result.errors, []);

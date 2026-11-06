@@ -9,6 +9,7 @@ const BUILT_VALUE = /^[0-9a-f]{7,40}$/;
 const OPEN_VALUE = /^(B\d+|none)$/;
 const LIST_ITEM = /^(\d+)\. /;
 const FINDING_LIKE_LIST_NUMBER = 100;
+const OPEN_NONE_GRANDFATHERED_UP_TO = 204;
 
 export const frontmatterOf = (text) => {
   const match = /^---\n([\s\S]*?)\n---/.exec(text);
@@ -39,6 +40,9 @@ export const checkAdr = (name, text, rows) => {
   } else if (!OPEN_VALUE.test(meta.open)) {
     errors.push(`${name}: open must be B<row> or none, got "${meta.open}"`);
   } else if (meta.open === 'none') {
+    if (Number(/^(\d+)-/.exec(name)?.[1] ?? 0) > OPEN_NONE_GRANDFATHERED_UP_TO) {
+      errors.push(`${name}: open: none needs a "built: <sha>" or an "open: B<row>"; a decided ADR must be tracked`);
+    }
     warnings.push(`${name}: open: none (decided, no STATUS row yet)`);
   } else {
     const row = rows.find((r) => r.id === meta.open);

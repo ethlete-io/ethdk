@@ -1,4 +1,5 @@
 import { PartMark, Picture } from './shot';
+import { pixelsDiffer } from './system/anti-alias';
 import { decodePng } from './system/part-compare';
 import { readPartModule } from './system/list-system';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
@@ -40,8 +41,6 @@ export type PictureOf = (options: {
   fresh?: boolean;
 }) => Promise<Picture>;
 
-const ANTI_ALIAS_TOLERANCE = 8;
-
 /**
  * `true` when two pictures have the same size and no channel of any pixel differs by more than 8 of 255, so an
  * anti-alias shift on a rounded edge is no change. A picture that does not decode is the same only byte for byte.
@@ -55,8 +54,8 @@ export const looksTheSame = (a: Buffer, b: Buffer) => {
 
     if (left.width !== right.width || left.height !== right.height) return false;
 
-    for (let at = 0; at < left.data.length; at++)
-      if (Math.abs(left.data.readUInt8(at) - right.data.readUInt8(at)) > ANTI_ALIAS_TOLERANCE) return false;
+    for (let at = 0; at + 4 <= left.data.length; at += 4)
+      if (pixelsDiffer(left.data.readUInt32BE(at), right.data.readUInt32BE(at))) return false;
 
     return true;
   } catch {
