@@ -189,6 +189,36 @@ export const allowedFilesOf = (options: {
   ...(options.product === 'sdk' ? ['apps/docs/components/**'] : []),
 ];
 
+const NOT_IMPLEMENTATION_FILES = [
+  'plans/**',
+  'apps/ethlete-studio/docs/**',
+  '.changeset/**',
+  'apps/docs/components/**',
+];
+
+/** The files of a diff that never count as implementation: plans, the Studio docs, changesets and the docs guides. */
+export const notImplementationFilesOf = (files: string[]) =>
+  files.filter((file) => NOT_IMPLEMENTATION_FILES.some((pattern) => matchesPattern(file, pattern)));
+
+/** The linked parts of a product, other than `except`, whose allowed files hold one of `files`, in product order. */
+export const ownerPartsOf = (options: { product: ResolvedProduct; files: string[]; except: string[] }): string[] =>
+  options.product.parts
+    .map((candidate) => partKeyOf(candidate))
+    .filter((part) => !options.except.includes(part))
+    .filter((part) => {
+      const linked = linkedTaskPartOf({ product: options.product, part });
+
+      if (typeof linked === 'string') return false;
+
+      const allowed = allowedFilesOf({
+        product: options.product.name,
+        component: linked.component,
+        harnessMap: null,
+      });
+
+      return filesOutsideOf({ files: options.files, allowed }).length < options.files.length;
+    });
+
 /** The files of a diff outside the allowed patterns of `allowedFilesOf`. */
 export const filesOutsideOf = (options: { files: string[]; allowed: string[] }) =>
   options.files.filter((file) => !options.allowed.some((pattern) => matchesPattern(file, pattern)));

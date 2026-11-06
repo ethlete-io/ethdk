@@ -19,7 +19,10 @@ import {
   importersOf,
   gitDiffPatchOf,
   markImplemented,
+  notImplementationFilesOf,
+  ownerPartsOf,
   readImplemented,
+  TaskPart,
   themingDirectivesOf,
   taskPartOf,
   taskStatesOf,
@@ -34,7 +37,8 @@ import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
 import { parseTarget } from './sketch/sketch';
 import { productModuleIdOf } from './system-modules';
 
-export const TASK_USAGE = 'task <layer>/<name> --product <name> [--verify [<rev>] [--url <app dev server url>]]';
+export const TASK_USAGE =
+  'task <layer>/<name> --product <name> [--verify [<rev>] [--url <app dev server url>]] | task <layer>/<name> <layer>/<name>... --product <name> --verify <rev> [--url <app dev server url>]';
 
 export type PartActionFailures = typeof partActionFailuresOf;
 
@@ -83,7 +87,8 @@ const verifyOf = (argv: string[]) => {
 /**
  * `et design task <layer>/<name> …` prints what implementing a build-ready part takes, or its blockers; `--verify [<rev>]`
  * needs a holding check record and checks the files of a commit or range against the files the task allows, runs compare and the actions check, and records the part as
- * implemented when all pass.
+ * implemented when all pass. Several parts verify one commit as one task: their allowed files join, and each part needs
+ * its own green compare and actions check before any is recorded.
  */
 export const designTask = async (options: {
   target: string;
@@ -103,8 +108,9 @@ export const designTask = async (options: {
   const { rest, rev } = verifyOf(options.argv);
   const args = argsOf(rest, { values: ['--product', '--url'], switches: [] });
 
-  if (typeof args === 'string' || args.positional.length !== 1) {
+  if (typeof args === 'string' || args.positional.length === 0 || (rev === null && args.positional.length > 1)) {
     if (typeof args === 'string') console.error(args);
+    else if (args.positional.length > 1) console.error('several parts need --verify: they verify one commit together');
 
     console.error(`usage: ${invocation} ${TASK_USAGE}`);
 
@@ -112,12 +118,25 @@ export const designTask = async (options: {
   }
 
   const config = configOf(target);
-  const parsed = parseTarget(args.positional[0]);
 
-  if (typeof config === 'string' || typeof parsed === 'string') {
-    console.error(typeof config === 'string' ? config : parsed);
+  if (typeof config === 'string') {
+    console.error(config);
 
     return 1;
+  }
+
+  const parts: string[] = [];
+
+  for (const positional of args.positional) {
+    const parsed = parseTarget(positional);
+
+    if (typeof parsed === 'string') {
+      console.error(parsed);
+
+      return 1;
+    }
+
+    if (!parts.includes(partKeyOf(parsed))) parts.push(partKeyOf(parsed));
   }
 
   const product = oneProductOf({ target, config, asked: args.values['--product'] });
@@ -128,28 +147,43 @@ export const designTask = async (options: {
     return 1;
   }
 
-  const part = partKeyOf(parsed);
-  const task =
-    rev === null
-      ? taskPartOf({ product, part, inputs: (options.inputs ?? buildReadyInputsOf)(product) })
-      : verifiedTaskPartOf({ product, part });
+  const tasks: TaskPart[] = [];
 
-  if (typeof task === 'string') {
-    console.error(task);
+  for (const part of parts) {
+    const found =
+      rev === null
+        ? taskPartOf({ product, part, inputs: (options.inputs ?? buildReadyInputsOf)(product) })
+        : verifiedTaskPartOf({ product, part });
 
-    return 1;
+    if (typeof found === 'string') {
+      console.error(found);
+
+      return 1;
+    }
+
+    tasks.push(found);
   }
 
-  const allowed = allowedFilesOf({
-    product: product.name,
-    component: task.component,
-    harnessMap: product.config.harness?.map ?? null,
-    shared: product.config.harness?.shared ?? [],
-  });
+  const [task] = tasks;
+
+  if (!task) return 2;
+
+  const allowed = [
+    ...new Set(
+      tasks.flatMap((each) =>
+        allowedFilesOf({
+          product: product.name,
+          component: each.component,
+          harnessMap: product.config.harness?.map ?? null,
+          shared: product.config.harness?.shared ?? [],
+        }),
+      ),
+    ),
+  ];
   const harnessApp = product.config.harness?.app;
   const stylesheet = harnessApp ? appStylesheetOf({ target, app: harnessApp }) : null;
   const root = resolve(product.configFile, '../../..');
-  const wiringAt = (range: string) => {
+  const wiringAt = (range: string, component: string) => {
     const read = (file: string) => (options.read ?? gitFileAtOf)({ root, range, file });
     const rev = range.includes('..') ? (range.split('..').pop() ?? range) : range;
 
@@ -157,10 +191,10 @@ export const designTask = async (options: {
       const files = (options.tree ?? gitTreeFilesOf)({
         root,
         rev,
-        dir: task.component.split('/').slice(0, 2).join('/'),
+        dir: component.split('/').slice(0, 2).join('/'),
       });
 
-      return wiringFilesOf({ files, component: task.component, read });
+      return wiringFilesOf({ files, component, read });
     } catch {
       return [];
     }
@@ -184,21 +218,30 @@ export const designTask = async (options: {
       const diffed = (options.diff ?? gitDiffFilesOf)({ root, range });
       const design = designFilesOf(diffed);
 
-      files = diffed.filter((file) => !design.includes(file));
+      const ignored = notImplementationFilesOf(diffed);
+
+      files = diffed.filter((file) => !design.includes(file) && !ignored.includes(file));
       if (design.length > 0) {
         console.log(`skipped ${design.length} design file${design.length === 1 ? '' : 's'} under .ethlete/design`);
+      }
+      if (ignored.length > 0) {
+        console.log(
+          `skipped ${ignored.length} plan, docs and changeset file${ignored.length === 1 ? '' : 's'}: ${ignored.join(', ')}`,
+        );
       }
       const unlisted = filesOutsideOf({ files, allowed }).filter(
         (file) =>
           file !== stylesheet || !changesOnlySourceLines((options.patch ?? gitDiffPatchOf)({ root, range, file })),
       );
-      const importers = importersOf({
-        files: unlisted,
-        component: task.component,
-        read: (file) => (options.read ?? gitFileAtOf)({ root, range, file }),
-      });
+      const importers = tasks.flatMap((each) =>
+        importersOf({
+          files: unlisted,
+          component: each.component,
+          read: (file) => (options.read ?? gitFileAtOf)({ root, range, file }),
+        }),
+      );
 
-      const wiring = wiringAt(range);
+      const wiring = tasks.flatMap((each) => wiringAt(range, each.component));
 
       wired = unlisted.filter((file) => wiring.includes(file));
       outside = unlisted.filter((file) => !importers.includes(file) && !wiring.includes(file));
@@ -217,64 +260,87 @@ export const designTask = async (options: {
         `allowed: ${[...allowed, ...(stylesheet ? [`${stylesheet} (@source lines)`] : []), 'wiring files'].join(', ')}`,
       );
 
+      const owners = ownerPartsOf({ product, files: outside, except: parts });
+
+      if (owners.length > 0) {
+        console.error(
+          `verify together: ${invocation} task ${[...parts, ...owners].join(' ')} --product ${product.name} --verify ${rev}`,
+        );
+      }
+
       return 1;
     }
 
     console.log(`${files.length} file${files.length === 1 ? '' : 's'} of ${range} inside the allowed files`);
 
-    const compared = await withHarnessUrl({
-      target,
-      product,
-      url: args.values['--url'],
-      start: options.start,
-      run: (url) => (options.compare ?? comparePart)({ target, config, product, part: task.part, url, only: null }),
-    });
+    const prefix = (each: TaskPart) => (tasks.length > 1 ? `${each.part}: ` : '');
+    const passed: { task: TaskPart; states: Record<string, unknown> }[] = [];
 
-    if (typeof compared === 'string' || !compared.green) {
-      console.error(typeof compared === 'string' ? compared : 'compare is not green, so nothing was recorded');
+    for (const each of tasks) {
+      const compared = await withHarnessUrl({
+        target,
+        product,
+        url: args.values['--url'],
+        start: options.start,
+        run: (url) => (options.compare ?? comparePart)({ target, config, product, part: each.part, url, only: null }),
+      });
 
-      return 1;
+      if (typeof compared === 'string' || !compared.green) {
+        console.error(
+          `${prefix(each)}${typeof compared === 'string' ? compared : 'compare is not green, so nothing was recorded'}`,
+        );
+
+        return 1;
+      }
+
+      const failures = await (options.actions ?? partActionFailuresOf)({
+        target,
+        config,
+        product,
+        part: each.part,
+        url: args.values['--url'],
+        start: options.start,
+        onNote: (line) => console.log(line),
+      });
+
+      if (!Array.isArray(failures)) {
+        console.error(
+          `${prefix(each)}the actions check could not run, so nothing was recorded: ${failures.unavailable}`,
+        );
+
+        return 1;
+      }
+
+      if (failures.length > 0) {
+        failures.forEach((line) => console.error(line));
+        console.error(
+          `${prefix(each)}${failures.length} action${failures.length === 1 ? '' : 's'} missed, so nothing was recorded`,
+        );
+
+        return 1;
+      }
+
+      passed.push({ task: each, states: compared.states });
     }
 
-    const failures = await (options.actions ?? partActionFailuresOf)({
-      target,
-      config,
-      product,
-      part: task.part,
-      url: args.values['--url'],
-      start: options.start,
-      onNote: (line) => console.log(line),
-    });
+    for (const { task: each, states } of passed) {
+      const implemented = markImplemented({
+        product,
+        part: each.part,
+        states,
+        app: appFilesOf({ root: repoRootOf(product), component: each.component }),
+      });
 
-    if (!Array.isArray(failures)) {
-      console.error(`the actions check could not run, so nothing was recorded: ${failures.unavailable}`);
+      if (typeof implemented === 'string') {
+        console.error(implemented);
 
-      return 1;
+        return 1;
+      }
+
+      console.log(
+        `recorded ${each.part} as implemented at ${implemented.hash} (${implemented.at}), states: ${Object.keys(implemented.states).join(', ')}, app files: ${Object.keys(implemented.app ?? {}).length}`,
+      );
     }
-
-    if (failures.length > 0) {
-      failures.forEach((line) => console.error(line));
-      console.error(`${failures.length} action${failures.length === 1 ? '' : 's'} missed, so nothing was recorded`);
-
-      return 1;
-    }
-
-    const implemented = markImplemented({
-      product,
-      part: task.part,
-      states: compared.states,
-      app: appFilesOf({ root: repoRootOf(product), component: task.component }),
-    });
-
-    if (typeof implemented === 'string') {
-      console.error(implemented);
-
-      return 1;
-    }
-
-    console.log(
-      `recorded ${task.part} as implemented at ${implemented.hash} (${implemented.at}), states: ${Object.keys(implemented.states).join(', ')}, app files: ${Object.keys(implemented.app ?? {}).length}`,
-    );
 
     return 0;
   }
@@ -300,7 +366,7 @@ export const designTask = async (options: {
   console.log('allowed files:');
   allowed.forEach((pattern) => console.log(`  ${pattern}`));
   if (stylesheet) console.log(`  ${stylesheet} (@source lines)`);
-  const wiring = wiringAt('HEAD');
+  const wiring = wiringAt('HEAD', task.component);
 
   console.log(wiring.length > 0 ? 'wiring files:' : 'wiring files: none yet');
   wiring.forEach((file) => console.log(`  ${file}`));

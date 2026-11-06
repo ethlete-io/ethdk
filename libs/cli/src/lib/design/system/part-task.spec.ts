@@ -432,6 +432,105 @@ describe('part task', () => {
     expect(verifyRangeOf('abc')).toBe('abc^..abc');
   });
 
+  describe('verify over several parts', () => {
+    const OUTBOX_STATES = { default: {} };
+    const several = (target: string, argv: string[], diff: () => string[], compare: ComparePart) =>
+      designTask({
+        target,
+        argv: [...argv, '--product', 'app-a', '--url', 'http://localhost:9'],
+        invocation: 'et design',
+        load: async () => CHIP_STATES,
+        diff: vi.fn(diff),
+        compare,
+        actions: vi.fn(async () => []),
+        inputs: () => GREEN,
+      });
+    const green = () =>
+      vi.fn<ComparePart>(async ({ part }) => ({
+        green: true,
+        states: part === 'components/chip' ? CHIP_STATES : OUTBOX_STATES,
+      }));
+
+    it('verifies one commit over the union of the allowed files and records each part', async () => {
+      const { target, dir } = checkout();
+      const lines = output();
+
+      record(target);
+      record(target, 'pages/outbox');
+
+      const compare = green();
+      const diff = () => [
+        'libs/chip/chip.component.ts',
+        'src/outbox/outbox.component.ts',
+        'plans/ethlete-studio/design-to-code.md',
+        'apps/ethlete-studio/docs/notes.md',
+        '.changeset/chip.md',
+        'apps/docs/components/chip.md',
+      ];
+
+      expect(await several(target, ['components/chip', 'pages/outbox', '--verify', 'abc'], diff, compare)).toBe(0);
+      expect(compare).toHaveBeenCalledTimes(2);
+      expect(lines).toContain('2 files of abc^..abc inside the allowed files');
+      expect(lines.join('\n')).toContain('skipped 4 plan, docs and changeset files');
+      expect(readImplemented(dir)['components/chip']?.hash).toBe(record(target)?.hash);
+      expect(readImplemented(dir)['pages/outbox']?.hash).toBe(record(target, 'pages/outbox')?.hash);
+    });
+
+    it('refuses a file outside every named part, and records nothing while one compare is red', async () => {
+      const { target, dir } = checkout();
+      const lines = output();
+
+      record(target);
+      record(target, 'pages/outbox');
+
+      const compare = green();
+      const foreign = () => ['libs/chip/chip.component.ts', 'src/outbox/outbox.component.ts', 'libs/other/x.ts'];
+
+      expect(await several(target, ['components/chip', 'pages/outbox', '--verify', 'abc'], foreign, compare)).toBe(1);
+      expect(lines).toContain('1 file of abc^..abc outside the allowed files:');
+      expect(lines).toContain('  libs/other/x.ts');
+      expect(compare).not.toHaveBeenCalled();
+
+      const red = vi.fn<ComparePart>(async ({ part }) => ({ green: part === 'components/chip', states: CHIP_STATES }));
+      const inside = () => ['libs/chip/chip.component.ts', 'src/outbox/outbox.component.ts'];
+
+      lines.length = 0;
+      expect(await several(target, ['components/chip', 'pages/outbox', '--verify', 'abc'], inside, red)).toBe(1);
+      expect(lines).toContain('pages/outbox: compare is not green, so nothing was recorded');
+      expect(readImplemented(dir)).toEqual({});
+    });
+
+    it('refuses several parts without --verify', async () => {
+      const { target } = checkout();
+      const lines = output();
+
+      expect(await several(target, ['components/chip', 'pages/outbox'], () => [], green())).toBe(2);
+      expect(lines).toContain('several parts need --verify: they verify one commit together');
+    });
+
+    it('names the parts to verify together when a single part commit holds the files of other parts', async () => {
+      const { target, dir } = checkout();
+      const lines = output();
+
+      record(target);
+
+      const compare = green();
+      const diff = () => ['libs/chip/chip.component.ts', 'src/outbox/outbox.component.ts', 'plans/a.md'];
+
+      expect(await several(target, ['components/chip', '--verify', 'abc'], diff, compare)).toBe(1);
+      expect(lines).toContain('  src/outbox/outbox.component.ts');
+      expect(lines).toContain(
+        'verify together: et design task components/chip pages/outbox --product app-a --verify abc',
+      );
+      expect(compare).not.toHaveBeenCalled();
+      expect(readImplemented(dir)).toEqual({});
+
+      lines.length = 0;
+      expect(await several(target, ['components/chip', '--verify', 'abc'], () => ['libs/other/x.ts'], compare)).toBe(1);
+      expect(lines.join('\n')).not.toContain('verify together');
+    });
+  });
+
   describe('verify of 5a29b1b94', () => {
     const component = 'apps/studio/src/app/design-parts/sketches/sketches.component.ts';
     const sources: Record<string, string> = {

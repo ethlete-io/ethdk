@@ -3771,6 +3771,17 @@ click` (printed by `check --part`). `check --part` prints why it wrote no record
 passes (`READY` lists them). Verified: specs with bite in `part-build-ready.spec.ts`, `part-ready.spec.ts` and
 `check-system.spec.ts`.
 
+**Doc-agent decision under Q160 - multi-part verify, as built (2026-11-06):** `task <part> [<part>...] --product <p>
+--verify <rev>` verifies one commit as one task over several parts. The allowed files are the union of the named parts'
+allowed files. Files under `plans/`, `apps/ethlete-studio/docs/`, `.changeset/` and `apps/docs/components/` never count
+as implementation files: they are skipped with one line (`notImplementationFilesOf` in `part-task.ts`), also for a
+single part. Any other file outside the union is refused and named. Each part runs its own compare and actions check;
+a part is recorded only when every named part passed, each with its own implemented hash. A refused verify names the
+other linked parts whose allowed files hold the refused files: `verify together: et design task a b c --product <p>
+--verify <rev>` (`ownerPartsOf`). Several parts without `--verify` exit 2 with a usage message. Verified: specs with
+bite in `part-task.spec.ts` (union, foreign file, skipped plan/docs/changeset files, red compare on one part records
+nothing, the hint, no `--verify`). Not verified: the real verify of ff698951f.
+
 499\. Tom, 2026-11-06 12:08: "den hat er schon seit 71m gezeichnet aber danke... du merkst selbst wie lahm wir schon
 wieder sind". The sketch `components/title-bar@notice-hint` had its variants written at 10:56; at 12:07 c8 still waited
 on `sketch check` (4:42 min in, in-process, while cb ran a full `design check --slow` for 14 min on the same machine),
