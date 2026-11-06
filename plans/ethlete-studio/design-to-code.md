@@ -4422,5 +4422,6 @@ revision held, passes with a new URL and ETag. 530 closed: the cause was the e2e
 checkout has two tree rows named shell-main (the part and a sketch), and the case clicked the sketch row. The case now
 picks the part row, and a switch without a frame fails with a DOM dump. icons -> shell-main seen 14 ms, back 11 ms;
 first visit 6.3 s (all drawn, nothing stored in the temp checkout). Verified: Studio tsc and lint, sketch-view spec
-17/17, merge/discard e2e. Open: whether NG0953 "Unexpected emit for destroyed OutputRef" in the sketch-view merge spec
+17/17, merge/discard e2e. `design check --product studio --part pages/sketches` on c77c781d5: exit 0, 0 findings (42.8 s non-resident, only the
+baselined DROPPED-PROP lines of finding 489). Open: whether NG0953 "Unexpected emit for destroyed OutputRef" in the sketch-view merge spec
 predates C; the scroll e2e covers one column only.
