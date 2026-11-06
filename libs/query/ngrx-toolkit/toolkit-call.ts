@@ -1,5 +1,13 @@
-import { assertInInjectionContext, EnvironmentInjector, inject, Injector } from '@angular/core';
-import { AnyQueryCreator, QueryHeaders, RequestArgs, resolveQueryHeaders } from '@ethlete/query';
+import { assertInInjectionContext, DestroyRef, EnvironmentInjector, inject, Injector } from '@angular/core';
+import {
+  AnyQueryCreator,
+  QueryArgsOf,
+  QueryHeaders,
+  RequestArgs,
+  ResponseType,
+  resolveQueryHeaders,
+} from '@ethlete/query';
+import { filter, map, Observable, Subject } from 'rxjs';
 import { createToolkitHandle, ToolkitHandleEntry, toQueryArgs } from './toolkit-handle';
 import { ActionCallArgs, MappedEntityState } from './toolkit-types';
 
@@ -14,6 +22,7 @@ export type ToolkitCallOptions = {
 type ToolkitRegistry = {
   shared: WeakMap<AnyQueryCreator, Map<string, ToolkitHandleEntry>>;
   latestUnshared: WeakMap<AnyQueryCreator, ToolkitHandleEntry>;
+  successes: Subject<{ creator: AnyQueryCreator; response: unknown }>;
 };
 
 const registries = /* @__PURE__ */ new WeakMap<EnvironmentInjector, ToolkitRegistry>();
@@ -73,22 +82,37 @@ const resolveEnvironmentInjector = (fn: (...args: never[]) => unknown, options?:
   return inject(EnvironmentInjector);
 };
 
+const registryOf = (injector: EnvironmentInjector) => {
+  let registry = registries.get(injector);
+
+  if (!registry) {
+    const successes = new Subject<{ creator: AnyQueryCreator; response: unknown }>();
+
+    registry = { shared: new WeakMap(), latestUnshared: new WeakMap(), successes };
+    registries.set(injector, registry);
+    injector.get(DestroyRef).onDestroy(() => successes.complete());
+  }
+
+  return registry;
+};
+
+const handleFor = <TCreator extends AnyQueryCreator>(
+  creator: TCreator,
+  injector: EnvironmentInjector,
+  registry: ToolkitRegistry,
+) => createToolkitHandle(creator, injector, (response) => registry.successes.next({ creator, response }));
+
 const resolveEntry = <TCreator extends AnyQueryCreator>(
   creator: TCreator,
   args: ActionCallArgs<TCreator>,
   injector: EnvironmentInjector,
 ) => {
-  let registry = registries.get(injector);
-
-  if (!registry) {
-    registry = { shared: new WeakMap(), latestUnshared: new WeakMap() };
-    registries.set(injector, registry);
-  }
+  const registry = registryOf(injector);
 
   const key = hashArgs(toQueryArgs(args as Record<string, unknown>));
 
   if (key === null) {
-    const entry = createToolkitHandle(creator, injector);
+    const entry = handleFor(creator, injector, registry);
 
     registry.latestUnshared.get(creator)?.releaseWhenSettled();
     registry.latestUnshared.set(creator, entry);
@@ -106,7 +130,7 @@ const resolveEntry = <TCreator extends AnyQueryCreator>(
   let entry = entries.get(key);
 
   if (!entry) {
-    entry = createToolkitHandle(creator, injector);
+    entry = handleFor(creator, injector, registry);
     entries.set(key, entry);
   }
 
@@ -153,4 +177,29 @@ export const toolkitCall = <TCreator extends AnyQueryCreator>(
   entry.call(args);
 
   return entry.handle;
+};
+
+type SuccessResponseOf<TCreator> = TCreator extends AnyQueryCreator ? ResponseType<QueryArgsOf<TCreator>> : never;
+
+/**
+ * Emits the response every time a `toolkitCall` handle of one of the creators succeeds - the
+ * `facade.on(action.success)` of `@tomtomb/ngrx-toolkit`. Only handles of the same environment injector count.
+ *
+ * @example
+ * ```ts
+ * toolkitOnSuccess([postAcceptClaim, postDeclineClaim])
+ *   .pipe(takeUntilDestroyed())
+ *   .subscribe(() => this.reloadRoster());
+ * ```
+ */
+export const toolkitOnSuccess = <const TCreators extends AnyQueryCreator | readonly AnyQueryCreator[]>(
+  creators: TCreators,
+  options?: ToolkitCallOptions,
+): Observable<SuccessResponseOf<TCreators extends readonly AnyQueryCreator[] ? TCreators[number] : TCreators>> => {
+  const watched = new Set<AnyQueryCreator>(Array.isArray(creators) ? creators : [creators as AnyQueryCreator]);
+
+  return registryOf(resolveEnvironmentInjector(toolkitOnSuccess, options)).successes.pipe(
+    filter((success) => watched.has(success.creator)),
+    map((success) => success.response as never),
+  );
 };

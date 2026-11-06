@@ -149,7 +149,8 @@ export class TeamFacade {
 - **A second call with the same args joins the one in flight** instead of sending another request.
 - **Calls with other args are not cancelled.** A toolkit `onActionSwitchMap` aborted the previous call of the group; each args set is its own query now. Check screens that relied on that.
 - **`remove()` during a request drops the late result.**
-- **Not in the interop:** `isPolling$`, `type$`, `entityId$`, action ids, `sideUpdates`, `on()` / `once()`. They show up as `NTK-UNSUPPORTED-IMPORT`, or as `NTK-FACADE-ON` for `on()` / `once()` on a migrated facade.
+- **`facade.on(action.success)`:** `toolkitOnSuccess(creator)` (or an array of creators) emits the response every time a `toolkitCall` handle of that creator succeeds, in the same environment injector. Pass `{ injector }` outside an injection context.
+- **Not in the interop:** `isPolling$`, `type$`, `entityId$`, action ids, `sideUpdates`, `once()`, and `on()` for `.failure` or other actions. They show up as `NTK-UNSUPPORTED-IMPORT`, or as `NTK-FACADE-ON` for `on()` / `once()` on a migrated facade.
 
 ## 5. Migrate screens
 

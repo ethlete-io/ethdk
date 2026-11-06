@@ -91,6 +91,7 @@ export const toQueryArgs = (args: Record<string, unknown>) => {
 export const createToolkitHandle = <TCreator extends AnyQueryCreator>(
   creator: TCreator,
   injector: EnvironmentInjector,
+  onSuccess: (response: unknown) => void,
 ): ToolkitHandleEntry => {
   const query = creator({ injector, onlyManualExecution: true, silenceMissingWithArgsFeatureError: true });
 
@@ -119,10 +120,21 @@ export const createToolkitHandle = <TCreator extends AnyQueryCreator>(
 
   const changes = new Subject<ToolkitHandleSnapshot>();
 
+  let lastSuccess: QueryExecutionState<never> | null = null;
+
   const changesEffect = effect(
     () => {
       const current = snapshot();
-      untracked(() => changes.next(current));
+      const state = query.executionState();
+
+      untracked(() => {
+        changes.next(current);
+
+        if (current.callState === CallState.SUCCESS && state !== lastSuccess) {
+          lastSuccess = state;
+          onSuccess(current.response);
+        }
+      });
     },
     { injector },
   );

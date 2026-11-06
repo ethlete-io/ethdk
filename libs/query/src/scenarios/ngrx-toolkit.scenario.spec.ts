@@ -11,6 +11,7 @@ import {
   SuspensePipe,
   toolkitCall,
   ToolkitError,
+  toolkitOnSuccess,
   toolkitSelect,
 } from '@ethlete/query/ngrx-toolkit';
 import { Observable, Subject } from 'rxjs';
@@ -522,6 +523,65 @@ class ModuleViewComponent {
     this.store = this.facade.getTeam({ queryParams: { teamId: '3' } });
   }
 }
+
+describe('ngrx-toolkit interop toolkitOnSuccess', () => {
+  const scenario = useTeamScenario();
+
+  const facade = () => scenario().run(() => inject(TeamFacade));
+
+  beforeEach(() => {
+    scenario().api.on('POST', '/teams/:teamId/members', () => ({ body: { ok: true }, delay: 50 }));
+  });
+
+  it('emits for every success of any handle of the creators, like facade.on(action.success) did', () => {
+    const s = scenario();
+    const memberAdded = record(s.run(() => toolkitOnSuccess(api.postMember)));
+    const anyChange = record(s.run(() => toolkitOnSuccess([api.postMember, api.getTeam])));
+
+    facade().postMember({ queryParams: { teamId: '1' }, params: { notify: 'no' }, body: { name: 'A' } });
+    facade().postMember({ queryParams: { teamId: '2' }, params: { notify: 'no' }, body: { name: 'B' } });
+    s.tick(50);
+
+    expect(memberAdded.values).toEqual([{ ok: true }, { ok: true }]);
+
+    const team = facade().getTeam({ queryParams: { teamId: '1' } });
+    s.tick(100);
+    team.refresh();
+    s.tick(100);
+
+    expect(memberAdded.values).toHaveLength(2);
+    expect(anyChange.values).toEqual([
+      { ok: true },
+      { ok: true },
+      { id: '1', name: 'Team 1', revision: 1 },
+      { id: '1', name: 'Team 1', revision: 2 },
+    ]);
+
+    memberAdded.subscription.unsubscribe();
+    anyChange.subscription.unsubscribe();
+  });
+
+  it('stays silent for failures and emits once for a joined request', () => {
+    const s = scenario();
+    const loaded = record(s.run(() => toolkitOnSuccess(api.getTeam)));
+
+    facade().getTeam({ queryParams: { teamId: 'missing' } });
+    s.tick();
+
+    expect(loaded.values).toEqual([]);
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 404);
+
+    facade().getTeam({ queryParams: { teamId: '1' } });
+    s.tick(50);
+    facade().getTeam({ queryParams: { teamId: '1' } });
+    s.tick(100);
+
+    expect(s.api.requestCount('GET', '/teams/1')).toBe(1);
+    expect(loaded.values).toEqual([{ id: '1', name: 'Team 1', revision: 1 }]);
+
+    loaded.subscription.unsubscribe();
+  });
+});
 
 describe('ngrx-toolkit interop pipes', () => {
   const scenario = useTeamScenario();
