@@ -4114,6 +4114,16 @@ action cache (`action-cache.ts`, compare only). Verified: state lines identical 
 phase 4+5); ~2.4 s on sketches outside any phase; `settle` in action-press.ts still swallows a 15 s cap; the
 measuring script read a pipe's exit 0 again (515) - rule: exit and times come from `design timings`, never a shell
 pipe.
+
+523\. Tom (2026-11-06): "wenn ich zwischen 2 seiten wechsle wie icons und logo kommt immer pro frame noch ein loading
+state. ich hätte erwartet dass das mittlerweile instant ist. oder ist das nicht teil davon?" It was not: B416 sped up
+the CLI compare only. ADR 0186 (picture always under the live iframe) was decided 2026-11-04 for the sketch view and
+still sits unbuilt inside B365, queued behind B345/B346. Why no tool caught it: the perf block was scoped to CLI runs
+and `design timings`; Studio's own page switch has no timing and no target, so a slow switch is only seen by Tom. Fix
+(doc agent, applies ADR 0186 to every frame view and ADR 0213): the Studio frame part of B365 joins the perf block
+right after the resident cancel; measure first (per frame: picture available, loading shown), then build. Target: a
+page switch shows every frame's stored picture in the first paint. Tool fix: Studio logs the page-switch time to
+`design timings` with a target.
 B416 phase 3 = S4 (in progress, then as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06):
 compare keeps its pictures on disk under `node_modules/.design-explore/compare-{design,app}-shots-<hash>`. A design
 picture uses the design server's shot store (`server.shotStore`): its key is the frame (part, state, preset, width, bare,
