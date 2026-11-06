@@ -1,5 +1,6 @@
 ---
 status: accepted
+built: db7db6dc9
 decided: 2026-11-06
 source: doc-agent session 2026-11-06, after findings 518 and 520
 ---
