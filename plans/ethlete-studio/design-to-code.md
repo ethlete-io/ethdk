@@ -4075,3 +4075,13 @@ so each of ~30 shots waited the full 10 s and the timeout was swallowed silently
 per shot. Why no tool caught it: a wait that hits its cap logged nothing. Decided by the doc agent under ADR 0213: cap
 the pane wait at ~1 s with early exit, shoot app and design states 4 at once, and every wait that hits its cap reports
 a named problem ("design draws N panes, app opened M").
+As built (B416 steps 1+2, c0 subagent, 2026-11-06, a1405e348): per-state sub-phases (load/settle/screenshot) logged
+as they finish; pane wait capped at 1 s with early exit; design and app shots 4 at once (`createDrawQueue`).
+pages/sketches 340.8 s -> 19.7/25.7 s (design 5.6-7.0, app 5.0-6.0, compare-actions 8.2-8.7 s); pages/start 2.5 s.
+10 s not reached on sketches. Specs: compare-command.spec (fails at concurrency 1, order, early abort),
+settled-panes.spec, part-compare.spec, 61/61. The capped wait prints a note, not a failure: `drawnPaneCountOf` counts
+a pane in the sketches markup that is none (page-sketch and zoomed-page are 0 px green), so every state would turn red
+for a counter bug. Why no tool caught it: the counter was never checked against a design embedding a part with a pane
+mock. Agreed by the doc agent: note until the counter is fixed (spec on the sketches markup), then a failure; the fix
+is perf work (each wrong count costs the 1 s cap per shot) and runs right after S4. Not in the perf block, queued:
+pages/sketches differs on every state (far-out 2446 px), the same before the slice.
