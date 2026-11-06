@@ -4279,3 +4279,8 @@ fix: a fractional camera x (-853.2) gives edge smoothing that differs per side. 
 the helper route now; the move of SketchesComponent onto the shared canvas camera is its own queued slice (one camera
 code path for design and app is the real fix); snap the camera to whole pixels in the shared helper used by both, not
 a compare tolerance.
+
+Built (2026-11-06, Mac): fd9213b04 (finding 545), `checkRules` prints every skipped rule; under CI a missing-input
+skip fails. Found on the way: CLASS-UNDEFINED swallowed a Tailwind compile failure and silently found nothing, against
+ADR 0008 (no silent catch). Open for the builder: why the no-silent-catch check did not flag that catch (tool fix in
+the lint rule), and the same RuleSkip path in the slow/full check paths with S7c.
