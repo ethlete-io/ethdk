@@ -24,7 +24,7 @@ const defineConsumerTasks = (report: ToolkitMigrationReport) => {
   report.define(CONSUMER_TASK.UNCONVERTED_ACTION_GROUP, {
     title: 'Consumer types name an action group that is still on the toolkit',
     action:
-      'The file was left on `@tomtomb/ngrx-toolkit` because a `MappedEntityState` / `ActionCallArgs` type names an action group whose feature was not converted. Until then the file does not typecheck where it takes handles from facades that were migrated: the interop `MappedEntityState` has no `isPolling$`, `type$` or `entityId$`, and other generics. Resolve that feature’s task, then re-run the generator.',
+      'A `MappedEntityState` / `ActionCallArgs` type names an action group whose feature was not converted. In a file that also names converted creators, only these types stay on the toolkit, as `ToolkitMappedEntityState` / `ToolkitActionCallArgs`. Otherwise the whole file was left on `@tomtomb/ngrx-toolkit`. Until then the file does not typecheck where it takes handles from facades that were migrated: the interop `MappedEntityState` has no `isPolling$`, `type$` or `entityId$`, and other generics. Resolve that feature’s task, then re-run the generator.',
   });
   report.define(CONSUMER_TASK.SELECT_BY_ACTION_ID, {
     title: 'Handle looked up by action id',
@@ -146,19 +146,24 @@ const unconvertedTypeQueries = (
   handleTypeNames: ReadonlySet<string>,
 ) => {
   const unconverted: string[] = [];
+  const unconvertedReferences: ts.TypeReferenceNode[] = [];
+  let convertedReferences = 0;
 
-  const resolveQuery = (query: ts.TypeQueryNode) => {
+  const resolveQuery = (query: ts.TypeQueryNode): boolean => {
     const name = query.exprName;
     const local = ts.isIdentifier(name) ? name.text : ts.isIdentifier(name.left) ? name.left.text : null;
     const origin = local ? namedImportOf(sourceFile, local) : null;
 
-    if (!origin || origin.namespace === ts.isIdentifier(name)) return;
+    if (!origin || origin.namespace === ts.isIdentifier(name)) return false;
 
     const declaringFile = origin.namespace
       ? graph.resolveFile(filePath, origin.specifier)
       : graph.findDeclaringFile(filePath, origin.specifier, origin.imported);
 
-    if (isToolkitActionsFile(tree, declaringFile)) unconverted.push(name.getText(sourceFile));
+    if (!isToolkitActionsFile(tree, declaringFile)) return false;
+
+    unconverted.push(name.getText(sourceFile));
+    return true;
   };
 
   const visit = (node: ts.Node) => {
@@ -168,13 +173,22 @@ const unconvertedTypeQueries = (
       handleTypeNames.has(node.typeName.text) &&
       node.typeArguments
     ) {
+      let queries = 0;
+      let unconvertedQueries = 0;
+
       const visitArgument = (inner: ts.Node) => {
-        if (ts.isTypeQueryNode(inner)) resolveQuery(inner);
+        if (ts.isTypeQueryNode(inner)) {
+          queries += 1;
+          if (resolveQuery(inner)) unconvertedQueries += 1;
+        }
 
         ts.forEachChild(inner, visitArgument);
       };
 
       node.typeArguments.forEach(visitArgument);
+
+      if (unconvertedQueries > 0) unconvertedReferences.push(node);
+      else if (queries > 0) convertedReferences += 1;
     }
 
     ts.forEachChild(node, visit);
@@ -182,7 +196,7 @@ const unconvertedTypeQueries = (
 
   visit(sourceFile);
 
-  return unconverted;
+  return { names: unconverted, references: unconvertedReferences, convertedReferences };
 };
 
 const isCall = (node: ts.Node, name: string): node is ts.CallExpression =>
@@ -452,8 +466,13 @@ export const rewriteConsumer = (
     elements.filter((element) => HANDLE_TYPES.has(element.imported)).map((element) => element.local),
   );
   const unconverted = unconvertedTypeQueries(tree, graph, filePath, sourceFile, handleTypeNames);
+  const unconvertedTask: ToolkitTaskInput = {
+    id: CONSUMER_TASK.UNCONVERTED_ACTION_GROUP,
+    summary: `${[...new Set(unconverted.names)].map((name) => `\`${name}\``).join(', ')} still name toolkit action groups.`,
+    locations: [{ filePath }],
+  };
 
-  if (unconverted.length > 0) {
+  if (unconverted.names.length > 0 && (hasStoreSide || unconverted.convertedReferences === 0)) {
     if (hasStoreSide) return null;
 
     return {
@@ -461,20 +480,28 @@ export const rewriteConsumer = (
       rewritten: false,
       leftOnToolkit: true,
       refreshSitesRewritten: 0,
-      tasks: [
-        {
-          id: CONSUMER_TASK.UNCONVERTED_ACTION_GROUP,
-          summary: `${[...new Set(unconverted)].map((name) => `\`${name}\``).join(', ')} still name toolkit action groups.`,
-          locations: [{ filePath }],
-        },
-      ],
+      tasks: [unconvertedTask],
     };
   }
+
+  const importedOf = new Map(elements.map((element) => [element.local, element.imported]));
+  const aliased = new Set<string>();
+  const aliasEdits: TextEdit[] = unconverted.references.map((reference) => {
+    const imported = importedOf.get(reference.typeName.getText(sourceFile))!;
+
+    aliased.add(imported);
+
+    return {
+      start: reference.typeName.getStart(sourceFile),
+      end: reference.typeName.getEnd(),
+      text: `Toolkit${imported}`,
+    };
+  });
 
   const createActionId = elements.find((element) => element.imported === 'createActionId')?.local ?? null;
   const refresh = planRefreshSites(filePath, sourceFile, content, createActionId);
 
-  let result = applyEdits(content, refresh.edits);
+  let result = applyEdits(content, [...refresh.edits, ...aliasEdits]);
 
   const rewrittenSource = createSourceFile(result, filePath);
   const used = collectUsedIdentifiers(rewrittenSource);
@@ -504,7 +531,9 @@ export const rewriteConsumer = (
   );
   const replacement = [
     moved.length > 0 && !hasInteropImport ? `import { ${moved.join(', ')} } from '${INTEROP_MODULE}';` : null,
-    kept.length > 0 ? `import { ${kept.join(', ')} } from '${TOOLKIT_MODULE}';` : null,
+    kept.length + aliased.size > 0
+      ? `import { ${[...kept, ...[...aliased].map((name) => `${name} as Toolkit${name}`)].join(', ')} } from '${TOOLKIT_MODULE}';`
+      : null,
   ].filter((line): line is string => line !== null);
 
   const importEdits: TextEdit[] = toolkitImportsOf(rewrittenSource).map((statement, index) =>
@@ -529,6 +558,8 @@ export const rewriteConsumer = (
 
   const tasks = [...refresh.tasks];
 
+  if (aliased.size > 0) tasks.push(unconvertedTask);
+
   if (kept.length > 0) {
     tasks.push({
       id: CONSUMER_TASK.UNSUPPORTED_IMPORT,
@@ -540,7 +571,7 @@ export const rewriteConsumer = (
   return {
     content: result,
     rewritten: result !== content,
-    leftOnToolkit: kept.length > 0,
+    leftOnToolkit: kept.length + aliased.size > 0,
     refreshSitesRewritten: refresh.rewritten,
     tasks,
   };

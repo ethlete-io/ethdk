@@ -235,6 +235,67 @@ describe('migrate-from-ngrx-toolkit consumers', { timeout: 30_000 }, () => {
       ]);
     });
 
+    it('aliases only the toolkit types of a file that also names converted creators', () => {
+      const path = 'libs/domain/management/player/src/lib/competition/registration-details.component.ts';
+
+      tree.write(
+        path,
+        [
+          "import { Component } from '@angular/core';",
+          "import { getCatalogSessionEvent, getItem, getItemPublicProfileBySlug } from '@app-a/store';",
+          "import { CallState, MappedEntityState } from '@tomtomb/ngrx-toolkit';",
+          "import { BehaviorSubject } from 'rxjs';",
+          '',
+          'type RegistrationAction = {',
+          '  store: MappedEntityState<typeof getItem>;',
+          '};',
+          '',
+          "@Component({ selector: 'app-a-registration-details', template: '' })",
+          'export class RegistrationDetailsComponent {',
+          '  protected profileStore$ = new BehaviorSubject<MappedEntityState<',
+          '    typeof getItem | typeof getItemPublicProfileBySlug',
+          '  > | null>(null);',
+          '  protected chatStore$ = new BehaviorSubject<MappedEntityState<typeof getCatalogSessionEvent> | null>(null);',
+          '  protected state?: CallState;',
+          '  protected action?: RegistrationAction;',
+          '}',
+          '',
+        ].join('\n'),
+      );
+      migrateToolkitStores(tree, APP_A_OPTIONS, report);
+
+      expect(read(path)).toBe(
+        [
+          "import { Component } from '@angular/core';",
+          "import { getCatalogSessionEvent, getItem, getItemPublicProfileBySlug } from '@app-a/store';",
+          "import { CallState, MappedEntityState } from '@ethlete/query/ngrx-toolkit';",
+          "import { MappedEntityState as ToolkitMappedEntityState } from '@tomtomb/ngrx-toolkit';",
+          "import { BehaviorSubject } from 'rxjs';",
+          '',
+          'type RegistrationAction = {',
+          '  store: MappedEntityState<typeof getItem>;',
+          '};',
+          '',
+          "@Component({ selector: 'app-a-registration-details', template: '' })",
+          'export class RegistrationDetailsComponent {',
+          '  protected profileStore$ = new BehaviorSubject<MappedEntityState<',
+          '    typeof getItem | typeof getItemPublicProfileBySlug',
+          '  > | null>(null);',
+          '  protected chatStore$ = new BehaviorSubject<ToolkitMappedEntityState<typeof getCatalogSessionEvent> | null>(null);',
+          '  protected state?: CallState;',
+          '  protected action?: RegistrationAction;',
+          '}',
+          '',
+        ].join('\n'),
+      );
+      expect(tasksOf(CONSUMER_TASK.UNCONVERTED_ACTION_GROUP)).toEqual([
+        expect.objectContaining({ summary: '`getCatalogSessionEvent` still name toolkit action groups.' }),
+      ]);
+      expect(tasksOf(CONSUMER_TASK.UNSUPPORTED_IMPORT).filter((task) => task.locations[0]?.filePath === path)).toEqual(
+        [],
+      );
+    });
+
     it('says that a file left on the toolkit does not typecheck against migrated facades', () => {
       tree.write(
         'libs/domain/catalog/src/lib/event.component.ts',
