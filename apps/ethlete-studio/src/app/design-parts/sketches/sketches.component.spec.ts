@@ -45,6 +45,17 @@ const textOf = (element: Element | null | undefined) => element?.textContent?.re
 
 const LIST_WIDTH = 10000;
 
+const mockWorldSize = (width: number, height: number) => {
+  const isWorld = (element: HTMLElement) => element.parentElement?.hasAttribute('data-sk-rows') ?? false;
+
+  vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockImplementation(function (this: HTMLElement) {
+    return isWorld(this) ? width : 0;
+  });
+  vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) {
+    return isWorld(this) ? height : 0;
+  });
+};
+
 describe('SketchesComponent', () => {
   afterEach(() => vi.restoreAllMocks());
 
@@ -509,6 +520,7 @@ describe('SketchesComponent', () => {
   });
 
   it('opens at a restored camera and selects a clicked frame', async () => {
+    mockWorldSize(LIST_WIDTH + 500, 900);
     const fixture = await render({ restoredCamera: { zoom: 0.5, x: -40, y: -60 }, statesOpen: true });
     const root: HTMLElement = fixture.nativeElement;
     const frame = root.querySelector<HTMLElement>('[data-sk-frame="x rest"]');
@@ -532,11 +544,13 @@ describe('SketchesComponent', () => {
     expect(frame?.hasAttribute('data-selected')).toBe(true);
   });
 
-  it('opens at a camera panned past the top-left of the content', async () => {
-    const root: HTMLElement = (await render({ camera: { zoom: 1, x: 120, y: 80 } })).nativeElement;
+  it('keeps the start camera inside the content on both axes', async () => {
+    mockWorldSize(LIST_WIDTH + 300, 500);
+    const transformAt = async (camera: { zoom: number; x: number; y: number }) =>
+      (await render({ camera })).nativeElement.querySelector('[data-sk-rows] > div')?.style.transform;
 
-    expect(root.querySelector<HTMLElement>('[data-sk-rows] > div')?.style.transform).toBe(
-      'translate(120px, 80px) scale(1)',
-    );
+    expect(await transformAt({ zoom: 1, x: 120, y: 80 })).toBe('translate(0px, 0px) scale(1)');
+    expect(await transformAt({ zoom: 1, x: -1700, y: -260 })).toBe('translate(-300px, -260px) scale(1)');
+    expect(await transformAt({ zoom: 1, x: -100, y: -2000 })).toBe('translate(-100px, -500px) scale(1)');
   });
 });

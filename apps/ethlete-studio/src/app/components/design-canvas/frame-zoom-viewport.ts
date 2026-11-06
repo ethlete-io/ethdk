@@ -1,5 +1,5 @@
 import { CameraTarget, cameraAfterWheel, shortcutTarget } from './canvas-camera';
-import { Camera, panCamera } from './canvas-math';
+import { Camera, panCamera, Point } from './canvas-math';
 import { ARROWS } from './canvas-viewport';
 
 export type FrameZoomViewportOptions = {
@@ -21,6 +21,11 @@ const CLICK_SLOP = 3;
 
 const isEditable = (target: EventTarget | null) =>
   target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
+
+export const panRoomOf = (viewport: HTMLElement, content: HTMLElement): Point => ({
+  x: Math.max(0, content.scrollWidth - viewport.clientWidth),
+  y: Math.max(0, content.offsetHeight - viewport.clientHeight),
+});
 
 export const mountFrameZoomViewport = (options: FrameZoomViewportOptions) => {
   const { viewport } = options;

@@ -1,4 +1,5 @@
 import {
+  panInsideRoom,
   MAX_ZOOM,
   MIN_ZOOM,
   areasInView,
@@ -18,6 +19,12 @@ import {
 } from './canvas-math';
 
 describe('canvas math', () => {
+  it('keeps a pan between the content start and its end on both axes', () => {
+    expect(panInsideRoom({ x: 120, y: 44 }, { x: 300, y: 500 })).toEqual({ x: 0, y: 0 });
+    expect(panInsideRoom({ x: -1700, y: -260 }, { x: 300, y: 500 })).toEqual({ x: -300, y: -260 });
+    expect(panInsideRoom({ x: -40, y: -60 }, { x: 0, y: 0 })).toEqual({ x: 0, y: 0 });
+  });
+
   it('clamps the zoom to its range', () => {
     expect(clampZoom(0)).toBe(MIN_ZOOM);
     expect(clampZoom(100)).toBe(MAX_ZOOM);

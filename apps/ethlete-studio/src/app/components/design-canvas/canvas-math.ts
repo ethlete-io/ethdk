@@ -12,6 +12,11 @@ export const MAX_ZOOM = 8;
 
 export const clampZoom = (zoom: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom));
 
+export const panInsideRoom = (pan: Point, room: Point): Point => ({
+  x: Math.max(0 - room.x, Math.min(0, pan.x)),
+  y: Math.max(0 - room.y, Math.min(0, pan.y)),
+});
+
 export const screenToWorld = (camera: Camera, point: Point): Point => ({
   x: (point.x - camera.x) / camera.zoom,
   y: (point.y - camera.y) / camera.zoom,

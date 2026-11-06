@@ -29,8 +29,8 @@ import {
   signalElementDimensions,
 } from '@ethlete/core';
 import { CameraTarget } from '../../components/design-canvas/canvas-camera';
-import { Camera, clampZoom } from '../../components/design-canvas/canvas-math';
-import { mountFrameZoomViewport } from '../../components/design-canvas/frame-zoom-viewport';
+import { Camera, clampZoom, panInsideRoom } from '../../components/design-canvas/canvas-math';
+import { mountFrameZoomViewport, panRoomOf } from '../../components/design-canvas/frame-zoom-viewport';
 import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.component';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
@@ -203,6 +203,7 @@ export class SketchesComponent {
   public expandedChange = output<readonly string[]>();
   public cameraChange = output<Camera | null>();
   private list = viewChild.required('list', { read: ElementRef<HTMLElement> });
+  private world = viewChild.required('world', { read: ElementRef<HTMLElement> });
   private matrix = viewChild('matrix', { read: ElementRef<HTMLElement> });
 
   private fold = viewChild('fold', { read: ElementRef<HTMLElement> });
@@ -232,6 +233,8 @@ export class SketchesComponent {
 
     return typeof camera === 'object' ? { x: camera.x, y: camera.y } : { x: 0, y: 0 };
   });
+  private room = signal<Pan>({ x: 0, y: 0 }, { equal: (a, b) => a.x === b.x && a.y === b.y });
+  private shownPan = computed(() => panInsideRoom(this.pan(), this.room()));
   private userCamera$ = new Subject<Camera | null>();
   private listedRows = computed(() =>
     this.fresh() ? this.rows().filter((row) => row.key !== SKETCH_CURRENT) : this.rows(),
@@ -334,9 +337,9 @@ export class SketchesComponent {
   protected percent = computed(() => {
     return Math.round(this.shownZoom() * 100);
   });
-  protected panX = computed(() => Math.max(0, -this.pan().x));
+  protected panX = computed(() => Math.max(0, -this.shownPan().x));
   protected worldTransform = computed(() => {
-    const { x, y } = this.pan();
+    const { x, y } = this.shownPan();
 
     return `translate(${x}px, ${y}px) scale(1)`;
   });
@@ -346,7 +349,7 @@ export class SketchesComponent {
       const teardown = mountFrameZoomViewport({
         viewport: this.list().nativeElement,
         frameSelector: '[data-sk-frame]',
-        camera: () => ({ ...this.pan(), zoom: this.shownZoom() }),
+        camera: () => ({ ...this.shownPan(), zoom: this.shownZoom() }),
         move: (camera) => this.move(camera),
         show: (target, frame) => this.show(target, frame),
         select: (frame) => this.selectedFrame.set(frame.dataset['skFrame'] ?? null),
@@ -387,6 +390,17 @@ export class SketchesComponent {
         this.fitAt.set(this.fitScaleOf(dom));
         this.applyScale({ scale: this.scale(), note: this.noteSize() }, dom);
       });
+    });
+
+    afterRenderEffect({
+      read: () => {
+        this.listSize();
+        this.scale();
+        this.noteSize();
+        this.shownRows();
+        this.matrixRows();
+        this.room.set(panRoomOf(this.list().nativeElement, this.world().nativeElement));
+      },
     });
 
     this.userCamera$
@@ -552,7 +566,7 @@ export class SketchesComponent {
   }
 
   private zoomTo(zoom: number) {
-    this.move({ ...this.pan(), zoom });
+    this.move({ ...this.shownPan(), zoom });
   }
 
   private move(camera: Camera) {
@@ -588,7 +602,7 @@ export class SketchesComponent {
         write: () => {
           const moved = frame.getBoundingClientRect();
           const view = list.getBoundingClientRect();
-          const { x, y } = this.pan();
+          const { x, y } = this.shownPan();
 
           this.move({
             x: x + view.left + FOCUS_PADDING - moved.left,
