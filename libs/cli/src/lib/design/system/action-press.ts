@@ -20,8 +20,17 @@ export const UNSETTLED_ANIMATION = `((animation) => animation.playState === 'run
   animation.effect?.getTiming().iterations !== Infinity &&
   !(typeof ScrollTimeline !== 'undefined' && animation.timeline instanceof ScrollTimeline))`;
 
-/** Waits until no finite, time-based animation runs for a few frames, or `timeout` passes. */
+export const SETTLE_TIMEOUT_MS = 3_000;
+
+export class SettleTimeoutError extends Error {}
+
+/**
+ * Waits until no finite, time-based animation runs for a few frames. Throws a `SettleTimeoutError` when they still run
+ * after `timeout`, capped at `SETTLE_TIMEOUT_MS`.
+ */
 export const settle = async (page: Page, timeout: number) => {
+  const cap = Math.min(timeout, SETTLE_TIMEOUT_MS);
+
   await page
     .waitForFunction(
       `(() => {
@@ -30,9 +39,13 @@ export const settle = async (page: Page, timeout: number) => {
         return window.__etActionFrames >= ${SETTLED_FRAMES};
       })()`,
       undefined,
-      { timeout: playwrightTimeoutOf(timeout), polling: 'raf' },
+      { timeout: playwrightTimeoutOf(cap), polling: 'raf' },
     )
-    .catch(() => undefined);
+    .catch((error: unknown) => {
+      if (error instanceof Error && error.name === 'TimeoutError') {
+        throw new SettleTimeoutError(`the page did not settle its animations within ${cap} ms`);
+      }
+    });
 };
 
 /** Starts recording DOM changes on the page, for `awaitOutput`. Call it right before the press. */

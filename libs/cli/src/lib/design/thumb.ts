@@ -1,9 +1,11 @@
+import { fromEvent, take, tap } from 'rxjs';
 import { IncomingMessage, ServerResponse } from 'http';
 import { posix } from 'path';
 import { Chromium, chromiumOf } from './browser';
 import { DrawLedger } from './draw-ledger';
 import { performance } from 'perf_hooks';
 import { timedPhase } from './phase-timing';
+import { RunAbortedError, runSignal } from './run-abort';
 import { recordCache, recordDrawWait } from './timings';
 import { withinLimit } from './wait';
 
@@ -153,6 +155,34 @@ export const DRAWS_AT_ONCE = 8;
  * A drawing every ask withdrew before it started is dropped. A failed launch is not kept, so the next ask
  * tries again.
  */
+/** `browser` with every context it opens closed when `signal` aborts, so a draw of an aborted run fails at once. */
+export const closingOnAbort = (browser: Browser, signal: AbortSignal): Browser =>
+  new Proxy(browser, {
+    get: (target, key) => {
+      const value = Reflect.get(target, key, target) as unknown;
+
+      if (key !== 'newContext' || typeof value !== 'function') {
+        return typeof value === 'function' ? value.bind(target) : value;
+      }
+
+      return async (...args: Parameters<Browser['newContext']>) => {
+        if (signal.aborted) throw new RunAbortedError();
+
+        const context = await target.newContext(...args);
+        const close = () => void context.close().catch(() => undefined);
+
+        if (signal.aborted) close();
+        else {
+          const aborting = fromEvent(signal, 'abort').pipe(take(1), tap(close)).subscribe();
+
+          context.once('close', () => aborting.unsubscribe());
+        }
+
+        return context;
+      };
+    },
+  });
+
 export const createDrawQueue = (options: { target: string; chromiumOf?: typeof chromiumOf; ledger?: DrawLedger }) => {
   const { target, ledger } = options;
   const resolveChromium = options.chromiumOf ?? chromiumOf;
@@ -245,6 +275,7 @@ export const createDrawQueue = (options: { target: string; chromiumOf?: typeof c
     run: <T>(draw: (browser: Browser) => Promise<T>, want: DrawPriority | DrawWant = 'high') => {
       const ticket = ledger?.ask();
       const asked = performance.now();
+      const signal = runSignal();
       const entry: WaitingDraw = {
         job: () => Promise.resolve(),
         wants: new Set(),
@@ -255,8 +286,15 @@ export const createDrawQueue = (options: { target: string; chromiumOf?: typeof c
           ticket?.start();
           recordDrawWait(performance.now() - asked);
 
+          if (signal?.aborted) {
+            ticket?.end();
+            reject(new RunAbortedError());
+
+            return Promise.resolve();
+          }
+
           return launch()
-            .then(draw)
+            .then((open) => draw(signal ? closingOnAbort(open, signal) : open))
             .then(resolve, reject)
             .finally(() => ticket?.end());
         };

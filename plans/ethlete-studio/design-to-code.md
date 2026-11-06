@@ -4143,3 +4143,13 @@ otherwise and names that cap (`RingProbeTimeoutError`); the probe's click and fo
 action check result is kept on disk (`compare-actions`) under the cli build, Playwright, built harness, state, its design
 markup and props; it stays valid while every design picture, embedded state and embedder list it read prints the same,
 so an edit re-checks only the states that read it (action-cache.spec). Shot concurrency 6/8 not tried yet.
+B416 phase 4+5 (as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06): a resident request
+whose client closes its connection (a `timeout 30s` kill) is aborted: its queued draws reject, the browser contexts it
+opened close, a harness wait ends, the next request starts at once and the timings line logs exit 130
+(run-abort.spec, server.spec). The ~2.4 s outside any phase on pages/sketches was the pixel compare of its 30 states
+(PNG decode + per-pixel loop), not the file writes; it is now the `compare-pixels` phase and ~2.5x faster (same counts
+and diff pixels on 60 real pairs). Each timings line logs `unphasedMs` (total minus the union of its phases), `design
+timings` shows it, the compare target is 10 s, and a run over its target prints `over target: ... slowest phase ...` as
+its last line. `settle` caps at 3 s and fails the state with a named `SettleTimeoutError` instead of waiting 15 s
+silently. A compare of several parts already shares one harness start. Shot concurrency 6/8 not measured (context);
+numbers in `.claude/handoffs/agent-results/b416-phase45.md`.

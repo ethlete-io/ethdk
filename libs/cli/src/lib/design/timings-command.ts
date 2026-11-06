@@ -1,17 +1,9 @@
 import { existsSync, readFileSync } from 'fs';
-import { TimingLine, TimingPhase, timingsFileOf } from './timings';
+import { costliestPhaseOf, labelOf, TIMING_TARGETS, TimingLine, timingsFileOf } from './timings';
 
 export const TIMINGS_USAGE = 'timings [--since <n>m|h|d] [--command <command>]';
 
-export const TIMING_TARGETS: Record<string, number> = {
-  compare: 5_000,
-  'sketch check': 10_000,
-  'sketch ready': 10_000,
-  'check (full)': 60_000,
-};
-
 const LISTED = 10;
-const NARROWING_CHECK_FLAGS = new Set(['--call', '--lint', '--tsconfig']);
 const UNITS: Record<string, number> = { m: 60_000, h: 3_600_000, d: 86_400_000 };
 
 export const sinceMsOf = (value: string) => {
@@ -19,11 +11,6 @@ export const sinceMsOf = (value: string) => {
 
   return match ? Number(match[1]) * (UNITS[match[2] ?? ''] ?? 0) : null;
 };
-
-export const labelOf = (line: TimingLine) =>
-  line.command === 'check' && line.parts.length === 0 && !line.args.some((arg) => NARROWING_CHECK_FLAGS.has(arg))
-    ? 'check (full)'
-    : line.command;
 
 const matchesCommand = (line: TimingLine, command: string) =>
   labelOf(line) === command || line.command === command || line.command.startsWith(`${command} `);
@@ -37,11 +24,15 @@ const medianOf = (values: number[]) => {
   return sorted.length % 2 === 1 ? (sorted[middle] ?? 0) : ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
 };
 
-const costliestOf = (phases: TimingPhase[]) =>
-  phases.reduce<TimingPhase | null>((best, phase) => (best === null || phase.ms > best.ms ? phase : best), null);
-
 const runOf = (line: TimingLine) =>
-  [line.start, labelOf(line), ...line.parts, secondsOf(line.totalMs), line.exit === 0 ? '' : `exit ${line.exit}`]
+  [
+    line.start,
+    labelOf(line),
+    ...line.parts,
+    secondsOf(line.totalMs),
+    line.unphasedMs === undefined ? '' : `(unphased ${secondsOf(line.unphasedMs)})`,
+    line.exit === 0 ? '' : `exit ${line.exit}`,
+  ]
     .filter(Boolean)
     .join(' ');
 
@@ -123,7 +114,7 @@ export const timingsReportOf = (options: { lines: TimingLine[]; now: number; sin
     '',
     `runs over their target: ${misses.length}`,
     ...misses.slice(0, LISTED).map((line) => {
-      const costliest = costliestOf(line.phases);
+      const costliest = costliestPhaseOf(line);
       const target = TIMING_TARGETS[labelOf(line)] ?? 0;
 
       return `  ${runOf(line)} > ${secondsOf(target)} - most expensive phase ${costliest ? `${costliest.name} ${secondsOf(costliest.ms)}` : 'none recorded'}`;

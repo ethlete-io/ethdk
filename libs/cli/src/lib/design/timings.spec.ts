@@ -6,7 +6,7 @@ import { designCommand } from './design-command';
 import { timedPhase } from './phase-timing';
 import { ResidentClient, sendRun } from './resident/client';
 import { startResidentServer } from './resident/server';
-import { recordCache, recordRun, skipRunTimings, TimingLine, timingsFileOf } from './timings';
+import { recordCache, recordRun, skipRunTimings, TimingLine, timingsFileOf, unphasedMsOf } from './timings';
 
 const NO_SESSION = { CLAUDE_CODE_SESSION_ID: '', TMUX_PANE: '', ETHLETE_AGENT_ROLE: '' };
 
@@ -188,5 +188,75 @@ describe('designCommand timings', () => {
     expect(JSON.parse(lines[0] ?? '')).toMatchObject({ command: 'status', exit: 2 });
     expect(report).toContain('1 design runs since');
     expect(report).toContain('status');
+  });
+});
+
+describe('unphasedMsOf', () => {
+  it('counts the time no phase covers, nested and overlapping phases once', () => {
+    expect(
+      unphasedMsOf(
+        [
+          { name: 'resident-queue-wait', ms: 500, at: -500 },
+          { name: 'harness-start', ms: 100, at: 0 },
+          { name: 'compare-states', ms: 5000, at: 200 },
+          { name: 'compare-app-shots', ms: 4000, at: 1000 },
+          { name: 'compare-actions', ms: 600, at: 7600 },
+          { name: 'draw-queue-wait', ms: 300 },
+        ],
+        8900,
+      ),
+    ).toBe(8900 - 100 - 5000 - 600);
+    expect(unphasedMsOf([{ name: 'old', ms: 100 }], 1000)).toBeNull();
+  });
+});
+
+describe('a run over its target', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('logs its unphased time and prints its slowest phase at the end of its output', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'timings-'));
+    const file = join(dir, '.timings.jsonl');
+    const printed: string[] = [];
+    const now = vi.spyOn(performance, 'now');
+    let clock = 0;
+
+    now.mockImplementation(() => clock);
+    vi.spyOn(process.stderr, 'write').mockImplementation((chunk) => {
+      printed.push(String(chunk));
+
+      return true;
+    });
+
+    await recordRun({ file, argv: ['compare', 'pages/sketches'], env: NO_SESSION }, async () => {
+      await timedPhase('compare-states', async () => {
+        clock += 6_000;
+      });
+      clock += 5_000;
+      console.error('last line of the command');
+
+      return 1;
+    });
+
+    const [line] = readFileSync(file, 'utf8')
+      .trim()
+      .split('\n')
+      .map((raw) => JSON.parse(raw) as TimingLine);
+
+    expect(line?.unphasedMs).toBe(5_000);
+    expect(printed.at(-1)).toBe('over target: compare took 11.0 s > 10.0 s - slowest phase compare-states 6.0 s\n');
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('prints nothing within its target', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'timings-'));
+    const write = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+    await recordRun(
+      { file: join(dir, '.timings.jsonl'), argv: ['compare', 'pages/start'], env: NO_SESSION },
+      async () => 0,
+    );
+
+    expect(write.mock.calls.flat().join('')).not.toContain('over target');
+    rmSync(dir, { recursive: true, force: true });
   });
 });

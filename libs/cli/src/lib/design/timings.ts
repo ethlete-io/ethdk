@@ -11,7 +11,8 @@ export const QUEUE_WAIT_PHASES = ['resident-queue-wait', 'draw-queue-wait'];
 
 export type TimingSession = { claude: string | null; tmux: string | null; role: string | null };
 
-export type TimingPhase = { name: string; ms: number };
+/** `at` is when the phase started, in ms from the start of its run. */
+export type TimingPhase = { name: string; ms: number; at?: number };
 
 export type TimingLine = {
   command: string;
@@ -29,9 +30,20 @@ export type TimingLine = {
   serverStartMs: number;
   cache: { hits: number; misses: number };
   concurrentHeavy: number | null;
+  unphasedMs?: number;
 };
 
+export const TIMING_TARGETS: Record<string, number> = {
+  compare: 10_000,
+  'sketch check': 10_000,
+  'sketch ready': 10_000,
+  'check (full)': 60_000,
+};
+
+const NARROWING_CHECK_FLAGS = new Set(['--call', '--lint', '--tsconfig']);
+
 type Recorder = {
+  began: number;
   phases: TimingPhase[];
   draws: number[];
   cache: { hits: number; misses: number };
@@ -43,7 +55,10 @@ let current: Recorder | null = null;
 
 export const timingsFileOf = (target: string) => join(target, TIMINGS_FILE);
 
-export const recordPhase = (name: string, ms: number) => void current?.phases.push({ name, ms: Math.round(ms) });
+export const recordPhase = (name: string, ms: number) => {
+  if (current)
+    current.phases.push({ name, ms: Math.round(ms), at: Math.round(performance.now() - current.began - ms) });
+};
 
 export const recordCache = (hit: boolean) => {
   if (!current) return;
@@ -87,6 +102,55 @@ export const commandOf = (argv: string[]) => {
 export const partsOf = (argv: string[]) =>
   argv.flatMap((arg, index) => (PART.test(arg) && (index === 0 || argv[index - 1] !== '--product') ? [arg] : []));
 
+export const labelOf = (line: Pick<TimingLine, 'command' | 'parts' | 'args'>) =>
+  line.command === 'check' && line.parts.length === 0 && !line.args.some((arg) => NARROWING_CHECK_FLAGS.has(arg))
+    ? 'check (full)'
+    : line.command;
+
+/** The part of `totalMs` no recorded phase covers, or `null` when the phases carry no start. */
+export const unphasedMsOf = (phases: TimingPhase[], totalMs: number) => {
+  const spans = phases
+    .flatMap((phase) =>
+      phase.at === undefined ? [] : [[Math.max(0, phase.at), Math.min(totalMs, phase.at + phase.ms)] as const],
+    )
+    .filter(([from, to]) => to > from)
+    .sort((a, b) => a[0] - b[0]);
+
+  if (spans.length === 0) return null;
+
+  let covered = 0;
+  let reached = 0;
+
+  for (const [from, to] of spans) {
+    if (to <= reached) continue;
+
+    covered += to - Math.max(from, reached);
+    reached = to;
+  }
+
+  return Math.max(0, totalMs - covered);
+};
+
+/** The phase that cost the most, the unphased time included as `unphased`. */
+export const costliestPhaseOf = (line: Pick<TimingLine, 'phases' | 'unphasedMs'>) =>
+  [...line.phases, ...(line.unphasedMs ? [{ name: 'unphased', ms: line.unphasedMs }] : [])].reduce<TimingPhase | null>(
+    (best, phase) => (best === null || phase.ms > best.ms ? phase : best),
+    null,
+  );
+
+const secondsOf = (ms: number) => `${(ms / 1000).toFixed(1)} s`;
+
+/** The line a run over its target prints at the end of its output, or `null` when it met its target or has none. */
+export const overTargetLineOf = (line: TimingLine) => {
+  const target = TIMING_TARGETS[labelOf(line)];
+
+  if (target === undefined || line.totalMs <= target) return null;
+
+  const costliest = costliestPhaseOf(line);
+
+  return `over target: ${labelOf(line)} took ${secondsOf(line.totalMs)} > ${secondsOf(target)} - slowest phase ${costliest ? `${costliest.name} ${secondsOf(costliest.ms)}` : 'none recorded'}`;
+};
+
 const sumOf = (phases: TimingPhase[], names: string[]) =>
   phases.filter((phase) => names.includes(phase.name)).reduce((total, phase) => total + phase.ms, 0);
 
@@ -108,6 +172,7 @@ export const recordRun = async (
 ): Promise<number> => {
   const { file, argv, resident = false, env = process.env, write = defaultWrite } = options;
   const recorder: Recorder = {
+    began: performance.now(),
     phases: [],
     draws: [],
     cache: { hits: 0, misses: 0 },
@@ -116,11 +181,11 @@ export const recordRun = async (
   };
   const outer = current;
   const start = new Date();
-  const began = performance.now();
+  const began = recorder.began;
   const session = sessionOf(env);
   let written = false;
 
-  const flush = (exit: number) => {
+  const flush = (exit: number, viaExit = false) => {
     process.off('exit', onExit);
 
     if (written || recorder.skipped) return;
@@ -131,6 +196,7 @@ export const recordRun = async (
       ...recorder.phases,
       ...(recorder.draws.length > 0 ? [{ name: 'draw-queue-wait', ms: Math.round(Math.max(...recorder.draws)) }] : []),
     ];
+    const totalMs = Math.round(performance.now() - began);
     const line: TimingLine = {
       command: commandOf(argv),
       args: argv.slice(1),
@@ -138,7 +204,7 @@ export const recordRun = async (
       session,
       resident,
       start: start.toISOString(),
-      totalMs: Math.round(performance.now() - began),
+      totalMs,
       exit,
       phases,
       queueWaitMs: sumOf(phases, QUEUE_WAIT_PHASES),
@@ -148,6 +214,13 @@ export const recordRun = async (
       cache: recorder.cache,
       concurrentHeavy: recorder.concurrentHeavy,
     };
+    const unphasedMs = unphasedMsOf(phases, totalMs);
+
+    if (unphasedMs !== null) line.unphasedMs = unphasedMs;
+
+    const over = overTargetLineOf(line);
+
+    if (over && !viaExit) process.stderr.write(`${over}\n`);
 
     try {
       write(file, `${JSON.stringify(line)}\n`);
@@ -155,7 +228,7 @@ export const recordRun = async (
       return;
     }
   };
-  const onExit = (code: number) => flush(code);
+  const onExit = (code: number) => flush(code, true);
 
   process.once('exit', onExit);
   current = recorder;

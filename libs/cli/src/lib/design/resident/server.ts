@@ -1,3 +1,4 @@
+import { setMaxListeners } from 'events';
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { AddressInfo } from 'net';
 import { performance } from 'perf_hooks';
@@ -21,7 +22,10 @@ export type ResidentRequest = {
   env: Partial<Record<(typeof FORWARDED_ENV)[number], string>>;
 };
 
-export type ResidentRun = (request: ResidentRequest & { waitedMs?: number }) => Promise<number>;
+/** The run gets `signal`, which aborts when the client closes its connection before the answer ends. */
+export type ResidentRun = (request: ResidentRequest & { waitedMs?: number; signal?: AbortSignal }) => Promise<number>;
+
+export const ABORTED_EXIT = 130;
 
 /** One line of the newline-delimited JSON answer to a run request. */
 export type ResidentFrame = { o: string } | { e: string } | { beat: true } | { exit: number };
@@ -113,6 +117,13 @@ export const startResidentServer = async (options: {
       if (!response.writableEnded && !response.destroyed) response.write(`${JSON.stringify(frame)}\n`);
     };
 
+    const gone = new AbortController();
+
+    setMaxListeners(0, gone.signal);
+
+    response.once('close', () => {
+      if (!response.writableEnded) gone.abort();
+    });
     response.writeHead(200, { 'content-type': 'application/x-ndjson' });
 
     if (pending > 1) send({ e: 'waiting for an earlier request to the resident design process\n' });
@@ -122,19 +133,21 @@ export const startResidentServer = async (options: {
       .pipe(tap(() => send({ beat: true })))
       .subscribe();
     const turn = queue.then(() =>
-      withEnv(asked.env, async () => {
-        const restore = capture((stream, text) => send(stream === 'o' ? { o: text } : { e: text }));
+      gone.signal.aborted
+        ? ABORTED_EXIT
+        : withEnv(asked.env, async () => {
+            const restore = capture((stream, text) => send(stream === 'o' ? { o: text } : { e: text }));
 
-        try {
-          return await run({ ...asked, waitedMs: performance.now() - asking });
-        } catch (error) {
-          send({ e: `${messageOf(error)}\n` });
+            try {
+              return await run({ ...asked, waitedMs: performance.now() - asking, signal: gone.signal });
+            } catch (error) {
+              send({ e: `${messageOf(error)}\n` });
 
-          return 1;
-        } finally {
-          restore();
-        }
-      }),
+              return 1;
+            } finally {
+              restore();
+            }
+          }),
     );
 
     queue = turn.catch(() => undefined);

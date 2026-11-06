@@ -267,41 +267,46 @@ export const decodePng = (png: Buffer): Pixels => {
   const raw = inflateSync(Buffer.concat(data));
   const stride = width * channels;
   const rows = Buffer.alloc(stride * height);
-  const out = Buffer.alloc(width * height * 4);
 
   for (let y = 0; y < height; y++) {
     const filter = raw[y * (stride + 1)];
     const source = y * (stride + 1) + 1;
     const row = y * stride;
+    const above = row - stride;
+
+    if (filter === 0 || (filter === 2 && y === 0)) {
+      raw.copy(rows, row, source, source + stride);
+      continue;
+    }
 
     for (let x = 0; x < stride; x++) {
-      const left = x >= channels ? (rows[row + x - channels] ?? 0) : 0;
-      const up = y > 0 ? (rows[row - stride + x] ?? 0) : 0;
-      const upLeft = y > 0 && x >= channels ? (rows[row - stride + x - channels] ?? 0) : 0;
-      const value = raw[source + x] ?? 0;
-      const predicted =
-        filter === 1
-          ? left
-          : filter === 2
-            ? up
-            : filter === 3
-              ? (left + up) >> 1
-              : filter === 4
-                ? paeth({ left, up, upLeft })
-                : 0;
+      const value = raw[source + x] as number;
+      const left = x >= channels ? (rows[row + x - channels] as number) : 0;
+      const up = y > 0 ? (rows[above + x] as number) : 0;
+      let predicted = 0;
+
+      if (filter === 1) predicted = left;
+      else if (filter === 2) predicted = up;
+      else if (filter === 3) predicted = (left + up) >> 1;
+      else if (filter === 4) {
+        const upLeft = y > 0 && x >= channels ? (rows[above + x - channels] as number) : 0;
+
+        predicted = paeth({ left, up, upLeft });
+      }
 
       rows[row + x] = (value + predicted) & 0xff;
     }
+  }
 
-    for (let x = 0; x < width; x++) {
-      const from = row + x * channels;
-      const to = (y * width + x) * 4;
+  if (channels === 4) return { width, height, data: rows };
 
-      out[to] = rows[from] ?? 0;
-      out[to + 1] = rows[from + 1] ?? 0;
-      out[to + 2] = rows[from + 2] ?? 0;
-      out[to + 3] = channels === 4 ? (rows[from + 3] ?? 0) : 255;
-    }
+  const out = Buffer.alloc(width * height * 4);
+
+  for (let pixel = 0, from = 0, to = 0; pixel < width * height; pixel++, from += 3, to += 4) {
+    out[to] = rows[from] as number;
+    out[to + 1] = rows[from + 1] as number;
+    out[to + 2] = rows[from + 2] as number;
+    out[to + 3] = 255;
   }
 
   return { width, height, data: out };
@@ -347,8 +352,12 @@ export type PixelCompare =
 
 type Size = { width: number; height: number };
 
-const pixelAt = (pixels: Pixels, { x, y }: { x: number; y: number }) =>
-  x < pixels.width && y < pixels.height ? pixels.data.readUInt32BE((y * pixels.width + x) * 4) : null;
+const RED = 0xff0000ff;
+
+const wordsOf = (bytes: Buffer) =>
+  bytes.byteOffset % 4 === 0
+    ? new Uint32Array(bytes.buffer, bytes.byteOffset, bytes.length / 4)
+    : new Uint32Array(Uint8Array.from(bytes).buffer);
 
 /** Compares two PNGs pixel by pixel; the diff picture paints differing pixels red over a faded design. */
 export const comparePngs = (options: { design: Buffer; app: Buffer }): PixelCompare => {
@@ -356,25 +365,30 @@ export const comparePngs = (options: { design: Buffer; app: Buffer }): PixelComp
   const app = decodePng(options.app);
   const width = Math.max(design.width, app.width);
   const height = Math.max(design.height, app.height);
-  const data = Buffer.alloc(width * height * 4);
+  const shared = { width: Math.min(design.width, app.width), height: Math.min(design.height, app.height) };
+  const from = wordsOf(design.data);
+  const other = wordsOf(app.data);
+  const out = new Uint32Array(width * height);
+  const data = Buffer.from(out.buffer);
   let pixels = 0;
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      const from = pixelAt(design, { x, y });
-      const to = (y * width + x) * 4;
+      const to = y * width + x;
 
-      const other = pixelAt(app, { x, y });
+      if (x < shared.width && y < shared.height) {
+        const word = from[y * design.width + x] as number;
+        const near = other[y * app.width + x] as number;
 
-      if (from !== null && other !== null && !pixelsDiffer(from, other)) {
-        design.data.copy(data, to, (y * design.width + x) * 4, (y * design.width + x) * 4 + 3);
-        data[to + 3] = (design.data[(y * design.width + x) * 4 + 3] ?? 0) >> 2;
+        if (word === near || !pixelsDiffer(word, near)) {
+          out[to] = ((word & 0x00ffffff) | ((word >>> 26) << 24)) >>> 0;
 
-        continue;
+          continue;
+        }
       }
 
       pixels++;
-      data.writeUInt32BE(0xff0000ff, to);
+      out[to] = RED;
     }
   }
 

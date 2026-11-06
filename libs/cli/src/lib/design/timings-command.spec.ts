@@ -32,7 +32,7 @@ const LINES = [
   lineOf({ minutesAgo: 10, totalMs: 4000 }),
   lineOf({
     minutesAgo: 20,
-    totalMs: 9000,
+    totalMs: 12000,
     phases: [
       { name: 'compare-design-server', ms: 1000 },
       { name: 'harness-build', ms: 7000 },
@@ -57,12 +57,12 @@ describe('timingsReportOf', () => {
     const report = timingsReportOf({ lines: LINES, now: NOW, sinceMs: 86_400_000 });
 
     expect(report).toContain('6 design runs since 2026-11-05T12:00:00.000Z');
-    expect(rowOf(report, 'compare')).toMatch(/compare\s+3\s+4\.0 s\s+9\.0 s\s+5\.0 s\s+ok$/);
+    expect(rowOf(report, 'compare')).toMatch(/compare\s+3\s+4\.0 s\s+12\.0 s\s+10\.0 s\s+ok$/);
     expect(rowOf(report, 'sketch check')).toMatch(/sketch check\s+1\s+14\.0 s\s+14\.0 s\s+10\.0 s\s+MISS$/);
     expect(rowOf(report, 'check (full)')).toMatch(/check \(full\)\s+2\s+70\.0 s\s+90\.0 s\s+60\.0 s\s+MISS$/);
     expect(report).toContain('runs over their target: 3');
     expect(report).toContain(
-      '2026-11-06T11:40:00.000Z compare pages/start 9.0 s > 5.0 s - most expensive phase harness-build 7.0 s',
+      '2026-11-06T11:40:00.000Z compare pages/start 12.0 s > 10.0 s - most expensive phase harness-build 7.0 s',
     );
     expect(report).toContain(
       '2026-11-06T11:30:00.000Z sketch check pages/start 14.0 s exit 1 > 10.0 s - most expensive phase render-check 12.0 s',
@@ -93,5 +93,24 @@ describe('timingsReportOf', () => {
       172_800_000,
       null,
     ]);
+  });
+
+  it("shows a run's unphased time and names it when it costs more than any phase", () => {
+    const report = timingsReportOf({
+      lines: [
+        lineOf({
+          minutesAgo: 1,
+          totalMs: 11000,
+          unphasedMs: 6000,
+          phases: [{ name: 'compare-states', ms: 5000, at: 0 }],
+        }),
+      ],
+      now: NOW,
+      sinceMs: 86_400_000,
+    });
+
+    expect(report).toContain(
+      '2026-11-06T11:59:00.000Z compare pages/start 11.0 s (unphased 6.0 s) > 10.0 s - most expensive phase unphased 6.0 s',
+    );
   });
 });

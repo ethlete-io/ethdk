@@ -1,6 +1,14 @@
 import { chromium, type Browser } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { awaitOutput, dropKeyboardFocus, EMIT_WAIT_MS, settle, watchMutations } from './action-press';
+import {
+  awaitOutput,
+  dropKeyboardFocus,
+  EMIT_WAIT_MS,
+  settle,
+  SETTLE_TIMEOUT_MS,
+  SettleTimeoutError,
+  watchMutations,
+} from './action-press';
 
 describe('settle', () => {
   let browser: Browser | undefined;
@@ -28,6 +36,23 @@ describe('settle', () => {
     await settle(page, 3000);
 
     expect(Date.now() - start).toBeLessThan(1500);
+    await page.close();
+  });
+
+  it('names an animation that outruns its cap instead of waiting the caller timeout out silently', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const page = await browser.newPage();
+
+    await page.setContent(`<style>
+        @keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+        .body { animation: fade 60s linear }
+      </style><div class="body">x</div>`);
+
+    const start = Date.now();
+
+    await expect(settle(page, 15_000)).rejects.toBeInstanceOf(SettleTimeoutError);
+    expect(Date.now() - start).toBeLessThan(SETTLE_TIMEOUT_MS + 1500);
     await page.close();
   });
 }, 30_000);

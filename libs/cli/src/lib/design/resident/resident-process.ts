@@ -9,11 +9,12 @@ import { StartHarnessServer, startHarnessServer } from '../system/harness-server
 import { createHarnessWatch } from '../system/harness-watch';
 import { designMocksFresh, guardsDesignMocks } from '../system/stale-design-mocks';
 import { libBuildStampOf, readFreshDist } from '../system/stale-dist';
+import { runSignal, unlessAborted, withRunSignal } from '../run-abort';
 import { recordPhase, recordRun, timingsFileOf } from '../timings';
 import { WarmDraw } from '../warm-draw';
 import { runsInResident } from './client';
 import { removeDiscovery, writeDiscovery } from './discovery';
-import { ResidentRun, startResidentServer } from './server';
+import { ABORTED_EXIT, ResidentRun, startResidentServer } from './server';
 
 type DesignServer = Awaited<ReturnType<typeof createDesignServer>>;
 
@@ -67,7 +68,7 @@ export const createWarmRuns = (options: { target: string }) => {
   };
 
   const start: StartHarnessServer = async ({ product }) => {
-    const served = await harness.current(product);
+    const served = await unlessAborted(runSignal(), harness.current(product));
 
     if (served === null) return startHarnessServer({ target, product });
 
@@ -121,11 +122,13 @@ export const createWarmRuns = (options: { target: string }) => {
     }
   };
 
-  const run: ResidentRun = ({ argv, invocation, waitedMs }) =>
+  const run: ResidentRun = ({ argv, invocation, waitedMs, signal }) =>
     recordRun({ file: timingsFileOf(target), argv, resident: true }, () => {
       if (waitedMs !== undefined) recordPhase('resident-queue-wait', waitedMs);
 
-      return runIn({ argv, invocation });
+      return withRunSignal(signal, () => runIn({ argv, invocation })).then((code) =>
+        signal?.aborted ? ABORTED_EXIT : code,
+      );
     });
 
   const warmUp = async () => {

@@ -794,41 +794,45 @@ export const comparePart: ComparePart = async (options) => {
   if (typeof shot === 'string') return shot;
   if (shot.shots.length === 0) return `${options.part} has no states to compare`;
 
-  let dir: string | null = null;
+  const { states, shots } = shot;
 
-  let failed = false;
+  return timedPhase('compare-pixels', () => {
+    let dir: string | null = null;
 
-  for (const stateShot of shot.shots) {
-    const { state } = stateShot;
+    let failed = false;
 
-    if ('problem' in stateShot) {
-      console.log(`${state} FAILED ${stateShot.problem}`);
-      failed = true;
-      continue;
+    for (const stateShot of shots) {
+      const { state } = stateShot;
+
+      if ('problem' in stateShot) {
+        console.log(`${state} FAILED ${stateShot.problem}`);
+        failed = true;
+        continue;
+      }
+
+      const { design, app } = stateShot;
+      let result: ReturnType<typeof comparePngs>;
+
+      try {
+        result = comparePngs({ design, app });
+      } catch (error) {
+        return `the pictures of ${state} cannot be compared: ${messageOf(error)}`;
+      }
+
+      console.log(compareLineOf(state, result));
+
+      if (result.kind === 'ok') continue;
+
+      dir ??= mkdtempSync(join(tmpdir(), 'et-design-compare-'));
+      writeFileSync(join(dir, `${fileNameOf(state)}.design.png`), design);
+      writeFileSync(join(dir, `${fileNameOf(state)}.app.png`), app);
+      writeFileSync(join(dir, `${fileNameOf(state)}.diff.png`), result.diff);
     }
 
-    const { design, app } = stateShot;
-    let result: ReturnType<typeof comparePngs>;
+    if (dir !== null) console.log(`pictures: ${dir}`);
 
-    try {
-      result = comparePngs({ design, app });
-    } catch (error) {
-      return `the pictures of ${state} cannot be compared: ${messageOf(error)}`;
-    }
-
-    console.log(compareLineOf(state, result));
-
-    if (result.kind === 'ok') continue;
-
-    dir ??= mkdtempSync(join(tmpdir(), 'et-design-compare-'));
-    writeFileSync(join(dir, `${fileNameOf(state)}.design.png`), design);
-    writeFileSync(join(dir, `${fileNameOf(state)}.app.png`), app);
-    writeFileSync(join(dir, `${fileNameOf(state)}.diff.png`), result.diff);
-  }
-
-  if (dir !== null) console.log(`pictures: ${dir}`);
-
-  return { green: dir === null && !failed, states: shot.states };
+    return { green: dir === null && !failed, states };
+  });
 };
 
 /**

@@ -97,4 +97,39 @@ describe('startResidentServer', () => {
     expect(body).toContain('boom');
     expect(body.trim().split('\n').at(-1)).toBe('{"exit":1}');
   });
+
+  it('aborts the run of a client that closes its connection and starts the next request at once', async () => {
+    const seen: boolean[] = [];
+    const { port } = await serverOf({
+      run: async ({ signal }) => {
+        if (seen.length > 0) return 0;
+
+        await Promise.race([
+          delay(3_000),
+          new Promise((done) => signal?.addEventListener('abort', done, { once: true })),
+        ]);
+        seen.push(signal?.aborted ?? false);
+
+        return 0;
+      },
+    });
+    const client = new AbortController();
+    const first = fetch(`http://127.0.0.1:${port}/run`, {
+      method: 'POST',
+      headers: { [TOKEN_HEADER]: 't' },
+      body: JSON.stringify({ argv: ['compare'], invocation: 'et design', env: {} }),
+      signal: client.signal,
+    }).then((response) => response.text());
+
+    first.catch(() => undefined);
+    await delay(100);
+    client.abort();
+
+    const asked = performance.now();
+    const second = await runOf(port);
+
+    expect(performance.now() - asked).toBeLessThan(1_000);
+    expect(second.body).toContain('{"exit":0}');
+    expect(seen[0]).toBe(true);
+  });
 });
