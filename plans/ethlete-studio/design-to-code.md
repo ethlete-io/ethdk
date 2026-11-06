@@ -4170,3 +4170,18 @@ silently. A compare of several parts already shares one harness start. Shot conc
 numbers in `.claude/handoffs/agent-results/b416-phase45.md`.
 B416 abort follow-up (as built in e3f7a81dd, 2026-11-06): an aborted resident request no longer writes its
 compare-actions results to the cache, so a half-run check cannot leave a wrong cached answer (action-cache.spec).
+B416 phase 4+5 numbers (c0, resident, before a3a1e5c35 -> after): pages/sketches warm 3.59 -> 3.46 s, app pictures
+dropped 8.78 -> 7.70 s; pages/start 0.58 / 0.81 s; studio-menu 0.50 s; `compare-pixels` 2.52 -> 0.98 s; `unphasedMs`
+0.10-0.13 s. The compare part of ADR 0213 is met (warm 3.5 s, after an edit 7.7 s). Not met: the first cold compare
+after a new CLI build hit the 30 s kill (harness build 13.7 s + design shots 5.5 s + the rest cold), because every
+cache key holds the whole CLI build. Doc agent (applies ADR 0213): this joins the perf block as its own slice after the
+closing checks and before S7 - key each cache on the CLI files that change its result; it costs the builder a cold run
+after every cli commit and would also blur the S7 number. Still open: shot concurrency 6/8, a `compare-pixels` cache by
+picture hashes (1.1 s warm), a capped settle in `live-actions.ts` without a per-state catch (unverified).
+
+524\. c0 (2026-11-06), while measuring B416 phase 4+5: the first killed resident run wrote "browser has been closed"
+failures into the compare-actions cache, and every later run read them back as results. Fixed in e3f7a81dd. Why no
+tool caught it: no cache spec ran an aborted run; each cache was only tested with runs that finish. Tool fix: every
+on-disk cache of the compare (compare-actions, the S4 design and app picture caches, the shot store) gets a spec that
+aborts a run mid-way and proves nothing of it is kept; the shared cache writer refuses a write once the run signal is
+aborted, so a new cache gets this for free.
