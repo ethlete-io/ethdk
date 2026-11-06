@@ -13,3 +13,9 @@ check within its target, the builder works only on performance (B416 with S4, S7
 the doc agent sends Tom nothing but performance. A new finding outside performance is recorded and queued, not built and
 not raised with Tom. Tom on the push: "der push ist solange auch egal". The push of next waits until the block is done; nobody spends a
 run on it before.
+
+Tom on timeouts: "lass ihn bewusst kurze timeouts setzen damit er nicht nacher 30 minuten auf einen job wartet wo er
+denkt den hat er nun schneller gemacht und dann ist der tag vorbei und wir haben wieder keinen fortschritt." Every run
+in the block gets a hard timeout of about twice its target (one studio page compare 30 s, full studio check 120 s). A
+timeout is a result: the phases up to the kill are reported and the slow phase is fixed; the timeout is never raised to
+make a run pass.
