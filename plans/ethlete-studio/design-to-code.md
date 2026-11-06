@@ -4195,6 +4195,15 @@ cache key holds the whole CLI build. Doc agent (applies ADR 0213): this joins th
 closing checks and before S7 - key each cache on the CLI files that change its result; it costs the builder a cold run
 after every cli commit and would also blur the S7 number. Still open: shot concurrency 6/8, a `compare-pixels` cache by
 picture hashes (1.1 s warm), a capped settle in `live-actions.ts` without a per-state catch (unverified).
+B416 closing checks + shot concurrency (as built in the `perf(cli)` commit that adds this note, c0 subagent,
+2026-11-06): compare shoots `COMPARE_SHOTS_AT_ONCE` = 8 states at once (the draw queue's cap), apart from the render
+check's `INSPECTS_AT_ONCE` = 4. pages/sketches with app pictures dropped, 3 runs each: 4 -> 8.13/7.50/7.70 s, 6 ->
+7.13/6.38/6.20 s, 8 -> 5.79/5.87/5.74 s (app shots 5.4 -> 3.6 s); state lines identical in all nine. Real edits in a
+scratch worktree (`--checkout`, its own resident): a design edit of components/zoom-chip re-shoots all 30 design
+pictures (all draw the chip) and the 15 app pictures whose forced button text changed, every diff px moves, the run
+after is all hits; an app edit re-shoots all 30 app pictures, design pictures stay hits, diff px fall back. Finding 519
+does not recur. After-edit runs miss the 10 s target under load 12-17: design edit 13-18 s (design shots 5.7-8 s,
+compare-actions 3-4.5 s), app edit 12.3-12.8 s; the next run 2.4-3.4 s.
 
 524\. c0 (2026-11-06), while measuring B416 phase 4+5: the first killed resident run wrote "browser has been closed"
 failures into the compare-actions cache, and every later run read them back as results. Fixed in e3f7a81dd. Why no

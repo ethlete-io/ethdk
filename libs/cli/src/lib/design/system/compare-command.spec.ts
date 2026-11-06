@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appShotsOf } from './compare-command';
+import { appShotsOf, COMPARE_SHOTS_AT_ONCE } from './compare-command';
 
 const designOf = (state: string) => ({ png: Buffer.from(`design ${state}`) });
 
@@ -22,14 +22,21 @@ describe('appShotsOf', () => {
   const states = ['a', 'b', 'c', 'd', 'e', 'f'];
   const designs = new Map(states.map((state) => [state, designOf(state)]));
 
-  it('shoots several states at once, at most four, and keeps the state order', async () => {
+  it('shoots eight states at once and keeps the state order', async () => {
     const { shoot, most } = shooting();
+    const many = [...states, 'g', 'h', 'i', 'j', 'k', 'l'];
 
-    const shots = await appShotsOf({ states, designs, opens: {}, slotOnly: new Map(), shoot });
+    const shots = await appShotsOf({
+      states: many,
+      designs: new Map(many.map((state) => [state, designOf(state)])),
+      opens: {},
+      slotOnly: new Map(),
+      shoot,
+    });
 
-    expect(most()).toBeGreaterThan(1);
-    expect(most()).toBeLessThanOrEqual(4);
-    expect(Array.isArray(shots) && shots.map((shot) => shot.state)).toEqual(states);
+    expect(COMPARE_SHOTS_AT_ONCE).toBe(8);
+    expect(most()).toBe(8);
+    expect(Array.isArray(shots) && shots.map((shot) => shot.state)).toEqual(many);
     expect(Array.isArray(shots) && shots[0]).toEqual({
       state: 'a',
       design: designOf('a').png,

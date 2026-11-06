@@ -47,7 +47,6 @@ import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { watchSdkErrors } from './sdk-errors';
 import { PANE_COUNT_TIMEOUT_MS, settledPanesOf } from './settled-panes';
 import { inOrderAtOnce } from './in-order-at-once';
-import { INSPECTS_AT_ONCE } from './render-check';
 import { FrozenAnimation, freezeAnimationsScriptOf, frozenAnimationsOf } from './frozen-animations';
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
 import { parseTarget, SketchTarget } from './sketch/sketch';
@@ -101,6 +100,9 @@ class DroppedPropsError extends Error {}
 
 class MissingPanesError extends Error {}
 
+/** @internal How many states compare shoots at once, design and app pictures alike. */
+export const COMPARE_SHOTS_AT_ONCE = 8;
+
 /** @internal The problem of a state whose app opened fewer overlay panes than its design draws. */
 export const missingPanesProblemOf = (count: { drawn: number; opened: number }) =>
   `the design draws ${count.drawn} overlay pane${count.drawn === 1 ? '' : 's'}, the app opened ${count.opened} before its panes settled or ${PANE_COUNT_TIMEOUT_MS} ms passed`;
@@ -116,7 +118,7 @@ export const appShotProblemOf = (error: unknown): AppShot => {
 };
 
 /**
- * @internal Shoots the app picture of each state that has a design, at most `INSPECTS_AT_ONCE` at once, and returns
+ * @internal Shoots the app picture of each state that has a design, at most `COMPARE_SHOTS_AT_ONCE` at once, and returns
  * the shots in state order; a state whose pointer open is a string aborts with it before any shot.
  */
 export const appShotsOf = async <TDesign extends { png: Buffer }, TOpen>(options: {
@@ -134,7 +136,7 @@ export const appShotsOf = async <TDesign extends { png: Buffer }, TOpen>(options
 
   return inOrderAtOnce({
     items: states,
-    limit: INSPECTS_AT_ONCE,
+    limit: COMPARE_SHOTS_AT_ONCE,
     run: async (state): Promise<StateShot> => {
       const design = designs.get(state) as TDesign;
       const base = slotOnly.get(state);
@@ -681,7 +683,7 @@ export const shootStatesWith =
       const slotOnly = await timedPhase('compare-design-shots', async () => {
         const drawn = await inOrderAtOnce({
           items: Object.keys(states),
-          limit: INSPECTS_AT_ONCE,
+          limit: COMPARE_SHOTS_AT_ONCE,
           run: (state) => pictureOf(state, true),
         });
 
