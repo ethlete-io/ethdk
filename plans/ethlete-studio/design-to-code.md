@@ -3796,6 +3796,7 @@ and Studio shows a drawn sketch at once with its check state beside it.
 As built, part 1 (c0, 2026-11-06): the render check of the slow check inspects up to four frames of a part at once
 (`INSPECTS_AT_ONCE`, one page each, render-check.ts). Verified: render-check.spec 29/29, lint, typecheck. Not measured
 yet: the slow-check time before/after - read `design timings` after the next slow check. S6 is still open.
+In progress (S6, builder c0 subagent, 2026-11-06): routing `sketch check` and `sketch ready` through the resident process with the warm shooter of compare; one request at a time.
 
 500\. Tom's screenshot of the sketch view, 2026-11-06 12:15, `components/title-bar@notice-hint` at "Fit" (54 %): (1) about
 550 px of empty canvas above the variant heads; (2) "Fit" does not fit: variant b is cut at the right edge and variant c
@@ -3935,3 +3936,9 @@ open point (or prints the hidden ones under the summary); spec with more open po
 Context: the ff698951f verify needs studio-menu, flows, merge, title-bar and shell-main together; title-bar misses
 notice.hover/active/focus-visible. Decided by ADR 0106 (no question to Tom): a sketch round that draws them with the
 existing styles, no new look, which Tom merges.
+
+513\. The S6 subagent drew a timing fixture as a real sketch in studio (`components/sketch-status-badge`, a/b only add
+p-1/p-2 padding). Studio listed it for Tom like any sketch, and the doc agent asked the builder before it could tell
+Tom to skip it. Why no tool caught it: nothing marks a sketch as a measurement, and nothing keeps measurement runs out
+of the product Tom picks in. Fix: timing and bench runs draw their sketches only in studio-lab or a scratch copy,
+never in studio; the fixture is discarded with `sketch discard` and never committed.
