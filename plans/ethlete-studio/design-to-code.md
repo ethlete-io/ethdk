@@ -3911,3 +3911,5 @@ As built (b) (c0, 2026-11-06): `ownScopeOf` leaves an app element to the embedde
 element on each side (shared `renamedPairsOf` with `pairElementsOf`); a failure without a partner names the same-role
 design elements (`nearMissesOf`). Specs with bite in actions.spec. Not verified yet: the flows check on the built CLI
 (after this commit). (a) design fix and (c) still open.
+Tom (2026-11-06, "q1ok"): pages/start is accepted as it is (`et design accept pages/start --by tom`) after his
+shell-main `@edit` pick has merged, because start embeds shell-main.
