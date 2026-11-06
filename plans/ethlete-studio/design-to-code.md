@@ -4312,3 +4312,11 @@ a ready sketch. Builder and doc agent both told Tom the sketch waited for him. W
 (builder): `sketch new` for an ADR 0010 sketch runs `sketch check` and marks it ready in the same command, or fails
 loudly; a sketch that stays in progress for more than one builder step shows as an open point on the part, with the
 missing step.
+
+Built (2026-11-07, Mac, on local next): ab26d7433 (548 CI fix; the local miss: `test:tools` runs in no hook, so the
+related-map fix of 548 stays needed), eb0546d31 (546 compare: forced states in embedded slots drawn statically, slot
+stand-ins masked, an unmatched look class fails by name), 1afe49a71 (547 whole-pixel `panInsideRoom`, shared with the
+design `pan()`), 1d776832f (`no-silent-catch-error` gets `{ tryCatch: true }`; cause of the ADR 0008 gap: the rule only
+visited RxJS `catchError`, never a `CatchClause`). Doc agent decision, applying ADR 0008: `tryCatch` is on as an error
+in apps/ethlete-studio (30 sites, each gets an error value or a disable comment with a reason, as in ADR 0008) and in
+libs/cli for `design/system/rules`; the rest of the repo stays off. Load reached 215 on 12 cores during these runs.
