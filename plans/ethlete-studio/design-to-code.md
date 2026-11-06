@@ -4236,6 +4236,13 @@ cannot be told from a slow tool. Why no tool caught it: a `.timings.jsonl` line 
 looks like a clean one. Tool fix: each line logs the 1-minute load average and the core count, `design timings` marks a
 line with load above the core count as noisy, and a target verdict uses only clean lines.
 
+527\. c0 (2026-11-06), building B416 slice 2 (56b3f7954): `slow-checks.ts` imported one string constant from
+`rules/visible-change`, which pulled compare-command and part-build-ready into the load order; moving `harnessShotOf`
+changed that order, and part-ready.spec's `vi.mock` got the real `slowProblemsOf`. Fixed by moving
+`VISIBLE_CHANGE_RULE` to `system/build-ready-contract.ts`. The spec caught it; the cause is that specs depend on module
+load order. Tool fix (queued after the perf block, low priority): a lint rule that an import of a constant or type
+from a rules/command module fails; shared constants live in a contract file.
+
 B416 slice 2 (as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06): each on-disk compare
 cache is keyed on the cli code that changes its result, not the whole cli build (`code-hash.ts`): the import graph of
 named producer modules, read from the built cli (or the source in specs), types-only imports dropped like tsc drops
