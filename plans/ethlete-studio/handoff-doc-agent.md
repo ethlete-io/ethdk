@@ -30,3 +30,8 @@ Builders:
 
 Notes: commits carry no trailers. An ADR with `open:` needs its STATUS row in the same commit; run
 `node tools/scripts/check-studio-adrs.mjs` before every plan commit (new ADRs > 0204 need `built:` when `open: none`).
+
+Update 12:25: c8 keeps the pb-12 band in variant b (room for the overlay tooltip; rows share the tallest cell's height;
+tool idea "padded to row height" hint, not urgent). Tom asked whether cb is done with SDK fixes and now does Studio:
+told him cb finished B400 and is the second tool builder (design CLI, not Studio UI); he may pull cb back - await his
+answer. c0 was asked to release sketches.component.* to c8.
