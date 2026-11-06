@@ -81,7 +81,7 @@
     }
   },
   "components/disclosure": {
-    "go": {
+    "record": {
       "hash": "9adea6074b258b00",
       "states": {
         "rest": "050eac4e15569696",
@@ -97,6 +97,7 @@
         "xs-active": "3935a50575e6b756",
         "xs-focus-visible": "e540190f03246628"
       },
+      "partHash": "a6186544ac32f22a",
       "slots": true
     }
   },
