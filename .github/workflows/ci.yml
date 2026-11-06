@@ -75,6 +75,7 @@ jobs:
       - run: yarn query:export-coverage
       - run: yarn core:export-coverage
       - run: yarn components:export-coverage
+      - run: yarn vitest:projects:check
 
       # Tailwind classes in apps/ethlete-studio/src must be written in their canonical form.
       - run: yarn studio:classes:check
