@@ -4095,6 +4095,13 @@ old store as a miss (fixed here). Verified: compare-cache.spec (6 cases, each ke
 1144/1144, tsc, lint. Not verified: resident numbers, a real edit, Chromium binary not in the key. Before the block
 closes: done-line numbers from the resident path, and a real one-part edit in a scratch copy with the finding-519
 check that the next compare shows the new picture.
+As built (B416 pane counter, c0 subagent, 2026-11-06, 0df8f2073): `drawnPaneCountOf` skips mocks inside `hidden`
+elements (the closed studio-menu in shell-main), like `drawnSurfacesOf`; the capped wait is a failure again and a
+failed state is not cached; spec on a reduced copy of the captured sketches markup. No speed: the doc agent's premise
+(1 s cap per shot) was computed, not measured; the wait already ended after 0.05-0.18 s. Rule: the perf order follows
+measured phases only. pages/sketches warm 6.7 s, app dropped 12.1 s, design dropped 11.9 s, both 17.8 s (resident
+off). New: compare of elements/studio-menu and components/shell-project-switch hits the 30 s timeout in
+compare-actions (`actions-input`, `actions-pointer-focus`). Next: compare-actions, measured in the resident path.
 B416 phase 3 = S4 (in progress, then as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06):
 compare keeps its pictures on disk under `node_modules/.design-explore/compare-{design,app}-shots-<hash>`. A design
 picture uses the design server's shot store (`server.shotStore`): its key is the frame (part, state, preset, width, bare,
