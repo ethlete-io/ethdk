@@ -4102,6 +4102,18 @@ failed state is not cached; spec on a reduced copy of the captured sketches mark
 measured phases only. pages/sketches warm 6.7 s, app dropped 12.1 s, design dropped 11.9 s, both 17.8 s (resident
 off). New: compare of elements/studio-menu and components/shell-project-switch hits the 30 s timeout in
 compare-actions (`actions-input`, `actions-pointer-focus`). Next: compare-actions, measured in the resident path.
+As built (B416 compare-actions, c0 subagent, 2026-11-06, a3a1e5c35), resident path, before c348e8af1: pages/start
+1.73 -> 1.17 s; pages/sketches 7.00 -> 3.91 s (actions 2.9 -> 0.67 s); elements/studio-menu 30 s timeout -> 1.03 s
+(cold 7.25 s); components/shell-project-switch timeout -> 1.01 s (cold 8.77 s). After an edit (app cache dropped):
+sketches 9.38 s, start 3.89 s. Resident start ~0.65 s. Cause of the timeouts: `readRingProbe` (pointer-focus.ts) had
+no timeout on an element the click removed, Playwright waited 30 s and `.catch(() => null)` swallowed it - the silent
+cap again. Fix: a removed element returns null, else a 1 s cap throws `RingProbeTimeoutError` (FAILED line); per-state
+action cache (`action-cache.ts`, compare only). Verified: state lines identical on four parts, pointer-focus.spec
+(real Chromium, fails on HEAD), action-cache.spec, 77 tests, tsc, lint. Found: a compare killed by the client's
+`timeout` keeps running in the resident and blocks the next run (breaks ADR 0213's timeout rule; fixed first in
+phase 4+5); ~2.4 s on sketches outside any phase; `settle` in action-press.ts still swallows a 15 s cap; the
+measuring script read a pipe's exit 0 again (515) - rule: exit and times come from `design timings`, never a shell
+pipe.
 B416 phase 3 = S4 (in progress, then as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06):
 compare keeps its pictures on disk under `node_modules/.design-explore/compare-{design,app}-shots-<hash>`. A design
 picture uses the design server's shot store (`server.shotStore`): its key is the frame (part, state, preset, width, bare,
