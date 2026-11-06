@@ -529,3 +529,14 @@ features, 151 creators written, 98 tasks. Built by the third session of ADR 0200
   decision: find out where the stubs get lost on publish and report the cause before any change to the publish
   pipeline (app-releases skill first). Tool fix: a replay installs the packed tarball (`npm pack` of the built lib),
   never the dist folder, so it tests what a consumer gets.
+- **Follow-ups as built (ethlete-sdk-62):** 675789d72 - `NTK-MODULE-RESOLUTION` follows tsconfig.base `paths` aliases
+  transitively ("... resolves modules with `node` and reaches `@ethlete/query/ngrx-toolkit` through `@fifa-gg/types`");
+  fixture from the real env/queries/uikit-mocks/types configs, failing before. 95b4a75b5 - the PhaseId row: one shared
+  declaration; `hasEveryKey` looked up `[Symbol.iterator]` of a branded `string & { __brand }` by `name` instead of
+  `escapedName`, so equal branded types never fit, and the only real difference (`?` on `queryParams`) was stripped
+  by `describe()`. Now looked up by `escapedName`; a mismatch names the first differing member with both types and
+  declaring files (also a missing key, required vs optional). Stub cause: ng-packagr 22.2.5 writes
+  `dist/libs/query/.npmignore` that drops the nested `package.json` stubs (`write-package.transform.js:55`), upstream by
+  design. Doc agent decision: no pipeline change - the exports map is the contract. Since that holds for every
+  `@ethlete/*` subpath, the v3 migration (`migrate-to-query-v3` and its guide) names `moduleResolution: bundler` (or
+  `node16`/`nodenext`) as required, not only the toolkit generator. The harness now installs the `npm pack` tarball.
