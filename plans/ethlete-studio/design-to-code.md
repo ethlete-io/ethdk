@@ -4218,3 +4218,20 @@ re-sync before a run, and nothing in a report said which commit was measured, so
 like a current one. Fix (doc agent): the Mac session pushes and resets before every measurement and names the measured
 sha. Tool fix: each `.timings.jsonl` line logs the commit (short sha + dirty flag), `design timings` shows it, and it
 marks a line whose commit is not the checkout's HEAD as stale.
+B416 slice 1 (as built in ecb9a8f46, c0, 2026-11-06): the 519 edit-between-runs check passed with a real edit in a
+scratch worktree on its own resident (`--checkout <wt>`): a design edit of `components/zoom-chip` (text in all 30
+pages/sketches states) re-shot all 30 design pictures and only the 15 app pictures whose key holds the text; the
+matching app edit re-shot all 30 app pictures and kept the design hits; the next run 104/104 hits, no stale picture.
+Compare shots 8 at once (`COMPARE_SHOTS_AT_ONCE`; render check stays at 4): app cache dropped 4 = 7.5-8.1 s, 6 =
+6.2-7.1 s, 8 = 5.7-5.9 s. Warm sketches 2.55 s; the run after an edit 2.4-3.4 s. NOT met: the first run after a real
+edit 12.3-18 s (design shots 4.4-8 s, app shots 4-5.4 s, compare-actions 3-3.9 s, compare-pixels 1.1-1.5 s), under
+load 12-17 from other sessions, zoom-chip being the worst case. Doc agent (ADR 0213): an "after-edit floor" slice
+after slice 2: first measure a single-state part edit on an idle machine (the typical case) and the zoom-chip edit
+(worst case), then cut by measured phase: compare-actions re-checks only the states whose action inputs changed (the
+a3a1e5c35 note claims this already - verify why every state re-ran), compare-pixels cached by both picture hashes,
+design shots at 8. The 10 s target holds for the typical edit; the worst case is reported, not a gate.
+
+526\. c0 (2026-11-06): the after-edit numbers of B416 slice 1 ran under load 12-17 from other sessions, so 12.3-18 s
+cannot be told from a slow tool. Why no tool caught it: a `.timings.jsonl` line holds no machine state, so a noisy run
+looks like a clean one. Tool fix: each line logs the 1-minute load average and the core count, `design timings` marks a
+line with load above the core count as noisy, and a target verdict uses only clean lines.
