@@ -114,7 +114,7 @@ export const SKETCH_NARROW_SAMPLE = {
       note: 'Chip als Pille, die Knöpfe rücken enger zusammen.',
       model: { ...OPUS, when: '02.11. 11:02' },
       width: 176,
-      shots: chipShotsOf(CHIP_STATES.filter((state) => state.startsWith('fit'))),
+      shots: chipShotsOf(CHIP_STATES.filter((state) => state === 'fit')),
     },
     {
       key: 'b',

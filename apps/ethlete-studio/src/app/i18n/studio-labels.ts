@@ -128,6 +128,7 @@ export const STUDIO_LABELS = {
     },
   },
   commentDraft: {
+    dialog: 'Kommentar schreiben',
     comment: 'Kommentar',
     placeholder: 'Enter sendet, Umschalt+Enter macht einen Zeilenumbruch',
     cancel: 'Abbrechen',

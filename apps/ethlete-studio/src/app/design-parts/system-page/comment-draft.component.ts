@@ -1,6 +1,6 @@
 import { Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, TEXTAREA_IMPORTS } from '@ethlete/components';
-import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
+import { AutoSurfaceDirective, injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
 export type CommentSendPhase = 'busy' | 'error' | 'rejected';
@@ -76,7 +76,10 @@ export const draftKeyOf = (event: Pick<KeyboardEvent, 'key' | 'shiftKey' | 'isCo
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS, FORM_FIELD_IMPORTS, TEXTAREA_IMPORTS, ProvideColorDirective],
+  hostDirectives: [AutoSurfaceDirective],
   host: {
+    role: 'dialog',
+    '[attr.aria-label]': 'LABELS.dialog',
     class:
       'flex w-80 flex-col gap-space-2 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-space-3 shadow-lg',
   },
