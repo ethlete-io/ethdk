@@ -119,8 +119,10 @@ describe('migrate-from-ngrx-toolkit', { timeout: 30_000 }, () => {
 
       const task = report.tasks.find((candidate) => candidate.id === TOOLKIT_TASK.SERVICE_HEADERS);
 
-      expect(task?.summary).toContain('getItemPublicProfileBySlug');
-      expect(task?.locations[0]?.filePath).toBe(featureFile(APP_A.item, 'service'));
+      expect(task?.summary).toBe(
+        "`getItemPublicProfileBySlug` added the headers `{ 'X-SSR': '1' }` (from `this._ssrHeader`) only when `isPlatformServer(this._platformId)`; the creator `getItemPublicProfileBySlug` does not.",
+      );
+      expect(task?.locations[0]).toEqual({ filePath: featureFile(APP_A.item, 'service'), line: 38 });
     });
 
     it('deletes the store files and unhooks the feature from a domain that keeps other features', () => {

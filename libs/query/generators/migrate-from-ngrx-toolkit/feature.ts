@@ -380,7 +380,9 @@ const isReducerPlainSlice = (content: string) => {
   return slice && !foreign;
 };
 
-type ServiceMethod = { route: ToolkitRoute; verb: HttpVerb; headers: boolean; cacheExpiry: boolean };
+type ServiceHeaders = { line: number; description: string };
+
+type ServiceMethod = { route: ToolkitRoute; verb: HttpVerb; headers: ServiceHeaders | null; cacheExpiry: boolean };
 
 type ParsedService = {
   apiBase: string | null;
@@ -431,6 +433,39 @@ const parseRoute = (node: ts.Expression, sourceFile: ts.SourceFile): ToolkitRout
   return { text, normalized, pathParams, staticPrefix: body.head.text };
 };
 
+const isEmptyValue = (node: ts.Expression) =>
+  node.kind === ts.SyntaxKind.NullKeyword || (ts.isIdentifier(node) && node.text === 'undefined');
+
+const describeHeaders = (value: ts.Expression, method: ts.MethodDeclaration, sourceFile: ts.SourceFile) => {
+  const text = value.getText(sourceFile);
+  const owner = method.parent;
+  const property =
+    ts.isPropertyAccessExpression(value) && value.expression.kind === ts.SyntaxKind.ThisKeyword && ts.isClassLike(owner)
+      ? owner.members.find(
+          (member): member is ts.PropertyDeclaration =>
+            ts.isPropertyDeclaration(member) && member.name.getText(sourceFile) === value.name.text,
+        )
+      : undefined;
+  const resolved = property?.initializer ?? value;
+  const source = property ? ` (from \`${text}\`)` : '';
+
+  if (ts.isConditionalExpression(resolved)) {
+    const condition = resolved.condition.getText(sourceFile);
+
+    if (isEmptyValue(resolved.whenFalse)) {
+      return `\`${resolved.whenTrue.getText(sourceFile)}\`${source} only when \`${condition}\``;
+    }
+
+    if (isEmptyValue(resolved.whenTrue)) {
+      return `\`${resolved.whenFalse.getText(sourceFile)}\`${source} only when \`${condition}\` is false`;
+    }
+
+    return `\`${resolved.whenTrue.getText(sourceFile)}\` or \`${resolved.whenFalse.getText(sourceFile)}\`${source} depending on \`${condition}\``;
+  }
+
+  return `\`${resolved.getText(sourceFile)}\`${source}`;
+};
+
 const parseServiceMethod = (method: ts.MethodDeclaration, sourceFile: ts.SourceFile): ServiceMethod | string => {
   const statements = method.body?.statements ?? [];
   const statement = statements[0];
@@ -458,7 +493,7 @@ const parseServiceMethod = (method: ts.MethodDeclaration, sourceFile: ts.SourceF
   }
 
   let route: ToolkitRoute | string = 'The method has no `apiRoute`.';
-  let headers = false;
+  let headers: ServiceHeaders | null = null;
   let cacheExpiry = false;
 
   for (const property of options.properties) {
@@ -486,7 +521,17 @@ const parseServiceMethod = (method: ts.MethodDeclaration, sourceFile: ts.SourceF
 
       if (!spreadsArgs) return `Unsupported \`httpOpts\`: \`${value.getText(sourceFile)}\`.`;
 
-      headers = true;
+      const header = value.properties.find(
+        (element): element is ts.PropertyAssignment =>
+          ts.isPropertyAssignment(element) && element.name.getText(sourceFile) === 'headers',
+      );
+
+      if (header) {
+        headers = {
+          line: lineOf(sourceFile, header.getStart(sourceFile)),
+          description: describeHeaders(header.initializer, method, sourceFile),
+        };
+      }
     } else if (name === 'extras') {
       if (!ts.isObjectLiteralExpression(value)) return `Unsupported \`extras\`: \`${value.getText(sourceFile)}\`.`;
 
@@ -709,8 +754,8 @@ const analyzeFeature = (tree: Tree, graph: ModuleGraph, input: FeatureInput): To
     if (method.headers) {
       warnings.push({
         id: TOOLKIT_TASK.SERVICE_HEADERS,
-        summary: `\`${serviceMethod}\` added headers to the request; the creator \`${group.name}\` does not.`,
-        locations: [{ filePath: files.service! }],
+        summary: `\`${serviceMethod}\` added the headers ${method.headers.description}; the creator \`${group.name}\` does not.`,
+        locations: [{ filePath: files.service!, line: method.headers.line }],
       });
     }
 
