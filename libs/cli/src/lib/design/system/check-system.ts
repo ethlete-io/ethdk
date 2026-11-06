@@ -689,6 +689,7 @@ const renderSystem = async (
   const rendered = await timedPhase('render-inspect', () =>
     renderIssuesOf({
       ...options,
+      cached: true,
       onProgress: (line) => console.log(line),
       jobs: options.products.map((product) => ({ product, sketch: null, parts: options.part ? [options.part] : null })),
     }),

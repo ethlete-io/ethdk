@@ -3,7 +3,7 @@ import { AddressInfo } from 'net';
 import { yieldRun } from '../run-yield';
 import { WarmDraw } from '../warm-draw';
 import { chromiumOf } from '../browser';
-import { DesignConfig } from '../paths';
+import { DesignConfig, viteCacheOf } from '../paths';
 import {
   ColorScheme,
   ContrastOptions,
@@ -30,6 +30,9 @@ import { NESTED_SCROLL_RULE, NESTED_SCROLL_STATEMENTS } from './nested-scroll';
 import { INTERACTIVE_SELECTOR } from './actions';
 import { REACH_STATEMENTS } from './reach';
 import { REACHABLE_CONTROLS_STATEMENTS } from './reachable-controls';
+import { browserVersionOf, cacheKeyOf } from './compare-cache';
+import { createServedCache, createServedHashes, ServedCacheRun, ServedRequest, servedHitOf } from './served-cache';
+import { renderInspectCodeOf } from '../code-hash';
 
 /** One drawing of one state that breaks a render rule. `path` is a short selector path to the element. */
 export type RenderIssue = {
@@ -595,6 +598,11 @@ const PART_TIMEOUT_MS = 120_000;
 /** @internal How many frames of one part `inspect` draws at once, each on a page of its own. */
 export const INSPECTS_AT_ONCE = 4;
 
+/** The cache folder of the render issues of each part, kept with the responses its drawing loaded. */
+export const RENDER_ISSUES = 'render-issues';
+
+const RENDER_ISSUES_LIMIT = 64 * 1024 * 1024;
+
 const embedControlsOf = (controls: unknown) =>
   typeof controls === 'object' && controls !== null
     ? Object.entries(controls)
@@ -660,12 +668,19 @@ const inspect = async (options: {
   frames: Frame[];
   timeoutMs?: number;
   onPart?: (progress: { done: number; total: number; part: string; ms: number }) => void;
+  cache?: ServedCacheRun<RenderIssue[]>;
 }) => {
-  const { browser, base, frames } = options;
+  const { browser, base, frames, cache } = options;
   const timeoutMs = options.timeoutMs ?? PART_TIMEOUT_MS;
   const context = await browser.newContext();
+  let requested: ServedRequest[] = [];
 
   await context.addInitScript(CLICK_LISTENER_INIT_SCRIPT);
+
+  if (cache)
+    context.on('request', (request) =>
+      requested.push({ url: request.url(), accept: request.headers()['accept'] ?? null }),
+    );
 
   const issues: RenderIssue[] = [];
   const groups = new Map<string, Frame[]>();
@@ -685,13 +700,30 @@ const inspect = async (options: {
       await yieldRun();
 
       const started = Date.now();
+      const first = group[0]?.address;
+      const key = cache ? cacheKeyOf([cache.salt, group]) : null;
+      const hit = cache && key ? await servedHitOf(cache, key) : null;
+
+      if (hit) {
+        issues.push(...hit);
+        done++;
+
+        if (first) options.onPart?.({ done, total: groups.size, part: first.part, ms: Date.now() - started });
+
+        continue;
+      }
+
       const width = Math.min(INSPECTS_AT_ONCE, group.length);
 
       while (lanes.length < width) {
         const page = await context.newPage();
 
+        if (cache) await (await context.newCDPSession(page)).send('Network.setCacheDisabled', { cacheDisabled: true });
+
         lanes.push({ page, sdkErrors: watchSdkErrorLines(page) });
       }
+
+      requested = [];
 
       const found: RenderIssue[][] = group.map(() => []);
       let next = 0;
@@ -711,8 +743,6 @@ const inspect = async (options: {
         race(from(drawn).pipe(map(() => 'drawn' as const)), timer(timeoutMs).pipe(map(() => 'timeout' as const))),
       );
 
-      const first = group[0]?.address;
-
       if (result === 'timeout') {
         await Promise.all(lanes.map(({ page }) => page.close().catch(() => undefined)));
         lanes = [];
@@ -729,11 +759,11 @@ const inspect = async (options: {
             sketch: first.sketch,
           });
       } else {
-        issues.push(...found.flat());
+        const groupIssues = found.flat();
 
         if (first)
           for (const line of new Set(lanes.flatMap(({ sdkErrors }) => sdkErrors.drain())))
-            issues.push({
+            groupIssues.push({
               rule: 'RENDER',
               product: first.product,
               part: first.part,
@@ -743,6 +773,11 @@ const inspect = async (options: {
               detail: `logged SDK error ${line.split('\n')[0]}`,
               sketch: first.sketch,
             });
+
+        issues.push(...groupIssues);
+
+        if (cache && key)
+          cache.store.write(key, { inputs: await cache.served.inputsOf(requested), value: groupIssues });
       }
 
       done++;
@@ -770,6 +805,7 @@ export const renderIssuesOf = async (options: {
   partTimeoutMs?: number;
   onProgress?: (line: string) => void;
   warm?: WarmDraw;
+  cached?: boolean;
 }): Promise<
   | {
       issues: RenderIssue[];
@@ -786,7 +822,9 @@ export const renderIssuesOf = async (options: {
 
   if (jobs.length === 0) return { issues: [], warnings: [], grids: [], drawn: [] };
 
-  if (!(await resolveChromium(target)))
+  const chromium = await resolveChromium(target);
+
+  if (!chromium)
     return {
       unavailable: `neither ${target} nor this package (${__dirname}) resolves playwright or playwright-core, so there is no Chromium to launch`,
     };
@@ -800,6 +838,13 @@ export const renderIssuesOf = async (options: {
 
     const { port } = server.httpServer?.address() as AddressInfo;
     const base = `http://localhost:${port}`;
+    const cache: ServedCacheRun<RenderIssue[]> | undefined = options.cached
+      ? {
+          store: createServedCache(viteCacheOf(target, RENDER_ISSUES), RENDER_ISSUES_LIMIT),
+          served: createServedHashes(base),
+          salt: `${renderInspectCodeOf()} ${browserVersionOf(chromium.from)}`,
+        }
+      : undefined;
     const system = createSystemModules({ target, config });
     const frames: Frame[] = [];
     const issues: RenderIssue[] = [];
@@ -1031,7 +1076,7 @@ export const renderIssuesOf = async (options: {
         })),
       );
 
-      return baseline.length > 0 ? queue.run((browser) => inspect({ browser, base, frames: baseline })) : [];
+      return baseline.length > 0 ? queue.run((browser) => inspect({ browser, base, frames: baseline, cache })) : [];
     };
     const askedInProduct = Promise.resolve(inspectBaselineOf([...asked]));
 
@@ -1042,6 +1087,7 @@ export const renderIssuesOf = async (options: {
         browser,
         base,
         frames,
+        cache,
         timeoutMs: options.partTimeoutMs,
         onPart: ({ done, total, part, ms }) =>
           options.onProgress?.(`[${done}/${total}] ${part} ${Math.round(ms / 1000)}s`),
