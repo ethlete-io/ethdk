@@ -1,6 +1,9 @@
+import { execFile } from 'child_process';
 import { appendFileSync } from 'fs';
-import { join } from 'path';
+import { availableParallelism, loadavg } from 'os';
+import { dirname, join } from 'path';
 import { performance } from 'perf_hooks';
+import { setTimeout as delay } from 'timers/promises';
 
 export const TIMINGS_FILE = '.ethlete/design/.timings.jsonl';
 
@@ -13,6 +16,12 @@ export type TimingSession = { claude: string | null; tmux: string | null; role: 
 
 /** `at` is when the phase started, in ms from the start of its run. */
 export type TimingPhase = { name: string; ms: number; at?: number };
+
+/** The checkout commit a run measured, and whether its tracked files differed from it. */
+export type TimingCommit = { sha: string; dirty: boolean };
+
+/** The 1-minute load average when a run ended, and the cores it shared. */
+export type TimingLoad = { avg1: number; cores: number };
 
 export type TimingLine = {
   command: string;
@@ -31,6 +40,8 @@ export type TimingLine = {
   cache: { hits: number; misses: number };
   concurrentHeavy: number | null;
   unphasedMs?: number;
+  commit?: TimingCommit | null;
+  load?: TimingLoad;
 };
 
 export const TIMING_TARGETS: Record<string, number> = {
@@ -140,6 +151,13 @@ export const costliestPhaseOf = (line: Pick<TimingLine, 'phases' | 'unphasedMs'>
 
 const secondsOf = (ms: number) => `${(ms / 1000).toFixed(1)} s`;
 
+/** A run whose machine had more runnable work than cores, or did not log its load: its time is no verdict. */
+export const isNoisy = (line: Pick<TimingLine, 'load'>) => !line.load || line.load.avg1 > line.load.cores;
+
+/** A run that measured another commit than `head`, or logged none; with no `head` known nothing is stale. */
+export const isStale = (line: Pick<TimingLine, 'commit'>, head: string | null) =>
+  head !== null && (!line.commit || !(head.startsWith(line.commit.sha) || line.commit.sha.startsWith(head)));
+
 /** The line a run over its target prints at the end of its output, or `null` when it met its target or has none. */
 export const overTargetLineOf = (line: TimingLine) => {
   const target = TIMING_TARGETS[labelOf(line)];
@@ -147,12 +165,38 @@ export const overTargetLineOf = (line: TimingLine) => {
   if (target === undefined || line.totalMs <= target) return null;
 
   const costliest = costliestPhaseOf(line);
+  const noisy =
+    line.load && isNoisy(line)
+      ? ` (noisy: load ${line.load.avg1.toFixed(1)} > ${line.load.cores} cores, no verdict)`
+      : '';
 
-  return `over target: ${labelOf(line)} took ${secondsOf(line.totalMs)} > ${secondsOf(target)} - slowest phase ${costliest ? `${costliest.name} ${secondsOf(costliest.ms)}` : 'none recorded'}`;
+  return `over target: ${labelOf(line)} took ${secondsOf(line.totalMs)} > ${secondsOf(target)} - slowest phase ${costliest ? `${costliest.name} ${secondsOf(costliest.ms)}` : 'none recorded'}${noisy}`;
 };
+
+const gitOutputOf = (cwd: string, args: string[]) =>
+  new Promise<string | null>((done) =>
+    execFile('git', ['-C', cwd, ...args], { timeout: 5000 }, (error, stdout) => done(error ? null : stdout.trim())),
+  );
+
+/** The commit `checkout` is at (short sha) and whether its tracked files differ from it, or `null` outside git. */
+export const checkoutCommitOf = async (checkout: string): Promise<TimingCommit | null> => {
+  const [sha, changed] = await Promise.all([
+    gitOutputOf(checkout, ['rev-parse', '--short', 'HEAD']),
+    gitOutputOf(checkout, ['status', '--porcelain', '--untracked-files=no']),
+  ]);
+
+  return sha ? { sha, dirty: changed === null || changed !== '' } : null;
+};
+
+const machineLoadOf = (): TimingLoad => ({
+  avg1: Math.round((loadavg()[0] ?? 0) * 100) / 100,
+  cores: availableParallelism(),
+});
 
 const sumOf = (phases: TimingPhase[], names: string[]) =>
   phases.filter((phase) => names.includes(phase.name)).reduce((total, phase) => total + phase.ms, 0);
+
+const COMMIT_WAIT_MS = 2000;
 
 const defaultWrite = (file: string, text: string) => appendFileSync(file, text);
 
@@ -167,10 +211,20 @@ export const recordRun = async (
     resident?: boolean;
     env?: NodeJS.ProcessEnv;
     write?: (file: string, text: string) => void;
+    commitOf?: (checkout: string) => Promise<TimingCommit | null>;
+    loadOf?: () => TimingLoad;
   },
   run: () => Promise<number>,
 ): Promise<number> => {
-  const { file, argv, resident = false, env = process.env, write = defaultWrite } = options;
+  const {
+    file,
+    argv,
+    resident = false,
+    env = process.env,
+    write = defaultWrite,
+    commitOf = checkoutCommitOf,
+    loadOf = machineLoadOf,
+  } = options;
   const recorder: Recorder = {
     began: performance.now(),
     phases: [],
@@ -184,8 +238,23 @@ export const recordRun = async (
   const began = recorder.began;
   const session = sessionOf(env);
   let written = false;
+  let commit: TimingCommit | null = null;
 
-  const flush = (exit: number, viaExit = false) => {
+  const commitRead = commitOf(dirname(dirname(dirname(file)))).then(
+    (found) => void (commit = found),
+    () => undefined,
+  );
+  const settled = async () => {
+    const ended = performance.now();
+
+    await Promise.race([commitRead, delay(COMMIT_WAIT_MS, undefined, { ref: false })]);
+
+    return ended;
+  };
+
+  const flush = (exit: number, how: { viaExit?: boolean; ended?: number } = {}) => {
+    const { viaExit = false, ended = performance.now() } = how;
+
     process.off('exit', onExit);
 
     if (written || recorder.skipped) return;
@@ -196,7 +265,7 @@ export const recordRun = async (
       ...recorder.phases,
       ...(recorder.draws.length > 0 ? [{ name: 'draw-queue-wait', ms: Math.round(Math.max(...recorder.draws)) }] : []),
     ];
-    const totalMs = Math.round(performance.now() - began);
+    const totalMs = Math.round(ended - began);
     const line: TimingLine = {
       command: commandOf(argv),
       args: argv.slice(1),
@@ -213,6 +282,8 @@ export const recordRun = async (
       serverStartMs: sumOf(phases, SERVER_START_PHASES),
       cache: recorder.cache,
       concurrentHeavy: recorder.concurrentHeavy,
+      commit,
+      load: loadOf(),
     };
     const unphasedMs = unphasedMsOf(phases, totalMs);
 
@@ -228,7 +299,7 @@ export const recordRun = async (
       return;
     }
   };
-  const onExit = (code: number) => flush(code, true);
+  const onExit = (code: number) => flush(code, { viaExit: true });
 
   process.once('exit', onExit);
   current = recorder;
@@ -236,11 +307,11 @@ export const recordRun = async (
   try {
     const code = await run();
 
-    flush(code);
+    flush(code, { ended: await settled() });
 
     return code;
   } catch (error) {
-    flush(1);
+    flush(1, { ended: await settled() });
 
     throw error;
   } finally {

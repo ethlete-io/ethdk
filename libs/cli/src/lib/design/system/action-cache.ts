@@ -1,6 +1,6 @@
-import { mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, utimesSync, writeFileSync } from 'fs';
+import { readdirSync, readFileSync, rmSync, statSync, utimesSync } from 'fs';
 import { join } from 'path';
-import { runSignal } from '../run-abort';
+import { writeCacheEntry } from '../cache-entry';
 
 /** The cache folder name of the action check results compare keeps per state. */
 export const COMPARE_ACTIONS = 'compare-actions';
@@ -25,8 +25,6 @@ export type ActionCache = {
 
 /** A disk cache of action check results under `dir`; the oldest entries go past `limit` entries. */
 export const createActionCache = (dir: string, limit = ENTRY_LIMIT): ActionCache => {
-  let temps = 0;
-
   const evict = () => {
     const entries = readdirSync(dir)
       .filter((name) => name.endsWith(ENTRY_SUFFIX))
@@ -56,16 +54,7 @@ export const createActionCache = (dir: string, limit = ENTRY_LIMIT): ActionCache
       }
     },
     write: (entry) => {
-      const temp = join(dir, `.${entry.key}.${process.pid}.${(temps += 1)}.tmp`);
-
-      try {
-        mkdirSync(dir, { recursive: true });
-        writeFileSync(temp, JSON.stringify(entry));
-        renameSync(temp, join(dir, `${entry.key}${ENTRY_SUFFIX}`));
-        evict();
-      } catch {
-        rmSync(temp, { force: true });
-      }
+      if (writeCacheEntry(dir, { name: `${entry.key}${ENTRY_SUFFIX}`, text: JSON.stringify(entry) })) evict();
     },
   };
 };
@@ -92,7 +81,7 @@ export const cachedActionsOf = async <T>(options: {
   const deps = new Map<string, { dep: ActionDep; print: string }>();
   const { value, keep } = await run((dep, print) => deps.set(JSON.stringify(dep), { dep, print }));
 
-  if (cache && keep && !runSignal()?.aborted) cache.write({ key, value, deps: [...deps.values()] });
+  if (cache && keep) cache.write({ key, value, deps: [...deps.values()] });
 
   return { value, hit: false };
 };

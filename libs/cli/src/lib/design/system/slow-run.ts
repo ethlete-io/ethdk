@@ -9,6 +9,7 @@ import {
   CONTROL_STATE_RULE,
   DROPPED_PROP_RULE,
   SDK_ERROR_RULE,
+  VISIBLE_CHANGE_RULE,
 } from './build-ready-contract';
 import { shootStates, ShootStates } from './compare-command';
 import { appFilesOf } from './app-files';
@@ -22,7 +23,7 @@ import { partKeyOf, partOfFile, ResolvedProduct, resolveProduct } from './resolv
 import { ruleBaselineOf } from './rule-baseline';
 import { APP_SPEC_RULE, appSpecProblemsOf, RunRelatedSpecs, runRelatedSpecs } from './rules/app-spec';
 import { UNCOVERED_REGION_RULE, uncoveredRegionProblemsOf } from './rules/uncovered-region';
-import { VISIBLE_CHANGE_RULE, visibleChangeProblemsOf } from './rules/visible-change';
+import { visibleChangeProblemsOf } from './rules/visible-change';
 import { sdkErrorLineOf } from './sdk-errors';
 import { autoAcceptOf } from './accepted-pictures';
 import { partHashOf } from './sketch/baseline';

@@ -5,7 +5,7 @@ import { createDesignServer } from '../serve';
 import { createPartShooter } from '../shot';
 import { createDrawQueue } from '../thumb';
 import { CONTROL_STATE_RULE } from './build-ready-contract';
-import { compareFrameOf } from './compare-command';
+import { compareFrameOf } from './harness-shot';
 import { declaredControlsOf, isInteractionState } from './complete';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedProduct } from './resolve-product';

@@ -5,6 +5,7 @@ import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { assetRoot, DESIGN_DIR, viteCacheOf } from './paths';
 import { serveDesign } from './serve';
+import { withRunSignal } from './run-abort';
 import { createShotStore } from './shot-store';
 import { productModuleIdOf } from './system/system-modules';
 
@@ -249,6 +250,24 @@ describe('the shots a design server keeps on disk', () => {
 describe('createShotStore', () => {
   const picture = { png: Buffer.from('png'), marks: [] };
   const address = { product: 'acme', part: 'components/card', sketch: null, props: null };
+
+  it('keeps no shot written after its run was aborted, so the next run draws it again', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'cli-shot-store-'));
+    const input = join(dir, 'input.ts');
+    const store = createShotStore({ dir, salt: 's', inputsOf: () => [input], scopeOf: () => '' });
+    const run = new AbortController();
+
+    writeFileSync(input, 'one');
+    await withRunSignal(run.signal, async () => {
+      store.write('before', { address, picture });
+      run.abort();
+      store.write('after', { address, picture });
+    });
+
+    expect(store.read('before', address)).toEqual(picture);
+    expect(store.read('after', address)).toBeNull();
+    expect(readdirSync(dir).filter((name) => name.startsWith('.'))).toEqual([]);
+  });
 
   it('treats a corrupt entry as a miss', () => {
     const dir = mkdtempSync(join(tmpdir(), 'cli-shot-store-'));

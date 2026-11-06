@@ -10,7 +10,7 @@ import { createDesignServer } from '../serve';
 import { checkerScriptOf, createPartShooter, Picture, pixelBoxOf, viewportOf } from '../shot';
 import { recordCache } from '../timings';
 import { ActionDep, cachedActionsOf, COMPARE_ACTIONS, createActionCache } from './action-cache';
-import { buildStampOf } from '../stamp';
+import { actionCheckCodeOf } from '../code-hash';
 import { browserVersionOf, builtAppHashOf, cacheKeyOf, COMPARE_DESIGN_SHOTS } from './compare-cache';
 import { awaitFonts, Browser, createDrawQueue, DRAW_TIMEOUT_MS, DRAWS_AT_ONCE } from '../thumb';
 import {
@@ -36,7 +36,7 @@ import {
   targetStateOf,
 } from './actions';
 import { awaitOutput, dropKeyboardFocus, INIT_SCRIPT, OVERLAY_ROOTS, settle, watchMutations } from './action-press';
-import { compareFrameOf } from './compare-command';
+import { compareFrameOf } from './harness-shot';
 import { componentOutputsOf, modelChangesForOf } from './component-outputs';
 import { checkLiveActions, liveLineOf, liveStateCompareOf, LiveLine } from './live-actions';
 import { pointerFocusVerdictOf, probePointerFocus } from './pointer-focus';
@@ -765,7 +765,7 @@ export const checkActions = async (options: {
 
     const cacheInputs = options.appRoot
       ? {
-          salt: `${buildStampOf().version} ${buildStampOf().build} ${browserVersionOf(chromium.from)}`,
+          salt: `${actionCheckCodeOf()} ${browserVersionOf(chromium.from)}`,
           built: builtAppHashOf(options.appRoot),
         }
       : null;

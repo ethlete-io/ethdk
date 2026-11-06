@@ -1,3 +1,4 @@
+import { execFileSync } from 'child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -6,7 +7,16 @@ import { designCommand } from './design-command';
 import { timedPhase } from './phase-timing';
 import { ResidentClient, sendRun } from './resident/client';
 import { startResidentServer } from './resident/server';
-import { recordCache, recordRun, skipRunTimings, TimingLine, timingsFileOf, unphasedMsOf } from './timings';
+import {
+  checkoutCommitOf,
+  overTargetLineOf,
+  recordCache,
+  recordRun,
+  skipRunTimings,
+  TimingLine,
+  timingsFileOf,
+  unphasedMsOf,
+} from './timings';
 
 const NO_SESSION = { CLAUDE_CODE_SESSION_ID: '', TMUX_PANE: '', ETHLETE_AGENT_ROLE: '' };
 
@@ -227,15 +237,18 @@ describe('a run over its target', () => {
       return true;
     });
 
-    await recordRun({ file, argv: ['compare', 'pages/sketches'], env: NO_SESSION }, async () => {
-      await timedPhase('compare-states', async () => {
-        clock += 6_000;
-      });
-      clock += 5_000;
-      console.error('last line of the command');
+    await recordRun(
+      { file, argv: ['compare', 'pages/sketches'], env: NO_SESSION, loadOf: () => ({ avg1: 1, cores: 8 }) },
+      async () => {
+        await timedPhase('compare-states', async () => {
+          clock += 6_000;
+        });
+        clock += 5_000;
+        console.error('last line of the command');
 
-      return 1;
-    });
+        return 1;
+      },
+    );
 
     const [line] = readFileSync(file, 'utf8')
       .trim()
@@ -258,5 +271,77 @@ describe('a run over its target', () => {
 
     expect(write.mock.calls.flat().join('')).not.toContain('over target');
     rmSync(dir, { recursive: true, force: true });
+  });
+});
+
+describe('the commit and load of a run', () => {
+  let dir: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'timings-commit-'));
+  });
+
+  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+
+  it('logs the commit of the checkout the timings file is in, and the load and cores when the run ended', async () => {
+    const file = timingsFileOf(dir);
+    const asked: string[] = [];
+
+    mkdirSync(join(dir, '.ethlete/design'), { recursive: true });
+    await recordRun(
+      {
+        file,
+        argv: ['compare', 'pages/start'],
+        env: NO_SESSION,
+        commitOf: async (checkout) => (asked.push(checkout), { sha: 'abc1234', dirty: true }),
+        loadOf: () => ({ avg1: 3.5, cores: 12 }),
+      },
+      async () => 0,
+    );
+
+    const line = JSON.parse(readFileSync(file, 'utf8')) as TimingLine;
+
+    expect(asked).toEqual([dir]);
+    expect(line.commit).toEqual({ sha: 'abc1234', dirty: true });
+    expect(line.load).toEqual({ avg1: 3.5, cores: 12 });
+  });
+
+  it('reads the short sha of HEAD and whether a tracked file differs from it', async () => {
+    const git = (...args: string[]) =>
+      execFileSync('git', ['-C', dir, '-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { encoding: 'utf8' });
+
+    expect(await checkoutCommitOf(dir)).toBeNull();
+
+    git('init', '-q');
+    writeFileSync(join(dir, 'a.txt'), 'one');
+    git('add', 'a.txt');
+    git('commit', '-qm', 'one');
+    writeFileSync(join(dir, 'untracked.txt'), 'new');
+
+    const sha = git('rev-parse', '--short', 'HEAD').trim();
+
+    expect(await checkoutCommitOf(dir)).toEqual({ sha, dirty: false });
+
+    writeFileSync(join(dir, 'a.txt'), 'two');
+
+    expect(await checkoutCommitOf(dir)).toEqual({ sha, dirty: true });
+  });
+
+  it('says a run over its target under load above its cores is no verdict', () => {
+    const line = {
+      command: 'compare',
+      args: ['pages/start'],
+      parts: ['pages/start'],
+      totalMs: 12000,
+      phases: [],
+      load: { avg1: 14.2, cores: 12 },
+    } as unknown as TimingLine;
+
+    expect(overTargetLineOf(line)).toBe(
+      'over target: compare took 12.0 s > 10.0 s - slowest phase none recorded (noisy: load 14.2 > 12 cores, no verdict)',
+    );
+    expect(overTargetLineOf({ ...line, load: { avg1: 3, cores: 12 } })).toBe(
+      'over target: compare took 12.0 s > 10.0 s - slowest phase none recorded',
+    );
   });
 });

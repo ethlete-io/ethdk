@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { settle } from './action-press';
-import { drawnPaneCountOf, missingPanesProblemOf } from './compare-command';
+import { drawnPaneCountOf, missingPanesProblemOf } from './harness-shot';
 import { PANE_COUNT_TIMEOUT_MS, settledPanesOf, settledPanesScript } from './settled-panes';
 
 type Page = Parameters<typeof settledPanesOf>[0]['page'];

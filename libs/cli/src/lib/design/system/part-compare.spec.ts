@@ -8,16 +8,8 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { crc32, deflateSync } from 'zlib';
 import { DESIGN_DIR } from '../paths';
 import type { TextAmbient } from '../shot';
-import {
-  appShotProblemOf,
-  compareFrameOf,
-  comparePart,
-  compareWidthOf,
-  designCompare,
-  harnessShotOf,
-  missingPanesProblemOf,
-  ShootStates,
-} from './compare-command';
+import { appShotProblemOf, comparePart, compareWidthOf, designCompare, ShootStates } from './compare-command';
+import { compareFrameOf, harnessShotOf, missingPanesProblemOf } from './harness-shot';
 import { partActionFailuresOf } from './actions-command';
 import { StartHarnessServer } from './harness-server';
 import {

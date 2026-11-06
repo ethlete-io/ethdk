@@ -24,6 +24,8 @@ export const CONTROL_STATE_RULE = 'CONTROL-STATE';
 
 export const DROPPED_PROP_RULE = 'DROPPED-PROP';
 
+export const VISIBLE_CHANGE_RULE = 'VISIBLE-CHANGE';
+
 export const ACTION_LOST_RULE = 'ACTION-LOST';
 
 export const blockerKindOfRule = (rule: string): BlockerKind =>

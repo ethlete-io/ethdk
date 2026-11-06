@@ -4235,3 +4235,17 @@ design shots at 8. The 10 s target holds for the typical edit; the worst case is
 cannot be told from a slow tool. Why no tool caught it: a `.timings.jsonl` line holds no machine state, so a noisy run
 looks like a clean one. Tool fix: each line logs the 1-minute load average and the core count, `design timings` marks a
 line with load above the core count as noisy, and a target verdict uses only clean lines.
+
+B416 slice 2 (as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06): each on-disk compare
+cache is keyed on the cli code that changes its result, not the whole cli build (`code-hash.ts`): the import graph of
+named producer modules, read from the built cli (or the source in specs), types-only imports dropped like tsc drops
+them, `timings`/`phase-timing`/`run-abort` left out, `serve` counted by its own text but not followed. Design pictures
+(Studio's and compare's shot store): serve, shot, thumb, render and the server transforms plus the frame assets. App
+pictures: the new `system/harness-shot.ts` (`harnessShotOf` moved out of compare-command, which is no longer in any key)
+and compare-cache. compare-actions: actions-command and its graph plus the design picture code. 524: the shared
+`writeCacheEntry` writes nothing once the run signal is aborted; an abort spec for the shot store, the app picture cache
+and compare-actions. 525/526: each `.timings.jsonl` line logs `commit` (short sha + dirty) and `load` (1-minute average,
+cores); `design timings` shows both, marks STALE (not HEAD) and NOISY (load above cores, or none logged), and its target
+verdict and miss list count only clean lines; a run's own over-target line says when it was noisy. Verified: specs
+(an edit between two hashes for each producer kind, abort per cache, timings), both tsc, lint. Measured numbers and what
+was not verified: `.claude/handoffs/agent-results/b416-slice2.md`.

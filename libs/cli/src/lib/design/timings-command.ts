@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
-import { costliestPhaseOf, labelOf, TIMING_TARGETS, TimingLine, timingsFileOf } from './timings';
+import { execFileSync } from 'child_process';
+import { costliestPhaseOf, isNoisy, isStale, labelOf, TIMING_TARGETS, TimingLine, timingsFileOf } from './timings';
 
 export const TIMINGS_USAGE = 'timings [--since <n>m|h|d] [--command <command>]';
 
@@ -24,7 +25,7 @@ const medianOf = (values: number[]) => {
   return sorted.length % 2 === 1 ? (sorted[middle] ?? 0) : ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
 };
 
-const runOf = (line: TimingLine) =>
+const runOf = (line: TimingLine, head: string | null) =>
   [
     line.start,
     labelOf(line),
@@ -32,6 +33,10 @@ const runOf = (line: TimingLine) =>
     secondsOf(line.totalMs),
     line.unphasedMs === undefined ? '' : `(unphased ${secondsOf(line.unphasedMs)})`,
     line.exit === 0 ? '' : `exit ${line.exit}`,
+    line.commit ? `@${line.commit.sha}${line.commit.dirty ? '+dirty' : ''}` : '',
+    line.load ? `load ${line.load.avg1.toFixed(1)}/${line.load.cores}` : '',
+    isStale(line, head) ? 'STALE' : '',
+    isNoisy(line) ? 'NOISY' : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -55,8 +60,19 @@ export const parseTimings = (text: string) =>
     }
   });
 
-export const timingsReportOf = (options: { lines: TimingLine[]; now: number; sinceMs: number; command?: string }) => {
-  const { now, sinceMs, command } = options;
+/**
+ * The timings report of `lines`. Each run shows its commit and load; a target verdict counts only the clean runs: not
+ * noisy, and at `head` (the checkout's short sha, `null` when unknown).
+ */
+export const timingsReportOf = (options: {
+  lines: TimingLine[];
+  now: number;
+  sinceMs: number;
+  command?: string;
+  head?: string | null;
+}) => {
+  const { now, sinceMs, command, head = null } = options;
+  const isClean = (line: TimingLine) => !isNoisy(line) && !isStale(line, head);
   const from = now - sinceMs;
   const lines = options.lines.filter(
     (line) => Date.parse(line.start) >= from && (command === undefined || matchesCommand(line, command)),
@@ -74,16 +90,16 @@ export const timingsReportOf = (options: { lines: TimingLine[]; now: number; sin
       label,
       runs,
       median: medianOf(runs.map((run) => run.totalMs)),
+      clean: runs.filter(isClean).map((run) => run.totalMs),
       target: TIMING_TARGETS[label],
     }))
     .sort((a, b) => b.median - a.median);
-  const misses = lines
-    .filter((line) => {
-      const target = TIMING_TARGETS[labelOf(line)];
+  const over = lines.filter((line) => {
+    const target = TIMING_TARGETS[labelOf(line)];
 
-      return target !== undefined && line.totalMs > target;
-    })
-    .sort((a, b) => b.start.localeCompare(a.start));
+    return target !== undefined && line.totalMs > target;
+  });
+  const misses = over.filter(isClean).sort((a, b) => b.start.localeCompare(a.start));
   const phases = new Map<string, number[]>();
 
   lines.forEach((line) =>
@@ -101,23 +117,25 @@ export const timingsReportOf = (options: { lines: TimingLine[]; now: number; sin
     '',
     'median per command:',
     ...padded([
-      ['command', 'runs', 'median', 'max', 'target', ''],
-      ...commands.map(({ label, runs, median, target }) => [
+      ['command', 'runs', 'median', 'max', 'clean', 'clean median', 'target', ''],
+      ...commands.map(({ label, runs, median, clean, target }) => [
         label,
         String(runs.length),
         secondsOf(median),
         secondsOf(Math.max(...runs.map((run) => run.totalMs))),
+        String(clean.length),
+        clean.length === 0 ? '-' : secondsOf(medianOf(clean)),
         target === undefined ? '-' : secondsOf(target),
-        target === undefined ? '' : median <= target ? 'ok' : 'MISS',
+        target === undefined ? '' : clean.length === 0 ? 'no clean run' : medianOf(clean) <= target ? 'ok' : 'MISS',
       ]),
     ]),
     '',
-    `runs over their target: ${misses.length}`,
+    `clean runs over their target: ${misses.length}${over.length > misses.length ? ` (${over.length - misses.length} more stale or noisy, no verdict)` : ''}`,
     ...misses.slice(0, LISTED).map((line) => {
       const costliest = costliestPhaseOf(line);
       const target = TIMING_TARGETS[labelOf(line)] ?? 0;
 
-      return `  ${runOf(line)} > ${secondsOf(target)} - most expensive phase ${costliest ? `${costliest.name} ${secondsOf(costliest.ms)}` : 'none recorded'}`;
+      return `  ${runOf(line, head)} > ${secondsOf(target)} - most expensive phase ${costliest ? `${costliest.name} ${secondsOf(costliest.ms)}` : 'none recorded'}`;
     }),
     ...(misses.length > LISTED ? [`  and ${misses.length - LISTED} more`] : []),
     '',
@@ -134,7 +152,7 @@ export const timingsReportOf = (options: { lines: TimingLine[]; now: number; sin
     ]),
     '',
     'slowest runs:',
-    ...slowestRuns.map((line) => `  ${runOf(line)}`),
+    ...slowestRuns.map((line) => `  ${runOf(line, head)}`),
   ].join('\n');
 };
 
@@ -142,6 +160,14 @@ const flagOf = (argv: string[], flag: string) => {
   const index = argv.indexOf(flag);
 
   return index === -1 ? undefined : argv[index + 1];
+};
+
+const headOf = (checkout: string) => {
+  try {
+    return execFileSync('git', ['-C', checkout, 'rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).trim() || null;
+  } catch {
+    return null;
+  }
 };
 
 /** `et design timings`: reports the logged timings of the design runs of the checkout. */
@@ -160,7 +186,7 @@ export const designTimings = (options: { target: string; argv: string[]; invocat
   const file = timingsFileOf(target);
   const lines = existsSync(file) ? parseTimings(readFileSync(file, 'utf8')) : [];
 
-  console.log(timingsReportOf({ lines, now, sinceMs, command }));
+  console.log(timingsReportOf({ lines, now, sinceMs, command, head: headOf(target) }));
 
   return 0;
 };

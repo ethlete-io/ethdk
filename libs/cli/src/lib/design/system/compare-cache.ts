@@ -1,16 +1,7 @@
 import { createHash } from 'crypto';
-import {
-  Dirent,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  statSync,
-  utimesSync,
-  writeFileSync,
-} from 'fs';
+import { Dirent, readdirSync, readFileSync, rmSync, statSync, utimesSync } from 'fs';
 import { dirname, join, relative } from 'path';
+import { writeCacheEntry } from '../cache-entry';
 
 export type CachedAppShot = { app: Buffer };
 
@@ -66,8 +57,6 @@ export const cacheKeyOf = (inputs: unknown) => createHash('sha256').update(JSON.
 
 /** A disk cache of app pictures under `dir`; the oldest entries go past `limit` bytes. Reading and writing never throw. */
 export const createAppShotCache = (dir: string, limit = APP_SHOT_LIMIT): AppShotCache => {
-  let temps = 0;
-
   const evict = () => {
     const entries = readdirSync(dir)
       .filter((name) => name.endsWith(ENTRY_SUFFIX))
@@ -102,16 +91,13 @@ export const createAppShotCache = (dir: string, limit = APP_SHOT_LIMIT): AppShot
       }
     },
     write: (key, shot) => {
-      const temp = join(dir, `.${key}.${process.pid}.${(temps += 1)}.tmp`);
-
-      try {
-        mkdirSync(dir, { recursive: true });
-        writeFileSync(temp, JSON.stringify({ key, app: shot.app.toString('base64') }));
-        renameSync(temp, join(dir, `${key}${ENTRY_SUFFIX}`));
+      if (
+        writeCacheEntry(dir, {
+          name: `${key}${ENTRY_SUFFIX}`,
+          text: JSON.stringify({ key, app: shot.app.toString('base64') }),
+        })
+      )
         evict();
-      } catch {
-        rmSync(temp, { force: true });
-      }
     },
   };
 };

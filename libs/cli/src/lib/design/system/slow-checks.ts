@@ -9,6 +9,7 @@ import {
   DROPPED_PROP_RULE,
   SDK_ERROR_RULE,
   SlowProblemsOf,
+  VISIBLE_CHANGE_RULE,
 } from './build-ready-contract';
 import { designHashOf, fileHashesOf, hashOfFiles, sha16 } from './design-hash';
 import { harnessOf } from './harness-map';
@@ -18,7 +19,6 @@ import { repoRootOf } from './reachable-files';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { APP_SPEC_RULE } from './rules/app-spec';
 import { UNCOVERED_REGION_RULE } from './rules/uncovered-region';
-import { VISIBLE_CHANGE_RULE } from './rules/visible-change';
 import { unbaselinedProblemsOf } from './rule-baseline';
 import { partLinkOf } from './sketch/part-definition';
 

@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
+import { withRunSignal } from '../run-abort';
 import { builtAppHashOf, createAppShotCache } from './compare-cache';
 import { cachedAppShotOf } from './compare-command';
 
@@ -126,5 +127,24 @@ describe('the app pictures compare keeps on disk', () => {
     await cachedAppShotOf({ cache: null, shot: shotsOf()['a'] as Shot, draw });
 
     expect(drawn).toEqual(['a', 'a']);
+  });
+
+  it('keeps no picture drawn after its run was aborted, so the next run draws it again', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'cli-compare-cache-'));
+    const app = builtApp();
+    const run = new AbortController();
+    const cache = { salt: 'cli 1 playwright@1', built: builtAppHashOf(app), cache: createAppShotCache(dir) };
+    const shots = shotsOf();
+
+    await withRunSignal(run.signal, async () => {
+      await cachedAppShotOf({ cache, shot: shots['a'] as Shot, draw: async () => ({ app: Buffer.from('a') }) });
+      await cachedAppShotOf({
+        cache,
+        shot: shots['b'] as Shot,
+        draw: async () => (run.abort(), { app: Buffer.from('browser has been closed') }),
+      });
+    });
+
+    expect(await compareRun({ dir, app, shots: { a: shots['a'] as Shot, b: shots['b'] as Shot } })).toEqual(['b']);
   });
 });

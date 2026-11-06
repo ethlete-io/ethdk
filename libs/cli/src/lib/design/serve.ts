@@ -92,6 +92,7 @@ import { sharedDirsOf } from './system/imports';
 import { ALL_PARTS, changedPartsOf, addedPartsOf, PartsChange } from './changed-parts';
 import { serverIdentityOf } from './server-identity';
 import { buildStampOf, STAMP_PATH } from './stamp';
+import { designPictureCodeOf } from './code-hash';
 import { listSystem, SYSTEM_PATH } from './system/list-system';
 import { partKeyOf, ResolvedPart } from './system/resolve-product';
 import {
@@ -494,7 +495,7 @@ const shotStoreOf = (options: {
         ),
       ]);
 
-      // The snapshot folder is named after the server's pid, so its files are gone after a restart; the salt's build stamp covers them.
+      // The snapshot folder is named after the server's pid, so its files are gone after a restart; the salt's asset hash covers them.
       const snapshot = dirname(assetRoot());
 
       return [
@@ -624,7 +625,7 @@ const designExplore = ({
                 system,
                 stylesheetImports,
                 dir: shotCacheDir,
-                salt: `${stamp.version} ${stamp.build}`,
+                salt: designPictureCodeOf(),
                 moduleById: (id) => vite.moduleGraph.getModuleById(id),
               }),
             }
@@ -1140,15 +1141,13 @@ export const createDesignServer = async (options: {
   return Object.assign(server, {
     /** A disk store of this server's part pictures under `dir`; an entry is served while every file it was drawn from is unchanged. */
     shotStore: (dir: string, salt: string) => {
-      const stamp = buildStampOf();
-
       return shotStoreOf({
         target,
         config,
         system,
         stylesheetImports,
         dir,
-        salt: `${stamp.version} ${stamp.build} ${salt}`,
+        salt: `${designPictureCodeOf()} ${salt}`,
         moduleById: (id) => server.moduleGraph.getModuleById(id),
       });
     },

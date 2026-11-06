@@ -4,7 +4,7 @@ import { DesignConfig } from '../paths';
 import { createDesignServer } from '../serve';
 import { createPartShooter, viewportOf } from '../shot';
 import { awaitFonts, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
-import { compareFrameOf } from './compare-command';
+import { compareFrameOf } from './harness-shot';
 import { harnessStaleOf } from './harness-map';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
 import { goPartOf } from './part-go';

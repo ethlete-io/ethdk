@@ -1,10 +1,9 @@
 import { DesignConfig } from '../../paths';
 import { ShootStates } from '../compare-command';
 import { StartHarnessServer } from '../harness-server';
+import { VISIBLE_CHANGE_RULE } from '../build-ready-contract';
 import { Problem } from '../problem';
 import { checkVisibleChange } from '../visible-change-command';
-
-export const VISIBLE_CHANGE_RULE = 'VISIBLE-CHANGE';
 
 /**
  * One `VISIBLE-CHANGE` problem per harness part whose app looks different from the base without a picked or merged

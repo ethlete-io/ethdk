@@ -7,7 +7,7 @@ import { DesignConfig } from '../paths';
 import { createDesignServer } from '../serve';
 import { createPartShooter } from '../shot';
 import { createDrawQueue } from '../thumb';
-import { compareFrameOf } from './compare-command';
+import { compareFrameOf } from './harness-shot';
 import { designHashOf, sha16 } from './design-hash';
 import { partOwnerOf } from './inventory-approval';
 import { Problem } from './problem';

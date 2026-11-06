@@ -1,6 +1,7 @@
 import { createHash } from 'crypto';
-import { mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, utimesSync, writeFileSync } from 'fs';
+import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, utimesSync } from 'fs';
 import { join } from 'path';
+import { writeCacheEntry } from './cache-entry';
 import { PartAddress, PartMark, Picture, TextAmbient } from './shot';
 
 /** The part of a shot address that decides which files a shot draws from. */
@@ -57,7 +58,6 @@ export const createShotStore = (options: {
   const limit = options.limit ?? SHOT_STORE_LIMIT;
   const hashes = new Map<string, { stamp: string; hash: string }>();
   let sizes: Map<string, number> | null = null;
-  let temps = 0;
 
   const nameOf = (key: string) =>
     `${createHash('sha1').update(salt).update('\n').update(key).digest('hex')}${ENTRY_SUFFIX}`;
@@ -140,7 +140,6 @@ export const createShotStore = (options: {
     },
     write: (key, { address, picture }) => {
       const name = nameOf(key);
-      const temp = join(dir, `.${name}.${process.pid}.${(temps += 1)}.tmp`);
 
       try {
         const files = inputsOf(address);
@@ -159,12 +158,12 @@ export const createShotStore = (options: {
         const text = JSON.stringify(entry);
         const known = sizesOf();
 
-        writeFileSync(temp, text);
-        renameSync(temp, join(dir, name));
+        if (!writeCacheEntry(dir, { name, text })) return;
+
         known.set(name, Buffer.byteLength(text));
         evict(known);
       } catch {
-        rmSync(temp, { force: true });
+        return;
       }
     },
     drop: (key) => {

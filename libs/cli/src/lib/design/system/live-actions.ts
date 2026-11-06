@@ -16,7 +16,7 @@ import {
   parseAction,
 } from './actions';
 import { awaitOutput, INIT_SCRIPT, OVERLAY_ROOTS, settle, watchMutations } from './action-press';
-import { compareFrameOf } from './compare-command';
+import { compareFrameOf } from './harness-shot';
 import { frameContentOf, LiveError, LivePage, liveSpecOf, LiveState, openLivePage } from './live-compare';
 import {
   PointerFocusProbes,
