@@ -4047,3 +4047,13 @@ of the warm Chromium, like the render check (`INSPECTS_AT_ONCE`); (b) S4 image c
 state is never shot again; (c) a compare of several parts in one call shares one harness wait; (d) target: a warm
 compare of a studio page <= 10 s, and a run over target prints its slowest phase at the end. Process: the builder
 never blocks on a batch of heavy runs in the foreground, and every wait loop has a timeout.
+
+522\. Tom (2026-11-06): "wir sind noch immer nicht mit den perf themen durch?" ADR 0199 put the performance work
+first, as one block, because a 44.9 s compare slows every step. The doc agent's queue then ran S6 -> 515 -> accepts ->
+514/518 -> title-bar -> 511/512 -> B412 and only then S4, S7, S8, S5: feature and process slices that each came from a
+fresh finding were put ahead of the open perf items. A warm studio compare still takes 47-106 s (finding 521). Why no
+tool caught it: nothing checks a queue against a "comes first" ADR, and each new finding felt more urgent than the
+open block. Fix: process - a finding's fix joins the queue behind an open "first" block unless it blocks the push or
+Tom; the queue in a handoff names the ADR that orders it. New order: push -> B416 (with S4) -> S7 (full check in the
+resident queue) -> S8 -> S5 -> then the rest. Perf is done when `design timings` shows a warm studio compare <= 10 s and
+a full studio check within its target.
