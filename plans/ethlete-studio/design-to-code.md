@@ -3629,6 +3629,15 @@ layout is drawn on every OS layout. Tool fix (technical, decided): the title-bar
 (rest, update, notice) and OS layout (linux-full, linux-left, linux-close, windows, macos); a `check --rules` rule
 fails when a part with an `os` prop draws a content prop on one layout but not on all.
 
+491\. Tom, 2026-11-06: "der builder der die ui themen macht hat noch immer nicht eine sache fertig bekommen. das ist alles
+echt noch viel zu langsam." The UI builder had one commit, A1 (ff698951f, title bar), and A1 left eight implemented
+parts uncompared (elements/canvas-frames, elements/studio-menu, pages/flows, inventory, merge, sketches, start, system);
+the pre-push gate found it at Tom's "push ok". The compare run then took about 1 min per part, one harness each, and
+pages/flows, inventory and merge showed 21-31 px DIFFs in every state (the new title bar inside each page). The rest of
+the time went to tool investigations. Why no tool caught it: the commit check does not refuse uncompared implemented
+parts, and no command compares every part a shared change affects. Tool fix: ADR 0203 (B402, `design compare
+--affected`, commit check, done means compared); process fix: ADR 0202 (B403).
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
