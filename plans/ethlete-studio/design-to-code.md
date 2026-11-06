@@ -3950,3 +3950,7 @@ change meant opening a collapsed list. Why no tool caught it: the "unchanged" co
 design round, and no rule or spec covers what an `@edit` sketch must show. Fix: an `@edit` sketch never collapses
 `new`; it shows two clearly named choices, "Änderung behalten" (new) and "Zuletzt gemergter Stand" (old), each with
 its own button; spec on an edit sketch where new equals Aktuell. The layout goes to Tom as a sketch.
+Tom on the shell-main pick: "wieso sollte man jemals die titlebar aus der shell werfen?" The old/new sketch offered
+to undo an edit that implements ADR 0045/0050, because nothing links a direct edit to the decision it implements.
+Decided in ADR 0209: an agent accepts a direct edit that names the ADR it implements; shell-main is accepted with
+"ADR 0050", then pages/start (Tom's q1ok).
