@@ -3923,3 +3923,15 @@ and a no-partner failure names the near miss (specs with bite). 5ec60c344 - the 
 (aria-labelledby only with a visible label, as et-select does); the flows picker is named "Bildschirmgröße"; slow check
 of sdk components/select clean, studio pages/flows `PASS: no visible change`, its action check passes. Open: the
 ACCESSIBLE-NAME rule (B413).
+
+511\. `design check --slow --part X` did not write the check record; only a fast `check --part X` afterwards did
+(READY line), so the ff698951f verify said "no check record" after a passing slow run. Why no tool caught it: no spec
+asserts that each check mode writes the record. Fix: `--slow` writes the same record as the fast check (it runs a
+superset), with a spec that fails when a slow run leaves no record.
+
+512\. The NO RECORD line of components/title-bar ended with "(+1 more)", but no line of the check named that open
+point. Why no tool caught it: the summary truncates the list, and nothing prints the rest. Fix: the check lists every
+open point (or prints the hidden ones under the summary); spec with more open points than the summary shows.
+Context: the ff698951f verify needs studio-menu, flows, merge, title-bar and shell-main together; title-bar misses
+notice.hover/active/focus-visible. Decided by ADR 0106 (no question to Tom): a sketch round that draws them with the
+existing styles, no new look, which Tom merges.
