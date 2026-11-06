@@ -122,8 +122,7 @@ Prose may explain a rule, never be its only guard. Every new finding answers: wh
 
 ## Not decided
 
-- How compare renders the real component per state (a harness route in the owning app, or Storybook), and how a
-  page part gets its data (a presentational component beside the route link). With Tom (lead 76).
+- Done (280efe991): compare renders the real component per state through a harness route in the owning app.
 
 - Where the go and the released state are stored (builder call).
 
