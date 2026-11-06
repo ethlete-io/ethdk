@@ -4431,3 +4431,10 @@ OutputRef" twice and still passes, before slice C (c77c781d5^, 16/16) and after 
 after it was destroyed. Why no tool caught it: the Studio specs do not fail on an Angular runtime error that is only
 logged with `console.error`. Tool fix (queued after S7, not perf): the Studio test setup fails a spec on any logged
 `NG0` error, and the emit after destroy in the sketch view is fixed in the same slice.
+
+528 tool fix (as built, c0, 2026-11-06): `compare-draw-once.spec.ts` runs the real `designCompare`, `shootStatesWith`
+and `checkActions` on fake drawers (a shooter over a shared design store, a counted `harnessShotOf`, a disk-cached
+built app) and fails on any picture drawn twice in one run (`draw-count.test.ts`). Paths: cold with the overlapped
+action check (3 design + 3 app draws), warm (0), design edit (3 design, 0 app), app edit (3 app, 0 design), `--all`
+over two parts. Bite: dropping `designsDrawn` from compare or its `await` in `checkActions` fails 3/4 cases with
+"design components/chip default drawn 2 times". HEAD has no double draw. Not covered: `--live`, the real shot store.
