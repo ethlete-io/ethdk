@@ -3995,3 +3995,9 @@ and the doc agent checks it shows a real choice.
 Tom then ran the accept command the doc agent had given him; it refused ("pages/sketches has an open sketch - merge
 or discard it"). The doc agent had sent a command it never checked against the open sketch. Rule: a command for Tom
 is run (or dry-run) by an agent first, or not sent.
+Cause of 518 (builder): the change is real (10 states differ from the merged pictures), but the `old` variant cannot
+show the old look: its `withdrawn.ts` imports `@shared/sketch-rows`, which resolves to the current shared file, and
+both variants draw against today's SDK, so old and new render the same. Fix (514/518 slice): the `old` variant of an
+`@edit` sketch shows the stored merged pictures and is never re-drawn from source; spec on an edit sketch where only
+a `@shared` import changed. Way out, decided by the doc agent under ADR 0210 (finding 500 is Tom's recorded report):
+the builder merges `new` itself with `--allowed-by "finding 500"`.
