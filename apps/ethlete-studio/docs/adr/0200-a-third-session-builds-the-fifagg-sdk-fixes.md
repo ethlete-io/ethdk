@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B400
+built: b89cae997
 decided: 2026-11-06
 source: grill session 2026-11-06
 ---
