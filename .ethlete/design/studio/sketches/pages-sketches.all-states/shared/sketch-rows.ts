@@ -2,6 +2,7 @@ import { html, withAction } from '@design-system';
 import button from '@system/components/button';
 import titleBar from '@system/components/title-bar';
 import zoomChip from '@system/components/zoom-chip';
+import { panInsideRoom } from '../../../../../../apps/ethlete-studio/src/app/components/design-canvas/canvas-math';
 import { variantCell } from '@system/elements/variant-cell';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
 
@@ -286,8 +287,9 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
   const pan = (x: number, y: number) => {
     const roomX = Math.max(0, world.scrollWidth - list.clientWidth);
     const roomY = Math.max(0, world.offsetHeight - list.clientHeight);
-    offset.x = Math.min(roomX, Math.max(0, offset.x + x));
-    offset.y = Math.min(roomY, Math.max(0, offset.y + y));
+    const inside = panInsideRoom({ x: -(offset.x + x), y: -(offset.y + y) }, { x: roomX, y: roomY });
+    offset.x = -inside.x;
+    offset.y = -inside.y;
     world.style.transform = `translate(${-offset.x}px, ${-offset.y}px)`;
     world.style.setProperty('--sk-pan-x', `${offset.x}px`);
     world.toggleAttribute('data-sk-panned', offset.x > 0);
