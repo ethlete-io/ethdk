@@ -468,3 +468,11 @@ features, 151 creators written, 98 tasks. Built by the third session of ADR 0200
   before the fix) applies. Tool fix: a replay on the pre-migration fifagg commit with an ngc baseline diff is the done
   check of this section: every new error is either fixed or covered by a named task, and each fix gets a trimmed
   fifagg fixture.
+- **T2 as built (9581d1af9, ethlete-sdk-62):** `module-resolution.ts` follows the `extends` chain of each project's
+  tsconfig.lib/app/spec.json that imports `@ethlete/query/ngrx-toolkit` and records `NTK-MODULE-RESOLUTION` for
+  `node`/`node10` with the tsconfig path. Spec from fifagg's real configs at 116a0d9afa; guide step 4 + Leftovers row.
+  Not replay-verified. Lesson: generator specs never had tsconfigs in the tree.
+- **T3 runtime as built (252c4d796, ethlete-sdk-62):** `toolkitOnSuccess(creator | creators[], { injector? })` in
+  `toolkit-call.ts`; each handle reports a new success state to a per-EnvironmentInjector subject. Scenarios: any
+  handle, array form, silent on failure, one emission for a joined request. Open: the generator rewrite of
+  `.on(x.success)` sites; T1, T4, T5; the replay.
