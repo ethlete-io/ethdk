@@ -3962,3 +3962,11 @@ agent `--by` is allowed only with a `--note` naming an existing accepted ADR (`A
 the record stores `by` and `adr: [...]`; without an ADR it is refused as before; every refusal exits 1. Specs for all
 three. A Tom finding is not an ADR: pages/sketches stays Tom's accept (in chat or Studio).
 Tom (2026-11-06, "q1ok"): pages/sketches@edit is accepted without opening it (`--by tom`, finding 500).
+
+516\. Tom's "q1ok" for pages/sketches reached the builder only as a relayed message, and the builder's permission
+check refused `accept --by tom`: an agent may not record Tom's consent from a relay. The doc agent had promised the
+accept in Tom's name. Why no tool caught it: the Tom-only accept exists only as a CLI flag an agent types; nothing
+lets Tom grant it with one action of his own. Fix: Studio lists the open `@edit` picks in one place with one
+"Übernehmen" button per item, so Tom clicks instead of an agent typing `--by tom` (layout as a sketch for Tom). Until
+then Tom runs the accept himself with `!` in a session. The doc agent no longer offers "ok in chat" for a Tom-only
+accept.
