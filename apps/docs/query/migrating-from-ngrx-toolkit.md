@@ -72,7 +72,7 @@ Most tasks that say "the feature was left on the toolkit" are resolved by fixing
 
 Apps that were also on the v2 client often have a creator for the same route already. If one exists with the same method, route, path params and response type, and the toolkit args are assignable to its args, the feature re-exports that creator instead of writing a second one. Assignable means TypeScript's check, after resolving aliases and intersections, with `T | null` on an optional member counted as `T`. So a named alias of the same shape, or a sort union that is a superset of the toolkit's, still reuses.
 
-If the types really differ (a missing query param, an array response on one side and an object on the other), the generator writes a second creator and reports `NTK-DUPLICATE-ROUTE-MISMATCH`.
+If the types really differ (a missing query param, an array response on one side and an object on the other), the generator writes a second creator and reports `NTK-DUPLICATE-ROUTE-MISMATCH`. The task names the first member that differs, with both types and the files that declare them, so two same-named types from different files are told apart.
 
 ## 4. Check the result
 

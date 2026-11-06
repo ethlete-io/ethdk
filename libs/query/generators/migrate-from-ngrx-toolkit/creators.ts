@@ -1,7 +1,7 @@
 import { Tree, getProjects } from '@nx/devkit';
 import * as ts from 'typescript';
 import { ModuleGraph } from '../migrate-to-query-v3/module-graph.js';
-import { toolkitArgsFitCreator } from './args-assignability.js';
+import { compareToolkitArgs } from './args-assignability.js';
 import { capitalizeFirstLetter, createSourceFile } from '../migrate-to-query-v3/shared.js';
 import { HTTP_VERBS, HttpVerb, ToolkitCall, ToolkitFeature, findTypeDeclaration } from './feature.js';
 import { TOOLKIT_TASK, ToolkitMigrationReport } from './report.js';
@@ -355,14 +355,14 @@ const decideReuse = (
   const argTexts = toolkitArgTexts(call);
   const argMismatch = (creator: ExistingCreator) =>
     COMPARED_ARG_KEYS.find((key) => creator.args?.[key] !== argTexts[key]) ?? null;
-  const argsFit = (creator: ExistingCreator) =>
-    argMismatch(creator) === null ||
-    toolkitArgsFitCreator(
+  const compare = (creator: ExistingCreator) =>
+    compareToolkitArgs(
       tree,
       graph,
       { file: feature.files.actions, typeText: call.args?.typeText ?? null },
       { file: creator.filePath, typeText: creator.argsTypeText },
     );
+  const argsFit = (creator: ExistingCreator) => argMismatch(creator) === null || compare(creator).fits;
   const match = sameRoute.find(
     (creator) =>
       creator.responseType === response &&
@@ -380,6 +380,11 @@ const decideReuse = (
 
       return `\`${type.length > 120 ? `${type.slice(0, 120)}…` : type}\``;
     };
+    const argsDifference = (creator: ExistingCreator) => {
+      const difference = differingKey ? compare(creator).difference : null;
+
+      return difference ? `: ${difference}` : '';
+    };
     const reason =
       other.pathParams.join(',') !== call.route.pathParams.join(',')
         ? 'its path params are named differently'
@@ -389,7 +394,7 @@ const decideReuse = (
             ? `its response is \`${other.responseType}\`, not \`${response ?? 'unknown'}\``
             : other.args === null
               ? 'its args type is not an interface or type literal, so it cannot be compared'
-              : `its ${differingKey === 'body' ? 'body' : 'query params'} are ${describe(other.args[differingKey!])}, not ${describe(argTexts[differingKey!])}`;
+              : `its ${differingKey === 'body' ? 'body' : 'query params'} are ${describe(other.args[differingKey!])}, not ${describe(argTexts[differingKey!])}${argsDifference(other)}`;
 
     return {
       mismatch: `\`${call.name}\` got its own creator: \`${other.name}\` (${other.filePath}:${other.line}) has the same ${call.verb.toUpperCase()} route, but ${reason}.`,

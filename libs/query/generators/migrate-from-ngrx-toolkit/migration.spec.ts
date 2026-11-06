@@ -238,6 +238,7 @@ describe('migrate-from-ngrx-toolkit', { timeout: 30_000 }, () => {
 
     const VENUE_MODELS = `${APP_B.venue}/venue.models.ts`;
     const VENUE_TYPES = 'libs/queries/src/lib/venue/venue.types.ts';
+    const VENUE_QUERIES = 'libs/queries/src/lib/venue/venue.queries.ts';
 
     it('reuses a creator whose query params are an assignable intersection behind another alias', () => {
       migrateToolkitStores(tree, APP_B_OPTIONS, report);
@@ -276,13 +277,66 @@ describe('migrate-from-ngrx-toolkit', { timeout: 30_000 }, () => {
       );
     });
 
+    const withPhaseIdCreator = (phaseIdImport: string) => {
+      tree.write(
+        'node_modules/@app-b/api-models/dist/Types/Branded/index.d.ts',
+        `export type PhaseId = string & {\n    __brand: 'PhaseId';\n};\n`,
+      );
+      tree.write(
+        'libs/types/src/index.ts',
+        `${read('libs/types/src/index.ts')}\nexport type * from '@app-b/api-models/dist/Types/Branded/index';\n`,
+      );
+      replaceIn(
+        VENUE_MODELS,
+        `export interface GetVenueBySlugArgs {\n  queryParams: {\n    slug: string;\n  };\n}`,
+        `export interface GetVenueBySlugArgs {\n  queryParams: {\n    slug: string;\n  };\n  params: {\n    phaseId?: PhaseId;\n  };\n}`,
+      );
+      replaceIn(
+        VENUE_MODELS,
+        "import { WithPagination, WithSorting } from '@app-b/types';",
+        "import { PhaseId, WithPagination, WithSorting } from '@app-b/types';",
+      );
+      tree.write(
+        VENUE_TYPES,
+        `${phaseIdImport}\n${read(VENUE_TYPES)}\nexport interface GetVenueBySlugArgs {\n  pathParams: {\n    slug: string;\n  };\n\n  queryParams?: {\n    phaseId?: PhaseId;\n  };\n}\n`,
+      );
+      replaceIn(
+        VENUE_QUERIES,
+        "import { GetVenueArgs, GetVenueRankingArgs, GetVenueSearchArgs } from './venue.types';",
+        "import { GetVenueArgs, GetVenueBySlugArgs, GetVenueRankingArgs, GetVenueSearchArgs } from './venue.types';\n\nexport const getVenueDetailBySlug = publicApiGet<\n  GetVenueBySlugArgs & { response: VenueDetailView }\n>((p) => `/public/venues/by-slug/${p.slug}`);",
+      );
+    };
+
+    it('reuses a creator whose optional query params name the same branded type', () => {
+      withPhaseIdCreator("import { PhaseId } from '@app-b/types';");
+      migrateToolkitStores(tree, APP_B_OPTIONS, report);
+
+      expect(read(featureFile(APP_B.venue, 'queries'))).toContain(
+        "export { getVenueDetailBySlug as getVenueBySlug } from '@app-b/queries';",
+      );
+      expect(mismatches()).not.toContainEqual(expect.stringContaining('`getVenueBySlug`'));
+    });
+
+    it('names the declaration files when two same-named query param types differ', () => {
+      tree.write(
+        'libs/queries/src/lib/venue/phase.types.ts',
+        `export type PhaseId = number & { __brand: 'PhaseId' };\n`,
+      );
+      withPhaseIdCreator("import { PhaseId } from './phase.types';");
+      migrateToolkitStores(tree, APP_B_OPTIONS, report);
+
+      expect(mismatches()).toContainEqual(
+        '`getVenueBySlug` got its own creator: `getVenueDetailBySlug` (libs/queries/src/lib/venue/venue.queries.ts:7) has the same GET route, but its query params are `{ phaseId?: PhaseId }`, not `{ phaseId?: PhaseId }`: `queryParams.phaseId` is `PhaseId` from libs/queries/src/lib/venue/phase.types.ts there and `PhaseId` from node_modules/@app-b/api-models/dist/Types/Branded/index.d.ts in the action.',
+      );
+    });
+
     it('writes a second creator when the existing one lacks a query param the toolkit sends', () => {
       migrateToolkitStores(tree, APP_B_OPTIONS, report);
 
       expect(read(featureFile(APP_B.venue, 'queries'))).toContain('export const getVenues = publicApiGet<');
       expect(mismatches()).toEqual([
         expect.stringContaining(
-          "`getVenues` got its own creator: `getVenueSearch` (libs/queries/src/lib/venue/venue.queries.ts:13) has the same GET route, but its query params are `{ search?: string | null; resultsPerPage?: number | null; page?: number | null }`, not `WithPagination & WithSorting<'name'>`.",
+          "`getVenues` got its own creator: `getVenueSearch` (libs/queries/src/lib/venue/venue.queries.ts:13) has the same GET route, but its query params are `{ search?: string | null; resultsPerPage?: number | null; page?: number | null }`, not `WithPagination & WithSorting<'name'>`: `queryParams.sort` is sent by the action but missing there.",
         ),
       ]);
     });

@@ -88,11 +88,6 @@ const collectAliasEdges = (tree: Tree, graph: ModuleGraph) => {
   return edges;
 };
 
-/**
- * The project roots that compile the interop import: the importing projects (value `null`), and every project that
- * reaches one of them through workspace path aliases, since an alias pulls the target's sources into the compilation
- * (value: the first alias on that path).
- */
 const projectsReachingInterop = (tree: Tree, graph: ModuleGraph, importingRoots: Set<string>) => {
   const reached = new Map<string, string | null>([...importingRoots].map((root) => [root, null]));
   const edges = collectAliasEdges(tree, graph);

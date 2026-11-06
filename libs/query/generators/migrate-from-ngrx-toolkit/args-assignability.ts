@@ -22,6 +22,12 @@ export type ToolkitSide = OptionalNullAsUndefined<{
 export type CreatorSide = OptionalNullAsUndefined<{
   [K in keyof CreatorArgs as K extends 'queryParams' | 'body' ? K : never]: CreatorArgs[K];
 }>;
+export type ToolkitRaw = {
+  [K in keyof ToolkitArgs as K extends 'params' ? 'queryParams' : K extends 'body' ? K : never]: ToolkitArgs[K];
+};
+export type CreatorRaw = {
+  [K in keyof CreatorArgs as K extends 'queryParams' | 'body' ? K : never]: CreatorArgs[K];
+};
 `;
 
 const COMPILER_OPTIONS: ts.CompilerOptions = {
@@ -81,7 +87,7 @@ const hasEveryKey = (
   seen.add(from);
 
   return checker.getPropertiesOfType(from).every((property) => {
-    const counterpart = checker.getPropertyOfType(to, property.name);
+    const counterpart = checker.getPropertiesOfType(to).find((each) => each.escapedName === property.escapedName);
 
     return (
       !!counterpart &&
@@ -90,13 +96,74 @@ const hasEveryKey = (
   });
 };
 
-export const toolkitArgsFitCreator = (
+const isOptional = (property: ts.Symbol) => !!(property.flags & ts.SymbolFlags.Optional);
+
+const describeType = (checker: ts.TypeChecker, type: ts.Type) => {
+  const text = `\`${checker.typeToString(type, undefined, ts.TypeFormatFlags.NoTruncation)}\``;
+  const declaration = (type.aliasSymbol ?? type.getSymbol())?.declarations?.[0];
+
+  return declaration ? `${text} from ${toTreePath(declaration.getSourceFile().fileName)}` : text;
+};
+
+const firstDifference = (
+  checker: ts.TypeChecker,
+  toolkit: ts.Type,
+  creator: ts.Type,
+  path: string,
+  depth: number,
+): string | null => {
+  const from = checker.getNonNullableType(toolkit);
+  const to = checker.getNonNullableType(creator);
+
+  if (depth > MAX_DEPTH) return null;
+
+  if (!isRecord(checker, from) || !isRecord(checker, to)) {
+    return checker.isTypeAssignableTo(from, to)
+      ? null
+      : `\`${path}\` is ${describeType(checker, to)} there and ${describeType(checker, from)} in the action`;
+  }
+
+  const creatorProperties = checker.getPropertiesOfType(to);
+  const toolkitProperties = checker.getPropertiesOfType(from);
+
+  for (const property of toolkitProperties) {
+    const name = `${path ? `${path}.` : ''}${property.name}`;
+    const counterpart = creatorProperties.find((each) => each.escapedName === property.escapedName);
+
+    if (!counterpart) return `\`${name}\` is sent by the action but missing there`;
+    if (isOptional(property) && !isOptional(counterpart))
+      return `\`${name}\` is required there and optional in the action`;
+
+    const nested = firstDifference(
+      checker,
+      checker.getTypeOfSymbol(property),
+      checker.getTypeOfSymbol(counterpart),
+      name,
+      depth + 1,
+    );
+
+    if (nested) return nested;
+  }
+
+  const extra = creatorProperties.find(
+    (property) => !isOptional(property) && !toolkitProperties.some((each) => each.escapedName === property.escapedName),
+  );
+
+  return extra ? `\`${path ? `${path}.` : ''}${extra.name}\` is required there but not sent by the action` : null;
+};
+
+export type ToolkitArgsComparison = {
+  fits: boolean;
+  difference: string | null;
+};
+
+export const compareToolkitArgs = (
   tree: Tree,
   graph: ModuleGraph,
   toolkit: { file: string; typeText: string | null },
   creator: { file: string; typeText: string | null },
 ) => {
-  if (toolkit.file === creator.file) return false;
+  if (toolkit.file === creator.file) return { fits: false, difference: null };
 
   const appended = new Map([
     [toolkit.file, `\nexport type ${TOOLKIT_PROBE} = ${toolkit.typeText ?? '{}'};\n`],
@@ -168,8 +235,10 @@ export const toolkitArgsFitCreator = (
   const toolkitSide = typeOf('ToolkitSide');
   const creatorSide = typeOf('CreatorSide');
 
-  if (!toolkitSide || !creatorSide) return false;
-  if (containsAny(checker, toolkitSide, new Set(), 0) || containsAny(checker, creatorSide, new Set(), 0)) return false;
+  if (!toolkitSide || !creatorSide) return { fits: false, difference: null };
+  if (containsAny(checker, toolkitSide, new Set(), 0) || containsAny(checker, creatorSide, new Set(), 0)) {
+    return { fits: false, difference: null };
+  }
 
   const keys = (type: ts.Type) =>
     checker
@@ -178,9 +247,18 @@ export const toolkitArgsFitCreator = (
       .sort()
       .join(',');
 
-  return (
+  const fits =
     keys(toolkitSide) === keys(creatorSide) &&
     checker.isTypeAssignableTo(toolkitSide, creatorSide) &&
-    hasEveryKey(checker, toolkitSide, creatorSide, new Set(), 0)
-  );
+    hasEveryKey(checker, toolkitSide, creatorSide, new Set(), 0);
+
+  if (fits) return { fits, difference: null };
+
+  const toolkitRaw = typeOf('ToolkitRaw');
+  const creatorRaw = typeOf('CreatorRaw');
+
+  return {
+    fits,
+    difference: toolkitRaw && creatorRaw ? firstDifference(checker, toolkitRaw, creatorRaw, '', 0) : null,
+  };
 };
