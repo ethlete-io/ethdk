@@ -16,7 +16,7 @@ export const sinceMsOf = (value: string) => {
 const matchesCommand = (line: TimingLine, command: string) =>
   labelOf(line) === command || line.command === command || line.command.startsWith(`${command} `);
 
-const secondsOf = (ms: number) => `${(ms / 1000).toFixed(1)} s`;
+const secondsOf = (ms: number) => (ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(1)} s`);
 
 const medianOf = (values: number[]) => {
   const sorted = [...values].sort((a, b) => a - b);

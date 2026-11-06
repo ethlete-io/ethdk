@@ -11,6 +11,7 @@ import {
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
+import { createRequire } from 'node:module';
 import { createServer } from 'node:net';
 import { availableParallelism, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -29,6 +30,10 @@ const cliEntry = resolve(root, process.env['STUDIO_CLI_ENTRY'] ?? 'dist/libs/cli
 const GONE_TARGETS = { Merge: 'components/title-bar', Discard: 'components/tree-row' };
 
 const WIDE_SKETCH = { part: 'components/title-bar', name: 'notice-hint', variants: ['a', 'b', 'c'] };
+
+const PAGE_SWITCHES = ['foundations/icons', 'foundations/logo', 'foundations/icons', 'foundations/logo'];
+const PAGE_SWITCH_TIMEOUT_MS = 15000;
+const PAGE_SWITCH_SETTLE_MS = 1500;
 
 const PAGES = [
   ...Object.entries(GONE_TARGETS).map(([name, target]) => ({
@@ -928,6 +933,141 @@ const CASES = [
         ok: seen.size > 0 && stored.length > 0 && empty.length === 0,
         detail: `${first} <- ${second}: ${stored.length - empty.length}/${stored.length} stored pictures painted in rAF ${back.frames} (+${Math.round(back.ms)} ms), ${seen.size} seen`,
       };
+    },
+  },
+  {
+    name: 'page switch time is logged to the design timings',
+    pages: ['System'],
+    run: async (page) => {
+      const { recordPageSwitch, timingsFileOf } = createRequire(import.meta.url)(
+        resolve(dirname(cliEntry), 'lib/design/timings.js'),
+      );
+      const shots = [];
+      const onShot = async (request) => {
+        if (!request.url().includes('/__design/shot?')) return;
+        const finishedAt = Date.now();
+        const response = await request.response();
+
+        shots.push({
+          url: request.url(),
+          finishedAt,
+          timing: request.timing(),
+          source: response?.headers()['x-design-shot'] ?? `status ${response?.status() ?? '-'}`,
+        });
+      };
+      const switchTo = (part) =>
+        page.evaluate(
+          ({ part, timeoutMs }) =>
+            new Promise((done) => {
+              const leaf = [...document.querySelectorAll('[role="treeitem"][data-kind="leaf"]')].find(
+                (candidate) => candidate.textContent.trim() === part.split('/')[1],
+              );
+
+              if (!leaf) return done({ error: `no part ${part} in the tree` });
+
+              const marker = `part=${encodeURIComponent(part)}&`;
+              const before = new Set(document.querySelectorAll('ethlete-canvas-frame'));
+              const shotsOf = (frame) => [...frame.querySelectorAll('img[src*="/__design/shot?"]')];
+              const isPainted = (frame) =>
+                !!frame.querySelector('iframe:not(.opacity-0)') ||
+                shotsOf(frame).some((img) => img.complete && img.naturalWidth > 0 && !img.matches('.opacity-0'));
+              const started = performance.now();
+              const times = {};
+              const sample = () => {
+                const now = performance.now() - started;
+                const frames = [...document.querySelectorAll('ethlete-canvas-frame')].filter(
+                  (frame) =>
+                    !before.has(frame) || shotsOf(frame).some((img) => img.getAttribute('src').includes(marker)),
+                );
+                const painted = frames.filter(isPainted);
+
+                if (frames.length > 0) times.mounted ??= now;
+                if (painted.length > 0) times.first ??= now;
+                if (frames.length > 0 && painted.length === frames.length) {
+                  done({ ...times, all: now, frames: frames.length, clickedAt: performance.timeOrigin + started });
+                } else if (now > timeoutMs) {
+                  done({
+                    ...times,
+                    frames: frames.length,
+                    painted: painted.length,
+                    clickedAt: performance.timeOrigin + started,
+                  });
+                } else requestAnimationFrame(sample);
+              };
+
+              leaf.click();
+              requestAnimationFrame(sample);
+            }),
+          { part, timeoutMs: PAGE_SWITCH_TIMEOUT_MS },
+        );
+      const rows = [];
+      const seen = new Set(['pages/system']);
+      let from = 'pages/system';
+
+      page.on('requestfinished', onShot);
+
+      try {
+        for (const to of PAGE_SWITCHES) {
+          const firstShot = shots.length;
+          const result = await switchTo(to);
+
+          if (result.error) return { ok: false, detail: result.error };
+          await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
+
+          const marker = `part=${encodeURIComponent(to)}&`;
+          const asked = shots
+            .slice(firstShot)
+            .filter((shot) => shot.url.includes(marker))
+            .map(({ finishedAt, timing, source }) => ({
+              ms: Math.round(finishedAt - result.clickedAt),
+              wait: Math.round(timing.responseStart - timing.requestStart),
+              source,
+            }));
+          const painted = result.all !== undefined;
+          const ms = result.all ?? PAGE_SWITCH_TIMEOUT_MS;
+          const mounted = result.mounted ?? ms;
+
+          rows.push({
+            from,
+            to,
+            seen: seen.has(to),
+            painted,
+            ms,
+            mounted,
+            first: result.first,
+            frames: result.frames,
+            paintedFrames: result.painted,
+            asked,
+          });
+          await recordPageSwitch({
+            file: timingsFileOf(root),
+            from,
+            to,
+            seen: seen.has(to),
+            ms,
+            painted,
+            start: new Date(result.clickedAt),
+            phases: [
+              { name: 'frame-mount', ms: Math.round(mounted), at: 0 },
+              { name: 'picture-wait', ms: Math.round(ms - mounted), at: Math.round(mounted) },
+            ],
+          });
+          seen.add(to);
+          from = to;
+        }
+      } finally {
+        page.off('requestfinished', onShot);
+      }
+
+      const round = (ms) => (ms === undefined ? '-' : Math.round(ms));
+      const detail = rows
+        .map(
+          (row) =>
+            `${row.from.split('/')[1]}->${row.to.split('/')[1]} ${row.seen ? 'seen' : 'first'}: mount ${round(row.mounted)}, first ${round(row.first)}, all ${row.painted ? round(row.ms) : `NOT (${row.paintedFrames} painted)`} ms (${row.frames} frames; ${row.asked.length} shots${row.asked.length ? ` ${row.asked.map((shot) => `${shot.source} +${shot.ms}/${shot.wait}`).join(' ')}` : ''})`,
+        )
+        .join(' | ');
+
+      return { ok: rows.every((row) => row.painted), detail };
     },
   },
   {

@@ -49,7 +49,11 @@ export const TIMING_TARGETS: Record<string, number> = {
   'sketch check': 10_000,
   'sketch ready': 10_000,
   'check (full)': 60_000,
+  'page-switch': 100,
 };
+
+export const PAGE_SWITCH_COMMAND = 'page-switch';
+export const FIRST_PAGE_SWITCH_COMMAND = 'page-switch (first)';
 
 const NARROWING_CHECK_FLAGS = new Set(['--call', '--lint', '--tsconfig']);
 
@@ -317,4 +321,69 @@ export const recordRun = async (
   } finally {
     current = outer;
   }
+};
+
+/**
+ * Appends one measured Studio page switch to `file`: `ms` runs from the click until every frame with a stored picture
+ * painted. A page `seen` before in the same Studio session is timed against its own target. Returns `null` when the
+ * line could not be written.
+ */
+export const recordPageSwitch = async (options: {
+  file: string;
+  from: string;
+  to: string;
+  seen: boolean;
+  ms: number;
+  painted: boolean;
+  start?: Date;
+  phases?: TimingPhase[];
+  env?: NodeJS.ProcessEnv;
+  write?: (file: string, text: string) => void;
+  commitOf?: (checkout: string) => Promise<TimingCommit | null>;
+  loadOf?: () => TimingLoad;
+}) => {
+  const {
+    file,
+    from,
+    to,
+    seen,
+    painted,
+    phases = [],
+    env = process.env,
+    write = defaultWrite,
+    commitOf = checkoutCommitOf,
+    loadOf = machineLoadOf,
+  } = options;
+  const totalMs = Math.round(options.ms);
+  const commit = await commitOf(dirname(dirname(dirname(file)))).catch(() => null);
+  const line: TimingLine = {
+    command: seen ? PAGE_SWITCH_COMMAND : FIRST_PAGE_SWITCH_COMMAND,
+    args: ['--from', from],
+    parts: [to],
+    session: sessionOf(env),
+    resident: false,
+    start: (options.start ?? new Date(Date.now() - totalMs)).toISOString(),
+    totalMs,
+    exit: painted ? 0 : 1,
+    phases,
+    queueWaitMs: 0,
+    buildWaitMs: 0,
+    browserStartMs: 0,
+    serverStartMs: 0,
+    cache: { hits: 0, misses: 0 },
+    concurrentHeavy: null,
+    commit,
+    load: loadOf(),
+  };
+  const unphasedMs = unphasedMsOf(phases, totalMs);
+
+  if (unphasedMs !== null) line.unphasedMs = unphasedMs;
+
+  try {
+    write(file, `${JSON.stringify(line)}\n`);
+  } catch {
+    return null;
+  }
+
+  return line;
 };

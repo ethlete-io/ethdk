@@ -4349,3 +4349,13 @@ dropped the unreferenced picture from its memory cache, so `ShotBoard.hold` keep
 page-switch.e2e, which runs on the main checkout): before 0/2 pictures in rAF 1, after 2/2 in rAF 1 (+11-13 ms). Not
 measured: icons/logo and shell-main switch times. Not built: finding 523 timings line. Details:
 `.claude/handoffs/agent-results/studio-frame-a.md`.
+
+Studio frame A verified, finding 523 (as built in the `perf(cli)` commit that adds this note, perf subagent,
+2026-11-06): the e2e case `a part shown before` passes on the rebuilt CLI (2/2 pictures in rAF 1, +12 ms). `design check
+--product studio` on `pages/system` and `elements/canvas-frames`: 0 findings. New canvas e2e case `page switch time is
+logged to the design timings` (own temp servers): click until every new frame shows a loaded picture or its live
+iframe. icons -> logo seen 10-12 ms (no request), first visit 200-1700 ms (both shots `drawn` in the temp checkout).
+Each switch appends a `page-switch` line (page seen before, target 100 ms) or `page-switch (first)` (no target) to
+`.ethlete/design/.timings.jsonl`, so `design timings` shows them with STALE/NOISY; sub-second times print in ms. Not
+measured: icons <-> elements/shell-main; after that switch no `img` or `iframe` with the shell-main part URL was in the
+DOM within 15 s although 18 shell-main shots were drawn. Details: `.claude/handoffs/agent-results/studio-frame-a2.md`.

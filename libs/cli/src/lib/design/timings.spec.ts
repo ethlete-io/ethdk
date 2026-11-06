@@ -4,6 +4,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { designCommand } from './design-command';
+import { timingsReportOf } from './timings-command';
 import { timedPhase } from './phase-timing';
 import { ResidentClient, sendRun } from './resident/client';
 import { startResidentServer } from './resident/server';
@@ -11,6 +12,7 @@ import {
   checkoutCommitOf,
   overTargetLineOf,
   recordCache,
+  recordPageSwitch,
   recordRun,
   skipRunTimings,
   TimingLine,
@@ -343,5 +345,85 @@ describe('the commit and load of a run', () => {
     expect(overTargetLineOf({ ...line, load: { avg1: 3, cores: 12 } })).toBe(
       'over target: compare took 12.0 s > 10.0 s - slowest phase none recorded',
     );
+  });
+});
+
+describe('recordPageSwitch', () => {
+  let dir: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'timings-switch-'));
+    mkdirSync(join(dir, '.ethlete/design'), { recursive: true });
+  });
+
+  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+
+  it('logs a switch to a page seen before against its own target, and design timings marks the stale and noisy ones', async () => {
+    const file = timingsFileOf(dir);
+    const start = new Date('2026-11-06T11:00:00.000Z');
+    const record = (options: { seen: boolean; ms: number; sha: string; avg1: number }) =>
+      recordPageSwitch({
+        file,
+        from: 'foundations/logo',
+        to: 'foundations/icons',
+        seen: options.seen,
+        ms: options.ms,
+        painted: true,
+        start,
+        phases: [
+          { name: 'frame-mount', ms: 10, at: 0 },
+          { name: 'picture-wait', ms: options.ms - 10, at: 10 },
+        ],
+        env: NO_SESSION,
+        commitOf: async () => ({ sha: options.sha, dirty: false }),
+        loadOf: () => ({ avg1: options.avg1, cores: 16 }),
+      });
+
+    await record({ seen: false, ms: 640, sha: 'abc1234', avg1: 2 });
+    await record({ seen: true, ms: 40, sha: 'abc1234', avg1: 2 });
+    await record({ seen: true, ms: 380, sha: 'abc1234', avg1: 30 });
+    await record({ seen: true, ms: 420, sha: 'old0000', avg1: 2 });
+
+    const lines = readFileSync(file, 'utf8')
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line) as TimingLine);
+
+    expect(lines[0]).toMatchObject({
+      command: 'page-switch (first)',
+      args: ['--from', 'foundations/logo'],
+      parts: ['foundations/icons'],
+      start: start.toISOString(),
+      totalMs: 640,
+      exit: 0,
+      unphasedMs: 0,
+    });
+    expect(lines.slice(1).map((line) => line.command)).toEqual(['page-switch', 'page-switch', 'page-switch']);
+
+    const report = timingsReportOf({ lines, now: start.getTime() + 60_000, sinceMs: 86_400_000, head: 'abc1234' });
+    const rowOf = (label: string) => report.split('\n').find((row) => row.trimStart().startsWith(`${label}  `));
+
+    expect(rowOf('page-switch')).toMatch(/page-switch\s+3\s+380 ms\s+420 ms\s+1\s+40 ms\s+100 ms\s+ok$/);
+    expect(rowOf('page-switch (first)')).toMatch(/page-switch \(first\)\s+1\s+640 ms\s+640 ms\s+1\s+640 ms\s+-$/);
+    expect(report).toContain('foundations/icons 380 ms (unphased 0 ms) @abc1234 load 30.0/16 NOISY');
+    expect(report).toContain('foundations/icons 420 ms (unphased 0 ms) @old0000 load 2.0/16 STALE');
+  });
+
+  it('returns null when the line cannot be written', async () => {
+    const line = await recordPageSwitch({
+      file: timingsFileOf(dir),
+      from: 'foundations/logo',
+      to: 'foundations/icons',
+      seen: true,
+      ms: 40,
+      painted: true,
+      env: NO_SESSION,
+      write: () => {
+        throw new Error('read-only');
+      },
+      commitOf: async () => null,
+    });
+
+    expect(line).toBeNull();
   });
 });
