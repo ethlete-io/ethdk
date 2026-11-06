@@ -729,13 +729,14 @@ export const actionLineOf = ({ state, element, input, failure, warning }: Line) 
 export const hostLineOf = (host: string) =>
   `host ${host}: skipped - the app's own chrome around the part, which the design does not draw`;
 
-/** The failed lines `design actions` prints for a part, or why the check could not run. */
+/** The failed lines `design actions` prints for a part, or why the check could not run; with `harness` it checks the part harness at that URL instead of starting one. */
 export const partActionFailuresOf = async (options: {
   target: string;
   config: DesignConfig;
   product: ResolvedProduct;
   part: string;
   url?: string;
+  harness?: string;
   start?: StartHarnessServer;
   check?: typeof checkActions;
   checkLive?: typeof checkLiveActions;
@@ -746,13 +747,10 @@ export const partActionFailuresOf = async (options: {
 
   if (stale !== null) return { unavailable: stale };
 
-  const checked = await withHarnessUrl({
-    target,
-    product,
-    url: options.url,
-    start: options.start,
-    run: (url) => (options.check ?? checkActions)({ target, config, product, part, url, only: null }),
-  });
+  const check = (url: string) => (options.check ?? checkActions)({ target, config, product, part, url, only: null });
+  const checked = options.harness
+    ? await check(options.harness)
+    : await withHarnessUrl({ target, product, url: options.url, start: options.start, run: check });
 
   if (typeof checked === 'string') return { unavailable: checked };
 

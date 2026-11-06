@@ -3462,8 +3462,15 @@ gets the same phase timing, the same biggest-phase-first fix and a budget entry.
 First compare measure (c8, 2026-11-06): `design compare components/title-bar --product studio` 44.9 s wall for 14
 states plus actions; compare ignores `ETHLETE_DESIGN_PHASES`. The harness starts twice (states, then actions): the
 second start is the first suspect.
-In progress (builder ethlete-sdk-c0, ADR 0199 item 1): `design compare` phase timing, one harness start for states and
-actions, budget spec.
+As built (builder ethlete-sdk-c0, ADR 0199 item 1): `design compare` prints phases with `ETHLETE_DESIGN_PHASES=1`
+(harness cache key, build, start, stop, design-shots, app-shots, compare-states, actions). The action check runs on the
+same harness as the states; the harness stops once, also on a throw. Spec: one harness start and one stop per run
+(bit: 2 starts on the old code). `compare components/title-bar` (14 states): 68.2 s before (two 14-15 s harness
+builds), 47.1 s after on a build miss, 39.7 s on a cache hit. `pages/start` 3.2 s, unchanged (cache hits). Next biggest
+phase: the title-bar action check, 27-31 s (70 % of a cache-hit run). C1 measure: the harness build missed on most
+title-bar runs, likely because another session edited title-bar sources during the run (the build is stored only when
+the key is unchanged after it); one rerun hit (0.07 s). Not measured: browser contexts; `pages/sketches` (stale-CLI
+guard).
 
 479\. A fresh sketch of a part that has a `.css` file (`components/kbd`, `components/divider`) fails `UTILITY-CSS` in
 `sketch check`, so `sketch ready` refuses after 2.5 s (builder measure, 2026-11-05). Why no tool caught it: no spec

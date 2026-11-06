@@ -574,6 +574,39 @@ describe('part compare', () => {
     expect(lines.at(-1)).toContain('pass --url');
     expect(stop).toHaveBeenCalledTimes(3);
   });
+
+  it('starts the harness app once for the states and the actions of a part, and stops it once', async () => {
+    const target = checkout();
+
+    output();
+
+    const stop = vi.fn(async () => undefined);
+    const start = vi.fn<StartHarnessServer>(async () => ({ url: 'http://127.0.0.1:50001', stop }));
+    const shoot = vi.fn<ShootStates>(async () => ({
+      states: { default: {} },
+      shots: [{ state: 'default', design: pngOf(1, 1, () => RED), app: pngOf(1, 1, () => RED) }],
+    }));
+    const check = vi.fn(async () => ({ lines: [], pictures: null }));
+    const compare = () =>
+      designCompare({
+        target,
+        argv: ['components/chip', '--product', 'app-a'],
+        invocation: 'et design',
+        shoot,
+        start,
+        actions: (options) => partActionFailuresOf({ ...options, check }),
+      });
+
+    expect(await compare()).toBe(0);
+    expect(start).toHaveBeenCalledTimes(1);
+    expect(check).toHaveBeenCalledWith(expect.objectContaining({ url: 'http://127.0.0.1:50001' }));
+    expect(stop).toHaveBeenCalledTimes(1);
+
+    check.mockRejectedValueOnce(new Error('chromium crashed'));
+    await expect(compare()).rejects.toThrow('chromium crashed');
+    expect(start).toHaveBeenCalledTimes(2);
+    expect(stop).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('harnessShotOf', () => {

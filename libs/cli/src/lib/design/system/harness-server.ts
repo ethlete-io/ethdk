@@ -10,6 +10,7 @@ import { claimHarnessBuild, harnessBuildKeyOf, harnessCacheDirOf, storeHarnessBu
 import { harnessOf } from './harness-map';
 import { HARNESS_PATH } from './part-compare';
 import { ResolvedProduct } from './resolve-product';
+import { timedPhase } from '../phase-timing';
 import { durationOf } from '../wait';
 
 export const RESERVED_PORTS: readonly number[] = [4221, 4400, 4402, 4403, 4492];
@@ -239,7 +240,7 @@ export const startHarnessServer = async (options: {
       target,
       command: [build.command, ...build.args.map((arg) => arg.split(outputPath).join('<out>'))],
     });
-  const key = keyOf();
+  const key = timedPhase('harness-cache-key', keyOf);
   const cached = key === null ? null : claimHarnessBuild(cacheDir, key);
 
   if (cached) {
@@ -263,21 +264,23 @@ export const startHarnessServer = async (options: {
 
   let tail = '';
   const timer = new AbortController();
-  const ended = await Promise.race([
-    new Promise<BuildEnd | Error>((done) => {
-      const keep = (chunk: Buffer) => {
-        tail = (tail + chunk.toString()).slice(-2_000);
+  const ended = await timedPhase('harness-build', () =>
+    Promise.race([
+      new Promise<BuildEnd | Error>((done) => {
+        const keep = (chunk: Buffer) => {
+          tail = (tail + chunk.toString()).slice(-2_000);
 
-        if (NX_BUSY.test(tail)) done('busy');
-      };
+          if (NX_BUSY.test(tail)) done('busy');
+        };
 
-      spawned.stdout?.on('data', keep);
-      spawned.stderr?.on('data', keep);
-      spawned.once('error', done);
-      spawned.once('close', (code) => done(code === 0 ? 'built' : 'failed'));
-    }),
-    delay(buildTimeout, 'timeout' as const, { signal: timer.signal }).catch(() => 'timeout' as const),
-  ]);
+        spawned.stdout?.on('data', keep);
+        spawned.stderr?.on('data', keep);
+        spawned.once('error', done);
+        spawned.once('close', (code) => done(code === 0 ? 'built' : 'failed'));
+      }),
+      delay(buildTimeout, 'timeout' as const, { signal: timer.signal }).catch(() => 'timeout' as const),
+    ]),
+  );
 
   timer.abort();
 
@@ -342,7 +345,9 @@ export const withHarnessUrl = async <T>(options: {
 }): Promise<T | string> => {
   if (options.url) return options.run(options.url);
 
-  const server = await (options.start ?? startHarnessServer)({ target: options.target, product: options.product });
+  const server = await timedPhase('harness-start', () =>
+    (options.start ?? startHarnessServer)({ target: options.target, product: options.product }),
+  );
 
   if (typeof server === 'string') return server;
 
@@ -351,6 +356,6 @@ export const withHarnessUrl = async <T>(options: {
   try {
     return await options.run(server.url);
   } finally {
-    await server.stop();
+    await timedPhase('harness-stop', () => server.stop());
   }
 };
