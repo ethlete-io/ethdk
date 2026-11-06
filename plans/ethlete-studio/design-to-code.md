@@ -4020,3 +4020,12 @@ so "fast" was measured but "fresh" never was. Fix (14c491450): `forgetDrawn()` b
 sketch-stylesheets.spec (a variant edit stays stale until forget). Tool fix (B414): a resident end-to-end spec that
 starts the real resident, runs `compare`, edits the part, runs `compare` again and fails if the second run shows the
 old picture. Rule for every warm or cached path: its spec includes an edit between two runs.
+
+520\. Tom (2026-11-06): "wolltest du nicht auch mal pushen? vor stunden?" 158 commits of next sat unpushed for hours.
+The doc agent had parked the push behind the five stale parts and those behind the 515 slice, and nobody reported the
+wait to Tom. The pre-push design rules gate (design-rules-gate.mjs origin/next next) fails with
+IMPLEMENTATION-UNCOMPARED on pages/inventory, merge, start, sketches and more. Why no tool caught it: nothing shows
+how long a branch has been unpushed or that its push gate is red; a blocked push only shows when someone pushes.
+Fix: process - a red push gate goes first in the builder queue, ahead of any feature slice; the builder runs the gate
+after each slice and pushes when it is green. Tool fix (B415): `design status` (and Studio) shows the unpushed
+commit count, the age of the oldest one and the gate result of the range.
