@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { withRunSignal } from '../run-abort';
 import { ActionDep, cachedActionsOf, createActionCache } from './action-cache';
 
 describe('cachedActionsOf', () => {
@@ -83,5 +84,22 @@ describe('cachedActionsOf', () => {
     await cachedActionsOf({ cache: createActionCache(dir), key: 'a', printOf: async () => '', run });
 
     expect(runs).toBe(4);
+  });
+
+  it('keeps nothing of a run its client aborted, whose lines name closed pages', async () => {
+    let runs = 0;
+    const run = async () => ((runs += 1), { value: runs, keep: true });
+    const dir = mkdtempSync(join(tmpdir(), 'action-cache-'));
+    const gone = new AbortController();
+
+    dirs.push(dir);
+    gone.abort();
+
+    await withRunSignal(gone.signal, () =>
+      cachedActionsOf({ cache: createActionCache(dir), key: 'a', printOf: async () => '', run }),
+    );
+    await cachedActionsOf({ cache: createActionCache(dir), key: 'a', printOf: async () => '', run });
+
+    expect(runs).toBe(2);
   });
 });

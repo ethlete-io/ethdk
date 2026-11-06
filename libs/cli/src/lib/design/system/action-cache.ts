@@ -1,5 +1,6 @@
 import { mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, utimesSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { runSignal } from '../run-abort';
 
 /** The cache folder name of the action check results compare keeps per state. */
 export const COMPARE_ACTIONS = 'compare-actions';
@@ -71,7 +72,7 @@ export const createActionCache = (dir: string, limit = ENTRY_LIMIT): ActionCache
 
 /**
  * The value `run` returns for `key`, kept in `cache` while every input `run` tracked prints the same through `printOf`.
- * A `keep: false` result is not kept. Without a cache `run` always runs.
+ * A `keep: false` result, or one of an aborted run, is not kept. Without a cache `run` always runs.
  */
 export const cachedActionsOf = async <T>(options: {
   cache: ActionCache | null;
@@ -91,7 +92,7 @@ export const cachedActionsOf = async <T>(options: {
   const deps = new Map<string, { dep: ActionDep; print: string }>();
   const { value, keep } = await run((dep, print) => deps.set(JSON.stringify(dep), { dep, print }));
 
-  if (cache && keep) cache.write({ key, value, deps: [...deps.values()] });
+  if (cache && keep && !runSignal()?.aborted) cache.write({ key, value, deps: [...deps.values()] });
 
   return { value, hit: false };
 };
