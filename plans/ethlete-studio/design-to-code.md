@@ -3866,3 +3866,16 @@ such commit: rule EDIT-OLD-NOT-FOUND on the part, with the `et design accept` co
 merges those files back. Verified: specs with a temp git repo (committed refactor holds, committed edit gets the old
 files, pick old writes them back, no matching commit gives the problem); they fail on the old HEAD code. Not verified:
 `design check` on the five studio parts, and the speed of the walk on the real history.
+As built (part 1, builder, 2026-11-06, 3e10f1ddf + type fix 6d26ac045): `old` comes from the newest commit whose part
+hash equals `merged.json[part]`; with none, the rule EDIT-OLD-NOT-FOUND shows on the part with the hint `et design
+accept <part> --product <p> --by ... --note ...`; picking `old` writes those files back. Real run: components/disclosure
+HELD (80f953c0c); components/update-dialog (a383f2bdb drew the button states after the merge), pages/inventory and
+elements/shell-main (title bar embed fea9ac862) open `@edit` sketches; pages/start has EDIT-OLD-NOT-FOUND (no commit
+holds merged hash 5074133a3524678e) and waits for Tom's accept as it is. Open: the DIRECT-EDIT-PENDING rule lands
+after Tom's picks, else it blocks every push; disclosure's pictures.json entry moved from key `go` to `record` (cause
+asked).
+
+508\. 3e10f1ddf did not compile: a subagent committed CLI code without running tsc, and `git commit` runs no
+typecheck (pre-push neither; CI is the only one). Found by the builder one commit later (type fix 6d26ac045). Why no
+tool caught it: no local gate runs a typecheck before a commit lands on `next`. Fix now: every builder brief to a
+subagent names a tsc step (or `yarn commit`). Open for Tom: a typecheck of the touched projects in pre-push.
