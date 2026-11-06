@@ -1,5 +1,5 @@
-import { PlatformLocation } from '@angular/common';
-import { Component, input, output, provideZonelessChangeDetection } from '@angular/core';
+import { NgTemplateOutlet, PlatformLocation } from '@angular/common';
+import { Component, input, output, provideZonelessChangeDetection, TemplateRef, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { DesignHarnessComponent } from './design-harness.component';
 
@@ -14,8 +14,41 @@ class FakeChipComponent {
   remove = output<string>();
 }
 
+@Component({
+  selector: 'ethlete-fake-frame',
+  template:
+    '@if (shot(); as template) {<ng-container *ngTemplateOutlet="template; context: { $implicit: label() }" />}',
+  imports: [NgTemplateOutlet],
+})
+class FakeFrameComponent {
+  label = input('');
+  shot = input<TemplateRef<{ $implicit: string }> | null>(null);
+}
+
+@Component({
+  selector: 'ethlete-fake-frame-shots',
+  template: '<ng-template #shot let-label><b data-shot>{{ label }}!</b></ng-template>',
+})
+class FakeFrameShotsComponent {
+  private shot = viewChild.required<TemplateRef<{ $implicit: string }>>('shot');
+
+  public templates() {
+    return { shot: this.shot() };
+  }
+}
+
 vi.mock('./design-harness-parts', () => ({
-  DESIGN_HARNESS_PARTS: { 'components/chip': () => Promise.resolve(FakeChipComponent) },
+  DESIGN_HARNESS_PARTS: {
+    'components/chip': () => Promise.resolve(FakeChipComponent),
+    'pages/frame': () => Promise.resolve(FakeFrameComponent),
+  },
+}));
+
+vi.mock('./design-harness-samples', () => ({
+  DESIGN_HARNESS_SAMPLES: {},
+  get DESIGN_HARNESS_TEMPLATES() {
+    return { 'pages/frame': FakeFrameShotsComponent };
+  },
 }));
 
 const render = async (search: string) => {
@@ -60,6 +93,13 @@ describe('DesignHarnessComponent', () => {
     const page = await render('?part=components%2Fchip&state=a&props=%7B%7D&layout=page');
 
     expect(page.querySelector('[data-design-harness-host]')?.className).toBe('block min-h-screen w-screen');
+  });
+
+  it('passes the templates of the part template component as inputs', async () => {
+    const props = encodeURIComponent(JSON.stringify({ label: 'Bar' }));
+    const element = await render(`?part=pages%2Fframe&state=a&props=${props}`);
+
+    expect(element.querySelector('ethlete-fake-frame [data-shot]')?.textContent).toBe('Bar!');
   });
 
   it('records each output the part emits on window', async () => {

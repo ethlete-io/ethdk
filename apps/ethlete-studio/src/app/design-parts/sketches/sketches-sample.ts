@@ -30,6 +30,12 @@ export type SketchPin = {
   count: number;
 };
 
+export type SketchTitleBar = {
+  os: 'linux' | 'windows' | 'macos';
+  right: ('minimize' | 'maximize' | 'close')[];
+  update: boolean;
+};
+
 export const SKETCH_CURRENT = 'current';
 
 const STATES = ['linux-close', 'linux-close-update', 'windows', 'windows-update', 'macos', 'macos-update'];
@@ -67,6 +73,27 @@ export const SKETCH_ROWS: SketchRow[] = [
     shots: shotsOf(['macos', 'macos-update']),
   },
 ];
+
+type TitleBarLayout = Omit<SketchTitleBar, 'update'>;
+
+const LINUX_CLOSE: TitleBarLayout = { os: 'linux', right: ['close'] };
+const WINDOWS: TitleBarLayout = { os: 'windows', right: ['minimize', 'maximize', 'close'] };
+const MACOS: TitleBarLayout = { os: 'macos', right: [] };
+
+export const SKETCH_TITLE_BARS: Record<string, SketchTitleBar> = {
+  'linux-close': { ...LINUX_CLOSE, update: false },
+  'linux-close-update': { ...LINUX_CLOSE, update: true },
+  windows: { ...WINDOWS, update: false },
+  'windows-update': { ...WINDOWS, update: true },
+  macos: { ...MACOS, update: false },
+  'macos-update': { ...MACOS, update: true },
+};
+
+export const SKETCH_LOOKS: Record<string, string> = {
+  a: '[&_.w-2xl]:w-55',
+  b: '[&_.st-title-bar]:h-10',
+  c: '[&_.st-title-bar]:grid-cols-[auto_1fr_auto]',
+};
 
 export const SKETCH_DRAWN = 'b';
 
@@ -124,6 +151,10 @@ export const SKETCH_NARROW_SAMPLE = {
       shots: chipShotsOf(CHIP_STATES.filter((state) => state.startsWith('reset'))),
     },
   ] satisfies SketchRow[],
+  looks: { a: '**:data-canvas-zoom:rounded-full', b: '[&_[data-camera-reset]_button]:font-ui-strong' } as Record<
+    string,
+    string
+  >,
   rounds: [{ value: 'round-1', label: 'Runde 1 · Reset control: SDK button or own part' }] satisfies SketchRound[],
   tree: [
     {

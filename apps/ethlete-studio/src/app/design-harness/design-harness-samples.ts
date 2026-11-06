@@ -1,9 +1,11 @@
+import { Type } from '@angular/core';
 import {
   buildReadySampleOf,
   BuildReadySample,
   OPEN_POINTS_SAMPLE,
   PART_EXCEPTIONS_SAMPLE,
 } from '../design-parts/system-page/system-page-sample';
+import { DesignHarnessSketchShotsComponent } from './design-harness-sketch-shots.component';
 import { SKETCH_CURRENT, SKETCH_NARROW_SAMPLE, SKETCH_ROWS, SketchRow } from '../design-parts/sketches/sketches-sample';
 
 type Props = Record<string, unknown>;
@@ -29,7 +31,7 @@ const sketchRowsOf = (rows: SketchRow[], { same = [], comparing = false }: { sam
 /** Replaces a design-only prop that picks sample data with the inputs that data needs. */
 export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
   'pages/sketches': ({ part, same, comparing, ...props }) => {
-    const sample = part === 'narrow' ? SKETCH_NARROW_SAMPLE : { rows: SKETCH_ROWS };
+    const { looks: _looks, ...sample } = part === 'narrow' ? SKETCH_NARROW_SAMPLE : { rows: SKETCH_ROWS, looks: {} };
     const rows = sketchRowsOf(sample.rows, { same: same as string[] | undefined, comparing: comparing === true });
 
     return { ...props, ...sample, rows };
@@ -47,4 +49,9 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
       ),
     };
   },
+};
+
+/** Template inputs a part takes, read from `templates()` of a component the harness creates beside it. */
+export const DESIGN_HARNESS_TEMPLATES: Record<string, Type<{ templates: () => Record<string, unknown> }>> = {
+  'pages/sketches': DesignHarnessSketchShotsComponent,
 };

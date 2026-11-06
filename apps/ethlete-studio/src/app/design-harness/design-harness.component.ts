@@ -1,7 +1,11 @@
 import { DOCUMENT, PlatformLocation } from '@angular/common';
 import {
+  ApplicationRef,
   Component,
+  ComponentRef,
+  createComponent,
   effect,
+  EnvironmentInjector,
   inject,
   Injector,
   OutputRef,
@@ -19,7 +23,7 @@ import { injectRenderer } from '@ethlete/core';
 import { catchError, from, map, Observable, of, tap } from 'rxjs';
 import { WINDOW_CHROME, WindowChrome } from '../../host/window';
 import { DESIGN_HARNESS_PARTS } from './design-harness-parts';
-import { DESIGN_HARNESS_SAMPLES } from './design-harness-samples';
+import { DESIGN_HARNESS_SAMPLES, DESIGN_HARNESS_TEMPLATES } from './design-harness-samples';
 
 /** Each output a mounted part emits, in order, for `et design actions` to read. */
 export type HarnessEmits = { output: string; value: unknown }[];
@@ -31,7 +35,7 @@ const LINUX_CHROME: WindowChrome = {
   preferNoCsd: false,
 };
 
-type HarnessState = { component: Type<unknown>; props: Record<string, unknown> } | { error: string };
+type HarnessState = { part: string; component: Type<unknown>; props: Record<string, unknown> } | { error: string };
 
 const stateOf$ = (search: string): Observable<HarnessState> => {
   const params = new URLSearchParams(search);
@@ -52,6 +56,7 @@ const stateOf$ = (search: string): Observable<HarnessState> => {
 
   return from(load()).pipe(
     map((component) => ({
+      part,
       component,
       props: (DESIGN_HARNESS_SAMPLES[part] ?? ((own) => own))(props as Record<string, unknown>),
     })),
@@ -79,7 +84,10 @@ export class DesignHarnessComponent {
   private document = inject(DOCUMENT);
   private renderer = injectRenderer();
   private injector = inject(Injector);
+  private appRef = inject(ApplicationRef);
+  private environmentInjector = inject(EnvironmentInjector);
   private outlet = viewChild('outlet', { read: ViewContainerRef });
+  private templatesRef: ComponentRef<{ templates: () => Record<string, unknown> }> | null = null;
   protected state = toSignal(stateOf$(this.platformLocation.search));
   protected page = new URLSearchParams(this.platformLocation.search).get('layout') === 'page';
 
@@ -92,21 +100,22 @@ export class DesignHarnessComponent {
 
       untracked(() => {
         outlet.clear();
+        this.templatesRef?.destroy();
+        this.templatesRef = null;
 
-        const ref = outlet.createComponent(state.component, {
-          injector: Injector.create({
-            parent: this.injector,
-            providers: [
-              {
-                provide: OVERLAY_REF,
-                useValue: { close: () => undefined, busy: signal(false) } as unknown as OverlayRef,
-              },
-              { provide: WINDOW_CHROME, useValue: signal(LINUX_CHROME).asReadonly() },
-            ],
-          }),
+        const injector = Injector.create({
+          parent: this.injector,
+          providers: [
+            {
+              provide: OVERLAY_REF,
+              useValue: { close: () => undefined, busy: signal(false) } as unknown as OverlayRef,
+            },
+            { provide: WINDOW_CHROME, useValue: signal(LINUX_CHROME).asReadonly() },
+          ],
         });
+        const ref = outlet.createComponent(state.component, { injector });
 
-        Object.entries(state.props).forEach(([name, value]) => {
+        Object.entries({ ...this.templatesOf(state.part, injector), ...state.props }).forEach(([name, value]) => {
           if (name === 'class') {
             if (typeof value === 'string')
               this.renderer.addClass(ref.location.nativeElement, ...value.split(/\s+/).filter(Boolean));
@@ -120,6 +129,21 @@ export class DesignHarnessComponent {
         this.recordOutputs(state.component, ref.instance as Record<string, unknown>);
       });
     });
+  }
+
+  private templatesOf(part: string, elementInjector: Injector) {
+    const component = Object.hasOwn(DESIGN_HARNESS_TEMPLATES, part) ? DESIGN_HARNESS_TEMPLATES[part] : undefined;
+
+    if (!component) return {};
+
+    this.templatesRef = createComponent(component, {
+      environmentInjector: this.environmentInjector,
+      elementInjector,
+    });
+    this.appRef.attachView(this.templatesRef.hostView);
+    this.templatesRef.changeDetectorRef.detectChanges();
+
+    return this.templatesRef.instance.templates();
   }
 
   private recordOutputs(component: Type<unknown>, instance: Record<string, unknown>) {

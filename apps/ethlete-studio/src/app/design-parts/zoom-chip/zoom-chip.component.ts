@@ -5,52 +5,60 @@ import { AutoSurfaceDirective } from '@ethlete/core';
 @Component({
   selector: 'ethlete-zoom-chip',
   template: `
-    <button
-      (click)="zoomOut.emit()"
-      et-button
-      type="button"
-      variant="transparent"
-      color="surface"
-      size="sm"
-      aria-label="Verkleinern"
-    >
-      −
-    </button>
-    <button
-      (click)="zoomReset.emit()"
-      et-button
-      type="button"
-      variant="transparent"
-      color="surface"
-      size="sm"
-      title="Zoom to 100 % (Shift+0)"
-      aria-label="Auf 100 % zoomen"
-    >
-      {{ percent() }} %
-    </button>
-    <button
-      (click)="zoomIn.emit()"
-      et-button
-      type="button"
-      variant="transparent"
-      color="surface"
-      size="sm"
-      aria-label="Vergrößern"
-    >
-      +
-    </button>
-    <button
-      (click)="fit.emit()"
-      et-button
-      type="button"
-      variant="transparent"
-      color="surface"
-      size="sm"
-      title="Zoom to fit (Shift+1)"
-      aria-label="Einpassen"
-    >
-      Fit
-    </button>
+    <span class="contents" data-camera-out>
+      <button
+        (click)="zoomOut.emit()"
+        et-button
+        type="button"
+        variant="transparent"
+        color="surface"
+        size="sm"
+        aria-label="Verkleinern"
+      >
+        −
+      </button>
+    </span>
+    <span class="contents" data-camera-reset>
+      <button
+        (click)="zoomReset.emit()"
+        et-button
+        type="button"
+        variant="transparent"
+        color="surface"
+        size="sm"
+        title="Zoom to 100 % (Shift+0)"
+        aria-label="Auf 100 % zoomen"
+      >
+        {{ percent() }} %
+      </button>
+    </span>
+    <span class="contents" data-camera-in>
+      <button
+        (click)="zoomIn.emit()"
+        et-button
+        type="button"
+        variant="transparent"
+        color="surface"
+        size="sm"
+        aria-label="Vergrößern"
+      >
+        +
+      </button>
+    </span>
+    <span class="contents" data-camera-fit>
+      <button
+        (click)="fit.emit()"
+        et-button
+        type="button"
+        variant="transparent"
+        color="surface"
+        size="sm"
+        title="Zoom to fit (Shift+1)"
+        aria-label="Einpassen"
+      >
+        Fit
+      </button>
+    </span>
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS],
