@@ -89,6 +89,7 @@ import {
 } from './shot';
 import { createShotStore, StoredAddress } from './shot-store';
 import { sharedDirsOf } from './system/imports';
+import { REGISTRY_SLICE_PATH } from './system/served-cache';
 import { ALL_PARTS, changedPartsOf, addedPartsOf, PartsChange } from './changed-parts';
 import { serverIdentityOf } from './server-identity';
 import { buildStampOf, STAMP_PATH } from './stamp';
@@ -331,6 +332,52 @@ const systemRegistry = (system: SystemModules) =>
     .products()
     .map((product) => `  ${JSON.stringify(product)}: {\n${sketchRegistry(system, product)}\n  },`)
     .join('\n')}\n};\n${tokensRegistry(system)}`;
+
+/**
+ * The entries of the env and system modules that a frame with the search params `query` can read: its product's parts,
+ * tokens and stylesheets, and those of the sketch variants it names; a call frame's project stylesheets and themes.
+ */
+export const registrySliceOf = (options: {
+  target: string;
+  config: DesignConfig;
+  system: SystemModules;
+  query: URLSearchParams;
+}) => {
+  const { target, config, system, query } = options;
+  const product = query.get('product');
+
+  if (!product) {
+    const project = projectOf(query.get('call') ?? '');
+    const entry = config.projects?.[project];
+
+    return `project ${JSON.stringify(project)}\n${entry ? stylesLoaderOf({ target, entry }) : 'none'}\n${themesOfSettings(entry ? { [project]: entry } : {})}\n`;
+  }
+
+  const entry = config.products?.[product];
+  const sketchOf = (part: string | null, variant: string | null): SketchVariant | null =>
+    part ? { target: part, variant: variant ?? '' } : null;
+  const sketch = sketchOf(query.get('sketch'), query.get('variant'));
+  const named = [sketch, sketchOf(query.get('props'), query.get('props-variant'))].filter(
+    (named): named is SketchVariant => named !== null,
+  );
+  const listed = system.sketchesOf(product);
+  const sketchStyles =
+    sketch && entry && system.replacedStylesheetsOf({ product, sketch }).size > 0
+      ? stylesLoaderOf({ target, entry, product, sketch })
+      : 'none';
+
+  return [
+    `product ${JSON.stringify(product)}`,
+    partsRegistry({ parts: system.productOf(product)?.parts ?? [], product, indent: '' }),
+    ...named.map(
+      (variant) =>
+        `sketch ${JSON.stringify(variant)} ${listed.some(({ target: part, variants }) => part === variant.target && variants.includes(variant.variant))}\n${partsRegistry({ parts: system.drawnOf(product, variant)?.parts ?? [], product, sketch: variant, indent: '' })}`,
+    ),
+    `tokens ${tokensLoaderOf({ system, product, sketch: sketch ?? undefined }) ?? 'none'}`,
+    `styles ${entry ? stylesLoaderOf({ target, entry, product }) : 'none'} ${sketchStyles}`,
+    '',
+  ].join('\n');
+};
 
 const sendJson = (response: ServerResponse, answer: { status: number; body: unknown }) => {
   response.setHeader('access-control-allow-origin', '*');
@@ -842,6 +889,18 @@ const designExplore = ({
         sendJson(response, { status: 200, body: ledger.report() }),
       );
       vite.middlewares.use(RENDER_PATH, renderMiddleware(renderer));
+      vite.middlewares.use(REGISTRY_SLICE_PATH, (request: IncomingMessage, response: ServerResponse) =>
+        send(response, {
+          status: 200,
+          type: 'text/plain',
+          body: registrySliceOf({
+            target,
+            config,
+            system,
+            query: new URL(request.url ?? '', 'http://localhost').searchParams,
+          }),
+        }),
+      );
       vite.middlewares.use(FORCE_PATH, forceMiddleware);
       vite.middlewares.use(THUMB_PATH, thumbs.middleware);
       vite.middlewares.use(SHOT_PATH, shots.middleware);

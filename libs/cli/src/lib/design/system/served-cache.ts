@@ -3,7 +3,7 @@ import { readFileSync, utimesSync } from 'fs';
 import { join } from 'path';
 import { writeCacheEntry } from '../cache-entry';
 import { evictOldestPast } from './compare-cache';
-import { QUIET_HEADER, SERVED_LINES_HEADER } from '../render';
+import { QUIET_HEADER, RENDER_PATH, SERVED_LINES_HEADER } from '../render';
 import { recordNullHashes } from '../timings';
 
 /** A request a drawing made: url, `accept` header and, for a POST, its body. */
@@ -20,6 +20,54 @@ export type FetchServed = (request: ServedRequest) => Promise<Served | null>;
 const FETCH_TIMEOUT_MS = 30_000;
 
 const ENTRY_SUFFIX = '.json';
+
+export const REGISTRY_SLICE_PATH = '/__design/registry-slice';
+
+const REGISTRY_PATHS = new Set(['/@id/__x00__virtual:design-explore/env', '/@id/__x00__virtual:design-explore/system']);
+
+const FRAME_PATH = '/frame.html';
+
+const COUNTED_ID = /\bid=\\?"(et-[a-z-]+-\d+)\\?"/g;
+
+/**
+ * `text` with each SDK id that ends in a counter (`et-label-30`) renamed by its order of first appearance: the render
+ * worker keeps the SDK loaded, so its counters grow with every render of the same template.
+ */
+export const withStableIds = (text: string) => {
+  const ids = [...new Set([...text.matchAll(COUNTED_ID)].map(([, id]) => id))];
+  const order = new Map(ids.map((id, index) => [id, `et-id-${index}`]));
+
+  return order.size === 0 ? text : text.replace(/\bet-[a-z-]+-\d+\b/g, (id) => order.get(id) ?? id);
+};
+
+const isRender = (url: string) => new URL(url, 'http://registry.invalid').pathname === RENDER_PATH;
+
+const SLICE_PARAMS = ['product', 'call', 'sketch', 'variant', 'props', 'props-variant'];
+
+/**
+ * `requested` with the env and system registries, which list every part of every sketch, replaced by the slice of them
+ * each requested frame can read, so a change to another part's entries leaves the key alone. Kept when no frame was
+ * requested.
+ */
+export const withRegistrySlices = (requested: readonly ServedRequest[]): ServedRequest[] => {
+  const urlOf = (request: ServedRequest) => new URL(request.url, 'http://registry.invalid');
+  const frames = requested.filter((request) => urlOf(request).pathname === FRAME_PATH);
+
+  if (frames.length === 0 || !requested.some((request) => REGISTRY_PATHS.has(urlOf(request).pathname)))
+    return [...requested];
+
+  const slices = frames.map((frame) => {
+    const asked = urlOf(frame).searchParams;
+    const query = new URLSearchParams(
+      SLICE_PARAMS.flatMap((name) => (asked.has(name) ? [[name, asked.get(name) ?? '']] : [])),
+    );
+    const path = `${REGISTRY_SLICE_PATH}?${query}`;
+
+    return { url: frame.url.startsWith('/') ? path : new URL(path, frame.url).href, accept: null };
+  });
+
+  return [...requested.filter((request) => !REGISTRY_PATHS.has(urlOf(request).pathname)), ...slices];
+};
 
 /**
  * The base Node reaches a listening server at: its own address, as Node's fetch tries IPv4 first for `localhost` while
@@ -83,10 +131,15 @@ export const createServedHashes = (base: string, fetchServed: FetchServed = fetc
     const hashed = fetchServed(request).then((served) => {
       if (!served) recordNullHashes(1);
 
+      const text = served?.body.toString('latin1').replace(ownHost, '') ?? null;
+
       return {
-        hash: served
-          ? createHash('sha256').update(served.body.toString('latin1').replace(ownHost, '')).digest('hex')
-          : null,
+        hash:
+          text === null
+            ? null
+            : createHash('sha256')
+                .update(isRender(request.url) ? withStableIds(text) : text)
+                .digest('hex'),
         lines: served?.lines ?? [],
       };
     });
@@ -182,7 +235,8 @@ export const writeServed = async <T>(
   run: ServedCacheRun<T>,
   entry: { key: string; requested: ServedRequest[]; value: T },
 ) => {
-  const { key, requested, value } = entry;
+  const { key, value } = entry;
+  const requested = withRegistrySlices(entry.requested);
   const inputs = await run.served.inputsOf(requested);
 
   if (inputs.some((input) => input.hash === null)) return false;
