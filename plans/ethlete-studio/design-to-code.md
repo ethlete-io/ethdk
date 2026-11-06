@@ -4362,3 +4362,14 @@ lint:changesets` checks only that each changed package has some changeset, not t
 packages. Doc agent decision (technical, applies ADR 0038, a fast check that prevents a certain loss): `yarn
 lint:changesets` fails when the pushed range removes a package entry from, or deletes, a changeset file that is not in
 pre.json. A rewrite of the text stays allowed.
+
+Built (2026-11-07): 48f1be06e + a6822ece4 (554). `check-changeset-coverage.js` compares each changeset file at the
+merge-base of the range with the head, not per commit. Defect in the first version: it checked per commit and failed
+wrongly on the real next range (the overwrite and its restore). Why no tool caught it: no fixture had a loss fixed
+inside the same range; a6822ece4 adds it. Real run on origin/next..HEAD: exit 0.
+
+555\. Builder (2026-11-07): the 552 changeset had 65 words, over the 40-word bar (fixed in 82dc69d09). The builder
+found it only by a manual run of `lint-changesets.js`. The pre-commit hook already runs that script on staged
+changeset files, so the hook did not fire for this commit. Cause: open, the builder checks it. The tool fix follows
+from the cause.
+
