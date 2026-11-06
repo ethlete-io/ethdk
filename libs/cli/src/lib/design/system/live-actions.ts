@@ -23,7 +23,7 @@ import {
   tabAwayFrom,
   pointerFocusVerdictOf,
   readRingAfterKey,
-  readRingProbe,
+  ringProbeOrNullOf,
   RingProbe,
   RingStyle,
 } from './pointer-focus';
@@ -560,7 +560,7 @@ export const checkLiveActions = async (options: {
             await control.click({ timeout: DRAW_TIMEOUT_MS });
             await settle(page, DRAW_TIMEOUT_MS);
             await readToggle();
-            clickRing = await readRingProbe(control).catch(() => null);
+            clickRing = await ringProbeOrNullOf(control);
             if (clickRing) {
               clickThenKeyRing = await readRingAfterKey({
                 page,
@@ -570,7 +570,7 @@ export const checkLiveActions = async (options: {
             }
             await page.mouse.move(-1, -1);
           } else {
-            const before: RingStyle | undefined = (await readRingProbe(control).catch(() => null))?.style;
+            const before: RingStyle | undefined = (await ringProbeOrNullOf(control))?.style;
 
             await page.keyboard.press('Shift');
             await control.focus({ timeout: DRAW_TIMEOUT_MS });
@@ -578,7 +578,7 @@ export const checkLiveActions = async (options: {
             if (options.input === 'Enter') {
               await settle(page, DRAW_TIMEOUT_MS);
 
-              const probe = await readRingProbe(control).catch(() => null);
+              const probe = await ringProbeOrNullOf(control);
 
               keyboardRing = before && probe ? { before, probe } : null;
             }

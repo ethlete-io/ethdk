@@ -1,5 +1,15 @@
-import { describe, expect, it } from 'vitest';
-import { focusMarkedOf, pointerFocusVerdictOf, RingProbe, RingStyle, ringVisibleOf } from './pointer-focus';
+import { chromium, type Browser } from 'playwright';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import {
+  focusMarkedOf,
+  pointerFocusVerdictOf,
+  readRingProbe,
+  RING_PROBE_TIMEOUT_MS,
+  RingProbe,
+  ringProbeOrNullOf,
+  RingStyle,
+  ringVisibleOf,
+} from './pointer-focus';
 
 const none: RingStyle = {
   outlineStyle: 'none',
@@ -104,3 +114,34 @@ describe('pointerFocusVerdictOf', () => {
       }).warning,
     ).toContain('could not take'));
 });
+
+describe('readRingProbe', () => {
+  let browser: Browser | undefined;
+
+  beforeAll(async () => {
+    browser = await chromium.launch().catch(() => undefined);
+  });
+
+  afterAll(async () => {
+    await browser?.close();
+  });
+
+  it('answers at once for an element a click removed, instead of waiting for it to come back', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const page = await browser.newPage();
+
+    await page.setContent(`<button id="item" onclick="this.remove()">Item</button><button id="kept">Kept</button>`);
+
+    const locator = page.locator('#item');
+
+    await locator.click();
+
+    const start = Date.now();
+
+    expect(await ringProbeOrNullOf(locator)).toBeNull();
+    expect(Date.now() - start).toBeLessThan(RING_PROBE_TIMEOUT_MS);
+    expect((await readRingProbe(page.locator('#kept')))?.control).toBe(true);
+    await page.close();
+  }, 10_000);
+}, 30_000);

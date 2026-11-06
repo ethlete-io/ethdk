@@ -4124,3 +4124,10 @@ time gained: the wrong count never cost the 1 s cap, because the wait already ex
 with no new one (settle 0.05-0.18 s per shot before and after). pages/sketches warm 6.7 s, app pictures dropped
 12.0 s, design pictures dropped 11.9 s (before: 6.6 / 12.0 / 12.1 s); pages/start 1.5-1.9 s. The rest after an edit
 is 30 shots 4 at once (5.6 s, ~0.6 s of a wide shot is queue wait), compare-actions 2.9 s and ~3 s process start.
+B416 compare-actions (as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06): the 30 s
+timeouts on elements/studio-menu and components/shell-project-switch were `readRingProbe` waiting Playwright's default
+30 s for a menu item its own click had removed; it now answers `null` at once for a gone element, waits at most 1 s
+otherwise and names that cap (`RingProbeTimeoutError`); the probe's click and focus got explicit timeouts. Each state's
+action check result is kept on disk (`compare-actions`) under the cli build, Playwright, built harness, state, its design
+markup and props; it stays valid while every design picture, embedded state and embedder list it read prints the same,
+so an edit re-checks only the states that read it (action-cache.spec). Shot concurrency 6/8 not tried yet.

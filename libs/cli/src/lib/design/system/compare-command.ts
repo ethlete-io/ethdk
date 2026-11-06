@@ -968,6 +968,7 @@ export const designCompare = async (options: {
           part: keys[0] ?? '',
           url: args.values['--url'],
           harness: url,
+          appRoot: root,
           onNote: (line) => console.log(line),
         }),
       );

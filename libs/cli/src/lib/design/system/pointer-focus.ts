@@ -1,4 +1,4 @@
-import { Browser } from '../thumb';
+import { Browser, DRAW_TIMEOUT_MS } from '../thumb';
 
 type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPage']>>;
 type Locator = ReturnType<Page['locator']>;
@@ -94,38 +94,68 @@ const CONTROL_SELECTOR = [
   ].map((role) => `[role="${role}"]`),
 ].join(', ');
 
-/** Reads the ring probe of the element a locator names; `null` when it is not one the check visits. */
-export const readRingProbe = async (locator: Locator) =>
-  locator.evaluate(
-    (element, { selector, textFree, control }) => {
-      if (!element.matches(selector)) return null;
+export const RING_PROBE_TIMEOUT_MS = 1000;
 
-      const style = getComputedStyle(element);
-      const type = element instanceof HTMLInputElement ? element.type : '';
+export class RingProbeTimeoutError extends Error {}
 
-      return {
-        style: {
-          outlineStyle: style.outlineStyle,
-          outlineWidth: style.outlineWidth,
-          outlineColor: style.outlineColor,
-          boxShadow: style.boxShadow,
-        },
-        focused: element.ownerDocument.activeElement === element,
-        textEntry:
-          element instanceof HTMLTextAreaElement ||
-          (element instanceof HTMLElement && element.isContentEditable) ||
-          (element instanceof HTMLInputElement && !textFree.includes(type)),
-        control: element.matches(control),
-      };
-    },
-    { selector: POINTER_FOCUS_SELECTOR, textFree: TEXT_FREE_INPUTS, control: CONTROL_SELECTOR },
-  ) as Promise<RingProbe | null>;
+/**
+ * Reads the ring probe of the element a locator names; `null` when it is not one the check visits or is gone from the
+ * page. Throws a `RingProbeTimeoutError` when the element does not answer within `timeout`.
+ */
+export const readRingProbe = async (locator: Locator, timeout = RING_PROBE_TIMEOUT_MS): Promise<RingProbe | null> => {
+  if ((await locator.count()) === 0) return null;
+
+  return (
+    locator.evaluate(
+      (element, { selector, textFree, control }) => {
+        if (!element.matches(selector)) return null;
+
+        const style = getComputedStyle(element);
+        const type = element instanceof HTMLInputElement ? element.type : '';
+
+        return {
+          style: {
+            outlineStyle: style.outlineStyle,
+            outlineWidth: style.outlineWidth,
+            outlineColor: style.outlineColor,
+            boxShadow: style.boxShadow,
+          },
+          focused: element.ownerDocument.activeElement === element,
+          textEntry:
+            element instanceof HTMLTextAreaElement ||
+            (element instanceof HTMLElement && element.isContentEditable) ||
+            (element instanceof HTMLInputElement && !textFree.includes(type)),
+          control: element.matches(control),
+        };
+      },
+      { selector: POINTER_FOCUS_SELECTOR, textFree: TEXT_FREE_INPUTS, control: CONTROL_SELECTOR },
+      { timeout },
+    ) as Promise<RingProbe | null>
+  ).catch((error: unknown) => {
+    if (error instanceof Error && error.name === 'TimeoutError')
+      throw new RingProbeTimeoutError(`the element did not answer the focus ring probe within ${timeout} ms`);
+
+    throw error;
+  });
+};
+
+/** `readRingProbe`, with `null` for any failure except a `RingProbeTimeoutError`. */
+export const ringProbeOrNullOf = (locator: Locator) =>
+  readRingProbe(locator).catch((error: unknown) => {
+    if (error instanceof RingProbeTimeoutError) throw error;
+
+    return null;
+  });
 
 /** Presses Tab so the last input is a key and the element itself does not hold focus. */
 export const tabAwayFrom = async (page: Page, locator: Locator) => {
   await page.keyboard.press('Tab');
 
-  if (await locator.evaluate((element) => element.ownerDocument.activeElement === element))
+  if (
+    await locator.evaluate((element) => element.ownerDocument.activeElement === element, undefined, {
+      timeout: RING_PROBE_TIMEOUT_MS,
+    })
+  )
     await page.keyboard.press('Tab');
 };
 
@@ -138,7 +168,7 @@ export const readRingAfterKey = async (options: {
   await options.page.keyboard.press('Shift');
   await options.settle(options.page);
 
-  return readRingProbe(options.locator).catch(() => null);
+  return ringProbeOrNullOf(options.locator);
 };
 
 /** The ring probes of one element: after a pointer click, after a Shift press that follows it, and after keyboard focus. */
@@ -163,9 +193,9 @@ export const probePointerFocus = async (options: {
 
   try {
     await tabAwayFrom(clicked.page, clicked.locator);
-    await clicked.locator.click();
+    await clicked.locator.click({ timeout: DRAW_TIMEOUT_MS });
     await options.settle(clicked.page);
-    click = await readRingProbe(clicked.locator).catch(() => null);
+    click = await ringProbeOrNullOf(clicked.locator);
     if (click) clickThenKey = await readRingAfterKey({ ...clicked, settle: options.settle });
   } finally {
     await clicked.close();
@@ -179,7 +209,7 @@ export const probePointerFocus = async (options: {
     const before = (await readRingProbe(focused.locator))?.style;
 
     await focused.page.keyboard.press('Shift');
-    await focused.locator.focus();
+    await focused.locator.focus({ timeout: DRAW_TIMEOUT_MS });
     await options.settle(focused.page);
 
     const probe = await readRingProbe(focused.locator);

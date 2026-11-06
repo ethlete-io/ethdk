@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { AddressInfo } from 'net';
 import { tmpdir } from 'os';
@@ -7,7 +8,10 @@ import { timedPhase } from '../phase-timing';
 import { DesignConfig, DesignPreset, viteCacheOf } from '../paths';
 import { createDesignServer } from '../serve';
 import { checkerScriptOf, createPartShooter, Picture, pixelBoxOf, viewportOf } from '../shot';
-import { browserVersionOf, COMPARE_DESIGN_SHOTS } from './compare-cache';
+import { recordCache } from '../timings';
+import { ActionDep, cachedActionsOf, COMPARE_ACTIONS, createActionCache } from './action-cache';
+import { buildStampOf } from '../stamp';
+import { browserVersionOf, builtAppHashOf, cacheKeyOf, COMPARE_DESIGN_SHOTS } from './compare-cache';
 import { awaitFonts, Browser, createDrawQueue, DRAW_TIMEOUT_MS, DRAWS_AT_ONCE } from '../thumb';
 import {
   actionInputsOf,
@@ -64,6 +68,8 @@ export const ACTIONS_USAGE =
 const ROOM_PX = 1024;
 
 const ACTION_BATCH_STATES = 4;
+
+const sha256Of = (text: string | Buffer) => createHash('sha256').update(text).digest('hex');
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -241,6 +247,7 @@ export const checkActions = async (options: {
   url: string;
   only: string | null;
   onLine?: (line: Line) => void;
+  appRoot?: string | null;
 }): Promise<{ lines: Line[]; pictures: string | null; embedders?: string[]; hosts?: string[] } | string> => {
   const { target, config, product, part, url, only, onLine } = options;
   const frame = compareFrameOf({ presets: product.presets, part, preset: null });
@@ -447,7 +454,30 @@ export const checkActions = async (options: {
     };
     let dir: string | null = null;
 
-    const checkState = async (state: string): Promise<{ lines: Line[]; hosts: string[] }> => {
+    const printOf = async (dep: ActionDep) =>
+      dep.kind === 'draw'
+        ? sha256Of((await draw(dep.state, dep.opened)).png)
+        : dep.kind === 'expected'
+          ? sha256Of(JSON.stringify(await expectedOf(dep.owner, dep.state)))
+          : sha256Of(JSON.stringify(await embeddersOfPart()));
+
+    const checkState = async (
+      state: string,
+      track: (dep: ActionDep, print: string) => void = () => undefined,
+    ): Promise<{ lines: Line[]; hosts: string[]; keep: boolean }> => {
+      const tracked = async <T>(dep: ActionDep, value: Promise<T>) => {
+        const resolved = await value;
+
+        track(dep, await printOf(dep));
+
+        return resolved;
+      };
+      const drawFor = (drawn: string, opened: Record<string, unknown> | null) =>
+        tracked({ kind: 'draw', state: drawn, opened }, draw(drawn, opened));
+      const expectedFor = (owner: string, expected: string) =>
+        tracked({ kind: 'expected', owner, state: expected }, expectedOf(owner, expected));
+      const embeddersFor = () => tracked({ kind: 'embedders' }, embeddersOfPart());
+      let wrotePictures = false;
       const lines: Line[] = [];
       const pushLine = (line: Line) => {
         lines.push(line);
@@ -458,7 +488,7 @@ export const checkActions = async (options: {
       if (typeof open === 'string') {
         pushLine({ state, element: '-', input: null, failure: open });
 
-        return { lines, hosts: [] };
+        return { lines, hosts: [], keep: true };
       }
 
       const design = await timedPhase('actions-design-scan', () => designScan(state));
@@ -467,7 +497,7 @@ export const checkActions = async (options: {
       if (open && opener === null) {
         pushLine({ state, element: '-', input: null, failure: `no ${open.control} trigger to open it with` });
 
-        return { lines, hosts: [] };
+        return { lines, hosts: [], keep: true };
       }
 
       const start: ActionStart = { state, props: open ? (open.props ?? states[open.from]) : states[state], opener };
@@ -585,8 +615,8 @@ export const checkActions = async (options: {
             if (
               candidate.states.includes(value) &&
               drawsStateAlreadyOf({
-                expected: await expectedOf(candidate.part, value),
-                current: await expectedOf(part, state),
+                expected: await expectedFor(candidate.part, value),
+                current: await expectedFor(part, state),
               })
             )
               settled.push(candidate.part);
@@ -598,7 +628,7 @@ export const checkActions = async (options: {
           const listen = owners.flatMap((candidate) => (candidate.selector === null ? [] : [candidate.selector]));
 
           if (drawn === null || action === null || typeof action === 'string') {
-            if (typeof action !== 'string' && (await embeddersOfPart()).length > 0) return finish();
+            if (typeof action !== 'string' && (await embeddersFor()).length > 0) return finish();
             if (
               drawn !== null &&
               action === null &&
@@ -630,7 +660,7 @@ export const checkActions = async (options: {
             const goalPicture =
               goal === '' || embeddedState
                 ? null
-                : await timedPhase('actions-goal-draw', () => draw(opened ? state : goal, opened));
+                : await timedPhase('actions-goal-draw', () => drawFor(opened ? state : goal, opened));
 
             try {
               const run = await timedPhase('actions-input', () =>
@@ -663,7 +693,7 @@ export const checkActions = async (options: {
                   embeddedState && action.kind === 'state'
                     ? liveStateCompareOf({
                         state: `${owner} ${goal}`,
-                        expected: await expectedOf(owner, goal),
+                        expected: await expectedFor(owner, goal),
                         after: run.after ?? [],
                       })
                     : result
@@ -681,7 +711,7 @@ export const checkActions = async (options: {
                       if (candidate === goal) return result;
 
                       const reopened = openedFromOf({ goal: candidate, start: state, states, open: opens[candidate] });
-                      const picture = await draw(reopened ? state : candidate, reopened);
+                      const picture = await drawFor(reopened ? state : candidate, reopened);
 
                       return comparePngs({ design: picture.png, app });
                     },
@@ -692,7 +722,7 @@ export const checkActions = async (options: {
                 outcome.reached = await reachedExpandedStateOf({
                   goal,
                   states: embeddedState.states,
-                  expectedOf: (candidate) => expectedOf(owner, candidate),
+                  expectedOf: (candidate) => expectedFor(owner, candidate),
                   after: run.after ?? [],
                 });
 
@@ -708,6 +738,7 @@ export const checkActions = async (options: {
               });
 
               if (failure !== null && result && result.kind !== 'ok' && goalPicture && run.app) {
+                wrotePictures = true;
                 dir ??= mkdtempSync(join(tmpdir(), 'et-design-actions-'));
 
                 const stem = `${state}--${name}--${input}`.replace(/[^\w.-]/g, '-');
@@ -729,9 +760,39 @@ export const checkActions = async (options: {
 
       lines.push(...checkedElements.flat());
 
-      return { lines, hosts: scope.skipped };
+      return { lines, hosts: scope.skipped, keep: !wrotePictures };
     };
 
+    const cacheInputs = options.appRoot
+      ? {
+          salt: `${buildStampOf().version} ${buildStampOf().build} ${browserVersionOf(chromium.from)}`,
+          built: builtAppHashOf(options.appRoot),
+        }
+      : null;
+    const actionCache = cacheInputs ? createActionCache(viteCacheOf(target, COMPARE_ACTIONS)) : null;
+    const actionKeyOf = (state: string) => {
+      if (!cacheInputs) return null;
+
+      try {
+        return cacheKeyOf([
+          cacheInputs.salt,
+          cacheInputs.built,
+          url === '' ? '' : new URL(url).pathname,
+          part,
+          state,
+          sha256Of(markups.get(state) ?? ''),
+          states[state] ?? null,
+          opens[state] ?? null,
+          names,
+          module.default?.controls ?? null,
+          appOutputs,
+          product.config.harness?.hosts ?? [],
+          frame,
+        ]);
+      } catch {
+        return null;
+      }
+    };
     const lines: Line[] = [];
     const skippedHosts: string[] = [];
     const checked = (only === null ? names : [only]).filter(
@@ -745,7 +806,29 @@ export const checkActions = async (options: {
       const batch = await inOrderAtOnce({
         items: checked.slice(at, at + ACTION_BATCH_STATES),
         limit: ACTION_BATCH_STATES,
-        run: (state) => timedPhase(`actions-state ${state}`, () => checkState(state)),
+        run: (state) =>
+          timedPhase(`actions-state ${state}`, async () => {
+            const key = actionKeyOf(state);
+
+            if (key === null) return checkState(state);
+
+            const { value, hit } = await cachedActionsOf({
+              cache: actionCache,
+              key,
+              printOf,
+              run: async (track) => {
+                const checkedState = await checkState(state, track);
+
+                return { value: checkedState, keep: checkedState.keep };
+              },
+            });
+
+            recordCache(hit);
+
+            if (hit) for (const line of value.lines) onLine?.(line);
+
+            return value;
+          }),
       });
 
       for (const checkedState of batch) {
@@ -786,6 +869,7 @@ export const partActionFailuresOf = async (options: {
   check?: typeof checkActions;
   checkLive?: typeof checkLiveActions;
   onNote?: (line: string) => void;
+  appRoot?: string | null;
 }): Promise<string[] | { unavailable: string }> => {
   const { target, config, product, part } = options;
   const source = product.parts.find((candidate) => partKeyOf(candidate) === part)?.source;
@@ -800,7 +884,16 @@ export const partActionFailuresOf = async (options: {
 
   if (stale !== null) return { unavailable: stale };
 
-  const check = (url: string) => (options.check ?? checkActions)({ target, config, product, part, url, only: null });
+  const check = (url: string) =>
+    (options.check ?? checkActions)({
+      target,
+      config,
+      product,
+      part,
+      url,
+      only: null,
+      appRoot: options.appRoot ?? null,
+    });
   const checked = options.harness
     ? await check(options.harness)
     : await withHarnessUrl({ target, product, url: options.url, start: options.start, run: check });
