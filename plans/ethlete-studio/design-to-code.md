@@ -4520,3 +4520,18 @@ not rerun until green. For S7c: a check must not create and remove `.edit` sketc
 auto-accept works on the picture cache without opening an edit sketch.
 
 S7b-4 + S7b-5 as built (72457e493, 07d3c5bcd, 2026-11-06). S7b-4 (538): three causes made every entry redraw. Auto-accept opens and closes `<part>.edit` sketches in the global env/system modules on every run; the render worker's SDK id counters grow per render; a worktree with `dist` symlinked to main's took another session's builds as input (copy `dist` instead). Entries key on the per-frame registry slice (`/__design/registry-slice`, STUDIO_API_LEVEL 6 -> 7) and renumbered SDK ids; a zoom-chip edit rewrites exactly 9 entries (render and completeness of zoom-chip and elements/canvas-frames, render of pages/flows, sketches, system, merge, inbox). S7b-5: `/@vite/client` holds a random per-start `wsToken`, and inline `sourceMappingURL=data:` lines embed host and token; both are dropped before hashing (spec, bites). A restart probe (a second server against the stored inputs of all 167 entries) found no other input that changes across a restart. Fresh worktree, CLI 07d3c5bcd, dist copied: cold 346.3 s; unchanged rerun 51.2 s, 0 of 167 rewritten, 0 null hashes; zoom-chip edit 103.3 s, exactly the 9 entries; after `design stop` the rerun took 70.9 s, 0 rewritten (render-inspect 2.1 s, completeness 0.8 s, open-points 13.5 s), log identical to the run before it. Main tree (07d3c5bcd, load ~3.5/32): cold 314.1 s (the code hash changed), warm 51.4 s (auto-accept 39.0, static 7.2, render-inspect 1.9, completeness 0.8), the known 2 findings, logs identical minus the resident start and over-target lines. The flaky spec "hits after a resident restart on another port": its cache key salts with `renderInspectCodeOf()`/`completenessCodeOf()`, which hash the live `libs/cli` source and `libs/cli/design` on every run, so a write there by another session between the spec's two runs changes the key (reproduced: rewriting a file under `libs/cli/design` every 10 ms fails every warm spec in both files). Both specs now mock the code hash and pass under the same writes. Open: auto-accept (~39 s) dominates the warm run; open-points redraws after a restart.
+
+S7 check target met (c0, 07d3c5bcd, main tree, load ~3.7/32): full `design check --product studio` warm 51.4 s (was
+308 s), 0 null hashes, known 2 findings, identical logs. Fresh worktree: unchanged rerun 51.2 s, zoom-chip edit 103.3 s
+(exactly 9 entries), after `design stop` 70.9 s with 0 entries rewritten. Cold stays 314-346 s, above the 120 s hard
+timeout of ADR 0213; S7c (parallel lanes, auto-accept on the picture cache) works on it. Per ADR 0215 the next builder
+session runs the `ci-check` skill and pushes `next`.
+
+539\. c0 (2026-11-06), S7b-5: the spec "hits after a resident restart on another port" failed now and then. Cause: the
+check cache salt (`renderInspectCodeOf()`/`completenessCodeOf()`) hashes the whole live `libs/cli` source on every run,
+so any write there between the spec's two runs - another session, prettier, `lint --fix` - forced a redraw; a 10 ms
+write loop failed every warm case. The specs now mock the code hash. The same cause makes every `libs/cli` commit cost
+the next dev check a cold 314 s. Why no tool caught it: the specs ran on a quiet tree; nothing wrote under `libs/cli`
+while they ran. Tool fix (doc agent, S7c): the check caches use the per-producer import-graph hash of `code-hash.ts`
+that the compare caches already use (B416 slice 2), so only an edit to the code that draws or inspects invalidates
+them; a spec edits an unrelated `libs/cli` file between two runs and expects 0 redraws.
