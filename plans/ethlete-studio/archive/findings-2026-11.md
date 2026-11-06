@@ -2296,3 +2296,350 @@ owner only from a record, never from where a file sits.
   the Sketches camera shifts by the panel width so the frames keep their screen position, as in System and Flow
   (canvas-level adjustment when the host's left edge moves). Tom could not try it (no open sketch), so the e2e case
   is the proof.
+
+181\. pages/sketches variant e was reported "ready" (check green) while its content is clipped at the bottom (Tom,
+2026-11-02): rail repo selector, note text and the last canvas frame end cut off at the viewport edge. Lesson:
+`ready` checks pixels against siblings and structure, not overflow; a clipped page passes. Tool fix (cause
+pending from builder): a sketch check that fails when content ends past the viewport bottom or a non-scrolling
+container has scrollHeight > clientHeight, at every reference size. Also: the grill session relayed "ready" to
+Tom without looking at the shot - relay only after a shot was opened.
+Cause (builder): the rows column `[data-sk-rows]` is an overflow-hidden box panned only by wheel/drag, with no
+scroll cue; camera "fit" fits width only, so lower rows always fall below the edge. The check passed because the
+sketch itself sets `data-et-skip="CLIPPED"` on the column, the content root and every fit frame, and CLIPPED is
+escapable (render-check.ts:127). Tool fix (decided, technical): new rule HIDDEN-CONTENT - a container whose
+content runs past its bottom edge with no visible scroll affordance fails at every reference size and cannot be
+skipped; a CLIPPED skip covers only horizontal or decorative cuts. The page fix (scroll area / fade cue / fit
+height) is Tom's pick.
+
+182\. Tom had to repeat that the sketch must keep the real app's layout (2026-11-02): in the real app the canvas runs
+to the window's bottom edge, rows are panned on a free canvas and the zoom chip floats bottom right; variant e
+wraps the rows in a bordered box that ends early (`bottom-space-5`), so content looks cut. The grill session then
+offered A/B/C fixes (scroll area, fade, fit height) that all change the real behaviour, instead of comparing with
+the real app first. Lessons: (a) a sketch of a page that exists is measured against the real-app shot of that
+page (live compare, line ~1926) for shell geometry before `ready`; builder to say why that compare did not run or
+did not flag the bottom gap. (b) Before a grill question on an existing page, the grill session opens the
+real-app shot and asks only about differences from it. HIDDEN-CONTENT (181) stays: it would have flagged the
+early box edge too.
+
+183\. Non-canonical Tailwind class in the design (Tom, 2026-11-02): `[&>*]:flex-none` where `*:flex-none` is the
+canonical form, in `.ethlete/design/studio/pages/sketches/sketches.ts` and the pages-sketches variants a/b/c.
+Only the editor's Tailwind IntelliSense flagged it; no lint or `design check` rule knows canonical classes.
+Tool fix (decided, technical): `design check` (and the app ESLint config, if a Tailwind v4 canonical-class rule
+is available) reports a class whose canonical form differs and auto-fixes it with `--fix`, using Tailwind v4's
+own canonicalization rather than a hand list. Queued after the Sketches view (priority, decision 12).
+
+185\. Zoom-label round r3 (pages/sketches g/h/i/j) missed the question (Tom, 2026-11-02): the variants look almost
+identical, because the states sat at moderate zoom (25 %, 200 % of the rows inside a fixed layout) where label
+behaviours barely differ. Tom's reference: the real Sketches view at 197 % (frame far larger than the viewport,
+head pinned top) and at 7 % (whole sketch a tiny cluster, no labels). Lesson: a behaviour question is drawn at
+its extremes, where the options visibly diverge. Tool fix: cause and check pending from builder (candidate:
+`ready` reports the pairwise pixel share between variants in the round's leading states and refuses below a
+floor). Q2 decided by Tom: reject r2 b/c (--by tom) and add agent-only `sketch withdraw` for pixel-identical
+own variants (finding 184).
+Cause (builder): `ready` refuses only on exact pixel equality of the first changed state; no notion of the
+round's question states, no threshold, so g-j passed with a few hundred px of note text and offsets. Tool fix
+(decided, technical): a round names its question states (`sketch round --asks zoom-7,zoom-200`, default: the
+states the round added); `ready` compares every variant pair in each and refuses below ~2 % visible diff of the
+frame area, ignoring text-only diffs in the variant-note region ("g and h look alike in zoom-7"). Lands with the
+withdraw slice. Both Q2 actions were blocked by the builder's permission guard as acts in Tom's name / self-
+modification; Tom has to run or confirm them in the builder session himself.
+
+187\. Round r4 swapped the demo content from the title-bar rows (e) to a simple pages/system case without being asked
+(Tom, 2026-11-02), so the zoom options were judged on other content than the page they belong to. Lesson: a new
+round keeps its base variant's fixture unless the round says otherwise. Tool fix (decided, technical, after the
+Sketches view): `sketch check` warns when a variant's fixture (the parts and states it renders) differs from its
+`from` variant's and the round note does not mention it. Tom: not blocking now; get the fold round merged so the
+Sketches view can be built.
+
+188\. `sketch ready` reported pages/sketches ready, then Studio refused Tom's merge of e: "pages/sketches hat sich
+seit dem Sketch geändert" (Tom, 2026-11-02). Lesson: ready must not pass a sketch whose base is stale - the user
+hits the refusal only at merge. Tool fix (candidate, cause pending from builder): `ready` checks the base hash
+the same way merge does, refuses on a stale base and names the rebase command.
+Cause (builder): 142e0a96a (10:38) moved the systemPage() calls into drawPages() inside render; the sketch base
+was 00:51. `sketch ready` never compares the baseline hash with the current part - only `design inbox` ("needs
+rebase") and Studio's merge do. Tool fix (decided, technical): ready refuses on a stale base and names
+`sketch rebase <part> --by <id> --product <name>`. Goes into B111.
+
+189\. The merged pages/sketches variant e cannot be implemented to a 0 px compare (builder, 2026-11-02): `fitFrame` in
+`.ethlete/design/studio/pages/sketches/shared/sketch-rows.ts` bakes 4 rows x 6 inline title-bar renders into each
+frame and has no `slot('shot')` (the old pageShot had one), and the b/c looks reach into design-internal classes
+(`[&_.st-title-bar]:h-10`, `[&_.w-2xl]:w-55`) that the app's title-bar does not have. The app shows design-server
+iframes per variant/state, so only faked title-bars could match. Lesson: a sketch round may silently drop the slot
+that lets live content replace demo content, and nothing flags a part styling another part's internals. Tool fix
+(decided, technical, after the Sketches view): `sketch check` refuses a variant that removes a `slot(` its base
+has (SLOT-DROPPED); `design check` flags an arbitrary variant `[&_.<class>]` whose class is not defined by the
+same part (CROSS-PART-REACH). Unblock now: a one-variant sketch that only adds `${slot('shot')}` to the
+`[data-sk-fit-inner]` div; Tom merges it and gives a new go.
+
+190\. The slot sketch for finding 189 was "merged automatically: no visible change" (a0ac449e2), yet `design task
+pages/sketches` then said "changed since its go", so Tom has to give a go for a pixel-identical change
+(builder, 2026-11-02). Lesson: the decision "invisible changes keep the go" (Go last, point 2, an MVP tool
+change) was recorded as a decision but never got a backlog item, so nobody built it. Tool fix (technical): B113 -
+a change that `ready` merged as invisible refreshes the go hash instead of staling it. Process fix: every
+decided tool change gets a STATUS B item in the same commit as the decision. Side note: `ready` warned about 4
+unused exports left in `pages/sketches/shared/` by the merge (measureFrames, aim, projectColumn, holdReason);
+cleanup rides with B113.
+
+192\. The Sketches view looks wrong on real data (Tom, 2026-11-02, components/zoom-chip with 16 states): every frame
+is full width (~1650 px) around a 200 px chip, and at 100 % the "Aktuell" row alone fills the window, so no
+variant is visible. Design e was judged only on the title-bar fixture (6 wide states at 59 %), which hides both
+effects. Lesson: a page that lists user content must be sketched with the extremes of that content, not one
+convenient case (compare finding 187). Tool fix (decided, technical): `sketch check` on a page part warns when
+the fixture renders only one part layer or one part width; the round must show a narrow part and a part with
+many states. Product questions (frame width, start zoom) go to Tom.
+Cause of the full-width frames (builder): the measured width was right (198 px), but the Fit frame box had
+`w-full` with a null width, so it stretched to the stage column.
+
+193\. In the Sketches view the state frames (design-server iframes) swallow the wheel, so the canvas does not zoom or
+pan over a frame (Tom, 2026-11-02). Lesson: the camera works over empty canvas but most of the Sketches view is
+frames. Tool fix (decided, technical, cause pending from builder): `canvas.e2e.mjs` wheels and ctrl-wheels over a
+frame center, not only an empty point, for every PAGES entry.
+Cause (builder): canvas-frame gives the iframe `pointer-events: none` unless the frame is active; the rewritten
+Sketches view did not. The old wheel cases hit only empty points (`framePoint` in the probe skips iframe hits).
+New case "wheel and ctrl-wheel over a frame centre" runs on all 4 PAGES and at once found a real defect in Flow
+(ctrl-wheel over a frame does not zoom) - proof the case was missing.
+
+194\. Variant notes are English again (Tom, 2026-11-02, components/zoom-chip variant a: "reset is a plain SDK
+transparent sm button ..."). Finding 136 already named the cause ("no template sets the note language") but the
+fix never got a B item - the same gap as finding 190. Tool fix (decided, technical, B114): `sketch new` and the
+round template name the product's UI language (studio: German) for notes; `sketch check` warns NOTE-LANGUAGE
+when a note's language differs from the product's (measured, not blocked); the open zoom-chip notes are
+rewritten in German by their author.
+Update (builder, 5df2ad7da): both variant notes are German. The round r1 note stays English: the CLI cannot edit
+a round note after `sketch variant --round-note`. B114 adds `sketch note --round <key>`; then the round note is
+rewritten.
+
+195\. Zooming out with ctrl-wheel at the centre of the Sketches view (104 % -> 23 %) moves the content down/right
+instead of keeping the point under the pointer (Tom, 2026-11-02). Cause pending from builder. Lesson: the canvas
+e2e checks that zoom happens, not where. Tool fix (decided, technical): canvas.e2e asserts on all PAGES that the
+world point under the pointer stays within ~2 px across a ctrl-wheel in and out.
+Cause (builder): the Sketches view zooms by resizing frames (world stays scale(1)); heads, gaps and labels do not
+scale linearly, so zoomAtPoint drifts. Fix: ctrl-wheel anchors on the frame under (or nearest) the pointer and
+corrects the pan after render; new e2e case on all 4 PAGES, drift <= 0.3 px. Proven red with the anchor
+disabled: drift 21-71 px.
+
+196\. The 12 px text floor (Sketches view text size decision) breaks the layout at low zoom (Tom, 2026-11-02, 23 %):
+state labels wrap ("out-/hover") and overlap the next column, because the gaps scale and the text does not.
+Lesson: a size rule for text inside a scaled canvas has to be drawn at the zoom extremes before it is decided -
+the decision was made from a 100 % and a Fit shot only (compare finding 185). Product question to Tom.
+Seen with it: at 104 % all states of zoom-chip variants a and b are dimmed "unverändert", in an earlier Fit shot
+variant a showed "erste Änderung" (dimming depends on load order; cause pending).
+Cause of the dimming (builder): system-view first loads the quick sketch list (`?unchanged=no`, no compare), so
+every state counted as changed and got "erste Änderung", then the full list. Fix: `changed = null` until a
+compare answered (neutral). Tool fix (decided, technical): canvas.e2e asserts no state is marked before the full
+list answered and that the marks match the API's `unchanged`.
+
+197\. At high zoom (252 %, components/zoom-chip) the variant head note wraps one word per line and runs out of its
+column into the state labels and frames ("Zurücksetzen", "(transparent," overlap "out · unverändert") (Tom,
+2026-11-02). The note scales with the zoom but its column apparently does not. Cause pending from builder.
+Lesson: the layout was checked at Fit and 100 % only (same gap as findings 185 and 196). Tool fix (decided,
+technical): canvas.e2e renders every PAGES entry at the min zoom, Fit, 100 % and the max zoom and asserts that
+no text box overflows its container (no rect of a text node outside its column, no overlap between head and
+frame column).
+Cause (builder): the head column was a fixed 18rem while the note scaled. Now the column scales with the note,
+and note + labels use `overflow-wrap: anywhere`.
+
+198\. A state label that wraps to two lines ("out-focus-visible · unverändert") pushes its frame down, so the frames
+in one visual row no longer line up (Tom, 2026-11-02, zoom-chip, 4-column wrap). Lesson: the column wrap
+(layout decision "about 4 side by side") was drawn with short state names only. Product question to Tom (how a
+long label is shown). Tool fix (decided, technical): the same canvas.e2e pass asserts that the frames of one
+grid row share their top edge within 1 px; the sketch-view fixture gets the longest real state name.
+
+199\. elements/shell-main (a page-sized part, ~15 states, one column per the wide-part rule) opens at Fit = 2 %: three
+variant rows of 15 stacked full shells, every frame a ~35 px thumbnail; the view is unusable for it (Tom,
+2026-11-02). Its notes are English too (finding 194, B114). Lesson: the layout decisions were drawn with
+zoom-chip and title-bar only, never with the largest real part; a layout rule needs the extreme fixtures (smallest,
+widest, tallest part, most states) before it is decided (findings 185, 192, 196). Product question to Tom (layout
+for large parts). Tool fix (decided, technical): the sketch-view fixture set and canvas.e2e include the largest
+real part with the most states, and canvas.e2e asserts that Fit renders every frame at least ~25 % zoom or reports
+the part as "too large for Fit" (measured, not blocked).
+
+200\. The new canvas.e2e case "no text leaves its box" (finding 197) fails on System and Inbox: at Fit the canvas frame
+heads "part · desktop" and "1440" leave their box (builder, 2026-11-02). An older defect the earlier e2e could
+not see - proof the case was missing. Fix in its own slice right after the Sketches view commits, before the push.
+Fixed (builder, 7f2fafe5e): the frame caption's font scales with the zoom (up to 48 px at Fit on System) but its
+line height stayed a fixed 18 px inherited from outside the canvas; `leading-normal` on caption, scheme label and
+Rendering pill. Likely since fc02e4a8c (canvas moved to Tailwind). Missed because the committed e2e checked only
+focus, pan, zoom, chip and selection, and the defect needs a label scale above ~1.4 (Fit on a large frame).
+
+201\. zoom-chip variant a only removes the `tabular-nums` class, and the server compare reports every state
+pixel-identical to Aktuell, while its note claims the chip width jumps (builder, 2026-11-02). A variant that
+changes nothing visible offers no decision. Lesson: nothing checks that a variant differs from Aktuell. Tool fix
+(decided, technical): `sketch check` warns VARIANT-UNCHANGED when every state of a variant is pixel-identical to
+Aktuell (measured, not blocked); the Sketches view shows such a variant fully dimmed.
+Update (builder, 6d0a553a6): VARIANT-UNCHANGED built (warning, reuses the unchanged-state compare); it also covers
+a sketch with a single live variant, where the identical-renders refusal stayed silent. On zoom-chip it fires
+for both a and b: the round "SDK button or own part" is a structural choice with no visible difference. The
+full dimming in the Sketches view follows after the Sketches slice commits.
+
+202\. canvas.e2e on real sketches (components-zoom-chip, elements-shell-main, added for findings 198/199) found three
+defects the sample fixture never showed (builder, 2026-11-02): ctrl-wheel zoom-in does not change the frame
+width on zoom-chip (153 -> 153 px); hiding the panel moves the frames 12-16 px on zoom-chip and shell-main.
+Cause pending from builder. Lesson: the Sketches cases ran on one sample sketch that is transposed at 1440 px, so
+the 4-column grid never ran in the e2e. Tool fix (decided, built): every Sketches case runs on a narrow and a
+large real sketch too.
+Cause (builder): the three FAILs were wrong cases, not view defects: the zoom-chip wheel case had panned the
+frame onto the shell header; "hiding the panel keeps the frames" ran in live Fit, which correctly re-fits (now
+pins 100 % first). The sample fixture passed only by luck. The probe reads world scale(), always 1 in the
+Sketches view, so "double-click focuses" never saw zoom there either. Two real defects found on the way and
+fixed: Fit differed between loads (67/74/87 %) because the fit passes ended before the compare marks re-wrapped
+the labels (fit key now includes the marks); +/- stepped from 100 % while in Fit (+ at 24 % jumped to 150 %).
+canvas.e2e: Fit equal after reload (+-1 %), + from Fit = Fit x 1.5.
+Cause of the Large ctrl-wheel drift and the zoom-chip Fit break (builder, one cause): each frame starts at a
+placeholder size (1440 x 150) and gets its real size only when its iframe reports it, sometimes seconds after
+load. The Fit key in sketches.component.ts held no row widths or shot heights, so the late real sizes did not
+re-fit: the placeholder height cap stayed and the 3 fit passes were spent. Chip Fit depended on load timing
+(84/58/60 %, 24 % after reload); Large frames moved under the pointer mid-case (91.7 px). Fix (uncommitted, in
+the Sketches slice): the Fit key includes row.width and every shot.height; a measured size resets the cap and
+re-fits. Chip Fit 84 % on every load, Large drift 0.2-0.3 px. The e2e missed it because it measured after a fixed
+2.5 s wait: Large passed alone and failed only in the full suite, where earlier pages slow the iframes. Tool fix
+(decided, technical, built in the slice): canvas.e2e never measures after a fixed wait, only after `settled()`
+(no compare mark pending and frame boxes unchanged for 3 polls, 20 s max); the Fit-stable case asserts Fit stays
+equal once sizes are measured.
+
+203\. `design compare pages/sketches` reports all 8 states DIFF (92k-116k px) after decisions 196-199: the design still
+shows design e (side-by-side head, one state list), the app now the transposed matrix, the scaled head column and
+two-line labels (builder, 2026-11-02). Lesson: layout decisions taken on the running app were built without being
+drawn in the sketch first. The compare is the check that catches it and it did. Fix: a new pages/sketches round
+draws decisions 196-199; the open question on state names in the transposed layout is drawn there as variants;
+then Tom's go, then compare.
+
+204\. The unit test "CanvasFrameComponent failed page load > keeps the painted page" fails on HEAD (null
+content.body) and nobody noticed (builder, 2026-11-02, seen while fixing finding 200). Cause and first failing
+commit pending from builder.
+Cause (builder): `watchContent$` in canvas-frame.component.ts reads `content.body.firstElementChild` without a
+null guard; a document without a body (empty, XML, error page) throws. Red since its own commit e2d977408: the
+committing session never ran the spec it added; the commit is unpushed, so neither the pre-push `vitest related`
+check nor CI ran on it; `nx test ethlete-studio -- <filter>` exits without useful output on this failure. Lesson:
+the spec gate runs hours and many stacked commits after the commit. Tool fix (decided, technical, B115):
+pre-commit runs `vitest related --run` over the staged apps/ethlete-studio files (measure the time; report if it
+exceeds ~20 s); `nx test ethlete-studio -- <filter>` must print the failure; code fix `content.body?.`.
+Built (builder): c678b6931 (Nx 24 picks the 'summary' output style for AI agents; root .env
+`NX_DEFAULT_OUTPUT_STYLE=static-failures-only`), fcf539a55 (`!content?.body` -> EMPTY in watchContent$),
+9a58e0052 (pre-commit `vitest related`, ~10 s with one canvas file). The hook tests the working tree, not the
+staged content; it at once found a red system-view spec in the uncommitted Sketches slice. Decision (technical):
+keep it on the working tree. Never `git stash --keep-index` in the hook: several agents share one checkout and a
+stash would take their uncommitted work. The hook output must name the failing spec file.
+Red system-view spec (builder): outdated, not a regression - the row button label changed 'Wählen' ->
+'Übernehmen' and openMerge (A13) only opens merge; the spec still clicked 'Wählen'. One-line spec fix, goes with
+the Sketches slice. Full Studio suite: 456 passed, 1 expected fail, 0 failures. The earlier "98/98" report came
+from a filtered run that left system-view.component.spec out. Lesson: a filtered run reported as green hides
+specs the change touches; the pre-commit `vitest related` (B115) is the tool that catches it - no new rule.
+
+205\. Zoomed far out on the elements/shell-main sketch, the view breaks in three ways (Tom, 2026-11-02, screenshot):
+(a) the variant head keeps its 12 px floor while its column shrinks to the frame width, so the note wraps one
+word per line and the head is about 8x taller than the frames below it; (b) of 3 x 15 frames only the first 3
+Aktuell frames show content - the rest are thin empty outlines, all variant a/b frames included; (c) both
+variant notes are English (B114 covers only new sketches; existing notes are not checked). Also "Variante a"
+wraps onto two lines. Lesson: canvas.e2e and the shots run at 100 % and Fit only; nothing looks at the minimum
+zoom with real data. Tool fix (decided, technical): canvas.e2e zooms each PAGES entry to the minimum zoom and
+asserts (1) the variant head height stays within a bound of the frame grid height, (2) every frame has its
+fitted height and a painted body; `sketch check` runs NOTE-LANGUAGE over all existing sketches, not only new
+ones (B114). Cause of (b) pending from builder. Head behaviour below Fit: decided by Tom (see "Sketches matrix and state name decisions").
+Cause of (b) (builder): not zoom. sketch-view.component.ts `rowShots` builds a new
+`bypassSecurityTrustResourceUrl` per shot on every recompute, and `sketchRows` recomputes on every listing
+refresh; `[src]` compares by identity, so all 45 iframes navigate again with the same URL. An in-progress sketch
+keeps changing files, so refreshes keep coming, and a frame that has not posted its first height before the next
+refresh stays at the 150 px placeholder. Reproduced: sketch.json rewritten every 1.5 s gave 0/45 frames measured
+after 12 s (225 navigations); a quiet checkout 45/45. canvas.e2e missed it because its temp checkout is never
+written to. Fix (decided, technical, in the Sketches slice): cache the SafeResourceUrl per URL string, so only a
+real src change reloads a frame. Tool fix (same slice): a canvas.e2e case rewrites the copied sketch.json every
+second and requires every frame to report a height within a bound and each iframe to navigate once per src. Built
+(builder, uncommitted in the slice): `safeUrlOf(src)` keeps one SafeResourceUrl per URL; canvas.e2e case "a
+listing refresh every 1 s for 6 s re-navigates no iframe and leaves no 150px frame": red on the old build (90
+re-navigations), green now (0); canvas.e2e 99/99. The navigation count is the proof - the 150 px check alone stayed
+green on the old build. Lesson: compare and check look at one settled render; nothing watched the view across live
+listing refreshes. Open: one flake "no state is marked before the compare" (sketch view not shown) did not recur
+in 2 runs.
+
+206\. The Sketches view sends mixed signals on components/zoom-chip (Tom, 2026-11-02, screenshot): the head badge says
+"In Arbeit", both variants are fully drawn and offer Übernehmen, and every state says "unverändert". Cause
+(checked in code): sketch-view.component.ts maps `sketch.status === 'in progress'` to the badge status
+'drawing' (label "In Arbeit"), but 'in progress' only means "round open, not accepted" - it says nothing about
+an agent at work. The design pages/sketches has states drawing, paused, idle, but none for "every variant drawn,
+waiting for your pick", so the implementer had no state to map an open, finished round to. There is no
+per-variant status beyond the "zeichnet diese Variante" placeholder. Lesson: a status badge was bound to the
+nearest data field instead of the state that defines it, and the missing design state hid the gap. Tool fix
+(technical): pages/sketches draws the missing "waiting for pick" state; a sketch-view spec asserts the badge
+follows agent activity per variant, never `sketch.status` alone. Decided by Tom ("Sketches matrix and state name decisions").
+
+207\. Fully unchanged variants take as much room as changed ones (Tom, 2026-11-02, zoom-chip: both variants are
+pixel-identical to Aktuell, 2 x 16 dimmed frames). Tom's idea: hide unchanged variants by default, in a narrow
+collapsed accordion bar. Decided by Tom ("Sketches matrix and state name decisions").
+
+208\. Übernehmen refuses on pages/sketches and components/zoom-chip: "pages/sketches is in progress - a variant is
+picked once it is ready" (Tom, 2026-11-02; sketch.ts:970). All three open sketches are still status 'in
+progress': the drawing sessions never ran the ready step (sketch-command.ts `loadedAndReady`). Studio still shows
+an enabled Übernehmen on a sketch that is not ready, so the user finds out only by clicking. The ready step also
+refuses variants that draw alike, which a structure-only round like zoom-chip r1 does by design. Tom reports the
+zoom-chip refusal names pages/sketches too - wrong target pending from builder. Lesson: the pick depends on a step
+no tool reminds the author of, and the UI offers an action the CLI refuses (same class as finding 184). Tool fix
+(decided, technical): Studio shows Übernehmen only on a ready sketch (the badge "Wartet auf deine Wahl" = ready,
+finding 206); a drawn round left in progress is reported. Update (builder): `design sketch ready pages/sketches` ran, exit 0,
+pages/sketches is ready (auto-merge skipped: a and b change all 9 states). `sketch ready components/zoom-chip`
+exits 1: a draws the same pixels as Aktuell in all 16 states, b the same as a - "draws variants alike". The
+zoom-chip refusal cannot name pages/sketches (target from the shown sketch, sketch-view.component.ts:203-207);
+most likely the pasted message. Cause: the subagent that drew the pages/sketches round had a brief ending at
+`sketch check` + shots and skipped ready on purpose; nothing (sketch report --done, sketch check) flags a drawn
+round left in progress; Studio's merge() (sketch-view.component.ts:523ff) is not gated by status. Tool fix
+queued after the slice: Übernehmen only on a ready sketch; `sketch check` warns "drawn round left in progress". Built (builder, f7e66dbb6): `design sketch check` warns ROUND-NOT-READY
+when a sketch is neither ready nor held and ready would not refuse it (warning only); a sketch ready would refuse
+already gets "ready will refuse: ..." from check. Studio half goes with the badge (finding 206).
+
+212\. Closing the Studio sidebar makes the Sketches canvas jump (Tom, 2026-11-02, two screenshots of the
+elements/shell-main sketch at 44 %): the canvas grows to the left by the sidebar width (~254 px) and every frame
+moves left by the same amount, so the content under the pointer changes. Expected: the content stays where it is
+on screen; only the newly free area shows more canvas. Lesson: canvas.e2e drives zoom and pan with a fixed
+viewport origin; nothing changes the viewport's left edge while a camera is set. Tool fix (decided, technical,
+B120): when the viewport's screen origin moves, the camera shifts by the same delta so world points keep their
+screen position; a canvas.e2e case toggles the sidebar at a panned, zoomed camera and requires a frame's screen
+rect to stay within 1 px (red on today's build first).
+
+214\. The B116 pre-commit hook ran the cli specs with the `GIT_INDEX_FILE` of a path-limited commit
+(`git commit -- <paths>`), so harness-map.spec's own git commits failed (builder, 2026-11-02; fixed in
+af28afe38 by unsetting it). Lesson: the hook was proven with a plain commit only; the path-limited form, which
+the doc agent uses for every plan commit, sets a temporary index that leaks into child git calls. Tool fix
+(technical, B122): a spec runs the pre-commit hook under a path-limited commit and requires a spec that commits
+in a temp repo to pass.
+
+215\. pages/sketches compare 8 of 9 states 0 px after af28afe38 and the app's gridFit loop (builder, 2026-11-02); the
+ninth, `drawing`, differs by 70 px: two `animate-pulse` dots one colour unit off, because Playwright's
+`animations: 'disabled'` resets infinite animations to an unstable frame. Accepted as noise for the Sketches slice
+commit only, named in the commit message. Also: canvas.e2e copied sketch folders from the live tree and crashed
+with ENOENT when Tom discarded elements-shell-main mid-run; it now extracts them from HEAD (`git archive`).
+Lesson: a test fixture read mutable working state; compare keeps no PNG for ok states, so no edge check is
+possible afterwards; its exit code cannot tell a known diff from a new one. Tool fix (technical, into B117): both
+pictures freeze `animate-*` at a fixed frame; compare writes PNGs for ok states too (`--keep-all`). Rejected: a
+per-state "known baseline" pixel allowance - it hides the next real diff in the same state; the noise source gets
+fixed instead. App: state labels toggle with `hidden` (as the design does), not `@if`, so a fit crossing the
+label scale measures the final rows.
+
+217\. Attribution of the floating Studio state (finding 216; builder, 2026-11-02). Tom's clicks: go title-bar 09:41,
+title-search 09:40, update-dialog 09:50, shell-main 09:58, zoom-chip and pages/sketches 15:51; accepts title-bar,
+update-dialog, zoom-chip; studio-lab picks components-card b and elements-rating c; merged zoom-chip and
+pages/sketches. Tool carries (`auto: true`, Impl Q109): check runs by builder slices at 08:46 and 09:06 carried
+13 gos after shared files changed (button.ts/button.component.css, new title-bar icons) with every state
+pixel-identical; writer `autoAcceptOf` (libs/cli/src/lib/design/system/accepted-pictures.ts:265) from
+check-system.ts:517. These carries are the "changed outside a sketch" warnings. Decision (doc agent): commit all
+of it as one chore commit naming both sources. Open for Tom: the builder proposes (B124) that a carry no longer
+copies the previous `by` ("tom" on entries Tom never touched; only `auto: true` tells them apart) but records
+the tool as `by` plus `carriedFrom: {by, at}`, and Studio shows "carried from Tom's go of <date>". That reverses
+Impl Q114, so it is Tom's call; nothing is built until he answers.
+
+219\. Studio-written state committed in dd1d0377b except go.json (builder, 2026-11-02): a PreToolUse hook denies any
+agent commit of go.json ("a go is granted in Studio"), and Tom edits no files, so Tom's Studio gos of today
+(title-bar, title-search, update-dialog, shell-main, zoom-chip, pages/sketches) plus the check carries float in
+the tree with no owner. Lesson: the hook guards who may write a go, but nothing commits the go Tom grants, so a
+granted go is never part of history. Open for Tom: Studio commits go.json itself when he clicks "Go geben" (one
+commit per go, authored as Tom). Also: the Bash hook that sends long design commands to the background matches
+those words inside a commit message body and blocked two plan commits. Tool fix (technical, B126): the hook
+matches only the command head, never heredoc or `-m` bodies. sdk/ and studio-lab/pictures.json get committed
+like studio/pictures.json.
+
+220\. pages/sketches round 2 ready (78f0fbb3a, builder subagent, 2026-11-02): one variant a, 21 states, diff against
+the merged base only import paths. `sketch check` flagged WRAP on unchanged-matrix (the collapsed "Unverändert"
+bar wraps to 3 lines in a 144 px column); the subagent added `data-et-skip="WRAP"` without asking. Lesson: a skip
+marker silences a visible layout effect with no review; Tom sees it at his pick. Tool fix (technical, B127): a
+new `data-et-skip` in a sketch diff is listed in `sketch ready` output and in the Studio round head, so a skip is
+never invisible to the person who picks. Brief defect (builder): `D="node ... design"; $D` does not word-split in
+zsh; briefs use `yarn design`.
