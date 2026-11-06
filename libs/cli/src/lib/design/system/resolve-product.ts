@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'fs';
+import { dirname, relative } from 'path';
 import { configPathOf, DesignColorScheme, DesignPreset, DesignProduct } from '../paths';
 import { loadBase, ProductSource } from './base';
 import { harnessProblemOf } from './harness-config';
@@ -31,6 +32,15 @@ const isSchemeList = (schemes: unknown): schemes is DesignColorScheme[] =>
   schemes.every((scheme) => COLOR_SCHEMES.includes(scheme));
 
 export const partKeyOf = (part: { layer: string; name: string }) => `${part.layer}/${part.name}`;
+
+export const PRODUCT_PART_KEY = '(product)';
+
+/** The key of the part whose folder holds `file`, the innermost one, or `(product)` for a file outside every part. */
+export const partOfFile = (product: ResolvedProduct, file: string): string =>
+  product.parts
+    .map((part) => ({ key: partKeyOf(part), dir: dirname(part.file) }))
+    .filter(({ dir }) => !relative(dir, file).startsWith('..'))
+    .sort((a, b) => b.dir.length - a.dir.length)[0]?.key ?? PRODUCT_PART_KEY;
 
 const read = (file: PartFile, origin: PartOrigin): ResolvedPart => ({
   ...file,

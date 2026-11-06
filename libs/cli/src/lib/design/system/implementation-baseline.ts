@@ -1,6 +1,6 @@
-import { execFileSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
-import { basename, dirname, resolve } from 'path';
+import { resolve } from 'path';
+import { addedBaselineNamesOf } from './baseline-history';
 import { FileHashes } from './design-hash';
 
 export const IMPLEMENTATION_BASELINE_FILE = 'implementation-baseline.json';
@@ -54,38 +54,9 @@ export const baselineLineOf = (part: string, entry: BaselineEntry) =>
 const keyOf = (part: string, entry: BaselineEntry) =>
   JSON.stringify([part, entry.finding, Object.entries(entry.app).sort(([a], [b]) => a.localeCompare(b))]);
 
-/**
- * The parts of the baseline `file` whose entry is not in every committed version of it, so the list may only shrink:
- * an entry added, added back or re-pinned after the file was first committed counts. An uncommitted file adds none.
- */
-export const addedBaselineEntriesOf = (options: { file: string }) => {
-  const { file } = options;
-
-  if (!existsSync(file)) return [];
-
-  const git = (args: string[]) =>
-    execFileSync('git', args, { cwd: dirname(file), maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'] }).toString();
-  const path = `./${basename(file)}`;
-  let versions: string[];
-
-  try {
-    versions = git(['log', '--format=%H', '--', path]).split('\n').filter(Boolean);
-  } catch {
-    return [];
-  }
-
-  const committed = versions.map((sha) => {
-    try {
-      return new Set(
-        Object.entries(entriesOf(git(['show', `${sha}:${path}`]))).map(([part, entry]) => keyOf(part, entry)),
-      );
-    } catch {
-      return new Set<string>();
-    }
+/** The parts of the baseline `file` whose entry is not in every committed version of it (see `addedBaselineNamesOf`). */
+export const addedBaselineEntriesOf = (options: { file: string }) =>
+  addedBaselineNamesOf({
+    file: options.file,
+    identitiesOf: (text) => Object.entries(entriesOf(text)).map(([part, entry]) => [part, keyOf(part, entry)]),
   });
-
-  return Object.entries(entriesOf(readFileSync(file, 'utf8')))
-    .filter(([part, entry]) => committed.some((set) => !set.has(keyOf(part, entry))))
-    .map(([part]) => part)
-    .sort((a, b) => a.localeCompare(b));
-};

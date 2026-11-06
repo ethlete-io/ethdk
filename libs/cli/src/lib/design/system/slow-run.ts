@@ -1,15 +1,25 @@
 import { exhaustMap, from, interval } from 'rxjs';
 import { relative, resolve } from 'path';
 import { DesignConfig } from '../paths';
-import { COMPARE_RULE, SDK_ERROR_RULE } from './build-ready-contract';
+import { actionLostProblemsOf } from './action-lost';
+import { bespokeControlProblemsOf } from './bespoke-controls';
+import {
+  ACTION_LOST_RULE,
+  COMPARE_RULE,
+  CONTROL_STATE_RULE,
+  DROPPED_PROP_RULE,
+  SDK_ERROR_RULE,
+} from './build-ready-contract';
 import { shootStates, ShootStates } from './compare-command';
 import { appFilesOf } from './app-files';
 import { HarnessServer, startHarnessServer, StartHarnessServer } from './harness-server';
 import { liveUncoveredOf, UncoveredState } from './live-uncovered';
+import { droppedPropProblemsOf } from './dropped-props';
 import { compareLineOf, comparePngs } from './part-compare';
 import { Problem } from './problem';
 import { repoRootOf } from './reachable-files';
-import { partKeyOf, ResolvedProduct, resolveProduct } from './resolve-product';
+import { partKeyOf, partOfFile, ResolvedProduct, resolveProduct } from './resolve-product';
+import { ruleBaselineOf } from './rule-baseline';
 import { APP_SPEC_RULE, appSpecProblemsOf, RunRelatedSpecs, runRelatedSpecs } from './rules/app-spec';
 import { UNCOVERED_REGION_RULE, uncoveredRegionProblemsOf } from './rules/uncovered-region';
 import { VISIBLE_CHANGE_RULE, visibleChangeProblemsOf } from './rules/visible-change';
@@ -17,7 +27,15 @@ import { sdkErrorLineOf } from './sdk-errors';
 import { autoAcceptOf } from './accepted-pictures';
 import { partHashOf } from './sketch/baseline';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
-import { linkedComponentOf, PRODUCT_PART, readSlowCache, slowInputsOf, writeSlowResults } from './slow-checks';
+import {
+  linkedComponentOf,
+  PRODUCT_PART,
+  readSlowCache,
+  isSlowRule,
+  slowInputsOf,
+  writeSlowResults,
+} from './slow-checks';
+import { repoInvocation } from '../../invocation';
 
 /** What a slow run calls out to; tests swap these for fakes. */
 export type SlowRunners = {
@@ -32,6 +50,9 @@ export type SlowRunners = {
     pages: string[] | undefined;
   }) => Promise<UncoveredState[] | string>;
   visibleChange: typeof visibleChangeProblemsOf;
+  controlState: typeof bespokeControlProblemsOf;
+  droppedProps: typeof droppedPropProblemsOf;
+  actionLost: typeof actionLostProblemsOf;
 };
 
 const defaultRunners: SlowRunners = {
@@ -44,6 +65,9 @@ const defaultRunners: SlowRunners = {
     return typeof checked === 'string' ? checked : checked.states;
   },
   visibleChange: visibleChangeProblemsOf,
+  controlState: bespokeControlProblemsOf,
+  droppedProps: droppedPropProblemsOf,
+  actionLost: actionLostProblemsOf,
 };
 
 const merge = (into: Map<string, Problem[]>, from: Map<string, Problem[]>) => {
@@ -78,9 +102,9 @@ const comparedProblemsOf = async (options: {
 };
 
 /**
- * Runs the slow rules - `APP-SPEC`, `UNCOVERED-REGION`, `VISIBLE-CHANGE`, compare and the SDK-error watch - on the
- * product's parts that have one, or on `parts`, against one harness app, one browser at a time, and stores each
- * part's problems at the inputs it had when the run started.
+ * Runs the slow rules - the draw rules, then `APP-SPEC`, `UNCOVERED-REGION`, `VISIBLE-CHANGE`, compare and the SDK-error
+ * watch against one harness app - on the product's parts that have one, or on `parts`, one browser at a time, and
+ * stores each part's problems at the inputs it had when the run started.
  */
 export const runSlowChecks = async (options: {
   target: string;
@@ -109,90 +133,126 @@ export const runSlowChecks = async (options: {
     return found ? relative(root, found.file) : part;
   };
 
-  if (!harness || keys.length + (whole ? 1 : 0) === 0) return results;
-
-  if (harness.specs && (ruled(APP_SPEC_RULE).length > 0 || whole)) {
-    const parts = ruled(APP_SPEC_RULE).map((part) => {
-      const found = product.parts.find((candidate) => partKeyOf(candidate) === part);
-      const component = found ? linkedComponentOf(found) : null;
-
-      return { part, files: component === null ? [] : Object.keys(appFilesOf({ root, component })) };
-    });
-    const failures = await runners.specs({
-      root,
-      config: harness.specs,
-      files: whole ? [harness.app] : [...new Set(parts.flatMap(({ files }) => files))],
-    });
-
-    if (typeof failures === 'string')
-      results.set(PRODUCT_PART, [{ rule: APP_SPEC_RULE, file: harness.specs, message: failures }]);
-    else merge(results, appSpecProblemsOf({ parts, failures }));
-  }
-
-  const server: HarnessServer | string = await runners.start({ target, product });
-
-  if (typeof server === 'string') {
-    merge(
-      results,
-      new Map([
-        [
-          PRODUCT_PART,
-          [{ rule: VISIBLE_CHANGE_RULE, file: harness.map, message: `the harness app did not start: ${server}` }],
-        ],
+  const byPart = (problems: Problem[]) =>
+    new Map(
+      [...new Set(problems.map((problem) => partOfFile(product, problem.file)))].map((part) => [
+        part,
+        problems
+          .filter((problem) => partOfFile(product, problem.file) === part)
+          .map((problem) => ({ ...problem, file: relative(root, problem.file) })),
       ]),
     );
-  } else {
-    try {
-      if (harness.live && (ruled(UNCOVERED_REGION_RULE).length > 0 || whole)) {
-        const states = await runners.live({
-          target,
-          config,
-          product,
-          url: server.url,
-          pages: whole ? undefined : ruled(UNCOVERED_REGION_RULE),
-        });
 
-        merge(
-          results,
-          typeof states === 'string'
-            ? new Map([[PRODUCT_PART, [{ rule: UNCOVERED_REGION_RULE, file: harness.live, message: states }]]])
-            : uncoveredRegionProblemsOf({ product, live: harness.live, states }),
-        );
-      }
+  if (ruled(CONTROL_STATE_RULE).length > 0)
+    merge(results, byPart(await runners.controlState({ target, config, product, parts: ruled(CONTROL_STATE_RULE) })));
 
-      for (const part of ruled(COMPARE_RULE)) {
-        const problems = await comparedProblemsOf({
-          target,
-          config,
-          product,
-          part,
-          file: fileOf(part),
-          url: server.url,
-          shoot: runners.shoot,
-        });
+  if (ruled(DROPPED_PROP_RULE).length > 0)
+    merge(results, byPart(await runners.droppedProps({ target, config, product, parts: ruled(DROPPED_PROP_RULE) })));
 
-        if (problems.length > 0) results.set(part, [...(results.get(part) ?? []), ...problems]);
-      }
+  if (inputs[PRODUCT_PART]?.rules.includes(ACTION_LOST_RULE)) {
+    const lost = await runners.actionLost({
+      target,
+      config,
+      product,
+      invocation: repoInvocation({ root: target, subcommand: 'design' }),
+    });
 
-      if (ruled(VISIBLE_CHANGE_RULE).length > 0)
-        merge(
-          results,
-          await runners.visibleChange({
+    merge(
+      results,
+      new Map([[PRODUCT_PART, lost.map((problem) => ({ ...problem, file: relative(root, problem.file) }))]]),
+    );
+  }
+
+  if (harness && keys.length + (whole ? 1 : 0) > 0) {
+    if (harness.specs && (ruled(APP_SPEC_RULE).length > 0 || whole)) {
+      const parts = ruled(APP_SPEC_RULE).map((part) => {
+        const found = product.parts.find((candidate) => partKeyOf(candidate) === part);
+        const component = found ? linkedComponentOf(found) : null;
+
+        return { part, files: component === null ? [] : Object.keys(appFilesOf({ root, component })) };
+      });
+      const failures = await runners.specs({
+        root,
+        config: harness.specs,
+        files: whole ? [harness.app] : [...new Set(parts.flatMap(({ files }) => files))],
+      });
+
+      if (typeof failures === 'string')
+        results.set(PRODUCT_PART, [{ rule: APP_SPEC_RULE, file: harness.specs, message: failures }]);
+      else merge(results, appSpecProblemsOf({ parts, failures }));
+    }
+
+    const server: HarnessServer | string = await runners.start({ target, product });
+
+    if (typeof server === 'string') {
+      merge(
+        results,
+        new Map([
+          [
+            PRODUCT_PART,
+            [
+              {
+                rule: VISIBLE_CHANGE_RULE,
+                file: harness.map,
+                message: `the harness app did not start: ${server}`,
+              },
+            ],
+          ],
+        ]),
+      );
+    } else {
+      try {
+        if (harness.live && (ruled(UNCOVERED_REGION_RULE).length > 0 || whole)) {
+          const states = await runners.live({
             target,
             config,
-            product: product.name,
-            harnessMap: harness.map,
-            base: options.base,
-            parts: ruled(VISIBLE_CHANGE_RULE),
+            product,
+            url: server.url,
+            pages: whole ? undefined : ruled(UNCOVERED_REGION_RULE),
+          });
+
+          merge(
+            results,
+            typeof states === 'string'
+              ? new Map([[PRODUCT_PART, [{ rule: UNCOVERED_REGION_RULE, file: harness.live, message: states }]]])
+              : uncoveredRegionProblemsOf({ product, live: harness.live, states }),
+          );
+        }
+
+        for (const part of ruled(COMPARE_RULE)) {
+          const problems = await comparedProblemsOf({
+            target,
+            config,
+            product,
+            part,
+            file: fileOf(part),
+            url: server.url,
             shoot: runners.shoot,
-            start: (asked) =>
-              asked.target === target
-                ? Promise.resolve({ url: server.url, stop: async () => undefined })
-                : runners.start(asked),
-          }),
-        );
-    } finally {
-      await server.stop();
+          });
+
+          if (problems.length > 0) results.set(part, [...(results.get(part) ?? []), ...problems]);
+        }
+
+        if (ruled(VISIBLE_CHANGE_RULE).length > 0)
+          merge(
+            results,
+            await runners.visibleChange({
+              target,
+              config,
+              product: product.name,
+              harnessMap: harness.map,
+              base: options.base,
+              parts: ruled(VISIBLE_CHANGE_RULE),
+              shoot: runners.shoot,
+              start: (asked) =>
+                asked.target === target
+                  ? Promise.resolve({ url: server.url, stop: async () => undefined })
+                  : runners.start(asked),
+            }),
+          );
+      } finally {
+        await server.stop();
+      }
     }
   }
 
@@ -229,12 +289,24 @@ export const checkSlow = async (options: {
 
     const product = resolveProduct({ target: options.target, name, config: entry });
     const results = await runSlowChecks({ ...options, product });
+    const found = [...results.entries()].flatMap(([part, problems]) => problems.map((problem) => ({ part, problem })));
+    const baselined = ruleBaselineOf({
+      product,
+      problems: found.map(({ problem }) => problem),
+      checked: (rule, part) => isSlowRule(rule) && (!options.parts || options.parts.includes(part)),
+    });
 
-    for (const [part, problems] of results)
-      for (const problem of problems)
-        console.log(`${name} ${part}: ${problem.rule} ${problem.file}: ${problem.message}`);
+    baselined.lines.forEach((line) => console.log(line));
 
-    failed += [...results.values()].reduce((sum, problems) => sum + problems.length, 0);
+    for (const problem of baselined.problems) {
+      const part = found.find((hit) => hit.problem === problem)?.part ?? partOfFile(product, problem.file);
+
+      console.log(
+        `${name} ${part}: ${problem.rule} ${relative(options.target, resolve(options.target, problem.file))}: ${problem.message}`,
+      );
+    }
+
+    failed += baselined.problems.length;
   }
 
   const seconds = Math.round((Date.now() - started) / 1000);

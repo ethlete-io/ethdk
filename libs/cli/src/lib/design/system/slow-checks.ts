@@ -2,18 +2,36 @@ import { execFileSync } from 'child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join, resolve } from 'path';
 import { appFilesOf } from './app-files';
-import { COMPARE_RULE, SDK_ERROR_RULE, SlowProblemsOf } from './build-ready-contract';
+import {
+  ACTION_LOST_RULE,
+  COMPARE_RULE,
+  CONTROL_STATE_RULE,
+  DROPPED_PROP_RULE,
+  SDK_ERROR_RULE,
+  SlowProblemsOf,
+} from './build-ready-contract';
 import { designHashOf, fileHashesOf, hashOfFiles, sha16 } from './design-hash';
 import { harnessOf } from './harness-map';
+import { READY_FILE, readReady } from './part-ready';
 import { Problem } from './problem';
 import { repoRootOf } from './reachable-files';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { APP_SPEC_RULE } from './rules/app-spec';
 import { UNCOVERED_REGION_RULE } from './rules/uncovered-region';
 import { VISIBLE_CHANGE_RULE } from './rules/visible-change';
+import { unbaselinedProblemsOf } from './rule-baseline';
 import { partLinkOf } from './sketch/part-definition';
 
 export const PRODUCT_PART = '(product)';
+
+export const isDrawRule = (rule: string) => [CONTROL_STATE_RULE, DROPPED_PROP_RULE, ACTION_LOST_RULE].includes(rule);
+
+/** Whether the `--slow` set runs `rule`, so `check --rules` does not. */
+export const isSlowRule = (rule: string) =>
+  isDrawRule(rule) ||
+  [APP_SPEC_RULE, UNCOVERED_REGION_RULE, VISIBLE_CHANGE_RULE, COMPARE_RULE, SDK_ERROR_RULE].includes(rule);
+
+const DECLARES_CONTROLS = /\bcontrols\s*:/u;
 
 /** One part's slow-rule problems and the input hash they were found at. */
 export type SlowEntry = { hash: string; problems: Problem[]; at: string };
@@ -123,6 +141,20 @@ type PartContext = {
   harness: Exclude<ReturnType<typeof harnessOf>, string>;
   pages: Set<string> | null;
   base: string;
+  designs: Map<string, string>;
+};
+
+const designOf = (context: PartContext, part: ResolvedPart) => {
+  const key = partKeyOf(part);
+  const known = context.designs.get(key);
+
+  if (known !== undefined) return known;
+
+  const { hash } = designHashOf({ product: context.product, part });
+
+  context.designs.set(key, hash);
+
+  return hash;
 };
 
 const contextOf = (product: ResolvedProduct, base?: string): PartContext => {
@@ -136,16 +168,21 @@ const contextOf = (product: ResolvedProduct, base?: string): PartContext => {
     harness,
     pages: livePagesOf(root, harness?.live),
     base: base ?? (harness ? defaultBaseOf({ root, branch: harness.baseBranch }) : ''),
+    designs: new Map(),
   };
 };
 
 const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
   const { product, root, harness, pages, base } = context;
   const key = partKeyOf(part);
-  const component = harness ? linkedComponentOf(part) : null;
-  const design = designHashOf({ product, part }).hash;
-  const app = component === null ? {} : appFilesOf({ root, component });
+  const own = part.origin !== 'base';
+  const linked = linkedComponentOf(part);
+  const component = harness ? linked : null;
+  const design = designOf(context, part);
+  const app = linked === null ? {} : appFilesOf({ root, component: linked });
   const rules = [
+    ...(own && !key.startsWith('pages/') && DECLARES_CONTROLS.test(part.source) ? [CONTROL_STATE_RULE] : []),
+    ...(own && linked !== null && existsSync(resolve(root, linked)) ? [DROPPED_PROP_RULE] : []),
     ...(component !== null && harness?.specs ? [APP_SPEC_RULE] : []),
     ...(pages?.has(key) ? [UNCOVERED_REGION_RULE] : []),
     ...(component !== null ? [VISIBLE_CHANGE_RULE] : []),
@@ -179,20 +216,30 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
   };
 };
 
+const actionsRecordedIn = (product: ResolvedProduct) =>
+  Object.values(readReady(product.dir)).some((record) => (record.actions ?? []).length > 0);
+
 const productInputsOf = (context: PartContext, parts: Record<string, SlowInputs>): SlowInputs => {
-  const { root, harness, base } = context;
-
-  if (!harness) return { rules: [], hash: '' };
-
+  const { product, root, harness, base } = context;
+  const actions = actionsRecordedIn(product);
   const rules = [
-    ...(harness.specs ? [APP_SPEC_RULE] : []),
-    ...(harness.live ? [UNCOVERED_REGION_RULE] : []),
-    VISIBLE_CHANGE_RULE,
+    ...(harness?.specs ? [APP_SPEC_RULE] : []),
+    ...(harness?.live ? [UNCOVERED_REGION_RULE] : []),
+    ...(harness ? [VISIBLE_CHANGE_RULE] : []),
+    ...(actions ? [ACTION_LOST_RULE] : []),
   ];
-  const files = fileHashesOf(
-    root,
-    [harness.map, harness.live, harness.specs].flatMap((file) => (file ? [resolve(root, file)] : [])),
-  );
+
+  if (rules.length === 0) return { rules, hash: '' };
+
+  const files = fileHashesOf(root, [
+    ...(harness ? [harness.map, harness.live, harness.specs] : []).flatMap((file) =>
+      file ? [resolve(root, file)] : [],
+    ),
+    ...(actions ? [join(product.dir, READY_FILE)] : []),
+  ]);
+  const designs = actions
+    ? product.parts.filter((part) => part.origin !== 'base').map((part) => designOf(context, part))
+    : [];
 
   return {
     rules,
@@ -200,8 +247,9 @@ const productInputsOf = (context: PartContext, parts: Record<string, SlowInputs>
       [
         rules.join(','),
         hashOfFiles(files),
-        base,
+        harness ? base : '',
         ...Object.entries(parts).map(([part, { hash }]) => `${part}=${hash}`),
+        ...designs,
       ].join('\0'),
     ),
   };
@@ -247,5 +295,7 @@ export const slowProblemsOf: SlowProblemsOf = ({ product, part }) => {
 
   const entry = readSlowCache(product)[part];
 
-  return entry?.hash === inputs.hash ? entry.problems : 'pending';
+  if (entry?.hash !== inputs.hash) return 'pending';
+
+  return unbaselinedProblemsOf(product, entry.problems);
 };

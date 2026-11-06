@@ -3618,14 +3618,20 @@ VISIBLE-CHANGE, COMPARE and SDK-ERROR. The draw rules (CONTROL-STATE, DROPPED-PR
 in a manual full `design check`. Tool fix: the draw rules join the `--slow` set with the per-part input-hash cache;
 the commit of a new rule runs it over every product and baselines what it finds (ADR 0201, B401). Picture fix: the
 rail bubble becomes its own control part `components/rail-bubble`, as a sketch (queued for c8).
-**B401 as built (cb, uncommitted sha in the commit message):** `rule-baseline.json` per product (rule -> `<part>: <place>`
+**B401 as built (cb):** `rule-baseline.json` per product (rule -> `<part>: <place>`
 -> `{ finding, sketch }`, `rule-baseline.ts`, shrink check shared with the implementation baseline in
 `baseline-history.ts`). `check --rules`, `--slow` and full `check` pass a listed hit and print it as `baselined (ADR
 0201)`; a new hit, an entry that no longer hits where its rule ran, and an added entry fail. The draw rules run in
 `--slow` with the slow input-hash cache (also without a harness); build-ready skips baselined slow hits. Baseline:
 studio 2 CONTROL-STATE (shell-main `section`, `product`) and 21 DROPPED-PROP (canvas-frames 4, sketches 9, system 8),
-all on finding 489; sdk and studio-lab none. Verified: specs with bite, `check --rules` on all three products, `check
---slow` on studio-lab and studio. Not verified: the pre-push gate end to end; no CLI flag writes the baseline yet.
+all on finding 489; sdk and studio-lab none. Verified: specs with bite, the draw rules over all three products from
+the built dist, `check --rules` on all three (23 baselined lines, exit 0), `check --slow` on studio-lab. Not verified:
+`check --slow` on studio (cut at 15 min inside the harness VISIBLE-CHANGE pass), the pre-push gate end to end. Not done: the writer flag
+`design check --rules --baseline <finding>` (a follow-up slice once c0's resident block in `design-command.ts` settles).
+Until then no in-repo script writes a new rule's baseline: call `writeRuleBaseline({ product, problems, entry: { finding,
+sketch } })` from `system/rule-baseline.ts` by hand, as a `node -e` one-liner over the built
+`dist/libs/cli/src/lib/design/system/rule-baseline.js` with the product from `resolveProduct` and the problems of the
+rule's runner (e.g. `droppedPropProblemsOf`).
 
 490\. The title bar draws the code notice only for `linux-full` and `windows`; macOS has `macos` and `macos-update` but
 no notice state, and `linux-left` / `linux-close` have no notice either (Tom, 2026-11-06: "wieso machen wir diese
@@ -3755,6 +3761,15 @@ instead of skipping; (3) `design check --part` passes and writes no record witho
 doc-agent decision under ADR 0203): a passing compare plus the part's own passing check writes the record that clears
 IMPLEMENTATION-UNCOMPARED and `task --verify`; build-ready keeps its embedded chain for `design task`; the action run
 skips parts without an `implements` link; `check --part` prints why it wrote no record.
+**As built (498, builder c0, 2026-11-06):** `recordBuildReady` (`part-build-ready.ts`) writes and drops the check
+record on the part's own check (open points, rules, slow results incl. COMPARE, actions) only; an embedded part that is
+not build-ready keeps the host from build-ready (`design task`), not from its record, so `task --verify` (compare +
+actions + implemented record) runs once the part's own check passes. `partActionFailuresOf` (`actions-command.ts`)
+skips a part without an `implements` link with one line `actions <part>: skipped - no implements link, nothing to
+click`. `recordBuildReady` takes `onNoRecord` and names why a part has no record (`NO RECORD <product> <part>:
+<kind>: <text> (+n more)` or `the actions did not run`). Verified: specs with bite in `part-build-ready.spec.ts` and
+`part-ready.spec.ts`. Not done: the one-line `onNoRecord` wiring for `check --part` in `check-system.ts` waits for cb's
+B401 commit of that file.
 
 499\. Tom, 2026-11-06 12:08: "den hat er schon seit 71m gezeichnet aber danke... du merkst selbst wie lahm wir schon
 wieder sind". The sketch `components/title-bar@notice-hint` had its variants written at 10:56; at 12:07 c8 still waited
@@ -3765,3 +3780,16 @@ files, and two heavy design runs from two builders share the CPU with no queue. 
 goes to Tom as soon as its variants are drawn, checks run behind it; tool (c0/cb, ADR 0204) - sketch check/ready go
 through the resident process (S6, ≤ 10 s), which queues heavy runs of all callers instead of running them side by side,
 and Studio shows a drawn sketch at once with its check state beside it.
+
+500\. Tom's screenshot of the sketch view, 2026-11-06 12:15, `components/title-bar@notice-hint` at "Fit" (54 %): (1) about
+550 px of empty canvas above the variant heads; (2) "Fit" does not fit: variant b is cut at the right edge and variant c
+is not visible at all, so Tom cannot compare the three; (3) the "Aktuell" column shows only the right end of the title
+bar (window controls), the left part is cropped; (4) in variant b the five notice rows are twice as tall with an empty
+band under the bar: the tooltip is drawn there (c8, `design shot --variant b`), but at 65-77 % of the 1440 px width,
+inside the part (2) cuts off; the merged notice state has the same empty 48 px band (`pb-12` in shared chrome); (5) "Keine Aktivität" while c8's `sketch check` was
+running. The sketch view is `pages/sketches`, a drift baseline entry of ADR 0205 (finding 495), so its compare could
+not flag this. Why no tool caught it: no check renders a real sketch of a wide part (a 1900 px title bar, 21856 px shot)
+in the sketch view and asserts that every variant column is inside the viewport at "Fit"; the sketch check checks the
+variant frames, not the view Tom picks in; no check flags a variant whose subject sits outside the visible part of its column. Fix: c8 takes
+`pages/sketches` out of the baseline first (fit width, top gap, Aktuell crop, activity state), with a Studio e2e that
+opens a wide-part sketch at Fit and asserts every column visible.

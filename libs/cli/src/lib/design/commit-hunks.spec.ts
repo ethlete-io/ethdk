@@ -196,8 +196,16 @@ const SPLIT = [
   'ready.json',
   'implemented.json',
   'inventory.json',
+  'implementation-baseline.json',
 ];
-const REFUSED = ['config.json', 'overrides.json', 'sign-in.json', 'add-a-film.json', 'review-a-film.json'];
+const REFUSED = [
+  'config.json',
+  'overrides.json',
+  'sign-in.json',
+  'add-a-film.json',
+  'review-a-film.json',
+  'rule-baseline.json',
+];
 
 describe('designCommitHunks over every shared file under .ethlete/design', () => {
   afterEach(() => vi.restoreAllMocks());

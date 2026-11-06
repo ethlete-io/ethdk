@@ -4,6 +4,7 @@ import ts from 'typescript';
 import { INTERACTIONS } from '../force-interactions';
 import { createDesignServer } from '../serve';
 import { DesignConfig } from '../paths';
+import { DROPPED_PROP_RULE } from './build-ready-contract';
 import { productSampledPropsOf } from './harness-samples';
 import { designOnlyPropsOf } from './part-compare';
 import { Problem } from './problem';
@@ -139,6 +140,7 @@ export const droppedPropProblemsOf = async (options: {
   config: DesignConfig;
   product: ResolvedProduct;
   part?: string;
+  parts?: readonly string[];
 }): Promise<Problem[]> => {
   const { target, config, product } = options;
   const candidates = product.parts.flatMap((part) => {
@@ -147,7 +149,13 @@ export const droppedPropProblemsOf = async (options: {
     const path = link.kind === 'component' ? link.path : link.kind === 'route' ? link.component : null;
     const file = path === null ? null : resolve(target, path);
 
-    if ((options.part && key !== options.part) || part.origin === 'base' || file === null || !existsSync(file))
+    if (
+      (options.part && key !== options.part) ||
+      (options.parts && !options.parts.includes(key)) ||
+      part.origin === 'base' ||
+      file === null ||
+      !existsSync(file)
+    )
       return [];
 
     const inputs = componentInputsOf(readFileSync(file, 'utf8'));
@@ -174,9 +182,10 @@ export const droppedPropProblemsOf = async (options: {
 
       for (const [state, dropped] of droppedStatePropsOf({ states, inputs, sampled }))
         problems.push({
-          rule: 'DROPPED-PROP',
+          rule: DROPPED_PROP_RULE,
           file: part.file,
           message: `${state}: ${droppedPropsMessageOf(dropped)}`,
+          at: state,
         });
     }
 

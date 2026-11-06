@@ -19,6 +19,13 @@ export const COMPARE_RULE = 'COMPARE';
 /** The rule of a slow problem from the harness SDK-error watch; it blocks as `sdk-error`. */
 export const SDK_ERROR_RULE = 'SDK-ERROR';
 
+/** The draw rules, which load or draw each part's states. */
+export const CONTROL_STATE_RULE = 'CONTROL-STATE';
+
+export const DROPPED_PROP_RULE = 'DROPPED-PROP';
+
+export const ACTION_LOST_RULE = 'ACTION-LOST';
+
 export const blockerKindOfRule = (rule: string): BlockerKind =>
   rule === COMPARE_RULE ? 'compare' : rule === SDK_ERROR_RULE ? 'sdk-error' : 'problem';
 

@@ -4,6 +4,7 @@ import { DesignConfig } from '../paths';
 import { createDesignServer } from '../serve';
 import { createPartShooter } from '../shot';
 import { createDrawQueue } from '../thumb';
+import { CONTROL_STATE_RULE } from './build-ready-contract';
 import { compareFrameOf } from './compare-command';
 import { declaredControlsOf, isInteractionState } from './complete';
 import { Problem } from './problem';
@@ -66,10 +67,14 @@ export const bespokeControlProblemsOf = async (options: {
   config: DesignConfig;
   product: ResolvedProduct;
   part?: string;
+  parts?: readonly string[];
 }): Promise<Problem[]> => {
   const { target, config, product } = options;
   const own = product.parts.filter(
-    (part) => part.origin !== 'base' && (!options.part || partKeyOf(part) === options.part),
+    (part) =>
+      part.origin !== 'base' &&
+      (!options.part || partKeyOf(part) === options.part) &&
+      (!options.parts || options.parts.includes(partKeyOf(part))),
   );
 
   if (own.length === 0 || !(await chromiumOf(target))) return [];
@@ -146,7 +151,12 @@ export const bespokeControlProblemsOf = async (options: {
       }
 
       for (const control of found)
-        problems.push({ rule: 'CONTROL-STATE', file: part.file, message: bespokeControlMessageOf(key, control) });
+        problems.push({
+          rule: CONTROL_STATE_RULE,
+          file: part.file,
+          message: bespokeControlMessageOf(key, control),
+          at: control.id,
+        });
     }
 
     return problems;

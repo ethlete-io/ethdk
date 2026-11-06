@@ -90,6 +90,7 @@ describe('ACTION-LOST', () => {
       {
         rule: 'ACTION-LOST',
         file: '.ethlete/design/app-a/ready.json',
+        at: 'components/gone emit:dismiss',
         message:
           'action "emit:dismiss" is in the check record of components/gone from 2026-10-01 and exists nowhere in app-a now - draw it again, or confirm the removal: delete it from the actions of components/gone in ready.json and run et design check --product app-a',
       },

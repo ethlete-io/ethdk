@@ -1,12 +1,11 @@
 import { resolve } from 'path';
 import { DesignConfig } from '../paths';
 import { createDesignServer } from '../serve';
+import { ACTION_LOST_RULE } from './build-ready-contract';
 import { READY_FILE, readReady } from './part-ready';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { productModuleIdOf } from './system-modules';
-
-export const ACTION_LOST_RULE = 'ACTION-LOST';
 
 /** Loads the module of a part file as `product` draws it. */
 export type PartModuleLoader = (options: { file: string; product: string }) => Promise<unknown>;
@@ -118,6 +117,7 @@ export const actionLostOf = (options: {
         .map((key) => ({
           rule: ACTION_LOST_RULE,
           file,
+          at: `${part} ${key}`,
           message: `action "${key}" is in the check record of ${part} from ${record.at.slice(0, 10)} and exists nowhere in ${product.name} now - draw it again, or confirm the removal: delete it from the actions of ${part} in ${READY_FILE} and run ${invocation} check --product ${product.name}`,
         }));
     });

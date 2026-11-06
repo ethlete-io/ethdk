@@ -17,11 +17,19 @@ import { doneParts, gitDiffFilesOf } from './part-task';
 import { actionsRerunOf, readyMarkOf, readyPartsOf } from './part-ready';
 import { BuildReadyInputs, recordBuildReady } from './part-build-ready';
 import { partActionFailuresOf } from './actions-command';
-import { staleLineOf, stalePartsOf, uncomparedAppProblemsOf, upgradeLegacyMarksOf } from './stale-parts';
+import { ruleBaselineLinesOf, ruleBaselineOf } from './rule-baseline';
+import { isDrawRule, isSlowRule } from './slow-checks';
+import {
+  staleLineOf,
+  stalePartsOf,
+  UNCOMPARED_RULE,
+  uncomparedAppProblemsOf,
+  upgradeLegacyMarksOf,
+} from './stale-parts';
 import { Problem } from './problem';
 import { staleDistWarningsOf } from './stale-dist';
 import { instantLinesOf, partPointsOf, readOpenPoints, unlinkedPartsOf } from './read-open-points';
-import { partKeyOf, resolveProduct, ResolvedProduct } from './resolve-product';
+import { partKeyOf, partOfFile, PRODUCT_PART_KEY, resolveProduct, ResolvedProduct } from './resolve-product';
 import { canonicalClassesOf } from './rules/canonical-class';
 import { componentCopiesOf } from './rules/component-copy';
 import { deniedClassesOf } from './rules/denied-class';
@@ -110,8 +118,8 @@ export const ruleLinesOf = (target: string, product: ResolvedProduct) =>
   ruleProblemsOf(product).map((problem) => lineOf(target, problem));
 
 /**
- * Runs only the static rules of `products` - no draw, no tsc - and prints each problem a product's own files hold; exits
- * 1 on one. With `base`, it also flags each app file changed since `base` that moved since its part's implemented record.
+ * Runs only the static rules of `products` - no draw, no tsc - and prints each problem a product's own files hold
+ * that its rule baseline does not list, and each baselined hit; exits 1 on a problem. With `base`, it also flags each app file changed since `base` that moved since its part's implemented record.
  */
 export const checkRules = (options: {
   target: string;
@@ -135,11 +143,20 @@ export const checkRules = (options: {
     }
 
     const product = resolveProduct({ target, name, config: entry });
+    const isStatic = (rule: string) => !isSlowRule(rule) && rule !== UNCOMPARED_RULE;
+    const baselined = ruleBaselineOf({
+      product,
+      problems: ruleProblemsOf(product).filter((problem) => !isInBasePart(product, problem.file)),
+      checked: isStatic,
+    });
     const problems = [
-      ...ruleProblemsOf(product),
+      ...baselined.problems,
       ...(changed.length > 0 ? uncomparedAppProblemsOf({ product, changed, invocation }) : []),
     ].filter((problem) => !isInBasePart(product, problem.file));
 
+    [...baselined.lines, ...ruleBaselineLinesOf(product, (rule) => !isStatic(rule))].forEach((line) =>
+      console.log(line),
+    );
     problems.forEach((problem) => console.error(lineOf(target, problem)));
     failed += problems.length;
   }
@@ -204,16 +221,9 @@ type CheckOptions = {
   chromiumOf?: typeof chromiumOf;
 };
 
-const PRODUCT_LEVEL = '(product)';
+const PRODUCT_LEVEL = PRODUCT_PART_KEY;
 
 const APP_CODE = 'app code:';
-
-/** The key of the part whose folder holds `file`, the innermost one, or `(product)` for a file outside every part. */
-export const partOfFile = (product: ResolvedProduct, file: string): string =>
-  product.parts
-    .map((part) => ({ key: partKeyOf(part), dir: dirname(part.file) }))
-    .filter(({ dir }) => !relative(dir, file).startsWith('..'))
-    .sort((a, b) => b.dir.length - a.dir.length)[0]?.key ?? PRODUCT_LEVEL;
 
 /** The tally key of `file`: its part, `(product)` for a design file outside every part, or `app code:<file>` for app code. */
 const tallyKeyOf = (target: string, { product, file }: { product: ResolvedProduct; file: string }) => {
@@ -781,17 +791,23 @@ export const checkSystemRendered = async (options: CheckOptions) => {
 
       if (counted) counted.warnings += 1;
     });
-    const problems = [
-      ...(await droppedPropProblemsOf({ ...options, product: resolved })),
-      ...(await bespokeControlProblemsOf({ ...options, product: resolved })),
-      ...(await actionLostProblemsOf({
-        ...options,
-        product: resolved,
-        invocation: options.invocation ?? repoInvocation({ root: options.target, subcommand: 'design' }),
-      })),
-      ...capabilities.errors,
-      ...(editProblems.get(name) ?? []),
-    ].filter(isWanted);
+    const drawn = ruleBaselineOf({
+      product: resolved,
+      problems: [
+        ...(await droppedPropProblemsOf({ ...options, product: resolved })),
+        ...(await bespokeControlProblemsOf({ ...options, product: resolved })),
+        ...(await actionLostProblemsOf({
+          ...options,
+          product: resolved,
+          invocation: options.invocation ?? repoInvocation({ root: options.target, subcommand: 'design' }),
+        })),
+      ].filter(isWanted),
+      checked: (rule, part) => isDrawRule(rule) && (!options.part || part === options.part),
+    });
+
+    drawn.lines.forEach((line) => console.log(line));
+
+    const problems = [...drawn.problems, ...capabilities.errors, ...(editProblems.get(name) ?? [])].filter(isWanted);
 
     for (const problem of problems) {
       console.error(lineOf(options.target, problem));
