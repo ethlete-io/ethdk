@@ -37,6 +37,10 @@ const report = (result) => {
   process.stderr.write(result.stderr ?? '');
 };
 
+/** The baseline entries a passing check printed, so a green push still lists them (ADR 0205). */
+export const baselinedLines = (result) =>
+  `${result.stdout ?? ''}\n${result.stderr ?? ''}`.split('\n').filter((line) => line.startsWith('baselined ('));
+
 export const checkDesignRules = (root, base, head) => {
   const configPath = join(root, CONFIG);
 
@@ -67,7 +71,13 @@ export const checkDesignRules = (root, base, head) => {
     `${base}..${head}`,
   ]);
 
-  if (check.status === 0) return 0;
+  if (check.status === 0) {
+    const baselined = baselinedLines(check);
+
+    if (baselined.length > 0) console.log(baselined.join('\n'));
+
+    return 0;
+  }
 
   report(check);
   console.error(`design-rules-gate: design check --rules fails for ${products.join(', ')} (above).`);

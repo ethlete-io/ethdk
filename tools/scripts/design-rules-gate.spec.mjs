@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { productsToCheck } from './design-rules-gate.mjs';
+import { baselinedLines, productsToCheck } from './design-rules-gate.mjs';
 
 const config = {
   products: {
@@ -27,4 +27,17 @@ test('checks every product when the design rules or the config change', () => {
 test('checks nothing for a range outside every product', () => {
   assert.deepEqual(productsToCheck(config, ['apps/ethlete-studio-e2e/x.ts', 'libs/components/src/a.ts']), []);
   assert.deepEqual(productsToCheck(undefined, ['apps/ethlete-studio/x.ts']), []);
+});
+
+test('keeps the baseline lines of a passing check from either stream', () => {
+  const result = {
+    stdout: 'checked 12 parts\nbaselined (ADR 0205): pages/system - finding 495\n',
+    stderr: 'baselined (ADR 0205): pages/sketches - finding 495\n',
+  };
+
+  assert.deepEqual(baselinedLines(result), [
+    'baselined (ADR 0205): pages/system - finding 495',
+    'baselined (ADR 0205): pages/sketches - finding 495',
+  ]);
+  assert.deepEqual(baselinedLines({ stdout: 'ok\n' }), []);
 });
