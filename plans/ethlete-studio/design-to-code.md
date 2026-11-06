@@ -4048,6 +4048,18 @@ state is never shot again; (c) a compare of several parts in one call shares one
 compare of a studio page <= 10 s, and a run over target prints its slowest phase at the end. Process: the builder
 never blocks on a batch of heavy runs in the foreground, and every wait loop has a timeout.
 
+B416 phase 1+2 (in progress, then as built in the `perf(cli)` commit that adds this note): measured first - each app
+shot of pages/sketches spent 10.05 s in `settledPanesOf` waiting for an overlay pane its design draws and the app never
+opens (`PANE_COUNT_TIMEOUT_MS` 10 s); load 0.1-0.2 s, screenshot 0.06 s. Built: per-shot timing phases
+(`compare-app-shot <state> load|settle|screenshot|...`); the pane wait capped at 1 s, ending early once the open panes
+settle with no new one; a state whose app opened fewer panes prints `<state> note: the design draws N overlay panes,
+the app opened M ...` (a note, not a failure: the 0 px pictures of other sessions had the same mismatch); design and
+app shots draw 4 at once (`INSPECTS_AT_ONCE`) through the draw queue, shots in state order, a string pointer open still
+aborts. Numbers (studio, read-only, resident off, harness cached): pages/sketches 340.8 s -> 19.7-25.7 s
+(compare-app-shots 317.7 -> 5.0-6.0 s, design shots 10.1 -> 5.6-7.0 s, compare-actions 8.2-8.7 s untouched); pages/start
+-> 2.5 s. Verified: specs (concurrency > 1 with order kept, fails at limit 1; pane cap and note), tsc, lint. Not
+verified: warm resident numbers (not restarted, shared). Still over 10 s: design shots (S4 cache) and compare-actions.
+
 522\. Tom (2026-11-06): "wir sind noch immer nicht mit den perf themen durch?" ADR 0199 put the performance work
 first, as one block, because a 44.9 s compare slows every step. The doc agent's queue then ran S6 -> 515 -> accepts ->
 514/518 -> title-bar -> 511/512 -> B412 and only then S4, S7, S8, S5: feature and process slices that each came from a

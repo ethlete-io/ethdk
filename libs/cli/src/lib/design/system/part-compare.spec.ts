@@ -376,6 +376,27 @@ describe('part compare', () => {
     expect(lines).toEqual(['a ok']);
   });
 
+  it('prints the missing-panes note of a state under its line, without failing an equal picture', async () => {
+    const target = checkout();
+    const lines = output();
+
+    expect(
+      await comparePart({
+        target,
+        config: {},
+        product: resolveProduct({ target, name: 'app-a', config: {} }),
+        part: 'components/chip',
+        url: 'u',
+        only: null,
+        shoot: async () => ({
+          states: { a: {} },
+          shots: [{ state: 'a', design: pngOf(1, 1, () => RED), app: pngOf(1, 1, () => RED), note: 'panes missing' }],
+        }),
+      }),
+    ).toEqual({ green: true, states: { a: {} } });
+    expect(lines).toEqual(['a ok', 'a note: panes missing']);
+  });
+
   it('refuses without a go, and exits 0 only when every state is ok', async () => {
     const target = checkout();
     const lines = output();

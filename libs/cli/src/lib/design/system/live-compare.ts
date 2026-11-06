@@ -420,7 +420,7 @@ export const liveShotOf = async (options: {
           `${host} measures ${Math.round(clip.width)}x${Math.round(clip.height)} on ${address}, not the ${size.width}x${size.height} of the design`,
         );
 
-      if (!(await settledPanesOf({ page, count: 0, timeout: Math.max(deadline - Date.now(), 0) })))
+      if (!(await settledPanesOf({ page, count: 0, timeout: Math.max(deadline - Date.now(), 0) })).settled)
         throw new LiveError(`the app page ${address} did not settle its overlay panes within ${timeout} ms`);
 
       if (options.frozen?.length) await page.evaluate(freezeAnimationsScriptOf(options.frozen));
