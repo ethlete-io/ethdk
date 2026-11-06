@@ -4234,3 +4234,16 @@ sample variant a changes only `fit`; merge `open`/`merging` and the five system 
 gate not yet run. ec316a94a opens sketch `pages/sketches@all-states` (ADR 0010, finding 544) with a = built look, b =
 fold row at the bottom, c = count chip on the question line; waits for Tom's pick. Fact for 544: the app has one
 `showAllStates` button, compare counts it twice (likely once per state); checked with 543 (1) and 486.
+
+Built (2026-11-06, Mac): 4aef2e30f push safety. `.husky/pre-commit` runs `design-rules-gate.mjs --staged` (ADR 0011,
+finding 541): 0.2 s with no staged design file, 4.3-7.6 s on a real staged part file at load 110 (< 5 s target not
+confirmed). `yarn push:slice` pushes to `slice/<name>` and opens a draft PR into `next`; ci-pr.yml already runs on
+every PR. Not verified: a real `yarn push:slice`, a CI run with `--base`, a partly staged file (judged by its disk copy).
+
+545\. Builder (2026-11-06): CI "Static design rules" ran without `--base`, so IMPLEMENTATION-UNCOMPARED never ran in CI,
+although finding 541 assumed it did; fixed in 4aef2e30f. Why no tool caught it: no spec or check asserts which rules a
+CI step really runs, so a rule that needs an input silently does nothing. Tool fix (builder): `check --rules` prints
+the rules it skipped and why, and fails in CI (`CI=true`) when a rule is skipped for a missing input. Second gap: the
+pre-push design gate also refuses a `slice/*` push, so the draft-PR path of ADR 0216 is closed exactly while a push is
+held for the gate. Doc agent decision (applies ADR 0216): for `slice/*` refs the pre-push hook skips only the design
+gate; the draft PR's CI runs it and stays red until fixed; pushes to `next` and `main` keep the full hook.
