@@ -4325,3 +4325,14 @@ the new canvas e2e case "a part switch asks for its open points once" (2 + 2 req
 page-switch empty-frame time in headless Chromium and a curl against a served build (a second server would write into
 the checkout). Not cached: a rule input outside those folders (e.g. an app file outside the harness `src`)
 stays stale until a fingerprinted file changes. Details: `.claude/handoffs/agent-results/studio-frame-b.md`.
+
+Studio frame A (as built in the `perf(cli)` commit that adds this note, perf subagent, 2026-11-06): the shot URL no
+longer carries `view`/`rank`. Studio's `ShotBoard` posts the mounted shot URLs (active, shown) to `POST /__design/view`;
+the draw queue ranks by that board (active, shown, plain, asked under an older view), the URL params still work. The URL
+is keyed on session (Studio load), epoch and revision (edit spec: a part redraw changes the URL); the shot answer carries
+an ETag (304 on a match) and `private, max-age=3600`. A stable URL alone did not paint in the first frame: Chromium
+dropped the unreferenced picture from its memory cache, so `ShotBoard.hold` keeps the last 500 loaded pictures as
+`Image` objects. e2e `a part shown before paints every stored picture in the first frame` (canvas.e2e, not
+page-switch.e2e, which runs on the main checkout): before 0/2 pictures in rAF 1, after 2/2 in rAF 1 (+11-13 ms). Not
+measured: icons/logo and shell-main switch times. Not built: finding 523 timings line. Details:
+`.claude/handoffs/agent-results/studio-frame-a.md`.

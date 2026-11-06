@@ -389,7 +389,6 @@ export type FramesSource = {
   part: ListedPart;
   epoch?: number;
   revision?: number;
-  view?: number;
   surface?: string;
   color?: string;
 };
@@ -446,11 +445,10 @@ const pageFrameOf = (options: {
   sketch?: { target: string; variant: string };
   epoch?: number;
   revision?: number;
-  view?: number;
   surface?: string;
   color?: string;
 }) => {
-  const { port, product, page, sketch, epoch, revision, view, surface, color } = options;
+  const { port, product, page, sketch, epoch, revision, surface, color } = options;
   const state = page.states[0];
 
   if (state === undefined) return null;
@@ -465,7 +463,6 @@ const pageFrameOf = (options: {
     state,
     epoch,
     revision,
-    view,
     surface,
     color,
     ...(sketch ? { sketch: sketch.target, variant: sketch.variant } : {}),
@@ -515,7 +512,6 @@ const gridFrameOf = (options: {
   idOf: (cell: Cell, size?: string | number) => string;
   schemes: ColorScheme[];
   revision?: number;
-  view?: number;
 }): CanvasFrame => {
   const { grid, width, addressOf, placeOf, idOf, schemes, revision } = options;
 
@@ -554,7 +550,7 @@ const gridFrameOf = (options: {
  * renders, and one that does not load lists no states.
  */
 export const framesOf = (source: FramesSource): CanvasFrame[] => {
-  const { port, product, part, epoch, revision, view, surface, color } = source;
+  const { port, product, part, epoch, revision, surface, color } = source;
   const key = partKeyOf(part);
   const error = loadErrorOf(part.problems);
   const grid = part.layer === 'pages' || error ? undefined : part.grid;
@@ -569,7 +565,6 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
     state: state ?? '',
     epoch,
     revision,
-    view,
     surface,
     color,
     ...(interaction === REST ? {} : { interaction }),
@@ -865,7 +860,6 @@ export const sketchMatrixOf = ({
   now,
   epoch,
   revision,
-  view,
   surface,
   color,
 }: SketchFramesSource): SketchMatrix => {
@@ -1056,7 +1050,6 @@ export const sketchMatrixOf = ({
         state: state ?? '',
         epoch,
         revision,
-        view,
         surface,
         color,
         ...(column.key === CURRENT ? {} : { sketch: sketch.target, variant: column.key }),
@@ -1079,7 +1072,6 @@ export const sketchMatrixOf = ({
           preset: cell.preset,
           width: cell.preset ? undefined : cell.width,
           revision,
-          view,
         }),
         error: column.states.length > 0 ? undefined : column.error,
         ...(state === undefined
@@ -1178,7 +1170,6 @@ export const sketchMatrixOf = ({
             page,
             epoch,
             revision,
-            view,
             surface,
             color,
             ...(column.key === CURRENT ? {} : { sketch: { target: sketch.target, variant: column.key } }),
@@ -1260,7 +1251,6 @@ export const mergePreviewOf = ({
   rows = null,
   epoch,
   revision,
-  view,
   surface,
   color,
 }: MergePreviewSource): SketchMatrix => {
@@ -1294,7 +1284,6 @@ export const mergePreviewOf = ({
           state,
           epoch,
           revision,
-          view,
           surface,
           color,
           ...(column === 'merged' ? { sketch: sketch.target, variant } : {}),
@@ -1314,7 +1303,6 @@ export const mergePreviewOf = ({
             preset: cell.preset,
             width: cell.preset ? undefined : cell.width,
             revision,
-            view,
           }),
           schemes: schemesOf(product),
           error: rowError ?? (column === 'now' ? error : undefined),
@@ -1390,21 +1378,12 @@ export type CallFramesSource = {
   call: ListedCall;
   epoch?: number;
   revision?: number;
-  view?: number;
   surface?: string;
   color?: string;
 };
 
 /** One frame per variant of a legacy call, at the call's own frame width. A call that does not load gets one failed frame. */
-export const callFramesOf = ({
-  port,
-  call,
-  epoch,
-  revision,
-  view,
-  surface,
-  color,
-}: CallFramesSource): CanvasFrame[] => {
+export const callFramesOf = ({ port, call, epoch, revision, surface, color }: CallFramesSource): CanvasFrame[] => {
   if ('error' in call) {
     return [{ id: call.slug, src: 'about:blank', width: DEFAULT_CALL_WIDTH, label: call.slug, error: call.error }];
   }
@@ -1412,7 +1391,7 @@ export const callFramesOf = ({
   const width = call.frameWidth > 0 ? call.frameWidth : DEFAULT_CALL_WIDTH;
 
   return call.variants.map((variant) => {
-    const address = { port, slug: call.slug, variant: variant.key, epoch, revision, view, surface, color };
+    const address = { port, slug: call.slug, variant: variant.key, epoch, revision, surface, color };
 
     return {
       id: variant.key,
@@ -1442,7 +1421,6 @@ export const sketchRowsOf = ({
   variants,
   epoch,
   revision,
-  view,
   surface,
   color,
 }: Omit<SketchFramesSource, 'size' | 'interaction' | 'openRounds' | 'openStates' | 'hideWithdrawn' | 'now'> & {
@@ -1469,7 +1447,6 @@ export const sketchRowsOf = ({
           state,
           epoch,
           revision,
-          view,
           surface,
           color,
           ...(key === CURRENT ? {} : { sketch: sketch.target, variant: key }),

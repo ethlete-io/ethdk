@@ -40,6 +40,7 @@ import {
 } from '../canvas-frame';
 import { Rect, Size } from '../canvas-math';
 import { paintedFrame$ } from '../frame-paint';
+import { ShotRankDirective } from './shot-rank';
 import { ShotStateComponent, ShotStateDirective } from './shot-state';
 
 type HeightMessage = Extract<FrameMessage, { type: 'height' }>;
@@ -58,6 +59,7 @@ export const LIVE_REVEAL_TIMEOUT_MS = 3000;
         #shot
         #shotState="ethleteShot"
         [src]="screenshot"
+        [ethleteShotRank]="screenshot"
         [class.opacity-0]="painted()"
         (load)="readScreenshotSize($event)"
         (error)="loadEnd.emit()"
@@ -80,7 +82,7 @@ export const LIVE_REVEAL_TIMEOUT_MS = 3000;
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [ShotStateDirective, ShotStateComponent],
+  imports: [ShotStateDirective, ShotStateComponent, ShotRankDirective],
   host: {
     class: 'relative block',
     '[style.width.px]': 'cell().width ?? size()?.width ?? 0',

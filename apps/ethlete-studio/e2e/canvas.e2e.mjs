@@ -850,6 +850,87 @@ const CASES = [
     },
   },
   {
+    name: 'a part shown before paints every stored picture in the first frame',
+    pages: ['System'],
+    run: async (page) => {
+      const leafTexts = () =>
+        page.evaluate(() =>
+          [...document.querySelectorAll('[role="treeitem"][data-kind="leaf"]')].map((leaf) => leaf.textContent.trim()),
+        );
+      const open = async (text) => {
+        const at = (await leafTexts()).indexOf(text);
+
+        if (at < 0) throw new Error(`no part ${text} in the tree`);
+        await page.locator('[role="treeitem"][data-kind="leaf"]').nth(at).click();
+      };
+      const pictures = () =>
+        page.evaluate(
+          ({ CANVAS }) =>
+            [
+              ...(document
+                .querySelector(CANVAS)
+                ?.querySelectorAll('ethlete-canvas-frame img[src*="/__design/shot?"]') ?? []),
+            ].map((img) => ({ src: img.getAttribute('src'), loaded: img.complete && img.naturalWidth > 0 })),
+          { CANVAS },
+        );
+      const loadAll = async () => {
+        for (let poll = 0; poll < 120; poll++) {
+          await page.waitForTimeout(250);
+          const shown = await pictures();
+
+          if (shown.length > 0 && shown.every((picture) => picture.loaded)) return shown;
+        }
+
+        return pictures();
+      };
+      const firstPaint = (text) =>
+        page.evaluate(
+          ({ CANVAS, text }) =>
+            new Promise((done) => {
+              const leaves = [...document.querySelectorAll('[role="treeitem"][data-kind="leaf"]')];
+              const started = performance.now();
+              let frames = 0;
+              const sample = () => {
+                frames++;
+                const shown = [
+                  ...(document
+                    .querySelector(CANVAS)
+                    ?.querySelectorAll('ethlete-canvas-frame img[src*="/__design/shot?"]') ?? []),
+                ].map((img) => ({ src: img.getAttribute('src'), loaded: img.complete && img.naturalWidth > 0 }));
+
+                if (shown.length > 0 || frames > 30) done({ frames, ms: performance.now() - started, shown });
+                else requestAnimationFrame(sample);
+              };
+
+              leaves.find((leaf) => leaf.textContent.trim() === text)?.click();
+              requestAnimationFrame(sample);
+            }),
+          { CANVAS, text },
+        );
+      const unranked = (src) => src.replace(/&(view|rank)=[^&]*/gu, '');
+      const texts = (await leafTexts()).filter((text) => text);
+
+      if (texts.length < 2) return { ok: false, detail: 'fewer than two parts in the tree' };
+
+      const [first, second] = texts;
+
+      await open(first);
+      const seen = new Set((await loadAll()).filter((picture) => picture.loaded).map(({ src }) => unranked(src)));
+
+      await open(second);
+      await loadAll();
+
+      const back = await firstPaint(first);
+      const stored = back.shown.filter(({ src }) => seen.has(unranked(src)));
+      const empty = stored.filter((picture) => !picture.loaded);
+
+      return {
+        ok: seen.size > 0 && stored.length > 0 && empty.length === 0,
+        detail: `${first} <- ${second}: ${stored.length - empty.length}/${stored.length} stored pictures painted in rAF ${back.frames} (+${Math.round(back.ms)} ms), ${seen.size} seen`,
+      };
+    },
+  },
+  {
     name: 'pointer click on an empty area keeps the ring off',
     pages: ['System', 'Sketches', 'Inbox'],
     viewport: WIDE,

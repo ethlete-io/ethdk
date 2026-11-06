@@ -111,6 +111,7 @@ import { SKETCH_FILE } from './system/sketch/sketch';
 import { CheckSketches, createSketchChecker } from './system/sketch/sketch-checker';
 import { forgetUnchangedStates } from './system/sketch/unchanged-states';
 import { inventoryOf } from './system/inventory';
+import { SHOT_VIEW_PATH } from './shot-board';
 import { createDrawQueue, createThumbnailer, send, THUMB_PATH, ThumbMissingError } from './thumb';
 import { DeclaredMotion, motionMiddleware } from './motion-endpoint';
 import {
@@ -841,6 +842,7 @@ const designExplore = ({
       vite.middlewares.use(FORCE_PATH, forceMiddleware);
       vite.middlewares.use(THUMB_PATH, thumbs.middleware);
       vite.middlewares.use(SHOT_PATH, shots.middleware);
+      vite.middlewares.use(SHOT_VIEW_PATH, shots.viewMiddleware);
       vite.middlewares.use(
         MOTION_PATH,
         motionMiddleware({

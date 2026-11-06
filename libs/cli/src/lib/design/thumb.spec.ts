@@ -8,6 +8,7 @@ import {
   createThumbnailer,
   finished,
   openFrame,
+  sendShot,
 } from './thumb';
 
 const sent: Record<string, unknown>[] = [];
@@ -328,5 +329,35 @@ describe('finished', () => {
     expect(fade.finish).toHaveBeenCalled();
     expect(loop.finish).not.toHaveBeenCalled();
     expect(scrollFade.finish).not.toHaveBeenCalled();
+  });
+});
+
+describe('sendShot', () => {
+  const answer = (png: string, tag?: string) =>
+    new Promise<{ status: number; headers: Record<string, string>; body: unknown }>((done) => {
+      const headers: Record<string, string> = {};
+      const response = {
+        statusCode: 200,
+        setHeader: (name: string, value: string) => (headers[name] = value),
+        end: (body: unknown) => done({ status: response.statusCode, headers, body }),
+      };
+      const req = { headers: tag ? { 'if-none-match': tag } : {} } as IncomingMessage;
+
+      sendShot(Object.assign(response, { req }) as unknown as ServerResponse, Promise.resolve(Buffer.from(png)));
+    });
+
+  it('tags a picture with its content, answers 304 to the same tag and the new picture after an edit', async () => {
+    const first = await answer('before edit');
+    const tag = first.headers['etag'];
+
+    expect(first.status).toBe(200);
+    expect(first.headers['cache-control']).toBe('private, max-age=3600');
+    expect(await answer('before edit', tag)).toMatchObject({ status: 304, body: undefined });
+
+    const edited = await answer('after edit', tag);
+
+    expect(edited.status).toBe(200);
+    expect(edited.headers['etag']).not.toBe(tag);
+    expect(String(edited.body)).toBe('after edit');
   });
 });

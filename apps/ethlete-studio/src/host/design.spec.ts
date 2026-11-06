@@ -11,7 +11,10 @@ import {
   frameUrl,
   listedSystem$,
   partShotUrl,
+  SHOT_SESSION,
 } from './design';
+
+const SESSION = `&session=${SHOT_SESSION}`;
 
 describe('frameUrl', () => {
   it('encodes the slug and the variant', () => {
@@ -40,10 +43,10 @@ describe('callShotUrl', () => {
     expect(
       callShotUrl({ port: 1, slug: 'shop/a b', variant: 'v', surface: 'dark', epoch: 2, width: 1280, revision: 3 }),
     ).toBe(
-      'http://localhost:1/__design/shot?call=shop%2Fa%20b&variant=v&surface=dark&epoch=2&revision=3&width=1280&priority=low',
+      `http://localhost:1/__design/shot?call=shop%2Fa%20b&variant=v&surface=dark&epoch=2&revision=3&width=1280${SESSION}&priority=low`,
     );
     expect(callShotUrl({ port: 1, slug: 's', variant: 'v', width: 390 })).toBe(
-      'http://localhost:1/__design/shot?call=s&variant=v&width=390&priority=low',
+      `http://localhost:1/__design/shot?call=s&variant=v&width=390${SESSION}&priority=low`,
     );
   });
 });
@@ -123,10 +126,10 @@ describe('shot urls under a preferred colour scheme', () => {
     followScheme(dark);
 
     expect(partShotUrl(part)).toBe(
-      'http://localhost:1/__design/shot?product=p&part=components%2Fbutton&state=rest&revision=2&scheme=dark&priority=low',
+      `http://localhost:1/__design/shot?product=p&part=components%2Fbutton&state=rest&revision=2${SESSION}&scheme=dark&priority=low`,
     );
     expect(callShotUrl({ port: 1, slug: 's', variant: 'v', width: 390 })).toBe(
-      'http://localhost:1/__design/shot?call=s&variant=v&width=390&scheme=dark&priority=low',
+      `http://localhost:1/__design/shot?call=s&variant=v&width=390${SESSION}&scheme=dark&priority=low`,
     );
 
     dark.set(false);

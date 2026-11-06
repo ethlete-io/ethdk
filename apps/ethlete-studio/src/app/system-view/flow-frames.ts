@@ -50,7 +50,7 @@ const sketchedOf = (sketches: ListedSketch[], { product, key }: { product: strin
  * the flow's lines between them. A part the product lacks draws as the first variant of its open sketch.
  */
 export const flowFramesOf = (source: FlowFramesSource): { frames: CanvasFrame[]; lines: CanvasLine[] } => {
-  const { port, product, flow, preset, epoch, revision, view, surface, color, sketches = [] } = source;
+  const { port, product, flow, preset, epoch, revision, surface, color, sketches = [] } = source;
   const size = product.presets[preset];
   const frames = flow.frames.map(({ part: key, state, position }): CanvasFrame => {
     const part = product.parts.find((candidate) => partKeyOf(candidate) === key);
@@ -62,7 +62,6 @@ export const flowFramesOf = (source: FlowFramesSource): { frames: CanvasFrame[];
       state,
       epoch,
       revision,
-      view,
       surface,
       color,
       ...(sketched ? { sketch: key, variant: sketched.variant } : {}),

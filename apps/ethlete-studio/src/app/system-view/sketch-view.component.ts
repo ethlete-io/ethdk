@@ -61,6 +61,7 @@ import { modelNameOf, senderOf } from './inbox-comments';
 import { MergeColumn, mergeFrameIdOf, partNameOf, sketchCompare$ } from './merge-preview';
 import { refusalMessageOf } from './inventory';
 import { FrameShieldComponent } from '../components/design-canvas/partials/frame-shield.component';
+import { ShotRankDirective } from '../components/design-canvas/partials/shot-rank';
 import { PageShell, PageShellAction } from './page-shell';
 import {
   NO_SKETCH_FRAME_RETRIES,
@@ -198,6 +199,7 @@ export const liveShotsOf = ({
           @if (shotPictures().get(key); as picture) {
             <img
               [src]="picture"
+              [ethleteShotRank]="picture"
               [alt]="key"
               (load)="pictureLoaded(key, $event)"
               class="block w-full"
@@ -209,7 +211,7 @@ export const liveShotsOf = ({
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [SketchesComponent, MergeComponent, FrameShieldComponent],
+  imports: [SketchesComponent, MergeComponent, FrameShieldComponent, ShotRankDirective],
   host: { class: 'block size-full' },
 })
 export class SketchViewComponent {
@@ -224,7 +226,6 @@ export class SketchViewComponent {
   public epoch = input(0);
   public revision = input(0);
   public changes = input(0);
-  public view = input(0);
   public surface = input<string | undefined>(undefined);
   public color = input<string | undefined>(undefined);
   public cameraKey = input<string | null>(null);
@@ -375,7 +376,6 @@ export class SketchViewComponent {
       rows,
       epoch: this.epoch(),
       revision: this.revision(),
-      view: this.view(),
       surface: this.surface(),
       color: this.color(),
     }).frames;
@@ -431,7 +431,6 @@ export class SketchViewComponent {
       openRounds: this.openRounds(),
       epoch: this.epoch(),
       revision: this.revision(),
-      view: this.view(),
       surface: this.surface(),
       color: this.color(),
     }),
@@ -446,7 +445,6 @@ export class SketchViewComponent {
       variants: this.shownRounds().flatMap((round) => (round.open ? round.variants : [])),
       epoch: this.epoch(),
       revision: this.revision(),
-      view: this.view(),
       surface: this.surface(),
       color: this.color(),
     }),

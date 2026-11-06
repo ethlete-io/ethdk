@@ -316,7 +316,6 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [sketches]="sketches()"
         [epoch]="epoch()"
         [revision]="page.revision"
-        [view]="view()"
         [surface]="surface()"
         [color]="color()"
         [shell]="pageShell()"
@@ -332,7 +331,6 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [epoch]="epoch()"
         [revision]="sketchRevision()"
         [changes]="frameRevisions().seq"
-        [view]="view()"
         [surface]="surface()"
         [color]="color()"
         [cameraKey]="cameraKey()"
@@ -825,11 +823,6 @@ export class SystemViewComponent {
     return part ? `${this.product()?.name} ${part.key}` : null;
   });
 
-  public view = linkedSignal<string | null, number>({
-    source: this.cameraKey,
-    computation: (_key, previous) => Math.max(Date.now(), (previous?.value ?? 0) + 1),
-  });
-
   protected callFrames = computed(() => {
     const port = this.port();
     const call = this.call();
@@ -841,7 +834,6 @@ export class SystemViewComponent {
       call,
       epoch: this.epoch(),
       revision: this.callsRevision(),
-      view: this.view(),
       surface: this.surface(),
       color: this.color(),
     });
@@ -871,7 +863,6 @@ export class SystemViewComponent {
         sketch: null,
         errored: failsToLoad(part.listed.problems),
       }),
-      view: this.view(),
       surface: this.surface(),
       color: this.color(),
     });

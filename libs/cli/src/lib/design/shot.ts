@@ -27,6 +27,7 @@ import {
 import { MotionMode, MotionPictures, motionPicturesOf } from './motion-shot';
 import { settleFrames } from './settle-frames';
 import { createWarmPages } from './warm-pages';
+import { createShotBoard, shotKeyOf, shotViewMiddleware } from './shot-board';
 import { ShotStore, StoredAddress } from './shot-store';
 import { recordCache } from './timings';
 
@@ -431,7 +432,8 @@ export const createPartShooter = (options: {
 }) => {
   const { system, statesOf, store } = options;
   const baseOf = () => (typeof options.base === 'function' ? options.base() : options.base);
-  const drawQueue = options.queue ?? createDrawQueue(options);
+  const board = createShotBoard();
+  const drawQueue = options.queue ?? createDrawQueue({ ...options, board });
   const warmPages = createWarmPages();
   const cache = new Map<string, { drawn: Drawn; shot: Promise<Picture> }>();
   const motions = new Map<string, { drawn: Drawn; pictures: Promise<MotionPictures> }>();
@@ -689,7 +691,10 @@ export const createPartShooter = (options: {
   return {
     middleware: (request: IncomingMessage, response: ServerResponse) => {
       const params = new URL(request.url ?? '', 'http://localhost').searchParams;
-      const want = wantOf(params, response);
+      const want: DrawWant = {
+        ...wantOf(params, response),
+        board: { key: shotKeyOf(request.url ?? ''), boardView: board.view() },
+      };
       const onSource = (source: ShotSource) => response.setHeader('x-design-shot', source);
 
       if (!isScale(scaleOf(params))) {
@@ -828,6 +833,7 @@ export const createPartShooter = (options: {
         ),
       );
     },
+    viewMiddleware: shotViewMiddleware(board),
     /**
      * Draws one state of a part as `partShotOf` does for the middleware, with the part roots it holds,
      * ahead of every shot asked with `priority=low`.

@@ -44,7 +44,6 @@ import {
   followedSizes,
   frameMessageOf,
   schemeCopiesOf,
-  withActiveRank,
   withScheme,
 } from '../canvas-frame';
 import { Rect, Size } from '../canvas-math';
@@ -53,6 +52,7 @@ import { RenderSlotState, injectFrameRenderQueue } from '../frame-render-queue';
 import { CanvasFrameBorderComponent } from './canvas-frame-border.component';
 import { CanvasFrameGridComponent } from './canvas-frame-grid.component';
 import { FrameShieldComponent } from './frame-shield.component';
+import { ShotRankDirective } from './shot-rank';
 import { FAILED_SHOT_SIZE, ShotStateComponent, ShotStateDirective } from './shot-state';
 
 type HeightMessage = Extract<FrameMessage, { type: 'height' }>;
@@ -142,6 +142,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         >
           <img
             [src]="screenshot"
+            [ethleteShotRank]="screenshot"
             [style.transform]="'scale(' + cropped.thumb.scale + ')'"
             class="absolute top-0 left-0 max-w-none origin-top-left"
             alt=""
@@ -177,6 +178,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
             } @else if (frame().screenshot; as screenshot) {
               <img
                 [src]="live() ? screenshot : (admittedShot() ?? screenshot)"
+                [ethleteShotRank]="screenshot"
                 class="absolute inset-0 size-full border-0 object-none object-top-left"
                 alt=""
               />
@@ -206,6 +208,8 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
             <img
               #copyShot="ethleteShot"
               [src]="copy.shot"
+              [ethleteShotRank]="copy.shot"
+              [shotRankActive]="active()"
               class="absolute inset-0 size-full border-0 object-none object-top-left"
               ethleteShot
               alt=""
@@ -232,6 +236,8 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
           #shot
           #pageShotState="ethleteShot"
           [src]="live() ? pageShot() : (admittedShot() ?? pageShot())"
+          [ethleteShotRank]="pageShot()"
+          [shotRankActive]="active()"
           [class.opacity-0]="painted()"
           (load)="readScreenshotSize($event)"
           (error)="failScreenshot($event)"
@@ -312,6 +318,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     FrameShieldComponent,
     ShotStateDirective,
     ShotStateComponent,
+    ShotRankDirective,
   ],
   host: {
     class:
@@ -371,9 +378,7 @@ export class CanvasFrameComponent {
 
   private pageSrc = computed(() => this.schemed(this.frame().src, this.firstScheme()));
 
-  private frameShot = computed(() => withActiveRank(this.frame().screenshot ?? '', this.active()));
-
-  protected pageShot = computed(() => this.schemed(this.frameShot(), this.firstScheme()));
+  protected pageShot = computed(() => this.schemed(this.frame().screenshot ?? '', this.firstScheme()));
 
   private laterSources = computed(
     () =>
@@ -382,7 +387,7 @@ export class CanvasFrameComponent {
         .map((copy) => ({
           ...copy,
           src: this.schemed(this.frame().src, copy.scheme),
-          shot: this.schemed(this.frameShot(), copy.scheme),
+          shot: this.schemed(this.frame().screenshot ?? '', copy.scheme),
         })),
     { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
   );

@@ -1,4 +1,5 @@
 import { fromEvent, take, tap } from 'rxjs';
+import { createHash } from 'crypto';
 import { IncomingMessage, ServerResponse } from 'http';
 import { posix } from 'path';
 import { Chromium, chromiumOf } from './browser';
@@ -6,6 +7,7 @@ import { DrawLedger } from './draw-ledger';
 import { performance } from 'perf_hooks';
 import { timedPhase } from './phase-timing';
 import { RunAbortedError, runSignal } from './run-abort';
+import { ShotBoard } from './shot-board';
 import { recordCache, recordDrawWait } from './timings';
 import { withinLimit } from './wait';
 
@@ -131,13 +133,15 @@ export type DrawPriority = 'high' | 'low';
 
 /**
  * What one ask wants of a drawing. `view` is a number the asker raises with each view change; the
- * highest one seen is the shown view. `rank` places the ask in that view. `onWithdraw` gets the callback
+ * highest one seen is the shown view. `rank` places the ask in that view. `board` places it by the queue's shot
+ * board instead, where the board names its shot. `onWithdraw` gets the callback
  * that withdraws the ask, to call once the asker no longer waits, or at once if it already stopped.
  */
 export type DrawWant = {
   priority: DrawPriority;
   view?: number | null;
   rank?: 'active' | 'visible' | null;
+  board?: { key: string; boardView: number };
   onWithdraw?: (withdraw: () => void) => void;
 };
 
@@ -183,7 +187,12 @@ export const closingOnAbort = (browser: Browser, signal: AbortSignal): Browser =
     },
   });
 
-export const createDrawQueue = (options: { target: string; chromiumOf?: typeof chromiumOf; ledger?: DrawLedger }) => {
+export const createDrawQueue = (options: {
+  target: string;
+  chromiumOf?: typeof chromiumOf;
+  ledger?: DrawLedger;
+  board?: Pick<ShotBoard, 'laneOf'>;
+}) => {
   const { target, ledger } = options;
   const resolveChromium = options.chromiumOf ?? chromiumOf;
   let browser: Promise<Browser> | null = null;
@@ -216,6 +225,10 @@ export const createDrawQueue = (options: { target: string; chromiumOf?: typeof c
 
   const laneOf = (want: DrawWant) => {
     if (want.priority === 'high') return 0;
+
+    const shown = want.board && options.board?.laneOf(want.board);
+
+    if (shown) return shown;
     if (typeof want.view === 'number' && want.view < shownView) return 4;
 
     return want.rank === 'active' ? 1 : want.rank === 'visible' ? 2 : 3;
@@ -345,9 +358,26 @@ export const noteFailure = <T>(shot: Promise<T>, failed: (failure: { status: num
   return shot;
 };
 
+export const SHOT_MAX_AGE_S = 3600;
+
+/**
+ * Answers with the PNG `shot` resolves to, tagged with its content hash; an ask whose `if-none-match` names that
+ * tag gets a 304. The asker keys the URL on the content it shows (Studio: session, epoch and revision), so the
+ * browser may keep a picture for `SHOT_MAX_AGE_S` and paint it again without asking.
+ */
 export const sendShot = (response: ServerResponse, shot: Promise<Buffer>) =>
   void shot.then(
-    (body) => send(response, { status: 200, type: 'image/png', body }),
+    (body) => {
+      const tag = `"${createHash('sha1').update(body).digest('base64url')}"`;
+
+      response.setHeader('etag', tag);
+      response.setHeader('cache-control', `private, max-age=${SHOT_MAX_AGE_S}`);
+
+      if (response.req?.headers['if-none-match'] === tag) {
+        response.statusCode = 304;
+        response.end();
+      } else send(response, { status: 200, type: 'image/png', body });
+    },
     (error: unknown) => {
       const failure = failureOf(error);
 

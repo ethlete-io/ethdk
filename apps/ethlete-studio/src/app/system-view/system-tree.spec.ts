@@ -1,4 +1,4 @@
-import { ListedCall, ListedPart, ListedProduct, ListedSketch, ListedSketches } from '../../host/design';
+import { ListedCall, ListedPart, ListedProduct, ListedSketch, ListedSketches, SHOT_SESSION } from '../../host/design';
 import listing from './__fixtures__/studio-listing.json';
 import { CanvasFrame, placeableFramesOf } from '../components/design-canvas/canvas-frame';
 import {
@@ -20,6 +20,9 @@ import {
   treeOf,
 } from './system-tree';
 import { CompareRow, mergeOutlinesOf } from './merge-preview';
+import { FrameRevisions, NO_FRAME_REVISIONS, frameRevisionsWith, revisionOf } from '../studio-view/frame-revisions';
+
+const SESSION = `&session=${SHOT_SESSION}`;
 
 const part = (overrides: Partial<ListedPart> = {}): ListedPart => ({
   layer: 'components',
@@ -322,32 +325,35 @@ describe('callFramesOf', () => {
       'http://localhost:4402/frame.html?call=acme%2Fcomponents%2Fbutton&variant=a&surface=dark&epoch=2&revision=3',
     );
     expect(frames[0]?.screenshot).toBe(
-      'http://localhost:4402/__design/shot?call=acme%2Fcomponents%2Fbutton&variant=a&surface=dark&epoch=2&revision=3&width=960&priority=low',
+      `http://localhost:4402/__design/shot?call=acme%2Fcomponents%2Fbutton&variant=a&surface=dark&epoch=2&revision=3&width=960${SESSION}&priority=low`,
     );
   });
 
-  it('asks a shot of the shown view with the view and a visible rank, and none without a view', () => {
-    const shot = (view?: number) => callFramesOf({ port: 1, call: call(), view })[0]?.screenshot;
+  it('keeps a shot URL across views and renews it once a change redraws the part', () => {
+    const home = part({ layer: 'pages', name: 'home' });
+    const shotsAt = (revisions: FrameRevisions) =>
+      framesOf({
+        port: 4402,
+        product: product([home]),
+        part: home,
+        revision: revisionOf(revisions, { product: 'acme', part: 'pages/home', sketch: null }),
+      }).map((frame) => frame.screenshot);
+    const before = shotsAt(NO_FRAME_REVISIONS);
+    const edited = frameRevisionsWith(NO_FRAME_REVISIONS, {
+      all: false,
+      parts: [{ product: 'acme', part: 'pages/home', sketch: null }],
+    });
+    const after = shotsAt(edited);
 
-    expect(shot(1700)).toBe(
-      'http://localhost:1/__design/shot?call=acme%2Fcomponents%2Fbutton&variant=a&width=960&view=1700&rank=visible&priority=low',
-    );
-    expect(shot(1701)).toContain('&view=1701&');
-    expect(shot()).not.toContain('view=');
-    const shots = framesOf({
-      port: 4402,
-      product: product(),
-      part: part({ layer: 'pages', name: 'home' }),
-      view: 9,
-    }).map((frame) => frame.screenshot);
-
-    expect(shots.every((url) => url?.endsWith('&view=9&rank=visible&priority=low'))).toBe(true);
+    expect(shotsAt(NO_FRAME_REVISIONS)).toEqual(before);
+    expect(before.every((url) => url && !/[?&](view|rank)=/u.test(url))).toBe(true);
+    expect(after.every((url, at) => url && url !== before[at] && url.includes('&revision=1&'))).toBe(true);
   });
 
   it('falls back to 1280 without a width and fails one frame for a call that does not load', () => {
     expect(callFramesOf({ port: 1, call: call({ frameWidth: 0 }) })[0]).toMatchObject({
       width: 1280,
-      screenshot: 'http://localhost:1/__design/shot?call=acme%2Fcomponents%2Fbutton&variant=a&width=1280&priority=low',
+      screenshot: `http://localhost:1/__design/shot?call=acme%2Fcomponents%2Fbutton&variant=a&width=1280${SESSION}&priority=low`,
     });
     expect(
       callFramesOf({ port: 1, call: { slug: 'acme/x', project: 'acme', error: 'boom' } }).map((frame) => [
@@ -374,7 +380,7 @@ describe('framesOf', () => {
       'http://localhost:4402/frame.html?product=acme&part=pages%2Fhome&state=default&surface=dark&epoch=2&revision=3',
     );
     expect(frames[0]?.screenshot).toBe(
-      'http://localhost:4402/__design/shot?product=acme&part=pages%2Fhome&state=default&preset=phone&surface=dark&epoch=2&revision=3&priority=low',
+      `http://localhost:4402/__design/shot?product=acme&part=pages%2Fhome&state=default&preset=phone&surface=dark&epoch=2&revision=3${SESSION}&priority=low`,
     );
     expect(frames.every((frame) => frame.error === undefined)).toBe(true);
     expect(frames.map((frame) => frame.schemes)).toEqual(Array(4).fill(['light', 'dark']));
@@ -432,7 +438,7 @@ describe('framesOf', () => {
       'http://localhost:4402/frame.html?product=acme&part=components%2Fbutton&state=default&fill=surface&fit&epoch=2&revision=3',
     );
     expect(frames[0]?.grid?.cells[0]?.screenshot).toBe(
-      'http://localhost:4402/__design/shot?product=acme&part=components%2Fbutton&state=default&fill=surface&epoch=2&revision=3&priority=low',
+      `http://localhost:4402/__design/shot?product=acme&part=components%2Fbutton&state=default&fill=surface&epoch=2&revision=3${SESSION}&priority=low`,
     );
   });
 
@@ -463,7 +469,7 @@ describe('framesOf', () => {
       'http://localhost:4402/frame.html?product=acme&part=components%2Fbutton&state=solid&interaction=hover&fill=surface&fit',
     );
     expect(cells[2]?.screenshot).toBe(
-      'http://localhost:4402/__design/shot?product=acme&part=components%2Fbutton&state=solid&interaction=disabled&fill=surface&priority=low',
+      `http://localhost:4402/__design/shot?product=acme&part=components%2Fbutton&state=solid&interaction=disabled&fill=surface${SESSION}&priority=low`,
     );
   });
 
@@ -492,7 +498,7 @@ describe('framesOf', () => {
       'http://localhost:4402/frame.html?product=acme&part=elements%2Fcard&state=default&revision=3',
     );
     expect(frames[1]?.screenshot).toBe(
-      'http://localhost:4402/__design/shot?product=acme&part=elements%2Fcard&state=default&width=480&revision=3&priority=low',
+      `http://localhost:4402/__design/shot?product=acme&part=elements%2Fcard&state=default&width=480&revision=3${SESSION}&priority=low`,
     );
   });
 
@@ -557,7 +563,7 @@ describe('a part with a grid', () => {
       'http://localhost:4402/frame.html?product=acme&part=components%2Ftree-row&state=leaf-hover&fill=surface&revision=3',
     );
     expect(gridFrame?.grid?.cells[1]?.screenshot).toBe(
-      'http://localhost:4402/__design/shot?product=acme&part=components%2Ftree-row&state=leaf-hover&width=280&fill=surface&revision=3&priority=low',
+      `http://localhost:4402/__design/shot?product=acme&part=components%2Ftree-row&state=leaf-hover&width=280&fill=surface&revision=3${SESSION}&priority=low`,
     );
     expect(placeableFramesOf(gridFrame ? [gridFrame] : []).map((placed) => placed.place)).toEqual([
       { part: 'components/tree-row', state: 'leaf', size: 280 },

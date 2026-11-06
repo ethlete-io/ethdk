@@ -1,5 +1,5 @@
 {
-  "apiLevel": 5,
+  "apiLevel": 6,
   "routes": [
     "/__design/calls",
     "/__design/comment",
@@ -40,6 +40,7 @@
     "/__design/stamp",
     "/__design/system",
     "/__design/thumb",
-    "/__design/transfer"
+    "/__design/transfer",
+    "/__design/view"
   ]
 }
