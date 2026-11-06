@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B408
+built: 4462cf3c8
 decided: 2026-11-06
 source: grill session 2026-11-06
 ---
