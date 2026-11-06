@@ -4253,6 +4253,17 @@ re-shot after a one-state edit (shot key = the part module's whole dep file list
 (design hash, app hash, pixel code hash); expected app edit 6.5-8.5 s. Doc agent: cut 2 (reuse design shots when the
 renderer's markup and styles match, ~-3 s on design edits) waits until after the Studio frame slices, since the design
 gate is met.
+B416 after-edit cuts (as built in 9374350cf + 315a2e66c, c0, 2026-11-06): compare-actions overlaps state shots and
+pixels; compare-pixels is cached on both picture hashes + the pixel code hash (`writeCacheEntry`). Clean lines
+(load 5.4-6.2/32): typical app edit median 5.77 s (5.69-5.78, was 10.8), typical design edit 4.76-5.23 s (was 6.9),
+zoom-chip app edit 6.78 s, every next run 0.91-1.04 s (was 2.6). The compare part of ADR 0213 is met, after an edit
+too. Not verified: cold resident, `--all`/`--live` in real runs, load above cores.
+
+528\. c0 (2026-11-06): the first after-edit commit (9374350cf) drew all 30 design pictures twice (the overlapped action
+check did not wait for compare's design shots); only the per-phase measurement showed it, no spec failed. Why no tool
+caught it: compare specs check results and order, not how often a picture is drawn. Tool fix (before S7, so the S7
+number is trustworthy): a draw-count invariant in the compare specs - each design and app picture is drawn at most once
+per run.
 
 B416 slice 2 (as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06): each on-disk compare
 cache is keyed on the cli code that changes its result, not the whole cli build (`code-hash.ts`): the import graph of
