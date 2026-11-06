@@ -9,17 +9,40 @@ const roots: string[] = [];
 
 const checkout = () => {
   const root = mkdtempSync(join(tmpdir(), 'cli-harness-build-key-'));
+  const write = (path: string, source: string) => {
+    mkdirSync(dirname(join(root, path)), { recursive: true });
+    writeFileSync(join(root, path), source);
+  };
 
   roots.push(root);
   execFileSync('git', ['init', '-q'], { cwd: root });
+  write(
+    'tsconfig.base.json',
+    JSON.stringify({
+      compilerOptions: { paths: { '@acme/ui': ['libs/ui/src/index.ts'], '@acme/other': ['libs/other/src/index.ts'] } },
+    }),
+  );
+  write(
+    'apps/app/project.json',
+    JSON.stringify({
+      name: 'app',
+      targets: { build: { options: { browser: 'apps/app/src/main.ts', styles: ['apps/app/src/styles.css'] } } },
+    }),
+  );
+  write('apps/app/src/main.ts', "import { button } from '@acme/ui';\n/** Mirrors `@acme/other`. */\nbutton();");
+  write('apps/app/src/styles.css', "@import '../../../.ethlete/design/studio/foundations/colors/colors.css';");
+  write('apps/app/src/main.spec.ts', "import '@acme/other';");
+  write('.ethlete/design/studio/foundations/colors/colors.css', ':root {}');
+  write('libs/ui/src/index.ts', "export * from './lib/button';");
+  write('libs/ui/src/lib/button.ts', "@Component({ styleUrl: './button.css' }) export const button = () => 1;");
+  write('libs/ui/src/lib/button.css', '.button {}');
+  write('libs/ui/src/lib/button.spec.ts', "import '@acme/other';");
+  write('libs/other/src/index.ts', 'export const other = 1;');
 
   return {
     root,
-    write: (path: string, source: string) => {
-      mkdirSync(dirname(join(root, path)), { recursive: true });
-      writeFileSync(join(root, path), source);
-    },
-    key: () => harnessBuildKeyOf({ target: root, command: ['build'] }),
+    write,
+    key: () => harnessBuildKeyOf({ target: root, app: 'apps/app', command: ['build'] }),
   };
 };
 
@@ -28,34 +51,14 @@ afterEach(() => {
 });
 
 describe('harnessBuildKeyOf', () => {
-  it('changes with a source file the build reads', () => {
-    const { write, key } = checkout();
-
-    write('apps/app/src/main.ts', 'a');
-    const before = key();
-
-    write('apps/app/src/main.ts', 'b');
-
-    expect(key()).not.toBe(before);
-  });
-
-  it('changes with a design token stylesheet the build imports', () => {
-    const { write, key } = checkout();
-
-    write('.ethlete/design/studio/foundations/colors/colors.css', 'a');
-    const before = key();
-
-    write('.ethlete/design/studio/foundations/colors/colors.css', 'b');
-
-    expect(key()).not.toBe(before);
-  });
-
   it.each([
-    '.ethlete/design/config.json',
-    '.ethlete/design/tsconfig.json',
-    '.ethlete/design/sdk/go.json',
-    '.ethlete/design/sdk/pictures.json',
-  ])('changes the key when %s changes', (path) => {
+    'apps/app/src/main.ts',
+    'apps/app/src/unused.ts',
+    '.ethlete/design/studio/foundations/colors/colors.css',
+    'libs/ui/src/lib/button.ts',
+    'libs/ui/src/lib/button.css',
+    'tsconfig.base.json',
+  ])('changes the key when the build input %s changes', (path) => {
     const { write, key } = checkout();
 
     write(path, 'a');
@@ -68,13 +71,17 @@ describe('harnessBuildKeyOf', () => {
 
   it.each([
     'plans/note.md',
+    'AGENTS.md',
     '.changeset/change.md',
-    '.ethlete/design/studio-lab/sketches/card/sketch.json',
-    '.ethlete/design/sdk/comments/note.json',
+    '.ethlete/design/config.json',
+    '.ethlete/design/studio/pictures.json',
+    '.ethlete/design/studio/sketches/card/sketch.json',
+    '.ethlete/design/studio/comments/note.json',
+    'libs/other/src/index.ts',
+    'libs/ui/README.md',
   ])('keeps the key when %s changes', (path) => {
     const { write, key } = checkout();
 
-    write('apps/app/src/main.ts', 'a');
     write(path, 'a');
     const before = key();
 
@@ -82,5 +89,16 @@ describe('harnessBuildKeyOf', () => {
     write('plans/new.md', 'new');
 
     expect(key()).toBe(before);
+  });
+
+  it('follows an alias the app starts importing', () => {
+    const { write, key } = checkout();
+
+    write('apps/app/src/main.ts', "import '@acme/other';");
+    const before = key();
+
+    write('libs/other/src/index.ts', 'export const other = 2;');
+
+    expect(key()).not.toBe(before);
   });
 });

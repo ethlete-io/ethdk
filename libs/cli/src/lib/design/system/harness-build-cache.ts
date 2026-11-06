@@ -14,14 +14,13 @@ import {
   writeFileSync,
 } from 'fs';
 import { tmpdir } from 'os';
-import { join, resolve } from 'path';
+import { join, relative, resolve, sep } from 'path';
 import { sha16 } from './design-hash';
+import { harnessInputsOf, repoReaderOf } from './harness-inputs';
 
 const KEEP_BUILDS = 2;
 const IN_USE = '.in-use-';
 const INSTALL_STATES = ['.yarn-state.yml', '.package-lock.json', '.modules.yaml', '.yarn-integrity'];
-
-const UNREAD_BY_BUILD = /^(?:plans\/|\.changeset\/|\.ethlete\/design\/[^/]+\/(?:sketches|comments)\/)/u;
 
 const gitOf = (cwd: string, args: string[]) =>
   execFileSync('git', ['--no-optional-locks', ...args], {
@@ -100,11 +99,10 @@ const installedPackagesOf = (dir: string) => {
 };
 
 /**
- * The key of everything a harness build can read: the content of every tracked and not ignored untracked file of the
- * git checkout except plans, changesets and design sketches and comments, each installed package, the Node version and the
- * build command. `null` outside a git checkout or with unresolved merge conflicts, where no build may be reused.
+ * The content sha of every file a build of the app at `app` (a path relative to `target`) can read, by repo path, and
+ * the git root; `null` outside a git checkout or with unresolved merge conflicts, where no build may be reused.
  */
-export const harnessBuildKeyOf = (options: { target: string; command: string[] }): string | null => {
+export const harnessInputFilesOf = (options: { target: string; app: string }) => {
   let tree: ReturnType<typeof workTreeFilesOf>;
 
   try {
@@ -115,17 +113,38 @@ export const harnessBuildKeyOf = (options: { target: string; command: string[] }
 
   if (!tree) return null;
 
+  const app = relative(tree.root, resolve(options.target, options.app)).split(sep).join('/');
+
+  return { root: tree.root, files: harnessInputsOf({ files: tree.files, app, read: repoReaderOf(tree.root) }) };
+};
+
+/**
+ * The key of everything a harness build of `app` can read: the content of each of its input files (`harnessInputsOf`)
+ * that `only` keeps, each installed package, the Node version and the build command. `null` where no build may be
+ * reused.
+ */
+export const harnessBuildKeyOf = (options: {
+  target: string;
+  app: string;
+  command: string[];
+  inputs?: ReturnType<typeof harnessInputFilesOf>;
+  only?: (path: string) => boolean;
+}): string | null => {
+  const inputs = options.inputs === undefined ? harnessInputFilesOf(options) : options.inputs;
+
+  if (!inputs) return null;
+
   const hash = createHash('sha256');
 
   hash.update(`${process.version}\0${options.command.join('\0')}\0`);
 
-  for (const [path, sha] of [...tree.files].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
-    if (UNREAD_BY_BUILD.test(path)) continue;
+  for (const [path, sha] of [...inputs.files].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
+    if (options.only && !options.only(path)) continue;
 
     hash.update(`${path}\0${sha}\n`);
   }
 
-  for (const dir of new Set([tree.root, resolve(options.target)]))
+  for (const dir of new Set([inputs.root, resolve(options.target)]))
     for (const line of installedPackagesOf(dir)) hash.update(`${dir}\0${line}\n`);
 
   return hash.digest('hex').slice(0, 32);

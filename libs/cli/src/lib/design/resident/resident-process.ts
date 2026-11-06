@@ -4,7 +4,8 @@ import { buildStampOf } from '../stamp';
 import { createDesignServer } from '../serve';
 import { createDrawQueue } from '../thumb';
 import { designCompare, shootStatesWith, WarmDraw } from '../system/compare-command';
-import { HarnessServer, harnessKeyOf, StartHarnessServer, startHarnessServer } from '../system/harness-server';
+import { StartHarnessServer, startHarnessServer } from '../system/harness-server';
+import { createHarnessWatch } from '../system/harness-watch';
 import { designMocksFresh, guardsDesignMocks } from '../system/stale-design-mocks';
 import { libBuildStampOf, readFreshDist } from '../system/stale-dist';
 import { removeDiscovery, writeDiscovery } from './discovery';
@@ -13,7 +14,7 @@ import { ResidentRun, startResidentServer } from './server';
 type DesignServer = Awaited<ReturnType<typeof createDesignServer>>;
 
 /**
- * Runs `compare` with a design server, Chromium and harness app that stay up between requests. Each request reads
+ * Runs `compare` with a design server, Chromium and a watch-built harness app that stay up between requests. Each request reads
  * the lib build under the lib-build lock only while it runs, and a changed lib build or design config restarts the
  * design server and Chromium before it draws.
  */
@@ -22,7 +23,7 @@ export const createWarmCompare = (options: { target: string }) => {
   let stamp: string | null = null;
   let server: Promise<DesignServer> | null = null;
   let queue: ReturnType<typeof createDrawQueue> | null = null;
-  let harness: { key: string; server: HarnessServer } | null = null;
+  const harness = createHarnessWatch({ target });
 
   const closeDraw = async () => {
     const [closingServer, closingQueue] = [server, queue];
@@ -61,20 +62,11 @@ export const createWarmCompare = (options: { target: string }) => {
   };
 
   const start: StartHarnessServer = async ({ product }) => {
-    const key = harnessKeyOf({ target, product });
+    const served = await harness.current(product);
 
-    if (key !== null && harness?.key === key) return { url: harness.server.url, stop: async () => undefined };
+    if (served === null) return startHarnessServer({ target, product });
 
-    await harness?.server.stop();
-    harness = null;
-
-    const started = await startHarnessServer({ target, product });
-
-    if (typeof started === 'string' || key === null) return started;
-
-    harness = { key, server: started };
-
-    return { url: started.url, stop: async () => undefined };
+    return typeof served === 'string' ? served : { url: served.url, stop: async () => undefined };
   };
 
   const refresh = async (config: DesignConfig | null) => {
@@ -131,8 +123,7 @@ export const createWarmCompare = (options: { target: string }) => {
 
   const close = async () => {
     await closeDraw();
-    await harness?.server.stop();
-    harness = null;
+    await harness.stop();
   };
 
   return { run, warmUp, close };

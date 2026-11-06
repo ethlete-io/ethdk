@@ -55,7 +55,7 @@ export const freePortOf = async (probe: () => Promise<number> = ephemeralPort) =
   throw new Error(`no free port outside ${RESERVED_PORTS.join(', ')}`);
 };
 
-const NX_BUSY = /Waiting for \S+ in another nx process/;
+export const NX_BUSY = /Waiting for \S+ in another nx process/;
 
 const CONTENT_TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -96,7 +96,7 @@ const groupAlive = (pid: number) => {
   }
 };
 
-const killGroup = (pid: number, signal: NodeJS.Signals) => {
+export const killGroup = (pid: number, signal: NodeJS.Signals) => {
   try {
     process.kill(-pid, signal);
   } catch {
@@ -104,7 +104,7 @@ const killGroup = (pid: number, signal: NodeJS.Signals) => {
   }
 };
 
-const stopGroup = async (pid: number) => {
+export const stopGroup = async (pid: number) => {
   killGroup(pid, 'SIGTERM');
 
   const until = Date.now() + STOP_TIMEOUT_MS;
@@ -114,7 +114,7 @@ const stopGroup = async (pid: number) => {
   killGroup(pid, 'SIGKILL');
 };
 
-const projectOf = (target: string, app: string) => {
+export const projectOf = (target: string, app: string) => {
   const file = resolve(target, app, 'project.json');
 
   if (!existsSync(file)) return `the harness app ${app} has no project.json`;
@@ -127,22 +127,7 @@ const projectOf = (target: string, app: string) => {
   return { name: project.name };
 };
 
-/** The cache key of the product's harness build, which changes with any input of it; null when there is none. */
-export const harnessKeyOf = (options: { target: string; product: ResolvedProduct }) => {
-  const harness = harnessOf(options.product);
-
-  if (harness === null || typeof harness === 'string') return null;
-
-  const found = projectOf(options.target, harness.app);
-
-  if (typeof found === 'string') return null;
-
-  const build = nxBuildCommandOf({ target: options.target, project: found.name, outputPath: '<out>' });
-
-  return harnessBuildKeyOf({ target: options.target, command: [build.command, ...build.args] });
-};
-
-const servingOf = async (url: string) => {
+export const servingOf = async (url: string) => {
   try {
     return (await fetch(`${url}${HARNESS_PATH}`, { signal: AbortSignal.timeout(5_000) })).ok;
   } catch {
@@ -162,7 +147,7 @@ const fileOf = (root: string, url: string | undefined) => {
   return join(root, 'index.html');
 };
 
-const serveStatic = (root: string, port: number) =>
+export const serveStatic = (root: string, port: number) =>
   new Promise<Server>((done, fail) => {
     const server = createHttpServer((request, response) => {
       const file = fileOf(root, request.url);
@@ -253,6 +238,7 @@ export const startHarnessServer = async (options: {
   const keyOf = () =>
     harnessBuildKeyOf({
       target,
+      app: harness.app,
       command: [build.command, ...build.args.map((arg) => arg.split(outputPath).join('<out>'))],
     });
   const key = timedPhase('harness-cache-key', keyOf);
