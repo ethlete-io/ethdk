@@ -3459,6 +3459,9 @@ compare); (3) every design command prints its duration, and a spec or a budget l
 budget on a fixed fixture.
 Scope extended (Tom, 2026-11-06: "die compare cli ist auch noch echt ausbaufähig in schnelligkeit"): `design compare`
 gets the same phase timing, the same biggest-phase-first fix and a budget entry.
+First compare measure (c8, 2026-11-06): `design compare components/title-bar --product studio` 44.9 s wall for 14
+states plus actions; compare ignores `ETHLETE_DESIGN_PHASES`. The harness starts twice (states, then actions): the
+second start is the first suspect.
 
 479\. A fresh sketch of a part that has a `.css` file (`components/kbd`, `components/divider`) fails `UTILITY-CSS` in
 `sketch check`, so `sketch ready` refuses after 2.5 s (builder measure, 2026-11-05). Why no tool caught it: no spec
