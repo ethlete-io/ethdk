@@ -356,3 +356,29 @@ import('@ethlete/query-devtools/lazy') })`; new export `mountQueryDevtools` in `
 - **21b. Migrator, extends 21 (fifagg-frontend-3d; built 8985c2711: computed -> `queryComputed`, async validator -> `destroyOnResponse`):** it leaves `prepare()` in a plain `computed` (about 8 sites, one
   unmanaged query per input change) and in async validators (a POST per keystroke) with no `destroyOnResponse` and no
   container. fifagg fixes its sites by hand.
+
+## 11. fifagg on next.62 (fifagg-sdk-findings-2026-11-06.md, 2026-11-06) - open
+
+Source: `plans/fifagg-sdk-findings-2026-11-06.md` (consumer handoff, German). Installed: query 6.0.0-next.62, core
+5.0.0-next.73, query-devtools 1.0.0-next.17, cdk 5.0.0-next.48.
+
+- **16 reopened (high):** the fix 3ade7f27f does not cover the consumer flow. A `keepAlive` subscriber stays on
+  `state$`; `execute()`, first response flushed; `execute({ skipCache: true })`; a second subscriber subscribes at
+  once, before the second response. Expected `["LOADING"]`, received `["LOADING", "SUCCESS"]` (old data). Impact:
+  `refreshUserSuccessfully` (`filterSuccess(), take(1)`) takes the old roles. fifagg works around it with
+  `filter(() => !isQueryStateLoading(query()?.rawState))`; its spec
+  `fifagg-frontend/libs/queries/src/lib/legacy-query-creator.spec.ts` is green only with that filter. Cause not
+  verified. Fix: port the repro without the filter into `legacy-state-replay.scenario.spec.ts` on both clients, with the
+  live subscriber, make it bite, then fix. Done when no old Success reaches any subscriber before the second response.
+  Why the first fix missed it: its scenario covered a fresh subscriber only, not the consumer's exact steps; the item
+  was closed without replaying the consumer repro. Process fix: a consumer-reported query bug closes only when the
+  consumer's steps are ported one to one into a scenario (add this to the `query-scenario-tests` skill).
+- **18 confirmed on next.62:** entity store before `onSuccess`, both `destroyOnResponse` values. fifagg removed its
+  workaround.
+- **15 stays by decision:** `reportErrors: false` from the migrator; fifagg keeps `createSilentLegacyQueryCreator`.
+- **20 needs a browser proof:** under Playwright `#et-query-devtools-pill` must not cover save/submit buttons, and
+  `showInAutomation: true` must keep the UI. A devtools e2e case, not the contract alone.
+- **Migrator items 10-25 (section 10) are not re-proven:** fifagg's tree carries hand fixes. Proof needs a replay of
+  the migrator on the pre-migration fifagg commit, then tsc and lint on the result.
+- **No SDK work:** 26 (consumer must read the error state), 22, 12, Swiss seeding, the V2 bearer cookie domain, 27
+  (accepted interop differences).
