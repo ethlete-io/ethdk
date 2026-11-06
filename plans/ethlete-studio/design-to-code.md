@@ -4539,6 +4539,6 @@ them; a spec edits an unrelated `libs/cli` file between two runs and expects 0 r
 540\. c0 (2026-11-06), ci-check before the push of `next` (259 commits): typecheck was red since 1518330a1 (ET800
 message, fifagg section 12 work): `legacy-state-replay.scenario.spec.ts:111` called `prepare()` without its argument.
 Fixed in 263654c41. Why no tool caught it: the pre-push hook leaves typecheck to CI, and with the push parked (ADR
-0213) no CI ran for 259 commits, so a type error stayed hidden for hours. Tool fix: open, put to Tom. Also: the vitest
+0213) no CI ran for 259 commits, so a type error stayed hidden for hours. Tool fix (ADR 0216): while a push is held, the builder pushes each slice to its own branch with a draft pull request so the full CI runs. Also: the vitest
 cache `libs/query/.vitest/` is untracked and not ignored, so local `format:check` fails on it; `**/.vitest/` goes into
 `.gitignore` (builder).
