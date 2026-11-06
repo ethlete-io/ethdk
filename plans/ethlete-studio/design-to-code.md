@@ -3723,3 +3723,12 @@ drew (same class as the "Runde" combobox of finding 486). Why no tool caught it:
 command, so the gate, the builder and the verify step read the run as clean. Tool fix (technical): `compare` exits
 non-zero on any FAILED action; a part whose app has an undeclared control gets a sketch for the control (UI item for
 c8, `pages/flows` "Bildschirmgröße").
+
+497\. cb, 2026-11-06, while building the B405 baseline (5ddcdf3f5): a pin scan of all implemented parts shows app-file
+drift also in `components/canvas-viewport` and `components/comment-pin`. The pre-push gate does not flag them, because
+it only checks implemented parts whose files are in the push range; they fail the next push that touches them. Why no
+tool caught it: no command lists every implemented part whose app files changed since its last compare, so drift sits
+unseen until an unrelated push trips over it. Tool fix (technical): the full `design check` (and the resident process,
+ADR 0204) reports every uncompared implemented part, independent of a push range. c8 compares both parts right after the
+push; real drift becomes a UI item, not a baseline entry. Also: `design-rules-gate.mjs` printed the check output only on
+failure, so the ADR 0205 `baselined` lines were hidden on a green push; it now always prints them.
