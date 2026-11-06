@@ -3471,6 +3471,14 @@ phase: the title-bar action check, 27-31 s (70 % of a cache-hit run). C1 measure
 title-bar runs, likely because another session edited title-bar sources during the run (the build is stored only when
 the key is unchanged after it); one rerun hit (0.07 s). Not measured: browser contexts; `pages/sketches` (stale-CLI
 guard).
+As built 2 (builder ethlete-sdk-c0): the action check draws the design pictures of all start states at once and runs
+the states 4 at a time (forced -hover/-active/-focus-visible states filtered out before batching; result order kept).
+`compare components/title-bar` action phase 28-32 s to 19.4 s, wall 58-59 s to 47.4 s (all runs were harness-build
+misses, 15-19 s); output lines identical. Spec counts concurrent draws and probes (bit: 1 instead of 8). Not done: a
+cache-hit run, a second part. Side effect: `design actions` streams lines of a batch's states mixed; the final list is
+in order. Next costs: the shared draw cap of 8 (`DRAWS_AT_ONCE`), a fresh context and page load per pointer probe and
+per input, the action check redrawing pictures compare already drew (3 s), the harness build on a miss (C1), then
+compare-states (~10 s).
 
 478\. After an automatic merge, `sketch ready` printed "ENOENT ... foundations-colors.foundations-check-fixes/sketch.json"
 and never printed "merged automatically", although the merge was complete (commit 479bdace3, builder, 2026-11-05).

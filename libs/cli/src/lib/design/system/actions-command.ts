@@ -3,6 +3,7 @@ import { AddressInfo } from 'net';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { chromiumOf } from '../browser';
+import { timedPhase } from '../phase-timing';
 import { DesignConfig, DesignPreset } from '../paths';
 import { createDesignServer } from '../serve';
 import { checkerScriptOf, createPartShooter, Picture, pixelBoxOf, viewportOf } from '../shot';
@@ -321,7 +322,7 @@ export const checkActions = async (options: {
       return drawn;
     };
 
-    for (const state of names) await draw(state);
+    await timedPhase('actions-designs', () => Promise.all(names.map((state) => draw(state))));
 
     const markups = new Map(
       await Promise.all([...designs].map(async ([state, design]) => [state, (await design).markup ?? ''] as const)),
@@ -426,69 +427,59 @@ export const checkActions = async (options: {
 
       return cached;
     };
-    const lines: Line[] = [];
-    const skippedHosts: string[] = [];
-    const pushLine = (line: Line) => {
-      lines.push(line);
-      onLine?.(line);
-    };
     let dir: string | null = null;
 
-    const checked = only === null ? names : [only];
-
-    for (const [index, state] of checked.entries()) {
-      if (index % ACTION_BATCH_STATES === 0) {
-        designs.clear();
-        ({ queue, shooter } = await freshBrowser());
-      }
-
-      const markup = markups.get(state) ?? '';
-
-      if (forcedElementsOf(markup).length > 0) continue;
-
+    const checkState = async (state: string): Promise<{ lines: Line[]; hosts: string[] }> => {
+      const lines: Line[] = [];
+      const pushLine = (line: Line) => {
+        lines.push(line);
+        onLine?.(line);
+      };
       const open = opens[state];
 
       if (typeof open === 'string') {
         pushLine({ state, element: '-', input: null, failure: open });
-        continue;
+
+        return { lines, hosts: [] };
       }
 
-      const design = await designScan(state);
+      const design = await timedPhase('actions-design-scan', () => designScan(state));
       const opener = open ? (design.find((element) => element.control === open.control)?.key ?? null) : null;
 
       if (open && opener === null) {
         pushLine({ state, element: '-', input: null, failure: `no ${open.control} trigger to open it with` });
-        continue;
+
+        return { lines, hosts: [] };
       }
 
       const start: ActionStart = { state, props: open ? (open.props ?? states[open.from]) : states[state], opener };
       const startUrl = harnessUrlOf({ url, part, state, props: start.props, layout: frame.layout });
-      const app = await queue.run(async (browser) => {
-        const context = await browser.newContext({ viewport: viewportOf(frame.size) });
+      const app = await timedPhase('actions-app-scan', () =>
+        queue.run(async (browser) => {
+          const context = await browser.newContext({ viewport: viewportOf(frame.size) });
 
-        try {
-          const page = await context.newPage();
+          try {
+            const page = await context.newPage();
 
-          await page.goto(startUrl, { timeout: DRAW_TIMEOUT_MS });
-          await harnessMountedOf(page, DRAW_TIMEOUT_MS);
+            await page.goto(startUrl, { timeout: DRAW_TIMEOUT_MS });
+            await harnessMountedOf(page, DRAW_TIMEOUT_MS);
 
-          if (opener !== null) {
-            const trigger = (await scanOf(page, [HARNESS_HOST_SELECTOR])).find((element) => element.key === opener);
+            if (opener !== null) {
+              const trigger = (await scanOf(page, [HARNESS_HOST_SELECTOR])).find((element) => element.key === opener);
 
-            if (trigger) await page.locator(probeOf(trigger.probe)).click();
+              if (trigger) await page.locator(probeOf(trigger.probe)).click();
 
-            await settle(page, DRAW_TIMEOUT_MS);
+              await settle(page, DRAW_TIMEOUT_MS);
+            }
+
+            return await scanOf(page, [HARNESS_HOST_SELECTOR, OVERLAY_ROOTS]);
+          } finally {
+            await context.close();
           }
-
-          return await scanOf(page, [HARNESS_HOST_SELECTOR, OVERLAY_ROOTS]);
-        } finally {
-          await context.close();
-        }
-      });
+        }),
+      );
       const hosts = product.config.harness?.hosts ?? [];
       const scope = ownScopeOf({ design, app, hosts });
-
-      skippedHosts.push(...scope.skipped.filter((host) => !skippedHosts.includes(host)));
 
       const { paired, missing } = pairElementsOf({ design: scope.design, app: scope.app });
 
@@ -514,43 +505,45 @@ export const checkActions = async (options: {
           const name = elementNameOf(element);
 
           try {
-            const probes = await queue.run((browser) =>
-              probePointerFocus({
-                open: async () => {
-                  const context = await browser.newContext({ viewport: viewportOf(frame.size) });
-                  const page = await context.newPage();
-                  const close = () => context.close();
+            const probes = await timedPhase('actions-pointer-focus', () =>
+              queue.run((browser) =>
+                probePointerFocus({
+                  open: async () => {
+                    const context = await browser.newContext({ viewport: viewportOf(frame.size) });
+                    const page = await context.newPage();
+                    const close = () => context.close();
 
-                  try {
-                    await page.goto(startUrl, { timeout: DRAW_TIMEOUT_MS });
-                    await harnessMountedOf(page, DRAW_TIMEOUT_MS);
-                    await page.mouse.move(-1, -1);
+                    try {
+                      await page.goto(startUrl, { timeout: DRAW_TIMEOUT_MS });
+                      await harnessMountedOf(page, DRAW_TIMEOUT_MS);
+                      await page.mouse.move(-1, -1);
 
-                    if (opener !== null) {
-                      const trigger = (await scanOf(page, [HARNESS_HOST_SELECTOR])).find(
-                        (found) => found.key === opener,
+                      if (opener !== null) {
+                        const trigger = (await scanOf(page, [HARNESS_HOST_SELECTOR])).find(
+                          (found) => found.key === opener,
+                        );
+
+                        if (trigger) await page.locator(probeOf(trigger.probe)).click();
+
+                        await settle(page, DRAW_TIMEOUT_MS);
+                        await page.mouse.move(-1, -1);
+                      }
+
+                      const found = (await scanOf(page, [HARNESS_HOST_SELECTOR, OVERLAY_ROOTS])).find(
+                        (candidate) => candidate.key === element.key && candidate.occurrence === element.occurrence,
                       );
 
-                      if (trigger) await page.locator(probeOf(trigger.probe)).click();
+                      if (!found) throw new Error('the element is gone after a fresh load');
 
-                      await settle(page, DRAW_TIMEOUT_MS);
-                      await page.mouse.move(-1, -1);
+                      return { page, locator: page.locator(probeOf(found.probe)), close };
+                    } catch (error) {
+                      await close();
+                      throw error;
                     }
-
-                    const found = (await scanOf(page, [HARNESS_HOST_SELECTOR, OVERLAY_ROOTS])).find(
-                      (candidate) => candidate.key === element.key && candidate.occurrence === element.occurrence,
-                    );
-
-                    if (!found) throw new Error('the element is gone after a fresh load');
-
-                    return { page, locator: page.locator(probeOf(found.probe)), close };
-                  } catch (error) {
-                    await close();
-                    throw error;
-                  }
-                },
-                settle: (page) => settle(page, DRAW_TIMEOUT_MS),
-              }),
+                  },
+                  settle: (page) => settle(page, DRAW_TIMEOUT_MS),
+                }),
+              ),
             );
 
             if (probes) {
@@ -616,28 +609,33 @@ export const checkActions = async (options: {
                 ? targetStateOf({ state: action.state, input, states: embeddedState?.states ?? names })
                 : '';
             const opened = goal === '' ? null : openedFromOf({ goal, start: state, states, open: opens[goal] });
-            const goalPicture = goal === '' || embeddedState ? null : await draw(opened ? state : goal, opened);
+            const goalPicture =
+              goal === '' || embeddedState
+                ? null
+                : await timedPhase('actions-goal-draw', () => draw(opened ? state : goal, opened));
 
             try {
-              const run = await queue.run((browser) =>
-                runActionInput({
-                  browser,
-                  url: startUrl,
-                  start,
-                  pick: element,
-                  input,
-                  size: frame.size,
-                  shoot: goalPicture
-                    ? {
-                        room: (goalPicture.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
-                      }
-                    : null,
-                  timeout: DRAW_TIMEOUT_MS,
-                  listen: action.kind === 'emit' ? listen : [],
-                  output: action.kind === 'emit' ? action.output : null,
-                  expanded: !!embeddedState && action.kind === 'state',
-                  focused: goal.endsWith('-focus-visible'),
-                }),
+              const run = await timedPhase('actions-input', () =>
+                queue.run((browser) =>
+                  runActionInput({
+                    browser,
+                    url: startUrl,
+                    start,
+                    pick: element,
+                    input,
+                    size: frame.size,
+                    shoot: goalPicture
+                      ? {
+                          room: (goalPicture.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
+                        }
+                      : null,
+                    timeout: DRAW_TIMEOUT_MS,
+                    listen: action.kind === 'emit' ? listen : [],
+                    output: action.kind === 'emit' ? action.output : null,
+                    expanded: !!embeddedState && action.kind === 'state',
+                    focused: goal.endsWith('-focus-visible'),
+                  }),
+                ),
               );
               const result = goalPicture && run.app ? comparePngs({ design: goalPicture.png, app: run.app }) : null;
               const outcome: ActionOutcome = {
@@ -657,18 +655,20 @@ export const checkActions = async (options: {
               const app = run.app;
 
               if (action.kind === 'state' && result && result.kind !== 'ok' && goalPicture && app)
-                outcome.reached = await reachedStateOf({
-                  goal,
-                  states: names,
-                  compare: async (candidate) => {
-                    if (candidate === goal) return result;
+                outcome.reached = await timedPhase('actions-reached', () =>
+                  reachedStateOf({
+                    goal,
+                    states: names,
+                    compare: async (candidate) => {
+                      if (candidate === goal) return result;
 
-                    const reopened = openedFromOf({ goal: candidate, start: state, states, open: opens[candidate] });
-                    const picture = await draw(reopened ? state : candidate, reopened);
+                      const reopened = openedFromOf({ goal: candidate, start: state, states, open: opens[candidate] });
+                      const picture = await draw(reopened ? state : candidate, reopened);
 
-                    return comparePngs({ design: picture.png, app });
-                  },
-                });
+                      return comparePngs({ design: picture.png, app });
+                    },
+                  }),
+                );
 
               if (embeddedState && action.kind === 'state' && outcome.compare && !outcome.compare.ok)
                 outcome.reached = await reachedExpandedStateOf({
@@ -710,6 +710,30 @@ export const checkActions = async (options: {
       });
 
       lines.push(...checkedElements.flat());
+
+      return { lines, hosts: scope.skipped };
+    };
+
+    const lines: Line[] = [];
+    const skippedHosts: string[] = [];
+    const checked = (only === null ? names : [only]).filter(
+      (state) => forcedElementsOf(markups.get(state) ?? '').length === 0,
+    );
+
+    for (let at = 0; at < checked.length; at += ACTION_BATCH_STATES) {
+      designs.clear();
+      ({ queue, shooter } = await timedPhase('actions-browser', freshBrowser));
+
+      const batch = await inOrderAtOnce({
+        items: checked.slice(at, at + ACTION_BATCH_STATES),
+        limit: ACTION_BATCH_STATES,
+        run: (state) => timedPhase(`actions-state ${state}`, () => checkState(state)),
+      });
+
+      for (const checkedState of batch) {
+        lines.push(...checkedState.lines);
+        skippedHosts.push(...checkedState.hosts.filter((host) => !skippedHosts.includes(host)));
+      }
     }
 
     return { lines, pictures: dir, embedders: embedders ? await embedders : [], hosts: skippedHosts };
