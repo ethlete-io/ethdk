@@ -4425,3 +4425,9 @@ first visit 6.3 s (all drawn, nothing stored in the temp checkout). Verified: St
 17/17, merge/discard e2e. `design check --product studio --part pages/sketches` on c77c781d5: exit 0, 0 findings (42.8 s non-resident, only the
 baselined DROPPED-PROP lines of finding 489). Open: whether NG0953 "Unexpected emit for destroyed OutputRef" in the sketch-view merge spec
 predates C; the scroll e2e covers one column only.
+
+533\. c0 (2026-11-06), checking slice C: `sketch-view.component.spec.ts` logs "NG0953 Unexpected emit for destroyed
+OutputRef" twice and still passes, before slice C (c77c781d5^, 16/16) and after it (17/17). A component emits an output
+after it was destroyed. Why no tool caught it: the Studio specs do not fail on an Angular runtime error that is only
+logged with `console.error`. Tool fix (queued after S7, not perf): the Studio test setup fails a spec on any logged
+`NG0` error, and the emit after destroy in the sketch view is fixed in the same slice.
