@@ -6,6 +6,7 @@ type FieldInteraction = 'hover' | 'active' | 'focus-visible';
 
 export type SelectProps = {
   label?: string;
+  ariaLabel?: string;
   options?: { value: string; label: string }[];
   value?: string;
   open?: boolean;
@@ -76,6 +77,7 @@ export const selectBody = (props: SelectProps) =>
         value: props.value,
         active: props.active,
         placeholder: 'Pick a status',
+        ariaLabel: props.ariaLabel,
       }),
     }),
     props,

@@ -56,6 +56,8 @@ export type SelectMockOptions = {
   panelColor?: string;
   /** A surface theme name the app registers, for the panel. Left out, the panel takes the surface one elevation above its parent. */
   panelSurface?: string;
+  /** The trigger's `aria-label`, for a select without a visible label. */
+  ariaLabel?: string;
 };
 
 /** The stylesheets `formField()` with a `select()` control draws with: the real `et-select` CSS. */
@@ -158,7 +160,8 @@ export const select = (options: SelectMockOptions): FormFieldControlMock => {
         'role="combobox"',
         'aria-haspopup="listbox"',
         `aria-expanded="${state.open}"`,
-        `aria-labelledby="${[state.labelId, triggerId].filter(Boolean).join(' ')}"`,
+        options.ariaLabel && `aria-label="${options.ariaLabel}"`,
+        state.labelId && `aria-labelledby="${state.labelId} ${triggerId}"`,
         `tabindex="${state.disabled ? -1 : 0}"`,
         state.disabled && 'aria-disabled="true" data-disabled="true"',
         state.open && activeIndex >= 0 && `aria-activedescendant="et-select-option-${state.id}-${activeIndex}"`,

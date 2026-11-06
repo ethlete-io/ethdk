@@ -3910,6 +3910,10 @@ slice B413: an ACCESSIBLE-NAME drift rule.
 As built (b) (c0, 2026-11-06): `ownScopeOf` leaves an app element to the embedded part when its role has one leftover
 element on each side (shared `renamedPairsOf` with `pairElementsOf`); a failure without a partner names the same-role
 design elements (`nearMissesOf`). Specs with bite in actions.spec. Not verified yet: the flows check on the built CLI
-(after this commit). (a) design fix and (c) still open.
+(after this commit). (c) still open.
+As built (a) (c0, 2026-11-06): the select design mock takes `ariaLabel` and, like `et-select`, sets `aria-labelledby`
+only with a visible label; the sdk select part passes it through, `presetPickerOf` passes "Bildschirmgröße". Verified:
+slow check of sdk components/select clean, of studio pages/flows `PASS: no visible change` and no NO RECORD; the flows
+action check no longer fails the picker (it is left to components/select now).
 Tom (2026-11-06, "q1ok"): pages/start is accepted as it is (`et design accept pages/start --by tom`) after his
 shell-main `@edit` pick has merged, because start embeds shell-main.

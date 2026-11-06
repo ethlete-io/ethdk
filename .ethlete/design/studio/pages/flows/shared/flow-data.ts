@@ -17,6 +17,7 @@ const shot = (step: Step, scale: number) =>
 export const presetPickerOf = async () => {
   const picker = await select.render({
     label: '',
+    ariaLabel: 'Bildschirmgröße',
     size: 'sm',
     value: 'desktop',
     options: [{ value: 'desktop', label: 'Desktop · 1440 × 900' }],
