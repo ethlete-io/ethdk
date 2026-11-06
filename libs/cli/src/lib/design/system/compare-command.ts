@@ -401,169 +401,199 @@ export const harnessShotOf = async (options: {
   }
 };
 
-/** Draws each state of a part, or the `only` one, as its design frame and as the app's harness page, in one Chromium. */
-export const shootStates: ShootStates = async ({ target, config, product, part, url, only, preset, appOnly }) => {
-  const frame = compareFrameOf({ presets: product.presets, part, preset: preset ?? null });
+type DesignServer = Awaited<ReturnType<typeof createDesignServer>>;
 
-  if (typeof frame === 'string') return frame;
-  if (!(await chromiumOf(target))) return 'compare needs playwright or playwright-core in the checkout';
+/** A listening design server and a draw queue that outlive one compare; the owner closes them. */
+export type WarmDraw = {
+  server: (config: DesignConfig) => Promise<DesignServer>;
+  queue: () => ReturnType<typeof createDrawQueue>;
+};
 
-  const queue = createDrawQueue({ target });
+const ownDraw = async (target: string, config: DesignConfig) => {
   const server = await createDesignServer({ target, config, listen: true, port: 0 });
-  let shooter: ReturnType<typeof createPartShooter> | undefined;
 
   try {
     await timedPhase('compare-design-server', () => server.listen());
+  } catch (error) {
+    await server.close();
 
-    const { port } = server.httpServer?.address() as AddressInfo;
-    const system = createSystemModules({ target, config });
+    throw error;
+  }
 
-    shooter = createPartShooter({ target, base: `http://localhost:${port}`, system, queue });
+  return server;
+};
 
-    const file = product.parts.find((candidate) => partKeyOf(candidate) === part)?.file ?? '';
-    const module = (await server.ssrLoadModule(productModuleIdOf({ file, product: product.name }))) as {
-      default?: { states?: unknown; controls?: unknown; widths?: unknown };
-    };
-    const width = compareWidthOf({ part, widths: module.default?.widths });
-    const loaded = module.default?.states;
-    const drawn = new Set(await drawnStateNamesOf(module.default));
-    const states =
-      loaded && typeof loaded === 'object' && !Array.isArray(loaded)
-        ? Object.fromEntries(Object.entries(loaded).filter(([state]) => drawn.has(state)))
-        : {};
+/** `shootStates` drawing on `warm`, or on a design server and Chromium of its own when there is none. */
+export const shootStatesWith =
+  (warm?: WarmDraw): ShootStates =>
+  async ({ target, config, product, part, url, only, preset, appOnly }) => {
+    const frame = compareFrameOf({ presets: product.presets, part, preset: preset ?? null });
 
-    if (only !== null && !(only in states))
-      return `${part} has no state "${only}" - its states: ${Object.keys(states).join(', ')}`;
+    if (typeof frame === 'string') return frame;
+    if (!(await chromiumOf(target))) return 'compare needs playwright or playwright-core in the checkout';
 
-    const controls = module.default?.controls;
-    const pictures = shooter;
-    const designs = new Map<string, Awaited<ReturnType<typeof pictures.pictureOf>>>();
-    const pictureOf = (state: string, emptySlots: boolean) =>
-      pictures.pictureOf({
-        product: product.name,
-        part,
-        state,
-        preset: frame.preset,
-        width,
-        sketch: null,
-        interaction: null,
-        bare: true,
-        emptySlots,
-        checker: true,
-        params: new URLSearchParams(),
+    const queue = warm ? warm.queue() : createDrawQueue({ target });
+    let server: DesignServer | undefined;
+    let shooter: ReturnType<typeof createPartShooter> | undefined;
+
+    try {
+      server = warm
+        ? await timedPhase('compare-design-server', () => warm.server(config))
+        : await ownDraw(target, config);
+
+      const { port } = server.httpServer?.address() as AddressInfo;
+      const system = createSystemModules({ target, config });
+
+      shooter = createPartShooter({ target, base: `http://localhost:${port}`, system, queue });
+
+      const file = product.parts.find((candidate) => partKeyOf(candidate) === part)?.file ?? '';
+      const module = (await server.ssrLoadModule(productModuleIdOf({ file, product: product.name }))) as {
+        default?: { states?: unknown; controls?: unknown; widths?: unknown };
+      };
+      const width = compareWidthOf({ part, widths: module.default?.widths });
+      const loaded = module.default?.states;
+      const drawn = new Set(await drawnStateNamesOf(module.default));
+      const states =
+        loaded && typeof loaded === 'object' && !Array.isArray(loaded)
+          ? Object.fromEntries(Object.entries(loaded).filter(([state]) => drawn.has(state)))
+          : {};
+
+      if (only !== null && !(only in states))
+        return `${part} has no state "${only}" - its states: ${Object.keys(states).join(', ')}`;
+
+      const controls = module.default?.controls;
+      const pictures = shooter;
+      const designs = new Map<string, Awaited<ReturnType<typeof pictures.pictureOf>>>();
+      const pictureOf = (state: string, emptySlots: boolean) =>
+        pictures.pictureOf({
+          product: product.name,
+          part,
+          state,
+          preset: frame.preset,
+          width,
+          sketch: null,
+          interaction: null,
+          bare: true,
+          emptySlots,
+          checker: true,
+          params: new URLSearchParams(),
+        });
+      const draw = async (state: string) =>
+        designs.get(state) ?? designs.set(state, await pictureOf(state, true)).get(state);
+
+      const slotOnly = await timedPhase('compare-design-shots', async () => {
+        for (const state of Object.keys(states)) await draw(state);
+
+        const slotted = [...designs.values()].some((design) => design?.markup?.includes('data-et-projected'));
+
+        return slotted
+          ? await slotOnlyStatesOf({
+              states: Object.keys(states),
+              emptied: new Map([...designs].flatMap(([state, design]) => (design ? [[state, design.png]] : []))),
+              full: async (state) => (await pictureOf(state, false))?.png ?? null,
+            })
+          : new Map<string, string>();
       });
-    const draw = async (state: string) =>
-      designs.get(state) ?? designs.set(state, await pictureOf(state, true)).get(state);
 
-    const slotOnly = await timedPhase('compare-design-shots', async () => {
-      for (const state of Object.keys(states)) await draw(state);
+      const opens = pointerOpensOf({
+        states,
+        controls,
+        drawn: Object.fromEntries([...designs].map(([state, design]) => [state, drawnSurfacesOf(design.markup ?? '')])),
+      });
+      const shots: StateShot[] = [];
+      const sampled = productSampledPropsOf({ target, product, part });
+      const forcing = new Set(
+        [...designs].flatMap(([state, design]) => (forcedElementsOf(design?.markup ?? '').length > 0 ? [state] : [])),
+      );
 
-      const slotted = [...designs.values()].some((design) => design?.markup?.includes('data-et-projected'));
+      const unshot = await timedPhase('compare-app-shots', async () => {
+        for (const state of only === null ? Object.keys(states) : [only]) {
+          const design = designs.get(state);
+          const open = opens[state];
 
-      return slotted
-        ? await slotOnlyStatesOf({
-            states: Object.keys(states),
-            emptied: new Map([...designs].flatMap(([state, design]) => (design ? [[state, design.png]] : []))),
-            full: async (state) => (await pictureOf(state, false))?.png ?? null,
-          })
-        : new Map<string, string>();
-    });
+          if (!design) continue;
 
-    const opens = pointerOpensOf({
-      states,
-      controls,
-      drawn: Object.fromEntries([...designs].map(([state, design]) => [state, drawnSurfacesOf(design.markup ?? '')])),
-    });
-    const shots: StateShot[] = [];
-    const sampled = productSampledPropsOf({ target, product, part });
-    const forcing = new Set(
-      [...designs].flatMap(([state, design]) => (forcedElementsOf(design?.markup ?? '').length > 0 ? [state] : [])),
-    );
+          if (typeof open === 'string') return open;
 
-    const unshot = await timedPhase('compare-app-shots', async () => {
-      for (const state of only === null ? Object.keys(states) : [only]) {
-        const design = designs.get(state);
-        const open = opens[state];
+          const base = slotOnly.get(state);
 
-        if (!design) continue;
+          if (base !== undefined && !appOnly) {
+            shots.push({
+              state,
+              problem: `draws like ${base} once compare empties its slots - it differs from ${base} only inside slot() regions, so compare cannot check it`,
+            });
+            continue;
+          }
 
-        if (typeof open === 'string') return open;
+          const sent = open?.props ?? states[open?.from ?? state];
+          const forced = forcedElementsOf(design.markup ?? '');
+          const app = await queue.run((browser) =>
+            harnessShotOf({
+              browser,
+              url: harnessUrlOf({
+                url,
+                part,
+                state,
+                props: sent,
+                layout: frame.layout,
+              }),
+              size: frame.size,
+              width,
+              forced,
+              ...(appOnly
+                ? {}
+                : {
+                    props: {
+                      sent,
+                      designOnly: new Set([
+                        ...designOnlyPropsOf({
+                          states,
+                          opens,
+                          state,
+                          forced: forced.map(({ interaction }) => interaction),
+                          forcing,
+                          selected: drawsSelectedOf(design.markup ?? ''),
+                        }),
+                        ...sampled,
+                      ]),
+                    },
+                  }),
+              roomAbove: (design.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
+              panes: drawnPaneCountOf(design.markup ?? ''),
+              frozen: frozenAnimationsOf(design.markup ?? ''),
+              ...(design.ambient ? { ambient: design.ambient } : {}),
+              ...(open ? { opened: { control: open.control, markup: design.markup ?? '' } } : {}),
+            }).catch((error: unknown) => {
+              if (error instanceof DroppedPropsError) return { problem: error.message };
+              if (error instanceof UndrivableError) return { problem: error.message, undrivable: true as const };
 
-        const base = slotOnly.get(state);
+              throw error;
+            }),
+          );
 
-        if (base !== undefined && !appOnly) {
-          shots.push({
-            state,
-            problem: `draws like ${base} once compare empties its slots - it differs from ${base} only inside slot() regions, so compare cannot check it`,
-          });
-          continue;
+          shots.push(Buffer.isBuffer(app) ? { state, design: design.png, app } : { state, ...app });
         }
 
-        const sent = open?.props ?? states[open?.from ?? state];
-        const forced = forcedElementsOf(design.markup ?? '');
-        const app = await queue.run((browser) =>
-          harnessShotOf({
-            browser,
-            url: harnessUrlOf({
-              url,
-              part,
-              state,
-              props: sent,
-              layout: frame.layout,
-            }),
-            size: frame.size,
-            width,
-            forced,
-            ...(appOnly
-              ? {}
-              : {
-                  props: {
-                    sent,
-                    designOnly: new Set([
-                      ...designOnlyPropsOf({
-                        states,
-                        opens,
-                        state,
-                        forced: forced.map(({ interaction }) => interaction),
-                        forcing,
-                        selected: drawsSelectedOf(design.markup ?? ''),
-                      }),
-                      ...sampled,
-                    ]),
-                  },
-                }),
-            roomAbove: (design.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
-            panes: drawnPaneCountOf(design.markup ?? ''),
-            frozen: frozenAnimationsOf(design.markup ?? ''),
-            ...(design.ambient ? { ambient: design.ambient } : {}),
-            ...(open ? { opened: { control: open.control, markup: design.markup ?? '' } } : {}),
-          }).catch((error: unknown) => {
-            if (error instanceof DroppedPropsError) return { problem: error.message };
-            if (error instanceof UndrivableError) return { problem: error.message, undrivable: true as const };
+        return null;
+      });
 
-            throw error;
-          }),
-        );
+      if (unshot !== null) return unshot;
 
-        shots.push(Buffer.isBuffer(app) ? { state, design: design.png, app } : { state, ...app });
-      }
+      return { states, shots };
+    } catch (error) {
+      return messageOf(error);
+    } finally {
+      if (!warm)
+        await timedPhase('compare-close', async () => {
+          await shooter?.close();
+          await queue.close();
+          await server?.close();
+        });
+    }
+  };
 
-      return null;
-    });
-
-    if (unshot !== null) return unshot;
-
-    return { states, shots };
-  } catch (error) {
-    return messageOf(error);
-  } finally {
-    await timedPhase('compare-close', async () => {
-      await shooter?.close();
-      await queue.close();
-      await server.close();
-    });
-  }
-};
+/** Draws each state of a part, or the `only` one, as its design frame and as the app's harness page, in one Chromium. */
+export const shootStates: ShootStates = shootStatesWith();
 
 const fileNameOf = (state: string) => state.replace(/[^\w.-]/g, '-');
 

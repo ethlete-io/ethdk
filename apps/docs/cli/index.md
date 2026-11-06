@@ -525,6 +525,13 @@ unknown path answered by its `index.html`, and stops the server and removes the 
 Ctrl-C. This works next to a running dev server of the same app. When another nx process runs the same build, it
 fails at once and asks for `--url`.
 
+Compare runs in a resident design process of the checkout. The first compare starts it detached and prints
+`starting the resident design process (cold start, ~N s)`; later ones send it their request, get its output and exit
+code back, and reuse its design server, Chromium and harness app, which it rebuilds only when an input of the build
+changed. It exits after 30 minutes without a request, and `et design stop` ends it at once. Its discovery file and log
+are in `tmp/design-resident/` of the checkout. When it does not answer, compare prints one line and runs in its own
+process; in CI (`CI` set) or with `ETHLETE_DESIGN_RESIDENT=0` it always does.
+
 `et design actions components/chip --product app-a [--url …] [--state <name>]` checks what each control does. Every
 interactive element of a design (button, link, field, an element with an interactive role or `tabindex` 0 or more)
 declares its action in `data-et-action`: the state a press reaches (`data-et-action="open"`) or the output it fires

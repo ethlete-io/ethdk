@@ -29,7 +29,7 @@ const ethleteDependenciesOf = (dir: string): string[] => {
 
 type StaleLib = { specifier: string; name: string; source: string; dir: string };
 
-const staleLibsOf = (options: { target: string; config: DesignConfig | null }): StaleLib[] => {
+const checkoutLibsOf = (options: { target: string; config: DesignConfig | null }): StaleLib[] => {
   const { target, config } = options;
   const packages = renderPackagesOf({ target, config });
   const queue = [...(config?.render?.modules ?? DEFAULT_RENDER_MODULES)];
@@ -53,13 +53,20 @@ const staleLibsOf = (options: { target: string; config: DesignConfig | null }): 
     const name = basename(mapped.dir);
     const source = resolve(target, 'libs', name, 'src');
 
-    if (!existsSync(source) || newestMtimeOf(source) <= newestMtimeOf(mapped.dir)) continue;
-
-    libs.push({ specifier, name, source, dir: mapped.dir });
+    if (existsSync(source)) libs.push({ specifier, name, source, dir: mapped.dir });
   }
 
   return libs;
 };
+
+const staleLibsOf = (options: { target: string; config: DesignConfig | null }) =>
+  checkoutLibsOf(options).filter(({ source, dir }) => newestMtimeOf(source) > newestMtimeOf(dir));
+
+/** Changes whenever a checkout lib build folder the drawings load from is rebuilt. */
+export const libBuildStampOf = (options: { target: string; config: DesignConfig | null }) =>
+  checkoutLibsOf(options)
+    .map(({ dir }) => `${dir}:${newestMtimeOf(dir)}`)
+    .join('|');
 
 /** The shell command that rebuilds the build folder of the checkout lib `name`. */
 export const libBuildCommandOf = (name: string) => `NX_NO_CLOUD=true npx nx build ${name} --skip-nx-cache`;

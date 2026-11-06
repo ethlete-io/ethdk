@@ -30,6 +30,8 @@ import { designReady, READY_USAGE } from './system/ready-command';
 import { designSystem } from './system/system-command';
 import { readFreshDist } from './system/stale-dist';
 import { designMocksFresh, guardsDesignMocks } from './system/stale-design-mocks';
+import { realResidentClient, RESIDENT_SERVE, runThroughResident, stopResident } from './resident/client';
+import { serveResident } from './resident/resident-process';
 
 /** Reads `--checkout <path>` out of an argument list, and answers with the path and the rest. */
 const splitCheckout = (argv: string[], root: string) => {
@@ -261,6 +263,11 @@ const helpOf = (invocation: string) =>
     `${invocation} stamp`,
     '  Print the version and build of this cli as JSON, which a running server answers with too.',
     '',
+    `${invocation} stop`,
+    '  End the resident design process of the checkout. compare runs in it: the first compare starts it detached',
+    '  (printed as a cold start), later ones reuse its design server, Chromium and harness app, and it exits after',
+    '  30 min without a request. CI and ETHLETE_DESIGN_RESIDENT=0 run compare in its own process.',
+    '',
     'Every command takes --checkout <path>. DE_PORT overrules the port in .ethlete/design/config.json.',
     '',
   ].join('\n');
@@ -351,6 +358,20 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     console.log(JSON.stringify(buildStampOf()));
 
     return 0;
+  }
+
+  if (argv[0] === RESIDENT_SERVE || argv[0] === 'stop' || argv[0] === 'compare') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    if (argv[0] === RESIDENT_SERVE) return serveResident({ target });
+
+    const client = realResidentClient(buildStampOf().build);
+
+    if (argv[0] === 'stop') return stopResident(target, client);
+
+    const answered = await runThroughResident({ target, argv: [argv[0], ...rest], invocation, client });
+
+    if (answered !== null) return answered;
   }
 
   let release: () => void = () => undefined;

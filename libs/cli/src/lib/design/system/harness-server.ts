@@ -127,6 +127,21 @@ const projectOf = (target: string, app: string) => {
   return { name: project.name };
 };
 
+/** The cache key of the product's harness build, which changes with any input of it; null when there is none. */
+export const harnessKeyOf = (options: { target: string; product: ResolvedProduct }) => {
+  const harness = harnessOf(options.product);
+
+  if (harness === null || typeof harness === 'string') return null;
+
+  const found = projectOf(options.target, harness.app);
+
+  if (typeof found === 'string') return null;
+
+  const build = nxBuildCommandOf({ target: options.target, project: found.name, outputPath: '<out>' });
+
+  return harnessBuildKeyOf({ target: options.target, command: [build.command, ...build.args] });
+};
+
 const servingOf = async (url: string) => {
   try {
     return (await fetch(`${url}${HARNESS_PATH}`, { signal: AbortSignal.timeout(5_000) })).ok;
