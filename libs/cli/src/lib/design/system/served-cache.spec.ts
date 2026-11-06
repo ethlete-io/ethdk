@@ -1,9 +1,20 @@
 import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'fs';
+import { createServer } from 'http';
+import { AddressInfo } from 'net';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { Rendered, renderMiddleware } from '../render';
 import { recordRun, TimingLine } from '../timings';
-import { createServedCache, createServedHashes, FetchServed, servedHitOf, writeServed } from './served-cache';
+import {
+  createServedCache,
+  createServedHashes,
+  fetchServedOf,
+  FetchServed,
+  reachableBaseOf,
+  servedHitOf,
+  writeServed,
+} from './served-cache';
 
 const BASE = 'http://localhost:4321';
 const ANSWERED: FetchServed = async ({ url }) => ({ body: Buffer.from(`200\0${url}`), lines: [] });
@@ -63,5 +74,50 @@ describe('served cache inputs', () => {
       .map((line) => JSON.parse(line) as TimingLine);
 
     expect(lines.map((line) => line.nullHashes)).toEqual([1, 0]);
+  });
+  it('prints on a hit the warnings the render worker logged while drawing, as the drawn run printed them', async () => {
+    const WARNING = 'etProvideColor="brand" has no effect because no color themes are registered.';
+    const printed: string[] = [];
+    const render = async (_ask: unknown, { quiet }: { quiet?: boolean }): Promise<Rendered> => {
+      if (!quiet) printed.push(WARNING);
+
+      return { html: '<et-chip></et-chip>', styles: [], lines: [WARNING] } as unknown as Rendered;
+    };
+    const server = createServer(renderMiddleware(render));
+
+    await new Promise<void>((done) => server.listen(0, 'localhost', done));
+
+    try {
+      const address = server.address() as AddressInfo;
+      const base = `http://localhost:${address.port}`;
+      const requested = [{ url: `${base}/__design/render`, accept: null, post: '{"call":"components/chip"}' }];
+      const runOf = () => ({
+        store: createServedCache<string>(join(dir, 'cache'), 1e9),
+        served: createServedHashes(base, fetchServedOf(reachableBaseOf(address))),
+        salt: '',
+        print: (line: string) => printed.push(line),
+      });
+      const drawn = async () => {
+        const run = runOf();
+        const hit = await servedHitOf(run, 'k');
+
+        if (hit !== null) return hit;
+
+        await fetch(`${reachableBaseOf(address)}/__design/render`, { method: 'POST', body: requested[0]?.post });
+        await writeServed(run, { key: 'k', requested, value: 'drawn' });
+
+        return 'drawn';
+      };
+
+      await drawn();
+      const cold = printed.splice(0);
+
+      await drawn();
+
+      expect(cold).toEqual([WARNING]);
+      expect(printed).toEqual(cold);
+    } finally {
+      await new Promise((done) => server.close(done));
+    }
   });
 });
