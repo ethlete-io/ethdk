@@ -4304,3 +4304,11 @@ agents so that a compare result still carries a verdict. pages/system port quest
 design-is-truth rule: the old Ausnahmen toggle in system-view goes, the popover is the design; system-view moves to the
 page component for call and themes now; `agent` becomes a known unbound input with the reason "no progress source",
 removed when a source exists.
+
+550\. Tom (2026-11-07): "all states sketch sehe ich ncht". The ADR 0010 sketch `pages/sketches@all-states` (ec316a94a)
+stayed `status: in progress`: its second `sketch check` was never run, so it was never marked ready, and a pick needs
+a ready sketch. Builder and doc agent both told Tom the sketch waited for him. Why no tool caught it: opening an ADR
+0010 sketch ends at "in progress", and nothing says that a sketch meant for Tom is not visible to him yet. Tool fix
+(builder): `sketch new` for an ADR 0010 sketch runs `sketch check` and marks it ready in the same command, or fails
+loudly; a sketch that stays in progress for more than one builder step shows as an open point on the part, with the
+missing step.
