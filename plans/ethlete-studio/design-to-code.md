@@ -3755,3 +3755,13 @@ instead of skipping; (3) `design check --part` passes and writes no record witho
 doc-agent decision under ADR 0203): a passing compare plus the part's own passing check writes the record that clears
 IMPLEMENTATION-UNCOMPARED and `task --verify`; build-ready keeps its embedded chain for `design task`; the action run
 skips parts without an `implements` link; `check --part` prints why it wrote no record.
+
+499\. Tom, 2026-11-06 12:08: "den hat er schon seit 71m gezeichnet aber danke... du merkst selbst wie lahm wir schon
+wieder sind". The sketch `components/title-bar@notice-hint` had its variants written at 10:56; at 12:07 c8 still waited
+on `sketch check` (4:42 min in, in-process, while cb ran a full `design check --slow` for 14 min on the same machine),
+and the doc agent told Tom it would show the sketch "once it is ready". Why no tool caught it: nothing reports how long
+a drawn sketch waits before Tom sees it, the doc agent relied on the builder's "ready" message instead of the sketch
+files, and two heavy design runs from two builders share the CPU with no queue. Fixes: process (doc agent) - a sketch
+goes to Tom as soon as its variants are drawn, checks run behind it; tool (c0/cb, ADR 0204) - sketch check/ready go
+through the resident process (S6, ≤ 10 s), which queues heavy runs of all callers instead of running them side by side,
+and Studio shows a drawn sketch at once with its check state beside it.
