@@ -8,6 +8,8 @@ export default [
     ignores: [
       '**/dist',
       '**/.design-base',
+      '.claude/worktrees',
+      'tmp',
       '**/vite.config.*.timestamp*',
       '**/vitest.config.*.timestamp*',
       '**/.vitepress/cache',

@@ -45,5 +45,5 @@
     "types": ["*"],
     "ignoreDeprecations": "6.0"
   },
-  "exclude": ["node_modules", "tmp"]
+  "exclude": ["node_modules", "tmp", ".claude/worktrees"]
 }

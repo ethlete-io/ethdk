@@ -33,5 +33,22 @@
     "source.organizeImports": "explicit"
   },
   "vsicons.presets.angular": true,
+  "files.watcherExclude": {
+    "**/.claude/worktrees/**": true,
+    "**/node_modules/**": true,
+    "**/.design-base/**": true,
+    "dist/**": true,
+    "tmp/**": true
+  },
+  "search.exclude": {
+    "**/.claude/worktrees": true,
+    "**/.design-base": true,
+    "dist": true,
+    "tmp": true
+  },
+  "files.exclude": {
+    "**/.claude/worktrees": true,
+    "tmp": true
+  },
   "nxConsole.generateAiAgentRules": true
 }
