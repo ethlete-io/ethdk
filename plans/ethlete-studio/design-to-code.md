@@ -3992,3 +3992,6 @@ nor the doc agent opened the sketch before sending Tom to it. Cause of (1) asked
 with no changed state never waits for Tom: the tool closes an `@edit` one as HELD and marks any other as broken, with
 a spec; (b) process: before the doc agent sends Tom to a pick, the builder takes a `design shot` of the sketch view
 and the doc agent checks it shows a real choice.
+Tom then ran the accept command the doc agent had given him; it refused ("pages/sketches has an open sketch - merge
+or discard it"). The doc agent had sent a command it never checked against the open sketch. Rule: a command for Tom
+is run (or dry-run) by an agent first, or not sent.
