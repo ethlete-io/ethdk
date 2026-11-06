@@ -36,6 +36,7 @@
     "lint:studio-label-specs": "node ./tools/scripts/studio-label-specs.mjs",
     "prepare": "husky",
     "prepare:release": "node ./tools/scripts/prepare-release.js",
+    "push:slice": "node ./tools/scripts/push-slice.mjs",
     "query:export-coverage": "node ./tools/export-coverage/check.mjs query",
     "red-check": "node ./tools/scripts/red-check.mjs",
     "release": "yarn prepare:release && yarn changeset publish",

@@ -1,6 +1,8 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const CONFIG = '.ethlete/design/config.json';
 const DESIGN_DIR = '.ethlete/design';
@@ -94,7 +96,66 @@ export const checkDesignRules = (root, base, head) => {
   return 1;
 };
 
+const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+const RULES_SOURCE = 'libs/cli/src/lib/design/system/check-system.ts';
+
+const loadRulesFromSource = async () => {
+  const { build } = await import('esbuild');
+  const dir = join(REPO, 'tmp', `design-rules-staged-${process.pid}`);
+  const outfile = join(dir, 'check-system.cjs');
+
+  try {
+    await build({
+      entryPoints: [join(REPO, RULES_SOURCE)],
+      bundle: true,
+      platform: 'node',
+      format: 'cjs',
+      packages: 'external',
+      outfile,
+      logLevel: 'error',
+    });
+
+    return createRequire(import.meta.url)(outfile);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+};
+
+const stagedFilesOf = (root) =>
+  run(root, 'git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR']).stdout.split('\n').filter(Boolean);
+
+const uncomparedMessageOf = (config, found) =>
+  found
+    .flatMap(({ product, lines }) => [
+      `A commit that changes UI in ${config.products?.[product]?.harness?.app ?? product} needs a green design compare (ADR 0011).`,
+      ...lines,
+    ])
+    .join('\n');
+
+export const checkStagedUncompared = async (root, { files = stagedFilesOf(root), invocation } = {}) => {
+  const configPath = join(root, CONFIG);
+
+  if (!existsSync(configPath)) return 0;
+
+  const config = JSON.parse(readFileSync(configPath, 'utf8'));
+  const products = productsToCheck(config, files);
+
+  if (products.length === 0) return 0;
+
+  const { uncomparedLinesOf } = await loadRulesFromSource();
+  const found = uncomparedLinesOf({ target: root, config, products, changed: files, invocation });
+
+  if (found.length === 0) return 0;
+
+  console.error(uncomparedMessageOf(config, found));
+
+  return 1;
+};
+
 if (import.meta.url === `file://${process.argv[1]}`) {
   const [base, head] = process.argv.slice(2);
-  process.exit(checkDesignRules(process.cwd(), base, head));
+
+  process.exit(
+    base === '--staged' ? await checkStagedUncompared(process.cwd()) : checkDesignRules(process.cwd(), base, head),
+  );
 }

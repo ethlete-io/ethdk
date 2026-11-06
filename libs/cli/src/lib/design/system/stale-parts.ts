@@ -63,12 +63,14 @@ export const UNCOMPARED_RULE = 'IMPLEMENTATION-UNCOMPARED';
  * One problem per file in `changed` that an implemented part's app component reaches and that moved since the part's
  * implemented record, so an app edit cannot land without a fresh compare. A part in the implementation baseline passes
  * while each such file still has its pinned hash; an entry added to the baseline, or whose part is no longer
- * uncompared, is a problem too. Prints each baseline entry.
+ * uncompared, is a problem too; with `onlyChanged`, only while the baseline file is in `changed`. Prints each baseline
+ * entry.
  */
 export const uncomparedAppProblemsOf = (options: {
   product: ResolvedProduct;
   changed: string[];
   invocation: string;
+  onlyChanged?: boolean;
 }): Problem[] => {
   const { product, invocation } = options;
   const changed = new Set(options.changed);
@@ -80,9 +82,13 @@ export const uncomparedAppProblemsOf = (options: {
   Object.entries(baseline).forEach(([part, entry]) => console.log(baselineLineOf(part, entry)));
 
   const own = product.parts.filter((resolved) => resolved.origin !== 'base');
-  const driftOf = (resolved: ResolvedPart) => {
+  const recordOf = (resolved: ResolvedPart) => {
     const part = partKeyOf(resolved);
-    const record = readImplemented(partOwnerOf({ product, part: resolved }).dir)[part];
+
+    return { part, record: readImplemented(partOwnerOf({ product, part: resolved }).dir)[part] };
+  };
+  const driftOf = (resolved: ResolvedPart) => {
+    const { part, record } = recordOf(resolved);
 
     return { part, record, drifted: record ? changedAppFilesOf({ product, part, record }) : [] };
   };
@@ -92,10 +98,11 @@ export const uncomparedAppProblemsOf = (options: {
     return component === null ? {} : driftPinOf(drifted, appFilesOf({ root, component }));
   };
 
-  const added = addedBaselineEntriesOf({ file: baselineFile }).map((part) =>
+  const checksBaseline = !options.onlyChanged || changed.has(relative(root, baselineFile).split(sep).join('/'));
+  const added = (checksBaseline ? addedBaselineEntriesOf({ file: baselineFile }) : []).map((part) =>
     baselineProblem(`${part} was added to the baseline - it may only shrink (ADR 0205)`),
   );
-  const removable = Object.entries(baseline)
+  const removable = Object.entries(checksBaseline ? baseline : {})
     .filter(([part]) => {
       const resolved = own.find((candidate) => partKeyOf(candidate) === part);
 
@@ -106,10 +113,11 @@ export const uncomparedAppProblemsOf = (options: {
     );
 
   const uncompared = own.flatMap((resolved) => {
-    const { part, record, drifted } = driftOf(resolved);
+    const { record } = recordOf(resolved);
 
     if (!record?.app || !Object.keys(record.app).some((file) => changed.has(file))) return [];
 
+    const { part, drifted } = driftOf(resolved);
     const entry = baseline[part];
     const pin = entry ? pinOf(resolved, drifted) : {};
 

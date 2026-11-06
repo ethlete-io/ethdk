@@ -1,4 +1,4 @@
-import { dirname, relative } from 'path';
+import { dirname, relative, resolve } from 'path';
 import { chromiumOf } from '../browser';
 import { DesignConfig } from '../paths';
 import { autoAcceptOf, DrawStates, newStatesLineOf } from './accepted-pictures';
@@ -154,9 +154,9 @@ export const checkRules = (options: {
       checked: isStatic,
     });
     const problems = [
-      ...baselined.problems,
-      ...(changed.length > 0 ? uncomparedAppProblemsOf({ product, changed, invocation }) : []),
-    ].filter((problem) => !isInBasePart(product, problem.file));
+      ...baselined.problems.filter((problem) => !isInBasePart(product, problem.file)),
+      ...uncomparedOf({ product, changed, invocation }),
+    ];
 
     [...baselined.lines, ...ruleBaselineLinesOf(product, (rule) => !isStatic(rule))].forEach((line) =>
       console.log(line),
@@ -172,6 +172,45 @@ export const checkRules = (options: {
   );
 
   return failed === 0 ? 0 : 1;
+};
+
+const uncomparedOf = (options: {
+  product: ResolvedProduct;
+  changed: string[];
+  invocation: string;
+  onlyChanged?: boolean;
+}) =>
+  (options.changed.length > 0 ? uncomparedAppProblemsOf(options) : []).filter(
+    (problem) => !isInBasePart(options.product, problem.file),
+  );
+
+/**
+ * The IMPLEMENTATION-UNCOMPARED lines `check --rules --base` prints for `products`, limited to the files in `changed`,
+ * without the other rules - the commit-time half of the design-rules gate.
+ */
+export const uncomparedLinesOf = (options: {
+  target: string;
+  config: DesignConfig;
+  products: string[];
+  changed: string[];
+  invocation?: string;
+}) => {
+  const { target, config, changed } = options;
+  const invocation = options.invocation ?? repoInvocation({ root: target, subcommand: 'design' });
+  const files = new Set(changed.map((file) => resolve(target, file)));
+
+  return options.products.flatMap((name) => {
+    const entry = config.products?.[name];
+
+    if (!entry) return [];
+
+    const product = resolveProduct({ target, name, config: entry });
+    const lines = uncomparedOf({ product, changed, invocation, onlyChanged: true })
+      .filter((problem) => files.has(resolve(target, problem.file)))
+      .map((problem) => lineOf(target, problem));
+
+    return lines.length > 0 ? [{ product: name, lines }] : [];
+  });
 };
 
 /** Every problem the rules find in a resolved product, its resolution problems first. */

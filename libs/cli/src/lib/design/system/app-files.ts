@@ -71,6 +71,28 @@ const reExportsOf = (source: string): ReExport[] =>
     return [{ specifier: statement.moduleSpecifier.text, names }];
   });
 
+const MAY_RE_EXPORT = /^\s*export\s+(?:type\s+)?[*{][^;]*?\bfrom\s*['"`]/mu;
+
+type ExportSummary = { names: string[]; reExports: ReExport[]; onlyReExports: boolean };
+
+const summaries = new Map<string, { source: string; summary: ExportSummary }>();
+
+const exportSummaryOf = (file: string, source: string): ExportSummary => {
+  const known = summaries.get(file);
+
+  if (known?.source === source) return known.summary;
+
+  const summary = {
+    names: exportedNamesOf(source),
+    reExports: reExportsOf(source),
+    onlyReExports: sourceFileOf(source).statements.every(ts.isExportDeclaration),
+  };
+
+  summaries.set(file, { source, summary });
+
+  return summary;
+};
+
 const stampOf = (file: string) => {
   try {
     return statSync(file).mtimeMs;
@@ -110,10 +132,13 @@ const reachedFilesOf = (options: { root: string; component: string }) => {
     seen.add(key);
 
     const source = read(file);
-    const reExports = reExportsOf(source);
+
+    if (!source.includes(name) && !MAY_RE_EXPORT.test(source)) return [];
+
+    const { names: exportedNames, reExports } = exportSummaryOf(file, source);
     const forwarded = new Set(reExports.flatMap(({ names }) => (names ?? []).map(({ exported }) => exported)));
 
-    if (exportedNamesOf(source).some((exported) => exported === name && !forwarded.has(exported))) return [file];
+    if (exportedNames.some((exported) => exported === name && !forwarded.has(exported))) return [file];
 
     for (const { specifier, names } of reExports) {
       const target = targetOf(file, specifier);
@@ -132,7 +157,7 @@ const reachedFilesOf = (options: { root: string; component: string }) => {
   const filesOfName = (file: string, name: string) => {
     const found = declaringFilesOf({ file, name }, new Set());
 
-    return found.length > 0 || sourceFileOf(read(file)).statements.every(ts.isExportDeclaration) ? found : [file];
+    return found.length > 0 || exportSummaryOf(file, read(file)).onlyReExports ? found : [file];
   };
 
   const files = new Set<string>();
