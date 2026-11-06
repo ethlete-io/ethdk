@@ -452,9 +452,10 @@ describe('part compare', () => {
     const lines = output();
     let actionsStarted = (): void => undefined;
     const started = new Promise<void>((resolve) => (actionsStarted = resolve));
-    const shoot = vi.fn<ShootStates>(async () => {
+    const shoot = vi.fn<ShootStates>(async (options) => {
       await started;
-      console.log('shots taken');
+      console.log('design shots taken');
+      options.onDesignShots?.();
 
       return {
         states: { default: {}, open: {} },
@@ -466,6 +467,8 @@ describe('part compare', () => {
     });
     const actions = vi.fn<typeof partActionFailuresOf>(async (options) => {
       actionsStarted();
+      await options.designsDrawn;
+      console.log('action designs drawn');
       options.onNote?.('host DesignCanvas: not checked');
 
       return ['open button "Zu" click FAILED the state default was not reached'];
@@ -480,8 +483,8 @@ describe('part compare', () => {
     });
 
     expect(code).toBe(1);
-    expect(lines.slice(0, 3)).toEqual(['shots taken', 'default ok', 'open DIFF 1 px']);
-    expect(lines.slice(4)).toEqual([
+    expect(lines.slice(0, 4)).toEqual(['design shots taken', 'action designs drawn', 'default ok', 'open DIFF 1 px']);
+    expect(lines.slice(5)).toEqual([
       'host DesignCanvas: not checked',
       'open button "Zu" click FAILED the state default was not reached',
       '1 action missed',

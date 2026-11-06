@@ -248,6 +248,8 @@ export const checkActions = async (options: {
   only: string | null;
   onLine?: (line: Line) => void;
   appRoot?: string | null;
+  /** Settles once another run has drawn the design pictures into the shared store, so this check reads them instead of drawing them twice. */
+  designsDrawn?: Promise<unknown>;
 }): Promise<{ lines: Line[]; pictures: string | null; embedders?: string[]; hosts?: string[] } | string> => {
   const { target, config, product, part, url, only, onLine } = options;
   const frame = compareFrameOf({ presets: product.presets, part, preset: null });
@@ -347,6 +349,7 @@ export const checkActions = async (options: {
       return drawn;
     };
 
+    await options.designsDrawn;
     await timedPhase('actions-designs', () => Promise.all(names.map((state) => draw(state))));
 
     const markups = new Map(
@@ -870,6 +873,7 @@ export const partActionFailuresOf = async (options: {
   checkLive?: typeof checkLiveActions;
   onNote?: (line: string) => void;
   appRoot?: string | null;
+  designsDrawn?: Promise<unknown>;
 }): Promise<string[] | { unavailable: string }> => {
   const { target, config, product, part } = options;
   const source = product.parts.find((candidate) => partKeyOf(candidate) === part)?.source;
@@ -893,6 +897,7 @@ export const partActionFailuresOf = async (options: {
       url,
       only: null,
       appRoot: options.appRoot ?? null,
+      designsDrawn: options.designsDrawn,
     });
   const checked = options.harness
     ? await check(options.harness)

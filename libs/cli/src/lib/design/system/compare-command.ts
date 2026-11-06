@@ -75,6 +75,8 @@ export type ShootStates = (options: {
   appOnly?: boolean;
   /** The folder of the built harness app `url` serves; without it no app picture is cached. */
   appRoot?: string | null;
+  /** Called once the design pictures are drawn and kept, before the app pictures. */
+  onDesignShots?: () => void;
 }) => Promise<{ states: Record<string, unknown>; shots: StateShot[] } | string>;
 
 export type ComparePart = (options: {
@@ -88,6 +90,7 @@ export type ComparePart = (options: {
   sketch?: string | null;
   appRoot?: string | null;
   shoot?: ShootStates;
+  onDesignShots?: () => void;
 }) => Promise<{ green: boolean; states: Record<string, unknown> } | string>;
 
 /** @internal How many states compare shoots at once, design and app pictures alike. */
@@ -237,7 +240,7 @@ const ownDraw = async (target: string, config: DesignConfig) => {
 /** `shootStates` drawing on `warm`, or on a design server and Chromium of its own when there is none. */
 export const shootStatesWith =
   (warm?: WarmDraw): ShootStates =>
-  async ({ target, config, product, part, url, only, preset, appOnly, appRoot }) => {
+  async ({ target, config, product, part, url, only, preset, appOnly, appRoot, onDesignShots }) => {
     const frame = compareFrameOf({ presets: product.presets, part, preset: preset ?? null });
 
     if (typeof frame === 'string') return frame;
@@ -318,6 +321,8 @@ export const shootStatesWith =
             })
           : new Map<string, string>();
       });
+
+      onDesignShots?.();
 
       const opens = pointerOpensOf({
         states,
@@ -566,6 +571,8 @@ export const designCompare = async (options: {
     start: options.start,
     run: async (url, root) => {
       const notes: string[] = [];
+      let designsShot = (): void => undefined;
+      const designsDrawn = new Promise<void>((resolve) => (designsShot = resolve));
       const actions =
         all || live
           ? null
@@ -578,6 +585,7 @@ export const designCompare = async (options: {
                 url: args.values['--url'],
                 harness: url,
                 appRoot: root,
+                designsDrawn,
                 onNote: (line) => notes.push(line),
               }),
             ).then(
@@ -599,7 +607,10 @@ export const designCompare = async (options: {
           sketch: args.values['--sketch'] ?? null,
           appRoot: root,
           shoot: options.shoot ?? (live ? shootLiveStates : undefined),
+          onDesignShots: designsShot,
         });
+
+        designsShot();
 
         if (typeof result === 'string') {
           console.error(result);
