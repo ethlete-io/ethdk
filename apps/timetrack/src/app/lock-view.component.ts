@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation, signal } from '@angular/core';
 import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
 import { BuildStampComponent } from './build-stamp.component';
+import { AlphaBadgeComponent } from './alpha-badge.component';
 import { LogoComponent } from './logo.component';
 import { injectWindowLock } from './window-lock';
 
@@ -18,8 +19,11 @@ import { injectWindowLock } from './window-lock';
         class="flex w-90 flex-col gap-5 rounded-xl border border-et-surface-border bg-et-surface-interaction/8 p-8 shadow-lg"
       >
         <div class="flex flex-col items-start gap-1">
-          <div class="w-50"><ethlete-logo /></div>
-          <div class="mt-2"><ethlete-build-stamp /></div>
+          <div class="flex w-50 flex-col items-center gap-2">
+            <ethlete-alpha-badge />
+            <ethlete-logo class="w-full" />
+          </div>
+          <div class="mt-2"><ethlete-build-stamp withoutBadge /></div>
         </div>
 
         <div class="flex flex-col gap-1">
@@ -59,7 +63,7 @@ import { injectWindowLock } from './window-lock';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, BuildStampComponent, FORM_FIELD_IMPORTS, INPUT_IMPORTS, LogoComponent],
+  imports: [AlphaBadgeComponent, BUTTON_IMPORTS, BuildStampComponent, FORM_FIELD_IMPORTS, INPUT_IMPORTS, LogoComponent],
 })
 export class LockViewComponent {
   protected lock = injectWindowLock();

@@ -16,6 +16,7 @@ import { injectDayRowsBackfill } from './peers/day-rows-backfill';
 import { injectScreenDayBooking } from './day-review/screen-day-booking';
 import { injectCollectionPause } from './collection-pause';
 import { LockViewComponent } from './lock-view.component';
+import { AlphaBadgeComponent } from './alpha-badge.component';
 import { LogoComponent } from './logo.component';
 import { NudgeBannerComponent } from './nudge-banner.component';
 import { SidebarComponent } from './shell';
@@ -71,10 +72,12 @@ const viewPathOf = (route: string) => route.split('/').filter(Boolean)[0];
             class="flex w-56 shrink-0 flex-col gap-6 overflow-y-auto border-r border-et-surface-border py-6 pr-4 pl-3"
           >
             <div class="flex flex-col items-start px-3">
+              <div class="mb-2 flex w-full justify-center"><ethlete-alpha-badge /></div>
+
               <h1 class="m-0 flex w-full"><ethlete-logo /></h1>
 
               <div class="mt-2">
-                <ethlete-build-stamp />
+                <ethlete-build-stamp withoutBadge />
               </div>
 
               <ethlete-update-check-button />
@@ -92,6 +95,7 @@ const viewPathOf = (route: string) => route.split('/').filter(Boolean)[0];
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
+    AlphaBadgeComponent,
     ApprovalBannerComponent,
     BuildStampComponent,
     LockViewComponent,
