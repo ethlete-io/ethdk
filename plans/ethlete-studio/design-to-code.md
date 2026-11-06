@@ -4085,6 +4085,16 @@ for a counter bug. Why no tool caught it: the counter was never checked against 
 mock. Agreed by the doc agent: note until the counter is fixed (spec on the sketches markup), then a failure; the fix
 is perf work (each wrong count costs the 1 s cap per shot) and runs right after S4. Not in the perf block, queued:
 pages/sketches differs on every state (far-out 2446 px), the same before the slice.
+As built (B416 step 3 = S4, c0 subagent, 2026-11-06, 361d96eca): design and app pictures kept on disk by input hash
+(`node_modules/.design-explore/...`; app key: built harness files, path+query, opened control + markup hash, prop
+check, shot options, cli build, Playwright version; design key: every file drawn from). The action check reuses the
+design store (compare-actions 8.5 -> 3.5-3.9 s). pages/sketches warm unchanged 8.0 s (91 hits, 0 misses; target met),
+cold 21.1 s, all design pictures dropped 14.4 s, all app pictures dropped 13.6 s (over target; floor ~30 shots x 0.9 s
+/ 4 + actions 3.5 s + ~3 s start); pages/start cold 2.7 s, warm 1.8 s. `design timings` counted each disk lookup of the
+old store as a miss (fixed here). Verified: compare-cache.spec (6 cases, each key input mutated fails its case), cli
+1144/1144, tsc, lint. Not verified: resident numbers, a real edit, Chromium binary not in the key. Before the block
+closes: done-line numbers from the resident path, and a real one-part edit in a scratch copy with the finding-519
+check that the next compare shows the new picture.
 B416 phase 3 = S4 (in progress, then as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06):
 compare keeps its pictures on disk under `node_modules/.design-explore/compare-{design,app}-shots-<hash>`. A design
 picture uses the design server's shot store (`server.shotStore`): its key is the frame (part, state, preset, width, bare,
