@@ -373,6 +373,11 @@ Source: `plans/fifagg-sdk-findings-2026-11-06.md` (consumer handoff, German). In
   Why the first fix missed it: its scenario covered a fresh subscriber only, not the consumer's exact steps; the item
   was closed without replaying the consumer repro. Process fix: a consumer-reported query bug closes only when the
   consumer's steps are ported one to one into a scenario (add this to the `query-scenario-tests` skill).
+  **Built 105d2fe92 (cb, unpushed).** Cause: `toObservable(executionState)` keeps its own `ReplaySubject(1)`, so the old
+  Success stayed buffered until its effect ran; 3ade7f27f removed only the outer `shareReplay`, and its scenario checked
+  only `late[0]`. Fix: `state$` reads from an effect that feeds a plain `Subject`. The consumer scenario bit on the
+  interop client (`['LOADING','SUCCESS']`), native v2 passed before and after. Rule 12 in `query-scenario-tests`. Not
+  verified: the full query suite, and fifagg's own spec against a built package.
 - **16 as built (ethlete-sdk-cb, 2026-11-06):** cause: `LegacyQuery.state$` read `toObservable(executionState)`, whose
   `ReplaySubject(1)` holds the previous Success until its effect runs; a subscriber that attaches right after
   `execute()` got Loading from `startWith`, then the buffered old Success. 3ade7f27f removed only the `shareReplay`, so
@@ -383,6 +388,7 @@ Source: `plans/fifagg-sdk-findings-2026-11-06.md` (consumer handoff, German). In
   native passed before and after. Rule 12 in the `query-scenario-tests` skill. Verified: the 20 legacy scenario files
   and the interop unit specs (332 passed), lint, typecheck, prettier, `query:export-coverage`. Not verified: the
   full query suite, the fifagg spec against a built package.
+- **In progress (ethlete-sdk-cb, 2026-11-06):** item 20 - a devtools e2e case for the pill under automation and `showInAutomation: true`.
 - **18 confirmed on next.62:** entity store before `onSuccess`, both `destroyOnResponse` values. fifagg removed its
   workaround.
 - **15 stays by decision:** `reportErrors: false` from the migrator; fifagg keeps `createSilentLegacyQueryCreator`.
