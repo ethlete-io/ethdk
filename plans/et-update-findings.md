@@ -438,7 +438,7 @@ Source: `plans/fifagg-sdk-findings-2026-11-06.md` (consumer handoff, German; del
 - **No SDK work:** 26 (consumer must read the error state), 22, 12, Swiss seeding, the V2 bearer cookie domain, 27
   (accepted interop differences).
 
-## 12. fifagg ngrx-toolkit migration (fifagg-sdk-findings-2026-11-06-ngrx-toolkit.md, 2026-11-06) - open
+## 12. fifagg ngrx-toolkit migration (fifagg-sdk-findings-2026-11-06-ngrx-toolkit.md, 2026-11-06) - done but the v3 subpath follow-up
 
 Source: `plans/fifagg-sdk-findings-2026-11-06-ngrx-toolkit.md` (consumer handoff, German). query 6.0.0-next.62,
 generator `@ethlete/query:migrate-from-ngrx-toolkit` on fifagg `chore/ngrx-toolkit-to-query-v3` (MR !1978): 44 of 49
@@ -540,3 +540,8 @@ features, 151 creators written, 98 tasks. Built by the third session of ADR 0200
   design. Doc agent decision: no pipeline change - the exports map is the contract. Since that holds for every
   `@ethlete/*` subpath, the v3 migration (`migrate-to-query-v3` and its guide) names `moduleResolution: bundler` (or
   `node16`/`nodenext`) as required, not only the toolkit generator. The harness now installs the `npm pack` tarball.
+- **Replay on the tarball (675789d72 + 95b4a75b5):** 6 new ngc errors, 78 tasks, every new error covered: the 4
+  sharing errors (`NTK-SELECT-BY-ACTION-ID`) and 2 TS2307 `@ethlete/query/ngrx-toolkit` in bundler files compiled from
+  node-resolving consumers, covered by 5 new `NTK-MODULE-RESOLUTION` rows (env, queries, uikit/mocks); the PhaseId
+  mismatch row is gone. The toolkit part of section 12 is done; open: the v3 subpath follow-up (every `@ethlete/*`
+  subpath needs `bundler`/`node16`/`nodenext` resolution, task from `migrate-to-query-v3`). Nothing pushed.
