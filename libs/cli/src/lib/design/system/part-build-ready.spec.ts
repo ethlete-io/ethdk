@@ -4,7 +4,7 @@ import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../paths';
 import { ActionsOf, BuildReadyInputs, buildReadyOf, recordBuildReady } from './part-build-ready';
-import { readReady, READY_FILE, readyPartOf, writePartRecord } from './part-ready';
+import { readReady, READY_FILE, readyMarkOf, readyPartOf, writePartRecord } from './part-ready';
 import { resolveProduct } from './resolve-product';
 
 const checkout = () => {
@@ -164,5 +164,78 @@ describe('recordBuildReady', () => {
       blockers: [{ kind: 'action', text: 'default button "remove" click FAILED' }],
     });
     expect(readReady(dir)).toEqual({});
+  });
+
+  it('writes the record of a host whose embedded part is not build-ready, and keeps the host from build-ready', async () => {
+    const { target } = checkout();
+    const product = productOf(target);
+    const inputs: BuildReadyInputs = {
+      ...green,
+      problemsOf: (part) =>
+        part === 'components/chip' ? [{ rule: 'HARD-CODED-COLOUR', file: 'chip.ts', message: '#fff' }] : [],
+    };
+    const lines: string[] = [];
+
+    const results = await recordBuildReady({
+      product,
+      parts: ['pages/home', 'components/chip'],
+      inputs,
+      actionsOf: async () => [],
+      onNoRecord: (line) => lines.push(line),
+    });
+
+    expect(readyMarkOf({ product, part: 'pages/home' })).not.toBeNull();
+    expect(readyMarkOf({ product, part: 'components/chip' })).toBeNull();
+    expect(results.get('pages/home')).toEqual({
+      ready: false,
+      blockers: [{ kind: 'embedded', text: 'components/chip is not build-ready', part: 'components/chip' }],
+    });
+    expect(buildReadyOf({ product, part: 'pages/home', inputs })).toEqual(results.get('pages/home'));
+    expect(lines).toEqual(['NO RECORD app-a components/chip: problem: HARD-CODED-COLOUR: #fff']);
+  });
+
+  it('keeps a page from build-ready while a part two levels down is not, though the part between has its record', async () => {
+    const { target } = checkout();
+    const design = join(target, DESIGN_DIR, 'app-a', 'pages/shell');
+
+    mkdirSync(design, { recursive: true });
+    writeFileSync(
+      join(design, 'shell.ts'),
+      "import home from '@system/pages/home';\nexport default definePart({ states: { default: { home } } });\n",
+    );
+
+    const product = productOf(target);
+    const inputs: BuildReadyInputs = {
+      ...green,
+      problemsOf: (part) =>
+        part === 'components/chip' ? [{ rule: 'HARD-CODED-COLOUR', file: 'chip.ts', message: '#fff' }] : [],
+    };
+
+    await recordBuildReady({
+      product,
+      parts: ['pages/shell', 'pages/home', 'components/chip'],
+      inputs,
+      actionsOf: async () => [],
+    });
+
+    expect(readyMarkOf({ product, part: 'pages/home' })).not.toBeNull();
+    expect(buildReadyOf({ product, part: 'pages/shell', inputs })).toEqual({
+      ready: false,
+      blockers: [{ kind: 'embedded', text: 'components/chip is not build-ready', part: 'components/chip' }],
+    });
+  });
+
+  it('says why it wrote no record when the actions did not run', async () => {
+    const { target } = checkout();
+    const lines: string[] = [];
+
+    await recordBuildReady({
+      product: productOf(target),
+      parts: ['components/chip'],
+      inputs: green,
+      onNoRecord: (line) => lines.push(line),
+    });
+
+    expect(lines).toEqual(['NO RECORD app-a components/chip: the actions did not run']);
   });
 });

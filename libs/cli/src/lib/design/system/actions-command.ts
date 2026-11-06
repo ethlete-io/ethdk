@@ -753,7 +753,10 @@ export const actionLineOf = ({ state, element, input, failure, warning }: Line) 
 export const hostLineOf = (host: string) =>
   `host ${host}: skipped - the app's own chrome around the part, which the design does not draw`;
 
-/** The failed lines `design actions` prints for a part, or why the check could not run; with `harness` it checks the part harness at that URL instead of starting one. */
+/** The line the action check prints for a part it skips because no app component renders it in the harness. */
+export const unlinkedSkipLineOf = (part: string) => `actions ${part}: skipped - no implements link, nothing to click`;
+
+/** The failed lines `design actions` prints for a part, or why the check could not run (`[]` for a part without an implements link); with `harness` it checks the part harness at that URL instead of starting one. */
 export const partActionFailuresOf = async (options: {
   target: string;
   config: DesignConfig;
@@ -767,6 +770,14 @@ export const partActionFailuresOf = async (options: {
   onNote?: (line: string) => void;
 }): Promise<string[] | { unavailable: string }> => {
   const { target, config, product, part } = options;
+  const source = product.parts.find((candidate) => partKeyOf(candidate) === part)?.source;
+
+  if (source !== undefined && partLinkOf(source).kind === 'none') {
+    options.onNote?.(unlinkedSkipLineOf(part));
+
+    return [];
+  }
+
   const stale = harnessStaleOf({ target, product });
 
   if (stale !== null) return { unavailable: stale };

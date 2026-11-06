@@ -586,7 +586,11 @@ const printOpenPoints = async (
       inputs: withTalliedProblems(buildReadyInputsOf(product, allPoints), options.tally?.get(name)),
       ...(rendered === null
         ? {}
-        : { actionsOf: (part: string) => partActionFailuresOf({ target, config, product, part }) }),
+        : {
+            actionsOf: (part: string) =>
+              partActionFailuresOf({ target, config, product, part, ...(options.part ? { onNote: console.log } : {}) }),
+          }),
+      ...(options.part ? { onNoRecord: (line: string) => console.log(line) } : {}),
     });
 
     const ready = readyPartsOf(product).filter((key) => !options.part || key === options.part);

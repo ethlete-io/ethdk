@@ -257,6 +257,28 @@ describe('part ready', () => {
     expect(readReady(dir)).toEqual({});
   });
 
+  it('skips the actions of a part without an implements link, in one line', async () => {
+    const { target } = checkout();
+    const { partActionFailuresOf: failuresOf } =
+      await vi.importActual<typeof import('./actions-command')>('./actions-command');
+    const check = vi.fn<typeof checkActions>();
+    const notes: string[] = [];
+
+    expect(
+      await failuresOf({
+        target,
+        config: {},
+        product: productOf(target),
+        part: 'components/tag',
+        url: 'http://localhost:1',
+        check,
+        onNote: (line) => notes.push(line),
+      }),
+    ).toEqual([]);
+    expect(check).not.toHaveBeenCalled();
+    expect(notes).toEqual(['actions components/tag: skipped - no implements link, nothing to click']);
+  });
+
   it('answers only the failed lines of design actions', async () => {
     const { target } = checkout();
     const { partActionFailuresOf: failuresOf } =

@@ -74,17 +74,31 @@ const isDefinite = (blocker: Blocker, unverifiedActions: boolean) =>
 /** The action-check failures of a part, or why they could not run. */
 export type ActionsOf = (part: string) => Promise<string[] | { unavailable: string }>;
 
+const noRecordLineOf = (options: { product: string; part: string; blockers: Blocker[]; unverified: boolean }) => {
+  const [first, ...rest] = options.blockers;
+  const reason = options.unverified
+    ? 'the actions did not run'
+    : first
+      ? `${first.kind}: ${first.text}${rest.length > 0 ? ` (+${rest.length} more)` : ''}`
+      : 'unknown part';
+
+  return `NO RECORD ${options.product} ${options.part}: ${reason}`;
+};
+
 /**
- * Writes the check record of each of `parts` that nothing blocks, and drops the record of each other one. A part
- * without a holding record, or whose embedded parts changed since its actions ran, is written only after `actionsOf`
- * passes. A record is dropped only for a blocker that was checked: a pending slow result or actions that did not run
- * (no `actionsOf`) keep it. Embedded parts are decided before their hosts.
+ * Writes the check record of each of `parts` whose own check passes, and drops the record of each part whose own check
+ * fails; an embedded part that is not build-ready keeps its host from build-ready, not from its record. A part without
+ * a holding record, or whose embedded parts changed since its actions ran, is written only after `actionsOf` passes. A
+ * record is dropped only for a blocker that was checked: a pending slow result or actions that did not run (no
+ * `actionsOf`) keep it. Embedded parts are decided before their hosts. `onNoRecord` gets one line for each part left
+ * without a holding record, naming why.
  */
 export const recordBuildReady = async (options: {
   product: ResolvedProduct;
   parts: string[];
   inputs: BuildReadyInputs;
   actionsOf?: ActionsOf;
+  onNoRecord?: (line: string) => void;
 }): Promise<Map<string, BuildReady>> => {
   const { product, inputs } = options;
   const results = new Map<string, BuildReady>();
@@ -97,22 +111,23 @@ export const recordBuildReady = async (options: {
 
   for (const part of [...options.parts].sort((a, b) => embeddedCountOf(a) - embeddedCountOf(b))) {
     const target = { product, part, inputs };
-    const blockers = [...ownBlockersOf(target), ...embeddedBlockersOf(target, readyOf)];
+    const own = ownBlockersOf(target);
+    const embedded = embeddedBlockersOf(target, readyOf);
     let unverified = false;
 
-    if (blockers.length === 0 && typeof readyPartOf({ product, part }) !== 'string') {
+    if (own.length === 0 && typeof readyPartOf({ product, part }) !== 'string') {
       const recorded = recordBlockersOf(target);
       const actions = recorded.length === 0 ? [] : await options.actionsOf?.(part);
 
       if (Array.isArray(actions) && actions.length === 0) {
         if (recorded.length > 0) writePartRecord({ product, part });
 
-        results.set(part, { ready: true });
+        results.set(part, embedded.length === 0 ? { ready: true } : { ready: false, blockers: embedded });
         continue;
       }
 
       unverified = actions === undefined;
-      blockers.push(
+      own.push(
         ...(actions === undefined
           ? recorded
           : Array.isArray(actions)
@@ -121,9 +136,12 @@ export const recordBuildReady = async (options: {
       );
     }
 
-    if (blockers.some((blocker) => isDefinite(blocker, unverified))) dropPartRecord({ product, part });
+    if (own.some((blocker) => isDefinite(blocker, unverified))) dropPartRecord({ product, part });
 
-    results.set(part, { ready: false, blockers });
+    if (readyMarkOf({ product, part }) === null)
+      options.onNoRecord?.(noRecordLineOf({ product: product.name, part, blockers: own, unverified }));
+
+    results.set(part, { ready: false, blockers: [...own, ...embedded] });
   }
 
   return results;

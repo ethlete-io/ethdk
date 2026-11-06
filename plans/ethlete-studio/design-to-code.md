@@ -3766,10 +3766,10 @@ record on the part's own check (open points, rules, slow results incl. COMPARE, 
 not build-ready keeps the host from build-ready (`design task`), not from its record, so `task --verify` (compare +
 actions + implemented record) runs once the part's own check passes. `partActionFailuresOf` (`actions-command.ts`)
 skips a part without an `implements` link with one line `actions <part>: skipped - no implements link, nothing to
-click`. `recordBuildReady` takes `onNoRecord` and names why a part has no record (`NO RECORD <product> <part>:
-<kind>: <text> (+n more)` or `the actions did not run`). Verified: specs with bite in `part-build-ready.spec.ts` and
-`part-ready.spec.ts`. Not done: the one-line `onNoRecord` wiring for `check --part` in `check-system.ts` waits for cb's
-B401 commit of that file.
+click` (printed by `check --part`). `check --part` prints why it wrote no record (`NO RECORD <product> <part>:
+<kind>: <text> (+n more)` or `the actions did not run`). A full check now also records unlinked parts whose own check
+passes (`READY` lists them). Verified: specs with bite in `part-build-ready.spec.ts`, `part-ready.spec.ts` and
+`check-system.spec.ts`.
 
 499\. Tom, 2026-11-06 12:08: "den hat er schon seit 71m gezeichnet aber danke... du merkst selbst wie lahm wir schon
 wieder sind". The sketch `components/title-bar@notice-hint` had its variants written at 10:56; at 12:07 c8 still waited
