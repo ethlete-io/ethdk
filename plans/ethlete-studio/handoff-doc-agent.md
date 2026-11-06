@@ -25,7 +25,8 @@ Built: a1405e348 (parallel shots, pane cap), 361d96eca (S4 cache), 0df8f2073 (pa
 Running at c0: phase 4+5 - (d) cancel the resident request when the client dies (first), 2.4 s gap outside any phase,
 concurrency 6/8, settle cap named problem, 10 s target + slowest phase print, shared harness wait. Then Studio page
 switch (finding 523, ADR 0186 applied to all frame views; a measure subagent runs now on icons<->logo and the
-shell-main sketch; numbers + cause come to me before build). Closing checks: resident path numbers, a real one-part
+shell-main sketch; numbers + cause come to me before build; also the scroll pop-in on elements/shell-main@edit, frames re-empty on
+scroll-back - sent to c0). Closing checks: resident path numbers, a real one-part
 edit in a scratch copy + the 519 check. Then S7 (full check; c0 suspects the logged 16 s "check (full)" runs were not
 full), S8, S5.
 

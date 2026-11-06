@@ -4124,6 +4124,10 @@ and `design timings`; Studio's own page switch has no timing and no target, so a
 right after the resident cancel; measure first (per frame: picture available, loading shown), then build. Target: a
 page switch shows every frame's stored picture in the first paint. Tool fix: Studio logs the page-switch time to
 `design timings` with a target.
+Tom, same day, screenshot of elements/shell-main@edit at 32 %: "auf shell main sieht man beim scrollen auch noch
+stark pop in. auch bereits rendered sachen popen wieder rein wenn sie in den viewport kommen." Frames entering the
+viewport show empty boxes, and frames already drawn go empty again on the way back. Added to the same item; target:
+a frame with a stored picture is never empty on screen, on switch or on scroll, and a frame drawn once stays drawn.
 B416 phase 3 = S4 (in progress, then as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06):
 compare keeps its pictures on disk under `node_modules/.design-explore/compare-{design,app}-shots-<hash>`. A design
 picture uses the design server's shot store (`server.shotStore`): its key is the frame (part, state, preset, width, bare,
