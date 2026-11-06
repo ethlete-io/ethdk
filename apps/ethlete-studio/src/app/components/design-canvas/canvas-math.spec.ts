@@ -25,6 +25,11 @@ describe('canvas math', () => {
     expect(panInsideRoom({ x: -40, y: -60 }, { x: 0, y: 0 })).toEqual({ x: 0, y: 0 });
   });
 
+  it('snaps a pan to whole pixels inside the room', () => {
+    expect(panInsideRoom({ x: -853.2, y: -10.6 }, { x: 900, y: 500 })).toEqual({ x: -853, y: -11 });
+    expect(panInsideRoom({ x: -0.3, y: -299.7 }, { x: 300.6, y: 299.9 })).toEqual({ x: 0, y: -299 });
+  });
+
   it('clamps the zoom to its range', () => {
     expect(clampZoom(0)).toBe(MIN_ZOOM);
     expect(clampZoom(100)).toBe(MAX_ZOOM);
