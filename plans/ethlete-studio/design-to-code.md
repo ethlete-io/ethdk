@@ -3888,3 +3888,16 @@ of the failure line against the products that have hits. Fix: the line names onl
 that has a clean product next to a failing one. Push state: the verifies of ff698951f run for studio-menu, flows and
 merge; inventory and start wait on Tom's picks and accept, no baseline (ADR 0205 covers only drift older than A1,
 the gate still fails on new drift).
+
+510\. The ff698951f verify of pages/flows reported NO RECORD: `action: flow combobox "Bildschirmgröße" FAILED the
+design draws no such element`. The message was false: the design draws the picker inside the embedded part
+components/select, named by its value text (`combobox "Desktop·1440×900"`, `select.render` label `''`), while the
+app names it by aria-label (studio-labels presetAria). `ownScopeOf` (libs/cli/src/lib/design/system/actions.ts) drops
+an app element only when its key equals an embedded design key, so the app combobox stayed "own" with no partner.
+Why no tool caught it earlier: compare checks pixels only, no rule compares a control's accessible name design vs
+app; and `ownScopeOf` has no role fallback, unlike `pairElementsOf`. Fix: (a) design: the sdk select design takes an
+`ariaLabel` prop and `presetPickerOf` passes "Bildschirmgröße"; an agent edit, allowed because the pictures stay the
+same, so `design check` must report HELD, any picture change goes to Tom as an `@edit` sketch; (b) tool:
+`ownScopeOf` pairs a lone leftover app element with a lone embedded design element of the same role, and the failure
+line names the near miss (`design draws combobox "…" in components/select - accessible names differ`); (c) later
+slice B413: an ACCESSIBLE-NAME drift rule.
