@@ -4412,3 +4412,15 @@ with the part-page frame) reports the page painted. canvas e2e: the sketch scrol
 blank iframes on the way back up, 0 now), the edit-while-away sketch case (fails with the sketch revision held), and
 `elements/shell-main` in `PAGE_SWITCHES`. Finding 530's cause was the e2e: it clicked the sketch leaf `shell-main`
 under the part row, which opens the sketch view, not the part page.
+
+Studio frame C (as built in c77c781d5, c0, 2026-11-06): ADR 0186 in the sketch view. Every cell always renders its
+`<img>` (`ethleteShotRank`); the live iframe lies over it, invisible until painted, then the picture hides; a far cell
+drops only the iframe. Paint detection is a new `frame-painted` directive around the existing `paintedFrame$` (shared
+with `canvas-frame-grid`). The live-slot choice is unchanged. e2e scroll case: before 8 up-steps with a blank iframe at
++30 ms, after 0 empty at every step and sample; edit-while-away for a sketch cell (rule of 531): fails with the
+revision held, passes with a new URL and ETag. 530 closed: the cause was the e2e selector, not Studio - the e2e
+checkout has two tree rows named shell-main (the part and a sketch), and the case clicked the sketch row. The case now
+picks the part row, and a switch without a frame fails with a DOM dump. icons -> shell-main seen 14 ms, back 11 ms;
+first visit 6.3 s (all drawn, nothing stored in the temp checkout). Verified: Studio tsc and lint, sketch-view spec
+17/17, merge/discard e2e. Open: whether NG0953 "Unexpected emit for destroyed OutputRef" in the sketch-view merge spec
+predates C; the scroll e2e covers one column only.
