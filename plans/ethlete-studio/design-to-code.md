@@ -3516,6 +3516,17 @@ inputs. Tool fix: (1) a forced SDK element counts as changed when a design style
 their names; (3) `check` fails a design rule that targets an SDK component class with an attribute value the SDK does
 not declare. For A1 the UI builder adds a real `caption` shape to the SDK button.
 
+484\. The app's code notice in the title bar drew text the merged design never had ("Host geändert - Studio neu
+starten", "CLI hat uncommittete Änderungen, Studio läuft auf Stand <sha>"), and the CLI-dirty state has no design state
+at all (UI builder ethlete-sdk-c8, A1, 2026-11-06). Compare reported the notice as "cannot compare" (no input), not as
+drift, so the undesigned app state stayed invisible until a builder read the old template. Why no tool caught it:
+compare only walks design states; an app branch that renders something no design state covers is never listed. Tool
+fix: compare lists every app state it cannot map to a design state as a named finding (not "cannot compare"), and such a
+state opens the missing-state sketch of ADR 0048 and ADR 0010 at once (built look as variant a). Overlaps B251.
+Applied for A1: the three restart cases follow the design (button only); the CLI-dirty hint and the cause text stay
+as the built look, marked, with a sketch on `components/title-bar` (variant a built text, b cause as tooltip, c no
+hint).
+
 478\. After an automatic merge, `sketch ready` printed "ENOENT ... foundations-colors.foundations-check-fixes/sketch.json"
 and never printed "merged automatically", although the merge was complete (commit 479bdace3, builder, 2026-11-05).
 Why no tool caught it: no spec runs `sketch ready` to the end for an auto-merging sketch and asserts a clean exit and
