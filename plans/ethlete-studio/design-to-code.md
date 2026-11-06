@@ -4168,3 +4168,5 @@ timings` shows it, the compare target is 10 s, and a run over its target prints 
 its last line. `settle` caps at 3 s and fails the state with a named `SettleTimeoutError` instead of waiting 15 s
 silently. A compare of several parts already shares one harness start. Shot concurrency 6/8 not measured (context);
 numbers in `.claude/handoffs/agent-results/b416-phase45.md`.
+B416 abort follow-up (as built in e3f7a81dd, 2026-11-06): an aborted resident request no longer writes its
+compare-actions results to the cache, so a half-run check cannot leave a wrong cached answer (action-cache.spec).
