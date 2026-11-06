@@ -4211,3 +4211,20 @@ moves from the handoff into the builder-agent skill. A run with no deadline at a
 blocks the builder silently. Also: the full gate took 134.4 s on the Mac, 98.6 s of it lib-build-wait at load 13.9 on
 12 cores; S7c measures it again on a quiet machine. Gate now refuses five parts (inventory, merge, sketches, start,
 system); pages/flows and elements/studio-menu pass.
+
+543\. Builder on the Mac (2026-11-06), the four refused parts: (A) `harnessShotOf` photographed the harness host
+before the lazy part mounted, so a loaded machine got a blank page (merge `open` 1.29M px); fixed with
+`@else if (current)`. (B) design picks merged after 2026-11-01 were never ported to the app (comment-draft surface and
+role, sketches sample `fit`, fixed; system popover "Ausnahmen" group and the `agent`/`call` props without app inputs,
+open). (C) since 5a29b1b94 the sketches design draws real title-bar/zoom-chip renders per frame, but the harness gives
+SketchesComponent no `shot` template, so every frame is empty. Fonts Mac vs PC: not a cause. Why no tool caught it: CI
+`design compare --all` compares only done parts (`doneParts` in part-task.ts needs implemented hash == ready hash and
+no changed app files), so a merged pick or an app edit silently drops the part from the CI compare. Tool fixes
+(builder, after push safety): (1) `--all` compares every part with an implemented record and lists parts that drifted
+out of done; (2) a merged pick on a part with an `implements` link opens a port task; (3) `harnessShotOf` waits for a
+mounted child of the host, not only a visible host.
+
+544\. Builder (2026-11-06) asked Tom whether the design gets the "Alle Zustände zeigen" action that the app has. ADR
+0010 already answers it: UI built without a design gets a sketch at once, built look as variant a, and Tom picks in
+Studio. A repeated question, and a sign that the tool fix of finding 486 (a missed action fails compare and opens the
+missing-state sketch) is not built: the builder still had to ask. Tool fix: build 486 with the slice of 543 (1).
