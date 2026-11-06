@@ -11,6 +11,7 @@ import { harnessOf } from './harness-map';
 import { HARNESS_PATH } from './part-compare';
 import { ResolvedProduct } from './resolve-product';
 import { timedPhase } from '../phase-timing';
+import { recordCache } from '../timings';
 import { durationOf } from '../wait';
 
 export const RESERVED_PORTS: readonly number[] = [4221, 4400, 4402, 4403, 4492];
@@ -243,6 +244,8 @@ export const startHarnessServer = async (options: {
     });
   const key = timedPhase('harness-cache-key', keyOf);
   const cached = key === null ? null : claimHarnessBuild(cacheDir, key);
+
+  recordCache(cached !== null);
 
   if (cached) {
     release = cached.release;

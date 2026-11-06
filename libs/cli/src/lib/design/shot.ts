@@ -28,6 +28,7 @@ import { MotionMode, MotionPictures, motionPicturesOf } from './motion-shot';
 import { settleFrames } from './settle-frames';
 import { createWarmPages } from './warm-pages';
 import { ShotStore, StoredAddress } from './shot-store';
+import { recordCache } from './timings';
 
 export const SHOT_PATH = '/__design/shot';
 
@@ -551,6 +552,8 @@ export const createPartShooter = (options: {
     const scheme = schemeOf(options.params);
     const key = JSON.stringify([...options.key, theme.surface, theme.color, theme.fill, scale, crop, scheme]);
     const kept = options.fresh ? undefined : cache.get(key);
+
+    recordCache(kept !== undefined);
 
     if (kept) {
       options.onSource?.('memory');

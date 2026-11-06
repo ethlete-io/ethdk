@@ -1,5 +1,6 @@
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { AddressInfo } from 'net';
+import { performance } from 'perf_hooks';
 import { interval, Subscription, tap, timer } from 'rxjs';
 
 export const RESIDENT_IDLE_MS = 30 * 60_000;
@@ -7,7 +8,12 @@ export const RESIDENT_BEAT_MS = 10_000;
 export const TOKEN_HEADER = 'x-et-design-token';
 
 /** The environment variables of the calling CLI a request carries into the resident process. */
-export const FORWARDED_ENV = ['ETHLETE_DESIGN_PHASES'] as const;
+export const FORWARDED_ENV = [
+  'ETHLETE_DESIGN_PHASES',
+  'CLAUDE_CODE_SESSION_ID',
+  'TMUX_PANE',
+  'ETHLETE_AGENT_ROLE',
+] as const;
 
 export type ResidentRequest = {
   argv: string[];
@@ -15,7 +21,7 @@ export type ResidentRequest = {
   env: Partial<Record<(typeof FORWARDED_ENV)[number], string>>;
 };
 
-export type ResidentRun = (request: ResidentRequest) => Promise<number>;
+export type ResidentRun = (request: ResidentRequest & { waitedMs?: number }) => Promise<number>;
 
 /** One line of the newline-delimited JSON answer to a run request. */
 export type ResidentFrame = { o: string } | { e: string } | { beat: true } | { exit: number };
@@ -111,6 +117,7 @@ export const startResidentServer = async (options: {
 
     if (pending > 1) send({ e: 'waiting for an earlier request to the resident design process\n' });
 
+    const asking = performance.now();
     const beat = interval(beatMs)
       .pipe(tap(() => send({ beat: true })))
       .subscribe();
@@ -119,7 +126,7 @@ export const startResidentServer = async (options: {
         const restore = capture((stream, text) => send(stream === 'o' ? { o: text } : { e: text }));
 
         try {
-          return await run(asked);
+          return await run({ ...asked, waitedMs: performance.now() - asking });
         } catch (error) {
           send({ e: `${messageOf(error)}\n` });
 

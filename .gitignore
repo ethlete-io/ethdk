@@ -87,3 +87,6 @@ playwright-report
 # Generated editor tsconfigs of the design tool
 .ethlete/design/tsconfig.json
 .ethlete/design/*/tsconfig.json
+
+# Local timings of every et design run
+.ethlete/design/.timings.jsonl

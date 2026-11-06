@@ -8,6 +8,7 @@ import { StartHarnessServer, startHarnessServer } from '../system/harness-server
 import { createHarnessWatch } from '../system/harness-watch';
 import { designMocksFresh, guardsDesignMocks } from '../system/stale-design-mocks';
 import { libBuildStampOf, readFreshDist } from '../system/stale-dist';
+import { recordPhase, recordRun, timingsFileOf } from '../timings';
 import { removeDiscovery, writeDiscovery } from './discovery';
 import { ResidentRun, startResidentServer } from './server';
 
@@ -80,7 +81,7 @@ export const createWarmCompare = (options: { target: string }) => {
     stamp = next;
   };
 
-  const run: ResidentRun = async ({ argv, invocation }) => {
+  const compareIn = async ({ argv, invocation }: { argv: string[]; invocation: string }) => {
     if (argv[0] !== 'compare') {
       console.error(`the resident design process runs compare only, not ${argv[0] ?? 'nothing'}`);
 
@@ -110,6 +111,13 @@ export const createWarmCompare = (options: { target: string }) => {
       read.release();
     }
   };
+
+  const run: ResidentRun = ({ argv, invocation, waitedMs }) =>
+    recordRun({ file: timingsFileOf(target), argv, resident: true }, () => {
+      if (waitedMs !== undefined) recordPhase('resident-queue-wait', waitedMs);
+
+      return compareIn({ argv, invocation });
+    });
 
   const warmUp = async () => {
     const config = readConfig(target);

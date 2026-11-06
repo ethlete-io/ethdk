@@ -2,6 +2,9 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { posix } from 'path';
 import { Chromium, chromiumOf } from './browser';
 import { DrawLedger } from './draw-ledger';
+import { performance } from 'perf_hooks';
+import { timedPhase } from './phase-timing';
+import { recordCache, recordDrawWait } from './timings';
 import { withinLimit } from './wait';
 
 export const THUMB_PATH = '/__design/thumb';
@@ -167,11 +170,13 @@ export const createDrawQueue = (options: { target: string; chromiumOf?: typeof c
         );
       }
 
-      return resolved.chromium.launch({ args: DRAW_BROWSER_ARGS }).catch((error: unknown) => {
-        throw new ThumbUnavailableError(
-          `design-explore: the Chromium of ${resolved.from} did not start\n${error instanceof Error ? error.message : String(error)}`,
-        );
-      });
+      return timedPhase('browser-start', () => resolved.chromium.launch({ args: DRAW_BROWSER_ARGS })).catch(
+        (error: unknown) => {
+          throw new ThumbUnavailableError(
+            `design-explore: the Chromium of ${resolved.from} did not start\n${error instanceof Error ? error.message : String(error)}`,
+          );
+        },
+      );
     });
 
     browser.catch(() => (browser = null));
@@ -239,6 +244,7 @@ export const createDrawQueue = (options: { target: string; chromiumOf?: typeof c
   return {
     run: <T>(draw: (browser: Browser) => Promise<T>, want: DrawPriority | DrawWant = 'high') => {
       const ticket = ledger?.ask();
+      const asked = performance.now();
       const entry: WaitingDraw = {
         job: () => Promise.resolve(),
         wants: new Set(),
@@ -247,6 +253,7 @@ export const createDrawQueue = (options: { target: string; chromiumOf?: typeof c
       const drawn = new Promise<T>((resolve, reject) => {
         entry.job = () => {
           ticket?.start();
+          recordDrawWait(performance.now() - asked);
 
           return launch()
             .then(draw)
@@ -374,6 +381,8 @@ export const createThumbnailer = (options: {
 
   const shotOf = (slug: string, search: string) => {
     const cached = cache.get(search);
+
+    recordCache(cached !== undefined);
 
     if (cached) return cached.shot;
 

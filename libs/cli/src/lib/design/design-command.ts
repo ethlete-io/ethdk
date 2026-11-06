@@ -32,6 +32,8 @@ import { readFreshDist } from './system/stale-dist';
 import { designMocksFresh, guardsDesignMocks } from './system/stale-design-mocks';
 import { realResidentClient, RESIDENT_SERVE, runThroughResident, stopResident } from './resident/client';
 import { serveResident } from './resident/resident-process';
+import { recordRun, skipRunTimings, timingsFileOf } from './timings';
+import { designTimings, TIMINGS_USAGE } from './timings-command';
 
 /** Reads `--checkout <path>` out of an argument list, and answers with the path and the rest. */
 const splitCheckout = (argv: string[], root: string) => {
@@ -263,6 +265,11 @@ const helpOf = (invocation: string) =>
     `${invocation} stamp`,
     '  Print the version and build of this cli as JSON, which a running server answers with too.',
     '',
+    `${invocation} ${TIMINGS_USAGE}`,
+    '  Every design run appends its timings to .ethlete/design/.timings.jsonl. timings reports the median of each command',
+    '  against its target (compare 5 s, sketch check and ready 10 s, full check 60 s), each miss with its most expensive',
+    '  phase, and the slowest phases and runs. --since defaults to 1d.',
+    '',
     `${invocation} stop`,
     '  End the resident design process of the checkout. compare runs in it: the first compare starts it detached',
     '  (printed as a cold start), later ones reuse its design server, Chromium and harness app, and it exits after',
@@ -273,6 +280,33 @@ const helpOf = (invocation: string) =>
   ].join('\n');
 
 const HELP_FLAGS = new Set(['--help', '-h']);
+
+const TIMED_COMMANDS = new Set([
+  'accept',
+  'actions',
+  'check',
+  'comment',
+  'commit-hunks',
+  'compare',
+  'complete',
+  'dom',
+  'go',
+  'harness',
+  'inbox',
+  'legacy',
+  'motion',
+  'new',
+  'part',
+  'product',
+  'ready',
+  'shot',
+  'sketch',
+  'status',
+  'stop',
+  'system',
+  'task',
+  'token',
+]);
 
 const DRAWING_COMMANDS = new Set([
   'check',
@@ -350,6 +384,15 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     return 0;
   }
 
+  if (!TIMED_COMMANDS.has(argv[0] ?? '')) return runDesign(options);
+
+  const { target, rest } = splitCheckout(argv.slice(1), root);
+
+  return recordRun({ file: timingsFileOf(target), argv: [argv[0] ?? '', ...rest] }, () => runDesign(options));
+};
+
+const runDesign = async (options: { root: string; argv: string[]; invocation: string }): Promise<number> => {
+  const { root, argv, invocation } = options;
   const staleWarning = argv[0] === 'stamp' ? null : runningCliStaleWarning();
 
   if (staleWarning) console.error(staleWarning);
@@ -371,7 +414,11 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
 
     const answered = await runThroughResident({ target, argv: [argv[0], ...rest], invocation, client });
 
-    if (answered !== null) return answered;
+    if (answered !== null) {
+      skipRunTimings();
+
+      return answered;
+    }
   }
 
   let release: () => void = () => undefined;
@@ -540,6 +587,12 @@ const dispatchDesign = async (options: { root: string; argv: string[]; invocatio
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     return designComment({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'timings') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designTimings({ target, argv: rest, invocation });
   }
 
   if (argv[0] === 'status') {

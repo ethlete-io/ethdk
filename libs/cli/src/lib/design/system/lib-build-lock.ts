@@ -4,6 +4,7 @@ import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { join } from 'path';
 import { setTimeout as delay } from 'timers/promises';
 import { acquireApiLock, LockSystem, releaseApiLock } from '../../api/lock';
+import { recordConcurrentHeavy, recordPhase } from '../timings';
 
 export const LIB_READER_ENV = 'ETHLETE_DESIGN_LIB_READER';
 
@@ -69,6 +70,7 @@ export const readFreshLibBuild = async (options: {
   if (env[LIB_READER_ENV]) return { ok: true, release: () => undefined };
 
   const readers = join(directory, 'readers');
+  const began = system.now();
   mkdirSync(readers, { recursive: true });
 
   const acquired = await acquireApiLock({
@@ -104,6 +106,8 @@ export const readFreshLibBuild = async (options: {
 
     writeFileSync(file, JSON.stringify({ pid: system.pid, hostname: system.hostname() }));
     env[LIB_READER_ENV] = token;
+    recordPhase('lib-build-wait', system.now() - began);
+    recordConcurrentHeavy(liveReadersOf(readers, system).length - 1);
 
     const release = () => {
       process.off('exit', release);
