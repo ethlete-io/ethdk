@@ -4228,3 +4228,9 @@ mounted child of the host, not only a visible host.
 0010 already answers it: UI built without a design gets a sketch at once, built look as variant a, and Tom picks in
 Studio. A repeated question, and a sign that the tool fix of finding 486 (a missed action fails compare and opens the
 missing-state sketch) is not built: the builder still had to ask. Tool fix: build 486 with the slice of 543 (1).
+
+Built (2026-11-06, Mac): dda42d946 harness waits for the mounted part (543 A), comment-draft pick ported, sketches
+sample variant a changes only `fit`; merge `open`/`merging` and the five system comment-draft states compare ok, full
+gate not yet run. ec316a94a opens sketch `pages/sketches@all-states` (ADR 0010, finding 544) with a = built look, b =
+fold row at the bottom, c = count chip on the question line; waits for Tom's pick. Fact for 544: the app has one
+`showAllStates` button, compare counts it twice (likely once per state); checked with 543 (1) and 486.
