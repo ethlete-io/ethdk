@@ -1,6 +1,6 @@
 {
   "target": "pages/sketches@all-states",
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-11-06T21:48:46.867Z",
   "baseline": {
     "foundations/agent-logos": "d8ad620ff101ae06",
@@ -119,5 +119,9 @@
       "round": "r1",
       "note": "Zählung als Chip an der Rundenwahl, Knopf dahinter."
     }
+  },
+  "mergeHold": {
+    "reason": "variant a changes folded; variant b changes folded; variant c changes folded",
+    "at": "2026-11-06T23:46:52.236Z"
   }
 }
