@@ -252,7 +252,7 @@ import('@ethlete/query-devtools/lazy') })`; new export `mountQueryDevtools` in `
   starts from the current execution state. Scenario `libs/query/src/scenarios/legacy-state-replay.scenario.spec.ts`
   runs on both clients and failed on interop before. Lesson: no scenario compared the interop layer with the native
   v2 client, so a parity gap showed up only in a consumer E2E run. A legacy interop behaviour gets a scenario that
-  runs on both clients.
+  runs on both clients. Full `nx test query` after the fix: 225 files, 3607 passed, 4 skipped, 0 failed.
 - **17. More out-of-context `prepare()` shapes (fifagg-frontend-3d, extends 14):** no injector is added for
   `prepare()` in `ngOnInit` (`widget-link.component.ts:59`), in async validators after `timer`/`switchMap`
   (`gamer-tag.async.validator.ts:24`), in a plain `computed` (`edit-match-data.provider`), or in callback config
