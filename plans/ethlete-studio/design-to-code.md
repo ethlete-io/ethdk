@@ -4129,6 +4129,23 @@ stark pop in. auch bereits rendered sachen popen wieder rein wenn sie in den vie
 viewport show empty boxes, and frames already drawn go empty again on the way back. Not new: finding 430 (2026-11-04) and ADR 0186 already recorded it, open in B365; the doc agent took it as new
 (a repeated report is a finding: check the findings list before recording). Added to the same item; target:
 a frame with a stored picture is never empty on screen, on switch or on scroll, and a frame drawn once stays drawn.
+Measured (c0 subagent, 2026-11-06, read-only, report `.claude/handoffs/agent-results/studio-page-switch.md`): the
+"loading state" is an empty box. icons <-> logo leaves frames empty 350-1000 ms on every switch, also back to a page
+seen seconds before: (a) the picture URL changes per switch (`view = Date.now()` in `system-view.component.ts:828-831`,
+into `&view=..&rank=visible`, `host/design.ts:339-348`), so the browser cache never hits; (b) `/__design/open-points`
+runs twice per switch, ~350 ms synchronous for the whole product (`read-open-points.ts:57`), and blocks the server, so
+a picture answered in <1 ms idle waits 330-970 ms. shell-main first visit 1.2-1.7 s empty (all pictures redrawn; the
+running server 5f60558 may predate 361d96eca, re-check after slice 2), second visit 414-799 ms (open-points + 6
+connections per host). Scroll pop-in (finding 430) unchanged since 2026-11-04: cells past the 400 px margin unmount and
+drop their picture, a live cell is an iframe with no picture under it (`sketch-view.component.ts:97-110`, template
+:184-206). Doc agent (applies ADR 0186 and 0213): go, as 3 slices after slice 2 and before S7, in this order: B
+`/__design/open-points` cheap (cached by input hash or per requested part) and called once per switch; A a stable
+picture URL - view/rank leave the `<img>` URL, the URL changes only when the picture's content key changes (so a stable
+URL never shows an old picture), with ETag/Cache-Control; C ADR 0186 in the sketch view: every cell renders its picture,
+the iframe lies on top and shows once drawn, a far cell unmounts only its iframe. Why no tool caught it:
+`page-switch.e2e.mjs` checks that the page renders, not that frames are non-empty in the first paint, and no e2e
+scrolls a sketch. Tool fix: per-frame empty checks in `page-switch.e2e.mjs`, a new sketch scroll e2e, and the
+page-switch time in `design timings` with a target (finding 523).
 B416 phase 3 = S4 (in progress, then as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06):
 compare keeps its pictures on disk under `node_modules/.design-explore/compare-{design,app}-shots-<hash>`. A design
 picture uses the design server's shot store (`server.shotStore`): its key is the frame (part, state, preset, width, bare,
