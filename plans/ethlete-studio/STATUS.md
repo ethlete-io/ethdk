@@ -232,6 +232,9 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 
 - **A1** Titelleiste: Sketch `components/title-bar` Variante C ist gemergt (02.11.); jetzt den Code angleichen
   (Fensterknöpfe, Suchfeld „studio / Part“, Update-Knopf nur bei bereitem Update; Befund 133).
+  Gebaut ff698951f (c8, ungepusht; SDK-Fensterknopf `shape: 'caption'`). Offen: die 12 übersprungenen Hover-Zustände
+  (Befund 483), ein echtes Windows-Fenster, Sketch `components/title-bar@notice-hint` (Befund 484). `check --part
+elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a sketch“ (vermutlich d961cb00d).
 - **A2** Nach A1: Suche in der Titelleiste; Klick oder Strg+K öffnet die Command Palette.
 - **A3** Nach A1: Knopf „Update“ in der Titelleiste, nur wenn ein Update bereit ist (Q90).
 - **A4** Arbeit (Rendern, Mergen) nur in der Ansicht zeigen, auf die man wartet.
