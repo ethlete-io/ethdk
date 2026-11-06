@@ -519,3 +519,13 @@ features, 151 creators written, 98 tasks. Built by the third session of ADR 0200
   an `NTK-DUPLICATE-ROUTE-MISMATCH` row says `{ phaseId?: PhaseId }` is not `{ phaseId?: PhaseId }`
   (getCompetitionStageBySlug): a mismatch must name what differs (declaration files of two same-named types), and two
   equal types raise no task.
+- **`NTK-MODULE-RESOLUTION` = 0 explained (ethlete-sdk-62):** env, queries and uikit/mocks inherit `node` from
+  tsconfig.base.json and never import the subpath themselves; they compile `libs/types/.../file.interfaces.ts` through
+  the `@fifa-gg/types` path alias, which the generator rewrites to import `@ethlete/query/ngrx-toolkit`. The check only
+  looks at projects whose own files import it. Fix (building): flag a `node`-resolving project whose sources reach such
+  a project through tsconfig.base `paths` aliases, transitively; fixture from those real configs. The replay hid it:
+  the local `dist/libs/query` ships ng-packagr subpath stub dirs (`ngrx-toolkit/package.json` with `typings`, also
+  `testing/`), the published 6.0.0-next.62 does not, so `node` resolution found the subpath only locally. Doc agent
+  decision: find out where the stubs get lost on publish and report the cause before any change to the publish
+  pipeline (app-releases skill first). Tool fix: a replay installs the packed tarball (`npm pack` of the built lib),
+  never the dist folder, so it tests what a consumer gets.
