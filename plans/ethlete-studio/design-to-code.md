@@ -4370,6 +4370,13 @@ inside the same range; a6822ece4 adds it. Real run on origin/next..HEAD: exit 0.
 
 555\. Builder (2026-11-07): the 552 changeset had 65 words, over the 40-word bar (fixed in 82dc69d09). The builder
 found it only by a manual run of `lint-changesets.js`. The pre-commit hook already runs that script on staged
-changeset files, so the hook did not fire for this commit. Cause: open, the builder checks it. The tool fix follows
-from the cause.
+changeset files, so the hook did not fire for this commit. Cause (builder): no git hook ran on the Mac since the
+move (ADR 0217). `.husky/_` did not exist and `core.hooksPath` was unset: package.json had `"prepare": "husky"`, and
+Yarn 4 does not run a root `prepare` on `yarn install`. So pre-commit and pre-push never ran there, and every "hook
+passed" in an agent report on the Mac was false. Also `git cherry-pick` (how worktree commits land) skips pre-commit.
+Why no tool caught it: nothing checks that the hooks are installed; a missing hook is silent. Doc agent decisions
+(apply ADRs 0218 and 0221, `next` and `main` keep the full hook): install the hooks now; `"postinstall": "husky"`
+replaces `prepare`; the CI Checks job, `yarn test:tools` and the start of `design check` fail when `core.hooksPath` is
+not `.husky/_`; after a cherry-pick of worktree commits the builder runs `yarn lint:changesets` and the design-rules
+gate on the picked range. The push of `next` stays held by ADR 0215.
 
