@@ -111,6 +111,16 @@ describe('the app pictures compare keeps on disk', () => {
     expect(await compareRun({ dir, app, shots })).toEqual(['c']);
   });
 
+  it('shoots again only the state whose design gained a forced frame or a look', async () => {
+    const { dir, app } = await shotAndRepeat();
+    const shots = shotsOf();
+
+    shots['a'] = { ...shots['a'], forcesInFrames: true } as Shot;
+    shots['b'] = { ...shots['b'], looks: [{ look: '[&_.x]:h-10', selector: '.x', part: 'components/x' }] } as Shot;
+
+    expect(await compareRun({ dir, app, shots })).toEqual(['a', 'b']);
+  });
+
   it('shoots every state again once a file of the built app changed', async () => {
     const { dir, app } = await shotAndRepeat();
 

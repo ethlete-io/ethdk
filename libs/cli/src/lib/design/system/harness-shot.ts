@@ -2,7 +2,15 @@ import { DesignPreset } from '../paths';
 import { timedPhase } from '../phase-timing';
 import { checkerScriptOf, pixelBoxOf, TextAmbient, viewportOf } from '../shot';
 import { awaitFonts, Browser, DRAW_TIMEOUT_MS } from '../thumb';
-import { ForcedElement, droppedPropsOf, HARNESS_HOST_SELECTOR, hostBoxScriptOf, OVERLAY_PANES } from './part-compare';
+import { forcedSelectorOf } from '../force-interactions';
+import {
+  ForcedElement,
+  FrameLook,
+  droppedPropsOf,
+  HARNESS_HOST_SELECTOR,
+  hostBoxScriptOf,
+  OVERLAY_PANES,
+} from './part-compare';
 import { watchSdkErrors } from './sdk-errors';
 import { PANE_COUNT_TIMEOUT_MS, settledPanesOf } from './settled-panes';
 import { FrozenAnimation, freezeAnimationsScriptOf } from './frozen-animations';
@@ -46,6 +54,58 @@ export class HarnessError extends Error {}
 export class UndrivableError extends HarnessError {}
 
 export class DroppedPropsError extends Error {}
+
+export class LookMissError extends Error {}
+
+const STYLE_RULES_WALK = `const rules = [];
+  const walk = (list) => {
+    for (const rule of list) {
+      if (rule instanceof CSSStyleRule) rules.push(rule);
+      if (rule.cssRules) walk(rule.cssRules);
+    }
+  };
+
+  for (const sheet of document.styleSheets) {
+    try {
+      walk(sheet.cssRules);
+    } catch {}
+  }`;
+
+const STYLE_SELECTORS_SCRIPT = `(() => {
+  ${STYLE_RULES_WALK}
+
+  return rules.map((rule) => rule.selectorText);
+})()`;
+
+const forceStylesScriptOf = (changed: [number, string][]) => `(() => {
+  ${STYLE_RULES_WALK}
+
+  for (const [at, selector] of ${JSON.stringify(changed)}) if (rules[at]) rules[at].selectorText = selector;
+})()`;
+
+/** Rewrites the interaction pseudos of every style rule on `page`, so an element with `data-et-force` draws forced as in a design frame. */
+const forceStylesOf = async (page: Page) => {
+  const selectors = (await page.evaluate(STYLE_SELECTORS_SCRIPT)) as string[];
+  const changed = selectors.flatMap((selector, at): [number, string][] => {
+    const forced = forcedSelectorOf(selector);
+
+    return forced === selector ? [] : [[at, forced]];
+  });
+
+  if (changed.length > 0) await page.evaluate(forceStylesScriptOf(changed));
+};
+
+const lookMissesScriptOf = (looks: FrameLook[]) => `(() => ${JSON.stringify(looks)}.filter(({ look, selector }) => {
+  try {
+    return !document.querySelector('.' + CSS.escape(look) + ' ' + selector);
+  } catch {
+    return false;
+  }
+}))()`;
+
+/** @internal The problem of a state whose app draws no element a look of the design targets. */
+export const lookMissProblemOf = ({ look, selector, part }: FrameLook) =>
+  `the look "${look}" targets "${selector}" in ${part}, but no element inside the app's element with that look matches it`;
 
 const MOUNTED_INPUTS_SCRIPT = `(() => {
   const mounted = document.querySelector(${JSON.stringify(HARNESS_HOST_SELECTOR)})?.firstElementChild;
@@ -239,6 +299,10 @@ export const harnessShotOf = async (options: {
   size?: DesignPreset | null;
   width?: number | null;
   forced?: ForcedElement[];
+  /** Draws the app's `data-et-force` elements forced, for a design that forces elements of framed drawings. */
+  forcesInFrames?: boolean;
+  /** Fails with the first look whose selector matches nothing inside the app's elements with that look. */
+  looks?: FrameLook[];
   opened?: { control: string; markup: string };
   roomAbove?: boolean;
   panes?: number;
@@ -338,6 +402,14 @@ export const harnessShotOf = async (options: {
     if (openedPanes !== null) throw new MissingPanesError(missingPanesProblemOf({ drawn: panes, opened: openedPanes }));
 
     if (options.frozen?.length) await page.evaluate(freezeAnimationsScriptOf(options.frozen));
+
+    if (options.looks?.length) {
+      const [missed] = (await page.evaluate(lookMissesScriptOf(options.looks))) as FrameLook[];
+
+      if (missed) throw new LookMissError(lookMissProblemOf(missed));
+    }
+
+    if (options.forcesInFrames) await forceStylesOf(page);
 
     if (options.size && (await page.locator(OVERLAY_PANES).count()) === 0) {
       const hostBox = await host.evaluate((element) => {

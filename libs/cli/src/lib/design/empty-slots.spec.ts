@@ -35,6 +35,21 @@ describe('emptySlotsScriptOf', () => {
     expect(textOf('[data-et-projected="pane"]')).toBe('');
   });
 
+  it('empties the stand-in of an embedded part on a page, as it does on the part itself', () => {
+    document.body.innerHTML =
+      '<div data-et-part="pages/sketches">' +
+      '<div data-et-part="elements/variant-cell"><div data-et-projected="shot">' +
+      '<div data-et-part="components/title-bar" data-et-slot="elements/variant-cell">' +
+      '<div data-et-slot="elements/variant-cell" data-et-projected="traffic-lights"><i data-et-slot="elements/variant-cell">lights</i></div>' +
+      '<b data-et-slot="elements/variant-cell">bar</b>' +
+      '</div></div></div></div>';
+
+    emptyFor('pages/sketches');
+
+    expect(textOf('[data-et-projected="traffic-lights"]')).toBe('');
+    expect(textOf('[data-et-projected="shot"]')).toBe('bar');
+  });
+
   it('empties the own slot of the compared part', () => {
     emptyFor('components/canvas-viewport');
 

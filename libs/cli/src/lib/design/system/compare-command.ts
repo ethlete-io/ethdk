@@ -31,6 +31,7 @@ import {
   DroppedPropsError,
   drawnPaneCountOf,
   harnessShotOf,
+  LookMissError,
   MissingPanesError,
   UndrivableError,
 } from './harness-shot';
@@ -41,6 +42,8 @@ import {
   drawsSelectedOf,
   drawnSurfacesOf,
   forcedElementsOf,
+  forcesInFramesOf,
+  frameLooksOf,
   harnessUrlOf,
   pointerOpensOf,
   slotOnlyStatesOf,
@@ -102,7 +105,8 @@ type AppShot = { app: Buffer } | { problem: string; undrivable?: true };
 
 /** @internal The failed state a harness shot's error stands for; rethrows any error that fails the whole compare. */
 export const appShotProblemOf = (error: unknown): AppShot => {
-  if (error instanceof DroppedPropsError || error instanceof MissingPanesError) return { problem: error.message };
+  if (error instanceof DroppedPropsError || error instanceof MissingPanesError || error instanceof LookMissError)
+    return { problem: error.message };
   if (error instanceof UndrivableError) return { problem: error.message, undrivable: true };
 
   throw error;
@@ -343,6 +347,7 @@ export const shootStatesWith =
           shoot: ({ state, design, open }) => {
             const sent = open?.props ?? states[open?.from ?? state];
             const forced = forcedElementsOf(design.markup ?? '');
+            const looks = frameLooksOf(design.markup ?? '');
             const shot: HarnessShot = {
               url: harnessUrlOf({
                 url,
@@ -354,6 +359,8 @@ export const shootStatesWith =
               size: frame.size,
               width,
               forced,
+              ...(forcesInFramesOf(design.markup ?? '') ? { forcesInFrames: true } : {}),
+              ...(looks.length > 0 ? { looks } : {}),
               ...(appOnly
                 ? {}
                 : {

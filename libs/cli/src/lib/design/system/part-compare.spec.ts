@@ -21,6 +21,8 @@ import {
   droppedPropsOf,
   encodePng,
   forcedElementsOf,
+  forcesInFramesOf,
+  frameLooksOf,
   harnessUrlOf,
   Pixels,
   pointerOpensOf,
@@ -144,6 +146,30 @@ describe('part compare', () => {
       { interaction: 'focus-visible', label: null, role: 'span', text: '' },
       { interaction: 'hover', label: null, role: 'treeitem', text: 'Components 3' },
       { interaction: 'hover', label: null, role: 'input', text: '' },
+    ]);
+  });
+
+  it('leaves out a forced element of a drawing a slot region frames, and reads the looks of that region', () => {
+    const chip = (force: string) =>
+      `<div data-et-part="components/zoom-chip" data-et-slot="elements/variant-cell"><span data-camera-fit><button aria-label="Einpassen" data-et-force="${force}">Fit</button></span></div>`;
+    const page =
+      '<div data-et-part="pages/sketches"><button aria-label="Zoom" data-et-force="hover">Z</button>' +
+      `<div data-et-part="elements/variant-cell"><div class="w-4 [&amp;_[data-camera-fit]_button]:font-ui-strong **:data-canvas-zoom:rounded-full [&>.a_b]:p-1" data-et-projected="shot">${chip('hover')}</div></div>` +
+      `<div data-et-projected="shot">${chip('active')}</div></div>`;
+
+    expect(forcedElementsOf(page)).toEqual([{ interaction: 'hover', label: 'Zoom', role: 'button', text: 'Z' }]);
+    expect(forcesInFramesOf(page)).toBe(true);
+    expect(forcesInFramesOf('<div data-et-projected="shot"><button data-et-force="hover">x</button></div>')).toBe(
+      false,
+    );
+    expect(frameLooksOf(page)).toEqual([
+      {
+        look: '[&_[data-camera-fit]_button]:font-ui-strong',
+        selector: '[data-camera-fit] button',
+        part: 'components/zoom-chip',
+      },
+      { look: '**:data-canvas-zoom:rounded-full', selector: '[data-canvas-zoom]', part: 'components/zoom-chip' },
+      { look: '[&>.a_b]:p-1', selector: '> .a b', part: 'components/zoom-chip' },
     ]);
   });
 
@@ -690,14 +716,16 @@ describe('harnessShotOf', () => {
                                 ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent}.et-overlay-runtime-root{position:absolute;top:0;left:0}.et-overlay-runtime-root button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><div class="et-overlay-runtime-root"><button> G o </button></div></div><p><button>Go</button></p></body>'
                                 : request.url?.includes('components%2Ftwice')
                                   ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><button>Go</button><button>Go</button></div></body>'
-                                  : request.url?.includes('components%2Fhover')
-                                    ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
-                                    : request.url?.startsWith('/__design-harness') &&
-                                        request.url.includes('layout=page')
-                                      ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
-                                      : request.url?.startsWith('/__design-harness')
-                                        ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
-                                        : '<body>no harness</body>',
+                                  : request.url?.includes('components%2Fframed')
+                                    ? '<style>i{display:block;width:7px;height:5px;background:#0000ff}i:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><div class="look"><i data-et-force="hover"></i></div></div></body>'
+                                    : request.url?.includes('components%2Fhover')
+                                      ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
+                                      : request.url?.startsWith('/__design-harness') &&
+                                          request.url.includes('layout=page')
+                                        ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
+                                        : request.url?.startsWith('/__design-harness')
+                                          ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
+                                          : '<body>no harness</body>',
       );
     });
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -904,6 +932,37 @@ describe('harnessShotOf', () => {
         timeout: 500,
       }),
     ).rejects.toThrow('has 2 elements with the button "Go" to force hover on');
+  });
+
+  it('draws an app element with data-et-force forced for a design that forces one in a frame', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const shoot = (forcesInFrames: boolean) =>
+      harnessShotOf({
+        browser: browser as Browser,
+        url: harnessUrlOf({ url, part: 'components/framed', state: 'a', props: {} }),
+        forcesInFrames,
+      });
+
+    expect(decodePng(await shoot(false))).toEqual(pixelsOf(7, 5, () => BLUE));
+    expect(decodePng(await shoot(true))).toEqual(pixelsOf(7, 5, () => RED));
+  });
+
+  it('fails a state whose app draws nothing a look of the design targets, naming the look, selector and part', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const shoot = (selector: string) =>
+      harnessShotOf({
+        browser: browser as Browser,
+        url: harnessUrlOf({ url, part: 'components/framed', state: 'a', props: {} }),
+        looks: [{ look: 'look', selector, part: 'components/zoom-chip' }],
+      });
+
+    await expect(shoot('> i')).resolves.toBeInstanceOf(Buffer);
+    expect(await shoot('.st-chip').catch(appShotProblemOf)).toEqual({
+      problem:
+        'the look "look" targets ".st-chip" in components/zoom-chip, but no element inside the app\'s element with that look matches it',
+    });
   });
 
   it('opens a surface by a pointer click on the trigger, then leaves it unhovered', async (context) => {

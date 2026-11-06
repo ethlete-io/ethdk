@@ -116,19 +116,142 @@ const textOf = (content: string) =>
     .replace(/\s+/g, ' ')
     .trim();
 
-/** The elements a design picture's markup forces with `data-et-force`, one entry per interaction. */
-export const forcedElementsOf = (markup: string): ForcedElement[] =>
-  [...markup.matchAll(/<([a-zA-Z][\w-]*)[^>]*?\sdata-et-force="([^"]*)"[^>]*>/g)].flatMap((found) => {
-    const [tag, name = '', names = ''] = found;
-    const label = /\saria-label="([^"]*)"/.exec(tag)?.[1];
-    const role = /\srole="([^"]*)"/.exec(tag)?.[1] ?? name.toLowerCase();
-    const text = textOf(contentOf({ markup, tag: name.toLowerCase(), from: found.index + tag.length }));
+const attributeOf = (attributes: string, name: string) => new RegExp(`\\s${name}="([^"]*)"`).exec(attributes)?.[1];
 
-    return names
-      .split(/\s+/)
-      .filter(Boolean)
-      .map((interaction) => ({ interaction, label: label === undefined ? null : unescaped(label), role, text }));
-  });
+type OpeningTag = {
+  whole: string;
+  name: string;
+  attributes: string;
+  index: number;
+  framed: boolean;
+  region: { attributes: string } | null;
+};
+
+/**
+ * Each opening tag of `markup`, `framed` when it lies in a framed drawing: a part root that is a child of a `slot()`
+ * region, and everything inside it. `region` is the opening tag of a region the tag is a child of.
+ */
+const openingTagsOf = (markup: string) => {
+  const open: { name: string; attributes: string; projected: boolean; framed: boolean }[] = [];
+  const tags: OpeningTag[] = [];
+
+  for (const found of markup.matchAll(
+    /<(\/?)([a-zA-Z][\w-]*)((?:\s+[^\s"'>/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)*)\s*(\/?)>/g,
+  )) {
+    const [whole, closing, tag = '', attributes = '', selfClosing] = found;
+    const name = tag.toLowerCase();
+
+    if (closing) {
+      const at = open.map((element) => element.name).lastIndexOf(name);
+
+      if (at >= 0) open.length = at;
+
+      continue;
+    }
+
+    const parent = open[open.length - 1];
+    const region = parent?.projected ? parent : null;
+    const framed = !!parent?.framed || (!!region && attributeOf(attributes, 'data-et-part') !== undefined);
+
+    tags.push({ whole, name, attributes, index: found.index, framed, region });
+
+    if (!VOID_TAGS.has(name) && !selfClosing)
+      open.push({ name, attributes, projected: attributeOf(attributes, 'data-et-projected') !== undefined, framed });
+  }
+
+  return tags;
+};
+
+const forcedTagsOf = (markup: string) =>
+  openingTagsOf(markup).filter(({ attributes }) => attributeOf(attributes, 'data-et-force') !== undefined);
+
+/**
+ * The elements a design picture's markup forces with `data-et-force`, one entry per interaction. A forced element of a
+ * framed drawing is left out: it is a still of another part's state, which the app draws forced as well.
+ */
+export const forcedElementsOf = (markup: string): ForcedElement[] =>
+  forcedTagsOf(markup)
+    .filter(({ framed }) => !framed)
+    .flatMap(({ whole, name, attributes, index }) => {
+      const label = attributeOf(attributes, 'aria-label');
+      const role = attributeOf(attributes, 'role') ?? name;
+      const text = textOf(contentOf({ markup, tag: name, from: index + whole.length }));
+
+      return (attributeOf(attributes, 'data-et-force') ?? '')
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((interaction) => ({ interaction, label: label === undefined ? null : unescaped(label), role, text }));
+    });
+
+/** Whether a design picture forces an element of a framed drawing, which the app then draws with `data-et-force` too. */
+export const forcesInFramesOf = (markup: string) => forcedTagsOf(markup).some(({ framed }) => framed);
+
+/** A class of a `slot()` region that styles the part drawing it frames, the `selector` it targets, and that `part`. */
+export type FrameLook = { look: string; selector: string; part: string };
+
+const variantsOf = (token: string) => {
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+
+  for (let at = 0; at < token.length; at++) {
+    if (token[at] === '[') depth++;
+    else if (token[at] === ']') depth--;
+    else if (token[at] === ':' && depth === 0) {
+      parts.push(token.slice(start, at));
+      start = at + 1;
+    }
+  }
+
+  return parts;
+};
+
+const lookSelectorOf = (token: string) => {
+  const [first = '', second = ''] = variantsOf(token);
+  const arbitrary = /^\[&([_>])(.+)\]$/.exec(first);
+
+  if (arbitrary)
+    return {
+      child: arbitrary[1] === '>',
+      selector: (arbitrary[2] ?? '')
+        .replace(/(?<!\\)_/g, ' ')
+        .replace(/\\_/g, '_')
+        .trim(),
+    };
+
+  if (first !== '*' && first !== '**') return null;
+
+  const data = /^data-(?:([\w-]+)|\[([^\]]+)\])$/.exec(second);
+
+  return data ? { child: first === '*', selector: `[data-${data[1] ?? data[2]}]` } : null;
+};
+
+/**
+ * The looks of a design picture: each class of a `slot()` region that reaches into the part drawing it frames, by a
+ * `[&_…]:`, `[&>…]:`, `*:data-…:` or `**:data-…:` variant. The app must draw an element each selector matches.
+ */
+export const frameLooksOf = (markup: string): FrameLook[] => {
+  const looks = new Map<string, FrameLook>();
+
+  for (const { attributes, region } of openingTagsOf(markup)) {
+    const part = attributeOf(attributes, 'data-et-part')?.split(/\s+/)[0];
+
+    if (!region || !part) continue;
+
+    for (const look of unescaped(attributeOf(region.attributes, 'class') ?? '').split(/\s+/)) {
+      const target = lookSelectorOf(look);
+
+      if (target)
+        looks.set(`${look} ${part}`, {
+          look,
+          selector: target.child ? `> ${target.selector}` : target.selector,
+          part,
+        });
+    }
+  }
+
+  return [...looks.values()];
+};
 
 /** A state compare reaches in the app by a pointer click on `control`'s trigger, from the props of state `from`. */
 /** A click on `control` from state `from`, its harness page loaded with `props`, or with `from`'s own props when left out. */

@@ -45,7 +45,8 @@ const forceSelector = selectorParser((selectors) => {
   for (const pseudo of found) pseudo.replaceWith(forcedPseudoOf(pseudo.value.slice(1).toLowerCase()));
 });
 
-const forcedSelectorOf = (selector: string) => {
+/** One selector with its interaction pseudos rewritten as {@link forceInteractions} rewrites a stylesheet. */
+export const forcedSelectorOf = (selector: string) => {
   try {
     return forceSelector.processSync(selector);
   } catch {

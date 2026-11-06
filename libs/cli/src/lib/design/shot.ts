@@ -257,8 +257,9 @@ export const dependencyFilesOf = (modules: Iterable<ImportingModule>, imports: S
 };
 
 /**
- * A frame script that empties the `slot()` regions the part `part` draws itself, not those of the parts it embeds.
- * A region belongs to the innermost marked part around it that its markup was not passed into through props.
+ * A frame script that empties the `slot()` regions the part `part` draws itself, and the stand-in of a part it embeds:
+ * a region whose children the host did not pass into that part through props. A region belongs to the innermost
+ * marked part around it that its markup was not passed into through props.
  */
 export const emptySlotsScriptOf = (part: string, fill: string | null = null) => `(() => {
   const keysOf = (element, name) => (element.getAttribute(name) ?? '').split(' ').filter(Boolean);
@@ -282,6 +283,8 @@ export const emptySlotsScriptOf = (part: string, fill: string | null = null) => 
     if (owner === null || owner === ${JSON.stringify(part)}) {
       slot.replaceChildren();
       ${fill === null ? '' : `slot.innerHTML = ${JSON.stringify(fill)};`}
+    } else if (slot.children.length > 0 && ![...slot.children].some((child) => keysOf(child, 'data-et-slot').includes(owner))) {
+      slot.replaceChildren();
     }
   });
 
