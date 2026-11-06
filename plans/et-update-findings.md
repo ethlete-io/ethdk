@@ -486,7 +486,9 @@ features, 151 creators written, 98 tasks. Built by the third session of ADR 0200
   `ToolkitMappedEntityState`/`ToolkitActionCallArgs` from `@tomtomb/ngrx-toolkit`. Spec from trimmed
   registration-details, failing before. Replay: new ngc errors 91 -> 29, none added. Lesson: "whole file stays on the
   toolkit" was designed, and no spec mixed both kinds of groups.
-- **T1 cause B (doc agent decision, building):** a kept feature (`stage`, ~34 errors) keeps per file, not per feature:
+- **T1 cause B (doc agent decision, built 42a619e55, ethlete-sdk-62; replay 29 -> 7 new ngc errors, none added; spec
+  of the VenueService shape failing before; lesson: the old fixture asserted the whole-feature keep, and nothing
+  type-checked a real consumer):** a kept feature (`stage`, ~34 errors) keeps per file, not per feature:
   the files referenced from outside plus their in-feature import closure; the rest converts (actions, reducer, effects,
   selectors deleted, barrel -> queries, registration unhooked). If the closure reaches actions/reducer, everything is
   kept as today. `NTK-STORE-FILE-KEPT` names each kept file with its outside user (`layout.effects.ts:14`). A barrel
