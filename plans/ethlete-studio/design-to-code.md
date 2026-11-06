@@ -4247,3 +4247,7 @@ the rules it skipped and why, and fails in CI (`CI=true`) when a rule is skipped
 pre-push design gate also refuses a `slice/*` push, so the draft-PR path of ADR 0216 is closed exactly while a push is
 held for the gate. Doc agent decision (applies ADR 0216): for `slice/*` refs the pre-push hook skips only the design
 gate; the draft PR's CI runs it and stays red until fixed; pushes to `next` and `main` keep the full hook.
+
+Built (2026-11-06, Mac): a277e1c3e, the pre-push hook skips only the design gate for `refs/heads/slice/*` with a
+printed line (finding 545, ADR 0216). First real `yarn push:slice`: `slice/mac-push-safety`, draft PR #3170 into
+`next`, hook ran without `--no-verify`; its CI design gate is expected red until the five parts pass.
