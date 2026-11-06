@@ -3954,3 +3954,10 @@ Tom on the shell-main pick: "wieso sollte man jemals die titlebar aus der shell 
 to undo an edit that implements ADR 0045/0050, because nothing links a direct edit to the decision it implements.
 Decided in ADR 0209: an agent accepts a direct edit that names the ADR it implements; shell-main is accepted with
 "ADR 0050", then pages/start (Tom's q1ok).
+
+515\. ADR 0209 could not be carried out: `design accept elements/shell-main --by builder --note "ADR 0050 ..."` printed
+"Only Tom grants an accept; agents report ready instead (--by builder refused)" and still exited 0. Why no tool caught
+it: ADR 0209 was decided without a tool path, and no spec asserts a non-zero exit on a refused accept. Fix (B412): an
+agent `--by` is allowed only with a `--note` naming an existing accepted ADR (`ADR \d{4}`, file in apps/*/docs/adr);
+the record stores `by` and `adr: [...]`; without an ADR it is refused as before; every refusal exits 1. Specs for all
+three. A Tom finding is not an ADR: pages/sketches stays Tom's accept (in chat or Studio).
