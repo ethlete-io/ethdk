@@ -2,7 +2,7 @@ import { Tree } from '@nx/devkit';
 import * as ts from 'typescript';
 import { MigrationScope } from './migration-scope.js';
 import { ModuleGraph, createModuleGraph } from './module-graph.js';
-import { isShadowedInNestedScope } from './rename-symbols.js';
+import { findUsedNames, isShadowedInNestedScope, pruneUnusedNamedImports } from './rename-symbols.js';
 import { QueryV3MigrationReport } from './report.js';
 import {
   REMOVED_EXPERIMENTAL_QUERY_HELPERS,
@@ -89,7 +89,10 @@ export const migrateDevtoolsUsage = (tree: Tree, scope: MigrationScope, report: 
     }
 
     const { content: migrated, importsComponent, mountsDevtools } = migrateDevtoolsInFile(content, mountsFromProvider);
-    const nextContent = mountsFromProvider ? removeDevtoolsTags(migrated) : migrated;
+    const nextContent = pruneUnusedNamedImports(
+      mountsFromProvider ? removeDevtoolsTags(migrated) : migrated,
+      findUsedNames(content),
+    );
 
     if (nextContent === content) {
       return;

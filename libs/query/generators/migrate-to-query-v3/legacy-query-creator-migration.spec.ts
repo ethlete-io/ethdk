@@ -749,4 +749,35 @@ export const config = computed(() => ({ queryCreator: getMatches, size: 3 }));
     expect(rail).toContain("import { legacyGetMatches } from '../queries';");
     expect(rail).toContain('queryCreator: legacyGetMatches');
   });
+  it('migrates a creator declared in the same file as its client', async () => {
+    tree.write(
+      'storybook.constants.ts',
+      `
+import { def, V2QueryClient } from '@ethlete/query';
+
+export interface Post {
+  id: number;
+}
+
+export const QUERY_CLIENT = new V2QueryClient({
+  baseRoute: 'https://jsonplaceholder.typicode.com',
+});
+
+export const getPosts = QUERY_CLIENT.get({
+  route: \`/posts/\`,
+  types: {
+    response: def<Post[]>(),
+  },
+});
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const constants = readFile('storybook.constants.ts');
+
+    expect(constants).not.toContain('QUERY_CLIENTConfig.get(');
+    expect(constants).toContain('export const getPosts = QUERY_CLIENTGet<{ response: Post[] }>(`/posts/`, {');
+    expect(constants).toContain('legacyGetPosts');
+  });
 });

@@ -190,16 +190,7 @@ export const renameImportedReferences = (content: string, renames: Map<string, s
   return { content: result, shadowed };
 };
 
-/**
- * Drops named imports whose local name no longer appears anywhere else in the file.
- *
- * The migration rewrites away the constructs that needed `def`, `AnyLegacyQueryCreator` and friends;
- * leaving the imports behind turns every touched file into a lint error, and `formatFiles` runs in
- * the same generator invocation so they land that way. Identifiers inside template strings count as
- * usage too - a component referenced only from an inline template must not be pruned.
- */
-export const pruneUnusedNamedImports = (content: string) => {
-  const sourceFile = createSourceFile(content);
+const collectUsedNames = (sourceFile: ts.SourceFile) => {
   const used = new Set<string>();
 
   const addWordsFrom = (text: string) => {
@@ -227,6 +218,22 @@ export const pruneUnusedNamedImports = (content: string) => {
 
   visit(sourceFile);
 
+  return used;
+};
+
+export const findUsedNames = (content: string) => collectUsedNames(createSourceFile(content));
+
+/**
+ * Drops named imports whose local name no longer appears anywhere else in the file.
+ *
+ * The migration rewrites away the constructs that needed `def`, `AnyLegacyQueryCreator` and friends;
+ * leaving the imports behind turns every touched file into a lint error, and `formatFiles` runs in
+ * the same generator invocation so they land that way. Identifiers inside template strings count as
+ * usage too - a component referenced only from an inline template must not be pruned.
+ */
+export const pruneUnusedNamedImports = (content: string, candidates?: ReadonlySet<string>) => {
+  const sourceFile = createSourceFile(content);
+  const used = collectUsedNames(sourceFile);
   const replacements: Array<{ start: number; end: number; replacement: string }> = [];
 
   for (const node of sourceFile.statements) {
@@ -239,7 +246,9 @@ export const pruneUnusedNamedImports = (content: string) => {
       continue;
     }
 
-    const kept = node.importClause.namedBindings.elements.filter((element) => used.has(element.name.text));
+    const kept = node.importClause.namedBindings.elements.filter(
+      (element) => used.has(element.name.text) || (candidates && !candidates.has(element.name.text)),
+    );
 
     if (kept.length === node.importClause.namedBindings.elements.length) continue;
 

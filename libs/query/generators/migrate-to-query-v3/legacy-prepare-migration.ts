@@ -1,6 +1,7 @@
 import { Tree } from '@nx/devkit';
 import { MigrationScope } from './migration-scope.js';
 import * as ts from 'typescript';
+import { findUsedNames, pruneUnusedNamedImports } from './rename-symbols.js';
 import { QueryV3MigrationReport } from './report.js';
 import {
   createSourceFile,
@@ -595,15 +596,16 @@ const transformLegacyCreatorPrepareCalls = (
   });
 
   filesByPath.forEach((classes, filePath) => {
-    let content = tree.read(filePath, 'utf-8');
+    const content = tree.read(filePath, 'utf-8');
 
     if (!content) {
       return;
     }
 
-    content = ensureAngularCoreImports(content, ['inject', 'Injector']);
-
-    const nextContent = transformPrepareCallsInFile(content, classes, pollingInfo);
+    const nextContent = pruneUnusedNamedImports(
+      transformPrepareCallsInFile(ensureAngularCoreImports(content, ['inject', 'Injector']), classes, pollingInfo),
+      new Set([...findUsedNames(content), 'inject', 'Injector']),
+    );
 
     if (nextContent !== content) {
       tree.write(filePath, nextContent);
@@ -705,6 +707,14 @@ const transformPrepareCallsInFile = (
           const functionWithInject = findOutermostFunctionWithInject(containingFunction);
 
           if (!functionWithInject) {
+            if (propertyAccess.name.text === 'prepare' && isInsideAsyncValidator(node)) {
+              replacements.push({
+                start: node.getStart(sourceFile),
+                end: node.getEnd(),
+                replacement: transformSinglePrepareCall(node, undefined, sourceFile, pollingInfo),
+              });
+            }
+
             ts.forEachChild(node, visit);
             return;
           }
@@ -712,11 +722,11 @@ const transformPrepareCallsInFile = (
           const functionPosition = functionWithInject.getStart(sourceFile);
 
           if (!functionsNeedingInjector.has(functionPosition)) {
-            const existingInjectorParameter = findInjectorParameter(functionWithInject);
+            const existingInjector = findExistingInjector(functionWithInject);
 
-            if (existingInjectorParameter) {
+            if (existingInjector) {
               functionsNeedingInjector.set(functionPosition, {
-                injectorName: existingInjectorParameter,
+                injectorName: existingInjector,
                 bodyStart: -1,
                 needsDeclaration: false,
               });
@@ -791,7 +801,7 @@ const transformPrepareCallsInFile = (
   return rewrittenComputeds.size > 0 ? ensureImportFromQuery(result, ['queryComputed']) : result;
 };
 
-const findInjectorParameter = (func: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression) => {
+const findExistingInjector = (func: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression) => {
   for (const parameter of func.parameters) {
     if (!ts.isIdentifier(parameter.name)) {
       continue;
@@ -803,6 +813,27 @@ const findInjectorParameter = (func: ts.FunctionDeclaration | ts.ArrowFunction |
 
     if (parameter.type?.getText().includes('Injector')) {
       return parameter.name.text;
+    }
+  }
+
+  if (!func.body || !ts.isBlock(func.body)) return undefined;
+
+  for (const statement of func.body.statements) {
+    if (!ts.isVariableStatement(statement)) continue;
+
+    for (const declaration of statement.declarationList.declarations) {
+      const initializer = declaration.initializer;
+
+      if (
+        ts.isIdentifier(declaration.name) &&
+        initializer &&
+        ts.isCallExpression(initializer) &&
+        ts.isIdentifier(initializer.expression) &&
+        initializer.expression.text === 'inject' &&
+        initializer.arguments[0]?.getText() === 'Injector'
+      ) {
+        return declaration.name.text;
+      }
     }
   }
 
@@ -915,7 +946,7 @@ const transformContainerCall = (callNode: ts.CallExpression, injectorReference: 
 
 const transformSinglePrepareCall = (
   callNode: ts.CallExpression,
-  injectorReference: string,
+  injectorReference: string | undefined,
   sourceFile: ts.SourceFile,
   pollingInfo: Map<string, QueryPollingInfo>,
 ) => {
@@ -956,7 +987,7 @@ const transformSinglePrepareCall = (
     }
   }
 
-  nextArgumentProperties.push(`injector: ${injectorReference}`);
+  if (injectorReference) nextArgumentProperties.push(`injector: ${injectorReference}`);
 
   const queryVariableName = findQueryVariableNameForPrepareCall(callNode, sourceFile);
   const addDestroyOnResponse = shouldAddDestroyOnResponse(
@@ -1357,28 +1388,36 @@ const ASYNC_VALIDATOR_PROPERTIES = new Set(['asyncValidator', 'asyncValidators']
 const ASYNC_VALIDATOR_SETTERS = new Set(['setAsyncValidators', 'addAsyncValidators']);
 
 /**
- * Whether the innermost function around the call is an Angular async validator: a value of an
- * `asyncValidator(s)` property or setter argument, an `AsyncValidatorFn`, or `validate` of an `AsyncValidator`.
+ * Whether a function around the call is an Angular async validator: a value of an `asyncValidator(s)` property or
+ * setter argument, an `AsyncValidatorFn` or a factory of one, a function returning `Observable`/`Promise` of
+ * `ValidationErrors`, or `validate` of an `AsyncValidator`.
  */
 const isInsideAsyncValidator = (callNode: ts.CallExpression) => {
-  let fn: ts.Node | undefined = callNode.parent;
-
-  while (fn && !isCallbackFunction(fn) && !ts.isMethodDeclaration(fn)) fn = fn.parent;
-
-  if (!fn) return false;
-
-  if (ts.isMethodDeclaration(fn)) {
-    const owner = fn.parent;
-
-    return (
-      ts.isIdentifier(fn.name) &&
-      fn.name.text === 'validate' &&
-      ts.isClassDeclaration(owner) &&
-      !!owner.heritageClauses?.some((clause) =>
-        clause.types.some((type) => type.expression.getText() === 'AsyncValidator'),
-      )
-    );
+  for (let node: ts.Node | undefined = callNode.parent; node; node = node.parent) {
+    if (ts.isMethodDeclaration(node)) return isAsyncValidatorMethod(node);
+    if (isCallbackFunction(node) && isAsyncValidatorFunction(node)) return true;
   }
+
+  return false;
+};
+
+const isAsyncValidatorMethod = (method: ts.MethodDeclaration) => {
+  const owner = method.parent;
+
+  return (
+    ts.isIdentifier(method.name) &&
+    method.name.text === 'validate' &&
+    ts.isClassDeclaration(owner) &&
+    !!owner.heritageClauses?.some((clause) =>
+      clause.types.some((type) => type.expression.getText() === 'AsyncValidator'),
+    )
+  );
+};
+
+const ASYNC_VALIDATOR_SIGNATURE = /\bAsyncValidatorFn\b|\b(?:Observable|Promise)<\s*ValidationErrors\b/;
+
+const isAsyncValidatorFunction = (fn: FunctionLike) => {
+  if (fn.type && ASYNC_VALIDATOR_SIGNATURE.test(fn.type.getText())) return true;
 
   let value: ts.Node = fn;
 

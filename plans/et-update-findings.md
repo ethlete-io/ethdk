@@ -416,6 +416,18 @@ Source: `plans/fifagg-sdk-findings-2026-11-06.md` (consumer handoff, German). In
   innermost function, here a `switchMap` callback in an untyped factory); 16, 18-20, 22-24 not observable statically.
   Lint-warning gaps: unused renamed client imports in three `app.config.ts`, unused `computed` after the
   `queryComputed` rewrite. Not run: fifagg's jest and e2e, per-project `nx lint`.
+- **Replay gaps as built (ethlete-sdk-cb, 2026-11-06):** A - `legacy-query-creator-migration.ts` maps the renamed
+  `XConfig` back to `X` in the client's own file, so a creator next to its client migrates. B (21b) -
+  `isInsideAsyncValidator` walks every enclosing function and also accepts a factory returning `AsyncValidatorFn` or
+  an `Observable`/`Promise` of `ValidationErrors`; a validator `prepare()` without an injector in reach gets
+  `destroyOnResponse: true` and keeps its task; a local `inject(Injector)` is reused instead of declaring a second
+  one. C - the devtools and `queryComputed` rewrites drop an import only when they removed its last use. Each fixture is
+  the trimmed fifagg shape and failed before its fix. Replay (465 files, 74 tasks): tsc 148 (115 baseline, so 33 new,
+  all tasked or decided; the combobox error is gone), ESLint 0 errors, 42 warnings (baseline 43). Verified: the 21
+  generator spec files, lint, prettier, `query:export-coverage`. Not verified: ngc, fifagg's jest and e2e, a runtime
+  check of the validator, gql calls on a same-file client.
+- **Rule (2026-11-06):** a migrator gap found in a consumer replay gets its spec fixture from that consumer's real code,
+  trimmed, not a hand-written one, and the fixture fails before the fix.
 - **18 confirmed on next.62:** entity store before `onSuccess`, both `destroyOnResponse` values. fifagg removed its
   workaround.
 - **15 stays by decision:** `reportErrors: false` from the migrator; fifagg keeps `createSilentLegacyQueryCreator`.

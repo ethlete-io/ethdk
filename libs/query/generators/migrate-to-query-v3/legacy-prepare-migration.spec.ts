@@ -203,6 +203,47 @@ ${body}
       expect(result).toMatch(/import \{[^}]*queryComputed[^}]*\} from '@ethlete\/query'/);
     });
 
+    it('drops the computed import once its last computed became a queryComputed', async () => {
+      tree.write(
+        'fecwc-club-ranking.component.ts',
+        `
+import { ChangeDetectionStrategy, Component, computed, effect, inject, ViewEncapsulation } from '@angular/core';
+import { createLegacyQueryCreator } from '@ethlete/query';
+
+const getCurrentSeasonWithRanks = {} as never;
+export const legacyGetCurrentSeasonWithRanks = createLegacyQueryCreator({ creator: getCurrentSeasonWithRanks });
+
+@Component({ changeDetection: ChangeDetectionStrategy.OnPush, encapsulation: ViewEncapsulation.None })
+export class FecwcClubRankingComponent {
+  router = inject(Router);
+
+  getCurrentSeasonWithRanksQuery = computed(() => {
+    const formData = this.filterForm.currentValue();
+    if (!formData) return null;
+    return legacyGetCurrentSeasonWithRanks
+      .prepare({
+        pathParams: { key: 'club' },
+        queryParams: { limit: 20, page: formData.page || 1 },
+      })
+      .execute();
+  });
+
+  constructor() {
+    effect(() => this.router.navigate([]));
+  }
+}
+        `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const result = readFile('fecwc-club-ranking.component.ts');
+
+      expect(result).toContain('queryComputed(');
+      expect(result).not.toMatch(/\bcomputed\b/);
+      expect(result).toMatch(/import \{[^}]*\beffect\b[^}]*\} from '@angular\/core'/);
+    });
+
     it('keeps the options of a plain computed that returns the prepared query', async () => {
       writeComponent(`  users = computed(() => legacyGetUsers.prepare({}).execute(), { equal: () => false });`);
 
@@ -228,6 +269,57 @@ ${body}
       await migration(tree, { skipFormat: true });
 
       expect(readFile('component.ts')).toContain('destroyOnResponse: true');
+    });
+
+    describe('in a validator returned by an untyped factory', () => {
+      const writeValidator = (withInjector: boolean) =>
+        tree.write(
+          'gamer-tag.async.validator.ts',
+          `
+${withInjector ? "import { inject, Injector } from '@angular/core';" : ''}
+import { AbstractControl, ValidationErrors } from '@angular/forms';
+import { legacyPostPlayerValidateGamertag } from './queries';
+import { Observable, timer } from 'rxjs';
+import { switchMap, take } from 'rxjs/operators';
+
+export const validatePlayerGamerTagAsync = (startGamerTag: string | null | undefined = null) => {
+${withInjector ? '  const injector = inject(Injector);\n' : ''}
+  return (control: AbstractControl): Observable<ValidationErrors | null> => {
+    return timer(300).pipe(
+      switchMap(() =>
+        legacyPostPlayerValidateGamertag
+          .prepare({ body: { gamerTag: control.value } })
+          .execute()
+          .state$.pipe(take(1)),
+      ),
+    );
+  };
+};
+          `.trim(),
+        );
+
+      it('adds destroyOnResponse next to the factory injector', async () => {
+        writeValidator(true);
+
+        await migration(tree, { skipFormat: true });
+
+        const validator = readFile('gamer-tag.async.validator.ts');
+
+        expect(validator.match(/inject\(Injector\)/g)).toHaveLength(1);
+        expect(validator).toContain('injector: injector,\n  config: { destroyOnResponse: true }');
+      });
+
+      it('adds destroyOnResponse without an injector in reach', async () => {
+        writeValidator(false);
+
+        await migration(tree, { skipFormat: true });
+
+        expect(readFile('gamer-tag.async.validator.ts')).toContain(
+          '.prepare({ body: { gamerTag: control.value }, config: { destroyOnResponse: true } })',
+        );
+        expect(readFile('gamer-tag.async.validator.ts')).not.toContain('@angular/core');
+        expect(readFile('query-v3-migration-tasks.md')).toContain('gamer-tag.async.validator.ts');
+      });
     });
 
     it('adds no destroyOnResponse to a prepare call in an ordinary callback', async () => {

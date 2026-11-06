@@ -23,6 +23,47 @@ describe('migrate-to-query-v3 cleanup passes', () => {
     vi.restoreAllMocks();
   });
 
+  it('drops a client import that only the devtools registrations used', async () => {
+    tree.write(
+      'queries/client.ts',
+      `
+import { V2QueryClient } from '@ethlete/query';
+
+export const ggApiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
+export const ggContentfulApiClient = new V2QueryClient({ baseRoute: 'https://cms.example.com' });
+      `.trim(),
+    );
+
+    tree.write(
+      'app.config.ts',
+      `
+import { provideQueryClientForDevtools } from '@ethlete/query';
+import { environment } from './env';
+import { ggApiClient, ggContentfulApiClient } from './queries/client';
+import { unusedBefore } from './unrelated';
+
+export const appConfig = {
+  providers: [
+    ...(environment.production
+      ? []
+      : [
+          provideQueryClientForDevtools({ client: ggApiClient, displayName: 'GG API Client' }),
+          provideQueryClientForDevtools({ client: ggContentfulApiClient, displayName: 'Contentful Client' }),
+        ]),
+  ],
+};
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const appConfig = readFile('app.config.ts');
+
+    expect(appConfig).not.toContain("from './queries/client'");
+    expect(appConfig).toContain("import { environment } from './env';");
+    expect(appConfig).toContain("import { unusedBefore } from './unrelated';");
+  });
+
   it('should point devtools usage at the v3 components', async () => {
     tree.write(
       'app.config.ts',

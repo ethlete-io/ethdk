@@ -341,9 +341,14 @@ const analyzeLegacyQueryCreators = (
   const sourceFile = createSourceFile(content, filePath);
   const creators: LegacyQueryCreatorInfo[] = [];
   const oldClientNames = new Set<string>();
+  const renamedOwnClients = new Map<string, string>();
 
   queryClientFiles.forEach((configNames) => {
     configNames.forEach((configName) => oldClientNames.add(configName));
+  });
+
+  queryClientFiles.get(filePath)?.forEach((configName) => {
+    renamedOwnClients.set(ensureConfigSuffix(configName), configName);
   });
 
   const visit = (node: ts.Node) => {
@@ -362,7 +367,9 @@ const analyzeLegacyQueryCreators = (
         return;
       }
 
-      if (!oldClientNames.has(objectExpression.text) || !isLegacyHttpMethod(methodExpression.text)) {
+      const clientName = renamedOwnClients.get(objectExpression.text) ?? objectExpression.text;
+
+      if (!oldClientNames.has(clientName) || !isLegacyHttpMethod(methodExpression.text)) {
         ts.forEachChild(node, visit);
         return;
       }
@@ -371,7 +378,7 @@ const analyzeLegacyQueryCreators = (
 
       const info: LegacyQueryCreatorInfo = {
         name: creatorName,
-        clientName: objectExpression.text,
+        clientName,
         method: methodExpression.text,
         route: '',
         secure: false,
