@@ -364,7 +364,7 @@ import('@ethlete/query-devtools/lazy') })`; new export `mountQueryDevtools` in `
   unmanaged query per input change) and in async validators (a POST per keystroke) with no `destroyOnResponse` and no
   container. fifagg fixes its sites by hand.
 
-## 11. fifagg on next.62 (fifagg-sdk-findings-2026-11-06.md, 2026-11-06) - open
+## 11. fifagg on next.62 (fifagg-sdk-findings-2026-11-06.md, 2026-11-06) - done (b89cae997)
 
 Source: `plans/fifagg-sdk-findings-2026-11-06.md` (consumer handoff, German). Installed: query 6.0.0-next.62, core
 5.0.0-next.73, query-devtools 1.0.0-next.17, cdk 5.0.0-next.48.
