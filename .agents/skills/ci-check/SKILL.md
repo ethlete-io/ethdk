@@ -32,6 +32,7 @@ yarn versions:check                       # 4. libs/*/src/lib/version.ts vs each
 yarn lint:changesets                      # 5. unreleased changeset notes: ≤40 words, 1 paragraph, ≤3 bullets
 yarn query:export-coverage                # 5b. every @ethlete/query runtime export: scenario or allowlist
 yarn core:export-coverage                 # 5c. the same for @ethlete/core
+yarn vitest:projects:check                # 5d. the root vitest.projects.ts resolves (~15 s, too slow for pre-push)
 yarn nx run-many -t typecheck             # 6. spec-file types (nothing else checks them)
 yarn nx run-many -t lint                  # 7. ESLint, incl. @nx/dependency-checks
 yarn nx run-many -t test                  # 8. all unit tests
