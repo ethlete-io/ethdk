@@ -403,6 +403,19 @@ Source: `plans/fifagg-sdk-findings-2026-11-06.md` (consumer handoff, German). In
   toggle is visible. Bite: `Automation` with `true` failed with the pill visible. Verified: the devtools e2e folder
   against the dev Storybook (9 passed, 5 keyboard cases skipped on touch), lint and prettier. Not verified: the
   static Storybook build and the CI shard selection.
+- **Migrator replay as built (ethlete-sdk-cb, 2026-11-06):** the current generator (SDK 9efe2aa41 builds wired into a
+  clone) on fifagg bb07c334ed (parent of the migration 6ff3142096): 464 files, 74 tasks. tsc over app and lib sources
+  115 baseline errors (dead dummy data, missing modules), 149 after, so 34 new; ngc the same 33, no template-only
+  errors; ESLint 0 errors before and after, 43 to 55 warnings (unused vars). The 34: gql creators (9 + 3 implicit
+  any, tasked, REST-only by decision), v2 auth wiring (17, tasked), the scaffolded auth provider (3, tasked as
+  QV3-052/054/055), item 12 (1, decided), and one new gap: `QUERY_CLIENTConfig.get(` in
+  `et-combobox-storybook.constants.ts:35` - `query-client-migration.ts:332` renames the client in its own file before
+  `analyzeLegacyQueryCreators` matches the old name, so a creator next to its client is neither migrated nor tasked.
+  Items: 10, 11, 13, 21, 25 proven fixed; 14, 17 as designed; 15 by decision; 21b partly - the async validator in
+  `gamer-tag.async.validator.ts:25` still gets no `destroyOnResponse` (`isInsideAsyncValidator` checks only the
+  innermost function, here a `switchMap` callback in an untyped factory); 16, 18-20, 22-24 not observable statically.
+  Lint-warning gaps: unused renamed client imports in three `app.config.ts`, unused `computed` after the
+  `queryComputed` rewrite. Not run: fifagg's jest and e2e, per-project `nx lint`.
 - **18 confirmed on next.62:** entity store before `onSuccess`, both `destroyOnResponse` values. fifagg removed its
   workaround.
 - **15 stays by decision:** `reportErrors: false` from the migrator; fifagg keeps `createSilentLegacyQueryCreator`.
