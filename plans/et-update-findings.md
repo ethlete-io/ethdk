@@ -511,3 +511,11 @@ features, 151 creators written, 98 tasks. Built by the third session of ADR 0200
 - **T5 part 2 closed (doc agent):** after cause B a barrel keeps an actions export only when the whole feature is
   kept, and then the group is live, not deleted; the replay has 0 such rows, and `NTK-STORE-FILE-KEPT` already lists
   every outside user. No real case, so no fixture (section 11 rule) - no new task.
+- **Final replay (SDK 1518330a1, ethlete-sdk-62, 172 s):** fresh setup at 116a0d9afa, ngc over 65 tsconfigs vs
+  baseline: 4 new errors (consumer's first run: 217), all in `libs/domain/shared/sharing` and covered by
+  `NTK-SELECT-BY-ACTION-ID`; 74 tasks (first run: 98). Not run: fifagg jest, e2e, per-project lint, app boot, the
+  package.json swap. Open: `NTK-MODULE-RESOLUTION` fired 0 times although the consumer hit it in env, queries and
+  uikit-mocks and the baseline's TS2307 rows point at `node` resolution - explain before the section closes. Follow-up:
+  an `NTK-DUPLICATE-ROUTE-MISMATCH` row says `{ phaseId?: PhaseId }` is not `{ phaseId?: PhaseId }`
+  (getCompetitionStageBySlug): a mismatch must name what differs (declaration files of two same-named types), and two
+  equal types raise no task.
