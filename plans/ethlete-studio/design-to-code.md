@@ -3961,3 +3961,4 @@ it: ADR 0209 was decided without a tool path, and no spec asserts a non-zero exi
 agent `--by` is allowed only with a `--note` naming an existing accepted ADR (`ADR \d{4}`, file in apps/*/docs/adr);
 the record stores `by` and `adr: [...]`; without an ADR it is refused as before; every refusal exits 1. Specs for all
 three. A Tom finding is not an ADR: pages/sketches stays Tom's accept (in chat or Studio).
+Tom (2026-11-06, "q1ok"): pages/sketches@edit is accepted without opening it (`--by tom`, finding 500).
