@@ -48,8 +48,8 @@ const stateOf$ = (search: string): Observable<HarnessState> => {
 
   try {
     props = JSON.parse(params.get('props') ?? '{}') ?? {};
-  } catch {
-    return of({ error: `The props of "${part}" are not JSON.` });
+  } catch (error) {
+    return of({ error: `The props of "${part}" are not JSON: ${String(error)}` });
   }
 
   if (typeof props !== 'object' || Array.isArray(props)) return of({ error: `The props of "${part}" are no object.` });

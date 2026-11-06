@@ -257,6 +257,7 @@ const withoutSdkElementRules = (css: string) => {
     });
 
     return root.toString();
+    // eslint-disable-next-line ethlete/no-silent-catch-error -- css that does not parse is checked as written
   } catch {
     return css;
   }

@@ -67,6 +67,11 @@ export default [
     files: ['design/web/env.d.ts'],
     rules: { '@nx/enforce-module-boundaries': 'off', 'ethlete/no-type-only-import': 'off' },
   },
+  {
+    files: ['src/lib/design/system/rules/**/*.ts'],
+    ignores: ['**/*.spec.ts', '**/*.test.ts'],
+    rules: { 'ethlete/no-silent-catch-error': ['error', { tryCatch: true }] },
+  },
   // Relaxed rules for spec files (non-null assertions are common and intentional in tests)
   ethlete.configs.recommendedSpec,
 ];

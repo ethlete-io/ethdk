@@ -241,6 +241,7 @@ export const rememberedView = (): Partial<ViewState> => {
       flowPresets: nameMap(flowPresets),
       inventoryShown: typeof inventoryShown === 'boolean' ? inventoryShown : undefined,
     };
+    // eslint-disable-next-line ethlete/no-silent-catch-error -- unreadable or absent stored view means defaults
   } catch {
     return {};
   }

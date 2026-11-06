@@ -546,6 +546,7 @@ const logRefusedAction = ({ url, status, message }: { url: string; status: numbe
       status,
       message,
     }).catch(() => undefined);
+    // eslint-disable-next-line ethlete/no-silent-catch-error -- reporting a refusal is best effort, a bad url must not mask the refusal
   } catch {
     return;
   }

@@ -20,6 +20,7 @@ export const partsChangeOf = (data: unknown): PartsChange | null => {
     if (change.all === true) return { revision: 0, ...change, all: true };
 
     return 'parts' in change && Array.isArray(change.parts) ? ({ revision: 0, ...change } as PartsChange) : null;
+    // eslint-disable-next-line ethlete/no-silent-catch-error -- documented: null means an event this Studio cannot read
   } catch {
     return null;
   }

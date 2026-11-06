@@ -35,6 +35,7 @@ const allowedSelector = (selector: Selector, parentScoped: boolean) => {
 const selectorsOf = (rule: Rule) => {
   try {
     return selectorParser().astSync(rule.selector).nodes;
+    // eslint-disable-next-line ethlete/no-silent-catch-error -- an unparseable selector has no nodes to check
   } catch {
     return [];
   }
@@ -63,8 +64,14 @@ export const tokenSelectorsOf = (product: ResolvedProduct): Problem[] => {
       let root: postcss.Root;
       try {
         root = postcss.parse(part.cssSource ?? '');
-      } catch {
-        return [];
+      } catch (error) {
+        return [
+          {
+            rule: 'TOKEN-SELECTOR',
+            file: part.css ?? part.file,
+            message: `the token stylesheet could not be parsed: ${String(error)}`,
+          },
+        ];
       }
       const problems: Problem[] = [];
       root.walkRules((rule) => {

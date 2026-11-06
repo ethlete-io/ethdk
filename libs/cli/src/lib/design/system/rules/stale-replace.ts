@@ -26,6 +26,7 @@ const matcherOf = (pattern: ts.Expression): Pick<Replace, 'label' | 'matches'> |
     const regex = new RegExp(body, pattern.text.slice(slash + 1).replace(/[gy]/g, ''));
 
     return { label: pattern.text, matches: (source) => regex.test(source) };
+    // eslint-disable-next-line ethlete/no-silent-catch-error -- a pattern that is no valid RegExp cannot go stale, null skips it
   } catch {
     return null;
   }
