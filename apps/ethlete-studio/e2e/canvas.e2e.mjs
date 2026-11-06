@@ -819,6 +819,37 @@ const CASES = [
     },
   },
   {
+    name: 'a part switch asks for its open points once',
+    pages: ['System'],
+    run: async (page) => {
+      const asked = [];
+      const count = (request) => {
+        if (request.url().includes('/__design/open-points?'))
+          asked.push(new URL(request.url()).searchParams.get('part'));
+      };
+      const leaves = page.locator('[role="treeitem"][data-kind="leaf"]:not([data-selected])');
+
+      if ((await leaves.count()) < 1) return { ok: false, detail: 'no other part in the tree' };
+
+      page.on('request', count);
+
+      const counts = [];
+
+      for (let step = 0; step < 2; step++) {
+        asked.length = 0;
+        await leaves.nth(step).click();
+        await page.waitForTimeout(2500);
+        counts.push([...asked]);
+      }
+
+      page.off('request', count);
+
+      const ok = counts.every((parts) => parts.length === 1);
+
+      return { ok, detail: counts.map((parts) => `${parts.length} (${parts.join(', ')})`).join(' / ') };
+    },
+  },
+  {
     name: 'pointer click on an empty area keeps the ring off',
     pages: ['System', 'Sketches', 'Inbox'],
     viewport: WIDE,

@@ -4299,3 +4299,15 @@ resident, `timeout 30s`, load 5.4-6.2 of 32, every line clean in `design timings
 text) 5.69 / 5.77 / 5.78 s, 89/45 (app shots 3.8 s, actions 3.45 s hidden under them, pixels 0.04 s), **meets 10 s**;
 design edit 4.76 / 4.86 / 5.23 s, 102/32; zoom-chip app edit 6.78 s (pixels 1.31 s, all 30 app pictures change); every
 next run 0.91-1.04 s, 134/134 (was 2.6 s). Deferred: reuse design shots by render output.
+
+Studio frame B (as built in the `perf(cli)` commit that adds this note, perf subagent, 2026-11-06): measured first, the
+~520 ms of a warm `/__design/open-points?part=` call were the static rules of the whole product (`ruleProblemsOf` 535
+ms; `readOpenPoints` only 39 ms). Built: `system/open-points-cache.ts` keeps the product's open points and build-ready
+inputs keyed on a stat fingerprint (path, mtime, ctime, size) of the own and base product folders, the config file, the
+configured stylesheets and each harness app's `src` (~1300 files, 6-8 ms); the answer's ready mark, direct edit, slow
+results and build-ready stay live. Studio sent two requests per switch: the System view's open points and the part
+approval both asked; `openPointsAnswer$` now shares one request between overlapping calls. Verified: a spec with a
+comment, a sketch and a part file edited between calls (fails with a constant key), both tsc, lint, the Studio specs, and
+the new canvas e2e case "a part switch asks for its open points once" (2 + 2 requests before, 1 + 1 after). In-process
+repeat call 520 -> 15 ms. Not cached: a rule input outside those folders (e.g. an app file outside the harness `src`)
+stays stale until a fingerprinted file changes. Details: `.claude/handoffs/agent-results/studio-frame-b.md`.

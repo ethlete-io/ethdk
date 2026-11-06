@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 import { ProductAddress, designAnswer$ } from './design';
+import { openPointsAnswer$ } from './design-open-points';
 
 export type PartGo = { hash: string; by: string; at: string };
 
@@ -10,7 +11,7 @@ const partUrl = ({ port, product, path, part }: ProductAddress & { path: string;
   `http://localhost:${port}/__design/${path}?product=${encodeURIComponent(product)}${part === undefined ? '' : `&part=${encodeURIComponent(part)}`}`;
 
 export const partApproval$ = (address: ProductAddress, part: string): Observable<PartApproval> =>
-  designAnswer$<PartApproval>(partUrl({ ...address, path: 'open-points', part }));
+  openPointsAnswer$<PartApproval>(address, part);
 
 /** Stores the Studio user's go for a part at the hash Studio showed; `harness` says why the harness map stayed stale. */
 export const giveGo$ = (

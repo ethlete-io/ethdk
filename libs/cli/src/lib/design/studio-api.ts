@@ -29,13 +29,13 @@ import {
 } from './system/notes/note';
 import { approveException, listExceptions } from './system/exceptions';
 import { approveInventory, Inventory } from './system/inventory';
-import { buildReadyInputsOf } from './system/check-system';
+import { cachedOpenPointsOf } from './system/open-points-cache';
 import { buildReadyOf } from './system/part-build-ready';
 import { drawnPartPointsOf, readyMarkOf, readyPartOf } from './system/part-ready';
 import { refreshHarnessMap } from './system/harness-map';
 import { markPartGo } from './system/part-go';
 import { partActionsOf } from './system/action-lost';
-import { partPointsOf, readOpenPoints } from './system/read-open-points';
+import { partPointsOf } from './system/read-open-points';
 import { flowProblemsOf } from './system/rules/flow';
 import { Problem } from './system/problem';
 import { ResolvedProduct } from './system/resolve-product';
@@ -973,14 +973,15 @@ export const openPointsAnswer = withProduct('GET', async (found) => {
   if (asked === null) {
     if (draw === 'true') return failure(400, 'draw needs a part');
 
-    return { status: 200, body: { drawn: false, parts: readOpenPoints(found.product) } };
+    return { status: 200, body: { drawn: false, parts: cachedOpenPointsOf(found.product).points } };
   }
 
   const part = knownPartOf(found.product, asked);
 
   if (typeof part !== 'string') return part;
 
-  const points = draw === 'true' ? await drawnPointsOf(found, part) : partPointsOf(readOpenPoints(found.product), part);
+  const cached = cachedOpenPointsOf(found.product);
+  const points = draw === 'true' ? await drawnPointsOf(found, part) : partPointsOf(cached.points, part);
 
   if (!Array.isArray(points)) return failure(points.status, points.error);
 
@@ -988,7 +989,7 @@ export const openPointsAnswer = withProduct('GET', async (found) => {
   const hash = typeof located === 'string' ? null : located.hash;
   const ready = readyMarkOf({ product: found.product, part });
   const directEdit = changedOutsideSketchOf(found.product).includes(part);
-  const inputs = buildReadyInputsOf(found.product);
+  const { inputs } = cached;
   const buildReady = buildReadyOf({
     product: found.product,
     part,

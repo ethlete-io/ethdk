@@ -4,9 +4,13 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { Readable } from 'stream';
 import { describe, expect, it, vi } from 'vitest';
-import { DESIGN_DIR } from './paths';
+import { DESIGN_DIR, readConfig } from './paths';
 import { openPointsAnswer } from './studio-api';
+import { createComment } from './system/comments/comment';
 import { drawnFindingsOf } from './system/drawn-open-points';
+import { oneProductOf } from './system/sketch/cli-args';
+import { createSketch } from './system/sketch/sketch';
+import { ResolvedProduct } from './system/resolve-product';
 
 vi.mock('./system/drawn-open-points', () => ({
   drawnFindingsOf: vi.fn(async () => ({
@@ -66,6 +70,39 @@ describe('openPointsAnswer', () => {
       },
     });
     expect(drawnFindingsOf).not.toHaveBeenCalled();
+  });
+
+  it('answers a comment, a sketch and a part file edited between two calls', async () => {
+    const target = checkout();
+    const pointsOf = async (part = 'pages/home') => {
+      const answer = await openPointsAnswer(ask(target, `/?product=app-a&part=${part}`));
+
+      return (answer.body as { points: { kind: string }[] }).points.map((point) => point.kind);
+    };
+    const product = () => oneProductOf({ target, config: readConfig(target)!, asked: 'app-a' }) as ResolvedProduct;
+
+    expect(await pointsOf()).toEqual([]);
+    expect(await pointsOf()).toEqual([]);
+
+    createComment({
+      product: product(),
+      comment: { part: 'pages/home', state: 'default', size: 'fitted', text: 'too tall' },
+    });
+
+    expect(await pointsOf()).toEqual(['open-comment']);
+
+    createSketch({ product: product(), sketch: { layer: 'pages', name: 'home' }, variants: ['a'] });
+
+    expect(await pointsOf()).toEqual(['open-comment', 'unmerged-sketch']);
+
+    expect(await pointsOf('components/chip')).toEqual([]);
+
+    writeFileSync(
+      join(target, DESIGN_DIR, 'app-a/components/chip/chip.ts'),
+      "export default definePart({ implements: 'libs/chip.component.ts', states: { default: {} } });\n",
+    );
+
+    expect(await pointsOf('components/chip')).toEqual(['missing-state']);
   });
 
   it('draws one part for its contrasts and missing control states', async () => {
