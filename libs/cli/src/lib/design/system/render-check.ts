@@ -28,6 +28,7 @@ import { SEE_THROUGH_STATEMENTS } from './see-through';
 import { LOST_SURFACE_RULE, NESTED_SURFACE_RULE, SURFACE_STATEMENTS } from './surface-nesting';
 import { NESTED_SCROLL_RULE, NESTED_SCROLL_STATEMENTS } from './nested-scroll';
 import { INTERACTIVE_SELECTOR } from './actions';
+import { loadScaledMs, NoVerdict, noVerdictOf } from './no-verdict';
 import { REACH_STATEMENTS } from './reach';
 import { REACHABLE_CONTROLS_STATEMENTS } from './reachable-controls';
 import { browserVersionOf, cacheKeyOf } from './compare-cache';
@@ -820,11 +821,13 @@ export const renderIssuesOf = async (options: {
       drawn: RenderedState[];
       busy?: BusyState[];
       before?: RenderIssue[];
+      noVerdict?: NoVerdict;
     }
   | { unavailable: string }
 > => {
   const { target, config, jobs } = options;
   const resolveChromium = options.chromiumOf ?? chromiumOf;
+  const timeoutMs = options.partTimeoutMs ?? loadScaledMs(PART_TIMEOUT_MS);
 
   if (jobs.length === 0) return { issues: [], warnings: [], grids: [], drawn: [] };
 
@@ -1082,7 +1085,9 @@ export const renderIssuesOf = async (options: {
         })),
       );
 
-      return baseline.length > 0 ? queue.run((browser) => inspect({ browser, base, frames: baseline, cache })) : [];
+      return baseline.length > 0
+        ? queue.run((browser) => inspect({ browser, base, frames: baseline, cache, timeoutMs }))
+        : [];
     };
     const askedInProduct = Promise.resolve(inspectBaselineOf([...asked]));
 
@@ -1094,7 +1099,7 @@ export const renderIssuesOf = async (options: {
         base,
         frames,
         cache,
-        timeoutMs: options.partTimeoutMs,
+        timeoutMs,
         onPart: ({ done, total, part, ms }) =>
           options.onProgress?.(`[${done}/${total}] ${part} ${Math.round(ms / 1000)}s`),
       }),
@@ -1128,6 +1133,9 @@ export const renderIssuesOf = async (options: {
       (framedOf(issue, issue.sketch) !== framedOf(issue, null) &&
         existing.has(sameIssueOf(issue, framedOf(issue, issue.sketch))));
     const mergedInputs = inspected.filter((issue) => isInput(issue) && !issue.sketch);
+    const undrawnBase = [
+      ...new Set(inProduct.filter((issue) => issue.rule === RENDER_TIMEOUT).map((issue) => issue.part)),
+    ];
 
     issues.push(
       ...inspected.filter((issue) => !issue.sketch && !WARNING_RULES.has(issue.rule) && !isInput(issue)),
@@ -1145,11 +1153,19 @@ export const renderIssuesOf = async (options: {
       ],
       grids,
       busy: busyStatesOf(all),
+      ...(undrawnBase.length > 0
+        ? {
+            noVerdict: noVerdictOf(
+              `the base of ${undrawnBase.join(', ')} did not draw within ${Math.round(timeoutMs / 1000)}s, so its problems could not be told apart from the sketch's`,
+            ),
+          }
+        : {}),
       before: uniqueIssuesOf(
         inProduct.filter(
           (issue) =>
             asked.has(JSON.stringify([issue.product, issue.part])) &&
             issue.rule !== BUSY_MARK &&
+            issue.rule !== RENDER_TIMEOUT &&
             !WARNING_RULES.has(issue.rule) &&
             !isInput(issue),
         ),

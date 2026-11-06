@@ -115,6 +115,32 @@ describe('portBaseChanges', () => {
     expect(port.ported.map(({ variant, how }) => `${variant} ${how}`)).toEqual(['b taken']);
   });
 
+  it('skips a product hunk the variant already took over by hand at another line', () => {
+    const { target, sketch } = sketched();
+    const trim = "import { trim } from './trim';\n";
+
+    edit(
+      variantFile(sketch, 'b', 'hero.ts'),
+      "import styles from './hero.css?inline';\n",
+      `import styles from './hero.css?inline';\n${trim}`,
+    );
+    edit(variantFile(sketch, 'b', 'hero.ts'), 'One featured film', 'A featured film');
+    edit(
+      join(heroDir(target), 'hero.ts'),
+      "import { Film, films } from '@system/fixtures';\n",
+      `${trim}import { Film, films } from '@system/fixtures';\n`,
+    );
+    changeProduct(target, 'hero.ts', '<h1>', '<h1 class="acme-hero-title">');
+
+    const port = portBaseChanges({ target, product: resolveAcme(target), sketch });
+    const source = readFileSync(variantFile(sketch, 'b', 'hero.ts'), 'utf8');
+
+    expect(port.conflicts).toEqual([]);
+    expect(source.split(trim).length - 1).toBe(1);
+    expect(source).toContain('<h1 class="acme-hero-title">');
+    expect(source).toContain('A featured film');
+  });
+
   it('compares a part shared file with the copy the sketch lifted into its shared folder', () => {
     const { target, sketch } = sketched({ sharedLabel: true });
     const lifted = join(sketch.dir, 'shared/label.ts');

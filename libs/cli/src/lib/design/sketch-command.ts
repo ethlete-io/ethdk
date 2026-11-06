@@ -44,6 +44,7 @@ import { editRefOf, mergeAndRecord } from './system/sketch/merge-step';
 import { staleSketchBasesOf } from './system/check-system';
 import { repoInvocation } from '../invocation';
 import { MERGED_FILE } from './system/sketch/merged-parts';
+import { noVerdictLineOf } from './system/no-verdict';
 import { BusyState, groupedIssueLinesOf, RenderIssue, renderIssueLineOf, renderIssuesOf } from './system/render-check';
 import { mergePreviewOf } from './system/sketch/merge-preview';
 import { openPointsText, PartOpenPoints } from './system/open-points';
@@ -731,6 +732,8 @@ const renderedAndReady = async (context: Context, found: { product: ResolvedProd
     }),
   );
 
+  if ('issues' in rendered && rendered.noVerdict) return 1;
+
   if ('issues' in rendered && rendered.issues.length > 0)
     return fail(`${sketch.target} has problems - fix them before ready`);
 
@@ -1256,7 +1259,14 @@ const renderedVariantsOf = async ({
     rendered.warnings.forEach((issue) =>
       console.warn(`${issue.sketch?.target ?? ''} ${issue.sketch?.variant ?? ''}: WARNING ${renderIssueLineOf(issue)}`),
     );
-    groupedIssueLinesOf(rendered.issues).forEach((line) => console.error(line));
+    const { noVerdict } = rendered;
+
+    if (noVerdict)
+      [...new Set(entries.map((entry) => entry.sketch.target))].forEach((sketchTarget) =>
+        console.error(noVerdictLineOf(sketchTarget, noVerdict)),
+      );
+    else groupedIssueLinesOf(rendered.issues).forEach((line) => console.error(line));
+
     beforeLinesOf({ sketches: entries.map((entry) => entry.sketch), before: rendered.before ?? [] }).forEach((line) =>
       console.log(line),
     );
@@ -1411,9 +1421,20 @@ const checked = async (context: Context) => {
     }
   }
 
-  if (failed) return 1;
+  const staleSince =
+    rendered === null
+      ? []
+      : staleSketchBasesOf({
+          product,
+          invocation: context.invocation ?? repoInvocation({ root: target, subcommand: 'design' }),
+          targets: new Set(chosen.map((entry) => entry.sketch.target)),
+        }).filter((problem) => !stale.some((before) => before.line === problem.line));
 
-  if (rendered !== null && 'issues' in rendered && rendered.issues.length > 0) return 1;
+  staleSince.forEach((problem) => console.error(problem.line));
+
+  if (failed || staleSince.length > 0) return 1;
+
+  if (rendered !== null && 'issues' in rendered && (rendered.noVerdict || rendered.issues.length > 0)) return 1;
 
   if (notReady) return 1;
 

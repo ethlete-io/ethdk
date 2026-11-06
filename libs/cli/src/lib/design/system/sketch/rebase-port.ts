@@ -124,6 +124,60 @@ const mergedOf = (options: { scratch: string; ours: Buffer; base: Buffer; theirs
   return result.status === 0 ? result.stdout : null;
 };
 
+const linesOf = (content: Buffer) => content.toString('utf8').split(/(?<=\n)/u);
+
+const HUNK_HEADER = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/u;
+
+const hunksOf = (options: { scratch: string; old: Buffer; fresh: Buffer }) => {
+  const dir = mkdtempSync(resolve(options.scratch, 'hunks-'));
+  const oldFile = resolve(dir, 'old-base');
+  const freshFile = resolve(dir, 'new-base');
+
+  writeFileSync(oldFile, options.old);
+  writeFileSync(freshFile, options.fresh);
+
+  const diff = spawnSync('git', ['diff', '--no-index', '--no-color', '-U0', oldFile, freshFile], {
+    maxBuffer: 1 << 28,
+  });
+
+  return diff.stdout
+    .toString('utf8')
+    .split('\n')
+    .flatMap((line) => {
+      const match = HUNK_HEADER.exec(line);
+
+      if (!match) return [];
+
+      const [, from = '0', removed = '1', to = '0', added = '1'] = match;
+
+      return [{ from: Number(from), removed: Number(removed), to: Number(to), added: Number(added) }];
+    });
+};
+
+const withoutHeldHunks = (options: { scratch: string; mine: Buffer; old: Buffer; fresh: Buffer }) => {
+  const text = options.mine.toString('utf8');
+  const oldLines = linesOf(options.old);
+  const freshLines = linesOf(options.fresh);
+  const holds = (lines: string[]) => lines.length > 0 && text.includes(lines.join(''));
+  const out: string[] = [];
+  let at = 0;
+
+  for (const hunk of hunksOf(options)) {
+    const start = hunk.removed === 0 ? hunk.from : hunk.from - 1;
+    const addedStart = hunk.added === 0 ? hunk.to : hunk.to - 1;
+    const removed = oldLines.slice(start, start + hunk.removed);
+    const added = freshLines.slice(addedStart, addedStart + hunk.added);
+    const held = added.some((line) => /\w/u.test(line)) && holds(added) && !holds(removed);
+
+    out.push(...oldLines.slice(at, start), ...(held ? removed : added));
+    at = start + hunk.removed;
+  }
+
+  out.push(...oldLines.slice(at));
+
+  return Buffer.from(out.join(''));
+};
+
 /**
  * Ports the changes the product made to each part the sketch's variants replace since its baseline into those
  * variants: a 3-way merge per file of the variant, the part as the baseline held it (found in git history by its
@@ -196,7 +250,11 @@ export const portBaseChanges = (options: {
             continue;
           }
 
-          const merged = mine && old && fresh ? mergedOf({ scratch, ours: mine, base: old, theirs: fresh }) : null;
+          const theirs = mine && old && fresh ? withoutHeldHunks({ scratch, mine, old, fresh }) : fresh;
+
+          if (sameBytes(theirs, old)) continue;
+
+          const merged = mine && old && theirs ? mergedOf({ scratch, ours: mine, base: old, theirs }) : null;
 
           if (merged === null) {
             conflicts.push(`${variant}: ${file} - the variant and the product both changed it`);
