@@ -366,7 +366,7 @@ import('@ethlete/query-devtools/lazy') })`; new export `mountQueryDevtools` in `
 
 ## 11. fifagg on next.62 (fifagg-sdk-findings-2026-11-06.md, 2026-11-06) - done (b89cae997)
 
-Source: `plans/fifagg-sdk-findings-2026-11-06.md` (consumer handoff, German). Installed: query 6.0.0-next.62, core
+Source: `plans/fifagg-sdk-findings-2026-11-06.md` (consumer handoff, German; deleted when done, in git at 99fb4e322). Installed: query 6.0.0-next.62, core
 5.0.0-next.73, query-devtools 1.0.0-next.17, cdk 5.0.0-next.48.
 
 - **16 reopened (high):** the fix 3ade7f27f does not cover the consumer flow. A `keepAlive` subscriber stays on
@@ -437,3 +437,34 @@ Source: `plans/fifagg-sdk-findings-2026-11-06.md` (consumer handoff, German). In
   the migrator on the pre-migration fifagg commit, then tsc and lint on the result.
 - **No SDK work:** 26 (consumer must read the error state), 22, 12, Swiss seeding, the V2 bearer cookie domain, 27
   (accepted interop differences).
+
+## 12. fifagg ngrx-toolkit migration (fifagg-sdk-findings-2026-11-06-ngrx-toolkit.md, 2026-11-06) - open
+
+Source: `plans/fifagg-sdk-findings-2026-11-06-ngrx-toolkit.md` (consumer handoff, German). query 6.0.0-next.62,
+generator `@ethlete/query:migrate-from-ngrx-toolkit` on fifagg `chore/ngrx-toolkit-to-query-v3` (MR !1978): 44 of 49
+features, 151 creators written, 98 tasks. Built by the third session of ADR 0200 (the builder stays on the perf block).
+
+- **T1 (high): the generator leaves 217 new ngc errors** (315 -> 484; TS2345 83, TS2344 49, TS2339 40, TS2739 30,
+  TS2684 4). Consumer types still expect the old handle where a `MappedEntityState<QueryCreator<...>>` now arrives
+  (`NTK-UNCONVERTED-ACTION-GROUP` 35, `NTK-DUPLICATE-ROUTE-MISMATCH` 26), and a route with `pathParams` needs
+  `withArgs()` (TS2684). The guide says the action-group task is "resolved by re-running"; here it was not. Doc agent
+  decision: the generator rewrites those consumer types itself where the feature's group is not a toolkit group, adds
+  `withArgs()` for a `pathParams` route, and the guide line is corrected for what stays a task.
+- **T2 (medium): `moduleResolution: node` does not resolve `@ethlete/query/ngrx-toolkit`** (libs env, queries,
+  uikit-mocks). Doc agent decision: the generator reads each affected project's effective `moduleResolution` and emits
+  a named task (`NTK-MODULE-RESOLUTION`, with the tsconfig path) for `node`/`node10`; it does not edit tsconfigs.
+- **T3 (medium): `NTK-FACADE-ON` has no interop replacement** (13 tasks, 31 type errors). fifagg built the same small
+  service twice (emit when a handle's `callState$` reaches SUCCESS). Open for Tom: a public interop helper or a guide
+  recipe.
+- **T4 (low-medium): ET800 hits a test with fast `skipCache` reloads** (11 faked errors, each `reload()` ->
+  `execute({ skipCache: true })`; the 7th request never went out, 5 of 8 runs red). The guide line on ET800 exists
+  (35bc8ca58). Doc agent decision: no runtime change; the ET800 message names the query and says that repeated
+  `execute({ skipCache: true })` calls count, and the guide line names tests that fake responses in a tight loop.
+- **T5 (low): task texts.** `NTK-SERVICE-HEADERS` names the condition a header is set under (`isPlatformServer` ...);
+  a barrel that still exports a deleted action group gets its own task (60 errors came from one stage-actions barrel,
+  only `NTK-STORE-FILE-KEPT` was named once).
+- **Why no tool caught T1/T2/T5:** the toolkit generator was never replayed on a real consumer with a type-check
+  baseline; its specs use hand-written fixtures. The section 11 rule (fixture from the consumer's real code, fails
+  before the fix) applies. Tool fix: a replay on the pre-migration fifagg commit with an ngc baseline diff is the done
+  check of this section: every new error is either fixed or covered by a named task, and each fix gets a trimmed
+  fifagg fixture.
