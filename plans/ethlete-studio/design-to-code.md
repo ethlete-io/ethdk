@@ -4274,6 +4274,19 @@ before (2+2). Why no tool caught the double request: no e2e counted requests per
 folder fingerprint is not accepted - it misses inputs outside the folders (an `implements` target in another app, the
 tailwind version) and then shows stale open points. The key records every file the rules actually read, like the
 compare-actions cache does, and a spec edits a file outside the old folder list.
+Studio frame A (as built in 0114e0d76, c0, 2026-11-06): the picture URL holds only session, epoch and revision;
+ranking goes by `POST /__design/view` from an `img[ethleteShotRank]` directive (ShotBoard); shot responses carry an
+ETag (PNG hash), 304 and `cache-control: private, max-age=3600`; STUDIO_API_LEVEL 6. New e2e "a part shown before
+paints every stored picture in the first frame": 0/2 before, 2/2 at 11-13 ms after. Risk: a content change that
+Studio's redraw events miss now stays stale until the next revision (before, every switch refetched and hid such
+gaps). Doc agent: a stale picture is the one outcome the stable URL must never cause, so the guard (every store write
+bumps the revision Studio sees) goes into the next slice with the open-points tracked key, not after C.
+
+529\. c0 (2026-11-06), slice A: a stable URL alone painted 0/2 - Chromium drops a picture from its memory cache once no
+`<img>` holds it while the other page loads. ShotBoard now keeps the last 500 loaded pictures as `Image` objects. Why no
+tool caught it: the earlier reuse proof (measurement of finding 523) only worked because the old `<img>` was still
+alive; the proof had a hidden condition the real switch does not meet. Tool fix: done - the new e2e measures the real
+switch (old page gone) instead of a held element; a measurement that proves a fix names what it kept alive.
 
 B416 slice 2 (as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06): each on-disk compare
 cache is keyed on the cli code that changes its result, not the whole cli build (`code-hash.ts`): the import graph of
