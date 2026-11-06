@@ -4438,3 +4438,16 @@ built app) and fails on any picture drawn twice in one run (`draw-count.test.ts`
 action check (3 design + 3 app draws), warm (0), design edit (3 design, 0 app), app edit (3 app, 0 design), `--all`
 over two parts. Bite: dropping `designsDrawn` from compare or its `await` in `checkActions` fails 3/4 cases with
 "design components/chip default drawn 2 times". HEAD has no double draw. Not covered: `--live`, the real shot store.
+
+534\. c0 (2026-11-06), S7 measurement at b7b19adb7 (load 3.3/32): a full `design check --product studio` takes 308 s,
+warm the same as cold (0/131 cache hits, not resident). Its `.timings.jsonl` line had `unphasedMs` 307.3 s: the check
+has no phases, so `design timings` could not say where the time goes; only a hand-timestamped run split it
+(completeness draws ~154 s, render inspect ~90 s, auto-accept ~38 s, open points + READY/GO ~13 s, static system ~9 s).
+Why no tool caught it: a timings line accepts any size of unphased time. Tool fix (S7a): `timedPhase` around every check
+step, and `design timings` flags a line whose unphased share is above 10 % of the run as unexplained.
+Doc agent, S7 plan (applies ADR 0213 and ADR 0204): order S7a (check through the resident, warm draw threaded into
+every step, phases) -> S7b (per-part disk cache of render issues and completeness gaps) -> S7c (auto-accept on the
+picture cache, parallel lanes) accepted. A check in the resident must not push a compare past its 10 s target: the
+resident runs a waiting compare between two parts of a running check, with a spec for it. Each S7b cache input named as
+a risk (fonts, frame assets, dist CSS, generated Tailwind output, config, capabilities, merged and pictures JSON) gets
+its own edit-between-runs case (rule of 531).
