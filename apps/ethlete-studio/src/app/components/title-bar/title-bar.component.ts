@@ -3,6 +3,7 @@ import { Component, computed, input, output, ViewEncapsulation } from '@angular/
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   BUTTON_IMPORTS,
+  TOOLTIP_IMPORTS,
   WINDOW_CONTROL_BUTTON_KINDS,
   WINDOW_CONTROL_BUTTON_SHAPES,
   WINDOW_CONTROL_BUTTON_SIZES,
@@ -32,11 +33,20 @@ import { TitleSearchComponent } from '../title-search/title-search.component';
       <ethlete-title-search [product]="product()" [part]="part()" [os]="os()" />
 
       <div [class.self-stretch]="caption()" class="flex items-center justify-end gap-2">
-        @if (noticeText(); as text) {
-          <span class="text-et-surface-muted" data-code-notice>{{ text }}</span>
+        @if (!notice() && noticeText(); as text) {
+          <span class="whitespace-nowrap text-et-surface-muted" data-code-notice>{{ text }}</span>
         }
         @if (notice()) {
-          <button (click)="restart.emit()" et-button type="button" variant="tonal" color="brand" size="xs">
+          <button
+            [etTooltip]="noticeText()"
+            (click)="restart.emit()"
+            et-button
+            type="button"
+            variant="tonal"
+            color="brand"
+            size="xs"
+            placement="bottom-end"
+          >
             <svg
               width="12"
               height="12"
@@ -248,7 +258,7 @@ import { TitleSearchComponent } from '../title-search/title-search.component';
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, NgTemplateOutlet, ProvideColorDirective, TitleSearchComponent],
+  imports: [BUTTON_IMPORTS, TOOLTIP_IMPORTS, NgTemplateOutlet, ProvideColorDirective, TitleSearchComponent],
   host: { class: 'block shrink-0' },
 })
 export class TitleBarComponent {

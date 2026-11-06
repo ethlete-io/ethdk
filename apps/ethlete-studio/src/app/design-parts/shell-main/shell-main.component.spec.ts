@@ -153,8 +153,10 @@ describe('ShellMainComponent', () => {
       );
 
       const text = element.querySelector('[data-code-notice]')?.textContent?.trim();
+      const describedBy = restart?.getAttribute('aria-describedby');
+      const hint = describedBy ? document.getElementById(describedBy)?.textContent?.trim() : undefined;
 
-      return { restart, restarts, text };
+      return { restart, restarts, text, hint };
     };
 
     it('draws no restart while the server runs the latest commit', async () => {
@@ -181,10 +183,11 @@ describe('ShellMainComponent', () => {
       expect(restarts).not.toHaveBeenCalled();
     });
 
-    it('names the cause next to the restart', async () => {
-      const { text } = await renderWith({ ...running, cli: { ...running.cli, latest: NEW } });
+    it('names the cause in the restart tooltip', async () => {
+      const { text, hint } = await renderWith({ ...running, cli: { ...running.cli, latest: NEW } });
 
-      expect(text).toBe('CLI geändert - neu starten');
+      expect(text).toBeUndefined();
+      expect(hint).toBe('CLI geändert - neu starten');
     });
 
     it('draws only the hint while the cli has uncommitted changes', async () => {

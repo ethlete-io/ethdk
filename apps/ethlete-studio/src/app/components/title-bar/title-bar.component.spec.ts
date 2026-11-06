@@ -11,6 +11,7 @@ vi.mock('../../../host/window', () => ({ isWindowMaximized$: () => of(false) }))
 type Props = Omit<WindowChrome, 'preferNoCsd'> & {
   update?: boolean;
   notice?: boolean;
+  noticeText?: string | null;
   product?: string;
   part?: string;
 };
@@ -129,5 +130,25 @@ describe('TitleBarComponent', () => {
     const { bar } = render({ ...linux([], ['close']), update: true });
 
     expect(bar?.lastElementChild?.textContent).not.toContain('Neu starten');
+  });
+
+  it('describes the restart button with the notice text and draws no inline notice', async () => {
+    const { fixture, bar } = render({ ...linux([], []), notice: true, noticeText: 'Agent-Regeln geändert' });
+
+    await fixture.whenStable();
+
+    const restart = bar?.lastElementChild?.querySelector<HTMLElement>('button[et-button]');
+    const description = restart?.getAttribute('aria-describedby');
+
+    expect(bar?.querySelector('[data-code-notice]')).toBeNull();
+    expect(description && document.getElementById(description)?.textContent).toContain('Agent-Regeln geändert');
+  });
+
+  it('draws the notice text inline without a restart button when no notice is pending', () => {
+    const text = 'CLI hat uncommittete Änderungen in drei Dateien, Studio läuft auf Stand abc1234';
+    const { bar } = render({ os: 'macos', left: [], right: [], noticeText: text });
+
+    expect(bar?.querySelector('[data-code-notice]')?.textContent?.trim()).toBe(text);
+    expect(bar?.textContent).not.toContain('Neu starten');
   });
 });
