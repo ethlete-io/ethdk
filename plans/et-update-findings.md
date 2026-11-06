@@ -498,7 +498,16 @@ features, 151 creators written, 98 tasks. Built by the third session of ADR 0200
   before. Lesson: no spec asserted the response type of the legacy state.
 - **T5 part 1 as built (39eaeeb9c):** `NTK-SERVICE-HEADERS` names the headers, their source and the condition
   (`isPlatformServer(...)`), with the line. Open: T5 part 2 (barrel exporting a deleted group), T4.
-- **Replay at 7 new errors:** 4 sharing errors are covered by `NTK-SELECT-BY-ACTION-ID`. Open, cause unknown:
-  `match-rail.component.html`, 3 errors (`match` is `unknown` inside `*etInfinityQuery`); the generator does not touch
-  the file, the errors come from the local `@ethlete/query` build vs next.62 - a possible type regression for every
-  consumer since next.62.
+- **Replay at 4 new errors, all covered by `NTK-SELECT-BY-ACTION-ID` (sharing):** the 3 `match-rail.component.html`
+  errors were a harness artifact, not an SDK regression: the worktree held a copy of `@ethlete/query`, while cdk,
+  components, contentful and query-devtools were symlinks into the main checkout and resolved a second declaration of
+  `LegacyQuery` (private members, so not assignable). `run-generator.sh` now copies those dependents too. Lesson for
+  any replay: every dependent of a swapped package is swapped as a copy too.
+- **T4 as built (1518330a1):** the ET800 message names the route and says repeated `execute({ skipCache: true })`
+  calls count (e.g. a test faking responses in a tight loop); route passed through `circularQueryDependencyChecker`
+  in http, secure and gql execute. Scenarios: http-lifecycle asserts the route; legacy-state-replay runs 6x skipCache.
+  errors.md row and the migrating-from-v2 ET800 bullet updated. Lesson: no test read the message, only
+  `/circular dependency/`.
+- **T5 part 2 closed (doc agent):** after cause B a barrel keeps an actions export only when the whole feature is
+  kept, and then the group is live, not deleted; the replay has 0 such rows, and `NTK-STORE-FILE-KEPT` already lists
+  every outside user. No real case, so no fixture (section 11 rule) - no new task.
