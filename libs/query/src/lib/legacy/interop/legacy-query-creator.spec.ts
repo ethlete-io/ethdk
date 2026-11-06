@@ -52,6 +52,24 @@ describe('LegacyQueryCreator.prepare', () => {
     expect(query.rawState.type).toBe(QueryStateType.Success);
   });
 
+  it('types the raw state with the response of the wrapped creator', () => {
+    const creator = createLegacyQueryCreator({
+      name: 'legacyGetTypedPerson',
+      creator: createQueryCreator<{ response: { id: number } }>(undefined, { client, method: 'GET', route: '/person' }),
+    });
+    const query = TestBed.runInInjectionContext(() => creator.prepare({}));
+
+    query.execute();
+    httpTesting.expectOne('https://api.example.com/person').flush({ id: 1 });
+
+    const state = query.rawState;
+
+    if (state.type !== QueryStateType.Success) throw new Error('expected a success state');
+
+    expectTypeOf(state.response).toEqualTypeOf<{ id: number }>();
+    expect(state.response.id).toBe(1);
+  });
+
   it('calls onSuccess for a mutation answered with 204 no content', async () => {
     const query = TestBed.runInInjectionContext(() => makeMutationCreator().prepare({}));
 

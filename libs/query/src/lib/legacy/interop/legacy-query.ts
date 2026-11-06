@@ -212,7 +212,7 @@ export class LegacyQuery<
 
   private _wasAborted = false;
 
-  private _mockState = signal<V2QueryState<unknown> | null>(null);
+  private _mockState = signal<V2QueryState<ResponseType<QueryArgsOf<TNewQuery>>> | null>(null);
 
   private _mockSubscription: Subscription | null = null;
 
@@ -483,7 +483,12 @@ export class LegacyQuery<
       }
 
       this.syncEntity(response);
-      this._mockState.set({ type: QueryStateType.Success, meta, headers: {}, response });
+      this._mockState.set({
+        type: QueryStateType.Success,
+        meta,
+        headers: {},
+        response: response as ResponseType<QueryArgsOf<TNewQuery>>,
+      });
     };
 
     untracked(() => {
