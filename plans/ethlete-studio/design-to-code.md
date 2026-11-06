@@ -4247,5 +4247,9 @@ and compare-cache. compare-actions: actions-command and its graph plus the desig
 and compare-actions. 525/526: each `.timings.jsonl` line logs `commit` (short sha + dirty) and `load` (1-minute average,
 cores); `design timings` shows both, marks STALE (not HEAD) and NOISY (load above cores, or none logged), and its target
 verdict and miss list count only clean lines; a run's own over-target line says when it was noisy. Verified: specs
-(an edit between two hashes for each producer kind, abort per cache, timings), both tsc, lint. Measured numbers and what
-was not verified: `.claude/handoffs/agent-results/b416-slice2.md`.
+(an edit between two hashes for each producer kind, abort per cache, timings), both tsc, lint. `VISIBLE_CHANGE_RULE`
+moved to `build-ready-contract.ts`: slow-checks imported it from the rule module, which pulled compare-command and
+part-build-ready into slow-checks' own load. Measured (pages/sketches, no resident, `timeout 30s`, load below cores):
+cold 29.8 s, timed out (harness build 15.7 s); warm 2.9 s, 105/105 hits; an unrelated built file edited, 3.0 s, 105 hits;
+`harness-shot` edited, 9.0 s, 44 misses (app pictures and actions; design pictures hit); `shot` edited, 14.1 s, 74
+misses. Details: `.claude/handoffs/agent-results/b416-slice2.md`.
