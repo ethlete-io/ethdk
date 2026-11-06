@@ -3495,6 +3495,24 @@ one. Tool fix: (1) an unchanged sketch never offers a manual pick or merge; (2) 
 the reason and what clears it, and the CLI and Studio retry the auto-merge by themselves when the guard clears (clean
 tree); (3) the sketch `pages-sketches` is discarded; (4) the builder lists the cause of a state in the sketch round note
 before it draws variants for it.
+In progress (builder ethlete-sdk-c0, 2026-11-06): (3) discard, (1) remove the manual fold actions, (2) one notice and
+the auto-retry when the guard clears.
+
+483\. `design compare components/title-bar` compared 16 states and silently skipped the 12 forced interaction states
+of the rows linux-left, linux-close, windows and windows-update (UI builder ethlete-sdk-c8, A1, 2026-11-06). Cause:
+`forcesOnlyUnchangedControls` / `drawnStateNamesOf` (`libs/cli/src/lib/design/system/unchanged-rows.ts`, used by
+`compare-command.ts`) drop a row's interaction states when every forced element is a plain SDK component from `ng()`
+without class or style. They ignore the design stylesheet: `title-bar.css` restyles
+`.et-window-control-button[data-shape='caption']` (hover, focus, active), and a wrapper span gives the Windows close its
+error fill. So the Windows hover and red close states are never drawn or judged, nothing says they were skipped, and
+`--state windows-hover` answers "has no state". Second defect: the design invents `shape="caption"`, a value the SDK
+button does not have, and `check` lets a design add attribute values or private `--_et-*` vars to an SDK component that
+the app cannot reproduce without an SDK change. Why no tool caught it: the unchanged-row shortcut trusts the markup alone
+and reports nothing about what it drops; no rule compares a design's selectors on SDK classes with the SDK's declared
+inputs. Tool fix: (1) a forced SDK element counts as changed when a design stylesheet rule matches it or a wrapper sets
+`--et-*` vars or a semantic colour on it; (2) compare prints "skipped n interaction states (unchanged SDK controls)" with
+their names; (3) `check` fails a design rule that targets an SDK component class with an attribute value the SDK does
+not declare. For A1 the UI builder adds a real `caption` shape to the SDK button.
 
 478\. After an automatic merge, `sketch ready` printed "ENOENT ... foundations-colors.foundations-check-fixes/sketch.json"
 and never printed "merged automatically", although the merge was complete (commit 479bdace3, builder, 2026-11-05).
