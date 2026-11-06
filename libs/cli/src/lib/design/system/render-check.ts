@@ -1,5 +1,6 @@
 import { firstValueFrom, from, map, race, timer } from 'rxjs';
 import { AddressInfo } from 'net';
+import { WarmDraw } from '../warm-draw';
 import { chromiumOf } from '../browser';
 import { DesignConfig } from '../paths';
 import {
@@ -765,6 +766,7 @@ export const renderIssuesOf = async (options: {
   chromiumOf?: typeof chromiumOf;
   partTimeoutMs?: number;
   onProgress?: (line: string) => void;
+  warm?: WarmDraw;
 }): Promise<
   | {
       issues: RenderIssue[];
@@ -786,11 +788,12 @@ export const renderIssuesOf = async (options: {
       unavailable: `neither ${target} nor this package (${__dirname}) resolves playwright or playwright-core, so there is no Chromium to launch`,
     };
 
-  const queue = createDrawQueue({ target, chromiumOf: resolveChromium });
-  const server = await createDesignServer({ target, config, listen: true, port: 0 });
+  const { warm } = options;
+  const queue = warm ? warm.queue() : createDrawQueue({ target, chromiumOf: resolveChromium });
+  const server = warm ? await warm.server(config) : await createDesignServer({ target, config, listen: true, port: 0 });
 
   try {
-    await server.listen();
+    if (!warm) await server.listen();
 
     const { port } = server.httpServer?.address() as AddressInfo;
     const base = `http://localhost:${port}`;
@@ -1111,6 +1114,6 @@ export const renderIssuesOf = async (options: {
 
     throw error;
   } finally {
-    await Promise.all([queue.close(), server.close()]);
+    if (!warm) await Promise.all([queue.close(), server.close()]);
   }
 };

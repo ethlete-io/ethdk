@@ -52,6 +52,7 @@ import { overlaySketch } from './system/sketch/overlay';
 import { SketchVariant } from './system/system-modules';
 import { portBaseChanges } from './system/sketch/rebase-port';
 import { THEMING_TEXT } from './system/theming-text';
+import { WarmDraw } from './warm-draw';
 import {
   addVariant,
   createSketch,
@@ -183,7 +184,14 @@ const WRITES = new Set([
 
 const RETRIES = new Set([...WRITES, 'check']);
 
-type Context = { target: string; config: DesignConfig; args: Args; invocation?: string; noSketchHint?: string };
+type Context = {
+  target: string;
+  config: DesignConfig;
+  args: Args;
+  invocation?: string;
+  noSketchHint?: string;
+  warm?: WarmDraw;
+};
 
 const fail = (message: string) => {
   console.error(message);
@@ -719,6 +727,7 @@ const renderedAndReady = async (context: Context, found: { product: ResolvedProd
         .filter((variant) => !rejectionOf(sketch, variant))
         .map((variant) => ({ sketch, variant })),
       drawn: false,
+      warm: context.warm,
     }),
   );
 
@@ -735,13 +744,13 @@ const renderedAndReady = async (context: Context, found: { product: ResolvedProd
 
 const loadedAndReady = async (context: Context, { product, sketch }: { product: ResolvedProduct; sketch: Sketch }) => {
   const unloaded = await timedPhase('load', () =>
-    unloadedLinesOf({ target: context.target, config: context.config, product, sketch }),
+    unloadedLinesOf({ target: context.target, config: context.config, product, sketch, warm: context.warm }),
   );
 
   if (unloaded.length > 0) return fail(`${unloaded.join('\n')}\n${sketch.target} does not load - fix it before ready`);
 
   const drifts = await timedPhase('mark-drift', () =>
-    sampleMarkDriftLines({ target: context.target, config: context.config, product, sketch }),
+    sampleMarkDriftLines({ target: context.target, config: context.config, product, sketch, warm: context.warm }),
   );
 
   if (drifts.length > 0)
@@ -750,7 +759,7 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
     );
 
   const identical = await timedPhase('identical', () =>
-    identicalRenderLines({ target: context.target, config: context.config, product, sketch }),
+    identicalRenderLines({ target: context.target, config: context.config, product, sketch, warm: context.warm }),
   );
 
   if (identical.length > 0)
@@ -758,7 +767,7 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
 
   const changes = sketch.targets.every((key) => product.parts.some((part) => partKeyOf(part) === key))
     ? await timedPhase('changes-shot', () =>
-        variantChangesShown({ target: context.target, config: context.config, product, sketch }),
+        variantChangesShown({ target: context.target, config: context.config, product, sketch, warm: context.warm }),
       )
     : null;
   const unviewed = Array.isArray(changes)
@@ -1073,6 +1082,7 @@ const unloadedLinesOf = async (options: {
   config: DesignConfig;
   product: ResolvedProduct;
   sketch: Sketch;
+  warm?: WarmDraw;
 }) => (await variantsThatDoNotLoad(options)).map((line) => `${options.sketch.target} ${line}`);
 
 const readyRefusalOf = (
@@ -1188,16 +1198,19 @@ const renderedVariantsOf = async ({
   product,
   entries,
   drawn,
+  warm,
 }: {
   target: string;
   config: DesignConfig;
   product: ResolvedProduct;
   entries: { sketch: Sketch; variant: string }[];
   drawn: boolean;
+  warm?: WarmDraw;
 }) => {
   const rendered = await renderIssuesOf({
     target,
     config,
+    warm,
     jobs: entries.map(({ sketch, variant }) => {
       const preview = mergePreviewOf({ product, sketch, variant });
 
@@ -1326,9 +1339,11 @@ const checked = async (context: Context) => {
 
   if (!failed)
     for (const sketch of new Set(chosen.map((entry) => entry.sketch)))
-      (await timedPhase('aktuell', () => aktuellPlaceholderWarnings({ target, config, product, sketch }))).forEach(
-        (warning) => console.warn(warning),
-      );
+      (
+        await timedPhase('aktuell', () =>
+          aktuellPlaceholderWarnings({ target, config, product, sketch, warm: context.warm }),
+        )
+      ).forEach((warning) => console.warn(warning));
 
   const rendered = failed
     ? null
@@ -1339,6 +1354,7 @@ const checked = async (context: Context) => {
           product,
           entries: chosen,
           drawn: true,
+          warm: context.warm,
         }),
       );
   const busy = rendered !== null && 'issues' in rendered ? (rendered.busy ?? []) : [];
@@ -1360,7 +1376,9 @@ const checked = async (context: Context) => {
   };
 
   for (const sketch of new Set(chosen.map((entry) => entry.sketch))) {
-    const unloaded = await timedPhase('load', () => unloadedLinesOf({ target, config, product, sketch }));
+    const unloaded = await timedPhase('load', () =>
+      unloadedLinesOf({ target, config, product, sketch, warm: context.warm }),
+    );
 
     const before = refused;
 
@@ -1371,8 +1389,16 @@ const checked = async (context: Context) => {
     ]);
 
     if (!failed && unloaded.length === 0) {
-      refuse(await timedPhase('mark-drift', () => sampleMarkDriftLines({ target, config, product, sketch })));
-      refuse(await timedPhase('identical', () => identicalRenderLines({ target, config, product, sketch })));
+      refuse(
+        await timedPhase('mark-drift', () =>
+          sampleMarkDriftLines({ target, config, product, sketch, warm: context.warm }),
+        ),
+      );
+      refuse(
+        await timedPhase('identical', () =>
+          identicalRenderLines({ target, config, product, sketch, warm: context.warm }),
+        ),
+      );
     }
 
     if (!failed && refused === before) {
@@ -1550,7 +1576,13 @@ const withdrawnVariant = async (
       `${sketch.target} variant ${variant} was not drawn by ${by} - only the agent that drew it withdraws it`,
     );
 
-  const identical = await identicalRenders({ target: context.target, config: context.config, product, sketch });
+  const identical = await identicalRenders({
+    target: context.target,
+    config: context.config,
+    product,
+    sketch,
+    warm: context.warm,
+  });
   const twin = identical.find((render) => render.variant === variant && render.sibling !== null);
 
   if (!twin)
@@ -1604,8 +1636,8 @@ const flagsOf = (command: string) => {
  * `et design sketch <command> …` opens, adds variants to, reports on, readies, checks, previews, rebases, merges and
  * discards sketches, and rejects, reopens and withdraws their variants.
  */
-export const designSketch = (options: { target: string; argv: string[]; invocation: string }) => {
-  const { target, argv, invocation } = options;
+export const designSketch = (options: { target: string; argv: string[]; invocation: string; warm?: WarmDraw }) => {
+  const { target, argv, invocation, warm } = options;
   const [command = '', ...rest] = argv;
   const run = COMMANDS[command];
   const args = argsOf(rest, flagsOf(command));
@@ -1636,5 +1668,5 @@ export const designSketch = (options: { target: string; argv: string[]; invocati
     });
   }
 
-  return run({ target, config, args, invocation });
+  return run({ target, config, args, invocation, warm });
 };

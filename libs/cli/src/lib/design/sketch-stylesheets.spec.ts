@@ -90,7 +90,7 @@ const serveAcme = async (options: { generated?: boolean } = {}) => {
       )
     )?.code ?? '';
 
-  return { vite, compiled, target };
+  return { vite, compiled, target, variantCss: css };
 };
 
 const cssOf = (code: string) => code.split('__vite__css')[1]?.replace(/\\n|\s/gu, '');
@@ -131,5 +131,22 @@ describe('a product stylesheet drawn for a sketch variant', () => {
     expect(env).toMatch(
       /\n {6}"a": \(\) => Promise\.resolve\(\)\.then\(\(\) => import\("[^"]*acme\/styles\.css\?design-product=acme&design-sketch=foundations%2Fpalette&design-variant=a"\)\),\n/u,
     );
+  });
+});
+
+describe('a design server that draws on after a variant changed', () => {
+  it('draws the stale variant until it forgets what it drew, then the file as it is now', async () => {
+    const { vite, compiled, variantCss: css } = await serveAcme();
+    const edited = '#2a9d8f';
+
+    expect(await compiled('a')).toContain(SKETCHED);
+
+    writeFileSync(css, readFileSync(css, 'utf8').replace(SKETCHED, edited));
+
+    expect(await compiled('a')).toContain(SKETCHED);
+
+    vite.forgetDrawn();
+
+    expect(await compiled('a')).toContain(edited);
   });
 });

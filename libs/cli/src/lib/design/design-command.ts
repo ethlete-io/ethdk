@@ -30,7 +30,13 @@ import { designReady, READY_USAGE } from './system/ready-command';
 import { designSystem } from './system/system-command';
 import { readFreshDist } from './system/stale-dist';
 import { designMocksFresh, guardsDesignMocks } from './system/stale-design-mocks';
-import { realResidentClient, RESIDENT_SERVE, runThroughResident, stopResident } from './resident/client';
+import {
+  realResidentClient,
+  RESIDENT_SERVE,
+  runsInResident,
+  runThroughResident,
+  stopResident,
+} from './resident/client';
 import { serveResident } from './resident/resident-process';
 import { recordRun, skipRunTimings, timingsFileOf } from './timings';
 import { designTimings, TIMINGS_USAGE } from './timings-command';
@@ -271,9 +277,10 @@ const helpOf = (invocation: string) =>
     '  phase, and the slowest phases and runs. --since defaults to 1d.',
     '',
     `${invocation} stop`,
-    '  End the resident design process of the checkout. compare runs in it: the first compare starts it detached',
-    '  (printed as a cold start), later ones reuse its design server, Chromium and harness app, and it exits after',
-    '  30 min without a request. CI and ETHLETE_DESIGN_RESIDENT=0 run compare in its own process.',
+    '  End the resident design process of the checkout. compare, sketch check and sketch ready run in it, one at a',
+    '  time: the first one starts it detached (printed as a cold start), later ones reuse its design server, Chromium',
+    '  and harness app, and it exits after 30 min without a request. CI and ETHLETE_DESIGN_RESIDENT=0 run them in',
+    '  their own process.',
     '',
     'Every command takes --checkout <path>. DE_PORT overrules the port in .ethlete/design/config.json.',
     '',
@@ -403,7 +410,7 @@ const runDesign = async (options: { root: string; argv: string[]; invocation: st
     return 0;
   }
 
-  if (argv[0] === RESIDENT_SERVE || argv[0] === 'stop' || argv[0] === 'compare') {
+  if (argv[0] === RESIDENT_SERVE || argv[0] === 'stop' || runsInResident(argv)) {
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     if (argv[0] === RESIDENT_SERVE) return serveResident({ target });
@@ -411,8 +418,9 @@ const runDesign = async (options: { root: string; argv: string[]; invocation: st
     const client = realResidentClient(buildStampOf().build);
 
     if (argv[0] === 'stop') return stopResident(target, client);
+    if (guardsDesignMocks(argv) && !designMocksFresh({ target })) return 1;
 
-    const answered = await runThroughResident({ target, argv: [argv[0], ...rest], invocation, client });
+    const answered = await runThroughResident({ target, argv: [argv[0] ?? '', ...rest], invocation, client });
 
     if (answered !== null) {
       skipRunTimings();

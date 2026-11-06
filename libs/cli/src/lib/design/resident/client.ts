@@ -73,6 +73,12 @@ export const realResidentClient = (build: string): ResidentClient => ({
   silenceMs: 60_000,
 });
 
+const RESIDENT_SKETCH_COMMANDS = new Set(['check', 'ready']);
+
+/** Whether `et design <argv>` runs in the resident design process: compare, sketch check and sketch ready. */
+export const runsInResident = (argv: string[]) =>
+  argv[0] === 'compare' || (argv[0] === 'sketch' && RESIDENT_SKETCH_COMMANDS.has(argv[1] ?? ''));
+
 export const residentWanted = (env: NodeJS.ProcessEnv) => !env['CI'] && env[RESIDENT_ENV] !== '0';
 
 const call = (options: {

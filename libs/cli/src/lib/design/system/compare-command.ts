@@ -6,6 +6,7 @@ import { chromiumOf } from '../browser';
 import { DesignConfig, DesignPreset } from '../paths';
 import { createDesignServer } from '../serve';
 import { timedPhase } from '../phase-timing';
+import { WarmDraw } from '../warm-draw';
 import { checkerScriptOf, createPartShooter, pixelBoxOf, TextAmbient, viewportOf } from '../shot';
 import { awaitFonts, Browser, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
 import { partActionFailuresOf } from './actions-command';
@@ -404,10 +405,6 @@ export const harnessShotOf = async (options: {
 type DesignServer = Awaited<ReturnType<typeof createDesignServer>>;
 
 /** A listening design server and a draw queue that outlive one compare; the owner closes them. */
-export type WarmDraw = {
-  server: (config: DesignConfig) => Promise<DesignServer>;
-  queue: () => ReturnType<typeof createDrawQueue>;
-};
 
 const ownDraw = async (target: string, config: DesignConfig) => {
   const server = await createDesignServer({ target, config, listen: true, port: 0 });

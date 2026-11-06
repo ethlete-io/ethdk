@@ -1137,7 +1137,13 @@ export const createDesignServer = async (options: {
       );
     });
 
-  return server;
+  return Object.assign(server, {
+    /** Forgets every loaded part, sketch and module, so the next draw reads the files as they are now: a server started with `port` does not watch them. */
+    forgetDrawn: () => {
+      system.forget();
+      Object.values(server.environments).forEach((environment) => environment.moduleGraph.invalidateAll());
+    },
+  });
 };
 
 const exitWhenStdinCloses = (server: { close: () => Promise<void> }) => {

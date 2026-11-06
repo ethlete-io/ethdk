@@ -3,23 +3,27 @@ import { DesignConfig, readConfig } from '../paths';
 import { buildStampOf } from '../stamp';
 import { createDesignServer } from '../serve';
 import { createDrawQueue } from '../thumb';
-import { designCompare, shootStatesWith, WarmDraw } from '../system/compare-command';
+import { designSketch } from '../sketch-command';
+import { designCompare, shootStatesWith } from '../system/compare-command';
 import { StartHarnessServer, startHarnessServer } from '../system/harness-server';
 import { createHarnessWatch } from '../system/harness-watch';
 import { designMocksFresh, guardsDesignMocks } from '../system/stale-design-mocks';
 import { libBuildStampOf, readFreshDist } from '../system/stale-dist';
 import { recordPhase, recordRun, timingsFileOf } from '../timings';
+import { WarmDraw } from '../warm-draw';
+import { runsInResident } from './client';
 import { removeDiscovery, writeDiscovery } from './discovery';
 import { ResidentRun, startResidentServer } from './server';
 
 type DesignServer = Awaited<ReturnType<typeof createDesignServer>>;
 
 /**
- * Runs `compare` with a design server, Chromium and a watch-built harness app that stay up between requests. Each request reads
- * the lib build under the lib-build lock only while it runs, and a changed lib build or design config restarts the
- * design server and Chromium before it draws.
+ * Runs `compare`, `sketch check` and `sketch ready` with a design server, Chromium and a watch-built harness app that stay up
+ * between requests. Each request reads the lib build under the lib-build lock only while it runs, a changed lib build or
+ * design config restarts the design server and Chromium before it draws, and every request draws the design files as
+ * they are when it starts.
  */
-export const createWarmCompare = (options: { target: string }) => {
+export const createWarmRuns = (options: { target: string }) => {
   const { target } = options;
   let stamp: string | null = null;
   let server: Promise<DesignServer> | null = null;
@@ -79,11 +83,14 @@ export const createWarmCompare = (options: { target: string }) => {
     }
 
     stamp = next;
+    (await server?.catch(() => null))?.forgetDrawn();
   };
 
-  const compareIn = async ({ argv, invocation }: { argv: string[]; invocation: string }) => {
-    if (argv[0] !== 'compare') {
-      console.error(`the resident design process runs compare only, not ${argv[0] ?? 'nothing'}`);
+  const runIn = async ({ argv, invocation }: { argv: string[]; invocation: string }) => {
+    if (!runsInResident(argv)) {
+      console.error(
+        `the resident design process runs compare, sketch check and sketch ready only, not ${argv.join(' ')}`,
+      );
 
       return 2;
     }
@@ -99,6 +106,8 @@ export const createWarmCompare = (options: { target: string }) => {
       await refresh(config);
 
       const rest = argv.slice(1);
+
+      if (argv[0] === 'sketch') return await designSketch({ target, argv: rest, invocation, warm });
 
       return await designCompare({
         target,
@@ -116,7 +125,7 @@ export const createWarmCompare = (options: { target: string }) => {
     recordRun({ file: timingsFileOf(target), argv, resident: true }, () => {
       if (waitedMs !== undefined) recordPhase('resident-queue-wait', waitedMs);
 
-      return compareIn({ argv, invocation });
+      return runIn({ argv, invocation });
     });
 
   const warmUp = async () => {
@@ -142,7 +151,7 @@ export const serveResident = async (options: { target: string }) => {
   const { target } = options;
   const build = buildStampOf().build;
   const token = randomUUID();
-  const compare = createWarmCompare({ target });
+  const runs = createWarmRuns({ target });
   let exiting = false;
   let close = async () => undefined as void;
   const exit = async (reason: string) => {
@@ -152,7 +161,7 @@ export const serveResident = async (options: { target: string }) => {
     console.error(`resident design process exits: ${reason}`);
     removeDiscovery(target, process.pid);
     await close();
-    await compare.close();
+    await runs.close();
     process.exit(0);
   };
 
@@ -162,13 +171,13 @@ export const serveResident = async (options: { target: string }) => {
   const server = await startResidentServer({
     token,
     identity: { pid: process.pid, build, checkout: target },
-    run: compare.run,
+    run: runs.run,
     onExit: (reason) => void exit(reason === 'idle' ? 'idle for 30 min' : 'stopped'),
   });
 
   close = server.close;
 
-  await compare.warmUp().catch((error: unknown) => console.error(`warm-up failed: ${String(error)}`));
+  await runs.warmUp().catch((error: unknown) => console.error(`warm-up failed: ${String(error)}`));
 
   writeDiscovery(target, {
     pid: process.pid,
