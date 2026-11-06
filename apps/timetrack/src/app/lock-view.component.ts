@@ -19,7 +19,7 @@ import { injectWindowLock } from './window-lock';
       >
         <div class="flex flex-col items-start gap-1">
           <div class="w-50"><ethlete-logo /></div>
-          <div class="-mt-1"><ethlete-build-stamp /></div>
+          <div class="mt-2"><ethlete-build-stamp /></div>
         </div>
 
         <div class="flex flex-col gap-1">

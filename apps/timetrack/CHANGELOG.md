@@ -1,5 +1,16 @@
 # timetrack-app
 
+## 0.2.0-next.17
+
+### Minor Changes
+
+- Replace the clock logo with the ethlete Timetrack lockup: new app icons, a neon E as the tray icon, and the lockup in the sidebar and the lock view.
+- Add the `store-key` tool, which exports the store key as a passphrase-protected file and imports it into another machine's keyring.
+
+### Patch Changes
+
+- Ignore the zip RUSTSEC-2026-0429 advisory the updater pins and update the yanked async-executor.
+
 ## 0.2.0-next.16
 
 ### Patch Changes

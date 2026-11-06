@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0-next.17
+
+### Patch Changes
+
+- The devtools panel, toggle and pills hide under `navigator.webdriver`. Set `provideQueryDevtools({ showInAutomation: true })` to keep them.
+- The toggle entry point no longer imports the `@ethlete/components` barrel, so the lazy shell adds no components code to the initial bundle of an application.
+
 ## 1.0.0-next.16
 
 ### Minor Changes

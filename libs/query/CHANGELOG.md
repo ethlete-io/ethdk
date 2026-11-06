@@ -1,5 +1,37 @@
 # @ethlete/query
 
+## 6.0.0-next.62
+
+### Patch Changes
+
+- Add the manifest field `addsWhenFound`: `et update` adds a package only when a `.ts` file names one of the listed identifiers. The `to-query-v3` migration adds `@ethlete/query-devtools` only for repos that use `QueryDevtoolsComponent`.
+- A migration can list `adds`, packages its codemod imports. `et update` adds a missing one before the codemod, and `to-query-v3` adds `@ethlete/query-devtools`.
+- A migrated query writes its response to the entity store before `onSuccess` and `state$` subscribers see the success.
+- `migrate-to-query-v3` turns a plain `computed` that returns a prepared query into `queryComputed`, and adds `destroyOnResponse` to a `prepare()` in an async validator.
+- `migrate-to-query-v3` adds the injector member before the leading comments of the first class member, so an `eslint-disable-next-line` comment stays on its member.
+- `et migrations` now lists `migrate-create-destroy`, `migrate-color-theme-variants` and `migrate-from-ngrx-toolkit`, all at level `optional`.
+- The v2 migration adds `destroyOnResponse` only to a query that is provably one-shot, so a stored, returned or re-executed query keeps working after its first response.
+- The v2 migration writes `reportErrors: false` into migrated creators and copies `cookieDomain` into `cookie.domain`.
+- `withPersistentAuth` retries a rejected refresh once with the token a sibling host wrote to the shared cookie, instead of deleting it.
+- The devtools panel, toggle and pills hide under `navigator.webdriver`. Set `provideQueryDevtools({ showInAutomation: true })` to keep them.
+- A legacy creator's `prepare()` returns the same query for equal arguments in one injector scope, as v2 did. A `queryComputed` that calls `prepare()` no longer loops on NG0103.
+- `V2BearerAuthProvider` writes the refresh cookie on the parent domain of the host again when `refreshConfig.cookieDomain` is not set. An earlier 6.0.0 prerelease wrote a host-only cookie, so apps on sibling subdomains lost the session and looped back to the login.
+- The `state$` of a legacy query no longer replays its previous `Success` to a subscriber that attaches right after `execute()`. Like v2, the subscriber now sees `Loading` first.
+- `toQuerySignal` subscribes its source once. A cold source no longer runs twice, so the template no longer shows a query that no container manages.
+- The `migrate-to-query-v3` report lists every call site of the v2 auth hooks (`setAuthProvider`, `clearAuthProvider`, `authProvider$`, `isBearerAuthProvider`) and every `HttpInterceptor` that sets an `Authorization` header.
+- The `migrate-to-query-v3` generator writes `retryConfig: { maxAttempts: 8 }` into the refresh query of the auth scaffold and warns that the login cookie is per host. The migration guide names both behaviors.
+- The `migrate-to-query-v3` auth provider scaffold imports the names its copied config uses (adapters, cookie name and domain) into the client file, and reports a name that the v2 file declares at its top level.
+- The `migrate-to-query-v3` generator maps the v2 `responseAdapter` result `{ token, refreshToken }` to `{ accessToken, refreshToken }` in `extractTokens`, and writes `defaultRememberMe: true` so the login cookie stays as long as in v2.
+- `migrate-to-query-v3` no longer copies a v2 `retryFn` into `createQueryClient` and no longer adds `withEthleteApiErrors()` to Contentful, Shopify or Bynder clients. It reports a task for each instead.
+- `migrate-to-query-v3` also passes an injector to `createSubject()`, `createSignal()` and `behaviorSubject()` calls on a legacy creator that run outside an injection context, as it did for `prepare()`.
+- The `migrate-to-query-v3` generator keeps `AnyV2Query` in a file that already names `AnyLegacyQuery`, so a union of both no longer collapses into one type with a duplicate import.
+- The `migrate-to-query-v3` generator moves `QueryDevtoolsComponent` to `QueryDevtoolsLazyComponent` from `@ethlete/query-devtools/lazy` and rewrites `<et-query-devtools>` to `<et-query-devtools-lazy>`, so the panel loads on first open.
+- `migrate-to-query-v3` names `createGqlQueryViaGet` in the task for a GraphQL creator whose v2 client set `request.gql.transferVia: 'GET'`, and no longer warns about that dropped option.
+- The `migrate-to-query-v3` report flags every `new V2QueryClient(...)` left after a run as a migrator error, and the migration guide no longer presents a client that stays on v2 as supported.
+- `migrate-to-query-v3` reports each `prepare()`, `createSignal()` and `behaviorSubject()` call on a `legacy*` property receiver outside an injection context, with `file:line`.
+- `migrate-to-query-v3` now points a consumer at the right `legacy*` wrapper when two projects declare a creator with the same name. Before, the last declaration in the workspace won and consumers of the other one were left on the v3 creator.
+- The `migrate-to-query-v3` task for a `prepare()` call in a standalone function now names the fix: add `const injector = inject(Injector)` at the top of the factory and pass `{ injector }`, or use `provideLegacyPrepareFallback()`.
+
 ## 6.0.0-next.61
 
 ### Patch Changes

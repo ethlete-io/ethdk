@@ -73,7 +73,7 @@ const viewPathOf = (route: string) => route.split('/').filter(Boolean)[0];
             <div class="flex flex-col items-start px-3">
               <h1 class="m-0 flex w-full"><ethlete-logo /></h1>
 
-              <div class="-mt-1">
+              <div class="mt-2">
                 <ethlete-build-stamp />
               </div>
 

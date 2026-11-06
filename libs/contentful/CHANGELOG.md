@@ -1,5 +1,12 @@
 # @ethlete/contentful
 
+## 4.0.0-next.17
+
+### Patch Changes
+
+- Allow `@contentful/rich-text-types` as a regular dependency in the package build.
+- Ship `@contentful/rich-text-types` as a dependency instead of a required peer dependency, since its node type constants are used at runtime.
+
 ## 4.0.0-next.16
 
 ### Patch Changes
