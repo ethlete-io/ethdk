@@ -3,8 +3,8 @@
  * included, and no changeset in that range names the package. A change that needs no release
  * names the package with the level `none`.
  *
- * Also fails when a commit deletes a changeset file, or drops a package entry from one, unless
- * the file is listed in `.changeset/pre.json` `changesets`: an unconsumed changeset is the only
+ * Also fails when the range deletes a changeset file, or drops a package entry from one, compared
+ * at the merge base and at the head so an overwrite restored inside the range passes, unless the file is listed in `.changeset/pre.json` `changesets`: an unconsumed changeset is the only
  * record of that release. A text-only rewrite is allowed.
  *
  * Only first-parent, non-merge commits count: a merge brings in commits another range already
@@ -21,7 +21,13 @@ const { join, resolve } = require('path');
 const ROOT = resolve(__dirname, '../..');
 const RELEASE_BOT = 'github-actions[bot]';
 
-const git = (...args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+const git = (...args) =>
+  execFileSync('git', args, {
+    cwd: ROOT,
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
 
 const packageDirs = () => {
   const { workspaces } = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
@@ -83,19 +89,6 @@ for (const [sha, , subject] of commits) {
     .map((line) => line.split('\t'));
 
   for (const [status, path] of changes) {
-    if (
-      (status === 'D' || status === 'M') &&
-      /^\.changeset\/[^/]+\.md$/.test(path) &&
-      path !== '.changeset/README.md'
-    ) {
-      const id = path.slice('.changeset/'.length, -'.md'.length);
-      const kept = status === 'M' ? new Set(changesetPackages(sha, path)) : new Set();
-
-      for (const name of changesetPackages(`${sha}^`, path)) {
-        if (!kept.has(name) && !released.has(id)) dropped.push({ path, name, deleted: status === 'D', sha, subject });
-      }
-    }
-
     if (status === 'D' || !/^\.changeset\/[^/]+\.md$/.test(path) || path === '.changeset/README.md') continue;
 
     for (const name of changesetPackages(sha, path)) covered.add(name);
@@ -110,6 +103,29 @@ for (const [sha, , subject] of commits) {
   for (const name of touched) {
     if (!touchedBy.has(name)) touchedBy.set(name, []);
     touchedBy.get(name).push(`${sha.slice(0, 9)} ${subject}`);
+  }
+}
+
+const rangeBase = git('merge-base', base, head).trim();
+const changesetFiles = git('ls-tree', '--name-only', rangeBase, '.changeset/')
+  .split('\n')
+  .filter((path) => /^\.changeset\/[^/]+\.md$/.test(path) && path !== '.changeset/README.md');
+
+for (const path of changesetFiles) {
+  const id = path.slice('.changeset/'.length, -'.md'.length);
+
+  if (released.has(id)) continue;
+
+  let kept = null;
+
+  try {
+    kept = new Set(changesetPackages(head, path));
+  } catch {
+    kept = null;
+  }
+
+  for (const name of changesetPackages(rangeBase, path)) {
+    if (!kept?.has(name)) dropped.push({ path, name, deleted: kept === null });
   }
 }
 
@@ -132,10 +148,8 @@ if (missing.length > 0) {
   );
 }
 
-for (const { path, name, deleted, sha, subject } of dropped) {
-  console.error(
-    `\n✖ ${path} ${deleted ? 'is deleted' : 'no longer lists'} \`${name}\` (${sha.slice(0, 9)} ${subject})`,
-  );
+for (const { path, name, deleted } of dropped) {
+  console.error(`\n✖ ${path} ${deleted ? 'is deleted' : 'no longer lists'} \`${name}\``);
 }
 
 if (dropped.length > 0) {

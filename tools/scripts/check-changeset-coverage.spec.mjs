@@ -102,6 +102,22 @@ describe('check-changeset-coverage dropped changesets', () => {
     assert.equal(check().status, 0);
   });
 
+  test('passes when an overwrite is restored inside the range', () => {
+    const { commit, check } = fixture(REAL_BEFORE);
+    commit(rewrite(REAL_AFTER));
+    commit(rewrite(REAL_BEFORE));
+
+    assert.equal(check().status, 0);
+  });
+
+  test('passes when a package is added and removed inside the range', () => {
+    const { commit, check } = fixture(REAL_BEFORE);
+    commit(rewrite(changeset("'@ethlete/eslint-plugin': patch\n'@ethlete/cli': patch")));
+    commit(rewrite(REAL_BEFORE));
+
+    assert.equal(check().status, 0);
+  });
+
   test('passes when the file is listed in pre.json', () => {
     const { commit, check } = fixture(REAL_BEFORE, ['silent-catch-try-catch']);
     commit(rewrite(REAL_AFTER));
