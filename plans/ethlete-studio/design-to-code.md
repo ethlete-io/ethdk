@@ -3462,6 +3462,8 @@ gets the same phase timing, the same biggest-phase-first fix and a budget entry.
 First compare measure (c8, 2026-11-06): `design compare components/title-bar --product studio` 44.9 s wall for 14
 states plus actions; compare ignores `ETHLETE_DESIGN_PHASES`. The harness starts twice (states, then actions): the
 second start is the first suspect.
+In progress (builder ethlete-sdk-c0, ADR 0199 item 1): `design compare` phase timing, one harness start for states and
+actions, budget spec.
 
 479\. A fresh sketch of a part that has a `.css` file (`components/kbd`, `components/divider`) fails `UTILITY-CSS` in
 `sketch check`, so `sketch ready` refuses after 2.5 s (builder measure, 2026-11-05). Why no tool caught it: no spec
@@ -3489,6 +3491,8 @@ the implemented app lacks passes, and the debt only shows when a check record is
 an implemented part that adds props the app has no input for opens a port item (STATUS row or `design task`) at merge
 time; builder decides how, or gives it a STATUS row. The `pictures.json` entry written by a builder `design check` run
 is a check record, not a decision (committed 0a9bf6117).
+Widened (builder ethlete-sdk-c0, 2026-11-06, full design check after 30a5c27b9): DROPPED-PROP also on
+`canvas-frames` (4) and `pages/system` (8), so 21 states in three parts carry design props without an app input.
 
 482\. The builder made a sketch with two variants for the state "all variants unchanged, auto-merge refused" and put it
 in front of Tom. Tom (2026-11-06): "die beiden varianten für den pages/sketches sind doch beide quatsch. wieso sollte es
@@ -3549,6 +3553,14 @@ names a part-scoped check for each touched part and each part that embeds one, a
 CI (done in this commit); (2) tool: `design check --product <p> --base <ref>` checks only the parts whose design or
 implemented app files changed since `<ref>`, plus the parts that embed them, and prints which parts it chose. Built in
 the performance block of ADR 0199.
+
+486\. `design compare pages/sketches` lists 16 missed actions: the app shows a combobox "Runde" in every state and a
+disclosure "Alle Zustände zeigen", and the design draws neither (builder ethlete-sdk-c0, 2026-11-06). The app grew
+controls without a design; compare only lists them, and `check --rules` and the pre-push gate pass. Same class as 484
+(app content no design covers), here as controls instead of states. Why no tool caught it: a missed action is
+informational, not a failure, and nothing turns it into a design task. Tool fix: a missed action fails compare for an
+implemented part and opens the missing-state sketch of ADR 0048 and ADR 0010 (built look as variant a); the
+IMPLEMENTATION-UNCOMPARED gate in `check --rules --base` fails while one is open.
 
 478\. After an automatic merge, `sketch ready` printed "ENOENT ... foundations-colors.foundations-check-fixes/sketch.json"
 and never printed "merged automatically", although the merge was complete (commit 479bdace3, builder, 2026-11-05).
