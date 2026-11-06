@@ -3973,6 +3973,11 @@ without ref or with a missing ADR (exit 1, nothing written), @edit merge with a 
 each bitten by a mutation. Verified: both tsc gates, lint, those two specs. Not verified: a real CLI process exit code
 (spec calls `designAccept`), `finding n` refs, `--allowed-by` through `sketch-command.ts` (only `mergeStepOf` is
 specced), nothing run against the studio product.
+Built in 8ae283f82. Cause of the exit 0 (builder, 2026-11-06): no tool defect. The builder piped `accept` through
+`| tail -15` and read tail's exit code; `designAccept` already returned 1. The exit-code part of 515 is closed as a
+builder error. Rule: never read the exit code of a pipe; use `set -o pipefail` or `${pipestatus[1]}`. Rest of 515
+(agent accept with a decision ref, @edit merge with `--allowed-by`) is built; the real refused-accept process exit
+and the `sketch-command.ts` wiring are still unverified until the stale-part accepts run through them.
 
 516\. Tom's "q1ok" for pages/sketches reached the builder only as a relayed message, and the builder's permission
 check refused `accept --by tom`: an agent may not record Tom's consent from a relay. The doc agent had promised the
