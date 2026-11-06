@@ -4267,3 +4267,15 @@ caught it: the empty frames dominated every diff and hid all three. Doc agent de
 not drive forced states inside an embedded `shot`; the app harness renders them with the same forced-state hook as the
 design; (b) compare masks a slot stand-in of an embedded part exactly as it masks it on the part itself; (c) compare
 fails when a selector a sketch look targets has no match in the app DOM. All three in libs/cli compare (builder).
+
+Built (2026-11-06, Mac): d30029793, the sketches camera stays inside the content through `panInsideRoom`
+(canvas-math.ts) and `panRoomOf` (frame-zoom-viewport.ts); sticky-names 76k -> 480 px, zoomed-page 62k -> 1.3k. The fold
+DIFF (all-unchanged, unchanged-matrix*) waits for Tom's pick on `pages/sketches@all-states`.
+
+547\. Builder (2026-11-06): the app sketches camera did not clamp like the design `pan()`, and an app spec asserted the
+unclamped camera as intended. Why no tool caught it: the design and the app each carry their own camera math, so a
+spec can pin the app copy while the design copy differs, and empty frames hid the offset in compare. Rest after the
+fix: a fractional camera x (-853.2) gives edge smoothing that differs per side. Doc agent decisions (technical): accept
+the helper route now; the move of SketchesComponent onto the shared canvas camera is its own queued slice (one camera
+code path for design and app is the real fix); snap the camera to whole pixels in the shared helper used by both, not
+a compare tolerance.
