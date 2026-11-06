@@ -613,11 +613,17 @@ const designExplore = ({
       const thumbs = createThumbnailer({ target, base, ledger });
       const inventoryDraws = createDrawQueue({ target, ledger });
       const sketchChecker = checkSketches ? undefined : createSketchChecker();
+      const events = createDesignEvents();
+      let revision = 0;
       const shots = createPartShooter({
         target,
         base,
         ledger,
         system,
+        changed: (part) => {
+          revision += 1;
+          events.signal('parts', { revision, all: false, parts: [part] });
+        },
         ...(shotCacheDir
           ? {
               store: shotStoreOf({
@@ -664,9 +670,6 @@ const designExplore = ({
         shots.forgetCalls(relative(callsRoot, file));
       };
 
-      const events = createDesignEvents();
-      let revision = 0;
-
       const redraw = (change: PartsChange, listed = false) => {
         if (!change.all && change.parts.length === 0 && !change.errored) {
           if (listed) events.signal('parts', { revision, ...change });
@@ -676,7 +679,7 @@ const designExplore = ({
 
         revision += 1;
         forgetUnchangedStates();
-        if (change.all) shots.clear();
+        if (change.all) shots.clear({ announced: true });
         else shots.forget(change);
         events.signal('parts', { revision, ...change });
       };
@@ -727,7 +730,7 @@ const designExplore = ({
 
       const reloadFlows = () => {
         thumbs.clear();
-        shots.clear();
+        shots.clear({ announced: false });
         events.signal('flows');
       };
 

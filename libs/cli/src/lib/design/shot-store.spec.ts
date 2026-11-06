@@ -2,11 +2,12 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, 
 import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { assetRoot, DESIGN_DIR, viteCacheOf } from './paths';
 import { serveDesign } from './serve';
 import { withRunSignal } from './run-abort';
 import { createShotStore } from './shot-store';
+import { COMMENT_EVENTS_PATH } from './studio-api';
 import { productModuleIdOf } from './system/system-modules';
 
 type Handler = (request: IncomingMessage, response: ServerResponse) => void;
@@ -121,6 +122,7 @@ const start = async (target: string, graph = new Map<string, FakeModule>()) => {
   expect(await serveDesign({ target })).toBe(0);
 
   const handlers = new Map<string, Handler>();
+  const watchers = new Map<string, (file: string) => void>();
 
   created[created.length - 1]?.plugins[0]?.configureServer({
     moduleGraph: {
@@ -132,7 +134,7 @@ const start = async (target: string, graph = new Map<string, FakeModule>()) => {
     environments: { client: { hot: { send: () => undefined } } },
     middlewares: { use: (path: string, handler: Handler) => handlers.set(path, handler) },
     httpServer: { on: () => undefined, address: () => ({ port: 1 }) },
-    watcher: { add: () => undefined, on: () => undefined },
+    watcher: { add: () => undefined, on: (event: string, watch: (file: string) => void) => watchers.set(event, watch) },
     ssrLoadModule: async () => ({ default: { states: { long: {} } } }),
   });
 
@@ -149,7 +151,16 @@ const start = async (target: string, graph = new Map<string, FakeModule>()) => {
       handlers.get('/__design/shot')?.({ url: `/?${SHOT}` } as IncomingMessage, response as unknown as ServerResponse);
     });
 
-  return { shot };
+  const events = () => {
+    const written: string[] = [];
+    const response = { writeHead: () => undefined, write: (text: string) => written.push(text) };
+
+    handlers.get(COMMENT_EVENTS_PATH)?.({ on: () => undefined } as unknown as IncomingMessage, response as never);
+
+    return () => written.filter((text) => text.startsWith('event: parts')).map((text) => text.split('data: ')[1]);
+  };
+
+  return { shot, events, watch: (event: string, file: string) => watchers.get(event)?.(file) };
 };
 
 const storedIn = (target: string) => {
@@ -244,6 +255,32 @@ describe('the shots a design server keeps on disk', () => {
     await (await start(target)).shot();
 
     expect(screenshot).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('the revision Studio keys a stored picture on', () => {
+  it('moves whenever the server keeps a changed picture that no redraw announced', async () => {
+    const { target, files } = acme();
+    const server = await start(target, graphOf(files));
+    const parts = server.events();
+    const flow = join(target, DESIGN_DIR, 'acme/flows/checkout.json');
+
+    onTestFinished(() => void screenshot.mockImplementation(async () => Buffer.from('drawn png')));
+
+    await server.shot();
+    await vi.waitFor(() => expect(storedIn(target)).toHaveLength(1));
+
+    server.watch('change', flow);
+    await server.shot();
+    expect(parts()).toEqual([]);
+
+    screenshot.mockImplementation(async () => Buffer.from('changed png'));
+    server.watch('change', flow);
+    await server.shot();
+
+    expect(parts().map((data) => JSON.parse(data ?? ''))).toEqual([
+      { revision: 1, all: false, parts: [{ product: 'acme', part: 'components/card', sketch: null }] },
+    ]);
   });
 });
 

@@ -429,6 +429,8 @@ export const createPartShooter = (options: {
   statesOf?: (address: Pick<PartAddress, 'product' | 'part' | 'sketch'>) => Promise<string[] | null>;
   store?: ShotStore;
   queue?: ReturnType<typeof createDrawQueue>;
+  /** Called when a part's picture changed although no `forget` or announced `clear` dropped it. */
+  changed?: (part: DrawnPart) => void;
 }) => {
   const { system, statesOf, store } = options;
   const baseOf = () => (typeof options.base === 'function' ? options.base() : options.base);
@@ -438,6 +440,15 @@ export const createPartShooter = (options: {
   const cache = new Map<string, { drawn: Drawn; shot: Promise<Picture> }>();
   const motions = new Map<string, { drawn: Drawn; pictures: Promise<MotionPictures> }>();
   const boxes = new Map<string, Promise<ChangedBox[]>>();
+  const shown = new Map<string, string>();
+
+  const show = (key: string, { drawn, picture }: { drawn: Drawn; picture: Picture }) => {
+    const hash = createHash('sha1').update(picture.png).digest('base64url');
+    const before = shown.get(key);
+
+    shown.set(key, hash);
+    if (before !== undefined && before !== hash && 'part' in drawn) options.changed?.(drawn.part);
+  };
 
   const draw = (browser: Browser, frame: Frame): Promise<Picture> =>
     warmPages.run(
@@ -574,6 +585,7 @@ export const createPartShooter = (options: {
       const shot = Promise.resolve(stored);
 
       cache.set(key, { drawn: options.drawn, shot });
+      show(key, { drawn: options.drawn, picture: stored });
 
       return shot;
     }
@@ -608,7 +620,12 @@ export const createPartShooter = (options: {
 
     cache.set(key, { drawn: options.drawn, shot });
     shot.then(
-      (picture) => address && cache.get(key)?.shot === shot && store?.write(key, { address, picture }),
+      (picture) => {
+        if (cache.get(key)?.shot !== shot) return;
+
+        show(key, { drawn: options.drawn, picture });
+        if (address) store?.write(key, { address, picture });
+      },
       () => cache.get(key)?.shot === shot && cache.delete(key),
     );
 
@@ -930,6 +947,7 @@ export const createPartShooter = (options: {
       for (const [key, { drawn }] of cache) {
         if ('part' in drawn && redraws(change, drawn.part)) {
           cache.delete(key);
+          shown.delete(key);
           store?.drop(key);
         }
       }
@@ -943,10 +961,12 @@ export const createPartShooter = (options: {
         if ('slug' in drawn && callDrawsFrom({ slug: drawn.slug, file })) cache.delete(key);
       }
     },
-    clear: () => {
+    /** Drops every picture; `announced` says the caller told Studio that every part redraws. */
+    clear: ({ announced }: { announced: boolean }) => {
       for (const [key, { drawn }] of cache) {
         if ('part' in drawn) store?.drop(key);
       }
+      if (announced) shown.clear();
       cache.clear();
       motions.clear();
     },

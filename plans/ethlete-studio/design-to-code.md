@@ -4367,3 +4367,16 @@ the frames. Why no tool caught it: the switch list was picked by what worked, an
 dropped instead of failing. Tool fix (slice C): shell-main joins `PAGE_SWITCHES`; a switch that shows no frame within
 the cap fails the e2e rather than being left out. c0 reports the cause; if Studio does not mount the frames, that is a
 Studio defect with its own finding.
+
+Open-points key and revision guard (as built in the commit that adds this note, subagent, 2026-11-06). Part 1:
+`cachedOpenPointsOf` runs `readOpenPoints` + `buildReadyInputsOf` inside `trackedRun` (`system/tracked-reads.ts`), which
+wraps the sync `fs` reads (stat-like and folder listings) for the run, so a new rule's read is recorded without a list.
+A hit needs the same product JSON and every recorded input printing the same (stat; listing; missing counts). Spec: an
+fs spy on every non-write `*Sync` function asserts the acme rules open nothing the tracker missed; guard spec (finding
+519): an `implements` target in another app, a config value, a package version, a vanished file and a new folder entry
+each give a fresh result. Repeat call on the main checkout: icons 12, logo 11, shell-main 38 ms (before 14-18, 14-16,
+~42). Part 2: the shooter hashes each kept picture; a changed hash for a key that no `forget` or announced `clear`
+dropped calls `changed`, and the server sends a `parts` event with the next revision. Bug fixed on the way: a flows
+change cleared the shots without a `parts` event. canvas e2e `a part edited on disk while away shows its new picture on
+return`: passes (12/12 pictures changed), fails with Studio's part revision held constant. Details:
+`.claude/handoffs/agent-results/open-points-key-revision-guard.md`.

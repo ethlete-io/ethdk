@@ -31,6 +31,9 @@ const GONE_TARGETS = { Merge: 'components/title-bar', Discard: 'components/tree-
 
 const WIDE_SKETCH = { part: 'components/title-bar', name: 'notice-hint', variants: ['a', 'b', 'c'] };
 
+const EDITED_PART = 'components/disclosure';
+const EDITED_PART_TIMEOUT_MS = 30000;
+
 const PAGE_SWITCHES = ['foundations/icons', 'foundations/logo', 'foundations/icons', 'foundations/logo'];
 const PAGE_SWITCH_TIMEOUT_MS = 15000;
 const PAGE_SWITCH_SETTLE_MS = 1500;
@@ -45,6 +48,12 @@ const PAGES = [
   {
     name: 'System',
     view: { systemProduct: 'studio', systemEntry: 'pages/system' },
+    shows: 'ethlete-system-view ethlete-open-points-chip',
+    hides: 'ethlete-sketch-view',
+  },
+  {
+    name: 'Edited',
+    view: { systemProduct: 'studio', systemEntry: EDITED_PART },
     shows: 'ethlete-system-view ethlete-open-points-chip',
     hides: 'ethlete-sketch-view',
   },
@@ -933,6 +942,77 @@ const CASES = [
         ok: seen.size > 0 && stored.length > 0 && empty.length === 0,
         detail: `${first} <- ${second}: ${stored.length - empty.length}/${stored.length} stored pictures painted in rAF ${back.frames} (+${Math.round(back.ms)} ms), ${seen.size} seen`,
       };
+    },
+  },
+  {
+    name: 'a part edited on disk while away shows its new picture on return',
+    pages: ['Edited'],
+    run: async (page) => {
+      const rows = page.locator('[role="treeitem"]');
+      const pictures = () =>
+        page.evaluate(
+          ({ CANVAS }) =>
+            [
+              ...(document
+                .querySelector(CANVAS)
+                ?.querySelectorAll('ethlete-canvas-frame img[src*="/__design/shot?"]') ?? []),
+            ].map((img) => ({ src: img.src, loaded: img.complete && img.naturalWidth > 0 })),
+          { CANVAS },
+        );
+      const loaded = async (accept) => {
+        for (const until = Date.now() + EDITED_PART_TIMEOUT_MS; Date.now() < until;) {
+          await page.waitForTimeout(250);
+          const shown = await pictures();
+
+          if (shown.length > 0 && shown.every((picture) => picture.loaded) && accept(shown)) return shown;
+        }
+
+        return null;
+      };
+      const tagsOf = (shown) =>
+        Promise.all(shown.map(({ src }) => page.request.get(src).then((answer) => answer.headers()['etag'])));
+      const leaves = await rows.evaluateAll((all) =>
+        all.flatMap((row) => (row.dataset.kind === 'leaf' ? [row.textContent.trim()] : [])),
+      );
+      const home = EDITED_PART.split('/')[1];
+      const away = leaves.find((text) => text !== home);
+
+      if (!leaves.includes(home) || !away) return { ok: false, detail: `no ${home} leaf or no other leaf` };
+
+      const rowOf = (text) => rows.filter({ hasText: new RegExp(`^\\s*${text}\\s*$`, 'u') }).first();
+
+      const before = await loaded(() => true);
+
+      if (!before) return { ok: false, detail: `${EDITED_PART} shows no loaded picture` };
+
+      const tags = new Set(await tagsOf(before));
+      const stylesheet = join(checkout, '.ethlete/design/studio', EDITED_PART, 'disclosure.css');
+      const original = readFileSync(stylesheet, 'utf8');
+
+      await rowOf(away).click();
+      await loaded(() => true);
+
+      try {
+        writeFileSync(
+          stylesheet,
+          `${original}\n.st-disclosure { background: rgb(255 0 0); outline: 6px solid rgb(0 128 255); }\n`,
+        );
+        await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
+        await rowOf(home).click();
+
+        const seen = new Set(before.map(({ src }) => src));
+        const after = await loaded((shown) => shown.some(({ src }) => !seen.has(src)));
+        const changed = after && (await tagsOf(after)).filter((tag) => !tags.has(tag));
+
+        return {
+          ok: !!changed && changed.length > 0,
+          detail: after
+            ? `${changed.length}/${after.length} pictures changed after the edit`
+            : `no new picture URL within ${EDITED_PART_TIMEOUT_MS} ms (${before.length} pictures)`,
+        };
+      } finally {
+        writeFileSync(stylesheet, original);
+      }
     },
   },
   {

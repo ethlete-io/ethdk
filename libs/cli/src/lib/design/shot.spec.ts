@@ -3,7 +3,7 @@ import { cpSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { changedPartsOf } from './changed-parts';
 import { createDrawLedger } from './draw-ledger';
 import { DESIGN_DIR, readConfig } from './paths';
@@ -426,6 +426,58 @@ describe('createPartShooter', () => {
     await shots.pictureOf({ ...address, fresh: true });
 
     expect(drawnUrls()).toHaveLength(2);
+  });
+
+  it('reports a part whose picture changed unless a forget or an announced clear dropped it first', async () => {
+    const changed = vi.fn<(part: unknown) => void>();
+    const target = realpathSync(mkdtempSync(join(tmpdir(), 'cli-design-shot-')));
+
+    cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
+
+    const shots = createPartShooter({
+      target,
+      base: 'http://localhost:1',
+      system: createSystemModules({ target, config: readConfig(target) ?? {} }),
+      chromiumOf: withBrowser,
+      ledger: createDrawLedger(),
+      changed,
+    });
+
+    closing.push(() => shots.close());
+    onTestFinished(() => void screenshot.mockImplementation(async () => Buffer.from('png')));
+
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams(),
+    };
+    const card = { product: 'acme', part: 'components/card', sketch: null };
+    const drawing = async (png: string) => {
+      screenshot.mockResolvedValue(Buffer.from(png));
+      await shots.pictureOf({ ...address, fresh: true });
+    };
+
+    await drawing('a');
+    await drawing('a');
+    expect(changed).not.toHaveBeenCalled();
+
+    await drawing('b');
+    expect(changed).toHaveBeenCalledExactlyOnceWith(card);
+
+    shots.forget({ all: false, parts: [card] });
+    await drawing('c');
+    shots.clear({ announced: true });
+    await drawing('d');
+    expect(changed).toHaveBeenCalledOnce();
+
+    shots.clear({ announced: false });
+    await drawing('e');
+    expect(changed).toHaveBeenCalledTimes(2);
   });
 
   it('draws the shots of pictureOf and of an ask without priority=low before the shots asked with it', async () => {
