@@ -3638,6 +3638,16 @@ the time went to tool investigations. Why no tool caught it: the commit check do
 parts, and no command compares every part a shared change affects. Tool fix: ADR 0203 (B402, `design compare
 --affected`, commit check, done means compared); process fix: ADR 0202 (B403).
 
+492\. Tom, 2026-11-06: "die cli calls alle EXTREM ausbremsen. wir müssen hier deutlich schneller werden, nicht nur ein
+paar sekunden und es reicht auch nicht von 4 auf 1 minute zu kommen. das ist absolut inakzeptabel." Measured today:
+`compare components/title-bar` 47 s (harness build 15-19 s per call on a miss, action check 19 s), about 1 min per page
+part, full `design check` about 6:30. The perf work (ADR 0199) tuned phases by 20-40 % each. Why no tool caught it:
+the budgets were set per phase against the old time, never as an absolute target per command, so a 30 % gain read as
+done. Every CLI call builds or starts its own harness, browser and render worker. Tool fix (doc-agent decision): absolute
+warm targets per command (compare one part ≤ 5 s, `compare --affected` 8 parts ≤ 15 s, `sketch ready` ≤ 10 s, `check
+--rules` ≤ 3 s, full `design check` ≤ 60 s), each a budget spec; one resident process owns harness, browser pool and a
+picture cache keyed on input hash, and the CLI only sends it requests. Ahead of B402 and the rest of B399.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
