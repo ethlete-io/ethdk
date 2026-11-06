@@ -4057,3 +4057,9 @@ open block. Fix: process - a finding's fix joins the queue behind an open "first
 Tom; the queue in a handoff names the ADR that orders it. New order: push -> B416 (with S4) -> S7 (full check in the
 resident queue) -> S8 -> S5 -> then the rest. Perf is done when `design timings` shows a warm studio compare <= 10 s and
 a full studio check within its target.
+Cause of 521 (B416 step 1, c0, 2026-11-06): every app shot waits for the overlay panes the design markup counts
+(`settled-panes.ts`, `PANE_COUNT_TIMEOUT_MS = 10_000`); pages/sketches' design counts panes the app state never opens,
+so each of ~30 shots waited the full 10 s and the timeout was swallowed silently (340.8 s compare). pages/start: 0.25-0.33 s
+per shot. Why no tool caught it: a wait that hits its cap logged nothing. Decided by the doc agent under ADR 0213: cap
+the pane wait at ~1 s with early exit, shoot app and design states 4 at once, and every wait that hits its cap reports
+a named problem ("design draws N panes, app opened M").
