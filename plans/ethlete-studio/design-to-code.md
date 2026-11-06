@@ -4337,3 +4337,13 @@ not in the first check, and `sketch rebase` added a hunk that was already presen
 caught it: a failed render is reported as a verdict, the same class as 545 and 549. Doc agent decisions (technical): a
 failed before render ends ready as "no verdict - base did not render, retry", never as "has problems"; the before
 render timeout scales with load (as 549); SKETCH-BASE-STALE runs in every check; rebase skips a hunk already present.
+
+Built (2026-11-07, Mac): 0adc15c06, VS Code, tsconfig.base and eslint ignore `.claude/worktrees` and `tmp` (VS Code
+used about 3 cores on the 2.1 GB of agent worktrees). 193639700, sketch `pages/sketches@all-states` ready after 338 s
+at load 30; auto-merge skipped, the pick waits for Tom (all three variants change `folded`).
+
+553\. Builder (2026-11-07), `sketch ready`: the three `design shot --variant a|b|c` calls write the same file
+(studio-pages-sketches.png), each overwrites the one before, and the command itself sets the "viewed" mark, so
+SHOT-NOT-VIEWED proves nothing about a view of each variant. Also the load note counts logical CPUs ("> 12 cores" on a
+6-core i7-9750H). Why no tool caught it: no spec asserts distinct shot files per variant. Doc agent decisions
+(technical): one shot file per variant, and ready names each file it needs viewed; load thresholds use physical cores.
