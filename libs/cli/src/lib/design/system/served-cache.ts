@@ -20,6 +20,18 @@ const FETCH_TIMEOUT_MS = 30_000;
 
 const ENTRY_SUFFIX = '.json';
 
+/**
+ * The base Node reaches a listening server at: its own address, as Node's fetch tries IPv4 first for `localhost` while
+ * a server on `localhost` may listen on `::1` only.
+ */
+export const reachableBaseOf = ({ address, family, port }: { address: string; family: string; port: number }) => {
+  const any = address === '::' || address === '0.0.0.0';
+
+  if (family === 'IPv6') return `http://[${any ? '::1' : address}]:${port}`;
+
+  return `http://${any ? '127.0.0.1' : address}:${port}`;
+};
+
 /** Fetches `url` from the server at `base` as Node sees it; null when it cannot be reached in time. */
 export const fetchServedOf =
   (base: string): FetchServed =>
@@ -53,7 +65,7 @@ const servedLinesOf = (header: string | null): string[] => {
  * host is left out of urls and bodies, so a server on another port answers the same.
  */
 export const createServedHashes = (base: string, fetchServed: FetchServed = fetchServedOf(base)) => {
-  const host = new URL(base).host;
+  const ownHost = new RegExp(`(?:localhost|127\\.0\\.0\\.1|\\[::1\\]):${new URL(base).port}`, 'g');
   const held = new Map<string, Promise<{ hash: string | null; lines: string[] }>>();
   const relativeOf = ({ url, accept, post }: ServedRequest): ServedRequest => ({
     url: url.startsWith(base) ? url.slice(base.length) || '/' : url,
@@ -69,7 +81,7 @@ export const createServedHashes = (base: string, fetchServed: FetchServed = fetc
 
     const hashed = fetchServed(request).then((served) => ({
       hash: served
-        ? createHash('sha256').update(served.body.toString('latin1').split(host).join('')).digest('hex')
+        ? createHash('sha256').update(served.body.toString('latin1').replace(ownHost, '')).digest('hex')
         : null,
       lines: served?.lines ?? [],
     }));
@@ -89,7 +101,11 @@ export const createServedHashes = (base: string, fetchServed: FetchServed = fetc
     linesOf: async (requested: readonly ServedRequest[]) =>
       (await Promise.all(requested.map(async (request) => (await servedOf(relativeOf(request))).lines))).flat(),
     unchanged: async (inputs: readonly ServedInput[]) =>
-      (await Promise.all(inputs.map(async (input) => (await servedOf(input)).hash === input.hash))).every(Boolean),
+      (
+        await Promise.all(
+          inputs.map(async (input) => input.hash !== null && (await servedOf(input)).hash === input.hash),
+        )
+      ).every(Boolean),
   };
 };
 

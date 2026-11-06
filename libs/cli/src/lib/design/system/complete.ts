@@ -24,6 +24,8 @@ import { browserVersionOf, cacheKeyOf } from './compare-cache';
 import {
   createServedCache,
   createServedHashes,
+  fetchServedOf,
+  reachableBaseOf,
   recordRequests,
   ServedCacheRun,
   ServedRequest,
@@ -1591,9 +1593,14 @@ const COMPLETENESS_SIGHTS = 'completeness-sights';
 
 const COMPLETENESS_SIGHTS_LIMIT = 64 * 1024 * 1024;
 
-const completenessCacheOf = (options: { target: string; base: string; from: string }): CompletenessCache => ({
+const completenessCacheOf = (options: {
+  target: string;
+  base: string;
+  address: AddressInfo;
+  from: string;
+}): CompletenessCache => ({
   store: createServedCache(viteCacheOf(options.target, COMPLETENESS_SIGHTS), COMPLETENESS_SIGHTS_LIMIT),
-  served: createServedHashes(options.base),
+  served: createServedHashes(options.base, fetchServedOf(reachableBaseOf(options.address))),
   salt: `${completenessCodeOf()} ${browserVersionOf(options.from)}`,
 });
 
@@ -1790,9 +1797,9 @@ export const partsCompletenessOf = async (options: {
   try {
     if (!warm) await server.listen();
 
-    const { port } = server.httpServer?.address() as AddressInfo;
-    const base = `http://localhost:${port}`;
-    const cache = options.cached ? completenessCacheOf({ target, base, from: chromium.from }) : undefined;
+    const address = server.httpServer?.address() as AddressInfo;
+    const base = `http://localhost:${address.port}`;
+    const cache = options.cached ? completenessCacheOf({ target, base, address, from: chromium.from }) : undefined;
 
     const checked = new Map<string, CompletenessGap[] | string>();
     const exceptions: ListedException[] = [];

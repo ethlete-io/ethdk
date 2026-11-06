@@ -124,7 +124,7 @@ const fakeBrowser = (base: string) => ({
 const warmOn = (port: number) =>
   ({
     server: async () => ({
-      httpServer: { address: () => ({ port }) },
+      httpServer: { address: () => ({ address: '::1', family: 'IPv6', port }) },
       ssrLoadModule: async (id: string) => ({
         default: { states: states.get(id.split('?')[0] ?? '') ?? {} },
       }),
@@ -298,6 +298,31 @@ describe('completeness cache', () => {
     served.delete('/src/c.ts');
 
     expect(await check()).toEqual(['c']);
+  });
+
+  it('never hits while Node cannot reach the server it drew from', async () => {
+    vi.stubGlobal('fetch', async () => {
+      throw new Error('connect ECONNREFUSED 127.0.0.1:1');
+    });
+
+    await check();
+
+    expect(await check()).toEqual(['a', 'b', 'c', 'host']);
+  });
+
+  it('fetches from the address the server listens on, not localhost', async () => {
+    const fetched: string[] = [];
+    const fetchServed = globalThis.fetch;
+
+    vi.stubGlobal('fetch', async (url: URL, init?: RequestInit) => {
+      fetched.push(url.host);
+
+      return fetchServed(url, init);
+    });
+
+    await check();
+
+    expect([...new Set(fetched)]).toEqual(['[::1]:1']);
   });
 
   it('keeps nothing of a run aborted while drawing', async () => {

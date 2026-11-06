@@ -109,7 +109,7 @@ const fakeBrowser = (base: string) => ({
 const warmOn = (port: number) =>
   ({
     server: async () => ({
-      httpServer: { address: () => ({ port }) },
+      httpServer: { address: () => ({ address: '::1', family: 'IPv6', port }) },
       ssrLoadModule: async (id: string) => ({ default: { states: states.get(id.split('?')[0] ?? '') ?? {} } }),
     }),
     queue: () => ({

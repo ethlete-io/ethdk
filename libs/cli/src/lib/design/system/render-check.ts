@@ -34,6 +34,8 @@ import { browserVersionOf, cacheKeyOf } from './compare-cache';
 import {
   createServedCache,
   createServedHashes,
+  fetchServedOf,
+  reachableBaseOf,
   recordRequests,
   ServedCacheRun,
   ServedRequest,
@@ -840,12 +842,12 @@ export const renderIssuesOf = async (options: {
   try {
     if (!warm) await server.listen();
 
-    const { port } = server.httpServer?.address() as AddressInfo;
-    const base = `http://localhost:${port}`;
+    const address = server.httpServer?.address() as AddressInfo;
+    const base = `http://localhost:${address.port}`;
     const cache: ServedCacheRun<RenderIssue[]> | undefined = options.cached
       ? {
           store: createServedCache(viteCacheOf(target, RENDER_ISSUES), RENDER_ISSUES_LIMIT),
-          served: createServedHashes(base),
+          served: createServedHashes(base, fetchServedOf(reachableBaseOf(address))),
           salt: `${renderInspectCodeOf()} ${browserVersionOf(chromium.from)}`,
         }
       : undefined;
