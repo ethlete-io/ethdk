@@ -4309,5 +4309,9 @@ results and build-ready stay live. Studio sent two requests per switch: the Syst
 approval both asked; `openPointsAnswer$` now shares one request between overlapping calls. Verified: a spec with a
 comment, a sketch and a part file edited between calls (fails with a constant key), both tsc, lint, the Studio specs, and
 the new canvas e2e case "a part switch asks for its open points once" (2 + 2 requests before, 1 + 1 after). In-process
-repeat call 520 -> 15 ms. Not cached: a rule input outside those folders (e.g. an app file outside the harness `src`)
+(the handler, warm, load 6 of 32): first call ~2.0-2.7 s with module load (unchanged); repeat icons 520 -> 14-18 ms, logo
+14-16 ms, elements/shell-main ~650 -> 42 ms (the live build-ready over its embedded parts is 22 ms of it). `design check
+--product studio --part pages/system`: 0 findings (only host services changed, no rendered component). Not measured: the
+page-switch empty-frame time in headless Chromium and a curl against a served build (a second server would write into
+the checkout). Not cached: a rule input outside those folders (e.g. an app file outside the harness `src`)
 stays stale until a fingerprinted file changes. Details: `.claude/handoffs/agent-results/studio-frame-b.md`.
