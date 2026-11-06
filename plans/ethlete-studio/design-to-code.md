@@ -3590,6 +3590,9 @@ hooks run tests through nx per project, and nothing runs the root projects file 
 Tool fix (technical, decided): the root projects file takes `vite.config.*` only where no `vitest.config.*` sits in
 the same folder, and the sub-second pre-push "Checks" run `vitest list --config vitest.projects.ts --project query`
 so a name clash fails the push.
+**Fixed in 69c5e3635 (cb):** `vitest.projects.ts` skips a folder's `vite.config.*` when a `vitest.config.*` sits next to
+it (17 configs, none under node_modules); bite: the old config fails `vitest list` on the storybook name. The check
+takes 15 s, so it is `yarn vitest:projects:check` in ci-check step 5d and in the Checks job of `ci.yml`, not in pre-push.
 
 488\. The doc agent committed ADRs 0198-0200 with `open:` values the ADR check refuses ("A1", "477", "et-update-findings
 11") and put finding 487 before 486; 478 already sat after 486 (doc agent, 2026-11-06). Only the pre-push
@@ -3597,6 +3600,26 @@ so a name clash fails the push.
 finding-order check at commit time) is still backlog. Fix in this round: STATUS rows B398-B400, ADRs point at them,
 findings reordered. Tool fix (technical, decided): B395 moves up and also checks the finding order; the doc-agent skill
 says an open ADR needs its STATUS row in the same commit.
+
+489\. `design check` shows 2 CONTROL-STATE problems on `shell-main`: the rail controls `section` and `product` are
+hand-drawn `<button class="st-shell-bubble">`, not an SDK component (builder ethlete-sdk-c8, 2026-11-06). They came in
+with 2008b4848 and 5ec59cccc (10-27/28); the rule came later in 4f1ba2b3e (11-02) and never ran over the existing
+products, so it landed on violations without a fix or a baseline. Why no tool caught it: CONTROL-STATE is a draw rule;
+pre-push runs `check --rules` (static, no draw), and the CI `--slow` set covers only APP-SPEC, UNCOVERED-REGION,
+VISIBLE-CHANGE, COMPARE and SDK-ERROR. The draw rules (CONTROL-STATE, DROPPED-PROP, ACTION-LOST) run in no gate, only
+in a manual full `design check`. Tool fix: the draw rules join the `--slow` set with the per-part input-hash cache;
+the commit of a new rule runs it over every product and baselines what it finds (ADR 0201, B401). Picture fix: the
+rail bubble becomes its own control part `components/rail-bubble`, as a sketch (queued for c8).
+
+490\. The title bar draws the code notice only for `linux-full` and `windows`; macOS has `macos` and `macos-update` but
+no notice state, and `linux-left` / `linux-close` have no notice either (Tom, 2026-11-06: "wieso machen wir diese
+titlebar designs eig für windows und linux? mac nicht? ... im grunde ist es ja das gleiche system ... nur dessen
+positionierung ändert sich basierend auf dem os"). The render is one function for all OS (ADR 0050-0052); only the
+state list in `components/title-bar/shared/chrome.ts` is a hand-picked set, so A1 added the notice to two layouts and
+the notice-hint sketch inherits the gap. Why no tool caught it: nothing checks that a content prop drawn on one OS
+layout is drawn on every OS layout. Tool fix (technical, decided): the title-bar states are the product of content
+(rest, update, notice) and OS layout (linux-full, linux-left, linux-close, windows, macos); a `check --rules` rule
+fails when a part with an `os` prop draws a content prop on one layout but not on all.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
