@@ -3853,3 +3853,9 @@ hook gate): a rule reports DIRECT-EDIT-PENDING on every merged part whose hash m
 it shows as a problem on the part (not build-ready) and fails `--rules` in pre-push and CI. The five parts are closed
 by `design check --product studio --part <each>`: auto-accept for the four with no visible change, an old/new edit
 sketch for shell-main (and start through the embed) that waits for Tom's pick (ADR 0135).
+Follow-up: `design check --part` closed none of the five. A committed direct edit was a dead end: auto-accept had no
+pictures at the merged hash and opened an edit sketch with `old` = HEAD, which already holds the edit, so old == new
+and `edit-sketch.ts` refused ("HEAD holds the edit ... no old design to show"). Why no tool caught it: the edit-sketch
+specs covered only uncommitted direct edits. Fix (B412): `old` = the part's files at the newest commit whose part hash
+equals `merged.json[part]`, not HEAD; with no such commit the part shows a problem with a hint, never a silent dead
+end. Picking `old` writes that version back (ADR 0135).
