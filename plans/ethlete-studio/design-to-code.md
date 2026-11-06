@@ -4490,3 +4490,19 @@ count per run and flags any above 0; and a cache slice reports no numbers and is
 scratch worktree has redrawn exactly the edited part and its embedders.
 
 S7b-3 as built (294eef997, 44514b348, 2026-11-06), partly: the served caches write no entry when an input could not be fetched, the timings line records `nullHashes` and `design timings` flags runs above 0 (specs, both bite). Main tree after deleting the null-hash caches: cold 314.0 s, warm 50.7 s (auto-accept 38.2, static 7.1, render-inspect 2.0, completeness 0.93), load ~5/32, 0 null hashes on disk and in timings. Cold and warm logs are identical, the 31 `etProvideColor` warnings included: they come from the render worker and were lost only because the failed refetch carried no lines header. Not done: the real-edit worktree run. After the zoom-chip edit every one of 167 entries redrew, and an unchanged rerun redrew all again. The only changed inputs were the virtual modules `design-explore/env` and `design-explore/system`, which every part loads, so the cache is not verified and the 50.7 s does not count. Open: find what changes those modules between runs (a run's own writes to sketches, merged or ready are suspected), then the worktree edit and the resident restart.
+
+536 closed (c0, 294eef997 + 44514b348): the 31 `etProvideColor` warnings come from the render worker drawing SDK
+components for the title-bar and update-dialog frames; entries keep them since the re-fetch works (52c079983), and a
+real-HTTP spec shows a hit prints them again. Full cold and warm logs are identical.
+
+538\. c0 (2026-11-06), S7b-3: the rule of 537 failed. In a scratch worktree the zoom-chip edit rewrote all 167 check
+entries (332 s), and an unchanged rerun right after it again all 167 (328.7 s). In every entry only
+`virtual:design-explore/env` and `virtual:design-explore/system` changed: `serve.ts` `env()`/`systemRegistry()` list
+every sketch (`sketchesOf`/`drawnOf`) and every part loads them, so any sketch change anywhere - including a check's own
+writes (`sketches/*.edit` folders, merged/ready/pictures.json) - redraws everything. The main tree only looked warm
+(50.7 s) because those writes had settled; that number does not count. Why no tool caught it: the edit-between-runs
+specs edit one input of a fake part graph, none loads the real global virtual modules, and nothing runs the check twice
+on a fresh tree, where a run's own writes become the next run's inputs. Tool fix (S7b-4): a real-tree test - cold
+check, then an unchanged rerun on a fresh worktree must redraw 0 parts - and the cache key of a part holds only the
+registry slice it reads, never a module that a check run rewrites. Done when the zoom-chip edit redraws exactly
+zoom-chip, canvas-viewport, pages/sketches, flows, system, merge and inbox, also after `yarn et:design stop`.
