@@ -75,9 +75,33 @@ export const realResidentClient = (build: string): ResidentClient => ({
 
 const RESIDENT_SKETCH_COMMANDS = new Set(['check', 'ready']);
 
-/** Whether `et design <argv>` runs in the resident design process: compare, sketch check and sketch ready. */
+const CHECK_SCOPES = ['--product', '--part'];
+
+const CHECK_ELSEWHERE = [
+  '--app-classes',
+  '--rules',
+  '--live',
+  '--visible-change',
+  '--slow',
+  '--receipt',
+  '--call',
+  '--lint',
+  '--tsconfig',
+  '--variant',
+];
+
+const drawsSystem = (argv: string[]) =>
+  argv.some((argument) => CHECK_SCOPES.includes(argument)) &&
+  !argv.some((argument) => CHECK_ELSEWHERE.includes(argument));
+
+/**
+ * Whether `et design <argv>` runs in the resident design process: compare, check of a product or part (not its
+ * source-only modes), sketch check and sketch ready.
+ */
 export const runsInResident = (argv: string[]) =>
-  argv[0] === 'compare' || (argv[0] === 'sketch' && RESIDENT_SKETCH_COMMANDS.has(argv[1] ?? ''));
+  argv[0] === 'compare' ||
+  (argv[0] === 'check' && drawsSystem(argv.slice(1))) ||
+  (argv[0] === 'sketch' && RESIDENT_SKETCH_COMMANDS.has(argv[1] ?? ''));
 
 export const residentWanted = (env: NodeJS.ProcessEnv) => !env['CI'] && env[RESIDENT_ENV] !== '0';
 

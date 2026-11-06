@@ -7,6 +7,8 @@ import { DesignConfig } from '../paths';
 import { createDesignServer } from '../serve';
 import { partFrameOf, viewportOf } from '../shot';
 import { awaitSettled, Browser, createDrawQueue, openFrame, ThumbUnavailableError } from '../thumb';
+import { yieldRun } from '../run-yield';
+import { WarmDraw } from '../warm-draw';
 import { INTERACTIVE_SELECTOR } from './actions';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { changedSharesOf } from '../contact-sheet';
@@ -1724,11 +1726,12 @@ export const partsCompletenessOf = async (options: {
   parts: string[];
   sketch?: SketchVariant | null;
   chromiumOf?: typeof chromiumOf;
+  warm?: WarmDraw;
 }): Promise<
   | { gaps: Map<string, CompletenessGap[] | string>; exceptions: ListedException[]; hints: Map<string, string[]> }
   | { unavailable: string }
 > => {
-  const { target, config, product, sketch = null } = options;
+  const { target, config, product, sketch = null, warm } = options;
   const resolveChromium = options.chromiumOf ?? chromiumOf;
   const system = createSystemModules({ target, config });
   const parts = (sketch ? system.drawnOf(product.name, sketch) : product)?.parts ?? [];
@@ -1737,11 +1740,11 @@ export const partsCompletenessOf = async (options: {
   if (!(await resolveChromium(target)))
     return { unavailable: 'neither the checkout nor this package resolves playwright or playwright-core' };
 
-  const queue = createDrawQueue({ target, chromiumOf: resolveChromium });
-  const server = await createDesignServer({ target, config, listen: true, port: 0 });
+  const queue = warm ? warm.queue() : createDrawQueue({ target, chromiumOf: resolveChromium });
+  const server = warm ? await warm.server(config) : await createDesignServer({ target, config, listen: true, port: 0 });
 
   try {
-    await server.listen();
+    if (!warm) await server.listen();
 
     const { port } = server.httpServer?.address() as AddressInfo;
 
@@ -1842,7 +1845,10 @@ export const partsCompletenessOf = async (options: {
 
     const gaps = new Map<string, CompletenessGap[] | string>();
 
-    for (const part of options.parts) gaps.set(part, await gapsOfPart(part, []));
+    for (const part of options.parts) {
+      await yieldRun();
+      gaps.set(part, await gapsOfPart(part, []));
+    }
 
     return { gaps, exceptions, hints };
   } catch (error) {
@@ -1850,6 +1856,6 @@ export const partsCompletenessOf = async (options: {
 
     throw error;
   } finally {
-    await Promise.all([queue.close(), server.close()]);
+    if (!warm) await Promise.all([queue.close(), server.close()]);
   }
 };

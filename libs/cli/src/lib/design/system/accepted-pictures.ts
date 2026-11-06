@@ -1,12 +1,11 @@
 import { existsSync, readFileSync } from 'fs';
 import { writeJsonFile } from '../../json-file';
-import { AddressInfo } from 'net';
 import { dirname, resolve } from 'path';
 import { chromiumOf } from '../browser';
 import { DesignConfig } from '../paths';
-import { createDesignServer } from '../serve';
 import { createPartShooter } from '../shot';
-import { createDrawQueue } from '../thumb';
+import { yieldRun } from '../run-yield';
+import { DesignServer, drawingOn, WarmDraw } from '../warm-draw';
 import { compareFrameOf } from './harness-shot';
 import { designHashOf, sha16 } from './design-hash';
 import { partOwnerOf } from './inventory-approval';
@@ -51,6 +50,7 @@ export type DrawStates = (options: {
   parts: string[];
   expected?: Record<string, StatePictures>;
   sketch?: SketchVariant;
+  warm?: WarmDraw;
 }) => Promise<Map<string, StatePictures | string>>;
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -117,7 +117,7 @@ export const changedStatesOf = (before: StatePictures, now: StatePictures) =>
     .filter((state) => before[state] !== now[state])
     .sort((a, b) => a.localeCompare(b));
 
-export const drawStatePictures: DrawStates = async ({ target, config, product, parts, expected, sketch }) => {
+export const drawStatePictures: DrawStates = async ({ target, config, product, parts, expected, sketch, warm }) => {
   const drawn = new Map<string, StatePictures | string>();
 
   if (parts.length === 0) return drawn;
@@ -128,88 +128,98 @@ export const drawStatePictures: DrawStates = async ({ target, config, product, p
     return drawn;
   }
 
-  const queue = createDrawQueue({ target });
-  const server = await createDesignServer({ target, config, listen: true, port: 0 });
-  let shooter: ReturnType<typeof createPartShooter> | undefined;
-
   try {
-    await server.listen();
+    await drawingOn({ target, config, warm }, async ({ server, base, queue }) => {
+      const system = createSystemModules({ target, config });
+      const pictures = createPartShooter({ target, base, system, queue });
 
-    const { port } = server.httpServer?.address() as AddressInfo;
-    const system = createSystemModules({ target, config });
-    const pictures = createPartShooter({ target, base: `http://localhost:${port}`, system, queue });
-
-    shooter = pictures;
-
-    for (const part of parts) {
       try {
-        const frame = compareFrameOf({ presets: product.presets, part, preset: null });
-
-        if (typeof frame === 'string') {
-          drawn.set(part, frame);
-          continue;
-        }
-
-        const file = sketch
-          ? system.partOf({ product: product.name, part, sketch })?.file
-          : product.parts.find((candidate) => partKeyOf(candidate) === part)?.file;
-
-        if (!file) {
-          drawn.set(part, `product "${product.name}" has no part "${part}"`);
-          continue;
-        }
-
-        const module = (await server.ssrLoadModule(productModuleIdOf({ file, product: product.name, sketch }))) as {
-          default?: { states?: unknown };
-        };
-        const states = await drawnStateNamesOf(module.default);
-        const pictureOf = async (state: string, fresh: boolean) =>
-          sha16(
-            (
-              await pictures.pictureOf({
-                product: product.name,
-                part,
-                state,
-                preset: frame.preset,
-                width: null,
-                sketch: sketch ?? null,
-                interaction: null,
-                bare: true,
-                emptySlots: false,
-                checker: true,
-                params: new URLSearchParams(),
-                fresh,
-              })
-            ).png,
-          );
-        if (states.length === 0) {
-          drawn.set(part, `${part} has no states`);
-          continue;
-        }
-
-        const hashes: StatePictures = {};
-
-        for (const state of states) {
-          const first = await pictureOf(state, false);
-          const want = expected?.[part]?.[state];
-
-          hashes[state] = want !== undefined && want !== first ? await pictureOf(state, true) : first;
-        }
-
-        drawn.set(part, hashes);
-      } catch (error) {
-        drawn.set(part, messageOf(error));
+        await drawPartsWith({ server, system, pictures, product, parts, expected, sketch, drawn });
+      } finally {
+        if (!warm) await pictures.close();
       }
-    }
+    });
   } catch (error) {
     for (const part of parts) if (!drawn.has(part)) drawn.set(part, messageOf(error));
-  } finally {
-    await shooter?.close();
-    await queue.close();
-    await server.close();
   }
 
   return drawn;
+};
+
+const drawPartsWith = async (options: {
+  server: DesignServer;
+  system: ReturnType<typeof createSystemModules>;
+  pictures: ReturnType<typeof createPartShooter>;
+  product: ResolvedProduct;
+  parts: string[];
+  expected?: Record<string, StatePictures>;
+  sketch?: SketchVariant;
+  drawn: Map<string, StatePictures | string>;
+}) => {
+  const { server, system, pictures, product, parts, expected, sketch, drawn } = options;
+
+  for (const part of parts) {
+    await yieldRun();
+
+    try {
+      const frame = compareFrameOf({ presets: product.presets, part, preset: null });
+
+      if (typeof frame === 'string') {
+        drawn.set(part, frame);
+        continue;
+      }
+
+      const file = sketch
+        ? system.partOf({ product: product.name, part, sketch })?.file
+        : product.parts.find((candidate) => partKeyOf(candidate) === part)?.file;
+
+      if (!file) {
+        drawn.set(part, `product "${product.name}" has no part "${part}"`);
+        continue;
+      }
+
+      const module = (await server.ssrLoadModule(productModuleIdOf({ file, product: product.name, sketch }))) as {
+        default?: { states?: unknown };
+      };
+      const states = await drawnStateNamesOf(module.default);
+      const pictureOf = async (state: string, fresh: boolean) =>
+        sha16(
+          (
+            await pictures.pictureOf({
+              product: product.name,
+              part,
+              state,
+              preset: frame.preset,
+              width: null,
+              sketch: sketch ?? null,
+              interaction: null,
+              bare: true,
+              emptySlots: false,
+              checker: true,
+              params: new URLSearchParams(),
+              fresh,
+            })
+          ).png,
+        );
+      if (states.length === 0) {
+        drawn.set(part, `${part} has no states`);
+        continue;
+      }
+
+      const hashes: StatePictures = {};
+
+      for (const state of states) {
+        const first = await pictureOf(state, false);
+        const want = expected?.[part]?.[state];
+
+        hashes[state] = want !== undefined && want !== first ? await pictureOf(state, true) : first;
+      }
+
+      drawn.set(part, hashes);
+    } catch (error) {
+      drawn.set(part, messageOf(error));
+    }
+  }
 };
 
 /**
@@ -288,8 +298,9 @@ export const autoAcceptOf = async (options: {
   parts?: string[];
   draw?: DrawStates;
   problems?: Problem[];
+  warm?: WarmDraw;
 }): Promise<string[]> => {
-  const { target, config, product, only } = options;
+  const { target, config, product, only, warm } = options;
   const edited = new Set(changedOutsideSketchOf(product));
   const editSketches = new Map(
     listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) =>
@@ -363,7 +374,7 @@ export const autoAcceptOf = async (options: {
     }
 
     const old = (
-      await draw({ target, config, product, parts: [part], sketch: { target: sketch.target, variant: EDIT_OLD } })
+      await draw({ target, config, product, parts: [part], sketch: { target: sketch.target, variant: EDIT_OLD }, warm })
     ).get(part);
 
     if (old === undefined || typeof old === 'string') oldNotDrawn({ resolved, sketch }, old ?? 'no drawing');
@@ -379,6 +390,7 @@ export const autoAcceptOf = async (options: {
     target,
     config,
     product,
+    warm,
     parts: needs.map(({ part }) => partKeyOf(part)),
     expected: Object.fromEntries(
       edits.flatMap(({ part, baseline }) => (baseline ? [[partKeyOf(part), baseline.states]] : [])),

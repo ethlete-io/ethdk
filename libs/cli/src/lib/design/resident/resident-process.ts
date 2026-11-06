@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import { checkDesign } from '../check';
 import { DesignConfig, readConfig } from '../paths';
 import { buildStampOf } from '../stamp';
 import { createDesignServer } from '../serve';
@@ -8,18 +9,19 @@ import { designCompare, shootStatesWith } from '../system/compare-command';
 import { StartHarnessServer, startHarnessServer } from '../system/harness-server';
 import { createHarnessWatch } from '../system/harness-watch';
 import { designMocksFresh, guardsDesignMocks } from '../system/stale-design-mocks';
-import { libBuildStampOf, readFreshDist } from '../system/stale-dist';
+import { libBuildStampOf, readFreshDist, staleLibsOf } from '../system/stale-dist';
 import { runSignal, unlessAborted, withRunSignal } from '../run-abort';
+import { withRunYield } from '../run-yield';
 import { recordPhase, recordRun, timingsFileOf } from '../timings';
 import { WarmDraw } from '../warm-draw';
 import { runsInResident } from './client';
 import { removeDiscovery, writeDiscovery } from './discovery';
-import { ABORTED_EXIT, ResidentRun, startResidentServer } from './server';
+import { ABORTED_EXIT, ResidentRequest, ResidentRun, startResidentServer } from './server';
 
 type DesignServer = Awaited<ReturnType<typeof createDesignServer>>;
 
 /**
- * Runs `compare`, `sketch check` and `sketch ready` with a design server, Chromium and a watch-built harness app that stay up
+ * Runs `compare`, `check --product`/`--part`, `sketch check` and `sketch ready` with a design server, Chromium and a watch-built harness app that stay up
  * between requests. Each request reads the lib build under the lib-build lock only while it runs, a changed lib build or
  * design config restarts the design server and Chromium before it draws, and every request draws the design files as
  * they are when it starts.
@@ -29,6 +31,7 @@ export const createWarmRuns = (options: { target: string }) => {
   let stamp: string | null = null;
   let server: Promise<DesignServer> | null = null;
   let queue: ReturnType<typeof createDrawQueue> | null = null;
+  let active = 0;
   const harness = createHarnessWatch({ target });
 
   const closeDraw = async () => {
@@ -75,8 +78,10 @@ export const createWarmRuns = (options: { target: string }) => {
     return typeof served === 'string' ? served : { url: served.url, root: served.root, stop: async () => undefined };
   };
 
+  const stampOf = (config: DesignConfig | null) => `${libBuildStampOf({ target, config })}#${JSON.stringify(config)}`;
+
   const refresh = async (config: DesignConfig | null) => {
-    const next = `${libBuildStampOf({ target, config })}#${JSON.stringify(config)}`;
+    const next = stampOf(config);
 
     if (stamp !== null && stamp !== next && (server || queue)) {
       console.error('the lib build or the design config changed - restarting the warm design server and Chromium');
@@ -90,7 +95,7 @@ export const createWarmRuns = (options: { target: string }) => {
   const runIn = async ({ argv, invocation }: { argv: string[]; invocation: string }) => {
     if (!runsInResident(argv)) {
       console.error(
-        `the resident design process runs compare, sketch check and sketch ready only, not ${argv.join(' ')}`,
+        `the resident design process runs compare, check --product/--part, sketch check and sketch ready only, not ${argv.join(' ')}`,
       );
 
       return 2;
@@ -99,16 +104,21 @@ export const createWarmRuns = (options: { target: string }) => {
     if (guardsDesignMocks(argv) && !designMocksFresh({ target })) return 1;
 
     const config = readConfig(target);
-    const read = await readFreshDist({ target, config });
+    const inside = active > 0;
+    const read = inside ? { ok: true, release: () => undefined } : await readFreshDist({ target, config });
 
     if (!read.ok) return 1;
 
+    active++;
+
     try {
-      await refresh(config);
+      if (inside) (await server?.catch(() => null))?.forgetDrawn();
+      else await refresh(config);
 
       const rest = argv.slice(1);
 
       if (argv[0] === 'sketch') return await designSketch({ target, argv: rest, invocation, warm });
+      if (argv[0] === 'check') return await checkDesign({ target, argv: rest, invocation, warm });
 
       return await designCompare({
         target,
@@ -118,15 +128,24 @@ export const createWarmRuns = (options: { target: string }) => {
         ...(rest.includes('--live') ? {} : { shoot: shootStatesWith(warm) }),
       });
     } finally {
+      active--;
       read.release();
     }
   };
 
-  const run: ResidentRun = ({ argv, invocation, waitedMs, signal }) =>
+  const jumps = ({ argv }: ResidentRequest) => {
+    if (argv[0] !== 'compare' || active === 0) return false;
+
+    const config = readConfig(target);
+
+    return stampOf(config) === stamp && staleLibsOf({ target, config }).length === 0;
+  };
+
+  const run: ResidentRun = ({ argv, invocation, waitedMs, signal, yieldTurn }) =>
     recordRun({ file: timingsFileOf(target), argv, resident: true }, () => {
       if (waitedMs !== undefined) recordPhase('resident-queue-wait', waitedMs);
 
-      return withRunSignal(signal, () => runIn({ argv, invocation })).then((code) =>
+      return withRunSignal(signal, () => withRunYield(yieldTurn, () => runIn({ argv, invocation }))).then((code) =>
         signal?.aborted ? ABORTED_EXIT : code,
       );
     });
@@ -146,7 +165,7 @@ export const createWarmRuns = (options: { target: string }) => {
     await harness.stop();
   };
 
-  return { run, warmUp, close };
+  return { run, jumps, warmUp, close };
 };
 
 /** `et design __resident`: the resident design process of the checkout, until it idles out or is stopped. */
@@ -175,6 +194,7 @@ export const serveResident = async (options: { target: string }) => {
     token,
     identity: { pid: process.pid, build, checkout: target },
     run: runs.run,
+    jumps: runs.jumps,
     onExit: (reason) => void exit(reason === 'idle' ? 'idle for 30 min' : 'stopped'),
   });
 

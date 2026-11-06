@@ -1,15 +1,13 @@
-import { AddressInfo } from 'net';
 import { chromiumOf } from '../browser';
 import { DesignConfig } from '../paths';
-import { createDesignServer } from '../serve';
 import { createPartShooter } from '../shot';
-import { createDrawQueue } from '../thumb';
 import { CONTROL_STATE_RULE } from './build-ready-contract';
 import { compareFrameOf } from './harness-shot';
 import { declaredControlsOf, isInteractionState } from './complete';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { createSystemModules, productModuleIdOf } from './system-modules';
+import { DesignServer, DrawQueue, drawingOn, WarmDraw } from '../warm-draw';
 
 export type BespokeControl = { id: string; why: string };
 
@@ -68,6 +66,7 @@ export const bespokeControlProblemsOf = async (options: {
   product: ResolvedProduct;
   part?: string;
   parts?: readonly string[];
+  warm?: WarmDraw;
 }): Promise<Problem[]> => {
   const { target, config, product } = options;
   const own = product.parts.filter(
@@ -79,90 +78,90 @@ export const bespokeControlProblemsOf = async (options: {
 
   if (own.length === 0 || !(await chromiumOf(target))) return [];
 
-  const queue = createDrawQueue({ target });
-  const server = await createDesignServer({ target, config, listen: true, port: 0 });
-  let shooter: ReturnType<typeof createPartShooter> | undefined;
+  return drawingOn({ target, config, warm: options.warm }, async ({ server, base, queue }) => {
+    const partShooter = createPartShooter({ target, base, system: createSystemModules({ target, config }), queue });
 
-  try {
-    await server.listen();
+    try {
+      return await bespokeProblemsDrawn({ product, own, server, queue, partShooter });
+    } finally {
+      if (!options.warm) await partShooter.close();
+    }
+  });
+};
 
-    const { port } = server.httpServer?.address() as AddressInfo;
-    const partShooter = (shooter = createPartShooter({
-      target,
-      base: `http://localhost:${port}`,
-      system: createSystemModules({ target, config }),
-      queue,
-    }));
-    const problems: Problem[] = [];
+const bespokeProblemsDrawn = async (options: {
+  product: ResolvedProduct;
+  own: ResolvedProduct['parts'];
+  server: DesignServer;
+  queue: DrawQueue;
+  partShooter: ReturnType<typeof createPartShooter>;
+}) => {
+  const { product, own, server, queue, partShooter } = options;
+  const problems: Problem[] = [];
 
-    for (const part of own) {
-      const key = partKeyOf(part);
-      const module = (await server
-        .ssrLoadModule(productModuleIdOf({ file: part.file, product: product.name }))
-        .catch(() => null)) as { default?: { states?: unknown; controls?: unknown } } | null;
-      const loaded = module?.default?.states;
-      const states = loaded && typeof loaded === 'object' && !Array.isArray(loaded) ? Object.keys(loaded) : [];
-      const ids = composedControlsOf({ part: key, controls: module?.default?.controls, states });
-      const frame = compareFrameOf({ presets: product.presets, part: key, preset: null });
+  for (const part of own) {
+    const key = partKeyOf(part);
+    const module = (await server
+      .ssrLoadModule(productModuleIdOf({ file: part.file, product: product.name }))
+      .catch(() => null)) as { default?: { states?: unknown; controls?: unknown } } | null;
+    const loaded = module?.default?.states;
+    const states = loaded && typeof loaded === 'object' && !Array.isArray(loaded) ? Object.keys(loaded) : [];
+    const ids = composedControlsOf({ part: key, controls: module?.default?.controls, states });
+    const frame = compareFrameOf({ presets: product.presets, part: key, preset: null });
 
-      if (ids.length === 0 || typeof frame === 'string') continue;
+    if (ids.length === 0 || typeof frame === 'string') continue;
 
-      const unseen = new Set(ids);
-      const found: BespokeControl[] = [];
+    const unseen = new Set(ids);
+    const found: BespokeControl[] = [];
 
-      for (const state of states) {
-        if (unseen.size === 0) break;
+    for (const state of states) {
+      if (unseen.size === 0) break;
 
-        const { markup } = await partShooter.pictureOf({
-          product: product.name,
-          part: key,
-          state,
-          preset: frame.preset,
-          width: null,
-          sketch: null,
-          interaction: null,
-          bare: true,
-          emptySlots: true,
-          checker: false,
-          params: new URLSearchParams(),
-        });
+      const { markup } = await partShooter.pictureOf({
+        product: product.name,
+        part: key,
+        state,
+        preset: frame.preset,
+        width: null,
+        sketch: null,
+        interaction: null,
+        bare: true,
+        emptySlots: true,
+        checker: false,
+        params: new URLSearchParams(),
+      });
 
-        if (markup === undefined) continue;
+      if (markup === undefined) continue;
 
-        const drawn = await queue.run(async (browser) => {
-          const page = await browser.newPage();
+      const drawn = await queue.run(async (browser) => {
+        const page = await browser.newPage();
 
-          try {
-            return (await page.evaluate(
-              `(() => {
+        try {
+          return (await page.evaluate(
+            `(() => {
                 const body = new DOMParser().parseFromString(${JSON.stringify(markup)}, 'text/html').body;
                 const seen = [...body.querySelectorAll('[data-et-control]')].map((element) => element.getAttribute('data-et-control'));
                 return { found: ${BESPOKE_CONTROLS_IN}({ root: body, part: ${JSON.stringify(key)}, ids: ${JSON.stringify([...unseen])} }), seen };
               })()`,
-            )) as { found: BespokeControl[]; seen: string[] };
-          } finally {
-            await page.close();
-          }
-        });
+          )) as { found: BespokeControl[]; seen: string[] };
+        } finally {
+          await page.close();
+        }
+      });
 
-        found.push(...drawn.found);
+      found.push(...drawn.found);
 
-        for (const id of drawn.seen) unseen.delete(id);
-      }
-
-      for (const control of found)
-        problems.push({
-          rule: CONTROL_STATE_RULE,
-          file: part.file,
-          message: bespokeControlMessageOf(key, control),
-          at: control.id,
-        });
+      for (const id of drawn.seen) unseen.delete(id);
     }
 
-    return problems;
-  } finally {
-    await shooter?.close();
-    await queue.close();
-    await server.close();
+    for (const control of found)
+      problems.push({
+        rule: CONTROL_STATE_RULE,
+        file: part.file,
+        message: bespokeControlMessageOf(key, control),
+        at: control.id,
+      });
   }
+
+  return problems;
 };

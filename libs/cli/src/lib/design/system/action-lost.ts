@@ -1,11 +1,11 @@
 import { resolve } from 'path';
 import { DesignConfig } from '../paths';
-import { createDesignServer } from '../serve';
 import { ACTION_LOST_RULE } from './build-ready-contract';
 import { READY_FILE, readReady } from './part-ready';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { productModuleIdOf } from './system-modules';
+import { loadingOn, WarmDraw } from '../warm-draw';
 
 /** Loads the module of a part file as `product` draws it. */
 export type PartModuleLoader = (options: { file: string; product: string }) => Promise<unknown>;
@@ -82,17 +82,12 @@ export const productActionsOf = async (options: { load: PartModuleLoader; produc
 
 /** Runs `use` with a loader on a design server of its own, closed afterwards. */
 export const withPartLoader = async <T>(
-  options: { target: string; config: DesignConfig },
+  options: { target: string; config: DesignConfig; warm?: WarmDraw },
   use: (load: PartModuleLoader) => Promise<T>,
-) => {
-  const server = await createDesignServer({ target: options.target, config: options.config, listen: false });
-
-  try {
-    return await use(({ file, product }) => server.ssrLoadModule(productModuleIdOf({ file, product })));
-  } finally {
-    await server.close();
-  }
-};
+) =>
+  loadingOn(options, (server) =>
+    use(({ file, product }) => server.ssrLoadModule(productModuleIdOf({ file, product }))),
+  );
 
 /**
  * An ACTION-LOST problem for every action key a check record in the product's ready.json holds that no part of the
@@ -131,6 +126,7 @@ export const actionLostProblemsOf = async (options: {
   invocation: string;
   part?: string;
   load?: PartModuleLoader;
+  warm?: WarmDraw;
 }) => {
   const recorded = Object.values(readReady(options.product.dir)).some((record) => (record.actions ?? []).length > 0);
 

@@ -18,6 +18,7 @@ import { checkVisibleChange } from './system/visible-change-command';
 import { inventoryWarningOf, stageProblemOf, systemWarningOf } from './system-use';
 import { binaryOf, outputOf, processFailureOf, trim, typecheck } from './typecheck';
 import { assertServed } from './thumb';
+import { WarmDraw } from './warm-draw';
 
 type Flags = Record<string, string[]>;
 
@@ -336,7 +337,12 @@ const writeReceipt = (options: { path: string; argv: string[]; ok: boolean; said
  * a check that cannot run (no browser, no server, a stale server) leaves the status it found.
  * `--receipt <path>` also writes what the check said and whether it passed to that file.
  */
-export const checkDesign = async (options: { target: string; argv: string[]; invocation: string }): Promise<number> => {
+export const checkDesign = async (options: {
+  target: string;
+  argv: string[];
+  invocation: string;
+  warm?: WarmDraw;
+}): Promise<number> => {
   const { receipt, rest } = receiptArgvOf(options.argv);
 
   if (!receipt) return checkWithStatus(options);
@@ -459,8 +465,13 @@ const unreadArgumentOf = (argv: string[]) => {
   return scope ? `${ignored} with ${scope}` : ignored;
 };
 
-const checkWithStatus = async (options: { target: string; argv: string[]; invocation: string }): Promise<number> => {
-  const { target, invocation } = options;
+const checkWithStatus = async (options: {
+  target: string;
+  argv: string[];
+  invocation: string;
+  warm?: WarmDraw;
+}): Promise<number> => {
+  const { target, invocation, warm } = options;
   const appClasses = options.argv.includes('--app-classes');
   const rules = options.argv.includes('--rules');
   const live = options.argv.includes('--live');
@@ -528,7 +539,7 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
     if (rules) return checkRules({ target, config: readConfig(target) ?? {}, products, base, invocation });
     if (live) return checkLive({ target, config: readConfig(target) ?? {}, products });
 
-    return checkSystemRendered({ target, config: readConfig(target) ?? {}, products, part, invocation });
+    return checkSystemRendered({ target, config: readConfig(target) ?? {}, products, part, invocation, warm });
   }
 
   if (part) {
@@ -545,13 +556,13 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
       return 1;
     }
 
-    return checkSystemRendered({ target, config, products: holding, part, invocation });
+    return checkSystemRendered({ target, config, products: holding, part, invocation, warm });
   }
 
   const config = argv.length === 0 ? readConfig(target) : null;
 
   if (config?.products && Object.keys(config.products).length > 0)
-    return checkSystemRendered({ target, config, products: Object.keys(config.products), invocation });
+    return checkSystemRendered({ target, config, products: Object.keys(config.products), invocation, warm });
 
   const slug = flags['--call']?.[0];
   let failure = '';

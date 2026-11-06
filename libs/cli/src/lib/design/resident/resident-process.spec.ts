@@ -8,14 +8,18 @@ import { createWarmRuns } from './resident-process';
 const designSketch = vi.hoisted(() => vi.fn());
 const designCompare = vi.hoisted(() => vi.fn());
 const forgetDrawn = vi.hoisted(() => vi.fn());
+const checkDesign = vi.hoisted(() => vi.fn());
+const readFreshDist = vi.hoisted(() => vi.fn());
 
 vi.mock('../sketch-command', () => ({ designSketch }));
+vi.mock('../check', () => ({ checkDesign }));
 vi.mock('../system/compare-command', () => ({ designCompare, shootStatesWith: () => vi.fn() }));
 vi.mock('../system/harness-watch', () => ({ createHarnessWatch: () => ({ current: vi.fn(), stop: vi.fn() }) }));
 vi.mock('../system/stale-design-mocks', () => ({ guardsDesignMocks: () => false, designMocksFresh: () => true }));
 vi.mock('../system/stale-dist', () => ({
   libBuildStampOf: () => 'stamp',
-  readFreshDist: async () => ({ ok: true, release: () => undefined }),
+  readFreshDist,
+  staleLibsOf: () => [],
 }));
 vi.mock('../paths', () => ({ readConfig: () => ({}) }));
 vi.mock('../serve', () => ({
@@ -28,6 +32,9 @@ vi.mock('../thumb', () => ({
 beforeEach(() => {
   vi.clearAllMocks();
   designSketch.mockResolvedValue(0);
+  checkDesign.mockResolvedValue(0);
+  designCompare.mockResolvedValue(0);
+  readFreshDist.mockResolvedValue({ ok: true, release: () => undefined });
 });
 
 const runsIn = () => createWarmRuns({ target: mkdtempSync(join(tmpdir(), 'cli-resident-runs-')) });
@@ -40,6 +47,11 @@ describe('the resident design process', () => {
     expect(runsInResident(['sketch', 'new', 'pages/start'])).toBe(false);
     expect(runsInResident(['sketch', 'merge', 'pages/start'])).toBe(false);
     expect(runsInResident(['check', 'pages/start'])).toBe(false);
+    expect(runsInResident(['check', '--product', 'studio'])).toBe(true);
+    expect(runsInResident(['check', '--part', 'pages/start'])).toBe(true);
+    expect(runsInResident(['check', '--product', 'studio', '--rules'])).toBe(false);
+    expect(runsInResident(['check', '--product', 'studio', '--receipt', 'r.json'])).toBe(false);
+    expect(runsInResident(['check', '--call', 'hero'])).toBe(false);
   });
 
   it('runs a sketch check on its warm design server and Chromium', async () => {
@@ -70,5 +82,35 @@ describe('the resident design process', () => {
     await runs.run({ argv: ['sketch', 'ready', 'pages/start'], invocation: 'et design', env: {} });
 
     expect(forgetDrawn).toHaveBeenCalledTimes(2);
+  });
+
+  it('runs a check of a product on its warm design server and Chromium', async () => {
+    const runs = runsIn();
+
+    expect(await runs.run({ argv: ['check', '--product', 'studio'], invocation: 'et design', env: {} })).toBe(0);
+    expect(checkDesign).toHaveBeenCalledWith(
+      expect.objectContaining({
+        argv: ['--product', 'studio'],
+        warm: expect.objectContaining({ queue: expect.any(Function) }),
+      }),
+    );
+  });
+
+  it('lets a compare jump into a running check, on the lib build the check holds', async () => {
+    const runs = runsIn();
+    const request = { argv: ['compare', 'pages/start'], invocation: 'et design', env: {} };
+
+    expect(runs.jumps(request)).toBe(false);
+
+    checkDesign.mockImplementation(async () => {
+      expect(runs.jumps(request)).toBe(true);
+      expect(await runs.run(request)).toBe(0);
+
+      return 0;
+    });
+
+    expect(await runs.run({ argv: ['check', '--product', 'studio'], invocation: 'et design', env: {} })).toBe(0);
+    expect(designCompare).toHaveBeenCalledTimes(1);
+    expect(readFreshDist).toHaveBeenCalledTimes(1);
   });
 });

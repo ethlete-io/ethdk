@@ -22,8 +22,15 @@ export type ResidentRequest = {
   env: Partial<Record<(typeof FORWARDED_ENV)[number], string>>;
 };
 
-/** The run gets `signal`, which aborts when the client closes its connection before the answer ends. */
-export type ResidentRun = (request: ResidentRequest & { waitedMs?: number; signal?: AbortSignal }) => Promise<number>;
+/**
+ * The run gets `signal`, which aborts when the client closes its connection before the answer ends, and `yieldTurn`,
+ * which runs the waiting requests `jumps` lets go first and settles when they are done.
+ */
+export type ResidentRun = (
+  request: ResidentRequest & { waitedMs?: number; signal?: AbortSignal; yieldTurn?: () => Promise<void> },
+) => Promise<number>;
+
+type Turn = { request: ResidentRequest; go: () => Promise<void> };
 
 export const ABORTED_EXIT = 130;
 
@@ -87,7 +94,8 @@ const bodyOf = (request: IncomingMessage) =>
 const messageOf = (error: unknown) => (error instanceof Error ? (error.stack ?? error.message) : String(error));
 
 /**
- * Serves run requests on 127.0.0.1, one at a time, streaming what each run writes back as `ResidentFrame` lines.
+ * Serves run requests on 127.0.0.1, one at a time, streaming what each run writes back as `ResidentFrame` lines. A
+ * waiting request that `jumps` accepts runs inside a running one when that one calls its `yieldTurn`.
  * Calls `onExit('idle')` after `idleMs` without a request and `onExit('stop')` on a stop request.
  */
 export const startResidentServer = async (options: {
@@ -98,10 +106,13 @@ export const startResidentServer = async (options: {
   idleMs?: number;
   beatMs?: number;
   capture?: typeof captureOutput;
+  jumps?: (request: ResidentRequest) => boolean;
 }) => {
   const { token, identity, run, onExit, idleMs = RESIDENT_IDLE_MS, beatMs = RESIDENT_BEAT_MS } = options;
   const capture = options.capture ?? captureOutput;
-  let queue: Promise<unknown> = Promise.resolve();
+  const jumps = options.jumps ?? (() => false);
+  const waiting: Turn[] = [];
+  let running = false;
   let pending = 0;
   let idle: Subscription | undefined;
   const arm = () => {
@@ -109,6 +120,31 @@ export const startResidentServer = async (options: {
     idle = timer(idleMs)
       .pipe(tap(() => onExit('idle')))
       .subscribe();
+  };
+
+  const pump = async () => {
+    if (running) return;
+
+    running = true;
+
+    try {
+      for (let turn = waiting.shift(); turn; turn = waiting.shift()) await turn.go();
+    } finally {
+      running = false;
+    }
+  };
+
+  const yieldTurn = async () => {
+    const jumping = waiting.filter((turn) => jumps(turn.request));
+
+    for (const turn of jumping) {
+      const at = waiting.indexOf(turn);
+
+      if (at === -1) continue;
+
+      waiting.splice(at, 1);
+      await turn.go();
+    }
   };
 
   const runRequest = async (request: IncomingMessage, response: ServerResponse) => {
@@ -132,25 +168,29 @@ export const startResidentServer = async (options: {
     const beat = interval(beatMs)
       .pipe(tap(() => send({ beat: true })))
       .subscribe();
-    const turn = queue.then(() =>
-      gone.signal.aborted
-        ? ABORTED_EXIT
-        : withEnv(asked.env, async () => {
-            const restore = capture((stream, text) => send(stream === 'o' ? { o: text } : { e: text }));
+    const runTurn = async () => {
+      if (gone.signal.aborted) return ABORTED_EXIT;
 
-            try {
-              return await run({ ...asked, waitedMs: performance.now() - asking, signal: gone.signal });
-            } catch (error) {
-              send({ e: `${messageOf(error)}\n` });
+      try {
+        return await withEnv(asked.env, async () => {
+          const restore = capture((stream, text) => send(stream === 'o' ? { o: text } : { e: text }));
 
-              return 1;
-            } finally {
-              restore();
-            }
-          }),
-    );
+          try {
+            return await run({ ...asked, waitedMs: performance.now() - asking, signal: gone.signal, yieldTurn });
+          } finally {
+            restore();
+          }
+        });
+      } catch (error) {
+        send({ e: `${messageOf(error)}\n` });
 
-    queue = turn.catch(() => undefined);
+        return 1;
+      }
+    };
+    const turn = new Promise<number>((done) => {
+      waiting.push({ request: asked, go: async () => done(await runTurn()) });
+      void pump();
+    });
 
     try {
       send({ exit: await turn });

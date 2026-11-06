@@ -1,6 +1,16 @@
 import { existsSync, readFileSync } from 'fs';
 import { execFileSync } from 'child_process';
-import { costliestPhaseOf, isNoisy, isStale, labelOf, TIMING_TARGETS, TimingLine, timingsFileOf } from './timings';
+import {
+  costliestPhaseOf,
+  isNoisy,
+  isStale,
+  isUnexplained,
+  labelOf,
+  TIMING_TARGETS,
+  TimingLine,
+  timingsFileOf,
+  UNEXPLAINED_SHARE,
+} from './timings';
 
 export const TIMINGS_USAGE = 'timings [--since <n>m|h|d] [--command <command>]';
 
@@ -37,6 +47,7 @@ const runOf = (line: TimingLine, head: string | null) =>
     line.load ? `load ${line.load.avg1.toFixed(1)}/${line.load.cores}` : '',
     isStale(line, head) ? 'STALE' : '',
     isNoisy(line) ? 'NOISY' : '',
+    isUnexplained(line) ? 'UNEXPLAINED' : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -111,6 +122,7 @@ export const timingsReportOf = (options: {
     .sort((a, b) => b.total - a.total)
     .slice(0, LISTED);
   const slowestRuns = [...lines].sort((a, b) => b.totalMs - a.totalMs).slice(0, LISTED);
+  const unexplained = lines.filter(isUnexplained).sort((a, b) => b.start.localeCompare(a.start));
 
   return [
     header,
@@ -138,6 +150,10 @@ export const timingsReportOf = (options: {
       return `  ${runOf(line, head)} > ${secondsOf(target)} - most expensive phase ${costliest ? `${costliest.name} ${secondsOf(costliest.ms)}` : 'none recorded'}`;
     }),
     ...(misses.length > LISTED ? [`  and ${misses.length - LISTED} more`] : []),
+    '',
+    `runs with unexplained time (unphased over ${UNEXPLAINED_SHARE * 100} % of the run): ${unexplained.length}`,
+    ...unexplained.slice(0, LISTED).map((line) => `  ${runOf(line, head)}`),
+    ...(unexplained.length > LISTED ? [`  and ${unexplained.length - LISTED} more`] : []),
     '',
     'slowest phases (total over all runs):',
     ...padded([

@@ -156,6 +156,16 @@ export const costliestPhaseOf = (line: Pick<TimingLine, 'phases' | 'unphasedMs'>
 const secondsOf = (ms: number) => `${(ms / 1000).toFixed(1)} s`;
 
 /** A run whose machine had more runnable work than cores, or did not log its load: its time is no verdict. */
+export const UNEXPLAINED_SHARE = 0.1;
+
+const UNEXPLAINED_FLOOR_MS = 1000;
+
+/** Whether more than a tenth of the run, and at least a second, ran outside every recorded phase. */
+export const isUnexplained = (line: Pick<TimingLine, 'totalMs' | 'unphasedMs'>) =>
+  line.unphasedMs !== undefined &&
+  line.unphasedMs >= UNEXPLAINED_FLOOR_MS &&
+  line.unphasedMs > line.totalMs * UNEXPLAINED_SHARE;
+
 export const isNoisy = (line: Pick<TimingLine, 'load'>) => !line.load || line.load.avg1 > line.load.cores;
 
 /** A run that measured another commit than `head`, or logged none; with no `head` known nothing is stale. */

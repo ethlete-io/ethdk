@@ -59,7 +59,7 @@ const checkoutLibsOf = (options: { target: string; config: DesignConfig | null }
   return libs;
 };
 
-const staleLibsOf = (options: { target: string; config: DesignConfig | null }) =>
+export const staleLibsOf = (options: { target: string; config: DesignConfig | null }) =>
   checkoutLibsOf(options).filter(({ source, dir }) => newestMtimeOf(source) > newestMtimeOf(dir));
 
 /** Changes whenever a checkout lib build folder the drawings load from is rebuilt. */

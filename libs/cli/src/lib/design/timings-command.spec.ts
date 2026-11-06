@@ -120,7 +120,7 @@ describe('timingsReportOf', () => {
     });
 
     expect(report).toContain(
-      `2026-11-06T11:59:00.000Z compare pages/start 11.0 s (unphased 6.0 s) ${CLEAN} > 10.0 s - most expensive phase unphased 6.0 s`,
+      `2026-11-06T11:59:00.000Z compare pages/start 11.0 s (unphased 6.0 s) ${CLEAN} UNEXPLAINED > 10.0 s - most expensive phase unphased 6.0 s`,
     );
   });
 
@@ -153,5 +153,25 @@ describe('timingsReportOf', () => {
     });
 
     expect(rowOf(report, 'compare')).toMatch(/compare\s+1\s+4\.0 s\s+4\.0 s\s+0\s+-\s+10\.0 s\s+no clean run$/);
+  });
+
+  it('flags a run whose unphased time is above a tenth of it as unexplained', () => {
+    const report = timingsReportOf({
+      lines: [
+        lineOf({ minutesAgo: 1, command: 'check', parts: [], totalMs: 308_000, unphasedMs: 307_300 }),
+        lineOf({ minutesAgo: 2, command: 'check', parts: [], totalMs: 300_000, unphasedMs: 20_000 }),
+        lineOf({ minutesAgo: 3, totalMs: 4000, unphasedMs: 900 }),
+        lineOf({ minutesAgo: 4, totalMs: 4000 }),
+      ],
+      now: NOW,
+      sinceMs: 3_600_000,
+      head: HEAD,
+    });
+
+    expect(report).toContain('runs with unexplained time (unphased over 10 % of the run): 1');
+    const flagged = report.split('\n').filter((line) => line.includes('UNEXPLAINED'));
+
+    expect(flagged.length).toBeGreaterThan(0);
+    expect(flagged.every((line) => line.includes('11:59:00.000Z check'))).toBe(true);
   });
 });

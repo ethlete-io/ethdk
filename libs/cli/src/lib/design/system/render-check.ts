@@ -1,5 +1,6 @@
 import { firstValueFrom, from, map, race, timer } from 'rxjs';
 import { AddressInfo } from 'net';
+import { yieldRun } from '../run-yield';
 import { WarmDraw } from '../warm-draw';
 import { chromiumOf } from '../browser';
 import { DesignConfig } from '../paths';
@@ -681,6 +682,8 @@ const inspect = async (options: {
     let done = 0;
 
     for (const group of groups.values()) {
+      await yieldRun();
+
       const started = Date.now();
       const width = Math.min(INSPECTS_AT_ONCE, group.length);
 

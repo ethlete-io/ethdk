@@ -69,6 +69,8 @@ import { listSketches, variantDirOf } from './sketch/sketch';
 import { typecheckProduct, writeEditorTsconfig } from './system-tsconfig';
 import { repoInvocation } from '../../invocation';
 import { uncommittedDecisionsWarningOf } from './uncommitted-decisions';
+import { timedPhase } from '../phase-timing';
+import { WarmDraw } from '../warm-draw';
 
 const RULES = [
   importProblemsOf,
@@ -225,6 +227,7 @@ type CheckOptions = {
   /** How the repo runs `et design`; defaults to the one its package.json implies. */
   invocation?: string;
   chromiumOf?: typeof chromiumOf;
+  warm?: WarmDraw;
 };
 
 const PRODUCT_LEVEL = PRODUCT_PART_KEY;
@@ -551,82 +554,99 @@ const printOpenPoints = async (
     if (!entry) continue;
 
     const product = resolveProduct({ target, name, config: entry });
-    const findings = rendered === null ? {} : await drawnFindingsFor({ ...options, product, rendered });
-
-    if (rendered === null && options.notDrawn) countCannotDraw({ ...options, product, why: options.notDrawn });
-
-    const allPoints = readOpenPoints(product, findings);
-    const points = allPoints.filter(({ part }) => !options.part || part === options.part);
-
-    for (const { part, points: ofPart } of points) {
-      const counted = tallyOf(options.tally, { product: name, part });
-
-      if (counted) counted.open += ofPart.length;
-    }
-
-    openPointsText(name, points).forEach((line) => console.log(line));
-
-    if (!options.part) uncoveredViewsText(name, uncoveredViewsOf(product)).forEach((line) => console.log(line));
-
-    const unlinked = unlinkedPartsOf(product).filter((part) => !options.part || part === options.part);
-
-    if (unlinked.length > 0) console.log(`UNLINKED ${name}: ${unlinked.join(', ')}`);
-
-    instantLinesOf(
-      product,
-      options.part
-        ? [options.part]
-        : product.parts.filter((part) => part.origin !== 'base').map((part) => partKeyOf(part)),
-    ).forEach((line) => console.log(line));
-
-    const upgraded = upgradeLegacyMarksOf({ product, only: options.part });
-
-    if (upgraded.length > 0)
-      console.log(`REHASHED ${name}: ${upgraded.map(({ part, marks }) => `${part} (${marks.join(', ')})`).join(', ')}`);
-
-    await recordBuildReady({
-      product,
-      parts: options.part
-        ? [options.part]
-        : product.parts.filter((part) => part.origin !== 'base').map((part) => partKeyOf(part)),
-      inputs: withTalliedProblems(buildReadyInputsOf(product, allPoints), options.tally?.get(name)),
-      ...(rendered === null
+    const findings =
+      rendered === null
         ? {}
-        : {
-            actionsOf: (part: string) =>
-              partActionFailuresOf({ target, config, product, part, ...(options.part ? { onNote: console.log } : {}) }),
-          }),
-      ...(options.part ? { onNoRecord: (line: string) => console.log(line) } : {}),
-    });
+        : await timedPhase('completeness', () => drawnFindingsFor({ ...options, product, rendered }));
 
-    const ready = readyPartsOf(product).filter((key) => !options.part || key === options.part);
-
-    if (ready.length > 0) console.log(`READY ${name}: ${ready.join(', ')}`);
-
-    for (const part of ready) {
-      const embedded = actionsRerunOf({ product, part });
-
-      if (embedded.length === 0) continue;
-
-      console.log(actionsRerunLineOf({ product: name, part, embedded }));
-
-      const counted = tallyOf(options.tally, { product: name, part });
-
-      if (counted) counted.open += 1;
-    }
-
-    const go = goPartsOf(product).filter((key) => !options.part || key === options.part);
-
-    if (go.length > 0) console.log(`GO ${name}: ${go.join(', ')}`);
-
-    for (const part of go) {
-      const review = goMarkOf({ product, part })?.review ?? [];
-
-      if (review.length > 0) console.log(newStatesLineOf({ product: name, part, states: review }));
-    }
-
-    stalePartsOf({ product, only: options.part }).forEach((stale) => console.log(staleLineOf(name, stale)));
+    await timedPhase('open-points', () => printProductOpenPoints({ ...options, product, findings }));
   }
+};
+
+const printProductOpenPoints = async (
+  options: CheckOptions & {
+    rendered: RenderIssue[] | null;
+    notDrawn?: string;
+    product: ResolvedProduct;
+    findings: Partial<DrawnFindings>;
+  },
+) => {
+  const { target, config, rendered, product, findings } = options;
+  const name = product.name;
+
+  if (rendered === null && options.notDrawn) countCannotDraw({ ...options, product, why: options.notDrawn });
+
+  const allPoints = readOpenPoints(product, findings);
+  const points = allPoints.filter(({ part }) => !options.part || part === options.part);
+
+  for (const { part, points: ofPart } of points) {
+    const counted = tallyOf(options.tally, { product: name, part });
+
+    if (counted) counted.open += ofPart.length;
+  }
+
+  openPointsText(name, points).forEach((line) => console.log(line));
+
+  if (!options.part) uncoveredViewsText(name, uncoveredViewsOf(product)).forEach((line) => console.log(line));
+
+  const unlinked = unlinkedPartsOf(product).filter((part) => !options.part || part === options.part);
+
+  if (unlinked.length > 0) console.log(`UNLINKED ${name}: ${unlinked.join(', ')}`);
+
+  instantLinesOf(
+    product,
+    options.part
+      ? [options.part]
+      : product.parts.filter((part) => part.origin !== 'base').map((part) => partKeyOf(part)),
+  ).forEach((line) => console.log(line));
+
+  const upgraded = upgradeLegacyMarksOf({ product, only: options.part });
+
+  if (upgraded.length > 0)
+    console.log(`REHASHED ${name}: ${upgraded.map(({ part, marks }) => `${part} (${marks.join(', ')})`).join(', ')}`);
+
+  await recordBuildReady({
+    product,
+    parts: options.part
+      ? [options.part]
+      : product.parts.filter((part) => part.origin !== 'base').map((part) => partKeyOf(part)),
+    inputs: withTalliedProblems(buildReadyInputsOf(product, allPoints), options.tally?.get(name)),
+    ...(rendered === null
+      ? {}
+      : {
+          actionsOf: (part: string) =>
+            partActionFailuresOf({ target, config, product, part, ...(options.part ? { onNote: console.log } : {}) }),
+        }),
+    ...(options.part ? { onNoRecord: (line: string) => console.log(line) } : {}),
+  });
+
+  const ready = readyPartsOf(product).filter((key) => !options.part || key === options.part);
+
+  if (ready.length > 0) console.log(`READY ${name}: ${ready.join(', ')}`);
+
+  for (const part of ready) {
+    const embedded = actionsRerunOf({ product, part });
+
+    if (embedded.length === 0) continue;
+
+    console.log(actionsRerunLineOf({ product: name, part, embedded }));
+
+    const counted = tallyOf(options.tally, { product: name, part });
+
+    if (counted) counted.open += 1;
+  }
+
+  const go = goPartsOf(product).filter((key) => !options.part || key === options.part);
+
+  if (go.length > 0) console.log(`GO ${name}: ${go.join(', ')}`);
+
+  for (const part of go) {
+    const review = goMarkOf({ product, part })?.review ?? [];
+
+    if (review.length > 0) console.log(newStatesLineOf({ product: name, part, states: review }));
+  }
+
+  stalePartsOf({ product, only: options.part }).forEach((stale) => console.log(staleLineOf(name, stale)));
 };
 
 const notCheckedLineOf = (options: { product: string; parts: string; why: string }) =>
@@ -662,15 +682,17 @@ const printUndrawn = (issues: RenderIssue[]) => {
 const renderSystem = async (
   options: CheckOptions,
 ): Promise<{ code: number; rendered: RenderIssue[] | null; busy?: BusyState[]; notDrawn?: string }> => {
-  const { code, fatal } = reportSystem({ ...options, warn: true });
+  const { code, fatal } = timedPhase('static', () => reportSystem({ ...options, warn: true }));
 
   if (fatal) return { code, rendered: null };
 
-  const rendered = await renderIssuesOf({
-    ...options,
-    onProgress: (line) => console.log(line),
-    jobs: options.products.map((product) => ({ product, sketch: null, parts: options.part ? [options.part] : null })),
-  });
+  const rendered = await timedPhase('render-inspect', () =>
+    renderIssuesOf({
+      ...options,
+      onProgress: (line) => console.log(line),
+      jobs: options.products.map((product) => ({ product, sketch: null, parts: options.part ? [options.part] : null })),
+    }),
+  );
 
   const resolved = options.products.flatMap((name) => {
     const entry = options.config.products?.[name];
@@ -744,6 +766,58 @@ const renderSystem = async (
   return { code: code !== 0 || issues.length > 0 ? 1 : 0, rendered: issues, busy: rendered.busy };
 };
 
+const checkProductTail = async (
+  options: CheckOptions & {
+    tally: Tally;
+    name: string;
+    entry: NonNullable<DesignConfig['products']>[string];
+    problemsOfEdits: Problem[];
+  },
+) => {
+  const { tally, name, entry } = options;
+  const resolved = resolveProduct({ target: options.target, name, config: entry });
+  const capabilities = await capabilityPlaceOf({ ...options, product: resolved });
+
+  const isWanted = (problem: { file: string }) => !options.part || partOfFile(resolved, problem.file) === options.part;
+
+  capabilities.warnings.filter(isWanted).forEach((warning) => {
+    console.warn(`WARNING ${lineOf(options.target, warning)}`);
+    const counted = tallyOf(tally, {
+      product: name,
+      part: tallyKeyOf(options.target, { product: resolved, file: warning.file }),
+    });
+
+    if (counted) counted.warnings += 1;
+  });
+  const drawn = ruleBaselineOf({
+    product: resolved,
+    problems: [
+      ...(await droppedPropProblemsOf({ ...options, product: resolved })),
+      ...(await bespokeControlProblemsOf({ ...options, product: resolved })),
+      ...(await actionLostProblemsOf({
+        ...options,
+        product: resolved,
+        invocation: options.invocation ?? repoInvocation({ root: options.target, subcommand: 'design' }),
+      })),
+    ].filter(isWanted),
+    checked: (rule, part) => isDrawRule(rule) && (!options.part || part === options.part),
+  });
+
+  drawn.lines.forEach((line) => console.log(line));
+
+  const problems = [...drawn.problems, ...capabilities.errors, ...options.problemsOfEdits].filter(isWanted);
+
+  for (const problem of problems) {
+    console.error(lineOf(options.target, problem));
+    tallyOf(tally, {
+      product: name,
+      part: tallyKeyOf(options.target, { product: resolved, file: problem.file }),
+    })?.problems.push(problem.rule);
+  }
+
+  return problems.length;
+};
+
 /**
  * Checks as `checkSystem` does, then draws every state in a headless browser and prints one line per
  * render rule a drawing breaks, also when a static rule failed, and warns of each merged part that changed outside a sketch. A part that does not
@@ -756,7 +830,7 @@ export const checkSystemRendered = async (options: CheckOptions) => {
   const tally: Tally = new Map();
   const counted = { ...options, tally };
 
-  for (const line of staleDistWarningsOf(options)) console.warn(line);
+  for (const line of timedPhase('stale-dist', () => staleDistWarningsOf(options))) console.warn(line);
 
   const editProblems = new Map<string, Problem[]>();
 
@@ -767,7 +841,9 @@ export const checkSystemRendered = async (options: CheckOptions) => {
 
     const product = resolveProduct({ target: options.target, name, config: entry });
     const problems: Problem[] = [];
-    const lines = await autoAcceptOf({ ...options, product, only: options.part, draw: options.drawPictures, problems });
+    const lines = await timedPhase('auto-accept', () =>
+      autoAcceptOf({ ...options, product, only: options.part, draw: options.drawPictures, problems }),
+    );
 
     editProblems.set(name, problems);
 
@@ -786,68 +862,31 @@ export const checkSystemRendered = async (options: CheckOptions) => {
 
     if (!entry) continue;
 
-    const resolved = resolveProduct({ target: options.target, name, config: entry });
-    const capabilities = await capabilityPlaceOf({ ...options, product: resolved });
+    failed += await timedPhase('tail', () =>
+      checkProductTail({ ...options, tally, name, entry, problemsOfEdits: editProblems.get(name) ?? [] }),
+    );
+  }
 
-    const isWanted = (problem: { file: string }) =>
-      !options.part || partOfFile(resolved, problem.file) === options.part;
+  timedPhase('summary', () => {
+    for (const name of options.products) {
+      const entry = options.config.products?.[name];
 
-    capabilities.warnings.filter(isWanted).forEach((warning) => {
-      console.warn(`WARNING ${lineOf(options.target, warning)}`);
-      const counted = tallyOf(tally, {
+      if (!entry) continue;
+
+      const resolved = resolveProduct({ target: options.target, name, config: entry });
+      const parts = resolved.parts.filter((part) => part.origin !== 'base').map(partKeyOf);
+
+      partsTotal += options.part ? parts.filter((key) => key === options.part).length : parts.length;
+
+      summaryText({
         product: name,
-        part: tallyKeyOf(options.target, { product: resolved, file: warning.file }),
-      });
-
-      if (counted) counted.warnings += 1;
-    });
-    const drawn = ruleBaselineOf({
-      product: resolved,
-      problems: [
-        ...(await droppedPropProblemsOf({ ...options, product: resolved })),
-        ...(await bespokeControlProblemsOf({ ...options, product: resolved })),
-        ...(await actionLostProblemsOf({
-          ...options,
-          product: resolved,
-          invocation: options.invocation ?? repoInvocation({ root: options.target, subcommand: 'design' }),
-        })),
-      ].filter(isWanted),
-      checked: (rule, part) => isDrawRule(rule) && (!options.part || part === options.part),
-    });
-
-    drawn.lines.forEach((line) => console.log(line));
-
-    const problems = [...drawn.problems, ...capabilities.errors, ...(editProblems.get(name) ?? [])].filter(isWanted);
-
-    for (const problem of problems) {
-      console.error(lineOf(options.target, problem));
-      tallyOf(tally, {
-        product: name,
-        part: tallyKeyOf(options.target, { product: resolved, file: problem.file }),
-      })?.problems.push(problem.rule);
+        parts,
+        tally,
+        only: options.part,
+        done: doneParts({ product: resolved, parts }).length,
+      }).forEach((line) => console.log(line));
     }
-
-    failed += problems.length;
-  }
-
-  for (const name of options.products) {
-    const entry = options.config.products?.[name];
-
-    if (!entry) continue;
-
-    const resolved = resolveProduct({ target: options.target, name, config: entry });
-    const parts = resolved.parts.filter((part) => part.origin !== 'base').map(partKeyOf);
-
-    partsTotal += options.part ? parts.filter((key) => key === options.part).length : parts.length;
-
-    summaryText({
-      product: name,
-      parts,
-      tally,
-      only: options.part,
-      done: doneParts({ product: resolved, parts }).length,
-    }).forEach((line) => console.log(line));
-  }
+  });
 
   const exit = code !== 0 || failed > 0 ? 1 : 0;
 

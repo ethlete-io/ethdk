@@ -2,7 +2,6 @@ import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import ts from 'typescript';
 import { INTERACTIONS } from '../force-interactions';
-import { createDesignServer } from '../serve';
 import { DesignConfig } from '../paths';
 import { DROPPED_PROP_RULE } from './build-ready-contract';
 import { productSampledPropsOf } from './harness-samples';
@@ -12,6 +11,7 @@ import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { partLinkOf } from './sketch/part-definition';
 import { productModuleIdOf } from './system-modules';
 import { sourceFileOf } from './ts-source';
+import { loadingOn, WarmDraw } from '../warm-draw';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -141,6 +141,7 @@ export const droppedPropProblemsOf = async (options: {
   product: ResolvedProduct;
   part?: string;
   parts?: readonly string[];
+  warm?: WarmDraw;
 }): Promise<Problem[]> => {
   const { target, config, product } = options;
   const candidates = product.parts.flatMap((part) => {
@@ -165,9 +166,7 @@ export const droppedPropProblemsOf = async (options: {
 
   if (candidates.length === 0) return [];
 
-  const server = await createDesignServer({ target, config, listen: false });
-
-  try {
+  return loadingOn({ target, config, warm: options.warm }, async (server) => {
     const problems: Problem[] = [];
 
     for (const { part, inputs } of candidates) {
@@ -190,7 +189,5 @@ export const droppedPropProblemsOf = async (options: {
     }
 
     return problems;
-  } finally {
-    await server.close();
-  }
+  });
 };
