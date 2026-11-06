@@ -3618,6 +3618,14 @@ VISIBLE-CHANGE, COMPARE and SDK-ERROR. The draw rules (CONTROL-STATE, DROPPED-PR
 in a manual full `design check`. Tool fix: the draw rules join the `--slow` set with the per-part input-hash cache;
 the commit of a new rule runs it over every product and baselines what it finds (ADR 0201, B401). Picture fix: the
 rail bubble becomes its own control part `components/rail-bubble`, as a sketch (queued for c8).
+**B401 as built (cb, uncommitted sha in the commit message):** `rule-baseline.json` per product (rule -> `<part>: <place>`
+-> `{ finding, sketch }`, `rule-baseline.ts`, shrink check shared with the implementation baseline in
+`baseline-history.ts`). `check --rules`, `--slow` and full `check` pass a listed hit and print it as `baselined (ADR
+0201)`; a new hit, an entry that no longer hits where its rule ran, and an added entry fail. The draw rules run in
+`--slow` with the slow input-hash cache (also without a harness); build-ready skips baselined slow hits. Baseline:
+studio 2 CONTROL-STATE (shell-main `section`, `product`) and 21 DROPPED-PROP (canvas-frames 4, sketches 9, system 8),
+all on finding 489; sdk and studio-lab none. Verified: specs with bite, `check --rules` on all three products, `check
+--slow` on studio-lab and studio. Not verified: the pre-push gate end to end; no CLI flag writes the baseline yet.
 
 490\. The title bar draws the code notice only for `linux-full` and `windows`; macOS has `macos` and `macos-update` but
 no notice state, and `linux-left` / `linux-close` have no notice either (Tom, 2026-11-06: "wieso machen wir diese
@@ -3696,6 +3704,8 @@ As built (S1, builder c0, 2026-11-06, commit `fix(cli): Lock the shared lib buil
 
 As built (S2 of 492, builder c0, 2026-11-06, commit `feat(cli): Run design compare through a self-starting resident process`): `et design compare` goes through a resident process per checkout (`libs/cli/src/lib/design/resident/`): HTTP on 127.0.0.1 with a token, newline-delimited JSON frames carrying stdout, stderr, heartbeats and the exit code; discovery file `tmp/design-resident/process.json` (pid, port, checkout, CLI build, token), log `resident.log`. The first compare starts it detached under a start lock and prints the cold start once; a dead pid is replaced, another CLI build is stopped and replaced, a live process that does not answer is killed and the call runs in-process with one line, as does a process that ends mid-run. Idle exit after 30 min, `et design stop`; `CI` and `ETHLETE_DESIGN_RESIDENT=0` stay in-process; only compare goes through it. It keeps the design server, render worker and Chromium warm (`shootStatesWith`) and the harness server running while `harnessKeyOf` is unchanged. Lib-build lock: each request takes the S1 reader for its own run only (`readFreshDist`) and releases it after, and a changed lib build stamp or design config restarts the design server and Chromium before it draws, so other runs can rebuild between requests. Measured `compare pages/start --product studio`: in-process 13.4 s (harness build 10.5 s), resident cold 17.0 s, warm 2.2 s and 3.9 s when no file changed between calls (harness reused, harness-start 0.05 s, compare-states 0.8-2.5 s), but 13.3-14.3 s when the harness key changed: it hashes every file of the checkout, so another session's edit to libs/cli rebuilds the harness (11-12 s) - S3 must scope or watch it. Verified: 14 specs in `resident/*.spec.ts` (streaming and exit code over a real socket, CI/opt-out, cold start once, stale pid, other build, hung and crashed process, idle exit, token, one request at a time), each bites; warm OK/DIFF lines equal the in-process run. Not verified: two clients starting at once against real processes, `--live` through the process.
 
+In progress (S3 of 492, builder c0, 2026-11-06): the resident process keeps the harness app current with an incremental watch build, and the harness key covers only the app's real inputs.
+
 494\. c8, 2026-11-06: after A1, `compare` of pages/flows, inventory and merge shows 21-31 px DIFF in every state. The
 title bar matches pixel for pixel; the 21 px are 1-2 colour levels of anti-alias on the four rounded corners of the
 left panel, which A1 did not touch. ADR 0115 (2026-11-01) decided one shared compare rule for pane corner anti-alias,
@@ -3732,3 +3742,16 @@ unseen until an unrelated push trips over it. Tool fix (technical): the full `de
 ADR 0204) reports every uncompared implemented part, independent of a push range. c8 compares both parts right after the
 push; real drift becomes a UI item, not a baseline entry. Also: `design-rules-gate.mjs` printed the check output only on
 failure, so the ADR 0205 `baselined` lines were hidden on a green push; it now always prints them.
+
+498\. c8, 2026-11-06: studio-menu, start, flows, inventory and merge pass `design check --part` (0 findings) and their
+compares match, yet `task --verify ff698951f` refuses "no check record at its current design". The record is written
+only when the part is build-ready, and build-ready needs every embedded part build-ready; bottom-up about 20 parts fail
+(button, select, list-row missing states; disclosure, start, inventory "changed outside a sketch"; logo, icons, menu
+"cannot check the actions: waiting for [data-design-harness-host] timed out"). So the IMPLEMENTATION-UNCOMPARED gate,
+which ADR 0203 clears by a compare, is in fact cleared only by the whole build-ready chain. Why no tool caught it: (1)
+verify reuses the build-ready record instead of a compare record, and no spec verifies a host whose embedded part is not
+build-ready; (2) the action run starts for parts without an `implements` link and times out on the harness host
+instead of skipping; (3) `design check --part` passes and writes no record without saying why. Tool fix (technical,
+doc-agent decision under ADR 0203): a passing compare plus the part's own passing check writes the record that clears
+IMPLEMENTATION-UNCOMPARED and `task --verify`; build-ready keeps its embedded chain for `design task`; the action run
+skips parts without an `implements` link; `check --part` prints why it wrote no record.
