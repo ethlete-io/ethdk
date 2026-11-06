@@ -3457,6 +3457,8 @@ by one; fixed in 1256d2786 (8 at a time, result order kept; the new seconds are 
 phase first (suspects: a full draw of every variant and state, the full listing, a cold CLI build, a repeated
 compare); (3) every design command prints its duration, and a spec or a budget list fails when a command passes its
 budget on a fixed fixture.
+Scope extended (Tom, 2026-11-06: "die compare cli ist auch noch echt ausbaufähig in schnelligkeit"): `design compare`
+gets the same phase timing, the same biggest-phase-first fix and a budget entry.
 
 479\. A fresh sketch of a part that has a `.css` file (`components/kbd`, `components/divider`) fails `UTILITY-CSS` in
 `sketch check`, so `sketch ready` refuses after 2.5 s (builder measure, 2026-11-05). Why no tool caught it: no spec
