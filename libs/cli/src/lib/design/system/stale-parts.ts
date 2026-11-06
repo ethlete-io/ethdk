@@ -6,6 +6,13 @@ import { changedFilesOf, designHashOf, DesignHash, HashRecord, recordHolds } fro
 import { partOwnerOf } from './inventory-approval';
 import { READY_FILE, readReady } from './part-ready';
 import { changedAppFilesOf, IMPLEMENTED_FILE, linkedComponentOf, readImplemented } from './part-task';
+import {
+  addedBaselineEntriesOf,
+  baselineLineOf,
+  driftPinOf,
+  implementationBaselineFileOf,
+  readImplementationBaseline,
+} from './implementation-baseline';
 import { Problem } from './problem';
 import { repoRootOf } from './reachable-files';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
@@ -54,7 +61,9 @@ export const UNCOMPARED_RULE = 'IMPLEMENTATION-UNCOMPARED';
 
 /**
  * One problem per file in `changed` that an implemented part's app component reaches and that moved since the part's
- * implemented record, so an app edit cannot land without a fresh compare.
+ * implemented record, so an app edit cannot land without a fresh compare. A part in the implementation baseline passes
+ * while each such file still has its pinned hash; an entry added to the baseline, or whose part is no longer
+ * uncompared, is a problem too. Prints each baseline entry.
  */
 export const uncomparedAppProblemsOf = (options: {
   product: ResolvedProduct;
@@ -64,23 +73,58 @@ export const uncomparedAppProblemsOf = (options: {
   const { product, invocation } = options;
   const changed = new Set(options.changed);
   const root = repoRootOf(product);
+  const baselineFile = implementationBaselineFileOf(product.dir);
+  const baseline = readImplementationBaseline(product.dir);
+  const baselineProblem = (message: string): Problem => ({ rule: UNCOMPARED_RULE, file: baselineFile, message });
 
-  return product.parts
-    .filter((resolved) => resolved.origin !== 'base')
-    .flatMap((resolved) => {
-      const part = partKeyOf(resolved);
-      const record = readImplemented(partOwnerOf({ product, part: resolved }).dir)[part];
+  Object.entries(baseline).forEach(([part, entry]) => console.log(baselineLineOf(part, entry)));
 
-      if (!record?.app || !Object.keys(record.app).some((file) => changed.has(file))) return [];
+  const own = product.parts.filter((resolved) => resolved.origin !== 'base');
+  const driftOf = (resolved: ResolvedPart) => {
+    const part = partKeyOf(resolved);
+    const record = readImplemented(partOwnerOf({ product, part: resolved }).dir)[part];
 
-      return changedAppFilesOf({ product, part, record })
-        .filter((file) => changed.has(file))
-        .map((file) => ({
-          rule: UNCOMPARED_RULE,
-          file: resolve(root, file),
-          message: `changed since ${part} was recorded as implemented (${record.at}) - run ${invocation} compare ${part} --product ${product.name}, then ${invocation} task ${part} --product ${product.name} --verify <rev> to record it`,
-        }));
-    });
+    return { part, record, drifted: record ? changedAppFilesOf({ product, part, record }) : [] };
+  };
+  const pinOf = (resolved: ResolvedPart, drifted: string[]) => {
+    const component = linkedComponentOf(resolved.source);
+
+    return component === null ? {} : driftPinOf(drifted, appFilesOf({ root, component }));
+  };
+
+  const added = addedBaselineEntriesOf({ file: baselineFile }).map((part) =>
+    baselineProblem(`${part} was added to the baseline - it may only shrink (ADR 0205)`),
+  );
+  const removable = Object.entries(baseline)
+    .filter(([part]) => {
+      const resolved = own.find((candidate) => partKeyOf(candidate) === part);
+
+      return !resolved || driftOf(resolved).drifted.length === 0;
+    })
+    .map(([part, entry]) =>
+      baselineProblem(`${part} is no longer uncompared - remove its entry (finding ${entry.finding})`),
+    );
+
+  const uncompared = own.flatMap((resolved) => {
+    const { part, record, drifted } = driftOf(resolved);
+
+    if (!record?.app || !Object.keys(record.app).some((file) => changed.has(file))) return [];
+
+    const entry = baseline[part];
+    const pin = entry ? pinOf(resolved, drifted) : {};
+
+    return drifted
+      .filter((file) => changed.has(file) && (!entry || entry.app[file] !== pin[file]))
+      .map((file) => ({
+        rule: UNCOMPARED_RULE,
+        file: resolve(root, file),
+        message: entry
+          ? `changed since ${part} was baselined for finding ${entry.finding} (ADR 0205) - run ${invocation} compare ${part} --product ${product.name}, then ${invocation} task ${part} --product ${product.name} --verify <rev> to record it`
+          : `changed since ${part} was recorded as implemented (${record.at}) - run ${invocation} compare ${part} --product ${product.name}, then ${invocation} task ${part} --product ${product.name} --verify <rev> to record it`,
+      }));
+  });
+
+  return [...added, ...removable, ...uncompared];
 };
 
 const rewrite = (file: string, entries: Record<string, unknown>) => {
