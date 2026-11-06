@@ -510,12 +510,46 @@ export const removeFeatureStores = (
     return content ? createSourceFile(content, file).statements.flatMap(declaredNames) : [];
   };
 
-  let converting = new Set(features);
+  const importClosure = (feature: ToolkitFeature, roots: Iterable<string>) => {
+    const storeFiles = new Set(storeFilesOf(feature));
+    const closure = new Set(roots);
+    const queue = [...closure];
+
+    for (let file = queue.pop(); file; file = queue.pop()) {
+      const content = tree.read(file, 'utf-8');
+
+      if (!content) continue;
+
+      for (const statement of createSourceFile(content, file).statements) {
+        if (
+          (!ts.isImportDeclaration(statement) && !ts.isExportDeclaration(statement)) ||
+          !statement.moduleSpecifier ||
+          !ts.isStringLiteral(statement.moduleSpecifier)
+        ) {
+          continue;
+        }
+
+        const resolved = graph.resolveFile(file, statement.moduleSpecifier.text);
+
+        if (resolved && storeFiles.has(resolved) && !closure.has(resolved)) {
+          closure.add(resolved);
+          queue.push(resolved);
+        }
+      }
+    }
+
+    return closure;
+  };
+
+  const converting = new Set(features);
   let scan: ScanResult;
   const keptLocations = new Map<ToolkitFeature, ToolkitTaskLocation[]>();
+  const keptFiles = new Map<string, ToolkitTaskLocation[]>();
+  const keptVia = new Map<string, string>();
+  const removableFilesOf = (feature: ToolkitFeature) => storeFilesOf(feature).filter((file) => !keptFiles.has(file));
 
   for (;;) {
-    const deletedFiles = new Set([...converting].flatMap(storeFilesOf));
+    const deletedFiles = new Set([...converting].flatMap(removableFilesOf));
     const movedFiles = new Map([...converting].map((feature) => [feature.files.actions, feature.queriesFile]));
     const needles = [
       ...new Set(
@@ -537,23 +571,43 @@ export const removeFeatureStores = (
       needles,
     });
 
-    const blocked = new Set<ToolkitFeature>();
+    const usedOutside = new Map<ToolkitFeature, Map<string, ToolkitTaskLocation[]>>();
 
     for (const reference of scan.references) {
       const feature = featureOfFile.get(reference.declaringFile);
 
       if (!feature || reference.target || !converting.has(feature)) continue;
 
-      blocked.add(feature);
-      keptLocations.set(feature, [
-        ...(keptLocations.get(feature) ?? []),
-        { filePath: reference.file, line: reference.line },
-      ]);
+      const files = usedOutside.get(feature) ?? new Map<string, ToolkitTaskLocation[]>();
+      const location = { filePath: reference.file, line: reference.line };
+
+      files.set(reference.declaringFile, [...(files.get(reference.declaringFile) ?? []), location]);
+      usedOutside.set(feature, files);
+      keptLocations.set(feature, [...(keptLocations.get(feature) ?? []), location]);
     }
 
-    if (blocked.size === 0) break;
+    if (usedOutside.size === 0) break;
 
-    converting = new Set([...converting].filter((feature) => !blocked.has(feature)));
+    for (const [feature, files] of usedOutside) {
+      const closure = importClosure(
+        feature,
+        [...keptFiles.keys(), ...files.keys()].filter((file) => featureOfFile.get(file) === feature),
+      );
+
+      if (closure.has(feature.files.actions) || (feature.files.reducer && closure.has(feature.files.reducer))) {
+        converting.delete(feature);
+        continue;
+      }
+
+      for (const [file, locations] of files) keptFiles.set(file, [...(keptFiles.get(file) ?? []), ...locations]);
+
+      for (const file of closure) {
+        if (keptFiles.has(file)) continue;
+
+        keptFiles.set(file, []);
+        keptVia.set(file, [...files.keys()][0]!);
+      }
+    }
   }
 
   for (const [feature, locations] of keptLocations) {
@@ -566,7 +620,23 @@ export const removeFeatureStores = (
     });
   }
 
-  const deletedFiles = new Set([...converting].flatMap(storeFilesOf));
+  for (const [file, locations] of keptFiles) {
+    const feature = featureOfFile.get(file)!;
+
+    if (!converting.has(feature)) continue;
+
+    const via = keptVia.get(file);
+
+    report.add({
+      id: TOOLKIT_TASK.STORE_FILE_KEPT,
+      summary: via
+        ? `\`${file}\` of \`${feature.base}\` is kept because the kept \`${via}\` imports it.`
+        : `\`${file}\` of \`${feature.base}\` is kept because code outside the feature uses it.`,
+      locations: [{ filePath: file }, ...locations],
+    });
+  }
+
+  const deletedFiles = new Set([...converting].flatMap(removableFilesOf));
   const movedFiles = new Map([...converting].map((feature) => [feature.files.actions, feature.queriesFile]));
   const editedFiles = new Set<string>();
 

@@ -359,7 +359,7 @@ describe('migrate-from-ngrx-toolkit', { timeout: 30_000 }, () => {
       expect(read(path)).toContain("import { BehaviorSubject } from 'rxjs';");
     });
 
-    it('keeps the store files when code outside the feature still uses them', () => {
+    it('keeps only the store file code outside the feature uses, and converts the rest', () => {
       tree.write(
         'libs/domain/public/venue/src/lib/venue-lookup.ts',
         "import { VenueService } from '@app-b/store/venue';\n\nexport const lookupVenue = (service: VenueService) => service.getVenues({ params: {} });\n",
@@ -367,14 +367,48 @@ describe('migrate-from-ngrx-toolkit', { timeout: 30_000 }, () => {
       migrateToolkitStores(tree, APP_B_OPTIONS, report);
 
       expect(tree.exists(featureFile(APP_B.venue, 'service'))).toBe(true);
-      expect(tree.exists('libs/store/venue/src/lib/store-venue.module.ts')).toBe(true);
+      expect(tree.exists(featureFile(APP_B.venue, 'models'))).toBe(true);
+      expect(tree.exists(featureFile(APP_B.venue, 'actions'))).toBe(false);
+      expect(tree.exists(featureFile(APP_B.venue, 'reducer'))).toBe(false);
+      expect(tree.exists(featureFile(APP_B.venue, 'effects'))).toBe(false);
+      expect(tree.exists(featureFile(APP_B.venue, 'selectors'))).toBe(false);
       expect(read(featureFile(APP_B.venue, 'facade'))).toContain('toolkitCall(getVenues');
+
+      const barrel = read('libs/store/venue/src/lib/state/index.ts');
+
+      expect(barrel).toContain('venue.service');
+      expect(barrel).toContain('venue.queries');
+      expect(barrel).not.toContain('venue.actions');
+      expect(barrel).not.toContain('venue.reducer');
+
+      const tasks = report.tasks.filter((candidate) => candidate.id === TOOLKIT_TASK.STORE_FILE_KEPT);
+
+      expect(tasks).toHaveLength(1);
+      expect(tasks[0]?.locations).toEqual([
+        { filePath: featureFile(APP_B.venue, 'service') },
+        { filePath: 'libs/domain/public/venue/src/lib/venue-lookup.ts', line: 3 },
+      ]);
+      expect(tree.exists(featureFile(APP_B.event, 'service'))).toBe(false);
+    });
+
+    it('keeps the whole store when the file used outside the feature imports its actions', () => {
+      tree.write(
+        'libs/domain/public/venue/src/lib/venue-effects-host.ts',
+        "import { VenueEffects } from '@app-b/store/venue';\n\nexport const hosts = [VenueEffects];\n\nexport const host = (effects: VenueEffects) => effects;\n",
+      );
+      migrateToolkitStores(tree, APP_B_OPTIONS, report);
+
+      expect(tree.exists(featureFile(APP_B.venue, 'service'))).toBe(true);
+      expect(tree.exists(featureFile(APP_B.venue, 'reducer'))).toBe(true);
+      expect(tree.exists('libs/store/venue/src/lib/store-venue.module.ts')).toBe(true);
       expect(read('libs/store/venue/src/lib/state/index.ts')).toContain('venue.actions');
 
       const task = report.tasks.find((candidate) => candidate.id === TOOLKIT_TASK.STORE_FILE_KEPT);
 
-      expect(task?.locations).toContainEqual({ filePath: 'libs/domain/public/venue/src/lib/venue-lookup.ts', line: 3 });
-      expect(tree.exists(featureFile(APP_B.event, 'service'))).toBe(false);
+      expect(task?.locations).toContainEqual({
+        filePath: 'libs/domain/public/venue/src/lib/venue-effects-host.ts',
+        line: 5,
+      });
     });
 
     it('leaves nothing to do on a second run', () => {

@@ -101,13 +101,13 @@ The feature is untouched. Fix the cause, then re-run the generator.
 
 ### Converted, but check by hand
 
-| Task                           | What to do                                                                                                                                                         |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `NTK-SERVICE-HEADERS`          | The service added request headers the creator does not send. Pass them per call in `actionOptions.headers`, or add them to the client's `headers`.                 |
-| `NTK-SERVICE-CACHE-EXPIRY`     | The service cached the response for `cacheExpiresIn` seconds. The creator requests again on every call. Decide whether the screen needs a cache.                   |
-| `NTK-ARGS-INHERITED`           | The args type extends another type, and only its own members were mapped. If the base adds `queryParams`, `params` or `body`, add them to the creator's type.      |
-| `NTK-DUPLICATE-ROUTE-MISMATCH` | A second creator was written for a route that already had one. Align the types, keep one, and re-export it from the feature's queries file.                        |
-| `NTK-STORE-FILE-KEPT`          | Code outside the feature still imports its reducer, effects, selectors, service or actions. Rewrite that code, then delete the store files and their registration. |
+| Task                           | What to do                                                                                                                                                                                                                                                                     |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `NTK-SERVICE-HEADERS`          | The service added request headers the creator does not send. Pass them per call in `actionOptions.headers`, or add them to the client's `headers`.                                                                                                                             |
+| `NTK-SERVICE-CACHE-EXPIRY`     | The service cached the response for `cacheExpiresIn` seconds. The creator requests again on every call. Decide whether the screen needs a cache.                                                                                                                               |
+| `NTK-ARGS-INHERITED`           | The args type extends another type, and only its own members were mapped. If the base adds `queryParams`, `params` or `body`, add them to the creator's type.                                                                                                                  |
+| `NTK-DUPLICATE-ROUTE-MISMATCH` | A second creator was written for a route that already had one. Align the types, keep one, and re-export it from the feature's queries file.                                                                                                                                    |
+| `NTK-STORE-FILE-KEPT`          | Code outside the feature still imports one of its store files. The generator keeps that file and the store files it imports, and converts the rest. If they include the actions or the reducer, it keeps the whole store. Rewrite the listed code, then delete the kept files. |
 
 ### Consumers
 
