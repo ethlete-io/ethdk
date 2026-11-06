@@ -3683,3 +3683,11 @@ go rule, and the go docs, with a migration that deletes both files. Built as B24
 of a person; the only human decision stays the sketch pick, with `by` as today. Roles and rights come with E8
 (two designers on one design, multi-user sessions). 8. Solo case (Tom builds Studio as designer and developer, the builder agent does the developer work): the same
 flow as a team. An undesigned state the builder renders becomes a sketch that Tom picks. No solo shortcut.
+
+493\. c8, 2026-11-06: the compare of the 8 parts A1 left uncompared runs one part at a time, because "two design runs
+at once race on dist/libs". So the gate fix of finding 491 takes 8 × ~1 min serial, and two builders cannot run design
+commands at the same time in one checkout. Why no tool caught it: every design call builds the libs into the shared
+`dist/libs` with no lock and no per-run output, and no spec starts two calls at once. Tool fix (technical): part of the
+492 resident process, which owns the one lib build and serves every caller; until it lands, a design call takes a lock
+on the lib build and waits (with a printed "waiting for the lib build of pid N") instead of racing, and a spec starts
+two `compare` calls at once and expects both to pass.
