@@ -12,7 +12,7 @@ import {
 } from 'fs';
 import { dirname, join, relative } from 'path';
 
-export type CachedAppShot = { app: Buffer; note?: string };
+export type CachedAppShot = { app: Buffer };
 
 /** App pictures of compare on disk, each under the hash of every input that draws it. */
 export type AppShotCache = {
@@ -88,7 +88,7 @@ export const createAppShotCache = (dir: string, limit = APP_SHOT_LIMIT): AppShot
       const path = join(dir, `${key}${ENTRY_SUFFIX}`);
 
       try {
-        const entry = JSON.parse(readFileSync(path, 'utf8')) as { key?: unknown; app?: unknown; note?: unknown };
+        const entry = JSON.parse(readFileSync(path, 'utf8')) as { key?: unknown; app?: unknown };
 
         if (entry.key !== key || typeof entry.app !== 'string') return null;
 
@@ -96,10 +96,7 @@ export const createAppShotCache = (dir: string, limit = APP_SHOT_LIMIT): AppShot
 
         utimesSync(path, now, now);
 
-        return {
-          app: Buffer.from(entry.app, 'base64'),
-          ...(typeof entry.note === 'string' ? { note: entry.note } : {}),
-        };
+        return { app: Buffer.from(entry.app, 'base64') };
       } catch {
         return null;
       }
@@ -109,7 +106,7 @@ export const createAppShotCache = (dir: string, limit = APP_SHOT_LIMIT): AppShot
 
       try {
         mkdirSync(dir, { recursive: true });
-        writeFileSync(temp, JSON.stringify({ key, app: shot.app.toString('base64'), note: shot.note }));
+        writeFileSync(temp, JSON.stringify({ key, app: shot.app.toString('base64') }));
         renameSync(temp, join(dir, `${key}${ENTRY_SUFFIX}`));
         evict();
       } catch {

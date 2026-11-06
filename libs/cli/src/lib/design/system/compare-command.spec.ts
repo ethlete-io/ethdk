@@ -62,8 +62,7 @@ describe('appShotsOf', () => {
       designs,
       opens: { missing: 'never reached' },
       slotOnly: new Map([['c', 'a']]),
-      shoot: async ({ state }) =>
-        state === 'b' ? { problem: 'b has no input' } : { app: Buffer.from(state), note: 'a note' },
+      shoot: async ({ state }) => (state === 'b' ? { problem: 'b has no input' } : { app: Buffer.from(state) }),
     });
 
     expect(Array.isArray(result) && result.map((shot) => ('problem' in shot ? shot.problem : shot.state))).toEqual([

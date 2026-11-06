@@ -4108,3 +4108,12 @@ off): pages/sketches cold 21.1 s, warm 8.0 s (91 hits, 0 misses; compare-states 
 process start); every design picture invalidated 14.4 s, the built app invalidated 13.6 s; pages/start 2.7 s cold, 1.8 s
 warm. Floor after an edit: 30 design or app shots 6-7 s; compare-actions 3.5-3.9 s, mostly `actions-state` per state
 (matrix states ~1.9 s).
+B416 pane count (as built in the `fix(cli)` commit that adds this note, c0 subagent, 2026-11-06): the pane
+`drawnPaneCountOf` counted on every pages/sketches state was the embedded `elements/studio-menu` panel (`<et-menu>`
+inside `#studio-menu-surface`), which the closed menu marks `hidden`; the same false count hit studio-menu's own
+four closed states. The counter now walks the tag tree and skips any mock inside a `hidden` element. A capped pane
+wait fails the state again ("the design draws N overlay pane(s), the app opened M ..."); the note path is gone. No
+time gained: the wrong count never cost the 1 s cap, because the wait already exits early once the open panes settle
+with no new one (settle 0.05-0.18 s per shot before and after). pages/sketches warm 6.7 s, app pictures dropped
+12.0 s, design pictures dropped 11.9 s (before: 6.6 / 12.0 / 12.1 s); pages/start 1.5-1.9 s. The rest after an edit
+is 30 shots 4 at once (5.6 s, ~0.6 s of a wide shot is queue wait), compare-actions 2.9 s and ~3 s process start.

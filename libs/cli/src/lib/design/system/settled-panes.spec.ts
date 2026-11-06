@@ -120,4 +120,18 @@ describe('drawnPaneCountOf', () => {
     expect(drawnPaneCountOf(markup)).toBe(4);
     expect(drawnPaneCountOf('<div class="et-overlay-runtime-pane-ish"></div><et-menu-item></et-menu-item>')).toBe(0);
   });
+
+  it('skips the closed studio menu every pages/sketches state embeds', () => {
+    const surface = (hidden: string) =>
+      `<button data-et-slot="elements/shell-main" data-et-action="open" data-et-control="studio-menu" data-studio-trigger="" data-et-auto-surface="" aria-label="Studio-Menü" aria-haspopup="menu" aria-expanded="false" aria-controls="studio-menu-surface" class="et-button et-focus-ring st-studio-trigger p-0" type="button" data-variant="transparent" data-size="sm"><div data-et-slot="elements/shell-main" class="et-button-icon"></div><div data-et-slot="elements/shell-main" class="et-button-contents"><svg data-et-slot="elements/shell-main" data-et-part="foundations/logo" width="40" height="40" viewBox="0 0 32 32" role="img" aria-label="Ethlete Studio"><g data-et-slot="elements/shell-main" color="var(--on-accent, #051211)"><rect data-et-slot="elements/shell-main" width="32" height="32" rx="8" fill="var(--accent, #25aea7)"></rect></g></svg>
+</div></button>
+      <div data-et-slot="elements/shell-main" id="studio-menu-surface" class="st-studio-menu absolute top-0 left-15 z-20 w-62" data-studio-menu="" data-et-surface="studio-menu.open"${hidden}>
+        <et-menu data-et-slot="elements/shell-main" data-et-part="components/menu" id="et-menu-panel-menu" data-et-auto-surface="" class="et-menu et-color--brand et-surface--dark-elevated" role="menu" aria-orientation="vertical" tabindex="-1"><div data-et-slot="elements/shell-main" class="et-menu-header"><div data-et-slot="elements/shell-main" class="et-menu-search-field"></div></div><div data-et-slot="elements/shell-main" class="et-menu-body-wrapper"><div data-et-slot="elements/shell-main" class="et-menu-body"><div data-et-slot="elements/shell-main" class="et-menu-body-content"><et-menu-group-label data-et-slot="elements/shell-main" class="et-menu-group-label" role="presentation" id="et-menu-group-label-menu-0">Studio</et-menu-group-label><button et-menu-item="" type="button" role="menuitem" data-studio-action="restart" data-et-action="emit:serverAction" data-et-slot="components/menu elements/shell-main" tabindex="-1" class="et-menu-item et-color--inherited" data-variant="default"><span data-et-slot="elements/shell-main" class="et-menu-item-content">Design-Server neu starten</span></button></div></div></div></et-menu>
+      </div>`;
+
+    expect(drawnPaneCountOf(surface(' hidden=""'))).toBe(0);
+    expect(drawnPaneCountOf(surface(''))).toBe(1);
+    expect(drawnPaneCountOf(`<div hidden><br><input><img src="x"></div>${surface('')}`)).toBe(1);
+    expect(drawnPaneCountOf(`<div class="a hidden" data-x="hidden"><et-menu></et-menu></div>`)).toBe(1);
+  });
 });

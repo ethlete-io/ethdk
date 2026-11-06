@@ -59,7 +59,7 @@ export const COMPARE_USAGE =
 
 /** A state compare could not draw; `undrivable` when the app has no element to force the design's interaction on. */
 export type StateShot =
-  { state: string; design: Buffer; app: Buffer; note?: string } | { state: string; problem: string; undrivable?: true };
+  { state: string; design: Buffer; app: Buffer } | { state: string; problem: string; undrivable?: true };
 
 export type ShootStates = (options: {
   target: string;
@@ -99,11 +99,21 @@ class UndrivableError extends HarnessError {}
 
 class DroppedPropsError extends Error {}
 
+class MissingPanesError extends Error {}
+
 /** @internal The problem of a state whose app opened fewer overlay panes than its design draws. */
 export const missingPanesProblemOf = (count: { drawn: number; opened: number }) =>
   `the design draws ${count.drawn} overlay pane${count.drawn === 1 ? '' : 's'}, the app opened ${count.opened} before its panes settled or ${PANE_COUNT_TIMEOUT_MS} ms passed`;
 
-type AppShot = { app: Buffer; note?: string } | { problem: string; undrivable?: true };
+type AppShot = { app: Buffer } | { problem: string; undrivable?: true };
+
+/** @internal The failed state a harness shot's error stands for; rethrows any error that fails the whole compare. */
+export const appShotProblemOf = (error: unknown): AppShot => {
+  if (error instanceof DroppedPropsError || error instanceof MissingPanesError) return { problem: error.message };
+  if (error instanceof UndrivableError) return { problem: error.message, undrivable: true };
+
+  throw error;
+};
 
 /**
  * @internal Shoots the app picture of each state that has a design, at most `INSPECTS_AT_ONCE` at once, and returns
@@ -248,16 +258,55 @@ const clickOpen = async (options: {
 
 const OVERLAY_ROOTS = '.et-overlay-runtime-root, .cdk-overlay-container';
 
+const VOID_TAGS = new Set([
+  'area',
+  'base',
+  'br',
+  'col',
+  'embed',
+  'hr',
+  'img',
+  'input',
+  'link',
+  'meta',
+  'source',
+  'track',
+  'wbr',
+]);
+
 /**
  * The number of overlay panes a design picture draws: each `<et-overlay-container>`, `.et-overlay-runtime-pane`,
- * `<et-menu>` and `<et-select-panel>` mock, as the app renders each of them in a pane of its own.
+ * `<et-menu>` and `<et-select-panel>` mock, as the app renders each of them in a pane of its own. A mock inside a
+ * `hidden` element draws none.
  */
-export const drawnPaneCountOf = (markup: string) =>
-  [...markup.matchAll(/<([a-z][\w-]*)(\s[^>]*)?>/g)].filter(
-    ([, tag = '', attributes = '']) =>
-      ['et-overlay-container', 'et-menu', 'et-select-panel'].includes(tag) ||
-      /\sclass="(?:[^"]*\s)?et-overlay-runtime-pane[\s"]/.test(attributes),
-  ).length;
+export const drawnPaneCountOf = (markup: string) => {
+  const open: { tag: string; hidden: boolean }[] = [];
+  let count = 0;
+
+  for (const [whole, closing, tag = '', attributes = ''] of markup.matchAll(/<(\/?)([a-zA-Z][\w-]*)(\s[^>]*)?>/g)) {
+    if (closing) {
+      const at = open.map((element) => element.tag).lastIndexOf(tag);
+
+      if (at >= 0) open.length = at;
+
+      continue;
+    }
+
+    const hidden =
+      !!open[open.length - 1]?.hidden || /\shidden(?=[\s=/>]|$)/.test(attributes.replace(/"[^"]*"/g, '""'));
+
+    if (
+      !hidden &&
+      (['et-overlay-container', 'et-menu', 'et-select-panel'].includes(tag) ||
+        /\sclass="(?:[^"]*\s)?et-overlay-runtime-pane[\s"]/.test(attributes))
+    )
+      count++;
+
+    if (!VOID_TAGS.has(tag.toLowerCase()) && !whole.endsWith('/>')) open.push({ tag, hidden });
+  }
+
+  return count;
+};
 
 const FORCED_POLL_MS = 50;
 
@@ -337,8 +386,6 @@ export const harnessShotOf = async (options: {
   ambient?: TextAmbient;
   /** Fails with the props the mounted component has no input for, but `designOnly`; skipped in a production build. */
   props?: { sent: unknown; designOnly: ReadonlySet<string> };
-  /** Gets the problem when the app opened fewer overlay panes than `panes`; the shot still goes on. */
-  onMissingPanes?: (problem: string) => void;
   /** Records the steps of the shot as `<phase> load|prepare|drive|settle|screenshot` timing phases. */
   phase?: string;
 }) => {
@@ -426,7 +473,7 @@ export const harnessShotOf = async (options: {
     if (!settled)
       throw new HarnessError(`the harness page ${url} did not settle its overlay panes within ${timeout} ms`);
 
-    if (openedPanes !== null) options.onMissingPanes?.(missingPanesProblemOf({ drawn: panes, opened: openedPanes }));
+    if (openedPanes !== null) throw new MissingPanesError(missingPanesProblemOf({ drawn: panes, opened: openedPanes }));
 
     if (options.frozen?.length) await page.evaluate(freezeAnimationsScriptOf(options.frozen));
 
@@ -484,7 +531,7 @@ export const harnessShotOf = async (options: {
 
 type DesignServer = Awaited<ReturnType<typeof createDesignServer>>;
 
-type HarnessShot = Omit<Parameters<typeof harnessShotOf>[0], 'browser' | 'phase' | 'onMissingPanes' | 'timeout'>;
+type HarnessShot = Omit<Parameters<typeof harnessShotOf>[0], 'browser' | 'phase' | 'timeout'>;
 
 const sha256Of = (text: string) => createHash('sha256').update(text).digest('hex');
 
@@ -533,7 +580,7 @@ export const compareCachesOf = (options: {
 export const cachedAppShotOf = async (options: {
   cache: { salt: string; built: string; cache: AppShotCache } | null;
   shot: HarnessShot;
-  draw: () => Promise<{ app: Buffer; note?: string }>;
+  draw: () => Promise<{ app: Buffer }>;
 }) => {
   const { cache } = options;
   const key = cache ? appShotKeyOf({ salt: cache.salt, app: cache.built, shot: options.shot }) : null;
@@ -709,26 +756,13 @@ export const shootStatesWith =
             return cachedAppShotOf({
               cache: caches.app,
               shot,
-              draw: () => {
-                let note: string | undefined;
-
-                return timedPhase(`compare-app-shot ${state}`, () =>
+              draw: () =>
+                timedPhase(`compare-app-shot ${state}`, () =>
                   queue.run((browser) =>
-                    harnessShotOf({
-                      ...shot,
-                      browser,
-                      phase: `compare-app-shot ${state}`,
-                      onMissingPanes: (problem) => (note = problem),
-                    }).then((app) => (note === undefined ? { app } : { app, note })),
+                    harnessShotOf({ ...shot, browser, phase: `compare-app-shot ${state}` }).then((app) => ({ app })),
                   ),
-                );
-              },
-            }).catch((error: unknown): AppShot => {
-              if (error instanceof DroppedPropsError) return { problem: error.message };
-              if (error instanceof UndrivableError) return { problem: error.message, undrivable: true as const };
-
-              throw error;
-            });
+                ),
+            }).catch(appShotProblemOf);
           },
         }),
       );
@@ -783,8 +817,6 @@ export const comparePart: ComparePart = async (options) => {
     }
 
     console.log(compareLineOf(state, result));
-
-    if (stateShot.note) console.log(`${state} note: ${stateShot.note}`);
 
     if (result.kind === 'ok') continue;
 

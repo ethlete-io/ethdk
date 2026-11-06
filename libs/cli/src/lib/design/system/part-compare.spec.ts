@@ -9,11 +9,13 @@ import { crc32, deflateSync } from 'zlib';
 import { DESIGN_DIR } from '../paths';
 import type { TextAmbient } from '../shot';
 import {
+  appShotProblemOf,
   compareFrameOf,
   comparePart,
   compareWidthOf,
   designCompare,
   harnessShotOf,
+  missingPanesProblemOf,
   ShootStates,
 } from './compare-command';
 import { partActionFailuresOf } from './actions-command';
@@ -374,27 +376,6 @@ describe('part compare', () => {
       }),
     ).toEqual({ green: true, states: { a: {} } });
     expect(lines).toEqual(['a ok']);
-  });
-
-  it('prints the missing-panes note of a state under its line, without failing an equal picture', async () => {
-    const target = checkout();
-    const lines = output();
-
-    expect(
-      await comparePart({
-        target,
-        config: {},
-        product: resolveProduct({ target, name: 'app-a', config: {} }),
-        part: 'components/chip',
-        url: 'u',
-        only: null,
-        shoot: async () => ({
-          states: { a: {} },
-          shots: [{ state: 'a', design: pngOf(1, 1, () => RED), app: pngOf(1, 1, () => RED), note: 'panes missing' }],
-        }),
-      }),
-    ).toEqual({ green: true, states: { a: {} } });
-    expect(lines).toEqual(['a ok', 'a note: panes missing']);
   });
 
   it('refuses without a go, and exits 0 only when every state is ok', async () => {
@@ -917,14 +898,15 @@ describe('harnessShotOf', () => {
     },
   );
 
-  it('shoots anyway when fewer overlay panes open than the design draws', async (context) => {
+  it('fails the state when fewer overlay panes open than the design draws', async (context) => {
     if (!browser) return context.skip('no browser');
 
     const target = harnessUrlOf({ url, part: 'components/picker', state: 'a', props: {} });
-    const withoutPanes = await harnessShotOf({ browser, url: target });
-    const png = await harnessShotOf({ browser, url: target, panes: 1 });
 
-    expect(decodePng(png)).toEqual(decodePng(withoutPanes));
+    await expect(harnessShotOf({ browser, url: target })).resolves.toBeInstanceOf(Buffer);
+    expect(await harnessShotOf({ browser, url: target, panes: 1 }).catch(appShotProblemOf)).toEqual({
+      problem: missingPanesProblemOf({ drawn: 1, opened: 0 }),
+    });
   });
 
   it('opens a surface by a trigger inside an overlay root', async (context) => {
