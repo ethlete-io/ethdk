@@ -4354,3 +4354,10 @@ onto the snapped camera), 8c07ea875 (552: a failed before render ends as no verd
 after the render; rebase skips a hunk already present). Left open from 551: `sketch ready` does not run the
 SKETCH-BASE-STALE check, only `sketch check` does. Doc agent decision (technical, applies 551): ready runs the same
 stale check and refuses with the base commit.
+
+554\. Builder (2026-11-07), tryCatch slice (b54d82426): the agent named its new changeset file the same as the one of
+1d776832f and overwrote the eslint-plugin changeset; 74808df43 restores it. Why no tool caught it: `yarn
+lint:changesets` checks only that each changed package has some changeset, not that an unreleased changeset kept its
+packages. Doc agent decision (technical, applies ADR 0038, a fast check that prevents a certain loss): `yarn
+lint:changesets` fails when the pushed range removes a package entry from, or deletes, a changeset file that is not in
+pre.json. A rewrite of the text stays allowed.
