@@ -289,6 +289,13 @@ import('@ethlete/query-devtools/lazy') })`; new export `mountQueryDevtools` in `
   load devtools only when `ngDevMode` and not `navigator.webdriver`. **Decision (Tom, 2026-11-05, "q3ok"):** the SDK does not show the devtools when
   `navigator.webdriver` is true; an option on the devtools provider switches them on again. The docs name the
   behaviour.
+  **Proven in 2da18aaca (cb), browser proof only, no product change:** story `Automation` provides the devtools
+  without `showInAutomation`; e2e group "query devtools / automation" checks on desktop and touch that pill, toggle and
+  panel are hidden, nothing overlaps the app button and a plain click lands once; on `Default` the toggle is visible.
+  Bite: with `Automation` set to true the hidden check fails. 9 passed, 5 skipped (keyboard on touch). Not verified:
+  static Storybook build, CI shard selection. Lesson: every story set `showInAutomation: true` in the meta decorator,
+  so no story showed Playwright the default automation behaviour. A default that only shows under automation gets a
+  story that keeps the default.
 - **21. Migrator adds `destroyOnResponse` wrongly (fifagg-frontend-3d, built 1bcd056ba + c034f6726, unpushed):**
   `legacy-prepare-migration.ts:1212-1223` `shouldAddDestroyOnResponse` checks only for polling, so a query kept in a
   signal, executed again, or bound to a template still gets `config: { destroyOnResponse: true }`; after the first

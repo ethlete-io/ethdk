@@ -3472,6 +3472,18 @@ title-bar runs, likely because another session edited title-bar sources during t
 the key is unchanged after it); one rerun hit (0.07 s). Not measured: browser contexts; `pages/sketches` (stale-CLI
 guard).
 
+478\. After an automatic merge, `sketch ready` printed "ENOENT ... foundations-colors.foundations-check-fixes/sketch.json"
+and never printed "merged automatically", although the merge was complete (commit 479bdace3, builder, 2026-11-05).
+Why no tool caught it: no spec runs `sketch ready` to the end for an auto-merging sketch and asserts a clean exit and
+the message. Tool fix: find the step that reads `sketch.json` after the sketch folder is removed; a spec for the
+auto-merge path with exit code 0 and the "merged automatically" line. Also: an automatic merge commits its own
+result, so it never leaves a dirty tree that blocks the next sketch.
+Cause (corrected by the builder, faa6b4f70): two `sketch ready` runs on the same sketch at the same time; one merged, the
+other hit ENOENT. Not a merge-path bug. Fixed: a per-sketch lock (the second run fails with a clear message) and a
+check that `sketch.json` still exists; the auto-merge commits its own result when the product folder is clean apart from
+the sketch's own folder. Finding 475(2) is built: a refused or skipped auto-merge writes `mergeHold {reason, at}` on the
+sketch.
+
 479\. A fresh sketch of a part that has a `.css` file (`components/kbd`, `components/divider`) fails `UTILITY-CSS` in
 `sketch check`, so `sketch ready` refuses after 2.5 s (builder measure, 2026-11-05). Why no tool caught it: no spec
 creates a sketch for a part with a `.css` file and runs `check`. Tool fix: `sketch new` copies the part so that it
@@ -3561,6 +3573,14 @@ CI (done in this commit); (2) tool: `design check --product <p> --base <ref>` ch
 implemented app files changed since `<ref>`, plus the parts that embed them, and prints which parts it chose. Built in
 the performance block of ADR 0199.
 
+486\. `design compare pages/sketches` lists 16 missed actions: the app shows a combobox "Runde" in every state and a
+disclosure "Alle Zustände zeigen", and the design draws neither (builder ethlete-sdk-c0, 2026-11-06). The app grew
+controls without a design; compare only lists them, and `check --rules` and the pre-push gate pass. Same class as 484
+(app content no design covers), here as controls instead of states. Why no tool caught it: a missed action is
+informational, not a failure, and nothing turns it into a design task. Tool fix: a missed action fails compare for an
+implemented part and opens the missing-state sketch of ADR 0048 and ADR 0010 (built look as variant a); the
+IMPLEMENTATION-UNCOMPARED gate in `check --rules --base` fails while one is open.
+
 487\. The documented scenario command `npx vitest run --config vitest.projects.ts --project query ...` (skill
 query-scenario-tests) fails before it collects a test: "Project name "storybook" from apps/storybook/vitest.config.mts is
 not unique", and apps/timetrack has the same pair (vite.config.mts from abc5bda5a plus vitest.config.mts, both
@@ -3571,25 +3591,12 @@ Tool fix (technical, decided): the root projects file takes `vite.config.*` only
 the same folder, and the sub-second pre-push "Checks" run `vitest list --config vitest.projects.ts --project query`
 so a name clash fails the push.
 
-486\. `design compare pages/sketches` lists 16 missed actions: the app shows a combobox "Runde" in every state and a
-disclosure "Alle Zustände zeigen", and the design draws neither (builder ethlete-sdk-c0, 2026-11-06). The app grew
-controls without a design; compare only lists them, and `check --rules` and the pre-push gate pass. Same class as 484
-(app content no design covers), here as controls instead of states. Why no tool caught it: a missed action is
-informational, not a failure, and nothing turns it into a design task. Tool fix: a missed action fails compare for an
-implemented part and opens the missing-state sketch of ADR 0048 and ADR 0010 (built look as variant a); the
-IMPLEMENTATION-UNCOMPARED gate in `check --rules --base` fails while one is open.
-
-478\. After an automatic merge, `sketch ready` printed "ENOENT ... foundations-colors.foundations-check-fixes/sketch.json"
-and never printed "merged automatically", although the merge was complete (commit 479bdace3, builder, 2026-11-05).
-Why no tool caught it: no spec runs `sketch ready` to the end for an auto-merging sketch and asserts a clean exit and
-the message. Tool fix: find the step that reads `sketch.json` after the sketch folder is removed; a spec for the
-auto-merge path with exit code 0 and the "merged automatically" line. Also: an automatic merge commits its own
-result, so it never leaves a dirty tree that blocks the next sketch.
-Cause (corrected by the builder, faa6b4f70): two `sketch ready` runs on the same sketch at the same time; one merged, the
-other hit ENOENT. Not a merge-path bug. Fixed: a per-sketch lock (the second run fails with a clear message) and a
-check that `sketch.json` still exists; the auto-merge commits its own result when the product folder is clean apart from
-the sketch's own folder. Finding 475(2) is built: a refused or skipped auto-merge writes `mergeHold {reason, at}` on the
-sketch.
+488\. The doc agent committed ADRs 0198-0200 with `open:` values the ADR check refuses ("A1", "477", "et-update-findings
+11") and put finding 487 before 486; 478 already sat after 486 (doc agent, 2026-11-06). Only the pre-push
+`lint:studio-adrs` caught it, at Tom's "push ok", so the push stopped on plan files. Same defect as 455: B395 (ADR and
+finding-order check at commit time) is still backlog. Fix in this round: STATUS rows B398-B400, ADRs point at them,
+findings reordered. Tool fix (technical, decided): B395 moves up and also checks the finding order; the doc-agent skill
+says an open ADR needs its STATUS row in the same commit.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 

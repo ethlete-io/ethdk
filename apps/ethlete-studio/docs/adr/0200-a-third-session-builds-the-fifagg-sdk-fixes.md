@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: et-update-findings 11
+open: B400
 decided: 2026-11-06
 source: grill session 2026-11-06
 ---

@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: 477
+open: B399
 decided: 2026-11-06
 source: grill session 2026-11-06
 ---
