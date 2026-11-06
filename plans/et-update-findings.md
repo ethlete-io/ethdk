@@ -493,3 +493,12 @@ features, 151 creators written, 98 tasks. Built by the third session of ADR 0200
   selectors deleted, barrel -> queries, registration unhooked). If the closure reaches actions/reducer, everything is
   kept as today. `NTK-STORE-FILE-KEPT` names each kept file with its outside user (`layout.effects.ts:14`). A barrel
   exporting both actions and queries was rejected (TS2308).
+- **Legacy `rawState` type as built (d76c6f151, ethlete-sdk-62):** `LegacyQuery.rawState` was `Success<unknown>`
+  (the cf15ca5b8 mock-state signal typed `V2QueryState<unknown>`); now the wrapped creator's response. Type spec fails
+  before. Lesson: no spec asserted the response type of the legacy state.
+- **T5 part 1 as built (39eaeeb9c):** `NTK-SERVICE-HEADERS` names the headers, their source and the condition
+  (`isPlatformServer(...)`), with the line. Open: T5 part 2 (barrel exporting a deleted group), T4.
+- **Replay at 7 new errors:** 4 sharing errors are covered by `NTK-SELECT-BY-ACTION-ID`. Open, cause unknown:
+  `match-rail.component.html`, 3 errors (`match` is `unknown` inside `*etInfinityQuery`); the generator does not touch
+  the file, the errors come from the local `@ethlete/query` build vs next.62 - a possible type regression for every
+  consumer since next.62.
