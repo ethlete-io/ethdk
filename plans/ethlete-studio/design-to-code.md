@@ -4272,8 +4272,14 @@ cold 29.8 s, timed out (harness build 15.7 s); warm 2.9 s, 105/105 hits; an unre
 `harness-shot` edited, 9.0 s, 44 misses (app pictures and actions; design pictures hit); `shot` edited, 14.1 s, 74
 misses. Details: `.claude/handoffs/agent-results/b416-slice2.md`.
 
-B416 after-edit floor (in progress, c0, 2026-11-06): measured first (resident, load 4.8-15): a single-state edit
-(sketch-status-badge, state idle) - design edit 6.9 s median meets 10 s, app edit 10.8 s median misses; zoom-chip
-worst case 9.0-11.3 s. compare-actions re-checks only changed states (no bug; an app edit re-runs all by its built-app
-key). Building: compare-actions overlapped with compare-states/pixels, slow unchanged-matrix states first; compare-pixels
-cached by (design picture hash, app picture hash, pixel code hash). Deferred: reuse design shots by render output.
+B416 after-edit floor (as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06): measured first
+(resident, load 4.8-15): a single-state edit (sketch-status-badge, state idle) - design edit 6.9 s median meets 10 s, app
+edit 10.8 s median misses; zoom-chip worst case 9.0-11.3 s. compare-actions re-checks only changed states (no bug; an app
+edit re-runs all by its built-app key). Built: compare-actions starts with compare-states once the harness is up, its
+note lines are held and printed where they were, so state lines and exit code are unchanged (spec: the shots wait for
+the action check to start). compare-pixels keeps each state's result and diff PNG in `compare-pixels` through
+`writeCacheEntry`, keyed on both picture hashes and `pixelCompareCodeOf()` (part-compare, pixel-cache). Verified: specs
+(an edit between two runs misses only that state with the new px count; same lines and diff files from the cache; abort
+keeps nothing), both tsc, lint. Not built: the slow unchanged-matrix states first - the batches run in turn, each in a
+fresh browser, so a reorder saves nothing; a pool needs the browser threaded through the check. Deferred: reuse design
+shots by render output.

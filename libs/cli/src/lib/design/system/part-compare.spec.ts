@@ -447,6 +447,47 @@ describe('part compare', () => {
     expect(lines).toEqual(['default ok', 'actions not checked: the harness map is stale']);
   });
 
+  it('runs the action check while the states are shot, and prints the same lines and exit code as in turn', async () => {
+    const target = checkout();
+    const lines = output();
+    let actionsStarted = (): void => undefined;
+    const started = new Promise<void>((resolve) => (actionsStarted = resolve));
+    const shoot = vi.fn<ShootStates>(async () => {
+      await started;
+      console.log('shots taken');
+
+      return {
+        states: { default: {}, open: {} },
+        shots: [
+          { state: 'default', design: pngOf(1, 1, () => RED), app: pngOf(1, 1, () => RED) },
+          { state: 'open', design: pngOf(1, 1, () => RED), app: pngOf(1, 1, () => BLUE) },
+        ],
+      };
+    });
+    const actions = vi.fn<typeof partActionFailuresOf>(async (options) => {
+      actionsStarted();
+      options.onNote?.('host DesignCanvas: not checked');
+
+      return ['open button "Zu" click FAILED the state default was not reached'];
+    });
+
+    const code = await designCompare({
+      target,
+      argv: ['components/chip', '--product', 'app-a', '--url', 'http://localhost:9'],
+      invocation: 'et design',
+      shoot,
+      actions,
+    });
+
+    expect(code).toBe(1);
+    expect(lines.slice(0, 3)).toEqual(['shots taken', 'default ok', 'open DIFF 1 px']);
+    expect(lines.slice(4)).toEqual([
+      'host DesignCanvas: not checked',
+      'open button "Zu" click FAILED the state default was not reached',
+      '1 action missed',
+    ]);
+  });
+
   it('says a foundation has nothing to compare and exits 0', async () => {
     const target = checkout();
     const lines = output();

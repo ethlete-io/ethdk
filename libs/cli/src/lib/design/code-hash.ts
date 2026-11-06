@@ -118,6 +118,9 @@ export const designPictureCodeOf = () => codeHashOf({ entries: DESIGN_PICTURE_MO
 /** @internal The code an app picture is drawn and kept with. */
 export const appPictureCodeOf = () => codeHashOf({ entries: ['system/harness-shot', 'system/compare-cache'] });
 
+/** @internal The code a pixel compare of two pictures runs and is kept with. */
+export const pixelCompareCodeOf = () => codeHashOf({ entries: ['system/part-compare', 'system/pixel-cache'] });
+
 /** @internal The code the action check of a state runs, the design pictures it compares against included. */
 export const actionCheckCodeOf = () =>
   codeHashOf({

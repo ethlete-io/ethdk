@@ -56,8 +56,9 @@ export const browserVersionOf = (from: string | undefined) => {
 export const cacheKeyOf = (inputs: unknown) => createHash('sha256').update(JSON.stringify(inputs)).digest('hex');
 
 /** A disk cache of app pictures under `dir`; the oldest entries go past `limit` bytes. Reading and writing never throw. */
-export const createAppShotCache = (dir: string, limit = APP_SHOT_LIMIT): AppShotCache => {
-  const evict = () => {
+/** @internal Removes the least recently used `.json` entries in `dir` until they hold at most `limit` bytes. */
+export const evictOldestPast = (dir: string, limit: number) => {
+  try {
     const entries = readdirSync(dir)
       .filter((name) => name.endsWith(ENTRY_SUFFIX))
       .map((name) => ({ name, ...statSync(join(dir, name)) }))
@@ -70,7 +71,13 @@ export const createAppShotCache = (dir: string, limit = APP_SHOT_LIMIT): AppShot
       total -= entry.size;
       rmSync(join(dir, entry.name), { force: true });
     }
-  };
+  } catch {
+    return;
+  }
+};
+
+export const createAppShotCache = (dir: string, limit = APP_SHOT_LIMIT): AppShotCache => {
+  const evict = () => evictOldestPast(dir, limit);
 
   return {
     read: (key) => {

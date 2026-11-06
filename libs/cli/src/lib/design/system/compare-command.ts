@@ -7,7 +7,7 @@ import { chromiumOf } from '../browser';
 import { DesignConfig, viteCacheOf } from '../paths';
 import { createDesignServer } from '../serve';
 import { timedPhase } from '../phase-timing';
-import { appPictureCodeOf } from '../code-hash';
+import { appPictureCodeOf, pixelCompareCodeOf } from '../code-hash';
 import { recordCache } from '../timings';
 import { WarmDraw } from '../warm-draw';
 import { createPartShooter } from '../shot';
@@ -36,7 +36,7 @@ import {
 } from './harness-shot';
 import {
   compareLineOf,
-  comparePngs,
+  PixelCompare,
   designOnlyPropsOf,
   drawsSelectedOf,
   drawnSurfacesOf,
@@ -51,6 +51,7 @@ import { inOrderAtOnce } from './in-order-at-once';
 import { frozenAnimationsOf } from './frozen-animations';
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
 import { parseTarget, SketchTarget } from './sketch/sketch';
+import { cachedComparePngs, COMPARE_PIXELS } from './pixel-cache';
 import { createSystemModules, productModuleIdOf } from './system-modules';
 import { drawnStateNamesOf } from './unchanged-rows';
 
@@ -418,6 +419,7 @@ export const comparePart: ComparePart = async (options) => {
 
   return timedPhase('compare-pixels', () => {
     let dir: string | null = null;
+    const cache = { dir: viteCacheOf(options.target, COMPARE_PIXELS), salt: pixelCompareCodeOf() };
 
     let failed = false;
 
@@ -431,10 +433,13 @@ export const comparePart: ComparePart = async (options) => {
       }
 
       const { design, app } = stateShot;
-      let result: ReturnType<typeof comparePngs>;
+      let result: PixelCompare;
 
       try {
-        result = comparePngs({ design, app });
+        const compared = cachedComparePngs({ ...cache, design, app });
+
+        recordCache(compared.hit);
+        result = compared.result;
       } catch (error) {
         return `the pictures of ${state} cannot be compared: ${messageOf(error)}`;
       }
@@ -560,6 +565,26 @@ export const designCompare = async (options: {
     url: args.values['--url'],
     start: options.start,
     run: async (url, root) => {
+      const notes: string[] = [];
+      const actions =
+        all || live
+          ? null
+          : timedPhase('compare-actions', () =>
+              (options.actions ?? partActionFailuresOf)({
+                target,
+                config,
+                product,
+                part: keys[0] ?? '',
+                url: args.values['--url'],
+                harness: url,
+                appRoot: root,
+                onNote: (line) => notes.push(line),
+              }),
+            ).then(
+              (missed) => ({ missed }),
+              (error: unknown) => ({ error }),
+            );
+
       for (const task of pending) {
         if (all) console.log(`== ${task.part}`);
 
@@ -582,22 +607,15 @@ export const designCompare = async (options: {
         } else if (!result.green) failed++;
       }
 
-      if (all || live) return { failed, missed: null };
+      if (actions === null) return { failed, missed: null };
 
-      const missed = await timedPhase('compare-actions', () =>
-        (options.actions ?? partActionFailuresOf)({
-          target,
-          config,
-          product,
-          part: keys[0] ?? '',
-          url: args.values['--url'],
-          harness: url,
-          appRoot: root,
-          onNote: (line) => console.log(line),
-        }),
-      );
+      const settled = await actions;
 
-      return { failed, missed };
+      notes.forEach((line) => console.log(line));
+
+      if ('error' in settled) throw settled.error;
+
+      return { failed, missed: settled.missed };
     },
   });
 
