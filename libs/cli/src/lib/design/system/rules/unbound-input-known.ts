@@ -8,7 +8,6 @@ export const KNOWN_UNBOUND_INPUTS: KnownUnboundInput[] = [
     file: 'apps/ethlete-studio/src/app/design-parts/shell-project-switch/shell-project-switch.component.ts',
     input: 'bare',
   },
-  { file: 'apps/ethlete-studio/src/app/components/title-bar/title-bar.component.ts', input: 'part' },
   { file: 'apps/ethlete-studio/src/app/design-parts/tree-row/tree-row.component.ts', input: 'rows' },
   { file: 'apps/ethlete-studio/src/app/components/update-dialog/update-dialog.component.ts', input: 'version' },
   { file: 'apps/ethlete-studio/src/app/design-parts/part-tree/part-tree.component.ts', input: 'warningTitle' },
