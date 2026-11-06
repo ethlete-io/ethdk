@@ -40,7 +40,7 @@ import {
 import { noChangeOf } from './system/sketch/no-visible-change';
 import { unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
-import { mergeAndRecord } from './system/sketch/merge-step';
+import { editRefOf, mergeAndRecord } from './system/sketch/merge-step';
 import { staleSketchBasesOf } from './system/check-system';
 import { repoInvocation } from '../invocation';
 import { MERGED_FILE } from './system/sketch/merged-parts';
@@ -1461,7 +1461,7 @@ const merged = (context: Context) =>
     const by = authorOf(context.args) ?? undefined;
     const allowed =
       flagVariant !== undefined && planRef !== undefined && sketch.decision?.kind !== 'pick'
-        ? { variant: flagVariant, planRef }
+        ? { variant: flagVariant, planRef, editRef: editRefOf({ target: context.target, sketch, planRef }) }
         : undefined;
     const result = timedPhase('merge', () =>
       mergeAndRecord({

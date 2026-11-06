@@ -3963,6 +3963,17 @@ the record stores `by` and `adr: [...]`; without an ADR it is refused as before;
 three. A Tom finding is not an ADR: pages/sketches stays Tom's accept (in chat or Studio).
 Tom (2026-11-06, "q1ok"): pages/sketches@edit is accepted without opening it (`--by tom`, finding 500).
 
+As built (515, builder c0 subagent, 2026-11-06): `system/decision-refs.ts` holds one matcher (`ADR \d{4}` with a file
+in `apps/*/docs/adr`, `Impl Q\d+`, `finding \d+`). `acceptStepOf` allows an agent `--by` (not tom, not designer) when
+`--note` holds a ref and `accepted.json` stores `refs`. `sketch merge <part>@edit --variant X --allowed-by <ref>` picks
+either live variant through the same matcher (`editRefOf` in `merge-step.ts`); non-@edit sketches and refless calls
+keep the one-live-variant rule. A refused accept already returned 1 from `designAccept` in the working tree, and specs
+now assert it. Specs (accept-command.spec.ts, sketch/merge-step-edit.spec.ts): agent plus ADR, agent plus Impl Q, agent
+without ref or with a missing ADR (exit 1, nothing written), @edit merge with a ref, without, non-@edit still refused;
+each bitten by a mutation. Verified: both tsc gates, lint, those two specs. Not verified: a real CLI process exit code
+(spec calls `designAccept`), `finding n` refs, `--allowed-by` through `sketch-command.ts` (only `mergeStepOf` is
+specced), nothing run against the studio product.
+
 516\. Tom's "q1ok" for pages/sketches reached the builder only as a relayed message, and the builder's permission
 check refused `accept --by tom`: an agent may not record Tom's consent from a relay. The doc agent had promised the
 accept in Tom's name. Why no tool caught it: the Tom-only accept exists only as a CLI flag an agent types; nothing

@@ -25,6 +25,8 @@ output; the designed Studio is the side product.
 - Every text for the user is German, from the first status line on. This overrides an English
   output style (for example ste-clarity): keep its clarity rules, but write them in German.
 - English only for the builder messages and the plan files.
+- Text to Tom says what a thing is in plain words: no flags, no plan refs (Impl Q), no part paths unless
+  needed; an ADR number only in brackets after the plain statement.
 
 ## Start
 
@@ -41,6 +43,7 @@ output; the designed Studio is the side product.
 - Before every grill question, search the Studio ADRs (`apps/ethlete-studio/docs/adr/`, title and body) and, until
   the migration is done, every `plans/ethlete-studio/**` decision block for the topic. If Tom already decided it,
   do not ask: name the ADR and send it to the builder. A repeated question is a finding.
+- A question that applies an existing Tom decision to a new case is yours to decide; report it in one line.
 - Load the `ethlete-grilling` skill before the first question. Every design question uses its
   round format (`❓ **Q1** - **Title**: …` then `➡️ <recommendation>`, `---` between), also an
   ad-hoc one that comes up mid-conversation, for example from a screenshot. Never free bullets.

@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -36,6 +36,8 @@ const draw: DrawStates = async ({ parts }) => new Map(parts.map((part) => [part,
 const accept = (target: string, argv: string[]) =>
   designAccept({ target, argv, invocation: 'et design', draw, prompt: { isTTY: true, ask: async () => 'y' } });
 
+const agentArgs = (note: string) => ['elements/hero', '--product', 'acme', '--by', 'claude-opus-5-5', '--note', note];
+
 const FULL = ['elements/hero', '--product', 'acme', '--by', 'tom', '--note', 'Tom approved the cleanup'];
 
 describe('designAccept', () => {
@@ -67,6 +69,42 @@ describe('designAccept', () => {
         FULL.map((arg) => (arg === 'tom' ? 'claude-opus-5-5' : arg)),
       ),
     ).toBe(1);
+    expect(errors.join('\n')).toContain('only Tom grants an accept');
+    expect(existsSync(join(productDir, ACCEPTED_FILE))).toBe(false);
+  });
+
+  it('records an agent accept whose note names an existing ADR, with the ref', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const { target, productDir } = editedHero();
+
+    mkdirSync(join(target, 'apps/studio/docs/adr'), { recursive: true });
+    writeFileSync(join(target, 'apps/studio/docs/adr/0050-direct-edit.md'), '# 0050');
+
+    expect(await accept(target, agentArgs('Direct edit, ADR 0050'))).toBe(0);
+    expect(readAccepted(productDir)).toEqual([
+      expect.objectContaining({ part: 'elements/hero', by: 'claude-opus-5-5', refs: ['ADR 0050'] }),
+    ]);
+  });
+
+  it('records an agent accept whose note names an Impl Q', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const { target, productDir } = editedHero();
+
+    expect(await accept(target, agentArgs('Impl Q12 allows it'))).toBe(0);
+    expect(readAccepted(productDir)).toEqual([expect.objectContaining({ by: 'claude-opus-5-5', refs: ['Impl Q12'] })]);
+  });
+
+  it('refuses an agent accept with no ref or a missing ADR, exits 1 and writes nothing', async () => {
+    const errors: string[] = [];
+
+    vi.spyOn(console, 'error').mockImplementation((line) => void errors.push(String(line)));
+
+    const { target, productDir } = editedHero();
+
+    expect(await accept(target, agentArgs('Tom approved it'))).toBe(1);
+    expect(await accept(target, agentArgs('ADR 9999'))).toBe(1);
     expect(errors.join('\n')).toContain('only Tom grants an accept');
     expect(existsSync(join(productDir, ACCEPTED_FILE))).toBe(false);
   });

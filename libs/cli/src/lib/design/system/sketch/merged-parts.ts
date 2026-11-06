@@ -210,7 +210,15 @@ export const directEditsOf = (product: ResolvedProduct): { part: string; sketch:
 
 export const ACCEPTED_FILE = 'accepted.json';
 
-export type Acceptance = { part: string; by: string; note: string; hash: string; at: string; auto?: true };
+export type Acceptance = {
+  part: string;
+  by: string;
+  note: string;
+  hash: string;
+  at: string;
+  auto?: true;
+  refs?: string[];
+};
 
 export const readAccepted = (productDir: string): Acceptance[] => {
   const file = resolve(productDir, ACCEPTED_FILE);
@@ -287,8 +295,9 @@ export const acceptPart = (options: {
   part: string;
   by: string;
   note: string;
+  refs?: string[];
 }): string | null => {
-  const { product, part, by, note } = options;
+  const { product, part, by, note, refs } = options;
   const refusal = acceptRefusalOf({ product, part });
 
   if (refusal) return refusal.error;
@@ -296,7 +305,7 @@ export const acceptPart = (options: {
   recordMerged({ product, parts: [part] });
 
   const hash = readMerged(product.dir)[part] ?? '';
-  const entry: Acceptance = { part, by, note, hash, at: new Date().toISOString() };
+  const entry: Acceptance = { part, by, note, hash, at: new Date().toISOString(), ...(refs?.length ? { refs } : {}) };
 
   logAcceptance(product.dir, entry);
 

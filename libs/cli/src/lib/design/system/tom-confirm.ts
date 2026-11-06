@@ -21,8 +21,9 @@ export type WriteCommandOptions = {
 export const isTom = (by: string) => by.trim().toLowerCase() === 'tom';
 
 /** Why `by` may not grant a go or an accept, or `null` for Tom. */
-export const onlyTomRefusalOf = (options: { by: string; action: 'go' | 'accept' }) =>
-  isTom(options.by)
+export const onlyTomRefusalOf = (options: { by: string; action: 'go' | 'accept'; refs?: string[] }) =>
+  isTom(options.by) ||
+  (options.action === 'accept' && options.by.trim().toLowerCase() !== 'designer' && !!options.refs?.length)
     ? null
     : `only Tom grants ${options.action === 'go' ? 'a go' : 'an accept'}; agents report ready instead (--by ${options.by} refused)`;
 

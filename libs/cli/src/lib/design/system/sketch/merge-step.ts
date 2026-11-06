@@ -1,5 +1,6 @@
 import { DesignConfig } from '../../paths';
 import { timedPhase } from '../../phase-timing';
+import { decisionRefsOf } from '../decision-refs';
 import { DesignStep } from '../tom-confirm';
 import { refreshHarnessMap } from '../harness-map';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
@@ -9,15 +10,19 @@ import { recordMergeReason } from './merged-parts';
 import { decideSketch, findSketch, parseTarget, rejectionOf, Sketch } from './sketch';
 
 /** The sketch with the pick a plan allows: its only live variant, when `variant` names it and nobody picked yet. */
-export const allowedMergeOf = (options: { sketch: Sketch; variant: string }) => {
-  const { sketch, variant } = options;
+export const allowedMergeOf = (options: { sketch: Sketch; variant: string; editRef?: boolean }) => {
+  const { sketch, variant, editRef } = options;
   const live = sketch.variants.filter((candidate) => !rejectionOf(sketch, candidate));
 
-  if (live.length !== 1 || live[0] !== variant)
+  if (editRef ? !live.includes(variant) : live.length !== 1 || live[0] !== variant)
     return `${sketch.target} has ${live.length} live variants (${live.join(', ') || 'none'}), not only "${variant}" - the user picks in Studio`;
 
   return decideSketch({ sketch, decision: { kind: 'pick', variant } });
 };
+
+export const editRefOf = (options: { target: string; sketch: Sketch; planRef: string }) =>
+  options.sketch.target.endsWith('@edit') &&
+  decisionRefsOf({ target: options.target, text: options.planRef }).length > 0;
 
 /** Merges the picked variant of `sketch` and logs the reason; answers the merged variant and part keys, or why not. */
 export const mergeAndRecord = (options: {
@@ -28,10 +33,10 @@ export const mergeAndRecord = (options: {
   note?: string;
   replaceNote?: boolean;
   by?: string;
-  allowed?: { variant: string; planRef: string };
+  allowed?: { variant: string; planRef: string; editRef?: boolean };
 }): { variant: string; parts: string[] } | string => {
   const { target, config, product, sketch, note, replaceNote, by, allowed } = options;
-  const decided = allowed ? allowedMergeOf({ sketch, variant: allowed.variant }) : sketch;
+  const decided = allowed ? allowedMergeOf({ sketch, variant: allowed.variant, editRef: allowed.editRef }) : sketch;
 
   if (typeof decided === 'string') return decided;
 
@@ -92,13 +97,16 @@ export const mergeStepOf = (options: {
     return `${sketch.target} is ${sketch.status} - mark it ready first: design sketch ready ${sketch.target} --by <model id> --product ${product.name}`;
 
   const picked = sketch.decision?.kind === 'pick' ? sketch.decision.variant : undefined;
-  const allowed = variant !== undefined && picked === undefined ? { variant, planRef: note } : undefined;
+  const allowed =
+    variant !== undefined && picked === undefined
+      ? { variant, planRef: note, editRef: editRefOf({ target, sketch, planRef: note }) }
+      : undefined;
 
   if (variant !== undefined && picked !== undefined && picked !== variant)
     return `${sketch.target} was picked as variant "${picked}", not "${variant}"`;
 
   if (allowed) {
-    const decided = allowedMergeOf({ sketch, variant: allowed.variant });
+    const decided = allowedMergeOf({ sketch, variant: allowed.variant, editRef: allowed.editRef });
 
     if (typeof decided === 'string') return decided;
   } else if (picked === undefined)

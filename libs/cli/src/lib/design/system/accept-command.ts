@@ -1,4 +1,5 @@
 import { dirname, relative } from 'path';
+import { decisionRefsOf } from './decision-refs';
 import { DrawStates, storePictures } from './accepted-pictures';
 import { ruleProblemsOf } from './check-system';
 import { DesignConfig } from '../paths';
@@ -8,6 +9,7 @@ import { AcceptRefusal, acceptPart, acceptRefusalOf, readMerged } from './sketch
 import { parseTarget } from './sketch/sketch';
 import {
   DesignStep,
+  isTom,
   onlyTomRefusalOf,
   runSteps,
   tomConfirmRefusalOf,
@@ -60,14 +62,15 @@ export const acceptRunOf = (options: {
   part: string;
   by: string;
   note: string;
+  refs?: string[];
   draw?: DrawStates;
 }): DesignStep => {
-  const { target, config, product, part, by, note } = options;
+  const { target, config, product, part, by, note, refs } = options;
 
   return {
     line: `accept ${product.name} ${part} - ${note}`,
     run: async () => {
-      const problem = acceptPart({ product, part, by, note });
+      const problem = acceptPart({ product, part, by, note, refs });
 
       if (problem) {
         console.error(problem);
@@ -104,7 +107,8 @@ export const acceptStepOf = (options: {
   draw?: DrawStates;
 }): DesignStep | string => {
   const { target, by, note } = options;
-  const refused = onlyTomRefusalOf({ by, action: 'accept' });
+  const refs = decisionRefsOf({ target, text: note });
+  const refused = onlyTomRefusalOf({ by, action: 'accept', refs });
 
   if (refused) return refused;
 
@@ -125,7 +129,16 @@ export const acceptStepOf = (options: {
 
   if (refusal) return refusal.error;
 
-  return acceptRunOf({ target, config, product, part, by, note, draw: options.draw });
+  return acceptRunOf({
+    target,
+    config,
+    product,
+    part,
+    by,
+    note,
+    refs: isTom(by) ? undefined : refs,
+    draw: options.draw,
+  });
 };
 
 /**
