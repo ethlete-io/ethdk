@@ -48,6 +48,7 @@ const runOf = (line: TimingLine, head: string | null) =>
     isStale(line, head) ? 'STALE' : '',
     isNoisy(line) ? 'NOISY' : '',
     isUnexplained(line) ? 'UNEXPLAINED' : '',
+    line.nullHashes ? `NULL-HASHES ${line.nullHashes}` : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -123,6 +124,7 @@ export const timingsReportOf = (options: {
     .slice(0, LISTED);
   const slowestRuns = [...lines].sort((a, b) => b.totalMs - a.totalMs).slice(0, LISTED);
   const unexplained = lines.filter(isUnexplained).sort((a, b) => b.start.localeCompare(a.start));
+  const unverified = lines.filter((line) => (line.nullHashes ?? 0) > 0).sort((a, b) => b.start.localeCompare(a.start));
 
   return [
     header,
@@ -154,6 +156,10 @@ export const timingsReportOf = (options: {
     `runs with unexplained time (unphased over ${UNEXPLAINED_SHARE * 100} % of the run): ${unexplained.length}`,
     ...unexplained.slice(0, LISTED).map((line) => `  ${runOf(line, head)}`),
     ...(unexplained.length > LISTED ? [`  and ${unexplained.length - LISTED} more`] : []),
+    '',
+    `runs with null cache input hashes (unfetched, nothing verified): ${unverified.length}`,
+    ...unverified.slice(0, LISTED).map((line) => `  ${runOf(line, head)}`),
+    ...(unverified.length > LISTED ? [`  and ${unverified.length - LISTED} more`] : []),
     '',
     'slowest phases (total over all runs):',
     ...padded([

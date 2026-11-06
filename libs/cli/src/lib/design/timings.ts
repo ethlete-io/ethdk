@@ -39,6 +39,7 @@ export type TimingLine = {
   serverStartMs: number;
   cache: { hits: number; misses: number };
   concurrentHeavy: number | null;
+  nullHashes?: number;
   unphasedMs?: number;
   commit?: TimingCommit | null;
   load?: TimingLoad;
@@ -63,6 +64,7 @@ type Recorder = {
   draws: number[];
   cache: { hits: number; misses: number };
   concurrentHeavy: number | null;
+  nullHashes: number;
   skipped: boolean;
 };
 
@@ -80,6 +82,11 @@ export const recordCache = (hit: boolean) => {
 
   if (hit) current.cache.hits++;
   else current.cache.misses++;
+};
+
+/** Records `count` cache inputs the run could not fetch, so their hash is null and they verify nothing. */
+export const recordNullHashes = (count: number) => {
+  if (current) current.nullHashes += count;
 };
 
 /** Records how long one drawing waited in the draw queue; the run logs its longest wait. */
@@ -245,6 +252,7 @@ export const recordRun = async (
     draws: [],
     cache: { hits: 0, misses: 0 },
     concurrentHeavy: null,
+    nullHashes: 0,
     skipped: false,
   };
   const outer = current;
@@ -296,6 +304,7 @@ export const recordRun = async (
       serverStartMs: sumOf(phases, SERVER_START_PHASES),
       cache: recorder.cache,
       concurrentHeavy: recorder.concurrentHeavy,
+      nullHashes: recorder.nullHashes,
       commit,
       load: loadOf(),
     };

@@ -4,6 +4,7 @@ import { join } from 'path';
 import { writeCacheEntry } from '../cache-entry';
 import { evictOldestPast } from './compare-cache';
 import { QUIET_HEADER, SERVED_LINES_HEADER } from '../render';
+import { recordNullHashes } from '../timings';
 
 /** A request a drawing made: url, `accept` header and, for a POST, its body. */
 export type ServedRequest = { url: string; accept: string | null; post?: string | null };
@@ -79,12 +80,16 @@ export const createServedHashes = (base: string, fetchServed: FetchServed = fetc
 
     if (known) return known;
 
-    const hashed = fetchServed(request).then((served) => ({
-      hash: served
-        ? createHash('sha256').update(served.body.toString('latin1').replace(ownHost, '')).digest('hex')
-        : null,
-      lines: served?.lines ?? [],
-    }));
+    const hashed = fetchServed(request).then((served) => {
+      if (!served) recordNullHashes(1);
+
+      return {
+        hash: served
+          ? createHash('sha256').update(served.body.toString('latin1').replace(ownHost, '')).digest('hex')
+          : null,
+        lines: served?.lines ?? [],
+      };
+    });
 
     held.set(at, hashed);
 
@@ -169,18 +174,22 @@ export const servedHitOf = async <T>(run: ServedCacheRun<T>, key: string): Promi
   return held.value;
 };
 
-/** Writes what a drawing found under `key`, with every response it loaded and every line the server logged for it. */
+/**
+ * Writes what a drawing found under `key`, with every response it loaded and every line the server logged for it.
+ * Writes nothing and returns false when a response could not be fetched, as its null hash would verify nothing.
+ */
 export const writeServed = async <T>(
   run: ServedCacheRun<T>,
   entry: { key: string; requested: ServedRequest[]; value: T },
 ) => {
   const { key, requested, value } = entry;
+  const inputs = await run.served.inputsOf(requested);
 
-  run.store.write(key, {
-    inputs: await run.served.inputsOf(requested),
-    lines: await run.served.linesOf(requested),
-    value,
-  });
+  if (inputs.some((input) => input.hash === null)) return false;
+
+  run.store.write(key, { inputs, lines: await run.served.linesOf(requested), value });
+
+  return true;
 };
 
 /** Records every request `context` makes into `into`, a POST with its body. */

@@ -174,4 +174,23 @@ describe('timingsReportOf', () => {
     expect(flagged.length).toBeGreaterThan(0);
     expect(flagged.every((line) => line.includes('11:59:00.000Z check'))).toBe(true);
   });
+  it('flags each run that could not fetch a cache input, with how many', () => {
+    const report = timingsReportOf({
+      lines: [
+        lineOf({ minutesAgo: 1, command: 'check', parts: [], nullHashes: 14_814 }),
+        lineOf({ minutesAgo: 2, command: 'check', parts: [], nullHashes: 0 }),
+        lineOf({ minutesAgo: 3, command: 'check', parts: [] }),
+      ],
+      now: NOW,
+      sinceMs: 3_600_000,
+      head: HEAD,
+    });
+    const flagged = report.split('\n').filter((line) => line.includes('NULL-HASHES'));
+
+    expect(report).toContain('runs with null cache input hashes (unfetched, nothing verified): 1');
+    expect(flagged.length).toBeGreaterThan(0);
+    expect(flagged.every((line) => line.includes('11:59:00.000Z check') && line.includes('NULL-HASHES 14814'))).toBe(
+      true,
+    );
+  });
 });
