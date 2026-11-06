@@ -3981,3 +3981,14 @@ flags and plan refs, and it says to put tool and process decisions to Tom withou
 existing decision". Fix (doc-agent skill, builder edits it): text to Tom says what a thing is in plain words (an ADR
 number at most in brackets after the plain statement, no flags, no plan refs); a question that applies an existing
 decision to a new case is decided by the doc agent and reported in one line.
+
+518\. Tom opened `pages/sketches@edit` to pick it (screenshot 2026-11-06): the view said "sieht anders aus - wähle",
+but showed no pictures at all, only "Variante new / Variante old" heads and "30 unveränderte Zustände eingeklappt".
+Tom: "wird hier eigentlich überhaupt irgendwas überprüft bevor es zu mir geht? ... ein zustand den ein user NIEMALS
+sehen sollte". The sketch was opened at 11:21Z by cb's direct edit (before 1741d8bf8); every drawn state of
+old and new is the same. Why no tool caught it: (1) an `@edit` sketch whose states are all unchanged still counts as
+"waits for your pick" (it should have closed as HELD); (2) nobody looked at what Tom would see: neither the builder
+nor the doc agent opened the sketch before sending Tom to it. Cause of (1) asked from the builder. Fix: (a) a sketch
+with no changed state never waits for Tom: the tool closes an `@edit` one as HELD and marks any other as broken, with
+a spec; (b) process: before the doc agent sends Tom to a pick, the builder takes a `design shot` of the sketch view
+and the doc agent checks it shows a real choice.
