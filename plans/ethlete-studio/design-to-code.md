@@ -4380,3 +4380,28 @@ dropped calls `changed`, and the server sends a `parts` event with the next revi
 change cleared the shots without a `parts` event. canvas e2e `a part edited on disk while away shows its new picture on
 return`: passes (12/12 pictures changed), fails with Studio's part revision held constant. Details:
 `.claude/handoffs/agent-results/open-points-key-revision-guard.md`.
+
+Open-points read-tracked key and revision guard (as built in 934616670, c0, 2026-11-06): `tracked-reads.ts` wraps the
+sync fs calls (read, exists, stat, readdir/opendir) during the rule run; a hit needs the same product JSON and every
+recorded input reading the same; the folder fingerprint is gone. Specs: an `implements` target in another app created
+and removed, a config value, a package version, a new folder entry and a vanished file each give a fresh answer; a
+completeness spec spies every non-write `fs.*Sync` and fails on an untracked read. Repeat calls: icons 12-19 ms, logo
+10-11 ms, shell-main 37-40 ms. Not tracked: `fs.promises`, child processes, an already-cached `require()`, a copy a rule
+holds in memory (no rule uses them; not proven).
+
+531\. c0 (2026-11-06), revision guard: Studio showed an old picture after a change. Studio's `revision`
+(`frame-revisions.ts`) moved only on a server `parts` event, but two paths swapped a picture without one: a flows change
+cleared every shot and sent only `flows`, and a `fresh` draw (merge-compare) replaced the stored picture. With frame A's
+stable URL, the 1 h cache and `ShotBoard.hold`, the old picture stayed. Why no tool caught it: no spec tied a store
+write to Studio's revision; before frame A every switch fetched the picture again and hid the gap. Tool fix (done in
+934616670): the shooter hashes every kept picture per key, and a changed hash that no announced redraw dropped calls
+`changed(part)` (revision bump + `parts` event); `clear` requires `{announced}`. Guards: shot.spec and shot-store.spec
+(flows change then a changed picture sends a `parts` revision; fails if the flows path claims announced) and the e2e
+"a part edited on disk while away shows its new picture on return" (12/12 new pictures; fails with the revision held).
+Lesson: a cache that makes a page faster also hides a missing invalidation, so every cache slice adds an
+edit-while-away e2e before it is called done.
+
+532\. c0 (2026-11-06): the orphan-endpoint rule throws ENOENT when the app folder of an `implements` path is missing
+(found while building the read-tracked key, not perf). Why no tool caught it: the rule specs only use fixtures where
+every linked app exists. Tool fix (queued after S7): the rule reports a missing app folder as a finding instead of
+throwing, with a spec for it.
