@@ -113,8 +113,6 @@ const FIT_PASSES = 6;
 
 const FIT_SETTLED = 0.002;
 
-const FIT_COLUMNS = 2;
-
 type FitDom = {
   columns: number;
   list: HTMLElement;
@@ -471,7 +469,7 @@ export class SketchesComponent {
   private matrixFit(matrix: HTMLElement, { columns, list, sections, fold }: FitDom) {
     const first = sections[0];
     const lead = first ? first.getBoundingClientRect().left - matrix.getBoundingClientRect().left : 0;
-    const shown = Math.max(1, Math.min(FIT_COLUMNS, columns));
+    const shown = Math.max(1, columns);
     const foldWidth = fold ? fold.offsetWidth + COLUMN_GAP : 0;
 
     return Math.min(

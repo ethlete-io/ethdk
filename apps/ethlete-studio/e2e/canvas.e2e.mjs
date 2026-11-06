@@ -28,6 +28,8 @@ const cliEntry = resolve(root, process.env['STUDIO_CLI_ENTRY'] ?? 'dist/libs/cli
 
 const GONE_TARGETS = { Merge: 'components/title-bar', Discard: 'components/tree-row' };
 
+const WIDE_SKETCH = { part: 'components/title-bar', name: 'notice-hint', variants: ['a', 'b', 'c'] };
+
 const PAGES = [
   ...Object.entries(GONE_TARGETS).map(([name, target]) => ({
     name,
@@ -60,6 +62,11 @@ const PAGES = [
     view: { systemProduct: 'studio', systemEntry: 'sketch:elements/shell-main' },
     shows: 'ethlete-sketch-view ethlete-sketches',
     fits: 'width',
+  },
+  {
+    name: 'Wide',
+    view: { systemProduct: 'studio', systemEntry: `sketch:${WIDE_SKETCH.part}@${WIDE_SKETCH.name}` },
+    shows: 'ethlete-sketch-view ethlete-sketches',
   },
   {
     name: 'Inbox',
@@ -1114,6 +1121,72 @@ const CASES = [
     },
   },
   {
+    name: 'Fit shows every column of a wide sketch, heads at the top',
+    pages: ['Wide'],
+    viewport: WIDE,
+    run: async (page) => {
+      await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
+        timeout: 60000,
+      });
+      await page.getByRole('button', { name: 'Einpassen' }).first().click();
+      await settle(page);
+      await settled(page, FRAME);
+
+      const { view, columns, headTop, crops } = await page.evaluate(() => {
+        const viewport = document.querySelector('ethlete-sketches ethlete-canvas-viewport');
+        const box = viewport.getBoundingClientRect();
+        const covered = Number.parseFloat(getComputedStyle(viewport).getPropertyValue('--st-shell-inset-left')) || 0;
+        const columns = Object.entries(
+          Object.groupBy(viewport.querySelectorAll('[data-sk-variant]'), (cell) => cell.dataset['skVariant']),
+        ).map(([key, cells]) => {
+          const frames = cells.map((cell) => cell.querySelector('[data-sk-frame]').getBoundingClientRect());
+
+          return {
+            key,
+            left: Math.min(...frames.map((frame) => frame.left)),
+            right: Math.max(...frames.map((frame) => frame.right)),
+          };
+        });
+        const crops = [...viewport.querySelectorAll('[data-sk-frame]')].flatMap((frame) => {
+          const outer = frame.getBoundingClientRect();
+          const inner = frame.firstElementChild.getBoundingClientRect();
+
+          return Math.abs(inner.left - outer.left) > 1 || Math.abs(inner.width - outer.width) > 1
+            ? [
+                `${frame.dataset['skFrame']} content ${Math.round(inner.left - outer.left)}+${Math.round(inner.width)} in ${Math.round(outer.width)}`,
+              ]
+            : [];
+        });
+        const heads = [...viewport.querySelectorAll('[data-sk-row]')].map((head) => head.getBoundingClientRect().top);
+
+        return {
+          view: { left: box.left + covered, top: box.top, right: box.right },
+          columns,
+          headTop: heads.length ? Math.min(...heads) : null,
+          crops,
+        };
+      });
+      const shown = columns.map((column) => column.key).sort();
+      const expected = ['current', ...WIDE_SKETCH.variants];
+      const cut = columns.filter((column) => column.left < view.left - 2 || column.right > view.right + 2);
+      const gap = headTop === null ? null : Math.round(headTop - view.top);
+      const faults = [
+        ...(expected.every((key) => shown.includes(key)) ? [] : [`columns ${shown.join(',')}, expected ${expected}`]),
+        ...cut.map(
+          (column) =>
+            `${column.key} spans ${Math.round(column.left)}..${Math.round(column.right)} outside ${Math.round(view.left)}..${Math.round(view.right)}`,
+        ),
+        ...(gap !== null && gap <= 40 ? [] : [`first head ${gap} px below the canvas top`]),
+        ...crops.slice(0, 3),
+      ];
+
+      return {
+        ok: faults.length === 0,
+        detail: faults.join('; ') || `${shown.length} columns inside, head gap ${gap} px`,
+      };
+    },
+  },
+  {
     name: 'hiding the panel keeps the frames',
     pages: ['System', 'Sketches', 'Flow'],
     run: async (page, _state, target) => {
@@ -1456,6 +1529,36 @@ const prepareCheckout = () => {
       }),
     );
   }
+
+  const wide = join(
+    dir,
+    '.ethlete/design/studio/sketches',
+    `${WIDE_SKETCH.part.replace('/', '-')}.${WIDE_SKETCH.name}`,
+  );
+  const wideCss = join(WIDE_SKETCH.part, `${WIDE_SKETCH.part.split('/')[1]}.css`);
+
+  WIDE_SKETCH.variants.forEach((variant, index) => {
+    cpSync(join(root, '.ethlete/design/studio', WIDE_SKETCH.part), join(wide, variant, WIDE_SKETCH.part), {
+      recursive: true,
+    });
+    writeFileSync(
+      join(wide, variant, wideCss),
+      `${readFileSync(join(wide, variant, wideCss), 'utf8')}\n.st-title-bar { opacity: ${0.4 + index * 0.2}; }\n`,
+    );
+  });
+  writeFileSync(
+    join(wide, 'sketch.json'),
+    JSON.stringify({
+      target: `${WIDE_SKETCH.part}@${WIDE_SKETCH.name}`,
+      targets: [WIDE_SKETCH.part],
+      status: 'ready',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      rounds: [{ key: 'r1', title: '', note: 'canvas e2e' }],
+      variantInfo: Object.fromEntries(
+        WIDE_SKETCH.variants.map((variant) => [variant, { authors: ['canvas-e2e'], round: 'r1' }]),
+      ),
+    }),
+  );
 
   return dir;
 };

@@ -319,6 +319,16 @@ describe('SketchesComponent', () => {
     expect(widthOf(withFold) * 2 + 24 + 144 + 24 + 16).toBeLessThanOrEqual(LIST_WIDTH + 1);
   });
 
+  it('fits Aktuell and every variant column of a wide part into the viewport', async () => {
+    const wide = [...ROWS, ...['y', 'z'].map((key) => ({ ...ROWS[1]!, key }))].map((row) => ({ ...row, width: 4950 }));
+    const root: HTMLElement = (await render({ rows: wide, camera: 'fit' })).nativeElement;
+    const columns = root.querySelector<HTMLElement>('[data-sk-matrix]')?.style.gridTemplateColumns;
+    const width = parseFloat(columns?.match(/repeat\(4, ([\d.]+)px\)/)?.[1] ?? '0');
+
+    expect(width).toBeGreaterThan(0);
+    expect(width * 4 + 24 * 3 + 16).toBeLessThanOrEqual(LIST_WIDTH + 1);
+  });
+
   it('shows a state neither dimmed nor first changed while its compare is pending', async () => {
     const pending = ROWS.map((row) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: null })) }));
     const root: HTMLElement = (await render({ camera: '100', rows: pending })).nativeElement;

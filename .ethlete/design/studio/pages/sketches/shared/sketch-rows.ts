@@ -227,8 +227,7 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
   const matrixFit = (matrix: HTMLElement) => {
     const first = matrix.querySelector<HTMLElement>('[data-sk-row]');
     const lead = first ? first.getBoundingClientRect().left - matrix.getBoundingClientRect().left : 0;
-    const shown = Math.min(2, columns);
-    return Math.min(1, (list.clientWidth - lead - (shown - 1) * GAP - FIT_PADDING) / (shown * width));
+    return Math.min(1, (list.clientWidth - lead - (columns - 1) * GAP - FIT_PADDING) / (columns * width));
   };
 
   const gridFit = (scale: number) => {

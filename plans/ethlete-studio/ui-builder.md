@@ -24,3 +24,37 @@ folded into the title bar. Per finding 484 (ADR 0010) the cause text stays as th
 Verified: `design compare components/title-bar` all 14 states ok and every declared action works (before the
 `noticeText` input; the harness never sets it); title-bar and shell-main specs 22/22; lint clean. Not verified: the
 twelve skipped interaction states (finding 483), the real Windows window, the text against a design (none exists).
+
+## B403 rules for the UI builder (2cef20507)
+
+- ADR 0202: investigate a tool gap only when it blocks the current UI item; every other gap goes to c4 in one
+  sentence, and c0 takes it. The shell-main "changed outside a sketch" investigation is dropped (to c0).
+- ADR 0203: a UI item is done only when it shows in the app and every part it affects is compared and verified.
+- A1 left 8 parts with IMPLEMENTATION-UNCOMPARED (canvas-frames, studio-menu, flows, inventory, merge, sketches, start,
+  system): no compare of the parts that embed the title bar ran before the commit.
+
+## As built: finding 500 - pages/sketches Fit shows every column
+
+Cause: `FIT_COLUMNS = 2` in `sketches.component.ts` capped Fit of a wide part's transposed matrix at two columns
+(Aktuell and a), so b was cut and c off screen. The design drew the same cap (`pages/sketches/shared/sketch-rows.ts`,
+`Math.min(2, columns)`), so compare saw app and design agree. Fit now counts every matrix column, in app and design.
+The design rule change (2 columns -> all) needs Tom's confirmation.
+
+Verified: new e2e case "Fit shows every column of a wide sketch, heads at the top" (page Wide, 2000x1100,
+`canvas.e2e.mjs`) failed before ("b spans 1988..2656 outside 344..1980") and passes after; new unit test in
+`sketches.component.spec.ts` fails before, file 31/31 after; lint clean. Not verified: `design check --part
+pages/sketches` (stopped), compare of pages/sketches. Not reproduced: the ~550 px top gap and the cropped Aktuell
+column; hypothesis (unverified): the view reopened with a restored camera (`move()` stores {x, y, zoom} after a wheel
+pan at Fit), so pan.y gives the gap and a negative pan.x puts the sticky label gutter over Aktuell; that fix belongs in
+camera restore in `system-view/sketch-view.component.ts`. Tool fix proposed: a check geometry rule for camera-fit
+parts (every frame inside the viewport horizontally, first head near the top) and a 3-variant wide-part fixture.
+
+## As built: title-bar notice hint b in the app
+
+Tom merged variant b of components/title-bar@notice-hint (332e49626). The app's "Neu starten" button carries
+`[etTooltip]="noticeText()"` (bottom-end); the inline `data-code-notice` text shows only without a restart
+(cli-dirty). Verified: title-bar spec 12/12 (two new tests: notice state has no inline text and the button's
+aria-describedby holds the cause; cli-dirty on macOS shows the text inline without a restart); lint clean. Not verified:
+no compare ran (components/title-bar and every part that embeds it), no part check. Expected gap: the design draws
+the tooltip always open, the real etTooltip opens only on hover/focus, so compare of the notice states will likely
+differ unless it hovers the button.
