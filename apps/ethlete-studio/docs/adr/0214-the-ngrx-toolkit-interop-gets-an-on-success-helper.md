@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: et-update-findings 12 T3
+built: 48d952ee9
 decided: 2026-11-06
 source: grill session 2026-11-06
 ---

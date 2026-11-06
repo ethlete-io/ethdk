@@ -474,5 +474,10 @@ features, 151 creators written, 98 tasks. Built by the third session of ADR 0200
   Not replay-verified. Lesson: generator specs never had tsconfigs in the tree.
 - **T3 runtime as built (252c4d796, ethlete-sdk-62):** `toolkitOnSuccess(creator | creators[], { injector? })` in
   `toolkit-call.ts`; each handle reports a new success state to a per-EnvironmentInjector subject. Scenarios: any
-  handle, array form, silent on failure, one emission for a joined request. Open: the generator rewrite of
-  `.on(x.success)` sites; T1, T4, T5; the replay.
+  handle, array form, silent on failure, one emission for a joined request. Open: T1, T4, T5; the final replay.
+- **T3 generator as built (48d952ee9, ethlete-sdk-62):** on a migrated facade `facade.on(x.success)` ->
+  `toolkitOnSuccess(x, { injector })`, the array form likewise; the injector field is reused or added (resolver shared
+  with toolkitSelect). A creator counts only when its import resolves to a converted file. `once()`, `.failure`, mixed
+  arrays and unconverted creators stay `NTK-FACADE-ON`. Spec from a trimmed fifagg roster fixture, failing before.
+  Replay at 116a0d9afa: 13 listeners rewritten, 0 `NTK-FACADE-ON` left, new ngc errors 107 -> 91 (16 TS2339 gone, none
+  added). Harness: `.claude/handoffs/agent-results/fifagg-replay/`.
