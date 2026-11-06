@@ -3917,3 +3917,9 @@ slow check of sdk components/select clean, of studio pages/flows `PASS: no visib
 action check no longer fails the picker (it is left to components/select now).
 Tom (2026-11-06, "q1ok"): pages/start is accepted as it is (`et design accept pages/start --by tom`) after his
 shell-main `@edit` pick has merged, because start embeds shell-main.
+As built 509 and 510 (builder, 2026-11-06): 3ec42c18d - the rules summary line reads `N problem(s) in <products>.`
+and the gate takes its product list from it; `ownScopeOf` pairs a lone renamed same-role element of an embedded part,
+and a no-partner failure names the near miss (specs with bite). 5ec60c344 - the select design mock takes `ariaLabel`
+(aria-labelledby only with a visible label, as et-select does); the flows picker is named "Bildschirmgröße"; slow check
+of sdk components/select clean, studio pages/flows `PASS: no visible change`, its action check passes. Open: the
+ACCESSIBLE-NAME rule (B413).
