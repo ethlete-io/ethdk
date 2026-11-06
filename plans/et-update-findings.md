@@ -373,6 +373,16 @@ Source: `plans/fifagg-sdk-findings-2026-11-06.md` (consumer handoff, German). In
   Why the first fix missed it: its scenario covered a fresh subscriber only, not the consumer's exact steps; the item
   was closed without replaying the consumer repro. Process fix: a consumer-reported query bug closes only when the
   consumer's steps are ported one to one into a scenario (add this to the `query-scenario-tests` skill).
+- **16 as built (ethlete-sdk-cb, 2026-11-06):** cause: `LegacyQuery.state$` read `toObservable(executionState)`, whose
+  `ReplaySubject(1)` holds the previous Success until its effect runs; a subscriber that attaches right after
+  `execute()` got Loading from `startWith`, then the buffered old Success. 3ade7f27f removed only the `shareReplay`, so
+  the inner buffer stayed. Fix: `legacy-query.ts` feeds a non-replaying `Subject` from an effect instead of
+  `toObservable`. Scenario `legacy-state-replay.scenario.spec.ts` ("keeps the previous Success from every subscriber
+  until the refresh responds") ports the consumer steps with a permanent keepAlive subscriber and a
+  `filterSuccess(), take(1)` subscriber on both clients; it bit on the interop client (`['LOADING','SUCCESS']`),
+  native passed before and after. Rule 12 in the `query-scenario-tests` skill. Verified: the 20 legacy scenario files
+  and the interop unit specs (332 passed), lint, typecheck, prettier, `query:export-coverage`. Not verified: the
+  full query suite, the fifagg spec against a built package.
 - **18 confirmed on next.62:** entity store before `onSuccess`, both `destroyOnResponse` values. fifagg removed its
   workaround.
 - **15 stays by decision:** `reportErrors: false` from the migrator; fifagg keeps `createSilentLegacyQueryCreator`.

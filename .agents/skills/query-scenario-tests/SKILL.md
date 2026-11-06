@@ -124,3 +124,5 @@ it('dedupes identical requests', () => {
 9. Use a POST or `s.liveQueries()` when checking for double execution; GET dedup hides a second execute.
 10. Change signal args at least 3 times; assert one request per change and that the superseded one aborts.
 11. Legacy patterns run on both clients: native `V2QueryClient` and the interop creator (`describe.each`).
+12. A consumer-reported bug closes only when its steps are ported one to one into a scenario - long-lived
+    subscribers included, the consumer's workarounds left out - and that scenario failed before the fix.

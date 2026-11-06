@@ -1,5 +1,4 @@
-import { EffectRef, effect, signal, untracked } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { DestroyRef, EffectRef, effect, Injector, Signal, signal, untracked } from '@angular/core';
 import {
   combineLatest,
   defer,
@@ -11,6 +10,7 @@ import {
   of,
   ReplaySubject,
   startWith,
+  Subject,
   Subscription,
   switchMap,
   takeUntil,
@@ -111,6 +111,22 @@ export const transformExecStateToQueryState = <TArgs extends QueryArgs>(
       return prepared;
     }
   }
+};
+
+const signalChanges = <T>(source: Signal<T>, injector: Injector): Observable<T> => {
+  const changes = new Subject<T>();
+
+  effect(
+    () => {
+      const value = source();
+
+      untracked(() => changes.next(value));
+    },
+    { injector },
+  );
+  injector.get(DestroyRef).onDestroy(() => changes.complete());
+
+  return changes.asObservable();
 };
 
 /**
@@ -247,12 +263,12 @@ export class LegacyQuery<
       { injector: this.newQuery.subtle.injector },
     );
 
-    // `toObservable` first emits from an effect, so a subscriber that attaches and calls `execute()` in the
-    // same turn would otherwise never see the Prepared state `legacy.md` promises. The source is created
-    // here, not inside the `defer`: its effect has to be registered before the
-    // `destroyOnResponse` teardown below, or a self-destroying query dies before its Success is published.
-    const executionState$ = toObservable(this.newQuery.executionState, { injector: this.newQuery.subtle.injector });
-    const mockState$ = toObservable(this._mockState, { injector: this.newQuery.subtle.injector });
+    // Each subscriber starts from the signal's current value, so it sees Prepared before an `execute()` in the same
+    // turn. Not `toObservable`: its buffer replays the previous Success after `execute()` until its effect runs.
+    // Created here, not inside the `defer`: the effects must be registered before the `destroyOnResponse`
+    // teardown below, or a self-destroying query dies before its Success is published.
+    const executionState$ = signalChanges(this.newQuery.executionState, this.newQuery.subtle.injector);
+    const mockState$ = signalChanges(this._mockState, this.newQuery.subtle.injector);
 
     this.state$ = defer(() =>
       combineLatest([
