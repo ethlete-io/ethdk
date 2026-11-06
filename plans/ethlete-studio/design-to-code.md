@@ -4284,3 +4284,13 @@ Built (2026-11-06, Mac): fd9213b04 (finding 545), `checkRules` prints every skip
 skip fails. Found on the way: CLASS-UNDEFINED swallowed a Tailwind compile failure and silently found nothing, against
 ADR 0008 (no silent catch). Open for the builder: why the no-silent-catch check did not flag that catch (tool fix in
 the lint rule), and the same RuleSkip path in the slow/full check paths with S7c.
+
+548\. Builder (2026-11-06), draft PR #3170 CI red (ADR 0216 caught it): `yarn test:tools` 16/151 fail in
+precommit-specs.spec.mjs and commit-wait.spec.mjs, because 4aef2e30f added the `--staged` gate to `.husky/pre-commit`
+and these specs run the hook in a temp copy without `tools/scripts/design-rules-gate.mjs`. The agent ran only the specs
+it touched. Why no tool caught it: the related-spec map does not link `.husky/*` to the specs that execute the hooks.
+Tool fix (builder, decided by doc agent): the related-spec map links `.husky/*` to precommit-specs and commit-wait
+specs, so `yarn commit` runs them. Same CI run: a stale `KNOWN_UNBOUND_INPUTS` entry (title-bar `part`, bound by the
+sketches port) fails UNBOUND-INPUT only in CI; cause of the local miss open (builder). `--slow` also fails
+components/title-bar (5 states unjudged, design 1 overlay pane, app 0) and components/update-dialog (4 unjudged), new
+to the list, queued.
