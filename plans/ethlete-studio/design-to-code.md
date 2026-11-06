@@ -3873,9 +3873,16 @@ HELD (80f953c0c); components/update-dialog (a383f2bdb drew the button states aft
 elements/shell-main (title bar embed fea9ac862) open `@edit` sketches; pages/start has EDIT-OLD-NOT-FOUND (no commit
 holds merged hash 5074133a3524678e) and waits for Tom's accept as it is. Open: the DIRECT-EDIT-PENDING rule lands
 after Tom's picks, else it blocks every push; disclosure's pictures.json entry moved from key `go` to `record` (cause
-asked).
+asked; answered: `go` is a legacy kind still read, the rewrite kept hash and pictures, no data loss).
 
 508\. 3e10f1ddf did not compile: a subagent committed CLI code without running tsc, and `git commit` runs no
 typecheck (pre-push neither; CI is the only one). Found by the builder one commit later (type fix 6d26ac045). Why no
 tool caught it: no local gate runs a typecheck before a commit lands on `next`. Fix now: every builder brief to a
 subagent names a tsc step (or `yarn commit`). Open for Tom: a typecheck of the touched projects in pre-push.
+
+509\. The pre-push design-rules gate refused the push of next with 27 IMPLEMENTATION-UNCOMPARED hits, all in studio,
+but its failure line said "fails for studio-lab, sdk, studio". Why no tool caught it: no spec checks the product list
+of the failure line against the products that have hits. Fix: the line names only products with problems, with a spec
+that has a clean product next to a failing one. Push state: the verifies of ff698951f run for studio-menu, flows and
+merge; inventory and start wait on Tom's picks and accept, no baseline (ADR 0205 covers only drift older than A1,
+the gate still fails on new drift).
