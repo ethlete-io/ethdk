@@ -4202,3 +4202,12 @@ states DIFF (up to 135 661 px) and 2 missed actions ("Alle Zustände zeigen"); p
 missed actions ("Kommentar", "49 offen", "Gründe"). Why no tool caught it earlier: the gate runs only at push time, and
 the push was held for hours (ADR 0213), so app changes piled up uncompared. Tool fix: ADR 0216 (draft PR with full CI
 per slice while a push is held); the design-rules gate is part of that CI.
+
+542\. Builder on the Mac (2026-11-06): the subagent brief rule "run the gate with `timeout 600s`" fails on macOS,
+which has no `timeout` command. The rule lived only in the builder handoff, written on Linux, so no tool or skill
+checked it against the Mac. Tool fix (builder, with S7c): briefs use the Bash tool's own `timeout` parameter (max
+600000 ms, the same on every OS) or `run_in_background` with a Monitor deadline, never the shell `timeout`; the rule
+moves from the handoff into the builder-agent skill. A run with no deadline at all is not the fix: a hung gate then
+blocks the builder silently. Also: the full gate took 134.4 s on the Mac, 98.6 s of it lib-build-wait at load 13.9 on
+12 cores; S7c measures it again on a quiet machine. Gate now refuses five parts (inventory, merge, sketches, start,
+system); pages/flows and elements/studio-menu pass.
