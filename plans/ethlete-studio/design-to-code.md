@@ -4281,5 +4281,10 @@ the action check to start). compare-pixels keeps each state's result and diff PN
 `writeCacheEntry`, keyed on both picture hashes and `pixelCompareCodeOf()` (part-compare, pixel-cache). Verified: specs
 (an edit between two runs misses only that state with the new px count; same lines and diff files from the cache; abort
 keeps nothing), both tsc, lint. Not built: the slow unchanged-matrix states first - the batches run in turn, each in a
-fresh browser, so a reorder saves nothing; a pool needs the browser threaded through the check. Deferred: reuse design
-shots by render output.
+fresh browser, so a reorder saves nothing; a pool needs the browser threaded through the check. Follow-up `perf(cli)`
+315a2e66c: the overlapped check waits for compare's design shots before it draws its own, which now hit the shared store
+(the first measurement drew them twice at once: actions 6.6-7.0 s after a design edit). Measured on 315a2e66c (worktree
+resident, `timeout 30s`, load 5.4-6.2 of 32, every line clean in `design timings`): app edit (studio-labels idle, fresh
+text) 5.69 / 5.77 / 5.78 s, 89/45 (app shots 3.8 s, actions 3.45 s hidden under them, pixels 0.04 s), **meets 10 s**;
+design edit 4.76 / 4.86 / 5.23 s, 102/32; zoom-chip app edit 6.78 s (pixels 1.31 s, all 30 app pictures change); every
+next run 0.91-1.04 s, 134/134 (was 2.6 s). Deferred: reuse design shots by render output.
