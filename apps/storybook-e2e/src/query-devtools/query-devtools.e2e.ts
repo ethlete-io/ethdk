@@ -87,3 +87,69 @@ test.describe('query devtools / keyboard', () => {
     await expect(page.locator(PANEL)).toHaveCount(0);
   });
 });
+
+const AUTOMATION_STORY_ID = 'components-dev-tools-query-devtools--automation';
+const PILL_HOST = '#et-query-devtools-pill';
+const TOGGLE = 'et-query-devtools-toggle';
+
+async function expectDevtoolsHidden(page: Page) {
+  for (const selector of [PILL_HOST, TOGGLE, TOGGLE_BUTTON, PANEL]) {
+    for (const element of await page.locator(selector).all()) {
+      await expect(element).toBeHidden();
+    }
+  }
+}
+
+async function expectNoDevtoolsOverlap(page: Page) {
+  const button = await appButton(page).boundingBox();
+  expect(button).not.toBeNull();
+  const hits = await page.evaluate((box) => {
+    const overlaps = (r: DOMRect) =>
+      !!box &&
+      r.width > 0 &&
+      r.height > 0 &&
+      r.left < box.x + box.width &&
+      r.right > box.x &&
+      r.top < box.y + box.height &&
+      r.bottom > box.y;
+    return Array.from(
+      document.querySelectorAll('#et-query-devtools-pill, et-query-devtools-toggle, .et-query-devtools-panel'),
+    )
+      .filter((el) => overlaps(el.getBoundingClientRect()))
+      .map((el) => el.tagName);
+  }, button);
+  expect(hits).toEqual([]);
+}
+
+test.describe('query devtools / automation', () => {
+  test('the UI hides itself under automation and never covers an app button', async ({ page }) => {
+    await openStory(page, AUTOMATION_STORY_ID);
+    await settle(page, 300);
+    await countClicksOnAppButton(page);
+
+    await expectDevtoolsHidden(page);
+    await expectNoDevtoolsOverlap(page);
+
+    await appButton(page).click();
+    await settle(page, 100);
+    await expect(appButton(page)).toHaveAttribute('data-e2e-clicks', '1');
+  });
+
+  test('the shortcut does not show the panel under automation', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'keyboard shortcut');
+    await openStory(page, AUTOMATION_STORY_ID);
+    await settle(page, 300);
+
+    await pressShortcut(page);
+    await settle(page, 200);
+
+    await expectDevtoolsHidden(page);
+    await expectNoDevtoolsOverlap(page);
+  });
+
+  test('showInAutomation keeps the toggle visible', async ({ page }) => {
+    await openStory(page, DEFAULT_STORY_ID);
+
+    await expect(page.locator(TOGGLE_BUTTON)).toBeVisible();
+  });
+});

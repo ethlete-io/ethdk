@@ -388,7 +388,14 @@ Source: `plans/fifagg-sdk-findings-2026-11-06.md` (consumer handoff, German). In
   native passed before and after. Rule 12 in the `query-scenario-tests` skill. Verified: the 20 legacy scenario files
   and the interop unit specs (332 passed), lint, typecheck, prettier, `query:export-coverage`. Not verified: the
   full query suite, the fifagg spec against a built package.
-- **In progress (ethlete-sdk-cb, 2026-11-06):** item 20 - a devtools e2e case for the pill under automation and `showInAutomation: true`.
+- **20 as built (ethlete-sdk-cb, 2026-11-06):** browser proof, no product change. A new story `Automation` provides the
+  devtools without `showInAutomation`; `provideQueryDevtools` reads its options on its first call, so the stories now
+  provide it per rendered story through a lazy decorator. `query-devtools.e2e.ts` "query devtools / automation": on
+  `Automation` the pill, toggle and panel are hidden, none overlaps the app button, a plain `click()` lands once
+  (desktop, touch), and the shortcut does not open the panel (desktop); on `Default` (`showInAutomation: true`) the
+  toggle is visible. Bite: `Automation` with `true` failed with the pill visible. Verified: the devtools e2e folder
+  against the dev Storybook (9 passed, 5 keyboard cases skipped on touch), lint and prettier. Not verified: the
+  static Storybook build and the CI shard selection.
 - **18 confirmed on next.62:** entity store before `onSuccess`, both `destroyOnResponse` values. fifagg removed its
   workaround.
 - **15 stays by decision:** `reportErrors: false` from the migrator; fifagg keeps `createSilentLegacyQueryCreator`.
