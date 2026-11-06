@@ -2,6 +2,7 @@ import { spawnSync } from 'child_process';
 import { existsSync, readdirSync, readFileSync, statSync, utimesSync } from 'fs';
 import { basename, join, relative, resolve } from 'path';
 import { DesignConfig } from '../paths';
+import { readFreshLibBuild } from './lib-build-lock';
 import { DEFAULT_RENDER_MODULES, mapPackage, renderPackagesOf } from '../render-packages';
 
 const SKIPPED_DIRS = new Set(['node_modules', 'scenarios', 'stories', '__fixtures__']);
@@ -121,4 +122,24 @@ export const rebuildStaleDist = (options: { target: string; config: DesignConfig
     );
 
   return still.length === 0;
+};
+
+/**
+ * Runs `rebuildStaleDist` under the lib build lock of the checkout and keeps the build read until `release`, so a
+ * concurrent design call waits instead of rebuilding a lib folder this one still renders from.
+ */
+export const readFreshDist = async (options: {
+  target: string;
+  config: DesignConfig | null;
+  build?: LibBuildRunner;
+}) => {
+  const { target } = options;
+
+  if (!existsSync(join(target, 'dist/libs'))) return { ok: rebuildStaleDist(options), release: () => undefined };
+
+  return readFreshLibBuild({
+    directory: join(target, 'tmp/design-lib-build'),
+    stale: () => staleLibsOf(options).length > 0,
+    rebuild: () => rebuildStaleDist(options),
+  });
 };

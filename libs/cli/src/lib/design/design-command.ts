@@ -28,7 +28,7 @@ import { designTask, TASK_USAGE } from './system/task-command';
 import { designHarness, HARNESS_USAGE } from './system/harness-command';
 import { designReady, READY_USAGE } from './system/ready-command';
 import { designSystem } from './system/system-command';
-import { rebuildStaleDist } from './system/stale-dist';
+import { readFreshDist } from './system/stale-dist';
 import { designMocksFresh, guardsDesignMocks } from './system/stale-design-mocks';
 
 /** Reads `--checkout <path>` out of an argument list, and answers with the path and the rest. */
@@ -353,11 +353,26 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     return 0;
   }
 
+  let release: () => void = () => undefined;
+
   if (drawsWithSdkLibs(argv)) {
     const { target } = splitCheckout(argv.slice(1), root);
+    const read = await readFreshDist({ target, config: readConfig(target) });
 
-    if (!rebuildStaleDist({ target, config: readConfig(target) })) return 1;
+    if (!read.ok) return 1;
+
+    release = read.release;
   }
+
+  try {
+    return await dispatchDesign({ root, argv, invocation });
+  } finally {
+    release();
+  }
+};
+
+const dispatchDesign = async (options: { root: string; argv: string[]; invocation: string }): Promise<number> => {
+  const { root, argv, invocation } = options;
 
   if (guardsDesignMocks(argv)) {
     const { target } = splitCheckout(argv.slice(1), root);
