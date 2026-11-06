@@ -4185,3 +4185,10 @@ tool caught it: no cache spec ran an aborted run; each cache was only tested wit
 on-disk cache of the compare (compare-actions, the S4 design and app picture caches, the shot store) gets a spec that
 aborts a run mid-way and proves nothing of it is kept; the shared cache writer refuses a write once the run signal is
 aborted, so a new cache gets this for free.
+
+525\. Tom (2026-11-06), on the Mac perf session: "der mac perf test braucht auch den aktuellen stand des repos oder sonst
+machen dessen tests ja wenig sinn". The Mac session copies the repo by `git push` into its own checkout; nothing made it
+re-sync before a run, and nothing in a report said which commit was measured, so a Mac number from an old state looks
+like a current one. Fix (doc agent): the Mac session pushes and resets before every measurement and names the measured
+sha. Tool fix: each `.timings.jsonl` line logs the commit (short sha + dirty flag), `design timings` shows it, and it
+marks a line whose commit is not the checkout's HEAD as stale.
