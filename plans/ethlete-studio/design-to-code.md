@@ -4535,3 +4535,10 @@ the next dev check a cold 314 s. Why no tool caught it: the specs ran on a quiet
 while they ran. Tool fix (doc agent, S7c): the check caches use the per-producer import-graph hash of `code-hash.ts`
 that the compare caches already use (B416 slice 2), so only an edit to the code that draws or inspects invalidates
 them; a spec edits an unrelated `libs/cli` file between two runs and expects 0 redraws.
+
+540\. c0 (2026-11-06), ci-check before the push of `next` (259 commits): typecheck was red since 1518330a1 (ET800
+message, fifagg section 12 work): `legacy-state-replay.scenario.spec.ts:111` called `prepare()` without its argument.
+Fixed in 263654c41. Why no tool caught it: the pre-push hook leaves typecheck to CI, and with the push parked (ADR
+0213) no CI ran for 259 commits, so a type error stayed hidden for hours. Tool fix: open, put to Tom. Also: the vitest
+cache `libs/query/.vitest/` is untracked and not ignored, so local `format:check` fails on it; `**/.vitest/` goes into
+`.gitignore` (builder).
