@@ -4453,3 +4453,14 @@ a risk (fonts, frame assets, dist CSS, generated Tailwind output, config, capabi
 its own edit-between-runs case (rule of 531).
 
 S7a as built (ecb5057b2, 2026-11-06): `design check --product`/`--part` runs in the resident (not its --rules/--live/--slow/--visible-change/--app-classes/--receipt/call forms); the resident's WarmDraw reaches auto-accept, render inspect, completeness, bespoke controls, dropped props and action lost (the last two load on the warm server); every step is a phase (stale-dist, auto-accept, static, render-inspect, completeness, open-points, tail, summary). A waiting compare runs between two parts of a running check (yield points in auto-accept, inspect groups and completeness; a jumped compare reuses the check's lib-build read and never restarts the warm server), and `design timings` flags a run with over 10 % (and at least 1 s) unphased time as UNEXPLAINED. Numbers (load ~3/32, sha ecb5057b2 dirty only by the design json): before 308.0/307.5 s non-resident, unphased 307.3 s; after 306.4 s (cold resident) and 297.6 s (warm), unphased 16 ms and 31 ms, same 2 findings (EDIT-OLD-NOT-FOUND pages/start, SKETCH-BASE-STALE), 173 finding lines identical between the two runs. Phases of the warm run: completeness 156.6 s, render-inspect 93.8 s, auto-accept 37.6 s, static 7.1 s, open-points 1.4 s, tail 0.9 s - the warm server saves startups only, the draws stay; S7b's per-part cache is the win. Verified: specs for routing, yield (compare queued during a fake check starts after one part), warm threading without createDesignServer/createDrawQueue, the timings flag; tsc, lint. Not verified: a no-double-draw spec with draw-count (the threading spec runs without a browser); the resident-queue-wait a real check causes for a real concurrent compare; warm vs non-resident results on the same tree in one sitting (only against the S7 baseline's 2 findings); `cachedOpenPointsOf` is not used by check (it caches the draw-less points) and stays as it was.
+
+535\. c0 (2026-11-06), S7a: the as-built numbers needed a second commit (b8bbef168 after ecb5057b2), because
+`yarn et:design` builds and runs the last commit, not the working tree; a slice cannot measure its own change before
+it commits it. Why no tool caught it: nothing in a timings line says it ran code other than the one being changed
+(finding 525 only marks a dirty tree). Tool fix (queued after S7): `et:design` takes an option to build the working tree
+into its own scratch dist for a measurement, and its timings line is marked with the dirty commit, so a number is
+never mixed up with the committed build's.
+Doc agent: S7b split accepted - S7b-1 render-inspect cache with the key infra, the check draw-count spec and every
+edit-between-runs case of the S7 plan; S7b-2 completeness cache on that infra, keyed on recursed parts. S7b-1 also
+checks whether `partActionFailuresOf` in open-points starts its own harness server, and threads the warm draw into it
+if so.
