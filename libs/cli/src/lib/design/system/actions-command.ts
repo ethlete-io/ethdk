@@ -21,6 +21,7 @@ import {
   embeddedOwnersScriptOf,
   enclosingControlsScriptOf,
   exemptFromDeclaringOf,
+  nearMissesOf,
   ownScopeOf,
   embeddersOf,
   listenEmbeddedScriptOf,
@@ -80,6 +81,16 @@ type Line = {
 
 const scanOf = async (page: Page, roots: string[]) =>
   (await page.evaluate(actionScanScriptOf(roots))) as ActionElement[];
+
+const noSuchElementOf = (nearMisses: (ActionElement & { owners: readonly string[] })[]) => {
+  const named = nearMisses.map(
+    (near) => `${elementNameOf(near)}${near.owners[0] === undefined ? '' : ` in ${near.owners[0]}`}`,
+  );
+
+  return named.length === 0
+    ? 'the design draws no such element, so it declares no action'
+    : `the design draws no element of this name - it draws ${named.join(', ')}: the accessible names differ`;
+};
 
 const probeOf = (probe: number) => `[data-et-action-probe="${probe}"]`;
 
@@ -596,7 +607,7 @@ export const checkActions = async (options: {
                 typeof action === 'string'
                   ? action
                   : drawn === null
-                    ? 'the design draws no such element, so it declares no action'
+                    ? noSuchElementOf(nearMissesOf({ element, design, app }))
                     : 'the design declares no data-et-action',
             });
 

@@ -132,6 +132,7 @@ export const checkRules = (options: {
   const changed = base === undefined ? [] : gitDiffFilesOf({ root: target, range: base });
   const invocation = options.invocation ?? repoInvocation({ root: target, subcommand: 'design' });
   let failed = 0;
+  const failing: string[] = [];
 
   for (const name of options.products) {
     const entry = config.products?.[name];
@@ -139,6 +140,7 @@ export const checkRules = (options: {
     if (!entry) {
       console.error(`NO PRODUCT "${name}" in config.json.`);
       failed++;
+      failing.push(name);
       continue;
     }
 
@@ -159,9 +161,13 @@ export const checkRules = (options: {
     );
     problems.forEach((problem) => console.error(lineOf(target, problem)));
     failed += problems.length;
+
+    if (problems.length > 0) failing.push(name);
   }
 
-  console.log(failed === 0 ? 'No static design rule finds a problem.' : `${failed} problem(s).`);
+  console.log(
+    failed === 0 ? 'No static design rule finds a problem.' : `${failed} problem(s) in ${failing.join(', ')}.`,
+  );
 
   return failed === 0 ? 0 : 1;
 };

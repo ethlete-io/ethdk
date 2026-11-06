@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { baselinedLines, productsToCheck } from './design-rules-gate.mjs';
+import { baselinedLines, failingProductsOf, productsToCheck } from './design-rules-gate.mjs';
 
 const config = {
   products: {
@@ -40,4 +40,14 @@ test('keeps the baseline lines of a passing check from either stream', () => {
     'baselined (ADR 0205): pages/sketches - finding 495',
   ]);
   assert.deepEqual(baselinedLines({ stdout: 'ok\n' }), []);
+});
+
+test('names only the products with problems, not a clean product checked next to them', () => {
+  const products = ['studio-lab', 'sdk', 'studio'];
+
+  assert.deepEqual(failingProductsOf({ stdout: 'baselined (ADR 0205): x\n27 problem(s) in studio.\n' }, products), [
+    'studio',
+  ]);
+  assert.deepEqual(failingProductsOf({ stdout: '3 problem(s) in sdk, studio.\n' }, products), ['sdk', 'studio']);
+  assert.deepEqual(failingProductsOf({ stdout: '' }, products), products);
 });

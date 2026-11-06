@@ -3883,7 +3883,7 @@ asked; answered: `go` is a legacy kind still read, the rewrite kept hash and pic
 508\. 3e10f1ddf did not compile: a subagent committed CLI code without running tsc, and `git commit` runs no
 typecheck (pre-push neither; CI is the only one). Found by the builder one commit later (type fix 6d26ac045). Why no
 tool caught it: no local gate runs a typecheck before a commit lands on `next`. Fix now: every builder brief to a
-subagent names a tsc step (or `yarn commit`). Open for Tom: a typecheck of the touched projects in pre-push.
+subagent names a tsc step (or `yarn commit`). No pre-push typecheck: Tom already moved typecheck to CI only (ADR 0038).
 
 509\. The pre-push design-rules gate refused the push of next with 27 IMPLEMENTATION-UNCOMPARED hits, all in studio,
 but its failure line said "fails for studio-lab, sdk, studio". Why no tool caught it: no spec checks the product list
@@ -3891,6 +3891,9 @@ of the failure line against the products that have hits. Fix: the line names onl
 that has a clean product next to a failing one. Push state: the verifies of ff698951f run for studio-menu, flows and
 merge; inventory and start wait on Tom's picks and accept, no baseline (ADR 0205 covers only drift older than A1,
 the gate still fails on new drift).
+As built (c0, 2026-11-06): the rules summary line names the failing products (`27 problem(s) in studio.`) and
+`design-rules-gate.mjs` takes its product list from that line (`failingProductsOf`). Specs with bite: a clean product
+next to a failing one (gate spec), a missing product next to a failing one (check-system.spec).
 
 510\. The ff698951f verify of pages/flows reported NO RECORD: `action: flow combobox "Bildschirmgröße" FAILED the
 design draws no such element`. The message was false: the design draws the picker inside the embedded part
@@ -3904,3 +3907,7 @@ same, so `design check` must report HELD, any picture change goes to Tom as an `
 `ownScopeOf` pairs a lone leftover app element with a lone embedded design element of the same role, and the failure
 line names the near miss (`design draws combobox "…" in components/select - accessible names differ`); (c) later
 slice B413: an ACCESSIBLE-NAME drift rule.
+As built (b) (c0, 2026-11-06): `ownScopeOf` leaves an app element to the embedded part when its role has one leftover
+element on each side (shared `renamedPairsOf` with `pairElementsOf`); a failure without a partner names the same-role
+design elements (`nearMissesOf`). Specs with bite in actions.spec. Not verified yet: the flows check on the built CLI
+(after this commit). (a) design fix and (c) still open.

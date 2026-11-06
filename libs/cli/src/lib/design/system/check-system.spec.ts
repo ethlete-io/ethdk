@@ -812,7 +812,14 @@ describe('checkDesign', () => {
     writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { border-color: #fff; }');
 
     expect(await checkDesign({ target, argv: ['--product', 'acme', '--rules'], invocation: 'et design' })).toBe(1);
-    expect(lines).toEqual([expect.stringMatching(/^HARD-CODED-COLOUR .*hero\.css: #fff/), '1 problem(s).']);
+    expect(lines).toEqual([expect.stringMatching(/^HARD-CODED-COLOUR .*hero\.css: #fff/), '1 problem(s) in acme.']);
+
+    lines.length = 0;
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme', 'gone', '--rules'], invocation: 'et design' })).toBe(
+      1,
+    );
+    expect(lines.at(-1)).toBe('2 problem(s) in acme, gone.');
   }, 60_000);
 
   it('finds the product of a part without --product, and refuses an unknown part', async () => {

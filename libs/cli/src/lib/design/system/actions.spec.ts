@@ -18,6 +18,7 @@ import {
   enclosingControlsScriptOf,
   exemptFromDeclaringOf,
   isHostElementOf,
+  nearMissesOf,
   ownScopeOf,
   openedFromOf,
   pairElementsOf,
@@ -428,6 +429,35 @@ describe('runActionInput', () => {
     expect(scope.design).toEqual([design[0]]);
     expect(scope.app).toEqual([app[0]]);
     expect(pairElementsOf(scope).missing).toEqual([]);
+  });
+
+  it('leaves a lone app element to the embedded part that draws the lone element of its role under another name', () => {
+    const design = [
+      { ...element({ key: 'button "Own"', action: 'emit:own' }), owners: [] as string[] },
+      {
+        ...element({ key: 'combobox "Desktop·1440×900"', action: 'emit:presetChange' }),
+        owners: ['components/select'],
+      },
+    ];
+    const app = [element({ key: 'button "Own"' }), element({ key: 'combobox "Bildschirmgröße"' })];
+
+    expect(ownScopeOf({ design, app, hosts: [] }).app).toEqual([app[0]]);
+
+    const twoApps = [...app, element({ key: 'combobox "Sprache"' })];
+
+    expect(ownScopeOf({ design, app: twoApps, hosts: [] }).app).toEqual(twoApps);
+  });
+
+  it('names the design elements of the same role an unpaired app element may have meant', () => {
+    const design = [
+      { ...element({ key: 'combobox "Desktop·1440×900"' }), owners: ['components/select'] },
+      { ...element({ key: 'combobox "Sprache"' }), owners: [] as string[] },
+      { ...element({ key: 'button "Bildschirmgröße"' }), owners: [] as string[] },
+    ];
+    const app = [element({ key: 'combobox "Bildschirmgröße"' }), element({ key: 'combobox "Sprache"' })];
+
+    expect(nearMissesOf({ element: app[0]!, design, app })).toEqual([design[0]]);
+    expect(nearMissesOf({ element: app[0]!, design: [], app })).toEqual([]);
   });
 
   it('skips a declared host only where the design does not draw it, and names it', () => {

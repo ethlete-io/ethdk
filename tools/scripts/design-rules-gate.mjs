@@ -41,6 +41,13 @@ const report = (result) => {
 export const baselinedLines = (result) =>
   `${result.stdout ?? ''}\n${result.stderr ?? ''}`.split('\n').filter((line) => line.startsWith('baselined ('));
 
+/** The products the summary line of a failed check names; all `products` when the check printed none. */
+export const failingProductsOf = (result, products) => {
+  const named = /^\d+ problem\(s\) in (.+)\.$/mu.exec(result.stdout ?? '')?.[1];
+
+  return named === undefined ? products : named.split(', ');
+};
+
 export const checkDesignRules = (root, base, head) => {
   const configPath = join(root, CONFIG);
 
@@ -80,7 +87,9 @@ export const checkDesignRules = (root, base, head) => {
   }
 
   report(check);
-  console.error(`design-rules-gate: design check --rules fails for ${products.join(', ')} (above).`);
+  console.error(
+    `design-rules-gate: design check --rules fails for ${failingProductsOf(check, products).join(', ')} (above).`,
+  );
 
   return 1;
 };

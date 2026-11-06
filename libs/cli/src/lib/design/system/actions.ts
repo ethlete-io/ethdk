@@ -210,31 +210,54 @@ export const targetStateOf = (options: { state: string; input: ActionInput; stat
   return input !== 'click' && states.includes(focused) ? focused : state;
 };
 
-/** The design and app elements of one state, paired by key and occurrence. */
-export const pairElementsOf = <TDesign extends ActionElement>(options: { design: TDesign[]; app: ActionElement[] }) => {
-  const idOf = (element: ActionElement) => `${element.key}#${element.occurrence}`;
-  const designs = new Map(options.design.map((element) => [idOf(element), element]));
-  const apps = new Set(options.app.map(idOf));
+const actionRoleOf = (element: ActionElement) => element.key.slice(0, element.key.indexOf(' "'));
 
-  const roleOf = (element: ActionElement) => element.key.slice(0, element.key.indexOf(' "'));
+/**
+ * The app elements whose key no design element shares, each paired with the one design element of its role that no
+ * app element shares a key with - only where the role has exactly one such element on each side.
+ */
+const renamedPairsOf = <TDesign extends ActionElement>(options: { design: TDesign[]; app: ActionElement[] }) => {
+  const idOf = (element: ActionElement) => `${element.key}#${element.occurrence}`;
+  const designs = new Set(options.design.map(idOf));
+  const apps = new Set(options.app.map(idOf));
   const leftOf = <T extends ActionElement>(elements: T[], paired: (element: T) => boolean) => {
     const byRole = new Map<string, T[]>();
 
     for (const element of elements.filter((candidate) => !paired(candidate)))
-      byRole.set(roleOf(element), [...(byRole.get(roleOf(element)) ?? []), element]);
+      byRole.set(actionRoleOf(element), [...(byRole.get(actionRoleOf(element)) ?? []), element]);
 
     return byRole;
   };
   const designLeft = leftOf(options.design, (design) => apps.has(idOf(design)));
-  const appLeft = leftOf(options.app, (app) => designs.has(idOf(app)));
   const renamed = new Map<ActionElement, TDesign>();
 
-  for (const [role, [app, ...moreApps]] of appLeft) {
+  for (const [role, [app, ...moreApps]] of leftOf(options.app, (app) => designs.has(idOf(app)))) {
     const [design, ...moreDesigns] = designLeft.get(role) ?? [];
 
     if (app && design && moreApps.length === 0 && moreDesigns.length === 0) renamed.set(app, design);
   }
 
+  return renamed;
+};
+
+/** The design elements of the app element's role that no app element shares a key with: what it may have meant. */
+export const nearMissesOf = <TDesign extends ActionElement>(options: {
+  element: ActionElement;
+  design: TDesign[];
+  app: ActionElement[];
+}) => {
+  const apps = new Set(options.app.map((element) => element.key));
+  const role = actionRoleOf(options.element);
+
+  return options.design.filter((design) => actionRoleOf(design) === role && !apps.has(design.key));
+};
+
+/** The design and app elements of one state, paired by key and occurrence. */
+export const pairElementsOf = <TDesign extends ActionElement>(options: { design: TDesign[]; app: ActionElement[] }) => {
+  const idOf = (element: ActionElement) => `${element.key}#${element.occurrence}`;
+  const designs = new Map(options.design.map((element) => [idOf(element), element]));
+  const apps = new Set(options.app.map(idOf));
+  const renamed = renamedPairsOf(options);
   const renamedDesigns = new Set(renamed.values());
 
   return {
@@ -302,6 +325,10 @@ export const ownScopeOf = <TDesign extends ActionElement & { owners: readonly st
   const own = options.design.filter((element) => element.owners.length === 0);
   const embedded = new Set(options.design.filter((element) => element.owners.length > 0).map(idOf));
   const ownIds = new Set(own.map(idOf));
+
+  for (const [app, design] of renamedPairsOf({ design: options.design, app: options.app }))
+    if (design.owners.length > 0 && !ownIds.has(idOf(app))) embedded.add(idOf(app));
+
   const drawnKeys = new Set(options.design.map((element) => element.key));
   const skipped = new Set<string>();
   const app = options.app.filter((element) => {
