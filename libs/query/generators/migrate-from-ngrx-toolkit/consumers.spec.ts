@@ -254,22 +254,94 @@ describe('migrate-from-ngrx-toolkit consumers', { timeout: 30_000 }, () => {
       );
     });
 
-    it('records a task for on() and once() calls on a migrated facade', () => {
+    it('rewrites success listeners on a migrated facade to toolkitOnSuccess', () => {
+      const path = 'libs/domain/admin/src/lib/members/views/roster/roster.component.ts';
+
+      tree.write(
+        path,
+        [
+          "import { Component, OnInit, inject } from '@angular/core';",
+          "import { ItemFacade, getItem, getItemPublicProfileBySlug } from '@app-a/store';",
+          "import { BehaviorSubject, Subject, takeUntil, tap } from 'rxjs';",
+          '',
+          "@Component({ selector: 'app-a-roster', template: '' })",
+          'export class RosterComponent implements OnInit {',
+          '  private _itemFacade = inject(ItemFacade);',
+          '  private _destroy$ = new Subject<void>();',
+          '  currentAlert$ = new BehaviorSubject<string | null>(null);',
+          '',
+          '  ngOnInit(): void {',
+          '    this._itemFacade',
+          '      .on(getItem.success)',
+          '      .pipe(',
+          '        takeUntil(this._destroy$),',
+          "        tap(() => this.currentAlert$.next('Item loaded')),",
+          '      )',
+          '      .subscribe();',
+          '    this._itemFacade',
+          '      .on([',
+          '        getItem.success,',
+          '        getItemPublicProfileBySlug.success,',
+          '      ])',
+          '      .pipe(takeUntil(this._destroy$))',
+          '      .subscribe();',
+          '  }',
+          '}',
+          '',
+        ].join('\n'),
+      );
+      migrateToolkitStores(tree, APP_A_OPTIONS, report);
+
+      expect(read(path)).toBe(
+        [
+          "import { Component, Injector, OnInit, inject } from '@angular/core';",
+          "import { ItemFacade, getItem, getItemPublicProfileBySlug } from '@app-a/store';",
+          "import { BehaviorSubject, Subject, takeUntil, tap } from 'rxjs';",
+          "import { toolkitOnSuccess } from '@ethlete/query/ngrx-toolkit';",
+          '',
+          "@Component({ selector: 'app-a-roster', template: '' })",
+          'export class RosterComponent implements OnInit {',
+          '  private injector = inject(Injector);',
+          '',
+          '  private _itemFacade = inject(ItemFacade);',
+          '  private _destroy$ = new Subject<void>();',
+          '  currentAlert$ = new BehaviorSubject<string | null>(null);',
+          '',
+          '  ngOnInit(): void {',
+          '    toolkitOnSuccess(getItem, { injector: this.injector })',
+          '      .pipe(',
+          '        takeUntil(this._destroy$),',
+          "        tap(() => this.currentAlert$.next('Item loaded')),",
+          '      )',
+          '      .subscribe();',
+          '    toolkitOnSuccess([getItem, getItemPublicProfileBySlug], { injector: this.injector })',
+          '      .pipe(takeUntil(this._destroy$))',
+          '      .subscribe();',
+          '  }',
+          '}',
+          '',
+        ].join('\n'),
+      );
+      expect(tasksOf(CONSUMER_TASK.FACADE_ON)).toEqual([]);
+    });
+
+    it('records a task for listeners toolkitOnSuccess cannot replace', () => {
       const path = 'libs/domain/admin/src/lib/members/item-listener.component.ts';
 
       tree.write(
         path,
         [
           "import { Component, inject } from '@angular/core';",
-          "import { CatalogSessionFacade, ItemFacade, getItem } from '@app-a/store';",
+          "import { CatalogSessionFacade, ItemFacade, getCatalogSessionEvent, getItem } from '@app-a/store';",
           '',
           "@Component({ selector: 'app-a-item-listener', template: '' })",
           'export class ItemListenerComponent {',
           '  private _sessionFacade = inject(CatalogSessionFacade);',
           '',
           '  constructor(private _itemFacade: ItemFacade) {',
-          '    this._itemFacade.on([getItem.success]).subscribe();',
-          '    inject(ItemFacade).once(getItem.failure).subscribe();',
+          '    this._itemFacade.on([getItem.success, getItem.failure]).subscribe();',
+          '    inject(ItemFacade).once(getItem.success).subscribe();',
+          '    this._itemFacade.on(getCatalogSessionEvent.success).subscribe();',
           '    this._sessionFacade.on([getItem.success]).subscribe();',
           '  }',
           '}',
@@ -281,15 +353,21 @@ describe('migrate-from-ngrx-toolkit consumers', { timeout: 30_000 }, () => {
       expect(tasksOf(CONSUMER_TASK.FACADE_ON)).toEqual([
         expect.objectContaining({
           summary:
-            '`this._itemFacade.on([getItem.success])` listens to toolkit actions the migrated facade no longer emits.',
+            '`this._itemFacade.on([getItem.success, getItem.failure])` listens to toolkit actions the migrated facade no longer emits.',
           locations: [{ filePath: path, line: 9 }],
         }),
         expect.objectContaining({
           summary:
-            '`inject(ItemFacade).once(getItem.failure)` listens to toolkit actions the migrated facade no longer emits.',
+            '`inject(ItemFacade).once(getItem.success)` listens to toolkit actions the migrated facade no longer emits.',
           locations: [{ filePath: path, line: 10 }],
         }),
+        expect.objectContaining({
+          summary:
+            '`this._itemFacade.on(getCatalogSessionEvent.success)` listens to toolkit actions the migrated facade no longer emits.',
+          locations: [{ filePath: path, line: 11 }],
+        }),
       ]);
+      expect(read(path)).not.toContain('toolkitOnSuccess');
     });
 
     it('keeps typeof on a namespace import once it points at the queries file', () => {

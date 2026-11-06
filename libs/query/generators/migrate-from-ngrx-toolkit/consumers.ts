@@ -78,6 +78,7 @@ export type ToolkitConsumerStats = {
   filesRewritten: number;
   filesLeftOnToolkit: number;
   refreshSitesRewritten: number;
+  facadeListenersRewritten: number;
   interceptorsFound: number;
 };
 
@@ -279,29 +280,9 @@ const injectorOf = (classNode: ts.ClassLikeDeclaration) => {
   return null;
 };
 
-type RefreshPlan = {
-  edits: TextEdit[];
-  rewritten: number;
-  needsInjectorImport: boolean;
-  tasks: ToolkitTaskInput[];
-};
-
-const planRefreshSites = (
-  filePath: string,
-  sourceFile: ts.SourceFile,
-  content: string,
-  createActionId: string | null,
-): RefreshPlan => {
-  const plan: RefreshPlan = { edits: [], rewritten: 0, needsInjectorImport: false, tasks: [] };
-  const consumedActionIds = new Set<ts.Node>();
+const classInjectorResolver = (sourceFile: ts.SourceFile) => {
   const classInjectors = new Map<ts.ClassLikeDeclaration, string>();
-
-  const task = (node: ts.Node, summary: string) =>
-    plan.tasks.push({
-      id: CONSUMER_TASK.SELECT_BY_ACTION_ID,
-      summary,
-      locations: [{ filePath, line: lineOf(sourceFile, node.getStart(sourceFile)) }],
-    });
+  const edits: TextEdit[] = [];
 
   const injectorFor = (node: ts.Node) => {
     let current: ts.Node | undefined = node.parent;
@@ -322,8 +303,7 @@ const planRefreshSites = (
     const name = taken ? 'toolkitInjector' : 'injector';
 
     classInjectors.set(classNode, name);
-    plan.needsInjectorImport = true;
-    plan.edits.push({
+    edits.push({
       start: classNode.members.pos,
       end: classNode.members.pos,
       text: `\n  private ${name} = inject(Injector);\n`,
@@ -331,6 +311,35 @@ const planRefreshSites = (
 
     return name;
   };
+
+  return { injectorFor, edits };
+};
+
+type RefreshPlan = {
+  edits: TextEdit[];
+  rewritten: number;
+  needsInjectorImport: boolean;
+  tasks: ToolkitTaskInput[];
+};
+
+const planRefreshSites = (
+  filePath: string,
+  sourceFile: ts.SourceFile,
+  content: string,
+  createActionId: string | null,
+): RefreshPlan => {
+  const plan: RefreshPlan = { edits: [], rewritten: 0, needsInjectorImport: false, tasks: [] };
+  const consumedActionIds = new Set<ts.Node>();
+
+  const task = (node: ts.Node, summary: string) =>
+    plan.tasks.push({
+      id: CONSUMER_TASK.SELECT_BY_ACTION_ID,
+      summary,
+      locations: [{ filePath, line: lineOf(sourceFile, node.getStart(sourceFile)) }],
+    });
+
+  const injectors = classInjectorResolver(sourceFile);
+  const injectorFor = injectors.injectorFor;
 
   const localActionId = (select: ts.CallExpression, identifier: ts.Identifier) => {
     let block: ts.Node | undefined = select.parent;
@@ -403,6 +412,9 @@ const planRefreshSites = (
 
   visit(sourceFile);
   visitActionIds(sourceFile);
+
+  plan.edits.push(...injectors.edits);
+  plan.needsInjectorImport = injectors.edits.length > 0;
 
   return plan;
 };
@@ -640,18 +652,27 @@ const migratedFacadeNames = (
   return names;
 };
 
-const findFacadeEventCalls = (
+type FacadeEventResult = {
+  content: string;
+  rewritten: number;
+  tasks: ToolkitTaskInput[];
+};
+
+const rewriteFacadeEventCalls = (
+  tree: Tree,
   graph: ModuleGraph,
   migratedFacades: ReadonlySet<string>,
   filePath: string,
   content: string,
-): ToolkitTaskInput[] => {
-  if (!/\.(on|once)\s*\(/.test(content)) return [];
+): FacadeEventResult => {
+  const unchanged: FacadeEventResult = { content, rewritten: 0, tasks: [] };
+
+  if (!/\.(on|once)\s*\(/.test(content)) return unchanged;
 
   const sourceFile = createSourceFile(content, filePath);
   const facadeNames = migratedFacadeNames(graph, migratedFacades, filePath, sourceFile);
 
-  if (facadeNames.size === 0) return [];
+  if (facadeNames.size === 0) return unchanged;
 
   const isFacadeType = (type: ts.TypeNode | undefined) =>
     !!type && ts.isTypeReferenceNode(type) && ts.isIdentifier(type.typeName) && facadeNames.has(type.typeName.text);
@@ -686,6 +707,44 @@ const findFacadeEventCalls = (
     );
   };
 
+  const isConvertedCreator = (local: string) => {
+    const origin = namedImportOf(sourceFile, local);
+
+    if (!origin || origin.namespace) return false;
+
+    const declaringFile = graph.findDeclaringFile(filePath, origin.specifier, origin.imported);
+
+    return !!declaringFile && !isToolkitActionsFile(tree, declaringFile);
+  };
+
+  const successCreatorsText = (call: ts.CallExpression) => {
+    const argument = call.arguments[0];
+
+    if (call.arguments.length !== 1 || !argument) return null;
+
+    const items = ts.isArrayLiteralExpression(argument) ? [...argument.elements] : [argument];
+    const creators: string[] = [];
+
+    for (const item of items) {
+      if (
+        !ts.isPropertyAccessExpression(item) ||
+        item.name.text !== 'success' ||
+        !ts.isIdentifier(item.expression) ||
+        !isConvertedCreator(item.expression.text)
+      ) {
+        return null;
+      }
+
+      creators.push(item.expression.text);
+    }
+
+    if (creators.length === 0) return null;
+
+    return ts.isArrayLiteralExpression(argument) ? `[${creators.join(', ')}]` : creators[0]!;
+  };
+
+  const injectors = classInjectorResolver(sourceFile);
+  const edits: TextEdit[] = [];
   const tasks: ToolkitTaskInput[] = [];
 
   const visit = (node: ts.Node) => {
@@ -695,6 +754,18 @@ const findFacadeEventCalls = (
       ['on', 'once'].includes(node.expression.name.text) &&
       isFacade(node.expression.expression)
     ) {
+      const creators = node.expression.name.text === 'on' ? successCreatorsText(node) : null;
+      const injector = creators ? injectors.injectorFor(node) : null;
+
+      if (creators && injector) {
+        edits.push({
+          start: node.getStart(sourceFile),
+          end: node.getEnd(),
+          text: `toolkitOnSuccess(${creators}, { injector: this.${injector} })`,
+        });
+        return;
+      }
+
       tasks.push({
         id: CONSUMER_TASK.FACADE_ON,
         summary: `${code(node.getText(sourceFile).replace(/\s+/g, ' '))} listens to toolkit actions the migrated facade no longer emits.`,
@@ -707,7 +778,25 @@ const findFacadeEventCalls = (
 
   visit(sourceFile);
 
-  return tasks;
+  if (edits.length === 0) return { ...unchanged, tasks };
+
+  let result = applyEdits(content, [...edits, ...injectors.edits]);
+
+  result = ensureNamedImports({
+    content: result,
+    importsNeeded: ['toolkitOnSuccess'],
+    moduleSpecifier: INTEROP_MODULE,
+  });
+
+  if (injectors.edits.length > 0) {
+    result = ensureNamedImports({
+      content: result,
+      importsNeeded: ['inject', 'Injector'],
+      moduleSpecifier: '@angular/core',
+    });
+  }
+
+  return { content: result, rewritten: edits.length, tasks };
 };
 
 /** Runs the consumer side of the migration on every scoped file that still imports `@tomtomb/ngrx-toolkit`. */
@@ -724,6 +813,7 @@ export const migrateToolkitConsumers = (
     filesRewritten: 0,
     filesLeftOnToolkit: 0,
     refreshSitesRewritten: 0,
+    facadeListenersRewritten: 0,
     interceptorsFound: 0,
   };
 
@@ -739,11 +829,19 @@ export const migrateToolkitConsumers = (
     interceptors.forEach((task) => report.add(task));
     stats.interceptorsFound += interceptors.length;
 
-    findFacadeEventCalls(graph, migratedFacades, filePath, content).forEach((task) => report.add(task));
+    const events = rewriteFacadeEventCalls(tree, graph, migratedFacades, filePath, content);
 
-    if (!content.includes(TOOLKIT_MODULE)) continue;
+    events.tasks.forEach((task) => report.add(task));
+    stats.facadeListenersRewritten += events.rewritten;
 
-    const result = rewriteConsumer(tree, graph, filePath, content);
+    if (events.rewritten > 0) {
+      tree.write(filePath, events.content);
+      stats.filesRewritten += 1;
+    }
+
+    if (!events.content.includes(TOOLKIT_MODULE)) continue;
+
+    const result = rewriteConsumer(tree, graph, filePath, events.content);
 
     if (!result) continue;
 
@@ -751,7 +849,7 @@ export const migrateToolkitConsumers = (
 
     if (result.rewritten) {
       tree.write(filePath, result.content);
-      stats.filesRewritten += 1;
+      if (events.rewritten === 0) stats.filesRewritten += 1;
     }
 
     if (result.leftOnToolkit) stats.filesLeftOnToolkit += 1;

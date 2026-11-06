@@ -222,7 +222,7 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
     `   ${stats.featuresConverted}/${stats.featuresFound} features converted, ${stats.creatorsWritten} creators written, ${stats.creatorsReused} reused, ${stats.deletedFiles.length} files deleted.`,
   );
   console.log(
-    `   ${stats.consumers.filesRewritten} consumer files moved to @ethlete/query/ngrx-toolkit, ${stats.consumers.refreshSitesRewritten} refresh sites rewritten.`,
+    `   ${stats.consumers.filesRewritten} consumer files moved to @ethlete/query/ngrx-toolkit, ${stats.consumers.refreshSitesRewritten} refresh sites and ${stats.consumers.facadeListenersRewritten} facade listeners rewritten.`,
   );
 
   report.writeToTree(tree);
