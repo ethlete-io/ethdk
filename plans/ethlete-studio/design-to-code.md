@@ -3942,3 +3942,11 @@ p-1/p-2 padding). Studio listed it for Tom like any sketch, and the doc agent as
 Tom to skip it. Why no tool caught it: nothing marks a sketch as a measurement, and nothing keeps measurement runs out
 of the product Tom picks in. Fix: timing and bench runs draw their sketches only in studio-lab or a scratch copy,
 never in studio; the fixture is discarded with `sketch discard` and never committed.
+
+514\. Tom on the `elements/shell-main@edit` sketch: "was wird hier von mir erwartet". The view showed "Aktuell" (the
+direct edit, with the embedded title bar) next to "Variante old" with an "Übernehmen" button; "Variante new" sat
+collapsed under "Unverändert", because new equals Aktuell. So the only visible action was the discard, and keeping the
+change meant opening a collapsed list. Why no tool caught it: the "unchanged" collapse treats an edit sketch like a
+design round, and no rule or spec covers what an `@edit` sketch must show. Fix: an `@edit` sketch never collapses
+`new`; it shows two clearly named choices, "Änderung behalten" (new) and "Zuletzt gemergter Stand" (old), each with
+its own button; spec on an edit sketch where new equals Aktuell. The layout goes to Tom as a sketch.
