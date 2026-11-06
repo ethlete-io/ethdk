@@ -4359,3 +4359,11 @@ Each switch appends a `page-switch` line (page seen before, target 100 ms) or `p
 `.ethlete/design/.timings.jsonl`, so `design timings` shows them with STALE/NOISY; sub-second times print in ms. Not
 measured: icons <-> elements/shell-main; after that switch no `img` or `iframe` with the shell-main part URL was in the
 DOM within 15 s although 18 shell-main shots were drawn. Details: `.claude/handoffs/agent-results/studio-frame-a2.md`.
+
+530\. c0 (2026-11-06), finding 523 verification (1dce81941): the page-switch e2e measured only icons, logo and system;
+the switch to `elements/shell-main` - the heaviest page and the one the Mac numbers flagged - drew 18 shots but no
+frame with its part URL mounted within 15 s. Cause open: a wrong selector or leaf in the e2e, or Studio not mounting
+the frames. Why no tool caught it: the switch list was picked by what worked, and a switch that never finishes was
+dropped instead of failing. Tool fix (slice C): shell-main joins `PAGE_SWITCHES`; a switch that shows no frame within
+the cap fails the e2e rather than being left out. c0 reports the cause; if Studio does not mount the frames, that is a
+Studio defect with its own finding.
