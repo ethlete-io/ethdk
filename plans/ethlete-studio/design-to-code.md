@@ -4126,7 +4126,8 @@ page switch shows every frame's stored picture in the first paint. Tool fix: Stu
 `design timings` with a target.
 Tom, same day, screenshot of elements/shell-main@edit at 32 %: "auf shell main sieht man beim scrollen auch noch
 stark pop in. auch bereits rendered sachen popen wieder rein wenn sie in den viewport kommen." Frames entering the
-viewport show empty boxes, and frames already drawn go empty again on the way back. Added to the same item; target:
+viewport show empty boxes, and frames already drawn go empty again on the way back. Not new: finding 430 (2026-11-04) and ADR 0186 already recorded it, open in B365; the doc agent took it as new
+(a repeated report is a finding: check the findings list before recording). Added to the same item; target:
 a frame with a stored picture is never empty on screen, on switch or on scroll, and a frame drawn once stays drawn.
 B416 phase 3 = S4 (in progress, then as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06):
 compare keeps its pictures on disk under `node_modules/.design-explore/compare-{design,app}-shots-<hash>`. A design
