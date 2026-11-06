@@ -22,10 +22,10 @@
     "at": "2026-11-03T16:58:15.525Z"
   },
   "components/title-bar": {
-    "hash": "2fc021f34b6c5e4e",
-    "variant": "no-pill",
+    "hash": "2e3593d3a439101d",
+    "variant": "b",
     "decidedBy": "user",
-    "at": "2026-11-05T15:37:41.468Z"
+    "at": "2026-11-06T11:17:52.121Z"
   },
   "components/tree-row": "9b985495f700b73f",
   "components/update-dialog": "ac56332d0f1f3ed0",

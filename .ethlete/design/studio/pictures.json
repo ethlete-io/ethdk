@@ -11,21 +11,21 @@
   },
   "components/comment-draft": {
     "record": {
-      "hash": "31580fe126c90586",
+      "hash": "751286ddbcc212f7",
       "states": {
-        "empty": "4f82a9613c1d95de",
-        "typed": "4098af9e0e52d16e",
-        "busy": "63c3cc20e62e7321",
-        "error": "bc858cbadaf728d2",
-        "rejected": "77b653fdfa4992e1"
+        "empty": "af44606424ad81e5",
+        "typed": "bb44a9afa253fd34",
+        "busy": "0d68f45a18fdc865",
+        "error": "158ffc02c98df287",
+        "rejected": "3fdc70fb8dafde24"
       },
-      "partHash": "46eb057ae9d8ab10",
+      "partHash": "ad14ceb6f41d913d",
       "slots": true
     }
   },
   "components/comment-pin": {
     "record": {
-      "hash": "4a3a790225b881ca",
+      "hash": "6f10078ec05d2bfc",
       "states": {
         "initials": "d12cb5d531da963b",
         "initials-hover": "7167613dee3e5e9b",
@@ -76,7 +76,7 @@
         "selected-resolved-active": "976fcaea7b76ceee",
         "selected-resolved-focus-visible": "54223a8a9863cb01"
       },
-      "partHash": "60a213cdfc41a3e3",
+      "partHash": "615fc830d7b00fa4",
       "slots": true
     }
   },
@@ -161,7 +161,7 @@
   },
   "components/title-bar": {
     "record": {
-      "hash": "bd0aa9dfb7f79222",
+      "hash": "2d54e122858093ed",
       "states": {
         "linux-full-update": "5b12eacaa5c5afe2",
         "linux-full-update-hover": "7736534ef896ee0b",
@@ -172,13 +172,13 @@
         "windows": "ac6ddd3c305bf14e",
         "windows-update": "83efabd2bd6ec748",
         "linux-full": "1009de5248de705e",
-        "linux-full-notice": "c77a389754177dab",
-        "windows-notice": "e8690dd01167873d",
+        "linux-full-notice": "ef98fd7c1c55424b",
+        "windows-notice": "0d016bc7b0df5446",
         "linux-close-update": "bf0dc6e2486f6ff3",
         "macos": "46432383b290b56c",
         "macos-update": "e1b7c78efbec58fc"
       },
-      "partHash": "4ad50a33ca509811",
+      "partHash": "2fc021f34b6c5e4e",
       "slots": true
     }
   },
@@ -320,24 +320,8 @@
     }
   },
   "elements/canvas-frames": {
-    "review": {
-      "hash": "9187f7aa728d28fa",
-      "states": {
-        "default": "9718bdf96370547f",
-        "out": "f0e61a09da602d28",
-        "reset": "a201ca2a0ca90f90",
-        "in": "55abb8646130c7b8",
-        "fit": "f46062554b484a8e",
-        "selected": "7755a247782db999",
-        "active": "2d5046807168a41a",
-        "load-failed": "ad3bc0d838a2e3f4",
-        "rounds": "5d75d78a9497aa55",
-        "round-folded": "de71ace2ec062119"
-      },
-      "slots": true
-    },
-    "go": {
-      "hash": "a47f630ccfc5a7be",
+    "record": {
+      "hash": "946276d9eeb42515",
       "states": {
         "default": "9718bdf96370547f",
         "out": "f0e61a09da602d28",
@@ -351,6 +335,7 @@
         "rounds": "5d75d78a9497aa55",
         "round-folded": "de71ace2ec062119"
       },
+      "partHash": "0aba678db6202ece",
       "slots": true
     }
   },
@@ -393,7 +378,7 @@
   },
   "elements/studio-menu": {
     "record": {
-      "hash": "d3076f3f357b1e74",
+      "hash": "1d8435d9524ee65e",
       "states": {
         "closed": "f3dd9d24f52f32bb",
         "closed-hover": "564c419701f79b50",
@@ -427,25 +412,25 @@
   },
   "foundations/agent-logos": {
     "record": {
-      "hash": "6764ff9a24aa5cf8",
+      "hash": "9d75073502df2ab0",
       "states": {
-        "hosts": "3c0f61b34f56bd9d",
+        "hosts": "6a9da3be0d3c027c",
         "detail": "454dd0743c56c12f"
       },
-      "partHash": "46bcf29865e6c1f4",
+      "partHash": "d8ad620ff101ae06",
       "slots": true
     }
   },
   "foundations/colors": {
     "record": {
-      "hash": "892a2b9bef02ff86",
+      "hash": "7b710439c4cfdc32",
       "states": {
-        "surfaces": "d7dcba5c30fde882",
-        "accent": "8377d8288385012f",
-        "warning": "4c63198f09a4cc22",
-        "error": "2b0f4d63b0a83080"
+        "surfaces": "4abfa933bab21809",
+        "accent": "dfd08f109b60be00",
+        "warning": "8ce7185ae9618be1",
+        "error": "3a9d29ec5627e1db"
       },
-      "partHash": "bc0d499f48f9253f",
+      "partHash": "97f8b2eb627962a4",
       "slots": true
     }
   },
@@ -462,12 +447,12 @@
   },
   "foundations/logo": {
     "record": {
-      "hash": "4bc4a21e9b36ac84",
+      "hash": "e8c89a3e8de5990d",
       "states": {
         "sizes": "3a051d17aa8c4e60",
-        "sidebar": "8794ba8cf41e9176"
+        "sidebar": "e0a0dbfabcd55548"
       },
-      "partHash": "99753939ebe518a9",
+      "partHash": "1bc6c33e87b3dda6",
       "slots": true
     }
   },
@@ -503,7 +488,7 @@
   },
   "pages/flows": {
     "record": {
-      "hash": "460aa4f4f314ef10",
+      "hash": "816b603a65564e47",
       "states": {
         "flow": "3c5b50b472891ccb",
         "empty": "17e02ac0074d5279"
@@ -514,20 +499,20 @@
   },
   "pages/inbox": {
     "record": {
-      "hash": "20ef70ec251a7b9a",
+      "hash": "79b9bcd6f223f765",
       "states": {
         "open": "60e6013a47fa76cf",
         "with-resolved": "7c6c1cf0783c5686",
         "active-only": "92b605d56df4ea67",
         "active-clear": "800223be72392ba7",
         "all-clear": "0b981efb75a99d26",
-        "comment-draft": "478c7e6c0fb1289e",
-        "comment-entry": "db6a29556a905fbe",
+        "comment-draft": "f7b46a28564fd8a2",
+        "comment-entry": "9862bbf6bda354f9",
         "loading": "9f10902d6cd4fef8",
         "load-error": "31cd51221347e001",
         "long-list": "8827de88f1a13954"
       },
-      "partHash": "d0e85e46cbdf0e66",
+      "partHash": "9d71efecdc22884c",
       "slots": true
     }
   },
@@ -545,7 +530,7 @@
   },
   "pages/merge": {
     "record": {
-      "hash": "dc1b6e3c094a765f",
+      "hash": "faa7530989b2cd84",
       "states": {
         "open": "4ab78d89c5a3c70c",
         "unchanged-open": "0976256ea44623c4",
@@ -616,7 +601,7 @@
   },
   "pages/system": {
     "record": {
-      "hash": "e276e44ce28b761d",
+      "hash": "9746dc9c10e39a95",
       "states": {
         "part": "7104744128f0f4fb",
         "empty": "f932d40afa6126cc",
@@ -627,11 +612,11 @@
         "part-focus-visible": "1f1245fdd55dc68b",
         "points-closed-focus-visible": "9f90b36ae20dede6",
         "comment-mode": "fd1ccf8a555a9305",
-        "comment-draft": "85873260ab1cded4",
-        "comment-draft-typed": "be4c5128d4521cf1",
-        "send-busy": "7b5d98bc0c52a43b",
-        "send-error": "a5a5c530b70932e4",
-        "send-rejected": "eec8feba439a98d6",
+        "comment-draft": "54d7490324674c99",
+        "comment-draft-typed": "bf23720dea653fa3",
+        "send-busy": "b3b39d1d8c3643e2",
+        "send-error": "ce009bce1222d5a6",
+        "send-rejected": "e5c82e2d87f5ccaf",
         "one-blocker": "89a69a462d186eb4",
         "checking": "87295b5200ef7fdb",
         "direct-edit": "af1e9bb9259cb3d3",
@@ -642,10 +627,10 @@
         "agent-failed-ready": "39af4eeb516dc4d9",
         "agent-waiting": "b24acce7950987f6",
         "agent-interrupted": "0712915f01a05573",
-        "call": "4e2d361ab0b31ba4",
-        "call-transferred": "768ec5b1bcc253ff"
+        "call": "7d0d1eb4d89ba2f7",
+        "call-transferred": "b0b073d9973d3dd7"
       },
-      "partHash": "21cce2be35b245bd",
+      "partHash": "0967723d07c853bf",
       "slots": true
     }
   }

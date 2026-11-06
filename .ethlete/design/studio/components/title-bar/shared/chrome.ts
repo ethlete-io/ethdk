@@ -16,6 +16,7 @@ export type Props = {
   right: WindowButton[];
   update: boolean;
   notice?: boolean;
+  noticeText?: string;
   product: string;
   part: string;
   force?: { control: TitleBarControl; interaction: TitleBarInteraction };
@@ -58,14 +59,39 @@ export const grid = {
   >,
 };
 
-export const states = {
-  ...(Object.assign({}, ...rows.map((row) => row.states)) as Record<StateName, Props>),
+const LAYOUTS = {
   'linux-full': LINUX_FULL,
-  'linux-full-notice': { ...LINUX_FULL, update: true, notice: true },
-  'windows-notice': { ...WINDOWS, update: true, notice: true },
-  'linux-close-update': { ...LINUX_CLOSE, update: true },
+  'linux-left': LINUX_LEFT,
+  'linux-close': LINUX_CLOSE,
+  windows: WINDOWS,
   macos: MACOS,
-  'macos-update': { ...MACOS, update: true },
+};
+
+type Layout = keyof typeof LAYOUTS;
+
+const CONTENTS = {
+  notice: { update: true, notice: true, noticeText: 'CLI geändert - neu starten' },
+  'cli-dirty': { noticeText: 'CLI hat uncommittete Änderungen, Studio läuft auf Stand 5dbc7ca' },
+  update: { update: true },
+  rest: {},
+} satisfies Record<string, Partial<Props>>;
+
+type Content = keyof typeof CONTENTS;
+
+const contentStates = (content: Content) =>
+  Object.fromEntries(
+    Object.entries(LAYOUTS).map(([layout, props]) => [
+      content === 'rest' ? layout : `${layout}-${content}`,
+      { ...props, ...CONTENTS[content] },
+    ]),
+  ) as Record<Layout | `${Layout}-${Exclude<Content, 'rest'>}`, Props>;
+
+export const states = {
+  ...contentStates('notice'),
+  ...contentStates('cli-dirty'),
+  ...(Object.assign({}, ...rows.map((row) => row.states)) as Record<StateName, Props>),
+  ...contentStates('update'),
+  ...contentStates('rest'),
 } satisfies Record<string, Props>;
 
 /** `control()` for one title-bar control, forced into the interaction its state draws. */

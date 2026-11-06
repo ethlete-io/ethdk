@@ -3,6 +3,7 @@ import captionClose from '@assets/icons/caption-close.svg?raw';
 import captionMaximize from '@assets/icons/caption-maximize.svg?raw';
 import captionMinimize from '@assets/icons/caption-minimize.svg?raw';
 import { button } from '@ethlete/components/design/button';
+import { tooltip, tooltipStyles } from '@ethlete/components/design/tooltip';
 import { icon } from '@system/foundations/icons';
 import titleSearchPart from '@system/components/title-search';
 import {
@@ -51,20 +52,36 @@ const update = (props: Props) =>
     props,
   );
 
-const notice = (props: Props) =>
-  titleBarControl(
-    withAction(
-      button({
-        label: 'Neu starten',
-        variant: 'tonal',
-        color: 'brand',
-        size: 'xs',
-        icon: icon('up-down', { size: 12 }),
-      }),
-      'emit:restart',
+const withHint = (markup: string, text: string | undefined) =>
+  text
+    ? `<span class="relative inline-flex">${markup}<span class="absolute top-full right-0 z-10 mt-2">${tooltip({ text, placement: 'bottom-end' })}</span></span>`
+    : markup;
+
+const dirtyText = ({ notice, noticeText }: Props) =>
+  !notice && noticeText
+    ? `<span class="whitespace-nowrap text-et-surface-muted" data-code-notice>${noticeText}</span>`
+    : '';
+
+const notice = async (props: Props) =>
+  withHint(
+    await ng(
+      titleBarControl(
+        withAction(
+          button({
+            label: 'Neu starten',
+            variant: 'tonal',
+            color: 'brand',
+            size: 'xs',
+            icon: icon('up-down', { size: 12 }),
+          }),
+          'emit:restart',
+        ),
+        'notice',
+        props,
+      ),
+      { imports },
     ),
-    'notice',
-    props,
+    props.noticeText,
   );
 
 export default definePart({
@@ -79,20 +96,25 @@ export default definePart({
     const search = await titleSearchPart.render({ product: props.product, part: props.part, os: props.os });
 
     return drawing({
-      body: html`<div
-        class="st-title-bar grid h-8 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-et-surface-border bg-et-surface-bg ${props.os === 'windows' ? 'pl-1.5' : 'px-1.5'} text-et-surface font-ui text-ui-sm"
-        data-et-surface
-        data-tauri-drag-region="deep"
-      >
-        ${await ng(
-          `<div class="flex items-center gap-2">${props.os === 'macos' ? MAC_RESERVE : ''}${sideControls(props, props.left)}</div>`,
-          { imports },
-        )}${search.body}${await ng(
-          `<div class="flex items-center justify-end gap-2 ${props.os === 'windows' ? 'self-stretch' : ''}">${props.notice ? notice(props) : ''}${props.update ? update(props) : ''}${sideControls(props, props.right)}</div>`,
-          { imports },
-        )}
+      body: html`<div class="${props.notice ? 'pb-12' : ''}">
+        <div
+          class="st-title-bar grid h-8 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-et-surface-border bg-et-surface-bg ${props.os === 'windows' ? 'pl-1.5' : 'px-1.5'} text-et-surface font-ui text-ui-sm"
+          data-et-surface
+          data-tauri-drag-region="deep"
+        >
+          ${await ng(
+            `<div class="flex items-center gap-2">${props.os === 'macos' ? MAC_RESERVE : ''}${sideControls(props, props.left)}</div>`,
+            { imports },
+          )}${search.body}
+          <div class="flex items-center justify-end gap-2 ${props.os === 'windows' ? 'self-stretch' : ''}">
+            ${dirtyText(props)}${props.notice ? await notice(props) : ''}${await ng(
+              `${props.update ? update(props) : ''}${sideControls(props, props.right)}`,
+              { imports },
+            )}
+          </div>
+        </div>
       </div>`,
-      styles,
+      styles: [styles, tooltipStyles].join('\n'),
     });
   },
 });
