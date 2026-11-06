@@ -18,6 +18,7 @@ import {
   migrateQueryClients,
   updateImportsAcrossWorkspace,
 } from './query-client-migration.js';
+import { reportLegacyModuleResolution } from './module-resolution.js';
 import { QueryV3MigrationReport } from './report.js';
 
 type MigrationSchema = MigrationScopeOptions & {
@@ -58,6 +59,8 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
     reportMissingHttpClientProviders(tree, report, scope);
     reportDefaultHeaderUsages(tree, report, scope);
   }
+
+  reportLegacyModuleResolution(tree, scope, report);
 
   report.writeToTree(tree, scope.isScoped ? scope.describe() : undefined);
   report.printSummary();

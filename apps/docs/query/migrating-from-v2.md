@@ -54,6 +54,10 @@ yarn nx g @ethlete/query:report-legacy-query-apis --projects=my-app
 
 These are the difference between "it compiles" and "it works".
 
+### Subpath imports need `moduleResolution: bundler`
+
+`@ethlete/query/testing`, `@ethlete/query-devtools/lazy` and the other `@ethlete/*` subpaths are `exports` map entries, which `moduleResolution: node` (`node10`) ignores. Set `bundler` (or `node16` / `nodenext`) in every project that imports one - the migration itself adds `@ethlete/query-devtools/lazy`. A project that still resolves with `node` gets a task naming its tsconfig and the subpath it imports, or the `paths` alias through which it reaches one in another project.
+
 ### `provideHttpClient()` is now your job
 
 The legacy client shipped its own transport. The current one does `inject(HttpClient)`, and `@ethlete/query` never provides it. Angular does: `HttpClient`, `HttpHandler` and `HttpBackend` are all `providedIn: 'root'`, so an app that never called `provideHttpClient()` builds and its requests go out anyway - over the default `fetch` backend, and unconfigured. Nothing that call configures is in place: no interceptors, and no XSRF header - the XSRF interceptor comes from `provideHttpClient()` itself, not from the root providers. Add it:
