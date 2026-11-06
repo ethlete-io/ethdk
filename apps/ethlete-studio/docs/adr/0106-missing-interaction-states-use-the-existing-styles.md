@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted, amended by 0210 (no merge by Tom for states in the existing styles)
 open: none
 decided: 2026-11-01
 source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Surfaces follow the elevation system, not picked names" (Q203-Q206), Q249
