@@ -44,7 +44,7 @@ export const createExecuteFn = <TArgs extends QueryArgs>(
   executeOptions: CreateQueryExecuteOptions<TArgs>,
 ): InternalQueryExecute<TArgs> => {
   const executeState = setupQueryExecuteState();
-  const circularChecker = circularQueryDependencyChecker();
+  const circularChecker = circularQueryDependencyChecker(executeOptions.creatorInternals.route);
   const aborter = createQueryExecutionAborter(executeOptions.state);
 
   const reset = () => untracked(() => resetExecuteState({ executeState, executeOptions }));

@@ -34,7 +34,7 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
   executeOptions: CreateGqlQueryExecuteOptions<TArgs>,
 ): InternalQueryExecute<TArgs> => {
   const executeState = setupQueryExecuteState();
-  const circularChecker = circularQueryDependencyChecker();
+  const circularChecker = circularQueryDependencyChecker(executeOptions.creator?.route);
   const aborter = createQueryExecutionAborter(executeOptions.state);
 
   const reset = () => untracked(() => resetExecuteState({ executeState, executeOptions }));

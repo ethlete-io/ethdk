@@ -54,7 +54,7 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
   options: SecureExecuteFactoryOptions<TArgs>,
 ): InternalQueryExecute<TArgs> => {
   const executeState = setupQueryExecuteState();
-  const circularChecker = circularQueryDependencyChecker();
+  const circularChecker = circularQueryDependencyChecker(options.route);
   const aborter = createQueryExecutionAborter(options.state);
 
   let authQuerySubscription = Subscription.EMPTY;

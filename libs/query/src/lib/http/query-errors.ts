@@ -277,23 +277,22 @@ export const invalidStateInsideSecureExecuteFactory = () => {
   );
 };
 
-export const circularQueryDependency = () => {
+const describeQuery = (route: unknown) =>
+  typeof route === 'string' ? `The query for "${route}"` : 'A query with a function route';
+
+export const circularQueryDependency = (route: unknown) => {
   return new RuntimeError(
     QueryRuntimeErrorCode.CIRCULAR_QUERY_DEPENDENCY,
-    `The same query was executed with identical args more than 5 times in a row, less than 100ms apart. This is usually a sign of a circular dependency.`,
+    `${describeQuery(route)} was executed with identical args more than 5 times in a row, less than 100ms apart. This is usually a sign of a circular dependency. Repeated execute({ skipCache: true }) calls count too, e.g. a test that fakes responses in a tight loop.`,
   );
 };
 
 export const queryExecutedAfterDestroyMessage = (route: unknown) => {
-  const target = typeof route === 'string' ? `The query for "${route}"` : 'A query with a function route';
-
-  return `${target} was executed after the scope that created it was destroyed. The call was ignored - drop the reference to the query when its component or injector goes away.`;
+  return `${describeQuery(route)} was executed after the scope that created it was destroyed. The call was ignored - drop the reference to the query when its component or injector goes away.`;
 };
 
 export const queryExecutedWhileParkedMessage = (route: unknown) => {
-  const target = typeof route === 'string' ? `The query for "${route}"` : 'A query with a function route';
-
-  return `${target} was executed while its withArgs source returned null (parked). The call was ignored - pass args to execute(), or let the source return them.`;
+  return `${describeQuery(route)} was executed while its withArgs source returned null (parked). The call was ignored - pass args to execute(), or let the source return them.`;
 };
 
 export const legacyPrepareWithoutInjectionContext = (

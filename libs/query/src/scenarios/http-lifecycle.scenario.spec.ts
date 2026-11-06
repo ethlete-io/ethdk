@@ -99,7 +99,7 @@ describe('http lifecycle scenario', () => {
     expect(() => {
       for (let i = 0; i < 4; i++) query.execute();
     }).not.toThrow();
-    expect(() => query.execute()).toThrow(/circular dependency/);
+    expect(() => query.execute()).toThrow(/^.*The query for "\/loop" was executed .*circular dependency/);
 
     s.tick();
     expect(query.response()).toEqual({ ok: true });

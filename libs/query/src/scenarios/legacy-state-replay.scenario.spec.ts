@@ -98,3 +98,29 @@ describe.each(LEGACY_CLIENT_KINDS)('legacy state$ after execute() on the %s clie
     legacy.destroy();
   });
 });
+
+describe('ET800 on the interop client', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  it('throws ET800 naming the query when execute({ skipCache: true }) repeats in a tight loop', () => {
+    const s = scenario();
+    const legacy = createLegacyClient(s, 'interop');
+    s.api.on('GET', '/me', () => ({ body: { id: 'me' } }));
+
+    const c = s.consumer([{ provide: GET_ITEMS, useValue: legacy.get<object>('/me') }]);
+    const query = c.run(() => c.injector.get(GET_ITEMS).prepare());
+
+    expect(() => {
+      for (let i = 0; i < 5; i++) {
+        query.execute({ skipCache: true });
+        s.tick(1);
+      }
+    }).not.toThrow();
+    expect(() => query.execute({ skipCache: true })).toThrow(
+      /The query for "\/me" .*execute\(\{ skipCache: true \}\) calls count/,
+    );
+
+    c.destroy();
+    legacy.destroy();
+  });
+});

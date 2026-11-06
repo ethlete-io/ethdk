@@ -166,7 +166,7 @@ const CIRCULAR_DEPENDENCY_MAX_REPEATS = 5;
  * less than 100 ms after the previous one. Executions with different args (a search term typed fast,
  * a slider bound to `withArgs`) never count against each other.
  */
-export const circularQueryDependencyChecker = () => {
+export const circularQueryDependencyChecker = (route: unknown) => {
   const recent = new Map<string, { lastTs: number; repeats: number }>();
 
   const check = (args: RequestArgs<QueryArgs> | null | undefined) => {
@@ -185,7 +185,7 @@ export const circularQueryDependencyChecker = () => {
 
     if (repeats > CIRCULAR_DEPENDENCY_MAX_REPEATS) {
       recent.delete(signature);
-      throw circularQueryDependency();
+      throw circularQueryDependency(route);
     }
 
     recent.set(signature, { lastTs: now, repeats });
