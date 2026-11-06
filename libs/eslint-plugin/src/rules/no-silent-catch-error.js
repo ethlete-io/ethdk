@@ -2,13 +2,16 @@
 'use strict';
 
 /**
- * Disallow an RxJS catchError whose handler ignores the error and returns of(...), EMPTY or NEVER.
+ * Disallow an RxJS catchError whose handler ignores the error and returns of(...), EMPTY or NEVER,
+ * and, with the `tryCatch` option, a try/catch whose catch ignores the error and returns a fallback value.
  *
  * BAD:
  *   source$.pipe(catchError(() => of(null)));
+ *   try { return read(); } catch { return []; }
  *
  * GOOD:
  *   source$.pipe(catchError((error) => { this.error.set(error); return of(null); }));
+ *   try { return read(); } catch (error) { report(error); return []; }
  */
 
 const SWALLOWING_CONSTANTS = new Set(['EMPTY', 'NEVER']);
@@ -24,6 +27,10 @@ const isSwallowingValue = (node) => {
 const collectReturnedValues = (fn) => {
   if (fn.body.type !== 'BlockStatement') return [fn.body];
 
+  return collectReturnsIn(fn.body);
+};
+
+const collectReturnsIn = (block) => {
   const values = [];
 
   const visit = (node) => {
@@ -52,7 +59,7 @@ const collectReturnedValues = (fn) => {
     }
   };
 
-  fn.body.body.forEach(visit);
+  block.body.forEach(visit);
 
   return values;
 };
@@ -62,37 +69,50 @@ const noSilentCatchError = {
   meta: {
     type: 'suggestion',
     docs: {
-      description: 'Disallow a catchError handler that ignores the error and swallows it with of(), EMPTY or NEVER.',
+      description:
+        'Disallow a catchError handler that ignores the error and swallows it with of(), EMPTY or NEVER, and with the `tryCatch` option a catch clause that ignores the error and returns a fallback.',
       recommended: false,
     },
     messages: {
       silentCatchError:
         'The error disappears silently. Use it (log it, store it in a signal, rethrow it) or disable this rule with a reason.',
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: { tryCatch: { type: 'boolean' } },
+        additionalProperties: false,
+      },
+    ],
   },
   create(context) {
     const sourceCode = context.sourceCode;
+    const checkTryCatch = context.options[0]?.tryCatch === true;
 
-    const ignoresError = (fn) => {
-      const [param] = fn.params;
-
+    const ignoresError = (scopeNode, param) => {
       if (!param) return true;
       if (param.type !== 'Identifier') return false;
 
-      const variable = sourceCode.getDeclaredVariables(fn).find((v) => v.name === param.name);
+      const variable = sourceCode.getDeclaredVariables(scopeNode).find((v) => v.name === param.name);
 
       return !variable || variable.references.length === 0;
     };
 
     return {
+      CatchClause(node) {
+        if (!checkTryCatch) return;
+        if (!ignoresError(node, node.param)) return;
+        if (collectReturnsIn(node.body).length === 0) return;
+
+        context.report({ node, messageId: 'silentCatchError' });
+      },
       CallExpression(node) {
         if (node.callee.type !== 'Identifier' || node.callee.name !== 'catchError') return;
 
         const [handler] = node.arguments;
 
         if (!handler || (handler.type !== 'ArrowFunctionExpression' && handler.type !== 'FunctionExpression')) return;
-        if (!ignoresError(handler)) return;
+        if (!ignoresError(handler, handler.params[0])) return;
 
         if (collectReturnedValues(handler).some(isSwallowingValue)) {
           context.report({ node: handler, messageId: 'silentCatchError' });

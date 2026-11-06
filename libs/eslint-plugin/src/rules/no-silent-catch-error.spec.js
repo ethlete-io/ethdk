@@ -9,6 +9,7 @@ const tester = new RuleTester({
   languageOptions: { ecmaVersion: 2022, sourceType: 'module', parser: tsParser },
 });
 
+const options = [{ tryCatch: true }];
 const error = [{ messageId: 'silentCatchError' }];
 
 tester.run('no-silent-catch-error', rule, {
@@ -22,6 +23,13 @@ tester.run('no-silent-catch-error', rule, {
     { code: `a$.pipe(catchError(() => { const inner = () => of(1); return inner(); }));` },
     { code: `a$.pipe(map(() => of(1)));` },
     { code: `a$.pipe(catchError((e) => { if (x) { return of(1); } return throwError(() => e); }));` },
+    {
+      code: `try { facts = classFactsOf({ product, classes }); } catch (error) { skipRule(tailwindFailureOf(error)); return []; }`,
+      options,
+    },
+    { code: `try { read(); } catch (error) { throw error; }`, options },
+    { code: `try { read(); } catch { return []; }` },
+    { code: `try { read(); } catch { cleanup(); }`, options },
   ],
   invalid: [
     { code: `a$.pipe(catchError(() => of(null)));`, errors: error },
@@ -30,5 +38,11 @@ tester.run('no-silent-catch-error', rule, {
     { code: `a$.pipe(catchError((e) => of([])));`, errors: error },
     { code: `a$.pipe(catchError(function () { return of(1); }));`, errors: error },
     { code: `a$.pipe(catchError(() => { this.x.set(1); return EMPTY; }));`, errors: error },
+    {
+      code: `let facts; try { facts = classFactsOf({ product, classes }); } catch { return []; }`,
+      options,
+      errors: error,
+    },
+    { code: `try { read(); } catch (e) { return null; }`, options, errors: error },
   ],
 });
