@@ -4347,3 +4347,10 @@ at load 30; auto-merge skipped, the pick waits for Tom (all three variants chang
 SHOT-NOT-VIEWED proves nothing about a view of each variant. Also the load note counts logical CPUs ("> 12 cores" on a
 6-core i7-9750H). Why no tool caught it: no spec asserts distinct shot files per variant. Doc agent decisions
 (technical): one shot file per variant, and ready names each file it needs viewed; load thresholds use physical cores.
+
+Built (2026-11-07, Mac, on local next): 07b96b302 (551, the all-states sketch copy of `shared/sketch-rows.ts` rebased
+onto the snapped camera), 8c07ea875 (552: a failed before render ends as no verdict, shared type in
+`libs/cli/src/lib/design/system/no-verdict.ts`; load-scaled before render timeout; SKETCH-BASE-STALE checked again
+after the render; rebase skips a hunk already present). Left open from 551: `sketch ready` does not run the
+SKETCH-BASE-STALE check, only `sketch check` does. Doc agent decision (technical, applies 551): ready runs the same
+stale check and refuses with the base commit.
