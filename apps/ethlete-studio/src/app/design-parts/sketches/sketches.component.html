@@ -53,6 +53,11 @@
             <div class="flex flex-wrap items-center">
               <et-badge variant="tonal" size="sm">{{ LABELS.status.waiting }}</et-badge>
             </div>
+            @if (heldMerge(); as held) {
+              <span class="line-clamp-2 min-w-0 text-ui-sm text-et-surface-muted" data-sk-merge-hold>{{
+                LABELS.mergeHold(held)
+              }}</span>
+            }
           </span>
         }
         @case ('errored') {
@@ -200,11 +205,6 @@
                     data-sk-same
                   >
                     <ethlete-disclosure [(open)]="sameOpen" [label]="sameLabel()" size="xs" />
-                    @for (row of sameRows(); track row.key) {
-                      <span [attr.data-sk-same-action]="row.key" class="flex">
-                        <ng-container *ngTemplateOutlet="mergeTemplate; context: { $implicit: row }" />
-                      </span>
-                    }
                   </div>
                 }
               }
@@ -228,13 +228,6 @@
                     </div>
                   }
                 </ethlete-disclosure>
-                @if (!sameOpen()) {
-                  @for (row of sameRows(); track row.key) {
-                    <span [attr.data-sk-same-action]="row.key" class="flex pt-space-2">
-                      <ng-container *ngTemplateOutlet="mergeTemplate; context: { $implicit: row }" />
-                    </span>
-                  }
-                }
               </section>
             }
           }
@@ -285,14 +278,11 @@
   </section>
 </ng-template>
 <ng-template #mergeTemplate let-row>
-  @if (status() === 'waiting' && !errored().includes(row.key)) {
-    <span class="flex flex-wrap items-center gap-space-2">
+  @if (status() === 'waiting' && !errored().includes(row.key) && !sameKeys().has(row.key)) {
+    <span class="flex">
       <button (click)="merge.emit(row.key)" et-button type="button" variant="outline" size="sm" data-sk-merge>
         {{ LABELS.merge }}
       </button>
-      @if (mergeHold(); as reason) {
-        <span class="text-ui-sm text-et-surface-muted" data-sk-merge-hold>{{ LABELS.mergeHold(reason) }}</span>
-      }
     </span>
   }
 </ng-template>

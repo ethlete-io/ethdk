@@ -69,8 +69,11 @@ export type SketchHold = { until: string; by: string; heldAt: string };
 /** A rebase after the merge of `merged` that could not port `parts` by itself; the sketch's agent ports `reasons` by hand. */
 export type SketchPortMark = { merged: string[]; parts: string[]; reasons: string[]; at: string };
 
-/** Why the last `sketch ready` run left a ready sketch for the user to merge; only a ready sketch keeps it. */
-export type SketchMergeHold = { reason: string; at: string };
+/**
+ * Why the last `sketch ready` run left a ready sketch unmerged; only a ready sketch keeps it. `dirty` lists the
+ * uncommitted files that refused the automatic merge; the next sketch command retries it once they are committed.
+ */
+export type SketchMergeHold = { reason: string; at: string; dirty?: string[] };
 
 export type SketchFile = {
   target: string;
@@ -360,7 +363,13 @@ const isStringList = (value: unknown) => Array.isArray(value) && value.every((en
 const isMergeHold = (value: unknown): value is SketchMergeHold => {
   const hold = value as Partial<Record<keyof SketchMergeHold, unknown>> | null;
 
-  return typeof hold === 'object' && hold !== null && typeof hold.reason === 'string' && typeof hold.at === 'string';
+  return (
+    typeof hold === 'object' &&
+    hold !== null &&
+    typeof hold.reason === 'string' &&
+    typeof hold.at === 'string' &&
+    (hold.dirty === undefined || isStringList(hold.dirty))
+  );
 };
 
 const isPortMark = (value: unknown): value is SketchPortMark => {

@@ -3500,8 +3500,18 @@ one. Tool fix: (1) an unchanged sketch never offers a manual pick or merge; (2) 
 the reason and what clears it, and the CLI and Studio retry the auto-merge by themselves when the guard clears (clean
 tree); (3) the sketch `pages-sketches` is discarded; (4) the builder lists the cause of a state in the sketch round note
 before it draws variants for it.
-In progress (builder ethlete-sdk-c0, 2026-11-06): (3) discard, (1) remove the manual fold actions, (2) one notice and
-the auto-retry when the guard clears.
+As built (builder ethlete-sdk-c0, 2026-11-06): (3) `sketch discard pages/sketches` (the sketch was untracked, nothing to
+commit). (1) The sketches part offers no merge for a variant whose every shot is unchanged, folded or open; the
+`[data-sk-same-action]` blocks are gone. (2) A dirty-guard refusal stores `mergeHold.dirty` (the uncommitted paths); the
+header shows one `[data-sk-merge-hold]` notice with the paths and "committen oder verwerfen, dann läuft er von selbst".
+`retriedHeldMerges` re-runs the auto-merge (with its own commit) before every sketch write command, `ready`, `check`, and
+before each `/__design/sketches` listing (Studio), once the held paths are clean. Only dirty-guard holds retry.
+Verified: CLI spec (held while dirty, merged and committed after the commit; bites without the retry call), 4 Studio
+specs, lint cli + ethlete-studio, tsc/ngc. `design check --product studio`: no new problem (DROPPED-PROP 481 on
+pages/sketches, canvas-frames, pages/system; CONTROL-STATE on shell-main from the UI builder's open work). `compare
+pages/sketches`: only the 9 DROPPED-PROP states differ; 16 missed actions (combobox "Runde", button "Alle Zustände
+zeigen") are not from this slice (not proven against the base). Not verified: a live Studio shot on :4402 (server down);
+Studio retries on the next listing, not at the commit itself.
 
 483\. `design compare components/title-bar` compared 16 states and silently skipped the 12 forced interaction states
 of the rows linux-left, linux-close, windows and windows-update (UI builder ethlete-sdk-c8, A1, 2026-11-06). Cause:

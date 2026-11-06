@@ -42,6 +42,7 @@ import { ResolvedProduct } from './system/resolve-product';
 import { openSketchListingOf } from './system/sketch/check-sketches';
 import { CheckSketches } from './system/sketch/sketch-checker';
 import { oneProductOf } from './system/sketch/cli-args';
+import { retriedHeldMerges } from './sketch-command';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { changedOutsideSketchOf, recordMergeReason } from './system/sketch/merged-parts';
 import { acceptRunOf, partAcceptRefusalOf } from './system/accept-command';
@@ -454,8 +455,11 @@ const startedListing = ({
  * of the agent (`report`, `null` when none runs). `?unchanged=no` answers without `problems`, and with the `unchanged` of a target only
  * while a full listing's comparison of the same sources is kept: no rule check, no pictures. `&targets=no` also leaves out `targets`: no part module loads.
  * A listing asked while the same one runs gets that one's answer; it stops when every client that asked for it has closed its request.
+ * Each listing first runs the held automatic merges whose uncommitted files are gone.
  */
-export const sketchesAnswer = withProduct('GET', ({ asked, product }) => {
+export const sketchesAnswer = withProduct('GET', ({ asked, config, product }) => {
+  retriedHeldMerges({ target: asked.target, config });
+
   const light = asked.url.searchParams.get('unchanged') === 'no';
   const key = JSON.stringify([asked.target, product.name, light, asked.url.searchParams.get('targets') === 'no']);
   const listing = runningListings.get(key) ?? startedListing({ key, asked, product, light });

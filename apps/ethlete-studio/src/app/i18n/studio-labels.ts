@@ -41,7 +41,10 @@ export const STUDIO_LABELS = {
   sketches: {
     discard: 'Verwerfen',
     merge: 'Übernehmen',
-    mergeHold: (reason: string) => `Nicht automatisch gemerged: ${reason}`,
+    mergeHold: ({ reason, dirty }: { reason: string; dirty?: string[] }) =>
+      dirty?.length
+        ? `Automatischer Merge wartet auf ungespeicherte Änderungen in ${dirty.join(', ')} - committen oder verwerfen, dann läuft er von selbst.`
+        : `Nicht automatisch gemerged: ${reason}`,
     variant: (label: string) => `Variante ${label}`,
     fitHint: 'Doppelklick zum Einpassen',
     current: 'Aktuell',

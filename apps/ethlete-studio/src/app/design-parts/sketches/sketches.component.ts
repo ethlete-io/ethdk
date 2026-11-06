@@ -57,6 +57,8 @@ import {
 
 type Zoom = 'fit' | number;
 
+export type SketchMergeHold = { reason: string; dirty?: string[] };
+
 export type SketchShotContext = { $implicit: SketchRow; state: string };
 
 const ZOOM_STEP = 1.5;
@@ -177,7 +179,7 @@ export class SketchesComponent {
   public fresh = input(false);
   public status = input<SketchStatus>('waiting');
   public errored = input<readonly string[]>([]);
-  public mergeHold = input<string | null>(null);
+  public mergeHold = input<SketchMergeHold | null>(null);
   public drawn = input<string | null>(SKETCH_DRAWN);
   public hold = input<SketchHold>(SKETCH_HOLD);
   public idle = input<SketchIdle>(SKETCH_IDLE);
@@ -304,6 +306,23 @@ export class SketchesComponent {
     const same = this.sameRows();
 
     return this.shownRows().filter((row) => !same.includes(row));
+  });
+  protected sameKeys = computed(
+    () =>
+      new Set(
+        this.listedRows()
+          .filter(
+            (row) =>
+              row.key !== SKETCH_CURRENT && row.shots.length > 0 && row.shots.every((shot) => shot.changed === false),
+          )
+          .map((row) => row.key),
+      ),
+  );
+  protected heldMerge = computed(() => {
+    const variants = this.listedRows().filter((row) => row.key !== SKETCH_CURRENT);
+    const same = this.sameKeys();
+
+    return variants.length > 0 && variants.every((row) => same.has(row.key)) ? this.mergeHold() : null;
   });
   protected sameLabel = computed(() => this.LABELS.sameVariants(this.sameRows().map((row) => row.key)));
   protected matrixRows = computed(() =>

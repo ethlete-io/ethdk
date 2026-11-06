@@ -129,7 +129,7 @@ const baseKeysOf = (options: { product: ResolvedProduct; sketch: Sketch; keys: s
  * Why a merge did nothing; `changed` names the parts a rebase must take in, `[]` when the sketch records no baseline;
  * `findings` holds the check's lines when the check failed after the merge.
  */
-export type MergeRefusal = { reason: string; changed?: string[]; findings?: string[] };
+export type MergeRefusal = { reason: string; changed?: string[]; findings?: string[]; dirty?: string[] };
 
 const formatFiles = (target: string, files: string[]) => {
   const bin = prettierBinOf(target);
@@ -288,7 +288,10 @@ const mergeOrReason = (options: {
   });
 
   if (dirty.length > 0)
-    return `${product.name} has uncommitted edits outside ${sketch.target}, so a failed check could not tell them from this merge - commit or revert them first: ${dirty.join(', ')}`;
+    return {
+      reason: `${product.name} has uncommitted edits outside ${sketch.target}, so a failed check could not tell them from this merge - commit or revert them first: ${dirty.join(', ')}`,
+      dirty,
+    };
 
   const swapped = swap([
     ...notedTargets.flatMap(({ inherited, targetDir }) =>

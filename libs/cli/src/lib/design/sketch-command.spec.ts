@@ -263,6 +263,41 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines).toContain('second run: 1');
   });
 
+  it('retries a held auto-merge on the next sketch command once the tree is clean', async () => {
+    const target = acme();
+    const lines = output();
+    const git = gitRepo(target);
+    const product = join(target, DESIGN_DIR, 'acme');
+    const sketchJson = join(product, 'sketches/components-button/sketch.json');
+    const home = join(product, 'pages/home/home.ts');
+
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) =>
+      sketch.variants.map((variant) => ({ variant, change: null })),
+    );
+    sameButton(target);
+    writeFileSync(home, `${readFileSync(home, 'utf8')}\nexport const edited = true;\n`);
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+
+    const held = JSON.parse(readFileSync(sketchJson, 'utf8')).mergeHold;
+
+    expect(held.dirty).toEqual([`${DESIGN_DIR}/acme/pages/home/home.ts`]);
+
+    await run(target, 'check', '--product', 'acme');
+
+    expect(JSON.parse(readFileSync(sketchJson, 'utf8')).mergeHold).toEqual(held);
+
+    git('commit', '-am', 'home');
+    await run(target, 'check', '--product', 'acme');
+
+    expect(existsSync(sketchJson)).toBe(false);
+    expect(lines).toContain('No visible change in any state: merged components/button automatically.');
+    expect(git('log', '-1', '--format=%s').stdout.trim()).toBe(
+      'feat(repo): Merge components/button, no visible change',
+    );
+  });
+
   it('commits its own auto-merge when the product was clean beside the sketch', async () => {
     const target = acme();
     const lines = output();

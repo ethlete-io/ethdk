@@ -144,7 +144,7 @@ describe('SketchesComponent', () => {
     expect(statesOf(same, 'x')).toEqual(statesOf(same, 'current'));
   });
 
-  it('shows only the question, the folded count and Übernehmen when every state draws like Aktuell', async () => {
+  it('shows only the question and the folded count, no Übernehmen, when every state draws like Aktuell', async () => {
     const rows = ROWS.map((row) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: false })) }));
     const fixture = await render({
       rows,
@@ -160,37 +160,50 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-state]')).toBeNull();
     expect(root.querySelector('[data-sk-stage]')).toBeNull();
     expect(root.querySelector('[data-sk-row="current"]')).toBeNull();
-    expect(textOf(root.querySelector('[data-sk-row="x"] [data-sk-merge]'))).toBe(LABELS.merge);
+    expect(root.querySelector('[data-sk-merge]')).toBeNull();
 
     root.querySelector<HTMLButtonElement>('[data-sk-folded] button')?.click();
     await fixture.whenStable();
 
     expect(root.querySelectorAll('[data-sk-row="current"] [data-sk-state]').length).toBe(2);
-    expect(textOf(root.querySelector('[data-sk-same-action="x"] [data-sk-merge]'))).toBe(LABELS.merge);
+    expect(root.querySelector('[data-sk-merge]')).toBeNull();
   });
 
-  it('keeps Übernehmen of a folded unchanged variant visible and emits it', async () => {
+  it('offers no Übernehmen for an unchanged variant, folded or open', async () => {
     const same: SketchRow = { ...ROWS[1]!, key: 'y', shots: ROWS[0]!.shots };
     const fixture = await render({ camera: '100', status: 'waiting', rows: [...ROWS, same] });
     const root: HTMLElement = fixture.nativeElement;
-    const merged: string[] = [];
 
-    fixture.componentInstance.merge.subscribe((variant) => merged.push(variant));
+    expect(root.querySelectorAll('[data-sk-merge]').length).toBe(1);
 
-    expect(root.querySelector('[data-sk-row="y"]')).toBeNull();
-    root.querySelector<HTMLButtonElement>('[data-sk-same-action="y"] [data-sk-merge]')?.click();
+    fixture.componentInstance.sameOpen.set(true);
+    await fixture.whenStable();
 
-    expect(merged).toEqual(['y']);
+    expect(root.querySelector('[data-sk-row="y"]')).not.toBeNull();
+    expect(root.querySelector('[data-sk-row="y"] [data-sk-merge]')).toBeNull();
+    expect(root.querySelectorAll('[data-sk-merge]').length).toBe(1);
   });
 
-  it('says why the sketch did not merge itself next to Übernehmen', async () => {
+  it('says once why an unchanged sketch did not merge itself and what clears it', async () => {
+    const hold = { reason: 'studio has uncommitted edits', dirty: ['pages/home/home.ts', 'shared/x.ts'] };
+    const rows = [...ROWS, { ...ROWS[1]!, key: 'y' }].map((row) => ({
+      ...row,
+      shots: row.shots.map((shot) => ({ ...shot, changed: false })),
+    }));
+    const root: HTMLElement = (await render({ camera: '100', status: 'waiting', rows, mergeHold: hold })).nativeElement;
+
+    expect(root.querySelectorAll('[data-sk-merge-hold]').length).toBe(1);
+    expect(textOf(root.querySelector('[data-sk-merge-hold]'))).toBe(LABELS.mergeHold(hold));
+    expect(textOf(root.querySelector('[data-sk-merge-hold]'))).toContain('pages/home/home.ts, shared/x.ts');
+    expect(root.querySelector('[data-sk-merge]')).toBeNull();
+  });
+
+  it('shows no merge notice for a sketch whose variant changes a picture', async () => {
     const root: HTMLElement = (
-      await render({ camera: '100', status: 'waiting', mergeHold: 'studio has uncommitted edits' })
+      await render({ camera: '100', status: 'waiting', mergeHold: { reason: 'variant x changes open' } })
     ).nativeElement;
 
-    expect(textOf(root.querySelector('[data-sk-row="x"] [data-sk-merge-hold]'))).toBe(
-      LABELS.mergeHold('studio has uncommitted edits'),
-    );
+    expect(root.querySelector('[data-sk-merge-hold]')).toBeNull();
   });
 
   it('shows the short model name with the full id and time as its title', async () => {

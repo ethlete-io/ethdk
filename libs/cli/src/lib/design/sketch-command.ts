@@ -181,6 +181,8 @@ const WRITES = new Set([
   ...VERDICTS,
 ]);
 
+const RETRIES = new Set([...WRITES, 'check']);
+
 type Context = { target: string; config: DesignConfig; args: Args; invocation?: string; noSketchHint?: string };
 
 const fail = (message: string) => {
@@ -867,9 +869,25 @@ const autoMerged = (options: {
     return stillReady({ sketch, again, reason: noChange });
   }
 
-  const author = authorOf(context.args) ?? undefined;
+  return mergedUnchanged({
+    target: context.target,
+    config: context.config,
+    author: authorOf(context.args) ?? undefined,
+    product,
+    sketch,
+  });
+};
+
+const mergedUnchanged = (options: {
+  target: string;
+  config: DesignConfig;
+  author?: string;
+  product: ResolvedProduct;
+  sketch: Sketch;
+}) => {
+  const { target, config, author, product, sketch } = options;
   const variant = sketch.variants.find((candidate) => !rejectionOf(sketch, candidate)) ?? '';
-  const commit = cleanBesideSketch({ target: context.target, product, sketch });
+  const commit = cleanBesideSketch({ target, product, sketch });
   const decided = decideSketch({ sketch, decision: { kind: 'pick', variant } });
 
   if (typeof decided === 'string') return fail(decided);
@@ -877,8 +895,8 @@ const autoMerged = (options: {
   const written = sharedFilesOf(product);
   const before = written.map((file) => contentOf(file));
   const result = mergeSketch({
-    target: context.target,
-    config: context.config,
+    target,
+    config,
     product,
     sketch: decided,
     author,
@@ -886,7 +904,14 @@ const autoMerged = (options: {
   });
 
   if (!Array.isArray(result)) {
-    writeSketchFile({ ...sketch, mergeHold: { reason: result.reason, at: new Date().toISOString() } });
+    writeSketchFile({
+      ...sketch,
+      mergeHold: {
+        reason: result.reason,
+        at: new Date().toISOString(),
+        ...(result.dirty ? { dirty: result.dirty } : {}),
+      },
+    });
     console.warn(`${sketch.target} shows no visible change but did not merge: ${result.reason}`);
 
     return 0;
@@ -894,19 +919,61 @@ const autoMerged = (options: {
 
   console.log(`No visible change in any state: merged ${sketch.targets.join(', ')} automatically.`);
 
-  if (commit && committedMerge({ target: context.target, product, sketch })) {
+  if (commit && committedMerge({ target, product, sketch })) {
     console.log(`Committed: feat(repo): Merge ${sketch.target}, no visible change`);
 
     return 0;
   }
 
   commitHunksLines({
-    target: context.target,
+    target,
     files: written.filter((file, index) => contentOf(file) !== before[index]),
     parts: sketch.targets,
   }).forEach((line) => console.log(line));
 
   return 0;
+};
+
+const stillDirtyOf = (options: { target: string; dirty: string[] }) => {
+  const status = gitIn(options.target, 'status', '--porcelain', '--untracked-files=all', '--', ...options.dirty);
+
+  return status.status !== 0 || status.stdout.trim() !== '';
+};
+
+/**
+ * Merges every ready sketch whose automatic merge uncommitted files refused, once those files are committed or
+ * reverted; `except` is a sketch target to leave alone.
+ */
+export const retriedHeldMerges = (options: {
+  target: string;
+  config: DesignConfig;
+  author?: string;
+  except?: string;
+}) => {
+  const { target, config, author, except } = options;
+
+  for (const name of Object.keys(config.products ?? {})) {
+    const productDir = productDirOf({ target, product: name });
+    const held = listSketches({ productDir, product: name }).filter(
+      (sketch): sketch is Sketch =>
+        typeof sketch !== 'string' &&
+        sketch.status === 'ready' &&
+        !!sketch.mergeHold?.dirty &&
+        sketch.target !== except &&
+        !stillDirtyOf({ target, dirty: sketch.mergeHold.dirty }),
+    );
+
+    if (held.length === 0) continue;
+
+    const product = oneProductOf({ target, config, asked: name });
+
+    if (typeof product === 'string') continue;
+
+    for (const sketch of held) {
+      console.log(`${sketch.target}: the uncommitted edits that held its automatic merge are gone - merging it now`);
+      mergedUnchanged({ target, config, author, product, sketch });
+    }
+  }
 };
 
 const contentOf = (file: string) => (existsSync(file) ? readFileSync(file, 'utf8') : null);
@@ -1557,6 +1624,17 @@ export const designSketch = (options: { target: string; argv: string[]; invocati
   const config = configOf(target);
 
   if (typeof config === 'string') return fail(config);
+
+  if (RETRIES.has(command)) {
+    const named = parseTarget(args.positional[0] ?? '');
+
+    retriedHeldMerges({
+      target,
+      config,
+      author: authorOf(args) ?? undefined,
+      except: typeof named === 'string' ? undefined : partKeyOf(named),
+    });
+  }
 
   return run({ target, config, args, invocation });
 };
