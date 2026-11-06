@@ -4329,3 +4329,11 @@ difference no variant made. Doc agent decision (technical): `sketch check` compa
 it came from (hash in sketch.json) and names a stale copy with the base commit; `sketch rebase` brings unchanged copies
 forward. Base problems reported the same in a/b/c (UNREACHABLE "Übernehmen" in far-out, CUT-CONTROL 64 px in
 unchanged-matrix-open, 90 frames over the 24 budget) are the base part's open points and do not block the sketch.
+
+552\. Builder (2026-11-07), `sketch ready pages/sketches@all-states` refused on base problems: the "before" render of
+pages/sketches hit RENDER-TIMEOUT (120 s at load 59-118), so the tool could not subtract the base problems and counted
+them as sketch problems ("has problems"). Also: SKETCH-BASE-STALE (551) printed only after the builder fixed the copy,
+not in the first check, and `sketch rebase` added a hunk that was already present (duplicate import). Why no tool
+caught it: a failed render is reported as a verdict, the same class as 545 and 549. Doc agent decisions (technical): a
+failed before render ends ready as "no verdict - base did not render, retry", never as "has problems"; the before
+render timeout scales with load (as 549); SKETCH-BASE-STALE runs in every check; rebase skips a hunk already present.
