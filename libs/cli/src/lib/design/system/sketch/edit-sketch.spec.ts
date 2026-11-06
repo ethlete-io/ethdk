@@ -31,6 +31,11 @@ const acme = (seed?: (heroDir: string) => void) => {
   return { target, css, head: readFileSync(css, 'utf8') };
 };
 
+const commit = (target: string) => {
+  execFileSync('git', ['add', '.'], { cwd: target });
+  execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
+};
+
 const resolveAcme = (target: string) =>
   resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
 
@@ -97,11 +102,56 @@ describe('openEditSketch', () => {
     expect(readFileSync(join(sketch.dir, 'old', HERO, 'hero.ts'), 'utf8')).toContain("from '@shared/tone'");
   });
 
-  it('opens no sketch when HEAD holds the edit already', () => {
+  it('opens no sketch when the part folder is at its merged commit', () => {
     const { target } = acme();
 
-    expect(openEditSketch({ target, product: resolveAcme(target), part: HERO })).toBe(
-      `HEAD holds the edit of ${HERO} already - there is no old design to show`,
+    expect(openEditSketch({ target, product: resolveAcme(target), part: HERO })).toMatch(
+      new RegExp(`^the folder of ${HERO} at its merged commit [0-9a-f]{9} equals the working one`, 'u'),
     );
+  });
+
+  it('takes old from the newest commit at the merged hash when the edit is committed', () => {
+    const { target, css, head } = acme();
+
+    writeFileSync(css, '.acme-hero { padding: 1px; }\n');
+    commit(target);
+    writeFileSync(css, '.acme-hero { padding: 0; }\n');
+    commit(target);
+
+    const sketch = openEditSketch({ target, product: resolveAcme(target), part: HERO }) as Sketch;
+
+    expect(readFileSync(join(sketch.dir, 'old', HERO, 'hero.css'), 'utf8')).toBe(head);
+    expect(readFileSync(join(sketch.dir, 'new', HERO, 'hero.css'), 'utf8')).toBe('.acme-hero { padding: 0; }\n');
+  });
+
+  it('writes the part at its merged commit back on a pick of old of a committed edit', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const { target, css, head } = acme();
+
+    writeFileSync(css, '.acme-hero { padding: 0; }\n');
+    commit(target);
+
+    const sketch = openEditSketch({ target, product: resolveAcme(target), part: HERO }) as Sketch;
+    const picked = decideSketch({ sketch, decision: { kind: 'pick', variant: 'old' } }) as Sketch;
+
+    mergeSketch({ target, config: readConfig(target) ?? {}, product: resolveAcme(target), sketch: picked });
+
+    expect(readFileSync(css, 'utf8')).toBe(head);
+    expect(changedOutsideSketchOf(resolveAcme(target))).toEqual([]);
+  });
+
+  it('answers EDIT-OLD-NOT-FOUND with the command to run when no commit has the merged hash', () => {
+    const { target, css } = acme();
+
+    writeFileSync(css, '.acme-hero { padding: 1px; }\n');
+    recordMerged({ product: resolveAcme(target), parts: [HERO] });
+    writeFileSync(css, '.acme-hero { padding: 0; }\n');
+    commit(target);
+
+    expect(openEditSketch({ target, product: resolveAcme(target), part: HERO })).toEqual({
+      rule: 'EDIT-OLD-NOT-FOUND',
+      message: expect.stringContaining(`et design accept ${HERO} --product acme`),
+    });
   });
 });

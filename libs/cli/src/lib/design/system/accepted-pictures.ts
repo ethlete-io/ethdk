@@ -13,7 +13,7 @@ import { partOwnerOf } from './inventory-approval';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
-import { EDIT_OLD, openEditSketch, refreshEditOld } from './sketch/edit-sketch';
+import { EDIT_OLD, EditOldNotFound, openEditSketch, refreshEditOld } from './sketch/edit-sketch';
 import { discardSketch } from './sketch/merge';
 import { changedOutsideSketchOf, EDIT_SKETCH, readMerged, recordMerged } from './sketch/merged-parts';
 import { listSketches, Sketch } from './sketch/sketch';
@@ -273,10 +273,11 @@ type Need = { part: ResolvedPart; design: string; baseline: AcceptedPictures | n
  * The work of `design check` on the pictures of each merged part, or of `parts`: draws the `record` pictures of a part
  * unchanged since its merge when none are stored at its design hash, and resolves a direct edit of a part changed
  * outside a sketch, and of a part whose old/new edit sketch is open without a decision. A direct edit is compared with
- * its pictures at the merged hash, else with the `old` variant of the old/new edit sketch, which holds the design at
- * HEAD (an open sketch's `old` is rewritten from HEAD first). One that draws every state as before holds at once (its
- * new hash goes to `merged.json`, and the edit sketch closes); one that draws a state differently leaves the edit
- * sketch open. An `old` that does not draw goes to `problems`, else to the lines.
+ * its pictures at the merged hash, else with the `old` variant of the old/new edit sketch, which holds the part at the
+ * newest commit with its merged hash (an open sketch's `old` is rewritten from that commit first). One that draws every
+ * state as before holds at once (its new hash goes to `merged.json`, and the edit sketch closes); one that draws a state
+ * differently leaves the edit sketch open. An `old` that does not draw, or no commit with the merged hash, goes to
+ * `problems`, else to the lines.
  * Answers with one line per part it drew or decided.
  */
 export const autoAcceptOf = async (options: {
@@ -301,12 +302,17 @@ export const autoAcceptOf = async (options: {
   const lines: string[] = [];
   const draw = options.draw ?? drawStatePictures;
   const heads: { part: ResolvedPart; design: string; sketch: Sketch; recheck?: true }[] = [];
-  const oldNotDrawn = ({ resolved, sketch }: { resolved: ResolvedPart; sketch: Sketch }, why: string) => {
-    const message = `variant ${EDIT_OLD} of ${sketch.target} (the part at HEAD) does not draw: ${why}`;
-
-    if (options.problems) options.problems.push({ rule: 'EDIT-OLD-NOT-DRAWN', file: resolved.file, message });
-    else lines.push(`EDIT-OLD-NOT-DRAWN ${product.name} ${partKeyOf(resolved)}: ${message}`);
+  const problem = (resolved: ResolvedPart, { rule, message }: { rule: string; message: string }) => {
+    if (options.problems) options.problems.push({ rule, file: resolved.file, message });
+    else lines.push(`${rule} ${product.name} ${partKeyOf(resolved)}: ${message}`);
   };
+  const oldNotDrawn = ({ resolved, sketch }: { resolved: ResolvedPart; sketch: Sketch }, why: string) =>
+    problem(resolved, {
+      rule: 'EDIT-OLD-NOT-DRAWN',
+      message: `variant ${EDIT_OLD} of ${sketch.target} (the part at its merged commit) does not draw: ${why}`,
+    });
+  const isNotFound = (result: object | string | null): result is EditOldNotFound =>
+    typeof result === 'object' && result !== null && 'rule' in result;
   const opened = (part: string, sketch: Sketch | string) =>
     lines.push(
       typeof sketch === 'string'
@@ -335,7 +341,8 @@ export const autoAcceptOf = async (options: {
 
       const sketch = open(part);
 
-      if (typeof sketch === 'string') opened(part, sketch);
+      if (isNotFound(sketch)) problem(resolved, sketch);
+      else if (typeof sketch === 'string') opened(part, sketch);
       else heads.push({ part: resolved, design, sketch });
     } else if (editSketch) heads.push({ part: resolved, design, sketch: editSketch, recheck: true });
     else if (pictures.record?.hash !== design) records.push({ part: resolved, design, baseline: null });
@@ -344,6 +351,11 @@ export const autoAcceptOf = async (options: {
   for (const { part: resolved, design, sketch, recheck } of heads) {
     const part = partKeyOf(resolved);
     const unreadable = recheck ? refreshEditOld({ product, sketch }) : null;
+
+    if (isNotFound(unreadable)) {
+      problem(resolved, unreadable);
+      continue;
+    }
 
     if (unreadable) {
       oldNotDrawn({ resolved, sketch }, unreadable);

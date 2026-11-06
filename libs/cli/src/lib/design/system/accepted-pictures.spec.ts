@@ -10,6 +10,7 @@ import { designHashOf } from './design-hash';
 import { Problem } from './problem';
 import { partPointsOf, readOpenPoints } from './read-open-points';
 import { partKeyOf, resolveProduct } from './resolve-product';
+import { partHashOf } from './sketch/baseline';
 import { changedOutsideSketchOf, directEditsOf, readMerged, recordMerged } from './sketch/merged-parts';
 
 const CHIP = 'components/chip';
@@ -233,6 +234,50 @@ describe('autoAcceptOf', () => {
     });
   });
 
+  describe('a committed direct edit', () => {
+    const commitAll = (target: string) => {
+      execFileSync('git', ['add', '.'], { cwd: target });
+      execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
+    };
+
+    it('holds a refactor drawn against the part at its merged commit', async () => {
+      const { target, dir, chip } = checkout();
+      const { draw, variants } = drawing({ default: 'a1', hover: 'b2' });
+
+      recordMerged({ product: productOf(target), parts: [CHIP] });
+      writeFileSync(chip, 'export default definePart({ states: { hover: {}, default: {} } });\n');
+      commitAll(target);
+
+      expect(await autoAccept(target, draw)).toEqual([
+        `HELD app-a ${CHIP}: changed outside a sketch, every state draws as before`,
+      ]);
+      expect(variants).toContain('old');
+      expect(readMerged(dir)[CHIP]).toBe(partHashOf({ product: productOf(target), dir: dirname(chip) }));
+    });
+
+    it('reports a merged hash no commit holds as a problem with the command to run', async () => {
+      const { target, dir, chip } = checkout();
+      const { draw } = drawing({ default: 'a1', hover: 'b2' });
+
+      writeFileSync(chip, 'export default definePart({ states: { default: {} } });\n');
+      recordMerged({ product: productOf(target), parts: [CHIP] });
+      writeFileSync(chip, 'export default definePart({ states: { hover: {}, default: {} } });\n');
+      commitAll(target);
+
+      const problems: Problem[] = [];
+
+      expect(await autoAcceptOf({ target, config: {}, product: productOf(target), draw, problems })).toEqual([]);
+      expect(problems).toEqual([
+        {
+          rule: 'EDIT-OLD-NOT-FOUND',
+          file: chip,
+          message: expect.stringContaining(`et design accept ${CHIP} --product app-a`),
+        },
+      ]);
+      expect(existsSync(join(dir, 'sketches', 'components-chip.edit'))).toBe(false);
+    });
+  });
+
   describe('an open edit sketch', () => {
     const sketchFileOf = (dir: string) => join(dir, 'sketches', 'components-chip.edit', 'sketch.json');
 
@@ -361,12 +406,12 @@ describe('autoAcceptOf', () => {
         {
           rule: 'EDIT-OLD-NOT-DRAWN',
           file: join(dir, 'components', 'chip', 'chip.ts'),
-          message: `variant old of ${CHIP}@edit (the part at HEAD) does not draw: Importing binding name 'emptyCanvas' is not found.`,
+          message: `variant old of ${CHIP}@edit (the part at its merged commit) does not draw: Importing binding name 'emptyCanvas' is not found.`,
         },
       ]);
       expect(existsSync(sketchFileOf(dir))).toBe(true);
       expect(await autoAccept(target, draw)).toEqual([
-        `EDIT-OLD-NOT-DRAWN app-a ${CHIP}: variant old of ${CHIP}@edit (the part at HEAD) does not draw: Importing binding name 'emptyCanvas' is not found.`,
+        `EDIT-OLD-NOT-DRAWN app-a ${CHIP}: variant old of ${CHIP}@edit (the part at its merged commit) does not draw: Importing binding name 'emptyCanvas' is not found.`,
       ]);
     });
 
@@ -389,10 +434,10 @@ describe('autoAcceptOf', () => {
 
       expect(rounds[0]).toMatchObject({
         title: 'Direkte Änderung',
-        note: `${CHIP} wurde außerhalb eines Sketches geändert und sieht anders aus - wähle den Stand von HEAD oder die Änderung`,
+        note: `${CHIP} wurde außerhalb eines Sketches geändert und sieht anders aus - wähle den zuletzt gemergten Stand oder die Änderung`,
       });
       expect(variantInfo.new.note).toBe('die Änderung außerhalb eines Sketches');
-      expect(variantInfo.old.note).toBe('der Stand von HEAD');
+      expect(variantInfo.old.note).toBe('der zuletzt gemergte Stand');
     });
   });
 

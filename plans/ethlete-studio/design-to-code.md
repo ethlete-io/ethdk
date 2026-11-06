@@ -3859,3 +3859,10 @@ and `edit-sketch.ts` refused ("HEAD holds the edit ... no old design to show"). 
 specs covered only uncommitted direct edits. Fix (B412): `old` = the part's files at the newest commit whose part hash
 equals `merged.json[part]`, not HEAD; with no such commit the part shows a problem with a hint, never a silent dead
 end. Picking `old` writes that version back (ADR 0135).
+As built (507, builder c0, 2026-11-06): `edit-sketch.ts` walks `git log` over the part folder and the product's
+`shared/` and `assets/` folders, rebuilds those folders of each commit in a temp dir and hashes the part there with
+`partHashOf`; the newest commit with the merged hash gives `old`, for a new edit sketch and for `refreshEditOld`. No
+such commit: rule EDIT-OLD-NOT-FOUND on the part, with the `et design accept` command as the hint. A pick of `old`
+merges those files back. Verified: specs with a temp git repo (committed refactor holds, committed edit gets the old
+files, pick old writes them back, no matching commit gives the problem); they fail on the old HEAD code. Not verified:
+`design check` on the five studio parts, and the speed of the walk on the real history.
