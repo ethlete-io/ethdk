@@ -4294,3 +4294,13 @@ specs, so `yarn commit` runs them. Same CI run: a stale `KNOWN_UNBOUND_INPUTS` e
 sketches port) fails UNBOUND-INPUT only in CI; cause of the local miss open (builder). `--slow` also fails
 components/title-bar (5 states unjudged, design 1 overlay pane, app 0) and components/update-dialog (4 unjudged), new
 to the list, queued.
+
+549\. Builder (2026-11-07), pages/system compare at load 157: a fixed 15 s design draw timeout skipped the whole action
+check, and only one trailing line said so; the run took 473 s. Why no tool caught it: a skipped check counts as a
+pass in the summary, the same class as finding 545 (a rule that silently does nothing). Doc agent decisions
+(technical): retry once with a timeout scaled by the machine load, and a skipped action check counts as FAIL in the
+summary. The parallel work of ADR 0219 drove the load to 110-157 on 12 cores; the builder caps parallel compare
+agents so that a compare result still carries a verdict. pages/system port questions, decided by the doc agent as the
+design-is-truth rule: the old Ausnahmen toggle in system-view goes, the popover is the design; system-view moves to the
+page component for call and themes now; `agent` becomes a known unbound input with the reason "no progress source",
+removed when a source exists.
