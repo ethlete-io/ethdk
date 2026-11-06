@@ -3693,3 +3693,24 @@ on the lib build and waits (with a printed "waiting for the lib build of pid N")
 two `compare` calls at once and expects both to pass.
 
 As built (S1, builder c0, 2026-11-06, commit `fix(cli): Lock the shared lib build of design calls`): a shared/exclusive lock on `dist/libs` in `tmp/design-lib-build` (`libs/cli/src/lib/design/system/lib-build-lock.ts`, used by `readFreshDist` in `stale-dist.ts` around every drawing design call). A call takes the build lock (prints "waiting for the lib build of pid N"), rebuilds only when stale and only after every other live run finished reading (dead pids are dropped), then reads under a reader file until it exits; a nested design call skips the lock. Verified: `lib-build-lock.spec.ts` (two calls at once, one build, the waiting line; no rebuild under a live reader), bites with the lock removed. Not verified: two real concurrent `compare` runs; `serve` and manual `nx build` stay outside the lock.
+
+In progress (S2 of 492, builder c0, 2026-11-06): resident design process skeleton (ADR 0204: auto-start detached, idle exit 30 min, `et design stop`), thin client, `compare` through it; CI keeps the in-process path.
+
+494\. c8, 2026-11-06: after A1, `compare` of pages/flows, inventory and merge shows 21-31 px DIFF in every state. The
+title bar matches pixel for pixel; the 21 px are 1-2 colour levels of anti-alias on the four rounded corners of the
+left panel, which A1 did not touch. ADR 0115 (2026-11-01) decided one shared compare rule for pane corner anti-alias,
+but only the sketch merge diff got a tolerance (`looksTheSame` in `merge-compare.ts`, 8 of 255 per channel, 2e5d9fa36);
+the implementation `compare` still counts every changed pixel. Why no tool caught it: ADR 0115 was marked `open: none`
+with no build sha and no STATUS row, so nothing tracked that the second consumer never got the rule. Tool fix
+(technical): `compare` uses the same per-channel tolerance as the merge diff, from one shared function, with a spec
+on a 1-2 level corner shift; the ADR check refuses an `open: none` ADR that has no `built:` sha (new ADRs only).
+
+495\. c8, 2026-11-06: of the eight parts A1 left uncompared, three show drift older than A1. `pages/sketches` (page-100
+63644 px, zoomed-page 94023 px, 16 missed actions, see finding 486), `pages/system` (`part` 73606 px, 6 missed
+actions in call / call-transferred) and `elements/canvas-frames` (6 of 11 states uncheckable: the design prop `heads`
+has no app input; 4 DROPPED-PROP). c8 blamed uncommitted c0 work for the sketches drift, but the tree holds none; the
+sketches page changed in committed builder slices (b9367d285 to 30a5c27b9) with no compare after them. Why no tool
+caught it: nothing re-compares an implemented part after its app files change, and `compare` does not say since which
+commit a part drifts, so the builder guessed. Tool fix (technical): ADR 0203's commit check covers the first part;
+`compare` prints for each drifting part the last commit that matched and the commits since then that touched its app
+files.
