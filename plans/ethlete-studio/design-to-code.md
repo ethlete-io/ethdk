@@ -3793,6 +3793,9 @@ files, and two heavy design runs from two builders share the CPU with no queue. 
 goes to Tom as soon as its variants are drawn, checks run behind it; tool (c0/cb, ADR 0204) - sketch check/ready go
 through the resident process (S6, ≤ 10 s), which queues heavy runs of all callers instead of running them side by side,
 and Studio shows a drawn sketch at once with its check state beside it.
+As built, part 1 (c0, 2026-11-06): the render check of the slow check inspects up to four frames of a part at once
+(`INSPECTS_AT_ONCE`, one page each, render-check.ts). Verified: render-check.spec 29/29, lint, typecheck. Not measured
+yet: the slow-check time before/after - read `design timings` after the next slow check. S6 is still open.
 
 500\. Tom's screenshot of the sketch view, 2026-11-06 12:15, `components/title-bar@notice-hint` at "Fit" (54 %): (1) about
 550 px of empty canvas above the variant heads; (2) "Fit" does not fit: variant b is cut at the right edge and variant c

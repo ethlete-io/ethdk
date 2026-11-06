@@ -590,6 +590,9 @@ const widthsOf = (value: unknown) =>
 
 const PART_TIMEOUT_MS = 120_000;
 
+/** @internal How many frames of one part `inspect` draws at once, each on a page of its own. */
+export const INSPECTS_AT_ONCE = 4;
+
 const embedControlsOf = (controls: unknown) =>
   typeof controls === 'object' && controls !== null
     ? Object.entries(controls)
@@ -622,6 +625,33 @@ export const inspectRetryingTimeouts = async (
   return [...first.filter((issue) => !timedOut.has(timedOutKeyOf(issue))), ...again];
 };
 
+type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPage']>>;
+
+const inspectedFrameOf = async (options: { page: Page; base: string; frame: Frame }): Promise<RenderIssue[]> => {
+  const { page, base, frame } = options;
+
+  await page.emulateMedia({ colorScheme: frame.contrast.scheme });
+  await page.setViewportSize(frame.viewport);
+  await openFrame(page, `${base}/frame.html?${frame.search}`);
+  await awaitSettled(page);
+
+  const inspected = {
+    fixed: frame.fixed,
+    fit: frame.fit,
+    skips: frame.skips,
+    namespaces: frame.namespaces,
+    contrast: frame.contrast,
+    part: frame.controlInputs ? frame.address.part : null,
+    embedControls: frame.embedControls,
+  };
+  const inFrame = (await page.evaluate(inspectFrame(inspected))) as Found[];
+  await page.evaluate(emptySlotsScriptOf(frame.address.part));
+  const unstyled = (await page.evaluate(inspectFrame({ ...inspected, sdkStylesOnly: true }))) as Found[];
+  const { product, part, state, sketch } = frame.address;
+
+  return [...inFrame, ...unstyled].map((issue) => ({ ...issue, product, part, state, sketch, size: frame.size }));
+};
+
 const inspect = async (options: {
   browser: Browser;
   base: string;
@@ -646,41 +676,30 @@ const inspect = async (options: {
   }
 
   try {
-    let page = await context.newPage();
-    let sdkErrors = watchSdkErrorLines(page);
+    let lanes: { page: Page; sdkErrors: ReturnType<typeof watchSdkErrorLines> }[] = [];
     let done = 0;
 
     for (const group of groups.values()) {
       const started = Date.now();
-      const found: RenderIssue[] = [];
-      const current = page;
-      const sdkErrorsOf = sdkErrors.drain;
-      const drawn = (async () => {
-        for (const frame of group) {
-          await current.emulateMedia({ colorScheme: frame.contrast.scheme });
-          await current.setViewportSize(frame.viewport);
-          await openFrame(current, `${base}/frame.html?${frame.search}`);
-          await awaitSettled(current);
+      const width = Math.min(INSPECTS_AT_ONCE, group.length);
 
-          const inspected = {
-            fixed: frame.fixed,
-            fit: frame.fit,
-            skips: frame.skips,
-            namespaces: frame.namespaces,
-            contrast: frame.contrast,
-            part: frame.controlInputs ? frame.address.part : null,
-            embedControls: frame.embedControls,
-          };
-          const inFrame = (await current.evaluate(inspectFrame(inspected))) as Found[];
-          await current.evaluate(emptySlotsScriptOf(frame.address.part));
-          const unstyled = (await current.evaluate(inspectFrame({ ...inspected, sdkStylesOnly: true }))) as Found[];
-          const { product, part, state, sketch } = frame.address;
+      while (lanes.length < width) {
+        const page = await context.newPage();
 
-          found.push(
-            ...[...inFrame, ...unstyled].map((issue) => ({ ...issue, product, part, state, sketch, size: frame.size })),
-          );
-        }
-      })();
+        lanes.push({ page, sdkErrors: watchSdkErrorLines(page) });
+      }
+
+      const found: RenderIssue[][] = group.map(() => []);
+      let next = 0;
+      const drawn = Promise.all(
+        lanes.slice(0, width).map(async ({ page }) => {
+          for (let at = next++; at < group.length; at = next++) {
+            const frame = group[at];
+
+            if (frame) found[at] = await inspectedFrameOf({ page, base, frame });
+          }
+        }),
+      );
 
       drawn.catch(() => undefined);
 
@@ -691,9 +710,8 @@ const inspect = async (options: {
       const first = group[0]?.address;
 
       if (result === 'timeout') {
-        await current.close().catch(() => undefined);
-        page = await context.newPage();
-        sdkErrors = watchSdkErrorLines(page);
+        await Promise.all(lanes.map(({ page }) => page.close().catch(() => undefined)));
+        lanes = [];
 
         if (first)
           issues.push({
@@ -707,10 +725,10 @@ const inspect = async (options: {
             sketch: first.sketch,
           });
       } else {
-        issues.push(...found);
+        issues.push(...found.flat());
 
         if (first)
-          for (const line of sdkErrorsOf())
+          for (const line of new Set(lanes.flatMap(({ sdkErrors }) => sdkErrors.drain())))
             issues.push({
               rule: 'RENDER',
               product: first.product,
