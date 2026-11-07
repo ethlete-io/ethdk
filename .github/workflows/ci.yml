@@ -135,7 +135,12 @@ jobs:
 
       - run: yarn playwright install --with-deps chromium
 
+      - name: Create a symlinked temp directory
+        run: mkdir -p "$RUNNER_TEMP/real-tmp" && ln -s "$RUNNER_TEMP/real-tmp" "$RUNNER_TEMP/link-tmp"
+
       - run: yarn nx run-many -t test
+        env:
+          TMPDIR: ${{ runner.temp }}/link-tmp
 
   build:
     name: Build
