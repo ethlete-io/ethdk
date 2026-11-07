@@ -4395,3 +4395,13 @@ resolve there.
 load). Why no tool caught it: no budget covers the pre-commit hook; on the Mac it never ran (555). Doc agent decision
 (applies ADRs 0017 and 0218, a fault seen on the slow machine becomes a budget): the hook joins the performance block
 (S7c). The builder measures it at low load per step and proposes a target; the target number goes to Tom.
+
+557 data point (2026-11-07): S7c-1 (part picture cache, 539 render-inspect key 202 -> 64 modules, 553 physical cores
+and one shot file per variant) is staged in worktree agent-afba22bc5202ed617, not committed. For a cli change the
+pre-commit hook runs 1354 related specs; at load 60-135 they failed with 49, then 40 failures (23 timeouts). The agent
+did not bypass the hook.
+
+558\. Builder (2026-11-07): 3 auto-merge specs in `sketch-command.spec` fail on `next` without any change. Why no tool
+caught it: the pre-commit and pre-push hooks never ran on the Mac (555), and `next` is not pushed (ADR 0215), so CI
+never ran these commits. Doc agent decision (technical): the next builder fixes the 3 specs first; the run over the
+whole unpushed range (555 decision) includes the full cli and Studio spec suites at low load.
