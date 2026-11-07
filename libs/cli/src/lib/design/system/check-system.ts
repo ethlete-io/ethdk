@@ -65,6 +65,7 @@ import { orphanEndpointProblemsOf, orphanEndpointWarningsOf } from './rules/orph
 import { sampleDefaultProblemsOf, sampleDefaultWarningsOf } from './rules/sample-default';
 import { unboundInputProblemsOf, unboundInputWarningsOf } from './rules/unbound-input';
 import { uncoveredViewsOf, uncoveredViewsText } from './rules/view-coverage';
+import { designCoverageOf } from './rules/design-coverage';
 import { badWidthsOf } from './rules/widths';
 import { typecheckVariant } from './sketch/check-sketches';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
@@ -839,7 +840,9 @@ const checkProductTail = async (
 
   const isWanted = (problem: { file: string }) => !options.part || partOfFile(resolved, problem.file) === options.part;
 
-  capabilities.warnings.filter(isWanted).forEach((warning) => {
+  const coverage = await designCoverageOf({ ...options, product: resolved });
+
+  [...capabilities.warnings, ...coverage].filter(isWanted).forEach((warning) => {
     console.warn(`WARNING ${lineOf(options.target, warning)}`);
     const counted = tallyOf(tally, {
       product: name,

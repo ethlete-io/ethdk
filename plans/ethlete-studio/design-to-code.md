@@ -2132,6 +2132,24 @@ change, check "change readable on open"); (2) B346: the state name keeps a floor
 sketch gives the sample other variant names (Tom picks), and B362 gets a rule that a part which draws the tool itself
 uses sample labels that differ from the live chrome.
 
+As built (B362, 2026-11-07): tool side only, no design and no app change. A part declares `coverage` (`PartCoverage`,
+`define-part.ts`): `branches` (per layout branch the real widest and tallest input and the sample size each state
+draws), `zoom` (extremes, and per status the state at each extreme), `async` (per async mark the state that draws it
+unknown, or `null`) and `chrome` (live chrome labels). `design check` warns `COVERAGE-RANGE`, `COVERAGE-ZOOM`,
+`COVERAGE-ASYNC`, `SAMPLE-CHROME` (text or `alt`/`aria-label`/`title` inside a `data-et-sample` region repeats a chrome
+label) and, for every part, `STATUS-TWICE` (the same `data-et-status` twice in one `data-et-view` region)
+(`rules/design-coverage.ts`, loads only parts whose source has `coverage:` or `data-et-status`). Verified: spec
+(9 cases); a temporary `coverage` on `pages/sketches` (not committed) made `design check --part pages/sketches` print
+3 COVERAGE-RANGE, 6 COVERAGE-ZOOM and 1 COVERAGE-ASYNC warnings. New e2e case "a sketch keeps its frame count and
+pictures from the first paint through a sketch edit" (Sketches/Large): fails when the `[data-shot]` count at the first
+paint differs from the settled one, or changes, or a pictured visible cell goes blank in the 10 s after a variant CSS
+edit. The case did not run: the Studio build of this branch fails (TS2322, `ThemeSwitch[]`, not in this
+change), so neither its pass nor its bite is proved; it is expected red until B345. Not done: `pages/sketches` carries no `coverage` yet and marks no `data-et-status`/`data-et-view`/`data-et-sample`,
+so the rules do not bite on it until B346 adds them (gaps: tall page sample in the matrix branch, status × below-fit /
+far-out, `changed` unknown, sample variant names "Aktuell"/"Variante a"/"Variante b", header status twice). The
+`real` sizes are declared by hand, not read from the listing; the sample shots are pictures, so SAMPLE-CHROME sees
+their labels only where the design marks a `data-et-sample` region with text or `alt`.
+
 432\. Tom (2026-11-04, screenshot of `agent-failed` and `question-only` in `pages/sketches@merge-port`): "dann
 funktioniert die unveränderte screens erkennung noch nicht korrekt. bzw screens wurden mixed". The compare itself is
 right: in both states, "Aktuell" marks fit-hover, fit-active and fit-focus-visible of sample variant a as changed, and

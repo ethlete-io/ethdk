@@ -48,6 +48,7 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  * `contrast` feeds the contrast check of `design check`, see `PartContrast`.
  * `implements` links the part to the code that builds it, see `PartLink`.
  * `sample` makes an embedded instance of the part comparable across the states of its host, see `PartSample`.
+ * `coverage` names the real input range and the view states the design must draw, see `PartCoverage`.
  */
 export type Part<TProps, TState extends string = string> = {
   note: string;
@@ -68,7 +69,32 @@ export type Part<TProps, TState extends string = string> = {
   rules?: PartRule<TState>[];
   implements?: PartLink;
   sample?: PartSample<TProps>;
+  coverage?: PartCoverage<TState>;
   render: (props: TProps, options?: RenderOptions) => DrawnPart | Promise<DrawnPart>;
+};
+
+/** A width and height in CSS px. */
+export type CoverageSize = { width: number; height: number };
+
+/**
+ * What a part's design must draw to cover the product's real inputs; `design check` warns on each gap.
+ * - `branches`: per layout branch the part switches between, the widest and tallest `real` input from the product's
+ *   listing, and the size of the sample each state draws in that branch (`COVERAGE-RANGE`).
+ * - `zoom`: the zoom extremes the view reaches, and per status (drawing, paused, failed, …) the state that draws it
+ *   at each extreme (`COVERAGE-ZOOM`).
+ * - `async`: per mark the view reads asynchronously, the state that draws it while unknown, or `null`
+ *   (`COVERAGE-ASYNC`).
+ * - `chrome`: the labels of the live chrome around a part that draws the tool itself; no text inside a
+ *   `data-et-sample` region may repeat one (`SAMPLE-CHROME`).
+ *
+ * Mark each drawn status with `data-et-status="<status>"`: the same status twice inside one `data-et-view` region,
+ * or one state without such regions, is a `STATUS-TWICE` warning, for every part.
+ */
+export type PartCoverage<TState extends string = string> = {
+  branches?: Record<string, { real: CoverageSize; samples: Partial<Record<TState, CoverageSize>> }>;
+  zoom?: { extremes: readonly string[]; statuses: Record<string, Partial<Record<string, TState>>> };
+  async?: Record<string, TState | null>;
+  chrome?: readonly string[];
 };
 
 /**
@@ -170,8 +196,9 @@ export type RenderOptions = { interaction?: Interaction };
 
 type PartSource<TProps, TState extends string, TColumn extends string> = Omit<
   Part<TProps, TState>,
-  'states' | 'grid' | 'controls' | 'motions' | 'rules' | 'render' | 'frame' | 'sample'
+  'states' | 'grid' | 'controls' | 'motions' | 'rules' | 'render' | 'frame' | 'sample' | 'coverage'
 > & {
+  coverage?: PartCoverage<NoInfer<TState>>;
   sample?: PartSample<NoInfer<TProps>>;
   frame?: (body: string, props: NoInfer<TProps>) => string;
   motions?: Record<string, Motion<NoInfer<TState>>>;

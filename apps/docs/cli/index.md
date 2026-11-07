@@ -449,6 +449,21 @@ an entry without a place. An entry without a place that names its backlog item i
 warning instead, so the list of known gaps can only shrink: a new entry needs a place or a backlog item, and an entry
 that has a place again must drop `missing`.
 
+A part declares in `coverage` what its design must draw to cover the real inputs, and `et design check` warns on each
+gap:
+
+- `branches`: per layout branch, the widest and tallest `real` input from the product's listing and the sample size
+  each state draws in that branch. `COVERAGE-RANGE` when no sample is as wide or as tall as the real input.
+- `zoom`: the zoom extremes of the view and, per status (drawing, paused, failed), the state that draws it at each
+  extreme. `COVERAGE-ZOOM` for each status and extreme without a state.
+- `async`: per mark the view reads asynchronously, the state that draws it while unknown, or `null`.
+  `COVERAGE-ASYNC` for `null`.
+- `chrome`: the labels of the live chrome around a part that draws the tool itself. `SAMPLE-CHROME` when a text inside
+  a `data-et-sample` region repeats one.
+
+A state that marks the same `data-et-status` twice inside one `data-et-view` region (or twice in a state without such
+regions) is a `STATUS-TWICE` warning, in every part.
+
 An agent that prepares Tom's goes writes a go list, a JSON array, and Tom runs `et design go --batch <file>`:
 
 ```json
