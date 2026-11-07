@@ -554,7 +554,12 @@ export const checkLiveActions = async (options: {
               overlays: (await overlayCountOf(page)) - overlaysBefore,
             });
 
-          if (options.input === 'click') {
+          if (options.input === 'dblclick') {
+            await watchMutations(page);
+            await control.dblclick({ timeout: DRAW_TIMEOUT_MS });
+            await settle(page, DRAW_TIMEOUT_MS);
+            await page.mouse.move(-1, -1);
+          } else if (options.input === 'click') {
             await tabAwayFrom(page, control);
             await watchMutations(page);
             await control.click({ timeout: DRAW_TIMEOUT_MS });
@@ -640,7 +645,10 @@ export const checkLiveActions = async (options: {
           const action =
             declared === null
               ? null
-              : declared.trim().startsWith('emit:')
+              : declared
+                    .trim()
+                    .replace(/^dblclick:/u, '')
+                    .startsWith('emit:')
                 ? parseAction(declared, [])
                 : owner === null
                   ? `data-et-action="${declared}" names no state of ${parts.join(', ') || 'its part'}`
@@ -660,7 +668,7 @@ export const checkLiveActions = async (options: {
           let toggle: string | null | undefined;
 
           await Promise.all(
-            actionInputsOf(app.key).map(async (input) => {
+            actionInputsOf(app.key, action).map(async (input) => {
               try {
                 const result = await press({
                   run,

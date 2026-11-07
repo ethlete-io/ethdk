@@ -48,6 +48,18 @@ describe('actions', () => {
     expect(parseAction('shut', ['rest'])).toBe('data-et-action="shut" names no state of the part - its states: rest');
   });
 
+  it('reads a dblclick: prefix as a double click on the same action', () => {
+    const dbl = parseAction('dblclick:open', ['rest', 'open']);
+
+    expect(dbl).toEqual({ kind: 'state', state: 'open', gesture: 'dblclick' });
+    expect(parseAction('dblclick:emit:fit', [])).toEqual({ kind: 'emit', output: 'fit', gesture: 'dblclick' });
+    expect(parseAction('dblclick:shut', ['rest'])).toBe(
+      'data-et-action="dblclick:shut" names no state of the part - its states: rest',
+    );
+    expect(actionInputsOf('button "Go"', dbl)).toEqual(['dblclick']);
+    expect(actionInputsOf('button "Go"')).toEqual(['click', 'Enter', 'Space']);
+  });
+
   it('presses a checkable control with click and Space only, every other element with Enter too', () => {
     expect(actionInputsOf('switch "Erledigtezeigen"')).toEqual(['click', 'Space']);
     expect(actionInputsOf('checkbox "Alle"')).toEqual(['click', 'Space']);

@@ -1,15 +1,22 @@
-export const ACTION_INPUTS = ['click', 'Enter', 'Space'] as const;
+export const ACTION_INPUTS = ['click', 'Enter', 'Space', 'dblclick'] as const;
+
+export const DBLCLICK_PREFIX = 'dblclick:';
 
 export type ActionInput = (typeof ACTION_INPUTS)[number];
 
 const SPACE_ONLY_ROLES = ['switch', 'checkbox', 'radio', 'input-checkbox', 'input-radio'];
 
 /** The inputs that press an element of `key`: a checkable control toggles on Space like a native checkbox, not on Enter. */
-export const actionInputsOf = (key: string): readonly ActionInput[] =>
-  SPACE_ONLY_ROLES.includes(key.slice(0, key.indexOf(' '))) ? ['click', 'Space'] : ACTION_INPUTS;
+export const actionInputsOf = (key: string, action?: DeclaredAction | string | null): readonly ActionInput[] => {
+  if (typeof action === 'object' && action?.gesture === 'dblclick') return ['dblclick'];
+
+  return SPACE_ONLY_ROLES.includes(key.slice(0, key.indexOf(' '))) ? ['click', 'Space'] : ['click', 'Enter', 'Space'];
+};
 
 /** What a design declares an interactive element does: reach a state of the part, or fire one of its outputs. */
-export type DeclaredAction = { kind: 'state'; state: string } | { kind: 'emit'; output: string };
+export type DeclaredAction = ({ kind: 'state'; state: string } | { kind: 'emit'; output: string }) & {
+  gesture?: 'dblclick';
+};
 
 /** The interactive elements the action check presses, in a design picture and in the app. */
 export const INTERACTIVE_SELECTOR = [
@@ -69,20 +76,30 @@ export const actionScanScriptOf = (roots: string[]) => `(() => {
   return found;
 })()`;
 
-/** Parses a `data-et-action` value; a string names what is wrong with it. */
+const gestureOf = (value: string) => {
+  const trimmed = value.trim();
+
+  return trimmed.startsWith(DBLCLICK_PREFIX)
+    ? { gesture: { gesture: 'dblclick' as const }, bare: trimmed.slice(DBLCLICK_PREFIX.length).trim() }
+    : { gesture: {}, bare: trimmed };
+};
+
+/** Parses a `data-et-action` value, with an optional `dblclick:` prefix for an action reached by a double click; a string names what is wrong with it. */
 export const parseAction = (value: string | null, states: readonly string[]): DeclaredAction | string | null => {
   if (value === null) return null;
 
-  const trimmed = value.trim();
+  const { gesture, bare } = gestureOf(value);
 
-  if (trimmed.startsWith('emit:')) {
-    const output = trimmed.slice('emit:'.length);
+  if (bare.startsWith('emit:')) {
+    const output = bare.slice('emit:'.length);
 
-    return /^[A-Za-z_$][\w$-]*$/.test(output) ? { kind: 'emit', output } : `data-et-action="${value}" names no output`;
+    return /^[A-Za-z_$][\w$-]*$/.test(output)
+      ? { kind: 'emit', output, ...gesture }
+      : `data-et-action="${value}" names no output`;
   }
 
-  return states.includes(trimmed)
-    ? { kind: 'state', state: trimmed }
+  return states.includes(bare)
+    ? { kind: 'state', state: bare, ...gesture }
     : `data-et-action="${value}" names no state of the part - its states: ${states.join(', ')}`;
 };
 
@@ -125,7 +142,7 @@ export const resolveActionOf = (options: {
   settled?: readonly string[];
 }): { action: DeclaredAction | string | null; owner: string } => {
   const { value, owners, page, settled = [] } = options;
-  const trimmed = value?.trim() ?? '';
+  const trimmed = gestureOf(value ?? '').bare;
   const having = owners.filter((candidate) => candidate.states.includes(trimmed));
   const owner = trimmed.startsWith('emit:')
     ? page

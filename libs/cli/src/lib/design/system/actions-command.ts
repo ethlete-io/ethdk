@@ -212,8 +212,8 @@ export const runActionInput = async (options: {
 
     await watchMutations(page);
 
-    if (input === 'click') {
-      await target.click({ timeout });
+    if (input === 'click' || input === 'dblclick') {
+      await (input === 'click' ? target.click({ timeout }) : target.dblclick({ timeout }));
       await page.mouse.move(-1, -1);
     } else {
       await page.keyboard.press('Shift');
@@ -224,7 +224,7 @@ export const runActionInput = async (options: {
     await awaitOutput(page, options.output ?? null);
     await settle(page, timeout);
 
-    if (shoot && input !== 'click' && !options.focused) {
+    if (shoot && input !== 'click' && input !== 'dblclick' && !options.focused) {
       await dropKeyboardFocus(page);
       await settle(page, timeout);
     }
@@ -665,7 +665,7 @@ export const checkActions = async (options: {
             return finish();
           }
 
-          for (const input of actionInputsOf(element.key)) {
+          for (const input of actionInputsOf(element.key, action)) {
             const goal =
               action.kind === 'state'
                 ? targetStateOf({ state: action.state, input, states: embeddedState?.states ?? names })
