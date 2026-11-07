@@ -4060,3 +4060,8 @@ returns the same note as the CLI (`x-et-note`), new row.
 
 570\. Builder (2026-11-07, B360): on a missing `dist`, `mappedSubpathOf` swallows the error, so the listing never names
 the build command. Tool fix (technical): the listing names `nx build <name>` for a missing `dist`.
+
+571\. Builder (2026-11-07): rows from worktree branches cannot land by merge commit (the PreToolUse hook allows only
+`git commit -m … -- <paths>`, and git refuses a partial commit during a merge), so they land by cherry-pick and their
+`built: <sha>` goes stale. Tool fix (technical): the integration step writes each `built:` sha itself after the
+cherry-pick; no agent hand-edits it.
