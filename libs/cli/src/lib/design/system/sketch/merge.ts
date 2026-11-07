@@ -22,7 +22,7 @@ import { rebaseAfterMerge } from './after-merge';
 import { conflictsOf } from './baseline';
 import { prettierBinOf } from '../prettier';
 import { carryShared, productSharedChangesOf, sharedPlanOf } from './merge-shared';
-import { forgetMerged, recordMerged, rerecordChangedMerged, unchangedMergedOf } from './merged-parts';
+import { EDIT_SKETCH, forgetMerged, recordMerged, rerecordChangedMerged, unchangedMergedOf } from './merged-parts';
 import { madeByOf, noteOf, withMadeBy, withNote } from './part-definition';
 import { staleEmbeddedOf } from './stale-base';
 import { CleanCopy, cleanCopyOf, contentsBelow } from './clean-copy';
@@ -387,6 +387,17 @@ const applyMerge = (options: { copy: CleanCopy; checked: CheckedMerge }) => {
   }
 };
 
+/** The checkout folder of the part an edit sketch replaces: its uncommitted edit is the sketch's own `new` variant, not a foreign edit. */
+const editedPartDirOf = (options: { product: ResolvedProduct; sketch: Sketch }) => {
+  if (options.sketch.target !== `${partKeyOf(options.sketch)}@${EDIT_SKETCH}`) return null;
+
+  const part = options.product.parts.find((candidate) => partKeyOf(candidate) === partKeyOf(options.sketch));
+
+  return part ? dirname(part.file) : null;
+};
+
+const isInside = (dir: string, path: string) => path === dir || path.startsWith(`${dir}/`);
+
 const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal => {
   const { target, product, sketch, note, author } = options;
 
@@ -417,6 +428,13 @@ const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal 
     rmSync(sketchesDirOf(copied.dir), { recursive: true, force: true });
     cpSync(sketch.dir, copiedSketch.dir, { recursive: true });
 
+    const edited = editedPartDirOf({ product, sketch });
+
+    if (edited) {
+      rmSync(copy.inCopy(edited), { recursive: true, force: true });
+      cpSync(edited, copy.inCopy(edited), { recursive: true });
+    }
+
     const checked = checkedMergeOf({
       ...options,
       target: copy.root,
@@ -430,7 +448,9 @@ const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal 
 
     const dirty = dirtyAmongOf({
       target,
-      paths: [...checked.replaced, ...checked.changes.keys()].map((path) => copy.relativeOf(copy.inCheckout(path))),
+      paths: [...checked.replaced, ...checked.changes.keys()]
+        .map((path) => copy.relativeOf(copy.inCheckout(path)))
+        .filter((path) => !edited || !isInside(copy.relativeOf(edited), path)),
     });
 
     if (dirty.length > 0)

@@ -111,7 +111,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       sketch.variants.map((variant) => ({ variant, change: null })),
     );
 
-    write(
+    await write(
       target,
       'new',
       'components/button',
@@ -153,7 +153,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     git('add', '.');
     git('commit', '-m', 'base');
 
-    write(
+    await write(
       target,
       'new',
       'components/button',
@@ -198,6 +198,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const git = (...args: string[]) =>
       spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: target, encoding: 'utf8' });
 
+    writeFileSync(join(target, '.gitignore'), `${DESIGN_DIR}/tsconfig.json\n${DESIGN_DIR}/*/tsconfig.json\n`);
     git('init');
     git('config', 'user.name', 't');
     git('config', 'user.email', 't@t');
@@ -211,7 +212,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const target = acme();
 
     output();
-    sameButton(target);
+    await sameButton(target);
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
 
@@ -230,7 +231,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const lines = output();
     const sketchDir = join(target, DESIGN_DIR, 'acme/sketches/components-button');
 
-    sameButton(target);
+    await sameButton(target);
     vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) => {
       rmSync(sketchDir, { recursive: true, force: true });
 
@@ -246,7 +247,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const lines = output();
     const unlock = vi.fn();
 
-    sameButton(target);
+    await sameButton(target);
     vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) => {
       lines.push(`second run: ${await write(target, 'ready', 'components/button', '--product', 'acme')}`);
       unlock();
@@ -268,7 +269,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) =>
       sketch.variants.map((variant) => ({ variant, change: null })),
     );
-    sameButton(target);
+    await sameButton(target);
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines).toContain('Committed: feat(repo): Merge components/button, no visible change');
@@ -289,7 +290,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       sketch.variants.map((variant) => ({ variant, change: null })),
     );
     writeFileSync(merged, '{}\n');
-    sameButton(target);
+    await sameButton(target);
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines).toContain('No visible change in any state: merged components/button automatically.');
@@ -318,7 +319,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const lines = output();
     const variantFile = join(target, DESIGN_DIR, 'acme/sketches/components-button/a/components/button/button.ts');
 
-    newButton(target);
+    await newButton(target);
     writeFileSync(
       variantFile,
       readFileSync(variantFile, 'utf8').replace('render:', "instant: 'No motion by design.',\n  render:"),
@@ -339,7 +340,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       'NOTE components/button a: components/button: no controls declared; 2 missing motions (default -> long, long -> default) (inherited from the merged part)';
 
     vi.mocked(sketchOpenPointsOf).mockImplementation(actual);
-    newButton(target);
+    await newButton(target);
     writeFileSync(
       variantFile,
       readFileSync(variantFile, 'utf8').replace(
@@ -397,7 +398,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       "components/button a: components/button: no looping motion in long (add to motions: long: { from: 'long', to: 'long' })";
 
     vi.mocked(sketchOpenPointsOf).mockImplementation(await actualSketchOpenPoints());
-    newButton(target);
+    await newButton(target);
     vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void lines.push(String(line)));
     vi.mocked(renderIssuesOf).mockResolvedValueOnce(busyRender);
 
@@ -417,7 +418,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const lines = output();
 
     vi.mocked(sketchOpenPointsOf).mockImplementation(await actualSketchOpenPoints());
-    write(
+    await write(
       target,
       'new',
       'components/new-part',
@@ -443,7 +444,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const target = acme();
     const lines = output();
 
-    newButton(target);
+    await newButton(target);
     vi.mocked(renderIssuesOf).mockResolvedValueOnce({
       issues: [
         {
@@ -477,7 +478,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
   it('does not let a render issue in a rejected variant block ready', async () => {
     const target = acme();
 
-    write(
+    await write(
       target,
       'new',
       'components/button',
@@ -491,7 +492,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       '--product',
       'acme',
     );
-    write(target, 'reject', 'components/button', '--variant', 'a', '--product', 'acme');
+    await write(target, 'reject', 'components/button', '--variant', 'a', '--product', 'acme');
     vi.mocked(renderIssuesOf).mockImplementationOnce(async ({ jobs }) => ({
       issues: jobs
         .filter((job) => job.sketch?.variant === 'a')
@@ -517,7 +518,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const target = acme();
     const lines = output();
 
-    newButton(target);
+    await newButton(target);
     vi.mocked(renderIssuesOf).mockResolvedValueOnce({ unavailable: 'no playwright' });
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
@@ -532,7 +533,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       'variant a components/button does not load: exports is not defined',
     ]);
 
-    write(
+    await write(
       target,
       'new',
       'components/button',
@@ -576,7 +577,18 @@ describe('designSketch', { timeout: 120_000 }, () => {
       'ROUND-NOT-READY components/button: round r1 is drawn but still in progress - run `design sketch ready components/button`';
 
     vi.spyOn(console, 'error').mockImplementation((line: unknown) => void lines.push(String(line)));
-    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
 
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines).toContain(problem);
@@ -593,7 +605,18 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const lines = output();
 
     vi.spyOn(console, 'error').mockImplementation((line: unknown) => void lines.push(String(line)));
-    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     vi.mocked(renderIssuesOf).mockClear();
     vi.mocked(renderIssuesOf).mockResolvedValueOnce({
@@ -630,13 +653,24 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const lines = output();
 
     vi.spyOn(console, 'error').mockImplementation((line: unknown) => void lines.push(String(line)));
-    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
 
-    expect(write(target, 'report', 'components/button', '--variant', 'a', '--done', '--product', 'acme')).toBe(1);
+    expect(await write(target, 'report', 'components/button', '--variant', 'a', '--done', '--product', 'acme')).toBe(1);
     expect(lines.join('\n')).toContain('ROUND-NOT-READY components/button: round r1 is drawn');
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
-    expect(write(target, 'report', 'components/button', '--variant', 'a', '--done', '--product', 'acme')).toBe(0);
+    expect(await write(target, 'report', 'components/button', '--variant', 'a', '--done', '--product', 'acme')).toBe(0);
   });
 
   it('check does not fail ROUND-NOT-READY while ready would refuse', async () => {
@@ -644,7 +678,18 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const lines = output();
 
     vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void lines.push(String(line)));
-    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
     vi.mocked(identicalRenderLines).mockResolvedValueOnce(['components/button variant b draws like a']);
 
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
@@ -658,7 +703,18 @@ describe('designSketch', { timeout: 120_000 }, () => {
       'SAMPLE-MARK-DRIFT components/button a components/button: elements/cell "a hover" draws same=false in narrow but same=true in merged - give it the same marks in every state, or another id where the state shows another sample';
 
     vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void lines.push(String(line)));
-    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
     vi.mocked(sampleMarkDriftLines).mockResolvedValueOnce([drift]);
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
@@ -681,7 +737,18 @@ describe('designSketch', { timeout: 120_000 }, () => {
       'components/button variant b draws the same pixels as variant a in every state (default, long) - it adds nothing visible: change it or reject it';
 
     vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void lines.push(String(line)));
-    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
     vi.mocked(identicalRenderLines).mockResolvedValueOnce([same]);
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
@@ -712,7 +779,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     );
 
     expect(
-      write(
+      await write(
         target,
         'new',
         'components/button',
@@ -753,7 +820,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       hero,
       `import { tone } from '@shared/tone';\n${readFileSync(hero, 'utf8')}\nexport const t = tone;\n`,
     );
-    write(
+    await write(
       target,
       'new',
       'foundations/palette',
@@ -769,7 +836,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     mkdirSync(join(product, 'sketches/foundations-palette/shared'));
     writeFileSync(join(product, 'sketches/foundations-palette/shared/tone.ts'), 'export const tone = 2;\n');
 
-    expect(run(target, 'preview', 'foundations/palette', 'a', '--product', 'acme')).toBe(0);
+    expect(await run(target, 'preview', 'foundations/palette', 'a', '--product', 'acme')).toBe(0);
     expect(lines).toContain('a shared/ edit reaches: elements/hero');
     expect(await write(target, 'ready', 'foundations/palette', '--product', 'acme')).toBe(0);
     expect(lines).toContain('variant a: a shared/ edit reaches elements/hero');
@@ -780,7 +847,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const lines = output();
     const product = join(target, DESIGN_DIR, 'acme');
 
-    write(
+    await write(
       target,
       'new',
       'components/button',
@@ -811,7 +878,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
   it('keeps a sketch ready when a state shows a change and names why', async () => {
     const target = acme();
     const lines = output();
-    write(
+    await write(
       target,
       'new',
       'components/button',
@@ -838,7 +905,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const actual = await vi.importActual<typeof import('./system/sketch/viewed-shots')>('./system/sketch/viewed-shots');
 
     vi.mocked(unviewedShotLinesOf).mockImplementation(actual.unviewedShotLinesOf);
-    write(
+    await write(
       target,
       'new',
       'components/button',
@@ -905,7 +972,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       { variant: 'a', change: null },
       { variant: 'b', change: null },
     ]);
-    write(
+    await write(
       target,
       'new',
       'components/button',
@@ -926,7 +993,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
   it('skips automatic merge for a new part without comparing shots', async () => {
     const target = acme();
     const lines = output();
-    write(
+    await write(
       target,
       'new',
       'components/new-part',
@@ -946,27 +1013,27 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(variantChangesShown).not.toHaveBeenCalled();
   });
 
-  it('names an unknown command and prints the usage', () => {
+  it('names an unknown command and prints the usage', async () => {
     const lines = output();
 
-    expect(run(acme(), 'nope')).toBe(2);
+    expect(await run(acme(), 'nope')).toBe(2);
     expect(lines[0]).toBe('unknown sketch command "nope"');
     expect(lines[1]).toContain('usage: et design sketch new <layer>/<name> [<layer>/<name>…] --variants a,b');
   });
 
-  it("refuses a flag of another sketch command and lists only the command's own flags", () => {
+  it("refuses a flag of another sketch command and lists only the command's own flags", async () => {
     const lines = output();
 
-    expect(run(acme(), 'ready', 'components/button', '--fix', '--by', 'x', '--product', 'acme')).toBe(2);
+    expect(await run(acme(), 'ready', 'components/button', '--fix', '--by', 'x', '--product', 'acme')).toBe(2);
     expect(lines[0]).toBe('unknown flag --fix (flags: --by, --product)');
   });
 
-  it('edits the title and note of a round and lists the rounds', () => {
+  it('edits the title and note of a round and lists the rounds', async () => {
     const target = acme();
     const lines = output();
     const round = (...argv: string[]) => write(target, 'round', 'components/button', ...argv, '--product', 'acme');
 
-    write(
+    await write(
       target,
       'new',
       'components/button',
@@ -987,7 +1054,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines.pop()).toBe('components/button has no round "r9" - it has r1');
     expect(round('r1', '--title', 'Pill or square', '--note', 'a won')).toBe(0);
     expect(round('r1', '--note', 'a clearly won')).toBe(0);
-    expect(run(target, 'list', '--product', 'acme')).toBe(0);
+    expect(await run(target, 'list', '--product', 'acme')).toBe(0);
     expect(lines.pop()).toBe('  r1  Pill or square  a, b  - a clearly won');
     expect(round('r1', '--drops', 'empty, long')).toBe(0);
     expect(lines.pop()).toBe('components/button round r1: Pill or square - a clearly won - drops empty, long');
@@ -995,14 +1062,14 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines.pop()).toBe('components/button round r1: Pill or square - a clearly won');
   });
 
-  it('says --product when report finds more than one product', () => {
+  it('says --product when report finds more than one product', async () => {
     const lines = output();
 
-    expect(write(acme(), 'report', 'components/button', '--variant', 'a', 'phone')).toBe(1);
+    expect(await write(acme(), 'report', 'components/button', '--variant', 'a', 'phone')).toBe(1);
     expect(lines.pop()).toContain('--product');
   });
 
-  it('refuses every write without --by', () => {
+  it('refuses every write without --by', async () => {
     const target = acme();
     const lines = output();
 
@@ -1017,7 +1084,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       ['reject', 'components/button', '--variant', 'a'],
       ['reopen', 'components/button', '--variant', 'a'],
     ]) {
-      expect(run(target, ...argv, '--product', 'acme')).toBe(2);
+      expect(await run(target, ...argv, '--product', 'acme')).toBe(2);
       expect(lines).toContain(
         `sketch ${argv[0]} needs --by <model id>: the exact model id the coordinator gave you, e.g. claude-opus-5-5. Never guess it.`,
       );
@@ -1026,12 +1093,12 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(existsSync(join(target, DESIGN_DIR, 'acme/sketches/components-button'))).toBe(false);
   });
 
-  it('sets the note of one variant, and refuses an unknown sketch or variant', () => {
+  it('sets the note of one variant, and refuses an unknown sketch or variant', async () => {
     const target = acme();
     const lines = output();
     const note = (...argv: string[]) => write(target, 'note', ...argv, '--product', 'acme');
 
-    write(target, 'new', 'elements/hero', '--variants', 'a,b', '--product', 'acme');
+    await write(target, 'new', 'elements/hero', '--variants', 'a,b', '--product', 'acme');
 
     expect(note('elements/hero', 'b', 'tighter', 'header')).toBe(0);
     expect(lines.pop()).toBe('elements/hero variant b: tighter header');
@@ -1051,7 +1118,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines.pop()).toContain('usage: sketch note <layer>/<name> <variant> <text>');
   });
 
-  it('rejects and reopens a variant, keeps the history and prints the stored state', () => {
+  it('rejects and reopens a variant, keeps the history and prints the stored state', async () => {
     const target = acme();
     const lines = output();
     const sketchOf = () =>
@@ -1061,17 +1128,17 @@ describe('designSketch', { timeout: 120_000 }, () => {
         sketch: { layer: 'components', name: 'button' },
       }) as Sketch;
 
-    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
+    await write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
 
-    expect(write(target, 'reject', 'components/button', '--product', 'acme')).toBe(1);
+    expect(await write(target, 'reject', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toContain('usage: sketch reject <layer>/<name> --variant <key>');
-    expect(write(target, 'reject', 'components/button', '--variant', 'a', '--product', 'acme')).toBe(0);
+    expect(await write(target, 'reject', 'components/button', '--variant', 'a', '--product', 'acme')).toBe(0);
     expect(lines.splice(-2)).toEqual([
       'components/button variant a: rejected',
       `  rejected by the agent at ${sketchOf().rejections?.['a']?.[0]?.decidedAt}`,
     ]);
     expect(
-      run(
+      await run(
         target,
         'reject',
         'components/button',
@@ -1086,10 +1153,10 @@ describe('designSketch', { timeout: 120_000 }, () => {
       ),
     ).toBe(0);
     expect(lines.pop()).toContain('(reason by the designer): too loud');
-    expect(run(target, 'list')).toBe(0);
+    expect(await run(target, 'list')).toBe(0);
     expect(lines.slice(-2)[0]).toBe('acme  components/button  in progress  a, b, rejected a');
     expect(
-      run(
+      await run(
         target,
         'reopen',
         'components/button',
@@ -1108,7 +1175,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       '  rejected by the agent (reason by the designer): too loud',
       '  reopened by the designer: worth a look',
     ]);
-    expect(write(target, 'reopen', 'components/button', '--variant', 'a', '--product', 'acme')).toBe(1);
+    expect(await write(target, 'reopen', 'components/button', '--variant', 'a', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toBe('components/button variant a is not rejected');
     expect(sketchOf().rejections?.['a']).toEqual([
       {
@@ -1127,11 +1194,22 @@ describe('designSketch', { timeout: 120_000 }, () => {
       vi.mocked(identicalRenderLines).mockReset().mockResolvedValue([]);
     });
 
-    const opened = () => {
+    const opened = async () => {
       const target = acme();
       const lines = output();
 
-      write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+      await write(
+        target,
+        'new',
+        'components/button',
+        '--override',
+        '--variants',
+        'a,b',
+        '--note',
+        'n',
+        '--product',
+        'acme',
+      );
 
       return { target, lines };
     };
@@ -1146,7 +1224,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       }) as Sketch;
 
     it('refuses --by designer', async () => {
-      const { target, lines } = opened();
+      const { target, lines } = await opened();
 
       vi.mocked(identicalRenders).mockResolvedValue([twinOfA]);
 
@@ -1156,7 +1234,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     });
 
     it("refuses another agent's variant", async () => {
-      const { target, lines } = opened();
+      const { target, lines } = await opened();
 
       vi.mocked(identicalRenders).mockResolvedValue([twinOfA]);
 
@@ -1166,7 +1244,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     });
 
     it('refuses a variant that does not draw like a sibling', async () => {
-      const { target, lines } = opened();
+      const { target, lines } = await opened();
 
       vi.mocked(identicalRenders).mockResolvedValue([]);
 
@@ -1176,7 +1254,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     });
 
     it('refuses a variant that draws like the product only', async () => {
-      const { target, lines } = opened();
+      const { target, lines } = await opened();
 
       vi.mocked(identicalRenders).mockResolvedValue([{ ...twinOfA, sibling: null }]);
 
@@ -1185,7 +1263,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     });
 
     it('withdraws the variant, so ready stops refusing on it', async () => {
-      const { target, lines } = opened();
+      const { target, lines } = await opened();
 
       vi.mocked(identicalRenders).mockResolvedValue([twinOfA]);
       vi.mocked(identicalRenderLines).mockImplementation(async ({ sketch }) =>
@@ -1209,12 +1287,12 @@ describe('designSketch', { timeout: 120_000 }, () => {
       expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
       expect(lines.some((line) => line.includes('draws variants alike'))).toBe(true);
       expect(lines.at(-1)).not.toContain('draws variants alike');
-      expect(run(target, 'list')).toBe(0);
+      expect(await run(target, 'list')).toBe(0);
       expect(lines.join('\n')).toContain('withdrawn b');
     });
 
     it('says a new variant comes from a withdrawn one', async () => {
-      const { target, lines } = opened();
+      const { target, lines } = await opened();
 
       vi.mocked(identicalRenders).mockResolvedValue([twinOfA]);
 
@@ -1230,8 +1308,19 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const target = acme();
     const lines = output();
 
-    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
-    write(target, 'hold', 'components/button', '--until', 'the round is picked', '--product', 'acme');
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
+    await write(target, 'hold', 'components/button', '--until', 'the round is picked', '--product', 'acme');
     vi.mocked(identicalRenders).mockResolvedValueOnce([
       { variant: 'b', sibling: 'a', line: 'components/button variant b draws like variant a' },
     ]);
@@ -1275,11 +1364,22 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const target = acme();
     const lines = output();
 
-    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
-    write(target, 'hold', 'components/button', '--until', 'the round is picked', '--product', 'acme');
-    expect(run(target, 'reject', 'components/button', '--variant', 'b', '--by', 'designer', '--product', 'acme')).toBe(
-      0,
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--note',
+      'n',
+      '--product',
+      'acme',
     );
+    await write(target, 'hold', 'components/button', '--until', 'the round is picked', '--product', 'acme');
+    expect(
+      await run(target, 'reject', 'components/button', '--variant', 'b', '--by', 'designer', '--product', 'acme'),
+    ).toBe(0);
     vi.mocked(renderIssuesOf).mockImplementationOnce(async ({ jobs }) => ({
       issues: jobs
         .filter((job) => job.sketch?.variant === 'b')
@@ -1303,13 +1403,15 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines).toContain('NOTE components/button b: rejected, not checked');
   });
 
-  it('refuses a reject with a --by that is neither designer nor a model id', () => {
+  it('refuses a reject with a --by that is neither designer nor a model id', async () => {
     const target = acme();
     const lines = output();
 
-    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
+    await write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
 
-    expect(run(target, 'reject', 'components/button', '--variant', 'a', '--by', 'tom', '--product', 'acme')).toBe(1);
+    expect(await run(target, 'reject', 'components/button', '--variant', 'a', '--by', 'tom', '--product', 'acme')).toBe(
+      1,
+    );
     expect(lines.at(-1)).toContain('use designer or a model id');
     expect(
       findSketch({
@@ -1320,12 +1422,12 @@ describe('designSketch', { timeout: 120_000 }, () => {
     ).toBeUndefined();
   });
 
-  it('refuses to merge a rejected variant', () => {
+  it('refuses to merge a rejected variant', async () => {
     const target = acme();
     const lines = output();
     const dir = join(target, DESIGN_DIR, 'acme/sketches/components-button');
 
-    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
+    await write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
 
     const file = JSON.parse(readFileSync(join(dir, 'sketch.json'), 'utf8')) as Record<string, unknown>;
 
@@ -1339,40 +1441,53 @@ describe('designSketch', { timeout: 120_000 }, () => {
       }),
     );
 
-    expect(write(target, 'merge', 'components/button', '--product', 'acme')).toBe(1);
+    expect(await write(target, 'merge', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toBe('components/button variant a is rejected by the designer: too loud - reopen it first');
     expect(existsSync(dir)).toBe(true);
   });
 
-  it('reports on the variant --variant names and records the author', () => {
+  it('reports on the variant --variant names and records the author', async () => {
     const target = acme();
     const lines = output();
 
-    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
+    await write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
 
-    expect(write(target, 'report', 'components/button', 'variant', 'b', '--product', 'acme')).toBe(1);
+    expect(await write(target, 'report', 'components/button', 'variant', 'b', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toContain(
       'usage: sketch report <layer>/<name> --variant <key> --by <model id> (<text> | --done)',
     );
-    expect(write(target, 'report', 'components/button', '--variant', 'c', 'phone', '--product', 'acme')).toBe(1);
+    expect(await write(target, 'report', 'components/button', '--variant', 'c', 'phone', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toBe('components/button has no variant "c" - it has a, b');
     expect(
-      run(target, 'report', 'components/button', '--variant', 'b', '--by', 'gpt-5.6-sol', 'phone', '--product', 'acme'),
+      await run(
+        target,
+        'report',
+        'components/button',
+        '--variant',
+        'b',
+        '--by',
+        'gpt-5.6-sol',
+        'phone',
+        '--product',
+        'acme',
+      ),
     ).toBe(0);
-    expect(write(target, 'report', 'components/button', '--variant', 'b', 'desktop', '--product', 'acme')).toBe(0);
-    expect(run(target, 'list', '--json')).toBe(0);
+    expect(await write(target, 'report', 'components/button', '--variant', 'b', 'desktop', '--product', 'acme')).toBe(
+      0,
+    );
+    expect(await run(target, 'list', '--json')).toBe(0);
     expect(JSON.parse(lines.pop() ?? '')[0].variantInfo).toEqual({
       a: { authors: ['claude-opus-5-5'], round: 'r1' },
       b: { authors: ['claude-opus-5-5', 'gpt-5.6-sol'], round: 'r1' },
     });
   });
 
-  it('ends the live report of a variant with --done', () => {
+  it('ends the live report of a variant with --done', async () => {
     const target = acme();
     const lines = output();
 
-    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
-    write(target, 'report', 'components/button', '--variant', 'b', 'phone', '--product', 'acme');
+    await write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
+    await write(target, 'report', 'components/button', '--variant', 'b', 'phone', '--product', 'acme');
 
     const sketch = findSketch({
       productDir: join(target, DESIGN_DIR, 'acme'),
@@ -1380,11 +1495,11 @@ describe('designSketch', { timeout: 120_000 }, () => {
       sketch: { layer: 'components', name: 'button' },
     }) as Sketch;
 
-    expect(write(target, 'report', 'components/button', '--variant', 'a', '--done', '--product', 'acme')).toBe(0);
+    expect(await write(target, 'report', 'components/button', '--variant', 'a', '--done', '--product', 'acme')).toBe(0);
     expect(lines.pop()).toBe('components/button variant a marked done');
     expect(readSketchReport({ checkout: target, sketch })?.variant).toBe('b');
 
-    expect(write(target, 'report', 'components/button', '--variant', 'b', '--done', '--product', 'acme')).toBe(0);
+    expect(await write(target, 'report', 'components/button', '--variant', 'b', '--done', '--product', 'acme')).toBe(0);
     expect(lines.pop()).toBe('components/button variant b marked done');
     expect(readSketchReport({ checkout: target, sketch })).toBeNull();
   });
@@ -1394,7 +1509,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const lines = output();
 
     expect(
-      write(
+      await write(
         target,
         'new',
         'components/button',
@@ -1410,22 +1525,26 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines.pop()).toBe(
       '--round needs --note "<what the round shows>" - sketch ready refuses a round without a note',
     );
-    expect(write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme')).toBe(0);
-    expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(
+      await write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme'),
+    ).toBe(0);
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toContain('round r1 has no note - set it with: sketch round components/button r1 --note');
     vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void lines.push(String(line)));
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines.pop()).toBe('check ok - ready will refuse 1 (see above)');
     expect(lines.pop()).toMatch(/^ready will refuse: components\/button round r1 has no note - set it with:/u);
-    expect(write(target, 'round', 'components/button', 'r1', '--note', 'pill', '--product', 'acme')).toBe(0);
+    expect(await write(target, 'round', 'components/button', 'r1', '--note', 'pill', '--product', 'acme')).toBe(0);
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
   });
 
-  it('names the next steps after sketch new, and says report --done is not needed yet', () => {
+  it('names the next steps after sketch new, and says report --done is not needed yet', async () => {
     const target = acme();
     const lines = output();
 
-    expect(write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme')).toBe(0);
+    expect(
+      await write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme'),
+    ).toBe(0);
 
     const next = lines.slice(lines.indexOf('Next:'));
 
@@ -1448,7 +1567,18 @@ describe('designSketch', { timeout: 120_000 }, () => {
     output();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
-    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
 
     const folder = join(target, DESIGN_DIR, 'acme/sketches/components-button/b/components/button');
     const ts = join(folder, 'button.ts');
@@ -1473,19 +1603,30 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const sketch = { layer: 'components', name: 'button' } as const;
     const statusOf = () => (findSketch({ productDir, product: 'acme', sketch }) as Sketch).status;
 
-    write(target, 'new', 'components/button', '--override', '--variants', 'a', '--note', 'n', '--product', 'acme');
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     expect(statusOf()).toBe('ready');
 
-    expect(write(target, 'hold', 'components/button', '--until', 'the radius token lands', '--product', 'acme')).toBe(
-      0,
-    );
+    expect(
+      await write(target, 'hold', 'components/button', '--until', 'the radius token lands', '--product', 'acme'),
+    ).toBe(0);
     expect(lines.pop()).toBe(
       'components/button is held until: the radius token lands - back in progress, out of the merge queue',
     );
     expect(statusOf()).toBe('in progress');
 
-    expect(run(target, 'list', '--product', 'acme')).toBe(0);
+    expect(await run(target, 'list', '--product', 'acme')).toBe(0);
     expect(lines).toContain('acme  components/button  in progress  a, held until: the radius token lands');
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
@@ -1494,21 +1635,32 @@ describe('designSketch', { timeout: 120_000 }, () => {
     );
     expect(statusOf()).toBe('in progress');
 
-    expect(write(target, 'release', 'components/button', '--product', 'acme')).toBe(0);
+    expect(await write(target, 'release', 'components/button', '--product', 'acme')).toBe(0);
     expect(findSketch({ productDir, product: 'acme', sketch })).not.toHaveProperty('hold');
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     expect(statusOf()).toBe('ready');
   });
 
-  it('refuses ready while a variant drops a state of the part', () => {
+  it('refuses ready while a variant drops a state of the part', async () => {
     const target = acme();
     const lines = output();
     const button = join(target, DESIGN_DIR, 'acme/sketches/components-button/b/components/button/button.ts');
 
-    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
     writeFileSync(button, readFileSync(button, 'utf8').replace(/, long: \{[^}]*\}/u, ''));
 
-    expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toBe(
       'components/button b: STATES .ethlete/design/acme/sketches/components-button/b/components/button/button.ts: drops the state long that components/button has in acme - a variant keeps every state of the part\ncomponents/button has problems - fix them before ready',
     );
@@ -1519,10 +1671,21 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const lines = output();
     const button = join(target, DESIGN_DIR, 'acme/sketches/components-button/b/components/button/button.ts');
 
-    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
     writeFileSync(button, `import { readFileSync } from 'fs';\n${readFileSync(button, 'utf8')}`);
 
-    expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toBe(
       'components/button b: UNUSED .ethlete/design/acme/sketches/components-button/b/components/button/button.ts: imports readFileSync but never uses it - remove the import\ncomponents/button has problems - fix them before ready',
     );
@@ -1539,15 +1702,26 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const css = join(target, DESIGN_DIR, 'acme/sketches/components-button/b/components/button/button.css');
 
     rmSync(join(target, '.prettierignore'));
-    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
     writeFileSync(css, `${readFileSync(css, 'utf8')}\n.acme-button   {   }\n`);
 
-    expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.join('\n')).toContain('FORMAT');
     expect(lines.join('\n')).toContain('sketch check components/button --fix');
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(1);
     lines.length = 0;
-    write(target, 'hold', 'components/button', '--until', 'the round is picked', '--product', 'acme');
+    await write(target, 'hold', 'components/button', '--until', 'the round is picked', '--product', 'acme');
     expect(await run(target, 'check', 'components/button', '--fix', '--product', 'acme')).toBe(0);
     expect(lines.join('\n')).not.toContain('FORMAT');
   }, 30_000);
@@ -1559,9 +1733,20 @@ describe('designSketch', { timeout: 120_000 }, () => {
 
     rmSync(join(target, '.prettierignore'));
     writeFileSync(join(target, '.prettierrc'), '{ "printWidth": 40 }\n');
-    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
-    write(target, 'hold', 'components/button', '--until', 'the round is picked', '--product', 'acme');
-    write(target, 'variant', 'components/button', 'c', '--from', 'a', '--product', 'acme');
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
+    await write(target, 'hold', 'components/button', '--until', 'the round is picked', '--product', 'acme');
+    await write(target, 'variant', 'components/button', 'c', '--from', 'a', '--product', 'acme');
 
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines.join('\n')).not.toContain('FORMAT');
@@ -1570,14 +1755,14 @@ describe('designSketch', { timeout: 120_000 }, () => {
     );
   }, 30_000);
 
-  it('keeps the note --variant-note names in sketch.json and leaves the merged note in the part file', () => {
+  it('keeps the note --variant-note names in sketch.json and leaves the merged note in the part file', async () => {
     const target = acme();
     const lines = output();
     const fileOf = (variant: string) =>
       join(target, DESIGN_DIR, `acme/sketches/components-button/${variant}/components/button/button.ts`);
 
     expect(
-      write(
+      await write(
         target,
         'new',
         'components/button',
@@ -1592,7 +1777,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     ).toBe(1);
     expect(lines.pop()).toContain('--variant-note needs <variant>=<text>');
     expect(
-      write(
+      await write(
         target,
         'new',
         'components/button',
@@ -1621,13 +1806,13 @@ describe('designSketch', { timeout: 120_000 }, () => {
     });
   });
 
-  it('lists the shared files a page sketch moves out of the part', () => {
+  it('lists the shared files a page sketch moves out of the part', async () => {
     const target = acme();
     const lines = output();
     const part = join(target, DESIGN_DIR, 'acme/components/button/shared');
     mkdirSync(part, { recursive: true });
     writeFileSync(join(part, 'data.ts'), 'export const rows = [];\n');
-    write(target, 'new', 'components/button', '--override', '--variants', 'a', '--product', 'acme');
+    await write(target, 'new', 'components/button', '--override', '--variants', 'a', '--product', 'acme');
 
     expect(lines.slice(lines.indexOf('Next:') - 2, lines.indexOf('Next:'))).toEqual([
       '  shared by every variant, imported as @shared/<path>; edit it here, not in a copy:',
@@ -1639,23 +1824,34 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const target = acme();
     const lines = output();
 
-    write(target, 'new', 'components/button', '--override', '--variants', 'a', '--note', 'n', '--product', 'acme');
-    write(target, 'hold', 'components/button', '--until', 'the round is picked', '--product', 'acme');
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
+    await write(target, 'hold', 'components/button', '--until', 'the round is picked', '--product', 'acme');
 
-    expect(write(target, 'variant', 'components/button', 'b', '--from', 'a')).toBe(0);
+    expect(await write(target, 'variant', 'components/button', 'b', '--from', 'a')).toBe(0);
     expect(lines.pop()).toContain('acme/sketches/components-button/b/');
     expect(await run(target, 'check', 'components/button')).toBe(0);
     expect(await run(target, 'check')).toBe(0);
-    expect(write(target, 'variant', 'components/card', 'b', '--from', 'a')).toBe(1);
+    expect(await write(target, 'variant', 'components/card', 'b', '--from', 'a')).toBe(1);
     expect(lines.pop()).toContain('more than one product - pass --product');
   }, 30_000);
 
-  it('adds every variant of a comma list, the first one opening the round', () => {
+  it('adds every variant of a comma list, the first one opening the round', async () => {
     const target = acme();
     const lines = output();
     const variant = (...argv: string[]) => write(target, 'variant', 'components/button', ...argv, '--product', 'acme');
 
-    write(
+    await write(
       target,
       'new',
       'components/button',
@@ -1675,7 +1871,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(variant('d,E', '--from', 'a')).toBe(1);
     expect(lines.pop()).toContain('"E" is no variant name');
     expect(variant('d,e,f', '--from', 'a', '--round', 'Mixed', '--note', 'a won')).toBe(0);
-    expect(run(target, 'list', '--json')).toBe(0);
+    expect(await run(target, 'list', '--json')).toBe(0);
     expect(JSON.parse(lines.pop() ?? '')[0]).toMatchObject({
       variants: ['a', 'b', 'd', 'e', 'f'],
       rounds: [
@@ -1690,7 +1886,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const target = acme();
     const lines = output();
 
-    run(
+    await run(
       target,
       'new',
       'components/button',
@@ -1704,15 +1900,37 @@ describe('designSketch', { timeout: 120_000 }, () => {
       '--product',
       'acme',
     );
-    run(target, 'variant', 'components/button', 'c', '--from', 'a', '--by', 'claude-opus-5-5', '--product', 'acme');
-    run(target, 'variant', 'components/button', 'd', '--from', 'a', '--by', 'claude-opus-5-5', '--product', 'acme');
+    await run(
+      target,
+      'variant',
+      'components/button',
+      'c',
+      '--from',
+      'a',
+      '--by',
+      'claude-opus-5-5',
+      '--product',
+      'acme',
+    );
+    await run(
+      target,
+      'variant',
+      'components/button',
+      'd',
+      '--from',
+      'a',
+      '--by',
+      'claude-opus-5-5',
+      '--product',
+      'acme',
+    );
 
     const file = join(target, DESIGN_DIR, 'acme/sketches/components-button/sketch.json');
     const stored = JSON.parse(readFileSync(file, 'utf8'));
     writeFileSync(file, JSON.stringify({ ...stored, variantInfo: { ...stored.variantInfo, d: { round: 'r1' } } }));
 
     expect(await run(target, 'ready', 'components/button', '--by', 'gpt-5.6-terra', '--product', 'acme')).toBe(0);
-    expect(run(target, 'list', '--json')).toBe(0);
+    expect(await run(target, 'list', '--json')).toBe(0);
     expect(JSON.parse(lines.pop() ?? '')[0].variantInfo).toEqual({
       a: { authors: ['gpt-5.6-sol'], round: 'r1' },
       b: { authors: ['gpt-5.6-sol'], round: 'r1' },
@@ -1721,20 +1939,20 @@ describe('designSketch', { timeout: 120_000 }, () => {
     });
   });
 
-  it('names the start command when sketch variant finds no open sketch', () => {
+  it('names the start command when sketch variant finds no open sketch', async () => {
     const lines = output();
 
-    expect(write(acme(), 'variant', 'components/button', 'c', '--from', 'a', '--product', 'acme')).toBe(1);
+    expect(await write(acme(), 'variant', 'components/button', 'c', '--from', 'a', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toBe(
       'NO SKETCH on components/button in acme - start one with: sketch new components/button --variants a,b,c --round "<title>"',
     );
   });
 
-  it('stores the note sketch new takes as the note of the first round', () => {
+  it('stores the note sketch new takes as the note of the first round', async () => {
     const target = acme();
     const lines = output();
 
-    write(
+    await write(
       target,
       'new',
       'components/button',
@@ -1749,16 +1967,16 @@ describe('designSketch', { timeout: 120_000 }, () => {
       'acme',
     );
 
-    expect(run(target, 'list', '--json')).toBe(0);
+    expect(await run(target, 'list', '--json')).toBe(0);
     expect(JSON.parse(lines.pop() ?? '')[0].rounds).toEqual([{ key: 'r1', title: 'Pill', note: 'pill or square' }]);
   });
 
-  it('adds a variant from another, in the running round or a new one', () => {
+  it('adds a variant from another, in the running round or a new one', async () => {
     const target = acme();
     const lines = output();
     const variant = (...argv: string[]) => write(target, 'variant', 'components/button', ...argv, '--product', 'acme');
 
-    write(
+    await write(
       target,
       'new',
       'components/button',
@@ -1802,7 +2020,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       'components/button in progress: variant d from c in round r2',
       `  d: ${DESIGN_DIR}/acme/sketches/components-button/d/components/button/button.ts  assets: ${DESIGN_DIR}/acme/sketches/components-button/d/assets/`,
     ]);
-    expect(run(target, 'list', '--json')).toBe(0);
+    expect(await run(target, 'list', '--json')).toBe(0);
     expect(JSON.parse(lines.pop() ?? '')[0]).toMatchObject({
       variants: ['a', 'b', 'c', 'd'],
       rounds: [
@@ -1813,7 +2031,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     });
   });
 
-  it('marks the open comments on the variant a new round starts from addressed in that round', () => {
+  it('marks the open comments on the variant a new round starts from addressed in that round', async () => {
     const target = acme();
     const lines = output();
     const comments = join(target, DESIGN_DIR, 'acme/comments');
@@ -1835,7 +2053,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       return file;
     };
 
-    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
+    await write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
     mkdirSync(comments, { recursive: true });
 
     const { createdAt } = findSketch({
@@ -1847,7 +2065,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const onB = comment('on-b', { target: 'components/button', variant: 'b', createdAt });
     const onPart = comment('on-part');
 
-    expect(write(target, 'variant', 'components/button', 'c', '--from', 'b', '--product', 'acme')).toBe(1);
+    expect(await write(target, 'variant', 'components/button', 'c', '--from', 'b', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toBe(
       [
         'components/button has 2 open comment(s) - a variant that answers them starts a new round:',
@@ -1860,7 +2078,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(existsSync(join(target, DESIGN_DIR, 'acme/sketches/components-button/c'))).toBe(false);
     expect(existsSync(onB)).toBe(true);
     expect(
-      write(
+      await write(
         target,
         'variant',
         'components/button',
@@ -1887,10 +2105,21 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const target = acme();
     const lines = output();
 
-    expect(write(target, 'new', 'components/button', '--override', '--variants', 'a,b')).toBe(1);
+    expect(await write(target, 'new', 'components/button', '--override', '--variants', 'a,b')).toBe(1);
     expect(lines.pop()).toBe('more than one product - pass --product <name>; config.json declares acme-base, acme.');
     expect(
-      write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme'),
+      await write(
+        target,
+        'new',
+        'components/button',
+        '--override',
+        '--variants',
+        'a,b',
+        '--note',
+        'n',
+        '--product',
+        'acme',
+      ),
     ).toBe(0);
     expect(lines.splice(lines.indexOf('Next:')).length).toBe(8);
     expect(lines.splice(-3)).toEqual([
@@ -1898,32 +2127,32 @@ describe('designSketch', { timeout: 120_000 }, () => {
       `  a: ${DESIGN_DIR}/acme/sketches/components-button/a/components/button/button.ts  assets: ${DESIGN_DIR}/acme/sketches/components-button/a/assets/`,
       `  b: ${DESIGN_DIR}/acme/sketches/components-button/b/components/button/button.ts  assets: ${DESIGN_DIR}/acme/sketches/components-button/b/assets/`,
     ]);
-    expect(write(target, 'report', 'components/button', '--variant', 'b', 'phone', '--product', 'acme')).toBe(0);
-    expect(run(target, 'list')).toBe(0);
+    expect(await write(target, 'report', 'components/button', '--variant', 'b', 'phone', '--product', 'acme')).toBe(0);
+    expect(await run(target, 'list')).toBe(0);
     expect(lines.slice(-2)).toEqual(['acme  components/button  in progress  a, b', '  r1    a, b  - n']);
-    expect(run(target, 'preview', 'components/button', 'a', '--product', 'acme', '--json')).toBe(0);
+    expect(await run(target, 'preview', 'components/button', 'a', '--product', 'acme', '--json')).toBe(0);
     expect(JSON.parse(lines.pop() ?? '')).toEqual({
       changed: ['components/button'],
       shared: [],
       affected: ['elements/hero', 'pages/home'],
     });
-    expect(write(target, 'merge', 'components/button', 'a', '--product', 'acme', '--note', 'x')).toBe(1);
+    expect(await write(target, 'merge', 'components/button', 'a', '--product', 'acme', '--note', 'x')).toBe(1);
     expect(lines.pop()).toBe(
       'usage: sketch merge <layer>/<name> [--note <reason>] - it merges the variant the user picked',
     );
-    expect(write(target, 'merge', 'components/button', '--product', 'acme', '--note', 'x')).toBe(1);
+    expect(await write(target, 'merge', 'components/button', '--product', 'acme', '--note', 'x')).toBe(1);
     expect(lines.pop()).toBe(
       'components/button is in progress - mark it ready before a merge: design sketch ready components/button --by <model id> --product acme',
     );
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines.splice(-2)).toEqual(['components/button is ready', 'auto-merge skipped: variant a changes default']);
-    expect(write(target, 'merge', 'components/button', '--product', 'acme')).toBe(1);
+    expect(await write(target, 'merge', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toBe('components/button has no pick - the user picks a variant in Studio before a merge');
-    expect(write(target, 'rebase', 'components/button', '--product', 'acme')).toBe(0);
+    expect(await write(target, 'rebase', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines.pop()).toBe('components/button now compares with the product as it is');
-    expect(write(target, 'discard', 'components/button', '--product', 'acme')).toBe(0);
+    expect(await write(target, 'discard', 'components/button', '--product', 'acme')).toBe(0);
     expect(existsSync(join(target, DESIGN_DIR, 'acme/sketches/components-button'))).toBe(false);
-    expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toBe('NO SKETCH on components/button in acme');
   });
 
@@ -1931,7 +2160,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const target = acme();
     const lines = output();
 
-    write(target, 'new', 'elements/hero', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    await write(target, 'new', 'elements/hero', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
     writeFileSync(
       join(target, DESIGN_DIR, 'acme/sketches/elements-hero/b/elements/hero/hero.css'),
       '.acme-hero { color: #fff; }',
@@ -1947,7 +2176,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const target = acme();
     const lines = output();
 
-    write(target, 'new', 'pages/home', '--variants', 'a', '--note', 'n', '--product', 'acme');
+    await write(target, 'new', 'pages/home', '--variants', 'a', '--note', 'n', '--product', 'acme');
     writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { padding: 0; }');
 
     expect(await run(target, 'check', '--product', 'acme')).toBe(1);
@@ -1965,8 +2194,8 @@ describe('designSketch', { timeout: 120_000 }, () => {
     vi.mocked(aktuellPlaceholderWarnings).mockResolvedValueOnce([
       'elements/hero: Aktuell shows only placeholders: open "default" to compare',
     ]);
-    write(target, 'new', 'elements/hero', '--variants', 'a', '--note', 'n', '--product', 'acme');
-    write(target, 'hold', 'elements/hero', '--until', 'the round is picked', '--product', 'acme');
+    await write(target, 'new', 'elements/hero', '--variants', 'a', '--note', 'n', '--product', 'acme');
+    await write(target, 'hold', 'elements/hero', '--until', 'the round is picked', '--product', 'acme');
 
     expect(await run(target, 'check', '--product', 'acme')).toBe(0);
     expect(warnings).toContain('elements/hero: Aktuell shows only placeholders: open "default" to compare');
@@ -1982,7 +2211,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'),
       '.acme-hero { color: #fff; }\n.acme-hero-title { color: #000; }',
     );
-    write(target, 'new', 'elements/hero', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    await write(target, 'new', 'elements/hero', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
 
     await run(target, 'check', '--product', 'acme');
 
@@ -1998,7 +2227,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const target = acme();
     const lines = output();
 
-    write(target, 'new', 'elements/hero', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    await write(target, 'new', 'elements/hero', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
     rmSync(join(target, DESIGN_DIR, 'acme/sketches/elements-hero/b/elements/hero/hero.css'));
     writeFileSync(
       join(target, DESIGN_DIR, 'acme/sketches/elements-hero/b/elements/hero/hero.ts'),
@@ -2030,7 +2259,7 @@ export default definePart({
     const target = acme();
     const lines = output();
 
-    write(target, 'new', 'elements/hero', '--variants', 'a', '--round', 'R', '--note', 'n', '--product', 'acme');
+    await write(target, 'new', 'elements/hero', '--variants', 'a', '--round', 'R', '--note', 'n', '--product', 'acme');
     wideHero(target, 'class="acme-hero"');
     vi.mocked(renderIssuesOf).mockImplementationOnce(await actualRender());
 
@@ -2058,7 +2287,7 @@ export default definePart({
       const target = acme();
       const lines = output();
 
-      write(
+      await write(
         target,
         'new',
         'components/button',
@@ -2083,7 +2312,7 @@ export default definePart({
       const { target, lines } = await readied('a');
 
       expect(
-        write(target, 'merge', 'components/button', '--variant', 'a', '--allowed-by', PLAN, '--product', 'acme'),
+        await write(target, 'merge', 'components/button', '--variant', 'a', '--allowed-by', PLAN, '--product', 'acme'),
       ).toBe(0);
       expect(lines.pop()).toContain('merged components/button variant a into acme');
       expect(existsSync(sketchDir(target))).toBe(false);
@@ -2100,7 +2329,7 @@ export default definePart({
       const noteLine = /note: .*/u.exec(readFileSync(buttonFile, 'utf8'))?.[0];
 
       expect(
-        write(
+        await write(
           target,
           'merge',
           'components/button',
@@ -2124,8 +2353,8 @@ export default definePart({
       const { target } = await readied('a');
       const args = ['merge', 'components/button', '--variant', 'a', '--allowed-by', PLAN, '--product', 'acme'];
 
-      expect(write(target, ...args, '--replace-note')).toBe(1);
-      expect(write(target, ...args, '--note', 'Calmer button.', '--replace-note')).toBe(0);
+      expect(await write(target, ...args, '--replace-note')).toBe(1);
+      expect(await write(target, ...args, '--note', 'Calmer button.', '--replace-note')).toBe(0);
       expect(readFileSync(join(target, DESIGN_DIR, 'acme/components/button/button.ts'), 'utf8')).toContain(
         "note: 'Calmer button.'",
       );
@@ -2135,7 +2364,7 @@ export default definePart({
       const { target, lines } = await readied('a,b');
 
       expect(
-        write(target, 'merge', 'components/button', '--variant', 'a', '--allowed-by', PLAN, '--product', 'acme'),
+        await write(target, 'merge', 'components/button', '--variant', 'a', '--allowed-by', PLAN, '--product', 'acme'),
       ).toBe(1);
       expect(lines.pop()).toContain('the user picks in Studio');
       expect(existsSync(sketchDir(target))).toBe(true);
@@ -2145,7 +2374,7 @@ export default definePart({
       const { target, lines } = await readied('a');
 
       expect(
-        write(target, 'merge', 'components/button', '--variant', 'b', '--allowed-by', PLAN, '--product', 'acme'),
+        await write(target, 'merge', 'components/button', '--variant', 'b', '--allowed-by', PLAN, '--product', 'acme'),
       ).toBe(1);
       expect(lines.pop()).toContain('not only "b"');
       expect(existsSync(sketchDir(target))).toBe(true);
@@ -2154,9 +2383,9 @@ export default definePart({
     it('refuses one flag without the other', async () => {
       const { target, lines } = await readied('a');
 
-      expect(write(target, 'merge', 'components/button', '--variant', 'a', '--product', 'acme')).toBe(1);
+      expect(await write(target, 'merge', 'components/button', '--variant', 'a', '--product', 'acme')).toBe(1);
       expect(lines.pop()).toContain('go together');
-      expect(write(target, 'merge', 'components/button', '--allowed-by', PLAN, '--product', 'acme')).toBe(1);
+      expect(await write(target, 'merge', 'components/button', '--allowed-by', PLAN, '--product', 'acme')).toBe(1);
       expect(lines.pop()).toContain('go together');
       expect(existsSync(sketchDir(target))).toBe(true);
     });
@@ -2210,20 +2439,23 @@ describe('sketch covers (ADR 0222)', () => {
 describe('sketch target add', () => {
   const acmeWrite = (target: string, ...argv: string[]) => write(target, ...argv, '--product', 'acme');
 
-  const start = () => {
+  const start = async () => {
     const target = acme();
     const lines = output();
 
-    expect(acmeWrite(target, 'new', 'components/button', '--variants', 'a,b', '--override'), lines.join('\n')).toBe(0);
+    expect(
+      await acmeWrite(target, 'new', 'components/button', '--variants', 'a,b', '--override'),
+      lines.join('\n'),
+    ).toBe(0);
     lines.length = 0;
 
     return { target, lines };
   };
 
-  it('adds a part to targets, seeds it into each variant, and list shows it', () => {
-    const { target, lines } = start();
+  it('adds a part to targets, seeds it into each variant, and list shows it', async () => {
+    const { target, lines } = await start();
 
-    expect(acmeWrite(target, 'target', 'add', 'components/button', 'components/card')).toBe(0);
+    expect(await acmeWrite(target, 'target', 'add', 'components/button', 'components/card')).toBe(0);
     expect(
       findSketch({
         productDir: join(target, DESIGN_DIR, 'acme'),
@@ -2237,20 +2469,20 @@ describe('sketch target add', () => {
       true,
     );
     lines.length = 0;
-    expect(run(target, 'list', '--product', 'acme')).toBe(0);
+    expect(await run(target, 'list', '--product', 'acme')).toBe(0);
     expect(lines[0]).toContain('components/button (+ components/card)');
   });
 
-  it('refuses a duplicate, a part another sketch holds, and a bad path', () => {
-    const { target, lines } = start();
+  it('refuses a duplicate, a part another sketch holds, and a bad path', async () => {
+    const { target, lines } = await start();
 
-    expect(acmeWrite(target, 'target', 'add', 'components/button', 'components/button')).toBe(1);
+    expect(await acmeWrite(target, 'target', 'add', 'components/button', 'components/button')).toBe(1);
     expect(lines.pop()).toContain('targets components/button already');
-    expect(acmeWrite(target, 'new', 'components/card', '--variants', 'a')).toBe(0);
-    expect(acmeWrite(target, 'target', 'add', 'components/button', 'components/card')).toBe(1);
+    expect(await acmeWrite(target, 'new', 'components/card', '--variants', 'a')).toBe(0);
+    expect(await acmeWrite(target, 'target', 'add', 'components/button', 'components/card')).toBe(1);
     expect(lines.pop()).toContain('components/card already has an open sketch');
-    expect(acmeWrite(target, 'target', 'add', 'components/button', 'nonsense')).toBe(1);
-    expect(acmeWrite(target, 'target', 'add', 'components/nothing', 'components/x')).toBe(1);
+    expect(await acmeWrite(target, 'target', 'add', 'components/button', 'nonsense')).toBe(1);
+    expect(await acmeWrite(target, 'target', 'add', 'components/nothing', 'components/x')).toBe(1);
   });
 });
 
@@ -2259,40 +2491,45 @@ describe('sketch target remove', () => {
   const jsonOf = (target: string, folder: string) =>
     readFileSync(join(target, DESIGN_DIR, 'acme/sketches', folder, 'sketch.json'), 'utf8');
 
-  it('leaves the sketch.json as it was before the add', () => {
+  it('leaves the sketch.json as it was before the add', async () => {
     const target = acme();
     const lines = output();
 
-    expect(acmeWrite(target, 'new', 'components/button', '--variants', 'a,b', '--override'), lines.join('\n')).toBe(0);
+    expect(
+      await acmeWrite(target, 'new', 'components/button', '--variants', 'a,b', '--override'),
+      lines.join('\n'),
+    ).toBe(0);
 
     const before = jsonOf(target, 'components-button');
 
-    expect(acmeWrite(target, 'target', 'add', 'components/button', 'components/card')).toBe(0);
+    expect(await acmeWrite(target, 'target', 'add', 'components/button', 'components/card')).toBe(0);
     expect(jsonOf(target, 'components-button')).not.toBe(before);
-    expect(acmeWrite(target, 'target', 'remove', 'components/button', 'components/card')).toBe(0);
+    expect(await acmeWrite(target, 'target', 'remove', 'components/button', 'components/card')).toBe(0);
     expect(jsonOf(target, 'components-button')).toBe(before);
     expect(existsSync(join(target, DESIGN_DIR, 'acme/sketches/components-button/a/components/card'))).toBe(false);
   });
 
-  it('refuses the main target and a part that is no target', () => {
+  it('refuses the main target and a part that is no target', async () => {
     const target = acme();
     const lines = output();
 
-    expect(acmeWrite(target, 'new', 'components/button', '--variants', 'a', '--override'), lines.join('\n')).toBe(0);
-    expect(acmeWrite(target, 'target', 'remove', 'components/button', 'components/button')).toBe(1);
-    expect(acmeWrite(target, 'target', 'remove', 'components/button', 'components/card')).toBe(1);
+    expect(await acmeWrite(target, 'new', 'components/button', '--variants', 'a', '--override'), lines.join('\n')).toBe(
+      0,
+    );
+    expect(await acmeWrite(target, 'target', 'remove', 'components/button', 'components/button')).toBe(1);
+    expect(await acmeWrite(target, 'target', 'remove', 'components/button', 'components/card')).toBe(1);
     expect(lines.pop()).toContain('does not target components/card');
   });
 
-  it('makes target add refuse a part the layer rule forbids, and writes nothing', () => {
+  it('makes target add refuse a part the layer rule forbids, and writes nothing', async () => {
     const target = acme();
     const lines = output();
 
-    expect(acmeWrite(target, 'new', 'elements/hero', '--variants', 'a', '--override'), lines.join('\n')).toBe(0);
+    expect(await acmeWrite(target, 'new', 'elements/hero', '--variants', 'a', '--override'), lines.join('\n')).toBe(0);
 
     const before = jsonOf(target, 'elements-hero');
 
-    expect(acmeWrite(target, 'target', 'add', 'elements/hero', 'elements/other')).toBe(1);
+    expect(await acmeWrite(target, 'target', 'add', 'elements/hero', 'elements/other')).toBe(1);
     expect(lines.pop()).toContain('UPWARD-DEPENDENCY');
     expect(jsonOf(target, 'elements-hero')).toBe(before);
     expect(existsSync(join(target, DESIGN_DIR, 'acme/sketches/elements-hero/a/elements/other'))).toBe(false);
@@ -2302,14 +2539,14 @@ describe('sketch target remove', () => {
 describe('sketch new --name', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it('opens a second sketch on a part and addresses each by its own id', () => {
+  it('opens a second sketch on a part and addresses each by its own id', async () => {
     const target = acme();
     const lines = output();
     const sketches = join(target, DESIGN_DIR, 'acme/sketches');
     const open = (...argv: string[]) => write(target, 'new', 'components/card', ...argv, '--product', 'acme');
 
-    expect(open('--variants', 'a')).toBe(0);
-    expect(open('--variants', 'x', '--name', 'alt')).toBe(0);
+    expect(await open('--variants', 'a')).toBe(0);
+    expect(await open('--variants', 'x', '--name', 'alt')).toBe(0);
     expect(lines.some((line) => line.includes('sketch ready components/card@alt --product acme'))).toBe(true);
     expect(JSON.parse(readFileSync(join(sketches, 'components-card/sketch.json'), 'utf8')).target).toBe(
       'components/card',
@@ -2317,8 +2554,12 @@ describe('sketch new --name', () => {
     expect(JSON.parse(readFileSync(join(sketches, 'components-card.alt/sketch.json'), 'utf8')).target).toBe(
       'components/card@alt',
     );
-    expect(open('--variants', 'y', '--name', 'alt')).toBe(1);
-    expect(write(target, 'report', 'components/card@alt', '--variant', 'x', '--done', '--product', 'acme')).toBe(0);
-    expect(write(target, 'report', 'components/card@nope', '--variant', 'x', '--done', '--product', 'acme')).toBe(1);
+    expect(await open('--variants', 'y', '--name', 'alt')).toBe(1);
+    expect(await write(target, 'report', 'components/card@alt', '--variant', 'x', '--done', '--product', 'acme')).toBe(
+      0,
+    );
+    expect(await write(target, 'report', 'components/card@nope', '--variant', 'x', '--done', '--product', 'acme')).toBe(
+      1,
+    );
   });
 });

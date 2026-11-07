@@ -287,7 +287,7 @@ describe('isStale', () => {
 
 describe('mountDrawing', () => {
   it('runs setup once the markup is in the root, and returns its error', () => {
-    const root = { innerHTML: '' } as HTMLElement;
+    const root = { innerHTML: '', querySelectorAll: () => [] } as unknown as HTMLElement;
     const seen: string[] = [];
 
     expect(mountDrawing(root, { body: '<b>x</b>', styles: '', setup: (r) => seen.push(r.innerHTML) })).toBeNull();
@@ -307,7 +307,7 @@ describe('mountDrawing', () => {
   });
 
   it('runs a list of setups in order and stops at the first that throws', () => {
-    const root = { innerHTML: '' } as HTMLElement;
+    const root = { innerHTML: '', querySelectorAll: () => [] } as unknown as HTMLElement;
     const calls: string[] = [];
     const thrown = new Error('boom');
 

@@ -36,21 +36,21 @@ const runOf = async (port: number, token = 't', argv = ['compare']) => {
 describe('startResidentServer', () => {
   it('exits after the idle time without a request, counted from the end of the last request', async () => {
     const { port, onExit } = await serverOf({
-      idleMs: 150,
+      idleMs: 1000,
       run: async () => {
-        await delay(200);
+        await delay(600);
 
         return 0;
       },
     });
 
-    await delay(100);
+    await delay(600);
     await runOf(port);
-    await delay(100);
+    await delay(400);
 
     expect(onExit).not.toHaveBeenCalled();
 
-    await delay(100);
+    await delay(1000);
 
     expect(onExit).toHaveBeenCalledWith('idle');
   });

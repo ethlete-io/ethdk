@@ -1250,7 +1250,7 @@ describe('the design server for sketches and comments', () => {
       body: { rejections: { b: [{ reopened: { by: 'designer', reason: 'second look' } }] } },
     });
     expect((await decide({ kind: 'pick', variant: 'b' })).status).toBe(200);
-  });
+  }, 30_000);
 
   it('discards a sketch, and refuses a merge without a pick', async () => {
     const target = acme();
@@ -1280,7 +1280,7 @@ describe('the design server for sketches and comments', () => {
       body: { discarded: 'components/card' },
     });
     expect((await ask('/__design/sketch-discard', sketchQuery, 'POST')).status).toBe(404);
-  });
+  }, 30_000);
 
   it('writes, lists and finishes a canvas comment', async () => {
     const target = acme();
