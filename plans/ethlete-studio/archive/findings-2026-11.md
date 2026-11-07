@@ -2643,3 +2643,84 @@ marker silences a visible layout effect with no review; Tom sees it at his pick.
 new `data-et-skip` in a sketch diff is listed in `sketch ready` output and in the Studio round head, so a skip is
 never invisible to the person who picks. Brief defect (builder): `D="node ... design"; $D` does not word-split in
 zsh; briefs use `yarn design`.
+
+301\. Uncommitted go refresh (2026-11-03). After the B242 tidy a62942f0c, the builder's check rewrote go.json at
+14:25:20 for elements/shell-main and pages/inventory, which embed title-bar. It was the decided carry
+(accepted-pictures.ts, B219/B223: the design hash changed and no state picture changed, so the go keeps `by` and
+gets auto:true, refreshedBy "design check"), not a new go. The refresh was left uncommitted, and Tom found an
+unexplained go in his tree. Why no tool caught it: check writes go.json silently, and nothing flags an
+uncommitted refresh before the next commit. Fix (B246, decided, technical): the check prints each go it
+refreshed with the commit-hunks command to run, and `yarn commit` refuses while a refreshed go of a part in the
+commit is uncommitted. Who may commit a carry refresh is Tom's call (asked 2026-11-03).
+
+372\. Tom (2026-11-04, about 15:05): after a full manual Studio restart on the dd708ee4a host, "Neu starten" showed
+"Design-Server gestoppt" with the same English stale-build text as finding 369. Cause (builder): the host ran
+the sha copy `tmp/studio-cli/5639952…` (`design_server.rs` start -> `studio_code.rs` cli_copy ->
+`tools/scripts/studio-code.mjs cli-copy`). That copy came from an earlier script version (14:41), had no
+`pinned-commit` file and so the old stale guard (`source-hash.ts`), which compared it with the dirty
+`libs/cli`. With `libs/cli` dirty, `cliCopyPlan()` keeps the current copy, so it never builds a newer commit
+while agents have uncommitted CLI work, which is the normal state. Recovery: the builder moved the copy to
+`/tmp/studio-cli-stale/` and built 5bec01b89 into `tmp/studio-cli/` in a temp worktree. Why no tool caught it:
+`studio-code.spec.mjs` tests `cliCopyPlan` only as a pure decision; no spec starts a copy against a dirty
+`libs/cli`; the plan trusts any 40-hex directory; dd708ee4a was not run end to end ("Not verified: the real
+Studio flow"). Tool fix (B318): a copy without `pinned-commit` counts as absent; with `libs/cli` dirty the plan
+still builds the latest commit when the kept copy is older; a node spec that starts the copy against a temp
+repo with a dirty `libs/cli` and expects a listening server; the stop text in German plus a recovery action
+(the finding-369 sketch).
+
+374\. Tom (2026-11-04, parked for later): components/textarea shows "508 offen". Cause (builder): `missingMotionsOf`
+(`libs/cli/src/lib/design/system/open-points.ts:87-106`, since 97ab889ed) emits one point per undeclared state
+pair, N\*(N-1) per part; Studio lists the raw pairs, while the CLI text already folds them. The stale-record
+text is English (`part-build-ready.ts:37`), and the explorer rows read "empty · width" without the value
+(`system-tree.ts:443`, lead only). Why no tool caught it: specs use 2-4 state fixtures; no spec runs against
+the real design system or sets a budget. Tool fix (B320): an open-point budget spec over the real parts;
+German stale-record text through STUDIO_LABELS. Open for Tom later: folding the pairs (sketch) and whether
+`motion.instant` is the default for components.
+
+377\. Builder (2026-11-04, about 15:50): the Studio frontend dev server (`nx serve ethlete-studio`, `hmr: false`,
+`liveReload: false`) still watches and rebuilds the working tree, so a window reload brings uncommitted agent
+edits into Tom's Studio (at that time the unverified B321 stacking fix). This breaks the decided rule "only
+committed code reaches the running Studio, after Tom's click"; dd708ee4a covered only the CLI copy. Why no
+tool caught it: the committed-code-only slice had no check for the frontend path. Tool fix (B322): serve the
+frontend from a sha-keyed build of HEAD like the CLI copy, switched on Tom's click; a scenario that an
+uncommitted `apps/ethlete-studio` edit does not reach the served app.
+
+379\. Tom (2026-11-04, about 16:45, server on copy 1cf06ce2d): after the restart the Sketches group in the part tree
+still appears only after a long wait. Measured on that server: quick listing (`&unchanged=no`) 0.03 s, full
+listing over 90 s (curl timeout; 33 s on a148d713e), machine load 32 from builder test runs. So the tree still
+waits for the full listing, or the quick listing does not feed the tree. Why no tool caught it: B317 specs
+time the endpoints, not the time until the tree shows the group in the real app under load. Tool fix (B324):
+the tree renders from the quick listing only; a spec with a full listing that never answers asserts that the
+Sketches group still renders.
+
+382\. Tom (2026-11-04, 15:48): "pages start merged". Tom picked "new" in `pages/start@edit` (merged.json:
+`decidedBy: user`). The merge left the tree uncommitted (merged.json, pages/start/start.ts, the deleted sketch
+folder), and its only change to the part is `madeBy` gaining `'design check'`. Cause (doc agent, from the
+code): accepted-pictures.ts:307 opens the edit sketch with `author: 'design check'`, and the merge adds the
+sketch author to `madeBy`. So a check tool is recorded as a maker, and Tom was asked to pick between two
+variants that differ in no picture. Why no tool caught it: no spec asserts that a merge adds only human or
+agent makers, and the build-ready rule "an automatic merge only when no picture changes" is not applied to
+edit sketches. Tool fix (B327): an edit sketch whose variants draw the same pictures merges itself as HELD
+without a pick; a tool author is never written to `madeBy`; Studio commits a merge it makes (or names the
+uncommitted files); specs for both.
+
+391\. Builder (2026-11-04, B329): the slice built UI that no design draws (the fold toggle "Alle Zustände zeigen" and
+the round note as a question line). No check refused it, because none ran: `design compare` of the sketches part
+would show the extra UI, and S3's UNCOVERED-REGION too, but S7 moved the Studio rules out of the hooks into CI, and
+nothing was pushed. The builder's brief also allowed "keep it minimal" when no design exists. Fix (B336): the commit
+gate refuses a staged change to an app component with an `implements` link unless `design compare <part>` is green
+at the staged tree, cached per part hash, for the touched parts only; a builder brief never permits undrawn UI, and a
+missing design becomes a sketch first.
+
+487\. The documented scenario command `npx vitest run --config vitest.projects.ts --project query ...` (skill
+query-scenario-tests) fails before it collects a test: "Project name "storybook" from apps/storybook/vitest.config.mts is
+not unique", and apps/timetrack has the same pair (vite.config.mts from abc5bda5a plus vitest.config.mts, both
+timetrack-app) (doc agent, 2026-11-06). The root glob takes every `vite.config.*` and every `vitest.config.*`, so an app
+that adds a plain Vite config next to its Vitest config breaks the whole root run. Why no tool caught it: CI and the
+hooks run tests through nx per project, and nothing runs the root projects file that the skill tells agents to use.
+Tool fix (technical, decided): the root projects file takes `vite.config.*` only where no `vitest.config.*` sits in
+the same folder, and the sub-second pre-push "Checks" run `vitest list --config vitest.projects.ts --project query`
+so a name clash fails the push.
+**Fixed in 69c5e3635 (cb):** `vitest.projects.ts` skips a folder's `vite.config.*` when a `vitest.config.*` sits next to
+it (17 configs, none under node_modules); bite: the old config fails `vitest list` on the storybook name. The check
+takes 15 s, so it is `yarn vitest:projects:check` in ci-check step 5d and in the Checks job of `ci.yml`, not in pre-push.

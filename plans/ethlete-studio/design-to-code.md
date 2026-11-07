@@ -1508,15 +1508,6 @@ Also found: `design check` after a62942f0c carried the go of elements/shell-main
 no tool caught it: check writes go.json silently and no commit gate sees an uncommitted refresh. Recommended
 B246, sent to the grill session.
 
-301\. Uncommitted go refresh (2026-11-03). After the B242 tidy a62942f0c, the builder's check rewrote go.json at
-14:25:20 for elements/shell-main and pages/inventory, which embed title-bar. It was the decided carry
-(accepted-pictures.ts, B219/B223: the design hash changed and no state picture changed, so the go keeps `by` and
-gets auto:true, refreshedBy "design check"), not a new go. The refresh was left uncommitted, and Tom found an
-unexplained go in his tree. Why no tool caught it: check writes go.json silently, and nothing flags an
-uncommitted refresh before the next commit. Fix (B246, decided, technical): the check prints each go it
-refreshed with the commit-hunks command to run, and `yarn commit` refuses while a refreshed go of a part in the
-commit is uncommitted. Who may commit a carry refresh is Tom's call (asked 2026-11-03).
-
 ### Go carry decisions (2026-11-03)
 
 - Tom: the go system is not extended any further; its rework (A10, "build-ready" replaces go and acceptance) is
@@ -2125,21 +2116,6 @@ B311 listing slice): the checks run in a worker thread with a 50 ms block budget
 times the quick listing during a full listing; a closed request aborts its server work; the frame grid draws
 from the quick listing targets.
 
-372\. Tom (2026-11-04, about 15:05): after a full manual Studio restart on the dd708ee4a host, "Neu starten" showed
-"Design-Server gestoppt" with the same English stale-build text as finding 369. Cause (builder): the host ran
-the sha copy `tmp/studio-cli/5639952…` (`design_server.rs` start -> `studio_code.rs` cli_copy ->
-`tools/scripts/studio-code.mjs cli-copy`). That copy came from an earlier script version (14:41), had no
-`pinned-commit` file and so the old stale guard (`source-hash.ts`), which compared it with the dirty
-`libs/cli`. With `libs/cli` dirty, `cliCopyPlan()` keeps the current copy, so it never builds a newer commit
-while agents have uncommitted CLI work, which is the normal state. Recovery: the builder moved the copy to
-`/tmp/studio-cli-stale/` and built 5bec01b89 into `tmp/studio-cli/` in a temp worktree. Why no tool caught it:
-`studio-code.spec.mjs` tests `cliCopyPlan` only as a pure decision; no spec starts a copy against a dirty
-`libs/cli`; the plan trusts any 40-hex directory; dd708ee4a was not run end to end ("Not verified: the real
-Studio flow"). Tool fix (B318): a copy without `pinned-commit` counts as absent; with `libs/cli` dirty the plan
-still builds the latest commit when the kept copy is older; a node spec that starts the copy against a temp
-repo with a dirty `libs/cli` and expects a listening server; the stop text in German plus a recovery action
-(the finding-369 sketch).
-
 373\. Tom (2026-11-04, about 15:15): `pages/flows@edit` ("Runde 1 · Direct edit", variants "new"/"old") shows no
 frame, no "vergleicht ..." and no error, with English texts in the German UI. The direct-edit check ran at
 13:53:56Z on the uncommitted TLA edit of an agent, 17 s before 5bec01b89, and also opened `pages-merge.edit`
@@ -2156,15 +2132,6 @@ UI; a variant with zero states has no failure state. Tool fix (B319): resolve th
 `shared/` for `old`; the baseline only from pictures at the merged hash, else draw HEAD; a spec for each; the
 three wrong edit sketches must close themselves through the fixed check (the proof), not by hand. The German
 texts (kind `direct-edit` mapped to STUDIO_LABELS) and a "variant draws no states" look go to Tom as a sketch.
-
-374\. Tom (2026-11-04, parked for later): components/textarea shows "508 offen". Cause (builder): `missingMotionsOf`
-(`libs/cli/src/lib/design/system/open-points.ts:87-106`, since 97ab889ed) emits one point per undeclared state
-pair, N\*(N-1) per part; Studio lists the raw pairs, while the CLI text already folds them. The stale-record
-text is English (`part-build-ready.ts:37`), and the explorer rows read "empty · width" without the value
-(`system-tree.ts:443`, lead only). Why no tool caught it: specs use 2-4 state fixtures; no spec runs against
-the real design system or sets a budget. Tool fix (B320): an open-point budget spec over the real parts;
-German stale-record text through STUDIO_LABELS. Open for Tom later: folding the pairs (sketch) and whether
-`motion.instant` is the default for components.
 
 375\. Tom (2026-11-04, about 15:35): finding 367 is back. While the WebContent process hangs, the frames of the
 first canvas column ("Rendering" chips, borders, text) paint on top of the explorer tree. So `isolate` and
@@ -2186,28 +2153,12 @@ break: no check links a label change to the specs that assert the old text. Tool
 every spec that imports `studio-labels`, and a check fails when a spec asserts a label text that no longer
 exists.
 
-377\. Builder (2026-11-04, about 15:50): the Studio frontend dev server (`nx serve ethlete-studio`, `hmr: false`,
-`liveReload: false`) still watches and rebuilds the working tree, so a window reload brings uncommitted agent
-edits into Tom's Studio (at that time the unverified B321 stacking fix). This breaks the decided rule "only
-committed code reaches the running Studio, after Tom's click"; dd708ee4a covered only the CLI copy. Why no
-tool caught it: the committed-code-only slice had no check for the frontend path. Tool fix (B322): serve the
-frontend from a sha-keyed build of HEAD like the CLI copy, switched on Tom's click; a scenario that an
-uncommitted `apps/ethlete-studio` edit does not reach the served app.
-
 378\. Tom (2026-11-04, about 15:55): while the server runs, Studio shows no "Neu starten" (only in the stopped
 state), and the title-bar code notice is built but not rendered. So a new CLI commit reaches Tom only by a
 kill of the server or a full Studio restart. Why no tool caught it: the committed-code-only slice tested the
 restart flow only from the stopped state; no spec renders the running state with a newer commit. Tool fix
 (B323): render the title-bar notice in the running state as an interim "needs approval" notice that opens its
 sketch (finding-368 flow); a spec for the running state with a newer CLI commit.
-
-379\. Tom (2026-11-04, about 16:45, server on copy 1cf06ce2d): after the restart the Sketches group in the part tree
-still appears only after a long wait. Measured on that server: quick listing (`&unchanged=no`) 0.03 s, full
-listing over 90 s (curl timeout; 33 s on a148d713e), machine load 32 from builder test runs. So the tree still
-waits for the full listing, or the quick listing does not feed the tree. Why no tool caught it: B317 specs
-time the endpoints, not the time until the tree shows the group in the real app under load. Tool fix (B324):
-the tree renders from the quick listing only; a spec with a full listing that never answers asserts that the
-Sketches group still renders.
 
 380\. Tom (2026-11-04, same screenshot): `pages/flows@edit` now draws "new", but "old" ("the design at HEAD") fails
 with `Importing binding name 'emptyCanvas' is not found`, and both variants show "Vergleich fehlgeschlagen:
@@ -2226,17 +2177,6 @@ over an iframe goes to the iframe document and never reaches the canvas. Why no 
 behavior tests pan on empty canvas only, never with the pointer over a frame. Tool fix (B326): frames do not
 take wheel and pointer input while the canvas is in pan mode (shield over the frame or forwarded wheel), and
 a storybook-e2e or Studio headless test that pans with the pointer over a frame.
-
-382\. Tom (2026-11-04, 15:48): "pages start merged". Tom picked "new" in `pages/start@edit` (merged.json:
-`decidedBy: user`). The merge left the tree uncommitted (merged.json, pages/start/start.ts, the deleted sketch
-folder), and its only change to the part is `madeBy` gaining `'design check'`. Cause (doc agent, from the
-code): accepted-pictures.ts:307 opens the edit sketch with `author: 'design check'`, and the merge adds the
-sketch author to `madeBy`. So a check tool is recorded as a maker, and Tom was asked to pick between two
-variants that differ in no picture. Why no tool caught it: no spec asserts that a merge adds only human or
-agent makers, and the build-ready rule "an automatic merge only when no picture changes" is not applied to
-edit sketches. Tool fix (B327): an edit sketch whose variants draw the same pictures merges itself as HELD
-without a pick; a tool author is never written to `madeBy`; Studio commits a merge it makes (or names the
-uncommitted files); specs for both.
 
 383\. Builder CI triage of run 41811275798 (at 68fbfd019). Four of five failures were fixed by later commits.
 (a) test:tools: `timedOutSpecs` did not strip ANSI colour from GitHub output (fix 62c79da3b); missed because
@@ -2316,14 +2256,6 @@ commits made on the Mac (421d2fee8 to be8aa16b7) the hooks most likely did not r
 `ethlete-studio`, which commitlint never allowed. Verified cause: the Mac checkout never installed husky (`core.hooksPath` unset, no `.husky/_`), so no git hook ran there. Why no tool caught it: nothing checks after the fact that the local
 hooks ran. Fix (B335): a CI job runs commitlint and `yarn test:tools` over the pushed range, and pre-push checks
 commitlint for each commit in the range; `yarn commit` and the agent session start refuse when `core.hooksPath` is not `.husky/_`; the Mac checkout gets husky installed.
-
-391\. Builder (2026-11-04, B329): the slice built UI that no design draws (the fold toggle "Alle Zustände zeigen" and
-the round note as a question line). No check refused it, because none ran: `design compare` of the sketches part
-would show the extra UI, and S3's UNCOVERED-REGION too, but S7 moved the Studio rules out of the hooks into CI, and
-nothing was pushed. The builder's brief also allowed "keep it minimal" when no design exists. Fix (B336): the commit
-gate refuses a staged change to an app component with an `implements` link unless `design compare <part>` is green
-at the staged tree, cached per part hash, for the touched parts only; a builder brief never permits undrawn UI, and a
-missing design becomes a sketch first.
 
 392\. Builder (2026-11-04, B321 on the Mac): the pixel check run lacked two build steps the handoff did not name
 (`nx build cli`, the components build); without `dist/libs/components` the design server hangs on `/__design/system`
@@ -2893,7 +2825,7 @@ that names the reverted change or matches its markup (grep the e2e for the attri
 pre-push runs the behavior suites of the components whose files the pushed range changes.
 
 As built (B394): `yarn revert:check <sha-to-revert> [head]` (`tools/scripts/revert-check.mjs`) lists the markup tokens
-(aria-*, data-*, `[attr.x]`, `[x=...]` locators, `x="..."`) the commit touches and every later commit that names it or
+(aria-_, data-_, `[attr.x]`, `[x=...]` locators, `x="..."`) the commit touches and every later commit that names it or
 changes a line with one of them, e2e specs included; prose files are skipped; exit 1 when any is found. Run on
 e73234f6e..40a92b60b^ it lists 80d8d2b8c. Part 2 needed no hook: ADR 0225 moved slow checks out of pre-push, and CI
 already runs the behavior suites of the changed components (`apps/storybook-e2e/affected.mjs`, the `e2e-selection`
@@ -3261,19 +3193,6 @@ controls without a design; compare only lists them, and `check --rules` and the 
 informational, not a failure, and nothing turns it into a design task. Tool fix: a missed action fails compare for an
 implemented part and opens the missing-state sketch of ADR 0048 and ADR 0010 (built look as variant a); the
 IMPLEMENTATION-UNCOMPARED gate in `check --rules --base` fails while one is open.
-
-487\. The documented scenario command `npx vitest run --config vitest.projects.ts --project query ...` (skill
-query-scenario-tests) fails before it collects a test: "Project name "storybook" from apps/storybook/vitest.config.mts is
-not unique", and apps/timetrack has the same pair (vite.config.mts from abc5bda5a plus vitest.config.mts, both
-timetrack-app) (doc agent, 2026-11-06). The root glob takes every `vite.config.*` and every `vitest.config.*`, so an app
-that adds a plain Vite config next to its Vitest config breaks the whole root run. Why no tool caught it: CI and the
-hooks run tests through nx per project, and nothing runs the root projects file that the skill tells agents to use.
-Tool fix (technical, decided): the root projects file takes `vite.config.*` only where no `vitest.config.*` sits in
-the same folder, and the sub-second pre-push "Checks" run `vitest list --config vitest.projects.ts --project query`
-so a name clash fails the push.
-**Fixed in 69c5e3635 (cb):** `vitest.projects.ts` skips a folder's `vite.config.*` when a `vitest.config.*` sits next to
-it (17 configs, none under node_modules); bite: the old config fails `vitest list` on the storybook name. The check
-takes 15 s, so it is `yarn vitest:projects:check` in ci-check step 5d and in the Checks job of `ci.yml`, not in pre-push.
 
 488\. The doc agent committed ADRs 0198-0200 with `open:` values the ADR check refuses ("A1", "477", "et-update-findings
 11") and put finding 487 before 486; 478 already sat after 486 (doc agent, 2026-11-06). Only the pre-push
@@ -4322,12 +4241,12 @@ specs, so `yarn commit` runs them. Same CI run: a stale `KNOWN_UNBOUND_INPUTS` e
 sketches port) fails UNBOUND-INPUT only in CI; cause of the local miss open (builder). `--slow` also fails
 components/title-bar (5 states unjudged, design 1 overlay pane, app 0) and components/update-dialog (4 unjudged), new
 to the list, queued.
-   As built (f548): nothing left to link. d67c98f91 removed `precommit-specs.mjs` and the spec runner from the
-   hook; `.husky/pre-commit` is now lint-changesets + lint-css-properties, and no spec executes a `.husky/*` hook
-   (commit-wait.spec no longer runs one). The only related map, `libs/cli/related-map.json`, covers cli specs, so
-   a `.husky/*` entry has no spec to point at. `yarn test:tools`: 140/140 pass. The title-bar `part` entry is
-   already gone from `KNOWN_UNBOUND_INPUTS`. Local miss: the UNBOUND-INPUT check reads app templates and only ran
-   in CI; the sketches port changed an app template, which maps to no spec, so the stale entry was never run.
+As built (f548): nothing left to link. d67c98f91 removed `precommit-specs.mjs` and the spec runner from the
+hook; `.husky/pre-commit` is now lint-changesets + lint-css-properties, and no spec executes a `.husky/*` hook
+(commit-wait.spec no longer runs one). The only related map, `libs/cli/related-map.json`, covers cli specs, so
+a `.husky/*` entry has no spec to point at. `yarn test:tools`: 140/140 pass. The title-bar `part` entry is
+already gone from `KNOWN_UNBOUND_INPUTS`. Local miss: the UNBOUND-INPUT check reads app templates and only ran
+in CI; the sketches port changed an app template, which maps to no spec, so the stale entry was never run.
 
 549\. Builder (2026-11-07), pages/system compare at load 157: a fixed 15 s design draw timeout skipped the whole action
 check, and only one trailing line said so; the run took 473 s. Why no tool caught it: a skipped check counts as a
@@ -4485,7 +4404,7 @@ when the footer shows no "esc to interrupt" and no "Waiting for"; on a denied se
 line to the doc agent, which drives the pane. Tom: "Natürlich darf er das. Der Skill gilt für jeden." The allow
 rule for `agent-sessions.mjs restart *` goes into the checked-in `.claude/settings.json`; auto mode refuses an agent edit
 of the settings, so Tom adds it.
-    As built: `busyLine` in `libs/agent-rules/content/skills/agent-sessions/agent-sessions.mjs` (the only idle check, used by `restart`) now matches "esc to interrupt" or "Waiting for"; spec added. The denied self-restart cannot be caught in the script (the classifier blocks the command before it runs), so SKILL.md tells the builder to send one mailbox line to the grill session, which drives the pane when idle. Skill copies regenerated with `yarn agents:sync`; changeset `agent-sessions-idle-waiting`.
+As built: `busyLine` in `libs/agent-rules/content/skills/agent-sessions/agent-sessions.mjs` (the only idle check, used by `restart`) now matches "esc to interrupt" or "Waiting for"; spec added. The denied self-restart cannot be caught in the script (the classifier blocks the command before it runs), so SKILL.md tells the builder to send one mailbox line to the grill session, which drives the pane when idle. Skill copies regenerated with `yarn agents:sync`; changeset `agent-sessions-idle-waiting`.
 
 S7c-1 as built (c0 subagent, 2026-11-07, in the `perf(cli)` commit that adds this note): auto-accept keeps the state
 pictures of each part drawn at a part hash under `node_modules/.design-explore/part-pictures` (`part-picture-cache.ts`;
@@ -4515,3 +4434,6 @@ check could not run prints `actions: no verdict - <why>, retry` (b56914c71's NoV
 onto `next` as 1f9f7a87e (conflict with b56914c71 in `compare-command.ts` and `part-compare.spec.ts` resolved by keeping
 the NoVerdict print and adding the FAILED line); the Studio System page port is 9bc56da98. Verified: part-compare,
 part-picture-cache and unbound-input specs. Not verified: no real compare run under load.
+
+563\. Doc agent (2026-11-07): an agent appended to a size-budgeted plan file and committed; only pre-push saw the size and
+format, 300 commits later. Tool fix (technical): a staged-file size and format check in pre-commit.
