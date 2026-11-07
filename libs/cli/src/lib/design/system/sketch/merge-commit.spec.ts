@@ -47,6 +47,8 @@ describe('a merge commits its own result', { timeout: 120_000 }, () => {
     const git = gitOf(target);
 
     git('init');
+    git('config', 'user.name', 't');
+    git('config', 'user.email', 't@t');
     git('add', '.');
     git('commit', '-m', 'base');
 

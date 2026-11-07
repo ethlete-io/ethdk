@@ -44,7 +44,7 @@ import { openSketchListingOf } from './system/sketch/check-sketches';
 import { CheckSketches } from './system/sketch/sketch-checker';
 import { oneProductOf } from './system/sketch/cli-args';
 import { retriedHeldMerges } from './sketch-command';
-import { discardSketch } from './system/sketch/merge';
+import { discardSketch, mergeRefusalOf } from './system/sketch/merge';
 import { commitMergeResult, dirtyFilesOf } from './system/sketch/merge-commit';
 import { mergeInWorker } from './system/sketch/merge-runner';
 import { changedOutsideSketchOf } from './system/sketch/merged-parts';
@@ -617,6 +617,10 @@ export const sketchDecisionAnswer = withSketch('POST', async ({ asked, sketch })
 export const sketchMergeAnswer = withSketch('POST', async ({ asked, product, sketch }) => {
   const body = await bodyOf(asked.request);
   const note = textOf(body?.['note']);
+  const refused = mergeRefusalOf({ product, sketch });
+
+  if (refused !== null) return failure(422, refused);
+
   const before = dirtyFilesOf({ target: asked.target, product });
   const merged = await mergeInWorker({ target: asked.target, product: product.name, sketch, note });
 

@@ -401,8 +401,9 @@ const editedPartDirOf = (options: { product: ResolvedProduct; sketch: Sketch }) 
 
 const isInside = (dir: string, path: string) => path === dir || path.startsWith(`${dir}/`);
 
-const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal => {
-  const { target, product, sketch, note, author } = options;
+/** Why `sketch` cannot be merged as it stands - not ready, no valid pick, or a rejected pick - or `null` when it can. */
+export const mergeRefusalOf = (options: { product: ResolvedProduct; sketch: Sketch }) => {
+  const { product, sketch } = options;
 
   if (sketch.status !== 'ready')
     return `${sketch.target} is ${sketch.status} - mark it ready before a merge: design sketch ready ${sketch.target} --by <model id> --product ${product.name}`;
@@ -411,11 +412,22 @@ const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal 
 
   if (typeof pick === 'string') return pick;
 
+  return rejectedProblemOf(sketch, pick.variant);
+};
+
+const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal => {
+  const { target, product, sketch, note, author } = options;
+
+  const refused = mergeRefusalOf({ product, sketch });
+
+  if (refused !== null) return refused;
+
+  const pick = pickOf(sketch);
+
+  if (typeof pick === 'string') return pick;
+
   const { variant } = pick;
   const decision = { variant, decidedBy: options.decidedBy ?? 'user', at: pick.at };
-  const rejected = rejectedProblemOf(sketch, variant);
-
-  if (rejected) return rejected;
 
   const copy = cleanCopyOf({ target, cloned: clonedDirsOf({ target, product }) });
 
