@@ -1,4 +1,5 @@
 export const CHECK_RULES = [
+  'ACCESSIBLE-NAME',
   'ACTION-LOST',
   'ACTION-UNDECLARED',
   'APP-SPEC',

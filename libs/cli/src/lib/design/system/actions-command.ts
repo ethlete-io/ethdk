@@ -31,6 +31,8 @@ import {
   ownScopeOf,
   embeddersOf,
   listenEmbeddedScriptOf,
+  accessibleNameDriftsOf,
+  accessibleNameFailureOf,
   pairElementsOf,
   openedFromOf,
   resolveActionOf,
@@ -534,6 +536,14 @@ export const checkActions = async (options: {
       const scope = ownScopeOf({ design, app, hosts });
 
       const { paired, missing } = pairElementsOf({ design: scope.design, app: scope.app });
+
+      for (const drift of accessibleNameDriftsOf(paired))
+        pushLine({
+          state,
+          element: elementNameOf(drift.app),
+          input: null,
+          failure: accessibleNameFailureOf(drift),
+        });
 
       for (const element of missing)
         pushLine({

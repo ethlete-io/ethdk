@@ -3584,6 +3584,10 @@ and a no-partner failure names the near miss (specs with bite). 5ec60c344 - the 
 (aria-labelledby only with a visible label, as et-select does); the flows picker is named "Bildschirmgröße"; slow check
 of sdk components/select clean, studio pages/flows `PASS: no visible change`, its action check passes. Open: the
 ACCESSIBLE-NAME rule (B413).
+As built (c) (B413, 2026-11-07): the action check pushes an `ACCESSIBLE-NAME` failure line for every paired own-scope
+element whose key differs from its design partner (`accessibleNameDriftsOf`, spec on fixture elements; rule listed in
+CHECK_RULES). Not done: no baseline run (needs a render), so existing hits in studio products are unknown; the rule
+may surface renamed controls the check passed silently before.
 
 511\. `design check --slow --part X` did not write the check record; only a fast `check --part X` afterwards did
 (READY line), so the ff698951f verify said "no check record" after a passing slow run. Why no tool caught it: no spec

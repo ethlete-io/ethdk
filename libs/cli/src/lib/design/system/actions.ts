@@ -268,6 +268,17 @@ export const pairElementsOf = <TDesign extends ActionElement>(options: { design:
   };
 };
 
+export const ACCESSIBLE_NAME_RULE = 'ACCESSIBLE-NAME';
+
+/** The paired elements whose accessible names differ between the design and the app. */
+export const accessibleNameDriftsOf = <TDesign extends ActionElement>(
+  paired: { app: ActionElement; design: TDesign | null }[],
+) => paired.flatMap(({ app, design }) => (design !== null && design.key !== app.key ? [{ app, design }] : []));
+
+/** The failure line for an element the app names differently from the design. */
+export const accessibleNameFailureOf = (options: { app: ActionElement; design: ActionElement }) =>
+  `${ACCESSIBLE_NAME_RULE}: the design names it ${options.design.key}, the app names it ${options.app.key}`;
+
 /** A script over a design picture that answers, per `data-et-action-probe`, the `data-et-control` names around the element, innermost first. */
 export const enclosingControlsScriptOf = () => `(() => {
   const within = {};

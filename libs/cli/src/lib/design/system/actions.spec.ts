@@ -18,6 +18,8 @@ import {
   enclosingControlsScriptOf,
   exemptFromDeclaringOf,
   isHostElementOf,
+  accessibleNameDriftsOf,
+  accessibleNameFailureOf,
   nearMissesOf,
   ownScopeOf,
   openedFromOf,
@@ -94,6 +96,18 @@ describe('actions', () => {
       { app: app[1], design: null },
       { app: app[2], design: null },
     ]);
+  });
+
+  it('reports a paired element whose accessible name differs, and none whose name matches', () => {
+    const design = [element({ key: 'combobox "Desktop·1440"' }), element({ key: 'button "Go"', occurrence: 0 })];
+    const app = [element({ key: 'combobox "Bildschirmgröße"' }), element({ key: 'button "Go"' })];
+    const drifts = accessibleNameDriftsOf(pairElementsOf({ design, app }).paired);
+
+    expect(drifts).toEqual([{ app: app[0], design: design[0] }]);
+    expect(accessibleNameFailureOf(drifts[0]!)).toBe(
+      'ACCESSIBLE-NAME: the design names it combobox "Desktop·1440", the app names it combobox "Bildschirmgröße"',
+    );
+    expect(accessibleNameDriftsOf([{ app: app[1]!, design: null }])).toEqual([]);
   });
 
   it('exempts an element without an action that an embedded part or a control declared with a part draws', () => {
