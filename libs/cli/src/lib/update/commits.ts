@@ -1,8 +1,8 @@
-import { spawnSync } from 'child_process';
 import { createHash } from 'crypto';
 import { readFileSync, realpathSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { UPDATE_DIR } from './tasks';
+import { spawnPlain } from '../plain-output';
 
 /** Repo-relative paths git reports as changed or untracked, each with a hash of its content. */
 export type DirtySnapshot = Record<string, string>;
@@ -23,7 +23,7 @@ export type StepCommit =
   | { state: 'failed'; reason: string; paths: string[] };
 
 const git = (cwd: string, args: string[]) => {
-  const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
+  const result = spawnPlain(['git', ...args], { cwd });
 
   return {
     status: result.error ? 1 : (result.status ?? 1),

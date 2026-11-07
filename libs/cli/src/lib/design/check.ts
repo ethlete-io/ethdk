@@ -1,6 +1,6 @@
-import { execFileSync } from 'child_process';
 import { mkdirSync, writeFileSync } from 'fs';
 import { dirname, relative, resolve } from 'path';
+import { execPlain } from '../plain-output';
 import { chromiumOf } from './browser';
 import { writeCallsTsconfig } from './calls-tsconfig';
 import { callsRootOf, DEFAULT_PORT, DesignConfig, portOf, readConfig } from './paths';
@@ -269,7 +269,7 @@ const runChecks = async (options: {
     if (!eslint) return unavailable(`NO LINTER - ${target} installs no eslint, so --lint has nothing to run.`);
 
     try {
-      execFileSync(process.execPath, [eslint, ...lintFiles], { cwd: target, encoding: 'utf8', stdio: 'pipe' });
+      execPlain([process.execPath, eslint, ...lintFiles], { cwd: target });
     } catch (error) {
       return fail(`LINT\n${outputOf(error) || processFailureOf(error)}`);
     }

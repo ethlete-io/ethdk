@@ -1,9 +1,9 @@
-import { spawnSync } from 'child_process';
 import { existsSync } from 'fs';
 import { join, resolve } from 'path';
+import { spawnPlain } from '../plain-output';
 
 const gitOf = (cwd: string, args: string[]) => {
-  const run = spawnSync('git', args, { cwd, encoding: 'utf8' });
+  const run = spawnPlain(['git', ...args], { cwd });
 
   return run.status === 0 ? run.stdout.trim() : '';
 };

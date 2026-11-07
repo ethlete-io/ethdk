@@ -2420,6 +2420,8 @@ through one helper that sets `NO_COLOR` and `--pretty false` and strips ANSI, wi
 Fixed in 9d788d831: design typecheck runs tsc with `--pretty false`; a spec under `FORCE_COLOR=1` fails without the
 fix, and the full `nx test cli` passed (2553). B373 is closed.
 
+As built (B390, 2026-11-07): `libs/cli/src/lib/plain-output.ts` holds `stripAnsi`, `plainEnv` (`NO_COLOR=1`, `FORCE_COLOR=0`), `spawnPlain([cmd, ...args])` and `execPlain([cmd, ...args])` (utf8 capture, plain `stdout`/`stderr`, also on the thrown error). Migrated: design typecheck and `--lint` eslint, prettier (stdin format, which now also reports empty output as a failure; `sketch/check-format` and `sketch/merge`), the git wrappers (`api/git`, push-status, hooks-problem, sketch-command, merge-commit, update commits/packages), compose output and `ps`, API setup, migration scan, release capture and both harness build spawns. `--pretty false` stays at the tsc call. Spec `plain-output.spec.ts` runs under `FORCE_COLOR=1` and bites. Not migrated: inherit/ignore stdio spawns (nothing is captured), `sketch/rebase-port`, `edit-sketch`, `go-guard`, `slow-checks`, `part-task` and other `execFileSync('git', ...)` binary or buffer captures, and the doctor streamed check; no lint rule yet forbids a new raw capture.
+
 452\. Two Studio e2e cases fail only in the full `yarn studio:e2e` run (112/114) and pass alone, also after other pages:
 (1) Sketches "pan beyond every edge": the content grew taller while it panned. Likely cause, not verified: far frames
 use a stored picture height, and the live iframe is taller. (2) Large "a variant equal to Aktuell keeps its iframes":

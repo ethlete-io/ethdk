@@ -1,4 +1,4 @@
-import { spawnSync } from 'child_process';
+import { spawnPlain } from '../../../plain-output';
 import { existsSync, readdirSync } from 'fs';
 import { join, resolve } from 'path';
 import { binaryOf } from '../../typecheck';
@@ -26,10 +26,7 @@ export const formatProblemsOf = (options: { target: string; sketch: Sketch; vari
 
   if (files.length === 0) return [];
 
-  const result = spawnSync(process.execPath, [prettier, '--list-different', ...files], {
-    cwd: target,
-    encoding: 'utf8',
-  });
+  const result = spawnPlain([process.execPath, prettier, '--list-different', ...files], { cwd: target });
 
   if (result.status !== 1) return [];
 
@@ -57,8 +54,5 @@ export const formatSketch = (options: { target: string; sketch: Sketch; variants
   const dirs = [...variants.map((variant) => variantDirOf(sketch, variant)), sharedDirOf(sketch)].filter(existsSync);
   const files = [...dirs.flatMap(filesOf), resolve(sketch.dir, SKETCH_FILE)];
 
-  spawnSync(process.execPath, [prettier, '--write', '--log-level', 'warn', ...files], {
-    cwd: target,
-    encoding: 'utf8',
-  });
+  spawnPlain([process.execPath, prettier, '--write', '--log-level', 'warn', ...files], { cwd: target });
 };

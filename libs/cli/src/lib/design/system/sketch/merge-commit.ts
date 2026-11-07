@@ -1,10 +1,10 @@
-import { spawnSync } from 'child_process';
 import { realpathSync } from 'fs';
 import { relative, resolve, sep } from 'path';
 import { ResolvedProduct } from '../resolve-product';
 import { Sketch, sketchesDirOf } from './sketch';
+import { spawnPlain } from '../../../plain-output';
 
-const gitIn = (target: string, ...args: string[]) => spawnSync('git', args, { cwd: target, encoding: 'utf8' });
+const gitIn = (target: string, ...args: string[]) => spawnPlain(['git', ...args], { cwd: target });
 
 const dirsOf = (product: ResolvedProduct) => [product.dir, ...(product.base ? [product.base.dir] : [])];
 

@@ -1,6 +1,7 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { plainEnv, stripAnsi } from '../plain-output';
 import { Migration } from './migration-manifest';
 import { PackageManager, nxCommand, spawnPackageManager } from './package-manager';
 import { generatorArgs, hasNx } from './run-migrations';
@@ -49,14 +50,19 @@ export const runScan = (options: { root: string; manager: PackageManager; migrat
     const result = spawnPackageManager({
       binary,
       args,
-      spawn: { cwd: root, stdio: 'pipe', encoding: 'utf8', env: { ...process.env, [SCAN_FILE_ENV]: resultPath } },
+      spawn: {
+        cwd: root,
+        stdio: 'pipe',
+        encoding: 'utf8',
+        env: plainEnv({ ...process.env, [SCAN_FILE_ENV]: resultPath }),
+      },
     });
 
     if (result.error) return { problem: result.error.message };
 
     if (result.status !== 0) {
       const output = [result.stdout, result.stderr]
-        .map((stream) => stream?.toString().trim())
+        .map((stream) => stripAnsi(stream?.toString() ?? '').trim())
         .filter(Boolean)
         .join('\n');
 

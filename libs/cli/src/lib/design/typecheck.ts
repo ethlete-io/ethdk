@@ -1,6 +1,6 @@
-import { execFileSync } from 'child_process';
 import { readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
+import { execPlain } from '../plain-output';
 
 /**
  * A tool the checker shells out to, taken from the checkout first and from this package second, so
@@ -67,7 +67,7 @@ export const typecheck = (options: { target: string; tsconfig: string }): Typech
     : { file: process.execPath, args: [tsc as string, '--noEmit', '--pretty', 'false', '-p', tsconfig] };
 
   try {
-    execFileSync(command.file, command.args, { cwd: target, encoding: 'utf8', stdio: 'pipe' });
+    execPlain([command.file, ...command.args], { cwd: target });
   } catch (error) {
     const output = outputOf(error);
 

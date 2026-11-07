@@ -1,7 +1,7 @@
-import { spawnSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { spawnPlain } from '../plain-output';
 
 export type PushGateReceipt = {
   head: string;
@@ -25,7 +25,7 @@ export const pushGateReceiptPath = (checkout: string) =>
   join(tmpdir(), 'ethlete-studio-checks', `${flattened(checkout)}.push-gate.json`);
 
 const git = (cwd: string, args: string[]) => {
-  const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
+  const result = spawnPlain(['git', ...args], { cwd });
 
   return result.status === 0 ? result.stdout.trim() : null;
 };

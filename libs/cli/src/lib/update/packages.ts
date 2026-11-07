@@ -1,7 +1,7 @@
-import { spawnSync } from 'child_process';
 import { Dirent, existsSync, readFileSync, readdirSync, writeFileSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { compareVersions, rangePrefix, versionOfRange } from './semver';
+import { spawnPlain } from '../plain-output';
 
 export const ETHLETE_SCOPE = '@ethlete/';
 
@@ -64,10 +64,11 @@ const sortRootFirst = (paths: string[]) =>
 
 /** The manifests git tracks or would track, or `undefined` when the root is not a git checkout. */
 const trackedManifests = (root: string) => {
-  const result = spawnSync(
-    'git',
-    ['ls-files', '--cached', '--others', '--exclude-standard', '--', `*${ROOT_MANIFEST}`],
-    { cwd: root, encoding: 'utf8' },
+  const result = spawnPlain(
+    ['git', 'ls-files', '--cached', '--others', '--exclude-standard', '--', `*${ROOT_MANIFEST}`],
+    {
+      cwd: root,
+    },
   );
 
   if (result.error || result.status !== 0) return undefined;

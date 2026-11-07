@@ -2,6 +2,7 @@ import { spawnSync } from 'child_process';
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { homedir, networkInterfaces, tmpdir } from 'os';
 import { join } from 'path';
+import { spawnPlain } from '../plain-output';
 
 export type ComposeTool = {
   engine: string;
@@ -87,7 +88,7 @@ export type ComposeCall = {
 export const composeOutput = (options: ComposeCall & { args: string[] }) => {
   const { tool, cwd, env, args } = options;
   const [binary, ...prefix] = tool.compose;
-  const result = spawnSync(binary, [...prefix, ...args], { cwd, env, encoding: 'utf8' });
+  const result = spawnPlain([binary, ...prefix, ...args], { cwd, env });
 
   return result.error || result.status !== 0 ? undefined : (result.stdout ?? '');
 };
@@ -126,7 +127,7 @@ export const isRunningStatus = (status: string) => /^up\b/i.test(status);
 
 /** Every container the engine knows, with its compose service and published ports. */
 export const containerStates = (engine: string): ContainerState[] => {
-  const result = spawnSync(engine, ['ps', '-a', '--format', PS_FORMAT], { encoding: 'utf8' });
+  const result = spawnPlain([engine, 'ps', '-a', '--format', PS_FORMAT]);
 
   if (result.error || result.status !== 0) return [];
 

@@ -1,9 +1,10 @@
 import { spawnSync } from 'child_process';
+import { spawnPlain } from '../plain-output';
 
 export type GitResult = { status: number; stdout: string; stderr: string };
 
 const git = (cwd: string, args: string[]): GitResult => {
-  const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
+  const result = spawnPlain(['git', ...args], { cwd });
 
   return {
     status: result.status ?? 1,

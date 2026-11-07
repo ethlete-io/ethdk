@@ -1,6 +1,6 @@
-import { spawnSync } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
+import { spawnPlain } from '../plain-output';
 
 export type SetupRequest = {
   /** The API's own `setupCommand`, for example `make setup`. */
@@ -23,7 +23,7 @@ export const runApiSetup = ({ setupCommand, composePath, envFile }: SetupRequest
 
   console.log(`Running "${setupCommand}" in ${composePath}.`);
 
-  const result = spawnSync(setupCommand, { cwd: composePath, shell: true, encoding: 'utf8', maxBuffer: Infinity });
+  const result = spawnPlain([setupCommand], { cwd: composePath, shell: true, maxBuffer: Infinity });
   const output = `${result.stdout ?? ''}\n${result.stderr ?? ''}`.trim();
   const status = result.status ?? 1;
 

@@ -1,4 +1,5 @@
 import { spawnSync } from 'child_process';
+import { spawnPlain } from '../../../plain-output';
 import {
   cpSync,
   existsSync,
@@ -140,10 +141,12 @@ const formatFiles = (target: string, files: string[]) => {
 
   if (!bin || files.length === 0) return;
 
-  const formatted = spawnSync(process.execPath, [bin, '--write', '--ignore-unknown', '--log-level', 'warn', ...files], {
-    cwd: target,
-    encoding: 'utf8',
-  });
+  const formatted = spawnPlain(
+    [process.execPath, bin, '--write', '--ignore-unknown', '--log-level', 'warn', ...files],
+    {
+      cwd: target,
+    },
+  );
 
   if (formatted.error || formatted.status !== 0)
     console.warn(`Could not format the merged files: ${(formatted.stderr || formatted.error?.message || '').trim()}`);

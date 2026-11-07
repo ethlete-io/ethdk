@@ -4,6 +4,7 @@ import { Server } from 'http';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { setTimeout as delay } from 'timers/promises';
+import { plainEnv } from '../../plain-output';
 import { timedPhase } from '../phase-timing';
 import { durationOf } from '../wait';
 import { harnessBuildKeyOf, harnessInputFilesOf } from './harness-build-cache';
@@ -174,7 +175,7 @@ export const startWatch = (options: {
       cwd: target,
       detached: true,
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, NX_NO_CLOUD: 'true', NX_TUI: 'false', NX_DAEMON: 'false', FORCE_COLOR: '0' },
+      env: plainEnv({ ...process.env, NX_NO_CLOUD: 'true', NX_TUI: 'false', NX_DAEMON: 'false' }),
     });
   } catch (error) {
     rmSync(dir, { recursive: true, force: true });

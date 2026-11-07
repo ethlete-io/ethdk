@@ -1,5 +1,6 @@
 import { execFileSync, spawnSync } from 'child_process';
 import { existsSync } from 'fs';
+import { plainEnv, stripAnsi } from './plain-output';
 import { PackageManager, detectPackageManager, spawnPackageManager } from './update/package-manager';
 import { readManifest } from './update/packages';
 import { askQuestion } from './utils';
@@ -81,10 +82,17 @@ export type ReleaseIo = {
 const defaultRun: ReleaseIo['run'] = ([binary = '', ...args], options = {}) => {
   const result =
     binary === 'git'
-      ? spawnSync(binary, args, { stdio: options.inherit ? 'inherit' : 'pipe' })
-      : spawnPackageManager({ binary, args, spawn: { stdio: options.inherit ? 'inherit' : 'pipe' } });
+      ? spawnSync(binary, args, {
+          stdio: options.inherit ? 'inherit' : 'pipe',
+          env: options.inherit ? undefined : plainEnv(),
+        })
+      : spawnPackageManager({
+          binary,
+          args,
+          spawn: { stdio: options.inherit ? 'inherit' : 'pipe', env: options.inherit ? undefined : plainEnv() },
+        });
 
-  return { status: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` };
+  return { status: result.status, output: stripAnsi(`${result.stdout ?? ''}${result.stderr ?? ''}`) };
 };
 
 const snapshotWorkingTree = (): WorkingTreeSnapshot => {

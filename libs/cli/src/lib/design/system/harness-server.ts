@@ -10,6 +10,7 @@ import { claimHarnessBuild, harnessBuildKeyOf, harnessCacheDirOf, storeHarnessBu
 import { harnessOf } from './harness-map';
 import { HARNESS_PATH } from './part-compare';
 import { ResolvedProduct } from './resolve-product';
+import { plainEnv } from '../../plain-output';
 import { timedPhase } from '../phase-timing';
 import { recordCache } from '../timings';
 import { durationOf } from '../wait';
@@ -262,7 +263,7 @@ export const startHarnessServer = async (options: {
     cwd: target,
     detached: true,
     stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, NX_NO_CLOUD: 'true', NX_TUI: 'false', NX_DAEMON: 'false', FORCE_COLOR: '0' },
+    env: plainEnv({ ...process.env, NX_NO_CLOUD: 'true', NX_TUI: 'false', NX_DAEMON: 'false' }),
   });
 
   child = spawned;

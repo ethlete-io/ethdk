@@ -1,5 +1,4 @@
 import { unusedInVariantOf } from './system/sketch/unused-closure';
-import { spawnSync } from 'child_process';
 import { createHash } from 'crypto';
 import { existsSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
@@ -91,6 +90,7 @@ import {
   writeSketchFile,
   SKETCH_FILE,
 } from './system/sketch/sketch';
+import { spawnPlain } from '../plain-output';
 
 export const SKETCH_USAGE = [
   'sketch new <layer>/<name> [<layer>/<name>…] --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--name <sketch name>] [--round <title>] [--note <text>] [--variant-note <variant>=<text>]… [--override | --into-base] [--ready] [--product <name>]',
@@ -895,7 +895,7 @@ const stillReady = (options: { sketch: Sketch; again: boolean; reason: string })
   return 0;
 };
 
-const gitIn = (target: string, ...args: string[]) => spawnSync('git', args, { cwd: target, encoding: 'utf8' });
+const gitIn = (target: string, ...args: string[]) => spawnPlain(['git', ...args], { cwd: target });
 
 const mergeDirsOf = (product: ResolvedProduct) => [product.dir, ...(product.base ? [product.base.dir] : [])];
 
@@ -1212,7 +1212,7 @@ const baseCommitOf = (options: { context: Context; product: ResolvedProduct; ske
 
   if (dirs.length === 0) return null;
 
-  const log = spawnSync('git', ['log', '-1', '--format=%h', '--', ...dirs], { cwd: context.target, encoding: 'utf8' });
+  const log = spawnPlain(['git', 'log', '-1', '--format=%h', '--', ...dirs], { cwd: context.target });
 
   return log.status === 0 && log.stdout.trim() ? log.stdout.trim() : null;
 };

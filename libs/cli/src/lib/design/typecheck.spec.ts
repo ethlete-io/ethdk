@@ -11,10 +11,16 @@ vi.mock('child_process', async (importOriginal) => {
 
   return {
     ...actual,
-    execFileSync: (...args: Parameters<typeof actual.execFileSync>) => {
-      if (!silentFailure.active) return actual.execFileSync(...args);
+    spawnSync: (...args: Parameters<typeof actual.spawnSync>) => {
+      if (!silentFailure.active) return actual.spawnSync(...args);
 
-      throw Object.assign(new Error('spawnSync npx EPERM'), { code: 'EPERM', stdout: '', stderr: '' });
+      return {
+        error: Object.assign(new Error('spawnSync npx EPERM'), { code: 'EPERM' }),
+        status: null,
+        signal: null,
+        stdout: '',
+        stderr: '',
+      };
     },
   };
 });
