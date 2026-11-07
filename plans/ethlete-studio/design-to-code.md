@@ -4380,3 +4380,18 @@ replaces `prepare`; the CI Checks job, `yarn test:tools` and the start of `desig
 not `.husky/_`; after a cherry-pick of worktree commits the builder runs `yarn lint:changesets` and the design-rules
 gate on the picked range. The push of `next` stays held by ADR 0215.
 
+
+Built (2026-11-07): c0f079a74 (555). `"postinstall": "husky"`; `yarn hooks:check` in the CI Checks job; `design check`
+prints HOOKS NOT INSTALLED at start. Not verified: full `test:tools`, CI, a real `yarn install`.
+
+556\. Builder (2026-11-07), 555 slice: a relative `core.hooksPath` finds no `.husky/_` in a worktree (the folder is
+gitignored), so hooks did not run in agent worktrees even after the install. The builder set the absolute path by
+hand. A later `yarn install` sets the relative path again. Why no tool caught it: the 555 check accepted any path that
+resolves in the main checkout. Doc agent decision (technical): the postinstall runs a script that calls husky and then
+sets the absolute path when `.claude/worktrees` exists; `hooks:check` fails in a worktree when the path does not
+resolve there.
+
+557\. Builder (2026-11-07): the first commit with the hooks on took about 15 min (related specs and typecheck at high
+load). Why no tool caught it: no budget covers the pre-commit hook; on the Mac it never ran (555). Doc agent decision
+(applies ADRs 0017 and 0218, a fault seen on the slow machine becomes a budget): the hook joins the performance block
+(S7c). The builder measures it at low load per step and proposes a target; the target number goes to Tom.
