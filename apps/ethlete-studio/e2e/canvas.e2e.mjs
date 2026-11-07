@@ -2086,7 +2086,7 @@ const CASES = [
   },
   {
     name: 'hiding the panel at a panned and zoomed camera keeps the frames on screen',
-    pages: ['System', 'Flow'],
+    pages: ['System', 'Sketches', 'Flow'],
     run: async (page) => {
       const screenRect = () =>
         page.evaluate(

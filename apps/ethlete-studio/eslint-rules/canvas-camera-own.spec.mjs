@@ -13,6 +13,8 @@ RuleTester.itOnly = it.only;
 const PART = '/repo/apps/ethlete-studio/src/app/design-parts/demo/demo.component.ts';
 const SKETCHES = 'apps/ethlete-studio/src/app/design-parts/sketches/sketches.component.ts';
 
+const TEMPLATED = (name) => new URL(`./fixtures/templated/${name}.component.ts`, import.meta.url).pathname;
+
 const tester = new RuleTester({ languageOptions: { parser: tseslint.parser } });
 
 tester.run('canvas-camera-own', rule, {
@@ -27,6 +29,7 @@ tester.run('canvas-camera-own', rule, {
     { filename: PART, code: `this.canvas.show({ kind: 'visible', zoom: this.canvas.camera().zoom * factor });` },
     { filename: PART, code: `element.addEventListener('click', onClick);` },
     { filename: PART, code: '@Component({ template: `<button (click)="zoomIn.emit()"></button>` }) class A {}' },
+    { filename: TEMPLATED('click'), code: `@Component({ templateUrl: './click.component.html' }) class A {}` },
     {
       filename: PART,
       code: `class A { pan = signal({ x: 0, y: 0 }); }`,
@@ -58,6 +61,11 @@ tester.run('canvas-camera-own', rule, {
       errors: [{ messageId: 'listener' }],
     },
     { filename: PART, code: `list.onwheel = onWheel;`, errors: [{ messageId: 'listener' }] },
+    {
+      filename: TEMPLATED('wheel'),
+      code: `@Component({ templateUrl: './wheel.component.html' }) class A {}`,
+      errors: [{ messageId: 'listener' }],
+    },
     {
       filename: PART,
       code: `const clampPan = ({ x, y }: Pan, room: Pan): Pan => ({ x: Math.min(0, x), y: Math.max(-room.y, y) });`,

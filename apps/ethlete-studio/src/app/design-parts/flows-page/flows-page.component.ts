@@ -7,6 +7,7 @@ import {
   output,
   signal,
   TemplateRef,
+  untracked,
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
@@ -232,11 +233,10 @@ export class FlowsPageComponent {
   private pickedFlow: string | null = null;
   protected readonly LABELS = STUDIO_LABELS.flows;
   protected readonly ZOOM_STEP = ZOOM_STEP;
-  private canvas: CanvasViewport | null = null;
+  private canvas = signal<CanvasViewport | null>(null);
   private mounted: HTMLElement | null = null;
 
-  public zoom = signal(1);
-  protected percent = computed(() => Math.round(this.zoom() * 100));
+  protected percent = computed(() => Math.round((this.canvas()?.zoom() ?? 1) * 100));
   protected presetOptions = computed(() =>
     this.presets().length ? this.presets() : [{ value: this.preset(), label: this.preset() }],
   );
@@ -302,21 +302,23 @@ export class FlowsPageComponent {
     afterRenderEffect(() => this.mountCamera());
     afterRenderEffect(() => {
       this.covered();
-      this.canvas?.refresh();
+      untracked(() => this.canvas())?.refresh();
     });
     afterRenderEffect(() => this.resetOnPick());
   }
 
   public zoomBy(factor: number) {
-    this.canvas?.show({ kind: 'visible', zoom: this.canvas.camera().zoom * factor });
+    const canvas = this.canvas();
+
+    canvas?.show({ kind: 'visible', zoom: canvas.camera().zoom * factor });
   }
 
   protected zoomReset() {
-    this.canvas?.show({ kind: 'visible', zoom: 1 });
+    this.canvas()?.show({ kind: 'visible', zoom: 1 });
   }
 
   protected fit() {
-    this.canvas?.show({ kind: 'all' });
+    this.canvas()?.show({ kind: 'all' });
   }
 
   protected pickPreset(value: unknown) {
@@ -327,12 +329,13 @@ export class FlowsPageComponent {
     const selected = this.selected();
     const stage = this.stage()?.nativeElement;
     const previous = this.pickedFlow;
+    const canvas = untracked(() => this.canvas());
 
     this.pickedFlow = selected ?? null;
 
-    if (previous === null || previous === selected || !this.canvas || !stage) return;
+    if (previous === null || previous === selected || !canvas || !stage) return;
 
-    this.canvas.reset({ x: stage.offsetLeft, y: stage.offsetTop, zoom: 1 });
+    canvas.reset({ x: stage.offsetLeft, y: stage.offsetTop, zoom: 1 });
   }
 
   private mountCamera() {
@@ -343,14 +346,15 @@ export class FlowsPageComponent {
     if (!viewport || !world || !stage || viewport === this.mounted) return;
 
     this.mounted = viewport;
-    this.canvas = mountCanvasViewport({
-      viewport,
-      world,
-      frameSelector: 'figure',
-      padding: 24,
-      covered: () => this.covered(),
-      start: { x: stage.offsetLeft, y: stage.offsetTop, zoom: 1 },
-      onPaint: (camera) => this.zoom.set(camera.zoom),
-    });
+    this.canvas.set(
+      mountCanvasViewport({
+        viewport,
+        world,
+        frameSelector: 'figure',
+        padding: 24,
+        covered: () => this.covered(),
+        start: { x: stage.offsetLeft, y: stage.offsetTop, zoom: 1 },
+      }),
+    );
   }
 }

@@ -737,6 +737,15 @@ list: Sketches still owns its camera, flows owns a zoom copy. red-check said NOT
 stub `export default`. The rule skips external `.html` templates. Decided (technical): B213 - design-canvas owns the
 Sketches camera and exposes zoom as a signal for the flows chip, the known list goes empty, the rule reads
 `templateUrl`; red-check's default-export stub goes into B217.
+As built (B213, 2026-11-07): `components/design-canvas/frame-zoom-camera.ts` (`frameZoomCamera`) owns the Sketches
+pan, zoom (`'fit'` or a number), clamp and sticky-gutter offset; Sketches only reads it. Only the opening camera stays
+inside the content (the design's `pan()`); a camera the user moved is free and follows the viewport's left edge
+(the origin delta, as `hostLeft` in design-canvas), so hiding the panel no longer moves the frames. `CanvasViewport`
+exposes `zoom` as a signal and the flows chip reads it. CANVAS_CAMERA_KNOWN is empty; the rule reads the `templateUrl`
+file for event bindings (spec with a wheel fixture). The e2e case runs on System, Sketches and Flow. Verified:
+frame-zoom-camera.spec (origin shift past the content edge), sketches/flows-page/canvas-viewport specs, rule spec,
+lint. Not verified: the widened e2e case (run cut off by the wrap-up) and its red run on Sketches without the fix
+(B120 saw it red there before).
 
 266\. system-view.component.spec "on a flow" logs `ResizeObserver is not defined` 6 times (flows-page `mountCamera` ->
 canvas-viewport.ts:199, since ea4459688) and the suite passes (builder, 2026-11-03). Why no tool caught it: vitest

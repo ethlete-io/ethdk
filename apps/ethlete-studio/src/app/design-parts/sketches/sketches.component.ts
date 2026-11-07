@@ -29,8 +29,9 @@ import {
   signalElementDimensions,
 } from '@ethlete/core';
 import { CameraTarget } from '../../components/design-canvas/canvas-camera';
-import { Camera, clampZoom, panInsideRoom } from '../../components/design-canvas/canvas-math';
-import { mountFrameZoomViewport, panRoomOf } from '../../components/design-canvas/frame-zoom-viewport';
+import { Camera } from '../../components/design-canvas/canvas-math';
+import { FrameZoom, frameZoomCamera } from '../../components/design-canvas/frame-zoom-camera';
+import { mountFrameZoomViewport } from '../../components/design-canvas/frame-zoom-viewport';
 import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.component';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
@@ -54,8 +55,6 @@ import {
   SketchRow,
   SketchStatus,
 } from './sketches-sample';
-
-type Zoom = 'fit' | number;
 
 export type SketchMergeHold = { reason: string; dirty?: string[] };
 
@@ -127,11 +126,9 @@ type FitDom = {
   fold: HTMLElement | null;
 };
 
-type Pan = { x: number; y: number };
-
 const frameKeyOf = (row: SketchRow, state: string) => `${row.key} ${state}`;
 
-const zoomOf = (camera: 'fit' | '100' | Camera): Zoom =>
+const zoomOf = (camera: 'fit' | '100' | Camera): FrameZoom =>
   camera === 'fit' ? 'fit' : camera === '100' ? 1 : camera.zoom;
 
 const noteAt = (scale: number, fit: number) => {
@@ -221,20 +218,14 @@ export class SketchesComponent {
   protected readonly COLUMN_GAP = COLUMN_GAP;
   protected readonly FRAME_KEY_OF = frameKeyOf;
 
-  public zoom = linkedSignal<Zoom>(() => this.restoredCamera()?.zoom ?? zoomOf(this.camera()));
+  protected canvas = frameZoomCamera(() => {
+    const camera = this.camera();
+
+    return this.restoredCamera() ?? (typeof camera === 'object' ? camera : { x: 0, y: 0, zoom: zoomOf(camera) });
+  });
   protected reasonOpen = linkedSignal(() => this.reason());
   protected selectedFrame = signal<string | null>(null);
   private fitAt = signal<number | null>(null);
-  private pan = linkedSignal<Pan>(() => {
-    const restored = this.restoredCamera();
-    const camera = this.camera();
-
-    if (restored) return { x: restored.x, y: restored.y };
-
-    return typeof camera === 'object' ? { x: camera.x, y: camera.y } : { x: 0, y: 0 };
-  });
-  private room = signal<Pan>({ x: 0, y: 0 }, { equal: (a, b) => a.x === b.x && a.y === b.y });
-  private shownPan = computed(() => panInsideRoom(this.pan(), this.room()));
   private userCamera$ = new Subject<Camera | null>();
   private listedRows = computed(() =>
     this.fresh() ? this.rows().filter((row) => row.key !== SKETCH_CURRENT) : this.rows(),
@@ -271,7 +262,7 @@ export class SketchesComponent {
   private fitScale = computed(() => this.fitAt() ?? 1);
 
   protected scale = computed(() => {
-    const zoom = this.zoom();
+    const zoom = this.canvas.zoom();
 
     return zoom === 'fit' ? this.fitScale() : zoom;
   });
@@ -337,19 +328,13 @@ export class SketchesComponent {
   protected percent = computed(() => {
     return Math.round(this.shownZoom() * 100);
   });
-  protected panX = computed(() => Math.max(0, -this.shownPan().x));
-  protected worldTransform = computed(() => {
-    const { x, y } = this.shownPan();
-
-    return `translate(${x}px, ${y}px) scale(1)`;
-  });
 
   constructor() {
     afterNextRender(() => {
       const teardown = mountFrameZoomViewport({
         viewport: this.list().nativeElement,
         frameSelector: '[data-sk-frame]',
-        camera: () => ({ ...this.shownPan(), zoom: this.shownZoom() }),
+        camera: () => ({ ...this.canvas.pan(), zoom: this.shownZoom() }),
         move: (camera) => this.move(camera),
         show: (target, frame) => this.show(target, frame),
         select: (frame) => this.selectedFrame.set(frame.dataset['skFrame'] ?? null),
@@ -399,7 +384,7 @@ export class SketchesComponent {
         this.noteSize();
         this.shownRows();
         this.matrixRows();
-        this.room.set(panRoomOf(this.list().nativeElement, this.world().nativeElement));
+        this.canvas.measure(this.list().nativeElement, this.world().nativeElement);
       },
     });
 
@@ -447,8 +432,7 @@ export class SketchesComponent {
   }
 
   protected fit() {
-    this.zoom.set('fit');
-    this.pan.set({ x: 0, y: 0 });
+    this.canvas.fit();
     this.userCamera$.next(null);
   }
 
@@ -559,22 +543,18 @@ export class SketchesComponent {
   }
 
   private shownZoom() {
-    const zoom = this.zoom();
+    const zoom = this.canvas.zoom();
     const row = this.shownRows().find((candidate) => candidate.key !== this.drawnKey() && candidate.shots.length > 0);
 
     return zoom === 'fit' ? (row ? this.scale() : 1) : zoom;
   }
 
   private zoomTo(zoom: number) {
-    this.move({ ...this.shownPan(), zoom });
+    this.move({ ...this.canvas.pan(), zoom });
   }
 
   private move(camera: Camera) {
-    const zoom = clampZoom(camera.zoom);
-
-    if (zoom !== this.shownZoom()) this.zoom.set(zoom);
-    this.pan.set({ x: camera.x, y: camera.y });
-    this.userCamera$.next({ x: camera.x, y: camera.y, zoom });
+    this.userCamera$.next(this.canvas.move(camera, this.shownZoom()));
   }
 
   private show(target: CameraTarget, pressed: HTMLElement | null) {
@@ -602,7 +582,7 @@ export class SketchesComponent {
         write: () => {
           const moved = frame.getBoundingClientRect();
           const view = list.getBoundingClientRect();
-          const { x, y } = this.shownPan();
+          const { x, y } = this.canvas.pan();
 
           this.move({
             x: x + view.left + FOCUS_PADDING - moved.left,

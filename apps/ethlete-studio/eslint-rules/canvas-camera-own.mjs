@@ -1,3 +1,6 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+
 const CLAMP_WORDS = new Set(['pan', 'camera']);
 const STATE_WORDS = new Set([...CLAMP_WORDS, 'zoom', 'offset']);
 const STATE_FACTORIES = new Set(['signal', 'linkedSignal', 'model']);
@@ -194,7 +197,14 @@ export const canvasCameraOwn = {
         if (named || inCameraContext || node.arguments.some((arg) => readsCamera(arg))) report(node, 'clamp');
       },
       Literal(node) {
-        if (typeof node.value === 'string') checkEventText(node, node.value);
+        if (typeof node.value !== 'string') return;
+
+        checkEventText(node, node.value);
+        if (node.parent?.type === 'Property' && keyName(node.parent.key) === 'templateUrl') {
+          const template = resolve(dirname(filename), node.value);
+
+          if (existsSync(template)) checkEventText(node, readFileSync(template, 'utf8'));
+        }
       },
       TemplateElement(node) {
         checkEventText(node, node.value.cooked ?? node.value.raw);

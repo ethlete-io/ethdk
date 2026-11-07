@@ -127,8 +127,8 @@
       <ethlete-canvas-viewport #list class="size-full [--st-shell-inset-left:0px]" data-sk-rows>
         <div
           #world
-          [class.w-max]="transposed() || zoom() !== 'fit'"
-          [style.transform]="worldTransform()"
+          [class.w-max]="transposed() || canvas.zoom() !== 'fit'"
+          [style.transform]="canvas.transform()"
           class="flex min-w-full origin-top-left flex-col gap-space-2 pb-16"
         >
           @if (transposed()) {
@@ -144,10 +144,10 @@
                   #gutter
                   [style.font-size.px]="noteSize()"
                   [style.grid-row]="matrixTop() + 1 + line * 2 + ' / span 2'"
-                  [style.transform]="'translateX(' + panX() + 'px)'"
+                  [style.transform]="'translateX(' + canvas.stickyLeft() + 'px)'"
                   [class]="
                     (headHidden() ? 'text-transparent' : 'text-et-surface') +
-                    (panX() > 0 ? ' shadow-[1px_0_0_var(--et-surface-border-solid)]' : '')
+                    (canvas.stickyLeft() > 0 ? ' shadow-[1px_0_0_var(--et-surface-border-solid)]' : '')
                   "
                   class="relative z-2 col-start-1 flex items-center self-stretch bg-et-surface-bg pr-space-3 font-code leading-[1.35]"
                   data-sk-gutter

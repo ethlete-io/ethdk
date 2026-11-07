@@ -1,3 +1,4 @@
+import { Signal, signal } from '@angular/core';
 import { CameraScene, CameraTarget, cameraAfterWheel, cameraFor, shortcutTarget, visibleFrame } from './canvas-camera';
 import { Camera, panCamera, Rect } from './canvas-math';
 import { trackPointerFocus } from './pointer-focus';
@@ -23,6 +24,7 @@ export type CanvasViewportOptions = {
 
 export type CanvasViewport = {
   camera: () => Camera;
+  zoom: Signal<number>;
   show: (target: CameraTarget) => void;
   /** Moves the camera as the user would and stops it fitting all. */
   reset: (camera: Camera) => void;
@@ -61,6 +63,7 @@ export const mountCanvasViewport = (options: CanvasViewportOptions): CanvasViewp
   let focused: HTMLElement | null = null;
   let pressed: HTMLElement | null = null;
   let following = !options.start;
+  const zoom = signal(camera.zoom);
 
   trackPointerFocus(viewport);
 
@@ -98,6 +101,7 @@ export const mountCanvasViewport = (options: CanvasViewportOptions): CanvasViewp
 
   const paint = () => {
     world.style.transform = `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`;
+    zoom.set(camera.zoom);
     if (chip?.label) chip.label.textContent = `${Math.round(camera.zoom * 100)}%`;
     options.onPaint?.(camera, frames);
   };
@@ -203,5 +207,5 @@ export const mountCanvasViewport = (options: CanvasViewportOptions): CanvasViewp
   settle();
   void document.fonts.ready.then(settle);
 
-  return { camera: () => camera, show, reset: move, refresh: settle };
+  return { camera: () => camera, zoom: zoom.asReadonly(), show, reset: move, refresh: settle };
 };
