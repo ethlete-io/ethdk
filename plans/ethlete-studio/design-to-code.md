@@ -4141,3 +4141,9 @@ e2e, and the builder then built findings 580-585 while a subagent hunted the cau
 feature work on a red next. Tool fix (technical): the builder skill says a red CI (Next) blocks every feature slice,
 and a cause not proven within 15 minutes means revert the suspect commit first; `design status` (B415 badge) shows
 "CI rot" and the builder start refuses a feature slice while it is red.
+
+588\. Builder (2026-11-07, B434): the Studio e2e job (added in 94606402c) never passed in CI. It built only `cli`, so
+the design server answered `/__design/system` with 503 "missing build" and Studio stayed on "Design-Server startet".
+A green run hid it because the job only runs when the push changed Studio or design files. A new CI job had no proof
+that it ever passed. Tool fix (technical): a commit that adds or changes a CI job carries a link to a run where that
+job ran and passed; until then the job runs with `continue-on-error`. Built for this job in 5c8b0d276 (ADR 0227).
