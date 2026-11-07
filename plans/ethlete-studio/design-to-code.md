@@ -4264,3 +4264,11 @@ upstream back to `origin/next`. Tool fix (technical): the unpushed badge (B415) 
 579\. Builder (2026-11-07): two docs-only pushes of the doc agent (plans files) cancelled the running CI (Next) runs
 42405979630 and 42408713788, so the CI fix waited for a third run. Tool fix (technical): CI (Next) skips a push that
 changes only `plans/` and ADR files (`paths-ignore`), so it does not cancel a run in progress.
+
+580\. Builder (2026-11-07, B426): `elements/canvas-frames` named an old `implements` component that the app no longer
+renders at the part's slot; it only looked live through the system-page fallback and an inbox import. No rule checks
+that the `implements` component is what the app renders there. Tool fix (technical): the page harness records the
+host it renders at each part slot, and a check flags an `implements` file whose host never appears.
+
+581\. Builder (2026-11-07, B426): the base clone of the visible-change check broke twice ("reference is not a tree",
+missing alternates). Tool fix (technical): `baseCheckoutOf` fetches or clones again after a failed checkout.
