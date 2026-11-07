@@ -232,6 +232,7 @@ describe('serveDesign', () => {
     const installed = resolve(installedAssetRoot(), 'web', probe);
 
     try {
+      mkdirSync(dirname(installed), { recursive: true });
       writeFileSync(installed, 'started', 'utf8');
       expect(await serveDesign({ target: makeTarget({ port: 4999 }) })).toBe(0);
       writeFileSync(installed, 'rebuilt', 'utf8');
