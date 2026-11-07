@@ -33,7 +33,8 @@ const MAX_DEPTH = 16;
 type Source = { path: string; text: string };
 type Body = { owner: string; text: string };
 
-const add = <T>(map: Map<string, T[]>, entry: [string, T]) => map.set(entry[0], [...(map.get(entry[0]) ?? []), entry[1]]);
+const add = <T>(map: Map<string, T[]>, entry: [string, T]) =>
+  map.set(entry[0], [...(map.get(entry[0]) ?? []), entry[1]]);
 
 const ownerOf = (path: string) => path.replace(/\.(?:ts|html)$/u, '');
 

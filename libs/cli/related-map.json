@@ -1,5 +1,6 @@
 {
   "sourceWide": [
+    "src/lib/design/render-missing-dist.spec.ts",
     "src/lib/design/runtime-imports.spec.ts",
     "src/lib/design/studio-api-level.spec.ts",
     "src/lib/design/system/check-rules.spec.ts",
