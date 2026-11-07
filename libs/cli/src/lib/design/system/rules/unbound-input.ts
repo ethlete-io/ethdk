@@ -6,13 +6,13 @@ import { KNOWN_UNBOUND_INPUTS, KnownUnboundInput } from './unbound-input-known';
 
 const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
 
-const tagsOf = (selector: string, texts: string[]): string[] => {
+export const tagsOf = (selector: string, texts: string[]): string[] => {
   const tag = new RegExp(`<${escaped(selector)}(?=[\\s/>])((?:[^>"']|"[^"]*"|'[^']*')*)>`, 'gu');
 
   return texts.flatMap((text) => [...text.matchAll(tag)].map((match) => match[1] as string));
 };
 
-const isBound = (name: string, tags: string[]) =>
+export const isBound = (name: string, tags: string[]) =>
   tags.some((attributes) => new RegExp(`(?:\\[\\(?${name}\\)?\\]|(?<![\\w\\[(-])${name}\\s*=)`, 'u').test(attributes));
 
 /** The inputs of `components` that no template in `appDir` binds on the component's own tag, as `UNBOUND-INPUT` problems naming the component file. */

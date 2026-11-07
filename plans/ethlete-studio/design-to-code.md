@@ -482,6 +482,14 @@ design draws but the app can never reach passes every pixel check, because compa
 (technical): B153 compare accepts every design prop the harness map consumes (first); B154 STATE-NO-SOURCE - each
 design state prop of an implemented part maps to app data or to an input a consumer binds; B155 UNBOUND-INPUT and
 SAMPLE-DEFAULT, both ratcheted. App fix: the sketch list delivers the hold data.
+As built (B154, builder, 2026-11-07): STATE-NO-SOURCE is a draw rule next to DROPPED-PROP, emitted from the same
+state load (`statesWithoutSourceOf`, dropped-props.ts). For each state prop that names an input of the part's
+component, some tag of the component's selector in the app's sources must feed it, with an expression or a fixed
+value equal to the state's; unbound, or bound only to a different constant, is a hit per state. Parts without a
+selector or with inherited inputs are skipped. The part's slow hash now covers the app's sources, so a consumer edit
+re-runs it. Not built: "maps to app data" beyond a template binding (a service the component injects counts as no
+source); hits on existing parts are not baselined yet - the first `--slow` run lists them and each needs a rule
+baseline entry (ADR 0201). Unit specs only; no product run.
 
 235\. CUT-CONTROL (c5d3271a1) reports 0 on pages/sketches although the design still clips "Übernehmen" (finding
 228); the rule was proven only on a fixture, never on the case that motivated it (builder, 2026-11-03). Cause

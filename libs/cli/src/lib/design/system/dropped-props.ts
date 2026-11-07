@@ -3,11 +3,13 @@ import { resolve } from 'path';
 import ts from 'typescript';
 import { INTERACTIONS } from '../force-interactions';
 import { DesignConfig } from '../paths';
-import { DROPPED_PROP_RULE } from './build-ready-contract';
+import { DROPPED_PROP_RULE, STATE_NO_SOURCE_RULE } from './build-ready-contract';
 import { productSampledPropsOf } from './harness-samples';
 import { designOnlyPropsOf } from './part-compare';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
+import { appSourcesOf, selectorOf } from './rules/implemented-components';
+import { isBound, tagsOf } from './rules/unbound-input';
 import { partLinkOf } from './sketch/part-definition';
 import { productModuleIdOf } from './system-modules';
 import { sourceFileOf } from './ts-source';
@@ -131,6 +133,69 @@ export const droppedStatePropsOf = (options: {
   return dropped;
 };
 
+const CONSTANT_BINDING = /^(?:'([^']*)'|"([^"]*)"|true|false|null|undefined|-?\d+(?:\.\d+)?)$/u;
+
+type Binding = { expression: string; fixed: boolean };
+
+const bindingOf = (name: string, attributes: string): Binding | null => {
+  const quoted = '(?:"([^"]*)"|\'([^\']*)\')';
+  const bound = attributes.match(new RegExp(`\\[\\(?${name}\\)?\\]\\s*=\\s*${quoted}`, 'u'));
+  const fixed = attributes.match(new RegExp(`(?<![\\w\\[(-])${name}\\s*=\\s*${quoted}`, 'u'));
+
+  if (bound) return { expression: (bound[1] ?? bound[2] ?? '').trim(), fixed: false };
+
+  return fixed ? { expression: fixed[1] ?? fixed[2] ?? '', fixed: true } : null;
+};
+
+const constantOf = (binding: Binding): string | null => {
+  if (binding.fixed) return binding.expression;
+
+  const match = binding.expression.match(CONSTANT_BINDING);
+
+  return match ? (match[1] ?? match[2] ?? match[0]) : null;
+};
+
+/**
+ * The state props that name an input no consumer template feeds: no tag of `selector` binds it, or every tag binds a
+ * constant that differs from the value the state sets, so the app can never reach that state.
+ */
+export const statesWithoutSourceOf = (options: {
+  states: Record<string, unknown>;
+  inputs: readonly string[];
+  selector: string;
+  templates: readonly string[];
+}): Map<string, string[]> => {
+  const { states, inputs, selector, templates } = options;
+  const tags = tagsOf(selector, [...templates]);
+  const missing = new Map<string, string[]>();
+
+  for (const [state, props] of Object.entries(states)) {
+    if (!isRecord(props)) continue;
+
+    const keys = Object.entries(props)
+      .filter(([key]) => inputs.includes(key))
+      .filter(([key, value]) => {
+        if (!isBound(key, tags)) return true;
+
+        const constants = tags.flatMap((attributes) => {
+          const binding = bindingOf(key, attributes);
+
+          return binding ? [constantOf(binding)] : [];
+        });
+
+        return constants.length > 0 && constants.every((constant) => constant !== null && constant !== String(value));
+      })
+      .map(([key]) => key);
+
+    if (keys.length > 0) missing.set(state, keys);
+  }
+
+  return missing;
+};
+
+export const stateNoSourceMessageOf = (props: readonly string[], selector: string) =>
+  `the design prop${props.length > 1 ? 's' : ''} ${props.join(', ')} ${props.length > 1 ? 'have' : 'has'} no data source in the app - no template feeds ${props.length > 1 ? 'them' : 'it'} on ${selector} with anything but a different fixed value, so the app can never reach this state`;
+
 export const droppedPropsMessageOf = (dropped: readonly string[]) =>
   `the design prop${dropped.length > 1 ? 's' : ''} ${dropped.join(', ')} ${dropped.length > 1 ? 'have' : 'has'} no input on the app component - the harness drops ${dropped.length > 1 ? 'them' : 'it'}, so compare cannot check this state`;
 
@@ -159,9 +224,13 @@ export const droppedPropProblemsOf = async (options: {
     )
       return [];
 
-    const inputs = componentInputsOf(readFileSync(file, 'utf8'));
+    const text = readFileSync(file, 'utf8');
+    const inputs = componentInputsOf(text);
+    const src = path?.match(/^(.*?\/src)\//u)?.[1];
 
-    return inputs === null ? [] : [{ part, inputs }];
+    return inputs === null
+      ? []
+      : [{ part, inputs, selector: selectorOf(text), appDir: src ? resolve(target, src) : null }];
   });
 
   if (candidates.length === 0) return [];
@@ -169,7 +238,7 @@ export const droppedPropProblemsOf = async (options: {
   return loadingOn({ target, config, warm: options.warm }, async (server) => {
     const problems: Problem[] = [];
 
-    for (const { part, inputs } of candidates) {
+    for (const { part, inputs, selector, appDir } of candidates) {
       const module = (await server
         .ssrLoadModule(productModuleIdOf({ file: part.file, product: product.name }))
         .catch(() => null)) as { default?: { states?: unknown } } | null;
@@ -184,6 +253,18 @@ export const droppedPropProblemsOf = async (options: {
           rule: DROPPED_PROP_RULE,
           file: part.file,
           message: `${state}: ${droppedPropsMessageOf(dropped)}`,
+          at: state,
+        });
+
+      if (selector === null || appDir === null || !existsSync(appDir)) continue;
+
+      const templates = appSourcesOf(appDir).map(({ text }) => text);
+
+      for (const [state, props] of statesWithoutSourceOf({ states, inputs, selector, templates }))
+        problems.push({
+          rule: STATE_NO_SOURCE_RULE,
+          file: part.file,
+          message: `${state}: ${stateNoSourceMessageOf(props, selector)}`,
           at: state,
         });
     }

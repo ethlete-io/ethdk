@@ -1,5 +1,37 @@
 import { describe, expect, it } from 'vitest';
-import { componentInputsOf, droppedStatePropsOf } from './dropped-props';
+import { componentInputsOf, droppedStatePropsOf, statesWithoutSourceOf } from './dropped-props';
+
+describe('statesWithoutSourceOf', () => {
+  const states = { rest: { hold: false }, paused: { hold: true, reason: 'late' } };
+  const inputs = ['hold', 'reason'];
+  const of = (templates: string[]) => statesWithoutSourceOf({ states, inputs, selector: 'app-row', templates });
+
+  it('reports a state prop whose input no template binds', () => {
+    expect(of(['<app-row [hold]="row.hold" />'])).toEqual(new Map([['paused', ['reason']]]));
+  });
+
+  it('reports every state when the component is used nowhere', () => {
+    expect(of([])).toEqual(
+      new Map([
+        ['rest', ['hold']],
+        ['paused', ['hold', 'reason']],
+      ]),
+    );
+  });
+
+  it('accepts a bound expression, a two-way binding and a fixed value equal to the state value', () => {
+    expect(of(['<app-row [(hold)]="held" [reason]="row.reason" />']).size).toBe(0);
+    expect(of(['<app-row [hold]="x" reason="late" />']).size).toBe(0);
+  });
+
+  it('reports a prop bound only to a constant the state does not set', () => {
+    expect(of(['<app-row [hold]="false" [reason]="r" />'])).toEqual(new Map([['paused', ['hold']]]));
+  });
+
+  it('counts a prop as sourced when any tag binds a dynamic value', () => {
+    expect(of(['<app-row [hold]="false" [reason]="r" />', '<app-row [hold]="h" [reason]="r" />']).size).toBe(0);
+  });
+});
 
 describe('componentInputsOf', () => {
   it('reads signal inputs, models, decorated inputs and aliases', () => {

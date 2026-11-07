@@ -9,9 +9,10 @@ import {
   DROPPED_PROP_RULE,
   SDK_ERROR_RULE,
   SlowProblemsOf,
+  STATE_NO_SOURCE_RULE,
   VISIBLE_CHANGE_RULE,
 } from './build-ready-contract';
-import { designHashOf, fileHashesOf, hashOfFiles, sha16 } from './design-hash';
+import { designHashOf, FileHashes, fileHashesOf, hashOfFiles, sha16 } from './design-hash';
 import { harnessOf } from './harness-map';
 import { READY_FILE, readReady } from './part-ready';
 import { Problem } from './problem';
@@ -20,11 +21,13 @@ import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { APP_SPEC_RULE } from './rules/app-spec';
 import { UNCOVERED_REGION_RULE } from './rules/uncovered-region';
 import { unbaselinedProblemsOf } from './rule-baseline';
+import { appSourcesOf } from './rules/implemented-components';
 import { partLinkOf } from './sketch/part-definition';
 
 export const PRODUCT_PART = '(product)';
 
-export const isDrawRule = (rule: string) => [CONTROL_STATE_RULE, DROPPED_PROP_RULE, ACTION_LOST_RULE].includes(rule);
+export const isDrawRule = (rule: string) =>
+  [CONTROL_STATE_RULE, DROPPED_PROP_RULE, STATE_NO_SOURCE_RULE, ACTION_LOST_RULE].includes(rule);
 
 /** Whether the `--slow` set runs `rule`, so `check --rules` does not. */
 export const isSlowRule = (rule: string) =>
@@ -172,6 +175,18 @@ const contextOf = (product: ResolvedProduct, base?: string): PartContext => {
   };
 };
 
+const consumersOf = (root: string, component: string | null): FileHashes => {
+  const src = component?.match(/^(.*?\/src)\//u)?.[1];
+  const dir = src ? resolve(root, src) : null;
+
+  return dir && existsSync(dir)
+    ? fileHashesOf(
+        root,
+        appSourcesOf(dir).map(({ path }) => path),
+      )
+    : {};
+};
+
 const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
   const { product, root, harness, pages, base } = context;
   const key = partKeyOf(part);
@@ -184,7 +199,7 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
   const app = linked === null ? {} : appFilesOf({ root, component: linked });
   const rules = [
     ...(own && !key.startsWith('pages/') && DECLARES_CONTROLS.test(part.source) ? [CONTROL_STATE_RULE] : []),
-    ...(own && linked !== null && existsSync(resolve(root, linked)) ? [DROPPED_PROP_RULE] : []),
+    ...(own && linked !== null && existsSync(resolve(root, linked)) ? [DROPPED_PROP_RULE, STATE_NO_SOURCE_RULE] : []),
     ...(component !== null && harness?.specs ? [APP_SPEC_RULE] : []),
     ...(pages?.has(key) ? [UNCOVERED_REGION_RULE] : []),
     ...(component !== null ? [VISIBLE_CHANGE_RULE] : []),
@@ -213,6 +228,7 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
         hashOfFiles(app),
         hashOfFiles(specs),
         hashOfFiles(live),
+        rules.includes(STATE_NO_SOURCE_RULE) ? hashOfFiles(consumersOf(root, linked)) : '',
         rules.includes(VISIBLE_CHANGE_RULE) ? base : '',
       ].join('\0'),
     ),
