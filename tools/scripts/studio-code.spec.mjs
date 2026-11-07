@@ -5,7 +5,7 @@ import { connect, createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { APP_SOURCES, AREAS, areaState, cliCopyPlan, ensureCliCopy } from './studio-code.mjs';
+import { APP_SOURCES, AREAS, areaState, cliCopyPlan, ensureCliCopy, pushStateOf } from './studio-code.mjs';
 
 const A = 'a'.repeat(40);
 const B = 'b'.repeat(40);
@@ -184,6 +184,25 @@ test('a commit to a lib the app imports moves the frontend, a host commit does n
     commit('apps/ethlete-studio/src-tauri/main.rs', 'one\n');
 
     assert.equal(areaState(root).frontend.latest, lib);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('the push state comes from the built CLI and is null without one', () => {
+  const root = mkdtempSync(join(tmpdir(), 'studio-code-spec-'));
+
+  try {
+    assert.equal(pushStateOf(root), null);
+
+    const module = join(root, 'dist/libs/cli/src/lib/design');
+    mkdirSync(module, { recursive: true });
+    writeFileSync(
+      join(module, 'push-status.js'),
+      `exports.pushStatusOf = (checkout) => ({ base: 'origin/next', unpushed: 4, oldestAt: 'x', oldestAgeHours: 2.5, gate: checkout.length ? 'red' : 'green', gateAt: null });`,
+    );
+
+    assert.deepEqual(pushStateOf(root), { unpushed: 4, oldestAgeHours: 2.5, gate: 'red' });
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

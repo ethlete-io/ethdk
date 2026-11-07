@@ -9,6 +9,7 @@
       [update]="update()"
       [notice]="codeNoticeAction() !== null"
       [noticeText]="codeNoticeText()"
+      [push]="codeWatch.push()"
       [product]="product()"
       [restart]="codeWatch.restart()"
       (update)="updateRequest.emit($event)"

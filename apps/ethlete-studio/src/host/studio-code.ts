@@ -1,10 +1,15 @@
 import { Observable } from 'rxjs';
 import { invokeHost$ } from './invoke';
 
+export type PushGate = 'green' | 'red' | 'unknown';
+
+export type PushState = { unpushed: number; oldestAgeHours: number | null; gate: PushGate };
+
 export type StudioCodeState = {
   cli: { running: string | null; latest: string | null; dirty: boolean };
   frontend: { latest: string | null };
   host: { running: string | null; latest: string | null };
+  push?: PushState | null;
 };
 
 export const studioCodeState$ = (): Observable<StudioCodeState | null> =>

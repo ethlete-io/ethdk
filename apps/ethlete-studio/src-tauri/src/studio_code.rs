@@ -28,6 +28,16 @@ struct Areas {
     cli: CliArea,
     frontend: Area,
     host: Area,
+    #[serde(default)]
+    push: Option<PushState>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct PushState {
+    unpushed: u32,
+    oldest_age_hours: Option<f64>,
+    gate: String,
 }
 
 #[derive(Deserialize)]
@@ -74,6 +84,7 @@ pub struct CodeState {
     cli: CliCode,
     frontend: FrontendCode,
     host: HostCode,
+    push: Option<PushState>,
 }
 
 async fn run_script(command: &str) -> StudioResult<(String, Vec<String>)> {
@@ -181,6 +192,7 @@ pub async fn studio_code_state(servers: tauri::State<'_, DesignServers>) -> Stud
             running: host_running(&areas.host.latest),
             latest: areas.host.latest,
         },
+        push: areas.push,
     }))
 }
 

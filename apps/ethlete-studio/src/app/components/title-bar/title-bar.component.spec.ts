@@ -13,6 +13,7 @@ type Props = Omit<WindowChrome, 'preferNoCsd'> & {
   notice?: boolean;
   noticeText?: string | null;
   restart?: 'pending' | 'failed' | null;
+  push?: { unpushed: number; age: string; gate: 'green' | 'red' | 'unknown' } | null;
   product?: string;
   part?: string;
 };
@@ -110,6 +111,29 @@ describe('TitleBarComponent', () => {
     bar?.lastElementChild?.querySelector<HTMLElement>('button')?.click();
 
     expect(events).toHaveLength(1);
+  });
+
+  it('draws the push badge before Update, filled with the gate advice only on a red gate', () => {
+    const red = render({
+      ...linux([], ['close']),
+      update: true,
+      push: { unpushed: 158, age: '31,5 h', gate: 'red' },
+    }).bar;
+    const state = red?.lastElementChild?.firstElementChild as HTMLElement | null;
+
+    expect(state?.matches('[data-push-state]')).toBe(true);
+    expect(state?.textContent?.trim()).toBe('158 ungepusht · 31,5 h');
+    expect(state?.title).toBe('Push-Gate rot - vor jedem Feature-Slice beheben');
+    expect(state?.querySelector('et-badge')?.getAttribute('data-variant')).toBe('filled');
+
+    TestBed.resetTestingModule();
+    const open = render({ ...linux([], []), push: { unpushed: 1, age: '0 h', gate: 'unknown' } }).bar;
+
+    expect(open?.querySelector<HTMLElement>('[data-push-state]')?.title).toBe('Push-Gate nicht gelaufen');
+    expect(open?.querySelector('[data-push-state] et-badge')?.getAttribute('data-variant')).toBe('tonal');
+
+    TestBed.resetTestingModule();
+    expect(render(linux([], [])).bar?.querySelector('[data-push-state]')).toBeNull();
   });
 
   it('fires restart from the notice button and hides Update without an update', () => {

@@ -1,5 +1,5 @@
 import { StudioCodeState } from '../host/studio-code';
-import { codeNoticeOf } from './code-watch';
+import { codeNoticeOf, pushNoticeOf } from './code-watch';
 
 const A = 'a'.repeat(40);
 const B = 'b'.repeat(40);
@@ -57,5 +57,22 @@ describe('codeNoticeOf', () => {
 
   it('asks nothing about the cli when Studio started no server from a copy', () => {
     expect(codeNoticeOf({ ...settled, cli: { running: null, latest: B, dirty: true } }, A)).toBeNull();
+  });
+});
+
+describe('pushNoticeOf', () => {
+  it('passes the unpushed commits, the gate and the age of the oldest in hours', () => {
+    expect(pushNoticeOf({ unpushed: 158, oldestAgeHours: 31.5, gate: 'red' })).toEqual({
+      unpushed: 158,
+      age: '31,5 h',
+      gate: 'red',
+    });
+    expect(pushNoticeOf({ unpushed: 2, oldestAgeHours: null, gate: 'unknown' })?.age).toBe('0 h');
+  });
+
+  it('shows nothing when everything is pushed or the host reports no push state', () => {
+    expect(pushNoticeOf({ unpushed: 0, oldestAgeHours: null, gate: 'unknown' })).toBeNull();
+    expect(pushNoticeOf(null)).toBeNull();
+    expect(pushNoticeOf(undefined)).toBeNull();
   });
 });

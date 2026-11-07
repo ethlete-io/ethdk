@@ -15,6 +15,10 @@ export const STUDIO_LABELS = {
     restart: 'Neu starten',
     restartFailedTitle: 'Neustart fehlgeschlagen',
     restartFailedMessage: 'Der Design-Server antwortet nicht. Das Log steht im Studio-Menü.',
+    push: ({ unpushed, age }: { unpushed: number; age: string }) => `${unpushed} ungepusht · ${age}`,
+    pushAge: (hours: string) => `${hours} h`,
+    pushGate: { green: 'Push-Gate grün', red: 'Push-Gate rot', unknown: 'Push-Gate nicht gelaufen' },
+    pushRedAdvice: 'vor jedem Feature-Slice beheben',
   },
   openFolder: {
     refusedTitle: 'Ordner nicht geöffnet',

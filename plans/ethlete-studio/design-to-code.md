@@ -3315,11 +3315,15 @@ As built (B415, CLI part): `design status [--json]` without a call prints the un
 (`origin/next` without one), the age of the oldest, and the push gate result for this exact head (green, red, or unknown
 when the head moved since the gate ran). `design-rules-gate.mjs` leaves the result as a receipt in the checks folder of
 the temp dir. Studio UI not built: it needs a new visual element with no design - sketch needed.
-Then (2026-11-07): the sketch `components/title-bar@push-state` (a chip right, b banner, c) is ready for Tom's pick.
-desk/B415 (db778132b) built a chip in the left group of the title bar as the recommendation and is held until the
-pick; its data path (`studio-code.mjs state` -> `push`, host passthrough, `injectCodeWatch().push`) carries over to
-any variant. Landed alone: a static `et-chip` no longer counts as an undeclared control (`SDK_CONTROLS` matches only a
-removable or role-carrying chip; `sdk-controls.spec.ts` fails on the old selector).
+Then (2026-11-07): the sketch `components/title-bar@push-state` (a chip right, b banner, c inline text) was
+rebased onto the restart busy state (181b604bf, ported by hand) and readied; the three variants draw visibly different.
+As built (B415, 2026-11-07): Empfehlung gebaut: variant a, a small SDK badge before Update (count and age of the oldest,
+check/warning/error icon; tonal, warning theme when the gate did not run, filled error theme on red, title says fix before
+any feature slice). b (full-width banner under the bar) and c (red inline text) rejected. Merged into
+`components/title-bar`; the app follows: desk/B415's data path (`studio-code.mjs state` -> `push`, host passthrough,
+`injectCodeWatch().push`) carried over, its left-group `et-chip` replaced by an `et-badge` in the right cluster
+(`push` input `{ unpushed, age, gate }`). Landed alone earlier: the `SDK_CONTROLS` et-chip fix. Verified: title-bar,
+code-watch, shell-main specs, `studio-code.spec.mjs`. Not verified: `design compare` of the push states, `cargo check`.
 
 521\. Tom (2026-11-06, screenshots of the builder's shells): "6 minuten hard blocking auf dem builder ist inakzeptabel.
 das tooling muss schneller werden". The builder ran nine `compare` runs one after another in the foreground for the

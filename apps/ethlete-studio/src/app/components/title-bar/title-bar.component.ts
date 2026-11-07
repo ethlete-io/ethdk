@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, output, ViewEncapsulation } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
+  BADGE_IMPORTS,
   BUTTON_IMPORTS,
   TOOLTIP_IMPORTS,
   WINDOW_CONTROL_BUTTON_KINDS,
@@ -14,6 +15,8 @@ import { isWindowMaximized$, WindowButton, WindowChrome } from '../../../host/wi
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { ErrorToastComponent } from '../../design-parts/error-toast/error-toast.component';
 import { TitleSearchComponent } from '../title-search/title-search.component';
+
+export type TitleBarPush = { unpushed: number; age: string; gate: 'green' | 'red' | 'unknown' };
 
 @Component({
   selector: 'ethlete-title-bar',
@@ -34,6 +37,41 @@ import { TitleSearchComponent } from '../title-search/title-search.component';
       <ethlete-title-search [product]="product()" [part]="part()" [os]="os()" />
 
       <div [class.self-stretch]="caption()" class="flex items-center justify-end gap-2">
+        @if (push(); as push) {
+          <span [etProvideColor]="pushTheme()" [attr.title]="pushTitle()" class="inline-flex" data-push-state>
+            <et-badge [variant]="push.gate === 'red' ? 'filled' : 'tonal'" size="sm">
+              <span class="inline-flex items-center gap-1 whitespace-nowrap">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  @switch (push.gate) {
+                    @case ('green') {
+                      <path d="m3.5 8.5 3 3 6-7" />
+                    }
+                    @case ('red') {
+                      <circle cx="8" cy="8" r="5.5" />
+                      <path d="m6 6 4 4m0-4-4 4" />
+                    }
+                    @default {
+                      <path d="M8 2.5 14 13H2z" />
+                      <path d="M8 6.5v3" />
+                      <path d="M8 11.25v.01" />
+                    }
+                  }
+                </svg>
+                {{ CODE_LABELS.push(push) }}
+              </span>
+            </et-badge>
+          </span>
+        }
         @if (!notice() && noticeText(); as text) {
           <span class="whitespace-nowrap text-et-surface-muted" data-code-notice>{{ text }}</span>
         }
@@ -270,6 +308,7 @@ import { TitleSearchComponent } from '../title-search/title-search.component';
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
+    BADGE_IMPORTS,
     BUTTON_IMPORTS,
     TOOLTIP_IMPORTS,
     NgTemplateOutlet,
@@ -281,6 +320,7 @@ import { TitleSearchComponent } from '../title-search/title-search.component';
 })
 export class TitleBarComponent {
   protected errorTheme = injectSemanticColorTheme('error');
+  private warningTheme = injectSemanticColorTheme('warning');
   public os = input.required<WindowChrome['os']>();
   public left = input<WindowButton[]>([]);
   public right = input<WindowButton[]>([]);
@@ -288,6 +328,7 @@ export class TitleBarComponent {
   public notice = input(false);
   public noticeText = input<string | null>(null);
   public restart = input<'pending' | 'failed' | null>(null);
+  public push = input<TitleBarPush | null>(null);
   public product = input('');
 
   public part = input('');
@@ -307,6 +348,22 @@ export class TitleBarComponent {
   protected readonly SIZE = WINDOW_CONTROL_BUTTON_SIZES.MD;
 
   protected readonly CLOSE_KIND = WINDOW_CONTROL_BUTTON_KINDS.CLOSE;
+
+  protected pushTheme = computed(() => {
+    const gate = this.push()?.gate;
+
+    return gate === 'red' ? this.errorTheme() : gate === 'unknown' ? this.warningTheme() : undefined;
+  });
+
+  protected pushTitle = computed(() => {
+    const gate = this.push()?.gate;
+
+    if (!gate) return null;
+
+    const label = this.CODE_LABELS.pushGate[gate];
+
+    return gate === 'red' ? `${label} - ${this.CODE_LABELS.pushRedAdvice}` : label;
+  });
 
   protected restarting = computed(() => this.restart() === 'pending');
   protected round = computed(() => this.os() === 'linux');

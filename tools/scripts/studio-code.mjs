@@ -77,6 +77,17 @@ const sourceHashOf = (root) => {
   return createRequire(import.meta.url)(module).cliSourceHash(join(root, AREAS.cli));
 };
 
+/** `et design status`'s push state of `root` (unpushed commits, oldest age, push gate), or null without a built CLI. */
+export const pushStateOf = (root) => {
+  const module = join(root, 'dist/libs/cli/src/lib/design/push-status.js');
+
+  if (!existsSync(module)) return null;
+
+  const status = createRequire(import.meta.url)(module).pushStatusOf(root);
+
+  return status && { unpushed: status.unpushed, oldestAgeHours: status.oldestAgeHours, gate: status.gate };
+};
+
 const recordedHashOf = (buildDir) => {
   try {
     return JSON.parse(readFileSync(join(buildDir, 'build-info.json'), 'utf8')).sourceHash ?? null;
@@ -232,7 +243,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const [command] = process.argv.slice(2);
 
   if (command === 'state') {
-    console.log(JSON.stringify(areaState(root)));
+    console.log(JSON.stringify({ ...areaState(root), push: pushStateOf(root) }));
   } else if (command === 'cli-copy') {
     console.log(JSON.stringify(ensureCliCopy(root)));
   } else if (command === 'app-copy') {

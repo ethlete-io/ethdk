@@ -2,7 +2,8 @@ import { computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import { EMPTY, Subject, catchError, exhaustMap, tap, timer } from 'rxjs';
-import { StudioCodeState, quitForRebuild$, studioCodeState$ } from '../host/studio-code';
+import { TitleBarPush } from './components/title-bar/title-bar.component';
+import { PushState, StudioCodeState, quitForRebuild$, studioCodeState$ } from '../host/studio-code';
 import { STUDIO_LABELS } from './i18n/studio-labels';
 
 export const CODE_WATCH_INTERVAL_MS = 10_000;
@@ -34,6 +35,18 @@ export const codeNoticeOf = (state: StudioCodeState | null, pageLoadedAt: string
   }
 
   return null;
+};
+
+const HOURS = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 });
+
+export const pushNoticeOf = (push: PushState | null | undefined): TitleBarPush | null => {
+  if (!push?.unpushed) return null;
+
+  return {
+    unpushed: push.unpushed,
+    age: STUDIO_LABELS.code.pushAge(HOURS.format(push.oldestAgeHours ?? 0)),
+    gate: push.gate,
+  };
 };
 
 const CODE_WATCH_DEF = /* @__PURE__ */ defineRootProvider(() => {
@@ -80,6 +93,7 @@ const CODE_WATCH_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   return {
     notice: computed(() => codeNoticeOf(state(), pageLoadedAt())),
+    push: computed(() => pushNoticeOf(state()?.push)),
     act,
     restart: restart.asReadonly(),
     failRestart: () => restart.set('failed'),
