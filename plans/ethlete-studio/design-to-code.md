@@ -1862,6 +1862,16 @@ Builder (S6a check): the empty cell in Tom's screenshot is not a missing state (
 the frame cap's far cell, an empty div at 10 % zoom. Suspect for the "part" block: a near cell past the cap renders
 `<img [alt]="key">`, and a picture that does not load shows its alt text on a dark block. Step 1 of B346 confirms it
 with a 30 % shot.
+As built (B346, 2026-11-07, part 1): the canvas e2e case "the sketch view at 30 % and 100 % draws no failed picture
+and no empty head at 100 %" (Sketches, Chip, Large, Wide) checks heads at 100 %, pictures at 30 % and 100 %, and a
+third pass that answers every `/__design/shot` with 404. With the old build a refused picture showed its alt text
+(`a reset-active`, `current linux-left-cli-dirty`) over the frames, Chip and Wide failed; the sketch view now hides a
+picture that failed to load. Not proved: that Tom's black "part" block was this alt text; no failed picture showed
+without the 404 route. Reproduced but not fixed: at 30 % the head is an empty 427x40 box (Sketches, Large) and 85x60
+(Chip). The design draws the same box (`rowHead` in `pages/sketches/shared/sketch-rows.ts`,
+`in-data-sk-head-hidden:invisible`), so the change is the open sketch `pages/sketches@head-zoom` (a collapse, b
+scale the whole head, c tag); the 30 % head check goes into the case with the pick. Not built: the state-name floor
+(finding 431 (2)).
 
 404\. Builder (2026-11-04, S6a merge 2e70dc149): `pages/system@pages-system-build-ready` showed "stale since
 5bec01b89" and `sketch rebase` reported a conflict, but all three variants already held 5bec01b89's change, identical to

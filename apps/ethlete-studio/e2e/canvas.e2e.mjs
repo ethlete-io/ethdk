@@ -1930,6 +1930,111 @@ const CASES = [
     },
   },
   {
+    name: 'the sketch view at 30 % and 100 % draws no failed picture and no empty head at 100 %',
+    pages: ['Sketches', 'Wide'],
+    run: async (page, _state, target) => {
+      await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
+        timeout: 60000,
+      });
+      const faults = [];
+
+      for (const [label, outSteps, heads, refused] of [
+        ['100 %', 0, true, false],
+        ['30 %', 3, false, false],
+        ['30 %, pictures refused', 3, false, true],
+      ]) {
+        if (refused) {
+          await page.route('**/__design/shot?**', (route) => route.fulfill({ status: 404, body: '' }));
+          await page.reload();
+          await page.waitForFunction(
+            () =>
+              [...document.querySelectorAll('img[data-shot-picture]')].some(
+                (picture) => picture.complete && picture.naturalWidth === 0,
+              ),
+            null,
+            { timeout: 30000 },
+          );
+        }
+        await page.getByRole('button', { name: 'Auf 100 % zoomen' }).first().click();
+        for (let step = 0; step < outSteps; step++)
+          await page.getByRole('button', { name: 'Verkleinern' }).first().click();
+        await settle(page);
+        await settled(page, FRAME);
+        if (process.env['STUDIO_E2E_SHOTS'])
+          await page.screenshot({
+            path: join(
+              process.env['STUDIO_E2E_SHOTS'],
+              `${target.label ?? target.name}-${label.replace(/\W+/g, '-')}.png`,
+            ),
+          });
+
+        faults.push(
+          ...(await page.evaluate(
+            ({ label, heads }) => {
+              const viewport = document.querySelector('ethlete-sketches ethlete-canvas-viewport');
+              const view = viewport.getBoundingClientRect();
+              const inView = (box) =>
+                box.width > 0 &&
+                box.height > 0 &&
+                box.right > view.left &&
+                box.left < view.right &&
+                box.bottom > view.top &&
+                box.top < view.bottom;
+              const paints = (element) => {
+                const style = getComputedStyle(element);
+
+                return style.visibility !== 'hidden' && style.color !== 'rgba(0, 0, 0, 0)' && Number(style.opacity) > 0;
+              };
+              const visibleContent = (box) => {
+                const walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+
+                for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+                  const element = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+                  const rect = element.getBoundingClientRect();
+
+                  if (rect.width === 0 || rect.height === 0 || !paints(element)) continue;
+                  if (node.nodeType === Node.TEXT_NODE ? node.textContent.trim() : element.matches('svg, img, button'))
+                    return true;
+                }
+
+                return false;
+              };
+              const found = [];
+
+              for (const section of heads ? viewport.querySelectorAll('[data-sk-row]') : []) {
+                const head = section.closest('[data-sk-matrix]') ? section : section.firstElementChild;
+                const box = head.getBoundingClientRect();
+
+                if (inView(box) && box.height > 8 && !visibleContent(head))
+                  found.push(
+                    `${label}: head of ${section.dataset['skRow']} is an empty ${Math.round(box.width)}x${Math.round(box.height)} box`,
+                  );
+              }
+
+              for (const picture of viewport.querySelectorAll('img[data-shot-picture]')) {
+                if (
+                  inView(picture.getBoundingClientRect()) &&
+                  paints(picture) &&
+                  picture.complete &&
+                  picture.naturalWidth === 0
+                )
+                  found.push(`${label}: picture ${picture.alt} failed and shows its alt text`);
+              }
+
+              return found;
+            },
+            { label, heads },
+          )),
+        );
+      }
+
+      return {
+        ok: faults.length === 0,
+        detail: faults.slice(0, 4).join('; ') || 'heads at 100 %, pictures at 30 % and 100 %, refused pictures hidden',
+      };
+    },
+  },
+  {
     name: 'hiding the panel keeps the frames',
     pages: ['System', 'Sketches', 'Flow'],
     run: async (page, _state, target) => {

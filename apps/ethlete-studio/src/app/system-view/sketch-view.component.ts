@@ -190,7 +190,9 @@ export const liveShotsOf = ({
             [ethleteShotRank]="picture"
             [alt]="key"
             [class.opacity-0]="paintedShots().has(key)"
+            [class.hidden]="failedPictures().has(picture)"
             (load)="pictureLoaded(key, $event)"
+            (error)="pictureFailed(picture)"
             class="block w-full"
             data-shot-picture
           />
@@ -676,6 +678,8 @@ export class SketchViewComponent {
     }),
   );
 
+  protected failedPictures = signal<ReadonlySet<string>>(new Set());
+
   /** Shows the round of the comment's variant. */
   public jumpTo(comment: ListedComment) {
     const variant = comment.sketch?.variant;
@@ -750,6 +754,10 @@ export class SketchViewComponent {
 
       return next;
     });
+  }
+
+  protected pictureFailed(picture: string) {
+    this.failedPictures.update((failed) => new Set(failed).add(picture));
   }
 
   protected pictureLoaded(key: string, event: Event) {
