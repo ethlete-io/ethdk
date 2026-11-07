@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { componentInputsOf, droppedStatePropsOf, statesWithoutSourceOf } from './dropped-props';
+import { componentInputsOf, droppedStatePropsOf, inputDefaultsOf, statesWithoutSourceOf } from './dropped-props';
 
 describe('statesWithoutSourceOf', () => {
   const states = { rest: { hold: false }, paused: { hold: true, reason: 'late' } };
@@ -30,6 +30,30 @@ describe('statesWithoutSourceOf', () => {
 
   it('counts a prop as sourced when any tag binds a dynamic value', () => {
     expect(of(['<app-row [hold]="false" [reason]="r" />', '<app-row [hold]="h" [reason]="r" />']).size).toBe(0);
+  });
+
+  it('counts a tag that leaves the input out as feeding its default', () => {
+    const zoomed = { rest: { zoom: '100%' } };
+    const templates = ['<app-row zoom="75%" />', '<app-row />'];
+    const sourced = (defaults: Record<string, string>) =>
+      statesWithoutSourceOf({ states: zoomed, inputs: ['zoom'], selector: 'app-row', templates, defaults }).size;
+
+    expect(sourced({ zoom: '100%' })).toBe(0);
+    expect(sourced({ zoom: '50%' })).toBe(1);
+  });
+});
+
+describe('inputDefaultsOf', () => {
+  it('reads the literal first argument of each signal input, aliases applied', () => {
+    const source = `@Component({}) export class X {
+      zoom = input('100%');
+      fitted = input(false);
+      size = input(2, { alias: 'scale' });
+      rows = input([]);
+      name = input.required<string>();
+    }`;
+
+    expect(inputDefaultsOf(source)).toEqual({ zoom: '100%', fitted: 'false', scale: '2' });
   });
 });
 

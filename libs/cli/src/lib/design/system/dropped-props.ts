@@ -10,6 +10,7 @@ import { Problem } from './problem';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { appSourcesOf, selectorOf } from './rules/implemented-components';
 import { isBound, tagsOf } from './rules/unbound-input';
+import { KNOWN_UNBOUND_INPUTS } from './rules/unbound-input-known';
 import { partLinkOf } from './sketch/part-definition';
 import { productModuleIdOf } from './system-modules';
 import { sourceFileOf } from './ts-source';
@@ -49,8 +50,8 @@ const signalInputOf = (expression: ts.Expression | undefined) => {
  * The input names of the one `@Component` class a source declares (`input()`, `input.required()`, `model()` and
  * `@Input()`, aliases applied), or `null` when the class extends another or uses host directives, so its inputs are not all in the source.
  */
-export const componentInputsOf = (source: string): string[] | null => {
-  const component = sourceFileOf(source).statements.find(
+const componentClassOf = (source: string) =>
+  sourceFileOf(source).statements.find(
     (statement): statement is ts.ClassDeclaration =>
       ts.isClassDeclaration(statement) &&
       (ts.getDecorators(statement) ?? []).some(
@@ -60,6 +61,9 @@ export const componentInputsOf = (source: string): string[] | null => {
           decorator.expression.expression.text === 'Component',
       ),
   );
+
+export const componentInputsOf = (source: string): string[] | null => {
+  const component = componentClassOf(source);
 
   if (!component || component.heritageClauses?.some((clause) => clause.token === ts.SyntaxKind.ExtendsKeyword))
     return null;
@@ -89,6 +93,31 @@ export const componentInputsOf = (source: string): string[] | null => {
   }
 
   return names;
+};
+
+const literalOf = (expression: ts.Expression | undefined): string | null => {
+  if (!expression) return null;
+  if (ts.isStringLiteralLike(expression) || ts.isNumericLiteral(expression)) return expression.text;
+  if (expression.kind === ts.SyntaxKind.TrueKeyword) return 'true';
+  if (expression.kind === ts.SyntaxKind.FalseKeyword) return 'false';
+
+  return null;
+};
+
+/** The literal default of each signal input of the source's `@Component` class (`input('100%')` gives `'100%'`), by input name. */
+export const inputDefaultsOf = (source: string): Record<string, string> => {
+  const defaults: Record<string, string> = {};
+
+  for (const member of componentClassOf(source)?.members ?? []) {
+    if (!ts.isPropertyDeclaration(member) || !ts.isIdentifier(member.name)) continue;
+
+    const call = signalInputOf(member.initializer);
+    const value = call ? literalOf(call.arguments[0]) : null;
+
+    if (call && value !== null) defaults[aliasOf(call) ?? member.name.text] = value;
+  }
+
+  return defaults;
 };
 
 /**
@@ -157,15 +186,17 @@ const constantOf = (binding: Binding): string | null => {
 
 /**
  * The state props that name an input no consumer template feeds: no tag of `selector` binds it, or every tag binds a
- * constant that differs from the value the state sets, so the app can never reach that state.
+ * constant (a tag that leaves it out feeds its literal default from `defaults`) that differs from the value the state
+ * sets, so the app can never reach that state.
  */
 export const statesWithoutSourceOf = (options: {
   states: Record<string, unknown>;
   inputs: readonly string[];
   selector: string;
   templates: readonly string[];
+  defaults?: Readonly<Record<string, string>>;
 }): Map<string, string[]> => {
-  const { states, inputs, selector, templates } = options;
+  const { states, inputs, selector, templates, defaults = {} } = options;
   const tags = tagsOf(selector, [...templates]);
   const missing = new Map<string, string[]>();
 
@@ -177,10 +208,10 @@ export const statesWithoutSourceOf = (options: {
       .filter(([key, value]) => {
         if (!isBound(key, tags)) return true;
 
-        const constants = tags.flatMap((attributes) => {
+        const constants = tags.map((attributes) => {
           const binding = bindingOf(key, attributes);
 
-          return binding ? [constantOf(binding)] : [];
+          return binding ? constantOf(binding) : (defaults[key] ?? null);
         });
 
         return constants.length > 0 && constants.every((constant) => constant !== null && constant !== String(value));
@@ -230,7 +261,18 @@ export const droppedPropProblemsOf = async (options: {
 
     return inputs === null
       ? []
-      : [{ part, inputs, selector: selectorOf(text), appDir: src ? resolve(target, src) : null }];
+      : [
+          {
+            part,
+            inputs,
+            defaults: inputDefaultsOf(text),
+            unbound: KNOWN_UNBOUND_INPUTS.filter((known) => resolve(target, known.file) === file).map(
+              (known) => known.input,
+            ),
+            selector: selectorOf(text),
+            appDir: src ? resolve(target, src) : null,
+          },
+        ];
   });
 
   if (candidates.length === 0) return [];
@@ -238,7 +280,7 @@ export const droppedPropProblemsOf = async (options: {
   return loadingOn({ target, config, warm: options.warm }, async (server) => {
     const problems: Problem[] = [];
 
-    for (const { part, inputs, selector, appDir } of candidates) {
+    for (const { part, inputs, defaults, unbound, selector, appDir } of candidates) {
       const module = (await server
         .ssrLoadModule(productModuleIdOf({ file: part.file, product: product.name }))
         .catch(() => null)) as { default?: { states?: unknown } } | null;
@@ -260,7 +302,13 @@ export const droppedPropProblemsOf = async (options: {
 
       const templates = appSourcesOf(appDir).map(({ text }) => text);
 
-      for (const [state, props] of statesWithoutSourceOf({ states, inputs, selector, templates }))
+      for (const [state, props] of statesWithoutSourceOf({
+        states,
+        inputs: inputs.filter((input) => !unbound.includes(input)),
+        selector,
+        templates,
+        defaults,
+      }))
         problems.push({
           rule: STATE_NO_SOURCE_RULE,
           file: part.file,
