@@ -14,6 +14,7 @@ import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { changedSharesOf } from '../contact-sheet';
 import { partHashOf } from './sketch/baseline';
 import { readMerged } from './sketch/merged-parts';
+import { INSPECTS_AT_ONCE } from './render-check';
 import { createSystemModules, productModuleIdOf, SketchVariant, SystemModules } from './system-modules';
 import { ListedException, readExceptions, withExceptions } from './exceptions';
 import { inventoryReasonOf, InventoryState, inventoryStateOf, partOwnerOf, readInventory } from './inventory-approval';
@@ -1765,6 +1766,25 @@ export const completenessOf = async (options: {
   };
 };
 
+const slotsOf = (size: number) => {
+  let free = size;
+  const waiting: (() => void)[] = [];
+
+  return async <T>(work: () => Promise<T>) => {
+    if (free > 0) free--;
+    else await new Promise<void>((resolve) => waiting.push(resolve));
+
+    try {
+      return await work();
+    } finally {
+      const next = waiting.shift();
+
+      if (next) next();
+      else free++;
+    }
+  };
+};
+
 /**
  * Checks each named part as `completenessOf` does, sharing one server, browser and cache, and answers the gaps of
  * each part, or why it could not be checked as a string.
@@ -1793,6 +1813,8 @@ export const partsCompletenessOf = async (options: {
 
   const queue = warm ? warm.queue() : createDrawQueue({ target, chromiumOf: resolveChromium });
   const server = warm ? await warm.server(config) : await createDesignServer({ target, config, listen: true, port: 0 });
+  const sights = new Map<string, ReturnType<typeof seePart>>();
+  const atOnce = slotsOf(INSPECTS_AT_ONCE);
 
   try {
     if (!warm) await server.listen();
@@ -1804,6 +1826,31 @@ export const partsCompletenessOf = async (options: {
     const checked = new Map<string, CompletenessGap[] | string>();
     const exceptions: ListedException[] = [];
     const hints = new Map<string, string[]>();
+    const sightOf = (resolved: ResolvedPart) => {
+      const key = partKeyOf(resolved);
+      const known = sights.get(key);
+
+      if (known) return known;
+
+      const sight = atOnce(() =>
+        seePart({
+          product,
+          part: resolved,
+          system,
+          base,
+          load: (id) => server.ssrLoadModule(id),
+          draw: (job) => queue.run(job),
+          sketch,
+          cache,
+        }),
+      );
+
+      sight.catch(() => undefined);
+      sights.set(key, sight);
+
+      return sight;
+    };
+    const resolvedOf = (key: string) => parts.find((candidate) => partKeyOf(candidate) === key);
     const gapsOfPart = async (key: string, chain: string[]): Promise<CompletenessGap[] | string> => {
       const known = checked.get(key);
 
@@ -1816,21 +1863,12 @@ export const partsCompletenessOf = async (options: {
       return gaps;
     };
     const freshGapsOfPart = async (key: string, chain: string[]): Promise<CompletenessGap[] | string> => {
-      const resolved = parts.find((candidate) => partKeyOf(candidate) === key);
+      const resolved = resolvedOf(key);
 
       if (!resolved) return `product "${product.name}" has no part "${key}"`;
       if (chain.includes(key)) return `its controls name each other in a cycle: ${[...chain, key].join(' > ')}`;
 
-      const sight = await seePart({
-        product,
-        part: resolved,
-        system,
-        base,
-        load: (id) => server.ssrLoadModule(id),
-        draw: (job) => queue.run(job),
-        sketch,
-        cache,
-      });
+      const sight = await sightOf(resolved);
 
       if (typeof sight === 'string') return [{ code: 'RENDER', target: key, detail: sight.split('\n')[0] ?? '' }];
 
@@ -1861,6 +1899,12 @@ export const partsCompletenessOf = async (options: {
 
       const isKitPart = (other: string) =>
         resolved.origin !== 'base' && parts.find((candidate) => partKeyOf(candidate) === other)?.origin === 'base';
+
+      for (const other of used) {
+        const ahead = other === null || isKitPart(other) ? undefined : resolvedOf(other);
+
+        if (ahead) void sightOf(ahead);
+      }
 
       for (const other of used)
         if (other !== null && !(other in referenced))
@@ -1897,6 +1941,12 @@ export const partsCompletenessOf = async (options: {
       ];
     };
 
+    for (const key of options.parts) {
+      const ahead = resolvedOf(key);
+
+      if (ahead) void sightOf(ahead);
+    }
+
     const gaps = new Map<string, CompletenessGap[] | string>();
 
     for (const part of options.parts) {
@@ -1910,6 +1960,8 @@ export const partsCompletenessOf = async (options: {
 
     throw error;
   } finally {
+    await Promise.allSettled(sights.values());
+
     if (!warm) await Promise.all([queue.close(), server.close()]);
   }
 };
