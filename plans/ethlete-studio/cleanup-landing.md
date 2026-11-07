@@ -53,3 +53,10 @@ webkit-revert-wt (nicht genommen, entschieden), wip/b321-stacking-fix (verworfen
 - origin/tank/tree → verworfen: der einzige WIP-Commit löscht 4664 Dateien (kaputter Baumstand).
 - origin/tank/conflicts-land, Teil f557-hub-split → gelandet in diesem Commit (Aufteilung von `design/paths.ts`; 13 seither in next neu dazugekommene `paths`-Importe umgehängt; der commitlint-Commit e6b6e12a3 war schon in next als 984042b90).
 - origin/tank/b407 → gelandet in diesem Commit (WIP fertig: Signatur `by`/`cmd`/`pid` für Ready-Markierung und Skizzen-Wahl; Konflikt mit `--decided-by` gelöst, Aufrufe in den seither aufgeteilten Specs nachgezogen; 20 Specs, Lint grün).
+- origin/tank/conflicts-land, Teil b412 → nicht gelandet: die neuen DIRECT-EDIT-PENDING-Einträge in `studio/rule-baseline.json` verstoßen gegen ADR 0201 (Baseline darf nur schrumpfen), und die vier Studio-Treffer schließen nur Toms Skizzen-Entscheidungen; Folgeschritt in B412.
+- origin/tank/b392 → verworfen: Spec-Aufteilung schon in next als 58a94e357; der WIP-Commit setzt nur STATUS-Zeilen auf einen älteren Stand zurück.
+- origin/tank/b397 → verworfen: schon in next als d0122053a; der WIP-Commit fügt nur zwei Leerzeilen in `sdk-selectors.ts` ein und setzt STATUS zurück.
+- origin/tank/worktree-agent-a66238bcffb60bf03 → verworfen: b5c266bfc schon in next als eb0546d31, der WIP (Zoom-Chip-Zustände) als c82aa7d4f.
+- origin/tank/b416-next → verworfen: der WIP (Theme-Schalter ohne `current`) ist schon in next als 947865686.
+- origin/tank/worktree-agent-a13203d886f4f7c9c → verworfen: überholt durch 9bc56da98 (System-Seite portiert, `exception-list` durch `exception-store` ersetzt).
+- origin/tank/b217 → verworfen: bf6fcd97e schon in next als 074e32805; der WIP 494af9c34 ist ein älterer Entwurf, den 074e32805 in `complete.ts` ersetzt hat.
