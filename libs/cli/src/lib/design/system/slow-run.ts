@@ -1,6 +1,6 @@
 import { exhaustMap, from, interval } from 'rxjs';
 import { relative, resolve } from 'path';
-import { DesignConfig } from '../paths';
+import { DesignConfig } from '../design-config';
 import { actionLostProblemsOf } from './action-lost';
 import { bespokeControlProblemsOf } from './bespoke-controls';
 import {

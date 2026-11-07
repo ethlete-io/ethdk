@@ -21,7 +21,7 @@ vi.mock('../system/stale-dist', () => ({
   readFreshDist,
   staleLibsOf: () => [],
 }));
-vi.mock('../paths', () => ({ readConfig: () => ({}) }));
+vi.mock('../design-config', () => ({ readConfig: () => ({}) }));
 vi.mock('../serve', () => ({
   createDesignServer: async () => ({ listen: async () => undefined, close: async () => undefined, forgetDrawn }),
 }));

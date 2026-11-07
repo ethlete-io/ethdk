@@ -3,7 +3,7 @@ import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } f
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
-import { DESIGN_DIR } from '../paths';
+import { DESIGN_DIR } from '../design-config';
 import { appFilesOf } from './app-files';
 import { checkRules } from './check-system';
 import { designHashOf } from './design-hash';

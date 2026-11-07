@@ -1,6 +1,6 @@
 import { existsSync } from 'fs';
 import { dirname, resolve } from 'path';
-import { DesignConfig } from '../paths';
+import { DesignConfig } from '../design-config';
 import { fsUrl, sourceFileOf } from '../vite-paths';
 import { ASSET_URL, assetFileOf, ASSETS_PREFIX } from './assets';
 import { classifyImport, productSharedDirsOf, sharedFileOf as sharedFileIn } from './imports';

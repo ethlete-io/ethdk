@@ -4,7 +4,7 @@ import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import { compareMerge, drawnPair, looksTheSame, PictureOf } from './merge-compare';
 import { encodePng } from './system/part-compare';
-import { readConfig } from './paths';
+import { readConfig } from './design-config';
 import { resolveProduct } from './system/resolve-product';
 import { createSketch, Sketch, SketchTarget } from './system/sketch/sketch';
 

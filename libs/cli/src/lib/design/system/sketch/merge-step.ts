@@ -1,4 +1,4 @@
-import { DesignConfig } from '../../paths';
+import { DesignConfig } from '../../design-config';
 import { timedPhase } from '../../phase-timing';
 import { decisionRefsOf } from '../decision-refs';
 import { DesignStep } from '../tom-confirm';

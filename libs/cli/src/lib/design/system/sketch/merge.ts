@@ -2,7 +2,7 @@ import { spawnSync } from 'child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join, relative, resolve } from 'path';
-import { DesignConfig } from '../../paths';
+import { DesignConfig } from '../../design-config';
 import { checkSystem, ruleLinesOf } from '../check-system';
 import { addressSketchComments, resolveSketchEndComments } from '../comments/comment';
 import { ASSETS_FOLDER, filesBelow } from '../assets';

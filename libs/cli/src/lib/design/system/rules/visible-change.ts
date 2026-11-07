@@ -1,4 +1,4 @@
-import { DesignConfig } from '../../paths';
+import { DesignConfig } from '../../design-config';
 import { ShootStates } from '../compare-command';
 import { StartHarnessServer } from '../harness-server';
 import { VISIBLE_CHANGE_RULE } from '../build-ready-contract';

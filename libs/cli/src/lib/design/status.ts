@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { callsRootOf } from './paths';
+import { callsRootOf } from './design-config';
 import { pushStatusLines, pushStatusOf } from './push-status';
 
 export const CALL_STATES = ['scaffolded', 'drawing', 'checking', 'ready', 'failed'] as const;

@@ -1,5 +1,5 @@
 import ts from 'typescript';
-import { DesignConfig } from '../../paths';
+import { DesignConfig } from '../../design-config';
 import { renderPackagesOf, typePathsOf } from '../../render-packages';
 import { ResolvedPart } from '../resolve-product';
 

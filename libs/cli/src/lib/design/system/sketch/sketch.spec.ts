@@ -2,7 +2,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symli
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { DESIGN_DIR, readConfig } from '../../paths';
+import { DESIGN_DIR, readConfig } from '../../design-config';
 import { partKeyOf, resolveProduct } from '../resolve-product';
 import {
   addVariant,

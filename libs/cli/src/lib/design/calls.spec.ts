@@ -4,7 +4,7 @@ import { dirname, join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { listCalls } from './calls';
 import { markTransferred } from './legacy';
-import { callsRootOf, readConfig } from './paths';
+import { callsRootOf, readConfig } from './design-config';
 import { createDesignServer } from './serve';
 
 const cwd = process.cwd();

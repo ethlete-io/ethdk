@@ -3,7 +3,7 @@ import { AddressInfo } from 'net';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { DESIGN_DIR, readConfig } from './paths';
+import { DESIGN_DIR, readConfig } from './design-config';
 import { createDesignServer } from './serve';
 import { createPartShooter } from './shot';
 import { createSystemModules } from './system/system-modules';

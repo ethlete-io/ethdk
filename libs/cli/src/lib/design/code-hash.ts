@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { dirname, join, relative, resolve } from 'path';
-import { assetRoot } from './paths';
+import { assetRoot } from './package-root';
 
 /** Modules that record how a run went but never change what it produces: an edit of one keeps every cache. */
 const RECORDING_ONLY = new Set(['timings', 'phase-timing', 'run-abort']);

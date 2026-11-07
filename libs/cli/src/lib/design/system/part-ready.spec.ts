@@ -4,7 +4,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { Readable } from 'stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DESIGN_DIR } from '../paths';
+import { DESIGN_DIR } from '../design-config';
 import { openPointsAnswer } from '../studio-api';
 import { checkActions, PART_HARNESS_ONLY, partActionFailuresOf } from './actions-command';
 import { harnessMapOf, writeHarnessMap } from './harness-map';

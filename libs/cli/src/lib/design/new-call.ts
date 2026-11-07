@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join, relative } from 'path';
-import { callsRootOf, readConfig } from './paths';
+import { callsRootOf, readConfig } from './design-config';
 import { argsOf } from './system/sketch/cli-args';
 import { writeStatus } from './status';
 

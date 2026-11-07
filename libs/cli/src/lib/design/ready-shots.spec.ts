@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DesignConfig } from './paths';
+import { DesignConfig } from './design-config';
 import { aktuellPlaceholderWarnings, identicalRenderLines } from './ready-shots';
 import { ResolvedProduct } from './system/resolve-product';
 import { Sketch } from './system/sketch/sketch';

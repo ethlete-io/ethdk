@@ -2,7 +2,7 @@ import { cpSync, mkdtempSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { expect, vi } from 'vitest';
-import { readConfig } from '../paths';
+import { readConfig } from '../design-config';
 import { checkSystem } from './check-system';
 
 export const acme = () => {

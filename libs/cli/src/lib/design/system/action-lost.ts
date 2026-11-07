@@ -1,5 +1,5 @@
 import { resolve } from 'path';
-import { DesignConfig } from '../paths';
+import { DesignConfig } from '../design-config';
 import { ACTION_LOST_RULE } from './build-ready-contract';
 import { READY_FILE, readReady } from './part-ready';
 import { Problem } from './problem';

@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, resolve } from 'path';
-import { assetRoot } from './paths';
+import { assetRoot } from './package-root';
 
 export const STAMP_PATH = '/__design/stamp';
 

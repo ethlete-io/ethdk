@@ -2,7 +2,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { readConfig } from '../../paths';
+import { readConfig } from '../../design-config';
 import { addFlowNote, changeFlowNote, deleteFlowNote, listFlows } from '../flows/flow';
 import { resolveProduct } from '../resolve-product';
 import { changeNote, createNote, deleteNote, listNotes, MISSING_NOTE_SIZE } from './note';

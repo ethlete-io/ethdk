@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'fs';
 import { dirname, extname, resolve } from 'path';
-import { workRootOf } from './paths';
+import { workRootOf } from './work-root';
 import { assetFileOf, assetPathOf } from './system/assets';
 import { argsOf, configOf, oneProductOf } from './system/sketch/cli-args';
 import { createSystemModules } from './system/system-modules';

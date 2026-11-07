@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
-import { DesignConfig } from '../../paths';
+import { DesignConfig } from '../../design-config';
 import { actionKeysOfMarkup, PartModuleLoader, partActionsOf, withPartLoader } from '../action-lost';
 import { Problem } from '../problem';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';

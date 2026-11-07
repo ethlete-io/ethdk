@@ -1,6 +1,6 @@
 import { dirname, relative, resolve, sep } from 'path';
 import { Interaction, INTERACTIONS } from '../force-interactions';
-import { DesignColorScheme, DesignPreset } from '../paths';
+import { DesignColorScheme, DesignPreset } from '../design-config';
 import { ruleProblemsOf } from './check-system';
 import { partsReachedFrom } from './imports';
 import { kitUsesOf } from './kit';

@@ -3,7 +3,7 @@ import { resolve } from 'path';
 import { ACCEPT_USAGE, designAccept } from './system/accept-command';
 import { checkDesign } from './check';
 import { COMPLETE_USAGE, designComplete } from './system/complete-command';
-import { findCheckoutRoot, readConfig } from './paths';
+import { findCheckoutRoot, readConfig } from './design-config';
 import { designComment, designInbox } from './inbox-command';
 import { markLegacy } from './legacy';
 import { newCall } from './new-call';

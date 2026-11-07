@@ -1,6 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, resolve } from 'path';
-import { callsRootOf, DESIGN_DIR, installedAssetRoot, readConfig, workRootOf } from './paths';
+import { callsRootOf, DESIGN_DIR, readConfig } from './design-config';
+import { installedAssetRoot } from './package-root';
+import { workRootOf } from './work-root';
 import { renderPackagesOf, typePathsOf } from './render-packages';
 
 export const DRAWING_COMPILER_OPTIONS = {

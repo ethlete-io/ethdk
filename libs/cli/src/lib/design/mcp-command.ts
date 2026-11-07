@@ -2,7 +2,7 @@ import { spawn } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import { isAbsolute, resolve } from 'path';
 import { createInterface } from 'readline';
-import { callsRootOf, DEFAULT_PORT, portOf, readConfig } from './paths';
+import { callsRootOf, DEFAULT_PORT, portOf, readConfig } from './design-config';
 import { buildStampOf } from './stamp';
 import { withinLimit } from './wait';
 

@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { checkDesign } from './check';
-import { readConfig } from './paths';
+import { readConfig } from './design-config';
 import { statusPath, writeStatus } from './status';
 import { resolveProduct } from './system/resolve-product';
 import { createSketch, Sketch } from './system/sketch/sketch';

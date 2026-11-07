@@ -3804,6 +3804,15 @@ and one shot file per variant) is staged in worktree agent-afba22bc5202ed617, no
 pre-commit hook runs 1354 related specs; at load 60-135 they failed with 49, then 40 failures (23 timeouts). The agent
 did not bypass the hook.
 
+557 as built (2026-11-07): `design/paths.ts` is split into `design-config` (config types, `DESIGN_DIR`,
+`readConfig`), `package-root` (`assetRoot`, `snapshotPackage`), `work-root`, `vite-cache` and `is-running`; 192 imports
+moved, no barrel. `system/base.ts` stays whole: `loadBase` and `baseDirOf` reach the same 167 specs, so a split gains
+nothing. Related spec files (static import graph, 316 cli spec files): paths 177 -> design-config 169, package-root and
+work-root 175, vite-cache 111; base 167 unchanged. The split barely helps. The real hub is a cycle of 48 modules
+through `serve.ts`: 7 system modules (actions-command, compare-command, complete, live-actions, live-compare,
+live-uncovered, render-check) and warm-draw import `serve.ts`, so any module in the cycle relates at least 111 specs.
+Breaking that cycle is the next step.
+
 558\. Builder (2026-11-07): 3 auto-merge specs in `sketch-command.spec` fail on `next` without any change. Why no tool
 caught it: the pre-commit and pre-push hooks never ran on the Mac (555), and `next` is not pushed (ADR 0215), so CI
 never ran these commits. Doc agent decision (technical): the next builder fixes the 3 specs first; the run over the

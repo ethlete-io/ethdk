@@ -7,7 +7,7 @@ import { check, resolveConfig } from 'prettier';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { checkSystem } from './system/check-system';
 import { resolveProduct } from './system/resolve-product';
-import { configPathOf, DESIGN_DIR, readConfig } from './paths';
+import { configPathOf, DESIGN_DIR, readConfig } from './design-config';
 import { designProduct, newProductAnswer } from './product-command';
 
 const make = () => mkdtempSync(join(tmpdir(), 'cli-design-product-'));

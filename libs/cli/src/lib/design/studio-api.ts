@@ -4,7 +4,7 @@ import { relative } from 'path';
 import { fromEvent, take } from 'rxjs';
 import { setImmediate } from 'timers/promises';
 import { repoInvocation } from '../invocation';
-import { DesignConfig, readConfig } from './paths';
+import { DesignConfig, readConfig } from './design-config';
 import {
   CommentSize,
   createComment,

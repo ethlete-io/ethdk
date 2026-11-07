@@ -4,7 +4,7 @@ import { createHash } from 'crypto';
 import { existsSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, relative, resolve } from 'path';
-import { DesignConfig } from './paths';
+import { DesignConfig } from './design-config';
 import { timedPhase } from './phase-timing';
 import { ASSETS_FOLDER } from './system/assets';
 import { addressSketchComments, commentsOnSketch } from './system/comments/comment';

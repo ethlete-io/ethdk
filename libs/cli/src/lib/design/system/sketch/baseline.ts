@@ -2,7 +2,7 @@ import { createHash } from 'crypto';
 import { readFileSync } from 'fs';
 import { dirname, relative, resolve } from 'path';
 import { setImmediate } from 'timers/promises';
-import { DesignProduct } from '../../paths';
+import { DesignProduct } from '../../design-config';
 import { ASSETS_PREFIX, filesBelow, importedAssetsOf } from '../assets';
 import { importedSharedOf, SHARED_PREFIX } from '../imports';
 import { fixturesOf, PartFile, partFilesOf } from '../product';

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createRenderer } from './render';
-import { DesignConfig } from './paths';
+import { DesignConfig } from './design-config';
 
 const workers: { workerData: { packages: Record<string, string> }; terminate: () => void }[] = [];
 

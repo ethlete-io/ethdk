@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { readConfig } from '../paths';
+import { readConfig } from '../design-config';
 import { readOpenPoints } from './read-open-points';
 import { resolveProduct } from './resolve-product';
 

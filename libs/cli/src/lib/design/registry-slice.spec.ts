@@ -2,7 +2,7 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } f
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { DESIGN_DIR, readConfig } from './paths';
+import { DESIGN_DIR, readConfig } from './design-config';
 import { registrySliceOf } from './serve';
 import { resolveProduct } from './system/resolve-product';
 import { createServedHashes, ServedRequest, withRegistrySlices } from './system/served-cache';

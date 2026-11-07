@@ -2,7 +2,8 @@ import { existsSync } from 'fs';
 import { resolve } from 'path';
 import { pathToFileURL } from 'url';
 import { Worker } from 'worker_threads';
-import { packageFileOf, readConfig } from '../../paths';
+import { packageFileOf } from '../../package-root';
+import { readConfig } from '../../design-config';
 import { OpenSketchListing, openSketchListingOf } from './check-sketches';
 import { oneProductOf } from './cli-args';
 

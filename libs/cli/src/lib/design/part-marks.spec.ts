@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { markPartSource } from './part-marks';
-import { readConfig } from './paths';
+import { readConfig } from './design-config';
 import { createDesignServer } from './serve';
 import { createSketch, parseTarget } from './system/sketch/sketch';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';

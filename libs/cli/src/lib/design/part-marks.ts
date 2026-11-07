@@ -1,5 +1,5 @@
 import { resolve } from 'path';
-import { assetRoot } from './paths';
+import { assetRoot } from './package-root';
 import { partKeyOf } from './system/resolve-product';
 import { fileOfModuleId, productOfModuleId, sketchOfModuleId, SystemModules } from './system/system-modules';
 import { fsUrl } from './vite-paths';

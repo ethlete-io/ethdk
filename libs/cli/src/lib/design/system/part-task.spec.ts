@@ -3,7 +3,7 @@ import { noVerdictOf } from './no-verdict';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DESIGN_DIR } from '../paths';
+import { DESIGN_DIR } from '../design-config';
 import { BuildReadyInputs } from './part-build-ready';
 import { markPartReady, readyPartOf, writePartRecord } from './part-ready';
 import {

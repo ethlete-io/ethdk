@@ -2,7 +2,7 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { readConfig } from '../../paths';
+import { readConfig } from '../../design-config';
 import { partKeyOf, resolveProduct } from '../resolve-product';
 import { overlaySketch } from './overlay';
 import { createSketch, Sketch } from './sketch';

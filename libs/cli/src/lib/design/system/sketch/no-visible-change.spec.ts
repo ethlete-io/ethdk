@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { basename, dirname, join, resolve } from 'path';
 import { describe, expect, it } from 'vitest';
 import { PictureOf } from '../../merge-compare';
-import { readConfig } from '../../paths';
+import { readConfig } from '../../design-config';
 import { resolveProduct } from '../resolve-product';
 import { sketchShowsNoChange, variantLoadProblemsOf } from './no-visible-change';
 import { createSketch, Sketch, variantDirOf } from './sketch';

@@ -3,7 +3,8 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { resolve } from 'path';
 import { Worker } from 'worker_threads';
 import { forceInteractions } from './force-interactions';
-import { DesignConfig, packageFileOf } from './paths';
+import { DesignConfig } from './design-config';
+import { packageFileOf } from './package-root';
 import { FieldSpec } from './render-fields';
 import { withinLimit } from './wait';
 import {

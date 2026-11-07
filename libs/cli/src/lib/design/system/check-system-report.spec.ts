@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { checkDesign } from '../check';
-import { DESIGN_DIR, readConfig } from '../paths';
+import { DESIGN_DIR, readConfig } from '../design-config';
 import { writePartRecord } from './part-ready';
 import { resolveProduct } from './resolve-product';
 import { acme, output, withoutOpenPoints } from './check-system.fixtures';

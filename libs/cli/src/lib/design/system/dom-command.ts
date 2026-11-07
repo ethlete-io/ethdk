@@ -1,6 +1,6 @@
 import { AddressInfo } from 'net';
 import { chromiumOf } from '../browser';
-import { DesignConfig } from '../paths';
+import { DesignConfig } from '../design-config';
 import { createDesignServer } from '../serve';
 import { createPartShooter, viewportOf } from '../shot';
 import { awaitFonts, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';

@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { checkDesign } from '../check';
-import { DESIGN_DIR } from '../paths';
+import { DESIGN_DIR } from '../design-config';
 import { acme, output, withoutBrowserLines, renderWarningsOf } from './check-system.fixtures';
 
 describe('checkDesign', () => {

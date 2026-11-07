@@ -2,7 +2,7 @@ import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { DESIGN_DIR, readConfig } from './paths';
+import { DESIGN_DIR, readConfig } from './design-config';
 import { createDesignServer } from './serve';
 import { createSketch, Sketch, variantDirOf } from './system/sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';

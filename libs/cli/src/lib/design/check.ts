@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync } from 'fs';
 import { dirname, relative, resolve } from 'path';
 import { chromiumOf } from './browser';
 import { writeCallsTsconfig } from './calls-tsconfig';
-import { callsRootOf, DEFAULT_PORT, DesignConfig, portOf, readConfig } from './paths';
+import { callsRootOf, DEFAULT_PORT, DesignConfig, portOf, readConfig } from './design-config';
 import { buildStampOf, serverProblemOf } from './stamp';
 import { hooksProblemOf } from './hooks-problem';
 import { holdStatus, writeStatus } from './status';

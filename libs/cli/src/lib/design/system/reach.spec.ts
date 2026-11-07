@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DESIGN_DIR, readConfig } from '../paths';
+import { DESIGN_DIR, readConfig } from '../design-config';
 import { renderIssuesOf } from './render-check';
 
 const skipWithoutBrowser = (context: { skip: (note?: string) => never }, reason: string) => {

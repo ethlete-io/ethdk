@@ -2,7 +2,7 @@ import { cpSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { readConfig } from '../../paths';
+import { readConfig } from '../../design-config';
 import { resolveProduct } from '../resolve-product';
 import { createSketch, Sketch } from './sketch';
 import { createSketchChecker, openSketchListingAt } from './sketch-checker';

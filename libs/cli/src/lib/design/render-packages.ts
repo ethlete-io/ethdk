@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { basename, resolve, sep } from 'path';
 import { pathToFileURL } from 'url';
-import { DesignConfig } from './paths';
+import { DesignConfig } from './design-config';
 import { FieldSpec } from './render-fields';
 
 export const DEFAULT_RENDER_MODULES = ['@ethlete/components', '@ethlete/core'];

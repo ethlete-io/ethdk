@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { isAbsolute, relative, resolve } from 'path';
 import { addedPartsOf, changedPartsOf, DrawnPart } from '../changed-parts';
-import { DESIGN_DIR, DesignConfig } from '../paths';
+import { DESIGN_DIR, DesignConfig } from '../design-config';
 import { partKeyOf, partOfFile } from './resolve-product';
 import { createSystemModules, fileOfModuleId, productModuleIdOf, SystemModules } from './system-modules';
 import { importsOf } from './ts-source';

@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { writeCallsTsconfig } from '../calls-tsconfig';
-import { DESIGN_DIR, readConfig } from '../paths';
+import { DESIGN_DIR, readConfig } from '../design-config';
 import { resolveProduct } from './resolve-product';
 import { writeEditorTsconfig, writeSystemTsconfig } from './system-tsconfig';
 

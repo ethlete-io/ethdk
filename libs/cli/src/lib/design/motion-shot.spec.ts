@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { pngSizeOf } from './contact-sheet';
 import { designMotion } from './motion-command';
 import { keyframeTimesOf, unionOfBoxes } from './motion-shot';
-import { DESIGN_DIR, readConfig } from './paths';
+import { DESIGN_DIR, readConfig } from './design-config';
 import { createDesignServer } from './serve';
 import { createPartShooter } from './shot';
 import { createSystemModules } from './system/system-modules';

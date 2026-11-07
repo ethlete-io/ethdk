@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { describe, expect, it, vi } from 'vitest';
-import { DESIGN_DIR, readConfig } from '../../paths';
+import { DESIGN_DIR, readConfig } from '../../design-config';
 import { resolveProduct } from '../resolve-product';
 import { capabilityPlaceOf, capabilityPlaceVerdictOf, readCapabilities } from './capability-place';
 

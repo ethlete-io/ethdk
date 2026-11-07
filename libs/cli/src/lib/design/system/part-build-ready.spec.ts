@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
-import { DESIGN_DIR } from '../paths';
+import { DESIGN_DIR } from '../design-config';
 import { ActionsOf, BuildReadyInputs, buildReadyOf, recordBuildReady } from './part-build-ready';
 import { readReady, READY_FILE, readyMarkOf, readyPartOf, writePartRecord } from './part-ready';
 import { resolveProduct } from './resolve-product';

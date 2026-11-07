@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DESIGN_DIR, readConfig } from '../paths';
+import { DESIGN_DIR, readConfig } from '../design-config';
 import { checkSystemRendered, summaryText } from './check-system';
 import { acme, output, noBrowser, check } from './check-system.fixtures';
 

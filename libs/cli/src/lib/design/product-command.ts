@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { IncomingMessage } from 'http';
 import { dirname, relative } from 'path';
 import { jsonLayoutOf } from './json-layout';
-import { configPathOf, DesignConfig, DesignProduct, readConfig } from './paths';
+import { configPathOf, DesignConfig, DesignProduct, readConfig } from './design-config';
 import { isBuiltInBase } from './system/base';
 import { argsOf } from './system/sketch/cli-args';
 import { LAYERS } from './system/layers';

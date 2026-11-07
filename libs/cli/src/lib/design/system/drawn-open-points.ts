@@ -1,4 +1,4 @@
-import { DesignConfig } from '../paths';
+import { DesignConfig } from '../design-config';
 import { CompletenessGap, partsCompletenessOf } from './complete';
 import { OpenPointsInput } from './open-points';
 import { contrastsOf, missingStatesOf } from './read-open-points';

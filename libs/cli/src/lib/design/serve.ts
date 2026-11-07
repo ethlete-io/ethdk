@@ -115,20 +115,17 @@ import { inventoryOf } from './system/inventory';
 import { SHOT_VIEW_PATH } from './shot-board';
 import { createDrawQueue, createThumbnailer, send, THUMB_PATH, ThumbMissingError } from './thumb';
 import { DeclaredMotion, motionMiddleware } from './motion-endpoint';
+import { assetRoot, snapshotPackage, installedAssetRoot } from './package-root';
+import { claimViteCache, viteCacheOf } from './vite-cache';
 import {
-  assetRoot,
-  snapshotPackage,
-  claimViteCache,
   callsRootOf,
   configPathOf,
   DESIGN_DIR,
   DesignConfig,
   DesignProject,
-  installedAssetRoot,
   portOf,
   readConfig,
-  viteCacheOf,
-} from './paths';
+} from './design-config';
 import { startSlowRunner } from './system/slow-run';
 import { relaunch, RELOAD_EXIT_CODE, superviseReloads, SUPERVISED_ENV, watchBuild } from './build-watch';
 
