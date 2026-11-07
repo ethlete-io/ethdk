@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, realpathSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -19,7 +19,7 @@ afterEach(async () => {
 type Drawn = { default: { states: Record<string, unknown>; render: (props: unknown) => Promise<{ body: string }> } };
 
 const acme = async (files: Record<string, string> = {}) => {
-  const target = mkdtempSync(join(tmpdir(), 'cli-design-marks-'));
+  const target = realpathSync(mkdtempSync(join(tmpdir(), 'cli-design-marks-')));
 
   cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
 

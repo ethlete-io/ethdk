@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, realpathSync, writeFileSync } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
@@ -21,7 +21,7 @@ afterEach(async () => {
 const SKETCH_A = { target: 'components/card', variant: 'a' };
 
 const serveAcme = async (options: { styles?: string[]; tokens?: string[] } = {}) => {
-  const target = mkdtempSync(join(tmpdir(), 'cli-design-changed-'));
+  const target = realpathSync(mkdtempSync(join(tmpdir(), 'cli-design-changed-')));
 
   cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
 

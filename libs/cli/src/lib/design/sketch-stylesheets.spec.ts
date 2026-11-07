@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { cpSync, mkdtempSync, realpathSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -28,7 +28,7 @@ writeFileSync(file, '.acme-generated { border-color: ' + accent + '; }');
 `;
 
 const serveAcme = async (options: { generated?: boolean } = {}) => {
-  const target = mkdtempSync(join(tmpdir(), 'cli-design-sketch-styles-'));
+  const target = realpathSync(mkdtempSync(join(tmpdir(), 'cli-design-sketch-styles-')));
 
   cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
 

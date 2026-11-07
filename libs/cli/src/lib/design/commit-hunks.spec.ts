@@ -1,5 +1,5 @@
 import { execFileSync, spawn } from 'child_process';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, relative, resolve } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -160,7 +160,7 @@ describe('designCommitHunks with a locked index', () => {
 
   it('waits through waitForLock of the checkout, not through git retries', async () => {
     const target = repo({ 'p/merged.json': { 'components/x': '1' } });
-    const lock = join(target, '.git/index.lock');
+    const lock = join(realpathSync(target), '.git/index.lock');
     const reported: string[] = [];
 
     mkdirSync(join(target, 'tools/scripts'), { recursive: true });

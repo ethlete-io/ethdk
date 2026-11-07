@@ -1,4 +1,4 @@
-import { existsSync } from 'fs';
+import { existsSync, realpathSync } from 'fs';
 import { resolve } from 'path';
 import { ACCEPT_USAGE, designAccept } from './system/accept-command';
 import { checkDesign } from './check';
@@ -42,13 +42,18 @@ import { serveResident } from './resident/resident-process';
 import { recordRun, skipRunTimings, timingsFileOf } from './timings';
 import { designTimings, TIMINGS_USAGE } from './timings-command';
 
+const realOf = (path: string) => (existsSync(path) ? realpathSync(path) : path);
+
 /** Reads `--checkout <path>` out of an argument list, and answers with the path and the rest. */
 const splitCheckout = (argv: string[], root: string) => {
   const index = argv.indexOf('--checkout');
 
-  if (index === -1) return { target: findCheckoutRoot(root), rest: argv };
+  if (index === -1) return { target: realOf(findCheckoutRoot(root)), rest: argv };
 
-  return { target: resolve(root, argv[index + 1] ?? '.'), rest: [...argv.slice(0, index), ...argv.slice(index + 2)] };
+  return {
+    target: realOf(resolve(root, argv[index + 1] ?? '.')),
+    rest: [...argv.slice(0, index), ...argv.slice(index + 2)],
+  };
 };
 
 const helpOf = (invocation: string) =>
@@ -650,7 +655,7 @@ const dispatchDesign = async (options: { root: string; argv: string[]; invocatio
   }
 
   return serveDesign({
-    target: positional ? resolve(root, positional) : target,
+    target: positional ? realOf(resolve(root, positional)) : target,
     host,
     reloadOnRebuild: !startedByStudio(),
   });

@@ -15,6 +15,7 @@ import {
   variantSharedDirOf,
   withSharedImports,
 } from './sketch';
+import { gitTopOf } from '../../git-top';
 
 const CANDIDATE_COMMITS = 60;
 
@@ -218,7 +219,7 @@ export const portBaseChanges = (options: {
 
         if (partHashOf({ product, dir: partDir }) === baseline[part]) continue;
 
-        top ??= git(target, ['rev-parse', '--show-toplevel']).toString().trim();
+        top ??= gitTopOf(target);
 
         const oldDir = oldBaseDirOf({ top, product, partDir, hash: baseline[part], scratch });
 

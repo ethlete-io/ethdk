@@ -1,5 +1,5 @@
 import { spawnSync } from 'child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from 'fs';
 import { hostname, tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -70,7 +70,7 @@ describe('et api run --lock', () => {
     );
 
     expect(code).toBe(0);
-    expect(readFileSync(join(root, 'seen-cwd'), 'utf8').trim()).toBe(root);
+    expect(readFileSync(join(root, 'seen-cwd'), 'utf8').trim()).toBe(realpathSync(root));
     expect(readFileSync(join(root, 'seen-token'), 'utf8').trim()).not.toBe('');
     expect(readApiLock(stateDirectory())).toBeUndefined();
     expect(readApiState(stateDirectory())).toMatchObject({ profile: 'e2e', dirty: true });

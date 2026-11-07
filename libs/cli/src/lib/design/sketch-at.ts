@@ -2,6 +2,7 @@ import { execFileSync } from 'child_process';
 import { mkdirSync, rmSync } from 'fs';
 import { relative, resolve, sep } from 'path';
 import { sketchFolderOf, SketchTarget } from './system/sketch/sketch';
+import { gitTopOf } from './git-top';
 
 /**
  * Copies the sketch folder of `sketch` as `commit` held it into `<dest>/sketches/<layer>-<name>`, straight from
@@ -19,7 +20,7 @@ export const extractSketchAt = (options: {
     execFileSync('git', args, { cwd: target, input, maxBuffer: 1 << 28, stdio: ['pipe', 'pipe', 'pipe'] });
 
   try {
-    const top = run(['rev-parse', '--show-toplevel']).toString().trim();
+    const top = gitTopOf(target);
     const folder = relative(top, resolve(productDir, 'sketches', sketchFolderOf(sketch)))
       .split(sep)
       .join('/');

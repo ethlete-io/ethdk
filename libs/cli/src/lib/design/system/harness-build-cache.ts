@@ -17,6 +17,7 @@ import { tmpdir } from 'os';
 import { join, relative, resolve, sep } from 'path';
 import { sha16 } from './design-hash';
 import { harnessInputsOf, repoReaderOf } from './harness-inputs';
+import { gitTopOf } from '../git-top';
 
 const KEEP_BUILDS = 2;
 const IN_USE = '.in-use-';
@@ -46,7 +47,7 @@ const workTreeFilesOf = (target: string) => {
   let root: string;
 
   try {
-    root = gitOf(target, ['rev-parse', '--show-toplevel']).trim();
+    root = gitTopOf(target);
   } catch {
     return null;
   }
