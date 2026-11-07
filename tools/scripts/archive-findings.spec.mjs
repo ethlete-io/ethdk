@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import {
   archiveFindings,
+  archiveSections,
   orphanFindings,
   doneFindingNumbers,
   splitFindings,
@@ -108,4 +109,49 @@ test('lists dated findings that no row cites', () => {
       { number: 13, title: 'Tom (2026-11-03): not referenced.', date: '2026-11-03' },
     ].filter((o) => o.number !== 12),
   );
+});
+
+const decisionPlan = `# Plan
+
+### Old decisions (Tom, 2026-10-31)
+
+Old body.
+
+### Cited by row (Tom, 2026-10-31)
+
+Cited body.
+
+### Cited by adr (Tom, 2026-10-31)
+
+Adr body.
+
+### Holds open (Tom, 2026-10-31)
+
+13\\. Tom (2026-10-31): open finding.
+
+### Fresh decisions (Tom, 2026-11-06)
+
+Fresh body.
+
+## Next
+`;
+
+test('archives old dated decision sections and keeps cited, open and fresh ones', () => {
+  const statusText = `${status}| B9 | open work (Cited by row) | ⏳ | |\n`;
+  const { plan: rest, moved } = archiveSections(decisionPlan, statusText, 'see Cited by adr', {
+    today: new Date('2026-11-07'),
+    days: 5,
+  });
+  assert.deepEqual(
+    moved.map((m) => m.month),
+    ['2026-10'],
+  );
+  assert.match(moved[0].text, /^### Old decisions[\s\S]*Old body\.$/);
+  assert.match(
+    rest,
+    /Archived: Old decisions \(2026-10-31\), see \[findings-2026-10\]\(archive\/findings-2026-10\.md\)\./,
+  );
+  assert.doesNotMatch(rest, /Old body/);
+  for (const kept of ['Cited body', 'Adr body', 'open finding', 'Fresh body', '## Next'])
+    assert.match(rest, new RegExp(kept));
 });

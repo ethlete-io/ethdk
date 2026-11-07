@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseStatusRows } from './studio-status.mjs';
@@ -49,6 +49,61 @@ export const archiveFindings = (planText, statusText) => {
   return { plan, moved };
 };
 
+const SECTION_START = /^#{2,3} /;
+const DAY_MS = 86_400_000;
+
+const sectionTitle = (heading) =>
+  heading
+    .replace(/^#+ /, '')
+    .replace(/\s*\([^()]*\)\s*$/, '')
+    .trim();
+
+export const archiveSections = (planText, statusText, adrText, { today, days = 5 }) => {
+  const rows = parseStatusRows(statusText);
+  const done = doneFindingNumbers(rows);
+  const openRows = rows
+    .filter((row) => !row.done)
+    .map((row) => row.text)
+    .join('\n');
+  const lines = planText.split('\n');
+  const moved = [];
+  const out = [];
+  let i = 0;
+  while (i < lines.length) {
+    const heading = lines[i];
+    const date = heading.startsWith('### ') ? DATE.exec(heading) : null;
+    if (!date) {
+      out.push(lines[i++]);
+      continue;
+    }
+    let end = i + 1;
+    while (end < lines.length && !SECTION_START.test(lines[end])) end++;
+    const body = lines.slice(i, end);
+    const title = sectionTitle(heading);
+    const age = (today - new Date(date[0])) / DAY_MS;
+    const holdsOpenFinding = splitFindings(body.join('\n')).some((block) => !done.has(block.number));
+    if (age <= days || holdsOpenFinding || openRows.includes(title) || adrText.includes(title)) {
+      out.push(...body);
+      i = end;
+      continue;
+    }
+    const month = `${date[1]}-${date[2]}`;
+    const text = body.join('\n').trimEnd();
+    moved.push({ number: 0, month, text });
+    out.push(`Archived: ${title} (${date[0]}), see [findings-${month}](archive/findings-${month}.md).`, '');
+    i = end;
+  }
+  return { plan: out.join('\n'), moved };
+};
+
+export const readAdrText = (root) => {
+  const dir = join(root, 'apps/ethlete-studio/docs/adr');
+  if (!existsSync(dir)) return '';
+  return readdirSync(dir)
+    .map((name) => readFileSync(join(dir, name), 'utf8'))
+    .join('\n');
+};
+
 export const orphanFindings = (planText, statusText) => {
   const cited = new Set(parseStatusRows(statusText).flatMap((row) => [...row.findings]));
   return splitFindings(planText).flatMap((block) => {
@@ -76,15 +131,15 @@ export const writeArchive = (archiveDir, moved) => {
   }
 };
 
-export const run = (root) => {
+export const run = (root, days = 5) => {
   const studio = join(root, 'plans/ethlete-studio');
   const planFile = join(studio, 'design-to-code.md');
-  const { plan, moved } = archiveFindings(
-    readFileSync(planFile, 'utf8'),
-    readFileSync(join(studio, 'STATUS.md'), 'utf8'),
-  );
+  const statusText = readFileSync(join(studio, 'STATUS.md'), 'utf8');
+  const first = archiveFindings(readFileSync(planFile, 'utf8'), statusText);
+  const second = archiveSections(first.plan, statusText, readAdrText(root), { today: new Date(), days });
+  const moved = [...first.moved, ...second.moved];
   writeArchive(join(studio, 'archive'), moved);
-  writeFileSync(planFile, plan);
+  writeFileSync(planFile, second.plan);
   return moved.length;
 };
 
@@ -100,5 +155,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     console.log(`${orphans.length} orphans`);
     process.exit(0);
   }
-  console.log(`moved ${run(root)} findings`);
+  const daysArg = process.argv.find((arg) => arg.startsWith('--days='));
+  console.log(`moved ${run(root, daysArg ? Number(daysArg.slice(7)) : 5)} findings and sections`);
 }

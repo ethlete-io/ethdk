@@ -2724,3 +2724,508 @@ so a name clash fails the push.
 **Fixed in 69c5e3635 (cb):** `vitest.projects.ts` skips a folder's `vite.config.*` when a `vitest.config.*` sits next to
 it (17 configs, none under node_modules); bite: the old config fails `vitest list` on the storybook name. The check
 takes 15 s, so it is `yarn vitest:projects:check` in ci-check step 5d and in the Checks job of `ci.yml`, not in pre-push.
+
+### Implementation phase decisions (Tom, 2026-11-01, Q250-Q255)
+
+The Studio MVP (design done, 26 of 26 parts clean) is reached. The next phase implements the design in code. Planned
+only; the builder starts when Tom gives the start.
+
+- Q250 scope: first the 26 Studio parts. Then the lib port of checkbox and radio-group variant d to
+  `libs/components` as its own SDK track. The 48 SDK parts with open points come later.
+- Q251 order: first the pilot, end to end through go, `design task`, `design compare` and `task --verify`:
+  `pages/inbox`, then `elements/shell-main`. Fix tool gaps on the way. Then the other parts in parallel, one
+  subagent per part.
+- Q252 components: every inline part (tree-row, part-tree, zoom-chip, comment-pin, canvas-viewport, the merge view)
+  becomes its own component when it is implemented, as Q248 planned. Parts with no app code yet (disclosure,
+  shell-collapse, shell-project-option, shell-project-switch, studio-menu, shell-main, pages/start) are built new. The
+  `implements` link points to the new component.
+- Q253 design freeze: a design change only when the implementation shows a design defect. Every other wish is parked.
+- Q254 parked items: none before the implementation, also no system lesson. First the implementation, then the
+  findings (system lessons and parked items in `backlog-parallel/decisions-latest.md`).
+- Q255 done: every Studio part has an `implemented.json` entry, a green compare and is ready.
+  `design check --product studio --complete` reports it as one number.
+- Impl Q1 start (Tom, 2026-11-01): the implementation phase starts now with the Q251 pilot, `pages/inbox`, then
+  `elements/shell-main`. Studio serve runs again in tmux.
+- Impl Q2 pilot order (Tom, 2026-11-01): replaced by Impl Q3. Tom first chose `elements/shell-main` first,
+  because the `pages/inbox` design renders inside `shellMain.render`.
+- Impl Q3 pilot order (Tom, 2026-11-01): keep the Q251 order. The pilot inbox component
+  (`apps/ethlete-studio/src/app/design-parts/inbox/`) draws a copy of the shell markup, so its compare works without
+  the built shell (5 of 7 states 0 px). Finish the inbox with the copy, then build `elements/shell-main` at once. In
+  that slice the inbox uses the shell-main component and the copy is deleted; compare shows if the swap breaks
+  anything. Tom checks the inbox in the real Studio on :4402 after the swap.
+- Impl Q5 real route (Tom, 2026-11-01): the pilot gets a slice 3 after the shell swap. The real Studio inbox view
+  renders `InboxComponent` with live comment-store data in place of the old comment panel, and the real shell
+  renders `ShellMainComponent`. Route `/` no longer shows the old `StudioViewComponent` parts that these replace.
+  Tom checks the inbox on :4402 after slice 3, not after slice 2.
+- Impl Q6 parallel findings (Tom, 2026-11-01): Q254 is partly lifted. Parallel to the pilot, the builder fixes tool
+  and system findings that change no design and touch none of the pilot files (inbox, shell-main, `studio-view`,
+  their harness). One subagent per item; commits pushed in batches. The items:
+  1. Plain `design check` shows every blocker that today only `design ready` shows (missing states, contrast).
+  2. `design check` and `design ready` warn when `dist/libs` is older than the lib sources.
+  3. Forced interactions (hover, active) are not applied to disabled states.
+  4. Studio says "restart the server" when the server runs an older `@ethlete/cli` than the installed one.
+  5. Studio writes `inventory.json` in the format Prettier accepts. Done before Impl Q6 in 3dd71ffb3; the spec
+     fails without the format step.
+  6. Browser-backed cli specs that CI skips report the skip visibly.
+  7. The canonical-class check also runs on the Tailwind classes in `apps/ethlete-studio/src`.
+     Not now: the Inventory canvas, the sketch views (live iframe cap, changed-area context, multi-part title), and the
+     word "go". They change the design or touch Studio views of the pilot.
+- Impl Q7 restart notice (Tom, 2026-11-01): the "has no system view" case came when Tom opened the tomflix project
+  in Studio. Tomflix has its own copy of `@ethlete/cli` in `~/dev/tomflix/node_modules` (built 2026-10-31 23:52,
+  same version string `3.0.0-next.26`), so its design server ran an older cli than Studio expects. A restart does not
+  help there. Item 4 therefore: the server reports its own build stamp and API level, Studio compares it with what it
+  needs, for every server it talks to (own, tmux, other project). An older one shows a notice that names the cause
+  and the fix: "restart the server" when the project's installed cli is newer than the running server, else "update
+  `@ethlete/cli` in <project>". Studio shows the notice after pilot slice 3, when `studio-view` is free.
+- Impl Q8 picker font (Tom, 2026-11-01): a design defect, fixed on the design side. The Studio frame no longer takes
+  `--et-font-family` from the SDK foundations `colors.css` (`system-ui`), so the SDK menu in `elements/shell-main`
+  state `project-picker` draws in the Studio font, like the app. Then the builder closes the remaining 29 px
+  (antialiasing at the rounded corners of the transformed overlay pane) in the app.
+- Impl Q9 picker autofocus (Tom, 2026-11-01): the real app keeps `autoFocus` on for the project picker menu, so a
+  keyboard open focuses the first item. The design state `project-picker` means a pointer open; compare opens the
+  menu by pointer, so no focus ring shows.
+- Impl Q10 disabled guards (Tom, 2026-11-01): the new `DISABLED-INTERACTION` rule (0d1082d73) found missing
+  `:not([disabled])` guards, mostly `backgroundColor`, in 8 sdk parts: button 2, calendar 2, carousel 6, chip 8,
+  copy-button 2, pagination 4, scrollable 28, toolbar 2. Fix them now, beside the pilot, in one subagent slice in
+  `libs/components` CSS, with a patch changeset. Where a colour also lives in the sdk design part (for example
+  button), the slice changes that part too and rebuilds `dist/libs`, so design and lib do not drift. Done when
+  `design check --product sdk` reports no `DISABLED-INTERACTION`.
+- Impl Q11 inline SVGs (Tom, 2026-11-01): the rail icons and the Studio mark stay inline in `ShellMainComponent`
+  for now (design freeze, Q253). When a second part needs the same icon, the SVGs move to one shared icon file in
+  `apps/ethlete-studio` that both the app and the design use. Until then, compare guards against drift.
+- Impl Q12 picker font (Tom, 2026-11-01): replaces Impl Q8. Measured: the design frame does not take
+  `--et-font-family` from the SDK `colors.css`; the design menu inherits `--font-ui` from the Studio `type.css` body
+  rule. In the app that rule sits in `layer(studio-tokens)`, so the unlayered app body rule (`--font-sans`, Jost)
+  wins for the body-portaled menu. The app deviates, so the fix is in the app: `--et-font-family: var(--font-ui)`
+  app-wide in `apps/ethlete-studio/src/styles/sdk-token-map.css`. Measured: 2923 px → 29 px.
+- Impl Q13 corner antialiasing (Tom, 2026-11-01): the last 29 px sit at the 4 rounded corners of the menu pane,
+  because the SDK overlay puts `transform: translate3d(...)` on the pane (own layer). One-line design change allowed
+  under the freeze (a defect the implementation shows): `transform: translate3d(0,0,0)` on `.st-project-picker` in
+  `.ethlete/design/studio/elements/shell-main/shared/picker.css`; then a new go, compare, `task --verify`. If that
+  does not reach 0 px, the builder reports and stops; no tolerance.
+- Impl Q14 picker autofocus (Tom, 2026-11-01): replaces Impl Q9. The harness opens the picker by the input
+  `projectPicker='open'` (API), not by pointer, so autofocus drew a focus ring (8355 px). Autofocus stays on in the
+  app (keyboard open focuses the first item); the compare harness opens the picker by a real pointer click (cli
+  change), and the app drops `autoFocus="false"`.
+- Impl Q15 go by the builder (Tom, 2026-11-01) - replaced by Impl Q119: when Tom approves a concrete design change in the chat (for example
+  the Impl Q13 transform line), the builder may record the new go with `--by tom`; the commit message names the
+  decision. A new design or a larger change still needs Tom's own go. The Impl Q13 go stays.
+- Impl Q16 verify revision (Tom, 2026-11-01): no tool change. With parallel committers the builder passes the
+  revision to `task --verify`; revisit only if a wrong record happens.
+- Impl Q17 inbox unread (Tom, 2026-11-01): the comment store has no read state; a row counts unread when it waits for
+  the user (`threadState` question or answered). Keep.
+- Impl Q18 user name (Tom, 2026-11-01): the store has no user name; the app shows "Du" (initials "Du") for the user's
+  own messages, the design "Tom Bornholdt"/"TB". Keep "Du". Real user identity comes with the multi-user sessions
+  work after the MVP.
+- Impl Q19 inbox load states (Tom, 2026-11-01): a design defect, fixed now under the freeze: `pages/inbox` gets a
+  loading state and a load-error state with retry. An interrupted state and other states the old panel had are
+  parked after the MVP. Then go (`--by tom`, Impl Q15), compare, `task --verify`.
+- Impl Q20 inbox scroll (Tom, 2026-11-01): a design defect, fixed now: the inbox list in `pages/inbox` scrolls in
+  place of `overflow-hidden` (53 real rows clip today). Then go (`--by tom`), compare, `task --verify`.
+- Impl Q21 rail letters (Tom, 2026-11-01): studio, studio-lab and sdk all show "S" in the rail, and the old picker's
+  "inherits from" hint is gone. Parked after the MVP as a rail design question.
+- Impl Q22 section trees (Tom, 2026-11-01): Sketches and Flows show the same full tree as System. Keep; per-section
+  trees are parked after the MVP.
+- Impl Q23 check speed (Tom, 2026-11-01): plain `design check` draws all states (studio ~6:30, was ~4:20). Keep; no
+  `--fast` now. The check time goes into the performance review after the MVP.
+- Impl Q24 clean count (Tom, 2026-11-01): `PARTS <product>: n of m clean` counts a part clean only when it has no
+  open point that blocks ready. One cli slice. This is the Q255 done number; expect far fewer than 26 at first.
+- Impl Q25 Tom's :4402 check (Tom, 2026-11-01): Tom checked the new shell and inbox on :4402 after slice 3. He has
+  feedback, all for after the MVP; he gives it in one collected round when the whole MVP is implemented (Q255:
+  every Studio part implemented, compare green, ready), not after Impl Q24. No change from this check now.
+- Impl Q26 load-error text (Tom, 2026-11-01): the second line of the inbox load-error state stays fixed text for the
+  MVP. Showing the real `loadError` message is parked after the MVP.
+- Impl Q27 go for seven parts (Tom, 2026-11-01): Tom gives the go in the chat for `components/disclosure`,
+  `components/shell-collapse`, `components/shell-project-option`, `components/shell-project-switch`,
+  `elements/studio-menu`, `elements/canvas-frames` and `pages/start` (design-done at the MVP). The builder records each
+  with `--by tom` and names Impl Q27 in the commit; they run in wave 2.
+- Impl Q28 link-only go (Tom, 2026-11-01): when Q252 moves an inline part to its own component, only its `implements`
+  link changes and the go goes stale. For a link-only change the builder re-records the go with `--by tom` and names
+  Impl Q28 in the commit. Any visual design change still stops and asks. After the MVP: the go hash ignores the link.
+- Impl Q29 done number (Tom, 2026-11-01): replaces the Impl Q24 premise. The clean count was right: it uses the open
+  points that `ready` refuses on, and the 26 own Studio parts have none; the 57-73 open points sit on the 47 inherited
+  SDK base parts. Revert `fe709f9d8` (base parts belong to the SDK track, Q250). The Q255 done number is its own line
+  over the own parts: `DONE studio: n of 26`, where a part counts when its `implemented.json` entry matches the go
+  hash and it has a ready mark. One cli slice.
+- Impl Q30 zoom-chip labels (Tom, 2026-11-01): the zoom-chip buttons get German aria-labels (the Studio UI is
+  German): "Verkleinern", "Vergrößern", "Auf 100 % zoomen", "Einpassen". No pixel change; go `--by tom`.
+- Impl Q31 canvas-viewport render (Tom, 2026-11-01): a design defect (part mixed with its demo). The render draws only
+  the viewport; the sample cards move into an empty slot, and the size comes from a `class` prop. Visible change, so
+  go `--by tom` (Tom approved it here) and Tom looks at the result in Studio in his collected round.
+- Impl Q32 live comment pin data (Tom, 2026-11-01): map from the comment store: author to initials ("Du" for the
+  user, as Impl Q18), agent logo by sender, count = replies, selected = open thread. Built in the canvas-frames or
+  page slice.
+- Impl Q33 agent logos (Tom, 2026-11-01): the Impl Q11 trigger is met (inbox and comment pin). The claude, codex and
+  gemini SVGs move to one shared icon file in `apps/ethlete-studio`, used by app and design, as part of the pin swap.
+  Rail icons and the Studio mark stay inline until a second part needs them.
+- Impl Q34 studio-menu open panel (Tom, 2026-11-01): redraw the open panel with the SDK menu mock
+  (`@system/components/menu`), as shell-main's project picker does; go `--by tom`; Tom reviews it in his collected
+  round. Also a system finding (see Impl findings).
+- Impl Q35 shell-project-switch open (Tom, 2026-11-01): the `open` state draws the picker like shell-main's
+  `project-picker`; go `--by tom`.
+- Impl Q36 shell-project-option (Tom, 2026-11-01): retire `components/shell-project-option` and drop it from the
+  shell-main note; the picker keeps the SDK `et-menu-radio-item` rows. Not a general rule: a product may give an SDK
+  component a new look (the point of the tier 2 and tier 3 system). The system must prevent sprawl instead, for
+  example ten menu styles in one app. Retired here only because no part uses the custom row.
+- Impl Q37 host padding (Tom, 2026-11-01): keep the convention: a component drawn in a padded wrapper carries that
+  padding on its host, no host background. If the padding breaks a consuming page, compare of that page shows it.
+- Impl Q38 ready by the builder (Tom, 2026-11-01): after a green `task --verify` the builder runs `design ready` for
+  the part itself. Tom checks everything in his collected round after the MVP.
+- Impl Q39 tree badges (Tom, 2026-11-01): drop the badges the tree-row design has no mark for (`from base`,
+  `overridden`, `changed`, `merging`, `question` vs `answered`, `transferred`, kit count) in the live swap. Tom looks
+  at them in his collected round after the pilot. Also a system finding.
+
+### Impl findings: system lessons (Tom, 2026-11-01)
+
+Moved to [archive/findings-2026-11.md](archive/findings-2026-11.md#impl-findings-system-lessons-moved-from-design-to-codemd-2026-11-05) for the size budget.
+
+### Exit the fix loop decisions (Tom, 2026-11-01)
+
+Tom: the find-error-fix loop runs for days; he wants out, and he is not always there to approve things.
+
+1. The MVP goal is a short list of user flows, not "every part merged and ready". The flow list and its state live in
+   plans/ethlete-studio/STATUS.md (draft of 7 flows; Tom corrects it). A flow is done when its click test passes.
+2. No new process tooling until the MVP: no new gates, flags or go rules. Ideas go to the backlog. Build only what
+   repairs a flow.
+3. Fix the root cause once (finding 85): one implementation per thing (one canvas, one picker, no copies), in one
+   cleanup pass.
+4. Every flow gets a Playwright test that clicks the real Studio. A defect Tom finds becomes a test first, then a fix.
+5. The builder never waits for Tom: Tom's approvals do not block work; one flow at a time. When Tom is there he gets a
+   short round: what works now, at most 3 questions.
+6. Flows and inventory are out until the MVP (Tom, 2026-11-01): "es macht keinen sinn an extra features wie flows zu
+   arbeiten wenn die basis mist ist"; the inventory gets reworked anyway (see plan). No work on pages/flows or
+   pages/inventory; the one canvas covers System and Sketches (Flows follows later through the same component).
+
+### Title bar, search and activity decisions (Tom, 2026-11-01)
+
+After the MVP. Not part of the 17-part goal.
+
+1. Studio gets its own title bar instead of the OS default. Windows and Linux: Studio draws the drag region and the
+   window buttons (Tauri `decorations: false`). macOS keeps the native traffic lights (overlay title bar style).
+2. The centre of the title bar holds a search field like the VS Code command center. A click on it or Ctrl+K opens the
+   `command-palette` from `libs/components`. It finds parts, sketches and commands (for example "Go geben").
+3. The project switch stays in the sidebar. The only other title bar item is an "Update" button, shown only when an
+   update is ready to install.
+4. Activity (render, merge) shows only in the view the user waits on, for example the merge loading state. No spinner in
+   tree rows ("dann wird der tree so unruhig"), no global indicator. A global indicator comes only once Studio does
+   background work the user did not start.
+
+### Handoff restart decisions (Tom, 2026-11-01)
+
+Cause: at 85 % context the builder had about 9 background agents running, one for over 40 minutes. The handoff skill
+forbids a restart while a sub-agent runs, so the builder stood still. Change the handoff skill
+(`.agents/skills/handoff/SKILL.md`), for every session:
+
+1. From 70 % (handoff mode on) start no new sub-agent. Running ones finish in peace.
+2. At 85 % stop only a sub-agent that surely hangs: no new step for more than 30 minutes. Write its remaining work into
+   the handoff file; the fresh session starts it again. Never stop a working agent ("a mit stoppen klingt zu aggro").
+3. A restart waits only for sub-agents whose answer the session needs for its next step (Tom: some agents write their
+   result another way). At spawn time the session decides: answer needed, or the agent writes its own result. A
+   self-reporting agent commits its slice and writes its result to `.claude/handoffs/agent-results/<name>.md`. The
+   handoff file names these agents and their result files; the restart then starts at once. Rule 2 still applies to the
+   agents whose answer the session waits for.
+4. First check whether a background sub-agent keeps running after `/clear`. If it dies, rule 3 does not apply and only
+   rules 1 and 2 hold.
+
+### Sidebar header and switch decisions (Tom, 2026-11-01)
+
+After the MVP, except item 5.
+
+1. Repo switch and "Projekt öffnen" move into the logo menu (elements/studio-menu).
+2. The design system select (for example `studio`, `sdk`, `studio-lab` in ethlete-sdk) replaces the static name in the
+   sidebar header. The repo select at the sidebar bottom (`components/shell-project-switch`) goes away.
+3. The select sits left in the header and looks like the current name with a small chevron when closed. The collapse
+   button stays right.
+4. The quick switch of recent design systems at the rail bottom stays. Each button shows the system logo (for example
+   `studio/foundations/logo`); without a logo, two letters that make the system unique (for example "St", "Sd", "SL"),
+   never the same single letter for all. A tooltip shows the full name.
+5. MVP, pages/inbox: a resolved comment shows its pin after a click in the inbox, muted and with a check mark, so the
+   click always shows a place.
+
+### Project switch focus row decision (Tom, 2026-11-01)
+
+- components/shell-project-switch `project.option-focus-visible`: the design draws the row fill together with the focus
+  ring, like the SDK menu on a keyboard-focused row and like the design's own `open-focus-visible`. No app override of
+  the SDK menu CSS.
+
+### One-click accept and go decision (Tom, 2026-11-01)
+
+MVP, pulled forward from finding 109 ("dieser prozess ist so beknackt"). When a part view has both steps open (a direct
+edit to accept and a go to give), it shows one primary button "Abnehmen und Go" that writes `accepted.json` and
+`go.json` in one click. When only one step is open, the view keeps the single button it has now. The full go rework stays
+after the MVP.
+
+### System fit state decision (Tom, 2026-11-01)
+
+- pages/system `fit` (finding 120): the design gives the fit frame a fixed body size (like many-states `w-md`) and reads
+  the panel inset from `--st-shell-inset-left`, so the fitted frame sits centred in the visible canvas area, clear of
+  the side panel, like the real System canvas. Re-check the app fit x after the design fix. pages/system then needs
+  accept + go.
+
+### Go order and stale go decisions (Tom, 2026-11-01)
+
+Tom: "builder baut was, ich nicke es ab, builder macht checks, checks failen, ich muss fragen beantworten, builder baut
+was, ... viel zu optimieren". Tonight pages/inbox, elements/shell-main and pages/merge each needed a second go after
+checks failed post-go.
+
+1. Go last (rule, now): the builder runs `design check`, `design actions` and compare for the part and gets them green
+   (or names each remaining fail as a known tool defect) BEFORE it sends the grill a shot for Tom's go. `ready` runs
+   right after the go. After the MVP, a tool gate: Studio shows "Go geben" only when the part's checks are green, else
+   it lists what is missing.
+2. Invisible changes keep the go (tool change, MVP): a design change that changes no pixel in any existing state (for
+   example a `data-et-action`, an app-only text) does not make the go stale, like the existing "merged automatically:
+   no visible change" accept. A new state that only combines known looks (for example `open` plus the focus ring) goes
+   into Tom's next review round but does not block the part.
+
+### CLI speed decision (Tom, 2026-11-02)
+
+Q16, from finding 126:
+
+1. Now, in the MVP: run the action checks in parallel (actions-command.ts, with the limit of the draw queue in
+   thumb.ts), and replace the fixed 400 ms emit wait in action-press.ts with a condition. Both are general tool
+   changes, test first.
+2. After the MVP: stop rebuilding the harness app on every command (harness-server.ts).
+
+### Sketch in context decisions (Tom, 2026-11-02)
+
+- A generic feature of the design tool, for every product, not a Studio special: a sketch can be seen in the context
+  of the existing design. Tom: "einen Sketch im Kontext von bestehendem Design sehen sehe ich als generell wichtig an".
+- The sketch view gets a toggle "Einzeln | Im Kontext", default "Einzeln"; it applies to all variants at once. "Im
+  Kontext" renders each variant in its real place inside the enclosing existing design (for components/title-bar:
+  the shell), the other parts at their current state.
+- A part used in several places: the first place is shown, a picker offers the others.
+- `sketch check` also renders each variant in its context and reports fit problems (height, overlap) (grill, tool
+  internal).
+- Visible UI: the builder sketches the sketch view with the toggle first, Tom picks, then it is built.
+
+### Visible change gate and no-memory decisions (Tom, 2026-11-02)
+
+- B48 is a gate in `@ethlete/cli` (part of the design check every product runs, locally and in CI), not a hook of
+  this repo; our pre-push only calls it. It renders each part's states at the merge base and at HEAD and compares
+  them. A part that looks different fails unless a picked or merged sketch of that part is in the pushed range.
+  Exception: a change that measurably moves the app closer to the part's existing design (the live compare against
+  the design part shows less deviation than before) passes without a sketch. Invisible changes always pass.
+- Rules for agents live in the shipped skills from libs/agent-rules, never in agent memory or gitignored handoff
+  files: "visible UI only with a picked sketch" goes into the design skill; "decide technical questions yourself,
+  put only product and UX questions to the user" goes into the grilling skill. Then the doc agent deletes its two
+  memory notes on these rules.
+- Agent memory is off-limits for this work (Tom: "memory hilft mir aber allen anderen usern absolut gar nicht"). A
+  lesson an agent learns becomes a finding with a tool fix; the doc-agent and builder-agent skills say so.
+
+### Title bar and refused-action decisions (Tom, 2026-11-02)
+
+- components/title-bar: Tom picks variant C (32 px wide field "studio / Title Bar", filled brand Update). The merge
+  from Studio failed and nothing was picked; it is retried only after the builder knows the cause.
+- A refused decide action (pick, discard) shows an error next to the decide controls, with the CLI's reason. It
+  reuses the merge bar's `[error]` pattern and `refusalMessageOf`; no new design, no sketch needed.
+
+### Pick and merge decisions (Tom, 2026-11-02)
+
+- One button per variant, "Übernehmen", replaces "Wählen". It opens the existing merge screen directly; that screen
+  is the confirmation (changed states, then merge). Cancelling it leaves nothing picked. The state "picked but not
+  merged" disappears from Studio; the CLI's pick becomes part of the merge, not a separate user step.
+- No undo after a merge: a merge is final. A later change of mind is the agent's job (a new sketch or a fix), not a
+  Studio button.
+- The sketch-view sketch (finding 148) is drawn on this flow.
+
+### Title bar implementation decisions (Tom, 2026-11-02)
+
+- The go for components/title-bar after the `implements` link: Tom grants it himself in Studio (granted). An agent
+  never grants a go in Tom's name; the auto-mode classifier blocks it anyway.
+- The search button "studio / Part" ships now and does nothing on click until the command palette (A2) exists.
+- The macOS states draw the traffic-light window controls as demo content on the left, in a slot that compare
+  empties (the OS draws the real ones). Today the left side of `macos` and `macos-update` is empty, so the state
+  does not read as macOS. Visible design change: it needs a new go from Tom.
+- The macOS traffic lights are three neutral grey dots (like an inactive macOS window): no new token, no asset.
+- The Update button restarts and installs via a host command, after a confirm dialog: "Update auf v<version>
+  installieren? Studio startet dafür neu." with "Neu starten" and "Später"; "Später" only closes the dialog, the
+  button stays. The dialog is new visible surface and gets its own small sketch.
+- The title bar ends at the bottom with a 1 px border in the theme's border colour; the background stays the
+  same (finding 157).
+- Technical (grill): os/left/right/update become app inputs; the layout follows the design (grid h-8, 1fr | auto |
+  1fr), not the app's flex h-9.
+
+### Title bar search and gate decisions (2026-11-02)
+
+- Search field text (Tom): placeholder, search icon and kbd take the full surface text colour on hover, pressed and
+  focus-visible; at rest they stay muted. No contrast exception.
+- The search field becomes its own control part (Tom's feedback, finding 163); the title bar embeds it and draws no
+  states of it. Its states and the contrast fix live in the new part.
+- Go withdrawal (B70) is parked: the go system will be reworked; the rework must include withdrawing a go. Until
+  then a wrong go is not removed: a redraw makes it stale, and Tom's next go replaces it. Tom edits no files
+  (finding 82); asking him to edit go.json was wrong.
+- Technical (grill): the pre-push visible-change gate fails when a selected part has any unjudged state; listing
+  them is not enough (a gate that passed after judging nothing, builder 2026-11-02).
+
+### Update dialog and merge commit decisions (Tom, 2026-11-02)
+
+- The update confirm is variant b of the update-dialog sketch: an SDK anchored dialog under the Update button with an
+  arrow, no scrim; the question bold, "Studio startet dafür neu." muted below, xs buttons right ("Später" outline,
+  "Neu starten" filled). Tom merged it.
+- The dialog shows the version without build metadata: everything from `+` on is dropped
+  (`v0.42.0-next.137+build...` shows as `v0.42.0-next.137`).
+- The builder commits Tom's title-bar merge once, together with its follow-up edits and the new
+  components/title-search part (the merge content is no longer separable): exactly components/title-bar/,
+  components/title-search/, the four icons close, maximize, minimize, search, and those parts' merged.json and
+  pictures.json lines, as one "chore(repo): Merge ..." commit, after both parts check clean; never go.json. A commit
+  is no go: Tom grants both gos in Studio afterwards.
+- The builder commits Tom's update-dialog merge (variant b) once, exactly its paths and lines; never go.json.
+- Title search long label (Tom): the product name always stays whole; the part name truncates at the end with an
+  ellipsis, and the label then aligns left instead of centring. Visible change to title-search before Tom's go; the
+  builder may commit it as a follow-up to the merge commit (same paths, never go.json).
+- The title bar belongs to the shell (finding 168): elements/shell-main embeds components/title-bar at the top over
+  the full window width, above the rail too; the Studio mark stays at the top of the rail. The app moves the title
+  bar from app.component.ts into the shell component. Visible change to shell-main: it needs Tom's go.
+
+### Sketch view states decision (Tom, 2026-11-02)
+
+- pages/sketches round 2: variant e. Each variant row stacks all its states; unchanged states dimmed, the first
+  changed state marked "erste Änderung". Rows pan with the canvas, no inner scrollbar. Open: the cut at the window
+  edge (finding 167).
+
+### Post-MVP tool fixes (builder, 2026-11-02, in progress)
+
+In progress, five parallel subagents, one per fix: (1) `task --verify` runs the actions check (findings 123/127);
+(2) an embedded-part change marks the embedding parts "actions need a re-run" in `check` and `ready` (finding 130);
+(3) "reaches state X instead" on an actions miss (finding 131); (4) OCCLUDED check and compare waits for the overlay
+enter animations (finding 129); (5) harness build cache (Q16 item 2).
+
+### Builder wave (2026-11-02, in progress)
+
+Merges committed: 9fe0b8a41 (title bar + title search + icons), f31a7febb (update dialog). In progress, parallel
+subagents, one per slice: causes of findings 166 and 167; B65 go auto-carry with slots drawn; B72 CONTROL-STATE;
+B66 harness host width; B75 identical-renders first changed state; `--et-kbd-color`; B77 background-only hook;
+zoom-chip `target` only in interaction rows.
+
+### Rule audit decisions (2026-11-02)
+
+From the B79 audit (.claude/handoffs/agent-results/b79-rule-audit.md: 100 rules, 17 enforced, 22 partly, 61 prose
+only). Technical gaps became B84-B98 in STATUS.md.
+
+1. Push: the builder may push `next` without asking when pre-push is green. Recorded in the builder-agent skill; a
+   hook allows push only to `next`.
+2. Freezes lifted: the design freeze (Q253/Q254), "no new process tooling until the MVP" and "no work on pages/flows
+   or pages/inventory until the MVP" existed to finish the MVP, which is done.
+3. Judgment rules: rules no tool can check go into one short list, each with one sentence why no tool fits. Every
+   other rule needs a hook, check or refusal.
+4. Claude config: the settings.json hook entries of B77 (background design commands) and B87 (git safety) are
+   approved by Tom; each new settings.json change needs its own approval.
+5. Sketches view has no selection: click and pan select nothing and draw no outline; Shift+2 fits the frame nearest
+   the view centre (B97). The outline Tom saw came from a window refocus (finding 158).
+6. pages/inbox sidebar declares its scroll instead of shortening demo data (B98).
+7. Uncommitted sketch variants may be edited by the builder for mechanical fixes that change no pixels, proven by
+   before/after shots; the builder does not commit them. Correction (Tom, 2026-11-02): these variants were drawn by
+   agents, not by Tom - Tom never builds a sketch himself (finding 180).
+8. Nested parts (A36): a part that belongs to a host lives under it in its path (`components/title-bar/title-search`)
+   and in the explorer; the check refuses it outside its host; shared parts (button, kbd) stay on their layer. In
+   the go rework (A10, "build-ready" replaces go) a nested part is build-ready on its own, and a host is build-ready
+   only when its nested parts are. Tom noted the go question belongs to the go rework, not to a separate decision
+   (B83 extended: a question touching a system under planned rework goes into that item).
+9. Builder chat length (finding 175): no blocking hook (it burns tokens on rewrites). The agent-sessions `run`
+   command gets a role flag (`run claude --role builder`) that starts Claude with `--append-system-prompt`: "The user
+   does not read this chat. Write no text between tool calls; end each turn with at most one line. Reports go to the
+   grill session via SendMessage." Plus a non-blocking Stop hook that only logs the chat words per turn of a builder
+   session, so the grill session can report whether the rule works; Tom approved its settings.json entry.
+10. Interaction rows for embedded parts (Tom): the "States by interaction" grid draws a state row for a marked element
+    only when the part styles it itself (own classes or overrides on it). A marked but unchanged embedded part (the
+    two et-buttons in update-dialog) keeps its action, gets no state row, and its states live in its own part. The
+    tool decides from the markup; no author rule (B106).
+11. Own controls found by CONTROL-STATE (Tom): zoom-chip `reset`, shell-main `section` and shell-main `product` each
+    get a sketch with two variants, the unchanged SDK button and a new own control part; Tom picks and merges.
+12. Priority (Tom, 2026-11-02 11:00): the Sketches view (pages/sketches r2, variant e: B34, B36, B38, B84, A13) goes
+    first. Two hours went into side fixes. In-flight slices only end in a committable state; new tool fixes and
+    findings get recorded but not built unless they block the Sketches view.
+
+#### Judgment rules (decision 3)
+
+Rules from the B79 audit that no hook, check or refusal can test. Each stays prose, with the reason no tool fits.
+
+- #46 A wireframe is rough (regions only): "too polished" is a visual judgment; `flow.ts` and
+  `kit-outside-pages.ts` already catch the structural part (one sketch per screen, no kit outside pages).
+- #51 A reference informs, it is not a template: telling inspiration from copying needs the reference and taste;
+  no diff metric separates the two.
+- #61 Doc agent writes German to Tom, English to the builder and plans: a language check on chat output would
+  misfire on code, paths and quoted English, and the cost of a slip is low.
+- #64 Never answer a design question for the user: whether an answer is a design decision or a technical one is the
+  judgment itself (see #94).
+- #65 While afk, collect questions and sound only when blocked: "afk" and "blocking" are states only the agent
+  knows from the conversation.
+- #69 Write a handoff only when work is left: the hook can see the tree, but not an unrecorded decision or an
+  unfinished step of the user's task.
+- #94 Decide technical questions yourself, ask only product/UX: the split between technical and product is the
+  judgment; the B83 rule (name the owning part, check for a planned rework) narrows it but cannot decide it.
+
+Not judgment rules, so they get a tool (B100): #47 stage order, #48 one open call and word limit, #58 slice plan
+notes, #63 grill round format, #93 comment allowlist. Lifted or moved, so no tool: #84, #85, #86 (freezes lifted,
+decision 2), #91 (go rework, A10).
+
+- 181/182 follow-up (builder, 2026-11-02): e fixed (rows run to the window edge, page root clips, CLIPPED skip
+  removed; check ok in 8 states). HIDDEN-CONTENT exempts a part that declares a canvas control (canvas-viewport):
+  a cut at the window edge is correct there. 182 cause: the live compare runs only against the MERGED page design
+  (r1), never a sketch variant (`compare --live --sketch` is no step of `sketch ready`), and it reports a pixel total
+  that never reaches 0, so a 20 px strip drowns in ~200k px of by-design difference. Tool fix (decided, technical):
+  the live compare measures named regions on both sides (canvas viewport rect and clip rect, header, zoom chip) and
+  reports geometry deltas apart from pixels; `sketch ready` on a page sketch with `implements` runs that region
+  check against the live app for every region the variant does not claim to change.
+
+### Sketches zoom label decisions (2026-11-02)
+
+- Zoomed far out (7 %): a small constant-size tag (variant + model, e.g. "a · Opus 5.5") above each frame (r4 m).
+- Zoomed far in (200 %): a compact sticky head at the canvas top - variant, model, "Wählen", no note - on a
+  backdrop, kept short so it hides as little of the frame as possible (r4 k, made compact).
+- Next round folds both into the e base with e's status states (drawing, paused, paused-reason, idle, new-part),
+  which r4 k/l/m do not carry.
+
+### Sketches view real-data layout decisions (Tom, 2026-11-02)
+
+- Frame width: each state frame is as wide as the part's fitted size (B36), not the full row width.
+- Many states: a narrow part wraps its states into several columns (about 4 side by side) inside its variant row; a
+  wide part (for example the title-bar) keeps one column. Unchanged states stay dimmed, the first change marked.
+- Start zoom: the view opens at Fit; after that the zoom is kept per sketch, like the other canvas views.
+- Nothing else differs from design e.
+- Text size (follow-up, Tom): variant head note 15 px and state labels 13 px at 100 %, scaling with the zoom, but
+  never below about 12 px on screen (at Fit they stay readable without zooming).
+- Text floor revised (Tom, finding 196): the 12 px floor applies only to the variant head (name, model, note,
+  Übernehmen). State labels scale with the zoom and are hidden once they would render below about 9 px.
+- Long state label (Tom, finding 198): a label longer than its frame wraps onto two lines; the whole grid row
+  reserves the height of its tallest label, so the frames of one row stay aligned.
+- Large parts transposed (Tom, finding 199): a part whose fitted width is more than a quarter of the view width (at
+  100 %) is laid out transposed: one column per variant (Aktuell | a | b ...), one row per state, so the same state of
+  every variant sits side by side. Fit fits the width of all variant columns; the user scrolls through the states.
+  This replaces the "wide part keeps one column" rule (title-bar is transposed too). Narrow parts keep the variant
+  rows with about 4 state columns. Dimming and the "erste Änderung" mark stay per cell.
+
+### Sketches matrix and state name decisions (Tom, 2026-11-02)
+
+- State names in the transposed matrix (pages/sketches round "Matrix und Zustandsnamen"): variant a - the name once
+  per row in a left gutter at 12 px. Tom picks a via Übernehmen and gives the go in Studio himself; then the builder
+  runs the compare and commits the Sketches slice.
+- Sticky names: when zoomed and panned, the state names stick to the left view edge while their row is visible.
+- Fit in the transposed matrix fits the Aktuell column plus the first variant column (readable); further columns are
+  reached by panning right. Same rule as "Fit shows Aktuell + first variant row" for variant rows. This replaces "Fit
+  fits the width of all variant columns" in finding 199.
+- Pending compare: the variant marks stay neutral, and the variant head shows a small "vergleicht ..." until the
+  compare answers.
+- zoom-chip round r1: variant a (plain SDK button). Tom picks it via Übernehmen himself.
+- Variant head below Fit (Tom, finding 205): the 12 px floor of the variant head holds only down to Fit. Zoomed out
+  further, the head scales with the canvas, and its text hides below about 9 px on screen, like the state labels.
+- Unchanged variants (Tom, finding 207): variants that are pixel-identical to Aktuell in every state go into one
+  shared accordion below the changed variants, collapsed by default. Its bar names them ("Unverändert: Variante a,
+  Variante b"); opened, it shows each variant as before (head, note, frames, Übernehmen). In the transposed matrix the
+  accordion is one narrow column at the right. Inside a changed variant, unchanged states stay visible and dimmed.
+- Head badge (Tom, finding 206): follows the real state - "zeichnet" while at least one variant is being drawn,
+  "Wartet auf deine Wahl" when all are drawn, "Pausiert" / "Keine Aktivität" when the agent stalls. Never derived from
+  `sketch.status` alone. pages/sketches draws the "Wartet auf deine Wahl" state first.
+- No per-variant status (Tom: too much). The "zeichnet diese Variante" placeholder stays for a variant without a
+  picture.
+- pages/sketches round "Matrix und Zustandsnamen": Tom merged variant a (2026-11-02). The go on pages/sketches is
+  still the one from 11:14 and must be given anew by Tom.
+- Structure-only rounds (Tom, finding 208): a round whose variants differ only in code and draw the same pixels is not
+  a design choice. The `sketch ready` refusal stays as is (no "same pixels" waiver). components/zoom-chip is
+  withdrawn; Tom's choice for it (variant a: reset is a plain SDK transparent sm button, no own part) is applied as a
+  code change. Such questions come to Tom as plain questions, or are decided technically.
+- pages/sketches round 2 details (Tom, 2026-11-02, all as drawn): the matrix state-name column is always on and cells
+  no longer repeat the state name; the collapsed "Unverändert" accordion column in the matrix is 144 px wide with
+  wrapping text (not rotated); below 9 px all variant head text hides, the variant name too; column heads do not stick
+  when panning down (not now).
+- Open for later: the drawing placeholder "GPT-6.1 Sol zeichnet diese Variante" wraps hard in narrow columns.
