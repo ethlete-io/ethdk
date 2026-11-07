@@ -1915,6 +1915,14 @@ Built (B351, 7a7c37b30): a missing `dist` throws at once with "<dir> missing, ru
 The poll came from 1d116d6b8, so a render survived a package mid-rebuild; now such a render fails once and the watcher
 redraws after the rebuild. Gap: the 5 s budget runs on the resolve path only, not through the compiled render worker or
 a real Vite listing. Fix (B360): a check or e2e runs the real render path against a fixture whose `dist` is missing.
+As built (B360, 2026-11-07): `libs/cli/src/lib/design/render-missing-dist.spec.ts` compiles the CLI with `tsc` into
+`tmp/`, starts the compiled `createDesignServer` on a free port against a fixture with `render.packages` on a missing
+`dist`, and asserts over HTTP: `/__design/calls` answers within 5 s with an error entry, and `POST /__design/render`
+(the real compiled worker) answers within 5 s with a 500 naming `nx build components`. Bite proof: with the pre-B351
+`render-packages.ts` and `render-worker.ts` both tests hit the 5 s limit (the listing waits, Vite's transport
+disconnects). Not verified: the Vite listing does not itself name the missing package, because `resolveId` swallows the
+`entryOf` throw and falls back to `node_modules` (here Vite reports an unexported subpath); only the render answer
+carries the build command. Recommendation: let `mappedSubpathOf` surface the missing-`dist` error to the listing.
 
 411\. Tom (2026-11-04): "der neu starten button tut nach klick nichts. wenns ne weile dauert sollten wir da nen spinner
 zeigen". Builder (code read, not reproduced): almost surely the title-bar code notice ("CLI geändert - neu starten");
