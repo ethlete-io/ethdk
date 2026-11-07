@@ -4086,3 +4086,8 @@ the build command. Tool fix (technical): the listing names `nx build <name>` for
 `git commit -m … -- <paths>`, and git refuses a partial commit during a merge), so they land by cherry-pick and their
 `built: <sha>` goes stale. Tool fix (technical): the integration step writes each `built:` sha itself after the
 cherry-pick; no agent hand-edits it.
+
+572\. Doc agent (2026-11-07): the desk builder handed `next` to a successor session (9a) whose process exited within
+minutes. Nobody owned `next`, and 8 row agents reported to a dead session. Tool fix (technical): a handoff to another
+session waits for the successor's ack and checks its process; a session that hands itself off prefers `restart <own
+session>` over a new session.
