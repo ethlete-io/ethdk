@@ -1,6 +1,7 @@
 ---
 status: accepted
 open: B396
+governs: ['.github/workflows/*']
 decided: 2026-11-05
 source: grill session 2026-11-05
 ---

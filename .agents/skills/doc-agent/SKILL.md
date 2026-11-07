@@ -43,6 +43,7 @@ output; the designed Studio is the side product.
 - Before every grill question, search the Studio ADRs (`apps/ethlete-studio/docs/adr/`, title and body) and, until
   the migration is done, every `plans/ethlete-studio/**` decision block for the topic. If Tom already decided it,
   do not ask: name the ADR and send it to the builder. A repeated question is a finding.
+- Before you record a decision on files or send work on them, run `yarn adr:governs <files>` and read the ADRs it lists.
 - A question that applies an existing Tom decision to a new case is yours to decide; report it in one line.
 - Load the `ethlete-grilling` skill before the first question. Every design question uses its
   round format (`❓ **Q1** - **Title**: …` then `➡️ <recommendation>`, `---` between), also an

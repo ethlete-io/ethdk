@@ -4440,6 +4440,8 @@ before they change or ask. Process fix: the doc agent searches the ADRs before i
 question. Applied at once: the slow pre-commit checks leave the hook; finding 541 becomes a problem on the part.
 As built (ee935173c): ADRs 0036-0038 carry `governs: [...]`; `yarn adr:governs <files|--staged|a..b>` (tools/scripts/adr-governs.mjs) lists the accepted ADRs whose globs match; not wired to a hook.
 
+560 rest as built (f560-rest): `governs:` globs now also on ADR 0033, 0216, 0221, 0224 (`.husky/pre-push`; 0216 also `.github/workflows/*`), 0039 (`.husky/pre-commit`) and 0197 (`.github/workflows/*`); 0222 skipped (it decides gate rules, not the files). The builder-agent and doc-agent skills run `yarn adr:governs <files>` before a slice changes files and before a decision on files.
+
 561\. Doc agent (2026-11-07): the builder hit 85% context and could not restart itself: the auto-mode classifier denied
 `agent-sessions.mjs restart` ("Tmux Self Drive"), so the 559 fix never gets a chance to run. The doc agent then typed
 `/clear` into the pane while the builder still finished a turn ("Waiting for 2 background agents" looked idle); the

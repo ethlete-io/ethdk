@@ -1,6 +1,7 @@
 ---
 status: accepted
 open: B418
+governs: ['.husky/pre-push']
 decided: 2026-11-07
 source: doc-agent session, after the builder hung for 9 h on a restart
 ---

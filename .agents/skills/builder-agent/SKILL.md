@@ -31,6 +31,7 @@ that talks with the user and records decisions. Talk English.
 ## Build
 
 - Build in slices. When a slice starts, write an "in progress" note to the plan; it goes into the slice's commit.
+- Before a slice changes files, run `yarn adr:governs <files>` and read the ADRs it lists. They are decisions about those files.
 - Lead subagents for scoped work, with a fresh subagent per slice and a `model` on each call.
 - One topic at a time: work the queue in order and start the next topic only when the current one
   is committed. Do not run several topics in parallel. You coordinate, verify, push and report.

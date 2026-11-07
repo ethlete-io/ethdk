@@ -1,6 +1,7 @@
 ---
 status: accepted
 open: B416
+governs: ['.husky/pre-push', '.github/workflows/*']
 decided: 2026-11-06
 source: doc-agent session 2026-11-06, after finding 540
 ---
