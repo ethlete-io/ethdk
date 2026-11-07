@@ -33,7 +33,7 @@ import { OpenPointGroup, PartException } from './system-page-sample';
       size="sm"
       data-open-points-chip
     >
-      @if (count()) {
+      @if (count() || missingShots()) {
         <span [etProvideColor]="warningTheme()" class="contents" etIcon>
           <svg
             class="text-et-theme"
@@ -69,7 +69,7 @@ import { OpenPointGroup, PartException } from './system-page-sample';
           <path d="m3.5 8.5 3 3 6-7" />
         </svg>
       }
-      {{ count() ? LABELS.openCount(count()) : LABELS.nothingOpen }}
+      {{ label() }}
     </button>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -84,16 +84,25 @@ export class OpenPointsChipComponent {
   public exceptions = input<PartException[]>([]);
   public buildReady = input<BuildReadyStatus | null>(null);
   public agent = input<AgentProgress | null>(null);
+  public missingShots = input(0);
   public closed = model(true);
   public blockersOpen = model(false);
   public openEditSketch = output<BuildBlocker>();
   public approveException = output<string>();
 
   private chip = viewChild.required('chip', { read: ElementRef<HTMLElement> });
-  protected readonly LABELS = STUDIO_LABELS.system;
+  public readonly LABELS = STUDIO_LABELS.system;
 
   protected count = computed(() =>
     this.groups().reduce((sum, group) => sum + group.lines.length, this.exceptions().length),
+  );
+
+  protected label = computed(() =>
+    this.count()
+      ? this.LABELS.openCount(this.count())
+      : this.missingShots()
+        ? this.LABELS.shotsMissing(this.missingShots())
+        : this.LABELS.nothingOpen,
   );
 
   constructor() {
@@ -114,6 +123,7 @@ export class OpenPointsChipComponent {
                     inputBinding('part', this.part),
                     inputBinding('groups', this.groups),
                     inputBinding('exceptions', this.exceptions),
+                    inputBinding('missingShots', this.missingShots),
                     inputBinding('buildReady', this.buildReady),
                     inputBinding('agent', this.agent),
                     twoWayBinding('blockersOpen', this.blockersOpen),

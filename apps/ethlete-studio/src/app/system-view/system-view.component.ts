@@ -33,6 +33,7 @@ import {
   transferCall$,
 } from '../../host/design';
 import { placeableFramesOf } from '../components/design-canvas/canvas-frame';
+import { injectFailedShots } from '../components/design-canvas/partials/shot-state';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
 import {
   ThemePick,
@@ -180,6 +181,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
                 [part]="partShown.key"
                 [groups]="openPointGroups()"
                 [exceptions]="openExceptions()"
+                [missingShots]="failedShots.count()"
                 (approveException)="approveException(partShown.key, $event)"
               />
             </div>
@@ -362,6 +364,7 @@ export class SystemViewComponent {
   private destroyRef = inject(DestroyRef);
   protected commentStore = injectCommentStore();
   private injector = inject(Injector);
+  protected failedShots = injectFailedShots();
   public port = input<number | null>(null);
   public epoch = input(0);
   public checkout = input('');

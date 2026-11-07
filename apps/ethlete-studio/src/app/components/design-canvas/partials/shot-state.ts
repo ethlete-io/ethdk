@@ -1,6 +1,6 @@
-import { Component, Directive, ViewEncapsulation, computed, input, linkedSignal, signal } from '@angular/core';
+import { Component, Directive, ViewEncapsulation, computed, effect, input, linkedSignal, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
+import { ProvideColorDirective, defineRootProvider, injectSemanticColorTheme, toInjectFn } from '@ethlete/core';
 import { map, switchMap, tap, timer } from 'rxjs';
 
 export type ShotState = 'loading' | 'slow' | 'loaded' | 'failed';
@@ -8,6 +8,10 @@ export type ShotState = 'loading' | 'slow' | 'loaded' | 'failed';
 export const SLOW_SHOT_MS = 2000;
 
 export const FAILED_SHOT_SIZE = { width: 320, height: 160 };
+
+const FAILED_SHOTS_DEF = /* @__PURE__ */ defineRootProvider(() => ({ count: signal(0) }));
+
+export const injectFailedShots = /* @__PURE__ */ toInjectFn(FAILED_SHOTS_DEF);
 
 @Directive({
   selector: 'img[ethleteShot]',
@@ -29,6 +33,15 @@ export class ShotStateDirective {
   public state = computed<ShotState>(() => this.settled() ?? (this.slowSrc() === this.src() ? 'slow' : 'loading'));
 
   constructor() {
+    const failedShots = injectFailedShots();
+
+    effect((onCleanup) => {
+      if (this.state() !== 'failed') return;
+
+      failedShots.count.update((count) => count + 1);
+      onCleanup(() => failedShots.count.update((count) => count - 1));
+    });
+
     toObservable(this.src)
       .pipe(
         switchMap((src) => timer(SLOW_SHOT_MS).pipe(map(() => src))),

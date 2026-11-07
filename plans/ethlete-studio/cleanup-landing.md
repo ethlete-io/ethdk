@@ -60,3 +60,4 @@ webkit-revert-wt (nicht genommen, entschieden), wip/b321-stacking-fix (verworfen
 - origin/tank/b416-next → verworfen: der WIP (Theme-Schalter ohne `current`) ist schon in next als 947865686.
 - origin/tank/worktree-agent-a13203d886f4f7c9c → verworfen: überholt durch 9bc56da98 (System-Seite portiert, `exception-list` durch `exception-store` ersetzt).
 - origin/tank/b217 → verworfen: bf6fcd97e schon in next als 074e32805; der WIP 494af9c34 ist ein älterer Entwurf, den 074e32805 in `complete.ts` ersetzt hat.
+- desk/B306 → gelandet in diesem Commit (FailedShots als `defineRootProvider`, Chip und Popover „N Bilder fehlen“; Specs, Lint, Typecheck grün; Retry-Knopf bleibt offen in B306).

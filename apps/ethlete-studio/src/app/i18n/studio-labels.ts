@@ -95,6 +95,7 @@ export const STUDIO_LABELS = {
     statesByInteraction: 'States by interaction',
     openCount: (count: number) => `${count} offen`,
     nothingOpen: 'Nichts offen',
+    shotsMissing: (count: number) => (count === 1 ? '1 Bild fehlt' : `${count} Bilder fehlen`),
     openPoints: 'Offene Punkte',
     more: (count: number) => `+${count} weitere`,
     allDone: 'Jeder Zustand ist gezeichnet, verknüpft und besprochen.',

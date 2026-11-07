@@ -19,7 +19,13 @@ const SHOWN_LINES = 3;
         class="flex items-baseline gap-space-2 border-b border-(--et-surface-border-solid) px-space-3 pt-space-3 pb-space-2"
       >
         <span class="font-ui-strong text-(--et-surface-color-solid)">
-          {{ groups().length ? LABELS.openPoints : LABELS.nothingOpen }}
+          {{
+            groups().length
+              ? LABELS.openPoints
+              : missingShots()
+                ? LABELS.shotsMissing(missingShots())
+                : LABELS.nothingOpen
+          }}
         </span>
         <span class="ms-auto font-code text-ui-xs text-(--et-surface-color-muted-solid)">{{ part() }}</span>
       </header>
@@ -148,6 +154,7 @@ export class OpenPointsPopoverComponent {
   public part = input.required<string>();
   public groups = input.required<OpenPointGroup[]>();
   public exceptions = input<PartException[]>([]);
+  public missingShots = input(0);
   public buildReady = input<BuildReadyStatus | null>(null);
   public agent = input<AgentProgress | null>(null);
   public blockersOpen = model(false);

@@ -5,7 +5,7 @@ import { THEMES } from '../../../themes';
 import { OpenPointsPopoverComponent } from './open-points-popover.component';
 import { PartException } from './system-page-sample';
 
-const render = async (exceptions: PartException[]) => {
+const render = async (exceptions: PartException[], missingShots = 0) => {
   TestBed.configureTestingModule({
     providers: [provideZonelessChangeDetection(), provideColorThemesWithTailwind4(THEMES)],
   });
@@ -15,6 +15,7 @@ const render = async (exceptions: PartException[]) => {
   fixture.componentRef.setInput('part', 'components/chip');
   fixture.componentRef.setInput('groups', []);
   fixture.componentRef.setInput('exceptions', exceptions);
+  fixture.componentRef.setInput('missingShots', missingShots);
   await fixture.whenStable();
 
   return { fixture, element: fixture.nativeElement as HTMLElement };
@@ -26,6 +27,13 @@ describe('OpenPointsPopoverComponent', () => {
 
     expect(element.querySelector('h3')).toBeNull();
     expect(element.textContent).toContain('Nichts offen');
+  });
+
+  it('does not say Nichts offen while shots are missing', async () => {
+    const { element } = await render([], 2);
+
+    expect(element.textContent).toContain('2 Bilder fehlen');
+    expect(element.textContent).not.toContain('Nichts offen');
   });
 
   it('lists the exceptions with their state and emits the approved rule', async () => {
