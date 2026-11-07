@@ -38,6 +38,32 @@ describe('CAPABILITY-PLACE', () => {
     ).toEqual({ errors: [], warnings: [] });
   });
 
+  it('reads a dblclick: action as a literal action key of the part', () => {
+    const verdict = capabilityPlaceVerdictOf({
+      file: FILE,
+      capabilities: [{ id: 'fit', label: 'Frame fit', place: { part: 'pages/sketches', action: 'dblclick:open' } }],
+      declared: new Map([['pages/sketches', ['dblclick:open']]]),
+    });
+
+    expect(verdict).toEqual({ errors: [], warnings: [] });
+  });
+
+  it('lists an automatic capability with its why as a warning, and fails one without a why or with a place', () => {
+    const verdict = verdictOf([
+      { id: 'fit', label: 'Frame fit', place: null, automatic: true, why: 'ResizeObserver refits on resize' },
+      { id: 'a', label: 'A', place: null, automatic: true },
+      { id: 'b', label: 'B', place: { part: 'pages/sketches', action: 'open' }, automatic: true, why: 'x' },
+    ]);
+
+    expect(verdict.warnings.map((warning) => warning.message)).toEqual([
+      'fit (Frame fit): automatic, no design action draws it - ResizeObserver refits on resize',
+    ]);
+    expect(verdict.errors.map((error) => error.message)).toEqual([
+      'a (A): is automatic but gives no "why" - say what triggers it',
+      'b (B): has a place but is marked automatic - remove "automatic"',
+    ]);
+  });
+
   it('fails a capability without a place that is not known as missing', () => {
     expect(verdictOf([{ id: 'comment-write', label: 'Kommentar schreiben', place: null }]).errors).toEqual([
       {

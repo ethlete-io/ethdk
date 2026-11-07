@@ -18,6 +18,7 @@ export type Capability = {
   place: CapabilityPlace | null;
   confirmed?: boolean;
   missing?: string;
+  automatic?: boolean;
   why?: string;
 };
 
@@ -34,7 +35,9 @@ const isCapability = (value: unknown): value is Capability =>
   typeof value['label'] === 'string' &&
   'place' in value &&
   isPlace(value['place']) &&
-  (value['missing'] === undefined || typeof value['missing'] === 'string');
+  (value['missing'] === undefined || typeof value['missing'] === 'string') &&
+  (value['automatic'] === undefined || typeof value['automatic'] === 'boolean') &&
+  (value['why'] === undefined || typeof value['why'] === 'string');
 
 /** The raw entries of a product's `capabilities.json`, null without the file, or the problem that makes it unreadable. */
 export const readCapabilities = (dir: string): unknown[] | Problem | null => {
@@ -57,7 +60,8 @@ export const readCapabilities = (dir: string): unknown[] | Problem | null => {
 
 /**
  * Checks every capability against the action keys each part declares: one without a place, or with a place no part
- * declares, is an error; a known missing one is a warning, and an error once it has a place again.
+ * declares, is an error; a known missing one is a warning, and an error once it has a place again. An `automatic` one needs a `why` and no
+ * place, and is a warning in every report.
  */
 export const capabilityPlaceVerdictOf = (options: {
   file: string;
@@ -86,6 +90,14 @@ export const capabilityPlaceVerdictOf = (options: {
 
     const name = `${entry.id} (${entry.label})`;
     const { place, missing } = entry;
+
+    if (entry.automatic === true) {
+      if (!entry.why?.trim()) errors.push(problem(`${name}: is automatic but gives no "why" - say what triggers it`));
+      else if (place) errors.push(problem(`${name}: has a place but is marked automatic - remove "automatic"`));
+      else warnings.push(problem(`${name}: automatic, no design action draws it - ${entry.why.trim()}`));
+
+      return;
+    }
 
     if (!place) {
       if (missing) warnings.push(problem(`${name}: no design action yet, known and tracked in ${missing}`));

@@ -634,6 +634,8 @@ own dist, so an agent ran an old CLI and reported its bugs as current ones. Less
 older than its own source. Fix: B191 (technical) - in a repo checkout `et design` prints a first-line WARN
 "cli dist older than libs/cli/src (built <time>, source changed <time>), run <rebuild command>" and repeats it in
 every report header; rebuild the shared cli dist once the parallel slices settle.
+As built (B191, rest): `design check` prints the warning again before its summary lines; the dist rebuild is left
+to the coordinator.
 
 256\. Sketching B178 (canvas frames, builder, 2026-11-03) the action vocabulary was too small for real interactions:
 no double-click form for `data-et-action`; capabilities.json cannot say a capability happens automatically
@@ -644,6 +646,10 @@ declaration language cannot say the true thing, agents write a false one that pa
 `dblclick:` prefix read by CAPABILITY-PLACE; B193 `"automatic": true` with a required `why`, accepted without a
 place but listed in every capability report (never silent); B194 an `instant` declaration replacing per-pair
 `unreachable`. Scratch names are slugged per agent in the builder brief.
+As built (B192): `parseAction` strips `dblclick:` and marks the action `gesture: 'dblclick'`; the actions and live-actions
+checks press such an element with a double click only. CAPABILITY-PLACE matches the literal key, so a place names
+`dblclick:<state>`. As built (B193): `"automatic": true` needs a non-empty `why` and no place (error otherwise), and
+is a warning line in every `design check`.
 
 259\. The sketch header read "Letzte Änderung von ·" with no name (builder, 2026-11-03): sketch title-bar has no report
 file, `lastChange()` (`sketch-view.component.ts`) returns empty by/since, and the label renders the separators
