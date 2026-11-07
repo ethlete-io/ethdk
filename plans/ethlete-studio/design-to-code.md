@@ -2090,7 +2090,7 @@ WebKit zoom budget on this fixture (rAF frame interval over 90 wheel-zoom steps,
 broke `tsc -p libs/cli/tsconfig.spec.json`, which then blocked every cli commit in the hook. Why no tool caught it: no
 gate ran the spec typecheck on the commit that added it (vitest does not typecheck). Fix (B358): the commit gate runs
 the spec typecheck for every staged spec file.
-As built (B358, w3-gates-b): see 389; the spec typecheck of every changed spec runs in the CI `Checks` job, not in a hook.
+As built (B358, 2026-11-07): no hook change, same as B334 (388, 389). ADR 0225 moved the spec-selecting pre-commit gate (d67c98f91) out of the hook on purpose; `libs/cli` has a `typecheck` target on `tsconfig.spec.json` and the CI `Checks` job runs `nx run-many -t typecheck` on every push. A per-commit `tsc` over the staged specs' projects would take tens of seconds and bring back the slow hook. Not verified: a local timing of that `tsc`. If Tom wants it back, it belongs behind `yarn commit` (commit-wait), not in `.husky/pre-commit`.
 
 420\. Builder (2026-11-04, B343): `list-system.spec.ts` fails only in the pre-commit temp tree (ENOENT on
 `design/web/rebuild-probe-*.txt`). Why no tool caught it: the spec shares a probe path with the tree it runs in, and no
