@@ -2085,6 +2085,57 @@ const CASES = [
     },
   },
   {
+    name: 'hiding the panel at a panned and zoomed camera keeps the frames on screen',
+    pages: ['System', 'Flow'],
+    run: async (page) => {
+      const screenRect = () =>
+        page.evaluate(
+          ({ CANVAS, FRAME }) => {
+            const canvas = [...document.querySelectorAll(CANVAS)].sort(
+              (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+            )[0];
+            const rect = canvas?.querySelector(`${FRAME}, figure`)?.getBoundingClientRect();
+
+            return rect
+              ? { left: rect.left, top: rect.top, width: rect.width, canvasLeft: canvas.getBoundingClientRect().left }
+              : null;
+          },
+          { CANVAS, FRAME },
+        );
+      const canvasBox = await page.locator(CANVAS).evaluateAll((all) => {
+        const widest = all.sort((a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width)[0];
+        const box = widest.getBoundingClientRect();
+
+        return { x: box.right - box.width / 4, y: box.top + box.height / 2 };
+      });
+
+      await page.mouse.move(canvasBox.x, canvasBox.y);
+      await page.mouse.wheel(60, 90);
+      await settle(page);
+      await page.keyboard.down('Control');
+      await page.mouse.wheel(0, -120);
+      await page.keyboard.up('Control');
+      await settle(page);
+
+      const before = await screenRect();
+
+      await page.getByRole('button', { name: 'Hide panel' }).first().click();
+      await settle(page);
+      const after = await screenRect();
+      const kept =
+        !!before &&
+        !!after &&
+        Math.abs(after.left - before.left) <= 1 &&
+        Math.abs(after.top - before.top) <= 1 &&
+        Math.abs(after.width - before.width) <= 1;
+
+      return {
+        ok: kept,
+        detail: `frame ${before?.left},${before?.top} w ${before?.width} -> ${after?.left},${after?.top} w ${after?.width}, canvas left ${before?.canvasLeft} -> ${after?.canvasLeft}`,
+      };
+    },
+  },
+  {
     name: 'a listing refresh every 1 s for 6 s re-navigates no iframe and leaves no 150px frame',
     pages: ['Sketches'],
     labels: ['Large'],

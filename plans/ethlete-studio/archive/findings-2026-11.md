@@ -2595,6 +2595,18 @@ B120): when the viewport's screen origin moves, the camera shifts by the same de
 screen position; a canvas.e2e case toggles the sidebar at a panned, zoomed camera and requires a frame's screen
 rect to stay within 1 px (red on today's build first).
 
+As built (B120, 2026-11-07): the camera shift by the move of the canvas origin already exists in
+`design-canvas.component.ts` (the `hostLeft` delta in the constructor effect, from 2f1d27538, with a spec); no camera code
+changed. Added the e2e case "hiding the panel at a panned and zoomed camera keeps the frames on screen" (canvas.e2e.mjs):
+it pans and zooms, hides the panel and requires the first frame's screen rect within 1 px. Verified green on System and
+Flow, but there the canvas origin does not move (the panel floats over it), so it does not bite. On Sketches, Large and
+Chip, where the origin does move (344 -> 84), it is red: the Sketches page runs its own camera (`pan` clamped by
+`panInsideRoom`, content anchored to the list's left edge, `sketches.component.ts`), so the pan cannot go positive and
+the frames jump by 66-101 px. The fix there is B213 (design-canvas owns the Sketches camera, which already applies the
+origin delta); B213 widens this case's `pages` to `['System', 'Sketches', 'Flow']`. The older case "hiding the panel
+keeps the frames" compares origin-relative rects, which is why it never saw the jump. Not verified: the case green on
+Sketches.
+
 214\. The B116 pre-commit hook ran the cli specs with the `GIT_INDEX_FILE` of a path-limited commit
 (`git commit -- <paths>`), so harness-map.spec's own git commits failed (builder, 2026-11-02; fixed in
 af28afe38 by unsetting it). Lesson: the hook was proven with a plain commit only; the path-limited form, which
