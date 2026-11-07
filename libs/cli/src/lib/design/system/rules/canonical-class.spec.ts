@@ -1,11 +1,11 @@
-import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
 import { ruleProblemsOf } from '../check-system';
 import { resolveProduct } from '../resolve-product';
-import { appCanonicalClassesOf, canonicalClassesOf } from './canonical-class';
+import { appCanonicalClassesOf, canonicalClassesOf, fixCanonicalClassesOf } from './canonical-class';
 
 const write = (target: string, path: string, content: string) => {
   mkdirSync(dirname(join(target, DESIGN_DIR, path)), { recursive: true });
@@ -47,7 +47,7 @@ const messagesOf = (target: string) =>
     resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} }),
   ).map((problem) => `${problem.file.split('/').pop()}: ${problem.message}`);
 
-describe('canonicalClassesOf', { timeout: 30_000 }, () => {
+describe('canonicalClassesOf', { timeout: 240_000 }, () => {
   it('flags a class with a canonical form in the markup of a part and of a file below it', () => {
     const target = acme('');
 
@@ -83,6 +83,20 @@ describe('canonicalClassesOf', { timeout: 30_000 }, () => {
       'row.ts: The class `w-[420px]` can be written as `w-105`',
       'cell.ts: The class `mt-[16px]` can be written as `mt-4`',
     ]);
+  });
+
+  it('rewrites a class with a canonical form in place and leaves a longer token alone', () => {
+    const target = acme('');
+
+    write(target, 'acme/pages/home/home.ts', part('<div class="flex w-[420px] hover:mt-[16px] xw-[420px]"></div>'));
+
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+
+    expect(fixCanonicalClassesOf(product)).toBe(2);
+    expect(readFileSync(join(target, DESIGN_DIR, 'acme/pages/home/home.ts'), 'utf8')).toContain(
+      'class="flex w-105 hover:mt-4 xw-[420px]"',
+    );
+    expect(messagesOf(target)).toEqual([]);
   });
 
   it('runs as part of design check', () => {

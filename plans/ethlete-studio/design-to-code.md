@@ -3976,3 +3976,7 @@ worktree lacked the scripts they call, and agents fell back to `--no-verify`. As
 `core.hooksPath=.husky` (tracked scripts, so each worktree runs its own), the hooks `cd` to `--show-toplevel`,
 `check-hooks-installed` rejects an absolute path, and `lint:no-verify-briefs` (pre-push) fails a brief that tells agents to
 skip hooks. Apply once in the main checkout: `git config core.hooksPath .husky`.
+As built (B112): the report was already there (`CANONICAL-CLASS` in `design check` and `--app-classes`, from
+Tailwind's own `canonicalizeCandidates`). Added `design check --product <name> --app-classes --fix`: rewrites
+each flagged class in the app source and the product's parts, whole tokens only. Spec case added. Not built:
+an ESLint rule for the app config (no Tailwind v4 canonical-class lint rule is available).

@@ -9,7 +9,7 @@ import { hooksProblemOf } from './hooks-problem';
 import { holdStatus, writeStatus } from './status';
 import { checkRules, checkSystemRendered } from './system/check-system';
 import { liveUncoveredOf, uncoveredFindingLineOf } from './system/live-uncovered';
-import { appCanonicalClassesOf } from './system/rules/canonical-class';
+import { appCanonicalClassesOf, fixAppCanonicalClassesOf, fixCanonicalClassesOf } from './system/rules/canonical-class';
 import { callTopLevelAwaitsOf } from './system/rules/top-level-await';
 import { partKeyOf, resolveProduct } from './system/resolve-product';
 import { typecheckVariant } from './system/sketch/check-sketches';
@@ -378,6 +378,29 @@ export const checkDesign = async (options: {
   }
 };
 
+const fixAppClasses = (options: { target: string; config: DesignConfig; products: string[] }) => {
+  const { target, config, products } = options;
+  let fixed = 0;
+
+  for (const name of products) {
+    const entry = config.products?.[name];
+
+    if (!entry) {
+      console.log(`NO PRODUCT "${name}" in config.json.`);
+
+      return 1;
+    }
+
+    const product = resolveProduct({ target, name, config: entry });
+
+    fixed += fixAppCanonicalClassesOf(target, product) + fixCanonicalClassesOf(product);
+  }
+
+  console.log(`Rewrote ${fixed} class(es) to their canonical form.`);
+
+  return 0;
+};
+
 const checkAppClasses = (options: { target: string; config: DesignConfig; products: string[] }) => {
   const { target, config, products } = options;
   const lines = products.flatMap((name) => {
@@ -436,7 +459,7 @@ const VALUE_FLAGS = ['--lint', '--tsconfig', '--call', '--variant', '--product',
 
 const MODE_FLAGS: Record<string, string[]> = {
   '--visible-change': ['--product', '--part', '--base'],
-  '--app-classes': ['--product'],
+  '--app-classes': ['--product', '--fix'],
   '--rules': ['--product', '--base'],
   '--live': ['--product'],
   '--slow': ['--product', '--part', '--base'],
@@ -447,7 +470,7 @@ const CALL_FLAGS = ['--lint', '--tsconfig', '--call', '--variant'];
 /** The first flag of `argv` no form of `check` reads, or one its mode ignores, as `--part with --live`. */
 const unreadArgumentOf = (argv: string[]) => {
   const flags = argv.filter((argument) => argument.startsWith('-'));
-  const unknown = flags.find((flag) => !VALUE_FLAGS.includes(flag) && !(flag in MODE_FLAGS));
+  const unknown = flags.find((flag) => !VALUE_FLAGS.includes(flag) && flag !== '--fix' && !(flag in MODE_FLAGS));
 
   if (unknown) return unknown;
 
@@ -478,6 +501,7 @@ const checkWithStatus = async (options: {
   if (hooksProblem) console.log(hooksProblem);
 
   const appClasses = options.argv.includes('--app-classes');
+  const fix = options.argv.includes('--fix');
   const rules = options.argv.includes('--rules');
   const live = options.argv.includes('--live');
   const visibleChange = options.argv.includes('--visible-change');
@@ -487,6 +511,7 @@ const checkWithStatus = async (options: {
   const argv = options.argv.filter(
     (argument, index) =>
       argument !== '--app-classes' &&
+      argument !== '--fix' &&
       argument !== '--rules' &&
       argument !== '--live' &&
       argument !== '--visible-change' &&
@@ -540,6 +565,7 @@ const checkWithStatus = async (options: {
       return 2;
     }
 
+    if (appClasses && fix) return fixAppClasses({ target, config: readConfig(target) ?? {}, products });
     if (appClasses) return checkAppClasses({ target, config: readConfig(target) ?? {}, products });
     if (rules) return checkRules({ target, config: readConfig(target) ?? {}, products, base, invocation });
     if (live) return checkLive({ target, config: readConfig(target) ?? {}, products });
