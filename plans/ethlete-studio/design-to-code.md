@@ -4164,3 +4164,18 @@ merge leave files and folders behind, and nothing shows a leftover. Tool fix (te
 (90 s "not settled", 30 s clicks, 15 s waits). Parallel cases (B377) were parked behind B376 (ADR 0191), and no budget
 caps the suite time. Tool fix (technical): B377 moves up; the suite runs on all runner cores, a case fails at its first
 missed wait within 10 s, and the run prints its time against a 5 min budget that fails above it once B434 is green.
+
+592\. Builder (2026-11-08, B434): 33 of the 35 hidden Studio e2e failures (Sketches, Large: "0 iframes / no frame
+point") came from the fixture, not the app. `prepareCheckout` in `apps/ethlete-studio/e2e/canvas.e2e.mjs` made sketch
+variant `a` of pages/system and elements/shell-main an exact copy of the current part. Since b9367d285 the sketch view
+folds every state equal to Aktuell and drops a row when all states fold, as designed; 7bb4abf8a and 8bc90241c made the
+copies pixel-identical, so the frames went from 30 to 0 once the full compare answered. The view was correct, so check,
+compare and verify had nothing to report, and nothing checks that a fixture still has a difference to show. Fixed in
+1b0e18653. Tool fix (technical): after setup the harness asserts that each sketch fixture variant has at least one
+changed state and fails with "fixture folds every state"; `design sketch check` warns on a sketch whose variants equal
+Aktuell in every state. The System case "Neu starten … 100 ms" could never pass, because the e2e started Studio without
+window chrome (fixed in ffe60ce8b); finding 588 covers the job that never ran green.
+
+593\. Correction to finding 591: parallel cases (B377) are built. The worker default is cores/4, so the 4-core CI
+runner gets 1 worker. The doc agent read the parked STATUS row and did not check the code. Tool fix (technical): the
+suite takes all runner cores in CI, and the B377 row and the rows that wait on it (B378, B388) name it as done.
