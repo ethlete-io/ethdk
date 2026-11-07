@@ -1798,6 +1798,7 @@ export const partsCompletenessOf = async (options: {
   chromiumOf?: typeof chromiumOf;
   warm?: WarmDraw;
   cached?: boolean;
+  undeclaredOnly?: boolean;
 }): Promise<
   | { gaps: Map<string, CompletenessGap[] | string>; exceptions: ListedException[]; hints: Map<string, string[]> }
   | { unavailable: string }
@@ -1842,6 +1843,7 @@ export const partsCompletenessOf = async (options: {
           draw: (job) => queue.run(job),
           sketch,
           cache,
+          restOnly: options.undeclaredOnly,
         }),
       );
 
@@ -1873,6 +1875,13 @@ export const partsCompletenessOf = async (options: {
       if (typeof sight === 'string') return [{ code: 'RENDER', target: key, detail: sight.split('\n')[0] ?? '' }];
 
       const { definition, states, seen, refused, changes, owner, hash } = sight;
+      if (options.undeclaredOnly)
+        return discoveryGapsOf({
+          part: key,
+          declared: declaredControlsOf(definition?.controls) ?? {},
+          frames: seen,
+        }).filter(isUndeclaredControlGap);
+
       const optionProblems = optionValuesOf(resolved, definition ?? {});
 
       hints.set(key, [
@@ -1964,4 +1973,45 @@ export const partsCompletenessOf = async (options: {
 
     if (!warm) await Promise.all([queue.close(), server.close()]);
   }
+};
+
+/**
+ * The `CONTROL-UNDECLARED` gaps a sketch variant adds to `parts`: a control it draws at rest that no `controls`
+ * entry declares and the merged part does not draw undeclared either. Answers the gap lines, or why it could not draw.
+ */
+export const addedUndeclaredControlsOf = async (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  sketch: SketchVariant;
+  parts: string[];
+  warm?: WarmDraw;
+}): Promise<{ lines: string[] } | { unavailable: string }> => {
+  const { target, config, product, sketch, parts, warm } = options;
+  const drawn = await partsCompletenessOf({ target, config, product, parts, sketch, warm, undeclaredOnly: true });
+
+  if ('unavailable' in drawn) return drawn;
+
+  const failed = new Map<string, CompletenessGap[]>();
+
+  for (const [part, gaps] of drawn.gaps) if (Array.isArray(gaps) && gaps.length > 0) failed.set(part, gaps);
+
+  const merged = [...failed.keys()].filter((part) => product.parts.some((candidate) => partKeyOf(candidate) === part));
+  const before =
+    merged.length > 0
+      ? await partsCompletenessOf({ target, config, product, parts: merged, warm, undeclaredOnly: true })
+      : null;
+
+  if (before && 'unavailable' in before) return before;
+
+  const lines = [...failed].flatMap(([part, gaps]) => {
+    const known = before?.gaps.get(part);
+    const details = new Set(Array.isArray(known) ? known.map((gap) => gap.detail) : []);
+
+    return gaps
+      .filter((gap) => !details.has(gap.detail))
+      .map((gap) => `${completenessGapLineOf(gap)} (variant ${sketch.variant})`);
+  });
+
+  return { lines };
 };

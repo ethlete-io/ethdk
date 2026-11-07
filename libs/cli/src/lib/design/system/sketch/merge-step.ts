@@ -34,9 +34,10 @@ export const mergeAndRecord = (options: {
   note?: string;
   replaceNote?: boolean;
   by?: string;
+  decidedBy?: string;
   allowed?: { variant: string; planRef: string; editRef?: boolean };
 }): { variant: string; parts: string[] } | string => {
-  const { target, config, product, sketch, note, replaceNote, by, allowed } = options;
+  const { target, config, product, sketch, note, replaceNote, by, decidedBy, allowed } = options;
   const decided = allowed ? allowedMergeOf({ sketch, variant: allowed.variant, editRef: allowed.editRef }) : sketch;
 
   if (typeof decided === 'string') return decided;
@@ -51,7 +52,7 @@ export const mergeAndRecord = (options: {
       note,
       replaceNote,
       author: by,
-      ...(allowed ? { decidedBy: `plan: ${allowed.planRef.trim()}` } : {}),
+      ...(allowed ? { decidedBy: `plan: ${allowed.planRef.trim()}` } : decidedBy ? { decidedBy } : {}),
     }),
   );
 

@@ -7,6 +7,7 @@ import { checkSystem } from './check-system';
 import {
   completenessGapLineOf,
   completenessGapsOf,
+  addedUndeclaredControlsOf,
   completenessOf,
   controlStateGapsOf,
   FoundControl,
@@ -1354,6 +1355,55 @@ export default definePart({
 
     expect('gaps' in reopened && reopened.gaps).toContain('components/flat.more.active');
     expect('exceptions' in reopened && reopened.exceptions?.map(({ state }) => state)).toEqual(['reopened']);
+  }, 120_000);
+
+  it('names the undeclared controls a sketch variant adds, and not the ones the merged part already draws', async (context) => {
+    const { target, config, product } = checkout();
+
+    createSketch({ product, sketch: { layer: 'components', name: 'flat' }, variants: ['a', 'b'] });
+    createSketch({ product, sketch: { layer: 'components', name: 'undeclared' }, variants: ['c'] });
+
+    const drawnAs = (variant: string, source: string, part = 'components/flat') =>
+      writeFileSync(
+        createSystemModules({ target, config }).partOf({
+          product: 'app-a',
+          part,
+          sketch: { target: part, variant },
+        })?.file ?? '',
+        readFileSync(join(product.dir, 'components', source, `${source}.ts`), 'utf8'),
+      );
+
+    drawnAs('a', 'undeclared');
+    drawnAs('b', 'flat');
+    drawnAs('c', 'undeclared', 'components/undeclared');
+
+    const added = (variant: string) =>
+      addedUndeclaredControlsOf({
+        target,
+        config,
+        product,
+        sketch: { target: 'components/flat', variant },
+        parts: ['components/flat'],
+      });
+    const first = await added('a');
+
+    if ('unavailable' in first) return context.skip(first.unavailable);
+
+    expect(first.lines).toEqual([
+      expect.stringMatching(
+        /^CONTROL-UNDECLARED components\/flat - button at div > button in rest - .* \(variant a\)$/,
+      ),
+    ]);
+    expect(await added('b')).toEqual({ lines: [] });
+    expect(
+      await addedUndeclaredControlsOf({
+        target,
+        config,
+        product,
+        sketch: { target: 'components/undeclared', variant: 'c' },
+        parts: ['components/undeclared'],
+      }),
+    ).toEqual({ lines: [] });
   }, 120_000);
 
   it('checks the open sketch variant of a part with --variant, as unmerged but not unreviewed', async (context) => {

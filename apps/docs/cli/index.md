@@ -706,6 +706,13 @@ drawn yet).
 sketch the user has not picked in, only when `<key>` is its one live (not rejected) variant; both flags
 go together, and `accepted.json` logs the plan; the part note stays. With two live variants the user picks in Studio.
 
+`sketch merge --decided-by <name>` records who picked the variant in `merged.json` (`user` without it): give it the name
+the designer told you at this terminal, for example `tom`. It does not go with `--allowed-by`, which records the plan.
+
+`sketch ready` also draws each live variant's changed parts at rest and refuses with
+`CONTROL-UNDECLARED <part> - … (variant <key>)` for a control the variant draws that no `controls` entry declares, unless
+the merged part draws that same control undeclared. Declare it with `data-et-control` or `control(markup, name)`.
+
 `et design sketch merge` and `sketch discard` resolve the addressed comments on the sketch's
 variants, and a merge also those addressed comments of the merged parts that have no sketch; the open
 comments on the variants become addressed. A merge leaves a thread open when it has no reply yet or its

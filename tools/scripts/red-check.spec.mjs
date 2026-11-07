@@ -130,6 +130,23 @@ test('a module the commit adds in a new folder is stubbed there', () => {
   }
 });
 
+test('a module the commit adds with only a default export is stubbed, so the assertions are red', () => {
+  const repo = makeCommit(
+    { 'keep.txt': 'x\n' },
+    {
+      'rule.mjs': "export default function rule() {\n  return ['x'];\n}\n",
+      'rule.spec.mjs': specOf("import rule from './rule.mjs';", "assert.deepEqual(rule(), ['x']);"),
+    },
+  );
+  try {
+    const result = run(repo);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.match(result.stdout, /red: rule/);
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
+});
+
 test('an added module the auto stub cannot satisfy is reported', () => {
   const repo = makeCommit(
     { 'keep.txt': 'x\n' },

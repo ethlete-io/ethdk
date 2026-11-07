@@ -2349,6 +2349,34 @@ export default definePart({
       });
     });
 
+    it('records --decided-by as who picked the variant, and refuses it with --allowed-by', async () => {
+      const { target, lines } = await readied('a,b');
+      const file = join(sketchDir(target), 'sketch.json');
+      const sketch = JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
+
+      writeFileSync(file, JSON.stringify({ ...sketch, decision: { kind: 'pick', variant: 'a', decidedAt: 'now' } }));
+      expect(
+        write(
+          target,
+          'merge',
+          'components/button',
+          '--decided-by',
+          'tom',
+          '--allowed-by',
+          PLAN,
+          '--variant',
+          'a',
+          '--product',
+          'acme',
+        ),
+      ).toBe(1);
+      expect(lines.pop()).toContain('does not go with --allowed-by');
+      expect(write(target, 'merge', 'components/button', '--decided-by', 'tom', '--product', 'acme')).toBe(0);
+      expect(JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/merged.json'), 'utf8'))).toMatchObject({
+        'components/button': { variant: 'a', decidedBy: 'tom' },
+      });
+    });
+
     it('writes the --note over the part note with --replace-note', async () => {
       const { target } = await readied('a');
       const args = ['merge', 'components/button', '--variant', 'a', '--allowed-by', PLAN, '--product', 'acme'];

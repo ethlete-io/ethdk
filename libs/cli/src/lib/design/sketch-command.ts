@@ -40,6 +40,7 @@ import {
 import { noChangeOf } from './system/sketch/no-visible-change';
 import { editCovers } from './system/sketch/covered-diffs';
 import { unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots';
+import { addedUndeclaredControlsOf } from './system/complete';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { editRefOf, mergeAndRecord } from './system/sketch/merge-step';
 import { staleSketchBasesOf } from './system/check-system';
@@ -107,7 +108,7 @@ export const SKETCH_USAGE = [
   'sketch check [<layer>/<name>] [--fix] [--product <name>]',
   'sketch preview <layer>/<name> <variant> [--product <name>] [--json]',
   'sketch rebase <layer>/<name> [--ported] --by <model id> [--product <name>]',
-  'sketch merge <layer>/<name> [--note <reason> [--replace-note]] [--variant <key> --allowed-by <plan ref>] --by <model id> [--product <name>]',
+  'sketch merge <layer>/<name> [--note <reason> [--replace-note]] [--variant <key> --allowed-by <plan ref>] [--decided-by <name>] --by <model id> [--product <name>]',
   'sketch discard <layer>/<name> --by <model id> [--product <name>]',
   'sketch reject <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
   'sketch reopen <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
@@ -137,6 +138,8 @@ const FLAG_HELP: Record<string, string> = {
   '--variant': 'the variant the command is about; on merge, the only live variant of a sketch with no pick',
   '--allowed-by':
     'the plan entry that lets the merge go without a pick in Studio; noted in merged.json, needs --variant',
+  '--decided-by':
+    'on merge: who picked the variant, as merged.json records it (default user); a name the designer gave you at this terminal, e.g. tom - not with --allowed-by',
   '--replace-note': "on merge: also write --note over each target part's note",
   '--reason':
     'why; on reject of a variant that is rejected already it sets the reason of that rejection; stored with who wrote it',
@@ -842,6 +845,16 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
   if (identical.length > 0)
     return fail(`${identical.join('\n')}\n${sketch.target} draws variants alike - fix them before ready`);
 
+  const undeclared = await timedPhase('undeclared', () =>
+    undeclaredLinesOf({ target: context.target, config: context.config, product, sketch, warm: context.warm }),
+  );
+
+  if (typeof undeclared === 'string') return fail(undeclared);
+  if (undeclared.length > 0)
+    return fail(
+      `${undeclared.join('\n')}\n${sketch.target} draws controls no controls entry declares - declare them before ready`,
+    );
+
   const changes = sketch.targets.every((key) => product.parts.some((part) => partKeyOf(part) === key))
     ? await timedPhase('changes-shot', () =>
         variantChangesShown({ target: context.target, config: context.config, product, sketch, warm: context.warm }),
@@ -1162,6 +1175,32 @@ const unloadedLinesOf = async (options: {
   sketch: Sketch;
   warm?: WarmDraw;
 }) => (await variantsThatDoNotLoad(options)).map((line) => `${options.sketch.target} ${line}`);
+
+const undeclaredLinesOf = async (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  sketch: Sketch;
+  warm?: WarmDraw;
+}) => {
+  const { sketch } = options;
+  const lines: string[] = [];
+
+  for (const variant of sketch.variants.filter((name) => !rejectionOf(sketch, name))) {
+    const { changed } = mergePreviewOf({ product: options.product, sketch, variant });
+    const added = await addedUndeclaredControlsOf({
+      ...options,
+      sketch: { target: sketch.target, variant },
+      parts: changed,
+    });
+
+    if ('unavailable' in added) return added.unavailable;
+
+    lines.push(...added.lines);
+  }
+
+  return lines;
+};
 
 const baseCommitOf = (options: { context: Context; product: ResolvedProduct; sketch: Sketch }) => {
   const { context, product, sketch } = options;
@@ -1603,7 +1642,12 @@ const previewed = (context: Context) =>
 
 const merged = (context: Context) =>
   withSketch(context, ({ product, sketch }) => {
-    const { '--note': note, '--variant': flagVariant, '--allowed-by': planRef } = context.args.values;
+    const {
+      '--note': note,
+      '--variant': flagVariant,
+      '--allowed-by': planRef,
+      '--decided-by': decidedBy,
+    } = context.args.values;
 
     const replaceNote = context.args.flags.has('--replace-note');
 
@@ -1614,6 +1658,9 @@ const merged = (context: Context) =>
       return fail(
         '--variant and --allowed-by go together: name the only live variant and the plan that allows the merge',
       );
+
+    if (decidedBy !== undefined && (decidedBy.trim() === '' || planRef !== undefined))
+      return fail('--decided-by needs a name and does not go with --allowed-by, which records the plan');
 
     const by = authorOf(context.args) ?? undefined;
     const allowed =
@@ -1629,6 +1676,7 @@ const merged = (context: Context) =>
         note,
         replaceNote,
         by,
+        decidedBy: decidedBy?.trim(),
         allowed,
       }),
     );

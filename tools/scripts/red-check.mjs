@@ -87,6 +87,13 @@ export const stubOf = (source) => {
     else if (/^['"`]/.test(init) || declared?.trim() === 'string') lines.push(`export const ${name} = '';`);
     else lines.push(`export const ${name} = {};`);
   }
+  const fallback = /^export\s+default\s+(async\s+function|function|class)?/m.exec(source);
+  if (fallback) {
+    const kind = fallback[1];
+    if (kind === 'class') lines.push('export default class {}');
+    else if (kind) lines.push(`export default ${kind} () { return []; }`);
+    else lines.push('export default {};');
+  }
   return lines.join('\n') + '\n';
 };
 
