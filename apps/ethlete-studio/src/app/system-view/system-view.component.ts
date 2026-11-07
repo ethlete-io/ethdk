@@ -383,7 +383,6 @@ export class SystemViewComponent {
 
   private sketchView = viewChild<SketchViewComponent>('sketchView');
 
-
   private productsRevision = computed(() => this.lists().products);
 
   private callsRevision = computed(() => this.lists().calls);
