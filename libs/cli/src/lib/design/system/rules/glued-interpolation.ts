@@ -17,11 +17,26 @@ const tsFilesIn = (dir: string) =>
         .sort()
     : [];
 
+const startsWithSpace = (node: ts.Expression): boolean => {
+  if (ts.isParenthesizedExpression(node)) return startsWithSpace(node.expression);
+  if (ts.isStringLiteralLike(node)) return node.text === '' || /^\s/u.test(node.text);
+  if (ts.isTemplateExpression(node)) return /^\s/u.test(node.head.text);
+  if (ts.isConditionalExpression(node)) return startsWithSpace(node.whenTrue) && startsWithSpace(node.whenFalse);
+  if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.PlusToken)
+    return startsWithSpace(node.left);
+
+  return false;
+};
+
 const classValuesIn = (source: string) => {
   const values: string[] = [];
   const visit = (node: ts.Node) => {
     if (ts.isTemplateExpression(node)) {
-      const text = node.head.text + node.templateSpans.map((span) => HOLE + span.literal.text).join('');
+      const text =
+        node.head.text +
+        node.templateSpans
+          .map((span) => (startsWithSpace(span.expression) ? ' ' : '') + HOLE + span.literal.text)
+          .join('');
 
       if (text.includes('<'))
         values.push(...[...text.matchAll(/\bclass=["']([^"']*)/gu)].map(([, value]) => value ?? ''));

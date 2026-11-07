@@ -30,15 +30,31 @@ const report = (name: string) =>
 
 describe('gluedInterpolationsOf', { timeout: 30_000 }, () => {
   it('reports a class glued before an interpolation', () => {
-    expect(
-      messagesOf(
-        `<div class="flex shadow-(--x,0_10px_24px_rgb(0_0_0/0.16))\${props.class ? ' ' + props.class : ''}"></div>`,
-      ),
-    ).toEqual([report('shadow-(--x,0_10px_24px_rgb(0_0_0/0.16))')]);
+    expect(messagesOf(`<div class="flex shadow-(--x,0_10px_24px_rgb(0_0_0/0.16))\${props.class}"></div>`)).toEqual([
+      report('shadow-(--x,0_10px_24px_rgb(0_0_0/0.16))'),
+    ]);
   });
 
   it('reports a class glued after an interpolation', () => {
     expect(messagesOf(`<div class="flex \${props.class}p-2"></div>`)).toEqual([report('p-2')]);
+  });
+
+  it('passes an interpolation whose every branch starts with whitespace', () => {
+    expect(
+      messagesOf(
+        `<figure class="st-cframe bg-et-surface-bg\${props.class ? \` \${props.class}\` : ''} p-2\${props.name ? ' ' + props.name : ''}"></figure>`,
+      ),
+    ).toEqual([]);
+  });
+
+  it('still reports a glued class after an interpolation whose branches start with whitespace', () => {
+    expect(messagesOf(`<div class="flex \${props.class ? ' ' + props.class : ''}p-2"></div>`)).toEqual([report('p-2')]);
+  });
+
+  it('reports an interpolation with one branch that does not start with whitespace', () => {
+    expect(messagesOf(`<div class="flex\${props.class ? ' ' + props.class : props.name}"></div>`)).toEqual([
+      report('flex'),
+    ]);
   });
 
   it('passes a space around the interpolation', () => {
