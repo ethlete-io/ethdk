@@ -1,6 +1,6 @@
 ---
 status: accepted
-built: d03b8c815
+built: cc2966908
 decided: 2026-11-04
 source: grill session 2026-11-04, finding 410
 ---
