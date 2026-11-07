@@ -1,0 +1,16 @@
+{
+  "DIRECT-EDIT-PENDING": {
+    "components/button: merged-hash": {
+      "finding": "507",
+      "sketch": "closed by et design check --part (B412): auto-accept or an edit sketch"
+    },
+    "components/select: merged-hash": {
+      "finding": "507",
+      "sketch": "closed by et design check --part (B412): auto-accept or an edit sketch"
+    },
+    "foundations/icons: merged-hash": {
+      "finding": "507",
+      "sketch": "closed by et design check --part (B412): auto-accept or an edit sketch"
+    }
+  }
+}

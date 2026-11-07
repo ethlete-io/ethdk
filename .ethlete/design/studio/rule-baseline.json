@@ -9,6 +9,24 @@
       "sketch": "components/rail-bubble (queued for c8)"
     }
   },
+  "DIRECT-EDIT-PENDING": {
+    "components/update-dialog: merged-hash": {
+      "finding": "507",
+      "sketch": "closed by et design check --part (B412): auto-accept or an edit sketch; shell-main and pages/start wait for Tom"
+    },
+    "elements/shell-main: merged-hash": {
+      "finding": "507",
+      "sketch": "closed by et design check --part (B412): auto-accept or an edit sketch; shell-main and pages/start wait for Tom"
+    },
+    "pages/inventory: merged-hash": {
+      "finding": "507",
+      "sketch": "closed by et design check --part (B412): auto-accept or an edit sketch; shell-main and pages/start wait for Tom"
+    },
+    "pages/start: merged-hash": {
+      "finding": "507",
+      "sketch": "closed by et design check --part (B412): auto-accept or an edit sketch; shell-main and pages/start wait for Tom"
+    }
+  },
   "DROPPED-PROP": {
     "elements/canvas-frames: load-failed": {
       "finding": "489",
