@@ -45,7 +45,10 @@ const frameElement = (fixture: ComponentFixture<DesignCanvasComponent>) =>
 describe('DesignCanvasComponent', () => {
   beforeEach(() => localStorage.clear());
 
-  afterEach(() => vi.useRealTimers());
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
 
   it('is a focusable region named like the canvas viewport part', async () => {
     const fixture = await render([FITTED]);
@@ -133,13 +136,8 @@ describe('DesignCanvasComponent', () => {
   });
 
   it('opens at a restored camera before any frame has a size, and shows its zoom in the chip', async () => {
-    const width = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(800);
-    const height = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(600);
-
-    onTestFinished(() => {
-      width.mockRestore();
-      height.mockRestore();
-    });
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(800);
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(600);
 
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
