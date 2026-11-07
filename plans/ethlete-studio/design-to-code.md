@@ -3315,6 +3315,11 @@ As built (B415, CLI part): `design status [--json]` without a call prints the un
 (`origin/next` without one), the age of the oldest, and the push gate result for this exact head (green, red, or unknown
 when the head moved since the gate ran). `design-rules-gate.mjs` leaves the result as a receipt in the checks folder of
 the temp dir. Studio UI not built: it needs a new visual element with no design - sketch needed.
+Then (2026-11-07): the sketch `components/title-bar@push-state` (a chip right, b banner, c) is ready for Tom's pick.
+desk/B415 (db778132b) built a chip in the left group of the title bar as the recommendation and is held until the
+pick; its data path (`studio-code.mjs state` -> `push`, host passthrough, `injectCodeWatch().push`) carries over to
+any variant. Landed alone: a static `et-chip` no longer counts as an undeclared control (`SDK_CONTROLS` matches only a
+removable or role-carrying chip; `sdk-controls.spec.ts` fails on the old selector).
 
 521\. Tom (2026-11-06, screenshots of the builder's shells): "6 minuten hard blocking auf dem builder ist inakzeptabel.
 das tooling muss schneller werden". The builder ran nine `compare` runs one after another in the foreground for the

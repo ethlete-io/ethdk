@@ -1000,7 +1000,7 @@ export const SDK_CONTROLS = [
   'et-accordion',
   'et-cascader',
   'et-checkbox',
-  'et-chip',
+  'et-chip:is([data-removable], [role])',
   'et-color-input',
   'et-counter',
   'et-date-input',

@@ -64,3 +64,10 @@ webkit-revert-wt (nicht genommen, entschieden), wip/b321-stacking-fix (verworfen
 - desk/B355 → gelandet in diesem Commit (async-Fehler außerhalb des Falls → FAIL und neuer Worker; zwischen den Fällen endet der Worker mit 1 statt den Fehler zu schlucken; mit zwei Wegwerf-Fällen geprüft).
 - desk/B356 → verworfen: der WIP ist nur der WebKit-Budget-Fall samt CI-Schritt; der Zoom-Fix fehlt, der Fall wäre in CI rot (gemessen p50 45–49 ms), und er kollidiert mit next; Übernahme des Falls nach dem Zoom-Fix steht auf B356.
 - desk/B346 → 975505b03 gelandet in diesem Commit (`sketch new` rebast Importe eines gehobenen `shared/`-Ordners richtig; Sketch-Specs grün); 4f56e7893 (Kopf-Tag) zurückgehalten: Skizze `pages/sketches@head-zoom` ist noch in Arbeit ohne Wahl, e2e 0/4; der WIP-Commit ist nur Toms Skizzendaten.
+- desk/B345 → verworfen: 0de880f4d ist schon in next als e7a9900d8 (gleicher Inhalt); der WIP-Commit ist nur Toms Skizzendaten (u. a. `pages/sketches@head-zoom`), die Tom selbst übernimmt.
+- desk/B365 → verworfen: nichts gebaut, der WIP-Commit ist nur Toms Skizzendaten und `merged.json`/`pictures.json`; Messplan bleibt auf B365.
+- desk/B370 → verworfen: der Signal-Handler wirkt nicht (alle vier Host-Fälle rot), fertig bauen braucht CEF-Debugging am Display; Schritte auf B370.
+- desk/B415 → nur der et-chip-Fix (`SDK_CONTROLS`) gelandet in diesem Commit; der Chip (db778132b) zurückgehalten, bis Tom in `components/title-bar@push-state` wählt; der WIP-Commit ist nur Skizzendaten.
+- origin/tank/b415-sketch-final → zurückgehalten: Skizze `components/title-bar@push-state` (ready, a/b/c) ist Toms Wahl, Design-Daten für Gruppe 5.
+- desk/clifix → verworfen: render.spec, `.gitignore` im sketch-command-Spec und CHECK_RULES schon in next; der Rest (Timeout, `created` ohne async) ohne Grund, die Skizze `components-update-dialog.edit` liegt schon in Toms Arbeitsbaum.
+- origin/tank/webkit-tla-wt → verworfen: der einzige WIP-Commit löscht 579 Dateien (kaputter Baumstand).
