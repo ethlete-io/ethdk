@@ -4250,3 +4250,8 @@ add "no" to the negations and join wrapped lines before matching.
 its ADR. No check reads the plan rows against the ADRs. Tool fix (technical): `yarn lint:person-names` or a new plan
 lint flags a STATUS row that asks Tom for "Go", `design accept` or `go` once B249 has landed; B249 itself removes the
 last hint text in the CLI that tells a human to run `design accept`.
+
+577\. Builder (2026-11-07, CI run 42402108781): all 50 serve.spec tests passed, but the afterAll in
+`libs/cli/vitest.setup.ts` timed out after 10 s: serve.spec left about 300 MB of temp targets and `rmSync` took 8.4 s
+on the Mac. Fixed in 282591127 (each test removes its own target in afterEach). No check caught a spec that leaves a
+large temp tree. Tool fix (technical): `vitest.setup` warns when the spec tmpdir of one file passes 50 MB.
