@@ -4464,3 +4464,11 @@ load threshold (`timings` load line, `isNoisy`, `loadScaledMs`) uses `physicalCo
 else half the logical CPUs; 6 on this Mac). `design shot --variant a` writes `<product>-<part>-a.png`, and
 SHOT-NOT-VIEWED names that file. Not verified: no real check numbers (load 13-27 on 6 cores the whole session, no
 verdict) and no scratch-worktree edit run; pre-existing: 3 auto-merge specs in sketch-command.spec fail on `next` too.
+
+562\. Doc agent (2026-11-07): Tom, twice in one morning: "Wir warten hier schon wieder rum. Warten ist keine Option".
+The builder ended its turn with "Waiting for 1 background agent to finish" and 83 unpushed commits, and the doc agent
+reported "the push follows when the agents land" instead of starting more work. Why no tool caught it: the
+builder-agent and doc-agent skills allow a turn to end on a wait; nothing flags an idle pane with a non-empty queue.
+Tool fix (technical): both skills say a turn ends only with agents running on every independent open item, and a push
+never waits for an unrelated agent; the doc agent's periodic check reads the builder footer and sends a nudge when it
+shows "Waiting for" while STATUS.md has open builder rows.
