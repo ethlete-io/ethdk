@@ -30,3 +30,11 @@ adr_files=$(git diff --cached --name-only --diff-filter=ACM -- 'plans/ethlete-st
 if [ -n "$adr_files" ]; then
   node ./tools/scripts/check-studio-adrs.mjs >/dev/null
 fi
+
+# Size budget and Prettier check of the staged blob, only when one of the two big plan files is staged.
+plan_files=$(git diff --cached --name-only --diff-filter=ACM -- 'plans/ethlete-studio/design-to-code.md' 'plans/ethlete-studio/STATUS.md')
+
+if [ -n "$plan_files" ]; then
+  # shellcheck disable=SC2086
+  node ./tools/scripts/check-staged-plans.mjs $plan_files
+fi
