@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(node -e ' *)",
-      "Bash(git ls-remote *)"
+      "Bash(git ls-remote *)",
+      "Bash(node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs restart *)"
     ]
   },
   "hooks": {
