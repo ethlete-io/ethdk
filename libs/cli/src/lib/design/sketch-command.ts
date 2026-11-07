@@ -88,7 +88,7 @@ import {
 } from './system/sketch/sketch';
 
 export const SKETCH_USAGE = [
-  'sketch new <layer>/<name> [<layer>/<name>…] --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--name <sketch name>] [--round <title>] [--note <text>] [--variant-note <variant>=<text>]… [--override | --into-base] [--product <name>]',
+  'sketch new <layer>/<name> [<layer>/<name>…] --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--name <sketch name>] [--round <title>] [--note <text>] [--variant-note <variant>=<text>]… [--override | --into-base] [--ready] [--product <name>]',
   'sketch variant <layer>/<name> <variant>[,<variant>…] --from <variant> --by <model id> [--round <title> --note <why the running round lost> [--round-note <what the new round shows>]] [--product <name>]',
   'sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] --by <model id> [--product <name>]',
   'sketch note <layer>/<name> <variant> <text> --by <model id> [--product <name>]',
@@ -121,6 +121,8 @@ const FLAG_HELP: Record<string, string> = {
     'on a base part: merge into a product copy that overrides the base, not into the base; on a product override: sketch that copy',
   '--into-base':
     'on a part the product overrides: start from the product copy, merge into the base and remove the copy',
+  '--ready':
+    'on new: run sketch ready (its gates are the check) right after opening the sketch; it fails when either refuses and the sketch stays in progress',
   '--ported': 'on rebase: the conflicting files hold the product change already, ported by hand - keep them and rebase',
   '--round': 'the title of a new round',
   '--round-note': 'what the new round shows',
@@ -270,7 +272,7 @@ const variantLineOf = (options: { root: string; sketch: Sketch; variant: string 
   return `  ${variant}: ${files}  assets: ${relative(root, resolve(sketch.dir, variant, ASSETS_FOLDER))}/`;
 };
 
-const created = (context: Context) => {
+const opened = (context: Context) => {
   const { target, config, args } = context;
   const product = oneProductOf({ target, config, asked: args.values['--product'] });
 
@@ -337,6 +339,31 @@ const created = (context: Context) => {
   nextStepsOf(sketch, product.name).forEach((line) => console.log(line));
 
   return 0;
+};
+
+const created = async (context: Context) => {
+  const code = opened(context);
+
+  if (code !== 0 || !context.args.flags.has('--ready')) return code;
+
+  const found = productAndSketchOf({ ...context, args: { ...context.args, positional: [openedTargetOf(context)] } });
+
+  if (typeof found === 'string') return fail(found);
+
+  const again = { ...context, args: { ...context.args, positional: [found.sketch.target] } };
+
+  const readyCode = await readied(again);
+
+  return readyCode === 0
+    ? 0
+    : fail(`${found.sketch.target} is still in progress: sketch ready refused - fix it, then run sketch ready`);
+};
+
+const openedTargetOf = ({ args }: Context) => {
+  const [first] = args.positional;
+  const name = args.values['--name'];
+
+  return name === undefined ? (first ?? '') : `${first}@${name}`;
 };
 
 const nextStepsOf = (sketch: Sketch, product: string) => {

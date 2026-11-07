@@ -222,7 +222,7 @@ describe('openPointsText', () => {
 
     expect(openPointsText('acme', list)).toEqual([
       'OPEN POINTS acme: 5 in 2 parts',
-      '  components/a: 2 open comments (c-1, c-2 addressed, waits on the user); sketch components-a is in progress',
+      '  components/a: 2 open comments (c-1, c-2 addressed, waits on the user); sketch components-a is in progress - missing: sketch check, then sketch ready; the designer sees it only when ready',
       '  components/b: sketch components-b picked, not merged; sketch components-x is ready, not merged (it also targets this part)',
     ]);
   });

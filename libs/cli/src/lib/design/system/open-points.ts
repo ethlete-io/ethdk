@@ -203,7 +203,7 @@ const sketchText = (point: Extract<OpenPoint, { kind: 'unmerged-sketch' }>) => {
         ? 'discarded, not removed'
         : point.status === 'ready'
           ? 'is ready, not merged'
-          : 'is in progress';
+          : 'is in progress - missing: sketch check, then sketch ready; the designer sees it only when ready';
 
   return `sketch ${point.sketch} ${state}${point.primary ? '' : ' (it also targets this part)'}`;
 };
