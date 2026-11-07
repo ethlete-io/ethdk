@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - next
+    paths-ignore:
+      - 'plans/**'
+      - 'apps/ethlete-studio/docs/adr/**'
 
 concurrency: next_environment
 
