@@ -44,6 +44,7 @@ const WIDE_SKETCH = { part: 'components/title-bar', name: 'notice-hint', variant
 
 const EDITED_PART = 'components/disclosure';
 const EDITED_PART_TIMEOUT_MS = 30000;
+const SAME_VARIANT_TIMEOUT_MS = 120000;
 
 const PAGE_SWITCHES = [
   'foundations/icons',
@@ -2194,8 +2195,11 @@ const CASES = [
     pages: ['Sketches'],
     labels: ['Large'],
     run: async (page) => {
-      const sketchJson = join(checkout, '.ethlete/design/studio/sketches/elements-shell-main/sketch.json');
-      const original = readFileSync(sketchJson, 'utf8');
+      const sketchDir = join(checkout, '.ethlete/design/studio/sketches/elements-shell-main');
+      const sketchJson = join(sketchDir, 'sketch.json');
+      const base = readFileSync(sketchJson, 'utf8');
+      const sketch = JSON.parse(base);
+      const original = JSON.stringify({ ...sketch, variantInfo: { ...sketch.variantInfo, b: sketch.variantInfo.a } });
       const listings = { quick: 0, full: 0 };
       const onResponse = (response) => {
         if (!response.url().includes('/__design/sketches?')) return;
@@ -2217,7 +2221,7 @@ const CASES = [
           const record = { added: 0, removed: 0 };
           const touches = (node) =>
             node instanceof Element &&
-            (node.matches('[data-sk-row="a"], [data-sk-variant="a"], iframe') || !!node.querySelector('iframe'));
+            (node.matches('[data-sk-row="b"], [data-sk-variant="b"], iframe') || !!node.querySelector('iframe'));
 
           window.__sameRow = record;
           window.__sameObserver?.disconnect();
@@ -2234,6 +2238,15 @@ const CASES = [
       page.on('response', onResponse);
 
       try {
+        cpSync(join(checkout, '.ethlete/design/studio/elements/shell-main'), join(sketchDir, 'b/elements/shell-main'), {
+          recursive: true,
+        });
+        writeFileSync(sketchJson, original);
+        await page
+          .locator('[data-sk-same]')
+          .first()
+          .waitFor({ timeout: SAME_VARIANT_TIMEOUT_MS })
+          .catch(() => undefined);
         const folded = await page.evaluate(() => !!document.querySelector('[data-sk-same]'));
 
         await watch();
@@ -2244,14 +2257,14 @@ const CASES = [
         await settle(page);
         await page.evaluate(() => {
           window.__sameFrames = [
-            ...document.querySelectorAll('[data-sk-row="a"] iframe, [data-sk-variant="a"] iframe'),
+            ...document.querySelectorAll('[data-sk-row="b"] iframe, [data-sk-variant="b"] iframe'),
           ];
         });
         await watch();
         const openListings = await refresh(original);
         const open = await changes();
         const kept = await page.evaluate(() => {
-          const now = [...document.querySelectorAll('[data-sk-row="a"] iframe, [data-sk-variant="a"] iframe')];
+          const now = [...document.querySelectorAll('[data-sk-row="b"] iframe, [data-sk-variant="b"] iframe')];
 
           return {
             before: window.__sameFrames.length,
@@ -2275,7 +2288,8 @@ const CASES = [
         };
       } finally {
         page.off('response', onResponse);
-        writeFileSync(sketchJson, original);
+        writeFileSync(sketchJson, base);
+        rmSync(join(sketchDir, 'b'), { recursive: true, force: true });
       }
     },
   },
@@ -2417,6 +2431,35 @@ const CASES = [
 
 let checkout;
 
+const MARKED_SHELL = '.st-shell { outline: 2px solid rgb(255 0 0); outline-offset: -2px; }';
+
+/**
+ * The change variant `a` of each canvas sketch draws in every state. A variant that draws every state like Aktuell
+ * folds them all and leaves no frame on the canvas.
+ */
+const SKETCH_CHANGES = {
+  'components/zoom-chip': {
+    file: 'zoom-chip.ts',
+    change: (source) => source.replace('reset: { percent: 100 }', 'reset: { percent: 110 }'),
+  },
+  'elements/shell-main': { file: 'shell-main.css', change: (source) => `${source}\n${MARKED_SHELL}\n` },
+  'pages/system': {
+    file: 'system.ts',
+    change: (source) =>
+      [
+        source
+          .replaceAll('return drawing({', 'return markedDrawing({')
+          .replace(
+            'return manyStatesView(await treeRowGrid());',
+            'return markedDrawing(await manyStatesView(await treeRowGrid()));',
+          ),
+        'const markedDrawing = (drawn: Parameters<typeof drawing>[0]) =>',
+        `  drawing({ ...drawn, styles: (drawn.styles ?? '') + ${JSON.stringify(MARKED_SHELL)} });`,
+        '',
+      ].join('\n'),
+  },
+};
+
 const prepareCheckout = () => {
   const dir = mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-'));
 
@@ -2439,13 +2482,12 @@ const prepareCheckout = () => {
     mkdirSync(join(folder, 'a', dirname(target)), { recursive: true });
     cpSync(join(root, '.ethlete/design/studio', target), join(folder, 'a', target), { recursive: true });
 
-    if (target === 'components/zoom-chip') {
-      const variantFile = join(folder, 'a', target, 'zoom-chip.ts');
+    const { file, change } = SKETCH_CHANGES[target] ?? {};
 
-      writeFileSync(
-        variantFile,
-        readFileSync(variantFile, 'utf8').replace('reset: { percent: 100 }', 'reset: { percent: 110 }'),
-      );
+    if (file) {
+      const variantFile = join(folder, 'a', target, file);
+
+      writeFileSync(variantFile, change(readFileSync(variantFile, 'utf8')));
     }
     writeFileSync(
       join(folder, 'sketch.json'),
