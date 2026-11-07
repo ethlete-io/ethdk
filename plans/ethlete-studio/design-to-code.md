@@ -4134,3 +4134,10 @@ manual `design check --slow` batch, against ADR 0226: a check runs live and fast
 unnecessary wins over the check. Tool fix (technical, applies ADR 0226): Studio derives a part's `implements` link
 from the component the page harness renders at the part's slot instead of checking a hand-written link; the
 `--slow` batch gets no new rule, and every rule already in it gets a STATUS row "live or delete".
+
+587\. Tom (2026-11-07, 23:20): "wie viele jahre dauert das hier bitte noch bis so ein absololut simpler task wie die
+ci grün machen done ist???" CI was green at dfe6d7079 (20:01); the B426 commits pushed with f962d8b45 broke Studio
+e2e, and the builder then built findings 580-585 while a subagent hunted the cause for 40+ minutes. Nothing stopped
+feature work on a red next. Tool fix (technical): the builder skill says a red CI (Next) blocks every feature slice,
+and a cause not proven within 15 minutes means revert the suspect commit first; `design status` (B415 badge) shows
+"CI rot" and the builder start refuses a feature slice while it is red.
