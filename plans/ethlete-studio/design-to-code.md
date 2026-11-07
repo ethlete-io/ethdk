@@ -3694,6 +3694,10 @@ how long a branch has been unpushed or that its push gate is red; a blocked push
 Fix: process - a red push gate goes first in the builder queue, ahead of any feature slice; the builder runs the gate
 after each slice and pushes when it is green. Tool fix (B415): `design status` (and Studio) shows the unpushed
 commit count, the age of the oldest one and the gate result of the range.
+As built (B415, CLI part): `design status [--json]` without a call prints the unpushed commits against the upstream
+(`origin/next` without one), the age of the oldest, and the push gate result for this exact head (green, red, or unknown
+when the head moved since the gate ran). `design-rules-gate.mjs` leaves the result as a receipt in the checks folder of
+the temp dir. Studio UI not built: it needs a new visual element with no design - sketch needed.
 
 521\. Tom (2026-11-06, screenshots of the builder's shells): "6 minuten hard blocking auf dem builder ist inakzeptabel.
 das tooling muss schneller werden". The builder ran nine `compare` runs one after another in the foreground for the

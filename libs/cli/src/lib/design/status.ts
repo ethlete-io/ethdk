@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { callsRootOf } from './paths';
+import { pushStatusLines, pushStatusOf } from './push-status';
 
 export const CALL_STATES = ['scaffolded', 'drawing', 'checking', 'ready', 'failed'] as const;
 
@@ -54,10 +55,25 @@ export const holdStatus = (options: { checkout: string; slug: string }) => {
 
 const isState = (value: string | undefined): value is CallState => CALL_STATES.includes(value as CallState);
 
-/** `et design status <slug> <state>` records the state of a call by hand. */
+/** `et design status` shows the unpushed commits and the push gate; with a slug and a state it records a call's state by hand. */
 export const designStatus = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const [slug, state] = argv;
+  const json = argv.includes('--json');
+  const [slug, state] = argv.filter((arg) => arg !== '--json');
+
+  if (!slug && !state) {
+    const push = pushStatusOf(target);
+
+    if (push === null) {
+      console.error('NO GIT RANGE - the checkout has no commits to compare.');
+
+      return 1;
+    }
+
+    console.log(json ? JSON.stringify({ push }) : pushStatusLines(push).join('\n'));
+
+    return 0;
+  }
 
   if (!slug || !isState(state)) {
     console.error(`usage: ${invocation} status <slug> <${CALL_STATES.join('|')}>`);

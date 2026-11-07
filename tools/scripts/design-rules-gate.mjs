@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -155,7 +156,14 @@ export const checkStagedUncompared = async (root, { files = stagedFilesOf(root),
 if (import.meta.url === `file://${process.argv[1]}`) {
   const [base, head] = process.argv.slice(2);
 
-  process.exit(
-    base === '--staged' ? await checkStagedUncompared(process.cwd()) : checkDesignRules(process.cwd(), base, head),
-  );
+  if (base === '--staged') process.exit(await checkStagedUncompared(process.cwd()));
+
+  const code = checkDesignRules(process.cwd(), base, head);
+  const flattened = process.cwd().replace(/[^A-Za-z0-9]/gu, '-');
+  const receipt = join(tmpdir(), 'ethlete-studio-checks', `${flattened}.push-gate.json`);
+  const sha = run(process.cwd(), 'git', ['rev-parse', head ?? 'HEAD']).stdout.trim();
+
+  mkdirSync(dirname(receipt), { recursive: true });
+  writeFileSync(receipt, JSON.stringify({ head: sha, ok: code === 0, at: new Date().toISOString() }));
+  process.exit(code);
 }

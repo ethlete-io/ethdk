@@ -116,6 +116,8 @@ const helpOf = (invocation: string) =>
     '',
     `${invocation} status <slug> <${CALL_STATES.join('|')}>`,
     '  Record the state of a call for Ethlete Studio. new and check --call record theirs on their own.',
+    `${invocation} status [--json]`,
+    '  Without a call: the unpushed commits, the age of the oldest and the last push gate result for this head.',
     '',
     `${invocation} sketch new <layer>/<name> [<layer>/<name>…] --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--round <title>] [--note <text>] [--product <name>]`,
     '  Open a sketch on a part, new or existing, in progress. Each variant starts as a copy of the part, or of the part',
