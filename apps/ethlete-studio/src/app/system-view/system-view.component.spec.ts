@@ -1380,8 +1380,54 @@ describe('SystemViewComponent on a tree pick', () => {
     await pick(fixture, 'Legacy', 'start');
 
     expect(rememberedView().systemEntry).toBe('legacy:web/start');
-    expect(element.querySelector('main header')?.textContent).toContain('web/start');
+    expect(element.querySelector('main')?.textContent).toContain('web/start: unreadable call');
     expect(element.querySelector('ethlete-open-points-chip')).toBeNull();
+  });
+
+  it('opens a readable call in the system page with its header, its canvas and the transfer action', async () => {
+    const posts: string[] = [];
+    const readable: ListedCall = {
+      slug: 'web/start',
+      project: 'web',
+      eyebrow: 'Start',
+      headline: 'A start page for the web app',
+      stage: null,
+      legacy: true,
+      transferred: false,
+      closed: null,
+      frameWidth: 1280,
+      variants: [],
+    };
+
+    vi.stubGlobal('fetch', (url: string, init?: RequestInit) => {
+      if (url.includes('/__design/transfer')) {
+        posts.push(`${init?.method} ${url}`);
+
+        return json({ result: 'transferred' });
+      }
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([readable]);
+      if (url.includes('/__design/sketches')) return json({ sketches: [], unreadable: [] });
+      if (url.includes('/__design/flows')) return json({ flows: [], unreadable: [] });
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'legacy:web/start' });
+    const page: HTMLElement | null = (fixture.nativeElement as HTMLElement).querySelector('ethlete-system-page');
+    const transfer = [...(page?.querySelectorAll<HTMLButtonElement>('header button') ?? [])].find(
+      (button) => button.textContent?.trim() === STUDIO_LABELS.shell.markTransferred,
+    );
+
+    expect(page?.querySelector('header h2')?.textContent?.trim()).toBe('A start page for the web app');
+    expect(page?.querySelector('[systemCallCanvas] ethlete-design-canvas')).not.toBeNull();
+    expect(page?.querySelector('ethlete-canvas-frames')).toBeNull();
+
+    transfer?.click();
+    await settle(fixture);
+
+    expect(posts).toEqual(['POST http://localhost:4402/__design/transfer?call=web%2Fstart']);
   });
 
   it('says the sketch is not found once the lists are read without it, instead of showing another part', async () => {

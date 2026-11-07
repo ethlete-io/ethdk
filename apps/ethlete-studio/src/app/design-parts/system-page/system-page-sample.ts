@@ -1,13 +1,13 @@
 import { PartTreeLayer } from '../part-tree/part-tree.component';
-import { BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
+import { AgentProgress, BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
 
 export type OpenPointIcon = 'grid' | 'warning' | 'comment' | 'error' | 'flow';
 
 export type OpenPointGroup = { icon: OpenPointIcon; lines: { text: string; detail: string }[] };
 
-export type PartExceptionSample = { rule: string; reason: string; reopened: boolean };
+export type PartException = { rule: string; reason: string; reopened: boolean };
 
-export const PART_EXCEPTIONS_SAMPLE: PartExceptionSample[] = [
+export const PART_EXCEPTIONS_SAMPLE: PartException[] = [
   { rule: 'filled/UNBOUND-INPUT', reason: 'Das Label kommt im Harness aus einem Beispieltext.', reopened: false },
   {
     rule: 'outline/CONTRAST',
@@ -96,3 +96,33 @@ export const buildReadySampleOf = (sample: BuildReadySample, openCount: number):
       return { state: 'blocked', blockers: manyBlockers(openCount) };
   }
 };
+
+export const AGENT_SAMPLES: Record<AgentProgress['state'], AgentProgress> = {
+  working: { state: 'working', doing: 'behebt', detail: 'APP-SPEC in button.component.spec.ts' },
+  waiting: { state: 'waiting', detail: 'auf deine Antwort im Kommentar zu outline' },
+  interrupted: { state: 'interrupted', detail: 'Sitzung beendet, bevor hover fertig war' },
+  failed: { state: 'failed', detail: 'tsc meldet 2 Fehler in system.ts' },
+};
+
+export const AGENT_ON_READY_PART_SAMPLE: AgentProgress = {
+  state: 'working',
+  doing: 'zeichnet',
+  detail: 'einen Sketch für den Zustand pressed',
+};
+
+export type LegacyCall = { slug: string; headline: string; transferred: boolean };
+
+export type ThemeSwitch = { kind: 'surface' | 'color'; names: string[]; current: string };
+
+export type ThemePick = { kind: ThemeSwitch['kind']; name: string };
+
+export const LEGACY_CALL_SAMPLE: LegacyCall = {
+  slug: 'timetrack/kerbe/03-narrow-lane',
+  headline: 'Schmale Spur für die Wochenansicht',
+  transferred: false,
+};
+
+export const THEME_SWITCHES_SAMPLE: ThemeSwitch[] = [
+  { kind: 'surface', names: ['light', 'dark'], current: 'light' },
+  { kind: 'color', names: ['brand', 'danger', 'warning'], current: 'brand' },
+];

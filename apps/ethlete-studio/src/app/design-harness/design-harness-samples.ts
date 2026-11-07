@@ -1,9 +1,13 @@
 import { Type } from '@angular/core';
 import {
+  AGENT_ON_READY_PART_SAMPLE,
+  AGENT_SAMPLES,
   buildReadySampleOf,
   BuildReadySample,
+  LEGACY_CALL_SAMPLE,
   OPEN_POINTS_SAMPLE,
   PART_EXCEPTIONS_SAMPLE,
+  THEME_SWITCHES_SAMPLE,
 } from '../design-parts/system-page/system-page-sample';
 import { DesignHarnessSketchShotsComponent } from './design-harness-sketch-shots.component';
 import { SKETCH_CURRENT, SKETCH_NARROW_SAMPLE, SKETCH_ROWS, SketchRow } from '../design-parts/sketches/sketches-sample';
@@ -36,13 +40,21 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
 
     return { ...props, ...sample, rows };
   },
-  'pages/system': ({ build, ...props }) => {
-    const exceptionCount = PART_EXCEPTIONS_SAMPLE.length;
-    const openCount = OPEN_POINTS_SAMPLE.reduce((sum, group) => sum + group.lines.length, exceptionCount);
+  'pages/system': ({ build, agent, call, ...props }) => {
+    const exceptions = PART_EXCEPTIONS_SAMPLE;
+    const openCount = OPEN_POINTS_SAMPLE.reduce((sum, group) => sum + group.lines.length, exceptions.length);
+    const agentState = agent as keyof typeof AGENT_SAMPLES | undefined;
 
     return {
-      exceptionCount,
+      exceptions,
       ...props,
+      agent: agentState
+        ? props['nothingOpen'] && agentState === 'working'
+          ? AGENT_ON_READY_PART_SAMPLE
+          : AGENT_SAMPLES[agentState]
+        : null,
+      call: call ? { ...LEGACY_CALL_SAMPLE, transferred: call === 'transferred' } : null,
+      themeSwitches: call ? THEME_SWITCHES_SAMPLE : [],
       buildReady: buildReadySampleOf(
         (build as BuildReadySample | undefined) ?? (props['nothingOpen'] ? 'ready' : 'blocked'),
         openCount,

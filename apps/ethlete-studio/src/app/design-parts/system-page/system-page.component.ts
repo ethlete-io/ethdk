@@ -1,15 +1,23 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, model, output, TemplateRef, ViewEncapsulation } from '@angular/core';
-import { BUTTON_IMPORTS } from '@ethlete/components';
+import { BADGE_IMPORTS, BUTTON_IMPORTS } from '@ethlete/components';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component';
 import { PartTreeComponent } from '../part-tree/part-tree.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { SystemEmptyComponent } from './system-empty.component';
-import { BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
+import { AgentProgress, BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
 import { CommentDraftComponent, CommentSendPhase } from './comment-draft.component';
 import { OpenPointsChipComponent } from './open-points-chip.component';
-import { MANY_STATES_LAYERS, OPEN_POINTS_SAMPLE, SYSTEM_LAYERS } from './system-page-sample';
+import {
+  LegacyCall,
+  MANY_STATES_LAYERS,
+  OPEN_POINTS_SAMPLE,
+  PartException,
+  SYSTEM_LAYERS,
+  ThemePick,
+  ThemeSwitch,
+} from './system-page-sample';
 
 export const FRAME_CLASS = 'relative m-0 bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border-solid)]';
 
@@ -30,7 +38,69 @@ export const FRAME_HEAD_CLASS =
           shellMainSide
         />
       }
-      @if (empty()) {
+      @if (call(); as shown) {
+        <ng-content select="[systemCallCanvas]">
+          <ethlete-canvas-frames
+            (zoomOut)="zoomOut.emit()"
+            (zoomReset)="zoomReset.emit()"
+            (zoomIn)="zoomIn.emit()"
+            (fit)="fitAll.emit()"
+            class="w-full pt-16"
+          >
+            <figure [class]="FRAME_CLASS">
+              <figcaption [class]="FRAME_HEAD_CLASS">{{ callFrame() }}</figcaption>
+              <div class="h-45 w-md">
+                <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: callFrame() }" />
+              </div>
+            </figure>
+          </ethlete-canvas-frames>
+        </ng-content>
+        <header
+          class="absolute inset-x-0 top-0 flex items-center gap-space-3 border-b border-(--et-surface-border-solid) bg-(--et-surface-background-solid) py-space-3 ps-[calc(var(--st-shell-inset-left)+var(--spacing-space-4))] pe-space-4"
+        >
+          <div class="min-w-0 flex-1">
+            <span class="font-code text-ui-xs text-et-surface-muted">{{ shown.slug }}</span>
+            <h2 class="m-0 truncate font-ui-strong text-ui-md text-et-surface">{{ shown.headline }}</h2>
+          </div>
+          @for (themeSwitch of themeSwitches(); track themeSwitch.kind) {
+            <div
+              [attr.aria-label]="themeSwitch.kind === 'surface' ? SHELL_LABELS.surfaceTheme : SHELL_LABELS.colorTheme"
+              class="flex gap-0.5 rounded-control-lg border border-(--et-surface-border-solid) p-0.5"
+              role="group"
+            >
+              @for (name of themeSwitch.names; track name) {
+                <button
+                  [pressed]="name === themeSwitch.current"
+                  (click)="pickTheme.emit({ kind: themeSwitch.kind, name })"
+                  et-button
+                  type="button"
+                  variant="transparent"
+                  color="surface"
+                  size="xs"
+                >
+                  {{ name }}
+                </button>
+              }
+            </div>
+          }
+          @if (shown.transferred) {
+            <div class="flex flex-wrap items-center">
+              <et-badge variant="tonal" size="sm">{{ SHELL_LABELS.transferred }}</et-badge>
+            </div>
+          } @else {
+            <button
+              (click)="markTransferred.emit(shown.slug)"
+              et-button
+              type="button"
+              variant="outline"
+              color="surface"
+              size="sm"
+            >
+              {{ SHELL_LABELS.markTransferred }}
+            </button>
+          }
+        </header>
+      } @else if (empty()) {
         <ethlete-system-empty [product]="shell().product" (copyPrompt)="copyPrompt.emit()" />
       } @else if (manyStates()) {
         <ethlete-canvas-frames
@@ -110,9 +180,11 @@ export const FRAME_HEAD_CLASS =
             [(blockersOpen)]="blockersOpen"
             [part]="part()"
             [groups]="groups()"
-            [exceptionCount]="openExceptionCount()"
+            [exceptions]="openExceptions()"
             [buildReady]="buildReady()"
+            [agent]="agent()"
             (openEditSketch)="openEditSketch.emit($event)"
+            (approveException)="approveException.emit($event)"
           />
         </div>
       }
@@ -126,6 +198,7 @@ export const FRAME_HEAD_CLASS =
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
+    BADGE_IMPORTS,
     BUTTON_IMPORTS,
     CanvasFramesComponent,
     CommentDraftComponent,
@@ -155,8 +228,11 @@ export class SystemPageComponent {
   public shot = input<TemplateRef<{ $implicit: string }> | null>(null);
   public part = input('components/button');
   public openPoints = input(OPEN_POINTS_SAMPLE);
-  public exceptionCount = input(0);
+  public exceptions = input<PartException[]>([]);
   public buildReady = input<BuildReadyStatus | null>(null);
+  public agent = input<AgentProgress | null>(null);
+  public call = input<LegacyCall | null>(null);
+  public themeSwitches = input<ThemeSwitch[]>([]);
   public blockersOpen = model(false);
   public shellAction = output<ShellAction>();
 
@@ -169,13 +245,19 @@ export class SystemPageComponent {
   public fitAll = output();
   public sendComment = output<string>();
   public openEditSketch = output<BuildBlocker>();
+  public approveException = output<string>();
+  // eslint-disable-next-line ethlete/prefer-present-tense-output -- the design action emit:markTransferred fixes this name
+  public markTransferred = output<string>();
+  public pickTheme = output<ThemePick>();
 
   protected readonly LABELS = STUDIO_LABELS.system;
+  protected readonly SHELL_LABELS = STUDIO_LABELS.shell;
   protected readonly FRAME_CLASS = FRAME_CLASS;
   protected readonly FRAME_HEAD_CLASS = FRAME_HEAD_CLASS;
 
   public groups = computed(() => (this.nothingOpen() ? [] : this.openPoints()));
-  public openExceptionCount = computed(() => (this.nothingOpen() ? 0 : this.exceptionCount()));
+  public openExceptions = computed(() => (this.nothingOpen() ? [] : this.exceptions()));
+  protected callFrame = computed(() => this.call()?.slug.split('/').pop() ?? '');
 
   protected toggleComments() {
     const on = !this.commentMode();

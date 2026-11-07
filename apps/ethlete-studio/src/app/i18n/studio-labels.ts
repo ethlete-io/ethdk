@@ -117,6 +117,12 @@ export const STUDIO_LABELS = {
     blocked: (count: number) => `Nicht baubereit (${count})`,
     reasons: 'Gründe',
     openEditSketch: 'Sketch öffnen',
+    agent: {
+      working: (doing: string) => `Agent ${doing}`,
+      waiting: 'Agent wartet',
+      interrupted: 'Agent unterbrochen',
+      failed: 'Agent fehlgeschlagen',
+    },
     groups: {
       'direct-edit': 'Direkte Änderung',
       'open-point': 'Offene Punkte',
@@ -147,7 +153,6 @@ export const STUDIO_LABELS = {
     colorTheme: 'Farb-Theme',
   },
   exceptions: {
-    toggleTitle: 'Ausnahmen dieses Teils, die auf deine Freigabe warten',
     toggle: 'Ausnahmen',
     reopened: 'wieder offen - der Teil hat sich geändert',
     pending: 'offen',

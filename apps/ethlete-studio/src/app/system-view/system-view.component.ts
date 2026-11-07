@@ -79,7 +79,8 @@ import { FlowViewComponent } from './flow-view.component';
 import { InventoryViewComponent } from './inventory-view.component';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { PageShell, PageShellAction } from './page-shell';
-import { ExceptionListComponent } from './exception-list.component';
+import { createExceptionStore } from './exception-store';
+import { SystemPageComponent } from '../design-parts/system-page/system-page.component';
 import { PartApprovalComponent } from './part-approval.component';
 import { openPointGroupsOf } from './open-points';
 import { partOpenPoints$ } from '../../host/design-open-points';
@@ -93,9 +94,6 @@ import { NO_FRAME_REVISIONS, revisionOf, sketchRevisionOf } from '../studio-view
 import { NO_LIST_REVISIONS } from '../studio-view/list-revisions';
 
 type Reading = { products: ListedProduct[]; error: string | null };
-
-const BADGE =
-  'shrink-0 whitespace-nowrap rounded-full border border-(--et-surface-border-solid) px-1.5 py-px text-[1rem] text-(--et-surface-color-subtle-solid)';
 
 /** A product switch keeps the old read until the new product answers; that read must not show. */
 const itemsOf = <T>(read: { product: string; items: T[] } | null, product: string | undefined) =>
@@ -120,75 +118,12 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
       />
     </ng-template>
 
-    <ng-template #themeBar>
-      @for (themeSwitch of themeSwitches(); track themeSwitch.kind) {
-        <div
-          [attr.aria-label]="themeSwitch.label"
-          class="flex gap-0.5 rounded-[0.6rem] border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-0.5"
-          role="group"
-        >
-          @for (name of themeSwitch.names; track name) {
-            <button
-              [pressed]="name === themeSwitch.current"
-              (click)="pickTheme(themeSwitch.kind, name)"
-              et-button
-              type="button"
-              variant="transparent"
-              color="surface"
-              size="xs"
-            >
-              {{ name }}
-            </button>
-          }
-        </div>
-      }
-    </ng-template>
-
     <ng-template #shellCanvas>
       <main class="relative grid size-full min-h-0 min-w-0 pl-(--st-shell-inset-left)">
         @if (!port()) {
           <p [class]="NOTE">{{ LABELS.startServer }}</p>
         } @else if (call(); as shown) {
-          <div class="grid min-h-0 grid-rows-[auto_minmax(0,1fr)]">
-            <header class="flex items-center gap-3 border-b border-(--et-surface-border-solid) px-4 py-3">
-              <div class="min-w-0 flex-1">
-                <span class="font-mono text-[1.1rem] text-(--et-surface-color-subtle-solid)">{{ shown.slug }}</span>
-                @if ('headline' in shown) {
-                  <h2 class="m-0 mt-0.5 overflow-hidden text-[1.5rem] font-semibold text-ellipsis whitespace-nowrap">
-                    {{ shown.headline }}
-                  </h2>
-                }
-              </div>
-              <ng-container [ngTemplateOutlet]="themeBar" />
-              @if ('transferred' in shown && shown.transferred) {
-                <span [class]="BADGE">{{ LABELS.transferred }}</span>
-              } @else if (!('error' in shown)) {
-                <button
-                  [disabled]="transferring()"
-                  (click)="markTransferred(shown.slug)"
-                  et-button
-                  type="button"
-                  variant="outline"
-                  color="surface"
-                  size="sm"
-                >
-                  {{ LABELS.markTransferred }}
-                </button>
-              }
-              @if (transferError(); as message) {
-                <span [etProvideColor]="errorTheme()" class="text-[1.2rem] text-(--et-theme-color-primary-solid)">{{
-                  message
-                }}</span>
-              }
-            </header>
-            <ethlete-design-canvas
-              [frames]="callFrames()"
-              [cameraKey]="cameraKey()"
-              [restoredCamera]="restoredCamera()"
-              (cameraChange)="rememberCamera($event)"
-              class="-ms-(--st-shell-inset-left) min-h-0"
-            />
-          </div>
+          <p [class]="NOTE">{{ shown.slug }}: {{ 'error' in shown ? shown.error : '' }}</p>
         } @else if (reading(); as read) {
           @if (read.error) {
             <p [class]="NOTE">{{ read.error }}</p>
@@ -207,12 +142,14 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
                   [revision]="allRevision()"
                   (approve)="approvals.set(approvals() + 1)"
                 />
-                <ethlete-exception-list
-                  [port]="port"
-                  [product]="product()?.name ?? ''"
-                  [part]="partShown.key"
-                  [revision]="productsRevision()"
-                />
+              }
+              @if (exceptions.error(); as message) {
+                <span
+                  [etProvideColor]="errorTheme()"
+                  class="self-center text-[1.2rem] text-(--et-theme-color-primary-solid)"
+                  data-exceptions-error
+                  >{{ message }}</span
+                >
               }
               @if (partShown.listed.layer === 'pages') {
                 <button
@@ -242,7 +179,8 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
               <ethlete-open-points-chip
                 [part]="partShown.key"
                 [groups]="openPointGroups()"
-                [exceptionCount]="exceptionCount()"
+                [exceptions]="openExceptions()"
+                (approveException)="approveException(partShown.key, $event)"
               />
             </div>
             <ethlete-design-canvas
@@ -358,6 +296,36 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
           (shellAction)="runShellAction($event)"
         />
       }
+    } @else if (callPage(); as shown) {
+      <ethlete-system-page
+        [shell]="pageShell()"
+        [layers]="partTreeLayers()"
+        [call]="shown"
+        [themeSwitches]="themeSwitches()"
+        (markTransferred)="markTransferred($event)"
+        (pickTheme)="pickTheme($event.kind, $event.name)"
+        (activate)="activate($event)"
+        (expandedChange)="rememberOpen($event)"
+        (shellAction)="runShellAction($event)"
+      >
+        <div class="grid size-full min-h-0 grid-rows-[minmax(0,1fr)] pt-16" systemCallCanvas>
+          <ethlete-design-canvas
+            [frames]="callFrames()"
+            [cameraKey]="cameraKey()"
+            [restoredCamera]="restoredCamera()"
+            (cameraChange)="rememberCamera($event)"
+            class="min-h-0"
+          />
+          @if (transferError(); as message) {
+            <p
+              [etProvideColor]="errorTheme()"
+              class="absolute right-space-4 bottom-space-3 m-0 text-[1.2rem] text-(--et-theme-color-primary-solid)"
+            >
+              {{ message }}
+            </p>
+          }
+        </div>
+      </ethlete-system-page>
     } @else {
       <ethlete-shell-page [section]="section()" [shell]="pageShell()" (action)="runShellAction($event)">
         <div class="-m-space-2 h-[calc(100%+var(--space-2)*2)] overflow-y-auto" shellMainSide>
@@ -381,7 +349,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     SystemEmptyComponent,
     StartComponent,
     InventoryViewComponent,
-    ExceptionListComponent,
+    SystemPageComponent,
     PartApprovalComponent,
     OpenPointsChipComponent,
     CommentDraftComponent,
@@ -415,16 +383,14 @@ export class SystemViewComponent {
 
   private sketchView = viewChild<SketchViewComponent>('sketchView');
 
-  private exceptionList = viewChild(ExceptionListComponent);
 
-  protected productsRevision = computed(() => this.lists().products);
+  private productsRevision = computed(() => this.lists().products);
 
   private callsRevision = computed(() => this.lists().calls);
   private sketchesRevision = computed(() => this.lists().sketches);
   private flowsRevision = computed(() => this.lists().flows);
   protected allRevision = computed(() => this.lists().all);
   protected approvals = signal(0);
-  protected readonly BADGE = BADGE;
 
   protected readonly NOTE = NOTE;
   protected readonly PART_ZOOM_CHIP_CLASS = PART_ZOOM_CHIP_CLASS;
@@ -500,7 +466,7 @@ export class SystemViewComponent {
 
   private cameras = signal(rememberedView().movedCameras ?? {});
 
-  protected transferring = signal(false);
+  private transferring = signal(false);
 
   protected transferError = signal('');
 
@@ -510,6 +476,13 @@ export class SystemViewComponent {
     const products = this.products();
 
     return products.find((listed) => listed.name === this.pickedProduct()) ?? products[0] ?? null;
+  });
+
+  protected exceptions = createExceptionStore(() => {
+    const port = this.port();
+    const product = this.product()?.name;
+
+    return port && product ? { port, product, revision: this.productsRevision() } : null;
   });
 
   public productNames = computed(() => this.products().map((listed) => listed.name));
@@ -660,6 +633,12 @@ export class SystemViewComponent {
 
   protected call = computed(() => this.calls().find((listed) => callKeyOf(listed.slug) === this.picked()) ?? null);
 
+  protected callPage = computed(() => {
+    const call = this.call();
+
+    return this.port() && call && !('error' in call) ? call : null;
+  });
+
   private themePicks = signal(rememberedView().themes ?? {});
 
   /** The themes the shown entry names - a call's design project, else the product - with the name each frame wears. */
@@ -788,11 +767,17 @@ export class SystemViewComponent {
 
   protected openPointGroups = computed(() => this.openPointReads()?.items ?? []);
 
-  protected exceptionCount = computed(() => {
+  protected openExceptions = computed(() => {
     const part = this.part()?.key;
-    const listed = this.exceptionList()?.listed();
+    const listed = this.exceptions.listed();
 
-    return part && listed ? openExceptionsOf(listed, part).length : 0;
+    return part && listed
+      ? openExceptionsOf(listed, part).map(({ key, reason, state }) => ({
+          rule: key.slice(part.length + 1),
+          reason,
+          reopened: state === 'reopened',
+        }))
+      : [];
   });
 
   public selectedKey = computed(() => {
@@ -1094,6 +1079,10 @@ export class SystemViewComponent {
 
     this.openGroups.set(openGroups);
     rememberView({ openGroups });
+  }
+
+  protected approveException(part: string, rule: string) {
+    this.exceptions.approve(`${part}.${rule}`);
   }
 
   protected activate(key: string) {

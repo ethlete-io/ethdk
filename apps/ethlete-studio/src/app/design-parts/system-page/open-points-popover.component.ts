@@ -1,7 +1,13 @@
 import { Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
+import { BUTTON_IMPORTS } from '@ethlete/components';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
-import { BuildBlocker, BuildReadyFooterComponent, BuildReadyStatus } from './build-ready-footer.component';
-import { OpenPointGroup } from './system-page-sample';
+import {
+  AgentProgress,
+  BuildBlocker,
+  BuildReadyFooterComponent,
+  BuildReadyStatus,
+} from './build-ready-footer.component';
+import { OpenPointGroup, PartException } from './system-page-sample';
 
 const SHOWN_LINES = 3;
 
@@ -94,26 +100,62 @@ const SHOWN_LINES = 3;
           <span class="text-(--et-surface-color-muted-solid)">{{ LABELS.allDone }}</span>
         </div>
       }
+      @if (exceptions().length) {
+        <section class="border-t border-(--et-surface-border-solid) py-space-1">
+          <h3
+            class="m-0 flex items-center gap-space-2 px-space-3 py-space-1 text-ui-xs font-ui-strong text-et-surface-muted"
+          >
+            {{ EXCEPTION_LABELS.toggle }}<span class="font-code font-normal">{{ exceptions().length }}</span>
+          </h3>
+          <ul class="m-0 list-none p-0">
+            @for (exception of exceptions(); track exception.rule) {
+              <li class="flex items-start gap-space-3 px-space-3 py-space-2">
+                <span class="flex min-w-0 flex-1 flex-col">
+                  <span class="font-code text-ui-xs break-all text-et-surface">{{ exception.rule }}</span>
+                  <span class="text-et-surface-muted">{{ exception.reason }}</span>
+                  <span class="text-ui-xs text-et-surface-muted">
+                    {{ exception.reopened ? EXCEPTION_LABELS.reopened : EXCEPTION_LABELS.pending }}
+                  </span>
+                </span>
+                <button
+                  (click)="approveException.emit(exception.rule)"
+                  et-button
+                  type="button"
+                  variant="filled"
+                  size="xs"
+                >
+                  {{ EXCEPTION_LABELS.approve }}
+                </button>
+              </li>
+            }
+          </ul>
+        </section>
+      }
       @if (buildReady(); as status) {
         <ethlete-build-ready-footer
           [(blockersOpen)]="blockersOpen"
           [status]="status"
+          [agent]="agent()"
           (openEditSketch)="openEditSketch.emit($event)"
         />
       }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BuildReadyFooterComponent],
+  imports: [BUTTON_IMPORTS, BuildReadyFooterComponent],
 })
 export class OpenPointsPopoverComponent {
   public part = input.required<string>();
   public groups = input.required<OpenPointGroup[]>();
+  public exceptions = input<PartException[]>([]);
   public buildReady = input<BuildReadyStatus | null>(null);
+  public agent = input<AgentProgress | null>(null);
   public blockersOpen = model(false);
   public openEditSketch = output<BuildBlocker>();
+  public approveException = output<string>();
 
   protected readonly LABELS = STUDIO_LABELS.system;
+  protected readonly EXCEPTION_LABELS = STUDIO_LABELS.exceptions;
 
   protected shown = computed(() =>
     this.groups().map(({ icon, lines }) => ({

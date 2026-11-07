@@ -16,9 +16,9 @@ import { anchoredDialogOverlayStrategy, BUTTON_IMPORTS, injectOverlayManager } f
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { defer, EMPTY, finalize, switchMap, tap } from 'rxjs';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
-import { BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
+import { AgentProgress, BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
 import { OpenPointsPopoverComponent } from './open-points-popover.component';
-import { OpenPointGroup } from './system-page-sample';
+import { OpenPointGroup, PartException } from './system-page-sample';
 
 @Component({
   selector: 'ethlete-open-points-chip',
@@ -81,17 +81,19 @@ export class OpenPointsChipComponent {
   protected warningTheme = injectSemanticColorTheme('warning');
   public part = input.required<string>();
   public groups = input.required<OpenPointGroup[]>();
-  public exceptionCount = input(0);
+  public exceptions = input<PartException[]>([]);
   public buildReady = input<BuildReadyStatus | null>(null);
+  public agent = input<AgentProgress | null>(null);
   public closed = model(true);
   public blockersOpen = model(false);
   public openEditSketch = output<BuildBlocker>();
+  public approveException = output<string>();
 
   private chip = viewChild.required('chip', { read: ElementRef<HTMLElement> });
   protected readonly LABELS = STUDIO_LABELS.system;
 
   protected count = computed(() =>
-    this.groups().reduce((sum, group) => sum + group.lines.length, this.exceptionCount()),
+    this.groups().reduce((sum, group) => sum + group.lines.length, this.exceptions().length),
   );
 
   constructor() {
@@ -111,9 +113,12 @@ export class OpenPointsChipComponent {
                   bindings: [
                     inputBinding('part', this.part),
                     inputBinding('groups', this.groups),
+                    inputBinding('exceptions', this.exceptions),
                     inputBinding('buildReady', this.buildReady),
+                    inputBinding('agent', this.agent),
                     twoWayBinding('blockersOpen', this.blockersOpen),
                     outputBinding<BuildBlocker>('openEditSketch', (blocker) => this.openEditSketch.emit(blocker)),
+                    outputBinding<string>('approveException', (rule) => this.approveException.emit(rule)),
                   ],
                 });
 
