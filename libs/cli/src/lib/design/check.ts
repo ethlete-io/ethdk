@@ -5,6 +5,7 @@ import { chromiumOf } from './browser';
 import { writeCallsTsconfig } from './calls-tsconfig';
 import { callsRootOf, DEFAULT_PORT, DesignConfig, portOf, readConfig } from './paths';
 import { buildStampOf, serverProblemOf } from './stamp';
+import { hooksProblemOf } from './hooks-problem';
 import { holdStatus, writeStatus } from './status';
 import { checkRules, checkSystemRendered } from './system/check-system';
 import { liveUncoveredOf, uncoveredFindingLineOf } from './system/live-uncovered';
@@ -472,6 +473,10 @@ const checkWithStatus = async (options: {
   warm?: WarmDraw;
 }): Promise<number> => {
   const { target, invocation, warm } = options;
+  const hooksProblem = hooksProblemOf(target);
+
+  if (hooksProblem) console.log(hooksProblem);
+
   const appClasses = options.argv.includes('--app-classes');
   const rules = options.argv.includes('--rules');
   const live = options.argv.includes('--live');
