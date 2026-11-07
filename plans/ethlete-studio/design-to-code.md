@@ -4244,3 +4244,9 @@ reads a variant choice recorded for the sketch and applies it without asking aga
 575\. Builder (2026-11-07): `lint:no-verify-briefs` failed the pre-push on gitignored local handoff notes and missed
 negations ("no `--no-verify`", a "Never" wrapped onto the previous line). Tool fix (technical): scan only tracked files,
 add "no" to the negations and join wrapped lines before matching.
+
+576\. Doc agent (2026-11-07, B412): STATUS still asked Tom for a "Go" for `design accept pages/start` and
+`components/select`, although ADR 0048 removed the Go and ADR 0209 lets the agent accept a direct edit that names
+its ADR. No check reads the plan rows against the ADRs. Tool fix (technical): `yarn lint:person-names` or a new plan
+lint flags a STATUS row that asks Tom for "Go", `design accept` or `go` once B249 has landed; B249 itself removes the
+last hint text in the CLI that tells a human to run `design accept`.
