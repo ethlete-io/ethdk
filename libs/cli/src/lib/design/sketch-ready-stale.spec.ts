@@ -1,3 +1,4 @@
+import { execFileSync } from 'child_process';
 import { cpSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -66,7 +67,18 @@ describe('sketch ready on a stale base', { timeout: 120_000 }, () => {
     const lines = output();
 
     expect(await write(target, 'new', 'pages/home', '--variants', 'a', '--note', 'n', '--product', 'acme')).toBe(0);
+    const git = (...args: string[]) => execFileSync('git', args, { cwd: target, encoding: 'utf8' }).trim();
+    const commit = (message: string) =>
+      git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', message);
+
+    git('init', '-q');
+    git('add', '-A');
+    commit('drawn');
     writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { padding: 0; }');
+    git('add', '-A');
+    commit('hero');
+
+    const heroCommit = git('rev-parse', '--short', 'HEAD');
 
     expect(await write(target, 'ready', 'pages/home', '--product', 'acme')).toBe(1);
 
@@ -74,7 +86,11 @@ describe('sketch ready on a stale base', { timeout: 120_000 }, () => {
       'SKETCH-BASE-STALE acme pages/home: elements/hero changed since the sketch was drawn - bring each variant up to date, then run et design sketch rebase pages/home --product acme --by <model id>';
 
     expect(lines.some((entry) => entry.includes(line))).toBe(true);
-    expect(lines.some((entry) => entry.includes('pages/home is stale - rebase it before ready'))).toBe(true);
+    expect(
+      lines.some((entry) =>
+        entry.includes(`pages/home is stale (base changed in ${heroCommit}) - rebase it before ready`),
+      ),
+    ).toBe(true);
 
     lines.length = 0;
     expect(await designSketch({ target, argv: ['check', '--product', 'acme'], invocation: 'et design' })).toBe(1);

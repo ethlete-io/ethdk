@@ -3,7 +3,7 @@ import { spawnSync } from 'child_process';
 import { createHash } from 'crypto';
 import { existsSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { relative, resolve } from 'path';
+import { dirname, relative, resolve } from 'path';
 import { DesignConfig } from './paths';
 import { timedPhase } from './phase-timing';
 import { ASSETS_FOLDER } from './system/assets';
@@ -42,6 +42,7 @@ import { unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { editRefOf, mergeAndRecord } from './system/sketch/merge-step';
 import { staleSketchBasesOf } from './system/check-system';
+import { staleBaseOf } from './system/sketch/stale-base';
 import { repoInvocation } from '../invocation';
 import { MERGED_FILE } from './system/sketch/merged-parts';
 import { noVerdictLineOf } from './system/no-verdict';
@@ -1122,6 +1123,21 @@ const unloadedLinesOf = async (options: {
   warm?: WarmDraw;
 }) => (await variantsThatDoNotLoad(options)).map((line) => `${options.sketch.target} ${line}`);
 
+const baseCommitOf = (options: { context: Context; product: ResolvedProduct; sketch: Sketch }) => {
+  const { context, product, sketch } = options;
+  const dirs = (staleBaseOf({ product, sketch }) ?? []).flatMap((key) => {
+    const part = product.parts.find((candidate) => partKeyOf(candidate) === key);
+
+    return part ? [dirname(part.file)] : [];
+  });
+
+  if (dirs.length === 0) return null;
+
+  const log = spawnSync('git', ['log', '-1', '--format=%h', '--', ...dirs], { cwd: context.target, encoding: 'utf8' });
+
+  return log.status === 0 && log.stdout.trim() ? log.stdout.trim() : null;
+};
+
 const readyRefusalOf = (
   context: Context,
   { product, sketch }: { product: ResolvedProduct; sketch: Sketch },
@@ -1130,10 +1146,13 @@ const readyRefusalOf = (
     `${sketch.target} ${variant}: ${problem.rule} ${relative(context.target, problem.file)}: ${problem.message}`;
   const stale = staleBasesOf(context, { product, targets: new Set([sketch.target]) });
 
-  if (stale.length > 0)
+  if (stale.length > 0) {
+    const commit = baseCommitOf({ context, product, sketch });
+
     return fail(
-      `${stale.map((problem) => problem.line).join('\n')}\n${sketch.target} is stale - rebase it before ready`,
+      `${stale.map((problem) => problem.line).join('\n')}\n${sketch.target} is stale${commit ? ` (base changed in ${commit})` : ''} - rebase it before ready`,
     );
+  }
 
   const found = variantProblemsOf({ product, sketch });
 
