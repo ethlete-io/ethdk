@@ -162,8 +162,18 @@
   },
   "components/title-bar": {
     "record": {
-      "hash": "2d54e122858093ed",
+      "hash": "73cd77c46f404dd5",
       "states": {
+        "linux-full-notice": "96cea298531275b0",
+        "linux-left-notice": "ceee9a5d20bce3b0",
+        "linux-close-notice": "5bdd1abb86a77267",
+        "windows-notice": "6841f7a786328873",
+        "macos-notice": "78a047c6e6ab3661",
+        "linux-full-cli-dirty": "e119ff26dd0d0b72",
+        "linux-left-cli-dirty": "44134880c02bb203",
+        "linux-close-cli-dirty": "3e42d415f01e195a",
+        "windows-cli-dirty": "716e283a24212767",
+        "macos-cli-dirty": "b1c8843bd07ae064",
         "linux-full-update": "5b12eacaa5c5afe2",
         "linux-full-update-hover": "7736534ef896ee0b",
         "linux-full-update-active": "2c34101181be9636",
@@ -171,15 +181,22 @@
         "linux-left": "07394e6a387567bc",
         "linux-close": "0c7e4f126b340f88",
         "windows": "ac6ddd3c305bf14e",
+        "windows-hover": "3bf2845b41d02ba4",
+        "windows-active": "c01658aa20f31469",
+        "windows-focus-visible": "0ba2c3b6a54a9435",
         "windows-update": "83efabd2bd6ec748",
-        "linux-full": "1009de5248de705e",
-        "linux-full-notice": "ef98fd7c1c55424b",
-        "windows-notice": "0d016bc7b0df5446",
+        "windows-update-hover": "431612b6a1171dc5",
+        "windows-update-active": "f904e97bcef12f2e",
+        "windows-update-focus-visible": "dda9f5494e3e54e1",
+        "linux-left-update": "1fe691fe7ad38fa8",
         "linux-close-update": "bf0dc6e2486f6ff3",
+        "macos-update": "e1b7c78efbec58fc",
+        "linux-full": "1009de5248de705e",
         "macos": "46432383b290b56c",
-        "macos-update": "e1b7c78efbec58fc"
+        "linux-full-notice-pending": "66c6ae9ce452658f",
+        "linux-full-notice-failed": "d673aea051ead218"
       },
-      "partHash": "2fc021f34b6c5e4e",
+      "partHash": "56bbb4a9e6048102",
       "slots": true
     }
   },
@@ -489,7 +506,7 @@
   },
   "pages/flows": {
     "record": {
-      "hash": "fc1db857f3fd32dd",
+      "hash": "c2aae6244950e1cf",
       "states": {
         "flow": "e19c6b20903f72cc",
         "empty": "17e02ac0074d5279"
@@ -500,7 +517,7 @@
   },
   "pages/inbox": {
     "record": {
-      "hash": "79b9bcd6f223f765",
+      "hash": "cf47cbd95939bc73",
       "states": {
         "open": "60e6013a47fa76cf",
         "with-resolved": "7c6c1cf0783c5686",
@@ -531,7 +548,7 @@
   },
   "pages/merge": {
     "record": {
-      "hash": "33dee9fd7da915df",
+      "hash": "cb06928e0fe0c4ea",
       "states": {
         "open": "4ab78d89c5a3c70c",
         "unchanged-open": "0976256ea44623c4",
@@ -545,40 +562,40 @@
   },
   "pages/sketches": {
     "record": {
-      "hash": "e453218e1666cb25",
+      "hash": "fa45e1f598c230f8",
       "states": {
-        "page-sketch": "c6da074b786f89b6",
+        "page-sketch": "0463584cb490297e",
         "page-100": "d5f65b6e6c5b2c06",
-        "zoomed-page": "400f27c8c6b104dc",
-        "drawing": "b3cad136ac7a0dd8",
-        "paused": "a5a4a1c159c030cc",
-        "paused-reason": "e95dfe38defe4efc",
-        "idle": "caf2e1a4443ebef5",
-        "new-part": "81f6c966616c264c",
+        "zoomed-page": "e467b8a85f5d889a",
+        "drawing": "dd63bdb9cb1f394a",
+        "paused": "6661f917c5e5b8d5",
+        "paused-reason": "eb62a2ee251ba830",
+        "idle": "4060efe5c6b77d3b",
+        "new-part": "c3aaa752f55ac1ed",
         "narrow-part": "25916d63e8b88487",
         "sticky-names": "61a66b3db47d8d3d",
-        "comparing": "bd10700317c182de",
+        "comparing": "23a37e85b3287bd3",
         "comparing-narrow": "f84a398ce1599b21",
-        "below-fit": "397229f389619eee",
-        "far-out": "6769ce77d3a48e77",
+        "below-fit": "d4d25964a56d7934",
+        "far-out": "d290e84aa8546c20",
         "narrow-below-fit": "13200c0e80e8dc29",
         "narrow-far-out": "0fdaedbffb5b093b",
         "unchanged": "b460a0f403b553dd",
         "unchanged-open": "a38ed1509987e3c9",
         "all-unchanged": "8b33fd29baef623a",
         "unchanged-matrix": "f0848d7abfd596cd",
-        "unchanged-matrix-open": "3b7acac4a876e617",
+        "unchanged-matrix-open": "eebf5a8794f4d86c",
         "withdrawn-hidden": "250c86bef97fc78e",
         "withdrawn-shown": "b13c2cbf9ea92265",
         "agent-round": "82cbd62e317a73af",
         "agent-variant": "a387ee194f14c9fd",
         "agent-failed": "6733cddda5750d5b",
-        "folded": "8400de8321ef0398",
+        "folded": "95b24b69b336e7bc",
         "question-only": "c1b8fb78eb649113",
         "port-after-merge": "519eae2564fd9659",
         "port-after-merge-long": "5fcc01181fe730f7"
       },
-      "partHash": "e53138328f230d88",
+      "partHash": "09d741cdd0ededde",
       "slots": true
     }
   },
@@ -602,7 +619,7 @@
   },
   "pages/system": {
     "record": {
-      "hash": "9746dc9c10e39a95",
+      "hash": "701d1c0e3d7705f1",
       "states": {
         "part": "7104744128f0f4fb",
         "empty": "f932d40afa6126cc",
@@ -631,7 +648,7 @@
         "call": "7d0d1eb4d89ba2f7",
         "call-transferred": "b0b073d9973d3dd7"
       },
-      "partHash": "0967723d07c853bf",
+      "partHash": "42069945dc47ff87",
       "slots": true
     }
   }

@@ -11,6 +11,7 @@ import { EDIT_SKETCH, readMerged } from './merged-parts';
 import {
   createSketch,
   markSketchReady,
+  rebaseOutsideImports,
   rewriteSharedImports,
   SHARED_FOLDER,
   Sketch,
@@ -216,7 +217,16 @@ const writeOld = ({ sketch, resolved }: { sketch: Sketch; resolved: ResolvedPart
     writeFileSync(file, source);
   }
 
+  const partDir = dirname(resolved.file);
+
+  rebaseOutsideImports({ dir: oldDir, from: partDir, skip: SHARED_FOLDER });
+
   if (existsSync(resolve(oldDir, SHARED_FOLDER))) {
+    rebaseOutsideImports({
+      dir: resolve(oldDir, SHARED_FOLDER),
+      from: resolve(partDir, SHARED_FOLDER),
+      settledIn: variantSharedDirOf(sketch, EDIT_OLD),
+    });
     rewriteSharedImports(oldDir);
     cpSync(resolve(oldDir, SHARED_FOLDER), variantSharedDirOf(sketch, EDIT_OLD), { recursive: true });
     rmSync(resolve(oldDir, SHARED_FOLDER), { recursive: true });

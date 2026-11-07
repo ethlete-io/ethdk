@@ -2,7 +2,7 @@ import { execFileSync } from 'child_process';
 import { originOf } from '../write-origin';
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../design-config';
 import { readOpenPoints } from '../read-open-points';
@@ -101,6 +101,30 @@ describe('openEditSketch', () => {
     expect(readFileSync(join(sketch.dir, 'old', 'shared', 'tone.ts'), 'utf8')).toBe("export const tone = 'head';\n");
     expect(readFileSync(join(sketch.dir, 'shared', 'tone.ts'), 'utf8')).toBe("export const tone = 'edit';\n");
     expect(readFileSync(join(sketch.dir, 'old', HERO, 'hero.ts'), 'utf8')).toContain("from '@shared/tone'");
+  });
+
+  it('points an import that leaves the old shared folder at the same file from the sketch', () => {
+    const { target } = acme((heroDir) => {
+      mkdirSync(join(heroDir, 'shared'));
+      writeFileSync(join(heroDir, '..', '..', 'outside.ts'), 'export const outside = 1;\n');
+      writeFileSync(
+        join(heroDir, 'shared', 'tone.ts'),
+        "import { outside } from '../../../outside';\nexport { outside };\n",
+      );
+      writeFileSync(
+        join(heroDir, 'hero.ts'),
+        `import { outside } from './shared/tone';\n${readFileSync(join(heroDir, 'hero.ts'), 'utf8')}`,
+      );
+    });
+    const product = resolveAcme(target);
+
+    writeFileSync(join(product.dir, HERO, 'hero.css'), '.acme-hero { padding: 0; }\n');
+
+    const sketch = openEditSketch({ target, product, part: HERO }) as Sketch;
+    const written =
+      /from '([^']+)'/u.exec(readFileSync(join(sketch.dir, 'old', 'shared', 'tone.ts'), 'utf8'))?.[1] ?? '';
+
+    expect(`${resolve(sketch.dir, 'old', 'shared', written)}.ts`).toBe(join(product.dir, 'outside.ts'));
   });
 
   it('opens no sketch when the part folder is at its merged commit', () => {

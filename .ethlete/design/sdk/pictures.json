@@ -23,14 +23,15 @@
     }
   },
   "components/anchored-dialog": {
-    "review": {
-      "hash": "02e3cce0bd8f11b6",
+    "record": {
+      "hash": "15ba4525ab01bffc",
       "states": {
         "open-points": "226f8135b514b073",
         "filter": "3ecf9f95f7739891",
         "no-arrow": "a071879be802f635",
         "top-start": "afe5a3fd876a51e4"
       },
+      "partHash": "1e60e9f9e74b4c91",
       "slots": true
     }
   },
@@ -1177,6 +1178,17 @@
         "overview": "b81931cd91126c4c",
         "stacked": "3ce87de3d3129be5"
       },
+      "slots": true
+    }
+  },
+  "foundations/icons": {
+    "record": {
+      "hash": "8f54284f202642c8",
+      "states": {
+        "catalogue": "4e2a1394b85b1546",
+        "construction": "be42f54e25b07e1f"
+      },
+      "partHash": "693a3ae986c6ad3f",
       "slots": true
     }
   }
