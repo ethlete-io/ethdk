@@ -20,8 +20,15 @@ export const sdkPrivateVarsOf = (product: ResolvedProduct): Problem[] => {
 
     try {
       root = postcss.parse(part.cssSource);
-    } catch {
-      return [];
+    } catch (error) {
+      return [
+        {
+          rule: SDK_PRIVATE_VAR_RULE,
+          file: part.css,
+          at: part.css,
+          message: `the stylesheet does not parse, so its private variables went unchecked: ${error instanceof Error ? error.message : String(error)}`,
+        },
+      ];
     }
 
     const seen = new Set<string>();
