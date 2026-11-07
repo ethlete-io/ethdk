@@ -10,7 +10,7 @@ export default defineConfig({
   cleanUrls: true,
 
   vite: {
-    plugins: [docsExamples(), tsconfigPaths(), llmstxt()],
+    plugins: [docsExamples(), tsconfigPaths({ root: '../..', projects: ['tsconfig.base.json'] }), llmstxt()],
   },
 
   themeConfig: {

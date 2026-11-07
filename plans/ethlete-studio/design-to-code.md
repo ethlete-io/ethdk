@@ -3957,3 +3957,13 @@ Verified: new spec in agent-sessions.spec.ts. A builder started before this chan
 565\. Builder (2026-11-07): `ethlete-studio:build` failed with TS2322 at the `[themeSwitches]` binding (`current` is `string | undefined`, `ThemeSwitch.current` is `string`) and it sat on `next`. Why no tool caught it: plain `tsc` does not check templates, and `ethlete-studio` had no `typecheck` target, so CI's `run-many -t typecheck` skipped it; only the post-push `build` job saw it. Tool fix (technical): an `ethlete-studio:typecheck` target running `ngc --noEmit`, picked up by that CI step.
 
 565 as built (2026-11-07): `themeSwitches` drops a switch whose `current` is undefined (`flatMap` narrows it). Added `ethlete-studio:typecheck` (`ngc -p apps/ethlete-studio/tsconfig.app.json --noEmit`). Verified: `ngc` reproduced the error on `next`; `tsc` printed none. Not verified: pre-push still skips it.
+
+565 as built (2026-11-07): `git push origin next` exited 141 after a green pre-push hook (VitePress "build complete in
+484s", no check failed). Cause: git opens the SSH connection to GitHub before it runs the hook, the ~8 min docs build
+leaves it idle, GitHub drops it, and git dies of SIGPIPE writing the pack. Why no spec caught it: the hook had no spec,
+and no spec can hold an idle connection for minutes; the failure sits between git and the remote, not in the script.
+Fix: the hook stamps the pushed sha in the git dir after a green docs build and skips the build for the same sha, so
+the retry is fast (new `tools/scripts/pre-push.spec.mjs`). The tsconfig-paths noise was `vite-tsconfig-paths` scanning
+`.claude/worktrees/*`; `apps/docs/.vitepress/config.mts` now names `tsconfig.base.json` as its only project. Not done:
+an `ServerAliveInterval` for github.com in `~/.ssh/config` (the sandbox denied editing it); the first push of a docs
+change still waits ~8 min and may still drop.

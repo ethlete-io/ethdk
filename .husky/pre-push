@@ -1,6 +1,8 @@
 #!/usr/bin/env sh
 # The format check reads committed blobs, so other sessions' uncommitted edits never block a push.
 set -e
+# The docs build runs ~8 min with the push connection already open; GitHub drops it and git push exits 141 (SIGPIPE) after
+# a green hook. The stamp lets the retry of the same sha skip the build.
 cd "$(git rev-parse --show-toplevel)"
 
 export NX_NO_CLOUD=true
@@ -8,6 +10,7 @@ export NX_DAEMON=false
 
 zero=0000000000000000000000000000000000000000
 failed=0
+docs_stamp=$(git rev-parse --git-path pre-push-docs-built)
 
 while read -r _ local_sha _ remote_sha; do
   [ "$local_sha" = "$zero" ] && continue
@@ -26,8 +29,8 @@ while read -r _ local_sha _ remote_sha; do
     out=$(yarn "$check" 2>&1) || { echo "pre-push: $check failed:"; echo "$out"; failed=1; }
   done
 
-  if git diff --name-only "$base" "$local_sha" | grep -q '^apps/docs/'; then
-    yarn vitepress build apps/docs || failed=1
+  if git diff --name-only "$base" "$local_sha" | grep -q '^apps/docs/' && [ "$(cat "$docs_stamp" 2>/dev/null)" != "$local_sha" ]; then
+    if yarn vitepress build apps/docs; then echo "$local_sha" > "$docs_stamp"; else failed=1; fi
   fi
 done
 
