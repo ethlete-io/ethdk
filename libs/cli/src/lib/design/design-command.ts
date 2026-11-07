@@ -141,7 +141,7 @@ const helpOf = (invocation: string) =>
     `${invocation} sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] --by <model id> | sketch list [--json] | sketch check [<layer>/<name>] | sketch preview <layer>/<name> <variant> [--json]`,
     '  List open sketches, check each variant laid over the product, and list the elements and pages a merge changes.',
     '',
-    `${invocation} sketch note <layer>/<name> <variant> <text> --by <model id>`,
+    `${invocation} sketch note <layer>/<name> [<variant>] <text> [--round <round>] --by <model id>`,
     '  Set the note of one variant in sketch.json, the one sketch new sets with --variant-note.',
     '',
     `${invocation} sketch covers <layer>/<name> [[<layer>/<name>:]<state>[@<x>,<y>,<w>,<h>]…] --by <model id>`,

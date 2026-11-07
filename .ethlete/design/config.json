@@ -64,6 +64,7 @@
       }
     },
     "studio": {
+      "noteLanguage": "de",
       "schemes": ["dark"],
       "commandText": "deny",
       "styles": [".ethlete/design/studio/styles.css"],

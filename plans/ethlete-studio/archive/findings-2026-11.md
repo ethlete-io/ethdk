@@ -2408,6 +2408,7 @@ rewritten in German by their author.
 Update (builder, 5df2ad7da): both variant notes are German. The round r1 note stays English: the CLI cannot edit
 a round note after `sketch variant --round-note`. B114 adds `sketch note --round <key>`; then the round note is
 rewritten.
+As built (B114, branch b114): product config `noteLanguage` (`de`|`en`; studio: `de`); the `sketch new` Next lines name it; `sketch check` warns `NOTE-LANGUAGE <target> <round|variant>: ...` (stopword count, silent on short notes); `sketch note <target> --round <key> <text>` rewrites a round note and keeps a ready sketch ready (closes 397; `sketch round --note` already did the edit).
 
 195\. Zooming out with ctrl-wheel at the centre of the Sketches view (104 % -> 23 %) moves the content down/right
 instead of keeping the point under the pointer (Tom, 2026-11-02). Cause pending from builder. Lesson: the canvas

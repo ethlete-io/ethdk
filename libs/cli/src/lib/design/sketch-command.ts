@@ -12,6 +12,7 @@ import { Problem } from './system/problem';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { formatProblemsOf, formatSketch } from './system/sketch/check-format';
 import { frameBudgetWarningsOf } from './system/sketch/frame-budget';
+import { NOTE_LANGUAGE_NAMES, noteLanguageWarningsOf } from './system/sketch/note-language';
 import {
   openSketchProblemsOf,
   typecheckVariant,
@@ -96,8 +97,8 @@ export const SKETCH_USAGE = [
   'sketch new <layer>/<name> [<layer>/<name>…] --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--name <sketch name>] [--round <title>] [--note <text>] [--variant-note <variant>=<text>]… [--override | --into-base] [--ready] [--product <name>]',
   'sketch variant <layer>/<name> <variant>[,<variant>…] --from <variant> --by <model id> [--round <title> --note <why the running round lost> [--round-note <what the new round shows>]] [--product <name>]',
   'sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] --by <model id> [--product <name>]',
-  'sketch note <layer>/<name> <variant> <text> --by <model id> [--product <name>]',
   'sketch covers <layer>/<name> [[<layer>/<name>:]<state>[@<x>,<y>,<w>,<h>]…] --by <model id> [--product <name>]',
+  'sketch note <layer>/<name> [<variant>] <text> [--round <round>] --by <model id> [--product <name>]',
   'sketch target add <layer>/<name> <layer>/<name> --by <model id> [--product <name>]',
   'sketch target remove <layer>/<name> <layer>/<name> --by <model id> [--product <name>]',
   'sketch list [--product <name>] [--json]',
@@ -130,7 +131,7 @@ const FLAG_HELP: Record<string, string> = {
   '--ready':
     'on new: run sketch ready (its gates are the check) right after opening the sketch; it fails when either refuses and the sketch stays in progress',
   '--ported': 'on rebase: the conflicting files hold the product change already, ported by hand - keep them and rebase',
-  '--round': 'the title of a new round',
+  '--round': 'the title of a new round; on note: the key of the round whose note to rewrite',
   '--round-note': 'what the new round shows',
   '--from': 'the variant to copy',
   '--title': 'the new title of the round',
@@ -351,7 +352,7 @@ const opened = (context: Context) => {
     shared.forEach((file) => console.log(`    ${relative(target, file)}`));
   }
 
-  nextStepsOf(sketch, product.name).forEach((line) => console.log(line));
+  nextStepsOf(sketch, product).forEach((line) => console.log(line));
 
   return 0;
 };
@@ -381,7 +382,15 @@ const openedTargetOf = ({ args }: Context) => {
   return name === undefined ? (first ?? '') : `${first}@${name}`;
 };
 
-const nextStepsOf = (sketch: Sketch, product: string) => {
+const noteLanguageLineOf = (product: ResolvedProduct) =>
+  product.config.noteLanguage === undefined
+    ? []
+    : [
+        `  write every round and variant note in ${NOTE_LANGUAGE_NAMES[product.config.noteLanguage]}: that is the product's UI language`,
+      ];
+
+const nextStepsOf = (sketch: Sketch, productSource: ResolvedProduct) => {
+  const product = productSource.name;
   const at = `${sketch.target} --product ${product}`;
   const first = sketch.variants[0] ?? '<key>';
   const running = runningRoundOf(sketch);
@@ -395,6 +404,7 @@ const nextStepsOf = (sketch: Sketch, product: string) => {
         ]
       : []),
     `  sketch check ${at}`,
+    ...noteLanguageLineOf(productSource),
     `  shot ${sketch.targets[0]} --states --variants --product ${product}   look at it: ready refuses a pixel diff without a viewed shot`,
     `  sketch ready ${at} --by <model id>`,
     `  sketch report ${at} --variant ${first} --by <model id> --done              after ready, once you stop drawing a variant; no report runs yet, so none is needed now`,
@@ -655,6 +665,22 @@ const roundEdited = (context: Context) =>
 
 const noteEdited = (context: Context) =>
   withSketch(context, ({ sketch }) => {
+    const round = context.args.values['--round'];
+
+    if (round !== undefined) {
+      const roundNote = context.args.positional.slice(1).join(' ').trim();
+
+      if (roundNote === '') return fail('usage: sketch note <layer>/<name> --round <round> <text> --by <model id>');
+
+      const reworded = editRound({ sketch, round, note: roundNote });
+
+      if (typeof reworded === 'string') return fail(reworded);
+
+      console.log(`${reworded.target} round ${round}: ${roundNote}`);
+
+      return 0;
+    }
+
     const [, variant, ...words] = context.args.positional;
     const note = words.join(' ').trim();
 
@@ -1500,6 +1526,9 @@ const checked = async (context: Context) => {
 
   new Set(chosen.map((entry) => entry.sketch)).forEach((sketch) => {
     reportedReopen(sketch);
+
+    if (product.config.noteLanguage)
+      noteLanguageWarningsOf(sketch, product.config.noteLanguage).forEach((warning) => console.warn(warning));
 
     if (sketch.hold) console.warn(`HELD ${sketch.target}: until ${sketch.hold.until}`);
   });

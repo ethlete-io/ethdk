@@ -63,7 +63,12 @@ export type DesignHarness = {
  * parts (`<layer>/<name>`) whose stylesheets every frame draws under, in order (`tokens`,
  * `['foundations/tokens']` when left out).
  */
+/** The language of a product's UI, and so of the notes its sketches carry. */
+export type DesignNoteLanguage = 'de' | 'en';
+
 export type DesignProduct = DesignProject & {
+  /** The language sketch round and variant notes are written in; `sketch check` warns on a note in another one. */
+  noteLanguage?: DesignNoteLanguage;
   base?: string;
   presets?: Record<string, DesignPreset>;
   /** The colour schemes the product draws, each a copy of every frame; both when left out. */

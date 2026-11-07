@@ -1115,7 +1115,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines.pop()).toBe('elements/hero has no variant "z" - it has a, b');
     expect(note('elements/nope', 'a', 'x')).toBe(1);
     expect(note('elements/hero', 'a')).toBe(1);
-    expect(lines.pop()).toContain('usage: sketch note <layer>/<name> <variant> <text>');
+    expect(lines.pop()).toContain('usage: sketch note <layer>/<name> [<variant>] <text>');
   });
 
   it('rejects and reopens a variant, keeps the history and prints the stored state', async () => {
@@ -1536,6 +1536,38 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines.pop()).toMatch(/^ready will refuse: components\/button round r1 has no note - set it with:/u);
     expect(await write(target, 'round', 'components/button', 'r1', '--note', 'pill', '--product', 'acme')).toBe(0);
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+  });
+
+  it('rewrites the note of a round of a ready sketch with note --round and keeps it ready', async () => {
+    const target = acme();
+    const lines = output();
+
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--round',
+      'Pill',
+      '--note',
+      'pill',
+      '--product',
+      'acme',
+    );
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(write(target, 'note', 'components/button', '--round', 'r9', 'x', '--product', 'acme')).toBe(1);
+    expect(lines.pop()).toBe('components/button has no round "r9" - it has r1');
+    expect(write(target, 'note', 'components/button', '--round', 'r1', 'Pille', 'rund', '--product', 'acme')).toBe(0);
+    expect(lines.pop()).toBe('components/button round r1: Pille rund');
+    expect(
+      findSketch({
+        productDir: join(target, DESIGN_DIR, 'acme'),
+        product: 'acme',
+        sketch: { layer: 'components', name: 'button' },
+      }),
+    ).toMatchObject({ status: 'ready', rounds: [{ key: 'r1', note: 'Pille rund' }] });
   });
 
   it('names the next steps after sketch new, and says report --done is not needed yet', async () => {
