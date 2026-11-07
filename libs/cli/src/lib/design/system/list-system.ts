@@ -9,7 +9,7 @@ import { partKeyOf, PartOrigin, ResolvedPart } from './resolve-product';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
 import { partLinkOf } from './sketch/part-definition';
 import { SystemModules } from './system-modules';
-import { drawnStateNamesOf } from './unchanged-rows';
+import { drawnStateNamesOf, ownStylesheetOf } from './unchanged-rows';
 import { unusedBasePartsOf } from './unused-base-parts';
 
 export const SYSTEM_PATH = '/__design/system';
@@ -172,7 +172,7 @@ const belongsTo = (part: ResolvedPart, problem: Problem) =>
 
 /** The note, state names, widths, interactions and grid a part module declares, or the problem that kept it from loading. */
 export const readPartModule = async (options: {
-  part: Pick<ResolvedPart, 'file'>;
+  part: Pick<ResolvedPart, 'file'> & Partial<Pick<ResolvedPart, 'cssSource'>>;
   product: string;
   load: PartLoader;
 }) => {
@@ -192,7 +192,7 @@ export const readPartModule = async (options: {
       };
     }
 
-    const names = await drawnStateNamesOf(loaded);
+    const names = await drawnStateNamesOf(loaded, part.cssSource ?? ownStylesheetOf(part.file));
 
     return {
       note: typeof loaded.note === 'string' ? loaded.note : null,

@@ -2613,6 +2613,17 @@ inputs. Tool fix: (1) a forced SDK element counts as changed when a design style
 `--et-*` vars or a semantic colour on it; (2) compare prints "skipped n interaction states (unchanged SDK controls)" with
 their names; (3) `check` fails a design rule that targets an SDK component class with an attribute value the SDK does
 not declare. For A1 the UI builder adds a real `caption` shape to the SDK button.
+**B397 as built:** (1) `forcesOnlyUnchangedControls` takes the part's own stylesheet (`sdk-selectors.ts` resolves
+nested rules into compounds): a rule whose `et-` compound matches the forced element (an absent attribute counts as a
+possible default) or an ancestor with `data-et-semantic-color` or an `--et-*` var in class or style keeps the row's
+states drawn. Compare, accepted pictures and the system list pass the part's `.css`. (2) compare prints `skipped n
+interaction states (unchanged SDK controls): ...` and `--state <skipped>` says why. (3) `SDK-ATTRIBUTE-VALUE`
+(static, `check --rules`) reads the inputs, host-directive inputs and declared values of each `et-` selector from the
+built `@ethlete/components` declaration file and fails a `[data-<input>='<value>']` outside them; no file means a
+`missing-input` skip. Specs on fixtures (a captured d.ts excerpt), no renders. Not verified: the rule over the real
+products against a built dist (the grep shows no invented value since A1 added `caption`, so no baseline). Needs a
+render run in CI: the newly drawn states (title-bar windows/close rows and any part whose CSS selects its SDK
+controls) have no accepted pictures yet and may show compare drift; those old hits go to the ADR 0205 baseline.
 
 484\. The app's code notice in the title bar drew text the merged design never had ("Host geändert - Studio neu
 starten", "CLI hat uncommittete Änderungen, Studio läuft auf Stand <sha>"), and the CLI-dirty state has no design state

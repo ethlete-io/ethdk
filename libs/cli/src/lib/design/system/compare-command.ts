@@ -58,7 +58,7 @@ import { coveredLineOf, coveringSketchOf } from './sketch/covered-diffs';
 import { listSketches, parseTarget, Sketch, SketchTarget } from './sketch/sketch';
 import { cachedComparePngs, COMPARE_PIXELS } from './pixel-cache';
 import { createSystemModules, productModuleIdOf } from './system-modules';
-import { drawnStateNamesOf } from './unchanged-rows';
+import { drawnStateNamesOf, skippedStatesLineOf } from './unchanged-rows';
 
 export const COMPARE_USAGE =
   'compare <layer>/<name> | --all --product <name> [--url <app dev server url>] [--state <name>] [--preset <name>] [--live [--sketch <variant>]]';
@@ -82,7 +82,7 @@ export type ShootStates = (options: {
   appRoot?: string | null;
   /** Called once the design pictures are drawn and kept, before the app pictures. */
   onDesignShots?: () => void;
-}) => Promise<{ states: Record<string, unknown>; shots: StateShot[] } | string>;
+}) => Promise<{ states: Record<string, unknown>; shots: StateShot[]; skipped?: string[] } | string>;
 
 export type ComparePart = (options: {
   target: string;
@@ -276,17 +276,20 @@ export const shootStatesWith =
 
       shooter = createPartShooter({ target, base: `http://localhost:${port}`, system, queue, store: caches.design });
 
-      const file = product.parts.find((candidate) => partKeyOf(candidate) === part)?.file ?? '';
+      const resolved = product.parts.find((candidate) => partKeyOf(candidate) === part);
+      const file = resolved?.file ?? '';
       const module = (await server.ssrLoadModule(productModuleIdOf({ file, product: product.name }))) as {
         default?: { states?: unknown; controls?: unknown; widths?: unknown };
       };
       const width = compareWidthOf({ part, widths: module.default?.widths });
       const loaded = module.default?.states;
-      const drawn = new Set(await drawnStateNamesOf(module.default));
-      const states =
-        loaded && typeof loaded === 'object' && !Array.isArray(loaded)
-          ? Object.fromEntries(Object.entries(loaded).filter(([state]) => drawn.has(state)))
-          : {};
+      const drawn = new Set(await drawnStateNamesOf(module.default, resolved?.cssSource ?? null));
+      const declared = loaded && typeof loaded === 'object' && !Array.isArray(loaded) ? Object.entries(loaded) : [];
+      const states = Object.fromEntries(declared.filter(([state]) => drawn.has(state)));
+      const skipped = declared.flatMap(([state]) => (drawn.has(state) ? [] : [state]));
+
+      if (only !== null && skipped.includes(only))
+        return `${part} does not draw "${only}": it is an interaction state of a row of unchanged SDK controls`;
 
       if (only !== null && !(only in states))
         return `${part} has no state "${only}" - its states: ${Object.keys(states).join(', ')}`;
@@ -405,7 +408,7 @@ export const shootStatesWith =
 
       if (typeof unshot === 'string') return unshot;
 
-      return { states, shots: unshot };
+      return { states, shots: unshot, skipped };
     } catch (error) {
       return messageOf(error);
     } finally {
@@ -431,6 +434,10 @@ export const comparePart: ComparePart = async (options) => {
   if (shot.shots.length === 0) return `${options.part} has no states to compare`;
 
   const { states, shots } = shot;
+  const skippedLine = skippedStatesLineOf(shot.skipped ?? []);
+
+  if (skippedLine !== null) console.log(skippedLine);
+
   const sketches =
     options.sketches ??
     listSketches({ productDir: options.product.dir, product: options.product.name }).filter(

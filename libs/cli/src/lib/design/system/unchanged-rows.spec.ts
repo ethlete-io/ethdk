@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { definePart, forceInteraction, interactionRows, ng } from '../../../../design/define-part';
 import { gridOf } from './list-system';
-import { drawnStateNamesOf, forcesOnlyUnchangedControls, unchangedRowStatesOf } from './unchanged-rows';
+import {
+  drawnStateNamesOf,
+  forcesOnlyUnchangedControls,
+  skippedStatesLineOf,
+  unchangedRowStatesOf,
+} from './unchanged-rows';
 
 type Control = 'restart' | 'later';
 type Props = { force?: { control: Control; interaction: 'hover' | 'active' | 'focus-visible' } };
@@ -66,6 +71,15 @@ describe('unchangedRowStatesOf', () => {
   });
 });
 
+describe('skippedStatesLineOf', () => {
+  it('names the skipped states, and prints nothing when compare draws them all', () => {
+    expect(skippedStatesLineOf(['later-hover', 'later-active'])).toBe(
+      'skipped 2 interaction states (unchanged SDK controls): later-hover, later-active',
+    );
+    expect(skippedStatesLineOf([])).toBeNull();
+  });
+});
+
 describe('forcesOnlyUnchangedControls', () => {
   it('counts only SDK components rendered through ng()', () => {
     expect(forcesOnlyUnchangedControls('<button data-et-ng et-button data-et-force="hover">Go</button>')).toBe(true);
@@ -74,6 +88,33 @@ describe('forcesOnlyUnchangedControls', () => {
       true,
     );
     expect(forcesOnlyUnchangedControls('<div data-et-ng class="x"></div>')).toBe(false);
+  });
+
+  it('treats a rule of the part stylesheet that selects the control as a change', () => {
+    const caption =
+      '<button data-et-ng et-window-control-button shape="caption" data-et-force="hover"><svg></svg></button>';
+    const css = `@layer components {
+      .et-window-control-button[data-shape='caption'] { width: 46px; @media (hover: hover) { &:hover { opacity: 1 } } }
+    }`;
+
+    expect(forcesOnlyUnchangedControls(caption)).toBe(true);
+    expect(forcesOnlyUnchangedControls(caption, css)).toBe(false);
+    expect(forcesOnlyUnchangedControls(caption.replace('caption', 'round'), css)).toBe(true);
+    expect(forcesOnlyUnchangedControls(caption.replace(' shape="caption"', ''), css)).toBe(false);
+    expect(forcesOnlyUnchangedControls(caption, '.et-button[data-variant="filled"] { color: red }')).toBe(true);
+  });
+
+  it('treats a wrapper that sets SDK vars or a semantic colour as a change', () => {
+    const close = '<button data-et-ng et-window-control-button kind="close" data-et-force="hover"></button>';
+
+    expect(forcesOnlyUnchangedControls(`<div data-et-ng class="flex"><span>x</span>${close}</div>`)).toBe(true);
+    expect(forcesOnlyUnchangedControls(`<span data-et-ng data-et-semantic-color="error">${close}</span>`)).toBe(false);
+    expect(
+      forcesOnlyUnchangedControls(
+        `<span data-et-ng class="contents [--et-window-control-button-close-background:red]">${close}</span>`,
+      ),
+    ).toBe(false);
+    expect(forcesOnlyUnchangedControls(`<span data-et-semantic-color="error"></span>${close}`)).toBe(true);
   });
 
   it('treats an inline style or styled content as a change, but not icons or embedded parts', () => {

@@ -99,3 +99,33 @@ describe('compare DIFFs an open sketch covers (ADR 0222)', () => {
     expect(closed.lines[1]).toBe('folded DIFF 1 px');
   });
 });
+
+describe('compare names the interaction states it skips', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('prints the unchanged row states before the state lines', async () => {
+    const { target, product } = checkout();
+    const lines: string[] = [];
+
+    vi.spyOn(console, 'log').mockImplementation((line: unknown) => void lines.push(String(line)));
+
+    await comparePart({
+      target,
+      config: {},
+      product,
+      part: 'components/chip',
+      url: 'u',
+      only: null,
+      shoot: async () => ({
+        states: { default: {} },
+        shots: [{ state: 'default', design: solid(RED), app: solid(RED) }],
+        skipped: ['default-hover', 'default-active'],
+      }),
+    });
+
+    expect(lines).toEqual([
+      'skipped 2 interaction states (unchanged SDK controls): default-hover, default-active',
+      'default ok',
+    ]);
+  });
+});

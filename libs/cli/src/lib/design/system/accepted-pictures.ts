@@ -170,9 +170,10 @@ const drawPartsWith = async (options: {
         continue;
       }
 
-      const file = sketch
-        ? system.partOf({ product: product.name, part, sketch })?.file
-        : product.parts.find((candidate) => partKeyOf(candidate) === part)?.file;
+      const found = sketch
+        ? system.partOf({ product: product.name, part, sketch })
+        : product.parts.find((candidate) => partKeyOf(candidate) === part);
+      const file = found?.file;
 
       if (!file) {
         drawn.set(part, `product "${product.name}" has no part "${part}"`);
@@ -182,7 +183,7 @@ const drawPartsWith = async (options: {
       const module = (await server.ssrLoadModule(productModuleIdOf({ file, product: product.name, sketch }))) as {
         default?: { states?: unknown };
       };
-      const states = await drawnStateNamesOf(module.default);
+      const states = await drawnStateNamesOf(module.default, found?.cssSource ?? null);
       const pictureOf = async (state: string, fresh: boolean) =>
         sha16(
           (

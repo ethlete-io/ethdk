@@ -52,6 +52,7 @@ import { gluedInterpolationsOf } from './rules/glued-interpolation';
 import { undefinedClassesOf } from './rules/undefined-class';
 import { undefinedTokensOf } from './rules/undefined-token';
 import { tokenSelectorsOf } from './rules/token-selectors';
+import { sdkAttributeValuesOf } from './rules/sdk-attribute-value';
 import { upwardDependenciesOf } from './rules/upward-dependency';
 import { badSvgAssetsOf } from './rules/svg-asset';
 import { staleReplacesOf } from './rules/stale-replace';
@@ -105,6 +106,7 @@ const RULES = [
   sampleDefaultProblemsOf,
   unboundInputProblemsOf,
   gluedInterpolationsOf,
+  sdkAttributeValuesOf,
 ];
 
 export const warningProblemsOf = (product: ResolvedProduct): Problem[] => [

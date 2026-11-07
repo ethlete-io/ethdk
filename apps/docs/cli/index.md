@@ -134,6 +134,11 @@ and `success` get their semantic type.
 outside `:root`, `html`, `body` or an SDK `.et-*` scope. Keep preview layout styles in the drawing
 instead of the globally loaded token CSS.
 
+`et design check` fails with `SDK-ATTRIBUTE-VALUE` when a part's stylesheet selects an SDK component class with an
+input value the component does not declare, such as `.et-window-control-button[data-shape='caption']` while the
+button takes only `square` and `round`: the app cannot draw that look without an SDK change. The rule reads the
+declaration file of the built `@ethlete/components` the drawings render from.
+
 `et design check` fails with `HARD-CODED-MOTION` when a `transition` or `animation` declaration
 outside `foundations/` holds a literal duration, delay or easing, for example `120ms` or `ease`.
 Take them from a foundations token instead: `transition: opacity var(--duration-appear) var(--ease-standard)`.
@@ -779,8 +784,10 @@ draws them with `interactionRows`: its `grid` needs a column for each of them, a
 needs a state in each of those columns, so the open row is drawn hovered too. In any grid, a row that draws a state in one
 column and none in another leaves an empty cell: the shot sheet draws it as "not drawn", and `sketch check` prints it
 on the grid line (`draws no selected active`). A row whose forced elements are only SDK components rendered through
-`ng()` with no class, inline style or styled content of the part's own is drawn at rest only: Studio, `shot`, `compare`
-and the visible-change gate skip its interaction states, though `shot --state <name>` alone, without `--states` or `--variants`, still draws one you name. A shot refused for its flags prints which flag is missing or conflicts (for example `--at needs --variants`) before the usage line. Flat states such as
+`ng()` with no class, inline style or styled content of the part's own, no rule of the part's stylesheet that selects
+it, and no wrapper that sets `--et-*` vars or `data-et-semantic-color` is drawn at rest only: Studio, `shot`, `compare`
+and the visible-change gate skip its interaction states, and `compare` names them (`skipped 3 interaction states
+(unchanged SDK controls): ...`), though `shot --state <name>` alone, without `--states` or `--variants`, still draws one you name. A shot refused for its flags prints which flag is missing or conflicts (for example `--at needs --variants`) before the usage line. Flat states such as
 `hovered` and `pressed` fail with `CONTROL-GRID-MISSING`. Each forced state must force the
 interaction on the control, for example with `forceInteraction`, and draw different pixels in
 the control's box than the same frame at rest. When a descendant of the control draws an interaction or carries
