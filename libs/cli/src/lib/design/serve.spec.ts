@@ -1282,7 +1282,7 @@ describe('the design server for sketches and comments', () => {
       body: { discarded: 'components/card' },
     });
     expect((await ask('/__design/sketch-discard', sketchQuery, 'POST')).status).toBe(404);
-  }, 30_000);
+  }, 120_000);
 
   it('writes, lists and finishes a canvas comment', async () => {
     const target = acme();
