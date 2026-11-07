@@ -124,7 +124,7 @@ describe('SketchesComponent', () => {
 
     expect(framesOf()).toEqual(['x open', 'x busy']);
     expect(root.querySelector('[data-sk-row="current"] [data-sk-frame="current rest"]')).toBeNull();
-    expect(textOf(root.querySelector('[data-sk-folded] > span'))).toBe(LABELS.foldedStates(1));
+    expect(textOf(root.querySelector('[data-sk-folded] > span > span'))).toBe(LABELS.foldedStates(1));
     expect(textOf(root.querySelector('[data-sk-folded] button'))).toBe(LABELS.showAllStates);
     expect(textOf(root.querySelector('[data-sk-question]'))).toBe('Wo steht der Status?');
 
@@ -167,7 +167,7 @@ describe('SketchesComponent', () => {
     const root: HTMLElement = fixture.nativeElement;
 
     expect(textOf(root.querySelector('[data-sk-question]'))).toBe('Wo steht der Status?');
-    expect(textOf(root.querySelector('[data-sk-folded] > span'))).toBe(LABELS.foldedStates(2));
+    expect(textOf(root.querySelector('[data-sk-folded] > span > span'))).toBe(LABELS.foldedStates(2));
     expect(root.querySelector('[data-sk-state]')).toBeNull();
     expect(root.querySelector('[data-sk-stage]')).toBeNull();
     expect(root.querySelector('[data-sk-row="current"]')).toBeNull();
