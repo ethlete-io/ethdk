@@ -60,7 +60,7 @@ node dist/libs/cli/src/index.js design check --product studio --slow --base "$(g
 
 The `.husky/pre-push` hook runs only the cheap part: a format check of the committed files in the pushed
 range, `lint:changesets` and the other sub-second checks, and the VitePress build when `apps/docs` changed.
-Lint, typecheck and the Studio rules are CI's.
+Lint, typecheck, specs and the Studio rules (`design check --rules`, the design gate) are CI's.
 
 Step 11 is the slowest by far. Skip steps 11 and 12 only when the change touches no component
 source and no story - and say so rather than reporting a clean run you didn't do. Step 12 serves
