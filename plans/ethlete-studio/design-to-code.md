@@ -4127,3 +4127,10 @@ Lesson: a decision that names a ratchet ("may only shrink") gets a spec for its 
 `design task elements/canvas-frames` still failed on "embedded: components/button is not build-ready", only because
 button has no `implements` link. ADR 0105 says an unlinked part must not block. Tool fix (technical, inside B249): the
 build-ready computation treats an embedded part without app code as ready when its own checks pass, with a spec.
+
+586\. Tom (2026-11-07): "--slow? was? ich denke den mist gibts in der ci nicht mehr". CI and the hooks run no design
+check (checked: `.github/workflows`, `.husky`). But the builder put the new rule IMPLEMENTS-UNRENDERED (B430) into the
+manual `design check --slow` batch, against ADR 0226: a check runs live and fast, and construction that makes it
+unnecessary wins over the check. Tool fix (technical, applies ADR 0226): Studio derives a part's `implements` link
+from the component the page harness renders at the part's slot instead of checking a hand-written link; the
+`--slow` batch gets no new rule, and every rule already in it gets a STATUS row "live or delete".
