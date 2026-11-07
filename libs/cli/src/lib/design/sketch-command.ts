@@ -37,7 +37,7 @@ import {
   variantsThatDoNotLoad,
 } from './ready-shots';
 import { noChangeOf } from './system/sketch/no-visible-change';
-import { editCovers } from './system/sketch/covered-diffs';
+import { coverPartProblemOf, editCovers } from './system/sketch/covered-diffs';
 import { unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots';
 import { addedUndeclaredControlsOf } from './system/complete';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
@@ -97,7 +97,7 @@ export const SKETCH_USAGE = [
   'sketch variant <layer>/<name> <variant>[,<variant>…] --from <variant> --by <model id> [--round <title> --note <why the running round lost> [--round-note <what the new round shows>]] [--product <name>]',
   'sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] --by <model id> [--product <name>]',
   'sketch note <layer>/<name> <variant> <text> --by <model id> [--product <name>]',
-  'sketch covers <layer>/<name> [<state>[@<x>,<y>,<w>,<h>]…] --by <model id> [--product <name>]',
+  'sketch covers <layer>/<name> [[<layer>/<name>:]<state>[@<x>,<y>,<w>,<h>]…] --by <model id> [--product <name>]',
   'sketch target add <layer>/<name> <layer>/<name> --by <model id> [--product <name>]',
   'sketch target remove <layer>/<name> <layer>/<name> --by <model id> [--product <name>]',
   'sketch list [--product <name>] [--json]',
@@ -671,7 +671,16 @@ const noteEdited = (context: Context) =>
 
 const coversEdited = (context: Context) =>
   withSketch(context, ({ sketch }) => {
-    const edited = editCovers({ sketch, covers: context.args.positional.slice(1) });
+    const covers = context.args.positional.slice(1);
+    const partProblem = coverPartProblemOf({ sketch, covers });
+
+    if (partProblem !== null) {
+      console.error(partProblem);
+
+      return 2;
+    }
+
+    const edited = editCovers({ sketch, covers });
 
     if (typeof edited === 'string') return fail(edited);
 

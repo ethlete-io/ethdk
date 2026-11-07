@@ -34,3 +34,4 @@ webkit-revert-wt (nicht genommen, entschieden), wip/b321-stacking-fix (verworfen
 - desk/B359 → gelandet in diesem Commit (Probe-Ordner in serve.spec.ts anlegen; Stress 4/4).
 - desk/B364 → gelandet in diesem Commit (Spec-Fälle covers, list/check mit unbekanntem Flag, unbekannter Unterbefehl; Exit 2 bleibt).
 - desk/B390 + origin/tank/b390 → gelandet in diesem Commit (desk/B390 als Basis, Signatur argv-Array wie tank/b390, dessen prettier-Aufrufe in check-format/merge übernommen; leere prettier-Ausgabe gilt als Fehler).
+- desk/B417 + origin/tank/b417-target → gelandet in diesem Commit (desk/B417 ist tank/b417-target ohne die fremde vitest-Abhängigkeit; Specs, Lint grün).

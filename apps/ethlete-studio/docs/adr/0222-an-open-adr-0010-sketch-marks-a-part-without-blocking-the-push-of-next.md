@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B417
+built: 7dfa6dde7
 decided: 2026-11-07
 source: doc-agent session, grill round after finding 544
 ---

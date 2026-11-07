@@ -2464,6 +2464,36 @@ describe('sketch covers (ADR 0222)', () => {
   });
 });
 
+describe('sketch covers with several targets', () => {
+  const acmeWrite = (target: string, ...argv: string[]) => write(target, ...argv, '--product', 'acme');
+  const coversOf = (target: string) =>
+    (
+      findSketch({
+        productDir: join(target, DESIGN_DIR, 'acme'),
+        product: 'acme',
+        sketch: { layer: 'components', name: 'button' },
+      }) as Sketch
+    ).covers;
+
+  it('refuses a bare state with exit 2, takes the qualified form, and a one-target sketch takes both', async () => {
+    const target = acme();
+    const lines = output();
+
+    expect(await acmeWrite(target, 'new', 'components/button', '--variants', 'a', '--override'), lines.join('\n')).toBe(
+      0,
+    );
+    expect(await acmeWrite(target, 'covers', 'components/button', 'default', 'components/button:hover')).toBe(0);
+    expect(coversOf(target)).toEqual(['default', 'components/button:hover']);
+    expect(await acmeWrite(target, 'target', 'add', 'components/button', 'components/card')).toBe(0);
+    expect(await acmeWrite(target, 'covers', 'components/button', 'default')).toBe(2);
+    expect(lines.pop()).toContain('names no part');
+    expect(await acmeWrite(target, 'covers', 'components/button', 'components/other:default')).toBe(2);
+    expect(lines.pop()).toContain('does not target');
+    expect(await acmeWrite(target, 'covers', 'components/button', 'components/card:default@0,0,2,2')).toBe(0);
+    expect(coversOf(target)).toEqual(['components/card:default@0,0,2,2']);
+  });
+});
+
 describe('sketch target add', () => {
   const acmeWrite = (target: string, ...argv: string[]) => write(target, ...argv, '--product', 'acme');
 

@@ -60,7 +60,8 @@ et design sketch covers <layer>/<name> <state> <state>@<x>,<y>,<w>,<h>… --by <
 
 While the sketch is open, `compare` lists each covered DIFF with the sketch name and passes it. A bare state
 covers its whole DIFF; `@x,y,w,h` covers only differing pixels inside that box of the state's picture (the
-diff PNG compare writes), and never a size change. Any other DIFF on the part still fails. After the pick the
+diff PNG compare writes), and never a size change. A sketch with several targets needs the part in front,
+`<layer>/<name>:<state>[@x,y,w,h]`, and refuses a bare state (exit 2); a one-target sketch takes both forms. Any other DIFF on the part still fails. After the pick the
 cover ends, and the part must compare green again.
 
 One change across several parts (an alias removal, a token rename) is one sketch with several targets: each

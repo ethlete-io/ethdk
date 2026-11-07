@@ -3862,6 +3862,13 @@ and `sketch covers` in sketch-command.spec. Not done: `covers` on `sketch new`, 
 multi-target sketch (a state name covers that state on every target), a check that a covered state exists on the part,
 and Studio showing the cover. `pages/sketches@all-states` has no `covers` yet.
 
+Built (2026-11-07, b417-target): `et design sketch covers` on a sketch with several targets needs
+`<layer>/<name>:<state>[@x,y,w,h]`; a bare state exits 2, a one-target sketch takes both. Covered-DIFF matching uses the
+part (`covered-diffs.ts`). As built (B417, 2026-11-07): WIP d3ebf148f cherry-picked onto next without conflicts; the
+`vitest` dependency it added to `libs/cli/package.json` (an nx sync from `check-system.fixtures.ts`, unrelated) was
+dropped. Specs and lint green on landing (cleanup group 1). Open:
+`covers` on `sketch new`, a check that a covered state exists on the part, Studio showing the cover.
+
 545\. Builder (2026-11-06): CI "Static design rules" ran without `--base`, so IMPLEMENTATION-UNCOMPARED never ran in CI,
 although finding 541 assumed it did; fixed in 4aef2e30f. Why no tool caught it: no spec or check asserts which rules a
 CI step really runs, so a rule that needs an input silently does nothing. Tool fix (builder): `check --rules` prints

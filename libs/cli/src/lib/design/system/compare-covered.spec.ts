@@ -129,6 +129,31 @@ describe('compare DIFFs an open sketch covers (ADR 0222)', () => {
     expect(outside.lines[1]).toBe('folded DIFF 1 px');
   });
 
+  it('takes a qualified cover for its own part only when the sketch has several targets', async () => {
+    const two = ['components/chip', 'components/card'];
+    const mine = await compared({ targets: two, covers: ['components/chip:folded'] });
+
+    expect(mine.result).toMatchObject({ green: true });
+    expect(mine.lines[1]).toContain('covered by open sketch');
+
+    vi.restoreAllMocks();
+
+    const other = await compared({ targets: two, covers: ['components/card:folded'] });
+
+    expect(other.result).toMatchObject({ green: false });
+    expect(other.lines[1]).toBe('folded DIFF 1 px');
+
+    vi.restoreAllMocks();
+
+    const bare = await compared({ targets: two, covers: ['folded'] });
+
+    expect(bare.result).toMatchObject({ green: false });
+
+    vi.restoreAllMocks();
+
+    expect((await compared({ covers: ['components/chip:folded'] })).result).toMatchObject({ green: true });
+  });
+
   it('does not cover a size change with a region', async () => {
     const sized: ShootStates = async () => ({
       states: { folded: {} },
@@ -141,8 +166,18 @@ describe('compare DIFFs an open sketch covers (ADR 0222)', () => {
 
 describe('parseCover', () => {
   it('reads a state and a region, and refuses a broken region', () => {
-    expect(parseCover('folded')).toEqual({ state: 'folded', box: null });
-    expect(parseCover('folded@1,2,30,40')).toEqual({ state: 'folded', box: { x: 1, y: 2, width: 30, height: 40 } });
+    expect(parseCover('folded')).toEqual({ part: null, state: 'folded', box: null });
+    expect(parseCover('folded@1,2,30,40')).toEqual({
+      part: null,
+      state: 'folded',
+      box: { x: 1, y: 2, width: 30, height: 40 },
+    });
+    expect(parseCover('components/chip:folded@1,2,3,4')).toEqual({
+      part: 'components/chip',
+      state: 'folded',
+      box: { x: 1, y: 2, width: 3, height: 4 },
+    });
+    expect(parseCover('nonsense/:folded')).toContain('names no part');
     expect(parseCover('folded@1,2,0,4')).toContain('has no region');
     expect(parseCover('folded@top')).toContain('has no region');
     expect(parseCover('@1,2,3,4')).toContain('names no state');
