@@ -16,6 +16,8 @@ const ready = new Promise((resolve, fail) => {
 const failedImports = Number(process.env.FRAME_FAILED_IMPORTS ?? 0);
 let imports = 0;
 let frames = 0;
+let now = 1_000_000;
+const intervals = [];
 const context = createContext({
   document: dom.window.document,
   location: {
@@ -23,6 +25,8 @@ const context = createContext({
     href: 'http://localhost/frame.html',
   },
   URLSearchParams,
+  Date: { now: () => now },
+  setInterval: (callback) => intervals.push(callback),
   setTimeout: (callback) => setImmediate(callback),
   requestAnimationFrame: (callback) => {
     frames++;
@@ -116,8 +120,14 @@ const initial = { evaluated, body: dom.window.document.getElementById('root').in
 if (process.argv[3] === 'reject') reject(new Error(process.env.FRAME_REJECT ?? 'Environment failed'));
 else release();
 for (let tick = 0; tick < 20; tick++) await new Promise(setImmediate);
+const first = dom.window.document.getElementById('root').textContent;
+now += 12_000;
+for (const callback of intervals) callback();
+const ticked = dom.window.document.getElementById('root').textContent;
 process.stdout.write(
   JSON.stringify({
+    first,
+    ticked,
     initial,
     body: dom.window.document.getElementById('root').innerHTML,
     error: dom.window.document.documentElement.getAttribute('data-et-error'),

@@ -7,6 +7,8 @@ type Result = {
   body: string;
   error: string | null;
   building: boolean;
+  first: string;
+  ticked: string;
   pageFill: string;
   styles: string[];
   messages: { type: string; errored?: boolean }[];
@@ -83,6 +85,13 @@ describe('design frame bootstrap', { timeout: 30_000 }, () => {
     expect(result.building).toBe(true);
     expect(result.error).toBeNull();
     expect(result.body).toContain('wird gebaut …');
+  });
+
+  it('shows the elapsed build time and ticks it', () => {
+    const result = bootstrap('reject', undefined, '', 0, 'design-explore: wird gebaut … (nx build core)');
+
+    expect(result.first).toBe('design-explore: wird gebaut … (nx build core) 0 s');
+    expect(result.ticked).toBe('design-explore: wird gebaut … (nx build core) 12 s');
   });
 
   it("loads the product's tokens once, before the part's own styles", () => {

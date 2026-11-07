@@ -65,12 +65,20 @@ const showBuilding = (line: string) => {
   document.documentElement.setAttribute('data-et-building', '');
 
   const text = document.createElement('pre');
+  const startedAt = Date.now();
+  const paint = () => {
+    text.textContent = `${line} ${Math.floor((Date.now() - startedAt) / 1000)} s`;
+  };
 
-  text.textContent = line;
+  paint();
+  setInterval(paint, 1000);
   text.style.margin = '0';
   text.style.whiteSpace = 'pre-wrap';
   root.replaceChildren(text);
-  root.setAttribute('style', 'padding:16px;font:14px monospace;color:#c8c8c8;background:#181818');
+  root.setAttribute(
+    'style',
+    'padding:16px;font:14px monospace;color:var(--et-surface-color-muted-solid);background:var(--et-surface-background-solid)',
+  );
 
   return null;
 };

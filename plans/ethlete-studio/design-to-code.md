@@ -1968,6 +1968,12 @@ render (entryOf says building), frame-bootstrap (building state). Not verified: 
 (relies on the worker restart of d7fc506b1 and the watcher; no e2e), the Studio-side look next to the existing loading
 state, and macOS (`ps` path has no cwd check). The visual (grey text, no spinner) is a placeholder, not a designed state;
 no sketch was built. Tool gap: the same as 410, no check runs the real render path against a missing dist (B360).
+As built (B361 look, 2026-11-07): Tom chose variant C, the placeholder shows the elapsed build time. `showBuilding` (`libs/cli/design/web/frame.ts`)
+appends `<n> s` to the line and re-paints it every second (counted from when the frame first shows the placeholder, not from
+the build process start, so a frame opened mid-build starts at 0 s); the colors are now `--et-surface-color-muted-solid` on
+`--et-surface-background-solid` instead of hardcoded greys. Spec: frame-bootstrap (first paint 0 s, 12 s after the fake clock
+advances). Not verified: the look in a real Studio frame (no `design check` part touches it; the frame is CLI chrome, no design
+part draws this state) and the real-build redraw. Tool gap: none new.
 
 411\. Tom (2026-11-04): "der neu starten button tut nach klick nichts. wenns ne weile dauert sollten wir da nen spinner
 zeigen". Builder (code read, not reproduced): almost surely the title-bar code notice ("CLI geändert - neu starten");
