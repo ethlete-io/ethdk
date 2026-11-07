@@ -68,7 +68,15 @@ jobs:
       - run: yarn test:tools
 
       # Catches a commit made where the local commit-msg hook never ran (finding 390).
-      - run: yarn commitlint --from "$NX_BASE" --to "$NX_HEAD"
+      # Only the commits of this push or pull request: NX_BASE lags to the last green run and reaches
+      # into history that predates the commit rules.
+      - run: |
+          if [ -z "$EVENT_BASE" ] || [ "$EVENT_BASE" = "0000000000000000000000000000000000000000" ]; then
+            EVENT_BASE="$NX_BASE"
+          fi
+          yarn commitlint --from "$EVENT_BASE" --to "$NX_HEAD"
+        env:
+          EVENT_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
 
       # Every error code defined in components, core, bracket and contentful needs a row on its docs page.
       - run: yarn docs:error-codes:check
