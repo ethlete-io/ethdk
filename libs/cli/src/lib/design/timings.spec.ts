@@ -188,7 +188,7 @@ describe('designCommand timings', () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    await expect(designCommand({ root, argv: ['status'], invocation: 'et design' })).resolves.toBe(2);
+    await expect(designCommand({ root, argv: ['status'], invocation: 'et design' })).resolves.toBe(1);
     await expect(designCommand({ root, argv: ['timings', '--since', '1h'], invocation: 'et design' })).resolves.toBe(0);
 
     const lines = readFileSync(timingsFileOf(root), 'utf8').trim().split('\n');
@@ -197,7 +197,7 @@ describe('designCommand timings', () => {
     error.mockRestore();
     log.mockRestore();
     expect(lines).toHaveLength(1);
-    expect(JSON.parse(lines[0] ?? '')).toMatchObject({ command: 'status', exit: 2 });
+    expect(JSON.parse(lines[0] ?? '')).toMatchObject({ command: 'status', exit: 1 });
     expect(report).toContain('1 design runs since');
     expect(report).toContain('status');
   });
