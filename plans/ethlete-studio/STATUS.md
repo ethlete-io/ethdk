@@ -18,6 +18,19 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
    zuerst der Entwurf (Liste E).
 5. Der Builder wartet nicht auf Tom. Tom bekommt eine kurze Runde, wenn er da ist: höchstens 3 Fragen.
 
+## Ungelandete Desk-Branches (aufgeräumt 07.11.)
+
+Neue Arbeit ist gestoppt (Tom, 07.11.). Alle Desk-Worktrees sind entfernt. Was nicht in `next` ist, liegt nur noch als
+lokaler Branch `desk/<ID>`; ungespeicherte Reste sind dort als `wip(repo): Save the uncommitted worktree state …` committet.
+Agent-Berichte: `.claude/handoffs/agent-results/<ID>.md`.
+
+- WIP, `--no-verify`, ungeprüft: B234, B285, B305, B306, B308, B355, B359, B364, B390, B417; B358 und B341 nur Docs/STATUS.
+- Gebaut, nicht gelandet: B120, B212, B338, B354, B362, B369, B419; B415 (Titelleisten-Chip + WIP-Sketch); B346 (cli-Fix
+  975505b03 allein landbar, Kopf-Tag 4f56e7893 e2e 0/4); B356 (nur WIP-Commit 19598dce9).
+- Kaputt oder nicht gebaut: B370 (Signal-Handler wirkt nicht), B365 und B345 (nur WIP-Sketch-Daten), B353 (kein Gewinn,
+  bleibt ungelandet), `desk/clifix` (WIP in `sketch-command.ts`, ungeprüft).
+- Mac: `tank/*` auf origin, Liste in `.claude/handoffs/mac-tank-branches.md`.
+
 ## Gerade in Arbeit
 
 **Reihenfolge (05.11., ADR 0189, 0192, 0193, 0195):** CI grün bis auf `pages/system` --slow (Lauf 42025926914, ADR 0196) → B388 (ADR 0195) → B391 → Port in der App (`portAfterMerge`) → B345/B346
