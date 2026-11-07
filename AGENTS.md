@@ -135,6 +135,8 @@ goldens, Storybook build - use the **`ci-check`** skill (`.agents/skills/ci-chec
 count), changesets, the sub-second "Checks" scripts, the lib build gate, and, when `apps/docs` changes, the VitePress build; lint,
 typecheck, specs and the Studio gates run in CI. Fix what the hook reports rather than skipping it.
 
+Before you change a file or ask a question about it, run `yarn adr:governs <files>` (or `--staged`, or `<a>..<b>`) and read the ADRs it lists.
+
 ## Agent rules & skills for other repos
 
 Edit the content in `libs/agent-rules/content/`, format it, then run `yarn agents:sync`.

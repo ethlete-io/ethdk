@@ -10,6 +10,7 @@
     "tools/changesets-action"
   ],
   "scripts": {
+    "adr:governs": "node ./tools/scripts/adr-governs.mjs",
     "agents:check": "nx build agent-rules && node dist/libs/agent-rules/src/index.js check",
     "agents:sessions": "node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs",
     "agents:sync": "nx build agent-rules && node dist/libs/agent-rules/src/index.js sync",
