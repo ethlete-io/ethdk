@@ -744,7 +744,7 @@ inside the content (the design's `pan()`); a camera the user moved is free and f
 exposes `zoom` as a signal and the flows chip reads it. CANVAS_CAMERA_KNOWN is empty; the rule reads the `templateUrl`
 file for event bindings (spec with a wheel fixture). The e2e case runs on System, Sketches and Flow. Verified:
 frame-zoom-camera.spec (origin shift past the content edge), sketches/flows-page/canvas-viewport specs, rule spec,
-lint. Not verified: the widened e2e case (run cut off by the wrap-up) and its red run on Sketches without the fix
+lint. Not verified: the widened e2e case (0/5, every page timed out in `waitForFunction` under desk load, System and Flow too) and its red run on Sketches without the fix
 (B120 saw it red there before).
 
 266\. system-view.component.spec "on a flow" logs `ResizeObserver is not defined` 6 times (flows-page `mountCamera` ->
