@@ -253,4 +253,52 @@ describe('anchored overlay position', () => {
       boundary,
     });
   });
+
+  it('centres the arrow on arrowAnchor instead of the reference element', async () => {
+    const arrowElement = document.createElement('div');
+    const anchor = document.createElement('button');
+    const rootElement = document.createElement('div');
+
+    arrowElement.setAttribute('et-floating-arrow', '');
+    paneElement.appendChild(arrowElement);
+
+    const overlayRef = createOverlayRuntimeRef(
+      'arrow-anchor-test',
+      { id: 'arrow-anchor-test' },
+      { rootElement, hostElement: rootElement, backdropElement: signal<HTMLElement | null>(null), paneElement },
+      vi.fn(),
+    );
+    const renderer = TestBed.runInInjectionContext(() => injectRenderer());
+    const cleanup = createAnchoredPositionCleanup(
+      { kind: 'anchored', referenceElement, arrowAnchor: anchor, shift: false },
+      paneElement,
+      overlayRef,
+      renderer,
+    );
+    const middleware = capturedMiddleware.find(({ name }) => name === 'arrow');
+
+    cleanup();
+
+    const anchorRect = { x: 150, y: 100, width: 20, height: 40 };
+    const getElementRects = vi.fn().mockResolvedValue({ reference: anchorRect, floating: FLOATING_RECT });
+    const result = await middleware?.fn({
+      x: 40,
+      y: 140,
+      initialPlacement: 'bottom',
+      placement: 'bottom',
+      strategy: 'absolute',
+      middlewareData: {},
+      elements: { reference: referenceElement, floating: paneElement },
+      rects: { reference: REFERENCE_RECT, floating: FLOATING_RECT },
+      platform: {
+        ...platform,
+        detectOverflow: vi.fn(),
+        getElementRects,
+        getDimensions: () => ({ width: 20, height: 20 }),
+      },
+    });
+
+    expect(getElementRects).toHaveBeenCalledWith({ reference: anchor, floating: paneElement, strategy: 'absolute' });
+    expect(result?.data?.['x']).toBe(150 + 10 - 40 - 10);
+  });
 });

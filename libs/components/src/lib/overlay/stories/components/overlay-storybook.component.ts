@@ -112,6 +112,9 @@ export class OverlayPopoverExampleComponent {}
         <div class="flex flex-wrap gap-4">
           <button (click)="openDialog()" et-button size="sm">Dialog</button>
           <button (click)="openAnchoredDialog($event)" et-button size="sm" variant="tonal">Anchored dialog</button>
+          <button (click)="openArrowAnchored($event)" et-button size="sm" variant="tonal" data-sb-arrow-anchor>
+            Arrow at this button
+          </button>
           <button (click)="openAnchoredPopover($event)" et-button size="sm" variant="tonal">
             Anchored popover (arrow)
           </button>
@@ -192,6 +195,15 @@ export class OverlayStorybookComponent {
 
   protected openAnchoredDialog(origin: Event) {
     this.open({ strategies: anchoredDialogOverlayStrategy({ minWidth: 500 }), origin });
+  }
+
+  protected openArrowAnchored(event: Event) {
+    const button = event.currentTarget as HTMLElement;
+
+    this.open({
+      strategies: anchoredDialogOverlayStrategy({ minWidth: 500, placement: 'bottom-start', arrowAnchor: button }),
+      origin: button.parentElement ?? button,
+    });
   }
 
   protected openAnchoredPopover(origin: Event) {

@@ -220,6 +220,37 @@ describe('renderIssuesOf', () => {
     ]);
   }, 120_000);
 
+  it('aims an anchored arrow in the frame, reports a tip that cannot reach its anchor and a hand-moved arrow', async (context) => {
+    const drawn = (attributes: string, arrow: string, buttonLeft = 100) =>
+      `<div style="padding: 8px"><button id="go" style="display: block; margin-left: ${buttonLeft}px; box-sizing: border-box; width: 40px; height: 20px; padding: 0; border: 0">Go</button><div class="et-anchored-dialog-mock" data-overlay-placement="bottom-start" ${attributes} style="position: relative; width: 200px; height: 60px; margin-top: 10px"><div class="et-overlay-arrow" style="position: absolute; top: -10px; width: 20px; height: 20px; transform: var(--et-floating-arrow-translate); ${arrow}"></div></div></div>`;
+    const target = checkout({
+      'components/arrow-aimed': { body: drawn('data-et-arrow-anchor="#go"', 'left: 16px') },
+      'components/arrow-out-of-reach': { body: drawn('data-et-arrow-anchor="#go"', 'left: 16px', 300) },
+      'components/arrow-lost': { body: drawn('data-et-arrow-anchor="#gone"', 'left: 100px') },
+      'components/arrow-by-hand': { body: drawn('', '--et-floating-arrow-translate: translate3d(100px, 0, 0)') },
+      'components/arrow-default': { body: drawn('', 'left: 16px') },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(
+      rendered.issues
+        .filter((issue) => issue.rule === 'ARROW-ANCHOR')
+        .map((issue) => [issue.part, issue.detail])
+        .sort(),
+    ).toEqual([
+      ['components/arrow-by-hand', expect.stringContaining('moved by hand')],
+      ['components/arrow-lost', 'the arrow anchor "#gone" matches no drawn element'],
+      ['components/arrow-out-of-reach', 'the arrow tip is 146px left of the centre of "#go"'],
+    ]);
+  }, 120_000);
+
   it('flags text that shows through an open overlay pane, and not under an opaque one', async (context) => {
     const page = (pane: string) =>
       `<div style="position: relative; width: 300px; height: 160px"><p style="margin: 0; padding: 40px 8px">Round one text below</p>${pane}</div>`;

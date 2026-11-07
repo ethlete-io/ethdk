@@ -11,6 +11,11 @@ export type AnchoredDialogMockOptions = {
   arrow?: boolean;
   /** The side the pane opened on, which places the arrow. Defaults to `bottom-end`, the strategy's default. */
   placement?: Placement;
+  /**
+   * A CSS selector of the drawn element the arrow points at, like `arrowAnchor` of the strategy. The design frame aims
+   * the arrow at its centre, and the render check reports a tip that misses it.
+   */
+  anchor?: string;
   /** The pane's role. Defaults to `dialog`. */
   role?: 'dialog' | 'alertdialog';
   /** Draws `aria-modal="true"`. Defaults to `true`, as for a modal overlay; `false` for `mode: 'non-modal'`. */
@@ -84,6 +89,7 @@ export const anchoredDialog = (options: AnchoredDialogMockOptions) => {
     options.labelledBy && `aria-labelledby="${options.labelledBy}"`,
     options.label && `aria-label="${options.label}"`,
     `data-overlay-placement="${placement}"`,
+    options.anchor && `data-et-arrow-anchor="${options.anchor.replaceAll('"', '&quot;')}"`,
     `class="${classes.join(' ')}"`,
   ].filter(Boolean);
   const arrowMarkup = arrow ? '<div class="et-overlay-arrow" et-floating-arrow></div>' : '';

@@ -608,6 +608,21 @@ the chip (builder, 2026-11-03). A hand offset is right for one layout only and n
 anchor centre. Fix: B188 (technical, SDK) - an anchor option on the components anchored-dialog that points the
 arrow at a given element; the render check measures arrow tip vs anchor centre. Changeset + docs guide.
 
+As built (B188, 2026-11-07): `arrowAnchor` on the anchored strategies (`@ethlete/core` `OverlayRuntimeAnchoredPosition`,
+`@ethlete/components` `anchoredOverlayStrategy`/`anchoredDialogOverlayStrategy`; an element or `(origin) => element`):
+floating-ui's arrow middleware then measures that element instead of the reference, the pane stays placed against the
+origin. The `anchoredDialog()` design mock takes `anchor` (a selector, drawn as `data-et-arrow-anchor`); the design frame
+(`mountDrawing`) aims every such arrow and re-aims on resize, so a part needs no setup of its own. `design check` has the
+new render rule ARROW-ANCHOR: the tip misses the anchor centre by more than 1px (e.g. out of reach of `arrowPadding`), the
+selector matches nothing, or a mock arrow carries a hand-set `--et-floating-arrow-translate` without an anchor. Live
+pages/system dropped its hand offset (327 / 314.68px) for `anchor: '[data-et-control="open-points"]'`. Verified: specs in
+core, components and cli (the cli one fails without the statements), `design check` pages/system and
+components/anchored-dialog report ARROW-ANCHOR 0 (other findings unchanged and unrelated), Storybook overlay story
+"Arrow at this button" (pane anchored to the button row) puts the tip at the button centre (342.5px vs row centre 640px).
+Not done: the B175 sketch (`pointArrow` in sketches/pages-system/shared/capabilities.ts, untracked on the Mac) still sets
+its offset by hand; the new rule reports it once the sketch is checked - swap it for `anchor`. Mocks that never name an
+anchor (components/update-dialog) are not measured.
+
 253\. B145 step 2 (builder, 2026-11-03) brought the comment write path back, but the designs leave gaps the builder
 would otherwise have had to invent: thread, reply, resolve and withdraw are drawn nowhere (comment-reply, -done
 and -withdraw have no caller), the draft field is drawn unfocused, and leaving comment mode by key (Esc, `C`) is

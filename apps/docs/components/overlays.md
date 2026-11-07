@@ -426,6 +426,10 @@ A pane near a side edge keeps its placement and shifts along that edge: `flip` c
 
 The reason to prefer it over `fallbackPlacements` for such a pane is stability: it measures the space around the origin, never the pane, so **an open pane cannot jump sides when its content changes**. `flip` compares the pane's current height against the space below it while `autoResize` derives that height from the placement `flip` just picked - a filtered list or an animated resize then flips the pane back and forth mid-animation. `et-select` and `et-cascader` both use it with a `160px` minimum.
 
+**`arrowAnchor`** points the arrow at another element than the origin the pane is placed against - a pane anchored to a toolbar whose arrow points at the button inside it. Pass the element, or a function that gets the origin: `anchoredDialogOverlayStrategy({ arrowAnchor: (origin) => origin.querySelector('.filter-button') })`. The arrow aims at that element's centre and still keeps `arrowPadding` off the corners, so an anchor beyond the pane's edge leaves the arrow at the nearest corner.
+
+In a design part, `anchoredDialog({ anchor: '[data-et-control="open-points"]' })` from `@ethlete/components/design/anchored-dialog` does the same for the drawn pane: the design frame aims the arrow at the element the selector names, and `design check` reports `ARROW-ANCHOR` when the tip misses the anchor's centre, the selector matches nothing, or an arrow was moved by hand (`--et-floating-arrow-translate`) without an anchor.
+
 `arrowPadding` (default `16` for `anchoredDialogOverlayStrategy`, `12` for a bare anchored strategy) is how close the arrow's base may get to the pane's corners. Keep it above the pane's corner radius: on aligned placements (`'bottom-end'`, `'left-start'`, …) and on panes shifted off center near a viewport edge, the arrow slides all the way to that limit, and a smaller value lets its base ride into the rounded corner.
 
 ## Color theme context

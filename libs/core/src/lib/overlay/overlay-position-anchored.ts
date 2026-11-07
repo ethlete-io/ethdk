@@ -77,6 +77,19 @@ const PREFERRED_SIDE_NAME = 'etPreferredSide';
 
 type PreferredSideData = { availableSpace?: Partial<Record<AnchoredSide, number>> };
 
+const arrowAt = (anchor: Element, arrowMiddleware: Middleware): Middleware => ({
+  ...arrowMiddleware,
+  async fn(state) {
+    const { reference } = await state.platform.getElementRects({
+      reference: anchor,
+      floating: state.elements.floating,
+      strategy: state.strategy,
+    });
+
+    return arrowMiddleware.fn({ ...state, rects: { ...state.rects, reference } });
+  },
+});
+
 const getAnchoredSide = (placement: Placement) => placement.split('-')[0] as AnchoredSide;
 
 const toOppositeSidePlacement = (placement: Placement) => {
@@ -329,15 +342,15 @@ export const createAnchoredPositionCleanup = (
       const extras = requireMiddlewareExtras('arrow');
 
       if (extras) {
-        middleware.push(
-          extras.arrow({
-            element: arrowElement,
-            // keeps the arrow off a rounded pane corner by default: 12px covers the radius of the
-            // built-in boxed panes (--et-overlay-radius). Panes with a larger radius have to pass their
-            // own - an arrow whose base sits on the corner arc looks detached from the pane.
-            padding: strategy.arrowPadding ?? 12,
-          }),
-        );
+        const arrowMiddleware = extras.arrow({
+          element: arrowElement,
+          // keeps the arrow off a rounded pane corner by default: 12px covers the radius of the
+          // built-in boxed panes (--et-overlay-radius). Panes with a larger radius have to pass their
+          // own - an arrow whose base sits on the corner arc looks detached from the pane.
+          padding: strategy.arrowPadding ?? 12,
+        });
+
+        middleware.push(strategy.arrowAnchor ? arrowAt(strategy.arrowAnchor, arrowMiddleware) : arrowMiddleware);
       }
     }
 

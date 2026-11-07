@@ -9,6 +9,7 @@ type Props = {
   label?: string;
   placement?: 'bottom-end' | 'bottom-start' | 'top-end' | 'top-start';
   arrow?: boolean;
+  anchor?: string;
   modal?: boolean;
 };
 
@@ -47,7 +48,15 @@ export default definePart({
   },
   frame: (body, { placement = 'bottom-end' }) =>
     `<div class="anchored-dialog-frame" style="--anchored-dialog-justify:${placement.endsWith('start') ? 'flex-start' : 'flex-end'}"><div data-et-anchor>${body}</div></div>`,
-  render: async ({ kind = 'open-points', content, label, placement = 'bottom-end', arrow, modal = true }: Props) => {
+  render: async ({
+    kind = 'open-points',
+    content,
+    label,
+    placement = 'bottom-end',
+    arrow,
+    anchor,
+    modal = true,
+  }: Props) => {
     const apply = await button.render({ label: 'Apply', variant: 'filled' });
     const pane = content ?? (kind === 'filter' ? filter(apply.body) : openPoints());
 
@@ -56,6 +65,7 @@ export default definePart({
         label: label ?? (kind === 'filter' ? 'Filter' : 'Open points'),
         placement,
         arrow,
+        anchor,
         modal,
         content: pane,
       }),

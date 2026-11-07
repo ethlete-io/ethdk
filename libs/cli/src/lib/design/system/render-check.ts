@@ -15,6 +15,7 @@ import {
 import { introducedControlStateGapsOf, PLAIN_CONTROL_SELECTOR, SDK_CONTROLS } from './complete';
 import { ACTION_UNDECLARED_STATEMENTS, CLICK_LISTENER_INIT_SCRIPT } from './action-undeclared';
 import { DISABLED_INTERACTION_STATEMENTS } from './disabled-interaction';
+import { ARROW_ANCHOR_STATEMENTS } from './arrow-anchor';
 import { classesOf, cssBlocksOf } from './css-source';
 import { createDesignServer } from '../serve';
 import { emptySlotsScriptOf, PartAddress, partFrameOf, viewportOf } from '../shot';
@@ -546,6 +547,7 @@ ${SURFACE_STATEMENTS}
       report('CONTROL-PART-INPUT', element, named + ' is a control without data-et-control, so no control check sees it - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls');
     }
 ${ACTION_UNDECLARED_STATEMENTS}
+${ARROW_ANCHOR_STATEMENTS}
 ${DISABLED_INTERACTION_STATEMENTS}
   return found;
 })(${JSON.stringify({ ...options, escapable: ESCAPABLE, controlInputs: PLAIN_CONTROL_SELECTOR, sdkControls: SDK_CONTROLS.join(', ') })})`;

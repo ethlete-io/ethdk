@@ -139,6 +139,7 @@ const popover = async (
   const dialog = await anchoredDialog.render({
     label: 'Offene Punkte',
     modal: false,
+    anchor: '[data-et-control="open-points"]',
     content: html`<div class="w-96 text-ui-sm">
       <header
         class="flex items-baseline gap-space-2 px-space-3 pt-space-3 pb-space-2 border-b border-(--et-surface-border-solid)"
@@ -152,10 +153,7 @@ const popover = async (
     </div>`,
   });
   return {
-    body: html`<div
-      class="absolute top-full right-0 mt-2.5 [&_.et-overlay-arrow]:left-0"
-      style="--et-floating-arrow-translate: translate3d(${groups.length ? 327 : 314.6796875}px, 0, 0); transform: translate3d(0, 0, 0)"
-    >
+    body: html`<div class="absolute top-full right-0 mt-2.5" style="transform: translate3d(0, 0, 0)">
       ${dialog.body}
     </div>`,
     styles: dialog.styles + (exceptions?.styles ?? '') + build.styles,

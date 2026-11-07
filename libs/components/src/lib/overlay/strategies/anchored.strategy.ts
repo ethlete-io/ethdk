@@ -23,6 +23,11 @@ export type AnchoredOverlayStrategyOptions = {
   fallbackPlacements?: Placement[];
   offset?: OffsetOptions | null;
   arrowPadding?: Padding | null;
+  /**
+   * The element the arrow points at, when it is not the origin the pane is placed against - e.g. a pane
+   * anchored to a toolbar whose arrow points at the button inside it. A function receives the origin.
+   */
+  arrowAnchor?: Element | ((origin: Element) => Element | null | undefined);
   viewportPadding?: Padding | null;
   shift?: boolean | OverlayRuntimeShiftOptions;
   autoResize?: boolean;
@@ -56,6 +61,7 @@ export type AnchoredPositionOptions = Pick<
   | 'fallbackPlacements'
   | 'offset'
   | 'arrowPadding'
+  | 'arrowAnchor'
   | 'viewportPadding'
   | 'shift'
   | 'autoResize'
@@ -75,6 +81,7 @@ export const buildAnchoredRuntimePositionStrategy =
           fallbackPlacements: options.fallbackPlacements,
           offset: options.offset,
           arrowPadding: options.arrowPadding,
+          arrowAnchor: typeof options.arrowAnchor === 'function' ? options.arrowAnchor(origin) : options.arrowAnchor,
           viewportPadding: options.viewportPadding,
           shift: options.shift,
           autoResize: options.autoResize,

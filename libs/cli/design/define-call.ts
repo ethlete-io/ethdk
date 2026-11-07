@@ -1,4 +1,5 @@
 import { morph } from './morph';
+import { aimAnchoredArrows } from './arrow-anchor';
 
 /**
  * A value inside a template. An array joins with nothing between, and `null`, `undefined` and
@@ -163,6 +164,8 @@ export const mountDrawing = (root: HTMLElement, drawn: Drawing): unknown => {
     for (const setup of [drawn.setup ?? []].flat()) {
       setup(root);
     }
+
+    aimAnchoredArrows(root);
 
     return null;
   } catch (error: unknown) {

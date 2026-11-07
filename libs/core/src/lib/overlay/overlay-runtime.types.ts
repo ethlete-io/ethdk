@@ -41,6 +41,8 @@ export type OverlayRuntimeAnchoredPosition = {
   fallbackPlacements?: Placement[];
   offset?: OffsetOptions | null;
   arrowPadding?: Padding | null;
+  /** The element the arrow points at. Defaults to `referenceElement`, which the pane is still positioned against. */
+  arrowAnchor?: Element | null;
   viewportPadding?: Padding | null;
   autoResize?: boolean;
   /**
