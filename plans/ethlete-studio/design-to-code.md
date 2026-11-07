@@ -2726,6 +2726,14 @@ products against a built dist (the grep shows no invented value since A1 added `
 render run in CI: the newly drawn states (title-bar windows/close rows and any part whose CSS selects its SDK
 controls) have no accepted pictures yet and may show compare drift; those old hits go to the ADR 0205 baseline.
 
+**As built (B419, 2026-11-07):** `SDK-PRIVATE-VAR` (`system/rules/sdk-private-var.ts`, static, in `check --rules`) walks
+each part stylesheet of a product other than `sdk` and fails every `--_et-*` declaration, once per selector and
+property, with its line. It does not look at the selector: a private variable set on an SDK component is never
+reproducible by the app, a wrapper's or an own class's set included. Spec on inline CSS; not run over the real
+products. By reading, it hits `title-bar.css` (`--_et-window-control-button-border-radius`, `-icon-size`) and
+`canvas-viewport.css` (`--_et-focus-ring-offset`); both need a public input or token in the SDK, or the override
+dropped, and stay open until then.
+
 484\. The app's code notice in the title bar drew text the merged design never had ("Host geändert - Studio neu
 starten", "CLI hat uncommittete Änderungen, Studio läuft auf Stand <sha>"), and the CLI-dirty state has no design state
 at all (UI builder ethlete-sdk-c8, A1, 2026-11-06). Compare reported the notice as "cannot compare" (no input), not as

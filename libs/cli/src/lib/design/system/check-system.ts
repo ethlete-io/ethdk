@@ -55,6 +55,7 @@ import { undefinedClassesOf } from './rules/undefined-class';
 import { undefinedTokensOf } from './rules/undefined-token';
 import { tokenSelectorsOf } from './rules/token-selectors';
 import { sdkAttributeValuesOf } from './rules/sdk-attribute-value';
+import { sdkPrivateVarsOf } from './rules/sdk-private-var';
 import { upwardDependenciesOf } from './rules/upward-dependency';
 import { badSvgAssetsOf } from './rules/svg-asset';
 import { staleReplacesOf } from './rules/stale-replace';
@@ -111,6 +112,7 @@ const RULES = [
   unboundInputProblemsOf,
   gluedInterpolationsOf,
   sdkAttributeValuesOf,
+  sdkPrivateVarsOf,
 ];
 
 export const warningProblemsOf = (product: ResolvedProduct): Problem[] => [

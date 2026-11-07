@@ -139,6 +139,10 @@ input value the component does not declare, such as `.et-window-control-button[d
 button takes only `square` and `round`: the app cannot draw that look without an SDK change. The rule reads the
 declaration file of the built `@ethlete/components` the drawings render from.
 
+`et design check` fails with `SDK-PRIVATE-VAR` when a part's stylesheet sets a private `--_et-*` variable of an SDK
+component, such as `--_et-window-control-button-icon-size`: the app cannot rely on it without an SDK change. The `sdk`
+product mirrors the SDK and is exempt.
+
 `et design check` fails with `HARD-CODED-MOTION` when a `transition` or `animation` declaration
 outside `foundations/` holds a literal duration, delay or easing, for example `120ms` or `ease`.
 Take them from a foundations token instead: `transition: opacity var(--duration-appear) var(--ease-standard)`.
