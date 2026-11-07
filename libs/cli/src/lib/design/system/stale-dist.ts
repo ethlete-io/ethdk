@@ -1,7 +1,7 @@
 import { spawnSync } from 'child_process';
 import { existsSync, readdirSync, readFileSync, statSync, utimesSync } from 'fs';
 import { basename, join, relative, resolve } from 'path';
-import { DesignConfig } from '../paths';
+import { DesignConfig } from '../design-config';
 import { readFreshLibBuild } from './lib-build-lock';
 import { DEFAULT_RENDER_MODULES, mapPackage, renderPackagesOf } from '../render-packages';
 

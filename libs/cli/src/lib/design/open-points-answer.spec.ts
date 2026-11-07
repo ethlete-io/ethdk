@@ -4,7 +4,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { Readable } from 'stream';
 import { describe, expect, it, vi } from 'vitest';
-import { DESIGN_DIR, readConfig } from './paths';
+import { DESIGN_DIR, readConfig } from './design-config';
 import { openPointsAnswer } from './studio-api';
 import { createComment } from './system/comments/comment';
 import { drawnFindingsOf } from './system/drawn-open-points';

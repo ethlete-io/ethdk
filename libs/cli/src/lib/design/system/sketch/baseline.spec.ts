@@ -2,7 +2,7 @@ import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { DESIGN_DIR, readConfig } from '../../paths';
+import { DESIGN_DIR, readConfig } from '../../design-config';
 import { partFilesOf } from '../product';
 import { resolveProduct } from '../resolve-product';
 import { baselineOf, conflictsOf, partHashOf } from './baseline';

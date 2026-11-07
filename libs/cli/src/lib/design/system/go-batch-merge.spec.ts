@@ -2,7 +2,7 @@ import { cpSync, existsSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { readConfig } from '../paths';
+import { readConfig } from '../design-config';
 import { goBatch } from './go-batch';
 import { resolveProduct } from './resolve-product';
 import { createSketch, markSketchReady, Sketch } from './sketch/sketch';

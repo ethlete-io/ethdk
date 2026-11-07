@@ -5,7 +5,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { Readable } from 'stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DESIGN_DIR } from '../paths';
+import { DESIGN_DIR } from '../design-config';
 import { openPointsAnswer, partGoAnswer } from '../studio-api';
 import { designGo } from './go-command';
 import { TomPrompt } from './tom-confirm';

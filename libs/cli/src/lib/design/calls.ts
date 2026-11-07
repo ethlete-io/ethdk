@@ -1,6 +1,6 @@
 import { existsSync, globSync } from 'fs';
 import { relative, resolve } from 'path';
-import { callsRootOf } from './paths';
+import { callsRootOf } from './design-config';
 import { callSlugOf } from './vite-paths';
 
 export const CALLS_PATH = '/__design/calls';

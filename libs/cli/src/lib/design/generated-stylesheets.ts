@@ -3,7 +3,8 @@ import { promisify } from 'util';
 import { createHash } from 'crypto';
 import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
-import { DesignConfig, DesignGeneratedStylesheets, workRootOf } from './paths';
+import { DesignConfig, DesignGeneratedStylesheets } from './design-config';
+import { workRootOf } from './work-root';
 import { SketchVariant, SystemModules } from './system/system-modules';
 
 /**

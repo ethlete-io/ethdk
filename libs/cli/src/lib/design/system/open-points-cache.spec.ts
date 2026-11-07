@@ -3,7 +3,7 @@ import { syncBuiltinESMExports } from 'module';
 import { tmpdir } from 'os';
 import { dirname, join, resolve } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DESIGN_DIR, readConfig } from '../paths';
+import { DESIGN_DIR, readConfig } from '../design-config';
 import { buildReadyInputsOf } from './check-system';
 import { cachedOpenPointsOf } from './open-points-cache';
 import { readOpenPoints } from './read-open-points';

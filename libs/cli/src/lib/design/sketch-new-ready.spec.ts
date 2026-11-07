@@ -2,7 +2,7 @@ import { cpSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DESIGN_DIR } from './paths';
+import { DESIGN_DIR } from './design-config';
 import { variantsThatDoNotLoad } from './ready-shots';
 import { designSketch } from './sketch-command';
 import { renderIssuesOf } from './system/render-check';

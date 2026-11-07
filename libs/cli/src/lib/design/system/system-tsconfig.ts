@@ -2,7 +2,9 @@ import { existsSync, mkdirSync } from 'fs';
 import { isAbsolute, relative, resolve, sep } from 'path';
 import { typecheck, TypecheckResult } from '../typecheck';
 import { DRAWING_COMPILER_OPTIONS, writeTsconfigText } from '../calls-tsconfig';
-import { installedAssetRoot, readConfig, workRootOf } from '../paths';
+import { installedAssetRoot } from '../package-root';
+import { readConfig } from '../design-config';
+import { workRootOf } from '../work-root';
 import { renderPackagesOf, typePathsOf } from '../render-packages';
 import {
   FIXTURES_SPECIFIER,

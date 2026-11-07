@@ -14,7 +14,7 @@ import {
 } from 'fs';
 import { tmpdir } from 'os';
 import { join, relative } from 'path';
-import { DesignConfig, readConfig } from '../paths';
+import { DesignConfig, readConfig } from '../design-config';
 import { shootStates, ShootStates, StateShot } from './compare-command';
 import { harnessEntriesOf, harnessOf, harnessStaleOf } from './harness-map';
 import { HarnessServer, startHarnessServer, StartHarnessServer } from './harness-server';

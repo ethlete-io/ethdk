@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, relative, resolve, sep } from 'path';
-import { DesignHarness } from '../paths';
+import { DesignHarness } from '../design-config';
 import { harnessProblemOf } from './harness-config';
 import { formattedTextOf } from './prettier';
 import { partKeyOf, ResolvedProduct } from './resolve-product';

@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { DESIGN_DIR } from '../paths';
+import { DESIGN_DIR } from '../design-config';
 import { Problem } from './problem';
 import { resolveProduct } from './resolve-product';
 import { RULE_BASELINE_FILE, ruleBaselineOf, writeRuleBaseline } from './rule-baseline';

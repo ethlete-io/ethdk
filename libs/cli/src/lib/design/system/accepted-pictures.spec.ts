@@ -3,7 +3,7 @@ import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSyn
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DESIGN_DIR } from '../paths';
+import { DESIGN_DIR } from '../design-config';
 import { designAccept } from './accept-command';
 import { autoAcceptOf, DrawStates, readPictures, StatePictures } from './accepted-pictures';
 import { designHashOf } from './design-hash';

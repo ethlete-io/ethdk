@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DesignHarness, DESIGN_DIR } from '../paths';
+import { DesignHarness, DESIGN_DIR } from '../design-config';
 import { designCompare } from './compare-command';
 import { harnessProblemOf } from './harness-config';
 import { designHarness } from './harness-command';

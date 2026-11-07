@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { basename, resolve, sep } from 'path';
 import { pathToFileURL } from 'url';
-import { DesignConfig } from './paths';
+import { DesignConfig } from './design-config';
 import { FieldSpec } from './render-fields';
 import { isBuildRunning } from './system/build-running';
 

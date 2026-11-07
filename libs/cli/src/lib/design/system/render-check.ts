@@ -3,7 +3,8 @@ import { AddressInfo } from 'net';
 import { yieldRun } from '../run-yield';
 import { WarmDraw } from '../warm-draw';
 import { chromiumOf } from '../browser';
-import { DesignConfig, viteCacheOf } from '../paths';
+import { DesignConfig } from '../design-config';
+import { viteCacheOf } from '../vite-cache';
 import {
   ColorScheme,
   ContrastOptions,

@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { dirname, relative } from 'path';
-import { configPathOf, DesignColorScheme, DesignPreset, DesignProduct } from '../paths';
+import { configPathOf, DesignColorScheme, DesignPreset, DesignProduct } from '../design-config';
 import { loadBase, ProductSource } from './base';
 import { harnessProblemOf } from './harness-config';
 import { LAYERS } from './layers';

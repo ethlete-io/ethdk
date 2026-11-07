@@ -2,7 +2,7 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { viteCacheOf } from '../paths';
+import { viteCacheOf } from '../vite-cache';
 import { withRunSignal } from '../run-abort';
 import { comparePart, ShootStates } from './compare-command';
 import { comparePngs, encodePng } from './part-compare';

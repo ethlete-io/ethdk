@@ -4,7 +4,7 @@ import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { PartsChange } from './changed-parts';
-import { DESIGN_DIR, DesignConfig, readConfig } from './paths';
+import { DESIGN_DIR, DesignConfig, readConfig } from './design-config';
 import { createDesignServer } from './serve';
 import { COMMENT_EVENTS_PATH } from './studio-api';
 import { createSketch, parseTarget } from './system/sketch/sketch';

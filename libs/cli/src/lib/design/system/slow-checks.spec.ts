@@ -2,7 +2,7 @@ import { appendFileSync, cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'f
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { DESIGN_DIR, readConfig } from '../paths';
+import { DESIGN_DIR, readConfig } from '../design-config';
 import { StateShot } from './compare-command';
 import { designHashOf } from './design-hash';
 import { Problem } from './problem';

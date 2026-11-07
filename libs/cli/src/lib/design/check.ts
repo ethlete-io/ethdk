@@ -3,7 +3,7 @@ import { dirname, relative, resolve } from 'path';
 import { execPlain } from '../plain-output';
 import { chromiumOf } from './browser';
 import { writeCallsTsconfig } from './calls-tsconfig';
-import { callsRootOf, DEFAULT_PORT, DesignConfig, portOf, readConfig } from './paths';
+import { callsRootOf, DEFAULT_PORT, DesignConfig, portOf, readConfig } from './design-config';
 import { buildStampOf, serverProblemOf } from './stamp';
 import { hooksProblemOf } from './hooks-problem';
 import { holdStatus, writeStatus } from './status';

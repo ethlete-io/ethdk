@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { AddressInfo } from 'net';
 import { resolve } from 'path';
 import { chromiumOf } from '../browser';
-import { DesignConfig } from '../paths';
+import { DesignConfig } from '../design-config';
 import { createDesignServer } from '../serve';
 import { createPartShooter } from '../shot';
 import { Browser, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';

@@ -2,7 +2,7 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DESIGN_DIR, DesignDeniedClass, readConfig } from '../../paths';
+import { DESIGN_DIR, DesignDeniedClass, readConfig } from '../../design-config';
 import { checkDesign } from '../../check';
 import { designSketch } from '../../sketch-command';
 import { designAccept } from '../accept-command';

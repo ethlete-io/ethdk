@@ -6,7 +6,7 @@ import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { changedPartsOf } from './changed-parts';
 import { createDrawLedger } from './draw-ledger';
-import { DESIGN_DIR, readConfig } from './paths';
+import { DESIGN_DIR, readConfig } from './design-config';
 import { createDesignServer } from './serve';
 import { createPartShooter, dependentIdsOf } from './shot';
 import { DRAWS_AT_ONCE } from './thumb';

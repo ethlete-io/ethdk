@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { designComment, designInbox } from './inbox-command';
-import { DESIGN_DIR, readConfig } from './paths';
+import { DESIGN_DIR, readConfig } from './design-config';
 import { createSketch, parseTarget, readSketch } from './system/sketch/sketch';
 import { createSystemModules } from './system/system-modules';
 

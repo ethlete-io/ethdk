@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { checkDesign } from '../check';
-import { DesignConfig, readConfig } from '../paths';
+import { DesignConfig, readConfig } from '../design-config';
 import { buildStampOf } from '../stamp';
 import { createDesignServer } from '../serve';
 import { createDrawQueue } from '../thumb';

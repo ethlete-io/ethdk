@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { DESIGN_DIR, readConfig } from '../paths';
+import { DESIGN_DIR, readConfig } from '../design-config';
 import { inspectRetryingTimeouts, RenderIssue, renderIssuesOf } from './render-check';
 
 const checkout = (bodyOf: (name: string) => string = () => '<p style="margin: 0; color: #000">Text</p>') => {

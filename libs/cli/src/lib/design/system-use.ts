@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { dirname, isAbsolute, relative, resolve } from 'path';
 import { CALL_STAGES } from './new-call';
-import { callsRootOf, DESIGN_DIR } from './paths';
+import { callsRootOf, DESIGN_DIR } from './design-config';
 
 const STAGES_ON_THE_SYSTEM = new Set(['element', 'page', 'prototype']);
 

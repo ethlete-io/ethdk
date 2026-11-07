@@ -7,7 +7,7 @@ import { join } from 'path';
 import { chromium, type Browser } from 'playwright';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { crc32, deflateSync } from 'zlib';
-import { DESIGN_DIR } from '../paths';
+import { DESIGN_DIR } from '../design-config';
 import type { TextAmbient } from '../shot';
 import { appShotProblemOf, comparePart, compareWidthOf, designCompare, ShootStates } from './compare-command';
 import { compareFrameOf, harnessShotOf, missingPanesProblemOf } from './harness-shot';

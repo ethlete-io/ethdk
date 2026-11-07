@@ -1,5 +1,5 @@
 import { relative, resolve, sep } from 'path';
-import { DesignConfig } from './paths';
+import { DesignConfig } from './design-config';
 import { SHARED_FOLDER } from './system/imports';
 import { isLayer } from './system/layers';
 import { partKeyOf } from './system/resolve-product';

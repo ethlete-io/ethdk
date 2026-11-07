@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { designPictureCodeOf } from '../code-hash';
-import { workRootOf } from '../paths';
+import { workRootOf } from '../work-root';
 import { designHashOf, FileHashes, fileHashesOf, sha16 } from './design-hash';
 import { partOwnerOf } from './inventory-approval';
 import { repoRootOf } from './reachable-files';

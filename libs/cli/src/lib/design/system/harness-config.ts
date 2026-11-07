@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { posix, resolve } from 'path';
-import { DesignHarness } from '../paths';
+import { DesignHarness } from '../design-config';
 
 const isRepoPath = (path: unknown): path is string =>
   typeof path === 'string' &&

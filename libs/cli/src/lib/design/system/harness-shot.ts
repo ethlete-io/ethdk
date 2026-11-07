@@ -1,4 +1,4 @@
-import { DesignPreset } from '../paths';
+import { DesignPreset } from '../design-config';
 import { timedPhase } from '../phase-timing';
 import { checkerScriptOf, pixelBoxOf, TextAmbient, viewportOf } from '../shot';
 import { awaitFonts, Browser, DRAW_TIMEOUT_MS } from '../thumb';

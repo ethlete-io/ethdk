@@ -1,4 +1,4 @@
-import { DesignConfig } from '../../paths';
+import { DesignConfig } from '../../design-config';
 import { PartModuleLoader, withPartLoader } from '../action-lost';
 import { Problem } from '../problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';

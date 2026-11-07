@@ -1,5 +1,5 @@
 import { chromiumOf } from '../browser';
-import { DesignConfig } from '../paths';
+import { DesignConfig } from '../design-config';
 import { createPartShooter } from '../shot';
 import { CONTROL_STATE_RULE } from './build-ready-contract';
 import { compareFrameOf } from './harness-shot';

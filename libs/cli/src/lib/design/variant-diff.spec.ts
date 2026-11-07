@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import { PictureOf } from './merge-compare';
-import { readConfig } from './paths';
+import { readConfig } from './design-config';
 import { resolveProduct } from './system/resolve-product';
 import { createSketch, Sketch } from './system/sketch/sketch';
 import { BoxOf, changedAreaOf, diffVariant, VariantDiff } from './variant-diff';

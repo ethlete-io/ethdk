@@ -1,5 +1,5 @@
 import { createPartShooter } from './shot';
-import { DesignConfig } from './paths';
+import { DesignConfig } from './design-config';
 import { ResolvedProduct } from './system/resolve-product';
 import { aktuellPlaceholderWarningsOf } from './system/sketch/aktuell-placeholders';
 import { IdenticalRender, identicalRendersOf } from './system/sketch/identical-renders';

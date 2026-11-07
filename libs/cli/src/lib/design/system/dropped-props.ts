@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import ts from 'typescript';
 import { INTERACTIONS } from '../force-interactions';
-import { DesignConfig } from '../paths';
+import { DesignConfig } from '../design-config';
 import { DROPPED_PROP_RULE, STATE_NO_SOURCE_RULE } from './build-ready-contract';
 import { productSampledPropsOf } from './harness-samples';
 import { designOnlyPropsOf } from './part-compare';

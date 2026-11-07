@@ -1,4 +1,4 @@
-import { configPathOf, DesignConfig, readConfig } from '../../paths';
+import { configPathOf, DesignConfig, readConfig } from '../../design-config';
 import { resolveProduct, ResolvedProduct } from '../resolve-product';
 
 /** `values` holds the last value of each flag, `repeated` every value in order. */

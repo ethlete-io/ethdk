@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, statSync } from 'fs';
 import { resolve } from 'path';
-import { DESIGN_DIR } from '../paths';
+import { DESIGN_DIR } from '../design-config';
 import { LAYERS, Layer } from './layers';
 import { Problem } from './problem';
 

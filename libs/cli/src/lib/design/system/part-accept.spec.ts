@@ -4,7 +4,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { Readable } from 'stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DESIGN_DIR, readConfig } from '../paths';
+import { DESIGN_DIR, readConfig } from '../design-config';
 import { openPointsAnswer, partAcceptAnswer } from '../studio-api';
 import { DrawStates } from './accepted-pictures';
 import { readyPartOf } from './part-ready';

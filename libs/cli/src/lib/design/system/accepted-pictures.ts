@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'fs';
 import { writeJsonFile } from '../../json-file';
 import { dirname, resolve } from 'path';
 import { chromiumOf } from '../browser';
-import { DesignConfig } from '../paths';
+import { DesignConfig } from '../design-config';
 import { createPartShooter } from '../shot';
 import { yieldRun } from '../run-yield';
 import { DesignServer, drawingOn, WarmDraw } from '../warm-draw';

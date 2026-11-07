@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { callFilesOf } from './calls';
-import { callsRootOf } from './paths';
+import { callsRootOf } from './design-config';
 
 const OPENING = /defineCall\(\{\n/;
 const HAS_STAGE = /^\s*stage\s*:/m;

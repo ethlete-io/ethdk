@@ -2,7 +2,7 @@ import { cpSync, mkdtempSync, realpathSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
-import { readConfig } from './paths';
+import { readConfig } from './design-config';
 import {
   changedCropsIn,
   designShot,

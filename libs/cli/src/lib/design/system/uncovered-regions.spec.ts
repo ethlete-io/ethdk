@@ -2,7 +2,7 @@ import { uncoveredFindingLineOf, uncoveredFindingsOf } from './live-uncovered';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
-import { DESIGN_DIR } from '../paths';
+import { DESIGN_DIR } from '../design-config';
 import { resolveProduct } from './resolve-product';
 import { partCoverOf, RegionNode, uncoveredLineOf, uncoveredRegionsOf } from './uncovered-regions';
 

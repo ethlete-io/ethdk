@@ -2,7 +2,7 @@ import { dirname, relative } from 'path';
 import { decisionRefsOf } from './decision-refs';
 import { DrawStates, storePictures } from './accepted-pictures';
 import { ruleProblemsOf } from './check-system';
-import { DesignConfig } from '../paths';
+import { DesignConfig } from '../design-config';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf } from './sketch/cli-args';
 import { AcceptRefusal, acceptPart, acceptRefusalOf, readMerged } from './sketch/merged-parts';

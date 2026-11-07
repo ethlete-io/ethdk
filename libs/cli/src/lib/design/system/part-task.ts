@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from 'fs';
 import { posix, resolve } from 'path';
 import { appFilesOf } from './app-files';
 import { changedFilesOf, FileHashes, isOptionalFileHashes } from './design-hash';
-import { DESIGN_DIR } from '../paths';
+import { DESIGN_DIR } from '../design-config';
 import { matchesPattern } from './harness-config';
 import { buildReadyOf, BuildReadyInputs } from './part-build-ready';
 import { readyMarkOf, readyPartOf } from './part-ready';

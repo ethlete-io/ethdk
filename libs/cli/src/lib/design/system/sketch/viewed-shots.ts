@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, resolve } from 'path';
-import { workRootOf } from '../../paths';
+import { workRootOf } from '../../work-root';
 import { Sketch, variantContentHashOf } from './sketch';
 
 /** What a live variant of a sketch draws differently from the product, or `null` when it draws the same pixels. */

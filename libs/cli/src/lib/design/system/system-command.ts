@@ -1,4 +1,4 @@
-import { configPathOf, readConfig } from '../paths';
+import { configPathOf, readConfig } from '../design-config';
 import { createDesignServer } from '../serve';
 import { listSystem } from './list-system';
 import { argsOf } from './sketch/cli-args';

@@ -31,6 +31,7 @@ Agent-Berichte: `.claude/handoffs/agent-results/<ID>.md`.
   bleibt ungelandet), `desk/clifix` (WIP in `sketch-command.ts`, ungeprüft).
 - Mac: `tank/*` auf origin, Liste in `.claude/handoffs/mac-tank-branches.md`.
 - Gruppe 2 (Gates und Tools, `cleanup-landing.md`): tank/w3-gates-b gelandet (commitlint-Gate, B335 teilweise). Verworfen, da schon in next: tank/b380, b382, b393, b394, b396 (B379, B380, B382, B393, B394, B396 geschlossen), ci-gates-on-next, w3-gates-a, w3-b379-b364, w3-cli-a; tank/tree (WIP löscht 4664 Dateien).
+- Gruppe 3 (cli groß, `cleanup-landing.md`): tank/conflicts-land Teil f557 gelandet (Aufteilung von `design/paths.ts`, 557).
 
 ## Gerade in Arbeit
 

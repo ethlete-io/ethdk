@@ -11,7 +11,7 @@ import {
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { DESIGN_DIR, readConfig } from '../paths';
+import { DESIGN_DIR, readConfig } from '../design-config';
 import { entryOf } from '../render-packages';
 import { createDesignServer } from '../serve';
 import { resolveProduct } from './resolve-product';

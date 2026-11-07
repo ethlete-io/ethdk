@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, statSync } from 'fs';
 import { resolve } from 'path';
-import { DesignConfig } from '../../paths';
+import { DesignConfig } from '../../design-config';
 import { renderPackagesOf, typePathsOf } from '../../render-packages';
 import { Problem } from '../problem';
 import { ResolvedProduct } from '../resolve-product';

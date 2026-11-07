@@ -4,7 +4,7 @@ import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { PictureOf } from '../../merge-compare';
 import { BoxOf } from '../../variant-diff';
-import { readConfig } from '../../paths';
+import { readConfig } from '../../design-config';
 import { DRAWS_AT_ONCE } from '../../thumb';
 import { resolveProduct } from '../resolve-product';
 import { identicalRenderLinesOf } from './identical-renders';

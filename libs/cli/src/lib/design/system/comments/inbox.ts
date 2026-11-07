@@ -1,5 +1,5 @@
 import { relative } from 'path';
-import { DesignConfig } from '../../paths';
+import { DesignConfig } from '../../design-config';
 import { productDirOf } from '../product';
 import { staleBaseOf } from '../sketch/stale-base';
 import { oneProductOf } from '../sketch/cli-args';

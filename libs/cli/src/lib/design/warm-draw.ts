@@ -1,5 +1,5 @@
 import { AddressInfo } from 'net';
-import { DesignConfig } from './paths';
+import { DesignConfig } from './design-config';
 import { createDesignServer } from './serve';
 import { createDrawQueue } from './thumb';
 

@@ -3,7 +3,7 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { readConfig } from '../../paths';
+import { readConfig } from '../../design-config';
 import { resolveProduct } from '../resolve-product';
 import { baselineOf } from './baseline';
 import { mergeSketch } from './merge';

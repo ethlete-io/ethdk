@@ -3,7 +3,7 @@ import { resolve } from 'path';
 import { ACCEPT_USAGE, designAccept } from './system/accept-command';
 import { checkDesign } from './check';
 import { COMPLETE_USAGE, designComplete } from './system/complete-command';
-import { DEFAULT_PORT, findCheckoutRoot, portOf, readConfig } from './paths';
+import { DEFAULT_PORT, findCheckoutRoot, portOf, readConfig } from './design-config';
 import { designServeState } from './serve-state';
 import { designComment, designInbox } from './inbox-command';
 import { markLegacy } from './legacy';

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { basename, dirname, resolve } from 'path';
-import { assetRoot, DesignConfig, DesignProduct } from '../paths';
+import { DesignConfig, DesignProduct } from '../design-config';
+import { assetRoot } from '../package-root';
 import { Problem } from './problem';
 
 /** A product folder together with its entry in the `config.json` that declares it. */

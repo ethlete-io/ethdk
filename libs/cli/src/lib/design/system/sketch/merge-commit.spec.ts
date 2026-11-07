@@ -3,7 +3,7 @@ import { cpSync, existsSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DESIGN_DIR, readConfig } from '../../paths';
+import { DESIGN_DIR, readConfig } from '../../design-config';
 import { resolveProduct } from '../resolve-product';
 import { mergeAndRecord } from './merge-step';
 import { createSketch, decideSketch, findSketch, markSketchReady, Sketch, SketchTarget } from './sketch';

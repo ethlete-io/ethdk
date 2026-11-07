@@ -6,7 +6,7 @@ import { blankPngOf } from './blank-png';
 import { chromiumOf } from './browser';
 import { ChangedBox, changedBoxesOf } from './contact-sheet';
 import { DrawnPart, PartsChange, redraws } from './changed-parts';
-import { DesignPreset } from './paths';
+import { DesignPreset } from './design-config';
 import { DrawLedger } from './draw-ledger';
 import { fileOfModuleId, SketchVariant, SystemModules } from './system/system-modules';
 import { sketchIdOfName } from './system/sketch/sketch';

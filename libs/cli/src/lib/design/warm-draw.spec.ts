@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DesignConfig } from './paths';
+import { DesignConfig } from './design-config';
 import { DesignServer, drawingOn, DrawQueue, WarmDraw } from './warm-draw';
 
 const own = vi.hoisted(() => ({ serverClosed: vi.fn(), queueClosed: vi.fn() }));

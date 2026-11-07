@@ -2,7 +2,7 @@ import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
-import { readConfig } from '../paths';
+import { readConfig } from '../design-config';
 import { designCompare, ShootStates } from './compare-command';
 import { liveSketchOf } from './live-compare';
 import { resolveProduct } from './resolve-product';

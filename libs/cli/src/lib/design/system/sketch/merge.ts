@@ -12,7 +12,7 @@ import {
   writeFileSync,
 } from 'fs';
 import { dirname, relative, resolve } from 'path';
-import { DESIGN_DIR, DesignConfig, readConfig } from '../../paths';
+import { DESIGN_DIR, DesignConfig, readConfig } from '../../design-config';
 import { checkSystem, ruleLinesOf } from '../check-system';
 import { addressSketchComments, resolveSketchEndComments } from '../comments/comment';
 import { ASSETS_FOLDER, filesBelow } from '../assets';

@@ -1,4 +1,4 @@
-import { DesignNoteLanguage } from '../../paths';
+import { DesignNoteLanguage } from '../../design-config';
 import { Sketch } from './sketch';
 
 const STOPWORDS: Record<DesignNoteLanguage, string[]> = {

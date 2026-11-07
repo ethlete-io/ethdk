@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { writeJsonFile } from '../../json-file';
-import { DesignConfig } from '../paths';
+import { DesignConfig } from '../design-config';
 import { Blocker } from './build-ready-contract';
 import { designHashOf, FileHashes, isOptionalFileHashes, recordHolds } from './design-hash';
 import { drawnFindingsOf } from './drawn-open-points';
