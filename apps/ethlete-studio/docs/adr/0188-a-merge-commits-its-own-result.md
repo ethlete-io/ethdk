@@ -1,6 +1,6 @@
 ---
 status: accepted
-built: 4a4bb56c6
+built: 13acb71a1
 decided: 2026-11-04
 source: grill session 2026-11-04
 ---
