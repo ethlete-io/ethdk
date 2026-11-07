@@ -216,11 +216,11 @@ describe('part ready', () => {
 
     expect(await ready('components/tag', '--product', 'app-a')).toBe(2);
     expect(lines.join('\n')).toContain('a ready mark needs --by <model id | designer>');
-    expect(await ready('components/tag', '--product', 'app-a', '--by', 'tom')).toBe(1);
+    expect(await ready('components/tag', '--product', 'app-a', '--by', 'human')).toBe(1);
     expect(lines).toContain('  components/tag: no controls declared');
     expect(lines).toContain('components/tag has 1 open point - close them before ready');
 
-    expect(await ready('components/chip', '--product', 'app-a', '--by', 'tom')).toBe(0);
+    expect(await ready('components/chip', '--product', 'app-a', '--by', 'human')).toBe(0);
     expect(lines.at(-1)).toBe('components/chip is build-ready in app-a');
     expect(Object.keys(readReady(dir))).toEqual(['components/chip']);
   });
@@ -246,7 +246,7 @@ describe('part ready', () => {
     expect(
       await designReady({
         target,
-        argv: ['components/chip', '--product', 'app-a', '--by', 'tom'],
+        argv: ['components/chip', '--product', 'app-a', '--by', 'human'],
         invocation: 'et design',
       }),
     ).toBe(1);
@@ -258,7 +258,7 @@ describe('part ready', () => {
     expect(
       await designReady({
         target,
-        argv: ['components/chip', '--product', 'app-a', '--by', 'tom', '--url', 'http://localhost:1'],
+        argv: ['components/chip', '--product', 'app-a', '--by', 'human', '--url', 'http://localhost:1'],
         invocation: 'et design',
       }),
     ).toBe(1);
