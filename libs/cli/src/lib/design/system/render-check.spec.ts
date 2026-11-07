@@ -30,6 +30,9 @@ const PARTS: Record<string, { body: string; extra?: string; css?: string; states
   'components/label': {
     body: '<div style="width: 120px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis">A label that is cut with dots</div>',
   },
+  'components/spinner': {
+    body: '<span class="et-spinner" style="display: block; width: 18px; height: 18px; overflow: hidden"><span style="display: block; width: 9px; height: 18px; overflow: hidden"><span style="display: block; width: 18px; height: 18px; transform: rotate(45deg)"></span></span></span>',
+  },
   'components/embed': {
     body: '<div data-et-embed-box style="overflow: hidden; width: 288px; height: 180px"><iframe style="display: block; border: 0; width: 1440px; height: 900px; transform: scale(0.2); transform-origin: 0 0"></iframe></div>',
   },

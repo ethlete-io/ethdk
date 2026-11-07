@@ -8,13 +8,14 @@ const SDK_PRODUCT = 'sdk';
 
 /**
  * Each `--_et-*` custom property a part's own stylesheet sets: the private variables of an SDK component, which the app
- * cannot rely on without an SDK change. The `sdk` product mirrors the SDK and is exempt.
+ * cannot rely on without an SDK change. The `sdk` product mirrors the SDK and is exempt, and a part a product takes
+ * from its base is checked in the base's own run.
  */
 export const sdkPrivateVarsOf = (product: ResolvedProduct): Problem[] => {
   if (product.name === SDK_PRODUCT) return [];
 
   return product.parts.flatMap((part) => {
-    if (!part.css || !part.cssSource || !part.cssSource.includes('--_et-')) return [];
+    if (part.origin === 'base' || !part.css || !part.cssSource || !part.cssSource.includes('--_et-')) return [];
 
     let root: postcss.Root;
 

@@ -61,38 +61,6 @@
     "pages/sketches: withdrawn-shown": {
       "finding": "489",
       "sketch": "pages/sketches: not opened yet - an app input for the prop, or a state that does not set it"
-    },
-    "pages/system: agent-failed": {
-      "finding": "489",
-      "sketch": "pages/system: not opened yet - an app input for the prop, or a state that does not set it"
-    },
-    "pages/system: agent-failed-ready": {
-      "finding": "489",
-      "sketch": "pages/system: not opened yet - an app input for the prop, or a state that does not set it"
-    },
-    "pages/system: agent-interrupted": {
-      "finding": "489",
-      "sketch": "pages/system: not opened yet - an app input for the prop, or a state that does not set it"
-    },
-    "pages/system: agent-waiting": {
-      "finding": "489",
-      "sketch": "pages/system: not opened yet - an app input for the prop, or a state that does not set it"
-    },
-    "pages/system: agent-working": {
-      "finding": "489",
-      "sketch": "pages/system: not opened yet - an app input for the prop, or a state that does not set it"
-    },
-    "pages/system: agent-working-ready": {
-      "finding": "489",
-      "sketch": "pages/system: not opened yet - an app input for the prop, or a state that does not set it"
-    },
-    "pages/system: call": {
-      "finding": "489",
-      "sketch": "pages/system: not opened yet - an app input for the prop, or a state that does not set it"
-    },
-    "pages/system: call-transferred": {
-      "finding": "489",
-      "sketch": "pages/system: not opened yet - an app input for the prop, or a state that does not set it"
     }
   }
 }

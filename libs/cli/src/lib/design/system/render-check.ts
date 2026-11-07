@@ -335,13 +335,14 @@ const inspectFrame = (options: {
     return { width: Math.floor(rect.width), height: Math.floor(rect.height) };
   };
   const clipMarginOf = (style, axis) => (style[axis] === 'clip' ? parseFloat((style.overflowClipMargin ?? '').split(' ').pop()) || 0 : 0);
+  const drawsByClipping = (element) => element.closest('.et-spinner') !== null;
   const pans = (element, style) => /^grab/.test(style.cursor) || [...element.children].some((child) => isPanned(getComputedStyle(child)));
   for (const element of root.querySelectorAll('*')) {
     const style = getComputedStyle(element);
     const drawn = drawnSizeOf(element);
     const cutX = clips(style.overflowX) && drawn.width > element.clientWidth + clipMarginOf(style, 'overflowX');
     const cutY = clips(style.overflowY) && drawn.height > element.clientHeight + clipMarginOf(style, 'overflowY');
-    const cutsOnPurpose = style.textOverflow === 'ellipsis' || style.webkitLineClamp !== 'none' || pans(element, style);
+    const cutsOnPurpose = style.textOverflow === 'ellipsis' || style.webkitLineClamp !== 'none' || pans(element, style) || drawsByClipping(element);
     if ((cutX || cutY) && !cutsOnPurpose) report('CLIPPED', element, 'content ' + drawn.width + 'x' + drawn.height + ' in ' + element.clientWidth + 'x' + element.clientHeight);
   }
 ${NESTED_SCROLL_STATEMENTS}

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ResolvedProduct } from '../resolve-product';
 import { sdkPrivateVarsOf } from './sdk-private-var';
 
-const productOf = (css: string, name = 'studio'): ResolvedProduct =>
+const productOf = (css: string, name = 'studio', origin = 'product'): ResolvedProduct =>
   ({
     name,
     configFile: '/nowhere/.ethlete/design/config.json',
@@ -14,7 +14,7 @@ const productOf = (css: string, name = 'studio'): ResolvedProduct =>
         css: 'title-bar.css',
         cssSource: css,
         source: '',
-        origin: 'product',
+        origin,
       },
     ],
   }) as ResolvedProduct;
@@ -33,8 +33,9 @@ describe('sdkPrivateVarsOf', () => {
     expect(problems[2]?.file).toBe('title-bar.css');
   });
 
-  it('leaves the sdk product, other variables and parts without the prefix alone', () => {
+  it('leaves the sdk product, parts from the base, other variables and parts without the prefix alone', () => {
     expect(sdkPrivateVarsOf(productOf(css, 'sdk'))).toEqual([]);
+    expect(sdkPrivateVarsOf(productOf(css, 'studio', 'base'))).toEqual([]);
     expect(sdkPrivateVarsOf(productOf('.st-a { --_own: 1px; --et-x: 2px }'))).toEqual([]);
   });
 });

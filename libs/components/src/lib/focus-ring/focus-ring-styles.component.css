@@ -1,10 +1,25 @@
 @layer components {
+  @property --et-focus-ring-offset {
+    syntax: '*';
+    inherits: false;
+  }
+
+  @property --et-focus-ring-width {
+    syntax: '*';
+    inherits: false;
+  }
+
+  @property --et-focus-ring-color {
+    syntax: '*';
+    inherits: false;
+  }
+
   .et-focus-ring {
-    --_et-focus-ring-offset: 3px;
-    --_et-focus-ring-width: 2px;
-    --_et-focus-ring-color: light-dark(
-      var(--et-theme-color-ink-solid, currentColor),
-      var(--et-theme-color-primary-solid, currentColor)
+    --_et-focus-ring-offset: var(--et-focus-ring-offset, 3px);
+    --_et-focus-ring-width: var(--et-focus-ring-width, 2px);
+    --_et-focus-ring-color: var(
+      --et-focus-ring-color,
+      light-dark(var(--et-theme-color-ink-solid, currentColor), var(--et-theme-color-primary-solid, currentColor))
     );
     outline: var(--_et-focus-ring-width) solid transparent;
     outline-offset: var(--_et-focus-ring-offset);

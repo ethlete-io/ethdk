@@ -25,14 +25,16 @@ import { FocusRingDirective } from '@ethlete/components';
 
 ## Theming
 
-Override the private custom properties in your component's CSS scope:
+Set the public tokens on the element that carries the ring:
 
 ```css
 .my-custom-trigger.et-focus-ring {
-  --_et-focus-ring-offset: 2px; /* default 3px */
-  --_et-focus-ring-width: 3px; /* default 2px */
-  --_et-focus-ring-color: hotpink; /* default: light-dark(ink, primary) - see below */
+  --et-focus-ring-offset: 2px; /* default 3px */
+  --et-focus-ring-width: 3px; /* default 2px */
+  --et-focus-ring-color: hotpink; /* default: light-dark(ink, primary) - see below */
 }
 ```
+
+The tokens do not inherit: a token set on a container leaves the rings of the controls inside it alone.
 
 By default the color follows the active [color theme](/core/theming): `--et-theme-color-ink-solid` in the light scheme and `--et-theme-color-primary-solid` in the dark scheme, both through `light-dark()`, so themed areas get matching rings automatically. Ink is the theme's text-safe tone, so the ring keeps its contrast on a light surface where a bright primary would not.

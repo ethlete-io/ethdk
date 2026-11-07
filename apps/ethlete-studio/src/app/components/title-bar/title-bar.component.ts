@@ -77,7 +77,7 @@ export type TitleBarPush = { unpushed: number; age: string; gate: 'green' | 'red
         }
         @if (notice()) {
           <button
-            [etTooltip]="restarting() ? null : noticeText()"
+            [etTooltip]="restart() ? null : noticeText()"
             [loading]="restarting()"
             (click)="restartPress.emit()"
             et-button

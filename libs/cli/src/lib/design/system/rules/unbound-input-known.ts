@@ -3,8 +3,6 @@ export type KnownUnboundInput = { file: string; input: string; reason?: string }
 
 export const KNOWN_UNBOUND_INPUTS: KnownUnboundInput[] = [
   { file: 'apps/ethlete-studio/src/app/design-parts/disclosure/disclosure.component.ts', input: 'body' },
-  { file: 'apps/ethlete-studio/src/app/design-parts/error-toast/error-toast.component.ts', input: 'heading' },
-  { file: 'apps/ethlete-studio/src/app/design-parts/error-toast/error-toast.component.ts', input: 'message' },
   {
     file: 'apps/ethlete-studio/src/app/design-parts/shell-project-switch/shell-project-switch.component.ts',
     input: 'bare',

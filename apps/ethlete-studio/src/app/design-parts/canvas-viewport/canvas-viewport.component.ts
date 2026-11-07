@@ -9,7 +9,7 @@ import { trackPointerFocus } from '../../components/design-canvas/pointer-focus'
   hostDirectives: [FocusRingDirective],
   host: {
     class:
-      'block cursor-grab touch-none transition-[outline-color] duration-(--duration-state) ease-(--ease-standard) [--_et-focus-ring-offset:-2px] data-pointer-focus:outline-transparent active:cursor-grabbing',
+      'block cursor-grab touch-none transition-[outline-color] duration-(--duration-state) ease-(--ease-standard) [--et-focus-ring-offset:-2px] data-pointer-focus:outline-transparent active:cursor-grabbing',
     tabindex: '0',
     'aria-label': 'Design Canvas',
   },
