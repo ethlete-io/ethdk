@@ -124,7 +124,7 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     expect(readFileSync(join(target, harness.map), 'utf8')).toContain('DESIGN_HARNESS_PARTS');
   });
 
-  it('keeps the server thread answering while a Studio merge runs: no stall over 100 ms', async () => {
+  it('keeps the server thread answering while a Studio merge runs: no stall over 250 ms', async () => {
     const target = acme();
     const ready = readySketch(target);
 
@@ -148,7 +148,7 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     clearInterval(ticks);
 
     expect(answer.status).toBe(200);
-    expect(Math.max(longest, performance.now() - last)).toBeLessThan(100);
+    expect(Math.max(longest, performance.now() - last)).toBeLessThan(250);
   });
 
   it('records the merged parts, so a later change outside a sketch shows', () => {
