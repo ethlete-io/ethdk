@@ -72,6 +72,9 @@ Run in this order and fix before moving on:
 3. `et design task <layer>/<name> --product <name> --verify` - checks the changed files against the allowed ones, runs
    compare and records `implemented.json`.
 4. `et design compare <layer>/<name> --product <name>` - every state `ok` at tolerance 0 (`--url` for a running app).
+5. `et design compare --affected --product <name>` - every other implemented part your change reached, on one
+   harness, recorded again when green. The UI item is done only when it shows in the app and this run is green
+   (ADR 0203); `check --rules --base` names each part it leaves uncompared.
 
 Then grep the app: the component is imported by a consumer, no `*_SAMPLE` in `src/app/components`, no
 hard-coded strings. Add a changeset for `ethlete-studio` (skill `changeset`).

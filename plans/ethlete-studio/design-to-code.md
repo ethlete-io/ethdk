@@ -2705,6 +2705,15 @@ pages/flows, inventory and merge showed 21-31 px DIFFs in every state (the new t
 the time went to tool investigations. Why no tool caught it: the commit check does not refuse uncompared implemented
 parts, and no command compares every part a shared change affects. Tool fix: ADR 0203 (B402, `design compare
 --affected`, commit check, done means compared); process fix: ADR 0202 (B403).
+As built (B402): `et design compare --affected --product <p>` takes the own implemented parts whose app files moved
+since their `implemented.json` record (`affectedPartsOf`), compares them in one `withHarnessUrl` run (the resident
+process when it runs), checks each green part's actions on that harness and records it again; a part whose design
+moved is left to `task --verify`. The refusal stays a record read, no render: IMPLEMENTATION-UNCOMPARED now points
+to `compare --affected`, and `design-rules-gate.mjs` (CI and `--staged`) adds one line naming the uncompared parts.
+No hook change: ADR 0036 and finding 560 keep Studio gates out of `.husky/*`, so the commit-time refusal is
+`check --rules --base` in CI plus the problem on the part. "Done means compared" is step 5 of the
+`studio-design-part` skill. Specs: compare-affected.spec, stale-parts.spec, design-rules-gate.spec. Not run: a real
+`--affected` run (load 113-129, over the 60 limit), so the ≤ 15 s target for 8 parts is unmeasured.
 
 492\. Tom, 2026-11-06: "die cli calls alle EXTREM ausbremsen. wir müssen hier deutlich schneller werden, nicht nur ein
 paar sekunden und es reicht auch nicht von 4 auf 1 minute zu kommen. das ist absolut inakzeptabel." Measured today:

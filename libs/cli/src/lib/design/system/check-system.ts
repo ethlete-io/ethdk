@@ -199,7 +199,7 @@ const uncomparedOf = (options: {
 
 /**
  * The IMPLEMENTATION-UNCOMPARED lines `check --rules --base` prints for `products`, limited to the files in `changed`,
- * without the other rules - the commit-time half of the design-rules gate.
+ * without the other rules - the commit-time half of the design-rules gate - and the uncompared parts they name.
  */
 export const uncomparedLinesOf = (options: {
   target: string;
@@ -218,11 +218,14 @@ export const uncomparedLinesOf = (options: {
     if (!entry) return [];
 
     const product = resolveProduct({ target, name, config: entry });
-    const lines = uncomparedOf({ product, changed, invocation, onlyChanged: true })
-      .filter((problem) => files.has(resolve(target, problem.file)))
-      .map((problem) => lineOf(target, problem));
+    const problems = uncomparedOf({ product, changed, invocation, onlyChanged: true }).filter((problem) =>
+      files.has(resolve(target, problem.file)),
+    );
+    const parts = [...new Set(problems.flatMap((problem) => (problem.part ? [problem.part] : [])))].sort();
 
-    return lines.length > 0 ? [{ product: name, lines }] : [];
+    return problems.length > 0
+      ? [{ product: name, lines: problems.map((problem) => lineOf(target, problem)), parts }]
+      : [];
   });
 };
 

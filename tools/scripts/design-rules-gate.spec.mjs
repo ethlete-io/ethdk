@@ -123,7 +123,8 @@ test('refuses a staged app file of an implemented part with the compare and veri
     status: 1,
     errors: [
       'A commit that changes UI in apps/a needs a green design compare (ADR 0011).',
-      `IMPLEMENTATION-UNCOMPARED ${CHIP}.html: changed since components/chip was recorded as implemented (2026-11-01T00:00:00.000Z) - run et design compare components/chip --product app-a, then et design task components/chip --product app-a --verify <rev> to record it`,
+      `IMPLEMENTATION-UNCOMPARED ${CHIP}.html: changed since components/chip was recorded as implemented (2026-11-01T00:00:00.000Z) - run et design compare --affected --product app-a to compare and record every affected part`,
+      '1 implemented part(s) not compared: components/chip (ADR 0203)',
     ].join('\n'),
   });
 });

@@ -223,7 +223,7 @@ describe('transitive part hash', () => {
     expect(run('HEAD~1..HEAD')).toEqual([
       `IMPLEMENTATION-UNCOMPARED apps/a/chip/chip.component.html: changed since ${CHIP} was recorded as implemented (${
         JSON.parse(readFileSync(join(target, DESIGN_DIR, 'app-a/implemented.json'), 'utf8'))[CHIP].at
-      }) - run et design compare ${CHIP} --product app-a, then et design task ${CHIP} --product app-a --verify <rev> to record it`,
+      }) - run et design compare --affected --product app-a to compare and record every affected part`,
     ]);
     vi.restoreAllMocks();
   });

@@ -126,9 +126,12 @@ export const uncomparedAppProblemsOf = (options: {
       .map((file) => ({
         rule: UNCOMPARED_RULE,
         file: resolve(root, file),
-        message: entry
-          ? `changed since ${part} was baselined for finding ${entry.finding} (ADR 0205) - run ${invocation} compare ${part} --product ${product.name}, then ${invocation} task ${part} --product ${product.name} --verify <rev> to record it`
-          : `changed since ${part} was recorded as implemented (${record.at}) - run ${invocation} compare ${part} --product ${product.name}, then ${invocation} task ${part} --product ${product.name} --verify <rev> to record it`,
+        part,
+        message: `${
+          entry
+            ? `changed since ${part} was baselined for finding ${entry.finding} (ADR 0205)`
+            : `changed since ${part} was recorded as implemented (${record.at})`
+        } - run ${invocation} compare --affected --product ${product.name} to compare and record every affected part`,
       }));
   });
 

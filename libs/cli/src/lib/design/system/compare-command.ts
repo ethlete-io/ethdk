@@ -49,7 +49,9 @@ import {
   pointerOpensOf,
   slotOnlyStatesOf,
 } from './part-compare';
-import { doneParts, linkedTaskPartOf } from './part-task';
+import { affectedPartsOf, doneParts, linkedTaskPartOf, markImplemented, readImplemented, TaskPart } from './part-task';
+import { appFilesOf } from './app-files';
+import { repoRootOf } from './reachable-files';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { inOrderAtOnce } from './in-order-at-once';
 import { frozenAnimationsOf } from './frozen-animations';
@@ -61,7 +63,7 @@ import { createSystemModules, productModuleIdOf } from './system-modules';
 import { drawnStateNamesOf, skippedStatesLineOf } from './unchanged-rows';
 
 export const COMPARE_USAGE =
-  'compare <layer>/<name> | --all --product <name> [--url <app dev server url>] [--state <name>] [--preset <name>] [--live [--sketch <variant>]]';
+  'compare <layer>/<name> | --all --product <name> | --affected --product <name> [--url <app dev server url>] [--state <name>] [--preset <name>] [--live [--sketch <variant>]]';
 
 /** A state compare could not draw; `undrivable` when the app has no element to force the design's interaction on. */
 export type StateShot =
@@ -499,11 +501,67 @@ export const comparePart: ComparePart = async (options) => {
   });
 };
 
+/**
+ * Runs the action check of an affected part whose compare is green, on the same harness, and records the part as
+ * implemented again when every action works; a part whose design moved since its record needs `task --verify`.
+ */
+const recordAffected = async (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  task: TaskPart;
+  states: Record<string, unknown>;
+  url: string | undefined;
+  harness: string;
+  appRoot: string | null;
+  actions: typeof partActionFailuresOf;
+}): Promise<{ ok: boolean; line: string }> => {
+  const { product, task } = options;
+
+  if (readImplemented(task.dir)[task.part]?.hash !== task.hash)
+    return { ok: false, line: `${task.part}: its design changed since it was implemented - run task --verify` };
+
+  const missed = await timedPhase('compare-actions', () =>
+    options.actions({
+      target: options.target,
+      config: options.config,
+      product,
+      part: task.part,
+      url: options.url,
+      harness: options.harness,
+      appRoot: options.appRoot,
+      onNote: (line) => console.log(line),
+    }),
+  );
+
+  if (!Array.isArray(missed))
+    return { ok: false, line: `${task.part} not recorded - ${noVerdictLineOf('actions', missed)}` };
+
+  if (missed.length > 0) {
+    missed.forEach((line) => console.error(line));
+
+    return { ok: false, line: `${task.part}: ${missed.length} action(s) missed, so nothing was recorded` };
+  }
+
+  const implemented = markImplemented({
+    product,
+    part: task.part,
+    states: options.states,
+    app: appFilesOf({ root: repoRootOf(product), component: task.component }),
+  });
+
+  return typeof implemented === 'string'
+    ? { ok: false, line: implemented }
+    : { ok: true, line: `recorded ${task.part} as compared (${implemented.at})` };
+};
+
 /** The summary line of a compare whose action check could not run: a skipped check never passes. */
 export const ACTIONS_NOT_CHECKED = 'FAILED actions: not checked, so no action counts as working';
 
 /**
  * `et design compare --all` compares every done part and fails on any deviation or part it cannot compare; a foundation has nothing to compare.
+ * `et design compare --affected` compares, on one harness, every implemented part whose app files changed since its
+ * record, runs its action check and records each part that passes both.
  * `et design compare <layer>/<name> …` compares each state of a part with the app's harness page of its component;
  * with `--live` each live state of a page with the app's real page on the fixed sample of `harness.live`.
  */
@@ -518,10 +576,11 @@ export const designCompare = async (options: {
   const { target, invocation } = options;
   const args = argsOf(options.argv, {
     values: ['--product', '--url', '--state', '--preset', '--sketch'],
-    switches: ['--all', '--live'],
+    switches: ['--all', '--affected', '--live'],
   });
+  const many = typeof args !== 'string' && (args.flags.has('--all') || args.flags.has('--affected'));
 
-  if (typeof args === 'string' || args.positional.length !== (args.flags.has('--all') ? 0 : 1)) {
+  if (typeof args === 'string' || args.positional.length !== (many ? 0 : 1)) {
     if (typeof args === 'string') console.error(args);
 
     console.error(`usage: ${invocation} ${COMPARE_USAGE}`);
@@ -531,7 +590,8 @@ export const designCompare = async (options: {
 
   const config = configOf(target);
   const all = args.flags.has('--all');
-  const parsed = all ? null : parseTarget(args.positional[0]);
+  const affected = args.flags.has('--affected');
+  const parsed = many ? null : parseTarget(args.positional[0]);
 
   if (typeof config === 'string' || typeof parsed === 'string') {
     console.error(typeof config === 'string' ? config : parsed);
@@ -555,20 +615,39 @@ export const designCompare = async (options: {
     return 2;
   }
 
-  if (all && (live || args.values['--state'] !== undefined || args.values['--preset'] !== undefined)) {
-    console.error('--all compares every state of every done part: pass no part, --state, --preset or --live');
+  if (all && affected) {
+    console.error('pass --all or --affected, not both');
 
     return 2;
   }
 
+  if (many && (live || args.values['--state'] !== undefined || args.values['--preset'] !== undefined)) {
+    console.error(
+      `${all ? '--all' : '--affected'} compares every state of each part: pass no part, --state, --preset or --live`,
+    );
+
+    return 2;
+  }
+
+  const changedFiles = new Map(affected ? affectedPartsOf(product).map(({ part, files }) => [part, files]) : []);
   const keys = all
     ? doneParts({
         product,
         parts: product.parts.filter((part) => part.layer !== 'foundations').map(partKeyOf),
       })
-    : [partKeyOf(parsed as SketchTarget)];
+    : affected
+      ? [...changedFiles.keys()]
+      : [partKeyOf(parsed as SketchTarget)];
 
-  if (!all && parsed?.layer === 'foundations' && product.parts.some((part) => partKeyOf(part) === keys[0])) {
+  if (affected && keys.length === 0) {
+    console.log(`${product.name}: no implemented part changed since its compare`);
+
+    return 0;
+  }
+
+  if (affected) console.log(`affected: ${keys.join(', ')}`);
+
+  if (!many && parsed?.layer === 'foundations' && product.parts.some((part) => partKeyOf(part) === keys[0])) {
     console.log(`${keys[0]}: foundation, nothing to compare`);
 
     return 0;
@@ -595,7 +674,7 @@ export const designCompare = async (options: {
   for (const task of tasks) {
     if (typeof task !== 'string') continue;
 
-    console.error(all ? `${task} - cannot be compared` : task);
+    console.error(many ? `${task} - cannot be compared` : task);
     failed++;
   }
 
@@ -611,7 +690,7 @@ export const designCompare = async (options: {
       let designsShot = (): void => undefined;
       const designsDrawn = new Promise<void>((resolve) => (designsShot = resolve));
       const actions =
-        all || live
+        many || live
           ? null
           : timedPhase('compare-actions', () =>
               (options.actions ?? partActionFailuresOf)({
@@ -632,6 +711,7 @@ export const designCompare = async (options: {
 
       for (const task of pending) {
         if (all) console.log(`== ${task.part}`);
+        if (affected) console.log(`== ${task.part} (changed: ${(changedFiles.get(task.part) ?? []).join(', ')})`);
 
         const result = await comparePart({
           target,
@@ -653,6 +733,23 @@ export const designCompare = async (options: {
           console.error(result);
           failed++;
         } else if (!result.green) failed++;
+        else if (affected) {
+          const recorded = await recordAffected({
+            target,
+            config,
+            product,
+            task,
+            states: result.states,
+            url: args.values['--url'],
+            harness: url,
+            appRoot: root,
+            actions: options.actions ?? partActionFailuresOf,
+          });
+
+          console[recorded.ok ? 'log' : 'error'](recorded.line);
+
+          if (!recorded.ok) failed++;
+        }
       }
 
       if (actions === null) return { failed, missed: null };

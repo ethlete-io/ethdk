@@ -127,9 +127,10 @@ const stagedFilesOf = (root) =>
 
 const uncomparedMessageOf = (config, found) =>
   found
-    .flatMap(({ product, lines }) => [
+    .flatMap(({ product, lines, parts = [] }) => [
       `A commit that changes UI in ${config.products?.[product]?.harness?.app ?? product} needs a green design compare (ADR 0011).`,
       ...lines,
+      ...(parts.length > 0 ? [`${parts.length} implemented part(s) not compared: ${parts.join(', ')} (ADR 0203)`] : []),
     ])
     .join('\n');
 

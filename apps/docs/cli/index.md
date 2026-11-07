@@ -341,8 +341,8 @@ named `phase` or `state`) but is not named after that value: `sending: { phase: 
 
 `et design check --product <name> --rules --base <rev|range>` also fails with `IMPLEMENTATION-UNCOMPARED` on each file
 `git diff <base>` names that the app component of an implemented part reaches and that changed since the part's
-`implemented.json` record. The pre-push hook passes the pushed range. `et design task <part> --verify <rev>` reruns
-compare and records the part again, which clears it.
+`implemented.json` record, and names the part. CI passes the pushed range. `et design compare --affected` (or
+`et design task <part> --verify <rev>`) compares and records the part again, which clears it.
 
 `et design check` fails with `UNBOUND-INPUT` when an `input()` or `model()` of an app component that implements a part is
 bound by no template of the app (a consumer binds it with `[x]`, `[(x)]` or a plain attribute), and with `SAMPLE-DEFAULT`
@@ -529,6 +529,14 @@ product's harness app (`nx run <project>:build:development`) into a temp folder,
 unknown path answered by its `index.html`, and stops the server and removes the folder afterwards, also on failure or
 Ctrl-C. This works next to a running dev server of the same app. When another nx process runs the same build, it
 fails at once and asks for `--url`.
+
+`et design compare --affected --product app-a` compares every implemented part whose app files changed since its
+`implemented.json` record, the parts a shared change reaches, in one run on one harness. Each part's output starts with
+`== <part> (changed: <files>)`. A part whose states are all ok gets its actions check on the same harness, and when every
+action works its record is written again with the current app file hashes. A part whose design changed since its record
+is not recorded: that needs `task --verify`. It exits 1 unless every affected part is recorded. A UI item is done when
+it shows in the app and `compare --affected` is green (ADR 0203); `check --rules --base` and the design rules gate
+refuse a change that leaves an implemented part uncompared and name the parts.
 
 Compare runs in a resident design process of the checkout. The first compare starts it detached and prints
 `starting the resident design process (cold start, ~N s)`; later ones send it their request, get its output and exit

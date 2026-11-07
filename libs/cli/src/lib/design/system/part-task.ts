@@ -391,6 +391,24 @@ export const changedAppFilesOf = (options: { product: ResolvedProduct; part: str
 };
 
 /**
+ * The product's own implemented parts whose app files changed since their implemented record, each with those files:
+ * the parts a change left uncompared (ADR 0203).
+ */
+export const affectedPartsOf = (product: ResolvedProduct): { part: string; files: string[] }[] => {
+  const implemented = readImplemented(product.dir);
+
+  return product.parts
+    .filter((resolved) => resolved.origin !== 'base' && resolved.layer !== 'foundations')
+    .flatMap((resolved) => {
+      const part = partKeyOf(resolved);
+      const record = implemented[part];
+      const files = record ? changedAppFilesOf({ product, part, record }) : [];
+
+      return files.length > 0 ? [{ part, files }] : [];
+    });
+};
+
+/**
  * The parts of a product whose implemented record is at the hash of their holding check record, and whose app files did
  * not change since.
  */
