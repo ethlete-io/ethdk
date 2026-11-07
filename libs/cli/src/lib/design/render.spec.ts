@@ -15,6 +15,9 @@ import {
   typePathsOf,
   watchedEntryOf,
 } from './render-packages';
+import { isBuildRunning } from './system/build-running';
+
+vi.mock('./system/build-running', () => ({ isBuildRunning: vi.fn(() => false) }));
 
 const packages = { '@ethlete/*': 'dist/libs/*', 'exact-pkg': 'vendor/exact' };
 
@@ -80,6 +83,14 @@ describe('a missing dist', () => {
     const dir = join(mkdtempSync(join(tmpdir(), 'cli-render-')), 'dist/libs/core');
 
     expect(() => entryOf({ dir, subpath: '.' })).toThrow(`${dir} missing, run \`nx build core\``);
+  });
+
+  it('says the build is running instead of failing while an nx build of the lib runs', () => {
+    const dir = join(mkdtempSync(join(tmpdir(), 'cli-render-')), 'dist/libs/core');
+    vi.mocked(isBuildRunning).mockReturnValueOnce(true);
+
+    expect(() => entryOf({ dir, subpath: '.' })).toThrow('design-explore: wird gebaut … (nx build core)');
+    expect(isBuildRunning).toHaveBeenLastCalledWith({ dir, name: 'core' });
   });
 
   it('answers every module of a render.packages fixture within the budget', () => {

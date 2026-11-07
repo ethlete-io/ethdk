@@ -6,6 +6,7 @@ type Result = {
   initial: { evaluated: boolean; body: string; messages: { type: string }[] };
   body: string;
   error: string | null;
+  building: boolean;
   pageFill: string;
   styles: string[];
   messages: { type: string; errored?: boolean }[];
@@ -13,7 +14,13 @@ type Result = {
   frames: number;
 };
 
-const bootstrap = (outcome: 'resolve' | 'reject', tokens?: 'tokens', query = '', failedImports = 0): Result => {
+const bootstrap = (
+  outcome: 'resolve' | 'reject',
+  tokens?: 'tokens',
+  query = '',
+  failedImports = 0,
+  rejection?: string,
+): Result => {
   const result = spawnSync(
     process.execPath,
     [
@@ -26,7 +33,12 @@ const bootstrap = (outcome: 'resolve' | 'reject', tokens?: 'tokens', query = '',
     {
       encoding: 'utf8',
       timeout: 10000,
-      env: { ...process.env, FRAME_QUERY: query, FRAME_FAILED_IMPORTS: String(failedImports) },
+      env: {
+        ...process.env,
+        FRAME_QUERY: query,
+        FRAME_FAILED_IMPORTS: String(failedImports),
+        ...(rejection ? { FRAME_REJECT: rejection } : {}),
+      },
     },
   );
 
@@ -63,6 +75,14 @@ describe('design frame bootstrap', { timeout: 30_000 }, () => {
     expect(result.error).toContain('Environment failed');
     expect(result.messages.at(-2)).toMatchObject({ type: 'design-explore:height', errored: true });
     expect(result.messages.at(-1)).toMatchObject({ type: 'design-explore:painted' });
+  });
+
+  it('shows a building state, not the error, while a missing build is being built', () => {
+    const result = bootstrap('reject', undefined, '', 0, 'design-explore: wird gebaut … (nx build core)');
+
+    expect(result.building).toBe(true);
+    expect(result.error).toBeNull();
+    expect(result.body).toContain('wird gebaut …');
   });
 
   it("loads the product's tokens once, before the part's own styles", () => {

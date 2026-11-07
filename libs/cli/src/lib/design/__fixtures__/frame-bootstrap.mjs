@@ -113,7 +113,7 @@ entry.evaluate().then(() => {
 });
 await new Promise(setImmediate);
 const initial = { evaluated, body: dom.window.document.getElementById('root').innerHTML, messages: [...messages] };
-if (process.argv[3] === 'reject') reject(new Error('Environment failed'));
+if (process.argv[3] === 'reject') reject(new Error(process.env.FRAME_REJECT ?? 'Environment failed'));
 else release();
 for (let tick = 0; tick < 20; tick++) await new Promise(setImmediate);
 process.stdout.write(
@@ -121,6 +121,7 @@ process.stdout.write(
     initial,
     body: dom.window.document.getElementById('root').innerHTML,
     error: dom.window.document.documentElement.getAttribute('data-et-error'),
+    building: dom.window.document.documentElement.hasAttribute('data-et-building'),
     pageFill: dom.window.document.body.getAttribute('data-fill') ?? '',
     styles: [...dom.window.document.head.querySelectorAll('style')].map((style) => style.textContent),
     messages,

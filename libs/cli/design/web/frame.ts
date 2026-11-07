@@ -59,7 +59,27 @@ const markFailed = (message: string) => {
   document.documentElement.setAttribute('data-et-error', message);
 };
 
+const BUILDING = /design-explore: wird gebaut …[^\n]*/;
+
+const showBuilding = (line: string) => {
+  document.documentElement.setAttribute('data-et-building', '');
+
+  const text = document.createElement('pre');
+
+  text.textContent = line;
+  text.style.margin = '0';
+  text.style.whiteSpace = 'pre-wrap';
+  root.replaceChildren(text);
+  root.setAttribute('style', 'padding:16px;font:14px monospace;color:#c8c8c8;background:#181818');
+
+  return null;
+};
+
 const fail = (message: string) => {
+  const building = BUILDING.exec(message)?.[0];
+
+  if (building) return showBuilding(building);
+
   markFailed(message);
 
   const text = document.createElement('pre');

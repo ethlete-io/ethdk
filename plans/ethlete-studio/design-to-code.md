@@ -1923,6 +1923,15 @@ As built (B360, 2026-11-07): `libs/cli/src/lib/design/render-missing-dist.spec.t
 disconnects). Not verified: the Vite listing does not itself name the missing package, because `resolveId` swallows the
 `entryOf` throw and falls back to `node_modules` (here Vite reports an unexported subpath); only the render answer
 carries the build command. Recommendation: let `mappedSubpathOf` surface the missing-`dist` error to the listing.
+As built (B361, 2026-11-07): `entryOf` (`render-packages.ts`) asks `isBuildRunning` (`system/build-running.ts`) before it throws
+for a missing dist: an `nx build <folder>` process whose working folder contains the dist (read from `/proc`, `ps` as
+fallback with no cwd check) turns the error into `design-explore: wird gebaut … (nx build <folder>)`; with no build the
+red error stays. `libs/cli/design/web/frame.ts` shows that line as grey monospace text on a dark box (`data-et-building`
+on `<html>`, no `data-et-error`, so the frame does not count as errored) instead of the red box. Specs: build-running,
+render (entryOf says building), frame-bootstrap (building state). Not verified: the real redraw after the build finishes
+(relies on the worker restart of d7fc506b1 and the watcher; no e2e), the Studio-side look next to the existing loading
+state, and macOS (`ps` path has no cwd check). The visual (grey text, no spinner) is a placeholder, not a designed state;
+no sketch was built. Tool gap: the same as 410, no check runs the real render path against a missing dist (B360).
 
 411\. Tom (2026-11-04): "der neu starten button tut nach klick nichts. wenns ne weile dauert sollten wir da nen spinner
 zeigen". Builder (code read, not reproduced): almost surely the title-bar code notice ("CLI geändert - neu starten");

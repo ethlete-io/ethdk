@@ -3,6 +3,9 @@ import { basename, resolve, sep } from 'path';
 import { pathToFileURL } from 'url';
 import { DesignConfig } from './paths';
 import { FieldSpec } from './render-fields';
+import { isBuildRunning } from './system/build-running';
+
+export const BUILDING_MESSAGE = 'wird gebaut …';
 
 export const DEFAULT_RENDER_MODULES = ['@ethlete/components', '@ethlete/core'];
 
@@ -118,7 +121,9 @@ export const entryOf = (mapped: MappedPackage) => {
     throw new Error(
       isInstalled(mapped)
         ? `design-explore: ${dir} has no package.json - build the package first.`
-        : `design-explore: ${dir} missing, run \`nx build ${basename(dir)}\`.`,
+        : isBuildRunning({ dir, name: basename(dir) })
+          ? `design-explore: ${BUILDING_MESSAGE} (nx build ${basename(dir)})`
+          : `design-explore: ${dir} missing, run \`nx build ${basename(dir)}\`.`,
     );
   }
 
