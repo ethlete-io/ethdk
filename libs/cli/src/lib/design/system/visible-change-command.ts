@@ -151,9 +151,10 @@ const alive = (pid: number) => {
 
 /**
  * A shared clone of the checkout at `commit`, with the checkout's node_modules linked in. It reuses one folder per
- * checkout so the harness build cache, keyed by that path, survives runs; a second run at once gets a fresh folder.
+ * checkout so the harness build cache, keyed by that path, survives runs; a second run at once gets a fresh folder. A
+ * reused clone that cannot check out `commit` is cloned again in the same folder.
  */
-const baseCheckoutOf = (options: { root: string; commit: string }) => {
+export const baseCheckoutOf = (options: { root: string; commit: string }) => {
   const stable = join(
     tmpdir(),
     'et-design-visible-change',
@@ -168,8 +169,11 @@ const baseCheckoutOf = (options: { root: string; commit: string }) => {
 
   if (!held) writeFileSync(lock, String(process.pid));
 
-  if (existsSync(join(dir, '.git'))) git(dir, ['checkout', '--quiet', '--force', '--detach', options.commit]);
-  else {
+  const reused =
+    existsSync(join(dir, '.git')) &&
+    gitOrNull(dir, ['checkout', '--quiet', '--force', '--detach', options.commit]) !== null;
+
+  if (!reused) {
     rmSync(dir, { recursive: true, force: true });
     git(options.root, ['clone', '--quiet', '--shared', '--no-checkout', options.root, dir]);
     git(dir, ['checkout', '--quiet', '--detach', options.commit]);

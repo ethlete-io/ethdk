@@ -1,10 +1,10 @@
 import { execFileSync } from 'child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { sketchedPartsOf } from './visible-change';
-import { baseCommitOf, mergedInRangeOf, sketchEvidenceOf } from './visible-change-command';
+import { baseCheckoutOf, baseCommitOf, mergedInRangeOf, sketchEvidenceOf } from './visible-change-command';
 
 const repoOf = () => {
   const root = mkdtempSync(join(tmpdir(), 'et-visible-change-spec-'));
@@ -58,6 +58,37 @@ describe('sketchEvidenceOf', () => {
       expect(baseCommitOf({ root, base: 'nope' })).toBe('no commit "nope"');
     } finally {
       rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('baseCheckoutOf', () => {
+  it('clones again when the reused clone lost its alternates and cannot check out the commit', () => {
+    const { root, git, write } = repoOf();
+    let dir: string | undefined;
+
+    try {
+      write('a.json', 1);
+      git('add', '.');
+      git('commit', '--quiet', '-m', 'one');
+
+      const first = baseCheckoutOf({ root, commit: git('rev-parse', 'HEAD') });
+
+      dir = first.dir;
+      first.release();
+      rmSync(join(dir, '.git', 'objects', 'info', 'alternates'));
+      write('a.json', 2);
+      git('commit', '--quiet', '-am', 'two');
+
+      const head = git('rev-parse', 'HEAD');
+      const second = baseCheckoutOf({ root, commit: head });
+
+      second.release();
+      expect(second.dir).toBe(dir);
+      expect(readFileSync(join(dir, 'a.json'), 'utf8')).toBe('2');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+      if (dir) rmSync(dir, { recursive: true, force: true });
     }
   });
 });
