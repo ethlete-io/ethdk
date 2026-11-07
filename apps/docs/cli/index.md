@@ -487,16 +487,16 @@ counts as done. A mark stored before the file lists holds while the old folder-o
 whose folder changed since, or that reaches a file outside its folder (an imported part, a mock) committed or edited
 after the record's `at`, stays stale and is not moved, listed with `files unknown: recorded before file lists`.
 
-An edit that changes no pixel keeps its review and its go. `et design go` and `et design accept` draw every state of
+An edit that changes no pixel keeps its review. `et design go` and `et design accept` draw every state of
 the part as `design compare` draws the design side and store the hash of each picture in
 `.ethlete/design/<product>/pictures.json`, under `review` (at the `merged.json` hash) and `go` (at the go hash).
 `et design check` stores the pictures of a review or go that holds and has none at its hash yet, which covers Studio's
-go button and sketch merges. When the hash of a part with stored pictures moves, `et design check` draws every state
-again: with the same states and every picture identical, it records the review as `merged.json` does after a merge and
-logs an `auto` acceptance in `accepted.json` with the `by` of the last acceptance, and writes the go at the new hash with `auto: true`, keeping its `by` and
-`note`, and prints `AUTO ACCEPTED <product> <part> (review, go)`. Otherwise it prints
-`PICTURES CHANGED <product> <part>: <states>` and the part stays unreviewed or stale. A go without pictures from while
-it held is never carried, so an automatic go only carries a decision forward to an identical look.
+go button and sketch merges, and the `record` pictures of a merged part unchanged since its merge. When a merged part
+changed outside a sketch, `et design check` draws every state again and compares it with the pictures at the
+`merged.json` hash. With every state identical it records the new hash in `merged.json` and prints
+`HELD <product> <part>: changed outside a sketch, every state draws as before`. Otherwise it prints
+`PICTURES CHANGED <product> <part>: <states>` and opens an old/new edit sketch to pick from. The check never writes a
+go: a go holds only while the part hash does, so an edit that moves the hash leaves the go stale, however small the edit.
 
 `et design task components/chip --product app-a` prints what implementing a part with a current go takes: the go hash,
 the `implements` component, each state with its props, the states new or changed since the last implementation, the

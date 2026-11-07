@@ -9,9 +9,8 @@ export const GO_FILE = 'go.json';
 
 /**
  * Who released a part for implementation, and at which design hash, with the hash of each file it covers; the go holds
- * only while the hash does. `auto` marks a go carried to a new hash because no state's picture changed. `actions` holds
- * the sorted action keys the part declared at the go, for ACTION-LOST. `via` names the command that wrote the entry;
- * an automatic refresh keeps `by` and `via` and adds `refreshedBy` and `cause`.
+ * only while the hash does. `actions` holds
+ * the sorted action keys the part declared at the go, for ACTION-LOST. `via` names the command that wrote the entry.
  */
 export type PartGo = {
   hash: string;
@@ -20,9 +19,6 @@ export type PartGo = {
   via?: string;
   at: string;
   note?: string;
-  auto?: true;
-  refreshedBy?: string;
-  cause?: string;
   review?: string[];
   actions?: string[];
 };
