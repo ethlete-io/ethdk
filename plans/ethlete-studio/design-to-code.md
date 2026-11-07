@@ -4419,3 +4419,22 @@ presses moved the focus to the prompt and recalled a history entry; C-u then emp
 fix: `restart` moves the focus out of the panel (Up until the prompt line is focused, then C-u) before it types, and the
 spec covers a pane with panel focus. Process lesson: the doc agent waited for Tom to type `/clear` by hand although Tom
 allowed it to restart the builder; when a restart hangs, the doc agent drives the pane itself.
+
+559 as built (builder, 2026-11-07): `draftLine` reads the text between the last two rules of the input box; a `❯` menu
+line below the last rule still wins, and panel rows (`❯ ⏺`, `◯`) never count. `leavePanel` presses Up (at most 10) while
+a panel row holds the `❯`, then C-u; `restart` and the dispatch wake call it before they type. A draft that blocks 2 min
+and each give-up send a mailbox line to the caller and each `--notify` agent. Specs: a captured real pane with panel
+focus (fixture `claude-pane-agent-panel.txt`, a fake pane that drops the panel focus on Up), and the notices. Verified:
+the agent-sessions spec file. Not verified: a bite run of the new specs on the old script, a live restart of a real
+Claude pane, Codex panes.
+
+560\. Doc agent (2026-11-07): Tom asked "Wieso hängen wir eigentlich schon wieder bei git hooks? Hatten wir uns nicht
+dagegen entschieden?" He had: ADR 0036 (Studio checks leave the git hook, open B295), ADR 0037 (build-ready stops a
+defect, CI is the backstop), ADR 0038 (pre-push keeps only fast checks; lint and typecheck CI only), all 2026-11-04.
+Since then the pre-commit hook grew a design gate (4aef2e30f), a sketch-round gate and a spec/lint/tsc gate, and the doc
+agent sent hook timing work (557) and a hook target question to Tom without a search of the ADRs. Why no tool caught it:
+an accepted ADR with `open: B<row>` has no link to the files it governs, so a builder change to `.husky/*` or a doc
+agent question about hooks meets no warning. Tool fix (technical): ADR frontmatter gets `governs: <globs>`; a fast check
+lists each open or accepted ADR whose globs match the staged files, and the builder and the doc agent read that list
+before they change or ask. Process fix: the doc agent searches the ADRs before it sends work, not only before a grill
+question. Applied at once: the slow pre-commit checks leave the hook; finding 541 becomes a problem on the part.

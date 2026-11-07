@@ -17,5 +17,5 @@ Studio compares, and the low-load hook measurement of finding 557 wait. Commits 
 builder keeps a list of the checks it skipped per commit, and all of them run once over the unpushed range before the
 next push of `next`.
 
-Applied by the doc agent (2026-11-07): the pre-commit design gate is one of these slow checks. While this decision is in
-force, it writes an uncompared part into the skipped-checks list instead of refusing; the pre-push gate stays strict.
+Applied by the doc agent (2026-11-07): the slow checks in the pre-commit hook (design gate, sketch-round gate, specs,
+lint, type check) leave the hook as ADR 0036, 0037 and 0038 already decided; they are rules in Studio and in CI.
