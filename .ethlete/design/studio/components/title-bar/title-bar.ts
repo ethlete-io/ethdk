@@ -3,8 +3,9 @@ import captionClose from '@assets/icons/caption-close.svg?raw';
 import captionMaximize from '@assets/icons/caption-maximize.svg?raw';
 import captionMinimize from '@assets/icons/caption-minimize.svg?raw';
 import { button } from '@ethlete/components/design/button';
+import { badge, badgeStyles } from '@ethlete/components/design/badge';
 import { tooltip, tooltipStyles } from '@ethlete/components/design/tooltip';
-import { loaderStyles, spinner } from '@ethlete/components/design/loader';
+import { loaderStyles } from '@ethlete/components/design/loader';
 import { notification, notificationStack, notificationStyles } from '@ethlete/components/design/notification';
 import { icon } from '@system/foundations/icons';
 import titleSearchPart from '@system/components/title-search';
@@ -18,7 +19,11 @@ import {
   states,
   titleBarControl,
   windowControls,
+  PUSH_GATE_LABEL,
+  PUSH_RED_ADVICE,
+  pushCount,
   type Props,
+  type PushGate,
   type WindowButton,
 } from './shared/chrome';
 import styles from './title-bar.css?inline';
@@ -64,6 +69,27 @@ const dirtyText = ({ notice, noticeText }: Props) =>
     ? `<span class="whitespace-nowrap text-et-surface-muted" data-code-notice>${noticeText}</span>`
     : '';
 
+const GATE_ICON = { green: 'check', red: 'error', unknown: 'warning' } as const;
+
+const GATE_THEME = { green: '', red: 'error', unknown: 'warning' } as const;
+
+const themed = (gate: PushGate, markup: string) =>
+  GATE_THEME[gate] ? `<span class="inline-flex" data-et-semantic-color="${GATE_THEME[gate]}">${markup}</span>` : markup;
+
+const pushState = ({ push }: Props) =>
+  push
+    ? themed(
+        push.gate,
+        `<span class="inline-flex" title="${PUSH_GATE_LABEL[push.gate]}${push.gate === 'red' ? ` - ${PUSH_RED_ADVICE}` : ''}" data-push-state>${badge(
+          {
+            label: `<span class="inline-flex items-center gap-1 whitespace-nowrap">${icon(GATE_ICON[push.gate], { size: 12 })}${pushCount(push)} · ${push.age}</span>`,
+            variant: push.gate === 'red' ? 'filled' : 'tonal',
+            size: 'sm',
+          },
+        )}</span>`,
+      )
+    : '';
+
 const failedToast = ({ restart }: Props) =>
   restart === 'failed'
     ? `<div class="flex justify-end px-space-3 pt-space-3">${notificationStack([
@@ -103,9 +129,7 @@ const notice = async (props: Props) =>
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/components/title-bar/title-bar.component.ts',
-  note:
-    'Variant A: the SDK busy button. On click the tonal Neu starten button turns loading: the spinner covers the label, the button is disabled and aria-busy, the tooltip is gone. A failed restart drops the busy state and shows the danger error toast (Neustart fehlgeschlagen) under the bar until dismissed. ' +
-    'The window title bar: a compact 32 px drag region on the app background, closed off from the content below by a 1 px bottom border. The centred search field (components/title-search) names the product and part you are in and draws its own states. Update, a filled brand button, shows only when an update is ready and ends the bar before the window controls. macOS reserves 78 px left for the native traffic lights (drawn as three neutral grey dots, like an inactive window); Linux draws round buttons on the side its button layout gives; Windows draws square tiles with a red close hover. The grid draws each control at rest, hovered, pressed and focused: Update (linux-full-update), minimize (linux-left), the round close (linux-close), maximize (windows) and the square close (windows-update).',
+  note: 'The window title bar: a compact 32 px drag region on the app background, closed off from the content below by a 1 px bottom border. The centred search field (components/title-search) names the product and part you are in and draws its own states. Update, a filled brand button, shows only when an update is ready and ends the bar before the window controls. macOS reserves 78 px left for the native traffic lights (drawn as three neutral grey dots, like an inactive window); Linux draws round buttons on the side its button layout gives; Windows draws square tiles with a red close hover. The grid draws each control at rest, hovered, pressed and focused: Update (linux-full-update), minimize (linux-left), the round close (linux-close), maximize (windows) and the square close (windows-update). The push state of the checkout (unpushed commits, age of the oldest, push gate) is a small badge before Update: tonal, a check when the gate is green, the warning theme when it did not run on this head, and filled in the error theme when it is red; its title says fix before any feature slice. Neu starten is the SDK busy button: on click the tonal Neu starten button turns loading: the spinner covers the label, the button is disabled and aria-busy, the tooltip is gone. A failed restart drops the busy state and shows the danger error toast (Neustart fehlgeschlagen) under the bar until dismissed.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   widths: [1440],
   states,
@@ -126,7 +150,7 @@ export default definePart({
               { imports },
             )}${search.body}
             <div class="flex items-center justify-end gap-2 ${props.os === 'windows' ? 'self-stretch' : ''}">
-              ${dirtyText(props)}${props.notice ? await notice(props) : ''}${await ng(
+              ${pushState(props)}${dirtyText(props)}${props.notice ? await notice(props) : ''}${await ng(
                 `${props.update ? update(props) : ''}${sideControls(props, props.right)}`,
                 { imports },
               )}
@@ -134,7 +158,7 @@ export default definePart({
           </div>
         </div>
         ${failedToast(props)}`,
-      styles: [styles, tooltipStyles, loaderStyles, notificationStyles].join('\n'),
+      styles: [styles, tooltipStyles, loaderStyles, notificationStyles, badgeStyles].join('\n'),
     });
   },
 });

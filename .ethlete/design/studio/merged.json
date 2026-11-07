@@ -22,10 +22,11 @@
     "at": "2026-11-03T16:58:15.525Z"
   },
   "components/title-bar": {
-    "hash": "2e3593d3a439101d",
-    "variant": "b",
-    "decidedBy": "user",
-    "at": "2026-11-06T11:17:52.121Z"
+    "hash": "b538ec93e61ef4b3",
+    "variant": "a",
+    "decidedBy": "plan: B415: Empfehlung gebaut (builder), a chip before Update; b banner, c inline text rejected",
+    "at": "2026-11-07T15:03:58.280Z",
+    "note": "merged without a pick: allowed by B415: Empfehlung gebaut (builder), a chip before Update; b banner, c inline text rejected"
   },
   "components/tree-row": "9b985495f700b73f",
   "components/update-dialog": {

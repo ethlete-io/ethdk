@@ -10,6 +10,22 @@ type TitleBarControl = 'update' | 'notice' | WindowButton;
 
 type TitleBarInteraction = 'hover' | 'active' | 'focus-visible';
 
+export type PushGate = 'green' | 'red' | 'unknown';
+
+type PushState = { unpushed: number; age: string; gate: PushGate };
+
+export const PUSH_GATE_LABEL: Record<PushGate, string> = {
+  green: 'Push-Gate grün',
+  red: 'Push-Gate rot',
+  unknown: 'Push-Gate nicht gelaufen',
+};
+
+export const PUSH_RED_ADVICE = 'vor jedem Feature-Slice beheben';
+
+export const pushCount = ({ unpushed }: PushState) => `${unpushed} ungepusht`;
+
+export const pushAge = ({ age }: PushState) => `ältester ${age}`;
+
 export type Props = {
   os: Os;
   left: WindowButton[];
@@ -17,6 +33,7 @@ export type Props = {
   update: boolean;
   notice?: boolean;
   noticeText?: string;
+  push?: PushState;
   restart?: 'pending' | 'failed';
   product: string;
   part: string;
@@ -87,7 +104,18 @@ const contentStates = (content: Content) =>
     ]),
   ) as Record<Layout | `${Layout}-${Exclude<Content, 'rest'>}`, Props>;
 
+const PUSH = {
+  green: { unpushed: 3, age: '40 min', gate: 'green' },
+  unknown: { unpushed: 12, age: '2 h', gate: 'unknown' },
+  red: { unpushed: 158, age: '5 h', gate: 'red' },
+} satisfies Record<PushGate, PushState>;
+
 export const states = {
+  'push-green': { ...LINUX_FULL, push: PUSH.green },
+  'push-unknown': { ...LINUX_FULL, push: PUSH.unknown },
+  'push-red': { ...LINUX_FULL, push: PUSH.red },
+  'push-red-update': { ...LINUX_FULL, update: true, push: PUSH.red },
+  'macos-push-red': { ...MACOS, push: PUSH.red },
   ...contentStates('notice'),
   ...contentStates('cli-dirty'),
   ...(Object.assign({}, ...rows.map((row) => row.states)) as Record<StateName, Props>),
