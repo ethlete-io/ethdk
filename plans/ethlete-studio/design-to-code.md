@@ -1744,6 +1744,9 @@ shows only after the full listing. The case is updated to this rule and still fa
 As built (B339 rest, w3-gates-b): `ci.yml` has a `studio-e2e` job (cli build, Chromium, `yarn studio:e2e`). It runs
 when `apps/ethlete-studio` or `libs/cli/src/lib/design` changed (the `design-changes` job), counts in `Verified`, and
 does not gate `deploy`.
+As built (B339, 2026-11-07): `deploy` needs `studio-e2e`. Its `if` became `!cancelled() && inputs.deploy && no failed
+need`, because `studio-e2e` is skipped when no design path changed and a skipped need would skip `deploy` with the plain
+`inputs.deploy` condition. Verified: prettier on `ci.yml`. Not verified: a CI run of the changed `if`.
 
 396\. Builder (2026-11-04, B323): `GET /__design/shot` with `sketch=components/title-bar.code-notice` (the sketch's
 folder name) answered 404 "variant a ... has no part components/title-bar", a wrong cause: the sketch exists, only

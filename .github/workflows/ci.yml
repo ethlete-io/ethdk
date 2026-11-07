@@ -467,8 +467,9 @@ jobs:
 
   deploy:
     name: Deploy
-    if: inputs.deploy
-    needs: [checks, studio, test, build, storybook, storybook-test, storybook-e2e, timetrack-e2e, csp-e2e, rust]
+    if: ${{ !cancelled() && inputs.deploy && !contains(needs.*.result, 'failure') }}
+    needs:
+      [checks, studio, test, build, storybook, storybook-test, storybook-e2e, timetrack-e2e, csp-e2e, studio-e2e, rust]
     runs-on: ubuntu-latest
     permissions:
       contents: read
