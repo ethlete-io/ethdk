@@ -3,7 +3,8 @@ import { resolve } from 'path';
 import { ACCEPT_USAGE, designAccept } from './system/accept-command';
 import { checkDesign } from './check';
 import { COMPLETE_USAGE, designComplete } from './system/complete-command';
-import { findCheckoutRoot, readConfig } from './paths';
+import { DEFAULT_PORT, findCheckoutRoot, portOf, readConfig } from './paths';
+import { designServeState } from './serve-state';
 import { designComment, designInbox } from './inbox-command';
 import { markLegacy } from './legacy';
 import { newCall } from './new-call';
@@ -276,6 +277,10 @@ const helpOf = (invocation: string) =>
     `${invocation} ${COMMIT_HUNKS_USAGE}`,
     '  Commit only the entries of the part from a shared JSON file (go.json, merged.json, accepted.json, ...): HEAD plus',
     '  those entries is committed for that path, and entries of other parts stay uncommitted in the working tree.',
+    '',
+    `${invocation} serve-state`,
+    '  Print who serves the design port (the Studio app or a terminal, with its pid), which cli build it runs against this',
+    '  checkout and how to restart it.',
     '',
     `${invocation} stamp`,
     '  Print the version and build of this cli as JSON, which a running server answers with too.',
@@ -610,6 +615,16 @@ const dispatchDesign = async (options: { root: string; argv: string[]; invocatio
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     return designTimings({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'serve-state') {
+    const { target } = splitCheckout(argv.slice(1), root);
+    const config = readConfig(target);
+
+    return designServeState({
+      base: `http://localhost:${config ? portOf(config) : DEFAULT_PORT}`,
+      own: buildStampOf(),
+    });
   }
 
   if (argv[0] === 'status') {

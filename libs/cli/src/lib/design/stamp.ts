@@ -84,7 +84,7 @@ const isStamp = (value: unknown): value is BuildStamp =>
  * Node connects `localhost` to 127.0.0.1 alone, while Vite may listen on ::1 alone, so a local
  * base is also tried at each loopback address.
  */
-const stampUrlsOf = (base: string) => {
+export const stampUrlsOf = (base: string) => {
   const url = new URL(STAMP_PATH, base);
 
   if (url.hostname !== 'localhost') return [url.href];

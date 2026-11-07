@@ -2118,6 +2118,10 @@ would leave Tom without a server. So the B363 product opt-in waits for Tom to pr
 caught it: nothing tells an agent who owns the design port or which CLI copy it serves. Tool fix (B368): `et design`
 prints the serve state: the port owner (Studio app or terminal), the served CLI commit against HEAD, and how to
 restart it.
+As built (B368): `et design serve-state` (`serve-state.ts`) reads `/__design/stamp`; the server identity now carries
+`owner` (studio or terminal) and `cliRoot`. The served build is compared with this checkout's cli by version and
+build hash, not by commit; a Studio copy's folder (`tmp/studio-cli/<commit>`) shows in `cliRoot`. Not done: calling it
+automatically from other commands.
 
 437\. Tom (2026-11-04): "ich bekomm ihn nicht tot. ctrl c tut nichts" in the `nx tauri:dev ethlete-studio` terminal.
 `target/debug/ethlete-studio` (pid 36678, 4 h old) was in state R; Tom ended it with `kill -TERM`. Cause (builder,

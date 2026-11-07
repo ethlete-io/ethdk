@@ -1,5 +1,6 @@
 import { createRequire } from 'module';
 import { dirname, join } from 'path';
+import { startedByStudio } from './started-by-studio';
 import { BuildStamp, buildInfoOf, installedBuildInfoOf } from './stamp';
 
 /** Bumped whenever the contract between Studio and the design server changes. */
@@ -16,6 +17,10 @@ export type ServerIdentity = {
   installed: ServerBuild | null;
   /** The process that serves; a server restarted from a new build answers with a new one. */
   pid: number;
+  /** `studio` when Ethlete Studio started the server and owns its lifetime, `terminal` otherwise. */
+  owner: 'studio' | 'terminal';
+  /** The folder the running cli code was loaded from. */
+  cliRoot: string;
 };
 
 /** The cli package folder that `@ethlete/cli` resolves to from `projectRoot`, or null when it is not installed there. */
@@ -42,6 +47,8 @@ export const serverIdentityOf = (projectRoot: string) => {
       projectRoot,
       installed,
       pid: process.pid,
+      owner: startedByStudio() ? 'studio' : 'terminal',
+      cliRoot: __dirname,
     };
   };
 };

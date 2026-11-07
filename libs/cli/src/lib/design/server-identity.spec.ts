@@ -57,6 +57,8 @@ describe('serverIdentityOf', () => {
     expect(identity.apiLevel).toBe(STUDIO_API_LEVEL);
     expect(identity.projectRoot).toBe(project);
     expect(identity.pid).toBe(process.pid);
+    expect(identity.owner).toBe('terminal');
+    expect(identity.cliRoot).toBe(__dirname);
     expect(identity.stamp.build).toMatch(/^[0-9a-f]{12}$/);
     expect(identity.builtAt).toBeGreaterThan(0);
     expect(identity.installed).toMatchObject({ builtAt: 1_000_000, stamp: { version: '1.0.0' } });
@@ -125,6 +127,8 @@ describe('judgeServerIdentity', () => {
     projectRoot: '/work/app',
     installed: { stamp: stamp('aaa'), builtAt: 2000 },
     pid: 1,
+    owner: 'terminal',
+    cliRoot: '/work/cli',
     ...patch,
   });
 
