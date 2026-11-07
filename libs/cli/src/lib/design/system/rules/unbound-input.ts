@@ -57,9 +57,14 @@ export const unboundInputVerdictOf = (options: {
           message: `${input}: listed as a known unbound input but it is bound (or gone) - remove it from KNOWN_UNBOUND_INPUTS`,
         })),
     ],
-    warnings: found
-      .filter((problem) => listed.has(keyOf(problem.file, problem.message.split(':')[0] as string)))
-      .map((problem) => ({ ...problem, message: `${problem.message} (known)` })),
+    warnings: found.flatMap((problem) => {
+      const input = problem.message.split(':')[0] as string;
+      const known = options.known.find((entry) => keyOf(entry.file, entry.input) === keyOf(problem.file, input));
+
+      return known
+        ? [{ ...problem, message: `${problem.message} (known${known.reason ? `: ${known.reason}` : ''})` }]
+        : [];
+    }),
   };
 };
 

@@ -471,7 +471,11 @@ describe('part compare', () => {
     actions.mockResolvedValueOnce(noVerdictOf('the harness map is stale'));
     lines.length = 0;
     expect(await compare()).toBe(1);
-    expect(lines).toEqual(['default ok', 'actions: no verdict - the harness map is stale, retry']);
+    expect(lines).toEqual([
+      'default ok',
+      'actions: no verdict - the harness map is stale, retry',
+      'FAILED actions: not checked, so no action counts as working',
+    ]);
   });
 
   it('runs the action check while the states are shot, and prints the same lines and exit code as in turn', async () => {

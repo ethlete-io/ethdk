@@ -14,6 +14,7 @@ import { WarmDraw } from '../warm-draw';
 import { createPartShooter } from '../shot';
 import { createDrawQueue } from '../thumb';
 import { partActionFailuresOf } from './actions-command';
+import { noVerdictLineOf, noVerdictOf } from './no-verdict';
 import {
   AppShotCache,
   browserVersionOf,
@@ -492,6 +493,9 @@ export const comparePart: ComparePart = async (options) => {
   });
 };
 
+/** The summary line of a compare whose action check could not run: a skipped check never passes. */
+export const ACTIONS_NOT_CHECKED = 'FAILED actions: not checked, so no action counts as working';
+
 /**
  * `et design compare --all` compares every done part and fails on any deviation or part it cannot compare; a foundation has nothing to compare.
  * `et design compare <layer>/<name> …` compares each state of a part with the app's harness page of its component;
@@ -669,6 +673,7 @@ export const designCompare = async (options: {
 
   if (!Array.isArray(missed)) {
     console.error(noVerdictLineOf('actions', missed));
+    console.log(ACTIONS_NOT_CHECKED);
 
     return 1;
   }

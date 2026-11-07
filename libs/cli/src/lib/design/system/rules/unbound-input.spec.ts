@@ -71,4 +71,20 @@ describe('unboundInputVerdictOf', () => {
     expect(verdict.errors.map(({ message }) => message.split(':')[0])).toEqual(['reason', 'rows']);
     expect(verdict.warnings.map(({ message }) => message.split(':')[0])).toEqual(['hold']);
   });
+
+  it('repeats the reason a listed input carries in its warning', () => {
+    const verdict = unboundInputVerdictOf({
+      components,
+      appDir,
+      known: [
+        { file: 'src/sketches.component.ts', input: 'hold', reason: 'no progress source' },
+        { file: 'src/sketches.component.ts', input: 'reason' },
+      ],
+    });
+
+    expect(verdict.warnings.map(({ message }) => message.split(': ').slice(1).join(': '))).toEqual([
+      expect.stringMatching(/\(known: no progress source\)$/),
+      expect.stringMatching(/\(known\)$/),
+    ]);
+  });
 });

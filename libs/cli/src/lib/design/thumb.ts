@@ -10,6 +10,7 @@ import { RunAbortedError, runSignal } from './run-abort';
 import { ShotBoard } from './shot-board';
 import { recordCache, recordDrawWait } from './timings';
 import { withinLimit } from './wait';
+import { loadScaledMs } from './system/no-verdict';
 
 export const THUMB_PATH = '/__design/thumb';
 
@@ -68,12 +69,13 @@ const frameWidthOf = (slug: string) => `(async (slug) => {
 type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPage']>>;
 
 /**
- * Opens a frame and waits until it drew its content or its error, then for its embedded frames. A frame that
- * draws nothing after one reload throws a `ShotTimeoutError` naming the URL.
+ * Opens a frame and waits until it drew its content or its error, then for its embedded frames. Each wait is
+ * `DRAW_TIMEOUT_MS` stretched by the machine load. A frame that draws nothing after one reload throws a
+ * `ShotTimeoutError` naming the URL.
  */
 export const openFrame = async (page: Page, url: string) => {
-  const never = (what: string) =>
-    new ShotTimeoutError(`design-explore: ${url} did not ${what} within ${DRAW_TIMEOUT_MS} ms`);
+  const timeout = loadScaledMs(DRAW_TIMEOUT_MS);
+  const never = (what: string) => new ShotTimeoutError(`design-explore: ${url} did not ${what} within ${timeout} ms`);
   const drawn = async () => {
     assertServed(await page.goto(url, { waitUntil: 'domcontentloaded' }), url);
     // Headless Chromium's pointer starts at 0,0 on a new page and draws a real :hover on whatever fills the
@@ -82,7 +84,7 @@ export const openFrame = async (page: Page, url: string) => {
     return page
       .locator('#root > :not(style)')
       .first()
-      .waitFor({ state: 'attached', timeout: DRAW_TIMEOUT_MS })
+      .waitFor({ state: 'attached', timeout })
       .then(
         () => true,
         async () => (await page.locator('vite-error-overlay').count()) > 0,
@@ -93,7 +95,7 @@ export const openFrame = async (page: Page, url: string) => {
   await page
     .locator('iframe[data-et-embed]:not([data-et-embed-drawn])')
     .first()
-    .waitFor({ state: 'detached', timeout: DRAW_TIMEOUT_MS })
+    .waitFor({ state: 'detached', timeout })
     .catch(() => {
       throw never('draw its embedded frames');
     });

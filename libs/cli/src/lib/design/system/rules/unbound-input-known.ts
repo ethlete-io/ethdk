@@ -1,4 +1,5 @@
-export type KnownUnboundInput = { file: string; input: string };
+/** `reason` says why no app template binds the input yet; the warning repeats it. */
+export type KnownUnboundInput = { file: string; input: string; reason?: string };
 
 export const KNOWN_UNBOUND_INPUTS: KnownUnboundInput[] = [
   { file: 'apps/ethlete-studio/src/app/design-parts/disclosure/disclosure.component.ts', input: 'body' },
@@ -17,12 +18,10 @@ export const KNOWN_UNBOUND_INPUTS: KnownUnboundInput[] = [
   { file: 'apps/ethlete-studio/src/app/design-parts/inbox/inbox.component.ts', input: 'entry' },
   { file: 'apps/ethlete-studio/src/app/design-parts/sketches/sketches.component.ts', input: 'camera' },
   { file: 'apps/ethlete-studio/src/app/design-parts/sketches/sketches.component.ts', input: 'reason' },
-  { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'shell' },
   { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'empty' },
   { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'manyStates' },
   { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'nothingOpen' },
   { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'fit' },
-  { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'layers' },
   { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'manyStatesLayers' },
   { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'frame' },
   { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'shot' },
@@ -35,9 +34,11 @@ export const KNOWN_UNBOUND_INPUTS: KnownUnboundInput[] = [
   { file: 'apps/ethlete-studio/src/app/design-parts/shell-main/shell-main.component.ts', input: 'projectPicker' },
   { file: 'apps/ethlete-studio/src/app/design-parts/merge/merge.component.ts', input: 'unchanged' },
   { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'closed' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'exceptions' },
   {
     file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts',
-    input: 'exceptionCount',
+    input: 'agent',
+    reason: 'no progress source',
   },
   { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'buildReady' },
   { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'blockersOpen' },
