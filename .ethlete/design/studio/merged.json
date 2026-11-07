@@ -43,7 +43,13 @@
     "at": "2026-11-05T14:07:16.480Z"
   },
   "elements/part-tree": "4decbdf07174f4c8",
-  "elements/shell-main": "ae33c034c1dd289c",
+  "elements/shell-main": {
+    "hash": "ddbdedeb1ef8f441",
+    "variant": "new",
+    "decidedBy": "plan: finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit",
+    "at": "2026-11-07T14:51:01.266Z",
+    "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit"
+  },
   "elements/studio-menu": "3e69133852294818",
   "elements/variant-cell": {
     "hash": "fb0b925497ff1069",
