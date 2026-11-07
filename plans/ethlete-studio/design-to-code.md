@@ -4147,3 +4147,8 @@ the design server answered `/__design/system` with 503 "missing build" and Studi
 A green run hid it because the job only runs when the push changed Studio or design files. A new CI job had no proof
 that it ever passed. Tool fix (technical): a commit that adds or changes a CI job carries a link to a run where that
 job ran and passed; until then the job runs with `continue-on-error`. Built for this job in 5c8b0d276 (ADR 0227).
+
+589\. Builder (2026-11-07, push 29ce24b3d): `yarn lint:person-names` refused ADR 0227, which the doc agent wrote with
+"Tom:" before each quote, as the doc-agent skill says ("Tom's words verbatim"). The skill and the person-name rule
+disagree. Tool fix (technical): the doc-agent and grilling skills say "the human:" (as ADR 0226 does), and the
+pre-commit hook runs `lint:person-names` on staged ADR and plan files, so the doc agent sees it at commit time.
