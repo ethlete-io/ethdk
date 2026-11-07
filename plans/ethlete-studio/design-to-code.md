@@ -2840,6 +2840,12 @@ caught it: no gate runs the slow compare when only the design side of a part cha
 default): a design-only change to a part also runs the visible-change gate for that part, and a merge that adds a
 state the app cannot drive (missing trigger) fails and names the app row to build.
 
+As built (B393): a part with a record in `implemented.json` whose hash differs from its design hash gets the `COMPARE`
+rule (`designOnly` in its slow inputs, so the design change already makes the cache stale). That run judges only the
+states `shootStates` marks `undrivable`; a pixel difference is ignored, as the app is not yet rebuilt. A hit names the
+state and the linked app component to build the trigger in. A part never implemented is not compared. Specs on fixtures
+with fake runners in `slow-checks.spec.ts`; no real render ran.
+
 455\. The grill session closed B377 in `STATUS.md`, but ADR 0192 still had `open: B377`. The pre-push check found it
 only at push time, and the builder fixed it in de53d8571. Why no tool caught it earlier: the check that matches ADR
 `open:` rows against `STATUS.md` runs at pre-push, not when a plan file is committed. Tool fix (B395, builder

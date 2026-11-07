@@ -133,7 +133,7 @@ export const defaultBaseOf = (options: { root: string; branch: string | undefine
 };
 
 /** What a part's slow result depends on, and the rules that check it; no rules means it has no slow result. */
-export type SlowInputs = { rules: string[]; hash: string };
+export type SlowInputs = { rules: string[]; hash: string; designOnly?: true };
 
 type PartContext = {
   product: ResolvedProduct;
@@ -179,6 +179,8 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
   const linked = linkedComponentOf(part);
   const component = harness ? linked : null;
   const design = designOf(context, part);
+  const implemented = implementedHashOf(product, key);
+  const designOnly = component !== null && implemented !== undefined && implemented !== design;
   const app = linked === null ? {} : appFilesOf({ root, component: linked });
   const rules = [
     ...(own && !key.startsWith('pages/') && DECLARES_CONTROLS.test(part.source) ? [CONTROL_STATE_RULE] : []),
@@ -186,7 +188,8 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
     ...(component !== null && harness?.specs ? [APP_SPEC_RULE] : []),
     ...(pages?.has(key) ? [UNCOVERED_REGION_RULE] : []),
     ...(component !== null ? [VISIBLE_CHANGE_RULE] : []),
-    ...(component !== null && implementedHashOf(product, key) === design ? [COMPARE_RULE, SDK_ERROR_RULE] : []),
+    ...(component !== null && implemented === design ? [COMPARE_RULE, SDK_ERROR_RULE] : []),
+    ...(designOnly ? [COMPARE_RULE] : []),
   ];
 
   if (rules.length === 0) return { rules, hash: '' };
@@ -213,6 +216,7 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
         rules.includes(VISIBLE_CHANGE_RULE) ? base : '',
       ].join('\0'),
     ),
+    ...(designOnly ? { designOnly: true as const } : {}),
   };
 };
 

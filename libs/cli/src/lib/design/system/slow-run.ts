@@ -83,6 +83,8 @@ const comparedProblemsOf = async (options: {
   file: string;
   url: string;
   shoot: ShootStates;
+  designOnly?: boolean;
+  component?: string | null;
 }): Promise<Problem[]> => {
   const shot = await options.shoot({ ...options, only: null });
   const problemOf = (text: string): Problem => ({
@@ -92,6 +94,17 @@ const comparedProblemsOf = async (options: {
   });
 
   if (typeof shot === 'string') return [problemOf(shot)];
+
+  if (options.designOnly)
+    return shot.shots.flatMap((state): Problem[] =>
+      'problem' in state && state.undrivable
+        ? [
+            problemOf(
+              `${state.state}: ${state.problem} - the design changed and the app cannot drive this state; build its trigger in ${options.component ?? 'the app component'}`,
+            ),
+          ]
+        : [],
+    );
 
   return shot.shots.flatMap((state): Problem[] => {
     if ('problem' in state) return [problemOf(`${state.state}: ${state.problem}`)];
@@ -132,6 +145,12 @@ export const runSlowChecks = async (options: {
     const found = product.parts.find((candidate) => partKeyOf(candidate) === part);
 
     return found ? relative(root, found.file) : part;
+  };
+
+  const componentOf = (part: string) => {
+    const found = product.parts.find((candidate) => partKeyOf(candidate) === part);
+
+    return found ? linkedComponentOf(found) : null;
   };
 
   const byPart = (problems: Problem[]) =>
@@ -229,6 +248,8 @@ export const runSlowChecks = async (options: {
             file: fileOf(part),
             url: server.url,
             shoot: runners.shoot,
+            designOnly: inputs[part]?.designOnly === true,
+            component: componentOf(part),
           });
 
           if (problems.length > 0) results.set(part, [...(results.get(part) ?? []), ...problems]);

@@ -3,7 +3,10 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../paths';
-import { resolveProduct } from './resolve-product';
+import { StateShot } from './compare-command';
+import { designHashOf } from './design-hash';
+import { Problem } from './problem';
+import { partKeyOf, resolveProduct } from './resolve-product';
 import { RULE_BASELINE_FILE } from './rule-baseline';
 import { slowInputsOf, slowProblemsOf, staleSlowPartsOf, writeSlowResults } from './slow-checks';
 import { runSlowChecks } from './slow-run';
@@ -133,5 +136,90 @@ describe('the draw rules in the slow set', { timeout: 30_000 }, () => {
     expect(slowProblemsOf({ product: product(), part: 'components/chip' })).toEqual([
       { ...hit('product'), file: '.ethlete/design/acme/components/chip/chip.ts' },
     ]);
+  });
+});
+
+describe('a design-only change in the slow set', { timeout: 30_000 }, () => {
+  const implemented = (dir: string, hash: string) =>
+    writeFileSync(
+      join(dir, 'implemented.json'),
+      JSON.stringify({ 'components/chip': { hash, at: '2026-11-06T00:00:00Z' } }),
+    );
+
+  const designHash = (product: ReturnType<ReturnType<typeof acme>['product']>) =>
+    designHashOf({ product, part: product.parts.find((part) => partKeyOf(part) === 'components/chip')! }).hash;
+
+  const runners = (shots: StateShot[]) => ({
+    specs: async () => [],
+    droppedProps: async () => [],
+    controlState: async () => [],
+    start: async () => ({ url: 'http://app', stop: async () => undefined }),
+    shoot: async () => ({ states: {}, shots }),
+    visibleChange: async () => new Map<string, Problem[]>(),
+  });
+
+  it('starts the compare for a part whose design moved on after it was implemented', () => {
+    const { target, product } = acme();
+    const dir = join(target, DESIGN_DIR, 'acme');
+
+    implemented(dir, 'older');
+
+    const inputs = slowInputsOf({ product: product() })['components/chip'];
+
+    expect(inputs?.rules).toContain('COMPARE');
+    expect(inputs?.rules).not.toContain('SDK-ERROR');
+    expect(inputs?.designOnly).toBe(true);
+
+    implemented(dir, designHash(product()));
+
+    const same = slowInputsOf({ product: product() })['components/chip'];
+
+    expect(same?.rules).toEqual(expect.arrayContaining(['COMPARE', 'SDK-ERROR']));
+    expect(same?.designOnly).toBeUndefined();
+  });
+
+  it('does not compare a part that was never implemented', () => {
+    const { product } = acme();
+
+    expect(slowInputsOf({ product: product() })['components/chip']?.rules).not.toContain('COMPARE');
+  });
+
+  it('fails a state the app cannot drive and names the app component, and ignores a pixel difference', async () => {
+    const { target, product } = acme();
+
+    implemented(join(target, DESIGN_DIR, 'acme'), 'older');
+
+    const results = await runSlowChecks({
+      target,
+      config: readConfig(target) ?? {},
+      product: product(),
+      parts: ['components/chip'],
+      runners: runners([
+        { state: 'direct-edit', problem: 'no "Gründe" trigger', undrivable: true },
+        { state: 'default', problem: 'drawn differently' },
+      ]),
+    });
+    const problems = results.get('components/chip') ?? [];
+
+    expect(problems).toHaveLength(1);
+    expect(problems[0]?.rule).toBe('COMPARE');
+    expect(problems[0]?.message).toContain('direct-edit');
+    expect(problems[0]?.message).toContain('apps/acme/src/chip.component.ts');
+  });
+
+  it('passes a design-only change whose states are all drivable', async () => {
+    const { target, product } = acme();
+
+    implemented(join(target, DESIGN_DIR, 'acme'), 'older');
+
+    const results = await runSlowChecks({
+      target,
+      config: readConfig(target) ?? {},
+      product: product(),
+      parts: ['components/chip'],
+      runners: runners([{ state: 'default', design: Buffer.from('a'), app: Buffer.from('b') }]),
+    });
+
+    expect(results.get('components/chip') ?? []).toEqual([]);
   });
 });
