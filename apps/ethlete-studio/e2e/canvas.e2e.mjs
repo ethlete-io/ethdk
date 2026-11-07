@@ -1930,7 +1930,7 @@ const CASES = [
     },
   },
   {
-    name: 'the sketch view at 30 % and 100 % draws no failed picture and no empty head at 100 %',
+    name: 'the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms',
     pages: ['Sketches', 'Wide'],
     run: async (page, _state, target) => {
       await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
@@ -1940,8 +1940,8 @@ const CASES = [
 
       for (const [label, outSteps, heads, refused] of [
         ['100 %', 0, true, false],
-        ['30 %', 3, false, false],
-        ['30 %, pictures refused', 3, false, true],
+        ['30 %', 3, true, false],
+        ['30 %, pictures refused', 3, true, true],
       ]) {
         if (refused) {
           await page.route('**/__design/shot?**', (route) => route.fulfill({ status: 404, body: '' }));
@@ -2011,6 +2011,18 @@ const CASES = [
                   );
               }
 
+              const tags = [...viewport.querySelectorAll('[data-sk-head-tag]')].filter(
+                (tag) => inView(tag.getBoundingClientRect()) && paints(tag),
+              );
+              const small = tags.find((tag) => parseFloat(getComputedStyle(tag).fontSize) < 9);
+
+              const collapsed = !!viewport.querySelector('[data-sk-head-hidden]');
+
+              if (collapsed && tags.length === 0) found.push(`${label}: heads collapsed but no head tag in view`);
+              if (label.startsWith('100') && tags.length > 0)
+                found.push(`${label}: head tag shows beside the full head`);
+              if (small) found.push(`${label}: head tag text is ${getComputedStyle(small).fontSize}`);
+
               for (const picture of viewport.querySelectorAll('img[data-shot-picture]')) {
                 if (
                   inView(picture.getBoundingClientRect()) &&
@@ -2030,7 +2042,9 @@ const CASES = [
 
       return {
         ok: faults.length === 0,
-        detail: faults.slice(0, 4).join('; ') || 'heads at 100 %, pictures at 30 % and 100 %, refused pictures hidden',
+        detail:
+          faults.slice(0, 4).join('; ') ||
+          'heads and tags at 30 % and 100 %, pictures at both, refused pictures hidden',
       };
     },
   },

@@ -268,7 +268,9 @@ export class SketchesComponent {
   });
   protected noteSize = computed(() => noteAt(this.scale(), this.fitScale()));
   protected headHidden = computed(() => this.noteSize() < MIN_LABEL);
-  protected headColumns = computed(() => `${(HEAD_WIDTH * this.noteSize()) / NOTE_TEXT}px minmax(0, 1fr)`);
+  protected headColumns = computed(() =>
+    this.headHidden() ? 'max-content minmax(0, 1fr)' : `${(HEAD_WIDTH * this.noteSize()) / NOTE_TEXT}px minmax(0, 1fr)`,
+  );
   protected labelFont = computed(() => LABEL_TEXT * this.scale());
   protected labelSize = computed(() => {
     const size = LABEL_TEXT * this.scale();

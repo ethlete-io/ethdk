@@ -259,7 +259,10 @@
     [attr.data-sk-row]="row.key"
     [attr.data-selected]="row.key === selected() ? '' : null"
     [style.grid-template-columns]="headColumns()"
-    class="grid gap-space-5 rounded-control-md p-space-3 data-selected:shadow-[0_0_0_2px_var(--et-theme-color-primary-solid)]"
+    [attr.data-sk-head-hidden]="headHidden() ? '' : null"
+    [class.gap-space-2]="headHidden()"
+    [class.gap-space-5]="!headHidden()"
+    class="grid rounded-control-md p-space-3 data-selected:shadow-[0_0_0_2px_var(--et-theme-color-primary-solid)]"
   >
     <div class="relative min-w-0">
       <ng-container *ngTemplateOutlet="headTemplate; context: { $implicit: row }" />
@@ -315,7 +318,14 @@
 </ng-template>
 <ng-template #headTemplate let-row>
   @let drawn = row.key === drawnKey();
-  <div [class.invisible]="headHidden()" class="flex min-w-0 flex-col gap-space-2">
+  @if (headHidden()) {
+    <span
+      class="inline-flex w-fit items-center rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+      data-sk-head-tag
+      >{{ row.key === CURRENT ? LABELS.current : row.key }}</span
+    >
+  }
+  <div [class.hidden]="headHidden()" class="flex min-w-0 flex-col gap-space-2">
     <div class="flex flex-wrap items-center gap-x-space-2 gap-y-space-1">
       @if (row.key === CURRENT) {
         <span class="text-ui-sm font-ui-medium text-et-surface">{{ LABELS.current }}</span>

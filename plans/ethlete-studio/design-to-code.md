@@ -1898,6 +1898,21 @@ levels up. Fixed: it rebases them for the place they end up (`settledIn`), with 
 The head tag (c) built on desk/B346 (4f56e7893) is held: the sketch `pages/sketches@head-zoom` is still in progress
 and has no pick, and its e2e case failed 0/4 under load.
 
+As built (B346, 2026-11-07, part 2): Empfehlung gebaut, c "tag", merged as 34bc2d4ac; a (head gone, grid
+jumps left) and b (head scales into strokes) rejected. `sketch ready` first refused two hits the product already had:
+the hidden head now gets `hidden` from the fit script (`data-sk-head-full`, like the pins), and
+`unchanged-matrix-open` moved to 20 % so no head button is cut at the pan limit. Below the label floor the head
+collapses into a pill with the variant name ("Aktuell", "a"), the row grid narrows to `max-content` with a 2-unit gap,
+and the full head and note are hidden (`data-sk-head-tag`), in `pages/sketches` (list rows and matrix columns) and in
+`sketches.component` (`headHidden()`, `headColumns()`, the head template). The e2e case now checks heads at 30 % and
+100 %: no empty head at either zoom, at least one tag in view at 30 %, none at 100 %, tag text at least 11 px.
+Also fixed: `sketch new` wrote 9 `../` instead of 6 into the canvas-math import of a copied `shared/sketch-rows.ts`:
+`seedTarget` rebased imports that leave `shared/` for the variant folder and then lifted the folder up three levels.
+It now rebases them for the place they end up (`settledIn`); spec "points an import that leaves the shared folder at
+the same file from the sketch" fails on the old code. Why no tool caught it: no spec resolved an outside import of a
+lifted `shared/` file. Not built: the state-name floor of the matrix gutters (finding 431 (2)), still transparent at
+30 %.
+
 404\. Builder (2026-11-04, S6a merge 2e70dc149): `pages/system@pages-system-build-ready` showed "stale since
 5bec01b89" and `sketch rebase` reported a conflict, but all three variants already held 5bec01b89's change, identical to
 the product. No port was needed. Why no tool caught it: `sketch rebase` calls a file a conflict when variant and product
