@@ -515,6 +515,8 @@ added after the first ready), and no agent command sets it back to in progress; 
 hand (builder, 2026-11-03). A status that does not know what it judged goes stale silently. Fix: B162, ready
 stores the content hash it judged; a changed variant drops the status to in progress on the next check or ready
 (same stale logic as SKETCH-BASE-STALE).
+As built (4373e3a4c): `sketch ready` stores `readyContent` (hash per variant, its folder plus `shared/`); `sketch check` and
+`sketch ready` reopen an undecided ready sketch whose variant hash changed.
 
 240\. `design shot --crop` with a box outside the content returns an empty canvas without error (builder,
 2026-11-03); an agent can review a blank picture and call it fine. Fix: B163, fail with "crop box outside content
