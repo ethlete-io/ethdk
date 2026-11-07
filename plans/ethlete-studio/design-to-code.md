@@ -4380,7 +4380,6 @@ replaces `prepare`; the CI Checks job, `yarn test:tools` and the start of `desig
 not `.husky/_`; after a cherry-pick of worktree commits the builder runs `yarn lint:changesets` and the design-rules
 gate on the picked range. The push of `next` stays held by ADR 0215.
 
-
 Built (2026-11-07): c0f079a74 (555). `"postinstall": "husky"`; `yarn hooks:check` in the CI Checks job; `design check`
 prints HOOKS NOT INSTALLED at start. Not verified: full `test:tools`, CI, a real `yarn install`.
 
@@ -4414,3 +4413,9 @@ Why no tool caught it: the draft spec has no captured pane with the agent panel,
 tells nobody. Doc agent decision (technical): `draftLine` reads the prompt line above the footer rule, not the last
 `❯` line, with a spec on a captured real pane that holds the panel; a restart that still waits after 2 min of draft
 sends one mailbox line to the caller and the doc agent, and a restart that gives up says so in the same way.
+Addendum (2026-11-07 11:40): the builder hung about 9 h until Tom asked. A manual clear by the doc agent showed a second
+cause: the keyboard focus sat in the agent panel, so typed text and Escape went into the panel, not the prompt. Two Up
+presses moved the focus to the prompt and recalled a history entry; C-u then emptied the line before `/clear`. Tool
+fix: `restart` moves the focus out of the panel (Up until the prompt line is focused, then C-u) before it types, and the
+spec covers a pane with panel focus. Process lesson: the doc agent waited for Tom to type `/clear` by hand although Tom
+allowed it to restart the builder; when a restart hangs, the doc agent drives the pane itself.
