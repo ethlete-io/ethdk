@@ -4116,3 +4116,9 @@ design-canvas); `components/canvas-viewport` is drawn by design-canvas itself; `
 off-screen in the panned sample. Decision by the doc agent (ADR 0201, 0105, 0113): the rule lands with these five in
 its baseline, then each link fix shrinks it. A link to the real host is technical; a part drawn as inline markup links
 the file that holds it; a part with no app code loses its link; comment-pin gets an on-screen sample.
+
+584\. Builder (2026-11-07, 994dd8bea): `addedBaselineNamesOf` flagged every entry that some older version of
+`rule-baseline.json` did not hold, so only the first commit of the file could baseline anything and a second new rule
+could never baseline its old hits (against ADR 0201). No spec covered a second rule. Fixed in 994dd8bea: an entry
+counts as added only if an older version already held the same rule without it, with a spec for a second new rule.
+Lesson: a decision that names a ratchet ("may only shrink") gets a spec for its second use, not only its first.
