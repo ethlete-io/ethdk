@@ -25,8 +25,9 @@ import { partKeyOf } from './resolve-product';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
 import { optionValuesChecker } from './rules/option-values';
 import { SEE_THROUGH_STATEMENTS } from './see-through';
-import { LOST_SURFACE_RULE, NESTED_SURFACE_RULE, SURFACE_STATEMENTS } from './surface-nesting';
-import { NESTED_SCROLL_RULE, NESTED_SCROLL_STATEMENTS } from './nested-scroll';
+import { SURFACE_STATEMENTS } from './surface-nesting';
+import { NESTED_SCROLL_STATEMENTS } from './nested-scroll';
+import { ESCAPABLE_RULES } from './skip-classes';
 import { INTERACTIVE_SELECTOR } from './actions';
 import { loadScaledMs, NoVerdict, noVerdictOf } from './no-verdict';
 import { REACH_STATEMENTS } from './reach';
@@ -163,7 +164,7 @@ const SINGLE_LINE =
  * Reads the rule breaks in a drawn frame. A string, not a function: the build would add helpers to a
  * function that the page does not have.
  */
-const ESCAPABLE = ['CLIPPED', 'WRAP', NESTED_SCROLL_RULE, NESTED_SURFACE_RULE, LOST_SURFACE_RULE];
+const ESCAPABLE = ESCAPABLE_RULES;
 
 const WARNING_RULES = new Set(['UNDEFINED-CLASS', 'EMBED-SCALE']);
 

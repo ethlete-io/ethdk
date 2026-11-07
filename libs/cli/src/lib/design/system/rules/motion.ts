@@ -52,6 +52,7 @@ export const badUnreachableOf = (product: ResolvedProduct): Problem[] =>
   product.parts.flatMap((part) => {
     const states = stateNamesOf(part.source);
     const pairs = unreachableOf(part.source);
+    const { motions } = motionRefsOf(part.source);
     const problem = (rule: string, message: string): Problem => ({ rule, file: part.file, message });
 
     const instant = instantOf(part.source);
@@ -75,6 +76,14 @@ export const badUnreachableOf = (product: ResolvedProduct): Problem[] =>
           ...(reason?.trim()
             ? []
             : [problem('MOTION-UNREACHABLE-REASON', `unreachable ${from} -> ${to} gives no reason`)]),
+          ...(motions.some((motion) => motion.from === from && motion.to === to)
+            ? [
+                problem(
+                  'MOTION-UNREACHABLE-REACHABLE',
+                  `unreachable ${from} -> ${to} has a motion, so a user reaches it`,
+                ),
+              ]
+            : []),
           ...(states
             ? [from, to]
                 .filter((state) => !states.includes(state))

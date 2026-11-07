@@ -223,3 +223,19 @@ describe('badUnreachableOf', () => {
     expect(instantProblemsOf("''")).toEqual(['MOTION-INSTANT']);
   });
 });
+
+describe('badUnreachableOf, a pair that is reachable', () => {
+  it('flags an unreachable pair that also has a motion', () => {
+    const target = acme();
+
+    write(
+      target,
+      'acme/elements/hero/hero.ts',
+      `import { definePart } from '@design-system';\nexport default definePart({ note: '', states: { closed: {}, open: {} }, motions: { fold: { from: 'open', to: 'closed' } }, unreachable: [{ from: 'open', to: 'closed', reason: 'x' }, { from: 'closed', to: 'open', reason: 'y' }], render: () => ({ body: '', styles: '' }) });\n`,
+    );
+
+    expect(badUnreachableOf(resolveAcme(target)).map(({ rule, message }) => `${rule} ${message}`)).toEqual([
+      'MOTION-UNREACHABLE-REACHABLE unreachable open -> closed has a motion, so a user reaches it',
+    ]);
+  });
+});

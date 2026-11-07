@@ -150,7 +150,7 @@ the part, with `MOTION-NAME` when a rule names a motion the part does not declar
 `requestAnimationFrame`, `setInterval` or `setTimeout`. `et design list` shows the motions without `play`.
 A motion with `from` equal to `to` is the looping motion inside that state. `unreachable: [{ from: 'empty', to: 'default', reason: '…' }]`
 marks a pair no user reaches; `et design check` fails with `MOTION-UNREACHABLE-STATE`, `MOTION-UNREACHABLE-REASON` or
-`MOTION-UNREACHABLE-LITERAL` for an unknown state, an empty reason or a value that is no literal.
+`MOTION-UNREACHABLE-LITERAL` for an unknown state, an empty reason or a value that is no literal, and with `MOTION-UNREACHABLE-REACHABLE` when a pair marked unreachable also has a motion.
 A part whose states all switch without motion declares `instant: 'reason'` instead of listing every pair: it covers every pair of different states (a loop in an ongoing-work state is still asked for), `et design check` fails with `MOTION-INSTANT` when the value is no non-empty string literal, and `design sketch ready` prints `NOTE <sketch> <variant>: <part> declares instant state switches` for each variant that declares it. Keep `unreachable` for pairs no user reaches.
 
 In a frame, a rule switches the part by a morph: the tool draws the new state and changes only what differs in the existing DOM,

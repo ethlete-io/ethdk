@@ -626,6 +626,13 @@ pair (motion rule) still passes once it becomes reachable, and a `data-et-skip` 
 its element. Fix: B202 (technical) - an `unreachable` pair that becomes reachable is an error; each skip names
 its reason class (CLIPPED, ...) and the check reports a skip whose reason no longer holds (B187 first case). B190 still landed (calls resolved through
 the host functions; an import no longer counts).
+As built (B202, 2026-11-07): `MOTION-UNREACHABLE-REACHABLE` (rules/motion.ts) reports an `unreachable` pair that also has a
+declared motion; `SKIP-CLASS` (rules/skips.ts) reports a `data-et-skip` in a part's strings that is empty, bare or names a
+class outside `SKIP_CLASSES` (CLIPPED, WRAP, NESTED-SCROLL, NESTED-SURFACE, LOST-SURFACE, COVERED; skip-classes.ts also feeds
+the render check's escape list). Specs for both; the real sdk, studio and studio-lab parts report nothing new. Not built:
+reachability through a `rules` entry without a motion, a skip on `checks.skip` (typed), and a skip whose class no longer
+holds beyond SKIP-SCOPE (B187). `design check` itself was not run: it refuses on stale components mocks (needs a components
+build), the new rules are static and were run over all three products directly.
 
 255\. B180 could not reproduce the `--out` + `--variants` refusal from finding 244: the source already accepted it
 (now pinned by a spec). The refusal came from the shared cli `dist/`, which predates B172 (it still checked
