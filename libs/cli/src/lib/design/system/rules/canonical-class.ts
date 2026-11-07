@@ -116,7 +116,7 @@ const applyRewrites = (rewrites: Rewrite[]) => {
 };
 
 /** Rewrites every class with a canonical form in the markup of the product's parts. Returns the rewritten count. */
-export const fixCanonicalClassesOf = (product: ResolvedProduct & SharedDirs): number => {
+export const fixCanonicalClassesOf = (product: ResolvedProduct & SharedDirs) => {
   const classes = partClassesOf(product);
   const rewrites = classes ? rewritesOf({ holder: product, classes }) : [];
 
@@ -124,7 +124,7 @@ export const fixCanonicalClassesOf = (product: ResolvedProduct & SharedDirs): nu
 };
 
 /** Rewrites every class with a canonical form in the harness app source. Returns the rewritten count. */
-export const fixAppCanonicalClassesOf = (target: string, product: ResolvedProduct): number => {
+export const fixAppCanonicalClassesOf = (target: string, product: ResolvedProduct) => {
   const harness = harnessOf(product);
 
   if (harness === null || typeof harness === 'string') return 0;

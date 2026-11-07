@@ -1,9 +1,9 @@
-import { appendFileSync, cpSync, mkdtempSync, writeFileSync } from 'fs';
+import { cpSync, mkdtempSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../paths';
-import { touchedPartsOf, type PrepushChange } from './touched-parts';
+import { touchedPartsOf } from './touched-parts';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-touched-parts-'));

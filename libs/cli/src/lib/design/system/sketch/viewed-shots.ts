@@ -1,6 +1,6 @@
 import { createHash } from 'crypto';
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'fs';
-import { dirname, relative, resolve } from 'path';
+import { mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { dirname, resolve } from 'path';
 import { workRootOf } from '../../paths';
 import { Sketch, variantContentHashOf } from './sketch';
 

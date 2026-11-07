@@ -17,6 +17,7 @@ export default [
           ignoredFiles: [
             '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
             '{projectRoot}/src/**/*.spec.ts',
+            '{projectRoot}/src/**/*.fixtures.ts',
             '{projectRoot}/src/**/__fixtures__/**',
             '{projectRoot}/vitest.config.{js,ts,mts}',
             '{projectRoot}/vitest.skip-reporter.mts',
