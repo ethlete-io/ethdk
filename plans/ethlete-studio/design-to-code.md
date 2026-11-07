@@ -1727,6 +1727,9 @@ candidate. Why no tool caught it: `canvas.e2e.mjs` runs only through a manual `y
 CI; CI on `next` was red on other jobs at that time and nobody triaged it. Fix (B339): `studio:e2e` runs as a CI job.
 Tom (2026-11-04): kept `unchanged` marks from the last full comparison may show from the quick listing; a new mark
 shows only after the full listing. The case is updated to this rule and still fails on an early new mark.
+As built (B339 rest, w3-gates-b): `ci.yml` has a `studio-e2e` job (cli build, Chromium, `yarn studio:e2e`). It runs
+when `apps/ethlete-studio` or `libs/cli/src/lib/design` changed (the `design-changes` job), counts in `Verified`, and
+does not gate `deploy`.
 
 396\. Builder (2026-11-04, B323): `GET /__design/shot` with `sketch=components/title-bar.code-notice` (the sketch's
 folder name) answered 404 "variant a ... has no part components/title-bar", a wrong cause: the sketch exists, only

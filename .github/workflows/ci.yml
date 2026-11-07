@@ -309,6 +309,29 @@ jobs:
 
       - run: yarn nx e2e csp-e2e
 
+  studio-e2e:
+    name: Studio e2e
+    needs: design-changes
+    if: needs.design-changes.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+        with:
+          nx-cache-key: studio-e2e
+
+      - run: yarn playwright install --with-deps chromium
+
+      - run: yarn nx build cli
+
+      - run: yarn studio:e2e
+
   rust:
     name: Rust host
     runs-on: ubuntu-latest
@@ -433,6 +456,7 @@ jobs:
         storybook-e2e,
         timetrack-e2e,
         csp-e2e,
+        studio-e2e,
         rust,
         webkit-design-events,
       ]
