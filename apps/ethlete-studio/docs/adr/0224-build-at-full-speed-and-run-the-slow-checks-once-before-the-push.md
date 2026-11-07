@@ -16,3 +16,6 @@ takes seconds: one spec file, lint of one file, a type check of one project. Ful
 Studio compares, and the low-load hook measurement of finding 557 wait. Commits still go through the git hooks. The
 builder keeps a list of the checks it skipped per commit, and all of them run once over the unpushed range before the
 next push of `next`.
+
+Applied by the doc agent (2026-11-07): the pre-commit design gate is one of these slow checks. While this decision is in
+force, it writes an uncompared part into the skipped-checks list instead of refusing; the pre-push gate stays strict.
