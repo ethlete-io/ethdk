@@ -6,6 +6,7 @@ import { importProblemsOf } from './imports';
 import { CompletenessGap, partsCompletenessOf } from './complete';
 import { actionsRerunLineOf } from './embedded-actions';
 import { actionLostProblemsOf } from './action-lost';
+import { runningCliStaleWarning } from '../stale-cli-dist';
 import { capabilityPlaceOf } from './rules/capability-place';
 import { actionUndeclaredUnderGoOf } from './action-undeclared';
 import { bespokeControlProblemsOf } from './bespoke-controls';
@@ -924,6 +925,10 @@ export const checkSystemRendered = async (options: CheckOptions) => {
   }
 
   timedPhase('summary', () => {
+    const staleCli = runningCliStaleWarning();
+
+    if (staleCli) console.log(staleCli);
+
     for (const name of options.products) {
       const entry = options.config.products?.[name];
 
