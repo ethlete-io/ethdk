@@ -1704,6 +1704,7 @@ GUI terminal. Why no tool caught it: the server does not check its build inputs,
 without a check of what it needs. Fix (B337): the design server answers with an error that names the missing dist,
 and `verify-webkit-studio.mjs` checks its build inputs before it starts; a Mac check that needs Tom ships as one
 prepared command, not a list of steps.
+As built (B337): `/__design/system` answers 503 `missing build: dist/libs/<lib> is missing - run ...` when a render module maps to a missing `dist/libs/<lib>` (`missingDistOf`, `stale-dist.ts`); the actual hang was not reproduced or traced, so a hang from another cause may remain. `verify-webkit-studio.mjs` fails at setup with the missing CLI or `dist/libs/components` (`missingBuildInputs`). The Mac check is `yarn verify:webkit-studio` (builds cli and components, then runs the checks; needs a GUI terminal for Screen Recording). Specs run; the Mac run did not.
 
 393\. Builder (2026-11-04, B326): on the Mac the frames ate the two-finger trackpad pan (finding 381). Cause, inferred
 and not run on WebKit: the Sketches, merge and flow pages kept wheel input out of their iframes only with

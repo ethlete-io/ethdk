@@ -59,6 +59,27 @@ const checkoutLibsOf = (options: { target: string; config: DesignConfig | null }
   return libs;
 };
 
+/**
+ * The checkout lib build folders the render modules map to that do not exist, each with the command that builds it.
+ * A checkout with a source `libs/<name>` but no `dist/libs/<name>` cannot render its drawings.
+ */
+export const missingDistOf = (options: { target: string; config: DesignConfig | null }) => {
+  const { target, config } = options;
+  const packages = renderPackagesOf({ target, config });
+
+  return (config?.render?.modules ?? DEFAULT_RENDER_MODULES).flatMap((specifier) => {
+    const mapped = mapPackage({ specifier, packages, target });
+
+    if (!mapped || mapped.dir.split(/[\\/]/).includes('node_modules')) return [];
+
+    const name = basename(mapped.dir);
+
+    return existsSync(join(mapped.dir, 'package.json')) || !existsSync(resolve(target, 'libs', name, 'src'))
+      ? []
+      : [`${relative(target, mapped.dir)} is missing - run ${libBuildCommandOf(name)}`];
+  });
+};
+
 export const staleLibsOf = (options: { target: string; config: DesignConfig | null }) =>
   checkoutLibsOf(options).filter(({ source, dir }) => newestMtimeOf(source) > newestMtimeOf(dir));
 

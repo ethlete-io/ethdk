@@ -95,6 +95,7 @@ import { serverIdentityOf } from './server-identity';
 import { buildStampOf, STAMP_PATH } from './stamp';
 import { designPictureCodeOf } from './code-hash';
 import { listSystem, SYSTEM_PATH } from './system/list-system';
+import { missingDistOf } from './system/stale-dist';
 import { partKeyOf, ResolvedPart } from './system/resolve-product';
 import {
   createSystemModules,
@@ -936,6 +937,10 @@ const designExplore = ({
           const asked = url.searchParams.get('product');
 
           if (asked && !config.products?.[asked]) return { status: 404, body: { error: `no product "${asked}"` } };
+
+          const missing = missingDistOf({ target, config });
+
+          if (missing.length > 0) return { status: 503, body: { error: `missing build: ${missing.join('; ')}` } };
 
           const products = await listSystem({
             target,

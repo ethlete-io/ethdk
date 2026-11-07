@@ -57,6 +57,14 @@ export const startDesignServer = (checkout, stamp) =>
     child.on('exit', (code) => reject(new Error(`design server exited with ${code}\n${output}`)));
   });
 
+export const missingBuildInputs = (checkout, entry = cliEntry) =>
+  [
+    [entry, 'npx nx build cli'],
+    [join(checkout, 'dist/libs/components/package.json'), 'npx nx build components'],
+  ]
+    .filter(([path]) => !existsSync(path))
+    .map(([path, command]) => `${path} is missing - run ${command}`);
+
 export const ensureCli = () => {
   if (!existsSync(cliEntry)) execFileSync('npx', ['nx', 'build', 'cli'], { cwd: root, stdio: 'inherit' });
 };

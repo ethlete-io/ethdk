@@ -3,7 +3,13 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { listen, serveStatic, startDesignServer, studioHostAnswer } from './verify-studio-headless.mjs';
+import {
+  listen,
+  missingBuildInputs,
+  serveStatic,
+  startDesignServer,
+  studioHostAnswer,
+} from './verify-studio-headless.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
 const swift = resolve(root, 'tools/scripts/verify-webkit-studio.swift');
@@ -56,6 +62,10 @@ let app;
 const failed = [];
 
 try {
+  const missing = missingBuildInputs(checkout);
+
+  if (missing.length) throw new Error(`build inputs missing:\n${missing.join('\n')}`);
+
   if (!built && checks.some((check) => check !== 'soak')) {
     stamp('studio build starting');
     execFileSync(

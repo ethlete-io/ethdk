@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
-import { rebuildStaleDist, staleDistWarningsOf } from './stale-dist';
+import { missingDistOf, rebuildStaleDist, staleDistWarningsOf } from './stale-dist';
 
 const file = (path: string, content: string, at: number) => {
   mkdirSync(dirname(path), { recursive: true });
@@ -98,5 +98,21 @@ describe('rebuildStaleDist', () => {
 
     expect(rebuildStaleDist({ target, config, build })).toBe(true);
     expect(build).not.toHaveBeenCalled();
+  });
+});
+
+describe('missingDistOf', () => {
+  it('names a render module whose build folder does not exist, with the build command', () => {
+    const target = mkdtempSync(join(tmpdir(), 'cli-design-missing-dist-'));
+
+    file(join(target, 'libs/core/src/index.ts'), 'export {};', 1_000);
+
+    expect(missingDistOf({ target, config })).toEqual([
+      'dist/libs/core is missing - run NX_NO_CLOUD=true npx nx build core --skip-nx-cache',
+    ]);
+  });
+
+  it('answers nothing when the build folder exists', () => {
+    expect(missingDistOf({ target: checkout({ coreSource: 1_000, coreBuild: 2_000 }), config })).toEqual([]);
   });
 });
