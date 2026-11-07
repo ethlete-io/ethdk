@@ -461,9 +461,8 @@ tools/scripts/studio-code.spec.mjs` (end-to-end case with a fake build). Not ver
 - B320 598973423: real-design open-point budget spec (ratchet per product, part, kind; growth checked by hand: a
   lowered budget fails). 52d23cfc2 + 996b339ef: German blocker texts (`stale-record` = "Kein Prüfergebnis ...",
   `pending`, `embedded`). 16a3d8214 fixed the system-view spec that 52d23cfc2 broke (only the module spec ran).
-- B321: cause and fix in finding 375 report; fix uncommitted in `apps/ethlete-studio/src/app/design-parts/shell-main/`
-  (copy /tmp/b321-shell-stacking-fix.patch) until the new `paint` check (uncommitted, verify-webkit-studio.swift)
-  fails on HEAD and passes with the fix in Tom's quiet window.
+- B321: cause and fix in finding 375 report. The parked WIP (tank/wip/b321-stacking-fix e8bc0d1e6) is dropped:
+  all 16 files are on next or superseded (desk builder, file-by-file check, 2026-11-07).
 
 ## As built: B325 rest
 
