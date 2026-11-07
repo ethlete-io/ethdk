@@ -27,3 +27,15 @@ test('maps a staged file to its specs through globs', () => {
   assert.deepEqual(specsForFiles(['libs/x/rules/deep/r.ts'], map), []);
   assert.deepEqual(specsForFiles(['libs/y/f.ts'], map), ['b.spec.ts']);
 });
+
+test('flags a spec that reads a data file of the repo by path', () => {
+  const dataLoader = "readFileSync(join(__dirname, '../../../migrations.json'), 'utf8');";
+  assert.equal(readsSourcePath(dataLoader), true);
+  assert.equal(readsSourcePath("writeJson(join(core, 'migrations.json'), {})"), false);
+});
+
+test('maps a data file to the specs that read it', () => {
+  const map = { 'g.spec.ts': ['libs/*/migrations.json', 'libs/*/generators/generators.json'] };
+  assert.deepEqual(specsForFiles(['libs/core/migrations.json'], map), ['g.spec.ts']);
+  assert.deepEqual(specsForFiles(['libs/core/generators/generators.json'], map), ['g.spec.ts']);
+});

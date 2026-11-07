@@ -7,7 +7,7 @@ const mapPath = 'libs/cli/related-map.json';
 const cliRoot = 'libs/cli';
 const READS = /\b(readFileSync|spawnSync|execFileSync)\b|node:vm|from ['"]vm['"]|\bvm\./;
 const LOCATES = /__dirname|import\.meta/;
-const SOURCE_LITERAL = /['"`][^'"`\n]*\.(?:ts|tsx|mjs|js)['"`]/g;
+const SOURCE_LITERAL = /['"`][^'"`\n]*\.(?:ts|tsx|mjs|js)['"`]|['"`](?:[^'"`\n]*\/)?(?:migrations|generators)\.json['"`]/g;
 const NOT_SOURCE = /__fixtures__|\.spec\.|\.d\.ts|\$\{/;
 
 export const readsSourcePath = (text) =>

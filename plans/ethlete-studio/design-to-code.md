@@ -2838,6 +2838,8 @@ gate passes the repo root by env var and the spec uses it; no skip, because a sk
 ethlete-sdk-ff caught it with the whole cli update suite. Why no tool caught it: the gate picks related specs by import
 graph, and a guard spec that reads `libs/*/migrations.json` does not import it. Tool fix (B386, builder default): the gate
 maps data files (`migrations.json`, `generators.json`) to the specs that read them.
+As built (B386): `libs/cli/related-map.json` already maps the data files; the gap was `lint:cli-related-map`, whose
+source-path detection ignored `.json`. A spec that locates `migrations.json`/`generators.json` by path now needs a map entry too.
 
 449\. After B372 (8f059ae72) the full `design check --product studio` still exits 1 after 605 s with about 800 render
 problems (LOST-SURFACE in foundations/*, title-bar 265, shell-main 248, canvas-viewport SKIP-SCOPE 92, comment-pin
