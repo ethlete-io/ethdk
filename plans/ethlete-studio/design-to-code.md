@@ -2924,6 +2924,16 @@ elements/shell-main (title bar embed fea9ac862) open `@edit` sketches; pages/sta
 holds merged hash 5074133a3524678e) and waits for Tom's accept as it is. Open: the DIRECT-EDIT-PENDING rule lands
 after Tom's picks, else it blocks every push; disclosure's pictures.json entry moved from key `go` to `record` (cause
 asked; answered: `go` is a legacy kind still read, the rewrite kept hash and pictures, no data loss).
+As built (part 2, builder b412, 2026-11-07): static rule DIRECT-EDIT-PENDING (`rules/direct-edit-pending.ts`, in
+`RULES`, so `design check --rules`, pre-push and CI run it) reports every merged part of `changedOutsideSketchOf`: hash
+moved, no `merged.json` record, no open sketch holds it. The problem sits on the part's file (`at: merged-hash`), so
+the part is not build-ready. B401 way (ADR 0201/0205): the rule baseline, computed from the rule alone (no render)
+with `writeRuleBaseline`, lists the old hits: studio components/update-dialog, elements/shell-main, pages/inventory,
+pages/start (finding 507), sdk components/button, components/select, foundations/icons (new in `rule-baseline.json`).
+Closing a part by `design check --part` removes its hit, and the baseline entry must go with it (stale entries fail).
+Spec: pass for a never-merged and an unchanged part, hit for a moved hash, pass after `recordMerged`; the old
+check-system spec "warns ... and passes" now expects exit 1. Not done on purpose: `design check --part` on the five
+parts (render work) and the shell-main/start sketch (waits for Tom).
 
 508\. 3e10f1ddf did not compile: a subagent committed CLI code without running tsc, and `git commit` runs no
 typecheck (pre-push neither; CI is the only one). Found by the builder one commit later (type fix 6d26ac045). Why no

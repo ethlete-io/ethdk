@@ -16,7 +16,7 @@ describe('checkDesign', () => {
     vi.unstubAllEnvs();
   });
 
-  it('warns of a merged part that changed outside a sketch, and passes', async () => {
+  it('warns of a merged part that changed outside a sketch, and fails with DIRECT-EDIT-PENDING', async () => {
     const target = acme();
     const lines = output();
     const warnings: string[] = [];
@@ -25,12 +25,12 @@ describe('checkDesign', () => {
     recordMerged({ product: { dir: join(target, DESIGN_DIR, 'acme'), base: null }, parts: ['elements/hero'] });
     writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { padding: 0; }');
 
-    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
     expect(warnings).toEqual([
       expect.stringMatching(/^WARNING acme elements\/hero changed outside a sketch/),
       ...renderWarningsOf(lines),
     ]);
-    expect(lines).toContain('ok');
+    expect(lines).toContainEqual(expect.stringMatching(/^DIRECT-EDIT-PENDING .*elements\/hero/));
   }, 60_000);
 
   it('warns once per product of decision files that differ from HEAD or are untracked, and passes', async () => {
