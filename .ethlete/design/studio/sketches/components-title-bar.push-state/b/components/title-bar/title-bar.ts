@@ -69,7 +69,11 @@ const dirtyText = ({ notice, noticeText }: Props) =>
 
 const BANNER_TYPE = { green: 'info', red: 'error', unknown: 'warning' } as const;
 
-const BANNER_THEME = { green: '', red: ' data-et-semantic-color="error"', unknown: ' data-et-semantic-color="warning"' };
+const BANNER_THEME = {
+  green: '',
+  red: ' data-et-semantic-color="error"',
+  unknown: ' data-et-semantic-color="warning"',
+};
 
 const pushState = ({ push }: Props) =>
   push

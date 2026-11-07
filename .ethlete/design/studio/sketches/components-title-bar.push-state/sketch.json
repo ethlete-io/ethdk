@@ -1,6 +1,6 @@
 {
   "target": "components/title-bar@push-state",
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-11-07T11:32:19.528Z",
   "baseline": {
     "foundations/agent-logos": "d8ad620ff101ae06",
@@ -119,5 +119,9 @@
       "round": "r1",
       "note": "Inline text: the same muted text the title bar already uses for the dirty CLI notice, with a gate dot; red turns the text error-coloured. Reuses an existing pattern, cheapest; least prominent."
     }
+  },
+  "mergeHold": {
+    "reason": "variant a changes push-green, push-unknown, push-red, push-red-update, macos-push-red; variant b changes push-green, push-unknown, push-red, push-red-update, macos-push-red; variant c changes push-green, push-unknown, push-red, push-red-update, macos-push-red",
+    "at": "2026-11-07T13:08:58.403Z"
   }
 }

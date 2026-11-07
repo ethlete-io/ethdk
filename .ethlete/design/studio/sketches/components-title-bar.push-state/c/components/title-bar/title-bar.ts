@@ -78,7 +78,7 @@ const pushState = ({ push }: Props) =>
   push
     ? themed(
         push.gate,
-        `<span class="inline-flex items-center gap-1 whitespace-nowrap ${push.gate === 'green' ? 'text-et-surface-muted' : 'text-et-theme'}" data-push-state>${icon(GATE_ICON[push.gate], { size: 12 })}${pushCount(push)}, ${pushAge(push)}${push.gate === 'green' ? '' : ` - ${PUSH_GATE_LABEL[push.gate]}`}${push.gate === 'red' ? `, ${PUSH_RED_ADVICE}` : ''}</span>`,
+        `<span class="inline-flex items-center gap-1 whitespace-nowrap ${push.gate === 'green' ? 'text-et-surface-muted' : 'text-et-theme'}"${push.gate === 'red' ? ` title="${PUSH_RED_ADVICE}"` : ''} data-push-state>${icon(GATE_ICON[push.gate], { size: 12 })}${pushCount(push)}, ${pushAge(push)}${push.gate === 'green' ? '' : ` - ${PUSH_GATE_LABEL[push.gate]}`}</span>`,
       )
     : '';
 
@@ -106,7 +106,7 @@ const notice = async (props: Props) =>
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/components/title-bar/title-bar.component.ts',
-  note: 'The window title bar: a compact 32 px drag region on the app background, closed off from the content below by a 1 px bottom border. The centred search field (components/title-search) names the product and part you are in and draws its own states. Update, a filled brand button, shows only when an update is ready and ends the bar before the window controls. macOS reserves 78 px left for the native traffic lights (drawn as three neutral grey dots, like an inactive window); Linux draws round buttons on the side its button layout gives; Windows draws square tiles with a red close hover. The grid draws each control at rest, hovered, pressed and focused: Update (linux-full-update), minimize (linux-left), the round close (linux-close), maximize (windows) and the square close (windows-update). The push state of the checkout is muted inline text before the notice, like the dirty CLI text: count and age with a check when the gate is green; the warning or error theme ink when the gate did not run or is red, and red adds fix before any feature slice.',
+  note: 'The window title bar: a compact 32 px drag region on the app background, closed off from the content below by a 1 px bottom border. The centred search field (components/title-search) names the product and part you are in and draws its own states. Update, a filled brand button, shows only when an update is ready and ends the bar before the window controls. macOS reserves 78 px left for the native traffic lights (drawn as three neutral grey dots, like an inactive window); Linux draws round buttons on the side its button layout gives; Windows draws square tiles with a red close hover. The grid draws each control at rest, hovered, pressed and focused: Update (linux-full-update), minimize (linux-left), the round close (linux-close), maximize (windows) and the square close (windows-update). The push state of the checkout is muted inline text before the notice, like the dirty CLI text: count and age with a check when the gate is green; the warning or error theme ink and the gate word when the gate did not run or is red; red carries fix before any feature slice in its title.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   widths: [1440],
   states,
