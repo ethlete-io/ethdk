@@ -2887,6 +2887,13 @@ touched `apps/storybook-e2e`. Tool fix (B394, builder default): a revert also re
 that names the reverted change or matches its markup (grep the e2e for the attributes the revert removes), and
 pre-push runs the behavior suites of the components whose files the pushed range changes.
 
+As built (B394): `yarn revert:check <sha-to-revert> [head]` (`tools/scripts/revert-check.mjs`) lists the markup tokens
+(aria-*, data-*, `[attr.x]`, `[x=...]` locators, `x="..."`) the commit touches and every later commit that names it or
+changes a line with one of them, e2e specs included; prose files are skipped; exit 1 when any is found. Run on
+e73234f6e..40a92b60b^ it lists 80d8d2b8c. Part 2 needed no hook: ADR 0225 moved slow checks out of pre-push, and CI
+already runs the behavior suites of the changed components (`apps/storybook-e2e/affected.mjs`, the `e2e-selection`
+step and three `storybook-e2e` shards in `ci.yml`), including a change that touches only an e2e folder.
+
 454\. CI 42016914765, Studio rules: the `--slow` step finds that the direct-edit state of `pages/system` has no
 "Gründe" trigger. Cause (the first lead, B372, was wrong): the design state draws the build-ready footer with a "Gründe"
 disclosure since 2e70dc149 (merge pick a of the build-ready sketch, design files only). The app never had it; building

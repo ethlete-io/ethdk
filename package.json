@@ -43,6 +43,7 @@
     "red-check": "node ./tools/scripts/red-check.mjs",
     "release": "yarn prepare:release && yarn changeset publish",
     "release:smoke": "node ./tools/release-smoke/smoke.mjs",
+    "revert:check": "node ./tools/scripts/revert-check.mjs",
     "sdk:tokens": "node tools/scripts/generate-sdk-tokens.mjs",
     "sdk:tokens:check": "node tools/scripts/generate-sdk-tokens.mjs --check",
     "sessions": "node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs",
