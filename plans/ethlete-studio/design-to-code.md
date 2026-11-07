@@ -4145,3 +4145,10 @@ cherry-pick; no agent hand-edits it.
 minutes. Nobody owned `next`, and 8 row agents reported to a dead session. Tool fix (technical): a handoff to another
 session waits for the successor's ack and checks its process; a session that hands itself off prefers `restart <own
 session>` over a new session.
+
+573\. Doc agent (2026-11-07): the desk builder 2a's tmux session ended at about 13:30 with no restart and no log line;
+its row agents died with it, and the grill noticed only because a send failed. The Mac's wind-down pushed two tank
+branches that only delete files (tank/tree: 4664 files, tank/webkit-tla-wt: 579), with `--no-verify`. Tool fixes
+(technical): the dispatcher tells the paired session when a builder's session ends; a WIP push refuses a commit that
+deletes more than a set share of the tree; `sketch merge` marks the STATUS row that names the merged sketch (B398 still
+read "sketch waits for Tom" after Tom merged it).
