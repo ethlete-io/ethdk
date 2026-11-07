@@ -196,6 +196,12 @@ type Context = {
   warm?: WarmDraw;
 };
 
+const staleBasesOf = (context: Context, options: { product: ResolvedProduct; targets: Set<string> }) =>
+  staleSketchBasesOf({
+    ...options,
+    invocation: context.invocation ?? repoInvocation({ root: context.target, subcommand: 'design' }),
+  });
+
 const fail = (message: string) => {
   console.error(message);
 
@@ -1121,6 +1127,13 @@ const readyRefusalOf = (
 ): number | null => {
   const lineOf = (variant: string, problem: Problem) =>
     `${sketch.target} ${variant}: ${problem.rule} ${relative(context.target, problem.file)}: ${problem.message}`;
+  const stale = staleBasesOf(context, { product, targets: new Set([sketch.target]) });
+
+  if (stale.length > 0)
+    return fail(
+      `${stale.map((problem) => problem.line).join('\n')}\n${sketch.target} is stale - rebase it before ready`,
+    );
+
   const found = variantProblemsOf({ product, sketch });
 
   found.forEach((entry) => noteProblemsBefore({ target: context.target, ...entry }));
@@ -1341,11 +1354,7 @@ const checked = async (context: Context) => {
     if (sketch.hold) console.warn(`HELD ${sketch.target}: until ${sketch.hold.until}`);
   });
 
-  const stale = staleSketchBasesOf({
-    product,
-    invocation: context.invocation ?? repoInvocation({ root: target, subcommand: 'design' }),
-    targets: new Set(chosen.map((entry) => entry.sketch.target)),
-  });
+  const stale = staleBasesOf(context, { product, targets: new Set(chosen.map((entry) => entry.sketch.target)) });
 
   stale.forEach((problem) => console.error(problem.line));
   failed ||= stale.length > 0;
@@ -1451,11 +1460,9 @@ const checked = async (context: Context) => {
   const staleSince =
     rendered === null
       ? []
-      : staleSketchBasesOf({
-          product,
-          invocation: context.invocation ?? repoInvocation({ root: target, subcommand: 'design' }),
-          targets: new Set(chosen.map((entry) => entry.sketch.target)),
-        }).filter((problem) => !stale.some((before) => before.line === problem.line));
+      : staleBasesOf(context, { product, targets: new Set(chosen.map((entry) => entry.sketch.target)) }).filter(
+          (problem) => !stale.some((before) => before.line === problem.line),
+        );
 
   staleSince.forEach((problem) => console.error(problem.line));
 
