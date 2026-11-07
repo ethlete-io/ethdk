@@ -6,6 +6,12 @@
   "prefix": "ethlete",
   "tags": ["type:app", "scope:studio"],
   "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "ngc -p apps/ethlete-studio/tsconfig.app.json --noEmit"
+      }
+    },
     "lint": {
       "options": {
         "args": ["--max-warnings=0"]

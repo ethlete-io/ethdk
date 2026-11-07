@@ -3948,3 +3948,6 @@ restart a stuck builder and Tom had to step in. Fix: `restart <name>` accepts th
 exactly one is a builder. `restart` accepts a paired target and logs `peer restart: <caller> restarted <target>` to
 `restart.log`; any other peer is still refused. The builder-agent and doc-agent skills each got one line.
 Verified: new spec in agent-sessions.spec.ts. A builder started before this change has no marker; restart it once by hand.
+565\. Builder (2026-11-07): `ethlete-studio:build` failed with TS2322 at the `[themeSwitches]` binding (`current` is `string | undefined`, `ThemeSwitch.current` is `string`) and it sat on `next`. Why no tool caught it: plain `tsc` does not check templates, and `ethlete-studio` had no `typecheck` target, so CI's `run-many -t typecheck` skipped it; only the post-push `build` job saw it. Tool fix (technical): an `ethlete-studio:typecheck` target running `ngc --noEmit`, picked up by that CI step.
+
+565 as built (2026-11-07): `themeSwitches` drops a switch whose `current` is undefined (`flatMap` narrows it). Added `ethlete-studio:typecheck` (`ngc -p apps/ethlete-studio/tsconfig.app.json --noEmit`). Verified: `ngc` reproduced the error on `next`; `tsc` printed none. Not verified: pre-push still skips it.

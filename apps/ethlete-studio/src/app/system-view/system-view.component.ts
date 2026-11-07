@@ -673,7 +673,9 @@ export class SystemViewComponent {
     return [
       { kind: 'surface' as const, label: STUDIO_LABELS.shell.surfaceTheme, ...themes.surface },
       { kind: 'color' as const, label: STUDIO_LABELS.shell.colorTheme, ...themes.color },
-    ].filter((theme) => theme.names.length > 1);
+    ].flatMap(({ current, ...theme }) =>
+      current !== undefined && theme.names.length > 1 ? [{ ...theme, current }] : [],
+    );
   });
 
   private nodes = computed(() => {
