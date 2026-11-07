@@ -1,7 +1,7 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'fs';
 import { originOf } from '../write-origin';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../design-config';
 import { partKeyOf, resolveProduct } from '../resolve-product';
@@ -777,6 +777,27 @@ describe('a sketch on a part with a shared folder', () => {
     expect(readFileSync(join(sketch.dir, 'shared/data.ts'), 'utf8')).toContain("from '@shared/more'");
     expect(existsSync(join(sketch.dir, 'shared/more.ts'))).toBe(true);
     expect(existsSync(join(hero, 'shared/data.ts'))).toBe(true);
+  });
+
+  it('points an import that leaves the shared folder at the same file from the sketch', () => {
+    const target = acme();
+    const hero = join(target, DESIGN_DIR, 'acme/elements/hero');
+    const outside = join(target, DESIGN_DIR, 'outside.ts');
+
+    mkdirSync(join(hero, 'shared'));
+    writeFileSync(outside, 'export const outside = 1;\n');
+    writeFileSync(
+      join(hero, 'shared/data.ts'),
+      "import { outside } from '../../../../outside';\nexport { outside };\n",
+    );
+
+    const sketch = open(target, 'elements/hero');
+    const specifier = /from '([^']+)'|import .* from '([^']+)'/u.exec(
+      readFileSync(join(sketch.dir, 'shared/data.ts'), 'utf8'),
+    );
+    const written = specifier?.[1] ?? specifier?.[2] ?? '';
+
+    expect(`${resolve(sketch.dir, 'shared', written)}.ts`).toBe(outside);
   });
 
   it('refuses several targets whose shared folders hold the same path with different contents', () => {

@@ -62,3 +62,5 @@ webkit-revert-wt (nicht genommen, entschieden), wip/b321-stacking-fix (verworfen
 - origin/tank/b217 → verworfen: bf6fcd97e schon in next als 074e32805; der WIP 494af9c34 ist ein älterer Entwurf, den 074e32805 in `complete.ts` ersetzt hat.
 - desk/B306 → gelandet in diesem Commit (FailedShots als `defineRootProvider`, Chip und Popover „N Bilder fehlen“; Specs, Lint, Typecheck grün; Retry-Knopf bleibt offen in B306).
 - desk/B355 → gelandet in diesem Commit (async-Fehler außerhalb des Falls → FAIL und neuer Worker; zwischen den Fällen endet der Worker mit 1 statt den Fehler zu schlucken; mit zwei Wegwerf-Fällen geprüft).
+- desk/B356 → verworfen: der WIP ist nur der WebKit-Budget-Fall samt CI-Schritt; der Zoom-Fix fehlt, der Fall wäre in CI rot (gemessen p50 45–49 ms), und er kollidiert mit next; Übernahme des Falls nach dem Zoom-Fix steht auf B356.
+- desk/B346 → 975505b03 gelandet in diesem Commit (`sketch new` rebast Importe eines gehobenen `shared/`-Ordners richtig; Sketch-Specs grün); 4f56e7893 (Kopf-Tag) zurückgehalten: Skizze `pages/sketches@head-zoom` ist noch in Arbeit ohne Wahl, e2e 0/4; der WIP-Commit ist nur Toms Skizzendaten.

@@ -1892,6 +1892,11 @@ without the 404 route. Reproduced but not fixed: at 30 % the head is an empty 42
 `in-data-sk-head-hidden:invisible`), so the change is the open sketch `pages/sketches@head-zoom` (a collapse, b
 scale the whole head, c tag); the 30 % head check goes into the case with the pick. Not built: the state-name floor
 (finding 431 (2)).
+Found on the way (2026-11-07): `sketch new` wrote 9 `../` instead of 6 into the canvas-math import of a copied
+`shared/sketch-rows.ts`; it rebased imports leaving `shared/` for the variant folder, then lifted the folder three
+levels up. Fixed: it rebases them for the place they end up (`settledIn`), with a spec that fails on the old code.
+The head tag (c) built on desk/B346 (4f56e7893) is held: the sketch `pages/sketches@head-zoom` is still in progress
+and has no pick, and its e2e case failed 0/4 under load.
 
 404\. Builder (2026-11-04, S6a merge 2e70dc149): `pages/system@pages-system-build-ready` showed "stale since
 5bec01b89" and `sketch rebase` reported a conflict, but all three variants already held 5bec01b89's change, identical to

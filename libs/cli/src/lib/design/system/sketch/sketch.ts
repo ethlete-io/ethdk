@@ -183,10 +183,18 @@ export const relativeSpecifierOf = (options: { from: string; to: string }) => {
  * Rewrites the relative imports of the files in `dir`, a copy of the folder `from`, that leave `from` - and `within`,
  * when given - so they reach the same files from `dir`.
  */
-export const rebaseOutsideImports = (options: { dir: string; from: string; within?: string }) => {
-  const { dir, from, within } = options;
+export const rebaseOutsideImports = (options: {
+  dir: string;
+  from: string;
+  within?: string;
+  settledIn?: string;
+  skip?: string;
+}) => {
+  const { dir, from, within, settledIn, skip } = options;
 
   for (const file of sourceFilesIn(dir)) {
+    if (skip !== undefined && insideOf(resolve(dir, skip), file)) continue;
+
     const original = resolve(from, relative(dir, file));
     const source = readFileSync(file, 'utf8');
     const rewritten = source.replace(
@@ -196,7 +204,7 @@ export const rebaseOutsideImports = (options: { dir: string; from: string; withi
 
         return insideOf(from, path) || (within !== undefined && insideOf(within, path))
           ? match
-          : `${quote}${relativeSpecifierOf({ from: file, to: path })}${quote}`;
+          : `${quote}${relativeSpecifierOf({ from: settledIn ? resolve(settledIn, relative(dir, file)) : file, to: path })}${quote}`;
       },
     );
 
@@ -700,14 +708,27 @@ const seedTarget = (options: {
 
   mkdirSync(folder, { recursive: true });
 
+  const seeded = (from: string) => {
+    const sketchSharedDir = resolve(dir, SHARED_FOLDER);
+
+    rebaseOutsideImports({ dir: folder, from, skip: SHARED_FOLDER });
+
+    if (existsSync(resolve(folder, SHARED_FOLDER)))
+      rebaseOutsideImports({
+        dir: resolve(folder, SHARED_FOLDER),
+        from: resolve(from, SHARED_FOLDER),
+        settledIn: sketchSharedDir,
+      });
+
+    liftShared({ partDir: folder, sketchSharedDir });
+  };
+
   if (like) {
     copyPartAs({ from: like, to: folder, name: target.name });
-    rebaseOutsideImports({ dir: folder, from: like.folder });
-    liftShared({ partDir: folder, sketchSharedDir: resolve(dir, SHARED_FOLDER) });
+    seeded(like.folder);
   } else if (existing) {
     cpSync(resolve(existing.file, '..'), folder, { recursive: true });
-    rebaseOutsideImports({ dir: folder, from: resolve(existing.file, '..') });
-    liftShared({ partDir: folder, sketchSharedDir: resolve(dir, SHARED_FOLDER) });
+    seeded(resolve(existing.file, '..'));
   } else if (target.layer === 'pages') {
     const widths = [...new Set(Object.values(product.presets).map((preset) => preset.width))].sort((a, b) => a - b);
     writeFileSync(resolve(folder, `${target.name}.ts`), pageStubOf({ name: target.name, madeBy: author, widths }));
