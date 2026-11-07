@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
 import { hooksProblemOf } from './check-hooks-installed.mjs';
-import { useAbsoluteHooksPath } from './postinstall.mjs';
+import { useTrackedHooksPath } from './postinstall.mjs';
 
 const created = [];
 
@@ -19,9 +19,9 @@ const repoOf = () => {
   return repo;
 };
 
-const installHooks = (repo) => {
-  mkdirSync(join(repo, '.husky', '_'), { recursive: true });
-  writeFileSync(join(repo, '.husky', '_', 'pre-commit'), '');
+const addHooks = (repo) => {
+  mkdirSync(join(repo, '.husky'), { recursive: true });
+  writeFileSync(join(repo, '.husky', 'pre-commit'), '');
 };
 
 const setHooksPath = (repo, value) => spawnSync('git', ['config', 'core.hooksPath', value], { cwd: repo });
@@ -30,30 +30,23 @@ test('fails when core.hooksPath is unset', () => {
   assert.match(hooksProblemOf(repoOf()), /core\.hooksPath is unset/);
 });
 
-test('fails when hooksPath is set but .husky/_ was never generated', () => {
+test('fails when hooksPath is set but the hooks are missing', () => {
   const repo = repoOf();
-  setHooksPath(repo, '.husky/_');
+  setHooksPath(repo, '.husky');
   assert.match(hooksProblemOf(repo), /not installed/);
 });
 
 test('fails when hooksPath points somewhere else', () => {
   const repo = repoOf();
-  installHooks(repo);
+  addHooks(repo);
   setHooksPath(repo, '.githooks');
   assert.match(hooksProblemOf(repo), /not installed/);
 });
 
-test('passes with the relative husky path and a generated pre-commit', () => {
+test('passes with the relative .husky path and a pre-commit', () => {
   const repo = repoOf();
-  installHooks(repo);
-  setHooksPath(repo, '.husky/_');
-  assert.equal(hooksProblemOf(repo), null);
-});
-
-test('passes with an absolute husky path', () => {
-  const repo = repoOf();
-  installHooks(repo);
-  setHooksPath(repo, join(repo, '.husky', '_'));
+  addHooks(repo);
+  setHooksPath(repo, '.husky');
   assert.equal(hooksProblemOf(repo), null);
 });
 
@@ -73,27 +66,29 @@ const worktreeOf = (repo) => {
   return realpathSync(worktree);
 };
 
-test('in a worktree a relative husky path fails and an absolute one passes', () => {
+test('an absolute path to the main checkout fails in a worktree', () => {
   const repo = repoOf();
-  installHooks(repo);
+  addHooks(repo);
   const worktree = worktreeOf(repo);
-  setHooksPath(repo, '.husky/_');
+  setHooksPath(repo, join(repo, '.husky'));
   assert.match(hooksProblemOf(worktree), /not installed/);
-  setHooksPath(repo, join(repo, '.husky', '_'));
-  assert.equal(hooksProblemOf(worktree), null);
 });
 
-test('postinstall sets the absolute path of the main checkout from a worktree', () => {
+test('postinstall sets the relative path and a worktree runs its own hooks', () => {
   const repo = repoOf();
-  installHooks(repo);
+  addHooks(repo);
+  spawnSync('git', ['add', '.'], { cwd: repo });
   const worktree = worktreeOf(repo);
-  setHooksPath(repo, '.husky/_');
-  assert.equal(useAbsoluteHooksPath(worktree), join(repo, '.husky', '_'));
-  assert.equal(hooksProblemOf(worktree), null);
+  assert.equal(useTrackedHooksPath(repo), '.husky');
+  assert.equal(
+    spawnSync('git', ['config', 'core.hooksPath'], { cwd: worktree, encoding: 'utf8' }).stdout.trim(),
+    '.husky',
+  );
+  assert.equal(hooksProblemOf(repo), null);
 });
 
-test('postinstall leaves core.hooksPath alone without a worktrees directory', () => {
-  const repo = repoOf();
-  setHooksPath(repo, '.husky/_');
-  assert.equal(useAbsoluteHooksPath(repo), null);
+test('postinstall does nothing outside a git repository', () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), 'hooks-installed-')));
+  created.push(dir);
+  assert.equal(useTrackedHooksPath(dir), null);
 });

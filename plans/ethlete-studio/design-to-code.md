@@ -3971,3 +3971,8 @@ the retry is fast (new `tools/scripts/pre-push.spec.mjs`). The tsconfig-paths no
 `.claude/worktrees/*`; `apps/docs/.vitepress/config.mts` now names `tsconfig.base.json` as its only project. Not done:
 an `ServerAliveInterval` for github.com in `~/.ssh/config` (the sandbox denied editing it); the first push of a docs
 change still waits ~8 min and may still drop.
+566\. Agents (2026-11-07): worktree commits ran the main checkout's hooks through an absolute `core.hooksPath`; an older
+worktree lacked the scripts they call, and agents fell back to `--no-verify`. As built: `postinstall` sets the relative
+`core.hooksPath=.husky` (tracked scripts, so each worktree runs its own), the hooks `cd` to `--show-toplevel`,
+`check-hooks-installed` rejects an absolute path, and `lint:no-verify-briefs` (pre-push) fails a brief that tells agents to
+skip hooks. Apply once in the main checkout: `git config core.hooksPath .husky`.

@@ -1,6 +1,6 @@
 import { spawnSync } from 'child_process';
 import { existsSync } from 'fs';
-import { join, resolve, sep } from 'path';
+import { join, resolve } from 'path';
 
 const gitOf = (cwd: string, args: string[]) => {
   const run = spawnSync('git', args, { cwd, encoding: 'utf8' });
@@ -17,7 +17,7 @@ export const hooksProblemOf = (cwd: string) => {
   const hooksPath = gitOf(cwd, ['config', 'core.hooksPath']);
   const dir = hooksPath ? resolve(top, hooksPath) : join(top, '.husky', '_');
 
-  if (hooksPath && dir.endsWith(`${sep}.husky${sep}_`) && existsSync(join(dir, 'pre-commit'))) return null;
+  if (hooksPath && dir === join(top, '.husky') && existsSync(join(dir, 'pre-commit'))) return null;
 
-  return `HOOKS NOT INSTALLED: core.hooksPath is ${hooksPath ? `"${hooksPath}"` : 'unset'} and ${join(dir, 'pre-commit')} is missing, so no commit or push check runs. Run \`yarn husky\`; in a worktree set the absolute path: git config core.hooksPath <main checkout>/.husky/_`;
+  return `HOOKS NOT INSTALLED: core.hooksPath is ${hooksPath ? `"${hooksPath}"` : 'unset'} and ${join(dir, 'pre-commit')} is missing, so no commit or push check runs. Run \`git config core.hooksPath .husky\` (relative, so every worktree runs its own hooks).`;
 };

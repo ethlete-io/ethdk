@@ -27,11 +27,9 @@ describe('hooksProblemOf', () => {
     expect(hooksProblemOf(repoOf({ husky: true }))).toContain('HOOKS NOT INSTALLED');
   });
 
-  it('is silent once .husky/_ is generated and configured', () => {
+  it('is silent once core.hooksPath is the relative .husky', () => {
     const repo = repoOf({ husky: true });
-    mkdirSync(join(repo, '.husky', '_'));
-    writeFileSync(join(repo, '.husky', '_', 'pre-commit'), '');
-    spawnSync('git', ['config', 'core.hooksPath', '.husky/_'], { cwd: repo });
+    spawnSync('git', ['config', 'core.hooksPath', '.husky'], { cwd: repo });
 
     expect(hooksProblemOf(repo)).toBeNull();
   });

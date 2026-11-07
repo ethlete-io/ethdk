@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { join, resolve, sep } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const git = (cwd, args) => {
@@ -18,9 +18,9 @@ export const hooksProblemOf = (cwd) => {
   const hooksPath = git(cwd, ['config', 'core.hooksPath']);
   const dir = hooksPath ? resolve(top, hooksPath) : join(top, '.husky', '_');
 
-  if (hooksPath && dir.endsWith(`${sep}.husky${sep}_`) && existsSync(join(dir, 'pre-commit'))) return null;
+  if (hooksPath && dir === join(top, '.husky') && existsSync(join(dir, 'pre-commit'))) return null;
 
-  return `Git hooks are not installed here (core.hooksPath is ${hooksPath ? `"${hooksPath}"` : 'unset'}, no pre-commit at ${join(dir, 'pre-commit')}), so commit and push checks never run. Run \`yarn husky\`. In a worktree the config is shared with the main checkout, so set the absolute path instead: git config core.hooksPath <main checkout>/.husky/_`;
+  return `Git hooks are not installed here (core.hooksPath is ${hooksPath ? `"${hooksPath}"` : 'unset'}, no pre-commit at ${join(dir, 'pre-commit')}), so commit and push checks never run. Run \`git config core.hooksPath .husky\` (relative, so every worktree runs its own hooks; \`yarn install\` sets it).`;
 };
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
