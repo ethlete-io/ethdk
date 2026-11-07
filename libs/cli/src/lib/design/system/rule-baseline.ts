@@ -72,12 +72,16 @@ const partOfHit = (hit: string) => hit.slice(0, hit.indexOf(': '));
 export const ruleBaselineLineOf = ({ rule, hit, entry }: { rule: string; hit: string; entry: RuleBaselineEntry }) =>
   `baselined (ADR 0201): ${rule} ${hit} - finding ${entry.finding}, sketch ${entry.sketch}`;
 
-/** The entries of `product`'s rule baseline added after it was first committed: it may only shrink; a note may change. */
+/**
+ * The entries of `product`'s rule baseline added after their rule was first committed in it: it may only shrink, a note
+ * may change, and a new rule may start with the hits that predate it.
+ */
 export const addedRuleBaselineEntriesOf = (product: ResolvedProduct) =>
   addedBaselineNamesOf({
     file: ruleBaselineFileOf(product),
     identitiesOf: (text) =>
       flatOf(baselineOf(text)).map(({ rule, hit }) => [`${rule} ${hit}`, JSON.stringify([rule, hit])]),
+    groupOf: (identity) => (JSON.parse(identity) as [string, string])[0],
   });
 
 /**

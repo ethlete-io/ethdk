@@ -63,6 +63,7 @@ export const implementsUnrenderedProblemsOf = (options: {
       {
         rule: IMPLEMENTS_UNRENDERED_RULE,
         file: relative(root, definition.file),
+        at: page,
         message: `${part} implements ${path ?? 'a component'}, but the live page ${page} renders no <${selector}> at its slot in ${states.join(', ')} - link the component the app renders there`,
       },
     ]);

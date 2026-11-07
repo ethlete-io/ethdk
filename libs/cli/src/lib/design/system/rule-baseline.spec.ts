@@ -106,6 +106,28 @@ describe('rule baseline (ADR 0201)', () => {
     ]);
   });
 
+  it('lets a rule that was never in the committed baseline start with entries, and keeps it shrink-only after', () => {
+    const { product, commit, writeBaseline } = checkout();
+
+    writeBaseline({ 'CONTROL-STATE': { 'components/rail: section': entry } });
+    commit();
+    writeBaseline({
+      'CONTROL-STATE': { 'components/rail: section': entry },
+      'DROPPED-PROP': { 'components/chip: remove': entry },
+    });
+    commit();
+    writeBaseline({
+      'CONTROL-STATE': { 'components/rail: section': entry },
+      'DROPPED-PROP': { 'components/chip: remove': entry, 'components/chip: size': entry },
+    });
+
+    const found = ruleBaselineOf({ product: product(), problems: [], checked: () => false });
+
+    expect(found.problems.map((problem) => problem.message)).toEqual([
+      'components/chip: size was added to the rule baseline - it may only shrink (ADR 0201)',
+    ]);
+  });
+
   it('writes every hit under its rule and part, sorted, and keeps the entries already there', () => {
     const { product, hitOn, writeBaseline, file } = checkout();
 

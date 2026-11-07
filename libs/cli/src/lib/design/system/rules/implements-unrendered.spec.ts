@@ -47,6 +47,7 @@ describe('implementsUnrenderedProblemsOf', { timeout: 30_000 }, () => {
       {
         rule: 'IMPLEMENTS-UNRENDERED',
         file: '.ethlete/design/acme/elements/hero/hero.ts',
+        at: 'pages/home',
         message: `elements/hero implements ${HERO_COMPONENT}, but the live page pages/home renders no <app-hero> at its slot in default, empty - link the component the app renders there`,
       },
     ]);
