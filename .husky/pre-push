@@ -26,8 +26,6 @@ while read -r _ local_sha _ remote_sha; do
     out=$(yarn "$check" 2>&1) || { echo "pre-push: $check failed:"; echo "$out"; failed=1; }
   done
 
-  node tools/scripts/lib-build-gate.mjs "$base" "$local_sha" || failed=1
-
   if git diff --name-only "$base" "$local_sha" | grep -q '^apps/docs/'; then
     yarn vitepress build apps/docs || failed=1
   fi

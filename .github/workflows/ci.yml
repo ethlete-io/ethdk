@@ -112,8 +112,7 @@ jobs:
       - name: Static design rules
         run: node dist/libs/cli/src/index.js design check --product studio --rules ${NX_BASE:+--base "$NX_BASE"}
 
-      - name: Design rules gate over the pull request range
-        if: github.event_name == 'pull_request'
+      - name: Design rules gate over the pushed range
         run: node tools/scripts/design-rules-gate.mjs "$NX_BASE" "$NX_HEAD"
 
       - name: Slow design rules against the pull request base
@@ -153,6 +152,9 @@ jobs:
           nx-cache-key: build
 
       - run: yarn nx run-many -t build
+
+      - name: Lib build gate over the pushed range
+        run: node tools/scripts/lib-build-gate.mjs "$NX_BASE" "$NX_HEAD"
 
       # Bundle-size goldens: fails when something in core/query/components becomes unshakeable again.
       # Accept a real change with `nx run treeshake:bundle-goldens:update` and commit goldens.json.
