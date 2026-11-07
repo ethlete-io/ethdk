@@ -4022,3 +4022,21 @@ As built (B112): the report was already there (`CANONICAL-CLASS` in `design chec
 Tailwind's own `canonicalizeCandidates`). Added `design check --product <name> --app-classes --fix`: rewrites
 each flagged class in the app source and the product's parts, whole tokens only. Spec case added. Not built:
 an ESLint rule for the app config (no Tailwind v4 canonical-class lint rule is available).
+
+567\. Doc agent (2026-11-07): the Mac doc session sent its desk handoff as `send <name> --to desk-doc -`; the mailbox
+stored a literal `-` and the handoff was lost until it was resent as a file. Why no tool caught it: `send` reads stdin
+only when the message is missing, and takes `-` as text. Tool fix (technical): `send` reads stdin for `-`, and refuses
+an empty or `-`-only message.
+
+568\. Doc agent (2026-11-07): Tom's ready marks for seven studio foundations (agent-logos, colors, icons, logo, motion,
+spacing, type) sat uncommitted in the desk `ready.json` for a day; the move to the Mac's `next` dropped them, and Tom has
+to mark them again. Why no tool caught it: nothing tells the user that a ready mark is not committed, and the checkout
+switch only saw a dirty generated file. Tool fix (technical): Studio shows uncommitted ready marks (same channel as
+B415's unpushed commits), and `sketch ready` commits its own `ready.json` change like B369 does for merges.
+
+569\. Builder (2026-11-07, B163): `shot` threw when the clip lay outside the page. Why no tool caught it: every shot
+spec used a mocked page. Tool fix (technical): each Playwright-backed spec gets one case on a real page; the serve route
+returns the same note as the CLI (`x-et-note`), new row.
+
+570\. Builder (2026-11-07, B360): on a missing `dist`, `mappedSubpathOf` swallows the error, so the listing never names
+the build command. Tool fix (technical): the listing names `nx build <name>` for a missing `dist`.
