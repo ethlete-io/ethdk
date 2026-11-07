@@ -36,7 +36,8 @@ const DRAFT_RETRY_MS = 2000;
 const RESTART_AFTER_SECONDS = 5;
 const RESTART_CLEAR_MS = 2500;
 const RESTART_POLL_MS = 2000;
-const RESTART_WAIT_MS = 30 * 60 * 1000;
+const RESTART_WAIT_MS = Number(process.env.AGENT_RESTART_WAIT_MS ?? 30 * 60 * 1000);
+const RESTART_DRAFT_NOTICE_MS = Number(process.env.AGENT_RESTART_DRAFT_NOTICE_MS ?? 2 * 60 * 1000);
 const RESTART_CLEAR_WAIT_MS = Number(process.env.AGENT_RESTART_CLEAR_WAIT_MS ?? 60 * 1000);
 const repoSlug = basename(root).replace(/[.:]/g, '-');
 const sessionFor = (agent) => `${agent}@${repoSlug}`;
@@ -62,6 +63,7 @@ const afterSeconds = takeFlag(args, '--after', true);
 const now = takeFlag(args, '--now', false);
 const dryRun = takeFlag(args, '--dry-run', false);
 const role = takeFlag(args, '--role', true);
+const notify = takeFlag(args, '--notify', true);
 const [command, sender, ...words] = args;
 
 const help = `Shared agent mailbox: ${mailbox}
@@ -81,8 +83,9 @@ Run:     node ${script} run <name> <command...> [--role builder] [--dry-run]
 Install: node ${script} shell-install [<agent>...] [--file <path>] [--remove] [--dry-run]
                                                       (write the shell functions into ~/.zshrc or ~/.bashrc)
 Shell:   node ${script} shell-init [<agent>...]       (print shell functions that wrap each agent with run; default: claude codex)
-Restart: node ${script} restart <name> [--after <seconds>] <prompt...>
-                                                      (type the clear command and then the prompt into the tmux session of <name>)
+Restart: node ${script} restart <name> [--after <seconds>] [--notify <agent,...>] <prompt...>
+                                                      (type the clear command and then the prompt into the tmux session of <name>;
+                                                       a long wait on a draft and a give-up go to <name> and each --notify agent)
 Down:    node ${script} down [<name>...]              (stop dispatch; stop the named sessions too)
 Dispatch: node ${script} dispatch                      (wake the tmux session named <agent> for each message sent --to <agent>)
 
@@ -120,6 +123,13 @@ const restartLog = (message) => {
   mkdirSync(dirname(mailbox), { recursive: true });
   appendFileSync(join(dirname(mailbox), 'restart.log'), `${new Date().toISOString()} ${message}\n`);
 };
+const restartNotice = (message) => {
+  restartLog(message);
+  [sender, ...(notify ?? '').split(',')]
+    .map((agent) => agent.trim())
+    .filter(Boolean)
+    .forEach((to) => append({ sender: 'restart', to, message }));
+};
 
 /**
  * Waits until the agent ended its turn and nobody types in its prompt, twice in a row; `false` after the time limit.
@@ -130,12 +140,19 @@ const waitForQuiet = (session, limitMs = RESTART_WAIT_MS, allowBusy = false) => 
   const end = Date.now() + limitMs;
   let quiet = 0;
   let reason = '';
+  let draftSince = null;
+  let told = false;
   while (Date.now() < end) {
     const busy = allowBusy ? null : busyLine(session);
     const draft = busy === null ? draftLine(session) : null;
     const next = busy !== null ? `busy: ${busy.trim()}` : draft !== null ? `draft: ${draft}` : '';
     if (next !== reason) restartLog(`${session} ${next ? `waits, ${next}` : 'is quiet'}`);
     reason = next;
+    draftSince = draft === null ? null : (draftSince ?? Date.now());
+    if (!told && draftSince !== null && Date.now() - draftSince >= RESTART_DRAFT_NOTICE_MS) {
+      told = true;
+      restartNotice(`restart of ${session} waits ${Math.round((Date.now() - draftSince) / 1000)}s, draft: ${draft}`);
+    }
     quiet = next ? 0 : quiet + 1;
     if (quiet === 2) return true;
     sleep(RESTART_POLL_MS);
@@ -145,15 +162,29 @@ const waitForQuiet = (session, limitMs = RESTART_WAIT_MS, allowBusy = false) => 
 
 /** The IDE context chip (`[⧉ In file.ts]`, `[⧉ 3 lines selected]`) shares the prompt line and survives `/clear`. */
 const IDE_CHIP = /\[⧉ [^\]]*\]/g;
-const draftLine = (session) => {
-  const pane = tmux('capture-pane', '-p', '-e', '-t', `=${session}:`).stdout ?? '';
-  const prompt = pane
-    .split('\n')
-    .reverse()
-    .find((line) => /^\s*[❯›]/.test(line.replace(new RegExp(SGR, 'g'), '')));
-  if (!prompt) return null;
+const plain = (line) => line.replace(new RegExp(SGR, 'g'), '');
+const isRule = (line) => /^─{10,}$/.test(plain(line).trim());
+const isPromptMark = (line) => /^\s*[❯›]/.test(plain(line));
+/** A row of the background-agent panel below the footer (`❯ ⏺ main`, `  ◯ general-purpose …`). */
+const isPanelRow = (line) => /^\s*❯?\s*[⏺◯]/.test(plain(line));
+const paneLines = (session) => (tmux('capture-pane', '-p', '-e', '-t', `=${session}:`).stdout ?? '').split('\n');
+const lastRuleIndex = (lines) => lines.findLastIndex(isRule);
+/**
+ * The prompt is the text between the last two rules of the input box. A `❯` line below the last rule that is not a
+ * panel row is a menu (`❯ 1. Yes`) and wins, which keeps a wake-up line from answering a permission dialog.
+ */
+const promptLines = (lines) => {
+  const below = lastRuleIndex(lines);
+  const menu = lines.slice(below + 1).findLast((line) => isPromptMark(line) && !isPanelRow(line));
+  if (menu) return [menu];
+  const above = lines.slice(0, below).findLastIndex(isRule);
+  if (below !== -1 && above !== -1) return lines.slice(above + 1, below);
+  const prompt = lines.findLast((line) => isPromptMark(line) && !isPanelRow(line));
+  return prompt ? [prompt] : [];
+};
+const withoutDim = (line) => {
   let dim = false;
-  const visible = prompt
+  return line
     .split(new RegExp(`(${SGR.replace('(', '(?:')})`))
     .map((part) => {
       const codes = part.match(new RegExp(`^${SGR}$`))?.[1].split(';');
@@ -165,11 +196,34 @@ const draftLine = (session) => {
       return '';
     })
     .join('');
-  const text = visible
+};
+const draftLine = (session) => {
+  const text = promptLines(paneLines(session))
+    .map(withoutDim)
+    .join('\n')
     .replace(/^\s*[❯›]/, '')
     .replace(IDE_CHIP, '')
     .trim();
   return text.length > 0 ? text : null;
+};
+const panelFocused = (lines) => lines.slice(lastRuleIndex(lines) + 1).some((line) => /^\s*❯\s*[⏺◯]/.test(plain(line)));
+const PANEL_UP_LIMIT = 10;
+/**
+ * Keys typed while the focus sits in the background-agent panel go into the panel. Up moves the focus back to the
+ * prompt, and an Up too many recalls history, so C-u clears the line after. `false` if the focus did not leave.
+ */
+const leavePanel = (session) => {
+  if (!panelFocused(paneLines(session))) return true;
+  for (let press = 0; press < PANEL_UP_LIMIT; press++) {
+    tmux('send-keys', '-t', `=${session}:`, 'Up');
+    sleep(ENTER_DELAY_MS);
+    if (!panelFocused(paneLines(session))) {
+      tmux('send-keys', '-t', `=${session}:`, 'C-u');
+      sleep(ENTER_DELAY_MS);
+      return true;
+    }
+  }
+  return false;
 };
 const hasDraft = (session) => draftLine(session) !== null;
 const isAttached = (name) => tmux('list-clients', '-t', `=${name}`).stdout.trim() !== '';
@@ -369,21 +423,27 @@ if (command === 'send' && sender) {
     const type = (...keys) => tmux('send-keys', '-t', `=${session}:`, ...keys);
     sleep(Number(afterSeconds ?? RESTART_AFTER_SECONDS) * 1000);
     if (!waitForQuiet(session)) {
+      restartNotice(`restart of ${session} gave up after ${RESTART_WAIT_MS / 1000}s, reason in restart.log`);
+      process.exitCode = 1;
+    } else if (!leavePanel(session)) {
+      restartNotice(
+        `restart of ${session} gave up, the focus did not leave the agent panel after ${PANEL_UP_LIMIT} Up`,
+      );
       process.exitCode = 1;
     } else {
       type('-l', sender.startsWith('codex') ? '/new' : '/clear');
       sleep(ENTER_DELAY_MS);
       type('Enter');
       sleep(RESTART_CLEAR_MS);
-      if (waitForQuiet(session, RESTART_CLEAR_WAIT_MS, true)) {
+      if (waitForQuiet(session, RESTART_CLEAR_WAIT_MS, true) && leavePanel(session)) {
         type('-l', words.join(' '));
         sleep(ENTER_DELAY_MS);
         type('Enter');
       } else {
         const saved = join(dirname(mailbox), `restart.prompt.${session}.txt`);
         writeFileSync(saved, `${words.join(' ')}\n`);
-        restartLog(
-          `${session} prompt not empty ${RESTART_CLEAR_WAIT_MS / 1000}s after the clear, prompt not typed, saved to ${saved}`,
+        restartNotice(
+          `restart of ${session} gave up: prompt not empty ${RESTART_CLEAR_WAIT_MS / 1000}s after the clear, prompt not typed, saved to ${saved}`,
         );
         tmux(
           'display-message',
@@ -396,7 +456,8 @@ if (command === 'send' && sender) {
     }
   } else {
     const delay = Number(afterSeconds ?? RESTART_AFTER_SECONDS);
-    spawn(process.execPath, [script, 'restart', sender, '--now', '--after', String(delay), ...words], {
+    const forward = notify ? ['--notify', notify] : [];
+    spawn(process.execPath, [script, 'restart', sender, '--now', '--after', String(delay), ...forward, ...words], {
       detached: true,
       stdio: 'ignore',
     }).unref();
@@ -427,6 +488,7 @@ if (command === 'send' && sender) {
       return;
     }
     waiting.delete(agent);
+    if (!leavePanel(session)) return process.stderr.write(`The focus of ${session} stays in the agent panel.\n`);
     spawnSync('tmux', ['send-keys', '-t', `=${session}:`, '-l', text]);
     sleep(ENTER_DELAY_MS);
     spawnSync('tmux', ['send-keys', '-t', `=${session}:`, 'Enter']);

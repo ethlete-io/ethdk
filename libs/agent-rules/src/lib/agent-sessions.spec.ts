@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from 'child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { basename, join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -343,6 +343,86 @@ describe('agent-sessions', () => {
 
         expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toMatch(/waits, draft: half a sentence/);
         expect(readFileSync(join(dir, `restart.prompt.${scoped}.txt`), 'utf8')).toBe('resume slug\n');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  const panelPane = (log: string) => {
+    const fixture = join(__dirname, 'fixtures/claude-pane-agent-panel.txt');
+    const program = join(dir, 'pane.js');
+
+    writeFileSync(
+      program,
+      `const fs = require('fs');
+const pane = fs.readFileSync(${JSON.stringify(fixture)}, 'utf8');
+let focused = true;
+const draw = () => process.stdout.write('\\x1b[2J\\x1b[H' + (focused ? pane : pane.replace('❯ ⏺', '  ⏺')));
+draw();
+process.stdin.setRawMode(true);
+process.stdin.on('data', (data) => {
+  fs.appendFileSync(${JSON.stringify(log)}, data);
+  if (focused && data.includes('\\x1b[A')) { focused = false; draw(); }
+});`,
+    );
+    return `node ${program}`;
+  };
+
+  it.skipIf(!hasTmux)(
+    'leaves the agent panel before it types the clear and the prompt into a captured pane',
+    async () => {
+      const agent = `claude-panel-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const log = join(dir, 'pane.log');
+      writeFileSync(log, '');
+
+      spawnSync('tmux', ['new-session', '-d', '-x', '120', '-y', '30', '-s', scoped, panelPane(log)]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '1', 'resume', 'slug'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          AGENT_RESTART_CLEAR_WAIT_MS: '3000',
+        });
+
+        const typed = readFileSync(log, 'utf8');
+        expect(['\x1b[A', '\x1bOA'].some((up) => typed.startsWith(`${up}\x15/clear\r`))).toBe(true);
+        expect(typed.endsWith('resume slug\r')).toBe(true);
+        expect(existsSync(join(dir, 'restart.log'))).toBe(false);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'tells the caller and each --notify agent when a draft blocks the restart and when it gives up',
+    () => {
+      const agent = `claude-notice-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'echo "❯ half a sentence"; cat']);
+
+      try {
+        const result = run(['restart', agent, '--now', '--after', '0', '--notify', 'grill', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          AGENT_RESTART_WAIT_MS: '5000',
+          AGENT_RESTART_DRAFT_NOTICE_MS: '1000',
+        });
+
+        expect(result.status).toBe(1);
+        const notices = readFileSync(join(dir, 'mailbox.jsonl'), 'utf8')
+          .trim()
+          .split('\n')
+          .map((line) => JSON.parse(line) as { to: string; message: string });
+        expect(notices.map(({ to, message }) => `${to}: ${message.replace(/waits \d+s/, 'waits Ns')}`)).toEqual([
+          `${agent}: restart of ${scoped} waits Ns, draft: half a sentence`,
+          `grill: restart of ${scoped} waits Ns, draft: half a sentence`,
+          `${agent}: restart of ${scoped} gave up after 5s, reason in restart.log`,
+          `grill: restart of ${scoped} gave up after 5s, reason in restart.log`,
+        ]);
       } finally {
         spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
       }

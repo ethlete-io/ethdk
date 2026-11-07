@@ -20,7 +20,7 @@ script, so you do not need `<skill-dir>`. The older name `npx ethlete-agents mai
 ```bash
 node <skill-dir>/agent-sessions.mjs run <name> <command...> [--role builder] [--dry-run]
 node <skill-dir>/agent-sessions.mjs up <name>[=<command>]...
-node <skill-dir>/agent-sessions.mjs restart <name> [--after <seconds>] <prompt...>
+node <skill-dir>/agent-sessions.mjs restart <name> [--after <seconds>] [--notify <agent,...>] <prompt...>
 node <skill-dir>/agent-sessions.mjs down [<name>...]
 node <skill-dir>/agent-sessions.mjs shell-install [<agent>...] [--file <path>] [--remove] [--dry-run]
 node <skill-dir>/agent-sessions.mjs shell-init [<agent>...]
@@ -49,7 +49,7 @@ Nothing runs until you start it, so a person who does not use this does nothing.
 
 `up codex=codex gemini=gemini` starts a detached `tmux` session per agent, named like its sender name, and runs the command in it. It also starts a session named `mailbox-dispatch` that runs `dispatch`. A running session is left alone. Attach to a session with `tmux attach -t <name>`. Detach with `Ctrl-b`, then `d`. The session and its agent keep running. Use `down` to stop the dispatcher and the named sessions.
 
-`restart <name> <prompt...>` types the clear command (`/clear`, or `/new` for a `codex` name) and then the prompt into the session `<name>@<repo>`, no sooner than `--after` seconds (default 5). It waits until that session ended its turn and its prompt holds no typed text, and gives up after 30 minutes. After the clear, a new turn does not hold the prompt back: a message can wake the fresh session, and Claude Code queues input typed during a turn. Only typed text in its prompt holds the prompt back. After 60 seconds of typed text, it saves the prompt to `.ethlete/restart.prompt.<session>.txt` and logs why in `.ethlete/restart.log`. The command returns at once, so end your turn after it. An agent uses it to clear itself and resume from its saved work state. It refuses any session other than the caller's own (from `$TMUX_PANE`), and the error names the caller's own sender name. Background commands of the old session still report into the new one.
+`restart <name> <prompt...>` types the clear command (`/clear`, or `/new` for a `codex` name) and then the prompt into the session `<name>@<repo>`, no sooner than `--after` seconds (default 5). It waits until that session ended its turn and its prompt holds no typed text, and gives up after 30 minutes. After the clear, a new turn does not hold the prompt back: a message can wake the fresh session, and Claude Code queues input typed during a turn. Only typed text in its prompt holds the prompt back. The prompt is the text between the two rules of the input box, so the background-agent panel below the footer does not count as typed text. When the focus sits in that panel, it presses Up until the prompt has the focus and clears the line with C-u before it types. After 2 minutes of typed text, and when it gives up, it sends one mailbox line to `<name>` and to each `--notify` agent. After 60 seconds of typed text, it saves the prompt to `.ethlete/restart.prompt.<session>.txt` and logs why in `.ethlete/restart.log`. The command returns at once, so end your turn after it. An agent uses it to clear itself and resume from its saved work state. It refuses any session other than the caller's own (from `$TMUX_PANE`), and the error names the caller's own sender name. Background commands of the old session still report into the new one.
 
 `shell-install` writes one shell function per agent into `~/.zshrc` or `~/.bashrc`, between two marker lines. A second run replaces the block, and `--remove` deletes it. Use `--file` for another startup file and `--dry-run` to preview. After a new terminal opens, typing `claude` or `codex` in a repo with this skill runs the agent through `run`. Elsewhere the function starts the plain command. Run `shell-install` only when the user asks: it changes a file the user owns. `shell-init` prints the same functions without writing a file.
 
@@ -78,6 +78,6 @@ If the prompt of the agent holds typed text, the dispatcher waits until that tex
 4. After each larger step, run `inbox` again. Most agents cannot wake on new output, so you must pull messages yourself.
 5. When you finish, run `release`. A claim also expires after 4 hours, or after `--ttl` hours.
 
-In this repo commit with `yarn commit -m "..." -- <paths>`: it runs the related specs first in a throwaway worktree of HEAD plus those paths, before it takes `.git/index.lock`, and the pre-commit hook then skips them for that exact tree (a plain `git commit` still runs them in the hook).
+In this repo commit with `yarn commit -m "..." -- <paths>`: it adds untracked paths and waits for `.git/index.lock`. Specs, lint and typecheck run in CI, not in the hook.
 
 A claim is advisory, not a lock. `--force` claims over another agent: use it only after the holder agreed. Silence is not approval. Acknowledge each handoff in words. No agent starts automatically. The user starts each one.
