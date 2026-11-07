@@ -2899,6 +2899,10 @@ only at push time, and the builder fixed it in de53d8571. Why no tool caught it 
 default): run that check at commit time for commits that touch `STATUS.md` or an ADR, and the doc-agent skill says to
 set `built: <sha>` in the same commit that closes a row.
 
+As built (B395): `.husky/pre-commit` runs `check-studio-adrs.mjs` (about 0.7 s) when `STATUS.md` or an ADR file is
+staged; it checks the working tree, like the pre-push gate. The doc-agent skill carries the `built:` rule. A spec
+pins the hook wiring.
+
 456\. B388 triage of the full studio check (798 problems, 10:46 min): the check renders each part in light and dark
 and does not de-duplicate render problems across the schemes, so the count doubles (about 412 real). Why no tool
 caught it: no spec renders one part with a problem in both schemes and counts the result. Tool fix (in B388, builder

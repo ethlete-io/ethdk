@@ -79,6 +79,8 @@ output; the designed Studio is the side product.
 
 - After the user confirms a short summary, write each decision as an ADR in `apps/ethlete-studio/docs/adr/`
   (English, Tom's words verbatim, frontmatter `built: <sha>` or `open: B<row>`). Never in a plan section.
+- A commit that closes a STATUS row sets `built: <sha>` on every ADR with `open: B<row>` in that same commit; the
+  pre-commit hook rejects it otherwise.
 - Commit only plan and docs files: `git commit -- <paths>`. Never `git add -A`, never
   stash, never amend.
 - One commit per grill round, not one per finding or decision. The message names all of them.

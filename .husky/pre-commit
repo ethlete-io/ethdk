@@ -19,3 +19,10 @@ if [ -n "$styles" ]; then
   # shellcheck disable=SC2086
   node ./tools/scripts/lint-css-properties.js $styles
 fi
+
+# A closed STATUS row whose ADR still says `open:` fails here instead of at push (about 0.7 s).
+adr_files=$(git diff --cached --name-only --diff-filter=ACM -- 'plans/ethlete-studio/STATUS.md' 'apps/ethlete-studio/docs/adr/*.md')
+
+if [ -n "$adr_files" ]; then
+  node ./tools/scripts/check-studio-adrs.mjs >/dev/null
+fi

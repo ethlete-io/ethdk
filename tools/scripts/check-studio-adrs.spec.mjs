@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -87,4 +87,11 @@ test('fails a duplicate, a decrease and a dangling Bef.', () => {
     'finding 3 follows finding 5; numbers must increase',
     'B1 cites Bef. 9, but no finding 9 exists',
   ]);
+});
+
+test('the pre-commit hook runs the check when STATUS.md or an ADR is staged', () => {
+  const hook = readFileSync(new URL('../../.husky/pre-commit', import.meta.url), 'utf8');
+  assert.match(hook, /plans\/ethlete-studio\/STATUS\.md/);
+  assert.match(hook, /apps\/ethlete-studio\/docs\/adr\/\*\.md/);
+  assert.match(hook, /node \.\/tools\/scripts\/check-studio-adrs\.mjs/);
 });
