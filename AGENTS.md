@@ -178,6 +178,10 @@ A spec for a parser of tool output takes its fixture from a captured real run, n
 If a prompt says `New mailbox message for <name>`, run the `inbox` command in that prompt and act on
 the messages. Before you edit a file that another agent may edit, read `.agents/skills/ethlete-agent-sessions/SKILL.md`.
 
+A slice brief names its allowed paths: write them (comma or newline separated, directories or globs) to
+`$(git rev-parse --git-path slice-paths)` or export `ETHLETE_SLICE_PATHS`. The pre-commit hook then warns, without
+blocking, about staged paths outside them; `.changeset/` and `plans/` are always allowed.
+
 ## Comments: almost none, and never for the reviewer of your change
 
 **Write no comment unless it fits one of the four cases below.** This is an allowlist, not a

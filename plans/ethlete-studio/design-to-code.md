@@ -2821,6 +2821,11 @@ path scope, and nothing stops a lint-driven fix from leaving it. Tool fix (B382,
 code starts in an opt-in config; a slice brief names its allowed paths, and the commit gate warns when a commit touches
 paths outside them (for example `libs/` in an `apps/` slice).
 
+As built (B382): `tools/scripts/check-slice-paths.mjs`, called from `.husky/pre-commit`, warns (exit 0) when a staged path is
+outside the paths in `ETHLETE_SLICE_PATHS` or the worktree's `slice-paths` git file; one `git diff`, silent when none are
+declared. `.changeset/` and `plans/` are always allowed. The opt-in rule policy is a step in
+`libs/eslint-plugin/CLAUDE.md`.
+
 446\. Four migration generators have no `migrations.json` entry, so `et migrations` does not list them:
 `@ethlete/query:migrate-from-ngrx-toolkit` (reported by the fifagg session, 475 files still on `@tomtomb/ngrx-toolkit`),
 and in core `migrate-create-destroy`, `migrate-color-theme-variants`, `migrate-legacy-color-themes` (doc agent check,

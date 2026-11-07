@@ -20,6 +20,10 @@ if [ -n "$styles" ]; then
   node ./tools/scripts/lint-css-properties.js $styles
 fi
 
+# Warns, never blocks, when a staged path is outside the slice paths of the brief: env ETHLETE_SLICE_PATHS or
+# the file `slice-paths` in the worktree's git dir. One git diff (about 0.05 s); silent when none are declared.
+node ./tools/scripts/check-slice-paths.mjs
+
 # A closed STATUS row whose ADR still says `open:` fails here instead of at push (about 0.7 s).
 adr_files=$(git diff --cached --name-only --diff-filter=ACM -- 'plans/ethlete-studio/STATUS.md' 'apps/ethlete-studio/docs/adr/*.md')
 

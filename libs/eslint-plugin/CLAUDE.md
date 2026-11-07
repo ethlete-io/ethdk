@@ -21,6 +21,9 @@ Do all of the following in the same change:
    a rule (or changing its default severity) **must** update both - `docs/STYLEGUIDE.md`
    is not enough. Grep `apps/docs/eslint` for the rule name to confirm it's in sync.
 4. Wire the rule into `src/configs/recommended.js` and export it from `src/index.js`.
+   A rule aimed at app code (`apps/*`) starts opt-in instead: enable it in the app's own
+   `eslint.config.mjs`, and add it to `recommended` only after the libs pass it. Otherwise a
+   rule's lib fixes become unplanned `libs/` edits in an app slice (finding 445).
 5. Add a **changeset** for `@ethlete/eslint-plugin` (see the `changeset` skill).
 
 If a change makes a styleguide _judgment_ rule statically enforceable, also prune
