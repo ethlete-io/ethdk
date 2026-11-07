@@ -4438,3 +4438,4 @@ agent question about hooks meets no warning. Tool fix (technical): ADR frontmatt
 lists each open or accepted ADR whose globs match the staged files, and the builder and the doc agent read that list
 before they change or ask. Process fix: the doc agent searches the ADRs before it sends work, not only before a grill
 question. Applied at once: the slow pre-commit checks leave the hook; finding 541 becomes a problem on the part.
+As built (ee935173c): ADRs 0036-0038 carry `governs: [...]`; `yarn adr:governs <files|--staged|a..b>` (tools/scripts/adr-governs.mjs) lists the accepted ADRs whose globs match; not wired to a hook.
