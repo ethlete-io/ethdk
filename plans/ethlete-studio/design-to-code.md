@@ -4158,3 +4158,9 @@ auto-made link-only sketch `elements-canvas-frames.edit` (old/new differ only in
 after the builder reported its discard, plus six empty `*.edit/old|new` folders of merged edit sketches. Discard and
 merge leave files and folders behind, and nothing shows a leftover. Tool fix (technical): `sketch discard` and
 `sketch merge` delete the sketch folder and fail if it is still there; `design status` lists untracked sketch folders.
+
+591\. The human (2026-11-08): "ci ist durch und grün aber 25m für studio e2e ist echt too much". Run 42421444909: the
+`yarn studio:e2e` step took 24 min on 1 worker, 97/132 passed; the 35 hidden B434 failures each wait for a long timeout
+(90 s "not settled", 30 s clicks, 15 s waits). Parallel cases (B377) were parked behind B376 (ADR 0191), and no budget
+caps the suite time. Tool fix (technical): B377 moves up; the suite runs on all runner cores, a case fails at its first
+missed wait within 10 s, and the run prints its time against a 5 min budget that fails above it once B434 is green.
