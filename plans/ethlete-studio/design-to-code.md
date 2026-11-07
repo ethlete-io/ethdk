@@ -4108,3 +4108,11 @@ missing alternates). Tool fix (technical): `baseCheckoutOf` fetches or clones ag
 change does not count (ADR 0113, carried over when ADR 0048 replaced the Go); the hash never followed it, and the
 builder asked again. Tool fix (technical): `designHashOf` leaves the `implements` field out, with a spec that a
 link-only change keeps the hash. Until it lands, the builder accepts the part once with ADR 0113 in the note (ADR 0209).
+
+583\. Builder (2026-11-07, finding 580 built as IMPLEMENTS-UNRENDERED, 6c611c1a9): the new rule hits five studio
+parts. `pages/system` links `design-parts/system-page`, which the app never renders (system-view → shell-main →
+design-canvas); `components/canvas-viewport` is drawn by design-canvas itself; `components/disclosure` and
+`components/tree-row` have no rendered host (no app template uses `<ethlete-tree-row>`); `components/comment-pin` sits
+off-screen in the panned sample. Decision by the doc agent (ADR 0201, 0105, 0113): the rule lands with these five in
+its baseline, then each link fix shrinks it. A link to the real host is technical; a part drawn as inline markup links
+the file that holds it; a part with no app code loses its link; comment-pin gets an on-screen sample.
