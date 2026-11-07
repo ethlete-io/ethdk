@@ -38,6 +38,7 @@ import {
   variantsThatDoNotLoad,
 } from './ready-shots';
 import { noChangeOf } from './system/sketch/no-visible-change';
+import { editCovers } from './system/sketch/covered-diffs';
 import { unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { editRefOf, mergeAndRecord } from './system/sketch/merge-step';
@@ -94,6 +95,7 @@ export const SKETCH_USAGE = [
   'sketch variant <layer>/<name> <variant>[,<variant>…] --from <variant> --by <model id> [--round <title> --note <why the running round lost> [--round-note <what the new round shows>]] [--product <name>]',
   'sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] --by <model id> [--product <name>]',
   'sketch note <layer>/<name> <variant> <text> --by <model id> [--product <name>]',
+  'sketch covers <layer>/<name> [<state>[@<x>,<y>,<w>,<h>]…] --by <model id> [--product <name>]',
   'sketch target add <layer>/<name> <layer>/<name> --by <model id> [--product <name>]',
   'sketch target remove <layer>/<name> <layer>/<name> --by <model id> [--product <name>]',
   'sketch list [--product <name>] [--json]',
@@ -177,6 +179,7 @@ const WRITES = new Set([
   'variant',
   'round',
   'note',
+  'covers',
   'report',
   'ready',
   'hold',
@@ -657,6 +660,21 @@ const noteEdited = (context: Context) =>
     if (typeof edited === 'string') return fail(edited);
 
     console.log(`${edited.target} variant ${variant}: ${note}`);
+
+    return 0;
+  });
+
+const coversEdited = (context: Context) =>
+  withSketch(context, ({ sketch }) => {
+    const edited = editCovers({ sketch, covers: context.args.positional.slice(1) });
+
+    if (typeof edited === 'string') return fail(edited);
+
+    console.log(
+      (edited.covers ?? []).length === 0
+        ? `${edited.target} covers no compare DIFF`
+        : `${edited.target} covers the compare DIFFs of ${(edited.covers ?? []).join(', ')} while it is open (ADR 0222)`,
+    );
 
     return 0;
   });
@@ -1694,6 +1712,7 @@ const COMMANDS: Record<string, (context: Context) => number | Promise<number>> =
   variant: varied,
   round: roundEdited,
   note: noteEdited,
+  covers: coversEdited,
   list: listed,
   report: reported,
   ready: readied,

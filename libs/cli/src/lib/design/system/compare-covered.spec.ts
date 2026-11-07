@@ -6,6 +6,7 @@ import { DESIGN_DIR } from '../paths';
 import { comparePart, ShootStates } from './compare-command';
 import { encodePng } from './part-compare';
 import { resolveProduct } from './resolve-product';
+import { parseCover } from './sketch/covered-diffs';
 
 const solid = (rgba: number[]) => encodePng({ width: 1, height: 1, data: Buffer.from(rgba) });
 const RED = [255, 0, 0, 255];
@@ -46,7 +47,22 @@ const shoot: ShootStates = async () => ({
   ],
 });
 
-const compared = async (sketch?: Record<string, unknown>) => {
+const square = (paint: (x: number, y: number) => number[]) =>
+  encodePng({
+    width: 4,
+    height: 4,
+    data: Buffer.from(Array.from({ length: 16 }, (_, i) => paint(i % 4, Math.floor(i / 4))).flat()),
+  });
+
+const corner: ShootStates = async () => ({
+  states: { default: {}, folded: {} },
+  shots: [
+    { state: 'default', design: solid(RED), app: solid(RED) },
+    { state: 'folded', design: square(() => RED), app: square((x, y) => (x === 3 && y === 3 ? BLUE : RED)) },
+  ],
+});
+
+const compared = async (sketch?: Record<string, unknown>, shots: ShootStates = shoot) => {
   const { target, product } = checkout(sketch);
   const lines: string[] = [];
 
@@ -59,7 +75,7 @@ const compared = async (sketch?: Record<string, unknown>) => {
     part: 'components/chip',
     url: 'u',
     only: null,
-    shoot,
+    shoot: shots,
   });
 
   return { result, lines };
@@ -97,6 +113,39 @@ describe('compare DIFFs an open sketch covers (ADR 0222)', () => {
 
     expect(closed.result).toMatchObject({ green: false });
     expect(closed.lines[1]).toBe('folded DIFF 1 px');
+  });
+
+  it('covers a DIFF inside the region the sketch names, and fails one outside it', async () => {
+    const inside = await compared({ covers: ['folded@2,2,2,2'] }, corner);
+
+    expect(inside.result).toMatchObject({ green: true });
+    expect(inside.lines[1]).toBe('folded DIFF 1 px (covered by open sketch components/chip@all-states, ADR 0222)');
+
+    vi.restoreAllMocks();
+
+    const outside = await compared({ covers: ['folded@0,0,3,3'] }, corner);
+
+    expect(outside.result).toMatchObject({ green: false });
+    expect(outside.lines[1]).toBe('folded DIFF 1 px');
+  });
+
+  it('does not cover a size change with a region', async () => {
+    const sized: ShootStates = async () => ({
+      states: { folded: {} },
+      shots: [{ state: 'folded', design: solid(RED), app: square(() => RED) }],
+    });
+
+    expect((await compared({ covers: ['folded@0,0,4,4'] }, sized)).result).toMatchObject({ green: false });
+  });
+});
+
+describe('parseCover', () => {
+  it('reads a state and a region, and refuses a broken region', () => {
+    expect(parseCover('folded')).toEqual({ state: 'folded', box: null });
+    expect(parseCover('folded@1,2,30,40')).toEqual({ state: 'folded', box: { x: 1, y: 2, width: 30, height: 40 } });
+    expect(parseCover('folded@1,2,0,4')).toContain('has no region');
+    expect(parseCover('folded@top')).toContain('has no region');
+    expect(parseCover('@1,2,3,4')).toContain('names no state');
   });
 });
 

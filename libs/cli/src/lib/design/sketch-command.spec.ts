@@ -2189,6 +2189,50 @@ export default definePart({
   });
 });
 
+describe('sketch covers (ADR 0222)', () => {
+  const acmeWrite = (target: string, ...argv: string[]) => write(target, ...argv, '--product', 'acme');
+  const coversOf = (target: string) =>
+    (
+      findSketch({
+        productDir: join(target, DESIGN_DIR, 'acme'),
+        product: 'acme',
+        sketch: { layer: 'components', name: 'button' },
+      }) as Sketch
+    ).covers;
+
+  it('sets the covered states and regions, keeps them through another write, and clears them', async () => {
+    const target = acme();
+    const lines = output();
+
+    expect(
+      await acmeWrite(target, 'new', 'components/button', '--variants', 'a,b', '--override'),
+      lines.join('\n'),
+    ).toBe(0);
+    expect(await acmeWrite(target, 'covers', 'components/button', 'default', 'hover@0,0,20,10')).toBe(0);
+    expect(lines.pop()).toBe(
+      'components/button covers the compare DIFFs of default, hover@0,0,20,10 while it is open (ADR 0222)',
+    );
+    expect(await acmeWrite(target, 'note', 'components/button', 'a', 'the built look')).toBe(0);
+    expect(coversOf(target)).toEqual(['default', 'hover@0,0,20,10']);
+    expect(await acmeWrite(target, 'covers', 'components/button')).toBe(0);
+    expect(lines.pop()).toBe('components/button covers no compare DIFF');
+    expect(coversOf(target)).toBeUndefined();
+  });
+
+  it('refuses a broken region and a call without --by', async () => {
+    const target = acme();
+    const lines = output();
+
+    expect(await acmeWrite(target, 'new', 'components/button', '--variants', 'a', '--override'), lines.join('\n')).toBe(
+      0,
+    );
+    expect(await acmeWrite(target, 'covers', 'components/button', 'hover@0,0,20')).toBe(1);
+    expect(lines.pop()).toContain('has no region');
+    expect(await run(target, 'covers', 'components/button', 'default', '--product', 'acme')).toBe(2);
+    expect(coversOf(target)).toBeUndefined();
+  });
+});
+
 describe('sketch target add', () => {
   const acmeWrite = (target: string, ...argv: string[]) => write(target, ...argv, '--product', 'acme');
 

@@ -3647,6 +3647,16 @@ finding 541): 0.2 s with no staged design file, 4.3-7.6 s on a real staged part 
 confirmed). `yarn push:slice` pushes to `slice/<name>` and opens a draft PR into `next`; ci-pr.yml already runs on
 every PR. Not verified: a real `yarn push:slice`, a CI run with `--base`, a partly staged file (judged by its disk copy).
 
+B417 as built (2026-11-07, ADR 0222): 4e869796c makes `compare` print a DIFF that an open sketch's `covers` names with
+the sketch id and pass it. The follow-up commit adds `et design sketch covers <layer>/<name> [<state>[@x,y,w,h]…] --by`
+(no state clears the list), keeps `covers` through every other sketch write (`writeSketchFile` dropped it), validates it
+on read, and adds regions: `<state>@x,y,w,h` covers a DIFF only when every differing pixel lies in one of that state's
+boxes, in pixels of the state's picture (the diff PNG compare writes); a size change is never covered by a region. A
+pick ends the cover. Documented in the design CLI usage and the design-exploration skill. Specs: compare-covered.spec
+and `sketch covers` in sketch-command.spec. Not done: `covers` on `sketch new`, a cover scoped to one target of a
+multi-target sketch (a state name covers that state on every target), a check that a covered state exists on the part,
+and Studio showing the cover. `pages/sketches@all-states` has no `covers` yet.
+
 545\. Builder (2026-11-06): CI "Static design rules" ran without `--base`, so IMPLEMENTATION-UNCOMPARED never ran in CI,
 although finding 541 assumed it did; fixed in 4aef2e30f. Why no tool caught it: no spec or check asserts which rules a
 CI step really runs, so a rule that needs an input silently does nothing. Tool fix (builder): `check --rules` prints

@@ -51,6 +51,18 @@ et design sketch reject <layer>/<name> --variant b [--reason <text>] --by <model
 et design sketch reopen <layer>/<name> --variant b [--reason <text>] --by <model id> # only when the user takes b back; the rejection stays in the history
 ```
 
+When the app shows UI the design does not draw, open the sketch at once with the built look as variant a, and
+name the compare DIFFs it explains:
+
+```bash
+et design sketch covers <layer>/<name> <state> <state>@<x>,<y>,<w>,<h>… --by <model id>   # no state clears them
+```
+
+While the sketch is open, `compare` lists each covered DIFF with the sketch name and passes it. A bare state
+covers its whole DIFF; `@x,y,w,h` covers only differing pixels inside that box of the state's picture (the
+diff PNG compare writes), and never a size change. Any other DIFF on the part still fails. After the pick the
+cover ends, and the part must compare green again.
+
 One change across several parts (an alias removal, a token rename) is one sketch with several targets: each
 variant holds every target, and `ready` compares them all. `ready` and `preview` also name every part a `shared/`
 edit reaches.

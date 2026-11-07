@@ -478,7 +478,7 @@ export const comparePart: ComparePart = async (options) => {
         continue;
       }
 
-      const covering = coveringSketchOf({ sketches, part: options.part, state });
+      const covering = coveringSketchOf({ sketches, part: options.part, state, result });
 
       if (covering !== null) {
         console.log(coveredLineOf(line, covering));

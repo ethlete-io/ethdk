@@ -94,7 +94,7 @@ export type SketchFile = {
    * `into-base`, into the base, removing the product copy the sketch started from.
    */
   merge?: SketchMerge;
-  /** The states of the part whose compare DIFF this sketch covers while it is open (ADR 0222). */
+  /** The compare DIFFs this sketch covers while it is open (ADR 0222): `<state>`, or `<state>@<x>,<y>,<w>,<h>` for one region of its picture. */
   covers?: string[];
   hold?: SketchHold;
   /** The content hash of each variant when `sketch ready` judged it; a change drops a ready sketch back to in progress. */
@@ -472,6 +472,8 @@ export const readSketch = (options: { product: string; dir: string }): Sketch | 
     return `${file}: portAfterMerge must be { merged: string[], parts: string[], reasons: string[], at }`;
   if (parsed.mergeHold !== undefined && !isMergeHold(parsed.mergeHold))
     return `${file}: mergeHold must be { reason, at }`;
+  if (parsed.covers !== undefined && !isStringList(parsed.covers))
+    return `${file}: covers must be a list of <state> or <state>@<x>,<y>,<w>,<h>`;
 
   const rounds = parsed.rounds ?? [firstRoundOf()];
   const running = runningRoundOf({ rounds }).key;
@@ -551,6 +553,7 @@ export const writeSketchFile = (sketch: Sketch) => {
     ...(sketch.merge ? { merge: sketch.merge } : {}),
     ...(sketch.hold ? { hold: sketch.hold } : {}),
     ...(sketch.readyContent && sketch.status === 'ready' ? { readyContent: sketch.readyContent } : {}),
+    ...(sketch.covers && sketch.covers.length > 0 ? { covers: sketch.covers } : {}),
     ...(sketch.portAfterMerge ? { portAfterMerge: sketch.portAfterMerge } : {}),
     ...(sketch.mergeHold && sketch.status === 'ready' ? { mergeHold: sketch.mergeHold } : {}),
   };
