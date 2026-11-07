@@ -1,5 +1,5 @@
 import { spawnSync } from 'child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join, relative, resolve } from 'path';
 import { DesignConfig } from '../../paths';
@@ -155,6 +155,12 @@ const dirtyOutsideOf = (options: { target: string; productDir: string; ignored: 
   if (root.status !== 0 || status.status !== 0) return [];
 
   const top = root.stdout.trim();
+  const realTarget = realpathSync(options.target);
+  const real = (path: string) =>
+    path === options.target || path.startsWith(`${options.target}/`)
+      ? realTarget + path.slice(options.target.length)
+      : path;
+  const ignored = options.ignored.map(real);
   const entries = status.stdout.split('\0').filter(Boolean);
   const files = entries.flatMap((entry, index) =>
     /^[RC]/.test(entry) ? [entry.slice(3)] : /^[RC]/.test(entries[index - 1] ?? '') ? [] : [entry.slice(3)],
@@ -162,8 +168,8 @@ const dirtyOutsideOf = (options: { target: string; productDir: string; ignored: 
 
   return files
     .map((file) => resolve(top, file))
-    .filter((file) => !options.ignored.some((path) => file === path || file.startsWith(`${path}/`)))
-    .map((file) => relative(options.target, file));
+    .filter((file) => !ignored.some((path) => file === path || file.startsWith(`${path}/`)))
+    .map((file) => relative(realTarget, file));
 };
 
 const typeErrorFilesOf = (options: { target: string; failures: string[] }) =>

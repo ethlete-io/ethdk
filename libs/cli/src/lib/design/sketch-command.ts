@@ -1,7 +1,7 @@
 import { unusedInVariantOf } from './system/sketch/unused-closure';
 import { spawnSync } from 'child_process';
 import { createHash } from 'crypto';
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { relative, resolve } from 'path';
 import { DesignConfig } from './paths';
@@ -860,11 +860,12 @@ const cleanBesideSketch = (options: { target: string; product: ResolvedProduct; 
   if (status.status !== 0 || root.status !== 0) return false;
 
   const top = root.stdout.trim();
+  const sketchDir = realpathSync(options.sketch.dir);
 
   return status.stdout
     .split('\0')
     .filter((entry) => /^.. /.test(entry))
-    .every((entry) => resolve(top, entry.slice(3)).startsWith(`${options.sketch.dir}/`));
+    .every((entry) => resolve(top, entry.slice(3)).startsWith(`${sketchDir}/`));
 };
 
 const committedMerge = (options: { target: string; product: ResolvedProduct; sketch: Sketch }) => {
