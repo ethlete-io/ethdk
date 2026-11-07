@@ -222,11 +222,18 @@ const headOf = (row: Row, view: View) => {
 const gridRow = (part: SketchPart, row: Row, view: View) => {
   const drawn = view.status === 'drawing' && row.key === DRAWN;
   return html`<section
-    class="sk-row grid grid-cols-[var(--sk-head)_minmax(0,1fr)] gap-space-5 rounded-control-md p-space-3"
+    class="sk-row grid grid-cols-[var(--sk-head)_minmax(0,1fr)] gap-space-5 rounded-control-md p-space-3 in-data-sk-head-hidden:grid-cols-[max-content_minmax(0,1fr)] in-data-sk-head-hidden:gap-space-2"
     data-sk-row="${row.key}"
     ${row.key === view.selected ? ' data-selected' : ''}
   >
-    <div class="relative min-w-0">${headOf(row, view)}</div>
+    <div class="relative min-w-0">
+      <span
+        class="hidden w-fit items-center rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)] in-data-sk-head-hidden:inline-flex"
+        data-sk-head-tag
+        >${row.key === 'current' ? 'Aktuell' : row.key}</span
+      >
+      <div class="in-data-sk-head-hidden:hidden" data-sk-head-full>${headOf(row, view)}</div>
+    </div>
     <div class="min-w-0 ${isWithdrawn(row, view.withdrawn) ? 'opacity-60' : ''}">
       ${drawn ? drawingStage(row) : wrapStage(part, row, view.comparing)}
     </div>
@@ -271,7 +278,12 @@ const column = (part: SketchPart, row: Row, at: number, top: number, view: View)
     style="grid-column: ${at}; grid-row: ${top}"
     ${row.key === view.selected ? ' data-selected' : ''}
   >
-    ${headOf(row, view)}
+    <span
+      class="hidden w-fit items-center rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)] in-data-sk-head-hidden:inline-flex"
+      data-sk-head-tag
+      >${row.key === 'current' ? 'Aktuell' : row.key}</span
+    >
+    <div class="in-data-sk-head-hidden:hidden" data-sk-head-full>${headOf(row, view)}</div>
   </section>`;
   const cells = drawn
     ? drawingStage(row, `grid-column: ${at}; grid-row: ${top + 1} / span ${part.states.length * 2}`)
@@ -348,7 +360,7 @@ export default definePart<Props>({
     'unchanged-open': { camera: 'fit', part: 'narrow', same: ['b'], sameOpen: true },
     'all-unchanged': { camera: 'fit', part: 'narrow', same: ['a', 'b'] },
     'unchanged-matrix': { camera: { zoom: 0.25, x: -4000, y: 0 }, same: ['b', 'c'] },
-    'unchanged-matrix-open': { camera: { zoom: 0.25, x: -4000, y: 0 }, same: ['b', 'c'], sameOpen: true },
+    'unchanged-matrix-open': { camera: { zoom: 0.2, x: -4000, y: 0 }, same: ['b', 'c'], sameOpen: true },
     'withdrawn-hidden': { camera: 'fit', part: 'narrow', withdrawn: 'hidden' },
     'withdrawn-shown': { camera: 'fit', part: 'narrow', withdrawn: 'shown' },
     'agent-round': { camera: 'fit', part: 'narrow', agent: 'round' },
