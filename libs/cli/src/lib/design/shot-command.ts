@@ -599,7 +599,11 @@ export const designShot = async (options: { target: string; argv: string[]; invo
         absent
           ? Promise.resolve({ label, note: NEW_STATE_NOTE })
           : shooter.pictureOf({ ...address, params, fresh }).then(
-              ({ png, markup }) => ({ label, png, ...(markup === undefined ? {} : { markup }) }),
+              ({ png, markup, note }) => {
+                if (note) console.log(`${label}: ${note}`);
+
+                return { label, png, ...(markup === undefined ? {} : { markup }) };
+              },
               (error: unknown) => ({ label, error: error instanceof Error ? error.message : String(error) }),
             );
       const shootAll = async (fresh = false) => {

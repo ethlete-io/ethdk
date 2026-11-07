@@ -637,6 +637,37 @@ describe('createPartShooter', () => {
     }
   });
 
+  it('answers a crop outside the content with an empty picture of the crop size and a note', async () => {
+    const { shots } = acme();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams('clip=900,900,40,10&scale=2'),
+    };
+
+    screenshot.mockRejectedValueOnce(
+      new Error('page.screenshot: Clipped area is either empty or outside the resulting image'),
+    );
+
+    const picture = await shots.pictureOf(address);
+
+    expect(picture.png.readUInt32BE(16)).toBe(80);
+    expect(picture.png.readUInt32BE(20)).toBe(20);
+    expect(picture.note).toBe(
+      'crop box 900,900,40,10 is outside the content (content box 0,0,200,80); the picture is empty',
+    );
+
+    screenshot.mockRejectedValueOnce(new Error('page.screenshot: Target closed'));
+    await expect(
+      shots.pictureOf({ ...address, params: new URLSearchParams('clip=900,900,40,10&scale=3') }),
+    ).rejects.toThrow('the screenshot failed');
+  });
+
   it('draws a state at the asked scale as a picture of its own, and answers 400 for a bad scale', async () => {
     const { shots } = acme();
     const part = 'product=acme&part=components/card&state=long';

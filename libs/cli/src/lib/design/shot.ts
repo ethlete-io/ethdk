@@ -2,6 +2,7 @@ import { createHash } from 'crypto';
 import { IncomingMessage, ServerResponse } from 'http';
 import { isAbsolute } from 'path';
 import { Plugin } from 'postcss';
+import { blankPngOf } from './blank-png';
 import { chromiumOf } from './browser';
 import { ChangedBox, changedBoxesOf } from './contact-sheet';
 import { DrawnPart, PartsChange, redraws } from './changed-parts';
@@ -152,7 +153,9 @@ export const TEXT_AMBIENT_PROPERTIES = [
 /** The inherited text style the frame root hands to a part: font family, size, weight, style, line height and letter spacing. */
 export type TextAmbient = Record<(typeof TEXT_AMBIENT_PROPERTIES)[number], string>;
 
-export type Picture = { png: Buffer; marks: PartMark[]; markup?: string; ambient?: TextAmbient };
+export type Picture = { png: Buffer; marks: PartMark[]; markup?: string; ambient?: TextAmbient; note?: string };
+
+const CLIP_OUTSIDE = 'Clipped area is either empty or outside';
 
 const AMBIENT_SCRIPT = `(() => {
   const root = document.getElementById('root');
@@ -507,6 +510,7 @@ export const createPartShooter = (options: {
 
         if (frame.checker) await page.evaluate(checkerScriptOf({ x: clip?.x ?? 0, y: clip?.y ?? 0 }));
 
+        let note: string | undefined;
         const png = await (clip ? page.screenshot({ ...shotOptions, clip }) : page.screenshot(shotOptions)).catch(
           (error: unknown) => {
             const message = error instanceof Error ? error.message : String(error);
@@ -515,6 +519,17 @@ export const createPartShooter = (options: {
               throw new ShotTimeoutError(
                 `design-explore: the screenshot timed out after ${DRAW_TIMEOUT_MS} ms: ${message}`,
               );
+
+            if (frame.crop && message.includes(CLIP_OUTSIDE)) {
+              const { x, y, width, height } = frame.crop;
+              const content = rootBox
+                ? ` (content box 0,0,${Math.round(rootBox.width)},${Math.round(rootBox.height)})`
+                : '';
+
+              note = `crop box ${x},${y},${width},${height} is outside the content${content}; the picture is empty`;
+
+              return blankPngOf(width * frame.scale, height * frame.scale);
+            }
 
             throw new ShotUnprocessableError(`design-explore: the screenshot failed: ${message}`);
           },
@@ -533,6 +548,7 @@ export const createPartShooter = (options: {
 
         return {
           png,
+          ...(note ? { note } : {}),
           marks: Array.isArray(marks) ? (marks as PartMark[]) : [],
           ...(typeof markup === 'string' ? { markup } : {}),
           ...(ambient && typeof ambient === 'object' ? { ambient: ambient as TextAmbient } : {}),

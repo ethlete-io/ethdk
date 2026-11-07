@@ -701,6 +701,7 @@ merge, and at most eight boxes remain. `et design shot <part> --variants --crop 
 drawn state of every shown variant with the merged part, a state the merged part does not draw with its first state,
 and writes one contact sheet per cluster (`<out>-area-1.png`, `<out>-area-2.png`, …; a single cluster keeps
 `<out>`), and Studio's changed area stacks one enlarged crop per cluster below the whole page.
+`--crop <x,y,width,height>` with a box outside the content writes an empty transparent picture of the crop size and prints a note naming the content box.
 
 `--surface <name>` only puts the `et-surface--<name>` class on the frame root; the colour scheme
 stays light, so `light-dark()` and theme rules bound to `prefers-color-scheme` still draw their

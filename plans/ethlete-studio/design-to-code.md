@@ -522,6 +522,15 @@ As built (4373e3a4c): `sketch ready` stores `readyContent` (hash per variant, it
 2026-11-03); an agent can review a blank picture and call it fine. Fix: B163, fail with "crop box outside content
 (content box ...)".
 
+As built (B163, 2026-11-07): Playwright does not return an empty canvas for a clip outside the page, it throws "Clipped area is
+either empty or outside the resulting image", which `shot` turned into "the screenshot failed" (the opposite of the finding's
+wording). Decided with the caller: a crop outside the content now answers an empty transparent picture of the crop size
+(times `--scale`) and `shot` prints `<state>: crop box x,y,w,h is outside the content (content box ...); the picture is
+empty`; any other screenshot failure still fails. Spec in `shot.spec.ts` (fails without the fix); the PNG written by
+`blank-png.ts` was checked chunk by chunk (CRC). Not verified: a live Chromium run through `et design shot --crop`, and the
+HTTP route (`serve`) carries no note, only the CLI prints it. Why no tool caught it: `shot` only has mocked-page specs, and
+no spec ever asked for a clip outside the page; the note closes it for the CLI.
+
 241\. Studio disclosure padded its panel instead of its body (fixed f05409524); compare was 12/12 green because the
 demo body is `display: contents` inside the padded panel, so both forms give the same geometry (builder,
 2026-11-03). A demo that cannot tell two layouts apart cannot guard either. Fix: B164, a disclosure state whose
