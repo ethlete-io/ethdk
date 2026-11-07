@@ -115,10 +115,6 @@ jobs:
       - name: Design rules gate over the pushed range
         run: node tools/scripts/design-rules-gate.mjs "$NX_BASE" "$NX_HEAD"
 
-      - name: Slow design rules against the pull request base
-        if: success() || failure()
-        run: node dist/libs/cli/src/index.js design check --product studio --slow --base "$NX_BASE"
-
   test:
     name: Unit tests
     runs-on: ubuntu-latest

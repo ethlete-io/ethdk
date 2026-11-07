@@ -14,3 +14,4 @@ hooks, but during the push-safety work the design gate came back into the pre-pu
 ADR 0221). It leaves again: an uncompared or drifted part shows as a problem on the part in Studio and makes it not
 build-ready (ADR 0037), and CI runs the design gate after the push as the backstop. A red CI run on `next` is accepted.
 The slice-branch exception of ADR 0221 is no longer needed. The lib build gate leaves the hook the same way and runs in the CI Build job; the design rules gate runs on every push to `next` and `main`, not only on pull requests.
+The slow design compare (`--slow`) runs in its own workflow, `design-slow.yml`, only on changes to `apps/ethlete-studio/**` and `.ethlete/design/**`, on pull requests and pushes to `next` and `main`; it no longer runs in the shared `ci.yml`.
