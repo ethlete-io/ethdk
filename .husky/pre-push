@@ -29,6 +29,8 @@ while read -r _ local_sha _ remote_sha; do
 
   node .husky/format-check-committed.mjs "$base" "$local_sha" || failed=1
 
+  yarn commitlint --from "$base" --to "$local_sha" || failed=1
+
   for check in lint:changesets versions:check lint:size lint:cli-related-map lint:migration-entries lint:studio-label-specs lint:studio-adrs lint:runner-os lint:no-verify-briefs lint:person-names docs:error-codes:check sdk:tokens:check; do
     out=$(yarn "$check" 2>&1) || { echo "pre-push: $check failed:"; echo "$out"; failed=1; }
   done

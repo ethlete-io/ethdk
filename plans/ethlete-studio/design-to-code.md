@@ -1764,6 +1764,9 @@ commits made on the Mac (421d2fee8 to be8aa16b7) the hooks most likely did not r
 `ethlete-studio`, which commitlint never allowed. Verified cause: the Mac checkout never installed husky (`core.hooksPath` unset, no `.husky/_`), so no git hook ran there. Why no tool caught it: nothing checks after the fact that the local
 hooks ran. Fix (B335): a CI job runs commitlint and `yarn test:tools` over the pushed range, and pre-push checks
 commitlint for each commit in the range; `yarn commit` and the agent session start refuse when `core.hooksPath` is not `.husky/_`; the Mac checkout gets husky installed.
+As built (B335, w3-gates-b): CI `Checks` runs `yarn commitlint --from $NX_BASE --to $NX_HEAD` next to the existing
+`yarn test:tools` and `hooks:check`; `.husky/pre-push` runs the same commitlint over the pushed range (about a second).
+Not built: `yarn commit` refusing without hooks (its spec runs in a repo without `core.hooksPath`), and husky on the Mac.
 
 392\. Builder (2026-11-04, B321 on the Mac): the pixel check run lacked two build steps the handoff did not name
 (`nx build cli`, the components build); without `dist/libs/components` the design server hangs on `/__design/system`

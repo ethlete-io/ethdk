@@ -67,6 +67,9 @@ jobs:
       - run: node tools/scripts/check-migration-entries.mjs
       - run: yarn test:tools
 
+      # Catches a commit made where the local commit-msg hook never ran (finding 390).
+      - run: yarn commitlint --from "$NX_BASE" --to "$NX_HEAD"
+
       # Every error code defined in components, core, bracket and contentful needs a row on its docs page.
       - run: yarn docs:error-codes:check
 
