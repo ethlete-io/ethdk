@@ -4255,3 +4255,8 @@ last hint text in the CLI that tells a human to run `design accept`.
 `libs/cli/vitest.setup.ts` timed out after 10 s: serve.spec left about 300 MB of temp targets and `rmSync` took 8.4 s
 on the Mac. Fixed in 282591127 (each test removes its own target in afterEach). No check caught a spec that leaves a
 large temp tree. Tool fix (technical): `vitest.setup` warns when the spec tmpdir of one file passes 50 MB.
+
+578\. Tom (2026-11-07): "was hier mit den 235 non pushed auf next?" Local `next` had no unpushed commits; its upstream
+was still `origin/studio-mac-move` from the Mac move (ADR 0217), so the title bar counted 235. The doc agent set the
+upstream back to `origin/next`. Tool fix (technical): the unpushed badge (B415) counts against `origin/<branch>`, and
+`design status` warns when the upstream of a branch has another name.
