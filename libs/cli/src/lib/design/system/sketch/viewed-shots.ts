@@ -2,7 +2,7 @@ import { createHash } from 'crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'fs';
 import { dirname, relative, resolve } from 'path';
 import { workRootOf } from '../../paths';
-import { sharedDirOf, Sketch, variantDirOf } from './sketch';
+import { Sketch, variantContentHashOf } from './sketch';
 
 /** What a live variant of a sketch draws differently from the product, or `null` when it draws the same pixels. */
 export type VariantChange = { variant: string; change: string | null };
@@ -26,27 +26,6 @@ const viewedFileOf = (options: { target: string; sketch: Sketch }) =>
     'viewed-shots',
     `${createHash('sha256').update(resolve(options.sketch.dir)).digest('hex').slice(0, 16)}.json`,
   );
-
-const filesIn = (dir: string) =>
-  existsSync(dir)
-    ? (readdirSync(dir, { recursive: true }) as string[])
-        .map((path) => resolve(dir, path))
-        .filter((file) => statSync(file).isFile())
-    : [];
-
-/** The content hash of every file a variant draws from: its folder and the `shared/` folder of the sketch. */
-export const variantContentHashOf = (sketch: Sketch, variant: string) => {
-  const hash = createHash('sha256');
-  const files = [...filesIn(variantDirOf(sketch, variant)), ...filesIn(sharedDirOf(sketch))].sort();
-
-  for (const file of files)
-    hash
-      .update(`${relative(sketch.dir, file)}\0`)
-      .update(readFileSync(file))
-      .update('\0');
-
-  return hash.digest('hex').slice(0, 16);
-};
 
 const readViewed = (file: string): ViewedFile => {
   try {

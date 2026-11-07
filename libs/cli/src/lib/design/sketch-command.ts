@@ -70,6 +70,7 @@ import {
   isVariantName,
   listSketches,
   markSketchReady,
+  reopenChangedReady,
   parseTarget,
   rebaseSketch,
   authorsOf,
@@ -731,6 +732,16 @@ const lockedReady = (sketch: Sketch) => {
   return () => rmSync(lock, { force: true });
 };
 
+const reportedReopen = (sketch: Sketch) => {
+  const reopened = reopenChangedReady(sketch);
+
+  if (!reopened) return sketch;
+
+  console.log(`${sketch.target} was ready; ${reopened.changed.join(', ')} changed since - back to in progress`);
+
+  return reopened.sketch;
+};
+
 const readied = (context: Context) => {
   const found = productAndSketchOf(context);
 
@@ -740,15 +751,17 @@ const readied = (context: Context) => {
 
   if (hold !== null) return fail(hold);
 
-  const refused = timedPhase('gates', () => readyRefusalOf(context, found));
+  const reopened = reportedReopen(found.sketch);
+  const current = { product: found.product, sketch: reopened };
+  const refused = timedPhase('gates', () => readyRefusalOf(context, current));
 
   if (refused !== null) return refused;
 
-  const unlock = lockedReady(found.sketch);
+  const unlock = lockedReady(reopened);
 
-  if (!unlock) return fail(`another sketch ready run on ${found.sketch.target} is going - wait for it`);
+  if (!unlock) return fail(`another sketch ready run on ${reopened.target} is going - wait for it`);
 
-  return renderedAndReady(context, found).finally(unlock);
+  return renderedAndReady(context, current).finally(unlock);
 };
 
 const renderedAndReady = async (context: Context, found: { product: ResolvedProduct; sketch: Sketch }) => {
@@ -1371,6 +1384,8 @@ const checked = async (context: Context) => {
     );
 
   new Set(chosen.map((entry) => entry.sketch)).forEach((sketch) => {
+    reportedReopen(sketch);
+
     if (sketch.hold) console.warn(`HELD ${sketch.target}: until ${sketch.hold.until}`);
   });
 

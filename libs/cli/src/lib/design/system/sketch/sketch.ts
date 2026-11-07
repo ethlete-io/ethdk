@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import {
   cpSync,
   existsSync,
@@ -96,6 +97,8 @@ export type SketchFile = {
   /** The states of the part whose compare DIFF this sketch covers while it is open (ADR 0222). */
   covers?: string[];
   hold?: SketchHold;
+  /** The content hash of each variant when `sketch ready` judged it; a change drops a ready sketch back to in progress. */
+  readyContent?: Record<string, string>;
   portAfterMerge?: SketchPortMark;
   mergeHold?: SketchMergeHold;
 };
@@ -458,6 +461,13 @@ export const readSketch = (options: { product: string; dir: string }): Sketch | 
     return `${file}: merge must be one of ${SKETCH_MERGES.join(', ')}`;
   if (parsed.hold !== undefined && !isHold(parsed.hold)) return `${file}: hold must be { until, by, heldAt }`;
   if (parsed.hold !== undefined && parsed.status !== 'in progress') return `${file}: a held sketch must be in progress`;
+  if (
+    parsed.readyContent !== undefined &&
+    (!parsed.readyContent ||
+      typeof parsed.readyContent !== 'object' ||
+      Object.values(parsed.readyContent).some((hash) => typeof hash !== 'string'))
+  )
+    return `${file}: readyContent must be { <variant>: <content hash> }`;
   if (parsed.portAfterMerge !== undefined && !isPortMark(parsed.portAfterMerge))
     return `${file}: portAfterMerge must be { merged: string[], parts: string[], reasons: string[], at }`;
   if (parsed.mergeHold !== undefined && !isMergeHold(parsed.mergeHold))
@@ -540,6 +550,7 @@ export const writeSketchFile = (sketch: Sketch) => {
     ...(sketch.rejections && Object.keys(sketch.rejections).length > 0 ? { rejections: sketch.rejections } : {}),
     ...(sketch.merge ? { merge: sketch.merge } : {}),
     ...(sketch.hold ? { hold: sketch.hold } : {}),
+    ...(sketch.readyContent && sketch.status === 'ready' ? { readyContent: sketch.readyContent } : {}),
     ...(sketch.portAfterMerge ? { portAfterMerge: sketch.portAfterMerge } : {}),
     ...(sketch.mergeHold && sketch.status === 'ready' ? { mergeHold: sketch.mergeHold } : {}),
   };
@@ -989,12 +1000,56 @@ export const markSketchReady = (options: { checkout: string; sketch: Sketch; aut
         .filter((variant) => authorsOf(sketch, variant).length === 0)
         .reduce((current, variant) => withAuthor({ sketch: current, variant, author }), sketch)
     : sketch;
-  const ready: Sketch = { ...authored, status: 'ready' };
+  const ready: Sketch = { ...authored, status: 'ready', readyContent: readyContentOf(sketch) };
 
   writeSketchFile(ready);
   clearSketchReport({ checkout, sketch });
 
   return ready;
+};
+
+const filesIn = (dir: string) =>
+  existsSync(dir)
+    ? (readdirSync(dir, { recursive: true }) as string[])
+        .map((path) => resolve(dir, path))
+        .filter((file) => statSync(file).isFile())
+    : [];
+
+/** The content hash of every file a variant draws from: its folder and the `shared/` folder of the sketch. */
+export const variantContentHashOf = (sketch: Sketch, variant: string) => {
+  const hash = createHash('sha256');
+  const files = [...filesIn(variantDirOf(sketch, variant)), ...filesIn(sharedDirOf(sketch))].sort();
+
+  for (const file of files)
+    hash
+      .update(`${relative(sketch.dir, file)}\0`)
+      .update(readFileSync(file))
+      .update('\0');
+
+  return hash.digest('hex').slice(0, 16);
+};
+
+const readyContentOf = (sketch: Sketch) =>
+  Object.fromEntries(sketch.variants.map((variant) => [variant, variantContentHashOf(sketch, variant)]));
+
+/**
+ * Moves an undecided ready sketch back to in progress when a variant changed since `sketch ready` judged it, and
+ * answers the changed variants, or `null` when nothing changed or the sketch recorded no content.
+ */
+export const reopenChangedReady = (sketch: Sketch): { sketch: Sketch; changed: string[] } | null => {
+  if (sketch.status !== 'ready' || sketch.decision || !sketch.readyContent) return null;
+
+  const judged = sketch.readyContent;
+  const changed = sketch.variants.filter((variant) => judged[variant] !== variantContentHashOf(sketch, variant));
+
+  if (changed.length === 0) return null;
+
+  const { readyContent: _readyContent, mergeHold: _mergeHold, ...rest } = sketch;
+  const reopened: Sketch = { ...rest, status: 'in progress' };
+
+  writeSketchFile(reopened);
+
+  return { sketch: reopened, changed };
 };
 
 /** Why a held sketch cannot be ready, or `null` when it holds nothing. */

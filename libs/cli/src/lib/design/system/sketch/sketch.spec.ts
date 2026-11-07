@@ -18,6 +18,7 @@ import {
   readSketchReport,
   rebaseSketch,
   rejectionOf,
+  reopenChangedReady,
   reportSketch,
   Sketch,
   SketchMerge,
@@ -339,6 +340,25 @@ describe('status', () => {
       reportSketch({ checkout: target, sketch: decided, variant: 'a', author: 'gpt-5.6-sol', message: 'late' }),
     ).toBe('elements/hero is decided (pick) - a report would reopen it, so nothing was recorded');
     expect(sketchJson(target, 'elements-hero')['status']).toBe('ready');
+  });
+
+  it('drops a ready sketch to in progress when a variant changed since ready, and keeps it while none did', () => {
+    const target = acme();
+    const sketch = open(target, 'elements/hero');
+    const ready = markSketchReady({ checkout: target, sketch }) as Sketch;
+
+    expect(reopenChangedReady(ready)).toBeNull();
+
+    writeFileSync(join(sketch.dir, 'a', 'extra.css'), '.x { color: red; }');
+
+    const reopened = reopenChangedReady(ready);
+
+    expect(reopened?.changed).toEqual(['a']);
+    expect(sketchJson(target, 'elements-hero')['status']).toBe('in progress');
+    expect(sketchJson(target, 'elements-hero')['readyContent']).toBeUndefined();
+    expect(markSketchReady({ checkout: target, sketch: reopened?.sketch as Sketch })).toMatchObject({
+      status: 'ready',
+    });
   });
 
   it('keeps the authors of each variant in the order of their first report, without duplicates', () => {
