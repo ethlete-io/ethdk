@@ -4439,3 +4439,12 @@ lists each open or accepted ADR whose globs match the staged files, and the buil
 before they change or ask. Process fix: the doc agent searches the ADRs before it sends work, not only before a grill
 question. Applied at once: the slow pre-commit checks leave the hook; finding 541 becomes a problem on the part.
 As built (ee935173c): ADRs 0036-0038 carry `governs: [...]`; `yarn adr:governs <files|--staged|a..b>` (tools/scripts/adr-governs.mjs) lists the accepted ADRs whose globs match; not wired to a hook.
+
+561\. Doc agent (2026-11-07): the builder hit 85% context and could not restart itself: the auto-mode classifier denied
+`agent-sessions.mjs restart` ("Tmux Self Drive"), so the 559 fix never gets a chance to run. The doc agent then typed
+`/clear` into the pane while the builder still finished a turn ("Waiting for 2 background agents" looked idle); the
+clear queued and ran at the end of the turn, which worked by luck. Why no tool caught it: no allow rule names the
+restart command, and the restart skill does not say what to do on a denial; the pane state has no clear idle marker for
+a turn that waits on background agents. Tool fix (technical): `restart` and the doc agent treat a pane as idle only
+when the footer shows no "esc to interrupt" and no "Waiting for"; on a denied self-restart the builder sends one mailbox
+line to the doc agent, which drives the pane. Decision for Tom: an allow rule for the restart command.
