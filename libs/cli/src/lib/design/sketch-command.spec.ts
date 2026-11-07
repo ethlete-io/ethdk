@@ -1212,6 +1212,18 @@ describe('designSketch', { timeout: 120_000 }, () => {
       expect(run(target, 'list')).toBe(0);
       expect(lines.join('\n')).toContain('withdrawn b');
     });
+
+    it('says a new variant comes from a withdrawn one', async () => {
+      const { target, lines } = opened();
+
+      vi.mocked(identicalRenders).mockResolvedValue([twinOfA]);
+
+      expect(await withdraw(target, '--by', 'claude-opus-5-5')).toBe(0);
+      expect(await write(target, 'variant', 'components/button', 'c', '--from', 'b', '--product', 'acme')).toBe(0);
+      expect(lines.join('\n')).toContain('c: from withdrawn b');
+      expect(await write(target, 'variant', 'components/button', 'd', '--from', 'a', '--product', 'acme')).toBe(0);
+      expect(lines.join('\n')).not.toContain('d: from withdrawn');
+    });
   });
 
   it('checks no withdrawn variant: it gets a NOTE line, and its render issues never fail the check', async () => {

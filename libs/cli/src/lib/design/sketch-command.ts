@@ -494,6 +494,7 @@ const varied = (context: Context) =>
       for (const name of variants) {
         console.log(`${added.target} in progress: variant ${name} from ${from} in round ${round?.key ?? ''}`);
         console.log(variantLineOf({ root: context.target, sketch: added, variant: name }));
+        if (rejectionOf(added, from)?.status === 'withdrawn') console.log(`  ${name}: from withdrawn ${from}`);
       }
 
       if (title !== undefined && round?.note === '')

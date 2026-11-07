@@ -697,6 +697,7 @@ agent in accepted.json, and a failed commit loop restored stale JSON backups ove
 foreign hunk lost; the copy-aside risk B204 removes). Fix (technical): B216 - a follow-up sketch declares the
 controls; B217 - `sketch ready` runs CONTROL-UNDECLARED per variant, `sketch merge --decided-by tom` records Tom.
 A pairwise `unreachable` list costing 2n entries per new state goes to B194 `instant`.
+As built (B211): `sketch variant` prints `  <new>: from withdrawn <from>` under the new variant when `--from` names a withdrawn variant.
 
 268\. Committing Tom's by-tom lines (builder, 2026-11-03, 8dd3679b1, 2f6fcf90f): `design commit-hunks` fails at once on a
 busy `.git/index.lock`, against the decision in finding 260 (B184 retries on the lock). Why no tool caught it: no
