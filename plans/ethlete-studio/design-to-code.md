@@ -4122,3 +4122,8 @@ the file that holds it; a part with no app code loses its link; comment-pin gets
 could never baseline its old hits (against ADR 0201). No spec covered a second rule. Fixed in 994dd8bea: an entry
 counts as added only if an older version already held the same rule without it, with a spec for a second new rule.
 Lesson: a decision that names a ratchet ("may only shrink") gets a spec for its second use, not only its first.
+
+585\. Builder (2026-11-07, d1fdccaa3): after the `implements` field left the design hash (finding 582),
+`design task elements/canvas-frames` still failed on "embedded: components/button is not build-ready", only because
+button has no `implements` link. ADR 0105 says an unlinked part must not block. Tool fix (technical, inside B249): the
+build-ready computation treats an embedded part without app code as ready when its own checks pass, with a spec.
