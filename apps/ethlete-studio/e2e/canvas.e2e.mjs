@@ -2258,6 +2258,7 @@ const lead = async () => {
         : [],
     ),
   ).sort((a, b) => (known[keyOf(b)] ?? Infinity) - (known[keyOf(a)] ?? Infinity));
+  const declared = [...queue];
   const total = queue.length;
   const workers = Math.min(total, workerCount());
   const rows = [];
@@ -2334,6 +2335,13 @@ const lead = async () => {
   );
 
   const failed = rows.filter((row) => !row.ok);
+  const ran = new Set(rows.map(keyOf));
+  const notRun = declared.filter((job) => !ran.has(keyOf(job)));
+
+  if (notRun.length) {
+    console.log(`\n${notRun.length} case(s) did not run:`);
+    for (const job of notRun) console.log(`NOT RUN  ${job.page.padEnd(9)} ${job.name}`);
+  }
 
   console.log(
     `\n${rows.length - failed.length}/${total} passed in ${seconds(performance.now() - runStartedAt).trim()} on ${workers} worker(s)`,

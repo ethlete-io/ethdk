@@ -1910,6 +1910,8 @@ later case never ran and looked green. Why no tool caught it: the runner reports
 skipped, and nothing compares the case count with the last run. Fix (B355): an async throw in a case marks that case
 FAIL and the runner goes on; the summary names every case that did not run; a run with fewer cases than the file
 declares fails. Also (B339): `studio:e2e` runs as a gate on commits that touch `system-view` or `design-parts/sketches`.
+As built (B355): the per-case try/catch (FAIL, run goes on), the worker-exit FAIL and the `rows < total` red already
+existed; added the `NOT RUN` list in the summary naming every declared case without a result.
 
 415\. Builder (2026-11-04, port of Tom's pick a of pages/sketches, e0f6a4396): `sketch report` refuses on a picked
 sketch even with `--reopen` ("is decided (pick) - a report would reopen it"), so the rule "report before a variant edit"
