@@ -1759,6 +1759,17 @@ has no key window or event routing; the verdict logic read zero events as a fail
 it: the harness has no positive control, so a blind run looks like a result. Fix (B338): a check reports BLIND when
 its control target (here the unshielded canvas) gets no event, and never PASS or FAIL; build it with the B321
 WebKit tooling once wip/b321 lands. B326 stays verified in Chromium only.
+As built (B338, 2026-11-07): the B321 tool was already on next (c348db743, newer than `wip/b321-stacking-fix`), so
+nothing was taken from that branch. `verify-webkit-frame-wheel.swift` is now the `frame-wheel` mode of
+`tools/scripts/verify-webkit-studio.swift` (same three rows); `verify-webkit-studio.mjs` runs it by default and alone
+with `--checks frame-wheel`, without a build or design server. Positive control: a fixed 60 px element on top of the
+page with its own wheel listener takes a 4-step gesture before and after the probes; zero events there ends the run
+as BLIND (exit 3), never PASS or FAIL. The `edges` check had the same blind spot (no wheel event reads as "no
+bounce", a false PASS) and now runs the same control. `webkitVerdict` (verify-studio-headless.mjs) folds the check
+exits: any failure fails, else any blind run gives BLIND. Verified: the verdict spec (fails without the BLIND branch).
+Not verified: the Swift was not compiled or run (no Swift on the Linux desk); a Mac run is open, and whether
+`web.scrollWheel(with:)` reaches WebKit from an SSH session is still unknown - the control now says so instead of
+guessing.
 
 395\. Builder (2026-11-04, B326): the Studio e2e case "Sketches: no state is marked before the compare answers"
 (21dcfc17f, 2026-11-03) fails, also on the build before B326. Inferred cause, not run: d2eaac782 (B329/B324 listing

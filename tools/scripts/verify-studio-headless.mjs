@@ -65,6 +65,20 @@ export const missingBuildInputs = (checkout, entry = cliEntry) =>
     .filter(([path]) => !existsSync(path))
     .map(([path, command]) => `${path} is missing - run ${command}`);
 
+export const WEBKIT_BLIND_EXIT = 3;
+
+export const webkitVerdict = (statuses) => {
+  const named = (match) => Object.keys(statuses).filter((check) => match(statuses[check]));
+  const failed = named((status) => status !== 0 && status !== WEBKIT_BLIND_EXIT);
+  const blind = named((status) => status === WEBKIT_BLIND_EXIT);
+  const lines = [
+    ...(failed.length ? [`FAIL: ${failed.join(', ')}`] : []),
+    ...(blind.length ? [`BLIND: ${blind.join(', ')} - the wheel control got no event, so the run proves nothing`] : []),
+  ];
+
+  return { exit: failed.length ? 1 : blind.length ? WEBKIT_BLIND_EXIT : 0, lines };
+};
+
 export const ensureCli = () => {
   if (!existsSync(cliEntry)) execFileSync('npx', ['nx', 'build', 'cli'], { cwd: root, stdio: 'inherit' });
 };

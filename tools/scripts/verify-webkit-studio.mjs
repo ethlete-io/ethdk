@@ -9,6 +9,7 @@ import {
   serveStatic,
   startDesignServer,
   studioHostAnswer,
+  webkitVerdict,
 } from './verify-studio-headless.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
@@ -17,7 +18,7 @@ const args = process.argv.slice(2);
 const value = (flag, fallback) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : fallback);
 const checkout = resolve(value('--checkout', root));
 const built = value('--built');
-const checks = value('--checks', 'soak,edges,paint').split(',');
+const checks = value('--checks', 'frame-wheel,soak,edges,paint').split(',');
 const pngDir = resolve(value('--png-dir', join(tmpdir(), 'webkit-studio-shots')));
 const soakBatches = value('--soak-batches', '600');
 const paintHangs = value('--paint-hangs', '24');
@@ -56,17 +57,33 @@ const runSwift = (...given) =>
   });
 
 const stamp = (phase) => console.log(`[webkit-studio] ${phase}`);
+const statuses = {};
+const finish = () => {
+  const { exit, lines } = webkitVerdict(statuses);
+
+  for (const line of lines) console.error(line);
+  process.exit(exit);
+};
+
+if (checks.includes('frame-wheel')) {
+  stamp('frame-wheel starting');
+  statuses['frame-wheel'] = await runSwift('frame-wheel');
+}
+
+const studioChecks = checks.filter((check) => check !== 'frame-wheel');
+
+if (!studioChecks.length) finish();
+
 const scratch = mkdtempSync(join(tmpdir(), 'webkit-studio-'));
 let design;
 let app;
-const failed = [];
 
 try {
   const missing = missingBuildInputs(checkout);
 
   if (missing.length) throw new Error(`build inputs missing:\n${missing.join('\n')}`);
 
-  if (!built && checks.some((check) => check !== 'soak')) {
+  if (!built && studioChecks.some((check) => check !== 'soak')) {
     stamp('studio build starting');
     execFileSync(
       'npx',
@@ -95,7 +112,7 @@ try {
   });
   const studioUrl = `http://localhost:${await listen(app)}/`;
 
-  for (const check of checks) {
+  for (const check of studioChecks) {
     stamp(`${check} starting`);
     const status =
       check === 'soak'
@@ -104,11 +121,11 @@ try {
           ? await runSwift('edges', studioUrl, JSON.stringify(VIEW))
           : await runSwift('paint', studioUrl, JSON.stringify(PAINT_VIEW), paintHangs, pngDir);
 
-    if (status !== 0) failed.push(check);
+    statuses[check] = status;
   }
 } catch (error) {
   console.error(`FAIL: ${error.message}`);
-  failed.push('setup');
+  statuses['setup'] = 1;
 } finally {
   app?.close();
   design?.child.removeAllListeners('exit');
@@ -116,5 +133,4 @@ try {
   rmSync(scratch, { recursive: true, force: true });
 }
 
-if (failed.length) console.error(`FAIL: ${failed.join(', ')}`);
-process.exit(failed.length ? 1 : 0);
+finish();

@@ -6,18 +6,26 @@ let usage = """
 Usage: swift tools/scripts/verify-webkit-studio.swift soak <design-url> <batches> <frame-path> [<frame-path> ...]
        swift tools/scripts/verify-webkit-studio.swift edges <studio-url> <call-view-json>
        swift tools/scripts/verify-webkit-studio.swift paint <studio-url> <call-view-json> <hangs> [<png-dir>]
+       swift tools/scripts/verify-webkit-studio.swift frame-wheel
+  Exit 0 PASS, 1 FAIL, 2 usage, 3 BLIND: the wheel control got no event, so the run proves nothing either way.
+  frame-wheel sends trackpad wheel gestures over three iframe setups inside a canvas that takes the wheel:
+  bare        the iframe sits in a `pointer-events: none` wrapper (the Sketches page before finding 381)
+  shielded    the same, plus a `pointer-events: auto` cover after the iframe (ethlete-frame-shield)
+  iframe-none the iframe itself has `pointer-events: none` (the design canvas without its shield)
+  It fails when the shielded iframe gets any wheel event or the canvas misses one.
 
 """
 let args = Array(CommandLine.arguments.dropFirst())
-guard args.count >= 3, ["soak", "edges", "paint"].contains(args[0]), let givenUrl = URL(string: args[1]),
-    givenUrl.host != nil
+let mode = args.first ?? ""
+let givenUrl = args.count > 1 ? URL(string: args[1]) : nil
+guard mode == "frame-wheel" || (args.count >= 3 && ["soak", "edges", "paint"].contains(mode) && givenUrl?.host != nil)
 else {
     fputs(usage, stderr)
     exit(2)
 }
-let pageUrl = givenUrl
-let mode = args[0]
+let pageUrl = givenUrl ?? URL(string: "http://localhost/")!
 let viewport = NSSize(width: 1440, height: 900)
+let BLIND_EXIT: Int32 = 3
 
 func json(_ value: Any) -> String {
     String(data: try! JSONSerialization.data(withJSONObject: value, options: [.fragmentsAllowed]), encoding: .utf8)!
@@ -83,6 +91,7 @@ final class Probe: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         window.orderFrontRegardless()
         switch mode {
         case "soak": startSoak()
+        case "frame-wheel": startFrameWheel()
         default: startStudio()
         }
         Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
@@ -106,6 +115,12 @@ final class Probe: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         print("PASS: \(reason)")
         fflush(stdout)
         exit(0)
+    }
+
+    func blind(_ reason: String) -> Never {
+        print("BLIND: \(reason)")
+        fflush(stdout)
+        exit(BLIND_EXIT)
     }
 
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
@@ -179,6 +194,67 @@ final class Probe: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         web.loadHTMLString("<!doctype html><body style=\"margin:0\"></body>", baseURL: pageUrl)
     }
 
+    func startFrameWheel() {
+        let frameDoc = """
+        <body style="margin:0;height:3000px;background:linear-gradient(#fff,#99f)"><script>\
+        addEventListener('wheel',()=>parent.postMessage('frame-wheel','*'),{passive:true})</script></body>
+        """
+        let frameSrc = "data:text/html," + frameDoc.addingPercentEncoding(withAllowedCharacters: .alphanumerics)!
+        let column = { (name: String, left: Int, inner: String) in
+            "<div data-col=\"\(name)\" style=\"position:absolute;left:\(left)px;top:100px;width:300px;height:600px\">\(inner)</div>"
+        }
+        let iframe = { (style: String) in
+            "<iframe src=\"\(frameSrc)\" style=\"display:block;width:300px;height:600px;border:0;\(style)\"></iframe>"
+        }
+        let shield = "<div style=\"position:absolute;inset:0;pointer-events:auto\"></div>"
+        let page = """
+        <!doctype html><html><body style="margin:0;overflow:hidden">
+        <div id="canvas" style="position:relative;width:1440px;height:900px;overflow:hidden;background:#eee">
+        \(column("bare", 100, "<div style=\"pointer-events:none\">\(iframe(""))</div>"))
+        \(column("shielded", 500, "<div style=\"pointer-events:none;position:relative\">\(iframe(""))\(shield)</div>"))
+        \(column("iframe-none", 900, iframe("pointer-events:none")))
+        </div>
+        <script>
+        let canvasWheels = 0, frameWheels = 0;
+        document.getElementById('canvas').addEventListener('wheel', (e) => { e.preventDefault(); canvasWheels++; }, { passive: false });
+        addEventListener('message', (e) => { if (e.data === 'frame-wheel') frameWheels++; });
+        window.takeCounts = () => { const counts = [canvasWheels, frameWheels]; canvasWheels = 0; frameWheels = 0; return counts; };
+        </script></body></html>
+        """
+        web.loadHTMLString(page, baseURL: pageUrl)
+        Task { @MainActor in
+            do {
+                while try await run("return document.readyState === 'complete' && typeof takeCounts === 'function'") as? Bool != true {
+                    try await Task.sleep(nanoseconds: 100_000_000)
+                }
+                try await Task.sleep(nanoseconds: 1_000_000_000)
+                try await checkFrameWheel()
+            } catch {
+                fail("\(error)")
+            }
+        }
+    }
+
+    func checkFrameWheel() async throws {
+        let steps = 10
+        try await requireWheelDelivery("before the iframe rows")
+        var leaked: [String] = []
+        for (name, x) in [("bare", 250.0), ("shielded", 650.0), ("iframe-none", 1050.0)] {
+            let over = NSPoint(x: x, y: 400)
+            for (label, from) in [("starts over the iframe", over), ("enters it mid-gesture", NSPoint(x: x - 140, y: 50))] {
+                try await swipe(from: from, to: over, steps: steps)
+                let counts = try await run("return takeCounts()") as? [Int] ?? [-1, -1]
+                let clean = counts[1] == 0 && counts[0] == steps
+                if name == "shielded" && !clean { leaked.append(label) }
+                let row = name.padding(toLength: 12, withPad: " ", startingAt: 0)
+                say("\(clean ? "CANVAS" : "FRAME ") \(row) \(label): canvas \(counts[0])/\(steps), iframe \(counts[1])")
+            }
+        }
+        try await requireWheelDelivery("after the iframe rows")
+        if !leaked.isEmpty { fail("the shielded iframe took wheel events (\(leaked.joined(separator: ", ")))") }
+        pass("the shield keeps every wheel event on the canvas")
+    }
+
     func startStudio() {
         let view = args[2]
         let seed = "localStorage.setItem('ethlete-studio.call-view', \(json(view)));"
@@ -237,6 +313,48 @@ final class Probe: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         web.scrollWheel(with: event)
     }
 
+    func swipe(from start: NSPoint, to end: NSPoint, steps: Int) async throws {
+        for step in 0..<steps {
+            let t = CGFloat(step) / CGFloat(steps - 1)
+            let at = NSPoint(x: start.x + (end.x - start.x) * t, y: start.y + (end.y - start.y) * t)
+            wheel(at: at, dx: 0, dy: -12, phase: step == 0 ? 1 : step == steps - 1 ? 4 : 2)
+            try await Task.sleep(nanoseconds: 16_000_000)
+        }
+        try await Task.sleep(nanoseconds: 600_000_000)
+        lastProgress = Date()
+    }
+
+    func requireWheelDelivery(_ when: String) async throws {
+        _ = try await run(
+            """
+            const control = document.createElement('div');
+            control.id = 'et-wheel-control';
+            control.style.cssText = 'position:fixed;left:0;top:0;width:60px;height:60px;z-index:2147483647;pointer-events:auto';
+            control.dataset.wheels = '0';
+            control.addEventListener('wheel', (event) => {
+              event.preventDefault();
+              control.dataset.wheels = String(Number(control.dataset.wheels) + 1);
+            }, { passive: false });
+            document.body.append(control);
+            """
+        )
+        try await swipe(from: NSPoint(x: 20, y: 20), to: NSPoint(x: 40, y: 40), steps: 4)
+        let wheels =
+            try await run(
+                """
+                const control = document.getElementById('et-wheel-control');
+                control.remove();
+                window.takeCounts?.();
+                return Number(control.dataset.wheels);
+                """
+            ) as? NSNumber
+        let count = wheels?.intValue ?? 0
+        say("wheel control \(when): \(count) of 4 events")
+        if count == 0 {
+            blind("the wheel control got no event \(when), so WebKit delivered none of the synthetic wheel events")
+        }
+    }
+
     let measure = """
     const target = id === 'root' ? document.scrollingElement : document.querySelector(`[data-edge-probe="${id}"]`);
     const first = id === 'root' ? document.body : target.firstElementChild;
@@ -246,6 +364,7 @@ final class Probe: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     """
 
     func checkEdges() async throws {
+        try await requireWheelDelivery("before the edge probes")
         let containers =
             try await run(
                 """
@@ -313,6 +432,7 @@ final class Probe: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
                 }
             }
         }
+        try await requireWheelDelivery("after the edge probes")
         if !bounces.isEmpty { fail("WebKit bounced at the scroll edge of \(bounces.joined(separator: ", "))") }
         pass("no scroll container of the Studio shell moved past its edges")
     }
