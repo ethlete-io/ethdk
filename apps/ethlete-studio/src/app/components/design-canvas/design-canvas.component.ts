@@ -671,15 +671,19 @@ export class DesignCanvasComponent {
       const key = this.cameraKey();
       const covered = this.covered();
 
-      if (!bounds || viewport.width === 0 || viewport.height === 0) return;
+      if (viewport.width === 0 || viewport.height === 0) return;
 
       untracked(() => {
+        const restored = this.restoredCamera();
+
+        if (!bounds && (this.fittedFor === key || restored === null)) return;
+
         const hostLeft = this.host.nativeElement.getBoundingClientRect().left;
         const shift = this.hostLeft - hostLeft;
 
         this.hostLeft = hostLeft;
 
-        if (this.fittedFor === key) {
+        if (this.fittedFor === key && bounds) {
           if (shift !== 0) this.camera.update((camera) => ({ ...camera, x: camera.x + shift }));
 
           if (covered !== this.coveredAtFit) {
@@ -700,14 +704,13 @@ export class DesignCanvasComponent {
           return;
         }
 
-        const restored = this.restoredCamera();
-
         this.fittedFor = key;
         this.coveredAtFit = covered;
         this.following = restored === null ? this.opening() : null;
         this.followsResize = false;
         this.followedBounds = bounds;
-        this.camera.set(restored ?? this.fitted({ bounds, viewport, fit: this.opening() }));
+        if (restored) this.camera.set(restored);
+        else if (bounds) this.camera.set(this.fitted({ bounds, viewport, fit: this.opening() }));
       });
     });
 

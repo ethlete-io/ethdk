@@ -34,6 +34,12 @@ const sketchRowsOf = (rows: SketchRow[], { same = [], comparing = false }: { sam
 
 /** Replaces a design-only prop that picks sample data with the inputs that data needs. */
 export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
+  'elements/canvas-frames': ({ zoom, class: extra, ...props }) => ({
+    ...props,
+    class: `${typeof extra === 'string' ? extra : ''} min-h-120`,
+    cameraKey: 'elements/canvas-frames',
+    restoredCamera: { x: 0, y: 0, zoom: parseFloat(String(zoom ?? '100%')) / 100 },
+  }),
   'pages/sketches': ({ part, same, comparing, ...props }) => {
     const { looks: _looks, ...sample } = part === 'narrow' ? SKETCH_NARROW_SAMPLE : { rows: SKETCH_ROWS, looks: {} };
     const rows = sketchRowsOf(sample.rows, { same: same as string[] | undefined, comparing: comparing === true });

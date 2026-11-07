@@ -132,6 +132,29 @@ describe('DesignCanvasComponent', () => {
     expect(canvas.camera()).toEqual({ x: 40, y: 48, zoom: 1 });
   });
 
+  it('opens at a restored camera before any frame has a size, and shows its zoom in the chip', async () => {
+    const width = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(800);
+    const height = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(600);
+
+    onTestFinished(() => {
+      width.mockRestore();
+      height.mockRestore();
+    });
+
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(DesignCanvasComponent);
+
+    fixture.componentRef.setInput('restoredCamera', { x: 12, y: 8, zoom: 2.5 });
+    fixture.componentRef.setInput('cameraKey', 'acme components/button');
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.camera()).toEqual({ x: 12, y: 8, zoom: 2.5 });
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('250');
+  });
+
   it('reports a camera the user moved, and a fit as no camera to keep', async () => {
     const fixture = await render([FITTED]);
     const canvas = fixture.componentInstance;
