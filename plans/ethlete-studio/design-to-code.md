@@ -1672,12 +1672,18 @@ pre-commit gate runs only the specs related to the staged files, and these two s
 the related map does not link. Fix (B334): a field name or string literal that the staged diff removes pulls every
 spec that contains it into the gate run, as finding 376 does for labels. Also seen: `list-system.spec.ts` failed once
 under load; if it is bound to wall-clock time, it goes into the B268 fake-clock work.
+As built (B334, w3-gates-b): no hook change. ADR 0225 keeps slow checks out of the hooks, and the spec-selecting
+pre-commit gate is gone (d67c98f91). The CI `Unit tests` job runs every spec on every push, so a removed field or
+literal that a spec still expects fails there; a related-spec subset in a hook would only repeat it.
 
 389\. Builder (2026-11-04, B325): dd708ee4a committed `started-by-studio.spec.ts` with a type error;
 `tsc -p libs/cli/tsconfig.spec.json` fails. Why no tool caught it: vitest does not typecheck, the pre-commit gate
 runs only vitest, and S7 moved typecheck to CI. Fix (B334): when a staged file is a spec, the gate also runs
 `tsc --noEmit -p <lib>/tsconfig.spec.json` for that lib, inside the 60 s budget of S7; if it does not fit, it runs
 only the staged specs through vitest typecheck mode.
+As built (B334, w3-gates-b): no hook change. The CI `Checks` job runs `nx run-many -t typecheck`, which covers
+`tsconfig.spec.json` of `libs/cli` and every other lib. A `tsc` per commit takes tens of seconds, so by ADR 0225 it
+stays in CI.
 
 390\. Builder (2026-11-04, B333): `commit-wait.spec` was red since 2bad713a6 (B328), which added an eslint run over
 staged tools/scripts files; the spec's temp repo had no eslint config (fixed in 9f0d70e47). It blocked every later
@@ -1932,6 +1938,7 @@ WebKit zoom budget on this fixture (rAF frame interval over 90 wheel-zoom steps,
 broke `tsc -p libs/cli/tsconfig.spec.json`, which then blocked every cli commit in the hook. Why no tool caught it: no
 gate ran the spec typecheck on the commit that added it (vitest does not typecheck). Fix (B358): the commit gate runs
 the spec typecheck for every staged spec file.
+As built (B358, w3-gates-b): see 389; the spec typecheck of every changed spec runs in the CI `Checks` job, not in a hook.
 
 420\. Builder (2026-11-04, B343): `list-system.spec.ts` fails only in the pre-commit temp tree (ENOENT on
 `design/web/rebuild-probe-*.txt`). Why no tool caught it: the spec shares a probe path with the tree it runs in, and no
