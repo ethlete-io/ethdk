@@ -9,6 +9,7 @@ const SUBCOMMANDS = [
   'variant',
   'round',
   'note',
+  'covers',
   'report',
   'ready',
   'hold',
@@ -64,6 +65,19 @@ describe('sketch usage errors end with a non-zero exit', () => {
     const argv = [command, '--by', 'claude-opus-5-5', '--product', 'acme'];
 
     expect(await designSketch({ target: acme(), argv, invocation: 'et design' })).not.toBe(0);
+  });
+
+  it.each(['list', 'check'])('%s with an unknown flag fails', async (command) => {
+    silenced();
+    const argv = [command, '--bogus', '--product', 'acme'];
+
+    expect(await designSketch({ target: acme(), argv, invocation: 'et design' })).not.toBe(0);
+  });
+
+  it('an unknown sketch command fails', async () => {
+    silenced();
+
+    expect(await designSketch({ target: acme(), argv: ['nope'], invocation: 'et design' })).not.toBe(0);
   });
 
   it('ready without --by fails', async () => {

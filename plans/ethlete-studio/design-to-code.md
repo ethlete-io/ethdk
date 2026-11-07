@@ -2177,6 +2177,8 @@ new ones stand.
 agent sees success. Why no tool caught it: no spec runs a sketch subcommand with missing arguments and checks the exit
 code. Fix (B364): every sketch subcommand exits 1 on a usage error, with a spec per subcommand.
 
+As built (B364, 2026-11-07): a3b204c2d already made `designSketch` end every usage error with exit 2 (non-zero) and added `sketch-usage-exit.spec.ts` (every writing subcommand without arguments and with only `--by`, `ready` without `--by`). This row adds `covers`, `list`/`check` with an unknown flag and an unknown subcommand to that spec. Exit 2 stays (the other design commands use it for usage errors), not 1. Not verified: the compiled `et` binary's process exit code.
+
 430\. Tom (2026-11-04): "das wir nun ständig die frames 'laden' die im viewport sind ist super nervig. ständig
 verschwindet das bild und kommt wieder beim scrollen. man scrollt wie durch so ein laggy netscape browser window wo
 gerade 17kb an bild übers modem laden müssen." When a frame scrolls into the viewport, its picture is gone and then

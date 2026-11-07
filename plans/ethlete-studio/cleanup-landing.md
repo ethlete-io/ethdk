@@ -32,3 +32,4 @@ webkit-revert-wt (nicht genommen, entschieden), wip/b321-stacking-fix (verworfen
 - desk/B234 → gelandet in diesem Commit (Leerraum-Zweige im glued-interpolation-Check, Spec + Beißprobe grün).
 - desk/B285 → gelandet in diesem Commit (Regel COMMAND-TEXT, für studio an; Tag-Erkennung zitatfest gemacht, 0 Treffer im echten Repo).
 - desk/B359 → gelandet in diesem Commit (Probe-Ordner in serve.spec.ts anlegen; Stress 4/4).
+- desk/B364 → gelandet in diesem Commit (Spec-Fälle covers, list/check mit unbekanntem Flag, unbekannter Unterbefehl; Exit 2 bleibt).
