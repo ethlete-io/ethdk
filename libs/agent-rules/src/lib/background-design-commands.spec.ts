@@ -88,6 +88,30 @@ describe('background-design-commands', () => {
     expect(decisionOf({ command: 'git commit -m "docs: run design check in background"' })).toBeNull();
   });
 
+  it.each([
+    ['a commit message', 'git commit -m "fix(repo): design check no longer blocks" -- a.ts'],
+    ['an echo string', 'echo "run design ready later"'],
+    ['an unquoted echo', 'echo design ready'],
+    ['a heredoc commit message', "git commit -F - <<'EOF'\nfix: design ready hook\n\nyarn design check studio\nEOF"],
+    ['a substituted heredoc', 'git commit -m "$(cat <<\'EOF\'\ndesign check in the foreground\nEOF\n)"'],
+    ['a grep pattern', "grep -rn 'design compare' plans"],
+    ['an unquoted grep', 'grep -rn design check plans'],
+    ['a cat and an echo', 'cat notes.txt && echo design harness'],
+  ])('ignores %s that only names a long command', (_name, command) => {
+    expect(decisionOf({ command })).toBeNull();
+  });
+
+  it.each([
+    'FOO=1 yarn design check',
+    'echo start && yarn design ready studio',
+    'git status; node dist/libs/cli/src/index.js design compare studio',
+    'echo $(yarn design check)',
+    'cat <<EOF\nhello\nEOF\nyarn design harness studio',
+    'timeout 600 yarn design check',
+  ])('still denies the command-position form %s', (command) => {
+    expect(decisionOf({ command })).toBe('deny');
+  });
+
   it('ignores tools other than Bash', () => {
     expect(decisionOf({ command: 'yarn design check', toolName: 'Write' })).toBeNull();
   });

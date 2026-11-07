@@ -1488,6 +1488,7 @@ design, and add a macOS window check that measures the traffic-light centre agai
 heredoc or a commit message. Why no tool caught it: the hook spec tests only commands that should be blocked,
 not free text that only names the command. Tool fix (technical, B305): the hook matches the command position
 only; the spec gets cases with the words in a heredoc, a quoted string and a commit message.
+As built (B305, 2026-11-07; closes B126 too): `libs/agent-rules/content/hooks/background-design-commands.py` splits the command into simple commands (heredoc bodies and quoted text removed, `$(` and separators split) and matches a long command only when the segment starts with a launcher (yarn, npx, node, nx, timeout, env assignments and the like). The spec has cases for a commit message, echo, unquoted echo and grep, heredoc and `$(cat <<EOF)` commit messages, plus command-position forms that must still deny. Bite proof: the old hook denied `echo design ready` and an unquoted grep. The `.claude` copy was written by hand with the generated header, not through `yarn agents:sync` (build too heavy on the loaded desk); a later sync should produce no diff. Not verified: other agents' hook copies (Codex), a launcher missing from the list lets that command through.
 
 359\. Tom (2026-11-04): every frame in Studio showed the browser's broken-image icon and an endless "Rendering" chip
 (foundations/agent-logos and others), while the part head said "Nichts offen". Cause: load about 256 from a full

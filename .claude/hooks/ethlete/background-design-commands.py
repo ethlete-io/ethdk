@@ -8,8 +8,9 @@ they block the whole session, so a Bash call that runs one without `run_in_backg
 is denied and the agent repeats it in the background.
 
 Matches the `yarn design ...`, `node dist/libs/cli/src/index.js design ...` and
-`npx nx ... studio:e2e` forms. Quoted text is ignored, so a commit message that mentions a
-command does not trip the hook.
+`npx nx ... studio:e2e` forms at command position only. Quoted text, heredoc bodies and
+arguments of other commands (`echo`, `git commit`, `grep`) are ignored, so free text that
+mentions a command does not trip the hook.
 
 Can be disabled per machine via a gitignored ethlete-agents.config.local.json at the repo
 root: {"disableHooks": true} or {"disableHooks": ["background-design-commands"]}.
@@ -26,16 +27,51 @@ HOOK_NAME = "background-design-commands"
 LOCAL_CONFIG_FILE = "ethlete-agents.config.local.json"
 
 LONG_COMMANDS = (
-    ("design check", re.compile(r"(?:^|[\s;&|])design\s+check(?=\s|$|[;&|])")),
-    ("design compare", re.compile(r"(?:^|[\s;&|])design\s+compare(?=\s|$|[;&|])")),
-    ("design ready", re.compile(r"(?:^|[\s;&|])design\s+ready(?=\s|$|[;&|])")),
-    ("design sketch ready", re.compile(r"(?:^|[\s;&|])design\s+sketch\s+ready(?=\s|$|[;&|])")),
-    ("design harness", re.compile(r"(?:^|[\s;&|])design\s+harness(?=\s|$|[;&|])")),
-    ("studio:e2e", re.compile(r"studio:e2e(?=\s|$|[;&|:])")),
+    ("design check", re.compile(r"\bdesign\s+check(?=\s|$)")),
+    ("design compare", re.compile(r"\bdesign\s+compare(?=\s|$)")),
+    ("design ready", re.compile(r"\bdesign\s+ready(?=\s|$)")),
+    ("design sketch ready", re.compile(r"\bdesign\s+sketch\s+ready(?=\s|$)")),
+    ("design harness", re.compile(r"\bdesign\s+harness(?=\s|$)")),
+    ("studio:e2e", re.compile(r"studio:e2e(?=\s|$|:)")),
     ("--visible-change", re.compile(r"(?:^|\s)--visible-change(?=\s|=|$)")),
 )
 
+LAUNCHERS = frozenset(
+    ("yarn", "npx", "pnpm", "pnpx", "npm", "node", "nx", "bun", "bunx", "et", "ethlete-agents", "bash", "sh", "zsh", "time", "env", "nohup", "timeout", "sudo", "exec", "xargs")
+)
+
 QUOTED = re.compile(r"\"(?:\\.|[^\"\\])*\"|'[^']*'")
+HEREDOC = re.compile(r"<<-?\s*(?:\"(\w+)\"|'(\w+)'|\\?(\w+))")
+SEPARATORS = re.compile(r"&&|\|\||[;&|\n(){}`]")
+ASSIGNMENT = re.compile(r"^[A-Za-z_]\w*=")
+
+
+def without_heredoc_bodies(command):
+    lines = command.split("\n")
+    kept = []
+    delimiter = None
+    for line in lines:
+        if delimiter is not None:
+            if line.strip() == delimiter:
+                delimiter = None
+            continue
+        kept.append(line)
+        match = HEREDOC.search(line)
+        if match:
+            delimiter = match.group(1) or match.group(2) or match.group(3)
+    return "\n".join(kept)
+
+
+def command_segments(command):
+    """The shell string split into simple commands, with heredoc bodies and quoted text removed."""
+    text = QUOTED.sub(" ", without_heredoc_bodies(command))
+    text = text.replace("$(", ";")
+    return [segment.strip() for segment in SEPARATORS.split(text) if segment.strip()]
+
+
+def at_command_position(segment):
+    words = [word for word in segment.split() if not ASSIGNMENT.match(word)]
+    return bool(words) and os.path.basename(words[0]) in LAUNCHERS
 
 
 def agent_name(argv):
@@ -77,11 +113,13 @@ def disabled_locally(config):
 
 
 def long_command_in(command):
-    """The name of the first long command the shell string runs, or None."""
-    unquoted = QUOTED.sub(" ", command)
-    for name, pattern in LONG_COMMANDS:
-        if pattern.search(unquoted):
-            return name
+    """The name of the first long command the shell string runs at a command position, or None."""
+    for segment in command_segments(command):
+        if not at_command_position(segment):
+            continue
+        for name, pattern in LONG_COMMANDS:
+            if pattern.search(segment):
+                return name
     return None
 
 
