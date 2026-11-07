@@ -93,6 +93,8 @@ export type SketchFile = {
    * `into-base`, into the base, removing the product copy the sketch started from.
    */
   merge?: SketchMerge;
+  /** The states of the part whose compare DIFF this sketch covers while it is open (ADR 0222). */
+  covers?: string[];
   hold?: SketchHold;
   portAfterMerge?: SketchPortMark;
   mergeHold?: SketchMergeHold;

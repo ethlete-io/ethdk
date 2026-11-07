@@ -54,7 +54,8 @@ import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { inOrderAtOnce } from './in-order-at-once';
 import { frozenAnimationsOf } from './frozen-animations';
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
-import { parseTarget, SketchTarget } from './sketch/sketch';
+import { coveredLineOf, coveringSketchOf } from './sketch/covered-diffs';
+import { listSketches, parseTarget, Sketch, SketchTarget } from './sketch/sketch';
 import { cachedComparePngs, COMPARE_PIXELS } from './pixel-cache';
 import { createSystemModules, productModuleIdOf } from './system-modules';
 import { drawnStateNamesOf } from './unchanged-rows';
@@ -95,6 +96,7 @@ export type ComparePart = (options: {
   appRoot?: string | null;
   shoot?: ShootStates;
   onDesignShots?: () => void;
+  sketches?: readonly Sketch[];
 }) => Promise<{ green: boolean; states: Record<string, unknown> } | string>;
 
 /** @internal How many states compare shoots at once, design and app pictures alike. */
@@ -429,6 +431,11 @@ export const comparePart: ComparePart = async (options) => {
   if (shot.shots.length === 0) return `${options.part} has no states to compare`;
 
   const { states, shots } = shot;
+  const sketches =
+    options.sketches ??
+    listSketches({ productDir: options.product.dir, product: options.product.name }).filter(
+      (sketch): sketch is Sketch => typeof sketch !== 'string',
+    );
 
   return timedPhase('compare-pixels', () => {
     let dir: string | null = null;
@@ -457,9 +464,21 @@ export const comparePart: ComparePart = async (options) => {
         return `the pictures of ${state} cannot be compared: ${messageOf(error)}`;
       }
 
-      console.log(compareLineOf(state, result));
+      const line = compareLineOf(state, result);
 
-      if (result.kind === 'ok') continue;
+      if (result.kind === 'ok') {
+        console.log(line);
+        continue;
+      }
+
+      const covering = coveringSketchOf({ sketches, part: options.part, state });
+
+      if (covering !== null) {
+        console.log(coveredLineOf(line, covering));
+        continue;
+      }
+
+      console.log(line);
 
       dir ??= mkdtempSync(join(tmpdir(), 'et-design-compare-'));
       writeFileSync(join(dir, `${fileNameOf(state)}.design.png`), design);
