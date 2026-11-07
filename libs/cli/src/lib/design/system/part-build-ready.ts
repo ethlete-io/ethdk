@@ -1,4 +1,5 @@
 import { Blocker, blockerKindOfRule, BuildReady, SlowProblemsOf } from './build-ready-contract';
+import { NoVerdict } from './no-verdict';
 import { actionsRerunReasonOf, embeddedPartsOf } from './embedded-actions';
 import { OpenPoint, openPointGroupsOf } from './open-points';
 import { actionsRerunOf, dropPartRecord, readyMarkOf, readyPartOf, writePartRecord } from './part-ready';
@@ -72,7 +73,7 @@ const isDefinite = (blocker: Blocker, unverifiedActions: boolean) =>
   blocker.kind !== 'pending' && blocker.kind !== 'stale-record' && !(unverifiedActions && blocker.kind === 'action');
 
 /** The action-check failures of a part, or why they could not run. */
-export type ActionsOf = (part: string) => Promise<string[] | { unavailable: string }>;
+export type ActionsOf = (part: string) => Promise<string[] | NoVerdict>;
 
 const noRecordLineOf = (options: { product: string; part: string; blockers: Blocker[]; unverified: boolean }) => {
   const [first, ...rest] = options.blockers;
@@ -132,7 +133,7 @@ export const recordBuildReady = async (options: {
           ? recorded
           : Array.isArray(actions)
             ? actions.map((text) => ({ kind: 'action' as const, text }))
-            : [{ kind: 'action' as const, text: `the actions could not run: ${actions.unavailable}` }]),
+            : [{ kind: 'action' as const, text: `the actions could not run: ${actions.noVerdict}` }]),
       );
     }
 

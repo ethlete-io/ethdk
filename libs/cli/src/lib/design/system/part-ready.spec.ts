@@ -78,7 +78,7 @@ const post = async (target: string, body: { part?: string; hash?: string }) => {
 
       return Array.isArray(failures)
         ? failures
-        : { status: 503, error: `cannot check the actions of ${part}: ${failures.unavailable}` };
+        : { status: 503, error: `cannot check the actions of ${part}: ${failures.noVerdict}` };
     },
     actionsNote: PART_HARNESS_ONLY,
   });
@@ -248,7 +248,7 @@ describe('part ready', () => {
     expect(lines).toContain('components/chip fails 1 action check - fix them before ready');
     expect(partActionFailuresOf).toHaveBeenLastCalledWith(expect.objectContaining({ url: 'http://localhost:1' }));
 
-    vi.mocked(partActionFailuresOf).mockResolvedValueOnce({ unavailable: 'no harness' });
+    vi.mocked(partActionFailuresOf).mockResolvedValueOnce({ noVerdict: 'no harness' });
 
     expect(await post(target, { part: 'components/chip', hash: hashOf(target) })).toEqual({
       status: 503,

@@ -71,7 +71,7 @@ export const designReady = async (options: { target: string; argv: string[]; inv
 
       return Array.isArray(failures)
         ? failures
-        : { status: 503, error: `cannot check the actions of ${part}: ${failures.unavailable}` };
+        : { status: 503, error: `cannot check the actions of ${part}: ${failures.noVerdict}` };
     },
     ...(args.values['--url'] ? {} : { actionsNote: PART_HARNESS_ONLY }),
   });

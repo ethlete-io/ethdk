@@ -304,9 +304,7 @@ export const designTask = async (options: {
       });
 
       if (!Array.isArray(failures)) {
-        console.error(
-          `${prefix(each)}the actions check could not run, so nothing was recorded: ${failures.unavailable}`,
-        );
+        console.error(`${prefix(each)}the actions check could not run, so nothing was recorded: ${failures.noVerdict}`);
 
         return 1;
       }

@@ -1,4 +1,5 @@
 import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { noVerdictOf } from './no-verdict';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -363,7 +364,7 @@ describe('part task', () => {
     expect(lines.join('\n')).toContain('default button click FAILED nothing happened');
     expect(readImplemented(dir)).toEqual({});
 
-    const unavailable = vi.fn<PartActionFailures>(async () => ({ unavailable: 'no harness' }));
+    const unavailable = vi.fn<PartActionFailures>(async () => noVerdictOf('no harness'));
 
     lines.length = 0;
     expect(await task(target, ['--verify', '--url', 'http://localhost:9'], inside, green, undefined, unavailable)).toBe(

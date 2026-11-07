@@ -1,4 +1,5 @@
 import { createHash } from 'crypto';
+import { NoVerdict, noVerdictOf } from './no-verdict';
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { AddressInfo } from 'net';
 import { tmpdir } from 'os';
@@ -874,7 +875,7 @@ export const partActionFailuresOf = async (options: {
   onNote?: (line: string) => void;
   appRoot?: string | null;
   designsDrawn?: Promise<unknown>;
-}): Promise<string[] | { unavailable: string }> => {
+}): Promise<string[] | NoVerdict> => {
   const { target, config, product, part } = options;
   const source = product.parts.find((candidate) => partKeyOf(candidate) === part)?.source;
 
@@ -886,7 +887,7 @@ export const partActionFailuresOf = async (options: {
 
   const stale = harnessStaleOf({ target, product });
 
-  if (stale !== null) return { unavailable: stale };
+  if (stale !== null) return noVerdictOf(stale);
 
   const check = (url: string) =>
     (options.check ?? checkActions)({
@@ -903,7 +904,7 @@ export const partActionFailuresOf = async (options: {
     ? await check(options.harness)
     : await withHarnessUrl({ target, product, url: options.url, start: options.start, run: check });
 
-  if (typeof checked === 'string') return { unavailable: checked };
+  if (typeof checked === 'string') return noVerdictOf(checked);
 
   for (const host of checked.hosts ?? []) options.onNote?.(hostLineOf(host));
 
@@ -913,7 +914,7 @@ export const partActionFailuresOf = async (options: {
 
   const live = await (options.checkLive ?? checkLiveActions)({ target, config, product, url: options.url, part });
 
-  if (typeof live === 'string') return { unavailable: `the live action check: ${live}` };
+  if (typeof live === 'string') return noVerdictOf(`the live action check: ${live}`);
 
   return [...failures, ...live.lines.filter((line) => line.failure !== null).map((line) => `live ${liveLineOf(line)}`)];
 };

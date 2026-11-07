@@ -1,4 +1,5 @@
 import { createHash } from 'crypto';
+import { noVerdictLineOf } from './no-verdict';
 import { mkdtempSync, writeFileSync } from 'fs';
 import { AddressInfo } from 'net';
 import { tmpdir } from 'os';
@@ -648,7 +649,7 @@ export const designCompare = async (options: {
   if (missed === null) return compared.failed === 0 ? 0 : 1;
 
   if (!Array.isArray(missed)) {
-    console.error(`actions not checked: ${missed.unavailable}`);
+    console.error(noVerdictLineOf('actions', missed));
 
     return 1;
   }

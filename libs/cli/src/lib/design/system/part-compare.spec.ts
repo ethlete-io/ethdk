@@ -1,4 +1,5 @@
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { noVerdictOf } from './no-verdict';
 import { createServer, Server } from 'http';
 import { AddressInfo } from 'net';
 import { tmpdir } from 'os';
@@ -467,10 +468,10 @@ describe('part compare', () => {
       '1 action missed',
     ]);
 
-    actions.mockResolvedValueOnce({ unavailable: 'the harness map is stale' });
+    actions.mockResolvedValueOnce(noVerdictOf('the harness map is stale'));
     lines.length = 0;
     expect(await compare()).toBe(1);
-    expect(lines).toEqual(['default ok', 'actions not checked: the harness map is stale']);
+    expect(lines).toEqual(['default ok', 'actions: no verdict - the harness map is stale, retry']);
   });
 
   it('runs the action check while the states are shot, and prints the same lines and exit code as in turn', async () => {
