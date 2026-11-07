@@ -465,6 +465,11 @@ const withChangedCliAndSlowRestart = (key) => {
         frontend: { latest: null },
         host: { running: null, latest: null },
       });
+    if (command === 'window_chrome_watch') {
+      setTimeout(() => args.changes.onmessage({ os: 'linux', left: [], right: ['close'], preferNoCsd: false }));
+
+      return Promise.resolve(null);
+    }
     if (command === 'design_server_restart')
       return new Promise((done) => setTimeout(done, Number(localStorage.getItem(key)))).then(() =>
         invoke(command, args),
