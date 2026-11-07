@@ -34,7 +34,7 @@ Commits in this repo are **lean** and follow the **commitlint rules**
   refuses an untracked file: run `git add -N <that file>` for that one path
   first. Pass a formatter or `eslint --fix` the exact paths you changed, never a
   list from `git diff` or `git status` - that list holds other sessions' files.
-- `yarn commit -m "..." -- <paths>` takes the same arguments as `git commit`: it runs the related specs first in a throwaway worktree of HEAD plus those paths, before it takes `.git/index.lock`, and the pre-commit hook then skips them for that exact tree (a plain `git commit` still runs them in the hook).
+- `yarn commit -m "..." -- <paths>` takes the same arguments as `git commit`: it adds untracked paths and waits for `.git/index.lock` to clear before committing. The pre-commit hook only checks changesets and CSS custom properties; specs, lint, typecheck and the Studio gates run in CI.
 - **Few commits.** One commit per finished slice of work: the code, its specs, its
   changeset and its plan note ("as built") go in together. Fix format, lint and
   review findings before that commit, not in a follow-up commit.

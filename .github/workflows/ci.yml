@@ -112,6 +112,10 @@ jobs:
       - name: Static design rules
         run: node dist/libs/cli/src/index.js design check --product studio --rules ${NX_BASE:+--base "$NX_BASE"}
 
+      - name: Design rules gate over the pull request range
+        if: github.event_name == 'pull_request'
+        run: node tools/scripts/design-rules-gate.mjs "$NX_BASE" "$NX_HEAD"
+
       - name: Slow design rules against the pull request base
         if: success() || failure()
         run: node dist/libs/cli/src/index.js design check --product studio --slow --base "$NX_BASE"
