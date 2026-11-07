@@ -24,8 +24,6 @@ export const PUSH_RED_ADVICE = 'vor jedem Feature-Slice beheben';
 
 export const pushCount = ({ unpushed }: PushState) => `${unpushed} ungepusht`;
 
-export const pushAge = ({ age }: PushState) => `ältester ${age}`;
-
 export type Props = {
   os: Os;
   left: WindowButton[];

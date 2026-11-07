@@ -1,5 +1,10 @@
 {
-  "components/canvas-viewport": "a1b78e29542a5eb7",
+  "components/canvas-viewport": {
+    "hash": "773836bb044dd526",
+    "variant": "a",
+    "decidedBy": "auto: no visible change",
+    "at": "2026-11-07T17:19:30.454Z"
+  },
   "components/comment-draft": {
     "hash": "ad14ceb6f41d913d",
     "variant": "raised",
@@ -22,11 +27,11 @@
     "at": "2026-11-03T16:58:15.525Z"
   },
   "components/title-bar": {
-    "hash": "b538ec93e61ef4b3",
+    "hash": "fbc75e72f2126ef3",
     "variant": "a",
-    "decidedBy": "plan: B415: Empfehlung gebaut (builder), a chip before Update; b banner, c inline text rejected",
-    "at": "2026-11-07T15:03:58.280Z",
-    "note": "merged without a pick: allowed by B415: Empfehlung gebaut (builder), a chip before Update; b banner, c inline text rejected"
+    "decidedBy": "plan: B425: Empfehlung gebaut (builder), a: no restart tooltip or action while pending or failed",
+    "at": "2026-11-07T17:20:26.699Z",
+    "note": "merged without a pick: allowed by B425: Empfehlung gebaut (builder), a: no restart tooltip or action while pending or failed"
   },
   "components/tree-row": "9b985495f700b73f",
   "components/update-dialog": {

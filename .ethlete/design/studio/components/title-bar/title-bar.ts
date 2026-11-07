@@ -104,11 +104,14 @@ const failedToast = ({ restart }: Props) =>
       ])}</div>`
     : '';
 
+const restartButton = (markup: string, { restart }: Props) =>
+  restart === 'pending' ? markup : withAction(markup, 'emit:restart');
+
 const notice = async (props: Props) =>
   withHint(
     await ng(
       titleBarControl(
-        withAction(
+        restartButton(
           button({
             label: 'Neu starten',
             variant: 'tonal',
@@ -117,19 +120,19 @@ const notice = async (props: Props) =>
             icon: icon('up-down', { size: 12 }),
             loading: props.restart === 'pending',
           }),
-          'emit:restart',
+          props,
         ),
         'notice',
         props,
       ),
       { imports },
     ),
-    props.restart === 'pending' ? undefined : props.noticeText,
+    props.restart ? undefined : props.noticeText,
   );
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/components/title-bar/title-bar.component.ts',
-  note: 'The window title bar: a compact 32 px drag region on the app background, closed off from the content below by a 1 px bottom border. The centred search field (components/title-search) names the product and part you are in and draws its own states. Update, a filled brand button, shows only when an update is ready and ends the bar before the window controls. macOS reserves 78 px left for the native traffic lights (drawn as three neutral grey dots, like an inactive window); Linux draws round buttons on the side its button layout gives; Windows draws square tiles with a red close hover. The grid draws each control at rest, hovered, pressed and focused: Update (linux-full-update), minimize (linux-left), the round close (linux-close), maximize (windows) and the square close (windows-update). The push state of the checkout (unpushed commits, age of the oldest, push gate) is a small badge before Update: tonal, a check when the gate is green, the warning theme when it did not run on this head, and filled in the error theme when it is red; its title says fix before any feature slice. Neu starten is the SDK busy button: on click the tonal Neu starten button turns loading: the spinner covers the label, the button is disabled and aria-busy, the tooltip is gone. A failed restart drops the busy state and shows the danger error toast (Neustart fehlgeschlagen) under the bar until dismissed.',
+  note: 'The window title bar: a compact 32 px drag region on the app background, closed off from the content below by a 1 px bottom border. The centred search field (components/title-search) names the product and part you are in and draws its own states. Update, a filled brand button, shows only when an update is ready and ends the bar before the window controls. macOS reserves 78 px left for the native traffic lights (drawn as three neutral grey dots, like an inactive window); Linux draws round buttons on the side its button layout gives; Windows draws square tiles with a red close hover. The grid draws each control at rest, hovered, pressed and focused: Update (linux-full-update), minimize (linux-left), the round close (linux-close), maximize (windows) and the square close (windows-update). The push state of the checkout (unpushed commits, age of the oldest, push gate) is a small badge before Update: tonal, a check when the gate is green, the warning theme when it did not run on this head, and filled in the error theme when it is red; its title says fix before any feature slice. Neu starten is the SDK busy button: on click the tonal Neu starten button turns loading: the spinner covers the label, the button is disabled and aria-busy, takes no second press, and the tooltip is gone. A failed restart drops the busy state and shows the danger error toast (Neustart fehlgeschlagen) under the bar until dismissed; the tooltip stays gone, so it never covers the toast.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   widths: [1440],
   states,
