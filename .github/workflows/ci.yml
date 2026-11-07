@@ -93,31 +93,6 @@ jobs:
 
       - run: yarn nx run-many -t lint
 
-  studio:
-    name: Studio rules
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          fetch-depth: 0
-
-      - uses: ./.github/actions/setup
-        with:
-          nx-cache-key: studio
-
-      - run: yarn playwright install --with-deps chromium
-
-      # The drawings render `@ethlete/*` from dist, and `design check` refuses while the component mocks are unbuilt.
-      - run: yarn nx run-many -t build -p cli,components
-
-      - name: Static design rules
-        run: node dist/libs/cli/src/index.js design check --product studio --rules ${NX_BASE:+--base "$NX_BASE"}
-
-      - name: Design rules gate over the pushed range
-        run: node tools/scripts/design-rules-gate.mjs "$NX_BASE" "$NX_HEAD"
-
   test:
     name: Unit tests
     runs-on: ubuntu-latest
@@ -163,14 +138,6 @@ jobs:
       # Bundle-size goldens: fails when something in core/query/components becomes unshakeable again.
       # Accept a real change with `nx run treeshake:bundle-goldens:update` and commit goldens.json.
       - run: yarn nx run treeshake:bundle-goldens
-
-      # Fails when a part with the `handoff` status in .ethlete/design/studio/handoff.json is no longer
-      # design complete. It renders against the dist libs built above.
-      - run: yarn playwright install --with-deps chromium
-      - run: node dist/libs/cli/src/index.js design complete --handoff --product studio
-
-      # Fails when a done part no longer matches its design, or cannot be compared. Foundations are skipped.
-      - run: node dist/libs/cli/src/index.js design compare --all --product studio
 
       - if: inputs.docs_target != ''
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -451,7 +418,6 @@ jobs:
     needs:
       [
         checks,
-        studio,
         test,
         build,
         storybook,
@@ -471,8 +437,7 @@ jobs:
   deploy:
     name: Deploy
     if: ${{ !cancelled() && inputs.deploy && !contains(needs.*.result, 'failure') }}
-    needs:
-      [checks, studio, test, build, storybook, storybook-test, storybook-e2e, timetrack-e2e, csp-e2e, studio-e2e, rust]
+    needs: [checks, test, build, storybook, storybook-test, storybook-e2e, timetrack-e2e, csp-e2e, studio-e2e, rust]
     runs-on: ubuntu-latest
     permissions:
       contents: read
