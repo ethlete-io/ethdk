@@ -61,3 +61,4 @@ webkit-revert-wt (nicht genommen, entschieden), wip/b321-stacking-fix (verworfen
 - origin/tank/worktree-agent-a13203d886f4f7c9c → verworfen: überholt durch 9bc56da98 (System-Seite portiert, `exception-list` durch `exception-store` ersetzt).
 - origin/tank/b217 → verworfen: bf6fcd97e schon in next als 074e32805; der WIP 494af9c34 ist ein älterer Entwurf, den 074e32805 in `complete.ts` ersetzt hat.
 - desk/B306 → gelandet in diesem Commit (FailedShots als `defineRootProvider`, Chip und Popover „N Bilder fehlen“; Specs, Lint, Typecheck grün; Retry-Knopf bleibt offen in B306).
+- desk/B355 → gelandet in diesem Commit (async-Fehler außerhalb des Falls → FAIL und neuer Worker; zwischen den Fällen endet der Worker mit 1 statt den Fehler zu schlucken; mit zwei Wegwerf-Fällen geprüft).

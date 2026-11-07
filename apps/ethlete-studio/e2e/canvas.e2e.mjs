@@ -2523,6 +2523,16 @@ const nextJob = () =>
     process.send({ type: 'next' });
   });
 
+const crashOnAsyncError = (error) => {
+  console.error(error);
+  process.exit(1);
+};
+
+let reportAsyncError = crashOnAsyncError;
+
+process.on('unhandledRejection', (error) => reportAsyncError(error));
+process.on('uncaughtException', (error) => reportAsyncError(error));
+
 const work = async () => {
   checkout = prepareCheckout();
 
@@ -2533,10 +2543,15 @@ const work = async () => {
         let result;
 
         try {
-          result = await runCase(page, studioUrl, designPort, PAGES[job.target], CASES[job.case]);
+          result = await Promise.race([
+            runCase(page, studioUrl, designPort, PAGES[job.target], CASES[job.case]),
+            new Promise((_, reject) => (reportAsyncError = reject)),
+          ]);
         } catch (error) {
           result = { ok: false, detail: String(error).split('\n')[0] };
         }
+
+        reportAsyncError = crashOnAsyncError;
 
         process.send({ type: 'result', ok: result.ok, detail: result.detail, ms: performance.now() - startedAt });
       }
@@ -2600,35 +2615,43 @@ const lead = async () => {
     if (scratch) buildStudio(scratch, (phase) => console.log(`[canvas-e2e] ${phase}`));
     console.log(`[canvas-e2e] ${total} cases on ${workers} worker(s)`);
 
+    const runWorker = async (index) => {
+      const port = await freePort();
+      const child = fork(fileURLToPath(import.meta.url), ['--worker', '--built', built ?? scratch], {
+        env: { ETHLETE_DESIGN_SLOW_CHECKS: 'off', ...process.env, DE_PORT: String(port) },
+        stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+      });
+      let output = '';
+      let current;
+      let tookJob = false;
+
+      child.stdout.on('data', (chunk) => (output += chunk));
+      child.stderr.on('data', (chunk) => (output += chunk));
+      child.on('message', (message) => {
+        if (message.type === 'result') {
+          record(current, message);
+          current = undefined;
+        }
+        if (message.type === 'next') {
+          current = queue.shift();
+          tookJob ||= !!current;
+          child.send({ job: current ?? null });
+        }
+      });
+
+      const code = await new Promise((done) => child.on('exit', done));
+
+      if (code !== 0 || current) {
+        console.log(`[canvas-e2e] worker ${index} on port ${port} exited with ${code}\n${output.slice(-4000)}`);
+        if (current) record(current, { ok: false, detail: `worker exited with ${code}` });
+      }
+
+      return tookJob;
+    };
+
     await Promise.all(
       Array.from({ length: workers }, async (_, index) => {
-        const port = await freePort();
-        const child = fork(fileURLToPath(import.meta.url), ['--worker', '--built', built ?? scratch], {
-          env: { ETHLETE_DESIGN_SLOW_CHECKS: 'off', ...process.env, DE_PORT: String(port) },
-          stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
-        });
-        let output = '';
-        let current;
-
-        child.stdout.on('data', (chunk) => (output += chunk));
-        child.stderr.on('data', (chunk) => (output += chunk));
-        child.on('message', (message) => {
-          if (message.type === 'result') {
-            record(current, message);
-            current = undefined;
-          }
-          if (message.type === 'next') {
-            current = queue.shift();
-            child.send({ job: current ?? null });
-          }
-        });
-
-        const code = await new Promise((done) => child.on('exit', done));
-
-        if (code !== 0 || current) {
-          console.log(`[canvas-e2e] worker ${index} on port ${port} exited with ${code}\n${output.slice(-4000)}`);
-          if (current) record(current, { ok: false, detail: `worker exited with ${code}` });
-        }
+        while (queue.length && (await runWorker(index)));
       }),
     );
   } finally {
