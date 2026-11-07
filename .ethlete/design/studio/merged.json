@@ -77,10 +77,10 @@
   "pages/inventory": "a050641c3c773f51",
   "pages/merge": "44fd8307ce8b2ab0",
   "pages/sketches": {
-    "hash": "e53138328f230d88",
-    "variant": "a",
-    "decidedBy": "auto: no visible change",
-    "at": "2026-11-05T14:13:51.860Z"
+    "hash": "09d741cdd0ededde",
+    "variant": "b",
+    "decidedBy": "user",
+    "at": "2026-11-07T00:38:47.911Z"
   },
   "pages/start": {
     "hash": "5074133a3524678e",

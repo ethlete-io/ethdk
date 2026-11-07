@@ -445,7 +445,7 @@ export default definePart<Props>({
           ${
             fold > 0
               ? html`<section class="sk-same rounded-control-md p-space-2" data-sk-folded>
-                  ${disclosure({ label: foldedLabel(fold), body: '', open: false, size: 'xs', action: 'emit:statesToggle' })}
+                  ${html`<span class="flex items-center gap-space-3"><span class="text-ui-sm text-et-surface-muted">${foldedLabel(fold)}</span>${disclosure({ label: 'Alle Zustände zeigen', body: '', open: false, size: 'xs', action: 'emit:statesToggle' })}</span>`}
                 </section>`
               : ''
           }
