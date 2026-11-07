@@ -14,7 +14,6 @@ import { WarmDraw } from '../warm-draw';
 import { createPartShooter } from '../shot';
 import { createDrawQueue } from '../thumb';
 import { partActionFailuresOf } from './actions-command';
-import { noVerdictLineOf, noVerdictOf } from './no-verdict';
 import {
   AppShotCache,
   browserVersionOf,
