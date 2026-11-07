@@ -46,6 +46,7 @@ that talks with the user and records decisions. Talk English.
 - A slice that changes `apps/<app>` or `.ethlete/design` ends with `design check --product <p> --part <part>` for each
   part it touched and each part that embeds one, in the background. A problem that is not known and was not there
   before the slice fails the slice. The full `design check --product <p>` runs in pre-push and CI only.
+- A CI step that renames or caches runs twice with real data on every OS it has a branch for. Only then is it done. A sample line is not real data.
 - After a slice, write an "as built" section in the plan: what was built, the commits, and
   what you verified and what you did not verify.
 
