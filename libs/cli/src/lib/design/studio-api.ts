@@ -621,13 +621,13 @@ export const sketchMergeAnswer = withSketch('POST', async ({ asked, product, ske
 
   if (refused !== null) return failure(422, refused);
 
-  const before = dirtyFilesOf({ target: asked.target, product });
+  const before = await dirtyFilesOf({ target: asked.target, product });
   const merged = await mergeInWorker({ target: asked.target, product: product.name, sketch, note });
 
   if (Array.isArray(merged)) {
     const picked = sketch.decision?.kind === 'pick' ? sketch.decision.variant : '';
 
-    commitMergeResult({ target: asked.target, product, sketch, variant: picked, before });
+    await commitMergeResult({ target: asked.target, product, sketch, variant: picked, before });
 
     return { status: 200, body: { merged } };
   }

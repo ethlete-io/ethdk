@@ -10,6 +10,7 @@ import {
   symlinkSync,
   writeFileSync,
 } from 'fs';
+import { rm } from 'fs/promises';
 import { EventEmitter } from 'events';
 import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
@@ -39,6 +40,7 @@ type ServerOptions = {
 };
 
 const created: ServerOptions[] = [];
+const targets: string[] = [];
 let listenFailure: Error | null = null;
 
 vi.mock('vite', () => ({
@@ -59,15 +61,18 @@ vi.mock('@tailwindcss/postcss', () => ({ default: () => ({}) }));
 
 const cwd = process.cwd();
 
-afterEach(() => {
+afterEach(async () => {
   process.chdir(cwd);
   created.length = 0;
   listenFailure = null;
   vi.restoreAllMocks();
+  await Promise.all(targets.splice(0).map((target) => rm(target, { recursive: true, force: true })));
 });
 
 const makeTarget = (config?: unknown) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-serve-'));
+
+  targets.push(target);
 
   if (config) {
     mkdirSync(join(target, '.ethlete/design/calls/app/one'), { recursive: true });
@@ -312,6 +317,8 @@ type Handler = (request: IncomingMessage, response: ServerResponse) => void;
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-serve-system-'));
+
+  targets.push(target);
 
   cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
   mkdirSync(join(target, '.ethlete/design/calls/acme/hero'), { recursive: true });

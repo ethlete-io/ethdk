@@ -1,4 +1,4 @@
-import { SpawnSyncOptions, SpawnSyncReturns, spawnSync } from 'child_process';
+import { spawn, SpawnSyncOptions, SpawnSyncReturns, spawnSync } from 'child_process';
 
 const ESC = String.fromCharCode(27);
 const BEL = String.fromCharCode(7);
@@ -27,6 +27,27 @@ export const spawnPlain = (
 
   return { ...result, stdout: stripAnsi(result.stdout ?? ''), stderr: stripAnsi(result.stderr ?? '') };
 };
+
+export type PlainResult = { status: number | null; stdout: string; stderr: string; error?: Error };
+
+/** `spawnPlain` that does not block the event loop; `input` goes to the child's stdin. */
+export const spawnPlainAsync = (
+  [command = '', ...args]: readonly string[],
+  options: { cwd?: string; env?: NodeJS.ProcessEnv; input?: string } = {},
+) =>
+  new Promise<PlainResult>((done) => {
+    const child = spawn(command, args, { cwd: options.cwd, env: plainEnv(options.env), stdio: 'pipe' });
+    const stdout: Buffer[] = [];
+    const stderr: Buffer[] = [];
+    const text = (chunks: Buffer[]) => stripAnsi(Buffer.concat(chunks).toString('utf8'));
+
+    child.stdout.on('data', (chunk: Buffer) => stdout.push(chunk));
+    child.stderr.on('data', (chunk: Buffer) => stderr.push(chunk));
+    child.on('error', (error) => done({ status: null, stdout: text(stdout), stderr: text(stderr), error }));
+    child.on('close', (status) => done({ status, stdout: text(stdout), stderr: text(stderr) }));
+    child.stdin.on('error', () => undefined);
+    child.stdin.end(options.input ?? '');
+  });
 
 /** `spawnPlain` that returns stdout and throws, with plain `stdout`/`stderr` on the error, when the process fails. */
 export const execPlain = (argv: readonly string[], options: PlainOptions = {}) => {

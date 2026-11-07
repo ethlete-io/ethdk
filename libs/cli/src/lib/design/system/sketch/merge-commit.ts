@@ -1,57 +1,63 @@
-import { realpathSync } from 'fs';
+import { existsSync, realpathSync } from 'fs';
 import { relative, resolve, sep } from 'path';
 import { ResolvedProduct } from '../resolve-product';
 import { Sketch, sketchesDirOf } from './sketch';
-import { spawnPlain } from '../../../plain-output';
+import { PlainResult, spawnPlain, spawnPlainAsync } from '../../../plain-output';
 
-const gitIn = (target: string, ...args: string[]) => spawnPlain(['git', ...args], { cwd: target });
+type GitCall = { args: string[]; input?: string };
+type GitFlow<T> = Generator<GitCall, T, PlainResult>;
+
+const runSync = <T>(target: string, flow: GitFlow<T>) => {
+  let step = flow.next();
+
+  while (!step.done)
+    step = flow.next(spawnPlain(['git', ...step.value.args], { cwd: target, input: step.value.input }));
+
+  return step.value;
+};
+
+const runAsync = async <T>(target: string, flow: GitFlow<T>) => {
+  let step = flow.next();
+
+  while (!step.done)
+    step = flow.next(await spawnPlainAsync(['git', ...step.value.args], { cwd: target, input: step.value.input }));
+
+  return step.value;
+};
 
 const dirsOf = (product: ResolvedProduct) => [product.dir, ...(product.base ? [product.base.dir] : [])];
 
 const below = (path: string, dir: string) => path === dir || path.startsWith(`${dir}${sep}`);
 
-/** The dirty files of the product's folders by absolute path, each with a hash of its content; `null` outside a git checkout. */
-export const dirtyFilesOf = (options: { target: string; product: ResolvedProduct }) => {
-  const root = gitIn(options.target, 'rev-parse', '--show-toplevel');
-  const status = gitIn(
-    options.target,
-    'status',
-    '--porcelain',
-    '-z',
-    '--no-renames',
-    '--untracked-files=all',
-    '--',
-    ...dirsOf(options.product),
-  );
+function* dirtyFilesFlow(product: ResolvedProduct): GitFlow<Map<string, string> | null> {
+  const root = yield { args: ['rev-parse', '--show-toplevel'] };
+  const status = yield {
+    args: ['status', '--porcelain', '-z', '--no-renames', '--untracked-files=all', '--', ...dirsOf(product)],
+  };
 
   if (root.status !== 0 || status.status !== 0) return null;
 
   const top = realpathSync(root.stdout.trim());
-  const files = new Map<string, string>();
+  const files = status.stdout
+    .split('\0')
+    .filter((line) => /^.. /.test(line))
+    .map((entry) => resolve(top, entry.slice(3)));
+  const present = files.filter((file) => existsSync(file));
+  const hashed =
+    present.length > 0 ? yield { args: ['hash-object', '--stdin-paths'], input: present.join('\n') } : null;
+  const hashes = hashed?.status === 0 ? hashed.stdout.trim().split('\n') : [];
 
-  for (const entry of status.stdout.split('\0').filter((line) => /^.. /.test(line))) {
-    const file = resolve(top, entry.slice(3));
-    const hashed = gitIn(options.target, 'hash-object', '--', file);
+  return new Map(files.map((file) => [file, hashes[present.indexOf(file)] ?? 'deleted']));
+}
 
-    files.set(file, hashed.status === 0 ? hashed.stdout.trim() : 'deleted');
-  }
-
-  return files;
-};
-
-/**
- * Commits what a merge wrote into the product's folders - the files dirty now that were clean or different before,
- * and the merged sketch's own deletion, never another open sketch - as one commit. A failed commit warns and leaves the files as they are.
- */
-export const commitMergeResult = (options: {
-  target: string;
+function* commitFlow(options: {
   product: ResolvedProduct;
   sketch: Sketch;
   variant: string;
   before: Map<string, string> | null;
-}) => {
-  const { target, product, sketch, before } = options;
-  const after = dirtyFilesOf({ target, product });
+}): GitFlow<boolean> {
+  const { product, sketch, before } = options;
+  const after = yield* dirtyFilesFlow(product);
 
   if (!before || !after) return false;
 
@@ -65,21 +71,47 @@ export const commitMergeResult = (options: {
 
   if (files.length === 0) return true;
 
-  const added = gitIn(target, 'add', '--all', '--', ...files);
+  const added = yield { args: ['add', '--all', '--', ...files] };
   const committed =
     added.status === 0
-      ? gitIn(
-          target,
-          'commit',
-          '-m',
-          `feat(repo): Merge ${sketch.target} variant ${options.variant} into ${product.name}`,
-          '--',
-          ...files,
-        )
+      ? yield {
+          args: [
+            'commit',
+            '-m',
+            `feat(repo): Merge ${sketch.target} variant ${options.variant} into ${product.name}`,
+            '--',
+            ...files,
+          ],
+        }
       : added;
 
   if (committed.status !== 0)
     console.warn(`Could not commit the merge: ${(committed.stderr || committed.stdout).trim()}`);
 
   return committed.status === 0;
+}
+
+type CommitOptions = {
+  target: string;
+  product: ResolvedProduct;
+  sketch: Sketch;
+  variant: string;
+  before: Map<string, string> | null;
 };
+
+/** The dirty files of the product's folders by absolute path, each with a hash of its content; `null` outside a git checkout. */
+export const dirtyFilesOfSync = (options: { target: string; product: ResolvedProduct }) =>
+  runSync(options.target, dirtyFilesFlow(options.product));
+
+/** `dirtyFilesOfSync` that does not block the event loop, for the Studio server. */
+export const dirtyFilesOf = (options: { target: string; product: ResolvedProduct }) =>
+  runAsync(options.target, dirtyFilesFlow(options.product));
+
+/**
+ * Commits what a merge wrote into the product's folders - the files dirty now that were clean or different before,
+ * and the merged sketch's own deletion, never another open sketch - as one commit. A failed commit warns and leaves the files as they are.
+ */
+export const commitMergeResultSync = (options: CommitOptions) => runSync(options.target, commitFlow(options));
+
+/** `commitMergeResultSync` that does not block the event loop, for the Studio server. */
+export const commitMergeResult = (options: CommitOptions) => runAsync(options.target, commitFlow(options));

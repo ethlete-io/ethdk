@@ -5,7 +5,7 @@ import { DesignStep } from '../tom-confirm';
 import { refreshHarnessMap } from '../harness-map';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { configOf, oneProductOf } from './cli-args';
-import { commitMergeResult, dirtyFilesOf } from './merge-commit';
+import { commitMergeResultSync, dirtyFilesOfSync } from './merge-commit';
 import { mergeSketch } from './merge';
 import { recordMergeReason } from './merged-parts';
 import { originOf } from '../write-origin';
@@ -43,7 +43,7 @@ export const mergeAndRecord = (options: {
 
   if (typeof decided === 'string') return decided;
 
-  const before = dirtyFilesOf({ target, product });
+  const before = dirtyFilesOfSync({ target, product });
   const result = timedPhase('merge-files', () =>
     mergeSketch({
       target,
@@ -70,7 +70,7 @@ export const mergeAndRecord = (options: {
 
   const variant = decided.decision?.kind === 'pick' ? decided.decision.variant : '';
 
-  commitMergeResult({ target, product, sketch, variant, before });
+  commitMergeResultSync({ target, product, sketch, variant, before });
 
   return { variant, parts: result };
 };
