@@ -1,13 +1,19 @@
 {
   "components/accent-on-light": "6a914711035c5ff4",
   "components/accordion": "e8aee655bae00a4e",
-  "components/anchored-dialog": "02e3cce0bd8f11b6",
+  "components/anchored-dialog": "1e60e9f9e74b4c91",
   "components/avatar": "1252da777499aba9",
   "components/badge": "c5987a95f8f0899c",
   "components/banner": "304a4eca399be5df",
   "components/bracket": "619e74fa7a872701",
   "components/breadcrumb": "2dbb6a7bb9615c19",
-  "components/button": "c61b05dccf5899dc",
+  "components/button": {
+    "hash": "74200761e047e309",
+    "variant": "new",
+    "decidedBy": "plan: finding 507: Empfehlung gebaut (builder) - new is the shipped loader/disabled fix",
+    "at": "2026-11-07T14:52:06.957Z",
+    "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped loader/disabled fix"
+  },
   "components/calendar": "8785c8cdfa63539a",
   "components/card": "6aa9b5fa24781dfb",
   "components/carousel": "9ffe4c38855ebd5e",
@@ -60,5 +66,5 @@
   "components/tree": "7826d5e508a8602c",
   "foundations/colors": "928c53ae4cba5a3e",
   "foundations/elevation": "1cb38802221872b5",
-  "foundations/icons": "9159b49e97564072"
+  "foundations/icons": "693a3ae986c6ad3f"
 }
