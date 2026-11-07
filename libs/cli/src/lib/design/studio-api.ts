@@ -44,6 +44,7 @@ import { CheckSketches } from './system/sketch/sketch-checker';
 import { oneProductOf } from './system/sketch/cli-args';
 import { retriedHeldMerges } from './sketch-command';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
+import { commitMergeResult, dirtyFilesOf } from './system/sketch/merge-commit';
 import { changedOutsideSketchOf, recordMergeReason } from './system/sketch/merged-parts';
 import { acceptRunOf, partAcceptRefusalOf } from './system/accept-command';
 import { DrawStates, storePictures } from './system/accepted-pictures';
@@ -613,6 +614,7 @@ export const sketchDecisionAnswer = withSketch('POST', async ({ asked, sketch })
 export const sketchMergeAnswer = withSketch('POST', async ({ asked, config, product, sketch }) => {
   const body = await bodyOf(asked.request);
   const note = textOf(body?.['note']);
+  const before = dirtyFilesOf({ target: asked.target, product });
   const merged = mergeSketch({ target: asked.target, config, product, sketch, note });
 
   if (Array.isArray(merged)) refreshHarnessMap({ target: asked.target, product });
@@ -620,7 +622,14 @@ export const sketchMergeAnswer = withSketch('POST', async ({ asked, config, prod
   if (Array.isArray(merged) && note?.trim())
     for (const part of sketch.targets) recordMergeReason({ product, part, reason: note.trim() });
 
-  if (Array.isArray(merged)) return { status: 200, body: { merged } };
+  if (Array.isArray(merged)) {
+    const picked = sketch.decision?.kind === 'pick' ? sketch.decision.variant : '';
+
+    commitMergeResult({ target: asked.target, product, sketch, variant: picked, before });
+
+    return { status: 200, body: { merged } };
+  }
+
   if (merged.findings)
     return refusal({
       status: 422,

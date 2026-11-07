@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B369
+built: 4a4bb56c6
 decided: 2026-11-04
 source: grill session 2026-11-04
 ---

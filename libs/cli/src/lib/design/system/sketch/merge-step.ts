@@ -5,6 +5,7 @@ import { DesignStep } from '../tom-confirm';
 import { refreshHarnessMap } from '../harness-map';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { configOf, oneProductOf } from './cli-args';
+import { commitMergeResult, dirtyFilesOf } from './merge-commit';
 import { mergeSketch } from './merge';
 import { recordMergeReason } from './merged-parts';
 import { decideSketch, findSketch, parseTarget, rejectionOf, Sketch } from './sketch';
@@ -40,6 +41,7 @@ export const mergeAndRecord = (options: {
 
   if (typeof decided === 'string') return decided;
 
+  const before = dirtyFilesOf({ target, product });
   const result = timedPhase('merge-files', () =>
     mergeSketch({
       target,
@@ -64,7 +66,11 @@ export const mergeAndRecord = (options: {
   if (allowed || reason)
     for (const part of sketch.targets) recordMergeReason({ product, part, planRef: allowed?.planRef.trim(), reason });
 
-  return { variant: decided.decision?.kind === 'pick' ? decided.decision.variant : '', parts: result };
+  const variant = decided.decision?.kind === 'pick' ? decided.decision.variant : '';
+
+  commitMergeResult({ target, product, sketch, variant, before });
+
+  return { variant, parts: result };
 };
 
 /** A merge of one ready sketch as a step, or why it may not run; checks everything a merge needs before anything is written. */

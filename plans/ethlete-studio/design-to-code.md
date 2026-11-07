@@ -4033,6 +4033,9 @@ the retry is fast (new `tools/scripts/pre-push.spec.mjs`). The tsconfig-paths no
 `.claude/worktrees/*`; `apps/docs/.vitepress/config.mts` now names `tsconfig.base.json` as its only project. Not done:
 an `ServerAliveInterval` for github.com in `~/.ssh/config` (the sandbox denied editing it); the first push of a docs
 change still waits ~8 min and may still drop.
+
+As built (B369, 2026-11-07), ADR 0188: `commitMergeResult` (`libs/cli/src/lib/design/system/sketch/merge-commit.ts`) commits what a merge wrote into the product folders, one commit `feat(repo): Merge <target> variant <v> into <product>` per merge, from `mergeAndRecord` (CLI, go-batch) and `sketchMergeAnswer` (Studio). It snapshots the dirty files with content hashes before the merge and commits only files that are new or changed after it, never another open sketch; a failed commit warns and leaves the files. `merge-commit.spec.ts` merges two sketches in a row in a git checkout (two commits, a stray edit stays uncommitted, tree clean) and bites without the call. Not verified: the Studio route by e2e; a file already dirty before the merge that the merge also writes (merged.json) is committed with the user's edit.
+
 566\. Agents (2026-11-07): worktree commits ran the main checkout's hooks through an absolute `core.hooksPath`; an older
 worktree lacked the scripts they call, and agents fell back to `--no-verify`. As built: `postinstall` sets the relative
 `core.hooksPath=.husky` (tracked scripts, so each worktree runs its own), the hooks `cd` to `--show-toplevel`,
