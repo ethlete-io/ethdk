@@ -43,9 +43,10 @@ import { openSketchListingOf } from './system/sketch/check-sketches';
 import { CheckSketches } from './system/sketch/sketch-checker';
 import { oneProductOf } from './system/sketch/cli-args';
 import { retriedHeldMerges } from './sketch-command';
-import { discardSketch, mergeSketch } from './system/sketch/merge';
+import { discardSketch } from './system/sketch/merge';
 import { commitMergeResult, dirtyFilesOf } from './system/sketch/merge-commit';
-import { changedOutsideSketchOf, recordMergeReason } from './system/sketch/merged-parts';
+import { mergeInWorker } from './system/sketch/merge-runner';
+import { changedOutsideSketchOf } from './system/sketch/merged-parts';
 import { acceptRunOf, partAcceptRefusalOf } from './system/accept-command';
 import { DrawStates, storePictures } from './system/accepted-pictures';
 import { readPartModule } from './system/list-system';
@@ -611,16 +612,11 @@ export const sketchDecisionAnswer = withSketch('POST', async ({ asked, sketch })
  * A merge refused for a stale baseline answers 422 with `changed` (the parts, `[]` without a baseline) and the `rebase` command;
  * one the check fails after answers 422 with reason `check-failed` and the check's `findings` lines.
  */
-export const sketchMergeAnswer = withSketch('POST', async ({ asked, config, product, sketch }) => {
+export const sketchMergeAnswer = withSketch('POST', async ({ asked, product, sketch }) => {
   const body = await bodyOf(asked.request);
   const note = textOf(body?.['note']);
   const before = dirtyFilesOf({ target: asked.target, product });
-  const merged = mergeSketch({ target: asked.target, config, product, sketch, note });
-
-  if (Array.isArray(merged)) refreshHarnessMap({ target: asked.target, product });
-
-  if (Array.isArray(merged) && note?.trim())
-    for (const part of sketch.targets) recordMergeReason({ product, part, reason: note.trim() });
+  const merged = await mergeInWorker({ target: asked.target, product: product.name, sketch, note });
 
   if (Array.isArray(merged)) {
     const picked = sketch.decision?.kind === 'pick' ? sketch.decision.variant : '';

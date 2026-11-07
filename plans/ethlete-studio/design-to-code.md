@@ -1976,6 +1976,19 @@ the server thread: Studio freezes for that time. Why no tool caught it: no budge
 stall during a merge, and the desk is fast enough to hide both. Fix (B354): `sketch ready` on this fixture under 60 s
 on CI, affected parts with no pixel change skipped or sampled, one Vite server and Chromium shared by all phases, and
 progress output; the merge keeps the longest `/@vite/client` ping under 100 ms.
+As built (B354, 2026-11-07): `sketch ready` runs every phase on one design server and Chromium (a run-scoped
+`createRunDraw` without the resident process, the resident one with it) and one part shooter, so identical renders and
+the no-change check share pictures. The render check skips every state of an embedding part that `unchangedStatesOf`
+finds markup- and style-identical to the merged part (`RenderJob.unchanged`, a NOTE line names the count), and prints
+`[n/m] part s` progress to stderr. The Studio merge (`sketchMergeAnswer`) runs `mergeSketch`, the harness map and the
+note in a worker (`merge-runner.ts`). Desk, scratch clone, one-variant copy of components/tree-row, desk under load
+25-85 on 16 cores (no clean verdict): before 81.3 s cold, 87.1 s resident (render-check 54-56 s, changes-shot 13-21 s);
+after 32.4 s cold, 32.6/32.5 s resident (render-check 5.5-7 s; part-tree 5, flows 2, inventory 4, sketches 30, system 26
+states skipped). Specs: `render-unchanged.spec.ts` (a named-unchanged state draws no frame) and a stall budget in
+`merge.spec.ts` (longest event-loop gap under 100 ms during a Studio merge; 1 021 ms before), both fail without the fix.
+Not done: the 60 s budget is not an enforced CI gate (the `sketch ready` timing target stays the 10 s over-target line);
+changes-shot (15.5 s) is now the slowest phase and is the next cut; the Mac and the live `/@vite/client` ping were not
+measured.
 
 414\. Builder (2026-11-04, triage of finding 407): the baseline "only the known case red after c348db743" was false.
 At c348db743 the known-red case crashed the whole e2e runner (`route.fulfill: Route is already handled!`), so every

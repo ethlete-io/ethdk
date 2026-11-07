@@ -82,7 +82,13 @@ export const busyStatesOf = (issues: RenderIssue[]): BusyState[] => {
 };
 
 /** The parts of one product to draw, as it draws or as one sketch variant draws it; every part when `parts` is null. */
-export type RenderJob = { product: string; sketch: SketchVariant | null; parts: string[] | null };
+export type RenderJob = {
+  product: string;
+  sketch: SketchVariant | null;
+  parts: string[] | null;
+  /** Per part key, the states that draw the same as the merged part; none of their frames is inspected. */
+  unchanged?: Record<string, string[]>;
+};
 
 type Found = { rule: string; path: string; detail: string };
 
@@ -863,7 +869,7 @@ export const renderIssuesOf = async (options: {
     const baselines = new Map<string, Frame[]>();
     const mergedSkips = new Map<string, string[]>();
     const framed = new Map<string, boolean>();
-    for (const { product, sketch, parts } of jobs) {
+    for (const { product, sketch, parts, unchanged } of jobs) {
       const skips: Record<string, string[]> = {};
 
       const drawn = system.drawnOf(product, sketch);
@@ -1045,7 +1051,7 @@ export const renderIssuesOf = async (options: {
 
         const measuresPairs = new Set<ColorScheme | null>();
 
-        for (const state of states) {
+        for (const state of states.filter((name) => !unchanged?.[key]?.includes(name))) {
           for (const { preset, width } of sizes) {
             for (const scheme of schemes) {
               const address = { product, part: key, state, preset, width, sketch, interaction: null };

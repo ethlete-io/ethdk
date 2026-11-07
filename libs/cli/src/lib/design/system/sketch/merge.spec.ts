@@ -123,6 +123,33 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     expect(readFileSync(join(target, harness.map), 'utf8')).toContain('DESIGN_HARNESS_PARTS');
   });
 
+  it('keeps the server thread answering while a Studio merge runs: no stall over 100 ms', async () => {
+    const target = acme();
+    const ready = readySketch(target);
+
+    picked(ready.sketch);
+
+    let last = performance.now();
+    let longest = 0;
+    const ticks = setInterval(() => {
+      const now = performance.now();
+
+      longest = Math.max(longest, now - last);
+      last = now;
+    }, 5);
+
+    const answer = await sketchMergeAnswer({
+      target,
+      url: new URL('http://localhost/?product=acme&sketch=elements/hero'),
+      request: Object.assign(Readable.from([Buffer.from('{}')]), { method: 'POST' }) as unknown as IncomingMessage,
+    });
+
+    clearInterval(ticks);
+
+    expect(answer.status).toBe(200);
+    expect(Math.max(longest, performance.now() - last)).toBeLessThan(100);
+  });
+
   it('records the merged parts, so a later change outside a sketch shows', () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
 

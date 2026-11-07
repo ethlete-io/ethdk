@@ -10,6 +10,7 @@ export type DrawQueue = ReturnType<typeof createDrawQueue>;
 export type WarmDraw = {
   server: (config: DesignConfig) => Promise<DesignServer>;
   queue: () => DrawQueue;
+  perRun?: boolean;
 };
 
 export type Drawing = { server: DesignServer; base: string; queue: DrawQueue };
@@ -57,4 +58,34 @@ export const loadingOn = async <T>(
   } finally {
     await server.close();
   }
+};
+
+/** A design server and Chromium that start on first use and stay up until `close`, shared by every phase of one run. */
+export const createRunDraw = (target: string) => {
+  let server: Promise<DesignServer> | null = null;
+  let queue: DrawQueue | null = null;
+
+  const warm: WarmDraw = {
+    server: (config) =>
+      (server ??= createDesignServer({ target, config, listen: true, port: 0 }).then(async (started) => {
+        try {
+          await started.listen();
+        } catch (error) {
+          await started.close();
+
+          throw error;
+        }
+
+        return started;
+      })),
+    queue: () => (queue ??= createDrawQueue({ target })),
+    perRun: true,
+  };
+
+  const close = async () => {
+    await queue?.close();
+    await (await server?.catch(() => null))?.close();
+  };
+
+  return { warm, close };
 };

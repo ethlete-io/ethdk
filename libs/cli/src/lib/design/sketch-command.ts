@@ -52,10 +52,11 @@ import { mergePreviewOf } from './system/sketch/merge-preview';
 import { openPointsText, PartOpenPoints } from './system/open-points';
 import { instantLinesOf, sketchOpenPointsOf } from './system/read-open-points';
 import { overlaySketch } from './system/sketch/overlay';
-import { SketchVariant } from './system/system-modules';
+import { productModuleIdOf, SketchVariant } from './system/system-modules';
+import { unchangedStatesOf } from './system/sketch/unchanged-states';
 import { portBaseChanges } from './system/sketch/rebase-port';
 import { THEMING_TEXT } from './system/theming-text';
-import { WarmDraw } from './warm-draw';
+import { createRunDraw, loadingOn, WarmDraw } from './warm-draw';
 import {
   addVariant,
   createSketch,
@@ -780,7 +781,14 @@ const readied = (context: Context) => {
 
   if (!unlock) return fail(`another sketch ready run on ${reopened.target} is going - wait for it`);
 
-  return renderedAndReady(context, current).finally(unlock);
+  const run = context.warm
+    ? { warm: { ...context.warm, perRun: true }, close: async () => undefined }
+    : createRunDraw(context.target);
+
+  return renderedAndReady({ ...context, warm: run.warm }, current).finally(async () => {
+    unlock();
+    await run.close();
+  });
 };
 
 const renderedAndReady = async (context: Context, found: { product: ResolvedProduct; sketch: Sketch }) => {
@@ -1287,6 +1295,33 @@ export const beforeLinesOf = ({ sketches, before }: { sketches: Sketch[]; before
     ),
   );
 
+const unchangedAffectedOf = (options: {
+  target: string;
+  config: DesignConfig;
+  warm: WarmDraw;
+  product: ResolvedProduct;
+  sketch: Sketch;
+  variant: string;
+  affected: string[];
+}) =>
+  loadingOn(options, async (server) =>
+    Object.fromEntries(
+      await Promise.all(
+        options.affected.map(
+          async (part) =>
+            [
+              part,
+              await unchangedStatesOf({
+                ...options,
+                part,
+                load: ({ file, product, sketch }) => server.ssrLoadModule(productModuleIdOf({ file, product, sketch })),
+              }),
+            ] as const,
+        ),
+      ),
+    ),
+  );
+
 const renderedVariantsOf = async ({
   target,
   config,
@@ -1302,19 +1337,32 @@ const renderedVariantsOf = async ({
   drawn: boolean;
   warm?: WarmDraw;
 }) => {
-  const rendered = await renderIssuesOf({
-    target,
-    config,
-    warm,
-    jobs: entries.map(({ sketch, variant }) => {
+  const jobs = await Promise.all(
+    entries.map(async ({ sketch, variant }) => {
       const preview = mergePreviewOf({ product, sketch, variant });
 
       return {
         product: product.name,
         sketch: { target: sketch.target, variant },
         parts: [...preview.changed, ...preview.affected],
+        unchanged: warm
+          ? await unchangedAffectedOf({ target, config, warm, product, sketch, variant, affected: preview.affected })
+          : {},
       };
     }),
+  );
+  for (const { sketch, unchanged } of jobs)
+    for (const [part, states] of Object.entries(unchanged).filter(([, states]) => states.length > 0))
+      console.log(
+        `NOTE ${sketch.target} ${sketch.variant}: ${part} draws ${states.length} state${states.length === 1 ? '' : 's'} as merged, not inspected`,
+      );
+
+  const rendered = await renderIssuesOf({
+    target,
+    config,
+    warm,
+    jobs,
+    onProgress: (line) => console.error(line),
     before: [...new Set(entries.flatMap(({ sketch }) => sketch.targets))].map((part) => ({
       product: product.name,
       part,

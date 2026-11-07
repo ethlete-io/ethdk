@@ -23,13 +23,23 @@ const loaderOf =
   ({ file, product, sketch }: { file: string; product: string; sketch: SketchVariant | null }) =>
     server.ssrLoadModule(productModuleIdOf({ file, product, sketch }));
 
-const shooterOf = (options: SketchShots, { base, queue }: Drawing) =>
-  createPartShooter({
-    target: options.target,
-    base,
-    system: createSystemModules({ target: options.target, config: options.config }),
-    queue,
-  });
+const runShooters = new WeakMap<WarmDraw, ReturnType<typeof createPartShooter>>();
+
+const shooterOf = (options: SketchShots, { base, queue }: Drawing) => {
+  const kept = options.warm?.perRun ? runShooters.get(options.warm) : undefined;
+  const shooter =
+    kept ??
+    createPartShooter({
+      target: options.target,
+      base,
+      system: createSystemModules({ target: options.target, config: options.config }),
+      queue,
+    });
+
+  if (options.warm?.perRun) runShooters.set(options.warm, shooter);
+
+  return shooter;
+};
 
 const couldNotRender = (sketch: Sketch, error: unknown) =>
   `could not render ${sketch.target}: ${error instanceof Error ? error.message : String(error)}`;
