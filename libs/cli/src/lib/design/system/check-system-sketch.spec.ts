@@ -8,6 +8,7 @@ import { markPartGo } from './part-go';
 import { resolveProduct } from './resolve-product';
 import { recordMerged } from './sketch/merged-parts';
 import { createSketch, decideSketch, rebaseSketch, variantDirOf } from './sketch/sketch';
+import { originOf } from './write-origin';
 import { acme, output, withoutOpenPoints, withoutBrowserLines, renderWarningsOf } from './check-system.fixtures';
 
 describe('checkDesign', () => {
@@ -237,14 +238,17 @@ describe('checkDesign', () => {
 
     writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { padding: 0; }');
 
-    const picked = decideSketch({ sketch: { ...sketch, status: 'ready' }, decision: { kind: 'pick', variant: 'a' } });
+    const picked = decideSketch({
+      sketch: { ...sketch, status: 'ready' },
+      decision: { kind: 'pick', variant: 'a', ...originOf('spec') },
+    });
 
     if (typeof picked === 'string') throw new Error(picked);
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'yarn design' })).toBe(1);
     expect(lines).toContain('SKETCH-BASE-STALE 1');
 
-    const discarded = decideSketch({ sketch: picked, decision: { kind: 'discard' } });
+    const discarded = decideSketch({ sketch: picked, decision: { kind: 'discard', ...originOf('spec') } });
 
     if (typeof discarded === 'string') throw new Error(discarded);
 

@@ -1,4 +1,5 @@
 import { execFileSync } from 'child_process';
+import { originOf } from '../write-origin';
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -68,7 +69,7 @@ describe('openEditSketch', () => {
     writeFileSync(css, '.acme-hero { padding: 0; }\n');
 
     const sketch = openEditSketch({ target, product: resolveAcme(target), part: HERO }) as Sketch;
-    const picked = decideSketch({ sketch, decision: { kind: 'pick', variant: 'old' } }) as Sketch;
+    const picked = decideSketch({ sketch, decision: { kind: 'pick', variant: 'old', ...originOf('spec') } }) as Sketch;
     const merged = mergeSketch({
       target,
       config: readConfig(target) ?? {},
@@ -133,7 +134,7 @@ describe('openEditSketch', () => {
     commit(target);
 
     const sketch = openEditSketch({ target, product: resolveAcme(target), part: HERO }) as Sketch;
-    const picked = decideSketch({ sketch, decision: { kind: 'pick', variant: 'old' } }) as Sketch;
+    const picked = decideSketch({ sketch, decision: { kind: 'pick', variant: 'old', ...originOf('spec') } }) as Sketch;
 
     mergeSketch({ target, config: readConfig(target) ?? {}, product: resolveAcme(target), sketch: picked });
 

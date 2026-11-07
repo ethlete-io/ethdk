@@ -10,13 +10,14 @@ import { partOwnerOf } from './inventory-approval';
 import { OpenPoint } from './open-points';
 import { partPointsOf, readOpenPoints } from './read-open-points';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
+import { hasActor, WriteOrigin } from './write-origin';
 
 export const READY_FILE = 'ready.json';
 
 /**
  * The check record of a build-ready part: the design hash it was checked at, with the hash of each file it covers; it
- * holds only while the hash does. `embedded` holds the app hash of each embedded part its actions ran against. `by`
- * appears only in records written before the record became tool-written.
+ * holds only while the hash does. `embedded` holds the app hash of each embedded part its actions ran against. `by`,
+ * `cmd` and `pid` name the writer; records written before they were required lack them.
  */
 export type PartReady = {
   hash: string;
@@ -25,6 +26,8 @@ export type PartReady = {
   actions?: string[];
   at: string;
   by?: string;
+  cmd?: string;
+  pid?: number;
 };
 
 export type ReadyRefusal = {
@@ -40,11 +43,13 @@ const readyFileOf = (dir: string) => resolve(dir, READY_FILE);
 const isReady = (value: unknown): value is PartReady => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
 
-  const { hash, by, at, files, embedded, actions } = value as Record<string, unknown>;
+  const { hash, by, cmd, pid, at, files, embedded, actions } = value as Record<string, unknown>;
 
   return (
     typeof hash === 'string' &&
     (by === undefined || typeof by === 'string') &&
+    (cmd === undefined || typeof cmd === 'string') &&
+    (pid === undefined || typeof pid === 'number') &&
     typeof at === 'string' &&
     isOptionalFileHashes(files) &&
     isOptionalFileHashes(embedded) &&
@@ -130,11 +135,19 @@ const writeReady = (dir: string, records: Record<string, PartReady>) =>
     value: Object.fromEntries(Object.entries(records).sort(([a], [b]) => a.localeCompare(b))),
   });
 
-/** Writes the check record of a part at its current design hash; a record already at that hash keeps its `at`. */
-export const writePartRecord = (options: { product: ResolvedProduct; part: string; at?: string }): PartReady | null => {
+/**
+ * Writes the check record of a part at its current design hash, stamped with `origin`; a record already at that hash
+ * keeps its `at`. Answers `null` for an unknown part or an `origin` without `by`.
+ */
+export const writePartRecord = (options: {
+  product: ResolvedProduct;
+  part: string;
+  origin: WriteOrigin;
+  at?: string;
+}): PartReady | null => {
   const found = readyPartOf(options);
 
-  if (typeof found === 'string') return null;
+  if (typeof found === 'string' || !hasActor(options.origin)) return null;
 
   const existing = readReady(found.dir);
   const previous = existing[options.part];
@@ -145,6 +158,9 @@ export const writePartRecord = (options: { product: ResolvedProduct; part: strin
     ...(Object.keys(embedded).length > 0 ? { embedded } : {}),
     ...(previous?.actions ? { actions: previous.actions } : {}),
     at: (previous?.hash === found.hash ? previous.at : undefined) ?? options.at ?? new Date().toISOString(),
+    by: options.origin.by,
+    cmd: options.origin.cmd,
+    pid: options.origin.pid,
   };
 
   writeReady(found.dir, { ...existing, [options.part]: record });
@@ -168,7 +184,8 @@ export const dropPartRecord = (options: { product: ResolvedProduct; part: string
 };
 
 /**
- * Checks a part at `hash` and writes its check record, or answers why not: 400 without `hash`, 404 for an unknown
+ * Checks a part at `hash` and writes its check record, or answers why not: 400 without `hash` or without an
+ * `origin` that names its actor, 404 for an unknown
  * part, 409 when the part changed since `hash`, 422 while `pointsOf` lists any open point, `blockersOf` any other
  * blocker or `actionsOf` any failed action check. The failed-actions refusal names the embedded parts whose app files
  * changed since the last record. `pointsOf` runs only after the hash holds, `blockersOf` only after the open-point list
@@ -178,6 +195,7 @@ export const markPartReady = async (options: {
   product: ResolvedProduct;
   part: string;
   hash: unknown;
+  origin: WriteOrigin;
   pointsOf: () => Promise<OpenPoint[] | ReadyRefusal>;
   blockersOf?: () => Promise<Blocker[]>;
   actionsOf: () => Promise<string[] | ReadyRefusal>;
@@ -186,6 +204,7 @@ export const markPartReady = async (options: {
 }): Promise<PartReady | ReadyRefusal> => {
   const { product, part, hash } = options;
 
+  if (!hasActor(options.origin)) return { status: 400, error: 'a ready mark needs the actor that writes it (by)' };
   if (typeof hash !== 'string' || hash === '') return { status: 400, error: 'hash is required' };
 
   const found = readyPartOf({ product, part });
@@ -228,5 +247,10 @@ export const markPartReady = async (options: {
       actions,
     };
 
-  return writePartRecord({ product, part, at: options.at }) ?? { status: 404, error: `unknown part ${part}` };
+  return (
+    writePartRecord({ product, part, origin: options.origin, at: options.at }) ?? {
+      status: 404,
+      error: `unknown part ${part}`,
+    }
+  );
 };

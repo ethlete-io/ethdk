@@ -1,4 +1,5 @@
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { originOf } from '../write-origin';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -232,7 +233,10 @@ describe('a denied class in the flows', () => {
     const before = readFileSync(hero, 'utf8');
     const errors = errorsOf();
     const ready = markSketchReady({ checkout: target, sketch: heroSketch(target) }) as Sketch;
-    const sketch = decideSketch({ sketch: ready, decision: { kind: 'pick', variant: 'b' } }) as Sketch;
+    const sketch = decideSketch({
+      sketch: ready,
+      decision: { kind: 'pick', variant: 'b', ...originOf('spec') },
+    }) as Sketch;
     const merged = mergeSketch({ target, config: readConfig(target) ?? {}, product: resolveAcme(target), sketch });
 
     expect(Array.isArray(merged) ? merged : merged.reason).toContain('the check failed');

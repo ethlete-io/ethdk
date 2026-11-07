@@ -1,4 +1,5 @@
-import { appendFileSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { originOf } from './write-origin';
 import { IncomingMessage } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -66,6 +67,7 @@ const post = async (target: string, body: { part?: string; hash?: string }) => {
   const part = body.part ?? '';
   const marked = await markPartReady({
     product,
+    origin: originOf('spec'),
     part,
     hash: body.hash,
     pointsOf: async () => {
@@ -119,7 +121,14 @@ describe('part ready', () => {
 
     expect(answer.status).toBe(200);
     expect(readReady(dir)).toEqual({
-      'components/chip': { hash, files: expect.any(Object), at: expect.any(String) },
+      'components/chip': {
+        hash,
+        files: expect.any(Object),
+        at: expect.any(String),
+        by: 'spec',
+        cmd: expect.any(String),
+        pid: process.pid,
+      },
     });
     expect(readyPartsOf(productOf(target))).toEqual(['components/chip']);
 
@@ -182,7 +191,14 @@ describe('part ready', () => {
     expect(answer.body).toEqual({
       part: 'components/chip',
       hash,
-      ready: { hash, files: expect.any(Object), at: expect.any(String) },
+      ready: {
+        hash,
+        files: expect.any(Object),
+        at: expect.any(String),
+        by: 'spec',
+        cmd: expect.any(String),
+        pid: process.pid,
+      },
       directEdit: false,
       buildReady: expect.any(Object),
       drawn: false,
@@ -198,12 +214,13 @@ describe('part ready', () => {
 
     const ready = (...argv: string[]) => designReady({ target, argv, invocation: 'et design' });
 
-    expect(await ready('components/tag', '--product', 'app-a', '--by', 'tom')).toBe(2);
-    expect(await ready('components/tag', '--product', 'app-a')).toBe(1);
+    expect(await ready('components/tag', '--product', 'app-a')).toBe(2);
+    expect(lines.join('\n')).toContain('a ready mark needs --by <model id | designer>');
+    expect(await ready('components/tag', '--product', 'app-a', '--by', 'tom')).toBe(1);
     expect(lines).toContain('  components/tag: no controls declared');
     expect(lines).toContain('components/tag has 1 open point - close them before ready');
 
-    expect(await ready('components/chip', '--product', 'app-a')).toBe(0);
+    expect(await ready('components/chip', '--product', 'app-a', '--by', 'tom')).toBe(0);
     expect(lines.at(-1)).toBe('components/chip is build-ready in app-a');
     expect(Object.keys(readReady(dir))).toEqual(['components/chip']);
   });
@@ -229,7 +246,7 @@ describe('part ready', () => {
     expect(
       await designReady({
         target,
-        argv: ['components/chip', '--product', 'app-a'],
+        argv: ['components/chip', '--product', 'app-a', '--by', 'tom'],
         invocation: 'et design',
       }),
     ).toBe(1);
@@ -241,7 +258,7 @@ describe('part ready', () => {
     expect(
       await designReady({
         target,
-        argv: ['components/chip', '--product', 'app-a', '--url', 'http://localhost:1'],
+        argv: ['components/chip', '--product', 'app-a', '--by', 'tom', '--url', 'http://localhost:1'],
         invocation: 'et design',
       }),
     ).toBe(1);
@@ -433,6 +450,7 @@ describe('ready on an unchanged part', () => {
   const readyAs = (target: string, at: string) =>
     markPartReady({
       product: productOf(target),
+      origin: originOf('spec'),
       part: 'pages/inbox',
       hash: hashOf(target, 'pages/inbox'),
       at,
@@ -440,12 +458,35 @@ describe('ready on an unchanged part', () => {
       actionsOf: async () => [],
     });
 
+  it('refuses a ready mark without an actor and stamps by, cmd and pid on one with', async () => {
+    const { target, dir } = checkout();
+    const product = productOf(target);
+    const base = {
+      product,
+      part: 'components/tag',
+      hash: hashOf(target, 'components/tag'),
+      pointsOf: async () => [],
+      actionsOf: async () => [],
+    };
+
+    expect(await markPartReady({ ...base, origin: { by: '', cmd: 'x', pid: 1 } })).toMatchObject({ status: 400 });
+    expect(existsSync(join(dir, 'ready.json'))).toBe(false);
+
+    const marked = await markPartReady({ ...base, origin: originOf('claude-opus-5-5', 'design ready components/tag') });
+
+    expect(marked).toMatchObject({ by: 'claude-opus-5-5', cmd: 'design ready components/tag', pid: process.pid });
+    expect(JSON.parse(readFileSync(join(dir, 'ready.json'), 'utf8'))['components/tag']).toMatchObject({
+      by: 'claude-opus-5-5',
+      pid: process.pid,
+    });
+  });
+
   it('keeps at and refreshes the embedded record, and writes a new mark when the part changed', async () => {
     const target = embeddingCheckout();
     const dir = join(target, DESIGN_DIR, 'app-a');
     const first = await readyAs(target, '2026-01-01T00:00:00.000Z');
 
-    expect(first).not.toHaveProperty('by');
+    expect(first).toHaveProperty('by', 'spec');
 
     const marks = readReady(dir);
 

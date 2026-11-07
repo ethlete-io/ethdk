@@ -1,4 +1,5 @@
 import { appendFileSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { originOf } from './write-origin';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -52,6 +53,7 @@ const ready = (target: string, failures: string[] = []) => {
 
   return markPartReady({
     product,
+    origin: originOf('spec'),
     part: 'pages/inbox',
     hash: typeof found === 'string' ? found : found.hash,
     pointsOf: async () => [],

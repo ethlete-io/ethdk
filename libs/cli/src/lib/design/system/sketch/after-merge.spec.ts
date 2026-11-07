@@ -1,4 +1,5 @@
 import { execFileSync } from 'child_process';
+import { originOf } from '../write-origin';
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -59,7 +60,7 @@ const mergeHero = (target: string, hero: Sketch) =>
     target,
     config: readConfig(target) ?? {},
     product: resolveAcme(target),
-    sketch: decideSketch({ sketch: hero, decision: { kind: 'pick', variant: 'a' } }) as Sketch,
+    sketch: decideSketch({ sketch: hero, decision: { kind: 'pick', variant: 'a', ...originOf('spec') } }) as Sketch,
   });
 
 afterEach(() => {

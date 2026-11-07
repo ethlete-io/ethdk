@@ -6,6 +6,7 @@ import { actionsRerunOf, dropPartRecord, readyMarkOf, readyPartOf, writePartReco
 import { Problem } from './problem';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { slowProblemsOf } from './slow-checks';
+import { originOf } from './write-origin';
 
 /** What build-ready is computed from: the open points and rule problems of each part, and its slow results. */
 export type BuildReadyInputs = {
@@ -121,7 +122,7 @@ export const recordBuildReady = async (options: {
       const actions = recorded.length === 0 ? [] : await options.actionsOf?.(part);
 
       if (Array.isArray(actions) && actions.length === 0) {
-        if (recorded.length > 0) writePartRecord({ product, part });
+        if (recorded.length > 0) writePartRecord({ product, part, origin: originOf('et design check') });
 
         results.set(part, embedded.length === 0 ? { ready: true } : { ready: false, blockers: embedded });
         continue;

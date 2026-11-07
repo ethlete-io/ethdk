@@ -1,4 +1,5 @@
 import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { originOf } from './write-origin';
 import { noVerdictOf } from './no-verdict';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -53,7 +54,8 @@ const checkout = () => {
 
 const productOf = (target: string) => resolveProduct({ target, name: 'app-a', config: {} });
 
-const record = (target: string, part = 'components/chip') => writePartRecord({ product: productOf(target), part });
+const record = (target: string, part = 'components/chip') =>
+  writePartRecord({ product: productOf(target), part, origin: originOf('spec') });
 
 const GREEN: BuildReadyInputs = { pointsOf: () => [], problemsOf: () => [], slowOf: () => [] };
 
@@ -715,6 +717,7 @@ describe('doneParts', () => {
     const ready = (part: string) =>
       markPartReady({
         product: product(),
+        origin: originOf('spec'),
         part,
         hash: readyHash(part),
         pointsOf: async () => [],

@@ -8,17 +8,18 @@ import { configOf, oneProductOf } from './cli-args';
 import { commitMergeResult, dirtyFilesOf } from './merge-commit';
 import { mergeSketch } from './merge';
 import { recordMergeReason } from './merged-parts';
+import { originOf } from '../write-origin';
 import { decideSketch, findSketch, parseTarget, rejectionOf, Sketch } from './sketch';
 
 /** The sketch with the pick a plan allows: its only live variant, when `variant` names it and nobody picked yet. */
-export const allowedMergeOf = (options: { sketch: Sketch; variant: string; editRef?: boolean }) => {
-  const { sketch, variant, editRef } = options;
+export const allowedMergeOf = (options: { sketch: Sketch; variant: string; by?: string; editRef?: boolean }) => {
+  const { sketch, variant, by = '', editRef } = options;
   const live = sketch.variants.filter((candidate) => !rejectionOf(sketch, candidate));
 
   if (editRef ? !live.includes(variant) : live.length !== 1 || live[0] !== variant)
     return `${sketch.target} has ${live.length} live variants (${live.join(', ') || 'none'}), not only "${variant}" - the user picks in Studio`;
 
-  return decideSketch({ sketch, decision: { kind: 'pick', variant } });
+  return decideSketch({ sketch, decision: { kind: 'pick', variant, ...originOf(by) } });
 };
 
 export const editRefOf = (options: { target: string; sketch: Sketch; planRef: string }) =>
@@ -38,7 +39,7 @@ export const mergeAndRecord = (options: {
   allowed?: { variant: string; planRef: string; editRef?: boolean };
 }): { variant: string; parts: string[] } | string => {
   const { target, config, product, sketch, note, replaceNote, by, decidedBy, allowed } = options;
-  const decided = allowed ? allowedMergeOf({ sketch, variant: allowed.variant, editRef: allowed.editRef }) : sketch;
+  const decided = allowed ? allowedMergeOf({ sketch, variant: allowed.variant, by, editRef: allowed.editRef }) : sketch;
 
   if (typeof decided === 'string') return decided;
 
@@ -113,7 +114,7 @@ export const mergeStepOf = (options: {
     return `${sketch.target} was picked as variant "${picked}", not "${variant}"`;
 
   if (allowed) {
-    const decided = allowedMergeOf({ sketch, variant: allowed.variant, editRef: allowed.editRef });
+    const decided = allowedMergeOf({ sketch, variant: allowed.variant, by, editRef: allowed.editRef });
 
     if (typeof decided === 'string') return decided;
   } else if (picked === undefined)

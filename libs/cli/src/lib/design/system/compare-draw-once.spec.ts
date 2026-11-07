@@ -1,4 +1,5 @@
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { originOf } from './write-origin';
 import { tmpdir } from 'os';
 import { basename, join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
@@ -194,6 +195,7 @@ describe('compare draws each picture at most once per run', () => {
 
       await markPartReady({
         product: product(),
+        origin: originOf('spec'),
         part,
         hash: typeof found === 'string' ? found : found.hash,
         pointsOf: async () => [],

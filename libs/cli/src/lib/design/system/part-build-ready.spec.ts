@@ -1,4 +1,5 @@
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { originOf } from './write-origin';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
@@ -34,7 +35,7 @@ describe('buildReadyOf', () => {
     const { target } = checkout();
     const product = productOf(target);
 
-    writePartRecord({ product, part: 'pages/home' });
+    writePartRecord({ product, part: 'pages/home', origin: originOf('spec') });
 
     const inputs: BuildReadyInputs = {
       ...green,
@@ -52,7 +53,7 @@ describe('buildReadyOf', () => {
     const product = productOf(target);
     const part = 'components/chip';
 
-    writePartRecord({ product, part });
+    writePartRecord({ product, part, origin: originOf('spec') });
 
     expect(
       buildReadyOf({
@@ -74,7 +75,7 @@ describe('buildReadyOf', () => {
     ).toEqual({ ready: false, blockers: [{ kind: 'compare', text: 'COMPARE: differs' }] });
   });
 
-  it('answers a green part ready, with no by anywhere, and blocks it once the design moves', () => {
+  it('answers a green part ready, signed, and blocks it once the design moves', () => {
     const { target, dir } = checkout();
     const product = productOf(target);
 
@@ -83,10 +84,10 @@ describe('buildReadyOf', () => {
       blockers: [expect.objectContaining({ kind: 'stale-record' })],
     });
 
-    writePartRecord({ product, part: 'components/chip' });
+    writePartRecord({ product, part: 'components/chip', origin: originOf('spec') });
 
     expect(buildReadyOf({ product, part: 'components/chip', inputs: green })).toEqual({ ready: true });
-    expect(readFileSync(join(dir, READY_FILE), 'utf8')).not.toContain('"by"');
+    expect(readFileSync(join(dir, READY_FILE), 'utf8')).toContain('"by": "spec"');
 
     writeFileSync(join(dir, 'components/chip/chip.ts'), 'export default definePart({ states: { other: {} } });\n');
 
@@ -128,7 +129,7 @@ describe('recordBuildReady', () => {
     expect(written.get('pages/home')).toEqual({ ready: true });
     expect(actionsOf.mock.calls.map(([part]) => part)).toEqual(['components/chip', 'pages/home']);
     expect(Object.keys(readReady(dir))).toEqual(['components/chip', 'pages/home']);
-    expect(Object.values(readReady(dir)).some((record) => 'by' in record)).toBe(false);
+    expect(Object.values(readReady(dir)).every((record) => record.by === 'et design check')).toBe(true);
 
     const blocked = await recordBuildReady({
       product,

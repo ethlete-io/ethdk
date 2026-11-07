@@ -52,3 +52,4 @@ webkit-revert-wt (nicht genommen, entschieden), wip/b321-stacking-fix (verworfen
 - origin/tank/w3-cli-a → verworfen: schon in next als 4373e3a4c; die WIP-Datei check-staged-plans.mjs liegt identisch in next.
 - origin/tank/tree → verworfen: der einzige WIP-Commit löscht 4664 Dateien (kaputter Baumstand).
 - origin/tank/conflicts-land, Teil f557-hub-split → gelandet in diesem Commit (Aufteilung von `design/paths.ts`; 13 seither in next neu dazugekommene `paths`-Importe umgehängt; der commitlint-Commit e6b6e12a3 war schon in next als 984042b90).
+- origin/tank/b407 → gelandet in diesem Commit (WIP fertig: Signatur `by`/`cmd`/`pid` für Ready-Markierung und Skizzen-Wahl; Konflikt mit `--decided-by` gelöst, Aufrufe in den seither aufgeteilten Specs nachgezogen; 20 Specs, Lint grün).

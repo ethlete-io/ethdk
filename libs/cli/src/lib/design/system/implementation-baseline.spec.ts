@@ -10,6 +10,7 @@ import { addedBaselineEntriesOf, IMPLEMENTATION_BASELINE_FILE } from './implemen
 import { writePartRecord } from './part-ready';
 import { markImplemented } from './part-task';
 import { resolveProduct } from './resolve-product';
+import { originOf } from './write-origin';
 
 const CHIP = 'components/chip';
 const BADGE = 'components/badge';
@@ -40,7 +41,7 @@ const checkout = () => {
   const product = () => resolveProduct({ target, name: 'app-a', config: {} });
 
   for (const name of ['chip', 'badge']) {
-    writePartRecord({ product: product(), part: `components/${name}` });
+    writePartRecord({ product: product(), part: `components/${name}`, origin: originOf('spec') });
     markImplemented({
       product: product(),
       part: `components/${name}`,

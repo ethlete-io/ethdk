@@ -1,4 +1,5 @@
 import { execFileSync } from 'child_process';
+import { originOf } from './system/write-origin';
 import { IncomingMessage } from 'http';
 import { relative } from 'path';
 import { fromEvent, take } from 'rxjs';
@@ -588,6 +589,7 @@ export const sketchDecisionAnswer = withSketch('POST', async ({ asked, sketch })
   const comment = textOf(body?.['comment']);
   const reason = textOf(body?.['reason']);
   const variant = textOf(body?.['variant']) ?? '';
+  const studioOrigin = originOf('designer', `POST ${SKETCH_DECISION_PATH}`);
 
   if (!SKETCH_DECISION_KINDS.includes(kind))
     return failure(400, `kind must be one of ${SKETCH_DECISION_KINDS.join(', ')}`);
@@ -596,9 +598,9 @@ export const sketchDecisionAnswer = withSketch('POST', async ({ asked, sketch })
 
   const decision: SketchDecisionInput =
     kind === 'discard'
-      ? { kind, ...(comment ? { comment } : {}) }
+      ? { kind, ...(comment ? { comment } : {}), ...studioOrigin }
       : kind === 'pick'
-        ? { kind, variant, ...(comment ? { comment } : {}) }
+        ? { kind, variant, ...(comment ? { comment } : {}), ...studioOrigin }
         : { kind, variant, reason: reason ?? '', by: 'designer' };
   const decided = decideSketch({ sketch, decision });
 

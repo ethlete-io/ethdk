@@ -2589,6 +2589,10 @@ Leads (builder, not verified): the changed `go.json` entries carry `at` 11:24:48
 `yarn studio:e2e` and `nx test cli`, so a test run may write `go.json` in the real repo. The `canvas-viewport` ready
 mark (14:53:59Z) matches no agent CLI call in any session log, so the Studio server or the app may have written it.
 `pictures.json`: not checked yet.
+As built (B407): `WriteOrigin` (`by`, `cmd`, `pid`, `system/write-origin.ts`) is required by `writePartRecord`, `markPartReady`
+and `decideSketch` (pick, discard); a write without `by` is refused (400 / a problem string) and writes nothing. `et design ready`
+needs `--by`; the Studio pick route signs `designer`; `design check` records sign `et design check`. Not covered:
+`go.json` and `pictures.json` writers (cause still open).
 
 469\. A Studio merge leaves its result uncommitted. After Tom merged `components-comment-draft`, its
 `comment-draft.ts` edit blocked his next merge (`components/title-bar@notice-shape`) with the same guard. Tom:

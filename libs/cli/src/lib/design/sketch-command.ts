@@ -5,6 +5,7 @@ import { tmpdir } from 'os';
 import { dirname, relative, resolve } from 'path';
 import { DesignConfig } from './design-config';
 import { timedPhase } from './phase-timing';
+import { originOf } from './system/write-origin';
 import { ASSETS_FOLDER } from './system/assets';
 import { addressSketchComments, commentsOnSketch } from './system/comments/comment';
 import { productDirOf } from './system/product';
@@ -1023,7 +1024,7 @@ const mergedUnchanged = (options: {
   const { target, config, author, product, sketch } = options;
   const variant = sketch.variants.find((candidate) => !rejectionOf(sketch, candidate)) ?? '';
   const commit = cleanBesideSketch({ target, product, sketch });
-  const decided = decideSketch({ sketch, decision: { kind: 'pick', variant } });
+  const decided = decideSketch({ sketch, decision: { kind: 'pick', variant, ...originOf(author ?? '') } });
 
   if (typeof decided === 'string') return fail(decided);
 

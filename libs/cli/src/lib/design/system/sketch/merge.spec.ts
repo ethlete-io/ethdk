@@ -1,4 +1,5 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { originOf } from '../write-origin';
 import { spawnSync } from 'child_process';
 import { IncomingMessage } from 'http';
 import { tmpdir } from 'os';
@@ -54,7 +55,7 @@ const readySketch = (
 };
 
 const picked = (sketch: Sketch, variant = 'b') =>
-  decideSketch({ sketch, decision: { kind: 'pick', variant } }) as Sketch;
+  decideSketch({ sketch, decision: { kind: 'pick', variant, ...originOf('spec') } }) as Sketch;
 
 const reasonOf = (result: ReturnType<typeof mergeSketch>) => (Array.isArray(result) ? result : result.reason);
 

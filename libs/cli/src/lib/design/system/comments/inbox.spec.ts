@@ -1,4 +1,5 @@
 import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { originOf } from '../write-origin';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -45,10 +46,10 @@ const setup = () => {
   vi.setSystemTime('2026-10-27T10:00:00Z');
   decideSketch({
     sketch: markSketchReady({ checkout: target, sketch: hero }) as Sketch,
-    decision: { kind: 'pick', variant: 'b', comment: 'Calmer.' },
+    decision: { kind: 'pick', variant: 'b', comment: 'Calmer.', ...originOf('spec') },
   });
   vi.setSystemTime('2026-10-27T11:00:00Z');
-  decideSketch({ sketch: card, decision: { kind: 'discard' } });
+  decideSketch({ sketch: card, decision: { kind: 'discard', ...originOf('spec') } });
   createSketch({ product: acmeProduct, sketch: { layer: 'pages', name: 'home' }, variants: ['a'] });
 
   return { target, comment };

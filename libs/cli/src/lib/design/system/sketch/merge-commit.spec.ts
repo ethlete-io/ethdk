@@ -7,6 +7,7 @@ import { DESIGN_DIR, readConfig } from '../../design-config';
 import { resolveProduct } from '../resolve-product';
 import { mergeAndRecord } from './merge-step';
 import { createSketch, decideSketch, findSketch, markSketchReady, Sketch, SketchTarget } from './sketch';
+import { originOf } from '../write-origin';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-merge-commit-'));
@@ -29,7 +30,7 @@ const pickedSketch = (target: string, sketch: SketchTarget) => {
   const created = createSketch({ product: productOf(target), sketch, variants: ['a', 'b'] }) as Sketch;
   const ready = markSketchReady({ checkout: target, sketch: created }) as Sketch;
 
-  return decideSketch({ sketch: ready, decision: { kind: 'pick', variant: 'b' } }) as Sketch;
+  return decideSketch({ sketch: ready, decision: { kind: 'pick', variant: 'b', ...originOf('spec') } }) as Sketch;
 };
 
 const mergeOf = (target: string, sketch: Sketch) =>

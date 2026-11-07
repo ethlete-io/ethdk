@@ -1,4 +1,5 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'fs';
+import { originOf } from '../write-origin';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -334,7 +335,10 @@ describe('status', () => {
     expect(readSketchReport({ checkout: target, sketch })?.message).toBe('fix');
 
     const again = markSketchReady({ checkout: target, sketch: reopened as Sketch }) as Sketch;
-    const decided = decideSketch({ sketch: again, decision: { kind: 'pick', variant: 'a' } }) as Sketch;
+    const decided = decideSketch({
+      sketch: again,
+      decision: { kind: 'pick', variant: 'a', ...originOf('spec') },
+    }) as Sketch;
 
     expect(
       reportSketch({ checkout: target, sketch: decided, variant: 'a', author: 'gpt-5.6-sol', message: 'late' }),
@@ -409,22 +413,47 @@ describe('status', () => {
     expect(readSketchReport({ checkout: target, sketch })).toMatchObject({ variant: null, author: null });
   });
 
+  it('refuses a pick or discard without an actor and writes nothing', () => {
+    const target = acme();
+    const sketch = markSketchReady({ checkout: target, sketch: open(target, 'elements/hero') }) as Sketch;
+    const unsigned = { by: '', cmd: 'x', pid: 1 };
+
+    expect(decideSketch({ sketch, decision: { kind: 'pick', variant: 'a', ...unsigned } })).toContain(
+      'needs the actor',
+    );
+    expect(decideSketch({ sketch, decision: { kind: 'discard', ...unsigned } })).toContain('needs the actor');
+    expect(sketchJson(target, 'elements-hero')['decision']).toBeUndefined();
+  });
+
   it('takes a pick only once ready, and a discard at any time', () => {
     const target = acme();
     const sketch = open(target, 'elements/hero');
 
-    expect(decideSketch({ sketch, decision: { kind: 'pick', variant: 'a' } })).toContain('a variant is picked once');
-    decideSketch({ sketch, decision: { kind: 'discard' } });
-    expect(sketchJson(target, 'elements-hero')['decision']).toEqual({ kind: 'discard', decidedAt: expect.any(String) });
+    expect(decideSketch({ sketch, decision: { kind: 'pick', variant: 'a', ...originOf('spec') } })).toContain(
+      'a variant is picked once',
+    );
+    decideSketch({ sketch, decision: { kind: 'discard', ...originOf('spec') } });
+    expect(sketchJson(target, 'elements-hero')['decision']).toEqual({
+      kind: 'discard',
+      by: 'spec',
+      cmd: expect.any(String),
+      pid: process.pid,
+      decidedAt: expect.any(String),
+    });
 
     const ready = markSketchReady({ checkout: target, sketch }) as Sketch;
 
-    expect(decideSketch({ sketch: ready, decision: { kind: 'pick', variant: 'z' } })).toContain('has no variant "z"');
-    decideSketch({ sketch: ready, decision: { kind: 'pick', variant: 'b', comment: 'bolder' } });
+    expect(decideSketch({ sketch: ready, decision: { kind: 'pick', variant: 'z', ...originOf('spec') } })).toContain(
+      'has no variant "z"',
+    );
+    decideSketch({ sketch: ready, decision: { kind: 'pick', variant: 'b', comment: 'bolder', ...originOf('spec') } });
     expect(sketchJson(target, 'elements-hero')['decision']).toEqual({
       kind: 'pick',
       variant: 'b',
       comment: 'bolder',
+      by: 'spec',
+      cmd: expect.any(String),
+      pid: process.pid,
       decidedAt: expect.any(String),
     });
   });
@@ -449,11 +478,13 @@ describe('variant verdicts', () => {
 
     expect(rejectionOf(reloaded, 'a')).toMatchObject({ reason: 'too loud' });
     expect(rejectionOf(reloaded, 'b')).toBeNull();
-    expect(decideSketch({ sketch: reloaded, decision: { kind: 'pick', variant: 'a' } })).toBe(
+    expect(decideSketch({ sketch: reloaded, decision: { kind: 'pick', variant: 'a', ...originOf('spec') } })).toBe(
       'elements/hero variant a is rejected by the designer: too loud - reopen it first',
     );
-    expect(decideSketch({ sketch: reloaded, decision: { kind: 'pick', variant: 'b' } })).toMatchObject({
-      decision: { kind: 'pick', variant: 'b' },
+    expect(
+      decideSketch({ sketch: reloaded, decision: { kind: 'pick', variant: 'b', ...originOf('spec') } }),
+    ).toMatchObject({
+      decision: { kind: 'pick', variant: 'b', ...originOf('spec') },
     });
   });
 
@@ -497,8 +528,10 @@ describe('variant verdicts', () => {
     expect(decideSketch({ sketch: reopened, decision: { kind: 'reopen', variant: 'a', by: 'designer' } })).toBe(
       'elements/hero variant a is not rejected',
     );
-    expect(decideSketch({ sketch: reopened, decision: { kind: 'pick', variant: 'a' } })).toMatchObject({
-      decision: { kind: 'pick', variant: 'a' },
+    expect(
+      decideSketch({ sketch: reopened, decision: { kind: 'pick', variant: 'a', ...originOf('spec') } }),
+    ).toMatchObject({
+      decision: { kind: 'pick', variant: 'a', ...originOf('spec') },
     });
 
     const again = decideSketch({
@@ -595,7 +628,7 @@ describe('addVariant', () => {
     rmSync(join(dir, 'b/assets'), { recursive: true });
     decideSketch({
       sketch: markSketchReady({ checkout: target, sketch }) as Sketch,
-      decision: { kind: 'pick', variant: 'a' },
+      decision: { kind: 'pick', variant: 'a', ...originOf('spec') },
     });
 
     const added = addVariant({ sketch: find(target), variant: 'c', from: 'b' }) as Sketch;
@@ -617,14 +650,14 @@ describe('addVariant', () => {
 
     decideSketch({
       sketch: markSketchReady({ checkout: target, sketch }) as Sketch,
-      decision: { kind: 'discard' },
+      decision: { kind: 'discard', ...originOf('spec') },
     });
 
     expect(addVariant({ sketch: find(target), variant: 'c', from: 'a' })).toBe(
       'The user decided to discard elements/hero. The user must pick a variant first to go on.',
     );
     expect(find(target).variants).toEqual(['a', 'b']);
-    expect(sketchJson(target, 'elements-hero')).toMatchObject({ decision: { kind: 'discard' } });
+    expect(sketchJson(target, 'elements-hero')).toMatchObject({ decision: { kind: 'discard', ...originOf('spec') } });
   });
 
   it('starts a new round with the note on the running one, and continues the letters', () => {

@@ -20,6 +20,7 @@ import { isBuiltInBase } from '../base';
 import { isLayer, Layer, LAYER_USES, mayUse } from '../layers';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { baselineOf } from './baseline';
+import { hasActor, WriteOrigin } from '../write-origin';
 import { withMadeBy } from './part-definition';
 
 export const SKETCH_STATUSES = ['in progress', 'ready'] as const;
@@ -31,8 +32,8 @@ export type SketchTarget = { layer: Layer; name: string; sketch?: string };
 
 /** What the user decided in Studio: a variant to merge, or the whole sketch to drop. */
 export type SketchDecision =
-  | { kind: 'pick'; variant: string; comment?: string; decidedAt: string }
-  | { kind: 'discard'; comment?: string; decidedAt: string };
+  | ({ kind: 'pick'; variant: string; comment?: string; decidedAt: string } & Partial<WriteOrigin>)
+  | ({ kind: 'discard'; comment?: string; decidedAt: string } & Partial<WriteOrigin>);
 
 /**
  * What `sketch.json` knows about one variant: the model ids that reported on it, in the order of their first report,
@@ -1108,7 +1109,9 @@ export type SketchVariantVerdict =
   | { kind: 'reopen'; variant: string; reason?: string; by: SketchVerdictBy };
 
 export type SketchDecisionInput =
-  { kind: 'pick'; variant: string; comment?: string } | { kind: 'discard'; comment?: string } | SketchVariantVerdict;
+  | ({ kind: 'pick'; variant: string; comment?: string } & WriteOrigin)
+  | ({ kind: 'discard'; comment?: string } & WriteOrigin)
+  | SketchVariantVerdict;
 
 const withVerdict = (sketch: Sketch, verdict: SketchVariantVerdict): Sketch | string => {
   const { variant, by } = verdict;
@@ -1203,6 +1206,8 @@ export const decideSketch = (options: { sketch: Sketch; decision: SketchDecision
 
     return judged;
   }
+
+  if (!hasActor(decision)) return `${sketch.target}: a ${decision.kind} needs the actor that writes it (by)`;
 
   if (decision.kind === 'pick') {
     if (sketch.status !== 'ready') return `${sketch.target} is ${sketch.status} - a variant is picked once it is ready`;

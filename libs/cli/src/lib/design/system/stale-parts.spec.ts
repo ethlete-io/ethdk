@@ -1,4 +1,5 @@
 import { execFileSync } from 'child_process';
+import { originOf } from './write-origin';
 import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
@@ -95,7 +96,7 @@ describe('transitive part hash', () => {
   it('marks a check record stale and names the file when an imported part changes, though the folder did not', () => {
     const { target, dir } = checkout();
 
-    expect(writePartRecord({ product: productOf(target), part: CHIP })).not.toBeNull();
+    expect(writePartRecord({ product: productOf(target), part: CHIP, origin: originOf('spec') })).not.toBeNull();
     markImplemented({ product: productOf(target), part: CHIP, states: { default: {} } });
 
     const folder = partHashOf({ product: productOf(target), dir: join(dir, 'components/chip') });
@@ -125,7 +126,7 @@ describe('transitive part hash', () => {
   it('marks a done part stale when a file its app component reaches changes', () => {
     const { target } = checkout();
 
-    writePartRecord({ product: productOf(target), part: CHIP });
+    writePartRecord({ product: productOf(target), part: CHIP, origin: originOf('spec') });
     markImplemented({
       product: productOf(target),
       part: CHIP,
@@ -196,7 +197,7 @@ describe('transitive part hash', () => {
   it('fails check --rules --base on an app file of an implemented part changed in the range since its record', () => {
     const { target } = checkout();
 
-    writePartRecord({ product: productOf(target), part: CHIP });
+    writePartRecord({ product: productOf(target), part: CHIP, origin: originOf('spec') });
     markImplemented({
       product: productOf(target),
       part: CHIP,

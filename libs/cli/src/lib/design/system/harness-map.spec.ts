@@ -1,4 +1,5 @@
 import { execFileSync } from 'child_process';
+import { originOf } from './write-origin';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
@@ -177,7 +178,7 @@ describe('et design harness', () => {
     const compare = vi.fn(async () => ({ green: true, states: {} }));
     const shoot = vi.fn(async () => 'shoot must not run');
 
-    expect(writePartRecord({ product, part: 'components/chip' })).not.toBeNull();
+    expect(writePartRecord({ product, part: 'components/chip', origin: originOf('spec') })).not.toBeNull();
 
     const stale = 'the harness map apps/app-a/src/harness/parts.ts is stale - run et design harness --product app-a';
     const argv = ['components/chip', '--product', 'app-a', '--url', 'http://localhost:1'];
@@ -228,6 +229,7 @@ describe('task --verify and the app stylesheet', () => {
       writePartRecord({
         product: resolveProduct({ target, name: 'app-a', config: { harness: HARNESS } }),
         part: 'components/chip',
+        origin: originOf('spec'),
       }),
     ).not.toBeNull();
 

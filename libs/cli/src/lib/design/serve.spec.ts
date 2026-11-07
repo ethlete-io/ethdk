@@ -1215,7 +1215,7 @@ describe('the design server for sketches and comments', () => {
         .status,
     ).toBe(200);
     expect(JSON.parse(readFileSync(file, 'utf8'))).toMatchObject({
-      decision: { kind: 'pick', variant: 'b', comment: 'calmer' },
+      decision: { kind: 'pick', variant: 'b', comment: 'calmer', by: 'designer', pid: process.pid },
     });
     expect((await ask('/__design/sketch-decision', '?product=acme&sketch=elements/none', 'POST', {})).status).toBe(404);
   });

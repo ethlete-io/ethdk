@@ -6,11 +6,13 @@ import { checkBlockersOf } from './part-build-ready';
 import { partKeyOf } from './resolve-product';
 import { runSlowChecks } from './slow-run';
 import { slowProblemsOf } from './slow-checks';
+import { originOf } from './write-origin';
 import { staleDistWarningsOf } from './stale-dist';
-import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
+import { argsOf, authorOf, configOf, oneProductOf } from './sketch/cli-args';
 import { parseTarget } from './sketch/sketch';
 
-export const READY_USAGE = 'ready <layer>/<name> --product <name> [--url <app dev server url>]';
+export const READY_USAGE =
+  'ready <layer>/<name> --product <name> [--url <app dev server url>] --by <model id | designer>';
 
 /**
  * `et design ready <layer>/<name> …` checks a part and writes its check record, and exits 1 with its open points, its
@@ -19,7 +21,7 @@ export const READY_USAGE = 'ready <layer>/<name> --product <name> [--url <app de
  */
 export const designReady = async (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, { values: ['--product', '--url'], switches: [] });
+  const args = argsOf(argv, { values: ['--product', '--url', '--by'], switches: [] });
   const usage = `usage: ${invocation} ${READY_USAGE}`;
 
   if (typeof args === 'string' || args.positional.length !== 1) {
@@ -49,11 +51,20 @@ export const designReady = async (options: { target: string; argv: string[]; inv
 
   for (const line of staleDistWarningsOf({ target, config })) console.warn(line);
 
+  const author = authorOf(args);
+
+  if (!author) {
+    console.error(`a ready mark needs --by <model id | designer>\n${usage}`);
+
+    return 2;
+  }
+
   const part = partKeyOf(parsed);
   const located = readyPartOf({ product, part });
   const marked = await markPartReady({
     product,
     part,
+    origin: originOf(author, `design ready ${argv.join(' ')}`),
     hash: typeof located === 'string' ? '-' : located.hash,
     pointsOf: async () => {
       const points = await drawnPartPointsOf({ target, config, product, part });

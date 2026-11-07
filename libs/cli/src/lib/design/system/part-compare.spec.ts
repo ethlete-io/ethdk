@@ -1,4 +1,5 @@
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { originOf } from './write-origin';
 import { noVerdictOf } from './no-verdict';
 import { createServer, Server } from 'http';
 import { AddressInfo } from 'net';
@@ -570,6 +571,7 @@ describe('part compare', () => {
 
     await markPartReady({
       product: product(),
+      origin: originOf('spec'),
       part: 'components/chip',
       hash: typeof found === 'string' ? found : found.hash,
       pointsOf: async () => [],

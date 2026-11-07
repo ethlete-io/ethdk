@@ -5,6 +5,7 @@ import { checkDesign } from '../check';
 import { DESIGN_DIR, readConfig } from '../design-config';
 import { writePartRecord } from './part-ready';
 import { resolveProduct } from './resolve-product';
+import { originOf } from './write-origin';
 import { acme, output, withoutOpenPoints } from './check-system.fixtures';
 
 describe('checkDesign', () => {
@@ -162,7 +163,7 @@ describe('checkDesign', () => {
     const config = readConfig(target) ?? {};
     const product = resolveProduct({ target, name: 'acme', config: config.products?.['acme'] ?? {} });
 
-    writePartRecord({ product, part: 'elements/hero' });
+    writePartRecord({ product, part: 'elements/hero', origin: originOf('spec') });
     lines.length = 0;
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
