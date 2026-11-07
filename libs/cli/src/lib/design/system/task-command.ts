@@ -349,7 +349,7 @@ export const designTask = async (options: {
   const states =
     loaded && typeof loaded === 'object' && !Array.isArray(loaded) ? (loaded as Record<string, unknown>) : {};
   const record = readImplemented(task.dir)[task.part];
-  const since = taskStatesOf({ states, hash: task.hash, record });
+  const since = taskStatesOf({ states, hash: task.hash, earlier: task.earlier, record });
 
   console.log(`part ${task.part} in ${product.name}`);
   console.log(`design ${task.hash}`);

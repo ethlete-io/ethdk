@@ -1,4 +1,5 @@
 import { execFileSync } from 'child_process';
+import { createHash } from 'crypto';
 import { originOf } from './write-origin';
 import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
@@ -7,11 +8,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../design-config';
 import { appFilesOf } from './app-files';
 import { checkRules } from './check-system';
-import { designHashOf } from './design-hash';
+import { designHashOf, designHolds, fileHashesOf, hashOfFiles, recordHolds } from './design-hash';
 import { readyMarkOf, writePartRecord } from './part-ready';
 import { doneParts, markImplemented } from './part-task';
 import { partKeyOf, resolveProduct } from './resolve-product';
-import { partHashOf } from './sketch/baseline';
+import { partHashHolds, partHashOf } from './sketch/baseline';
 import { staleLineOf, stalePartsOf, UNLISTED_FILES, upgradeLegacyMarksOf } from './stale-parts';
 
 const CHIP = 'components/chip';
@@ -227,5 +228,108 @@ describe('transitive part hash', () => {
       }) - run et design compare --affected --product app-a to compare and record every affected part`,
     ]);
     vi.restoreAllMocks();
+  });
+});
+
+describe('implements link', () => {
+  const ICON = 'elements/icon';
+  const iconFile = (dir: string) => join(dir, 'elements/icon/icon.ts');
+  const linkIcon = (dir: string, link: string) =>
+    writeFileSync(
+      iconFile(dir),
+      `export default definePart({\n  implements: '${link}',\n  states: { default: {} },\n});\n`,
+    );
+  const partOf = (target: string, key: string) => {
+    const product = productOf(target);
+    const part = product.parts.find((candidate) => partKeyOf(candidate) === key);
+
+    if (!part) throw new Error(`no ${key}`);
+
+    return { product, part };
+  };
+  const hashesOf = (target: string, dir: string) => ({
+    icon: designHashOf(partOf(target, ICON)).hash,
+    chip: designHashOf(chipOf(target)).hash,
+    folder: partHashOf({ product: productOf(target), dir: join(dir, 'elements/icon') }),
+  });
+  const withLinkRecordOf = (target: string, key: string) => {
+    const files = fileHashesOf(
+      target,
+      Object.keys(designHashOf(partOf(target, key)).files).map((path) => join(target, path)),
+    );
+
+    return { hash: hashOfFiles(files), files };
+  };
+  const withLinkFolderHashOf = (dir: string) =>
+    createHash('sha256')
+      .update('icon.ts\0')
+      .update(readFileSync(iconFile(dir)))
+      .digest('hex')
+      .slice(0, 16);
+
+  it('keeps the design hash of the part and of every part that embeds it when only the link changes', () => {
+    const { target, dir } = checkout();
+
+    linkIcon(dir, 'apps/a/icon/icon.component.ts');
+    const before = hashesOf(target, dir);
+
+    linkIcon(dir, 'apps/a/other/other.component.ts');
+    expect(hashesOf(target, dir)).toEqual(before);
+
+    writeFileSync(iconFile(dir), `export default definePart({\n  states: { default: {} },\n});\n`);
+    expect(hashesOf(target, dir)).toEqual(before);
+  });
+
+  it('changes the design hash for any other change in the same file', () => {
+    const { target, dir } = checkout();
+
+    linkIcon(dir, 'apps/a/icon/icon.component.ts');
+    const before = hashesOf(target, dir);
+
+    writeFileSync(
+      iconFile(dir),
+      `export default definePart({\n  implements: 'apps/a/icon/icon.component.ts',\n  states: { default: {}, hover: {} },\n});\n`,
+    );
+    const after = hashesOf(target, dir);
+
+    expect(after.icon).not.toBe(before.icon);
+    expect(after.chip).not.toBe(before.chip);
+    expect(after.folder).not.toBe(before.folder);
+  });
+
+  it('holds a record and a merged hash written while the hash still covered the link, also at a link git history held', () => {
+    const { target, dir } = checkout();
+
+    execFileSync('git', ['init', '-q'], { cwd: target });
+    linkIcon(dir, 'apps/a/icon/icon.component.ts');
+    commitAt(target, '2026-09-01T00:00:00Z');
+    const record = withLinkRecordOf(target, CHIP);
+    const folder = withLinkFolderHashOf(dir);
+
+    expect(record.hash).not.toBe(designHashOf(chipOf(target)).hash);
+    expect(recordHolds(record, designHashOf(chipOf(target)))).toBe(true);
+    expect(designHolds(record.hash, designHashOf(chipOf(target)))).toBe(true);
+    expect(partHashHolds({ product: productOf(target), dir: join(dir, 'elements/icon'), hash: folder })).toBe(true);
+
+    linkIcon(dir, 'apps/a/other/other.component.ts');
+    commitAt(target, '2026-09-02T00:00:00Z');
+
+    expect(recordHolds(record, designHashOf(chipOf(target)))).toBe(true);
+    expect(designHolds(record.hash, designHashOf(chipOf(target)))).toBe(true);
+    expect(partHashHolds({ product: productOf(target), dir: join(dir, 'elements/icon'), hash: folder })).toBe(true);
+
+    writeFileSync(
+      join(dir, 'ready.json'),
+      JSON.stringify({ [CHIP]: { ...record, by: 'tom', at: '2026-09-01T00:00:00Z' } }),
+    );
+    expect(stalePartsOf({ product: productOf(target) })).toEqual([]);
+
+    appendFileSync(iconFile(dir), '// moved\n');
+
+    expect(recordHolds(record, designHashOf(chipOf(target)))).toBe(false);
+    expect(partHashHolds({ product: productOf(target), dir: join(dir, 'elements/icon'), hash: folder })).toBe(false);
+    expect(stalePartsOf({ product: productOf(target) })).toEqual([
+      { part: CHIP, design: [`${DESIGN_DIR}/app-a/elements/icon/icon.ts`], app: [] },
+    ]);
   });
 });

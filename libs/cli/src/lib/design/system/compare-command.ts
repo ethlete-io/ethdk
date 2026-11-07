@@ -50,7 +50,15 @@ import {
   pointerOpensOf,
   slotOnlyStatesOf,
 } from './part-compare';
-import { affectedPartsOf, doneParts, linkedTaskPartOf, markImplemented, readImplemented, TaskPart } from './part-task';
+import {
+  affectedPartsOf,
+  doneParts,
+  implementedHolds,
+  linkedTaskPartOf,
+  markImplemented,
+  readImplemented,
+  TaskPart,
+} from './part-task';
 import { appFilesOf } from './app-files';
 import { repoRootOf } from './reachable-files';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
@@ -519,7 +527,7 @@ const recordAffected = async (options: {
 }): Promise<{ ok: boolean; line: string }> => {
   const { product, task } = options;
 
-  if (readImplemented(task.dir)[task.part]?.hash !== task.hash)
+  if (!implementedHolds(readImplemented(task.dir)[task.part]?.hash, task))
     return { ok: false, line: `${task.part}: its design changed since it was implemented - run task --verify` };
 
   const missed = await timedPhase('compare-actions', () =>

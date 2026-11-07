@@ -4,7 +4,7 @@ import { createHash } from 'crypto';
 import { existsSync, readFileSync } from 'fs';
 import { posix, resolve } from 'path';
 import { appFilesOf } from './app-files';
-import { changedFilesOf, FileHashes, isOptionalFileHashes } from './design-hash';
+import { changedFilesOf, designHolds, FileHashes, isOptionalFileHashes } from './design-hash';
 import { DESIGN_DIR } from '../design-config';
 import { matchesPattern } from './harness-config';
 import { buildReadyOf, BuildReadyInputs } from './part-build-ready';
@@ -22,7 +22,7 @@ export const IMPLEMENTED_FILE = 'implemented.json';
 export type PartImplemented = { hash: string; at: string; states: Record<string, string>; app?: FileHashes };
 
 /** A part a task can build: its design hash, the component path its `implements` names, and the directory of its records. */
-export type TaskPart = { part: string; hash: string; dir: string; component: string };
+export type TaskPart = { part: string; hash: string; dir: string; component: string; earlier?: string[] };
 
 /** The states a task names: added since the implemented record, with changed props, or all when only the rest changed. */
 export type TaskStates = { added: string[]; changed: string[]; all: boolean };
@@ -102,6 +102,10 @@ export const markImplemented = (options: {
   return implemented;
 };
 
+/** Whether an implemented record's design hash still matches the part a task builds. */
+export const implementedHolds = (hash: string | undefined, task: Pick<TaskPart, 'hash' | 'earlier'>) =>
+  hash !== undefined && (hash === task.hash || (task.earlier ?? []).includes(hash));
+
 /** The part an `implements` link names at its current design hash, or why a task cannot build it: unknown part, no or a route-only link. */
 export const linkedTaskPartOf = (options: { product: ResolvedProduct; part: string }): TaskPart | string => {
   const { product, part } = options;
@@ -119,7 +123,7 @@ export const linkedTaskPartOf = (options: { product: ResolvedProduct; part: stri
   if (component === null)
     return `${part} links only its route - add the presentational component it renders for compare (Q195): implements: { route: '/…', component: '<repo path>.component.ts' }`;
 
-  return { part, hash: found.hash, dir: found.dir, component };
+  return { part, hash: found.hash, dir: found.dir, component, earlier: found.design.earlier.hashes };
 };
 
 /** The part a task builds, or why not: what `linkedTaskPartOf` refuses, or each blocker while the part is not build-ready. */
@@ -157,9 +161,10 @@ export const verifiedTaskPartOf = (options: { product: ResolvedProduct; part: st
 export const taskStatesOf = (options: {
   states: Record<string, unknown>;
   hash: string;
+  earlier?: string[];
   record: PartImplemented | undefined;
 }): TaskStates => {
-  const { states, hash, record } = options;
+  const { states, record } = options;
   const names = Object.keys(states);
 
   if (!record) return { added: names, changed: [], all: false };
@@ -169,7 +174,7 @@ export const taskStatesOf = (options: {
     (name) => record.states[name] !== undefined && record.states[name] !== stateHashOf(states[name]),
   );
 
-  return { added, changed, all: added.length === 0 && changed.length === 0 && record.hash !== hash };
+  return { added, changed, all: added.length === 0 && changed.length === 0 && !implementedHolds(record.hash, options) };
 };
 
 /**
@@ -421,5 +426,9 @@ export const doneParts = (options: { product: ResolvedProduct; parts: string[] }
 
     const record = readImplemented(found.dir)[part];
 
-    return record?.hash === mark.hash && changedAppFilesOf({ product: options.product, part, record }).length === 0;
+    return (
+      !!record &&
+      (record.hash === mark.hash || designHolds(record.hash, found.design)) &&
+      changedAppFilesOf({ product: options.product, part, record }).length === 0
+    );
   });

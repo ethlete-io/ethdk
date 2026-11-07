@@ -7,7 +7,7 @@ import { createPartShooter } from '../shot';
 import { yieldRun } from '../run-yield';
 import { DesignServer, drawingOn, WarmDraw } from '../warm-draw';
 import { compareFrameOf } from './harness-shot';
-import { designHashOf, sha16 } from './design-hash';
+import { designHashOf, designHolds, sha16 } from './design-hash';
 import { partOwnerOf } from './inventory-approval';
 import { createPartPictureCache, PartPictureCache } from './part-picture-cache';
 import { Problem } from './problem';
@@ -349,7 +349,8 @@ export const autoAcceptOf = async (options: {
     if (resolved.origin === 'base' || merged[part] === undefined) continue;
 
     const pictures = readPictures(partOwnerOf({ product, part: resolved }).dir)[part] ?? {};
-    const design = designHashOf({ product, part: resolved }).hash;
+    const designHash = designHashOf({ product, part: resolved });
+    const design = designHash.hash;
     const editSketch = editSketches.get(part);
 
     if (edited.has(part)) {
@@ -372,7 +373,8 @@ export const autoAcceptOf = async (options: {
         rewordEditNotes(editSketch);
         edits.push({ part: resolved, design, baseline: old, sketch: editSketch });
       } else heads.push({ part: resolved, design, sketch: editSketch, recheck: true });
-    } else if (pictures.record?.hash !== design) records.push({ part: resolved, design, baseline: null });
+    } else if (!pictures.record || !designHolds(pictures.record.hash, designHash))
+      records.push({ part: resolved, design, baseline: null });
   }
 
   for (const { part: resolved, design, sketch, recheck } of heads) {

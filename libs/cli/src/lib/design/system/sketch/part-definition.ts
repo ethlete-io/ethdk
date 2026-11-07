@@ -387,3 +387,38 @@ export const partLinkOf = (source: string): PartLinkSource => {
     ? { kind: 'unreadable' }
     : { kind: 'route', route, component };
 };
+
+const linkFieldOf = (source: string) => {
+  const { file, definition } = definitionOf(source);
+  const field = definition ? fieldOf(definition, 'implements') : undefined;
+
+  return field ? { file, field } : null;
+};
+
+/** The source text of the `implements` field of a part file's `definePart`, `null` without one. */
+export const linkFieldTextOf = (source: string) => {
+  const found = linkFieldOf(source);
+
+  return found ? source.slice(found.field.getStart(found.file), found.field.getEnd()) : null;
+};
+
+/** `source` without the `implements` field of its `definePart`, its leading whitespace and its trailing comma. */
+export const withoutLinkFieldOf = (source: string) => {
+  const found = linkFieldOf(source);
+
+  if (!found) return source;
+
+  const end = found.field.getEnd();
+  const comma = /^\s*,/u.exec(source.slice(end))?.[0].length ?? 0;
+
+  return source.slice(0, found.field.getFullStart()) + source.slice(end + comma);
+};
+
+/** `source` with its `implements` field replaced by `field`, the source text of another one. */
+export const withLinkFieldOf = (source: string, field: string) => {
+  const found = linkFieldOf(source);
+
+  return found
+    ? source.slice(0, found.field.getStart(found.file)) + field + source.slice(found.field.getEnd())
+    : source;
+};

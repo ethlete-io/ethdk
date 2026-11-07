@@ -4,16 +4,27 @@ import { dirname, relative, sep } from 'path';
 import { importedAssetsOf } from './assets';
 import { FIXTURES_SPECIFIER } from './imports';
 import { partOwnerOf } from './inventory-approval';
+import { linkedContentsOf, linkFreeContentOf } from './link-free';
 import { reachableFilesOf, repoRootOf } from './reachable-files';
 import { ResolvedPart, ResolvedProduct } from './resolve-product';
-import { partHashOf, partInputsOf } from './sketch/baseline';
+import { earlierPartHashesOf, partHashOf, partInputsOf } from './sketch/baseline';
 import { importsOf } from './ts-source';
 
 /** The content hash of each file, under its path from the repository root. */
 export type FileHashes = Record<string, string>;
 
-/** A part's design hash, the file hashes it covers, and the folder-only hash records from before file lists. */
-export type DesignHash = { hash: string; files: FileHashes; legacy: string };
+/**
+ * The hashes a record written while the design hash still covered `implements` links holds at: whole design hashes,
+ * the hashes of each linked file, and folder-only hashes.
+ */
+export type EarlierHashes = { hashes: string[]; files: Record<string, string[]>; legacy: string[] };
+
+/**
+ * A part's design hash, the file hashes it covers, and the folder-only hash records from before file lists. None of
+ * them covers the `implements` field of a `definePart`: a link-only change is not a design edit. `withLinks` is the
+ * design hash with the links, for caches whose results depend on what a part links.
+ */
+export type DesignHash = { hash: string; files: FileHashes; legacy: string; earlier: EarlierHashes; withLinks: string };
 
 /** A stored mark: one with `files` holds at the design hash, one without at the folder-only hash. */
 export type HashRecord = { hash: string; files?: FileHashes };
@@ -43,6 +54,52 @@ export const fileHashesOf = (root: string, files: Iterable<string>): FileHashes 
         }
       }),
   );
+
+const designFileHashesOf = (root: string, files: string[]) => {
+  const hashes: FileHashes = {};
+  const linked: Record<string, { current: string; older: string[] }> = {};
+
+  for (const [path, file] of [...new Set(files)]
+    .map((file) => [relative(root, file).split(sep).join('/'), file] as const)
+    .sort(([a], [b]) => a.localeCompare(b))) {
+    let bytes: Buffer;
+
+    try {
+      bytes = readFileSync(file);
+    } catch {
+      continue;
+    }
+
+    hashes[path] = sha16(linkFreeContentOf(file, bytes));
+
+    const contents = linkedContentsOf(file, bytes);
+
+    if (contents) linked[path] = { current: sha16(contents.current), older: contents.older.map(sha16) };
+  }
+
+  return { hashes, linked };
+};
+
+const linkHashesOf = (files: FileHashes, linked: Record<string, { current: string; older: string[] }>) => {
+  const entries = Object.entries(linked);
+  const withLinks = { ...files, ...Object.fromEntries(entries.map(([path, { current }]) => [path, current])) };
+  const withLinksHash = hashOfFiles(withLinks);
+
+  return {
+    withLinks: withLinksHash,
+    earlier:
+      entries.length === 0
+        ? []
+        : [
+            ...new Set([
+              withLinksHash,
+              ...entries.flatMap(([path, { older }]) =>
+                older.map((hash) => hashOfFiles({ ...withLinks, [path]: hash })),
+              ),
+            ]),
+          ],
+  };
+};
 
 export const hashOfFiles = (files: FileHashes) =>
   sha16(
@@ -75,13 +132,38 @@ export const designHashOf = (options: { product: ResolvedProduct; part: Resolved
     ...reachable.sdkDesign.keys(),
     ...fixtures,
   ].filter((file) => !inputs.generated.has(file));
-  const hashes = fileHashesOf(repoRootOf(product), files);
+  const { hashes, linked } = designFileHashesOf(repoRootOf(product), files);
+  const links = linkHashesOf(hashes, linked);
 
-  return { hash: hashOfFiles(hashes), files: hashes, legacy: partHashOf({ product: owner, dir }) };
+  return {
+    hash: hashOfFiles(hashes),
+    files: hashes,
+    legacy: partHashOf({ product: owner, dir }),
+    earlier: {
+      hashes: links.earlier,
+      files: Object.fromEntries(
+        Object.entries(linked).map(([path, { current, older }]) => [path, [current, ...older]]),
+      ),
+      legacy: earlierPartHashesOf({ product: owner, dir }),
+    },
+    withLinks: links.withLinks,
+  };
 };
 
+/** Whether a stored design hash without its file list still matches the part. */
+export const designHolds = (hash: string, now: DesignHash) => hash === now.hash || now.earlier.hashes.includes(hash);
+
+/** Whether a stored folder-only hash still matches the part. */
+export const legacyHolds = (hash: string, now: DesignHash) => hash === now.legacy || now.earlier.legacy.includes(hash);
+
+/** The paths of a stored file hash map whose file changed since, a change of only its `implements` link aside. */
+export const changedDesignFilesOf = (before: FileHashes, now: DesignHash) =>
+  changedFilesOf(before, now.files).filter((path) => !now.earlier.files[path]?.includes(before[path] ?? ''));
+
 export const recordHolds = (record: HashRecord, now: DesignHash) =>
-  record.files ? record.hash === now.hash : record.hash === now.legacy;
+  record.files
+    ? record.hash === now.hash || changedDesignFilesOf(record.files, now).length === 0
+    : legacyHolds(record.hash, now);
 
 /** The paths whose hash differs between two file hash maps, added and removed paths included, sorted. */
 export const changedFilesOf = (before: FileHashes, now: FileHashes) =>

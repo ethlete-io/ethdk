@@ -5,6 +5,7 @@ import { setImmediate } from 'timers/promises';
 import { DesignProduct } from '../../design-config';
 import { ASSETS_PREFIX, filesBelow, importedAssetsOf } from '../assets';
 import { importedSharedOf, SHARED_PREFIX } from '../imports';
+import { linkedContentsOf, linkFreeContentOf } from '../link-free';
 import { fixturesOf, PartFile, partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 
@@ -12,10 +13,16 @@ export const FIXTURES_KEY = 'fixtures.ts';
 
 type Imported = { path: string; file: string }[];
 
-const hashOf = (paths: { root: string; files: string[]; assets?: Imported; shared?: Imported }) => {
+const hashOf = (
+  paths: { root: string; files: string[]; assets?: Imported; shared?: Imported },
+  contents?: Map<string, string>,
+) => {
   const hash = createHash('sha256');
 
-  for (const file of paths.files) hash.update(`${relative(paths.root, file)}\0`).update(readFileSync(file));
+  for (const file of paths.files)
+    hash
+      .update(`${relative(paths.root, file)}\0`)
+      .update(contents?.get(file) ?? linkFreeContentOf(file, readFileSync(file)));
   for (const asset of paths.assets ?? [])
     hash.update(`${ASSETS_PREFIX}${asset.path}\0`).update(readFileSync(asset.file));
   for (const shared of paths.shared ?? [])
@@ -42,6 +49,35 @@ const generatedFilesOf = (product: HashedProduct) =>
  */
 export const partHashOf = (options: { product: HashedProduct; dir: string }) =>
   hashOf({ root: options.dir, ...partInputsOf(options) });
+
+/** The hashes `partHashOf` gave the part folder while it still covered the `implements` links of its files. */
+export const earlierPartHashesOf = (options: { product: HashedProduct; dir: string }) => {
+  const inputs = partInputsOf(options);
+  const linked = inputs.files.flatMap((file) => {
+    const contents = linkedContentsOf(file, readFileSync(file));
+
+    return contents ? [[file, contents] as const] : [];
+  });
+
+  if (linked.length === 0) return [];
+
+  const withLinks = new Map(linked.map(([file, { current }]) => [file, current]));
+  const hashOfInputs = (contents: Map<string, string>) => hashOf({ root: options.dir, ...inputs }, contents);
+
+  return [
+    ...new Set([
+      hashOfInputs(withLinks),
+      ...linked.flatMap(([file, { older }]) =>
+        older.map((content) => hashOfInputs(new Map([...withLinks, [file, content]]))),
+      ),
+    ]),
+  ];
+};
+
+/** Whether `hash`, a stored `partHashOf` of the part folder, still matches it. */
+export const partHashHolds = (options: { product: HashedProduct; dir: string; hash: string | undefined }) =>
+  options.hash !== undefined &&
+  (partHashOf(options) === options.hash || earlierPartHashesOf(options).includes(options.hash));
 
 /** The files `partHashOf` reads: the part folder without generated files, and the shared and asset files it reaches. */
 export const partInputsOf = (options: { product: HashedProduct; dir: string }) => {
@@ -92,7 +128,15 @@ export const conflictsOf = (options: {
   const { product, baseline, parts, fixtures } = options;
   const now = baselineOf(product);
 
-  return [...parts.map(partKeyOf), ...(fixtures ? [FIXTURES_KEY] : [])].filter((key) => now[key] !== baseline[key]);
+  const changed = (key: string) => {
+    const part = product.parts.find((candidate) => partKeyOf(candidate) === key);
+
+    return part ? !partHashHolds({ product, dir: dirname(part.file), hash: baseline[key] }) : true;
+  };
+
+  return [...parts.map(partKeyOf), ...(fixtures ? [FIXTURES_KEY] : [])].filter(
+    (key) => now[key] !== baseline[key] && changed(key),
+  );
 };
 
 /**

@@ -2,7 +2,7 @@ import { execFileSync } from 'child_process';
 import { writeJsonFile } from '../../json-file';
 import { dirname, relative, resolve, sep } from 'path';
 import { appFilesOf } from './app-files';
-import { changedFilesOf, designHashOf, DesignHash, HashRecord, recordHolds } from './design-hash';
+import { changedDesignFilesOf, designHashOf, DesignHash, HashRecord, legacyHolds, recordHolds } from './design-hash';
 import { partOwnerOf } from './inventory-approval';
 import { READY_FILE, readReady } from './part-ready';
 import { changedAppFilesOf, IMPLEMENTED_FILE, linkedComponentOf, readImplemented } from './part-task';
@@ -23,7 +23,7 @@ export const UNLISTED_FILES = 'files unknown: recorded before file lists';
 export type StalePart = { part: string; design: string[]; app: string[] };
 
 const changedSinceOf = (record: HashRecord, now: DesignHash) =>
-  recordHolds(record, now) ? [] : record.files ? changedFilesOf(record.files, now.files) : [UNLISTED_FILES];
+  recordHolds(record, now) ? [] : record.files ? changedDesignFilesOf(record.files, now) : [UNLISTED_FILES];
 
 const partsOf = (product: ResolvedProduct, only?: string) =>
   product.parts.filter((part) => !only || partKeyOf(part) === only);
@@ -182,7 +182,10 @@ const upgradeOf = (product: ResolvedProduct, resolved: ResolvedPart) => {
   const folder = `${relative(root, dirname(resolved.file)).split(sep).join('/')}/`;
   const outside = Object.keys(now.files).filter((path) => !path.startsWith(folder));
   const holds = (record: (HashRecord & { at: string }) | undefined): record is HashRecord & { at: string } =>
-    legacy(record) && record?.hash === now.legacy && !newerThanOf({ root, paths: outside, at: record.at });
+    record !== undefined &&
+    legacy(record) &&
+    legacyHolds(record.hash, now) &&
+    !newerThanOf({ root, paths: outside, at: record.at });
   const upgraded: string[] = [];
   const readyEntry = ready[part];
   const implementedEntry = implemented[part];
@@ -196,7 +199,7 @@ const upgradeOf = (product: ResolvedProduct, resolved: ResolvedPart) => {
 
   if (
     implementedEntry &&
-    implementedEntry.hash === now.legacy &&
+    legacyHolds(implementedEntry.hash, now) &&
     !implementedEntry.app &&
     component !== null &&
     !newerThanOf({ root, paths: outside, at: implementedEntry.at })

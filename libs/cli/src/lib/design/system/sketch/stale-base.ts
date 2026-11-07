@@ -1,7 +1,7 @@
 import { dirname, isAbsolute, relative } from 'path';
 import { reachableFilesOf } from '../reachable-files';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
-import { partHashOf, staleBaselineOf } from './baseline';
+import { partHashHolds, staleBaselineOf } from './baseline';
 import { overlaySketch } from './overlay';
 import { Sketch } from './sketch';
 
@@ -42,7 +42,7 @@ export const staleEmbeddedOf = (options: { product: ResolvedProduct; sketch: Ske
   return embeddedByVariantsOf(options).filter((key) => {
     const part = product.parts.find((candidate) => partKeyOf(candidate) === key);
 
-    return part !== undefined && partHashOf({ product, dir: dirname(part.file) }) !== baseline[key];
+    return part !== undefined && !partHashHolds({ product, dir: dirname(part.file), hash: baseline[key] });
   });
 };
 

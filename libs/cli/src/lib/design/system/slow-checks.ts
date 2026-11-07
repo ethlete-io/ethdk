@@ -12,7 +12,7 @@ import {
   STATE_NO_SOURCE_RULE,
   VISIBLE_CHANGE_RULE,
 } from './build-ready-contract';
-import { designHashOf, FileHashes, fileHashesOf, hashOfFiles, sha16 } from './design-hash';
+import { DesignHash, designHashOf, designHolds, FileHashes, fileHashesOf, hashOfFiles, sha16 } from './design-hash';
 import { harnessOf } from './harness-map';
 import { READY_FILE, readReady } from './part-ready';
 import { Problem } from './problem';
@@ -152,7 +152,7 @@ type PartContext = {
   harness: Exclude<ReturnType<typeof harnessOf>, string>;
   pages: Set<string> | null;
   base: string;
-  designs: Map<string, string>;
+  designs: Map<string, DesignHash>;
 };
 
 const designOf = (context: PartContext, part: ResolvedPart) => {
@@ -161,11 +161,11 @@ const designOf = (context: PartContext, part: ResolvedPart) => {
 
   if (known !== undefined) return known;
 
-  const { hash } = designHashOf({ product: context.product, part });
+  const design = designHashOf({ product: context.product, part });
 
-  context.designs.set(key, hash);
+  context.designs.set(key, design);
 
-  return hash;
+  return design;
 };
 
 const contextOf = (product: ResolvedProduct, base?: string): PartContext => {
@@ -203,7 +203,8 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
   const component = harness ? linked : null;
   const design = designOf(context, part);
   const implemented = implementedHashOf(product, key);
-  const designOnly = component !== null && implemented !== undefined && implemented !== design;
+  const current = typeof implemented === 'string' && designHolds(implemented, design);
+  const designOnly = component !== null && implemented !== undefined && !current;
   const app = linked === null ? {} : appFilesOf({ root, component: linked });
   const rules = [
     ...(own && !key.startsWith('pages/') && DECLARES_CONTROLS.test(part.source) ? [CONTROL_STATE_RULE] : []),
@@ -211,7 +212,7 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
     ...(component !== null && harness?.specs ? [APP_SPEC_RULE] : []),
     ...(pages?.has(key) ? [UNCOVERED_REGION_RULE, IMPLEMENTS_UNRENDERED_RULE] : []),
     ...(component !== null ? [VISIBLE_CHANGE_RULE] : []),
-    ...(component !== null && implemented === design ? [COMPARE_RULE, SDK_ERROR_RULE] : []),
+    ...(component !== null && current ? [COMPARE_RULE, SDK_ERROR_RULE] : []),
     ...(designOnly ? [COMPARE_RULE] : []),
   ];
 
@@ -232,7 +233,7 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
     hash: sha16(
       [
         rules.join(','),
-        design,
+        design.withLinks,
         hashOfFiles(app),
         hashOfFiles(specs),
         hashOfFiles(live),
@@ -266,7 +267,7 @@ const productInputsOf = (context: PartContext, parts: Record<string, SlowInputs>
     ...(actions ? [join(product.dir, READY_FILE)] : []),
   ]);
   const designs = actions
-    ? product.parts.filter((part) => part.origin !== 'base').map((part) => designOf(context, part))
+    ? product.parts.filter((part) => part.origin !== 'base').map((part) => designOf(context, part).withLinks)
     : [];
 
   return {

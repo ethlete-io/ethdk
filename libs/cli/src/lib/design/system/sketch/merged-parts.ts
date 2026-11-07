@@ -3,7 +3,7 @@ import { writeJsonFile } from '../../../json-file';
 import { dirname, resolve } from 'path';
 import { partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
-import { partHashOf } from './baseline';
+import { partHashHolds, partHashOf } from './baseline';
 import { listSketches, variantDirOf } from './sketch';
 
 export const MERGED_FILE = 'merged.json';
@@ -133,9 +133,11 @@ export const unchangedMergedOf = (options: { product: ResolvedProduct; except: s
 
   return product.parts.flatMap((part) => {
     const key = partKeyOf(part);
-    const hash = partHashOf({ product, dir: dirname(part.file) });
+    const dir = dirname(part.file);
 
-    return part.origin !== 'base' && !except.includes(key) && merged[key] === hash ? [{ key, hash }] : [];
+    return part.origin !== 'base' && !except.includes(key) && partHashHolds({ product, dir, hash: merged[key] })
+      ? [{ key, hash: partHashOf({ product, dir }) }]
+      : [];
   });
 };
 
@@ -178,7 +180,7 @@ export const changedOutsideSketchOf = (product: ResolvedProduct): string[] => {
     return (
       part.origin !== 'base' &&
       merged[key] !== undefined &&
-      partHashOf({ product, dir: dirname(part.file) }) !== merged[key]
+      !partHashHolds({ product, dir: dirname(part.file), hash: merged[key] })
     );
   });
 
