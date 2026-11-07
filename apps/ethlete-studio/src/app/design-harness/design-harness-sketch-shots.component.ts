@@ -8,7 +8,7 @@ import {
   SketchRow,
 } from '../design-parts/sketches/sketches-sample';
 import { SketchShotContext } from '../design-parts/sketches/sketches.component';
-import { ZoomChipComponent } from '../design-parts/zoom-chip/zoom-chip.component';
+import { ZoomChipComponent, ZoomControl, ZoomInteraction } from '../design-parts/zoom-chip/zoom-chip.component';
 
 const changedIn = (rows: SketchRow[], { key, state }: { key: string; state: string }) =>
   rows.find((row) => row.key === key)?.shots.find((shot) => shot.state === state)?.changed === true;
@@ -27,7 +27,12 @@ const changedIn = (rows: SketchRow[], { key, state }: { key: string; state: stri
             part="Title bar"
           />
         } @else {
-          <ethlete-zoom-chip [percent]="100" />
+          @let force = chipForceOf(state);
+          <ethlete-zoom-chip
+            [percent]="100"
+            [target]="force?.target ?? null"
+            [interaction]="force?.interaction ?? null"
+          />
         }
       </div>
     </ng-template>
@@ -41,6 +46,14 @@ export class DesignHarnessSketchShotsComponent {
 
   public templates() {
     return { shot: this.shot() };
+  }
+
+  protected chipForceOf(state: string) {
+    const [, target, interaction] = /^(out|reset|in|fit)-(hover|active|focus-visible)$/.exec(state) ?? [];
+
+    return target && interaction
+      ? { target: target as ZoomControl, interaction: interaction as ZoomInteraction }
+      : null;
   }
 
   protected lookOf(row: SketchRow, state: string) {

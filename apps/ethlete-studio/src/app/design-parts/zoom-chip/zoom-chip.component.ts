@@ -2,11 +2,16 @@ import { Component, input, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective } from '@ethlete/core';
 
+export type ZoomControl = 'out' | 'reset' | 'in' | 'fit';
+
+export type ZoomInteraction = 'hover' | 'active' | 'focus-visible';
+
 @Component({
   selector: 'ethlete-zoom-chip',
   template: `
     <span class="contents" data-camera-out>
       <button
+        [attr.data-et-force]="forcedOn('out')"
         (click)="zoomOut.emit()"
         et-button
         type="button"
@@ -20,6 +25,7 @@ import { AutoSurfaceDirective } from '@ethlete/core';
     </span>
     <span class="contents" data-camera-reset>
       <button
+        [attr.data-et-force]="forcedOn('reset')"
         (click)="zoomReset.emit()"
         et-button
         type="button"
@@ -34,6 +40,7 @@ import { AutoSurfaceDirective } from '@ethlete/core';
     </span>
     <span class="contents" data-camera-in>
       <button
+        [attr.data-et-force]="forcedOn('in')"
         (click)="zoomIn.emit()"
         et-button
         type="button"
@@ -47,6 +54,7 @@ import { AutoSurfaceDirective } from '@ethlete/core';
     </span>
     <span class="contents" data-camera-fit>
       <button
+        [attr.data-et-force]="forcedOn('fit')"
         (click)="fit.emit()"
         et-button
         type="button"
@@ -71,9 +79,15 @@ import { AutoSurfaceDirective } from '@ethlete/core';
 })
 export class ZoomChipComponent {
   public percent = input(100);
+  public target = input<ZoomControl | null>(null);
+  public interaction = input<ZoomInteraction | null>(null);
 
   public zoomOut = output();
   public zoomReset = output();
   public zoomIn = output();
   public fit = output();
+
+  protected forcedOn(control: ZoomControl) {
+    return this.target() === control ? this.interaction() : null;
+  }
 }
