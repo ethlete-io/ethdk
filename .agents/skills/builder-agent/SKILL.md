@@ -16,6 +16,7 @@ that talks with the user and records decisions. Talk English.
    points" lists and the latest decision sections give the queue. Check `git log` for
    what is already done.
 4. Start building. Do not tell the user what you build.
+5. At the end of a slice, run `yarn spec:stress <touched specs> --runs 4 --load 2` to catch flaky timing specs (parallel runs under CPU load); keep N low on a busy machine.
 
 ## Output
 

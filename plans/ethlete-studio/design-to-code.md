@@ -2805,6 +2805,7 @@ re-render under load (reproduced with a 300 ms delay; the repro bites on the old
 did not come back in 24 local runs; its assertion now prints the check findings. Fixed in b770d4222. Why pre-push missed
 it: CI is much slower (the merge spec file takes 17 s locally and 143 s in CI). Tool fix (B380, builder default): a
 stress script that runs the touched specs N times in parallel under CPU load, part of the slice end.
+As built (B380): `yarn spec:stress <specs> --runs N [--load M]` (`tools/scripts/spec-stress.mjs`) runs every spec N times at once next to M busy-loop processes (default one per CPU) and reports flaky (some runs failed) apart from broken (all failed). Step 5 of the builder-agent skill.
 
 444\. CI run 41924354824, job Studio rules (builder, 2026-11-05): the job built only `cli`, so `design check` refused on
 stale dist mocks. Fixed in 4de41ac2e (builds `cli,components` first). The check now runs and fails on the 3 real
