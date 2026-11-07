@@ -57,6 +57,24 @@ describe('pushStatusOf', () => {
     expect(pushStatusLines(status!)[0]).toBe('2 unpushed commit(s) on origin/next, oldest 5 h old');
   });
 
+  it('counts against origin/<branch> and warns when the upstream has another name', () => {
+    const dir = freshRepo();
+
+    git(dir, ['update-ref', 'refs/remotes/origin/studio-mac-move', `${headOf(dir)}~2`]);
+    git(dir, ['config', 'remote.origin.url', dir]);
+    git(dir, ['config', 'remote.origin.fetch', '+refs/heads/*:refs/remotes/origin/*']);
+    git(dir, ['config', 'branch.next.remote', 'origin']);
+    git(dir, ['config', 'branch.next.merge', 'refs/heads/studio-mac-move']);
+    git(dir, ['update-ref', 'refs/remotes/origin/next', headOf(dir)]);
+
+    const status = pushStatusOf(dir);
+
+    expect(status).toMatchObject({ base: 'origin/next', unpushed: 0, strayUpstream: 'origin/studio-mac-move' });
+    expect(pushStatusLines(status!)[2]).toBe(
+      'warning: the upstream is origin/studio-mac-move, not origin/next; run git branch --set-upstream-to=origin/next',
+    );
+  });
+
   it('reads the gate result only for the head it was run on', () => {
     const dir = freshRepo();
 

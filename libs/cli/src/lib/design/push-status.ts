@@ -11,6 +11,7 @@ export type PushGateReceipt = {
 
 export type PushStatus = {
   base: string;
+  strayUpstream: string | null;
   unpushed: number;
   oldestAt: string | null;
   oldestAgeHours: number | null;
@@ -30,7 +31,17 @@ const git = (cwd: string, args: string[]) => {
   return result.status === 0 ? result.stdout.trim() : null;
 };
 
-const upstreamOf = (cwd: string) => git(cwd, ['rev-parse', '--abbrev-ref', '@{u}']) ?? 'origin/next';
+const baseOf = (cwd: string) => {
+  const upstream = git(cwd, ['rev-parse', '--abbrev-ref', '@{u}']);
+  const branch = git(cwd, ['symbolic-ref', '--quiet', '--short', 'HEAD']);
+  const own = branch === null ? null : `origin/${branch}`;
+  const base =
+    own !== null && git(cwd, ['rev-parse', '--verify', '--quiet', `refs/remotes/${own}`]) !== null
+      ? own
+      : (upstream ?? 'origin/next');
+
+  return { base, strayUpstream: upstream !== null && upstream !== base ? upstream : null };
+};
 
 const receiptOf = (checkout: string): PushGateReceipt | null => {
   const path = pushGateReceiptPath(checkout);
@@ -46,7 +57,7 @@ const receiptOf = (checkout: string): PushGateReceipt | null => {
 
 /** The commits of `checkout` the remote does not have yet, the age of the oldest, and the last push gate result for this head. */
 export const pushStatusOf = (checkout: string, now = Date.now()): PushStatus | null => {
-  const base = upstreamOf(checkout);
+  const { base, strayUpstream } = baseOf(checkout);
   const head = git(checkout, ['rev-parse', 'HEAD']);
   const stamps = git(checkout, ['log', '--format=%cI', `${base}..HEAD`]);
 
@@ -59,6 +70,7 @@ export const pushStatusOf = (checkout: string, now = Date.now()): PushStatus | n
 
   return {
     base,
+    strayUpstream,
     unpushed: dates.length,
     oldestAt: oldest === undefined ? null : new Date(oldest).toISOString(),
     oldestAgeHours: oldest === undefined ? null : Math.round(((now - oldest) / 3_600_000) * 10) / 10,
@@ -72,4 +84,9 @@ export const pushStatusLines = (status: PushStatus) => [
     ? `nothing unpushed (${status.base})`
     : `${status.unpushed} unpushed commit(s) on ${status.base}, oldest ${status.oldestAgeHours} h old`,
   `push gate: ${status.gate}${status.gate === 'red' ? ' - fix it before any feature slice' : ''}`,
+  ...(status.strayUpstream === null
+    ? []
+    : [
+        `warning: the upstream is ${status.strayUpstream}, not ${status.base}; run git branch --set-upstream-to=${status.base}`,
+      ]),
 ];
