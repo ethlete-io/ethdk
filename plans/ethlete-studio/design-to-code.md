@@ -1793,6 +1793,8 @@ looked for them in the part folder, so it called every such file a conflict.
 405\. Builder (2026-11-04): `yarn commit -- <paths>` joins the paths into one string, so it works only with a few path
 arguments. Why no tool caught it: the commit script has no test with many paths. Fix (B347): pass the paths to git as
 an array, with a spec that commits more than ten paths.
+As built (B347): the script already passed an array; `commit-wait.spec.mjs` now commits 15 paths (one with a space).
+B122: `pre-commit-hook.spec.mjs` runs the real hook under `git commit -- <paths>` in a temp repo.
 
 406\. Builder (2026-11-04, S6a check): the product shot of `blockers-open` answered a non-image before the merge, so
 the builder could not compare that state. Likely cause (not proven): the product had no `blockers-open` state yet, and
