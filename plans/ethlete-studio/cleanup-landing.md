@@ -37,3 +37,4 @@ webkit-revert-wt (nicht genommen, entschieden), wip/b321-stacking-fix (verworfen
 - desk/B417 + origin/tank/b417-target → gelandet in diesem Commit (desk/B417 ist tank/b417-target ohne die fremde vitest-Abhängigkeit; Specs, Lint grün).
 - desk/B305 → gelandet in diesem Commit (Hook prüft lange Design-Befehle nur an Befehlsposition; schließt B126; Hook-Spec 38/38).
 - desk/B308 → gelandet in diesem Commit (Ratchet-Prüfung auf Personennamen; Baseline auf den Stand von heute neu geschrieben, da next schon neue Treffer hatte; Umbenennung --by tom → human bleibt offen in B308).
+- desk/B341 → Zeilen-Schluss gelandet in diesem Commit; origin/tank/b341 → verworfen: schon in next als b20f3d5b7 (gleiche Dateien, gleiche Änderung).
