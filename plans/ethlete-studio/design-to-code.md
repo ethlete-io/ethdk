@@ -4447,7 +4447,9 @@ clear queued and ran at the end of the turn, which worked by luck. Why no tool c
 restart command, and the restart skill does not say what to do on a denial; the pane state has no clear idle marker for
 a turn that waits on background agents. Tool fix (technical): `restart` and the doc agent treat a pane as idle only
 when the footer shows no "esc to interrupt" and no "Waiting for"; on a denied self-restart the builder sends one mailbox
-line to the doc agent, which drives the pane. Decision for Tom: an allow rule for the restart command.
+line to the doc agent, which drives the pane. Tom: "Natürlich darf er das. Der Skill gilt für jeden." The allow
+rule for `agent-sessions.mjs restart *` goes into the checked-in `.claude/settings.json`; auto mode refuses an agent edit
+of the settings, so Tom adds it.
 
 S7c-1 as built (c0 subagent, 2026-11-07, in the `perf(cli)` commit that adds this note): auto-accept keeps the state
 pictures of each part drawn at a part hash under `node_modules/.design-explore/part-pictures` (`part-picture-cache.ts`;
