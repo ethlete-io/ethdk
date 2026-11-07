@@ -4260,3 +4260,7 @@ large temp tree. Tool fix (technical): `vitest.setup` warns when the spec tmpdir
 was still `origin/studio-mac-move` from the Mac move (ADR 0217), so the title bar counted 235. The doc agent set the
 upstream back to `origin/next`. Tool fix (technical): the unpushed badge (B415) counts against `origin/<branch>`, and
 `design status` warns when the upstream of a branch has another name.
+
+579\. Builder (2026-11-07): two docs-only pushes of the doc agent (plans files) cancelled the running CI (Next) runs
+42405979630 and 42408713788, so the CI fix waited for a third run. Tool fix (technical): CI (Next) skips a push that
+changes only `plans/` and ADR files (`paths-ignore`), so it does not cancel a run in progress.
