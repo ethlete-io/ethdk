@@ -4179,3 +4179,7 @@ read "sketch waits for Tom" after Tom merged it).
 574\. Builder (2026-11-07, B352): Tom's variant choice was already recorded in the plan, but `sketch merge --variant`
 cannot apply a recorded choice, so the sketch stayed open as "needs Tom's pick". Tool fix (technical): `sketch merge`
 reads a variant choice recorded for the sketch and applies it without asking again.
+
+575\. Builder (2026-11-07): `lint:no-verify-briefs` failed the pre-push on gitignored local handoff notes and missed
+negations ("no `--no-verify`", a "Never" wrapped onto the previous line). Tool fix (technical): scan only tracked files,
+add "no" to the negations and join wrapped lines before matching.
