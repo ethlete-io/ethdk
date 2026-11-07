@@ -4472,3 +4472,10 @@ builder-agent and doc-agent skills allow a turn to end on a wait; nothing flags 
 Tool fix (technical): both skills say a turn ends only with agents running on every independent open item, and a push
 never waits for an unrelated agent; the doc agent's periodic check reads the builder footer and sends a nudge when it
 shows "Waiting for" while STATUS.md has open builder rows.
+
+549 as built (2026-11-07): the design draw wait stretches by machine load (`loadScaledMs`), and a compare whose action
+check could not run prints `actions: no verdict - <why>, retry` (b56914c71's NoVerdict shape), then
+`FAILED actions: not checked, so no action counts as working` and exits 1, so a skipped check never passes. Cherry-picked
+onto `next` as 1f9f7a87e (conflict with b56914c71 in `compare-command.ts` and `part-compare.spec.ts` resolved by keeping
+the NoVerdict print and adding the FAILED line); the Studio System page port is 9bc56da98. Verified: part-compare,
+part-picture-cache and unbound-input specs. Not verified: no real compare run under load.
