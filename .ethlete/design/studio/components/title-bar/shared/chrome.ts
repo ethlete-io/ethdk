@@ -17,6 +17,7 @@ export type Props = {
   update: boolean;
   notice?: boolean;
   noticeText?: string;
+  restart?: 'pending' | 'failed';
   product: string;
   part: string;
   force?: { control: TitleBarControl; interaction: TitleBarInteraction };
@@ -92,6 +93,8 @@ export const states = {
   ...(Object.assign({}, ...rows.map((row) => row.states)) as Record<StateName, Props>),
   ...contentStates('update'),
   ...contentStates('rest'),
+  'linux-full-notice-pending': { ...LINUX_FULL, ...CONTENTS.notice, restart: 'pending' },
+  'linux-full-notice-failed': { ...LINUX_FULL, ...CONTENTS.notice, restart: 'failed' },
 } satisfies Record<string, Props>;
 
 /** `control()` for one title-bar control, forced into the interaction its state draws. */
@@ -112,7 +115,7 @@ export const controls = {
   close: BUTTON,
 };
 
-export const imports = ['BUTTON_IMPORTS'];
+export const imports = ['BUTTON_IMPORTS', 'LOADER_IMPORTS'];
 
 const TRAFFIC_LIGHTS = '<span class="size-3 rounded-full bg-et-surface-border" aria-hidden="true"></span>'.repeat(3);
 

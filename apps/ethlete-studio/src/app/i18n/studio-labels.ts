@@ -13,6 +13,8 @@ export const STUDIO_LABELS = {
     cliDirty: (sha: string) => `CLI hat uncommittete Änderungen, Studio läuft auf Stand ${sha}`,
     frontend: 'Oberfläche geändert - neu starten',
     restart: 'Neu starten',
+    restartFailedTitle: 'Neustart fehlgeschlagen',
+    restartFailedMessage: 'Der Design-Server antwortet nicht. Das Log steht im Studio-Menü.',
   },
   openFolder: {
     refusedTitle: 'Ordner nicht geöffnet',

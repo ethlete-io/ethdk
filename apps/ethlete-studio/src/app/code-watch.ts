@@ -9,6 +9,8 @@ export const CODE_WATCH_INTERVAL_MS = 10_000;
 
 export type CodeAction = 'restartStudio' | 'restartServer';
 
+export type RestartState = 'pending' | 'failed' | null;
+
 export type CodeNotice = { text: string; action: CodeAction | null };
 
 const short = (sha: string) => sha.slice(0, 7);
@@ -56,9 +58,19 @@ const CODE_WATCH_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const serverRestartRequests$ = new Subject<void>();
 
+  const restart = signal<RestartState>(null);
+
   const act = (action: CodeAction) => {
+    restart.set('pending');
+
     if (action === 'restartStudio') {
-      quitForRebuild$().subscribe();
+      quitForRebuild$()
+        .pipe(
+          tap({ error: () => restart.set('failed') }),
+          // eslint-disable-next-line ethlete/no-silent-catch-error -- the failure shows as the restart toast
+          catchError(() => EMPTY),
+        )
+        .subscribe();
 
       return;
     }
@@ -69,6 +81,10 @@ const CODE_WATCH_DEF = /* @__PURE__ */ defineRootProvider(() => {
   return {
     notice: computed(() => codeNoticeOf(state(), pageLoadedAt())),
     act,
+    restart: restart.asReadonly(),
+    failRestart: () => restart.set('failed'),
+    settleRestart: () => restart.update((state) => (state === 'pending' ? null : state)),
+    dismissRestart: () => restart.set(null),
     serverRestarts$: serverRestartRequests$.asObservable(),
   };
 });

@@ -12,6 +12,7 @@ import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { catchError, EMPTY, fromEvent, startWith, switchMap } from 'rxjs';
 import { isWindowMaximized$, WindowButton, WindowChrome } from '../../../host/window';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { ErrorToastComponent } from '../../design-parts/error-toast/error-toast.component';
 import { TitleSearchComponent } from '../title-search/title-search.component';
 
 @Component({
@@ -38,8 +39,9 @@ import { TitleSearchComponent } from '../title-search/title-search.component';
         }
         @if (notice()) {
           <button
-            [etTooltip]="noticeText()"
-            (click)="restart.emit()"
+            [etTooltip]="restarting() ? null : noticeText()"
+            [loading]="restarting()"
+            (click)="restartPress.emit()"
             et-button
             type="button"
             variant="tonal"
@@ -73,6 +75,15 @@ import { TitleSearchComponent } from '../title-search/title-search.component';
         <ng-container *ngTemplateOutlet="caption() ? captionControls : controls; context: { $implicit: right() }" />
       </div>
     </div>
+
+    @if (restart() === 'failed') {
+      <ethlete-error-toast
+        [heading]="CODE_LABELS.restartFailedTitle"
+        [message]="CODE_LABELS.restartFailedMessage"
+        (dismiss)="dismiss.emit()"
+        class="px-space-3 pt-space-3"
+      />
+    }
 
     <ng-template #captionControls let-buttons>
       @if (buttons.length) {
@@ -258,7 +269,14 @@ import { TitleSearchComponent } from '../title-search/title-search.component';
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, TOOLTIP_IMPORTS, NgTemplateOutlet, ProvideColorDirective, TitleSearchComponent],
+  imports: [
+    BUTTON_IMPORTS,
+    TOOLTIP_IMPORTS,
+    NgTemplateOutlet,
+    ProvideColorDirective,
+    TitleSearchComponent,
+    ErrorToastComponent,
+  ],
   host: { class: 'block shrink-0' },
 })
 export class TitleBarComponent {
@@ -269,12 +287,15 @@ export class TitleBarComponent {
   public update = input(false);
   public notice = input(false);
   public noticeText = input<string | null>(null);
+  public restart = input<'pending' | 'failed' | null>(null);
   public product = input('');
 
   public part = input('');
   // eslint-disable-next-line @angular-eslint/no-output-rename -- the design's update output shares its name with the update input
   public updatePress = output<MouseEvent>({ alias: 'update' });
-  public restart = output();
+  // eslint-disable-next-line @angular-eslint/no-output-rename -- the design's restart output shares its name with the restart input
+  public restartPress = output({ alias: 'restart' });
+  public dismiss = output();
   public minimize = output();
   public maximize = output();
 
@@ -287,6 +308,7 @@ export class TitleBarComponent {
 
   protected readonly CLOSE_KIND = WINDOW_CONTROL_BUTTON_KINDS.CLOSE;
 
+  protected restarting = computed(() => this.restart() === 'pending');
   protected round = computed(() => this.os() === 'linux');
   protected caption = computed(() => this.os() === 'windows');
 

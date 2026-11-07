@@ -2385,7 +2385,6 @@ const CASES = [
   {
     name: 'Neu starten in the code notice answers within 100 ms',
     pages: ['System'],
-    open: 'finding 411: the button has no pending state until the B352 sketch ships',
     run: async (page) => {
       const key = 'e2e.slow-restart-ms';
 

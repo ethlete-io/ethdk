@@ -36,7 +36,7 @@ const HOVER_PRESS_RAISED =
   host: { '[class]': "fill() ? 'block size-full' : 'block h-225 w-360'" },
 })
 export class ShellMainComponent {
-  private codeWatch = injectCodeWatch();
+  protected codeWatch = injectCodeWatch();
   public fill = input(false, { transform: booleanAttribute });
   public section = input<ShellSection>('System');
   public product = input('studio');

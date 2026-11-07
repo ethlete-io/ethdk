@@ -12,6 +12,7 @@ type Props = Omit<WindowChrome, 'preferNoCsd'> & {
   update?: boolean;
   notice?: boolean;
   noticeText?: string | null;
+  restart?: 'pending' | 'failed' | null;
   product?: string;
   part?: string;
 };
@@ -115,7 +116,7 @@ describe('TitleBarComponent', () => {
     const { fixture, bar } = render({ os: 'windows', left: [], right: ['close'], notice: true, update: false });
     const restarts: unknown[] = [];
 
-    fixture.componentInstance.restart.subscribe(() => restarts.push(null));
+    fixture.componentInstance.restartPress.subscribe(() => restarts.push(null));
 
     const actions = [...(bar?.lastElementChild?.querySelectorAll<HTMLElement>('button[et-button]') ?? [])];
 
@@ -150,5 +151,51 @@ describe('TitleBarComponent', () => {
 
     expect(bar?.querySelector('[data-code-notice]')?.textContent?.trim()).toBe(text);
     expect(bar?.textContent).not.toContain('Neu starten');
+  });
+
+  describe('restart', () => {
+    const restartButton = (element: HTMLElement) =>
+      [...element.querySelectorAll<HTMLButtonElement>('button')].find((button) =>
+        button.textContent?.includes('Neu starten'),
+      );
+
+    it('turns the restart button busy while pending and emits nothing more', () => {
+      const { element } = render({
+        ...linux([], ['close']),
+        notice: true,
+        noticeText: 'CLI geändert',
+        restart: 'pending',
+      });
+      const button = restartButton(element);
+
+      expect(button?.getAttribute('aria-disabled')).toBe('true');
+      expect(button?.getAttribute('aria-busy')).toBe('true');
+    });
+
+    it('shows the failure toast once and emits dismiss', async () => {
+      const { fixture, element } = render({
+        ...linux([], ['close']),
+        notice: true,
+        noticeText: 'x',
+        restart: 'failed',
+      });
+      const dismissed = vi.fn();
+
+      fixture.componentInstance.dismiss.subscribe(dismissed);
+
+      expect(restartButton(element)?.getAttribute('aria-busy')).toBeNull();
+      expect(element.querySelector('ethlete-error-toast')?.textContent).toContain('Neustart fehlgeschlagen');
+
+      element.querySelector<HTMLButtonElement>('ethlete-error-toast [etnotificationdismiss]')?.click();
+      await vi.waitFor(() => expect(dismissed).toHaveBeenCalledTimes(1));
+
+      expect(dismissed).toHaveBeenCalledTimes(1);
+    });
+
+    it('draws no toast when idle', () => {
+      const { element } = render({ ...linux([], ['close']), notice: true, noticeText: 'x' });
+
+      expect(element.querySelector('ethlete-error-toast')).toBeNull();
+    });
   });
 });

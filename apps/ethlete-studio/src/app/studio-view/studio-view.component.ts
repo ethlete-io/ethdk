@@ -89,6 +89,7 @@ const SERVER_ANSWER_RETRY_MS = 1000;
 })
 export class StudioViewComponent {
   private destroyRef = inject(DestroyRef);
+  private codeWatch = injectCodeWatch();
 
   public checkout = signal('');
   protected projectName = computed(() => folderNameOf(this.checkout()));
@@ -174,8 +175,8 @@ export class StudioViewComponent {
       )
       .subscribe();
 
-    injectCodeWatch()
-      .serverRestarts$.pipe(
+    this.codeWatch.serverRestarts$
+      .pipe(
         tap(() => this.restartServer()),
         takeUntilDestroyed(),
       )
@@ -225,9 +226,16 @@ export class StudioViewComponent {
     designServerRestart$(checkout)
       .pipe(
         tap((state) => this.showServer(state)),
-        // eslint-disable-next-line ethlete/no-silent-catch-error -- not surfaced yet, finding 145
-        catchError(() => of(null)),
-        finalize(() => this.serverBusy.set(false)),
+        // eslint-disable-next-line ethlete/no-silent-catch-error -- failRestart shows the restart toast
+        catchError(() => {
+          this.codeWatch.failRestart();
+
+          return of(null);
+        }),
+        finalize(() => {
+          this.serverBusy.set(false);
+          this.codeWatch.settleRestart();
+        }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
