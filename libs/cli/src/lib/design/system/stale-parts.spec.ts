@@ -320,7 +320,7 @@ describe('implements link', () => {
 
     writeFileSync(
       join(dir, 'ready.json'),
-      JSON.stringify({ [CHIP]: { ...record, by: 'tom', at: '2026-09-01T00:00:00Z' } }),
+      JSON.stringify({ [CHIP]: { ...record, by: 'human', at: '2026-09-01T00:00:00Z' } }),
     );
     expect(stalePartsOf({ product: productOf(target) })).toEqual([]);
 
