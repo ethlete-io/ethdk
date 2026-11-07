@@ -19,7 +19,7 @@ import { classesOf, cssBlocksOf } from './css-source';
 import { createDesignServer } from '../serve';
 import { emptySlotsScriptOf, PartAddress, partFrameOf, viewportOf } from '../shot';
 import { awaitSettled, Browser, createDrawQueue, openFrame, ThumbUnavailableError } from '../thumb';
-import { gridReportOf } from './list-system';
+import { gridReportOf } from './grid-report';
 import { watchSdkErrorLines } from './sdk-errors';
 import { partKeyOf } from './resolve-product';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';

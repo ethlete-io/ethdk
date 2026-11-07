@@ -17,7 +17,7 @@ import { THEMING_TEXT } from './system/theming-text';
 import { sketchOpenPointsOf } from './system/read-open-points';
 import { renderIssuesOf } from './system/render-check';
 import { findSketch, readSketchReport, Sketch } from './system/sketch/sketch';
-import { recordShotViewed, unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots';
+import { recordShotViewed, shotFileOf, unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots';
 
 vi.mock('./ready-shots', () => ({
   aktuellPlaceholderWarnings: vi.fn(async (): Promise<string[]> => []),
@@ -909,10 +909,18 @@ describe('designSketch', { timeout: 120_000 }, () => {
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.pop()?.split('\n')).toEqual([
-      'SHOT-NOT-VIEWED variant a changes default - no shot of variant a was viewed since its last edit: `et design shot components/button --states --variants --variant a --product acme`, or GET /__design/shot?product=acme&part=components/button&sketch=components/button&variant=a&state=<state>',
+      `SHOT-NOT-VIEWED variant a changes default - no shot of variant a was viewed since its last edit: view ${join(target, 'node_modules/.design-explore/shots/acme-components-button-a.png')} after ` +
+        '`et design shot components/button --states --variants --variant a --product acme`, or GET /__design/shot?product=acme&part=components/button&sketch=components/button&variant=a&state=<state>',
       'components/button draws a pixel diff - view its shot before ready',
     ]);
     expect(sketch().status).toBe('in progress');
+    expect(
+      new Set(
+        ['a', 'b', 'c', undefined].map((variant) =>
+          shotFileOf({ target, product: 'acme', part: 'components/button', variants: variant ? [variant] : [] }),
+        ),
+      ).size,
+    ).toBe(4);
 
     recordShotViewed({ target, sketch: sketch(), variant: 'a' });
     writeFileSync(join(sketch().dir, 'a/components/button/button.css'), '.et-button { color: red; }\n');

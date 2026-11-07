@@ -9,10 +9,11 @@ import { DesignServer, drawingOn, WarmDraw } from '../warm-draw';
 import { compareFrameOf } from './harness-shot';
 import { designHashOf, sha16 } from './design-hash';
 import { partOwnerOf } from './inventory-approval';
+import { createPartPictureCache, PartPictureCache } from './part-picture-cache';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
-import { EDIT_OLD, EditOldNotFound, openEditSketch, refreshEditOld } from './sketch/edit-sketch';
+import { EDIT_OLD, EditOldNotFound, openEditSketch, refreshEditOld, rewordEditNotes } from './sketch/edit-sketch';
 import { discardSketch } from './sketch/merge';
 import { changedOutsideSketchOf, EDIT_SKETCH, readMerged, recordMerged } from './sketch/merged-parts';
 import { listSketches, Sketch } from './sketch/sketch';
@@ -299,8 +300,16 @@ export const autoAcceptOf = async (options: {
   draw?: DrawStates;
   problems?: Problem[];
   warm?: WarmDraw;
+  cache?: PartPictureCache;
 }): Promise<string[]> => {
   const { target, config, product, only, warm } = options;
+  const cache = options.cache ?? createPartPictureCache({ target, product });
+  const cachedOf = (resolved: ResolvedPart, hash: string | undefined): AcceptedPictures | null => {
+    const states = hash === undefined ? null : cache.read(resolved, hash);
+
+    return states && hash !== undefined ? { hash, states, slots: true } : null;
+  };
+  const partHashNowOf = (resolved: ResolvedPart) => partHashOf({ product, dir: dirname(resolved.file) });
   const edited = new Set(changedOutsideSketchOf(product));
   const editSketches = new Map(
     listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) =>
@@ -343,7 +352,7 @@ export const autoAcceptOf = async (options: {
     const editSketch = editSketches.get(part);
 
     if (edited.has(part)) {
-      const baseline = baselineOf(pictures, merged[part]);
+      const baseline = baselineOf(pictures, merged[part]) ?? cachedOf(resolved, merged[part]);
 
       if (baseline) {
         edits.push({ part: resolved, design, baseline });
@@ -355,8 +364,14 @@ export const autoAcceptOf = async (options: {
       if (isNotFound(sketch)) problem(resolved, sketch);
       else if (typeof sketch === 'string') opened(part, sketch);
       else heads.push({ part: resolved, design, sketch });
-    } else if (editSketch) heads.push({ part: resolved, design, sketch: editSketch, recheck: true });
-    else if (pictures.record?.hash !== design) records.push({ part: resolved, design, baseline: null });
+    } else if (editSketch) {
+      const old = cachedOf(resolved, merged[part]);
+
+      if (old) {
+        rewordEditNotes(editSketch);
+        edits.push({ part: resolved, design, baseline: old, sketch: editSketch });
+      } else heads.push({ part: resolved, design, sketch: editSketch, recheck: true });
+    } else if (pictures.record?.hash !== design) records.push({ part: resolved, design, baseline: null });
   }
 
   for (const { part: resolved, design, sketch, recheck } of heads) {
@@ -378,24 +393,39 @@ export const autoAcceptOf = async (options: {
     ).get(part);
 
     if (old === undefined || typeof old === 'string') oldNotDrawn({ resolved, sketch }, old ?? 'no drawing');
-    else
+    else {
+      if (merged[part] !== undefined) cache.write({ part: resolved, partHash: merged[part], states: old });
       edits.push({ part: resolved, design, baseline: { hash: merged[part] ?? '', states: old, slots: true }, sketch });
+    }
   }
 
   const needs = [...edits, ...records];
 
   if (needs.length === 0) return lines;
 
-  const drawn = await draw({
-    target,
-    config,
-    product,
-    warm,
-    parts: needs.map(({ part }) => partKeyOf(part)),
-    expected: Object.fromEntries(
-      edits.flatMap(({ part, baseline }) => (baseline ? [[partKeyOf(part), baseline.states]] : [])),
-    ),
-  });
+  const cached = new Map(
+    needs.flatMap(({ part }) => {
+      const states = cache.read(part, partHashNowOf(part));
+
+      return states ? [[partKeyOf(part), states] as const] : [];
+    }),
+  );
+  const toDraw = needs.filter(({ part }) => !cached.has(partKeyOf(part)));
+  const drawn = new Map<string, StatePictures | string>([
+    ...cached,
+    ...(toDraw.length === 0
+      ? []
+      : await draw({
+          target,
+          config,
+          product,
+          warm,
+          parts: toDraw.map(({ part }) => partKeyOf(part)),
+          expected: Object.fromEntries(
+            edits.flatMap(({ part, baseline }) => (baseline ? [[partKeyOf(part), baseline.states]] : [])),
+          ),
+        })),
+  ]);
 
   for (const { part: resolved, design, baseline, sketch } of needs) {
     const part = partKeyOf(resolved);
@@ -414,6 +444,8 @@ export const autoAcceptOf = async (options: {
       notDrawn('changed while it was drawn');
       continue;
     }
+
+    if (!cached.has(part)) cache.write({ part: resolved, partHash: partHashNowOf(resolved), states });
 
     const changed = baseline ? changedStatesOf(baseline.states, states) : [];
 
@@ -436,7 +468,7 @@ export const autoAcceptOf = async (options: {
     writePictures({
       dir: partOwnerOf({ product, part: resolved }).dir,
       part,
-      pictures: { hash: design, states, partHash: partHashOf({ product, dir: dirname(resolved.file) }) },
+      pictures: { hash: design, states, partHash: partHashNowOf(resolved) },
     });
   }
 

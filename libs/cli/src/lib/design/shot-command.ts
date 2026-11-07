@@ -10,7 +10,7 @@ import { extractSketchAt } from './sketch-at';
 import { productDirOf } from './system/product';
 import { ResolvedProduct } from './system/resolve-product';
 import { findSketch, parseTarget, rejectionOf, Sketch, SketchRejection } from './system/sketch/sketch';
-import { recordShotViewed } from './system/sketch/viewed-shots';
+import { recordShotViewed, shotFileOf } from './system/sketch/viewed-shots';
 import { createPartShooter, cropOf, drawParamsOf, isSchemeFlag, PartAddress } from './shot';
 import { gridOf, ListedGrid } from './system/list-system';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';
@@ -631,7 +631,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
       const mergedIndex = rows.findIndex((axis) => axis.sketch === null);
       const sheetOut = resolve(
         target,
-        args.values['--out'] ?? `${workRootOf(target)}/shots/${product}-${part.replace('/', '-')}.png`,
+        args.values['--out'] ?? shotFileOf({ target, product, part, variants: sketch ? onlyVariants : [] }),
       );
       const crops = cropChanged
         ? await changedCropsIn({ plan, sheet, mergedIndex, boxOf: shooter.changedBoxesOf, scale })

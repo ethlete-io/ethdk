@@ -1,6 +1,7 @@
 import { execFile } from 'child_process';
 import { appendFileSync } from 'fs';
-import { availableParallelism, loadavg } from 'os';
+import { loadavg } from 'os';
+import { physicalCoresOf } from './physical-cores';
 import { dirname, join } from 'path';
 import { performance } from 'perf_hooks';
 import { setTimeout as delay } from 'timers/promises';
@@ -20,7 +21,7 @@ export type TimingPhase = { name: string; ms: number; at?: number };
 /** The checkout commit a run measured, and whether its tracked files differed from it. */
 export type TimingCommit = { sha: string; dirty: boolean };
 
-/** The 1-minute load average when a run ended, and the cores it shared. */
+/** The 1-minute load average when a run ended, and the physical cores it shared. */
 export type TimingLoad = { avg1: number; cores: number };
 
 export type TimingLine = {
@@ -211,7 +212,7 @@ export const checkoutCommitOf = async (checkout: string): Promise<TimingCommit |
 
 const machineLoadOf = (): TimingLoad => ({
   avg1: Math.round((loadavg()[0] ?? 0) * 100) / 100,
-  cores: availableParallelism(),
+  cores: physicalCoresOf(),
 });
 
 const sumOf = (phases: TimingPhase[], names: string[]) =>

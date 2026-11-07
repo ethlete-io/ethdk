@@ -9,6 +9,17 @@ export type VariantChange = { variant: string; change: string | null };
 
 type ViewedFile = Record<string, string>;
 
+/**
+ * The file `design shot` writes its contact sheet to without `--out`: one per part, and one per set of `--variant`
+ * names, so the shots of two variants never overwrite each other.
+ */
+export const shotFileOf = (options: { target: string; product: string; part: string; variants?: string[] }) =>
+  resolve(
+    workRootOf(options.target),
+    'shots',
+    `${options.product}-${options.part.replace('/', '-')}${(options.variants ?? []).map((variant) => `-${variant}`).join('')}.png`,
+  );
+
 const viewedFileOf = (options: { target: string; sketch: Sketch }) =>
   resolve(
     workRootOf(options.target),
@@ -75,7 +86,8 @@ export const unviewedShotLinesOf = (options: {
     .filter(({ variant, change }) => change !== null && viewed[variant] !== variantContentHashOf(sketch, variant))
     .map(
       ({ variant, change }) =>
-        `SHOT-NOT-VIEWED ${change} - no shot of variant ${variant} was viewed since its last edit: ` +
+        `SHOT-NOT-VIEWED ${change} - no shot of variant ${variant} was viewed since its last edit: view ` +
+        `${shotFileOf({ target, product: sketch.product, part, variants: [variant] })} after ` +
         `\`${invocation} shot ${part} --states --variants --variant ${variant} --product ${sketch.product}\`, ` +
         `or GET /__design/shot?product=${sketch.product}&part=${part}&sketch=${sketch.target}&variant=${variant}&state=<state>`,
     );

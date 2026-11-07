@@ -2,7 +2,15 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { actionCheckCodeOf, appPictureCodeOf, codeHashOf, codeModulesOf, designPictureCodeOf } from './code-hash';
+import {
+  actionCheckCodeOf,
+  appPictureCodeOf,
+  codeHashOf,
+  codeModulesOf,
+  COMPLETENESS_MODULES,
+  designPictureCodeOf,
+  RENDER_INSPECT_MODULES,
+} from './code-hash';
 
 describe('codeHashOf', () => {
   let root: string;
@@ -85,5 +93,24 @@ describe('the code each compare cache is keyed on', () => {
 
   it('hashes each cache apart', () => {
     expect(new Set([designPictureCodeOf(), appPictureCodeOf(), actionCheckCodeOf()]).size).toBe(3);
+  });
+});
+
+describe('the code each check cache is keyed on', () => {
+  it('leaves out the check command, the system list and auto-accept, so an edit of those redraws nothing', () => {
+    for (const entries of [RENDER_INSPECT_MODULES, COMPLETENESS_MODULES]) {
+      const modules = [...codeModulesOf(entries).keys()];
+
+      expect(modules).toEqual(expect.arrayContaining(['shot', 'system/served-cache']));
+      for (const unrelated of [
+        'system/check-system',
+        'system/list-system',
+        'system/accepted-pictures',
+        'system/slow-run',
+        'design-command',
+        'timings',
+      ])
+        expect(modules).not.toContain(unrelated);
+    }
   });
 });

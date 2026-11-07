@@ -4448,3 +4448,17 @@ restart command, and the restart skill does not say what to do on a denial; the 
 a turn that waits on background agents. Tool fix (technical): `restart` and the doc agent treat a pane as idle only
 when the footer shows no "esc to interrupt" and no "Waiting for"; on a denied self-restart the builder sends one mailbox
 line to the doc agent, which drives the pane. Decision for Tom: an allow rule for the restart command.
+
+S7c-1 as built (c0 subagent, 2026-11-07, in the `perf(cli)` commit that adds this note): auto-accept keeps the state
+pictures of each part drawn at a part hash under `node_modules/.design-explore/part-pictures` (`part-picture-cache.ts`;
+key: design picture code, product, part, part hash; read only while every other file of its design hash is unchanged).
+A direct edit and an open undecided `<part>.edit` sketch compare with the cached `old` at the merged hash: no
+`refreshEditOld`, no old draw, and a rerun on an unchanged tree draws nothing and leaves `git status` and the sketch
+as they were (spec bites on the old code). An edit sketch is still opened once when an edit draws differently (it holds
+Tom's pick). 539: render inspect keyed on 202 cli modules because render-check -> list-system -> check-system pulled in
+the whole check; `gridReportOf` moved to `grid-report.ts`, render inspect is now 64 modules, completeness 51, and a spec
+asserts that check-system, list-system, accepted-pictures, slow-run and design-command are outside both. 553: every
+load threshold (`timings` load line, `isNoisy`, `loadScaledMs`) uses `physicalCoresOf()` (sysctl hw.physicalcpu, lscpu,
+else half the logical CPUs; 6 on this Mac). `design shot --variant a` writes `<product>-<part>-a.png`, and
+SHOT-NOT-VIEWED names that file. Not verified: no real check numbers (load 13-27 on 6 cores the whole session, no
+verdict) and no scratch-worktree edit run; pre-existing: 3 auto-merge specs in sketch-command.spec fail on `next` too.

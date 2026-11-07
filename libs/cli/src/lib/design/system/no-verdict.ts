@@ -1,4 +1,5 @@
-import { availableParallelism, loadavg } from 'os';
+import { loadavg } from 'os';
+import { physicalCoresOf } from '../physical-cores';
 
 /** The answer of a check that could not run: why it could not, never a pass or a fail. */
 export type NoVerdict = { noVerdict: string };
@@ -14,6 +15,6 @@ export const noVerdictLineOf = (subject: string, result: NoVerdict) =>
 
 const MAX_LOAD_FACTOR = 8;
 
-/** `ms` stretched by how far the machine load exceeds its cores, at least `ms` and at most 8 times it. */
-export const loadScaledMs = (ms: number, load = { avg1: loadavg()[0] ?? 0, cores: availableParallelism() }) =>
+/** `ms` stretched by how far the machine load exceeds its physical cores, at least `ms` and at most 8 times it. */
+export const loadScaledMs = (ms: number, load = { avg1: loadavg()[0] ?? 0, cores: physicalCoresOf() }) =>
   Math.round(ms * Math.min(MAX_LOAD_FACTOR, Math.max(1, load.avg1 / Math.max(1, load.cores))));

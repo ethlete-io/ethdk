@@ -186,7 +186,8 @@ export const refreshEditOld = ({
   return null;
 };
 
-const rewordEditNotes = (sketch: Sketch) => {
+/** Rewrites the round and variant notes of an edit sketch in today's wording, writing only when they differ. */
+export const rewordEditNotes = (sketch: Sketch) => {
   const [first, ...later] = sketch.rounds;
   const rounds = first
     ? [{ ...first, title: EDIT_ROUND_TITLE, note: editRoundNoteOf(partKeyOf(sketch)) }, ...later]

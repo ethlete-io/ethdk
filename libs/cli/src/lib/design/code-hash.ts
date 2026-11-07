@@ -115,19 +115,17 @@ const DESIGN_PICTURE_MODULES = [
 /** @internal The code a design picture is drawn with: the frame assets, the server's transforms and the shot itself. */
 export const designPictureCodeOf = () => codeHashOf({ entries: DESIGN_PICTURE_MODULES, assets: assetRoot() });
 
+/** @internal The modules render inspect runs: a module outside their imports keeps its cache. */
+export const RENDER_INSPECT_MODULES = [...DESIGN_PICTURE_MODULES, 'system/render-check', 'system/served-cache'];
+
 /** @internal The code render inspect draws and judges a part with, the frame assets included. */
-export const renderInspectCodeOf = () =>
-  codeHashOf({
-    entries: [...DESIGN_PICTURE_MODULES, 'system/render-check', 'system/served-cache'],
-    assets: assetRoot(),
-  });
+export const renderInspectCodeOf = () => codeHashOf({ entries: RENDER_INSPECT_MODULES, assets: assetRoot() });
+
+/** @internal The modules the completeness check runs: a module outside their imports keeps its cache. */
+export const COMPLETENESS_MODULES = [...DESIGN_PICTURE_MODULES, 'system/complete', 'system/served-cache'];
 
 /** @internal The code the completeness check draws and sees a part with, the frame assets included. */
-export const completenessCodeOf = () =>
-  codeHashOf({
-    entries: [...DESIGN_PICTURE_MODULES, 'system/complete', 'system/served-cache'],
-    assets: assetRoot(),
-  });
+export const completenessCodeOf = () => codeHashOf({ entries: COMPLETENESS_MODULES, assets: assetRoot() });
 
 /** @internal The code an app picture is drawn and kept with. */
 export const appPictureCodeOf = () => codeHashOf({ entries: ['system/harness-shot', 'system/compare-cache'] });

@@ -291,12 +291,44 @@ describe('autoAcceptOf', () => {
       await autoAccept(target, drawn.draw);
       expect(existsSync(sketchFileOf(dir))).toBe(true);
 
-      return { target, dir, ...drawn };
+      return { target, dir, chip, ...drawn };
     };
 
-    it('closes as held when every state now draws the same as HEAD', async () => {
-      const { target, dir, draw, pictures } = await openSketch();
+    it('draws nothing and leaves git status as it was on a rerun over an unchanged tree', async () => {
+      const { target, dir, draw, calls } = await openSketch();
+      const status = () => execFileSync('git', ['status', '--porcelain', '-uall'], { cwd: target, encoding: 'utf8' });
+      const sketchJson = readFileSync(sketchFileOf(dir), 'utf8');
+      const before = status();
 
+      calls.length = 0;
+
+      for (let run = 0; run < 2; run++)
+        expect(await autoAccept(target, draw)).toEqual([
+          `PICTURES CHANGED app-a ${CHIP}: hover`,
+          `DIRECT EDIT app-a ${CHIP}: changed outside a sketch - pick old or new in sketch ${CHIP}@edit`,
+        ]);
+      expect(calls).toEqual([]);
+      expect(status()).toBe(before);
+      expect(readFileSync(sketchFileOf(dir), 'utf8')).toBe(sketchJson);
+    });
+
+    it('compares a direct edit with old pictures an earlier run drew, without drawing old or new again', async () => {
+      const { target, dir, draw, calls } = await openSketch();
+
+      rmSync(join(dir, 'sketches'), { recursive: true });
+      calls.length = 0;
+
+      expect(await autoAccept(target, draw)).toEqual([
+        `PICTURES CHANGED app-a ${CHIP}: hover`,
+        `DIRECT EDIT app-a ${CHIP}: changed outside a sketch - pick old or new in sketch ${CHIP}@edit`,
+      ]);
+      expect(calls).toEqual([]);
+    });
+
+    it('closes as held when every state now draws the same as HEAD', async () => {
+      const { target, dir, chip, draw, pictures } = await openSketch();
+
+      appendFileSync(chip, '// hover drawn as before\n');
       pictures.now = { default: 'a1', hover: 'b2' };
 
       expect(await autoAccept(target, draw)).toEqual([
@@ -396,6 +428,8 @@ describe('autoAcceptOf', () => {
     it('reports an old that does not draw as a check problem, not as a pick', async () => {
       const { target, dir, draw: drawOpen } = await openSketch();
       const problems: Problem[] = [];
+
+      rmSync(join(target, 'node_modules'), { recursive: true });
       const draw: DrawStates = async (options) =>
         options.sketch
           ? new Map(options.parts.map((part) => [part, "Importing binding name 'emptyCanvas' is not found."]))
