@@ -4164,3 +4164,7 @@ branches that only delete files (tank/tree: 4664 files, tank/webkit-tla-wt: 579)
 (technical): the dispatcher tells the paired session when a builder's session ends; a WIP push refuses a commit that
 deletes more than a set share of the tree; `sketch merge` marks the STATUS row that names the merged sketch (B398 still
 read "sketch waits for Tom" after Tom merged it).
+
+574\. Builder (2026-11-07, B352): Tom's variant choice was already recorded in the plan, but `sketch merge --variant`
+cannot apply a recorded choice, so the sketch stayed open as "needs Tom's pick". Tool fix (technical): `sketch merge`
+reads a variant choice recorded for the sketch and applies it without asking again.
