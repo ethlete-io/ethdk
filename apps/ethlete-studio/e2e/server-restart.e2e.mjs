@@ -136,4 +136,5 @@ const result = await withStudio(
 console.log(
   `${result.ok ? 'PASS' : 'FAIL'}  frames recover from a design server restart during a load: ${result.detail}`,
 );
+console.log(`\n${result.ok ? 1 : 0}/1 passed`);
 process.exit(result.ok ? 0 : 1);

@@ -7,7 +7,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import * as check from './e2e-check.mjs';
 import { judgeSuiteRun, runSuite } from './e2e-check.mjs';
-import { mapChanged } from './e2e-map.mjs';
+import { mapChanged, suiteInvocation } from './e2e-map.mjs';
 
 const scratchDirs = [];
 const scratch = (prefix) => {
@@ -70,8 +70,33 @@ test('sketch, design-canvas and system-view files map to canvas', () => {
     `${base}/components/design-canvas/b.ts`,
     `${base}/system-view/anything-else.ts`,
   ]);
-  assert.ok(suites.includes('canvas'));
-  assert.deepEqual(mapChanged([`${base}/system-view/x.ts`]).suites, ['canvas']);
+  assert.deepEqual(suites, ['canvas-flow', 'canvas-sketches', 'canvas-system', 'sketches-tree', 'studio-menu']);
+  assert.deepEqual(mapChanged([`${base}/system-view/x.ts`]).suites, [
+    'canvas-flow',
+    'canvas-sketches',
+    'canvas-system',
+  ]);
+});
+
+test('a change to one view runs only that view', () => {
+  const base = 'apps/ethlete-studio/src/app/system-view';
+  assert.deepEqual(mapChanged([`${base}/flow-view.component.ts`]).suites, ['canvas-flow']);
+  assert.deepEqual(mapChanged([`${base}/sketch-view.component.ts`]).suites, ['canvas-sketches', 'sketches-tree']);
+  assert.deepEqual(mapChanged([`${base}/system-view.component.ts`]).suites, ['canvas-system', 'page-switch']);
+});
+
+test('the canvas e2e file itself runs every view, another e2e file only itself', () => {
+  const e2e = 'apps/ethlete-studio/e2e';
+  assert.deepEqual(mapChanged([`${e2e}/canvas.e2e.mjs`]).suites, ['canvas-flow', 'canvas-sketches', 'canvas-system']);
+  assert.deepEqual(mapChanged([`${e2e}/page-switch.e2e.mjs`]).suites, ['page-switch']);
+});
+
+test('a canvas view suite runs canvas.e2e with --view', () => {
+  assert.deepEqual(suiteInvocation('canvas-flow'), {
+    script: 'apps/ethlete-studio/e2e/canvas.e2e.mjs',
+    args: ['--view', 'flow'],
+  });
+  assert.equal(suiteInvocation('page-switch').script, 'apps/ethlete-studio/e2e/page-switch.e2e.mjs');
 });
 
 const sh = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();

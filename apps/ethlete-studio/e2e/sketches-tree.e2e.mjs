@@ -68,4 +68,5 @@ const ok = worst <= BUDGET_MS;
 console.log(
   `${ok ? 'PASS' : 'FAIL'}  [timing] first sketch row after reload: ${result.reloads.join(' / ')} ms (budget ${BUDGET_MS} ms)`,
 );
+console.log(`\n${ok ? 1 : 0}/1 passed`);
 process.exit(ok ? 0 : 1);

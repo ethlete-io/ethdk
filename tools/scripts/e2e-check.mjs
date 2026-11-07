@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 import { join, sep } from 'node:path';
 import { selectE2eFolders, readIndex, ALL } from '../../apps/storybook-e2e/affected.mjs';
 import { linkNodeModules } from './link-node-modules.mjs';
-import { mapChanged, STUDIO_E2E } from './e2e-map.mjs';
+import { mapChanged, suiteInvocation } from './e2e-map.mjs';
 
 const SUITE_TIMEOUT_MS = 15 * 60 * 1000;
 
@@ -99,9 +99,12 @@ export const runSuite = (
 ) =>
   new Promise((resolve) => {
     const started = Date.now();
-    const child = spawn('node', [script ?? `${STUDIO_E2E}/${suite}.e2e.mjs`, ...(built ? ['--built', built] : [])], {
-      cwd: repo,
-    });
+    const invocation = suiteInvocation(suite);
+    const child = spawn(
+      'node',
+      [script ?? invocation.script, ...(script ? [] : invocation.args), ...(built ? ['--built', built] : [])],
+      { cwd: repo },
+    );
     let output = '';
     let pending = '';
     let cases = 0;

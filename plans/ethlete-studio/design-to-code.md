@@ -688,6 +688,17 @@ nonzero exit with no PASS/FAIL line are red; the runner's own `0/0 passed` exite
 canvas, page-switch and studio-menu. The canvas suite alone runs over 9 minutes, long enough to get skipped.
 Fix: B212 (technical) - split canvas.e2e by view so e2e-check runs only the touched views; the three suites without
 a case count print `N/M passed`.
+As built (B212, 2026-11-07): `canvas.e2e.mjs --view system|sketches|flow` runs the pages of one view (system: System, Edited,
+Inbox; sketches: Sketches, Wide, Merge, Discard; flow: Flow); the file stays one file, so fixtures and the worker pool are
+shared. `e2e-map.mjs` maps to `canvas-system`, `canvas-sketches`, `canvas-flow` (`suiteInvocation` turns a suite name into
+script plus `--view`): flow-_.ts runs only flow, sketch-view and design-parts/sketches only sketches, system-view.component
+only system, comment-_.ts system and sketches; design-canvas, design.ts, canvas.e2e.mjs and the rest of system-view run all
+three (a `fallback` map entry applies only when nothing more specific matched). sketch-frame-cap, sketches-tree and
+server-restart print `N/1 passed`; frame-load-failed still prints no count. Verified: e2e-check.spec (24 pass, new cases for
+the mapping), `--view flow` 6/6 passed, `e2e-check --list` on two real commits selects the narrow view sets. Not verified:
+the system and sketches views run, the three new count lines (edited, not run). The Studio app did not compile on this base
+(TS2322 `ThemeSwitch.current` string vs undefined, system-view.component.ts:304); I widened the type locally to run the
+suite and reverted it - not fixed here.
 
 265\. CANVAS-CAMERA-OWN built (B196, 7a7caf5ff, f53a0a03e, e57fa1868): a local ESLint rule for
 `apps/ethlete-studio/src/app/design-parts/**` flags pan/zoom/camera state, wheel and pointer-move listeners and

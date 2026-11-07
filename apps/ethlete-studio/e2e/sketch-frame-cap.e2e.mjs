@@ -42,4 +42,5 @@ const ok = result.cells > 0 && result.live <= LIVE_CAP;
 console.log(
   `${ok ? 'PASS' : 'FAIL'}  ${target}: ${result.live} live frames (cap ${LIVE_CAP}), ${result.pictures} pictures, ${result.cells} cells`,
 );
+console.log(`\n${ok ? 1 : 0}/1 passed`);
 process.exit(ok ? 0 : 1);

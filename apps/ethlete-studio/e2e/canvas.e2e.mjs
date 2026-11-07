@@ -22,6 +22,17 @@ const root = resolve(import.meta.dirname, '../../..');
 const args = process.argv.slice(2);
 const built = args.includes('--built') ? resolve(args[args.indexOf('--built') + 1]) : undefined;
 const only = args.includes('--case') ? args[args.indexOf('--case') + 1] : undefined;
+const VIEWS = {
+  system: ['System', 'Edited', 'Inbox'],
+  sketches: ['Sketches', 'Wide', 'Merge', 'Discard'],
+  flow: ['Flow'],
+};
+const view = args.includes('--view') ? args[args.indexOf('--view') + 1] : undefined;
+
+if (view && !VIEWS[view]) {
+  console.error(`unknown --view ${view}, one of: ${Object.keys(VIEWS).join(', ')}`);
+  process.exit(2);
+}
 
 const TIMINGS_FILE = join(root, 'node_modules/.cache/studio-e2e/canvas-timings.json');
 
@@ -2253,7 +2264,8 @@ const lead = async () => {
     CASES.flatMap((testCase, caseIndex) =>
       (testCase.pages ?? ['System', 'Sketches']).includes(target.name) &&
       (!testCase.labels || testCase.labels.includes(target.label)) &&
-      (!only || testCase.name.includes(only))
+      (!only || testCase.name.includes(only)) &&
+      (!view || VIEWS[view].includes(target.name))
         ? [{ target: targetIndex, case: caseIndex, page: target.label ?? target.name, name: testCase.name }]
         : [],
     ),
