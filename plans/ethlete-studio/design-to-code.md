@@ -4295,6 +4295,12 @@ specs, so `yarn commit` runs them. Same CI run: a stale `KNOWN_UNBOUND_INPUTS` e
 sketches port) fails UNBOUND-INPUT only in CI; cause of the local miss open (builder). `--slow` also fails
 components/title-bar (5 states unjudged, design 1 overlay pane, app 0) and components/update-dialog (4 unjudged), new
 to the list, queued.
+   As built (f548): nothing left to link. d67c98f91 removed `precommit-specs.mjs` and the spec runner from the
+   hook; `.husky/pre-commit` is now lint-changesets + lint-css-properties, and no spec executes a `.husky/*` hook
+   (commit-wait.spec no longer runs one). The only related map, `libs/cli/related-map.json`, covers cli specs, so
+   a `.husky/*` entry has no spec to point at. `yarn test:tools`: 140/140 pass. The title-bar `part` entry is
+   already gone from `KNOWN_UNBOUND_INPUTS`. Local miss: the UNBOUND-INPUT check reads app templates and only ran
+   in CI; the sketches port changed an app template, which maps to no spec, so the stale entry was never run.
 
 549\. Builder (2026-11-07), pages/system compare at load 157: a fixed 15 s design draw timeout skipped the whole action
 check, and only one trailing line said so; the run took 473 s. Why no tool caught it: a skipped check counts as a
