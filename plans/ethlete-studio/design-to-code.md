@@ -4405,3 +4405,12 @@ did not bypass the hook.
 caught it: the pre-commit and pre-push hooks never ran on the Mac (555), and `next` is not pushed (ADR 0215), so CI
 never ran these commits. Doc agent decision (technical): the next builder fixes the 3 specs first; the run over the
 whole unpushed range (555 decision) includes the full cli and Studio spec suites at low load.
+
+559\. Doc agent (2026-11-07): the builder said "the session restarts after this turn" and then sat idle for about one
+hour; nothing landed. `agent-sessions.mjs restart` waited the whole time: `.ethlete/restart.log` shows "waits, draft:
+⏺ main" again and again. `draftLine` takes the last pane line that starts with `❯` as the prompt, but with background
+agents open Claude Code shows the agent panel below the prompt (`❯ ⏺ main`), so the empty prompt reads as typed text.
+Why no tool caught it: the draft spec has no captured pane with the agent panel, and a restart that waits or gives up
+tells nobody. Doc agent decision (technical): `draftLine` reads the prompt line above the footer rule, not the last
+`❯` line, with a spec on a captured real pane that holds the panel; a restart that still waits after 2 min of draft
+sends one mailbox line to the caller and the doc agent, and a restart that gives up says so in the same way.
