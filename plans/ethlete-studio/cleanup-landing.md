@@ -54,6 +54,7 @@ webkit-revert-wt (nicht genommen, entschieden), wip/b321-stacking-fix (verworfen
 - origin/tank/conflicts-land, Teil f557-hub-split → gelandet in diesem Commit (Aufteilung von `design/paths.ts`; 13 seither in next neu dazugekommene `paths`-Importe umgehängt; der commitlint-Commit e6b6e12a3 war schon in next als 984042b90).
 - origin/tank/b407 → gelandet in diesem Commit (WIP fertig: Signatur `by`/`cmd`/`pid` für Ready-Markierung und Skizzen-Wahl; Konflikt mit `--decided-by` gelöst, Aufrufe in den seither aufgeteilten Specs nachgezogen; 20 Specs, Lint grün).
 - origin/tank/conflicts-land, Teil b412 → nicht gelandet: die neuen DIRECT-EDIT-PENDING-Einträge in `studio/rule-baseline.json` verstoßen gegen ADR 0201 (Baseline darf nur schrumpfen), und die vier Studio-Treffer schließen nur Toms Skizzen-Entscheidungen; Folgeschritt in B412.
+- origin/tank/b412 (54247e161 + 3931e1bf4), 2026-11-07 → weiter nicht gelandet: ohne Baseline treffen `pages/start` (studio) und `components/select` (sdk); beide brauchen `design accept` mit dem Go eines Menschen (kein alter Stand im Verlauf), Folgeschritt in B412.
 - origin/tank/b392 → verworfen: Spec-Aufteilung schon in next als 58a94e357; der WIP-Commit setzt nur STATUS-Zeilen auf einen älteren Stand zurück.
 - origin/tank/b397 → verworfen: schon in next als d0122053a; der WIP-Commit fügt nur zwei Leerzeilen in `sdk-selectors.ts` ein und setzt STATUS zurück.
 - origin/tank/worktree-agent-a66238bcffb60bf03 → verworfen: b5c266bfc schon in next als eb0546d31, der WIP (Zoom-Chip-Zustände) als c82aa7d4f.
