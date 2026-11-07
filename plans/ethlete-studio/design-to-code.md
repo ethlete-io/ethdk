@@ -4458,6 +4458,7 @@ when the footer shows no "esc to interrupt" and no "Waiting for"; on a denied se
 line to the doc agent, which drives the pane. Tom: "Natürlich darf er das. Der Skill gilt für jeden." The allow
 rule for `agent-sessions.mjs restart *` goes into the checked-in `.claude/settings.json`; auto mode refuses an agent edit
 of the settings, so Tom adds it.
+    As built: `busyLine` in `libs/agent-rules/content/skills/agent-sessions/agent-sessions.mjs` (the only idle check, used by `restart`) now matches "esc to interrupt" or "Waiting for"; spec added. The denied self-restart cannot be caught in the script (the classifier blocks the command before it runs), so SKILL.md tells the builder to send one mailbox line to the grill session, which drives the pane when idle. Skill copies regenerated with `yarn agents:sync`; changeset `agent-sessions-idle-waiting`.
 
 S7c-1 as built (c0 subagent, 2026-11-07, in the `perf(cli)` commit that adds this note): auto-accept keeps the state
 pictures of each part drawn at a part hash under `node_modules/.design-explore/part-pictures` (`part-picture-cache.ts`;

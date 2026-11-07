@@ -118,7 +118,7 @@ const SGR = `${String.fromCharCode(27)}\\[([0-9;]*)m`;
 const busyLine = (session) =>
   (tmux('capture-pane', '-p', '-t', `=${session}:`).stdout ?? '')
     .split('\n')
-    .find((line) => /esc to inte/i.test(line)) ?? null;
+    .find((line) => /esc to interrupt|Waiting for/i.test(line)) ?? null;
 const restartLog = (message) => {
   mkdirSync(dirname(mailbox), { recursive: true });
   appendFileSync(join(dirname(mailbox), 'restart.log'), `${new Date().toISOString()} ${message}\n`);

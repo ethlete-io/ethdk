@@ -398,6 +398,29 @@ process.stdin.on('data', (data) => {
   );
 
   it.skipIf(!hasTmux)(
+    'treats a pane that waits for background agents as busy',
+    () => {
+      const agent = `claude-waiting-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'echo "Waiting for 2 background agents"; cat']);
+
+      try {
+        const result = run(['restart', agent, '--now', '--after', '0', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          AGENT_RESTART_WAIT_MS: '2000',
+        });
+
+        expect(result.status).toBe(1);
+        expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toMatch(/waits, busy: Waiting for 2 background agents/);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
     'tells the caller and each --notify agent when a draft blocks the restart and when it gives up',
     () => {
       const agent = `claude-notice-${process.pid}`;
