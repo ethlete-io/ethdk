@@ -4152,3 +4152,9 @@ job ran and passed; until then the job runs with `continue-on-error`. Built for 
 "Tom:" before each quote, as the doc-agent skill says ("Tom's words verbatim"). The skill and the person-name rule
 disagree. Tool fix (technical): the doc-agent and grilling skills say "the human:" (as ADR 0226 does), and the
 pre-commit hook runs `lint:person-names` on staged ADR and plan files, so the doc agent sees it at commit time.
+
+590\. Tom (2026-11-07): "was ist mit den sachen hier untracked?" `.ethlete/design/studio/sketches/` held the
+auto-made link-only sketch `elements-canvas-frames.edit` (old/new differ only in the `implements` line, finding 582)
+after the builder reported its discard, plus six empty `*.edit/old|new` folders of merged edit sketches. Discard and
+merge leave files and folders behind, and nothing shows a leftover. Tool fix (technical): `sketch discard` and
+`sketch merge` delete the sketch folder and fail if it is still there; `design status` lists untracked sketch folders.
