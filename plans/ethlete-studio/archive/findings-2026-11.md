@@ -3242,3 +3242,177 @@ decision 2), #91 (go rework, A10).
   wrapping text (not rotated); below 9 px all variant head text hides, the variant name too; column heads do not stick
   when panning down (not now).
 - Open for later: the drawing placeholder "GPT-6.1 Sol zeichnet diese Variante" wraps hard in narrow columns.
+
+## Findings 224-239 (2026-11-02)
+
+224\. B128 landed (7957d3194, builder, 2026-11-02): wiring for pages/sketches is now every ancestor (app.config.ts,
+app.routes.ts, main.ts, the harness files, studio-view, sketch-view, system-view) plus the part's spec. Gap:
+5a29b1b94 also changed system-view/inbox-comments.ts and system-tree.ts, which do not import the part; sketch-view
+(the direct importer) imports them to build the part's inputs. Ancestors-only refuses them. Lesson: "files that
+mount the part" and "files that feed its inputs" are two sets; decision 221 covered only the first. Tool fix
+(decided, technical, amends B128): wiring also includes the non-spec app files imported by the part's DIRECT
+importers (one level, not the imports of every ancestor, so app.config does not pull in the whole app).
+
+225\. B130 landed (5577108ff rule, d2d484c55 marker, builder, 2026-11-02): ACTION-UNDECLARED is now a draw-time error
+in inspectFrame, so check, sketch check and sketch ready flag native controls, interactive roles, `[tabindex]`,
+`[aria-expanded]` and click listeners without `data-et-action`. The hold toggle carries
+`data-et-action="${open ? 'paused' : 'paused-reason'}"` (a non-emit value names a state). Product-wide
+`design check` went red on HEAD: studio 286 hits (comment-pin, title-bar, tree-row, update-dialog), sdk 2222.
+Lesson: these parts had gos while their interactive elements carried no action, so the action check never ran
+against those controls; and a new rule switched on as an error everywhere breaks every unrelated push.
+Tool fix (decided, technical, B133): ratchet. ACTION-UNDECLARED is an error in sketch check / sketch ready and in
+check for a part with no go or changed since its go; for an unchanged part with a go it is a WARNING, one summary
+line per part (count + first selector), not one per element x state x scheme. Product-wide check and pre-push
+are green again. Backlog: B134 studio declares the actions in comment-pin, title-bar, tree-row, update-dialog
+(stales their gos: Tom re-gos them in one batch); B135 sdk: an explicit per-part declaration that the part is a
+control whose action belongs to its consumer (never inferred), then the remaining hits. Open before Tom's go of
+pages/sketches: why the check printed "PICTURES CHANGED ... drawing" after d2d484c55 (that state has no hold
+button). Flake: actions-stream.spec failed once under load.
+
+### Capability list decisions (Tom, 2026-11-03)
+
+- Every product keeps a list of its user capabilities (write comment, write note, give go, merge sketch, toggle
+  sidebar, ...). Each capability must point to a design action, the place in the design where the user triggers it.
+  `design check` reports every capability without a place. The builder writes the first list from the code; Tom
+  confirms it once; after that it changes with each change (B157, finding 231). The confirmed list, not the code,
+  says what a product must be able to do.
+- B151 orphan endpoints: the changed-area view in merge (`sketch-diff`, `sketch-crop`) and the motion strip in the
+  part view (`motion`) go on the studio capability list and come back later as Studio sketches; the motion strip
+  much later, as planned. `part-ready` is deleted: "ready to build" follows from green checks.
+
+- First studio list (B157, 1627a0d53): `.ethlete/design/studio/capabilities.json`, 65 capabilities, 38 with a place,
+  24 without, 3 known missing (B151); all `confirmed: false` until Tom confirms. The 24 without a place: comment
+  reply/done/withdraw and note write/change/delete/flow-note (endpoints, no caller, B145/B148); drawn without a
+  `data-et-action` (comment-write on pages/inbox, inventory approve/reload/toggle); in the app but drawn by no part
+  (go-give, edit-accept, exception-approve, call-transfer, theme-pick, preset-pick, frame-select, frame-resize,
+  grid-columns-toggle, frame-reload, comments-retry, sketch-round, prompt-copy-flows).
+- Decided (technical): a capability without a place carries `missing: "B..."` and is then a warning, shrink-only like
+  the orphan list; wiring after Tom's confirmation. A real-product spec that needs `dist/` fails with "needs dist"
+  instead of skipping.
+- Tom confirmed the first studio list as it is (2026-11-03): all 65 entries become `confirmed: true`; wire
+  CAPABILITY-PLACE with `missing: "B..."` on the 24 without a place.
+
+### Uncommitted design files, comment errors and canvas frames decisions (Tom, 2026-11-03)
+
+- Tom's uncommitted design files (`.ethlete/design/studio/go.json`, `merged.json`, `pages/system/system.ts`, the
+  deleted `sketches/pages-system/*`): the builder commits them as they are, only Tom's lines, split with
+  `design commit-hunks`. This unblocks `design ready`/go for pages/system and the pages/system part of B189.
+- Comment send error (B189): two texts. Network or server error: "Kommentar nicht gesendet. Erneut versuchen." with
+  a retry button. A 4xx shows the server's reason, with no retry button.
+- B178 frame size: variant a - frames keep fitting their content, as in the app. No size field, no corner grip.
+- B178 round switch: keep it, label "Unveränderte Zustände zeigen", off by default.
+
+### Go ownership and sketch rebase decisions (Tom, 2026-11-02)
+
+- pages/sketches round 2: the builder rebases the round-2 sketch onto the current merged design and re-runs
+  `sketch check` and `sketch ready`; then Tom picks ("Übernehmen") and grants the go in Studio. No agent writes the go.
+- go.json commits (finding 219): Studio commits go.json itself when Tom clicks "Go geben", one commit per go, authored
+  as Tom. Today's uncommitted gos (title-bar, title-search, update-dialog, shell-main, zoom-chip, pages/sketches) go
+  in once in one Studio-made commit. The agent hook that denies go.json commits stays. (B139)
+- Carried gos (finding 217, B124, reverses Impl Q114): an auto-carried go is written with `by: <tool>` and
+  `carriedFrom: {by, at}`; Studio shows "übernommen aus Toms Go vom <date>". Existing entries with `auto: true` and a
+  copied `by` are migrated the same way.
+- B134: the builder declares the missing actions in comment-pin, title-bar, tree-row and update-dialog in one slice;
+  Tom re-grants the four gos in one batch.
+- After the rebase (31e191378, base hash only, 21 states ok) Tom's earlier pick of variant a (2026-11-02 18:08) stands;
+  no re-pick. The pick stays uncommitted until Studio commits it with the go (B139).
+
+227\. B136 cause (builder subagent, 2026-11-02, uncommitted at stop): the "Pausiert" Enter/Space misses were a tool
+bug, not an app bug: the action check compared a key-pressed control that still shows the focus ring against an
+unfocused goal state (DIFF 427 px). Lesson: a keyboard press leaves focus, a click path does not, so the same
+action has two end states and the check knew one. Tool fix (B136, in the tree, unverified): normalize focus
+before the goal comparison of a key press. The "PICTURES CHANGED drawing" trace has no result yet.
+
+228\. pages/sketches clips its canvas at the panel edge (Tom, 2026-11-03, screenshots; recurring, Tom: "this error is
+made here constantly"): in `unchanged-matrix-open` the variant head with "Übernehmen" is cut at the right edge of
+the tree panel (68 of 108 px). The app canvas runs full width under the floating panel and clips only at the
+shell-main edge (finding 44); round 2 added `overflow-x: clip` on a hand-drawn canvas box at
+`left: calc(var(--st-shell-inset-left) + var(--space-5))` (sketches.ts:325). Second cause: the variant head never
+sticks; only the state-name gutter follows the pan (`.sk-gutter`, `translateX(var(--sk-pan-x))`). Tom: the
+design follows the app as built; go on round 2 stays, the fix comes as a design change with a new go. Why no
+tool caught it (builder, measured): (1) the page root carries `data-et-skip="CLIPPED"`, which every descendant
+inherits, so no clip check ran on the page; (2) no rule measures an interactive control against its clipping
+ancestor; (3) sketches hand-draws its canvas box instead of the shared `canvasView` from
+`elements/canvas-frames` (rule 1: one canvas), so the finding-44 fix never reached it; (4) compare takes the
+design as truth and would have asked to copy the clip into the app. States that cross the edge existed
+(zoomed-page, sticky-names, unchanged-matrix*); only a human saw the picture. Lesson: a fix to a shared shape
+that pages copy instead of import reaches only the page that imports it, and a skip on a page root silences a
+whole page. Tool fix: CUT-CONTROL rule (own code, a CLIPPED skip does not silence it); a CLIPPED skip may not
+sit on an ancestor of an interactive control; shared canvas enforced by check (open, put to Tom).
+
+229\. The grill session asked Tom a visual question in chat (2026-11-03: what sits behind the sticky state-name
+column) right after Tom had answered "as built" (Tom: "you ask me again about things we want to change? ... you
+ask me design questions in text again; we built this tool EXTRA for that"). Two errors: "as built" already
+answers it (the builder looks up what the app does and copies it), and a look question belongs in Studio as a
+sketch, not in a chat round. Lesson: the grill round had no rule that keeps look questions out. Fix: the
+doc-agent skill now routes look questions to a sketch and treats "as built" as a fact for the builder.
+
+231\. Studio has no way to write a comment any more (Tom, 2026-11-03): there is no comment button. Cause (from the
+record): finding 49 removed the legacy top-right chrome ("Notiz", "Kommentar", ...) because no page design showed
+it, and 8cf715654 deleted the comment draft and thread components with it; no page design ever drew an entry for
+writing a comment. Why no tool caught it: the checks compare the app against the designs, so a capability the
+designs never drew is "legacy" and its removal looks like a fix; nothing lists the user actions that existed
+before and are gone after. Lesson: matching the app to the design can delete a capability the design forgot.
+Tool fix (Tom, 2026-11-03; B146): ACTION-LOST - an action declared at the last go or in the last app state that
+exists nowhere afterwards fails `design check` until the user confirms the removal or a design shows it again.
+Generic, any project. Product fix (B145): the comment button returns top right next to the other buttons as a
+one-variant sketch; where page buttons belong in general follows as its own sketch with variants.
+Builder facts: 8cf715654 removed the whole write path (pin pick, draft, thread, reply, resolve, withdraw, the four
+app write calls); only display is left, while the CLI still serves the write endpoints (studio-api.ts:72-77).
+ACTION-LOST would not have caught 231 (the buttons were never a design action). Added tool fix (B147,
+technical): ORPHAN-ENDPOINT - every Studio API path the CLI serves needs an app caller, else `design check`
+fails.
+
+232\. studio-lab `pages/film-detail` state `reviewing` fails CONTRAST ("What did you think?" 2.07:1, needs 4.5) since
+the UTILITY-CSS fix (aa0040aa9, builder, 2026-11-03). It was hidden before: 23 UTILITY-CSS errors made the check
+skip the render check for the whole product, and the report did not say how much went unchecked. Lesson: a
+blocking error in one rule hid every later rule, so "red for one reason" looked like the full picture. Tool fix
+(B150, technical): the render check runs even when a static rule fails; if a rule really cannot run, the report
+names it as "not checked" with the parts it skipped. Product fix (B149): a one-variant sketch that sets the text
+to the product's text token at AA, for Tom's pick in Studio.
+
+234\. Sketches app slice (pages/sketches r2, builder, 2026-11-03): the design's "Pausiert" badge can never show in the
+app, because the sketch list the app reads carries no hold data; the app also has inputs nobody binds (hold,
+reason, camera) and inputs that default to sample data (SHELL_SAMPLE, SKETCH_ROWS). Compare refused the design
+prop `comparing` although the harness map turns it into row data (and accepts `same`, mapped the same way), so the
+comparing states stay unchecked. Why no tool caught it: no check asks whether each design state of an implemented
+part has a data source in the app, and no check looks for unbound or sample-default inputs. Lesson: a state the
+design draws but the app can never reach passes every pixel check, because compare feeds it in by hand. Tool fixes
+(technical): B153 compare accepts every design prop the harness map consumes (first); B154 STATE-NO-SOURCE - each
+design state prop of an implemented part maps to app data or to an input a consumer binds; B155 UNBOUND-INPUT and
+SAMPLE-DEFAULT, both ratcheted. App fix: the sketch list delivers the hold data.
+As built (B154, builder, 2026-11-07): STATE-NO-SOURCE is a draw rule next to DROPPED-PROP, emitted from the same
+state load (`statesWithoutSourceOf`, dropped-props.ts). For each state prop that names an input of the part's
+component, some tag of the component's selector in the app's sources must feed it, with an expression or a fixed
+value equal to the state's; unbound, or bound only to a different constant, is a hit per state. Parts without a
+selector or with inherited inputs are skipped. The part's slow hash now covers the app's sources, so a consumer edit
+re-runs it. Not built: "maps to app data" beyond a template binding (a service the component injects counts as no
+source); hits on existing parts are not baselined yet - the first `--slow` run lists them and each needs a rule
+baseline entry (ADR 0201). Unit specs only; no product run.
+
+235\. CUT-CONTROL (c5d3271a1) reports 0 on pages/sketches although the design still clips "Übernehmen" (finding
+228); the rule was proven only on a fixture, never on the case that motivated it (builder, 2026-11-03). Cause
+open (button outside the scanned root, or the CLIPPED skip still exempts it). A dist debug patch was overwritten
+by a parallel cli rebuild, because all agents share one dist/. Lesson: a rule built for a real defect is done only
+when it is red on that real defect; a shared build output cannot hold a private experiment. Fix: B142 starts with
+a spec on the real pages/sketches render that must report CUT-CONTROL; debugging runs in specs or a private
+outDir, never in the shared dist/ (builder sub-agent brief).
+
+237\. pages/sketches: the matrix state-name gutter (`data-sk-gutter`, design sketches.ts `gutter()`, app
+sketches.component.html) is an opaque sticky column as tall as the whole variant row; on horizontal pan it slides
+over variant a's canvas and hides it, holding only the state key ("part" on pages/system) (Tom, 2026-11-03: "sieht
+echt ugly aus"). Compare was green because the r2 design itself draws the opaque gutter; no rule asks whether an
+opaque element covers content, and CUT-CONTROL looks only at clipped controls. Same family as 228/235 (Übernehmen
+under Verwerfen, same screenshot). Lesson: a design can be wrong in a way design-vs-app compare never sees; an
+occlusion check must judge the render itself, at every pan/zoom state. Fix: B158, CUT-CONTROL grows into COVERED
+(hit-test controls and canvas regions; an opaque element of another subtree on top is red), red first on both real
+cases; look fix as a Studio sketch inside B142(b) (gutter only label height, translucent; a second variant if a
+real alternative exists, Tom picks in Studio).
+
+239\. `sketch ready` refuses a sketch already marked ready even after its variant changed (B145 busy/error states
+added after the first ready), and no agent command sets it back to in progress; the agent edited sketch.json by
+hand (builder, 2026-11-03). A status that does not know what it judged goes stale silently. Fix: B162, ready
+stores the content hash it judged; a changed variant drops the status to in progress on the next check or ready
+(same stale logic as SKETCH-BASE-STALE).
+As built (4373e3a4c): `sketch ready` stores `readyContent` (hash per variant, its folder plus `shared/`); `sketch check` and
+`sketch ready` reopen an undecided ready sketch whose variant hash changed.
