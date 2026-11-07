@@ -19,3 +19,5 @@ next push of `next`.
 
 Applied by the doc agent (2026-11-07): the slow checks in the pre-commit hook (design gate, sketch-round gate, specs,
 lint, type check) leave the hook as ADR 0036, 0037 and 0038 already decided; they are rules in Studio and in CI.
+
+ADR 0225 replaces the run before the push: CI runs the slow checks after the push as the backstop.
