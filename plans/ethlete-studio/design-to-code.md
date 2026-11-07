@@ -623,6 +623,12 @@ Not done: the B175 sketch (`pointArrow` in sketches/pages-system/shared/capabili
 its offset by hand; the new rule reports it once the sketch is checked - swap it for `anchor`. Mocks that never name an
 anchor (components/update-dialog) are not measured.
 
+As built (anchor, 2026-11-07): every `anchoredDialog()` call site listed: studio pages/system (already anchored),
+studio components/update-dialog (now `anchor: '[data-et-control="update"]'`, the title bar's Update button), and the SDK
+components/anchored-dialog part (its states draw no trigger, so there is nothing to name; left anchorless). No rule
+requires an anchor: an anchorless arrow in the default place is correct for a pane whose trigger is not drawn, so a
+requirement would flag the SDK part itself. Verified: `design check` studio components/update-dialog.
+
 253\. B145 step 2 (builder, 2026-11-03) brought the comment write path back, but the designs leave gaps the builder
 would otherwise have had to invent: thread, reply, resolve and withdraw are drawn nowhere (comment-reply, -done
 and -withdraw have no caller), the draft field is drawn unfocused, and leaving comment mode by key (Esc, `C`) is

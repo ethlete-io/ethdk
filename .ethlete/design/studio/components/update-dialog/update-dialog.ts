@@ -14,6 +14,7 @@ export default definePart({
   render: async (props: Props) => {
     const dialog = await anchoredDialog.render({
       label: 'Update installieren',
+      anchor: '[data-et-control="update"]',
       placement: 'bottom-end',
       content: await ng(
         `<div class="box-border flex w-80 flex-col gap-space-3 p-space-3 text-ui-sm">
