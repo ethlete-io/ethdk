@@ -28,7 +28,13 @@
     "at": "2026-11-06T11:17:52.121Z"
   },
   "components/tree-row": "9b985495f700b73f",
-  "components/update-dialog": "ac56332d0f1f3ed0",
+  "components/update-dialog": {
+    "hash": "fa791c1a54978622",
+    "variant": "new",
+    "decidedBy": "plan: finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit",
+    "at": "2026-11-07T14:50:56.608Z",
+    "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit"
+  },
   "components/zoom-chip": "eac0eac1e633a857",
   "elements/canvas-frames": {
     "hash": "0aba678db6202ece",
@@ -89,7 +95,7 @@
     "at": "2026-11-04T14:48:14.692Z"
   },
   "pages/system": {
-    "hash": "0967723d07c853bf",
+    "hash": "42069945dc47ff87",
     "variant": "a",
     "decidedBy": "auto: no visible change",
     "at": "2026-11-05T22:47:24.777Z"
