@@ -57,6 +57,8 @@ also find why the tool (compare, verify, check) did not catch it. Report the cau
 with your recommendation to the grill session. A defect is not done with only the CSS or
 component fix.
 
+The UI builder investigates a tool gap only when it blocks its current UI item (ADR 0202). It sends every other gap in one sentence to the doc agent. The tool builder (c0) builds it.
+
 ## Questions
 
 - Never ask the user a question. This covers every kind: design, process ("where do I file
