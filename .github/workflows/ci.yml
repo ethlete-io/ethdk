@@ -306,7 +306,9 @@ jobs:
 
       - run: yarn playwright install --with-deps chromium
 
-      - run: yarn nx build cli
+      # The design server answers 503 on /__design/system until the render packages of
+      # .ethlete/design/config.json (dist/libs/components, dist/libs/core) exist.
+      - run: yarn nx run-many -t build -p cli,components,core
 
       - run: yarn studio:e2e
 
