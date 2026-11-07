@@ -36,6 +36,7 @@ import { canonicalClassesOf } from './rules/canonical-class';
 import { componentCopiesOf } from './rules/component-copy';
 import { deniedClassesOf } from './rules/denied-class';
 import { nativeTitlesOf } from './rules/native-title';
+import { commandTextOf } from './rules/command-text';
 import { BusyState, ownerPartOf, RenderIssue, renderIssueLineOf, renderIssuesOf } from './render-check';
 import { flowProblemsOf } from './rules/flow';
 import { badLinksOf } from './rules/implements';
@@ -107,6 +108,7 @@ const RULES = [
   undefinedClassesOf,
   deniedClassesOf,
   nativeTitlesOf,
+  commandTextOf,
   utilityCssOf,
   orphanEndpointProblemsOf,
   sampleDefaultProblemsOf,

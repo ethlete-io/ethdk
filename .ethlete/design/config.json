@@ -65,6 +65,7 @@
     },
     "studio": {
       "schemes": ["dark"],
+      "commandText": "deny",
       "styles": [".ethlete/design/studio/styles.css"],
       "generated": [
         {

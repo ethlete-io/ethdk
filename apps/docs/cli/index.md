@@ -317,6 +317,10 @@ A product that sets `"nativeTitle": "deny"` in its config also fails `et design 
 attribute on an HTML element in the markup strings of its design files, with the line; elements with a dash in
 their name are components and pass. Off when the flag is left out.
 
+A product that sets `"commandText": "deny"` fails `et design check` with `COMMAND-TEXT` on command text (`npx`, `nx`,
+`yarn`, a `--flag`, a `NAME=value`) in the visible text of its drawings or of its harness app templates. Off when
+the flag is left out.
+
 `et design check` fails with `UTILITY-CSS` when the CSS of a part outside `foundations/` holds a
 declaration that a Tailwind utility of the product draws: a layout keyword such as `display: flex`, or
 the value of a token that a `@theme` block registers. Put the utility in the markup. A rule whose

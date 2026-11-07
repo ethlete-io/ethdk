@@ -79,6 +79,8 @@ export type DesignProduct = DesignProject & {
   deniedClasses?: DesignDeniedClass[];
   /** `'deny'` makes `et design check` fail on a native `title` attribute in the design markup; off when left out. */
   nativeTitle?: 'deny';
+  /** `'deny'` makes `et design check` fail on command text in a drawing or an app template; off when left out. */
+  commandText?: 'deny';
 };
 
 /** A regular expression a class or a `var(--name)` reference is tested against, and the fix for a match. */
