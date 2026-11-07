@@ -86,7 +86,13 @@
     "decidedBy": "auto: no visible change",
     "at": "2026-11-05T13:36:21.797Z"
   },
-  "pages/inventory": "a050641c3c773f51",
+  "pages/inventory": {
+    "hash": "641695c7b8cf30f9",
+    "variant": "new",
+    "decidedBy": "plan: finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit",
+    "at": "2026-11-07T14:51:05.960Z",
+    "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit"
+  },
   "pages/merge": "44fd8307ce8b2ab0",
   "pages/sketches": {
     "hash": "09d741cdd0ededde",

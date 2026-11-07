@@ -126,7 +126,7 @@ const listOf = (entries: Entry[]) =>
 
 export default definePart<Props>({
   note: 'The Inventory of a page, shown in place of the canvas when the Inventory toggle of a page is on: a header with the approval state, Reload and Approve inventory, the rest frames of the page with a numbered box on each control, and the numbered control list at the right with its status, kind and state count. An undeclared control is red, an unclassified one amber; Approve stays off while either is left.',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'design check'],
   implements: {
     route: '/',
     component: 'apps/ethlete-studio/src/app/design-parts/inventory-page/inventory-page.component.ts',
