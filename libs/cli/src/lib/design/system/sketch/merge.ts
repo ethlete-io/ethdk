@@ -1,8 +1,17 @@
 import { spawnSync } from 'child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'fs';
-import { tmpdir } from 'os';
-import { dirname, join, relative, resolve } from 'path';
-import { DesignConfig } from '../../paths';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'fs';
+import { dirname, relative, resolve } from 'path';
+import { DESIGN_DIR, DesignConfig, readConfig } from '../../paths';
 import { checkSystem, ruleLinesOf } from '../check-system';
 import { addressSketchComments, resolveSketchEndComments } from '../comments/comment';
 import { ASSETS_FOLDER, filesBelow } from '../assets';
@@ -16,7 +25,7 @@ import { carryShared, productSharedChangesOf, sharedPlanOf } from './merge-share
 import { forgetMerged, recordMerged, rerecordChangedMerged, unchangedMergedOf } from './merged-parts';
 import { madeByOf, noteOf, withMadeBy, withNote } from './part-definition';
 import { staleEmbeddedOf } from './stale-base';
-import { ROOT_DECISION_FILES } from '../uncommitted-decisions';
+import { CleanCopy, cleanCopyOf, contentsBelow } from './clean-copy';
 import {
   authorsOf,
   clearSketchReport,
@@ -27,16 +36,7 @@ import {
   variantDirOf,
 } from './sketch';
 
-const swap = (entries: { from: string | null; to: string }[]) => {
-  const backup = mkdtempSync(join(tmpdir(), 'ethlete-sketch-merge-'));
-  const held = entries.map(({ to }, index) => {
-    const copy = resolve(backup, String(index));
-
-    if (existsSync(to)) cpSync(to, copy, { recursive: true });
-
-    return { to, copy: existsSync(copy) ? copy : null };
-  });
-
+const replace = (entries: { from: string | null; to: string }[]) => {
   for (const { from, to } of entries) {
     rmSync(to, { recursive: true, force: true });
 
@@ -45,19 +45,23 @@ const swap = (entries: { from: string | null; to: string }[]) => {
     mkdirSync(dirname(to), { recursive: true });
     cpSync(from, to, { recursive: true });
   }
+};
 
-  return {
-    restore: () => {
-      for (const { to, copy } of held) {
-        rmSync(to, { recursive: true, force: true });
+const changesOf = (before: Map<string, Buffer>, after: Map<string, Buffer>) => {
+  const changes = new Map<string, Buffer | null>();
 
-        if (copy) cpSync(copy, to, { recursive: true });
-      }
+  for (const [file, content] of after) if (!before.get(file)?.equals(content)) changes.set(file, content);
+  for (const file of before.keys()) if (!after.has(file)) changes.set(file, null);
 
-      rmSync(backup, { recursive: true, force: true });
-    },
-    drop: () => rmSync(backup, { recursive: true, force: true }),
-  };
+  return changes;
+};
+
+const pruneEmptyDirs = (dir: string) => {
+  if (!existsSync(dir) || !statSync(dir).isDirectory()) return;
+
+  for (const name of readdirSync(dir)) pruneEmptyDirs(resolve(dir, name));
+
+  if (readdirSync(dir).length === 0) rmSync(dir, { recursive: true, force: true });
 };
 
 const pickOf = (sketch: Sketch) => {
@@ -145,9 +149,11 @@ const formatFiles = (target: string, files: string[]) => {
     console.warn(`Could not format the merged files: ${(formatted.stderr || formatted.error?.message || '').trim()}`);
 };
 
-const dirtyOutsideOf = (options: { target: string; productDir: string; ignored: string[] }) => {
+const dirtyAmongOf = (options: { target: string; paths: string[] }) => {
+  if (options.paths.length === 0) return [];
+
   const root = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: options.target, encoding: 'utf8' });
-  const status = spawnSync('git', ['status', '--porcelain', '-z', '--untracked-files=all', '--', options.productDir], {
+  const status = spawnSync('git', ['status', '--porcelain', '-z', '--untracked-files=all', '--', ...options.paths], {
     cwd: options.target,
     encoding: 'utf8',
   });
@@ -156,20 +162,12 @@ const dirtyOutsideOf = (options: { target: string; productDir: string; ignored: 
 
   const top = root.stdout.trim();
   const realTarget = realpathSync(options.target);
-  const real = (path: string) =>
-    path === options.target || path.startsWith(`${options.target}/`)
-      ? realTarget + path.slice(options.target.length)
-      : path;
-  const ignored = options.ignored.map(real);
   const entries = status.stdout.split('\0').filter(Boolean);
   const files = entries.flatMap((entry, index) =>
     /^[RC]/.test(entry) ? [entry.slice(3)] : /^[RC]/.test(entries[index - 1] ?? '') ? [] : [entry.slice(3)],
   );
 
-  return files
-    .map((file) => resolve(top, file))
-    .filter((file) => !ignored.some((path) => file === path || file.startsWith(`${path}/`)))
-    .map((file) => relative(realTarget, file));
+  return [...new Set(files.map((file) => relative(realTarget, resolve(top, file))))];
 };
 
 const typeErrorFilesOf = (options: { target: string; failures: string[] }) =>
@@ -195,7 +193,7 @@ const withPrintedErrors = (run: () => number) => {
   }
 };
 
-const mergeOrReason = (options: {
+type MergeOptions = {
   target: string;
   config: DesignConfig;
   product: ResolvedProduct;
@@ -204,22 +202,20 @@ const mergeOrReason = (options: {
   replaceNote?: boolean;
   author?: string;
   decidedBy?: string;
-}): string[] | string | MergeRefusal => {
-  const { target, config, product, sketch, note, replaceNote, author } = options;
+};
 
-  if (sketch.status !== 'ready')
-    return `${sketch.target} is ${sketch.status} - mark it ready before a merge: design sketch ready ${sketch.target} --by <model id> --product ${product.name}`;
+type CheckedMerge = {
+  mergedKeys: string[];
+  baseKeys: string[];
+  removedKeys: string[];
+  mergedParts: string[];
+  touchesShared: boolean;
+  replaced: string[];
+  changes: Map<string, Buffer | null>;
+};
 
-  const pick = pickOf(sketch);
-
-  if (typeof pick === 'string') return pick;
-
-  const { variant } = pick;
-  const decision = { variant, decidedBy: options.decidedBy ?? 'user', at: pick.at };
-  const rejected = rejectedProblemOf(sketch, variant);
-
-  if (rejected) return rejected;
-
+const checkedMergeOf = (options: MergeOptions & { variant: string }): string | MergeRefusal | CheckedMerge => {
+  const { target, config, product, sketch, note, replaceNote, variant } = options;
   const dir = variantDirOf(sketch, variant);
   const { parts, problems } = partFilesOf(dir);
 
@@ -271,11 +267,8 @@ const mergeOrReason = (options: {
     notedTargets.push(noted);
   }
 
-  const inheritedKeys = notedTargets.flatMap((entry) => (entry.inherited ? [entry.key] : []));
   const assetFiles = filesBelow(resolve(dir, ASSETS_FOLDER));
   const sharedChanges = productSharedChangesOf({ sketch, variant, product });
-  const untouched =
-    assetFiles.length > 0 || sharedChanges.length > 0 ? unchangedMergedOf({ product, except: mergedKeys }) : [];
 
   const baseProduct =
     base && baseKeys.length > 0 && base.configFile === product.configFile && config.products?.[base.name]
@@ -283,23 +276,7 @@ const mergeOrReason = (options: {
       : null;
   const known = [...ruleLinesOf(target, product), ...(baseProduct ? ruleLinesOf(target, baseProduct) : [])];
 
-  const dirty = dirtyOutsideOf({
-    target,
-    productDir: product.dir,
-    ignored: [
-      sketchesDirOf(product.dir),
-      ...ROOT_DECISION_FILES.map((file) => resolve(product.dir, file)),
-      ...mergedKeys.map((key) => resolve(rootOf(key), key)),
-    ],
-  });
-
-  if (dirty.length > 0)
-    return {
-      reason: `${product.name} has uncommitted edits outside ${sketch.target}, so a failed check could not tell them from this merge - commit or revert them first: ${dirty.join(', ')}`,
-      dirty,
-    };
-
-  const swapped = swap([
+  const entries = [
     ...notedTargets.flatMap(({ inherited, targetDir }) =>
       inherited ? [{ from: dirname(inherited.file), to: targetDir }] : [],
     ),
@@ -311,7 +288,12 @@ const mergeOrReason = (options: {
       to: resolve(product.dir, ASSETS_FOLDER, relative(resolve(dir, ASSETS_FOLDER), file)),
     })),
     ...sharedChanges,
-  ]);
+  ];
+  const replaced = entries.map(({ to }) => to);
+  const touched = [...new Set([...replaced, ...mergedKeys.map((key) => resolve(rootOf(key), key))])];
+  const before = contentsBelow(touched);
+
+  replace(entries);
 
   for (const { noteFile, noted } of notedTargets) writeFileSync(noteFile, noted);
 
@@ -333,8 +315,6 @@ const mergeOrReason = (options: {
   const { code, failures } = withPrintedErrors(() => checkSystem({ target, config, products: checked, known }));
 
   if (code !== 0) {
-    swapped.restore();
-
     const changed = [
       ...mergedKeys.map((key) => resolve(rootOf(key), key)),
       ...sharedChanges.map(({ to }) => to),
@@ -364,39 +344,139 @@ const mergeOrReason = (options: {
   ];
   formatFiles(target, [...new Set(written)]);
 
-  swapped.drop();
-  const productKeys = mergedKeys.filter((key) => !baseKeys.includes(key));
+  return {
+    mergedKeys,
+    baseKeys,
+    removedKeys,
+    mergedParts: [
+      ...new Set([...notedTargets.flatMap((entry) => (entry.inherited ? [entry.key] : [])), ...parts.map(partKeyOf)]),
+    ],
+    touchesShared: assetFiles.length > 0 || sharedChanges.length > 0,
+    replaced,
+    changes: changesOf(before, contentsBelow(touched)),
+  };
+};
 
-  if (productKeys.length > 0) recordMerged({ product, parts: productKeys, decision });
+const clonedDirsOf = (options: { target: string; product: ResolvedProduct }) => {
+  const { product } = options;
+  const base = product.base && !isBuiltInBase(product.config.base ?? '') ? [product.base.dir] : [];
 
-  if (base && baseKeys.length > 0) {
-    recordMerged({ product: { dir: base.dir, base: null }, parts: baseKeys, decision });
-    forgetMerged({ productDir: product.dir, parts: removedKeys });
+  return [resolve(options.target, DESIGN_DIR), ...base];
+};
+
+const applyMerge = (options: { copy: CleanCopy; checked: CheckedMerge }) => {
+  const { copy, checked } = options;
+
+  for (const [file, content] of checked.changes) {
+    const into = copy.inCheckout(file);
+
+    if (content === null) {
+      rmSync(into, { force: true });
+      continue;
+    }
+
+    mkdirSync(dirname(into), { recursive: true });
+    writeFileSync(into, content);
   }
 
-  const alsoChanged = rerecordChangedMerged({ product, before: untouched });
+  for (const path of checked.replaced) {
+    const into = copy.inCheckout(path);
 
-  if (alsoChanged.length > 0) console.log(`Asset or shared/ change also updates: ${alsoChanged.join(', ')}`);
+    if (existsSync(path)) pruneEmptyDirs(into);
+    else rmSync(into, { recursive: true, force: true });
+  }
+};
 
-  resolveSketchEndComments({
-    sketch,
-    parts: mergedKeys,
-    note: `resolved by the merge of ${sketch.target} variant ${variant}`,
-  });
-  addressSketchComments({ sketch, reason: 'merge', author, note });
-  rmSync(sketch.dir, { recursive: true, force: true });
-  clearSketchReport({ checkout: target, sketch });
+const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal => {
+  const { target, product, sketch, note, author } = options;
 
-  const mergedParts = [...new Set([...inheritedKeys, ...parts.map(partKeyOf)])];
+  if (sketch.status !== 'ready')
+    return `${sketch.target} is ${sketch.status} - mark it ready before a merge: design sketch ready ${sketch.target} --by <model id> --product ${product.name}`;
 
-  rebaseAfterMerge({
-    target,
-    product: resolveProduct({ target, name: product.name, config: product.config }),
-    merged: sketch.targets,
-    before: sketch.baseline,
-  }).forEach((line) => console.log(line));
+  const pick = pickOf(sketch);
 
-  return mergedParts;
+  if (typeof pick === 'string') return pick;
+
+  const { variant } = pick;
+  const decision = { variant, decidedBy: options.decidedBy ?? 'user', at: pick.at };
+  const rejected = rejectedProblemOf(sketch, variant);
+
+  if (rejected) return rejected;
+
+  const copy = cleanCopyOf({ target, cloned: clonedDirsOf({ target, product }) });
+
+  try {
+    const config = readConfig(copy.root) ?? options.config;
+    const entry = config.products?.[product.name];
+
+    if (!entry) return `${product.name} is not in the committed config.json - commit it before a merge`;
+
+    const copied = resolveProduct({ target: copy.root, name: product.name, config: entry });
+    const copiedSketch = { ...sketch, dir: copy.inCopy(sketch.dir) };
+
+    rmSync(sketchesDirOf(copied.dir), { recursive: true, force: true });
+    cpSync(sketch.dir, copiedSketch.dir, { recursive: true });
+
+    const checked = checkedMergeOf({
+      ...options,
+      target: copy.root,
+      config,
+      product: copied,
+      sketch: copiedSketch,
+      variant,
+    });
+
+    if (typeof checked === 'string' || 'reason' in checked) return checked;
+
+    const dirty = dirtyAmongOf({
+      target,
+      paths: [...checked.replaced, ...checked.changes.keys()].map((path) => copy.relativeOf(copy.inCheckout(path))),
+    });
+
+    if (dirty.length > 0)
+      return {
+        reason: `the merge of ${sketch.target} would overwrite uncommitted edits - commit or revert them first: ${dirty.join(', ')}`,
+        dirty,
+      };
+
+    const { mergedKeys, baseKeys, removedKeys } = checked;
+    const untouched = checked.touchesShared ? unchangedMergedOf({ product, except: mergedKeys }) : [];
+
+    applyMerge({ copy, checked });
+
+    const productKeys = mergedKeys.filter((key) => !baseKeys.includes(key));
+
+    if (productKeys.length > 0) recordMerged({ product, parts: productKeys, decision });
+
+    if (product.base && baseKeys.length > 0) {
+      recordMerged({ product: { dir: product.base.dir, base: null }, parts: baseKeys, decision });
+      forgetMerged({ productDir: product.dir, parts: removedKeys });
+    }
+
+    const alsoChanged = rerecordChangedMerged({ product, before: untouched });
+
+    if (alsoChanged.length > 0) console.log(`Asset or shared/ change also updates: ${alsoChanged.join(', ')}`);
+
+    resolveSketchEndComments({
+      sketch,
+      parts: mergedKeys,
+      note: `resolved by the merge of ${sketch.target} variant ${variant}`,
+    });
+    addressSketchComments({ sketch, reason: 'merge', author, note });
+    rmSync(sketch.dir, { recursive: true, force: true });
+    clearSketchReport({ checkout: target, sketch });
+
+    rebaseAfterMerge({
+      target,
+      product: resolveProduct({ target, name: product.name, config: product.config }),
+      merged: sketch.targets,
+      before: sketch.baseline ?? {},
+    }).forEach((line) => console.log(line));
+
+    return checked.mergedParts;
+  } finally {
+    copy.drop();
+  }
 };
 
 /**
@@ -404,8 +484,9 @@ const mergeOrReason = (options: {
  * over the product's - a part the product takes from its base over the base's, unless the sketch was opened with
  * `override`; `into-base` also removes the product copy and its `merged.json` entry - keeps the target's note (replaces it with `note`
  * only with `replaceNote`; an empty one takes the variant note) and sets `madeBy` (the file's own plus the variant's authors) on the target, runs the check
- * records each merged part's hash in `merged.json`, with the pick (variant, `decidedBy` - default `user` - and when), and deletes the sketch. With `override`, a target the product only takes from its base is copied into the product first. When the check fails, the
- * product's old files come back and the sketch stays. Each file in the variant's `assets/` goes into the product's `assets/`. A file of the sketch's `shared/` folder whose path the product's `shared/` holds
+ * records each merged part's hash in `merged.json`, with the pick (variant, `decidedBy` - default `user` - and when), and deletes the sketch. With `override`, a target the product only takes from its base is copied into the product first. All of this
+ * runs in a clean copy of HEAD plus the sketch; only the result reaches the checkout, and a result that would overwrite
+ * a file with uncommitted edits refuses with that file in `dirty`. When the check fails, the checkout and the sketch stay as they were. Each file in the variant's `assets/` goes into the product's `assets/`. A file of the sketch's `shared/` folder whose path the product's `shared/` holds
  * replaces it there; the rest goes into the target's folder when the target imports it, with its `@shared/` imports made relative; any other part that imports it stops the merge. Otherwise the addressed comments on its variants, and those on the merged parts that have no sketch, are resolved, and the open ones on its variants are addressed, by `author` or the user. Refuses without a
  * pick, and when a part the variant replaces changed in the product since the sketch's baseline. Answers with the merged part keys, or with why nothing was merged - and, when a rebase
  * would let it, the parts that changed (`[]` without a baseline).

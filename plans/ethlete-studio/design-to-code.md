@@ -2907,6 +2907,19 @@ row. Tool fix: the merge checks in a clean copy of HEAD plus the sketch (ADR 020
 write carries `by`, `cmd` and pid, and one without `by` is refused (B407). Process fix: a finding's tool fix gets its
 STATUS row in the same commit as the finding.
 
+B406 as built (builder subagent, 2026-11-07): `mergeSketch` builds a temp copy of the checkout (`sketch/clean-copy.ts`):
+`.ethlete/design` (and a non-built-in base outside it) comes from `git archive HEAD`, or from the working tree outside
+git; every other entry links to the checkout, `node_modules` is a folder of links without `.design-explore`, `.git` is
+left out. The product's `sketches/` in the copy holds only the merged sketch. Writing, the check and formatting run in
+the copy; the files it changed are then written into the checkout, and the bookkeeping (`merged.json`, comments, sketch
+removal, rebase of other sketches) runs there as before. Foreign uncommitted edits elsewhere neither block nor fail
+the merge. The old guard is gone; the new one asks `git status` only for the replaced folders and the changed files,
+and refuses with `dirty` naming them ("would overwrite uncommitted edits"), so the held-merge retry keeps working.
+Specs: `merge.spec.ts` (clean copy ignores a broken and a dirty file outside; a dirty merged file is named),
+`sketch-command.spec.ts` (the auto-merge runs past a dirty file outside the sketch and keeps it). The spec of the
+held-merge retry is gone: a dirty file inside the target folder now stops `sketch ready` at SKETCH-BASE-STALE before
+the merge, so no `sketch ready` fixture reaches a hold; `retriedHeldMerges` is unchanged.
+
 506\. The doc agent named sessions by their ids (c0, cb, c8) in German text for Tom. Tom: "woher soll ich wissen wer cb
 ist? ist das hier star wars?" Why no tool caught it: the session names carry no role, and the doc-agent skill does not
 say to name roles. Fix: messages to Tom name the role (Tool-Builder, UI-Builder), never the id (ADR 0207); with two

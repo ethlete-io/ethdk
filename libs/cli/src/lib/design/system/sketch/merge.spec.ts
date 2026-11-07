@@ -355,11 +355,7 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     expect(existsSync(found.sketch.dir)).toBe(true);
   }, 120_000);
 
-  it('refuses before any write when the product has uncommitted edits outside the sketch', () => {
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-    const target = acme();
+  const committed = (target: string) => {
     const git = (...args: string[]) =>
       spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: target, encoding: 'utf8' });
 
@@ -367,19 +363,61 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     git('add', '.');
     git('commit', '-m', 'base');
 
+    return git;
+  };
+
+  it('checks in a clean copy of HEAD, so uncommitted edits outside the sketch neither block nor fail it', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const target = acme();
+    const git = committed(target);
     const ready = readySketch(target);
     const found = { ...ready, sketch: picked(ready.sketch) };
-    const before = readFileSync(join(heroOf(target), 'hero.ts'), 'utf8');
+    const homeCss = join(target, DESIGN_DIR, 'acme/pages/home/home.css');
+    const homeTs = join(target, DESIGN_DIR, 'acme/pages/home/home.ts');
+    const broken = `${readFileSync(homeTs, 'utf8')}\nexport const broken: number = 'x';\n`;
+    const stray = join(target, DESIGN_DIR, 'acme/pages/home/stray.ts');
+
+    writeFileSync(join(found.sketch.dir, 'b/elements/hero/hero.css'), '.acme-hero { background: var(--acme-accent); }');
+    writeFileSync(homeCss, '.acme-home { color: #fff; }');
+    writeFileSync(homeTs, broken);
+    writeFileSync(stray, 'export default 1;\n');
+
+    expect(merge(target, found)).toEqual(['elements/hero']);
+    expect(readFileSync(join(heroOf(target), 'hero.css'), 'utf8')).toContain('--acme-accent');
+    expect(readFileSync(homeCss, 'utf8')).toBe('.acme-home { color: #fff; }');
+    expect(readFileSync(homeTs, 'utf8')).toBe(broken);
+    expect(existsSync(stray)).toBe(true);
+    expect(existsSync(found.sketch.dir)).toBe(false);
+    expect(git('status', '--porcelain', '--', join(DESIGN_DIR, 'acme/elements')).stdout).toBe(
+      ` M ${DESIGN_DIR}/acme/elements/hero/hero.css\n M ${DESIGN_DIR}/acme/elements/hero/hero.ts\n`,
+    );
+  }, 120_000);
+
+  it('refuses before any write and names the uncommitted file the merge would overwrite', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const target = acme();
+
+    committed(target);
+
+    const ready = readySketch(target);
+    const found = { ...ready, sketch: picked(ready.sketch) };
+    const heroTs = join(heroOf(target), 'hero.ts');
+    const edited = `${readFileSync(heroTs, 'utf8')}\nexport const edited = true;\n`;
     const cssBefore = readFileSync(join(heroOf(target), 'hero.css'), 'utf8');
 
-    writeFileSync(join(found.sketch.dir, 'b/elements/hero/hero.css'), '.acme-hero { color: #fff; }');
+    writeFileSync(join(found.sketch.dir, 'b/elements/hero/hero.css'), '.acme-hero { background: var(--acme-accent); }');
+    writeFileSync(heroTs, edited);
     writeFileSync(join(target, DESIGN_DIR, 'acme/pages/home/home.css'), '.acme-home { margin: 0; }');
 
-    const reason = merge(target, found);
+    const result = mergeResult(target, found);
 
-    expect(reason).toContain('uncommitted edits outside elements/hero');
-    expect(reason).toContain(join(DESIGN_DIR, 'acme/pages/home/home.css'));
-    expect(readFileSync(join(heroOf(target), 'hero.ts'), 'utf8')).toBe(before);
+    expect(reasonOf(result)).toContain('would overwrite uncommitted edits');
+    expect(Array.isArray(result) ? [] : result.dirty).toEqual([`${DESIGN_DIR}/acme/elements/hero/hero.ts`]);
+    expect(readFileSync(heroTs, 'utf8')).toBe(edited);
     expect(readFileSync(join(heroOf(target), 'hero.css'), 'utf8')).toBe(cssBefore);
     expect(existsSync(found.sketch.dir)).toBe(true);
   }, 120_000);
