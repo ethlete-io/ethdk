@@ -28,6 +28,7 @@ let base = '';
 const config = { render: { packages: { '@ethlete/*': 'dist/libs/*' } } };
 
 beforeAll(async () => {
+  mkdirSync(join(workspace, 'tmp'), { recursive: true });
   compiled = mkdtempSync(join(workspace, 'tmp/render-missing-dist-'));
   execFileSync('npx', ['tsc', '-p', join(cliRoot, 'tsconfig.lib.json'), '--outDir', compiled], {
     cwd: workspace,
