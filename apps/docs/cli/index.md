@@ -358,6 +358,11 @@ again fails until it comes off the list.
 endpoint built from a bare segment, `productUrl(address, 'comment')`, counts as called only when an app file calls the
 host function that builds it; an import alone does not count.
 
+`et design check` warns with `PENDING-STATE-MISSING` on an `emit:` action of a part whose app handler reaches a host
+invoke or HTTP call while the part draws no pending state (no `pending`, `busy`, `loading` or `spinner` in its sources).
+The trace starts at the output's binding on the implementing component's own tag and follows method calls, re-emitted
+outputs, service subjects and the branch an emitted `kind` literal picks; it stops at a handler that opens an overlay.
+
 ### Slow rules
 
 Some rules need the app running in a browser, so they do not run with the static checks.

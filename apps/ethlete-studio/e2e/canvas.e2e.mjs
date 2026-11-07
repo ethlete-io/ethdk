@@ -400,6 +400,79 @@ const frameBoxes = (page, selector) =>
     { CANVAS, selector },
   );
 
+const FEEDBACK_MS = 100;
+const SLOW_HOST_MS = 3000;
+const CODE_NOTICE_TIMEOUT_MS = 15000;
+
+/**
+ * Clicks `target` in the page and resolves whether a visible answer follows within `ms`: the element turns disabled
+ * or busy, leaves the page, changes its text, or a status, alert or spinner appears.
+ */
+const expectFeedbackWithin = (target, ms) =>
+  target.evaluate(
+    (element, ms) =>
+      new Promise((done) => {
+        const SIGNALS = '[aria-busy="true"], [role="status"]:not(:empty), [role="alert"], et-progress-spinner';
+        const before = { text: element.textContent, signals: document.querySelectorAll(SIGNALS).length };
+        const answerOf = () => {
+          if (!element.isConnected) return 'the button left the page';
+          if (element.disabled || element.getAttribute('aria-disabled') === 'true') return 'the button turned disabled';
+          if (element.getAttribute('aria-busy') === 'true') return 'the button turned busy';
+          if (element.textContent !== before.text) return 'the button changed its text';
+          if (document.querySelectorAll(SIGNALS).length > before.signals) return 'a status, alert or spinner appeared';
+
+          return null;
+        };
+        const startedAt = performance.now();
+        const observer = new MutationObserver(() => {
+          const answer = answerOf();
+
+          if (answer) finish(answer);
+        });
+        const timer = setTimeout(() => finish(null), ms);
+        const finish = (answer) => {
+          observer.disconnect();
+          clearTimeout(timer);
+          done({
+            ok: !!answer,
+            detail: answer
+              ? `${answer} after ${Math.round(performance.now() - startedAt)} ms`
+              : `no visible answer within ${ms} ms of the click`,
+          });
+        };
+
+        observer.observe(document.body, { subtree: true, childList: true, attributes: true, characterData: true });
+        element.click();
+
+        const answer = answerOf();
+
+        if (answer) finish(answer);
+      }),
+    ms,
+  );
+
+const withChangedCliAndSlowRestart = (key) => {
+  if (!localStorage.getItem(key)) return;
+
+  const internals = window.__TAURI_INTERNALS__;
+  const invoke = internals.invoke;
+
+  internals.invoke = (command, args) => {
+    if (command === 'studio_code_state')
+      return Promise.resolve({
+        cli: { running: 'aaaaaaaaaaaa', latest: 'bbbbbbbbbbbb', dirty: false },
+        frontend: { latest: null },
+        host: { running: null, latest: null },
+      });
+    if (command === 'design_server_restart')
+      return new Promise((done) => setTimeout(done, Number(localStorage.getItem(key)))).then(() =>
+        invoke(command, args),
+      );
+
+    return invoke(command, args);
+  };
+};
+
 const settled = async (page, selector) => {
   let last = '';
   let same = 0;
@@ -2153,6 +2226,24 @@ const CASES = [
       }
     },
   },
+  {
+    name: 'Neu starten in the code notice answers within 100 ms',
+    pages: ['System'],
+    open: 'finding 411: the button has no pending state until the B352 sketch ships',
+    run: async (page) => {
+      const key = 'e2e.slow-restart-ms';
+
+      await page.addInitScript(withChangedCliAndSlowRestart, key);
+      await page.evaluate(({ key, ms }) => localStorage.setItem(key, String(ms)), { key, ms: SLOW_HOST_MS });
+      await page.reload();
+
+      const restart = page.locator('ethlete-title-bar').getByRole('button', { name: 'Neu starten' });
+
+      await restart.waitFor({ state: 'visible', timeout: CODE_NOTICE_TIMEOUT_MS });
+
+      return expectFeedbackWithin(restart, FEEDBACK_MS);
+    },
+  },
 ];
 
 let checkout;
@@ -2258,11 +2349,17 @@ const runCase = async (page, studioUrl, designPort, target, testCase) => {
   );
   const state = await probe(page);
 
-  return !shown
+  const result = !shown
     ? { ok: false, detail: `the page does not show ${target.shows}` }
     : state
       ? await testCase.run(page, state, target, { designPort })
       : { ok: false, detail: 'no canvas' };
+
+  if (!testCase.open || !shown || !state) return result;
+
+  return result.ok
+    ? { ok: false, detail: `passes now - drop \`open\` from the case (${testCase.open}): ${result.detail}` }
+    : { ok: true, detail: `open, ${testCase.open}: ${result.detail}` };
 };
 
 const nextJob = () =>

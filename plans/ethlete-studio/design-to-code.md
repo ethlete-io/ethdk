@@ -1972,6 +1972,14 @@ pending state; an e2e helper `expectFeedbackWithin(click, 100 ms)` covers every 
 dialog, server panel, merge); a sketch of the pending state on the button (spinner, disabled) and an error toast on a
 failed restart.
 
+As built (B352, 2026-11-07): `PENDING-STATE-MISSING` (warning, `rules/pending-state.ts`) traces each `emit:` action from
+its binding on the component's tag through methods, re-emitted outputs, service subjects and `kind` branches to a host
+invoke or HTTP call; on studio it names 10 actions in 5 parts, title-bar `emit:restart` among them. The update dialog's
+restart is missed (bound via `outputBinding`). e2e case "Neu starten in the code notice answers within 100 ms" with
+`expectFeedbackWithin`, marked `open` (passes while it fails). Sketch `components/title-bar@restart-pending` a/b/c drawn,
+not checked or readied (stale `dist/libs/components`). Not run: the e2e case end to end (first run broke on a type error,
+since fixed), `design check`.
+
 412\. Mac perf session (2026-11-04, B348, full `dist`): `et design check --product studio` takes 1 083 s on the Mac and
 615 s on the desk (36 parts, 767 findings). The per-part loop is 694 s vs 410 s; the slowest parts (Mac/desk) are
 pages/sketches 97/33 s, textarea 36/11 s, slider 35/17 s. Likely cause: render-check `inspect()` runs every frame in

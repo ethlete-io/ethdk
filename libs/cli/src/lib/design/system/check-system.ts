@@ -65,6 +65,7 @@ import { utilityCssOf } from './rules/utility-css';
 import { orphanEndpointProblemsOf, orphanEndpointWarningsOf } from './rules/orphan-endpoint';
 import { sampleDefaultProblemsOf, sampleDefaultWarningsOf } from './rules/sample-default';
 import { unboundInputProblemsOf, unboundInputWarningsOf } from './rules/unbound-input';
+import { pendingStateWarningsOf } from './rules/pending-state';
 import { uncoveredViewsOf, uncoveredViewsText } from './rules/view-coverage';
 import { designCoverageOf } from './rules/design-coverage';
 import { badWidthsOf } from './rules/widths';
@@ -123,6 +124,7 @@ export const warningProblemsOf = (product: ResolvedProduct): Problem[] => [
   ...sampleDefaultWarningsOf(product),
   ...unboundInputWarningsOf(product),
   ...inlineUiInPageWarningsOf(product),
+  ...pendingStateWarningsOf(product),
 ];
 
 export const ruleLinesOf = (target: string, product: ResolvedProduct) =>
