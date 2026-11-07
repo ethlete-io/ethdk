@@ -22,6 +22,7 @@ import { repoRootOf } from './reachable-files';
 import { partKeyOf, partOfFile, ResolvedProduct, resolveProduct } from './resolve-product';
 import { ruleBaselineOf } from './rule-baseline';
 import { APP_SPEC_RULE, appSpecProblemsOf, RunRelatedSpecs, runRelatedSpecs } from './rules/app-spec';
+import { implementsUnrenderedProblemsOf } from './rules/implements-unrendered';
 import { UNCOVERED_REGION_RULE, uncoveredRegionProblemsOf } from './rules/uncovered-region';
 import { visibleChangeProblemsOf } from './rules/visible-change';
 import { sdkErrorLineOf } from './sdk-errors';
@@ -116,8 +117,8 @@ const comparedProblemsOf = async (options: {
 };
 
 /**
- * Runs the slow rules - the draw rules, then `APP-SPEC`, `UNCOVERED-REGION`, `VISIBLE-CHANGE`, compare and the SDK-error
- * watch against one harness app - on the product's parts that have one, or on `parts`, one browser at a time, and
+ * Runs the slow rules - the draw rules, then `APP-SPEC`, `UNCOVERED-REGION` with `IMPLEMENTS-UNRENDERED`, `VISIBLE-CHANGE`,
+ * compare and the SDK-error watch against one harness app - on the product's parts that have one, or on `parts`, one browser at a time, and
  * stores each part's problems at the inputs it had when the run started.
  */
 export const runSlowChecks = async (options: {
@@ -237,6 +238,8 @@ export const runSlowChecks = async (options: {
               ? new Map([[PRODUCT_PART, [{ rule: UNCOVERED_REGION_RULE, file: harness.live, message: states }]]])
               : uncoveredRegionProblemsOf({ product, live: harness.live, states }),
           );
+
+          if (typeof states !== 'string') merge(results, implementsUnrenderedProblemsOf({ product, states }));
         }
 
         for (const part of ruled(COMPARE_RULE)) {

@@ -378,6 +378,9 @@ Some rules need the app running in a browser, so they do not run with the static
   `harness.specs` the rule is off.
 - `UNCOVERED-REGION` opens every state of the `harness.live` spec and reports each visible region no part covers, on
   the page part of that live page, else on `(product)`.
+- `IMPLEMENTS-UNRENDERED` runs in the same pass: for each part the page's design embeds, it checks that the app
+  renders the part's `implements` component at the spot the design draws the part. A part whose component appears at
+  none of its spots on that page is reported on the page part, naming the embedded part's file.
 - `VISIBLE-CHANGE` draws each harness part in the app at the base and at HEAD and fails a part that looks different
   without a picked or merged sketch in between. The base is `--base`, else the merge base of HEAD and
   `harness.baseBranch`, else of the branch `origin/HEAD` names. CI passes the pull request's base.

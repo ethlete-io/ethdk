@@ -1,18 +1,28 @@
+import { readFileSync } from 'fs';
 import { AddressInfo } from 'net';
+import { resolve } from 'path';
 import { chromiumOf } from '../browser';
 import { DesignConfig } from '../design-config';
 import { createDesignServer } from '../serve';
+import { createPartShooter } from '../shot';
 import { awaitFonts, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
-import { LiveError, liveSpecOf, openLivePage } from './live-compare';
+import { frameContentOf, LiveError, liveSpecOf, openLivePage } from './live-compare';
 import { ResolvedProduct } from './resolve-product';
 import { settledPanesOf } from './settled-panes';
+import { implementsSelectorsOf, PartSlot, partSlotsOf, SlotHost, slotHostsOnPage } from './slot-hosts';
+import { createSystemModules } from './system-modules';
 import { partCoverOf, regionTextOf, UncoveredRegion, uncoveredRegionsOnPage } from './uncovered-regions';
 
 export type UncoveredFinding = { region: UncoveredRegion; states: string[] };
 
-/** The regions one live state of a page part shows, or why that state did not open. */
-export type UncoveredState = { page: string; state: string } & ({ regions: UncoveredRegion[] } | { problem: string });
+/**
+ * The regions one live state of a page part shows and whether the app renders each `implements` host at the slot its
+ * design draws the part in, or why that state did not open.
+ */
+export type UncoveredState = { page: string; state: string } & (
+  { regions: UncoveredRegion[]; slots?: SlotHost[] } | { problem: string }
+);
 
 /** Groups the regions each live state reports, so a region every state shows is one finding listing those states. */
 export const uncoveredFindingsOf = (found: { state: string; regions: UncoveredRegion[] }[]): UncoveredFinding[] => {
@@ -69,11 +79,20 @@ export const liveUncoveredOf = async (options: {
     run: async (url) => {
       const queue = createDrawQueue({ target });
       const server = await createDesignServer({ target, config, listen: true, port: 0 });
+      let shooter: ReturnType<typeof createPartShooter> | undefined;
 
       try {
         await server.listen();
 
         const base = `http://localhost:${(server.httpServer?.address() as AddressInfo).port}`;
+        const selectors = implementsSelectorsOf({ target, product });
+        const slotFill = spec.frame ? frameContentOf(readFileSync(resolve(dir, spec.frame))) : null;
+        const designShooter = (shooter = createPartShooter({
+          target,
+          base,
+          system: createSystemModules({ target, config }),
+          queue,
+        }));
         const found: { state: string; regions: UncoveredRegion[] }[] = [];
         const problems: string[] = [];
         const states: UncoveredState[] = [];
@@ -83,7 +102,24 @@ export const liveUncoveredOf = async (options: {
         ))
           for (const [stateName, state] of Object.entries(page.states)) {
             const label = `${name} ${stateName}`;
-            const regions = await queue
+            const slots: PartSlot[] = await designShooter
+              .pictureOf({
+                product: product.name,
+                part: name,
+                state: state.design,
+                preset: presetName,
+                width: null,
+                sketch: null,
+                interaction: null,
+                pan: state.pan ?? null,
+                emptySlots: slotFill !== null,
+                slotFill,
+                compose: state.compose ?? null,
+                params: new URLSearchParams(),
+              })
+              .then((design) => partSlotsOf(design.marks, selectors))
+              .catch(() => []);
+            const seen = await queue
               .run(async (browser) => {
                 const context = await browser.newContext({
                   viewport: size,
@@ -112,24 +148,28 @@ export const liveUncoveredOf = async (options: {
                     .catch(() => undefined);
                   await settledPanesOf({ page: opened.page, count: 0, timeout: DRAW_TIMEOUT_MS });
 
-                  return await uncoveredRegionsOnPage({ page: opened.page, parts, partless: spec.partless ?? [] });
+                  return {
+                    regions: await uncoveredRegionsOnPage({ page: opened.page, parts, partless: spec.partless ?? [] }),
+                    slots: await slotHostsOnPage({ page: opened.page, host: page.host ?? spec.host, slots }),
+                  };
                 } finally {
                   await context.close();
                 }
               })
               .catch((error: unknown) => (error instanceof LiveError ? error.message : Promise.reject(error)));
 
-            if (typeof regions === 'string') {
-              problems.push(`${label}: ${regions}`);
-              states.push({ page: name, state: stateName, problem: regions });
+            if (typeof seen === 'string') {
+              problems.push(`${label}: ${seen}`);
+              states.push({ page: name, state: stateName, problem: seen });
             } else {
-              found.push({ state: label, regions });
-              states.push({ page: name, state: stateName, regions });
+              found.push({ state: label, regions: seen.regions });
+              states.push({ page: name, state: stateName, ...seen });
             }
           }
 
         return { findings: uncoveredFindingsOf(found), problems, states };
       } finally {
+        await shooter?.close();
         await queue.close();
         await server.close();
       }

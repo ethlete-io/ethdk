@@ -19,6 +19,7 @@ import { Problem } from './problem';
 import { repoRootOf } from './reachable-files';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { APP_SPEC_RULE } from './rules/app-spec';
+import { IMPLEMENTS_UNRENDERED_RULE } from './rules/implements-unrendered';
 import { UNCOVERED_REGION_RULE } from './rules/uncovered-region';
 import { unbaselinedProblemsOf } from './rule-baseline';
 import { appSourcesOf } from './rules/implemented-components';
@@ -32,7 +33,14 @@ export const isDrawRule = (rule: string) =>
 /** Whether the `--slow` set runs `rule`, so `check --rules` does not. */
 export const isSlowRule = (rule: string) =>
   isDrawRule(rule) ||
-  [APP_SPEC_RULE, UNCOVERED_REGION_RULE, VISIBLE_CHANGE_RULE, COMPARE_RULE, SDK_ERROR_RULE].includes(rule);
+  [
+    APP_SPEC_RULE,
+    UNCOVERED_REGION_RULE,
+    IMPLEMENTS_UNRENDERED_RULE,
+    VISIBLE_CHANGE_RULE,
+    COMPARE_RULE,
+    SDK_ERROR_RULE,
+  ].includes(rule);
 
 const DECLARES_CONTROLS = /\bcontrols\s*:/u;
 
@@ -201,7 +209,7 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
     ...(own && !key.startsWith('pages/') && DECLARES_CONTROLS.test(part.source) ? [CONTROL_STATE_RULE] : []),
     ...(own && linked !== null && existsSync(resolve(root, linked)) ? [DROPPED_PROP_RULE, STATE_NO_SOURCE_RULE] : []),
     ...(component !== null && harness?.specs ? [APP_SPEC_RULE] : []),
-    ...(pages?.has(key) ? [UNCOVERED_REGION_RULE] : []),
+    ...(pages?.has(key) ? [UNCOVERED_REGION_RULE, IMPLEMENTS_UNRENDERED_RULE] : []),
     ...(component !== null ? [VISIBLE_CHANGE_RULE] : []),
     ...(component !== null && implemented === design ? [COMPARE_RULE, SDK_ERROR_RULE] : []),
     ...(designOnly ? [COMPARE_RULE] : []),
