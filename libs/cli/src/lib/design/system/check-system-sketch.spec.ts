@@ -1,5 +1,5 @@
 import { execFileSync } from 'child_process';
-import { mkdirSync, writeFileSync } from 'fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { checkDesign } from '../check';
@@ -175,6 +175,33 @@ describe('checkDesign', () => {
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
     expect(withoutBrowserLines(lines)).toEqual([
       expect.stringMatching(/^TYPE-ERROR .*sketches\/elements-hero\/b: \n[^]*TS2322/),
+    ]);
+  }, 60_000);
+
+  it('fails when an old variant imports a name its sketch shared folder no longer exports', async () => {
+    const target = acme();
+    const lines = output();
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+    const sketch = createSketch({ product, sketch: { layer: 'elements', name: 'hero' }, variants: ['new', 'old'] });
+
+    if (typeof sketch === 'string') throw new Error(sketch);
+
+    mkdirSync(join(sketch.dir, 'shared'), { recursive: true });
+    writeFileSync(join(sketch.dir, 'shared/flows.ts'), "export const emptyCanvasOf = (): string => '';\n");
+    const newHero = join(variantDirOf(sketch, 'new'), 'elements/hero/hero.ts');
+
+    writeFileSync(
+      newHero,
+      `import { emptyCanvasOf } from '@shared/flows';\nemptyCanvasOf();\n${readFileSync(newHero, 'utf8')}`,
+    );
+    writeFileSync(
+      join(variantDirOf(sketch, 'old'), 'elements/hero/hero.ts'),
+      "import { emptyCanvas } from '@shared/flows';\nexport default emptyCanvas;\n",
+    );
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
+    expect(withoutBrowserLines(lines)).toEqual([
+      expect.stringMatching(/^TYPE-ERROR .*sketches\/elements-hero\/old: \n[^]*emptyCanvas/),
     ]);
   }, 60_000);
 

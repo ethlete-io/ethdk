@@ -1610,6 +1610,10 @@ compares by drawing `old`, which cannot render here. Tool fix (B325): the re-che
 stored `old/`; an `old` that fails to render while the working part equals HEAD closes the sketch as HELD; a
 render error in an edit sketch's `old` is a check problem, not a silent frame; German variant notes; a spec
 with a stale `old/` against a renamed `shared/` export.
+As built (B332): `design check` already types every variant of every open sketch, `old` included, over the sketch's
+`shared/` (a5b7715fe, `typecheckOpenSketches`); a stale `old/` importing a removed export is a `TYPE-ERROR` and exit 1. The
+gap was a spec: check-system-sketch.spec.ts now pins it with `old` importing `emptyCanvas` against a `shared/` that
+exports `emptyCanvasOf`. No new rule.
 
 381\. Tom (2026-11-04): on the Mac the frames (iframes) eat the two-finger trackpad pan of the canvas. A wheel event
 over an iframe goes to the iframe document and never reaches the canvas. Why no tool caught it: the canvas
