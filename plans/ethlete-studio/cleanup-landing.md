@@ -41,3 +41,13 @@ webkit-revert-wt (nicht genommen, entschieden), wip/b321-stacking-fix (verworfen
 - desk/B358 → gelandet in diesem Commit (nur Doku: B358 und B334 geschlossen, Spec-Typecheck bleibt in CI nach ADR 0225).
 - origin/tank/b114 → gelandet in diesem Commit (Notizsprache, NOTE-LANGUAGE, `sketch note --round`; Konflikte in Usage-Zeilen und Spec gelöst, Hilfe angepasst).
 - origin/tank/w3-gates-b → gelandet in diesem Commit (984042b90: commitlint über den gepushten Bereich in CI und Pre-push; dc7a9a06d und f8cd875e0 waren schon in next als 7e3685dcf und 94606402c).
+- origin/tank/b380 → verworfen: Feature schon in next als 377879f5a; der WIP-Commit setzt nur STATUS-Zeilen (B318–B336) auf einen älteren Stand zurück.
+- origin/tank/b382 → verworfen: schon in next als 2e23578d1; WIP-Commit ist dieselbe veraltete STATUS-Rücksetzung.
+- origin/tank/b393 → verworfen: schon in next als fd611c3ac (gleicher Code, andere design-to-code-Notiz); WIP-Commit ist die veraltete STATUS-Rücksetzung.
+- origin/tank/b394 → verworfen: schon in next als f77a48873; WIP-Commit ist die veraltete STATUS-Rücksetzung.
+- origin/tank/b396 → verworfen: schon in next als 3182bd02f; WIP-Commit ist die veraltete STATUS-Rücksetzung.
+- origin/tank/ci-gates-on-next → verworfen: beide Commits schon in next (3ba0a690b, 96639086f); der WIP-Commit ist ein alter Baumstand, der die System-Seite und neuere cli-Arbeit zurückdrehen würde.
+- origin/tank/w3-gates-a → verworfen: beide Commits schon in next (7d8e0ae63, 1d2cbaa77); der WIP-Commit macht nur eine Prettier-Umbrechung in cli-related-map.mjs rückgängig.
+- origin/tank/w3-b379-b364 → verworfen: beide Commits schon in next (ec09123c5, a3b204c2d); die WIP-Notiz zu B364 ist durch die As-built-Notiz von desk/B364 ersetzt.
+- origin/tank/w3-cli-a → verworfen: schon in next als 4373e3a4c; die WIP-Datei check-staged-plans.mjs liegt identisch in next.
+- origin/tank/tree → verworfen: der einzige WIP-Commit löscht 4664 Dateien (kaputter Baumstand).
