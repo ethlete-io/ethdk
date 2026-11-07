@@ -46,7 +46,7 @@ beforeAll(async () => {
     "import { marker } from '@ethlete/core/marker';\nexport default { eyebrow: marker, headline: '', frameWidth: 1, variants: [] };\n",
   );
 
-  const serve = createRequire(import.meta.url)(join(compiled, 'libs/cli/src/lib/design/serve.js')) as ServeModule;
+  const serve = createRequire(__filename)(join(compiled, 'libs/cli/src/lib/design/serve.js')) as ServeModule;
   const port = 20000 + Math.floor(Math.random() * 30000);
 
   server = await serve.createDesignServer({ target, config, listen: true, listenOn: port, host: '127.0.0.1' });
