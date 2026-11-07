@@ -2,12 +2,12 @@
 status: accepted
 open: B424
 decided: 2026-11-07
-source: desk session 2026-11-07, Tom on the long design checks
+source: desk session 2026-11-07, the human on the long design checks
 ---
 
 # Studio checks run live and fast, never in git hooks or CI
 
-Tom: "ich bin auch noch immer absolut kein fan davon dass wir uns hier auf ci verlassen müssen dass du nicht gegen das
+The human: "ich bin auch noch immer absolut kein fan davon dass wir uns hier auf ci verlassen müssen dass du nicht gegen das
 system gearbeitet hast / dinge vergessen hast beim design. das ist grundsätzlich einfach nur falsch. diese ewigen checks
 sollte es eigentlich gar nicht erst brauchen", then: "für studio sollten git hooks UND ci tabu sein. wenn dort checks
 landen die dann auch noch fehler finden dann ist studio schlicht unbrauchbar. ALLES muss live passieren und extrem
