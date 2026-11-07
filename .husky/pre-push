@@ -19,6 +19,10 @@ while read -r _ local_sha _ remote_sha; do
     base=$remote_sha
   else
     base=$(git merge-base "$local_sha" origin/main)
+    next_base=$(git merge-base "$local_sha" origin/next 2>/dev/null || true)
+    if [ -n "$next_base" ] && git merge-base --is-ancestor "$base" "$next_base"; then
+      base=$next_base
+    fi
   fi
 
   export NX_BASE="$base" NX_HEAD="$local_sha"
