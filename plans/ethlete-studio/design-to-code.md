@@ -2161,6 +2161,7 @@ the macOS runner (from e6b59bdf4). Fixed in f30bb3b81 (machine id per `RUNNER_OS
 Linux branch and the fallback were run). Why pre-push missed it: no local gate runs a macOS step. Tool fix (B379,
 builder default): a lint check for `.github/actions` and workflows that flags Linux-only paths (`/etc`, `/proc`) outside
 a `RUNNER_OS` branch.
+As built (B379): `yarn lint:runner-os` (`tools/scripts/check-runner-os-paths.mjs`) flags `/etc`, `/proc`, `/sys`, `/var/lib` and `/usr/lib` paths in `.github/actions` and `.github/workflows` unless the line names Linux (a `Linux)` case branch) or the step has a `runner.os == 'Linux'` guard. Part of the pre-push checks.
 
 443\. CI run 41924354824, job Unit tests (builder, 2026-11-05): only `cli` failed. The `motion-shot.spec` fixture raced a
 re-render under load (reproduced with a 300 ms delay; the repro bites on the old code). The `merge.spec` flake (B373)

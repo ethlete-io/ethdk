@@ -34,6 +34,7 @@
     "lint:cli-related-map": "node ./tools/scripts/cli-related-map.mjs check",
     "lint:css-properties": "node ./tools/scripts/lint-css-properties.js",
     "lint:migration-entries": "node ./tools/scripts/check-migration-entries.mjs",
+    "lint:runner-os": "node ./tools/scripts/check-runner-os-paths.mjs",
     "lint:size": "node ./tools/scripts/check-size-budget.mjs",
     "lint:studio-adrs": "node ./tools/scripts/check-studio-adrs.mjs",
     "lint:studio-label-specs": "node ./tools/scripts/studio-label-specs.mjs",
