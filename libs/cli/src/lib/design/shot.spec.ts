@@ -728,7 +728,15 @@ describe('createPartShooter', () => {
   });
 
   it('names the states of the part in the 400 without a state', async () => {
-    const { shots } = acme(async ({ sketch }) => (sketch ? ['short', 'long', 'new'] : ['short', 'long']));
+    const { target, config, shots } = acme(async ({ sketch }) =>
+      sketch ? ['short', 'long', 'new'] : ['short', 'long'],
+    );
+    const product = createSystemModules({ target, config }).productOf('acme');
+    const parsed = parseTarget('components/card');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    createSketch({ merge: 'override', product, sketch: parsed, variants: ['a'] });
 
     const merged = await ask(shots, 'product=acme&part=components/card');
     const variant = await ask(shots, 'product=acme&part=components/card&sketch=components/card&variant=a');
@@ -755,13 +763,31 @@ describe('createPartShooter', () => {
     );
 
     expect(merged).toMatchObject({ status: 404, type: 'text/plain; charset=utf-8' });
-    expect(String(merged.body)).toContain(
-      'state "new" is not in the merged part components/button - it has: short, long',
-    );
+    expect(String(merged.body)).toContain('state "new" not in part components/button at HEAD - it has: short, long');
     expect(String(variant.body)).toContain(
       'state "long" is not in variant "a" of components/button - it has: short, new',
     );
     expect(screenshot).not.toHaveBeenCalled();
+  });
+
+  it('takes a sketch folder name as the sketch id, and names the known ids for an unknown sketch', async () => {
+    const { target, config, shots } = acme(async () => ['short', 'long']);
+    const product = createSystemModules({ target, config }).productOf('acme');
+    const parsed = parseTarget('components/button@notice');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    createSketch({ merge: 'override', product, sketch: parsed, variants: ['a'] });
+
+    const part = 'product=acme&part=components/button&state=short&variant=a';
+
+    expect((await ask(shots, `${part}&sketch=components/button.notice`)).status).toBe(200);
+    expect((await ask(shots, `${part}&sketch=components-button.notice`)).status).toBe(200);
+
+    const unknown = await ask(shots, `${part}&sketch=components/button.nope`);
+
+    expect(unknown.status).toBe(404);
+    expect(String(unknown.body)).toContain('no sketch components/button.nope; did you mean components/button@notice');
   });
 
   it('answers 422 with a reason, never a png, when the part root has zero size or the screenshot fails', async () => {

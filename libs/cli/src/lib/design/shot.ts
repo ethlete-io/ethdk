@@ -8,6 +8,7 @@ import { DrawnPart, PartsChange, redraws } from './changed-parts';
 import { DesignPreset } from './paths';
 import { DrawLedger } from './draw-ledger';
 import { fileOfModuleId, SketchVariant, SystemModules } from './system/system-modules';
+import { sketchIdOfName } from './system/sketch/sketch';
 import { recordShotViewed } from './system/sketch/viewed-shots';
 import {
   Browser,
@@ -673,10 +674,12 @@ export const createPartShooter = (options: {
     return statesOf({ product, part, sketch: statesFrom }).then((names) => {
       if (!names || names.includes(state)) return draw();
 
-      const holder = statesFrom ? `variant "${statesFrom.variant}" of ${statesFrom.target}` : `the merged part ${part}`;
+      const where = statesFrom
+        ? `is not in variant "${statesFrom.variant}" of ${statesFrom.target}`
+        : `not in part ${part} at HEAD`;
 
       throw new ThumbMissingError(
-        `design-explore: state "${state}" is not in ${holder} - it has: ${names.join(', ') || 'no states'}`,
+        `design-explore: state "${state}" ${where} - it has: ${names.join(', ') || 'no states'}`,
       );
     });
   };
@@ -737,9 +740,26 @@ export const createPartShooter = (options: {
         return;
       }
 
-      const [slug, variant, width, sketch, product] = ['call', 'variant', 'width', 'sketch', 'product'].map((name) =>
-        params.get(name),
+      const [slug, variant, width, askedSketch, product] = ['call', 'variant', 'width', 'sketch', 'product'].map(
+        (name) => params.get(name),
       );
+      const sketch = askedSketch && (sketchIdOfName(askedSketch) ?? askedSketch);
+
+      if (sketch && product && !slug && !system.sketchOf(product, sketch)) {
+        const known = system
+          .sketchesOf(product)
+          .map((entry) => entry.target)
+          .filter((id) => id.startsWith(sketch.split('@')[0] ?? sketch));
+        const hint = known.length ? known : system.sketchesOf(product).map((entry) => entry.target);
+
+        send(response, {
+          status: 404,
+          type: 'text/plain; charset=utf-8',
+          body: `design-explore: no sketch ${askedSketch}${hint.length ? `; did you mean ${hint.join(', ')}` : ''}`,
+        });
+
+        return;
+      }
 
       if (slug || (!product && (width || variant))) {
         const pixels = Number(width);

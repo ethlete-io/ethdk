@@ -1751,6 +1751,8 @@ under the id `components/title-bar@code-notice`. Why no tool caught it: no spec 
 name in the wrong form. Fix (B341): the route accepts the folder name as a sketch id, and an unknown sketch answers
 "no sketch <x>; did you mean <id>" from the listing. Lesson: an error must name the input it could not resolve, not a
 cause further down.
+As built (B341): the shot route reads `sketch=` as an id, `<layer>/<name>.<sketch>` or a folder name
+(`sketchIdOfName`); an unknown sketch answers 404 `no sketch <x>; did you mean <ids>`.
 
 397\. Builder (2026-11-04, B323): the ready sketch `components/title-bar@code-notice` has a round note that says
 "b = Punkt am Update-Bereich", but variant b draws the dot on the "Neu starten" button. Why no tool caught it:
@@ -1824,6 +1826,8 @@ the builder could not compare that state. Likely cause (not proven): the product
 the shot route answers an unclear text for a state the part lacks. Why no tool caught it: the route names a missing
 part, but not a missing state. Fix (B341): a state the part lacks at HEAD answers 404 with "state <s> not in part <p>
 at HEAD".
+As built (B341): a state the merged part lacks answers 404 `state "<s>" not in part <p> at HEAD - it has: ...`
+(the state check already existed; its wording now matches).
 
 407\. Builder (2026-11-04, after B339 part 1, c0035f241): `studio:e2e` is 109/112. Three cases went red that were green
 after B321 (c348db743): Sketches and Large "pan beyond every edge of the content" (bottom edge), and Chip "first load

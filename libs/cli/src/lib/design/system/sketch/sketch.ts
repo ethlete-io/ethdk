@@ -264,6 +264,15 @@ export const parseTarget = (value: string | undefined): SketchTarget | string =>
   return sketch === undefined ? { layer, name } : { layer, name, sketch };
 };
 
+/** Reads a sketch id (`<layer>/<name>[@<sketch>]`), `<layer>/<name>.<sketch>` or a sketch folder name (`<layer>-<name>[.<sketch>]`) as a sketch id, or `null` when it is none of them. */
+export const sketchIdOfName = (value: string) => {
+  const dotted = value.includes('/')
+    ? value.replace(/\.([^./@]+)$/u, '@$1')
+    : value.replace(/^([^-/]+)-/u, '$1/').replace(/\.([^./@]+)$/u, '@$1');
+
+  return typeof parseTarget(dotted) === 'string' ? null : dotted;
+};
+
 export const isVariantName = (name: string) => NAME.test(name) && name !== SHARED_FOLDER;
 
 const foldersOf = (dir: string) =>
