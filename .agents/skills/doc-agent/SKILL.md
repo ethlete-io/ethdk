@@ -74,6 +74,7 @@ output; the designed Studio is the side product.
   processes (`ps`) before you ask it anything.
 - You may clear its dead background agents and shells, or restart its CLI with the agent-sessions `restart`
   command and a `/handoff resume` prompt. Agree this with the builder first by SendMessage.
+  Restart it with `restart <builder name> <prompt>`; the command accepts the paired session.
 
 ## Record
 

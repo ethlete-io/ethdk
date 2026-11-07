@@ -473,6 +473,30 @@ process.stdin.on('data', (data) => {
     }
   });
 
+  it.skipIf(!hasTmux)('restarts the paired builder session and logs who restarted whom', () => {
+    const builder = `claude-builder-${process.pid}`;
+    const doc = `claude-doc-${process.pid}`;
+    const scopedBuilder = `${builder}@${basename(dir)}`;
+    const scopedDoc = `${doc}@${basename(dir)}`;
+
+    spawnSync('tmux', ['new-session', '-d', '-s', scopedBuilder, 'cat']);
+    spawnSync('tmux', ['new-session', '-d', '-s', scopedDoc, 'cat']);
+    spawnSync('tmux', ['set-option', '-t', `=${scopedBuilder}:`, '@ethlete_role', 'builder']);
+
+    try {
+      const result = run(['restart', builder, '--after', '30', 'resume'], undefined, { TMUX_PANE: paneOf(scopedDoc) });
+
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain('Restarting');
+      expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toContain(
+        `peer restart: ${scopedDoc} restarted ${scopedBuilder}`,
+      );
+    } finally {
+      spawnSync('tmux', ['kill-session', '-t', `=${scopedBuilder}`]);
+      spawnSync('tmux', ['kill-session', '-t', `=${scopedDoc}`]);
+    }
+  });
+
   it('fails restart when no tmux session exists for the agent', () => {
     const result = run(['restart', `nobody-${process.pid}`, 'resume']);
 

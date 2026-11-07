@@ -105,6 +105,9 @@ const BUILDER_PROMPT =
 const withRole = (words) =>
   role === 'builder' && basename(words[0]) === 'claude' ? [...words, '--append-system-prompt', BUILDER_PROMPT] : words;
 const sessionExists = (name) => tmux('has-session', '-t', `=${name}`).status === 0;
+const ROLE_OPTION = '@ethlete_role';
+const roleOf = (session) => tmux('show-options', '-v', '-t', `=${session}:`, ROLE_OPTION).stdout.trim() || null;
+const arePaired = (a, b) => (roleOf(a) === 'builder') !== (roleOf(b) === 'builder');
 const ONE_SHOT_FLAGS = new Set(['-p', '--print', '-v', '--version', '-h', '--help']);
 const runsInSession = (agentArgs) =>
   Boolean(process.stdin.isTTY && process.stdout.isTTY) && !agentArgs.some((arg) => ONE_SHOT_FLAGS.has(arg));
@@ -351,12 +354,18 @@ if (command === 'send' && sender) {
   const session = freeSessionFor(sender);
   const shellCommand = `${role ? `ETHLETE_AGENT_ROLE=${role} ` : ''}${withRole(words).map(quote).join(' ')}`;
   if (process.env.TMUX) {
-    if (!sessionExists(session)) tmux('new-session', '-d', '-s', session, '-c', process.cwd(), shellCommand);
+    if (!sessionExists(session)) {
+      tmux('new-session', '-d', '-s', session, '-c', process.cwd(), shellCommand);
+      if (role) tmux('set-option', '-t', `=${session}:`, ROLE_OPTION, role);
+    }
     process.exitCode = spawnSync('tmux', ['switch-client', '-t', `=${session}`], { stdio: 'inherit' }).status ?? 1;
   } else {
-    process.exitCode =
-      spawnSync('tmux', ['new-session', '-A', '-s', session, '-c', process.cwd(), shellCommand], { stdio: 'inherit' })
-        .status ?? 1;
+    const created = sessionExists(session)
+      ? []
+      : ['new-session', '-d', '-s', session, '-c', process.cwd(), shellCommand];
+    if (created.length && tmux(...created).status === 0 && role)
+      tmux('set-option', '-t', `=${session}:`, ROLE_OPTION, role);
+    process.exitCode = spawnSync('tmux', ['attach-session', '-t', `=${session}`], { stdio: 'inherit' }).status ?? 1;
   }
 } else if (command === 'shell-init' || command === 'shell-install') {
   const agents = [sender, ...words].filter(Boolean);
@@ -414,7 +423,7 @@ if (command === 'send' && sender) {
   if (!session) {
     process.stderr.write(`No tmux session for ${sender}.\n`);
     process.exitCode = 1;
-  } else if (own && own !== session) {
+  } else if (own && own !== session && !arePaired(own, session)) {
     process.stderr.write(
       `Refused: ${session} is not your session. You run in ${own}, so pass ${own.replace(`@${repoSlug}`, '')}.\n`,
     );
@@ -455,6 +464,7 @@ if (command === 'send' && sender) {
       }
     }
   } else {
+    if (own && own !== session) restartLog(`peer restart: ${own} restarted ${session}`);
     const delay = Number(afterSeconds ?? RESTART_AFTER_SECONDS);
     const forward = notify ? ['--notify', notify] : [];
     spawn(process.execPath, [script, 'restart', sender, '--now', '--after', String(delay), ...forward, ...words], {

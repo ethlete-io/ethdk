@@ -3932,3 +3932,11 @@ part-picture-cache and unbound-input specs. Not verified: no real compare run un
 
 563\. Doc agent (2026-11-07): an agent appended to a size-budgeted plan file and committed; only pre-push saw the size and
 format, 300 commits later. Tool fix (technical): a staged-file size and format check in pre-commit.
+
+564\. Doc agent (2026-11-07): the agent-sessions `restart` refused a peer session, so the doc session's idle check could not
+restart a stuck builder and Tom had to step in. Fix: `restart <name>` accepts the paired session.
+
+564 as built (2026-11-07): `run --role builder` marks its tmux session with `@ethlete_role`; two sessions are paired when
+exactly one is a builder. `restart` accepts a paired target and logs `peer restart: <caller> restarted <target>` to
+`restart.log`; any other peer is still refused. The builder-agent and doc-agent skills each got one line.
+Verified: new spec in agent-sessions.spec.ts. A builder started before this change has no marker; restart it once by hand.

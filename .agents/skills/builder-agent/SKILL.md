@@ -11,7 +11,7 @@ that talks with the user and records decisions. Talk English.
 ## Start
 
 1. Call `ListAgents`. Find the grill/docs session: an interactive session in the same repo.
-2. Send it a short message: you are the builder, and what you will build first.
+2. Send it a short message: you are the builder, and what you will build first. The grill/docs session can restart you with `restart <your name>`, and you it.
 3. Read the plan in `plans/` that the work belongs to. Its "in progress" notes, "Open
    points" lists and the latest decision sections give the queue. Check `git log` for
    what is already done.
