@@ -4254,3 +4254,15 @@ thread, the class of finding 599, which the 599 spec checks only for the merge p
 the server or counts requests per page load. Tool fix (technical): a first-frame timeout names the slow design
 requests and the longest ping (b815a18af); a spec asserts one listing per page load; the 599 assertion covers the
 whole server (no sync `child_process` call and no full rule run on the server thread per request).
+
+603\. Builder (2026-11-08, B434, d20413216): after a css edit the Large sketch cells showed nothing for about 8 s. The
+img and the iframe switched to the new revision at the same moment; the new img took about 5 s to render, and the new
+iframe stayed transparent until it painted. Fix: a cell keeps its last loaded picture on top until the new one loads,
+and a failed revision keeps the old one. The e2e case caught it but was masked by the leaked route of finding 601; no
+spec checks that a cell is never empty while its revision changes. Tool fix (technical): a sketch-view spec samples a
+cell through a revision change and fails on any frame without a loaded picture.
+
+604\. Builder (2026-11-08): a subagent ran `git checkout` on `apps/ethlete-studio/e2e/canvas.e2e.mjs` while another
+agent had uncommitted edits in it. Nothing stops an agent from discarding another agent's work in a shared checkout.
+Tool fix (technical): a PreToolUse hook refuses `git checkout`/`git restore`/`git stash` on a path with uncommitted
+changes that the agent did not make itself, and the builder's subagent brief names the files each slice owns.
