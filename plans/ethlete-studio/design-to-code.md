@@ -4200,3 +4200,17 @@ before their picture loaded; now painted-without-picture > without-picture > pic
 `continue-on-error`. Tool fix (technical): the job blocks (c99006d83), and the probe names its outcome (786f7adb0), so
 the next red says which cause. Open: a harsher held-picture repro still empties cells when more than 6 near cells have
 no picture; CI never showed it.
+
+613\. Builder (2026-11-09, B440): the title bar needed a "CI rot" label that the human decided in ADR 0230, but
+`design accept` refused to run without the human at a terminal, so the builder opened the sketch
+`components/title-bar@ci-red` and asked for a new `--adr` flag. ADR 0209 already says an agent accepts a direct edit
+that names its ADR (`--by builder --note "ADR <n>"`). The question repeated a decision. Tool fix (technical, ADR 0209):
+`design accept --by builder` works without a terminal when the note names an ADR; the builder then accepts the label
+and drops the sketch.
+
+614\. Builder (2026-11-09, B440): the e2e runner overwrites its log when a run starts, so a watcher that greps the log
+for "exit" can read the end of the previous run. Tool fix (technical): each run writes a new log file.
+
+615\. Builder (2026-11-09, B440): `tsc -p` on the Studio `tsconfig.spec.json` fails in `shot-state.spec.ts`
+(`failedShots` possibly null) since 38d421711. vitest does not typecheck, so the specs stayed green. Cause of the gap
+and tool fix: open, the builder reports why no gate caught it.
