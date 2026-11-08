@@ -4246,3 +4246,14 @@ part change but not on a sketch file change, so a request after the merge could 
 `signalLists` detaches running listings first. That CI took this path is not proven; it is the only stale path found.
 The specs covered the join in studio-api but not the serve trigger on a sketch file change. Tool fix: a serve spec that
 runs every watcher event kind against a gated listing and asserts a fresh answer.
+
+621\. Builder (2026-11-09, B448, 49b3c969f): the full batch run before the push failed Large "a sketch keeps its frame
+count and pictures from the first paint through a sketch edit" (2 frames at the first paint, 30 once settled), 1 of 2
+runs alone. The B445 fix was not the cause (6 runs each with and without it). Cause: after a reload the `targets=no`
+listing draws 30 pending cells, and the quick listing folds them to 2 about 270 ms later; the case sampled at a random
+moment in that window, so it passed on the jumpy 30 and failed on the correct 2. The case is split, and the new case
+"first paints the frame count it settles on" stays open under B345 (finding 425). The tool did not catch it because the
+B445 slice ran only the Merge case, 2bb8d3d58 changed the fixtures without a re-run of this case, and one run of a
+racy sample can pass. Tool fix: a commit that touches the e2e fixtures, `serve.ts` or `studio-api.ts` makes
+`studio:e2e:bite` run each case of the affected page group 3 times and blocks when a result changes. The batch gate
+caught it before the push.
