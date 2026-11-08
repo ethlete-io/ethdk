@@ -4226,3 +4226,23 @@ their specs. Fix (d536fee67): both targets also run `tsc -p tsconfig.spec.json`.
 use, the suspected cause of finding 616 and of the old unit flake. Tool fix (technical): the specs listen on port 0.
 Decided by the grill session under ADR 0230: wait bounds that only tell "answers at once" from "waits for a timeout"
 stay in the unit run; one moves to the perf job when it flakes.
+
+618\. Builder (2026-11-09, B447, 90ef0eeb8): Large "a sketch scroll never empties a cell" printed `(iframe: null)`.
+Cause (proven): `sketchCells` listed all cells and then probed each frame by position, so a frame removed in between
+gave a null probe and the cell counted as empty. Why the frame left in CI is not proven (likely the cap of 6 live
+frames against 8 visible cells); the detail now prints "frames gone before their probe". The tool did not catch it
+because nothing tests the e2e probe helpers and the race never happened locally. Tool fix: a spec for the probe helpers
+with a forced-race fixture page for each outcome.
+
+619\. Builder (2026-11-09, B446, c3e136ae2): Sketches "wheel and ctrl-wheel over a frame centre" failed with "no iframe
+frame". Cause: the case sampled the frames once after setup, but a sketch mounts its iframes only after the listing
+arrives; in CI it was the first case of a shard on a cold server (slow listing not proven, the log has no listing
+timings). Locally the listing always arrives inside the 2.5 s settle. Tool fix: an e2e mode `--hold-listings <ms>` that
+delays design-server listings, so a case that samples once fails locally.
+
+620\. Builder (2026-11-09, B445, c88cf6ebd): Merge "the sketch view stays open after the sketch dropped from the
+listing" timed out. Cause (server bug): a request joins a running listing, and `serve.ts` detached running listings on a
+part change but not on a sketch file change, so a request after the merge could get the deleted sketch back. Fix:
+`signalLists` detaches running listings first. That CI took this path is not proven; it is the only stale path found.
+The specs covered the join in studio-api but not the serve trigger on a sketch file change. Tool fix: a serve spec that
+runs every watcher event kind against a gated listing and asserts a fresh answer.
