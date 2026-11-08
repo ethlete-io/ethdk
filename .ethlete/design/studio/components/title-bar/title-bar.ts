@@ -82,7 +82,7 @@ const pushState = ({ push }: Props) =>
         push.gate,
         `<span class="inline-flex" title="${PUSH_GATE_LABEL[push.gate]}${push.gate === 'red' ? ` - ${PUSH_RED_ADVICE}` : ''}" data-push-state>${badge(
           {
-            label: `<span class="inline-flex items-center gap-1 whitespace-nowrap">${icon(GATE_ICON[push.gate], { size: 12 })}${pushCount(push)} · ${push.age}</span>`,
+            label: `<span class="flex items-center gap-1 whitespace-nowrap">${icon(GATE_ICON[push.gate], { size: 12 })}<span class="[text-box:trim-both_cap_alphabetic]">${pushCount(push)} · ${push.age}</span></span>`,
             variant: push.gate === 'red' ? 'filled' : 'tonal',
             size: 'sm',
           },

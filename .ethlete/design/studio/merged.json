@@ -27,11 +27,10 @@
     "at": "2026-11-03T16:58:15.525Z"
   },
   "components/title-bar": {
-    "hash": "fbc75e72f2126ef3",
+    "hash": "d8eb542e980c46af",
     "variant": "a",
-    "decidedBy": "plan: B425: Empfehlung gebaut (builder), a: no restart tooltip or action while pending or failed",
-    "at": "2026-11-07T17:20:26.699Z",
-    "note": "merged without a pick: allowed by B425: Empfehlung gebaut (builder), a: no restart tooltip or action while pending or failed"
+    "decidedBy": "user",
+    "at": "2026-11-08T14:38:29.675Z"
   },
   "components/tree-row": "9b985495f700b73f",
   "components/update-dialog": {
