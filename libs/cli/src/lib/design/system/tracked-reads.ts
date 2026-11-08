@@ -57,26 +57,23 @@ export const printOf = (input: TrackedInput) =>
 /** Whether every input still prints what it printed when the run read it; a vanished file prints differently. */
 export const inputsUnchanged = (inputs: PrintedInput[]) => inputs.every(({ input, print }) => printOf(input) === print);
 
-/**
- * Runs the synchronous `run` with every `fs` read in `STAT_READS` and `LIST_READS` recorded, and returns its value with
- * what each input printed. `run` must not await: the tracking ends when it returns.
- */
-export const trackedRun = <T>(run: () => T): { value: T; inputs: PrintedInput[] } => {
-  const seen = new Map<string, TrackedInput>();
-  const record = (input: TrackedInput) => seen.set(JSON.stringify(input), input);
-  const originals = new Map<string, unknown>();
+let recording: ((input: TrackedInput) => void) | null = null;
+let installed = false;
+
+const installRecorders = () => {
+  if (installed) return;
+
   const target = fs as unknown as Record<string, (...args: unknown[]) => unknown>;
 
   for (const name of STAT_READS) {
     const original = target[name];
 
     if (!original) continue;
-    originals.set(name, original);
     target[name] = Object.assign(
       (path: unknown, ...rest: unknown[]) => {
-        const resolved = pathOf(path);
+        const resolved = recording ? pathOf(path) : null;
 
-        if (resolved) record({ kind: 'stat', path: resolved });
+        if (resolved) recording?.({ kind: 'stat', path: resolved });
 
         return original.call(fs, path, ...rest);
       },
@@ -87,25 +84,37 @@ export const trackedRun = <T>(run: () => T): { value: T; inputs: PrintedInput[] 
     const original = target[name];
 
     if (!original) continue;
-    originals.set(name, original);
     target[name] = (path: unknown, options?: unknown) => {
-      const resolved = pathOf(path);
+      const resolved = recording ? pathOf(path) : null;
       const recursive =
         typeof options === 'object' && options !== null && (options as { recursive?: boolean }).recursive === true;
 
-      if (resolved) record({ kind: 'list', path: resolved, recursive });
+      if (resolved) recording?.({ kind: 'list', path: resolved, recursive });
 
       return original.call(fs, path as PathLike, options);
     };
   }
   syncBuiltinESMExports();
+  installed = true;
+};
+
+/**
+ * Runs the synchronous `run` with every `fs` read in `STAT_READS` and `LIST_READS` recorded, and returns its value with
+ * what each input printed. `run` must not await: the tracking ends when it returns.
+ */
+export const trackedRun = <T>(run: () => T): { value: T; inputs: PrintedInput[] } => {
+  const seen = new Map<string, TrackedInput>();
+
+  // The recorders stay installed once a run needs them: a loader such as jiti keeps the `fs` function a module first
+  // called, so a recorder put back after one run would record nothing in the next.
+  installRecorders();
+  recording = (input) => seen.set(JSON.stringify(input), input);
 
   try {
     const value = run();
 
     return { value, inputs: [...seen.values()].map((input) => ({ input, print: printOf(input) })) };
   } finally {
-    for (const [name, original] of originals) target[name] = original as (...args: unknown[]) => unknown;
-    syncBuiltinESMExports();
+    recording = null;
   }
 };

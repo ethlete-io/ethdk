@@ -43,7 +43,7 @@ const ask = (target: string, path: string, method = 'GET') => ({
   request: Object.assign(Readable.from([]), { method }) as unknown as IncomingMessage,
 });
 
-describe('openPointsAnswer', () => {
+describe('openPointsAnswer', { timeout: 30_000 }, () => {
   it('answers the open points of every part, or of one, without a draw', async () => {
     const target = checkout();
 

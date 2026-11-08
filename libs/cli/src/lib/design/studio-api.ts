@@ -30,13 +30,12 @@ import {
 } from './system/notes/note';
 import { approveException, listExceptions } from './system/exceptions';
 import { approveInventory, Inventory } from './system/inventory';
-import { cachedOpenPointsOf } from './system/open-points-cache';
-import { buildReadyOf } from './system/part-build-ready';
-import { drawnPartPointsOf, readyMarkOf, readyPartOf } from './system/part-ready';
+import { drawnFindingsOf } from './system/drawn-open-points';
+import { openPointsInWorker } from './system/open-points-runner';
+import { readyPartOf } from './system/part-ready';
 import { refreshHarnessMap } from './system/harness-map';
 import { markPartGo } from './system/part-go';
 import { partActionsOf } from './system/action-lost';
-import { partPointsOf } from './system/read-open-points';
 import { flowProblemsOf } from './system/rules/flow';
 import { Problem } from './system/problem';
 import { ResolvedProduct } from './system/resolve-product';
@@ -46,7 +45,6 @@ import { oneProductOf } from './system/sketch/cli-args';
 import { retriedHeldMerges } from './sketch-command';
 import { discardSketch, mergeRefusalOf } from './system/sketch/merge';
 import { mergeInWorker } from './system/sketch/merge-runner';
-import { changedOutsideSketchOf } from './system/sketch/merged-parts';
 import { acceptRunOf, partAcceptRefusalOf } from './system/accept-command';
 import { DrawStates, storePictures } from './system/accepted-pictures';
 import { readPartModule } from './system/list-system';
@@ -961,10 +959,10 @@ const knownPartOf = (product: ResolvedProduct, part: unknown): string | Answer =
     : refusal({ status: 404, reason: 'unknown-part', message: `product "${product.name}" has no part "${part}"` });
 };
 
-const drawnPointsOf = async ({ asked, config, product }: Found, part: string) => {
-  const points = await drawnPartPointsOf({ target: asked.target, config, product, part });
+const drawnFindingsAnswerOf = async ({ asked, config, product }: Found, part: string) => {
+  const findings = await drawnFindingsOf({ target: asked.target, config, product, parts: [part] });
 
-  return 'unavailable' in points ? { status: 503, error: `cannot draw ${part}: ${points.unavailable}` } : points;
+  return 'unavailable' in findings ? { status: 503, error: `cannot draw ${part}: ${findings.unavailable}` } : findings;
 };
 
 /**
@@ -982,30 +980,23 @@ export const openPointsAnswer = withProduct('GET', async (found) => {
   if (asked === null) {
     if (draw === 'true') return failure(400, 'draw needs a part');
 
-    return { status: 200, body: { drawn: false, parts: cachedOpenPointsOf(found.product).points } };
+    return {
+      status: 200,
+      body: { drawn: false, ...(await openPointsInWorker({ product: found.product, part: null })) },
+    };
   }
 
   const part = knownPartOf(found.product, asked);
 
   if (typeof part !== 'string') return part;
 
-  const cached = cachedOpenPointsOf(found.product);
-  const points = draw === 'true' ? await drawnPointsOf(found, part) : partPointsOf(cached.points, part);
+  const findings = draw === 'true' ? await drawnFindingsAnswerOf(found, part) : undefined;
 
-  if (!Array.isArray(points)) return failure(points.status, points.error);
+  if (findings && 'error' in findings) return failure(findings.status, findings.error);
 
-  const located = readyPartOf({ product: found.product, part });
-  const hash = typeof located === 'string' ? null : located.hash;
-  const ready = readyMarkOf({ product: found.product, part });
-  const directEdit = changedOutsideSketchOf(found.product).includes(part);
-  const { inputs } = cached;
-  const buildReady = buildReadyOf({
-    product: found.product,
-    part,
-    inputs: { ...inputs, pointsOf: (key) => (key === part ? points : inputs.pointsOf(key)) },
-  });
+  const answer = await openPointsInWorker({ product: found.product, part, findings });
 
-  return { status: 200, body: { part, hash, ready, directEdit, buildReady, drawn: draw === 'true', points } };
+  return { status: 200, body: { ...answer, drawn: draw === 'true' } };
 });
 
 const STUDIO_CLICK = 'user';

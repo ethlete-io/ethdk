@@ -4258,3 +4258,11 @@ child processes and long sync loops out of a request handler. Tool fix (backlog,
 studio-api answer runs through one worker building block, and lint forbids `execFileSync`/`spawnSync` in code
 reachable from studio-api handlers (same rule family as the git reader of 642); an event-loop lag assertion in the
 server specs is only the fallback. First e2e speedup in the same commit: 169.8 s → 146.3 s (one run).
+
+As built (639/644): `GET /__design/open-points` runs in one long-lived worker (`system/open-points-runner.ts`,
+`open-points-worker.ts`) with its own open-points cache; a draw stays on the server thread and passes its findings in.
+Measured on the studio product from dist: the loop stalled 2.1 s (cold, all parts), 2.0 s (one part) and 0.3 s (warm);
+in the worker the longest loop gap is 7 ms. In the jiti worker of the specs the cache missed every read after its
+first tracked run (jiti keeps the `fs` function a module first called), so `tracked-reads.ts` keeps its recorders
+installed. `open-points-loop.spec.ts` bites with the old answer (1021 ms gap). The jiti worker starts in 4-7 s: 30 s
+spec timeouts.

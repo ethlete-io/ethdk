@@ -116,7 +116,7 @@ describe('part go', () => {
 
     expect(answer.body).toMatchObject({ directEdit: false, points: [] });
     expect(answer.body).not.toHaveProperty('go');
-  });
+  }, 30_000);
 
   it('et design go stores a go, and refuses an unknown part and a missing author', async () => {
     const { target, dir } = checkout();

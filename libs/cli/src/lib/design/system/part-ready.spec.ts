@@ -204,7 +204,7 @@ describe('part ready', () => {
       drawn: false,
       points: [],
     });
-  });
+  }, 30_000);
 
   it('et design ready exits 1 with the open points, and marks a part without any', async () => {
     const { target, dir } = checkout();

@@ -72,7 +72,7 @@ describe('part accept', () => {
     expect(readAccepted(productDir)).toEqual([
       expect.objectContaining({ part: HERO, by: 'user', note: 'approved by a click in Studio' }),
     ]);
-  });
+  }, 30_000);
 
   it('refuses before it writes: no hash, a stale hash, an unknown part, nothing to accept, an open sketch', async () => {
     const { target, productDir } = editedHero();
