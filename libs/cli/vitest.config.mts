@@ -13,7 +13,8 @@ export default defineConfig({
     // memory-reducer major GC (15-273 ms) on the server thread and fails its stall check. Docker: 0/10 runs with a
     // no-op merge, 1/5 with the idle worker, 6/15 with the real merge. Per-file execArgv needs nested projects,
     // which vitest.projects.ts cannot load.
-    execArgv: ['--no-memory-reducer'],
+    // Temporary diagnostic for finding 607, removed after one CI run.
+    execArgv: ['--no-memory-reducer', '--trace-gc'],
     coverage: {
       reportsDirectory: '../../coverage/libs/cli',
       provider: 'v8',
