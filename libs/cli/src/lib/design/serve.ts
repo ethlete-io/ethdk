@@ -66,6 +66,7 @@ import {
   sketchCompareAnswer,
   sketchCropAnswer,
   sketchDiffAnswer,
+  detachRunningListings,
   sketchesAnswer,
   sketchMergeAnswer,
   sketchPreviewAnswer,
@@ -723,7 +724,8 @@ const designExplore = ({
         }
 
         revision += 1;
-        forgetUnchangedStates();
+        forgetUnchangedStates(change);
+        detachRunningListings();
         if (change.all) shots.clear({ announced: true });
         else shots.forget(change);
         events.signal('parts', { revision, ...change });

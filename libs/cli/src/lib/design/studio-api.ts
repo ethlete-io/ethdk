@@ -424,6 +424,12 @@ const listingOf = async ({
 
 const runningListings = new Map<string, { answer: Promise<Answer>; askers: number; stop: AbortController }>();
 
+/**
+ * Lets the next sketch listing start anew instead of joining one that started before a file changed. A running listing
+ * still answers the requests that already joined it.
+ */
+export const detachRunningListings = () => runningListings.clear();
+
 const startedListing = ({
   key,
   asked,
@@ -457,7 +463,7 @@ const startedListing = ({
  * from the product's (`changes`), and the live report
  * of the agent (`report`, `null` when none runs). `?unchanged=no` answers without `problems`, and with the `unchanged` of a target only
  * while a full listing's comparison of the same sources is kept: no rule check, no pictures. `&targets=no` also leaves out `targets`: no part module loads.
- * A listing asked while the same one runs gets that one's answer; it stops when every client that asked for it has closed its request.
+ * A listing asked while the same one runs gets that one's answer, unless `detachRunningListings` ran since it started; it stops when every client that asked for it has closed its request.
  * Each listing first runs the held automatic merges whose uncommitted files are gone.
  */
 export const sketchesAnswer = withProduct('GET', ({ asked, config, product }) => {

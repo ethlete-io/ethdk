@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 import { resolve } from 'path';
+import { ALL_PARTS, DrawnPart, PartsChange, redraws } from '../../changed-parts';
 import { drawnPair, PictureOf } from '../../merge-compare';
 import { productStylesheetFilesOf } from '../product-stylesheets';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
@@ -28,10 +29,17 @@ type Rendered = { part: LoadedPart; frames: string; states: Map<string, Markup |
 
 const CACHE_LIMIT = 200;
 
-const cache = new Map<string, string[]>();
+const cache = new Map<string, { unchanged: string[]; drawn: DrawnPart[] }>();
 
-/** Drops every kept result, so the next call compares again. Call it when a product file changes. */
-export const forgetUnchangedStates = () => cache.clear();
+/**
+ * Drops the kept results of every part `change` redraws, in the product or in the compared variant, so the next call
+ * compares them again. Without `change` it drops them all.
+ */
+export const forgetUnchangedStates = (change: PartsChange = ALL_PARTS) => {
+  for (const [key, { drawn }] of cache) {
+    if (drawn.some((part) => redraws(change, part))) cache.delete(key);
+  }
+};
 
 const hashOf = (value: string) => createHash('sha256').update(value).digest('hex');
 
@@ -70,11 +78,11 @@ const renderedOf = async (load: () => Promise<unknown>): Promise<Rendered | null
   }
 };
 
-const remember = (key: string, unchanged: string[]) => {
+const remember = (key: string, kept: { unchanged: string[]; drawn: DrawnPart[] }) => {
   if (cache.size >= CACHE_LIMIT) cache.delete(cache.keys().next().value ?? '');
-  cache.set(key, unchanged);
+  cache.set(key, kept);
 
-  return unchanged;
+  return kept.unchanged;
 };
 
 export const framesOf = (part: Pick<LoadedPart, 'widths' | 'interactions'>, presets: string[] | null) => {
@@ -182,7 +190,7 @@ export const keptUnchangedStatesOf = async (options: {
     states: undefined,
   });
 
-  return cache.get(key) ?? null;
+  return cache.get(key)?.unchanged ?? null;
 };
 
 /**
@@ -192,7 +200,7 @@ export const keptUnchangedStatesOf = async (options: {
  * rendered outside a browser (`ng()`), is unchanged when every frame draws the
  * same pixels in the default theme. A state the product lacks, or one that fails to draw on either side, is never
  * unchanged. Markup-only comparisons are kept by source hashes. Pixel comparisons are kept the same way only with
- * `keepPictures`, and never when a draw failed; `forgetUnchangedStates` drops them all. Set `compareFrames` to false
+ * `keepPictures`, and never when a draw failed; `forgetUnchangedStates` drops them. Set `compareFrames` to false
  * to compare drawings without requiring matching widths and interactions.
  */
 export const unchangedStatesOf = async (options: {
@@ -235,7 +243,7 @@ export const unchangedStatesOf = async (options: {
     states,
   });
   const keeps = !pictureOf || keepPictures;
-  const known = keeps ? cache.get(key) : undefined;
+  const known = keeps ? cache.get(key)?.unchanged : undefined;
 
   if (known) return known;
 
@@ -245,7 +253,13 @@ export const unchangedStatesOf = async (options: {
   ]);
 
   if (!now || !after) return [];
-  if (compareFrames && now.frames !== after.frames) return keeps ? remember(key, []) : [];
+
+  const parts: DrawnPart[] = [
+    { product: product.name, part: compared, sketch: null },
+    { product: product.name, part: compared, sketch: { target: sketch.target, variant } },
+  ];
+
+  if (compareFrames && now.frames !== after.frames) return keeps ? remember(key, { unchanged: [], drawn: parts }) : [];
 
   const imported = productStylesheetFilesOf(product);
   const restyled = overlaid.parts.some((part) => {
@@ -280,5 +294,5 @@ export const unchangedStatesOf = async (options: {
 
   const unchanged = comparedStates.filter((_, index) => same[index] === 'same').map(([state]) => state);
 
-  return keeps && !same.includes('failed') ? remember(key, unchanged) : unchanged;
+  return keeps && !same.includes('failed') ? remember(key, { unchanged, drawn: parts }) : unchanged;
 };

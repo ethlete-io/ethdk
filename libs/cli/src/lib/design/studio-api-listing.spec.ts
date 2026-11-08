@@ -4,7 +4,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { readConfig } from './design-config';
-import { sketchesAnswer } from './studio-api';
+import { detachRunningListings, sketchesAnswer } from './studio-api';
 import { resolveProduct } from './system/resolve-product';
 import { createSketch, markSketchReady, parseTarget } from './system/sketch/sketch';
 import { CheckSketches, openSketchListingAt } from './system/sketch/sketch-checker';
@@ -67,5 +67,36 @@ describe('the sketch listing tiers', () => {
     expect(unchangedOf(await listing(target, '&unchanged=no', load))).toEqual([undefined, undefined]);
     expect(unchangedOf(await listing(target, '', load))).toEqual([['one'], ['one']]);
     expect(unchangedOf(await listing(target, '&unchanged=no', load))).toEqual([['one'], ['one']]);
+  });
+
+  it('starts a new listing after a file change instead of joining one that started before it', async () => {
+    const target = acme();
+    let release = () => undefined as void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const load = async () => {
+      await gate;
+
+      return { default: { note: 'n', states: { one: {} }, render: () => ({ body: 'x' }) } };
+    };
+    const targetsOf = (listed: Listed) => listed.sketches.map((sketch) => sketch.target);
+    const earlier = listing(target, '', load);
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+    const parsed = parseTarget('components/chip');
+
+    if (typeof parsed === 'string') throw new Error(parsed);
+
+    const created = createSketch({ product, sketch: parsed, variants: ['a'] });
+
+    if (typeof created === 'string') throw new Error(created);
+
+    markSketchReady({ checkout: target, sketch: created });
+    detachRunningListings();
+
+    const later = listing(target, '', load);
+
+    release();
+
+    expect(targetsOf(await earlier)).toEqual(['components/card']);
+    expect(targetsOf(await later)).toEqual(['components/card', 'components/chip']);
   });
 });

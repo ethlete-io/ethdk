@@ -206,6 +206,30 @@ describe('unchangedStatesOf', () => {
         );
       });
 
+      it('keeps the pixel compare across a change to another part, and drops it for a change to its own', async () => {
+        const { product, sketch } = spaced();
+        const options = { product, sketch, variant: 'a', load: counting().load, keepPictures: true };
+        const differs = pictureOf((variant) => variant ?? 'now');
+
+        expect(await unchangedStatesOf({ ...options, pictureOf: pictureOf(() => 'same') })).toEqual(['default']);
+        forgetUnchangedStates({
+          all: false,
+          parts: [
+            { product: product.name, part: 'elements/other', sketch: null },
+            { product: product.name, part: sketch.target, sketch: { target: 'elements/other', variant: 'a' } },
+          ],
+        });
+        expect(await unchangedStatesOf({ ...options, pictureOf: differs })).toEqual(['default']);
+        forgetUnchangedStates({
+          all: false,
+          parts: [{ product: product.name, part: sketch.target, sketch: { target: sketch.target, variant: 'a' } }],
+        });
+        expect(await unchangedStatesOf({ ...options, pictureOf: differs })).toEqual([]);
+        expect(await unchangedStatesOf({ ...options, pictureOf: pictureOf(() => 'same') })).toEqual([]);
+        forgetUnchangedStates({ all: false, parts: [{ product: product.name, part: sketch.target, sketch: null }] });
+        expect(await unchangedStatesOf({ ...options, pictureOf: pictureOf(() => 'same') })).toEqual(['default']);
+      });
+
       it('does not keep a result whose draw failed', async () => {
         const { product, sketch } = spaced();
         let failed = true;
