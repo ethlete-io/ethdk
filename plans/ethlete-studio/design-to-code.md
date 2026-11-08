@@ -4156,3 +4156,11 @@ before anyone sizes the work; the 264 made the warning-only route look needed (f
 `span.sk-gutter` hits are a mask in canvas colour, on purpose. Decision (doc agent, applies ADR 0209 with ADR 0201): the
 skip is an invisible direct edit that implements a decision, so the builder adds `data-et-skip="OFF-CENTRE"` and runs
 `et design accept pages/sketches --by builder --note "ADR 0201"`; the gutter does not go into the baseline.
+
+635\. Builder (2026-11-09, B459a): the ADR 0209 path failed on its first real use. `--by builder` counts as the human,
+and `yarn et:design accept pages/sketches --product studio --by claude-opus-5-5 --note "ADR 0201, ADR 0209"` was denied
+by the Claude Code permission system as self-approval. The builder undid the `sk-gutter` skip edit. Why no tool caught
+it: ADR 0209 was decided and queued (613) without a run of the command in auto mode, so nobody saw the permission
+boundary. Lesson: a decision that has an agent run a command checks first that the agent may run it. Open: the human
+decides between a narrow permission rule for the agent accept and a prepared command that the human runs. Until then
+the 4 `pages/sketches` gutter hits go into the OFF-CENTRE baseline, so B459b does not wait.
