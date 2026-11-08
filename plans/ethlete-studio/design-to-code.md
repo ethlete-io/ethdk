@@ -4173,7 +4173,7 @@ Why no tool caught it: the command prints no build commit and no note on uncommi
 builder): `et:design` prints one line with the build commit when `libs/cli/src` has uncommitted changes, and names the
 command that runs the working copy.
 As built (B461, 62cb4eaa2): `dirtyCliNoteOf` in `tools/scripts/studio-code.mjs` prints the build commit and the
-working-copy command to stderr when `libs/cli` is dirty; `studio-code.spec.mjs` covers it. Not verified: a live dirty run.
+working-copy command to stderr when `libs/cli` is dirty; `studio-code.spec.mjs` covers it. A live dirty run printed the line (built from d8cf6cd80).
 
 637\. The human (2026-11-09), on a grill question that offered `yarn design go --batch` for a human accept: "ich lese
 da schon wieder das wort go". ADR 0048 removed go and accept as human gates: a direct edit to a merged part without a
