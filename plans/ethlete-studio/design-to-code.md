@@ -4194,3 +4194,12 @@ suite takes all runner cores in CI, and the B377 row and the rows that wait on i
 fix of 589 waits behind B434 (ADR 0228), and the doc-agent skill still says "Tom's words verbatim", so the doc agent
 wrote the name again. Tool fix (technical): the 589 fix moves into the current slice of the doc agent's own files: the
 doc-agent skill says "the human's words verbatim", and the doc agent runs `yarn lint:person-names` before each commit.
+
+595\. Builder (2026-11-08, B434, 219961e3e): the e2e case "hiding the panel keeps the frames" failed for two causes.
+(1) The test measured against the canvas origin, which moves by the panel width; the app shifts the camera as decided
+(finding 212, B120), so the case now compares screen positions. (2) App bug: `sketches.component.ts` sized the labels
+from the fit scale, which is measured again on each width change, so a wider viewport moved the frames 6-43 px at a user
+zoom (fix: a `noteFit` linkedSignal). Check, compare and verify render at one fixed viewport, and nothing changes the
+width while a camera is set. Tool fix (technical): `design verify` hides the panel (or resizes) at a non-Fit zoom on
+each canvas part and needs the first frame rect to stay within 1 px; `design check` flags a layout size (font size,
+grid column) derived from a fit or viewport measurement. Open risk: `transposed` also depends on the width.
