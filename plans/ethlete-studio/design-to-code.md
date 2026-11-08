@@ -4203,3 +4203,10 @@ zoom (fix: a `noteFit` linkedSignal). Check, compare and verify render at one fi
 width while a camera is set. Tool fix (technical): `design verify` hides the panel (or resizes) at a non-Fit zoom on
 each canvas part and needs the first frame rect to stay within 1 px; `design check` flags a layout size (font size,
 grid column) derived from a fit or viewport measurement. Open risk: `transposed` also depends on the width.
+
+596\. Builder (2026-11-08, run 42431195355): two cli unit specs with wall-clock stall budgets failed under CI load
+without a code change: `serve.spec.ts:954` (two hundred sketches, no block over 50 ms, got 51.2 ms) and
+`merge.spec.ts:151` (no stall over 250 ms, got 525 ms); run 42421444909 passed them. A plain time bound in a unit spec
+measures the runner load, not the code, and a red Verified job skips Deploy and hides the e2e signal. Tool fix
+(technical): the stall specs measure with `monitorEventLoopDelay` percentiles or a bound relative to a calibration run,
+never a raised constant; a lint rule flags `performance.now()` differences compared to a literal in a spec.
