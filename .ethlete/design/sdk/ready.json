@@ -1,0 +1,64 @@
+{
+  "foundations/colors": {
+    "hash": "90cda4cd58b51ef5",
+    "files": {
+      ".ethlete/design/sdk/foundations/colors/colors.ts": "5f21e1f2948db378",
+      ".ethlete/design/sdk/foundations/colors/overrides.json": "37529d9089744c64",
+      ".ethlete/design/sdk/foundations/colors/shared/contrast.ts": "b93de9afab5a930e"
+    },
+    "at": "2026-11-08T14:57:09.725Z",
+    "by": "et design check",
+    "cmd": "design check",
+    "pid": 1454598
+  },
+  "foundations/elevation": {
+    "hash": "097c0586609d90ad",
+    "files": {
+      ".ethlete/design/sdk/foundations/elevation/elevation.css": "f2f220dfb86a39c2",
+      ".ethlete/design/sdk/foundations/elevation/elevation.ts": "db933f910ada1a89",
+      ".ethlete/design/sdk/foundations/elevation/shared/elevation/scene.css": "1f8f38c213e70f13",
+      ".ethlete/design/sdk/foundations/elevation/shared/elevation/scene.ts": "936205798eb8c95c",
+      "libs/components/design/form-field.ts": "6910b0bf23eb0f3c",
+      "libs/components/design/icon.ts": "829a95253b948ba9",
+      "libs/components/design/select.ts": "d9dba51f6cbeb2df",
+      "libs/components/src/lib/forms/form-field/form-field-control-suffix-styles.component.css": "cc2cea40f4a0f4ae",
+      "libs/components/src/lib/forms/form-field/form-field-suffix-overlap-styles.component.css": "74e1b9ee85a9cc51",
+      "libs/components/src/lib/forms/form-field/form-field-text-shell-styles.component.css": "2eac704dfac0a6aa",
+      "libs/components/src/lib/forms/form-field/form-field.component.css": "4063eb2012233778",
+      "libs/components/src/lib/forms/form-field/headless/label.directive.css": "c010d55fd205c6fa",
+      "libs/components/src/lib/forms/form-field/hint.component.css": "d2c4f0ec2ef6bac4",
+      "libs/components/src/lib/forms/input/input.component.css": "02a190d06c08aa88",
+      "libs/components/src/lib/forms/select/select-all-option.component.css": "79b5a2ae71dbd24b",
+      "libs/components/src/lib/forms/select/select-option-group.component.css": "b6451eacb9b026b3",
+      "libs/components/src/lib/forms/select/select-option-styles.component.css": "24a12532fc82fb09",
+      "libs/components/src/lib/forms/select/select-panel.component.css": "b85bb18bab2890e3",
+      "libs/components/src/lib/forms/select/select.component.css": "fa54cb1b79ba643b",
+      "libs/components/src/lib/forms/textarea/textarea-autosize-styles.component.css": "27aa7dd9c197e96d",
+      "libs/components/src/lib/forms/textarea/textarea.component.css": "e1e6b6061ab5c476",
+      "libs/components/src/lib/icon/headless/check-icon.ts": "6a14df4cc853b42d",
+      "libs/components/src/lib/icon/headless/chevron-icon.ts": "d2c88d30d687a8bf",
+      "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
+      "libs/components/src/lib/icon/headless/icon-styles.component.css": "c137a7a10599dc3f",
+      "libs/components/src/lib/icon/headless/times-icon.ts": "52047c20b1cf421d",
+      "libs/core/design/interactive-styles.ts": "781528322bd34499",
+      "libs/core/src/lib/theming/color-interactive-styles.component.css": "8baece3a25375ed8",
+      "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
+    },
+    "at": "2026-11-08T14:57:09.841Z",
+    "by": "et design check",
+    "cmd": "design check",
+    "pid": 1454598
+  },
+  "foundations/icons": {
+    "hash": "8f54284f202642c8",
+    "files": {
+      ".ethlete/design/sdk/foundations/icons/icons.ts": "92fe04df2b6735e5",
+      "libs/components/design/icon-set.ts": "2aab551c1dd9aedc",
+      "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404"
+    },
+    "at": "2026-11-08T14:57:09.936Z",
+    "by": "et design check",
+    "cmd": "design check",
+    "pid": 1454598
+  }
+}

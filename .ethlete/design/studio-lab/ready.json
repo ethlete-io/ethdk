@@ -1,0 +1,13 @@
+{
+  "foundations/tokens": {
+    "hash": "55203b3a6672a6cb",
+    "files": {
+      ".ethlete/design/studio-lab/foundations/tokens/tokens.css": "810c834bc3293871",
+      ".ethlete/design/studio-lab/foundations/tokens/tokens.ts": "ec854040dce3b368"
+    },
+    "at": "2026-11-08T14:56:33.608Z",
+    "by": "et design check",
+    "cmd": "design check",
+    "pid": 1454598
+  }
+}

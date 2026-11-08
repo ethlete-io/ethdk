@@ -4067,6 +4067,7 @@ timeout. The tool did not catch it because `spec:stress --load 2` stays far belo
 without the fix), and nothing reports a case that runs close to its timeout. Tool fix: the vitest reporter of the Studio
 unit run fails a case that uses more than half of its timeout, so a first case that holds a cold compile shows up
 locally before it turns red in CI.
+As built (B458): `apps/ethlete-studio/src/test-slow-case.ts`, called from an `afterEach` in `test-setup.mjs`; it measures from the setup `beforeEach` to the last `afterEach` against `task.timeout`, and is off when `CI=true`. Verified: with `--testTimeout=40` the System view spec fails its slow cases locally and not with `CI=true`; the full Studio unit run passes (589). Not verified: how close the slowest local case is to the half mark on a busy machine.
 
 623\. The human (2026-11-09, screenshot of the live title bar and the sketch `components/title-bar@ci-red`): "mal ganz
 davon ab dass das vertical alignment total grütze ist". In the screenshot the text of the "3 ungepusht · 0,7 h" badge

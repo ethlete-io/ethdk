@@ -1,7 +1,8 @@
 import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';
 import '@angular/compiler';
-import { afterEach } from 'vitest';
+import { afterEach, beforeEach } from 'vitest';
 import { watchSdkErrors } from './test-sdk-errors';
+import { slowCaseProblemOf } from './test-slow-case';
 
 const takeSdkErrors = watchSdkErrors(console);
 const loggedErrors = [];
@@ -11,6 +12,22 @@ console.error = (...args) => {
   loggedErrors.push(args.map((arg) => (arg instanceof Error ? arg.message : String(arg))).join(' '));
   logError(...args);
 };
+
+let caseStart = 0;
+
+beforeEach(() => {
+  caseStart = performance.now();
+});
+
+afterEach((context) => {
+  const slow = slowCaseProblemOf({
+    elapsedMs: performance.now() - caseStart,
+    timeoutMs: context.task.timeout ?? 5000,
+    ci: process.env['CI'] === 'true',
+  });
+
+  if (slow) throw new Error(slow);
+});
 
 afterEach(() => {
   const problem = takeSdkErrors();
