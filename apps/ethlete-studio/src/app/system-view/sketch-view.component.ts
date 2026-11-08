@@ -231,6 +231,7 @@ export class SketchViewComponent {
   public part = input<ListedPart | null>(null);
   public epoch = input(0);
   public revision = input(0);
+  public currentRevision = input(0);
   public changes = input(0);
   public surface = input<string | undefined>(undefined);
   public color = input<string | undefined>(undefined);
@@ -451,6 +452,7 @@ export class SketchViewComponent {
       variants: this.shownRounds().flatMap((round) => (round.open ? round.variants : [])),
       epoch: this.epoch(),
       revision: this.revision(),
+      currentRevision: this.currentRevision(),
       surface: this.surface(),
       color: this.color(),
     }),

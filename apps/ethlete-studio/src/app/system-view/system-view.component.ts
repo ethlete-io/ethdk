@@ -270,6 +270,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [part]="shown.part"
         [epoch]="epoch()"
         [revision]="sketchRevision()"
+        [currentRevision]="sketchCurrentRevision()"
         [changes]="frameRevisions().seq"
         [surface]="surface()"
         [color]="color()"
@@ -630,6 +631,21 @@ export class SystemViewComponent {
         failsToLoad(part?.problems ?? []) ||
         (sketch.targets ?? []).some((target) => !!target.error) ||
         sketch.problems?.some((entry) => failsToLoad(entry.problems)),
+    });
+  });
+
+  protected sketchCurrentRevision = computed(() => {
+    const shown = this.sketchShown();
+
+    if (!shown) return 0;
+
+    const { product, sketch, part } = shown;
+
+    return revisionOf(this.frameRevisions(), {
+      product: product.name,
+      part: sketchPartOf(sketch),
+      sketch: null,
+      errored: failsToLoad(part?.problems ?? []),
     });
   });
 

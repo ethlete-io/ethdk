@@ -3,6 +3,7 @@ import listing from './__fixtures__/studio-listing.json';
 import { CanvasFrame, placeableFramesOf } from '../components/design-canvas/canvas-frame';
 import {
   callFramesOf,
+  CURRENT,
   canPick,
   holdersOf,
   isGroupOpen,
@@ -15,6 +16,7 @@ import {
   PENDING_LABEL,
   sketchMatrixOf,
   sketchRoundsOf,
+  sketchRowsOf,
   stateRowKeyOf,
   TreeEntry,
   treeOf,
@@ -1472,5 +1474,28 @@ describe('a sketch that is gone', () => {
     expect(pickedPartKeyOf('sketch:components/tree')).toBe('components/tree');
     expect(pickedPartKeyOf('components/card')).toBe('components/card');
     expect(pickedPartKeyOf(null)).toBeNull();
+  });
+});
+
+describe('sketchRowsOf', () => {
+  it('renews the Aktuell row only with its own revision, so a variant edit keeps its frames and pictures', () => {
+    const button = part({ name: 'button' });
+    const rows = sketchRowsOf({
+      port: 4400,
+      product: product([button]),
+      part: button,
+      sketch: sketch(),
+      variants: ['a'],
+      epoch: 1,
+      revision: 7,
+      currentRevision: 3,
+    });
+    const revisionsOf = (key: string) =>
+      rows
+        .find((row) => row.key === key)
+        ?.shots.flatMap((shot) => [shot.src, shot.picture].map((src) => new URL(src).searchParams.get('revision')));
+
+    expect(revisionsOf(CURRENT)).toEqual(['3', '3', '3', '3']);
+    expect(revisionsOf('a')).toEqual(['7', '7', '7', '7']);
   });
 });
