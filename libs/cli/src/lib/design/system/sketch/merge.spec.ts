@@ -96,6 +96,21 @@ const agentReply = (product: ReturnType<typeof resolveAcme>, comment: DesignComm
   });
 const heroOf = (target: string) => join(target, DESIGN_DIR, 'acme/elements/hero');
 
+const cpuMs = (since?: NodeJS.CpuUsage) => {
+  const spent = process.threadCpuUsage(since);
+
+  return (spent.user + spent.system) / 1000;
+};
+
+const calibrationMs = () => {
+  const from = process.threadCpuUsage();
+  let sum = 0;
+
+  for (let i = 0; i < 10_000_000; i++) sum += Math.sqrt(i);
+
+  return Math.max(cpuMs(from), sum < 0 ? 1 : 0);
+};
+
 describe('mergeSketch', { timeout: 60_000 }, () => {
   afterEach(() => vi.restoreAllMocks());
 
@@ -124,19 +139,18 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     expect(readFileSync(join(target, harness.map), 'utf8')).toContain('DESIGN_HARNESS_PARTS');
   });
 
-  it('keeps the server thread answering while a Studio merge runs: no stall over 250 ms', async () => {
+  it('keeps the server thread answering while a Studio merge runs: no stall over 3 calibration units', async () => {
     const target = acme();
     const ready = readySketch(target);
 
     picked(ready.sketch);
 
-    let last = performance.now();
+    const unit = calibrationMs();
     let longest = 0;
+    let last = process.threadCpuUsage();
     const ticks = setInterval(() => {
-      const now = performance.now();
-
-      longest = Math.max(longest, now - last);
-      last = now;
+      longest = Math.max(longest, cpuMs(last));
+      last = process.threadCpuUsage();
     }, 5);
 
     const answer = await sketchMergeAnswer({
@@ -148,7 +162,7 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     clearInterval(ticks);
 
     expect(answer.status).toBe(200);
-    expect(Math.max(longest, performance.now() - last)).toBeLessThan(250);
+    expect(Math.max(longest, cpuMs(last))).toBeLessThan(Math.max(unit, calibrationMs()) * 3);
   });
 
   it('records the merged parts, so a later change outside a sketch shows', () => {

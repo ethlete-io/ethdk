@@ -339,6 +339,21 @@ const checkSketchesHere: CheckSketches = async (request) => {
 };
 
 // Thread CPU time, not wall time: a loaded machine deschedules the thread, which a wall-clock bar would count as a block.
+const cpuMs = (since?: NodeJS.CpuUsage) => {
+  const spent = process.threadCpuUsage(since);
+
+  return (spent.user + spent.system) / 1000;
+};
+
+const calibrationMs = () => {
+  const from = process.threadCpuUsage();
+  let sum = 0;
+
+  for (let i = 0; i < 10_000_000; i++) sum += Math.sqrt(i);
+
+  return Math.max(cpuMs(from), sum < 0 ? 1 : 0);
+};
+
 const watchLongestBlock = () => {
   let longest = 0;
   let last = process.threadCpuUsage();
@@ -899,7 +914,7 @@ describe('the design server for sketches and comments', () => {
     expect((await ask('/__design/sketches', '?product=acme', 'POST')).status).toBe(405);
   });
 
-  it('keeps answering other requests while it checks two hundred sketches, without a block over 50 ms', async () => {
+  it('keeps answering other requests while it checks two hundred sketches, without a block over 8 calibration units', async () => {
     const target = acme();
     const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
     const targets = Array.from({ length: 200 }, (_, index) => `components/card@s${String(index).padStart(3, '0')}`);
@@ -932,6 +947,7 @@ describe('the design server for sketches and comments', () => {
     );
     let listedAt = Infinity;
     let callsAt = Infinity;
+    const unit = calibrationMs();
     const longestBlock = watchLongestBlock();
     const listings = Promise.all([
       ask('/__design/sketches', '?product=acme'),
@@ -951,7 +967,7 @@ describe('the design server for sketches and comments', () => {
     ).toEqual(Array.from({ length: 200 }, () => 1));
     expect(checks).toBe(1);
     expect(callsAt).toBeLessThan(listedAt);
-    expect(longest).toBeLessThan(50);
+    expect(longest).toBeLessThan(Math.max(unit, calibrationMs()) * 8);
   }, 60_000);
 
   it('lists the states of every target part of a sketch, the first target first', async () => {
