@@ -289,8 +289,6 @@ jobs:
 
   studio-e2e:
     name: Studio e2e (${{ matrix.shard }}/6)
-    needs: design-changes
-    if: needs.design-changes.outputs.changed == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
