@@ -4117,6 +4117,9 @@ restart still waited. Why no tool caught it: the restart spec has no captured pa
 busy words, and `restart` gives up without a message to the session it should restart. Tool fix (general, builder):
 `busyLine()` matches "Waiting for" only in the footer or spinner line, never in a transcript line; a spec with a captured
 pane whose last chat line says "Waiting for" bites; a `restart` that gives up sends a mailbox line to the session.
+As built (B460, 39d8de81b): `busyLine()` counts only the spinner line above the input box and the footer; a captured
+idle pane with a "Waiting for" transcript line bites. The give-up mailbox line already existed. Not verified: a real
+end-to-end restart.
 
 628\. Builder (2026-11-09, B459a, 2facac8ea): OFF-CENTRE baseline hit, sdk `components/button`, `size-lg` and `size-xl`: the text sits off the
 box centre. Cause: the lib CSS has no `text-box` trim and a height that does not fit the trimmed line. It goes into the
