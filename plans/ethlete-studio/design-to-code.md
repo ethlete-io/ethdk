@@ -4248,3 +4248,13 @@ budget is only the fallback if the lint rule cannot cover a case.
 Cause: one slice-paths file per checkout, shared by every session and subagent. Why no tool caught it: nothing ties
 the file to the session that wrote it. Tool fix (backlog): a subagent sets `ETHLETE_SLICE_PATHS` and never writes the
 file; the pre-commit hook names the writer of the file and warns when a different session commits against it.
+
+644\. Builder (2026-11-09, item 0, 07596570b): the Studio e2e flakes ("no frame after 10 s", `/__design/stamp` at about
+7 s on CI) come from the design server blocking its event loop while it answers `GET /__design/open-points`:
+`openPointsAnswer` → `ruleProblemsOf` runs the Tailwind check with a blocking `execFileSync`, and `declaringFilesOf`
+walks files synchronously, 6-10 s per run locally, 2-3× more on CI. Every other request waits behind it. Fix (item 0):
+compute the open-points answer in a worker thread, like `merge-runner.ts`. Why no tool caught it: nothing keeps sync
+child processes and long sync loops out of a request handler. Tool fix (backlog, per ADR 0235 at the cause): a heavy
+studio-api answer runs through one worker building block, and lint forbids `execFileSync`/`spawnSync` in code
+reachable from studio-api handlers (same rule family as the git reader of 642); an event-loop lag assertion in the
+server specs is only the fallback. First e2e speedup in the same commit: 169.8 s → 146.3 s (one run).
