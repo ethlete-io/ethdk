@@ -268,7 +268,7 @@ const SKETCH_CSS = {
 const drawnIn = async (iframe) => {
   const frame = await iframe.contentFrame();
 
-  if (!frame) return false;
+  if (!frame) return 'no frame';
 
   return Promise.race([
     frame
@@ -279,8 +279,9 @@ const drawnIn = async (iframe) => {
             (child) => child.tagName !== 'SCRIPT' && child.getBoundingClientRect().height > 0,
           ),
       )
-      .catch(() => false),
-    new Promise((done) => setTimeout(() => done(false), 250)),
+      .then((drawn) => (drawn ? 'drawn' : 'blank'))
+      .catch(() => 'no context'),
+    new Promise((done) => setTimeout(() => done('no answer in 250 ms'), 250)),
   ]);
 };
 
@@ -325,7 +326,8 @@ const sketchCells = async (page) => {
   for (const cell of cells) {
     const iframe = cell.visible && cell.framed && (await page.$(`iframe[data-census="${cell.index}"]`));
 
-    cell.drawn = iframe ? await drawnIn(iframe) : false;
+    cell.probe = iframe ? await drawnIn(iframe) : null;
+    cell.drawn = cell.probe === 'drawn';
     cell.shows = cell.framed ? cell.drawn : cell.picture;
   }
 
@@ -1316,7 +1318,9 @@ const CASES = [
 
             counts.push(`${empty.length}/${visible.length}`);
             empties.push(
-              ...empty.map((cell) => `${name}${step}+${at} ${cell.key}${cell.framed ? ' (blank iframe)' : ''}`),
+              ...empty.map(
+                (cell) => `${name}${step}+${at} ${cell.key}${cell.framed ? ` (iframe: ${cell.probe})` : ''}`,
+              ),
             );
             note(cells);
           }
