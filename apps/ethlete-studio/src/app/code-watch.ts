@@ -40,12 +40,13 @@ export const codeNoticeOf = (state: StudioCodeState | null, pageLoadedAt: string
 const HOURS = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 });
 
 export const pushNoticeOf = (push: PushState | null | undefined): TitleBarPush | null => {
-  if (!push?.unpushed) return null;
+  if (!push || (!push.unpushed && push.ci !== 'red')) return null;
 
   return {
     unpushed: push.unpushed,
     age: STUDIO_LABELS.code.pushAge(HOURS.format(push.oldestAgeHours ?? 0)),
     gate: push.gate,
+    ...(push.ci === 'red' ? { ci: 'red' as const } : {}),
   };
 };
 

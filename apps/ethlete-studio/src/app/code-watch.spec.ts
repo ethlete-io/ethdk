@@ -74,5 +74,15 @@ describe('pushNoticeOf', () => {
     expect(pushNoticeOf({ unpushed: 0, oldestAgeHours: null, gate: 'unknown' })).toBeNull();
     expect(pushNoticeOf(null)).toBeNull();
     expect(pushNoticeOf(undefined)).toBeNull();
+    expect(pushNoticeOf({ unpushed: 0, oldestAgeHours: null, gate: 'green', ci: 'green' })).toBeNull();
+  });
+
+  it('shows a red CI run even when everything is pushed', () => {
+    expect(pushNoticeOf({ unpushed: 0, oldestAgeHours: null, gate: 'green', ci: 'red' })).toEqual({
+      unpushed: 0,
+      age: '0 h',
+      gate: 'green',
+      ci: 'red',
+    });
   });
 });

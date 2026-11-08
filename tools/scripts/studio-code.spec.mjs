@@ -199,10 +199,10 @@ test('the push state comes from the built CLI and is null without one', () => {
     mkdirSync(module, { recursive: true });
     writeFileSync(
       join(module, 'push-status.js'),
-      `exports.pushStatusOf = (checkout) => ({ base: 'origin/next', unpushed: 4, oldestAt: 'x', oldestAgeHours: 2.5, gate: checkout.length ? 'red' : 'green', gateAt: null });`,
+      `exports.pushStatusOf = (checkout) => ({ base: 'origin/next', unpushed: 4, oldestAt: 'x', oldestAgeHours: 2.5, gate: checkout.length ? 'red' : 'green', gateAt: null, ci: 'red', ciUrl: null, ciAt: null });`,
     );
 
-    assert.deepEqual(pushStateOf(root), { unpushed: 4, oldestAgeHours: 2.5, gate: 'red' });
+    assert.deepEqual(pushStateOf(root), { unpushed: 4, oldestAgeHours: 2.5, gate: 'red', ci: 'red' });
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

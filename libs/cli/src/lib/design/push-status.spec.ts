@@ -1,9 +1,9 @@
 import { spawnSync } from 'child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { pushGateReceiptPath, pushStatusLines, pushStatusOf } from './push-status';
+import { ciCachePath, ciStatusOfRuns, pushGateReceiptPath, pushStatusLines, pushStatusOf } from './push-status';
 import { designStatus } from './status';
 
 const git = (cwd: string, args: string[], date?: string) =>
@@ -28,6 +28,8 @@ const repo = () => {
   return dir;
 };
 
+const RUNS_FIXTURE = join(__dirname, '__fixtures__', 'gh-run-list-ci-next.json');
+
 const dirs: string[] = [];
 
 const freshRepo = () => {
@@ -46,12 +48,13 @@ describe('pushStatusOf', () => {
     dirs.splice(0).forEach((dir) => {
       rmSync(dir, { recursive: true, force: true });
       rmSync(pushGateReceiptPath(dir), { force: true });
+      rmSync(ciCachePath(dir), { force: true });
     });
   });
 
   it('counts the unpushed commits and ages the oldest one', () => {
     const dir = freshRepo();
-    const status = pushStatusOf(dir, Date.parse('2026-01-01T15:00:00Z'));
+    const status = pushStatusOf(dir, { now: Date.parse('2026-01-01T15:00:00Z') });
 
     expect(status).toMatchObject({ base: 'origin/next', unpushed: 2, oldestAgeHours: 5, gate: 'unknown' });
     expect(pushStatusLines(status!)[0]).toBe('2 unpushed commit(s) on origin/next, oldest 5 h old');
@@ -70,7 +73,7 @@ describe('pushStatusOf', () => {
     const status = pushStatusOf(dir);
 
     expect(status).toMatchObject({ base: 'origin/next', unpushed: 0, strayUpstream: 'origin/studio-mac-move' });
-    expect(pushStatusLines(status!)[2]).toBe(
+    expect(pushStatusLines(status!)[3]).toBe(
       'warning: the upstream is origin/studio-mac-move, not origin/next; run git branch --set-upstream-to=origin/next',
     );
   });
@@ -100,5 +103,49 @@ describe('pushStatusOf', () => {
 
     const printed = JSON.parse(String(log.mock.calls[0]?.[0])) as { push: { unpushed: number } };
     expect(printed.push.unpushed).toBe(2);
+  });
+
+  it('reads the CI state through gh and gives unknown when gh fails', () => {
+    const dir = freshRepo();
+    const gh = join(dir, 'gh');
+    const runs = JSON.parse(readFileSync(RUNS_FIXTURE, 'utf8')) as unknown[];
+
+    writeFileSync(join(dir, 'runs.json'), JSON.stringify(runs.slice(4)));
+    writeFileSync(gh, `#!/bin/sh\ncat "${join(dir, 'runs.json')}"\n`);
+    chmodSync(gh, 0o755);
+
+    const status = pushStatusOf(dir, { gh })!;
+
+    expect(status).toMatchObject({ ci: 'red', ciUrl: 'https://github.com/ethlete-io/ethdk/actions/runs/42467169184' });
+    expect(pushStatusLines(status)[2]).toBe(
+      'ci: red - fix or revert before any feature slice (https://github.com/ethlete-io/ethdk/actions/runs/42467169184)',
+    );
+
+    rmSync(ciCachePath(dir), { force: true });
+
+    expect(pushStatusOf(dir, { gh: 'false' })?.ci).toBe('unknown');
+
+    rmSync(ciCachePath(dir), { force: true });
+
+    expect(pushStatusOf(dir, { gh: join(dir, 'no-such-gh') })?.ci).toBe('unknown');
+  });
+});
+
+describe('ciStatusOfRuns', () => {
+  const runs = () => JSON.parse(readFileSync(RUNS_FIXTURE, 'utf8')) as unknown[];
+
+  it('takes the newest run of a captured gh run list', () => {
+    expect(ciStatusOfRuns(readFileSync(RUNS_FIXTURE, 'utf8'))).toEqual({
+      ci: 'running',
+      ciUrl: 'https://github.com/ethlete-io/ethdk/actions/runs/42477989128',
+      ciAt: '2026-11-08T11:57:22Z',
+    });
+    expect(ciStatusOfRuns(JSON.stringify(runs().slice(2))).ci).toBe('green');
+    expect(ciStatusOfRuns(JSON.stringify(runs().slice(4))).ci).toBe('red');
+  });
+
+  it('gives unknown for no runs or output that is not JSON', () => {
+    expect(ciStatusOfRuns('[]').ci).toBe('unknown');
+    expect(ciStatusOfRuns('gh: not logged in').ci).toBe('unknown');
   });
 });

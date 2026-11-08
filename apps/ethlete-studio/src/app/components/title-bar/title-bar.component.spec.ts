@@ -4,7 +4,7 @@ import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { of } from 'rxjs';
 import { WindowChrome } from '../../../host/window';
 import { THEMES } from '../../../themes';
-import { TitleBarComponent } from './title-bar.component';
+import { TitleBarComponent, TitleBarPush } from './title-bar.component';
 
 vi.mock('../../../host/window', () => ({ isWindowMaximized$: () => of(false) }));
 
@@ -13,7 +13,7 @@ type Props = Omit<WindowChrome, 'preferNoCsd'> & {
   notice?: boolean;
   noticeText?: string | null;
   restart?: 'pending' | 'failed' | null;
-  push?: { unpushed: number; age: string; gate: 'green' | 'red' | 'unknown' } | null;
+  push?: TitleBarPush | null;
   product?: string;
   part?: string;
 };
@@ -134,6 +134,15 @@ describe('TitleBarComponent', () => {
 
     TestBed.resetTestingModule();
     expect(render(linux([], [])).bar?.querySelector('[data-push-state]')).toBeNull();
+  });
+
+  it('draws CI rot in the red badge while the CI run is red, also with nothing unpushed', () => {
+    const bar = render({ ...linux([], []), push: { unpushed: 0, age: '0 h', gate: 'green', ci: 'red' } }).bar;
+    const state = bar?.querySelector<HTMLElement>('[data-push-state]');
+
+    expect(state?.textContent?.trim()).toBe('CI rot');
+    expect(state?.title).toBe('CI rot - vor jedem Feature-Slice beheben oder zurücknehmen');
+    expect(state?.querySelector('et-badge')?.getAttribute('data-variant')).toBe('filled');
   });
 
   it('fires restart from the notice button and hides Update without an update', () => {

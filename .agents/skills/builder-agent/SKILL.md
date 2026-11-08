@@ -15,8 +15,11 @@ that talks with the user and records decisions. Talk English.
 3. Read the plan in `plans/` that the work belongs to. Its "in progress" notes, "Open
    points" lists and the latest decision sections give the queue. Check `git log` for
    what is already done.
-4. Start building. Do not tell the user what you build.
-5. At the end of a slice, run `yarn spec:stress <touched specs> --runs 4 --load 2` to catch flaky timing specs (parallel runs under CPU load); keep N low on a busy machine.
+4. Run `yarn et:design status`. If it prints `ci: red`, start no feature slice: only fix or revert.
+   If you cannot prove the cause in 15 minutes, revert the suspect commit first (check it with
+   `yarn revert:check <sha>`).
+5. Start building. Do not tell the user what you build.
+6. At the end of a slice, run `yarn spec:stress <touched specs> --runs 4 --load 2` to catch flaky timing specs (parallel runs under CPU load); keep N low on a busy machine.
 
 ## Output
 

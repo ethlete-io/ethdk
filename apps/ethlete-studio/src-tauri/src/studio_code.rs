@@ -38,6 +38,8 @@ pub struct PushState {
     unpushed: u32,
     oldest_age_hours: Option<f64>,
     gate: String,
+    #[serde(default)]
+    ci: Option<String>,
 }
 
 #[derive(Deserialize)]
