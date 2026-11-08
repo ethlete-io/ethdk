@@ -14,24 +14,30 @@ const listedOnly$ = ({ port, product }: { port: number; product: string }) =>
     `http://localhost:${port}/__design/sketches?product=${encodeURIComponent(product)}&unchanged=no&targets=no`,
   ).pipe(timeout(LISTED_SKETCHES_TIMEOUT_MS));
 
+const keepListed = (kept: ListedSketch[]) => (answer: ListedSketches) => ({
+  ...answer,
+  sketches: answer.sketches.map((sketch) => kept.find((listed) => listed.target === sketch.target) ?? sketch),
+});
+
 /**
- * Reads the sketch names without loading a part module when `listed` is false, then the quick listing, then the full one;
- * a failed or timed out listing keeps the last items and carries the error.
+ * Reads the sketch names without loading a part module, then the quick listing, then the full one; a failed or timed
+ * out listing keeps the last items and carries the error. A sketch in `kept` that the name listing still lists stays
+ * as kept until the quick listing answers.
  */
 export const sketchRead$ = ({
   port,
   product,
-  listed = false,
+  kept = null,
 }: {
   port: number;
   product: string;
-  listed?: boolean;
+  kept?: ListedSketch[] | null;
 }): Observable<SketchRead> =>
   defer(() => {
-    let items: ListedSketch[] = [];
+    let items: ListedSketch[] = kept ?? [];
 
     return concat(
-      listed ? [] : listedOnly$({ port, product }),
+      kept ? listedOnly$({ port, product }).pipe(map(keepListed(kept))) : listedOnly$({ port, product }),
       listedSketches$({ port, product, quick: true }),
       listedSketches$({ port, product }),
     ).pipe(

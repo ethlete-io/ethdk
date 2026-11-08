@@ -649,7 +649,7 @@ describe('SystemViewComponent on a named list change', () => {
     fixture.componentRef.setInput('lists', { ...NO_LIST_REVISIONS, calls: 1, sketches: 1 });
     await settle(fixture);
 
-    expect(counts()).toEqual({ ...before, calls: before.calls + 1, sketches: before.sketches + 2 });
+    expect(counts()).toEqual({ ...before, calls: before.calls + 1, sketches: before.sketches + 3 });
 
     fixture.componentRef.setInput('lists', { all: 1, products: 1, calls: 2, sketches: 2, flows: 1 });
     await settle(fixture);
@@ -750,7 +750,7 @@ describe('SystemViewComponent on a sketch report change', () => {
     await new Promise((resolve) => setTimeout(resolve, 300));
     await settle(fixture);
 
-    expect(sketchListings).toBe(before + 2);
+    expect(sketchListings).toBe(before + 3);
   });
 });
 
@@ -913,6 +913,90 @@ describe('SystemViewComponent on a merge', () => {
 
     expect(view['sketchShown']()).toBeNull();
     expect(view['selectedKey']()).toBe('elements/rating');
+  });
+
+  it('shows the part a merged sketch targeted once the name listing drops it, while the listings with targets hang', async () => {
+    const sketch: ListedSketch = {
+      target: 'elements/rating',
+      status: 'ready',
+      createdAt: '2026-10-27T10:00:00Z',
+      product: 'web',
+      layer: 'elements',
+      name: 'rating',
+      dir: 'rating',
+      variants: ['a', 'b'],
+      problems: [],
+    };
+    let merged = false;
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/sketches')) {
+        if (!merged) return json({ sketches: [sketch], unreadable: [] });
+
+        return url.includes('targets=no') ? json({ sketches: [], unreadable: [] }) : new Promise(() => undefined);
+      }
+
+      if (url.includes('/__design/flows')) return json({ flows: [], unreadable: [] });
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'sketch:elements/rating' });
+    const view = fixture.componentInstance;
+
+    expect(view['sketchShown']()?.sketch.target).toBe('elements/rating');
+
+    merged = true;
+    fixture.componentRef.setInput('lists', { ...NO_LIST_REVISIONS, sketches: 1 });
+    await settle(fixture);
+
+    expect(view['sketchShown']()).toBeNull();
+    expect(view['selectedKey']()).toBe('elements/rating');
+  });
+
+  it('keeps the targets of a still listed sketch while the listings with targets of a new read hang', async () => {
+    const sketch: ListedSketch = {
+      target: 'elements/rating',
+      status: 'ready',
+      createdAt: '2026-10-27T10:00:00Z',
+      product: 'web',
+      layer: 'elements',
+      name: 'rating',
+      dir: 'rating',
+      variants: ['a'],
+      problems: [],
+      targets: [{ variant: 'a', states: ['default'] }],
+    };
+    let reread = false;
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/sketches')) {
+        if (!reread) return json({ sketches: [sketch], unreadable: [] });
+
+        return url.includes('targets=no')
+          ? json({ sketches: [{ ...sketch, targets: undefined, problems: undefined }], unreadable: [] })
+          : new Promise(() => undefined);
+      }
+
+      if (url.includes('/__design/flows')) return json({ flows: [], unreadable: [] });
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'sketch:elements/rating' });
+    const view = fixture.componentInstance;
+
+    reread = true;
+    fixture.componentRef.setInput('lists', { ...NO_LIST_REVISIONS, sketches: 1 });
+    await settle(fixture);
+
+    expect(view['sketchShown']()?.sketch.targets).toEqual(sketch.targets);
   });
 
   it('opens the target part and draws no frame of the sketch at once when the open sketch is discarded, before the listing drops it', async () => {

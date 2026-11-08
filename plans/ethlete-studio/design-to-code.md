@@ -4220,3 +4220,11 @@ davon ab dass das vertical alignment total grütze ist". In the screenshot the t
 sits high in its pill, and the ci-red sketch passed `sketch ready` with the same badge. Cause and tool fix: open, the
 builder reports which element is off, and why neither `design check` nor `sketch ready` caught a vertically off-centre
 label.
+
+624\. Builder (2026-11-09, B454): Merge "the sketch view stays open after the sketch dropped from the listing" failed under
+`--hold-listings 14000`, the new hold run of the B453 gate, and passed without it. Cause (app bug): `sketchRead$` skipped
+the name listing (`targets=no`) on every read after the first, so the app learned of a merged sketch only from the quick
+listing with targets. The request log showed only `unchanged=no` requests after the merge, each held and restarted by
+the next sketch file change, and the case gave up 10 s later. Fix: every read starts with the name listing; a sketch it
+still lists keeps its last item with targets until the quick listing answers, a dropped one leaves at once. A
+component spec with hanging listings with targets bites.

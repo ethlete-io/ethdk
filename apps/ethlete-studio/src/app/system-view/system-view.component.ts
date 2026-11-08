@@ -502,9 +502,7 @@ export class SystemViewComponent {
       })),
     ).pipe(
       switchMap(({ port, product }) =>
-        port && product
-          ? sketchRead$({ port, product, listed: untracked((): boolean => this.sketchList() !== null) })
-          : of(null),
+        port && product ? sketchRead$({ port, product, kept: untracked(this.sketchList) }) : of(null),
       ),
     ),
     { initialValue: null },
