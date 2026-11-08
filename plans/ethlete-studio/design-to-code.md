@@ -4208,3 +4208,13 @@ also still ran. Cause of the shot hang: not known (no output captured). Why no t
 deadline and writes no progress, and neither wait has a deadline. Tool fix (part of item 0, because it stops all work):
 `shot` and `design check` end with an error and a captured log after a hard deadline, and the builder waits on a
 background run or a subagent only with a deadline (Monitor until-loop with a timeout), then reads the log.
+
+641\. Doc agent (2026-11-09): the human asked why `et-design.mjs` processes stay behind again and again. pid 1117702
+(from 15:27) ran 3 h 25 min as an orphan: its parent `yarn et:design` was reparented to systemd, so the shell that
+started it was gone, and the auto mode refused the builder's kill. The human had it killed. Cause: the wrapper
+`tools/scripts/et-design.mjs` runs the cli with `spawnSync`, so it blocks, forwards no signal, and never sees that its
+parent died; with no deadline (finding 640) it waits forever. Why no tool caught it: the orphan check of B282 covers
+only e2e-check runs, not cli runs from an agent shell. Tool fix (with item 0, same cause as 640): the wrapper spawns
+the cli async in its own process group, forwards SIGTERM, SIGINT and SIGHUP to that group, and ends the group when its
+parent is gone (ppid changes); `design` refuses to start a second run of the same command while an older one lives and
+names its pid.
