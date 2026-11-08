@@ -4217,3 +4217,12 @@ low-priority picture loaded. Fix: the Aktuell row has its own revision (`sketchC
 `sketchRowsOf`). No check asserts that an edit of one variant keeps the URLs of the other rows byte-identical. Tool fix
 (technical): an invariant spec on `sketchRowsOf` and a harness scenario that edit one variant and compare the URLs of
 every other row.
+
+598\. Builder (2026-11-08, B434, e1fa89e05): after a variant was added, a full sketch listing took 89.9 s: the design
+server's `redraw()` dropped all kept compares on each part change, and every differing frame was drawn 4 times at high
+priority (171 frames), which also starved the canvas pictures. Fix: `forgetUnchangedStates(change)` drops only the
+compares of redrawn parts, and a listing after a change does not join an older run; now 11.8 s. Nothing caught it,
+because the long-running server writes nothing to `.timings.jsonl` and nothing counts draws or compare hits per
+listing, so it showed only as 60 s e2e timeouts. Tool fix (technical): the server logs each full listing (hits,
+misses, draws, fresh redraws, time) to the timings file; the e2e prints that line when a `FULL_COMPARE_MS` wait fails;
+a spec asserts that a listing after an unrelated edit draws nothing.
