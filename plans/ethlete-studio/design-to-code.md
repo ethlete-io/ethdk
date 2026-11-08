@@ -4212,5 +4212,8 @@ and drops the sketch.
 for "exit" can read the end of the previous run. Tool fix (technical): each run writes a new log file.
 
 615\. Builder (2026-11-09, B440): `tsc -p` on the Studio `tsconfig.spec.json` fails in `shot-state.spec.ts`
-(`failedShots` possibly null) since 38d421711. vitest does not typecheck, so the specs stayed green. Cause of the gap
-and tool fix: open, the builder reports why no gate caught it.
+(`failedShots` possibly null) since 38d421711. vitest does not typecheck, so the specs stayed green. Cause: the
+`typecheck` target of `ethlete-studio` and `timetrack-app` checked only `tsconfig.app.json`, so no gate typechecked
+their specs. Fix (d536fee67): both targets also run `tsc -p tsconfig.spec.json`. Tool fix (general):
+`yarn lint:spec-typecheck` in pre-push refuses a project whose `typecheck` target does not name its
+`tsconfig.spec.json`.
