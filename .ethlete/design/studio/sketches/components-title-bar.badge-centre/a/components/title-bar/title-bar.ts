@@ -19,8 +19,6 @@ import {
   states,
   titleBarControl,
   windowControls,
-  CI_RED_ADVICE,
-  CI_RED_LABEL,
   PUSH_GATE_LABEL,
   PUSH_RED_ADVICE,
   pushCount,
@@ -78,26 +76,19 @@ const GATE_THEME = { green: '', red: 'error', unknown: 'warning' } as const;
 const themed = (gate: PushGate, markup: string) =>
   GATE_THEME[gate] ? `<span class="inline-flex" data-et-semantic-color="${GATE_THEME[gate]}">${markup}</span>` : markup;
 
-const pushTitle = (push: NonNullable<Props['push']>) =>
-  push.ci === 'red'
-    ? `${CI_RED_LABEL} - ${CI_RED_ADVICE}`
-    : `${PUSH_GATE_LABEL[push.gate]}${push.gate === 'red' ? ` - ${PUSH_RED_ADVICE}` : ''}`;
-
-const pushState = ({ push }: Props) => {
-  if (!push) return '';
-
-  const look = push.ci === 'red' ? 'red' : push.gate;
-  const text = push.ci === 'red' ? CI_RED_LABEL : `${pushCount(push)} · ${push.age}`;
-
-  return themed(
-    look,
-    `<span class="inline-flex" title="${pushTitle(push)}" data-push-state>${badge({
-      label: `<span class="inline-flex items-center gap-1 whitespace-nowrap">${icon(GATE_ICON[look], { size: 12 })}${text}</span>`,
-      variant: look === 'red' ? 'filled' : 'tonal',
-      size: 'sm',
-    })}</span>`,
-  );
-};
+const pushState = ({ push }: Props) =>
+  push
+    ? themed(
+        push.gate,
+        `<span class="inline-flex" title="${PUSH_GATE_LABEL[push.gate]}${push.gate === 'red' ? ` - ${PUSH_RED_ADVICE}` : ''}" data-push-state>${badge(
+          {
+            label: `<span class="flex items-center gap-1 whitespace-nowrap">${icon(GATE_ICON[push.gate], { size: 12 })}<span class="[text-box:trim-both_cap_alphabetic]">${pushCount(push)} · ${push.age}</span></span>`,
+            variant: push.gate === 'red' ? 'filled' : 'tonal',
+            size: 'sm',
+          },
+        )}</span>`,
+      )
+    : '';
 
 const failedToast = ({ restart }: Props) =>
   restart === 'failed'
@@ -141,7 +132,7 @@ const notice = async (props: Props) =>
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/components/title-bar/title-bar.component.ts',
-  note: 'The window title bar: a compact 32 px drag region on the app background, closed off from the content below by a 1 px bottom border. The centred search field (components/title-search) names the product and part you are in and draws its own states. Update, a filled brand button, shows only when an update is ready and ends the bar before the window controls. macOS reserves 78 px left for the native traffic lights (drawn as three neutral grey dots, like an inactive window); Linux draws round buttons on the side its button layout gives; Windows draws square tiles with a red close hover. The grid draws each control at rest, hovered, pressed and focused: Update (linux-full-update), minimize (linux-left), the round close (linux-close), maximize (windows) and the square close (windows-update). The push state of the checkout (unpushed commits, age of the oldest, push gate) is a small badge before Update: tonal, a check when the gate is green, the warning theme when it did not run on this head, and filled in the error theme when it is red; its title says fix before any feature slice. A red CI (Next) run shows the same filled error badge with the label CI rot, also with nothing unpushed; its title says fix or revert before any feature slice. Neu starten is the SDK busy button: on click the tonal Neu starten button turns loading: the spinner covers the label, the button is disabled and aria-busy, takes no second press, and the tooltip is gone. A failed restart drops the busy state and shows the danger error toast (Neustart fehlgeschlagen) under the bar until dismissed; the tooltip stays gone, so it never covers the toast.',
+  note: 'The window title bar: a compact 32 px drag region on the app background, closed off from the content below by a 1 px bottom border. The centred search field (components/title-search) names the product and part you are in and draws its own states. Update, a filled brand button, shows only when an update is ready and ends the bar before the window controls. macOS reserves 78 px left for the native traffic lights (drawn as three neutral grey dots, like an inactive window); Linux draws round buttons on the side its button layout gives; Windows draws square tiles with a red close hover. The grid draws each control at rest, hovered, pressed and focused: Update (linux-full-update), minimize (linux-left), the round close (linux-close), maximize (windows) and the square close (windows-update). The push state of the checkout (unpushed commits, age of the oldest, push gate) is a small badge before Update: tonal, a check when the gate is green, the warning theme when it did not run on this head, and filled in the error theme when it is red; its title says fix before any feature slice. Neu starten is the SDK busy button: on click the tonal Neu starten button turns loading: the spinner covers the label, the button is disabled and aria-busy, takes no second press, and the tooltip is gone. A failed restart drops the busy state and shows the danger error toast (Neustart fehlgeschlagen) under the bar until dismissed; the tooltip stays gone, so it never covers the toast.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   widths: [1440],
   states,

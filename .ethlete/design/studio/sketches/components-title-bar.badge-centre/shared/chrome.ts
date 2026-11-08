@@ -12,7 +12,7 @@ type TitleBarInteraction = 'hover' | 'active' | 'focus-visible';
 
 export type PushGate = 'green' | 'red' | 'unknown';
 
-type PushState = { unpushed: number; age: string; gate: PushGate; ci?: 'red' };
+type PushState = { unpushed: number; age: string; gate: PushGate };
 
 export const PUSH_GATE_LABEL: Record<PushGate, string> = {
   green: 'Push-Gate grün',
@@ -21,10 +21,6 @@ export const PUSH_GATE_LABEL: Record<PushGate, string> = {
 };
 
 export const PUSH_RED_ADVICE = 'vor jedem Feature-Slice beheben';
-
-export const CI_RED_LABEL = 'CI rot';
-
-export const CI_RED_ADVICE = 'vor jedem Feature-Slice beheben oder zurücknehmen';
 
 export const pushCount = ({ unpushed }: PushState) => `${unpushed} ungepusht`;
 
@@ -118,7 +114,6 @@ export const states = {
   'push-red': { ...LINUX_FULL, push: PUSH.red },
   'push-red-update': { ...LINUX_FULL, update: true, push: PUSH.red },
   'macos-push-red': { ...MACOS, push: PUSH.red },
-  'ci-red': { ...LINUX_FULL, push: { unpushed: 0, age: '0 h', gate: 'green', ci: 'red' } },
   ...contentStates('notice'),
   ...contentStates('cli-dirty'),
   ...(Object.assign({}, ...rows.map((row) => row.states)) as Record<StateName, Props>),

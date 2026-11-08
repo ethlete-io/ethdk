@@ -1,7 +1,7 @@
 {
-  "target": "components/title-bar@ci-red",
+  "target": "components/title-bar@badge-centre",
   "status": "ready",
-  "createdAt": "2026-11-08T12:03:46.961Z",
+  "createdAt": "2026-11-08T14:28:35.876Z",
   "baseline": {
     "foundations/agent-logos": "d8ad620ff101ae06",
     "foundations/colors": "97f8b2eb627962a4",
@@ -99,22 +99,22 @@
   "rounds": [
     {
       "key": "r1",
-      "title": "",
-      "note": "B440, ADR 0230: der Mensch hat entschieden, dass Studio CI rot in der Titelleiste zeigt."
+      "title": "Push-Badge mittig",
+      "note": "Befund 623: Der Text der Push-Badge sitzt 2 px zu hoch in der Pille. Variante a setzt ihn mittig, sonst bleibt alles gleich."
     }
   ],
   "variantInfo": {
     "a": {
       "authors": ["claude-opus-5-5"],
       "round": "r1",
-      "note": "Das rote Push-Badge mit dem Label CI rot, auch ohne ungepushte Commits; Titel: vor jedem Feature-Slice beheben oder zurücknehmen."
+      "note": "Icon und Text stehen in einer Flex-Zeile, der Text ist auf Versalhöhe beschnitten: Versalien und Icon sitzen mittig in der Pille (3,4/3,4 px, Icon 1/1 px). Größe, Abstände und Schrift bleiben gleich."
     }
   },
   "readyContent": {
-    "a": "d04841b9c433a1d0"
+    "a": "7da36c6b57949cce"
   },
   "mergeHold": {
-    "reason": "variant a changes ci-red",
-    "at": "2026-11-08T12:05:13.377Z"
+    "reason": "variant a changes push-green, push-unknown, push-red, push-red-update, macos-push-red",
+    "at": "2026-11-08T14:30:43.014Z"
   }
 }
