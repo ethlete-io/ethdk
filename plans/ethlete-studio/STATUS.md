@@ -44,6 +44,10 @@ nimmt den nächsten. Kein Punkt und kein Rückstand läuft über Nacht als E2E-F
    Push-Prüfung (165-197 s pro Lauf) und der größte Posten der Builder-Zeit. Ende: E2E-Schritt im push:suite unter 60 s,
    gemessen über 3 Läufe; der Builder wartet auf E2E per Benachrichtigung, nicht per Abfrage-Schleife; `shot` und
    `design check` haben eine harte Frist, und jedes Warten hat eine Frist (Bef. 640).
+   In Arbeit (08.11. 20:40, Builder): 07596570b (E2E 170 → 146 s) und a8cc4eb06 (Bef. 644) sind committet, nicht
+   gepusht; der Wiederholungs-Lauf mit `--hold-listings 14000` scheitert, weil `settled()` nach 10 s still aufgibt.
+   Fix `listingAnswered()` liegt uncommittet in `canvas.e2e.mjs`; Hold-Läufe grün, zwei Nicht-Hold-Flakes (Large)
+   offen. Übergabe: `.claude/handoffs/builder.md`.
 1. A10 / B249: „Baubereit“ statt Go und Abnahme, `go.json`, `accepted.json`, `design go` und `design accept` weg
    (ADR 0048); unsichtbare direkte Änderungen gelten sofort; danach Gutter-Skip in `pages/sketches`. Nichts am Go-System
    wird vorher noch geändert.
