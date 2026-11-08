@@ -266,7 +266,16 @@ export class SketchesComponent {
 
     return zoom === 'fit' ? this.fitScale() : zoom;
   });
-  protected noteSize = computed(() => noteAt(this.scale(), this.fitScale()));
+  // A user zoom holds the fit the labels were sized at: a new fit from a wider viewport would resize the gutter and head
+  // columns and move every frame on screen.
+  private noteFit = linkedSignal<{ zoom: FrameZoom; fit: number | null }, number>({
+    source: () => ({ zoom: this.canvas.zoom(), fit: this.fitAt() }),
+    computation: ({ zoom, fit }, previous) =>
+      zoom === 'fit' || fit === null || previous?.source.fit === null || previous?.source.zoom !== zoom
+        ? (fit ?? 1)
+        : previous.value,
+  });
+  protected noteSize = computed(() => noteAt(this.scale(), this.noteFit()));
   protected headHidden = computed(() => this.noteSize() < MIN_LABEL);
   protected headColumns = computed(() =>
     this.headHidden() ? 'max-content minmax(0, 1fr)' : `${(HEAD_WIDTH * this.noteSize()) / NOTE_TEXT}px minmax(0, 1fr)`,

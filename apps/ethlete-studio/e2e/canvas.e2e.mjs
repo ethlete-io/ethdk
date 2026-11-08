@@ -2069,7 +2069,7 @@ const CASES = [
             const rect = canvas?.querySelector(`${FRAME}, figure`)?.getBoundingClientRect();
             const origin = canvas?.getBoundingClientRect();
 
-            return rect && origin ? { left: rect.left - origin.left, top: rect.top - origin.top, x: rect.left } : null;
+            return rect && origin ? { x: rect.left, y: rect.top, canvasLeft: origin.left } : null;
           },
           { CANVAS, FRAME },
         );
@@ -2095,14 +2095,14 @@ const CASES = [
         !!after?.camera &&
         !!frameBefore &&
         !!frameAfter &&
-        near(frameAfter.left, frameBefore.left) &&
-        near(frameAfter.top, frameBefore.top) &&
+        near(frameAfter.x, frameBefore.x) &&
+        near(frameAfter.y, frameBefore.y) &&
         near(after.camera.zoom * 1000, before.camera.zoom * 1000) &&
         near(headAfter, headBefore);
 
       return {
         ok: kept,
-        detail: `${describe(before, after)} frame ${frameBefore?.left},${frameBefore?.top} -> ${frameAfter?.left},${frameAfter?.top} head-frame ${headBefore} -> ${headAfter}`,
+        detail: `${describe(before, after)} frame ${frameBefore?.x},${frameBefore?.y} -> ${frameAfter?.x},${frameAfter?.y}, canvas left ${frameBefore?.canvasLeft} -> ${frameAfter?.canvasLeft}, head-frame ${headBefore} -> ${headAfter}`,
       };
     },
   },
@@ -2140,10 +2140,12 @@ const CASES = [
       await settle(page);
 
       const before = await screenRect();
+      const cameraBefore = await probe(page);
 
       await page.getByRole('button', { name: 'Hide panel' }).first().click();
       await settle(page);
       const after = await screenRect();
+      const cameraAfter = await probe(page);
       const kept =
         !!before &&
         !!after &&
@@ -2153,7 +2155,7 @@ const CASES = [
 
       return {
         ok: kept,
-        detail: `frame ${before?.left},${before?.top} w ${before?.width} -> ${after?.left},${after?.top} w ${after?.width}, canvas left ${before?.canvasLeft} -> ${after?.canvasLeft}`,
+        detail: `${describe(cameraBefore, cameraAfter)} frame ${before?.left},${before?.top} w ${before?.width} -> ${after?.left},${after?.top} w ${after?.width}, canvas left ${before?.canvasLeft} -> ${after?.canvasLeft}`,
       };
     },
   },
