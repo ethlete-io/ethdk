@@ -314,6 +314,8 @@ jobs:
       - run: yarn studio:e2e
         continue-on-error: true
         timeout-minutes: 40
+        env:
+          STUDIO_E2E_WORKERS: 2
 
   rust:
     name: Rust host

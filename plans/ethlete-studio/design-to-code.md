@@ -4165,6 +4165,16 @@ merge leave files and folders behind, and nothing shows a leftover. Tool fix (te
 caps the suite time. Tool fix (technical): B377 moves up; the suite runs on all runner cores, a case fails at its first
 missed wait within 10 s, and the run prints its time against a 5 min budget that fails above it once B434 is green.
 
+591 as built (2026-11-08): `canvas.e2e.mjs` sets a 10 s Playwright default (`WAIT_MS`) and drops every explicit 15, 30
+and 90 s wait; `settled` stops after 10 s. Two waits stay named and long: `FULL_COMPARE_MS` (60 s) for the full sketch
+compare (`data-sk-changed="pending"`, the full listing, the folded same-variant row), and `COLD_START_MS` (60 s) for a
+once-per-worker warm-up page load, since the first Studio load of a worker took 12-17 s here. The run prints `suite
+<m>m<s>s of 5m budget` and fails above it only with `STUDIO_E2E_BUDGET_ENFORCE=1` (not set in CI). CI runs
+`STUDIO_E2E_WORKERS=2`: one worker used about 3 cores here; on 12 cores 4 workers overloaded and missed 10 s first-frame
+waits, 2 did not. The default stays cores / 4. Verified: `--case` subsets at 1, 2 and 4 workers; one full run at 2
+workers, 114/132 in 19m06s on this Mac (load 20-30 from other sessions, x64 Chromium under Rosetta), its failures the
+known B434 set plus full-compare waits that ran past 60 s here. Not verified: the time on the 4-core CI runner.
+
 592\. Builder (2026-11-08, B434): 33 of the 35 hidden Studio e2e failures (Sketches, Large: "0 iframes / no frame
 point") came from the fixture, not the app. `prepareCheckout` in `apps/ethlete-studio/e2e/canvas.e2e.mjs` made sketch
 variant `a` of pages/system and elements/shell-main an exact copy of the current part. Since b9367d285 the sketch view

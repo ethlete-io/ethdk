@@ -43,8 +43,10 @@ const GONE_TARGETS = { Merge: 'components/title-bar', Discard: 'components/tree-
 const WIDE_SKETCH = { part: 'components/title-bar', name: 'notice-hint', variants: ['a', 'b', 'c'] };
 
 const EDITED_PART = 'components/disclosure';
-const EDITED_PART_TIMEOUT_MS = 30000;
-const SAME_VARIANT_TIMEOUT_MS = 120000;
+const WAIT_MS = 10000;
+const FULL_COMPARE_MS = 60000;
+const COLD_START_MS = 60000;
+const BUDGET_MS = 5 * 60 * 1000;
 
 const PAGE_SWITCHES = [
   'foundations/icons',
@@ -56,7 +58,6 @@ const PAGE_SWITCHES = [
   'foundations/icons',
   'elements/shell-main',
 ];
-const PAGE_SWITCH_TIMEOUT_MS = 15000;
 const PAGE_SWITCH_SETTLE_MS = 1500;
 
 const PAGES = [
@@ -309,7 +310,7 @@ const sketchCells = async (page) => {
 const showAllStates = async (page) => {
   const button = page.getByRole('button', { name: 'Alle Zustände zeigen' });
 
-  await button.waitFor({ timeout: EDITED_PART_TIMEOUT_MS }).catch(() => undefined);
+  await button.waitFor().catch(() => undefined);
   if (await button.count()) await button.first().click();
 };
 
@@ -403,7 +404,6 @@ const frameBoxes = (page, selector) =>
 
 const FEEDBACK_MS = 100;
 const SLOW_HOST_MS = 3000;
-const CODE_NOTICE_TIMEOUT_MS = 15000;
 
 /**
  * Clicks `target` in the page and resolves whether a visible answer follows within `ms`: the element turns disabled
@@ -483,7 +483,7 @@ const settled = async (page, selector) => {
   let last = '';
   let same = 0;
 
-  for (let poll = 0; poll < 80 && same < 3; poll++) {
+  for (let poll = 0; poll < WAIT_MS / 250 && same < 3; poll++) {
     await page.waitForTimeout(250);
     const now = await page.evaluate(
       ({ CANVAS, selector }) =>
@@ -522,7 +522,7 @@ const goneSketchLeavesToThePart = async (page, { designPort }, target, decide) =
   if (!answer.ok) return { ok: false, detail: `the design server refused: ${answer.status} ${await answer.text()}` };
 
   try {
-    await page.waitForFunction(() => !document.querySelector('ethlete-sketch-view'), undefined, { timeout: 30000 });
+    await page.waitForFunction(() => !document.querySelector('ethlete-sketch-view'));
   } catch {
     return { ok: false, detail: 'the sketch view stays open after the sketch dropped from the listing' };
   }
@@ -788,7 +788,7 @@ const CASES = [
       const { view } = state;
 
       await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
-        timeout: 60000,
+        timeout: FULL_COMPARE_MS,
       });
       await page.mouse.click((view.left + view.right) / 2, (view.top + view.bottom) / 2);
       await page.keyboard.press('Shift+Digit1');
@@ -807,7 +807,7 @@ const CASES = [
       if (percent === null) return { ok: false, detail: 'no zoom chip percent' };
 
       await page.reload();
-      await page.waitForSelector('[data-sk-state]', { timeout: 30000 });
+      await page.waitForSelector('[data-sk-state]');
       await settled(page, FRAME);
       await page.getByRole('button', { name: 'Einpassen' }).first().click();
       await settle(page);
@@ -852,7 +852,7 @@ const CASES = [
             })),
         );
 
-      const primed = entryOf(await (await page.request.get(listing)).json());
+      const primed = entryOf(await (await page.request.get(listing, { timeout: FULL_COMPARE_MS })).json());
       let release;
       const held = new Promise((resolve) => (release = resolve));
       let answered;
@@ -871,11 +871,10 @@ const CASES = [
       });
       const quickAnswered = page.waitForResponse(
         (response) => /unchanged=no$/.test(response.url()) && response.url().includes('/__design/sketches?'),
-        { timeout: 30000 },
       );
 
       await page.reload();
-      await page.waitForSelector('[data-sk-state]', { timeout: 30000 });
+      await page.waitForSelector('[data-sk-state]');
       await quickAnswered;
       await settle(page);
 
@@ -890,7 +889,7 @@ const CASES = [
       release();
       await fullAnswered;
       await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
-        timeout: 60000,
+        timeout: FULL_COMPARE_MS,
       });
       await page.unroute('**/__design/sketches?*');
 
@@ -951,7 +950,7 @@ const CASES = [
     name: 'a frame renders real content, not an error page',
     pages: ['System', 'Sketches'],
     run: async (page) => {
-      const deadline = Date.now() + 15000;
+      const deadline = Date.now() + WAIT_MS;
       let texts = [];
 
       while (Date.now() < deadline) {
@@ -1147,7 +1146,7 @@ const CASES = [
           { CANVAS },
         );
       const loaded = async (accept) => {
-        for (const until = Date.now() + EDITED_PART_TIMEOUT_MS; Date.now() < until;) {
+        for (const until = Date.now() + WAIT_MS; Date.now() < until;) {
           await page.waitForTimeout(250);
           const shown = await pictures();
 
@@ -1157,7 +1156,11 @@ const CASES = [
         return null;
       };
       const tagsOf = (shown) =>
-        Promise.all(shown.map(({ src }) => page.request.get(src).then((answer) => answer.headers()['etag'])));
+        Promise.all(
+          shown.map(({ src }) =>
+            page.request.get(src, { timeout: WAIT_MS }).then((answer) => answer.headers()['etag']),
+          ),
+        );
       const leaves = await rows.evaluateAll((all) =>
         all.flatMap((row) => (row.dataset.kind === 'leaf' ? [row.textContent.trim()] : [])),
       );
@@ -1195,7 +1198,7 @@ const CASES = [
           ok: !!changed && changed.length > 0,
           detail: after
             ? `${changed.length}/${after.length} pictures changed after the edit`
-            : `no new picture URL within ${EDITED_PART_TIMEOUT_MS} ms (${before.length} pictures)`,
+            : `no new picture URL within ${WAIT_MS} ms (${before.length} pictures)`,
         };
       } finally {
         writeFileSync(stylesheet, original);
@@ -1221,7 +1224,7 @@ const CASES = [
 
       let first = await sketchCells(page);
 
-      for (const until = Date.now() + EDITED_PART_TIMEOUT_MS; Date.now() < until; first = await sketchCells(page)) {
+      for (const until = Date.now() + WAIT_MS; Date.now() < until; first = await sketchCells(page)) {
         const visible = first.filter((cell) => cell.visible);
 
         if (visible.length > 0 && visible.every((cell) => cell.shows)) break;
@@ -1292,17 +1295,17 @@ const CASES = [
       const faults = [];
 
       await page.reload();
-      await page.waitForSelector('ethlete-sketch-view [data-shot]', { timeout: 30000 });
+      await page.waitForSelector('ethlete-sketch-view [data-shot]');
       const first = await count();
 
       await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
-        timeout: 60000,
+        timeout: FULL_COMPARE_MS,
       });
       await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
       const settledCount = await count();
       let pictured = shown(await sketchCells(page));
 
-      for (const until = Date.now() + EDITED_PART_TIMEOUT_MS; pictured.size === 0 && Date.now() < until;) {
+      for (const until = Date.now() + WAIT_MS; pictured.size === 0 && Date.now() < until;) {
         await page.waitForTimeout(250);
         pictured = shown(await sketchCells(page));
       }
@@ -1317,7 +1320,7 @@ const CASES = [
 
       try {
         writeFileSync(stylesheet, `${original}\n.st-shell { outline: 1px solid rgb(255 0 0); }\n`);
-        for (const until = Date.now() + EDITED_PART_TIMEOUT_MS / 3; Date.now() < until;) {
+        for (const until = Date.now() + WAIT_MS; Date.now() < until;) {
           const cells = await sketchCells(page);
 
           counts.add(cells.length);
@@ -1351,7 +1354,7 @@ const CASES = [
       const cellOf = async (key) => (await sketchCells(page)).find((cell) => cell.key === key);
       const away = Math.ceil((2 * (NARROW.height + 400)) / SCROLL_STEP_PX);
       const loadedCell = async (key, accept) => {
-        for (const until = Date.now() + EDITED_PART_TIMEOUT_MS; Date.now() < until;) {
+        for (const until = Date.now() + WAIT_MS; Date.now() < until;) {
           const cell = await cellOf(key);
 
           if (
@@ -1368,7 +1371,7 @@ const CASES = [
 
         return null;
       };
-      const tagOf = async (src) => (await page.request.get(src)).headers()['etag'];
+      const tagOf = async (src) => (await page.request.get(src, { timeout: WAIT_MS })).headers()['etag'];
 
       await showAllStates(page);
       await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
@@ -1411,7 +1414,7 @@ const CASES = [
           ok: !!after && newTag !== tag,
           detail: after
             ? `${top.key}: new picture URL, ETag ${newTag === tag ? 'unchanged' : 'changed'}`
-            : `${top.key} kept its old picture URL for ${EDITED_PART_TIMEOUT_MS} ms after the edit`,
+            : `${top.key} kept its old picture URL for ${WAIT_MS} ms after the edit`,
         };
       } finally {
         writeFileSync(stylesheet, original);
@@ -1494,7 +1497,7 @@ const CASES = [
               leaf.click();
               requestAnimationFrame(sample);
             }),
-          { part, timeoutMs: PAGE_SWITCH_TIMEOUT_MS },
+          { part, timeoutMs: WAIT_MS },
         );
       const rows = [];
       const seen = new Set(['pages/system']);
@@ -1520,7 +1523,7 @@ const CASES = [
               source,
             }));
           const painted = result.all !== undefined;
-          const ms = result.all ?? PAGE_SWITCH_TIMEOUT_MS;
+          const ms = result.all ?? WAIT_MS;
           const mounted = result.mounted ?? ms;
 
           rows.push({
@@ -1875,7 +1878,7 @@ const CASES = [
     viewport: WIDE,
     run: async (page) => {
       await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
-        timeout: 60000,
+        timeout: FULL_COMPARE_MS,
       });
       await page.getByRole('button', { name: 'Einpassen' }).first().click();
       await settle(page);
@@ -1940,7 +1943,7 @@ const CASES = [
     pages: ['Sketches', 'Wide'],
     run: async (page, _state, target) => {
       await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
-        timeout: 60000,
+        timeout: FULL_COMPARE_MS,
       });
       const faults = [];
 
@@ -1958,7 +1961,6 @@ const CASES = [
                 (picture) => picture.complete && picture.naturalWidth === 0,
               ),
             null,
-            { timeout: 30000 },
           );
         }
         await page.getByRole('button', { name: 'Auf 100 % zoomen' }).first().click();
@@ -2214,7 +2216,7 @@ const CASES = [
         listings.quick = 0;
         listings.full = 0;
         writeFileSync(sketchJson, content);
-        const deadline = Date.now() + 15000;
+        const deadline = Date.now() + WAIT_MS;
 
         while ((listings.quick === 0 || listings.full === 0) && Date.now() < deadline) await page.waitForTimeout(250);
         await page.waitForTimeout(1000);
@@ -2250,7 +2252,7 @@ const CASES = [
         await page
           .locator('[data-sk-same]')
           .first()
-          .waitFor({ timeout: SAME_VARIANT_TIMEOUT_MS })
+          .waitFor({ timeout: FULL_COMPARE_MS })
           .catch(() => undefined);
         const folded = await page.evaluate(() => !!document.querySelector('[data-sk-same]'));
 
@@ -2354,11 +2356,10 @@ const CASES = [
           );
         });
         await page.reload();
-        await page.waitForFunction(
-          ({ CANVAS, FRAME }) => document.querySelector(CANVAS)?.querySelector(FRAME),
-          { CANVAS, FRAME },
-          { timeout: 30000 },
-        );
+        await page.waitForFunction(({ CANVAS, FRAME }) => document.querySelector(CANVAS)?.querySelector(FRAME), {
+          CANVAS,
+          FRAME,
+        });
 
         const loadState = () =>
           page.evaluate(() => {
@@ -2366,7 +2367,7 @@ const CASES = [
 
             return `${iframes.length}/${iframes.filter((iframe) => window.__frameLoad.loadedAt.has(iframe)).length}`;
           });
-        const deadline = Date.now() + 90000;
+        const deadline = Date.now() + WAIT_MS;
         let stable = 0;
         let last = '';
 
@@ -2408,7 +2409,7 @@ const CASES = [
 
         return {
           ok: stable >= 4 && load.frames > 0 && load.createdForShown === load.frames && shownAborts === 0,
-          detail: `${stable >= 4 ? 'settled' : `not settled in 90 s (${last} loaded)`}, iframes ${load.frames}, created for them ${load.createdForShown} (must equal), created in all ${load.created}, aborted requests of shown frames ${shownAborts} of ${aborted.length} (must be 0), ${load.visible} visible got src first ${load.visibleFirst}, visible loaded at ${load.visibleLoadedMs} ms, all at ${load.allLoadedMs} ms after reload`,
+          detail: `${stable >= 4 ? 'settled' : `not settled in ${WAIT_MS / 1000} s (${last} loaded)`}, iframes ${load.frames}, created for them ${load.createdForShown} (must equal), created in all ${load.created}, aborted requests of shown frames ${shownAborts} of ${aborted.length} (must be 0), ${load.visible} visible got src first ${load.visibleFirst}, visible loaded at ${load.visibleLoadedMs} ms, all at ${load.allLoadedMs} ms after reload`,
         };
       } finally {
         page.off('requestfailed', onFailed);
@@ -2427,7 +2428,7 @@ const CASES = [
 
       const restart = page.locator('ethlete-title-bar').getByRole('button', { name: 'Neu starten' });
 
-      await restart.waitFor({ state: 'visible', timeout: CODE_NOTICE_TIMEOUT_MS });
+      await restart.waitFor({ state: 'visible' });
 
       return expectFeedbackWithin(restart, FEEDBACK_MS);
     },
@@ -2540,6 +2541,15 @@ const prepareCheckout = () => {
   return dir;
 };
 
+const warmUp = async (page, studioUrl) => {
+  await page.goto(studioUrl);
+  await page.waitForFunction(
+    ({ CANVAS, FRAME }) => document.querySelector(CANVAS)?.querySelector(FRAME),
+    { CANVAS, FRAME },
+    { timeout: COLD_START_MS },
+  );
+};
+
 const runCase = async (page, studioUrl, designPort, target, testCase) => {
   await page.goto(studioUrl);
   await page.evaluate(
@@ -2551,11 +2561,10 @@ const runCase = async (page, studioUrl, designPort, target, testCase) => {
   );
   await page.setViewportSize(testCase.viewport ?? NARROW);
   await page.goto(studioUrl);
-  await page.waitForFunction(
-    ({ CANVAS, FRAME }) => document.querySelector(CANVAS)?.querySelector(FRAME),
-    { CANVAS, FRAME: target.frame ?? FRAME },
-    { timeout: 30000 },
-  );
+  await page.waitForFunction(({ CANVAS, FRAME }) => document.querySelector(CANVAS)?.querySelector(FRAME), {
+    CANVAS,
+    FRAME: target.frame ?? FRAME,
+  });
   await page.waitForTimeout(2500);
   await settled(page, target.frame ?? FRAME);
 
@@ -2599,6 +2608,8 @@ const work = async () => {
 
   await withStudio(
     async ({ page, studioUrl, designPort }) => {
+      page.setDefaultTimeout(WAIT_MS);
+      await warmUp(page, studioUrl);
       for (let { job } = await nextJob(); job; { job } = await nextJob()) {
         const startedAt = performance.now();
         let result;
@@ -2637,6 +2648,11 @@ const freePort = () =>
 
 const keyOf = (job) => `${job.page} :: ${job.name}`;
 const seconds = (ms) => `${(ms / 1000).toFixed(1)}s`.padStart(7);
+const minutes = (ms) => {
+  const total = Math.round(ms / 1000);
+
+  return `${Math.floor(total / 60)}m${total % 60 ? `${String(total % 60).padStart(2, '0')}s` : ''}`;
+};
 
 const workerCount = () => {
   const asked = Number(
@@ -2752,10 +2768,15 @@ const lead = async () => {
     for (const job of notRun) console.log(`NOT RUN  ${job.page.padEnd(9)} ${job.name}`);
   }
 
+  const suiteMs = performance.now() - runStartedAt;
+  const overBudget = suiteMs > BUDGET_MS;
+  const enforceBudget = process.env['STUDIO_E2E_BUDGET_ENFORCE'] === '1';
+
+  console.log(`\n${rows.length - failed.length}/${total} passed in ${seconds(suiteMs).trim()} on ${workers} worker(s)`);
   console.log(
-    `\n${rows.length - failed.length}/${total} passed in ${seconds(performance.now() - runStartedAt).trim()} on ${workers} worker(s)`,
+    `suite ${minutes(suiteMs)} of ${minutes(BUDGET_MS)} budget${overBudget ? ` - over budget${enforceBudget ? ', failing the run' : ' (STUDIO_E2E_BUDGET_ENFORCE=1 fails the run)'}` : ''}`,
   );
-  process.exit(failed.length || rows.length < total || !total ? 1 : 0);
+  process.exit(failed.length || rows.length < total || !total || (overBudget && enforceBudget) ? 1 : 0);
 };
 
 await (args.includes('--worker') ? work() : lead());
