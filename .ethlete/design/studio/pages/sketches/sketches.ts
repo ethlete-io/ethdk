@@ -263,7 +263,7 @@ const gutter = (part: SketchPart, top: number) =>
         html`<span
           class="sk-gutter relative z-2 flex items-center self-stretch bg-et-surface-bg pr-space-3 font-code text-(length:--sk-note) leading-[1.35] text-et-surface in-data-sk-head-hidden:text-transparent"
           data-sk-gutter
-          data-et-skip="COVERED"
+          data-et-skip="COVERED OFF-CENTRE"
           style="grid-column: 1; grid-row: ${top + 1 + index * 2} / span 2"
           >${state}</span
         >`,

@@ -7,7 +7,10 @@ const sampleOf = (name: string) => {
   if (name.startsWith('font-')) return html`<span style="font-family: var(--${name})">Aa 0123 {}</span>`;
   if (name.startsWith('weight-')) return html`<span style="font-weight: var(--${name})">Merge sketch</span>`;
   if (name.endsWith('-line'))
-    return html`<span class="ty-line" style="font-size: var(--${name.slice(0, -5)}); line-height: var(--${name})"
+    return html`<span
+      class="ty-line"
+      data-et-skip="OFF-CENTRE"
+      style="font-size: var(--${name.slice(0, -5)}); line-height: var(--${name})"
       >Pick variant</span
     >`;
 
@@ -20,7 +23,10 @@ const typeSample = (step: string) =>
     ><span class="ts-value"
       ><span data-token="text-${step}"></span> / <span data-token="text-${step}-line"></span
     ></span>
-    <span class="ty-step-text ty-line" style="font-size: var(--text-${step}); line-height: var(--text-${step}-line)"
+    <span
+      class="ty-step-text ty-line"
+      data-et-skip="OFF-CENTRE"
+      style="font-size: var(--text-${step}); line-height: var(--text-${step}-line)"
       >foundations/type · Pick variant</span
     >
   </div>`;

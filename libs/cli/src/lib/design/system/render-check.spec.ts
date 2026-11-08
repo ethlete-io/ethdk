@@ -294,6 +294,45 @@ describe('renderIssuesOf', () => {
     ]);
   }, 120_000);
 
+  it('does not flag text whose centre the box does not set', async (context) => {
+    const fill = 'background: rgb(20, 120, 60); color: white';
+    const target = checkout({
+      'components/high': {
+        body: `<div style="padding: 8px"><span style="display: inline-block; font: 12px/12px sans-serif; padding: 1px 8px 7px; ${fill}">Ready</span></div>`,
+      },
+      'components/scaled': {
+        body: `<div style="padding: 8px; transform: scale(0.25); transform-origin: 0 0"><span style="display: inline-block; font: 40px/40px sans-serif; padding: 16px 24px; ${fill}">Ready</span></div>`,
+      },
+      'components/underlined': {
+        body: `<div style="padding: 8px"><span style="display: block; font: 12px/12px sans-serif; padding: 0 0 12px; border-bottom: 1px solid rgb(0, 0, 0)">Section</span></div>`,
+      },
+      'components/line-filled': {
+        body: `<div style="padding: 8px"><span style="display: inline-block; font: 40px/40px sans-serif; ${fill}"><span style="position: relative; top: 6px">Ready</span></span></div>`,
+      },
+      'components/top-aligned': {
+        body: `<div style="padding: 8px"><span style="display: flex; align-items: flex-start; height: 48px; font: 12px/12px sans-serif; padding: 4px 8px; ${fill}">Daily sync</span></div>`,
+      },
+      'components/with-input': {
+        body: `<div style="padding: 8px"><label style="display: block; position: relative; width: 200px; font: 12px/12px sans-serif; padding: 4px 8px 32px; ${fill}">Name<input value="Ada" style="position: absolute; left: 8px; top: 10px; height: 30px; margin: 0; border: 0; padding: 0; font: 16px/30px sans-serif" /></label></div>`,
+      },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(
+      rendered.warnings
+        .filter((issue) => issue.rule === 'OFF-CENTRE')
+        .map((issue) => issue.part)
+        .sort(),
+    ).toEqual(['components/high']);
+  }, 120_000);
+
   it('flags text that shows through an open overlay pane, and not under an opaque one', async (context) => {
     const page = (pane: string) =>
       `<div style="position: relative; width: 300px; height: 160px"><p style="margin: 0; padding: 40px 8px">Round one text below</p>${pane}</div>`;

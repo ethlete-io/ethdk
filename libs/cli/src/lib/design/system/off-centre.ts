@@ -5,13 +5,14 @@ export const OFF_CENTRE_RULE = 'OFF-CENTRE';
  * The statements of the off-centre check inside the frame script of `render-check`. They use `root`, `report`, `px`,
  * `invisible`, `unseen` and `metrics` of that script. A box with a background or a border that holds one line of text,
  * and nothing that reaches above or below that line, must have the same gap above the capitals as below the baseline
- * (1px tolerance), and no icon in it may stick out of the box by more than 0.5px.
+ * (1px tolerance), and no icon in it may stick out of the box by more than 0.5px. A box counts only when a background
+ * or a border on both the top and the bottom closes it, its line box is not all of it, its row is not aligned to the
+ * top, and no form control in it draws text the walker cannot measure. Text in a scaled box is measured at its scale.
  */
 export const OFF_CENTRE_STATEMENTS = `
-  const filled = (style) =>
-    (style.backgroundColor && !invisible(style.backgroundColor)) ||
-    style.backgroundImage !== 'none' ||
-    ['Top', 'Right', 'Bottom', 'Left'].some((side) => px(style['border' + side + 'Width']) > 0 && style['border' + side + 'Style'] !== 'none' && !invisible(style['border' + side + 'Color']));
+  const backed = (style) => (style.backgroundColor && !invisible(style.backgroundColor)) || style.backgroundImage !== 'none';
+  const bordered = (style, side) => px(style['border' + side + 'Width']) > 0 && style['border' + side + 'Style'] !== 'none' && !invisible(style['border' + side + 'Color']);
+  const filled = (style) => backed(style) || ['Top', 'Right', 'Bottom', 'Left'].some((side) => bordered(style, side));
   const boxOfText = (node) => {
     for (let at = node.parentElement; at && at !== root; at = at.parentElement) if (filled(getComputedStyle(at))) return at;
     return null;
@@ -30,8 +31,10 @@ export const OFF_CENTRE_STATEMENTS = `
     const lines = textLines.get(box) ?? [];
     for (const rect of range.getClientRects()) {
       if (rect.width === 0 || rect.height === 0) continue;
-      const baseline = rect.top + measured.fontBoundingBoxAscent;
-      lines.push({ top: rect.top, bottom: rect.bottom, capTop: baseline - cap, baseline });
+      const drawnScale = rect.height / (measured.fontBoundingBoxAscent + measured.fontBoundingBoxDescent);
+      const scale = Math.abs(drawnScale - 1) > 0.05 ? drawnScale : 1;
+      const baseline = rect.top + scale * measured.fontBoundingBoxAscent;
+      lines.push({ top: rect.top, bottom: rect.bottom, capTop: baseline - scale * cap, baseline });
     }
     textLines.set(box, lines);
   }
@@ -43,6 +46,12 @@ export const OFF_CENTRE_STATEMENTS = `
     if (!lines.every((line) => lines.every((other) => middleOf(line) > other.top && middleOf(line) < other.bottom))) continue;
     const rect = box.getBoundingClientRect();
     if (rect.height > 4 * (bottom - top)) continue;
+    const style = getComputedStyle(box);
+    const centred =
+      (backed(style) || (bordered(style, 'Top') && bordered(style, 'Bottom'))) &&
+      !(px(style.paddingTop) === 0 && px(style.paddingBottom) === 0 && rect.height <= bottom - top + 1) &&
+      !(/flex/.test(style.display) && /^row/.test(style.flexDirection) && /^(flex-start|start|self-start)$/.test(style.alignItems)) &&
+      !box.querySelector('input:not([type=checkbox]):not([type=radio]):not([type=hidden]), textarea, select, [contenteditable]:not([contenteditable=false])');
     const drawn = [...box.querySelectorAll('*')].filter((element) => element.getClientRects().length > 0 && !element.closest('svg *'));
     if (drawn.some((element) => {
       const inner = element.getBoundingClientRect();
@@ -50,7 +59,7 @@ export const OFF_CENTRE_STATEMENTS = `
     })) continue;
     const above = Math.min(...lines.map((line) => line.capTop)) - rect.top;
     const below = rect.bottom - Math.max(...lines.map((line) => line.baseline));
-    if (Math.abs(above - below) > 1)
+    if (centred && Math.abs(above - below) > 1)
       report('${OFF_CENTRE_RULE}', box, 'the text sits ' + Math.abs(above - below).toFixed(1) + 'px ' + (above < below ? 'high' : 'low') + ' in its box: ' + above.toFixed(1) + 'px above the capitals, ' + below.toFixed(1) + 'px below the baseline');
     for (const icon of box.querySelectorAll('svg, img, .et-icon')) {
       if (icon.parentElement.closest('svg') || icon.getClientRects().length === 0) continue;
