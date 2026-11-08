@@ -4100,3 +4100,10 @@ baseline file. Decision (doc agent, applies ADR 0201): one triage slice first, w
 `data-et-skip` the on-purpose ones (`foundations/type` `span.ty-line`) and tune the filter for clear false classes (box
 with no padding, heading cell with space below on purpose); then OFF-CENTRE becomes a problem, and the hits left go
 into its baseline, each one a finding with a sketch.
+
+626\. Builder (2026-11-09, B457, b1af8f143): the full `design check` of B456 wrote build-ready records with the absolute
+home path in `cmd` into `.ethlete/design/*/ready.json`, and `yarn lint:person-names` refused them. Cause: `originOf` in
+`libs/cli/src/lib/design/system/write-origin.ts` wrote `process.argv` as it was, and the resident starts as
+`design __resident --checkout <absolute checkout>`. No full check wrote through the resident before, so HEAD had no such
+path. The tool caught it at the commit, not at the write. Tool fix (built): `portableCmdOf` writes each absolute
+argument relative to the working directory (`--checkout .`); `write-origin.spec.ts` bites without it.
