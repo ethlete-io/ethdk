@@ -4184,3 +4184,11 @@ an accept on a pixel-identical edit; the doc agent searched the ADRs for "accept
 builder): until B249 lands, `design go` and `design accept` print that ADR 0048 removed them and name B249, and
 EDIT-OLD-NOT-FOUND does not fire when the edit leaves every picture of the part unchanged. Process fix: before a grill
 question names a cli command, the doc agent runs `yarn adr:governs` on the file that defines that command.
+
+638\. Builder (2026-11-09): pre-push `lint:changesets` refused the push of B460, because the doc agent's ADR commit
+2d0b4e14d changed `ethlete-studio` with no changeset; the builder added `.changeset/adr-0233-withdrawn.md`. Why no tool
+caught it: the pre-commit hook runs `lint:person-names` and `lint:studio-adrs`, but not the changeset check, so a
+docs-only commit learns of the missing changeset only at the next push, in the builder's session. Same class as
+findings 589 and 594. Tool fix (general, builder): the pre-commit hook fails a commit that stages a file of a workspace
+package without a changeset for it, staged or already in `.changeset/` on the branch; it names the `none` changeset to
+add.
