@@ -49,7 +49,8 @@ that talks with the user and records decisions. Talk English.
   background and start the next slice while it runs: `nx test cli`, `nx test ethlete-studio`, `yarn studio:e2e` on the
   committed runner, then the page groups the unpushed diff touches in `canvas.e2e.mjs`, `serve.ts` or `studio-api.ts`
   3 times (the last with `--hold-listings 14000`). Push only after `push-suite: ok <sha>`; a failure, a changed result or
-  a hold failure stops the push, and the pre-push hook of `next` refuses a code push without that verdict. Push at the end of
+  a hold failure stops the push, and the pre-push hook of `next` refuses a code push without that verdict. `PUSH_SUITE_SKIP=1` is for the human only;
+  no agent sets it, and no subagent brief names it. Push at the end of
   each slice (ADR 0230). A subagent runs no full suite. Tell each subagent the same.
 - A slice that changes `apps/<app>` or `.ethlete/design` ends with `design check --product <p> --part <part>` for each
   part it touched and each part that embeds one, in the background. A problem that is not known and was not there
