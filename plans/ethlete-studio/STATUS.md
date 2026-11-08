@@ -36,10 +36,24 @@ Agent-Berichte: `.claude/handoffs/agent-results/<ID>.md`.
 
 ## Gerade in Arbeit
 
-**Reihenfolge (05.11., ADR 0189, 0192, 0193, 0195):** CI grün bis auf `pages/system` --slow (Lauf 42025926914, ADR 0196) → B388 (ADR 0195) → B391 → Port in der App (`portAfterMerge`) → B345/B346
-(erst Design-Session) → A10 (B249 + B295, ADR 0190) → B365 → B370 → B375 → B376 → B368 → B371 → B378 → B362 → B364 → B361 + B360 → B317 + B350 →
-B353/B354 → B356 → Refresh-Icon-Sketch + Code-Notice c + B352 → B334, B335, B336 → B332, B327, S4, S6b, S8 → B340 →
-B297, A36, A25. Ohne Platz: B339-Rest, B341, B342, B344, B347, B349, B355, B358, B359.
+**Reihenfolge (09.11., verbindlich, von Tom beauftragt):** Studio-Arbeit kommt vor Werkzeug-Rückstand. Der Builder
+nimmt immer den obersten offenen Punkt. Vor dem Start prüft er ihn gegen git: Ist er schon erledigt, streicht er ihn und
+nimmt den nächsten. Nur der Doc-Agent ändert diese Liste, und nur nach Toms Okay.
+
+1. ADR-0048-Rest (Bef. 637): unsichtbare direkte Änderung braucht keine Freigabe; `design go`/`accept` melden „entfernt“;
+   Gutter-Skip in `pages/sketches`. Ein Slice, schon begonnen.
+2. A10 / B249: „Baubereit“ statt Go und Abnahme, `go.json` und `accepted.json` weg (ADR 0048).
+3. A1-Rest: Titelleiste fertig (12 Hover-Zustände, Sketch `components/title-bar@notice-hint`).
+4. B345: Sketch-Runde zeigt geänderte Zustände als Ausschnitt.
+5. A13: ein Knopf „Übernehmen“ öffnet direkt die Merge-Ansicht.
+6. A24: Merge-Seite zeigt alle unveränderten Teile.
+7. A2 + A3: Suche mit Strg+K und Update-Knopf in der Titelleiste.
+
+**Werkzeug-Rückstand** (nur, wenn der Builder auf Toms Wahl in einer Skizze wartet): Off-centre-Skizzen 628-633,
+Bef. 638 (Changeset im Pre-Commit), 617, 614, 618, 620, B438.
+
+**Regel gegen Stillstand:** Ein neuer Befund unterbricht den laufenden Punkt nur, wenn (a) CI rot ist (ADR 0230), oder
+(b) er den laufenden Punkt blockiert. Sonst trägt der Doc-Agent ihn ein und hängt den Werkzeug-Fix an den Rückstand.
 
 Ältere 🔨-Zeilen unten sind noch nicht gegen git geprüft (Stand der Zeile kann veraltet sein).
 
