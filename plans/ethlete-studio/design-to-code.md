@@ -3763,3 +3763,12 @@ accepted it for now, because red CI comes first (ADR 0234). `@swc-node/register`
 runtime dependency of `@ethlete/cli` through dependency-checks. Why no tool caught it: nothing flags a raised spec
 timeout. Tool fix (backlog, first in line after item 0): a precompiled worker entry for the specs, the 30 s timeouts
 go back to the default, and lint refuses a spec timeout above the default without a finding number next to it.
+
+646\. Builder (2026-11-09, item 0): 07596570b broke run 3 of the push-suite repeat gate, the run with
+`--hold-listings 14000` (Fit is stable, first load iframes, hiding the panel, wheel over an iframe, Chip frame-point
+cases). Suspect: cases now set localStorage on a blank page instead of loading Studio twice. The item 0 subagent never
+ran the hold run, although its brief named it; the builder first blamed contention, a clean run disproved it. Nothing
+pushed until the fix lands. Why no tool caught it: the hold run is a separate mode that a local e2e run can skip, so
+only the push gate sees it. Tool fix (backlog, per ADR 0235 at the cause instead of a commit gate): the default local
+e2e run of a page group runs the same runs as the repeat gate, the hold run included, so there is no second step to
+forget.
