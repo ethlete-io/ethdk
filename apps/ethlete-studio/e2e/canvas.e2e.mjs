@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { execFileSync, fork } from 'node:child_process';
+import { execFileSync, fork, spawn } from 'node:child_process';
 import {
   cpSync,
   existsSync,
@@ -16,7 +16,7 @@ import { createServer } from 'node:net';
 import { availableParallelism, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildStudio, ensureCli, withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
+import { ensureCli, withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
 const args = process.argv.slice(2);
@@ -2819,8 +2819,9 @@ const waitForFirstFrame = async (page, studioUrl, designPort, frame) => {
   }
 };
 
+const BLANK_PATH = '/__canvas-e2e-blank';
 const runCase = async (page, studioUrl, designPort, target, testCase) => {
-  await page.goto(studioUrl);
+  await page.goto(`${studioUrl}${BLANK_PATH}`);
   await page.evaluate(
     ({ view, checkout }) => {
       localStorage.clear();
@@ -2880,6 +2881,16 @@ const trackRoutes = (page) => {
   return routes;
 };
 
+const studioBuilt = new Promise((done) => {
+  const onBuilt = (message) => {
+    if (message?.type !== 'built') return;
+    process.off('message', onBuilt);
+    done();
+  };
+
+  process.on('message', onBuilt);
+});
+
 const nextJob = () =>
   new Promise((done) => {
     process.once('message', done);
@@ -2904,8 +2915,27 @@ const work = async () => {
       page.setDefaultTimeout(WAIT_MS);
       const routes = trackRoutes(page);
 
-      await warmUp(page, studioUrl);
+      const opened = performance.now();
+
+      await page
+        .context()
+        .route(`${studioUrl}${BLANK_PATH}`, (route) => route.fulfill({ contentType: 'text/html', body: '' }));
       await assertSketchFixtures(page, designPort);
+      const fixed = performance.now();
+
+      await studioBuilt;
+      const builtAt = performance.now();
+
+      await warmUp(page, studioUrl);
+      process.send({
+        type: 'ready',
+        phases: {
+          open: opened,
+          fixtures: fixed - opened,
+          build: builtAt - fixed,
+          warmUp: performance.now() - builtAt,
+        },
+      });
       if (holdListingsMs) await holdListings(page);
       for (let { job } = await nextJob(); job; { job } = await nextJob()) {
         const startedAt = performance.now();
@@ -2957,6 +2987,19 @@ const minutes = (ms) => {
 
   return `${Math.floor(total / 60)}m${total % 60 ? `${String(total % 60).padStart(2, '0')}s` : ''}`;
 };
+
+const buildStudioAsync = (outputPath) =>
+  new Promise((done) => {
+    console.log('[canvas-e2e] studio build starting');
+    const child = spawn(
+      'npx',
+      ['nx', 'build', 'ethlete-studio', `--outputPath=${outputPath}`, '--excludeTaskDependencies', '--skip-nx-cache'],
+      { cwd: root, stdio: ['ignore', 'inherit', 'inherit'], env: { ...process.env, NX_NO_CLOUD: 'true' } },
+    );
+
+    child.on('error', () => done(1));
+    child.on('exit', (code) => done(code ?? 1));
+  });
 
 const workerCount = () => {
   const asked = Number(
@@ -3029,7 +3072,21 @@ const lead = async () => {
 
   try {
     ensureCli();
-    if (scratch) buildStudio(scratch, (phase) => console.log(`[canvas-e2e] ${phase}`));
+    const children = new Set();
+    let builtOk = !scratch;
+    const build = scratch ? buildStudioAsync(scratch) : Promise.resolve(0);
+    const failBuild = (code) => {
+      console.log(`[canvas-e2e] studio build failed with ${code}`);
+      for (const child of children) child.kill();
+      process.exit(1);
+    };
+
+    void build.then((code) => {
+      if (code !== 0) return failBuild(code);
+      builtOk = true;
+      console.log(`[canvas-e2e] studio build done at ${seconds(performance.now() - runStartedAt).trim()}`);
+      for (const child of children) child.send({ type: 'built' });
+    });
     console.log(`[canvas-e2e] ${total} cases${shardLabel} on ${workers} worker(s)`);
 
     const runWorker = async (index) => {
@@ -3038,6 +3095,10 @@ const lead = async () => {
         env: { ETHLETE_DESIGN_SLOW_CHECKS: 'off', ...process.env, DE_PORT: String(port) },
         stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
       });
+
+      children.add(child);
+      child.on('exit', () => children.delete(child));
+      if (builtOk) child.send({ type: 'built' });
       let output = '';
       let current;
       let tookJob = false;
@@ -3049,6 +3110,12 @@ const lead = async () => {
           record(current, message);
           current = undefined;
         }
+        if (message.type === 'ready')
+          console.log(
+            `[canvas-e2e] worker ${index} ready: ${Object.entries(message.phases)
+              .map(([phase, ms]) => `${phase} ${seconds(ms).trim()}`)
+              .join(', ')}`,
+          );
         if (message.type === 'next') {
           current = queue.shift();
           tookJob ||= !!current;
