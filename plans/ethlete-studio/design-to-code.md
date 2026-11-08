@@ -3764,11 +3764,13 @@ runtime dependency of `@ethlete/cli` through dependency-checks. Why no tool caug
 timeout. Tool fix (backlog, first in line after item 0): a precompiled worker entry for the specs, the 30 s timeouts
 go back to the default, and lint refuses a spec timeout above the default without a finding number next to it.
 
-646\. Builder (2026-11-09, item 0): 07596570b broke run 3 of the push-suite repeat gate, the run with
-`--hold-listings 14000` (Fit is stable, first load iframes, hiding the panel, wheel over an iframe, Chip frame-point
-cases). Suspect: cases now set localStorage on a blank page instead of loading Studio twice. The item 0 subagent never
-ran the hold run, although its brief named it; the builder first blamed contention, a clean run disproved it. Nothing
-pushed until the fix lands. Why no tool caught it: the hold run is a separate mode that a local e2e run can skip, so
-only the push gate sees it. Tool fix (backlog, per ADR 0235 at the cause instead of a commit gate): the default local
-e2e run of a page group runs the same runs as the repeat gate, the hold run included, so there is no second step to
-forget.
+646\. Builder (2026-11-09, item 0): run 3 of the push-suite repeat gate (`--hold-listings 14000`) failed (Fit is
+stable, first load iframes, hiding the panel, wheel over an iframe, Chip frame-point cases). First suspect 07596570b
+was wrong: the runner before it fails the same way; 07596570b was only the first commit whose repeat gate ran every
+page group. Cause: `settled()` in `canvas.e2e.mjs` gives up after 10 s without an error while a cell is still
+pending, and a case takes about 12.5 s, less than the 14 s hold. Fix (`listingAnswered`, uncommitted at stop): every
+hold run green; two full gates still hit other Large flakes ("a sketch scroll never empties a cell", "a sketch keeps
+its frame count through a sketch edit"). Why no tool caught it: a wait helper may end silently on its deadline, and
+the hold run is a separate mode a local run can skip. Tool fix (backlog, per ADR 0235 at the cause): every e2e wait
+helper throws on its deadline with what it waited for, and the default local e2e run of a page group runs the same
+runs as the repeat gate, the hold run included.
