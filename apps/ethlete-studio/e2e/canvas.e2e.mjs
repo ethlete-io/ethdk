@@ -238,6 +238,14 @@ const probe = (page) =>
 
 const settle = (page) => page.waitForTimeout(SETTLE_MS);
 
+const stillInFit = async (page, after) =>
+  (await page.locator('[data-sk-rows][data-sk-fit]').count())
+    ? {
+        ok: false,
+        detail: `precondition not met: the camera is still in Fit after ${after}, so this fixture cannot test it`,
+      }
+    : null;
+
 const SCROLL_STEP_PX = 300;
 const SCROLL_SAMPLES_MS = [30, 300];
 const SKETCH_CSS = {
@@ -614,6 +622,10 @@ const CASES = [
       await page.mouse.wheel(0, -240);
       await page.keyboard.up('Control');
       await settle(page);
+      const unzoomed = await stillInFit(page, 'a ctrl-wheel zoom');
+
+      if (unzoomed) return unzoomed;
+
       const zoomed = (await frameBoxes(page, selector))[index];
       const pans = Math.abs(panned.top - before.top) > 20 || Math.abs(panned.left - before.left) > 20;
       const zooms = zoomed.width > panned.width * 1.05;
@@ -702,6 +714,10 @@ const CASES = [
         await page.mouse.wheel(0, delta);
         await page.keyboard.up('Control');
         await settle(page);
+
+        const unzoomed = await stillInFit(page, `a ctrl-wheel of ${delta}`);
+
+        if (unzoomed) return unzoomed;
 
         const after = (await frameBoxes(page, selector))[index];
         const ratio = after.width / before.width;
@@ -2107,6 +2123,10 @@ const CASES = [
         await settle(page);
       }
 
+      const unzoomed = await stillInFit(page, 'Vergrößern');
+
+      if (unzoomed) return unzoomed;
+
       const before = await probe(page);
       const frameBefore = await firstFrame();
       const headBefore = frameBefore ? await headOffset(frameBefore) : 0;
@@ -2164,6 +2184,10 @@ const CASES = [
       await page.mouse.wheel(0, -120);
       await page.keyboard.up('Control');
       await settle(page);
+
+      const unzoomed = await stillInFit(page, 'a ctrl-wheel zoom');
+
+      if (unzoomed) return unzoomed;
 
       const before = await screenRect();
       const cameraBefore = await probe(page);
@@ -2737,6 +2761,25 @@ const runCase = async (page, studioUrl, designPort, target, testCase) => {
     : { ok: true, detail: `open, ${testCase.open}: ${result.detail}` };
 };
 
+const trackRoutes = (page) => {
+  const routes = new Set();
+  const route = page.route.bind(page);
+  const unroute = page.unroute.bind(page);
+
+  page.route = (url, ...rest) => {
+    routes.add(String(url));
+
+    return route(url, ...rest);
+  };
+  page.unroute = (url, ...rest) => {
+    routes.delete(String(url));
+
+    return unroute(url, ...rest);
+  };
+
+  return routes;
+};
+
 const nextJob = () =>
   new Promise((done) => {
     process.once('message', done);
@@ -2759,6 +2802,8 @@ const work = async () => {
   await withStudio(
     async ({ page, studioUrl, designPort }) => {
       page.setDefaultTimeout(WAIT_MS);
+      const routes = trackRoutes(page);
+
       await warmUp(page, studioUrl);
       await assertSketchFixtures(page, designPort);
       for (let { job } = await nextJob(); job; { job } = await nextJob()) {
@@ -2775,6 +2820,13 @@ const work = async () => {
         }
 
         reportAsyncError = crashOnAsyncError;
+
+        const leftRoutes = [...routes];
+
+        routes.clear();
+        await page.unrouteAll({ behavior: 'ignoreErrors' });
+        if (leftRoutes.length)
+          result = { ok: false, detail: `left route ${leftRoutes.join(', ')} active after the case: ${result.detail}` };
 
         process.send({ type: 'result', ok: result.ok, detail: result.detail, ms: performance.now() - startedAt });
       }

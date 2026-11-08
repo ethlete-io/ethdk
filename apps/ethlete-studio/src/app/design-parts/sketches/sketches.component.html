@@ -124,7 +124,12 @@
     <div
       class="absolute top-27 right-space-5 bottom-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] overflow-clip [overflow-clip-margin:4px]"
     >
-      <ethlete-canvas-viewport #list class="size-full [--st-shell-inset-left:0px]" data-sk-rows>
+      <ethlete-canvas-viewport
+        #list
+        [attr.data-sk-fit]="canvas.zoom() === 'fit' ? '' : null"
+        class="size-full [--st-shell-inset-left:0px]"
+        data-sk-rows
+      >
         <div
           #world
           [class.w-max]="transposed() || canvas.zoom() !== 'fit'"
