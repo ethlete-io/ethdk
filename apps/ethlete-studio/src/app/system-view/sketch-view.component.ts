@@ -185,13 +185,22 @@ export const liveShotsOf = ({
       @let key = row.key + ' ' + state;
       <div #shotCell [attr.data-shot]="key" class="relative size-full">
         @if (shotPictures().get(key); as picture) {
+          @let shown = loadedPictures().get(key);
+          @if (shown && shown !== picture) {
+            <img
+              [src]="shown"
+              [alt]="key"
+              [class.opacity-0]="paintedShots().has(key)"
+              class="absolute inset-x-0 top-0 block w-full"
+            />
+          }
           <img
             [src]="picture"
             [ethleteShotRank]="picture"
             [alt]="key"
             [class.opacity-0]="paintedShots().has(key)"
             [class.hidden]="failedPictures().has(picture)"
-            (load)="pictureLoaded(key, $event)"
+            (load)="pictureLoaded({ key, picture, event: $event })"
             (error)="pictureFailed(picture)"
             class="block w-full"
             data-shot-picture
@@ -682,6 +691,8 @@ export class SketchViewComponent {
 
   protected failedPictures = signal<ReadonlySet<string>>(new Set());
 
+  protected loadedPictures = signal<ReadonlyMap<string, string>>(new Map());
+
   /** Shows the round of the comment's variant. */
   public jumpTo(comment: ListedComment) {
     const variant = comment.sketch?.variant;
@@ -762,9 +773,11 @@ export class SketchViewComponent {
     this.failedPictures.update((failed) => new Set(failed).add(picture));
   }
 
-  protected pictureLoaded(key: string, event: Event) {
+  protected pictureLoaded({ key, picture, event }: { key: string; picture: string; event: Event }) {
     const { naturalWidth, naturalHeight } = event.target as HTMLImageElement;
 
+    if (naturalWidth > 0 && this.loadedPictures().get(key) !== picture)
+      this.loadedPictures.update((loaded) => new Map(loaded).set(key, picture));
     if (naturalWidth === 0 || this.pictureRatios()[key] === naturalHeight / naturalWidth) return;
 
     this.pictureRatios.update((ratios) => ({ ...ratios, [key]: naturalHeight / naturalWidth }));
