@@ -4192,3 +4192,10 @@ docs-only commit learns of the missing changeset only at the next push, in the b
 findings 589 and 594. Tool fix (general, builder): the pre-commit hook fails a commit that stages a file of a workspace
 package without a changeset for it, staged or already in `.changeset/` on the branch; it names the `none` changeset to
 add.
+
+639\. Doc agent (2026-11-09, ADR 0236): measured loop time of the builder on 2026-11-08 (4 builder sessions, 16
+subagents, 8 push-suite logs in `/tmp/push-suite*.log`). Studio e2e dominates: 26 min of direct runs, most of the 25 min
+of wait loops, and 23.4 of the 29.5 min of push-suite time (165-197 s per run, 80 %). The cli step costs 85-104 s only
+when cli changed; commit hook, lint and prettier together about 3.5 min. Polling (`tail -f`, `until grep`, `sleep`)
+on e2e logs ate a large part of the "other" 24.6 min. Fix (item 0 of the binding order): the e2e step in push:suite
+under 60 s over 3 measured runs, and the builder waits on e2e by notification, not by polling.

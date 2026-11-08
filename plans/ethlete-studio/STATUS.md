@@ -40,8 +40,9 @@ Agent-Berichte: `.claude/handoffs/agent-results/<ID>.md`.
 nimmt immer den obersten offenen Punkt. Vor dem Start prüft er ihn gegen git: Ist er schon erledigt, streicht er ihn und
 nimmt den nächsten. Kein Punkt und kein Rückstand läuft über Nacht als E2E-Fix-Schleife. Nur der Doc-Agent ändert diese Liste, und nur nach Toms Okay.
 
-0. Wartezeit (ADR 0236): der langsamste gemessene Schritt der Builder-Schleife wird schneller (Messung läuft,
-   Ergebnis vom Doc-Agent). Klares Ende, dann weiter mit 1.
+0. Wartezeit (ADR 0236, Bef. 639): die Studio-E2E-Suite wird schneller. Gemessen am 08.11.: E2E war 80 % der
+   Push-Prüfung (165-197 s pro Lauf) und der größte Posten der Builder-Zeit. Ende: E2E-Schritt im push:suite unter 60 s,
+   gemessen über 3 Läufe; der Builder wartet auf E2E per Benachrichtigung, nicht per Abfrage-Schleife.
 1. A10 / B249: „Baubereit“ statt Go und Abnahme, `go.json`, `accepted.json`, `design go` und `design accept` weg
    (ADR 0048); unsichtbare direkte Änderungen gelten sofort; danach Gutter-Skip in `pages/sketches`. Nichts am Go-System
    wird vorher noch geändert.
