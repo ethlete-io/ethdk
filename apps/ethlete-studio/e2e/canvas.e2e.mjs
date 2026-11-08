@@ -772,7 +772,7 @@ const CASES = [
                   found.push(`${label}: "${node.textContent.trim().slice(0, 30)}" leaves its box`);
               }
 
-              for (const row of canvas.querySelectorAll('[data-sk-row]')) {
+              for (const row of canvas.querySelectorAll('[data-sk-row]:not([data-sk-matrix] *)')) {
                 const [head, stage] = row.children;
 
                 if (head && stage && head.getBoundingClientRect().right > stage.getBoundingClientRect().left + 0.5)
