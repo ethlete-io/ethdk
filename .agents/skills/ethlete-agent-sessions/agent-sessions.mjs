@@ -118,10 +118,20 @@ const runsInSession = (agentArgs) =>
  * wake-up line from answering a permission dialog.
  */
 const SGR = `${String.fromCharCode(27)}\\[([0-9;]*)m`;
-const busyLine = (session) =>
-  (tmux('capture-pane', '-p', '-t', `=${session}:`).stdout ?? '')
-    .split('\n')
-    .find((line) => /esc to interrupt|Waiting for/i.test(line)) ?? null;
+const BUSY_TEXT = /esc to interrupt|Waiting for/i;
+const isTranscript = (line) => /^\s*[●⎿]/.test(line);
+/**
+ * The line that shows a running turn: the spinner line right above the input box, or a footer line below it.
+ * A transcript line (`●`, `⎿`) never counts, since an agent can end its turn with its own "Waiting for ..." text.
+ */
+const busyLineOf = (lines) => {
+  const bottom = lastRuleIndex(lines);
+  const top = lines.slice(0, bottom).findLastIndex(isRule);
+  if (bottom === -1 || top === -1) return lines.find((line) => BUSY_TEXT.test(line) && !isTranscript(line)) ?? null;
+  const spinner = lines.slice(0, top).findLast((line) => line.trim() !== '') ?? '';
+  return [spinner, ...lines.slice(bottom + 1)].find((line) => BUSY_TEXT.test(line) && !isTranscript(line)) ?? null;
+};
+const busyLine = (session) => busyLineOf((tmux('capture-pane', '-p', '-t', `=${session}:`).stdout ?? '').split('\n'));
 const restartLog = (message) => {
   mkdirSync(dirname(mailbox), { recursive: true });
   appendFileSync(join(dirname(mailbox), 'restart.log'), `${new Date().toISOString()} ${message}\n`);

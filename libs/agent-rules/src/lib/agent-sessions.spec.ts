@@ -420,6 +420,47 @@ process.stdin.on('data', (data) => {
     30_000,
   );
 
+  const restartOverFixture = (name: string, fixture: string) => {
+    const agent = `claude-${name}-${process.pid}`;
+    const scoped = `${agent}@${basename(dir)}`;
+
+    spawnSync('tmux', ['new-session', '-d', '-s', scoped, `cat ${join(__dirname, 'fixtures', fixture)}; cat`]);
+
+    try {
+      const result = run(['restart', agent, '--now', '--after', '0', 'resume'], undefined, {
+        TMUX_PANE: paneOf(scoped),
+        AGENT_RESTART_WAIT_MS: '6000',
+        AGENT_RESTART_CLEAR_WAIT_MS: '1000',
+      });
+      const log = readFileSync(join(dir, 'restart.log'), 'utf8');
+      return { result, log };
+    } finally {
+      spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+    }
+  };
+
+  it.skipIf(!hasTmux)(
+    'treats a captured pane with a spinner line above the input box as busy',
+    () => {
+      const { result, log } = restartOverFixture('real-busy', 'claude-pane-busy.txt');
+
+      expect(result.status).toBe(1);
+      expect(log).toMatch(/waits, busy: ✻ Waiting for 1 background agent to finish/);
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'treats a captured idle pane with a "Waiting for" transcript line as idle',
+    () => {
+      const { log } = restartOverFixture('real-idle', 'claude-pane-idle-waiting-text.txt');
+
+      expect(log).not.toMatch(/busy:/);
+      expect(log).not.toMatch(/gave up after/);
+    },
+    30_000,
+  );
+
   it.skipIf(!hasTmux)(
     'tells the caller and each --notify agent when a draft blocks the restart and when it gives up',
     () => {
