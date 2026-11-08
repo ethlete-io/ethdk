@@ -5,6 +5,7 @@ import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../design-config';
 import { resolveProduct } from '../resolve-product';
+import { mergeInWorker } from './merge-runner';
 import { mergeAndRecord } from './merge-step';
 import { createSketch, decideSketch, findSketch, markSketchReady, Sketch, SketchTarget } from './sketch';
 import { originOf } from '../write-origin';
@@ -97,5 +98,24 @@ describe('a merge commits its own result', { timeout: 120_000 }, () => {
     writeFileSync(join(hero.dir, 'b/elements/hero/hero.css'), '.acme-hero { background: var(--acme-accent); }');
 
     expect(mergeOf(target, hero)).toMatchObject({ parts: ['elements/hero'] });
+  });
+
+  it('commits a Studio merge from the merge worker', async () => {
+    const target = acme();
+    const git = gitOf(target);
+
+    git('init');
+    git('config', 'user.name', 't');
+    git('config', 'user.email', 't@t');
+    git('add', '.');
+    git('commit', '-m', 'base');
+
+    const hero = pickedSketch(target, { layer: 'elements', name: 'hero' });
+
+    writeFileSync(join(hero.dir, 'b/elements/hero/hero.css'), '.acme-hero { background: var(--acme-accent); }');
+
+    expect(await mergeInWorker({ target, product: 'acme', sketch: hero })).toEqual(['elements/hero']);
+    expect(git('log', '-1', '--format=%s').stdout.trim()).toBe('feat(repo): Merge elements/hero variant b into acme');
+    expect(git('status', '--porcelain', '--', `${DESIGN_DIR}/acme/elements`).stdout).toBe('');
   });
 });

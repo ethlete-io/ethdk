@@ -2,7 +2,7 @@ import { existsSync, realpathSync } from 'fs';
 import { relative, resolve, sep } from 'path';
 import { ResolvedProduct } from '../resolve-product';
 import { Sketch, sketchesDirOf } from './sketch';
-import { PlainResult, spawnPlain, spawnPlainAsync } from '../../../plain-output';
+import { PlainResult, spawnPlain } from '../../../plain-output';
 
 type GitCall = { args: string[]; input?: string };
 type GitFlow<T> = Generator<GitCall, T, PlainResult>;
@@ -12,15 +12,6 @@ const runSync = <T>(target: string, flow: GitFlow<T>) => {
 
   while (!step.done)
     step = flow.next(spawnPlain(['git', ...step.value.args], { cwd: target, input: step.value.input }));
-
-  return step.value;
-};
-
-const runAsync = async <T>(target: string, flow: GitFlow<T>) => {
-  let step = flow.next();
-
-  while (!step.done)
-    step = flow.next(await spawnPlainAsync(['git', ...step.value.args], { cwd: target, input: step.value.input }));
 
   return step.value;
 };
@@ -103,15 +94,8 @@ type CommitOptions = {
 export const dirtyFilesOfSync = (options: { target: string; product: ResolvedProduct }) =>
   runSync(options.target, dirtyFilesFlow(options.product));
 
-/** `dirtyFilesOfSync` that does not block the event loop, for the Studio server. */
-export const dirtyFilesOf = (options: { target: string; product: ResolvedProduct }) =>
-  runAsync(options.target, dirtyFilesFlow(options.product));
-
 /**
  * Commits what a merge wrote into the product's folders - the files dirty now that were clean or different before,
  * and the merged sketch's own deletion, never another open sketch - as one commit. A failed commit warns and leaves the files as they are.
  */
 export const commitMergeResultSync = (options: CommitOptions) => runSync(options.target, commitFlow(options));
-
-/** `commitMergeResultSync` that does not block the event loop, for the Studio server. */
-export const commitMergeResult = (options: CommitOptions) => runAsync(options.target, commitFlow(options));

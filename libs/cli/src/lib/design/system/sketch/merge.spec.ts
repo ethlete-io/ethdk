@@ -1,7 +1,8 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { originOf } from '../write-origin';
-import { spawnSync } from 'child_process';
+import childProcess, { spawnSync } from 'child_process';
 import { IncomingMessage } from 'http';
+import { syncBuiltinESMExports } from 'module';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { Readable } from 'stream';
@@ -139,11 +140,17 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     expect(readFileSync(join(target, harness.map), 'utf8')).toContain('DESIGN_HARNESS_PARTS');
   });
 
-  it('keeps the server thread answering while a Studio merge runs: no stall over 3 calibration units', async () => {
+  it('keeps the server thread answering while a Studio merge runs: no child process and no stall over 3 calibration units', async () => {
     const target = acme();
     const ready = readySketch(target);
 
     picked(ready.sketch);
+
+    const spawners = (['spawn', 'spawnSync', 'exec', 'execSync', 'execFile', 'execFileSync', 'fork'] as const).map(
+      (name) => vi.spyOn(childProcess, name),
+    );
+
+    syncBuiltinESMExports();
 
     const unit = calibrationMs();
     let longest = 0;
@@ -161,7 +168,13 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
 
     clearInterval(ticks);
 
+    const spawned = spawners.filter((spy) => spy.mock.calls.length > 0).map((spy) => spy.getMockName());
+
+    for (const spy of spawners) spy.mockRestore();
+    syncBuiltinESMExports();
+
     expect(answer.status).toBe(200);
+    expect(spawned).toEqual([]);
     expect(Math.max(longest, cpuMs(last))).toBeLessThan(Math.max(unit, calibrationMs()) * 3);
   });
 

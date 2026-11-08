@@ -45,7 +45,6 @@ import { CheckSketches } from './system/sketch/sketch-checker';
 import { oneProductOf } from './system/sketch/cli-args';
 import { retriedHeldMerges } from './sketch-command';
 import { discardSketch, mergeRefusalOf } from './system/sketch/merge';
-import { commitMergeResult, dirtyFilesOf } from './system/sketch/merge-commit';
 import { mergeInWorker } from './system/sketch/merge-runner';
 import { changedOutsideSketchOf } from './system/sketch/merged-parts';
 import { acceptRunOf, partAcceptRefusalOf } from './system/accept-command';
@@ -627,16 +626,9 @@ export const sketchMergeAnswer = withSketch('POST', async ({ asked, product, ske
 
   if (refused !== null) return failure(422, refused);
 
-  const before = await dirtyFilesOf({ target: asked.target, product });
   const merged = await mergeInWorker({ target: asked.target, product: product.name, sketch, note });
 
-  if (Array.isArray(merged)) {
-    const picked = sketch.decision?.kind === 'pick' ? sketch.decision.variant : '';
-
-    await commitMergeResult({ target: asked.target, product, sketch, variant: picked, before });
-
-    return { status: 200, body: { merged } };
-  }
+  if (Array.isArray(merged)) return { status: 200, body: { merged } };
 
   if (merged.findings)
     return refusal({
