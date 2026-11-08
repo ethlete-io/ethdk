@@ -11,6 +11,7 @@ import { extractSketchAt } from './sketch-at';
 import { productDirOf } from './system/product';
 import { ResolvedProduct } from './system/resolve-product';
 import { findSketch, parseTarget, rejectionOf, Sketch, SketchRejection } from './system/sketch/sketch';
+import { noteStep } from './run-deadline';
 import { recordShotViewed, shotFileOf } from './system/sketch/viewed-shots';
 import { createPartShooter, cropOf, drawParamsOf, isSchemeFlag, PartAddress } from './shot';
 import { gridOf, ListedGrid } from './system/list-system';
@@ -613,7 +614,10 @@ export const designShot = async (options: { target: string; argv: string[]; invo
         for (const row of plan) {
           const cells: SheetCell[] = [];
 
-          for (const entry of row) cells.push(await shoot(entry, fresh));
+          for (const entry of row) {
+            noteStep(`${fresh ? 'second ' : ''}shot of ${entry.label}`);
+            cells.push(await shoot(entry, fresh));
+          }
 
           drawn.push(cells);
         }

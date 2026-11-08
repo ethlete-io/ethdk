@@ -73,6 +73,9 @@ let current: Recorder | null = null;
 
 export const timingsFileOf = (target: string) => join(target, TIMINGS_FILE);
 
+/** The phases the run in progress has ended so far. */
+export const phasesSoFar = (): readonly TimingPhase[] => current?.phases ?? [];
+
 export const recordPhase = (name: string, ms: number) => {
   if (current)
     current.phases.push({ name, ms: Math.round(ms), at: Math.round(performance.now() - current.began - ms) });

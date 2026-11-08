@@ -1,4 +1,5 @@
 import { Browser } from './thumb';
+import { withinLimit } from './wait';
 
 type ContextOptions = NonNullable<Parameters<Browser['newContext']>[0]>;
 type Context = Awaited<ReturnType<Browser['newContext']>>;
@@ -67,13 +68,16 @@ export const createWarmPages = (options: { idleLimit?: number } = {}) => {
   };
 
   return {
-    /** Runs `draw` on an idle page of `browser` opened with the same `context` options, or on a new one. */
-    run: async <T>(lent: Lent, draw: (page: Page) => Promise<T>) => {
+    /**
+     * Runs `draw` on an idle page of `browser` opened with the same `context` options, or on a new one. With `limit`,
+     * a draw still running after `limit.ms` rejects with a `WaitTimeoutError` and its page closes.
+     */
+    run: async <T>(lent: Lent & { limit?: { ms: number; what: string } }, draw: (page: Page) => Promise<T>) => {
       const key = JSON.stringify(lent.context);
       const warm = await borrow(lent, key);
 
       try {
-        const drawn = await draw(warm.page);
+        const drawn = await (lent.limit ? withinLimit(draw(warm.page), lent.limit) : draw(warm.page));
         const kept = idleOf(lent.browser);
 
         kept.push({ warm, parked: park(warm) });

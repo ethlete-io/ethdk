@@ -1,4 +1,5 @@
 import { performance } from 'perf_hooks';
+import { noteStep } from './run-deadline';
 import { recordPhase } from './timings';
 
 /**
@@ -7,6 +8,8 @@ import { recordPhase } from './timings';
  */
 export const timedPhase = <T>(name: string, run: () => T): T => {
   const start = performance.now();
+
+  noteStep(`phase ${name}`);
   const done = () => {
     const ms = performance.now() - start;
 

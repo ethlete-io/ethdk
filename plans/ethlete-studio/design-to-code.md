@@ -4219,6 +4219,20 @@ the cli async in its own process group, forwards SIGTERM, SIGINT and SIGHUP to t
 parent is gone (ppid changes); `design` refuses to start a second run of the same command while an older one lives and
 names its pid.
 
+As built (640/641): `tools/scripts/et-design.mjs` spawns the cli async, detached in its own process group unless stdin is
+a terminal (a background group stops on SIGTTIN when `et design` reads stdin), forwards SIGTERM/SIGINT/SIGHUP, polls
+`/proc/self/stat` every 1.5 s and ends the group when its parent changed, SIGKILL 5 s after SIGTERM. A lock per
+checkout + argv in `$TMPDIR/et-design/locks` refuses a second identical run with the old pid; a dead pid's lock is taken
+over. Deadlines from `.ethlete/design/.timings.jsonl` (2026-11-08): slowest normal `shot` 38 s (14 runs), `check` 560 s
+(88 runs), so `shot` 5 min and `check` 20 min in `libs/cli/src/lib/design/run-deadline.ts`; the cli exits 124 and writes
+`$TMPDIR/et-design/deadline/<cmd>-*.log` (last step, ended phases, last 200 output lines). The wrapper backstop (6 / 22
+min) kills the group and writes `wrapper-*.log`. `ETHLETE_DESIGN_DEADLINE_MS` overrides both. Cause of the 55 min shot:
+its timing line shows 374 cache misses and 3.3 M ms unphased after browser-start, no step named; one visible gap is
+closed: a part draw (`page.evaluate` calls have no limit) now fails after 4x the load-scaled draw timeout and closes its
+page. Specs: `tools/scripts/et-design.spec.mjs`, `run-deadline.spec.ts`, `warm-pages.spec.ts`, each bites with its
+fix removed. Not verified: a real `shot` hitting the deadline in Chrome (a probe showed `process.exit` and SIGTERM both
+end Playwright's Chrome).
+
 642\. Builder (2026-11-09, 48d1a7716): CI on `next` was red since 3aaa8364e, `real-open-points.spec.ts` timed out at
 5 s under full CI load (405 ms alone). Cause: `readOpenPoints` reached `committedLinkFieldsOf` in `link-free.ts`, which
 started 50 synchronous git processes per run (one `git log -G implements` per linked part, one `git show` per commit

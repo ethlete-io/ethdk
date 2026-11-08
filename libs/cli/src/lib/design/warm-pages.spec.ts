@@ -68,6 +68,20 @@ describe('createWarmPages', () => {
     expect(contexts[0]?.pages[0]?.goto).not.toHaveBeenCalled();
   });
 
+  it('rejects a draw that outlives its limit and closes its page', async () => {
+    const { browser, contexts } = fakeBrowser();
+    const warm = createWarmPages();
+
+    await expect(
+      warm.run(
+        { browser, context: phone, limit: { ms: 20, what: 'the hung draw' } },
+        () => new Promise(() => undefined),
+      ),
+    ).rejects.toThrow('the hung draw');
+
+    expect(contexts[0]?.close).toHaveBeenCalled();
+  });
+
   it('opens a page of its own per viewport and scale', async () => {
     const { browser, contexts } = fakeBrowser();
     const warm = createWarmPages();

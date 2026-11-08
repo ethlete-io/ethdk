@@ -28,6 +28,7 @@ import {
 } from './thumb';
 import { MotionMode, MotionPictures, motionPicturesOf } from './motion-shot';
 import { settleFrames } from './settle-frames';
+import { loadScaledMs } from './system/no-verdict';
 import { createWarmPages } from './warm-pages';
 import { createShotBoard, shotKeyOf, shotViewMiddleware } from './shot-board';
 import { ShotStore, StoredAddress } from './shot-store';
@@ -295,6 +296,8 @@ export const emptySlotsScriptOf = (part: string, fill: string | null = null) => 
   return Promise.all([...document.images].map((image) => image.decode().catch(() => undefined)));
 })()`;
 
+const DRAW_LIMIT_MS = 4 * DRAW_TIMEOUT_MS;
+
 const SHOT_OPTIONS = { type: 'png', fullPage: true, omitBackground: true, timeout: DRAW_TIMEOUT_MS } as const;
 
 const CHECKER_SQUARE_PX = 8;
@@ -466,6 +469,7 @@ export const createPartShooter = (options: {
           ...(frame.scale > 1 ? { deviceScaleFactor: frame.scale } : {}),
           ...(frame.scheme ? { colorScheme: frame.scheme } : {}),
         },
+        limit: { ms: loadScaledMs(DRAW_LIMIT_MS), what: `the draw of frame.html?${frame.search}` },
       },
       async (page) => {
         await openFrame(page, `${baseOf()}/frame.html?${frame.search}`);

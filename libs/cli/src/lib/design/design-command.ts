@@ -5,6 +5,7 @@ import { checkDesign } from './check';
 import { COMPLETE_USAGE, designComplete } from './system/complete-command';
 import { DEFAULT_PORT, findCheckoutRoot, portOf, readConfig } from './design-config';
 import { designServeState } from './serve-state';
+import { deadlineMsOf, withRunDeadline } from './run-deadline';
 import { designComment, designInbox } from './inbox-command';
 import { markLegacy } from './legacy';
 import { newCall } from './new-call';
@@ -413,11 +414,15 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     return 0;
   }
 
-  if (!TIMED_COMMANDS.has(argv[0] ?? '')) return runDesign(options);
+  const deadline = { argv, ms: deadlineMsOf(argv[0] ?? '') };
+
+  if (!TIMED_COMMANDS.has(argv[0] ?? '')) return withRunDeadline(deadline, () => runDesign(options));
 
   const { target, rest } = splitCheckout(argv.slice(1), root);
 
-  return recordRun({ file: timingsFileOf(target), argv: [argv[0] ?? '', ...rest] }, () => runDesign(options));
+  return withRunDeadline(deadline, () =>
+    recordRun({ file: timingsFileOf(target), argv: [argv[0] ?? '', ...rest] }, () => runDesign(options)),
+  );
 };
 
 const runDesign = async (options: { root: string; argv: string[]; invocation: string }): Promise<number> => {
