@@ -365,26 +365,9 @@ nothing, while `sketch rebase` only rewrites baseline hashes (B220 not built). L
 says whether the change draws anything. Into B220: rebase ports new states; Studio marks a draw-free base change
 as "base refreshed, no visual change" instead of blocking the pick. title-bar is B220's real reproduction.
 
-### Title-bar rebase and canvas-frames merge decisions (2026-11-03)
+Archived: Title-bar rebase and canvas-frames merge decisions (2026-11-03), see [findings-2026-11](archive/findings-2026-11.md).
 
-- B208 + settings restore: Tom typed the approval into the builder session himself.
-- Title-bar r3 (Tom): components/title-bar changed since the sketch was cut; the builder rebases the sketch onto the
-  current part. The uncommitted pick `"variant":"f"` is not committed: it was made on a stale base. Tom picks again
-  after the rebase. B220 (`sketch rebase` ports new states) is built first, with title-bar as its real reproduction;
-  a hand rebase is not a substitute.
-- B199 (Tom: "yes, I think"): the builder confirms that the tree is byte-equal to variant c and that the Studio
-  merge record names c. Both true -> commit c and migrate canvas-frames to `instant` (B194) in the same commit.
-  Either false -> report, commit nothing.
-
-studio` on the new commits.
-
-### Unrecorded merge decisions (2026-11-03)
-
-- pages/system (Tom: merged): HEAD's sketch records pick b and the tree equals variant b, so the builder commits
-  the merge.
-- canvas-frames (Tom does not remember merging it; no recorded pick): the builder restores the element and the sketch
-  to HEAD, and Tom picks again in Studio. The merge, the `instant` migration and the B226 real repro follow that
-  pick. This case is B228's real reproduction.
+Archived: Unrecorded merge decisions (2026-11-03), see [findings-2026-11](archive/findings-2026-11.md).
 
 ### Pace decision (2026-11-03)
 
@@ -839,23 +822,6 @@ shared list function), and a spec asserts both lists are equal for a round. Open
 a round show only the states it touches (plus a reference state) instead of every base state; recommend with
 facts. B256 is not pickable until B240 phase 2 lands and the view renders.
 
-336\. Two corrections from Tom (2026-11-03). (a) The grill session asked Tom which states a sketch round shows, but
-that was decided several times: unchanged states fold away (finding 77, b879f640e), each variant row stacks its
-states with unchanged ones dimmed and the first change marked (pages/sketches round 2, variant e), and a round
-names its question states (`sketch round --asks`, default the states the round added) with `ready` refusing
-variant pairs below ~2 % visible diff. Why no tool caught it: the grill session asked without searching the
-plan for the topic first; the builder recommended the same without checking either. Rule: before any grill
-question or recommendation, grep the plan for the topic and quote the earlier decision; if it exists, the
-question is "why does the tool not do what was decided", sent to the builder. The pages/system and
-sketch-status-badge views (findings 332, 335) show all states unfolded and identical variants, so the decided
-behaviour is missing or regressed; the builder finds which commit and why no spec held it. B281 and the "touched
-states" part of B284 collapse into that. (b) The B256 variant c draws a "Mocks veraltet" popover with an
-`nx build components` command. A designer can do nothing with it; stale mocks must never reach the Studio UI.
-Decision (Tom): no banner, no variant of it. Studio and the design server rebuild stale SDK mocks themselves
-before they draw; the CLI refusal for agents (check, ready, shot) stays. Why no tool caught it: nothing checks
-that Studio UI text is for a designer. Fix: a rule flags command text (`npx`, `nx `, `yarn `, `--flag`,
-env assignments) in a studio product drawing or app template. The pages/system sketch 2862bad2e is withdrawn.
-
 337\. The B264b slice (busy sketch renders count as ongoing work, motions hint in every check) is spec-green in the
 tree but uncommitted: `yarn commit` refused twice because its related-spec run in the HEAD worktree failed
 `motion-shot.spec.ts` (72 instead of >= 300), the B268 flake. The flaky spec does not touch the changed code. Why
@@ -987,12 +953,6 @@ bar (screenshots of pages/sketches and pages/system). Why no tool caught it: the
 any design drawing or headless compare; the design only reserves their space, and nothing checks the real Tauri
 window. Tool fix (technical, B304): derive the traffic-light position from the title-bar height token of the
 design, and add a macOS window check that measures the traffic-light centre against the title-bar centre.
-
-358\. Builder (2026-11-04, S1): a PreToolUse hook blocks every Bash call whose text contains "design ready", also a
-heredoc or a commit message. Why no tool caught it: the hook spec tests only commands that should be blocked,
-not free text that only names the command. Tool fix (technical, B305): the hook matches the command position
-only; the spec gets cases with the words in a heredoc, a quoted string and a commit message.
-As built (B305, 2026-11-07; closes B126 too): `libs/agent-rules/content/hooks/background-design-commands.py` splits the command into simple commands (heredoc bodies and quoted text removed, `$(` and separators split) and matches a long command only when the segment starts with a launcher (yarn, npx, node, nx, timeout, env assignments and the like). The spec has cases for a commit message, echo, unquoted echo and grep, heredoc and `$(cat <<EOF)` commit messages, plus command-position forms that must still deny. Bite proof: the old hook denied `echo design ready` and an unquoted grep. The `.claude` copy was written by hand with the generated header, not through `yarn agents:sync` (build too heavy on the loaded desk); a later sync should produce no diff. Not verified: other agents' hook copies (Codex), a launcher missing from the list lets that command through.
 
 359\. Tom (2026-11-04): every frame in Studio showed the browser's broken-image icon and an endless "Rendering" chip
 (foundations/agent-logos and others), while the part head said "Nichts offen". Cause: load about 256 from a full
@@ -1242,25 +1202,6 @@ alone; `yarn lint:studio-adrs` fails on a list item numbered 100 or more, a dupl
 and a "Bef. N" with no finding N, and its spec runs a prettier-renumbered fixture as the red case. Lesson: a number
 that other text points at must not be one a formatter computes.
 
-388\. Builder (2026-11-04, B325): 5fd088c7c (A10 S2) removed `go` from the open-points answer, but two cli specs
-still expected it. They failed at HEAD and blocked every later cli commit until 586c115a9. Why no tool caught it: the
-pre-commit gate runs only the specs related to the staged files, and these two specs read the answer through a path
-the related map does not link. Fix (B334): a field name or string literal that the staged diff removes pulls every
-spec that contains it into the gate run, as finding 376 does for labels. Also seen: `list-system.spec.ts` failed once
-under load; if it is bound to wall-clock time, it goes into the B268 fake-clock work.
-As built (B334, w3-gates-b): no hook change. ADR 0225 keeps slow checks out of the hooks, and the spec-selecting
-pre-commit gate is gone (d67c98f91). The CI `Unit tests` job runs every spec on every push, so a removed field or
-literal that a spec still expects fails there; a related-spec subset in a hook would only repeat it.
-
-389\. Builder (2026-11-04, B325): dd708ee4a committed `started-by-studio.spec.ts` with a type error;
-`tsc -p libs/cli/tsconfig.spec.json` fails. Why no tool caught it: vitest does not typecheck, the pre-commit gate
-runs only vitest, and S7 moved typecheck to CI. Fix (B334): when a staged file is a spec, the gate also runs
-`tsc --noEmit -p <lib>/tsconfig.spec.json` for that lib, inside the 60 s budget of S7; if it does not fit, it runs
-only the staged specs through vitest typecheck mode.
-As built (B334, w3-gates-b): no hook change. The CI `Checks` job runs `nx run-many -t typecheck`, which covers
-`tsconfig.spec.json` of `libs/cli` and every other lib. A `tsc` per commit takes tens of seconds, so by ADR 0225 it
-stays in CI.
-
 390\. Builder (2026-11-04, B333): `commit-wait.spec` was red since 2bad713a6 (B328), which added an eslint run over
 staged tools/scripts files; the spec's temp repo had no eslint config (fixed in 9f0d70e47). It blocked every later
 tools/scripts commit. The gate selects the whole tools/scripts suite for such a commit, so on 2bad713a6 and six later
@@ -1290,55 +1231,6 @@ where `pointer-events: none` is enough. Fix (built in 7658705c1): a transparent 
 cover also over the live frame, and an e2e case that forces `iframe { pointer-events: auto }` as WebKit does; plus
 `verify-webkit-frame-wheel.swift` for a real WebKit run. Lesson: an e2e that stands in for another engine must
 model that engine's difference, not only run the gesture.
-
-394\. Builder (2026-11-04, B326): `verify-webkit-frame-wheel.swift` ran over SSH on the Mac but no setup got any event
-(canvas 0 of 10, iframe 0 in all six rows), and it still printed "FAIL the shielded iframe took wheel events".
-Cause: events sent with `web.scrollWheel(with:)` reached neither document, likely because a process started over SSH
-has no key window or event routing; the verdict logic read zero events as a failure of the fix. Why no tool caught
-it: the harness has no positive control, so a blind run looks like a result. Fix (B338): a check reports BLIND when
-its control target (here the unshielded canvas) gets no event, and never PASS or FAIL; build it with the B321
-WebKit tooling once wip/b321 lands. B326 stays verified in Chromium only.
-As built (B338, 2026-11-07): the B321 tool was already on next (c348db743, newer than `wip/b321-stacking-fix`), so
-nothing was taken from that branch. `verify-webkit-frame-wheel.swift` is now the `frame-wheel` mode of
-`tools/scripts/verify-webkit-studio.swift` (same three rows); `verify-webkit-studio.mjs` runs it by default and alone
-with `--checks frame-wheel`, without a build or design server. Positive control: a fixed 60 px element on top of the
-page with its own wheel listener takes a 4-step gesture before and after the probes; zero events there ends the run
-as BLIND (exit 3), never PASS or FAIL. The `edges` check had the same blind spot (no wheel event reads as "no
-bounce", a false PASS) and now runs the same control. `webkitVerdict` (verify-studio-headless.mjs) folds the check
-exits: any failure fails, else any blind run gives BLIND. Verified: the verdict spec (fails without the BLIND branch).
-Not verified: the Swift was not compiled or run (no Swift on the Linux desk); a Mac run is open, and whether
-`web.scrollWheel(with:)` reaches WebKit from an SSH session is still unknown - the control now says so instead of
-guessing.
-
-395\. Builder (2026-11-04, B326): the Studio e2e case "Sketches: no state is marked before the compare answers"
-(21dcfc17f, 2026-11-03) fails, also on the build before B326. Inferred cause, not run: d2eaac782 (B329/B324 listing
-tiers) lets the quick listing return `unchanged` states kept from an earlier full comparison
-(`keptUnchangedStatesOf`), so Studio marks them early on purpose, and B329's fold depends on it; 2a1a52628 is a weaker
-candidate. Why no tool caught it: `canvas.e2e.mjs` runs only through a manual `yarn studio:e2e`, in no hook and not in
-CI; CI on `next` was red on other jobs at that time and nobody triaged it. Fix (B339): `studio:e2e` runs as a CI job.
-Tom (2026-11-04): kept `unchanged` marks from the last full comparison may show from the quick listing; a new mark
-shows only after the full listing. The case is updated to this rule and still fails on an early new mark.
-As built (B339 rest, w3-gates-b): `ci.yml` has a `studio-e2e` job (cli build, Chromium, `yarn studio:e2e`). It runs
-when `apps/ethlete-studio` or `libs/cli/src/lib/design` changed (the `design-changes` job), counts in `Verified`, and
-does not gate `deploy`.
-As built (B339, 2026-11-07): `deploy` needs `studio-e2e`. Its `if` became `!cancelled() && inputs.deploy && no failed
-need`, because `studio-e2e` is skipped when no design path changed and a skipped need would skip `deploy` with the plain
-`inputs.deploy` condition. Verified: prettier on `ci.yml`. Not verified: a CI run of the changed `if`.
-
-396\. Builder (2026-11-04, B323): `GET /__design/shot` with `sketch=components/title-bar.code-notice` (the sketch's
-folder name) answered 404 "variant a ... has no part components/title-bar", a wrong cause: the sketch exists, only
-under the id `components/title-bar@code-notice`. Why no tool caught it: no spec covers the shot route with a sketch
-name in the wrong form. Fix (B341): the route accepts the folder name as a sketch id, and an unknown sketch answers
-"no sketch <x>; did you mean <id>" from the listing. Lesson: an error must name the input it could not resolve, not a
-cause further down.
-As built (B341): the shot route reads `sketch=` as an id, `<layer>/<name>.<sketch>` or a folder name
-(`sketchIdOfName`); an unknown sketch answers 404 `no sketch <x>; did you mean <ids>`.
-
-397\. Builder (2026-11-04, B323): the ready sketch `components/title-bar@code-notice` has a round note that says
-"b = Punkt am Update-Bereich", but variant b draws the dot on the "Neu starten" button. Why no tool caught it:
-`sketch ready` does not compare the round note with the variants, and that is not checkable by a tool; and no command
-corrects a round note without reopening the sketch. Fix: the `sketch note --round` part of B114 edits a round note
-of a ready sketch and keeps it ready. Until then the doc agent tells Tom the correct text when it shows the sketch.
 
 398\. Builder (2026-11-04, B329 sketch `pages/sketches@fold-question`): `sketch ready` passed variant c although it
 changed two states the round did not touch (withdrawn-shown and withdrawn-hidden: gap 3 instead of 4, toggle moved);
@@ -1376,32 +1268,6 @@ readable at the zoom Studio opens with. Fix (B345): a round opens each changed s
 differs from HEAD, with a margin and a switch to the whole screen; states whose cropped change is identical show
 once with a count; a check fails a round whose changed region renders below a readable size at the opening zoom.
 
-403\. Tom (2026-11-04, screenshots of the same sketch): (1) the variant header card ("Variante a · Opus 5.5", note,
-"Übernehmen") keeps its size when he zooms out, so at 30 % it is a large empty teal frame above the grid; (2) in the
-first column a black block labelled "part" covers the frames, likely the frame cap's empty far cell. Cause not yet
-confirmed by the builder. Why no tool caught it: the sketch-view e2e measures frames, not the chrome around them at
-other zoom levels. Fix (B346): the header card and the empty far cell follow the canvas zoom or collapse below a
-readable size, and the e2e takes the sketch view at 30 % and 100 % and fails on a box with no visible content.
-Builder (S6a check): the empty cell in Tom's screenshot is not a missing state (all 26 states ok in a/b/c); it is
-the frame cap's far cell, an empty div at 10 % zoom. Suspect for the "part" block: a near cell past the cap renders
-`<img [alt]="key">`, and a picture that does not load shows its alt text on a dark block. Step 1 of B346 confirms it
-with a 30 % shot.
-As built (B346, 2026-11-07, part 1): the canvas e2e case "the sketch view at 30 % and 100 % draws no failed picture
-and no empty head at 100 %" (Sketches, Chip, Large, Wide) checks heads at 100 %, pictures at 30 % and 100 %, and a
-third pass that answers every `/__design/shot` with 404. With the old build a refused picture showed its alt text
-(`a reset-active`, `current linux-left-cli-dirty`) over the frames, Chip and Wide failed; the sketch view now hides a
-picture that failed to load. Not proved: that Tom's black "part" block was this alt text; no failed picture showed
-without the 404 route. Reproduced but not fixed: at 30 % the head is an empty 427x40 box (Sketches, Large) and 85x60
-(Chip). The design draws the same box (`rowHead` in `pages/sketches/shared/sketch-rows.ts`,
-`in-data-sk-head-hidden:invisible`), so the change is the open sketch `pages/sketches@head-zoom` (a collapse, b
-scale the whole head, c tag); the 30 % head check goes into the case with the pick. Not built: the state-name floor
-(finding 431 (2)).
-Found on the way (2026-11-07): `sketch new` wrote 9 `../` instead of 6 into the canvas-math import of a copied
-`shared/sketch-rows.ts`; it rebased imports leaving `shared/` for the variant folder, then lifted the folder three
-levels up. Fixed: it rebases them for the place they end up (`settledIn`), with a spec that fails on the old code.
-The head tag (c) built on desk/B346 (4f56e7893) is held: the sketch `pages/sketches@head-zoom` is still in progress
-and has no pick, and its e2e case failed 0/4 under load.
-
 As built (B346, 2026-11-07, part 2): Empfehlung gebaut, c "tag", merged as 34bc2d4ac; a (head gone, grid
 jumps left) and b (head scales into strokes) rejected. `sketch ready` first refused two hits the product already had:
 the hidden head now gets `hidden` from the fit script (`data-sk-head-full`, like the pins), and
@@ -1430,14 +1296,6 @@ arguments. Why no tool caught it: the commit script has no test with many paths.
 an array, with a spec that commits more than ten paths.
 As built (B347): the script already passed an array; `commit-wait.spec.mjs` now commits 15 paths (one with a space).
 B122: `pre-commit-hook.spec.mjs` runs the real hook under `git commit -- <paths>` in a temp repo.
-
-406\. Builder (2026-11-04, S6a check): the product shot of `blockers-open` answered a non-image before the merge, so
-the builder could not compare that state. Likely cause (not proven): the product had no `blockers-open` state yet, and
-the shot route answers an unclear text for a state the part lacks. Why no tool caught it: the route names a missing
-part, but not a missing state. Fix (B341): a state the part lacks at HEAD answers 404 with "state <s> not in part <p>
-at HEAD".
-As built (B341): a state the merged part lacks answers 404 `state "<s>" not in part <p> at HEAD - it has: ...`
-(the state check already existed; its wording now matches).
 
 407\. Builder (2026-11-04, after B339 part 1, c0035f241): `studio:e2e` is 109/112. Three cases went red that were green
 after B321 (c348db743): Sketches and Large "pan beyond every edge of the content" (bottom edge), and Chip "first load
@@ -1480,58 +1338,6 @@ Correction (second runs): the 61 s warm call did not repeat; drop "on every call
 (the same fixed wait as finding 408). Warm: Mac 1.05 s (stall 1.04 s), desk 0.35 s (stall 0.34 s). Budget (updated):
 the first system answer in a fresh checkout under 5 s, the warm call under 200 ms, the longest stall under 50 ms.
 
-410\. Mac perf session (2026-11-04, B348): the ~60 s waits of findings 408 and 409 are a missing `dist`, not a cold
-cache. `render.packages` maps `@ethlete/*` to `dist/libs/*`; when that folder is missing, `render-packages.ts` polls
-every 500 ms up to `BUILD_WAIT_TIMEOUT_MS = 60_000` (`entryOfBuilt` with `Atomics.wait` in the render worker,
-`entryOfBuiltAsync` in Vite `resolveId`), then throws. Nothing starts a build, so the wait always runs to the timer,
-once per drawing module, and the Vite SSR transport times out after another 60 s while the worker blocks: about 120 s
-for the first listing. With a full `dist` and a cold harness cache the desk answers in 651 ms (listing) and 2 s
-(system). It hits every fresh clone and every consumer repo that maps to an unbuilt `dist`. Why no tool caught it: the
-desk checkout always has a built `dist`, and the wait logs only a "waiting for the build" line, no error. Fix (B351):
-a missing `dist` fails fast with an error that names the package and the build command (`nx build <pkg>`), one check
-per package, not per module; budget: a fixture with `render.packages` on a missing `dist` answers the first listing
-within 5 s with that error.
-Built (B351, 7a7c37b30): a missing `dist` throws at once with "<dir> missing, run `nx build <folder>`"; the poll is gone.
-The poll came from 1d116d6b8, so a render survived a package mid-rebuild; now such a render fails once and the watcher
-redraws after the rebuild. Gap: the 5 s budget runs on the resolve path only, not through the compiled render worker or
-a real Vite listing. Fix (B360): a check or e2e runs the real render path against a fixture whose `dist` is missing.
-As built (B360, 2026-11-07): `libs/cli/src/lib/design/render-missing-dist.spec.ts` compiles the CLI with `tsc` into
-`tmp/`, starts the compiled `createDesignServer` on a free port against a fixture with `render.packages` on a missing
-`dist`, and asserts over HTTP: `/__design/calls` answers within 5 s with an error entry, and `POST /__design/render`
-(the real compiled worker) answers within 5 s with a 500 naming `nx build components`. Bite proof: with the pre-B351
-`render-packages.ts` and `render-worker.ts` both tests hit the 5 s limit (the listing waits, Vite's transport
-disconnects). Not verified: the Vite listing does not itself name the missing package, because `resolveId` swallows the
-`entryOf` throw and falls back to `node_modules` (here Vite reports an unexported subpath); only the render answer
-carries the build command. Recommendation: let `mappedSubpathOf` surface the missing-`dist` error to the listing.
-As built (B361, 2026-11-07): `entryOf` (`render-packages.ts`) asks `isBuildRunning` (`system/build-running.ts`) before it throws
-for a missing dist: an `nx build <folder>` process whose working folder contains the dist (read from `/proc`, `ps` as
-fallback with no cwd check) turns the error into `design-explore: wird gebaut … (nx build <folder>)`; with no build the
-red error stays. `libs/cli/design/web/frame.ts` shows that line as grey monospace text on a dark box (`data-et-building`
-on `<html>`, no `data-et-error`, so the frame does not count as errored) instead of the red box. Specs: build-running,
-render (entryOf says building), frame-bootstrap (building state). Not verified: the real redraw after the build finishes
-(relies on the worker restart of d7fc506b1 and the watcher; no e2e), the Studio-side look next to the existing loading
-state, and macOS (`ps` path has no cwd check). The visual (grey text, no spinner) is a placeholder, not a designed state;
-no sketch was built. Tool gap: the same as 410, no check runs the real render path against a missing dist (B360).
-As built (B361 look, 2026-11-07): Tom chose variant C, the placeholder shows the elapsed build time. `showBuilding` (`libs/cli/design/web/frame.ts`)
-appends `<n> s` to the line and re-paints it every second (counted from when the frame first shows the placeholder, not from
-the build process start, so a frame opened mid-build starts at 0 s); the colors are now `--et-surface-color-muted-solid` on
-`--et-surface-background-solid` instead of hardcoded greys. Spec: frame-bootstrap (first paint 0 s, 12 s after the fake clock
-advances). Not verified: the look in a real Studio frame (no `design check` part touches it; the frame is CLI chrome, no design
-part draws this state) and the real-build redraw. Tool gap: none new.
-
-411\. Tom (2026-11-04): "der neu starten button tut nach klick nichts. wenns ne weile dauert sollten wir da nen spinner
-zeigen". Builder (code read, not reproduced): almost surely the title-bar code notice ("CLI geändert - neu starten");
-the "Design-Server gestoppt" panel shares its handler. The click runs host `design_server_restart`, which answers only
-after the old server is killed, the new one listens (up to 90 s) and is judged. The button has no pending state;
-`server()` keeps the old "listening" state until the answer, so the "starting" screen does not show; a second click
-returns silently; `catchError(() => of(null))` swallows a refusal (finding 145). Duration not measured. Why no tool
-caught it: no gate asserts that a click shows a visible change, the title-bar design draws the button at rest, hover,
-pressed and focus but not pending, so compare has nothing to compare, and no e2e case clicks the code notice. Fix
-(B352): a design check rule warns on an `emit:` action with an async handler (host invoke or HTTP) whose part draws no
-pending state; an e2e helper `expectFeedbackWithin(click, 100 ms)` covers every async button (code notice, update
-dialog, server panel, merge); a sketch of the pending state on the button (spinner, disabled) and an error toast on a
-failed restart.
-
 As built (B352, 2026-11-07): `PENDING-STATE-MISSING` (warning, `rules/pending-state.ts`) traces each `emit:` action from
 its binding on the component's tag through methods, re-emitted outputs, service subjects and `kind` branches to a host
 invoke or HTTP call; on studio it names 10 actions in 5 parts, title-bar `emit:restart` among them. The update dialog's
@@ -1541,14 +1347,6 @@ not checked or readied (stale `dist/libs/components`). Not run: the e2e case end
 since fixed), `design check`.
 
 As built (B352 close, 2026-11-07): Tom chose variant a (recommendation: SDK busy button). Brought by hand into part `components/title-bar` (the `restart: 'pending' | 'failed'` prop, states `linux-full-notice-pending`/`-failed`, `loading` button, failed toast; sketch dir deleted) and the app `ethlete-title-bar` (`restart` input, `dismiss` output, `ethlete-error-toast` under the bar). `code-watch` holds the restart state (`pending` on act, `failed` on a refused server restart or quit, dismissed by the toast); `studio-view.restartServer` reports into it, so finding 145's swallowed refusal now shows. The e2e case lost its `open` mark. Verified: specs (title-bar, code-watch, shell-main, studio-view), lint; `design check --part components/title-bar` shows no PENDING-STATE finding and re-drew the two new pictures. Not verified: e2e case end to end, `design compare`, `task --verify`. Tool gap: `sketch merge` refuses while variants b/c live and the sketch is in progress (rejected b, c; the merge then needs the sketch ready), so the variant was copied by hand and `design check` opened a direct-edit sketch `components/title-bar@edit` (old/new) that Tom must pick in Studio; the sketch dir `restart-pending` was kept. Recommendation: let `sketch merge --variant` accept a recorded user choice from the plan, or let an agent ready a sketch.
-
-412\. Mac perf session (2026-11-04, B348, full `dist`): `et design check --product studio` takes 1 083 s on the Mac and
-615 s on the desk (36 parts, 767 findings). The per-part loop is 694 s vs 410 s; the slowest parts (Mac/desk) are
-pages/sketches 97/33 s, textarea 36/11 s, slider 35/17 s. Likely cause: render-check `inspect()` runs every frame in
-sequence in one Chromium page (~0.5 s per frame on the desk; pages/sketches has ~50 frames), and Node waits idle on the
-round trips. Why no tool caught it: no budget on the check's own run time, and the frame count per part is not logged,
-so a growing state matrix looks like a slow machine. Fix (B353): frames render in parallel pages; budget at a fixed
-commit: no part over 20 s, the full check under 300 s on CI; the check logs and caps the frame count per part.
 
 413\. Mac perf session (2026-11-04, B348, scratch copies, one-variant sketch of components/tree-row): `sketch ready`
 takes 284 s on the Mac and 117 s on the desk. Phase 1, the render check (`renderIssuesOf`), is 238/98.5 s: tree-row
@@ -1574,18 +1372,6 @@ states skipped). Specs: `render-unchanged.spec.ts` (a named-unchanged state draw
 Not done: the 60 s budget is not an enforced CI gate (the `sketch ready` timing target stays the 10 s over-target line);
 changes-shot (15.5 s) is now the slowest phase and is the next cut; the Mac and the live `/@vite/client` ping were not
 measured.
-
-414\. Builder (2026-11-04, triage of finding 407): the baseline "only the known case red after c348db743" was false.
-At c348db743 the known-red case crashed the whole e2e runner (`route.fulfill: Route is already handled!`), so every
-later case never ran and looked green. Why no tool caught it: the runner reports the crash, but not the cases it
-skipped, and nothing compares the case count with the last run. Fix (B355): an async throw in a case marks that case
-FAIL and the runner goes on; the summary names every case that did not run; a run with fewer cases than the file
-declares fails. Also (B339): `studio:e2e` runs as a gate on commits that touch `system-view` or `design-parts/sketches`.
-As built (B355): the per-case try/catch (FAIL, run goes on), the worker-exit FAIL and the `rows < total` red already
-existed; added the `NOT RUN` list in the summary naming every declared case without a result.
-Then (2026-11-07): an unhandled rejection or uncaught exception thrown outside the awaited case fails the running
-case, and the lead forks a fresh worker while cases remain. Between cases such an error ends the worker with exit 1
-instead of being swallowed. Proved with two throwaway cases (`--case zzz --workers 1`): FAIL, then PASS, exit 1.
 
 415\. Builder (2026-11-04, port of Tom's pick a of pages/sketches, e0f6a4396): `sketch report` refuses on a picked
 sketch even with `--reopen` ("is decided (pick) - a report would reopen it"), so the rule "report before a variant edit"
@@ -1616,67 +1402,11 @@ perf check runs in Chromium, the engine Tom's desk e2e uses, not in the engine o
 WebKit zoom budget on this fixture (rAF frame interval over 90 wheel-zoom steps, p50 at most 20 ms, p95 at most
 33 ms) on a CI image with the WebKit libs (Fedora lacks them without sudo), and the zoom fixed to meet it.
 
-419\. Builder (2026-11-04, B343): a top-level await in `libs/cli/src/lib/design/started-by-studio.spec.ts` (dd708ee4a)
-broke `tsc -p libs/cli/tsconfig.spec.json`, which then blocked every cli commit in the hook. Why no tool caught it: no
-gate ran the spec typecheck on the commit that added it (vitest does not typecheck). Fix (B358): the commit gate runs
-the spec typecheck for every staged spec file.
-As built (B358, 2026-11-07): no hook change, same as B334 (388, 389). ADR 0225 moved the spec-selecting pre-commit gate (d67c98f91) out of the hook on purpose; `libs/cli` has a `typecheck` target on `tsconfig.spec.json` and the CI `Checks` job runs `nx run-many -t typecheck` on every push. A per-commit `tsc` over the staged specs' projects would take tens of seconds and bring back the slow hook. Not verified: a local timing of that `tsc`. If Tom wants it back, it belongs behind `yarn commit` (commit-wait), not in `.husky/pre-commit`.
-
-420\. Builder (2026-11-04, B343): `list-system.spec.ts` fails only in the pre-commit temp tree (ENOENT on
-`design/web/rebuild-probe-*.txt`). Why no tool caught it: the spec shares a probe path with the tree it runs in, and no
-check runs a spec in both trees. Fix (B359): the probe tolerates a missing file, or the spec uses its own temp dir.
-
-421\. Tom (2026-11-04, screenshot of the port-mark sketch on pages/sketches): "wann kümmern wir uns um diese ugly ui
-hier?" The state labels (`agent-round`, `port-after-merge`, `port-after-merge-long`) float in plain monospace far left
-of their frames on the empty dot grid, and the frames stand cut off at the right. Cause (builder): a part wider than
-1/4 of the view uses the transposed matrix (`isTransposed`, `shared/sketch-rows.ts`). The design draws the state names
-as a `font-code` gutter column, each centred on its state row. The design's only sample for this layout is the 32 px
-tall title-bar, so for a page-sized frame of about 900 px the label sits at the middle of a tall frame. The cut-off is
-likely `matrixFit`: it fits 2 columns after the label column and does not count the `auto` column of folded variants
-(not measured). The app matches the design, so the compare check stayed green. Why no tool caught it: no check
-compares the sample shapes of a design with the real input range of the product. Fix (B362): a design-coverage check.
-For each layout branch of a part, the design draws the widest and the tallest real input from the listing, and the
-check warns when the samples do not cover the real range. The layout itself goes into the B346 sketch (Tom picks).
-
-422\. Tom (2026-11-04, screenshot of the sketch view zoomed far out): "noch nen ui ding bei extrem zoom". A frame
-that an agent still draws shows its placeholder ("Opus 5.5 zeichnet diese Variante", "Der Rahmen füllt sich, sobald
-die erste Ansicht steht.") at full screen size next to a tiny finished frame. The placeholder card is larger than the
-frame it stands for, and its title wraps into three lines. Second screenshot (Tom: "das sieht auch wild aus"): next
-to a column of 12 finished frames, the variant that an agent still draws is one tall empty card over all 12 state rows.
-The title wraps into three lines in the middle of the card, and the pulse dot stands outside the card's left edge.
-Cause (builder): the canvas zoom sets each frame's width and
-height to part size × scale (`applyScale`) and uses no CSS scale. The placeholder is a card with fixed type sizes
-(`text-ui-lg`, `text-ui-sm`) and a fixed `min-h-24` that the zoom never touches, in a column only a few px wide. The
-design (`drawingStage()`) draws the same card, but only at `camera: 'fit'`, so the compare check stayed green. Why no
-tool caught it: the design states cross the zoom extremes (below-fit, far-out) only with finished frames, never with a
-status state. Fix (B362): the coverage check also crosses the status states (drawing, paused, failed) with the zoom
-extremes a part declares. The look (placeholder scales with the zoom, below a readable size only the pulse dot and the
-model logo) goes into the B346 sketch (Tom picks).
-
-423\. Tom (2026-11-04, screenshot of variant a while the agent draws it): "die zeichnet line oben im variant header
-kann dann wohl weg?" The variant header shows "● zeichnet" in its own line, and the frame below shows "● Opus 5.5
-zeichnet diese Variante". The same state stands twice in one variant. Why no tool caught it: no check finds the same
-status shown twice in one view. Fix: the B346 sketch draws the header without the line (Tom picks); the check joins
-B362 as a rule.
-
 424\. Builder (2026-11-04, port-mark sketch `pages/sketches@merge-port`): ADR 0183 says the same state of the same
 variant carries the same sample marks in every page state. After B357, `narrow-part` and `comparing-narrow` still mark
 the fit-* states of variant a as changed. Why no tool caught it: the sketch check does not compare the marks of one
 variant state across the page states of a design. Fix (B363): a sketch check rule that warns when the same variant
 state carries different sample marks in two page states. B357 stays open until all page states match.
-
-425\. Tom (2026-11-04, two screenshots of `pages/sketches@merge-port` at 24 %): "zudem rendert die app für eine gewisse
-zeit immer alle zustände bis wohl die berechnung durch ist welche varianten nicht verändert sind und dann springen die
-raus." At first the view shows every state, most of them as empty frames. After a short time "27 unveränderte Zustände
-eingeklappt" appears, and the folded states jump out of the layout. Above the frames stands a large empty band. Cause
-(builder, code read): the first listing has no `targets`, so every shot has `changed: null`. `foldedStatesOf` folds
-only states where every variant has `changed === false`, and `null` never folds. When the full listing arrives, 27
-states turn `false` and fold in one step; `sameRows` has the same delay. The empty band is probably the placeholder
-height of unmeasured rows (`tallestOf(state)` or `MEASURING_HEIGHT`); the B345 build proves it. Why no tool caught
-it: the design states and the e2e specs wait for the settled listing, and no check compares the first paint with the
-settled one. Fix (B362): a coverage rule that a view which reads an async mark draws the "mark unknown" state, plus an
-e2e that fails when the frame count drops after the first paint. The look while the fold is unknown goes into the
-B345 sketch (Tom picks).
 
 426\. Grill (2026-11-04): `pages/sketches@merge-port` shows "Wartet auf deine Wahl", but the builder plans to align the
 sample marks of `narrow-part` and `comparing-narrow` after Tom's pick (finding 424). A sketch is ready only when no
@@ -1690,23 +1420,6 @@ for a moment and then scrolls late. "nun" points to a recent change. Tom, with a
 (highlighted) box of a tree item, not over the gap between items. Cause not yet known (asked the builder, with a
 check of the wheel shields from finding 393 and of main-thread stalls such as B317). Why no tool caught it, and the
 fix: pending the cause.
-
-428\. Tom (2026-11-04, screenshot of `pages/sketches@merge-port` far zoomed out, while the builder aligns the sample
-marks): "und dann waren die bilder auf einmal weg". A moment before, the column showed 12 finished frames. Now it
-shows 28 state rows, and all but four frames are empty boxes. The fold is gone again, and the drawing card stands over
-all rows. A short time later (Tom: "und wieder da") the 12 folded frames with their images are back. So each
-refresh of the listing seems to repeat the first paint of finding 425 (no marks yet, so nothing folds and the shots
-are not shown). Cause (builder, code read): the quick listing carries the kept `unchanged` marks (c0035f241) only
-while the sketch content equals the kept comparison. The builder's edits changed the sketch, so the next listing had no
-valid marks: every shot got `changed: null`, nothing folded, and the frames re-rendered without a picture until the
-full compare answered. Finding 425 is probably the same path with a cold cache (not proved). Why no tool caught it:
-the c0035f241 e2e only proves that a quick mark equals the full mark, not the frame count or the pictures across a
-refresh. Fix: the B362 e2e also edits the sketch after the first paint; B345 keeps the last shots and marks until the
-new ones stand.
-
-429\. Builder (2026-11-04): `sketch ready` without `--by` printed only the usage text and exited 0, so a script or an
-agent sees success. Why no tool caught it: no spec runs a sketch subcommand with missing arguments and checks the exit
-code. Fix (B364): every sketch subcommand exits 1 on a usage error, with a spec per subcommand.
 
 As built (B364, 2026-11-07): a3b204c2d already made `designSketch` end every usage error with exit 2 (non-zero) and added `sketch-usage-exit.spec.ts` (every writing subcommand without arguments and with only `--by`, `ready` without `--by`). This row adds `covers`, `list`/`check` with an unknown flag and an unknown subcommand to that spec. Exit 2 stays (the other design commands use it for usage errors), not 1. Not verified: the compiled `et` binary's process exit code.
 
@@ -1872,33 +1585,10 @@ harness has no way to run a case against an old build. Tool fix (B378, builder d
 `STUDIO_CLI_ENTRY` from a CLI copy built before the fix, so a new e2e case must fail there first.
 As built (B378): `yarn studio:e2e:bite <ref-before-the-fix> [--case Name]` (`tools/scripts/studio-e2e-bite.mjs`) builds the CLI of that ref in a temporary git worktree, runs `canvas.e2e.mjs` with `STUDIO_CLI_ENTRY` pointing at it, and exits 0 only if the e2e fails (the case bites). `canvas.e2e.mjs` and the headless harness already read `STUDIO_CLI_ENTRY`. Only the arg parsing and verdict are specced; the build and e2e run were not executed (load).
 
-442\. CI run 41924354824, job WebKit (builder, 2026-11-05): `.github/actions/setup/action.yml` read `/etc/machine-id` on
-the macOS runner (from e6b59bdf4). Fixed in f30bb3b81 (machine id per `RUNNER_OS`, macOS through `ioreg`; only the
-Linux branch and the fallback were run). Why pre-push missed it: no local gate runs a macOS step. Tool fix (B379,
-builder default): a lint check for `.github/actions` and workflows that flags Linux-only paths (`/etc`, `/proc`) outside
-a `RUNNER_OS` branch.
-As built (B379): `yarn lint:runner-os` (`tools/scripts/check-runner-os-paths.mjs`) flags `/etc`, `/proc`, `/sys`, `/var/lib` and `/usr/lib` paths in `.github/actions` and `.github/workflows` unless the line names Linux (a `Linux)` case branch) or the step has a `runner.os == 'Linux'` guard. Part of the pre-push checks.
-
-443\. CI run 41924354824, job Unit tests (builder, 2026-11-05): only `cli` failed. The `motion-shot.spec` fixture raced a
-re-render under load (reproduced with a 300 ms delay; the repro bites on the old code). The `merge.spec` flake (B373)
-did not come back in 24 local runs; its assertion now prints the check findings. Fixed in b770d4222. Why pre-push missed
-it: CI is much slower (the merge spec file takes 17 s locally and 143 s in CI). Tool fix (B380, builder default): a
-stress script that runs the touched specs N times in parallel under CPU load, part of the slice end.
-As built (B380): `yarn spec:stress <specs> --runs N [--load M]` (`tools/scripts/spec-stress.mjs`) runs every spec N times at once next to M busy-loop processes (default one per CPU) and reports flaky (some runs failed) apart from broken (all failed). Step 5 of the builder-agent skill.
-
 444\. CI run 41924354824, job Studio rules (builder, 2026-11-05): the job built only `cli`, so `design check` refused on
 stale dist mocks. Fixed in 4de41ac2e (builds `cli,components` first). The check now runs and fails on the 3 real
 problems of finding 438. Why pre-push missed it: no local gate runs `design check`. Tool fix: part of B372 (slice end
 and pre-push run `design check --product <p>`). Tom (2026-11-05): B372 comes before the push and before B377 (ADR 0193).
-
-445\. The tooltip swap for Studio (finding 116, row A8) also changed `libs/components` (e73234f6e, 661ce4cca, Tom
-2026-11-05: "das war nie der plan"). Several bundles grew by up to 23 KB. Cause (builder): 4c60be59e added
-`ethlete/no-native-title` as an error to the plugin's recommended template config, which `libs/components` also uses.
-Lint then failed on the lib templates, and e73234f6e "fixed" them 26 minutes later. aa6fcba2f took the rule out of
-recommended but left the lib edits. Reverted in 40a92b60b (ADR 0194). Why no tool caught it: a slice has no declared
-path scope, and nothing stops a lint-driven fix from leaving it. Tool fix (B382, builder default): a new lint rule for app
-code starts in an opt-in config; a slice brief names its allowed paths, and the commit gate warns when a commit touches
-paths outside them (for example `libs/` in an `apps/` slice).
 
 As built (B382): `tools/scripts/check-slice-paths.mjs`, called from `.husky/pre-commit`, warns (exit 0) when a staged path is
 outside the paths in `ETHLETE_SLICE_PATHS` or the worktree's `slice-paths` git file; one `git diff`, silent when none are
@@ -2307,33 +1997,6 @@ pages/sketches, canvas-frames, pages/system; CONTROL-STATE on shell-main from th
 pages/sketches`: only the 9 DROPPED-PROP states differ; 16 missed actions (combobox "Runde", button "Alle Zustände
 zeigen") are not from this slice (not proven against the base). Not verified: a live Studio shot on :4402 (server down);
 Studio retries on the next listing, not at the commit itself.
-
-483\. `design compare components/title-bar` compared 16 states and silently skipped the 12 forced interaction states
-of the rows linux-left, linux-close, windows and windows-update (UI builder ethlete-sdk-c8, A1, 2026-11-06). Cause:
-`forcesOnlyUnchangedControls` / `drawnStateNamesOf` (`libs/cli/src/lib/design/system/unchanged-rows.ts`, used by
-`compare-command.ts`) drop a row's interaction states when every forced element is a plain SDK component from `ng()`
-without class or style. They ignore the design stylesheet: `title-bar.css` restyles
-`.et-window-control-button[data-shape='caption']` (hover, focus, active), and a wrapper span gives the Windows close its
-error fill. So the Windows hover and red close states are never drawn or judged, nothing says they were skipped, and
-`--state windows-hover` answers "has no state". Second defect: the design invents `shape="caption"`, a value the SDK
-button does not have, and `check` lets a design add attribute values or private `--_et-*` vars to an SDK component that
-the app cannot reproduce without an SDK change. Why no tool caught it: the unchanged-row shortcut trusts the markup alone
-and reports nothing about what it drops; no rule compares a design's selectors on SDK classes with the SDK's declared
-inputs. Tool fix: (1) a forced SDK element counts as changed when a design stylesheet rule matches it or a wrapper sets
-`--et-*` vars or a semantic colour on it; (2) compare prints "skipped n interaction states (unchanged SDK controls)" with
-their names; (3) `check` fails a design rule that targets an SDK component class with an attribute value the SDK does
-not declare. For A1 the UI builder adds a real `caption` shape to the SDK button.
-**B397 as built:** (1) `forcesOnlyUnchangedControls` takes the part's own stylesheet (`sdk-selectors.ts` resolves
-nested rules into compounds): a rule whose `et-` compound matches the forced element (an absent attribute counts as a
-possible default) or an ancestor with `data-et-semantic-color` or an `--et-*` var in class or style keeps the row's
-states drawn. Compare, accepted pictures and the system list pass the part's `.css`. (2) compare prints `skipped n
-interaction states (unchanged SDK controls): ...` and `--state <skipped>` says why. (3) `SDK-ATTRIBUTE-VALUE`
-(static, `check --rules`) reads the inputs, host-directive inputs and declared values of each `et-` selector from the
-built `@ethlete/components` declaration file and fails a `[data-<input>='<value>']` outside them; no file means a
-`missing-input` skip. Specs on fixtures (a captured d.ts excerpt), no renders. Not verified: the rule over the real
-products against a built dist (the grep shows no invented value since A1 added `caption`, so no baseline). Needs a
-render run in CI: the newly drawn states (title-bar windows/close rows and any part whose CSS selects its SDK
-controls) have no accepted pictures yet and may show compare drift; those old hits go to the ADR 0205 baseline.
 
 **As built (B419, 2026-11-07):** `SDK-PRIVATE-VAR` (`system/rules/sdk-private-var.ts`, static, in `check --rules`) walks
 each part stylesheet of a product other than `sdk` and fails every `--_et-*` declaration, once per selector and
@@ -2821,28 +2484,6 @@ so "fast" was measured but "fresh" never was. Fix (14c491450): `forgetDrawn()` b
 sketch-stylesheets.spec (a variant edit stays stale until forget). Tool fix (B414): a resident end-to-end spec that
 starts the real resident, runs `compare`, edits the part, runs `compare` again and fails if the second run shows the
 old picture. Rule for every warm or cached path: its spec includes an edit between two runs.
-
-520\. Tom (2026-11-06): "wolltest du nicht auch mal pushen? vor stunden?" 158 commits of next sat unpushed for hours.
-The doc agent had parked the push behind the five stale parts and those behind the 515 slice, and nobody reported the
-wait to Tom. The pre-push design rules gate (design-rules-gate.mjs origin/next next) fails with
-IMPLEMENTATION-UNCOMPARED on pages/inventory, merge, start, sketches and more. Why no tool caught it: nothing shows
-how long a branch has been unpushed or that its push gate is red; a blocked push only shows when someone pushes.
-Fix: process - a red push gate goes first in the builder queue, ahead of any feature slice; the builder runs the gate
-after each slice and pushes when it is green. Tool fix (B415): `design status` (and Studio) shows the unpushed
-commit count, the age of the oldest one and the gate result of the range.
-As built (B415, CLI part): `design status [--json]` without a call prints the unpushed commits against the upstream
-(`origin/next` without one), the age of the oldest, and the push gate result for this exact head (green, red, or unknown
-when the head moved since the gate ran). `design-rules-gate.mjs` leaves the result as a receipt in the checks folder of
-the temp dir. Studio UI not built: it needs a new visual element with no design - sketch needed.
-Then (2026-11-07): the sketch `components/title-bar@push-state` (a chip right, b banner, c inline text) was
-rebased onto the restart busy state (181b604bf, ported by hand) and readied; the three variants draw visibly different.
-As built (B415, 2026-11-07): Empfehlung gebaut: variant a, a small SDK badge before Update (count and age of the oldest,
-check/warning/error icon; tonal, warning theme when the gate did not run, filled error theme on red, title says fix before
-any feature slice). b (full-width banner under the bar) and c (red inline text) rejected. Merged into
-`components/title-bar`; the app follows: desk/B415's data path (`studio-code.mjs state` -> `push`, host passthrough,
-`injectCodeWatch().push`) carried over, its left-group `et-chip` replaced by an `et-badge` in the right cluster
-(`push` input `{ unpushed, age, gate }`). Landed alone earlier: the `SDK_CONTROLS` et-chip fix. Verified: title-bar,
-code-watch, shell-main specs, `studio-code.spec.mjs`. Not verified: `design compare` of the push states, `cargo check`.
 
 521\. Tom (2026-11-06, screenshots of the builder's shells): "6 minuten hard blocking auf dem builder ist inakzeptabel.
 das tooling muss schneller werden". The builder ran nine `compare` runs one after another in the foreground for the
@@ -3755,34 +3396,6 @@ its ADR. No check reads the plan rows against the ADRs. Tool fix (technical): `y
 lint flags a STATUS row that asks Tom for "Go", `design accept` or `go` once B249 has landed; B249 itself removes the
 last hint text in the CLI that tells a human to run `design accept`.
 
-577\. Builder (2026-11-07, CI run 42402108781): all 50 serve.spec tests passed, but the afterAll in
-`libs/cli/vitest.setup.ts` timed out after 10 s: serve.spec left about 300 MB of temp targets and `rmSync` took 8.4 s
-on the Mac. Fixed in 282591127 (each test removes its own target in afterEach). No check caught a spec that leaves a
-large temp tree. Tool fix (technical): `vitest.setup` warns when the spec tmpdir of one file passes 50 MB.
-
-578\. Tom (2026-11-07): "was hier mit den 235 non pushed auf next?" Local `next` had no unpushed commits; its upstream
-was still `origin/studio-mac-move` from the Mac move (ADR 0217), so the title bar counted 235. The doc agent set the
-upstream back to `origin/next`. Tool fix (technical): the unpushed badge (B415) counts against `origin/<branch>`, and
-`design status` warns when the upstream of a branch has another name.
-
-579\. Builder (2026-11-07): two docs-only pushes of the doc agent (plans files) cancelled the running CI (Next) runs
-42405979630 and 42408713788, so the CI fix waited for a third run. Tool fix (technical): CI (Next) skips a push that
-changes only `plans/` and ADR files (`paths-ignore`), so it does not cancel a run in progress.
-
-580\. Builder (2026-11-07, B426): `elements/canvas-frames` named an old `implements` component that the app no longer
-renders at the part's slot; it only looked live through the system-page fallback and an inbox import. No rule checks
-that the `implements` component is what the app renders there. Tool fix (technical): the page harness records the
-host it renders at each part slot, and a check flags an `implements` file whose host never appears.
-
-581\. Builder (2026-11-07, B426): the base clone of the visible-change check broke twice ("reference is not a tree",
-missing alternates). Tool fix (technical): `baseCheckoutOf` fetches or clones again after a failed checkout.
-
-582\. Builder (2026-11-07, B426): the `implements` fix in 13107a3b1 made `elements/canvas-frames` stale and opened an
-"old or new" edit point, because `designHashOf` hashes the whole part file. Tom decided on 2026-11-01 that a link-only
-change does not count (ADR 0113, carried over when ADR 0048 replaced the Go); the hash never followed it, and the
-builder asked again. Tool fix (technical): `designHashOf` leaves the `implements` field out, with a spec that a
-link-only change keeps the hash. Until it lands, the builder accepts the part once with ADR 0113 in the note (ADR 0209).
-
 583\. Builder (2026-11-07, finding 580 built as IMPLEMENTS-UNRENDERED, 6c611c1a9): the new rule hits five studio
 parts. `pages/system` links `design-parts/system-page`, which the app never renders (system-view → shell-main →
 design-canvas); `components/canvas-viewport` is drawn by design-canvas itself; `components/disclosure` and
@@ -3809,13 +3422,6 @@ unnecessary wins over the check. Tool fix (technical, applies ADR 0226): Studio 
 from the component the page harness renders at the part's slot instead of checking a hand-written link; the
 `--slow` batch gets no new rule, and every rule already in it gets a STATUS row "live or delete".
 
-587\. Tom (2026-11-07, 23:20): "wie viele jahre dauert das hier bitte noch bis so ein absololut simpler task wie die
-ci grün machen done ist???" CI was green at dfe6d7079 (20:01); the B426 commits pushed with f962d8b45 broke Studio
-e2e, and the builder then built findings 580-585 while a subagent hunted the cause for 40+ minutes. Nothing stopped
-feature work on a red next. Tool fix (technical): the builder skill says a red CI (Next) blocks every feature slice,
-and a cause not proven within 15 minutes means revert the suspect commit first; `design status` (B415 badge) shows
-"CI rot" and the builder start refuses a feature slice while it is red.
-
 588\. Builder (2026-11-07, B434): the Studio e2e job (added in 94606402c) never passed in CI. It built only `cli`, so
 the design server answered `/__design/system` with 503 "missing build" and Studio stayed on "Design-Server startet".
 A green run hid it because the job only runs when the push changed Studio or design files. A new CI job had no proof
@@ -3832,12 +3438,6 @@ auto-made link-only sketch `elements-canvas-frames.edit` (old/new differ only in
 after the builder reported its discard, plus six empty `*.edit/old|new` folders of merged edit sketches. Discard and
 merge leave files and folders behind, and nothing shows a leftover. Tool fix (technical): `sketch discard` and
 `sketch merge` delete the sketch folder and fail if it is still there; `design status` lists untracked sketch folders.
-
-591\. The human (2026-11-08): "ci ist durch und grün aber 25m für studio e2e ist echt too much". Run 42421444909: the
-`yarn studio:e2e` step took 24 min on 1 worker, 97/132 passed; the 35 hidden B434 failures each wait for a long timeout
-(90 s "not settled", 30 s clicks, 15 s waits). Parallel cases (B377) were parked behind B376 (ADR 0191), and no budget
-caps the suite time. Tool fix (technical): B377 moves up; the suite runs on all runner cores, a case fails at its first
-missed wait within 10 s, and the run prints its time against a 5 min budget that fails above it once B434 is green.
 
 591 as built (2026-11-08): `canvas.e2e.mjs` sets a 10 s Playwright default (`WAIT_MS`) and drops every explicit 15, 30
 and 90 s wait; `settled` stops after 10 s. Two waits stay named and long: `FULL_COMPARE_MS` (60 s) for the full sketch
@@ -3877,13 +3477,6 @@ zoom (fix: a `noteFit` linkedSignal). Check, compare and verify render at one fi
 width while a camera is set. Tool fix (technical): `design verify` hides the panel (or resizes) at a non-Fit zoom on
 each canvas part and needs the first frame rect to stay within 1 px; `design check` flags a layout size (font size,
 grid column) derived from a fit or viewport measurement. Open risk: `transposed` also depends on the width.
-
-596\. Builder (2026-11-08, run 42431195355): two cli unit specs with wall-clock stall budgets failed under CI load
-without a code change: `serve.spec.ts:954` (two hundred sketches, no block over 50 ms, got 51.2 ms) and
-`merge.spec.ts:151` (no stall over 250 ms, got 525 ms); run 42421444909 passed them. A plain time bound in a unit spec
-measures the runner load, not the code, and a red Verified job skips Deploy and hides the e2e signal. Tool fix
-(technical): the stall specs measure with `monitorEventLoopDelay` percentiles or a bound relative to a calibration run,
-never a raised constant; a lint rule flags `performance.now()` differences compared to a literal in a spec.
 
 597\. Builder (2026-11-08, B434, 4f00e0311): the sketch view used one revision for the whole sketch, so an edit of one
 variant renewed the iframe and picture URLs of the Aktuell row too, and its cells stayed empty until the new
@@ -3954,13 +3547,6 @@ findings 240-252 alone (3527 lines deleted): its script opened the file for writ
 (technical): a `findings:archive <from> <to>` script moves findings, so no agent writes its own; the pre-commit hook
 refuses a commit that removes a finding from the archive and runs `lint:studio-adrs` on staged plan files.
 
-607\. Builder (2026-11-08): the merge stall spec still failed on Linux (210 ms, 353 ms) after finding 599. Docker
-profiles: a V8 memory-reducer major GC on the server thread (15-273 ms), triggered by the start of the jiti merge
-worker that only the spec does (no-op merge 0/10, idle worker 1/5, real merge 6/15). A second source (322 ms CPU in an
-847 ms span) did not reproduce. The doc agent decided: `--no-memory-reducer` for this spec, CPU time and threshold
-unchanged; no GC subtraction, no wall-clock. Tool fix (technical): a stall spec prints the GC trace of a failed span,
-so the next failure names its source without a docker session.
-
 608\. Builder (2026-11-08, 0a3243bb5): `--no-memory-reducer` (finding 607) held the merge stall at 3-5 ms in 5 macOS
 and 5 Linux docker runs, but CI run 42464173027 still measured 237 ms over 88 ms. The docker repro proved one source
 and not the one CI hits; the flag reaches every cli spec, because vitest cannot scope `execArgv` per file. Next: one
@@ -4019,15 +3605,6 @@ frames against 8 visible cells); the detail now prints "frames gone before their
 because nothing tests the e2e probe helpers and the race never happened locally. Tool fix: a spec for the probe helpers
 with a forced-race fixture page for each outcome.
 
-619\. Builder (2026-11-09, B446, c3e136ae2): Sketches "wheel and ctrl-wheel over a frame centre" failed with "no iframe
-frame". Cause: the case sampled the frames once after setup, but a sketch mounts its iframes only after the listing
-arrives; in CI it was the first case of a shard on a cold server (slow listing not proven, the log has no listing
-timings). Locally the listing always arrives inside the 2.5 s settle. Tool fix: an e2e mode `--hold-listings <ms>` that
-delays design-server listings, so a case that samples once fails locally. As built (B450): `yarn studio:e2e
---hold-listings <ms>` holds the sketch listings that carry frame targets (all but `targets=no`) in a Playwright context
-route; the old wheel case fails with 14000 (one hold outlasts the 2.5 s settle and the 10 s `settled` cap), 3000 does
-not bite.
-
 620\. Builder (2026-11-09, B445, c88cf6ebd): Merge "the sketch view stays open after the sketch dropped from the
 listing" timed out. Cause (server bug): a request joins a running listing, and `serve.ts` detached running listings on a
 part change but not on a sketch file change, so a request after the merge could get the deleted sketch back. Fix:
@@ -4035,91 +3612,12 @@ part change but not on a sketch file change, so a request after the merge could 
 The specs covered the join in studio-api but not the serve trigger on a sketch file change. Tool fix: a serve spec that
 runs every watcher event kind against a gated listing and asserts a fresh answer.
 
-621\. Builder (2026-11-09, B448, 49b3c969f): the full batch run before the push failed Large "a sketch keeps its frame
-count and pictures from the first paint through a sketch edit" (2 frames at the first paint, 30 once settled), 1 of 2
-runs alone. The B445 fix was not the cause (6 runs each with and without it). Cause: after a reload the `targets=no`
-listing draws 30 pending cells, and the quick listing folds them to 2 about 270 ms later; the case sampled at a random
-moment in that window, so it passed on the jumpy 30 and failed on the correct 2. The case is split, and the new case
-"first paints the frame count it settles on" stays open under B345 (finding 425). The tool did not catch it because the
-B445 slice ran only the Merge case, 2bb8d3d58 changed the fixtures without a re-run of this case, and one run of a
-racy sample can pass. Tool fix: a commit that touches the e2e fixtures, `serve.ts` or `studio-api.ts` makes
-`studio:e2e:bite` run each case of the affected page group 3 times and blocks when a result changes. The batch gate
-caught it before the push.
-As built (B453): `yarn push:suite` (`tools/scripts/push-suite.mjs`, run in the background before a push, ADR 0230
-and 0231; `yarn commit` no longer runs it) runs `tools/scripts/studio-e2e-repeat.mjs` (also `yarn studio:e2e:repeat`)
-over the unpushed diff after `nx test cli`, `nx test ethlete-studio` and `yarn studio:e2e`; it writes `ok <sha>` or `blocked <reason>` to
-`$(git rev-parse --git-path push-suite)/<sha>`, which the pre-push hook of `next` requires for a push with code
-(`PUSH_SUITE_SKIP=1` skips it). Cost per push: one page group about 1.3 min (measured, Edited, loaded machine), every
-group about 8-10 min (933 s of cases on 8 workers per run, the hold run longer, plus the cli and app build). A hunk inside one case runs that case's page groups, any other hunk in the runner or a change to `serve.ts` or
-`studio-api.ts` runs every group. Of the 3 runs the last uses `--hold-listings 14000`; a changed result or a hold failure
-blocks. The new runner flag `--page <a|b>` picks the groups. Merge fails its hold run today, so a full-suite trigger blocks
-until that case holds.
-As built (B455): every step runs in a `git archive <sha> | tar -x` export of HEAD in the temp dir, with `node_modules` linked from the repo and the `@ethlete/*` workspace links pointing into the export, and `nx build cli components core` before the e2e steps, because the drawings load `dist/libs/*`, which came from the live tree before; live edits during the run never leak in (export about 0.1 s and 94 MB in tmpfs, the lib build about 16 s).
-
-622\. Builder (2026-11-08, B449): Unit "shows no other part while the remembered sketch is still being listed" timed
-out at 5106 ms in CI run 42479812031. Cause: it is the first case of `system-view.component.spec.ts`, so it carried the
-cold JIT compile of the whole System view tree inside `TestBed.createComponent` (232 of 292 ms locally; `whenStable()`
-and the `settle` loop cost under 10 ms, and no stub fetch holds a pending task). CI ran the file about 13 times slower
-(second case 1003 ms against 75 ms locally), which puts the compile near 5 s. A file-level `beforeAll` with a 30 s
-budget now compiles the tree once; with `--testTimeout=150` the case times out without it and passes in 24 ms with
-it. B442 (`shell-logo.spec.ts:140`) is not the same cause: it is an assertion (`closed: false` on Flows), not a
-timeout. The tool did not catch it because `spec:stress --load 2` stays far below the CI factor (4/4 passed with and
-without the fix), and nothing reports a case that runs close to its timeout. Tool fix: the vitest reporter of the Studio
-unit run fails a case that uses more than half of its timeout, so a first case that holds a cold compile shows up
-locally before it turns red in CI.
-As built (B458): `apps/ethlete-studio/src/test-slow-case.ts`, called from an `afterEach` in `test-setup.mjs`; it measures from the setup `beforeEach` to the last `afterEach` against `task.timeout`, and is off when `CI=true`. Verified: with `--testTimeout=40` the System view spec fails its slow cases locally and not with `CI=true`; the full Studio unit run passes (589). Not verified: how close the slowest local case is to the half mark on a busy machine.
-
-623\. The human (2026-11-09, screenshot of the live title bar and the sketch `components/title-bar@ci-red`): "mal ganz
-davon ab dass das vertical alignment total grütze ist". In the screenshot the text of the "3 ungepusht · 0,7 h" badge
-sits high in its pill, and the ci-red sketch passed `sketch ready` with the same badge. Cause (builder, measured): the label holds an
-`inline-flex` span (icon + text), whose baseline is the icon's bottom edge, so `text-box: trim-both cap alphabetic`
-trimmed 2 px too low: 1.42 px above the capitals, 5.44 px below, and the icon stuck 1.44 px out of the pill. Fix: the
-sketch `components/title-bar@badge-centre` (47f747dd4), the human merges. The tool did not catch it because
-render-check has only breakage rules (CLIPPED needs `overflow: hidden`) and nothing measures the vertical position of
-text in its box. Tool fix (general): render-check rule `OFF-CENTRE` flags single-line text in a box with a background or
-border when the cap gap above and below differ by more than 1 px, and an icon past the border by more than 0.5 px.
-As built (B456): `libs/cli/src/lib/design/system/off-centre.ts`, as a warning rule first. The spec reproduces the 623 markup (1.3 px above the capitals, 6.0 px below the baseline) and passes the fixed markup. The first full `design check` flagged 186 spots in studio and 78 in sdk; not triaged yet, so the rule does not block. Not verified: which hits are real defects.
-As built (app, B452): `title-bar.component.ts` takes the merged badge-centre markup (`flex` wrapper, text in its own
-`[text-box:trim-both_cap_alphabetic]` span); a title-bar spec on the wrapper and span classes bites on the old markup.
-
-624\. Builder (2026-11-09, B454): Merge "the sketch view stays open after the sketch dropped from the listing" failed under
-`--hold-listings 14000`, the new hold run of the B453 gate, and passed without it. Cause (app bug): `sketchRead$` skipped
-the name listing (`targets=no`) on every read after the first, so the app learned of a merged sketch only from the quick
-listing with targets. The request log showed only `unchanged=no` requests after the merge, each held and restarted by
-the next sketch file change, and the case gave up 10 s later. Fix: every read starts with the name listing; a sketch it
-still lists keeps its last item with targets until the quick listing answers, a dropped one leaves at once. A
-component spec with hanging listings with targets bites.
-
-625\. Builder (2026-11-09, B456, 6a3f0b825): the OFF-CENTRE rule landed as a warning, not as a problem with a baseline,
-because 264 hits on existing parts (186 studio, 78 sdk) would block every push. ADR 0201 already decided this case: a
-new design rule fails at once for new code, its hits on existing parts go into a baseline list that may only shrink,
-and each baselined hit opens a sketch. The builder took the decision again, and differently. Why no tool caught it:
-ADR 0201 has no `governs` paths, so `yarn adr:governs libs/cli/src/lib/design/system/off-centre.ts` lists nothing, and
-no check ties a new rule to a severity and a baseline. Tool fix (general): ADR 0201 now governs
-`libs/cli/src/lib/design/system/*` (doc agent, done), and a cli spec fails when a registered design rule has severity warning without a
-baseline file. Decision (doc agent, applies ADR 0201): one triage slice first, with a live shot per hit kind; fix or
-`data-et-skip` the on-purpose ones (`foundations/type` `span.ty-line`) and tune the filter for clear false classes (box
-with no padding, heading cell with space below on purpose); then OFF-CENTRE becomes a problem, and the hits left go
-into its baseline, each one a finding with a sketch.
-
 626\. Builder (2026-11-09, B457, b1af8f143): the full `design check` of B456 wrote build-ready records with the absolute
 home path in `cmd` into `.ethlete/design/*/ready.json`, and `yarn lint:person-names` refused them. Cause: `originOf` in
 `libs/cli/src/lib/design/system/write-origin.ts` wrote `process.argv` as it was, and the resident starts as
 `design __resident --checkout <absolute checkout>`. No full check wrote through the resident before, so HEAD had no such
 path. The tool caught it at the commit, not at the write. Tool fix (built): `portableCmdOf` writes each absolute
 argument relative to the working directory (`--checkout .`); `write-origin.spec.ts` bites without it.
-
-627\. Builder (2026-11-09): the self-restart after the B458 handoff never ran, and the human resumed the builder by hand
-("auto restart did not work"). Cause (verified in `agent-sessions.mjs` lines 121-124 and `.ethlete/restart.log`
-15:13-15:44): `busyLine()` treats any pane line with "Waiting for" as busy. The builder ended its turn with its own chat
-text "Waiting for the push suite ...", so the pane looked busy until `restart` gave up after 1800 s, and a second
-restart still waited. Why no tool caught it: the restart spec has no captured pane where a transcript line holds the
-busy words, and `restart` gives up without a message to the session it should restart. Tool fix (general, builder):
-`busyLine()` matches "Waiting for" only in the footer or spinner line, never in a transcript line; a spec with a captured
-pane whose last chat line says "Waiting for" bites; a `restart` that gives up sends a mailbox line to the session.
-As built (B460, 39d8de81b): `busyLine()` counts only the spinner line above the input box and the footer; a captured
-idle pane with a "Waiting for" transcript line bites. The give-up mailbox line already existed. Not verified: a real
-end-to-end restart.
 
 628\. Builder (2026-11-09, B459a, 2facac8ea): OFF-CENTRE baseline hit, sdk `components/button`, `size-lg` and `size-xl`: the text sits off the
 box centre. Cause: the lib CSS has no `text-box` trim and a height that does not fit the trimmed line. It goes into the
@@ -4166,14 +3664,6 @@ by the Claude Code permission system as self-approval. The builder undid the `sk
 it: ADR 0209 was decided and queued (613) without a run of the command in auto mode, so nobody saw the permission
 boundary. Lesson: a decision that has an agent run a command checks first that the agent may run it. Decision (ADR 0233): the agent prepares the accept command, dry-runs it, and the human runs it with `!`.
 Until then the 4 `pages/sketches` gutter hits stay in the OFF-CENTRE baseline.
-
-636\. Builder (2026-11-09, B459b, d8cf6cd80): `yarn et:design` runs the CLI built from the last commit, so a check of
-uncommitted rule code in `libs/cli` silently runs the old rule; the builder needed `nx build cli` and `node dist/...`.
-Why no tool caught it: the command prints no build commit and no note on uncommitted cli sources. Tool fix (general,
-builder): `et:design` prints one line with the build commit when `libs/cli/src` has uncommitted changes, and names the
-command that runs the working copy.
-As built (B461, 62cb4eaa2): `dirtyCliNoteOf` in `tools/scripts/studio-code.mjs` prints the build commit and the
-working-copy command to stderr when `libs/cli` is dirty; `studio-code.spec.mjs` covers it. A live dirty run printed the line (built from d8cf6cd80).
 
 637\. The human (2026-11-09), on a grill question that offered `yarn design go --batch` for a human accept: "ich lese
 da schon wieder das wort go". ADR 0048 removed go and accept as human gates: a direct edit to a merged part without a
@@ -4266,3 +3756,10 @@ in the worker the longest loop gap is 7 ms. In the jiti worker of the specs the 
 first tracked run (jiti keeps the `fs` function a module first called), so `tracked-reads.ts` keeps its recorders
 installed. `open-points-loop.spec.ts` bites with the old answer (1021 ms gap). The jiti worker starts in 4-7 s: 30 s
 spec timeouts.
+
+645\. Builder (2026-11-09, a8cc4eb06): the open-points worker of 644 needs 4-7 s to start under jiti, so the four spec
+files that ask for open points got 30 s timeouts. That is a timeout raise, not a cause fix (ADR 0235). The doc agent
+accepted it for now, because red CI comes first (ADR 0234). `@swc-node/register` would fix the start but became a
+runtime dependency of `@ethlete/cli` through dependency-checks. Why no tool caught it: nothing flags a raised spec
+timeout. Tool fix (backlog, first in line after item 0): a precompiled worker entry for the specs, the 30 s timeouts
+go back to the default, and lint refuses a spec timeout above the default without a finding number next to it.
