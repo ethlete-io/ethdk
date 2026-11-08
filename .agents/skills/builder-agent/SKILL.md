@@ -44,9 +44,12 @@ that talks with the user and records decisions. Talk English.
   Tell each subagent the same. Never `git add -A`, never stash, never amend, never rebase.
 - A slice runs only the spec files it touched, and only its own e2e cases (`yarn studio:e2e --case <name>`).
   `--hold-listings <ms>` delays the sketch listings that carry frame targets, so a case that reads frames once
-  before they mount fails locally as on a cold CI server; 14000 outlasts the case setup. The bite proof runs only the new specs. `yarn commit`
+  before they mount fails locally as on a cold CI server; 14000 outlasts the case setup. A `yarn commit` that touches `canvas.e2e.mjs`, `serve.ts` or `studio-api.ts`
+  first runs the affected page groups 3 times (the last with `--hold-listings 14000`) and blocks on a changed result or a
+  hold failure (`yarn studio:e2e:repeat`). The bite proof runs only the new specs. `yarn commit`
   already runs the specs related to the staged files and the typecheck. Run the full suite (`nx test cli`,
-  `yarn studio:e2e`) once per batch before a push, not in each slice. Tell each subagent the same.
+  `yarn studio:e2e`) in the background before you push, and start the next slice while it runs. Push at the end of
+  each slice (ADR 0230). A subagent runs no full suite. Tell each subagent the same.
 - A slice that changes `apps/<app>` or `.ethlete/design` ends with `design check --product <p> --part <part>` for each
   part it touched and each part that embeds one, in the background. A problem that is not known and was not there
   before the slice fails the slice. The full `design check --product <p>` runs in pre-push and CI only.
