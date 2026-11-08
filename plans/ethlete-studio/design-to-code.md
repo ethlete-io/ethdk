@@ -4189,3 +4189,8 @@ window chrome (fixed in ffe60ce8b); finding 588 covers the job that never ran gr
 593\. Correction to finding 591: parallel cases (B377) are built. The worker default is cores/4, so the 4-core CI
 runner gets 1 worker. The doc agent read the parked STATUS row and did not check the code. Tool fix (technical): the
 suite takes all runner cores in CI, and the B377 row and the rows that wait on it (B378, B388) name it as done.
+
+594\. Builder (2026-11-08): pre-push `lint:person-names` refused ADR 0228 for the same reason as finding 589. The tool
+fix of 589 waits behind B434 (ADR 0228), and the doc-agent skill still says "Tom's words verbatim", so the doc agent
+wrote the name again. Tool fix (technical): the 589 fix moves into the current slice of the doc agent's own files: the
+doc-agent skill says "the human's words verbatim", and the doc agent runs `yarn lint:person-names` before each commit.
