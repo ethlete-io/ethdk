@@ -4199,14 +4199,14 @@ racy sample can pass. Tool fix: a commit that touches the e2e fixtures, `serve.t
 caught it before the push.
 As built (B453): `yarn push:suite` (`tools/scripts/push-suite.mjs`, run in the background before a push, ADR 0230
 and 0231; `yarn commit` no longer runs it) runs `tools/scripts/studio-e2e-repeat.mjs` (also `yarn studio:e2e:repeat`)
-over the unpushed diff after `nx test cli`, `nx test ethlete-studio` and `yarn studio:e2e`, all on a copy of the HEAD
-runner; it refuses to start on uncommitted app or lib code and writes `ok <sha>` or `blocked <reason>` to
+over the unpushed diff after `nx test cli`, `nx test ethlete-studio` and `yarn studio:e2e`; it writes `ok <sha>` or `blocked <reason>` to
 `$(git rev-parse --git-path push-suite)/<sha>`, which the pre-push hook of `next` requires for a push with code
 (`PUSH_SUITE_SKIP=1` skips it). Cost per push: one page group about 1.3 min (measured, Edited, loaded machine), every
 group about 8-10 min (933 s of cases on 8 workers per run, the hold run longer, plus the cli and app build). A hunk inside one case runs that case's page groups, any other hunk in the runner or a change to `serve.ts` or
 `studio-api.ts` runs every group. Of the 3 runs the last uses `--hold-listings 14000`; a changed result or a hold failure
 blocks. The new runner flag `--page <a|b>` picks the groups. Merge fails its hold run today, so a full-suite trigger blocks
 until that case holds.
+As built (B455): every step runs in a `git archive <sha> | tar -x` export of HEAD in the temp dir, with `node_modules` linked from the repo and the `@ethlete/*` workspace links pointing into the export, so live edits during the run never leak in (about 0.1 s and 94 MB in tmpfs; cli and Studio are built cold from the export).
 
 622\. Builder (2026-11-08, B449): Unit "shows no other part while the remembered sketch is still being listed" timed
 out at 5106 ms in CI run 42479812031. Cause: it is the first case of `system-view.component.spec.ts`, so it carried the
@@ -4222,9 +4222,13 @@ locally before it turns red in CI.
 
 623\. The human (2026-11-09, screenshot of the live title bar and the sketch `components/title-bar@ci-red`): "mal ganz
 davon ab dass das vertical alignment total grütze ist". In the screenshot the text of the "3 ungepusht · 0,7 h" badge
-sits high in its pill, and the ci-red sketch passed `sketch ready` with the same badge. Cause and tool fix: open, the
-builder reports which element is off, and why neither `design check` nor `sketch ready` caught a vertically off-centre
-label.
+sits high in its pill, and the ci-red sketch passed `sketch ready` with the same badge. Cause (builder, measured): the label holds an
+`inline-flex` span (icon + text), whose baseline is the icon's bottom edge, so `text-box: trim-both cap alphabetic`
+trimmed 2 px too low: 1.42 px above the capitals, 5.44 px below, and the icon stuck 1.44 px out of the pill. Fix: the
+sketch `components/title-bar@badge-centre` (47f747dd4), the human merges. The tool did not catch it because
+render-check has only breakage rules (CLIPPED needs `overflow: hidden`) and nothing measures the vertical position of
+text in its box. Tool fix (general): render-check rule `OFF-CENTRE` flags single-line text in a box with a background or
+border when the cap gap above and below differ by more than 1 px, and an icon past the border by more than 0.5 px.
 
 624\. Builder (2026-11-09, B454): Merge "the sketch view stays open after the sketch dropped from the listing" failed under
 `--hold-listings 14000`, the new hold run of the B453 gate, and passed without it. Cause (app bug): `sketchRead$` skipped
