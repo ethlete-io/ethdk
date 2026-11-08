@@ -4242,3 +4242,9 @@ verified: green under real CI load. Why no tool caught it: nothing stops code fr
 and no check counts process starts. Tool fix (backlog, per ADR 0235 at the cause): every git read in the cli goes
 through one batched git reader, and lint forbids a direct `spawnSync`/`execSync` of `git` outside it; a per-test spawn
 budget is only the fallback if the lint rule cannot cover a case.
+
+643\. Builder (2026-11-09, during 7a2c46230): the 640/641 subagent overwrote the repo slice-paths file
+(`$(git rev-parse --git-path slice-paths)`) with its own paths, so the builder's slice warning checked the wrong paths.
+Cause: one slice-paths file per checkout, shared by every session and subagent. Why no tool caught it: nothing ties
+the file to the session that wrote it. Tool fix (backlog): a subagent sets `ETHLETE_SLICE_PATHS` and never writes the
+file; the pre-commit hook names the writer of the file and warns when a different session commits against it.
