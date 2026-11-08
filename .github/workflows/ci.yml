@@ -314,12 +314,11 @@ jobs:
       # .ethlete/design/config.json (dist/libs/components, dist/libs/core) exist.
       - run: yarn nx run-many -t build -p cli,components,core
 
-      # Non-blocking until the cases hidden by the missing render packages pass (ADR 0227, B434).
       - run: yarn studio:e2e
-        continue-on-error: true
         timeout-minutes: 40
         env:
           STUDIO_E2E_WORKERS: 2
+          STUDIO_E2E_BUDGET_ENFORCE: 1
           STUDIO_E2E_SHARD: ${{ matrix.shard }}/6
 
   rust:
