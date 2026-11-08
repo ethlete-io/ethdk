@@ -4244,3 +4244,13 @@ the reused worker page, so later Large cases (edited on disk, scroll never empti
 ("keeps its frame count and pictures through a sketch edit": 3 folded cells of variant a go blank after a css edit). A
 route in one case outlived the case on a shared worker page. Tool fix (technical): the worker fixture calls
 `page.unrouteAll()` after each case and fails the case that left a route behind.
+
+602\. Builder (2026-11-08, B434): the System "wheel" case timed out in CI at its first frame. The System page waits
+for two full `/__design/system` listings, and each one runs all design rules again on the server thread with no
+result cache (`listSystem` -> `ruleProblemsOf`): 1.5-3.5 s on macOS, 3.5-7 s on Linux, and stamp and pings get no
+answer meanwhile. The page throws the first answer away and asks again. A passing local run drew at 9.2 s of a 10 s
+wait. The cold path also runs `execFileSync` (tailwind `classFactsOf`, about 8 s) and git (about 1.7 s) on the server
+thread, the class of finding 599, which the 599 spec checks only for the merge path. Nothing measures request time on
+the server or counts requests per page load. Tool fix (technical): a first-frame timeout names the slow design
+requests and the longest ping (b815a18af); a spec asserts one listing per page load; the 599 assertion covers the
+whole server (no sync `child_process` call and no full rule run on the server thread per request).
