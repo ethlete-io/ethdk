@@ -136,13 +136,14 @@ describe('TitleBarComponent', () => {
     expect(render(linux([], [])).bar?.querySelector('[data-push-state]')).toBeNull();
   });
 
-  it('draws CI rot in the red badge while the CI run is red, also with nothing unpushed', () => {
-    const bar = render({ ...linux([], []), push: { unpushed: 0, age: '0 h', gate: 'green', ci: 'red' } }).bar;
-    const state = bar?.querySelector<HTMLElement>('[data-push-state]');
+  it('centres the push badge text on its cap height beside the icon', () => {
+    const bar = render({ ...linux([], []), push: { unpushed: 3, age: '2 h', gate: 'green' } }).bar;
+    const row = bar?.querySelector<HTMLElement>('[data-push-state] et-badge svg')?.parentElement;
+    const text = row?.querySelector(':scope > span');
 
-    expect(state?.textContent?.trim()).toBe('CI rot');
-    expect(state?.title).toBe('CI rot - vor jedem Feature-Slice beheben oder zurücknehmen');
-    expect(state?.querySelector('et-badge')?.getAttribute('data-variant')).toBe('filled');
+    expect(row?.className).toBe('flex items-center gap-1 whitespace-nowrap');
+    expect(text?.className).toBe('[text-box:trim-both_cap_alphabetic]');
+    expect(text?.textContent?.trim()).toBe('3 ungepusht · 2 h');
   });
 
   it('fires restart from the notice button and hides Update without an update', () => {

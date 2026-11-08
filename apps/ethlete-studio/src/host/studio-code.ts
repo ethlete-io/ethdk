@@ -3,9 +3,7 @@ import { invokeHost$ } from './invoke';
 
 export type PushGate = 'green' | 'red' | 'unknown';
 
-export type PushCi = 'green' | 'red' | 'running' | 'unknown';
-
-export type PushState = { unpushed: number; oldestAgeHours: number | null; gate: PushGate; ci?: PushCi | null };
+export type PushState = { unpushed: number; oldestAgeHours: number | null; gate: PushGate };
 
 export type StudioCodeState = {
   cli: { running: string | null; latest: string | null; dirty: boolean };

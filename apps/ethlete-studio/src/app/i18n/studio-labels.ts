@@ -19,8 +19,6 @@ export const STUDIO_LABELS = {
     pushAge: (hours: string) => `${hours} h`,
     pushGate: { green: 'Push-Gate grün', red: 'Push-Gate rot', unknown: 'Push-Gate nicht gelaufen' },
     pushRedAdvice: 'vor jedem Feature-Slice beheben',
-    ciRed: 'CI rot',
-    ciRedAdvice: 'vor jedem Feature-Slice beheben oder zurücknehmen',
   },
   openFolder: {
     refusedTitle: 'Ordner nicht geöffnet',

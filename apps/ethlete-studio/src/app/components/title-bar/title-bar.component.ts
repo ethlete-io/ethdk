@@ -16,12 +16,7 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { ErrorToastComponent } from '../../design-parts/error-toast/error-toast.component';
 import { TitleSearchComponent } from '../title-search/title-search.component';
 
-export type TitleBarPush = {
-  unpushed: number;
-  age: string;
-  gate: 'green' | 'red' | 'unknown';
-  ci?: 'green' | 'red' | 'running' | 'unknown';
-};
+export type TitleBarPush = { unpushed: number; age: string; gate: 'green' | 'red' | 'unknown' };
 
 @Component({
   selector: 'ethlete-title-bar',
@@ -44,8 +39,8 @@ export type TitleBarPush = {
       <div [class.self-stretch]="caption()" class="flex items-center justify-end gap-2">
         @if (push(); as push) {
           <span [etProvideColor]="pushTheme()" [attr.title]="pushTitle()" class="inline-flex" data-push-state>
-            <et-badge [variant]="pushLook() === 'red' ? 'filled' : 'tonal'" size="sm">
-              <span class="inline-flex items-center gap-1 whitespace-nowrap">
+            <et-badge [variant]="push.gate === 'red' ? 'filled' : 'tonal'" size="sm">
+              <span class="flex items-center gap-1 whitespace-nowrap">
                 <svg
                   width="12"
                   height="12"
@@ -57,7 +52,7 @@ export type TitleBarPush = {
                   stroke-linejoin="round"
                   aria-hidden="true"
                 >
-                  @switch (pushLook()) {
+                  @switch (push.gate) {
                     @case ('green') {
                       <path d="m3.5 8.5 3 3 6-7" />
                     }
@@ -72,7 +67,7 @@ export type TitleBarPush = {
                     }
                   }
                 </svg>
-                {{ push.ci === 'red' ? CODE_LABELS.ciRed : CODE_LABELS.push(push) }}
+                <span class="[text-box:trim-both_cap_alphabetic]">{{ CODE_LABELS.push(push) }}</span>
               </span>
             </et-badge>
           </span>
@@ -354,10 +349,8 @@ export class TitleBarComponent {
 
   protected readonly CLOSE_KIND = WINDOW_CONTROL_BUTTON_KINDS.CLOSE;
 
-  protected pushLook = computed(() => (this.push()?.ci === 'red' ? 'red' : this.push()?.gate));
-
   protected pushTheme = computed(() => {
-    const gate = this.pushLook();
+    const gate = this.push()?.gate;
 
     return gate === 'red' ? this.errorTheme() : gate === 'unknown' ? this.warningTheme() : undefined;
   });
@@ -366,8 +359,6 @@ export class TitleBarComponent {
     const gate = this.push()?.gate;
 
     if (!gate) return null;
-
-    if (this.push()?.ci === 'red') return `${this.CODE_LABELS.ciRed} - ${this.CODE_LABELS.ciRedAdvice}`;
 
     const label = this.CODE_LABELS.pushGate[gate];
 
