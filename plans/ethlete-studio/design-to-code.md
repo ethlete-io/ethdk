@@ -4164,3 +4164,9 @@ it: ADR 0209 was decided and queued (613) without a run of the command in auto m
 boundary. Lesson: a decision that has an agent run a command checks first that the agent may run it. Open: the human
 decides between a narrow permission rule for the agent accept and a prepared command that the human runs. Until then
 the 4 `pages/sketches` gutter hits go into the OFF-CENTRE baseline, so B459b does not wait.
+
+636\. Builder (2026-11-09, B459b, d8cf6cd80): `yarn et:design` runs the CLI built from the last commit, so a check of
+uncommitted rule code in `libs/cli` silently runs the old rule; the builder needed `nx build cli` and `node dist/...`.
+Why no tool caught it: the command prints no build commit and no note on uncommitted cli sources. Tool fix (general,
+builder): `et:design` prints one line with the build commit when `libs/cli/src` has uncommitted changes, and names the
+command that runs the working copy.
