@@ -36,18 +36,18 @@ Agent-Berichte: `.claude/handoffs/agent-results/<ID>.md`.
 
 ## Gerade in Arbeit
 
-**Reihenfolge (09.11., verbindlich, von Tom beauftragt):** Studio-Arbeit kommt vor Werkzeug-Rückstand. Der Builder
+**Reihenfolge (09.11., verbindlich, ADR 0234):** Studio-Arbeit kommt vor Werkzeug-Rückstand. Der Builder
 nimmt immer den obersten offenen Punkt. Vor dem Start prüft er ihn gegen git: Ist er schon erledigt, streicht er ihn und
-nimmt den nächsten. Nur der Doc-Agent ändert diese Liste, und nur nach Toms Okay.
+nimmt den nächsten. Kein Punkt und kein Rückstand läuft über Nacht als E2E-Fix-Schleife. Nur der Doc-Agent ändert diese Liste, und nur nach Toms Okay.
 
-1. ADR-0048-Rest (Bef. 637): unsichtbare direkte Änderung braucht keine Freigabe; `design go`/`accept` melden „entfernt“;
-   Gutter-Skip in `pages/sketches`. Ein Slice, schon begonnen.
-2. A10 / B249: „Baubereit“ statt Go und Abnahme, `go.json` und `accepted.json` weg (ADR 0048).
-3. A1-Rest: Titelleiste fertig (12 Hover-Zustände, Sketch `components/title-bar@notice-hint`).
-4. B345: Sketch-Runde zeigt geänderte Zustände als Ausschnitt.
-5. A13: ein Knopf „Übernehmen“ öffnet direkt die Merge-Ansicht.
-6. A24: Merge-Seite zeigt alle unveränderten Teile.
-7. A2 + A3: Suche mit Strg+K und Update-Knopf in der Titelleiste.
+1. A10 / B249: „Baubereit“ statt Go und Abnahme, `go.json`, `accepted.json`, `design go` und `design accept` weg
+   (ADR 0048); unsichtbare direkte Änderungen gelten sofort; danach Gutter-Skip in `pages/sketches`. Nichts am Go-System
+   wird vorher noch geändert.
+2. A1-Rest: Titelleiste fertig (12 Hover-Zustände, Sketch `components/title-bar@notice-hint`).
+3. B345: Sketch-Runde zeigt geänderte Zustände als Ausschnitt.
+4. A13: ein Knopf „Übernehmen“ öffnet direkt die Merge-Ansicht.
+5. A24: Merge-Seite zeigt alle unveränderten Teile.
+6. A2 + A3: Suche mit Strg+K und Update-Knopf in der Titelleiste.
 
 **Werkzeug-Rückstand** (nur, wenn der Builder auf Toms Wahl in einer Skizze wartet): Off-centre-Skizzen 628-633,
 Bef. 638 (Changeset im Pre-Commit), 617, 614, 618, 620, B438.
