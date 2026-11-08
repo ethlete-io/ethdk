@@ -4117,3 +4117,42 @@ restart still waited. Why no tool caught it: the restart spec has no captured pa
 busy words, and `restart` gives up without a message to the session it should restart. Tool fix (general, builder):
 `busyLine()` matches "Waiting for" only in the footer or spinner line, never in a transcript line; a spec with a captured
 pane whose last chat line says "Waiting for" bites; a `restart` that gives up sends a mailbox line to the session.
+
+628\. Builder (2026-11-09, B459a, 2facac8ea): OFF-CENTRE baseline hit, sdk `components/button`, `size-lg` and `size-xl`: the text sits off the
+box centre. Cause: the lib CSS has no `text-box` trim and a height that does not fit the trimmed line. It goes into the
+OFF-CENTRE baseline (ADR 0201, finding 625). Fix: a sketch `components/button@off-centre` with the trim and height fix; the
+human picks by merge, then the hit leaves the baseline. Tool fix: none, OFF-CENTRE caught it.
+
+629\. Builder (2026-11-09, B459a, 2facac8ea): OFF-CENTRE baseline hit, sdk `components/pagination`, `first`, `sm` and the links: the text sits off the
+box centre. Cause: the lib CSS has no `text-box` trim and a height that does not fit the trimmed line. It goes into the
+OFF-CENTRE baseline (ADR 0201, finding 625). Fix: a sketch `components/pagination@off-centre` with the trim and height fix; the
+human picks by merge, then the hit leaves the baseline. Tool fix: none, OFF-CENTRE caught it.
+
+630\. Builder (2026-11-09, B459a, 2facac8ea): OFF-CENTRE baseline hit, sdk `components/scrollable`, `vertical-start`: the text sits off the
+box centre. Cause: the lib CSS has no `text-box` trim and a height that does not fit the trimmed line. It goes into the
+OFF-CENTRE baseline (ADR 0201, finding 625). Fix: a sketch `components/scrollable@off-centre` with the trim and height fix; the
+human picks by merge, then the hit leaves the baseline. Tool fix: none, OFF-CENTRE caught it.
+
+631\. Builder (2026-11-09, B459a, 2facac8ea): OFF-CENTRE baseline hit, sdk `components/chart`, the pie tooltip: the text sits off the
+box centre. Cause: the lib CSS has no `text-box` trim and a height that does not fit the trimmed line. It goes into the
+OFF-CENTRE baseline (ADR 0201, finding 625). Fix: a sketch `components/chart@off-centre` with the trim and height fix; the
+human picks by merge, then the hit leaves the baseline. Tool fix: none, OFF-CENTRE caught it.
+
+632\. Builder (2026-11-09, B459a, 2facac8ea): OFF-CENTRE baseline hit, sdk `components/table`, the group header: the text sits off the
+box centre. Cause: the lib CSS has no `text-box` trim and a height that does not fit the trimmed line. It goes into the
+OFF-CENTRE baseline (ADR 0201, finding 625). Fix: a sketch `components/table@off-centre` with the trim and height fix; the
+human picks by merge, then the hit leaves the baseline. Tool fix: none, OFF-CENTRE caught it.
+
+633\. Builder (2026-11-09, B459a, 2facac8ea): OFF-CENTRE baseline hit, sdk `components/skeleton`, the in-text skeleton (1.0 px): the text sits off the
+box centre. Cause: the lib CSS has no `text-box` trim and a height that does not fit the trimmed line. It goes into the
+OFF-CENTRE baseline (ADR 0201, finding 625). Fix: a sketch `components/skeleton@off-centre` with the trim and height fix; the
+human picks by merge, then the hit leaves the baseline. Tool fix: none, OFF-CENTRE caught it.
+
+634\. Builder (2026-11-09, B459a, 2facac8ea): the first OFF-CENTRE run counted 264 hits, but after deduplication and the
+false-class filters 13 are left (studio 25 to 4, sdk 21 to 9). Filtered false classes, each with a spec that bites:
+scaled text measured at its drawn scale, underline-only boxes, a zero-padding box filled by its line box, a flex row
+with `align-items: flex-start`, and a box with an input. Lesson: a new rule counts deduplicated hits after a filter pass
+before anyone sizes the work; the 264 made the warning-only route look needed (finding 625). The 4 `pages/sketches`
+`span.sk-gutter` hits are a mask in canvas colour, on purpose. Decision (doc agent, applies ADR 0209 with ADR 0201): the
+skip is an invisible direct edit that implements a decision, so the builder adds `data-et-skip="OFF-CENTRE"` and runs
+`et design accept pages/sketches --by builder --note "ADR 0201"`; the gutter does not go into the baseline.
