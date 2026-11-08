@@ -18,14 +18,14 @@ describe('FailedShots', () => {
     const failedShots = TestBed.runInInjectionContext(injectFailedShots);
 
     await fixture.whenStable();
-    expect(failedShots.count()).toBe(0);
+    expect(failedShots?.count()).toBe(0);
 
     fixture.nativeElement.querySelector('img').dispatchEvent(new Event('error'));
     await fixture.whenStable();
-    expect(failedShots.count()).toBe(1);
+    expect(failedShots?.count()).toBe(1);
 
     fixture.destroy();
     TestBed.tick();
-    expect(failedShots.count()).toBe(0);
+    expect(failedShots?.count()).toBe(0);
   });
 });

@@ -38,6 +38,7 @@
     "lint:person-names": "node ./tools/scripts/check-person-names.mjs",
     "lint:runner-os": "node ./tools/scripts/check-runner-os-paths.mjs",
     "lint:size": "node ./tools/scripts/check-size-budget.mjs",
+    "lint:spec-typecheck": "node ./tools/scripts/check-spec-typecheck.mjs",
     "lint:studio-adrs": "node ./tools/scripts/check-studio-adrs.mjs",
     "lint:studio-label-specs": "node ./tools/scripts/studio-label-specs.mjs",
     "prepare:release": "node ./tools/scripts/prepare-release.js",

@@ -9,7 +9,7 @@
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "ngc -p apps/ethlete-studio/tsconfig.app.json --noEmit"
+        "command": "ngc -p apps/ethlete-studio/tsconfig.app.json --noEmit && tsc -p apps/ethlete-studio/tsconfig.spec.json --noEmit"
       }
     },
     "lint": {
