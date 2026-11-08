@@ -22,6 +22,7 @@ const root = resolve(import.meta.dirname, '../../..');
 const args = process.argv.slice(2);
 const built = args.includes('--built') ? resolve(args[args.indexOf('--built') + 1]) : undefined;
 const only = args.includes('--case') ? args[args.indexOf('--case') + 1] : undefined;
+const pageGroups = args.includes('--page') ? args[args.indexOf('--page') + 1].split('|') : undefined;
 const VIEWS = {
   system: ['System', 'Edited', 'Inbox'],
   sketches: ['Sketches', 'Wide', 'Merge', 'Discard'],
@@ -2973,7 +2974,8 @@ const lead = async () => {
       (testCase.pages ?? ['System', 'Sketches']).includes(target.name) &&
       (!testCase.labels || testCase.labels.includes(target.label)) &&
       (!only || only.split('|').some((part) => testCase.name.includes(part))) &&
-      (!view || VIEWS[view].includes(target.name))
+      (!view || VIEWS[view].includes(target.name)) &&
+      (!pageGroups || pageGroups.includes(target.label ?? target.name))
         ? [{ target: targetIndex, case: caseIndex, page: target.label ?? target.name, name: testCase.name }]
         : [],
     ),

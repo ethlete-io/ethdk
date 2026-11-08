@@ -1,0 +1,4 @@
+3 of 3 cases, 74.2s by the last local timings:
+  29.8s  Wide      the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms
+  27.8s  Merge     a sketch merged while its view is open opens the part view of the target
+  16.6s  Wide      Fit shows every column of a wide sketch, heads at the top

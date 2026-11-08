@@ -4197,6 +4197,11 @@ B445 slice ran only the Merge case, 2bb8d3d58 changed the fixtures without a re-
 racy sample can pass. Tool fix: a commit that touches the e2e fixtures, `serve.ts` or `studio-api.ts` makes
 `studio:e2e:bite` run each case of the affected page group 3 times and blocks when a result changes. The batch gate
 caught it before the push.
+As built (B453): `yarn commit` runs `tools/scripts/studio-e2e-repeat.mjs` (also `yarn studio:e2e:repeat`) before it
+commits; a hunk inside one case runs that case's page groups, any other hunk in the runner or a change to `serve.ts` or
+`studio-api.ts` runs every group. Of the 3 runs the last uses `--hold-listings 14000`; a changed result or a hold failure
+blocks. The new runner flag `--page <a|b>` picks the groups. Merge fails its hold run today, so a full-suite trigger blocks
+until that case holds.
 
 622\. Builder (2026-11-08, B449): Unit "shows no other part while the remembered sketch is still being listed" timed
 out at 5106 ms in CI run 42479812031. Cause: it is the first case of `system-view.component.spec.ts`, so it carried the

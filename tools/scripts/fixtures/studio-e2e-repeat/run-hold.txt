@@ -1,0 +1,16 @@
+[canvas-e2e] 3 cases on 3 worker(s)
+PASS  Wide      Fit shows every column of a wide sketch, heads at the top 4 columns inside, head gap 0 px (16.6s)
+FAIL  Merge     a sketch merged while its view is open opens the part view of the target the sketch view stays open after the sketch dropped from the listing (27.8s)
+PASS  Wide      the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms heads and tags at 30 % and 100 %, pictures at both, refused pictures hidden (29.8s)
+
+Time per page group, slowest first:
+  46.5s  Wide (2 cases)
+  27.8s  Merge (1 cases)
+
+Time per case, slowest first:
+  29.8s  Wide      the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms
+  27.8s  Merge     a sketch merged while its view is open opens the part view of the target
+  16.6s  Wide      Fit shows every column of a wide sketch, heads at the top
+
+2/3 passed in 47.0s on 3 worker(s)
+suite 0m47s of 5m budget
