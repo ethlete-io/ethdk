@@ -285,9 +285,9 @@ const drawnIn = async (iframe) => {
   ]);
 };
 
-const sketchCells = async (page) => {
-  const cells = await page.evaluate(
-    ({ CANVAS }) => {
+const censusCells = (page, only = null) =>
+  page.evaluate(
+    ({ CANVAS, only }) => {
       const shots = [...document.querySelectorAll('ethlete-sketch-view [data-shot]')];
       const view = shots[0]?.closest(CANVAS)?.getBoundingClientRect();
       const showing = (node) => {
@@ -296,37 +296,56 @@ const sketchCells = async (page) => {
         return !!style && style.opacity !== '0' && style.visibility !== 'hidden' && style.display !== 'none';
       };
 
-      return shots.map((cell, index) => {
-        const box = cell.getBoundingClientRect();
-        const img = cell.querySelector('img');
-        const iframe = cell.querySelector('iframe');
+      return shots
+        .map((cell, index) => ({ cell, index }))
+        .filter(({ cell }) => only === null || cell.dataset['shot'] === only)
+        .map(({ cell, index }) => {
+          const box = cell.getBoundingClientRect();
+          const img = cell.querySelector('img');
+          const iframe = cell.querySelector('iframe');
 
-        if (iframe) iframe.dataset['census'] = String(index);
+          if (iframe) iframe.dataset['census'] = cell.dataset['shot'];
 
-        return {
-          index,
-          key: cell.dataset['shot'],
-          top: box.top - view.top,
-          below: box.bottom - view.bottom,
-          visible:
-            box.height > 0 &&
-            box.bottom > view.top &&
-            box.top < view.bottom &&
-            box.right > view.left &&
-            box.left < view.right,
-          picture: !!img && img.complete && img.naturalWidth > 0 && showing(img),
-          pictureSrc: img?.src ?? null,
-          framed: !!iframe && showing(iframe),
-        };
-      });
+          return {
+            index,
+            key: cell.dataset['shot'],
+            top: box.top - view.top,
+            below: box.bottom - view.bottom,
+            visible:
+              box.height > 0 &&
+              box.bottom > view.top &&
+              box.top < view.bottom &&
+              box.right > view.left &&
+              box.left < view.right,
+            picture: !!img && img.complete && img.naturalWidth > 0 && showing(img),
+            pictureSrc: img?.src ?? null,
+            framed: !!iframe && showing(iframe),
+          };
+        });
     },
-    { CANVAS },
+    { CANVAS, only },
   );
 
-  for (const cell of cells) {
-    const iframe = cell.visible && cell.framed && (await page.$(`iframe[data-census="${cell.index}"]`));
+const probeCell = async (page, cell, recensused = false) => {
+  const iframe = cell.visible && cell.framed && (await page.$(`iframe[data-census="${cell.key}"]`));
 
-    cell.probe = iframe ? await drawnIn(iframe) : null;
+  if (iframe) return drawnIn(iframe);
+  if (!cell.visible || !cell.framed) return null;
+  if (recensused) return 'frame gone twice';
+
+  const [now] = await censusCells(page, cell.key);
+
+  Object.assign(cell, now ?? { visible: false, framed: false, picture: false });
+  cell.gone = 'frame gone after the census';
+
+  return now?.visible && now.framed ? probeCell(page, cell, true) : null;
+};
+
+const sketchCells = async (page) => {
+  const cells = await censusCells(page);
+
+  for (const cell of cells) {
+    cell.probe = await probeCell(page, cell);
     cell.drawn = cell.probe === 'drawn';
     cell.shows = cell.framed ? cell.drawn : cell.picture;
   }
@@ -1266,6 +1285,7 @@ const CASES = [
         });
       const steps = [];
       const empties = [];
+      let reread = 0;
 
       await showAllStates(page);
 
@@ -1316,10 +1336,12 @@ const CASES = [
               (cell) => !cell.shows && (had.has(cell.key) || loadedPictures.has(cell.pictureSrc)),
             );
 
+            reread += cells.filter((cell) => cell.gone).length;
             counts.push(`${empty.length}/${visible.length}`);
             empties.push(
               ...empty.map(
-                (cell) => `${name}${step}+${at} ${cell.key}${cell.framed ? ` (iframe: ${cell.probe})` : ''}`,
+                (cell) =>
+                  `${name}${step}+${at} ${cell.key}${cell.framed ? ` (iframe: ${cell.probe})` : ''}${cell.gone ? ` (${cell.gone})` : ''}`,
               ),
             );
             note(cells);
@@ -1330,7 +1352,7 @@ const CASES = [
 
       return {
         ok: empties.length === 0,
-        detail: `empty/visible cells per step at +${SCROLL_SAMPLES_MS.join(' +')} ms: ${steps.join(', ')}${empties.length ? `; first: ${empties.slice(0, 6).join(' | ')}` : ''}`,
+        detail: `empty/visible cells per step at +${SCROLL_SAMPLES_MS.join(' +')} ms: ${steps.join(', ')}; frames gone before their probe: ${reread}${empties.length ? `; first: ${empties.slice(0, 6).join(' | ')}` : ''}`,
       };
     },
   },
