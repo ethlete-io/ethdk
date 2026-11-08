@@ -4161,9 +4161,8 @@ skip is an invisible direct edit that implements a decision, so the builder adds
 and `yarn et:design accept pages/sketches --product studio --by claude-opus-5-5 --note "ADR 0201, ADR 0209"` was denied
 by the Claude Code permission system as self-approval. The builder undid the `sk-gutter` skip edit. Why no tool caught
 it: ADR 0209 was decided and queued (613) without a run of the command in auto mode, so nobody saw the permission
-boundary. Lesson: a decision that has an agent run a command checks first that the agent may run it. Open: the human
-decides between a narrow permission rule for the agent accept and a prepared command that the human runs. Until then
-the 4 `pages/sketches` gutter hits go into the OFF-CENTRE baseline, so B459b does not wait.
+boundary. Lesson: a decision that has an agent run a command checks first that the agent may run it. Decision (ADR 0233): the agent prepares the accept command, dry-runs it, and the human runs it with `!`.
+Until then the 4 `pages/sketches` gutter hits stay in the OFF-CENTRE baseline.
 
 636\. Builder (2026-11-09, B459b, d8cf6cd80): `yarn et:design` runs the CLI built from the last commit, so a check of
 uncommitted rule code in `libs/cli` silently runs the old rule; the builder needed `nx build cli` and `node dist/...`.
