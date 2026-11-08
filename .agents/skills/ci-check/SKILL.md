@@ -36,6 +36,7 @@ yarn vitest:projects:check                # 5d. the root vitest.projects.ts reso
 yarn nx run-many -t typecheck             # 6. spec-file types (nothing else checks them)
 yarn nx run-many -t lint                  # 7. ESLint, incl. @nx/dependency-checks
 yarn nx run-many -t test                  # 8. all unit tests
+yarn nx run cli:test-perf                 # 8b. wall-time specs (*.perf.spec.ts), non-blocking; JSON in tmp/perf
 yarn nx run-many -t build                 # 9. all libs + apps (docs build fails on dead links)
 yarn nx run treeshake:bundle-goldens      # 10. bundle-size goldens
 yarn nx run storybook:build-storybook:ci  # 11. Storybook production build

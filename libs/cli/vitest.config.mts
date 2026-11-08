@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
@@ -6,6 +6,7 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     include: ['src/**/*.spec.ts', 'scripts/**/*.spec.mts'],
+    exclude: [...configDefaults.exclude, 'src/**/*.perf.spec.ts'],
     globalSetup: ['./vitest.global-setup.ts'],
     setupFiles: ['./vitest.setup.ts'],
     reporters: ['default', './vitest.skip-reporter.mts'],

@@ -427,6 +427,30 @@ jobs:
       # WKWebView drops an SSE response that sends no bytes for 60 s; Chromium does not.
       - run: node tools/scripts/verify-webkit-design-events.mjs
 
+  # Wall-time specs (*.perf.spec.ts): a slow runner turns this job red, never Verified or Deploy.
+  # Keep it out of both `needs` lists.
+  perf:
+    name: Perf (non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - uses: ./.github/actions/setup
+
+      - run: yarn nx run cli:test-perf
+
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: perf
+          path: tmp/perf
+          if-no-files-found: warn
+          retention-days: 30
+
   verified:
     name: Verified
     # A single check for a branch rule or a Mergify condition to name. Skipped jobs pass: a run

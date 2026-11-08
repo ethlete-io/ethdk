@@ -50,7 +50,10 @@ const owningRoot = (repo, spec) => {
 const commandFor = (repo, spec) => {
   if (spec.endsWith('.mjs')) return ['node', ['--test', spec]];
   const root = owningRoot(repo, spec);
-  return ['npx', ['vitest', 'run', '--root', root, '--maxWorkers=1', relative(root, spec)]];
+  const perfConfig = 'vitest.perf.config.mts';
+  const config =
+    /\.perf\.spec\.[cm]?ts$/.test(spec) && existsSync(join(repo, root, perfConfig)) ? ['--config', perfConfig] : [];
+  return ['npx', ['vitest', 'run', '--root', root, ...config, '--maxWorkers=1', relative(root, spec)]];
 };
 
 const runOnce = (repo, spec) =>
