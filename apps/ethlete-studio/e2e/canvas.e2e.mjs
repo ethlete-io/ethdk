@@ -2083,9 +2083,10 @@ const CASES = [
         );
       const head = page.getByText('Aktuell', { exact: true });
       const headOffset = async (frame) => ((await head.count()) ? (await head.first().boundingBox()).x - frame.x : 0);
-      // Sketches' Fit is sticky and re-fits to the wider canvas, so the case holds a fixed zoom.
+      // Sketches' Fit is sticky and re-fits to the wider canvas, so the case holds a fixed zoom. 100 % stays Fit where
+      // the content fits at 100 %, so the case zooms in past any fit.
       if (target.name === 'Sketches') {
-        await page.getByRole('button', { name: 'Auf 100 % zoomen' }).click();
+        await page.getByRole('button', { name: 'Vergrößern' }).first().click();
         await settle(page);
       }
 
