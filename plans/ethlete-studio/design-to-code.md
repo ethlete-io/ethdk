@@ -4217,3 +4217,12 @@ for "exit" can read the end of the previous run. Tool fix (technical): each run 
 their specs. Fix (d536fee67): both targets also run `tsc -p tsconfig.spec.json`. Tool fix (general):
 `yarn lint:spec-typecheck` in pre-push refuses a project whose `typecheck` target does not name its
 `tsconfig.spec.json`.
+
+616\. Builder (2026-11-09, B441): a first run of `render-missing-dist.perf` failed in its `beforeAll`, and
+`spec:stress` showed no error output for the failed run, so the cause stayed a guess. Tool fix (technical):
+`spec:stress` prints the output of the first failed run.
+
+617\. Builder (2026-11-09, B441): the `render-missing-dist` specs listen on a random port that can clash with a port in
+use, the suspected cause of finding 616 and of the old unit flake. Tool fix (technical): the specs listen on port 0.
+Decided by the grill session under ADR 0230: wait bounds that only tell "answers at once" from "waits for a timeout"
+stay in the unit run; one moves to the perf job when it flakes.
