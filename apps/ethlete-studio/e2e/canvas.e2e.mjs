@@ -630,17 +630,26 @@ const CASES = [
     run: async (page, state, target) => {
       const selector = target.frame ?? FRAME;
       const { view } = state;
-      const boxes = await frameBoxes(page, selector);
       const centreOf = (box) => ({ x: box.left + box.width / 2, y: box.top + box.height / 2 });
       const seen = (box) => {
         const { x, y } = centreOf(box);
 
         return box.width > 8 && x > view.left + 4 && x < view.right - 4 && y > view.top + 4 && y < view.bottom - 4;
       };
+      let boxes = await frameBoxes(page, selector);
+
+      // A sketch mounts its frames only once the listing with its targets arrives; until then its cells show pictures.
+      for (
+        const until = Date.now() + WAIT_MS;
+        target.name === 'Sketches' && !boxes.some((box) => box.iframe && seen(box)) && Date.now() < until;
+        boxes = await frameBoxes(page, selector)
+      )
+        await page.waitForTimeout(250);
       const index = [boxes.findIndex((box) => box.iframe && seen(box)), boxes.findIndex(seen)].find((at) => at >= 0);
 
       if (index === undefined) return { ok: false, detail: 'no frame centre in view' };
-      if (target.name === 'Sketches' && !boxes[index].iframe) return { ok: false, detail: 'no iframe frame' };
+      if (target.name === 'Sketches' && !boxes[index].iframe)
+        return { ok: false, detail: `no iframe frame within ${WAIT_MS} ms` };
 
       const before = boxes[index];
       const towardsMiddle = centreOf(before).y < (view.top + view.bottom) / 2 ? -120 : 120;
