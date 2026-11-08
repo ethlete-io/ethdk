@@ -1366,7 +1366,44 @@ const CASES = [
     },
   },
   {
-    name: 'a sketch keeps its frame count and pictures from the first paint through a sketch edit',
+    name: 'a sketch first paints the frame count it settles on',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    open: 'B345: the first paint draws every state until the quick listing folds them',
+    run: async (page) => {
+      await page.addInitScript(() => {
+        const observer = new MutationObserver(() => {
+          const shots = document.querySelectorAll('ethlete-sketch-view [data-shot]').length;
+
+          if (!shots) return;
+          window.__firstSketchShots = shots;
+          observer.disconnect();
+        });
+
+        observer.observe(document, { childList: true, subtree: true });
+      });
+      await page.reload();
+      await page.waitForFunction(() => window.__firstSketchShots > 0);
+      await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
+        timeout: FULL_COMPARE_MS,
+      });
+
+      const [first, settled] = await page.evaluate(() => [
+        window.__firstSketchShots,
+        document.querySelectorAll('ethlete-sketch-view [data-shot]').length,
+      ]);
+
+      return {
+        ok: first === settled,
+        detail:
+          first === settled
+            ? `${first} frames from the first paint on`
+            : `${first} frames at the first paint, ${settled} once settled`,
+      };
+    },
+  },
+  {
+    name: 'a sketch keeps its frame count and pictures through a sketch edit',
     pages: ['Sketches'],
     labels: ['Large'],
     run: async (page) => {
@@ -1376,8 +1413,6 @@ const CASES = [
 
       await page.reload();
       await page.waitForSelector('ethlete-sketch-view [data-shot]');
-      const first = await count();
-
       await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
         timeout: FULL_COMPARE_MS,
       });
@@ -1390,8 +1425,7 @@ const CASES = [
         pictured = shown(await sketchCells(page));
       }
 
-      if (settledCount !== first) faults.push(`${first} frames at the first paint, ${settledCount} once settled`);
-      if (pictured.size === 0) return { ok: false, detail: `no visible cell shows a picture; ${faults.join('; ')}` };
+      if (pictured.size === 0) return { ok: false, detail: 'no visible cell shows a picture' };
 
       const stylesheet = join(checkout, '.ethlete/design/studio', SKETCH_CSS.a);
       const original = readFileSync(stylesheet, 'utf8');
@@ -1421,8 +1455,7 @@ const CASES = [
 
       return {
         ok: faults.length === 0,
-        detail:
-          faults.join('; ') || `${first} frames from the first paint through the edit, ${pictured.size} pictures kept`,
+        detail: faults.join('; ') || `${settledCount} frames through the edit, ${pictured.size} pictures kept`,
       };
     },
   },
