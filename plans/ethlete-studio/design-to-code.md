@@ -4218,3 +4218,13 @@ only e2e-check runs, not cli runs from an agent shell. Tool fix (with item 0, sa
 the cli async in its own process group, forwards SIGTERM, SIGINT and SIGHUP to that group, and ends the group when its
 parent is gone (ppid changes); `design` refuses to start a second run of the same command while an older one lives and
 names its pid.
+
+642\. Builder (2026-11-09, 48d1a7716): CI on `next` was red since 3aaa8364e, `real-open-points.spec.ts` timed out at
+5 s under full CI load (405 ms alone). Cause: `readOpenPoints` reached `committedLinkFieldsOf` in `link-free.ts`, which
+started 50 synchronous git processes per run (one `git log -G implements` per linked part, one `git show` per commit
+found). Process starts get much slower when 342 spec files share the runner. Fix: one `git log --name-only` and one
+`git cat-file --batch` per repository; 50 calls became 2, the spec runs in 172-195 ms also under local load. Not
+verified: green under real CI load. Why no tool caught it: nothing stops code from starting one git process per file,
+and no check counts process starts. Tool fix (backlog, per ADR 0235 at the cause): every git read in the cli goes
+through one batched git reader, and lint forbids a direct `spawnSync`/`execSync` of `git` outside it; a per-test spawn
+budget is only the fallback if the lint rule cannot cover a case.
