@@ -350,159 +350,7 @@ Archived: Findings 224-239 (2026-11-02), see [findings-2026-11](archive/findings
 
 Archived: Findings 253-262 (2026-11-03), see [findings-2026-11](archive/findings-2026-11.md).
 
-263\. B173 (builder, 2026-11-03): the inbox `draftText` still falls back to the fixture text through `??`. The live
-store holds `''`, so nothing shows it today, but an `undefined` would show sample text in the app. Why no tool
-caught it: SAMPLE-DEFAULT only reads input initializers (`sample-default.ts`), not other expressions that fall
-back to sample data. Lesson: sample data reachable through any fallback is the same defect as a sample default.
-Fix: B205 (technical) - SAMPLE-DEFAULT checks every expression in an implementing component that falls back to a
-sample identifier (`??`, `||`, ternary); the inbox fallback goes with B189.
-
-264\. B186 cause (builder, 2026-11-03, 8d5d281cb): the pan clamps from 030fe2f36 (`clampPan`/room) and 5a29b1b94
-(`Math.min(0, ...)` camera) stopped the Sketches canvas at the top-left edge. Why no tool caught it: canvas.e2e had
-crashed before its first case since 5a29b1b94 - it pulled the deleted elements-shell-main sketch through
-`git archive` - so it never ran on 030fe2f36, and a suite that crashes before any case reads like no suite.
-CANVAS-CAMERA-OWN (B196) was never built. Lesson: an e2e suite that runs zero cases is a failure, not a pass, and
-its fixtures come from the code, not from git history. Fix (technical): 8d5d281cb generates the fixture and adds
-`--case <substr>`; new e2e "pan beyond every edge" (red on Sketches, Chip, Large before the fix). B197 maps
-design-parts/sketches, components/design-canvas and system-view to canvas.e2e and fails a suite that crashes
-before its first case; B196 also flags pan-clamp math outside design-canvas; B198 asserts iframe creations ==
-frames (each of the 60 iframes is recreated once after the first render; 6 connections give a 15-20 s first
-paint). The builder adds a pages/sketches design state with no report file. Not verified: the Tauri app, the
-remembered camera after reload, the sticky column shadow while panning.
-B197b (03d197841): e2e-check judges each suite (`judgeSuiteRun`): timeout, `N/0 passed`, a silent exit 0 and a
-nonzero exit with no PASS/FAIL line are red; the runner's own `0/0 passed` exited 0 too and now exits 1 for
-canvas, page-switch and studio-menu. The canvas suite alone runs over 9 minutes, long enough to get skipped.
-Fix: B212 (technical) - split canvas.e2e by view so e2e-check runs only the touched views; the three suites without
-a case count print `N/M passed`.
-As built (B212, 2026-11-07): `canvas.e2e.mjs --view system|sketches|flow` runs the pages of one view (system: System, Edited,
-Inbox; sketches: Sketches, Wide, Merge, Discard; flow: Flow); the file stays one file, so fixtures and the worker pool are
-shared. `e2e-map.mjs` maps to `canvas-system`, `canvas-sketches`, `canvas-flow` (`suiteInvocation` turns a suite name into
-script plus `--view`): flow-_.ts runs only flow, sketch-view and design-parts/sketches only sketches, system-view.component
-only system, comment-_.ts system and sketches; design-canvas, design.ts, canvas.e2e.mjs and the rest of system-view run all
-three (a `fallback` map entry applies only when nothing more specific matched). sketch-frame-cap, sketches-tree and
-server-restart print `N/1 passed`; frame-load-failed still prints no count. Verified: e2e-check.spec (24 pass, new cases for
-the mapping), `--view flow` 6/6 passed, `e2e-check --list` on two real commits selects the narrow view sets. Not verified:
-the system and sketches views run, the three new count lines (edited, not run). The Studio app did not compile on this base
-(TS2322 `ThemeSwitch.current` string vs undefined, system-view.component.ts:304); I widened the type locally to run the
-suite and reverted it - not fixed here.
-
-265\. CANVAS-CAMERA-OWN built (B196, 7a7caf5ff, f53a0a03e, e57fa1868): a local ESLint rule for
-`apps/ethlete-studio/src/app/design-parts/**` flags pan/zoom/camera state, wheel and pointer-move listeners and
-clamp math on pan values; red on the real 030fe2f36 and 5a29b1b94 components. HEAD is green only through a known
-list: Sketches still owns its camera, flows owns a zoom copy. red-check said NOT RED on 7a7caf5ff because it cannot
-stub `export default`. The rule skips external `.html` templates. Decided (technical): B213 - design-canvas owns the
-Sketches camera and exposes zoom as a signal for the flows chip, the known list goes empty, the rule reads
-`templateUrl`; red-check's default-export stub goes into B217.
-As built (B213, 2026-11-07): `components/design-canvas/frame-zoom-camera.ts` (`frameZoomCamera`) owns the Sketches
-pan, zoom (`'fit'` or a number), clamp and sticky-gutter offset; Sketches only reads it. Only the opening camera stays
-inside the content (the design's `pan()`); a camera the user moved is free and follows the viewport's left edge
-(the origin delta, as `hostLeft` in design-canvas), so hiding the panel no longer moves the frames. `CanvasViewport`
-exposes `zoom` as a signal and the flows chip reads it. CANVAS_CAMERA_KNOWN is empty; the rule reads the `templateUrl`
-file for event bindings (spec with a wheel fixture). The e2e case runs on System, Sketches and Flow. Verified:
-frame-zoom-camera.spec (origin shift past the content edge), sketches/flows-page/canvas-viewport specs, rule spec,
-lint. Not verified: the widened e2e case (0/5, every page timed out in `waitForFunction` under desk load, System and Flow too) and its red run on Sketches without the fix
-(B120 saw it red there before).
-
-266\. system-view.component.spec "on a flow" logs `ResizeObserver is not defined` 6 times (flows-page `mountCamera` ->
-canvas-viewport.ts:199, since ea4459688) and the suite passes (builder, 2026-11-03). Why no tool caught it: vitest
-passes a spec that logs `console.error`, so a real error is stderr noise. Lesson: a logged error fails the spec,
-as in the Storybook test-runner. Fix: B215 (technical) - the Studio vitest setup stubs ResizeObserver and a spec
-that logs `console.error` fails.
-
-267\. B178 merge (e888db413): the merged column, group and reload buttons of canvas-frames carry `data-et-action` but no
-`data-et-control`, so `design check` reports 5 CONTROL-UNDECLARED after the merge. Why no tool caught it: `sketch
-ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketch merge` on Tom's pick records the
-agent in accepted.json, and a failed commit loop restored stale JSON backups over the working file twice (no
-foreign hunk lost; the copy-aside risk B204 removes). Fix (technical): B216 - a follow-up sketch declares the
-controls; B217 - `sketch ready` runs CONTROL-UNDECLARED per variant, `sketch merge --decided-by tom` records Tom.
-A pairwise `unreachable` list costing 2n entries per new state goes to B194 `instant`.
-As built (B217, 2026-11-07): `sketch ready` has an `undeclared` phase after `identical`: per live variant it draws the variant's changed parts at rest only (`partsCompletenessOf` with `undeclaredOnly`, on the shared warm server) and refuses with `CONTROL-UNDECLARED ... (variant <key>)`; the merged part is drawn at rest too, only when the variant has a finding, and a finding it draws the same way is not the variant's. `sketch merge --decided-by <name>` writes the name as `decidedBy` in merged.json (not with `--allowed-by`). red-check stubs `export default` (function, class, expression). Verified: specs for the added-controls check (complete.spec), the flag (sketch-command.spec) and the default stub (red-check.spec). Not verified: the time of the new phase on a real many-variant sketch; the pre-existing `sketch new` specs of sketch-command.spec that call the async `created` synchronously fail at next (not from B217).
-As built (B211): `sketch variant` prints `  <new>: from withdrawn <from>` under the new variant when `--from` names a withdrawn variant.
-
-268\. Committing Tom's by-tom lines (builder, 2026-11-03, 8dd3679b1, 2f6fcf90f): `design commit-hunks` fails at once on a
-busy `.git/index.lock`, against the decision in finding 260 (B184 retries on the lock). Why no tool caught it: no
-spec runs commit-hunks while the lock is held. Also: go.json holds uncommitted hash and file-list refreshes for 11
-parts that are not Tom's (comment-pin, error-toast, shell-collapse, shell-project-switch, tree-row, zoom-chip,
-shell-main, studio-menu, pages/merge, pages/sketches, pages/start), caused by the new icon assets of the title-bar
-work; no one knows which run wrote them. Why: an automatic refresh records no writer. Lesson: every write to a
-shared design file names its writer, or it becomes an orphan no agent may commit. Fix (technical): B218 -
-commit-hunks waits with `waitForLock` from `tools/scripts/commit-wait.mjs`, spec holds the lock; B219 - a refresh
-entry names `refreshedBy` and `cause`; the title-bar slice that added the icons commits the 11 refreshes.
-
-270\. B169 report (builder, 2026-11-03): "Transform failed" did not reproduce in two private-outDir runs, but pages/sketches
-state page-sketch fails to render ("design-explore: state failed"), so its render rules were NOT CHECKED, and
-`design check pages/inbox` still checks all 29 parts. Why no tool caught it: an unrendered state reads as a note,
-and the CLI accepts a part argument it never reads. Lesson: a check that could not run is red, and an ignored
-argument is an error. Fix (technical): B221 - re-run page-sketch on tmp/b169-compile to tell a build problem from
-a real one; a state that fails to render fails the check. B222 - `design check <part>` narrows the run; an
-argument no command reads is an error. Full `yarn e2e-check 4221e7cb3` (B197): 104/105, the only FAIL is the
-expected B198 case.
-
-271\. `server-identity.spec` "reports no installed cli when the project has none" fails on a clean HEAD worktree too
-(builder, 2026-11-03). The worktree used the symlinked node_modules, which may supply the installed cli, so the
-spec depends on its environment. Why no tool caught it: specs run only in the main checkout, where the result
-happened to pass. Lesson: a spec about "nothing installed" controls what is installed. Fix: B206 (technical) -
-the spec stubs the installed-cli lookup instead of reading node_modules.
-
-272\. Commit contention (builder agents and this session, 2026-11-03): the pre-commit hook runs related cli specs
-against an index checkout for minutes while `.git/index.lock` is held, so parallel commits fail with "File
-exists" and agents retry by hand (a docs-only commit here waited over 4 minutes). A Bash hook also denied a whole
-compound command because it contained `git stash list`. Why no tool caught it: the hook was built for one
-session. Lesson: in a multi-agent checkout a commit waits, it does not fail, and a ban targets the harmful
-subcommand only. Fix (technical): B207 - a commit with no related spec starts none, and `yarn commit` waits for
-the lock with a message; B208 - the stash ban covers only writing subcommands and leaves `list`/`show` alone.
-Correction (builder, 2026-11-03): the >4 min wait was a foreign hook holding `.git/index.lock` (a docs-only hook
-takes 0.1 s). `git commit -- <paths>` runs pre-commit on a temporary index of HEAD + those paths, but the specs
-read the shared working tree with other agents' unfinished edits, and the lock stays held while they run. Landed:
-19ec4dd67 (docs-only skip, timeout re-run), 74cf900b0 (`yarn commit` waits for the lock), b3c669203 (B206).
-Decided (technical): B214 - `yarn commit` runs the related specs before it takes the lock, in a throwaway worktree
-of HEAD + the paths; the hook then does not run them again. That fixes the lock time and the foreign edits at once.
-
-275\. B214 (builder, 2026-11-03, 7593257f8, eba8f6885): the B207 timeout re-run never fired in the real repo. vitest
-prints `FAIL |cli| src/x.spec.ts`; the parser regex had no room for the `|cli|` project prefix. Why no tool caught
-it: the B207 unit spec fed made-up output without the prefix, never a captured real run. Lesson: a spec for a
-parser of tool output takes its fixture from a captured real run of that tool. Fix: eba8f6885; the rule goes into
-the styleguide/testing guidance (builder). Still unverified: a Studio-suite run through the B214 worktree.
-
-277\. B204 + B218 (builder, 2026-11-03, 480a22119): commit-hunks now splits every shared design JSON per entry, writes
-sorted keys, never commits a pure reorder, and waits for the commit lock. Why no tool caught the gap earlier:
-commit-hunks was spec'd only on synthetic repos holding the first incident's files, never on the real
-.ethlete/design files. Lesson: same as 275 - a tool's spec runs on the real inputs it will meet; here one spec
-walks every real shared JSON and fails on an unclassified kind. Decision: accepted.json lists keep append order
-(a log), they are not sorted. Not run yet: a live go.json commit through commit-hunks.
-
-278\. B215 (builder, 2026-11-03, 43295ce99) and the B214 live check. B215: a console.error in a Studio spec fails it;
-ResizeObserver, document.fonts and display:block for canvas/viewport/form-field hosts are stubbed in jsdom only
-(decision: keep the display:block stub, the host list grows per observed host). The new rule caught 12 spec gaps
-and no component bug; 20 failures stay, the same set before and after (foreign uncommitted sketch work). B214
-live: `yarn commit` ran the studio specs in the worktree, then the pre-commit hook ran them again instead of
-skipping, and `git add` of a new untracked changeset lost to index.lock contention. Why no tool caught it: the
-B214 end-to-end spec committed only modified files, never a new untracked file next to them. Lesson: third case
-of 275 - the rule covers the shape of a spec's input too (commit shape, file set), not only parsed text. Fix:
-B214 reopened - find why the marker missed, `yarn commit -- <paths>` adds untracked paths itself, spec on that
-real shape, one live commit where the hook skips.
-
-279\. B201 (builder, 2026-11-03, 2afda8d28): reach sweeps pan positions and COVERED names the opaque cover first. Two
-gaps. (1) The sub-agent never saw the two real Studio "Übernehmen" cases the slice came from and built synthetic
-ones (pan-gutter, pan-header), so whether the real buttons now turn red is unchecked. (2) No spec had an opaque
-pane with a transparent child, so the first draft's wrong blame passed its own specs. Why no tool caught (1): a
-builder sub-agent brief names the slice, not the defect's real reproduction. Lesson: a fix is verified on the
-real case that reported it; synthetic specs come on top. Fix: the builder sub-agent brief carries each defect's
-real reproduction (part, state, element) and the slice report quotes the check on it; B201 stays open until
-`design check` on the part holding the Übernehmen buttons reports them.
-Real check (builder, rebuilt dist with 2afda8d28): `design check --product studio --part pages/sketches` gives 94
-findings, the same as base; nothing on emit:merge (Übernehmen, sketch-rows.ts:205) or emit:discard (Verwerfen,
-sketches.ts:328) in any state, while far-out (finding 242) and the 228/235 state should flag them. So the fix is
-proven only on synthetic specs. Hypotheses (unverified): the reach check does not list emit:merge/emit:discard
-as declared actions of pages/sketches, or a hidden head is skipped before the visibility test. Next slice starts
-from this repro and is done only when check reports the Übernehmen button UNREACHABLE or COVERED.
-
-### Stash hook and settings order decisions (2026-11-03)
-
-- B208 (Tom: yes): `.claude/hooks/ethlete/git-safety.py` lets `git stash list` and `git stash show` pass; every
-  writing stash subcommand (push, save, pop, apply, drop, clear, branch, create, store) stays refused.
-- B224 follow-up (Tom: yes): the builder restores `.claude/settings.json` with `git checkout .claude/settings.json`
-  (the diff was hook order only); a later `yarn agents:sync` must then leave it unchanged.
+Archived: Findings 263-280 (2026-11-09), see [findings-2026-11](archive/findings-2026-11.md).
 
 281\. B205 + B225 (builder, 2026-11-03, 4247f5042, 21bc27863). B205: SAMPLE-DEFAULT flags `??`/`||`/ternary fallbacks to
 sample constants; the real hit is inbox.component.ts:72 `this.draftText() ?? this.DRAFT_TEXT`. Decision: the
@@ -4240,3 +4088,15 @@ listing with targets. The request log showed only `unchanged=no` requests after 
 the next sketch file change, and the case gave up 10 s later. Fix: every read starts with the name listing; a sketch it
 still lists keeps its last item with targets until the quick listing answers, a dropped one leaves at once. A
 component spec with hanging listings with targets bites.
+
+625\. Builder (2026-11-09, B456, 6a3f0b825): the OFF-CENTRE rule landed as a warning, not as a problem with a baseline,
+because 264 hits on existing parts (186 studio, 78 sdk) would block every push. ADR 0201 already decided this case: a
+new design rule fails at once for new code, its hits on existing parts go into a baseline list that may only shrink,
+and each baselined hit opens a sketch. The builder took the decision again, and differently. Why no tool caught it:
+ADR 0201 has no `governs` paths, so `yarn adr:governs libs/cli/src/lib/design/system/off-centre.ts` lists nothing, and
+no check ties a new rule to a severity and a baseline. Tool fix (general): ADR 0201 now governs
+`libs/cli/src/lib/design/system/*` (doc agent, done), and a cli spec fails when a registered design rule has severity warning without a
+baseline file. Decision (doc agent, applies ADR 0201): one triage slice first, with a live shot per hit kind; fix or
+`data-et-skip` the on-purpose ones (`foundations/type` `span.ty-line`) and tune the filter for clear false classes (box
+with no padding, heading cell with space below on purpose); then OFF-CENTRE becomes a problem, and the hits left go
+into its baseline, each one a finding with a sketch.
