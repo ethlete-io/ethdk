@@ -1,7 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
-import { repeatDiff, runRepeatGate } from './studio-e2e-repeat.mjs';
 
 const gitDir = (root) =>
   spawnSync('git', ['rev-parse', '--absolute-git-dir'], { cwd: root, encoding: 'utf8' }).stdout.trim();
@@ -53,8 +52,6 @@ export const commit = async (root, args) => {
   const separator = args.indexOf('--');
   const paths = separator === -1 ? [] : args.slice(separator + 1);
   const lock = join(gitDir(root), 'index.lock');
-  const repeated = await runRepeatGate(repeatDiff(root, paths));
-  if (repeated !== 0) return repeated;
   const added = await addUntracked(root, lock, paths);
   if (added !== 0) return added;
   await waitForLock(lock);

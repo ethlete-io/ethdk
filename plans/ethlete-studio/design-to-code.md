@@ -4197,8 +4197,13 @@ B445 slice ran only the Merge case, 2bb8d3d58 changed the fixtures without a re-
 racy sample can pass. Tool fix: a commit that touches the e2e fixtures, `serve.ts` or `studio-api.ts` makes
 `studio:e2e:bite` run each case of the affected page group 3 times and blocks when a result changes. The batch gate
 caught it before the push.
-As built (B453): `yarn commit` runs `tools/scripts/studio-e2e-repeat.mjs` (also `yarn studio:e2e:repeat`) before it
-commits; a hunk inside one case runs that case's page groups, any other hunk in the runner or a change to `serve.ts` or
+As built (B453): `yarn push:suite` (`tools/scripts/push-suite.mjs`, run in the background before a push, ADR 0230
+and 0231; `yarn commit` no longer runs it) runs `tools/scripts/studio-e2e-repeat.mjs` (also `yarn studio:e2e:repeat`)
+over the unpushed diff after `nx test cli`, `nx test ethlete-studio` and `yarn studio:e2e`, all on a copy of the HEAD
+runner; it refuses to start on uncommitted app or lib code and writes `ok <sha>` or `blocked <reason>` to
+`$(git rev-parse --git-path push-suite)/<sha>`, which the pre-push hook of `next` requires for a push with code
+(`PUSH_SUITE_SKIP=1` skips it). Cost per push: one page group about 1.3 min (measured, Edited, loaded machine), every
+group about 8-10 min (933 s of cases on 8 workers per run, the hold run longer, plus the cli and app build). A hunk inside one case runs that case's page groups, any other hunk in the runner or a change to `serve.ts` or
 `studio-api.ts` runs every group. Of the 3 runs the last uses `--hold-listings 14000`; a changed result or a hold failure
 blocks. The new runner flag `--page <a|b>` picks the groups. Merge fails its hold run today, so a full-suite trigger blocks
 until that case holds.

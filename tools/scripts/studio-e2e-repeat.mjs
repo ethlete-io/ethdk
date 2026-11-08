@@ -122,12 +122,12 @@ export const repeatVerdict = (jobs, runs) => {
   return { changed, holdFailed, blocks: changed.length > 0 || holdFailed.length > 0 };
 };
 
-const runner = (args) =>
-  spawnSync(process.execPath, [join(root, RUNNER), ...args], { cwd: root, encoding: 'utf8', env: process.env }).stdout;
+const listRunner = (runner, args) =>
+  spawnSync(process.execPath, [runner, ...args], { cwd: root, encoding: 'utf8', env: process.env }).stdout;
 
-const runOnce = (args) =>
+const runOnce = (runner, args) =>
   new Promise((done) => {
-    const child = spawn(process.execPath, [join(root, RUNNER), ...args], { cwd: root, env: process.env });
+    const child = spawn(process.execPath, [runner, ...args], { cwd: root, env: process.env });
     let output = '';
     const take = (chunk) => {
       output += chunk;
@@ -140,19 +140,19 @@ const runOnce = (args) =>
 
 const minutes = (ms) => `${(ms / 60000).toFixed(1)} min`;
 
-export const runRepeatGate = async (diff, log = console.log) => {
+export const runRepeatGate = async (diff, { log = console.log, runner = join(root, RUNNER) } = {}) => {
   const changes = new Map([...changedLines(diff)].filter(([file]) => TRIGGERS.includes(file)));
   if (!changes.size) return 0;
 
-  const spans = caseSpans(readFileSync(join(root, RUNNER), 'utf8'));
+  const spans = caseSpans(readFileSync(runner, 'utf8'));
   const { all, cases, reasons } = affectedCases(changes, spans);
   if (!all && !cases.length) return 0;
 
   const groups = all
     ? undefined
-    : [...new Set(parseList(runner(['--list', '--case', cases.join('|')])).map((job) => job.page))];
+    : [...new Set(parseList(listRunner(runner, ['--list', '--case', cases.join('|')])).map((job) => job.page))];
   const pageArgs = groups ? ['--page', groups.join('|')] : [];
-  const listed = runner(['--list', ...pageArgs]);
+  const listed = listRunner(runner, ['--list', ...pageArgs]);
   const jobs = parseList(listed);
   const knownSeconds = Number(/cases, ([\d.]+)s by/.exec(listed)?.[1] ?? 0);
 
@@ -177,7 +177,7 @@ export const runRepeatGate = async (diff, log = console.log) => {
     for (let at = 0; at < RUNS; at++) {
       const hold = at === RUNS - 1;
       log(`[studio-e2e-repeat] run ${at + 1}/${RUNS}${hold ? ` (--hold-listings ${HOLD_LISTINGS_MS})` : ''}`);
-      const output = await runOnce([
+      const output = await runOnce(runner, [
         ...pageArgs,
         '--built',
         built,
@@ -190,9 +190,7 @@ export const runRepeatGate = async (diff, log = console.log) => {
     for (const job of verdict.changed) log(`CHANGED  ${job.page.padEnd(9)} ${job.name}: ${job.results.join(', ')}`);
     for (const job of verdict.holdFailed)
       log(`HOLD FAIL  ${job.page.padEnd(9)} ${job.name}: ${job.results.join(', ')}`);
-    log(
-      `[studio-e2e-repeat] ${verdict.blocks ? 'blocks the commit' : 'stable'} after ${minutes(performance.now() - startedAt)}`,
-    );
+    log(`[studio-e2e-repeat] ${verdict.blocks ? 'blocks' : 'stable'} after ${minutes(performance.now() - startedAt)}`);
 
     return verdict.blocks ? 1 : 0;
   } finally {
