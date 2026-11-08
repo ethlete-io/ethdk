@@ -673,6 +673,11 @@ const CASES = [
     run: async (page, state, target) => {
       const selector = target.frame ?? FRAME;
       const { view } = state;
+
+      await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
+        timeout: FULL_COMPARE_MS,
+      });
+      await settled(page, selector);
       const boxes = await frameBoxes(page, selector);
       const index = boxes.findIndex(
         (box) =>
@@ -699,10 +704,14 @@ const CASES = [
         await settle(page);
 
         const after = (await frameBoxes(page, selector))[index];
-        const fx = (pointer.x - before.left) / before.width;
-        const fy = (pointer.y - before.top) / before.height;
+        const ratio = after.width / before.width;
 
-        drifts.push(Math.hypot(after.left + fx * after.width - pointer.x, after.top + fy * after.height - pointer.y));
+        drifts.push(
+          Math.hypot(
+            after.left + (pointer.x - before.left) * ratio - pointer.x,
+            after.top + (pointer.y - before.top) * ratio - pointer.y,
+          ),
+        );
         before = after;
       }
 
