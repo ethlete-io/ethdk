@@ -4226,3 +4226,9 @@ because the long-running server writes nothing to `.timings.jsonl` and nothing c
 listing, so it showed only as 60 s e2e timeouts. Tool fix (technical): the server logs each full listing (hits,
 misses, draws, fresh redraws, time) to the timings file; the e2e prints that line when a `FULL_COMPARE_MS` wait fails;
 a spec asserts that a listing after an unrelated edit draws nothing.
+
+599\. Builder (2026-11-08, CI at 334243fe4): `merge.spec` stall 277 ms over a 91 ms bound, Linux only. Cause real:
+libuv `fork()` on the server thread blocks in proportion to the RSS (29-173 ms per spawn at 3.8 GB), and a merge
+spawns git up to 5 times; macOS uses `posix_spawn` and hides the cost, so every local run was green. Fixed in b85f8fd40
+(git calls run in the merge worker). Tool fix (technical, built in b85f8fd40): a spec asserts that the server thread
+makes no `child_process` call, so the rule holds on every OS, not only where a stall shows.
