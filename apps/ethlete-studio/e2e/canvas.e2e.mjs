@@ -1955,105 +1955,113 @@ const CASES = [
       });
       const faults = [];
 
-      for (const [label, outSteps, heads, refused] of [
-        ['100 %', 0, true, false],
-        ['30 %', 3, true, false],
-        ['30 %, pictures refused', 3, true, true],
-      ]) {
-        if (refused) {
-          await page.route('**/__design/shot?**', (route) => route.fulfill({ status: 404, body: '' }));
-          await page.reload();
-          await page.waitForFunction(
-            () =>
-              [...document.querySelectorAll('img[data-shot-picture]')].some(
-                (picture) => picture.complete && picture.naturalWidth === 0,
+      try {
+        for (const [label, outSteps, heads, refused] of [
+          ['100 %', 0, true, false],
+          ['30 %', 3, true, false],
+          ['30 %, pictures refused', 3, true, true],
+        ]) {
+          if (refused) {
+            await page.route('**/__design/shot?**', (route) => route.fulfill({ status: 404, body: '' }));
+            await page.reload();
+            await page.waitForFunction(
+              () =>
+                [...document.querySelectorAll('img[data-shot-picture]')].some(
+                  (picture) => picture.complete && picture.naturalWidth === 0,
+                ),
+              null,
+            );
+          }
+          await page.getByRole('button', { name: 'Auf 100 % zoomen' }).first().click();
+          for (let step = 0; step < outSteps; step++)
+            await page.getByRole('button', { name: 'Verkleinern' }).first().click();
+          await settle(page);
+          await settled(page, FRAME);
+          if (process.env['STUDIO_E2E_SHOTS'])
+            await page.screenshot({
+              path: join(
+                process.env['STUDIO_E2E_SHOTS'],
+                `${target.label ?? target.name}-${label.replace(/\W+/g, '-')}.png`,
               ),
-            null,
-          );
-        }
-        await page.getByRole('button', { name: 'Auf 100 % zoomen' }).first().click();
-        for (let step = 0; step < outSteps; step++)
-          await page.getByRole('button', { name: 'Verkleinern' }).first().click();
-        await settle(page);
-        await settled(page, FRAME);
-        if (process.env['STUDIO_E2E_SHOTS'])
-          await page.screenshot({
-            path: join(
-              process.env['STUDIO_E2E_SHOTS'],
-              `${target.label ?? target.name}-${label.replace(/\W+/g, '-')}.png`,
-            ),
-          });
+            });
 
-        faults.push(
-          ...(await page.evaluate(
-            ({ label, heads }) => {
-              const viewport = document.querySelector('ethlete-sketches ethlete-canvas-viewport');
-              const view = viewport.getBoundingClientRect();
-              const inView = (box) =>
-                box.width > 0 &&
-                box.height > 0 &&
-                box.right > view.left &&
-                box.left < view.right &&
-                box.bottom > view.top &&
-                box.top < view.bottom;
-              const paints = (element) => {
-                const style = getComputedStyle(element);
+          faults.push(
+            ...(await page.evaluate(
+              ({ label, heads }) => {
+                const viewport = document.querySelector('ethlete-sketches ethlete-canvas-viewport');
+                const view = viewport.getBoundingClientRect();
+                const inView = (box) =>
+                  box.width > 0 &&
+                  box.height > 0 &&
+                  box.right > view.left &&
+                  box.left < view.right &&
+                  box.bottom > view.top &&
+                  box.top < view.bottom;
+                const paints = (element) => {
+                  const style = getComputedStyle(element);
 
-                return style.visibility !== 'hidden' && style.color !== 'rgba(0, 0, 0, 0)' && Number(style.opacity) > 0;
-              };
-              const visibleContent = (box) => {
-                const walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+                  return (
+                    style.visibility !== 'hidden' && style.color !== 'rgba(0, 0, 0, 0)' && Number(style.opacity) > 0
+                  );
+                };
+                const visibleContent = (box) => {
+                  const walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
 
-                for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-                  const element = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
-                  const rect = element.getBoundingClientRect();
+                  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+                    const element = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+                    const rect = element.getBoundingClientRect();
 
-                  if (rect.width === 0 || rect.height === 0 || !paints(element)) continue;
-                  if (node.nodeType === Node.TEXT_NODE ? node.textContent.trim() : element.matches('svg, img, button'))
-                    return true;
+                    if (rect.width === 0 || rect.height === 0 || !paints(element)) continue;
+                    if (
+                      node.nodeType === Node.TEXT_NODE ? node.textContent.trim() : element.matches('svg, img, button')
+                    )
+                      return true;
+                  }
+
+                  return false;
+                };
+                const found = [];
+
+                for (const section of heads ? viewport.querySelectorAll('[data-sk-row]') : []) {
+                  const head = section.closest('[data-sk-matrix]') ? section : section.firstElementChild;
+                  const box = head.getBoundingClientRect();
+
+                  if (inView(box) && box.height > 8 && !visibleContent(head))
+                    found.push(
+                      `${label}: head of ${section.dataset['skRow']} is an empty ${Math.round(box.width)}x${Math.round(box.height)} box`,
+                    );
                 }
 
-                return false;
-              };
-              const found = [];
+                const tags = [...viewport.querySelectorAll('[data-sk-head-tag]')].filter(
+                  (tag) => inView(tag.getBoundingClientRect()) && paints(tag),
+                );
+                const small = tags.find((tag) => parseFloat(getComputedStyle(tag).fontSize) < 9);
 
-              for (const section of heads ? viewport.querySelectorAll('[data-sk-row]') : []) {
-                const head = section.closest('[data-sk-matrix]') ? section : section.firstElementChild;
-                const box = head.getBoundingClientRect();
+                const collapsed = !!viewport.querySelector('[data-sk-head-hidden]');
 
-                if (inView(box) && box.height > 8 && !visibleContent(head))
-                  found.push(
-                    `${label}: head of ${section.dataset['skRow']} is an empty ${Math.round(box.width)}x${Math.round(box.height)} box`,
-                  );
-              }
+                if (collapsed && tags.length === 0) found.push(`${label}: heads collapsed but no head tag in view`);
+                if (label.startsWith('100') && tags.length > 0)
+                  found.push(`${label}: head tag shows beside the full head`);
+                if (small) found.push(`${label}: head tag text is ${getComputedStyle(small).fontSize}`);
 
-              const tags = [...viewport.querySelectorAll('[data-sk-head-tag]')].filter(
-                (tag) => inView(tag.getBoundingClientRect()) && paints(tag),
-              );
-              const small = tags.find((tag) => parseFloat(getComputedStyle(tag).fontSize) < 9);
+                for (const picture of viewport.querySelectorAll('img[data-shot-picture]')) {
+                  if (
+                    inView(picture.getBoundingClientRect()) &&
+                    paints(picture) &&
+                    picture.complete &&
+                    picture.naturalWidth === 0
+                  )
+                    found.push(`${label}: picture ${picture.alt} failed and shows its alt text`);
+                }
 
-              const collapsed = !!viewport.querySelector('[data-sk-head-hidden]');
-
-              if (collapsed && tags.length === 0) found.push(`${label}: heads collapsed but no head tag in view`);
-              if (label.startsWith('100') && tags.length > 0)
-                found.push(`${label}: head tag shows beside the full head`);
-              if (small) found.push(`${label}: head tag text is ${getComputedStyle(small).fontSize}`);
-
-              for (const picture of viewport.querySelectorAll('img[data-shot-picture]')) {
-                if (
-                  inView(picture.getBoundingClientRect()) &&
-                  paints(picture) &&
-                  picture.complete &&
-                  picture.naturalWidth === 0
-                )
-                  found.push(`${label}: picture ${picture.alt} failed and shows its alt text`);
-              }
-
-              return found;
-            },
-            { label, heads },
-          )),
-        );
+                return found;
+              },
+              { label, heads },
+            )),
+          );
+        }
+      } finally {
+        await page.unroute('**/__design/shot?**');
       }
 
       return {
