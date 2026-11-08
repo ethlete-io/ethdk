@@ -1,14 +1,27 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  readlinkSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { changedLines, runRepeatGate, TRIGGERS } from './studio-e2e-repeat.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
 const RUNNER = 'apps/ethlete-studio/e2e/canvas.e2e.mjs';
+const WORKSPACE_PARENTS = ['apps', 'libs', 'tools'];
+const DRAWING_BUILDS = ['cli', 'components', 'core'];
 
 export const STEPS = ['cli', 'studio', 'e2e', 'repeat'];
-export const TESTED_PATHS = ['apps/ethlete-studio/', 'libs/'];
 export const EXEMPT_PATHS = [/^plans\//, /^\.changeset\//, /\.md$/];
 
 export const parseArgs = (argv) => {
@@ -19,8 +32,12 @@ export const parseArgs = (argv) => {
   return { only, range: range ?? '@{upstream}..HEAD' };
 };
 
-export const blockingDirt = (files) =>
-  files.filter((file) => TESTED_PATHS.some((path) => file.startsWith(path)) && !file.endsWith('.md'));
+export const linkTargetOf = (repo, entry, link) => {
+  if (link === undefined || isAbsolute(link)) return entry;
+  const target = relative(repo, resolve(dirname(entry), link)).split(sep);
+  const intoWorkspace = target[0] !== '..' && !target.includes('node_modules');
+  return intoWorkspace ? link : entry;
+};
 
 export const missingVerdict = (commits, hasOk) => {
   for (const { sha, files } of commits) {
@@ -46,11 +63,37 @@ export const verdictFileOf = (sha) =>
 
 const seconds = (ms) => `${(ms / 1000).toFixed(0)} s`;
 
-const runStep = (command, args) =>
+const linkDependencies = (from, to) => {
+  mkdirSync(to);
+  for (const name of readdirSync(from)) {
+    const entry = join(from, name);
+    const link = lstatSync(entry).isSymbolicLink() ? readlinkSync(entry) : undefined;
+    if (link === undefined && name.startsWith('@')) linkDependencies(entry, join(to, name));
+    else symlinkSync(linkTargetOf(root, entry, link), join(to, name));
+  }
+};
+
+const exportCommit = (sha) => {
+  const dir = mkdtempSync(join(tmpdir(), `push-suite-${sha.slice(0, 12)}-`));
+  const extract = spawnSync('bash', ['-c', 'set -o pipefail; git archive "$1" | tar -x -C "$2"', 'export', sha, dir], {
+    cwd: root,
+    encoding: 'utf8',
+  });
+  if (extract.status !== 0) return { dir, error: extract.stderr.trim() || `git archive exited ${extract.status}` };
+  linkDependencies(join(root, 'node_modules'), join(dir, 'node_modules'));
+  for (const parent of WORKSPACE_PARENTS)
+    for (const name of readdirSync(join(dir, parent))) {
+      const dependencies = join(root, parent, name, 'node_modules');
+      if (existsSync(dependencies)) linkDependencies(dependencies, join(dir, parent, name, 'node_modules'));
+    }
+  return { dir };
+};
+
+const runStep = (command, args, cwd) =>
   new Promise((done) => {
     const child = spawn(command, args, {
-      cwd: root,
-      env: { ...process.env, NX_NO_CLOUD: 'true' },
+      cwd,
+      env: process.env,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let output = '';
@@ -61,7 +104,6 @@ const runStep = (command, args) =>
 
 export const pushSuite = async ({ only, range }, log = console.log) => {
   const sha = git('rev-parse', 'HEAD').stdout.trim();
-  const dirty = blockingDirt(git('diff', '--name-only', 'HEAD').stdout.split('\n').filter(Boolean));
   const finish = (verdict) => {
     log(`push-suite: ${verdict}`);
     if (only) log(`push-suite: --only ${only} writes no verdict file`);
@@ -74,32 +116,44 @@ export const pushSuite = async ({ only, range }, log = console.log) => {
   };
 
   if (only && !STEPS.includes(only)) return finish(`blocked unknown step ${only}, expected one of ${STEPS.join(', ')}`);
-  if (dirty.length) return finish(`blocked uncommitted tracked changes the suite would test: ${dirty.join(', ')}`);
 
-  const copy = join(root, 'apps/ethlete-studio/e2e', `.push-suite-${sha.slice(0, 12)}.e2e.mjs`);
-  const removeCopy = () => rmSync(copy, { force: true });
+  Object.assign(process.env, { NX_NO_CLOUD: 'true', NX_DAEMON: 'false' });
+  delete process.env['STUDIO_CLI_ENTRY'];
+  const exportedAt = performance.now();
+  const { dir, error } = exportCommit(sha);
+  const removeExport = () => rmSync(dir, { recursive: true, force: true });
   for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'])
     process.once(signal, () => {
-      removeCopy();
+      removeExport();
       process.exit(1);
     });
-  writeFileSync(copy, git('show', `HEAD:${RUNNER}`).stdout);
+
+  let built;
+  const buildDrawingLibs = () =>
+    (built ??= runStep('npx', ['nx', 'run-many', '-t', 'build', '-p', ...DRAWING_BUILDS], dir));
+  const afterBuild = async (run) => {
+    const build = await buildDrawingLibs();
+    return build.status === 0 ? run() : build;
+  };
 
   const steps = {
-    cli: () => runStep('npx', ['nx', 'test', 'cli']),
-    studio: () => runStep('npx', ['nx', 'test', 'ethlete-studio']),
-    e2e: () => runStep(process.execPath, [copy]),
-    repeat: async () => {
-      const diff = git('diff', '-U0', range, '--', ...TRIGGERS);
-      if (diff.status !== 0) return { status: 1, output: diff.stderr };
-      const lines = [];
-      const status = await runRepeatGate(diff.stdout, { log: (line) => lines.push(line), runner: copy });
-      const touched = [...changedLines(diff.stdout).keys()].length;
-      return { status, output: lines.join('\n'), note: touched ? undefined : `no trigger change in ${range}` };
-    },
+    cli: () => runStep('npx', ['nx', 'test', 'cli'], dir),
+    studio: () => runStep('npx', ['nx', 'test', 'ethlete-studio'], dir),
+    e2e: () => afterBuild(() => runStep(process.execPath, [join(dir, RUNNER)], dir)),
+    repeat: () =>
+      afterBuild(async () => {
+        const diff = git('diff', '-U0', range, '--', ...TRIGGERS);
+        if (diff.status !== 0) return { status: 1, output: diff.stderr };
+        const lines = [];
+        const status = await runRepeatGate(diff.stdout, { log: (line) => lines.push(line), cwd: dir });
+        const touched = [...changedLines(diff.stdout).keys()].length;
+        return { status, output: lines.join('\n'), note: touched ? undefined : `no trigger change in ${range}` };
+      }),
   };
 
   try {
+    if (error) return finish(`blocked export of ${sha} failed: ${error}`);
+    log(`push-suite: exported ${sha.slice(0, 12)} to ${dir} in ${seconds(performance.now() - exportedAt)}`);
     for (const name of only ? [only] : STEPS) {
       const startedAt = performance.now();
       const { status, output, note } = await steps[name]();
@@ -112,12 +166,9 @@ export const pushSuite = async ({ only, range }, log = console.log) => {
       }
       if (name === 'repeat' && output) log(output);
     }
-    const drift = blockingDirt(git('diff', '--name-only', 'HEAD').stdout.split('\n').filter(Boolean));
-    if (drift.length)
-      log(`push-suite: tracked files changed during the run and may have been tested: ${drift.join(', ')}`);
     return finish(`ok ${sha}`);
   } finally {
-    removeCopy();
+    removeExport();
   }
 };
 

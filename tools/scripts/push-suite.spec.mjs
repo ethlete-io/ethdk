@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { blockingDirt, missingVerdict, parseArgs, parseLog } from './push-suite.mjs';
+import { linkTargetOf, missingVerdict, parseArgs, parseLog } from './push-suite.mjs';
 
 test('defaults the repeat range to the upstream and reads --only', () => {
   assert.deepEqual(parseArgs([]), { only: undefined, range: '@{upstream}..HEAD' });
@@ -12,17 +12,24 @@ test('defaults the repeat range to the upstream and reads --only', () => {
   });
 });
 
-test('blocks on uncommitted app and lib code, not on plans, ADRs or design pictures', () => {
-  assert.deepEqual(
-    blockingDirt([
-      'apps/ethlete-studio/e2e/canvas.e2e.mjs',
-      'libs/cli/src/lib/design/serve.ts',
-      'apps/ethlete-studio/docs/adr/0231-x.md',
-      '.ethlete/design/studio/pictures.json',
-      'plans/ethlete-studio/STATUS.md',
-    ]),
-    ['apps/ethlete-studio/e2e/canvas.e2e.mjs', 'libs/cli/src/lib/design/serve.ts'],
+test('keeps workspace links relative so the export resolves them to its own libs, links the rest to the repo', () => {
+  const repo = '/repo';
+  assert.equal(linkTargetOf(repo, '/repo/node_modules/@ethlete/core', '../../libs/core'), '../../libs/core');
+  assert.equal(
+    linkTargetOf(repo, '/repo/node_modules/ethlete-studio', '../apps/ethlete-studio'),
+    '../apps/ethlete-studio',
   );
+  assert.equal(
+    linkTargetOf(repo, '/repo/node_modules/.bin/glob', '../glob/dist/esm/bin.mjs'),
+    '/repo/node_modules/.bin/glob',
+  );
+  assert.equal(
+    linkTargetOf(repo, '/repo/libs/cli/node_modules/.bin/tsc', '../typescript/bin/tsc'),
+    '/repo/libs/cli/node_modules/.bin/tsc',
+  );
+  assert.equal(linkTargetOf(repo, '/repo/node_modules/outside', '../../elsewhere'), '/repo/node_modules/outside');
+  assert.equal(linkTargetOf(repo, '/repo/node_modules/abs', '/opt/x'), '/repo/node_modules/abs');
+  assert.equal(linkTargetOf(repo, '/repo/node_modules/react', undefined), '/repo/node_modules/react');
 });
 
 const commits = [

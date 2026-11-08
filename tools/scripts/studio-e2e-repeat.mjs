@@ -122,12 +122,12 @@ export const repeatVerdict = (jobs, runs) => {
   return { changed, holdFailed, blocks: changed.length > 0 || holdFailed.length > 0 };
 };
 
-const listRunner = (runner, args) =>
-  spawnSync(process.execPath, [runner, ...args], { cwd: root, encoding: 'utf8', env: process.env }).stdout;
+const listRunner = (runner, args, cwd) =>
+  spawnSync(process.execPath, [runner, ...args], { cwd, encoding: 'utf8', env: process.env }).stdout;
 
-const runOnce = (runner, args) =>
+const runOnce = (runner, args, cwd) =>
   new Promise((done) => {
-    const child = spawn(process.execPath, [runner, ...args], { cwd: root, env: process.env });
+    const child = spawn(process.execPath, [runner, ...args], { cwd, env: process.env });
     let output = '';
     const take = (chunk) => {
       output += chunk;
@@ -140,7 +140,7 @@ const runOnce = (runner, args) =>
 
 const minutes = (ms) => `${(ms / 60000).toFixed(1)} min`;
 
-export const runRepeatGate = async (diff, { log = console.log, runner = join(root, RUNNER) } = {}) => {
+export const runRepeatGate = async (diff, { log = console.log, cwd = root, runner = join(cwd, RUNNER) } = {}) => {
   const changes = new Map([...changedLines(diff)].filter(([file]) => TRIGGERS.includes(file)));
   if (!changes.size) return 0;
 
@@ -150,9 +150,9 @@ export const runRepeatGate = async (diff, { log = console.log, runner = join(roo
 
   const groups = all
     ? undefined
-    : [...new Set(parseList(listRunner(runner, ['--list', '--case', cases.join('|')])).map((job) => job.page))];
+    : [...new Set(parseList(listRunner(runner, ['--list', '--case', cases.join('|')], cwd)).map((job) => job.page))];
   const pageArgs = groups ? ['--page', groups.join('|')] : [];
-  const listed = listRunner(runner, ['--list', ...pageArgs]);
+  const listed = listRunner(runner, ['--list', ...pageArgs], cwd);
   const jobs = parseList(listed);
   const knownSeconds = Number(/cases, ([\d.]+)s by/.exec(listed)?.[1] ?? 0);
 
@@ -166,23 +166,22 @@ export const runRepeatGate = async (diff, { log = console.log, runner = join(roo
   const env = { ...process.env, NX_NO_CLOUD: 'true' };
 
   try {
-    if (all) execFileSync('npx', ['nx', 'build', 'cli'], { cwd: root, stdio: 'ignore', env });
+    if (all) execFileSync('npx', ['nx', 'build', 'cli'], { cwd, stdio: 'ignore', env });
     execFileSync(
       'npx',
       ['nx', 'build', 'ethlete-studio', `--outputPath=${built}`, '--excludeTaskDependencies', '--skip-nx-cache'],
-      { cwd: root, stdio: 'ignore', env },
+      { cwd, stdio: 'ignore', env },
     );
 
     const runs = [];
     for (let at = 0; at < RUNS; at++) {
       const hold = at === RUNS - 1;
       log(`[studio-e2e-repeat] run ${at + 1}/${RUNS}${hold ? ` (--hold-listings ${HOLD_LISTINGS_MS})` : ''}`);
-      const output = await runOnce(runner, [
-        ...pageArgs,
-        '--built',
-        built,
-        ...(hold ? ['--hold-listings', String(HOLD_LISTINGS_MS)] : []),
-      ]);
+      const output = await runOnce(
+        runner,
+        [...pageArgs, '--built', built, ...(hold ? ['--hold-listings', String(HOLD_LISTINGS_MS)] : [])],
+        cwd,
+      );
       runs.push({ hold, results: parseResults(output, jobs) });
     }
 

@@ -4206,7 +4206,7 @@ group about 8-10 min (933 s of cases on 8 workers per run, the hold run longer, 
 `studio-api.ts` runs every group. Of the 3 runs the last uses `--hold-listings 14000`; a changed result or a hold failure
 blocks. The new runner flag `--page <a|b>` picks the groups. Merge fails its hold run today, so a full-suite trigger blocks
 until that case holds.
-As built (B455): every step runs in a `git archive <sha> | tar -x` export of HEAD in the temp dir, with `node_modules` linked from the repo and the `@ethlete/*` workspace links pointing into the export, so live edits during the run never leak in (about 0.1 s and 94 MB in tmpfs; cli and Studio are built cold from the export).
+As built (B455): every step runs in a `git archive <sha> | tar -x` export of HEAD in the temp dir, with `node_modules` linked from the repo and the `@ethlete/*` workspace links pointing into the export, and `nx build cli components core` before the e2e steps, because the drawings load `dist/libs/*`, which came from the live tree before; live edits during the run never leak in (export about 0.1 s and 94 MB in tmpfs, the lib build about 16 s).
 
 622\. Builder (2026-11-08, B449): Unit "shows no other part while the remembered sketch is still being listed" timed
 out at 5106 ms in CI run 42479812031. Cause: it is the first case of `system-view.component.spec.ts`, so it carried the
