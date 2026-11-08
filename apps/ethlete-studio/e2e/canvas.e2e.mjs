@@ -46,6 +46,16 @@ if (
   process.exit(2);
 }
 
+if (args.includes('--hold-listings'))
+  process.env['STUDIO_E2E_HOLD_LISTINGS'] = args[args.indexOf('--hold-listings') + 1];
+
+const holdListingsMs = Number(process.env['STUDIO_E2E_HOLD_LISTINGS'] ?? 0);
+
+if (!(Number.isInteger(holdListingsMs) && holdListingsMs >= 0)) {
+  console.error(`invalid --hold-listings ${process.env['STUDIO_E2E_HOLD_LISTINGS']}, expected a whole number of ms`);
+  process.exit(2);
+}
+
 const TIMINGS_FILE = join(root, 'node_modules/.cache/studio-e2e/canvas-timings.json');
 
 const cliEntry = resolve(root, process.env['STUDIO_CLI_ENTRY'] ?? 'dist/libs/cli/src/index.js');
@@ -2841,6 +2851,15 @@ const runCase = async (page, studioUrl, designPort, target, testCase) => {
     : { ok: true, detail: `open, ${testCase.open}: ${result.detail}` };
 };
 
+const holdListings = (page) =>
+  page.context().route(
+    (url) => url.pathname === '/__design/sketches' && url.searchParams.get('targets') !== 'no',
+    async (route) => {
+      if (route.request().method() === 'GET') await new Promise((done) => setTimeout(done, holdListingsMs));
+      await route.fallback().catch(() => undefined);
+    },
+  );
+
 const trackRoutes = (page) => {
   const routes = new Set();
   const route = page.route.bind(page);
@@ -2886,6 +2905,7 @@ const work = async () => {
 
       await warmUp(page, studioUrl);
       await assertSketchFixtures(page, designPort);
+      if (holdListingsMs) await holdListings(page);
       for (let { job } = await nextJob(); job; { job } = await nextJob()) {
         const startedAt = performance.now();
         let result;

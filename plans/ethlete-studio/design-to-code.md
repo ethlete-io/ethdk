@@ -4238,7 +4238,10 @@ with a forced-race fixture page for each outcome.
 frame". Cause: the case sampled the frames once after setup, but a sketch mounts its iframes only after the listing
 arrives; in CI it was the first case of a shard on a cold server (slow listing not proven, the log has no listing
 timings). Locally the listing always arrives inside the 2.5 s settle. Tool fix: an e2e mode `--hold-listings <ms>` that
-delays design-server listings, so a case that samples once fails locally.
+delays design-server listings, so a case that samples once fails locally. As built (B450): `yarn studio:e2e
+--hold-listings <ms>` holds the sketch listings that carry frame targets (all but `targets=no`) in a Playwright context
+route; the old wheel case fails with 14000 (one hold outlasts the 2.5 s settle and the 10 s `settled` cap), 3000 does
+not bite.
 
 620\. Builder (2026-11-09, B445, c88cf6ebd): Merge "the sketch view stays open after the sketch dropped from the
 listing" timed out. Cause (server bug): a request joins a running listing, and `serve.ts` detached running listings on a
