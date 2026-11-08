@@ -1,0 +1,104 @@
+{
+  "OFF-CENTRE": {
+    "components/button: size-lg at fitted: button[data-et-part=components/button]": {
+      "finding": "628",
+      "sketch": "components/button@off-centre"
+    },
+    "components/button: size-xl at fitted: button[data-et-part=components/button]": {
+      "finding": "628",
+      "sketch": "components/button@off-centre"
+    },
+    "components/chart: pie-tooltip at 480px: div.et-tooltip-mock-frame > div.et-overlay > et-tooltip.et-tooltip > div.et-tooltip__surface": {
+      "finding": "631",
+      "sketch": "components/chart@off-centre"
+    },
+    "components/pagination: current at 480px: et-pagination[data-et-part=components/pagination] > ul.et-pagination-list > li.et-pagination-item > button.et-surface-interactive": {
+      "finding": "629",
+      "sketch": "components/pagination@off-centre"
+    },
+    "components/pagination: current-active at 480px: et-pagination[data-et-part=components/pagination] > ul.et-pagination-list > li.et-pagination-item > button.et-surface-interactive": {
+      "finding": "629",
+      "sketch": "components/pagination@off-centre"
+    },
+    "components/pagination: current-focus-visible at 480px: et-pagination[data-et-part=components/pagination] > ul.et-pagination-list > li.et-pagination-item > button.et-surface-interactive": {
+      "finding": "629",
+      "sketch": "components/pagination@off-centre"
+    },
+    "components/pagination: current-hover at 480px: et-pagination[data-et-part=components/pagination] > ul.et-pagination-list > li.et-pagination-item > button.et-surface-interactive": {
+      "finding": "629",
+      "sketch": "components/pagination@off-centre"
+    },
+    "components/pagination: few at 480px: et-pagination[data-et-part=components/pagination] > ul.et-pagination-list > li.et-pagination-item > button.et-surface-interactive": {
+      "finding": "629",
+      "sketch": "components/pagination@off-centre"
+    },
+    "components/pagination: first at 480px: et-pagination[data-et-part=components/pagination] > ul.et-pagination-list > li.et-pagination-item > button.et-surface-interactive": {
+      "finding": "629",
+      "sketch": "components/pagination@off-centre"
+    },
+    "components/pagination: last at 480px: et-pagination[data-et-part=components/pagination] > ul.et-pagination-list > li.et-pagination-item > button.et-surface-interactive": {
+      "finding": "629",
+      "sketch": "components/pagination@off-centre"
+    },
+    "components/pagination: links at 480px: et-pagination[data-et-part=components/pagination] > ul.et-pagination-list > li.et-pagination-item > a.et-surface-interactive": {
+      "finding": "629",
+      "sketch": "components/pagination@off-centre"
+    },
+    "components/pagination: middle at 480px: et-pagination[data-et-part=components/pagination] > ul.et-pagination-list > li.et-pagination-item > button.et-surface-interactive": {
+      "finding": "629",
+      "sketch": "components/pagination@off-centre"
+    },
+    "components/pagination: page at 480px: et-pagination[data-et-part=components/pagination] > ul.et-pagination-list > li.et-pagination-item > button.et-surface-interactive": {
+      "finding": "629",
+      "sketch": "components/pagination@off-centre"
+    },
+    "components/pagination: page-active at 480px: et-pagination[data-et-part=components/pagination] > ul.et-pagination-list > li.et-pagination-item > button.et-surface-interactive": {
+      "finding": "629",
+      "sketch": "components/pagination@off-centre"
+    },
+    "components/pagination: page-focus-visible at 480px: et-pagination[data-et-part=components/pagination] > ul.et-pagination-list > li.et-pagination-item > button.et-surface-interactive": {
+      "finding": "629",
+      "sketch": "components/pagination@off-centre"
+    },
+    "components/pagination: page-hover at 480px: et-pagination[data-et-part=components/pagination] > ul.et-pagination-list > li.et-pagination-item > button.et-surface-interactive": {
+      "finding": "629",
+      "sketch": "components/pagination@off-centre"
+    },
+    "components/pagination: range at 480px: et-pagination[data-et-part=components/pagination] > ul.et-pagination-list > li.et-pagination-item > button.et-surface-interactive": {
+      "finding": "629",
+      "sketch": "components/pagination@off-centre"
+    },
+    "components/pagination: sm at 480px: et-pagination[data-et-part=components/pagination] > ul.et-pagination-list > li.et-pagination-item > button.et-surface-interactive": {
+      "finding": "629",
+      "sketch": "components/pagination@off-centre"
+    },
+    "components/scrollable: vertical-border-mask at 480px: et-scrollable.et-scrollable > div.et-scrollable-wrapper > div.et-scrollable-container > button.et-scrollable-item": {
+      "finding": "630",
+      "sketch": "components/scrollable@off-centre"
+    },
+    "components/scrollable: vertical-end at 480px: et-scrollable.et-scrollable > div.et-scrollable-wrapper > div.et-scrollable-container > button.et-scrollable-item": {
+      "finding": "630",
+      "sketch": "components/scrollable@off-centre"
+    },
+    "components/scrollable: vertical-middle at 480px: et-scrollable.et-scrollable > div.et-scrollable-wrapper > div.et-scrollable-container > button.et-scrollable-item": {
+      "finding": "630",
+      "sketch": "components/scrollable@off-centre"
+    },
+    "components/scrollable: vertical-navigation at 480px: et-scrollable.et-scrollable > div.et-scrollable-wrapper > div.et-scrollable-container > button.et-scrollable-item": {
+      "finding": "630",
+      "sketch": "components/scrollable@off-centre"
+    },
+    "components/scrollable: vertical-start at 480px: et-scrollable.et-scrollable > div.et-scrollable-wrapper > div.et-scrollable-container > button.et-scrollable-item": {
+      "finding": "630",
+      "sketch": "components/scrollable@off-centre"
+    },
+    "components/skeleton: in-text at 480px: div.skeleton-frame": {
+      "finding": "633",
+      "sketch": "components/skeleton@off-centre"
+    },
+    "components/table: group-header at 480px: et-table[data-et-part=components/table] > div.et-table > et-table-group-header-row.et-table-group-row > div.et-table-group-cell": {
+      "finding": "632",
+      "sketch": "components/table@off-centre"
+    }
+  }
+}

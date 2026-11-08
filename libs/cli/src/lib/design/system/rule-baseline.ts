@@ -3,7 +3,8 @@ import { resolve } from 'path';
 import { addedBaselineNamesOf } from './baseline-history';
 import { Problem } from './problem';
 import { repoRootOf } from './reachable-files';
-import { partOfFile, ResolvedProduct } from './resolve-product';
+import { RenderIssue } from './render-check';
+import { partKeyOf, partOfFile, ResolvedProduct } from './resolve-product';
 
 export const RULE_BASELINE_FILE = 'rule-baseline.json';
 
@@ -66,6 +67,14 @@ export const unbaselinedProblemsOf = (product: ResolvedProduct, problems: Proble
 
   return problems.filter((problem) => !baseline[problem.rule]?.[hitKeyOf(product, problem)]);
 };
+
+/** A render issue of a merged part of `product` as a problem whose place is its state, size and element. */
+export const renderProblemOf = (product: ResolvedProduct, issue: RenderIssue): Problem => ({
+  rule: issue.rule,
+  file: product.parts.find((part) => partKeyOf(part) === issue.part)?.file ?? product.dir,
+  message: issue.detail,
+  at: `${issue.state} at ${issue.size}: ${issue.path}`,
+});
 
 const partOfHit = (hit: string) => hit.slice(0, hit.indexOf(': '));
 

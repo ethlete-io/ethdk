@@ -18,7 +18,7 @@ import { doneParts, gitDiffFilesOf } from './part-task';
 import { actionsRerunOf, readyMarkOf, readyPartsOf } from './part-ready';
 import { BuildReadyInputs, recordBuildReady } from './part-build-ready';
 import { partActionFailuresOf } from './actions-command';
-import { ruleBaselineLinesOf, ruleBaselineOf } from './rule-baseline';
+import { renderProblemOf, ruleBaselineLinesOf, ruleBaselineOf } from './rule-baseline';
 import { isDrawRule, isSlowRule } from './slow-checks';
 import {
   staleLineOf,
@@ -37,7 +37,14 @@ import { componentCopiesOf } from './rules/component-copy';
 import { deniedClassesOf } from './rules/denied-class';
 import { nativeTitlesOf } from './rules/native-title';
 import { commandTextOf } from './rules/command-text';
-import { BusyState, ownerPartOf, RenderIssue, renderIssueLineOf, renderIssuesOf } from './render-check';
+import {
+  BASELINED_RENDER_RULES,
+  BusyState,
+  ownerPartOf,
+  RenderIssue,
+  renderIssueLineOf,
+  renderIssuesOf,
+} from './render-check';
 import { flowProblemsOf } from './rules/flow';
 import { badLinksOf } from './rules/implements';
 import { statesNotInComponentOf } from './rules/state-in-component';
@@ -162,7 +169,8 @@ export const checkRules = (options: {
     }
 
     const product = resolveProduct({ target, name, config: entry });
-    const isStatic = (rule: string) => !isSlowRule(rule) && rule !== UNCOMPARED_RULE;
+    const isStatic = (rule: string) =>
+      !isSlowRule(rule) && !BASELINED_RENDER_RULES.has(rule) && rule !== UNCOMPARED_RULE;
     const { result: own, skips } = collectingSkips(() =>
       ruleProblemsOf(product).filter((problem) => !isInBasePart(product, problem.file)),
     );
@@ -800,7 +808,45 @@ const renderSystem = async (
       return found !== undefined && readyMarkOf({ product: found, part }) !== null;
     },
   });
-  const { issues } = underGo;
+  const baselined = resolved.map((product) => {
+    const own = underGo.issues.filter(
+      (issue) => issue.product === product.name && BASELINED_RENDER_RULES.has(issue.rule),
+    );
+    const undrawn = new Set(
+      underGo.issues
+        .filter((issue) => issue.product === product.name && (isPartUndrawn(issue) || isStateUndrawn(issue)))
+        .map((issue) => issue.part),
+    );
+    const problemOf = new Map(own.map((issue) => [renderProblemOf(product, issue), issue]));
+    const result = ruleBaselineOf({
+      product,
+      problems: [...problemOf.keys()],
+      checked: (rule, part) =>
+        BASELINED_RENDER_RULES.has(rule) && !undrawn.has(part) && (!options.part || part === options.part),
+    });
+
+    return {
+      product,
+      own,
+      lines: result.lines,
+      failing: result.problems.flatMap((problem) => problemOf.get(problem) ?? []),
+      problems: result.problems.filter((problem) => !problemOf.has(problem)),
+    };
+  });
+  const passed = new Set(baselined.flatMap(({ own, failing }) => own.filter((issue) => !failing.includes(issue))));
+  const issues = underGo.issues.filter((issue) => !passed.has(issue));
+  const baselineProblems = baselined.flatMap(({ product, problems }) =>
+    problems.map((problem) => ({ product, problem })),
+  );
+
+  baselined.forEach(({ lines }) => lines.forEach((line) => console.log(line)));
+  baselineProblems.forEach(({ product, problem }) => {
+    console.error(lineOf(options.target, problem));
+    tallyOf(options.tally, {
+      product: product.name,
+      part: tallyKeyOf(options.target, { product, file: problem.file }),
+    })?.problems.push(problem.rule);
+  });
 
   underGo.warnings.forEach(({ product, part, line }) => {
     console.warn(line);
@@ -829,7 +875,11 @@ const renderSystem = async (
         rendered.issues.filter((issue) => issue.product === product.name && isInBase(issue)).map((issue) => issue.rule),
       );
 
-  return { code: code !== 0 || issues.length > 0 ? 1 : 0, rendered: issues, busy: rendered.busy };
+  return {
+    code: code !== 0 || issues.length > 0 || baselineProblems.length > 0 ? 1 : 0,
+    rendered: issues,
+    busy: rendered.busy,
+  };
 };
 
 const checkProductTail = async (

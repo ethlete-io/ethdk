@@ -283,7 +283,7 @@ describe('renderIssuesOf', () => {
     if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
 
     expect(
-      rendered.warnings
+      rendered.issues
         .filter((issue) => issue.rule === 'OFF-CENTRE')
         .map((issue) => [issue.part, issue.detail.split(';')[0]])
         .sort(),
@@ -326,7 +326,7 @@ describe('renderIssuesOf', () => {
     if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
 
     expect(
-      rendered.warnings
+      rendered.issues
         .filter((issue) => issue.rule === 'OFF-CENTRE')
         .map((issue) => issue.part)
         .sort(),
