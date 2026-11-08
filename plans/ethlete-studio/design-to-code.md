@@ -4210,3 +4210,10 @@ without a code change: `serve.spec.ts:954` (two hundred sketches, no block over 
 measures the runner load, not the code, and a red Verified job skips Deploy and hides the e2e signal. Tool fix
 (technical): the stall specs measure with `monitorEventLoopDelay` percentiles or a bound relative to a calibration run,
 never a raised constant; a lint rule flags `performance.now()` differences compared to a literal in a spec.
+
+597\. Builder (2026-11-08, B434, 4f00e0311): the sketch view used one revision for the whole sketch, so an edit of one
+variant renewed the iframe and picture URLs of the Aktuell row too, and its cells stayed empty until the new
+low-priority picture loaded. Fix: the Aktuell row has its own revision (`sketchCurrentRevision`, `currentRevision` into
+`sketchRowsOf`). No check asserts that an edit of one variant keeps the URLs of the other rows byte-identical. Tool fix
+(technical): an invariant spec on `sketchRowsOf` and a harness scenario that edit one variant and compare the URLs of
+every other row.
