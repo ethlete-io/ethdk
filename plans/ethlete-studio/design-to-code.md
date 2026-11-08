@@ -4232,3 +4232,15 @@ libuv `fork()` on the server thread blocks in proportion to the RSS (29-173 ms p
 spawns git up to 5 times; macOS uses `posix_spawn` and hides the cost, so every local run was green. Fixed in b85f8fd40
 (git calls run in the merge worker). Tool fix (technical, built in b85f8fd40): a spec asserts that the server thread
 makes no `child_process` call, so the rule holds on every OS, not only where a stall shows.
+
+600\. Builder (2026-11-08, B434): the Chip panel-hide case broke through the fixture change 2bb8d3d58, not the app.
+With one changed state, Fit capped at scale 1, so "Auf 100 % zoomen" stayed in Fit, and `measure()` keeps the pan in
+Fit by design; the case measured a state it never meant to test. The fixture slice ran only its own cases. Fixed in
+82e3583ca (zoom past Fit). Tool fix (technical): a case asserts its precondition (here: the camera is not in Fit)
+before it measures, and fails with "precondition not met" instead of a position diff.
+
+601\. Builder (2026-11-08, B434, 576362316): the 30 % case left a `page.route` that answered 404 for every picture on
+the reused worker page, so later Large cases (edited on disk, scroll never empties) failed and hid a real product bug
+("keeps its frame count and pictures through a sketch edit": 3 folded cells of variant a go blank after a css edit). A
+route in one case outlived the case on a shared worker page. Tool fix (technical): the worker fixture calls
+`page.unrouteAll()` after each case and fails the case that left a route behind.
