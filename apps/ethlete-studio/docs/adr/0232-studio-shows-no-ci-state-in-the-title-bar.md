@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B452
+built: 61ccc4a36
 decided: 2026-11-09
 source: doc-agent session 2026-11-09, screenshot of the sketch `components/title-bar@ci-red`
 ---
