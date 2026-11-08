@@ -4,14 +4,19 @@ import { pathToFileURL } from 'url';
 import { Worker } from 'worker_threads';
 import { packageFileOf } from '../../package-root';
 import { readConfig } from '../../design-config';
+import { ruleProblemsOf } from '../check-system';
+import { Problem } from '../problem';
 import { OpenSketchListing, openSketchListingOf } from './check-sketches';
 import { oneProductOf } from './cli-args';
 
-export type SketchCheckRequest = { id: number; target: string; product: string };
+export type SketchCheckRequest = { id: number; target: string; product: string; kind: 'sketches' | 'rules' };
 
-export type SketchCheckResponse = { id: number; result?: OpenSketchListing; error?: string };
+export type SketchCheckResponse = { id: number; result?: OpenSketchListing | Problem[]; error?: string };
 
 export type CheckSketches = (options: { target: string; product: string }) => Promise<OpenSketchListing>;
+
+/** The problems the rules find in a product, read from the files as they are when it runs. */
+export type CheckRules = (options: { target: string; product: string }) => Promise<Problem[]>;
 
 /** The rule checks of `product`'s open sketches in `target`, on this thread; a string when the product does not resolve. */
 export const openSketchListingAt = ({ target, product }: { target: string; product: string }) => {
@@ -19,6 +24,14 @@ export const openSketchListingAt = ({ target, product }: { target: string; produ
   const resolved = config ? oneProductOf({ target, config, asked: product }) : 'no design config';
 
   return typeof resolved === 'string' ? resolved : openSketchListingOf(resolved);
+};
+
+/** {@link ruleProblemsOf} of `product` in `target`, on this thread; a string when the product does not resolve. */
+export const ruleProblemsAt = ({ target, product }: { target: string; product: string }) => {
+  const config = readConfig(target);
+  const resolved = config ? oneProductOf({ target, config, asked: product }) : 'no design config';
+
+  return typeof resolved === 'string' ? resolved : ruleProblemsOf(resolved);
 };
 
 const startWorker = () => {
@@ -69,7 +82,7 @@ export const createSketchChecker = () => {
     return started;
   };
 
-  const run = async (request: Omit<SketchCheckRequest, 'id'>) => {
+  const run = async <T extends OpenSketchListing | Problem[]>(request: Omit<SketchCheckRequest, 'id'>) => {
     worker ??= start();
 
     const id = nextId++;
@@ -81,7 +94,7 @@ export const createSketchChecker = () => {
 
     if (!result) throw new Error(error ?? 'the sketch check worker answered nothing');
 
-    return result;
+    return result as T;
   };
 
   const check: CheckSketches = (request) => {
@@ -90,7 +103,7 @@ export const createSketchChecker = () => {
 
     if (known) return known;
 
-    const started = run(request).finally(() => running.delete(key));
+    const started = run<OpenSketchListing>({ ...request, kind: 'sketches' }).finally(() => running.delete(key));
 
     running.set(key, started);
 
@@ -104,5 +117,7 @@ export const createSketchChecker = () => {
     await stopping?.terminate();
   };
 
-  return Object.assign(check, { close });
+  const rules: CheckRules = (request) => run<Problem[]>({ ...request, kind: 'rules' });
+
+  return Object.assign(check, { rules, close });
 };

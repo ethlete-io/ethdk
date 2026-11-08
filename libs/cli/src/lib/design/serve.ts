@@ -97,7 +97,8 @@ import { buildStampOf, STAMP_PATH } from './stamp';
 import { designPictureCodeOf } from './code-hash';
 import { listSystem, SYSTEM_PATH } from './system/list-system';
 import { missingDistOf } from './system/stale-dist';
-import { partKeyOf, ResolvedPart } from './system/resolve-product';
+import { ruleProblemsOf } from './system/check-system';
+import { partKeyOf, ResolvedPart, ResolvedProduct } from './system/resolve-product';
 import {
   createSystemModules,
   productModuleIdOf,
@@ -659,6 +660,7 @@ const designExplore = ({
       const thumbs = createThumbnailer({ target, base, ledger });
       const inventoryDraws = createDrawQueue({ target, ledger });
       const sketchChecker = checkSketches ? undefined : createSketchChecker();
+      const ruleChecker = checkSketches ? undefined : createSketchChecker();
       const events = createDesignEvents();
       let revision = 0;
       const shots = createPartShooter({
@@ -946,6 +948,10 @@ const designExplore = ({
             system,
             products: asked ? [asked] : system.products(),
             load: ({ file, product }) => vite.ssrLoadModule(productModuleIdOf({ file, product })),
+            ...(ruleChecker && {
+              problemsOf: (name: string, product: ResolvedProduct) =>
+                ruleChecker.rules({ target, product: name }).catch(() => ruleProblemsOf(product)),
+            }),
           });
 
           return { status: 200, body: products };
@@ -1042,7 +1048,13 @@ const designExplore = ({
       vite.httpServer?.on('close', () => {
         events.close();
         settling?.abort();
-        void Promise.all([thumbs.close(), shots.close(), inventoryDraws.close(), sketchChecker?.close()]);
+        void Promise.all([
+          thumbs.close(),
+          shots.close(),
+          inventoryDraws.close(),
+          sketchChecker?.close(),
+          ruleChecker?.close(),
+        ]);
       });
       vite.watcher.add([designRoot, ...baseDirs, ...packageDirs()]);
       vite.watcher.on('add', (file: string) => (isPackageFile(file) ? packageChanged(file) : refresh(file)));

@@ -5,7 +5,7 @@ import { ruleProblemsOf } from './check-system';
 import { partsReachedFrom } from './imports';
 import { kitUsesOf } from './kit';
 import { Problem } from './problem';
-import { partKeyOf, PartOrigin, ResolvedPart } from './resolve-product';
+import { partKeyOf, PartOrigin, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
 import { partLinkOf } from './sketch/part-definition';
 import { SystemModules } from './system-modules';
@@ -227,8 +227,9 @@ export const listSystem = async (options: {
   system: SystemModules;
   products: string[];
   load: PartLoader;
+  problemsOf?: (name: string, product: ResolvedProduct) => Problem[] | Promise<Problem[]>;
 }): Promise<ListedProduct[]> => {
-  const { target, system, products, load } = options;
+  const { target, system, products, load, problemsOf = (_name, product) => ruleProblemsOf(product) } = options;
   const relativeTo = (problem: Problem) => ({ ...problem, file: relative(target, problem.file) });
   const pages = pageReachOf(system);
   const usedInOf = (part: ResolvedPart) => pages.filter(({ files }) => files.has(part.file)).map(({ use }) => use);
@@ -239,49 +240,53 @@ export const listSystem = async (options: {
 
       if (!product) return [];
 
-      const problems = ruleProblemsOf(product);
+      const ruled = problemsOf(name, product);
       const changedOutsideSketch = new Set(changedOutsideSketchOf(product));
       const unused = unusedBasePartsOf(product);
 
       return [
-        (async (): Promise<ListedProduct> => ({
-          name,
-          base: product.config.base ?? null,
-          presets: product.presets,
-          schemes: product.schemes,
-          themes: { surface: product.config.themes?.surface ?? [], color: product.config.themes?.color ?? [] },
-          parts: await Promise.all(
-            product.parts.map(async (part) => {
-              const { note, madeBy, states, interactions, problem, ...layout } = await readPartModule({
-                part,
-                product: name,
-                load,
-              });
-              const own = problems.filter((found) => belongsTo(part, found));
+        (async (): Promise<ListedProduct> => {
+          const problems = await ruled;
 
-              return {
-                layer: part.layer,
-                name: part.name,
-                origin: part.origin,
-                file: relative(target, part.file),
-                ...implementsOf({ target, source: part.source }),
-                note,
-                madeBy,
-                states,
-                ...layout,
-                interactions,
-                kitUses: part.layer === 'pages' ? kitUsesOf(part.source) : 0,
-                usedIn: usedInOf(part),
-                ...(unused.has(partKeyOf(part)) ? { unusedInProduct: true as const } : {}),
-                changedOutsideSketch: changedOutsideSketch.has(partKeyOf(part)),
-                problems: [...own, ...(problem ? [{ rule: 'LOAD', file: part.file, message: problem }] : [])].map(
-                  relativeTo,
-                ),
-              };
-            }),
-          ),
-          problems: problems.filter((found) => !product.parts.some((part) => belongsTo(part, found))).map(relativeTo),
-        }))(),
+          return {
+            name,
+            base: product.config.base ?? null,
+            presets: product.presets,
+            schemes: product.schemes,
+            themes: { surface: product.config.themes?.surface ?? [], color: product.config.themes?.color ?? [] },
+            parts: await Promise.all(
+              product.parts.map(async (part) => {
+                const { note, madeBy, states, interactions, problem, ...layout } = await readPartModule({
+                  part,
+                  product: name,
+                  load,
+                });
+                const own = problems.filter((found) => belongsTo(part, found));
+
+                return {
+                  layer: part.layer,
+                  name: part.name,
+                  origin: part.origin,
+                  file: relative(target, part.file),
+                  ...implementsOf({ target, source: part.source }),
+                  note,
+                  madeBy,
+                  states,
+                  ...layout,
+                  interactions,
+                  kitUses: part.layer === 'pages' ? kitUsesOf(part.source) : 0,
+                  usedIn: usedInOf(part),
+                  ...(unused.has(partKeyOf(part)) ? { unusedInProduct: true as const } : {}),
+                  changedOutsideSketch: changedOutsideSketch.has(partKeyOf(part)),
+                  problems: [...own, ...(problem ? [{ rule: 'LOAD', file: part.file, message: problem }] : [])].map(
+                    relativeTo,
+                  ),
+                };
+              }),
+            ),
+            problems: problems.filter((found) => !product.parts.some((part) => belongsTo(part, found))).map(relativeTo),
+          };
+        })(),
       ];
     }),
   );
