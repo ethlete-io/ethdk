@@ -12,7 +12,7 @@ import { designHashOf, designHolds, fileHashesOf, hashOfFiles, recordHolds } fro
 import { readyMarkOf, writePartRecord } from './part-ready';
 import { doneParts, markImplemented } from './part-task';
 import { partKeyOf, resolveProduct } from './resolve-product';
-import { partHashHolds, partHashOf } from './sketch/baseline';
+import { partHashesHold, partHashHolds, partHashOf } from './sketch/baseline';
 import { staleLineOf, stalePartsOf, UNLISTED_FILES, upgradeLegacyMarksOf } from './stale-parts';
 
 const CHIP = 'components/chip';
@@ -317,6 +317,12 @@ describe('implements link', () => {
     expect(recordHolds(record, designHashOf(chipOf(target)))).toBe(true);
     expect(designHolds(record.hash, designHashOf(chipOf(target)))).toBe(true);
     expect(partHashHolds({ product: productOf(target), dir: join(dir, 'elements/icon'), hash: folder })).toBe(true);
+    expect(
+      partHashesHold(productOf(target), [
+        { dir: join(dir, 'elements/icon'), hash: folder },
+        { dir: join(dir, 'elements/icon'), hash: 'other' },
+      ]),
+    ).toEqual([true, false]);
 
     writeFileSync(
       join(dir, 'ready.json'),

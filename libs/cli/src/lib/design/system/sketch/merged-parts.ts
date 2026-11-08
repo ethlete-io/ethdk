@@ -3,7 +3,7 @@ import { writeJsonFile } from '../../../json-file';
 import { dirname, resolve } from 'path';
 import { partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
-import { partHashHolds, partHashOf } from './baseline';
+import { partHashesHold, partHashHolds, partHashOf } from './baseline';
 import { listSketches, variantDirOf } from './sketch';
 
 export const MERGED_FILE = 'merged.json';
@@ -174,15 +174,12 @@ export const sketchedPartsOf = (product: ResolvedProduct) =>
  */
 export const changedOutsideSketchOf = (product: ResolvedProduct): string[] => {
   const merged = readMerged(product.dir);
-  const changed = product.parts.filter((part) => {
-    const key = partKeyOf(part);
-
-    return (
-      part.origin !== 'base' &&
-      merged[key] !== undefined &&
-      !partHashHolds({ product, dir: dirname(part.file), hash: merged[key] })
-    );
-  });
+  const recorded = product.parts.filter((part) => part.origin !== 'base' && merged[partKeyOf(part)] !== undefined);
+  const holds = partHashesHold(
+    product,
+    recorded.map((part) => ({ dir: dirname(part.file), hash: merged[partKeyOf(part)] })),
+  );
+  const changed = recorded.filter((_, index) => !holds[index]);
 
   if (changed.length === 0) return [];
 
