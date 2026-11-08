@@ -36,10 +36,12 @@ Agent-Berichte: `.claude/handoffs/agent-results/<ID>.md`.
 
 ## Gerade in Arbeit
 
-**Reihenfolge (09.11., verbindlich, ADR 0234):** Studio-Arbeit kommt vor Werkzeug-Rückstand. Der Builder
+**Reihenfolge (09.11., verbindlich, ADR 0234, 0235, 0236):** Studio-Arbeit kommt vor Werkzeug-Rückstand. Der Builder
 nimmt immer den obersten offenen Punkt. Vor dem Start prüft er ihn gegen git: Ist er schon erledigt, streicht er ihn und
 nimmt den nächsten. Kein Punkt und kein Rückstand läuft über Nacht als E2E-Fix-Schleife. Nur der Doc-Agent ändert diese Liste, und nur nach Toms Okay.
 
+0. Wartezeit (ADR 0236): der langsamste gemessene Schritt der Builder-Schleife wird schneller (Messung läuft,
+   Ergebnis vom Doc-Agent). Klares Ende, dann weiter mit 1.
 1. A10 / B249: „Baubereit“ statt Go und Abnahme, `go.json`, `accepted.json`, `design go` und `design accept` weg
    (ADR 0048); unsichtbare direkte Änderungen gelten sofort; danach Gutter-Skip in `pages/sketches`. Nichts am Go-System
    wird vorher noch geändert.
@@ -53,7 +55,8 @@ nimmt den nächsten. Kein Punkt und kein Rückstand läuft über Nacht als E2E-F
 Bef. 638 (Changeset im Pre-Commit), 617, 614, 618, 620, B438.
 
 **Regel gegen Stillstand:** Ein neuer Befund unterbricht den laufenden Punkt nur, wenn (a) CI rot ist (ADR 0230), oder
-(b) er den laufenden Punkt blockiert. Sonst trägt der Doc-Agent ihn ein und hängt den Werkzeug-Fix an den Rückstand.
+(b) er den laufenden Punkt blockiert. Jeder Fix geht an die Ursache, eine neue Prüfregel nur, wenn ein Baustein,
+ein Typ oder ein Standardwert den Fehler nicht unmöglich machen kann (ADR 0235). Sonst trägt der Doc-Agent ihn ein und hängt den Werkzeug-Fix an den Rückstand.
 
 Ältere 🔨-Zeilen unten sind noch nicht gegen git geprüft (Stand der Zeile kann veraltet sein).
 
