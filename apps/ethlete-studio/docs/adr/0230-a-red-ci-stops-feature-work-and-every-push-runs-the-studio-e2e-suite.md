@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B441
+built: 391d9ecd7
 decided: 2026-11-09
 source: doc-agent session 2026-11-09, round on the broken CI state (findings 587, 588, 596, 607)
 ---
