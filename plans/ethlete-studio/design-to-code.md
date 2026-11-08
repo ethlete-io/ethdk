@@ -4108,3 +4108,12 @@ home path in `cmd` into `.ethlete/design/*/ready.json`, and `yarn lint:person-na
 `design __resident --checkout <absolute checkout>`. No full check wrote through the resident before, so HEAD had no such
 path. The tool caught it at the commit, not at the write. Tool fix (built): `portableCmdOf` writes each absolute
 argument relative to the working directory (`--checkout .`); `write-origin.spec.ts` bites without it.
+
+627\. Builder (2026-11-09): the self-restart after the B458 handoff never ran, and the human resumed the builder by hand
+("auto restart did not work"). Cause (verified in `agent-sessions.mjs` lines 121-124 and `.ethlete/restart.log`
+15:13-15:44): `busyLine()` treats any pane line with "Waiting for" as busy. The builder ended its turn with its own chat
+text "Waiting for the push suite ...", so the pane looked busy until `restart` gave up after 1800 s, and a second
+restart still waited. Why no tool caught it: the restart spec has no captured pane where a transcript line holds the
+busy words, and `restart` gives up without a message to the session it should restart. Tool fix (general, builder):
+`busyLine()` matches "Waiting for" only in the footer or spinner line, never in a transcript line; a spec with a captured
+pane whose last chat line says "Waiting for" bites; a `restart` that gives up sends a mailbox line to the session.
