@@ -785,7 +785,10 @@ const designExplore = ({
 
       const signalLists = (file: string) => {
         if (isInside(callsRoot, file)) events.signal('calls');
-        else if (isSketchFile(designRoot, file)) events.signal('sketches');
+        else if (isSketchFile(designRoot, file)) {
+          detachRunningListings();
+          events.signal('sketches');
+        }
       };
 
       const isSystemFile = (file: string) =>

@@ -1086,6 +1086,30 @@ describe('the design server for sketches and comments', () => {
     expect(loaded).toHaveLength(started);
   });
 
+  it('starts a new listing for a client that asks after a sketch file changed instead of joining the running one', async () => {
+    const target = acme();
+    const sketchDir = join(target, DESIGN_DIR, 'acme/sketches/components-card');
+
+    readySketch(target);
+
+    const { moduleOf, release } = gatedSketchModules();
+    const { ask, loaded, watchers } = await serveAcme(target, moduleOf);
+    const targetsOf = (answered: { body: unknown }) =>
+      (answered.body as { sketches: { target: string }[] }).sketches.map((sketch) => sketch.target);
+    const before = ask('/__design/sketches', '?product=acme');
+
+    await vi.waitFor(() => expect(loaded.some((id) => id.includes('design-sketch'))).toBe(true));
+    rmSync(sketchDir, { recursive: true });
+    watchers.get('unlink')?.(join(sketchDir, 'sketch.json'));
+
+    const after = ask('/__design/sketches', '?product=acme');
+
+    release();
+
+    expect(targetsOf(await before)).toEqual(['components/card']);
+    expect(targetsOf(await after)).toEqual([]);
+  });
+
   it('registers the parts of each sketch variant, resolved through that variant', async () => {
     const target = acme();
 
