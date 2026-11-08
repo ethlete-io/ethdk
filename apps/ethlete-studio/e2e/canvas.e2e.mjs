@@ -40,7 +40,12 @@ const cliEntry = resolve(root, process.env['STUDIO_CLI_ENTRY'] ?? 'dist/libs/cli
 
 const GONE_TARGETS = { Merge: 'components/title-bar', Discard: 'components/tree-row' };
 
-const WIDE_SKETCH = { part: 'components/title-bar', name: 'notice-hint', variants: ['a', 'b', 'c'] };
+const WIDE_SKETCH = {
+  part: 'components/title-bar',
+  name: 'notice-hint',
+  variants: ['a', 'b', 'c'],
+  changed: 'push-green',
+};
 
 const EDITED_PART = 'components/disclosure';
 const WAIT_MS = 10000;
@@ -308,10 +313,13 @@ const sketchCells = async (page) => {
 };
 
 const showAllStates = async (page) => {
-  const button = page.getByRole('button', { name: 'Alle Zustände zeigen' });
+  const button = page.locator('[data-sk-folded]').getByRole('button', { name: 'Alle Zustände zeigen' }).first();
 
-  await button.waitFor().catch(() => undefined);
-  if (await button.count()) await button.first().click();
+  await button.waitFor({ timeout: FULL_COMPARE_MS }).catch(() => undefined);
+  if ((await button.count()) && (await button.getAttribute('aria-expanded')) !== 'true') {
+    await button.click();
+    await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
+  }
 };
 
 const wheelCanvas = async (page, deltaY) => {
@@ -1301,7 +1309,7 @@ const CASES = [
       await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
         timeout: FULL_COMPARE_MS,
       });
-      await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
+      await showAllStates(page);
       const settledCount = await count();
       let pictured = shown(await sketchCells(page));
 
@@ -1353,8 +1361,8 @@ const CASES = [
     run: async (page) => {
       const cellOf = async (key) => (await sketchCells(page)).find((cell) => cell.key === key);
       const away = Math.ceil((2 * (NARROW.height + 400)) / SCROLL_STEP_PX);
-      const loadedCell = async (key, accept) => {
-        for (const until = Date.now() + WAIT_MS; Date.now() < until;) {
+      const loadedCell = async (key, accept, wait = WAIT_MS) => {
+        for (const until = Date.now() + wait; Date.now() < until;) {
           const cell = await cellOf(key);
 
           if (
@@ -1379,7 +1387,7 @@ const CASES = [
 
       if (!top) return { ok: false, detail: 'no visible sketch cell' };
 
-      const before = await loadedCell(top.key, () => true);
+      const before = await loadedCell(top.key, () => true, FULL_COMPARE_MS);
 
       if (!before) return { ok: false, detail: `${top.key} loads no picture` };
 
@@ -2218,7 +2226,7 @@ const CASES = [
         listings.quick = 0;
         listings.full = 0;
         writeFileSync(sketchJson, content);
-        const deadline = Date.now() + WAIT_MS;
+        const deadline = Date.now() + FULL_COMPARE_MS;
 
         while ((listings.quick === 0 || listings.full === 0) && Date.now() < deadline) await page.waitForTimeout(250);
         await page.waitForTimeout(1000);
@@ -2442,30 +2450,97 @@ let checkout;
 const MARKED_SHELL = '.st-shell { outline: 2px solid rgb(255 0 0); outline-offset: -2px; }';
 
 /**
- * The change variant `a` of each canvas sketch draws in every state. A variant that draws every state like Aktuell
- * folds them all and leaves no frame on the canvas.
+ * Variant `a` of each canvas sketch changes exactly the `changed` state, so a cold compare draws one state per sketch
+ * and every other state folds.
  */
 const SKETCH_CHANGES = {
   'components/zoom-chip': {
     file: 'zoom-chip.ts',
-    change: (source) => source.replace('reset: { percent: 100 }', 'reset: { percent: 110 }'),
+    changed: 'reset',
+    change: (source) =>
+      replaceOnce(
+        source,
+        'return [name, target ? { ...(props as Props), target } : props];',
+        "return [name, name === 'reset' ? { ...(props as Props), percent: 110 } : target ? { ...(props as Props), target } : props];",
+      ),
   },
-  'elements/shell-main': { file: 'shell-main.css', change: (source) => `${source}\n${MARKED_SHELL}\n` },
+  'elements/shell-main': {
+    file: 'shell-main.ts',
+    changed: 'hidden',
+    change: (source) =>
+      replaceOnce(
+        source,
+        '    shell.render({ ...props, studio: props.studio ?? studioPreview }),',
+        [
+          '    shell.render({ ...props, studio: props.studio ?? studioPreview }).then((drawn) =>',
+          `      props.panel === 'hidden' ? { ...drawn, styles: drawn.styles + ${JSON.stringify(MARKED_SHELL)} } : drawn,`,
+          '    ),',
+        ].join('\n'),
+      ),
+  },
   'pages/system': {
     file: 'system.ts',
+    changed: 'empty',
     change: (source) =>
-      [
-        source
-          .replaceAll('return drawing({', 'return markedDrawing({')
-          .replace(
-            'return manyStatesView(await treeRowGrid());',
-            'return markedDrawing(await manyStatesView(await treeRowGrid()));',
-          ),
-        'const markedDrawing = (drawn: Parameters<typeof drawing>[0]) =>',
-        `  drawing({ ...drawn, styles: (drawn.styles ?? '') + ${JSON.stringify(MARKED_SHELL)} });`,
-        '',
-      ].join('\n'),
+      replaceOnce(
+        source,
+        'styles: shell.styles + menu.styles + copy.styles });',
+        `styles: shell.styles + menu.styles + copy.styles + ${JSON.stringify(MARKED_SHELL)} });`,
+      ),
   },
+};
+
+const replaceOnce = (source, needle, replacement) => {
+  const at = source.indexOf(needle);
+
+  if (at < 0 || source.indexOf(needle, at + 1) >= 0) {
+    throw new Error(`SKETCH_CHANGES: expected exactly one ${JSON.stringify(needle)} in the fixture source`);
+  }
+
+  return source.replace(needle, () => replacement);
+};
+
+const FIXTURE_CHANGES = [
+  ...Object.entries(SKETCH_CHANGES).map(([target, { changed }]) => ({
+    target,
+    part: target,
+    variants: ['a'],
+    changed,
+  })),
+  {
+    target: `${WIDE_SKETCH.part}@${WIDE_SKETCH.name}`,
+    part: WIDE_SKETCH.part,
+    variants: WIDE_SKETCH.variants,
+    changed: WIDE_SKETCH.changed,
+  },
+];
+
+const assertSketchFixtures = async (page, designPort) => {
+  const listing = await page.request
+    .get(`http://[::1]:${designPort}/__design/sketches?product=studio`, { timeout: COLD_START_MS })
+    .then((response) => response.json())
+    .catch((error) => console.error(`sketch fixture check skipped: ${String(error).split('\n')[0]}`));
+
+  if (!listing) return;
+
+  const faults = FIXTURE_CHANGES.flatMap(({ target, part, variants, changed }) => {
+    const sketch = listing?.sketches?.find((candidate) => candidate.target === target);
+
+    return variants.flatMap((variant) => {
+      const unchanged = sketch?.targets?.find(
+        (candidate) => candidate.variant === variant && (candidate.part ?? part) === part,
+      )?.unchanged;
+
+      if (!unchanged) return [`${target}/${variant}: not listed with compared states`];
+      if (unchanged.includes(changed))
+        return [`${target}/${variant}: fixture folds every state, ${changed} draws like Aktuell`];
+      if (unchanged.length === 0) return [`${target}/${variant}: changes every state, not only ${changed}`];
+
+      return [];
+    });
+  });
+
+  if (faults.length) throw new Error(`sketch fixture check failed: ${faults.join('; ')}`);
 };
 
 const prepareCheckout = () => {
@@ -2515,15 +2590,19 @@ const prepareCheckout = () => {
     '.ethlete/design/studio/sketches',
     `${WIDE_SKETCH.part.replace('/', '-')}.${WIDE_SKETCH.name}`,
   );
-  const wideCss = join(WIDE_SKETCH.part, `${WIDE_SKETCH.part.split('/')[1]}.css`);
+  const wideTs = join(WIDE_SKETCH.part, `${WIDE_SKETCH.part.split('/')[1]}.ts`);
 
   WIDE_SKETCH.variants.forEach((variant, index) => {
     cpSync(join(root, '.ethlete/design/studio', WIDE_SKETCH.part), join(wide, variant, WIDE_SKETCH.part), {
       recursive: true,
     });
     writeFileSync(
-      join(wide, variant, wideCss),
-      `${readFileSync(join(wide, variant, wideCss), 'utf8')}\n.st-title-bar { opacity: ${0.4 + index * 0.2}; }\n`,
+      join(wide, variant, wideTs),
+      replaceOnce(
+        readFileSync(join(wide, variant, wideTs), 'utf8'),
+        "styles: [styles, tooltipStyles, loaderStyles, notificationStyles, badgeStyles].join('\\n'),",
+        `styles: [styles, tooltipStyles, loaderStyles, notificationStyles, badgeStyles].join('\\n') + (props.push?.gate === 'green' ? '.st-title-bar { opacity: ${0.4 + index * 0.2}; }' : ''),`,
+      ),
     );
   });
   writeFileSync(
@@ -2612,6 +2691,7 @@ const work = async () => {
     async ({ page, studioUrl, designPort }) => {
       page.setDefaultTimeout(WAIT_MS);
       await warmUp(page, studioUrl);
+      await assertSketchFixtures(page, designPort);
       for (let { job } = await nextJob(); job; { job } = await nextJob()) {
         const startedAt = performance.now();
         let result;
