@@ -4174,3 +4174,13 @@ builder): `et:design` prints one line with the build commit when `libs/cli/src` 
 command that runs the working copy.
 As built (B461, 62cb4eaa2): `dirtyCliNoteOf` in `tools/scripts/studio-code.mjs` prints the build commit and the
 working-copy command to stderr when `libs/cli` is dirty; `studio-code.spec.mjs` covers it. Not verified: a live dirty run.
+
+637\. The human (2026-11-09), on a grill question that offered `yarn design go --batch` for a human accept: "ich lese
+da schon wieder das wort go". ADR 0048 removed go and accept as human gates: a direct edit to a merged part without a
+picture change holds at once, and the human decides only by picking in a sketch. ADR 0209, the builder's accept for the
+`pages/sketches` gutter skip (finding 635) and ADR 0233 all rested on the accept gate, so ADR 0233 is withdrawn. Why no
+tool caught it: B249 is still open, so the cli still has `go`, `accept` and `go.json`, and EDIT-OLD-NOT-FOUND asks for
+an accept on a pixel-identical edit; the doc agent searched the ADRs for "accept" but not for "go". Tool fix (general,
+builder): until B249 lands, `design go` and `design accept` print that ADR 0048 removed them and name B249, and
+EDIT-OLD-NOT-FOUND does not fire when the edit leaves every picture of the part unchanged. Process fix: before a grill
+question names a cli command, the doc agent runs `yarn adr:governs` on the file that defines that command.

@@ -1,6 +1,6 @@
 ---
-status: accepted
-open: B412
+status: superseded by 0048
+open: none
 decided: 2026-11-09
 source: grill session 2026-11-09, finding 635
 governs: ['libs/cli/src/lib/design/system/accept-command.ts']
@@ -15,3 +15,7 @@ then writes the exact accept command with the ADR in the note, and the human run
 command must run without an interactive terminal, and the agent dry-runs it first. This replaces the agent accept of
 ADR 0209 and covers the open accepts of B412 (`pages/start`, sdk `components/select`) too. The human: "q1b" (option b,
 recommended).
+
+Withdrawn the same day. ADR 0048 already removed go and accept as human gates: a direct edit to a merged part
+without a picture change holds at once, so the gutter skip needs no accept at all. The human: "ich lese da schon
+wieder das wort go" (finding 637).
