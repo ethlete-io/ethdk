@@ -4175,3 +4175,9 @@ worker that only the spec does (no-op merge 0/10, idle worker 1/5, real merge 6/
 847 ms span) did not reproduce. The doc agent decided: `--no-memory-reducer` for this spec, CPU time and threshold
 unchanged; no GC subtraction, no wall-clock. Tool fix (technical): a stall spec prints the GC trace of a failed span,
 so the next failure names its source without a docker session.
+
+608\. Builder (2026-11-08, 0a3243bb5): `--no-memory-reducer` (finding 607) held the merge stall at 3-5 ms in 5 macOS
+and 5 Linux docker runs, but CI run 42464173027 still measured 237 ms over 88 ms. The docker repro proved one source
+and not the one CI hits; the flag reaches every cli spec, because vitest cannot scope `execArgv` per file. Next: one
+CI run with `--trace-gc`, then keep the flag only if the failed span overlaps a GC. Tool fix (technical): from finding
+607, a failed stall span prints its GC trace in CI, so a fix is checked against the CI cause, not a local stand-in.
