@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B451
+built: 581d2b584
 decided: 2026-11-09
 source: doc-agent session 2026-11-09, question on the "3 ungepusht · 0,7 h" warning
 ---
