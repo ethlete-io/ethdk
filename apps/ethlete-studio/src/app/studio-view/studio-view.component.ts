@@ -30,7 +30,7 @@ import {
   designServerStop$,
 } from '../../host/design';
 import { DesignChange, designChanges$ } from '../../host/design-changes';
-import { designServerReplaced$ } from '../../host/design-server-pid';
+import { DESIGN_STAMP_PATH, designServerReplaced$ } from '../../host/design-server-pid';
 import { PartsRedraw } from '../../host/design-parts';
 import { SystemViewComponent } from '../system-view/system-view.component';
 import { ShellAction, ShellPageComponent } from '../design-parts/shell-main/shell-page.component';
@@ -356,7 +356,7 @@ export class StudioViewComponent {
 }
 
 const serverAnswers$ = (port: number) =>
-  fromFetch(`http://localhost:${port}/__design/system`).pipe(
+  fromFetch(`http://localhost:${port}${DESIGN_STAMP_PATH}`).pipe(
     map((response) => {
       if (response.status >= 500) throw new Error(`${response.status}`);
 

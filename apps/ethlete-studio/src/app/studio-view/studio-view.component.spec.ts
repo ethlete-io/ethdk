@@ -284,7 +284,9 @@ describe('StudioViewComponent', () => {
 
     let answer: () => Promise<Response> = () => Promise.resolve(new Response('', { status: 500 }));
 
-    vi.stubGlobal('fetch', () => answer());
+    const probed: string[] = [];
+
+    vi.stubGlobal('fetch', (url: string) => (probed.push(url), answer()));
 
     try {
       const fixture = TestBed.createComponent(StudioViewComponent);
@@ -296,6 +298,8 @@ describe('StudioViewComponent', () => {
 
       expect(element(fixture).textContent).toContain('Design-Server startet');
       expect(system(fixture)).toBeUndefined();
+      expect(probed).toContain('http://localhost:4402/__design/stamp');
+      expect(probed.filter((url) => url.includes('/__design/system'))).toEqual([]);
 
       answer = () => Promise.resolve(new Response('[]', { status: 200 }));
       await vi.advanceTimersByTimeAsync(1000);
