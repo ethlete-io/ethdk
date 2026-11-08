@@ -254,6 +254,46 @@ describe('renderIssuesOf', () => {
     ]);
   }, 120_000);
 
+  it('flags a single line of text off the vertical centre of its pill, and an icon out of the pill', async (context) => {
+    const pill = (padding: string, inner = 'Ready') =>
+      `<div style="padding: 8px"><span style="display: inline-block; font: 12px/12px sans-serif; padding: ${padding}; background: rgb(20, 120, 60); color: white; border-radius: 99px">${inner}</span></div>`;
+    const target = checkout({
+      'components/pill-centred': { body: pill('4px 8px') },
+      'components/pill-high': { body: pill('1px 8px 7px') },
+      'components/pill-icon-out': {
+        body: `<div style="padding: 8px"><span style="display: inline-flex; align-items: center; gap: 4px; height: 20px; font: 12px/12px sans-serif; padding: 0 8px; background: rgb(20, 120, 60); color: white"><svg style="flex: none; width: 24px; height: 24px"></svg>Ready</span></div>`,
+      },
+      'components/pill-trimmed-inline-flex': {
+        body: `<div style="padding: 8px"><span style="display: inline-block; text-box: trim-both cap alphabetic; font: 12px/16px sans-serif; padding: 4px 8px; background: rgb(20, 120, 60); color: white"><span style="display: inline-flex; align-items: center; gap: 4px"><svg style="width: 12px; height: 12px"></svg>Ready</span></span></div>`,
+      },
+      'components/pill-trimmed-flex': {
+        body: `<div style="padding: 8px"><span style="display: inline-block; font: 12px/16px sans-serif; padding: 4px 8px; background: rgb(20, 120, 60); color: white"><span style="display: flex; align-items: center; gap: 4px"><svg style="flex: none; width: 12px; height: 12px"></svg><span style="text-box: trim-both cap alphabetic">Ready</span></span></span></div>`,
+      },
+      'components/pill-card': {
+        body: pill('1px 8px 40px', 'Title<div style="height: 30px; background: rgb(0, 0, 0)"></div>'),
+      },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(
+      rendered.warnings
+        .filter((issue) => issue.rule === 'OFF-CENTRE')
+        .map((issue) => [issue.part, issue.detail.split(';')[0]])
+        .sort(),
+    ).toEqual([
+      ['components/pill-high', expect.stringMatching(/^the text sits [\d.]+px high in its box/u)],
+      ['components/pill-icon-out', expect.stringMatching(/^an icon sticks [\d.]+px out of the box$/u)],
+      ['components/pill-trimmed-inline-flex', expect.stringMatching(/^the text sits [\d.]+px high in its box/u)],
+    ]);
+  }, 120_000);
+
   it('flags text that shows through an open overlay pane, and not under an opaque one', async (context) => {
     const page = (pane: string) =>
       `<div style="position: relative; width: 300px; height: 160px"><p style="margin: 0; padding: 40px 8px">Round one text below</p>${pane}</div>`;

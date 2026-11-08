@@ -4229,6 +4229,7 @@ sketch `components/title-bar@badge-centre` (47f747dd4), the human merges. The to
 render-check has only breakage rules (CLIPPED needs `overflow: hidden`) and nothing measures the vertical position of
 text in its box. Tool fix (general): render-check rule `OFF-CENTRE` flags single-line text in a box with a background or
 border when the cap gap above and below differ by more than 1 px, and an icon past the border by more than 0.5 px.
+As built (B456): `libs/cli/src/lib/design/system/off-centre.ts`, as a warning rule first. The spec reproduces the 623 markup (1.3 px above the capitals, 6.0 px below the baseline) and passes the fixed markup. The first full `design check` flagged 186 spots in studio and 78 in sdk; not triaged yet, so the rule does not block. Not verified: which hits are real defects.
 As built (app, B452): `title-bar.component.ts` takes the merged badge-centre markup (`flex` wrapper, text in its own
 `[text-box:trim-both_cap_alphabetic]` span); a title-bar spec on the wrapper and span classes bites on the old markup.
 

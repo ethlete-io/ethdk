@@ -17,6 +17,7 @@ import { introducedControlStateGapsOf, PLAIN_CONTROL_SELECTOR, SDK_CONTROLS } fr
 import { ACTION_UNDECLARED_STATEMENTS, CLICK_LISTENER_INIT_SCRIPT } from './action-undeclared';
 import { DISABLED_INTERACTION_STATEMENTS } from './disabled-interaction';
 import { ARROW_ANCHOR_STATEMENTS } from './arrow-anchor';
+import { OFF_CENTRE_RULE, OFF_CENTRE_STATEMENTS } from './off-centre';
 import { classesOf, cssBlocksOf } from './css-source';
 import { createDesignServer } from '../serve';
 import { emptySlotsScriptOf, PartAddress, partFrameOf, viewportOf } from '../shot';
@@ -174,7 +175,7 @@ const SINGLE_LINE =
  */
 const ESCAPABLE = ESCAPABLE_RULES;
 
-const WARNING_RULES = new Set(['UNDEFINED-CLASS', 'EMBED-SCALE']);
+const WARNING_RULES = new Set(['UNDEFINED-CLASS', 'EMBED-SCALE', OFF_CENTRE_RULE]);
 
 const BUSY_SELECTOR = '[aria-busy="true"], [data-loading="true"]';
 
@@ -550,6 +551,7 @@ ${SURFACE_STATEMENTS}
     }
 ${ACTION_UNDECLARED_STATEMENTS}
 ${ARROW_ANCHOR_STATEMENTS}
+${OFF_CENTRE_STATEMENTS}
 ${DISABLED_INTERACTION_STATEMENTS}
   return found;
 })(${JSON.stringify({ ...options, escapable: ESCAPABLE, controlInputs: PLAIN_CONTROL_SELECTOR, sdkControls: SDK_CONTROLS.join(', ') })})`;
