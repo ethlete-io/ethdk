@@ -100,16 +100,31 @@ const NEAR_MARGIN = '400px';
 
 const LIVE_SHOT_CAP = 6;
 
-/** The keys of `near` that stay live frames: at most `cap`, in the order of `order`. */
+/**
+ * The keys of `near` that stay live frames: at most `cap`, in the order of `order`. The cap drops the frames of
+ * `pictured` keys (a picture loaded) first and of `painted` keys last, so a painted cell keeps its frame until its
+ * picture can take its place.
+ */
 export const liveShotsOf = ({
   order,
   near,
   cap = LIVE_SHOT_CAP,
+  pictured = new Set(),
+  painted = new Set(),
 }: {
   order: readonly string[];
   near: ReadonlySet<string>;
   cap?: number;
-}) => order.filter((key) => near.has(key)).slice(0, cap);
+  pictured?: ReadonlySet<string>;
+  painted?: ReadonlySet<string>;
+}) => {
+  const rank = (key: string) => (pictured.has(key) ? 2 : painted.has(key) ? 0 : 1);
+
+  return order
+    .filter((key) => near.has(key))
+    .sort((a, b) => rank(a) - rank(b))
+    .slice(0, cap);
+};
 
 @Component({
   selector: 'ethlete-sketch-view',
@@ -467,18 +482,6 @@ export class SketchViewComponent {
     }),
   );
 
-  protected liveShots = computed(
-    () =>
-      new Set(
-        this.sketch().targets === undefined && this.listError() === null
-          ? []
-          : liveShotsOf({
-              order: this.sketchRows().flatMap((row) => row.shots.map((shot) => `${row.key} ${shot.state}`)),
-              near: this.nearShots(),
-            }),
-      ),
-  );
-
   private paintedFrames = signal<ReadonlyMap<string, HTMLIFrameElement>>(new Map());
 
   protected paintedShots = computed(() => {
@@ -692,6 +695,20 @@ export class SketchViewComponent {
   protected failedPictures = signal<ReadonlySet<string>>(new Set());
 
   protected loadedPictures = signal<ReadonlyMap<string, string>>(new Map());
+
+  protected liveShots = computed(
+    () =>
+      new Set(
+        this.sketch().targets === undefined && this.listError() === null
+          ? []
+          : liveShotsOf({
+              order: this.sketchRows().flatMap((row) => row.shots.map((shot) => `${row.key} ${shot.state}`)),
+              near: this.nearShots(),
+              pictured: new Set(this.loadedPictures().keys()),
+              painted: this.paintedShots(),
+            }),
+      ),
+  );
 
   /** Shows the round of the comment's variant. */
   public jumpTo(comment: ListedComment) {

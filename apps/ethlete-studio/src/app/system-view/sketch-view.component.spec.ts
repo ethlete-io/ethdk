@@ -229,6 +229,18 @@ describe('SketchViewComponent', () => {
     ]);
   });
 
+  it('keeps the frames of painted cells without a picture ahead of pictured cells', () => {
+    expect(
+      liveShotsOf({
+        order: ['a 1', 'a 2', 'b 1', 'b 2'],
+        near: new Set(['a 1', 'a 2', 'b 1', 'b 2']),
+        cap: 2,
+        pictured: new Set(['a 1', 'a 2']),
+        painted: new Set(['a 1', 'b 2']),
+      }),
+    ).toEqual(['b 2', 'b 1']);
+  });
+
   it('switches the round from the select, remembers it, and follows a new round', async () => {
     const { fixture, root } = await render(ROUNDED, noComments);
     const component = fixture.componentInstance as unknown as {
