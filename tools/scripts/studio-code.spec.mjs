@@ -5,11 +5,30 @@ import { connect, createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { APP_SOURCES, AREAS, areaState, cliCopyPlan, ensureCliCopy, pushStateOf } from './studio-code.mjs';
+import {
+  APP_SOURCES,
+  AREAS,
+  areaState,
+  cliCopyPlan,
+  dirtyCliNoteOf,
+  ensureCliCopy,
+  pushStateOf,
+} from './studio-code.mjs';
 
 const A = 'a'.repeat(40);
 const B = 'b'.repeat(40);
 const C = 'c'.repeat(40);
+
+test('a dirty libs/cli names the build commit and the command that runs the working copy', () => {
+  const note = dirtyCliNoteOf({ sha: B, dirty: true, args: ['check', '--product', 'sdk'] });
+
+  assert.match(note, /built from bbbbbbbbb; libs\/cli has uncommitted changes/);
+  assert.match(note, /npx nx build cli && node dist\/libs\/cli\/src\/index\.js design check --product sdk$/);
+});
+
+test('a clean libs/cli prints no note', () => {
+  assert.equal(dirtyCliNoteOf({ sha: B, dirty: false, args: ['check'] }), null);
+});
 
 test('a dirty libs/cli builds the last commit when the kept copy is older', () => {
   assert.deepEqual(cliCopyPlan({ latest: B, dirty: true, copies: [A, C], distMatches: true }), {

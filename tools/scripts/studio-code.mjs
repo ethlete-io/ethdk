@@ -59,6 +59,13 @@ export const areaState = (root) => ({
   host: { latest: lastCommitOf(root, AREAS.host) },
 });
 
+/** The line `et:design` prints when `libs/cli` has uncommitted changes, or `null` for a clean `libs/cli`. */
+export const dirtyCliNoteOf = ({ sha, dirty, args }) =>
+  dirty
+    ? `et:design runs the cli built from ${sha.slice(0, 9)}; libs/cli has uncommitted changes. ` +
+      `To run them: npx nx build cli && node dist/libs/cli/src/index.js design ${args.join(' ')}`.trimEnd()
+    : null;
+
 /**
  * Picks the committed build to run. A dirty `libs/cli` never yields a copy of the working build;
  * the last commit that touched the CLI is built when no copy of it exists yet.
