@@ -3527,3 +3527,70 @@ studio components/update-dialog (now `anchor: '[data-et-control="update"]'`, the
 components/anchored-dialog part (its states draw no trigger, so there is nothing to name; left anchorless). No rule
 requires an anchor: an anchorless arrow in the default place is correct for a pane whose trigger is not drawn, so a
 requirement would flag the SDK part itself. Verified: `design check` studio components/update-dialog.
+
+## Findings 253-262 (2026-11-03)
+
+253\. B145 step 2 (builder, 2026-11-03) brought the comment write path back, but the designs leave gaps the builder
+would otherwise have had to invent: thread, reply, resolve and withdraw are drawn nowhere (comment-reply, -done
+and -withdraw have no caller), the draft field is drawn unfocused, and leaving comment mode by key (Esc, `C`) is
+not drawn. The capability list (B157) names these actions, but a capability without a drawn place only shows as
+"missing", not as a blocker of the slice that builds next to it. Fix: B189 - one Studio sketch (opened pin as a
+thread card in pages/system and pages/inbox with reply/resolve/withdraw, the draft drawn focused, the key exit),
+variants where there is a choice; Tom picks. The inbox "Senden" button that the live inbox does not wire is
+B173.
+
+254\. ORPHAN-ENDPOINT (B147) missed `/__design/comment` after 8cf715654 deleted `writeComment$` (builder,
+2026-11-03): the app builds the path from a bare segment (`productUrl(address, 'comment')`), so a grep for the
+full path finds no caller and none is missed either - the check matched strings, not calls. Lesson: a caller
+check resolves calls through the functions that build the path, not text. Fix: B190 (technical) - resolve
+callers through the host functions that call `designAnswer$` with the segment; a spec on the 8cf715654 tree
+reports all four comment endpoints, and after 4221e7cb3 still reports reply, done and withdraw (known list).
+Correction (builder, 2026-11-03, after B190 2b91b06b6): the old rule did report all four endpoints on the
+8cf715654 tree, but they sat on the known list under B145, so they came out as known warnings, not errors. The
+real gap: a known entry silenced a regression - an endpoint that had a writer and lost it looked the same as one
+that never had one. Lesson: a known entry names the state it expects. Fix: B195 (technical) - each ORPHAN-ENDPOINT
+known entry says "never written" or "written by <fn>"; losing a writer reports the endpoint again. The builder
+lists the other known lists where an entry can hide the same flip.
+Builder list (de36e4795): UNBOUND-INPUT and SAMPLE-DEFAULT do not hide the flip - a fixed entry fails
+until it leaves the list, so a later regression is a new error. Two lists do: a per-part `unreachable` state
+pair (motion rule) still passes once it becomes reachable, and a `data-et-skip` hides every later problem on
+its element. Fix: B202 (technical) - an `unreachable` pair that becomes reachable is an error; each skip names
+its reason class (CLIPPED, ...) and the check reports a skip whose reason no longer holds (B187 first case). B190 still landed (calls resolved through
+the host functions; an import no longer counts).
+As built (B202, 2026-11-07): `MOTION-UNREACHABLE-REACHABLE` (rules/motion.ts) reports an `unreachable` pair that also has a
+declared motion; `SKIP-CLASS` (rules/skips.ts) reports a `data-et-skip` in a part's strings that is empty, bare or names a
+class outside `SKIP_CLASSES` (CLIPPED, WRAP, NESTED-SCROLL, NESTED-SURFACE, LOST-SURFACE, COVERED; skip-classes.ts also feeds
+the render check's escape list). Specs for both; the real sdk, studio and studio-lab parts report nothing new. Not built:
+reachability through a `rules` entry without a motion, a skip on `checks.skip` (typed), and a skip whose class no longer
+holds beyond SKIP-SCOPE (B187). `design check` itself was not run: it refuses on stale components mocks (needs a components
+build), the new rules are static and were run over all three products directly.
+
+255\. B180 could not reproduce the `--out` + `--variants` refusal from finding 244: the source already accepted it
+(now pinned by a spec). The refusal came from the shared cli `dist/`, which predates B172 (it still checked
+withdrawn variant b) (builder, 2026-11-03). B94 guards the design libs' dist that shots draw from, not the cli's
+own dist, so an agent ran an old CLI and reported its bugs as current ones. Lesson: a tool must say when it runs
+older than its own source. Fix: B191 (technical) - in a repo checkout `et design` prints a first-line WARN
+"cli dist older than libs/cli/src (built <time>, source changed <time>), run <rebuild command>" and repeats it in
+every report header; rebuild the shared cli dist once the parallel slices settle.
+As built (B191, rest): `design check` prints the warning again before its summary lines; the dist rebuild is left
+to the coordinator.
+
+256\. Sketching B178 (canvas frames, builder, 2026-11-03) the action vocabulary was too small for real interactions:
+no double-click form for `data-et-action`; capabilities.json cannot say a capability happens automatically
+(frame fit via ResizeObserver has no place to draw); instant state switches must each be declared `unreachable`
+to pass ready, so the part lists all 90 pairs. Each gap pushes an agent to fake a place or to bulk-declare
+exceptions that then hide real ones. Parallel agents also overwrote each other's scratch files. Lesson: when the
+declaration language cannot say the true thing, agents write a false one that passes. Fix (technical): B192
+`dblclick:` prefix read by CAPABILITY-PLACE; B193 `"automatic": true` with a required `why`, accepted without a
+place but listed in every capability report (never silent); B194 an `instant` declaration replacing per-pair
+`unreachable`. Scratch names are slugged per agent in the builder brief.
+As built (B192): `parseAction` strips `dblclick:` and marks the action `gesture: 'dblclick'`; the actions and live-actions
+checks press such an element with a double click only. CAPABILITY-PLACE matches the literal key, so a place names
+`dblclick:<state>`. As built (B193): `"automatic": true` needs a non-empty `why` and no place (error otherwise), and
+is a warning line in every `design check`.
+
+259\. The sketch header read "Letzte Änderung von ·" with no name (builder, 2026-11-03): sketch title-bar has no report
+file, `lastChange()` (`sketch-view.component.ts`) returns empty by/since, and the label renders the separators
+anyway. Samples always carried a report, so no state showed the missing case. Lesson: a sample set includes the
+missing optional data. Fix in B186: fall back to the newest variant's author, drop empty parts, red spec; a
+sketch-view state without a report file.
