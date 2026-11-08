@@ -28,9 +28,21 @@ const VIEWS = {
   flow: ['Flow'],
 };
 const view = args.includes('--view') ? args[args.indexOf('--view') + 1] : undefined;
+const listOnly = args.includes('--list');
 
 if (view && !VIEWS[view]) {
   console.error(`unknown --view ${view}, one of: ${Object.keys(VIEWS).join(', ')}`);
+  process.exit(2);
+}
+
+const shardArg = args.includes('--shard') ? args[args.indexOf('--shard') + 1] : process.env['STUDIO_E2E_SHARD'];
+const shard = shardArg ? { index: Number(shardArg.split('/')[0]), count: Number(shardArg.split('/')[1]) } : undefined;
+
+if (
+  shard &&
+  !(Number.isInteger(shard.index) && Number.isInteger(shard.count) && shard.index >= 1 && shard.index <= shard.count)
+) {
+  console.error(`invalid shard ${shardArg}, expected <i>/<n> with 1 <= i <= n`);
   process.exit(2);
 }
 
@@ -2877,7 +2889,42 @@ const lead = async () => {
         ? [{ target: targetIndex, case: caseIndex, page: target.label ?? target.name, name: testCase.name }]
         : [],
     ),
-  ).sort((a, b) => (known[keyOf(b)] ?? Infinity) - (known[keyOf(a)] ?? Infinity));
+  );
+  const matched = queue.length;
+
+  if (shard) {
+    const slot = Object.fromEntries(
+      Object.values(Object.groupBy(queue, (job) => job.page)).flatMap((jobs) =>
+        jobs.map((job, at) => [keyOf(job), at]),
+      ),
+    );
+    const share = queue
+      .toSorted((a, b) => slot[keyOf(a)] - slot[keyOf(b)])
+      .filter(
+        (_, at) => Math.min(at % (2 * shard.count), 2 * shard.count - 1 - (at % (2 * shard.count))) === shard.index - 1,
+      );
+
+    queue.splice(0, queue.length, ...share);
+  }
+  queue.sort((a, b) => (known[keyOf(b)] ?? Infinity) - (known[keyOf(a)] ?? Infinity));
+
+  const shardLabel = shard ? ` (shard ${shard.index}/${shard.count})` : '';
+
+  if (listOnly) {
+    const knownMs = queue.reduce((sum, job) => sum + (known[keyOf(job)] ?? 0), 0);
+
+    console.log(
+      `${queue.length} of ${matched} cases${shardLabel}, ${seconds(knownMs).trim()} by the last local timings:`,
+    );
+    for (const job of queue) console.log(`${seconds(known[keyOf(job)] ?? 0)}  ${job.page.padEnd(9)} ${job.name}`);
+    process.exit(0);
+  }
+
+  if (!queue.length && matched) {
+    console.log(`0 of ${matched} cases fall to${shardLabel.replace(/[()]/g, '')}, nothing to run`);
+    process.exit(0);
+  }
+
   const declared = [...queue];
   const total = queue.length;
   const workers = Math.min(total, workerCount());
@@ -2893,7 +2940,7 @@ const lead = async () => {
   try {
     ensureCli();
     if (scratch) buildStudio(scratch, (phase) => console.log(`[canvas-e2e] ${phase}`));
-    console.log(`[canvas-e2e] ${total} cases on ${workers} worker(s)`);
+    console.log(`[canvas-e2e] ${total} cases${shardLabel} on ${workers} worker(s)`);
 
     const runWorker = async (index) => {
       const port = await freePort();
@@ -2975,11 +3022,13 @@ const lead = async () => {
   const overBudget = suiteMs > BUDGET_MS;
   const enforceBudget = process.env['STUDIO_E2E_BUDGET_ENFORCE'] === '1';
 
-  console.log(`\n${rows.length - failed.length}/${total} passed in ${seconds(suiteMs).trim()} on ${workers} worker(s)`);
   console.log(
-    `suite ${minutes(suiteMs)} of ${minutes(BUDGET_MS)} budget${overBudget ? ` - over budget${enforceBudget ? ', failing the run' : ' (STUDIO_E2E_BUDGET_ENFORCE=1 fails the run)'}` : ''}`,
+    `\n${rows.length - failed.length}/${total} passed${shardLabel} in ${seconds(suiteMs).trim()} on ${workers} worker(s)`,
   );
-  process.exit(failed.length || rows.length < total || !total || (overBudget && enforceBudget) ? 1 : 0);
+  console.log(
+    `suite${shard ? ` shard ${shard.index}/${shard.count}` : ''} ${minutes(suiteMs)} of ${minutes(BUDGET_MS)} budget${overBudget ? ` - over budget${enforceBudget ? ', failing the run' : ' (STUDIO_E2E_BUDGET_ENFORCE=1 fails the run)'}` : ''}`,
+  );
+  process.exit(failed.length || rows.length < total || !matched || (overBudget && enforceBudget) ? 1 : 0);
 };
 
 await (args.includes('--worker') ? work() : lead());

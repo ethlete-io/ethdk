@@ -288,10 +288,14 @@ jobs:
       - run: yarn nx e2e csp-e2e
 
   studio-e2e:
-    name: Studio e2e
+    name: Studio e2e (${{ matrix.shard }}/4)
     needs: design-changes
     if: needs.design-changes.outputs.changed == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     timeout-minutes: 45
     permissions:
       contents: read
@@ -316,6 +320,7 @@ jobs:
         timeout-minutes: 40
         env:
           STUDIO_E2E_WORKERS: 2
+          STUDIO_E2E_SHARD: ${{ matrix.shard }}/4
 
   rust:
     name: Rust host
