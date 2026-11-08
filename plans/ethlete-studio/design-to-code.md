@@ -4181,3 +4181,22 @@ and 5 Linux docker runs, but CI run 42464173027 still measured 237 ms over 88 ms
 and not the one CI hits; the flag reaches every cli spec, because vitest cannot scope `execArgv` per file. Next: one
 CI run with `--trace-gc`, then keep the flag only if the failed span overlaps a GC. Tool fix (technical): from finding
 607, a failed stall span prints its GC trace in CI, so a fix is checked against the CI cause, not a local stand-in.
+
+609\. Builder (2026-11-09, b6ac8937b): the revert c4ce243f3 also deleted unreleased changesets, and the pre-push
+`lint:changesets` refused the push. The builder restored them by hand. Tool fix (technical): `lint:changesets` names
+each deleted changeset that is not in `pre.json` and prints the `git checkout <sha>^ -- <file>` command that restores it.
+
+610\. Builder (2026-11-09): `nx run-many` prints the output of a task only when the task fails. The `--trace-gc`
+diagnostic of finding 608 logged to stdout, so a green run gave no data. Tool fix (technical, ADR 0230 / B441): a CI
+diagnostic writes to a file that the job uploads as an artifact, never only to stdout.
+
+611\. Builder (2026-11-09, da7bb2608): the `design-changes` filter skipped every Studio e2e shard on a push that changed
+only `ci.yml`, so the shard split had no CI proof. Tool fix (ADR 0230 / B439): Studio e2e runs on every push.
+
+612\. Builder (2026-11-09, eeaca8e0c): Large "a sketch scroll never empties a cell that had a picture" was red in 3
+sharded runs. Cause 1 (app bug): `liveShotsOf` gave the 6 live slots in row order, so variant-a cells lost their iframe
+before their picture loaded; now painted-without-picture > without-picture > pictured. A later blank iframe at
+`down2+30` recovered by +300 ms, cause not proven. The tool did not stop it because the e2e job had
+`continue-on-error`. Tool fix (technical): the job blocks (c99006d83), and the probe names its outcome (786f7adb0), so
+the next red says which cause. Open: a harsher held-picture repro still empties cells when more than 6 near cells have
+no picture; CI never showed it.
