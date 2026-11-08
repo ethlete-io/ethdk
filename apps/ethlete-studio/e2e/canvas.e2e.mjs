@@ -2640,6 +2640,61 @@ const warmUp = async (page, studioUrl) => {
   );
 };
 
+const waitForFirstFrame = async (page, studioUrl, designPort, frame) => {
+  const startedAt = performance.now();
+  const at = () => Math.round(performance.now() - startedAt);
+  const port = `:${designPort}/`;
+  const requests = new Map();
+  const onRequest = (request) =>
+    request.url().includes(port) && requests.set(request, { url: request.url(), start: at(), end: null });
+  const onDone = (request) => requests.has(request) && (requests.get(request).end = at());
+  const pings = [];
+  let pinging = true;
+  const ping = async () => {
+    while (pinging) {
+      const sent = at();
+
+      await fetch(`http://[::1]${port}__design/e2e-ping`, { signal: AbortSignal.timeout(WAIT_MS) }).catch(
+        () => undefined,
+      );
+      pings.push(at() - sent);
+      await new Promise((done) => setTimeout(done, 250));
+    }
+  };
+
+  page.on('request', onRequest);
+  page.on('requestfinished', onDone);
+  page.on('requestfailed', onDone);
+  const pinged = ping();
+
+  try {
+    await page.goto(studioUrl);
+    await page.waitForFunction(({ CANVAS, FRAME }) => document.querySelector(CANVAS)?.querySelector(FRAME), {
+      CANVAS,
+      FRAME: frame,
+    });
+  } catch (error) {
+    const short = (url) => url.slice(url.indexOf(port) + port.length - 1).slice(0, 90);
+    const slow = [...requests.values()]
+      .map((request) => ({ ...request, ms: (request.end ?? at()) - request.start }))
+      .filter((request) => request.end === null || request.ms > 1000)
+      .map(
+        (request) => `${short(request.url)} @${request.start} ${request.end === null ? 'pending' : `${request.ms}ms`}`,
+      );
+
+    throw new Error(
+      `${String(error).split('\n')[0]} - no frame after ${at()} ms; slow design requests: ${slow.join(', ') || 'none'}; ${requests.size} sent; server pings max ${Math.max(0, ...pings)} ms of ${pings.length}`,
+      { cause: error },
+    );
+  } finally {
+    pinging = false;
+    page.off('request', onRequest);
+    page.off('requestfinished', onDone);
+    page.off('requestfailed', onDone);
+    await pinged;
+  }
+};
+
 const runCase = async (page, studioUrl, designPort, target, testCase) => {
   await page.goto(studioUrl);
   await page.evaluate(
@@ -2650,11 +2705,7 @@ const runCase = async (page, studioUrl, designPort, target, testCase) => {
     { view: target.view, checkout },
   );
   await page.setViewportSize(testCase.viewport ?? NARROW);
-  await page.goto(studioUrl);
-  await page.waitForFunction(({ CANVAS, FRAME }) => document.querySelector(CANVAS)?.querySelector(FRAME), {
-    CANVAS,
-    FRAME: target.frame ?? FRAME,
-  });
+  await waitForFirstFrame(page, studioUrl, designPort, target.frame ?? FRAME);
   await page.waitForTimeout(2500);
   await settled(page, target.frame ?? FRAME);
 
@@ -2760,7 +2811,7 @@ const lead = async () => {
     CASES.flatMap((testCase, caseIndex) =>
       (testCase.pages ?? ['System', 'Sketches']).includes(target.name) &&
       (!testCase.labels || testCase.labels.includes(target.label)) &&
-      (!only || testCase.name.includes(only)) &&
+      (!only || only.split('|').some((part) => testCase.name.includes(part))) &&
       (!view || VIEWS[view].includes(target.name))
         ? [{ target: targetIndex, case: caseIndex, page: target.label ?? target.name, name: testCase.name }]
         : [],
