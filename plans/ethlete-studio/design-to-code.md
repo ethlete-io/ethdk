@@ -4162,3 +4162,9 @@ no tool flagged a visible branch without a design state. Marker sketch opened as
 tool gaps: the `--round` title did not stay in `sketch.json`, and the round note was not German. Tool fix (technical):
 `design check` lists app template branches that draw text (error, empty, loading) with no matching state in the
 implemented part; `sketch new` keeps `--round` in `sketch.json` and refuses a non-German round note.
+
+606\. Builder (2026-11-08): the doc agent's archive commit e8610084f replaced `archive/findings-2026-11.md` with
+findings 240-252 alone (3527 lines deleted): its script opened the file for writing before it read it. Pre-push
+`lint:studio-adrs` caught 36 STATUS rows that cited lost findings; the pre-commit hook did not. Fixed on top. Tool fix
+(technical): a `findings:archive <from> <to>` script moves findings, so no agent writes its own; the pre-commit hook
+refuses a commit that removes a finding from the archive and runs `lint:studio-adrs` on staged plan files.
