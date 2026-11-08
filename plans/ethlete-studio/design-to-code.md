@@ -4168,3 +4168,10 @@ findings 240-252 alone (3527 lines deleted): its script opened the file for writ
 `lint:studio-adrs` caught 36 STATUS rows that cited lost findings; the pre-commit hook did not. Fixed on top. Tool fix
 (technical): a `findings:archive <from> <to>` script moves findings, so no agent writes its own; the pre-commit hook
 refuses a commit that removes a finding from the archive and runs `lint:studio-adrs` on staged plan files.
+
+607\. Builder (2026-11-08): the merge stall spec still failed on Linux (210 ms, 353 ms) after finding 599. Docker
+profiles: a V8 memory-reducer major GC on the server thread (15-273 ms), triggered by the start of the jiti merge
+worker that only the spec does (no-op merge 0/10, idle worker 1/5, real merge 6/15). A second source (322 ms CPU in an
+847 ms span) did not reproduce. The doc agent decided: `--no-memory-reducer` for this spec, CPU time and threshold
+unchanged; no GC subtraction, no wall-clock. Tool fix (technical): a stall spec prints the GC trace of a failed span,
+so the next failure names its source without a docker session.
