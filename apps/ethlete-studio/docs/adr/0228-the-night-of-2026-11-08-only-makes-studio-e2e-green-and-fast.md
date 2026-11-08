@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B434
+built: c99006d83
 decided: 2026-11-08
 source: doc-agent session 2026-11-08, night plan
 ---

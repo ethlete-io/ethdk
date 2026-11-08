@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B434
+built: c99006d83
 decided: 2026-11-07
 source: doc-agent session 2026-11-07, Q1 and Q2 (red Studio e2e job)
 ---
