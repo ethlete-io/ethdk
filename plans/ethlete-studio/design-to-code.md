@@ -4257,3 +4257,15 @@ B445 slice ran only the Merge case, 2bb8d3d58 changed the fixtures without a re-
 racy sample can pass. Tool fix: a commit that touches the e2e fixtures, `serve.ts` or `studio-api.ts` makes
 `studio:e2e:bite` run each case of the affected page group 3 times and blocks when a result changes. The batch gate
 caught it before the push.
+
+622\. Builder (2026-11-08, B449): Unit "shows no other part while the remembered sketch is still being listed" timed
+out at 5106 ms in CI run 42479812031. Cause: it is the first case of `system-view.component.spec.ts`, so it carried the
+cold JIT compile of the whole System view tree inside `TestBed.createComponent` (232 of 292 ms locally; `whenStable()`
+and the `settle` loop cost under 10 ms, and no stub fetch holds a pending task). CI ran the file about 13 times slower
+(second case 1003 ms against 75 ms locally), which puts the compile near 5 s. A file-level `beforeAll` with a 30 s
+budget now compiles the tree once; with `--testTimeout=150` the case times out without it and passes in 24 ms with
+it. B442 (`shell-logo.spec.ts:140`) is not the same cause: it is an assertion (`closed: false` on Flows), not a
+timeout. The tool did not catch it because `spec:stress --load 2` stays far below the CI factor (4/4 passed with and
+without the fix), and nothing reports a case that runs close to its timeout. Tool fix: the vitest reporter of the Studio
+unit run fails a case that uses more than half of its timeout, so a first case that holds a cold compile shows up
+locally before it turns red in CI.

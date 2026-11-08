@@ -107,6 +107,23 @@ const mount = async (remembered: object) => {
   return fixture;
 };
 
+// The cold JIT compile of the component tree takes seconds on a loaded CI runner; outside this hook it lands in the 5 s budget of the first case.
+beforeAll(() => {
+  stubServer();
+  vi.stubGlobal('EventSource', SilentEventSource);
+  TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+
+  const fixture = TestBed.createComponent(SystemViewComponent);
+
+  fixture.componentRef.setInput('port', 4402);
+  fixture.componentRef.setInput('project', 'ethlete-sdk');
+  fixture.detectChanges();
+  fixture.destroy();
+  TestBed.resetTestingModule();
+  vi.unstubAllGlobals();
+  localStorage.clear();
+}, 30_000);
+
 describe('SystemViewComponent on a reload', () => {
   beforeEach(() => {
     localStorage.clear();
