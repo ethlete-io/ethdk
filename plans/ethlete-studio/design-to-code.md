@@ -4199,3 +4199,12 @@ of wait loops, and 23.4 of the 29.5 min of push-suite time (165-197 s per run, 8
 when cli changed; commit hook, lint and prettier together about 3.5 min. Polling (`tail -f`, `until grep`, `sleep`)
 on e2e logs ate a large part of the "other" 24.6 min. Fix (item 0 of the binding order): the e2e step in push:suite
 under 60 s over 3 measured runs, and the builder waits on e2e by notification, not by polling.
+
+640\. Doc agent (2026-11-09): the builder sat idle for about 55 min. Its button sketch subagent (finding 628) ran
+`node tools/scripts/et-design.mjs shot components/button --states --variants --product sdk` in the background at 17:52;
+the shot kept a live headless Chrome tree and never exited. The subagent waited for the completion notice with no
+deadline, and the builder waited on the subagent with no deadline. An older `et-design.mjs` (pid 1117702, from 15:27)
+also still ran. Cause of the shot hang: not known (no output captured). Why no tool caught it: `shot` has no overall
+deadline and writes no progress, and neither wait has a deadline. Tool fix (part of item 0, because it stops all work):
+`shot` and `design check` end with an error and a captured log after a hard deadline, and the builder waits on a
+background run or a subagent only with a deadline (Monitor until-loop with a timeout), then reads the log.
