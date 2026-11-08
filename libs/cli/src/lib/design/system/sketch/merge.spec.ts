@@ -6,9 +6,6 @@ import { syncBuiltinESMExports } from 'module';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { Readable } from 'stream';
-import { setFlagsFromString } from 'v8';
-import { runInNewContext } from 'vm';
-import { threadId } from 'worker_threads';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../design-config';
 import { sketchMergeAnswer } from '../../studio-api';
@@ -158,17 +155,9 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     const unit = calibrationMs();
     let longest = 0;
     let last = process.threadCpuUsage();
-    const windowStart = performance.now();
-    let lastAt = windowStart;
-    let worst = { from: windowStart, to: windowStart };
     const ticks = setInterval(() => {
-      const spent = cpuMs(last);
-      const now = performance.now();
-
-      if (spent > longest) worst = { from: lastAt, to: now };
-      longest = Math.max(longest, spent);
+      longest = Math.max(longest, cpuMs(last));
       last = process.threadCpuUsage();
-      lastAt = now;
     }, 5);
 
     const answer = await sketchMergeAnswer({
@@ -184,28 +173,9 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     for (const spy of spawners) spy.mockRestore();
     syncBuiltinESMExports();
 
-    // Temporary diagnostic for finding 607, removed after one CI run.
-    const tail = cpuMs(last);
-    const windowEnd = performance.now();
-
-    if (tail > longest) worst = { from: lastAt, to: windowEnd };
-
-    const unitAfter = calibrationMs();
-
-    setFlagsFromString('--expose-gc');
-    const gc = runInNewContext('gc') as () => void;
-    const markerAt = performance.now();
-
-    gc();
-    process.stdout.write(
-      `[merge-stall-diag] pid=${process.pid} threadId=${threadId} stallMs=${Math.max(longest, tail).toFixed(1)} limitMs=${(Math.max(unit, unitAfter) * 3).toFixed(1)} ` +
-        `stall=${worst.from.toFixed(1)}..${worst.to.toFixed(1)} window=${windowStart.toFixed(1)}..${windowEnd.toFixed(1)} ` +
-        `markerGcAt=${markerAt.toFixed(1)} (performance.now; isolate ms = value + offset, offset = trace ms of the 'testing' Mark-Compact right after - markerGcAt)\n`,
-    );
-
     expect(answer.status).toBe(200);
     expect(spawned).toEqual([]);
-    expect(Math.max(longest, tail)).toBeLessThan(Math.max(unit, unitAfter) * 3);
+    expect(Math.max(longest, cpuMs(last))).toBeLessThan(Math.max(unit, calibrationMs()) * 3);
   });
 
   it('records the merged parts, so a later change outside a sketch shows', () => {
