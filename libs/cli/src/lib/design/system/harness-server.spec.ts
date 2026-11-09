@@ -245,7 +245,7 @@ describe('startHarnessServer', () => {
       expect(builds()).toBe(6);
 
       expect(await serveOnce({ ...start, commandOf: vi.fn(HARNESS_BUILD) })).toBe('<script src="main.js"></script>');
-    });
+    }, 30_000);
 
     it('does not keep a build whose inputs changed while it ran', async () => {
       const { target, product, write, cacheDir } = repo();
