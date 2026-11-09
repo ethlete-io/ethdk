@@ -238,7 +238,21 @@ describe('SketchViewComponent', () => {
         pictured: new Set(['a 1', 'a 2']),
         painted: new Set(['a 1', 'b 2']),
       }),
-    ).toEqual(['b 2', 'b 1']);
+    ).toEqual(['b 1', 'b 2']);
+  });
+
+  it('keeps the frame of a painted cell without a picture live after it leaves the near cells, until its picture loads', () => {
+    const live = (pictured: string[]) =>
+      liveShotsOf({
+        order: ['a 1', 'a 2', 'b 1', 'b 2'],
+        near: new Set(['b 1', 'b 2']),
+        cap: 2,
+        pictured: new Set(pictured),
+        painted: new Set(['a 1', 'b 1']),
+      });
+
+    expect(live([])).toEqual(['a 1', 'b 1', 'b 2']);
+    expect(live(['a 1'])).toEqual(['b 1', 'b 2']);
   });
 
   it('switches the round from the select, remembers it, and follows a new round', async () => {

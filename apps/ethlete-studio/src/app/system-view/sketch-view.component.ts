@@ -101,9 +101,9 @@ const NEAR_MARGIN = '400px';
 const LIVE_SHOT_CAP = 6;
 
 /**
- * The keys of `near` that stay live frames: at most `cap`, in the order of `order`. The cap drops the frames of
- * `pictured` keys (a picture loaded) first and of `painted` keys last, so a painted cell keeps its frame until its
- * picture can take its place.
+ * The keys that stay live frames: at most `cap` keys of `near`, dropping the frames of `pictured` keys (a picture
+ * loaded) first and of `painted` keys last, plus every `painted` key without a picture, near or not, so no cell that
+ * showed its frame goes empty before its picture can take its place.
  */
 export const liveShotsOf = ({
   order,
@@ -120,10 +120,14 @@ export const liveShotsOf = ({
 }) => {
   const rank = (key: string) => (pictured.has(key) ? 2 : painted.has(key) ? 0 : 1);
 
-  return order
-    .filter((key) => near.has(key))
-    .sort((a, b) => rank(a) - rank(b))
-    .slice(0, cap);
+  const capped = new Set(
+    order
+      .filter((key) => near.has(key))
+      .sort((a, b) => rank(a) - rank(b))
+      .slice(0, cap),
+  );
+
+  return order.filter((key) => capped.has(key) || (painted.has(key) && !pictured.has(key)));
 };
 
 @Component({

@@ -3828,3 +3828,27 @@ As built (648): `failureReport()` in `tools/scripts/push-suite.mjs` prints every
 Large failure (`tools/scripts/fixtures/push-suite/e2e-failed.txt`); it fails with the old tail-only report. The same
 real log matches the e2e-progress mod regexes: total 133, workers 8, 132 ✓, 1 ✘, done. Not verified: the mod UI
 with `/e2e` during a live push-suite run.
+
+As built (647): the cause was `liveShotsOf` in `system-view/sketch-view.component.ts`. It only kept frames of near
+cells (400px margin, cap 6), so a cell whose frame had painted but whose picture had not loaded yet lost its frame
+when it scrolled out of the near band. On return it mounted a new frame and stayed empty until that frame painted.
+Under load the low-priority `__design/shot` pictures arrive late, so the cells rely on their frames, and the scroll
+back up hit them (the `up1 a product` rows). Fix: a painted cell without a loaded picture stays live, near or not,
+outside the cap, until its picture loads. The cap still governs the near cells. Reproduction: CPU load alone (8-10
+parallel runs plus 24-56 busy loops, or CDP `Emulation.setCPUThrottlingRate` 4x/8x) never reproduced it. Holding the
+picture responses (a context route that delays `__design/shot` by 60 s) reproduces it deterministically: 6/6 fail
+before (`up1+30 current product [pic:pending]`), 6/6 pass after (8/8 overall, plus 5/6 with one start-up timeout
+while two page groups ran alongside). Verified: the case alone and with `--hold-listings 14000`, `--page Large` 32/32
+and `--page Sketches` 26/26 (one Large run under extra load failed the listing-refresh 150px case, which passed 3/3
+alone on both builds and in a quiet rerun), the sketch-view spec (a new `liveShotsOf` spec fails on the old code),
+tsc, eslint. Not fixed: the other half of the failures (`down7+300 a section (iframe: no frame)`, also `no context`)
+is a probe race in the case, not an empty cell. With pictures delayed 3 s, a MutationObserver and a probe-time read
+show that the census saw the frame with the picture pending, then the picture loaded, the frame was swapped out, and
+the probe hit a detached iframe; at that moment the cell showed its loaded picture (`img true/1440/1, iframe none`).
+That race fails about 1/4 runs before and about 7/16 after the fix (more live frames swap out when pictures land).
+It needs a case fix: re-census a cell whose probe says `no frame` or `no context`. Not verified: a full 8-worker
+suite run. Why the design tools missed it: compare, verify and check read settled pictures and frames of one state.
+None scrolls the sketch view, and none runs with late pictures, so a cell's empty time during a scroll is invisible
+to them. Tool fix: the decided e2e load mode that the repeat gate runs. Generic CPU load is a poor base because it did
+not reproduce. A better base is a load mode that delays the design server's slow paths (picture shots by several
+seconds, frame loads by a smaller amount), as the delayed-shot route here does.
