@@ -22,11 +22,8 @@ Builder: ethlete-sdk-22 in tmux `claude@ethlete-sdk`; this session runs in `clau
 - Decided by me tonight (applied rules, no ADR): no PUSH_SUITE_SKIP for agents (builder-agent skill); the cargo fix
   went through push-suite on origin/next plus only the needed commits; the worker count stays 3 on the Mac (666).
 
-## Questions for the human in the morning (one round, round format)
+## Questions for the human in the morning
 
-1. On which machine does the 90 s e2e goal of ADR 0237 count? The Mac runs the step in about 420-520 s on 3
-   workers, the PC in 117-127 s on 8 (finding 664). Recommendation: the PC, and the Mac only reports its time.
-2. Exclude the checkout from Spotlight indexing on the Mac? `mds_stores` and `mediaanalysisd` ran at about 140 % CPU
-   during the e2e measurement (finding 666). Recommendation: yes, the human adds it in System Settings.
-3. Three orphan `a-cli` design servers (pids 65717-65719, parent 1, 1.5 days old) are still alive; the permission
-   check refused the builder's kill, so the human must stop them (finding 673). Not a decision, an action.
+Answered on 2026-11-09 in the morning round: ADR 0240 (the 90 s goal counts on the desk PC, every machine stays as
+fast as possible) and ADR 0241 (the human excludes the checkout from Spotlight). The doc agent stopped the three
+orphan design servers with the human's consent.
