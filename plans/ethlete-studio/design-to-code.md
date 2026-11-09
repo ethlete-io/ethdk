@@ -4063,6 +4063,12 @@ that the workers share the same inputs. Tool fix (tonight, in this order): (a) t
 timeout, not a log line; (b) the fixture check runs once per run, the other workers skip it; (c) one shot and vite
 cache for all workers, keyed by the read-files fingerprint (finding 649), not by the checkout path. This is also the
 disk check cache of ADR 0239.
+As built (a)+(b): fe28fc8c9 ran the check on worker 0 only and failed the run on timeout; it regressed (1/3),
+because the fixture request was also each worker's cache warm-up, so the cold compare moved into the first case.
+265baef27: every worker requests the listing again (warm-up, same timeout, a fail fails the run), only worker 0
+asserts the states; 3/3, fixtures 43 s per worker. Lesson: a setup request with a side effect looked like a pure
+check; the work saving waits for (c). Tool fix: a setup step names its side effects in its function name
+(`warmAndAssertFixtures`), so a change that drops it sees what it removes.
 
 As built (B462, parts a and b, fe28fc8c9, then corrected): the fixture request runs on every worker again, because it
 is also each worker's cache warm-up: each worker has its own cold shot cache, and without the request its first
