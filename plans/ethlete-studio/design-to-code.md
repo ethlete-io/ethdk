@@ -3806,3 +3806,17 @@ every case body, listing and stability, against about 50 s today. Next steps: ca
 `libs/cli` per product until a watched file changes (helps Studio too); cut the cost of a case's page load (one
 Studio boot per case, 1.3 s under load); find what else keeps each design server main thread busy (50 s per server:
 TypeScript, playwright shots, vite) - or relax the goal.
+
+647\. Builder (2026-11-09, item 0): the Large case "a sketch scroll never empties a cell" fails under 8-worker load in
+about 3 of 10 full runs, and blocked the push-suite on 99dda96f7 (e2e 132/133). Alone it passes 4 of 4. A cell loses
+its iframe for 30-300 ms after a scroll under CPU load, so this is probably a Studio defect under load, not a test
+defect (not proven). Why no tool caught it: the repeat gate runs the suite three times on one load level, so a fault
+that needs CPU pressure passes until the load is high by chance. Tool fix (part of item 0, decided by the doc agent
+under the anti-stall rule because it blocks the push): fix the empty cell at its cause in Studio; then the e2e runner
+gets a load mode (CPU pressure on purpose) that the repeat gate runs, so a load fault fails every time and not one
+push in three.
+
+648\. Builder (2026-11-09, item 0): a failed push-suite step prints only its last 40 output lines, so the row of the
+failed e2e case was cut away and the log named no case. Why no tool caught it: the step output is a fixed tail, not a
+summary of what failed. Tool fix (part of the e2e-progress step of item 0): push-suite writes the e2e step live to
+`.claude/handoffs/push-suite-e2e.log`, and a failed step prints every failed row, not a fixed tail.
