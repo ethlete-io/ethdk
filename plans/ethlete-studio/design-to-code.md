@@ -3774,3 +3774,9 @@ its frame count through a sketch edit"). Why no tool caught it: a wait helper ma
 the hold run is a separate mode a local run can skip. Tool fix (backlog, per ADR 0235 at the cause): every e2e wait
 helper throws on its deadline with what it waited for, and the default local e2e run of a page group runs the same
 runs as the repeat gate, the hold run included.
+
+As built (646): `listingAnswered(page)` in `canvas.e2e.mjs` waits until no cell is pending (60 s), runs first in
+`settled()`, replaces 7 inline copies, and runs after the first-load reload. Verified: every reported hold case passes
+with and without `--hold-listings 14000`; the two Large cases ("a sketch scroll never empties a cell", "a sketch keeps
+its frame count") pass 4 of 4 alone on HEAD and on the fix, so their failures come only under 8-worker load and do not
+come from this fix. Not verified: the Large load flakes; the push-suite repeat gate verdict follows.

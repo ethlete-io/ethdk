@@ -539,7 +539,13 @@ const withChangedCliAndSlowRestart = (key) => {
   };
 };
 
+const listingAnswered = (page) =>
+  page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
+    timeout: FULL_COMPARE_MS,
+  });
+
 const settled = async (page, selector) => {
+  await listingAnswered(page);
   let last = '';
   let same = 0;
 
@@ -739,9 +745,7 @@ const CASES = [
       const selector = target.frame ?? FRAME;
       const { view } = state;
 
-      await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
-        timeout: FULL_COMPARE_MS,
-      });
+      await listingAnswered(page);
       await settled(page, selector);
       const boxes = await frameBoxes(page, selector);
       const index = boxes.findIndex(
@@ -873,9 +877,7 @@ const CASES = [
     run: async (page, state) => {
       const { view } = state;
 
-      await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
-        timeout: FULL_COMPARE_MS,
-      });
+      await listingAnswered(page);
       await page.mouse.click((view.left + view.right) / 2, (view.top + view.bottom) / 2);
       await page.keyboard.press('Shift+Digit1');
       await settle(page);
@@ -974,9 +976,7 @@ const CASES = [
 
       release();
       await fullAnswered;
-      await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
-        timeout: FULL_COMPARE_MS,
-      });
+      await listingAnswered(page);
       await page.unroute('**/__design/sketches?*');
 
       const entry = entryOf(listed);
@@ -1395,9 +1395,7 @@ const CASES = [
       });
       await page.reload();
       await page.waitForFunction(() => window.__firstSketchShots > 0);
-      await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
-        timeout: FULL_COMPARE_MS,
-      });
+      await listingAnswered(page);
 
       const [first, settled] = await page.evaluate(() => [
         window.__firstSketchShots,
@@ -1424,9 +1422,7 @@ const CASES = [
 
       await page.reload();
       await page.waitForSelector('ethlete-sketch-view [data-shot]');
-      await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
-        timeout: FULL_COMPARE_MS,
-      });
+      await listingAnswered(page);
       await showAllStates(page);
       const settledCount = await count();
       let pictured = shown(await sketchCells(page));
@@ -2001,9 +1997,7 @@ const CASES = [
     pages: ['Wide'],
     viewport: WIDE,
     run: async (page) => {
-      await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
-        timeout: FULL_COMPARE_MS,
-      });
+      await listingAnswered(page);
       await page.getByRole('button', { name: 'Einpassen' }).first().click();
       await settle(page);
       await settled(page, FRAME);
@@ -2066,9 +2060,7 @@ const CASES = [
     name: 'the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms',
     pages: ['Sketches', 'Wide'],
     run: async (page, _state, target) => {
-      await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
-        timeout: FULL_COMPARE_MS,
-      });
+      await listingAnswered(page);
       const faults = [];
 
       try {
@@ -2503,6 +2495,7 @@ const CASES = [
           CANVAS,
           FRAME,
         });
+        await listingAnswered(page);
 
         const loadState = () =>
           page.evaluate(() => {
