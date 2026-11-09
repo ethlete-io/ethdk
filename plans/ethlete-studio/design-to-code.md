@@ -4064,6 +4064,14 @@ timeout, not a log line; (b) the fixture check runs once per run, the other work
 cache for all workers, keyed by the read-files fingerprint (finding 649), not by the checkout path. This is also the
 disk check cache of ADR 0239.
 
+As built (B462, parts a and b): only the first worker 0 gets `--check-fixtures` and runs the fixture check. The
+other workers skip it. A timeout or error in the listing now fails the check. The worker reports the fault to the lead,
+the lead empties the queue and fails the run with the message. A real fixture mismatch fails the run the same way.
+`listingAnswered` and every timeout are unchanged, so a worker's own first cold listing still shows. Part c is open.
+Verified with one run of `first load creates one iframe` on 3 workers: fixtures 31.6 s on worker 0, 0.0 s on workers 1
+and 2. 1/3 passed: the Large and Sketches cases hit a 60 s `waitForFunction` timeout on the skipping workers, which
+still do their own cold compare (part c). The failing check path was not run.
+
 668\. Builder (2026-11-09, Mac night, push:suite on 4a0978b11): e2e 130/131 in 544 s, load 7.7 to 40. The case
 'hover alone draws no frame border' failed on "new -> button[data-part-give-go,...] outline solid 2px transparent |
 border solid 1px transparent": a button that mounted late under load, with no drawn border. Alone 4/4 pass (B464).

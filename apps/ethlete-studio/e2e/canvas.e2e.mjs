@@ -2660,9 +2660,9 @@ const assertSketchFixtures = async (page, designPort) => {
   const listing = await page.request
     .get(`http://[::1]:${designPort}/__design/sketches?product=studio`, { timeout: COLD_START_MS })
     .then((response) => response.json())
-    .catch((error) => console.error(`sketch fixture check skipped: ${String(error).split('\n')[0]}`));
-
-  if (!listing) return;
+    .catch((error) => {
+      throw new Error(`sketch fixture check could not list the sketches: ${String(error).split('\n')[0]}`);
+    });
 
   const faults = FIXTURE_CHANGES.flatMap(({ target, part, variants, changed }) => {
     const sketch = listing?.sketches?.find((candidate) => candidate.target === target);
@@ -2933,7 +2933,11 @@ const work = async () => {
       await page
         .context()
         .route(`${studioUrl}${BLANK_PATH}`, (route) => route.fulfill({ contentType: 'text/html', body: '' }));
-      await assertSketchFixtures(page, designPort);
+      if (args.includes('--check-fixtures'))
+        await assertSketchFixtures(page, designPort).catch((error) => {
+          process.send({ type: 'fixtures', detail: error.message });
+          throw error;
+        });
       const fixed = performance.now();
 
       await studioBuilt;
@@ -3085,11 +3089,13 @@ const lead = async () => {
       `  ${result.ok ? '✓' : '✘'}  ${rows.length} [${job.page}] › ${job.name} ${result.detail} (${seconds(result.ms ?? 0).trim()})`,
     );
   };
+  let fixtureFault;
 
   try {
     ensureCli();
     const children = new Set();
     let builtOk = !scratch;
+    let fixturesAsked = false;
     const build = scratch ? buildStudioAsync(scratch) : Promise.resolve(0);
     const failBuild = (code) => {
       console.log(`[canvas-e2e] studio build failed with ${code}`);
@@ -3110,10 +3116,17 @@ const lead = async () => {
 
     const runWorker = async (index) => {
       const port = await freePort();
-      const child = fork(fileURLToPath(import.meta.url), ['--worker', '--built', built ?? scratch], {
-        env: { ETHLETE_DESIGN_SLOW_CHECKS: 'off', ...process.env, DE_PORT: String(port) },
-        stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
-      });
+      const checkFixtures = index === 0 && !fixturesAsked;
+
+      fixturesAsked ||= checkFixtures;
+      const child = fork(
+        fileURLToPath(import.meta.url),
+        ['--worker', '--built', built ?? scratch, ...(checkFixtures ? ['--check-fixtures'] : [])],
+        {
+          env: { ETHLETE_DESIGN_SLOW_CHECKS: 'off', ...process.env, DE_PORT: String(port) },
+          stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+        },
+      );
 
       children.add(child);
       child.on('exit', () => children.delete(child));
@@ -3128,6 +3141,11 @@ const lead = async () => {
         if (message.type === 'result') {
           record(current, message);
           current = undefined;
+        }
+        if (message.type === 'fixtures') {
+          fixtureFault = message.detail;
+          console.log(`[canvas-e2e] ${fixtureFault}, stopping the run`);
+          queue.splice(0);
         }
         if (message.type === 'ready')
           console.log(
@@ -3202,6 +3220,7 @@ const lead = async () => {
   failed.forEach((row, at) => console.log(`  ${at + 1}) [${row.page}] › ${row.name}`));
   console.log(`  ${rows.length - failed.length} passed (${seconds(suiteMs).trim()})`);
   if (failed.length) console.log(`  ${failed.length} failed`);
+  if (fixtureFault) console.log(`  ${fixtureFault}`);
   if (notRun.length) console.log(`  ${notRun.length} did not run`);
   console.log(
     `\n${rows.length - failed.length}/${total} passed${shardLabel} in ${seconds(suiteMs).trim()} on ${workers} worker(s)`,
@@ -3209,7 +3228,9 @@ const lead = async () => {
   console.log(
     `suite${shard ? ` shard ${shard.index}/${shard.count}` : ''} ${minutes(suiteMs)} of ${minutes(BUDGET_MS)} budget${overBudget ? ` - over budget${enforceBudget ? ', failing the run' : ' (STUDIO_E2E_BUDGET_ENFORCE=1 fails the run)'}` : ''}`,
   );
-  process.exit(failed.length || rows.length < total || !matched || (overBudget && enforceBudget) ? 1 : 0);
+  process.exit(
+    fixtureFault || failed.length || rows.length < total || !matched || (overBudget && enforceBudget) ? 1 : 0,
+  );
 };
 
 await (args.includes('--worker') ? work() : lead());
