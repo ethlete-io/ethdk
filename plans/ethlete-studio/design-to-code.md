@@ -4209,6 +4209,13 @@ out with `listingMayPend: true`; those 17 runs then pass 17/17 in a hold run. Bi
 passes with it restored; `studio-e2e-listing-hold.spec.mjs` covers the verdict. Not verified: whether the 8 opt-out
 cases trip only intermittently in other hold runs (one full hold run seen), and a push:suite run.
 
+As built (B464, finding 677): the hover case maps each element near the frame to its visible edges only: the outline
+and each border side when the style is not `none`/`hidden`, the width is above 0 and the colour is not transparent,
+and each box-shadow with a non-transparent colour and a non-zero length. An element with no visible edge counts as no
+edge, so a late-mounted transparent button is no change; a new visible edge still fails (`no edge -> ...`). Bite (a
+temporary button mounted over the frame on hover): transparent outline, border and shadow pass 4/4 pages, a red one
+fails 4/4; the case then passed 4 runs of 4/4 at load 45-66. Not verified: a push:suite run.
+
 677\. Builder (2026-11-09, Mac night, push:suite at d00510226): the B464 hover case failed again, 130/131. It
 reported a late-mounted `button[data-part-give-go]` with only a transparent outline, border and shadow as a `new`
 frame border. Cause: the case compared raw computed-style strings, so it measured DOM churn under load, not drawn

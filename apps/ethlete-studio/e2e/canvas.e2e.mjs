@@ -1866,12 +1866,37 @@ const CASES = [
               if (!ids.has(element)) ids.set(element, (window.__hoverEdgeCount = (window.__hoverEdgeCount ?? 0) + 1));
 
               const style = getComputedStyle(element);
+              const seen = (color) =>
+                color !== 'transparent' && !/^rgba\(.*,\s*0(\.0*)?\)$|\/\s*0(\.0*)?\)$/.test(color);
+              const line = (name, lineStyle, width, color) =>
+                lineStyle !== 'none' && lineStyle !== 'hidden' && parseFloat(width) > 0 && seen(color)
+                  ? [`${name} ${lineStyle} ${width} ${color}`]
+                  : [];
+              const shadows =
+                style.boxShadow === 'none'
+                  ? []
+                  : style.boxShadow.split(/,(?![^(]*\))/).filter((shadow) => {
+                      const color = shadow.match(/[a-z-]+\([^)]*\)|transparent/)?.[0] ?? 'currentcolor';
+
+                      return seen(color) && (shadow.match(/-?[\d.]+px/g) ?? []).some((length) => parseFloat(length));
+                    });
+              const visible = [
+                ...line('outline', style.outlineStyle, style.outlineWidth, style.outlineColor),
+                ...(shadows.length ? [`shadow ${shadows.join(',')}`] : []),
+                ...['top', 'right', 'bottom', 'left'].flatMap((side) =>
+                  line(
+                    `border-${side}`,
+                    style.getPropertyValue(`border-${side}-style`),
+                    style.getPropertyValue(`border-${side}-width`),
+                    style.getPropertyValue(`border-${side}-color`),
+                  ),
+                ),
+              ];
               const marks = [...element.attributes].flatMap((attribute) =>
                 attribute.name.startsWith('data-') ? [attribute.name] : [],
               );
 
-              edges[ids.get(element)] =
-                `${element.localName}[${marks}] outline ${style.outlineStyle} ${style.outlineWidth} ${style.outlineColor} | shadow ${style.boxShadow} | border ${style.borderStyle} ${style.borderWidth} ${style.borderColor}`;
+              edges[ids.get(element)] = visible.length ? `${element.localName}[${marks}] ${visible.join(' | ')}` : '';
             }
 
             return edges;
@@ -1887,7 +1912,7 @@ const CASES = [
       await settle(page);
       const after = await edges();
       const changed = Object.entries(after).flatMap(([id, edge]) =>
-        edge === before[id] ? [] : [`${before[id] ?? 'new'} -> ${edge}`],
+        edge === (before[id] ?? '') ? [] : [`${before[id] || 'no edge'} -> ${edge || 'no edge'}`],
       );
 
       return { ok: changed.length === 0, detail: changed.length ? changed.join('; ') : 'unchanged' };
