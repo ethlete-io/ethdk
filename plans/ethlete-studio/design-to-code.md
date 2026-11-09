@@ -4063,3 +4063,11 @@ that the workers share the same inputs. Tool fix (tonight, in this order): (a) t
 timeout, not a log line; (b) the fixture check runs once per run, the other workers skip it; (c) one shot and vite
 cache for all workers, keyed by the read-files fingerprint (finding 649), not by the checkout path. This is also the
 disk check cache of ADR 0239.
+
+668\. Builder (2026-11-09, Mac night, push:suite on 4a0978b11): e2e 130/131 in 544 s, load 7.7 to 40. The case
+'hover alone draws no frame border' failed on "new -> button[data-part-give-go,...] outline solid 2px transparent |
+border solid 1px transparent": a button that mounted late under load, with no drawn border. Alone 4/4 pass (B464).
+B462 did not fail this time. Why no tool caught it: the case compares the DOM before and after the hover and counts
+every new element as a border, even one whose outline, border and shadow are all transparent. Tool fix (tonight, bug
+queue; doc agent decision): the case waits for a stable DOM before the hover, so a real late border still fails.
+Order: 667 (b) and (a) first, because they cut the load; then one push:suite that carries the cargo fix.
