@@ -4187,3 +4187,11 @@ run leaves no per-project figures, and a config tuned on one machine went to CI 
 662 sets `min(cap, default)`, never a fixed count.
 
 As built: CI run 42699047872 failed part-go and part-ready (and part-accept in attempt 1) at the 30 s timeout, twice. The cause is not proven; green runs print no vitest worker line. The fixed `maxWorkers: 4` may exceed vitest's default (cores - 1) on the CI runner, so the cap is now `Math.min(4, cores - 1)` in the cli and Studio configs. Verify in the next CI run.
+
+676\. Builder (2026-11-09, Mac night, c11cc03ac): the builder's plan note for c11cc03ac was in the shared
+`design-to-code.md` when the doc agent ran `git commit -- plans/ethlete-studio/design-to-code.md`, so d6cd9db4a
+carries it and c11cc03ac does not. No content was lost, but the as-built note sits in a commit that does not name the
+code sha. Why no tool caught it: a path commit takes the whole file, and nothing tells a session that another one has
+unsaved hunks in it. Tool fix (backlog): the pre-commit hook warns when a staged plan file has hunks that the claims
+file (`ethlete-agent-sessions`) gives to another live session; until then the builder commits its plan note in the
+same commit as its code.
