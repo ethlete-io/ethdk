@@ -24,7 +24,7 @@ notify = "8.2.0"
 rand = "0.10.2"
 rcgen = { version = "0.14.10", default-features = false, features = ["aws_lc_rs"] }
 reqwest = { version = "0.13.4", features = ["json", "form", "gzip"] }
-rusqlite = { version = "0.40.2", features = ["bundled-sqlcipher-vendored-openssl", "chrono"] }
+rusqlite = { version = "0.41.0", features = ["bundled-sqlcipher-vendored-openssl", "chrono"] }
 rustls = { version = "0.23.45", default-features = false, features = ["aws-lc-rs", "std"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
