@@ -4175,3 +4175,15 @@ delay: the case did not touch the state it claims to guard. Fixed: it waits for 
 component now fails 3/3 under the delay, the fix passes. Why no tool caught it: nothing proves that a case's
 precondition holds before its action. Tool fix (backlog): a case that guards cells asserts a non-empty set of guarded
 cells before the action, and the 651 bite proof is the check that a case can fail at all.
+
+675\. Builder (2026-11-09, Mac night, CI 42699047872 and its rerun): cli `part-go` and `part-ready` hit the 30 s
+timeout twice, `part-accept` once (B466); green in 42651661922. Suspect: the fixed `maxWorkers: 4` of 343e968aa,
+which can raise the CI runner above its old default. The worker count could not be proven, because a green CI run
+prints no vitest summary (Nx shows output only on failure), so there is no worker count or time per project to
+compare. No cause in 15 min, so per ADR 0230 the suspect is undone: both caps become `min(4, vitest default)` (not a
+git revert, 343e968aa also holds the regex fix of 660); the next CI run is the proof. Why no tool caught it: a green
+run leaves no per-project figures, and a config tuned on one machine went to CI with no CI-side measurement. Tool fix
+(bug queue): the cli and Studio test targets print workers and duration also when green, and the shared preset of
+662 sets `min(cap, default)`, never a fixed count.
+
+As built: CI run 42699047872 failed part-go and part-ready (and part-accept in attempt 1) at the 30 s timeout, twice. The cause is not proven; green runs print no vitest worker line. The fixed `maxWorkers: 4` may exceed vitest's default (cores - 1) on the CI runner, so the cap is now `Math.min(4, cores - 1)` in the cli and Studio configs. Verify in the next CI run.
