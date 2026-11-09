@@ -210,6 +210,36 @@ describe('SketchViewComponent', () => {
     expect(picture().classList).toContain('opacity-0');
   });
 
+  it('keeps a painted frame shown until the frame of a new revision paints, so a cell without a picture never goes empty', async () => {
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => window.setTimeout(callback, 0));
+    const { fixture, root } = await render(ROUNDED, noComments);
+    const cell = root.querySelector<HTMLIFrameElement>('iframe[data-variant="b"]')!.parentElement!;
+    const frames = () => [...cell.querySelectorAll<HTMLIFrameElement>('iframe')];
+    const paint = async (frame: HTMLIFrameElement) => {
+      window.dispatchEvent(
+        new MessageEvent('message', { source: frame.contentWindow, data: { type: 'design-explore:painted' } }),
+      );
+      await settle(fixture);
+    };
+    const [old] = frames();
+
+    await paint(old!);
+    fixture.componentRef.setInput('revision', 1);
+    await settle(fixture);
+
+    const [kept, next] = frames();
+
+    expect(kept).toBe(old);
+    expect(kept!.classList).not.toContain('opacity-0');
+    expect(next!.classList).toContain('opacity-0');
+    expect(new URL(next!.src).searchParams.get('revision')).toBe('1');
+
+    await paint(next!);
+
+    expect(frames()).toEqual([next]);
+    expect(next!.classList).not.toContain('opacity-0');
+  });
+
   it('makes no frame live while the listing names the sketch without its targets', async () => {
     const { fixture, root } = await render({ ...ROUNDED, targets: undefined }, noComments);
 

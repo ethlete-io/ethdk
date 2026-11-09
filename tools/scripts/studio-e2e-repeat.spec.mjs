@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -138,4 +139,18 @@ test('only the hold run holds the listings and delays the pictures', () => {
     String(DELAY_PICTURES_MS),
   ]);
   for (const args of runs.slice(0, -1)) assert.deepEqual(args, ['--page', 'Large', '--built', '/built']);
+});
+
+test('the hold run delays the pictures of the sketch edit case but never holds its listings', () => {
+  const holdArgs = runArgs(RUNS - 1, [], '/built').filter((arg) => arg !== '--built' && arg !== '/built');
+  const listed = spawnSync(process.execPath, ['apps/ethlete-studio/e2e/canvas.e2e.mjs', '--list', ...holdArgs], {
+    cwd: join(import.meta.dirname, '../..'),
+    encoding: 'utf8',
+  }).stdout;
+  const row = listed
+    .split('\n')
+    .find((line) => line.includes('keeps its frame count and pictures through a sketch edit'));
+
+  assert.ok(row?.includes('[listings not held]'), row);
+  assert.ok(!row.includes('[pictures not delayed]'), row);
 });

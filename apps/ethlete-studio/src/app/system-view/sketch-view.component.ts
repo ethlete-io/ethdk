@@ -226,7 +226,8 @@ export const liveShotsOf = ({
           />
         }
         @if (liveShots().has(key)) {
-          @if (rowShots().get(key); as src) {
+          @let srcs = frameSrcs().get(key) ?? [];
+          @for (src of srcs; track src) {
             <iframe
               #shotFrame
               [src]="src"
@@ -234,10 +235,12 @@ export const liveShotsOf = ({
               [title]="key"
               [attr.data-variant]="row.key"
               [attr.data-state]="state"
-              [class.opacity-0]="!paintedShots().has(key)"
-              (paintedChange)="framePainted({ key, frame: shotFrame, painted: $event })"
+              [class.opacity-0]="paintedFrames().get(key)?.frame !== shotFrame"
+              (paintedChange)="framePainted({ key, frame: shotFrame, src, painted: $event })"
               class="absolute inset-0 block size-full border-0 scheme-normal"
             ></iframe>
+          }
+          @if (srcs.length) {
             <ethlete-frame-shield class="pointer-events-auto" />
           }
         }
@@ -486,12 +489,12 @@ export class SketchViewComponent {
     }),
   );
 
-  private paintedFrames = signal<ReadonlyMap<string, HTMLIFrameElement>>(new Map());
+  protected paintedFrames = signal<ReadonlyMap<string, { frame: HTMLIFrameElement; src: SafeResourceUrl }>>(new Map());
 
   protected paintedShots = computed(() => {
     const mounted = new Set(this.shotFrames().map(({ nativeElement }) => nativeElement));
 
-    return new Set([...this.paintedFrames()].flatMap(([key, frame]) => (mounted.has(frame) ? [key] : [])));
+    return new Set([...this.paintedFrames()].flatMap(([key, { frame }]) => (mounted.has(frame) ? [key] : [])));
   });
 
   protected shotPictures = computed(
@@ -604,7 +607,7 @@ export class SketchViewComponent {
     });
   });
 
-  protected rowShots = computed(() => {
+  private rowShots = computed(() => {
     const { retry } = this.frameRetries();
 
     return new Map<string, SafeResourceUrl>(
@@ -615,6 +618,19 @@ export class SketchViewComponent {
           return [key, this.safeUrlOf(retriedSrcOf(shot.src, retry[key]))] as const;
         }),
       ),
+    );
+  });
+
+  protected frameSrcs = computed(() => {
+    const painted = this.paintedShots();
+    const frames = this.paintedFrames();
+
+    return new Map(
+      [...this.rowShots()].map(([key, src]) => {
+        const shown = painted.has(key) ? frames.get(key)?.src : undefined;
+
+        return [key, shown && shown !== src ? [shown, src] : [src]] as const;
+      }),
     );
   });
 
@@ -777,13 +793,23 @@ export class SketchViewComponent {
     this.run('discard', discardSketch$(address).pipe(tap(() => this.discardComplete.emit(address.sketch))));
   }
 
-  protected framePainted({ key, frame, painted }: { key: string; frame: HTMLIFrameElement; painted: boolean }) {
+  protected framePainted({
+    key,
+    frame,
+    src,
+    painted,
+  }: {
+    key: string;
+    frame: HTMLIFrameElement;
+    src: SafeResourceUrl;
+    painted: boolean;
+  }) {
     this.paintedFrames.update((frames) => {
-      if (!painted && frames.get(key) !== frame) return frames;
+      if (!painted && frames.get(key)?.frame !== frame) return frames;
 
       const next = new Map(frames);
 
-      if (painted) next.set(key, frame);
+      if (painted) next.set(key, { frame, src });
       else next.delete(key);
 
       return next;

@@ -4148,3 +4148,22 @@ parent pid 1, started about 1.5 days ago, `node_modules/.cache/a-cli/src/index.j
 live, at 0 % CPU. A run left them as orphans. Why no tool caught it: a design server does not exit when its parent
 dies, and no run lists old servers of the checkout. Tool fix (bug queue): a design server exits when its parent
 process is gone, and push-suite lists design servers of the checkout older than one hour at its start.
+
+As built (671/B465, finding 672): the cause was the sketch view, not the case's probe. `sketchRowsOf` puts the
+revision into the frame address of every variant row, so a sketch edit gives each cell of row `a` a new address. The
+same `<iframe>` got the new `src`, `FramePaintedDirective` emitted `false` at once, and the cell hid its frame. A cell
+whose picture had loaded fell back to it; a cell shown only by its painted frame, picture not loaded yet (late pictures
+under load), was empty until the new frame painted, about 80 animation frames (1.3 s) per cell. Fix
+(`sketch-view.component.ts`): `paintedFrames` keeps each painted frame's address, and `frameSrcs` renders the frames
+with `@for ... track src`, so the painted frame stays mounted and shown under the new one until that one paints. The
+case also measured the wrong cells: it took its picture set as soon as any cell showed, and with late pictures only the
+`current` row (unchanged by the edit) had painted, so it passed without testing an edited cell. It now waits for a
+cell of variant `a`. The hold run held the listings 14 s, past the case's 10 s window, so the edit never reached the
+page there; the case opts out of the listing hold (`holdListings: false`, the runner's per-case flag, listed as
+`[listings not held]`), so the gate's hold run tests it with pictures delayed 60 s, and `studio-e2e-repeat.spec.mjs`
+checks that. Bite: `--delay-pictures 60000` fails 3/3 on the old component (all three row-`a` cells lost, the
+reported message) and passes 3/3 with the fix (0 empty animation frames); with the hold-run arguments 1/1 fail before,
+1/1 pass after; plain runs pass 2/2 with the fix; a new sketch-view spec fails on the old component. Load 4.8 to 8.4 throughout. Why no gate caught it:
+the case only bit when a visible variant cell had a painted frame and no loaded picture, which needs late pictures,
+and the one run with late pictures held the listings past the case's window. Not verified: a full suite or push:suite
+run.

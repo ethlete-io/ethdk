@@ -1428,6 +1428,7 @@ const CASES = [
   },
   {
     name: 'a sketch keeps its frame count and pictures through a sketch edit',
+    holdListings: false,
     pages: ['Sketches'],
     labels: ['Large'],
     run: async (page) => {
@@ -1440,14 +1441,15 @@ const CASES = [
       await listingAnswered(page);
       await showAllStates(page);
       const settledCount = await count();
+      const edited = (keys) => [...keys].some((key) => key.startsWith('a '));
       let pictured = shown(await sketchCells(page));
 
-      for (const until = Date.now() + WAIT_MS; pictured.size === 0 && Date.now() < until;) {
+      for (const until = Date.now() + WAIT_MS; !edited(pictured) && Date.now() < until;) {
         await page.waitForTimeout(250);
         pictured = shown(await sketchCells(page));
       }
 
-      if (pictured.size === 0) return { ok: false, detail: 'no visible cell shows a picture' };
+      if (!edited(pictured)) return { ok: false, detail: 'no visible cell of variant a shows a picture' };
 
       const stylesheet = join(checkout, '.ethlete/design/studio', SKETCH_CSS.a);
       const original = readFileSync(stylesheet, 'utf8');
@@ -2865,11 +2867,14 @@ const runCase = async (page, studioUrl, designPort, target, testCase) => {
     : { ok: true, detail: `open, ${testCase.open}: ${result.detail}` };
 };
 
+let listingHoldOn = true;
+
 const holdListings = (page) =>
   page.context().route(
     (url) => url.pathname === '/__design/sketches' && url.searchParams.get('targets') !== 'no',
     async (route) => {
-      if (route.request().method() === 'GET') await new Promise((done) => setTimeout(done, holdListingsMs));
+      if (listingHoldOn && route.request().method() === 'GET')
+        await new Promise((done) => setTimeout(done, holdListingsMs));
       await route.fallback().catch(() => undefined);
     },
   );
@@ -2966,6 +2971,7 @@ const work = async () => {
         let result;
 
         pictureDelayOn = CASES[job.case].delayPictures !== false;
+        listingHoldOn = CASES[job.case].holdListings !== false;
 
         try {
           result = await Promise.race([
@@ -3079,8 +3085,9 @@ const lead = async () => {
     );
     for (const job of queue) {
       const undelayed = delayPicturesMs && CASES[job.case].delayPictures === false ? '  [pictures not delayed]' : '';
+      const unheld = holdListingsMs && CASES[job.case].holdListings === false ? '  [listings not held]' : '';
 
-      console.log(`${seconds(known[keyOf(job)] ?? 0)}  ${job.page.padEnd(9)} ${job.name}${undelayed}`);
+      console.log(`${seconds(known[keyOf(job)] ?? 0)}  ${job.page.padEnd(9)} ${job.name}${undelayed}${unheld}`);
     }
     process.exit(0);
   }
