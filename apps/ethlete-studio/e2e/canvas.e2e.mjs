@@ -2824,7 +2824,6 @@ const runCase = async (page, studioUrl, designPort, target, testCase) => {
   );
   await page.setViewportSize(testCase.viewport ?? NARROW);
   await waitForFirstFrame(page, studioUrl, designPort, target.frame ?? FRAME);
-  await page.waitForTimeout(2500);
   await settled(page, target.frame ?? FRAME);
 
   const shown = await page.evaluate(

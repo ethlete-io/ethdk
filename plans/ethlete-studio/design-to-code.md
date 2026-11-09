@@ -3782,3 +3782,8 @@ its frame count") pass 4 of 4 alone on HEAD and on the fix, so their failures co
 come from this fix. Pushed as e15d7b88e: push-suite ok, e2e 142 s, all 3 repeat-gate runs stable, the hold run
 included; the Large load flakes did not come. Open: the Large load flakes under 8 workers. If one comes back, it
 becomes its own finding.
+
+As built (639, step 2): `runCase` drops the fixed 2.5 s wait after the first frame; `settled()` already waits for
+the listing and three stable frame polls. Two full local runs: 110.7 s and 121.4 s (before: 142 s in push-suite).
+Run 2 hit the known Large load flake "a sketch scroll never empties a cell" (down7+300, down10+30: a cell without its
+iframe); it passes alone 4 of 4 and also failed in earlier gates before this change.
