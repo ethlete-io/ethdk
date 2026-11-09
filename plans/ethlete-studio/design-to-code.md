@@ -3787,3 +3787,22 @@ As built (639, step 2): `runCase` drops the fixed 2.5 s wait after the first fra
 the listing and three stable frame polls. Two full local runs: 110.7 s and 121.4 s (before: 142 s in push-suite).
 Run 2 hit the known Large load flake "a sketch scroll never empties a cell" (down7+300, down10+30: a cell without its
 iframe); it passes alone 4 of 4 and also failed in earlier gates before this change.
+
+As measured (639, step 3, no code change): the 60 s goal cannot be reached from `canvas.e2e.mjs` alone. Per-case setup
+in `runCase`, instrumented over a full 8-worker run (116.8 s, sum of case times 770 s): first frame 175 s, full
+listing 65 s, three stable polls 147 s, so half of all case time is setup; the fastest case takes 2.1 s, the median
+3.8 s. Workers are ready at 22-24 s (fixture listing 15-19 s next to the 18 s build, then warmUp 5-6 s). The run is
+CPU-bound: 12 workers take 117.9 s with a case sum of 1065 s (one Chip "Fit is stable" fail), so more workers do not
+help. Design servers use about 10.7 cores on average, Chromium 7.5, other sessions' apps about 4. CPU profiles of the
+8 servers: 548 s in the sketch-check worker (`openSketchListingOf` on every full listing: `ruleProblemsOf` of the
+whole product, TypeScript parsing in part-rewrite/ts-source/part-definition/command-text, postcss `CssSyntaxError` in
+`utility-css` `withoutSdkElementRules` 24 s, `spawnSync` in `tailwind-classes` `classFactsOf` 30 s). An
+experiment that memoised that check per server (wrong, upper bound only, not committed) gave 101.2 s, sum 627 s, so
+the check is about 15 % of the run. A rAF-sampled 750 ms stability window in `settled()` instead of four 250 ms polls
+gave 116.2, 116.4, 118.7 s, all 133 green (8 hold-listing cases green too), within the noise of the 117-124 s
+baseline, so it was not committed; a 500 ms window failed Chip "Fit is stable" (Fit 100 % then 56 % after a reload)
+once under 12 workers. Floor without new work: start 22 s plus first-frame setup 175 s / 8 = 22 s leaves 16 s for
+every case body, listing and stability, against about 50 s today. Next steps: cache the sketch and rule checks in
+`libs/cli` per product until a watched file changes (helps Studio too); cut the cost of a case's page load (one
+Studio boot per case, 1.3 s under load); find what else keeps each design server main thread busy (50 s per server:
+TypeScript, playwright shots, vite) - or relax the goal.
