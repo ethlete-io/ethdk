@@ -4032,7 +4032,7 @@ the goal names. Open for the human in the morning: on which machine does the 90 
 665\. Builder (2026-11-09, Mac night): two push:suite runs in a row failed e2e 132/133, each in another case (B462
 Sketches first load, B463 System page switch timing); each passes alone. The red-CI fix 2bc4d42f2 waits behind
 them, so the Rust audit stays red for hours because of two e2e flakes on another machine. Why no tool caught it: the
-push gate has no record of which cases are known flaky on which machine, and B463 is a timing case that ADR 0230
-moves to a non-blocking perf job (B441, not built yet). Tool fix: B441 first for the timing cases; the gate prints
-the B row of a known flaky case next to its fail. Cause the builder fixes next: `canvas.e2e.mjs:3020` gives
+push gate has no record of which cases are known flaky on which machine, and B463 is a timing case that ADR 0230 moves to a non-blocking perf job, but B441 moved only four `libs/cli`
+specs, not the e2e timing cases. Tool fix (tonight, bug queue): the e2e timing cases move into the perf job too (B441
+applied to e2e), and the gate prints the B row of a known flaky case next to its fail. Cause the builder fixes next: `canvas.e2e.mjs:3020` gives
 `min(8, floor(cores/4))`, 3 workers on the 12-core Mac.
