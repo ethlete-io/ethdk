@@ -60,7 +60,7 @@ nimmt den nächsten. Kein Punkt und kein Rückstand läuft über Nacht als E2E-F
 6. A2 + A3: Suche mit Strg+K und Update-Knopf in der Titelleiste.
 
 **Werkzeug-Rückstand** (nur, wenn der Builder auf Toms Wahl in einer Skizze wartet): Off-centre-Skizzen 628-633,
-Bef. 638 (Changeset im Pre-Commit), 617, 614, 618, 620, B438.
+Bef. 638 (Changeset im Pre-Commit), 617, 614, 618, 620, B438, 649 (Cache-Schlüssel), 650 (Last in E2E-Messungen).
 
 **Regel gegen Stillstand:** Ein neuer Befund unterbricht den laufenden Punkt nur, wenn (a) CI rot ist (ADR 0230), oder
 (b) er den laufenden Punkt blockiert. Jeder Fix geht an die Ursache, eine neue Prüfregel nur, wenn ein Baustein,
