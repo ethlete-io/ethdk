@@ -4140,8 +4140,9 @@ defect; the case measured right. Fix (builder): keep the painted old iframe, mou
 remove the old one when the new one paints. Why no tool caught it: the defect needs a painted frame with no loaded
 picture, which only load produces; and the hold run holds listings 14 s, longer than the case's 10 s window, so the
 revision bump never arrives there and the case passes by chance. Second time tonight that the hold hides a fault
-(657). Tool fix (tonight, with the fix): this case runs with `--delay-pictures` and without the listing hold; backlog:
-the gate spec checks that no case's watch window is shorter than the hold it runs under.
+(657). Tool fix (tonight, with the fix): this case runs with `--delay-pictures` and without the listing hold; tonight
+(bug queue, it bit twice): the runner flags a case whose wait window is shorter than `HOLD_LISTINGS_MS` unless the
+case opts out (`holdListings: false`).
 
 673\. Doc agent (2026-11-09, Mac night, seen by the builder): three `a-cli` design servers (pids 65717-65719,
 parent pid 1, started about 1.5 days ago, `node_modules/.cache/a-cli/src/index.js design /var/folders/...`) still
@@ -4167,3 +4168,10 @@ reported message) and passes 3/3 with the fix (0 empty animation frames); with t
 the case only bit when a visible variant cell had a painted frame and no loaded picture, which needs late pictures,
 and the one run with late pictures held the listings past the case's window. Not verified: a full suite or push:suite
 run.
+
+674\. Builder (2026-11-09, Mac night, 9e4ada3c5): the B465 case took its "had a picture" snapshot when only the
+`current` row, which the edit does not change, had painted. So the old code passed 3/3 even with a 60 s picture
+delay: the case did not touch the state it claims to guard. Fixed: it waits for a visible variant-a cell; the old
+component now fails 3/3 under the delay, the fix passes. Why no tool caught it: nothing proves that a case's
+precondition holds before its action. Tool fix (backlog): a case that guards cells asserts a non-empty set of guarded
+cells before the action, and the 651 bite proof is the check that a case can fail at all.
