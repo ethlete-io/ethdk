@@ -40,16 +40,8 @@ Agent-Berichte: `.claude/handoffs/agent-results/<ID>.md`.
 nimmt immer den obersten offenen Punkt. Vor dem Start prüft er ihn gegen git: Ist er schon erledigt, streicht er ihn und
 nimmt den nächsten. Kein Punkt und kein Rückstand läuft über Nacht als E2E-Fix-Schleife. Nur der Doc-Agent ändert diese Liste, und nur nach Toms Okay.
 
-0. Wartezeit (ADR 0236, Bef. 639): die Studio-E2E-Suite wird schneller. Gemessen am 08.11.: E2E war 80 % der
-   Push-Prüfung (165-197 s pro Lauf) und der größte Posten der Builder-Zeit. Ende (ADR 0237): die Skizzen- und
-   Regelprüfung im Design-Server speichert ihr Ergebnis, bis sich eine Datei ändert; dann E2E-Schritt im push:suite unter 90 s,
-   gemessen über 3 Läufe; der Builder wartet auf E2E per Benachrichtigung, nicht per Abfrage-Schleife; `shot` und
-   `design check` haben eine harte Frist, und jedes Warten hat eine Frist (Bef. 640).
-   In Arbeit (09.11., Builder): gepusht bis e15d7b88e (Fix `listingAnswered()`, Bef. 646), E2E 142 s, alle 3
-   Wiederholungs-Läufe stabil. Jetzt: runCase ohne die feste Wartezeit von 2,5 s. Übergabe: `.claude/handoffs/builder.md`.
-   Letzter Schritt (Tom, 09.11.): Der Mod `e2e-progress` zeigt auch Studio-E2E-Läufe. Der Studio-Runner schreibt am
-   Start „Running N tests using W workers“ und Ergebniszeilen im Playwright-Format; push:suite schreibt sein E2E-Log nach
-   `.claude/handoffs/`. Der Mod bleibt allgemein, ohne Studio-Sonderfall.
+0. Wartezeit (ADR 0236, 0237, 0238, Bef. 639): endet nach dem Beweis für 647 und dem Push (Tom, 09.11.). E2E-Schritt
+   jetzt etwa 118 s statt 165-197 s; Fehler auf „Large“ an der Ursache behoben (Bef. 647). Rest im Werkzeug-Rückstand.
 1. A10 / B249: „Baubereit“ statt Go und Abnahme, `go.json`, `accepted.json`, `design go` und `design accept` weg
    (ADR 0048); unsichtbare direkte Änderungen gelten sofort; danach Gutter-Skip in `pages/sketches`. Nichts am Go-System
    wird vorher noch geändert.
@@ -60,7 +52,8 @@ nimmt den nächsten. Kein Punkt und kein Rückstand läuft über Nacht als E2E-F
 6. A2 + A3: Suche mit Strg+K und Update-Knopf in der Titelleiste.
 
 **Werkzeug-Rückstand** (nur, wenn der Builder auf Toms Wahl in einer Skizze wartet): Off-centre-Skizzen 628-633,
-Bef. 638 (Changeset im Pre-Commit), 617, 614, 618, 620, B438, 649 (Cache-Schlüssel), 650 (Last in E2E-Messungen).
+Bef. 638 (Changeset im Pre-Commit), 617, 614, 618, 620, B438, 649 (Cache-Schlüssel), 650 (Last in E2E-Messungen), Rest von Punkt 0 (ADR 0238: verzögerte Bilder in
+der Wiederholungs-Prüfung, ruhige Messung gegen 90 s, Prüf-Cache auf der Festplatte).
 
 **Regel gegen Stillstand:** Ein neuer Befund unterbricht den laufenden Punkt nur, wenn (a) CI rot ist (ADR 0230), oder
 (b) er den laufenden Punkt blockiert. Jeder Fix geht an die Ursache, eine neue Prüfregel nur, wenn ein Baustein,
