@@ -1,16 +1,53 @@
+[canvas-e2e] studio build starting
 [canvas-e2e] 3 cases on 3 worker(s)
-PASS  Wide      Fit shows every column of a wide sketch, heads at the top 4 columns inside, head gap 0 px (16.6s)
-FAIL  Merge     a sketch merged while its view is open opens the part view of the target the sketch view stays open after the sketch dropped from the listing (27.8s)
-PASS  Wide      the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms heads and tags at 30 % and 100 %, pictures at both, refused pictures hidden (29.8s)
+Running 3 tests using 3 workers
+
+> nx run ethlete-studio:build:production --outputPath=/tmp/studio-canvas-e2e-build-M7MAc8
+
+[33m❯[39m Building...
+[32m✔[39m Building...
+[37m[1mInitial chunk files[22m[2m | [22m[1mNames[22m                   [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mmain-7JB6PECD.js[37m   [2m | [22m[2mmain[22m                    [2m | [22m[36m414.28 kB[37m[2m | [22m              [36m106.10 kB[37m
+[32mstyles-TEFMAEWO.css[37m[2m | [22m[2mstyles[22m                  [2m | [22m [36m71.57 kB[37m[2m | [22m               [36m10.98 kB[37m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m           [2m | [22m[1m485.85 kB[22m[2m | [22m              [1m117.08 kB[22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m                   [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mchunk-XNYIZ8CG.js[37m  [2m | [22m[2mstudio-view-component[22m   [2m | [22m[36m714.91 kB[37m[2m | [22m              [36m157.68 kB[37m
+[32mchunk-D4fjlSm6.js[37m  [2m | [22m[2minventory-view-component[22m[2m | [22m [36m11.60 kB[37m[2m | [22m                [36m3.77 kB[37m
+
+Application bundle generation complete. [10.944 seconds] - 2026-11-09T14:51:15.309Z
+[39m
+[37mOutput location: /tmp/studio-canvas-e2e-build-M7MAc8
+[39m
+
+
+
+ NX   Successfully ran target build for project ethlete-studio
+
+
+  Run duration:      11.4s
+  Cache:             Skipped (--skip-nx-cache)
+  Critical path:     11.4s (1 task)
+  Recoverable time:  <1ms
+[canvas-e2e] studio build done at 12.5s
+[canvas-e2e] worker 2 ready: open 0.7s, fixtures 11.6s, build 0.2s, warmUp 3.9s
+[canvas-e2e] worker 0 ready: open 0.7s, fixtures 11.6s, build 0.2s, warmUp 3.9s
+[canvas-e2e] worker 1 ready: open 0.7s, fixtures 11.7s, build 0.0s, warmUp 3.9s
+  ✓  1 [Wide] › Fit shows every column of a wide sketch, heads at the top 4 columns inside, head gap 0 px (17.9s)
+  ✓  2 [Merge] › a sketch merged while its view is open opens the part view of the target frames of components/title-bar: 6, frames of the gone sketch: 0, not-found note: false, blank: false, error overlays: 0 (24.0s)
+  ✓  3 [Wide] › the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms heads and tags at 30 % and 100 %, pictures at both, refused pictures hidden (35.4s)
 
 Time per page group, slowest first:
-  46.5s  Wide (2 cases)
-  27.8s  Merge (1 cases)
+  53.3s  Wide (2 cases)
+  24.0s  Merge (1 cases)
 
 Time per case, slowest first:
-  29.8s  Wide      the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms
-  27.8s  Merge     a sketch merged while its view is open opens the part view of the target
-  16.6s  Wide      Fit shows every column of a wide sketch, heads at the top
+  35.4s  Wide      the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms
+  24.0s  Merge     a sketch merged while its view is open opens the part view of the target
+  17.9s  Wide      Fit shows every column of a wide sketch, heads at the top
 
-2/3 passed in 47.0s on 3 worker(s)
-suite 0m47s of 5m budget
+  3 passed (51.8s)
+
+3/3 passed in 51.8s on 3 worker(s)
+suite 0m52s of 5m budget

@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { linkTargetOf, missingVerdict, parseArgs, parseLog } from './push-suite.mjs';
+import { linkTargetOf, missingVerdict, parseArgs, parseLog, runStep } from './push-suite.mjs';
 
 test('defaults the repeat range to the upstream and reads --only', () => {
   assert.deepEqual(parseArgs([]), { only: undefined, range: '@{upstream}..HEAD' });
@@ -88,4 +89,20 @@ test('reads a captured git log and needs a verdict only for the code commit unde
     missingVerdict(log.slice(0, 1), () => false),
     undefined,
   );
+});
+
+test('a step with a log file writes its output there as it comes and still returns it', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'push-suite-log-'));
+  const logFile = join(dir, 'handoffs', 'step.log');
+  mkdirSync(join(dir, 'handoffs'));
+  writeFileSync(logFile, 'stale\n');
+  const script = "console.log('out'); setTimeout(() => console.error('err'), 300)";
+  const step = runStep(process.execPath, ['-e', script], dir, logFile);
+
+  await new Promise((done) => setTimeout(done, 150));
+  assert.equal(readFileSync(logFile, 'utf8'), 'out\n');
+  const { output } = await step;
+  assert.equal(readFileSync(logFile, 'utf8'), 'out\nerr\n');
+  assert.equal(output, 'out\nerr\n');
+  rmSync(dir, { recursive: true });
 });

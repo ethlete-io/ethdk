@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from 'node:child_process';
 import {
+  appendFileSync,
   existsSync,
   lstatSync,
   mkdirSync,
@@ -17,6 +18,7 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { changedLines, runRepeatGate, TRIGGERS } from './studio-e2e-repeat.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
+export const E2E_LOG = join(root, '.claude/handoffs/push-suite-e2e.log');
 const RUNNER = 'apps/ethlete-studio/e2e/canvas.e2e.mjs';
 const WORKSPACE_PARENTS = ['apps', 'libs', 'tools'];
 const DRAWING_BUILDS = ['cli', 'components', 'core'];
@@ -89,16 +91,24 @@ const exportCommit = (sha) => {
   return { dir };
 };
 
-const runStep = (command, args, cwd) =>
+export const runStep = (command, args, cwd, logFile) =>
   new Promise((done) => {
+    if (logFile) {
+      mkdirSync(dirname(logFile), { recursive: true });
+      writeFileSync(logFile, '');
+    }
     const child = spawn(command, args, {
       cwd,
       env: process.env,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let output = '';
-    child.stdout.on('data', (chunk) => (output += chunk));
-    child.stderr.on('data', (chunk) => (output += chunk));
+    const take = (chunk) => {
+      output += chunk;
+      if (logFile) appendFileSync(logFile, chunk);
+    };
+    child.stdout.on('data', take);
+    child.stderr.on('data', take);
     child.on('close', (status) => done({ status: status ?? 1, output }));
   });
 
@@ -139,7 +149,7 @@ export const pushSuite = async ({ only, range }, log = console.log) => {
   const steps = {
     cli: () => runStep('npx', ['nx', 'test', 'cli'], dir),
     studio: () => runStep('npx', ['nx', 'test', 'ethlete-studio'], dir),
-    e2e: () => afterBuild(() => runStep(process.execPath, [join(dir, RUNNER)], dir)),
+    e2e: () => afterBuild(() => runStep(process.execPath, [join(dir, RUNNER)], dir, E2E_LOG)),
     repeat: () =>
       afterBuild(async () => {
         const diff = git('diff', '-U0', range, '--', ...TRIGGERS);

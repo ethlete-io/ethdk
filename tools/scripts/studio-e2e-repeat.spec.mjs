@@ -59,8 +59,17 @@ test('reads every case of the current runner with its name', () => {
 test('reads the listed jobs and the results of a real run', () => {
   assert.deepEqual(jobs.map((job) => job.page).sort(), ['Merge', 'Wide', 'Wide']);
   assert.deepEqual([...stable.values()], ['pass', 'pass', 'pass']);
-  assert.equal(held.get(MERGE), 'fail');
+  assert.deepEqual([...held.values()], ['pass', 'pass', 'pass']);
   assert.equal(held.size, 3);
+});
+
+test('reads a failed and a not-run row in the list format', () => {
+  const output =
+    fixture('run-stable.txt').replace('  ✓  3 [Merge]', '  ✘  3 [Merge]') + 'NOT RUN  Wide      other case\n';
+  const results = parseResults(output, [...jobs, { page: 'Wide', name: 'other case' }]);
+
+  assert.equal(results.get(MERGE), 'fail');
+  assert.equal(results.get('Wide  other case'), 'not run');
 });
 
 test('stable runs pass the gate', () => {
@@ -91,7 +100,7 @@ test('a failure in the hold run blocks, also when it fails every run', () => {
   const verdict = repeatVerdict(jobs, [
     { hold: false, results: failing },
     { hold: false, results: failing },
-    { hold: true, results: held },
+    { hold: true, results: failing },
   ]);
 
   assert.equal(verdict.blocks, true);

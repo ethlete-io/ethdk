@@ -63,7 +63,7 @@ export const createRevisionWorktree = (repo, commit) => {
 
 const HEARTBEAT_MS = 30 * 1000;
 export const IDLE_MS = Number(process.env['E2E_CHECK_IDLE_MS']) || 3 * 60 * 1000;
-const CASE_LINE = /^(PASS|FAIL)\b/m;
+const CASE_LINE = /^((PASS|FAIL)\b| {2}[✓✘] )/m;
 const START_LINE = /^RUN\b/;
 const FAIL_LINE = /^FAIL\b/;
 const TIMING_FAIL_LINE = /^FAIL\s+\[timing\]/;

@@ -3058,7 +3058,7 @@ const lead = async () => {
   const record = (job, result) => {
     rows.push({ ...job, ...result });
     console.log(
-      `${result.ok ? 'PASS' : 'FAIL'}  ${job.page.padEnd(9)} ${job.name.padEnd(36)} ${result.detail} (${seconds(result.ms ?? 0).trim()})`,
+      `  ${result.ok ? '✓' : '✘'}  ${rows.length} [${job.page}] › ${job.name} ${result.detail} (${seconds(result.ms ?? 0).trim()})`,
     );
   };
 
@@ -3080,6 +3080,7 @@ const lead = async () => {
       for (const child of children) child.send({ type: 'built' });
     });
     console.log(`[canvas-e2e] ${total} cases${shardLabel} on ${workers} worker(s)`);
+    console.log(`Running ${total} test${total === 1 ? '' : 's'} using ${workers} worker${workers === 1 ? '' : 's'}`);
 
     const runWorker = async (index) => {
       const port = await freePort();
@@ -3171,6 +3172,11 @@ const lead = async () => {
   const overBudget = suiteMs > BUDGET_MS;
   const enforceBudget = process.env['STUDIO_E2E_BUDGET_ENFORCE'] === '1';
 
+  console.log('');
+  failed.forEach((row, at) => console.log(`  ${at + 1}) [${row.page}] › ${row.name}`));
+  console.log(`  ${rows.length - failed.length} passed (${seconds(suiteMs).trim()})`);
+  if (failed.length) console.log(`  ${failed.length} failed`);
+  if (notRun.length) console.log(`  ${notRun.length} did not run`);
   console.log(
     `\n${rows.length - failed.length}/${total} passed${shardLabel} in ${seconds(suiteMs).trim()} on ${workers} worker(s)`,
   );

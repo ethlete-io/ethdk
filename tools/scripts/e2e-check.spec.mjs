@@ -63,6 +63,12 @@ test('a timeout is red', () => {
   assert.equal(judgeSuiteRun({ status: null, timedOut: true, output: 'PASS a' }).ok, false);
 });
 
+test('a failed case in the list format is a failure, not a crash before the first case', () => {
+  const output = readFileSync(join(import.meta.dirname, 'fixtures/studio-e2e-repeat/run-stable.txt'), 'utf8');
+
+  assert.equal(judgeSuiteRun({ status: 1, output }).reason, 'failed');
+});
+
 test('sketch, design-canvas and system-view files map to canvas', () => {
   const base = 'apps/ethlete-studio/src/app';
   const { suites } = mapChanged([

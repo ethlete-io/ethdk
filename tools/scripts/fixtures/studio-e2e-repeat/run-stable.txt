@@ -1,16 +1,58 @@
+[canvas-e2e] studio build starting
 [canvas-e2e] 3 cases on 3 worker(s)
-PASS  Wide      Fit shows every column of a wide sketch, heads at the top 4 columns inside, head gap 0 px (6.2s)
-PASS  Wide      the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms heads and tags at 30 % and 100 %, pictures at both, refused pictures hidden (10.4s)
-PASS  Merge     a sketch merged while its view is open opens the part view of the target frames of components/title-bar: 6, frames of the gone sketch: 0, not-found note: false, blank: false, error overlays: 0 (14.0s)
+Running 3 tests using 3 workers
+
+> nx run ethlete-studio:build:production --outputPath=/tmp/studio-canvas-e2e-build-vZqHWS
+
+[33m❯[39m Building...
+[32m✔[39m Building...
+[37m[1mInitial chunk files[22m[2m | [22m[1mNames[22m                   [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mmain-7JB6PECD.js[37m   [2m | [22m[2mmain[22m                    [2m | [22m[36m414.28 kB[37m[2m | [22m              [36m106.10 kB[37m
+[32mstyles-TEFMAEWO.css[37m[2m | [22m[2mstyles[22m                  [2m | [22m [36m71.57 kB[37m[2m | [22m               [36m10.98 kB[37m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m           [2m | [22m[1m485.85 kB[22m[2m | [22m              [1m117.08 kB[22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m                   [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mchunk-XNYIZ8CG.js[37m  [2m | [22m[2mstudio-view-component[22m   [2m | [22m[36m714.91 kB[37m[2m | [22m              [36m157.68 kB[37m
+[32mchunk-D4fjlSm6.js[37m  [2m | [22m[2minventory-view-component[22m[2m | [22m [36m11.60 kB[37m[2m | [22m                [36m3.77 kB[37m
+
+Application bundle generation complete. [29.737 seconds] - 2026-11-09T14:50:45.509Z
+[39m
+[37mOutput location: /tmp/studio-canvas-e2e-build-vZqHWS
+[39m
+
+
+
+ NX   Successfully ran target build for project ethlete-studio
+
+
+  Run duration:      30.7s
+  Cache:             Skipped (--skip-nx-cache)
+  Critical path:     30.7s (1 task)
+  Recoverable time:  <1ms
+
+  Recommendations:
+    - Cache: drop --skip-nx-cache to restore unchanged tasks instantly.
+    - Speed up or split the longest tasks on the critical path:
+        ethlete-studio:build:production    30.7s
+[canvas-e2e] studio build done at 31.5s
+[canvas-e2e] worker 0 ready: open 1.1s, fixtures 30.1s, build 0.2s, warmUp 4.6s
+[canvas-e2e] worker 1 ready: open 1.2s, fixtures 30.4s, build 0.0s, warmUp 4.6s
+[canvas-e2e] worker 2 ready: open 1.2s, fixtures 30.4s, build 0.0s, warmUp 4.6s
+  ✓  1 [Wide] › Fit shows every column of a wide sketch, heads at the top 4 columns inside, head gap 0 px (5.0s)
+  ✓  2 [Wide] › the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms heads and tags at 30 % and 100 %, pictures at both, refused pictures hidden (9.2s)
+  ✓  3 [Merge] › a sketch merged while its view is open opens the part view of the target frames of components/title-bar: 6, frames of the gone sketch: 0, not-found note: false, blank: false, error overlays: 0 (12.3s)
 
 Time per page group, slowest first:
-  16.6s  Wide (2 cases)
-  14.0s  Merge (1 cases)
+  14.3s  Wide (2 cases)
+  12.3s  Merge (1 cases)
 
 Time per case, slowest first:
-  14.0s  Merge     a sketch merged while its view is open opens the part view of the target
-  10.4s  Wide      the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms
-   6.2s  Wide      Fit shows every column of a wide sketch, heads at the top
+  12.3s  Merge     a sketch merged while its view is open opens the part view of the target
+   9.2s  Wide      the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms
+   5.0s  Wide      Fit shows every column of a wide sketch, heads at the top
 
-3/3 passed in 30.9s on 3 worker(s)
-suite 0m31s of 5m budget
+  3 passed (48.5s)
+
+3/3 passed in 48.5s on 3 worker(s)
+suite 0m48s of 5m budget

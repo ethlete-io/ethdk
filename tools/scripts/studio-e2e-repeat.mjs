@@ -97,9 +97,12 @@ export const parseResults = (output, jobs) => {
   const results = new Map();
 
   for (const line of output.split('\n')) {
-    const row = /^(PASS|FAIL|NOT RUN) {2}(\S+)\s+(.*)$/.exec(line);
+    const row = /^(?: {2}(✓|✘) +\d+ \[([^\]]+)\] › |(NOT RUN) {2}(\S+)\s+)(.*)$/.exec(line);
     if (!row) continue;
-    const [, status, page, rest] = row;
+    const [, mark, resultPage, notRun, notRunPage, text] = row;
+    const status = notRun ? 'NOT RUN' : mark === '✓' ? 'PASS' : 'FAIL';
+    const page = resultPage ?? notRunPage;
+    const rest = text.replace(/ \([\d.]+m?s\)$/, '');
     const job = jobs
       .filter((it) => it.page === page && (rest === it.name || rest.startsWith(`${it.name} `)))
       .sort((a, b) => b.name.length - a.name.length)[0];
@@ -131,7 +134,7 @@ const runOnce = (runner, args, cwd) =>
     let output = '';
     const take = (chunk) => {
       output += chunk;
-      for (const line of String(chunk).split('\n')) if (/^(PASS|FAIL|NOT RUN) /.test(line)) console.log(`  ${line}`);
+      for (const line of String(chunk).split('\n')) if (/^( {2}[✓✘] |NOT RUN )/.test(line)) console.log(`  ${line}`);
     };
     child.stdout.on('data', take);
     child.stderr.on('data', (chunk) => (output += chunk));
