@@ -48,6 +48,9 @@ nimmt den nächsten. Kein Punkt und kein Rückstand läuft über Nacht als E2E-F
    gepusht; der Wiederholungs-Lauf mit `--hold-listings 14000` scheitert, weil `settled()` nach 10 s still aufgibt.
    Fix `listingAnswered()` liegt uncommittet in `canvas.e2e.mjs`; Hold-Läufe grün, zwei Nicht-Hold-Flakes (Large)
    offen. Übergabe: `.claude/handoffs/builder.md`.
+   Letzter Schritt (Tom, 09.11.): Der Mod `e2e-progress` zeigt auch Studio-E2E-Läufe. Der Studio-Runner schreibt am
+   Start „Running N tests using W workers“ und Ergebniszeilen im Playwright-Format; push:suite schreibt sein E2E-Log nach
+   `.claude/handoffs/`. Der Mod bleibt allgemein, ohne Studio-Sonderfall.
 1. A10 / B249: „Baubereit“ statt Go und Abnahme, `go.json`, `accepted.json`, `design go` und `design accept` weg
    (ADR 0048); unsichtbare direkte Änderungen gelten sofort; danach Gutter-Skip in `pages/sketches`. Nichts am Go-System
    wird vorher noch geändert.
