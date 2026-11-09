@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B467
+built: 348dadeb0
 decided: 2026-11-09
 source: grill session 2026-11-09 (Mac night shift, morning round)
 ---
