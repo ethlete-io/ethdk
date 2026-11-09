@@ -30,6 +30,7 @@ const VIEWS = {
 };
 const view = args.includes('--view') ? args[args.indexOf('--view') + 1] : undefined;
 const listOnly = args.includes('--list');
+const perfOnly = args.includes('--perf');
 
 if (view && !VIEWS[view]) {
   console.error(`unknown --view ${view}, one of: ${Object.keys(VIEWS).join(', ')}`);
@@ -1555,6 +1556,7 @@ const CASES = [
   },
   {
     name: 'page switch time is logged to the design timings',
+    perf: true,
     pages: ['System'],
     run: async (page) => {
       const { recordPageSwitch, timingsFileOf } = createRequire(import.meta.url)(
@@ -2566,6 +2568,7 @@ const CASES = [
   },
   {
     name: 'Neu starten in the code notice answers within 100 ms',
+    perf: true,
     pages: ['System'],
     run: async (page) => {
       const key = 'e2e.slow-restart-ms';
@@ -3025,6 +3028,7 @@ const lead = async () => {
   const known = existsSync(TIMINGS_FILE) ? JSON.parse(readFileSync(TIMINGS_FILE, 'utf8')) : {};
   const queue = PAGES.flatMap((target, targetIndex) =>
     CASES.flatMap((testCase, caseIndex) =>
+      !!testCase.perf === perfOnly &&
       (testCase.pages ?? ['System', 'Sketches']).includes(target.name) &&
       (!testCase.labels || testCase.labels.includes(target.label)) &&
       (!only || only.split('|').some((part) => testCase.name.includes(part))) &&
@@ -3035,6 +3039,7 @@ const lead = async () => {
     ),
   );
   const matched = queue.length;
+  const skippedPerf = perfOnly ? 0 : CASES.filter((testCase) => testCase.perf).length;
 
   if (shard) {
     const slot = Object.fromEntries(
@@ -3098,7 +3103,9 @@ const lead = async () => {
       console.log(`[canvas-e2e] studio build done at ${seconds(performance.now() - runStartedAt).trim()}`);
       for (const child of children) child.send({ type: 'built' });
     });
-    console.log(`[canvas-e2e] ${total} cases${shardLabel} on ${workers} worker(s)`);
+    console.log(
+      `[canvas-e2e] ${total} cases${shardLabel} on ${workers} worker(s)${perfOnly ? ' (perf only)' : skippedPerf ? `, ${skippedPerf} perf case(s) skipped (--perf runs them)` : ''}`,
+    );
     console.log(`Running ${total} test${total === 1 ? '' : 's'} using ${workers} worker${workers === 1 ? '' : 's'}`);
 
     const runWorker = async (index) => {

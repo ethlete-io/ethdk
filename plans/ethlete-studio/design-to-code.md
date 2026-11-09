@@ -4037,6 +4037,8 @@ specs, not the e2e timing cases. Tool fix (tonight, bug queue): the e2e timing c
 applied to e2e), and the gate prints the B row of a known flaky case next to its fail. Cause the builder fixes next: `canvas.e2e.mjs:3020` gives
 `min(8, floor(cores/4))`, 3 workers on the 12-core Mac.
 
+As built (finding 665, B463, ADR 0230): two e2e cases carry `perf: true` in `canvas.e2e.mjs`: "page switch time is logged to the design timings" and "Neu starten in the code notice answers within 100 ms". They fail under load on the 12-core Mac, so the default run, `push:suite` and the blocking e2e job skip them. `--perf` runs only them, and `--case` finds one only together with `--perf`. The header line prints how many were skipped. The CI `perf` job now builds and runs `yarn studio:e2e --perf` with one worker; it stays non-blocking and out of both `needs` lists. `tools/scripts/studio-e2e-perf.spec.mjs` checks that the default selection never holds a perf case. The B462 flake is not a timing case and stays blocking.
+
 666\. Builder (2026-11-09, Mac night, worker sweep): more e2e workers make the Mac worse. 4 workers: 130/133 in
 528 s, load 7 to 120, fixtures 52-55 s, warmUp 17 s. 6 workers: 116/133 in 591 s, load 120 to 253, fixtures at the
 60 s cap. 8 workers: about 30 fails, load 395 with about 6 threads on CPU, a process spawn storm (one Chromium renderer
