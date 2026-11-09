@@ -4195,3 +4195,14 @@ code sha. Why no tool caught it: a path commit takes the whole file, and nothing
 unsaved hunks in it. Tool fix (backlog): the pre-commit hook warns when a staged plan file has hunks that the claims
 file (`ethlete-agent-sessions`) gives to another live session; until then the builder commits its plan note in the
 same commit as its code.
+
+677\. Builder (2026-11-09, Mac night, push:suite at d00510226): the B464 hover case failed again, 130/131. It
+reported a late-mounted `button[data-part-give-go]` with only a transparent outline, border and shadow as a `new`
+frame border. Cause: the case compared raw computed-style strings, so it measured DOM churn under load, not drawn
+borders. The queued fix of 668 (wait for a stable DOM) is dropped: a wait cannot prove that the DOM is final under
+load. Fix (in progress): the case compares only visible edges; an element with fully transparent edges gives no
+entry, and a new visible edge still fails. Why no tool caught it: the runner has no check that a case's signal
+matches its claim, so a case that claims "draws a border" can read a value that draws nothing. Tool fix (backlog):
+style-diff helpers of the e2e runner compare drawn results (visible width and non-transparent colour), never raw
+computed strings, and the 651 bite proof runs each case once with the claimed effect forced off and once with an
+unrelated element added late, to show the case reacts only to its claim.
