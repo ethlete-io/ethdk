@@ -10,6 +10,7 @@ const SHARED = ['libs/cli/src/lib/design/serve.ts', 'libs/cli/src/lib/design/stu
 
 export const RUNS = 3;
 export const HOLD_LISTINGS_MS = 14000;
+export const DELAY_PICTURES_MS = 60000;
 export const TRIGGERS = [RUNNER, ...SHARED];
 
 export const changedLines = (diff) => {
@@ -141,6 +142,15 @@ const runOnce = (runner, args, cwd) =>
     child.on('close', () => done(output));
   });
 
+export const runArgs = (at, pageArgs, built) => [
+  ...pageArgs,
+  '--built',
+  built,
+  ...(at === RUNS - 1
+    ? ['--hold-listings', String(HOLD_LISTINGS_MS), '--delay-pictures', String(DELAY_PICTURES_MS)]
+    : []),
+];
+
 const minutes = (ms) => `${(ms / 60000).toFixed(1)} min`;
 
 export const runRepeatGate = async (diff, { log = console.log, cwd = root, runner = join(cwd, RUNNER) } = {}) => {
@@ -161,7 +171,7 @@ export const runRepeatGate = async (diff, { log = console.log, cwd = root, runne
 
   log(`[studio-e2e-repeat] ${reasons.join('; ')}`);
   log(
-    `[studio-e2e-repeat] runs ${jobs.length} case(s) of ${groups ? groups.join(', ') : 'every page group'} ${RUNS} times, the last with --hold-listings ${HOLD_LISTINGS_MS}; it blocks when a case result changes between runs or fails in the hold run (${knownSeconds.toFixed(0)} s of cases per run by the last local timings)`,
+    `[studio-e2e-repeat] runs ${jobs.length} case(s) of ${groups ? groups.join(', ') : 'every page group'} ${RUNS} times, the last with --hold-listings ${HOLD_LISTINGS_MS} --delay-pictures ${DELAY_PICTURES_MS}; it blocks when a case result changes between runs or fails in the hold run (${knownSeconds.toFixed(0)} s of cases per run by the last local timings)`,
   );
 
   const startedAt = performance.now();
@@ -179,12 +189,10 @@ export const runRepeatGate = async (diff, { log = console.log, cwd = root, runne
     const runs = [];
     for (let at = 0; at < RUNS; at++) {
       const hold = at === RUNS - 1;
-      log(`[studio-e2e-repeat] run ${at + 1}/${RUNS}${hold ? ` (--hold-listings ${HOLD_LISTINGS_MS})` : ''}`);
-      const output = await runOnce(
-        runner,
-        [...pageArgs, '--built', built, ...(hold ? ['--hold-listings', String(HOLD_LISTINGS_MS)] : [])],
-        cwd,
+      log(
+        `[studio-e2e-repeat] run ${at + 1}/${RUNS}${hold ? ` (--hold-listings ${HOLD_LISTINGS_MS} --delay-pictures ${DELAY_PICTURES_MS})` : ''}`,
       );
+      const output = await runOnce(runner, runArgs(at, pageArgs, built), cwd);
       runs.push({ hold, results: parseResults(output, jobs) });
     }
 

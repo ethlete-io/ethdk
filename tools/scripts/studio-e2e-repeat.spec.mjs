@@ -6,10 +6,14 @@ import {
   affectedCases,
   caseSpans,
   changedLines,
+  DELAY_PICTURES_MS,
+  HOLD_LISTINGS_MS,
   keyOf,
   parseList,
   parseResults,
   repeatVerdict,
+  RUNS,
+  runArgs,
   TRIGGERS,
 } from './studio-e2e-repeat.mjs';
 
@@ -117,4 +121,21 @@ test('a case missing from one run counts as changed', () => {
   ]);
 
   assert.deepEqual(verdict.changed[0].results, ['pass', 'not run', 'pass']);
+});
+
+test('only the hold run holds the listings and delays the pictures', () => {
+  const runs = Array.from({ length: RUNS }, (_, at) => runArgs(at, ['--page', 'Large'], '/built'));
+
+  assert.ok(DELAY_PICTURES_MS > 0);
+  assert.deepEqual(runs.at(-1), [
+    '--page',
+    'Large',
+    '--built',
+    '/built',
+    '--hold-listings',
+    String(HOLD_LISTINGS_MS),
+    '--delay-pictures',
+    String(DELAY_PICTURES_MS),
+  ]);
+  for (const args of runs.slice(0, -1)) assert.deepEqual(args, ['--page', 'Large', '--built', '/built']);
 });

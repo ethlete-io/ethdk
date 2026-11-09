@@ -3955,3 +3955,18 @@ verdict or change it without a sign. Why no tool caught it: the export covers th
 Tool fix (tonight, bug queue after queue 1; doc agent decision): push-suite re-runs itself from the export directory
 (`node <export>/tools/scripts/push-suite.mjs`), so the gate is the committed gate; a spec checks that a dirty
 `tools/scripts` file does not change the run. Until then: run push-suite only with a clean `tools/scripts`.
+
+As built (647 part 3, delay in the hold run): `studio-e2e-repeat.mjs` passes `--delay-pictures 60000`
+(`DELAY_PICTURES_MS`) with `--hold-listings 14000` in its last run (`runArgs`); the log line names both. The hold
+masks a short delay: pictures requested while the listing is held land before the case scrolls back, so with the
+`liveShotsOf` fix of ec946602e reverted the scroll case passed 2/2 at 3000, 6000 and 15000 ms with the hold, and
+failed 2/2 at 15000 without it. With the hold it failed 2/2 at 20000, 1/2 at 30000 (the pass at load 35) and 2/2 at
+60000 (`up1+30 a product` empty, the 647 cell). 60000 leaves room for load. Spec: `runArgs` gives only the last run
+the hold and the delay (fails on the old source, which has no such export). Verified on 1b17d73f3 (the commits up to
+fef1fa1a8 change no Studio or runner file), load average 4-8 unless named:
+`node apps/ethlete-studio/e2e/canvas.e2e.mjs --case 'a sketch scroll never empties a cell that had a picture'
+--hold-listings 14000 --delay-pictures 60000`: 2/2 fail with ec946602e's sketch-view change reverted, 2/2 pass
+with it (load 8-81); `node --test tools/scripts/studio-e2e-repeat.spec.mjs`: 11/11. Not verified: that a known hold
+bite (646, `listingAnswered` removed, case 'Fit is stable') still bites with the delay on: both tries hit the
+`warmUp` timeout at load 92-107 from other sessions; the full repeat gate with the delay (other cases that wait for
+pictures may now take up to 60 s longer); push:suite.
