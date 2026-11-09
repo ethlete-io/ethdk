@@ -4036,3 +4036,14 @@ push gate has no record of which cases are known flaky on which machine, and B46
 specs, not the e2e timing cases. Tool fix (tonight, bug queue): the e2e timing cases move into the perf job too (B441
 applied to e2e), and the gate prints the B row of a known flaky case next to its fail. Cause the builder fixes next: `canvas.e2e.mjs:3020` gives
 `min(8, floor(cores/4))`, 3 workers on the 12-core Mac.
+
+666\. Builder (2026-11-09, Mac night, worker sweep): more e2e workers make the Mac worse. 4 workers: 130/133 in
+528 s, load 7 to 120, fixtures 52-55 s, warmUp 17 s. 6 workers: 116/133 in 591 s, load 120 to 253, fixtures at the
+60 s cap. 8 workers: about 30 fails, load 395 with about 6 threads on CPU, a process spawn storm (one Chromium renderer
+per cross-origin iframe). So `min(8, floor(cores/4))` = 3 is not the cause, and the doc agent's line in 664 ("mostly
+the worker count") was wrong. The cause is the cases with fixed 60 s waits under load. Also during the sweep
+`mediaanalysisd` and `mds_stores` ran at about 140 % CPU, so 659's "Spotlight was idle" was true only at that
+moment. Why no tool caught it: no run records the CPU of processes outside the checkout. Tool fix (with 650/659): the
+load report also names the top processes outside the checkout. Machine fix (question for the human in the morning):
+exclude the checkout from Spotlight indexing. Next (doc agent agrees): the e2e timing cases move into the
+non-blocking perf job; for B462 find why the first-load wait needs more than 60 s under load, no timeout raise.
