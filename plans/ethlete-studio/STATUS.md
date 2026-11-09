@@ -41,7 +41,8 @@ nimmt immer den obersten offenen Punkt. Vor dem Start prüft er ihn gegen git: I
 nimmt den nächsten. Kein Punkt und kein Rückstand läuft über Nacht als E2E-Fix-Schleife. Nur der Doc-Agent ändert diese Liste, und nur nach Toms Okay.
 
 0. Wartezeit (ADR 0236, Bef. 639): die Studio-E2E-Suite wird schneller. Gemessen am 08.11.: E2E war 80 % der
-   Push-Prüfung (165-197 s pro Lauf) und der größte Posten der Builder-Zeit. Ende: E2E-Schritt im push:suite unter 60 s,
+   Push-Prüfung (165-197 s pro Lauf) und der größte Posten der Builder-Zeit. Ende (ADR 0237): die Skizzen- und
+   Regelprüfung im Design-Server speichert ihr Ergebnis, bis sich eine Datei ändert; dann E2E-Schritt im push:suite unter 90 s,
    gemessen über 3 Läufe; der Builder wartet auf E2E per Benachrichtigung, nicht per Abfrage-Schleife; `shot` und
    `design check` haben eine harte Frist, und jedes Warten hat eine Frist (Bef. 640).
    In Arbeit (09.11., Builder): gepusht bis e15d7b88e (Fix `listingAnswered()`, Bef. 646), E2E 142 s, alle 3
