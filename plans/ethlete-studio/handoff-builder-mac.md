@@ -20,18 +20,15 @@ time; pause subagent e2e runs during a push:suite.
   077bd0543 in apps/ethlete-studio/vite.config.mts) raised CI parallelism on the 2-vCPU ubuntu-latest runner (vitest
   default there is 1-ish). Check: compare the vitest worker count in the logs of runs 42651661922 vs 42699047872. Fix:
   cap `Math.min(4, <vitest default>)`, not a fixed 4. Send the rerun result to the grill session.
-- In flight: subagent (opus) on B465 / finding 672 in the main tree. Uncommitted: sketch-view.component.ts + spec,
-  `.changeset/sketch-frame-kept-through-revision.md`. Cause: `sketchRowsOf` puts `revision` into frame src; the same
-  iframe gets the new src and goes opacity-0 before the new frame paints. Fix keeps the painted old iframe until the new
-  one paints (spec 20/20 with, 1/20 fail without). Still to do: e2e repro with `--delay-pictures 5000` and no hold, with
-  and without the fix; repeat-gate run of this case with delay and without hold + spec; as-built 672; one
-  `fix(repo)` commit. If the subagent is gone, finish these from the uncommitted files.
+- B465 / finding 672 done: 9e4ada3c5 fix(repo) (local, not pushed). The sketch view keeps a painted frame until the
+  new revision's frame paints; the case waits for a variant-a cell; per-case `holdListings: false`. Bite proven.
 - Orphan a-cli design servers pids 65717-65719 (parent 1): kill refused by the permission check; the human decides.
 
 ## Then
 
 1. One push:suite for the unpushed range (load < 10 first), push on ok, send CI run id.
-2. Bug queue: B464 hover case waits for a stable DOM before the hover; 667 part (c) shared shot/vite cache keyed by the
+2. Bug queue: runner check that flags a case whose wait window is shorter than HOLD_LISTINGS_MS unless it opts out
+   (657, 672, finding 674); B464 hover case waits for a stable DOM before the hover; 667 part (c) shared shot/vite cache keyed by the
    read-files fingerprint (finding 649), then once-per-run fixture request again; 656, 658 (failureReport prints vitest
    FAIL rows - tonight a cli fail had no file names), 663, 660, 662, 650/659; 670 warning names its source; 673 design
    server exits when its parent is gone, push-suite lists servers older than 1 h.
