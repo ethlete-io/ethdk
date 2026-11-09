@@ -3852,3 +3852,13 @@ None scrolls the sketch view, and none runs with late pictures, so a cell's empt
 to them. Tool fix: the decided e2e load mode that the repeat gate runs. Generic CPU load is a poor base because it did
 not reproduce. A better base is a load mode that delays the design server's slow paths (picture shots by several
 seconds, frame loads by a smaller amount), as the delayed-shot route here does.
+
+As built (647, part 1, ec946602e): `liveShotsOf` in `sketch-view.component.ts` kept frames only for near cells, so a
+painted cell without a loaded picture lost its frame when it left the near band and stayed empty on return. Such a
+cell now stays live until its picture loads; the spec bites. CPU pressure (56 busy loops, CDP throttle 8x) never
+reproduced it; a 60 s delay on `__design/shot` did, 6/6 fail before, 8/8 pass after. The e2e case has a race of its
+own: `probeCell` reads a frame that Studio removed after its picture loaded and reports "no frame" or "no context",
+while the cell shows its picture. Doc agent decision (the test intent stays, so no question for the human): on those
+two answers `probeCell` counts the cell again from a new census; an empty cell still fails, and the case must still
+fail with the `liveShotsOf` fix reverted. The 647 load mode uses a delay on the design server's slow paths (pictures
+by several seconds, frames by less), not CPU pressure; base: the subagent harness `/tmp/s647/zz-load-647.e2e.mjs`.
