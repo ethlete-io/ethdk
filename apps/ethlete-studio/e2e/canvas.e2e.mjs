@@ -2656,13 +2656,15 @@ const FIXTURE_CHANGES = [
   },
 ];
 
-const assertSketchFixtures = async (page, designPort) => {
+const assertSketchFixtures = async (page, designPort, assertStates) => {
   const listing = await page.request
     .get(`http://[::1]:${designPort}/__design/sketches?product=studio`, { timeout: COLD_START_MS })
     .then((response) => response.json())
     .catch((error) => {
       throw new Error(`sketch fixture check could not list the sketches: ${String(error).split('\n')[0]}`);
     });
+
+  if (!assertStates) return;
 
   const faults = FIXTURE_CHANGES.flatMap(({ target, part, variants, changed }) => {
     const sketch = listing?.sketches?.find((candidate) => candidate.target === target);
@@ -2933,11 +2935,10 @@ const work = async () => {
       await page
         .context()
         .route(`${studioUrl}${BLANK_PATH}`, (route) => route.fulfill({ contentType: 'text/html', body: '' }));
-      if (args.includes('--check-fixtures'))
-        await assertSketchFixtures(page, designPort).catch((error) => {
-          process.send({ type: 'fixtures', detail: error.message });
-          throw error;
-        });
+      await assertSketchFixtures(page, designPort, args.includes('--check-fixtures')).catch((error) => {
+        process.send({ type: 'fixtures', detail: error.message });
+        throw error;
+      });
       const fixed = performance.now();
 
       await studioBuilt;
