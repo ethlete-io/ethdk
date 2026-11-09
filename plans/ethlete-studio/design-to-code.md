@@ -3887,3 +3887,21 @@ other sessions), all passed. A diagnostic run saw 582 hits and 57 misses; 36 mis
 server, the rest are real edits, together about 185 s of worker CPU. The 90 s goal is not met; the next lever is a
 cache shared across servers (on disk, by target-relative inputs) or a sketches run that reuses the rules result.
 Not verified: a measurement on an idle machine.
+
+As built (ADR 0237, check cache, b94bb9b46): the design CLI keeps rule and sketch check results per kind, target and
+product, keyed by the stat of every file the run read (the open-points-cache fingerprint); 7 specs bite. 3 full e2e
+runs: 127.6, 123.0, 117.6 s, 133/133 green, no scroll flake, at a load average of 39-51 from other sessions. 582 hits,
+57 misses; the misses cost about 185 s CPU, 36 of them the first check of each new design server. Doc agent decision:
+measure again on an idle machine (load average under 4) before more work; if the e2e step is still over 90 s, the next
+step goes to the human as a question.
+
+649\. Builder (2026-11-09, check cache): the Tailwind facts store was keyed only by stylesheet paths, so a theme change
+gave stale answers; the bug existed before the cache. Why no tool caught it: each store builds its own cache key by
+hand, and nothing checks that the key covers every input the store reads. Tool fix (backlog): every design CLI cache
+takes its key from the shared fingerprint of the files the run read, never a hand-built key; a spec per store changes
+each input once and expects a fresh answer.
+
+650\. Builder (2026-11-09, ADR 0237): the 3 measured e2e runs ran at a load average of 39-51 from other sessions, so
+the times cannot show if the 90 s goal is met. Why no tool caught it: the e2e timing report has no load figure, so a
+noisy measurement looks like a clean one. Tool fix (backlog, with ADR 0208 run timings): every e2e timing report
+prints the load average at start and end and marks a run above a load threshold as "noisy, not a measurement".
