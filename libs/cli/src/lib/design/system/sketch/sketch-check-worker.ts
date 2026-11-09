@@ -1,9 +1,14 @@
 import { parentPort } from 'worker_threads';
+import { cachedCheckOf } from './sketch-check-cache';
 import { openSketchListingAt, ruleProblemsAt, SketchCheckRequest, SketchCheckResponse } from './sketch-checker';
 
-const answerOf = ({ id, kind, ...request }: SketchCheckRequest): SketchCheckResponse => {
+const checkOf = cachedCheckOf(({ kind, ...request }: Omit<SketchCheckRequest, 'id'>) =>
+  kind === 'rules' ? ruleProblemsAt(request) : openSketchListingAt(request),
+);
+
+const answerOf = ({ id, ...request }: SketchCheckRequest): SketchCheckResponse => {
   try {
-    const listing = kind === 'rules' ? ruleProblemsAt(request) : openSketchListingAt(request);
+    const listing = checkOf(request);
 
     return typeof listing === 'string' ? { id, error: listing } : { id, result: listing };
   } catch (error) {

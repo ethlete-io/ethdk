@@ -1,4 +1,5 @@
 import { execFileSync } from 'child_process';
+import { createHash } from 'crypto';
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { dirname, join, relative, resolve } from 'path';
 import postcss from 'postcss';
@@ -38,12 +39,12 @@ type StyleHolder = ProductSource & { base?: ProductSource | null };
 const styleSourceOf = (product: StyleHolder) =>
   [product, product.base].find((each): each is ProductSource => !!each?.config.styles?.length);
 
-const remOf = (files: Set<string>) => {
+const remOf = (sheets: string[]) => {
   let rem = DEFAULT_REM;
 
-  for (const file of files) {
+  for (const sheet of sheets) {
     try {
-      postcss.parse(readFileSync(file, 'utf8')).walkRules(/^(?:html|:root)$/u, (rule) =>
+      postcss.parse(sheet).walkRules(/^(?:html|:root)$/u, (rule) =>
         rule.walkDecls('font-size', (declaration) => {
           const [, amount, unit] = /^(\d*\.?\d+)(%|px)$/u.exec(declaration.value.trim()) ?? [];
 
@@ -263,9 +264,12 @@ const factsCache = new Map<string, Map<string, ClassFacts>>();
 export const classFactsOf = (options: { product: StyleHolder; classes: PartClasses }) => {
   const { target, stylesheets, files } = options.classes;
   const source = styleSourceOf(options.product);
-  const rem = remOf(source ? productStylesheetFilesOf(source) : new Set());
+  const sheets = [...(source ? productStylesheetFilesOf(source) : [])].map((file) => readFileSync(file, 'utf8'));
+  const rem = remOf(sheets);
   const css = stylesheets.map((file) => `@import ${JSON.stringify(file)};`).join('\n');
-  const key = `${rem}\n${css}`;
+  const key = createHash('sha1')
+    .update(JSON.stringify([rem, css, sheets]))
+    .digest('base64url');
   const known = factsCache.get(key) ?? new Map<string, ClassFacts>();
   const missing = [...new Set(files.flatMap((file) => [...file.candidates, ...file.classes]))].filter(
     (candidate) => !known.has(candidate),

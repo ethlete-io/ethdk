@@ -249,6 +249,8 @@ const lastCompoundOf = (selector: string) =>
     .pop() ?? '';
 
 const withoutSdkElementRules = (css: string) => {
+  if (!/\.et-[\w-]/u.test(css)) return css;
+
   try {
     const root = postcss.parse(css);
 

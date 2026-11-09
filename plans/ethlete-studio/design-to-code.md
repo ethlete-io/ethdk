@@ -3874,3 +3874,16 @@ As built (647, part 2, 2b0227f8e): `canvas.e2e.mjs --delay-pictures <ms>` delays
 load mode, moved from `/tmp/s647`); `probeCell` counts a cell again from a new census on "no frame" or "no context".
 With the fix and a 60 s delay the scroll case passes 3/3. Open: the bite proof, the full suite, push:suite. Doc agent
 decision: the repeat gate runs `--delay-pictures` inside an existing run (for example the hold run), not as a 4th run.
+
+As built (639/0237, check cache): the sketch check worker keeps each `rules` and `sketches` result per kind, target
+and product (`cachedCheckOf`, `sketch/sketch-check-cache.ts`) with the stat and folder listing of every file the run
+read (`trackedRun`, the open-points cache pattern); any changed print runs the check again. Not covered by the prints:
+the files Tailwind's child process reads outside the stylesheet import graph (its own package files). The Tailwind
+facts memo is now keyed by the stylesheet texts too, and UTILITY-CSS skips the postcss parse of a text without an
+`.et-` class. Specs: a repeat check does not run again; a part stylesheet, a part folder listing, the config, a sketch
+variant, the SDK declaration file and a Tailwind stylesheet each run it again and match a fresh run (bites with the
+cache off, invalidation off, and the old facts key). Canvas e2e: 127.6 s, 123.0 s, 117.6 s (load average 39-51 from
+other sessions), all passed. A diagnostic run saw 582 hits and 57 misses; 36 misses are the first check of a fresh
+server, the rest are real edits, together about 185 s of worker CPU. The 90 s goal is not met; the next lever is a
+cache shared across servers (on disk, by target-relative inputs) or a sketches run that reuses the rules result.
+Not verified: a measurement on an idle machine.
