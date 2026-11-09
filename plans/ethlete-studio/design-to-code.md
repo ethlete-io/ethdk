@@ -4226,3 +4226,16 @@ matches its claim, so a case that claims "draws a border" can read a value that 
 style-diff helpers of the e2e runner compare drawn results (visible width and non-transparent colour), never raw
 computed strings, and the 651 bite proof runs each case once with the claimed effect forced off and once with an
 unrelated element added late, to show the case reacts only to its claim.
+
+As built (674): 054fb039b. In a hold run, a case fails when its `run()` passes while a listing that it requested inside
+`run()` is still held; listings held before `run()` are ignored. Bite: the sketch-edit case without
+`holdListings: false` fails with the new detail and passes when restored. 8 cases carry the opt-out
+`listingMayPend: true`.
+
+678\. Doc agent (2026-11-09, Mac night, 054fb039b): the 674 runtime check went in with 8 opt-outs
+(`listingMayPend: true`) at birth, and only one full hold run. The builder checked none of the 8 one by one; each one
+says "passes on its own evidence", but nothing proves that. A check with many unproven opt-outs looks green and guards
+less than it claims. Why no tool caught it: an opt-out flag takes no reason, and the runner has no list of which cases
+skip which check. Tool fix (bug queue, after 673): `listingMayPend` takes a reason string instead of `true`; the runner
+prints the opt-out cases per check in its summary; the 651 bite proof runs each opt-out case once with the hold on, to
+show that its own evidence fails when the listing is late.
