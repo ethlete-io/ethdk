@@ -4130,3 +4130,21 @@ gate tests the whole unpushed stack, so one change cannot pass alone while other
 decision (inside the existing rules; the suite skip stays with the human): the builder runs push-suite on
 origin/next plus only 2bc4d42f2 and pushes that sha; B465 is found in parallel. Tool fix (backlog): push-suite takes
 a commit list and tests origin plus those commits only, so an independent fix does not queue behind open work.
+
+672\. Builder (2026-11-09, Mac night, B465 cause; spec fails 1/20 on the old code, passes 20/20 with the fix):
+`sketchRowsOf` (`system-tree.ts`) puts `revision` into the frame src and picture URL of every variant row. A CSS edit
+of sketch `a` bumps it, so every cell of row `a` gets a new frame address; the same `<iframe>` gets the new `[src]`,
+`FramePaintedDirective` emits false at once and the frame goes to opacity 0. A cell shown only by its painted frame,
+with no loaded picture yet, stays empty until the new frame paints (`a project-picker-focus-visible`). A real Studio
+defect; the case measured right. Fix (builder): keep the painted old iframe, mount the new src on top at opacity 0,
+remove the old one when the new one paints. Why no tool caught it: the defect needs a painted frame with no loaded
+picture, which only load produces; and the hold run holds listings 14 s, longer than the case's 10 s window, so the
+revision bump never arrives there and the case passes by chance. Second time tonight that the hold hides a fault
+(657). Tool fix (tonight, with the fix): this case runs with `--delay-pictures` and without the listing hold; backlog:
+the gate spec checks that no case's watch window is shorter than the hold it runs under.
+
+673\. Doc agent (2026-11-09, Mac night, seen by the builder): three `a-cli` design servers (pids 65717-65719,
+parent pid 1, started about 1.5 days ago, `node_modules/.cache/a-cli/src/index.js design /var/folders/...`) still
+live, at 0 % CPU. A run left them as orphans. Why no tool caught it: a design server does not exit when its parent
+dies, and no run lists old servers of the checkout. Tool fix (bug queue): a design server exits when its parent
+process is gone, and push-suite lists design servers of the checkout older than one hour at its start.
