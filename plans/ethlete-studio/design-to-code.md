@@ -3929,3 +3929,10 @@ the same e2e step without this, so the hand copy of `exportCommit` misses someth
 blamed the delay route, which already turns on after `warmUp`. Why no tool caught it: there is no shared way to run a
 case on an export, so each proof builds its own. Tool fix (backlog, with 651): a bite proof runs through push-suite's
 `exportCommit` (one export path) with a flag that reverts a named commit.
+
+654\. Doc agent (2026-11-09, Mac night start): the builder handoff said the on-disk check cache waits for the human
+("its cost goes to the human first"), while ADR 0239, written the same afternoon, puts it in the night scope. The
+handoff restated an older doc agent line instead of the ADR, so the builder would have stopped on a decided point.
+Why no tool caught it: a handoff is free prose; nothing compares its scope lines with the ADRs it names. Tool fix
+(backlog): a handoff names its scope only by ADR number and lists the ADR's items verbatim (no paraphrase), and
+`yarn adr:governs` on a handoff file lists the ADRs it cites so the writer rereads them before the commit.

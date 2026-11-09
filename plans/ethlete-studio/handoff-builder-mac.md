@@ -27,7 +27,8 @@ A plans-only commit on top of an ok sha needs no new verdict. `PUSH_SUITE_SKIP=1
   127.6, 123.0, 117.6 s at load 39-51 (noisy, finding 650). Wait for idle with a deadline (finding 640).
 - If the idle runs are over 90 s: the next lever is an on-disk check cache shared across design servers, keyed by
   target-relative inputs (36 of 57 misses were the first check of a fresh server, about 185 s worker CPU in total).
-  The doc agent decided that its cost goes to the human first. Second lever: let `sketches` reuse a fresh `rules`
+  ADR 0239 puts it in tonight's scope: build it without waiting for the human, on the shared read-files fingerprint
+  (finding 649). Second lever: let `sketches` reuse a fresh `rules`
   result.
 - Delay run in the repeat gate (647 tool fix): `tools/scripts/studio-e2e-repeat.mjs` passes `--delay-pictures <ms>`
   inside the existing hold run (run 3, with `--hold-listings 14000`), not as a 4th run. First prove that the two do
