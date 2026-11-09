@@ -3779,4 +3779,6 @@ As built (646): `listingAnswered(page)` in `canvas.e2e.mjs` waits until no cell 
 `settled()`, replaces 7 inline copies, and runs after the first-load reload. Verified: every reported hold case passes
 with and without `--hold-listings 14000`; the two Large cases ("a sketch scroll never empties a cell", "a sketch keeps
 its frame count") pass 4 of 4 alone on HEAD and on the fix, so their failures come only under 8-worker load and do not
-come from this fix. Not verified: the Large load flakes; the push-suite repeat gate verdict follows.
+come from this fix. Pushed as e15d7b88e: push-suite ok, e2e 142 s, all 3 repeat-gate runs stable, the hold run
+included; the Large load flakes did not come. Open: the Large load flakes under 8 workers. If one comes back, it
+becomes its own finding.

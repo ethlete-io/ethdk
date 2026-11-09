@@ -44,10 +44,8 @@ nimmt den nächsten. Kein Punkt und kein Rückstand läuft über Nacht als E2E-F
    Push-Prüfung (165-197 s pro Lauf) und der größte Posten der Builder-Zeit. Ende: E2E-Schritt im push:suite unter 60 s,
    gemessen über 3 Läufe; der Builder wartet auf E2E per Benachrichtigung, nicht per Abfrage-Schleife; `shot` und
    `design check` haben eine harte Frist, und jedes Warten hat eine Frist (Bef. 640).
-   In Arbeit (08.11. 20:40, Builder): 07596570b (E2E 170 → 146 s) und a8cc4eb06 (Bef. 644) sind committet, nicht
-   gepusht; der Wiederholungs-Lauf mit `--hold-listings 14000` scheitert, weil `settled()` nach 10 s still aufgibt.
-   Fix `listingAnswered()` liegt uncommittet in `canvas.e2e.mjs`; Hold-Läufe grün, zwei Nicht-Hold-Flakes (Large)
-   offen. Übergabe: `.claude/handoffs/builder.md`.
+   In Arbeit (09.11., Builder): gepusht bis e15d7b88e (Fix `listingAnswered()`, Bef. 646), E2E 142 s, alle 3
+   Wiederholungs-Läufe stabil. Jetzt: runCase ohne die feste Wartezeit von 2,5 s. Übergabe: `.claude/handoffs/builder.md`.
    Letzter Schritt (Tom, 09.11.): Der Mod `e2e-progress` zeigt auch Studio-E2E-Läufe. Der Studio-Runner schreibt am
    Start „Running N tests using W workers“ und Ergebniszeilen im Playwright-Format; push:suite schreibt sein E2E-Log nach
    `.claude/handoffs/`. Der Mod bleibt allgemein, ohne Studio-Sonderfall.
