@@ -4010,5 +4010,8 @@ underline offset. Why no tool caught it: render fixtures use the system font, an
 662\. Builder (2026-11-09, Mac night, 343e968aa): on the 12-core Mac the cli vitest run started 11 forks, each with
 Chromium, Vite and git; 23 tests timed out. The CI runner gets about 3. Fix: `maxWorkers: 4` in
 `libs/cli/vitest.config.mts`; with it all 345 files pass (530 s, the failing default run took 562 s). Why no tool
-caught it: the worker count follows the core count, so only a bigger machine than CI shows it. Tool fix: the cap
-itself.
+caught it: the worker count follows the core count, so only a bigger machine than CI shows it. The same cause hit
+`harness-server.spec` (default 5 s timeout, d43db5c91) and `nx test ethlete-studio` on the half-timeout guard
+(077bd0543, cap 4 there too). Tool fix (tonight, bug queue after 660; doc agent decision, because it bit three times in
+one night): one shared vitest preset sets `maxWorkers`, and every project config uses it; a check fails a vitest
+config that does not.
