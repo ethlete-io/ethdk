@@ -4049,3 +4049,17 @@ moment. Why no tool caught it: no run records the CPU of processes outside the c
 load report also names the top processes outside the checkout. Machine fix (question for the human in the morning):
 exclude the checkout from Spotlight indexing. Next (doc agent agrees): the e2e timing cases move into the
 non-blocking perf job; for B462 find why the first-load wait needs more than 60 s under load, no timeout raise.
+
+667\. Builder (2026-11-09, Mac night, B462 cause, from code, one point seen in logs): each e2e worker runs
+`assertSketchFixtures` (`canvas.e2e.mjs:2659`), one full `/__design/sketches` listing, so a full picture compare of
+every fixture sketch, drawn by its own draw Chromium with `DRAWS_AT_ONCE` 8. Nothing is shared: the shot cache and the
+vite `cacheDir` are keyed by the sha1 of the checkout path (`serve.ts:1169/1190`, `vite-cache.ts:8`), and each worker
+has its own tmp checkout. So N workers do N cold compares of the same pictures, up to 8N draws at once plus N test
+browsers: that is the load spike of 666. At 6+ workers the fixture request hits `COLD_START_MS` 60 s, and a `.catch`
+swallows it ("sketch fixture check skipped"); the closed request aborts the listing (`studio-api.ts:478`), so the first
+Sketches case pays the compare again inside its 60 s `listingAnswered` and fails (B462). Why no tool caught it: a
+swallowed timeout in the setup phase made a broken precondition look like a slow case, and a path-keyed cache hides
+that the workers share the same inputs. Tool fix (tonight, in this order): (a) the fixture check fails the worker on
+timeout, not a log line; (b) the fixture check runs once per run, the other workers skip it; (c) one shot and vite
+cache for all workers, keyed by the read-files fingerprint (finding 649), not by the checkout path. This is also the
+disk check cache of ADR 0239.
