@@ -1,57 +1,37 @@
-<!-- Builder handoff for the Mac night shift 2026-11-09/10 (ADR 0239). Replace once resumed. -->
+<!-- Builder handoff, Mac night shift 2026-11-09/10 (ADR 0239), second session. Replace once resumed. -->
 
 # Handoff: builder, Mac night shift (ADR 0239)
 
-Run `/builder-agent` first. The doc agent reads `plans/ethlete-studio/handoff-doc-agent.md`. Report every slice
-sha to it. Never ask the user. `export NX_NO_CLOUD=true`. Commits: `git commit -- <paths>`, never `git add -A`,
-stash, amend or rebase. Never commit `.ethlete/design/*/pictures.json`, `.ethlete/design/studio/ready.json`,
-`.ethlete/design/studio/sketches/pages-system/sketch.json` or `.ethlete/design/sdk/sketches/` (other sessions).
+Run `/builder-agent` first. The grill/docs session is `ethlete-sdk-68` (tmux `claude-2@ethlete-sdk`); report every
+sha to it with `SendMessage`. Never ask the user. `export NX_NO_CLOUD=true`. Commits: `git commit -- <paths>` (a new
+file needs `git add -- <file>` first), never `git add -A`, stash, amend or rebase. Never commit
+`.ethlete/design/*/pictures.json`, `.ethlete/design/studio/ready.json`, any `sketch.json` or `.ethlete/design/sdk/sketches/`.
+Commit scope: `repo` for Studio/tools, `cli`, `deps`; commitlint rejects `timetrack-app` and `ethlete-studio`.
 
-## Start
+Watchdogs are set: claude-at `kick-01-1110`, `kick-06-1110`, `kick-11-1110` (2026-11-10 01:35/06:35/11:35).
 
-1. `git fetch origin && git checkout next && git pull --ff-only`. The PC pushed up to the sha the doc agent names.
-2. Set three one-shot claude-at watchdogs as in ADR 0220: `kick-01`, `kick-06`, `kick-11` at 01:35, 06:35 and 11:35
-   (five minutes after each usage reset). Each reads both tmux panes, types a resume line into a session that stopped
-   at a limit, logs to `/tmp/dx/kick-report.log` and exits.
-3. Scope tonight (ADR 0239): e2e speed, then perf, then bugs. No features. B249 (Baubereit) is day-shift work.
+## Top priority: CI on `next` is red, the fix is not pushed
 
-## Push rule (ADR 0230/0231)
+- Cause: `cargo audit` RUSTSEC-2026-0459. Fix 2bc4d42f2 (rusqlite 0.41.1, libsqlite3-sys 0.39.1), cargo test 280 ok,
+  cargo audit ok. Not pushed: no `push-suite: ok` yet. Unpushed on top: 6cafe2129 (delay in hold run), 343e968aa
+  (cli: macOS git `-G` POSIX regex, render fixture font, `maxWorkers: 4`), d43db5c91 (harness spec 30 s),
+  077bd0543 (Studio unit specs `maxWorkers: 4`), plus grill plan commits.
+- push:suite now: cli ok, studio ok, e2e fails 132/133 with a different load-timing case each run
+  (`[Sketches] first load creates one iframe ...` 60 s waitForFunction; then `[System] page switch time is logged`,
+  `icons->shell-main ... all NOT`). Each passes alone. Step takes 513-533 s on 3 workers. Do not rerun push:suite
+  blindly again (grill: no loop).
+- Cause to fix next: `canvas.e2e.mjs:3020` picks `min(8, floor(availableParallelism()/4))` = 3 workers on this 12-core
+  Mac (PC: 8). Grill order: (1) find a worker count that fits the machine (lesson 662: fit the machine, not CI) and
+  measure 4/6/8 workers with the load average and per-worker `fixtures`/`warmUp` times; (2) 3 idle runs, each with
+  machine, cores, workers, load; (3) disk check cache (inside the existing CLI cache, shared read-files fingerprint,
+  finding 649) if still over 90 s; (4) 647 bite proof through push-suite `exportCommit`. Then push:suite, push, send
+  the green CI run id to the grill session.
+- Run one full test run at a time; no subagent test runs during push:suite. Run `npx nx build cli` after any libs/cli
+  commit, or the e2e runner shows NOT RUN (finding 663).
 
-`yarn push:suite` in the background; push only the sha in `push-suite: ok <sha>` (`git push origin <sha>:next`).
-A plans-only commit on top of an ok sha needs no new verdict. `PUSH_SUITE_SKIP=1` is for the human only.
+## Bug queue after queue 1 (grill order)
 
-## Queue 1: e2e speed (rest of item 0, ADR 0237/0238, now tool backlog)
-
-- Idle measurement against 90 s: 3 runs of the push:suite e2e step, with the 1-min load average written next to each
-  time (`cut -d' ' -f1-3 /proc/loadavg` on Linux, `sysctl -n vm.loadavg` on macOS) at start and end. Last PC values:
-  127.6, 123.0, 117.6 s at load 39-51 (noisy, finding 650). Wait for idle with a deadline (finding 640).
-- If the idle runs are over 90 s: the next lever is an on-disk check cache shared across design servers, keyed by
-  target-relative inputs (36 of 57 misses were the first check of a fresh server, about 185 s worker CPU in total).
-  ADR 0239 puts it in tonight's scope: build it without waiting for the human, on the shared read-files fingerprint
-  (finding 649). Second lever: let `sketches` reuse a fresh `rules`
-  result.
-- Delay run in the repeat gate (647 tool fix): `tools/scripts/studio-e2e-repeat.mjs` passes `--delay-pictures <ms>`
-  inside the existing hold run (run 3, with `--hold-listings 14000`), not as a 4th run. First prove that the two do
-  not mask each other, and find the smallest delay that bites.
-- 647 bite proof through `exportCommit` of `tools/scripts/push-suite.mjs` (accepted backlog fix). Two hand-made
-  exports of HEAD on the PC (`/tmp/exp-tools/export.mjs`, a copy of `exportCommit`, plus
-  `STUDIO_CLI_ENTRY=<main tree>/dist/libs/cli/src/index.js`) timed out in `warmUp` (canvas.e2e.mjs:2765, 60 s) in every
-  run, also with no delay. So a hand-made export cannot start the canvas, but push-suite's export can. The cause was
-  not found. Proof: the `liveShotsOf` change of ec946602e reverted plus `--delay-pictures 60000` must fail the case
-  'a sketch scroll never empties a cell that had a picture'; with the fix, 2 runs must pass. The delay route is
-  already installed after `warmUp` (canvas.e2e.mjs:2939-2950).
-
-## Queue 2: perf and bug candidates
-
-- Finding 649: every CLI cache uses the shared read-files fingerprint (`trackedRun`, open-points cache), no
-  hand-built keys.
-- Finding 650: the e2e timing report prints the load average at start and end and marks a run over a threshold as
-  "noisy, not a measurement".
-- Finding 651: every "Verified" line in a plan names the sha and the command.
-- Bug: find why a hand-made export of HEAD times out in `warmUp` while push-suite's export does not (see above).
-
-## State at handoff
-
-- Check cache b94bb9b46 is in; 7 specs bite. `dist/libs/cli` on the PC was rebuilt from it.
-- Not verified: the 647 fix under a delay on committed code (the earlier "passes 3/3" came from the /tmp scratch
-  harness, finding 651).
+656 push-suite re-execs itself from the export dir (+ spec: dirty tools/scripts does not change the run);
+658 failureReport prints vitest `FAIL` rows; 663 canvas runner checks dist freshness before workers start;
+660 spec/lint rejects `\s \S \b \d \w` in git `-G`/`--grep`/`-E` args in libs/cli; 662 shared vitest preset with
+maxWorkers that every project uses, plus a check; then 650/659 load report (load at start/end, top CPU processes).
