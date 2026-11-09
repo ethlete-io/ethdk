@@ -3915,3 +3915,17 @@ scratch copy reads like a result on the committed code. Tool fix (backlog): ever
 the exact command; a result from a scratch or export tree says so. Fix now (doc agent decision, ADR 0238 scope): the
 delay route turns on only after `warmUp`; one more bite proof; if it again gives no result, push without it and the
 proof moves to the tool backlog.
+
+652\. Doc agent (2026-11-09): the design tools rewrite tracked files on every run (`.ethlete/design/*/pictures.json`,
+`.ethlete/design/studio/ready.json`, a sketch's `sketch.json`), so the working tree is never clean. Sessions learn
+"never commit them, not ours", and the doc agent even called them the human's files. Why no tool caught it: nothing
+separates tool state from design source in the tree. Tool fix (backlog): tool-written state goes to a gitignored
+cache, or the tool commits it itself in its own commit; `git status` after a design run shows only what a person
+changed.
+
+653\. Builder (2026-11-09, 647 bite proof): a hand-made HEAD export (`STUDIO_CLI_ENTRY` = main tree dist) could not
+start the canvas: all 4 runs ended in a `warmUp` timeout, also with no delay at load 4-8. The push-suite export runs
+the same e2e step without this, so the hand copy of `exportCommit` misses something (not found). The first report
+blamed the delay route, which already turns on after `warmUp`. Why no tool caught it: there is no shared way to run a
+case on an export, so each proof builds its own. Tool fix (backlog, with 651): a bite proof runs through push-suite's
+`exportCommit` (one export path) with a flag that reverts a named commit.
