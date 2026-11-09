@@ -15,6 +15,8 @@ export default defineConfig(() => ({
     environment: 'jsdom',
     include: ['src/**/*.spec.ts'],
     setupFiles: ['src/test-setup.mjs'],
+    // Above 4 workers on a many-core machine the jsdom cases slow down past the half-timeout guard in test-setup.mjs.
+    maxWorkers: 4,
     reporters: ['default'],
   },
 }));
