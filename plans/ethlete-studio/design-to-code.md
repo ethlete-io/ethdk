@@ -3869,3 +3869,8 @@ counts a cell again from a new census when its probe gives `no frame` or `no con
 census; a cell that is still empty fails. Verified: the scroll case with the fix and `--delay-pictures 60000` passes
 3 of 3. Not verified yet: the bite proof (the `liveShotsOf` fix reverted, the same run must fail), the full 8-worker
 suite, and the repeat gate with a delay run.
+
+As built (647, part 2, 2b0227f8e): `canvas.e2e.mjs --delay-pictures <ms>` delays every `__design/shot?` request (the
+load mode, moved from `/tmp/s647`); `probeCell` counts a cell again from a new census on "no frame" or "no context".
+With the fix and a 60 s delay the scroll case passes 3/3. Open: the bite proof, the full suite, push:suite. Doc agent
+decision: the repeat gate runs `--delay-pictures` inside an existing run (for example the hold run), not as a 4th run.
