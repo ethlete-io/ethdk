@@ -4196,6 +4196,19 @@ unsaved hunks in it. Tool fix (backlog): the pre-commit hook warns when a staged
 file (`ethlete-agent-sessions`) gives to another live session; until then the builder commits its plan note in the
 same commit as its code.
 
+As built (finding 674 tool fix, findings 657/672): a runtime check, not a static one. In a hold run
+(`--hold-listings`) the runner (`tools/scripts/studio-e2e-listing-hold.mjs`, used by `canvas.e2e.mjs`) counts held
+listing responses still pending; a case whose `run()` passes while a listing it requested inside `run()` is still
+held fails with `ended while a held listing was pending: its wait is shorter than the 14000 ms hold; wait longer or
+set holdListings: false`. Listings held since the page load before `run()` do not count: with them, 126 of 131 cases
+tripped in a full hold run. With the narrower condition 16 runs of 9 cases tripped; open cases are exempt (their
+inverted result says nothing about a wait), and 8 cases that pass on their own evidence without the held listing
+(merge, discard, the two "edited on disk" picture cases, 30 %/100 %, first load, Fit, listing refresh every 1 s) opt
+out with `listingMayPend: true`; those 17 runs then pass 17/17 in a hold run. Bite: the sketch edit case without
+`holdListings: false` fails with the new detail under `--hold-listings 14000` (twice, broad and narrow condition) and
+passes with it restored; `studio-e2e-listing-hold.spec.mjs` covers the verdict. Not verified: whether the 8 opt-out
+cases trip only intermittently in other hold runs (one full hold run seen), and a push:suite run.
+
 677\. Builder (2026-11-09, Mac night, push:suite at d00510226): the B464 hover case failed again, 130/131. It
 reported a late-mounted `button[data-part-give-go]` with only a transparent outline, border and shadow as a `new`
 frame border. Cause: the case compared raw computed-style strings, so it measured DOM churn under load, not drawn

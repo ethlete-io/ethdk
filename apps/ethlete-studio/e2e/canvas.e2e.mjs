@@ -16,6 +16,7 @@ import { createServer } from 'node:net';
 import { availableParallelism, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { listingHold } from '../../../tools/scripts/studio-e2e-listing-hold.mjs';
 import { ensureCli, withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -630,6 +631,7 @@ const goneSketchLeavesToThePart = async (page, { designPort }, target, decide) =
 const CASES = [
   {
     name: 'a sketch merged while its view is open opens the part view of the target',
+    listingMayPend: true,
     pages: ['Merge'],
     run: (page, _state, target, context) =>
       goneSketchLeavesToThePart(page, context, target, async (ask) => {
@@ -646,6 +648,7 @@ const CASES = [
   },
   {
     name: 'a sketch discarded while its view is open opens the part view of the target',
+    listingMayPend: true,
     pages: ['Discard'],
     run: (page, _state, target, context) =>
       goneSketchLeavesToThePart(page, context, target, async () => {
@@ -886,6 +889,7 @@ const CASES = [
   },
   {
     name: 'Fit is stable, + steps from it, 25 % report',
+    listingMayPend: true,
     pages: ['Sketches'],
     run: async (page, state) => {
       const { view } = state;
@@ -1232,6 +1236,7 @@ const CASES = [
   },
   {
     name: 'a part edited on disk while away shows its new picture on return',
+    listingMayPend: true,
     delayPictures: false,
     pages: ['Edited'],
     run: async (page) => {
@@ -1485,6 +1490,7 @@ const CASES = [
   },
   {
     name: 'a sketch cell edited on disk while scrolled away shows its new picture on return',
+    listingMayPend: true,
     delayPictures: false,
     pages: ['Sketches'],
     labels: ['Large'],
@@ -2077,6 +2083,7 @@ const CASES = [
   },
   {
     name: 'the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms',
+    listingMayPend: true,
     pages: ['Sketches', 'Wide'],
     run: async (page, _state, target) => {
       await listingAnswered(page);
@@ -2313,6 +2320,7 @@ const CASES = [
   },
   {
     name: 'a listing refresh every 1 s for 6 s re-navigates no iframe and leaves no 150px frame',
+    listingMayPend: true,
     pages: ['Sketches'],
     labels: ['Large'],
     run: async (page) => {
@@ -2456,6 +2464,7 @@ const CASES = [
   },
   {
     name: 'first load creates one iframe per frame and aborts no frame request',
+    listingMayPend: true,
     pages: ['Sketches'],
     run: async (page) => {
       const aborted = [];
@@ -2854,6 +2863,8 @@ const runCase = async (page, studioUrl, designPort, target, testCase) => {
   );
   const state = await probe(page);
 
+  heldListings.startRun();
+
   const result = !shown
     ? { ok: false, detail: `the page does not show ${target.shows}` }
     : state
@@ -2868,13 +2879,13 @@ const runCase = async (page, studioUrl, designPort, target, testCase) => {
 };
 
 let listingHoldOn = true;
+const heldListings = listingHold(holdListingsMs);
 
 const holdListings = (page) =>
   page.context().route(
     (url) => url.pathname === '/__design/sketches' && url.searchParams.get('targets') !== 'no',
     async (route) => {
-      if (listingHoldOn && route.request().method() === 'GET')
-        await new Promise((done) => setTimeout(done, holdListingsMs));
+      if (listingHoldOn && route.request().method() === 'GET') await heldListings.hold();
       await route.fallback().catch(() => undefined);
     },
   );
@@ -2972,6 +2983,7 @@ const work = async () => {
 
         pictureDelayOn = CASES[job.case].delayPictures !== false;
         listingHoldOn = CASES[job.case].holdListings !== false;
+        heldListings.startJob();
 
         try {
           result = await Promise.race([
@@ -2981,6 +2993,8 @@ const work = async () => {
         } catch (error) {
           result = { ok: false, detail: String(error).split('\n')[0] };
         }
+
+        if (!CASES[job.case].open && !CASES[job.case].listingMayPend) result = heldListings.check(result);
 
         reportAsyncError = crashOnAsyncError;
 
