@@ -63,7 +63,7 @@ const PARTS: Record<string, { body: string; extra?: string; css?: string; states
     body: '<div style="overflow: hidden; padding: 8px"><button data-et-action="emit:go" style="display: block; outline: 3px solid; box-shadow: 0 0 0 9px transparent, 0 8px 24px currentColor, inset 0 0 0 20px currentColor">Go</button></div>',
   },
   'components/underline-cut': {
-    body: '<p style="margin: 0; width: 80px; overflow: hidden; font-size: 16px; line-height: 16px"><span style="text-decoration: underline wavy; text-underline-offset: 3px">Spelt</span></p>',
+    body: '<p style="margin: 0; width: 80px; overflow: hidden; font-size: 12px; line-height: 16px"><span style="text-decoration: underline wavy; text-underline-offset: 6px">Spelt</span></p>',
   },
   'components/underline-room': {
     body: '<p style="margin: 0; width: 80px; overflow: hidden; padding-bottom: 12px; font-size: 16px; line-height: 16px; text-decoration: underline wavy; text-underline-offset: 3px">Spelt</p>',

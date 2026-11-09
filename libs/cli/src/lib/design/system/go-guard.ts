@@ -54,7 +54,14 @@ export const tomGoCheckOf = (options: {
   const paths = Object.keys(files);
 
   try {
-    const decisions = git(root, ['log', '-G', `^\\s*-\\s+Impl Q${number}\\b`, '--format=%H', '--', 'plans'])
+    const decisions = git(root, [
+      'log',
+      '-G',
+      `^[[:space:]]*-[[:space:]]+Impl Q${number}([^[:alnum:]_]|$)`,
+      '--format=%H',
+      '--',
+      'plans',
+    ])
       .split('\n')
       .filter(Boolean);
     const decision = decisions[decisions.length - 1];
