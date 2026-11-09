@@ -4119,3 +4119,14 @@ in one agent shell call does not reach the next call that runs `git commit`, so 
 tool caught it: the warning prints the patterns but not where they came from or how old they are. Tool fix (bug
 queue): the warning names its source (env or file, with the file's age), and the builder writes the file, not the env
 var, at each slice start.
+
+671\. Builder (2026-11-09, Mac night, push:suite on f3e978adb): e2e green (422 s), the 669 fix worked, and the 647
+scroll case passed in every run. The repeat gate blocked on Large 'a sketch keeps its frame count and pictures
+through a sketch edit' in a normal run (pass, fail, pass): "after the edit 1 cells lost their picture: a
+project-picker-focus-visible", load 6-10. Not a timeout and not the delay, so possibly a real intermittent Studio
+defect (B465; B448 was the old row of this case). The red-CI fix 2bc4d42f2 has now waited 4 push-suite runs behind
+Studio e2e cases, though it changes only Cargo files that the suite does not test. Why no tool caught it: the push
+gate tests the whole unpushed stack, so one change cannot pass alone while other local work is red. Doc agent
+decision (inside the existing rules; the suite skip stays with the human): the builder runs push-suite on
+origin/next plus only 2bc4d42f2 and pushes that sha; B465 is found in parallel. Tool fix (backlog): push-suite takes
+a commit list and tests origin plus those commits only, so an independent fix does not queue behind open work.
