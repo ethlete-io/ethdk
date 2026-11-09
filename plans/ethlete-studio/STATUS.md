@@ -52,7 +52,7 @@ nimmt den nächsten. Kein Punkt und kein Rückstand läuft über Nacht als E2E-F
 6. A2 + A3: Suche mit Strg+K und Update-Knopf in der Titelleiste.
 
 **Werkzeug-Rückstand** (nur, wenn der Builder auf Toms Wahl in einer Skizze wartet): Off-centre-Skizzen 628-633,
-Bef. 638 (Changeset im Pre-Commit), 617, 614, 618, 620, B438, 649 (Cache-Schlüssel), 650 (Last in E2E-Messungen), 652 (Werkzeug-Dateien im Arbeitsbaum), 653 (Beweis über exportCommit), 654 (Übergabe widerspricht ADR), 655 (rotes CI aus Rust-Audit nicht gesehen), 656 (Push-Suite lädt Prüfcode aus dem Arbeitsbaum), 658 (vitest-Fehler ohne Namen), 659 (Last ohne Quelle), Rest von Punkt 0 (ADR 0238: verzögerte Bilder in
+Bef. 638 (Changeset im Pre-Commit), 617, 614, 618, 620, B438, 649 (Cache-Schlüssel), 650 (Last in E2E-Messungen), 652 (Werkzeug-Dateien im Arbeitsbaum), 653 (Beweis über exportCommit), 654 (Übergabe widerspricht ADR), 655 (rotes CI aus Rust-Audit nicht gesehen), 656 (Push-Suite lädt Prüfcode aus dem Arbeitsbaum), 658 (vitest-Fehler ohne Namen), 659 (Last ohne Quelle), 660 (Git-Regex nur unter Linux), 661 (Systemschrift in Fixtures), Rest von Punkt 0 (ADR 0238: verzögerte Bilder in
 der Wiederholungs-Prüfung, ruhige Messung gegen 90 s, Prüf-Cache auf der Festplatte).
 
 **Regel gegen Stillstand:** Ein neuer Befund unterbricht den laufenden Punkt nur, wenn (a) CI rot ist (ADR 0230), oder

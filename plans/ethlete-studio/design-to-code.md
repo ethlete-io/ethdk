@@ -3994,3 +3994,21 @@ the push-suite fail of 658 may be self-made load. Why no tool caught it: the loa
 no source. Tool fix (with 650): when the load is over the threshold, the timing report lists the top processes by CPU
 with their checkout and parent session, and push-suite warns before its start when other test or build processes of
 the checkout run.
+
+660\. Builder (2026-11-09, Mac night, 343e968aa): `tomGoCheckOf` (`libs/cli/.../system/go-guard.ts`) ran
+`git log -G '^\s*-\s+Impl Q7\b'`. Apple Git 2.39.5 has no `\s` or `\b` in its regex, Linux git has them. So
+`et design go --by tom` on a Mac always said "Impl Qn is not committed yet". Fix: POSIX classes (`[[:space:]]`,
+`([^[:alnum:]_]|$)`). Why no tool caught it: CI runs only Linux git, and no check pins the regex dialect of a git
+argument. Tool fix (tonight, bug queue; doc agent decision, lint over a macOS CI leg because it is cheap and exact): a
+spec or lint rule in `libs/cli` rejects `\s`, `\S`, `\b`, `\d`, `\w` in any `-G`, `--grep` or `-E` argument to git.
+
+661\. Builder (2026-11-09, Mac night, 343e968aa): `render-check.spec` fixture `components/underline-cut` put a 16px
+font in a 16px line. The Mac font draws 17px, so a second CLIPPED issue came out (14 vs 13). Fix: 12px font, 6px
+underline offset. Why no tool caught it: render fixtures use the system font, and CI has only one system. Tool fix
+(backlog): render fixtures load a bundled font, so a metric is the same on every machine.
+
+662\. Builder (2026-11-09, Mac night, 343e968aa): on the 12-core Mac the cli vitest run started 11 forks, each with
+Chromium, Vite and git; 23 tests timed out. The CI runner gets about 3. Fix: `maxWorkers: 4` in
+`libs/cli/vitest.config.mts`; with it all 345 files pass (530 s, the failing default run took 562 s). Why no tool
+caught it: the worker count follows the core count, so only a bigger machine than CI shows it. Tool fix: the cap
+itself.
