@@ -3970,3 +3970,27 @@ with it (load 8-81); `node --test tools/scripts/studio-e2e-repeat.spec.mjs`: 11/
 bite (646, `listingAnswered` removed, case 'Fit is stable') still bites with the delay on: both tries hit the
 `warmUp` timeout at load 92-107 from other sessions; the full repeat gate with the delay (other cases that wait for
 pictures may now take up to 60 s longer); push:suite.
+
+657\. Builder (2026-11-09, Mac night, 6cafe2129): the hold run masks a short picture delay. With the `liveShotsOf`
+fix reverted, hold 14000 plus delay 3000/6000/15000 all pass 2/2; hold 0 plus 15000 fails 2/2; hold 14000 plus 20000
+fails 2/2, plus 30000 1/2, plus 60000 2/2. Pictures asked for during the hold arrive before the scroll back. So the
+delay must be longer than the hold; the gate uses 60000. Every fail is the 647 empty cell, not the probe race. With the
+fix: 2/2 pass at 6000 and 60000. Command: `node apps/ethlete-studio/e2e/canvas.e2e.mjs --case 'a sketch scroll never
+empties a cell that had a picture' --hold-listings <h> --delay-pictures <ms>` on 1b17d73f3. Why no tool caught it:
+two fault injections in one run had no check that each one still bites; only the hand sweep showed it. Tool fix
+(in 6cafe2129 for this pair): the gate spec asserts delay > hold. Open: the 646 hold bite with the delay on, and the
+extra time of run 3 (measured in the idle runs).
+
+658\. Builder (2026-11-09, Mac night): `yarn push:suite` on fef1fa1a8 ended `blocked cli failed` (35 tests in 18
+files, 1 unhandled error from `serve.spec.ts`, load 58), but its log named no failed spec, only the file of the
+unhandled error. Why no tool caught it: the 648 `failureReport` reads only e2e rows. Tool fix (tonight, bug queue):
+`failureReport` also prints the vitest `FAIL <file> > <test>` rows.
+
+659\. Doc agent (2026-11-09, Mac night): the builder blamed a load of 81-107 on "other sessions". A `ps` at load 91
+showed only this checkout's own work: two `tsc --noEmit`, a `libs/cli` tsc build, cli vitest workers, Playwright
+Chromium and Tailwind design-system loaders, from the builder's parallel subagents next to a running push-suite; plus
+an Nx daemon 2.6 days old at 17 % CPU. Spotlight and media analysis were idle. No other session ran on the Mac. So
+the push-suite fail of 658 may be self-made load. Why no tool caught it: the load figure of 650 is a bare number with
+no source. Tool fix (with 650): when the load is over the threshold, the timing report lists the top processes by CPU
+with their checkout and parent session, and push-suite warns before its start when other test or build processes of
+the checkout run.
