@@ -4085,3 +4085,16 @@ B462 did not fail this time. Why no tool caught it: the case compares the DOM be
 every new element as a border, even one whose outline, border and shadow are all transparent. Tool fix (tonight, bug
 queue; doc agent decision): the case waits for a stable DOM before the hover, so a real late border still fails.
 Order: 667 (b) and (a) first, because they cut the load; then one push:suite that carries the cargo fix.
+
+669\. Builder (2026-11-09, Mac night, push:suite on 4fc2d5299): cli, studio and e2e green (131/131, 516 s, load 8),
+then the repeat gate blocked after 31 min. Three cases failed only in the hold run (`--hold-listings 14000
+--delay-pictures 60000`): Large 'a sketch cell edited on disk while scrolled away shows its new picture on return',
+Edited 'a part edited on disk while away shows its new picture on return', System 'a part shown before paints every
+stored picture in the first frame'. Each waits for a new or stored picture inside 10 s, so a 60 s picture delay fails
+it every time; the Studio keeps the old picture until the new one loads, as wanted. The cause is tonight's slice
+6cafe2129: it put the delay on every case of the hold run but checked one case, and its as-built note listed "full
+repeat gate with the delay" as not verified. Why no tool caught it: a change to the gate's own arguments can commit
+without one full gate run, and "not verified" in a note blocks nothing. Tool fix (tonight; doc agent agrees): a case
+that needs a fresh picture opts out of the delay (`delayPictures: false`), and a spec checks the hold-run argument
+list against the opt-outs. Backlog: a commit that changes `studio-e2e-repeat.mjs` arguments needs a full repeat-gate
+run before the push suite counts it.
