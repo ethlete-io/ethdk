@@ -3971,6 +3971,18 @@ bite (646, `listingAnswered` removed, case 'Fit is stable') still bites with the
 `warmUp` timeout at load 92-107 from other sessions; the full repeat gate with the delay (other cases that wait for
 pictures may now take up to 60 s longer); push:suite.
 
+As built (647 part 4, a case can opt out of the delay): with the 60 s delay on, three cases failed every hold run
+because they wait 10 s for a new or stored picture: 'a sketch cell edited on disk while scrolled away shows its new
+picture on return' (Large), 'a part edited on disk while away shows its new picture on return' (Edited) and 'a part
+shown before paints every stored picture in the first frame' (System). Each now has `delayPictures: false`. The
+route installed by `delayPictures(page)` reads a flag that the job loop sets from the case before each run, so the
+other cases and the 647 scroll case are still delayed. `--list` marks an undelayed case with `[pictures not
+delayed]` when `--delay-pictures` is given; `studio-e2e-perf.spec.mjs` checks that the scroll case is delayed and the
+three are not. No other case was marked: 'a sketch keeps its frame count and pictures through a sketch edit' also
+waits 10 s for a shown cell, but a drawn frame counts there and it passed in the hold run. Verified: the three
+cases with `--hold-listings 14000 --delay-pictures 60000`: 3/3 pass (14.7 s, 15.2 s, 28.8 s); the scroll case with
+the same flags: 1/1 pass (it is still delayed). Not verified: the full repeat gate.
+
 657\. Builder (2026-11-09, Mac night, 6cafe2129): the hold run masks a short picture delay. With the `liveShotsOf`
 fix reverted, hold 14000 plus delay 3000/6000/15000 all pass 2/2; hold 0 plus 15000 fails 2/2; hold 14000 plus 20000
 fails 2/2, plus 30000 1/2, plus 60000 2/2. Pictures asked for during the hold arrive before the scroll back. So the

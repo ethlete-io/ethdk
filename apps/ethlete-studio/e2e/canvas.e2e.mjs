@@ -1150,6 +1150,7 @@ const CASES = [
   },
   {
     name: 'a part shown before paints every stored picture in the first frame',
+    delayPictures: false,
     pages: ['System'],
     run: async (page) => {
       const leafTexts = () =>
@@ -1231,6 +1232,7 @@ const CASES = [
   },
   {
     name: 'a part edited on disk while away shows its new picture on return',
+    delayPictures: false,
     pages: ['Edited'],
     run: async (page) => {
       const rows = page.locator('[role="treeitem"]');
@@ -1481,6 +1483,7 @@ const CASES = [
   },
   {
     name: 'a sketch cell edited on disk while scrolled away shows its new picture on return',
+    delayPictures: false,
     pages: ['Sketches'],
     labels: ['Large'],
     run: async (page) => {
@@ -2871,9 +2874,11 @@ const holdListings = (page) =>
     },
   );
 
+let pictureDelayOn = true;
+
 const delayPictures = (page) =>
   page.context().route(/__design\/shot\?/, async (route) => {
-    await new Promise((done) => setTimeout(done, delayPicturesMs));
+    if (pictureDelayOn) await new Promise((done) => setTimeout(done, delayPicturesMs));
     await route.fallback().catch(() => undefined);
   });
 
@@ -2959,6 +2964,8 @@ const work = async () => {
       for (let { job } = await nextJob(); job; { job } = await nextJob()) {
         const startedAt = performance.now();
         let result;
+
+        pictureDelayOn = CASES[job.case].delayPictures !== false;
 
         try {
           result = await Promise.race([
@@ -3070,7 +3077,11 @@ const lead = async () => {
     console.log(
       `${queue.length} of ${matched} cases${shardLabel}, ${seconds(knownMs).trim()} by the last local timings:`,
     );
-    for (const job of queue) console.log(`${seconds(known[keyOf(job)] ?? 0)}  ${job.page.padEnd(9)} ${job.name}`);
+    for (const job of queue) {
+      const undelayed = delayPicturesMs && CASES[job.case].delayPictures === false ? '  [pictures not delayed]' : '';
+
+      console.log(`${seconds(known[keyOf(job)] ?? 0)}  ${job.page.padEnd(9)} ${job.name}${undelayed}`);
+    }
     process.exit(0);
   }
 
