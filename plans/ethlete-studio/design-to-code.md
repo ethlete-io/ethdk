@@ -3936,3 +3936,13 @@ handoff restated an older doc agent line instead of the ADR, so the builder woul
 Why no tool caught it: a handoff is free prose; nothing compares its scope lines with the ADRs it names. Tool fix
 (backlog): a handoff names its scope only by ADR number and lists the ADR's items verbatim (no paraphrase), and
 `yarn adr:governs` on a handoff file lists the ADRs it cites so the writer rereads them before the commit.
+
+655\. Doc agent (2026-11-09, Mac night, reported by the human): CI on next was red in "ci / Rust host" from run
+42632896727 (14:15) on: `cargo audit` found RUSTSEC-2026-0459 (libsqlite3-sys 0.38.2 through rusqlite 0.40.2 in
+`apps/timetrack/src-tauri`, solution >=0.39.0). The repo did not change; the advisory database did. The builder
+started the night with "ci running, push gate unknown" and did not see the earlier red run; the human found it. Why
+no tool caught it: `cargo audit` runs only inside the CI push run (no pre-push step, no scheduled run), and the
+status line shows only the newest run, not the last finished one with its failed jobs. Tool fix (backlog): (1) the
+status line shows the last finished CI run on the branch with its failed job names next to a running one; (2) a
+daily scheduled `cargo audit` on both Tauri lockfiles, so a new advisory goes red on a fixed time and not on the next
+unrelated push. Fix work: sent to the builder before queue 1 (ADR 0230).
