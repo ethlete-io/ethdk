@@ -4110,3 +4110,12 @@ without one full gate run, and "not verified" in a note blocks nothing. Tool fix
 that needs a fresh picture opts out of the delay (`delayPictures: false`), and a spec checks the hold-run argument
 list against the opt-outs. Backlog: a commit that changes `studio-e2e-repeat.mjs` arguments needs a full repeat-gate
 run before the push suite counts it.
+
+670\. Builder (2026-11-09, Mac night, f3e978adb): the slice-paths pre-commit hook warned about
+`tools/scripts/studio-e2e-perf.spec.mjs`, though the builder had `tools/scripts` in `ETHLETE_SLICE_PATHS`. The
+directory match in `check-slice-paths.mjs` is right (`path.startsWith(dir + '/')`). Doc agent check: the git-path
+file `slice-paths` still holds an older slice (`canvas.e2e.mjs`, `design-canvas`, `.changeset`), and an env var set
+in one agent shell call does not reach the next call that runs `git commit`, so the hook read the stale file. Why no
+tool caught it: the warning prints the patterns but not where they came from or how old they are. Tool fix (bug
+queue): the warning names its source (env or file, with the file's age), and the builder writes the file, not the env
+var, at each slice start.
