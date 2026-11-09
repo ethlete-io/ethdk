@@ -3862,3 +3862,10 @@ while the cell shows its picture. Doc agent decision (the test intent stays, so 
 two answers `probeCell` counts the cell again from a new census; an empty cell still fails, and the case must still
 fail with the `liveShotsOf` fix reverted. The 647 load mode uses a delay on the design server's slow paths (pictures
 by several seconds, frames by less), not CPU pressure; base: the subagent harness `/tmp/s647/zz-load-647.e2e.mjs`.
+
+As built (647 part 2, in progress): `canvas.e2e.mjs` gets `--delay-pictures <ms>` (`STUDIO_E2E_DELAY_PICTURES`), a
+route that delays every `__design/shot?` request: the 647 load mode, moved from the scratch harness. `probeCell`
+counts a cell again from a new census when its probe gives `no frame` or `no context`, and judges it from that
+census; a cell that is still empty fails. Verified: the scroll case with the fix and `--delay-pictures 60000` passes
+3 of 3. Not verified yet: the bite proof (the `liveShotsOf` fix reverted, the same run must fail), the full 8-worker
+suite, and the repeat gate with a delay run.

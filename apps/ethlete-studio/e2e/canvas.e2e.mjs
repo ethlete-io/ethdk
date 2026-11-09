@@ -57,6 +57,16 @@ if (!(Number.isInteger(holdListingsMs) && holdListingsMs >= 0)) {
   process.exit(2);
 }
 
+if (args.includes('--delay-pictures'))
+  process.env['STUDIO_E2E_DELAY_PICTURES'] = args[args.indexOf('--delay-pictures') + 1];
+
+const delayPicturesMs = Number(process.env['STUDIO_E2E_DELAY_PICTURES'] ?? 0);
+
+if (!(Number.isInteger(delayPicturesMs) && delayPicturesMs >= 0)) {
+  console.error(`invalid --delay-pictures ${process.env['STUDIO_E2E_DELAY_PICTURES']}, expected a whole number of ms`);
+  process.exit(2);
+}
+
 const TIMINGS_FILE = join(root, 'node_modules/.cache/studio-e2e/canvas-timings.json');
 
 const cliEntry = resolve(root, process.env['STUDIO_CLI_ENTRY'] ?? 'dist/libs/cli/src/index.js');
@@ -340,14 +350,16 @@ const censusCells = (page, only = null) =>
 const probeCell = async (page, cell, recensused = false) => {
   const iframe = cell.visible && cell.framed && (await page.$(`iframe[data-census="${cell.key}"]`));
 
-  if (iframe) return drawnIn(iframe);
+  const drawn = iframe ? await drawnIn(iframe) : null;
+
+  if (drawn && drawn !== 'no frame' && drawn !== 'no context') return drawn;
   if (!cell.visible || !cell.framed) return null;
-  if (recensused) return 'frame gone twice';
+  if (recensused) return drawn ?? 'frame gone twice';
 
   const [now] = await censusCells(page, cell.key);
 
   Object.assign(cell, now ?? { visible: false, framed: false, picture: false });
-  cell.gone = 'frame gone after the census';
+  cell.gone = drawn ? `${drawn} after the census` : 'frame gone after the census';
 
   return now?.visible && now.framed ? probeCell(page, cell, true) : null;
 };
@@ -2854,6 +2866,12 @@ const holdListings = (page) =>
     },
   );
 
+const delayPictures = (page) =>
+  page.context().route(/__design\/shot\?/, async (route) => {
+    await new Promise((done) => setTimeout(done, delayPicturesMs));
+    await route.fallback().catch(() => undefined);
+  });
+
 const trackRoutes = (page) => {
   const routes = new Set();
   const route = page.route.bind(page);
@@ -2929,6 +2947,7 @@ const work = async () => {
         },
       });
       if (holdListingsMs) await holdListings(page);
+      if (delayPicturesMs) await delayPictures(page);
       for (let { job } = await nextJob(); job; { job } = await nextJob()) {
         const startedAt = performance.now();
         let result;
