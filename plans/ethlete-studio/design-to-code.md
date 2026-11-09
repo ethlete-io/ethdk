@@ -3822,3 +3822,9 @@ summary of what failed. Tool fix (part of the e2e-progress step of item 0): push
 `.claude/handoffs/push-suite-e2e.log`, and a failed step prints every failed row, not a fixed tail.
 
 As built (639, e2e-progress). `canvas.e2e.mjs` prints `Running N tests using W workers`, each result as `  ✓  <n> [<page>] › <name> <detail> (<time>)` (`✘` for a failure), then the numbered failure list and `  <n> passed (<s>s)`, `  <n> failed`, `  <n> did not run` before the old summary; `NOT RUN` rows are unchanged. `studio-e2e-repeat.mjs` (`parseResults`, echo filter) and `e2e-check.mjs` (`CASE_LINE`) read the new rows. `push-suite.mjs` `runStep` takes an optional log file and the e2e step appends every chunk to it (truncated at step start). The two repeat fixtures are new captures of `--page 'Wide|Merge'` (the hold one with `--hold-listings 14000`); the hold capture passes all three cases, so no real `✘` row exists: the spec derives a failing run from the real fixture and the hold-failure test uses that. Verified: the three specs pass and fail against the old sources; the mod regexes applied to the real log give total 3, workers 3, 3 passes, no failures, done, `3 passed (48.5s)`, and a `✘` row yields the case title. Not verified: the mod UI itself, a live push-suite run writing the log (only the `runStep` spec), numbered failure list in a real failing run.
+
+As built (648): `failureReport()` in `tools/scripts/push-suite.mjs` prints every failed row (`✘`, numbered failures,
+`NOT RUN`, `HOLD FAIL`) of a failed step above its last 40 lines. Spec on a captured real 133-case run with one
+Large failure (`tools/scripts/fixtures/push-suite/e2e-failed.txt`); it fails with the old tail-only report. The same
+real log matches the e2e-progress mod regexes: total 133, workers 8, 132 ✓, 1 ✘, done. Not verified: the mod UI
+with `/e2e` during a live push-suite run.

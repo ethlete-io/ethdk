@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { linkTargetOf, missingVerdict, parseArgs, parseLog, runStep } from './push-suite.mjs';
+import { failureReport, linkTargetOf, missingVerdict, parseArgs, parseLog, runStep } from './push-suite.mjs';
 
 test('defaults the repeat range to the upstream and reads --only', () => {
   assert.deepEqual(parseArgs([]), { only: undefined, range: '@{upstream}..HEAD' });
@@ -105,4 +105,13 @@ test('a step with a log file writes its output there as it comes and still retur
   assert.equal(readFileSync(logFile, 'utf8'), 'out\nerr\n');
   assert.equal(output, 'out\nerr\n');
   rmSync(dir, { recursive: true });
+});
+
+test('a failed step reports every failed row of a captured run, also one far above the last 40 lines', () => {
+  const output = readFileSync(join(import.meta.dirname, 'fixtures/push-suite/e2e-failed.txt'), 'utf8');
+  const report = failureReport(output).split('\n');
+
+  assert.ok(report.some((line) => /^\s+✘\s+9 \[Large\] › a sketch scroll never empties a cell/.test(line)));
+  assert.deepEqual(report.slice(-40), output.split('\n').slice(-40));
+  assert.equal(report.filter((line) => line.includes('✓')).length, 0);
 });

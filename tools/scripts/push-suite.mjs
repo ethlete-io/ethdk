@@ -58,6 +58,16 @@ export const parseLog = (output) =>
       return { sha, files };
     });
 
+const FAILED_ROW = /^\s*(✘\s|\d+\) \[|NOT RUN |HOLD FAIL )/;
+
+export const failureReport = (output) => {
+  const lines = output.split('\n');
+  const tail = lines.slice(-40);
+  const failed = lines.slice(0, -40).filter((line) => FAILED_ROW.test(line));
+
+  return [...failed, ...tail].join('\n');
+};
+
 const git = (...args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
 
 export const verdictFileOf = (sha) =>
@@ -171,7 +181,7 @@ export const pushSuite = async ({ only, range }, log = console.log) => {
         `push-suite: ${name} ${status === 0 ? 'ok' : 'failed'} in ${seconds(performance.now() - startedAt)}${note ? ` (${note})` : ''}`,
       );
       if (status !== 0) {
-        log(output.split('\n').slice(-40).join('\n'));
+        log(failureReport(output));
         return finish(`blocked ${name} failed at ${sha}`);
       }
       if (name === 'repeat' && output) log(output);
