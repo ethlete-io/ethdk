@@ -4015,3 +4015,16 @@ caught it: the worker count follows the core count, so only a bigger machine tha
 (077bd0543, cap 4 there too). Tool fix (tonight, bug queue after 660; doc agent decision, because it bit three times in
 one night): one shared vitest preset sets `maxWorkers`, and every project config uses it; a check fails a vitest
 config that does not.
+
+663\. Builder (2026-11-09, Mac night): after 343e968aa the cli dist was stale. The stale-dist guard then made each
+single-case canvas rerun "NOT RUN" with the summary "0 passed (1.7s)"; the text "This CLI build is stale" was only in
+the worker output. Why no tool caught it: the guard runs inside each worker, not before the run. Tool fix (tonight,
+bug queue): the canvas runner checks dist freshness once before it starts workers and fails with the rebuild command
+as its first line.
+
+664\. Doc agent (2026-11-09, Mac night): the first Mac e2e step (push-suite on 077bd0543, load 8-35, so not a
+measurement) ran 133 cases on 3 workers in 513.3 s; the PC ran them on 8 workers in 117-127 s. The 90 s goal of ADR
+0237 names no machine and no worker count, so a Mac figure and a PC figure cannot be compared. Why no tool caught it:
+the timing report prints the time but not the worker count and the machine next to the goal. Tool fix (with 650): the
+report prints machine, core count, worker count and load next to the time, and checks the goal only on the machine
+the goal names. Open for the human in the morning: on which machine does the 90 s goal count.
