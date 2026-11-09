@@ -3946,3 +3946,12 @@ status line shows only the newest run, not the last finished one with its failed
 status line shows the last finished CI run on the branch with its failed job names next to a running one; (2) a
 daily scheduled `cargo audit` on both Tauri lockfiles, so a new advisory goes red on a fixed time and not on the next
 unrelated push. Fix work: sent to the builder before queue 1 (ADR 0230).
+
+656\. Builder (2026-11-09, Mac night, red CI fix 2bc4d42f2): `yarn push:suite` crashed at start with
+`ReferenceError: __DELAY__ is not defined` in `tools/scripts/studio-e2e-repeat.mjs`. `push-suite.mjs:18` imports
+`runRepeatGate` from the live tree, and a parallel slice had an uncommitted placeholder there. So "the suite tests an
+export of HEAD, live edits never leak in" is false for the suite's own scripts: an uncommitted gate edit can break the
+verdict or change it without a sign. Why no tool caught it: the export covers the code under test, not the gate code.
+Tool fix (tonight, bug queue after queue 1; doc agent decision): push-suite re-runs itself from the export directory
+(`node <export>/tools/scripts/push-suite.mjs`), so the gate is the committed gate; a spec checks that a dirty
+`tools/scripts` file does not change the run. Until then: run push-suite only with a clean `tools/scripts`.
