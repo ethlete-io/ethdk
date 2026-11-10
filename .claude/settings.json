@@ -17,6 +17,16 @@
             "timeout": 25
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/tools/scripts/lint-edited-file.mjs",
+            "timeout": 30
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
