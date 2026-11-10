@@ -3807,3 +3807,11 @@ part reverted. Not verified: live bite with a real Claude session and the real d
 docs-only ADR edits under `apps/ethlete-studio/docs/adr/` without a changeset. Only pre-push catches it; doc-agent ADR
 commits have the same gap. Tool fix, small: the builder and doc-agent skills say that an ADR edit is a change to
 `ethlete-studio` and gets an `'ethlete-studio': none` changeset in the same commit.
+
+701\. Builder (2026-11-10, day shift, CI 42796254724): Unit tests red, components
+`src/scenarios/progress-steps.scenario.spec.ts` 6/6 failed with NG0303 "Can't bind to 'state'". 9e7c567d0 (B478) renamed
+the input `state` to `stepState` and left the scenario spec on `[state]`. Fix 7e1842ce5 (spec only). Suspect: the
+rename slice ran only the specs it touched; `vitest related` follows imports, and the scenario spec imports
+`PROGRESS_STEPS_IMPORTS`, not the renamed file; the lib `typecheck` target does not check inline test templates. Tool
+fix: a breaking (`!`) commit in a lib runs that lib's whole `src/scenarios/` folder before the commit. Numbers 699 and
+700 are the Mac B469 findings.
