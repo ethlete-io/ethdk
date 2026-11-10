@@ -3857,3 +3857,22 @@ reruns for a recurrence.
 only inside the collapsed "Gründe" disclosure of the footer popover, though it is the only action there. ADR 0252 says
 the button opens the sketch, not where it sits. Placement question for the human: a sketch with the variants "inside
 Gründe" (as built) and "on the popover's top level" (builder recommendation), after the 719 CPU-quota step.
+
+In progress (Linux builder, 2026-11-10 evening): the 719 CPU-quota step in `tools/scripts/push-suite.mjs` (changed
+Studio spec files once under `systemd-run --user --scope -p CPUQuota=<n>%`, calibrated to CI timings).
+
+733\. Mac builder (2026-11-10, A1 rest, 7b6236922): `design compare components/title-bar` cannot judge two drawn states.
+(a) The five `*-notice` states FAIL: the design draws the notice tooltip always open, the app opens `etTooltip` only on
+hover or focus, and the design forces no interaction on the restart button. (b) `linux-full-notice-pending` DIFF 115 px
+only on the spinner: the mock draws a static arc without `data-et-frozen-at`, so compare cannot hold the app's
+indeterminate `et-spinner` at the mock's frame. Suspect: compare has no way to open an overlay a state draws, and no
+rule that a mock of an animated control carries a frame. Tool fix (backlog): a state may name the interaction that
+opens its overlay, and compare applies it; `design check` flags an animated-control mock without `data-et-frozen-at`.
+The doc agent's report of this to Tom is owed; the Mac builder's message reached the restarted doc agent late, so
+also: 734.
+
+734\. Doc agent (2026-11-10): the Mac builder's A1 report (sent about 19:43) never reached the restarted doc agent:
+the Mac `inbox doc-agent` showed "No new messages" at 20:31, and the Mac builder sat idle 48 min. Suspect: the old doc
+agent session read it (marked seen) right before its restart, and the handoff did not name it. Tool fix: `restart`
+of a session that owns a mailbox name lists the messages seen in the last 30 min into the resume prompt, or the
+handoff skill tells the saving session to name every unanswered peer message.
