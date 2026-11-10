@@ -1,45 +1,35 @@
-# Doc agent handoff for the Mac night shift (2026-11-10, part 4, from ethlete-sdk-68)
+# Doc agent handoff for the day shift (2026-11-10, from ethlete-sdk-68 / tmux claude-2)
 
-Run `/doc-agent` first, then read ADRs 0239, 0240 and 0242. Scope of the night: e2e speed, then perf, then bugs; no
-features, not B249. The human went to bed after ADR 0242 ("gute Nacht"): collect questions for the morning, no grill
-round; one short German line per event. Builder: ethlete-sdk-22 in tmux `claude@ethlete-sdk`; this session runs in
-`claude-2@ethlete-sdk`.
+Run `/doc-agent` first. The human is awake: grill rounds are allowed again. Builder: ethlete-sdk-22 in tmux
+`claude@ethlete-sdk`, on its day-shift handoff `plans/ethlete-studio/handoff-builder-mac.md`.
 
 ## State
 
-- Nothing pushed tonight. origin/next is f6a97186f, CI red on B466 (cli part spec timeouts). The B466-only fix waits in
-  the worktree `/tmp/b466-push` at 11de10881 (origin/next + c11cc03ac); its push:suite was blocked by B471, a paint
-  window e2e case. The push needs the human (question 1 below).
-- Findings tonight: 654-685 in `plans/ethlete-studio/design-to-code.md`. Findings up to 310 are archived in
-  `archive/findings-2026-11.md`; the file budget is 440k chars, STATUS.md 230k: archive the next range (340 on) when a
-  commit hits the budget, and update the "Archived: Findings 263-339" line.
-- STATUS rows tonight: B464 done, B466 open, B467 done (Spotlight off), B468 fixed locally (220e4d6b5), B469 day-shift
-  CEF spike (ADR 0242), B470 open (first-load aborts, detail now printed), B471 open (blocks B466 push), B472 open
-  (683, no proven cause; the warm-up 995491fb1 was reverted in c009a879e).
-- e2e wall time (full `yarn studio:e2e`, Mac, 3 workers): 503.6 s -> 442.2 s (idle worker restart fix) -> 410.9 s
-  (667 c shared shot store, 82369780d). One run each, no spread yet.
-- Builder queue now: lint slice (685: `yarn commit` eslint on staged files, `nx lint` for affected projects in
-  push:suite, plus 663 stale `dist/libs/cli` with a bite), then 667 (a) shared in-flight draw, 667 (b) prune old
-  `shots-*` (5.5 GB, never by hand), then 678, the rest of the bug queue (656, 658, 660, 662, 668-dropped, 672, 670 +
-  682), then the iframe perf measurement on a quiet machine (figures go to the human in the morning).
-- Rules applied tonight (no ADR): a finding writes "Suspect:" until a bite proves it (684, now in both skills); no
-  unproven fix that costs wall time (ADR 0230, 0240); no fourth push:suite fix round (ADR 0239).
+- Morning round done: ADR 0243 (push the night range with `PUSH_SUITE_SKIP=1`, row B474), 0244 (visible-only frames
+  dropped, built), 0245 (push:suite lints and typechecks the touched projects, built 9a2573e21), 0246 (`typescript-lsp`
+  plugin for agent sessions, row B475).
+- origin/next is still f6a97186f, CI red on B466 (cli spec timeouts). The fix c11cc03ac is in the unpushed range. The
+  builder does not set `PUSH_SUITE_SKIP` itself (its skill: for the human only). The human must run
+  `! PUSH_SUITE_SKIP=1 git push origin next` in the builder session. Then tell the builder, which watches CI, and close
+  B474 with the push sha (`built:` on ADR 0243).
+- B475: the human installs the plugin (`/plugin install typescript-lsp@claude-plugins-official`, scope project). Then
+  the builder bites it with a deliberate type error and closes B475 (`built:` on ADR 0246).
+- Findings this shift: 686-690 in `plans/ethlete-studio/design-to-code.md`. Archived up to 339. The file budget is 440k
+  chars. Archive the next range (340 on) when a commit hits it.
+- Builder queue: 690 skill line (`git -C <worktree>` for bite commits), the OFF-CENTRE base comparison on
+  `elements/canvas-frames` (3 findings at 7d72894fa, button text 1 px high), then 689 (lib `typecheck` targets also check
+  `tsconfig.lib.json`; time per lib first, figures to the doc agent), then B476 (ESLint hook, ADR 0247), then B469 CEF spike (ADR 0242), then quiet-machine
+  perf and a full studio:e2e.
+- B472 (683) stays open with no proven cause (18/18 under load). B471 fix is 7d72894fa (high fetch priority after a
+  camera switch). Its 3 OFF-CENTRE findings are not compared to the base yet.
 
-## Questions for the human in the morning (one round, round format, German)
+## Open questions for the human
 
-1. Push the B466 worker-cap fix alone to origin/next with `PUSH_SUITE_SKIP=1`? Worktree `/tmp/b466-push`, 11de10881:
-   two vitest worker caps and a changeset. Its cli and Studio unit gates are green; the e2e step failed on a paint
-   window case under load that the change cannot touch (B471, finding 681). Four push:suites tonight were red, each on
-   a different load-sensitive e2e case. Recommendation: yes, for this one push, so CI proves or disproves the B466 fix;
-   the full local range waits for green e2e.
-   Since 0e1d59984 the B471 cause is proven: Chromium holds back off-screen pictures in a cold picture store, a perf
-   defect of Studio that the B466 change cannot touch.
-2. "Only visible frames are live" as a day-shift feature? Measured (design-to-code.md, after finding 688): the
-   `liveShotsOf` cap already keeps 6 live frames, all in view; per frame 1-2 MB heap, about 0 % idle CPU; a
-   visible-only emulation changed nothing beyond noise. Recommendation: no, drop the idea.
-3. Type gate for a held push (findings 687, 688): two slices tonight went in red on types and nothing showed it; no
-   local gate runs a typecheck (ADR 0038: CI only), and ADR 0216's draft-PR push per slice is not built and did not run
-   at night. Options: (a) `push:suite` runs lint and typecheck for the touched projects (the lint step is in since
-   cef57a3d0, about 11 s per project, decided by the doc agent without ADR 0038); (b) the builder pushes each slice to
-   its own branch with a draft PR, also at night, and `push:suite` drops the lint step; (c) both. Recommendation: (a),
-   because it costs seconds per push, needs no network write at night, and finds the error before the push, not after.
+None. Q5 answered "5ok": ADR 0247, row B476 (ESLint hook after each agent edit).
+
+## Rules applied (no ADR)
+
+- A finding writes "Suspect:" until a bite proves it.
+- Before a decision on push or gate files, run `yarn adr:governs`. ADR 0038 now governs `push-suite.mjs` (finding 688).
+- Commit bodies: lines of 100 chars at most (commitlint). Re-read the plan before you add a finding: the builder also
+  writes findings (a duplicate 689 happened).
