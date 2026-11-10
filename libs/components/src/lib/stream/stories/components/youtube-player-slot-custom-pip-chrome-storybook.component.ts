@@ -293,10 +293,11 @@ export class PipPlaceholderStorybookComponent {
 export class CustomPipChromeStorybookComponent implements PipChromeRef {
   private pipWindow = viewChild(PipWindowComponent);
   private stage = viewChild(PipStageDirective, { read: ElementRef<HTMLElement> });
+  private gridBtn = viewChild(PipGridToggleDirective, { read: ElementRef<HTMLElement> });
   public state = createPipChromeState();
   public animations = createPipChromeAnimations(this.state, {
     stageRef: this.stage,
-    gridBtnRef: viewChild(PipGridToggleDirective, { read: ElementRef<HTMLElement> }),
+    gridBtnRef: this.gridBtn,
     pipWindowRef: this.pipWindow,
   });
 
