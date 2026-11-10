@@ -54,7 +54,4 @@ until they say they are back.
 
 None open. The human is afk until late evening (2026-11-10): collect questions, no round until they are back. Steps 3 and 721 (git-safety.py) run: the human left auto mode in tmux claude-3 and approved.
 
-## Collected for the human's return
-
-- The human stopped the real-config "Sketch öffnen" re-check agent. Ask: on purpose, or restart it? (Recommended:
-  restart; it is the open browser check of B249.)
+The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" re-check.
