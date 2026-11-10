@@ -26,6 +26,8 @@ const EDIT_VARIANT_NOTES = { [EDIT_OLD]: 'der zuletzt gemergte Stand', [NEW]: 'd
 
 const editRoundNoteOf = (part: string) =>
   `${part} wurde außerhalb eines Sketches geändert und sieht anders aus - wähle den zuletzt gemergten Stand oder die Änderung`;
+const newOnlyRoundNoteOf = (part: string) =>
+  `${part} wurde außerhalb eines Sketches geändert und der zuletzt gemergte Stand ist nicht mehr zu finden - wähle die Änderung oder setze sie zurück`;
 
 export const EDIT_OLD_NOT_FOUND = 'EDIT-OLD-NOT-FOUND';
 
@@ -117,15 +119,15 @@ const oldDesignOf = (product: ResolvedProduct, resolved: ResolvedPart): OldDesig
 
 /**
  * Opens the old/new sketch of a merged part edited outside a sketch, ready for a pick: `old` holds the part's folder at
- * the newest commit whose part hash is its merged hash, `new` the working one. Answers the sketch, `EDIT-OLD-NOT-FOUND`
- * when no commit has that hash, or why it cannot open.
+ * the newest commit whose part hash is its merged hash, `new` the working one. When no commit has that hash it opens the
+ * sketch with only `new` and answers `EDIT-OLD-NOT-FOUND` with it; else the sketch, or why it cannot open.
  */
 export const openEditSketch = (options: {
   target: string;
   product: ResolvedProduct;
   part: string;
   author?: string;
-}): Sketch | EditOldNotFound | string => {
+}): Sketch | (EditOldNotFound & { sketch: Sketch }) | string => {
   const { target, product, part } = options;
   const resolved = product.parts.find((candidate) => partKeyOf(candidate) === part);
 
@@ -133,7 +135,25 @@ export const openEditSketch = (options: {
 
   const old = oldDesignOf(product, resolved);
 
-  if (typeof old === 'string' || 'rule' in old) return old;
+  if (typeof old === 'string') return old;
+  if ('rule' in old) {
+    const created = createSketch({
+      product,
+      sketch: { layer: resolved.layer, name: resolved.name, sketch: EDIT_SKETCH },
+      variants: [NEW],
+      roundTitle: EDIT_ROUND_TITLE,
+      roundNote: newOnlyRoundNoteOf(part),
+      variantNotes: new Map([[NEW, EDIT_VARIANT_NOTES[NEW]]]),
+      author: options.author,
+      merge: resolved.origin === 'overridden' ? 'override' : undefined,
+    });
+
+    if (typeof created === 'string') return created;
+
+    const ready = markSketchReady({ checkout: target, sketch: created, author: options.author });
+
+    return typeof ready === 'string' ? ready : { ...old, sketch: ready };
+  }
 
   const partDir = dirname(resolved.file);
   const working = filesBelow(partDir);

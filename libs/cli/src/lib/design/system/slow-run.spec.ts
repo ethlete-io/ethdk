@@ -1,4 +1,5 @@
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { execFileSync } from 'child_process';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -8,6 +9,7 @@ import { recordSettledBuildReady } from './record-settled';
 import { warmOpenPointsWorker } from './open-points-worker.fixtures';
 import { resolveProduct } from './resolve-product';
 import { startSlowRunner } from './slow-run';
+import { recordMerged } from './sketch/merged-parts';
 
 const harness = { app: 'apps/acme', map: 'apps/acme/src/map.ts', baseBranch: 'x' };
 
@@ -121,5 +123,41 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
     expect(kinds).toContain('no-harness');
     expect(kinds).not.toContain('pending');
     expect(kinds).not.toContain('stale-record');
+  });
+
+  it('opens the new-only sketch of an edit with no old design once and reports it once over several polls', async () => {
+    const { target, dir, config } = staleChip();
+    const bare = { ...config, products: { acme: { ...config.products.acme, harness: undefined } } };
+    const chip = join(dir, 'components/chip/chip.ts');
+    const lines: string[] = [];
+
+    writeFileSync(chip, 'export default definePart({ states: { default: {} } });\n');
+    recordMerged({
+      product: resolveProduct({ target, name: 'acme', config: bare.products.acme }),
+      parts: ['components/chip'],
+    });
+    writeFileSync(chip, 'export default definePart({ states: { hover: {}, default: {} } });\n');
+    execFileSync('git', ['init', '-q'], { cwd: target });
+    execFileSync('git', ['add', '.'], { cwd: target });
+    execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
+
+    const runner = startSlowRunner({
+      target,
+      configOf: () => bare,
+      log: (line) => lines.push(line),
+      intervalMs: 3_600_000,
+    });
+
+    for (let poll = 0; poll < 4; poll++) await runner.poll();
+    runner.stop();
+
+    const sketchFile = join(dir, 'sketches', 'components-chip.edit', 'sketch.json');
+
+    expect(lines.filter((line) => line.startsWith('EDIT-OLD-NOT-FOUND'))).toHaveLength(1);
+    expect(existsSync(sketchFile)).toBe(true);
+
+    const sketch = JSON.parse(readFileSync(sketchFile, 'utf8'));
+
+    expect([sketch.status, Object.keys(sketch.variantInfo)]).toEqual(['ready', ['new']]);
   });
 });

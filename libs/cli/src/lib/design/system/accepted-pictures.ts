@@ -327,6 +327,8 @@ export const autoAcceptOf = async (options: {
       else if (typeof sketch === 'string') opened(part, sketch);
       else heads.push({ part: resolved, design, sketch });
     } else if (editSketch) {
+      if (!editSketch.variants.includes(EDIT_OLD)) continue;
+
       const old = cachedOf(resolved, merged[part]);
 
       if (old) {

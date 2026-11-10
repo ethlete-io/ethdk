@@ -252,7 +252,7 @@ describe('autoAcceptOf', () => {
       expect(readMerged(dir)[CHIP]).toBe(partHashOf({ product: productOf(target), dir: dirname(chip) }));
     });
 
-    it('reports a merged hash no commit holds as a problem with the command to run', async () => {
+    it('reports a merged hash no commit holds as a problem and opens a sketch with only new', async () => {
       const { target, dir, chip } = checkout();
       const { draw } = drawing({ default: 'a1', hover: 'b2' });
 
@@ -271,7 +271,8 @@ describe('autoAcceptOf', () => {
           message: expect.stringContaining(`${CHIP} gets a sketch with only the variant new`),
         },
       ]);
-      expect(existsSync(join(dir, 'sketches', 'components-chip.edit'))).toBe(false);
+      expect(existsSync(join(dir, 'sketches', 'components-chip.edit', 'new'))).toBe(true);
+      expect(existsSync(join(dir, 'sketches', 'components-chip.edit', 'old'))).toBe(false);
     });
   });
 

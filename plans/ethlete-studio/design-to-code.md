@@ -3976,3 +3976,14 @@ the builder's 732 check saw a "Verwerfen" button in this view, but ADR 0135 says
 list. Missed: no spec draws two columns with different changed-state sets. Tool fix (backlog, after 742): one row per
 state across all columns (an empty cell where a column has no change); a spec bites on 3 vs 5 states; drop "Verwerfen"
 from `@edit` views or record why ADR 0135 changed.
+
+As built (Linux builder, 742): Cause (measured on a clone of HEAD in /tmp): ADR 0253 was not built. `openEditSketch`
+answered `EDIT-OLD-NOT-FOUND` and opened no sketch, so the part stayed "changed outside a sketch" and the serve slow
+runner re-ran it on every 15 s poll; the two lines per poll (about 20 s each, 104 polls in 35 min) match. It did not block
+the server: `openEditSketch` took 60 ms (sdk `components/select`) and 277 ms (studio `pages/start`), and the log shows serve
+listening on a free port (39489) before the loop, as it does when not started by Studio (`DE_PORT` unset), so :4402 was
+never its port; the harness app is started per draw and stopped after. Fix: on `EDIT-OLD-NOT-FOUND` `openEditSketch` opens
+the ready `<part>@edit` sketch with only `new` and answers the problem with it; `autoAcceptOf` skips an open edit sketch
+without `old`. Bite: `slow-run.spec.ts` polls four times over such a part and expects one `EDIT-OLD-NOT-FOUND` line and a
+ready sketch with only `new`; the old code logs it 3 times and opens none. Not verified: a real serve on the repo, the
+Studio view of a new-only sketch, and the merge after picking `new`.
