@@ -8,7 +8,8 @@ import { autoAcceptOf, DrawStates, newStatesLineOf } from './accepted-pictures';
 import { importProblemsOf } from './imports';
 import { CompletenessGap, partsCompletenessOf } from './complete';
 import { actionsRerunLineOf } from './embedded-actions';
-import { actionLostProblemsOf } from './action-lost';
+import { actionLostProblemsOf, declaredPartActionsOf } from './action-lost';
+import { refreshHarnessMap } from './harness-map';
 import { runningCliStaleWarning } from '../stale-cli-dist';
 import { capabilityPlaceOf } from './rules/capability-place';
 import { actionUndeclaredUnderGoOf } from './action-undeclared';
@@ -692,6 +693,13 @@ const printProductOpenPoints = async (
       : {
           actionsOf: (part: string) =>
             partActionFailuresOf({ target, config, product, part, ...(options.part ? { onNote: console.log } : {}) }),
+          declaredActionsOf: async (part: string) => {
+            const declared = await declaredPartActionsOf({ target, config, product, part, warm: options.warm });
+
+            if (typeof declared === 'string') console.log(`ACTIONS NOT RECORDED ${name} ${part}: ${declared}`);
+
+            return declared;
+          },
         }),
     ...(options.part ? { onNoRecord: (line: string) => console.log(line) } : {}),
   });
@@ -1007,6 +1015,11 @@ export const checkSystemRendered = async (options: CheckOptions) => {
     if (!entry) continue;
 
     const product = resolveProduct({ target: options.target, name, config: entry });
+    const refreshed = timedPhase('harness-map', () => refreshHarnessMap({ target: options.target, product }));
+
+    if (typeof refreshed === 'string') console.log(`HARNESS MAP STALE ${name}: ${refreshed}`);
+    if (refreshed === true) console.log(`REGENERATED ${name}: the stale harness map`);
+
     const problems: Problem[] = [];
     const lines = await timedPhase('auto-accept', () =>
       autoAcceptOf({ ...options, product, only: options.part, draw: options.drawPictures, problems }),

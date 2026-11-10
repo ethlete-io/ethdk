@@ -147,5 +147,13 @@ export type GoActionsOf = (options: {
   part: string;
 }) => Promise<string[] | string>;
 
-export const goActionsOf: GoActionsOf = ({ target, config, product, part }) =>
-  withPartLoader({ target, config }, (load) => partActionsOf({ load, product, part }));
+/** Reads the declared action keys of a part on a design server, or why not; the check record holds them. */
+export const declaredPartActionsOf = (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  part: string;
+  warm?: WarmDraw;
+}) => withPartLoader(options, (load) => partActionsOf({ load, product: options.product, part: options.part }));
+
+export const goActionsOf: GoActionsOf = declaredPartActionsOf;

@@ -628,3 +628,14 @@ fail the commit.` Verified: commit-wait.spec fails without the line. A real fail
 Finding 466 real run: `sketch ready pages/system@check-fixes` now reports no visible change, but the merge refuses on
 the uncommitted `ready.json` (same block as the foundations merge). The refused auto-merge left a `pick` decision in
 `sketch.json`; I restored the file. Fix: a refused auto-merge writes `sketch.json` back as it was (sketch-command.spec bites).
+
+As built (B249 actions in check record): `writePartRecord` takes `actions`; `recordBuildReady` (`declaredActionsOf`) and
+`markPartReady` (`declaredActionsOf`) write the keys the part source declares (`declaredPartActionsOf`, the logic of
+`goActionsOf`, which now aliases it); a read failure prints `ACTIONS NOT RECORDED` and keeps the held keys. ACTION-LOST
+already reads ready.json, so it now compares against what check recorded. `design check` regenerates a stale harness
+map per product before auto-accept (`REGENERATED <product>: the stale harness map`, or `HARNESS MAP STALE` and go on);
+`design ready` regenerates it first and exits 1 with the regenerate command when it cannot. Go/accept paths unchanged.
+Verified: 4 new cases (part-build-ready, action-lost, harness-map x2) fail on the old source; tsc, eslint, related
+specs and spec:stress pass. Not verified: a real `design check` run (would rewrite the shared ready.json); a record
+that still holds is not rewritten, so old records get actions only at their next write. Suspect, not traced: a definite blocker
+(ACTION-LOST included) drops the whole record, actions with it, so an ACTION-LOST disappears on the next check.

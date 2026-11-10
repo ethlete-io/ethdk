@@ -136,13 +136,15 @@ const writeReady = (dir: string, records: Record<string, PartReady>) =>
   });
 
 /**
- * Writes the check record of a part at its current design hash, stamped with `origin`; a record already at that hash
- * keeps its `at`. Answers `null` for an unknown part or an `origin` without `by`.
+ * Writes the check record of a part at its current design hash, stamped with `origin`, with `actions` as the action
+ * keys the part declares; without `actions` the record keeps the ones it held. A record already at that hash keeps its
+ * `at`. Answers `null` for an unknown part or an `origin` without `by`.
  */
 export const writePartRecord = (options: {
   product: ResolvedProduct;
   part: string;
   origin: WriteOrigin;
+  actions?: string[];
   at?: string;
 }): PartReady | null => {
   const found = readyPartOf(options);
@@ -152,11 +154,12 @@ export const writePartRecord = (options: {
   const existing = readReady(found.dir);
   const previous = existing[options.part];
   const embedded = embeddedHashesOf({ product: options.product, part: found.resolved });
+  const actions = options.actions ?? previous?.actions;
   const record: PartReady = {
     hash: found.hash,
     files: found.design.files,
     ...(Object.keys(embedded).length > 0 ? { embedded } : {}),
-    ...(previous?.actions ? { actions: previous.actions } : {}),
+    ...(actions ? { actions } : {}),
     at: (previous?.hash === found.hash ? previous.at : undefined) ?? options.at ?? new Date().toISOString(),
     by: options.origin.by,
     cmd: options.origin.cmd,
@@ -189,7 +192,8 @@ export const dropPartRecord = (options: { product: ResolvedProduct; part: string
  * part, 409 when the part changed since `hash`, 422 while `pointsOf` lists any open point, `blockersOf` any other
  * blocker or `actionsOf` any failed action check. The failed-actions refusal names the embedded parts whose app files
  * changed since the last record. `pointsOf` runs only after the hash holds, `blockersOf` only after the open-point list
- * is empty, `actionsOf` only after the blocker list is.
+ * is empty, `actionsOf` only after the blocker list is. The record holds the keys `declaredActionsOf` answers; when it
+ * answers why it could not read them, the record keeps the ones it held.
  */
 export const markPartReady = async (options: {
   product: ResolvedProduct;
@@ -199,6 +203,7 @@ export const markPartReady = async (options: {
   pointsOf: () => Promise<OpenPoint[] | ReadyRefusal>;
   blockersOf?: () => Promise<Blocker[]>;
   actionsOf: () => Promise<string[] | ReadyRefusal>;
+  declaredActionsOf?: () => Promise<string[] | string>;
   actionsNote?: string;
   at?: string;
 }): Promise<PartReady | ReadyRefusal> => {
@@ -247,8 +252,16 @@ export const markPartReady = async (options: {
       actions,
     };
 
+  const declared = await options.declaredActionsOf?.();
+
   return (
-    writePartRecord({ product, part, origin: options.origin, at: options.at }) ?? {
+    writePartRecord({
+      product,
+      part,
+      origin: options.origin,
+      at: options.at,
+      ...(Array.isArray(declared) ? { actions: declared } : {}),
+    }) ?? {
       status: 404,
       error: `unknown part ${part}`,
     }

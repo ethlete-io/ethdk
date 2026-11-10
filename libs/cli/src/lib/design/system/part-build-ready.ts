@@ -76,6 +76,9 @@ const isDefinite = (blocker: Blocker, unverifiedActions: boolean) =>
 /** The action-check failures of a part, or why they could not run. */
 export type ActionsOf = (part: string) => Promise<string[] | NoVerdict>;
 
+/** The action keys a part declares now, or why they could not be read. */
+export type DeclaredActionsOf = (part: string) => Promise<string[] | string>;
+
 const noRecordLineOf = (options: { product: string; part: string; blockers: Blocker[]; unverified: boolean }) => {
   const [first, ...rest] = options.blockers;
   const reason = options.unverified
@@ -93,13 +96,15 @@ const noRecordLineOf = (options: { product: string; part: string; blockers: Bloc
  * a holding record, or whose embedded parts changed since its actions ran, is written only after `actionsOf` passes. A
  * record is dropped only for a blocker that was checked: a pending slow result or actions that did not run (no
  * `actionsOf`) keep it. Embedded parts are decided before their hosts. `onNoRecord` gets one line for each part left
- * without a holding record, naming why.
+ * without a holding record, naming why. A written record holds the keys `declaredActionsOf` answers, or keeps the ones it
+ * held when it answers why not.
  */
 export const recordBuildReady = async (options: {
   product: ResolvedProduct;
   parts: string[];
   inputs: BuildReadyInputs;
   actionsOf?: ActionsOf;
+  declaredActionsOf?: DeclaredActionsOf;
   onNoRecord?: (line: string) => void;
 }): Promise<Map<string, BuildReady>> => {
   const { product, inputs } = options;
@@ -122,7 +127,16 @@ export const recordBuildReady = async (options: {
       const actions = recorded.length === 0 ? [] : await options.actionsOf?.(part);
 
       if (Array.isArray(actions) && actions.length === 0) {
-        if (recorded.length > 0) writePartRecord({ product, part, origin: originOf('et design check') });
+        if (recorded.length > 0) {
+          const declared = await options.declaredActionsOf?.(part);
+
+          writePartRecord({
+            product,
+            part,
+            origin: originOf('et design check'),
+            ...(Array.isArray(declared) ? { actions: declared } : {}),
+          });
+        }
 
         results.set(part, embedded.length === 0 ? { ready: true } : { ready: false, blockers: embedded });
         continue;

@@ -8,8 +8,10 @@ import {
   actionLostOf,
   actionLostProblemsOf,
   declaredActionsOf,
+  partActionsOf,
   productActionsOf,
 } from './action-lost';
+import { recordBuildReady } from './part-build-ready';
 import { PartReady } from './part-ready';
 import { resolveProduct } from './resolve-product';
 
@@ -100,6 +102,25 @@ describe('ACTION-LOST', () => {
       '.ethlete/design/app-a/ready.json',
     ]);
     expect(lostOf(['open'], 'components/chip')).toHaveLength(1);
+  });
+
+  it('fails a key from the actions design check recorded, without a go', async () => {
+    const { product } = checkout({});
+    const load = async () => ({
+      default: { states: { a: {} }, render: () => ({ body: '<button data-et-action="emit:remove">' }) },
+    });
+
+    await recordBuildReady({
+      product,
+      parts: ['components/chip'],
+      inputs: { pointsOf: () => [], problemsOf: () => [], slowOf: () => [] },
+      actionsOf: async () => [],
+      declaredActionsOf: (part) => partActionsOf({ load, product, part }),
+    });
+
+    expect(
+      actionLostOf({ product, declared: new Set(), invocation: 'et design' }).map((problem) => problem.at),
+    ).toEqual(['components/chip emit:remove']);
   });
 
   it('reads no part when no check record holds actions', async () => {
