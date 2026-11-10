@@ -4137,3 +4137,11 @@ the human's pick).
 760\. Linux builder (2026-11-10, night): `check-studio-adrs` prints about 40 warning lines to stderr on every commit
 that stages STATUS.md (the hook hides only stdout). Lesson: a warning on every commit is noise that hides a real one.
 Backlog: the hook prints a one-line count and a command for the full list.
+
+761\. Linux builder (2026-11-10, night, push of 4b50bdb51 + 5039c0a8d): push:suite failed with 6 e2e timeouts (no frame
+after 10 s, slow `/__design` requests) at load 56-110 on 16 cores; the same e2e passed at b6da40338 30 min earlier. Top
+CPU: Playwright workers of the fifagg-frontend session, timetrack, a Studio debug build. Suspect: load, not the diff
+(not yet proven; a rerun at load < 20 decides). Lesson: the 726 gate checks the load only at the start of push:suite,
+so load from another session that rises mid-run still fails the e2e step. Backlog: push:suite checks the load again
+before the e2e step and, if a step fails with a load above the limit, reruns it once after the load drops, and says
+so in the report.
