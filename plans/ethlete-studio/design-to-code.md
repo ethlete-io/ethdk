@@ -4145,3 +4145,12 @@ CPU: Playwright workers of the fifagg-frontend session, timetrack, a Studio debu
 so load from another session that rises mid-run still fails the e2e step. Backlog: push:suite checks the load again
 before the e2e step and, if a step fails with a load above the limit, reruns it once after the load drops, and says
 so in the report.
+
+762\. Mac builder (2026-11-10, night, B482 release smoke): the plain smoke passed on 7f7042561 after two causes, both
+proven by run. (1) Cause: the smoke opened `sketch:pages/sketches`, but the tree key is the target
+`sketch:pages/sketches@change-crop`; fixed 4871b83a3 (the smoke reads the targets from sketch.json; the old default
+also broke on folder names like `components-title-bar.edit`). (2) Cause: `dist/libs/cli` was stale after a merge, so
+the bundle showed "Design-Server gestoppt", and the smoke reported only "sketch view missing". Lesson: a stale CLI
+build and a stopped design server look like a missing view to the smoke. Decided by the doc agent (tool internal,
+backlog): the smoke checks that `dist/libs/cli` is not older than its sources before the run, and its waiting line
+names a stopped design server with the server's own text.
