@@ -19,6 +19,7 @@ import { droppedPropProblemsOf } from './dropped-props';
 import { compareLineOf, comparePngs } from './part-compare';
 import { Problem } from './problem';
 import { repoRootOf } from './reachable-files';
+import { RecordSettledRequest, recordSettledBuildReady } from './record-settled';
 import { partKeyOf, partOfFile, ResolvedProduct, resolveProduct } from './resolve-product';
 import { ruleBaselineOf } from './rule-baseline';
 import { APP_SPEC_RULE, appSpecProblemsOf, RunRelatedSpecs, runRelatedSpecs } from './rules/app-spec';
@@ -357,14 +358,18 @@ const settledEditsOf = (product: ResolvedProduct, seen: Map<string, string>) =>
 /**
  * Keeps the slow results of every harness product fresh while the design server runs: each poll reruns the parts whose
  * inputs changed and then held still for one poll, one run at a time. Before them it resolves each direct edit of a
- * merged part that held still for one poll: it holds, or it opens the old/new edit sketch.
+ * merged part that held still for one poll: it holds, or it opens the old/new edit sketch. After a run it writes or drops
+ * the check record of each run part and its hosts, as `design check` does.
  */
 export const startSlowRunner = (options: {
   target: string;
   configOf: () => DesignConfig | null;
   log: (line: string) => void;
   intervalMs?: number;
+  runners?: Partial<SlowRunners>;
+  record?: (request: RecordSettledRequest) => Promise<void>;
 }) => {
+  const record = options.record ?? recordSettledBuildReady;
   const seen = new Map<string, string>();
   let running = false;
 
@@ -405,10 +410,12 @@ export const startSlowRunner = (options: {
           config,
           product,
           parts: settled.includes(PRODUCT_PART) ? undefined : settled,
+          ...(options.runners ? { runners: options.runners } : {}),
         });
         const count = [...results.values()].reduce((sum, problems) => sum + problems.length, 0);
 
         options.log(`slow checks: ${name} done, ${count} problem(s)`);
+        await record({ target: options.target, config, product, settled });
       }
     } catch (error) {
       options.log(`slow checks failed: ${error instanceof Error ? error.message : String(error)}`);

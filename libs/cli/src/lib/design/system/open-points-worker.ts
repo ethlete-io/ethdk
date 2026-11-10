@@ -1,14 +1,14 @@
 import { parentPort } from 'worker_threads';
-import { OpenPointsRequest, openPointsOf } from './open-points-runner';
+import { buildReadyDataOf, openPointsOf, WorkerRequest } from './open-points-runner';
 
-const answerOf = (id: number, request: OpenPointsRequest) => {
+const answerOf = (id: number, message: WorkerRequest) => {
   try {
-    return { id, result: openPointsOf(request) };
+    return { id, result: 'request' in message ? openPointsOf(message.request) : buildReadyDataOf(message.inputs) };
   } catch (error) {
     return { id, error: error instanceof Error ? error.message : String(error) };
   }
 };
 
-parentPort?.on('message', ({ id, request }: { id: number; request: OpenPointsRequest }) =>
-  parentPort?.postMessage(answerOf(id, request)),
+parentPort?.on('message', ({ id, ...message }: { id: number } & WorkerRequest) =>
+  parentPort?.postMessage(answerOf(id, message)),
 );

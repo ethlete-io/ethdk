@@ -661,3 +661,19 @@ footer's. The chip gets `[buildReady]`; `(openEditSketch)` activates `sketch:<pa
 itself (ADR 0252). Verified: open-points spec (3 cases) and a system-view case fail on the old source; e2e case "open
 points chip pressed matches its popup" asserts the footer badge and no Go button, plain and with `--hold-listings 14000`.
 Open: a stale record reads as Wird geprüft until someone runs `design check`; nothing starts that check from Studio.
+
+As built (B249 serve records build-ready): Cause, proven by `libs/cli/src/lib/design/system/slow-run.spec.ts`: the
+slow runner of `design serve` (`startSlowRunner`) reran the slow rules and cached their results but never wrote a check
+record, so a part with a stale record kept its `stale-record` blocker (Wird geprüft) until someone ran `design check`;
+the spec fails on the old source with exactly that blocker. Fix: after each settled run the runner calls
+`recordSettledBuildReady` (`system/record-settled.ts`), which runs `recordBuildReady` for the run parts and every part
+that embeds one (all parts when the product itself reran) with `partActionFailuresOf` and `declaredPartActionsOf`, as
+`design check` does. The open points and rule problems come from the open-points worker as data
+(`buildReadyDataInWorker`); the action checks stay on the main thread, because they start a design server and
+`createDesignServer` calls `process.chdir`, which a worker refuses. An open sketch or direct edit is an open point, so
+`recordBuildReady` writes no record for it. Commit: see git log "Record build-ready when the serve slow run settles".
+Verified: both spec cases fail without the record call and pass with it (one through the worker and the real declared
+actions read); tsc, eslint, 122 related spec files, spec:stress 4/4. Not verified: a live `design serve` on the repo
+design (would rewrite the shared ready.json); the action check of a linked part inside serve (starts a harness and a
+design server per stale part); products without a `harness` still never run the slow runner, so their parts stay
+pending in serve.
