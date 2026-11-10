@@ -3931,3 +3931,16 @@ to the texts of the turn once, and skips it when the transcript already ends wit
 message only in the payload passes the old hook and is blocked by the new one; a dedupe spec; 9/9. Live bite 11:14:47Z:
 a 3-line closing summary with no mid-turn text logged `{"words": 41, "lines": 3, "blocked": true}`; a one-line close at
 11:12:37Z logged 1 line and no block. Pass.
+
+705\. Builder (2026-11-10, day shift, B442 and B443): neither flake repeats. B443 (`action-press.spec.ts` "keeps
+waiting for an output that fires late"): `spec:stress` 10/10 at load 48, and 150 runs of a standalone copy in Chromium
+with CDP CPU throttle 1, 6 and 20 at load 37: 0 fails. Suspect: the quiet path (`QUIET_FRAMES = 2`) returns before the
+250 ms emit when the 5 ms busy interval misses 2 frames; the same CI job also failed `merge.spec.ts:208` (stall 265 ms
+against a budget of 86 ms), so that runner was very slow. B442 (`shell-logo.spec.ts:140`, `closed: false` on Flows):
+`spec:stress` 8/8 at load 19 to 28; the menu leaves the DOM after 1 settle round in 10/10 closes, the spec waits 5.
+Suspect: on the slow runner the toggle close did not finish inside 5 rounds; hardening if it comes back: wait until the
+menu is gone, with a bound. Both parked. The tool did not catch it, the same gap as B458: `spec:stress` adds CPU hogs
+next to the run, but a hog run on many cores never makes one worker 13 times slower, as the slow CI runners do. Tool
+fix: `spec:stress --slow <factor>` runs the vitest workers under a CPU quota (for example a `systemd-run --user --scope
+-p CPUQuota=` scope sized to 1/factor of the cores the workers use), so a local run reaches the CI factor. Bite: the B458
+cold-compile case with its fix reverted fails under `--slow 13` and passes with plain `spec:stress`.
