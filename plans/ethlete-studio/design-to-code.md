@@ -3519,3 +3519,50 @@ Not verified: the full cli suite under CI load; the push suite runs it.
 the case reads focus before the page settles under load. Lesson: a load-sensitive case needs its cause, not a retry; a
 retry hides a real focus defect. Decided by the doc agent (tool internal): no single-case retry. Tool fix (night, Mac):
 reproduce under the CPU quota (731/735), find the cause, the case waits on a condition, bite under the quota.
+
+770\. Mac builder (2026-11-11, night): the Mac push was refused twice in a row because the Linux builder pushed during
+the Mac push:suite (8c4bdb6a1, d3444f82a, 209facfa3); each merge starts a full push:suite again (8-40 min). Lesson: two
+builders on one branch pay a full suite per race. Tool fix (night backlog, Mac): after a merge of origin, push:suite
+reuses the verdict of the steps whose inputs the merged range does not touch; a spec bites with a merge that changes one
+lib only.
+
+As built (766 item 1, Linux builder): Cause (bite): this Claude Code build marks the focus below the input box with
+inverse video (`ESC[7m`, first on the `1 shell` footer pill after one Down) and draws panel rows as `  ● main` /
+`  ◯ general-purpose`, with no `❯`. `panelFocused` knew only `❯ [⏺◯]`, so it never saw the focus and typed into the
+pill. Now `panelFocused` also accepts an inverse SGR code below the last rule (colour arguments of 38/48 skipped), and
+`isPanelRow` accepts `●`. Fixtures claude-pane-footer-pill-focused/unfocused.txt are real captures of this pane; the
+only edit drops " · esc to interrupt", which marks a busy pane. The new spec failed on the old script and passes now;
+the agent-sessions spec runs 40 of 41 green, "stores the command of run without the prompt" failed once at 5 s under
+load and passes alone (not this change). `run` in the spec has a 25 s spawn timeout, so a hung script fails the case
+instead of the whole file. Not verified: a focused panel row (two Downs): the auto-mode classifier refused the second
+self-drive capture; Suspect: it is also inverse. Item (b) parked: every Claude session is a SendMessage peer, so a
+refusal would end the typed wake for all of them; the focus fix removes the wrong typing.
+
+771\. Linux builder (2026-11-11, night, CI run 42916647044): two cli specs timed out (open-points-answer 30 s,
+merge.spec 60 s; 2-3 s locally). Cause (bite, subagent): the workers start from source through jiti, which caches in
+`<tmpdir>/jiti`, and vitest.setup.ts gives each spec file its own TMPDIR, so every file transpiled the 262-file worker
+graph again. As built a3df386fa: the spec tmpdir links `jiti` to `libs/cli/node_modules/.cache/jiti-specs`. Bite on one
+busy core: 30 s timeout without the fix, 12 s with it. Not verified: a CI run; the first worker start of a CI run is
+still a full transpile.
+
+772\. Linux builder (2026-11-11, night): the agent-sessions spec "stores the command of run without the prompt" failed
+once under load (5 s poll) and passes alone. Suspect: a fixed poll budget, not a wait on the stored command. Lesson: a
+spec that polls a fixed time fails under load like 769. Tool fix (night backlog, Linux, after 767): the case waits on the
+condition; a bite under the CPU quota. 766 (b) parked by the builder (tool internal): every Claude session is a
+SendMessage peer, so `send` refusing them would end every typed wake; d3e2a7c58 fixes the wrong typing.
+
+As built (767): `recordShotViewed` copies the shot it is handed (a file from the CLI, the bytes from the design server)
+into the variant's own `viewed-shots/<sketch>-<variant>.png` and records that copy's hash; the design server path calls
+the same helper, so there is one copy rule. A CLI sheet that holds several variants gives each variant its own copy, so a
+later shot that rewrites the sheet file leaves earlier views intact. Bite: the sketch-command spec "keeps a variant
+viewed after a later shot of another variant rewrites the same sheet file" fails on HEAD (`sketch ready` exits 1) and
+passes with the fix; the "drawn over" case now draws over the per-view copy. Not verified: a real `et design shot
+--states --variants` run in a browser, and old records that point at a sheet file (they stay valid until that sheet is
+redrawn, then ask for a new view).
+
+772 note (Linux builder, not fixed): the Suspect "fixed poll budget" is wrong. With every 5 s poll of agent-sessions.spec.ts
+raised to 20 s, the case still failed in a full-file run after 20 s (the `@ethlete_command` option read `''`), and it
+passes alone. A 6 s delayed start bites the 5 s budget, but that is not the CI failure. A 4% CPU quota on vitest did
+not slow it (tmux runs outside the scope). Suspect: an earlier case of the file leaves tmux state (the shared private
+server, a dispatch or scoped session name) that keeps `run` from creating or tagging its session. Next step: run the
+file with `--sequence.shuffle=false` and bisect the earlier cases.

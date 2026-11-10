@@ -1,12 +1,19 @@
-import { mkdtempSync, readdirSync, rmSync, statSync } from 'fs';
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, statSync, symlinkSync } from 'fs';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { join, resolve } from 'path';
 
 // Every temp dir a spec or the code under test creates lands in this one, so afterAll removes them all.
 const originalTmpdir = process.env['TMPDIR'];
 const specTmpdir = mkdtempSync(join(tmpdir(), 'cli-'));
 
 process.env['TMPDIR'] = specTmpdir;
+
+// jiti caches the transpiled source of the workers specs start in `<tmpdir>/jiti`. A cache per spec file transpiles
+// the whole worker graph in every file, past the test timeout on a busy CI runner.
+const jitiCache = resolve(__dirname, 'node_modules/.cache/jiti-specs');
+
+mkdirSync(jitiCache, { recursive: true });
+symlinkSync(jitiCache, join(specTmpdir, 'jiti'), 'dir');
 
 const originalStateHome = process.env['XDG_STATE_HOME'];
 

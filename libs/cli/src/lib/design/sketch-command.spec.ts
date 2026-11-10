@@ -17,7 +17,13 @@ import { THEMING_TEXT } from './system/theming-text';
 import { sketchOpenPointsOf } from './system/read-open-points';
 import { renderIssuesOf } from './system/render-check';
 import { findSketch, readSketchReport, Sketch, variantContentHashOf } from './system/sketch/sketch';
-import { recordShotViewed, shotFileOf, unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots';
+import {
+  recordShotViewed,
+  shotFileOf,
+  unviewedShotLinesOf,
+  VariantChange,
+  viewedShotFileOf,
+} from './system/sketch/viewed-shots';
 
 vi.mock('./ready-shots', () => ({
   aktuellPlaceholderWarnings: vi.fn(async (): Promise<string[]> => []),
@@ -1087,7 +1093,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     mkdirSync(dirname(shot), { recursive: true });
     writeFileSync(shot, 'drawn');
     recordShotViewed({ target, sketch: sketch(), variant: 'a', shot });
-    writeFileSync(shot, 'drawn over');
+    writeFileSync(viewedShotFileOf({ target, sketch: sketch(), variant: 'a' }), 'drawn over');
 
     expect(await ready()).toEqual({
       code: 1,
@@ -1107,6 +1113,51 @@ describe('designSketch', { timeout: 120_000 }, () => {
     recordShotViewed({ target, sketch: sketch(), variant: 'a', shot });
 
     expect(await ready()).toEqual({ code: 0, reason: null });
+  });
+
+  it('keeps a variant viewed after a later shot of another variant rewrites the same sheet file', async () => {
+    const target = acme();
+    const actual = await vi.importActual<typeof import('./system/sketch/viewed-shots')>('./system/sketch/viewed-shots');
+
+    vi.mocked(unviewedShotLinesOf).mockImplementation(actual.unviewedShotLinesOf);
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--round',
+      'Diff',
+      '--note',
+      'changes',
+      '--product',
+      'acme',
+    );
+    vi.mocked(variantChangesShown).mockResolvedValue([
+      { variant: 'a', change: 'variant a changes default' },
+      { variant: 'b', change: 'variant b changes default' },
+    ]);
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+
+    const found = findSketch({
+      productDir: join(target, DESIGN_DIR, 'acme'),
+      product: 'acme',
+      sketch: { layer: 'components', name: 'button' },
+    });
+
+    if (!found || typeof found === 'string') throw new Error('no sketch');
+
+    const sheet = shotFileOf({ target, product: 'acme', part: 'components/button' });
+
+    mkdirSync(dirname(sheet), { recursive: true });
+    writeFileSync(sheet, 'sheet of a');
+    recordShotViewed({ target, sketch: found, variant: 'a', shot: sheet });
+    writeFileSync(sheet, 'sheet of b');
+    recordShotViewed({ target, sketch: found, variant: 'b', shot: sheet });
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
   });
 
   it('readies a sketch whose variants draw no pixel diff without a viewed shot', async () => {

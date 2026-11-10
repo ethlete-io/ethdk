@@ -33,16 +33,22 @@ const sketchKeyOf = (sketch: Sketch) => createHash('sha256').update(resolve(sket
 const viewedFileOf = (options: { target: string; sketch: Sketch }) =>
   resolve(workRootOf(options.target), 'viewed-shots', `${sketchKeyOf(options.sketch)}.json`);
 
-/** The file the design server writes a sketch variant shot to when it hands one out. */
+/** The file a handed-out shot of a sketch variant is copied to, so its viewed record holds its own copy. */
 export const viewedShotFileOf = (options: { target: string; sketch: Sketch; variant: string }) =>
   resolve(workRootOf(options.target), 'viewed-shots', `${sketchKeyOf(options.sketch)}-${options.variant}.png`);
 
-const fileHashOf = (file: string) => {
+const fileOf = (file: string) => {
   try {
-    return createHash('sha256').update(readFileSync(file)).digest('hex');
+    return readFileSync(file);
   } catch {
     return null;
   }
+};
+
+const fileHashOf = (file: string) => {
+  const content = fileOf(file);
+
+  return content === null ? null : createHash('sha256').update(content).digest('hex');
 };
 
 const readViewed = (file: string): ViewedFile => {
@@ -56,25 +62,28 @@ const readViewed = (file: string): ViewedFile => {
 };
 
 /**
- * Records that the CLI drew `shot` of `variant` and handed it out, at the content of `drawn` (the sketch itself unless
- * an older copy of it was drawn). The record holds the hash of the shot file, so it counts only while that file holds it.
+ * Records that the CLI drew `variant` and handed it out, at the content of `drawn` (the sketch itself unless an older
+ * copy of it was drawn). It copies the shot (the `shot` file or the `png` bytes) into the variant's own viewed shot file
+ * and holds that copy's hash, so a later shot that rewrites the source file leaves the view intact.
  */
-export const recordShotViewed = (options: {
-  target: string;
-  sketch: Sketch;
-  variant: string;
-  shot: string;
-  drawn?: Sketch;
-}) => {
-  const { target, sketch, variant, shot, drawn = sketch } = options;
-  const shotHash = fileHashOf(shot);
+export const recordShotViewed = (
+  options: { target: string; sketch: Sketch; variant: string; drawn?: Sketch } & ({ shot: string } | { png: Buffer }),
+) => {
+  const { target, sketch, variant, drawn = sketch } = options;
+  const png = 'png' in options ? options.png : fileOf(options.shot);
 
-  if (shotHash === null) return;
+  if (png === null) return;
 
+  const shot = viewedShotFileOf({ target, sketch, variant });
   const file = viewedFileOf({ target, sketch });
-  const record: ViewedShot = { content: variantContentHashOf(drawn, variant), shot: resolve(shot), shotHash };
+  const record: ViewedShot = {
+    content: variantContentHashOf(drawn, variant),
+    shot,
+    shotHash: createHash('sha256').update(png).digest('hex'),
+  };
 
   mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(shot, png);
   writeFileSync(file, JSON.stringify({ ...readViewed(file), [variant]: record }));
 };
 
