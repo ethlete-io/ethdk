@@ -4151,3 +4151,9 @@ the record of an embedding part..." timed out at 5000 ms; `spec:stress --load 2`
 5.1-5.3 s at load 17-26. Measured: the 708 lint step is not on its path. Suspect: a slow case near its limit under load;
 recent `system/` commits 538b77b31, f83b0bded, c58f340a0, 498d82393 changed its path. Tool fix (Linux builder): time
 `checkSystemRendered` and `markPartReady` per step before 538b77b31 and at f83b0bded; fix the slow step, not the limit.
+
+724\. Mac builder (2026-11-10, B482): the pre-commit check refused a one-line as-built note in `design-to-code.md` at
+its 440,000-character budget, and `archive-findings.mjs` (also `--days=2`) moved 0 findings. Cause (measured, doc agent):
+`--orphans` lists 195 findings that no STATUS row names, so the archive never takes them; only findings of done rows
+leave. Tool fix (Linux builder, `tools/scripts/archive-findings.mjs`): also archive an orphan finding that holds a
+"Built" or "As built" line and is older than the `--days` limit; a spec bites on a built orphan that stays today.

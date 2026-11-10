@@ -59,3 +59,6 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   gone); studio/go.json removed in b52ff697c. Not pushed yet. Left in B249: re-check "Sketch öffnen", step 6, ADR built:.
 - Mac: 708 built (4ae5bc51c, c16d3856d); finding 722 recorded; lint scope decided (calls + pre-commit). 709 app-icon
   sketch (studio foundations/logo@app-icon, variants a-d) is ready: tell the human on return, they pick by merge.
+- Collected for the human: (1) B482 release smoke bite needs an unlocked Mac screen (CEF page runs no CDP command while
+  locked). (2) Studio gets an on_console_message hook that writes errors to a log file, so the smoke checks the real
+  shipped bundle with no debug port (recommended: yes). (3) 709 app icon pick by merge.
