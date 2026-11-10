@@ -4049,3 +4049,13 @@ findings and did not check it against the binding order; nothing compares a hand
 builder queue is 710 (CI red), then B249 and the STATUS order; 708, 709 and B482 join the tool backlog; 706 stays on
 the Mac builder. Tool fix (builder default): the handoff save of a builder names the top open STATUS item, and the
 builder Stop hook or `handoff` warns when a slice is committed for an item that is neither that one nor a red-CI fix.
+
+As built (710). Cause (measured): the open-points worker cold start from source (jiti) is 2.0-2.4 s of the 2.5 s first
+case unloaded; a second call takes 3-4 ms, a call for a new product on the warm worker 7-8 ms, `openPointsOf` in process
+23-27 ms (3 runs). Under `--slow 6` the first `openPointsAnswer` case of each file times out at 30 s, the CI symptom.
+`--slow 13` is too harsh: with the fix, `part-accept` "refuses a part with theming findings" still takes 37 s there, a
+case that does not start the worker. Fix: `open-points-worker.fixtures.ts` `warmOpenPointsWorker()` starts the worker in
+a file-level `beforeAll` with a 120 s timeout; `part-accept`, `part-go` and `part-ready` call it, nothing else in the go
+system changed. Verified: bite under `--slow 6`, copies without the warm-up 0/2 in all three files (part-accept,
+part-go first worker case at 30 s); with it `--runs 4 --slow 6` 4/4 and `--runs 4 --load 2` 4/4 each; eslint and
+`tsc -p libs/cli/tsconfig.spec.json` clean. Not run: the scheduled stress sweep (tool fix of 710, tool backlog).

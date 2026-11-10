@@ -5,6 +5,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { Readable } from 'stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { warmOpenPointsWorker } from './open-points-worker.fixtures';
 import { DESIGN_DIR } from '../design-config';
 import { openPointsAnswer, partGoAnswer } from '../studio-api';
 import { designGo } from './go-command';
@@ -55,6 +56,8 @@ const output = () => {
 
   return lines;
 };
+
+warmOpenPointsWorker();
 
 describe('part go', () => {
   afterEach(() => vi.restoreAllMocks());
