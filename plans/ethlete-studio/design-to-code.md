@@ -4145,3 +4145,9 @@ remove empty parent folders. A spec bites on an empty leftover folder.
 
 As decided (doc agent, tool internals, 2026-11-10, after 708): the design lint also covers `.ethlete/design/calls` (its
 33 old findings go into the lint baseline), and the pre-commit hook lints the staged `.ethlete/**/*.ts` files.
+
+723\. Mac builder (2026-11-10, 708 push): push:suite on c16d3856d failed once. `system/embedded-actions.spec.ts` "drops
+the record of an embedding part..." timed out at 5000 ms; `spec:stress --load 2` gives 0/4 fails; alone 3.0 s at load 13,
+5.1-5.3 s at load 17-26. Measured: the 708 lint step is not on its path. Suspect: a slow case near its limit under load;
+recent `system/` commits 538b77b31, f83b0bded, c58f340a0, 498d82393 changed its path. Tool fix (Linux builder): time
+`checkSystemRendered` and `markPartReady` per step before 538b77b31 and at f83b0bded; fix the slow step, not the limit.
