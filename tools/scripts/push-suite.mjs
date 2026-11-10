@@ -38,11 +38,23 @@ export const parseArgs = (argv) => {
   return { only, range: range ?? '@{upstream}..HEAD', ...(maxLoad === undefined ? {} : { maxLoad }) };
 };
 
+export const LOAD_SAMPLE_MS = 5_000;
 export const LOAD_POLL_MS = 15_000;
 export const LOAD_MAX_WAIT_MS = 10 * 60_000;
 
 const oneMinuteLoad = () => loadavg()[0];
 const formatLoad = (load) => load.toFixed(1);
+
+export const sampleMaxLoad = (load = oneMinuteLoad, { every = setInterval, clear = clearInterval } = {}) => {
+  let max = load();
+  const timer = every(() => {
+    max = Math.max(max, load());
+  }, LOAD_SAMPLE_MS);
+  return () => {
+    clear(timer);
+    return Math.max(max, load());
+  };
+};
 
 export const waitForLowLoad = async (
   { limit, log, load = oneMinuteLoad, sleep = (ms) => new Promise((done) => setTimeout(done, ms)), now = Date.now },
@@ -144,8 +156,8 @@ export const verdictFileOf = (sha) =>
 
 const seconds = (ms) => `${(ms / 1000).toFixed(0)} s`;
 
-export const stepLine = (name, status, ms, note, load) =>
-  `push-suite: ${name} ${status === 0 ? 'ok' : `failed at load ${formatLoad(load)}`} in ${seconds(ms)}${note ? ` (${note})` : ''}`;
+export const stepLine = (name, status, ms, note, load, max = load) =>
+  `push-suite: ${name} ${status === 0 ? 'ok' : `failed at load ${formatLoad(load)} (max ${formatLoad(max)} during the step)`} in ${seconds(ms)}${note ? ` (${note})` : ''}`;
 
 const linkDependencies = (from, to) => {
   mkdirSync(to);
@@ -289,8 +301,10 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
     await warnStaleDesignServers(log);
     for (const name of only ? [only] : STEPS) {
       const startedAt = performance.now();
+      const stopSampling = sampleMaxLoad(loadProbe.load, loadProbe.timers);
       const { status, output, note } = await steps[name]();
-      log(stepLine(name, status, performance.now() - startedAt, note, (loadProbe.load ?? oneMinuteLoad)()));
+      const maxLoad = stopSampling();
+      log(stepLine(name, status, performance.now() - startedAt, note, (loadProbe.load ?? oneMinuteLoad)(), maxLoad));
       if (status !== 0) {
         log(failureReport(output));
         return finish(`blocked ${name} failed at ${sha}`);

@@ -11,6 +11,7 @@ import {
   parseLog,
   reexecCommand,
   runStep,
+  sampleMaxLoad,
   waitForLowLoad,
   STEPS,
   stepLine,
@@ -219,6 +220,29 @@ test('starts anyway after the maximum wait and says it starts under load', async
 });
 
 test('a failed step line names the load average, an ok one does not', () => {
-  assert.equal(stepLine('e2e', 1, 60_000, undefined, 18.24), 'push-suite: e2e failed at load 18.2 in 60 s');
+  assert.equal(
+    stepLine('e2e', 1, 60_000, undefined, 18.24, 42),
+    'push-suite: e2e failed at load 18.2 (max 42.0 during the step) in 60 s',
+  );
   assert.equal(stepLine('cli', 0, 5_000, undefined, 18.24), 'push-suite: cli ok in 5 s');
+});
+
+test('samples the load while a step runs and reports the peak, not the end value', () => {
+  let tick;
+  let cleared = false;
+  const loads = [3, 42, 5, 2];
+  const stop = sampleMaxLoad(() => loads.shift(), {
+    every: (fn) => {
+      tick = fn;
+      return 1;
+    },
+    clear: () => {
+      cleared = true;
+    },
+  });
+  tick();
+  tick();
+
+  assert.equal(stop(), 42);
+  assert.equal(cleared, true);
 });
