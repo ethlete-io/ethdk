@@ -39,18 +39,18 @@ const text = (element: Element | null | undefined) => element?.textContent?.repl
   template: `
     <et-progress-steps [orientation]="orientation()">
       <a
-        [state]="account()"
+        [stepState]="account()"
         (click)="$event.preventDefault(); visited.push('account')"
         et-progress-step
         href="/account"
       >
         Account
       </a>
-      <button [state]="shipping()" (click)="visited.push('shipping')" et-progress-step type="button">
+      <button [stepState]="shipping()" (click)="visited.push('shipping')" et-progress-step type="button">
         Shipping
         <span class="shipping-note" etProgressStepDescription>Parcel for team-a</span>
       </button>
-      <button [state]="payment()" (click)="visited.push('payment')" disabled et-progress-step type="button">
+      <button [stepState]="payment()" (click)="visited.push('payment')" disabled et-progress-step type="button">
         Payment
       </button>
       <et-progress-step>Review</et-progress-step>
@@ -67,12 +67,12 @@ class CheckoutStepsComponent {
 
 const OUTCOME_STEPS_TEMPLATE = `
   <et-progress-steps>
-    <et-progress-step state="complete">Account</et-progress-step>
-    <et-progress-step state="success">Shipping</et-progress-step>
-    <et-progress-step state="warning">Payment</et-progress-step>
-    <et-progress-step state="error">Review</et-progress-step>
-    <et-progress-step state="current">Confirm</et-progress-step>
-    <et-progress-step state="upcoming">Done</et-progress-step>
+    <et-progress-step stepState="complete">Account</et-progress-step>
+    <et-progress-step stepState="success">Shipping</et-progress-step>
+    <et-progress-step stepState="warning">Payment</et-progress-step>
+    <et-progress-step stepState="error">Review</et-progress-step>
+    <et-progress-step stepState="current">Confirm</et-progress-step>
+    <et-progress-step stepState="upcoming">Done</et-progress-step>
   </et-progress-steps>
 `;
 
@@ -111,7 +111,7 @@ class StepPageComponent {}
   imports: [PROGRESS_STEPS_IMPORTS, RouterLink],
   template: `
     <et-progress-steps>
-      <a [routerLink]="['/account']" etProgressStepRouterActive state="complete" et-progress-step>Account</a>
+      <a [routerLink]="['/account']" etProgressStepRouterActive stepState="complete" et-progress-step>Account</a>
       <a [routerLink]="['/shipping']" etProgressStepRouterActive et-progress-step>Shipping</a>
       <a [routerLink]="['/payment']" etProgressStepRouterActive et-progress-step>Payment</a>
     </et-progress-steps>
