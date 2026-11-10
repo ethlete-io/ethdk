@@ -4096,3 +4096,18 @@ worker `build 17.0s` waited, cases after; with the worker wait removed, `first c
 build done at 54.6s`. Full run: 442.2 s, 131/131, load 4.9 at the start and 16.0 at the end, first case 51.4 s, tail
 from 395.1 s, 46.9 s for 9 rows (against 503.6 s before 681 and 533.6 s after). Not verified: push:suite, CI, a second
 full run for spread.
+
+As built (683, 150c2cbe1): the cause recorded above is wrong. The runner already started no case before the Studio
+build ended (`await studioBuilt` before warm-up and the first case); a bite with a 20 s slower build shows that this
+wait holds the order. `Fit is stable` ran in the first wave on three cold design servers that each rendered their first
+page; the 46.3 1-min load still carried the finished build. Cause now: first-wave cold design servers. Tool fix (next):
+one warm-up page render per design server before its first case, with a bite (cold server fails the 10 s goto under the
+same load, warm passes). Also fixed in 150c2cbe1: during the quiet tail, workers 1 and 2 restarted and did a full setup
+of about 50 s for no case. Full `yarn studio:e2e`: 442.2 s, 131/131 (503.6 s before 681, 533.6 s after it).
+
+684\. Doc agent (2026-11-10, Mac night, 683): I recorded "e2e cases start while the build runs" as the cause of 683
+from the builder's first report, before any proof, and queued a fix for it; the bite then showed the rule already held.
+A fix round went into a cause nobody had proven. Why no tool caught it: the findings format has no field that says
+whether a cause is proven, so a suspect reads like a fact. Tool fix (process, doc agent and builder skills): a finding
+writes "Suspect:" until a bite or a measurement proves it, and only "Cause:" after; the builder's report names which of
+the two it is.
