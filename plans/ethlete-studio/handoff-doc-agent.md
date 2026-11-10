@@ -76,8 +76,9 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 
 ## Late evening state (2026-11-10, after 743eb7901)
 
-- The human is back at the desk. Open question to the human: they said "2 sketches sind merged"; only 7fec742b2 (732
-  variant b) is in git. Ask which second sketch they merged if no merge commit shows up.
+- The human is back at the desk. They merged 732 b (7fec742b2) and 709 app-icon a (27e00d769). On the other open
+  sketches: "die anderen beiden sind deine baustelle". Sent: Linux builder resolves `components-title-bar.edit` (B483)
+  and the `pages-system` marker sketch; Mac builder resolves sdk `components-button.off-centre`. No open question.
 - Findings 730-745 recorded. ADR 0256 (stale direct-edit sketch is removed by the tool, STATUS B483) decided.
 - Linux builder (ethlete-sdk-3e): 742 fixed in 6ada387e2 (push suite, then push), then serve with `DE_PORT=4402` in tmux
   `studio-serve`, then B483 (ADR 0256), then 731 (e2e under quota), 745, 736+737. 735, 719 quota step, 732 sketch done.
