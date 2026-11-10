@@ -112,7 +112,11 @@ const CARD: ListedPart = {
   problems: [],
 };
 
-const render = async (sketch: ListedSketch, fetch: (url: string, init?: RequestInit) => Promise<Response>) => {
+const render = async (
+  sketch: ListedSketch,
+  fetch: (url: string, init?: RequestInit) => Promise<Response>,
+  part: ListedPart = CARD,
+) => {
   vi.stubGlobal('fetch', fetch);
   TestBed.runInInjectionContext(() => injectCommentStore()).connect(
     signal({ address: { port: 4402, product: 'web' }, revision: 0 }),
@@ -123,7 +127,7 @@ const render = async (sketch: ListedSketch, fetch: (url: string, init?: RequestI
   fixture.componentRef.setInput('port', 4402);
   fixture.componentRef.setInput('product', PRODUCT);
   fixture.componentRef.setInput('sketch', sketch);
-  fixture.componentRef.setInput('part', CARD);
+  fixture.componentRef.setInput('part', part);
   fixture.componentRef.setInput('cameraKey', 'web sketch:components/card');
   fixture.componentRef.setInput('shell', SHELL);
   fixture.autoDetectChanges();
@@ -200,22 +204,18 @@ describe('SketchViewComponent', () => {
   });
 
   it('keeps at most six near cells live and the stored picture in every cell', async () => {
-    const states = Array.from({ length: 25 }, (_, index) => `state-${index}`);
+    const states = ['default', 'hover', 'focus'];
     const wide = {
       ...SKETCH,
-      variants: ['a', 'b', 'c'],
-      targets: ['a', 'b', 'c'].map((variant) => ({ variant, states, interactions: [] })),
+      targets: SKETCH.variants.map((variant) => ({ variant, states, interactions: [] })),
     } satisfies ListedSketch;
 
-    const { fixture, root } = await render(wide, noComments);
+    const { root } = await render(wide, noComments, { ...CARD, states });
 
-    fixture.componentRef.setInput('part', { ...CARD, states });
-    await settle(fixture);
-
-    expect(root.querySelectorAll('[data-shot]').length).toBe(100);
+    expect(root.querySelectorAll('[data-shot]').length).toBe(9);
     expect(root.querySelectorAll('iframe[data-state]').length).toBe(6);
     expect(root.querySelectorAll('iframe[data-state] + ethlete-frame-shield.pointer-events-auto').length).toBe(6);
-    expect(root.querySelectorAll('img[data-shot-picture]').length).toBe(100);
+    expect(root.querySelectorAll('img[data-shot-picture]').length).toBe(9);
   });
 
   it('shows a live frame over its picture only once its page painted', async () => {

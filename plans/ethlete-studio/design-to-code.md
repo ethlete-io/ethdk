@@ -3936,3 +3936,14 @@ the variant's `treeOf` ignored the page key. No tool fix: a tree-against-header 
 and tool fixes must help every project. The general gap is 740's: the builder found it only by reading the shot, so the
 ready report must name what the builder checked by eye. On 740: the sketch passes because its sample screen root carries
 the `inert` attribute, not a skip reason.
+
+As built (Linux builder, 735): Cause: measured in CPU time (process.cpuUsage, idle) the old case spent about 220-290 ms
+in the first render of 76 cells, 50-90 ms in the change detection after `part` gained its 25 states, 100-160 ms in the
+second settle and under 10 ms in the asserts; under the 20% quota that is roughly five times as much wall time. The
+cost hardly grows with the cell count (10 cells 175 ms, 151 cells 350 ms render); it is the fixed cost of a full render
+and settle, done twice. Batching the IntersectionObserver double's entries changed nothing, so the double is not the
+cause, and no product work showed up as needless. Fix: `render` takes the part, so the case renders once with three
+states and two variants (9 cells: more than six near, so the cap of six still bites, and a picture in each). Bite: the
+new case under `CPUQuota=20%` passed 5 of 5 at 685, 619, 606, 904, 906 ms. The old case passed 10 of 10 at
+1790-2300 ms; the 1-in-5 failure over the 2500 ms budget did not reproduce on an otherwise idle machine. Not verified:
+the case under the push suite's full load, where the old failure was seen.
