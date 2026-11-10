@@ -12,7 +12,7 @@ export const staleDesignServers = (psOutput, { root, minSeconds = 3600 }) =>
     .split('\n')
     .map((line) => /^\s*(\d+)\s+(\S+)\s+(.*)$/.exec(line))
     .filter((match) => match && /index\.js design\b/.test(match[3]))
-    .filter((match) => match[3].includes(root) || match[3].includes('.cache/a-cli/'))
+    .filter((match) => match[3].includes(`${root}/`))
     .map((match) => ({ pid: Number(match[1]), age: match[2], seconds: etimeSeconds(match[2]), command: match[3] }))
     .filter((server) => server.seconds > minSeconds);
 

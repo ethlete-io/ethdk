@@ -4101,10 +4101,12 @@ process is gone, and push-suite lists design servers of the checkout older than 
 As built (finding 673): `serveDesign` calls `exitWhenParentGone` (`parent-watch.ts`): every 5 s, unref'd, it closes the
 server and exits 0 when `process.ppid` changed or `kill(ppid, 0)` finds no parent; it runs for every start, a shell
 as parent included. `tools/scripts/stale-design-servers.mjs` parses `ps -Ao pid,etime,command` and `push-suite` logs one
-warning line per design server older than 1 h (command has `index.js design` and this root or `.cache/a-cli/`), no kill.
+warning line per design server older than 1 h (command has `index.js design` and this checkout's absolute root path, so its absolute cache path too), no kill.
 Verified: `parent-watch.spec.ts` (injected ppid/alive, fake timers, 4 cases), `stale-design-servers.spec.mjs` (3 cases;
 fixture lines are real `ps` output, the design line from a real process started with that argv), cli build and lint.
-Not verified: a real orphaned server exiting after its parent was killed; the push-suite warning against live servers.
+Proof: the real `dist/libs/cli/src/index.js design` under a `node` parent, parent `kill -9`: the server was gone after
+about 6.4 s (limit 10 s). Bite: with the watch call disabled in the built `serve.js`, the server was re-parented to
+pid 1 and survived 15 s (killed by hand, dist restored, no server left). Not verified: the push-suite warning against live servers.
 
 As built (671/B465, finding 672): the cause was the sketch view, not the case's probe. `sketchRowsOf` puts the
 revision into the frame address of every variant row, so a sketch edit gives each cell of row `a` a new address. The

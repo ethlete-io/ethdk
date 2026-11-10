@@ -4,7 +4,9 @@ import { etimeSeconds, staleDesignServers, staleServerWarnings } from './stale-d
 
 const PS = `  PID     ELAPSED COMMAND
     1 38-07:04:01 /sbin/launchd
-65717  1-12:03:10 node node_modules/.cache/a-cli/src/index.js design /var/folders/zz/abc/T/x
+65717  1-12:03:10 node /Users/tom/dev/ethlete-sdk/node_modules/.cache/a-cli/src/index.js design /var/folders/zz/abc/T/x
+40000  3-00:00:00 node /Users/other/dev/elsewhere/node_modules/.cache/a-cli/src/index.js design /var/folders/zz/abc/T/x
+40001  3-00:00:00 node node_modules/.cache/a-cli/src/index.js design /var/folders/zz/abc/T/x
 20479       00:01 node -e setTimeout(()=>{},8000) index.js design /var/folders/zz/abc/T/x
 20480       59:59 node /Users/tom/dev/ethlete-sdk/node_modules/.cache/a-cli/src/index.js design /tmp/y
 20481    02:00:00 node /Users/tom/dev/ethlete-sdk/dist/libs/cli/src/index.js design /tmp/z
