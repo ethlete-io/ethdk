@@ -4034,3 +4034,13 @@ init script, fail after 30 s with "no page loaded in 30 s (native dialog?)", fir
 end: a run before the commit still showed the prompt, because the smoke builds HEAD in a worktree, not the working tree.
 Decided by the doc agent (tool internal): the smoke `--help` and its start line name the commit it builds ("builds HEAD
 <sha>, not the working tree"), and it warns when the working tree has uncommitted changes under `apps/ethlete-studio`.
+
+747\. The human (2026-11-10, screen shot of CI on the "next" changesets merge): the Checks step failed in commitlint on
+`chore: 🤖 update prereleases (next)` with "scope may not be empty [scope-empty]". Cause (read in the files):
+`.github/workflows/ci-next.yml` and `ci-main.yml` pass `commit_message: 'chore: 🤖 update prereleases'` (and `'chore: 🤖
+update versions'`) to `publish.yml`, and the commitlint range check in `ci.yml` (71c202188, 3ba2ca88b) now lints that
+bot commit with `scope-empty: never`. Lesson: the commitlint gate came in without a look at the commit messages the
+workflows write themselves, so nothing ran them through commitlint. Decided by the doc agent (tool internal, CI is red):
+both messages get a scope and a valid subject, for example `chore(repo): Update prereleases`, and a check (spec or
+`lint:*` script in pre-push) runs every `commit_message:` in `.github/workflows/*.yml` through commitlint, so a new
+gate or a new workflow message fails locally first.
