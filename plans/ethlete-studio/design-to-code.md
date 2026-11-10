@@ -3826,3 +3826,20 @@ human's attached clients. Tool fix: every spec and fake agent uses an isolated t
 `TMUX_TMPDIR`, `TMUX` unset), agent-sessions calls `switch-client` only for a human `run`, and the respawn passes the
 prompt once. Bite: a spec run and a `restart --process` with a client attached to another session leave that client
 where it is.
+
+As built (702, 663a568cd). Cause, prompt twice: `claude-3` was created at 10:14:39Z by the `run` from before 812a67070,
+which stored the full command with the prompt in `@ethlete_command`; 812a67070 fixed only new sessions, and
+`restart --process` reused the stored value and wrote it back. Fix: `restart --process` strips a stored prompt and keeps
+`VAR=value` words; the spec "drops a prompt that an older run stored" fails without the fix. Suspect, client move: the
+agent-sessions spec inherited `TMUX` and ran on the human's server; its "stores the command of run" case calls `run`
+from a detached runner session, and `run` called `switch-client` without `-c`, so tmux moved the most recent real
+client. Not proven: that the move came from this case and not from the restart (the restart only does `respawn-pane`
+on the same pane; no move from it was seen). Fix: the spec runs on a private server (temp `TMUX_TMPDIR`, `TMUX` and
+`TMUX_PANE` unset, `kill-server` after); `run` switches only a client attached to the caller's session, and none if it
+has none. Bite: 3 full spec runs with two real clients attached and a 0.5 s watch of the real server: no new session,
+no client move; 37/37 pass on runs 2 and 3, run 1 had one 5 s poll timeout at load 13 that passed alone. Open: the
+same watch during one live `restart --process`.
+
+697 live bite (builder, 2026-11-10, 11:32): (a) the script answered the dialog and wrote the stopped job to the mailbox
+and `restart.log`: pass. (b) same session `claude-3@ethlete-sdk`, no new `claude-N`: pass. (c) `@ethlete_command` holds
+no prompt: fail, the stale value from 702, fixed in 663a568cd. (d) a new process (start time = restart time): pass.
