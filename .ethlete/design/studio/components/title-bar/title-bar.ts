@@ -19,11 +19,8 @@ import {
   states,
   titleBarControl,
   windowControls,
-  PUSH_GATE_LABEL,
-  PUSH_RED_ADVICE,
   pushCount,
   type Props,
-  type PushGate,
   type WindowButton,
 } from './shared/chrome';
 import styles from './title-bar.css?inline';
@@ -69,25 +66,13 @@ const dirtyText = ({ notice, noticeText }: Props) =>
     ? `<span class="whitespace-nowrap text-et-surface-muted" data-code-notice>${noticeText}</span>`
     : '';
 
-const GATE_ICON = { green: 'check', red: 'error', unknown: 'warning' } as const;
-
-const GATE_THEME = { green: '', red: 'error', unknown: 'warning' } as const;
-
-const themed = (gate: PushGate, markup: string) =>
-  GATE_THEME[gate] ? `<span class="inline-flex" data-et-semantic-color="${GATE_THEME[gate]}">${markup}</span>` : markup;
-
 const pushState = ({ push }: Props) =>
   push
-    ? themed(
-        push.gate,
-        `<span class="inline-flex" title="${PUSH_GATE_LABEL[push.gate]}${push.gate === 'red' ? ` - ${PUSH_RED_ADVICE}` : ''}" data-push-state>${badge(
-          {
-            label: `<span class="flex items-center gap-1 whitespace-nowrap">${icon(GATE_ICON[push.gate], { size: 12 })}<span class="[text-box:trim-both_cap_alphabetic]">${pushCount(push)} · ${push.age}</span></span>`,
-            variant: push.gate === 'red' ? 'filled' : 'tonal',
-            size: 'sm',
-          },
-        )}</span>`,
-      )
+    ? `<span class="inline-flex" data-push-state>${badge({
+        label: `<span class="flex items-center gap-1 whitespace-nowrap"><span class="[text-box:trim-both_cap_alphabetic]">${pushCount(push)} · ${push.age}</span></span>`,
+        variant: 'tonal',
+        size: 'sm',
+      })}</span>`
     : '';
 
 const failedToast = ({ restart }: Props) =>

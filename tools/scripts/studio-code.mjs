@@ -84,7 +84,7 @@ const sourceHashOf = (root) => {
   return createRequire(import.meta.url)(module).cliSourceHash(join(root, AREAS.cli));
 };
 
-/** `et design status`'s push state of `root` (unpushed commits, oldest age, push gate), or null without a built CLI. */
+/** `et design status`'s push state of `root` (unpushed commits, oldest age), or null without a built CLI. */
 export const pushStateOf = (root) => {
   const module = join(root, 'dist/libs/cli/src/lib/design/push-status.js');
 
@@ -92,7 +92,7 @@ export const pushStateOf = (root) => {
 
   const status = createRequire(import.meta.url)(module).pushStatusOf(root);
 
-  return status && { unpushed: status.unpushed, oldestAgeHours: status.oldestAgeHours, gate: status.gate };
+  return status && { unpushed: status.unpushed, oldestAgeHours: status.oldestAgeHours };
 };
 
 const recordedHashOf = (buildDir) => {

@@ -113,36 +113,24 @@ describe('TitleBarComponent', () => {
     expect(events).toHaveLength(1);
   });
 
-  it('draws the push badge before Update, filled with the gate advice only on a red gate', () => {
-    const red = render({
-      ...linux([], ['close']),
-      update: true,
-      push: { unpushed: 158, age: '31,5 h', gate: 'red' },
-    }).bar;
-    const state = red?.lastElementChild?.firstElementChild as HTMLElement | null;
+  it('draws the push badge before Update, tonal', () => {
+    const bar = render({ ...linux([], ['close']), update: true, push: { unpushed: 158, age: '31,5 h' } }).bar;
+    const state = bar?.lastElementChild?.firstElementChild as HTMLElement | null;
 
     expect(state?.matches('[data-push-state]')).toBe(true);
     expect(state?.textContent?.trim()).toBe('158 ungepusht · 31,5 h');
-    expect(state?.title).toBe('Push-Gate rot - vor jedem Feature-Slice beheben');
-    expect(state?.querySelector('et-badge')?.getAttribute('data-variant')).toBe('filled');
-
-    TestBed.resetTestingModule();
-    const open = render({ ...linux([], []), push: { unpushed: 1, age: '0 h', gate: 'unknown' } }).bar;
-
-    expect(open?.querySelector<HTMLElement>('[data-push-state]')?.title).toBe('Push-Gate nicht gelaufen');
-    expect(open?.querySelector('[data-push-state] et-badge')?.getAttribute('data-variant')).toBe('tonal');
+    expect(state?.querySelector('et-badge')?.getAttribute('data-variant')).toBe('tonal');
 
     TestBed.resetTestingModule();
     expect(render(linux([], [])).bar?.querySelector('[data-push-state]')).toBeNull();
   });
 
-  it('centres the push badge text on its cap height beside the icon', () => {
-    const bar = render({ ...linux([], []), push: { unpushed: 3, age: '2 h', gate: 'green' } }).bar;
-    const row = bar?.querySelector<HTMLElement>('[data-push-state] et-badge svg')?.parentElement;
-    const text = row?.querySelector(':scope > span');
+  it('centres the push badge text on its cap height', () => {
+    const bar = render({ ...linux([], []), push: { unpushed: 3, age: '2 h' } }).bar;
+    const text = bar?.querySelector<HTMLElement>(
+      '[data-push-state] et-badge .\\[text-box\\:trim-both_cap_alphabetic\\]',
+    );
 
-    expect(row?.className).toBe('flex items-center gap-1 whitespace-nowrap');
-    expect(text?.className).toBe('[text-box:trim-both_cap_alphabetic]');
     expect(text?.textContent?.trim()).toBe('3 ungepusht · 2 h');
   });
 

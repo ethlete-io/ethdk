@@ -95,7 +95,7 @@ const WIDE_SKETCH = {
   part: 'components/title-bar',
   name: 'notice-hint',
   variants: ['a', 'b', 'c'],
-  changed: 'push-green',
+  changed: 'push',
 };
 
 const EDITED_PART = 'components/disclosure';

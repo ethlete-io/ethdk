@@ -45,7 +45,6 @@ export const pushNoticeOf = (push: PushState | null | undefined): TitleBarPush |
   return {
     unpushed: push.unpushed,
     age: STUDIO_LABELS.code.pushAge(HOURS.format(push.oldestAgeHours ?? 0)),
-    gate: push.gate,
   };
 };
 

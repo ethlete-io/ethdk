@@ -1,9 +1,7 @@
 import { Observable } from 'rxjs';
 import { invokeHost$ } from './invoke';
 
-export type PushGate = 'green' | 'red' | 'unknown';
-
-export type PushState = { unpushed: number; oldestAgeHours: number | null; gate: PushGate };
+export type PushState = { unpushed: number; oldestAgeHours: number | null };
 
 export type StudioCodeState = {
   cli: { running: string | null; latest: string | null; dirty: boolean };

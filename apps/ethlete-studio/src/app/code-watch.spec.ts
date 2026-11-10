@@ -61,17 +61,16 @@ describe('codeNoticeOf', () => {
 });
 
 describe('pushNoticeOf', () => {
-  it('passes the unpushed commits, the gate and the age of the oldest in hours', () => {
-    expect(pushNoticeOf({ unpushed: 158, oldestAgeHours: 31.5, gate: 'red' })).toEqual({
+  it('passes the unpushed commits and the age of the oldest in hours', () => {
+    expect(pushNoticeOf({ unpushed: 158, oldestAgeHours: 31.5 })).toEqual({
       unpushed: 158,
       age: '31,5 h',
-      gate: 'red',
     });
-    expect(pushNoticeOf({ unpushed: 2, oldestAgeHours: null, gate: 'unknown' })?.age).toBe('0 h');
+    expect(pushNoticeOf({ unpushed: 2, oldestAgeHours: null })?.age).toBe('0 h');
   });
 
   it('shows nothing when everything is pushed or the host reports no push state', () => {
-    expect(pushNoticeOf({ unpushed: 0, oldestAgeHours: null, gate: 'unknown' })).toBeNull();
+    expect(pushNoticeOf({ unpushed: 0, oldestAgeHours: null })).toBeNull();
     expect(pushNoticeOf(null)).toBeNull();
     expect(pushNoticeOf(undefined)).toBeNull();
   });
