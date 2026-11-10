@@ -30,6 +30,13 @@ until they say they are back.
 - Open: pages/start EDIT-OLD-NOT-FOUND — the builder says whether an ADR covers it (then agent pick) or it waits for
   the human. 714 tool fix and 710 sweep need a slow factor measured from CI, not 13.
 
+## Side work
+
+- Issue ethlete-io/ethdk#3172 (tooltip on touch): decided by the human (long press opens; toggletip keeps the
+  button trigger, docs get an icon-button example; tooltip docs name the toggletip for must-see hints). A new session
+  in tmux `claude-4@ethlete-sdk` builds it (brief /tmp/issue-3172-brief.txt) and reports to ethlete-sdk-a6. The
+  human comments on the issue, not the agents.
+
 ## Open questions for the human
 
 None. The human is afk again (said "afk" after the ADR 0254 round): collect questions.
