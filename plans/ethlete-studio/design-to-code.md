@@ -4205,3 +4205,11 @@ variant a with the `!` -> `sketch ready` exit 1, `LINT ...a/components/button/bu
 LINT line, ready passes the gate and goes on to render (then refuses "draws variants alike", the untouched copies).
 Specs: `design-lint.spec.ts` (5 cases); the merge case fails with the merge gate disabled. Not verified: `design check`
 against the real sdk product end to end, and a Studio merge in the app.
+
+In progress (709): sketch `foundations/logo@app-icon` (product `studio`) adds an `app-icon` state to the logo part,
+drawn from a new asset `assets/studio-app-icon.svg` (1024 px, literal colours so `tauri icon` can rasterize it); the
+human picks by merging. a: macOS grid, squircle 824/1024 with a 100 px margin and a soft drop shadow, accent tile, glyph
+at the mark's proportion. b: as a, glyph 12 % larger (tighter inner padding). c: full bleed, the mark's own tile to the
+canvas edge (corners 25 %), no shadow. d: as a, with the colours inverted (dark `#051211` tile, accent glyph). Next, after
+the pick: the script that writes `apps/ethlete-studio/src-tauri/app-icon.svg` from the merged asset and runs `tauri
+icon`, and the `design check` rule that fails when they differ.

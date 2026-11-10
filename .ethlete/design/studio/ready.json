@@ -583,18 +583,6 @@
     "cmd": "design check",
     "pid": 1454598
   },
-  "foundations/logo": {
-    "hash": "e8c89a3e8de5990d",
-    "files": {
-      ".ethlete/design/studio/assets/studio-mark-line.svg": "f9a0e58663473e8f",
-      ".ethlete/design/studio/assets/studio-mark.svg": "772b2ce52c6abbc2",
-      ".ethlete/design/studio/foundations/logo/logo.ts": "b17fef9975e15a47"
-    },
-    "at": "2026-11-08T14:58:03.801Z",
-    "by": "et design check",
-    "cmd": "design check",
-    "pid": 1454598
-  },
   "foundations/motion": {
     "hash": "16f5f95b078fd2e0",
     "files": {
