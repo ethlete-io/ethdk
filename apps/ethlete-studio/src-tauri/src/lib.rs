@@ -1,6 +1,7 @@
 mod call_source;
 mod call_status;
 mod child_env;
+mod console_log;
 mod design;
 mod design_action_log;
 mod design_roots;
@@ -189,6 +190,7 @@ pub fn run() {
         .manage(call_status::StatusWatch::default())
         .manage(update::PendingUpdate::default())
         .manage(window_chrome::ChromeWatch::default())
+        .setup(|app| Ok(console_log::start(app.handle())?))
         .invoke_handler(tauri::generate_handler![
             call_status::design_status_watch,
             design::design_project,

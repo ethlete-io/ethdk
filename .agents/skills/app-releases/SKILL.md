@@ -36,4 +36,6 @@ built by `@tauri-apps/cli-cef` too and is about 147 MiB larger. The branch's `ta
 a plugin whose crates.io release asks for tauri's `wry` feature is patched to plugins-workspace's
 `feat/cef` branch. Building needs the GTK 4
 headers (`sudo dnf install gtk4-devel`, `libgtk-4-dev` on Debian). The first build downloads CEF
-(~1.8 GB unpacked) into `src-tauri/target/cef`.
+(~1.8 GB unpacked) into `src-tauri/target/cef`. Studio appends every console error of its window to `console.log` in its app log
+directory (`~/Library/Logs/io.ethlete.studio/` on macOS; `ETHLETE_STUDIO_CONSOLE_LOG` overrides the path), and
+`yarn studio:release-smoke` reads that file, so a shipped bundle needs no debug port.
