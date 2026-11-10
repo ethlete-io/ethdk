@@ -4166,9 +4166,14 @@ CPU throttle, then fix the wait at its cause (an event, not a longer timeout).
 --locked --version 0.22.2` failed with "binary `cargo-audit` already exists in destination". Suspect (not proven by a
 CI run): Swatinem/rust-cache restores `~/.cargo/bin`, while the separate actions/cache key `cargo-audit-Linux-0.22.2`
 misses, so two caches own one binary. Fix cd266da38 adds `--force`. Lesson: a step that installs into a directory
-another cache restores has no single owner. Decided by the doc agent (tool internal, CI is red): the step skips the
-install when `cargo audit --version` already prints 0.22.2 and installs with `--force` otherwise, so a cache hit costs
-no rebuild; the next green run proves the suspect. As built: cd266da38 + 59ca46802 (skip on a version match, else `--force`). Cause (measured, run 42912315216): the cargo-audit cache missed, the install step took under 1 s, so the version check found 0.22.2 already in `~/.cargo/bin` from rust-cache; Rust host green.
+another cache restores has no single owner. Decided by the doc agent (tool internal, CI red). As built: cd266da38 + 59ca46802 (skip on a version match, else `--force`). Cause (measured, run 42912315216): the cargo-audit cache missed, the install step took under 1 s, so the version check found 0.22.2 already in `~/.cargo/bin` from rust-cache; Rust host green.
+
+765\. Mac builder (2026-11-10, night): `/e2e` shows "No active run log" in the push:suite `repeat` step. Cause: only the
+`e2e` step writes a live log. Lesson: every long step writes one. Fix d06bd6f34 (Mac).
+
+766\. Doc agent (2026-11-10, 23:33): a mailbox `send` to the Linux builder made the dispatcher type into its pane (history
+line recalled). Suspect: `panelFocused` knows only `❯ ⏺` rows, this build draws `● main`.
+Tool fix (night, Linux): `send` refuses a SendMessage peer; panel regexes from a real pane.
 
 As built (Linux builder, 731 e2e quota step): `yarn push:suite` has an `e2e-quota` step after `e2e` and before
 `repeat`. It is its own step, not a part of `quota`: it needs the drawing builds and a Studio build, and it runs after
@@ -4205,5 +4210,18 @@ As built (Linux builder, 745): `startCommandOf(base)` (stamp.ts) gives `DE_PORT=
 `startCommandOf` back to `et design`, 2 of 4 serve-state cases fail; with the change 4/4, the `terminalPortLine` case
 passes, cli typecheck passes. Not verified: a real terminal `et design` run that shows the new line.
 
-In progress (Linux builder, 2026-11-10 night, 736+737): shot resolves `<part>@<name>`, and the viewed record holds the
-hash of the drawn shot file.
+As built (Linux builder, 736+737): `sketchHoldingOf` (shot-command.ts) resolves `<part>@<name>` to that exact sketch.
+A bare `<part>` draws the unnamed sketch on the part (the rule `findSketch` already has), else the only sketch on it;
+with several named sketches it refuses and names the `<part>@<name>` targets. A named shot writes its own sheet file
+(`<product>-<layer>-<name>.<sketch>.png`). An `--at` shot records a view on the live sketch, at the content of the
+commit, so it counts while the live content equals that commit. The viewed record now holds the content hash, the shot
+file and its sha256. `recordShotViewed` takes the shot file and records nothing when it cannot read it. The design
+server writes the shot it hands out to `viewed-shots/<sketch>-<variant>.png` and records that. `sketch ready` refuses
+when the record's shot file is gone or drawn over. A record from before (a bare content hash) counts as not viewed,
+with "its viewed record predates shot hashes, so view the shot again". Bite: with `sketchHoldingOf` back to the first
+holder, 3 cases fail ("draws the sketch a <part>@<name> shot names, not the first one on the part", "refuses a bare
+part and names the <part>@<name> targets, but draws the unnamed sketch of a bare part", "refuses a bare shot of a part
+with two named sketches before it draws"). With the check back to content only, "refuses ready on a viewed record
+without a shot the CLI drew of the current content" fails: a direct `recordShotViewed` without a drawn shot readied the
+sketch. With the fix, the touched specs pass and cli typecheck passes. Not verified: a real `design shot
+<part>@<name> --variants` run in a browser, and a real `--at` shot of a named sketch.

@@ -112,3 +112,8 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   B482 done locally (df14efe67), push-suite runs for the range with the B345 sketch; 735 throttle ffe68bb3b not
   calibrated. When B345 is pushed, tell the human they can pick it. The human emptied the trash (86 GB free on Linux).
   No open question for the human.
+- Night, 23:35: the human: "in der nachtschicht gilt generell dass ich keine fragen mehr beantworten kann". Sent to both
+  builders (nothing waits on the human; apply an ADR or park the item). ADR not written: the summary is not confirmed
+  ("egal, wir sind nun in der nachtschicht"); put the summary to the human in the morning round. Findings 765 (repeat
+  step live log, d06bd6f34 on the Mac) and 766 (doc agent mailbox send typed into the Linux builder pane; send to the
+  Linux builder only by SendMessage) recorded. 766 tool fix is Linux night backlog, sent to the builder.
