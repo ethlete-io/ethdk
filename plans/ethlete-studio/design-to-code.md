@@ -4039,3 +4039,13 @@ on the old source and pass; LSP bite from a temp build `tmp/707-cli` with the de
 rewrote it, 0 diagnostics in the part, `shared/`, new and old variants and 4 sdk and studio-lab variant files. Not run:
 the full suite, the design-command specs. Accepted (doc agent, builder default): a sketch folder removed with `git rm`
 keeps its ignored `tsconfig.json`; the CLI merge and edit remove folders recursively.
+
+711\. The human (2026-11-10, day shift, after reading the 710 report about `part-go`): "wieso sehe ich da schon wieder
+sowas wie part go case? go system etwa schon wieder?". Facts (doc agent): the go system still exists (`go.json`,
+`libs/cli/src/lib/design/system/part-go.ts`); B249 (ADR 0048, decided 2026-11-03) removes it and is item 1 of the
+binding order in `STATUS.md` since 2026-11-09 (ADR 0234). Today's builder queue (707, 708, 709, 706, B482) held only
+findings and tool work, set by the doc agent, so B249 did not move. Cause: the doc agent built the builder queue from
+findings and did not check it against the binding order; nothing compares a handoff queue with that order. Fix: the
+builder queue is 710 (CI red), then B249 and the STATUS order; 708, 709 and B482 join the tool backlog; 706 stays on
+the Mac builder. Tool fix (builder default): the handoff save of a builder names the top open STATUS item, and the
+builder Stop hook or `handoff` warns when a slice is committed for an item that is neither that one nor a red-CI fix.
