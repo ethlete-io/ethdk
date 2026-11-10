@@ -4068,3 +4068,49 @@ Bite at `--slow 6`: without the warm-up 0/2 in all three files, the first `openP
 in CI; with it `--runs 4 --slow 6` 4/4 and `--load 2` 4/4. Open: at `--slow 13` the `part-accept` case "refuses a part
 with theming findings" (no worker) takes 37 s, so `--slow 13` overstates the CI runners for these files; the sweep in
 the 710 tool fix needs a factor measured from CI, not 13. Also: `design-command.spec` (707) 6/6.
+
+712\. Builder (2026-11-10, day shift, B249 slice 1, 498d82393): `vitest related` over 1276 tests failed once in
+`check-system-sketch` with "port in use" under load; alone 12/12. Suspect: the spec picks a fixed or probed port and a
+parallel spec takes it between the probe and the listen. Tool fix (builder default, tool backlog): the spec server
+listens on port 0 and reads the bound port; bite: two parallel runs of the spec under `spec:stress --load 2` 4/4.
+
+As built (706, Mac builder, 21ae1ff2e, pushed with merge 0a4e96f88). Cause: nothing checked that a commit or push turn
+sent a report. Fix: the builder Stop hook scans the `tool_use` blocks of the current turn; a Bash `git ... commit|push`
+with no `SendMessage` and no `agent-sessions.mjs send` or `agents:sessions send` blocks the stop once, with its own
+reason; the 703 line rule and the once-only `last_assistant_message` count stay; the log gets `committed` and
+`reported`. Bite: 6 new spec cases, 4 fail on the old hook, 15/15 pass. Verified: push-suite ok on 21ae1ff2e (cli
+447 s, studio 38 s, e2e 443 s); lint ok; a hand run of the hook with `ETHLETE_AGENT_ROLE=builder` on the real transcript
+blocked with the report reason. Not verified: a block in a real `--role builder` session. Open: (a) the match is on
+command text, so a heredoc that contains `agent-sessions.mjs send` counts as a report; tool fix (builder default): match
+on the parsed command of each Bash call, not on its text. (b) The Mac builder session runs with no role, so neither the
+703 nor the 706 hook fires there; fix: restart it with `--role builder` (doc agent, after its current turn).
+
+713\. Builder (2026-11-10, day shift, B249 app slice): the push of 27e923d8b failed; pre-push `lint:studio-label-specs`
+found that `system-view.component.spec.ts:1488` asserts the removed label "Go geben" (`not.toContain`). Fix: the line
+is gone; the spec already asserts that no `ethlete-part-approval` exists (47/47). Cause: the label-spec lint runs only
+in pre-push, and a slice subagent never runs pre-push, so the slice commit passed. Tool fix (builder default, tool
+backlog): pre-commit runs `lint:studio-label-specs` on staged spec files under `apps/ethlete-studio` (sub-second);
+bite: a staged spec that names a label the app no longer has is refused at commit.
+
+714\. Builder (2026-11-10, day shift, CI 42818705706 on 0a4e96f88): Unit tests red, only query
+`src/scenarios/auth-features.scenario.spec.ts:403` "reports the expiry from a custom expiration claim": `expected 18000
+to be greater than 18000` after `s.settle(1001)`; 226 other files pass; not in the cli or B249 range. Suspect: a
+boundary flake where the expiry read sees a clock that did not advance on the fake clock (off by one between `settle`
+and the expiry tick); last commits there 3bf4f45db, ab8d48ca2. The fresh builder fixes it first (ADR 0230). Tool gap:
+open until the cause; check whether `spec:stress --slow` reproduces it, since the scenario runs on a fake clock.
+
+As built (706a, Mac builder, bfd02499d, not pushed). Cause: the hook matched the raw Bash text, so a heredoc body or a
+quoted string with `agent-sessions.mjs send` counted as a report, and a quoted `git commit` as a commit. Fix: the hook
+splits each command into simple commands, keeps quoted text in one word, drops heredoc bodies and comments; a commit is
+`git [opts] commit|push`, a send is `node [opts] <...>/agent-sessions.mjs send` or `yarn agents:sessions send`. Bite: 3
+new cases fail on the old hook; 20/20 pass. Live bite in a role session: the block reached the builder (log committed
+true, reported false, blocked true). Push blocked by 715.
+
+715\. Mac builder (2026-11-10, day shift, push suite for bfd02499d): `system-tsconfig.spec.ts` "keeps the editor
+tsconfig when the CLI runs from a temporary build" and "maps @design-system to the @ethlete/cli the checkout installs"
+fail on macOS: expected `/var/folders/...`, got `/private/var/folders/...`. Suspect: 707 (b354fc7e5) resolves the CLI
+root through `realpath`, and the spec builds its expectation from the unresolved temp path; macOS links `/var` to
+`/private/var`. Tool gap: CI runs the cli unit specs only on Linux, so a path spec that is wrong on macOS reached
+`next`; only the Mac push suite saw it. Tool fix (builder default): the spec helpers return `realpathSync` of every
+temp dir, and the cli unit job also runs on the macOS runner (or a lint flags `tmpdir()` without `realpathSync` in
+cli specs).

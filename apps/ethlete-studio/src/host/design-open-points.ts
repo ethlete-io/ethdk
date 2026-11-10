@@ -7,7 +7,8 @@ export type OpenPoint =
   | { kind: 'contrast'; state: string; path: string }
   | { kind: 'open-comment'; comment: string; state: string; answered: boolean }
   | { kind: 'unmerged-sketch'; status: 'in progress' | 'ready'; decision: 'pick' | 'discard' | null }
-  | { kind: 'missing-motion'; from: string; to: string };
+  | { kind: 'missing-motion'; from: string; to: string }
+  | { kind: 'direct-edit'; sketch: string | null };
 
 /** One thing that keeps a part from being build-ready; `part` names the embedded part it is about. */
 export type BuildReadyBlocker = { kind: string; text: string; part?: string };

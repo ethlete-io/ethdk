@@ -167,6 +167,35 @@ describe('recordBuildReady', () => {
     expect(readReady(dir)).toEqual({});
   });
 
+  it('records the actions the part declares, and keeps the held ones when they cannot be read', async () => {
+    const { target, dir } = checkout();
+    const product = productOf(target);
+    const record = (declaredActionsOf: (part: string) => Promise<string[] | string>) =>
+      recordBuildReady({
+        product,
+        parts: ['components/chip'],
+        inputs: green,
+        actionsOf: async () => [],
+        declaredActionsOf,
+      });
+
+    writeFileSync(
+      join(dir, READY_FILE),
+      JSON.stringify({ 'components/chip': { hash: 'old', at: 'then', actions: ['go:old'] } }),
+    );
+    await record(async () => ['emit:remove']);
+
+    expect(readReady(dir)['components/chip']?.actions).toEqual(['emit:remove']);
+
+    writeFileSync(
+      join(dir, READY_FILE),
+      JSON.stringify({ 'components/chip': { hash: 'old', at: 'then', actions: ['go:old'] } }),
+    );
+    await record(async () => 'cannot load the part');
+
+    expect(readReady(dir)['components/chip']?.actions).toEqual(['go:old']);
+  });
+
   it('writes the record of a host whose embedded part is not build-ready, and keeps the host from build-ready', async () => {
     const { target } = checkout();
     const product = productOf(target);

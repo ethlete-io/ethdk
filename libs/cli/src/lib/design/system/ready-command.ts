@@ -1,4 +1,6 @@
+import { declaredPartActionsOf } from './action-lost';
 import { PART_HARNESS_ONLY, partActionFailuresOf } from './actions-command';
+import { refreshHarnessMap } from './harness-map';
 import { openPointsText } from './open-points';
 import { drawnPartPointsOf, markPartReady, readyPartOf } from './part-ready';
 import { buildReadyInputsOf } from './check-system';
@@ -59,6 +61,16 @@ export const designReady = async (options: { target: string; argv: string[]; inv
     return 2;
   }
 
+  const refreshed = refreshHarnessMap({ target, product });
+
+  if (typeof refreshed === 'string') {
+    console.error(`the harness map is stale and could not be regenerated: ${refreshed}`);
+
+    return 1;
+  }
+
+  if (refreshed) console.log('regenerated the stale harness map');
+
   const part = partKeyOf(parsed);
   const located = readyPartOf({ product, part });
   const marked = await markPartReady({
@@ -83,6 +95,13 @@ export const designReady = async (options: { target: string; argv: string[]; inv
       return Array.isArray(failures)
         ? failures
         : { status: 503, error: `cannot check the actions of ${part}: ${failures.noVerdict}` };
+    },
+    declaredActionsOf: async () => {
+      const declared = await declaredPartActionsOf({ target, config, product, part });
+
+      if (typeof declared === 'string') console.warn(`ACTIONS NOT RECORDED ${part}: ${declared}`);
+
+      return declared;
     },
     ...(args.values['--url'] ? {} : { actionsNote: PART_HARNESS_ONLY }),
   });

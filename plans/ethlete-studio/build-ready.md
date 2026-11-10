@@ -628,3 +628,52 @@ fail the commit.` Verified: commit-wait.spec fails without the line. A real fail
 Finding 466 real run: `sketch ready pages/system@check-fixes` now reports no visible change, but the merge refuses on
 the uncommitted `ready.json` (same block as the foundations merge). The refused auto-merge left a `pick` decision in
 `sketch.json`; I restored the file. Fix: a refused auto-merge writes `sketch.json` back as it was (sketch-command.spec bites).
+
+As built (B249 actions in check record): `writePartRecord` takes `actions`; `recordBuildReady` (`declaredActionsOf`) and
+`markPartReady` (`declaredActionsOf`) write the keys the part source declares (`declaredPartActionsOf`, the logic of
+`goActionsOf`, which now aliases it); a read failure prints `ACTIONS NOT RECORDED` and keeps the held keys. ACTION-LOST
+already reads ready.json, so it now compares against what check recorded. `design check` regenerates a stale harness
+map per product before auto-accept (`REGENERATED <product>: the stale harness map`, or `HARNESS MAP STALE` and go on);
+`design ready` regenerates it first and exits 1 with the regenerate command when it cannot. Go/accept paths unchanged.
+Verified: 4 new cases (part-build-ready, action-lost, harness-map x2) fail on the old source; tsc, eslint, related
+specs and spec:stress pass. Not verified: a real `design check` run (would rewrite the shared ready.json); a record
+that still holds is not rewritten, so old records get actions only at their next write. Suspect, not traced: a definite blocker
+(ACTION-LOST included) drops the whole record, actions with it, so an ACTION-LOST disappears on the next check.
+
+As built (B249 keep recorded actions): Cause (proven by the new action-lost spec): ACTION-LOST is a slow-check problem
+of the part, a definite blocker, so `recordBuildReady` called `dropPartRecord`, which removed the whole ready.json entry
+with its `actions`; the next check found no recorded key and reported nothing. Fix: `dropPartRecord` leaves an action
+baseline `{ actions, at }` (no `hash`) in place of a record that held actions. `readReady` returns only check records,
+so `readyMarkOf`, `readyPartsOf`, `isPartReady`, stale parts and the open-points answer never take a baseline as ready;
+`readRecordedActions` (ACTION-LOST, the slow-check inputs) reads records and baselines; `writePartRecord`, the drop and
+the legacy-hash upgrade keep other parts' baselines. The baseline moves only when a record is written again (with the
+then-declared keys, or the held ones when they cannot be read). Commit: see git log "Keep recorded actions when a check
+record is dropped". Verified: the new spec fails on the old source and passes; tsc, eslint, 122 related spec files and
+spec:stress (4/4) pass. Not verified: a real `design check` run (would rewrite the shared ready.json).
+
+As built (B249 Studio app on build-ready): the System page no longer renders `PartApprovalComponent` and no longer calls
+`giveGo$`/`acceptEdit$` (component, spec, `src/host/design-part-approval.ts` and the go/accept labels removed; the CLI
+endpoints stay). `buildReadyStatusOf` (`src/app/system-view/open-points.ts`) maps the open-points answer to the footer:
+ready → Baubereit; a `pending` or `stale-record` blocker → Wird geprüft; otherwise Nicht baubereit (n) with a
+`direct-edit` open point as a `direct-edit` blocker, the other points in Studio words, and the rule blockers by kind
+(`action` and unknown kinds as `problem`). The mapping lives in the app, not `src/host`, because the status type is the
+footer's. The chip gets `[buildReady]`; `(openEditSketch)` activates `sketch:<part>@edit`, Studio never switches by
+itself (ADR 0252). Verified: open-points spec (3 cases) and a system-view case fail on the old source; e2e case "open
+points chip pressed matches its popup" asserts the footer badge and no Go button, plain and with `--hold-listings 14000`.
+Open: a stale record reads as Wird geprüft until someone runs `design check`; nothing starts that check from Studio.
+
+As built (B249 serve records build-ready): Cause, proven by `libs/cli/src/lib/design/system/slow-run.spec.ts`: the
+slow runner of `design serve` (`startSlowRunner`) reran the slow rules and cached their results but never wrote a check
+record, so a part with a stale record kept its `stale-record` blocker (Wird geprüft) until someone ran `design check`;
+the spec fails on the old source with exactly that blocker. Fix: after each settled run the runner calls
+`recordSettledBuildReady` (`system/record-settled.ts`), which runs `recordBuildReady` for the run parts and every part
+that embeds one (all parts when the product itself reran) with `partActionFailuresOf` and `declaredPartActionsOf`, as
+`design check` does. The open points and rule problems come from the open-points worker as data
+(`buildReadyDataInWorker`); the action checks stay on the main thread, because they start a design server and
+`createDesignServer` calls `process.chdir`, which a worker refuses. An open sketch or direct edit is an open point, so
+`recordBuildReady` writes no record for it. Commit: see git log "Record build-ready when the serve slow run settles".
+Verified: both spec cases fail without the record call and pass with it (one through the worker and the real declared
+actions read); tsc, eslint, 122 related spec files, spec:stress 4/4. Not verified: a live `design serve` on the repo
+design (would rewrite the shared ready.json); the action check of a linked part inside serve (starts a harness and a
+design server per stale part); products without a `harness` still never run the slow runner, so their parts stay
+pending in serve.

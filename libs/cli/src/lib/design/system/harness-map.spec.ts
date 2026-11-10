@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DesignHarness, DESIGN_DIR } from '../design-config';
+import { DesignHarness, DESIGN_DIR, readConfig } from '../design-config';
 import { designCompare } from './compare-command';
 import { harnessProblemOf } from './harness-config';
 import { designHarness } from './harness-command';
@@ -16,6 +16,8 @@ import { goMarkOf, goPartOf } from './part-go';
 import { writePartRecord } from './part-ready';
 import { resolveProduct } from './resolve-product';
 import { designTask } from './task-command';
+import { checkSystemRendered } from './check-system';
+import { designReady } from './ready-command';
 
 const HARNESS: DesignHarness = { app: 'apps/app-a', map: 'apps/app-a/src/harness/parts.ts' };
 
@@ -236,6 +238,60 @@ describe('task --verify and the app stylesheet', () => {
     expect(await verify("-@source inline('w-12');\n+@source inline('w-12 w-128');\n")).toBe(0);
     expect(await verify("-@source inline('w-12');\n+@source inline('w-12');\n+body { margin: 0; }\n")).toBe(1);
     expect(lines).toContain(`  ${stylesheet}`);
+  });
+});
+
+describe('design check and design ready with a stale harness map', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it('design check regenerates the stale map', async () => {
+    vi.stubEnv('CI', '1');
+    const lines = output();
+    const { target, map } = checkout();
+
+    await checkSystemRendered({
+      target,
+      config: readConfig(target) ?? {},
+      products: ['app-a'],
+      part: 'components/chip',
+      chromiumOf: async () => null,
+    });
+
+    expect(readFileSync(map, 'utf8')).toContain("'components/chip'");
+    expect(lines).toContain('REGENERATED app-a: the stale harness map');
+    expect(harness(target, '--check')).toBe(0);
+  }, 60_000);
+
+  it('design ready regenerates the stale map, and refuses with the regenerate command when it cannot write it', async () => {
+    const lines = output();
+    const { target, map } = checkout();
+    const ready = () =>
+      designReady({
+        target,
+        argv: ['components/nope', '--product', 'app-a', '--by', 'model'],
+        invocation: 'et design',
+      });
+
+    await ready();
+
+    expect(readFileSync(map, 'utf8')).toContain("'components/chip'");
+    expect(lines).toContain('regenerated the stale harness map');
+
+    const blocked = checkout();
+
+    blocked.write('apps/app-a/src/harness/parts.ts/blocker', '');
+
+    expect(
+      await designReady({
+        target: blocked.target,
+        argv: ['components/chip', '--product', 'app-a', '--by', 'model'],
+        invocation: 'et design',
+      }),
+    ).toBe(1);
+    expect(lines.join('\n')).toContain('run et design harness --product app-a');
   });
 });
 

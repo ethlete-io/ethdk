@@ -82,8 +82,9 @@ import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { PageShell, PageShellAction } from './page-shell';
 import { createExceptionStore } from './exception-store';
 import { SystemPageComponent } from '../design-parts/system-page/system-page.component';
-import { PartApprovalComponent } from './part-approval.component';
-import { openPointGroupsOf } from './open-points';
+import { buildReadyStatusOf, openPointGroupsOf } from './open-points';
+import { BuildReadyStatus } from '../design-parts/system-page/build-ready-footer.component';
+import { OpenPointGroup } from '../design-parts/system-page/system-page-sample';
 import { partOpenPoints$ } from '../../host/design-open-points';
 import { openExceptionsOf } from '../../host/design-exceptions';
 import { OpenPointsChipComponent } from '../design-parts/system-page/open-points-chip.component';
@@ -99,6 +100,11 @@ type Reading = { products: ListedProduct[]; error: string | null };
 /** A product switch keeps the old read until the new product answers; that read must not show. */
 const itemsOf = <T>(read: { product: string; items: T[] } | null, product: string | undefined) =>
   read && read.product === product ? read.items : null;
+
+const NO_OPEN_POINTS: { groups: OpenPointGroup[]; buildReady: BuildReadyStatus | null } = {
+  groups: [],
+  buildReady: null,
+};
 
 const PART_ZOOM_CHIP_CLASS = 'absolute right-space-3 bottom-space-3';
 
@@ -135,15 +141,6 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             <p [class]="NOTE" data-sketch-missing>{{ EMPTY_LABELS.sketchMissing }}</p>
           } @else if (part(); as partShown) {
             <div class="absolute top-space-3 right-space-3 z-1 flex gap-2">
-              @if (port(); as port) {
-                <ethlete-part-approval
-                  [port]="port"
-                  [product]="product()?.name ?? ''"
-                  [part]="partShown.key"
-                  [revision]="allRevision()"
-                  (approve)="approvals.set(approvals() + 1)"
-                />
-              }
               @if (exceptions.error(); as message) {
                 <span
                   [etProvideColor]="errorTheme()"
@@ -182,6 +179,8 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
                 [groups]="openPointGroups()"
                 [exceptions]="openExceptions()"
                 [missingShots]="failedShots.count()"
+                [buildReady]="buildReady()"
+                (openEditSketch)="openEditSketch(partShown.key)"
                 (approveException)="approveException(partShown.key, $event)"
               />
             </div>
@@ -353,7 +352,6 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     StartComponent,
     InventoryViewComponent,
     SystemPageComponent,
-    PartApprovalComponent,
     OpenPointsChipComponent,
     CommentDraftComponent,
   ],
@@ -392,8 +390,7 @@ export class SystemViewComponent {
   private callsRevision = computed(() => this.lists().calls);
   private sketchesRevision = computed(() => this.lists().sketches);
   private flowsRevision = computed(() => this.lists().flows);
-  protected allRevision = computed(() => this.lists().all);
-  protected approvals = signal(0);
+  public allRevision = computed(() => this.lists().all);
 
   protected readonly NOTE = NOTE;
   protected readonly PART_ZOOM_CHIP_CLASS = PART_ZOOM_CHIP_CLASS;
@@ -769,21 +766,25 @@ export class SystemViewComponent {
         const product = this.product()?.name;
         const part = this.part()?.key;
 
-        return port && product && part
-          ? { address: { port, product }, part, revision: this.allRevision() + this.approvals() }
-          : null;
+        return port && product && part ? { address: { port, product }, part, revision: this.allRevision() } : null;
       }),
     ).pipe(
       keptRead$({
-        read: (asked) => (asked ? partOpenPoints$(asked.address, asked.part).pipe(map(openPointGroupsOf)) : of([])),
-        empty: [] as ReturnType<typeof openPointGroupsOf>,
+        read: (asked) =>
+          asked
+            ? partOpenPoints$(asked.address, asked.part).pipe(
+                map((answer) => ({ groups: openPointGroupsOf(answer), buildReady: buildReadyStatusOf(answer) })),
+              )
+            : of(NO_OPEN_POINTS),
+        empty: NO_OPEN_POINTS,
         subjectOf: (asked) => asked && `${asked.address.port}/${asked.address.product}/${asked.part}`,
       }),
     ),
     { initialValue: null },
   );
 
-  protected openPointGroups = computed(() => this.openPointReads()?.items ?? []);
+  protected openPointGroups = computed(() => this.openPointReads()?.items.groups ?? []);
+  protected buildReady = computed(() => this.openPointReads()?.items.buildReady ?? null);
 
   protected openExceptions = computed(() => {
     const part = this.part()?.key;
@@ -1214,6 +1215,10 @@ export class SystemViewComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
+  }
+
+  protected openEditSketch(part: string) {
+    this.activate(sketchKeyOf(`${part}@edit`));
   }
 
   private openFirstSketch() {

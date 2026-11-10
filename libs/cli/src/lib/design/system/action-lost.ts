@@ -1,7 +1,7 @@
 import { resolve } from 'path';
 import { DesignConfig } from '../design-config';
 import { ACTION_LOST_RULE } from './build-ready-contract';
-import { READY_FILE, readReady } from './part-ready';
+import { READY_FILE, readRecordedActions } from './part-ready';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { productModuleIdOf } from './system-modules';
@@ -101,13 +101,13 @@ export const actionLostOf = (options: {
 }): Problem[] => {
   const { product, declared, invocation } = options;
 
-  return Object.entries(readReady(product.dir))
+  return Object.entries(readRecordedActions(product.dir))
     .filter(([part]) => !options.part || part === options.part)
     .flatMap(([part, record]) => {
       const file =
         product.parts.find((candidate) => partKeyOf(candidate) === part)?.file ?? resolve(product.dir, READY_FILE);
 
-      return (record.actions ?? [])
+      return record.actions
         .filter((key) => !declared.has(key))
         .map((key) => ({
           rule: ACTION_LOST_RULE,
@@ -128,7 +128,7 @@ export const actionLostProblemsOf = async (options: {
   load?: PartModuleLoader;
   warm?: WarmDraw;
 }) => {
-  const recorded = Object.values(readReady(options.product.dir)).some((record) => (record.actions ?? []).length > 0);
+  const recorded = Object.values(readRecordedActions(options.product.dir)).some((record) => record.actions.length > 0);
 
   if (!recorded) return [];
 
@@ -147,5 +147,13 @@ export type GoActionsOf = (options: {
   part: string;
 }) => Promise<string[] | string>;
 
-export const goActionsOf: GoActionsOf = ({ target, config, product, part }) =>
-  withPartLoader({ target, config }, (load) => partActionsOf({ load, product, part }));
+/** Reads the declared action keys of a part on a design server, or why not; the check record holds them. */
+export const declaredPartActionsOf = (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  part: string;
+  warm?: WarmDraw;
+}) => withPartLoader(options, (load) => partActionsOf({ load, product: options.product, part: options.part }));
+
+export const goActionsOf: GoActionsOf = declaredPartActionsOf;

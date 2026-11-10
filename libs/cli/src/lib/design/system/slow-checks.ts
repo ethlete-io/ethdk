@@ -14,7 +14,7 @@ import {
 } from './build-ready-contract';
 import { DesignHash, designHashOf, designHolds, FileHashes, fileHashesOf, hashOfFiles, sha16 } from './design-hash';
 import { harnessOf } from './harness-map';
-import { READY_FILE, readReady } from './part-ready';
+import { READY_FILE, readRecordedActions } from './part-ready';
 import { Problem } from './problem';
 import { repoRootOf } from './reachable-files';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
@@ -246,7 +246,7 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
 };
 
 const actionsRecordedIn = (product: ResolvedProduct) =>
-  Object.values(readReady(product.dir)).some((record) => (record.actions ?? []).length > 0);
+  Object.values(readRecordedActions(product.dir)).some((record) => record.actions.length > 0);
 
 const productInputsOf = (context: PartContext, parts: Record<string, SlowInputs>): SlowInputs => {
   const { product, root, harness, base } = context;

@@ -13,6 +13,7 @@ import { rememberedView } from '../studio-view/remembered';
 import { FlowViewComponent } from './flow-view.component';
 import { SketchViewComponent } from './sketch-view.component';
 import { SystemViewComponent } from './system-view.component';
+import { OpenPointsChipComponent } from '../design-parts/system-page/open-points-chip.component';
 
 const watchChannels: { onmessage: () => void }[] = [];
 
@@ -1450,6 +1451,46 @@ describe('SystemViewComponent on a tree pick', () => {
     expect(rememberedView().systemEntry).toBe('elements/rating');
     expect(element.querySelector('ethlete-open-points-chip')).not.toBeNull();
     expect(element.querySelector('ethlete-sketch-view')).toBeNull();
+  });
+
+  it('shows a direct edit as a build-ready blocker without a Go button and opens the edit sketch only on request', async () => {
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/open-points'))
+        return json({
+          points: [{ kind: 'direct-edit', sketch: 'elements/rating@edit' }],
+          buildReady: { ready: false, blockers: [{ kind: 'open-point', text: 'changed outside a sketch' }] },
+        });
+      if (url.includes('/__design/sketches')) return json({ sketches: [EDIT], unreadable: [] });
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([CALL]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
+    const element: HTMLElement = fixture.nativeElement;
+    const chip = fixture.debugElement.query(By.directive(OpenPointsChipComponent));
+
+    expect(chip.componentInstance.buildReady()).toEqual({
+      state: 'blocked',
+      blockers: [{ kind: 'direct-edit', text: 'Bild ohne Sketch geändert' }],
+    });
+    expect(element.querySelector('ethlete-sketch-view')).toBeNull();
+    expect(element.querySelector('ethlete-part-approval')).toBeNull();
+
+    element.querySelector<HTMLButtonElement>('[data-open-points-chip]')?.click();
+    await settle(fixture);
+
+    const popover = document.querySelector('ethlete-open-points-popover');
+
+    expect(popover?.querySelector('ethlete-build-ready-footer')?.textContent).toContain('Nicht baubereit (1)');
+
+    chip.componentInstance.openEditSketch.emit({ kind: 'direct-edit', text: 'Bild ohne Sketch geändert' });
+    await settle(fixture);
+
+    expect(rememberedView().systemEntry).toBe('sketch:elements/rating@edit');
+    expect(element.querySelector('ethlete-sketch-view')).not.toBeNull();
   });
 
   it('opens the sketch view on a sketch row whose old variant fails to render', async () => {

@@ -1198,17 +1198,34 @@ const CASES = [
       for (let click = 1; click <= 4; click++) {
         await chip.click();
         await page.waitForTimeout(SETTLE_MS);
+        if (click === 1)
+          await page
+            .locator('ethlete-build-ready-footer et-badge')
+            .first()
+            .waitFor({ timeout: 20000 })
+            .catch(() => undefined);
         steps.push(
           await page.evaluate(() => ({
             pressed: document.querySelector('[data-open-points-chip]')?.getAttribute('aria-pressed') === 'true',
             open: !!document.querySelector('[role="dialog"][aria-label="Offene Punkte"]'),
+            status: document.querySelector('ethlete-build-ready-footer et-badge')?.textContent?.trim() ?? null,
+            go: [...document.querySelectorAll('[role="dialog"] button')].some((button) =>
+              button.textContent?.includes('Go geben'),
+            ),
           })),
         );
       }
 
-      const ok = steps.every((step, index) => step.pressed === step.open && step.open === (index % 2 === 0));
+      const buildReady = /^(Baubereit|Nicht baubereit \(\d+\)|Wird geprüft)$/.test(steps[0].status ?? '');
+      const ok =
+        buildReady &&
+        !steps[0].go &&
+        steps.every((step, index) => step.pressed === step.open && step.open === (index % 2 === 0));
 
-      return { ok, detail: steps.map((step) => `${+step.pressed}/${+step.open}`).join(' ') };
+      return {
+        ok,
+        detail: `${steps.map((step) => `${+step.pressed}/${+step.open}`).join(' ')} status=${steps[0].status} go=${steps[0].go}`,
+      };
     },
   },
   {
