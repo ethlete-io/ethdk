@@ -4031,6 +4031,24 @@ one mechanism (rows moved by the quick listing) and marked timing budgets NOT ME
 and the case printed only a count. Tool fix; the field red itself is not reproduced, so whether it was this race, a
 Vite `full-reload` or a retry `src` is not verified - the next red names it.
 
+As built (679 backlog, every count-only canvas case lists its events): one helper in `canvas.e2e.mjs`, `eventLog()`,
+records each event behind a count (kind, subject URL or key, detail, time) and prints one line per event on failure:
+`<ms since case start> ms <kind> <path+query or key>: <detail>`. A pass prints nothing new. Inventory: 8 count-only
+cases; 7 now list their events: open points once (each open-points request and switch), stored pictures in the first
+frame (each unpainted picture and its shot requests), frame count through a sketch edit (each count change, lost
+picture and listing), page switch timings (each frame painted or not, with src and state, and each shot), listing
+refresh (the 679 re-navigations moved onto the helper, plus refresh writes and each 150px frame with key and iframe
+heights), Aktuell iframes (each listing response and each iframe/row add or remove), first load (the B470 aborts moved
+onto the helper, plus each created iframe with key, time, src and load). Left out: "a sketch first paints the frame
+count it settles on", an `open` case (B345) whose cause is known. Bites (temporary, removed): open points expecting 2
+per switch listed both requests (`130 ms open-points request /__design/open-points?...agent-logos: switch 1`); an
+iframe removed and re-inserted in the Aktuell case listed `collapsed removed <iframe>` and `collapsed added <iframe>`
+with src between the listings; the 680 src flip on first load listed `4493 ms aborted /frame.html?...: net::ERR_ABORTED,
+navigation, initiator about:blank, iframe src then /frame.html?...`, the initiator in whole (the old helper cut URLs at
+160 chars; the new one cuts nothing). Runs: the 7 cases plain pass, with `--hold-listings 14000` pass, and the perf case
+(page switch) passes with `--perf`. Not verified: the failure output of the stored pictures, sketch edit, page switch
+and listing refresh cases (not bitten).
+
 680\. Builder (2026-11-10, Mac night, push:suite at 220e4d6b5, B470): the Sketches case "first load creates one iframe
 per frame and aborts no frame request" failed once in the repeat gate (pass, fail, pass): `aborted requests of shown
 frames 2 of 2 (must be 0)`, visible frames loaded 25.7 s after reload, 54.7 s for the case. Cause unknown: the case

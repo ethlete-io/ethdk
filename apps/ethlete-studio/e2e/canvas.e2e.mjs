@@ -603,6 +603,34 @@ const srcChange = (from, to) => {
   return keys.length ? `${side(before)} -> ${side(after)}` : `same src ${after.pathname}`;
 };
 
+const eventUrl = (url) =>
+  URL.canParse(url) && /^https?:/u.test(url) ? new URL(url).pathname + new URL(url).search : String(url);
+
+const eventLog = (startedAt = Date.now()) => {
+  const events = [];
+
+  return {
+    events,
+    restart: (at = Date.now()) => {
+      startedAt = at;
+    },
+    add: (kind, subject, detail = '', at = Date.now()) => {
+      events.push({ at, kind, subject, detail });
+    },
+    lines: async (pick = () => true) => {
+      const picked = events.filter(pick).sort((a, b) => a.at - b.at);
+      const details = await Promise.all(picked.map((event) => event.detail));
+
+      return picked
+        .map(
+          (event, i) =>
+            `\n  ${Math.round(event.at - startedAt)} ms ${event.kind} ${eventUrl(event.subject)}${details[i] ? `: ${details[i]}` : ''}`,
+        )
+        .join('');
+    },
+  };
+};
+
 const settled = async (page, selector) => {
   await listingAnswered(page);
   let last = '';
@@ -1171,9 +1199,12 @@ const CASES = [
     pages: ['System'],
     run: async (page) => {
       const asked = [];
+      const log = eventLog();
+      let switched = 0;
       const count = (request) => {
-        if (request.url().includes('/__design/open-points?'))
-          asked.push(new URL(request.url()).searchParams.get('part'));
+        if (!request.url().includes('/__design/open-points?')) return;
+        asked.push(new URL(request.url()).searchParams.get('part'));
+        log.add('open-points request', request.url(), `switch ${switched}`);
       };
       const leaves = page.locator('[role="treeitem"][data-kind="leaf"]:not([data-selected])');
 
@@ -1185,6 +1216,8 @@ const CASES = [
 
       for (let step = 0; step < 2; step++) {
         asked.length = 0;
+        switched = step + 1;
+        log.add('switch', `leaf ${step}`);
         await leaves.nth(step).click();
         await page.waitForTimeout(2500);
         counts.push([...asked]);
@@ -1194,7 +1227,10 @@ const CASES = [
 
       const ok = counts.every((parts) => parts.length === 1);
 
-      return { ok, detail: counts.map((parts) => `${parts.length} (${parts.join(', ')})`).join(' / ') };
+      return {
+        ok,
+        detail: `${counts.map((parts) => `${parts.length} (${parts.join(', ')})`).join(' / ')}${ok ? '' : await log.lines()}`,
+      };
     },
   },
   {
@@ -1263,21 +1299,53 @@ const CASES = [
       if (texts.length < 2) return { ok: false, detail: 'fewer than two parts in the tree' };
 
       const [first, second] = texts;
-
-      await open(first);
-      const seen = new Set((await loadAll()).filter((picture) => picture.loaded).map(({ src }) => unranked(src)));
-
-      await open(second);
-      await loadAll();
-
-      const back = await firstPaint(first);
-      const stored = back.shown.filter(({ src }) => seen.has(unranked(src)));
-      const empty = stored.filter((picture) => !picture.loaded);
-
-      return {
-        ok: seen.size > 0 && stored.length > 0 && empty.length === 0,
-        detail: `${first} <- ${second}: ${stored.length - empty.length}/${stored.length} stored pictures painted in rAF ${back.frames} (+${Math.round(back.ms)} ms), ${seen.size} seen`,
+      const log = eventLog();
+      const shotKey = (url) => unranked(eventUrl(new URL(url, 'http://host').href));
+      const onShot = (kind) => (request) => {
+        if (!request.url().includes('/__design/shot?')) return;
+        log.add(
+          kind,
+          request.url(),
+          kind === 'shot failed'
+            ? request.failure()?.errorText
+            : kind === 'shot request'
+              ? ''
+              : `${request.timing().responseEnd >= 0 ? Math.round(request.timing().responseEnd) : '-'} ms response end`,
+        );
       };
+      const listeners = {
+        request: onShot('shot request'),
+        requestfinished: onShot('shot done'),
+        requestfailed: onShot('shot failed'),
+      };
+
+      Object.entries(listeners).forEach(([event, listener]) => page.on(event, listener));
+
+      try {
+        await open(first);
+        const seen = new Set((await loadAll()).filter((picture) => picture.loaded).map(({ src }) => unranked(src)));
+
+        log.add('open', second);
+        await open(second);
+        await loadAll();
+
+        log.add('back to', first);
+        const back = await firstPaint(first);
+        const stored = back.shown.filter(({ src }) => seen.has(unranked(src)));
+        const empty = stored.filter((picture) => !picture.loaded);
+        const ok = seen.size > 0 && stored.length > 0 && empty.length === 0;
+
+        empty.forEach((picture) => log.add('not painted', picture.src, `first paint rAF ${back.frames}`));
+
+        const emptyKeys = new Set(empty.map(({ src }) => shotKey(src)));
+
+        return {
+          ok,
+          detail: `${first} <- ${second}: ${stored.length - empty.length}/${stored.length} stored pictures painted in rAF ${back.frames} (+${Math.round(back.ms)} ms), ${seen.size} seen${ok ? '' : await log.lines((event) => !event.subject.includes('/__design/shot?') || emptyKeys.has(shotKey(event.subject)))}`,
+        };
+      } finally {
+        Object.entries(listeners).forEach(([event, listener]) => page.off(event, listener));
+      }
     },
   },
   {
@@ -1506,19 +1574,32 @@ const CASES = [
       const original = readFileSync(stylesheet, 'utf8');
       const counts = new Set();
       const lost = new Set();
+      const log = eventLog();
+      const onListing = (response) => {
+        if (response.url().includes('/__design/sketches?')) log.add('listing', response.url(), `${response.status()}`);
+      };
+      let lastCount = settledCount;
 
+      page.on('response', onListing);
       try {
+        log.restart();
         writeFileSync(stylesheet, `${original}\n.st-shell { outline: 1px solid rgb(255 0 0); }\n`);
         for (const until = Date.now() + WAIT_MS; Date.now() < until;) {
           const cells = await sketchCells(page);
 
+          if (cells.length !== lastCount) log.add('frame count', `${lastCount} -> ${cells.length}`);
+          lastCount = cells.length;
           counts.add(cells.length);
           cells
-            .filter((cell) => cell.visible && !cell.shows && pictured.has(cell.key))
-            .forEach((cell) => lost.add(cell.key));
+            .filter((cell) => cell.visible && !cell.shows && pictured.has(cell.key) && !lost.has(cell.key))
+            .forEach((cell) => {
+              lost.add(cell.key);
+              log.add('lost picture', cell.key);
+            });
           await page.waitForTimeout(100);
         }
       } finally {
+        page.off('response', onListing);
         writeFileSync(stylesheet, original);
       }
 
@@ -1530,7 +1611,9 @@ const CASES = [
 
       return {
         ok: faults.length === 0,
-        detail: faults.join('; ') || `${settledCount} frames through the edit, ${pictured.size} pictures kept`,
+        detail: faults.length
+          ? `${faults.join('; ')}${await log.lines()}`
+          : `${settledCount} frames through the edit, ${pictured.size} pictures kept`,
       };
     },
   },
@@ -1654,6 +1737,24 @@ const CASES = [
                 shotsOf(frame).some((img) => img.complete && img.naturalWidth > 0 && !img.matches('.opacity-0'));
               const started = performance.now();
               const times = {};
+              const paintedAt = new Map();
+              const sourceOf = (frame) => {
+                const iframe = frame.querySelector('iframe');
+                const img = shotsOf(frame)[0];
+
+                if (iframe)
+                  return {
+                    src: iframe.getAttribute('src') ?? 'iframe without src',
+                    state: [...iframe.classList].includes('opacity-0') ? 'iframe opacity-0' : 'iframe shown',
+                  };
+                if (img)
+                  return {
+                    src: img.getAttribute('src'),
+                    state: `img complete ${img.complete}, width ${img.naturalWidth}${img.matches('.opacity-0') ? ', opacity-0' : ''}`,
+                  };
+
+                return { src: 'no iframe or picture', state: '' };
+              };
               const sample = () => {
                 const now = performance.now() - started;
                 const frames = [...document.querySelectorAll('ethlete-canvas-frame')].filter(
@@ -1662,6 +1763,7 @@ const CASES = [
                 );
                 const painted = frames.filter(isPainted);
 
+                painted.forEach((frame) => paintedAt.has(frame) || paintedAt.set(frame, now));
                 if (frames.length > 0) times.mounted ??= now;
                 if (painted.length > 0) times.first ??= now;
                 if (frames.length > 0 && painted.length === frames.length) {
@@ -1681,6 +1783,11 @@ const CASES = [
                     dom: `${marked.length} marked img/iframe, ${document.querySelectorAll('ethlete-canvas-frame').length} canvas frames, first in ${chain.slice(0, 6).join('<')}; shots ${[...document.querySelectorAll('img[src*="/__design/shot?"]')].map((img) => new URL(img.src).searchParams.get('part')).slice(0, 3)}; ${[...document.querySelectorAll('[role="treeitem"]')].filter((row) => row.textContent.trim() === part.split('/')[1]).map((row) => `leaf ${row.dataset.kind}${row.hasAttribute('data-selected') ? ' selected' : ''}`)}; views ${[...new Set([...document.querySelectorAll('[class*="view"], ethlete-system-view *')].map((node) => node.localName).filter((tag) => tag.startsWith('ethlete-')))].slice(0, 25)}`,
                     frames: frames.length,
                     painted: painted.length,
+                    frameEvents: frames.map((frame) => ({
+                      ms: paintedAt.get(frame) ?? now,
+                      painted: paintedAt.has(frame),
+                      ...sourceOf(frame),
+                    })),
                     clickedAt: performance.timeOrigin + started,
                   });
                 } else requestAnimationFrame(sample);
@@ -1709,7 +1816,8 @@ const CASES = [
           const asked = shots
             .slice(firstShot)
             .filter((shot) => shot.url.includes(marker))
-            .map(({ finishedAt, timing, source }) => ({
+            .map(({ url, finishedAt, timing, source }) => ({
+              url,
               ms: Math.round(finishedAt - result.clickedAt),
               wait: Math.round(timing.responseStart - timing.requestStart),
               source,
@@ -1717,6 +1825,14 @@ const CASES = [
           const painted = result.all !== undefined;
           const ms = result.all ?? WAIT_MS;
           const mounted = result.mounted ?? ms;
+          const log = eventLog(result.clickedAt);
+
+          (result.frameEvents ?? []).forEach((frame) =>
+            log.add(frame.painted ? 'painted' : 'not painted', frame.src, frame.state, result.clickedAt + frame.ms),
+          );
+          asked.forEach((shot) =>
+            log.add('shot finished', shot.url, `${shot.source}, wait ${shot.wait} ms`, result.clickedAt + shot.ms),
+          );
 
           rows.push({
             from,
@@ -1730,6 +1846,7 @@ const CASES = [
             paintedFrames: result.painted,
             dom: result.dom,
             asked,
+            events: painted ? '' : await log.lines(),
           });
           await recordPageSwitch({
             file: timingsFileOf(root),
@@ -1755,7 +1872,7 @@ const CASES = [
       const detail = rows
         .map(
           (row) =>
-            `${row.from.split('/')[1]}->${row.to.split('/')[1]} ${row.seen ? 'seen' : 'first'}: mount ${round(row.mounted)}, first ${round(row.first)}, all ${row.painted ? round(row.ms) : `NOT (${row.paintedFrames} painted; ${row.dom})`} ms (${row.frames} frames; ${row.asked.length} shots${row.asked.length ? ` ${row.asked.map((shot) => `${shot.source} +${shot.ms}/${shot.wait}`).join(' ')}` : ''})`,
+            `${row.from.split('/')[1]}->${row.to.split('/')[1]} ${row.seen ? 'seen' : 'first'}: mount ${round(row.mounted)}, first ${round(row.first)}, all ${row.painted ? round(row.ms) : `NOT (${row.paintedFrames} painted; ${row.dom})`} ms (${row.frames} frames; ${row.asked.length} shots${row.asked.length ? ` ${row.asked.map((shot) => `${shot.source} +${shot.ms}/${shot.wait}`).join(' ')}` : ''})${row.events}`,
         )
         .join(' | ');
 
@@ -2404,15 +2521,12 @@ const CASES = [
 
       if (unpainted) return { ok: false, detail: unpainted };
 
-      const start = performance.now();
+      const log = eventLog();
       const known = new Set(page.frames());
       const srcs = new Map(page.frames().map((frame) => [frame, frame.url()]));
-      const navigations = [];
       const onNavigated = (frame) => {
         if (frame === page.mainFrame()) return;
-        navigations.push(
-          `${Math.round(performance.now() - start)} ms ${srcChange(srcs.get(frame), frame.url())}${known.has(frame) ? '' : ' (new iframe)'}`,
-        );
+        log.add('navigation', srcChange(srcs.get(frame), frame.url()), known.has(frame) ? '' : 'new iframe');
         srcs.set(frame, frame.url());
       };
       let flip = false;
@@ -2421,6 +2535,7 @@ const CASES = [
 
       const timer = setInterval(() => {
         flip = !flip;
+        log.add('refresh write', 'sketch.json');
         writeFileSync(sketchJson, original.trimEnd() + (flip ? '\n\n' : '\n'));
       }, 1000);
 
@@ -2432,17 +2547,30 @@ const CASES = [
 
       const heights = await page.evaluate(() =>
         [...document.querySelectorAll('[data-sk-frame]')].map((frame) => ({
+          key: frame.getAttribute('data-sk-frame'),
           frame: Math.round(frame.getBoundingClientRect().height),
-          iframes: [...frame.querySelectorAll('iframe')].map((iframe) => iframe.offsetHeight),
+          iframes: [...frame.querySelectorAll('iframe')].map((iframe) => ({
+            height: iframe.offsetHeight,
+            src: iframe.getAttribute('src') ?? 'no src',
+          })),
         })),
       );
-      const placeholder = heights.filter((row) => row.frame <= 0 || row.iframes.some((height) => height === 150));
+      const placeholder = heights.filter((row) => row.frame <= 0 || row.iframes.some(({ height }) => height === 150));
+      const navigations = log.events.filter((event) => event.kind === 'navigation');
+
+      placeholder.forEach((row) =>
+        log.add(
+          'placeholder',
+          row.key,
+          `frame ${row.frame}px, iframes ${row.iframes.map(({ height, src }) => `${height}px ${eventUrl(src)}`).join(', ') || 'none'}`,
+        ),
+      );
 
       const ok = heights.length > 0 && navigations.length === 0 && placeholder.length === 0;
 
       return {
         ok,
-        detail: `frames ${heights.length}, iframe re-navigations in 6 s ${navigations.length} (must be 0), frames with 150px placeholder or no height 1 s after the last refresh ${placeholder.length} (must be 0)${ok || !navigations.length ? '' : `; re-navigations: ${navigations.join('; ')}`}`,
+        detail: `frames ${heights.length}, iframe re-navigations in 6 s ${navigations.length} (must be 0), frames with 150px placeholder or no height 1 s after the last refresh ${placeholder.length} (must be 0)${ok ? '' : await log.lines()}`,
       };
     },
   },
@@ -2457,13 +2585,18 @@ const CASES = [
       const sketch = JSON.parse(base);
       const original = JSON.stringify({ ...sketch, variantInfo: { ...sketch.variantInfo, b: sketch.variantInfo.a } });
       const listings = { quick: 0, full: 0 };
+      const log = eventLog();
       const onResponse = (response) => {
         if (!response.url().includes('/__design/sketches?')) return;
-        listings[response.url().includes('unchanged=no') ? 'quick' : 'full'] += 1;
+        const kind = response.url().includes('unchanged=no') ? 'quick' : 'full';
+
+        listings[kind] += 1;
+        log.add(`${kind} listing`, response.url(), `${response.status()}`);
       };
       const refresh = async (content) => {
         listings.quick = 0;
         listings.full = 0;
+        log.add('write', 'sketch.json');
         writeFileSync(sketchJson, content);
         const deadline = Date.now() + FULL_COMPARE_MS;
 
@@ -2474,22 +2607,42 @@ const CASES = [
       };
       const watch = () =>
         page.evaluate(() => {
-          const record = { added: 0, removed: 0 };
+          const record = { added: 0, removed: 0, events: [] };
           const touches = (node) =>
             node instanceof Element &&
             (node.matches('[data-sk-row="b"], [data-sk-variant="b"], iframe') || !!node.querySelector('iframe'));
+          const note = (kind, node) => {
+            const iframe = node.matches('iframe') ? node : node.querySelector('iframe');
+            const keys = ['data-sk-row', 'data-sk-variant', 'data-sk-frame']
+              .filter((name) => node.hasAttribute(name))
+              .map((name) => `${name}=${node.getAttribute(name)}`);
+
+            record[kind] += 1;
+            record.events.push({
+              at: Date.now(),
+              kind,
+              subject: `<${node.localName}${keys.length ? ` ${keys.join(' ')}` : ''}>`,
+              detail: `iframe src ${iframe?.hasAttribute('src') ? ((url) => url.pathname + url.search)(new URL(iframe.getAttribute('src'), location.href)) : 'none'}`,
+            });
+          };
 
           window.__sameRow = record;
           window.__sameObserver?.disconnect();
           window.__sameObserver = new MutationObserver((mutations) => {
             for (const mutation of mutations) {
-              for (const node of mutation.addedNodes) if (touches(node)) record.added += 1;
-              for (const node of mutation.removedNodes) if (touches(node)) record.removed += 1;
+              for (const node of mutation.addedNodes) if (touches(node)) note('added', node);
+              for (const node of mutation.removedNodes) if (touches(node)) note('removed', node);
             }
           });
           window.__sameObserver.observe(document.body, { childList: true, subtree: true });
         });
-      const changes = () => page.evaluate(() => ({ ...window.__sameRow }));
+      const changes = async (phase) => {
+        const record = await page.evaluate(() => ({ ...window.__sameRow }));
+
+        record.events.forEach((event) => log.add(`${phase} ${event.kind}`, event.subject, event.detail, event.at));
+
+        return record;
+      };
 
       page.on('response', onResponse);
 
@@ -2507,7 +2660,7 @@ const CASES = [
 
         await watch();
         const collapsedListings = await refresh(original.trimEnd() + '\n\n');
-        const collapsed = await changes();
+        const collapsed = await changes('collapsed');
 
         await page.locator('[data-sk-same] button').first().click();
         await settle(page);
@@ -2518,7 +2671,7 @@ const CASES = [
         });
         await watch();
         const openListings = await refresh(original);
-        const open = await changes();
+        const open = await changes('open');
         const kept = await page.evaluate(() => {
           const now = [...document.querySelectorAll('[data-sk-row="b"] iframe, [data-sk-variant="b"] iframe')];
 
@@ -2530,17 +2683,18 @@ const CASES = [
         });
 
         const listed = (counts) => counts.quick > 0 && counts.full > 0;
+        const ok =
+          folded &&
+          listed(collapsedListings) &&
+          listed(openListings) &&
+          collapsed.added + collapsed.removed === 0 &&
+          open.added + open.removed === 0 &&
+          kept.before > 0 &&
+          kept.same;
 
         return {
-          ok:
-            folded &&
-            listed(collapsedListings) &&
-            listed(openListings) &&
-            collapsed.added + collapsed.removed === 0 &&
-            open.added + open.removed === 0 &&
-            kept.before > 0 &&
-            kept.same,
-          detail: `folded ${folded}; collapsed: listings ${JSON.stringify(collapsedListings)}, iframe/row adds ${collapsed.added} removes ${collapsed.removed} (must be 0); open: listings ${JSON.stringify(openListings)}, adds ${open.added} removes ${open.removed} (must be 0), iframes ${kept.before} kept ${kept.same}`,
+          ok,
+          detail: `folded ${folded}; collapsed: listings ${JSON.stringify(collapsedListings)}, iframe/row adds ${collapsed.added} removes ${collapsed.removed} (must be 0); open: listings ${JSON.stringify(openListings)}, adds ${open.added} removes ${open.removed} (must be 0), iframes ${kept.before} kept ${kept.same}${ok ? '' : await log.lines()}`,
         };
       } finally {
         page.off('response', onResponse);
@@ -2555,25 +2709,22 @@ const CASES = [
     listingMayPend: true,
     pages: ['Sketches'],
     run: async (page) => {
-      const aborted = [];
-      let reloadedAt = Date.now();
+      const log = eventLog();
       const onFailed = (request) => {
         if (request.resourceType() !== 'document' || request.frame() === page.mainFrame()) return;
 
         const frame = request.frame();
-        const entry = {
-          url: request.url(),
-          ms: Date.now() - reloadedAt,
-          error: request.failure()?.errorText ?? 'none',
-          navigation: request.isNavigationRequest(),
-          initiator: frame.url(),
-          iframeSrc: frame
+        const head = `${request.failure()?.errorText ?? 'none'}, ${request.isNavigationRequest() ? 'navigation' : 'subrequest'}, initiator ${eventUrl(frame.url())}`;
+
+        log.add(
+          'aborted',
+          request.url(),
+          frame
             .frameElement()
             .then((element) => element.getAttribute('src'))
-            .catch(() => 'detached'),
-        };
-
-        aborted.push(entry);
+            .catch(() => 'detached')
+            .then((src) => `${head}, iframe src then ${eventUrl(src ?? 'none')}`),
+        );
       };
 
       page.on('requestfailed', onFailed);
@@ -2582,7 +2733,7 @@ const CASES = [
         await page.addInitScript(() => {
           if (window.__frameLoad) return;
 
-          const record = { created: [], srcAt: new Map(), loadedAt: new Map() };
+          const record = { created: [], createdAt: new Map(), srcAt: new Map(), loadedAt: new Map() };
           const create = Document.prototype.createElement;
           const src = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'src');
           const setAttribute = Element.prototype.setAttribute;
@@ -2594,7 +2745,10 @@ const CASES = [
           Document.prototype.createElement = function (tag, ...rest) {
             const element = create.call(this, tag, ...rest);
 
-            if (element instanceof HTMLIFrameElement) record.created.push(element);
+            if (element instanceof HTMLIFrameElement) {
+              record.created.push(element);
+              record.createdAt.set(element, Date.now());
+            }
 
             return element;
           };
@@ -2622,7 +2776,7 @@ const CASES = [
             true,
           );
         });
-        reloadedAt = Date.now();
+        log.restart();
         await page.reload();
         await page.waitForFunction(({ CANVAS, FRAME }) => document.querySelector(CANVAS)?.querySelector(FRAME), {
           CANVAS,
@@ -2663,10 +2817,17 @@ const CASES = [
           const visible = iframes.filter(inView);
           const hidden = iframes.filter((iframe) => !inView(iframe));
 
+          const createdForShown = record.created.filter((iframe) => shownKeys.has(keyOf(iframe)));
+
           return {
             frames: iframes.length,
             created: record.created.length,
-            createdForShown: record.created.filter((iframe) => shownKeys.has(keyOf(iframe))).length,
+            createdForShown: createdForShown.length,
+            createdEvents: createdForShown.map((iframe) => ({
+              at: record.createdAt.get(iframe),
+              key: keyOf(iframe),
+              detail: `${iframe.isConnected ? 'connected' : 'detached'}, src ${iframe.getAttribute('src') ?? 'none'}${record.loadedAt.has(iframe) ? `, loaded ${Math.round(record.loadedAt.get(iframe))} ms after reload` : ', not loaded'}`,
+            })),
             urls: iframes.map((iframe) => iframe.src),
             visible: visible.length,
             visibleFirst: hidden.length === 0 || Math.max(...visible.map(srcAt)) <= Math.min(...hidden.map(srcAt)),
@@ -2674,23 +2835,18 @@ const CASES = [
             allLoadedMs: Math.round(Math.max(0, ...iframes.map((iframe) => record.loadedAt.get(iframe) ?? NaN))),
           };
         });
-        const shownList = aborted.filter((entry) => load.urls.includes(entry.url));
-        const shownAborts = shownList.length;
-        const short = (url) =>
-          (URL.canParse(url) && url.startsWith('http') ? new URL(url).pathname + new URL(url).search : url).slice(
-            0,
-            160,
-          );
-        const abortLines = await Promise.all(
-          shownList.map(
-            async (entry) =>
-              `\n  ${short(entry.url)} at ${entry.ms} ms: ${entry.error}, ${entry.navigation ? 'navigation' : 'subrequest'}, initiator ${short(entry.initiator)}, iframe src then ${short(String((await entry.iframeSrc) ?? 'none'))}`,
-          ),
-        );
+        const aborted = log.events.filter((event) => event.kind === 'aborted');
+        const shownAborts = aborted.filter((event) => load.urls.includes(event.subject)).length;
+        const createdOk = load.createdForShown === load.frames;
+
+        if (!createdOk)
+          load.createdEvents.forEach((event) => log.add('iframe created', event.key, event.detail, event.at));
+
+        const ok = stable >= 4 && load.frames > 0 && createdOk && shownAborts === 0;
 
         return {
-          ok: stable >= 4 && load.frames > 0 && load.createdForShown === load.frames && shownAborts === 0,
-          detail: `${stable >= 4 ? 'settled' : `not settled in ${WAIT_MS / 1000} s (${last} loaded)`}, iframes ${load.frames}, created for them ${load.createdForShown} (must equal), created in all ${load.created}, aborted requests of shown frames ${shownAborts} of ${aborted.length} (must be 0), ${load.visible} visible got src first ${load.visibleFirst}, visible loaded at ${load.visibleLoadedMs} ms, all at ${load.allLoadedMs} ms after reload${abortLines.join('')}`,
+          ok,
+          detail: `${stable >= 4 ? 'settled' : `not settled in ${WAIT_MS / 1000} s (${last} loaded)`}, iframes ${load.frames}, created for them ${load.createdForShown} (must equal), created in all ${load.created}, aborted requests of shown frames ${shownAborts} of ${aborted.length} (must be 0), ${load.visible} visible got src first ${load.visibleFirst}, visible loaded at ${load.visibleLoadedMs} ms, all at ${load.allLoadedMs} ms after reload${ok ? '' : await log.lines((event) => event.kind !== 'aborted' || load.urls.includes(event.subject))}`,
         };
       } finally {
         page.off('requestfailed', onFailed);
