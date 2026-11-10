@@ -4198,13 +4198,6 @@ a type error in `libs/bracket/src/lib/core/layout.ts` failed the step with TS232
 time on the real range origin/next..a3683f6ad (13 projects, cold export, load 3.6): 70 s, green. Not verified: a full
 `push:suite` run with the new step.
 
-689\. Builder (2026-11-10, B473 bite): a first bite with the type error in `libs/bracket/src/index.ts` passed the new
-step. Cause (bite): every lib `typecheck` target runs `tsc -p libs/<lib>/tsconfig.spec.json`, which includes only the
-specs and the files they import; `index.ts` and any other source that no spec reaches gets its type check only from
-`build` in CI. So the push:suite typecheck step does not catch a type error in unreached lib source. Tool fix
-(recommendation): each lib `typecheck` target also runs `tsc -p libs/<lib>/tsconfig.lib.json --noEmit` (`ngc` for the
-Angular libs), with a bite on `libs/bracket/src/index.ts`; measure the added time first.
-
 689\. Builder (2026-11-10, day shift, B473 bite, 9a2573e21): a first bite with a type error in
 `libs/bracket/src/index.ts` passed the new push:suite typecheck step. Cause (bitten): every lib `typecheck` target runs
 only `tsconfig.spec.json`, so it checks the specs and what they import; lib source that no spec reaches gets a type
