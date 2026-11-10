@@ -21,6 +21,16 @@ pub trait ConsoleRuntime: Runtime {}
 #[cfg(target_os = "windows")]
 impl<R: Runtime> ConsoleRuntime for R {}
 
+/// The smoke starts the bundle with its own `HOME`, where an unsigned bundle finds no keychain and the
+/// keychain prompt blocks the page before it paints.
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+pub fn secret_storage() -> tauri_runtime_cef::SecretStorage {
+    match std::env::var_os(SMOKE_VIEW_ENV) {
+        Some(_) => tauri_runtime_cef::SecretStorage::Mock,
+        None => tauri_runtime_cef::SecretStorage::Auto,
+    }
+}
+
 pub fn path<R: Runtime>(app: &AppHandle<R>) -> Option<PathBuf> {
     std::env::var_os(LOG_ENV)
         .filter(|value| !value.is_empty())
@@ -129,6 +139,7 @@ fn smoke_script(view: &str) -> String {
         r#"(() => {{
   const key = 'ethlete-studio.call-view';
   if (window.top !== window) return;
+  console.error('{SMOKE_MARKER} page loaded');
   if (localStorage.getItem(key) === null) localStorage.setItem(key, {view});
   const timer = setInterval(() => {{
     const live = document.querySelectorAll('ethlete-sketch-view iframe[data-state]').length;

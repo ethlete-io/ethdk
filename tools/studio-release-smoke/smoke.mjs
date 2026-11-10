@@ -1,6 +1,16 @@
 #!/usr/bin/env node
 import { execFileSync, spawn } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -19,8 +29,8 @@ bundle writes to its console log (ETHLETE_STUDIO_CONSOLE_LOG). Without --app it 
   --csp-from <rev>    build with the app.security block of tauri.conf.json at <rev> (the bite)
   --build-only        build, print the bundle path, do not run it
   --checkout <dir>    design checkout Studio opens (default: this repo)
-  --product <name>    design product (default: sdk)
-  --sketch <target>   sketch to open (default: components/button)
+  --product <name>    design product (default: the first product with a sketch)
+  --sketch <part>     part whose sketch to open (default: the first sketch of the product)
   --timeout <s>       how long the sketch may take to paint (default: 120)
   --record <file>     copy the console log the bundle wrote`);
   process.exit(0);
@@ -30,13 +40,26 @@ const CEF_CLI = '@tauri-apps/cli-cef@3.0.0-alpha.27';
 const LOG_ENV = 'ETHLETE_STUDIO_CONSOLE_LOG';
 const VIEW_ENV = 'ETHLETE_STUDIO_SMOKE_VIEW';
 const MARKER = '[studio-release-smoke]';
+const LOADED = `${MARKER} page loaded`;
+const PAINTED = `${MARKER} painted`;
+const LOAD_MS = 30_000;
 const CSP = 'Content Security Policy';
 const IDENTIFIER = 'io.ethlete.studio';
 const SETTLE_MS = 8000;
 
 const checkout = resolve(valueOf('--checkout', root));
-const product = valueOf('--product', 'sdk');
-const sketch = valueOf('--sketch', 'components/button');
+const sketchFolders = (name) => {
+  const dir = join(checkout, '.ethlete/design', name, 'sketches');
+
+  return existsSync(dir) ? readdirSync(dir).filter((folder) => existsSync(join(dir, folder, 'sketch.json'))) : [];
+};
+const product =
+  valueOf('--product') ??
+  readdirSync(join(checkout, '.ethlete/design')).find((name) => sketchFolders(name).length > 0) ??
+  'sdk';
+const sketch = valueOf('--sketch') ?? sketchFolders(product)[0]?.split('.')[0].replace('-', '/');
+
+if (!sketch) throw new Error(`no sketch in ${product}: pass --sketch <part> or open a sketch first`);
 const timeoutMs = Number(valueOf('--timeout', '120')) * 1000;
 const cspFrom = valueOf('--csp-from');
 const record = valueOf('--record');
@@ -168,20 +191,25 @@ const smoke = async (app) => {
     stdio: 'ignore',
   });
   let painted;
+  let loaded = false;
 
   try {
-    const until = Date.now() + timeoutMs;
+    const started = Date.now();
+    const until = started + timeoutMs;
 
     while (!painted && Date.now() < until) {
       await sleep(500);
-      painted = readLog(log)
-        .split('\n')
-        .find((line) => line.includes(MARKER));
+      const lines = readLog(log).split('\n');
+
+      loaded ||= lines.some((line) => line.includes(LOADED));
+      painted = lines.find((line) => line.includes(PAINTED));
+
+      if (!loaded && Date.now() - started > LOAD_MS) break;
     }
 
     if (painted) await sleep(SETTLE_MS);
 
-    return { painted: painted?.slice(painted.indexOf(MARKER) + MARKER.length).trim(), text: readLog(log) };
+    return { loaded, painted: painted?.slice(painted.indexOf(MARKER) + MARKER.length).trim(), text: readLog(log) };
   } finally {
     await stop(studio.pid);
     rmSync(home, { recursive: true, force: true });
@@ -215,7 +243,7 @@ if (args.includes('--build-only')) {
 }
 
 const locked = screenLocked();
-const { painted, text } = await smoke(app);
+const { loaded, painted, text } = await smoke(app);
 
 if (record) writeFileSync(record, text);
 
@@ -228,7 +256,10 @@ show('CSP refusal', refusals);
 show('console error', errors);
 
 const ok = Boolean(painted) && refusals.length === 0 && errors.length === 0;
-const notPainted = `no frame painted in ${timeoutMs / 1000} s${locked ? ' (the screen is locked)' : ''}`;
+const lockedNote = locked ? ' (the screen is locked)' : '';
+const notPainted = loaded
+  ? `no frame painted in ${timeoutMs / 1000} s${lockedNote}`
+  : `no page loaded in ${LOAD_MS / 1000} s (native dialog?)${lockedNote}`;
 
 console.log(
   `${ok ? 'PASS' : 'FAIL'}  ${product} ${sketch}: ${painted ?? notPainted}, ` +
