@@ -5,7 +5,9 @@ import { join } from 'path';
 import { pathToFileURL } from 'url';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readConfig } from './design-config';
+import { checkDesign } from './check';
 import {
+  callLintGateLinesOf,
   changedLintFilesOf,
   LINT_BASELINE_FILE,
   lintGateLinesOf,
@@ -185,5 +187,34 @@ describe('the design lint gate', { timeout: 60_000 }, () => {
     expect(Array.isArray(result) ? result : result.reason).toMatch(
       /no-non-null-assertion[^\n]*\nelements\/hero variant b adds lint warnings - fix them before a merge$/u,
     );
+  });
+
+  it('fails a changed call file with a warning over the calls baseline and lets it keep the old ones', async () => {
+    const target = acme();
+    const callsDir = join(target, '.ethlete', 'design', 'calls');
+    const fixture = join(callsDir, 'app', 'one', 'fixture.ts');
+    const rule = '@typescript-eslint/no-non-null-assertion';
+
+    mkdirSync(join(callsDir, 'app', 'one'), { recursive: true });
+    writeFileSync(fixture, PRELUDE + BANG);
+    writeFileSync(join(callsDir, LINT_BASELINE_FILE), JSON.stringify({ 'app/one/fixture.ts': { [rule]: 1 } }));
+    git(target, 'add', '-A');
+    git(target, 'commit', '-qm', 'call');
+
+    writeFileSync(fixture, PRELUDE + BANG + BANG.replace('plus', 'again'));
+
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    expect(await checkDesign({ target, argv: ['--call', 'app/one'], invocation: 'et design' })).toBe(1);
+    expect(errors.mock.calls.flat().join('\n')).toMatch(
+      /^LINT \.ethlete\/design\/calls\/app\/one\/fixture\.ts:6:\d+ @typescript-eslint\/no-non-null-assertion: .* \(2 in the file, the baseline allows 1\)$/mu,
+    );
+    expect(errors.mock.calls.flat().join('\n')).toContain(
+      'the calls add lint warnings - a call file adds none, fix them',
+    );
+
+    writeFileSync(fixture, PRELUDE + BANG);
+
+    expect(callLintGateLinesOf({ target, slug: 'app/one' })).toEqual([]);
   });
 });

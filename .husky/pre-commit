@@ -56,3 +56,11 @@ if [ -n "$lint_files" ]; then
   # shellcheck disable=SC2086
   node ./tools/scripts/lint-staged-files.mjs $lint_files
 fi
+
+# A staged .ethlete file fails here when eslint finds more than the committed lint-baseline.json above it allows.
+design_files=$(git diff --cached --name-only --diff-filter=ACM -- '.ethlete/*.ts')
+
+if [ -n "$design_files" ]; then
+  # shellcheck disable=SC2086
+  node ./tools/scripts/lint-staged-design.mjs $design_files
+fi

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, relative, resolve, sep } from 'path';
 import { spawnPlain } from '../plain-output';
+import { callsRootOf } from './design-config';
 import { addedBaselineNamesOf } from './system/baseline-history';
 import { sharedDirOf, Sketch, sourceFilesIn, variantDirOf } from './system/sketch/sketch';
 import { binaryOf, trim } from './typecheck';
@@ -212,4 +213,16 @@ export const lintGateLinesOf = (options: {
   for (const line of shrunk) console.log(line);
 
   return [...grownLintBaselineLinesOf(productDir), ...newLintLinesOf({ target, productDir, findings: findings ?? [] })];
+};
+
+/**
+ * The lint gate of the call files that differ from HEAD, of the call at `slug` only when given, against the calls'
+ * own baseline in `.ethlete/design/calls`.
+ */
+export const callLintGateLinesOf = (options: { target: string; slug?: string; shrink?: boolean }) => {
+  const { target, slug, shrink } = options;
+  const callsDir = callsRootOf(target);
+  const files = changedLintFilesOf({ target, productDir: slug ? resolve(callsDir, slug) : callsDir });
+
+  return lintGateLinesOf({ target, productDir: callsDir, files, shrink });
 };

@@ -7,7 +7,7 @@ import { callsRootOf, DEFAULT_PORT, DesignConfig, portOf, readConfig } from './d
 import { buildStampOf, serverProblemOf } from './stamp';
 import { hooksProblemOf } from './hooks-problem';
 import { holdStatus, writeStatus } from './status';
-import { changedLintFilesOf, lintGateLinesOf } from './design-lint';
+import { callLintGateLinesOf, changedLintFilesOf, lintGateLinesOf } from './design-lint';
 import { checkRules, checkSystemRendered } from './system/check-system';
 import { liveUncoveredOf, uncoveredFindingLineOf } from './system/live-uncovered';
 import { appCanonicalClassesOf, fixAppCanonicalClassesOf, fixCanonicalClassesOf } from './system/rules/canonical-class';
@@ -243,6 +243,8 @@ const typecheckSketchVariants = (target: string, fails: Fails) => {
   return code;
 };
 
+const CALLS_LINT_REFUSAL = 'the calls add lint warnings - a call file adds none, fix them';
+
 const runChecks = async (options: {
   target: string;
   flags: Flags;
@@ -283,6 +285,10 @@ const runChecks = async (options: {
       awaits.map((problem) => `${problem.rule} ${relative(target, problem.file)}: ${problem.message}`).join('\n'),
     );
   }
+
+  const callLint = callLintGateLinesOf({ target, slug, shrink: true });
+
+  if (callLint.length > 0) return fail([...callLint, CALLS_LINT_REFUSAL].join('\n'));
 
   if (tsconfig) {
     const result = typecheck({ target, tsconfig });
@@ -407,11 +413,21 @@ const lintedProducts = (options: { target: string; config: DesignConfig; product
   return code;
 };
 
+const lintedCalls = (target: string) => {
+  const lines = callLintGateLinesOf({ target, shrink: true });
+
+  for (const line of lines) console.error(line);
+  if (lines.length > 0) console.error(CALLS_LINT_REFUSAL);
+
+  return lines.length > 0 ? 1 : 0;
+};
+
 const renderedAndLinted = async (options: Parameters<typeof checkSystemRendered>[0]) => {
   const code = await checkSystemRendered(options);
   const lint = lintedProducts(options);
+  const calls = options.part ? 0 : lintedCalls(options.target);
 
-  return code === 0 ? lint : code;
+  return code === 0 ? lint || calls : code;
 };
 
 const fixAppClasses = (options: { target: string; config: DesignConfig; products: string[] }) => {
