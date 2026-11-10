@@ -3848,3 +3848,14 @@ same watch during one live `restart --process`.
 697 live bite (builder, 2026-11-10, 11:32): (a) the script answered the dialog and wrote the stopped job to the mailbox
 and `restart.log`: pass. (b) same session `claude-3@ethlete-sdk`, no new `claude-N`: pass. (c) `@ethlete_command` holds
 no prompt: fail, the stale value from 702, fixed in 663a568cd. (d) a new process (start time = restart time): pass.
+
+703\. Doc agent (2026-11-10, day shift): the human: "der builder schreibt btw schon wieder extrem viel im chat für
+mich. das ist eig doch verboten?" The builder pane (`claude-3@ethlete-sdk`, 11:48) shows full paragraphs to the human:
+the B480 options, a list of open items, "I removed B480 from my queue ...", "The push suite passed ... Now I push."
+The builder-agent skill forbids chat text between tool calls (Output section), and the human asked for this rule on
+2026-11-01 already. Suspect: the rule is only prose in the skill; after a restart or a long turn the session drifts back
+to the ste-clarity output style, which tells it to explain to the user. Nothing measures the chat text. Tool fix: a
+`Stop` hook that runs only when `ETHLETE_AGENT_ROLE=builder` and counts the assistant text of the turn outside tool
+calls; past one line it blocks the stop once with "builder: no chat text, send the report with SendMessage to the grill
+session" and logs the count to `restart.log` or the mailbox. Bite: a builder turn with a three-line chat reply gets the
+block; a turn with one closing line does not.
