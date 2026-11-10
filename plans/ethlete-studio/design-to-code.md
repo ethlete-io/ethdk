@@ -4091,3 +4091,10 @@ is gone; the spec already asserts that no `ethlete-part-approval` exists (47/47)
 in pre-push, and a slice subagent never runs pre-push, so the slice commit passed. Tool fix (builder default, tool
 backlog): pre-commit runs `lint:studio-label-specs` on staged spec files under `apps/ethlete-studio` (sub-second);
 bite: a staged spec that names a label the app no longer has is refused at commit.
+
+714\. Builder (2026-11-10, day shift, CI 42818705706 on 0a4e96f88): Unit tests red, only query
+`src/scenarios/auth-features.scenario.spec.ts:403` "reports the expiry from a custom expiration claim": `expected 18000
+to be greater than 18000` after `s.settle(1001)`; 226 other files pass; not in the cli or B249 range. Suspect: a
+boundary flake where the expiry read sees a clock that did not advance on the fake clock (off by one between `settle`
+and the expiry tick); last commits there 3bf4f45db, ab8d48ca2. The fresh builder fixes it first (ADR 0230). Tool gap:
+open until the cause; check whether `spec:stress --slow` reproduces it, since the scenario runs on a fake clock.
