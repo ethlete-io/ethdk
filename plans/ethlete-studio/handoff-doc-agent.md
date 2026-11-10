@@ -53,3 +53,11 @@ until they say they are back.
 ## Open questions for the human
 
 None open. The human is afk until late evening (2026-11-10): collect questions, no round until they are back. Steps 3 and 721 (git-safety.py) wait for their approval in tmux claude-3.
+
+## Collected for the human's return
+
+- 721 and step 3 (git-safety.py): the human approved "merge ausnahme erteilt" in tmux claude-3, but auto mode still
+  denies the edit as self-modification. The human picks: (a) a permission rule for the edit, or that session out of
+  auto mode for the slice (recommended: the builder brief is ready); (b) run the slice in a session without the hook.
+- The human stopped the real-config "Sketch öffnen" re-check agent. Ask: on purpose, or restart it? (Recommended:
+  restart; it is the open browser check of B249.)
