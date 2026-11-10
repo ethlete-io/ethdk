@@ -4260,5 +4260,4 @@ caps and a changeset) is a candidate for a gate the human decides on.
 pre-commit hook warned about the 680 slice's own files. Same tool as 670, a second gap: the file has no owner and no
 age, so a stale list looks as valid as a fresh one. Workaround: the builder writes the file at each slice start. Tool
 fix (extends 670, same queue slot): the slice-paths file carries the slice name and the time it was written; the hook
-names both in its warning and says "stale" when the file is older than the last commit that changed it, or older than
-2 h.
+names both in its warning and says "stale" when the file is older than 2 h.
