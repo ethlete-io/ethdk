@@ -4025,3 +4025,17 @@ only on demand; the push suite runs `nx test cli` unloaded, so a cold start that
 runner reaches CI unseen, also from a range that does not touch the lib. Tool fix (builder default): a scheduled
 `spec:stress --slow 13` sweep over the cli and Studio spec files (nightly CI job or a local timer) that reports each
 file under 100 % as a finding, and a spec helper for cold-start work (worker, compile) that every first case uses.
+
+As built (707, b354fc7e5, not pushed). Cause (LSP measured): the editor tsconfigs mapped `@design-system` to the deleted
+`tmp/691-cli-lowered` build, so ts(2307) showed in the part file (1) and in sketch files (2 and 8); with only that fixed
+the part had 0 and the sketch files still 2 and 8. Cause (include): the sketch files were in an inferred project; with
+only the include fixed, 1, 1 and 2 stayed. With both fixed a variant still failed on `@shared/chrome`, so one product
+tsconfig cannot type the variants. Also: a normal `yarn et:design` runs from `tmp/studio-cli/<sha>`, under the repo
+`tmp/` too. Fix: the writer targets the installed CLI root (`libs/cli/design` through the realpath of
+`node_modules/@ethlete/cli`) and refuses a temp or work-root build, keeping the old file; every design command repairs
+the editor tsconfigs (`repairEditorTsconfigs`, one `existsSync` per product); each sketch variant gets a gitignored
+`tsconfig.json` with the overlay of the sketch typecheck, plus one per sketch for `shared/`. Verified: 4 new specs fail
+on the old source and pass; LSP bite from a temp build `tmp/707-cli` with the dead tsconfig restored: `design status`
+rewrote it, 0 diagnostics in the part, `shared/`, new and old variants and 4 sdk and studio-lab variant files. Not run:
+the full suite, the design-command specs. Accepted (doc agent, builder default): a sketch folder removed with `git rm`
+keeps its ignored `tsconfig.json`; the CLI merge and edit remove folders recursively.
