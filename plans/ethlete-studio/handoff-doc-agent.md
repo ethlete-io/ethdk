@@ -55,3 +55,5 @@ until they say they are back.
 None open. The human is afk until late evening (2026-11-10): collect questions, no round until they are back. Steps 3 and 721 (git-safety.py) run: the human left auto mode in tmux claude-3 and approved.
 
 The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" re-check.
+- Step 3 + 721 built in 77e87c6b2 (merge path allowed only with MERGE_HEAD and merge-only staged paths; go.json rule
+  gone); studio/go.json removed in b52ff697c. Not pushed yet. Left in B249: re-check "Sketch öffnen", step 6, ADR built:.
