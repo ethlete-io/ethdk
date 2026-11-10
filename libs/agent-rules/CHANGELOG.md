@@ -1,5 +1,29 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.33
+
+### Minor Changes
+
+- `agent-sessions restart --process` starts the agent as a new process in its tmux pane, so a plugin, settings or `PATH` change takes effect.
+
+### Patch Changes
+
+- The builder Stop hook now blocks a turn that ends with more than one line of chat text. `restart --process` keeps the session's role. Resuming a role handoff loads its role skill.
+- The builder Stop hook now counts the final message of the turn from `last_assistant_message`. Claude Code calls the hook before that message reaches the transcript.
+- `agent-sessions restart` treats a pane that shows "Waiting for" background agents as busy, and the skill says to mail the grill session when a self-restart is denied.
+- `agent-sessions restart` accepts the paired builder or grill/docs session as target and logs each peer restart to `restart.log`.
+- `agent-sessions restart` no longer hangs when the background-agent panel is open, and it tells the caller and `--notify` agents when it waits or gives up.
+- `agent-sessions restart --process` keeps the tmux session of the agent, does not send the first prompt of `run` again, and answers the background work dialog of Claude Code with "exit and stop tasks".
+- `agent-sessions restart --process` no longer passes a stored prompt twice, and `run` switches only the client of the calling tmux session.
+- The design exploration skill documents `et design sketch covers` (ADR 0222).
+- `et design sketch covers` on a multi-target sketch takes the part, `<layer>/<name>:<state>[@x,y,w,h]`, and refuses a bare state; compare matches a covered DIFF against that part.
+- The `background-design-commands` hook matches long design commands only at command position, so a heredoc, an unquoted `echo` or a `git commit` message that names `design check` no longer gets denied.
+- The builder Stop hook now parses each Bash command into its simple commands. A heredoc body or a quoted string that names `agent-sessions.mjs send` or `git commit` no longer counts as a report or a commit.
+- The builder Stop hook also blocks a stop one time when the turn ran `git commit` or `git push` and sent no report with `SendMessage` or `agent-sessions send`.
+- The design-exploration skill now describes build-ready, a current check record from `design check`, instead of the removed `design go` and `design accept` commands.
+- The git-safety hook now allows a pathless `git commit` that concludes a merge, no longer denies commands that only mention `git commit` in a grep pattern or heredoc, and drops the obsolete `go.json` rule.
+- Fix `agent-sessions restart` never restarting an idle session whose own chat text said "Waiting for": only the spinner line and the footer count as busy.
+
 ## 0.1.0-next.32
 
 ### Minor Changes

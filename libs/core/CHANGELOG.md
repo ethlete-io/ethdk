@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.74
+
+### Minor Changes
+
+- Anchored overlays take `arrowAnchor`, an element the arrow points at instead of the origin; the `anchoredDialog()` design mock takes a matching `anchor` selector.
+
 ## 5.0.0-next.73
 
 ### Minor Changes

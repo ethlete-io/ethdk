@@ -1,6 +1,6 @@
 {
   "name": "ethlete-studio",
-  "version": "0.2.0-next.15",
+  "version": "0.2.0-next.16",
   "private": true,
   "exports": {
     "./canvas": "./src/app/components/design-canvas/canvas-viewport.ts"
