@@ -3794,3 +3794,8 @@ answers the dialog with "exit and stop tasks", since the handoff names the work)
 background job so the new process starts it again (here the CI watch), and the new process keeps the old tmux session
 name. Bite: a session with a running background shell restarts with `--process` without a human, in the same tmux
 session, and the new process resumes the watch.
+
+698\. Builder (2026-11-10, day shift, cfa266758): `lint:changesets` refused the push of 17913b655 and 1c72a5026, two
+docs-only ADR edits under `apps/ethlete-studio/docs/adr/` without a changeset. Only pre-push catches it; doc-agent ADR
+commits have the same gap. Tool fix, small: the builder and doc-agent skills say that an ADR edit is a change to
+`ethlete-studio` and gets an `'ethlete-studio': none` changeset in the same commit.
