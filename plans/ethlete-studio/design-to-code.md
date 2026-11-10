@@ -4057,6 +4057,8 @@ agent remembers fills the file again; the file needs a check. Doc agent cleanup:
 names the row to delete. Open: about 120 ⏳ rows are not checked against git; the builder checks each row against git
 when it takes one (ADR 0234).
 
+As built (Linux builder, 4b50bdb51, not pushed yet): `tools/scripts/check-studio-status.mjs` with a spec, wired in `.husky/pre-commit` on the staged STATUS.md blob. It refuses a ✅ row, a "## Erledigt" heading, a "Stand:" line older than 3 days, and a missing "Stand:" line (kept by the doc agent: without the line the age check checks nothing). Bite: with the check returning nothing, 3 of 5 spec cases fail. Not verified: the hook branch with a staged bad STATUS.md.
+
 749\. Mac builder (2026-11-10, B482): the console log of the macOS bundle stays empty. Suspect (from the config, not yet
 proven by a bundle run): `tauri.macos.conf.json` replaces the `windows` array without `"create": false`, so Tauri creates
 the macOS window itself, and `console_log::start()` sets the hook and the init script only on windows with
