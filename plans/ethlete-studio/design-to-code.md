@@ -3878,3 +3878,17 @@ than one line (not with `stop_hook_active`) and logs `lines` and `blocked`. `res
 session with no role next to a repo peer without a builder (`--role none` passes). Handoff resume loads the role skill.
 Verified: hook and agent-sessions specs bite on the old code; lint, tsc and `agents:check` clean. Not verified: a live
 Stop-hook round trip and a live restart of a role-less session.
+
+As built (703, 1d30ed931): `builder-chat-words.py` blocks a builder stop once when the chat text of the turn is longer
+than one line (not when `stop_hook_active` is set) and logs the line count and the block. `restart --process` takes the
+role from `--role`, `@ethlete_role` or a `builder-*` handoff name, adds `ETHLETE_AGENT_ROLE` and the rule prompt once,
+and refuses a session with no role next to a repo peer with no builder; `restart --role none` is the escape. The
+refusal also hits a session with no role next to an unrelated session of the same repo; the doc agent keeps it, the
+escape covers it. `/handoff resume` loads `builder-agent` or `doc-agent` itself. Verified: the hook and agent-sessions
+specs fail on the old code. Not verified: a live block of a Stop hook and a live restart of a session with no role.
+
+704\. Builder (2026-11-10, day shift, CI 42799940846 on 7e1842ce5): Unit tests red, only cli `shot-store-draw-lock`
+"takes over the lock of a live process once it is older than the wait" (timeout, expected "too old"). Cause (bite):
+`waitFor` compared the lock age with `>` and the timeout with `>=`, so in the poll where both reach the wait the timeout
+won. Fix f0e3be39f: the age check uses `>=`; a new spec with 0 ms fails on the old code; `spec:stress` 4/4. Tool gap:
+none, a boundary race in a timing spec.
