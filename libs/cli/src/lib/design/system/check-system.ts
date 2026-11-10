@@ -1,4 +1,7 @@
-import { dirname, relative, resolve } from 'path';
+import { dirname, relative, resolve, sep } from 'path';
+import { baseIssuesFileOf, oldRenderIssuesOf } from './base-issues';
+import { designHashOf } from './design-hash';
+import { repoRootOf } from './reachable-files';
 import { chromiumOf } from '../browser';
 import { DesignConfig } from '../design-config';
 import { autoAcceptOf, DrawStates, newStatesLineOf } from './accepted-pictures';
@@ -752,6 +755,40 @@ const printUndrawn = (issues: RenderIssue[]) => {
   }
 };
 
+const RENDER_INPUTS_OUTSIDE_PARTS = ['libs/', 'package.json', 'yarn.lock'];
+
+const oldIssuesOfRun = (options: {
+  resolved: ResolvedProduct[];
+  part: string | undefined;
+  issues: RenderIssue[];
+  undrawn: Set<string>;
+}) =>
+  new Set(
+    options.resolved.flatMap((product) => {
+      const root = repoRootOf(product);
+      const parts = product.parts
+        .filter((part) => part.origin !== 'base' && (!options.part || partKeyOf(part) === options.part))
+        .filter((part) => !options.undrawn.has(partKeyOf(part)))
+        .map((part) => ({
+          part: partKeyOf(part),
+          inputs: [
+            ...Object.keys(designHashOf({ product, part }).files),
+            `${relative(root, dirname(part.file)).split(sep).join('/')}/`,
+            ...RENDER_INPUTS_OUTSIDE_PARTS,
+          ],
+        }));
+
+      return [
+        ...oldRenderIssuesOf({
+          root,
+          file: baseIssuesFileOf(product),
+          parts,
+          issues: options.issues.filter((issue) => issue.product === product.name),
+        }),
+      ];
+    }),
+  );
+
 const renderSystem = async (
   options: CheckOptions,
 ): Promise<{ code: number; rendered: RenderIssue[] | null; busy?: BusyState[]; notDrawn?: string }> => {
@@ -862,8 +899,15 @@ const renderSystem = async (
 
       if (counted) counted.warnings += 1;
     });
+  const old = oldIssuesOfRun({
+    resolved,
+    part: options.part,
+    issues: rendered.issues.filter((issue) => !isInBase(issue)),
+    undrawn: new Set(issues.filter(isPartUndrawn).map((issue) => issue.part)),
+  });
+
   issues.forEach((issue) => {
-    console.error(renderIssueLineOf(issue));
+    console.error(old.has(issue) ? `OLD ${renderIssueLineOf(issue)}` : renderIssueLineOf(issue));
     tallyOf(options.tally, { product: issue.product, part: ownerPartOf(issue) })?.problems.push(issue.rule);
   });
   printUndrawn(issues.filter((issue) => isPartUndrawn(issue) || isStateUndrawn(issue)));

@@ -196,6 +196,22 @@ const frameNeutralPathOf = ({ path, part, framed }: { path: string; part: string
   return names.map((name, index) => (cut.includes(index) ? tagOf(name) : name)).join(' > ');
 };
 
+const isControlInput = (issue: RenderIssue) => issue.rule === 'CONTROL-PART-INPUT';
+
+/**
+ * The identity two render issues share when they are the same issue (ADR 0095): product, part, rule, detail and
+ * element path. `inFrame` names whether the drawing had the part's demo frame, so a path compares across the frame
+ * move of ADR 0093; `null` keeps the path as drawn.
+ */
+export const sameRenderIssueKeyOf = (issue: RenderIssue, inFrame: boolean | null) =>
+  JSON.stringify([
+    issue.product,
+    issue.part,
+    issue.rule,
+    isControlInput(issue) ? null : issue.detail,
+    inFrame === null ? issue.path : frameNeutralPathOf({ path: issue.path, part: issue.part, framed: inFrame }),
+  ]);
+
 // complete.ts and this module sit in an import cycle: read PLAIN_CONTROL_SELECTOR here, a top-level copy can be undefined.
 const inspectFrame = (options: {
   fixed: boolean;
@@ -1122,7 +1138,7 @@ export const renderIssuesOf = async (options: {
       }),
     );
     const inspected = uniqueIssuesOf(all.filter((issue) => issue.rule !== BUSY_MARK));
-    const isInput = (issue: RenderIssue) => issue.rule === 'CONTROL-PART-INPUT';
+    const isInput = isControlInput;
     const sketched = inspected.filter((issue) => issue.sketch && !WARNING_RULES.has(issue.rule));
     const keyOf = (issue: RenderIssue) => JSON.stringify([issue.product, issue.part]);
     const compared = [...new Set([...sketched.map(keyOf), ...asked])];
@@ -1132,14 +1148,7 @@ export const renderIssuesOf = async (options: {
       ...(await inspectBaselineOf(compared.filter((key) => !asked.has(key)))),
     ].sort((a, b) => (comparedAt.get(keyOf(a)) ?? 0) - (comparedAt.get(keyOf(b)) ?? 0));
     const elementOf = (issue: RenderIssue) => JSON.stringify([issue.product, issue.part, issue.path]);
-    const sameIssueOf = (issue: RenderIssue, inFrame: boolean | null) =>
-      JSON.stringify([
-        issue.product,
-        issue.part,
-        issue.rule,
-        isInput(issue) ? null : issue.detail,
-        inFrame === null ? issue.path : frameNeutralPathOf({ path: issue.path, part: issue.part, framed: inFrame }),
-      ]);
+    const sameIssueOf = sameRenderIssueKeyOf;
     const framedOf = (issue: RenderIssue, sketch: SketchVariant | null) =>
       framed.get(JSON.stringify([issue.product, issue.part, sketch])) ?? false;
     const existing = new Set(
