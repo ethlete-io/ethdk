@@ -1,14 +1,60 @@
 import { execFileSync } from 'child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { AddressInfo, createServer as createNetServer, Server } from 'net';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { checkDesign } from '../check';
 import { DESIGN_DIR, readConfig } from '../design-config';
+import { createDesignServer } from '../serve';
+import { markPartGo } from './part-go';
 import { resolveProduct } from './resolve-product';
 import { recordMerged } from './sketch/merged-parts';
 import { createSketch, decideSketch, rebaseSketch, variantDirOf } from './sketch/sketch';
 import { originOf } from './write-origin';
 import { acme, output, withoutOpenPoints, withoutBrowserLines, renderWarningsOf } from './check-system.fixtures';
+
+const probe = vi.hoisted(() => ({ port: null as number | null }));
+
+vi.mock('net', async (original) => {
+  const actual = await original<typeof import('net')>();
+  const createServer = ((...args: Parameters<typeof actual.createServer>) => {
+    const port = probe.port;
+
+    if (port === null) return actual.createServer(...args);
+    probe.port = null;
+
+    return {
+      once: () => undefined,
+      listen: (_port: number, listening: () => void) => listening(),
+      address: () => ({ port }),
+      close: (closed: () => void) => closed(),
+    };
+  }) as typeof actual.createServer;
+
+  return { ...actual, createServer };
+});
+
+describe('own design server', () => {
+  it('listens on another port when its probed port is taken before it binds', async () => {
+    const blocker: Server = createNetServer();
+
+    await new Promise<void>((listening) => blocker.listen(0, 'localhost', listening));
+    const taken = (blocker.address() as AddressInfo).port;
+    const target = acme();
+
+    probe.port = taken;
+    const server = await createDesignServer({ target, config: readConfig(target) ?? {}, listen: true, port: 0 });
+
+    try {
+      await server.listen();
+
+      expect((server.httpServer?.address() as AddressInfo).port).not.toBe(taken);
+    } finally {
+      await server.close();
+      await new Promise((closed) => blocker.close(closed));
+    }
+  }, 60_000);
+});
 
 describe('checkDesign', () => {
   afterEach(() => {

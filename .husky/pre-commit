@@ -42,6 +42,13 @@ if [ -n "$plan_files" ]; then
   node ./tools/scripts/check-staged-plans.mjs $plan_files
 fi
 
+# A staged studio spec or label file fails here when a spec still asserts a label text removed since the upstream.
+label_files=$(git diff --cached --name-only --diff-filter=ACM -- 'apps/ethlete-studio/*.spec.ts' 'apps/ethlete-studio/src/app/i18n/studio-labels.ts')
+
+if [ -n "$label_files" ]; then
+  node ./tools/scripts/studio-label-specs.mjs --staged
+fi
+
 # Lint errors fail here instead of in CI: eslint on the staged files only, with the config of the lib they sit in.
 lint_files=$(git diff --cached --name-only --diff-filter=ACM -- 'libs/*.ts' 'apps/*.ts' 'tools/*.mjs' 'tools/*.js' 'libs/*.mjs' 'libs/*.js')
 

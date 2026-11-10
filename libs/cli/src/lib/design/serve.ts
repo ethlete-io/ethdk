@@ -1215,7 +1215,7 @@ export const createDesignServer = async (options: {
       // Studio swaps a frame for a fresh one once it has painted; a Vite reload would blank every frame at once.
       hmr: false,
       ...(listen
-        ? { port: port ?? portOf(config), ...(host ? { host } : {}), strictPort: true, ...(own ? { watch: null } : {}) }
+        ? { port: port ?? portOf(config), ...(host ? { host } : {}), strictPort: !own, ...(own ? { watch: null } : {}) }
         : { middlewareMode: true, ws: false as const, watch: null }),
       // The frame page lives inside this package, which is outside the checkout it draws. Vite
       // serves neither root unless both are allowed.
