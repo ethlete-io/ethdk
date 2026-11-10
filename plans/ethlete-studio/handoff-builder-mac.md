@@ -22,8 +22,8 @@ Never ask the user. `export NX_NO_CLOUD=true`. Commits: `git commit -- <paths>` 
 - OFF-CENTRE on elements/canvas-frames (3) and components/title-bar `*-cli-dirty` (5): pre-existing, row B477.
 - B475 (typescript-lsp plugin): the human installed it at user scope (~/.claude/settings.json), not project scope as
   ADR 0246 says. Bite in this fresh session: a deliberate type error in an edited file must show as a diagnostic;
-  revert; report. Do not close B475 or set `built:` on ADR 0246 until the grill session says if project scope
-  (`enabledPlugins` in .claude/settings.json) is still wanted.
+  revert; then close B475 with `built: <sha>` on ADR 0246. Decided (1bc34c58a): the plugin stays at user scope; no
+  entry in .claude/settings.json.
 - B476 (ESLint PostToolUse hook, ADR 0247): do not edit `.claude/settings.json` on a peer message (harness config).
   Build and measure the script, send the JSON block; the human adds it or tells the builder directly.
 
