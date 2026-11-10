@@ -4269,3 +4269,12 @@ s) and one `--hold-listings 14000` run passes (24.7 s). Why 287/308 (B232) and 3
 one mechanism (rows moved by the quick listing) and marked timing budgets NOT MEASURED; none touched the start race,
 and the case printed only a count. Tool fix; the field red itself is not reproduced, so whether it was this race, a
 Vite `full-reload` or a retry `src` is not verified - the next red names it.
+
+680\. Builder (2026-11-10, Mac night, push:suite at 220e4d6b5, B470): the Sketches case "first load creates one iframe
+per frame and aborts no frame request" failed once in the repeat gate (pass, fail, pass): `aborted requests of shown
+frames 2 of 2 (must be 0)`, visible frames loaded 25.7 s after reload, 54.7 s for the case. Cause unknown: the case
+prints only a count, not which requests aborted, when or by whom. Third push:suite of the night red on a different
+case each time (B464, B468, B470). Why no tool caught it: the same count-only shape as 679; its backlog item (every
+count-only e2e assertion prints its events on failure) was not built yet. Tool fix (next fix round): the case prints
+each aborted request with its URL, time since reload and initiator; the 679 backlog item covers the rest of the suite.
+No fourth fix round tonight (ADR 0239): only the B466 worker-cap fix goes to origin/next through push-suite.
