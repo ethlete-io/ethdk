@@ -56,6 +56,8 @@ that talks with the user and records decisions. Talk English.
   before the slice fails the slice. The full `design check --product <p>` runs in pre-push and CI only.
 - A CI step that renames or caches runs twice with real data on every OS it has a branch for. Only then is it done. A sample line is not real data.
 - Before a revert commit, run `yarn revert:check <sha>`.
+- Commit in a bite or throwaway worktree only with `git -C <worktree> commit`, never after a bare `cd`: a failed
+  `cd` lands the commit on `next` in the main checkout. Put the same line in every bite brief.
 - Every slice brief names the slice's allowed paths; write them at slice start with `yarn slice:paths "<name>" <path>...` (an env var set in one shell call does not reach the later `git commit` call). The pre-commit hook warns on a staged path outside them.
 - After a slice, write an "as built" section in the plan: what was built, the commits, and
   what you verified and what you did not verify.
