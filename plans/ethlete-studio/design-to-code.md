@@ -3518,7 +3518,7 @@ instead of the whole file. Not verified: a focused panel row (two Downs): the au
 self-drive capture; Suspect: it is also inverse. Item (b) parked: every Claude session is a SendMessage peer, so a
 refusal would end the typed wake for all of them; the focus fix removes the wrong typing.
 
-770\. Linux builder (2026-11-11, night, CI run 42916647044): two cli specs timed out (open-points-answer 30 s,
+771\. Linux builder (2026-11-11, night, CI run 42916647044): two cli specs timed out (open-points-answer 30 s,
 merge.spec 60 s; 2-3 s locally). Cause (bite, subagent): the workers start from source through jiti, which caches in
 `<tmpdir>/jiti`, and vitest.setup.ts gives each spec file its own TMPDIR, so every file transpiled the 262-file worker
 graph again. As built a3df386fa: the spec tmpdir links `jiti` to `libs/cli/node_modules/.cache/jiti-specs`. Bite on one
