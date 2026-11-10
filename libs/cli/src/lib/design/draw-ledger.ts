@@ -19,6 +19,8 @@ export type QueueReport = {
   failed: DrawFailure[];
   /** Drawings started since the server started; a picture served from memory or disk starts none. */
   drawnTotal: number;
+  /** Pictures this server waited for while another server drew them, and then read from the shared store. */
+  waitedTotal: number;
 };
 
 type Asked = { since: number; drawing: boolean };
@@ -36,6 +38,7 @@ export const createDrawLedger = (
   const failed: DrawFailure[] = [];
   let failedTotal = 0;
   let drawnTotal = 0;
+  let waitedTotal = 0;
 
   return {
     /** Records a drawing as queued; `start` marks it drawing and `end` drops it. */
@@ -53,6 +56,10 @@ export const createDrawLedger = (
           asked.delete(entry);
         },
       };
+    },
+    /** Records a picture another server drew while this one waited for it. */
+    waited: () => {
+      waitedTotal++;
     },
     fail: (failure: Omit<DrawFailure, 'at'>) => {
       failedTotal++;
@@ -76,6 +83,7 @@ export const createDrawLedger = (
         failedTotal,
         failed: [...failed],
         drawnTotal,
+        waitedTotal,
       };
     },
   };

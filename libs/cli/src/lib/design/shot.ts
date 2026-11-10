@@ -442,7 +442,7 @@ export const createPartShooter = (options: {
   /** Called when a part's picture changed although no `forget` or announced `clear` dropped it. */
   changed?: (part: DrawnPart) => void;
 }) => {
-  const { system, statesOf, store } = options;
+  const { system, statesOf, store, ledger } = options;
   const baseOf = () => (typeof options.base === 'function' ? options.base() : options.base);
   const board = createShotBoard();
   const drawQueue = options.queue ?? createDrawQueue({ ...options, board });
@@ -621,36 +621,63 @@ export const createPartShooter = (options: {
     if (theme.fill) options.search.set('fill', theme.fill);
 
     const search = options.search.toString();
-    const shot = drawQueue.run((browser) => {
-      const gone = options.gone?.();
+    const drawHere = () =>
+      drawQueue.run((browser) => {
+        const gone = options.gone?.();
 
-      return gone
-        ? Promise.reject(gone)
-        : draw(browser, {
-            search,
-            size: options.size,
-            clip: options.clip ?? false,
-            scale,
-            crop,
-            scheme,
-            emptySlots: options.emptySlots ?? null,
-            slotFill: options.slotFill ?? null,
-            checker: options.checker ?? false,
-            pan: options.pan ?? null,
-          });
-    }, options.want);
+        return gone
+          ? Promise.reject(gone)
+          : draw(browser, {
+              search,
+              size: options.size,
+              clip: options.clip ?? false,
+              scale,
+              crop,
+              scheme,
+              emptySlots: options.emptySlots ?? null,
+              slotFill: options.slotFill ?? null,
+              checker: options.checker ?? false,
+              pan: options.pan ?? null,
+            });
+      }, options.want);
 
     const { address } = options;
+    const shared = address && !options.fresh ? store : undefined;
+    let held = shared?.claim(key);
+    let waited = false;
+    const shot =
+      shared && address && held === null
+        ? shared.waitFor(key, { address, ms: loadScaledMs(DRAW_LIMIT_MS) }).then((answer) => {
+            if ('picture' in answer) {
+              waited = true;
+              ledger?.waited();
+
+              return answer.picture;
+            }
+            if (answer.why === 'too old' || answer.why === 'timeout')
+              console.warn(
+                `design-explore: waited ${answer.waitedMs} ms for another server's draw of ${key}, past the draw limit, drawing it here`,
+              );
+            held = answer.claim;
+
+            return drawHere();
+          })
+        : drawHere();
 
     cache.set(key, { drawn: options.drawn, shot });
     shot.then(
       (picture) => {
-        if (cache.get(key)?.shot !== shot) return;
-
-        show(key, { drawn: options.drawn, picture });
-        if (address) store?.write(key, { address, picture });
+        if (cache.get(key)?.shot === shot) {
+          show(key, { drawn: options.drawn, picture });
+          if (address && !waited) store?.write(key, { address, picture });
+        }
+        // After the write: a server that waits on this lock reads the store once it is released.
+        held?.release();
       },
-      () => cache.get(key)?.shot === shot && cache.delete(key),
+      () => {
+        if (cache.get(key)?.shot === shot) cache.delete(key);
+        held?.release();
+      },
     );
 
     return shot;

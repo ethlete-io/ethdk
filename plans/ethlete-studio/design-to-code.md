@@ -4207,6 +4207,28 @@ after. Open: workers on a cold store at the same time still draw the same shot, 
 draw; Suspect: the Wide Fit case draws about 30 shots each run, because its sketch is new in each checkout; 517 old
 `shots-*` folders (5.5 GB) in `node_modules/.design-explore` stay.
 
+As built (667 a, shared in-flight draw): before a design server draws a key that is not in the shared store, it takes
+a lock file `draw.lock` in the key's store folder (`open` with `wx`, holding pid, start time and a token). A server that
+finds the lock taken does not draw; it polls every 100 ms for the stored picture. It reads the picture only when the
+read-files fingerprint matches its own checkout; else it draws itself once the lock is released. The owner releases the
+lock after the store write, and also when the draw fails or is dropped, so a waiter then draws itself. A lock of a dead
+pid, or one older than the draw limit (`DRAW_LIMIT_MS` 60 s, scaled by load), is taken over, and the waiter logs
+"past the draw limit" when the age was the reason. Fresh draws neither lock nor wait. The ledger counts `waitedTotal`
+next to `drawnTotal` (`/__design/queue`); the e2e `ready` line and each case line print both.
+Bite, unit: two stores on one folder, the second waits and reads the first's picture; two shooters, the second draws 0
+and waits for 1; a dead-pid lock and an old lock are taken over; a failed draw and a changed input file let the waiter
+draw. `spec:stress` 4/4 on the three touched specs. E2E, 7 first-load and Fit cases, 3 workers, cold store each run,
+load 4 to 28: setup draws per worker HEAD 22/22/22 (66) and new 21+1/13+6/12+2 waited (46 drawn, 9 waited). Plain
+7/7, 115.2 s HEAD vs 112.8 s new. With `--hold-listings 14000`: setup HEAD 20/21/22 (63), new 46 drawn and 9 waited
+as above; 7/7, 226.3 s HEAD vs 220.4 s new. Case draws hardly changed (25 to 55 per Fit case, 3 waited for in all):
+each case runs another target on another worker, so the workers rarely draw the same key at once. Not explained: the
+held Wide Fit case drew 79 at HEAD and 132 new, with 0 waited for in it; one run each. No
+"past the draw limit" line in the runs. About 12 setup draws per worker stay: the fixture compare draws fresh on
+purpose. Suspect: a lock is taken when the draw is queued, not when it starts, so a waiter may wait for a draw that
+sits in the owner's backlog; bounded by the draw limit, not seen in the runs. A server that is killed leaves its locks
+(2 left after a plain run); the next waiter takes them over and the store sweep removes dead-pid locks. Not verified: a
+full `yarn studio:e2e`, CI, more than 3 workers, a waiter that really reaches the draw limit.
+
 685\. Builder (2026-11-10, Mac night, 04eb763dc): the builder's own 8a473386c (673 parent watch) failed `nx lint cli`
 with 3 `prefer-rxjs-timer` errors; fixed with a scoped disable and the workaround reason (an RxJS interval cannot
 `unref`). Cause: `yarn commit` runs the related specs and the typecheck, not lint, so a lint error in an unpushed commit

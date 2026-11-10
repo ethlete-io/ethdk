@@ -32,6 +32,7 @@ describe('createDrawLedger', () => {
       failedTotal: 0,
       failed: [],
       drawnTotal: 0,
+      waitedTotal: 0,
     });
 
     await vi.waitFor(() => expect(releases).toHaveLength(DRAWS_AT_ONCE));

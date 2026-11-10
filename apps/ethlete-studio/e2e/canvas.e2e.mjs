@@ -3218,8 +3218,13 @@ process.on('uncaughtException', (error) => reportAsyncError(error));
 const drawsSoFar = (designPort) =>
   fetch(`http://[::1]:${designPort}/__design/queue`)
     .then((answer) => answer.json())
-    .then((report) => report.drawnTotal ?? null)
-    .catch(() => null);
+    .then((report) => ({ drawn: report.drawnTotal ?? null, waited: report.waitedTotal ?? null }))
+    .catch(() => ({ drawn: null, waited: null }));
+
+const drawsSince = (now, before) => ({
+  drawn: now.drawn === null || before.drawn === null ? null : now.drawn - before.drawn,
+  waited: now.waited === null || before.waited === null ? null : now.waited - before.waited,
+});
 
 const work = async () => {
   checkout = prepareCheckout();
@@ -3244,11 +3249,11 @@ const work = async () => {
       const builtAt = performance.now();
 
       await warmUp(page, studioUrl);
-      let drawn = await drawsSoFar(designPort);
+      let draws = await drawsSoFar(designPort);
 
       process.send({
         type: 'ready',
-        drawn,
+        ...draws,
         phases: {
           open: opened,
           fixtures: fixed - opened,
@@ -3287,16 +3292,10 @@ const work = async () => {
           result = { ok: false, detail: `left route ${leftRoutes.join(', ')} active after the case: ${result.detail}` };
 
         const ms = performance.now() - startedAt;
-        const drawnBefore = drawn;
+        const drawsBefore = draws;
 
-        drawn = await drawsSoFar(designPort);
-        process.send({
-          type: 'result',
-          ok: result.ok,
-          detail: result.detail,
-          ms,
-          drawn: drawn === null || drawnBefore === null ? null : drawn - drawnBefore,
-        });
+        draws = await drawsSoFar(designPort);
+        process.send({ type: 'result', ok: result.ok, detail: result.detail, ms, ...drawsSince(draws, drawsBefore) });
       }
     },
     { built, checkout },
@@ -3489,7 +3488,9 @@ const lead = async () => {
       child.on('message', (message) => {
         if (message.type === 'result') {
           record(current, message);
-          console.log(`[canvas-e2e] worker ${index} drew ${message.drawn ?? '?'} picture(s) in the case`);
+          console.log(
+            `[canvas-e2e] worker ${index} drew ${message.drawn ?? '?'} picture(s) in the case, waited for ${message.waited ?? '?'}`,
+          );
           current = undefined;
           busy.delete(index);
         }
@@ -3502,7 +3503,7 @@ const lead = async () => {
           console.log(
             `[canvas-e2e] worker ${index} ready: ${Object.entries(message.phases)
               .map(([phase, ms]) => `${phase} ${seconds(ms).trim()}`)
-              .join(', ')}, ${message.drawn ?? '?'} picture(s) drawn`,
+              .join(', ')}, ${message.drawn ?? '?'} picture(s) drawn, ${message.waited ?? '?'} waited for`,
           );
         if (message.type === 'next') void giveJob();
       });

@@ -1,7 +1,20 @@
-import { createHash } from 'crypto';
-import { mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, utimesSync } from 'fs';
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'path';
+import { createHash, randomUUID } from 'crypto';
+import {
+  closeSync,
+  mkdirSync,
+  openSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  statSync,
+  utimesSync,
+  writeSync,
+} from 'fs';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'path';
+import { setTimeout as delay } from 'timers/promises';
 import { writeCacheEntry } from './cache-entry';
+import { isRunning } from './is-running';
 import { PartAddress, PartMark, Picture, TextAmbient } from './shot';
 
 /** The part of a shot address that decides which files a shot draws from. */
@@ -12,7 +25,22 @@ export type ShotStore = {
   read: (key: string, address: StoredAddress) => Picture | null;
   write: (key: string, drawn: { address: StoredAddress; picture: Picture }) => void;
   drop: (key: string) => void;
+  /** Marks `key` as drawn by this process until `release`, or null while another live process draws it. */
+  claim: (key: string) => DrawClaim | null;
+  /**
+   * Waits up to `ms` for the draw of `key` another process holds: the picture once it is stored for this checkout's
+   * files, else the claim of a lock that was released, of a dead process or older than `ms`, else a timeout.
+   */
+  waitFor: (key: string, wait: { address: StoredAddress; ms: number }) => Promise<SharedDraw>;
 };
+
+export type DrawClaim = { release: () => void };
+
+export type SharedDraw =
+  | { picture: Picture }
+  | { claim: DrawClaim | null; why: 'released' | 'owner gone' | 'too old' | 'timeout'; waitedMs: number };
+
+type DrawLock = { pid: number; at: number; token: string };
 
 type Entry = {
   key: string;
@@ -35,6 +63,10 @@ const ENTRY_SUFFIX = '.json';
 
 const VARIANTS_PER_KEY = 4;
 
+const LOCK_NAME = 'draw.lock';
+
+const LOCK_POLL_MS = 100;
+
 const isEntry = (value: unknown): value is Entry => {
   const entry = value as Partial<Entry> | null;
 
@@ -45,6 +77,22 @@ const isEntry = (value: unknown): value is Entry => {
     typeof entry.png === 'string' &&
     Array.isArray(entry.marks)
   );
+};
+
+const isLock = (value: unknown): value is DrawLock => {
+  const lock = value as Partial<DrawLock> | null;
+
+  return typeof lock?.pid === 'number' && typeof lock.at === 'number' && typeof lock.token === 'string';
+};
+
+const lockAt = (path: string): DrawLock | 'none' | 'unreadable' => {
+  try {
+    const lock: unknown = JSON.parse(readFileSync(path, 'utf8'));
+
+    return isLock(lock) ? lock : 'unreadable';
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === 'ENOENT' ? 'none' : 'unreadable';
+  }
 };
 
 const realOf = (path: string) => {
@@ -69,9 +117,11 @@ export const createShotStore = (options: {
   inputsOf: (address: StoredAddress) => string[] | null;
   scopeOf: (address: StoredAddress) => string;
   limit?: number;
+  pollMs?: number;
 }): ShotStore => {
   const { dir, salt, inputsOf, scopeOf } = options;
   const limit = options.limit ?? SHOT_STORE_LIMIT;
+  const pollMs = options.pollMs ?? LOCK_POLL_MS;
   const hashes = new Map<string, { stamp: string; hash: string }>();
   const used = new Map<string, string>();
   let sizes: Map<string, number> | null = null;
@@ -113,6 +163,47 @@ export const createShotStore = (options: {
     }
   };
 
+  const dropDeadLock = (path: string) => {
+    const lock = lockAt(path);
+
+    if (typeof lock === 'object' && !isRunning(lock.pid)) rmSync(path, { force: true });
+  };
+
+  const lockOf = (key: string) => join(dir, keyDirOf(key), LOCK_NAME);
+
+  const claim = (key: string): DrawClaim | null => {
+    const path = lockOf(key);
+    const token = randomUUID();
+
+    try {
+      mkdirSync(dirname(path), { recursive: true });
+
+      const fd = openSync(path, 'wx');
+
+      try {
+        writeSync(fd, JSON.stringify({ pid: process.pid, at: Date.now(), token } satisfies DrawLock));
+      } finally {
+        closeSync(fd);
+      }
+    } catch {
+      return null;
+    }
+
+    let held = true;
+
+    return {
+      release: () => {
+        if (!held) return;
+
+        held = false;
+
+        const lock = lockAt(path);
+
+        if (typeof lock === 'object' && lock.token === token) rmSync(path, { force: true });
+      },
+    };
+  };
+
   const sizesOf = () => {
     if (sizes) return sizes;
 
@@ -124,6 +215,7 @@ export const createShotStore = (options: {
 
       if (!stat?.isFile()) continue;
       if (name.endsWith(ENTRY_SUFFIX)) sizes.set(name, stat.size);
+      else if (basename(name) === LOCK_NAME) dropDeadLock(join(dir, name));
       else if (Date.now() - stat.mtimeMs > STALE_TEMP_MS) rmSync(join(dir, name), { force: true });
     }
 
@@ -182,29 +274,75 @@ export const createShotStore = (options: {
     }
   };
 
-  return {
-    read: (key, address) => {
-      const scope = storedScopeOf(address);
+  const read = (key: string, address: StoredAddress) => {
+    const scope = storedScopeOf(address);
 
-      for (const name of variantsOf(key)) {
-        const picture = pictureOf(name, { key, scope });
+    for (const name of variantsOf(key)) {
+      const picture = pictureOf(name, { key, scope });
 
-        if (!picture) continue;
+      if (!picture) continue;
 
-        const now = new Date();
+      const now = new Date();
 
-        try {
-          utimesSync(join(dir, name), now, now);
-        } catch {
-          return null;
-        }
-        used.set(key, name);
-
-        return picture;
+      try {
+        utimesSync(join(dir, name), now, now);
+      } catch {
+        return null;
       }
+      used.set(key, name);
 
-      return null;
-    },
+      return picture;
+    }
+
+    return null;
+  };
+
+  const waitFor = async (key: string, { address, ms }: { address: StoredAddress; ms: number }): Promise<SharedDraw> => {
+    const path = lockOf(key);
+    const started = Date.now();
+
+    for (;;) {
+      const picture = read(key, address);
+
+      if (picture) return { picture };
+
+      const lock = lockAt(path);
+      const waitedMs = Date.now() - started;
+      const ownerGone = typeof lock === 'object' && !isRunning(lock.pid);
+      const tooOld =
+        typeof lock === 'object'
+          ? Date.now() - lock.at > ms
+          : lock === 'unreadable' && Date.now() - mtimeOf(relative(dir, path)) > ms;
+      const stale = ownerGone || tooOld;
+
+      if (stale) {
+        const still = lockAt(path);
+
+        if (typeof lock !== 'object' || (typeof still === 'object' && still.token === lock.token))
+          rmSync(path, { force: true });
+      }
+      if (lock === 'none' || stale) {
+        const claimed = claim(key);
+
+        if (claimed) {
+          const stored = read(key, address);
+
+          if (!stored)
+            return { claim: claimed, why: ownerGone ? 'owner gone' : tooOld ? 'too old' : 'released', waitedMs };
+
+          claimed.release();
+
+          return { picture: stored };
+        }
+      }
+      if (waitedMs >= ms) return { claim: null, why: 'timeout', waitedMs };
+
+      await delay(pollMs);
+    }
+  };
+
+  return {
+    read,
     write: (key, { address, picture }) => {
       try {
         const files = inputsOf(address);
@@ -254,5 +392,7 @@ export const createShotStore = (options: {
       if (sizes) remove(sizes, name);
       else rmSync(join(dir, name), { force: true });
     },
+    claim,
+    waitFor,
   };
 };

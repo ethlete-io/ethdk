@@ -9,6 +9,7 @@ import { createDrawLedger } from './draw-ledger';
 import { DESIGN_DIR, readConfig } from './design-config';
 import { createDesignServer } from './serve';
 import { createPartShooter, dependentIdsOf } from './shot';
+import { createShotStore } from './shot-store';
 import { DRAWS_AT_ONCE } from './thumb';
 import { createSketch, parseTarget } from './system/sketch/sketch';
 import { unviewedShotLinesOf } from './system/sketch/viewed-shots';
@@ -94,6 +95,39 @@ const acme = (statesOf?: Parameters<typeof createPartShooter>[0]['statesOf']) =>
   closing.push(() => shots.close());
 
   return { target, config, system, ledger, shots };
+};
+
+const sharingShooters = () => {
+  const { target, system } = acme();
+  const input = join(target, 'drawn-from.ts');
+
+  writeFileSync(input, 'export const drawn = 1;');
+
+  const shooter = () => {
+    const ledger = createDrawLedger();
+    const store = createShotStore({
+      dir: join(target, 'part-shots'),
+      salt: 'salt',
+      checkout: target,
+      inputsOf: () => [input],
+      scopeOf: () => 'scope',
+      pollMs: 5,
+    });
+    const shots = createPartShooter({
+      target,
+      base: 'http://localhost:1',
+      system,
+      chromiumOf: withBrowser,
+      ledger,
+      store,
+    });
+
+    closing.push(() => shots.close());
+
+    return { shots, ledger };
+  };
+
+  return { first: shooter(), second: shooter() };
 };
 
 const asking = (shots: ReturnType<typeof createPartShooter>, query: string) => {
@@ -666,6 +700,50 @@ describe('createPartShooter', () => {
     await expect(
       shots.pictureOf({ ...address, params: new URLSearchParams('clip=900,900,40,10&scale=3') }),
     ).rejects.toThrow('the screenshot failed');
+  });
+
+  it('waits for the draw another shooter on the same store holds and reads its picture without drawing', async () => {
+    const { first, second } = sharingShooters();
+    let release = () => undefined as void;
+    const held = new Promise<void>((done) => (release = done));
+    const query = 'product=acme&part=components/card&state=long';
+
+    goto.mockImplementationOnce(() => held);
+
+    const drawing = ask(first.shots, query);
+
+    await vi.waitFor(() => expect(goto).toHaveBeenCalledTimes(1));
+
+    const waiting = ask(second.shots, query);
+
+    release();
+
+    await expect(drawing).resolves.toMatchObject({ status: 200 });
+    await expect(waiting).resolves.toMatchObject({ status: 200, type: 'image/png' });
+    expect(drawnUrls()).toHaveLength(1);
+    expect(first.ledger.report()).toMatchObject({ drawnTotal: 1, waitedTotal: 0 });
+    expect(second.ledger.report()).toMatchObject({ drawnTotal: 0, waitedTotal: 1 });
+  });
+
+  it('draws a shot itself when the shooter it waited for failed to draw it', async () => {
+    const { first, second } = sharingShooters();
+    let release = () => undefined as void;
+    const held = new Promise<void>((done) => (release = done));
+    const query = 'product=acme&part=components/card&state=long';
+
+    goto.mockImplementationOnce(() => held.then(() => Promise.reject(new Error('net::ERR_ABORTED'))));
+
+    const drawing = ask(first.shots, query);
+
+    await vi.waitFor(() => expect(goto).toHaveBeenCalledTimes(1));
+
+    const waiting = ask(second.shots, query);
+
+    release();
+
+    await expect(drawing).resolves.toMatchObject({ status: 500 });
+    await expect(waiting).resolves.toMatchObject({ status: 200, type: 'image/png' });
+    expect(second.ledger.report()).toMatchObject({ drawnTotal: 1, waitedTotal: 0 });
   });
 
   it('draws a state at the asked scale as a picture of its own, and answers 400 for a bad scale', async () => {
