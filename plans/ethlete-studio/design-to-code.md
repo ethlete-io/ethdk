@@ -4142,3 +4142,10 @@ bug. The 714 assert is `toBeGreaterThanOrEqual(18000)`: at `.999` the floored `e
 lower bound, not slack (doc agent accepted). Verified by subagent: `src/scenarios` at `.500`, `.000`, `.999` each 1557
 passed; `spec:stress` 4/4. Decided (doc agent, ADR 0240 "as fast as possible"): CI runs the two edge fractions as
 parallel jobs, so the wall time of the query step does not grow.
+As built (715, Mac builder, 0fcb4c2dc, pushed with merge feae02d99d). Cause: spec, not product. `realOf()` in
+`package-root.ts` resolves only an existing path; the spec's running root did not exist, so it kept `/var/...` while
+`realOf(tmpdir())` gave `/private/var/...`, and the temp build counted as non-transient; the second case expected the
+unresolved path although the product writes the real one. Fix (spec only): `withRunningRoot` creates the root, the
+expectation uses `realpathSync`. Verified on macOS: both failed before, 9/9 after; push suite ok. Not verified on
+Linux (reasoned: `/tmp` is no symlink). Open, tool backlog: `realOf()` does not resolve a missing path under a
+symlinked parent; fix: realpath the nearest existing ancestor.
