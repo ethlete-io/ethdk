@@ -4059,3 +4059,12 @@ a file-level `beforeAll` with a 120 s timeout; `part-accept`, `part-go` and `par
 system changed. Verified: bite under `--slow 6`, copies without the warm-up 0/2 in all three files (part-accept,
 part-go first worker case at 30 s); with it `--runs 4 --slow 6` 4/4 and `--runs 4 --load 2` 4/4 each; eslint and
 `tsc -p libs/cli/tsconfig.spec.json` clean. Not run: the scheduled stress sweep (tool fix of 710, tool backlog).
+
+As built (710, bd6a1d5de, not pushed). Cause (measured, 3 runs): the cold start of the open-points worker from source
+through jiti takes 2.0 to 2.4 s of the 2.5 s first case unloaded; a second call takes 3 to 4 ms, a warm worker with a
+new product 7 to 8 ms. Fix: `warmOpenPointsWorker()` in `open-points-worker.fixtures.ts`, called in a file-level
+`beforeAll` with a 120 s timeout in `part-accept`, `part-go` and `part-ready`; nothing else in the go system changed.
+Bite at `--slow 6`: without the warm-up 0/2 in all three files, the first `openPointsAnswer` case times out at 30 s as
+in CI; with it `--runs 4 --slow 6` 4/4 and `--load 2` 4/4. Open: at `--slow 13` the `part-accept` case "refuses a part
+with theming findings" (no worker) takes 37 s, so `--slow 13` overstates the CI runners for these files; the sweep in
+the 710 tool fix needs a factor measured from CI, not 13. Also: `design-command.spec` (707) 6/6.
