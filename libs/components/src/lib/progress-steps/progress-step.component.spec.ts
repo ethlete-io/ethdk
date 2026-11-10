@@ -9,7 +9,7 @@ import { provideProgressStepLabels } from './progress-step-labels';
 
 @Component({
   selector: 'et-test-progress-step-host',
-  template: `<et-progress-step [state]="state()">Shipping</et-progress-step>`,
+  template: `<et-progress-step [stepState]="state()">Shipping</et-progress-step>`,
   imports: [PROGRESS_STEPS_IMPORTS],
 })
 class ProgressStepHostComponent {
@@ -21,7 +21,7 @@ class ProgressStepHostComponent {
 @Component({
   selector: 'et-test-progress-step-description-host',
   template: `
-    <et-progress-step state="current">
+    <et-progress-step stepState="current">
       Payment
       <span etProgressStepDescription>Card ending 4242</span>
     </et-progress-step>

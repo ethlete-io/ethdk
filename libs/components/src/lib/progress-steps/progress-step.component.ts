@@ -44,7 +44,7 @@ const STATE_ICONS: Partial<Record<ProgressStepState, RegisteredIconName>> = {
 
 /**
  * One step in an `et-progress-steps` row: a numbered marker that becomes an icon once resolved, plus
- * a label. `state` is yours to set per step - nothing is derived from position, so a skipped or
+ * a label. `stepState` is yours to set per step - nothing is derived from position, so a skipped or
  * out-of-order step is exactly as easy to render as a strictly linear one.
  *
  * `complete` marks a step as done in the surrounding color theme; `success`, `warning` and `error`
@@ -55,7 +55,7 @@ const STATE_ICONS: Partial<Record<ProgressStepState, RegisteredIconName>> = {
  * covers, what it produced, why it failed:
  *
  * @example
- * <et-progress-step state="current">
+ * <et-progress-step stepState="current">
  *   Payment
  *   <span etProgressStepDescription>Card ending 4242</span>
  * </et-progress-step>
@@ -65,7 +65,7 @@ const STATE_ICONS: Partial<Record<ProgressStepState, RegisteredIconName>> = {
  * belong, and the whole step becomes the target:
  *
  * @example
- * <a [routerLink]="['/checkout/account']" state="complete" et-progress-step>Account</a>
+ * <a [routerLink]="['/checkout/account']" stepState="complete" et-progress-step>Account</a>
  */
 @Component({
   selector: 'et-progress-step, [et-progress-step]',
@@ -89,13 +89,15 @@ export class ProgressStepComponent {
 
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  public state = input<ProgressStepState>(PROGRESS_STEP_STATES.UPCOMING);
+  public stepState = input<ProgressStepState>(PROGRESS_STEP_STATES.UPCOMING);
 
   protected role = INTERACTIVE_HOSTS.has(this.elementRef.nativeElement.nodeName) ? null : 'listitem';
 
   private currentSource = signal<Signal<boolean> | null>(null);
 
-  protected resolvedState = computed(() => (this.currentSource()?.() ? PROGRESS_STEP_STATES.CURRENT : this.state()));
+  protected resolvedState = computed(() =>
+    this.currentSource()?.() ? PROGRESS_STEP_STATES.CURRENT : this.stepState(),
+  );
 
   protected markerIcon = computed(() => STATE_ICONS[this.resolvedState()] ?? null);
   protected stateLabel = computed(() => {

@@ -7,9 +7,9 @@ import { PROGRESS_STEPS_IMPORTS } from './progress-steps.imports';
   selector: 'et-test-progress-steps-host',
   template: `
     <et-progress-steps>
-      <et-progress-step state="complete">Account</et-progress-step>
-      <et-progress-step state="current">Shipping</et-progress-step>
-      <et-progress-step state="upcoming">Payment</et-progress-step>
+      <et-progress-step stepState="complete">Account</et-progress-step>
+      <et-progress-step stepState="current">Shipping</et-progress-step>
+      <et-progress-step stepState="upcoming">Payment</et-progress-step>
     </et-progress-steps>
   `,
   imports: [PROGRESS_STEPS_IMPORTS],
@@ -18,7 +18,7 @@ class ProgressStepsHostComponent {}
 
 @Component({
   selector: 'et-test-progress-steps-link-host',
-  template: `<et-progress-steps><a href="/a" state="complete" et-progress-step>Account</a></et-progress-steps>`,
+  template: `<et-progress-steps><a href="/a" stepState="complete" et-progress-step>Account</a></et-progress-steps>`,
   imports: [PROGRESS_STEPS_IMPORTS],
 })
 class ProgressStepsLinkHostComponent {}

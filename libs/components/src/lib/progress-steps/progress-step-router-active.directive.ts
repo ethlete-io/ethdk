@@ -5,7 +5,7 @@ import { ProgressStepComponent } from './progress-step.component';
 
 /**
  * Makes a step written as a `routerLink` the `current` step while its link is active in the router.
- * Opt in per step; a step without it keeps the `state` you set. Set `etProgressStepExact` to match
+ * Opt in per step; a step without it keeps the `stepState` you set. Set `etProgressStepExact` to match
  * the link's URL exactly instead of any URL beneath it.
  *
  * @example

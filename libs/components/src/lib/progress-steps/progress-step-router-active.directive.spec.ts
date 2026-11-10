@@ -11,10 +11,10 @@ class PageComponent {}
   selector: 'et-test-router-active-host',
   template: `
     <et-progress-steps>
-      <a [routerLink]="['/account']" etProgressStepRouterActive state="complete" et-progress-step>Account</a>
+      <a [routerLink]="['/account']" etProgressStepRouterActive stepState="complete" et-progress-step>Account</a>
       <a [routerLink]="['/shipping']" etProgressStepRouterActive et-progress-step>Shipping</a>
       <a [routerLink]="['/payment']" etProgressStepRouterActive etProgressStepExact et-progress-step>Payment</a>
-      <a [routerLink]="['/review']" state="current" et-progress-step>Review</a>
+      <a [routerLink]="['/review']" stepState="current" et-progress-step>Review</a>
     </et-progress-steps>
   `,
   imports: [PROGRESS_STEPS_IMPORTS, RouterLink],

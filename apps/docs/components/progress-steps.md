@@ -8,10 +8,10 @@ import { PROGRESS_STEPS_IMPORTS } from '@ethlete/components';
 
 ```html
 <et-progress-steps>
-  <et-progress-step state="complete">Account</et-progress-step>
-  <et-progress-step state="complete">Shipping</et-progress-step>
-  <et-progress-step state="current">Payment</et-progress-step>
-  <et-progress-step state="upcoming">Review</et-progress-step>
+  <et-progress-step stepState="complete">Account</et-progress-step>
+  <et-progress-step stepState="complete">Shipping</et-progress-step>
+  <et-progress-step stepState="current">Payment</et-progress-step>
+  <et-progress-step stepState="upcoming">Review</et-progress-step>
 </et-progress-steps>
 ```
 
@@ -19,14 +19,17 @@ import { PROGRESS_STEPS_IMPORTS } from '@ethlete/components';
 
 @example progress-steps/progress-steps-default 140px
 
-## `state` is yours to set, per step
+## `stepState` is yours to set, per step
 
 Nothing is derived from a step's position or a "current index" - each `et-progress-step` reads its
-own `state` (default `'upcoming'`). That keeps a skipped step, an out-of-order retry, or a branching
-flow exactly as easy to render as a strictly linear wizard: set whatever `state` the step is actually
+own `stepState` (default `'upcoming'`). That keeps a skipped step, an out-of-order retry, or a branching
+flow exactly as easy to render as a strictly linear wizard: set whatever `stepState` the step is actually
 in, wherever it sits in the projected list.
 
-| `state`      | Marker                   | Reads as                                                   |
+The input is called `stepState`, not `state`, so it does not collide with the `state` input of `RouterLink` (the
+history state) when you put `et-progress-step` on a `routerLink` anchor.
+
+| `stepState`  | Marker                   | Reads as                                                   |
 | ------------ | ------------------------ | ---------------------------------------------------------- |
 | `'upcoming'` | number, neutral          | not reached yet                                            |
 | `'current'`  | number, accent outline   | where the flow is now                                      |
@@ -67,9 +70,9 @@ because in a column the gap _is_ the connector's length.
 
 ```html
 <et-progress-steps orientation="vertical">
-  <et-progress-step state="complete">Account</et-progress-step>
-  <et-progress-step state="current">Shipping</et-progress-step>
-  <et-progress-step state="upcoming">Payment</et-progress-step>
+  <et-progress-step stepState="complete">Account</et-progress-step>
+  <et-progress-step stepState="current">Shipping</et-progress-step>
+  <et-progress-step stepState="upcoming">Payment</et-progress-step>
 </et-progress-steps>
 ```
 
@@ -83,11 +86,11 @@ link, emphasis, or an interpolated value the same way the label does:
 
 ```html
 <et-progress-steps orientation="vertical">
-  <et-progress-step state="complete">
+  <et-progress-step stepState="complete">
     Account
     <span etProgressStepDescription>sam&#64;example.com</span>
   </et-progress-step>
-  <et-progress-step state="current">
+  <et-progress-step stepState="current">
     Payment
     <span etProgressStepDescription>Card ending 4242</span>
   </et-progress-step>
@@ -112,21 +115,21 @@ click handler, `disabled` - stays where you wrote it:
 
 ```html
 <et-progress-steps>
-  <a [routerLink]="['/checkout/account']" state="complete" et-progress-step>Account</a>
-  <a [routerLink]="['/checkout/shipping']" state="current" et-progress-step>Shipping</a>
+  <a [routerLink]="['/checkout/account']" stepState="complete" et-progress-step>Account</a>
+  <a [routerLink]="['/checkout/shipping']" stepState="current" et-progress-step>Shipping</a>
   <!-- not reachable yet, so not a link -->
-  <et-progress-step state="upcoming">Payment</et-progress-step>
+  <et-progress-step stepState="upcoming">Payment</et-progress-step>
 </et-progress-steps>
 ```
 
 Add `etProgressStepRouterActive` to a `routerLink` step and the router decides when it is `current`: the
-step is current while its link is active, and keeps the `state` you set otherwise. It is opt-in per
+step is current while its link is active, and keeps the `stepState` you set otherwise. It is opt-in per
 step, so nothing is detected behind your back. The match is by prefix (`/checkout/shipping` also matches
 `/checkout/shipping/address`); add `etProgressStepExact` to match the link's URL exactly. Query
 parameters and fragments are ignored. Steps behind the active one are still yours to mark `complete`.
 
 ```html
-<a [routerLink]="['/checkout/account']" state="complete" et-progress-step>Account</a>
+<a [routerLink]="['/checkout/account']" stepState="complete" et-progress-step>Account</a>
 <a [routerLink]="['/checkout/shipping']" etProgressStepRouterActive et-progress-step>Shipping</a>
 ```
 
@@ -144,9 +147,9 @@ normal case: only the steps behind the user are reachable.
 
 ### `et-progress-step`
 
-| Input   | Type                                                                         | Default      | Description                                                                                            |
-| ------- | ---------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------ |
-| `state` | `'complete' \| 'current' \| 'upcoming' \| 'success' \| 'warning' \| 'error'` | `'upcoming'` | Drives the marker (number vs. icon), the connector tint, the label weight, and the step's color theme. |
+| Input       | Type                                                                         | Default      | Description                                                                                            |
+| ----------- | ---------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------ |
+| `stepState` | `'complete' \| 'current' \| 'upcoming' \| 'success' \| 'warning' \| 'error'` | `'upcoming'` | Drives the marker (number vs. icon), the connector tint, the label weight, and the step's color theme. |
 
 ### `etProgressStepRouterActive`
 

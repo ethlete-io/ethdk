@@ -5,19 +5,19 @@ import { PROGRESS_STEPS_IMPORTS } from '@ethlete/components';
   selector: 'app-progress-steps-vertical-descriptions-example',
   template: `
     <et-progress-steps orientation="vertical">
-      <et-progress-step state="complete">
+      <et-progress-step stepState="complete">
         Account
         <span etProgressStepDescription>sam@example.com</span>
       </et-progress-step>
-      <et-progress-step state="complete">
+      <et-progress-step stepState="complete">
         Shipping
         <span etProgressStepDescription>Standard, 2-4 days</span>
       </et-progress-step>
-      <et-progress-step state="current">
+      <et-progress-step stepState="current">
         Payment
         <span etProgressStepDescription>Card ending 4242</span>
       </et-progress-step>
-      <et-progress-step state="upcoming">
+      <et-progress-step stepState="upcoming">
         Review
         <span etProgressStepDescription>Confirm and place the order</span>
       </et-progress-step>

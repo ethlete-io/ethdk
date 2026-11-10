@@ -10,13 +10,13 @@ export type ProgressStepsOrientation = (typeof PROGRESS_STEPS_ORIENTATIONS)[keyo
 /**
  * Lays out a row - or, with `orientation="vertical"`, a column - of `et-progress-step`s with automatic
  * step numbering and a connecting line between them. Project the steps in order, each with its own
- * `state`.
+ * `stepState`.
  *
  * @example
  * <et-progress-steps>
- *   <et-progress-step state="complete">Account</et-progress-step>
- *   <et-progress-step state="current">Shipping</et-progress-step>
- *   <et-progress-step state="upcoming">Payment</et-progress-step>
+ *   <et-progress-step stepState="complete">Account</et-progress-step>
+ *   <et-progress-step stepState="current">Shipping</et-progress-step>
+ *   <et-progress-step stepState="upcoming">Payment</et-progress-step>
  * </et-progress-steps>
  */
 @Component({
