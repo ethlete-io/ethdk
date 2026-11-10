@@ -4204,3 +4204,11 @@ green check (718) ran without the harness. Fix (doc agent, applies the B249 foot
 check is pending or running; after a refused record the footer shows the real blockers and "Sketch öffnen". Tool fix:
 an open-points spec and an e2e case with a refused record and a direct-edit point, failing on the old code. 719 did not
 recur on CI 42830064915.
+
+721\. Builder (2026-11-10, day shift, B249 S4a merge): the git-safety hook blocks `git commit` for a merge with a
+conflict, and auto mode denies the `commit-tree` way. The builder aborted and redid the merge with `-X theirs`
+(9f331121d), which silently took the Mac side of every conflicted hunk; a removed `part-go` import came back and
+d04fee738 dropped it again. Cause: the hook has no allowed path to conclude a conflicted merge, so the agent picks a
+strategy flag that drops hunks without a review. Tool fix (a safety-hook change, so the human decides; collected for the
+next round): the hook allows a pathless `git commit` while `MERGE_HEAD` exists and the index holds only the merge paths.
+Until then: resolve conflicts by hand, never `-X theirs` or `-X ours`.

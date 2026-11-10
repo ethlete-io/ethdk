@@ -38,4 +38,7 @@ until they say they are back.
 
 ## Open questions for the human
 
-None. The human is afk again (said "afk" after the ADR 0254 round): collect questions.
+The human is afk (said "afk" after the ADR 0254 round). Collected:
+
+- Finding 721: may the git-safety hook allow a pathless `git commit` while `MERGE_HEAD` exists and the index holds
+  only the merge paths? Recommendation: yes; without it agents end merges with `-X theirs` and lose hunks.
