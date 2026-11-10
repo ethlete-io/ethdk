@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { parseArgs, summarize } from './spec-stress.mjs';
+import { cpuQuotaOf, parseArgs, slowed, summarize } from './spec-stress.mjs';
 
 test('parseArgs reads specs, runs and load', () => {
   assert.deepEqual(parseArgs(['a.spec.ts', 'b.spec.mjs', '--runs', '4', '--load', '2']), {
     specs: ['a.spec.ts', 'b.spec.mjs'],
     runs: 4,
     load: 2,
+    slow: 0,
   });
 });
 
@@ -42,4 +43,20 @@ test('summarize separates flaky from broken', () => {
 
 test('summarize is ok when every run passes', () => {
   assert.equal(summarize([{ spec: 'a', ok: true }]).ok, true);
+});
+
+test('parseArgs reads a slow factor above 1', () => {
+  assert.equal(parseArgs(['a', '--slow', '13']).slow, 13);
+  assert.throws(() => parseArgs(['a', '--slow', '1']), /above 1/);
+  assert.throws(() => parseArgs(['a', '--slow', 'x']), /above 1/);
+});
+
+test('slowed runs the command in a user scope with a CPU quota of one core divided by the factor', () => {
+  assert.equal(cpuQuotaOf(13), '8%');
+  assert.equal(cpuQuotaOf(500), '1%');
+  assert.deepEqual(slowed(['npx', ['vitest', 'run']], 4), [
+    'systemd-run',
+    ['--user', '--scope', '--quiet', '-p', 'CPUQuota=25%', 'npx', 'vitest', 'run'],
+  ]);
+  assert.deepEqual(slowed(['npx', ['vitest']], 0), ['npx', ['vitest']]);
 });

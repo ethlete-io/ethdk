@@ -3944,3 +3944,8 @@ next to the run, but a hog run on many cores never makes one worker 13 times slo
 fix: `spec:stress --slow <factor>` runs the vitest workers under a CPU quota (for example a `systemd-run --user --scope
 -p CPUQuota=` scope sized to 1/factor of the cores the workers use), so a local run reaches the CI factor. Bite: the B458
 cold-compile case with its fix reverted fails under `--slow 13` and passes with plain `spec:stress`.
+As built (B481, builder, 2026-11-10): `spec:stress --slow <factor>` runs each spec run in a `systemd-run --user --scope`
+with `CPUQuota` = 100 % / factor of one core (`--slow 13` gives 8 %) and starts no CPU hogs unless `--load` is given; it
+exits 2 when no systemd user session exists. Bite: `system-view.component.spec.ts` without the B449 `beforeAll` passes
+2/2 under `--load 2` and fails 0/2 under `--slow 13`; with the `beforeAll` it passes 2/2 under `--slow 13`. Spec:
+`tools/scripts/spec-stress.spec.mjs` (7 pass). Not verified: macOS (no systemd, exits 2).

@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { cpus } from 'node:os';
 import { dirname, join, relative } from 'node:path';
@@ -7,10 +7,14 @@ import { fileURLToPath } from 'node:url';
 const ROOT_MARKERS = ['project.json', 'vitest.config.mts', 'vitest.config.ts', 'vite.config.mts', 'vite.config.ts'];
 
 export const parseArgs = (argv) => {
-  const options = { specs: [], runs: 8, load: 0 };
+  const options = { specs: [], runs: 8, load: 0, slow: 0 };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg === '--runs' || arg === '--load') {
+    if (arg === '--slow') {
+      const value = Number(argv[++i]);
+      if (!(value > 1)) throw new Error('--slow needs a factor above 1');
+      options.slow = value;
+    } else if (arg === '--runs' || arg === '--load') {
       const value = Number(argv[++i]);
       if (!Number.isInteger(value) || value < (arg === '--runs' ? 1 : 0)) throw new Error(`${arg} needs an integer`);
       options[arg.slice(2)] = value;
@@ -56,9 +60,16 @@ const commandFor = (repo, spec) => {
   return ['npx', ['vitest', 'run', '--root', root, ...config, '--maxWorkers=1', relative(root, spec)]];
 };
 
-const runOnce = (repo, spec) =>
+export const cpuQuotaOf = (slow) => `${Math.max(1, Math.round(100 / slow))}%`;
+
+export const slowed = ([cmd, args], slow) =>
+  slow
+    ? ['systemd-run', ['--user', '--scope', '--quiet', '-p', `CPUQuota=${cpuQuotaOf(slow)}`, cmd, ...args]]
+    : [cmd, args];
+
+const runOnce = (repo, spec, slow) =>
   new Promise((resolve) => {
-    const [cmd, args] = commandFor(repo, spec);
+    const [cmd, args] = slowed(commandFor(repo, spec), slow);
     const child = spawn(cmd, args, { cwd: repo, stdio: 'ignore' });
     child.on('exit', (code) => resolve({ spec, ok: code === 0 }));
     child.on('error', () => resolve({ spec, ok: false }));
@@ -72,11 +83,15 @@ const burn = (count) => {
 const main = async () => {
   const options = parseArgs(process.argv.slice(2));
   const repo = process.cwd();
-  const hogs = burn(options.load || cpus().length);
+  if (options.slow && spawnSync('systemd-run', ['--user', '--scope', '--quiet', 'true']).status !== 0) {
+    console.error('--slow needs systemd-run --user (a Linux user session with systemd)');
+    process.exit(2);
+  }
+  const hogs = burn(options.load || (options.slow ? 0 : cpus().length));
   const jobs = options.specs.flatMap((spec) => Array.from({ length: options.runs }, () => spec));
   let results;
   try {
-    results = await Promise.all(jobs.map((spec) => runOnce(repo, spec)));
+    results = await Promise.all(jobs.map((spec) => runOnce(repo, spec, options.slow)));
   } finally {
     for (const hog of hogs) hog.kill();
   }
