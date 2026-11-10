@@ -1,7 +1,6 @@
 import { createHash } from 'crypto';
 import { IncomingMessage, ServerResponse } from 'http';
-import { mkdirSync, writeFileSync } from 'fs';
-import { dirname, isAbsolute } from 'path';
+import { isAbsolute } from 'path';
 import { Plugin } from 'postcss';
 import { blankPngOf } from './blank-png';
 import { chromiumOf } from './browser';
@@ -11,7 +10,7 @@ import { DesignPreset } from './design-config';
 import { DrawLedger } from './draw-ledger';
 import { fileOfModuleId, SketchVariant, SystemModules } from './system/system-modules';
 import { sketchIdOfName } from './system/sketch/sketch';
-import { recordShotViewed, viewedShotFileOf } from './system/sketch/viewed-shots';
+import { recordShotViewed } from './system/sketch/viewed-shots';
 import {
   Browser,
   callDrawsFrom,
@@ -758,11 +757,7 @@ export const createPartShooter = (options: {
 
     if (!sketch) return;
 
-    const shot = viewedShotFileOf({ target: options.target, sketch, variant });
-
-    mkdirSync(dirname(shot), { recursive: true });
-    writeFileSync(shot, png);
-    recordShotViewed({ target: options.target, sketch, variant, shot });
+    recordShotViewed({ target: options.target, sketch, variant, png });
   };
 
   return {

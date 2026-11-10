@@ -3530,3 +3530,12 @@ once under load (5 s poll) and passes alone. Suspect: a fixed poll budget, not a
 spec that polls a fixed time fails under load like 769. Tool fix (night backlog, Linux, after 767): the case waits on the
 condition; a bite under the CPU quota. 766 (b) parked by the builder (tool internal): every Claude session is a
 SendMessage peer, so `send` refusing them would end every typed wake; d3e2a7c58 fixes the wrong typing.
+
+As built (767): `recordShotViewed` copies the shot it is handed (a file from the CLI, the bytes from the design server)
+into the variant's own `viewed-shots/<sketch>-<variant>.png` and records that copy's hash; the design server path calls
+the same helper, so there is one copy rule. A CLI sheet that holds several variants gives each variant its own copy, so a
+later shot that rewrites the sheet file leaves earlier views intact. Bite: the sketch-command spec "keeps a variant
+viewed after a later shot of another variant rewrites the same sheet file" fails on HEAD (`sketch ready` exits 1) and
+passes with the fix; the "drawn over" case now draws over the per-view copy. Not verified: a real `et design shot
+--states --variants` run in a browser, and old records that point at a sheet file (they stay valid until that sheet is
+redrawn, then ask for a new view).
