@@ -4084,3 +4084,10 @@ blocked with the report reason. Not verified: a block in a real `--role builder`
 command text, so a heredoc that contains `agent-sessions.mjs send` counts as a report; tool fix (builder default): match
 on the parsed command of each Bash call, not on its text. (b) The Mac builder session runs with no role, so neither the
 703 nor the 706 hook fires there; fix: restart it with `--role builder` (doc agent, after its current turn).
+
+713\. Builder (2026-11-10, day shift, B249 app slice): the push of 27e923d8b failed; pre-push `lint:studio-label-specs`
+found that `system-view.component.spec.ts:1488` asserts the removed label "Go geben" (`not.toContain`). Fix: the line
+is gone; the spec already asserts that no `ethlete-part-approval` exists (47/47). Cause: the label-spec lint runs only
+in pre-push, and a slice subagent never runs pre-push, so the slice commit passed. Tool fix (builder default, tool
+backlog): pre-commit runs `lint:studio-label-specs` on staged spec files under `apps/ethlete-studio` (sub-second);
+bite: a staged spec that names a label the app no longer has is refused at commit.
