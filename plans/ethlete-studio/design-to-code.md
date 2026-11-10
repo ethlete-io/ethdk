@@ -3489,13 +3489,13 @@ real package `design/web` folder, and `buildStampOf` in a parallel spec listed t
 file that was gone. The same race hits a real server that starts while `nx build cli` rewrites its assets. Why no
 tool caught it: the push suite runs `nx test cli` once, and the window is a few milliseconds.
 
+As built (768): `filesUnder` in stamp.ts stats with `throwIfNoEntry: false`, and the hash loop skips a file that
+is gone before it reads it. stamp-vanished.spec.ts removes a `vanishing-` file between `readdirSync` and the stat;
+it failed with the CI ENOENT without the fix and passes with it. Verified: the two stamp specs and `cli:typecheck`.
+Not verified: the full cli suite under CI load; the push suite runs it.
+
 769\. Mac builder (2026-11-11, night, push:suite 8c4bdb6a1): `[Inbox] Tab focus shows the ring` failed with
 `focused=false rings=[]` at load 26.2; alone at load about 10 it passes 3/3. CI failed the same case class (731). Suspect:
 the case reads focus before the page settles under load. Lesson: a load-sensitive case needs its cause, not a retry; a
 retry hides a real focus defect. Decided by the doc agent (tool internal): no single-case retry. Tool fix (night, Mac):
 reproduce under the CPU quota (731/735), find the cause, the case waits on a condition, bite under the quota.
-
-As built (768): `filesUnder` in stamp.ts stats with `throwIfNoEntry: false`, and the hash loop skips a file that
-is gone before it reads it. stamp-vanished.spec.ts removes a `vanishing-` file between `readdirSync` and the stat;
-it failed with the CI ENOENT without the fix and passes with it. Verified: the two stamp specs and `cli:typecheck`.
-Not verified: the full cli suite under CI load; the push suite runs it.
