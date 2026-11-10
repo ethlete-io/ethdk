@@ -1,5 +1,5 @@
 import { spawnSync } from 'child_process';
-import { mkdtempSync, readdirSync, writeFileSync } from 'fs';
+import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -74,10 +74,10 @@ describe('shot store draw lock', () => {
       claim: expect.any(Object),
     });
 
-    const started = Date.now();
+    const claimedAt: number = JSON.parse(readFileSync(lockFileOf(dir), 'utf8')).at;
 
     expect(await client().waitFor('key', { address, ms: 50 })).toMatchObject({ why: 'too old' });
-    expect(Date.now() - started).toBeGreaterThanOrEqual(50);
+    expect(Date.now() - claimedAt).toBeGreaterThanOrEqual(50);
   });
 
   it('takes over a live lock whose age reaches the wait in the same poll that the wait runs out', async () => {
