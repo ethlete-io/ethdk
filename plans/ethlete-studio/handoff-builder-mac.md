@@ -1,35 +1,33 @@
-<!-- Builder handoff, Mac night shift 2026-11-10 (ADR 0239), fifth session. Replace once resumed. -->
+<!-- Builder handoff, Mac 2026-11-10 morning (ADR 0239), after the sixth night session. Replace once resumed. -->
 
-# Handoff: builder, Mac night shift (ADR 0239)
+# Handoff: builder, Mac (day shift next)
 
 Run `/builder-agent` first. The grill/docs session is `ethlete-sdk-68`; report every sha to it with `SendMessage`.
 Never ask the user. `export NX_NO_CLOUD=true`. Commits: `git commit -- <paths>` (`git add -- <new file>` first), never
-`git add -A`, stash, amend or rebase. Write the slice paths with `yarn slice:paths "<slice name>" <path>...` yourself at
-each slice start. One full test run at a time. Commit scope for Studio/e2e is `repo`.
+`git add -A`, stash, amend or rebase. At each slice start run `yarn slice:paths "<slice name>" <path>...`. One full test
+run at a time. Commit scope for Studio/e2e is `repo`. `yarn commit` runs no spec and no typecheck: a slice that changes
+a config or a `.ts` file runs the `typecheck` target of each touched project.
 
 ## State at handoff
 
-- No push tonight (grill decision). CI red is B466 on origin/next; its fix waits for the human (B471, worktree
+- No push (grill decision). CI red is B466 on origin/next; its fix waits for the human (B471, worktree
   `/tmp/b466-push`). No agent sets PUSH_SUITE_SKIP.
-- Commits this session, all reported to the grill session and recorded by it: e370bba6c (679 event log), c009a879e
-  (revert of the 995491fb1 warm-up), 82369780d (667 c shared shot store), 04eb763dc (parent-watch lint), 9e2572e8c (684
-  Suspect/Cause rule in the skills), cef57a3d0 (685 lint at commit and in push:suite, 663 ensureCli rebuilds a stale
-  dist), 212a131f6 (667 a shared in-flight draw lock), 8f45fbb32 (667 b remove old `shots-<10 hex>` folders),
-  494fd4f4f (678 listing hold reasons).
-- Full `yarn studio:e2e` at 9e2572e8c: 131/131 in 410.9 s (was 442.2 s). No full run after 212a131f6.
-- `plans/ethlete-studio/design-to-code.md` has a size budget (440k). The grill session owns it and archives findings;
-  subagents add short As-built notes only.
-- Tree clean. No subagent, e2e or design server running.
+- Commits of the sixth night session, all reported to the grill session: 66df9d82a (656 push-suite runs from its export,
+  658 vitest FAIL rows), ed5d4ed8c + 28ba414d2 (660 git regex dialect spec), d906c4796 + ef646f413 (662 shared vitest
+  worker preset `tools/vitest/workers.mjs`, check in `yarn test:tools`), 0ecf33e8b (670 + 682 `yarn slice:paths`,
+  source and age in the warning), 465f8f69e (686 timetrack-app `test` target, 18/18 specs), b7b0a37e6 (skill sentence).
+  672's tool part was already in 054fb039b.
+- `nx affected -t typecheck --base=origin/next` at b7b0a37e6: 19 projects, 0 errors.
+- Full `yarn studio:e2e` at 28ba414d2: 131/131 in 418.3 s, load 12-17 from outside the run, so no clean spread figure
+  (earlier: 410.9 s, 442.2 s).
+- Open for the human (grill session asked, finding 687/688): typecheck step in push:suite versus a draft-PR push per
+  slice (ADR 0038, ADR 0216). The lint step of 685 stays until the answer. Do not add a typecheck step before it.
 
-## Then (order set by the grill session)
+## Then
 
-1. 656 + 658 (one slice, both `tools/scripts/push-suite.mjs`): 656 the suite imports its gate scripts from the live
-   tree, so an uncommitted edit leaks in (load them from the exported HEAD dir); 658 `failureReport` also prints the
-   vitest `FAIL <file> > <test>` rows. Findings at about line 3450 and 3496.
-2. 660 (Mac git regex dialect, a check that pins it), 662 (`maxWorkers` follows core count; B466 suspect, CI red), 672,
-   670 + 682 (slice-paths file names the slice and its time, "stale" past 2 h). Read each finding first; skip parts
-   whose As-built says done.
-3. A second full `yarn studio:e2e` on a quiet machine for spread (compare 410.9 s and 442.2 s).
-4. Iframe perf measurement only on a quiet machine: live iframes, memory/CPU per iframe, open-to-all-painted,
-   visible-only variant without a product change; figures to the grill session.
-5. Day-shift handoff: note B469 (ADR 0242, CEF on every platform; Mac spike is day shift, not night).
+1. B469 (day shift, ADR 0242, CEF on every platform): spike CEF on macOS (build runs, bundle size, signing and
+   notarization), then the human confirms the switch to CEF everywhere. Read the `app-releases` skill first.
+2. Iframe perf measurement, only on a quiet machine (load under 4): live iframes, memory/CPU per iframe,
+   open-to-all-painted, visible-only variant without a product change; figures to the grill session. Not done: the
+   machine was at load 12+ all morning.
+3. A third full `yarn studio:e2e` on a quiet machine for the spread.
