@@ -3984,6 +3984,12 @@ Reverted (grill decision, 540dc26db): 995491fb1 fixed no reproduced fail and cos
 0230, ADR 0240). It had no diagnostics that stand alone: the `warmUp` phase timing was there before it. The measurement
 stays: each worker draws the same ~52 shots cold, which is 667 (c), one shot store for all workers.
 
+Builder (2026-11-10, Mac day, B472 / 683 follow-up): no run after the 540dc26db revert has a `Fit is stable` fail.
+Targeted runs of the three Fit cases (Sketches, Large, Chip) on 3 cold workers, `--cold-shots`, 12 busy-loop hogs,
+1-min load 38 to 45: 6 runs, 18/18 pass; Sketches 42.6 to 45.2 s, Large 31.8 to 32.6 s, Chip 26.1 to 26.6 s, `warmUp`
+20.0 to 21.0 s, first case at 75.3 to 76.3 s. The 10 s `page.goto` fail did not come back. No new suspect beyond the
+683 one (the page `load` waits for cold shot draws); still not proven.
+
 684\. Doc agent (2026-11-10, Mac night, 683): I recorded "e2e cases start while the build runs" as the cause of 683
 from the builder's first report, before any proof, and queued a fix for it; the bite then showed the rule already held.
 A fix round went into a cause nobody had proven. Why no tool caught it: the findings format has no field that says
