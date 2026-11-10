@@ -4046,3 +4046,14 @@ store, 31.3 s (7 %) faster than 442.2 s; first case at 50.1 s, quiet tail from 3
 before it failed 0/131 in 1.4 s: the 673 fix made `dist/libs/cli` stale and `ensureCli` did not rebuild it. This is
 finding 663 (stale dist check before workers) seen again; it is still in the bug queue. 684 is built in 9e2572e8c
 (builder and doc agent skills).
+
+686\. Builder (2026-11-10, Mac night, d906c4796, during 662): the 18 vitest specs of timetrack-app
+(`apps/timetrack/src/**/*.spec.ts`, config `apps/timetrack/vitest.config.mts` since 97ca9a744, 2026-09-29) run in no
+gate. `apps/timetrack/project.json` has no `test` target, and no CI step names them. Run by hand they fail with `"." is
+not exported under the conditions [node, development, import] from @ethlete/core`, with the config before 662 too, so the
+662 preset is not the cause. Suspect: the config lacks the `@ethlete/*` source aliases the lib configs have; not proven.
+Why no tool caught it: nothing checks that a vitest config belongs to a project whose `test` target a gate runs, so a
+spec file can exist, look green in review and never run. Tool fix (doc agent decision, applies the rule that every spec
+runs): (1) give timetrack-app a `test` target that resolves `@ethlete/*` from source and make its specs pass or name
+each that cannot; (2) extend `check-vitest-workers.mjs` (or a sibling check in `yarn test:tools`) so a vitest config
+without a project `test` target fails, with a bite. Queue: after 672.
