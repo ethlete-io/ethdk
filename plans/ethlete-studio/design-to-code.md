@@ -3967,3 +3967,12 @@ parts `pages/sketches/sketch-data.ts`, `pages/inbox/shared/inbox.ts` and `compon
 hold the name. Suspect: the check scans only the changed files, so a name in a merged part spreads into every sketch
 that copies it. Tool fix (backlog): the person-name check runs once over all of `.ethlete/design` and the merged parts
 use a neutral author; a sketch built from a part then starts clean.
+
+744\. The human (2026-11-10, screenshot of the `components/title-bar@edit` sketch, the stale sketch of 729): the
+"Aktuell" column draws 3 changed states at the top, the "old" column draws 5 states lower down, so no row pairs a state
+with itself; the reader cannot tell which old row belongs to which current row. "new" is folded as "Unverändert". Also
+the builder's 732 check saw a "Verwerfen" button in this view, but ADR 0135 says an `@edit` sketch has none (picking
+`old` is the discard). Suspect: the round view lays out each column by its own changed states, not by one shared state
+list. Missed: no spec draws two columns with different changed-state sets. Tool fix (backlog, after 742): one row per
+state across all columns (an empty cell where a column has no change); a spec bites on 3 vs 5 states; drop "Verwerfen"
+from `@edit` views or record why ADR 0135 changed.
