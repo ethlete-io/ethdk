@@ -61,3 +61,7 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   sketch (studio foundations/logo@app-icon, variants a-d) is ready: tell the human on return, they pick by merge.
 - Collected for the human: (1) B482 release smoke bite needs an unlocked Mac screen (CEF page runs no CDP command while
   locked). (2) console log file: decided a, ADR 0255. (3) 709 app icon pick by merge.
+- Linux builder restarted from `.claude/handoffs/builder-2026-11-10e.md` (tmux claude-3): merge origin/next by hand
+  (ready.json first, commit-hunks.spec.ts by hand), push:suite on the merge head, push the batch with the doc commits
+  (ADR 0255 fb1fe0b99 waits for it); then "Sketch öffnen" re-check, step 6, ADR built:, 723, 724. Mac: B482 console
+  hook (ADR 0255), then 726; findings 722 (built 8145d8357) and 727 (10b906189) pushed.
