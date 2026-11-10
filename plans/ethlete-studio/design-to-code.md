@@ -3546,3 +3546,13 @@ passes alone. A 6 s delayed start bites the 5 s budget, but that is not the CI f
 not slow it (tmux runs outside the scope). Suspect: an earlier case of the file leaves tmux state (the shared private
 server, a dispatch or scoped session name) that keeps `run` from creating or tagging its session. Next step: run the
 file with `--sequence.shuffle=false` and bisect the earlier cases.
+
+As built (772): Cause: the case before it, "answers the background work dialog ...", kills the last session of the
+spec's private tmux server; tmux exits that server after `kill-session` returns, so the next case's first call
+(`new-session` of the runner) reaches the exiting server, fails with "server exited unexpectedly", and no session is
+ever made, so `@ethlete_command` reads `''` for any poll budget. That pane runs a login shell (`sh -lic`) from the
+respawn, which widens the exit window; other preceding cases lose the race only rarely. Not a tool defect: the spec's own
+`new-session` failed. Fix: `beforeAll` starts a `spec-keepalive` session, so no case empties the server. Bite: the two
+cases together (`-t "answers the background work dialog|stores the command of run without the prompt"`) fail 5 of 5
+without the fix and pass 3 of 3 with it; the full file failed 3 of 4 runs before and passed twice after. Not verified:
+CI.
