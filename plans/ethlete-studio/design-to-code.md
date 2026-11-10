@@ -3853,6 +3853,8 @@ and 726. Lesson: the push suite runs e2e on a quiet machine (726 waits for one),
 719 CPU-quota step covers the changed e2e suites too, after its spec part works. Watch 42877843341 and 42875373676
 reruns for a recurrence.
 
+As built (Linux builder, a900bbf5e, not pushed): push:suite step `e2e-quota` after `e2e` runs each changed e2e case once on 1 worker under `systemd-run --user --scope -p CPUQuota=50%` around the whole runner; pass = runner exit status, no case starts after 300 s, skipped on darwin with a note. Calibration (Tab focus case, Large): quiet 3.4 s, 20-30 % setup times out, 40 % 13-18 s, 50 % 6-12 s. Bite: 2 of 31 spec cases fail without the change. Not proven: 50 % never reproduced the CI focused=false failure, so the step is not shown to catch this case. Backlog: `--case` matches by substring; a range that changes only serve.ts or studio-api.ts gets no quota run.
+
 732\. Linux builder (2026-11-10, B249 real-config re-check, passed): "Sketch öffnen" of a direct-edit point is reachable
 only inside the collapsed "Gründe" disclosure of the footer popover, though it is the only action there. ADR 0252 says
 the button opens the sketch, not where it sits. Placement question for the human: a sketch with the variants "inside
