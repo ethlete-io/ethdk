@@ -17,6 +17,8 @@ output; the designed Studio is the side product.
   tool change stops it next time? A CSS or component fix alone is never the end of a defect.
 - Record the defect with this lesson in the findings list. If the cause is not known, ask the
   builder for it before you write the lesson.
+- A finding writes "Suspect:" until a bite or a measurement proves the cause, and "Cause:" only after.
+  A builder report that does not say which is a "Suspect:".
 - If the tool change is a decision, put it to the user as a grill question with a recommendation.
   Otherwise send it to the builder as work.
 
