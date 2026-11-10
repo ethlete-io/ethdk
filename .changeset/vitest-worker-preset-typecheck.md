@@ -1,7 +1,6 @@
 ---
 'ethlete-studio': none
 'timetrack-app': none
-'timetrack-vscode': none
 '@ethlete/components': none
 '@ethlete/bracket': none
 '@ethlete/query': none
