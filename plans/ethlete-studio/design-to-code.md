@@ -3776,3 +3776,11 @@ builder's idea that `yarn commit` runs `vitest related` was wrong). The cost was
 hook (ADR 0225 keeps slow checks out of git hooks): the builder skill and every slice brief run
 `vitest related --run <changed files>` for the touched project at the end of a slice that changes an import between
 modules, so a spec that mocks a module the slice re-imports fails in the slice.
+
+696\. Builder (2026-11-10, day shift, B475): after a `/clear` restart the LSP tool still said "No LSP server available
+for file type: .ts". The claude process started at 10:22, the plugin was installed at 10:26, and the agent-sessions
+`restart` command only types `/clear` and a prompt, so the process never reloads plugins, `PATH` or hooks. The
+doc-agent skill calls this "restart its CLI", which it is not. Tool fix: `restart` gets a mode that ends the process
+and starts a new one in the same tmux pane (for example `/exit`, then the agent command with `--continue` or a
+`/handoff resume` prompt), and the skills say which change needs it (plugin, settings, `PATH`). Bite: a plugin
+installed after the start is live after the new restart mode, not after `/clear`.
