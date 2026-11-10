@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { unpaddedLength, wideCells } from './plan-size.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -12,6 +13,8 @@ export const budgetFor = (file, config) => {
   return config.groups.find((group) => group.files?.includes(file))?.budget;
 };
 
+const cellCapFor = (file, config) => config.groups.find((group) => group.files?.includes(file))?.cellCap;
+
 export const checkStagedPlans = async ({ files, read, config, isFormatted }) => {
   const problems = [];
 
@@ -19,8 +22,17 @@ export const checkStagedPlans = async ({ files, read, config, isFormatted }) => 
     const source = read(file);
     const budget = budgetFor(file, config);
 
-    if (budget !== undefined && source.length > budget) {
-      problems.push(`${file}: ${source.length} chars exceeds the budget of ${budget}. Archive findings or shrink it.`);
+    const size = unpaddedLength(source);
+    const cap = cellCapFor(file, config);
+
+    if (budget !== undefined && size > budget) {
+      problems.push(
+        `${file}: ${size} chars without table padding exceeds the budget of ${budget}. Archive findings or shrink it.`,
+      );
+    }
+
+    for (const { row, length } of cap === undefined ? [] : wideCells(source, cap)) {
+      problems.push(`${file}: row ${row} has a ${length}-char cell, over the cap of ${cap}. Shorten it.`);
     }
 
     if (!(await isFormatted(file, source))) {

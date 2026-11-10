@@ -18,7 +18,7 @@
       "files": ["plans/ethlete-studio/design-to-code.md"],
       "budget": 440000
     },
-    { "name": "status", "files": ["plans/ethlete-studio/STATUS.md"], "budget": 230000 }
+    { "name": "status", "files": ["plans/ethlete-studio/STATUS.md"], "budget": 100000, "cellCap": 400 }
   ],
   "overrides": {
     ".agents/skills/ethlete-timetrack/SKILL.md": 25000,

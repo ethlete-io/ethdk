@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { unpaddedLength } from './plan-size.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -19,7 +20,7 @@ export const checkSizeBudget = (root, config) => {
       const path = join(root, file);
       if (!existsSync(path)) continue;
       const budget = config.overrides?.[file] ?? group.budget;
-      const size = readFileSync(path, 'utf8').length;
+      const size = unpaddedLength(readFileSync(path, 'utf8'));
       if (size > budget) failures.push({ file, size, budget, group: group.name });
     }
   }
