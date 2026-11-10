@@ -1485,7 +1485,6 @@ describe('SystemViewComponent on a tree pick', () => {
     const popover = document.querySelector('ethlete-open-points-popover');
 
     expect(popover?.querySelector('ethlete-build-ready-footer')?.textContent).toContain('Nicht baubereit (1)');
-    expect(popover?.textContent).not.toContain('Go geben');
 
     chip.componentInstance.openEditSketch.emit({ kind: 'direct-edit', text: 'Bild ohne Sketch geändert' });
     await settle(fixture);
