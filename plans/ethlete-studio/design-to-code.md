@@ -4186,3 +4186,23 @@ heavy load the `load` event waits for the cold shot draws. 995491fb1 opened each
 +10-16 s per worker) and is reverted (doc agent decision, ADR 0230 and 0240: no unproven fix that costs time). The fix
 for the measured cold burst is 667 (c), one shot store for all workers, which removes the N-fold cold draws instead of
 moving them into setup (the same lesson as fe28fc8c9 in 667).
+
+As built (667 c, 82369780d): one `part-shots` store for every checkout, keyed by the read-files fingerprint with
+checkout inputs stored relative to the checkout; up to 4 variants per key, one file per fingerprint, so a checkout
+with other files never gets or overwrites another checkout's picture. A second bug, Cause proven by the bite: the
+`server-<pid>` snapshot files were inputs under their real path through the `node_modules` symlink, so the store stayed
+cold; both paths are filtered. Vite `cacheDir` stays per checkout (`getConfigHash` includes checkout paths). Bite, one
+worker, two runs: before, 22 shots in setup and 28-35 per case in both runs; after, warm, 12 in setup (the fixture
+compare redraws on purpose) and 0 per case; a changed `zoom-chip.ts` drew exactly the 67 keys that read it. Draws are
+counted (`drawnTotal` in `/__design/queue`). 7 Fit and first-load cases, 3 workers, load 18-27: 120.9 s before, 93.4 s
+after. Open: workers on a cold store at the same time still draw the same shot, because nothing shares an in-flight
+draw; Suspect: the Wide Fit case draws about 30 shots each run, because its sketch is new in each checkout; 517 old
+`shots-*` folders (5.5 GB) in `node_modules/.design-explore` stay.
+
+685\. Builder (2026-11-10, Mac night, 04eb763dc): the builder's own 8a473386c (673 parent watch) failed `nx lint cli`
+with 3 `prefer-rxjs-timer` errors; fixed with a scoped disable and the workaround reason (an RxJS interval cannot
+`unref`). Cause: `yarn commit` runs the related specs and the typecheck, not lint, so a lint error in an unpushed commit
+stays hidden until CI. Why no tool caught it: the local commit gate and the push suite check different things than CI
+lint, and nothing says so. Tool fix (bug queue, next): `yarn commit` runs eslint on the staged files. Also queued from
+667 (c): (a) the design server shares an in-flight draw of the same key; (b) the design server prunes `shots-*` folders
+of the old path-keyed store, so the cache does not grow without a bound.
