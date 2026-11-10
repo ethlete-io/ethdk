@@ -84,6 +84,8 @@ output; the designed Studio is the side product.
   (English, the human's words verbatim and named "the human", never by name; run `yarn lint:person-names` before the commit; frontmatter `built: <sha>` or `open: B<row>`). Never in a plan section.
 - A commit that closes a STATUS row sets `built: <sha>` on every ADR with `open: B<row>` in that same commit; the
   pre-commit hook rejects it otherwise.
+- An ADR edit under `apps/ethlete-studio` is a change to ethlete-studio: put an `'ethlete-studio': none` changeset in
+  the same commit, or pre-push refuses the range.
 - Commit only plan and docs files: `git commit -- <paths>`. Never `git add -A`, never
   stash, never amend.
 - One commit per grill round, not one per finding or decision. The message names all of them.

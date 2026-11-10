@@ -3795,7 +3795,20 @@ background job so the new process starts it again (here the CI watch), and the n
 name. Bite: a session with a running background shell restarts with `--process` without a human, in the same tmux
 session, and the new process resumes the watch.
 
-698\. Builder ethlete-mac (2026-11-10, B469): a release build of Studio never leaves "Design-Server startet", on
+As built (697): the respawn command starts with `command` (after any `VAR=value` prefix), so the shell function does
+not run and the pane keeps its session. `run` stores the command without the trailing prompt (a last word that is not
+a flag and not the value of a flag, or the words after `--`). After `/exit`, the restart reads the pane; on "will stop
+when you exit" it moves the cursor to "exit and stop tasks", presses Enter, and writes the listed jobs to
+`restart.log` and a mailbox notice. The handoff skill says to name each background job before `--process`. Verified:
+three new specs (respawn bypasses a shell function, `run` stores no prompt, the dialog is answered), each fails with its
+part reverted. Not verified: live bite with a real Claude session and the real dialog text and cursor.
+
+698\. Builder (2026-11-10, day shift, cfa266758): `lint:changesets` refused the push of 17913b655 and 1c72a5026, two
+docs-only ADR edits under `apps/ethlete-studio/docs/adr/` without a changeset. Only pre-push catches it; doc-agent ADR
+commits have the same gap. Tool fix, small: the builder and doc-agent skills say that an ADR edit is a change to
+`ethlete-studio` and gets an `'ethlete-studio': none` changeset in the same commit.
+
+699\. Builder ethlete-mac (2026-11-10, B469): a release build of Studio never leaves "Design-Server startet", on
 WKWebView and on CEF alike (macOS x64, 0.2.0-next.15). The server runs and answers on `[::1]:4402`, but the CSP in
 `tauri.conf.json` has `connect-src 'self' ipc: http://ipc.localhost`, so each `fetch` of
 `http://localhost:4402/__design/stamp` is refused (62 errors in 60 s, over CDP). Two more CSP refusals in the same
@@ -3808,7 +3821,7 @@ release build". Fixed in the B469 commit: `connect-src` and `img-src` allow `htt
 console error. Not verified: a Linux deb with the fix, and the WKWebView release with the fix. Tool fix (proposal): a
 smoke step that starts the release bundle once and fails on a CSP refusal in the console.
 
-699\. Builder ethlete-mac (2026-11-10, B469): two defects of `tauri-runtime-cef` (rev `9d1a5b1`) with
+700\. Builder ethlete-mac (2026-11-10, B469): two defects of `tauri-runtime-cef` (rev `9d1a5b1`) with
 `RemoteDebugging::Port`. (a) A run with `Disabled` writes `devtools.remote_debugging.allowed: false` into
 `~/Library/Caches/<identifier>/cef/Local State`; a later run with `Port` does not reset it, so Chromium prints
 "DevTools remote debugging is disallowed by the system admin" and opens no port. Workaround: delete the key. (b) The

@@ -66,7 +66,7 @@ the human's decision. The change is three gates: `tauri-runtime-cef` under
    (`<binary> Helper`, `(GPU)`, `(Renderer)`, `(Plugin)`, `(Alerts)`), built at bundle time. CEF downloads into
    `~/.cache/tauri-cef` (505 MB). A cold build takes about 5 min, a warm one 2 min. Studio starts, opens the
    project, and the sketch `components/button` shows six live frames from the design server, with no console error.
-   This needed the CSP fix of finding 698; the WKWebView release build has the same defect.
+   This needed the CSP fix of finding 699; the WKWebView release build has the same defect.
 2. **Size (x64).** WKWebView: `.app` 109 MiB (94 MiB of it `cli-runtime`), `.dmg` 30.1 MiB, update `.app.tar.gz`
    about 30 MiB. CEF, signed: `.app` 443 MiB (framework 326 MiB), `.dmg` 177.2 MiB, update tarball 177.6 MiB. So each
    download and each update grows by about 147 MiB. Apple Silicon not measured; the framework is of a similar size.
@@ -82,4 +82,4 @@ Seen on the way: macOS asks for notification permission twice, for "Ethlete Stud
 (the helper name comes from the binary name). A CEF window that other windows cover paints nothing, so
 `screencapture -l` gives a black picture; check over CDP instead. Each run logs
 `process_requirement.cc ... Signature validation of current process failed (-67030)`; it has no effect seen.
-Finding 699 has the two upstream defects of the debug port.
+Finding 700 has the two upstream defects of the debug port.
