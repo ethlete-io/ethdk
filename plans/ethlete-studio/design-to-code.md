@@ -4131,3 +4131,18 @@ to all painted, median: Sketches 3020 ms, Large 1959 ms, Wide 2369 ms, spread ab
 2721 ms, heap the same: the difference is noise. Not measured: a per-frame process figure, the cap lifted, the "painted
 but no picture" path that keeps frames live past the cap. Builder recommendation: not worth a day-shift feature, because
 the cap already keeps the live frames at 6 and in view. Raw data `/tmp/iframe-perf/` (not kept).
+
+As built (681, B471, 5d6078461, diagnosis only, no product fix): the page switch case prints its frames on a fail, and
+`--cold-shots` (`STUDIO_E2E_COLD_SHOTS=1`) gives the checkout its own empty picture store. Why only the push:suite
+worktree hit it: a local checkout links to the shared store (667 c), so shell-main paints in about 100 ms; a fresh
+worktree is cold. Repro: 12 busy-loop hogs, load 47-90, cold: 1 fail in 12, the 11 passes at 8.3-9.6 s against the
+10 s window. Fail detail: 15 picture requests sent at +42 ms, answered in pairs at +6.7, +9.4 and +10.5 s, 1.2-2.0 s
+server time each; 11 imgs off the viewport, not live. Cause (bite): Chromium holds back low-priority (off-viewport)
+images, 2-3 on the wire at once, so 15 cold draws run about two at a time; not the 6-per-host limit (requests to [::1]
+still went out). Bite: `fetchpriority="high"` on the shot imgs put all on the wire; shell-main `all` 3769/4268/4443 ms
+at the same load. That build failed `system->icons` 3/3 (its pictures and `/__design/open-points` queued behind the
+now-high system pictures), so it was reverted. Not verified: the exact Chromium rule behind the 2-3 cap. A cold Studio
+user sees the same slow fill, so this is a real perf defect, not only a test artifact. Why no tool caught it before
+the push:suite: every local e2e run reads the warm shared store. Fix (doc agent, perf scope of ADR 0239): high
+priority only for the frames of the current page switch, or the design server answers the newest view first; each with
+its own bite against `system->icons` and the page switch case under load and `--cold-shots`.
