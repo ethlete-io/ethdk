@@ -3887,3 +3887,13 @@ quota runs at about half the CI time: 20%. At 12% and 15% the warmed file fails 
 ms timeout`; with it `status=0 note=CPUQuota=20%, ran …sketch-view.component.spec.ts`. Still at risk: "keeps at most
 six" takes 1.7-2.7 s at 20% (one of five warmed runs failed at 2698 ms), so a push that changes that spec can fail the
 step until the case gets faster. Not verified: a full `yarn push:suite` run, the step on the Mac.
+
+735\. Linux builder (2026-11-10, 719 quota step, 0372514ff): push:suite runs each changed Studio spec file once under
+`CPUQuota=20%` (calibrated: the local budget fails a case at half its timeout, so 20% times at about half of CI). The
+step fails "keeps at most six near cells live" (100 cells) at 1.7-2.7 s, the at-risk case from the 719 As built, so a
+push that changes `sketch-view.component.spec.ts` can fail until the case is cheaper. Gap: on the Mac the step prints
+"skipped on darwin", so Mac pushes get no quota run. Decided by the doc agent (tool internal): Linux builder makes the
+case cheaper at the cause (fewer cells or a warm render, product code unchanged unless it does needless work), after
+the 732 sketch; then 731 (e2e under quota) as its own slice with its own calibration. Mac gap: the Mac builder finds a
+darwin throttle (for example `taskpolicy` or a cpulimit equivalent) in its tool backlog, or the step says on the Mac
+that the Linux push suite covers it.
