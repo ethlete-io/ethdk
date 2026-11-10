@@ -18,12 +18,13 @@ const cellCapFor = (file, config) => config.groups.find((group) => group.files?.
 export const checkStagedPlans = async ({ files, read, config, isFormatted }) => {
   const problems = [];
 
-  for (const file of files.filter((f) => PLAN_FILES.includes(f))) {
+  for (const file of files.filter((f) => f.endsWith('.md'))) {
     const source = read(file);
-    const budget = budgetFor(file, config);
+    const isPlan = PLAN_FILES.includes(file);
+    const budget = isPlan ? budgetFor(file, config) : undefined;
 
     const size = unpaddedLength(source);
-    const cap = cellCapFor(file, config);
+    const cap = isPlan ? cellCapFor(file, config) : undefined;
 
     if (budget !== undefined && size > budget) {
       problems.push(
@@ -45,7 +46,7 @@ export const checkStagedPlans = async ({ files, read, config, isFormatted }) => 
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const root = resolve(here, '../..');
-  const files = process.argv.slice(2).filter((f) => PLAN_FILES.includes(f));
+  const files = process.argv.slice(2).filter((f) => f.endsWith('.md'));
 
   if (files.length > 0) {
     const prettier = await import('prettier');
@@ -57,6 +58,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
         execFileSync('git', ['show', `:${file}`], { cwd: root, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 }),
       isFormatted: async (file, source) => {
         const filepath = resolve(root, file);
+        const info = await prettier.getFileInfo(filepath, { ignorePath: join(root, '.prettierignore') });
+        if (info.ignored || !info.inferredParser) return true;
         const options = { ...(await prettier.resolveConfig(filepath)), filepath };
         return prettier.check(source, options);
       },

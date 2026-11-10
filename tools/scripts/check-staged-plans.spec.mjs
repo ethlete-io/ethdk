@@ -36,6 +36,16 @@ test('other staged files are ignored', async () => {
   assert.deepEqual(await run(['libs/a.ts'], {}, false), []);
 });
 
+test('any unformatted staged Markdown file is reported, without a budget', async () => {
+  const problems = await run(
+    ['plans/ethlete-studio/handoff-doc-agent.md'],
+    { 'plans/ethlete-studio/handoff-doc-agent.md': 'x'.repeat(500) },
+    false,
+  );
+  assert.equal(problems.length, 1);
+  assert.match(problems[0], /handoff-doc-agent.md: not formatted/);
+});
+
 test('the budget counts a table without its padding', async () => {
   const problems = await run(['plans/ethlete-studio/design-to-code.md'], {
     'plans/ethlete-studio/design-to-code.md': '| a        |',

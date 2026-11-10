@@ -3810,6 +3810,10 @@ file's `at`; `spec:stress --load 2` 4/4. The push suite caught it, so no tool ga
 Prettier on staged Markdown, so the refusal comes at push time, after other commits sit on top. Tool fix (decided by the
 doc agent, a repo format check and not a Studio gate under ADR 0036): pre-commit checks Prettier on every staged `*.md`
 and refuses with the fix command. Process: the doc agent formats every plan file before its commit.
+Built (2026-11-10, Linux): the commit that holds this line. `.husky/pre-commit` passes every staged `*.md` to
+`check-staged-plans.mjs`, which checks Prettier on the staged blob and skips files that `.prettierignore` covers;
+budget and cell cap stay on the two big plan files. Bite (temporary `GIT_INDEX_FILE`): a staged unformatted plan file
+exits 1 with the fix command, the old script exits 0; a spec case covers it.
 
 729\. Mac builder (2026-11-10, A1 rest): both checkouts hold an untracked direct-edit sketch
 `.ethlete/design/studio/sketches/components-title-bar.edit/` (target `components/title-bar@edit`, created 09:51 UTC,
