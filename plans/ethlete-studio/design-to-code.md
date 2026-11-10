@@ -3960,3 +3960,10 @@ builds it before 731; bite: a serve spec with such a part binds its port and cre
 
 On 735 (9c6d2e782): the old case passed 10/10 at 20% one at a time, so the bite "old fails the step" is not met. The
 fix is a margin gain (about 200 ms to 1600 ms under the 2500 ms budget), not a proven cause of the one 2698 ms failure.
+
+743\. Mac builder (2026-11-10, B345 push): pre-push refused the push because the person-name check found the human's
+full name in the pin thread of `pages/sketches@change-crop` b/c `sketch-data.ts`, copied from the merged page. The merged
+parts `pages/sketches/sketch-data.ts`, `pages/inbox/shared/inbox.ts` and `components/comment-row/comment-row.ts` still
+hold the name. Suspect: the check scans only the changed files, so a name in a merged part spreads into every sketch
+that copies it. Tool fix (backlog): the person-name check runs once over all of `.ethlete/design` and the merged parts
+use a neutral author; a sketch built from a part then starts clean.
