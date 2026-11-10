@@ -4133,3 +4133,12 @@ about 1 in 1000 runs today. Fix in progress: the harness pins one start instant;
 the spec or a real lib boundary bug (lib bug: fix plus scenario). Tool fix: the pinned start makes a boundary fail on
 every run; the doc agent adds that the harness also runs the suite at the two edge fractions (`.000`, `.999`) once,
 so a boundary bug cannot hide behind the one pinned value.
+As built (714, b504e7a99, not pushed). The harness starts at 2100-01-01T00:00:00.500Z (`scenarioStartMs()`,
+`useScenarioClock()`); a future date because jsdom's cookie jar expires cookies against the real clock.
+`SCENARIO_CLOCK_FRACTION=0|999` moves the start to an edge. Causes of the 11 (traced): 8 refresh scenarios fired exactly
+at the end of `s.tick(N)` at `.000` with the response 1 ms later (tick 1 ms further); the expiration-warning check
+samples once a second (settle 15000); 2 maxAge scenarios seeded with real `Date.now()` (now `scenarioStartMs()`). No lib
+bug. The 714 assert is `toBeGreaterThanOrEqual(18000)`: at `.999` the floored `eat` loses 999 ms, so 18000 is the exact
+lower bound, not slack (doc agent accepted). Verified by subagent: `src/scenarios` at `.500`, `.000`, `.999` each 1557
+passed; `spec:stress` 4/4. Decided (doc agent, ADR 0240 "as fast as possible"): CI runs the two edge fractions as
+parallel jobs, so the wall time of the query step does not grow.
