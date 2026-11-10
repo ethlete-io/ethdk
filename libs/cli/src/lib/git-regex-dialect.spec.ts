@@ -72,12 +72,12 @@ const gitRegexViolationsOf = (fileName: string, source: string): string[] => {
     const fixed = literals.some((text) => text !== null && FIXED_FLAGS.has(text));
 
     elements.forEach((element, index) => {
-      const text = literals[index];
+      const text = literals[index] ?? null;
 
       if (text !== null && REGEX_FLAGS.has(text) && !(gitGrep && fixed)) {
         const next = elements[index + 1];
         if (!next || ts.isSpreadElement(next)) return;
-        const pattern = literals[index + 1];
+        const pattern = literals[index + 1] ?? null;
         if (pattern === null) {
           violations.push(
             `${where(next)} builds a git regex argument from an expression the check cannot follow; pass a literal or a const string.`,
@@ -95,7 +95,7 @@ const gitRegexViolationsOf = (fileName: string, source: string): string[] => {
       const dashDash = literals.indexOf('--', grepAt + 1);
       const patterns = afterGrep.slice(0, dashDash === -1 ? undefined : dashDash - grepAt - 1);
       const positional = patterns.find((element, i) => {
-        const text = literals[grepAt + 1 + i];
+        const text = literals[grepAt + 1 + i] ?? null;
         return text === null || !text.startsWith('-');
       });
       if (positional && !ts.isSpreadElement(positional)) {
