@@ -52,7 +52,7 @@ until they say they are back.
 
 ## Open questions for the human
 
-None open. The human is afk until late evening (2026-11-10): collect questions, no round until they are back. Steps 3 and 721 (git-safety.py) run: the human left auto mode in tmux claude-3 and approved.
+None open. The human is back (2026-11-10 evening), but away from the Mac. Steps 3 and 721 (git-safety.py) run: the human left auto mode in tmux claude-3 and approved.
 
 The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" re-check.
 - Step 3 + 721 built in 77e87c6b2 (merge path allowed only with MERGE_HEAD and merge-only staged paths; go.json rule
@@ -60,5 +60,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - Mac: 708 built (4ae5bc51c, c16d3856d); finding 722 recorded; lint scope decided (calls + pre-commit). 709 app-icon
   sketch (studio foundations/logo@app-icon, variants a-d) is ready: tell the human on return, they pick by merge.
 - Collected for the human: (1) B482 release smoke bite needs an unlocked Mac screen (CEF page runs no CDP command while
-  locked). (2) Studio gets an on_console_message hook that writes errors to a log file, so the smoke checks the real
-  shipped bundle with no debug port (recommended: yes). (3) 709 app icon pick by merge.
+  locked). (2) console log file: decided a, ADR 0255. (3) 709 app icon pick by merge.
