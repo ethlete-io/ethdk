@@ -21,6 +21,7 @@ import { pathToFileURL } from 'node:url';
 const INNER_EXPORT = process.env['PUSH_SUITE_EXPORT'];
 const root = process.env['PUSH_SUITE_REPO'] ?? resolve(import.meta.dirname, '../..');
 export const E2E_LOG = join(root, '.claude/handoffs/push-suite-e2e.log');
+export const REPEAT_LOG = join(root, '.claude/handoffs/push-suite-repeat.log');
 const RUNNER = 'apps/ethlete-studio/e2e/canvas.e2e.mjs';
 const WORKSPACE_PARENTS = ['apps', 'libs', 'tools'];
 const DRAWING_BUILDS = ['cli', 'components', 'core'];
@@ -362,7 +363,11 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
         const diff = git('diff', '-U0', range, '--', ...TRIGGERS);
         if (diff.status !== 0) return { status: 1, output: diff.stderr };
         const lines = [];
-        const status = await runRepeatGate(diff.stdout, { log: (line) => lines.push(line), cwd: dir });
+        const status = await runRepeatGate(diff.stdout, {
+          log: (line) => lines.push(line),
+          cwd: dir,
+          liveLog: REPEAT_LOG,
+        });
         const touched = [...changedLines(diff.stdout).keys()].length;
         return { status, output: lines.join('\n'), note: touched ? undefined : `no trigger change in ${range}` };
       }),
