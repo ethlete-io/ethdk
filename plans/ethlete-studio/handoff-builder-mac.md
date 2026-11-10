@@ -25,15 +25,16 @@ a config or a `.ts` file runs the `typecheck` target of each touched project.
 
 ## Then
 
-0. Night scope from the grill session (bugs, ADR 0230 flake priority, cause first, no fix that costs wall time without a
-   bite per ADR 0240, no push:suite round), facts per item to the grill session:
-   - B471 / 681: done to the cause in 5d6078461 (fail print, `--cold-shots`); Cause: Chromium holds back off-viewport
-     pictures, 2-3 on the wire. The fix (high priority only for the current switch's frames, or newest view first on
-     the server) waits for the grill decision; it needs a bite against `system->icons` under load.
-   - B470 / 680, first-load aborts: read the printed URL/time/trigger detail from any run log that has it (the 680
-     print is in since 1ac3df506); else one targeted run of the Sketches case "first load creates one iframe per frame
-     and aborts no frame request", with `--cold-shots` and load. Write "Suspect:" until a bite.
-   - B472 / 683, `Fit is stable` `page.goto` timeout: no proven cause after the 995491fb1 revert. Same rule.
+0. Queue from the grill session after the restart, in this order (ADR 0230 flake priority, cause first, no fix that
+   costs wall time without a bite per ADR 0240, no push:suite round), facts per item to the grill session:
+   1. B471 / 681 fix, perf scope. Cause (0e1d59984, 5d6078461): Chromium holds back off-viewport pictures, 2-3 on the
+      wire. Try first: high fetch priority only for the frames of the current page switch. Else: the design server
+      answers the newest view first. Bite each against `system->icons` 3/3 and the page switch case, under the hog
+      load with `--cold-shots`, and measure the wall time.
+   2. B470 / 680, first-load aborts: read the printed URL/time/trigger detail from any run log that has it (the 680
+      print is in since 1ac3df506); else one targeted run of the Sketches case "first load creates one iframe per frame
+      and aborts no frame request", with `--cold-shots` and load. Write "Suspect:" until a bite.
+   3. B472 / 683, `Fit is stable` `page.goto` timeout: no proven cause after the 995491fb1 revert. Same rule.
 1. B469 (day shift, ADR 0242, CEF on every platform): spike CEF on macOS (build runs, bundle size, signing and
    notarization), then the human confirms the switch to CEF everywhere. Read the `app-releases` skill first.
 2. Iframe perf measurement, only on a quiet machine (load under 4): live iframes, memory/CPU per iframe,
