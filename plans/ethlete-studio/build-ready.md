@@ -735,4 +735,7 @@ The commit that holds this section removes the three `accepted.json` files, the 
 `tools/scripts/person-names-baseline.json`, and `accepted.json` from the commit-hunks spec list. Verified: the
 commit-hunks and rules specs, `check-person-names.mjs`. Not verified: a `design check` on the repo design (forbidden on
 the shared tree). Not done: `studio/go.json` (the git-safety hook denies a commit that names it; finding 721 waits for
-the human) and the `review`/`go` kinds in the three `pictures.json` files, which hold other sessions' uncommitted edits.
+the human) and the `review`/`go` kinds in the three `pictures.json` files, which hold other sessions' uncommitted edits. The grill session decided to leave them: `writePictures` reads the
+whole file through the legacy reader and writes only `record` keys, so the next record write of any part drops `go` and
+`review` (proven by the accepted-pictures spec "reads the older review and go pictures as the record, and writes only
+a record"). The reader mapping stays until no pictures.json holds a legacy key.
