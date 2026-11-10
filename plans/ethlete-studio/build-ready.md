@@ -694,3 +694,15 @@ output, the wiring list and ACTION-LOST). Verified: related specs in libs/cli (o
 eslint, prettier, spec:stress 4/4. Not verified: a real `design check` or `design serve` on the repo design. The repo
 product `studio-lab` has no harness, so after the next `design check` its 1 record is dropped and its parts read
 "Nicht baubereit (Kein Harness)"; whether it gets a harness is Tom's product call.
+
+As built (718 harness product pending): Cause, proven by `libs/cli/src/lib/design/system/check-record.spec.ts`: `design check`
+without `--slow` never runs the slow rules; only `design ready`, `design check --slow` (which writes no record) and the
+serve slow runner do. So a harness part whose slow result was missing or stale (a scratch copy has no
+`node_modules/.cache` slow cache) kept `[stale-record, pending]` after `design check --part`: `recordBuildReady` treats
+`pending` as not checked, writes no record and drops none. Fix: the check record step goes through
+`recordCheckedBuildReady` (`system/check-record.ts`), which first runs `runSlowChecks` on the `--part` part when its slow
+result is pending and the product has a harness (only when the check could draw), as `design ready` does. A whole-product
+`design check` still leaves pending parts to the serve slow runner, so it does not run every slow rule. Bite: the spec
+fails with `[stale-record, pending]` when the slow run is skipped. Verified: tsc, eslint, 123 related spec files,
+spec:stress 4/4. Not verified: a real `design check --part` on the repo design (would rewrite the shared ready.json),
+and whether the scratch Studio serve was also running its slow runner.
