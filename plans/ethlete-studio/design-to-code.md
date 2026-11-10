@@ -4143,6 +4143,7 @@ exists and every staged path is a merge path (changed HEAD..MERGE_HEAD or confli
 open-sketch detection counts a folder with no files, and a merge or discard leaves empty parent folders behind. Tool
 fix (Mac builder, tool backlog after B482): open-sketch detection ignores a folder with no files, and merge and discard
 remove empty parent folders. A spec bites on an empty leftover folder.
+As built (Mac, 8145d8357): a sketch folder with no files (recursive; a lone generated tsconfig.json counts as empty) is not an open sketch in listSketches, findSketch and createSketch; merge and discard use removeSketchDir, which also removes an empty sketches/ parent. Bite: with the empty check off, the new sketch.spec case fails. Suspect: how the 2026-11-07 empty old/new dirs arose is not reproduced.
 
 As decided (doc agent, tool internals, 2026-11-10, after 708): the design lint also covers `.ethlete/design/calls` (its
 33 old findings go into the lint baseline), and the pre-commit hook lints the staged `.ethlete/**/*.ts` files.
