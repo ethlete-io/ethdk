@@ -3957,3 +3957,9 @@ fertig"). Suspect: the report rule lives only in the handoff text, and nothing c
 grill session. Tool fix: the builder Stop hook (703) also blocks a stop once when the turn made a commit or a push and
 sent no report to the grill session (`SendMessage`, or `agent-sessions send` on the Mac). Bite: a turn that commits and
 ends with only a chat line gets the block; a turn with a send does not.
+
+705 rerun (builder, after B481 2dd96ea76): under `spec:stress --slow 13` B443 passes 2/4; a direct slowed run failed
+"stops waiting as soon as the expected output fired" with `[]` against `['go']` (1193 ms), the same early return in
+another case. B442 passes 3/4; 2 of 3 direct slowed runs fail with `closed: false`, as in CI. Both reproduce; causes
+not proven yet. B437 closed by CI run 42806303431 (3c5f77755, green): the 6 Studio e2e shards took 214, 322, 202, 305,
+230 and 178 s, wall time 322 s; shards 2 and 4 take about 1.7 times as long as shard 6.
