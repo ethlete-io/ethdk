@@ -4056,3 +4056,19 @@ agent remembers fills the file again; the file needs a check. Doc agent cleanup:
 `plans/ethlete-studio/STATUS.md` refuses a ✅ status, a "## Erledigt" section and a dated "Stand" older than 3 days, and
 names the row to delete. Open: about 120 ⏳ rows are not checked against git; the builder checks each row against git
 when it takes one (ADR 0234).
+
+749\. Mac builder (2026-11-10, B482): the console log of the macOS bundle stays empty. Suspect (from the config, not yet
+proven by a bundle run): `tauri.macos.conf.json` replaces the `windows` array without `"create": false`, so Tauri creates
+the macOS window itself, and `console_log::start()` sets the hook and the init script only on windows with
+`create: false`. Lesson: nothing checked a per-OS config override against the base config. Built by the Mac builder:
+ccf39547a adds `"create": false` and a Rust test that every platform config sets it. Smoke rebuild runs.
+
+750\. The human (2026-11-10, Studio screen shot after the B483 serve restart): `components-title-bar.edit` is gone (B483
+works on the real repo). Left is the marker sketch `pages/system` (round 1 "Fehlende Build-Antwort der Auflistung",
+variant a, last change by a Sonnet subagent): Studio shows "27 unveränderte Zustände eingeklappt" and not one changed
+state, so the human sees a sketch with nothing to look at. Its files have uncommitted changes in the Linux tree
+(`build-ready-footer.ts`, `system.ts`, `sketch.json`); the sketch is from 21ff32b31 (2026-11-07). Suspect: the variant
+draws the new state, but the state has no frame in the design, so the compare finds no changed state. Lesson: a sketch
+with zero changed states reached the human. Decided by the doc agent (tool internal): `sketch check` and `sketch ready`
+refuse a variant with zero changed states and name the state that should differ; Studio never lists such a sketch as
+waiting for the human. The Linux builder owns this sketch (the human: "deine baustelle") and finds the cause first.
