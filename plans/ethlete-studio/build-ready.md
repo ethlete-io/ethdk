@@ -639,3 +639,14 @@ Verified: 4 new cases (part-build-ready, action-lost, harness-map x2) fail on th
 specs and spec:stress pass. Not verified: a real `design check` run (would rewrite the shared ready.json); a record
 that still holds is not rewritten, so old records get actions only at their next write. Suspect, not traced: a definite blocker
 (ACTION-LOST included) drops the whole record, actions with it, so an ACTION-LOST disappears on the next check.
+
+As built (B249 keep recorded actions): Cause (proven by the new action-lost spec): ACTION-LOST is a slow-check problem
+of the part, a definite blocker, so `recordBuildReady` called `dropPartRecord`, which removed the whole ready.json entry
+with its `actions`; the next check found no recorded key and reported nothing. Fix: `dropPartRecord` leaves an action
+baseline `{ actions, at }` (no `hash`) in place of a record that held actions. `readReady` returns only check records,
+so `readyMarkOf`, `readyPartsOf`, `isPartReady`, stale parts and the open-points answer never take a baseline as ready;
+`readRecordedActions` (ACTION-LOST, the slow-check inputs) reads records and baselines; `writePartRecord`, the drop and
+the legacy-hash upgrade keep other parts' baselines. The baseline moves only when a record is written again (with the
+then-declared keys, or the held ones when they cannot be read). Commit: see git log "Keep recorded actions when a check
+record is dropped". Verified: the new spec fails on the old source and passes; tsc, eslint, 122 related spec files and
+spec:stress (4/4) pass. Not verified: a real `design check` run (would rewrite the shared ready.json).

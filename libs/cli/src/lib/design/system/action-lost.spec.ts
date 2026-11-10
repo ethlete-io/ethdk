@@ -8,11 +8,12 @@ import {
   actionLostOf,
   actionLostProblemsOf,
   declaredActionsOf,
+  PartModuleLoader,
   partActionsOf,
   productActionsOf,
 } from './action-lost';
 import { recordBuildReady } from './part-build-ready';
-import { PartReady } from './part-ready';
+import { PartReady, readyMarkOf } from './part-ready';
 import { resolveProduct } from './resolve-product';
 
 const record = (actions?: string[]): PartReady => ({
@@ -121,6 +122,41 @@ describe('ACTION-LOST', () => {
     expect(
       actionLostOf({ product, declared: new Set(), invocation: 'et design' }).map((problem) => problem.at),
     ).toEqual(['components/chip emit:remove']);
+  });
+
+  it('keeps failing a lost key on every check while the part stays blocked by it', async () => {
+    const { target, product } = checkout({});
+    const part = 'components/chip';
+    const loaderOf = (keys: string[]) => async () => ({
+      default: {
+        states: { a: {} },
+        render: () => ({ body: keys.map((key) => `<button data-et-action="${key}">`).join('') }),
+      },
+    });
+    const lostOf = (load: PartModuleLoader) =>
+      actionLostProblemsOf({ target, config: {}, product, invocation: 'et design', load });
+    const check = async (load: PartModuleLoader) => {
+      const lost = await lostOf(load);
+
+      await recordBuildReady({
+        product,
+        parts: [part],
+        inputs: { pointsOf: () => [], problemsOf: () => [], slowOf: () => lost },
+        actionsOf: async () => [],
+        declaredActionsOf: (candidate) => partActionsOf({ load, product, part: candidate }),
+      });
+    };
+
+    await check(loaderOf(['a', 'b']));
+    writeFileSync(join(product.dir, part, 'chip.ts'), 'export default definePart({ states: { a: {}, b: {} } });\n');
+
+    const shrunk = loaderOf(['a']);
+
+    await check(shrunk);
+    expect((await lostOf(shrunk)).map((problem) => problem.at)).toEqual([`${part} b`]);
+    await check(shrunk);
+    expect((await lostOf(shrunk)).map((problem) => problem.at)).toEqual([`${part} b`]);
+    expect(readyMarkOf({ product, part })).toBeNull();
   });
 
   it('reads no part when no check record holds actions', async () => {

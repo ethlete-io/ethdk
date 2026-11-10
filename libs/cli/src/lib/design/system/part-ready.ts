@@ -57,7 +57,24 @@ const isReady = (value: unknown): value is PartReady => {
   );
 };
 
-export const readReady = (dir: string): Record<string, PartReady> => {
+/** The action keys a dropped check record held, kept as the baseline ACTION-LOST compares against. */
+export type ActionBaseline = { actions: string[]; at: string };
+
+const isActionBaseline = (value: unknown): value is ActionBaseline => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+
+  const { hash, at, actions } = value as Record<string, unknown>;
+
+  return (
+    hash === undefined &&
+    typeof at === 'string' &&
+    Array.isArray(actions) &&
+    actions.every((key) => typeof key === 'string')
+  );
+};
+
+/** Every entry of a ready.json: the check records, and the action baselines of parts whose record was dropped. */
+export const readReadyEntries = (dir: string): Record<string, PartReady | ActionBaseline> => {
   const file = readyFileOf(dir);
 
   if (!existsSync(file)) return {};
@@ -66,12 +83,30 @@ export const readReady = (dir: string): Record<string, PartReady> => {
     const parsed: unknown = JSON.parse(readFileSync(file, 'utf8'));
 
     return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
-      ? Object.fromEntries(Object.entries(parsed).filter((entry): entry is [string, PartReady] => isReady(entry[1])))
+      ? Object.fromEntries(
+          Object.entries(parsed).filter(
+            (entry): entry is [string, PartReady | ActionBaseline] => isReady(entry[1]) || isActionBaseline(entry[1]),
+          ),
+        )
       : {};
   } catch {
     return {};
   }
 };
+
+/** The check records of a ready.json; an action baseline is no record. */
+export const readReady = (dir: string): Record<string, PartReady> =>
+  Object.fromEntries(
+    Object.entries(readReadyEntries(dir)).filter((entry): entry is [string, PartReady] => isReady(entry[1])),
+  );
+
+/** The recorded action keys of each part in a ready.json, from its check record or its action baseline. */
+export const readRecordedActions = (dir: string): Record<string, ActionBaseline> =>
+  Object.fromEntries(
+    Object.entries(readReadyEntries(dir)).flatMap(([part, entry]) =>
+      entry.actions ? [[part, { actions: entry.actions, at: entry.at }]] : [],
+    ),
+  );
 
 /** The design hash of a part and the directory whose ready.json holds it, or why the product has no such part. */
 export const readyPartOf = (options: { product: ResolvedProduct; part: string }) => {
@@ -129,7 +164,7 @@ export const drawnPartPointsOf = async (options: {
 export const readyPartsOf = (product: ResolvedProduct) =>
   product.parts.map(partKeyOf).filter((part) => readyMarkOf({ product, part }) !== null);
 
-const writeReady = (dir: string, records: Record<string, PartReady>) =>
+const writeReady = (dir: string, records: Record<string, PartReady | ActionBaseline>) =>
   writeJsonFile({
     file: readyFileOf(dir),
     value: Object.fromEntries(Object.entries(records).sort(([a], [b]) => a.localeCompare(b))),
@@ -151,7 +186,7 @@ export const writePartRecord = (options: {
 
   if (typeof found === 'string' || !hasActor(options.origin)) return null;
 
-  const existing = readReady(found.dir);
+  const existing = readReadyEntries(found.dir);
   const previous = existing[options.part];
   const embedded = embeddedHashesOf({ product: options.product, part: found.resolved });
   const actions = options.actions ?? previous?.actions;
@@ -160,7 +195,10 @@ export const writePartRecord = (options: {
     files: found.design.files,
     ...(Object.keys(embedded).length > 0 ? { embedded } : {}),
     ...(actions ? { actions } : {}),
-    at: (previous?.hash === found.hash ? previous.at : undefined) ?? options.at ?? new Date().toISOString(),
+    at:
+      (previous && 'hash' in previous && previous.hash === found.hash ? previous.at : undefined) ??
+      options.at ??
+      new Date().toISOString(),
     by: options.origin.by,
     cmd: options.origin.cmd,
     pid: options.origin.pid,
@@ -171,17 +209,26 @@ export const writePartRecord = (options: {
   return record;
 };
 
-/** Drops the check record of a part, whatever hash it holds; true when there was one. */
+/**
+ * Drops the check record of a part, whatever hash it holds; true when there was one. The action keys it held stay as
+ * the part's action baseline until a record is written again.
+ */
 export const dropPartRecord = (options: { product: ResolvedProduct; part: string }) => {
   const found = readyPartOf(options);
 
   if (typeof found === 'string') return false;
 
-  const existing = readReady(found.dir);
+  const existing = readReadyEntries(found.dir);
+  const record = existing[options.part];
 
-  if (!(options.part in existing)) return false;
+  if (!record || !isReady(record)) return false;
 
-  writeReady(found.dir, Object.fromEntries(Object.entries(existing).filter(([key]) => key !== options.part)));
+  const rest = Object.fromEntries(Object.entries(existing).filter(([key]) => key !== options.part));
+
+  writeReady(
+    found.dir,
+    record.actions ? { ...rest, [options.part]: { actions: record.actions, at: record.at } } : rest,
+  );
 
   return true;
 };
