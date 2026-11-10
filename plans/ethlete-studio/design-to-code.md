@@ -3707,3 +3707,14 @@ red result shows up first in a later slice and looks new. Tool fix (doc agent, a
 git hooks or CI" and ADR 0095 "old issues stay visible"): no CI job; the builder skill line says the full check runs
 on demand at each slice end until the live check (B424) replaces it; `design check` marks each finding that the base
 already shows as old, so a slice sees at once what it added.
+
+692\. Doc agent (2026-11-10, day shift): `yarn lint:studio-adrs` failed with 100 errors ("B397 cites Bef. 483, but no
+finding 483 exists"). Cause (git history): two night archive commits rewrote `archive/findings-2026-11.md` instead of
+appending to it. 0522263b3 replaced its 4264 lines (356 findings) with findings 281, 287 and 288, and e21bea1e3 replaced
+those three with findings 289-309. The doc agent restored both parts; the lint passes again. Suspect: the pre-commit
+hook runs `check-studio-adrs.mjs` when STATUS.md or an ADR is staged, but a failed run does not stop the commit (no
+`set -e`, only the last command's exit code counts), so 113582c6e and later commits went through red. Also, each agent
+archives by hand, not with `tools/scripts/archive-findings.mjs`, which appends. Tool fix: the hook stops the commit
+when the ADR check fails (bite: a STATUS row that cites a missing finding); the check also fails when an archive file
+loses a finding number that its last committed version had; the doc-agent and builder skills archive only with
+`archive-findings.mjs`.
