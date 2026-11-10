@@ -31,6 +31,7 @@ const VIEWS = {
 };
 const view = args.includes('--view') ? args[args.indexOf('--view') + 1] : undefined;
 const listOnly = args.includes('--list');
+const keepTimings = !args.includes('--no-timings');
 const coldShots = args.includes('--cold-shots') || process.env['STUDIO_E2E_COLD_SHOTS'] === '1';
 
 if (coldShots) process.env['STUDIO_E2E_COLD_SHOTS'] = '1';
@@ -3751,14 +3752,16 @@ const lead = async () => {
     console.log(`${seconds(row.ms ?? 0)}  ${row.page.padEnd(9)} ${row.name}`);
   }
 
-  mkdirSync(dirname(TIMINGS_FILE), { recursive: true });
-  writeFileSync(
-    TIMINGS_FILE,
-    JSON.stringify({
-      ...known,
-      ...Object.fromEntries(rows.filter((row) => row.ms).map((row) => [keyOf(row), Math.round(row.ms)])),
-    }),
-  );
+  if (keepTimings) {
+    mkdirSync(dirname(TIMINGS_FILE), { recursive: true });
+    writeFileSync(
+      TIMINGS_FILE,
+      JSON.stringify({
+        ...known,
+        ...Object.fromEntries(rows.filter((row) => row.ms).map((row) => [keyOf(row), Math.round(row.ms)])),
+      }),
+    );
+  }
 
   const failed = rows.filter((row) => !row.ok);
   const ran = new Set(rows.map(keyOf));

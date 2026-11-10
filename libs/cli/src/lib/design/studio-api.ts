@@ -54,8 +54,11 @@ import {
   listSketchesInTurns,
   parseTarget,
   readSketchReport,
+  rejectionOf,
   Sketch,
+  variantDirOf,
 } from './system/sketch/sketch';
+import { noChangedStateLinesOf } from './system/sketch/no-visible-change';
 import { partKeyOf } from './system/resolve-product';
 import { keptUnchangedStatesOf, unchangedStatesOf } from './system/sketch/unchanged-states';
 import { SketchVariant } from './system/system-modules';
@@ -352,6 +355,39 @@ const targetsOf = async (options: {
     )
   ).flat();
 
+type ListedTarget = Awaited<ReturnType<typeof targetsOf>>[number];
+
+const noChangedStateProblemsOf = ({ sketch, targets }: { sketch: Sketch; targets: ListedTarget[] }) => {
+  const changes = sketch.variants.flatMap((variant) => {
+    const drawn = targets.filter((entry) => entry.variant === variant);
+    const compared = drawn.every(
+      (entry) => !('error' in entry) && entry.states.length > 0 && 'unchanged' in entry && entry.unchanged,
+    );
+
+    if (rejectionOf(sketch, variant) || drawn.length === 0 || !compared) return [];
+
+    const changed = drawn.some((entry) =>
+      entry.states.some((state) => !('unchanged' in entry && entry.unchanged?.includes(state))),
+    );
+
+    return [{ variant, change: changed ? 'changed' : null }];
+  });
+  const unchanged = changes.filter(({ change }) => change === null);
+
+  return noChangedStateLinesOf({ sketch, changes, noVisibleChange: sketch.status === 'ready' }).map(
+    (line, index): Problem & { variant: string } => {
+      const variant = unchanged[index]?.variant ?? '';
+
+      return {
+        variant,
+        rule: 'NO-CHANGED-STATE',
+        file: variantDirOf(sketch, variant),
+        message: line.replace(/^NO-CHANGED-STATE /u, ''),
+      };
+    },
+  );
+};
+
 const listingOf = async ({
   asked,
   product,
@@ -381,32 +417,41 @@ const listingOf = async ({
   return {
     status: 200,
     body: {
-      sketches: await inTurns({ items: sketches, signal }, async (sketch) => ({
-        ...sketchOf({ sketch, target }),
-        ...(checked
-          ? {
-              problems: checked.variants
-                .filter((entry) => entry.target === sketch.target)
-                .map((entry) => ({
+      sketches: await inTurns({ items: sketches, signal }, async (sketch) => {
+        const targets = listOnly
+          ? null
+          : await targetsOf({
+              product,
+              sketch,
+              load: asked.load,
+              pictureOf: asked.pictureOf,
+              signal,
+              compare: !light,
+            });
+        const unchanged = checked && targets ? noChangedStateProblemsOf({ sketch, targets }) : [];
+        const variants = checked?.variants.filter((entry) => entry.target === sketch.target) ?? [];
+
+        return {
+          ...sketchOf({ sketch, target }),
+          ...(checked
+            ? {
+                problems: [
+                  ...variants,
+                  ...unchanged
+                    .filter(({ variant }) => !variants.some((entry) => entry.variant === variant))
+                    .map(({ variant }) => ({ variant, problems: [] })),
+                ].map((entry) => ({
                   variant: entry.variant,
-                  problems: entry.problems.map((p) => problemOf({ target, problem: p })),
+                  problems: [...entry.problems, ...unchanged.filter(({ variant }) => variant === entry.variant)].map(
+                    (problem) => problemOf({ target, problem }),
+                  ),
                 })),
-            }
-          : {}),
-        ...(listOnly
-          ? {}
-          : {
-              targets: await targetsOf({
-                product,
-                sketch,
-                load: asked.load,
-                pictureOf: asked.pictureOf,
-                signal,
-                compare: !light,
-              }),
-            }),
-        report: readSketchReport({ checkout: target, sketch }),
-      })),
+              }
+            : {}),
+          ...(targets ? { targets } : {}),
+          report: readSketchReport({ checkout: target, sketch }),
+        };
+      }),
       unreadable: unreadable.map((problem) => problemOf({ target, problem })),
     },
   };

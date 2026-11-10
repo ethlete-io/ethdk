@@ -642,8 +642,12 @@ rendering for one candidate in that variant's files and only common code in `sha
 
 `sketch ready` also refuses a live variant that adds nothing visible: one that draws every state of a target pixel
 for pixel like another live variant, or like the current part when the sketch has more than one live variant. A
-variant that matches another in some states only is fine. A lone variant that draws like the current part is a change
-without a visible difference, which `sketch ready` merges by itself. The Studio sketch view shows each column's first
+variant that matches another in some states only is fine.
+
+`sketch ready` also refuses (`NO-CHANGED-STATE`) a live variant that draws no state differing from the current part, by
+the same diff as `SHOT-NOT-VIEWED` below; `sketch check` warns of it, and the Studio listing shows it as a problem of the
+variant. A sketch meant to change no pixel passes `--no-visible-change`: when no live variant draws a change, `sketch
+ready` then merges it by itself. The Studio sketch view shows each column's first
 state (the current part's states first), so `sketch ready` also refuses a variant whose first shown state draws like
 the current part's or an earlier variant's: make a state the variant changes its first state.
 

@@ -126,7 +126,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       'acme',
     );
 
-    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(await write(target, 'ready', 'components/button', '--no-visible-change', '--product', 'acme')).toBe(0);
     expect(lines).toContain('No visible change in any state: merged components/button automatically.');
     expect(lines.filter((line) => line.startsWith('  et design commit-hunks'))).toEqual([
       '  et design commit-hunks .ethlete/design/acme/merged.json --part components/button',
@@ -171,7 +171,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
 
     writeFileSync(home, edited);
 
-    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(await write(target, 'ready', 'components/button', '--no-visible-change', '--product', 'acme')).toBe(0);
     expect(lines).toContain('No visible change in any state: merged components/button automatically.');
     expect(existsSync(join(product, 'sketches/components-button'))).toBe(false);
     expect(readFileSync(home, 'utf8')).toBe(edited);
@@ -237,7 +237,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       return sketch.variants.map((variant) => ({ variant, change: null }));
     });
 
-    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(await write(target, 'ready', 'components/button', '--no-visible-change', '--product', 'acme')).toBe(1);
     expect(lines).toContain('components/button is gone: another run merged or discarded it while this one checked it');
   });
 
@@ -270,7 +270,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     );
     await sameButton(target);
 
-    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(await write(target, 'ready', 'components/button', '--no-visible-change', '--product', 'acme')).toBe(0);
     expect(lines).toContain('Committed: feat(repo): Merge components/button, no visible change');
     expect(lines.filter((line) => line.startsWith('  et design commit-hunks'))).toEqual([]);
     expect(git('log', '-1', '--format=%s').stdout.trim()).toBe(
@@ -291,7 +291,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     writeFileSync(merged, '{}\n');
     await sameButton(target);
 
-    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(await write(target, 'ready', 'components/button', '--no-visible-change', '--product', 'acme')).toBe(0);
     expect(lines).toContain('No visible change in any state: merged components/button automatically.');
     expect(lines).toContain('  et design commit-hunks .ethlete/design/acme/merged.json --part components/button');
     expect(git('log', '-1', '--format=%s').stdout.trim()).toBe('base');
@@ -768,6 +768,78 @@ describe('designSketch', { timeout: 120_000 }, () => {
     ).toMatchObject({ status: 'in progress' });
   });
 
+  it('refuses ready and warns in check while a lone variant draws no changed state, unless --no-visible-change', async () => {
+    const target = acme();
+    const lines = output();
+    const line =
+      'NO-CHANGED-STATE variant a of components/button draws no state that differs from the design - draw the state the sketch is about (for a marker sketch: draw the missing state), or pass --no-visible-change to sketch ready when the sketch must change no pixel';
+
+    vi.spyOn(console, 'warn').mockImplementation((entry: unknown) => void lines.push(String(entry)));
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
+    vi.mocked(variantChangesShown).mockImplementation(async ({ sketch }) =>
+      sketch.variants.map((variant) => ({ variant, change: null })),
+    );
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines.at(-1)).toBe(
+      `${line}\ncomponents/button draws a variant with no changed state - draw it before ready`,
+    );
+
+    lines.length = 0;
+
+    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines).toContain(`ready will refuse: ${line}`);
+    expect(
+      findSketch({
+        productDir: join(target, DESIGN_DIR, 'acme'),
+        product: 'acme',
+        sketch: { layer: 'components', name: 'button' },
+      }),
+    ).toMatchObject({ status: 'in progress' });
+
+    expect(await write(target, 'ready', 'components/button', '--no-visible-change', '--product', 'acme')).toBe(0);
+    expect(lines).toContain('No visible change in any state: merged components/button automatically.');
+  });
+
+  it('refuses ready on the unchanged variant of a sketch whose other variant changes, also with --no-visible-change', async () => {
+    const target = acme();
+    const lines = output();
+
+    vi.spyOn(console, 'warn').mockImplementation((entry: unknown) => void lines.push(String(entry)));
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
+    vi.mocked(variantChangesShown).mockResolvedValue([
+      { variant: 'a', change: 'variant a changes default' },
+      { variant: 'b', change: null },
+    ]);
+
+    expect(await write(target, 'ready', 'components/button', '--no-visible-change', '--product', 'acme')).toBe(1);
+    expect(lines.at(-1)).toBe(
+      'NO-CHANGED-STATE variant b of components/button draws no state that differs from the design - draw the state the sketch is about (for a marker sketch: draw the missing state)\ncomponents/button draws a variant with no changed state - draw it before ready',
+    );
+  });
+
   it('opens one sketch on several targets and merges them all by itself when no state shows a change', async () => {
     const target = acme();
     const lines = output();
@@ -797,7 +869,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines).toContain(
       `  a: ${join(DESIGN_DIR, 'acme/sketches/components-button/a/components/button/button.ts')}, ${join(DESIGN_DIR, 'acme/sketches/components-button/a/elements/hero/hero.ts')}  assets: ${join(DESIGN_DIR, 'acme/sketches/components-button/a/assets')}/`,
     );
-    expect(await write(target, 'ready', 'elements/hero', '--product', 'acme')).toBe(0);
+    expect(await write(target, 'ready', 'elements/hero', '--no-visible-change', '--product', 'acme')).toBe(0);
     expect(lines).toContain('No visible change in any state: merged components/button, elements/hero automatically.');
     expect(existsSync(join(product, 'sketches/components-button'))).toBe(false);
     expect(JSON.parse(readFileSync(join(product, 'merged.json'), 'utf8'))).toMatchObject({
@@ -869,7 +941,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       sketch.variants.map((variant) => ({ variant, change: null })),
     );
 
-    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(await write(target, 'ready', 'components/button', '--no-visible-change', '--product', 'acme')).toBe(0);
     expect(existsSync(join(product, 'sketches/components-button'))).toBe(false);
   }, 30_000);
 
@@ -916,10 +988,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       '--product',
       'acme',
     );
-    vi.mocked(variantChangesShown).mockResolvedValue([
-      { variant: 'a', change: 'variant a changes default' },
-      { variant: 'b', change: null },
-    ]);
+    vi.mocked(variantChangesShown).mockResolvedValue([{ variant: 'a', change: 'variant a changes default' }]);
 
     const sketch = () => {
       const found = findSketch({
@@ -984,7 +1053,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       'acme',
     );
 
-    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(await write(target, 'ready', 'components/button', '--no-visible-change', '--product', 'acme')).toBe(0);
   });
 
   it('skips automatic merge for a new part without comparing shots', async () => {
@@ -1022,7 +1091,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const lines = output();
 
     expect(await run(acme(), 'ready', 'components/button', '--fix', '--by', 'x', '--product', 'acme')).toBe(2);
-    expect(lines[0]).toBe('unknown flag --fix (flags: --by, --product)');
+    expect(lines[0]).toBe('unknown flag --fix (flags: --by, --product, --no-visible-change)');
   });
 
   it('edits the title and note of a round and lists the rounds', async () => {
@@ -2306,7 +2375,7 @@ export default definePart({
       sketch.variants.map((variant) => ({ variant, change: null })),
     );
 
-    expect(await write(target, 'ready', 'elements/hero', '--product', 'acme')).toBe(0);
+    expect(await write(target, 'ready', 'elements/hero', '--no-visible-change', '--product', 'acme')).toBe(0);
   }, 120_000);
 
   describe('merge --variant --allowed-by', { timeout: 120_000 }, () => {

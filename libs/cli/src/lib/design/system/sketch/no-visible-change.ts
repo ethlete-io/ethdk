@@ -175,3 +175,27 @@ export const variantLoadProblemsOf = async (options: {
 
   return problems;
 };
+
+/**
+ * One `NO-CHANGED-STATE` line per live variant whose change is `null`: it draws no state that differs from the
+ * product. `[]` when `noVisibleChange` is set and no live variant changes anything: that sketch merges by itself.
+ */
+export const noChangedStateLinesOf = (options: {
+  sketch: Sketch;
+  changes: VariantChange[];
+  noVisibleChange: boolean;
+}): string[] => {
+  const { sketch, changes, noVisibleChange } = options;
+  const unchanged = changes.filter(({ change }) => change === null);
+  const alone = unchanged.length === changes.length;
+
+  if (alone && noVisibleChange) return [];
+
+  const escape = alone ? ', or pass --no-visible-change to sketch ready when the sketch must change no pixel' : '';
+
+  return unchanged.map(
+    ({ variant }) =>
+      `NO-CHANGED-STATE variant ${variant} of ${sketch.targets.join(', ')} draws no state that differs from the design - ` +
+      `draw the state the sketch is about (for a marker sketch: draw the missing state)${escape}`,
+  );
+};

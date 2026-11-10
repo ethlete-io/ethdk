@@ -69,6 +69,43 @@ describe('the sketch listing tiers', () => {
     expect(unchangedOf(await listing(target, '&unchanged=no', load))).toEqual([['one'], ['one']]);
   });
 
+  it('lists a variant that draws no changed state as a NO-CHANGED-STATE problem of the sketch', async () => {
+    const target = mkdtempSync(join(tmpdir(), 'cli-studio-listing-'));
+
+    cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
+
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+    const parsed = parseTarget('components/card');
+
+    if (typeof parsed === 'string') throw new Error(parsed);
+
+    createSketch({ product, sketch: parsed, variants: ['a', 'b'] });
+
+    const load = async (file: string) => ({
+      default: { note: 'n', states: { one: {} }, render: () => ({ body: file.includes('/b/') ? 'y' : 'x' }) },
+    });
+    const listed = (await listing(target, '', load)) as unknown as {
+      sketches: { problems?: { variant: string; problems: { rule: string; message: string }[] }[] }[];
+    };
+
+    expect(
+      listed.sketches[0]?.problems?.map(({ variant, problems }) => ({
+        variant,
+        rules: problems.map(({ rule, message }) => `${rule}: ${message}`),
+      })),
+    ).toEqual(
+      expect.arrayContaining([
+        {
+          variant: 'a',
+          rules: expect.arrayContaining([
+            'NO-CHANGED-STATE: variant a of components/card draws no state that differs from the design - draw the state the sketch is about (for a marker sketch: draw the missing state)',
+          ]),
+        },
+        { variant: 'b', rules: expect.not.arrayContaining([expect.stringContaining('NO-CHANGED-STATE')]) },
+      ]),
+    );
+  });
+
   it('starts a new listing after a file change instead of joining one that started before it', async () => {
     const target = acme();
     let release = () => undefined as void;

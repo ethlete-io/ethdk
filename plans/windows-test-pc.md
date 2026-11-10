@@ -14,6 +14,13 @@ through Moonlight. Dev tools go next to that setup, in a scratch folder.
 Goal: a third remote test machine next to `ethlete-mac`, for Windows-only checks: the Tauri bundles of Studio and
 Timetrack (MSI or NSIS, signing, the updater), WebView2 behavior, and a Windows build of the Rust host.
 
+## Probe (2026-11-10, night)
+
+`rack` is on and the key login works (`ssh -o BatchMode=yes trbor@192.168.1.115`). Windows 11 Pro, i9-13900HX, 64 GB
+RAM, 110 GB free on C:. Installed: WSL (`wsl.exe`), WebView2 154.0.4258.62. Missing: Node, Yarn, Git, Rust (cargo,
+rustup). The login shell is PowerShell 5.1: `&` and `$` in a quoted command break, and a script piped to stdin or an
+`scp` reset the connection once. A script runs reliably as `powershell -NoProfile -EncodedCommand <base64 UTF-16LE>`.
+
 ## Open when the work starts
 
 - Add a `Host rack` entry to `~/.ssh/config`; check that the key login works when the PC is on.

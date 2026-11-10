@@ -4,6 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import {
+  e2eQuotaCommand,
+  e2eQuotaStep,
   failureReport,
   linkTargetOf,
   missingVerdict,
@@ -366,4 +368,101 @@ test('without systemd-run the quota step passes and says it skipped on this OS',
 
 test('the quota step runs after the Studio unit tests', () => {
   assert.equal(STEPS.indexOf('quota'), STEPS.indexOf('studio') + 1);
+});
+
+test('the e2e quota step runs one changed case on one worker in a user scope with a CPU quota', () => {
+  assert.deepEqual(e2eQuotaCommand('Tab focus shows the ring', '/tmp/built', 40), {
+    command: 'systemd-run',
+    args: [
+      '--user',
+      '--scope',
+      '--quiet',
+      '-p',
+      'CPUQuota=40%',
+      process.execPath,
+      'apps/ethlete-studio/e2e/canvas.e2e.mjs',
+      '--built',
+      '/tmp/built',
+      '--no-timings',
+      '--workers',
+      '1',
+      '--case',
+      'Tab focus shows the ring',
+    ],
+  });
+});
+
+const e2eQuotaHarness = (durations, statuses = {}) => {
+  let time = 0;
+  const ran = [];
+  return {
+    ran,
+    built: '/tmp/built',
+    now: () => time,
+    build: async () => {
+      ran.push('build');
+      return { status: 0, output: '' };
+    },
+    run: async (command, args) => {
+      const name = args.at(-1);
+      ran.push(name);
+      time += durations[name] ?? 0;
+      return { status: statuses[name] ?? 0, output: `out ${name}` };
+    },
+  };
+};
+
+const changedCases = (...cases) => ({ all: false, cases, reasons: [] });
+
+test('the e2e quota step builds Studio once, then runs each changed case and names the quota', async () => {
+  const harness = e2eQuotaHarness({});
+  const result = await e2eQuotaStep(changedCases('a', 'b'), { ...harness, available: () => true });
+
+  assert.deepEqual(harness.ran, ['build', 'a', 'b']);
+  assert.equal(result.status, 0);
+  assert.equal(result.note, 'CPUQuota=50%, ran a, b');
+});
+
+test('the e2e quota step stops starting cases at its budget and names the skipped ones', async () => {
+  const harness = e2eQuotaHarness({ a: 200_000, b: 200_000 });
+  const result = await e2eQuotaStep(changedCases('a', 'b', 'c'), { ...harness, available: () => true });
+
+  assert.deepEqual(harness.ran, ['build', 'a', 'b']);
+  assert.equal(result.status, 0);
+  assert.equal(result.note, 'CPUQuota=50%, ran a, b; over the 300 s budget, skipped c');
+});
+
+test('a case that fails under the quota fails the e2e quota step with its output', async () => {
+  const harness = e2eQuotaHarness({}, { a: 1 });
+  const result = await e2eQuotaStep(changedCases('a', 'b'), { ...harness, available: () => true });
+
+  assert.deepEqual(harness.ran, ['build', 'a']);
+  assert.equal(result.status, 1);
+  assert.equal(result.output, 'out a');
+  assert.equal(result.note, 'CPUQuota=50%, failed a');
+});
+
+test('a change outside a case runs no e2e case under the quota and says why', async () => {
+  const harness = e2eQuotaHarness({});
+  const result = await e2eQuotaStep(
+    { all: true, cases: [], reasons: ['libs/cli/src/lib/design/serve.ts serves every page'] },
+    { ...harness, available: () => true },
+  );
+
+  assert.deepEqual(harness.ran, []);
+  assert.equal(result.status, 0);
+  assert.match(result.note, /^no case run under the quota: libs\/cli\/src\/lib\/design\/serve\.ts serves every page/);
+});
+
+test('without systemd-run the e2e quota step passes and says it skipped on this OS', async () => {
+  const harness = e2eQuotaHarness({});
+  const result = await e2eQuotaStep(changedCases('a'), { ...harness, available: () => false, os: 'darwin' });
+
+  assert.deepEqual(harness.ran, []);
+  assert.equal(result.status, 0);
+  assert.match(result.note, /^skipped on darwin: the CPU quota needs systemd-run --user/);
+});
+
+test('the e2e quota step runs after the e2e suite passes unthrottled', () => {
+  assert.equal(STEPS.indexOf('e2e-quota'), STEPS.indexOf('e2e') + 1);
 });

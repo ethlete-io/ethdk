@@ -38,7 +38,7 @@ import {
   variantChangesShown,
   variantsThatDoNotLoad,
 } from './ready-shots';
-import { noChangeOf } from './system/sketch/no-visible-change';
+import { noChangedStateLinesOf, noChangeOf } from './system/sketch/no-visible-change';
 import { coverPartProblemOf, editCovers } from './system/sketch/covered-diffs';
 import { unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots';
 import { addedUndeclaredControlsOf } from './system/complete';
@@ -105,10 +105,10 @@ export const SKETCH_USAGE = [
   'sketch target remove <layer>/<name> <layer>/<name> --by <model id> [--product <name>]',
   'sketch list [--product <name>] [--json]',
   'sketch report <layer>/<name> --variant <key> --by <model id> (<text> | --done) [--reopen] [--product <name>]',
-  'sketch ready <layer>/<name> --by <model id> [--product <name>]',
+  'sketch ready <layer>/<name> [--no-visible-change] --by <model id> [--product <name>]',
   'sketch hold <layer>/<name> --until <what the change waits on> --by <model id> [--product <name>]',
   'sketch release <layer>/<name> --by <model id> [--product <name>]',
-  'sketch check [<layer>/<name>] [--fix] [--product <name>]',
+  'sketch check [<layer>/<name>] [--fix] [--no-visible-change] [--product <name>]',
   'sketch preview <layer>/<name> <variant> [--product <name>] [--json]',
   'sketch rebase <layer>/<name> [--ported] --by <model id> [--product <name>]',
   'sketch merge <layer>/<name> [--note <reason> [--replace-note]] [--variant <key> --allowed-by <plan ref>] [--decided-by <name>] --by <model id> [--product <name>]',
@@ -152,6 +152,8 @@ const FLAG_HELP: Record<string, string> = {
   '--product': 'the product; needed only when config.json declares more than one and no other product has the sketch',
   '--json': 'print JSON',
   '--fix': "write the variants in the checkout's Prettier format first",
+  '--no-visible-change':
+    'the sketch must change no pixel: its variants may draw every state like the product, and ready merges it by itself',
 };
 
 const VERDICT_BY_HELP =
@@ -906,11 +908,20 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
       `${undeclared.join('\n')}\n${sketch.target} draws controls no controls entry declares - declare them before ready`,
     );
 
-  const changes = sketch.targets.every((key) => product.parts.some((part) => partKeyOf(part) === key))
+  const changes = targetsInProduct({ product, sketch })
     ? await timedPhase('changes-shot', () =>
         variantChangesShown({ target: context.target, config: context.config, product, sketch, warm: context.warm }),
       )
     : null;
+  const unchangedVariants = Array.isArray(changes)
+    ? noChangedStateLinesOf({ sketch, changes, noVisibleChange: context.args.flags.has('--no-visible-change') })
+    : [];
+
+  if (unchangedVariants.length > 0)
+    return fail(
+      `${unchangedVariants.join('\n')}\n${sketch.target} draws a variant with no changed state - draw it before ready`,
+    );
+
   const unviewed = Array.isArray(changes)
     ? unviewedShotLinesOf({
         target: context.target,
@@ -937,6 +948,9 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
     autoMerged({ context, product, sketch: ready, again: sketch.status === 'ready', changes }),
   );
 };
+
+const targetsInProduct = ({ product, sketch }: { product: ResolvedProduct; sketch: Sketch }) =>
+  sketch.targets.every((key) => product.parts.some((part) => partKeyOf(part) === key));
 
 const stillReady = (options: { sketch: Sketch; again: boolean; reason: string }) => {
   writeSketchFile({ ...options.sketch, mergeHold: { reason: options.reason, at: new Date().toISOString() } });
@@ -1505,6 +1519,25 @@ const renderedVariantsOf = async ({
   return rendered;
 };
 
+const noChangedStateLines = async (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  sketch: Sketch;
+  warm?: WarmDraw;
+  args: Args;
+}) => {
+  const { args, ...shots } = options;
+
+  if (!targetsInProduct(shots)) return [];
+
+  const changes = await variantChangesShown(shots);
+
+  return Array.isArray(changes)
+    ? noChangedStateLinesOf({ sketch: shots.sketch, changes, noVisibleChange: args.flags.has('--no-visible-change') })
+    : [];
+};
+
 const checked = async (context: Context) => {
   const { target, config, args } = context;
   const product = sketchProductOf(context);
@@ -1638,6 +1671,11 @@ const checked = async (context: Context) => {
       refuse(
         await timedPhase('identical', () =>
           identicalRenderLines({ target, config, product, sketch, warm: context.warm }),
+        ),
+      );
+      refuse(
+        await timedPhase('changes-shot', () =>
+          noChangedStateLines({ product, sketch, target, config, warm: context.warm, args: context.args }),
         ),
       );
     }

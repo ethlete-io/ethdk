@@ -395,7 +395,9 @@ jobs:
           key: cargo-audit-${{ runner.os }}-0.22.2
 
       - if: steps.cargo-audit-bin.outputs.cache-hit != 'true'
-        run: cargo install cargo-audit --locked --version 0.22.2
+        run: |
+          if cargo audit --version 2>/dev/null | grep -q ' 0\.22\.2$'; then exit 0; fi
+          cargo install cargo-audit --locked --force --version 0.22.2
 
       # Not cached by nx: the answer depends on the advisory database, which changes without the
       # lockfile. A cache hit would hide an advisory published since the last run.
