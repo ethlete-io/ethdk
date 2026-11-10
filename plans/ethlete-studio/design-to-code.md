@@ -3062,17 +3062,6 @@ applied to e2e), and the gate prints the B row of a known flaky case next to its
 
 As built (finding 665, B463, ADR 0230): two e2e cases carry `perf: true` in `canvas.e2e.mjs`: "page switch time is logged to the design timings" and "Neu starten in the code notice answers within 100 ms". They fail under load on the 12-core Mac, so the default run, `push:suite` and the blocking e2e job skip them. `--perf` runs only them, and `--case` finds one only together with `--perf`. The header line prints how many were skipped. The CI `perf` job now builds and runs `yarn studio:e2e --perf` with one worker; it stays non-blocking and out of both `needs` lists. `tools/scripts/studio-e2e-perf.spec.mjs` checks that the default selection never holds a perf case. The B462 flake is not a timing case and stays blocking.
 
-666\. Builder (2026-11-09, Mac night, worker sweep): more e2e workers make the Mac worse. 4 workers: 130/133 in
-528 s, load 7 to 120, fixtures 52-55 s, warmUp 17 s. 6 workers: 116/133 in 591 s, load 120 to 253, fixtures at the
-60 s cap. 8 workers: about 30 fails, load 395 with about 6 threads on CPU, a process spawn storm (one Chromium renderer
-per cross-origin iframe). So `min(8, floor(cores/4))` = 3 is not the cause, and the doc agent's line in 664 ("mostly
-the worker count") was wrong. The cause is the cases with fixed 60 s waits under load. Also during the sweep
-`mediaanalysisd` and `mds_stores` ran at about 140 % CPU, so 659's "Spotlight was idle" was true only at that
-moment. Why no tool caught it: no run records the CPU of processes outside the checkout. Tool fix (with 650/659): the
-load report also names the top processes outside the checkout. Machine fix (question for the human in the morning):
-exclude the checkout from Spotlight indexing. Next (doc agent agrees): the e2e timing cases move into the
-non-blocking perf job; for B462 find why the first-load wait needs more than 60 s under load, no timeout raise.
-
 667\. Builder (2026-11-09, Mac night, B462 cause, from code, one point seen in logs): each e2e worker runs
 `assertSketchFixtures` (`canvas.e2e.mjs:2659`), one full `/__design/sketches` listing, so a full picture compare of
 every fixture sketch, drawn by its own draw Chromium with `DRAWS_AT_ONCE` 8. Nothing is shared: the shot cache and the
@@ -3128,14 +3117,6 @@ is made fresh in each checkout, so its inputs differ. Not verified: a full `yarn
 worktrees with their own `node_modules` (they get a store each, as before). The 517 old `shots-*` folders in the main
 `node_modules/.design-explore` are left there.
 
-668\. Builder (2026-11-09, Mac night, push:suite on 4a0978b11): e2e 130/131 in 544 s, load 7.7 to 40. The case
-'hover alone draws no frame border' failed on "new -> button[data-part-give-go,...] outline solid 2px transparent |
-border solid 1px transparent": a button that mounted late under load, with no drawn border. Alone 4/4 pass (B464).
-B462 did not fail this time. Why no tool caught it: the case compares the DOM before and after the hover and counts
-every new element as a border, even one whose outline, border and shadow are all transparent. Tool fix (tonight, bug
-queue; doc agent decision): the case waits for a stable DOM before the hover, so a real late border still fails.
-Order: 667 (b) and (a) first, because they cut the load; then one push:suite that carries the cargo fix.
-
 669\. Builder (2026-11-09, Mac night, push:suite on 4fc2d5299): cli, studio and e2e green (131/131, 516 s, load 8),
 then the repeat gate blocked after 31 min. Three cases failed only in the hold run (`--hold-listings 14000
 --delay-pictures 60000`): Large 'a sketch cell edited on disk while scrolled away shows its new picture on return',
@@ -3157,30 +3138,6 @@ in one agent shell call does not reach the next call that runs `git commit`, so 
 tool caught it: the warning prints the patterns but not where they came from or how old they are. Tool fix (bug
 queue): the warning names its source (env or file, with the file's age), and the builder writes the file, not the env
 var, at each slice start.
-
-671\. Builder (2026-11-09, Mac night, push:suite on f3e978adb): e2e green (422 s), the 669 fix worked, and the 647
-scroll case passed in every run. The repeat gate blocked on Large 'a sketch keeps its frame count and pictures
-through a sketch edit' in a normal run (pass, fail, pass): "after the edit 1 cells lost their picture: a
-project-picker-focus-visible", load 6-10. Not a timeout and not the delay, so possibly a real intermittent Studio
-defect (B465; B448 was the old row of this case). The red-CI fix 2bc4d42f2 has now waited 4 push-suite runs behind
-Studio e2e cases, though it changes only Cargo files that the suite does not test. Why no tool caught it: the push
-gate tests the whole unpushed stack, so one change cannot pass alone while other local work is red. Doc agent
-decision (inside the existing rules; the suite skip stays with the human): the builder runs push-suite on
-origin/next plus only 2bc4d42f2 and pushes that sha; B465 is found in parallel. Tool fix (backlog): push-suite takes
-a commit list and tests origin plus those commits only, so an independent fix does not queue behind open work.
-
-672\. Builder (2026-11-09, Mac night, B465 cause; spec fails 1/20 on the old code, passes 20/20 with the fix):
-`sketchRowsOf` (`system-tree.ts`) puts `revision` into the frame src and picture URL of every variant row. A CSS edit
-of sketch `a` bumps it, so every cell of row `a` gets a new frame address; the same `<iframe>` gets the new `[src]`,
-`FramePaintedDirective` emits false at once and the frame goes to opacity 0. A cell shown only by its painted frame,
-with no loaded picture yet, stays empty until the new frame paints (`a project-picker-focus-visible`). A real Studio
-defect; the case measured right. Fix (builder): keep the painted old iframe, mount the new src on top at opacity 0,
-remove the old one when the new one paints. Why no tool caught it: the defect needs a painted frame with no loaded
-picture, which only load produces; and the hold run holds listings 14 s, longer than the case's 10 s window, so the
-revision bump never arrives there and the case passes by chance. Second time tonight that the hold hides a fault
-(657). Tool fix (tonight, with the fix): this case runs with `--delay-pictures` and without the listing hold; tonight
-(bug queue, it bit twice): the runner flags a case whose wait window is shorter than `HOLD_LISTINGS_MS` unless the
-case opts out (`holdListings: false`).
 
 As built (672 tool part): the runtime check of 674 in `studio-e2e-listing-hold.mjs` (054fb039b) covers it; each
 opt-out names its reason since 678 (494fd4f4f). No slice of its own (builder, 2026-11-10).
@@ -3267,17 +3224,6 @@ edge, so a late-mounted transparent button is no change; a new visible edge stil
 temporary button mounted over the frame on hover): transparent outline, border and shadow pass 4/4 pages, a red one
 fails 4/4; the case then passed 4 runs of 4/4 at load 45-66. Not verified: a push:suite run.
 
-677\. Builder (2026-11-09, Mac night, push:suite at d00510226): the B464 hover case failed again, 130/131. It
-reported a late-mounted `button[data-part-give-go]` with only a transparent outline, border and shadow as a `new`
-frame border. Cause: the case compared raw computed-style strings, so it measured DOM churn under load, not drawn
-borders. The queued fix of 668 (wait for a stable DOM) is dropped: a wait cannot prove that the DOM is final under
-load. Fix (in progress): the case compares only visible edges; an element with fully transparent edges gives no
-entry, and a new visible edge still fails. Why no tool caught it: the runner has no check that a case's signal
-matches its claim, so a case that claims "draws a border" can read a value that draws nothing. Tool fix (backlog):
-style-diff helpers of the e2e runner compare drawn results (visible width and non-transparent colour), never raw
-computed strings, and the 651 bite proof runs each case once with the claimed effect forced off and once with an
-unrelated element added late, to show the case reacts only to its claim.
-
 As built (674): 054fb039b. In a hold run, a case fails when its `run()` passes while a listing that it requested inside
 `run()` is still held; listings held before `run()` are ignored. Bite: the sketch-edit case without
 `holdListings: false` fails with the new detail and passes when restored. 8 cases carry the opt-out
@@ -3349,15 +3295,6 @@ navigation, initiator about:blank, iframe src then /frame.html?...`, the initiat
 160 chars; the new one cuts nothing). Runs: the 7 cases plain pass, with `--hold-listings 14000` pass, and the perf case
 (page switch) passes with `--perf`. Not verified: the failure output of the stored pictures, sketch edit, page switch
 and listing refresh cases (not bitten).
-
-680\. Builder (2026-11-10, Mac night, push:suite at 220e4d6b5, B470): the Sketches case "first load creates one iframe
-per frame and aborts no frame request" failed once in the repeat gate (pass, fail, pass): `aborted requests of shown
-frames 2 of 2 (must be 0)`, visible frames loaded 25.7 s after reload, 54.7 s for the case. Cause unknown: the case
-prints only a count, not which requests aborted, when or by whom. Third push:suite of the night red on a different
-case each time (B464, B468, B470). Why no tool caught it: the same count-only shape as 679; its backlog item (every
-count-only e2e assertion prints its events on failure) was not built yet. Tool fix (next fix round): the case prints
-each aborted request with its URL, time since reload and initiator; the 679 backlog item covers the rest of the suite.
-No fourth fix round tonight (ADR 0239): only the B466 worker-cap fix goes to origin/next through push-suite.
 
 As built (B470, finding 680): on failure the case detail now lists each aborted request of a shown frame on its own line:
 shortened URL (path + query), ms since the reload, `request.failure()` text, navigation or subrequest, the initiator
@@ -3618,25 +3555,6 @@ inferred by `@nx/vitest`; browser mode exempt by rule). Bite: target deleted, th
 TS5097 in 12 configs, so `nx run-many -t typecheck` was red after d906c4796; ef646f413 moves it to `tools/vitest/workers.mjs`
 with `workers.d.mts`. And ed5d4ed8c (660 spec) had 4 `noUncheckedIndexedAccess` errors in `cli:typecheck`; fixed in
 28ba414d2. Not verified: a full typecheck after 28ba414d2, CI.
-
-687\. Builder (2026-11-10, Mac night, 686): two slices tonight (d906c4796, ed5d4ed8c) went in red on types and nothing
-showed it. Cause (proven by reading the code): no local gate runs a typecheck. `commit-wait.mjs` waits for `index.lock`,
-adds and commits; pre-commit has no tsc; pre-push runs only `lint:spec-typecheck`, which checks the target config, not
-the types. The builder skill says "`yarn commit` already runs the specs related to the staged files and the typecheck";
-that is false. Typecheck in CI only is ADR 0038, and ADR 0216 (open) gives the answer for a held push: the builder pushes
-each slice to its own branch with a draft pull request, so the full CI runs there. Tonight nothing was pushed at all
-(ADR 0239: push only after a green push suite), so neither path ran. Why no tool caught it: the skill claims a check
-that does not exist, and ADR 0216 is not built, so a night with a held push has no type gate. Tool fix: (1) correct the
-skill sentence (fact, no decision); (2) question for the human in the morning: a typecheck step in `push:suite` for the
-touched projects, or the ADR 0216 draft-PR push per slice also at night (both against or beside ADR 0038).
-
-688\. Doc agent (2026-11-10, Mac night): I sent finding 685 (lint for the touched projects as a `push:suite` step,
-cef57a3d0) to the builder as my own call. ADR 0038 says lint and typecheck move to CI only, with no throwaway clone for
-them, and `push:suite` runs on an exported HEAD. I did not search the ADRs before the decision; the doc-agent skill says
-to. Why no tool caught it: `yarn adr:governs` maps ADR 0038 to `.husky/*` and `tools/scripts/*gate*`, not to
-`tools/scripts/push-suite.mjs`, so even the check would not have listed it. Tool fix: ADR 0038 governs
-`tools/scripts/push-suite.mjs` too (frontmatter), and the 685 lint step goes into the morning question of 687 as part of
-the same choice. The step stays until the human answers; it costs about 11 s per project.
 
 Measured (2026-11-10, Mac night, 28ba414d2, ADR 0240): full `yarn studio:e2e` 131/131 in 418.3 s on 3 workers (before:
 410.9 s, 442.2 s). Not a spread figure: load 4.0 at the start, 12.5/16.8/15.4 at the end, from processes outside the run
