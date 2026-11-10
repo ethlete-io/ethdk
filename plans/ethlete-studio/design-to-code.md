@@ -4171,3 +4171,8 @@ pre-push gates. Process: run `yarn adr:governs` before every decision on files, 
 Suspect: `libs/cli` system/ specs have little room under the 5 s limit at load (see 723). Tool fix (Mac builder, decided
 by the doc agent): push:suite prints the load average per failed case, as e2e does, and waits to start while the load is
 above a limit.
+
+727\. Mac builder (2026-11-10, 722 push): push:suite at 8145d8357 failed `shot-store-draw-lock.spec.ts` "takes over the
+lock of a live process once it is older than the wait": expected 49 >= 50. Suspect (code reading, no bite): the product
+counts the lock age from `lock.at`, the spec from a later `Date.now()`. Fix 10b906189: the spec measures from the lock
+file's `at`; `spec:stress --load 2` 4/4. The push suite caught it, so no tool gap.
