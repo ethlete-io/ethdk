@@ -311,7 +311,7 @@ product's `deniedClasses` matches. Each entry holds a regular expression and the
 The rule tests a class without its variants, its `!` and its opacity, so `hover:bg-surface-raised/50`
 counts as `bg-surface-raised`. It fails with `DENIED-STYLESHEET` when the product's own stylesheets,
 outside `foundations/`, define what would expose a denied name: a custom property, a `--color-*` theme
-value, an `@utility` or a class rule. A sketch fails only on a denied class it adds. `sketch ready`, `sketch merge` and `design accept` refuse on all three rules.
+value, an `@utility` or a class rule. A sketch fails only on a denied class it adds. `sketch ready` and `sketch merge` refuse on all three rules.
 
 A product that sets `"nativeTitle": "deny"` in its config also fails `et design check` with `NATIVE-TITLE` on a native `title`
 attribute on an HTML element in the markup strings of its design files, with the line; elements with a dash in
@@ -437,26 +437,23 @@ lines prefixed `live `; without `--url` the refusal notes that it checked the pa
 then reads as not ready. `et design check` prints a `READY <product>: <parts>` line after the open
 points when a mark holds.
 
-A go releases a part for implementation. `et design go components/chip --product app-a --by tom` stores the part hash,
-who and when in `.ethlete/design/<product>/go.json`, next to `ready.json`. A go needs no empty open-point list. Any edit
-of the part changes its hash, and the go then reads as stale: the design changed, so the part needs a new go. A part
-with an `implements` link and no current go has the open point `no go`, or `go is stale` after a change. Studio sends
-`POST /__design/part-go?product=` with `{ part, by }` and optional `hash`: 400 without `by`, 404 for an unknown part,
-409 when the part changed since `hash`. The one-part open-point answer also holds `go`. `et design check` prints a
-`GO <product>: <parts>` line when a go holds.
+## Build-ready
 
-`--by tom` is the guarded path: `et design go <part> --product app-a --by tom --note "Impl Q113"` needs a note that names
-an `Impl Qnn` entry of the current `plans/**/*.md`, committed. It shows the go and asks `Record this as Tom? [y/N]`, and
-records nothing without a yes. When stdin is not a TTY it refuses and names `et design go --batch <file>`, so an agent
-cannot give Tom's go. A design file of the part that is uncommitted or committed after the decision is no refusal: the
-confirm line names it, for example `go studio components/chip - Impl Q98 - design changed after Impl Q98 (5e554809b)`.
-The note is stored in the go entry. `et design accept --by tom` asks the same way. Any other `--by` and Studio's go
-button need no note and no confirm.
+A part is build-ready when `et design check` writes a current check record for it with no blockers. The record lives in
+`.ethlete/design/<product>/ready.json`, is written by the tool only and is committed. There is no go and no acceptance
+step: Studio computes the state and `design task` starts only for build-ready parts. Any edit of the part changes its
+hash, and the record then reads as stale until the next `design check`.
 
-A go also stores `actions`, the sorted `data-et-action` keys every state of the part draws. `et design check` fails
-`ACTION-LOST` for a key a go stored that no part of the product draws now: moving an action to another part is fine,
-dropping it is not. A new go of the part stores its current keys and so confirms the removal. A go stored before
-`actions` is not checked.
+Studio shows the state on the part as "Baubereit", "Nicht baubereit (n)" with the reasons, or "Wird geprüft" while the
+slow checks run. A change to a merged part outside a sketch is not accepted by hand: `design check` opens an old/new
+edit sketch, and the user picks in Studio.
+
+`et design check` warns `LEFTOVER-FILE` for a leftover gate file of the old go and accept flow that an earlier version left in the product
+folder. Neither file is read any more; the warning names the file to delete.
+
+A check record also stores `actions`, the sorted `data-et-action` keys every state of the part draws. `et design check` fails
+`ACTION-LOST` for a key a check record stored that no part of the product draws now: moving an action to another part is fine,
+dropping it is not. A new check record of the part stores its current keys and so confirms the removal.
 
 A product can list what its users can do in `.ethlete/design/<product>/capabilities.json`: a `capabilities` array of
 `{ "id", "label", "place" }`, where `place` is `{ "part", "action" }`, the part and the `data-et-action` key that draw
@@ -480,59 +477,31 @@ gap:
 A state that marks the same `data-et-status` twice inside one `data-et-view` region (or twice in a state without such
 regions) is a `STATUS-TWICE` warning, in every part.
 
-An agent that prepares Tom's goes writes a go list, a JSON array, and Tom runs `et design go --batch <file>`:
-
-```json
-[
-  {
-    "part": "components/chip",
-    "product": "studio",
-    "action": "go",
-    "note": "Impl Q98",
-    "verify": "d85d4129c"
-  }
-]
-```
-
-A sketch merge as Tom is an entry with `"action": "merge"` and no `verify`: `{ "part": "pages/system", "product": "studio",
-"action": "merge", "variant": "a", "note": "Impl Q99" }`. `variant` is optional and picks the only live variant of a
-sketch nobody picked in Studio; without it the sketch needs a pick. The check refuses a sketch that is missing or not
-ready, naming `design sketch ready <part> --by <model id> --product <name>`; a merge runs the same code as
-`et design sketch merge`, and its note is the reason and the plan reference.
-
-`action` is `go`, `accept` or `merge`, `note` names the `Impl Qnn` decision (an accept entry uses it as its note) and the optional
-`verify` names the commit of the part, which must exist. The command checks every entry first and refuses the whole list
-when one fails, then lists all entries with their notes in one `Record these <n> as Tom? [y/N]` prompt and records them
-all, by `tom`, on a yes.
-
-The part hash of ready, go and implemented is the design hash: the part folder, the shared and asset files it uses, and
+The part hash of the check record and of implemented is the design hash: the part folder, the shared and asset files it uses, and
 every file it reaches through imports - other `@system` parts, `@ethlete/<lib>/design` mocks and the fixtures. Each
 mark stores the hash of every one of those files next to it, so an edit of an imported part or an SDK mock makes the
 mark stale too. `task --verify` also stores in `implemented.json` the hash of each repository file the app component
 reaches: relative imports, `templateUrl` and `styleUrl` files, and for an `@ethlete/*` import (resolved through the
 `tsconfig.base.json` paths to `libs/*/src`) only the files that declare the imported names. `et design check` prints
 `STALE <product> <part>: design <files>; app <files>` for each part with a ready mark or an implemented record whose
-ready mark or go no longer holds, or whose app files changed, and names the changed files; such a part no longer
+check record no longer holds, or whose app files changed, and names the changed files; such a part no longer
 counts as done. A mark stored before the file lists holds while the old folder-only hash does: the first
-`et design check` moves it to the design hash and prints `REHASHED <product>: <part> (go, ready, implemented)`, and one
+`et design check` moves it to the design hash and prints `REHASHED <product>: <part> (ready, implemented)`, and one
 whose folder changed since, or that reaches a file outside its folder (an imported part, a mock) committed or edited
 after the record's `at`, stays stale and is not moved, listed with `files unknown: recorded before file lists`.
 
-An edit that changes no pixel keeps its review. `et design go` and `et design accept` draw every state of
-the part as `design compare` draws the design side and store the hash of each picture in
-`.ethlete/design/<product>/pictures.json`, under `review` (at the `merged.json` hash) and `go` (at the go hash).
-`et design check` stores the pictures of a review or go that holds and has none at its hash yet, which covers Studio's
-go button and sketch merges, and the `record` pictures of a merged part unchanged since its merge. When a merged part
+An edit that changes no pixel keeps its review. `design check` draws every state of
+the part as `design compare` draws the design side and stores the hash of each picture in
+`.ethlete/design/<product>/pictures.json`, under `record`.
+`et design check` stores the `record` pictures of a merged part unchanged since its merge. When a merged part
 changed outside a sketch, `et design check` draws every state again and compares it with the pictures at the
 `merged.json` hash. With every state identical it records the new hash in `merged.json` and prints
 `HELD <product> <part>: changed outside a sketch, every state draws as before`. Otherwise it prints
-`PICTURES CHANGED <product> <part>: <states>` and opens an old/new edit sketch to pick from. The check never writes a
-go: a go holds only while the part hash does, so an edit that moves the hash leaves the go stale, however small the edit.
-
-`et design task components/chip --product app-a` prints what implementing a part with a current go takes: the go hash,
+`PICTURES CHANGED <product> <part>: <states>` and opens an old/new edit sketch to pick from.
+`et design task components/chip --product app-a` prints what implementing a build-ready part takes: the part hash,
 the `implements` component, each state with its props, the states new or changed since the last implementation, the
 allowed files and the target, compare green, then a line naming the SDK surface and colour theming and the theming skill; `sketch new` ends its next steps with the same line. The allowed files are the folder of the component,
-`.changeset/*.md`, the generated harness map of the product, and for the product `sdk` also `apps/docs/components/**`. The task refuses a part without a go, with a stale go,
+`.changeset/*.md`, the generated harness map of the product, and for the product `sdk` also `apps/docs/components/**`. The task refuses a part that is not build-ready and prints its blockers, a part
 without an `implements` link, or with only a route link: add the `component` of the page to the link. A page part's
 allowed folder is the folder of that component.
 `.ethlete/design/<product>/implemented.json` keeps the part hash and a props hash per state of the last implementation;
@@ -545,9 +514,8 @@ state is ok it records the part hash, the time and a props hash per state in `im
 against the design states of variant `a` of its open sketch instead of the merged design.
 
 `et design compare components/chip --product app-a --url http://localhost:4200` compares each state of a part, or the
-one `--state` names, with the app. It refuses a part as `task` does, except a part that changed since its go: that
-runs too and its output starts with an `unapproved:` line, because only `task --verify`, `ready` and `accept` hold the
-go gate. For each state it draws the design frame and
+one `--state` names, with the app. It refuses a part as `task` does.
+For each state it draws the design frame and
 opens `<url>/__design-harness?part=<part>&state=<state>&props=<JSON>` in the same Chromium, with the same viewport and
 device scale, and shoots the `[data-design-harness-host]` element. The app owns that dev-only route and mounts the
 `implements` component with the state's props inside the host. Compare sets the host to the design frame root's font
@@ -586,7 +554,7 @@ compares with `<state>-focus-visible` where the part draws one. An output action
 emits it; the harness records outputs on `window.__etDesignEmits`. It fails on an app element whose design element
 declares nothing, on a declared design element the app lacks, and names a key whose keydown default the app prevented.
 States run in batches of a few with a fresh browser each, so a part with many states does not exhaust memory.
-It needs no go. `et design complete` fails an undeclared interactive element as `ACTION-UNDECLARED`.
+`et design complete` fails an undeclared interactive element as `ACTION-UNDECLARED`.
 
 It also checks the pointer focus of every focusable element (`tabindex` other than -1, button, `a[href]`, field,
 select, `contenteditable`) in two fresh pages: a real mouse click at its centre, after Tab presses that leave focus elsewhere (a script focus rings only when the last input was a key), must leave no focus ring (a visible
@@ -711,7 +679,7 @@ drawn yet).
 
 `et design sketch merge <layer>/<name> --variant <key> --allowed-by <plan ref> --by <model>` merges a
 sketch the user has not picked in, only when `<key>` is its one live (not rejected) variant; both flags
-go together, and `accepted.json` logs the plan; the part note stays. With two live variants the user picks in Studio.
+go together; the part note stays. With two live variants the user picks in Studio.
 
 `sketch merge --decided-by <name>` records who picked the variant in `merged.json` (`user` without it): give it the name
 the designer told you at this terminal, for example `tom`. It does not go with `--allowed-by`, which records the plan.
@@ -778,11 +746,11 @@ stays ready, and the output names each changed part and state. A state that look
 Every variant must draw the same; one changed variant is enough to stop it. A variant draws its
 own part stylesheets, also where the product stylesheet `@import`s the merged file.
 
-When `sketch ready` merges a sketch by itself it writes the shared files `merged.json` and `accepted.json` (and the base's
+When `sketch ready` merges a sketch by itself it writes the shared file `merged.json` (and the base's
 `merged.json`), and prints one `et design commit-hunks <file> --part <part>` line for each file it changed. That command
 commits only the entries of the named part (an object key, or the list entries whose `part` it is; repeat `--part` for
 several) as HEAD plus those entries for that path, and leaves the entries of every other part uncommitted in the working
-file. A locked `.git/index.lock` is retried with a short backoff, up to ten times. `--message` sets the commit message; the default is `chore(repo): Record <part> in <file>`. It works on `go.json`,
+file. A locked `.git/index.lock` is retried with a short backoff, up to ten times. `--message` sets the commit message; the default is `chore(repo): Record <part> in <file>`. It works on
 `implemented.json`, `ready.json`, `pictures.json` and the other part-keyed files too. There is no auto-commit in `ready`.
 
 A problem the product already had does not fail a variant: `sketch check` and `sketch ready` print one count line per

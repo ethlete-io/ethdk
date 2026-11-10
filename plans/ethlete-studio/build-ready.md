@@ -739,3 +739,7 @@ the human) and the `review`/`go` kinds in the three `pictures.json` files, which
 whole file through the legacy reader and writes only `record` keys, so the next record write of any part drops `go` and
 `review` (proven by the accepted-pictures spec "reads the older review and go pictures as the record, and writes only
 a record"). The reader mapping stays until no pictures.json holds a legacy key.
+
+## As built: B249 step 5 docs (2026-11-10, Linux)
+
+Docs commit "docs(cli): Document build-ready instead of go and accept". `apps/docs/cli/index.md` has a Build-ready section in place of the go/accept text; the design-exploration skill (content, `.agents`, `.claude` copies) and `studio-design-part` follow it. Verified: the done grep is empty, `yarn agents:sync` ran after prettier, `yarn vitepress build apps/docs` passes.

@@ -91,8 +91,8 @@ product. They take no picks and no new variants.
 - Mark a sketch `ready` only when no change to it waits on anything; otherwise `sketch hold`.
 - Every write command takes `--by <model id>`. **Never guess your id**: use the one your prompt names, or ask
   the coordinator or the user before you write.
-- Run `et design accept` only after the user approved a direct edit. Remove a part only with
-  `et design part remove`, never `git rm`.
+- A direct edit of a merged part is never accepted by hand: `design check` opens an old/new edit sketch and the
+  user picks in Studio. Remove a part only with `et design part remove`, never `git rm`.
 - Studio takes no new calls: never run `et design new`. New work goes to a product.
 - Share code between variants in the sketch's `shared/` folder only; no shared parameter or branch for one
   variant. An asset is one file in `<product>/assets/`, never inlined.
