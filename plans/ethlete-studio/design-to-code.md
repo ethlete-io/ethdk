@@ -3846,3 +3846,14 @@ their own command line and never end; the builder killed them. Cause: known sinc
 hook refuses `pgrep -f`/`pkill -f` wait loops and points to run_in_background or Monitor) is still unbuilt. Lesson: a
 brief line in each subagent prompt is a stop-gap; B99 is the tool fix. Stop-gap now (Linux builder): one line in its
 subagent brief template. B99 keeps its STATUS place.
+
+731\. Linux builder (2026-11-10, CI watch): CI 42875373676 (Mac 726 commit) red in Studio e2e (1/6): `[Large] › Tab focus
+shows the ring` saw focused=false, rings=[] at load 13.2 on 2 workers (4.6 s). Suspect: load-sensitive e2e case, as 719
+and 726. Lesson: the push suite runs e2e on a quiet machine (726 waits for one), so it hides such a case. Tool fix: the
+719 CPU-quota step covers the changed e2e suites too, after its spec part works. Watch 42877843341 and 42875373676
+reruns for a recurrence.
+
+732\. Linux builder (2026-11-10, B249 real-config re-check, passed): "Sketch öffnen" of a direct-edit point is reachable
+only inside the collapsed "Gründe" disclosure of the footer popover, though it is the only action there. ADR 0252 says
+the button opens the sketch, not where it sits. Placement question for the human: a sketch with the variants "inside
+Gründe" (as built) and "on the popover's top level" (builder recommendation), after the 719 CPU-quota step.
