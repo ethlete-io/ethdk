@@ -3815,3 +3815,14 @@ rename slice ran only the specs it touched; `vitest related` follows imports, an
 `PROGRESS_STEPS_IMPORTS`, not the renamed file; the lib `typecheck` target does not check inline test templates. Tool
 fix: a breaking (`!`) commit in a lib runs that lib's whole `src/scenarios/` folder before the commit. Numbers 699 and
 700 are the Mac B469 findings.
+
+702\. Doc agent (2026-11-10, day shift, 697 live bite): twice in a few minutes the human's terminal lost its tmux
+session ("schon wieder"); `claude-3@ethlete-sdk` was left with no client. During the second time the builder ran
+`agent-sessions.spec.ts`, and the human's tmux server held a session `claude-waiting-950238@agent-mailbox-if8GNH`
+("Waiting for 2 background agents") from a temp repo. Also the respawned process got the prompt twice:
+`command 'claude' '/handoff resume builder-2026-11-10' '/handoff resume builder-2026-11-10'`. Suspect: the spec and the
+restart code run tmux on the human's default server with `TMUX` set, so `switch-client` and `new-session` move the
+human's attached clients. Tool fix: every spec and fake agent uses an isolated tmux server (`-L` or a temp
+`TMUX_TMPDIR`, `TMUX` unset), agent-sessions calls `switch-client` only for a human `run`, and the respawn passes the
+prompt once. Bite: a spec run and a `restart --process` with a client attached to another session leave that client
+where it is.
