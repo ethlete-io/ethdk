@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.18
+
+### Minor Changes
+
+- `provideQueryDevtools({ ui: () => import('@ethlete/query-devtools/lazy') })` mounts the devtools once the app has rendered, with no template tag. `@ethlete/query-devtools/lazy` exports `mountQueryDevtools`.
+
 ## 1.0.0-next.17
 
 ### Patch Changes
