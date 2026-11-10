@@ -3731,6 +3731,19 @@ locally, first case of the file). Suspect: first-render cost of the file's first
 push suite runs the spec on an idle machine, so it never shows a load-sensitive case; the As built names the tool change
 that makes a local run catch it (for example a per-case time budget measured under load, not a raised limit).
 
+As built (builder, 2026-11-10, the commit "Compile the sketch view before the first case of its spec"): Cause, measured
+by timing each step of the first case: the cold JIT compile (Analog compiles specs in JIT) of the `SketchViewComponent`
+tree. Idle: `TestBed.createComponent` 182 ms and the first change detection 119 ms of the 347 ms case; the next case
+pays 1 ms and 66 ms. Under `systemd-run -p CPUQuota=8%` the case failed at 9101 ms (create 5603 ms, first change
+detection 2596 ms), so it reproduces the CI failure. Fix: a `beforeAll` in `sketch-view.component.spec.ts` (the pattern
+of `system-view.component.spec.ts`) creates, renders and destroys the component once. Measured at 8% CPU: the warm-up
+takes 8100 ms in the hook (30 s limit), the first case drops to 1398 ms. Product code does no needless work here; the
+cost is the test compiler. Not verified: a CI run. Still at risk: "keeps at most six near cells live" renders 100 cells
+and took 5398 ms at 8% CPU before and after (232 ms idle); 8% is harsher than CI (first case 9.1 s vs 6.1 s), so it
+should pass on CI, but with little margin. Tool fix to build next: the push suite runs every staged Studio spec file
+once under a CPU quota (`yarn spec:stress <files> --runs 1 --slow 12`, which already exists), so the
+`slowCaseProblemOf` budget in `test-setup.mjs` sees CI-like timings; on an idle machine the budget never fires.
+
 As built (Mac builder, pushed as eb3356f7c): 713 in 27f3a3d35 (pre-commit runs `studio-label-specs.mjs --staged` when a
 studio spec or `studio-labels.ts` is staged; bite: temp repo with a bare upstream, the refusal case fails on the old
 script). 712 in 0a821a9ff (Cause: `freePortOf` probes, closes, then Vite binds with `strictPort: true`; a parallel process

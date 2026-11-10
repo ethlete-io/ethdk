@@ -140,7 +140,35 @@ const buttonNamed = (root: HTMLElement, name: string) =>
 
 const LIST_WIDTH = 10000;
 
+const configure = () =>
+  TestBed.configureTestingModule({
+    providers: [provideZonelessChangeDetection(), provideCommentStore(), ...provideColorThemesWithTailwind4(THEMES)],
+  });
+
 describe('SketchViewComponent', () => {
+  // The cold JIT compile of the component tree takes seconds on a loaded CI runner; outside this hook it lands in the 5 s budget of the first case.
+  beforeAll(() => {
+    vi.stubGlobal('fetch', noComments);
+    vi.stubGlobal('EventSource', SilentEventSource);
+    vi.stubGlobal('ResizeObserver', SilentResizeObserver);
+    vi.stubGlobal('IntersectionObserver', NearIntersectionObserver);
+    configure();
+
+    const fixture = TestBed.createComponent(SketchViewComponent);
+
+    fixture.componentRef.setInput('port', 4402);
+    fixture.componentRef.setInput('product', PRODUCT);
+    fixture.componentRef.setInput('sketch', ROUNDED);
+    fixture.componentRef.setInput('part', CARD);
+    fixture.componentRef.setInput('cameraKey', 'web sketch:components/card');
+    fixture.componentRef.setInput('shell', SHELL);
+    fixture.detectChanges();
+    fixture.destroy();
+    TestBed.resetTestingModule();
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  }, 30_000);
+
   beforeEach(() => {
     localStorage.clear();
     vi.stubGlobal('EventSource', SilentEventSource);
@@ -149,9 +177,7 @@ describe('SketchViewComponent', () => {
     vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
       return this.hasAttribute('data-sk-rows') ? LIST_WIDTH : 0;
     });
-    TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), provideCommentStore(), ...provideColorThemesWithTailwind4(THEMES)],
-    });
+    configure();
   });
 
   afterEach(() => {
