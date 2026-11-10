@@ -52,10 +52,9 @@ const agentBadge = async (agent: AgentProgress) => {
 const blockerList = async (status: BuildReady) => {
   if (status.state !== 'blocked') return { body: '', styles: '' };
 
-  const open = await button.render({ label: 'Sketch öffnen', variant: 'outline', size: 'xs' });
   const groups = blockerGroupsOf(status.blockers)
     .map(
-      ({ kind, title, icon, blockers }) =>
+      ({ title, icon, blockers }) =>
         html`<li>
           <h3 class="m-0 px-space-2 pt-space-1 text-ui-xs font-ui-strong text-et-surface-muted">${title}</h3>
           <ul class="m-0 p-0 list-none">
@@ -64,7 +63,6 @@ const blockerList = async (status: BuildReady) => {
                 ({ text }) =>
                   html`<li class="flex items-center gap-space-2 px-space-2 py-space-1">
                     ${blockerIcon(icon)}<span class="min-w-0 flex-1 text-et-surface">${text}</span>
-                    ${kind === 'direct-edit' ? control(withAction(open.body, 'emit:openEditSketch'), 'open-edit-sketch') : ''}
                   </li>`,
               )
               .join('')}
@@ -77,14 +75,23 @@ const blockerList = async (status: BuildReady) => {
     body: html`<ul class="m-0 p-0 pb-space-1 list-none">
       ${groups}
     </ul>`,
-    styles: open.styles,
+    styles: '',
   };
+};
+
+const openEditSketch = async (status: BuildReady) => {
+  if (status.state !== 'blocked' || !status.blockers.some(({ kind }) => kind === 'direct-edit')) {
+    return { body: '', styles: '' };
+  }
+  const open = await button.render({ label: 'Sketch öffnen', variant: 'outline', size: 'xs' });
+  return { body: control(withAction(open.body, 'emit:openEditSketch'), 'open-edit-sketch'), styles: open.styles };
 };
 
 export const buildReadyView = async (status: BuildReady, agent: AgentProgress | undefined, open: boolean) => {
   const state = await statusBadge(status);
   const working = agent ? await agentBadge(agent) : undefined;
   const list = await blockerList(status);
+  const edit = await openEditSketch(status);
   const reasons =
     status.state === 'blocked'
       ? disclosure({ label: 'Gründe', body: list.body, open, size: 'sm', action: open ? 'part' : 'blockers-open' })
@@ -96,10 +103,10 @@ export const buildReadyView = async (status: BuildReady, agent: AgentProgress | 
       <div class="flex items-center gap-space-2">
         ${state.body}${working?.body ?? ''}
         <span class="ms-auto"></span>
-        ${status.state === 'blocked' && !open ? reasons : ''}
+        ${edit.body}${status.state === 'blocked' && !open ? reasons : ''}
       </div>
       ${status.state === 'blocked' && open ? html`<div class="-mx-space-2 mt-space-1">${reasons}</div>` : ''}
     </footer>`,
-    styles: state.styles + (working?.styles ?? '') + list.styles + disclosureStyles,
+    styles: state.styles + (working?.styles ?? '') + list.styles + edit.styles + disclosureStyles,
   };
 };

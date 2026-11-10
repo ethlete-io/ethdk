@@ -222,6 +222,7 @@ const emptySide = html`<p class="px-space-3 py-space-2 text-et-surface-muted tex
 
 export default definePart<{
   empty?: boolean;
+  listingError?: boolean;
   manyStates?: boolean;
   nothingOpen?: boolean;
   closed?: boolean;
@@ -236,7 +237,7 @@ export default definePart<{
   agent?: AgentState;
   call?: 'open' | 'transferred';
 }>({
-  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text: a network or server error shows "Kommentar nicht gesendet. Erneut versuchen." under the field and turns Senden into Erneut senden; a send the server refuses with a 4xx shows the server reason there and keeps Senden, with no retry. The open-points popover also lists the exceptions of the part as an Ausnahmen group, each with its reason, state and a Freigeben button, and ends in a footer with the computed build-ready status as a badge (Baubereit, Nicht baubereit (n) in the warning colour, Wird geprüft while slow rules run) and, beside it, the progress of the agent as a second badge (Agent behebt, Agent wartet, Agent unterbrochen, Agent fehlgeschlagen in the error colour, the detail as its title); Gründe opens the blockers grouped by kind, and a direct edit offers Sketch öffnen; the chip counts the exceptions with the points. A legacy call shows a header with its slug and headline, the surface and colour theme switches, and Als übertragen markieren, which turns into an übertragen badge.',
+  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text: a network or server error shows "Kommentar nicht gesendet. Erneut versuchen." under the field and turns Senden into Erneut senden; a send the server refuses with a 4xx shows the server reason there and keeps Senden, with no retry. The open-points popover also lists the exceptions of the part as an Ausnahmen group, each with its reason, state and a Freigeben button, and ends in a footer with the computed build-ready status as a badge (Baubereit, Nicht baubereit (n) in the warning colour, Wird geprüft while slow rules run) and, beside it, the progress of the agent as a second badge (Agent behebt, Agent wartet, Agent unterbrochen, Agent fehlgeschlagen in the error colour, the detail as its title); Gründe opens the blockers grouped by kind, and a direct edit offers Sketch öffnen; the chip counts the exceptions with the points. A failed listing read shows only the server error as a plain centred line in the canvas, for example "missing build: pages/system", with no frames and no open-points chip. A legacy call shows a header with its slug and headline, the surface and colour theme switches, and Als übertragen markieren, which turns into an übertragen badge.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6'],
   implements: {
     route: '/',
@@ -245,6 +246,7 @@ export default definePart<{
   states: {
     part: {},
     empty: { empty: true },
+    'listing-error': { listingError: true },
     'many-states': { manyStates: true },
     fit: { fit: true },
     'points-closed': { closed: true },
@@ -280,6 +282,7 @@ export default definePart<{
     'one-blocker': { nothingOpen: true, build: 'one-blocker' },
     checking: { nothingOpen: true, build: 'checking' },
     'direct-edit': { build: 'direct-edit', blockersOpen: true },
+    'direct-edit-closed': { build: 'direct-edit' },
     'blockers-open': { blockersOpen: true },
     'agent-working': { agent: 'working' },
     'agent-working-ready': { nothingOpen: true, agent: 'working' },
@@ -305,6 +308,7 @@ export default definePart<{
   },
   render: async ({
     empty,
+    listingError,
     manyStates,
     nothingOpen: clear,
     closed,
@@ -340,6 +344,21 @@ export default definePart<{
 
     if (manyStates) {
       return manyStatesView(await treeRowGrid());
+    }
+
+    if (listingError) {
+      const menu = await studioMenu({ open: false });
+      const shell = await shellMain.render({
+        studio: menu.body,
+        section: 'System',
+        product: 'studio',
+        side: emptySide,
+        content: html`<p class="m-0 max-w-130 self-center justify-self-center p-6 text-ui-sm text-et-surface-muted">
+          missing build: pages/system
+        </p>`,
+      });
+
+      return drawing({ body: shell.body, setup: menu.setup, styles: shell.styles + menu.styles });
     }
 
     if (empty) {
