@@ -3524,6 +3524,12 @@ the checkout run.
 argument. Tool fix (tonight, bug queue; doc agent decision, lint over a macOS CI leg because it is cheap and exact): a
 spec or lint rule in `libs/cli` rejects `\s`, `\S`, `\b`, `\d`, `\w` in any `-G`, `--grep` or `-E` argument to git.
 
+As built (finding 660): `libs/cli/src/lib/git-regex-dialect.spec.ts` parses every non-spec `libs/cli/src` file with the
+TypeScript API and checks each array that is a git argv (has `'git'` or starts with a git subcommand) for `-G`, `-E`, `-P`,
+`--grep`, `-e` (joined forms too) and `git grep` patterns, following same-file string consts; an unfollowable pattern fails.
+Bite proof: `\\s` put back in `go-guard.ts` failed the spec, restored. Only two sites existed (`go-guard.ts`, `link-free.ts`,
+the latter a plain word); `run-migrations.ts` greps with `-F`. Verified: spec, stress 4 runs, lint cli. Not verified: Apple Git itself.
+
 661\. Builder (2026-11-09, Mac night, 343e968aa): `render-check.spec` fixture `components/underline-cut` put a 16px
 font in a 16px line. The Mac font draws 17px, so a second CLIPPED issue came out (14 vs 13). Fix: 12px font, 6px
 underline offset. Why no tool caught it: render fixtures use the system font, and CI has only one system. Tool fix
