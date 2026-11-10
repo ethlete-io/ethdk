@@ -3920,3 +3920,7 @@ The turn had 3 text lines of about 30 words (2 mid-turn, 1 closing). Suspect: th
 final text block of the turn is in it, so a long closing summary alone is not counted, which is the main 703 case.
 Next: log the Stop payload keys and the last transcript entry type once, live; count the final message from a payload
 field if one exists, else wait briefly and read again. Bite: a fixture whose last text is not in the transcript yet.
+Cause (live probe, 11:06:48Z): the Stop payload has `last_assistant_message`, and the last transcript entry at hook
+time is `api-request`, not the final text. As built: the hook adds `last_assistant_message` to the turn's texts, once
+(not when the transcript already ends with it). Bite: a 3-line final message only in the payload fails on the old hook
+and blocks on the new one. Live 3-line close: pending, the next turn end of the builder after the commit.

@@ -3,7 +3,7 @@
 
 Only runs in a session started with `--role builder` (ETHLETE_AGENT_ROLE=builder). Appends one
 JSON line to .claude/builder-chat-words.jsonl: timestamp, session_id, words, lines, blocked. When
-the turn's text blocks hold more than one non-empty line it blocks the stop once (not again while
+the turn's text blocks and last_assistant_message hold more than one non-empty line it blocks the stop once (not again while
 stop_hook_active is set). It always exits 0.
 """
 
@@ -53,17 +53,28 @@ def turn_texts(path):
     return texts
 
 
+def with_final(texts, final):
+    if not isinstance(final, str) or not final.strip():
+        return texts
+    if texts and texts[-1].strip() == final.strip():
+        return texts
+    return [*texts, final]
+
+
 def main():
     if os.environ.get("ETHLETE_AGENT_ROLE") != "builder":
         return
     payload = json.load(sys.stdin)
     path = payload.get("transcript_path")
-    if not path or not os.path.isfile(path):
+    final = payload.get("last_assistant_message")
+    has_transcript = bool(path) and os.path.isfile(path)
+    if not has_transcript and not isinstance(final, str):
         return
     root = os.environ.get("CLAUDE_PROJECT_DIR") or payload.get("cwd") or os.getcwd()
     log = os.path.join(root, LOG_FILE)
     os.makedirs(os.path.dirname(log), exist_ok=True)
-    texts = turn_texts(path)
+    # Claude Code calls the Stop hook before the final text block reaches the transcript.
+    texts = with_final(turn_texts(path) if has_transcript else [], final)
     lines = sum(1 for text in texts for row in text.splitlines() if row.strip())
     blocked = lines > 1 and not payload.get("stop_hook_active")
     record = {

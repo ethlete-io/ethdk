@@ -73,6 +73,24 @@ describe('builder-chat-words', () => {
     expect(log()).toMatchObject([{ lines: 1, blocked: false }]);
   });
 
+  it('blocks a three-line final message that is not in the transcript yet', () => {
+    const result = run([prompt, toolResult], undefined, {
+      last_assistant_message: 'The suite passed.\nI pushed.\nNext: 704.',
+    });
+
+    expect(JSON.parse(result.stdout)).toEqual(block);
+    expect(log()).toMatchObject([{ lines: 3, blocked: true }]);
+  });
+
+  it('counts a final message once when the transcript already holds it', () => {
+    const result = run([prompt, toolResult, text('Report sent.')], undefined, {
+      last_assistant_message: 'Report sent.',
+    });
+
+    expect(result.stdout).toBe('');
+    expect(log()).toMatchObject([{ lines: 1, blocked: false }]);
+  });
+
   it('does not block again while stop_hook_active is set', () => {
     const result = run([prompt, text('one\ntwo\nthree')], undefined, { stop_hook_active: true });
 
