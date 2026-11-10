@@ -7,6 +7,7 @@ import { basename, dirname, join, relative, resolve, sep } from 'path';
 import { interval, Subscription, tap } from 'rxjs';
 import { CALLS_PATH, callSlugsOf, listCalls } from './calls';
 import { writeCallsTsconfig } from './calls-tsconfig';
+import { exitWhenParentGone } from './parent-watch';
 import { markTransferred, TRANSFER_PATH } from './legacy';
 import { aliasPattern, fsUrl, isCallFile } from './vite-paths';
 import {
@@ -1243,6 +1244,9 @@ export const createDesignServer = async (options: {
   });
 };
 
+const exitWhenParentIsGone = (server: { close: () => Promise<void> }) =>
+  exitWhenParentGone({ onGone: () => void server.close().finally(() => process.exit(0)) });
+
 const exitWhenStdinCloses = (server: { close: () => Promise<void> }) => {
   let closing = false;
   const shutDown = () => {
@@ -1314,6 +1318,8 @@ export const serveDesign = async (options: {
   if (ownedByStudio) {
     exitWhenStdinCloses(server);
   }
+
+  exitWhenParentIsGone(server);
 
   if (reloadOnRebuild) {
     watchBuild({

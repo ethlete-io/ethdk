@@ -15,6 +15,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { staleDesignServers, staleServerWarnings } from './stale-design-servers.mjs';
 import { changedLines, runRepeatGate, TRIGGERS } from './studio-e2e-repeat.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
@@ -122,7 +123,14 @@ export const runStep = (command, args, cwd, logFile) =>
     child.on('close', (status) => done({ status: status ?? 1, output }));
   });
 
+export const warnStaleDesignServers = (log) => {
+  const ps = spawnSync('ps', ['-Ao', 'pid,etime,command'], { encoding: 'utf8' });
+  if (ps.status !== 0) return;
+  for (const line of staleServerWarnings(staleDesignServers(ps.stdout, { root }))) log(line);
+};
+
 export const pushSuite = async ({ only, range }, log = console.log) => {
+  warnStaleDesignServers(log);
   const sha = git('rev-parse', 'HEAD').stdout.trim();
   const finish = (verdict) => {
     log(`push-suite: ${verdict}`);
