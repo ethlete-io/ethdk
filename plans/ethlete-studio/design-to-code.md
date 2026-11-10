@@ -3904,6 +3904,7 @@ sketch, and `sketch ready` and the merge do not lint. Tool fix: `design check` a
 changed part and variant files and fail on any warning (a baseline for the old ones is allowed, then only smaller);
 the merge refuses a variant with a new warning. Bite: the `components-button.off-centre` variant with the `!` fails
 `sketch ready`; with `SDK_ICONS.find(...) ?? fail(...)` it passes.
+As built (Mac, 708 follow-ups): calls gate in design check against `.ethlete/design/calls/lint-baseline.json` and a pre-commit lint of staged `.ethlete/**/*.ts` (65acd20da); 713 was already built in 27f3a3d35, its bite ran.
 
 709\. The human (2026-11-10, day shift): "wir haben das logo mal neu gemacht aber ich glaub die app also appicon ist
 noch das alte". Facts (doc agent): `apps/ethlete-studio/src-tauri/app-icon.svg` and `icons/*` were last written by
@@ -4157,3 +4158,15 @@ its 440,000-character budget, and `archive-findings.mjs` (also `--days=2`) moved
 `--orphans` lists 195 findings that no STATUS row names, so the archive never takes them; only findings of done rows
 leave. Tool fix (Linux builder, `tools/scripts/archive-findings.mjs`): also archive an orphan finding that holds a
 "Built" or "As built" line and is older than the `--days` limit; a spec bites on a built orphan that stays today.
+
+725\. Doc agent (2026-11-10): I decided that the pre-commit hook lints staged `.ethlete/**/*.ts` (708 follow-up) without
+running `yarn adr:governs .husky/pre-commit`. ADR 0036 (the human: "we built a check system in Studio, why rely on git
+hooks") moves Studio gates out of the git hooks (B295). Cause: the doc agent skipped the governs check for a tool-internal
+decision. Fix: the gate stays in pre-commit until B295, and B295 moves it into Studio's check system with the four
+pre-push gates. Process: run `yarn adr:governs` before every decision on files, tool-internal ones too.
+
+726\. Mac builder (2026-11-10, 708 push): push:suite failed 4 times before ok, all 5000 ms or 60 s timeouts at load
+16-51 (parallel subagents plus the suite's own e2e). Measured: the cases take 1.2-2.4 s idle at HEAD and at eb3356f7c.
+Suspect: `libs/cli` system/ specs have little room under the 5 s limit at load (see 723). Tool fix (Mac builder, decided
+by the doc agent): push:suite prints the load average per failed case, as e2e does, and waits to start while the load is
+above a limit.
