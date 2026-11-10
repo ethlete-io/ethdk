@@ -3505,3 +3505,22 @@ the Mac push:suite (8c4bdb6a1, d3444f82a, 209facfa3); each merge starts a full p
 builders on one branch pay a full suite per race. Tool fix (night backlog, Mac): after a merge of origin, push:suite
 reuses the verdict of the steps whose inputs the merged range does not touch; a spec bites with a merge that changes one
 lib only.
+
+As built (766 item 1, Linux builder): Cause (bite): this Claude Code build marks the focus below the input box with
+inverse video (`ESC[7m`, first on the `1 shell` footer pill after one Down) and draws panel rows as `  ● main` /
+`  ◯ general-purpose`, with no `❯`. `panelFocused` knew only `❯ [⏺◯]`, so it never saw the focus and typed into the
+pill. Now `panelFocused` also accepts an inverse SGR code below the last rule (colour arguments of 38/48 skipped), and
+`isPanelRow` accepts `●`. Fixtures claude-pane-footer-pill-focused/unfocused.txt are real captures of this pane; the
+only edit drops " · esc to interrupt", which marks a busy pane. The new spec failed on the old script and passes now;
+the agent-sessions spec runs 40 of 41 green, "stores the command of run without the prompt" failed once at 5 s under
+load and passes alone (not this change). `run` in the spec has a 25 s spawn timeout, so a hung script fails the case
+instead of the whole file. Not verified: a focused panel row (two Downs): the auto-mode classifier refused the second
+self-drive capture; Suspect: it is also inverse. Item (b) parked: every Claude session is a SendMessage peer, so a
+refusal would end the typed wake for all of them; the focus fix removes the wrong typing.
+
+770\. Linux builder (2026-11-11, night, CI run 42916647044): two cli specs timed out (open-points-answer 30 s,
+merge.spec 60 s; 2-3 s locally). Cause (bite, subagent): the workers start from source through jiti, which caches in
+`<tmpdir>/jiti`, and vitest.setup.ts gives each spec file its own TMPDIR, so every file transpiled the 262-file worker
+graph again. As built a3df386fa: the spec tmpdir links `jiti` to `libs/cli/node_modules/.cache/jiti-specs`. Bite on one
+busy core: 30 s timeout without the fix, 12 s with it. Not verified: a CI run; the first worker start of a CI run is
+still a full transpile.

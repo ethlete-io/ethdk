@@ -246,8 +246,8 @@ const IDE_CHIP = /\[⧉ [^\]]*\]/g;
 const plain = (line) => line.replace(new RegExp(SGR, 'g'), '');
 const isRule = (line) => /^─{10,}$/.test(plain(line).trim());
 const isPromptMark = (line) => /^\s*[❯›]/.test(plain(line));
-/** A row of the background-agent panel below the footer (`❯ ⏺ main`, `  ◯ general-purpose …`). */
-const isPanelRow = (line) => /^\s*❯?\s*[⏺◯]/.test(plain(line));
+/** A row of the background-agent panel below the footer (`❯ ⏺ main`, `  ● main`, `  ◯ general-purpose …`). */
+const isPanelRow = (line) => /^\s*❯?\s*[⏺●◯]/.test(plain(line));
 const paneLines = (session) => (tmux('capture-pane', '-p', '-e', '-t', `=${session}:`).stdout ?? '').split('\n');
 const lastRuleIndex = (lines) => lines.findLastIndex(isRule);
 /**
@@ -287,7 +287,22 @@ const draftLine = (session) => {
     .trim();
   return text.length > 0 ? text : null;
 };
-const panelFocused = (lines) => lines.slice(lastRuleIndex(lines) + 1).some((line) => /^\s*❯\s*[⏺◯]/.test(plain(line)));
+const isInverse = (codes) => {
+  for (let index = 0; index < codes.length; index++) {
+    if (codes[index] === '38' || codes[index] === '48') index += codes[index + 1] === '2' ? 4 : 2;
+    else if (codes[index] === '7') return true;
+  }
+  return false;
+};
+/** A focused footer pill or panel row is drawn inverse (`ESC[7m`); older builds mark a focused row with `❯`. */
+const panelFocused = (lines) =>
+  lines
+    .slice(lastRuleIndex(lines) + 1)
+    .some(
+      (line) =>
+        [...line.matchAll(new RegExp(SGR, 'g'))].some((match) => isInverse(match[1].split(';'))) ||
+        /^\s*❯\s*[⏺●◯]/.test(plain(line)),
+    );
 const PANEL_UP_LIMIT = 10;
 /**
  * Keys typed while the focus sits in the background-agent panel go into the panel. Up moves the focus back to the

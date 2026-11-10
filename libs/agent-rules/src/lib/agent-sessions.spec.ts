@@ -39,6 +39,7 @@ describe('agent-sessions', () => {
       cwd: dir,
       input,
       encoding: 'utf8',
+      timeout: 25_000,
       env: { ...process.env, TMUX_PANE: '', AGENT_MAILBOX: join(dir, 'mailbox.jsonl'), ...env },
     });
 
@@ -677,16 +678,22 @@ describe('agent-sessions', () => {
     30_000,
   );
 
-  const panelPane = (log: string) => {
-    const fixture = join(__dirname, 'fixtures/claude-pane-agent-panel.txt');
+  const panelPane = (
+    log: string,
+    focusedFixture = 'claude-pane-agent-panel.txt',
+    unfocusedFixture: string | null = null,
+  ) => {
+    const fixture = join(__dirname, 'fixtures', focusedFixture);
+    const unfocused = unfocusedFixture ? join(__dirname, 'fixtures', unfocusedFixture) : null;
     const program = join(dir, 'pane.js');
 
     writeFileSync(
       program,
       `const fs = require('fs');
 const pane = fs.readFileSync(${JSON.stringify(fixture)}, 'utf8');
+const left = ${JSON.stringify(unfocused)} ? fs.readFileSync(${JSON.stringify(unfocused)}, 'utf8') : pane.replace('❯ ⏺', '  ⏺');
 let focused = true;
-const draw = () => process.stdout.write('\\x1b[2J\\x1b[H' + (focused ? pane : pane.replace('❯ ⏺', '  ⏺')));
+const draw = () => process.stdout.write('\\x1b[2J\\x1b[H' + (focused ? pane : left));
 draw();
 process.stdin.setRawMode(true);
 process.stdin.on('data', (data) => {
@@ -717,6 +724,42 @@ process.stdin.on('data', (data) => {
         expect(['\x1b[A', '\x1bOA'].some((up) => typed.startsWith(`${up}\x15/clear\r`))).toBe(true);
         expect(typed.endsWith('resume slug\r')).toBe(true);
         expect(existsSync(join(dir, 'restart.log'))).toBe(false);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'leaves a focused footer pill of a captured pane before it types the clear and the prompt',
+    async () => {
+      const agent = `claude-pill-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const log = join(dir, 'pane.log');
+      writeFileSync(log, '');
+
+      spawnSync('tmux', [
+        'new-session',
+        '-d',
+        '-x',
+        '120',
+        '-y',
+        '30',
+        '-s',
+        scoped,
+        panelPane(log, 'claude-pane-footer-pill-focused.txt', 'claude-pane-footer-pill-unfocused.txt'),
+      ]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '1', 'resume', 'slug'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          AGENT_RESTART_CLEAR_WAIT_MS: '3000',
+        });
+
+        const typed = readFileSync(log, 'utf8');
+        expect(['\x1b[A', '\x1bOA'].some((up) => typed.startsWith(`${up}\x15/clear\r`))).toBe(true);
+        expect(typed.endsWith('resume slug\r')).toBe(true);
       } finally {
         spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
       }
