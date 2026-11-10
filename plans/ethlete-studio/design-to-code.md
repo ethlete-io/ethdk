@@ -4057,7 +4057,7 @@ agent remembers fills the file again; the file needs a check. Doc agent cleanup:
 names the row to delete. Open: about 120 ⏳ rows are not checked against git; the builder checks each row against git
 when it takes one (ADR 0234).
 
-As built (Linux builder, 4b50bdb51, not pushed yet): `tools/scripts/check-studio-status.mjs` with a spec, wired in `.husky/pre-commit` on the staged STATUS.md blob. It refuses a ✅ row, a "## Erledigt" heading, a "Stand:" line older than 3 days, and a missing "Stand:" line (kept by the doc agent: without the line the age check checks nothing). Bite: with the check returning nothing, 3 of 5 spec cases fail. Not verified: the hook branch with a staged bad STATUS.md.
+As built (Linux builder, 4b50bdb51, not pushed yet): `tools/scripts/check-studio-status.mjs` with a spec, wired in `.husky/pre-commit` on the staged STATUS.md blob. It refuses a ✅ row, a "## Erledigt" heading, a "Stand:" line older than 3 days, and a missing "Stand:" line (kept by the doc agent: without the line the age check checks nothing). Bite: with the check returning nothing, 3 of 5 spec cases fail. Hook verified: a throwaway index with row B101 set to ✅ makes `.husky/pre-commit` exit 1 with "row B101 has status ✅".
 
 749\. Mac builder (2026-11-10, B482): the console log of the macOS bundle stays empty. Suspect (from the config, not yet
 proven by a bundle run): `tauri.macos.conf.json` replaces the `windows` array without `"create": false`, so Tauri creates
@@ -4122,3 +4122,18 @@ its type (an SDK API question for the human if it changes a default); until then
 Note only: if the human picks c, the pick adds the part first (ADR 0010 flow), not a direct SDK import in a page.
 
 Measured (same sketch, for 738): `sketch ready` took 29 s, and 1-2 min on a later run (target 10 s).
+
+759\. The human (2026-11-10, night, Studio screen shot of `pages/system` round 1): "ich kann hier nix mergen". The
+sketch shows variants b and c, but no merge action and no reason. Cause (read in the repo): `.ethlete/design/studio/ready.json`
+has no entry for `pages/system`; `sketch ready` ran only on the scratch copy `/tmp/sk750`, and there it listed
+`listing-error` as SHOT-NOT-VIEWED. The builder still reported the sketch as "waits for the human's pick". Lesson: two
+gaps. (a) Studio shows a not-ready sketch to the human like a ready one, with the merge action silently missing.
+(b) A builder report can call a sketch pickable without a passed `sketch ready` on the real repo. Decided by the doc
+agent (tool internal, applies "ready means final"): Studio draws "Noch nicht bereit" with the reason from `sketch
+ready` in the sketch head where the merge action would be, and lists no such sketch as waiting for the human; the
+builder runs `sketch ready` on the real repo before it reports a sketch to the human. Fix of this sketch now (blocks
+the human's pick).
+
+760\. Linux builder (2026-11-10, night): `check-studio-adrs` prints about 40 warning lines to stderr on every commit
+that stages STATUS.md (the hook hides only stdout). Lesson: a warning on every commit is noise that hides a real one.
+Backlog: the hook prints a one-line count and a command for the full list.
