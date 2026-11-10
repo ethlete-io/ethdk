@@ -32,4 +32,4 @@ until they say they are back.
 
 ## Open questions for the human
 
-None. The human is back (not afk). studio-lab harness answered: ADR 0254.
+None. The human is afk again (said "afk" after the ADR 0254 round): collect questions.
