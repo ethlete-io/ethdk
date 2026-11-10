@@ -30,7 +30,7 @@ jobs:
       id-token: write
     with:
       version_command: 'yarn changeset:release'
-      commit_message: 'chore: 🤖 update versions'
+      commit_message: 'chore(repo): Update versions'
       title: 'Release packages'
       slack_title: '*New Release*'
     secrets: inherit

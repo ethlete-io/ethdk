@@ -94,6 +94,7 @@ jobs:
       # Tailwind classes in apps/ethlete-studio/src must be written in their canonical form.
       - run: yarn studio:classes:check
       - run: yarn lint:cli-related-map
+      - run: yarn lint:commit-messages
 
       # Spec files are excluded from every lib's build tsconfig, so this is the only step that
       # type-checks them.

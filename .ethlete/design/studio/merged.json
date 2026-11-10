@@ -76,10 +76,10 @@
   },
   "foundations/icons": "9ed1f1902cc38349",
   "foundations/logo": {
-    "hash": "1bc6c33e87b3dda6",
+    "hash": "ce90d9e22a1acd71",
     "variant": "a",
-    "decidedBy": "auto: no visible change",
-    "at": "2026-11-05T22:45:06.717Z"
+    "decidedBy": "user",
+    "at": "2026-11-10T20:43:07.744Z"
   },
   "foundations/motion": "7d6fb324da3cced7",
   "foundations/spacing": "b8821653c3476a2d",
@@ -113,9 +113,9 @@
     "at": "2026-11-04T14:48:14.692Z"
   },
   "pages/system": {
-    "hash": "42069945dc47ff87",
-    "variant": "a",
-    "decidedBy": "auto: no visible change",
-    "at": "2026-11-05T22:47:24.777Z"
+    "hash": "66ef59809504dd25",
+    "variant": "b",
+    "decidedBy": "user",
+    "at": "2026-11-10T20:44:50.271Z"
   }
 }

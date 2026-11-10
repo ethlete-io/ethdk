@@ -166,7 +166,7 @@ describe('openEditSketch', () => {
     expect(changedOutsideSketchOf(resolveAcme(target))).toEqual([]);
   });
 
-  it('answers EDIT-OLD-NOT-FOUND with the command to run when no commit has the merged hash', () => {
+  it('opens a ready sketch with only new and answers EDIT-OLD-NOT-FOUND when no commit has the merged hash', () => {
     const { target, css } = acme();
 
     writeFileSync(css, '.acme-hero { padding: 1px; }\n');
@@ -177,6 +177,7 @@ describe('openEditSketch', () => {
     expect(openEditSketch({ target, product: resolveAcme(target), part: HERO })).toEqual({
       rule: 'EDIT-OLD-NOT-FOUND',
       message: expect.stringContaining(`${HERO} gets a sketch with only the variant new`),
+      sketch: expect.objectContaining({ target: `${HERO}@edit`, status: 'ready', variants: ['new'] }),
     });
   });
 });

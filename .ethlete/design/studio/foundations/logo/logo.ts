@@ -1,8 +1,9 @@
 import { definePart, drawing, html, logoSheet, svgAsset } from '@design-system';
 import mark from '@assets/studio-mark.svg?raw';
 import markLine from '@assets/studio-mark-line.svg?raw';
+import appIcon from '@assets/studio-app-icon.svg?raw';
 
-type View = 'sizes' | 'sidebar';
+type View = 'sizes' | 'sidebar' | 'app-icon';
 
 export const studioMark = (size: number) => svgAsset(mark, { size });
 
@@ -14,6 +15,10 @@ const sizes = logoSheet({
     { title: 'Mark at app-icon sizes', svg: mark, sizes: [16, 32, 512], onLight: [16, 32] },
     { title: 'Line mark in the rail', svg: markLine, sizes: [16, 24, 32] },
   ],
+});
+
+const appIconSheet = logoSheet({
+  marks: [{ title: 'App icon', svg: appIcon, sizes: [16, 32, 64, 128, 256], onLight: [32, 64] }],
 });
 
 const sidebar = html`<div class="flex flex-col gap-space-4 p-space-6 bg-et-surface-bg text-text font-ui text-ui-md">
@@ -32,6 +37,6 @@ const sidebar = html`<div class="flex flex-col gap-space-4 p-space-6 bg-et-surfa
 export default definePart<{ view: View }>({
   note: 'Pilot — ein eigenständiger Agentencharakter aus einer schrägen Feder- und Cursor-Silhouette. Zwei ausgesparte Augen geben dem Gestaltungswerkzeug Persönlichkeit; bewusst spielerischer.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6'],
-  states: { sizes: { view: 'sizes' }, sidebar: { view: 'sidebar' } },
-  render: ({ view }) => (view === 'sizes' ? sizes : drawing({ body: sidebar })),
+  states: { sizes: { view: 'sizes' }, sidebar: { view: 'sidebar' }, 'app-icon': { view: 'app-icon' } },
+  render: ({ view }) => (view === 'sizes' ? sizes : view === 'app-icon' ? appIconSheet : drawing({ body: sidebar })),
 });

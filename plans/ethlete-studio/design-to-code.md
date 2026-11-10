@@ -3887,3 +3887,188 @@ quota runs at about half the CI time: 20%. At 12% and 15% the warmed file fails 
 ms timeout`; with it `status=0 note=CPUQuota=20%, ran …sketch-view.component.spec.ts`. Still at risk: "keeps at most
 six" takes 1.7-2.7 s at 20% (one of five warmed runs failed at 2698 ms), so a push that changes that spec can fail the
 step until the case gets faster. Not verified: a full `yarn push:suite` run, the step on the Mac.
+
+735\. Linux builder (2026-11-10, 719 quota step, 0372514ff): push:suite runs each changed Studio spec file once under
+`CPUQuota=20%` (calibrated: the local budget fails a case at half its timeout, so 20% times at about half of CI). The
+step fails "keeps at most six near cells live" (100 cells) at 1.7-2.7 s, the at-risk case from the 719 As built, so a
+push that changes `sketch-view.component.spec.ts` can fail until the case is cheaper. Gap: on the Mac the step prints
+"skipped on darwin", so Mac pushes get no quota run. Decided by the doc agent (tool internal): Linux builder makes the
+case cheaper at the cause (fewer cells or a warm render, product code unchanged unless it does needless work), after
+the 732 sketch; then 731 (e2e under quota) as its own slice with its own calibration. Mac gap: the Mac builder finds a
+darwin throttle (for example `taskpolicy` or a cpulimit equivalent) in its tool backlog, or the step says on the Mac
+that the Linux push suite covers it.
+
+As built (732): sketch `pages/system@footer-open-points` (a in Gründe, b top level, new state `direct-edit-closed`).
+Tool defect: `design shot <part>@<name> --variants` cannot address a named sketch (`sketchHoldingOf` matches only the
+part, so the first sketch holding the part wins), and `ready` then wants a viewed shot it cannot get; the check used
+`shot --at` on a temp commit and recorded the view by hand.
+
+736\. Linux builder (2026-11-10, 732 sketch `pages/system@footer-open-points`, 6c2fc5cc0): `design shot
+pages/system@footer-open-points` fails "has no open sketch in product studio", and `shot pages/system --variants` draws
+the other open `pages-system` sketch. Cause (measured by the subagent): `sketchHoldingOf` in
+`libs/cli/src/lib/design/shot-command.ts` matches the part only, never the sketch name. Missed: no spec has two open
+sketches on one part. Tool fix (Linux builder, after 731): shot resolves `<part>@<name>`; spec bite with two sketches
+on one part; an `--at` shot of a named sketch counts as viewed.
+
+737\. Linux builder (2026-11-10, same sketch): because of 736, `sketch ready` refused with SHOT-NOT-VIEWED, and the
+subagent called `recordShotViewed` directly to pass the gate. The gate was bypassed, not met; the builder says the
+viewed content equals the commit. Lesson: a gate that an agent can satisfy with one internal call is no gate when the
+tool is broken; the agent must stop and report the tool defect instead. Tool fix (with 736): the viewed record holds
+the hash of the shot file the CLI drew, and `sketch ready` checks it, so a direct call without a real shot fails;
+builder subagent briefs say "a refused gate is a finding, never call its internals".
+
+738\. Linux builder (2026-11-10, same sketch): `sketch check` 34 s and `sketch ready` 36.6 s against the 10 s target,
+render-check about 13 s. Suspect only (no measurement of the phases). Backlog: measure the phases before a fix.
+
+739\. Mac builder (2026-11-10, B345 sketch `pages/sketches@change-crop`, a5bf3bff2): `sketch ready` takes 140-280 s on
+the Mac, and each finding needs a full rerun. Suspect only, as 738 on Linux (34-37 s). Backlog with 738: measure the
+phases on both machines; a rerun after a fix checks only the states the fix touched.
+
+740\. Mac builder (same sketch): the clipping check flags the intended crop of the variants, and skip-scope refuses
+the reason "intended" because the crop holds controls; only "inert" passes. Suspect only. Lesson: a check that accepts
+only a wrong reason teaches the agent to give a wrong reason (as 737). Tool fix (backlog): skip-scope accepts
+"intended" for a crop that a state marks as a crop, or the clipping check knows a crop frame; the builder says which
+reason the sketch now carries.
+
+741\. Mac builder (2026-11-10, B345 flaw fix eb0eb9eb8): in all three `pages/sketches@change-crop` variants the outer
+part tree selected `components/zoom-chip` while the page header read `pages/sketches`; `sketch ready` passed it. Cause:
+the variant's `treeOf` ignored the page key. No tool fix: a tree-against-header check would test Studio's own content,
+and tool fixes must help every project. The general gap is 740's: the builder found it only by reading the shot, so the
+ready report must name what the builder checked by eye. On 740: the sketch passes because its sample screen root carries
+the `inert` attribute, not a skip reason.
+
+As built (Linux builder, 735): Cause: measured in CPU time (process.cpuUsage, idle) the old case spent about 220-290 ms
+in the first render of 76 cells, 50-90 ms in the change detection after `part` gained its 25 states, 100-160 ms in the
+second settle and under 10 ms in the asserts; under the 20% quota that is roughly five times as much wall time. The
+cost hardly grows with the cell count (10 cells 175 ms, 151 cells 350 ms render); it is the fixed cost of a full render
+and settle, done twice. Batching the IntersectionObserver double's entries changed nothing, so the double is not the
+cause, and no product work showed up as needless. Fix: `render` takes the part, so the case renders once with three
+states and two variants (9 cells: more than six near, so the cap of six still bites, and a picture in each). Bite: the
+new case under `CPUQuota=20%` passed 5 of 5 at 685, 619, 606, 904, 906 ms. The old case passed 10 of 10 at
+1790-2300 ms; the 1-in-5 failure over the 2500 ms budget did not reproduce on an otherwise idle machine. Not verified:
+the case under the push suite's full load, where the old failure was seen.
+
+742\. Linux builder (2026-11-10, 732 live look): `yarn et:design` in tmux `studio-serve` ran the checks, started the
+harness app on 127.0.0.1:44331, then printed EDIT-OLD-NOT-FOUND for `sdk components/select` and `studio pages/start`
+208 times in about 35 min and never bound :4402 (the harness port did not answer either). Log
+`/tmp/studio-serve-loop.log`. Side effect: it wrote `.ethlete/design/sdk/ready.json` (+201 lines, uncommitted). Suspect:
+the serve start retries the EDIT-OLD-NOT-FOUND sketch step and never reaches listen; ADR 0253 says such a part gets one
+sketch with only `new`, so the step must create it once and go on. Missed: no spec starts a serve with an
+EDIT-OLD-NOT-FOUND part. Decided by the doc agent (blocks the human's live look at 732 and B345, rule b): Linux builder
+builds it before 731; bite: a serve spec with such a part binds its port and creates the sketch once. The stray
+`sdk/ready.json` change is the builder's to judge (keep if the serve was right to write it, else restore).
+
+On 735 (9c6d2e782): the old case passed 10/10 at 20% one at a time, so the bite "old fails the step" is not met. The
+fix is a margin gain (about 200 ms to 1600 ms under the 2500 ms budget), not a proven cause of the one 2698 ms failure.
+
+743\. Mac builder (2026-11-10, B345 push): pre-push refused the push because the person-name check found the human's
+full name in the pin thread of `pages/sketches@change-crop` b/c `sketch-data.ts`, copied from the merged page. The merged
+parts `pages/sketches/sketch-data.ts`, `pages/inbox/shared/inbox.ts` and `components/comment-row/comment-row.ts` still
+hold the name. Suspect: the check scans only the changed files, so a name in a merged part spreads into every sketch
+that copies it. Tool fix (backlog): the person-name check runs once over all of `.ethlete/design` and the merged parts
+use a neutral author; a sketch built from a part then starts clean.
+
+744\. The human (2026-11-10, screenshot of the `components/title-bar@edit` sketch, the stale sketch of 729): the
+"Aktuell" column draws 3 changed states at the top, the "old" column draws 5 states lower down, so no row pairs a state
+with itself; the reader cannot tell which old row belongs to which current row. "new" is folded as "Unverändert". Also
+the builder's 732 check saw a "Verwerfen" button in this view, but ADR 0135 says an `@edit` sketch has none (picking
+`old` is the discard). Suspect: the round view lays out each column by its own changed states, not by one shared state
+list. Missed: no spec draws two columns with different changed-state sets. Tool fix (backlog, after 742): one row per
+state across all columns (an empty cell where a column has no change); a spec bites on 3 vs 5 states; drop "Verwerfen"
+from `@edit` views or record why ADR 0135 changed.
+
+As built (Linux builder, 742): Cause (measured on a clone of HEAD in /tmp): ADR 0253 was not built. `openEditSketch`
+answered `EDIT-OLD-NOT-FOUND` and opened no sketch, so the part stayed "changed outside a sketch" and the serve slow
+runner re-ran it on every 15 s poll; the two lines per poll (about 20 s each, 104 polls in 35 min) match. It did not block
+the server: `openEditSketch` took 60 ms (sdk `components/select`) and 277 ms (studio `pages/start`), and the log shows serve
+listening on a free port (39489) before the loop, as it does when not started by Studio (`DE_PORT` unset), so :4402 was
+never its port; the harness app is started per draw and stopped after. Fix: on `EDIT-OLD-NOT-FOUND` `openEditSketch` opens
+the ready `<part>@edit` sketch with only `new` and answers the problem with it; `autoAcceptOf` skips an open edit sketch
+without `old`. Bite: `slow-run.spec.ts` polls four times over such a part and expects one `EDIT-OLD-NOT-FOUND` line and a
+ready sketch with only `new`; the old code logs it 3 times and opens none. Not verified: a real serve on the repo, the
+Studio view of a new-only sketch, and the merge after picking `new`.
+
+As built 742 (Linux builder, 6ada387e2): Cause, measured: ADR 0253 was never built. `openEditSketch` returned
+EDIT-OLD-NOT-FOUND and opened no sketch, so the part stayed "changed outside a sketch", and the serve slow runner (polls
+every 15 s) ran `autoAcceptOf` on it again each poll: 104 polls x 2 parts = 208 lines. Correction: the loop did not
+block the port; serve listened on `localhost:39489`, because a terminal serve without `DE_PORT` leaves 4402 to Studio.
+Fix: on EDIT-OLD-NOT-FOUND a ready `<part>@edit` sketch with only `new` is created once; `autoAcceptOf` skips an open
+edit sketch without `old`. Bite: `slow-run.spec.ts` polls 4 times; old code logs 3 times, new code once with a ready
+`['new']` sketch. Not verified: a real serve on the repo, how Studio shows a new-only sketch, that merging `new` records
+the edit. The next repo serve creates `components-select.edit` (sdk) and `pages-start.edit` (studio).
+
+745\. Linux builder (2026-11-10, 742): `et design serve-state` says "Start it with `et design`", but `et design` from a
+terminal never binds 4402 without `DE_PORT=4402`. Cause (measured): the hint names the wrong command, and serve does not
+say it left 4402. Decided by the doc agent (tool internal): serve-state names the command that binds the Studio port,
+and a terminal serve prints "4402 left to Studio, serving on <port>". After 731.
+
+As built (Linux builder, B483 / 729): Cause (measured): 6530d25e7 (09:14 UTC) edited the merged part
+`components/title-bar` (`title-bar.ts`, `shared/chrome.ts`) directly and did not touch `merged.json`, whose entry still
+holds `d8eb542e980c46af` from 810b1f241. A direct edit is detected from the working part hash against `merged.json`,
+never against git, so `design check` opened `components/title-bar@edit` at 09:30 UTC, 16 minutes after the commit, with
+`new` equal to the HEAD folder (only the `@shared` import rewrite differs). Nothing closed it then: a part with an open
+edit sketch leaves `changedOutsideSketchOf`, so the serve slow runner never looks at it, and `autoAcceptOf` keeps it open
+while a picture differs from `old`. Fix: `headHoldsPart` (edit-sketch.ts) asks git whether the part folder is tracked
+and the part folder, the product `shared/` and the asset folders are clean; `settleCommittedEdits`
+(accepted-pictures.ts) records the hash of each direct edit, or each part with an undecided `<part>@edit` sketch (with
+or without `old`), that HEAD holds, and discards that sketch, with no line. `autoAcceptOf` (design check) runs it first,
+and the slow runner runs it on every poll before the settled edits. So a committed direct edit opens no sketch at all; an
+uncommitted one still gets the old/new or new-only sketch (ADR 0253). Bite: accepted-pictures.spec.ts (a committed edit
+with changed pictures records without a sketch; an open old/new sketch and an open new-only sketch are deleted once the
+chip is committed) and slow-run.spec.ts (one poll deletes an open edit sketch HEAD holds and records the hash); the old
+code fails all four. The committed-edit specs for a held refactor, for EDIT-OLD-NOT-FOUND and the 742 slow-run spec now
+put an uncommitted edit on top. Not verified: a real `design check` or serve on the repo (the builder runs it; it should
+delete `components-title-bar.edit` and record the title-bar hash), and Studio's view between a commit and the next poll.
+
+746\. Mac builder (2026-11-10, B482 bite): the release smoke and its bite both failed "no frame painted". Cause (seen on a
+screen shot): the smoke starts the unsigned bundle with its own HOME, so it finds no keychain, and CEF shows the macOS
+prompt "Schlüsselbund nicht gefunden" (a keychain password prompt) that blocks the page. Suspect: the earlier
+locked-screen failure was the same prompt. The human had to click several of these prompts away. Fix in the tree: with
+`ETHLETE_STUDIO_SMOKE_VIEW` set, Studio passes `SecretStorage::Mock` (`--use-mock-keychain`) to the CEF runtime, and the
+smoke opens the first existing sketch and fails at once when there is none. Lesson: the smoke cannot see a native modal,
+so it waited for a frame that never came and named the wrong cause. Decided by the doc agent (tool internal): the smoke
+fails early when the console log stays empty and no CEF page loads in 30 s, and its message names "native dialog?".
+
+Built (Mac builder, 746): f10c01295 (mock keychain under `ETHLETE_STUDIO_SMOKE_VIEW`, a "page loaded" marker from the
+init script, fail after 30 s with "no page loaded in 30 s (native dialog?)", first existing sketch as default). Dead
+end: a run before the commit still showed the prompt, because the smoke builds HEAD in a worktree, not the working tree.
+Decided by the doc agent (tool internal): the smoke `--help` and its start line name the commit it builds ("builds HEAD
+<sha>, not the working tree"), and it warns when the working tree has uncommitted changes under `apps/ethlete-studio`.
+
+747\. The human (2026-11-10, screen shot of CI on the "next" changesets merge): the Checks step failed in commitlint on
+`chore: 🤖 update prereleases (next)` with "scope may not be empty [scope-empty]". Cause (read in the files):
+`.github/workflows/ci-next.yml` and `ci-main.yml` pass `commit_message: 'chore: 🤖 update prereleases'` (and `'chore: 🤖
+update versions'`) to `publish.yml`, and the commitlint range check in `ci.yml` (71c202188, 3ba2ca88b) now lints that
+bot commit with `scope-empty: never`. Lesson: the commitlint gate came in without a look at the commit messages the
+workflows write themselves, so nothing ran them through commitlint. Decided by the doc agent (tool internal, CI is red):
+both messages get a scope and a valid subject, for example `chore(repo): Update prereleases`, and a check (spec or
+`lint:*` script in pre-push) runs every `commit_message:` in `.github/workflows/*.yml` through commitlint, so a new
+gate or a new workflow message fails locally first.
+
+As built (Linux builder, 747): the release bot commit `chore: 🤖 update prereleases (next)` had no scope, so commitlint failed on it. `ci-next.yml` and `ci-main.yml` now pass `chore(repo): Update prereleases` and `chore(repo): Update versions`; the vendored action appends ` (next)` in pre mode. New `yarn lint:commit-messages` (`tools/scripts/check-workflow-commit-messages.mjs`) lints every workflow `commit_message:` plus that suffix; wired in ci.yml after the commitlint step and in `.husky/pre-push`. Bite: the spec fails the old scopeless message and passes the new ones. Not verified: a real release run.
+
+748\. The human (2026-11-10, late evening): "das doc ist echt schon wieder voller müll" (STATUS.md). Cause (counted):
+591 lines with 79 ✅ rows that were long pushed, an "Erledigt" section, a desk-branch landing log of 07.11. and a
+priority block of 02.11. that ADR 0234 replaced. The table legend itself said "✅ fertig (lokal, ungepusht)" and "fertige
+Zeilen fallen beim Push weg", so a done row had a legal state and nobody owned its delete. Lesson: a rule that only an
+agent remembers fills the file again; the file needs a check. Doc agent cleanup: 491 lines, 145 open rows kept, ✅ removed from the legend,
+"a done row is deleted in the same commit". Decided by the doc agent (tool internal): a pre-commit check on
+`plans/ethlete-studio/STATUS.md` refuses a ✅ status, a "## Erledigt" section and a dated "Stand" older than 3 days, and
+names the row to delete. Open: about 120 ⏳ rows are not checked against git; the builder checks each row against git
+when it takes one (ADR 0234).
+
+749\. Mac builder (2026-11-10, B482): the console log of the macOS bundle stays empty. Suspect (from the config, not yet
+proven by a bundle run): `tauri.macos.conf.json` replaces the `windows` array without `"create": false`, so Tauri creates
+the macOS window itself, and `console_log::start()` sets the hook and the init script only on windows with
+`create: false`. Lesson: nothing checked a per-OS config override against the base config. Built by the Mac builder:
+ccf39547a adds `"create": false` and a Rust test that every platform config sets it. Smoke rebuild runs.
+
+750\. The human (2026-11-10, Studio screen shot after the B483 serve restart): `components-title-bar.edit` is gone (B483
+works on the real repo). Left is the marker sketch `pages/system` (round 1 "Fehlende Build-Antwort der Auflistung",
+variant a, last change by a Sonnet subagent): Studio shows "27 unveränderte Zustände eingeklappt" and not one changed
+state, so the human sees a sketch with nothing to look at. Its files have uncommitted changes in the Linux tree
+(`build-ready-footer.ts`, `system.ts`, `sketch.json`); the sketch is from 21ff32b31 (2026-11-07). Suspect: the variant
+draws the new state, but the state has no frame in the design, so the compare finds no changed state. Lesson: a sketch
+with zero changed states reached the human. Decided by the doc agent (tool internal): `sketch check` and `sketch ready`
+refuse a variant with zero changed states and name the state that should differ; Studio never lists such a sketch as
+waiting for the human. The Linux builder owns this sketch (the human: "deine baustelle") and finds the cause first.

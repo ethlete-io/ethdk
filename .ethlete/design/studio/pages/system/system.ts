@@ -280,6 +280,7 @@ export default definePart<{
     'one-blocker': { nothingOpen: true, build: 'one-blocker' },
     checking: { nothingOpen: true, build: 'checking' },
     'direct-edit': { build: 'direct-edit', blockersOpen: true },
+    'direct-edit-closed': { build: 'direct-edit' },
     'blockers-open': { blockersOpen: true },
     'agent-working': { agent: 'working' },
     'agent-working-ready': { nothingOpen: true, agent: 'working' },

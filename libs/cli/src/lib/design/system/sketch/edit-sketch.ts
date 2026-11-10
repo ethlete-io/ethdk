@@ -26,6 +26,8 @@ const EDIT_VARIANT_NOTES = { [EDIT_OLD]: 'der zuletzt gemergte Stand', [NEW]: 'd
 
 const editRoundNoteOf = (part: string) =>
   `${part} wurde außerhalb eines Sketches geändert und sieht anders aus - wähle den zuletzt gemergten Stand oder die Änderung`;
+const newOnlyRoundNoteOf = (part: string) =>
+  `${part} wurde außerhalb eines Sketches geändert und der zuletzt gemergte Stand ist nicht mehr zu finden - wähle die Änderung oder setze sie zurück`;
 
 export const EDIT_OLD_NOT_FOUND = 'EDIT-OLD-NOT-FOUND';
 
@@ -46,6 +48,29 @@ const blobsAt = ({ root, commit, paths }: { root: string; commit: string; paths:
       return type === 'blob' && oid && path ? [{ oid, path }] : [];
     });
 
+const editPathsOf = (product: ResolvedProduct, resolved: ResolvedPart) => {
+  const root = repoRootOf(product);
+
+  return [dirname(resolved.file), ...productSharedDirsOf(product), ...assetDirsOf(product)].map((dir) =>
+    relative(root, dir),
+  );
+};
+
+/** Whether HEAD holds the part as it is in the working tree: its folder is tracked and git sees no change in it, its product's `shared/` or its assets. */
+export const headHoldsPart = (product: ResolvedProduct, resolved: ResolvedPart) => {
+  const root = repoRootOf(product);
+  const paths = editPathsOf(product, resolved).map((path) => `./${path}`);
+
+  try {
+    return (
+      git(root, ['ls-files', '--', paths[0] ?? '.']) !== '' &&
+      git(root, ['status', '--porcelain', '--untracked-files=all', '--', ...paths]) === ''
+    );
+  } catch {
+    return false;
+  }
+};
+
 const oldDesignOf = (product: ResolvedProduct, resolved: ResolvedPart): OldDesign | EditOldNotFound | string => {
   const part = partKeyOf(resolved);
   const hash = readMerged(product.dir)[part];
@@ -54,10 +79,7 @@ const oldDesignOf = (product: ResolvedProduct, resolved: ResolvedPart): OldDesig
 
   const root = repoRootOf(product);
   const partDir = relative(root, dirname(resolved.file));
-  const paths = [
-    partDir,
-    ...[...productSharedDirsOf(product), ...assetDirsOf(product)].map((dir) => relative(root, dir)),
-  ];
+  const paths = editPathsOf(product, resolved);
   const blobs = new Map<string, Buffer>();
   const blobOf = (oid: string) => {
     const cached =
@@ -117,15 +139,15 @@ const oldDesignOf = (product: ResolvedProduct, resolved: ResolvedPart): OldDesig
 
 /**
  * Opens the old/new sketch of a merged part edited outside a sketch, ready for a pick: `old` holds the part's folder at
- * the newest commit whose part hash is its merged hash, `new` the working one. Answers the sketch, `EDIT-OLD-NOT-FOUND`
- * when no commit has that hash, or why it cannot open.
+ * the newest commit whose part hash is its merged hash, `new` the working one. When no commit has that hash it opens the
+ * sketch with only `new` and answers `EDIT-OLD-NOT-FOUND` with it; else the sketch, or why it cannot open.
  */
 export const openEditSketch = (options: {
   target: string;
   product: ResolvedProduct;
   part: string;
   author?: string;
-}): Sketch | EditOldNotFound | string => {
+}): Sketch | (EditOldNotFound & { sketch: Sketch }) | string => {
   const { target, product, part } = options;
   const resolved = product.parts.find((candidate) => partKeyOf(candidate) === part);
 
@@ -133,7 +155,25 @@ export const openEditSketch = (options: {
 
   const old = oldDesignOf(product, resolved);
 
-  if (typeof old === 'string' || 'rule' in old) return old;
+  if (typeof old === 'string') return old;
+  if ('rule' in old) {
+    const created = createSketch({
+      product,
+      sketch: { layer: resolved.layer, name: resolved.name, sketch: EDIT_SKETCH },
+      variants: [NEW],
+      roundTitle: EDIT_ROUND_TITLE,
+      roundNote: newOnlyRoundNoteOf(part),
+      variantNotes: new Map([[NEW, EDIT_VARIANT_NOTES[NEW]]]),
+      author: options.author,
+      merge: resolved.origin === 'overridden' ? 'override' : undefined,
+    });
+
+    if (typeof created === 'string') return created;
+
+    const ready = markSketchReady({ checkout: target, sketch: created, author: options.author });
+
+    return typeof ready === 'string' ? ready : { ...old, sketch: ready };
+  }
 
   const partDir = dirname(resolved.file);
   const working = filesBelow(partDir);

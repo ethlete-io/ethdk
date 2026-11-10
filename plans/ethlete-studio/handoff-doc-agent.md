@@ -65,7 +65,7 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 ## Evening state (2026-11-10, after b6976eb26)
 
 - The human is back but away from the Mac. No open question for the human. Info given: 709 app icon pick by merge,
-  the B482 bite needs an unlocked Mac screen.
+  the Mac screen stays unlocked: screensaver off (`defaults -currentHost write com.apple.screensaver idleTime -int 0`) and `caffeinate -d -u` runs (pid 90006, 2026-11-10); undo with `pkill -x caffeinate` and `defaults -currentHost delete com.apple.screensaver idleTime`.
 - Linux batch pushed 8e25eecda (ADR 0255, 724 fix). Linux builder (ethlete-sdk-3e, tmux claude-3, fresh after
   builder-2026-11-10e): commit the 728 pre-commit Markdown prettier hook with a Built line under 728, watch CI, then the
   real-config "Sketch öffnen" re-check, step 6 gutter skip, ADR built: lines (0048, 0252, 0253), 723, 729.
@@ -73,3 +73,16 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   726 pushed (2f658146e). Now: A1 rest, 12 title-bar hover states (notice-hint is built, 332e49626). Pushes are free
   again; merge origin/next first.
 - Findings 722-729 recorded; 722, 724, 726, 727 built. Doc agent rule (728): format every plan file before its commit.
+
+## Late evening state (2026-11-10, after 743eb7901)
+
+- The human is back at the desk. They merged 732 b (7fec742b2) and 709 app-icon a (27e00d769). On the other open
+  sketches: "die anderen beiden sind deine baustelle". Sent: Linux builder resolves `components-title-bar.edit` (B483)
+  and the `pages-system` marker sketch; Mac builder resolves sdk `components-button.off-centre`. No open question.
+- Findings 730-745 recorded. ADR 0256 (stale direct-edit sketch is removed by the tool, STATUS B483) decided.
+- Linux builder (ethlete-sdk-3e): 742 fixed in 6ada387e2 (push suite, then push), then serve with `DE_PORT=4402` in tmux
+  `studio-serve`, then B483 (ADR 0256), then 731 (e2e under quota), 745, 736+737. 735, 719 quota step, 732 sketch done.
+- Mac builder: B482 bite running on the unlocked screen; B345 sketch `pages/sketches@change-crop` (a5bf3bff2, eb0eb9eb8)
+  waits for push (person-name fix in sketch data, finding 743), then the human picks it. Then backlog 628-633, the darwin
+  quota gap (735).
+- Mac mailbox wait: restart it at once (command at the top). Background task may still run from the old session.

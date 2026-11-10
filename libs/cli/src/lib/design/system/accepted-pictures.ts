@@ -13,7 +13,14 @@ import { createPartPictureCache, PartPictureCache } from './part-picture-cache';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
-import { EDIT_OLD, EditOldNotFound, openEditSketch, refreshEditOld, rewordEditNotes } from './sketch/edit-sketch';
+import {
+  EDIT_OLD,
+  EditOldNotFound,
+  headHoldsPart,
+  openEditSketch,
+  refreshEditOld,
+  rewordEditNotes,
+} from './sketch/edit-sketch';
 import { discardSketch } from './sketch/merge';
 import { changedOutsideSketchOf, EDIT_SKETCH, readMerged, recordMerged } from './sketch/merged-parts';
 import { listSketches, Sketch } from './sketch/sketch';
@@ -241,10 +248,50 @@ const isUndecidedEditSketch = (sketch: Sketch) =>
 
 type Need = { part: ResolvedPart; design: string; baseline: AcceptedPictures | null; sketch?: Sketch };
 
+const undecidedEditSketchesOf = (product: ResolvedProduct) =>
+  new Map(
+    listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) =>
+      typeof sketch !== 'string' && isUndecidedEditSketch(sketch) ? [[partKeyOf(sketch), sketch] as const] : [],
+    ),
+  );
+
+/**
+ * Settles each direct edit of a merged part, or of `parts`, that HEAD already holds: records its hash in `merged.json`
+ * and deletes its open edit sketch, without a pick and without a line. Answers the parts it settled.
+ */
+export const settleCommittedEdits = (options: { target: string; product: ResolvedProduct; parts?: string[] }) => {
+  const { target, product } = options;
+  const sketches = undecidedEditSketchesOf(product);
+  const candidates = new Set([...changedOutsideSketchOf(product), ...sketches.keys()]);
+  const settled = product.parts.filter((resolved) => {
+    const part = partKeyOf(resolved);
+
+    return (
+      candidates.has(part) &&
+      resolved.origin !== 'base' &&
+      (!options.parts || options.parts.includes(part)) &&
+      headHoldsPart(product, resolved)
+    );
+  });
+
+  for (const resolved of settled) {
+    const sketch = sketches.get(partKeyOf(resolved));
+
+    if (sketch) discardSketch({ target, sketch, author: 'design check' });
+  }
+
+  const parts = settled.map(partKeyOf);
+
+  if (parts.length > 0) recordMerged({ product, parts });
+
+  return parts;
+};
+
 /**
  * The work of `design check` on the pictures of each merged part, or of `parts`: draws the `record` pictures of a part
  * unchanged since its merge when none are stored at its design hash, and resolves a direct edit of a part changed
- * outside a sketch, and of a part whose old/new edit sketch is open without a decision. A direct edit is compared with
+ * outside a sketch, and of a part whose old/new edit sketch is open without a decision. A direct edit HEAD already
+ * holds is settled first, as `settleCommittedEdits` does. Any other direct edit is compared with
  * its pictures at the merged hash, else with the `old` variant of the old/new edit sketch, which holds the part at the
  * newest commit with its merged hash (an open sketch's `old` is rewritten from that commit first). One that draws every
  * state as before holds at once (its new hash goes to `merged.json`, and the edit sketch closes); one that draws a state
@@ -271,12 +318,15 @@ export const autoAcceptOf = async (options: {
     return states && hash !== undefined ? { hash, states, slots: true } : null;
   };
   const partHashNowOf = (resolved: ResolvedPart) => partHashOf({ product, dir: dirname(resolved.file) });
+
+  settleCommittedEdits({
+    target,
+    product,
+    parts: only ? (options.parts ?? [only]).filter((part) => part === only) : options.parts,
+  });
+
   const edited = new Set(changedOutsideSketchOf(product));
-  const editSketches = new Map(
-    listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) =>
-      typeof sketch !== 'string' && isUndecidedEditSketch(sketch) ? [[partKeyOf(sketch), sketch] as const] : [],
-    ),
-  );
+  const editSketches = undecidedEditSketchesOf(product);
   const merged = readMerged(product.dir);
   const records: Need[] = [];
   const edits: Need[] = [];
@@ -327,6 +377,8 @@ export const autoAcceptOf = async (options: {
       else if (typeof sketch === 'string') opened(part, sketch);
       else heads.push({ part: resolved, design, sketch });
     } else if (editSketch) {
+      if (!editSketch.variants.includes(EDIT_OLD)) continue;
+
       const old = cachedOf(resolved, merged[part]);
 
       if (old) {
