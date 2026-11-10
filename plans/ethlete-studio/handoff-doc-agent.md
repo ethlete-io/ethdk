@@ -103,3 +103,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - Watchdogs set by the human: 14 systemd one-shot timers kick-2335 … kick-1235 (:35 each hour, 2026-11-10 23:35 to
   2026-11-11 12:35), script /tmp/dx/kick.sh, panes %2 %23 %207, log /tmp/dx/kick-report.log. Finding 752 (permanent
   watchdog command) is night backlog. No open question for the human.
+- After restart (night): 750 pages/system sketch variants a/b/c are ready (e0d4c428f, b6da40338), the human picks by merge in the morning. Findings 753-758 recorded (68f6b3eff) and put in the STATUS backlog line. Linux builder next: 748.
