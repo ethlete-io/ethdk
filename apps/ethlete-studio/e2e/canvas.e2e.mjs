@@ -703,7 +703,8 @@ const goneSketchLeavesToThePart = async (page, { designPort }, target, decide) =
 const CASES = [
   {
     name: 'a sketch merged while its view is open opens the part view of the target',
-    listingMayPend: true,
+    listingMayPend:
+      'the evidence is the view leaving to the part view after the merge, which does not wait for a listing',
     pages: ['Merge'],
     run: (page, _state, target, context) =>
       goneSketchLeavesToThePart(page, context, target, async (ask) => {
@@ -720,7 +721,8 @@ const CASES = [
   },
   {
     name: 'a sketch discarded while its view is open opens the part view of the target',
-    listingMayPend: true,
+    listingMayPend:
+      'the evidence is the view leaving to the part view after the discard, which does not wait for a listing',
     pages: ['Discard'],
     run: (page, _state, target, context) =>
       goneSketchLeavesToThePart(page, context, target, async () => {
@@ -961,7 +963,7 @@ const CASES = [
   },
   {
     name: 'Fit is stable, + steps from it, 25 % report',
-    listingMayPend: true,
+    listingMayPend: 'waits for the listing itself (listingAnswered) before it reads the zoom chip',
     pages: ['Sketches'],
     run: async (page, state) => {
       const { view } = state;
@@ -1349,7 +1351,7 @@ const CASES = [
   },
   {
     name: 'a part edited on disk while away shows its new picture on return',
-    listingMayPend: true,
+    listingMayPend: 'the evidence is the part picture tag, read through shot requests that the listing does not gate',
     delayPictures: false,
     pages: ['Edited'],
     run: async (page) => {
@@ -1618,7 +1620,7 @@ const CASES = [
   },
   {
     name: 'a sketch cell edited on disk while scrolled away shows its new picture on return',
-    listingMayPend: true,
+    listingMayPend: 'the evidence is the cell picture tag, read through shot requests that the listing does not gate',
     delayPictures: false,
     pages: ['Sketches'],
     labels: ['Large'],
@@ -2272,7 +2274,7 @@ const CASES = [
   },
   {
     name: 'the sketch view at 30 % and 100 % draws no failed picture and a readable head at both zooms',
-    listingMayPend: true,
+    listingMayPend: 'waits for the listing itself (listingAnswered) before it reads heads and pictures',
     pages: ['Sketches', 'Wide'],
     run: async (page, _state, target) => {
       await listingAnswered(page);
@@ -2510,7 +2512,7 @@ const CASES = [
   {
     name: 'a listing refresh every 1 s for 6 s re-navigates no iframe and leaves no 150px frame',
     quiet: true,
-    listingMayPend: true,
+    listingMayPend: 'waits for all frames to paint, which needs the listing, before the refreshes start',
     pages: ['Sketches'],
     labels: ['Large'],
     run: async (page) => {
@@ -2705,7 +2707,8 @@ const CASES = [
   {
     name: 'first load creates one iframe per frame and aborts no frame request',
     quiet: true,
-    listingMayPend: true,
+    listingMayPend:
+      'records iframe creation and aborted requests, and is meant to see the first load while the listing is late',
     pages: ['Sketches'],
     run: async (page) => {
       const log = eventLog();
@@ -3347,6 +3350,19 @@ const workerCount = () => {
 
 const lead = async () => {
   const runStartedAt = performance.now();
+  const noReason = CASES.filter(
+    (testCase) =>
+      'listingMayPend' in testCase && (typeof testCase.listingMayPend !== 'string' || !testCase.listingMayPend.trim()),
+  );
+
+  if (noReason.length) {
+    for (const testCase of noReason)
+      console.error(
+        `[canvas-e2e] listingMayPend needs a reason string, not ${testCase.listingMayPend}: ${testCase.name}`,
+      );
+    process.exit(2);
+  }
+
   const known = existsSync(TIMINGS_FILE) ? JSON.parse(readFileSync(TIMINGS_FILE, 'utf8')) : {};
   const queue = PAGES.flatMap((target, targetIndex) =>
     CASES.flatMap((testCase, caseIndex) =>
@@ -3564,6 +3580,13 @@ const lead = async () => {
   const suiteMs = performance.now() - runStartedAt;
   const overBudget = suiteMs > BUDGET_MS;
   const enforceBudget = process.env['STUDIO_E2E_BUDGET_ENFORCE'] === '1';
+
+  const optedOut = CASES.filter((testCase) => testCase.listingMayPend && !testCase.open);
+
+  if (holdListingsMs && optedOut.length) {
+    console.log('\nopted out of the held-listing check (listingMayPend):');
+    for (const testCase of optedOut) console.log(`  ${testCase.name}: ${testCase.listingMayPend}`);
+  }
 
   console.log('');
   failed.forEach((row, at) => console.log(`  ${at + 1}) [${row.page}] › ${row.name}`));

@@ -3785,6 +3785,17 @@ skip which check. Tool fix (bug queue, after 673): `listingMayPend` takes a reas
 prints the opt-out cases per check in its summary; the 651 bite proof runs each opt-out case once with the hold on, to
 show that its own evidence fails when the listing is late.
 
+As built (678, bite in a Mac run): `listingMayPend` takes a reason string; a case with it missing, empty or `true`
+stops the runner at start (exit 2: `listingMayPend needs a reason string, not true: <case>`, shown with a temporary
+edit of the merge case). In a hold run the summary lists each opted-out case with its reason once. Reasons: merge and
+discard: the evidence is the view leaving to the part view, no listing wait; Fit, 30 %/100 %: call `listingAnswered`
+first; refresh every 1 s: waits for all frames to paint, which needs the listing; the two "edited on disk" cases: the
+evidence is a picture tag read through shot requests the listing does not gate; first load: records iframe creation
+and aborts and is meant to see the late listing. Bite: each case alone with `--hold-listings 14000` passes (merge 73 s,
+discard 58 s, Fit 3/3 94 s, part edited 44 s, cell edited 64 s, 30 %/100 % 4/4 128 s, refresh 61 s, first load 3/3
+142 s), so none of their own evidence fails when the listing is late. Not verified: that the reasons are the only
+reason each passes (the reasons are read from the case code, one hold run each), and a push:suite run.
+
 679\. Builder (2026-11-10, Mac night, push:suite at a45458424, B468): the Large case "a listing refresh every 1 s for
 6 s re-navigates no iframe" saw 2 iframe re-navigations in 6 s in the plain run of the repeat gate (fail, pass, pass;
 27.3 s against 16-24 s when green). It is the third red of this case under load (287/308 as B232, 316 as B270). No
