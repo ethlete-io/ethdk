@@ -4204,3 +4204,20 @@ specs and the files they import; `index.ts` and any other source that no spec re
 `build` in CI. So the push:suite typecheck step does not catch a type error in unreached lib source. Tool fix
 (recommendation): each lib `typecheck` target also runs `tsc -p libs/<lib>/tsconfig.lib.json --noEmit` (`ngc` for the
 Angular libs), with a bite on `libs/bracket/src/index.ts`; measure the added time first.
+
+689\. Builder (2026-11-10, day shift, B473 bite, 9a2573e21): a first bite with a type error in
+`libs/bracket/src/index.ts` passed the new push:suite typecheck step. Cause (bitten): every lib `typecheck` target runs
+only `tsconfig.spec.json`, so it checks the specs and what they import; lib source that no spec reaches gets a type
+check only from `build` in CI. A second bite in `libs/bracket/src/lib/core/layout.ts` (reached by a spec) failed the step
+with TS2322 in 6 s. Why no tool caught it: the target is named `typecheck`, and nothing says it covers only the spec
+graph. Tool fix (doc agent, it applies ADR 0245 "typecheck the touched projects" to the whole project): each lib
+`typecheck` target also checks `tsconfig.lib.json` with `--noEmit` (ngc for the Angular libs); bite on
+`libs/bracket/src/index.ts`; measure the time per lib first and report it. Also seen: an eslint `no-control-regex`
+error in `tools/scripts/push-suite.spec.mjs:138`, older; `tools/` is in no lint project.
+
+690\. Builder (2026-11-10, day shift): a failed `cd` into a bite worktree made the bite commit `495b906bf "bite"` land
+on `next` in the main checkout. The builder moved HEAD back with `git update-ref HEAD a3683f6ad 495b906bf`; nothing
+else was on top. Cause: the bite commit ran in the shell's current directory after the `cd` failed, and `git commit`
+accepts any message locally (commitlint runs only at pre-push and in CI). Why no tool caught it: nothing stops a
+throwaway commit on `next`. Tool fix: the builder skill and every bite brief say to commit in a worktree only with
+`git -C <worktree>`, never after a bare `cd`.
