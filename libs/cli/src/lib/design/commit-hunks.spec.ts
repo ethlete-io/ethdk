@@ -187,7 +187,6 @@ const sharedJsonFiles = (dir: string): string[] =>
   });
 
 const SPLIT = [
-  'accepted.json',
   'merged.json',
   'pictures.json',
   'go.json',

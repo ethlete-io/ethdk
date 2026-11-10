@@ -96,22 +96,6 @@
       "missing": "B148"
     },
     {
-      "id": "go-give",
-      "label": "Go geben",
-      "place": null,
-      "confirmed": true,
-      "why": "system-view/part-approval.component.ts calls /__design/part-go; no design part draws it",
-      "missing": "B175"
-    },
-    {
-      "id": "edit-accept",
-      "label": "Änderung annehmen",
-      "place": null,
-      "confirmed": true,
-      "why": "system-view/part-approval.component.ts calls /__design/part-accept; no design part draws it",
-      "missing": "B175"
-    },
-    {
       "id": "exception-approve",
       "label": "Ausnahme freigeben",
       "place": null,

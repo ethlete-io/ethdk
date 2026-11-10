@@ -727,3 +727,12 @@ As built (718 pending count): a whole-product `design check` still leaves pendin
   `commit-hunks.spec` SPLIT list still names `accepted.json`/`go.json` while the repo holds them (S8 deletes them),
   `actionUndeclaredUnderGoOf` keeps its name (it already reads ready marks), and Studio does not yet open the new-only
   sketch the hint names. `--allowed-by` (Q4) is untouched. No real `design check` on the repo design.
+
+## As built: B249 step 4 data migration, part 1 (2026-11-10, Linux)
+
+The commit that holds this section removes the three `accepted.json` files, the `go-give` and `edit-accept` entries of
+`.ethlete/design/studio/capabilities.json`, the baseline entries of deleted files in
+`tools/scripts/person-names-baseline.json`, and `accepted.json` from the commit-hunks spec list. Verified: the
+commit-hunks and rules specs, `check-person-names.mjs`. Not verified: a `design check` on the repo design (forbidden on
+the shared tree). Not done: `studio/go.json` (the git-safety hook denies a commit that names it; finding 721 waits for
+the human) and the `review`/`go` kinds in the three `pictures.json` files, which hold other sessions' uncommitted edits.
