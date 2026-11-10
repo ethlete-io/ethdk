@@ -3897,3 +3897,8 @@ case cheaper at the cause (fewer cells or a warm render, product code unchanged 
 the 732 sketch; then 731 (e2e under quota) as its own slice with its own calibration. Mac gap: the Mac builder finds a
 darwin throttle (for example `taskpolicy` or a cpulimit equivalent) in its tool backlog, or the step says on the Mac
 that the Linux push suite covers it.
+
+As built (732): sketch `pages/system@footer-open-points` (a in Gründe, b top level, new state `direct-edit-closed`).
+Tool defect: `design shot <part>@<name> --variants` cannot address a named sketch (`sketchHoldingOf` matches only the
+part, so the first sketch holding the part wins), and `ready` then wants a viewed shot it cannot get; the check used
+`shot --at` on a temp commit and recorded the view by hand.
