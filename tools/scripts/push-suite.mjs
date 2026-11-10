@@ -25,7 +25,7 @@ const RUNNER = 'apps/ethlete-studio/e2e/canvas.e2e.mjs';
 const WORKSPACE_PARENTS = ['apps', 'libs', 'tools'];
 const DRAWING_BUILDS = ['cli', 'components', 'core'];
 
-export const STEPS = ['lint', 'cli', 'studio', 'e2e', 'repeat'];
+export const STEPS = ['lint', 'typecheck', 'cli', 'studio', 'e2e', 'repeat'];
 export const EXEMPT_PATHS = [/^plans\//, /^\.changeset\//, /\.md$/];
 
 export const parseArgs = (argv) => {
@@ -88,6 +88,29 @@ export const lintStep = (projects, dir) =>
   projects.length === 0
     ? Promise.resolve({ status: 0, output: '', note: 'no linted project touched' })
     : runStep('npx', ['nx', 'run-many', '-t', 'lint', '-p', ...projects], dir);
+
+export const touchedProjects = (files, read = (path) => readFileSync(path, 'utf8'), exists = existsSync) => {
+  const names = new Set();
+  for (const file of files) {
+    const [parent, name] = file.split('/');
+    if (!WORKSPACE_PARENTS.includes(parent) || name === undefined) continue;
+    const projectFile = join(root, parent, name, 'project.json');
+    if (exists(projectFile)) names.add(JSON.parse(read(projectFile)).name);
+  }
+  return [...names].sort();
+};
+
+export const withTarget = (projects, available) => projects.filter((name) => available.includes(name));
+
+export const typecheckStep = async (projects, dir) => {
+  if (projects.length === 0) return { status: 0, output: '', note: 'no project touched' };
+  const listed = await runStep('npx', ['nx', 'show', 'projects', '--with-target', 'typecheck', '--json'], dir);
+  if (listed.status !== 0) return listed;
+  const checked = withTarget(projects, JSON.parse(listed.output.slice(listed.output.indexOf('['))));
+  if (checked.length === 0) return { status: 0, output: '', note: 'no touched project has a typecheck target' };
+  const run = await runStep('npx', ['nx', 'run-many', '-t', 'typecheck', '-p', ...checked], dir);
+  return { ...run, note: checked.join(', ') };
+};
 
 const git = (...args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
 
@@ -203,6 +226,11 @@ export const pushSuite = async ({ only, range }, log = console.log) => {
       const changed = git('diff', '--name-only', range);
       if (changed.status !== 0) return Promise.resolve({ status: 1, output: changed.stderr });
       return lintStep(lintedProjects(changed.stdout.split('\n').filter(Boolean)), dir);
+    },
+    typecheck: () => {
+      const changed = git('diff', '--name-only', range);
+      if (changed.status !== 0) return Promise.resolve({ status: 1, output: changed.stderr });
+      return typecheckStep(touchedProjects(changed.stdout.split('\n').filter(Boolean)), dir);
     },
     cli: () => runStep('npx', ['nx', 'test', 'cli'], dir),
     studio: () => runStep('npx', ['nx', 'test', 'ethlete-studio'], dir),

@@ -11,6 +11,9 @@ import {
   parseLog,
   reexecCommand,
   runStep,
+  STEPS,
+  touchedProjects,
+  withTarget,
 } from './push-suite.mjs';
 
 test('defaults the repeat range to the upstream and reads --only', () => {
@@ -150,4 +153,19 @@ test('push-suite imports no sibling script at load time, so no live gate code ru
   const source = readFileSync(join(import.meta.dirname, 'push-suite.mjs'), 'utf8');
 
   assert.deepEqual(source.match(/^import .* from '\.\/.*';$/gm) ?? [], []);
+});
+
+test('typechecks only the touched projects that have a typecheck target, right after lint', () => {
+  const projects = { 'libs/cli/project.json': 'cli', 'apps/ethlete-studio/project.json': 'ethlete-studio' };
+  const exists = (path) => Object.keys(projects).some((file) => path.endsWith(file));
+  const read = (path) => JSON.stringify({ name: Object.entries(projects).find(([file]) => path.endsWith(file))[1] });
+  const touched = touchedProjects(
+    ['apps/ethlete-studio/src/a.ts', 'libs/cli/src/b.ts', 'libs/cli/c.ts', 'plans/x.md', 'package.json', 'tools/x.mjs'],
+    read,
+    exists,
+  );
+
+  assert.deepEqual(touched, ['cli', 'ethlete-studio']);
+  assert.deepEqual(withTarget(touched, ['core', 'ethlete-studio']), ['ethlete-studio']);
+  assert.deepEqual(STEPS.slice(0, 2), ['lint', 'typecheck']);
 });

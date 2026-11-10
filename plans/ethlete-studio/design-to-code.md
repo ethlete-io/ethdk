@@ -4190,3 +4190,17 @@ user sees the same slow fill, so this is a real perf defect, not only a test art
 the push:suite: every local e2e run reads the warm shared store. Fix (doc agent, perf scope of ADR 0239): high
 priority only for the frames of the current page switch, or the design server answers the newest view first; each with
 its own bite against `system->icons` and the page switch case under load and `--cold-shots`.
+
+As built (B473, ADR 0245): `yarn push:suite` has a `typecheck` step after `lint`. It runs the `typecheck` target of each
+project with a `project.json` that the pushed range touches and that `nx show projects --with-target typecheck` lists;
+a failure blocks the verdict. Spec: `tools/scripts/push-suite.spec.mjs`. Bite (throwaway worktree, `--only typecheck`):
+a type error in `libs/bracket/src/lib/core/layout.ts` failed the step with TS2322 in 6 s, and only `bracket` ran. Wall
+time on the real range origin/next..a3683f6ad (13 projects, cold export, load 3.6): 70 s, green. Not verified: a full
+`push:suite` run with the new step.
+
+689\. Builder (2026-11-10, B473 bite): a first bite with the type error in `libs/bracket/src/index.ts` passed the new
+step. Cause (bite): every lib `typecheck` target runs `tsc -p libs/<lib>/tsconfig.spec.json`, which includes only the
+specs and the files they import; `index.ts` and any other source that no spec reaches gets its type check only from
+`build` in CI. So the push:suite typecheck step does not catch a type error in unreached lib source. Tool fix
+(recommendation): each lib `typecheck` target also runs `tsc -p libs/<lib>/tsconfig.lib.json --noEmit` (`ngc` for the
+Angular libs), with a bite on `libs/bracket/src/index.ts`; measure the added time first.
