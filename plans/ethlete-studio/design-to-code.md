@@ -4073,3 +4073,14 @@ the 710 tool fix needs a factor measured from CI, not 13. Also: `design-command.
 `check-system-sketch` with "port in use" under load; alone 12/12. Suspect: the spec picks a fixed or probed port and a
 parallel spec takes it between the probe and the listen. Tool fix (builder default, tool backlog): the spec server
 listens on port 0 and reads the bound port; bite: two parallel runs of the spec under `spec:stress --load 2` 4/4.
+
+As built (706, Mac builder, 21ae1ff2e, pushed with merge 0a4e96f88). Cause: nothing checked that a commit or push turn
+sent a report. Fix: the builder Stop hook scans the `tool_use` blocks of the current turn; a Bash `git ... commit|push`
+with no `SendMessage` and no `agent-sessions.mjs send` or `agents:sessions send` blocks the stop once, with its own
+reason; the 703 line rule and the once-only `last_assistant_message` count stay; the log gets `committed` and
+`reported`. Bite: 6 new spec cases, 4 fail on the old hook, 15/15 pass. Verified: push-suite ok on 21ae1ff2e (cli
+447 s, studio 38 s, e2e 443 s); lint ok; a hand run of the hook with `ETHLETE_AGENT_ROLE=builder` on the real transcript
+blocked with the report reason. Not verified: a block in a real `--role builder` session. Open: (a) the match is on
+command text, so a heredoc that contains `agent-sessions.mjs send` counts as a report; tool fix (builder default): match
+on the parsed command of each Bash call, not on its text. (b) The Mac builder session runs with no role, so neither the
+703 nor the 706 hook fires there; fix: restart it with `--role builder` (doc agent, after its current turn).
