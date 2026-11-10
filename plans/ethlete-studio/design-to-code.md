@@ -4258,6 +4258,14 @@ fails on load, not on a defect; one red case blocks a push that cannot touch e2e
 that hits its window prints the load next to the fail; a change set that touches no e2e input (here two vitest worker
 caps and a changeset) is a candidate for a gate the human decides on.
 
+As built (B471, finding 681): cases flagged `quiet: true` sort last; only worker 0 takes them, once no other worker
+holds a case, after printing `quiet tail: <n> case(s) on worker 0`. Every failed row ends in `- load <1-min> on <n>
+worker(s)`. Marked: page switch timings (`all` painted), listing refresh 1 s (`framesPainted`), first load (every iframe
+loaded), part shown before (every picture loaded), hover (late mount, B464); 9 rows. Full run: before 503.6 s 131/131
+(load 3.0); after 533.6 s 130/131 (load 4.9; tail 62 s; `Fit is stable` hit `page.goto` during the build, `load 46.3 on
+3 worker(s)`). Bite: 3 workers ran 9 parallel rows, the tail line, then 4 hover rows, each forced fail printing `load
+72.8 on 1 worker(s)`. Not verified: push:suite, CI, `--perf`.
+
 682\. Builder (2026-11-10, Mac night, 1ac3df506): the slice-paths file still held the previous slice's paths, so the
 pre-commit hook warned about the 680 slice's own files. Same tool as 670, a second gap: the file has no owner and no
 age, so a stale list looks as valid as a fresh one. Workaround: the builder writes the file at each slice start. Tool

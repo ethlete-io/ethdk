@@ -1,0 +1,14 @@
+13 of 13 cases, 193.4s by the last local timings:
+  29.9s  Large     zoom chip sits at the canvas bottom right
+  29.8s  Large     arrow key pans
+  29.6s  Sketches  zoom chip sits at the canvas bottom right
+  28.2s  Sketches  arrow key pans
+  19.7s  Chip      zoom chip sits at the canvas bottom right
+  16.4s  Chip      arrow key pans
+   5.0s  System    arrow key pans
+   3.9s  Inbox     zoom chip sits at the canvas bottom right
+   3.9s  System    zoom chip sits at the canvas bottom right
+   9.8s  Large     hover alone draws no frame border
+   7.1s  Sketches  hover alone draws no frame border
+   6.4s  Chip      hover alone draws no frame border
+   3.6s  System    hover alone draws no frame border

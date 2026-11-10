@@ -13,7 +13,7 @@ import {
 } from 'node:fs';
 import { createRequire } from 'node:module';
 import { createServer } from 'node:net';
-import { availableParallelism, tmpdir } from 'node:os';
+import { availableParallelism, loadavg, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { listingHold } from '../../../tools/scripts/studio-e2e-listing-hold.mjs';
@@ -1198,6 +1198,7 @@ const CASES = [
   },
   {
     name: 'a part shown before paints every stored picture in the first frame',
+    quiet: true,
     delayPictures: false,
     pages: ['System'],
     run: async (page) => {
@@ -1611,6 +1612,7 @@ const CASES = [
   },
   {
     name: 'page switch time is logged to the design timings',
+    quiet: true,
     perf: true,
     pages: ['System'],
     run: async (page) => {
@@ -1886,6 +1888,7 @@ const CASES = [
   },
   {
     name: 'hover alone draws no frame border',
+    quiet: true,
     run: async (page, state) => {
       if (!state.frame || !state.empty) return { ok: false, detail: 'no frame or empty point' };
       const edges = () =>
@@ -2389,6 +2392,7 @@ const CASES = [
   },
   {
     name: 'a listing refresh every 1 s for 6 s re-navigates no iframe and leaves no 150px frame',
+    quiet: true,
     listingMayPend: true,
     pages: ['Sketches'],
     labels: ['Large'],
@@ -2546,6 +2550,7 @@ const CASES = [
   },
   {
     name: 'first load creates one iframe per frame and aborts no frame request',
+    quiet: true,
     listingMayPend: true,
     pages: ['Sketches'],
     run: async (page) => {
@@ -3198,7 +3203,9 @@ const lead = async () => {
 
     queue.splice(0, queue.length, ...share);
   }
-  queue.sort((a, b) => (known[keyOf(b)] ?? Infinity) - (known[keyOf(a)] ?? Infinity));
+  const quiet = (job) => !!job && !!CASES[job.case].quiet;
+
+  queue.sort((a, b) => quiet(a) - quiet(b) || (known[keyOf(b)] ?? Infinity) - (known[keyOf(a)] ?? Infinity));
 
   const shardLabel = shard ? ` (shard ${shard.index}/${shard.count})` : '';
 
@@ -3226,11 +3233,13 @@ const lead = async () => {
   const total = queue.length;
   const workers = Math.min(total, workerCount());
   const rows = [];
+  const busy = new Set();
+  let quietTail = false;
   const scratch = built ? undefined : mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-build-'));
   const record = (job, result) => {
     rows.push({ ...job, ...result });
     console.log(
-      `  ${result.ok ? '✓' : '✘'}  ${rows.length} [${job.page}] › ${job.name} ${result.detail} (${seconds(result.ms ?? 0).trim()})`,
+      `  ${result.ok ? '✓' : '✘'}  ${rows.length} [${job.page}] › ${job.name} ${result.detail}${result.ok ? '' : ` - load ${loadavg()[0].toFixed(1)} on ${busy.size || 1} worker(s)`} (${seconds(result.ms ?? 0).trim()})`,
     );
   };
   let fixtureFault;
@@ -3279,12 +3288,27 @@ const lead = async () => {
       let current;
       let tookJob = false;
 
+      const giveJob = async () => {
+        if (quiet(queue[0]) && index !== 0) return child.send({ job: null });
+        while (quiet(queue[0]) && [...busy].some((other) => other !== index))
+          await new Promise((done) => setTimeout(done, 200));
+        if (quiet(queue[0]) && !quietTail) {
+          quietTail = true;
+          console.log(`[canvas-e2e] quiet tail: ${queue.length} case(s) on worker ${index} after the parallel cases`);
+        }
+        current = queue.shift();
+        tookJob ||= !!current;
+        if (current) busy.add(index);
+        child.send({ job: current ?? null });
+      };
+
       child.stdout.on('data', (chunk) => (output += chunk));
       child.stderr.on('data', (chunk) => (output += chunk));
       child.on('message', (message) => {
         if (message.type === 'result') {
           record(current, message);
           current = undefined;
+          busy.delete(index);
         }
         if (message.type === 'fixtures') {
           fixtureFault = message.detail;
@@ -3297,11 +3321,7 @@ const lead = async () => {
               .map(([phase, ms]) => `${phase} ${seconds(ms).trim()}`)
               .join(', ')}`,
           );
-        if (message.type === 'next') {
-          current = queue.shift();
-          tookJob ||= !!current;
-          child.send({ job: current ?? null });
-        }
+        if (message.type === 'next') void giveJob();
       });
 
       const code = await new Promise((done) => child.on('exit', done));
@@ -3309,6 +3329,7 @@ const lead = async () => {
       if (code !== 0 || current) {
         console.log(`[canvas-e2e] worker ${index} on port ${port} exited with ${code}\n${output.slice(-4000)}`);
         if (current) record(current, { ok: false, detail: `worker exited with ${code}` });
+        busy.delete(index);
       }
 
       return tookJob;

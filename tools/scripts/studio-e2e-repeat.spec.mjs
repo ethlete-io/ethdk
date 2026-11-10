@@ -77,6 +77,17 @@ test('reads a failed and a not-run row in the list format', () => {
   assert.equal(results.get('Wide  other case'), 'not run');
 });
 
+test('reads the fail rows of a quiet-tail run that carry the machine load', () => {
+  const quietJobs = parseList(fixture('list-quiet-tail.txt'));
+  const results = parseResults(fixture('run-quiet-tail-fail.txt'), quietJobs);
+
+  assert.equal(results.size, 13);
+  assert.deepEqual(
+    quietJobs.filter((job) => results.get(keyOf(job)) === 'fail').map((job) => job.name),
+    Array(4).fill('hover alone draws no frame border'),
+  );
+});
+
 test('stable runs pass the gate', () => {
   const verdict = repeatVerdict(jobs, [
     { hold: false, results: stable },
