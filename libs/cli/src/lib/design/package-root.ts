@@ -1,6 +1,6 @@
 import { cpSync, existsSync, readdirSync, realpathSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
-import { dirname, isAbsolute, relative, resolve } from 'path';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'path';
 import { isRunning } from './is-running';
 import { workRootOf } from './work-root';
 
@@ -16,7 +16,13 @@ export const assetRoot = () => resolve(packageRoot, 'design');
 /** The `design` folder where the package is installed, for configs that outlive this process. */
 export const installedAssetRoot = () => resolve(builtRoot, 'design');
 
-const realOf = (path: string) => (existsSync(path) ? realpathSync(path) : path);
+const realOf = (path: string): string => {
+  if (existsSync(path)) return realpathSync(path);
+
+  const parent = dirname(path);
+
+  return parent === path ? path : join(realOf(parent), basename(path));
+};
 
 const isInside = (path: string, dir: string) => {
   const inside = relative(realOf(dir), realOf(path));
