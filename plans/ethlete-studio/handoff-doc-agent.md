@@ -1,44 +1,30 @@
-# Doc agent handoff (2026-11-10, day shift, from ethlete-sdk-68 / tmux claude-2)
+# Doc agent handoff (2026-11-10, day shift, from ethlete-sdk-a6 / tmux claude-2)
 
-Run `/doc-agent` first. The human is awake: grill rounds are allowed again. Builder: ethlete-sdk-22 in tmux
-`claude@ethlete-sdk`, on its day-shift handoff `plans/ethlete-studio/handoff-builder-mac.md`.
+Run `/doc-agent` first. The human is awake: grill rounds are allowed.
+
+## Sessions
+
+- Linux builder: ethlete-sdk-5d in tmux `claude-3@ethlete-sdk` (name changes after each `restart --process`; find it
+  with ListAgents).
+- Mac builder for B469/B479: tmux `claude@ethlete-sdk` on ethlete-mac. It reports through the Mac mailbox. Read it with
+  `ssh ethlete-mac 'zsh -lc "cd ~/dev/ethlete-sdk && node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs inbox doc-agent --wait 3500"'`
+  in the background. Send with `... send doc-agent --to claude '<msg>'`.
 
 ## State
 
-- Morning round done: ADR 0243 (push the night range with `PUSH_SUITE_SKIP=1`, row B474), 0244 (visible-only frames
-  dropped, built), 0245 (push:suite lints and typechecks the touched projects, built 9a2573e21), 0246 (`typescript-lsp`
-  plugin for agent sessions, row B475).
-- origin/next is still f6a97186f, CI red on B466 (cli spec timeouts). The fix c11cc03ac is in the unpushed range. The
-  builder does not set `PUSH_SUITE_SKIP` itself (its skill: for the human only). The human must run
-  `! PUSH_SUITE_SKIP=1 git push origin next` in the builder session. Then tell the builder, which watches CI, and close
-  B474 with the push sha (`built:` on ADR 0243).
-- B475: the human installs the plugin (`/plugin install typescript-lsp@claude-plugins-official`, scope project). Then
-  the builder bites it with a deliberate type error and closes B475 (`built:` on ADR 0246).
-- Day shift start: the human was reminded in German of the B474 push and the B475 plugin install. Neither was done at
-  the handoff (origin/next still f6a97186f, 122 commits unpushed). The builder sends the push sha when it lands.
-- Findings: up to 691 in `plans/ethlete-studio/design-to-code.md`. Archived up to 414 (file now about 388k chars, budget
-  440k). Finding 691: the 3 OFF-CENTRE lines are older than 7d72894fa (B471 fix is clear); new row B477 for the 1 px
-  high button text. 691 lesson done (61585f36a): no CI job (ADR 0226); the builder corrects its skill line, deletes the uncalled
-  `design-rules-gate.mjs`, and `design check` marks findings the base already shows as old. 689: the builder adds the
-  `tsconfig.lib.json` check to each lib `typecheck` target and fixes 2 story errors in components.
-- ADR 0248 (row B478): the `et-progress-step` input `state` becomes `stepState` (collides with `RouterLink.state`);
-  the human answered "Ok". Finding 692: two night commits overwrote the November findings archive; restored in
-  bc2204c99, lint:studio-adrs is green. Builder work for 692: pre-commit stops on a failed ADR check (bite first), the
-  check catches a lost archive finding, skills archive only with `archive-findings.mjs`. Archive only with that script.
-- Builder queue: B478, 689 (lib `typecheck` targets also check
-  `tsconfig.lib.json`; time per lib first, figures to the doc agent), then B476 (ESLint hook, ADR 0247), then B469 CEF spike (ADR 0242), then quiet-machine
-  perf and a full studio:e2e.
-- B472 (683) stays open with no proven cause (18/18 under load). B471 fix is 7d72894fa (high fetch priority after a
-  camera switch). Its 3 OFF-CENTRE findings are older (691, B477).
+- Closed today: B474 (5fcf6202b), B475 (1c72a5026), B476 (9975af963), 694 built (2516fabc1), 696 built (3cfdb35d0),
+  697 fix pushed (812a67070), 698 skill line (55ad943ce). B477 is Mac-only.
+- ADR 0249 (38418d3e6, row B479): Studio ships CEF on macOS; the human: "q1ok". The Mac session commits the 3 cfg gates
+  after its push of f08f0a3d1 (release CSP fix). Then close B469 (spike) and B479 with the Mac shas.
+- Mac findings: the Mac session renumbers its 698/699 to 699/700 on merge (told by mailbox). Check after its push.
+- Finding 701: a breaking lib commit runs the lib's whole `src/scenarios/` folder (builder work, approved).
+- Finding 702 (URGENT, builder work): the agent-sessions spec and `restart --process` move or detach the human's tmux
+  clients (twice today; human: "schon wieder"); the respawn passed the prompt twice. Fix: isolated tmux server in
+  specs, no `switch-client` outside a human `run`, prompt once. Wait for the builder's cause report.
+- STATUS.md: size check counts without padding now (budget 100000), cell cap 400 chars.
+- ADR edits need an `'ethlete-studio': none` changeset in the same commit (698).
+- `yarn -s lint:person-names` prints yarn help; run `yarn lint:person-names` without `-s`.
 
 ## Open questions for the human
 
-None. The human knows the B476 settings step: the builder sends the JSON block for `.claude/settings.json`, and the
-human adds it or tells the builder in its own session to add it.
-
-## Rules applied (no ADR)
-
-- A finding writes "Suspect:" until a bite proves it.
-- Before a decision on push or gate files, run `yarn adr:governs`. ADR 0038 now governs `push-suite.mjs` (finding 688).
-- Commit bodies: lines of 100 chars at most (commitlint). Re-read the plan before you add a finding: the builder also
-  writes findings (a duplicate 689 happened).
+None.

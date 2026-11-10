@@ -47,7 +47,8 @@ that talks with the user and records decisions. Talk English.
 - A slice runs only the spec files it touched, and only its own e2e cases (`yarn studio:e2e --case <name>`).
   `--hold-listings <ms>` delays the sketch listings that carry frame targets, so a case that reads frames once
   before they mount fails locally as on a cold CI server; 14000 outlasts the case setup. The bite proof runs only the new specs. `yarn commit`
-  runs no spec and no typecheck; a slice that changes a config or a `.ts` file runs the `typecheck` target of each touched project.
+  runs no spec and no typecheck, except one: a breaking (`!`) commit runs the whole `src/scenarios/` folder of each lib it
+  stages, in the commit-msg hook; a slice that changes a config or a `.ts` file runs the `typecheck` target of each touched project.
   A slice that changes an import between modules ends with `npx vitest related --run <changed files>` in each touched project. Before you push, run `yarn push:suite` in the
   background and start the next slice while it runs; it tests an export of HEAD, so your live edits never leak in: `nx test cli`, `nx test ethlete-studio`, `yarn studio:e2e`, then the page groups the unpushed diff touches in `canvas.e2e.mjs`, `serve.ts` or `studio-api.ts`
   3 times (the last with `--hold-listings 14000`). Push only after `push-suite: ok <sha>`; a failure, a changed result or

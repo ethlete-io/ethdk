@@ -2,7 +2,7 @@ import { spawn, spawnSync } from 'child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { basename, join } from 'path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 const SCRIPT = join(__dirname, '../../content/skills/agent-sessions/agent-sessions.mjs');
 
@@ -10,6 +10,29 @@ const hasTmux = spawnSync('tmux', ['-V']).status === 0;
 
 describe('agent-sessions', () => {
   let dir: string;
+  let tmuxDir: string;
+  const outerTmux = {
+    TMUX: process.env['TMUX'],
+    TMUX_PANE: process.env['TMUX_PANE'],
+    TMUX_TMPDIR: process.env['TMUX_TMPDIR'],
+  };
+
+  // Every tmux call of the spec and of the script must reach a private server: on the default server a
+  // switch-client or a new session moves the attached clients of the user.
+  beforeAll(() => {
+    tmuxDir = mkdtempSync(join(tmpdir(), 'agent-sessions-tmux-'));
+    delete process.env['TMUX'];
+    delete process.env['TMUX_PANE'];
+    process.env['TMUX_TMPDIR'] = tmuxDir;
+  });
+
+  afterAll(() => {
+    spawnSync('tmux', ['kill-server']);
+    Object.entries(outerTmux).forEach(([key, value]) =>
+      value === undefined ? delete process.env[key] : (process.env[key] = value),
+    );
+    rmSync(tmuxDir, { recursive: true, force: true });
+  });
 
   const run = (args: string[], input?: string, env: NodeJS.ProcessEnv = {}) =>
     spawnSync('node', [SCRIPT, ...args], {
@@ -311,11 +334,11 @@ describe('agent-sessions', () => {
       const scoped = `${agent}@${basename(dir)}`;
       const exited = join(dir, 'exited.log');
       const started = join(dir, 'started.log');
-      const fakeAgent = join(dir, 'fake-agent.sh');
-      writeFileSync(fakeAgent, `printf '%s\\n' "$*" > ${started}; exec cat\n`);
+      const fakeAgent = join(dir, 'fakeagent');
+      writeFileSync(fakeAgent, `#!/bin/sh\nprintf '%s\\n' "$*" > ${started}; exec cat\n`, { mode: 0o755 });
 
       spawnSync('tmux', ['new-session', '-d', '-s', scoped, `read line; echo "$line" > ${exited}`]);
-      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', `sh ${fakeAgent}`]);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', fakeAgent]);
 
       try {
         run(['restart', agent, '--now', '--after', '0', '--process', '/handoff', 'resume', 'slug'], undefined, {
@@ -339,19 +362,63 @@ describe('agent-sessions', () => {
   );
 
   it.skipIf(!hasTmux)(
+    'drops a prompt that an older run stored with the command for restart --process',
+    async () => {
+      const agent = `claude-stale-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const started = join(dir, 'started.log');
+      const fakeAgent = join(dir, 'fakeagent');
+      writeFileSync(fakeAgent, `#!/bin/sh\nprintf '%s\\n' "$*" > ${started}; exec cat\n`, { mode: 0o755 });
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
+      spawnSync('tmux', [
+        'set-option',
+        '-t',
+        `=${scoped}:`,
+        '@ethlete_command',
+        `'${fakeAgent}' '/handoff resume old'`,
+      ]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+        });
+
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toBe('resume\n');
+        expect(
+          spawnSync('tmux', ['show-options', '-v', '-t', `=${scoped}:`, '@ethlete_command'], { encoding: 'utf8' })
+            .stdout,
+        ).toBe(`'${fakeAgent}'\n`);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
     'starts the program itself and not the shell function of the same name for restart --process',
     async () => {
       const agent = `claude-bypass-${process.pid}`;
       const scoped = `${agent}@${basename(dir)}`;
       const started = join(dir, 'started.log');
       const viaFunction = join(dir, 'via-function.log');
-      const fakeAgent = join(dir, 'fake-agent.sh');
+      const fakeAgent = join(dir, 'fakeagent');
       const rc = join(dir, 'rc.sh');
-      writeFileSync(fakeAgent, `printf '%s\\n' "$*" > ${started}; exec cat\n`);
-      writeFileSync(rc, `sh() { echo function > ${viaFunction}; }\n`);
+      writeFileSync(fakeAgent, `#!/bin/sh\nprintf '%s\\n' "$*" > ${started}; exec cat\n`, { mode: 0o755 });
+      writeFileSync(rc, `fakeagent() { echo function > ${viaFunction}; }\n`);
 
       spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
-      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', `sh ${fakeAgent}`]);
+      spawnSync('tmux', [
+        'set-option',
+        '-t',
+        `=${scoped}:`,
+        '@ethlete_command',
+        `PATH=${dir}:${process.env['PATH']} fakeagent`,
+      ]);
       spawnSync('tmux', ['set-environment', '-t', `=${scoped}:`, 'ENV', rc]);
 
       try {
@@ -377,7 +444,7 @@ describe('agent-sessions', () => {
       const agent = `claude-dialog-${process.pid}`;
       const scoped = `${agent}@${basename(dir)}`;
       const answered = join(dir, 'answered.log');
-      const fakeAgent = join(dir, 'fake-agent.sh');
+      const fakeAgent = join(dir, 'fakeagent');
       const dialog = [
         'Background work is running',
         'The following will stop when you exit:',
@@ -386,7 +453,7 @@ describe('agent-sessions', () => {
         '  2. Move to background and exit',
         '  3. Stay',
       ].join('\\n');
-      writeFileSync(fakeAgent, 'exec cat\n');
+      writeFileSync(fakeAgent, '#!/bin/sh\nexec cat\n', { mode: 0o755 });
 
       spawnSync('tmux', [
         'new-session',
@@ -395,7 +462,7 @@ describe('agent-sessions', () => {
         scoped,
         `read line; printf '${dialog}\\n'; read answer; echo answered > ${answered}`,
       ]);
-      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', `sh ${fakeAgent}`]);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', fakeAgent]);
 
       try {
         run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {

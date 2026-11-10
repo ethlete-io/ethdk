@@ -3828,3 +3828,66 @@ smoke step that starts the release bundle once and fails on a CSP refusal in the
 CDP listen socket leaks into child processes: the design server (`node .../cli design`) held `127.0.0.1:9333` after
 Studio started it. Both matter only when a build turns the debug port on, for example a future Studio e2e over CDP.
 Tool fix: report (a) and (b) upstream; a CDP harness deletes the key before the start.
+
+701\. Builder (2026-11-10, day shift, CI 42796254724): Unit tests red, components
+`src/scenarios/progress-steps.scenario.spec.ts` 6/6 failed with NG0303 "Can't bind to 'state'". 9e7c567d0 (B478) renamed
+the input `state` to `stepState` and left the scenario spec on `[state]`. Fix 7e1842ce5 (spec only). Suspect: the
+rename slice ran only the specs it touched; `vitest related` follows imports, and the scenario spec imports
+`PROGRESS_STEPS_IMPORTS`, not the renamed file; the lib `typecheck` target does not check inline test templates. Tool
+fix: a breaking (`!`) commit in a lib runs that lib's whole `src/scenarios/` folder before the commit. Numbers 699 and
+700 are the Mac B469 findings.
+
+As built (701): `.husky/commit-msg` runs `tools/scripts/check-breaking-scenarios.mjs` after commitlint. A header with
+`!` before the colon runs `vitest run --config libs/<lib>/vite.config.mts libs/<lib>/src/scenarios` for each staged lib
+with that folder (components, core, query), and a failure blocks the commit. Bite: the run on an export of 9e7c567d0
+fails with the 6 progress-steps failures of CI 42796254724 (820 others pass). The builder skill names the exception.
+
+702\. Doc agent (2026-11-10, day shift, 697 live bite): twice in a few minutes the human's terminal lost its tmux
+session ("schon wieder"); `claude-3@ethlete-sdk` was left with no client. During the second time the builder ran
+`agent-sessions.spec.ts`, and the human's tmux server held a session `claude-waiting-950238@agent-mailbox-if8GNH`
+("Waiting for 2 background agents") from a temp repo. Also the respawned process got the prompt twice:
+`command 'claude' '/handoff resume builder-2026-11-10' '/handoff resume builder-2026-11-10'`. Suspect: the spec and the
+restart code run tmux on the human's default server with `TMUX` set, so `switch-client` and `new-session` move the
+human's attached clients. Tool fix: every spec and fake agent uses an isolated tmux server (`-L` or a temp
+`TMUX_TMPDIR`, `TMUX` unset), agent-sessions calls `switch-client` only for a human `run`, and the respawn passes the
+prompt once. Bite: a spec run and a `restart --process` with a client attached to another session leave that client
+where it is.
+
+As built (702, 663a568cd). Cause, prompt twice: `claude-3` was created at 10:14:39Z by the `run` from before 812a67070,
+which stored the full command with the prompt in `@ethlete_command`; 812a67070 fixed only new sessions, and
+`restart --process` reused the stored value and wrote it back. Fix: `restart --process` strips a stored prompt and keeps
+`VAR=value` words; the spec "drops a prompt that an older run stored" fails without the fix. Suspect, client move: the
+agent-sessions spec inherited `TMUX` and ran on the human's server; its "stores the command of run" case calls `run`
+from a detached runner session, and `run` called `switch-client` without `-c`, so tmux moved the most recent real
+client. Not proven: that the move came from this case and not from the restart (the restart only does `respawn-pane`
+on the same pane; no move from it was seen). Fix: the spec runs on a private server (temp `TMUX_TMPDIR`, `TMUX` and
+`TMUX_PANE` unset, `kill-server` after); `run` switches only a client attached to the caller's session, and none if it
+has none. Bite: 3 full spec runs with two real clients attached and a 0.5 s watch of the real server: no new session,
+no client move; 37/37 pass on runs 2 and 3, run 1 had one 5 s poll timeout at load 13 that passed alone. Open: the
+same watch during one live `restart --process`.
+
+697 live bite (builder, 2026-11-10, 11:32): (a) the script answered the dialog and wrote the stopped job to the mailbox
+and `restart.log`: pass. (b) same session `claude-3@ethlete-sdk`, no new `claude-N`: pass. (c) `@ethlete_command` holds
+no prompt: fail, the stale value from 702, fixed in 663a568cd. (d) a new process (start time = restart time): pass.
+
+703\. Doc agent (2026-11-10, day shift): the human: "der builder schreibt btw schon wieder extrem viel im chat für
+mich. das ist eig doch verboten?" The builder pane (`claude-3@ethlete-sdk`, 11:48) shows full paragraphs to the human:
+the B480 options, a list of open items, "I removed B480 from my queue ...", "The push suite passed ... Now I push."
+The builder-agent skill forbids chat text between tool calls (Output section), and the human asked for this rule on
+2026-11-01 already. Suspect: the rule is only prose in the skill; after a restart or a long turn the session drifts back
+to the ste-clarity output style, which tells it to explain to the user. Nothing measures the chat text. Tool fix: a
+`Stop` hook that runs only when `ETHLETE_AGENT_ROLE=builder` and counts the assistant text of the turn outside tool
+calls; past one line it blocks the stop once with "builder: no chat text, send the report with SendMessage to the grill
+session" and logs the count to `restart.log` or the mailbox. Bite: a builder turn with a three-line chat reply gets the
+block; a turn with one closing line does not.
+
+Cause (measured by the builder, 2026-11-10): the builder process has no `ETHLETE_AGENT_ROLE` (unset in its env and in
+`/proc/<pid>/environ`), `claude-3` has no `@ethlete_role` option, and the command line has no `--append-system-prompt`
+(`claude /handoff resume builder-2026-11-10 /handoff resume builder-2026-11-10`). The `run` from before 812a67070 made
+`claude-3` without `--role builder`, so `restart --process` started plain `claude`, and the builder rule prompt never
+reached the session. The builder also did not run `/builder-agent` at resume, which the handoff asks for. So the hook
+above alone would not have fired here. Tool fix, added: `restart --process` keeps the role (from `@ethlete_role`, or
+from the handoff name `builder-*` and `doc-agent-*` when the option is missing) and refuses a restart of a paired
+session with no role; `/handoff resume` of a role handoff loads the role skill itself instead of a line that asks for it.
+Bite: a restart of a session made without `--role` comes back with `ETHLETE_AGENT_ROLE=builder` and the rule prompt in
+its command line.

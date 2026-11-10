@@ -131,6 +131,17 @@ const withoutPrompt = (words) => {
     (!previous.startsWith('-') || (/\s/.test(last) && !TEXT_VALUE_FLAGS.has(previous)));
   return isPrompt ? words.slice(0, -1) : words;
 };
+const SHELL_WORD = /(?:'[^']*'|\\.|[^\s'\\])+/g;
+const ENV_WORD = /^[A-Za-z_][A-Za-z0-9_]*=/;
+const unquoteWord = (word) => word.replace(/'([^']*)'|\\(.)/g, (_, quoted, escaped) => quoted ?? escaped);
+const commandWithoutPrompt = (command) => {
+  const tokens = [...command.matchAll(SHELL_WORD)];
+  const program = tokens.findIndex(([word]) => !ENV_WORD.test(word));
+  if (program < 0) return command;
+  const words = tokens.slice(program).map(([word]) => unquoteWord(word));
+  const kept = withoutPrompt(words).length;
+  return kept === words.length ? command : command.slice(0, tokens[program + kept].index).trimEnd();
+};
 const bypassingShellFunction = (base) => base.replace(/^((?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*)/, '$1command ');
 const EXIT_DIALOG_JOBS = /will stop when you exit/i;
 const EXIT_AND_STOP = /exit and stop/i;
@@ -394,7 +405,20 @@ if (command === 'send' && sender) {
       tmux('set-option', '-t', `=${session}:`, COMMAND_OPTION, baseCommand);
       if (role) tmux('set-option', '-t', `=${session}:`, ROLE_OPTION, role);
     }
-    process.exitCode = spawnSync('tmux', ['switch-client', '-t', `=${session}`], { stdio: 'inherit' }).status ?? 1;
+    const callerSession = tmux(
+      'display-message',
+      '-p',
+      '-t',
+      process.env.TMUX_PANE ?? '',
+      '#{session_id}',
+    ).stdout.trim();
+    const [callerClient] = callerSession
+      ? tmux('list-clients', '-t', callerSession, '-F', '#{client_tty}').stdout.split('\n').filter(Boolean)
+      : [];
+    process.exitCode = callerClient
+      ? (spawnSync('tmux', ['switch-client', '-c', callerClient, '-t', `=${session}`], { stdio: 'inherit' }).status ??
+        1)
+      : 0;
   } else {
     const created = sessionExists(session)
       ? []
@@ -479,7 +503,7 @@ if (command === 'send' && sender) {
       process.exitCode = 1;
     } else if (newProcess) {
       const pane = `=${session}:`;
-      const base = agentCommandOf(session);
+      const base = commandWithoutPrompt(agentCommandOf(session));
       tmux('set-option', '-p', '-t', pane, 'remain-on-exit', 'on');
       type('-l', sender.startsWith('codex') ? '/quit' : '/exit');
       sleep(ENTER_DELAY_MS);
