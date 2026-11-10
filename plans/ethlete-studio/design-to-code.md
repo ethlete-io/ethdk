@@ -3717,4 +3717,5 @@ hook runs `check-studio-adrs.mjs` when STATUS.md or an ADR is staged, but a fail
 archives by hand, not with `tools/scripts/archive-findings.mjs`, which appends. Tool fix: the hook stops the commit
 when the ADR check fails (bite: a STATUS row that cites a missing finding); the check also fails when an archive file
 loses a finding number that its last committed version had; the doc-agent and builder skills archive only with
-`archive-findings.mjs`.
+`archive-findings.mjs`. More evidence: f1e5b1fd7 went through although the hook printed "STATUS.md: not
+formatted" from `check-staged-plans.mjs`.
