@@ -25,7 +25,7 @@ const RUNNER = 'apps/ethlete-studio/e2e/canvas.e2e.mjs';
 const WORKSPACE_PARENTS = ['apps', 'libs', 'tools'];
 const DRAWING_BUILDS = ['cli', 'components', 'core'];
 
-export const STEPS = ['lint', 'typecheck', 'cli', 'studio', 'quota', 'e2e', 'repeat'];
+export const STEPS = ['lint', 'typecheck', 'cli', 'studio', 'quota', 'e2e', 'e2e-quota', 'repeat'];
 export const EXEMPT_PATHS = [/^plans\//, /^\.changeset\//, /\.md$/];
 
 export const parseArgs = (argv) => {
@@ -194,23 +194,81 @@ export const quotaStep = async (
       output: '',
       note: `skipped on ${os}: the CPU quota needs systemd-run --user, so a load-sensitive Studio case is not caught here`,
     };
+  return runUnderQuota(files, (file) => quotaCommand(file, quota), { run, quota, budgetMs, now });
+};
+
+const runUnderQuota = async (items, commandOf, { run, quota, budgetMs, now }) => {
   const startedAt = now();
   const ran = [];
-  for (const [index, file] of files.entries()) {
+  for (const [index, item] of items.entries()) {
     if (now() - startedAt >= budgetMs) {
-      const skipped = files.slice(index);
+      const skipped = items.slice(index);
       return {
         status: 0,
         output: '',
         note: `CPUQuota=${quota}%, ran ${ran.join(', ')}; over the ${seconds(budgetMs)} budget, skipped ${skipped.join(', ')}`,
       };
     }
-    const { command, args } = quotaCommand(file, quota);
+    const { command, args } = commandOf(item);
     const result = await run(command, args);
-    ran.push(file);
-    if (result.status !== 0) return { ...result, note: `CPUQuota=${quota}%, failed ${file}` };
+    ran.push(item);
+    if (result.status !== 0) return { ...result, note: `CPUQuota=${quota}%, failed ${item}` };
   }
   return { status: 0, output: '', note: `CPUQuota=${quota}%, ran ${ran.join(', ')}` };
+};
+
+export const E2E_QUOTA_PERCENT = 50;
+export const E2E_QUOTA_BUDGET_MS = 300_000;
+
+export const e2eQuotaCommand = (name, built, quota = E2E_QUOTA_PERCENT) => ({
+  command: 'systemd-run',
+  args: [
+    '--user',
+    '--scope',
+    '--quiet',
+    '-p',
+    `CPUQuota=${quota}%`,
+    process.execPath,
+    RUNNER,
+    '--built',
+    built,
+    '--no-timings',
+    '--workers',
+    '1',
+    '--case',
+    name,
+  ],
+});
+
+export const e2eQuotaStep = async (
+  { all, cases, reasons },
+  {
+    run,
+    build,
+    built,
+    quota = E2E_QUOTA_PERCENT,
+    budgetMs = E2E_QUOTA_BUDGET_MS,
+    available = canQuota,
+    now = () => performance.now(),
+    os = platform(),
+  },
+) => {
+  if (all)
+    return {
+      status: 0,
+      output: '',
+      note: `no case run under the quota: ${reasons.join('; ')}, and it runs changed cases only`,
+    };
+  if (cases.length === 0) return { status: 0, output: '', note: 'no changed e2e case' };
+  if (!available())
+    return {
+      status: 0,
+      output: '',
+      note: `skipped on ${os}: the CPU quota needs systemd-run --user, so a load-sensitive e2e case is not caught here`,
+    };
+  const studio = await build();
+  if (studio.status !== 0) return { ...studio, note: 'the Studio build for the quota run failed' };
+  return runUnderQuota(cases, (name) => e2eQuotaCommand(name, built, quota), { run, quota, budgetMs, now });
 };
 
 const git = (...args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
@@ -351,6 +409,35 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
       });
     },
     e2e: () => afterBuild(() => runStep(process.execPath, [join(dir, RUNNER)], dir, E2E_LOG)),
+    'e2e-quota': () =>
+      afterBuild(async () => {
+        const { affectedCases, caseSpans, changedLines, TRIGGERS } = await import('./studio-e2e-repeat.mjs');
+        const diff = git('diff', '-U0', range, '--', ...TRIGGERS);
+        if (diff.status !== 0) return { status: 1, output: diff.stderr };
+        const spans = caseSpans(readFileSync(join(dir, RUNNER), 'utf8'));
+        const built = mkdtempSync(join(tmpdir(), 'push-suite-e2e-quota-'));
+        try {
+          return await e2eQuotaStep(affectedCases(changedLines(diff.stdout), spans), {
+            run: (command, args) => runStep(command, args, dir),
+            build: () =>
+              runStep(
+                'npx',
+                [
+                  'nx',
+                  'build',
+                  'ethlete-studio',
+                  `--outputPath=${built}`,
+                  '--excludeTaskDependencies',
+                  '--skip-nx-cache',
+                ],
+                dir,
+              ),
+            built,
+          });
+        } finally {
+          rmSync(built, { recursive: true, force: true });
+        }
+      }),
     repeat: () =>
       afterBuild(async () => {
         const { changedLines, runRepeatGate, TRIGGERS } = await import('./studio-e2e-repeat.mjs');

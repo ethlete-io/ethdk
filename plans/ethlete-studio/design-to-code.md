@@ -4160,9 +4160,6 @@ failed 2 of 4 runs at load 18. Suspect: a timing bound that the load breaks (not
 the push gate itself can fail under the load that the gate exists to survive. Backlog: measure the case under the 735
 CPU throttle, then fix the wait at its cause (an event, not a longer timeout).
 
-In progress (Linux builder, 2026-11-10 night, 731): push:suite runs the changed Studio e2e cases under a CPU quota, with
-an own calibration and pass rule.
-
 764\. Linux builder (2026-11-10, night): CI 42907782323 (89aa166b4) red in `ci / Rust host`: `cargo install cargo-audit
 --locked --version 0.22.2` failed with "binary `cargo-audit` already exists in destination". Suspect (not proven by a
 CI run): Swatinem/rust-cache restores `~/.cargo/bin`, while the separate actions/cache key `cargo-audit-Linux-0.22.2`
@@ -4170,3 +4167,31 @@ misses, so two caches own one binary. Fix cd266da38 adds `--force`. Lesson: a st
 another cache restores has no single owner. Decided by the doc agent (tool internal, CI is red): the step skips the
 install when `cargo audit --version` already prints 0.22.2 and installs with `--force` otherwise, so a cache hit costs
 no rebuild; the next green run proves the suspect.
+
+As built (Linux builder, 731 e2e quota step): `yarn push:suite` has an `e2e-quota` step after `e2e` and before
+`repeat`. It is its own step, not a part of `quota`: it needs the drawing builds and a Studio build, and it runs after
+the e2e suite passed unthrottled, so a failure here means a load-sensitive case, not a broken one. It takes the cases
+the pushed range changes with the selection of the `repeat` step (`changedLines`, `caseSpans`, `affectedCases` over
+canvas.e2e.mjs, serve.ts and studio-api.ts). It builds Studio once without a quota, then runs each changed case once,
+one case at a time, on all its page groups, as `systemd-run --user --scope --quiet -p CPUQuota=50% node
+apps/ethlete-studio/e2e/canvas.e2e.mjs --built <dir> --no-timings --workers 1 --case <name>`. The scope wraps the
+whole runner (design server, its drawing, Chromium), because CI load slows all of them; a quota on Chromium alone
+misses a slow `/__design` answer. Page groups are not the unit: the Large group alone holds 32 cases and 751 s of
+quiet time. Pass rule: the runner exit status; a failed or not-run case fails the step. A change outside a case
+(fixtures, helpers, serve.ts, studio-api.ts) runs no case under the quota and the step line says why: the full suite
+does not fit the budget. No case starts after 300 s; the step line names the quota, the cases run and the cases
+skipped. Without `systemd-run --user` (macOS) the step passes with "skipped on darwin: the CPU quota needs systemd-run
+--user". The runner has a new `--no-timings` flag, so a throttled run does not write slow times into
+`canvas-timings.json`. Calibration, `[Large] › Tab focus shows the ring` with `--page Large`, one worker, case time
+(wall time of the run), load at start: quiet 3.4 s (19 s), load 5.3; 20% not run, the fixture listing timed out at
+60 s (67 s), load 5.9; 30% the same (65 s), load 7.1; 40% 18.5/13.2/12.9 s (83/83/76 s), load 14.2/5.8/3.6; 50%
+7.7/11.8/10.9/6.0 s (63/64/61/55 s), load 7.3/5.9/5.9/2.7. `left click on a frame selects it` on Large: 40%
+6.4/6.5 s (68/69 s), 50% 5.6/5.8 s (55 s), load 2.2-2.7. CI failed the Tab case at 4.6 s. 50% is the step quota: the
+case already runs slower than in CI (6-12 s), setup passes every time, and 40% adds about 20 s per run without a
+closer CI match. No run reproduced the CI failure (focused=false). Real step through `e2eQuotaStep` with a range that
+changes one line of the Tab case: `status=0 note=CPUQuota=50%, ran Tab focus shows the ring`, 103 s with the build,
+all five page groups. Bite: the spec against the HEAD push-suite.mjs fails on import (`does not provide an export
+named 'e2eQuotaCommand'`); with `e2e-quota` out of `STEPS` and the change-outside-a-case guard off, 2 of 31 fail
+("a change outside a case runs no e2e case under the quota and says why", "the e2e quota step runs after the e2e
+suite passes unthrottled"); with the change 31 of 31 pass. Not verified: a full `yarn push:suite` run, the step on
+the Mac, and that 50% catches the CI case (the failure did not recur here).
