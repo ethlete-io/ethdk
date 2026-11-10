@@ -120,3 +120,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - Night, later: Linux builder c18d4a1d0 (736+737 named shots, viewed hash) and 5a2a1a453 (archive rule, 22 findings moved)
   committed, not pushed. 766 item 1 (pane regex, send refuses a SendMessage peer) and 767 (stale variant views) wait in
   the Linux queue.
+- Night: B345 change-crop sketch is on origin (663088643); told the human in chat, they pick by merge in the morning.
