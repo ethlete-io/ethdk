@@ -45,7 +45,7 @@ export const PAGE_VARIANTS: PageVariant[] = [
 export const PAGE_PIN: Pin = {
   variant: 'g',
   state: 'part',
-  thread: [{ author: 'Tom Bornholdt', initials: 'TB', when: 'vor 5 Min', text: 'Ohne Panel fehlt mir der Baum.' }],
+  thread: [{ author: 'human', initials: 'TB', when: 'vor 5 Min', text: 'Ohne Panel fehlt mir der Baum.' }],
 };
 
 export const pageShot = (variant: PageVariant['key'], page: string, pin = '') =>
