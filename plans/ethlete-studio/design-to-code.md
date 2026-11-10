@@ -4098,3 +4098,19 @@ to be greater than 18000` after `s.settle(1001)`; 226 other files pass; not in t
 boundary flake where the expiry read sees a clock that did not advance on the fake clock (off by one between `settle`
 and the expiry tick); last commits there 3bf4f45db, ab8d48ca2. The fresh builder fixes it first (ADR 0230). Tool gap:
 open until the cause; check whether `spec:stress --slow` reproduces it, since the scenario runs on a fake clock.
+
+As built (706a, Mac builder, bfd02499d, not pushed). Cause: the hook matched the raw Bash text, so a heredoc body or a
+quoted string with `agent-sessions.mjs send` counted as a report, and a quoted `git commit` as a commit. Fix: the hook
+splits each command into simple commands, keeps quoted text in one word, drops heredoc bodies and comments; a commit is
+`git [opts] commit|push`, a send is `node [opts] <...>/agent-sessions.mjs send` or `yarn agents:sessions send`. Bite: 3
+new cases fail on the old hook; 20/20 pass. Live bite in a role session: the block reached the builder (log committed
+true, reported false, blocked true). Push blocked by 715.
+
+715\. Mac builder (2026-11-10, day shift, push suite for bfd02499d): `system-tsconfig.spec.ts` "keeps the editor
+tsconfig when the CLI runs from a temporary build" and "maps @design-system to the @ethlete/cli the checkout installs"
+fail on macOS: expected `/var/folders/...`, got `/private/var/folders/...`. Suspect: 707 (b354fc7e5) resolves the CLI
+root through `realpath`, and the spec builds its expectation from the unresolved temp path; macOS links `/var` to
+`/private/var`. Tool gap: CI runs the cli unit specs only on Linux, so a path spec that is wrong on macOS reached
+`next`; only the Mac push suite saw it. Tool fix (builder default): the spec helpers return `realpathSync` of every
+temp dir, and the cli unit job also runs on the macOS runner (or a lint flags `tmpdir()` without `realpathSync` in
+cli specs).
