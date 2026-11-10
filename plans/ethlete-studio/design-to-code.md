@@ -3743,6 +3743,9 @@ and took 5398 ms at 8% CPU before and after (232 ms idle); 8% is harsher than CI
 should pass on CI, but with little margin. Tool fix to build next: the push suite runs every staged Studio spec file
 once under a CPU quota (`yarn spec:stress <files> --runs 1 --slow 12`, which already exists), so the
 `slowCaseProblemOf` budget in `test-setup.mjs` sees CI-like timings; on an idle machine the budget never fires.
+Decided by the doc agent (tool internal): build it, after the current B249 item and before 723/729. Only changed
+Studio spec files; calibrate the quota so the 719 case times like CI (about 6 s), not 8%; cap the added time and print
+the quota used. Bite: the old sketch-view spec without the warm-up fails the push suite.
 
 As built (Mac builder, pushed as eb3356f7c): 713 in 27f3a3d35 (pre-commit runs `studio-label-specs.mjs --staged` when a
 studio spec or `studio-labels.ts` is staged; bite: temp repo with a bare upstream, the refusal case fails on the old
@@ -3837,3 +3840,9 @@ exits 1 with the fix command, the old script exits 0; a spec case covers it.
 status ready) whose diff removes the push gate badge, which 6530d25e7 already committed. Suspect: a direct-edit sketch
 stays behind when its change reaches git by another path. Tool fix (Linux builder, after B249): `design check` names a
 direct-edit sketch whose diff HEAD already holds as stale and the discard removes it; a spec bites on such a sketch.
+
+730\. Linux builder (2026-11-10, 719 fix): the opus subagent left 5 wait loops with `pgrep -f <pattern>` that match
+their own command line and never end; the builder killed them. Cause: known since finding 173; its tool fix B99 (Bash
+hook refuses `pgrep -f`/`pkill -f` wait loops and points to run_in_background or Monitor) is still unbuilt. Lesson: a
+brief line in each subagent prompt is a stop-gap; B99 is the tool fix. Stop-gap now (Linux builder): one line in its
+subagent brief template. B99 keeps its STATUS place.
