@@ -179,3 +179,28 @@ As built: today.
   assert.ok(!rest.includes('old built orphan') && !rest.includes('Built (2026-10-02)'));
   assert.ok(rest.includes('31\\.') && rest.includes('32\\.') && rest.includes('## Next'));
 });
+
+test('moves a young finding whose own As built line names it, unless STATUS names it', () => {
+  const young = `# Plan
+
+30\\. Builder (2026-11-10): built today.
+
+As built (Linux builder, 30): done.
+
+31\\. Builder (2026-11-10): open, an As built of another finding follows.
+
+As built (Linux builder, 719 step): other.
+
+32\\. Builder (2026-11-10): built, but STATUS prose names it.
+
+As built (Linux builder, 32): done.
+`;
+  const prose = `${status}\n**Werkzeug-Rückstand**: 32, 650.\n`;
+  const { plan: rest, moved } = archiveFindings(young, prose, { today: new Date('2026-11-10') });
+  assert.deepEqual(
+    moved.map((m) => m.number),
+    [30],
+  );
+  assert.match(rest, /31\\\. Builder/);
+  assert.match(rest, /32\\\. Builder/);
+});

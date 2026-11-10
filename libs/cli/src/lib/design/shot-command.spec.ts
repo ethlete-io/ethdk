@@ -144,7 +144,7 @@ describe('designShot', () => {
     const { code, text } = await run(['components/button']);
 
     expect(code).toBe(2);
-    expect(text).toContain('usage: et design shot <layer>/<name> --states');
+    expect(text).toContain('usage: et design shot <layer>/<name>[@<sketch>] --states');
   });
 
   it('rejects --at without --variants', async () => {
@@ -391,13 +391,84 @@ describe('shownVariantsOf', () => {
 
 describe('a sketch with extra targets', () => {
   it('is found by an extra target and draws its variants under the main target', () => {
-    const sketch = { targets: ['pages/a', 'pages/b'] };
+    const sketch = { target: 'pages/a', targets: ['pages/a', 'pages/b'] };
 
     expect(sketchHoldingOf([sketch], 'pages/b')).toBe(sketch);
     expect(sketchHoldingOf([sketch], 'pages/c')).toBeUndefined();
     expect(rowsOf({ part: 'pages/b', sketchTarget: 'pages/a', variants: ['one'], merged: false })[0]?.sketch).toEqual({
       target: 'pages/a',
       variant: 'one',
+    });
+  });
+});
+
+describe('two open sketches on one part', () => {
+  const a = { target: 'pages/system@a', targets: ['pages/system'] };
+  const b = { target: 'pages/system@b', targets: ['pages/system'] };
+
+  it('draws the sketch a <part>@<name> shot names, not the first one on the part', () => {
+    const held = sketchHoldingOf([a, b], 'pages/system@b');
+    const sketchTarget = typeof held === 'string' ? held : held?.target;
+
+    expect(sketchTarget).toBe('pages/system@b');
+    expect(rowsOf({ part: 'pages/system', sketchTarget, variants: ['one'], merged: true })[1]?.sketch).toEqual({
+      target: 'pages/system@b',
+      variant: 'one',
+    });
+    expect(sketchHoldingOf([a, b], 'pages/system@c')).toBeUndefined();
+  });
+
+  it('refuses a bare part and names the <part>@<name> targets, but draws the unnamed sketch of a bare part', () => {
+    expect(sketchHoldingOf([a, b], 'pages/system')).toBe(
+      'pages/system has 2 open sketches - name one: pages/system@a, pages/system@b',
+    );
+
+    const unnamed = { target: 'pages/system', targets: ['pages/system'] };
+
+    expect(sketchHoldingOf([a, unnamed], 'pages/system')).toBe(unnamed);
+    expect(sketchHoldingOf([a], 'pages/system')).toBe(a);
+  });
+
+  it('refuses a bare shot of a part with two named sketches before it draws', async () => {
+    const target = realpathSync(mkdtempSync(join(tmpdir(), 'cli-design-shot-named-')));
+
+    cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
+
+    const product = createSystemModules({ target, config: readConfig(target) ?? {} }).productOf('acme');
+
+    if (!product) throw new Error('no acme');
+
+    for (const name of ['a', 'b']) {
+      const parsed = parseTarget(`components/button@${name}`);
+
+      if (typeof parsed === 'string') throw new Error(parsed);
+
+      const created = createSketch({ merge: 'override', product, sketch: parsed, variants: ['one'] });
+
+      if (typeof created === 'string') throw new Error(created);
+    }
+
+    const run = async (part: string) => {
+      const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const code = await designShot({
+        target,
+        argv: [part, '--variants', '--product', 'acme'],
+        invocation: 'et design',
+      });
+      const text = error.mock.calls.flat().join('\n');
+
+      error.mockRestore();
+
+      return { code, text };
+    };
+
+    expect(await run('components/button')).toEqual({
+      code: 1,
+      text: 'design-explore: components/button has 2 open sketches - name one: components/button@a, components/button@b',
+    });
+    expect(await run('components/button@c')).toEqual({
+      code: 1,
+      text: 'design-explore: components/button@c has no open sketch in product "acme"',
     });
   });
 });

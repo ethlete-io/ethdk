@@ -1,6 +1,7 @@
 import { createHash } from 'crypto';
 import { IncomingMessage, ServerResponse } from 'http';
-import { isAbsolute } from 'path';
+import { mkdirSync, writeFileSync } from 'fs';
+import { dirname, isAbsolute } from 'path';
 import { Plugin } from 'postcss';
 import { blankPngOf } from './blank-png';
 import { chromiumOf } from './browser';
@@ -10,7 +11,7 @@ import { DesignPreset } from './design-config';
 import { DrawLedger } from './draw-ledger';
 import { fileOfModuleId, SketchVariant, SystemModules } from './system/system-modules';
 import { sketchIdOfName } from './system/sketch/sketch';
-import { recordShotViewed } from './system/sketch/viewed-shots';
+import { recordShotViewed, viewedShotFileOf } from './system/sketch/viewed-shots';
 import {
   Browser,
   callDrawsFrom,
@@ -752,10 +753,16 @@ export const createPartShooter = (options: {
     });
   };
 
-  const viewed = ({ product, target, variant }: SketchVariant & { product: string }) => {
+  const viewed = ({ product, target, variant, png }: SketchVariant & { product: string; png: Buffer }) => {
     const sketch = system.sketchOf(product, target);
 
-    if (sketch) recordShotViewed({ target: options.target, sketch, variant });
+    if (!sketch) return;
+
+    const shot = viewedShotFileOf({ target: options.target, sketch, variant });
+
+    mkdirSync(dirname(shot), { recursive: true });
+    writeFileSync(shot, png);
+    recordShotViewed({ target: options.target, sketch, variant, shot });
   };
 
   return {
@@ -906,7 +913,7 @@ export const createPartShooter = (options: {
             want,
             onSource,
           }).then((picture) => {
-            if (sketchVariant && want.priority === 'high') viewed({ product, ...sketchVariant });
+            if (sketchVariant && want.priority === 'high') viewed({ product, ...sketchVariant, png: picture.png });
 
             return picture.png;
           }),

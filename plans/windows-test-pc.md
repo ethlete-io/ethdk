@@ -1,6 +1,6 @@
 # Windows test PC (later)
 
-Status: idea, not started. Raised by the human on 2026-11-10.
+Status: decided (ADR 0258): `rack` runs the Windows CEF spike B480, after the night shift. In the coming weeks `rack` belongs to the builder alone (no guests). It may be off: wake it with `sh spiele-pc.sh an` in `~/umbau-elrond/elrond/spiele-pcs/` (Wake-on-LAN), check with `status`. Raised by the human on 2026-11-10.
 
 The machine is `rack`, one of the two guest game PCs set up from the human's home-server repo
 (`~/umbau-elrond/elrond/spiele-pcs/`, README and `pcs.tsv`): a Minisforum AR900i (Intel), Windows with a local account,

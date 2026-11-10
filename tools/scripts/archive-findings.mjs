@@ -33,6 +33,7 @@ export const splitFindings = (planText) => {
 };
 
 const BUILT_LINE = /^(As built|Built)\b/;
+const namedIn = (text, number) => new RegExp(`(?<![\\d.])${number}(?![\\d])`).test(text);
 const HEADING = /^#/;
 
 const extentOf = (lines, from) => {
@@ -57,10 +58,13 @@ export const archiveFindings = (planText, statusText, { today, days = 5 } = {}) 
     if (done.has(block.number)) {
       text = block.lines.join('\n');
       to = block.to;
-    } else if (today && !cited.has(block.number) && (today - new Date(date[0])) / DAY_MS > days) {
+    } else if (!cited.has(block.number) && !namedIn(statusText, block.number)) {
       to = extentOf(lines, block.from);
       const extent = lines.slice(block.from, to);
-      if (!extent.some((line) => BUILT_LINE.test(line))) continue;
+      const old = today && (today - new Date(date[0])) / DAY_MS > days;
+      const builtLines = extent.filter((line) => BUILT_LINE.test(line));
+      if (!builtLines.length) continue;
+      if (!old && !builtLines.some((line) => namedIn(line, block.number))) continue;
       text = extent.join('\n');
     } else {
       continue;
