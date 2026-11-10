@@ -141,15 +141,20 @@ fn smoke_script(view: &str) -> String {
   if (window.top !== window) return;
   console.error('{SMOKE_MARKER} page loaded');
   localStorage.setItem(key, {view});
+  let waiting = '';
   const timer = setInterval(() => {{
     const view = document.querySelector('ethlete-sketch-view');
-    if (!view) return;
-    const frames = view.querySelectorAll('iframe[data-state]');
-    const pictures = view.querySelectorAll('img[data-shot-picture]');
+    const frames = view ? view.querySelectorAll('iframe[data-state]') : [];
+    const pictures = view ? view.querySelectorAll('img[data-shot-picture]') : [];
     const painted =
       [...frames].filter((frame) => !frame.classList.contains('opacity-0')).length +
       [...pictures].filter((picture) => picture.complete && picture.naturalWidth > 0).length;
-    if (!painted) return;
+    if (!painted) {{
+      const now = `${{location.pathname}} sketch view ${{view ? 'shown' : 'missing'}}, ${{frames.length}} live frames, ${{pictures.length}} pictures`;
+      if (now !== waiting) console.error(`{SMOKE_MARKER} waiting: ${{now}}`);
+      waiting = now;
+      return;
+    }}
     clearInterval(timer);
     console.error(`{SMOKE_MARKER} painted ${{painted}} of ${{frames.length}} live frames and ${{pictures.length}} pictures`);
   }}, 500);

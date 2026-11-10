@@ -42,6 +42,7 @@ const VIEW_ENV = 'ETHLETE_STUDIO_SMOKE_VIEW';
 const MARKER = '[studio-release-smoke]';
 const LOADED = `${MARKER} page loaded`;
 const PAINTED = `${MARKER} painted`;
+const WAITING = `${MARKER} waiting:`;
 const LOAD_MS = 30_000;
 const CSP = 'Content Security Policy';
 const IDENTIFIER = 'io.ethlete.studio';
@@ -265,8 +266,10 @@ show('console error', errors);
 
 const ok = Boolean(painted) && refusals.length === 0 && errors.length === 0;
 const lockedNote = locked ? ' (the screen is locked)' : '';
+const lastWait = text.split('\n').findLast((line) => line.includes(WAITING));
+const waitNote = lastWait ? ` (last: ${lastWait.slice(lastWait.indexOf(WAITING) + WAITING.length).trim()})` : '';
 const notPainted = loaded
-  ? `no frame painted in ${timeoutMs / 1000} s${lockedNote}`
+  ? `no frame painted in ${timeoutMs / 1000} s${waitNote}${lockedNote}`
   : `no page loaded in ${LOAD_MS / 1000} s (native dialog?)${lockedNote}`;
 
 console.log(
