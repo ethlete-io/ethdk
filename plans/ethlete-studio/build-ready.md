@@ -743,3 +743,9 @@ a record"). The reader mapping stays until no pictures.json holds a legacy key.
 ## As built: B249 step 5 docs (2026-11-10, Linux)
 
 Docs commit "docs(cli): Document build-ready instead of go and accept". `apps/docs/cli/index.md` has a Build-ready section in place of the go/accept text; the design-exploration skill (content, `.agents`, `.claude` copies) and `studio-design-part` follow it. Verified: the done grep is empty, `yarn agents:sync` ran after prettier, `yarn vitepress build apps/docs` passes.
+
+## As built: B249 step 4 data migration, part 2 (2026-11-10, Linux)
+
+The commit that holds this section removes `.ethlete/design/studio/go.json` (possible after 77e87c6b2 dropped the
+go.json rule of the git-safety hook), its person-names baseline entry, and `go.json` from the commit-hunks spec list.
+Verified: commit-hunks spec, `check-person-names.mjs`. Not verified: a `design check` on the repo design.
