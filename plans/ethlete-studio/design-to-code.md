@@ -4197,3 +4197,10 @@ named 'e2eQuotaCommand'`); with `e2e-quota` out of `STEPS` and the change-outsid
 ("a change outside a case runs no e2e case under the quota and says why", "the e2e quota step runs after the e2e
 suite passes unthrottled"); with the change 31 of 31 pass. Not verified: a full `yarn push:suite` run, the step on
 the Mac, and that 50% catches the CI case (the failure did not recur here).
+
+As built (Linux builder, 745): `startCommandOf(base)` (stamp.ts) gives `DE_PORT=<port of base> et design`. The
+`serve-state` "nothing answers" hint, its terminal restart line and the stamp `NO SERVER` line name it instead of
+`et design`. A terminal serve prints `design-explore: 4402 left to Studio, serving on <port> (DE_PORT=4402 binds 4402)`
+(`terminalPortLine`, serve.ts) in place of "not started by Studio, so it listens on a free port". Bite: with
+`startCommandOf` back to `et design`, 2 of 4 serve-state cases fail; with the change 4/4, the `terminalPortLine` case
+passes, cli typecheck passes. Not verified: a real terminal `et design` run that shows the new line.

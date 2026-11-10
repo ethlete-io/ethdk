@@ -3,6 +3,8 @@ import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, resolve } from 'path';
 import { assetRoot } from './package-root';
 
+export const startCommandOf = (base: string) => `DE_PORT=${new URL(base).port || '80'} et design`;
+
 export const STAMP_PATH = '/__design/stamp';
 
 export const BUILD_INFO_FILE = 'build-info.json';
@@ -113,7 +115,7 @@ export const serverProblemOf = async (options: { base: string; own: BuildStamp }
   if (!response) {
     const reason = String((failure as { cause?: unknown } | null)?.cause ?? failure);
 
-    return `NO SERVER - nothing answers at ${base} (${reason}). Start it with \`et design\`.`;
+    return `NO SERVER - nothing answers at ${base} (${reason}). Start it with \`${startCommandOf(base)}\`.`;
   }
 
   const served = await response.json().catch(() => null);

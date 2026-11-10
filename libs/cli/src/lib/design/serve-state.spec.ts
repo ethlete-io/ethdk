@@ -5,8 +5,11 @@ const own = { version: '1.0.0', build: 'aaa' };
 const base = 'http://localhost:4402';
 
 describe('serveStateLines', () => {
-  it('says nothing answers', () => {
-    expect(serveStateLines({ base, own, served: null })[0]).toContain('nothing answers');
+  it('says nothing answers and names the command that binds the port', () => {
+    const [line] = serveStateLines({ base, own, served: null });
+
+    expect(line).toContain('nothing answers');
+    expect(line).toContain('`DE_PORT=4402 et design`');
   });
 
   it('names the Studio app as owner and the Studio restart for an older build', () => {
@@ -28,6 +31,7 @@ describe('serveStateLines', () => {
     expect(text).toContain('served by a terminal (pid 7)');
     expect(text).toContain('the server runs it');
     expect(text).toContain('Stop pid 7');
+    expect(text).toContain('run `DE_PORT=4402 et design` again');
   });
 
   it('reads a server that predates the identity', () => {

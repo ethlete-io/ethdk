@@ -1,5 +1,5 @@
 import { ServerIdentity } from './server-identity';
-import { BuildStamp, stampUrlsOf } from './stamp';
+import { BuildStamp, stampUrlsOf, startCommandOf } from './stamp';
 
 type Served = Partial<ServerIdentity> & Partial<BuildStamp>;
 
@@ -19,7 +19,7 @@ const fetchServed = async (base: string): Promise<Served | null> => {
 export const serveStateLines = (options: { base: string; own: BuildStamp; served: Served | null }) => {
   const { base, own, served } = options;
 
-  if (!served) return [`serve: nothing answers at ${base}. Start it with \`et design\`, or open Studio.`];
+  if (!served) return [`serve: nothing answers at ${base}. Start it with \`${startCommandOf(base)}\`, or open Studio.`];
 
   const stamp = served.stamp ?? (served.version && served.build ? (served as BuildStamp) : null);
   const owner = served.owner ?? 'unknown';
@@ -30,7 +30,7 @@ export const serveStateLines = (options: { base: string; own: BuildStamp; served
     owner === 'studio'
       ? 'Press restart in Studio (the design_server_restart command). Do not kill the process, Studio would be left without a server.'
       : owner === 'terminal'
-        ? `Stop pid ${pid} (Ctrl+C in its terminal) and run \`et design\` again.`
+        ? `Stop pid ${pid} (Ctrl+C in its terminal) and run \`${startCommandOf(base)}\` again.`
         : `Restart whatever started pid ${pid}; Studio if it runs in the Studio app.`;
 
   return [

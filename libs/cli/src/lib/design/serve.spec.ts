@@ -26,6 +26,7 @@ import {
   createDesignServer,
   sendHeldJson,
   serveDesign,
+  terminalPortLine,
 } from './serve';
 import { resolveProduct } from './system/resolve-product';
 import { createSketch, markSketchReady, parseTarget, Sketch } from './system/sketch/sketch';
@@ -94,6 +95,14 @@ const makeTarget = (config?: unknown) => {
 
   return target;
 };
+
+describe('terminalPortLine', () => {
+  it('names the port left to Studio, the port it serves on and how to bind the Studio port', () => {
+    expect(terminalPortLine(4402, 51234)).toBe(
+      'design-explore: 4402 left to Studio, serving on 51234 (DE_PORT=4402 binds 4402)',
+    );
+  });
+});
 
 describe('serveDesign', () => {
   it('exits 1 without a config', async () => {

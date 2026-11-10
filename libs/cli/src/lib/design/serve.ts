@@ -1084,6 +1084,9 @@ const designExplore = ({
   };
 };
 
+export const terminalPortLine = (studioPort: number, port: number) =>
+  `design-explore: ${studioPort} left to Studio, serving on ${port} (DE_PORT=${studioPort} binds ${studioPort})`;
+
 const freePortOf = () =>
   new Promise<number>((resolvePort, reject) => {
     const probe = createNetServer();
@@ -1306,22 +1309,19 @@ export const serveDesign = async (options: {
 
   const ownedByStudio = process.env['ETHLETE_DESIGN_EXIT_ON_STDIN_CLOSE'] === '1';
   const portPinned = ownedByStudio || !!Number(process.env['DE_PORT']);
+  const freePort = portPinned ? undefined : await freePortOf();
   const server = await createDesignServer({
     target,
     config,
     listen: true,
     host,
-    listenOn: portPinned ? undefined : await freePortOf(),
+    listenOn: freePort,
     checkSketches,
   });
 
   await server.listen();
   console.log(`design-explore: drawing ${target}`);
-  if (!portPinned) {
-    console.log(
-      `design-explore: not started by Studio, so it listens on a free port and leaves ${portOf(config)} to Studio`,
-    );
-  }
+  if (freePort) console.log(terminalPortLine(portOf(config), freePort));
   server.printUrls();
 
   if (process.env['ETHLETE_DESIGN_SLOW_CHECKS'] !== 'off')
