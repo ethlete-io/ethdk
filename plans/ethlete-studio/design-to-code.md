@@ -4192,3 +4192,15 @@ takes the port in between. Fix: an own server runs with `strictPort: false` and 
 mocked probe returns a held port). Open from 712: `serveDesign` with an unpinned port has the same probe gap, because the
 user's server must keep its logged port. 715 open point in b7e8f7b6a (`realOf()` resolves the nearest existing
 ancestor; bite in `package-root.spec.ts`).
+
+720\. Builder (2026-11-10, day shift, B249 real-config "Sketch öffnen" check, studio harness kept): the footer of
+`components/title-bar` stays "Wird geprüft" and never shows "Sketch öffnen". Measured: `design check --product studio
+--part components/title-bar` prints `NO RECORD … open-point: 3 missing states … (+1 more)` and writes no record; then
+`/__design/open-points` returns blockers `[stale-record, open-point …]` and the point `direct-edit components/title-bar@edit`.
+Suspect (code reading): `buildReadyStatusOf` in `apps/ethlete-studio/src/app/system-view/open-points.ts` returns `checking`
+when any blocker is `pending` or `stale-record`, before the direct edit maps to a blocker, so a stale record hides every
+real point. Why the tool missed it: no spec or e2e case combines a direct-edit point with a refused record; the earlier
+green check (718) ran without the harness. Fix (doc agent, applies the B249 footer decision): "Wird geprüft" only while a
+check is pending or running; after a refused record the footer shows the real blockers and "Sketch öffnen". Tool fix:
+an open-points spec and an e2e case with a refused record and a direct-edit point, failing on the old code. 719 did not
+recur on CI 42830064915.
