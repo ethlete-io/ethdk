@@ -46,6 +46,8 @@ until they say they are back.
 - Mac builder: 708 committed 4ae5bc51c (report not yet in), now 709 app-icon sketch, then B482. Mac mailbox wait must be
   restarted after a restart (command above).
 - Issue #3172 tooltip touch: built 181eb140d, pushed; the human comments/closes the issue.
+- Step 4 part 1 8dd5634d0 (accepted.json removed); studio/go.json waits for step 3. pictures.json legacy keys: left
+  (doc agent), with a spec that a writePictures round trip rewrites go/review to record.
 - New idea of the human: `plans/windows-test-pc.md` (the `rack` PC, for later).
 
 ## Open questions for the human
