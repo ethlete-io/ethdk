@@ -22,7 +22,8 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-src 'self' http://localhost:* http://127.0.0.1:*; connect-src 'self' ipc: http://ipc.localhost"
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: http://localhost:* http://127.0.0.1:*; font-src 'self' https://fonts.gstatic.com; frame-src 'self' http://localhost:* http://127.0.0.1:*; connect-src 'self' ipc: http://ipc.localhost http://localhost:* http://127.0.0.1:*",
+      "dangerousDisableAssetCspModification": ["style-src"]
     }
   },
   "bundle": {
