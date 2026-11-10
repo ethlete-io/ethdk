@@ -19,7 +19,14 @@ import { basename, dirname, join, resolve } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from './design-config';
 import { installedAssetRoot } from './package-root';
-import { DESIGN_EVENTS_HEARTBEAT_MS, KEEP_ALIVE_MS, createDesignServer, sendHeldJson, serveDesign } from './serve';
+import {
+  DELAY_FRAMES_ENV,
+  DESIGN_EVENTS_HEARTBEAT_MS,
+  KEEP_ALIVE_MS,
+  createDesignServer,
+  sendHeldJson,
+  serveDesign,
+} from './serve';
 import { resolveProduct } from './system/resolve-product';
 import { createSketch, markSketchReady, parseTarget, Sketch } from './system/sketch/sketch';
 import { CheckSketches, openSketchListingAt } from './system/sketch/sketch-checker';
@@ -528,6 +535,32 @@ describe('the design server for a design system', () => {
     expect(plugin?.resolveId('@system/components/button', `${join(target, 'x.ts')}?design-product=acme`)).toMatch(
       /acme\/components\/button\/button\.ts\?design-product=acme$/,
     );
+  });
+
+  it('holds each frame document for the delay in the environment, and no other path, only when it is set', async () => {
+    const unset = await serveAcme(acme());
+
+    vi.stubEnv(DELAY_FRAMES_ENV, '60');
+
+    const set = await serveAcme(acme());
+
+    vi.unstubAllEnvs();
+
+    expect(unset.handlers.has('/frame.html')).toBe(false);
+    expect([...set.handlers.keys()].filter((path) => !unset.handlers.has(path))).toEqual(['/frame.html']);
+
+    const next = vi.fn();
+    const hold = set.handlers.get('/frame.html') as unknown as (
+      request: unknown,
+      response: unknown,
+      next: () => void,
+    ) => void;
+
+    hold({}, {}, next);
+    await delay(30);
+    expect(next).not.toHaveBeenCalled();
+    await delay(60);
+    expect(next).toHaveBeenCalledTimes(1);
   });
 
   it('rebuilds the parts registry and every import a product resolved when a part file comes or goes, and leaves the frames to Studio', async () => {

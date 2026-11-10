@@ -72,6 +72,19 @@ if (!(Number.isInteger(delayPicturesMs) && delayPicturesMs >= 0)) {
   process.exit(2);
 }
 
+if (args.includes('--delay-frames')) process.env['STUDIO_E2E_DELAY_FRAMES'] = args[args.indexOf('--delay-frames') + 1];
+
+const delayFramesMs = Number(process.env['STUDIO_E2E_DELAY_FRAMES'] ?? 0);
+
+if (!(Number.isInteger(delayFramesMs) && delayFramesMs >= 0)) {
+  console.error(`invalid --delay-frames ${process.env['STUDIO_E2E_DELAY_FRAMES']}, expected a whole number of ms`);
+  process.exit(2);
+}
+
+if (delayFramesMs) process.env['ETHLETE_DESIGN_DELAY_FRAMES_MS'] = String(delayFramesMs);
+
+const framesDelayedNote = delayFramesMs ? `, frame documents delayed ${delayFramesMs} ms` : '';
+
 const TIMINGS_FILE = join(root, 'node_modules/.cache/studio-e2e/canvas-timings.json');
 
 const cliEntry = resolve(root, process.env['STUDIO_CLI_ENTRY'] ?? 'dist/libs/cli/src/index.js');
@@ -3548,7 +3561,7 @@ const lead = async () => {
   const record = (job, result) => {
     rows.push({ ...job, ...result });
     console.log(
-      `  ${result.ok ? '✓' : '✘'}  ${rows.length} [${job.page}] › ${job.name} ${result.detail}${result.ok ? '' : ` - load ${loadavg()[0].toFixed(1)} on ${busy.size || 1} worker(s)`} (${seconds(result.ms ?? 0).trim()})`,
+      `  ${result.ok ? '✓' : '✘'}  ${rows.length} [${job.page}] › ${job.name} ${result.detail}${result.ok ? '' : ` - load ${loadavg()[0].toFixed(1)} on ${busy.size || 1} worker(s)${framesDelayedNote}`} (${seconds(result.ms ?? 0).trim()})`,
     );
   };
   let fixtureFault;
@@ -3572,7 +3585,7 @@ const lead = async () => {
       for (const child of children) child.send({ type: 'built' });
     });
     console.log(
-      `[canvas-e2e] ${total} cases${shardLabel} on ${workers} worker(s)${perfOnly ? ' (perf only)' : skippedPerf ? `, ${skippedPerf} perf case(s) skipped (--perf runs them)` : ''}`,
+      `[canvas-e2e] ${total} cases${shardLabel} on ${workers} worker(s)${perfOnly ? ' (perf only)' : skippedPerf ? `, ${skippedPerf} perf case(s) skipped (--perf runs them)` : ''}${framesDelayedNote}`,
     );
     console.log(`Running ${total} test${total === 1 ? '' : 's'} using ${workers} worker${workers === 1 ? '' : 's'}`);
 

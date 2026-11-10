@@ -4,7 +4,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { AddressInfo, createServer as createNetServer } from 'net';
 import { setTimeout as delay } from 'timers/promises';
 import { basename, dirname, join, relative, resolve, sep } from 'path';
-import { interval, Subscription, tap } from 'rxjs';
+import { interval, Subscription, tap, timer } from 'rxjs';
 import { CALLS_PATH, callSlugsOf, listCalls } from './calls';
 import { writeCallsTsconfig } from './calls-tsconfig';
 import { exitWhenParentGone } from './parent-watch';
@@ -435,6 +435,15 @@ const isSketchFile = (designRoot: string, file: string) => {
 
 // Workaround: WebKit drops an event stream that sends nothing for 60 seconds.
 export const DESIGN_EVENTS_HEARTBEAT_MS = 20_000;
+
+/** Test tooling: when set to a whole number of ms, every `/frame.html` document waits that long before it is served. */
+export const DELAY_FRAMES_ENV = 'ETHLETE_DESIGN_DELAY_FRAMES_MS';
+
+const frameDelayMsOf = () => {
+  const ms = Number(process.env[DELAY_FRAMES_ENV] ?? 0);
+
+  return Number.isInteger(ms) && ms > 0 ? ms : 0;
+};
 
 /**
  * A server-sent event stream for Studio: `comments`, `notes`, `flows`, `calls` and `sketches` when a file of that
@@ -891,6 +900,14 @@ const designExplore = ({
           void (held ? sendHeldJson(response, answered) : answered.then((answer) => sendJson(response, answer)));
         };
 
+      const frameDelayMs = frameDelayMsOf();
+
+      if (frameDelayMs)
+        vite.middlewares.use('/frame.html', (...[, , next]: [unknown, unknown, () => void]) =>
+          timer(frameDelayMs)
+            .pipe(tap(() => next()))
+            .subscribe(),
+        );
       vite.middlewares.use(STAMP_PATH, (_request: unknown, response: ServerResponse) => {
         response.setHeader('content-type', 'application/json');
         response.end(JSON.stringify({ ...stamp, ...identityOf() }));

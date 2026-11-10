@@ -3898,6 +3898,17 @@ the same navigation; the 680 print `initiator about:blank, iframe src then <same
 next round: count the `src` sets per iframe in the case and delay `frame.html` on the server side, because the
 Playwright routes do not reach the frame documents.
 
+As built (2026-11-10, `--delay-frames`): the Studio e2e runner takes `--delay-frames <ms>` (env
+`STUDIO_E2E_DELAY_FRAMES`, a whole number of ms or exit 2). It sets `ETHLETE_DESIGN_DELAY_FRAMES_MS` for the
+design server, which then mounts a `/frame.html` middleware that waits that long before Vite answers; unset, no
+middleware is mounted. The run header and each failed row say `frame documents delayed <ms> ms`. A
+`serve.spec.ts` case covers unset, set, and that only `/frame.html` is held. Commit `test(repo): Add a frame
+delay flag to the Studio e2e runner`. Bite on Sketches, "first load creates one iframe per frame and aborts no
+frame request": undelayed passed, visible loaded at 4567 ms, 0 of 0 aborted; with `--delay-frames 3000` it
+failed, visible loaded at 6260 ms, 2 of 2 frame requests aborted at 20 ms (`initiator about:blank, iframe src
+then detached`). Not verified: why the delayed load is only about 1.7 s later, not 3 s, and whether the aborts
+come from the `followLoad$` retry; that is the next slice.
+
 681\. Builder (2026-11-10, Mac night, B466-only push:suite in a worktree at 11de10881 = origin/next f6a97186f + c11cc03ac,
 B471): the e2e step failed on `[System] page switch time is logged to the design timings` (`icons->shell-main first:
 mount 37, first 4730, all NOT (5 painted; 17 marked img/iframe, 8 canvas frames ...)`, 33.1 s): under load not every
