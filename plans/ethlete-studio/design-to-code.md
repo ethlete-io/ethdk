@@ -4012,3 +4012,16 @@ click), but the removal took 15 and 25 rounds (118 ms, 30 ms) in 2 of 9 calls. T
 waits for the menu state with a 3 s deadline (`until`), not a round count. Verified: 13/13 normal;
 `spec:stress --slow 13` 4/4 (2 of 3 failed before, finding 705); the multi-section case still fails when the second
 click is left out. Tool gap: none, B481 found it.
+
+710\. Builder (2026-11-10, day shift, CI 42810531430 on 7d4202f19): Unit tests red, cli `part-accept:56`, `part-go:106`
+and `part-ready:176` time out at 30 s. The pushed range had no `libs/cli` change; 3c5f77755 was green. Reproduces:
+`spec:stress --slow 13` 0/3 for all three files; a direct slowed run times out the first case of `part-accept` at
+30.1 s. Unloaded, the first case takes 2.5 s, the others 0.1 to 1.4 s. Suspect: each failing case is the first
+`openPointsAnswer` call of its file, which cold-starts the open-points worker from `.ts` through jiti
+(`open-points-runner.ts` `startWorker`) and loads the rules and Tailwind; on a slow CI shard that alone nears 30 s. Not
+measured yet: the share of the worker start in the 2.5 s. Fix (builder default): warm the worker in a `beforeAll` with
+its own long timeout, shared as a spec helper; bite under `--slow 13`. Tool gap: B481 can reproduce such a flake, but
+only on demand; the push suite runs `nx test cli` unloaded, so a cold start that nears the timeout only on a slow
+runner reaches CI unseen, also from a range that does not touch the lib. Tool fix (builder default): a scheduled
+`spec:stress --slow 13` sweep over the cli and Studio spec files (nightly CI job or a local timer) that reports each
+file under 100 % as a finding, and a spec helper for cold-start work (worker, compile) that every first case uses.
