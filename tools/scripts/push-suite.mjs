@@ -14,7 +14,7 @@ import {
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { cpus, loadavg, tmpdir } from 'node:os';
+import { cpus, loadavg, platform, tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -25,7 +25,7 @@ const RUNNER = 'apps/ethlete-studio/e2e/canvas.e2e.mjs';
 const WORKSPACE_PARENTS = ['apps', 'libs', 'tools'];
 const DRAWING_BUILDS = ['cli', 'components', 'core'];
 
-export const STEPS = ['lint', 'typecheck', 'cli', 'studio', 'e2e', 'repeat'];
+export const STEPS = ['lint', 'typecheck', 'cli', 'studio', 'quota', 'e2e', 'repeat'];
 export const EXEMPT_PATHS = [/^plans\//, /^\.changeset\//, /\.md$/];
 
 export const parseArgs = (argv) => {
@@ -147,6 +147,70 @@ export const typecheckStep = async (projects, dir) => {
   if (checked.length === 0) return { status: 0, output: '', note: 'no touched project has a typecheck target' };
   const run = await runStep('npx', ['nx', 'run-many', '-t', 'typecheck', '-p', ...checked], dir);
   return { ...run, note: checked.join(', ') };
+};
+
+const STUDIO_ROOT = 'apps/ethlete-studio';
+export const QUOTA_PERCENT = 20;
+export const QUOTA_BUDGET_MS = 180_000;
+
+export const quotaSpecFiles = (files) =>
+  files.filter((file) => file.startsWith(`${STUDIO_ROOT}/`) && file.endsWith('.spec.ts')).sort();
+
+export const quotaCommand = (file, quota = QUOTA_PERCENT) => ({
+  command: 'systemd-run',
+  args: [
+    '--user',
+    '--scope',
+    '--quiet',
+    '-p',
+    `CPUQuota=${quota}%`,
+    'npx',
+    'vitest',
+    'run',
+    '--root',
+    STUDIO_ROOT,
+    '--maxWorkers=1',
+    relative(STUDIO_ROOT, file),
+  ],
+});
+
+const canQuota = () => spawnSync('systemd-run', ['--user', '--scope', '--quiet', 'true']).status === 0;
+
+export const quotaStep = async (
+  files,
+  {
+    run,
+    quota = QUOTA_PERCENT,
+    budgetMs = QUOTA_BUDGET_MS,
+    available = canQuota,
+    now = () => performance.now(),
+    os = platform(),
+  },
+) => {
+  if (files.length === 0) return { status: 0, output: '', note: 'no changed Studio spec file' };
+  if (!available())
+    return {
+      status: 0,
+      output: '',
+      note: `skipped on ${os}: the CPU quota needs systemd-run --user, so a load-sensitive Studio case is not caught here`,
+    };
+  const startedAt = now();
+  const ran = [];
+  for (const [index, file] of files.entries()) {
+    if (now() - startedAt >= budgetMs) {
+      const skipped = files.slice(index);
+      return {
+        status: 0,
+        output: '',
+        note: `CPUQuota=${quota}%, ran ${ran.join(', ')}; over the ${seconds(budgetMs)} budget, skipped ${skipped.join(', ')}`,
+      };
+    }
+    const { command, args } = quotaCommand(file, quota);
+    const result = await run(command, args);
+    ran.push(file);
+    if (result.status !== 0) return { ...result, note: `CPUQuota=${quota}%, failed ${file}` };
+  }
+  return { status: 0, output: '', note: `CPUQuota=${quota}%, ran ${ran.join(', ')}` };
 };
 
 const git = (...args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
@@ -279,6 +343,13 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
     },
     cli: () => runStep('npx', ['nx', 'test', 'cli'], dir),
     studio: () => runStep('npx', ['nx', 'test', 'ethlete-studio'], dir),
+    quota: () => {
+      const changed = git('diff', '--name-only', '--diff-filter=d', range);
+      if (changed.status !== 0) return Promise.resolve({ status: 1, output: changed.stderr });
+      return quotaStep(quotaSpecFiles(changed.stdout.split('\n').filter(Boolean)), {
+        run: (command, args) => runStep(command, args, dir),
+      });
+    },
     e2e: () => afterBuild(() => runStep(process.execPath, [join(dir, RUNNER)], dir, E2E_LOG)),
     repeat: () =>
       afterBuild(async () => {

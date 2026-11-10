@@ -3858,9 +3858,6 @@ only inside the collapsed "Gründe" disclosure of the footer popover, though it 
 the button opens the sketch, not where it sits. Placement question for the human: a sketch with the variants "inside
 Gründe" (as built) and "on the popover's top level" (builder recommendation), after the 719 CPU-quota step.
 
-In progress (Linux builder, 2026-11-10 evening): the 719 CPU-quota step in `tools/scripts/push-suite.mjs` (changed
-Studio spec files once under `systemd-run --user --scope -p CPUQuota=<n>%`, calibrated to CI timings).
-
 733\. Mac builder (2026-11-10, A1 rest, 7b6236922): `design compare components/title-bar` cannot judge two drawn states.
 (a) The five `*-notice` states FAIL: the design draws the notice tooltip always open, the app opens `etTooltip` only on
 hover or focus, and the design forces no interaction on the restart button. (b) `linux-full-notice-pending` DIFF 115 px
@@ -3874,3 +3871,19 @@ the Mac `inbox doc-agent` showed "No new messages" at 20:31, and the Mac builder
 agent session read it (marked seen) right before its restart, and the handoff did not name it. Tool fix: `restart`
 of a session that owns a mailbox name lists the messages seen in the last 30 min into the resume prompt, or the
 handoff skill tells the saving session to name every unanswered peer message.
+
+As built (Linux builder, 719 CPU-quota step): `yarn push:suite` has a `quota` step after `studio`. It runs each Studio
+spec file the pushed range changes (`apps/ethlete-studio/**/*.spec.ts`, deletions left out) once, one file at a time,
+as `systemd-run --user --scope --quiet -p CPUQuota=20% npx vitest run --root apps/ethlete-studio --maxWorkers=1 <file>`,
+so the `slowCaseProblemOf` budget (half the case timeout) sees loaded timings. It calls vitest directly, not
+`spec:stress --slow`, because `--slow 12` already sets its own 8% quota and `spec:stress` drops the vitest output. A
+failed file blocks the verdict. No file starts after 180 s; the step line names the quota, the files run and the files
+skipped. Without `systemd-run --user` (macOS) the step passes with "skipped on darwin: the CPU quota needs systemd-run
+--user". Calibration, first case of `sketch-view.component.spec.ts` without its `beforeAll` (with it in brackets), one
+file wall time: 12% 6596 ms (1003 ms), 204 s; 15% 5296 ms (698 ms), 146 s; 20% 3103/3401/2996 ms (595/498/502 ms),
+84 s; 25% 3202/3299 ms (509/589 ms). 12% times like CI (6.1 s), but the budget fails a case at half its timeout, so the
+quota runs at about half the CI time: 20%. At 12% and 15% the warmed file fails on "keeps at most six near cells live"
+(3994 and 2694 ms). Bite through `quotaStep` at 20%: without the warm-up `status=1 … the case took 3100 ms of its 5000
+ms timeout`; with it `status=0 note=CPUQuota=20%, ran …sketch-view.component.spec.ts`. Still at risk: "keeps at most
+six" takes 1.7-2.7 s at 20% (one of five warmed runs failed at 2698 ms), so a push that changes that spec can fail the
+step until the case gets faster. Not verified: a full `yarn push:suite` run, the step on the Mac.
