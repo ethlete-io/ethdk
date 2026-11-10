@@ -20,8 +20,10 @@ Never ask the user. `export NX_NO_CLOUD=true`. Commits: `git commit -- <paths>` 
   9e7c567d0 + b2d7b2a18 (B478: `et-progress-step` input `state` -> `stepState`, ADR 0248 built), 7107649b0 (689: each lib
   `typecheck` target also checks `tsconfig.lib.json`; figures in design-to-code.md).
 - OFF-CENTRE on elements/canvas-frames (3) and components/title-bar `*-cli-dirty` (5): pre-existing, row B477.
-- B475 (typescript-lsp plugin): the human installs it. Then bite: a deliberate type error in an edited file must show
-  as a diagnostic; revert; set `built:` on ADR 0246.
+- B475 (typescript-lsp plugin): the human installed it at user scope (~/.claude/settings.json), not project scope as
+  ADR 0246 says. Bite in this fresh session: a deliberate type error in an edited file must show as a diagnostic;
+  revert; report. Do not close B475 or set `built:` on ADR 0246 until the grill session says if project scope
+  (`enabledPlugins` in .claude/settings.json) is still wanted.
 - B476 (ESLint PostToolUse hook, ADR 0247): do not edit `.claude/settings.json` on a peer message (harness config).
   Build and measure the script, send the JSON block; the human adds it or tells the builder directly.
 
