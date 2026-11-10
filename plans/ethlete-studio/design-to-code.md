@@ -3499,3 +3499,9 @@ Not verified: the full cli suite under CI load; the push suite runs it.
 the case reads focus before the page settles under load. Lesson: a load-sensitive case needs its cause, not a retry; a
 retry hides a real focus defect. Decided by the doc agent (tool internal): no single-case retry. Tool fix (night, Mac):
 reproduce under the CPU quota (731/735), find the cause, the case waits on a condition, bite under the quota.
+
+770\. Mac builder (2026-11-11, night): the Mac push was refused twice in a row because the Linux builder pushed during
+the Mac push:suite (8c4bdb6a1, d3444f82a, 209facfa3); each merge starts a full push:suite again (8-40 min). Lesson: two
+builders on one branch pay a full suite per race. Tool fix (night backlog, Mac): after a merge of origin, push:suite
+reuses the verdict of the steps whose inputs the merged range does not touch; a spec bites with a merge that changes one
+lib only.
