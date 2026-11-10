@@ -4129,3 +4129,11 @@ A fix round went into a cause nobody had proven. Why no tool caught it: the find
 whether a cause is proven, so a suspect reads like a fact. Tool fix (process, doc agent and builder skills): a finding
 writes "Suspect:" until a bite or a measurement proves it, and only "Cause:" after; the builder's report names which of
 the two it is.
+
+As measured (683, 995491fb1): a cold Fit case did not fail in the bite (3/3 cold and 3/3 warm at load 31-52), so 683
+has no proven cause. Measured: the 683 fail row had 66 requests pending at 10 s, mostly `/__design/shot`; the Sketches
+page asks for 52 shots, and each worker starts with an empty shot store, so each draws them all cold. Suspect: under
+heavy load the `load` event waits for the cold shot draws. 995491fb1 opened each worker's first page in setup (net about
++10-16 s per worker) and is reverted (doc agent decision, ADR 0230 and 0240: no unproven fix that costs time). The fix
+for the measured cold burst is 667 (c), one shot store for all workers, which removes the N-fold cold draws instead of
+moving them into setup (the same lesson as fe28fc8c9 in 667).
