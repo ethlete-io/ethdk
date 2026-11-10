@@ -21,7 +21,7 @@ import { goMarkOf, goPartsOf } from './part-go';
 import { doneParts, gitDiffFilesOf } from './part-task';
 import { actionsRerunOf, readyMarkOf, readyPartsOf } from './part-ready';
 import { BuildReadyInputs } from './part-build-ready';
-import { recordCheckedBuildReady } from './check-record';
+import { recordCheckedBuildReady, slowWaitingLineOf } from './check-record';
 import { partActionFailuresOf } from './actions-command';
 import { renderProblemOf, ruleBaselineLinesOf, ruleBaselineOf } from './rule-baseline';
 import { isDrawRule, isSlowRule } from './slow-checks';
@@ -683,7 +683,7 @@ const printProductOpenPoints = async (
   if (upgraded.length > 0)
     console.log(`REHASHED ${name}: ${upgraded.map(({ part, marks }) => `${part} (${marks.join(', ')})`).join(', ')}`);
 
-  await recordCheckedBuildReady({
+  const recorded = await recordCheckedBuildReady({
     target,
     config,
     settle: options.part && rendered !== null ? [options.part] : [],
@@ -707,6 +707,12 @@ const printProductOpenPoints = async (
         }),
     ...(options.part ? { onNoRecord: (line: string) => console.log(line) } : {}),
   });
+
+  const waiting = [...recorded.values()].filter(
+    (result) => !result.ready && result.blockers.some((blocker) => blocker.kind === 'pending'),
+  ).length;
+
+  if (waiting > 0) console.log(slowWaitingLineOf({ product: name, count: waiting }));
 
   const ready = readyPartsOf(product).filter((key) => !options.part || key === options.part);
 

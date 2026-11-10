@@ -23,6 +23,10 @@ export const recordCheckedBuildReady = async (
   return recordBuildReady({ product, ...record });
 };
 
+/** The line `design check` prints when parts of a product still wait for their slow rules, naming the commands that settle them. */
+export const slowWaitingLineOf = (options: { product: string; count: number }) =>
+  `PENDING ${options.product}: ${options.count} ${options.count === 1 ? 'part waits' : 'parts wait'} for slow rules - run design serve or design check --product ${options.product} --part <part>`;
+
 const settlePendingSlowOf = async (options: {
   target: string;
   config: DesignConfig;

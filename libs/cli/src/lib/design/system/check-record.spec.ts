@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../design-config';
-import { recordCheckedBuildReady } from './check-record';
+import { recordCheckedBuildReady, slowWaitingLineOf } from './check-record';
 import { openPointsOf, PartOpenPointsAnswer } from './open-points-runner';
 import { resolveProduct } from './resolve-product';
 import { SlowRunners } from './slow-run';
@@ -66,5 +66,29 @@ describe('the check record of a part-scoped design check', { timeout: 60_000 }, 
     });
 
     expect(buildReadyOf()).toEqual({ ready: true });
+  });
+
+  it('leaves a whole-product check pending and names the commands that settle it', async () => {
+    const { target, config, product } = staleChip();
+    const part = 'components/chip';
+
+    const results = await recordCheckedBuildReady({
+      target,
+      config,
+      product: product(),
+      parts: [part],
+      settle: [],
+      inputs: { pointsOf: () => [], problemsOf: () => [] },
+      runners,
+    });
+
+    expect(results.get(part)).toMatchObject({
+      ready: false,
+      blockers: [{ kind: 'pending' }],
+    });
+    expect(slowWaitingLineOf({ product: 'acme', count: 1 })).toBe(
+      'PENDING acme: 1 part waits for slow rules - run design serve or design check --product acme --part <part>',
+    );
+    expect(slowWaitingLineOf({ product: 'acme', count: 3 })).toContain('3 parts wait');
   });
 });

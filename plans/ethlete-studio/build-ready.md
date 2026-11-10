@@ -706,3 +706,5 @@ result is pending and the product has a harness (only when the check could draw)
 fails with `[stale-record, pending]` when the slow run is skipped. Verified: tsc, eslint, 123 related spec files,
 spec:stress 4/4. Not verified: a real `design check --part` on the repo design (would rewrite the shared ready.json),
 and whether the scratch Studio serve was also running its slow runner.
+
+As built (718 pending count): a whole-product `design check` still leaves pending parts to the serve slow runner (grill decision), and now prints `PENDING <product>: <n> parts wait for slow rules - run design serve or design check --product <p> --part <part>` (`slowWaitingLineOf`, `check-record.ts`), so it never looks settled. Verified: a check-record spec case (whole-product call keeps `pending`, line text), cli typecheck, eslint. Not verified: the line in a real `design check` run.
