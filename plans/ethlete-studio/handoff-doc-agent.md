@@ -25,6 +25,10 @@ Run `/doc-agent` first. The human is awake: grill rounds are allowed again. Buil
 
 ## Open questions for the human
 
+- Tell the human: for B476 the builder builds and measures the hook script and sends the exact JSON block for
+  `.claude/settings.json`. It does not edit that file on a peer message. The human adds the block or tells the builder
+  in its own session to add it. 690 skill line is done (97ac9b574).
+
 None. Q5 answered "5ok": ADR 0247, row B476 (ESLint hook after each agent edit).
 
 ## Rules applied (no ADR)
