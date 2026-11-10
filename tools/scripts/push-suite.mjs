@@ -14,7 +14,7 @@ import {
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { cpus, loadavg, tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -31,9 +31,46 @@ export const EXEMPT_PATHS = [/^plans\//, /^\.changeset\//, /\.md$/];
 export const parseArgs = (argv) => {
   const at = argv.indexOf('--only');
   const only = at === -1 ? undefined : argv[at + 1];
-  const range = argv.find((arg, index) => !arg.startsWith('--') && index !== at + 1);
+  const loadAt = argv.indexOf('--max-load');
+  const maxLoad = loadAt === -1 ? undefined : Number(argv[loadAt + 1]);
+  const range = argv.find((arg, index) => !arg.startsWith('--') && index !== at + 1 && index !== loadAt + 1);
 
-  return { only, range: range ?? '@{upstream}..HEAD' };
+  return { only, range: range ?? '@{upstream}..HEAD', ...(maxLoad === undefined ? {} : { maxLoad }) };
+};
+
+export const LOAD_SAMPLE_MS = 5_000;
+export const LOAD_POLL_MS = 15_000;
+export const LOAD_MAX_WAIT_MS = 10 * 60_000;
+
+const oneMinuteLoad = () => loadavg()[0];
+const formatLoad = (load) => load.toFixed(1);
+
+export const sampleMaxLoad = (load = oneMinuteLoad, { every = setInterval, clear = clearInterval } = {}) => {
+  let max = load();
+  const timer = every(() => {
+    max = Math.max(max, load());
+  }, LOAD_SAMPLE_MS);
+  return () => {
+    clear(timer);
+    return Math.max(max, load());
+  };
+};
+
+export const waitForLowLoad = async (
+  { limit, log, load = oneMinuteLoad, sleep = (ms) => new Promise((done) => setTimeout(done, ms)), now = Date.now },
+  { pollMs = LOAD_POLL_MS, maxWaitMs = LOAD_MAX_WAIT_MS } = {},
+) => {
+  const startedAt = now();
+  while (load() > limit) {
+    if (now() - startedAt >= maxWaitMs) {
+      log(
+        `push-suite: starting under load ${formatLoad(load())} (limit ${limit}) after ${seconds(maxWaitMs)} of waiting`,
+      );
+      return;
+    }
+    log(`push-suite: waiting to start, load ${formatLoad(load())} is above the limit ${limit}`);
+    await sleep(pollMs);
+  }
 };
 
 export const linkTargetOf = (repo, entry, link) => {
@@ -119,6 +156,9 @@ export const verdictFileOf = (sha) =>
 
 const seconds = (ms) => `${(ms / 1000).toFixed(0)} s`;
 
+export const stepLine = (name, status, ms, note, load, max = load) =>
+  `push-suite: ${name} ${status === 0 ? 'ok' : `failed at load ${formatLoad(load)} (max ${formatLoad(max)} during the step)`} in ${seconds(ms)}${note ? ` (${note})` : ''}`;
+
 const linkDependencies = (from, to) => {
   mkdirSync(to);
   for (const name of readdirSync(from)) {
@@ -186,7 +226,7 @@ export const warnStaleDesignServers = async (log) => {
   for (const line of staleServerWarnings(staleDesignServers(ps.stdout, { root }))) log(line);
 };
 
-export const pushSuite = async ({ only, range }, log = console.log) => {
+export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loadProbe = {}) => {
   const sha = git('rev-parse', 'HEAD').stdout.trim();
   const finish = (verdict) => {
     log(`push-suite: ${verdict}`);
@@ -200,6 +240,11 @@ export const pushSuite = async ({ only, range }, log = console.log) => {
   };
 
   if (only && !STEPS.includes(only)) return finish(`blocked unknown step ${only}, expected one of ${STEPS.join(', ')}`);
+
+  if (!INNER_EXPORT) {
+    const limit = maxLoad ?? Number(process.env['PUSH_SUITE_MAX_LOAD'] || cpus().length);
+    await waitForLowLoad({ limit, log, ...loadProbe });
+  }
 
   Object.assign(process.env, { NX_NO_CLOUD: 'true', NX_DAEMON: 'false' });
   delete process.env['STUDIO_CLI_ENTRY'];
@@ -256,10 +301,10 @@ export const pushSuite = async ({ only, range }, log = console.log) => {
     await warnStaleDesignServers(log);
     for (const name of only ? [only] : STEPS) {
       const startedAt = performance.now();
+      const stopSampling = sampleMaxLoad(loadProbe.load, loadProbe.timers);
       const { status, output, note } = await steps[name]();
-      log(
-        `push-suite: ${name} ${status === 0 ? 'ok' : 'failed'} in ${seconds(performance.now() - startedAt)}${note ? ` (${note})` : ''}`,
-      );
+      const maxLoad = stopSampling();
+      log(stepLine(name, status, performance.now() - startedAt, note, (loadProbe.load ?? oneMinuteLoad)(), maxLoad));
       if (status !== 0) {
         log(failureReport(output));
         return finish(`blocked ${name} failed at ${sha}`);

@@ -11,7 +11,10 @@ import {
   parseLog,
   reexecCommand,
   runStep,
+  sampleMaxLoad,
+  waitForLowLoad,
   STEPS,
+  stepLine,
   touchedProjects,
   withTarget,
 } from './push-suite.mjs';
@@ -168,4 +171,78 @@ test('typechecks only the touched projects that have a typecheck target, right a
   assert.deepEqual(touched, ['cli', 'ethlete-studio']);
   assert.deepEqual(withTarget(touched, ['core', 'ethlete-studio']), ['ethlete-studio']);
   assert.deepEqual(STEPS.slice(0, 2), ['lint', 'typecheck']);
+});
+
+const loadHarness = (loads, limit = 4) => {
+  let time = 0;
+  const lines = [];
+  const slept = [];
+  return {
+    lines,
+    slept,
+    options: {
+      limit,
+      log: (line) => lines.push(line),
+      load: () => loads[Math.min(Math.floor(time / 15_000), loads.length - 1)],
+      now: () => time,
+      sleep: async (ms) => {
+        slept.push(ms);
+        time += ms;
+      },
+    },
+  };
+};
+
+test('waits to start while the load is above the limit, then starts', async () => {
+  const { lines, slept, options } = loadHarness([9, 6, 2]);
+  await waitForLowLoad(options);
+
+  assert.equal(slept.length, 2);
+  assert.deepEqual(lines, [
+    'push-suite: waiting to start, load 9.0 is above the limit 4',
+    'push-suite: waiting to start, load 6.0 is above the limit 4',
+  ]);
+});
+
+test('starts at once when the load is at or below the limit', async () => {
+  const { lines, slept, options } = loadHarness([4]);
+  await waitForLowLoad(options);
+
+  assert.deepEqual([lines, slept], [[], []]);
+});
+
+test('starts anyway after the maximum wait and says it starts under load', async () => {
+  const { lines, options } = loadHarness([20]);
+  await waitForLowLoad(options, { pollMs: 15_000, maxWaitMs: 45_000 });
+
+  assert.equal(lines.length, 4);
+  assert.equal(lines.at(-1), 'push-suite: starting under load 20.0 (limit 4) after 45 s of waiting');
+});
+
+test('a failed step line names the load average, an ok one does not', () => {
+  assert.equal(
+    stepLine('e2e', 1, 60_000, undefined, 18.24, 42),
+    'push-suite: e2e failed at load 18.2 (max 42.0 during the step) in 60 s',
+  );
+  assert.equal(stepLine('cli', 0, 5_000, undefined, 18.24), 'push-suite: cli ok in 5 s');
+});
+
+test('samples the load while a step runs and reports the peak, not the end value', () => {
+  let tick;
+  let cleared = false;
+  const loads = [3, 42, 5, 2];
+  const stop = sampleMaxLoad(() => loads.shift(), {
+    every: (fn) => {
+      tick = fn;
+      return 1;
+    },
+    clear: () => {
+      cleared = true;
+    },
+  });
+  tick();
+  tick();
+
+  assert.equal(stop(), 42);
+  assert.equal(cleared, true);
 });
