@@ -178,6 +178,19 @@ mod tests {
     }
 
     #[test]
+    fn every_platform_config_leaves_the_windows_to_start() {
+        for config in [
+            include_str!("../tauri.conf.json"),
+            include_str!("../tauri.macos.conf.json"),
+        ] {
+            let config: serde_json::Value = serde_json::from_str(config).unwrap();
+            for window in config["app"]["windows"].as_array().unwrap() {
+                assert_eq!(window["create"], false, "{}", window["label"]);
+            }
+        }
+    }
+
+    #[test]
     fn the_window_gets_no_smoke_script_without_the_smoke_view() {
         assert_eq!(smoke_init_script(None), None);
         assert_eq!(smoke_init_script(Some(String::new())), None);
