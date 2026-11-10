@@ -4159,6 +4159,10 @@ its 440,000-character budget, and `archive-findings.mjs` (also `--days=2`) moved
 `--orphans` lists 195 findings that no STATUS row names, so the archive never takes them; only findings of done rows
 leave. Tool fix (Linux builder, `tools/scripts/archive-findings.mjs`): also archive an orphan finding that holds a
 "Built" or "As built" line and is older than the `--days` limit; a spec bites on a built orphan that stays today.
+Built (2026-11-10, Linux): the commit that holds this line. `archiveFindings` also moves an orphan (no STATUS row cites it)
+older than `--days` when its extent holds a line that starts with "Built" or "As built"; the extent runs to the next
+finding or heading, so the as-built paragraphs leave with it. The new spec fails on the old script. Measured, no write:
+`--days=5` moves 1 (all other orphans are from 2026-11-05 or later), `--days=2` 22 (44k chars), `--days=1` 37 (87k).
 
 725\. Doc agent (2026-11-10): I decided that the pre-commit hook lints staged `.ethlete/**/*.ts` (708 follow-up) without
 running `yarn adr:governs .husky/pre-commit`. ADR 0036 (the human: "we built a check system in Studio, why rely on git
