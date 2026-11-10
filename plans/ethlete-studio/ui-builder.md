@@ -58,3 +58,34 @@ aria-describedby holds the cause; cli-dirty on macOS shows the text inline witho
 no compare ran (components/title-bar and every part that embeds it), no part check. Expected gap: the design draws
 the tooltip always open, the real etTooltip opens only on hover/focus, so compare of the notice states will likely
 differ unless it hovers the button.
+
+## As built: A1 rest (title-bar states)
+
+`design compare components/title-bar` on 2026-11-10, nothing changed in the app:
+
+- Interaction states: `linux-full-update` and `windows-update` hover, active and focus-visible ok (6). The other
+  9 (`linux-left`, `linux-close`, `windows` x 3) are skipped by B397 as rows of unchanged SDK controls: the forced
+  control is a plain `et-window-control-button`, whose states the SDK part compares. Finding 483 is closed: every
+  state now prints a line.
+- Rest states: 19 ok, including push, cli-dirty, update and `linux-full-notice-failed`.
+- `linux-full-notice`, `linux-left-notice`, `linux-close-notice`, `windows-notice`, `macos-notice` FAILED: the
+  design draws 1 overlay pane (the notice tooltip always open), the app opens 0 because `etTooltip` opens on hover or
+  focus. This is the expected gap. The design forces no interaction on the restart button, so compare has no way to
+  open it.
+- `linux-full-notice-pending` DIFF 115 px, the same in two runs, only on the spinner inside Neu starten. The design
+  mock draws a static half arc and the app's indeterminate `et-spinner` is caught at another frame. The button mock
+  sets no `data-et-frozen-at`, so compare cannot hold the app spinner at the mock's frame.
+
+Embedding parts, compared: `elements/shell-main` 15/15 ok, `pages/flows`, `pages/inventory` ok. Diffs in
+`pages/merge` (merge-error 2 px), `pages/start` (no-products), `pages/system` (12 states) and `pages/sketches` (20
+states) have 0 diff pixels in the title-bar rows (y < 33) of every diff picture, so none of them comes from the
+title bar. `elements/canvas-frames` cannot judge 6 states (slot-only, `heads` prop). The `elements/studio-menu`
+action "Design-Server neu starten" times out in two runs; the menu sits in the rail, not the title bar.
+
+`design check --part components/title-bar`: 5 OFF-CENTRE, all OLD (the cli-dirty text); open points: notice
+hover/active/focus-visible are not drawn, and the design changed outside a sketch (the open
+`components/title-bar@edit` sketch, not this slice). No new problem.
+
+Not verified: a real Windows window, the notice tooltip against the design (compare cannot open it), the spinner
+frame. The embedding compares were not recorded in `implemented.json` (`compare --affected` would also record
+parts other slices changed), so their IMPLEMENTATION-UNCOMPARED stays.
