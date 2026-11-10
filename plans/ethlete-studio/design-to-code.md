@@ -4079,3 +4079,11 @@ item outside the binding order; the same failure as 711. Lesson: the rule agains
 fix had no default place except a builder message. Decided by the doc agent: a tool fix decided by the doc agent goes
 into the "Werkzeug-Rückstand" line of STATUS.md, never into a builder message as work, unless CI is red or it blocks the
 current item. Both builders are back on the binding order; B482 is parked after its running smoke.
+
+752\. Linux builder (2026-11-10, night setup): the usage-limit watchdogs of ADR 0220 could not be set. `claude-at` no
+longer exists on the desk PC, and auto mode denied the builder's `systemd-run --user` timers twice ("Unauthorized
+Persistence", then "Tmux Self Drive", because the script types into the builder's own pane). The builder wrote
+`/tmp/dx/kick.sh` and gave the human a `!` command in tmux claude-3. Lesson: each night rebuilt its watchdog by hand,
+and the tool was lost. Decided by the doc agent (tool internal, night backlog): the agent-sessions script gets a
+`watchdog` command (one-shot resume after a usage-limit reset, log file, pane list) that the human installs once with
+an allow rule, so no night needs a hand-made timer.
