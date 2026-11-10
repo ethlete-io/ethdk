@@ -2,7 +2,8 @@ import { execFileSync } from 'child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { repoRootOf } from './reachable-files';
-import { RenderIssue, sameRenderIssueKeyOf } from './render-check';
+import { RenderIssue } from './render-check';
+import { sameRenderIssueKeyOf } from './render-issue-key';
 import { ResolvedProduct } from './resolve-product';
 
 /** The render issues a part showed at a commit, drawn while its inputs had no change from that commit. */

@@ -36,6 +36,7 @@ import { loadScaledMs, NoVerdict, noVerdictOf } from './no-verdict';
 import { REACH_STATEMENTS } from './reach';
 import { REACHABLE_CONTROLS_STATEMENTS } from './reachable-controls';
 import { browserVersionOf, cacheKeyOf } from './compare-cache';
+import { isControlInput, PATH_DEPTH, sameRenderIssueKeyOf } from './render-issue-key';
 import {
   createServedCache,
   createServedHashes,
@@ -182,35 +183,6 @@ export const WARNING_RULES: ReadonlySet<string> = new Set(['UNDEFINED-CLASS', 'E
 export const BASELINED_RENDER_RULES: ReadonlySet<string> = new Set([OFF_CENTRE_RULE]);
 
 const BUSY_SELECTOR = '[aria-busy="true"], [data-loading="true"]';
-
-const PATH_DEPTH = 4;
-
-const tagOf = (name: string) => /^[a-z0-9-]+/u.exec(name)?.[0] ?? name;
-
-const frameNeutralPathOf = ({ path, part, framed }: { path: string; part: string; framed: boolean }) => {
-  const names = path.split(' > ');
-  const marked = names.findIndex((name) => name.endsWith(`[data-et-part=${part}]`));
-  const cut =
-    marked < 0 ? (names.length === PATH_DEPTH ? [0] : []) : framed ? [marked - 1, marked] : [marked, marked + 1];
-
-  return names.map((name, index) => (cut.includes(index) ? tagOf(name) : name)).join(' > ');
-};
-
-const isControlInput = (issue: RenderIssue) => issue.rule === 'CONTROL-PART-INPUT';
-
-/**
- * The identity two render issues share when they are the same issue (ADR 0095): product, part, rule, detail and
- * element path. `inFrame` names whether the drawing had the part's demo frame, so a path compares across the frame
- * move of ADR 0093; `null` keeps the path as drawn.
- */
-export const sameRenderIssueKeyOf = (issue: RenderIssue, inFrame: boolean | null) =>
-  JSON.stringify([
-    issue.product,
-    issue.part,
-    issue.rule,
-    isControlInput(issue) ? null : issue.detail,
-    inFrame === null ? issue.path : frameNeutralPathOf({ path: issue.path, part: issue.part, framed: inFrame }),
-  ]);
 
 // complete.ts and this module sit in an import cycle: read PLAIN_CONTROL_SELECTOR here, a top-level copy can be undefined.
 const inspectFrame = (options: {

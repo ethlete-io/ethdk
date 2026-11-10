@@ -762,32 +762,37 @@ const oldIssuesOfRun = (options: {
   part: string | undefined;
   issues: RenderIssue[];
   undrawn: Set<string>;
-}) =>
-  new Set(
-    options.resolved.flatMap((product) => {
-      const root = repoRootOf(product);
-      const parts = product.parts
-        .filter((part) => part.origin !== 'base' && (!options.part || partKeyOf(part) === options.part))
-        .filter((part) => !options.undrawn.has(partKeyOf(part)))
-        .map((part) => ({
-          part: partKeyOf(part),
-          inputs: [
-            ...Object.keys(designHashOf({ product, part }).files),
-            `${relative(root, dirname(part.file)).split(sep).join('/')}/`,
-            ...RENDER_INPUTS_OUTSIDE_PARTS,
-          ],
-        }));
+}): Set<RenderIssue> => {
+  try {
+    return new Set(
+      options.resolved.flatMap((product) => {
+        const root = repoRootOf(product);
+        const parts = product.parts
+          .filter((part) => part.origin !== 'base' && (!options.part || partKeyOf(part) === options.part))
+          .filter((part) => !options.undrawn.has(partKeyOf(part)))
+          .map((part) => ({
+            part: partKeyOf(part),
+            inputs: [
+              ...Object.keys(designHashOf({ product, part }).files),
+              `${relative(root, dirname(part.file)).split(sep).join('/')}/`,
+              ...RENDER_INPUTS_OUTSIDE_PARTS,
+            ],
+          }));
 
-      return [
-        ...oldRenderIssuesOf({
-          root,
-          file: baseIssuesFileOf(product),
-          parts,
-          issues: options.issues.filter((issue) => issue.product === product.name),
-        }),
-      ];
-    }),
-  );
+        return [
+          ...oldRenderIssuesOf({
+            root,
+            file: baseIssuesFileOf(product),
+            parts,
+            issues: options.issues.filter((issue) => issue.product === product.name),
+          }),
+        ];
+      }),
+    );
+  } catch {
+    return new Set();
+  }
+};
 
 const renderSystem = async (
   options: CheckOptions,
