@@ -4028,3 +4028,9 @@ locked-screen failure was the same prompt. The human had to click several of the
 smoke opens the first existing sketch and fails at once when there is none. Lesson: the smoke cannot see a native modal,
 so it waited for a frame that never came and named the wrong cause. Decided by the doc agent (tool internal): the smoke
 fails early when the console log stays empty and no CEF page loads in 30 s, and its message names "native dialog?".
+
+Built (Mac builder, 746): f10c01295 (mock keychain under `ETHLETE_STUDIO_SMOKE_VIEW`, a "page loaded" marker from the
+init script, fail after 30 s with "no page loaded in 30 s (native dialog?)", first existing sketch as default). Dead
+end: a run before the commit still showed the prompt, because the smoke builds HEAD in a worktree, not the working tree.
+Decided by the doc agent (tool internal): the smoke `--help` and its start line name the commit it builds ("builds HEAD
+<sha>, not the working tree"), and it warns when the working tree has uncommitted changes under `apps/ethlete-studio`.
