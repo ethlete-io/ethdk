@@ -3887,6 +3887,17 @@ net::ERR_ABORTED, navigation, initiator blank, iframe src then /frame.html?...ep
 `page.route` never fired (no request reached it), so it was dropped. Runs: 3 plain passes (56 s each) and 1 pass with --hold-listings 14000 (87 s). Not verified: the cause of the
 original 2 of 2 abort; the next red run names it.
 
+Builder (2026-11-10, Mac day, B470 / 680 follow-up): no red run has the 680 print yet. `/tmp/e2e679-bite.log` holds
+the bite's lines, and `/tmp/push-suite-b466c.log` (02:15) predates the print (02:50). Targeted runs of the Sketches
+first load case with `--cold-shots` and 12 busy-loop hogs (load 25-35): 10/10 pass, visible frames loaded at 8.6-11.5
+s, 0 aborts. A temporary bite with CDP latency 1500 ms on the page made the case time out (frames not loaded in 10 s)
+and abort nothing; `page.context().route` on `/frame.html?` again did not fire (no delay on the load times). Suspect
+(not bitten): `followLoad$` in `canvas-frame.component.ts` reads `failed` when an iframe `load` (the initial
+`about:blank`) is followed by 1000 ms without a frame message, then `designServerBack$` and `iframe.src = src` restart
+the same navigation; the 680 print `initiator about:blank, iframe src then <same URL>` matches that path. Bite for the
+next round: count the `src` sets per iframe in the case and delay `frame.html` on the server side, because the
+Playwright routes do not reach the frame documents.
+
 681\. Builder (2026-11-10, Mac night, B466-only push:suite in a worktree at 11de10881 = origin/next f6a97186f + c11cc03ac,
 B471): the e2e step failed on `[System] page switch time is logged to the design timings` (`icons->shell-main first:
 mount 37, first 4730, all NOT (5 painted; 17 marked img/iframe, 8 canvas frames ...)`, 33.1 s): under load not every
