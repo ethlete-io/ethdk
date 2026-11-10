@@ -1,4 +1,4 @@
-import { openPointGroupsOf } from './open-points';
+import { buildReadyStatusOf, openPointGroupsOf } from './open-points';
 
 describe('openPointGroupsOf', () => {
   it('groups the points by icon in the popover order, with the texts of the System page design', () => {
@@ -78,5 +78,50 @@ describe('openPointGroupsOf blockers', () => {
     expect(linesOf({ kind: 'embedded', text: 'x is not build-ready' })).toEqual([
       { text: 'x is not build-ready', detail: 'embedded' },
     ]);
+  });
+});
+
+describe('buildReadyStatusOf', () => {
+  it('reads a build-ready part as ready', () => {
+    expect(buildReadyStatusOf({ points: [], buildReady: { ready: true } })).toEqual({ state: 'ready' });
+  });
+
+  it('reads a part without a current check record or with slow checks running as checking', () => {
+    for (const kind of ['stale-record', 'pending'])
+      expect(
+        buildReadyStatusOf({
+          points: [{ kind: 'contrast', state: 'hover', path: 'label' }],
+          buildReady: { ready: false, blockers: [{ kind, text: 'not checked' }] },
+        }),
+      ).toEqual({ state: 'checking' });
+  });
+
+  it('lists a direct edit as its own blocker, the open points in Studio words and the rule blockers by kind', () => {
+    expect(
+      buildReadyStatusOf({
+        points: [
+          { kind: 'direct-edit', sketch: 'elements/rating@edit' },
+          { kind: 'missing-motion', from: 'rest', to: 'hover' },
+        ],
+        buildReady: {
+          ready: false,
+          blockers: [
+            { kind: 'open-point', text: 'changed outside a sketch; 1 missing motion' },
+            { kind: 'embedded', text: 'elements/icon is not build-ready', part: 'elements/icon' },
+            { kind: 'compare', text: 'hover differs' },
+            { kind: 'action', text: 'click did not run' },
+          ],
+        },
+      }),
+    ).toEqual({
+      state: 'blocked',
+      blockers: [
+        { kind: 'direct-edit', text: 'Bild ohne Sketch geändert' },
+        { kind: 'open-point', text: 'rest → hover' },
+        { kind: 'embedded', text: 'elements/icon ist noch nicht baubereit', part: 'elements/icon' },
+        { kind: 'compare', text: 'hover differs' },
+        { kind: 'problem', text: 'click did not run' },
+      ],
+    });
   });
 });

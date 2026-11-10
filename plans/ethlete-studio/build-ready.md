@@ -650,3 +650,14 @@ the legacy-hash upgrade keep other parts' baselines. The baseline moves only whe
 then-declared keys, or the held ones when they cannot be read). Commit: see git log "Keep recorded actions when a check
 record is dropped". Verified: the new spec fails on the old source and passes; tsc, eslint, 122 related spec files and
 spec:stress (4/4) pass. Not verified: a real `design check` run (would rewrite the shared ready.json).
+
+As built (B249 Studio app on build-ready): the System page no longer renders `PartApprovalComponent` and no longer calls
+`giveGo$`/`acceptEdit$` (component, spec, `src/host/design-part-approval.ts` and the go/accept labels removed; the CLI
+endpoints stay). `buildReadyStatusOf` (`src/app/system-view/open-points.ts`) maps the open-points answer to the footer:
+ready → Baubereit; a `pending` or `stale-record` blocker → Wird geprüft; otherwise Nicht baubereit (n) with a
+`direct-edit` open point as a `direct-edit` blocker, the other points in Studio words, and the rule blockers by kind
+(`action` and unknown kinds as `problem`). The mapping lives in the app, not `src/host`, because the status type is the
+footer's. The chip gets `[buildReady]`; `(openEditSketch)` activates `sketch:<part>@edit`, Studio never switches by
+itself (ADR 0252). Verified: open-points spec (3 cases) and a system-view case fail on the old source; e2e case "open
+points chip pressed matches its popup" asserts the footer badge and no Go button, plain and with `--hold-listings 14000`.
+Open: a stale record reads as Wird geprüft until someone runs `design check`; nothing starts that check from Studio.
