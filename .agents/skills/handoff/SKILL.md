@@ -199,6 +199,7 @@ node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs restart <name> '/h
 
 Add `--process` after `restart` when the session changed a plugin, a settings file, an MCP server or `PATH`.
 A plain restart keeps the old process, so the change reaches only a new one.
+Before `--process`, write the command line of each background job of the session into the handoff file. The exit stops these jobs, so the new process starts them again.
 
 If the user wrote text after the slug of the save command, append it to the prompt word for word.
 Escape each `'` in it as `'\''`. The restart drops anything you leave out, and the fresh session has

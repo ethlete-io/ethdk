@@ -120,6 +120,20 @@ const arePaired = (a, b) => (roleOf(a) === 'builder') !== (roleOf(b) === 'builde
 const ONE_SHOT_FLAGS = new Set(['-p', '--print', '-v', '--version', '-h', '--help']);
 const runsInSession = (agentArgs) =>
   Boolean(process.stdin.isTTY && process.stdout.isTTY) && !agentArgs.some((arg) => ONE_SHOT_FLAGS.has(arg));
+const TEXT_VALUE_FLAGS = new Set(['--append-system-prompt', '--system-prompt']);
+const withoutPrompt = (words) => {
+  const separator = words.indexOf('--');
+  if (separator > 0) return words.slice(0, separator);
+  const [previous, last] = words.slice(-2);
+  const isPrompt =
+    words.length > 1 &&
+    !last.startsWith('-') &&
+    (!previous.startsWith('-') || (/\s/.test(last) && !TEXT_VALUE_FLAGS.has(previous)));
+  return isPrompt ? words.slice(0, -1) : words;
+};
+const bypassingShellFunction = (base) => base.replace(/^((?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*)/, '$1command ');
+const EXIT_DIALOG_JOBS = /will stop when you exit/i;
+const EXIT_AND_STOP = /exit and stop/i;
 
 /**
  * Reads the last prompt line (`❯` for Claude Code, `›` for Codex) of the pane. Dim text is the empty
@@ -371,11 +385,13 @@ if (command === 'send' && sender) {
   if (!sessionExists(DISPATCH_SESSION))
     startSession(DISPATCH_SESSION, `${withEnv}node ${quote(script)} dispatch`, true);
   const session = freeSessionFor(sender);
-  const shellCommand = `${role ? `ETHLETE_AGENT_ROLE=${role} ` : ''}${withRole(words).map(quote).join(' ')}`;
+  const roleEnv = role ? `ETHLETE_AGENT_ROLE=${role} ` : '';
+  const shellCommand = `${roleEnv}${withRole(words).map(quote).join(' ')}`;
+  const baseCommand = `${roleEnv}${withRole(withoutPrompt(words)).map(quote).join(' ')}`;
   if (process.env.TMUX) {
     if (!sessionExists(session)) {
       tmux('new-session', '-d', '-s', session, '-c', process.cwd(), shellCommand);
-      tmux('set-option', '-t', `=${session}:`, COMMAND_OPTION, shellCommand);
+      tmux('set-option', '-t', `=${session}:`, COMMAND_OPTION, baseCommand);
       if (role) tmux('set-option', '-t', `=${session}:`, ROLE_OPTION, role);
     }
     process.exitCode = spawnSync('tmux', ['switch-client', '-t', `=${session}`], { stdio: 'inherit' }).status ?? 1;
@@ -384,7 +400,7 @@ if (command === 'send' && sender) {
       ? []
       : ['new-session', '-d', '-s', session, '-c', process.cwd(), shellCommand];
     if (created.length && tmux(...created).status === 0) {
-      tmux('set-option', '-t', `=${session}:`, COMMAND_OPTION, shellCommand);
+      tmux('set-option', '-t', `=${session}:`, COMMAND_OPTION, baseCommand);
       if (role) tmux('set-option', '-t', `=${session}:`, ROLE_OPTION, role);
     }
     process.exitCode = spawnSync('tmux', ['attach-session', '-t', `=${session}`], { stdio: 'inherit' }).status ?? 1;
@@ -470,10 +486,43 @@ if (command === 'send' && sender) {
       type('Enter');
       const end = Date.now() + RESTART_EXIT_WAIT_MS;
       const dead = () => tmux('display-message', '-p', '-t', pane, '#{pane_dead}').stdout.trim() === '1';
-      while (!dead() && Date.now() < end) sleep(RESTART_POLL_MS / 4);
+      const answerExitDialog = () => {
+        const lines = (tmux('capture-pane', '-p', '-t', pane).stdout ?? '').split('\n');
+        const start = lines.findIndex((line) => EXIT_DIALOG_JOBS.test(line));
+        const stop = lines.findIndex((line, index) => index > start && EXIT_AND_STOP.test(line));
+        if (start < 0 || stop < 0) return false;
+        const selected = lines.findIndex((line, index) => index > start && line.trim().startsWith('❯'));
+        const jobs = lines
+          .slice(start + 1, stop)
+          .map((line) => line.trim())
+          .filter(Boolean);
+        restartNotice(
+          `restart of ${session} stopped its background work, start it again: ${jobs.join('; ') || '(none listed)'}`,
+        );
+        const between = (from, to) => lines.slice(from, to).filter((line) => line.trim()).length;
+        const [key, steps] = selected > stop ? ['Up', between(stop, selected)] : ['Down', between(selected, stop)];
+        for (let step = 0; selected >= 0 && step < steps; step++) type(key);
+        type('Enter');
+        return true;
+      };
+      let answered = false;
+      while (!dead() && Date.now() < end) {
+        if (!answered) answered = answerExitDialog();
+        sleep(RESTART_POLL_MS / 4);
+      }
       if (!dead()) restartLog(`${session} did not exit ${RESTART_EXIT_WAIT_MS / 1000}s after the exit command, killed`);
       const shell = process.env.SHELL || 'sh';
-      tmux('respawn-pane', '-k', '-t', pane, '-c', root, shell, '-lic', `${base} ${quote(words.join(' '))}`);
+      tmux(
+        'respawn-pane',
+        '-k',
+        '-t',
+        pane,
+        '-c',
+        root,
+        shell,
+        '-lic',
+        `${bypassingShellFunction(base)} ${quote(words.join(' '))}`,
+      );
       tmux('set-option', '-p', '-t', pane, 'remain-on-exit', 'off');
       tmux('set-option', '-t', pane, COMMAND_OPTION, base);
       restartLog(`${session} started a new process: ${base}`);

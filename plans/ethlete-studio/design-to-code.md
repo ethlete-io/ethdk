@@ -3795,6 +3795,14 @@ background job so the new process starts it again (here the CI watch), and the n
 name. Bite: a session with a running background shell restarts with `--process` without a human, in the same tmux
 session, and the new process resumes the watch.
 
+As built (697): the respawn command starts with `command` (after any `VAR=value` prefix), so the shell function does
+not run and the pane keeps its session. `run` stores the command without the trailing prompt (a last word that is not
+a flag and not the value of a flag, or the words after `--`). After `/exit`, the restart reads the pane; on "will stop
+when you exit" it moves the cursor to "exit and stop tasks", presses Enter, and writes the listed jobs to
+`restart.log` and a mailbox notice. The handoff skill says to name each background job before `--process`. Verified:
+three new specs (respawn bypasses a shell function, `run` stores no prompt, the dialog is answered), each fails with its
+part reverted. Not verified: live bite with a real Claude session and the real dialog text and cursor.
+
 698\. Builder (2026-11-10, day shift, cfa266758): `lint:changesets` refused the push of 17913b655 and 1c72a5026, two
 docs-only ADR edits under `apps/ethlete-studio/docs/adr/` without a changeset. Only pre-push catches it; doc-agent ADR
 commits have the same gap. Tool fix, small: the builder and doc-agent skills say that an ADR edit is a change to
