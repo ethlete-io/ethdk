@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B475
+built: 3cfdb35d0
 decided: 2026-11-10
 source: grill session 2026-11-10 (morning round), findings 687 and 688
 ---
