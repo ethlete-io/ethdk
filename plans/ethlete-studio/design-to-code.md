@@ -4080,3 +4080,33 @@ As built (finding 686, part 2): the preset is now `tools/vitest/workers.mjs` plu
 `../../tools/vitest/workers.mjs` in all 14 configs, so no tsconfig needs `allowImportingTsExtensions` (reverted in
 timetrack-app). An extensionless import fails in vite's config bundler, a `.mts` import fails `tsc` (TS5097); `.mjs` with
 a `.d.mts` satisfies both. `check-vitest-workers.mjs` names `workers.mjs`.
+
+As built (686, 465f8f69e): Cause (proven by the green run): `apps/timetrack/vitest.config.mts` aliased only
+`@ethlete/timetrack`, so every other `@ethlete/*` import resolved through the `node_modules` exports. The config now sets
+`resolve: { tsconfigPaths: true }` and `root: import.meta.dirname`, and timetrack-app has a `test` target; CI's
+`nx run-many -t test` picks it up. 18/18 files, 83 tests; `spec:stress` 4/4 at load 2. No source change, so no timetrack
+snapshot. `check-vitest-workers.mjs` also fails a vitest config whose project has no `test` target (project.json or
+inferred by `@nx/vitest`; browser mode exempt by rule). Bite: target deleted, the check names
+`apps/timetrack/vitest.config.mts`; restored. Regression found on the way: the 662 preset import (`workers.mts`) gave
+TS5097 in 12 configs, so `nx run-many -t typecheck` was red after d906c4796; ef646f413 moves it to `tools/vitest/workers.mjs`
+with `workers.d.mts`. And ed5d4ed8c (660 spec) had 4 `noUncheckedIndexedAccess` errors in `cli:typecheck`; fixed in
+28ba414d2. Not verified: a full typecheck after 28ba414d2, CI.
+
+687\. Builder (2026-11-10, Mac night, 686): two slices tonight (d906c4796, ed5d4ed8c) went in red on types and nothing
+showed it. Cause (proven by reading the code): no local gate runs a typecheck. `commit-wait.mjs` waits for `index.lock`,
+adds and commits; pre-commit has no tsc; pre-push runs only `lint:spec-typecheck`, which checks the target config, not
+the types. The builder skill says "`yarn commit` already runs the specs related to the staged files and the typecheck";
+that is false. Typecheck in CI only is ADR 0038, and ADR 0216 (open) gives the answer for a held push: the builder pushes
+each slice to its own branch with a draft pull request, so the full CI runs there. Tonight nothing was pushed at all
+(ADR 0239: push only after a green push suite), so neither path ran. Why no tool caught it: the skill claims a check
+that does not exist, and ADR 0216 is not built, so a night with a held push has no type gate. Tool fix: (1) correct the
+skill sentence (fact, no decision); (2) question for the human in the morning: a typecheck step in `push:suite` for the
+touched projects, or the ADR 0216 draft-PR push per slice also at night (both against or beside ADR 0038).
+
+688\. Doc agent (2026-11-10, Mac night): I sent finding 685 (lint for the touched projects as a `push:suite` step,
+cef57a3d0) to the builder as my own call. ADR 0038 says lint and typecheck move to CI only, with no throwaway clone for
+them, and `push:suite` runs on an exported HEAD. I did not search the ADRs before the decision; the doc-agent skill says
+to. Why no tool caught it: `yarn adr:governs` maps ADR 0038 to `.husky/*` and `tools/scripts/*gate*`, not to
+`tools/scripts/push-suite.mjs`, so even the check would not have listed it. Tool fix: ADR 0038 governs
+`tools/scripts/push-suite.mjs` too (frontmatter), and the 685 lint step goes into the morning question of 687 as part of
+the same choice. The step stays until the human answers; it costs about 11 s per project.
