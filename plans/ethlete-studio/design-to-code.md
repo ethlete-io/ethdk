@@ -4105,6 +4105,24 @@ one warm-up page render per design server before its first case, with a bite (co
 same load, warm passes). Also fixed in 150c2cbe1: during the quiet tail, workers 1 and 2 restarted and did a full setup
 of about 50 s for no case. Full `yarn studio:e2e`: 442.2 s, 131/131 (503.6 s before 681, 533.6 s after it).
 
+As built (B472 warm-up, 683): what the warm-up missed is the shots. `warmUp` opens the default view, the System
+page, which asks for 1 or 2 `/__design/shot` pictures. The Sketches page of `pages/system` asks for 52, and the design
+server draws each one cold in its own browser, because every worker has a fresh checkout and so an empty shot store.
+The 683 row shows that: 66 requests, most of them shots, pending at 10 s. Built: after `warmUp`, each worker takes its
+first job and opens that job's page once (`openView`, 60 s cold-start timeouts), and waits until no shot request is
+in flight for 1 s. The `ready` line keeps `warmUp` and adds `firstPage`. Bite, 3 workers with the three Fit cases, 10
+`yes` processes, 1-min load 31 to 52: cold (warm-up as before), 3/3 passed, goto plus first frame 2.0 to 2.5 s, at
+settle only 18 of 52, 24 of 30 and 26 of 32 shots answered, the last one after 25.0 s, cases 28.0, 32.8 and 41.7 s;
+warm, 3/3 passed, every shot answered after 1.0 to 3.0 s, cases 18.0, 14.6 and 10.0 s. The bite did not reproduce
+the 10 s goto fail cold: the goto ended before the shot images were in the page, so `load` did not wait for them. With
+20 or 36 `yes` processes both modes failed earlier, in the fixture listing (60 s). Suspect: under load the page's
+`load` event comes after the shot images are inserted, and then the goto waits for cold shot draws. Not proven. Cost:
+`firstPage` 19.6, 27.7 and 47.8 s per worker under that load, 21.3 s unloaded; `warmUp` stays at 20 s loaded and 8.6 s
+unloaded. The first case gets 10 to 32 s faster, so a worker's start costs net 10 to 16 s more, because the warm-up
+waits for every shot of the page. Rejected: warming every target of the run on every worker took `warmUp` from 20 s to
+116 to 119 s for three targets. Not verified: a cold goto fail, a full `yarn studio:e2e`, the first pages of the other
+targets (System, Flow, Wide), CI.
+
 684\. Doc agent (2026-11-10, Mac night, 683): I recorded "e2e cases start while the build runs" as the cause of 683
 from the builder's first report, before any proof, and queued a fix for it; the bite then showed the rule already held.
 A fix round went into a cause nobody had proven. Why no tool caught it: the findings format has no field that says

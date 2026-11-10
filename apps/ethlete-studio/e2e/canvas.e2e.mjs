@@ -163,6 +163,7 @@ const WIDE = { width: 2000, height: 1100 };
 const CHIP_INSET = 12;
 
 const CANVAS = 'ethlete-design-canvas, ethlete-canvas-viewport';
+const SHOT_QUERY = '/__design/shot?';
 const FRAME = 'ethlete-canvas-frame, [data-canvas-frame], [data-sk-frame]';
 const ARROW_STEP = 80;
 const SETTLE_MS = 600;
@@ -2895,6 +2896,43 @@ const prepareCheckout = () => {
   return dir;
 };
 
+const openView = async (page, studioUrl, target) => {
+  await page.goto(`${studioUrl}${BLANK_PATH}`);
+  await page.evaluate(
+    ({ view, checkout }) => {
+      localStorage.clear();
+      localStorage.setItem('ethlete-studio.call-view', JSON.stringify({ checkout, ...view }));
+    },
+    { view: target.view, checkout },
+  );
+  await page.setViewportSize(NARROW);
+
+  const shots = new Set();
+  const onRequest = (request) => request.url().includes(SHOT_QUERY) && shots.add(request);
+  const onDone = (request) => shots.delete(request);
+
+  page.on('request', onRequest);
+  page.on('requestfinished', onDone);
+  page.on('requestfailed', onDone);
+
+  try {
+    await page.goto(studioUrl, { timeout: COLD_START_MS });
+    await page.waitForFunction(
+      ({ CANVAS, FRAME }) => document.querySelector(CANVAS)?.querySelector(FRAME),
+      { CANVAS, FRAME: target.frame ?? FRAME },
+      { timeout: COLD_START_MS },
+    );
+    for (let idle = 0, waited = 0; idle < 4 && waited < COLD_START_MS; waited += 250) {
+      await page.waitForTimeout(250);
+      idle = shots.size ? 0 : idle + 1;
+    }
+  } finally {
+    page.off('request', onRequest);
+    page.off('requestfinished', onDone);
+    page.off('requestfailed', onDone);
+  }
+};
+
 const warmUp = async (page, studioUrl) => {
   await page.goto(studioUrl);
   await page.waitForFunction(
@@ -3082,18 +3120,23 @@ const work = async () => {
       const builtAt = performance.now();
 
       await warmUp(page, studioUrl);
+      const warmedAt = performance.now();
+      let { job } = await nextJob();
+
+      if (job) await openView(page, studioUrl, PAGES[job.target]);
       process.send({
         type: 'ready',
         phases: {
           open: opened,
           fixtures: fixed - opened,
           build: builtAt - fixed,
-          warmUp: performance.now() - builtAt,
+          warmUp: warmedAt - builtAt,
+          firstPage: performance.now() - warmedAt,
         },
       });
       if (holdListingsMs) await holdListings(page);
       if (delayPicturesMs) await delayPictures(page);
-      for (let { job } = await nextJob(); job; { job } = await nextJob()) {
+      for (; job; { job } = await nextJob()) {
         const startedAt = performance.now();
         let result;
 
