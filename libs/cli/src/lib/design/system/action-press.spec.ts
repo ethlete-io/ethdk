@@ -72,7 +72,7 @@ describe('awaitOutput', () => {
     const page = await (browser as Browser).newPage();
 
     await page.setContent(content);
-    await page.evaluate('window.__etDesignEmits = []');
+    await page.evaluate('window.__etDesignEmits = []; window.__etOutputReads = 0');
     await watchMutations(page);
     await page.evaluate('window.start?.()');
 
@@ -81,55 +81,60 @@ describe('awaitOutput', () => {
     await awaitOutput(page, output);
 
     const waited = Date.now() - start;
+    const { reads, quietFrames } = (await page.evaluate(
+      '({ reads: window.__etOutputReads, quietFrames: window.__etQuietFrames })',
+    )) as { reads: number; quietFrames: number };
     const emitted = (await page.evaluate('window.__etDesignEmits.map((emit) => emit.output)')) as string[];
 
     await page.close();
 
-    return { waited, emitted };
+    return { waited, emitted, reads, quietFrames };
   };
 
-  const BUSY = `<div id="busy"></div><script>
+  const busy = (emitAtFrame?: number) => `<div id="busy"></div><script>
     window.start = () => {
-      const timer = setInterval(() => (document.getElementById('busy').textContent = String(Math.random())), 5);
-      window.stop = () => clearInterval(timer);
+      let frame = 0;
+      const tick = () => {
+        document.getElementById('busy').textContent = String(++frame);
+        if (frame === ${emitAtFrame ?? -1}) {
+          window.__etDesignEmits.push({ get output() { window.__etOutputReads++; return 'go'; } });
+        }
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
     };
   </script>`;
 
   it('stops waiting as soon as the expected output fired, even while the DOM keeps changing', async (context) => {
     if (!browser) return context.skip('no browser');
 
-    const { waited, emitted } = await timed(
-      `${BUSY}<script>setTimeout(() => window.__etDesignEmits.push({ output: 'go' }), 60)</script>`,
-      'go',
-    );
+    const { emitted, reads } = await timed(busy(3), 'go');
 
     expect(emitted).toEqual(['go']);
-    expect(waited).toBeLessThan(EMIT_WAIT_MS - 150);
+    expect(reads).toBe(1);
   });
 
   it('keeps waiting for an output that fires late while the DOM is still changing', async (context) => {
     if (!browser) return context.skip('no browser');
 
-    const { emitted } = await timed(
-      `${BUSY}<script>setTimeout(() => { window.__etDesignEmits.push({ output: 'go' }); window.stop(); }, 250)</script>`,
-      'go',
-    );
+    const { emitted, reads } = await timed(busy(9), 'go');
 
     expect(emitted).toEqual(['go']);
+    expect(reads).toBe(1);
   });
 
   it('stops waiting once the DOM stays unchanged for a few frames when nothing fires', async (context) => {
     if (!browser) return context.skip('no browser');
 
-    const { waited } = await timed('<div>still</div>', 'go');
+    const { quietFrames } = await timed('<div>still</div>', 'go');
 
-    expect(waited).toBeLessThan(EMIT_WAIT_MS - 150);
+    expect(quietFrames).toBe(2);
   });
 
   it('gives up after EMIT_WAIT_MS when the DOM never settles and the output never fires', async (context) => {
     if (!browser) return context.skip('no browser');
 
-    const { waited, emitted } = await timed(BUSY, 'go');
+    const { waited, emitted } = await timed(busy(), 'go');
 
     expect(emitted).toEqual([]);
     expect(waited).toBeGreaterThanOrEqual(EMIT_WAIT_MS - 20);
