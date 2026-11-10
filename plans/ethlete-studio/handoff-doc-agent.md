@@ -65,7 +65,7 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 ## Evening state (2026-11-10, after b6976eb26)
 
 - The human is back but away from the Mac. No open question for the human. Info given: 709 app icon pick by merge,
-  the B482 bite needs an unlocked Mac screen.
+  the Mac screen stays unlocked: screensaver off (`defaults -currentHost write com.apple.screensaver idleTime -int 0`) and `caffeinate -d -u` runs (pid 90006, 2026-11-10); undo with `pkill -x caffeinate` and `defaults -currentHost delete com.apple.screensaver idleTime`.
 - Linux batch pushed 8e25eecda (ADR 0255, 724 fix). Linux builder (ethlete-sdk-3e, tmux claude-3, fresh after
   builder-2026-11-10e): commit the 728 pre-commit Markdown prettier hook with a Built line under 728, watch CI, then the
   real-config "Sketch öffnen" re-check, step 6 gutter skip, ADR built: lines (0048, 0252, 0253), 723, 729.
