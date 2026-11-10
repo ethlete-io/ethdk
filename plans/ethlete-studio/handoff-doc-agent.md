@@ -117,3 +117,6 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   ("egal, wir sind nun in der nachtschicht"); put the summary to the human in the morning round. Findings 765 (repeat
   step live log, d06bd6f34 on the Mac) and 766 (doc agent mailbox send typed into the Linux builder pane; send to the
   Linux builder only by SendMessage) recorded. 766 tool fix is Linux night backlog, sent to the builder.
+- Night, later: Linux builder c18d4a1d0 (736+737 named shots, viewed hash) and 5a2a1a453 (archive rule, 22 findings moved)
+  committed, not pushed. 766 item 1 (pane regex, send refuses a SendMessage peer) and 767 (stale variant views) wait in
+  the Linux queue.

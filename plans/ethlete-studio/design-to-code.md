@@ -3421,6 +3421,11 @@ another cache restores has no single owner. Decided by the doc agent (tool inter
 line recalled). Suspect: `panelFocused` knows only `❯ ⏺` rows, this build draws `● main`.
 Tool fix (night, Linux): `send` refuses a SendMessage peer; panel regexes from a real pane.
 
+767\. Linux builder (2026-11-10, night, 736+737 c18d4a1d0): a viewed shot is tied to the hash of its sheet file, so a
+later shot that rewrites the same sheet file makes earlier variant views stale. Lesson: one file per drawn view, or the
+hash covers only the viewed variant. Tool fix (night backlog, Linux): the builder picks the rule; a spec bites with two
+variant views of one sheet.
+
 As built (Linux builder, 731 e2e quota step): `yarn push:suite` has an `e2e-quota` step after `e2e` and before
 `repeat`. It is its own step, not a part of `quota`: it needs the drawing builds and a Studio build, and it runs after
 the e2e suite passed unthrottled, so a failure here means a load-sensitive case, not a broken one. It takes the cases
