@@ -3720,6 +3720,18 @@ loses a finding number that its last committed version had; the doc-agent and bu
 `archive-findings.mjs`. More evidence: f1e5b1fd7 went through although the hook printed "STATUS.md: not
 formatted" from `check-staged-plans.mjs`.
 
+As built (691 part 3, dae1ed29d): `design check` prints each render problem that the base already shows as
+`OLD <line>`. The match is the ADR 0095 key of sketch ready, now exported as `sameRenderIssueKeyOf`; there is one
+matcher. Base: when a drawn part has no change to its inputs against HEAD (the `designHashOf` files, the part folder,
+`libs/`, `package.json`, `yarn.lock`), its issues are stored with the HEAD sha in
+`node_modules/.cache/ethlete-design/<product>/base-issues.json`; a later run that changes the part marks only the stored
+issues old, and drops the base when a commit after the stored sha touches an input. Old problems still exit 1 (ADR
+0095: they still need a fix). Bite: on Linux the 3 B477 lines do not show (`OFF-CENTRE 0`, exit 0, before and after);
+with a scratch CLI whose OFF-CENTRE tolerance was 0.2 px, the check printed `OFF-CENTRE 19`, all `OLD`, the B477 trio
+among them. `base-issues.spec.ts`: 3 tests; 2 fail when `oldRenderIssuesOf` returns an empty set. Not verified: the
+real B477 lines on macOS; an end-to-end run that changes canvas-frames (spec only). Limit: a run from a CLI that is not
+HEAD's counts as untouched and labels its hits old; only the label is wrong, not the exit code.
+
 As built (692): Cause proven. In a scratch clone, a staged STATUS row that cites the missing finding 99999 made
 `check-studio-adrs.mjs` print the error and `check-staged-plans.mjs` print "STATUS.md: not formatted", and
 `sh .husky/pre-commit` still exited 0. `.husky/pre-commit` now runs with `set -e`; the same bite exits 1. The check
