@@ -55,7 +55,7 @@ export const holdStatus = (options: { checkout: string; slug: string }) => {
 
 const isState = (value: string | undefined): value is CallState => CALL_STATES.includes(value as CallState);
 
-/** `et design status` shows the unpushed commits and the push gate; with a slug and a state it records a call's state by hand. */
+/** `et design status` shows the unpushed commits and the CI state; with a slug and a state it records a call's state by hand. */
 export const designStatus = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
   const json = argv.includes('--json');

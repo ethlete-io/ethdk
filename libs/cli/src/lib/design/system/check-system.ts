@@ -217,7 +217,7 @@ const uncomparedOf = (options: {
 
 /**
  * The IMPLEMENTATION-UNCOMPARED lines `check --rules --base` prints for `products`, limited to the files in `changed`,
- * without the other rules - the commit-time half of the design-rules gate - and the uncompared parts they name.
+ * without the other rules, and the uncompared parts they name.
  */
 export const uncomparedLinesOf = (options: {
   target: string;

@@ -1,9 +1,9 @@
 import { spawnSync } from 'child_process';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ciCachePath, ciStatusOfRuns, pushGateReceiptPath, pushStatusLines, pushStatusOf } from './push-status';
+import { ciCachePath, ciStatusOfRuns, pushStatusLines, pushStatusOf } from './push-status';
 import { designStatus } from './status';
 
 const git = (cwd: string, args: string[], date?: string) =>
@@ -47,7 +47,6 @@ describe('pushStatusOf', () => {
     vi.restoreAllMocks();
     dirs.splice(0).forEach((dir) => {
       rmSync(dir, { recursive: true, force: true });
-      rmSync(pushGateReceiptPath(dir), { force: true });
       rmSync(ciCachePath(dir), { force: true });
     });
   });
@@ -56,7 +55,7 @@ describe('pushStatusOf', () => {
     const dir = freshRepo();
     const status = pushStatusOf(dir, { now: Date.parse('2026-01-01T15:00:00Z') });
 
-    expect(status).toMatchObject({ base: 'origin/next', unpushed: 2, oldestAgeHours: 5, gate: 'unknown' });
+    expect(status).toMatchObject({ base: 'origin/next', unpushed: 2, oldestAgeHours: 5 });
     expect(pushStatusLines(status!)[0]).toBe('2 unpushed commit(s) on origin/next, oldest 5 h old');
   });
 
@@ -73,26 +72,9 @@ describe('pushStatusOf', () => {
     const status = pushStatusOf(dir);
 
     expect(status).toMatchObject({ base: 'origin/next', unpushed: 0, strayUpstream: 'origin/studio-mac-move' });
-    expect(pushStatusLines(status!)[3]).toBe(
+    expect(pushStatusLines(status!)[2]).toBe(
       'warning: the upstream is origin/studio-mac-move, not origin/next; run git branch --set-upstream-to=origin/next',
     );
-  });
-
-  it('reads the gate result only for the head it was run on', () => {
-    const dir = freshRepo();
-
-    mkdirSync(join(pushGateReceiptPath(dir), '..'), { recursive: true });
-    writeFileSync(
-      pushGateReceiptPath(dir),
-      JSON.stringify({ head: headOf(dir), ok: false, at: '2026-01-01T13:00:00Z' }),
-    );
-
-    expect(pushStatusOf(dir)?.gate).toBe('red');
-    expect(pushStatusLines(pushStatusOf(dir)!)[1]).toContain('before any feature slice');
-
-    commit(dir, '2026-01-01T14:00:00Z');
-
-    expect(pushStatusOf(dir)?.gate).toBe('unknown');
   });
 
   it('prints the push status as JSON for a bare status call', () => {
@@ -117,7 +99,7 @@ describe('pushStatusOf', () => {
     const status = pushStatusOf(dir, { gh })!;
 
     expect(status).toMatchObject({ ci: 'red', ciUrl: 'https://github.com/ethlete-io/ethdk/actions/runs/42467169184' });
-    expect(pushStatusLines(status)[2]).toBe(
+    expect(pushStatusLines(status)[1]).toBe(
       'ci: red - fix or revert before any feature slice (https://github.com/ethlete-io/ethdk/actions/runs/42467169184)',
     );
 
