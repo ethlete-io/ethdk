@@ -4117,3 +4117,15 @@ Measured (2026-11-10, Mac night, 28ba414d2, ADR 0240): full `yarn studio:e2e` 13
 daemon, load 7.3/13.9/14.5. Log `/tmp/studio-e2e-full-28ba414d2.log`. Typecheck of the unpushed range
 (`nx affected -t typecheck --base=origin/next --head=HEAD --skip-nx-cache` at b7b0a37e6): 19 projects, 0 errors. Skill
 sentence of 687 corrected in b7b0a37e6.
+
+Measured (2026-11-10, Mac night, b171f767f, iframe perf for the question "only visible frames are live"): real start path
+(`prepareCheckout` fixtures, `withStudio`, fresh build), 1440x900, all states shown on Sketches (`pages/system`, 52
+cells), Large (`elements/shell-main`, 30) and Wide (`title-bar@notice-hint`, 132); 1 warm-up and 3 runs per page and
+mode. Load 2.2 at the start, 6-7 during the main run (the run itself), 3.7 at the end, so not fully quiet. Live frames:
+6 on every page and run (the `liveShotsOf` cap), all 6 in the viewport; a scroll run (8 x 400 px) never had more than 6
+live and at most 1 off-screen. Per frame: 1.1-2.1 MB JS heap, 3-8 MB RSS (RSS noise 20-60 MB), idle CPU about 0 %. Open
+to all painted, median: Sketches 3020 ms, Large 1959 ms, Wide 2369 ms, spread about 1 s. An emulation of visible-only
+(off-screen iframes blanked, no product change) blanked 0 frames on open and 1 when scrolled; medians 2225, 2121,
+2721 ms, heap the same: the difference is noise. Not measured: a per-frame process figure, the cap lifted, the "painted
+but no picture" path that keeps frames live past the cap. Builder recommendation: not worth a day-shift feature, because
+the cap already keeps the live frames at 6 and in view. Raw data `/tmp/iframe-perf/` (not kept).

@@ -32,8 +32,9 @@ round; one short German line per event. Builder: ethlete-sdk-22 in tmux `claude@
    window case under load that the change cannot touch (B471, finding 681). Four push:suites tonight were red, each on
    a different load-sensitive e2e case. Recommendation: yes, for this one push, so CI proves or disproves the B466 fix;
    the full local range waits for green e2e.
-2. The iframe perf figures (if the builder has them): "only visible frames are live" as a day-shift feature?
-   Recommendation depends on the figures.
+2. "Only visible frames are live" as a day-shift feature? Measured (design-to-code.md, after finding 688): the
+   `liveShotsOf` cap already keeps 6 live frames, all in view; per frame 1-2 MB heap, about 0 % idle CPU; a
+   visible-only emulation changed nothing beyond noise. Recommendation: no, drop the idea.
 3. Type gate for a held push (findings 687, 688): two slices tonight went in red on types and nothing showed it; no
    local gate runs a typecheck (ADR 0038: CI only), and ADR 0216's draft-PR push per slice is not built and did not run
    at night. Options: (a) `push:suite` runs lint and typecheck for the touched projects (the lint step is in since
