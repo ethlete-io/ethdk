@@ -3872,3 +3872,9 @@ from the handoff name `builder-*` and `doc-agent-*` when the option is missing) 
 session with no role; `/handoff resume` of a role handoff loads the role skill itself instead of a line that asks for it.
 Bite: a restart of a session made without `--role` comes back with `ETHLETE_AGENT_ROLE=builder` and the rule prompt in
 its command line.
+As built (builder, 2026-11-10): `builder-chat-words.py` blocks a builder stop once when the turn's chat text is more
+than one line (not with `stop_hook_active`) and logs `lines` and `blocked`. `restart --process` takes the role from
+`--role`, `@ethlete_role` or a `builder-*` handoff name, adds `ETHLETE_AGENT_ROLE` and the rule once, and refuses a
+session with no role next to a repo peer without a builder (`--role none` passes). Handoff resume loads the role skill.
+Verified: hook and agent-sessions specs bite on the old code; lint, tsc and `agents:check` clean. Not verified: a live
+Stop-hook round trip and a live restart of a role-less session.

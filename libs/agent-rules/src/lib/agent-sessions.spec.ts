@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from 'child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { basename, join } from 'path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -437,6 +437,116 @@ describe('agent-sessions', () => {
     },
     30_000,
   );
+
+  const BUILDER_RULE =
+    'The user does not read this chat. Write no text between tool calls; end each turn with at most one line. Reports go to the grill session via SendMessage.';
+
+  const fakeClaude = (started: string) => {
+    const bin = join(dir, 'bin');
+    mkdirSync(bin);
+    writeFileSync(
+      join(bin, 'claude'),
+      `#!/bin/sh\nprintf 'role=%s\\n' "$ETHLETE_AGENT_ROLE" > ${started}; for arg; do printf '%s\\n' "$arg" >> ${started}; done; exec cat\n`,
+      { mode: 0o755 },
+    );
+    return join(bin, 'claude');
+  };
+
+  it.skipIf(!hasTmux)(
+    'gives the builder role and rule to a session without a role that resumes a builder handoff for restart --process',
+    async () => {
+      const agent = `claude-role-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const peer = `claude-grill-${process.pid}@${basename(dir)}`;
+      const started = join(dir, 'started.log');
+      const claude = fakeClaude(started);
+
+      spawnSync('tmux', ['new-session', '-d', '-s', peer, 'cat']);
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', `'${claude}' '/handoff resume old'`]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', '/handoff resume builder-x'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+        });
+
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toBe(`role=builder\n--append-system-prompt\n${BUILDER_RULE}\n/handoff resume builder-x\n`);
+        expect(
+          spawnSync('tmux', ['show-options', '-v', '-t', `=${scoped}:`, '@ethlete_role'], { encoding: 'utf8' }).stdout,
+        ).toBe('builder\n');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+        spawnSync('tmux', ['kill-session', '-t', `=${peer}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'adds the builder rule once when the stored command already has it for restart --process',
+    async () => {
+      const agent = `claude-once-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const started = join(dir, 'started.log');
+      const claude = fakeClaude(started);
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_role', 'builder']);
+      spawnSync('tmux', [
+        'set-option',
+        '-t',
+        `=${scoped}:`,
+        '@ethlete_command',
+        `ETHLETE_AGENT_ROLE=builder '${claude}' '--append-system-prompt' '${BUILDER_RULE}'`,
+      ]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+        });
+
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toBe(`role=builder\n--append-system-prompt\n${BUILDER_RULE}\nresume\n`);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)('refuses restart --process of a session without a role next to a peer session', () => {
+    const agent = `claude-norole-${process.pid}`;
+    const scoped = `${agent}@${basename(dir)}`;
+    const peer = `claude-peer-${process.pid}@${basename(dir)}`;
+    const exited = join(dir, 'exited.log');
+
+    spawnSync('tmux', ['new-session', '-d', '-s', peer, 'cat']);
+    spawnSync('tmux', ['new-session', '-d', '-s', scoped, `read line; echo "$line" > ${exited}`]);
+    spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', 'claude']);
+
+    try {
+      const result = run(
+        ['restart', agent, '--now', '--after', '0', '--process', '/handoff resume topic-x'],
+        undefined,
+        {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+        },
+      );
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain(`Refused: ${scoped} has no role`);
+      expect(existsSync(exited)).toBe(false);
+    } finally {
+      spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      spawnSync('tmux', ['kill-session', '-t', `=${peer}`]);
+    }
+  });
 
   it.skipIf(!hasTmux)(
     'answers the background work dialog with exit and stop tasks and reports the stopped jobs',

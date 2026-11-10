@@ -231,8 +231,11 @@ first line of the handoff file: `Restarted because: <one line>`. End the turn wi
    the constraints and the dead ends, so do not re-read the plan files it summarises, and do
    not survey the directory. Open a source file when you are going to edit it, and load a
    focused guidance file only when the work needs one.
-5. Continue with the **Next steps** section. Don't redo work listed under
+5. If the handoff name starts with a role prefix (`builder-`, `doc-agent-`) and a skill
+   of that name exists (`builder-agent`, `doc-agent`), load that skill now. Do it yourself;
+   do not wait for a line in the handoff that asks for it.
+6. Continue with the **Next steps** section. Don't redo work listed under
    _Done_; don't re-open questions under _Decisions_.
-6. When every next step is complete, decide whether the handoff can be removed. Delete it
+7. When every next step is complete, decide whether the handoff can be removed. Delete it
    only if this workflow created it and the save workflow or user authorized cleanup.
    Otherwise report that it is no longer needed and let the user decide.

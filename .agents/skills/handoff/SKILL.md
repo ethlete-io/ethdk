@@ -228,7 +228,10 @@ first line of the handoff file: `Restarted because: <one line>`. End the turn wi
    it summarises, and do not survey the directory. Open a source file when you are
    going to edit it, and read a skill only when the work needs one (e.g. `theming`
    before CSS work).
-5. Continue with the **Next steps** section. Don't redo work listed under
+5. If the handoff name starts with `builder-`, invoke the `builder-agent` skill now. If it
+   starts with `doc-agent-`, invoke the `doc-agent` skill. Do it yourself; do not wait for a
+   line in the handoff that asks for it.
+6. Continue with the **Next steps** section. Don't redo work listed under
    *Done*; don't re-open questions under *Decisions*.
-6. When every next step is complete (including changeset/docs follow-ups),
+7. When every next step is complete (including changeset/docs follow-ups),
    delete the handoff file so the directory only contains live handoffs.

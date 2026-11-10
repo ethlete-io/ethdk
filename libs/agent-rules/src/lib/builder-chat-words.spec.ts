@@ -21,14 +21,18 @@ describe('builder-chat-words', () => {
   const prompt = { type: 'user', message: { content: 'go' } };
   const toolResult = { type: 'user', message: { content: [{ type: 'tool_result', content: 'ok' }] } };
 
-  const run = (entries: object[], env: NodeJS.ProcessEnv = { ETHLETE_AGENT_ROLE: 'builder' }) => {
+  const run = (
+    entries: object[],
+    env: NodeJS.ProcessEnv = { ETHLETE_AGENT_ROLE: 'builder' },
+    payload: Record<string, unknown> = {},
+  ) => {
     const transcript = join(root, 'transcript.jsonl');
     writeFileSync(transcript, entries.map((entry) => JSON.stringify(entry)).join('\n'));
 
     return spawnSync('python3', [hookPath], {
       encoding: 'utf8',
       env: { ...process.env, ETHLETE_AGENT_ROLE: '', CLAUDE_PROJECT_DIR: root, ...env },
-      input: JSON.stringify({ session_id: 's1', transcript_path: transcript, hook_event_name: 'Stop' }),
+      input: JSON.stringify({ session_id: 's1', transcript_path: transcript, hook_event_name: 'Stop', ...payload }),
     });
   };
 
@@ -38,12 +42,50 @@ describe('builder-chat-words', () => {
       .split('\n')
       .map((line) => JSON.parse(line));
 
-  it('logs the words of the current turn only, silently', () => {
-    const result = run([prompt, text('one two three'), prompt, text('a b'), toolResult, text('c d e')]);
+  const block = {
+    decision: 'block',
+    reason:
+      'builder: no chat text. Send the report with SendMessage to the grill session; end the turn with at most one line.',
+  };
+
+  it('logs the words of the current turn only', () => {
+    const result = run([prompt, text('one two three'), prompt, text('a b'), toolResult, text('c d e')], undefined, {
+      stop_hook_active: true,
+    });
+
+    expect(result.status).toBe(0);
+    expect(log()).toMatchObject([{ session_id: 's1', words: 5, lines: 2 }]);
+  });
+
+  it('blocks a turn with a three-line chat reply once', () => {
+    const result = run([prompt, text('Done.'), toolResult, text('The suite passed.\n\nNow I push.')]);
+
+    expect(result.status).toBe(0);
+    expect(JSON.parse(result.stdout)).toEqual(block);
+    expect(log()).toMatchObject([{ lines: 3, blocked: true }]);
+  });
+
+  it('lets a one-line close through silently', () => {
+    const result = run([prompt, text('three\nlines\nbefore'), prompt, toolResult, text('\nReport sent.\n')]);
 
     expect(result.status).toBe(0);
     expect(result.stdout).toBe('');
-    expect(log()).toMatchObject([{ session_id: 's1', words: 5 }]);
+    expect(log()).toMatchObject([{ lines: 1, blocked: false }]);
+  });
+
+  it('does not block again while stop_hook_active is set', () => {
+    const result = run([prompt, text('one\ntwo\nthree')], undefined, { stop_hook_active: true });
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toBe('');
+    expect(log()).toMatchObject([{ lines: 3, blocked: false }]);
+  });
+
+  it('does not block outside a builder session', () => {
+    const result = run([prompt, text('one\ntwo\nthree')], { ETHLETE_AGENT_ROLE: '' });
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toBe('');
   });
 
   it('writes nothing outside a builder session', () => {

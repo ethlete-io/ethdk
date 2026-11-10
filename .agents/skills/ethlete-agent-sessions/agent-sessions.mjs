@@ -85,10 +85,12 @@ Run:     node ${script} run <name> <command...> [--role builder] [--dry-run]
 Install: node ${script} shell-install [<agent>...] [--file <path>] [--remove] [--dry-run]
                                                       (write the shell functions into ~/.zshrc or ~/.bashrc)
 Shell:   node ${script} shell-init [<agent>...]       (print shell functions that wrap each agent with run; default: claude codex)
-Restart: node ${script} restart <name> [--after <seconds>] [--notify <agent,...>] [--process] <prompt...>
+Restart: node ${script} restart <name> [--after <seconds>] [--notify <agent,...>] [--process] [--role builder|none] <prompt...>
                                                       (type the clear command and then the prompt into the tmux session of <name>;
                                                        a long wait on a draft and a give-up go to <name> and each --notify agent;
-                                                       --process ends the agent and starts it again in the same pane with the prompt)
+                                                       --process ends the agent and starts it again in the same pane with the prompt;
+                                                       it keeps the role, else takes it from a builder-* handoff name, and refuses
+                                                       a session with no role while another agent session runs in the repo)
 Down:    node ${script} down [<name>...]              (stop dispatch; stop the named sessions too)
 Dispatch: node ${script} dispatch                      (wake the tmux session named <agent> for each message sent --to <agent>)
 
@@ -141,6 +143,38 @@ const commandWithoutPrompt = (command) => {
   const words = tokens.slice(program).map(([word]) => unquoteWord(word));
   const kept = withoutPrompt(words).length;
   return kept === words.length ? command : command.slice(0, tokens[program + kept].index).trimEnd();
+};
+const HANDOFF_ROLE = /^\/handoff\s+resume\s+(builder|doc-agent)-/;
+const handoffRoleOf = (prompt) => prompt.match(HANDOFF_ROLE)?.[1] ?? null;
+const restartRoleOf = (session, prompt) => {
+  if (role === 'none') return null;
+  const found = role ?? roleOf(session) ?? handoffRoleOf(prompt);
+  return found === 'doc-agent' ? null : found;
+};
+const hasUnknownRole = (session, prompt) => {
+  if (role !== undefined || roleOf(session) || handoffRoleOf(prompt)) return false;
+  const peers = tmux('list-sessions', '-F', '#{session_name}')
+    .stdout.split('\n')
+    .filter((name) => name.endsWith(`@${repoSlug}`) && name !== session && name !== DISPATCH_SESSION);
+  return peers.length > 0 && !peers.some((name) => roleOf(name) === 'builder');
+};
+const commandWithRole = (command, agentRole) => {
+  const tokens = [...command.matchAll(SHELL_WORD)].map(([word]) => word);
+  const program = tokens.findIndex((word) => !ENV_WORD.test(word));
+  const env = program < 0 ? tokens : tokens.slice(0, program);
+  const words = tokens.slice(env.length).map(unquoteWord);
+  const kept = words.filter(
+    (word, index) =>
+      !(word === '--append-system-prompt' && words[index + 1] === BUILDER_PROMPT) &&
+      !(word === BUILDER_PROMPT && words[index - 1] === '--append-system-prompt'),
+  );
+  const rule =
+    agentRole === 'builder' && basename(kept[0] ?? '') === 'claude' ? ['--append-system-prompt', BUILDER_PROMPT] : [];
+  return [
+    ...env.filter((word) => !word.startsWith('ETHLETE_AGENT_ROLE=')),
+    `ETHLETE_AGENT_ROLE=${agentRole}`,
+    ...[...kept, ...rule].map(quote),
+  ].join(' ');
 };
 const bypassingShellFunction = (base) => base.replace(/^((?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*)/, '$1command ');
 const EXIT_DIALOG_JOBS = /will stop when you exit/i;
@@ -490,6 +524,14 @@ if (command === 'send' && sender) {
       `Refused: ${session} is not your session. You run in ${own}, so pass ${own.replace(`@${repoSlug}`, '')}.\n`,
     );
     process.exitCode = 1;
+  } else if (role !== undefined && role !== 'builder' && role !== 'none') {
+    process.stderr.write(`Unknown role ${role}. Pass --role builder or --role none.\n`);
+    process.exitCode = 1;
+  } else if (newProcess && hasUnknownRole(session, words.join(' '))) {
+    process.stderr.write(
+      `Refused: ${session} has no role and another agent session runs in this repo, so the new process could lose the builder rule. Resume a builder-* or doc-agent-* handoff, or pass --role builder or --role none.\n`,
+    );
+    process.exitCode = 1;
   } else if (now) {
     const type = (...keys) => tmux('send-keys', '-t', `=${session}:`, ...keys);
     sleep(Number(afterSeconds ?? RESTART_AFTER_SECONDS) * 1000);
@@ -503,7 +545,10 @@ if (command === 'send' && sender) {
       process.exitCode = 1;
     } else if (newProcess) {
       const pane = `=${session}:`;
-      const base = commandWithoutPrompt(agentCommandOf(session));
+      const restartRole = restartRoleOf(session, words.join(' '));
+      const stored = commandWithoutPrompt(agentCommandOf(session));
+      const base = restartRole ? commandWithRole(stored, restartRole) : stored;
+      if (restartRole) tmux('set-option', '-t', pane, ROLE_OPTION, restartRole);
       tmux('set-option', '-p', '-t', pane, 'remain-on-exit', 'on');
       type('-l', sender.startsWith('codex') ? '/quit' : '/exit');
       sleep(ENTER_DELAY_MS);
@@ -578,7 +623,7 @@ if (command === 'send' && sender) {
     if (own && own !== session) restartLog(`peer restart: ${own} restarted ${session}`);
     const delay = Number(afterSeconds ?? RESTART_AFTER_SECONDS);
     const forward = notify ? ['--notify', notify] : [];
-    const mode = newProcess ? ['--process'] : [];
+    const mode = [...(newProcess ? ['--process'] : []), ...(role ? ['--role', role] : [])];
     spawn(
       process.execPath,
       [script, 'restart', sender, '--now', '--after', String(delay), ...forward, ...mode, ...words],
