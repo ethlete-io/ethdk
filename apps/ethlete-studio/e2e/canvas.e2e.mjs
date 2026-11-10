@@ -3215,6 +3215,12 @@ let reportAsyncError = crashOnAsyncError;
 process.on('unhandledRejection', (error) => reportAsyncError(error));
 process.on('uncaughtException', (error) => reportAsyncError(error));
 
+const drawsSoFar = (designPort) =>
+  fetch(`http://[::1]:${designPort}/__design/queue`)
+    .then((answer) => answer.json())
+    .then((report) => report.drawnTotal ?? null)
+    .catch(() => null);
+
 const work = async () => {
   checkout = prepareCheckout();
 
@@ -3238,8 +3244,11 @@ const work = async () => {
       const builtAt = performance.now();
 
       await warmUp(page, studioUrl);
+      let drawn = await drawsSoFar(designPort);
+
       process.send({
         type: 'ready',
+        drawn,
         phases: {
           open: opened,
           fixtures: fixed - opened,
@@ -3277,7 +3286,17 @@ const work = async () => {
         if (leftRoutes.length)
           result = { ok: false, detail: `left route ${leftRoutes.join(', ')} active after the case: ${result.detail}` };
 
-        process.send({ type: 'result', ok: result.ok, detail: result.detail, ms: performance.now() - startedAt });
+        const ms = performance.now() - startedAt;
+        const drawnBefore = drawn;
+
+        drawn = await drawsSoFar(designPort);
+        process.send({
+          type: 'result',
+          ok: result.ok,
+          detail: result.detail,
+          ms,
+          drawn: drawn === null || drawnBefore === null ? null : drawn - drawnBefore,
+        });
       }
     },
     { built, checkout },
@@ -3470,6 +3489,7 @@ const lead = async () => {
       child.on('message', (message) => {
         if (message.type === 'result') {
           record(current, message);
+          console.log(`[canvas-e2e] worker ${index} drew ${message.drawn ?? '?'} picture(s) in the case`);
           current = undefined;
           busy.delete(index);
         }
@@ -3482,7 +3502,7 @@ const lead = async () => {
           console.log(
             `[canvas-e2e] worker ${index} ready: ${Object.entries(message.phases)
               .map(([phase, ms]) => `${phase} ${seconds(ms).trim()}`)
-              .join(', ')}`,
+              .join(', ')}, ${message.drawn ?? '?'} picture(s) drawn`,
           );
         if (message.type === 'next') void giveJob();
       });

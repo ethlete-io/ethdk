@@ -31,6 +31,7 @@ describe('createDrawLedger', () => {
       oldestMs: null,
       failedTotal: 0,
       failed: [],
+      drawnTotal: 0,
     });
 
     await vi.waitFor(() => expect(releases).toHaveLength(DRAWS_AT_ONCE));
@@ -42,7 +43,7 @@ describe('createDrawLedger', () => {
     releases.splice(0).forEach((release) => release());
     await Promise.all(drawn);
 
-    expect(ledger.report()).toMatchObject({ queued: 0, rendering: 0, oldestMs: null });
+    expect(ledger.report()).toMatchObject({ queued: 0, rendering: 0, oldestMs: null, drawnTotal: DRAWS_AT_ONCE + 2 });
   });
 
   it('lists the shots that failed, newest first, with their status', async () => {

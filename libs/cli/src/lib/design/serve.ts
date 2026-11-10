@@ -89,7 +89,7 @@ import {
   StylesheetImports,
   stylesheetImportsPlugin,
 } from './shot';
-import { createShotStore, StoredAddress } from './shot-store';
+import { createShotStore, SHOT_STORE_DIR, StoredAddress } from './shot-store';
 import { sharedDirsOf } from './system/imports';
 import { REGISTRY_SLICE_PATH } from './system/served-cache';
 import { ALL_PARTS, changedPartsOf, addedPartsOf, PartsChange } from './changed-parts';
@@ -121,6 +121,7 @@ import { createDrawQueue, createThumbnailer, send, THUMB_PATH, ThumbMissingError
 import { DeclaredMotion, motionMiddleware } from './motion-endpoint';
 import { assetRoot, snapshotPackage, installedAssetRoot } from './package-root';
 import { claimViteCache, viteCacheOf } from './vite-cache';
+import { workRootOf } from './work-root';
 import {
   callsRootOf,
   configPathOf,
@@ -519,6 +520,7 @@ const shotStoreOf = (options: {
   return createShotStore({
     dir,
     salt,
+    checkout: target,
     inputsOf: (address) => {
       const { product, part } = address;
       const entry = config.products?.[product];
@@ -545,7 +547,7 @@ const shotStoreOf = (options: {
       ]);
 
       // The snapshot folder is named after the server's pid, so its files are gone after a restart; the salt's asset hash covers them.
-      const snapshot = dirname(assetRoot());
+      const snapshots = [...new Set([dirname(assetRoot()), realpathSync(dirname(assetRoot()))])];
 
       return [
         ...dependencyFilesOf([...roots.flatMap((root) => root ?? []), ...styles], stylesheetImports),
@@ -553,7 +555,7 @@ const shotStoreOf = (options: {
         configPathOf(target),
         resolve(target, 'tsconfig.base.json'),
         ...(entry.head ? [resolve(target, entry.head)] : []),
-      ].filter((file) => !isInside(snapshot, resolve(file)));
+      ].filter((file) => !snapshots.some((snapshot) => isInside(snapshot, resolve(file))));
     },
     scopeOf: (address) =>
       JSON.stringify(
@@ -1189,7 +1191,7 @@ export const createDesignServer = async (options: {
         config,
         system,
         stylesheetImports,
-        shotCacheDir: listen && !own ? viteCacheOf(target, 'shots') : null,
+        shotCacheDir: listen && !own ? resolve(workRootOf(target), SHOT_STORE_DIR) : null,
         checkSketches,
       }),
     ],

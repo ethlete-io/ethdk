@@ -5,10 +5,10 @@ import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { assetRoot } from './package-root';
 import { DESIGN_DIR } from './design-config';
-import { viteCacheOf } from './vite-cache';
+import { workRootOf } from './work-root';
 import { serveDesign } from './serve';
 import { withRunSignal } from './run-abort';
-import { createShotStore } from './shot-store';
+import { createShotStore, SHOT_STORE_DIR } from './shot-store';
 import { COMMENT_EVENTS_PATH } from './studio-api';
 import { productModuleIdOf } from './system/system-modules';
 
@@ -166,9 +166,11 @@ const start = async (target: string, graph = new Map<string, FakeModule>()) => {
 };
 
 const storedIn = (target: string) => {
-  const dir = viteCacheOf(target, 'shots');
+  const dir = join(workRootOf(target), SHOT_STORE_DIR);
 
-  return existsSync(dir) ? readdirSync(dir).filter((name) => name.endsWith('.json')) : [];
+  return existsSync(dir)
+    ? (readdirSync(dir, { recursive: true }) as string[]).filter((name) => name.endsWith('.json'))
+    : [];
 };
 
 describe('the shots a design server keeps on disk', () => {
@@ -293,7 +295,7 @@ describe('createShotStore', () => {
   it('keeps no shot written after its run was aborted, so the next run draws it again', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'cli-shot-store-'));
     const input = join(dir, 'input.ts');
-    const store = createShotStore({ dir, salt: 's', inputsOf: () => [input], scopeOf: () => '' });
+    const store = createShotStore({ dir, salt: 's', checkout: dir, inputsOf: () => [input], scopeOf: () => '' });
     const run = new AbortController();
 
     writeFileSync(input, 'one');
@@ -305,18 +307,18 @@ describe('createShotStore', () => {
 
     expect(store.read('before', address)).toEqual(picture);
     expect(store.read('after', address)).toBeNull();
-    expect(readdirSync(dir).filter((name) => name.startsWith('.'))).toEqual([]);
+    expect((readdirSync(dir, { recursive: true }) as string[]).filter((name) => name.includes('/.'))).toEqual([]);
   });
 
   it('treats a corrupt entry as a miss', () => {
     const dir = mkdtempSync(join(tmpdir(), 'cli-shot-store-'));
     const input = join(dir, 'input.ts');
-    const store = () => createShotStore({ dir, salt: 's', inputsOf: () => [input], scopeOf: () => '' });
+    const store = () => createShotStore({ dir, salt: 's', checkout: dir, inputsOf: () => [input], scopeOf: () => '' });
 
     writeFileSync(input, 'one');
     store().write('key', { address, picture });
 
-    const [entry = ''] = readdirSync(dir);
+    const [entry = ''] = (readdirSync(dir, { recursive: true }) as string[]).filter((name) => name.endsWith('.json'));
 
     expect(store().read('key', address)).toEqual(picture);
 
@@ -327,7 +329,7 @@ describe('createShotStore', () => {
 
   it('keeps the text style of the frame root, which compare sets on the app host', () => {
     const dir = mkdtempSync(join(tmpdir(), 'cli-shot-store-'));
-    const store = createShotStore({ dir, salt: 's', inputsOf: () => [], scopeOf: () => '' });
+    const store = createShotStore({ dir, salt: 's', checkout: dir, inputsOf: () => [], scopeOf: () => '' });
     const ambient = {
       fontFamily: 'Inter',
       fontSize: '14px',
@@ -342,9 +344,82 @@ describe('createShotStore', () => {
     expect(store.read('key', address)).toEqual({ ...picture, ambient });
   });
 
+  describe('shared by checkouts', () => {
+    const entriesIn = (dir: string) =>
+      (readdirSync(dir, { recursive: true }) as string[]).filter((name) => name.endsWith('.json'));
+    const setUp = () => {
+      const base = mkdtempSync(join(tmpdir(), 'cli-shot-store-'));
+      const dir = join(base, 'store');
+      const checkouts = ['one', 'two'].map((name) => {
+        const checkout = join(base, name);
+
+        mkdirSync(join(checkout, 'src'), { recursive: true });
+        writeFileSync(join(checkout, 'src/card.ts'), 'card');
+        writeFileSync(join(checkout, 'src/button.ts'), 'button');
+
+        return checkout;
+      });
+      const storeOf = (checkout: string) =>
+        createShotStore({
+          dir,
+          salt: 's',
+          checkout,
+          inputsOf: ({ part }) => [join(checkout, `src/${part}.ts`)],
+          scopeOf: ({ part }) => JSON.stringify({ file: join(checkout, `src/${part}.ts`) }),
+        });
+
+      return { dir, checkouts, stores: checkouts.map(storeOf) };
+    };
+    const card = { ...address, part: 'card' };
+    const button = { ...address, part: 'button' };
+
+    it('serves a picture drawn in another checkout whose read files read the same, under the same entry', () => {
+      const { dir, stores } = setUp();
+      const [one, two] = stores;
+
+      one?.write('card', { address: card, picture });
+      two?.write('card', { address: card, picture });
+
+      expect(entriesIn(dir)).toHaveLength(1);
+      expect(two?.read('card', card)).toEqual(picture);
+    });
+
+    it('misses only the picture whose read file changed in this checkout, and keeps the other checkout its own', () => {
+      const { dir, checkouts, stores } = setUp();
+      const [one, two] = stores;
+      const changed = { png: Buffer.from('changed png'), marks: [] };
+
+      one?.write('card', { address: card, picture });
+      one?.write('button', { address: button, picture });
+      writeFileSync(join(checkouts[1] ?? '', 'src/card.ts'), 'card, changed');
+
+      expect(two?.read('card', card)).toBeNull();
+      expect(two?.read('button', button)).toEqual(picture);
+
+      two?.write('card', { address: card, picture: changed });
+
+      expect(entriesIn(dir)).toHaveLength(3);
+      expect(two?.read('card', card)).toEqual(changed);
+      expect(one?.read('card', card)).toEqual(picture);
+    });
+
+    it('drops only the variant its own checkout used', () => {
+      const { checkouts, stores } = setUp();
+      const [one, two] = stores;
+
+      writeFileSync(join(checkouts[1] ?? '', 'src/card.ts'), 'card, changed');
+      one?.write('card', { address: card, picture });
+      two?.write('card', { address: card, picture });
+      two?.drop('card');
+
+      expect(two?.read('card', card)).toBeNull();
+      expect(one?.read('card', card)).toEqual(picture);
+    });
+  });
+
   it('drops the oldest entries past its limit', () => {
     const dir = mkdtempSync(join(tmpdir(), 'cli-shot-store-'));
-    const store = createShotStore({ dir, salt: 's', inputsOf: () => [], scopeOf: () => '', limit: 120 });
+    const store = createShotStore({ dir, salt: 's', checkout: dir, inputsOf: () => [], scopeOf: () => '', limit: 120 });
 
     for (const key of ['one', 'two', 'three']) store.write(key, { address, picture });
 

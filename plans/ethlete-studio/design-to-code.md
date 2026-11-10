@@ -3841,6 +3841,33 @@ The assertion of the fixture states stays once per run: only worker 0 gets `--ch
 the request fails the run on any worker: it reports the fault to the lead, which empties the queue and fails the run.
 Part c is open.
 
+As built (667 c, shared shot store): the design server's shot store moved from `shots-<sha1 of the checkout path>` to
+one `part-shots` folder under the work root, so every checkout that shares a `node_modules` (every e2e worker) shares
+it. The read-files fingerprint is the one the store already had: the content hash of every file a picture was drawn
+from, plus the scope string. Files and paths inside the checkout are now stored relative to it, so the same inputs in
+another checkout give the same fingerprint. A key keeps up to 4 variants, one per fingerprint, so a checkout with a
+changed file gets its own picture and never takes the other's; `drop` drops only the variant this server used. The
+server snapshot folder (`server-<pid>`) was a stored input under its real path, which the old filter missed through
+the e2e checkout's `node_modules` symlink; it is filtered by both paths now. The vite `cacheDir` stays per checkout:
+vite's config hash includes `root` and `resolve` (`getConfigHash`), and `resolve.alias` holds the checkout's paths, so
+a shared folder would be rewritten by each checkout. The draw ledger counts `drawnTotal` (`/__design/queue`), and each
+e2e worker prints its draws in the `ready` line and after each case.
+Bite, Sketches/Chip/Large first-load cases, 1 worker, two runs one after the other: HEAD drew 22 in setup and 28 to 35
+per case in both runs. New, warm run: 12 in setup, 0 in every case. Cause: the path-keyed store. The 12 left are
+`fresh` draws of the fixture compare (`drawnPair` draws a pair that differs once more on purpose), so `fixtures` stays
+25 to 28 s. A comment added to `zoom-chip.ts` in one run's checkout: 67 draws, and exactly 67 keys got a second variant,
+all of them keys whose inputs read `zoom-chip.ts`; no other key drew. Unit spec: same files in two checkouts give one
+entry and a hit; a changed file misses only that picture and keeps the other checkout's.
+E2E, 7 cases (first load and Fit), 3 workers: HEAD plain 7/7, 120.9 s, ready fixtures 35.7-37.4 s, warmUp
+11.6-11.9 s, 22 draws each; HEAD with `--hold-listings 14000` 7/7, 122.1 s, fixtures 36.2-37.7 s, warmUp 11.3-12.3 s.
+New, held, cold store (fresh cli salt) 7/7, 111.9 s, fixtures 36.5-37.3 s, warmUp 11.3-11.6 s; new, plain, warm 7/7,
+93.4 s, fixtures 33.2-34.6 s, warmUp 11.3-11.6 s, 0 draws in 5 of 7 cases. Load was 18 to 27 in these runs, so the
+times are noisy. Not solved: workers that start at the same time with a cold store still each draw the same shots, as
+nothing shares a draw in flight across processes. Suspect: the Wide Fit case draws about 30 every run because its sketch
+is made fresh in each checkout, so its inputs differ. Not verified: a full `yarn studio:e2e`, CI, two real user
+worktrees with their own `node_modules` (they get a store each, as before). The 517 old `shots-*` folders in the main
+`node_modules/.design-explore` are left there.
+
 668\. Builder (2026-11-09, Mac night, push:suite on 4a0978b11): e2e 130/131 in 544 s, load 7.7 to 40. The case
 'hover alone draws no frame border' failed on "new -> button[data-part-give-go,...] outline solid 2px transparent |
 border solid 1px transparent": a button that mounted late under load, with no drawn border. Alone 4/4 pass (B464).

@@ -17,6 +17,8 @@ export type QueueReport = {
   oldestMs: number | null;
   failedTotal: number;
   failed: DrawFailure[];
+  /** Drawings started since the server started; a picture served from memory or disk starts none. */
+  drawnTotal: number;
 };
 
 type Asked = { since: number; drawing: boolean };
@@ -33,6 +35,7 @@ export const createDrawLedger = (
   const asked = new Set<Asked>();
   const failed: DrawFailure[] = [];
   let failedTotal = 0;
+  let drawnTotal = 0;
 
   return {
     /** Records a drawing as queued; `start` marks it drawing and `end` drops it. */
@@ -43,6 +46,7 @@ export const createDrawLedger = (
 
       return {
         start: () => {
+          if (!entry.drawing) drawnTotal++;
           entry.drawing = true;
         },
         end: () => {
@@ -71,6 +75,7 @@ export const createDrawLedger = (
         oldestMs: entries.length ? now() - oldest : null,
         failedTotal,
         failed: [...failed],
+        drawnTotal,
       };
     },
   };
