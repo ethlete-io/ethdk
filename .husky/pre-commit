@@ -39,3 +39,11 @@ if [ -n "$plan_files" ]; then
   # shellcheck disable=SC2086
   node ./tools/scripts/check-staged-plans.mjs $plan_files
 fi
+
+# Lint errors fail here instead of in CI: eslint on the staged files only, with the config of the lib they sit in.
+lint_files=$(git diff --cached --name-only --diff-filter=ACM -- 'libs/*.ts' 'apps/*.ts' 'tools/*.mjs' 'tools/*.js' 'libs/*.mjs' 'libs/*.js')
+
+if [ -n "$lint_files" ]; then
+  # shellcheck disable=SC2086
+  node ./tools/scripts/lint-staged-files.mjs $lint_files
+fi

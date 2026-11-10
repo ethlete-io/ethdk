@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { spawn, execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, extname, join, resolve } from 'node:path';
@@ -79,8 +80,22 @@ export const webkitVerdict = (statuses) => {
   return { exit: failed.length ? 1 : blind.length ? WEBKIT_BLIND_EXIT : 0, lines };
 };
 
+const rebuildCli = () =>
+  execFileSync('npx', ['nx', 'build', 'cli'], {
+    cwd: root,
+    stdio: 'inherit',
+    env: { ...process.env, NX_NO_CLOUD: 'true' },
+  });
+
 export const ensureCli = () => {
-  if (!existsSync(cliEntry)) execFileSync('npx', ['nx', 'build', 'cli'], { cwd: root, stdio: 'inherit' });
+  if (!existsSync(cliEntry)) return rebuildCli();
+  if (process.env['STUDIO_CLI_ENTRY']) return;
+  const buildDir = resolve(dirname(cliEntry), '..');
+  const { staleCliBuildMessage } = createRequire(import.meta.url)(join(dirname(cliEntry), 'lib/source-hash.js'));
+  if (!staleCliBuildMessage({ root, buildDir })) return;
+  console.log('[canvas-e2e] dist/libs/cli is stale, rebuilding it: npx nx build cli');
+  rebuildCli();
+  if (staleCliBuildMessage({ root, buildDir })) throw new Error('dist/libs/cli is still stale after npx nx build cli');
 };
 
 export const buildStudio = (outputPath, stamp) => {

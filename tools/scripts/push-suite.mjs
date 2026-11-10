@@ -24,7 +24,7 @@ const RUNNER = 'apps/ethlete-studio/e2e/canvas.e2e.mjs';
 const WORKSPACE_PARENTS = ['apps', 'libs', 'tools'];
 const DRAWING_BUILDS = ['cli', 'components', 'core'];
 
-export const STEPS = ['cli', 'studio', 'e2e', 'repeat'];
+export const STEPS = ['lint', 'cli', 'studio', 'e2e', 'repeat'];
 export const EXEMPT_PATHS = [/^plans\//, /^\.changeset\//, /\.md$/];
 
 export const parseArgs = (argv) => {
@@ -68,6 +68,23 @@ export const failureReport = (output) => {
 
   return [...failed, ...tail].join('\n');
 };
+
+export const lintedProjects = (files, read = (path) => readFileSync(path, 'utf8'), exists = existsSync) => {
+  const names = new Set();
+  for (const file of files) {
+    const [parent, name] = file.split('/');
+    if (!WORKSPACE_PARENTS.includes(parent)) continue;
+    const dir = join(root, parent, name);
+    if (exists(join(dir, 'eslint.config.mjs')) && exists(join(dir, 'project.json')))
+      names.add(JSON.parse(read(join(dir, 'project.json'))).name);
+  }
+  return [...names].sort();
+};
+
+export const lintStep = (projects, dir) =>
+  projects.length === 0
+    ? Promise.resolve({ status: 0, output: '', note: 'no linted project touched' })
+    : runStep('npx', ['nx', 'run-many', '-t', 'lint', '-p', ...projects], dir);
 
 const git = (...args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
 
@@ -165,6 +182,11 @@ export const pushSuite = async ({ only, range }, log = console.log) => {
   };
 
   const steps = {
+    lint: () => {
+      const changed = git('diff', '--name-only', range);
+      if (changed.status !== 0) return Promise.resolve({ status: 1, output: changed.stderr });
+      return lintStep(lintedProjects(changed.stdout.split('\n').filter(Boolean)), dir);
+    },
     cli: () => runStep('npx', ['nx', 'test', 'cli'], dir),
     studio: () => runStep('npx', ['nx', 'test', 'ethlete-studio'], dir),
     e2e: () => afterBuild(() => runStep(process.execPath, [join(dir, RUNNER)], dir, E2E_LOG)),

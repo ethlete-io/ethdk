@@ -3785,6 +3785,14 @@ the worker output. Why no tool caught it: the guard runs inside each worker, not
 bug queue): the canvas runner checks dist freshness once before it starts workers and fails with the rebuild command
 as its first line.
 
+As built (663, 2026-11-10, with 685): `ensureCli` in `tools/scripts/verify-studio-headless.mjs` checked only that
+`dist/libs/cli/src/index.js` exists. It now loads `staleCliBuildMessage` from the dist's own `lib/source-hash.js` (the check
+`et design` runs, no second one), rebuilds with `nx build cli` when it says stale, and throws if the build is still stale.
+It runs before the workers start, and `STUDIO_CLI_ENTRY` skips it. Bite: appended a blank line to
+`libs/cli/src/lib/source-hash.ts`, `yarn studio:e2e --case "first load creates one iframe"` printed
+`dist/libs/cli is stale, rebuilding it`, built, and passed 3/3 in 68.6 s; the source was restored and the dist rebuilt.
+Not verified: that HEAD before the change fails 0/131 (that failure is from the 663 report); the still-stale throw path.
+
 664\. Doc agent (2026-11-09, Mac night): the first Mac e2e step (push-suite on 077bd0543, load 8-35, so not a
 measurement) ran 133 cases on 3 workers in 513.3 s; the PC ran them on 8 workers in 117-127 s. The 90 s goal of ADR
 0237 names no machine and no worker count, so a Mac figure and a PC figure cannot be compared. Why no tool caught it:
@@ -4206,6 +4214,18 @@ stays hidden until CI. Why no tool caught it: the local commit gate and the push
 lint, and nothing says so. Tool fix (bug queue, next): `yarn commit` runs eslint on the staged files. Also queued from
 667 (c): (a) the design server shares an in-flight draw of the same key; (b) the design server prunes `shots-*` folders
 of the old path-keyed store, so the cache does not grow without a bound.
+
+As built (685, 2026-11-10): two checks. (1) `.husky/pre-commit` runs `tools/scripts/lint-staged-files.mjs` on the staged
+`.ts`, `.mjs` and `.js` under `libs/` and `apps/`. It groups them by project dir and runs `npx eslint --no-warn-ignored`
+inside it, which is the config and cwd `nx lint` uses (`eslint .` in the project root); `tools/` has no lint config and
+is not linted. Time: 0.4 s with nothing to lint, 2.2 s for 1 staged file and 2.0 s for 5 (libs/cli). Bite: a staged
+`setInterval` in `libs/cli/src/lib/source-hash.ts` fails the hook (exit 1, `ethlete/prefer-rxjs-timer`); the hook at HEAD
+exits 0 on the same index. (2) `yarn push:suite` has a `lint` step first (`--only lint` works): `nx run-many -t lint` for
+the projects whose `eslint.config.mjs` and `project.json` sit under the paths changed in the range, on the exported HEAD;
+a failure writes `blocked lint failed`. Bite of the step function (`lintStep(['cli'], root)`), not the whole suite: status 0
+on the clean tree, status 1 with the eslint error in the report on a tree with the temporary `setInterval`, 11.3 s.
+Not verified: a full `yarn push:suite` run or `--only lint` on an exported HEAD with a committed lint error; the
+`lintedProjects` mapping was checked by hand on five paths, no spec.
 
 Measured (2026-11-10, Mac night, 9e2572e8c, ADR 0240): full `yarn studio:e2e` 131/131 in 410.9 s on a warm shared shot
 store, 31.3 s (7 %) faster than 442.2 s; first case at 50.1 s, quiet tail from 361.2 s; one run, no spread yet. The run
