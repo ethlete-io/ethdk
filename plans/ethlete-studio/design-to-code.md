@@ -3456,6 +3456,12 @@ Tool fix (tonight, bug queue after queue 1; doc agent decision): push-suite re-r
 (`node <export>/tools/scripts/push-suite.mjs`), so the gate is the committed gate; a spec checks that a dirty
 `tools/scripts` file does not change the run. Until then: run push-suite only with a clean `tools/scripts`.
 
+As built (656): push-suite exports HEAD, then spawns `node <export>/tools/scripts/push-suite.mjs` (`reexecCommand`)
+with `PUSH_SUITE_EXPORT` and `PUSH_SUITE_REPO`; the inner run does the steps and writes the verdict for the real repo,
+the outer removes the export. `studio-e2e-repeat` and `stale-design-servers` load by dynamic `import()` in the inner
+run, so the outer loads no sibling script. Spec: `reexecCommand` plan, and no static sibling import in the source
+(a static import breaks the spec file). Not verified: a full `yarn push:suite` with a dirty `tools/scripts`.
+
 As built (647 part 3, delay in the hold run): `studio-e2e-repeat.mjs` passes `--delay-pictures 60000`
 (`DELAY_PICTURES_MS`) with `--hold-listings 14000` in its last run (`runArgs`); the log line names both. The hold
 masks a short delay: pictures requested while the listing is held land before the case scrolls back, so with the
@@ -3497,6 +3503,10 @@ extra time of run 3 (measured in the idle runs).
 files, 1 unhandled error from `serve.spec.ts`, load 58), but its log named no failed spec, only the file of the
 unhandled error. Why no tool caught it: the 648 `failureReport` reads only e2e rows. Tool fix (tonight, bug queue):
 `failureReport` also prints the vitest `FAIL <file> > <test>` rows.
+
+As built (658): `FAILED_ROW` also matches `FAIL ` rows after stripping ANSI. Fixtures `vitest-failed.txt` and
+`vitest-failed-color.txt` are captured from a real failing `vitest run` (FORCE_COLOR on and off). Verified: with the
+`FAIL` alternative removed the new spec fails. Not verified: output of `nx test cli` itself (prefix lines).
 
 659\. Doc agent (2026-11-09, Mac night): the builder blamed a load of 81-107 on "other sessions". A `ps` at load 91
 showed only this checkout's own work: two `tsc --noEmit`, a `libs/cli` tsc build, cli vitest workers, Playwright

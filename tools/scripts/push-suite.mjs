@@ -9,16 +9,17 @@ import {
   readdirSync,
   readFileSync,
   readlinkSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
-import { staleDesignServers, staleServerWarnings } from './stale-design-servers.mjs';
-import { changedLines, runRepeatGate, TRIGGERS } from './studio-e2e-repeat.mjs';
+import { pathToFileURL } from 'node:url';
 
-const root = resolve(import.meta.dirname, '../..');
+const INNER_EXPORT = process.env['PUSH_SUITE_EXPORT'];
+const root = process.env['PUSH_SUITE_REPO'] ?? resolve(import.meta.dirname, '../..');
 export const E2E_LOG = join(root, '.claude/handoffs/push-suite-e2e.log');
 const RUNNER = 'apps/ethlete-studio/e2e/canvas.e2e.mjs';
 const WORKSPACE_PARENTS = ['apps', 'libs', 'tools'];
@@ -59,12 +60,14 @@ export const parseLog = (output) =>
       return { sha, files };
     });
 
-const FAILED_ROW = /^\s*(✘\s|\d+\) \[|NOT RUN |HOLD FAIL )/;
+const FAILED_ROW = /^\s*(✘\s|\d+\) \[|NOT RUN |HOLD FAIL |FAIL\s)/;
+const ANSI = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g');
+const stripAnsi = (line) => line.replace(ANSI, '');
 
 export const failureReport = (output) => {
   const lines = output.split('\n');
   const tail = lines.slice(-40);
-  const failed = lines.slice(0, -40).filter((line) => FAILED_ROW.test(line));
+  const failed = lines.slice(0, -40).filter((line) => FAILED_ROW.test(stripAnsi(line)));
 
   return [...failed, ...tail].join('\n');
 };
@@ -140,14 +143,27 @@ export const runStep = (command, args, cwd, logFile) =>
     child.on('close', (status) => done({ status: status ?? 1, output }));
   });
 
-export const warnStaleDesignServers = (log) => {
+export const reexecCommand = (exportDir, repo, { only, range }, env = process.env) => ({
+  command: process.execPath,
+  args: [join(exportDir, 'tools/scripts/push-suite.mjs'), ...(only ? ['--only', only] : []), range],
+  env: { ...env, PUSH_SUITE_REPO: repo, PUSH_SUITE_EXPORT: exportDir },
+});
+
+const runInner = (plan) =>
+  new Promise((done) => {
+    const child = spawn(plan.command, plan.args, { env: plan.env, stdio: 'inherit' });
+    for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.once(signal, () => child.kill(signal));
+    child.on('close', (status) => done(status ?? 1));
+  });
+
+export const warnStaleDesignServers = async (log) => {
+  const { staleDesignServers, staleServerWarnings } = await import('./stale-design-servers.mjs');
   const ps = spawnSync('ps', ['-Ao', 'pid,etime,command'], { encoding: 'utf8' });
   if (ps.status !== 0) return;
   for (const line of staleServerWarnings(staleDesignServers(ps.stdout, { root }))) log(line);
 };
 
 export const pushSuite = async ({ only, range }, log = console.log) => {
-  warnStaleDesignServers(log);
   const sha = git('rev-parse', 'HEAD').stdout.trim();
   const finish = (verdict) => {
     log(`push-suite: ${verdict}`);
@@ -165,13 +181,14 @@ export const pushSuite = async ({ only, range }, log = console.log) => {
   Object.assign(process.env, { NX_NO_CLOUD: 'true', NX_DAEMON: 'false' });
   delete process.env['STUDIO_CLI_ENTRY'];
   const exportedAt = performance.now();
-  const { dir, error } = exportCommit(sha);
-  const removeExport = () => rmSync(dir, { recursive: true, force: true });
-  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'])
-    process.once(signal, () => {
-      removeExport();
-      process.exit(1);
-    });
+  const { dir, error } = INNER_EXPORT ? { dir: INNER_EXPORT } : exportCommit(sha);
+  const removeExport = () => (INNER_EXPORT ? undefined : rmSync(dir, { recursive: true, force: true }));
+  if (!INNER_EXPORT)
+    for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'])
+      process.once(signal, () => {
+        removeExport();
+        process.exit(1);
+      });
 
   let built;
   const buildDrawingLibs = () =>
@@ -192,6 +209,7 @@ export const pushSuite = async ({ only, range }, log = console.log) => {
     e2e: () => afterBuild(() => runStep(process.execPath, [join(dir, RUNNER)], dir, E2E_LOG)),
     repeat: () =>
       afterBuild(async () => {
+        const { changedLines, runRepeatGate, TRIGGERS } = await import('./studio-e2e-repeat.mjs');
         const diff = git('diff', '-U0', range, '--', ...TRIGGERS);
         if (diff.status !== 0) return { status: 1, output: diff.stderr };
         const lines = [];
@@ -203,7 +221,11 @@ export const pushSuite = async ({ only, range }, log = console.log) => {
 
   try {
     if (error) return finish(`blocked export of ${sha} failed: ${error}`);
-    log(`push-suite: exported ${sha.slice(0, 12)} to ${dir} in ${seconds(performance.now() - exportedAt)}`);
+    if (!INNER_EXPORT) {
+      log(`push-suite: exported ${sha.slice(0, 12)} to ${dir} in ${seconds(performance.now() - exportedAt)}`);
+      return await runInner(reexecCommand(dir, root, { only, range }));
+    }
+    await warnStaleDesignServers(log);
     for (const name of only ? [only] : STEPS) {
       const startedAt = performance.now();
       const { status, output, note } = await steps[name]();
@@ -237,7 +259,7 @@ export const checkPush = (base, sha, log = console.error) => {
   return 1;
 };
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   const argv = process.argv.slice(2);
   process.exit(argv[0] === '--check' ? checkPush(argv[1], argv[2]) : await pushSuite(parseArgs(argv)));
 }

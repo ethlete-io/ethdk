@@ -3,7 +3,15 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { failureReport, linkTargetOf, missingVerdict, parseArgs, parseLog, runStep } from './push-suite.mjs';
+import {
+  failureReport,
+  linkTargetOf,
+  missingVerdict,
+  parseArgs,
+  parseLog,
+  reexecCommand,
+  runStep,
+} from './push-suite.mjs';
 
 test('defaults the repeat range to the upstream and reads --only', () => {
   assert.deepEqual(parseArgs([]), { only: undefined, range: '@{upstream}..HEAD' });
@@ -114,4 +122,32 @@ test('a failed step reports every failed row of a captured run, also one far abo
   assert.ok(report.some((line) => /^\s+✘\s+9 \[Large\] › a sketch scroll never empties a cell/.test(line)));
   assert.deepEqual(report.slice(-40), output.split('\n').slice(-40));
   assert.equal(report.filter((line) => line.includes('✓')).length, 0);
+});
+
+test('a failed vitest spec reports its FAIL row, with and without colors', () => {
+  const filler = Array.from({ length: 45 }, (_, index) => `later line ${index}`);
+  for (const name of ['vitest-failed.txt', 'vitest-failed-color.txt']) {
+    const fixture = readFileSync(join(import.meta.dirname, 'fixtures/push-suite', name), 'utf8');
+    const report = failureReport([...fixture.split('\n'), ...filler].join('\n')).split('\n');
+    const row = report.find((line) => line.includes('FAIL'));
+
+    assert.ok(row, name);
+    assert.match(row.replace(/\x1b\[[0-9;]*m/g, ''), /FAIL\s+a\.spec\.mjs > serve > fails here/);
+    assert.equal(report.length, 41);
+  }
+});
+
+test('the suite re-runs itself from the export, so every gate script is the committed one', () => {
+  const plan = reexecCommand('/tmp/export', '/repo', { only: 'repeat', range: 'a..b' }, { PATH: 'x' });
+
+  assert.deepEqual(plan.args, ['/tmp/export/tools/scripts/push-suite.mjs', '--only', 'repeat', 'a..b']);
+  assert.equal(plan.env.PUSH_SUITE_REPO, '/repo');
+  assert.equal(plan.env.PUSH_SUITE_EXPORT, '/tmp/export');
+  assert.deepEqual(reexecCommand('/e', '/r', { range: 'a..b' }, {}).args.slice(1), ['a..b']);
+});
+
+test('push-suite imports no sibling script at load time, so no live gate code runs before the re-exec', () => {
+  const source = readFileSync(join(import.meta.dirname, 'push-suite.mjs'), 'utf8');
+
+  assert.deepEqual(source.match(/^import .* from '\.\/.*';$/gm) ?? [], []);
 });
