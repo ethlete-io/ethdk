@@ -22,8 +22,8 @@ if (args.includes('--help')) {
   console.log(`Usage: yarn studio:release-smoke [--app <Ethlete Studio.app>] [options]
 
 Starts a Studio release bundle once, opens a sketch and fails on a CSP refusal or any console error the
-bundle writes to its console log (ETHLETE_STUDIO_CONSOLE_LOG). Without --app it builds a bundle first
-(macOS, CEF, a few minutes when warm).
+bundle writes to its console log (ETHLETE_STUDIO_CONSOLE_LOG). Without --app it builds a bundle first from HEAD
+in a git worktree, not from the working tree (macOS, CEF, a few minutes when warm).
 
   --app <path>        a Studio bundle, e.g. dist/studio-release-smoke/<label>/Ethlete Studio.app
   --csp-from <rev>    build with the app.security block of tauri.conf.json at <rev> (the bite)
@@ -88,6 +88,14 @@ const build = () => {
   const out = join(root, 'dist/studio-release-smoke', label);
   const worktree = mkdtempSync(join(tmpdir(), 'studio-release-smoke-'));
 
+  const head = execFileSync('git', ['-C', root, 'rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).trim();
+  const dirty = execFileSync('git', ['-C', root, 'status', '--porcelain', '--', 'apps/ethlete-studio'], {
+    encoding: 'utf8',
+  }).trim();
+
+  console.log(`studio-release-smoke: builds HEAD ${head}, not the working tree`);
+  if (dirty)
+    console.warn('studio-release-smoke: apps/ethlete-studio has uncommitted changes; the bundle does not carry them');
   run('git', ['-C', root, 'worktree', 'add', '--quiet', '--detach', worktree, 'HEAD']);
 
   try {
