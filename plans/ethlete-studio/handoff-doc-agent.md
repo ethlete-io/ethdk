@@ -86,3 +86,20 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   waits for push (person-name fix in sketch data, finding 743), then the human picks it. Then backlog 628-633, the darwin
   quota gap (735).
 - Mac mailbox wait: restart it at once (command at the top). Background task may still run from the old session.
+
+## Night state (2026-11-10, after d6bf3c863)
+
+- Night shift per ADR 0257: both builders work only the tool backlog (fixes, test failures, speed; no sketches, no
+  features; push after a green push suite) until the human says stop (about noon 2026-11-11 or later). Then the binding
+  STATUS order applies again (Linux: B249 rest, A1 rest, A13). The doc agent records findings, answers builders,
+  collects questions for the human. Never send a decided tool fix as builder work by day (finding 751).
+- Done tonight: B483 built and verified on the real repo; 747 (release bot commit failed commitlint) fixed 588bb8e8b,
+  the human said no re-run, the next push publishes (CI Next run 42903146591 on 34cb5e211; the Linux builder reports
+  the publish result); STATUS cleaned (aae2f3ab2, 145 open rows); findings 746-751; ADR 0256 extended (965f63494).
+- Linux builder (ethlete-sdk-3e, tmux claude-3): 750 pages/system marker sketch variants a/b/c (the human picks
+  tomorrow), then 748, 750 tool guard, 731, 745, 736+737, 738, 723, 714/710, the STATUS backlog line minus 628-633.
+- Mac builder: B345 change-crop sketch ready + push (the human picks tomorrow), B482 rest (e50636eaf paint probe),
+  Built lines 746/749, 746 HEAD hint, 735, 739, Mac e2e speed.
+- Open question for the human (asked, not answered): watchdogs after usage-limit resets. Auto mode denied the Linux
+  builder the systemd-run timers ("Unauthorized Persistence"); `claude-at` no longer exists. Options: a) the human
+  allows it in tmux claude-3 (recommended), b) the human runs it, c) no watchdogs. The doc agent never sets them.
