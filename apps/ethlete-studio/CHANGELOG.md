@@ -1,5 +1,57 @@
 # ethlete-studio
 
+## 0.2.0-next.16
+
+### Minor Changes
+
+- Studio on macOS runs on Chromium (CEF), like on Linux, so the live view and the frame pictures come from one engine.
+- Zoom chip: force a hover, active or focus-visible state on one button for design shots.
+
+### Patch Changes
+
+- The System page drops the Go and accept buttons. The open-points popover ends in the computed build-ready status (Baubereit, Nicht baubereit (n), Wird geprüft); a direct edit shows as its own blocker, and Sketch öffnen opens the part's edit sketch.
+- `design compare` draws forced states in embedded frames statically, masks the slot stand-ins of embedded parts on a page, and fails when a frame look's selector matches nothing in the app.
+- `et design sketch covers` on a multi-target sketch takes the part, `<layer>/<name>:<state>[@x,y,w,h]`, and refuses a bare state; compare matches a covered DIFF against that part.
+- The focus ring takes public `--et-focus-ring-*` tokens; `design check` stops flagging base parts and spinner clipping.
+- The release build reaches its design server: the CSP now allows the local server, its fonts, and Angular's inline styles.
+- Studio writes every console error of its window to `console.log` in the app log folder, so a bug report can carry it.
+- The title bar shows "CI rot" in the red push badge while the latest CI (Next) run is red, also when nothing is unpushed.
+- The footer popover shows "Sketch öffnen" and the other real blockers after a refused check record instead of staying on "Wird geprüft".
+- Lint now rejects a try/catch that ignores its error and returns a fallback in Studio and the design rules. A malformed token stylesheet is reported as a TOKEN-SELECTOR problem, and an invalid harness props JSON names its parse error.
+- An edit in a sketch variant no longer reloads the Aktuell row: its frames and pictures follow only the revision of the product part, so they stay drawn.
+- A sketch cell keeps its last picture while the picture of a new revision loads, instead of showing an empty cell after a sketch edit.
+- A sketch cell keeps its painted frame shown after an edit until the frame of the new revision has painted, so a cell whose picture had not loaded yet no longer goes empty.
+- The sketch view collapses the variant head into a small readable tag when the canvas is zoomed out, instead of leaving an empty frame.
+- A sketch whose automatic merge uncommitted files refused merges by itself on the next sketch command or Studio listing once they are committed; Studio shows one notice instead of a manual Übernehmen.
+- A sketch scroll keeps the live frame of a cell whose picture has not loaded yet, and drops the frames of pictured cells first, so a cell no longer turns empty while the design server is still rendering.
+- The sketches camera now snaps to whole pixels, and the design and the app share one pan helper, so text edges no longer smooth differently.
+- The design canvas opens at a remembered camera before its frames have a size, so the zoom chip shows the remembered zoom at once. The `elements/canvas-frames` design part now links to this canvas.
+- The title-bar push badge no longer shows a push gate state, only the unpushed count and the age.
+- Studio picture URLs stay the same across page switches, so a page shown before paints its stored pictures at once. Draw ranking moves to `POST /__design/view`; shots carry an ETag and answer 304.
+- The design harness shows a part only after it mounted, so a compare no longer photographs an empty page. The comment draft is a raised dialog, and the narrow zoom-chip sample changes only `fit`.
+- Show "N Bilder fehlen" instead of "Nichts offen" on the part chip while shots failed to load.
+- A sketch merged or discarded outside the app leaves its view as soon as the name listing drops it, instead of after the slow listing with targets.
+- `/__design/open-points` reuses its product-wide open points and rule results while no design, stylesheet or harness app file changed. Studio asks for a part's open points once per page switch.
+- The Studio checks that its design server answers with the cheap stamp request instead of a full system listing, so the System page reads the listing once and draws its first frame about 2 s sooner.
+- The Studio title bar shows unpushed commits and the push gate result as a badge before Update.
+- The "Neu starten" button in the title bar turns busy while the restart runs, and a failed restart shows the "Neustart fehlgeschlagen" error toast until dismissed.
+- Sketch cells keep their stored picture while scrolling. A live frame shows over it only once its page painted, so a cell that drew once never turns blank.
+- The sketch view hides a state picture the design server refused instead of showing its alt text over the frames.
+- Fit in the sketch view shows every variant column of a wide part, not only the first two.
+- A sketch cell that showed its live frame keeps that frame through a scroll until its picture has loaded, so it never goes empty.
+- The folded column of unchanged sketch variants stays on screen at Fit.
+- The sketches page keeps its frames on screen when the side panel hides at a panned or zoomed camera.
+- The Sketches page shows the folded-state count and "Alle Zustände zeigen" as a row at the end of the list instead of in the header.
+- The design harness renders the title bar and zoom chip inside each sketches frame, so the sketches page compares against its design again.
+- The Sketches canvas keeps its frames in place on screen when the side panel hides at a zoom other than Fit; the state labels no longer resize with the wider canvas.
+- The sketches page keeps its camera inside the content: a start or restored camera panned past an edge, and a wheel or drag pan, now stop at the first and last row and column.
+- Exceptions are approved in the open-points popover instead of a separate Ausnahmen toggle, and a legacy call opens in the System page.
+- The Studio build compiles again: a theme switch without a current theme is left out of the System view, and `ethlete-studio:typecheck` checks the templates.
+- The Windows title bar draws caption tiles with a red close, and a pending code change shows as a "Neu starten" button before Update.
+- The title bar no longer shows "CI rot", and the push badge text sits centred beside its icon.
+- Show the restart cause in a tooltip on the title bar's restart button; the inline notice text is left for the state without a restart.
+- Load every picture of a part you switch to at once, off-screen ones too, so a cold switch no longer fills two frames at a time.
+
 ## 0.2.0-next.15
 
 ### Minor Changes

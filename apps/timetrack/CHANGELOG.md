@@ -1,5 +1,11 @@
 # timetrack-app
 
+## 0.2.0-next.18
+
+### Patch Changes
+
+- Update rusqlite to 0.41 so libsqlite3-sys 0.39 replaces the version flagged by RUSTSEC-2026-0459.
+
 ## 0.2.0-next.17
 
 ### Minor Changes
