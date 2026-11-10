@@ -172,8 +172,9 @@ A spec for a parser of tool output takes its fixture from a captured real run, n
 
 ## Slice paths
 
-A slice brief names its allowed paths: write them (comma or newline separated, directories or globs) to
-`$(git rev-parse --git-path slice-paths)` or export `ETHLETE_SLICE_PATHS`. The pre-commit hook then warns, without
+A slice brief names its allowed paths: at each slice start run `yarn slice:paths "<slice name>" <path>...` (directories
+or globs; it writes `$(git rev-parse --git-path slice-paths)` with the name and time; an exported `ETHLETE_SLICE_PATHS`
+does not reach a later `git commit` call, and a file older than 2 h is reported stale). The pre-commit hook then warns, without
 blocking, about staged paths outside them; `.changeset/` and `plans/` are always allowed.
 
 <!-- ethlete:agent-rules:start -->

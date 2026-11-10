@@ -4,7 +4,7 @@
 
 Run `/builder-agent` first. The grill/docs session is `ethlete-sdk-68`; report every sha to it with `SendMessage`.
 Never ask the user. `export NX_NO_CLOUD=true`. Commits: `git commit -- <paths>` (`git add -- <new file>` first), never
-`git add -A`, stash, amend or rebase. Write the slice paths to `$(git rev-parse --git-path slice-paths)` yourself at
+`git add -A`, stash, amend or rebase. Write the slice paths with `yarn slice:paths "<slice name>" <path>...` yourself at
 each slice start. One full test run at a time. Commit scope for Studio/e2e is `repo`.
 
 ## State at handoff

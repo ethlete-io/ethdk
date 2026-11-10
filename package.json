@@ -52,6 +52,7 @@
     "sdk:tokens": "node tools/scripts/generate-sdk-tokens.mjs",
     "sdk:tokens:check": "node tools/scripts/generate-sdk-tokens.mjs --check",
     "sessions": "node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs",
+    "slice:paths": "node ./tools/scripts/check-slice-paths.mjs --set",
     "spec:stress": "node ./tools/scripts/spec-stress.mjs",
     "storybook": "nx run storybook:storybook:network",
     "studio": "node tools/scripts/studio-dev.mjs",

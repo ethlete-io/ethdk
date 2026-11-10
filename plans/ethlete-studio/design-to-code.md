@@ -3910,6 +3910,12 @@ age, so a stale list looks as valid as a fresh one. Workaround: the builder writ
 fix (extends 670, same queue slot): the slice-paths file carries the slice name and the time it was written; the hook
 names both in its warning and says "stale" when the file is older than 2 h.
 
+As built (findings 670, 682): `yarn slice:paths "<name>" <path>...` (`check-slice-paths.mjs --set`) writes the git-path file
+with `# slice:` and `# written:` headers. The warning now names its source (`env ETHLETE_SLICE_PATHS`, or `file <path>`
+with slice name and age; mtime when there is no header) through the pure `describeSource`; past 2 h it opens with a
+stale note and the `--set` command, and still warns. AGENTS.md, the builder-agent skill and the handoff say to write
+the file at each slice start, since an env var does not reach a later `git commit` call.
+
 683\. Builder (2026-11-10, Mac night, full `yarn studio:e2e` after 1cc2d2ee8, B472): `[Sketches] Fit is stable` hit
 the 10 s `page.goto` timeout in setup while the Studio build ran, `load 46.3 on 3 worker(s)`. The fifth load-sensitive
 case tonight (B464, B468, B470, B471, B472). Not caused by the 681 quiet tail. Why no tool caught it: e2e cases start
