@@ -4110,3 +4110,10 @@ to. Why no tool caught it: `yarn adr:governs` maps ADR 0038 to `.husky/*` and `t
 `tools/scripts/push-suite.mjs`, so even the check would not have listed it. Tool fix: ADR 0038 governs
 `tools/scripts/push-suite.mjs` too (frontmatter), and the 685 lint step goes into the morning question of 687 as part of
 the same choice. The step stays until the human answers; it costs about 11 s per project.
+
+Measured (2026-11-10, Mac night, 28ba414d2, ADR 0240): full `yarn studio:e2e` 131/131 in 418.3 s on 3 workers (before:
+410.9 s, 442.2 s). Not a spread figure: load 4.0 at the start, 12.5/16.8/15.4 at the end, from processes outside the run
+(the builder ran nothing else); source not found, at 06:43 the top processes were the two Claude sessions and the nx
+daemon, load 7.3/13.9/14.5. Log `/tmp/studio-e2e-full-28ba414d2.log`. Typecheck of the unpushed range
+(`nx affected -t typecheck --base=origin/next --head=HEAD --skip-nx-cache` at b7b0a37e6): 19 projects, 0 errors. Skill
+sentence of 687 corrected in b7b0a37e6.
