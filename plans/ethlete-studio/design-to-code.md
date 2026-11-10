@@ -3963,3 +3963,26 @@ ends with only a chat line gets the block; a turn with a send does not.
 another case. B442 passes 3/4; 2 of 3 direct slowed runs fail with `closed: false`, as in CI. Both reproduce; causes
 not proven yet. B437 closed by CI run 42806303431 (3c5f77755, green): the 6 Studio e2e shards took 214, 322, 202, 305,
 230 and 178 s, wall time 322 s; shards 2 and 4 take about 1.7 times as long as shard 6.
+
+707\. The human (2026-11-10, day shift, editor screenshot of a sketch part file): "der ts server kommt in sketches auch
+noch nicht mit imports klar". The editor shows `Cannot find module '@design-system' or its corresponding type
+declarations. ts(2307)` on `from '@design-system'`. Facts (doc agent): the generated, gitignored
+`.ethlete/design/sdk/tsconfig.json` and `.ethlete/design/studio/tsconfig.json` (both written 10:35 today) map
+`@design-system` to `/home/tom/dev/ethlete-sdk/tmp/691-cli-lowered/design/define-part.ts`, a temp CLI copy that no
+longer exists; their `include` lists the part files and `fixtures.ts`, but no file under `sketches/`. Suspect: (a) a run
+from a temp CLI copy (finding 691 bite) rewrote the tsconfig with its own paths, and nothing writes them back when the
+copy is gone; (b) a sketch file is outside `include`, so the TS server gives it an inferred project with no `paths`, even
+when (a) is fixed. Tool fix: the tsconfig writer refuses a `@design-system` target outside the installed CLI (or
+under `tmp/`), every `design` command repairs a tsconfig whose targets do not exist, and the tsconfig covers the
+sketch variant files (`sketches/**`, with their own `@system/*` paths per variant or a per-sketch tsconfig). Bite: in a
+sketch variant file the LSP reports no ts(2307) on `@design-system` and `@system/*`, also after a run from a temp CLI.
+
+708\. The human (2026-11-10, day shift, editor screenshot): "und wir solten auch hier schauen dass wir keine lint
+warnings einbauen". `@typescript-eslint/no-non-null-assertion` on
+`SDK_ICONS.find((each) => each.name === 'et-plus')!` in `.ethlete/design/sdk/components/button/button.ts:30` (merged
+in c8f5ac740, "Merge the button size round") and in the three variants of the sketch `components-button.off-centre`.
+Suspect: no lint target covers `.ethlete/design/**`, so the zero-new-warnings rule never reaches a design part or a
+sketch, and `sketch ready` and the merge do not lint. Tool fix: `design check` and `sketch ready` run ESLint on the
+changed part and variant files and fail on any warning (a baseline for the old ones is allowed, then only smaller);
+the merge refuses a variant with a new warning. Bite: the `components-button.off-centre` variant with the `!` fails
+`sketch ready`; with `SDK_ICONS.find(...) ?? fail(...)` it passes.
