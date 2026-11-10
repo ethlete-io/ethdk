@@ -14,3 +14,5 @@ stays as the full check. The install gets a bite: a deliberate type error in an 
 Rejected: the plugin alone, and no plugin. The human asked: "Zu q3 sollte der ts lsp nicht eigentlich das schon liefern?
 Aka wieso fragen wir nicht den lsp für angepasste Daten ab." and then answered "Q4ok".
 On the install the human chose the user level: "ist auf user ebene".
+The plugin needs `typescript-language-server` on `PATH`; it is installed globally with npm on both machines
+(finding 693). The human answered "q1ok".

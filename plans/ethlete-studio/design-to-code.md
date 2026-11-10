@@ -3738,3 +3738,12 @@ found 2 errors in components stories: dabaee37d (`viewChild` outside a member in
 collision with `RouterLink`, fixed by B478 (9e7c567d0, ADR 0248). Bite: a type error in `libs/bracket/src/index.ts`
 fails `bracket:typecheck`; after the revert it passes. All 10 targets pass now. Not verified: the CI typecheck job
 with the new targets.
+
+693\. Doc agent (2026-11-10, day shift, B475): after the plugin install on Linux the LSP tool said "No LSP server
+available for file type: .ts". The `typescript-lsp` plugin only starts `typescript-language-server` from `PATH`, and
+neither machine had it; the install printed "Plugin is now active" all the same. Node comes from fnm here, so a global
+npm package exists only for the active Node version. Tool fix: the builder skill checks
+`command -v typescript-language-server` before the B475 bite and names the missing binary, and the ADR 0246 bite
+counts only when the LSP tool returns a diagnostic, not when the plugin is listed. Decided (the human: "q1ok"): the
+server is installed globally on both machines with `npm i -g typescript-language-server typescript`; done by the doc
+agent on Linux (fnm Node 24.17.0) and on ethlete-mac (`~/.local/node`). After a Node version switch, install again.
