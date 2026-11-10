@@ -104,3 +104,11 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   2026-11-11 12:35), script /tmp/dx/kick.sh, panes %2 %23 %207, log /tmp/dx/kick-report.log. Finding 752 (permanent
   watchdog command) is night backlog. No open question for the human.
 - After restart (night): 750 pages/system sketch variants a/b/c are ready (e0d4c428f, b6da40338), the human picks by merge in the morning. Findings 753-758 recorded (68f6b3eff) and put in the STATUS backlog line. Linux builder next: 748.
+- Night, later (after 4fced726b): the human merged pages/system variant b (514dbc881); the app build is STATUS row B485,
+  after the night. Findings 759-764 recorded (764 cause measured, Rust host green). 731, 745, 748, 750 guard built by the
+  Linux builder (750 guard pushed; 731 a900bbf5e and 745 c9d4af13b wait for a push-suite ok); next 736+737. ADR 0258:
+  the Windows CEF spike B480 runs on the guest PC `rack`, which belongs to the builder for the coming weeks (after the
+  night; `rack` is shut down, wake with `sh spiele-pc.sh an rack` in `~/umbau-elrond/elrond/spiele-pcs/`). Mac:
+  B482 done locally (df14efe67), push-suite runs for the range with the B345 sketch; 735 throttle ffe68bb3b not
+  calibrated. When B345 is pushed, tell the human they can pick it. The human emptied the trash (86 GB free on Linux).
+  No open question for the human.
