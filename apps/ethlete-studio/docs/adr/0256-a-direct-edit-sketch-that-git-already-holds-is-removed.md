@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B483
+built: 2ab90fded
 decided: 2026-11-10
 source: grill session 2026-11-10 (evening), finding 729
 ---
