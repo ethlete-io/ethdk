@@ -4209,8 +4209,8 @@ recur on CI 42830064915.
 conflict, and auto mode denies the `commit-tree` way. The builder aborted and redid the merge with `-X theirs`
 (9f331121d), which silently took the Mac side of every conflicted hunk; a removed `part-go` import came back and
 d04fee738 dropped it again. Cause: the hook has no allowed path to conclude a conflicted merge, so the agent picks a
-strategy flag that drops hunks without a review. Tool fix (a safety-hook change, so the human decides; collected for the
-next round): the hook allows a pathless `git commit` while `MERGE_HEAD` exists and the index holds only the merge paths.
+strategy flag that drops hunks without a review. Tool fix (decided by the human 2026-11-10, "q1ok", option A recommended;
+Linux builder after the 720 fix): the hook allows a pathless `git commit` while `MERGE_HEAD` exists and the index holds only the merge paths.
 Until then: resolve conflicts by hand, never `-X theirs` or `-X ours`. Also seen (doc agent): the same hook denied a whole
 Bash call whose grep pattern and heredoc text only contained the words, with no commit in it; it matches command text,
 not the commands the shell runs.
