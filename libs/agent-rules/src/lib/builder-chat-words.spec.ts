@@ -20,6 +20,11 @@ describe('builder-chat-words', () => {
   const text = (words: string) => ({ type: 'assistant', message: { content: [{ type: 'text', text: words }] } });
   const prompt = { type: 'user', message: { content: 'go' } };
   const toolResult = { type: 'user', message: { content: [{ type: 'tool_result', content: 'ok' }] } };
+  const tool = (name: string, input: object) => ({
+    type: 'assistant',
+    message: { content: [{ type: 'tool_use', name, input }] },
+  });
+  const bash = (command: string) => tool('Bash', { command });
 
   const run = (
     entries: object[],
@@ -89,6 +94,70 @@ describe('builder-chat-words', () => {
 
     expect(result.stdout).toBe('');
     expect(log()).toMatchObject([{ lines: 1, blocked: false }]);
+  });
+
+  const reportBlock = {
+    decision: 'block',
+    reason:
+      'builder: this turn committed or pushed and sent no report. Send it to the grill session with SendMessage or `agent-sessions.mjs send`, then end the turn.',
+  };
+
+  it('blocks a commit turn that ends with only a chat line', () => {
+    const result = run([prompt, bash('git commit -m "fix" -- a.ts'), toolResult], undefined, {
+      last_assistant_message: 'The doc agent closes B469.',
+    });
+
+    expect(JSON.parse(result.stdout)).toEqual(reportBlock);
+    expect(log()).toMatchObject([{ lines: 1, committed: true, reported: false, blocked: true }]);
+  });
+
+  it('blocks a push turn without a report', () => {
+    const result = run([prompt, bash('git -C /repo push origin next'), toolResult, text('Pushed.')]);
+
+    expect(JSON.parse(result.stdout)).toEqual(reportBlock);
+  });
+
+  it('lets a commit turn with an agent-sessions send through', () => {
+    const result = run(
+      [
+        prompt,
+        bash('git commit -m "fix" -- a.ts'),
+        toolResult,
+        bash("node tools/agent-sessions.mjs send doc-agent '- a.ts'"),
+        toolResult,
+      ],
+      undefined,
+      { last_assistant_message: 'Report sent.' },
+    );
+
+    expect(result.stdout).toBe('');
+    expect(log()).toMatchObject([{ committed: true, reported: true, blocked: false }]);
+  });
+
+  it('lets a commit turn with a SendMessage through', () => {
+    const result = run([
+      prompt,
+      bash('git push'),
+      toolResult,
+      tool('SendMessage', { to: 'doc-agent', message: 'pushed' }),
+      toolResult,
+      text('Report sent.'),
+    ]);
+
+    expect(result.stdout).toBe('');
+  });
+
+  it('does not count a commit of an earlier turn', () => {
+    const result = run([prompt, bash('git commit -m x'), toolResult, prompt, bash('git status'), toolResult]);
+
+    expect(result.stdout).toBe('');
+    expect(log()).toMatchObject([{ committed: false }]);
+  });
+
+  it('does not block a commit turn again while stop_hook_active is set', () => {
+    const result = run([prompt, bash('git commit -m x'), toolResult], undefined, { stop_hook_active: true });
+
+    expect(result.stdout).toBe('');
   });
 
   it('does not block again while stop_hook_active is set', () => {
