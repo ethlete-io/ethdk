@@ -201,6 +201,7 @@ const REFUSED = [
   'add-a-film.json',
   'review-a-film.json',
   'rule-baseline.json',
+  'lint-baseline.json',
 ];
 
 describe('designCommitHunks over every shared file under .ethlete/design', () => {

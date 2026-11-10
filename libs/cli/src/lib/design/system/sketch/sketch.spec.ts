@@ -249,6 +249,20 @@ describe('createSketch on a part the product overrides', () => {
 });
 
 describe('listSketches and findSketch', () => {
+  it('ignores a sketch folder that holds no files and opens a sketch on it', () => {
+    const target = acme();
+    const productDir = join(target, DESIGN_DIR, 'acme');
+    const leftover = join(productDir, 'sketches/elements-hero');
+
+    mkdirSync(join(leftover, 'old'), { recursive: true });
+    mkdirSync(join(leftover, 'new'), { recursive: true });
+    writeFileSync(join(leftover, 'tsconfig.json'), '{}');
+
+    expect(listSketches({ productDir, product: 'acme' })).toEqual([]);
+    expect(findSketch({ productDir, product: 'acme', sketch: { layer: 'elements', name: 'hero' } })).toBeNull();
+    expect(open(target, 'elements/hero').target).toBe('elements/hero');
+  });
+
   it('skips an entry that vanished before it was read', () => {
     const target = acme();
     const productDir = join(target, DESIGN_DIR, 'acme');

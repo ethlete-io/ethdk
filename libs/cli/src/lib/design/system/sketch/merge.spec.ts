@@ -4,7 +4,7 @@ import childProcess, { spawnSync } from 'child_process';
 import { IncomingMessage } from 'http';
 import { syncBuiltinESMExports } from 'module';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { Readable } from 'stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../design-config';
@@ -1045,6 +1045,15 @@ describe('mergeSketch with several targets', () => {
 });
 
 describe('discardSketch', () => {
+  it('leaves no empty sketches folder behind', () => {
+    const target = acme();
+    const { sketch } = readySketch(target);
+
+    discardSketch({ target, sketch });
+
+    expect(existsSync(resolve(sketch.dir, '..'))).toBe(false);
+  });
+
   it('deletes the sketch with its variants', () => {
     const target = acme();
     const { sketch } = readySketch(target);

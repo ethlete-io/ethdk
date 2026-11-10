@@ -4176,3 +4176,32 @@ above a limit.
 lock of a live process once it is older than the wait": expected 49 >= 50. Suspect (code reading, no bite): the product
 counts the lock age from `lock.at`, the spec from a later `Date.now()`. Fix 10b906189: the spec measures from the lock
 file's `at`; `spec:stress --load 2` 4/4. The push suite caught it, so no tool gap.
+
+As built (708, builder subagent). Cause (measured): every lint target of the 23 projects with one runs `eslint .` in
+its own root (`nx show project <p>`), none of them under `.ethlete`, and the pre-commit hook lints only staged
+`libs/*`, `apps/*` and `tools/*` files. The root `eslint.config.mjs` does reach the folder (the editor warning):
+`npx eslint '.ethlete/design/**/*.ts'` finds 38 findings, 5 of them in sdk parts (button, breadcrumb, tabs, timeline,
+toolbar), the rest in calls. Nothing in the design tool ran ESLint on a part or a variant. Fix: `design-lint.ts` runs
+the checkout's ESLint (`--format json`, one spawn) on the changed files only. `design check` (product, `--part` and
+whole run) lints the part and variant files that differ from HEAD or are untracked, shrinks the product's
+`lint-baseline.json` to what fires now and fails on a finding over it; `sketch ready` lints the live variants and the
+sketch `shared/` folder before rendering; `mergeSketch` refuses the picked variant with a new finding (CLI and Studio
+merge). The baseline counts findings per part file and rule, a variant file counts as its part file, and an entry
+added or grown after the file's first commit fails (`addedBaselineNamesOf`, as the rule baseline). Seeded with the 4
+old sdk `!` (breadcrumb, tabs, timeline, toolbar). `button.ts:30` uses `?? fail('SDK_ICONS has no et-plus')` (a direct
+edit of a merged part: it shows as changed outside a sketch until the human approves it). The sketch
+`components-button.off-centre` is in no checkout here (not committed, not on disk), so nothing was merged or deleted.
+Bite (worktree at HEAD + the change, cli built there, `sketch new components/button@off-centre --variants a,b,c`):
+variant a with the `!` -> `sketch ready` exit 1, `LINT ...a/components/button/button.ts:34:25
+@typescript-eslint/no-non-null-assertion` and "adds lint warnings - fix them before ready"; with `?? fail(...)` -> no
+LINT line, ready passes the gate and goes on to render (then refuses "draws variants alike", the untouched copies).
+Specs: `design-lint.spec.ts` (5 cases); the merge case fails with the merge gate disabled. Not verified: `design check`
+against the real sdk product end to end, and a Studio merge in the app.
+
+In progress (709): sketch `foundations/logo@app-icon` (product `studio`) adds an `app-icon` state to the logo part,
+drawn from a new asset `assets/studio-app-icon.svg` (1024 px, literal colours so `tauri icon` can rasterize it); the
+human picks by merging. a: macOS grid, squircle 824/1024 with a 100 px margin and a soft drop shadow, accent tile, glyph
+at the mark's proportion. b: as a, glyph 12 % larger (tighter inner padding). c: full bleed, the mark's own tile to the
+canvas edge (corners 25 %), no shadow. d: as a, with the colours inverted (dark `#051211` tile, accent glyph). Next, after
+the pick: the script that writes `apps/ethlete-studio/src-tauri/app-icon.svg` from the merged asset and runs `tauri
+icon`, and the `design check` rule that fails when they differ.

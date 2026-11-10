@@ -83,3 +83,31 @@ Seen on the way: macOS asks for notification permission twice, for "Ethlete Stud
 `screencapture -l` gives a black picture; check over CDP instead. Each run logs
 `process_requirement.cc ... Signature validation of current process failed (-67030)`; it has no effect seen.
 Finding 700 has the two upstream defects of the debug port.
+
+## As built (B482) - release smoke, 2026-11-10
+
+Cause: no check opened a release build of Studio, so the CSP of finding 699 shipped unseen. Fix: `yarn
+studio:release-smoke` (`tools/studio-release-smoke/smoke.mjs`) starts a macOS CEF release bundle once with an empty
+`HOME` (only `design-roots.json` naming the checkout), opens `sdk` `sketch:components/button` through the remembered
+view, and fails unless a frame paints with no CSP refusal and no console error (`Log.entryAdded` error,
+`Runtime.consoleAPICalled` error, `Runtime.exceptionThrown`, iframes included via auto-attach). Without `--app` it
+builds: a throwaway worktree at HEAD, `lib.rs` patched to `RemoteDebugging::Port { port: 9339 }` (the shipped build
+pins remote debugging off and ignores Chromium switches, so a shipped bundle has no console a script can read),
+`@tauri-apps/cli-cef@3.0.0-alpha.27 tauri build --bundles app --no-sign`, target dir `dist/studio-release-smoke/target`.
+Measured: the CSP is compiled into the binary as a string, so the bite takes two builds; `--csp-from <rev>` merges the
+old `app.security` block over the current one through `tauri build --config` (keys the old block lacks become `null`).
+Build time on ethlete-mac: cold 9:17, warm 2:02.
+
+Bite: `yarn studio:release-smoke --csp-from f08f0a3d1^` must fail naming the refusals, `yarn studio:release-smoke`
+must pass.
+
+Verified: both bundles build; the patched bundle opens the DevTools port and lists the page `http://tauri.localhost/`.
+
+Not verified: the bite itself. The run was on a locked screen (`CGSSessionScreenIsLocked`), where the Studio page
+answers no CDP command (`Runtime.enable` and `Runtime.evaluate` time out; a CDP-created `about:blank` target in the
+same browser answers), also with `--disable-backgrounding-occluded-windows` and `--disable-renderer-backgrounding`.
+The smoke now refuses to start on a locked screen. Also not verified: Windows (WebView2, no runtime here) and Linux
+CEF. Not wired into `publish.yml`: the smoke needs its own patched build (2-9 min) and an unlocked GUI session, and
+ADR 0197 keeps slow steps from holding a release; recommendation: a separate `workflow_dispatch` job on
+`macos-15-intel` after the first local bite passes. Seen on the way: running a shipped bundle on the real `HOME`
+re-pins `devtools.remote_debugging.allowed: false` (finding 700a), which is why the smoke uses its own `HOME`.

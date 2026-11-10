@@ -60,6 +60,7 @@
     "studio:e2e": "node apps/ethlete-studio/e2e/canvas.e2e.mjs",
     "studio:e2e:bite": "node ./tools/scripts/studio-e2e-bite.mjs",
     "studio:e2e:repeat": "node ./tools/scripts/studio-e2e-repeat.mjs",
+    "studio:release-smoke": "node ./tools/studio-release-smoke/smoke.mjs",
     "studio:themes": "node tools/scripts/generate-studio-themes.mjs",
     "studio:verify": "node tools/scripts/verify-studio-headless.mjs",
     "test:tools": "node --test tools/scripts/*.spec.mjs apps/ethlete-studio/eslint-rules/*.spec.mjs",

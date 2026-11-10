@@ -27,7 +27,11 @@ const control = ({ interaction, ...options }: Props) => {
   return interaction ? forceInteraction(markup, interaction) : markup;
 };
 
-const plus = iconMarkup(SDK_ICONS.find((each) => each.name === 'et-plus')!);
+const fail = (message: string): never => {
+  throw new Error(message);
+};
+
+const plus = iconMarkup(SDK_ICONS.find((each) => each.name === 'et-plus') ?? fail('SDK_ICONS has no et-plus'));
 const SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
 const VARIANTS = ['filled', 'outline', 'tonal', 'transparent'] as const;
 type Size = (typeof SIZES)[number];
