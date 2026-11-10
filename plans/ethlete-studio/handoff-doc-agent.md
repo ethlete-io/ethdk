@@ -73,3 +73,15 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   726 pushed (2f658146e). Now: A1 rest, 12 title-bar hover states (notice-hint is built, 332e49626). Pushes are free
   again; merge origin/next first.
 - Findings 722-729 recorded; 722, 724, 726, 727 built. Doc agent rule (728): format every plan file before its commit.
+
+## Late evening state (2026-11-10, after 743eb7901)
+
+- The human is back at the desk. Open question to the human: they said "2 sketches sind merged"; only 7fec742b2 (732
+  variant b) is in git. Ask which second sketch they merged if no merge commit shows up.
+- Findings 730-745 recorded. ADR 0256 (stale direct-edit sketch is removed by the tool, STATUS B483) decided.
+- Linux builder (ethlete-sdk-3e): 742 fixed in 6ada387e2 (push suite, then push), then serve with `DE_PORT=4402` in tmux
+  `studio-serve`, then B483 (ADR 0256), then 731 (e2e under quota), 745, 736+737. 735, 719 quota step, 732 sketch done.
+- Mac builder: B482 bite running on the unlocked screen; B345 sketch `pages/sketches@change-crop` (a5bf3bff2, eb0eb9eb8)
+  waits for push (person-name fix in sketch data, finding 743), then the human picks it. Then backlog 628-633, the darwin
+  quota gap (735).
+- Mac mailbox wait: restart it at once (command at the top). Background task may still run from the old session.
