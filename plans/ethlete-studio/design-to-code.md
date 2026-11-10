@@ -4239,3 +4239,19 @@ less than it claims. Why no tool caught it: an opt-out flag takes no reason, and
 skip which check. Tool fix (bug queue, after 673): `listingMayPend` takes a reason string instead of `true`; the runner
 prints the opt-out cases per check in its summary; the 651 bite proof runs each opt-out case once with the hold on, to
 show that its own evidence fails when the listing is late.
+
+679\. Builder (2026-11-10, Mac night, push:suite at a45458424, B468): the Large case "a listing refresh every 1 s for
+6 s re-navigates no iframe" saw 2 iframe re-navigations in 6 s in the plain run of the repeat gate (fail, pass, pass;
+27.3 s against 16-24 s when green). It is the third red of this case under load (287/308 as B232, 316 as B270). No
+cause proven in 45 min: load 17-20 passes 10/10, heavier load fails earlier in setup. Evidence: each iframe navigates
+twice before the case (`about:blank`, then `frame.html?...&epoch=1`); the case starts after `settled()`, which waits
+for stable frame boxes but not for loaded iframes, and the margin shrinks from 1.7 s idle to about 1.0 s under load.
+Candidates: a start race (both first commits land after the case start, exactly 2), a cold Vite pre-bundle
+`full-reload` in the fresh temp checkout (2), or a frame retry `src` (1 per frame). Why the earlier fixes did not
+hold: 287/308 fixed one mechanism (iframes destroyed when the quick listing moved a row), 316 only marked timing
+budgets as not measured under load; none touched the start race. Why no tool caught it: the case prints only a count,
+so each red is unexplained again, and `settled()` claims a stable canvas while iframes still load. Tool fix (in
+progress): (a) on failure the case prints each navigation with time since case start, old and new `src`, and new frame
+or not; (b) the case starts only after every iframe has painted, bite proof by a route that delays `frame.html` by
+about 2 s; (c) the design server logs `full-reload` to stderr. Backlog: every count-only e2e assertion prints its
+events on failure.
