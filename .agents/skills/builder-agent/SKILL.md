@@ -57,6 +57,7 @@ that talks with the user and records decisions. Talk English.
   nothing runs it in pre-push or CI (ADR 0226).
 - A CI step that renames or caches runs twice with real data on every OS it has a branch for. Only then is it done. A sample line is not real data.
 - Before a revert commit, run `yarn revert:check <sha>`.
+- Before an LSP bite, run `command -v typescript-language-server`. If it prints nothing, report the missing binary; a session restart does not help. The bite counts only when the deliberate type error shows as a diagnostic.
 - Commit in a bite or throwaway worktree only with `git -C <worktree> commit`, never after a bare `cd`: a failed
   `cd` lands the commit on `next` in the main checkout. Put the same line in every bite brief.
 - Every slice brief names the slice's allowed paths; write them at slice start with `yarn slice:paths "<name>" <path>...` (an env var set in one shell call does not reach the later `git commit` call). The pre-commit hook warns on a staged path outside them.
