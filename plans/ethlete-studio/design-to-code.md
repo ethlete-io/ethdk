@@ -3919,3 +3919,13 @@ builder subagent briefs say "a refused gate is a finding, never call its interna
 
 738\. Linux builder (2026-11-10, same sketch): `sketch check` 34 s and `sketch ready` 36.6 s against the 10 s target,
 render-check about 13 s. Suspect only (no measurement of the phases). Backlog: measure the phases before a fix.
+
+739\. Mac builder (2026-11-10, B345 sketch `pages/sketches@change-crop`, a5bf3bff2): `sketch ready` takes 140-280 s on
+the Mac, and each finding needs a full rerun. Suspect only, as 738 on Linux (34-37 s). Backlog with 738: measure the
+phases on both machines; a rerun after a fix checks only the states the fix touched.
+
+740\. Mac builder (same sketch): the clipping check flags the intended crop of the variants, and skip-scope refuses
+the reason "intended" because the crop holds controls; only "inert" passes. Suspect only. Lesson: a check that accepts
+only a wrong reason teaches the agent to give a wrong reason (as 737). Tool fix (backlog): skip-scope accepts
+"intended" for a crop that a state marks as a crop, or the clipping check knows a crop frame; the builder says which
+reason the sketch now carries.
