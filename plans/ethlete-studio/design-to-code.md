@@ -3700,6 +3700,10 @@ throwaway commit on `next`. Tool fix: the builder skill and every bite brief say
 (rounds@1440, round-folded@1440 x2: the `button.et-surface-interactive` text sits 1.0 px high, 7.1 px above the capitals,
 8.1 px below the baseline) also print at `7d72894fa~1`, with fresh cli, components and core builds. Both runs exit 1
 with `OFF-CENTRE 3` and `NO RECORD ... OFF-CENTRE` and no other difference. So 7d72894fa is clear, and the 1 px is an
-older UI defect with no STATUS row (now B477). Suspect: no gate runs the OFF-CENTRE check on a clean base, so an older
-red result shows up first in a later change and looks new. Tool fix: open after B477's cause is known; ask the builder
-which gate runs the check today before the doc agent writes the lesson.
+older UI defect with no STATUS row (now B477). Cause (builder, `git grep`): no gate runs `design check`; only the
+on-demand `yarn et:design check` at a slice end does. `design-rules-gate.mjs` has no caller since pre-commit dropped it
+after 2026-11-06, and the builder skill still says the full check runs in pre-push and CI, which is false. So an older
+red result shows up first in a later slice and looks new. Tool fix (doc agent, applies ADR 0226 "no Studio check in
+git hooks or CI" and ADR 0095 "old issues stay visible"): no CI job; the builder skill line says the full check runs
+on demand at each slice end until the live check (B424) replaces it; `design check` marks each finding that the base
+already shows as old, so a slice sees at once what it added.
