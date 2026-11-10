@@ -3859,3 +3859,14 @@ to the ste-clarity output style, which tells it to explain to the user. Nothing 
 calls; past one line it blocks the stop once with "builder: no chat text, send the report with SendMessage to the grill
 session" and logs the count to `restart.log` or the mailbox. Bite: a builder turn with a three-line chat reply gets the
 block; a turn with one closing line does not.
+
+Cause (measured by the builder, 2026-11-10): the builder process has no `ETHLETE_AGENT_ROLE` (unset in its env and in
+`/proc/<pid>/environ`), `claude-3` has no `@ethlete_role` option, and the command line has no `--append-system-prompt`
+(`claude /handoff resume builder-2026-11-10 /handoff resume builder-2026-11-10`). The `run` from before 812a67070 made
+`claude-3` without `--role builder`, so `restart --process` started plain `claude`, and the builder rule prompt never
+reached the session. The builder also did not run `/builder-agent` at resume, which the handoff asks for. So the hook
+above alone would not have fired here. Tool fix, added: `restart --process` keeps the role (from `@ethlete_role`, or
+from the handoff name `builder-*` and `doc-agent-*` when the option is missing) and refuses a restart of a paired
+session with no role; `/handoff resume` of a role handoff loads the role skill itself instead of a line that asks for it.
+Bite: a restart of a session made without `--role` comes back with `ETHLETE_AGENT_ROLE=builder` and the rule prompt in
+its command line.
