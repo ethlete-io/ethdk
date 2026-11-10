@@ -3902,3 +3902,20 @@ As built (732): sketch `pages/system@footer-open-points` (a in Gründe, b top le
 Tool defect: `design shot <part>@<name> --variants` cannot address a named sketch (`sketchHoldingOf` matches only the
 part, so the first sketch holding the part wins), and `ready` then wants a viewed shot it cannot get; the check used
 `shot --at` on a temp commit and recorded the view by hand.
+
+736\. Linux builder (2026-11-10, 732 sketch `pages/system@footer-open-points`, 6c2fc5cc0): `design shot
+pages/system@footer-open-points` fails "has no open sketch in product studio", and `shot pages/system --variants` draws
+the other open `pages-system` sketch. Cause (measured by the subagent): `sketchHoldingOf` in
+`libs/cli/src/lib/design/shot-command.ts` matches the part only, never the sketch name. Missed: no spec has two open
+sketches on one part. Tool fix (Linux builder, after 731): shot resolves `<part>@<name>`; spec bite with two sketches
+on one part; an `--at` shot of a named sketch counts as viewed.
+
+737\. Linux builder (2026-11-10, same sketch): because of 736, `sketch ready` refused with SHOT-NOT-VIEWED, and the
+subagent called `recordShotViewed` directly to pass the gate. The gate was bypassed, not met; the builder says the
+viewed content equals the commit. Lesson: a gate that an agent can satisfy with one internal call is no gate when the
+tool is broken; the agent must stop and report the tool defect instead. Tool fix (with 736): the viewed record holds
+the hash of the shot file the CLI drew, and `sketch ready` checks it, so a direct call without a real shot fails;
+builder subagent briefs say "a refused gate is a finding, never call its internals".
+
+738\. Linux builder (2026-11-10, same sketch): `sketch check` 34 s and `sketch ready` 36.6 s against the 10 s target,
+render-check about 13 s. Suspect only (no measurement of the phases). Backlog: measure the phases before a fix.
