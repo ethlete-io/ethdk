@@ -113,9 +113,9 @@
     "at": "2026-11-04T14:48:14.692Z"
   },
   "pages/system": {
-    "hash": "42069945dc47ff87",
-    "variant": "a",
-    "decidedBy": "auto: no visible change",
-    "at": "2026-11-05T22:47:24.777Z"
+    "hash": "66ef59809504dd25",
+    "variant": "b",
+    "decidedBy": "user",
+    "at": "2026-11-10T20:44:50.271Z"
   }
 }
