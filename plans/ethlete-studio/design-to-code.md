@@ -4132,3 +4132,6 @@ Linux builder after the 720 fix): the hook allows a pathless `git commit` while 
 Until then: resolve conflicts by hand, never `-X theirs` or `-X ours`. Also seen (doc agent): the same hook denied a whole
 Bash call whose grep pattern and heredoc text only contained the words, with no commit in it; it matches command text,
 not the commands the shell runs.
+Built (2026-11-10, Linux): the commit that holds this line; `git-safety.py` allows a pathless `git commit` while `MERGE_HEAD`
+exists and every staged path is a merge path (changed HEAD..MERGE_HEAD or conflicted), matches only real command positions
+(heredoc bodies and quoted text are ignored), and the go.json rule is gone. A spec merges for real in a temp repo.
