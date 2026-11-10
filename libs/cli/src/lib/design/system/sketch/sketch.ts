@@ -1,6 +1,7 @@
 import { createHash } from 'crypto';
 import {
   cpSync,
+  Dirent,
   existsSync,
   mkdirSync,
   readdirSync,
@@ -291,6 +292,27 @@ const foldersOf = (dir: string) =>
         .sort()
     : [];
 
+const GENERATED_FILE = 'tsconfig.json';
+
+const holdsFiles = (dir: string) =>
+  (readdirSync(dir, { recursive: true, withFileTypes: true }) as Dirent[]).some(
+    (entry) => entry.isFile() && !(entry.name === GENERATED_FILE && resolve(entry.parentPath) === resolve(dir)),
+  );
+
+const sketchFoldersOf = (productDir: string) =>
+  foldersOf(sketchesDirOf(productDir)).filter((folder) => holdsFiles(resolve(sketchesDirOf(productDir), folder)));
+
+const isOpenSketchDir = (dir: string) => existsSync(dir) && holdsFiles(dir);
+
+/** Deletes a sketch folder, then its `sketches/` folder when nothing else is left in it. */
+export const removeSketchDir = (dir: string) => {
+  rmSync(dir, { recursive: true, force: true });
+
+  const parent = resolve(dir, '..');
+
+  if (existsSync(parent) && readdirSync(parent).length === 0) rmSync(parent, { recursive: true, force: true });
+};
+
 const isStatus = (value: unknown): value is SketchStatus => SKETCH_STATUSES.includes(value as SketchStatus);
 
 const isAuthors = (value: unknown) =>
@@ -521,7 +543,7 @@ export const readSketch = (options: { product: string; dir: string }): Sketch | 
 
 /** Every sketch folder of a product, read; a folder that cannot be read answers with its problem. */
 export const listSketches = (options: { productDir: string; product: string }) =>
-  foldersOf(sketchesDirOf(options.productDir)).map((folder) =>
+  sketchFoldersOf(options.productDir).map((folder) =>
     readSketch({ product: options.product, dir: resolve(sketchesDirOf(options.productDir), folder) }),
   );
 
@@ -529,7 +551,7 @@ export const listSketches = (options: { productDir: string; product: string }) =
 export const listSketchesInTurns = async (options: { productDir: string; product: string }) => {
   const listed: ReturnType<typeof readSketch>[] = [];
 
-  for (const folder of foldersOf(sketchesDirOf(options.productDir))) {
+  for (const folder of sketchFoldersOf(options.productDir)) {
     await setImmediate();
     listed.push(readSketch({ product: options.product, dir: resolve(sketchesDirOf(options.productDir), folder) }));
   }
@@ -541,7 +563,7 @@ export const listSketchesInTurns = async (options: { productDir: string; product
 export const findSketch = (options: { productDir: string; product: string; sketch: SketchTarget }) => {
   const dir = sketchDirOf(options);
 
-  if (existsSync(dir)) return readSketch({ product: options.product, dir });
+  if (isOpenSketchDir(dir)) return readSketch({ product: options.product, dir });
 
   const key = partKeyOf(options.sketch);
 
@@ -773,7 +795,7 @@ export const createSketch = (options: {
     (target) => findSketch({ productDir: product.dir, product: product.name, sketch: target }) !== null,
   );
 
-  if (existsSync(dir) || taken) return alreadySketched(sketchIdOf(taken ?? sketch));
+  if (isOpenSketchDir(dir) || taken) return alreadySketched(sketchIdOf(taken ?? sketch));
   if (variants.length === 0) return 'name at least one variant';
 
   const mergeProblem = mergeProblemOf({ product, targets, merge });

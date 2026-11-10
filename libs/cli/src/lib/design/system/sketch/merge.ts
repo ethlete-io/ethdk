@@ -32,6 +32,7 @@ import {
   authorsOf,
   clearSketchReport,
   rebaseOutsideImports,
+  removeSketchDir,
   rejectedProblemOf,
   Sketch,
   sketchesDirOf,
@@ -507,7 +508,7 @@ const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal 
       note: `resolved by the merge of ${sketch.target} variant ${variant}`,
     });
     addressSketchComments({ sketch, reason: 'merge', author, note });
-    rmSync(sketch.dir, { recursive: true, force: true });
+    removeSketchDir(sketch.dir);
     clearSketchReport({ checkout: target, sketch });
 
     rebaseAfterMerge({
@@ -557,7 +558,7 @@ export const discardSketch = (options: { target: string; sketch: Sketch; author?
     note: `resolved by the discard of ${options.sketch.target}`,
   });
   addressSketchComments({ sketch: options.sketch, reason: 'discard', author: options.author });
-  rmSync(options.sketch.dir, { recursive: true, force: true });
+  removeSketchDir(options.sketch.dir);
   clearSketchReport({ checkout: options.target, sketch: options.sketch });
 
   return null;
