@@ -3701,6 +3701,9 @@ revision bump never arrives there and the case passes by chance. Second time ton
 (bug queue, it bit twice): the runner flags a case whose wait window is shorter than `HOLD_LISTINGS_MS` unless the
 case opts out (`holdListings: false`).
 
+As built (672 tool part): the runtime check of 674 in `studio-e2e-listing-hold.mjs` (054fb039b) covers it; each
+opt-out names its reason since 678 (494fd4f4f). No slice of its own (builder, 2026-11-10).
+
 673\. Doc agent (2026-11-09, Mac night, seen by the builder): three `a-cli` design servers (pids 65717-65719,
 parent pid 1, started about 1.5 days ago, `node_modules/.cache/a-cli/src/index.js design /var/folders/...`) still
 live, at 0 % CPU. A run left them as orphans. Why no tool caught it: a design server does not exit when its parent
