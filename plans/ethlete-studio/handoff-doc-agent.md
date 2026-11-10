@@ -38,3 +38,11 @@ orphan design servers with the human's consent.
   B466 when the CI run after the push is green.
 - Queued for the builder after the bug queue: iframe perf measurement (live iframes, memory and CPU per iframe, time to
   all painted, visible-only variant), figures go to the human in the morning.
+
+### Question for the human in the morning (round format)
+
+1. Push the B466 worker-cap fix alone to origin/next with `PUSH_SUITE_SKIP=1`? The worktree `/tmp/b466-push` holds
+   11de10881 (origin/next + c11cc03ac: two vitest worker caps and a changeset). Its cli and Studio unit gates are green;
+   the e2e step failed on a paint-window case under load that the change cannot touch (B471, finding 681). Four
+   push:suites tonight were red, each on a different load-sensitive e2e case. Recommendation: yes, the human allows the
+   skip for this one push, so CI proves or disproves the B466 fix; the full local range waits for green e2e.
