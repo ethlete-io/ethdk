@@ -4071,3 +4071,11 @@ state, so the human sees a sketch with nothing to look at. Its files have uncomm
 with zero changed states reached the human. Decided by the doc agent (tool internal): `sketch check` and `sketch ready`
 refuse a variant with zero changed states and name the state that should differ; Studio never lists such a sketch as
 waiting for the human. The Linux builder owns this sketch (the human: "deine baustelle") and finds the cause first. Added: `sketch new` for a marker sketch refuses to finish when variant a has no state beyond the design. Decided by the doc agent (applies ADR 0010 to pages/system): variant a = the built look (subtle note line), b = an error card in the canvas like the empty-product card ("Auflistung fehlgeschlagen", server reason, "Erneut laden"), c = a head banner in the error colour with "Erneut laden", tree still shown; the human picks by merge.
+
+751\. The human (2026-11-10, late evening): "würde schon gern mal wieder ins schaffen mit resultaten kommen, aktuell
+haben wir echt wieder so ein fix loop". Cause (read in this session): the doc agent sent each new tool lesson (746 HEAD
+hint, 748 STATUS check, 750 sketch guard) to a builder as work at once, and the Mac builder ran B482 bite rounds, a tool
+item outside the binding order; the same failure as 711. Lesson: the rule against standstill exists, but a decided tool
+fix had no default place except a builder message. Decided by the doc agent: a tool fix decided by the doc agent goes
+into the "Werkzeug-Rückstand" line of STATUS.md, never into a builder message as work, unless CI is red or it blocks the
+current item. Both builders are back on the binding order; B482 is parked after its running smoke.
