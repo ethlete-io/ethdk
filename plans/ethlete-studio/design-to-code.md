@@ -3929,3 +3929,10 @@ the reason "intended" because the crop holds controls; only "inert" passes. Susp
 only a wrong reason teaches the agent to give a wrong reason (as 737). Tool fix (backlog): skip-scope accepts
 "intended" for a crop that a state marks as a crop, or the clipping check knows a crop frame; the builder says which
 reason the sketch now carries.
+
+741\. Mac builder (2026-11-10, B345 flaw fix eb0eb9eb8): in all three `pages/sketches@change-crop` variants the outer
+part tree selected `components/zoom-chip` while the page header read `pages/sketches`; `sketch ready` passed it. Cause:
+the variant's `treeOf` ignored the page key. No tool fix: a tree-against-header check would test Studio's own content,
+and tool fixes must help every project. The general gap is 740's: the builder found it only by reading the shot, so the
+ready report must name what the builder checked by eye. On 740: the sketch passes because its sample screen root carries
+the `inert` attribute, not a skip reason.
