@@ -151,40 +151,45 @@ export const typecheckStep = async (projects, dir) => {
 
 const STUDIO_ROOT = 'apps/ethlete-studio';
 export const QUOTA_PERCENT = 20;
+export const QUOTA_PERCENT_DARWIN = 20;
 export const QUOTA_BUDGET_MS = 180_000;
 
 export const quotaSpecFiles = (files) =>
   files.filter((file) => file.startsWith(`${STUDIO_ROOT}/`) && file.endsWith('.spec.ts')).sort();
 
-export const quotaCommand = (file, quota = QUOTA_PERCENT) => ({
-  command: 'systemd-run',
-  args: [
-    '--user',
-    '--scope',
-    '--quiet',
-    '-p',
-    `CPUQuota=${quota}%`,
-    'npx',
-    'vitest',
-    'run',
-    '--root',
-    STUDIO_ROOT,
-    '--maxWorkers=1',
-    relative(STUDIO_ROOT, file),
-  ],
-});
+const quotaVitest = (file) => [
+  'npx',
+  'vitest',
+  'run',
+  '--root',
+  STUDIO_ROOT,
+  '--maxWorkers=1',
+  relative(STUDIO_ROOT, file),
+];
 
-const canQuota = () => spawnSync('systemd-run', ['--user', '--scope', '--quiet', 'true']).status === 0;
+export const quotaCommand = (file, quota = QUOTA_PERCENT, os = platform()) =>
+  os === 'darwin'
+    ? { command: 'node', args: ['tools/scripts/cpu-throttle.mjs', String(quota), '--', ...quotaVitest(file)] }
+    : {
+        command: 'systemd-run',
+        args: ['--user', '--scope', '--quiet', '-p', `CPUQuota=${quota}%`, ...quotaVitest(file)],
+      };
+
+export const quotaLabel = (quota, os = platform()) =>
+  os === 'darwin' ? `cpu-throttle ${quota}%` : `CPUQuota=${quota}%`;
+
+const canQuota = (os = platform()) =>
+  os === 'darwin' || spawnSync('systemd-run', ['--user', '--scope', '--quiet', 'true']).status === 0;
 
 export const quotaStep = async (
   files,
   {
     run,
-    quota = QUOTA_PERCENT,
-    budgetMs = QUOTA_BUDGET_MS,
-    available = canQuota,
-    now = () => performance.now(),
     os = platform(),
+    quota = os === 'darwin' ? QUOTA_PERCENT_DARWIN : QUOTA_PERCENT,
+    budgetMs = QUOTA_BUDGET_MS,
+    available = () => canQuota(os),
+    now = () => performance.now(),
   },
 ) => {
   if (files.length === 0) return { status: 0, output: '', note: 'no changed Studio spec file' };
@@ -192,7 +197,7 @@ export const quotaStep = async (
     return {
       status: 0,
       output: '',
-      note: `skipped on ${os}: the CPU quota needs systemd-run --user, so a load-sensitive Studio case is not caught here`,
+      note: `skipped on ${os}: the CPU quota needs systemd-run --user on Linux or cpu-throttle on darwin, so a load-sensitive Studio case is not caught here`,
     };
   const startedAt = now();
   const ran = [];
@@ -202,15 +207,15 @@ export const quotaStep = async (
       return {
         status: 0,
         output: '',
-        note: `CPUQuota=${quota}%, ran ${ran.join(', ')}; over the ${seconds(budgetMs)} budget, skipped ${skipped.join(', ')}`,
+        note: `${quotaLabel(quota, os)}, ran ${ran.join(', ')}; over the ${seconds(budgetMs)} budget, skipped ${skipped.join(', ')}`,
       };
     }
-    const { command, args } = quotaCommand(file, quota);
+    const { command, args } = quotaCommand(file, quota, os);
     const result = await run(command, args);
     ran.push(file);
-    if (result.status !== 0) return { ...result, note: `CPUQuota=${quota}%, failed ${file}` };
+    if (result.status !== 0) return { ...result, note: `${quotaLabel(quota, os)}, failed ${file}` };
   }
-  return { status: 0, output: '', note: `CPUQuota=${quota}%, ran ${ran.join(', ')}` };
+  return { status: 0, output: '', note: `${quotaLabel(quota, os)}, ran ${ran.join(', ')}` };
 };
 
 const git = (...args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });

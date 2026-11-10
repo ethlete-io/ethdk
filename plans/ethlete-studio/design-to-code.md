@@ -3898,6 +3898,14 @@ the 732 sketch; then 731 (e2e under quota) as its own slice with its own calibra
 darwin throttle (for example `taskpolicy` or a cpulimit equivalent) in its tool backlog, or the step says on the Mac
 that the Linux push suite covers it.
 
+As built (Mac builder, 735 Mac gap): `tools/scripts/cpu-throttle.mjs` runs a command in its own process group and
+lets it run 20 ms of each 100 ms (SIGSTOP/SIGCONT, the `cpulimit` way); on darwin the quota step runs each changed
+Studio spec file under it (`cpu-throttle 20%` in the note). Verified: `cpu-throttle.spec.mjs` (a throttled busy loop
+gets less than half the count of a free one) and the push-suite spec. Not verified: the calibration. 20% of wall time
+on all cores is not `CPUQuota=20%` of one core; the at-risk case (719) must still fail at about half its timeout on
+the Mac. Found on the way: the push-suite spec case "a step with a log file writes its output there" failed 2 of 4
+runs at load 18 (flaky under load, not caused by this change).
+
 As built (732): sketch `pages/system@footer-open-points` (a in Gründe, b top level, new state `direct-edit-closed`).
 Tool defect: `design shot <part>@<name> --variants` cannot address a named sketch (`sketchHoldingOf` matches only the
 part, so the first sketch holding the part wins), and `ready` then wants a viewed shot it cannot get; the check used
