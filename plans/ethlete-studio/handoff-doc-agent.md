@@ -27,3 +27,14 @@ Builder: ethlete-sdk-22 in tmux `claude@ethlete-sdk`; this session runs in `clau
 Answered on 2026-11-09 in the morning round: ADR 0240 (the 90 s goal counts on the desk PC, every machine stays as
 fast as possible) and ADR 0241 (the human excludes the checkout from Spotlight). The doc agent stopped the three
 orphan design servers with the human's consent.
+
+## Part 3 (2026-11-10, ethlete-sdk-68)
+
+- The human answered the morning round and went to bed after ADR 0242; collect new questions for the morning again.
+- New tonight: findings 677-679, STATUS rows B467 (closed), B468 (fix 220e4d6b5 local), B469 (day shift, CEF spike),
+  ADRs 0240-0242. B464 closed by the builder.
+- Waiting: the third push:suite. If red on a new case, the builder pushes only the B466 worker-cap fix through
+  push-suite on origin/next and tells me first; if B468 is red again, its failure detail must name the cause. Close
+  B466 when the CI run after the push is green.
+- Queued for the builder after the bug queue: iframe perf measurement (live iframes, memory and CPU per iframe, time to
+  all painted, visible-only variant), figures go to the human in the morning.
