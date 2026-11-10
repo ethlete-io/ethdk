@@ -30,9 +30,9 @@ pub fn path<R: Runtime>(app: &AppHandle<R>) -> Option<PathBuf> {
 
 pub fn build_window<R: ConsoleRuntime>(app: &AppHandle<R>, config: &WindowConfig) -> tauri::Result<()> {
     let builder = WebviewWindowBuilder::from_config(app, config)?;
-    let builder = match std::env::var(SMOKE_VIEW_ENV) {
-        Ok(view) if !view.is_empty() => builder.initialization_script(smoke_script(&view)),
-        _ => builder,
+    let builder = match smoke_init_script(std::env::var(SMOKE_VIEW_ENV).ok()) {
+        Some(script) => builder.initialization_script(script),
+        None => builder,
     };
 
     with_console_log(builder, path(app)).build().map(|_| ())
@@ -118,6 +118,10 @@ fn append(log: &Path, line: &str) {
     }
 }
 
+fn smoke_init_script(view: Option<String>) -> Option<String> {
+    view.filter(|view| !view.is_empty()).map(|view| smoke_script(&view))
+}
+
 fn smoke_script(view: &str) -> String {
     let view = serde_json::to_string(view).unwrap_or_else(|_| "null".into());
 
@@ -160,5 +164,12 @@ mod tests {
         let script = smoke_script(r#"{"checkout":"/a'b"}"#);
 
         assert!(script.contains(r#""{\"checkout\":\"/a'b\"}""#));
+    }
+
+    #[test]
+    fn the_window_gets_no_smoke_script_without_the_smoke_view() {
+        assert_eq!(smoke_init_script(None), None);
+        assert_eq!(smoke_init_script(Some(String::new())), None);
+        assert!(smoke_init_script(Some("{}".into())).is_some());
     }
 }
