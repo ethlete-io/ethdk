@@ -3539,3 +3539,10 @@ viewed after a later shot of another variant rewrites the same sheet file" fails
 passes with the fix; the "drawn over" case now draws over the per-view copy. Not verified: a real `et design shot
 --states --variants` run in a browser, and old records that point at a sheet file (they stay valid until that sheet is
 redrawn, then ask for a new view).
+
+772 note (Linux builder, not fixed): the Suspect "fixed poll budget" is wrong. With every 5 s poll of agent-sessions.spec.ts
+raised to 20 s, the case still failed in a full-file run after 20 s (the `@ethlete_command` option read `''`), and it
+passes alone. A 6 s delayed start bites the 5 s budget, but that is not the CI failure. A 4% CPU quota on vitest did
+not slow it (tmux runs outside the scope). Suspect: an earlier case of the file leaves tmux state (the shared private
+server, a dispatch or scoped session name) that keeps `run` from creating or tagging its session. Next step: run the
+file with `--sequence.shuffle=false` and bisect the earlier cases.
