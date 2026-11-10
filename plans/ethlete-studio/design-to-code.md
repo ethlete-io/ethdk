@@ -4166,3 +4166,18 @@ case that needs build-ready plus a harness is expensive to write; each spec buil
 (builder default, after B249 in the STATUS order): one shared cli fixture product with a minimal valid harness map, used
 by the build-ready specs; restore the two lost `part-ready` cases on it. Also from this slice: studio-lab has no harness,
 so its parts read "Nicht baubereit (Kein Harness)"; whether it gets one is collected for the human.
+
+718\. Builder (2026-11-10, day shift, B249 "Sketch öffnen" browser check): the check reached the direct-edit footer only
+after the subagent removed the `harness` block of `studio` in its scratch config. With the harness, every studio part
+with a stale or absent record shows "Wird geprüft", and a scratch `design check components/disclosure` did not clear it.
+Suspect (no bite yet): a part-scoped `design check` in a harness product leaves a `pending` slow blocker, so the human
+may never see "Baubereit" in Studio. Tool gap: no e2e case drives a harness product from a stale record to a settled
+footer, and a browser check may change the product config without saying the result no longer covers the real one.
+Tool fix (builder, ahead of the B249 CLI removal because it blocks B249): that e2e case first; a verify brief forbids
+config edits, or the report names them as "not verified on the real config". Also seen: repo `dist/libs/cli` was
+stale against HEAD and the CLI refused to start in a scratch copy until rebuilt.
+
+719\. Builder (2026-11-10, day shift): CI 42825654761 (Mac merge feae02d99) red in Unit tests:
+`sketch-view.component.spec.ts` "draws the current page and the variants…" timed out at 5986 ms, and
+`open-points-answer.spec.ts` "answers the open points of every part…" at 30042 ms. Suspect: load-sensitive timeouts;
+the builder watches 42826707435 and 42830064915 for a recurrence. If they recur, red CI goes first.
