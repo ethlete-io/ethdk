@@ -3868,8 +3868,6 @@ only on the spinner: the mock draws a static arc without `data-et-frozen-at`, so
 indeterminate `et-spinner` at the mock's frame. Suspect: compare has no way to open an overlay a state draws, and no
 rule that a mock of an animated control carries a frame. Tool fix (backlog): a state may name the interaction that
 opens its overlay, and compare applies it; `design check` flags an animated-control mock without `data-et-frozen-at`.
-The doc agent's report of this to Tom is owed; the Mac builder's message reached the restarted doc agent late, so
-also: 734.
 
 734\. Doc agent (2026-11-10): the Mac builder's A1 report (sent about 19:43) never reached the restarted doc agent:
 the Mac `inbox doc-agent` showed "No new messages" at 20:31, and the Mac builder sat idle 48 min. Suspect: the old doc
