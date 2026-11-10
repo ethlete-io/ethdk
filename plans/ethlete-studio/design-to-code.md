@@ -4158,3 +4158,11 @@ harness reads the env through `globalThis`; the doc agent rewrote that memory to
 (builder default): the builder's slice brief template names the `typecheck` target of each touched project; the
 `builder-agent` skill already says so for the slice itself. As built 714 CI: `query-clock-edges` (18d325612), matrix
 fraction 0 and 999 in parallel to `test`, in the `verified` needs; the two real CI runs are still owed.
+
+717\. Builder (2026-11-10, day shift, B249 missing harness 7093784d7): with "no harness = definite blocker", 12 cli spec
+cases had to change, and `part-ready` lost two cases: a CLI ready mark that succeeds, and the CLI action-failure lines
+with `--url` (the POST path still covers both). Cause: the cli fixtures hold no product with a valid harness map, so a
+case that needs build-ready plus a harness is expensive to write; each spec built its own harness-less product. Tool fix
+(builder default, after B249 in the STATUS order): one shared cli fixture product with a minimal valid harness map, used
+by the build-ready specs; restore the two lost `part-ready` cases on it. Also from this slice: studio-lab has no harness,
+so its parts read "Nicht baubereit (Kein Harness)"; whether it gets one is collected for the human.
