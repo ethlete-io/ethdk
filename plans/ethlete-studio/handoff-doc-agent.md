@@ -57,3 +57,5 @@ None open. The human is afk until late evening (2026-11-10): collect questions, 
 The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" re-check.
 - Step 3 + 721 built in 77e87c6b2 (merge path allowed only with MERGE_HEAD and merge-only staged paths; go.json rule
   gone); studio/go.json removed in b52ff697c. Not pushed yet. Left in B249: re-check "Sketch öffnen", step 6, ADR built:.
+- Mac: 708 built (4ae5bc51c, c16d3856d); finding 722 recorded; lint scope decided (calls + pre-commit). 709 app-icon
+  sketch (studio foundations/logo@app-icon, variants a-d) is ready: tell the human on return, they pick by merge.
