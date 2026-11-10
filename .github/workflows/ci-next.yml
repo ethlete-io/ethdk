@@ -33,7 +33,7 @@ jobs:
       id-token: write
     with:
       version_command: 'yarn changeset:prerelease'
-      commit_message: 'chore: 🤖 update prereleases'
+      commit_message: 'chore(repo): Update prereleases'
       title: 'Release prerelease packages'
       slack_title: '*New Next Release*'
     secrets: inherit

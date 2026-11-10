@@ -32,6 +32,7 @@
     "postinstall": "node ./tools/scripts/postinstall.mjs",
     "lint:changesets": "node ./tools/scripts/lint-changesets.js && node ./tools/scripts/check-changeset-coverage.js",
     "lint:cli-related-map": "node ./tools/scripts/cli-related-map.mjs check",
+    "lint:commit-messages": "node ./tools/scripts/check-workflow-commit-messages.mjs",
     "lint:css-properties": "node ./tools/scripts/lint-css-properties.js",
     "lint:migration-entries": "node ./tools/scripts/check-migration-entries.mjs",
     "lint:no-verify-briefs": "node ./tools/scripts/check-no-verify-briefs.mjs",
