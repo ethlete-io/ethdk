@@ -4235,6 +4235,15 @@ count-only e2e assertion prints its events on failure) was not built yet. Tool f
 each aborted request with its URL, time since reload and initiator; the 679 backlog item covers the rest of the suite.
 No fourth fix round tonight (ADR 0239): only the B466 worker-cap fix goes to origin/next through push-suite.
 
+As built (B470, finding 680): on failure the case detail now lists each aborted request of a shown frame on its own line:
+shortened URL (path + query), ms since the reload, `request.failure()` text, navigation or subrequest, the initiator
+(`request.frame().url()`) and the iframe element's src when it failed. The pass detail is unchanged. Bite (temporary:
+an in-page `iframe.src = url + '&bite=1'; iframe.src = url` on each iframe with a src, removed): `aborted requests of
+shown frames 2 of 4 (must be 0)` then `/frame.html?product=studio&part=pages%2Fsystem&state=empty&epoch=1 at 5395 ms:
+net::ERR_ABORTED, navigation, initiator blank, iframe src then /frame.html?...epoch=1`. A first bite with
+`page.route` never fired (no request reached it), so it was dropped. Runs: 3 plain passes (56 s each) and 1 pass with --hold-listings 14000 (87 s). Not verified: the cause of the
+original 2 of 2 abort; the next red run names it.
+
 681\. Builder (2026-11-10, Mac night, B466-only push:suite in a worktree at 11de10881 = origin/next f6a97186f + c11cc03ac,
 B471): the e2e step failed on `[System] page switch time is logged to the design timings` (`icons->shell-main first:
 mount 37, first 4730, all NOT (5 painted; 17 marked img/iframe, 8 canvas frames ...)`, 33.1 s): under load not every

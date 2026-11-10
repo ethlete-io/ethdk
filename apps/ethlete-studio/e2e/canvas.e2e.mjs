@@ -2550,8 +2550,24 @@ const CASES = [
     pages: ['Sketches'],
     run: async (page) => {
       const aborted = [];
+      let reloadedAt = Date.now();
       const onFailed = (request) => {
-        if (request.resourceType() === 'document' && request.frame() !== page.mainFrame()) aborted.push(request.url());
+        if (request.resourceType() !== 'document' || request.frame() === page.mainFrame()) return;
+
+        const frame = request.frame();
+        const entry = {
+          url: request.url(),
+          ms: Date.now() - reloadedAt,
+          error: request.failure()?.errorText ?? 'none',
+          navigation: request.isNavigationRequest(),
+          initiator: frame.url(),
+          iframeSrc: frame
+            .frameElement()
+            .then((element) => element.getAttribute('src'))
+            .catch(() => 'detached'),
+        };
+
+        aborted.push(entry);
       };
 
       page.on('requestfailed', onFailed);
@@ -2600,6 +2616,7 @@ const CASES = [
             true,
           );
         });
+        reloadedAt = Date.now();
         await page.reload();
         await page.waitForFunction(({ CANVAS, FRAME }) => document.querySelector(CANVAS)?.querySelector(FRAME), {
           CANVAS,
@@ -2651,11 +2668,23 @@ const CASES = [
             allLoadedMs: Math.round(Math.max(0, ...iframes.map((iframe) => record.loadedAt.get(iframe) ?? NaN))),
           };
         });
-        const shownAborts = aborted.filter((url) => load.urls.includes(url)).length;
+        const shownList = aborted.filter((entry) => load.urls.includes(entry.url));
+        const shownAborts = shownList.length;
+        const short = (url) =>
+          (URL.canParse(url) && url.startsWith('http') ? new URL(url).pathname + new URL(url).search : url).slice(
+            0,
+            160,
+          );
+        const abortLines = await Promise.all(
+          shownList.map(
+            async (entry) =>
+              `\n  ${short(entry.url)} at ${entry.ms} ms: ${entry.error}, ${entry.navigation ? 'navigation' : 'subrequest'}, initiator ${short(entry.initiator)}, iframe src then ${short(String((await entry.iframeSrc) ?? 'none'))}`,
+          ),
+        );
 
         return {
           ok: stable >= 4 && load.frames > 0 && load.createdForShown === load.frames && shownAborts === 0,
-          detail: `${stable >= 4 ? 'settled' : `not settled in ${WAIT_MS / 1000} s (${last} loaded)`}, iframes ${load.frames}, created for them ${load.createdForShown} (must equal), created in all ${load.created}, aborted requests of shown frames ${shownAborts} of ${aborted.length} (must be 0), ${load.visible} visible got src first ${load.visibleFirst}, visible loaded at ${load.visibleLoadedMs} ms, all at ${load.allLoadedMs} ms after reload`,
+          detail: `${stable >= 4 ? 'settled' : `not settled in ${WAIT_MS / 1000} s (${last} loaded)`}, iframes ${load.frames}, created for them ${load.createdForShown} (must equal), created in all ${load.created}, aborted requests of shown frames ${shownAborts} of ${aborted.length} (must be 0), ${load.visible} visible got src first ${load.visibleFirst}, visible loaded at ${load.visibleLoadedMs} ms, all at ${load.allLoadedMs} ms after reload${abortLines.join('')}`,
         };
       } finally {
         page.off('requestfailed', onFailed);
