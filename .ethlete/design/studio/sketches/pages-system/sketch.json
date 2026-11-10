@@ -100,11 +100,19 @@
     {
       "key": "r1",
       "title": "Fehlende Build-Antwort der Auflistung",
-      "note": "a Gebauter Stand: Die System-Ansicht zeigt den Fehler der Auflistung (z. B. fehlender Build, 503) als einfache Zeile; im Design ist dieser Zustand nicht gezeichnet."
+      "note": "a Gebauter Stand: Die System-Ansicht zeigt den Fehler der Auflistung (z. B. fehlender Build, 503) als einfache Zeile; im Design ist dieser Zustand nicht gezeichnet.\nb Fehlerkarte: Die Auflistung zeigt in der Mitte der Fläche eine Karte im Rahmen der leeren Produktkarte: kleines Fehler-Icon, Titel Auflistung fehlgeschlagen, der Server-Grund als gedämpfte Zeile und Erneut laden.\nc Kopfbanner: Ein Banner in der Fehlerfarbe über die ganze Fläche oben mit dem Grund und Erneut laden; die Fläche darunter bleibt leer."
     }
   ],
   "variantInfo": {
     "a": {
+      "authors": ["claude-sonnet-5-5"],
+      "round": "r1"
+    },
+    "b": {
+      "authors": ["claude-sonnet-5-5"],
+      "round": "r1"
+    },
+    "c": {
       "authors": ["claude-sonnet-5-5"],
       "round": "r1"
     }
