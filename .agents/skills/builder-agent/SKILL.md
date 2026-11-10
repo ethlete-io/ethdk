@@ -66,6 +66,7 @@ that talks with the user and records decisions. Talk English.
   `cd` lands the commit on `next` in the main checkout. Put the same line in every bite brief.
 - Every slice brief names the slice's allowed paths; write them at slice start with `yarn slice:paths "<name>" <path>...` (an env var set in one shell call does not reach the later `git commit` call). The pre-commit hook warns on a staged path outside them.
 - Every subagent brief says: "Never wait with `pgrep -f`/`pkill -f` loops: the pattern matches the loop's own command line, so it never ends. Use `run_in_background` or Monitor." (finding 730; B99 is the tool fix.)
+- Every subagent brief says: "A refused gate is a finding: stop and report it, never call its internals to pass it." (finding 737.)
 - After a slice, write an "as built" section in the plan: what was built, the commits, and
   what you verified and what you did not verify.
 
