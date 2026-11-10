@@ -4012,3 +4012,59 @@ click), but the removal took 15 and 25 rounds (118 ms, 30 ms) in 2 of 9 calls. T
 waits for the menu state with a 3 s deadline (`until`), not a round count. Verified: 13/13 normal;
 `spec:stress --slow 13` 4/4 (2 of 3 failed before, finding 705); the multi-section case still fails when the second
 click is left out. Tool gap: none, B481 found it.
+
+710\. Builder (2026-11-10, day shift, CI 42810531430 on 7d4202f19): Unit tests red, cli `part-accept:56`, `part-go:106`
+and `part-ready:176` time out at 30 s. The pushed range had no `libs/cli` change; 3c5f77755 was green. Reproduces:
+`spec:stress --slow 13` 0/3 for all three files; a direct slowed run times out the first case of `part-accept` at
+30.1 s. Unloaded, the first case takes 2.5 s, the others 0.1 to 1.4 s. Suspect: each failing case is the first
+`openPointsAnswer` call of its file, which cold-starts the open-points worker from `.ts` through jiti
+(`open-points-runner.ts` `startWorker`) and loads the rules and Tailwind; on a slow CI shard that alone nears 30 s. Not
+measured yet: the share of the worker start in the 2.5 s. Fix (builder default): warm the worker in a `beforeAll` with
+its own long timeout, shared as a spec helper; bite under `--slow 13`. Tool gap: B481 can reproduce such a flake, but
+only on demand; the push suite runs `nx test cli` unloaded, so a cold start that nears the timeout only on a slow
+runner reaches CI unseen, also from a range that does not touch the lib. Tool fix (builder default): a scheduled
+`spec:stress --slow 13` sweep over the cli and Studio spec files (nightly CI job or a local timer) that reports each
+file under 100 % as a finding, and a spec helper for cold-start work (worker, compile) that every first case uses.
+
+As built (707, b354fc7e5, not pushed). Cause (LSP measured): the editor tsconfigs mapped `@design-system` to the deleted
+`tmp/691-cli-lowered` build, so ts(2307) showed in the part file (1) and in sketch files (2 and 8); with only that fixed
+the part had 0 and the sketch files still 2 and 8. Cause (include): the sketch files were in an inferred project; with
+only the include fixed, 1, 1 and 2 stayed. With both fixed a variant still failed on `@shared/chrome`, so one product
+tsconfig cannot type the variants. Also: a normal `yarn et:design` runs from `tmp/studio-cli/<sha>`, under the repo
+`tmp/` too. Fix: the writer targets the installed CLI root (`libs/cli/design` through the realpath of
+`node_modules/@ethlete/cli`) and refuses a temp or work-root build, keeping the old file; every design command repairs
+the editor tsconfigs (`repairEditorTsconfigs`, one `existsSync` per product); each sketch variant gets a gitignored
+`tsconfig.json` with the overlay of the sketch typecheck, plus one per sketch for `shared/`. Verified: 4 new specs fail
+on the old source and pass; LSP bite from a temp build `tmp/707-cli` with the dead tsconfig restored: `design status`
+rewrote it, 0 diagnostics in the part, `shared/`, new and old variants and 4 sdk and studio-lab variant files. Not run:
+the full suite, the design-command specs. Accepted (doc agent, builder default): a sketch folder removed with `git rm`
+keeps its ignored `tsconfig.json`; the CLI merge and edit remove folders recursively.
+
+711\. The human (2026-11-10, day shift, after reading the 710 report about `part-go`): "wieso sehe ich da schon wieder
+sowas wie part go case? go system etwa schon wieder?". Facts (doc agent): the go system still exists (`go.json`,
+`libs/cli/src/lib/design/system/part-go.ts`); B249 (ADR 0048, decided 2026-11-03) removes it and is item 1 of the
+binding order in `STATUS.md` since 2026-11-09 (ADR 0234). Today's builder queue (707, 708, 709, 706, B482) held only
+findings and tool work, set by the doc agent, so B249 did not move. Cause: the doc agent built the builder queue from
+findings and did not check it against the binding order; nothing compares a handoff queue with that order. Fix: the
+builder queue is 710 (CI red), then B249 and the STATUS order; 708, 709 and B482 join the tool backlog; 706 stays on
+the Mac builder. Tool fix (builder default): the handoff save of a builder names the top open STATUS item, and the
+builder Stop hook or `handoff` warns when a slice is committed for an item that is neither that one nor a red-CI fix.
+
+As built (710). Cause (measured): the open-points worker cold start from source (jiti) is 2.0-2.4 s of the 2.5 s first
+case unloaded; a second call takes 3-4 ms, a call for a new product on the warm worker 7-8 ms, `openPointsOf` in process
+23-27 ms (3 runs). Under `--slow 6` the first `openPointsAnswer` case of each file times out at 30 s, the CI symptom.
+`--slow 13` is too harsh: with the fix, `part-accept` "refuses a part with theming findings" still takes 37 s there, a
+case that does not start the worker. Fix: `open-points-worker.fixtures.ts` `warmOpenPointsWorker()` starts the worker in
+a file-level `beforeAll` with a 120 s timeout; `part-accept`, `part-go` and `part-ready` call it, nothing else in the go
+system changed. Verified: bite under `--slow 6`, copies without the warm-up 0/2 in all three files (part-accept,
+part-go first worker case at 30 s); with it `--runs 4 --slow 6` 4/4 and `--runs 4 --load 2` 4/4 each; eslint and
+`tsc -p libs/cli/tsconfig.spec.json` clean. Not run: the scheduled stress sweep (tool fix of 710, tool backlog).
+
+As built (710, bd6a1d5de, not pushed). Cause (measured, 3 runs): the cold start of the open-points worker from source
+through jiti takes 2.0 to 2.4 s of the 2.5 s first case unloaded; a second call takes 3 to 4 ms, a warm worker with a
+new product 7 to 8 ms. Fix: `warmOpenPointsWorker()` in `open-points-worker.fixtures.ts`, called in a file-level
+`beforeAll` with a 120 s timeout in `part-accept`, `part-go` and `part-ready`; nothing else in the go system changed.
+Bite at `--slow 6`: without the warm-up 0/2 in all three files, the first `openPointsAnswer` case times out at 30 s as
+in CI; with it `--runs 4 --slow 6` 4/4 and `--load 2` 4/4. Open: at `--slow 13` the `part-accept` case "refuses a part
+with theming findings" (no worker) takes 37 s, so `--slow 13` overstates the CI runners for these files; the sweep in
+the 710 tool fix needs a factor measured from CI, not 13. Also: `design-command.spec` (707) 6/6.

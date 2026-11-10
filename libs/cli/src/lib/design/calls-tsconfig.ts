@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { callsRootOf, DESIGN_DIR, readConfig } from './design-config';
-import { installedAssetRoot } from './package-root';
+import { editorAssetRootOf, installedAssetRoot } from './package-root';
 import { workRootOf } from './work-root';
 import { renderPackagesOf, typePathsOf } from './render-packages';
 
@@ -34,25 +34,30 @@ export const writeTsconfigText = (path: string, text: string) => {
 export const writeCallsTsconfig = (target: string) => {
   const work = workRootOf(target);
   const path = resolve(work, 'tsconfig.json');
-  const defineCall = resolve(installedAssetRoot(), 'define-call.ts');
-  const inlineCss = resolve(installedAssetRoot(), 'css-inline.d.ts');
   const typePaths = typePathsOf({ packages: renderPackagesOf({ target, config: readConfig(target) }), target });
+  const textOf = (assetRoot: string) => {
+    const defineCall = resolve(assetRoot, 'define-call.ts');
+    const inlineCss = resolve(assetRoot, 'css-inline.d.ts');
+    const config = {
+      compilerOptions: {
+        ...DRAWING_COMPILER_OPTIONS,
+        paths: { ...typePaths, '@design-explore': [defineCall] },
+      },
+      include: [`${callsRootOf(target)}/**/*.ts`, defineCall, inlineCss],
+    };
 
-  const config = {
-    compilerOptions: {
-      ...DRAWING_COMPILER_OPTIONS,
-      paths: { ...typePaths, '@design-explore': [defineCall] },
-    },
-    include: [`${callsRootOf(target)}/**/*.ts`, defineCall, inlineCss],
+    return `${JSON.stringify(config, null, 2)}\n`;
   };
-
-  const text = `${JSON.stringify(config, null, 2)}\n`;
   const editorPath = resolve(target, DESIGN_DIR, 'tsconfig.json');
+  const editorRoot = editorAssetRootOf(target);
 
   mkdirSync(work, { recursive: true });
-  writeTsconfigText(path, text);
-  mkdirSync(dirname(editorPath), { recursive: true });
-  writeTsconfigText(editorPath, text);
+  writeTsconfigText(path, textOf(installedAssetRoot()));
+
+  if (editorRoot) {
+    mkdirSync(dirname(editorPath), { recursive: true });
+    writeTsconfigText(editorPath, textOf(editorRoot));
+  }
 
   return path;
 };

@@ -1,4 +1,5 @@
 import { existsSync, realpathSync } from 'fs';
+import { repairEditorTsconfigs } from './system/system-tsconfig';
 import { resolve } from 'path';
 import { ACCEPT_USAGE, designAccept } from './system/accept-command';
 import { checkDesign } from './check';
@@ -436,6 +437,8 @@ const runDesign = async (options: { root: string; argv: string[]; invocation: st
 
     return 0;
   }
+
+  repairEditorTsconfigs(splitCheckout(argv.slice(1), root).target);
 
   if (argv[0] === RESIDENT_SERVE || argv[0] === 'stop' || runsInResident(argv)) {
     const { target, rest } = splitCheckout(argv.slice(1), root);

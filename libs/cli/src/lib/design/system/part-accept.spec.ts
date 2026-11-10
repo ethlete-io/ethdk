@@ -4,6 +4,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { Readable } from 'stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { warmOpenPointsWorker } from './open-points-worker.fixtures';
 import { DESIGN_DIR, readConfig } from '../design-config';
 import { openPointsAnswer, partAcceptAnswer } from '../studio-api';
 import { DrawStates } from './accepted-pictures';
@@ -49,6 +50,8 @@ const post = (target: string, body: unknown) =>
     request: request('POST', body),
     drawStates,
   });
+
+warmOpenPointsWorker();
 
 describe('part accept', () => {
   afterEach(() => vi.restoreAllMocks());

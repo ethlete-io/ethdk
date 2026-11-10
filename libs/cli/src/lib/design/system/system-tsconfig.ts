@@ -1,8 +1,8 @@
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { isAbsolute, relative, resolve, sep } from 'path';
 import { typecheck, TypecheckResult } from '../typecheck';
 import { DRAWING_COMPILER_OPTIONS, writeTsconfigText } from '../calls-tsconfig';
-import { installedAssetRoot } from '../package-root';
+import { editorAssetRootOf, installedAssetRoot } from '../package-root';
 import { readConfig } from '../design-config';
 import { workRootOf } from '../work-root';
 import { renderPackagesOf, typePathsOf } from '../render-packages';
@@ -15,7 +15,10 @@ import {
   sharedDirsOf,
 } from './imports';
 import { KIT_SPECIFIER } from './kit';
-import { ResolvedProduct } from './resolve-product';
+import { productDirOf } from './product';
+import { ResolvedProduct, resolveProduct } from './resolve-product';
+import { overlaySketch } from './sketch/overlay';
+import { listSketches, sharedDirOf, variantDirOf } from './sketch/sketch';
 
 export const DESIGN_SYSTEM_SPECIFIER = '@design-system';
 
@@ -41,8 +44,10 @@ export const typecheckProduct = (options: { target: string; product: ResolvedPro
 
 /**
  * Writes `tsconfig.json` into the product's own folder, the nearest tsconfig an editor finds for
- * its parts, so `@design-system` and `@system/*` resolve there. The file is gitignored. A folder outside the
- * checkout or inside a `node_modules` gets none.
+ * its parts, so `@design-system` and `@system/*` resolve there, and one into each sketch variant with the
+ * paths of its sketch typecheck; the sketch folder's own one types its `shared/` like the first variant. The
+ * files are gitignored. A folder outside the checkout or inside a `node_modules` gets none, and a run from a
+ * temporary build keeps the files it finds.
  */
 export const writeEditorTsconfig = (options: { target: string; product: ResolvedProduct }) => {
   const { target, product } = options;
@@ -51,16 +56,87 @@ export const writeEditorTsconfig = (options: { target: string; product: Resolved
   if (!existsSync(product.dir) || inside.startsWith('..') || isAbsolute(inside)) return;
   if (inside.split(sep).includes('node_modules')) return;
 
-  writeTsconfigText(resolve(product.dir, 'tsconfig.json'), systemTsconfigText(options));
+  const assetRoot = editorAssetRootOf(target);
+
+  if (!assetRoot) return;
+
+  writeTsconfigText(resolve(product.dir, 'tsconfig.json'), systemTsconfigText({ target, product, assetRoot }));
+
+  for (const sketch of listSketches({ productDir: product.dir, product: product.name })) {
+    if (typeof sketch === 'string') continue;
+
+    const variants = sketch.variants.map((variant) => ({
+      dir: variantDirOf(sketch, variant),
+      product: overlaySketch({ product, sketch, variant }),
+    }));
+    const shared = {
+      dir: sharedDirOf(sketch),
+      product: variants[0]?.product ?? { ...product, sharedDir: sharedDirOf(sketch) },
+    };
+
+    writeSketchEditorTsconfig({ target, assetRoot, file: resolve(sketch.dir, 'tsconfig.json'), ...shared });
+
+    for (const variant of variants)
+      writeSketchEditorTsconfig({ target, assetRoot, file: resolve(variant.dir, 'tsconfig.json'), ...variant });
+  }
 };
 
-const systemTsconfigText = (options: { target: string; product: ResolvedProduct & SharedDirs }) => {
-  const { target, product } = options;
-  const defineCall = resolve(installedAssetRoot(), 'define-call.ts');
-  const definePart = resolve(installedAssetRoot(), 'define-part.ts');
-  const inlineCss = resolve(installedAssetRoot(), 'css-inline.d.ts');
-  const assets = resolve(installedAssetRoot(), 'assets.d.ts');
-  const kit = resolve(installedAssetRoot(), 'wireframe-kit.ts');
+const writeSketchEditorTsconfig = (options: {
+  target: string;
+  assetRoot: string;
+  file: string;
+  dir: string;
+  product: ResolvedProduct & SharedDirs;
+}) =>
+  writeTsconfigText(
+    options.file,
+    systemTsconfigText({
+      target: options.target,
+      product: options.product,
+      assetRoot: options.assetRoot,
+      include: [options.dir],
+    }),
+  );
+
+/**
+ * Rewrites every editor tsconfig of `target` whose `@design-system` file is gone, e.g. after a run from a
+ * temporary build that has since been deleted.
+ */
+export const repairEditorTsconfigs = (target: string) => {
+  const config = readConfig(target);
+
+  for (const [name, productConfig] of Object.entries(config?.products ?? {})) {
+    const path = resolve(productDirOf({ target, product: name }), 'tsconfig.json');
+
+    if (!existsSync(path) || !hasDeadDesignSystem(path)) continue;
+
+    writeEditorTsconfig({ target, product: resolveProduct({ target, name, config: productConfig }) });
+  }
+};
+
+const hasDeadDesignSystem = (path: string) => {
+  try {
+    const parsed = JSON.parse(readFileSync(path, 'utf8')) as { compilerOptions?: { paths?: Record<string, string[]> } };
+    const file = parsed.compilerOptions?.paths?.[DESIGN_SYSTEM_SPECIFIER]?.[0];
+
+    return file !== undefined && !existsSync(file);
+  } catch {
+    return true;
+  }
+};
+
+const systemTsconfigText = (options: {
+  target: string;
+  product: ResolvedProduct & SharedDirs;
+  assetRoot?: string;
+  include?: string[];
+}) => {
+  const { target, product, assetRoot = installedAssetRoot(), include = [] } = options;
+  const defineCall = resolve(assetRoot, 'define-call.ts');
+  const definePart = resolve(assetRoot, 'define-part.ts');
+  const inlineCss = resolve(assetRoot, 'css-inline.d.ts');
+  const assets = resolve(assetRoot, 'assets.d.ts');
+  const kit = resolve(assetRoot, 'wireframe-kit.ts');
   const typePaths = typePathsOf({ packages: renderPackagesOf({ target, config: readConfig(target) }), target });
   const partPaths = Object.fromEntries(product.parts.map((part) => [partSpecifierOf(part), [part.file]]));
   const fixtures = product.fixtures ? [product.fixtures] : [];
@@ -81,6 +157,7 @@ const systemTsconfigText = (options: { target: string; product: ResolvedProduct 
       },
     },
     include: [
+      ...include.map((dir) => resolve(dir, '**/*.ts')),
       ...product.parts.map((part) => part.file),
       ...fixtures,
       ...shared,
