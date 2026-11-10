@@ -4184,3 +4184,11 @@ stale against HEAD and the CLI refused to start in a scratch copy until rebuilt.
 `sketch-view.component.spec.ts` "draws the current page and the variants…" timed out at 5986 ms, and
 `open-points-answer.spec.ts` "answers the open points of every part…" at 30042 ms. Suspect: load-sensitive timeouts;
 the builder watches 42826707435 and 42830064915 for a recurrence. If they recur, red CI goes first.
+
+As built (Mac builder, pushed as eb3356f7c): 713 in 27f3a3d35 (pre-commit runs `studio-label-specs.mjs --staged` when a
+studio spec or `studio-labels.ts` is staged; bite: temp repo with a bare upstream, the refusal case fails on the old
+script). 712 in 0a821a9ff (Cause: `freePortOf` probes, closes, then Vite binds with `strictPort: true`; a parallel process
+takes the port in between. Fix: an own server runs with `strictPort: false` and reads `httpServer.address()`; bite: a
+mocked probe returns a held port). Open from 712: `serveDesign` with an unpinned port has the same probe gap, because the
+user's server must keep its logged port. 715 open point in b7e8f7b6a (`realOf()` resolves the nearest existing
+ancestor; bite in `package-root.spec.ts`).
