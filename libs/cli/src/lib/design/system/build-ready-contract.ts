@@ -2,7 +2,15 @@ import { Problem } from './problem';
 import { ResolvedProduct } from './resolve-product';
 
 export type BlockerKind =
-  'stale-record' | 'open-point' | 'action' | 'embedded' | 'problem' | 'compare' | 'sdk-error' | 'pending';
+  | 'stale-record'
+  | 'open-point'
+  | 'action'
+  | 'embedded'
+  | 'problem'
+  | 'compare'
+  | 'sdk-error'
+  | 'no-harness'
+  | 'pending';
 
 /** One reason a part is not build-ready; `part` names the embedded part it comes from, if any. */
 export type Blocker = { kind: BlockerKind; text: string; part?: string };

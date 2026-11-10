@@ -549,7 +549,7 @@ describe('auth refresh failure scenario', () => {
 
     expect(auth.isAuthenticated()).toBe(true);
 
-    s.tick(10000);
+    s.tick(10001);
     await s.settle();
 
     expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
@@ -586,7 +586,7 @@ describe('auth refresh failure scenario', () => {
 
     expect(auth.isAuthenticated()).toBe(true);
 
-    s.tick(10000);
+    s.tick(10001);
     await s.settle();
 
     expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);

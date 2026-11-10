@@ -677,3 +677,34 @@ actions read); tsc, eslint, 122 related spec files, spec:stress 4/4. Not verifie
 design (would rewrite the shared ready.json); the action check of a linked part inside serve (starts a harness and a
 design server per stale part); products without a `harness` still never run the slow runner, so their parts stay
 pending in serve.
+
+As built (B249 missing harness): Cause, proven: `startSlowRunner` skips a product without a harness
+(`libs/cli/src/lib/design/system/slow-run.ts:393`), so its parts stayed `[stale-record, pending]` (Wird geprüft) forever.
+Fix (decision: a missing harness is a definite blocker): every part of a product without `config.harness` gets a
+`no-harness` blocker in `part-build-ready.ts` / `build-ready-contract.ts`; it replaces the `pending` slow result, the
+record blockers are skipped, so `recordBuildReady` writes no record and `design ready` / `design task` refuse the part.
+Studio maps the kind in `system-view/open-points.ts` with the label `noHarness` ("Kein Harness - ..."). Specs: new cases in
+`slow-run.spec.ts`, `part-build-ready.spec.ts` and the Studio `open-points.spec.ts` fail on the old source. Existing
+cases whose fixture product had no harness now expect the new output: `open-points-answer.spec.ts` (`no-harness`
+blocker), `check-system-args.spec.ts` (NO RECORD `(+2 more)`, a NO RECORD line with `no-harness` for `pages/home`),
+`part-ready.spec.ts` (the `design ready` CLI calls refuse with the blocker; the action-check refusals stay on the POST
+path), `part-task.spec.ts` and `action-lost.spec.ts` (their fixtures get a harness, so they keep testing the task
+output, the wiring list and ACTION-LOST). Verified: related specs in libs/cli (only one
+`check-system-sketch.spec.ts` expectation fails, handed to its owner) and apps/ethlete-studio, both typecheck targets,
+eslint, prettier, spec:stress 4/4. Not verified: a real `design check` or `design serve` on the repo design. The repo
+product `studio-lab` has no harness, so after the next `design check` its 1 record is dropped and its parts read
+"Nicht baubereit (Kein Harness)"; whether it gets a harness is Tom's product call.
+
+As built (718 harness product pending): Cause, proven by `libs/cli/src/lib/design/system/check-record.spec.ts`: `design check`
+without `--slow` never runs the slow rules; only `design ready`, `design check --slow` (which writes no record) and the
+serve slow runner do. So a harness part whose slow result was missing or stale (a scratch copy has no
+`node_modules/.cache` slow cache) kept `[stale-record, pending]` after `design check --part`: `recordBuildReady` treats
+`pending` as not checked, writes no record and drops none. Fix: the check record step goes through
+`recordCheckedBuildReady` (`system/check-record.ts`), which first runs `runSlowChecks` on the `--part` part when its slow
+result is pending and the product has a harness (only when the check could draw), as `design ready` does. A whole-product
+`design check` still leaves pending parts to the serve slow runner, so it does not run every slow rule. Bite: the spec
+fails with `[stale-record, pending]` when the slow run is skipped. Verified: tsc, eslint, 123 related spec files,
+spec:stress 4/4. Not verified: a real `design check --part` on the repo design (would rewrite the shared ready.json),
+and whether the scratch Studio serve was also running its slow runner.
+
+As built (718 pending count): a whole-product `design check` still leaves pending parts to the serve slow runner (grill decision), and now prints `PENDING <product>: <n> parts wait for slow rules - run design serve or design check --product <p> --part <part>` (`slowWaitingLineOf`, `check-record.ts`), so it never looks settled. Verified: a check-record spec case (whole-product call keeps `pending`, line text), cli typecheck, eslint. Not verified: the line in a real `design check` run.

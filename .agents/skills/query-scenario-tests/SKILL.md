@@ -112,6 +112,7 @@ it('dedupes identical requests', () => {
    then awaits microtasks; `flush()` advances repeatedly and never awaits. A cascade in which each
    round arms its next timer one microtask later (401, refresh, retry, 401, ...) needs a loop of
    `await Promise.resolve(); s.tick(50);` - see the streak-cap test in `auth-features.scenario.spec.ts`. The harness follows every fake timer callback with a `TestBed.tick()`, so an effect a timer dirtied (a response landing, a debounce firing) runs at that fake instant, with or without an `await` before. A zero-delay timer armed inside a timer callback lands 1 ms later (fake-timers clamps it), so a request a response triggered answers after one more `s.tick(1)`. `mintToken` floors `exp` to whole seconds, so a proactive refresh lands up to 999 ms early: assert around a 1 s window, not at an exact instant.
+   The fake clock starts at `scenarioStartMs()` (2100-01-01T00:00:00.500Z; `useScenarioClock()` for a suite without `useScenario`, and seed persisted data from it, not `Date.now()`). `SCENARIO_CLOCK_FRACTION=0` and `=999` move the start to a whole-second edge: after a change to a timing test, run `src/scenarios` at both edges too.
 5. The harness lives in `harness/` and changes only with a coordinator's say; suites work
    around a gap inside their own file and report it.
 6. Devtools: `provideQueryDevtools()` enables the bridge process-wide on its first call and it

@@ -26,7 +26,9 @@ const checkout = () => {
   return { target, dir: join(design, 'app-a') };
 };
 
-const productOf = (target: string) => resolveProduct({ target, name: 'app-a', config: {} });
+const harness = { app: 'apps/app-a', map: 'apps/app-a/src/map.ts', baseBranch: 'x' };
+
+const productOf = (target: string) => resolveProduct({ target, name: 'app-a', config: { harness } });
 
 const green: BuildReadyInputs = { pointsOf: () => [], problemsOf: () => [], slowOf: () => [] };
 
@@ -267,5 +269,32 @@ describe('recordBuildReady', () => {
     });
 
     expect(lines).toEqual(['NO RECORD app-a components/chip: the actions did not run']);
+  });
+
+  it('drops the record of each part of a product without a harness, with a definite blocker', async () => {
+    const { target } = checkout();
+    const product = resolveProduct({ target, name: 'app-a', config: {} });
+    const lines: string[] = [];
+
+    writePartRecord({ product, part: 'components/chip', origin: originOf('spec') });
+
+    const results = await recordBuildReady({
+      product,
+      parts: ['components/chip', 'pages/home'],
+      inputs: { pointsOf: () => [], problemsOf: () => [] },
+      actionsOf: async () => [],
+      onNoRecord: (line) => lines.push(line),
+    });
+    const kindsOf = (part: string) => {
+      const ready = results.get(part);
+
+      return ready && !ready.ready ? ready.blockers.map((blocker) => blocker.kind) : [];
+    };
+
+    expect(kindsOf('components/chip')).toEqual(['no-harness']);
+    expect(kindsOf('pages/home')).toContain('no-harness');
+    expect(kindsOf('pages/home')).not.toContain('pending');
+    expect(readyMarkOf({ product, part: 'components/chip' })).toBeNull();
+    expect(lines[0]).toMatch(/^NO RECORD app-a components\/chip: no-harness: /u);
   });
 });

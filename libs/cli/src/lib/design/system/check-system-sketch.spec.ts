@@ -311,6 +311,6 @@ describe('checkDesign', () => {
       withoutOpenPoints(lines).filter(
         (line) => !/^RENDER CHECK (SKIPPED|FAILED)/.test(line) && !line.startsWith('HINT '),
       ),
-    ).toEqual(['READY acme: foundations/palette, pages/home', 'ok']);
+    ).toEqual(['ok']);
   }, 60_000);
 });

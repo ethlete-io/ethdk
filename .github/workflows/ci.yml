@@ -124,6 +124,25 @@ jobs:
         env:
           TMPDIR: ${{ runner.temp }}/link-tmp
 
+  query-clock-edges:
+    name: Query scenarios at clock edge .${{ matrix.fraction }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        fraction: ['0', '999']
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - uses: ./.github/actions/setup
+
+      - run: npx vitest run src/scenarios
+        working-directory: libs/query
+        env:
+          SCENARIO_CLOCK_FRACTION: ${{ matrix.fraction }}
+
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -469,6 +488,7 @@ jobs:
       [
         checks,
         test,
+        query-clock-edges,
         build,
         storybook,
         storybook-test,

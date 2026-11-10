@@ -73,7 +73,7 @@ describe('checkDesign', () => {
       '  elements/hero: no controls declared',
       'PART acme elements/hero: 1 problem (HARD-CODED-COLOUR), 1 open point',
     ]);
-    expect(lines).toContainEqual(expect.stringMatching(/^NO RECORD acme elements\/hero: open-point: .*\(\+1 more\)$/));
+    expect(lines).toContainEqual(expect.stringMatching(/^NO RECORD acme elements\/hero: open-point: .*\(\+2 more\)$/));
   }, 60_000);
 
   it('runs only the static rules with --rules, and fails on a problem', async () => {
@@ -109,7 +109,7 @@ describe('checkDesign', () => {
 
     expect(await checkDesign({ target: acme(), argv: ['--part', 'pages/home'], invocation: 'et design' })).toBe(0);
     expect(lines.filter((line) => /^PARTS? /u.test(line))).toEqual([expect.stringMatching(/^PART acme pages\/home: /)]);
-    expect(lines).toContain('actions pages/home: skipped - no implements link, nothing to click');
+    expect(lines).toContainEqual(expect.stringMatching(/^NO RECORD acme pages\/home: .*no-harness/));
     expect(await checkDesign({ target: acme(), argv: ['--part', 'pages/gone'], invocation: 'et design' })).toBe(1);
     expect(lines.at(-1)).toBe('NO PART "pages/gone" in any product of config.json.');
   }, 60_000);

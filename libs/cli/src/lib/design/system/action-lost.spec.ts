@@ -22,6 +22,8 @@ const record = (actions?: string[]): PartReady => ({
   ...(actions ? { actions } : {}),
 });
 
+const HARNESS = { harness: { app: 'apps/app-a', map: 'apps/app-a/harness.ts' } };
+
 const checkout = (records: Record<string, PartReady>) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-action-lost-'));
   const dir = join(target, DESIGN_DIR, 'app-a');
@@ -31,10 +33,10 @@ const checkout = (records: Record<string, PartReady>) => {
     writeFileSync(join(dir, part, `${part.split('/')[1]}.ts`), 'export default definePart({ states: { a: {} } });\n');
   }
 
-  writeFileSync(join(target, DESIGN_DIR, 'config.json'), JSON.stringify({ products: { 'app-a': {} } }));
+  writeFileSync(join(target, DESIGN_DIR, 'config.json'), JSON.stringify({ products: { 'app-a': HARNESS } }));
   writeFileSync(join(dir, 'ready.json'), JSON.stringify(records));
 
-  return { target, product: resolveProduct({ target, name: 'app-a', config: {} }) };
+  return { target, product: resolveProduct({ target, name: 'app-a', config: HARNESS }) };
 };
 
 describe('ACTION-LOST', () => {

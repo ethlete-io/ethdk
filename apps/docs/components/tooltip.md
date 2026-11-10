@@ -1,6 +1,6 @@
 # Tooltip
 
-Hover/focus-triggered descriptive text for an element. Non-interactive by design - it never receives pointer events or focus. For click-triggered, interactive popovers use a [toggletip](/components/toggletip).
+Hover-, focus- and long-press-triggered descriptive text for an element. Non-interactive by design - it never receives pointer events or focus. For click-triggered, interactive popovers use a [toggletip](/components/toggletip).
 
 Import `TOOLTIP_IMPORTS` (no provider needed) and attach `[etTooltip]`:
 
@@ -34,10 +34,17 @@ import { TOOLTIP_IMPORTS } from '@ethlete/components';
 ## Behavior
 
 - Shows on **hover** (after `showDelay`, default 300ms) and on **keyboard focus** (immediately - and only for focus made visible by the keyboard, so clicking a button doesn't pop its tooltip).
+- On **touch**, a **long press** (500ms) shows it. A normal tap does only the element's own action and never opens the tooltip. After the finger lifts, the tooltip stays visible for 1.5s, then hides. A press that turns into a scroll opens nothing, so a page still scrolls when the swipe starts on the trigger. This behavior is fixed - there is no input to choose a tap trigger.
 - Hides when neither hover nor focus remains, or on <kbd>Escape</kbd> - from anywhere, focus does not have to be on the trigger. The tooltip consumes that <kbd>Escape</kbd> only for overlays, so a dialog it is shown inside stays open, while the trigger and its ancestors still receive it unhandled - a grid that moves focus back on <kbd>Escape</kbd> does so in the same keypress. Closing it, by <kbd>Escape</kbd> or `hide()`, also cancels a hover show still waiting for its delay, so it stays closed until the pointer enters again.
 - The overlay is fully passive: non-modal, no backdrop, never steals focus or pointer events. It also never becomes the top layer, so a dialog it shows inside still closes on <kbd>Escape</kbd> and on a backdrop press.
 - `etTooltipDisabled` disables it; it also hides automatically when the content becomes `null` or a blank string. A blank string never opens it, so `[etTooltip]="truncated() ? label : ''"` is a valid conditional tooltip.
 - For programmatic control, grab the directive via `#tooltip="etTooltip"` - it exposes `show()` and `hide()`.
+
+### Touch devices
+
+Most touch users never long-press a control, so a touch user can miss a tooltip. A tooltip must only repeat or explain what the element already shows. A hint that every user must see - why a game is not ready yet, the rules of a nomination - belongs in a [toggletip](/components/toggletip#icon-trigger), which opens on a tap. For an icon, use an icon-only `et-icon-button` as the toggletip trigger.
+
+While a trigger carries a tooltip on a touch device (`(pointer: coarse)`), the tooltip sets `user-select: none` and `-webkit-touch-callout: none` on it, so a long press selects no text and opens no iOS callout. The Android context menu of a long press on the trigger is prevented and shows the tooltip instead. A disabled or empty tooltip leaves the trigger as it is.
 
 @example tooltip/tooltip-in-dialog 320px
 

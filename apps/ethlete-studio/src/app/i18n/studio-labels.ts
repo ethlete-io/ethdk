@@ -110,6 +110,7 @@ export const STUDIO_LABELS = {
     sketchOpen: 'Sketch noch nicht gemergt',
     recordStale: 'Kein Prüfergebnis zum aktuellen Design - Design-Check oder Design-Ready ausführen',
     slowChecksPending: 'Die langsamen Prüfungen sind für den aktuellen Stand noch nicht gelaufen',
+    noHarness: 'Kein Harness - ohne Harness in config.json laufen die App-Prüfungen nie',
     embeddedNotReady: (part: string) => `${part} ist noch nicht baubereit`,
     directEdit: 'Bild ohne Sketch geändert',
     comment: 'Kommentar',

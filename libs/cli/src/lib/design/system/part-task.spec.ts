@@ -54,6 +54,14 @@ const checkout = () => {
 
 const productOf = (target: string) => resolveProduct({ target, name: 'app-a', config: {} });
 
+const HARNESS = { harness: { app: 'apps/app-a', map: 'apps/app-a/harness.ts' } };
+
+const withHarness = (target: string) => {
+  writeFileSync(join(target, DESIGN_DIR, 'config.json'), JSON.stringify({ products: { 'app-a': HARNESS } }));
+
+  return resolveProduct({ target, name: 'app-a', config: HARNESS });
+};
+
 const record = (target: string, part = 'components/chip') =>
   writePartRecord({ product: productOf(target), part, origin: originOf('spec') });
 
@@ -214,7 +222,8 @@ describe('part task', () => {
 
   it('refuses a part without a link, with a route-only link, and a part that is not build-ready, listing its blockers', () => {
     const { target, chip, dir } = checkout();
-    const refusal = (part: string, inputs = GREEN) => taskPartOf({ product: productOf(target), part, inputs });
+    const product = withHarness(target);
+    const refusal = (part: string, inputs = GREEN) => taskPartOf({ product, part, inputs });
 
     expect(refusal('components/tag')).toContain('has no implements link');
     record(target, 'pages/inbox');
@@ -260,6 +269,8 @@ describe('part task', () => {
 
   it('prints the task with the states since the implemented record', async () => {
     const { target, dir } = checkout();
+
+    withHarness(target);
     const lines = output();
 
     expect(await task(target, [])).toBe(1);
@@ -282,6 +293,7 @@ describe('part task', () => {
       'allowed files:',
       '  libs/chip/**',
       '  .changeset/*.md',
+      '  apps/app-a/harness.ts',
       'wiring files: none yet',
       'target: compare green',
       THEMING_TEXT,
@@ -311,6 +323,8 @@ describe('part task', () => {
     ]);
 
     const { target, chip } = checkout();
+
+    withHarness(target);
     const lines = output();
 
     writeFileSync(
@@ -640,6 +654,12 @@ describe('part task', () => {
       const lines = output();
       const compare = vi.fn<ComparePart>(async () => ({ green: true, states: { default: {} } }));
 
+      expect(await verify(target, [...design, ...wiring], compare)).toBe(0);
+      expect(lines.filter((line) => line.startsWith('WIRING '))).toEqual(wiring.map((file) => `WIRING ${file}`));
+      expect(lines).toContain('2 files of 5a29b1b94^..5a29b1b94 inside the allowed files');
+
+      withHarness(target);
+      lines.length = 0;
       expect(await verify(target, [], compare, [])).toBe(0);
       expect(lines.slice(lines.indexOf('wiring files:') + 1, lines.indexOf('target: compare green'))).toEqual([
         '  apps/studio/src/app/system-view/sketch-view.component.ts',
@@ -650,11 +670,6 @@ describe('part task', () => {
         '  apps/studio/src/app/components/design-canvas/canvas-math.ts',
         '  apps/studio/src/app/app.config.ts',
       ]);
-
-      lines.length = 0;
-      expect(await verify(target, [...design, ...wiring], compare)).toBe(0);
-      expect(lines.filter((line) => line.startsWith('WIRING '))).toEqual(wiring.map((file) => `WIRING ${file}`));
-      expect(lines).toContain('2 files of 5a29b1b94^..5a29b1b94 inside the allowed files');
     });
 
     it('allows a grandparent importer that no spec imports', async () => {

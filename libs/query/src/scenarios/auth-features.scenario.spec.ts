@@ -359,7 +359,7 @@ describe('auth features without the devtools', () => {
       s.api.once('POST', '/auth/refresh', () => ({ status: 503, body: { message: 'unavailable' } }));
     }
 
-    await s.settle(14000); // the second refresh was due at t~21s and is still failing
+    await s.settle(15000); // t~26s: the second refresh is throttled until t~40s, and a check has seen <5s left
     expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(true);
 
     await s.settle(20000);
@@ -400,7 +400,7 @@ describe('auth features without the devtools', () => {
 
     await s.settle(1001);
 
-    expect(auth.features.tokenExpirationWarning.expiresIn()).toBeGreaterThan(18000);
+    expect(auth.features.tokenExpirationWarning.expiresIn()).toBeGreaterThanOrEqual(18000);
     expect(auth.features.tokenExpirationWarning.expiresIn()).toBeLessThanOrEqual(19000);
     expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(false);
 

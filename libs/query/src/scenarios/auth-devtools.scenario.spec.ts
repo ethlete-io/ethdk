@@ -240,7 +240,7 @@ const flows: Flow[] = [
       const secure = c.run(() => tab.getSecure<Profile>('/secure/me')());
       await s.settle();
 
-      s.tick(10000);
+      s.tick(10001);
       await s.settle();
       secure.execute();
       await s.settle();

@@ -96,6 +96,18 @@ describe('buildReadyStatusOf', () => {
       ).toEqual({ state: 'checking' });
   });
 
+  it('reads a product without a harness as blocked, not checking', () => {
+    expect(
+      buildReadyStatusOf({
+        points: [],
+        buildReady: { ready: false, blockers: [{ kind: 'no-harness', text: 'the product has no harness' }] },
+      }),
+    ).toEqual({
+      state: 'blocked',
+      blockers: [{ kind: 'problem', text: 'Kein Harness - ohne Harness in config.json laufen die App-Prüfungen nie' }],
+    });
+  });
+
   it('lists a direct edit as its own blocker, the open points in Studio words and the rule blockers by kind', () => {
     expect(
       buildReadyStatusOf({

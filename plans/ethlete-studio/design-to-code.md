@@ -4099,6 +4099,17 @@ boundary flake where the expiry read sees a clock that did not advance on the fa
 and the expiry tick); last commits there 3bf4f45db, ab8d48ca2. The fresh builder fixes it first (ADR 0230). Tool gap:
 open until the cause; check whether `spec:stress --slow` reproduces it, since the scenario runs on a fake clock.
 
+As built (714, builder subagent). Cause: `useScenario` started the fake clock at the real wall time, so the millisecond
+fraction was random; tokens floor `exp`/`iat`/`eat` to whole seconds. At a .999 start the custom-claim test reads
+exactly 18000 (bite: the CI message, reproduced with `SCENARIO_CLOCK_FRACTION=999`), and at a .000 start 9 other auth
+tests failed, each ticking to exactly the instant the refresh fires while its response lands 1 ms later (8 tests), or to
+1 ms before the next expiry check (the expiration warning). No lib bug. Fix: the harness pins the clock at
+2100-01-01T00:00:00.500Z (`scenarioStartMs()`, far future because jsdom's cookie jar expires cookies against the real
+clock), `SCENARIO_CLOCK_FRACTION=0|999` moves it to a second edge, the tests tick past the boundary they mean, the
+custom-claim test asserts `>= 18000` (the floor a .999 mint reaches), and the persistence seeds read the pinned start
+instead of the real clock. `src/scenarios` passes at .500, .000 and .999. Tool gap: CI runs only the default pin; a CI
+step for the two edge runs is proposed, not built.
+
 As built (706a, Mac builder, bfd02499d, not pushed). Cause: the hook matched the raw Bash text, so a heredoc body or a
 quoted string with `agent-sessions.mjs send` counted as a report, and a quoted `git commit` as a commit. Fix: the hook
 splits each command into simple commands, keeps quoted text in one word, drops heredoc bodies and comments; a commit is
@@ -4114,3 +4125,62 @@ root through `realpath`, and the spec builds its expectation from the unresolved
 `next`; only the Mac push suite saw it. Tool fix (builder default): the spec helpers return `realpathSync` of every
 temp dir, and the cli unit job also runs on the macOS runner (or a lint flags `tmpdir()` without `realpathSync` in
 cli specs).
+714 Cause (builder bite): the query scenario harness (`libs/query/src/scenarios/harness/scenario.ts:655`) fakes `Date`
+without `setSystemTime`, so the clock starts at real wall time with a random millisecond fraction; tokens floor `exp`
+and `eat` to seconds and lose 0 to 999 ms. A start pinned at `.999` gives the exact CI message. A whole-second start
+fails 11 other scenarios (proactive refresh, expiration warning, multi-tab leader refresh, maxAge drop), so these flake
+about 1 in 1000 runs today. Fix in progress: the harness pins one start instant; each of the 11 is sorted into timing in
+the spec or a real lib boundary bug (lib bug: fix plus scenario). Tool fix: the pinned start makes a boundary fail on
+every run; the doc agent adds that the harness also runs the suite at the two edge fractions (`.000`, `.999`) once,
+so a boundary bug cannot hide behind the one pinned value.
+As built (714, b504e7a99, not pushed). The harness starts at 2100-01-01T00:00:00.500Z (`scenarioStartMs()`,
+`useScenarioClock()`); a future date because jsdom's cookie jar expires cookies against the real clock.
+`SCENARIO_CLOCK_FRACTION=0|999` moves the start to an edge. Causes of the 11 (traced): 8 refresh scenarios fired exactly
+at the end of `s.tick(N)` at `.000` with the response 1 ms later (tick 1 ms further); the expiration-warning check
+samples once a second (settle 15000); 2 maxAge scenarios seeded with real `Date.now()` (now `scenarioStartMs()`). No lib
+bug. The 714 assert is `toBeGreaterThanOrEqual(18000)`: at `.999` the floored `eat` loses 999 ms, so 18000 is the exact
+lower bound, not slack (doc agent accepted). Verified by subagent: `src/scenarios` at `.500`, `.000`, `.999` each 1557
+passed; `spec:stress` 4/4. Decided (doc agent, ADR 0240 "as fast as possible"): CI runs the two edge fractions as
+parallel jobs, so the wall time of the query step does not grow.
+As built (715, Mac builder, 0fcb4c2dc, pushed with merge feae02d99d). Cause: spec, not product. `realOf()` in
+`package-root.ts` resolves only an existing path; the spec's running root did not exist, so it kept `/var/...` while
+`realOf(tmpdir())` gave `/private/var/...`, and the temp build counted as non-transient; the second case expected the
+unresolved path although the product writes the real one. Fix (spec only): `withRunningRoot` creates the root, the
+expectation uses `realpathSync`. Verified on macOS: both failed before, 9/9 after; push suite ok. Not verified on
+Linux (reasoned: `/tmp` is no symlink). Open, tool backlog: `realOf()` does not resolve a missing path under a
+symlinked parent; fix: realpath the nearest existing ancestor.
+
+716\. Builder (2026-11-10, day shift, 714 follow-up c4c0939ee): the first push suite blocked on `query:typecheck`; the
+`libs/query` ngc lib config includes `src/scenarios`, and the new harness used `process` with no Node types. The 714
+subagent ran only `tsc -p tsconfig.spec.json`, because its brief named only that. Cause: the agent memory
+"vitest-does-not-typecheck" told every brief to run the spec tsconfig, not the project's `typecheck` target. Fix: the
+harness reads the env through `globalThis`; the doc agent rewrote that memory to name `nx run <p>:typecheck`. Tool fix
+(builder default): the builder's slice brief template names the `typecheck` target of each touched project; the
+`builder-agent` skill already says so for the slice itself. As built 714 CI: `query-clock-edges` (18d325612), matrix
+fraction 0 and 999 in parallel to `test`, in the `verified` needs; the two real CI runs are still owed.
+
+717\. Builder (2026-11-10, day shift, B249 missing harness 7093784d7): with "no harness = definite blocker", 12 cli spec
+cases had to change, and `part-ready` lost two cases: a CLI ready mark that succeeds, and the CLI action-failure lines
+with `--url` (the POST path still covers both). Cause: the cli fixtures hold no product with a valid harness map, so a
+case that needs build-ready plus a harness is expensive to write; each spec built its own harness-less product. Tool fix
+(builder default, after B249 in the STATUS order): one shared cli fixture product with a minimal valid harness map, used
+by the build-ready specs; restore the two lost `part-ready` cases on it. Also from this slice: studio-lab has no harness,
+so its parts read "Nicht baubereit (Kein Harness)"; whether it gets one is collected for the human.
+
+718\. Builder (2026-11-10, day shift, B249 "Sketch öffnen" browser check): the check reached the direct-edit footer only
+after the subagent removed the `harness` block of `studio` in its scratch config. With the harness, every studio part
+with a stale or absent record shows "Wird geprüft", and a scratch `design check components/disclosure` did not clear it.
+Cause (bite, 538b77b31): plain `design check` never runs the slow rules (only `design ready`, `check --slow` and the serve
+slow runner do; `--slow` writes no record), so a part with a missing or stale slow result stays `pending` and reads
+`[stale-record, pending]` ("Wird geprüft"). Fix: a `--part` check in a harness product runs the pending slow rules of
+that part, then records. A whole-product check still leaves pending parts to serve (doc agent decision: tool
+internal); its output must name the pending count and the command that settles them. Tool gap: no e2e case drives a harness product from a stale record to a settled
+footer, and a browser check may change the product config without saying the result no longer covers the real one.
+Tool fix (builder, ahead of the B249 CLI removal because it blocks B249): that e2e case first; a verify brief forbids
+config edits, or the report names them as "not verified on the real config". Also seen: repo `dist/libs/cli` was
+stale against HEAD and the CLI refused to start in a scratch copy until rebuilt.
+
+719\. Builder (2026-11-10, day shift): CI 42825654761 (Mac merge feae02d99) red in Unit tests:
+`sketch-view.component.spec.ts` "draws the current page and the variants…" timed out at 5986 ms, and
+`open-points-answer.spec.ts` "answers the open points of every part…" at 30042 ms. Suspect: load-sensitive timeouts;
+the builder watches 42826707435 and 42830064915 for a recurrence. If they recur, red CI goes first.

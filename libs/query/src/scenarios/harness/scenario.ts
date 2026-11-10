@@ -639,6 +639,31 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
   }
 };
 
+const clockFraction = () => {
+  const env = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env;
+  const raw = env?.['SCENARIO_CLOCK_FRACTION'];
+
+  if (raw === undefined || raw === '') return 500;
+  if (raw === '0' || raw === '999') return Number(raw);
+
+  throw new Error(`SCENARIO_CLOCK_FRACTION must be 0 or 999, got ${raw}`);
+};
+
+/**
+ * The instant every scenario's fake clock starts at. Far in the future because jsdom's cookie jar
+ * expires cookies against the real clock, not the fake one, so a cookie written at a past fake
+ * instant is already gone. `SCENARIO_CLOCK_FRACTION=0|999` moves it to a whole-second edge.
+ */
+export const scenarioStartMs = () => Date.UTC(2100, 0, 1) + clockFraction();
+
+/** Installs the scenario fake timers with `Date` at {@link scenarioStartMs}. */
+export const useScenarioClock = () => {
+  vi.useFakeTimers({
+    toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'],
+    now: scenarioStartMs(),
+  });
+};
+
 export const createScenario = (config: ScenarioConfig = {}): (() => Scenario) => {
   let current: Scenario | null = null;
 
@@ -652,7 +677,7 @@ export const useScenario = (config: ScenarioConfig = {}): (() => Scenario) => {
   let current: Scenario | null = null;
 
   beforeEach(() => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
+    useScenarioClock();
     current = buildScenario(config);
   });
 

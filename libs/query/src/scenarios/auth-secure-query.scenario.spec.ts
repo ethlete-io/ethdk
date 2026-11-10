@@ -29,7 +29,7 @@ describe('auth secure query scenario', () => {
     s.tick();
     expect(s.api.requestCount('GET', '/secure/profile')).toBe(1);
 
-    s.tick(10000);
+    s.tick(10001);
     await s.settle();
 
     expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);

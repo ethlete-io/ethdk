@@ -263,7 +263,7 @@ describe('auth multi-tab scenario', () => {
     await sync(s);
     expect(b.auth.isAuthenticated()).toBe(true);
 
-    s.tick(7.5 * 60 * 1000);
+    s.tick(7.5 * 60 * 1000 + 1);
     await sync(s);
 
     expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
@@ -290,7 +290,7 @@ describe('auth multi-tab scenario', () => {
     const tokenAtLogin = a.auth.accessToken();
     expect(b.auth.accessToken()).toBe(tokenAtLogin);
 
-    s.tick(7.5 * 60 * 1000);
+    s.tick(7.5 * 60 * 1000 + 1);
     await sync(s);
 
     expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);

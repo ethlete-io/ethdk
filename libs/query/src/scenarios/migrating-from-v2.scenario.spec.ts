@@ -31,7 +31,7 @@ import {
   withRefreshQuery,
 } from '../index';
 import { isQueryDevtoolsEnabled, queryDevtoolsEntries } from '../../devtools-contract';
-import { mintToken, Scenario, ScenarioAuthBuilders, sequence, useScenario } from './harness';
+import { mintToken, Scenario, ScenarioAuthBuilders, sequence, useScenario, useScenarioClock } from './harness';
 
 const BASE_URL = 'https://api.test';
 const PERSISTENT_PROVIDER_NAME = 'migration-persistent-auth';
@@ -59,7 +59,7 @@ describe('migrating from v2 scenario', () => {
     let fetchCalls: string[] = [];
 
     beforeEach(() => {
-      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
+      useScenarioClock();
       fetchCalls = [];
       // Nothing may leave the machine, and the rejection the backend then reports is the point of the
       // test rather than an error to read.

@@ -34,7 +34,7 @@ import {
 } from '../index';
 import { forceCloseDatabase, IDBFactory } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mintToken, Scenario, sequence, useScenario } from './harness';
+import { mintToken, Scenario, scenarioStartMs, sequence, useScenario } from './harness';
 
 /**
  * Registered before `useScenario`'s `beforeEach` on purpose: the persistence engine reads the store
@@ -868,7 +868,7 @@ describe('persistence scenario', () => {
 
   describe('maxEntries at startup', () => {
     beforeEach(() => {
-      const now = Date.now();
+      const now = scenarioStartMs();
 
       store.seed([
         persistedEntry({ key: 'oldest', url: 'https://api.test/1', persistedAt: now - 3000 }),
@@ -895,7 +895,7 @@ describe('persistence scenario', () => {
 
   describe('maxAge at startup', () => {
     beforeEach(() => {
-      const now = Date.now();
+      const now = scenarioStartMs();
 
       store.seed([
         persistedEntry({ key: 'stale', url: 'https://api.test/stale', persistedAt: now - 86_400_000 }),
@@ -920,7 +920,7 @@ describe('persistence scenario', () => {
 
   describe('a failing write', () => {
     beforeEach(() => {
-      const now = Date.now();
+      const now = scenarioStartMs();
 
       store.seed([
         persistedEntry({ key: 'oldest', url: 'https://api.test/1', persistedAt: now - 2000 }),
@@ -1283,7 +1283,7 @@ describe('persistence scenario', () => {
 
   describe('the default maxAge', () => {
     beforeEach(() => {
-      const now = Date.now();
+      const now = scenarioStartMs();
 
       store.seed([
         persistedEntry({ key: 'just-inside', url: 'https://api.test/inside', persistedAt: now - 86_399_000 }),
@@ -1448,7 +1448,9 @@ describe('persistence scenario', () => {
 
   describe('an index that fails to load', () => {
     beforeEach(() => {
-      store.seed([persistedEntry({ key: 'left-over', url: 'https://api.test/left-over', persistedAt: Date.now() })]);
+      store.seed([
+        persistedEntry({ key: 'left-over', url: 'https://api.test/left-over', persistedAt: scenarioStartMs() }),
+      ]);
       store.failNextLoadIndex();
     });
 
@@ -2003,7 +2005,7 @@ describe('persistence scenario', () => {
 
   describe('a clearPersistedQueries that lands while the store index is loading', () => {
     beforeEach(() => {
-      const now = Date.now();
+      const now = scenarioStartMs();
 
       store.seed([
         persistedEntry({ key: 'first', url: 'https://api.test/1', persistedAt: now - 1000 }),

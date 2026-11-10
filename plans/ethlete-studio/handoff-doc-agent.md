@@ -1,26 +1,41 @@
-# Doc agent handoff (2026-11-10, day shift, second part, from ethlete-sdk-a6 / tmux claude-2)
+# Doc agent handoff (2026-11-10, day shift, third part, from ethlete-sdk-a6 / tmux claude-2)
 
-Run `/doc-agent` first. The human is awake: grill rounds are allowed.
+Run `/doc-agent` first. The human is **afk** (said "afk"): collect design questions, one chat line per event, no round
+until they say they are back.
 
 ## Sessions
 
-- Linux builder: ethlete-sdk-3e in tmux `claude-3@ethlete-sdk`, role builder live (checked in /proc).
-- Mac builder: tmux `claude@ethlete-sdk` on ethlete-mac, idle since 12:09 (CEF on macOS done). Mailbox:
+- Linux builder: ethlete-sdk-3e in tmux `claude-3@ethlete-sdk`, role builder.
+- Mac builder: tmux `claude@ethlete-sdk` on ethlete-mac (told to restart itself with `--role builder`; check with a
+  pane capture). Send work with a file: `scp -q /tmp/x.txt ethlete-mac:/tmp/x.txt && ssh ethlete-mac 'zsh -lc "cd
+~/dev/ethlete-sdk && node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs send doc-agent --to claude <
+/tmp/x.txt"'`. Never put the message inline in the ssh string: backticks ran `git pull` and `git push` on the Mac once.
+- Start the Mac mailbox wait in the background at once:
   `ssh ethlete-mac 'zsh -lc "cd ~/dev/ethlete-sdk && node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs inbox doc-agent --wait 3500"'`
-  in the background. On the Mac, `tmux` needs `zsh -lc`.
 
 ## State
 
-- Closed today (second part): B102, B437, B442, B443, B466, B469, B474, B475, B478, B479, B481. ADRs 0250 (Windows CEF
-  spike waits for real hardware, B480) and 0251 (CEF plugin debug-port defects stay internal) recorded.
-- Findings 702-709 in `design-to-code.md`. 702, 703, 704, 705 have as-built notes.
-- Builder queue: 707 (ts(2307) on `@design-system` in sketches: generated tsconfig points at the gone
-  `tmp/691-cli-lowered`, and `sketches/**` is not in `include`), 708 (lint `.ethlete/design/**`, fix button.ts:30 `!`),
-  709 (app icon is the old mark: sketch first, then generate it from the logo part), then 706 (Stop hook: a commit or
-  push turn with no report is blocked), then B482 (release smoke, CSP).
-- For each of 707-709, write the cause as "Cause:" only after the builder's bite.
-- B480 waits for the human's move to Windows.
+- Findings 706-716 in `design-to-code.md`; as-built notes for 706, 706a, 707, 710, 714, 715. ADRs 0252 (Studio does not
+  jump into an @edit sketch) and 0253 (no old design → sketch with only `new`), both `open: B249`.
+- Binding order (ADR 0234, STATUS "Gerade in Arbeit"): B249 is item 1. Finding 711: the doc agent had queued only
+  findings; never queue tool work ahead of the STATUS order unless CI is red or it blocks the item.
+- Linux builder queue: CI run 42826707435 (query-clock-edges, real run 1 of 2 owed), then B249: missing harness =
+  "Nicht baubereit" (in an opus subagent), browser check of "Sketch öffnen", CLI removal (apiLevel 8), go.json hook
+  rule, data migration, docs and skills, gutter skip in `pages/sketches`. Pushed B249 slices: 498d82393, c58f340a0,
+  5d7bcee34, 1bacbcefa, a3890721a.
+- Mac builder queue: 713 (pre-commit label-spec lint), 712 (check-system-sketch port 0), `realOf()` nearest existing
+  ancestor in `libs/cli` `package-root.ts`. Then tool backlog: 708, 709 (sketch first), B482.
+- Decided by the doc agent (technical): 714 assert `>= 18000` is the exact bound; the edge fractions run as parallel
+  CI jobs (ADR 0240). B249 Q1 (status words, ADR 0041) and Q3 (ADR 0209 stands, agent picks `new` with ADR note).
+- Open: pages/start EDIT-OLD-NOT-FOUND — the builder says whether an ADR covers it (then agent pick) or it waits for
+  the human. 714 tool fix and 710 sweep need a slow factor measured from CI, not 13.
+
+## Side work
+
+- Issue ethlete-io/ethdk#3172 (tooltip on touch): built in 181eb140d by session ethlete-sdk-3b (500 ms long press,
+  hides 1.5 s after lift; toggletip icon-button example). The Linux builder pushes it. Tell the human on return: the
+  issue comment and close are theirs.
 
 ## Open questions for the human
 
-None.
+None. The human is afk again (said "afk" after the ADR 0254 round): collect questions.
