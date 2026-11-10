@@ -4068,3 +4068,8 @@ Bite at `--slow 6`: without the warm-up 0/2 in all three files, the first `openP
 in CI; with it `--runs 4 --slow 6` 4/4 and `--load 2` 4/4. Open: at `--slow 13` the `part-accept` case "refuses a part
 with theming findings" (no worker) takes 37 s, so `--slow 13` overstates the CI runners for these files; the sweep in
 the 710 tool fix needs a factor measured from CI, not 13. Also: `design-command.spec` (707) 6/6.
+
+712\. Builder (2026-11-10, day shift, B249 slice 1, 498d82393): `vitest related` over 1276 tests failed once in
+`check-system-sketch` with "port in use" under load; alone 12/12. Suspect: the spec picks a fixed or probed port and a
+parallel spec takes it between the probe and the listen. Tool fix (builder default, tool backlog): the spec server
+listens on port 0 and reads the bound port; bite: two parallel runs of the spec under `spec:stress --load 2` 4/4.
