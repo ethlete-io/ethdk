@@ -14,9 +14,19 @@ export type BuildStamp = { version: string; build: string };
 
 const filesUnder = (dir: string) =>
   (readdirSync(dir, { recursive: true }) as string[])
-    .filter((file) => statSync(join(dir, file)).isFile())
+    .filter((file) => statSync(join(dir, file), { throwIfNoEntry: false })?.isFile())
     .sort()
     .map((file) => ({ name: file, path: join(dir, file) }));
+
+const readUnlessGone = (path: string) => {
+  try {
+    return { content: readFileSync(path), mtimeMs: statSync(path).mtimeMs };
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+
+    throw error;
+  }
+};
 
 const builtAtFromFile = (path: string) => {
   try {
@@ -34,8 +44,12 @@ const inspectBuild = (dirs: { code: string; assets: string; manifest: string; in
 
   for (const dir of [dirs.code, dirs.assets]) {
     for (const file of filesUnder(dir)) {
-      hash.update(file.name).update(readFileSync(file.path));
-      builtAt = Math.max(builtAt, statSync(file.path).mtimeMs);
+      const read = readUnlessGone(file.path);
+
+      if (!read) continue;
+
+      hash.update(file.name).update(read.content);
+      builtAt = Math.max(builtAt, read.mtimeMs);
     }
   }
 

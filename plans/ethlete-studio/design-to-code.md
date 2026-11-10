@@ -3502,3 +3502,20 @@ names its number nowhere (rows or prose) and an As built line in its extent name
 deletes done rows, so no finding is ever done, and the age rule (over 5 days) held back every finding from 11-05 on.
 First run moved 22 findings (641-715), plan 440205 to about 364000 chars. Bite: the new spec case fails with the old age
 gate and with the STATUS prose check off.
+
+768\. Linux builder (2026-11-11, night, CI run 42912315216): `nx test cli` failed in complete.spec.ts with ENOENT on
+`libs/cli/design/web/rebuild-probe-<pid>.txt`. Cause (bite): serve.spec.ts writes and removes a probe file in the
+real package `design/web` folder, and `buildStampOf` in a parallel spec listed the folder, then called `statSync` on a
+file that was gone. The same race hits a real server that starts while `nx build cli` rewrites its assets. Why no
+tool caught it: the push suite runs `nx test cli` once, and the window is a few milliseconds.
+
+As built (768): `filesUnder` in stamp.ts stats with `throwIfNoEntry: false`, and the hash loop skips a file that
+is gone before it reads it. stamp-vanished.spec.ts removes a `vanishing-` file between `readdirSync` and the stat;
+it failed with the CI ENOENT without the fix and passes with it. Verified: the two stamp specs and `cli:typecheck`.
+Not verified: the full cli suite under CI load; the push suite runs it.
+
+769\. Mac builder (2026-11-11, night, push:suite 8c4bdb6a1): `[Inbox] Tab focus shows the ring` failed with
+`focused=false rings=[]` at load 26.2; alone at load about 10 it passes 3/3. CI failed the same case class (731). Suspect:
+the case reads focus before the page settles under load. Lesson: a load-sensitive case needs its cause, not a retry; a
+retry hides a real focus defect. Decided by the doc agent (tool internal): no single-case retry. Tool fix (night, Mac):
+reproduce under the CPU quota (731/735), find the cause, the case waits on a condition, bite under the quota.
