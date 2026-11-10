@@ -4,7 +4,7 @@ import { By } from '@angular/platform-browser';
 import { setInputSignal } from '@ethlete/core';
 import '../../../test-helpers';
 import { dialogOverlayStrategy } from '../../overlay/strategies';
-import { pointerEnter, pressKey } from '../../testing/driver-core';
+import { pointerEnter, pointerEvent, pressKey } from '../../testing/driver-core';
 import { fakeLayout } from '../../testing/fake-layout';
 import { createOverlayDriver } from '../../testing/overlay-driver';
 import { TooltipContent, TooltipDirective } from './tooltip.directive';
@@ -192,6 +192,94 @@ describe('TooltipDirective showDelay', () => {
     const directive = fixture.debugElement.query(By.directive(TooltipDirective)).injector.get(TooltipDirective);
 
     expect(directive.showDelay()).toBe(250);
+  });
+});
+
+describe('TooltipDirective on touch', () => {
+  let button: HTMLButtonElement;
+  let tooltipDirective: TooltipDirective;
+
+  const touch = (type: string) => pointerEvent(button, type, { pointerType: 'touch' });
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    TestBed.configureTestingModule({ imports: [TooltipDirectiveTestHost] });
+
+    const fixture = TestBed.createComponent(TooltipDirectiveTestHost);
+    fixture.detectChanges();
+    button = fixture.nativeElement.querySelector('button');
+    tooltipDirective = fixture.debugElement.query(By.directive(TooltipDirective)).injector.get(TooltipDirective);
+    setInputSignal(tooltipDirective.content, 'Tooltip body' satisfies TooltipContent);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    tooltipDirective.hide();
+    vi.useRealTimers();
+  });
+
+  it('opens on a long press and stays open for a short time after the finger lifts', () => {
+    touch('pointerdown');
+    vi.advanceTimersByTime(499);
+    expect(tooltipDirective.overlayRef()).toBeNull();
+
+    vi.advanceTimersByTime(1);
+    expect(tooltipDirective.overlayRef()).not.toBeNull();
+
+    const overlayRef = tooltipDirective.overlayRef();
+    const close = vi.spyOn(overlayRef!, 'close');
+
+    touch('pointerup');
+    touch('pointerleave');
+    vi.advanceTimersByTime(1499);
+    expect(close).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(1);
+    expect(close).toHaveBeenCalled();
+  });
+
+  it('does not open on a short tap', () => {
+    touch('pointerenter');
+    touch('pointerdown');
+    vi.advanceTimersByTime(100);
+    touch('pointerup');
+    touch('pointerleave');
+    vi.advanceTimersByTime(2000);
+
+    expect(tooltipDirective.overlayRef()).toBeNull();
+  });
+
+  it('does not open when the press turns into a scroll', () => {
+    touch('pointerdown');
+    vi.advanceTimersByTime(200);
+    touch('pointercancel');
+    vi.advanceTimersByTime(2000);
+
+    expect(tooltipDirective.overlayRef()).toBeNull();
+  });
+
+  it('shows the tooltip in place of the native context menu of a long press', () => {
+    touch('pointerdown');
+    const contextMenu = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    button.dispatchEvent(contextMenu);
+
+    expect(contextMenu.defaultPrevented).toBe(true);
+    expect(tooltipDirective.overlayRef()).not.toBeNull();
+  });
+
+  it('leaves the context menu alone outside a touch press', () => {
+    const contextMenu = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    button.dispatchEvent(contextMenu);
+
+    expect(contextMenu.defaultPrevented).toBe(false);
+  });
+
+  it('does not open on a long press while disabled', () => {
+    setInputSignal(tooltipDirective.disabled, true);
+    touch('pointerdown');
+    vi.advanceTimersByTime(1000);
+
+    expect(tooltipDirective.overlayRef()).toBeNull();
   });
 });
 

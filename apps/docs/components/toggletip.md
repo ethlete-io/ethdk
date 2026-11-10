@@ -50,6 +50,25 @@ import { TOGGLETIP_IMPORTS } from '@ethlete/components';
 - Focus moves to the first tabbable element inside on open and is **restored to the trigger** on close - but it is not trapped.
 - `etToggletipDisabled` disables it; it also closes automatically when content becomes `null` or a blank string, or the trigger is disabled. A blank string never opens it, so `[etToggletip]="hint() ?? ''"` is a valid conditional toggletip.
 
+## Icon trigger
+
+The trigger must be a button with `et-button` or one of its flavors (error `ET1501` otherwise). For an icon, use an icon-only `et-icon-button` with an `aria-label`. This is the touch-friendly answer for a hint on an icon: a [tooltip](/components/tooltip#touch-devices) opens on touch only by long press, a toggletip opens on a tap.
+
+```html
+<button
+  aria-label="About nomination rules"
+  etToggletip="You can change your nomination until the first match of the matchday starts."
+  et-icon-button
+  etToggletipTrigger
+  size="sm"
+  type="button"
+>
+  <i etIcon="et-circle-info"></i>
+</button>
+```
+
+@example toggletip/toggletip-icon 200px
+
 ## Positioning
 
 Same floating-ui anchoring as the tooltip, with an arrow:
@@ -68,7 +87,7 @@ Same floating-ui anchoring as the tooltip, with an arrow:
 
 | -         | Tooltip                               | Toggletip                                         |
 | --------- | ------------------------------------- | ------------------------------------------------- |
-| Trigger   | Hover / keyboard focus                | Click                                             |
+| Trigger   | Hover / keyboard focus / long press   | Click / tap                                       |
 | Content   | Descriptive text only                 | Text or interactive template                      |
 | Focus     | Never moves                           | Moves in (first tabbable), restored on close      |
 | Semantics | `role="tooltip"` + `aria-describedby` | `role="dialog"` + `aria-expanded`/`aria-haspopup` |

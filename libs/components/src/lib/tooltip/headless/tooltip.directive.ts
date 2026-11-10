@@ -25,6 +25,7 @@ import {
   isOnHigherOverlayLayer,
   resolveOverlayLayer,
   enableAnchoredOverlayPositionExtras,
+  injectHasTouchInput,
 } from '@ethlete/core';
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 import {
@@ -33,6 +34,7 @@ import {
   defer,
   filter,
   fromEvent,
+  ignoreElements,
   map,
   merge,
   mergeMap,
@@ -53,6 +55,8 @@ import { createIdFactory } from '../../internals/id-factory';
 export type TooltipContent = string | TemplateRef<unknown>;
 
 const DEFAULT_TOOLTIP_DELAY = 300;
+const LONG_PRESS_DELAY = 500;
+const TOUCH_HIDE_DELAY = 1500;
 
 const createTooltipId = /* @__PURE__ */ createIdFactory('et-tooltip');
 const createTooltipDescriptionId = /* @__PURE__ */ createIdFactory('et-tooltip-description');
@@ -60,6 +64,11 @@ const createTooltipDescriptionId = /* @__PURE__ */ createIdFactory('et-tooltip-d
 @Directive({
   selector: '[etTooltip]',
   exportAs: 'etTooltip',
+  host: {
+    '[style.-webkit-touch-callout]': 'suppressNativeLongPress() ? "none" : null',
+    '[style.-webkit-user-select]': 'suppressNativeLongPress() ? "none" : null',
+    '[style.user-select]': 'suppressNativeLongPress() ? "none" : null',
+  },
 })
 export class TooltipDirective {
   private document = inject(DOCUMENT);
@@ -69,6 +78,7 @@ export class TooltipDirective {
   private overlayManager = injectOverlayManager();
   private focusVisibleTracker = injectFocusVisibleTracker();
   private renderer = injectRenderer();
+  private hasTouchInput = injectHasTouchInput();
 
   public content = input<TooltipContent | null>(null, { alias: 'etTooltip' });
   public ariaDescription = input<string | null>(null, { alias: 'etTooltipAriaDescription' });
@@ -109,6 +119,10 @@ export class TooltipDirective {
     return content !== null && (typeof content !== 'string' || content.trim() !== '');
   });
 
+  private canShow = computed(() => this.hasContent() && !this.disabled());
+
+  protected suppressNativeLongPress = computed(() => this.hasTouchInput() && this.canShow());
+
   private accessibleDescription = computed(() => {
     const ariaDescription = this.ariaDescription();
 
@@ -125,6 +139,7 @@ export class TooltipDirective {
     mountFloatingTipStyles();
 
     this.setupHoverBehavior();
+    this.setupLongPressBehavior();
     this.setupFocusBehavior();
 
     effect(() => {
@@ -257,7 +272,7 @@ export class TooltipDirective {
     // Pointer events rather than mouse events so the `pointerType` is readable: mobile browsers
     // synthesize a mouse enter around a tap, which pops a hover affordance the user never asked for
     // and then leaves it hanging until they tap elsewhere. A pen genuinely hovers, so only touch is
-    // excluded - touch input is what the toggletip is for.
+    // excluded - a touch user opens the tooltip with a long press instead.
     const leave$ = fromEvent<PointerEvent>(hostElement, 'pointerleave');
 
     fromEvent<PointerEvent>(hostElement, 'pointerenter')
@@ -282,11 +297,49 @@ export class TooltipDirective {
 
     leave$
       .pipe(
+        filter((event) => event.pointerType !== 'touch'),
         tap(() => {
           this.hasHover.set(false);
 
           if (!this.hasFocus()) {
             this.hide();
+          }
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  private setupLongPressBehavior() {
+    const hostElement = this.elementRef.nativeElement;
+    const isTouch = (event: PointerEvent) => event.pointerType === 'touch';
+    const pressEnd$ = merge(
+      fromEvent<PointerEvent>(hostElement, 'pointerup'),
+      fromEvent<PointerEvent>(hostElement, 'pointercancel'),
+    ).pipe(filter(isTouch), take(1));
+
+    // A scroll that starts on the trigger fires `pointercancel`, which ends the press before the
+    // long press delay runs out. Android fires `contextmenu` for a long press, so it shows the tooltip
+    // in place of the native menu.
+    fromEvent<PointerEvent>(hostElement, 'pointerdown')
+      .pipe(
+        filter((event) => isTouch(event) && this.canShow()),
+        switchMap(() =>
+          merge(
+            merge(
+              timer(LONG_PRESS_DELAY),
+              fromEvent<MouseEvent>(hostElement, 'contextmenu').pipe(tap((event) => event.preventDefault())),
+            ).pipe(
+              takeUntil(pressEnd$),
+              tap(() => this.show()),
+              ignoreElements(),
+            ),
+            pressEnd$.pipe(switchMap(() => timer(TOUCH_HIDE_DELAY))),
+          ),
+        ),
+        tap(() => {
+          if (!this.hasFocus() && !this.hasHover()) {
+            this.overlayRef()?.close();
           }
         }),
         takeUntilDestroyed(this.destroyRef),

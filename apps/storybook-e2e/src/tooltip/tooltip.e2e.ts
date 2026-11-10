@@ -1,5 +1,5 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { boxOf, openStory, pressKey, pressKeys, setColorScheme, settle, tap } from '../support';
+import { boxOf, openStory, pressKey, pressKeys, setColorScheme, settle, tap, touchDrag } from '../support';
 
 const STORY_ID = 'components-feedback-tooltip--default';
 const EMPTY_TEXT_STORY_ID = 'components-feedback-tooltip--empty-text';
@@ -233,8 +233,54 @@ test.describe('tooltip / empty text', () => {
   });
 });
 
+/** Holds one finger on the center of `trigger` for `holdMs`, then lifts it. */
+async function longPress(trigger: Locator, holdMs: number): Promise<void> {
+  const box = await boxOf(trigger);
+  const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+
+  await touchDrag(trigger.page(), center, center, { holdMs, steps: 1 });
+}
+
 test.describe('tooltip / touch', () => {
-  test.skip(({ isMobile }) => !isMobile, 'touch-only: tap does not trigger hover');
+  test.skip(({ isMobile }) => !isMobile, 'touch-only: long press opens the tooltip');
+
+  test('a long press shows the tooltip, which hides a short time after the finger lifts', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Text tooltip' });
+    const tooltip = page.getByRole('tooltip');
+
+    await longPress(trigger, 800);
+
+    await expect(tooltip).toBeVisible();
+    await expect(tooltip).toHaveText(TOOLTIP_TEXT);
+    await settle(page, 600);
+    await expect(tooltip).toBeVisible();
+
+    await expect(tooltip).toBeHidden();
+  });
+
+  test('a trigger with a tooltip suppresses native text selection on long press', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+
+    await expect(root.getByRole('button', { name: 'Text tooltip' })).toHaveCSS('user-select', 'none');
+  });
+
+  test('a swipe that starts on the trigger scrolls the page and opens no tooltip', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Text tooltip' });
+
+    await page.evaluate(() => {
+      document.body.style.paddingBottom = '300vh';
+    });
+    const box = await boxOf(trigger);
+    const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+
+    await touchDrag(page, from, { x: from.x, y: from.y - 200 });
+    await settle(page, 800);
+
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    await expect(page.getByRole('tooltip')).toHaveCount(0);
+  });
 
   test('a tap on the trigger does not leave a stuck tooltip', async ({ page }) => {
     const root = await openStory(page, STORY_ID);
