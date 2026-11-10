@@ -3947,3 +3947,16 @@ states and two variants (9 cells: more than six near, so the cap of six still bi
 new case under `CPUQuota=20%` passed 5 of 5 at 685, 619, 606, 904, 906 ms. The old case passed 10 of 10 at
 1790-2300 ms; the 1-in-5 failure over the 2500 ms budget did not reproduce on an otherwise idle machine. Not verified:
 the case under the push suite's full load, where the old failure was seen.
+
+742\. Linux builder (2026-11-10, 732 live look): `yarn et:design` in tmux `studio-serve` ran the checks, started the
+harness app on 127.0.0.1:44331, then printed EDIT-OLD-NOT-FOUND for `sdk components/select` and `studio pages/start`
+208 times in about 35 min and never bound :4402 (the harness port did not answer either). Log
+`/tmp/studio-serve-loop.log`. Side effect: it wrote `.ethlete/design/sdk/ready.json` (+201 lines, uncommitted). Suspect:
+the serve start retries the EDIT-OLD-NOT-FOUND sketch step and never reaches listen; ADR 0253 says such a part gets one
+sketch with only `new`, so the step must create it once and go on. Missed: no spec starts a serve with an
+EDIT-OLD-NOT-FOUND part. Decided by the doc agent (blocks the human's live look at 732 and B345, rule b): Linux builder
+builds it before 731; bite: a serve spec with such a part binds its port and creates the sketch once. The stray
+`sdk/ready.json` change is the builder's to judge (keep if the serve was right to write it, else restore).
+
+On 735 (9c6d2e782): the old case passed 10/10 at 20% one at a time, so the bite "old fails the step" is not met. The
+fix is a margin gain (about 200 ms to 1600 ms under the 2500 ms budget), not a proven cause of the one 2698 ms failure.
