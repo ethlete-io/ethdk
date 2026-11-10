@@ -31,6 +31,9 @@ const VIEWS = {
 };
 const view = args.includes('--view') ? args[args.indexOf('--view') + 1] : undefined;
 const listOnly = args.includes('--list');
+const coldShots = args.includes('--cold-shots') || process.env['STUDIO_E2E_COLD_SHOTS'] === '1';
+
+if (coldShots) process.env['STUDIO_E2E_COLD_SHOTS'] = '1';
 const perfOnly = args.includes('--perf');
 
 if (view && !VIEWS[view]) {
@@ -1717,10 +1720,74 @@ const CASES = [
           source: response?.headers()['x-design-shot'] ?? `status ${response?.status() ?? '-'}`,
         });
       };
+      const requests = new Map();
+      const inFlight = new Map();
+      const onRequest = (request) => {
+        inFlight.set(request, { url: request.url(), sentAt: Date.now() });
+        if (request.url().includes('part=')) requests.set(request.url(), { sentAt: Date.now() });
+      };
+      const inFlightOf = (clickedAt) => {
+        const open = [...inFlight.values()].filter(({ url }) => !url.includes('/__design/shot?'));
+
+        return `\n  in flight at the window end: ${inFlight.size - open.length} picture(s), ${open.length} other${open
+          .slice(0, 12)
+          .map(({ url, sentAt }) => `\n    ${eventUrl(url).slice(0, 90)} sent +${Math.round(sentAt - clickedAt)}`)
+          .join('')}`;
+      };
+      const onRequestDone = async (request) => {
+        inFlight.delete(request);
+        const sent = requests.get(request.url());
+
+        if (!sent) return;
+        const response = await request.response().catch(() => null);
+
+        const { startTime, requestStart, responseStart } = request.timing();
+
+        Object.assign(sent, {
+          endAt: Date.now(),
+          onWire: requestStart >= 0 ? startTime + requestStart : undefined,
+          firstByte: responseStart >= 0 ? startTime + responseStart : undefined,
+          answer: request.failure()?.errorText ?? `status ${response?.status() ?? '-'}`,
+        });
+      };
+      const requestOf = (url, clickedAt) => {
+        const sent = requests.get(url);
+        const since = (at) => Math.round(at - clickedAt);
+
+        if (!sent) return 'not sent';
+
+        const wire =
+          sent.onWire === undefined
+            ? ''
+            : `, on the wire +${since(sent.onWire)}, first byte ${sent.firstByte === undefined ? '-' : `+${since(sent.firstByte)}`}`;
+
+        return `sent +${since(sent.sentAt)}${wire}, ${sent.endAt ? `${sent.answer} +${since(sent.endAt)}` : 'not answered'}`;
+      };
       const switchTo = (part) =>
         page.evaluate(
           ({ part, timeoutMs }) =>
-            new Promise((done) => {
+            new Promise((resolveSwitch) => {
+              const heard = new Map();
+              const loadedAt = new Map();
+              const onMessage = (event) => {
+                const type = String(event.data?.type ?? '').replace('design-explore:', '');
+
+                if (!type || !event.source) return;
+                heard.set(event.source, [...(heard.get(event.source) ?? []), type]);
+              };
+              const onLoad = (event) => {
+                if (event.target instanceof HTMLIFrameElement && !loadedAt.has(event.target))
+                  loadedAt.set(event.target, Math.round(performance.now() - started));
+              };
+              const done = (result) => {
+                window.removeEventListener('message', onMessage);
+                document.removeEventListener('load', onLoad, true);
+                resolveSwitch(result);
+              };
+
+              window.addEventListener('message', onMessage);
+              document.addEventListener('load', onLoad, true);
+
               const named = [
                 ...document.querySelectorAll(
                   '[role="treeitem"][data-kind="part"], [role="treeitem"][data-kind="leaf"]',
@@ -1773,6 +1840,34 @@ const CASES = [
                   const marked = [...document.querySelectorAll('img, iframe')].filter((node) =>
                     (node.getAttribute('src') ?? '').includes(marker),
                   );
+                  const shown = (node) =>
+                    node.localName === 'iframe'
+                      ? !node.matches('.opacity-0')
+                      : node.complete && node.naturalWidth > 0 && !node.matches('.opacity-0');
+                  const unpainted = marked
+                    .filter((node) => !shown(node))
+                    .map((node) => {
+                      const src = new URL(node.src, location.href);
+                      const { top, left, bottom, right } = node.getBoundingClientRect();
+                      const frame = node.closest('ethlete-canvas-frame');
+                      const cell = node.closest('[data-cell-id]');
+
+                      return {
+                        url: src.href,
+                        tag: node.localName,
+                        part: src.searchParams.get('part'),
+                        state: src.searchParams.get('state') ?? cell?.getAttribute('data-cell-id') ?? '-',
+                        opacity: node.matches('.opacity-0') ? 'opacity-0' : 'shown',
+                        img: node.localName === 'img' ? `complete ${node.complete}, width ${node.naturalWidth}` : '',
+                        iframe:
+                          node.localName === 'iframe'
+                            ? `load ${loadedAt.get(node) ?? 'none'}, posted ${heard.get(node.contentWindow)?.join('+') || 'none'}`
+                            : '',
+                        inViewport: bottom > 0 && right > 0 && top < innerHeight && left < innerWidth,
+                        live: frame?.getAttribute('data-live') ?? '-',
+                        framePainted: frame ? isPainted(frame) : false,
+                      };
+                    });
                   const chain = [];
 
                   for (let node = marked[0]?.parentElement; node; node = node.parentElement) {
@@ -1789,6 +1884,7 @@ const CASES = [
                       painted: paintedAt.has(frame),
                       ...sourceOf(frame),
                     })),
+                    unpainted,
                     clickedAt: performance.timeOrigin + started,
                   });
                 } else requestAnimationFrame(sample);
@@ -1804,11 +1900,15 @@ const CASES = [
       let from = 'pages/system';
 
       page.on('requestfinished', onShot);
+      page.on('request', onRequest);
+      page.on('requestfinished', onRequestDone);
+      page.on('requestfailed', onRequestDone);
 
       try {
         for (const to of PAGE_SWITCHES) {
           const firstShot = shots.length;
           const result = await switchTo(to);
+          const flying = result.all === undefined ? inFlightOf(result.clickedAt) : '';
 
           if (result.error) return { ok: false, detail: result.error };
           await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
@@ -1847,7 +1947,14 @@ const CASES = [
             paintedFrames: result.painted,
             dom: result.dom,
             asked,
-            events: painted ? '' : await log.lines(),
+            events: painted
+              ? ''
+              : `${await log.lines()}${(result.unpainted ?? [])
+                  .map(
+                    (cell) =>
+                      `\n  unpainted ${cell.tag} ${cell.state} ${eventUrl(cell.url).slice(0, 90)}: ${cell.opacity}, ${cell.img || cell.iframe}, request ${requestOf(cell.url, result.clickedAt)}, ${cell.inViewport ? 'in' : 'out of'} viewport, live ${cell.live}, frame ${cell.framePainted ? 'painted' : 'not painted'}`,
+                  )
+                  .join('')}${flying}`,
           });
           await recordPageSwitch({
             file: timingsFileOf(root),
@@ -1867,6 +1974,9 @@ const CASES = [
         }
       } finally {
         page.off('requestfinished', onShot);
+        page.off('request', onRequest);
+        page.off('requestfinished', onRequestDone);
+        page.off('requestfailed', onRequestDone);
       }
 
       const round = (ms) => (ms === undefined ? '-' : Math.round(ms));
@@ -2979,7 +3089,15 @@ const prepareCheckout = () => {
   const dir = mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-'));
 
   for (const entry of readdirSync(root)) {
-    if (entry !== '.ethlete' && entry !== '.git') symlinkSync(join(root, entry), join(dir, entry));
+    if (entry === '.ethlete' || entry === '.git' || (coldShots && entry === 'node_modules')) continue;
+    symlinkSync(join(root, entry), join(dir, entry));
+  }
+
+  if (coldShots) {
+    mkdirSync(join(dir, 'node_modules'));
+    for (const entry of readdirSync(join(root, 'node_modules'))) {
+      if (entry !== '.design-explore') symlinkSync(join(root, 'node_modules', entry), join(dir, 'node_modules', entry));
+    }
   }
 
   cpSync(join(root, '.ethlete/design'), join(dir, '.ethlete/design'), { recursive: true });
