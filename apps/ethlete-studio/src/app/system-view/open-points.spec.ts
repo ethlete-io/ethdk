@@ -89,11 +89,41 @@ describe('buildReadyStatusOf', () => {
   it('reads a part without a current check record or with slow checks running as checking', () => {
     for (const kind of ['stale-record', 'pending'])
       expect(
-        buildReadyStatusOf({
-          points: [{ kind: 'contrast', state: 'hover', path: 'label' }],
-          buildReady: { ready: false, blockers: [{ kind, text: 'not checked' }] },
-        }),
+        buildReadyStatusOf({ points: [], buildReady: { ready: false, blockers: [{ kind, text: 'not checked' }] } }),
       ).toEqual({ state: 'checking' });
+  });
+
+  it('reads a pending check as checking even with other blockers', () => {
+    expect(
+      buildReadyStatusOf({
+        points: [{ kind: 'direct-edit', sketch: 'components/title-bar@edit' }],
+        buildReady: {
+          ready: false,
+          blockers: [
+            { kind: 'pending', text: 'slow checks running' },
+            { kind: 'open-point', text: 'changed outside a sketch' },
+          ],
+        },
+      }),
+    ).toEqual({ state: 'checking' });
+  });
+
+  it('shows the direct edit, not checking, when a refused record leaves a stale-record blocker beside it', () => {
+    expect(
+      buildReadyStatusOf({
+        points: [{ kind: 'direct-edit', sketch: 'components/title-bar@edit' }],
+        buildReady: {
+          ready: false,
+          blockers: [
+            { kind: 'stale-record', text: 'no check record at the current design' },
+            {
+              kind: 'open-point',
+              text: 'changed outside a sketch - pick old or new in sketch components/title-bar@edit',
+            },
+          ],
+        },
+      }),
+    ).toEqual({ state: 'blocked', blockers: [{ kind: 'direct-edit', text: 'Bild ohne Sketch geändert' }] });
   });
 
   it('reads a product without a harness as blocked, not checking', () => {

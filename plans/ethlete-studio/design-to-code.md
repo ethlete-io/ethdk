@@ -4197,13 +4197,13 @@ ancestor; bite in `package-root.spec.ts`).
 `components/title-bar` stays "Wird geprüft" and never shows "Sketch öffnen". Measured: `design check --product studio
 --part components/title-bar` prints `NO RECORD … open-point: 3 missing states … (+1 more)` and writes no record; then
 `/__design/open-points` returns blockers `[stale-record, open-point …]` and the point `direct-edit components/title-bar@edit`.
-Suspect (code reading): `buildReadyStatusOf` in `apps/ethlete-studio/src/app/system-view/open-points.ts` returns `checking`
-when any blocker is `pending` or `stale-record`, before the direct edit maps to a blocker, so a stale record hides every
-real point. Why the tool missed it: no spec or e2e case combines a direct-edit point with a refused record; the earlier
-green check (718) ran without the harness. Fix (doc agent, applies the B249 footer decision): "Wird geprüft" only while a
-check is pending or running; after a refused record the footer shows the real blockers and "Sketch öffnen". Tool fix:
-an open-points spec and an e2e case with a refused record and a direct-edit point, failing on the old code. 719 did not
-recur on CI 42830064915.
+Cause: `buildReadyStatusOf` in `open-points.ts` returned `checking` for any `stale-record` blocker, hiding the direct edit. Missed: no spec or e2e combined a direct-edit point with a refused record.
+Fix (doc agent, applies the B249 footer decision): "Wird geprüft" only while a
+check is pending or running; after a refused record the footer shows the real blockers and "Sketch öffnen". 719 did not recur on CI 42830064915.
+
+Built (2026-11-10, Linux): the commit that holds this line; `checking` only for `pending` or a lone `stale-record`, else
+`blocked` without the stale-record line. Spec and e2e "a refused check record still offers the direct edit sketch" both fail
+on the old code (`checking`; offered=0) and pass now, e2e also with `--hold-listings 14000`. Not verified: the click itself.
 
 721\. Builder (2026-11-10, day shift, B249 S4a merge): the git-safety hook blocks `git commit` for a merge with a
 conflict, and auto mode denies the `commit-tree` way. The builder aborted and redid the merge with `-X theirs`
