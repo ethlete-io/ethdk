@@ -140,13 +140,18 @@ fn smoke_script(view: &str) -> String {
   const key = 'ethlete-studio.call-view';
   if (window.top !== window) return;
   console.error('{SMOKE_MARKER} page loaded');
-  if (localStorage.getItem(key) === null) localStorage.setItem(key, {view});
+  localStorage.setItem(key, {view});
   const timer = setInterval(() => {{
-    const live = document.querySelectorAll('ethlete-sketch-view iframe[data-state]').length;
-    const painted = document.querySelectorAll('ethlete-sketch-view iframe[data-state]:not(.opacity-0)').length;
+    const view = document.querySelector('ethlete-sketch-view');
+    if (!view) return;
+    const frames = view.querySelectorAll('iframe[data-state]');
+    const pictures = view.querySelectorAll('img[data-shot-picture]');
+    const painted =
+      [...frames].filter((frame) => !frame.classList.contains('opacity-0')).length +
+      [...pictures].filter((picture) => picture.complete && picture.naturalWidth > 0).length;
     if (!painted) return;
     clearInterval(timer);
-    console.error(`{SMOKE_MARKER} painted ${{painted}} of ${{live}} live frames`);
+    console.error(`{SMOKE_MARKER} painted ${{painted}} of ${{frames.length}} live frames and ${{pictures.length}} pictures`);
   }}, 500);
 }})();"#
     )
