@@ -3726,6 +3726,10 @@ stale against HEAD and the CLI refused to start in a scratch copy until rebuilt.
 `sketch-view.component.spec.ts` "draws the current page and the variants…" timed out at 5986 ms, and
 `open-points-answer.spec.ts` "answers the open points of every part…" at 30042 ms. Suspect: load-sensitive timeouts;
 the builder watches 42826707435 and 42830064915 for a recurrence. If they recur, red CI goes first.
+Recurred: CI 42873546810 (Mac e35fcaeb5 range), the same sketch-view case at 6091 ms (whole file 20 s on CI, 0.37 s
+locally, first case of the file). Suspect: first-render cost of the file's first case under CI load. Lesson owed: the
+push suite runs the spec on an idle machine, so it never shows a load-sensitive case; the As built names the tool change
+that makes a local run catch it (for example a per-case time budget measured under load, not a raised limit).
 
 As built (Mac builder, pushed as eb3356f7c): 713 in 27f3a3d35 (pre-commit runs `studio-label-specs.mjs --staged` when a
 studio spec or `studio-labels.ts` is staged; bite: temp repo with a bare upstream, the refusal case fails on the old
