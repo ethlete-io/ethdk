@@ -4046,3 +4046,13 @@ both messages get a scope and a valid subject, for example `chore(repo): Update 
 gate or a new workflow message fails locally first.
 
 As built (Linux builder, 747): the release bot commit `chore: 🤖 update prereleases (next)` had no scope, so commitlint failed on it. `ci-next.yml` and `ci-main.yml` now pass `chore(repo): Update prereleases` and `chore(repo): Update versions`; the vendored action appends ` (next)` in pre mode. New `yarn lint:commit-messages` (`tools/scripts/check-workflow-commit-messages.mjs`) lints every workflow `commit_message:` plus that suffix; wired in ci.yml after the commitlint step and in `.husky/pre-push`. Bite: the spec fails the old scopeless message and passes the new ones. Not verified: a real release run.
+
+748\. The human (2026-11-10, late evening): "das doc ist echt schon wieder voller müll" (STATUS.md). Cause (counted):
+591 lines with 79 ✅ rows that were long pushed, an "Erledigt" section, a desk-branch landing log of 07.11. and a
+priority block of 02.11. that ADR 0234 replaced. The table legend itself said "✅ fertig (lokal, ungepusht)" and "fertige
+Zeilen fallen beim Push weg", so a done row had a legal state and nobody owned its delete. Lesson: a rule that only an
+agent remembers fills the file again; the file needs a check. Doc agent cleanup: 491 lines, 145 open rows kept, ✅ removed from the legend,
+"a done row is deleted in the same commit". Decided by the doc agent (tool internal): a pre-commit check on
+`plans/ethlete-studio/STATUS.md` refuses a ✅ status, a "## Erledigt" section and a dated "Stand" older than 3 days, and
+names the row to delete. Open: about 120 ⏳ rows are not checked against git; the builder checks each row against git
+when it takes one (ADR 0234).
