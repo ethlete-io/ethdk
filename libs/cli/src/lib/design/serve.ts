@@ -89,6 +89,7 @@ import {
   StylesheetImports,
   stylesheetImportsPlugin,
 } from './shot';
+import { removeOldShotFolders } from './old-shot-folders';
 import { createShotStore, SHOT_STORE_DIR, StoredAddress } from './shot-store';
 import { sharedDirsOf } from './system/imports';
 import { REGISTRY_SLICE_PATH } from './system/served-cache';
@@ -1148,6 +1149,8 @@ export const createDesignServer = async (options: {
   const baseDirs = system.products().flatMap((name) => system.productOf(name)?.base?.dir ?? []);
   const stylesheetImports: StylesheetImports = new Map();
   const cache = listen && !own ? null : claimViteCache(target, 'vite-check');
+
+  if (listen && !own) void removeOldShotFolders(workRootOf(target));
 
   const server = await createServer({
     configFile: false,
