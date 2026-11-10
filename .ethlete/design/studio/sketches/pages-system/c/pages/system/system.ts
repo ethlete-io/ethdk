@@ -356,19 +356,21 @@ export default definePart<{
         product: 'studio',
         side: '',
         content: html`<div class="h-full ps-(--st-shell-inset-left)" data-et-semantic-color="error">
-          ${control(
-            withAction(
-              banner({
-                type: 'error',
-                heading: 'Auflistung fehlgeschlagen',
-                description: 'missing build: pages/system',
-                action: 'Erneut laden',
-                dismissible: false,
-              }),
-              'emit:reload',
-            ),
-            'reload',
-          )}
+          <div class="p-space-3">
+            ${control(
+              withAction(
+                banner({
+                  type: 'error',
+                  heading: 'Auflistung fehlgeschlagen',
+                  description: 'missing build: pages/system',
+                  action: 'Erneut laden',
+                  dismissible: false,
+                }),
+                'emit:reload',
+              ),
+              'reload',
+            )}
+          </div>
         </div>`,
       });
 

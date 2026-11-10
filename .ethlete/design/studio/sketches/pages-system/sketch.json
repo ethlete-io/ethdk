@@ -1,6 +1,6 @@
 {
   "target": "pages/system",
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-11-08T06:10:32.894Z",
   "baseline": {
     "foundations/agent-logos": "d8ad620ff101ae06",
@@ -116,5 +116,14 @@
       "authors": ["claude-sonnet-5-5"],
       "round": "r1"
     }
+  },
+  "readyContent": {
+    "a": "71b933586091408a",
+    "b": "a1ce9d3b7218754a",
+    "c": "2f31d18bfcc9db09"
+  },
+  "mergeHold": {
+    "reason": "variant a changes listing-error; variant b changes listing-error; variant c changes listing-error",
+    "at": "2026-11-10T21:32:59.022Z"
   }
 }
