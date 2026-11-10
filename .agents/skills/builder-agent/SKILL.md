@@ -42,6 +42,8 @@ that talks with the user and records decisions. Talk English.
 - Commit each finished slice once, with `git commit -- <paths>`: code, spec, changeset and the
   "as built" note together. Fix format, lint and review findings before that commit, not after.
   Tell each subagent the same. Never `git add -A`, never stash, never amend, never rebase.
+- An ADR edit under `apps/ethlete-studio` is a change to ethlete-studio: put an `'ethlete-studio': none` changeset in
+  the same commit, or pre-push refuses the range.
 - A slice runs only the spec files it touched, and only its own e2e cases (`yarn studio:e2e --case <name>`).
   `--hold-listings <ms>` delays the sketch listings that carry frame targets, so a case that reads frames once
   before they mount fails locally as on a cold CI server; 14000 outlasts the case setup. The bite proof runs only the new specs. `yarn commit`
