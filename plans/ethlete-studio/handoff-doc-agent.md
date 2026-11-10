@@ -18,7 +18,9 @@ Run `/doc-agent` first. The human is awake: grill rounds are allowed again. Buil
   the handoff (origin/next still f6a97186f, 122 commits unpushed). The builder sends the push sha when it lands.
 - Findings: up to 691 in `plans/ethlete-studio/design-to-code.md`. Archived up to 414 (file now about 388k chars, budget
   440k). Finding 691: the 3 OFF-CENTRE lines are older than 7d72894fa (B471 fix is clear); new row B477 for the 1 px
-  high button text. 691 has no tool lesson yet: ask the builder which gate runs the OFF-CENTRE check today.
+  high button text. 691 lesson done (61585f36a): no CI job (ADR 0226); the builder corrects its skill line, deletes the uncalled
+  `design-rules-gate.mjs`, and `design check` marks findings the base already shows as old. 689: the builder adds the
+  `tsconfig.lib.json` check to each lib `typecheck` target and fixes 2 story errors in components.
 - Builder queue: 689 (lib `typecheck` targets also check
   `tsconfig.lib.json`; time per lib first, figures to the doc agent), then B476 (ESLint hook, ADR 0247), then B469 CEF spike (ADR 0242), then quiet-machine
   perf and a full studio:e2e.
