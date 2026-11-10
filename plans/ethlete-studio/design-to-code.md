@@ -4065,6 +4065,18 @@ the macOS window itself, and `console_log::start()` sets the hook and the init s
 `create: false`. Lesson: nothing checked a per-OS config override against the base config. Built by the Mac builder:
 ccf39547a adds `"create": false` and a Rust test that every platform config sets it. Smoke rebuild runs.
 
+As built (Mac builder, 749 and 746 rest): Cause proven: after ccf39547a the bundle console log holds the "page loaded"
+line (before: empty). Three more causes behind "no frame painted", each proven by a run: the paint probe counted only
+visible live iframes, but the sketch view shows shot pictures and only some live frames (e50636eaf counts loaded
+`img[data-shot-picture]` too); the smoke passed `sketch:<part>` but the tree key is the target `sketch:<part>@<name>`
+(4871b83a3 reads the targets from `sketch.json`; the old default also broke on folder names like
+`components-title-bar.edit`); a stale `dist/libs/cli` stopped the design server ("Design-Server gestoppt" on a screen
+shot). 7f7042561 logs a `waiting:` line and the FAIL line names the last one. The smoke view is now set on every load,
+so `--sketch` always wins. Verified: plain smoke on the bundle of 7f7042561 PASS "painted 1 of 6 live frames and 126
+pictures, 0 CSP refusals, 0 console errors"; bite `--csp-from 'f08f0a3d1^'` on 4871b83a3 FAIL with 17 CSP refusals
+(fonts.gstatic.com against `default-src 'self'`). Not verified: the bite also failed "no frame painted" (the old CSP
+blocks the frames too), and a Linux bundle run. Open (tool backlog): the smoke does not name a stopped design server.
+
 750\. The human (2026-11-10, Studio screen shot after the B483 serve restart): `components-title-bar.edit` is gone (B483
 works on the real repo). Left is the marker sketch `pages/system` (round 1 "Fehlende Build-Antwort der Auflistung",
 variant a, last change by a Sonnet subagent): Studio shows "27 unveränderte Zustände eingeklappt" and not one changed
