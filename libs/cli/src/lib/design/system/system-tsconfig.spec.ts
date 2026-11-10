@@ -1,4 +1,14 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, utimesSync, writeFileSync } from 'fs';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  statSync,
+  utimesSync,
+  writeFileSync,
+} from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
@@ -38,6 +48,7 @@ const editorConfigOf = (target: string) =>
   };
 
 const withRunningRoot = (root: string, run: () => void) => {
+  mkdirSync(root, { recursive: true });
   running.root = root;
 
   try {
@@ -134,7 +145,9 @@ describe('editor tsconfigs', () => {
       writeEditorTsconfig({ target, product: resolveAcme(target) }),
     );
 
-    expect(editorConfigOf(target).compilerOptions.paths['@design-system']).toEqual([join(installed, 'define-part.ts')]);
+    expect(editorConfigOf(target).compilerOptions.paths['@design-system']).toEqual([
+      realpathSync(join(installed, 'define-part.ts')),
+    ]);
   });
 
   it('repairs an editor tsconfig whose @design-system file is gone', () => {
