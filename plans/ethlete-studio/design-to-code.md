@@ -4154,3 +4154,8 @@ the bundle showed "Design-Server gestoppt", and the smoke reported only "sketch 
 build and a stopped design server look like a missing view to the smoke. Decided by the doc agent (tool internal,
 backlog): the smoke checks that `dist/libs/cli` is not older than its sources before the run, and its waiting line
 names a stopped design server with the server's own text.
+
+763\. Mac builder (2026-11-10, night, 735): the push-suite spec case "a step with a log file writes its output there"
+failed 2 of 4 runs at load 18. Suspect: a timing bound that the load breaks (not measured per phase). Lesson: a spec of
+the push gate itself can fail under the load that the gate exists to survive. Backlog: measure the case under the 735
+CPU throttle, then fix the wait at its cause (an event, not a longer timeout).
