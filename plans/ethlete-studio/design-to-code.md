@@ -3524,3 +3524,9 @@ merge.spec 60 s; 2-3 s locally). Cause (bite, subagent): the workers start from 
 graph again. As built a3df386fa: the spec tmpdir links `jiti` to `libs/cli/node_modules/.cache/jiti-specs`. Bite on one
 busy core: 30 s timeout without the fix, 12 s with it. Not verified: a CI run; the first worker start of a CI run is
 still a full transpile.
+
+772\. Linux builder (2026-11-11, night): the agent-sessions spec "stores the command of run without the prompt" failed
+once under load (5 s poll) and passes alone. Suspect: a fixed poll budget, not a wait on the stored command. Lesson: a
+spec that polls a fixed time fails under load like 769. Tool fix (night backlog, Linux, after 767): the case waits on the
+condition; a bite under the CPU quota. 766 (b) parked by the builder (tool internal): every Claude session is a
+SendMessage peer, so `send` refusing them would end every typed wake; d3e2a7c58 fixes the wrong typing.
