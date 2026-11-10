@@ -53,7 +53,8 @@ that talks with the user and records decisions. Talk English.
   each slice (ADR 0230). A subagent runs no full suite. Tell each subagent the same.
 - A slice that changes `apps/<app>` or `.ethlete/design` ends with `design check --product <p> --part <part>` for each
   part it touched and each part that embeds one, in the background. A problem that is not known and was not there
-  before the slice fails the slice. The full `design check --product <p>` runs in pre-push and CI only.
+  before the slice fails the slice. The full `design check --product <p>` runs on demand at each slice end until the live check (B424) replaces it;
+  nothing runs it in pre-push or CI (ADR 0226).
 - A CI step that renames or caches runs twice with real data on every OS it has a branch for. Only then is it done. A sample line is not real data.
 - Before a revert commit, run `yarn revert:check <sha>`.
 - Commit in a bite or throwaway worktree only with `git -C <worktree> commit`, never after a bare `cd`: a failed
