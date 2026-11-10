@@ -175,9 +175,9 @@ pub fn run() {
     child_env::remember();
 
     let builder = tauri::Builder::default();
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
     let builder = builder.runtime(tauri_runtime_cef::Cef::default());
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(target_os = "windows")]
     let builder = builder.runtime(tauri_runtime_wry::Wry::default());
     #[cfg(target_os = "macos")]
     let builder = builder.on_web_content_process_terminate(webview_rebuild::on_terminate);

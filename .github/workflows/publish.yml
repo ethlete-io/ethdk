@@ -130,7 +130,7 @@ jobs:
         with:
           workspaces: ${{ matrix.app.dir }}/src-tauri -> target
 
-      - if: runner.os == 'Linux'
+      - if: runner.os == 'Linux' || (runner.os == 'macOS' && matrix.app.project == 'ethlete-studio')
         uses: ./.github/actions/cef
 
       # A keychain item's "Always Allow" names the signing certificate. An ad-hoc build has a new
@@ -179,10 +179,12 @@ jobs:
             (cd ${{ matrix.app.dir }}/src-tauri && cargo clean --release -p whisper-rs-sys)
           fi
           echo '{ "bundle": { "createUpdaterArtifacts": true } }' > "$RUNNER_TEMP/updater.json"
-          # Both apps link CEF on Linux, which only the CEF CLI bundles. A CEF AppImage is broken upstream:
-          # https://github.com/tauri-apps/tauri/issues/16204
+          # Both apps link CEF on Linux and Studio on macOS, which only the CEF CLI bundles. A CEF AppImage is
+          # broken upstream: https://github.com/tauri-apps/tauri/issues/16204
           build() {
-            if [ "$RUNNER_OS" = Linux ]; then
+            if [ "$RUNNER_OS" = macOS ] && [ "${{ matrix.app.project }}" = ethlete-studio ]; then
+              (cd ${{ matrix.app.dir }} && npx --yes --package=@tauri-apps/cli-cef@3.0.0-alpha.27 tauri build --bundles app,dmg "$@")
+            elif [ "$RUNNER_OS" = Linux ]; then
               features=()
               [ "${{ matrix.app.project }}" = timetrack-app ] && features=(--features transcribe)
               (cd ${{ matrix.app.dir }} && npx --yes --package=@tauri-apps/cli-cef@3.0.0-alpha.27 tauri build --bundles deb,rpm "${features[@]}" "$@")

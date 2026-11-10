@@ -1,6 +1,6 @@
 name: CEF
 description: >-
-  Restore the CEF binary distribution Timetrack and Ethlete Studio link on Linux, and point CEF_PATH at it.
+  Restore the CEF binary distribution Timetrack and Ethlete Studio link on Linux (and Studio on macOS), and point CEF_PATH at it.
   cef-dll-sys downloads it on a cache miss, and this action saves it after the job.
 
 runs:
@@ -19,5 +19,7 @@ runs:
 
     - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
-        path: ~/.cache/tauri-cef/*/cef_linux_*
+        path: |
+          ~/.cache/tauri-cef/*/cef_linux_*
+          ~/.cache/tauri-cef/*/cef_macos_*
         key: cef-${{ runner.os }}-${{ runner.arch }}-${{ steps.version.outputs.version }}

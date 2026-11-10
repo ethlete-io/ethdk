@@ -30,14 +30,16 @@ tokio = { version = "1.53.1", features = ["io-util", "macros", "net", "process",
 # Stopping the design server means signalling the process group the package manager leads.
 libc = "0.2.189"
 
-[target.'cfg(target_os = "linux")'.dependencies]
-# WebKitGTK 2.54 drops animation frames, so Linux renders through Chromium instead. The CEF runtime
-# lives on Tauri's feat/cef branch only.
+[target.'cfg(any(target_os = "linux", target_os = "macos"))'.dependencies]
+# WebKitGTK 2.54 drops animation frames, and frame pictures and design checks run in Chromium, so Linux
+# and macOS render through CEF (ADR 0249). The CEF runtime lives on Tauri's feat/cef branch only.
 tauri-runtime-cef = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1", features = ["devtools"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
 wayland-client = "0.31.15"
 wayland-protocols = { version = "0.32.13", features = ["client", "unstable"] }
 
-[target.'cfg(not(target_os = "linux"))'.dependencies]
+[target.'cfg(target_os = "windows")'.dependencies]
 tauri-runtime-wry = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
 
 [patch.crates-io]
