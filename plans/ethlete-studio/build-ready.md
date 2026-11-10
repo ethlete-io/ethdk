@@ -708,3 +708,44 @@ spec:stress 4/4. Not verified: a real `design check --part` on the repo design (
 and whether the scratch Studio serve was also running its slow runner.
 
 As built (718 pending count): a whole-product `design check` still leaves pending parts to the serve slow runner (grill decision), and now prints `PENDING <product>: <n> parts wait for slow rules - run design serve or design check --product <p> --part <part>` (`slowWaitingLineOf`, `check-record.ts`), so it never looks settled. Verified: a check-record spec case (whole-product call keeps `pending`, line text), cli typecheck, eslint. Not verified: the line in a real `design check` run.
+
+## As built: B249 S4a (CLI removal)
+
+- Removed: `design go` and `design accept` (`part-go`, `go-command`, `go-step`, `go-guard`, `go-batch`, `accept-command`,
+  `tom-confirm` and their specs), the MCP `part_go` tool, the Studio routes `/__design/part-go` and
+  `/__design/part-accept` (`STUDIO_API_LEVEL` 8), the `GO` / `NEW STATES` lines of `design check`, `storePictures`,
+  `acceptPart` and the `accepted.json` writer in `merged-parts.ts`. `et design go|accept` now exit 2 as unknown commands.
+  `DesignStep` lives in `sketch/merge-step.ts`.
+- Added: `design check` prints one `WARNING LEFTOVER-FILE <product>: go.json, accepted.json are no longer read ...` per
+  product that still holds them, naming the paths to delete (Q3, no migration).
+- `pictures.json`: the reader maps the legacy `review` (as `partHash`) and `go` kinds to `record`; the writer writes only
+  `record`. The `EDIT-OLD-NOT-FOUND` hint names the new-only sketch (ADR 0253) instead of `design accept`.
+- Commit: the commit that holds this section.
+- Verified: `nx run cli:typecheck`, `nx lint cli` (no new warnings), the 15 touched or added spec files, `vitest related`
+  over the changed sources (126 files), `lint:cli-related-map`.
+- Not done: the Studio app client (S6b; it calls neither route today), the docs and data files (S8), the
+  `commit-hunks.spec` SPLIT list still names `accepted.json`/`go.json` while the repo holds them (S8 deletes them),
+  `actionUndeclaredUnderGoOf` keeps its name (it already reads ready marks), and Studio does not yet open the new-only
+  sketch the hint names. `--allowed-by` (Q4) is untouched. No real `design check` on the repo design.
+
+## As built: B249 step 4 data migration, part 1 (2026-11-10, Linux)
+
+The commit that holds this section removes the three `accepted.json` files, the `go-give` and `edit-accept` entries of
+`.ethlete/design/studio/capabilities.json`, the baseline entries of deleted files in
+`tools/scripts/person-names-baseline.json`, and `accepted.json` from the commit-hunks spec list. Verified: the
+commit-hunks and rules specs, `check-person-names.mjs`. Not verified: a `design check` on the repo design (forbidden on
+the shared tree). Not done: `studio/go.json` (the git-safety hook denies a commit that names it; finding 721 waits for
+the human) and the `review`/`go` kinds in the three `pictures.json` files, which hold other sessions' uncommitted edits. The grill session decided to leave them: `writePictures` reads the
+whole file through the legacy reader and writes only `record` keys, so the next record write of any part drops `go` and
+`review` (proven by the accepted-pictures spec "reads the older review and go pictures as the record, and writes only
+a record"). The reader mapping stays until no pictures.json holds a legacy key.
+
+## As built: B249 step 5 docs (2026-11-10, Linux)
+
+Docs commit "docs(cli): Document build-ready instead of go and accept". `apps/docs/cli/index.md` has a Build-ready section in place of the go/accept text; the design-exploration skill (content, `.agents`, `.claude` copies) and `studio-design-part` follow it. Verified: the done grep is empty, `yarn agents:sync` ran after prettier, `yarn vitepress build apps/docs` passes.
+
+## As built: B249 step 4 data migration, part 2 (2026-11-10, Linux)
+
+The commit that holds this section removes `.ethlete/design/studio/go.json` (possible after 77e87c6b2 dropped the
+go.json rule of the git-safety hook), its person-names baseline entry, and `go.json` from the commit-hunks spec list.
+Verified: commit-hunks spec, `check-person-names.mjs`. Not verified: a `design check` on the repo design.

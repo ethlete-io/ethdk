@@ -1,10 +1,7 @@
 import { execFileSync } from 'child_process';
 import { ResolvedProduct } from './resolve-product';
 
-/** The decision files at the root of a product folder; none of them is an input of a drawing. */
-export const ROOT_DECISION_FILES = ['go.json', 'accepted.json', 'merged.json', 'pictures.json'];
-
-const DECISION_FILES = [...ROOT_DECISION_FILES, ':(glob)sketches/*/sketch.json'];
+const DECISION_FILES = ['merged.json', 'pictures.json', ':(glob)sketches/*/sketch.json'];
 
 const gitLines = (cwd: string, args: string[]) =>
   execFileSync('git', [...args, '--', ...DECISION_FILES], {
@@ -34,6 +31,5 @@ export const uncommittedDecisionsWarningOf = (product: ResolvedProduct): string 
 
   return files.length === 0
     ? null
-    : `WARNING UNCOMMITTED-DECISIONS ${product.name}: ${files.join(', ')} differ from HEAD - Studio or Tom commits ` +
-        'them; an agent never commits go.json';
+    : `WARNING UNCOMMITTED-DECISIONS ${product.name}: ${files.join(', ')} differ from HEAD - Studio or Tom commits them`;
 };

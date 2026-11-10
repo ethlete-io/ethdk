@@ -16,7 +16,7 @@ component against its own design only. These rules cover what they do not.
 2. Open the design (`.ethlete/design/<product>/<layer>/<name>/<name>.ts`) and read its imports first.
 3. The part's `implements` link (`definePart({ implements: 'apps/ethlete-studio/src/app/.../x.component.ts' })`)
    must point at the component you write. Without it compare, task and implemented refuse the part. Never add
-   or move the link as part of the implementation - it changes the design hash and drops the `go`.
+   or move the link as part of the implementation - it changes the design hash and makes the check record stale.
 
 ## Compose, never copy
 

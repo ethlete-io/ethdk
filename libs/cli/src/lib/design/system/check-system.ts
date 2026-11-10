@@ -4,7 +4,7 @@ import { designHashOf } from './design-hash';
 import { repoRootOf } from './reachable-files';
 import { chromiumOf } from '../browser';
 import { DesignConfig } from '../design-config';
-import { autoAcceptOf, DrawStates, newStatesLineOf } from './accepted-pictures';
+import { autoAcceptOf, DrawStates } from './accepted-pictures';
 import { importProblemsOf } from './imports';
 import { CompletenessGap, partsCompletenessOf } from './complete';
 import { actionsRerunLineOf } from './embedded-actions';
@@ -17,7 +17,6 @@ import { bespokeControlProblemsOf } from './bespoke-controls';
 import { droppedPropProblemsOf } from './dropped-props';
 import { DrawnFindings, drawnFindingsFrom, isPartUndrawn, isStateUndrawn, statefulPartsOf } from './drawn-open-points';
 import { openPointsText, PartOpenPoints } from './open-points';
-import { goMarkOf, goPartsOf } from './part-go';
 import { doneParts, gitDiffFilesOf } from './part-task';
 import { actionsRerunOf, readyMarkOf, readyPartsOf } from './part-ready';
 import { BuildReadyInputs } from './part-build-ready';
@@ -88,6 +87,7 @@ import { staleBaseOf } from './sketch/stale-base';
 import { listSketches, variantDirOf } from './sketch/sketch';
 import { typecheckProduct, writeEditorTsconfig } from './system-tsconfig';
 import { repoInvocation } from '../../invocation';
+import { leftoverGateFilesWarningOf } from './leftover-gate-files';
 import { uncommittedDecisionsWarningOf } from './uncommitted-decisions';
 import { timedPhase } from '../phase-timing';
 import { WarmDraw } from '../warm-draw';
@@ -514,6 +514,10 @@ const reportSystem = (options: CheckOptions & { warn?: boolean }): { code: numbe
 
     if (uncommitted) console.warn(uncommitted);
 
+    const leftover = options.warn ? leftoverGateFilesWarningOf(product) : null;
+
+    if (leftover) console.warn(leftover);
+
     if (!options.part) goneSketchCommentWarningsOf(product).forEach((warning) => console.warn(warning));
     const isWanted = (problem: Problem) => !options.part || partOfFile(product, problem.file) === options.part;
     const isOwn = (problem: Problem) => !isInBasePart(product, problem.file) && isWanted(problem);
@@ -728,16 +732,6 @@ const printProductOpenPoints = async (
     const counted = tallyOf(options.tally, { product: name, part });
 
     if (counted) counted.open += 1;
-  }
-
-  const go = goPartsOf(product).filter((key) => !options.part || key === options.part);
-
-  if (go.length > 0) console.log(`GO ${name}: ${go.join(', ')}`);
-
-  for (const part of go) {
-    const review = goMarkOf({ product, part })?.review ?? [];
-
-    if (review.length > 0) console.log(newStatesLineOf({ product: name, part, states: review }));
   }
 
   stalePartsOf({ product, only: options.part }).forEach((stale) => console.log(staleLineOf(name, stale)));

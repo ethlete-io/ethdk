@@ -7,7 +7,6 @@ import { awaitFonts, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
 import { compareFrameOf } from './harness-shot';
 import { harnessStaleOf } from './harness-map';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
-import { goPartOf } from './part-go';
 import {
   drawnSurfacesOf,
   forcedElementsOf,
@@ -198,8 +197,12 @@ export const designDom = async (options: {
 
   const app = args.flags.has('--app');
   const part = partKeyOf(parsed);
-  const found = goPartOf({ product, part });
-  const refusal = typeof found === 'string' ? found : app ? harnessStaleOf({ target, product }) : null;
+  const known = product.parts.some((candidate) => partKeyOf(candidate) === part);
+  const refusal = !known
+    ? `product "${product.name}" has no part "${part}"`
+    : app
+      ? harnessStaleOf({ target, product })
+      : null;
 
   if (refusal !== null) {
     console.error(refusal);

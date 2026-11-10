@@ -82,8 +82,6 @@ export const openPointGroupsOf = (answer: PartOpenPoints): OpenPointGroup[] =>
     return lines.length > 0 ? [{ icon, lines }] : [];
   });
 
-const CHECKING_KINDS = new Set(['pending', 'stale-record']);
-
 const RULE_KINDS = new Set<BuildBlockerKind>(['embedded', 'problem', 'compare', 'sdk-error']);
 
 const ruleBlockerOf = (blocker: BuildReadyBlocker): BuildBlocker => ({
@@ -93,12 +91,15 @@ const ruleBlockerOf = (blocker: BuildReadyBlocker): BuildBlocker => ({
 });
 
 /**
- * The build-ready status the chip popover shows: checking while the part has no current check record or its slow
- * checks still run, otherwise each blocker with a direct edit as its own kind and the open points in Studio's words.
+ * The build-ready status the chip popover shows: checking only while a slow check is pending or a missing check record
+ * is the sole finding, otherwise each blocker with a direct edit as its own kind and the open points in Studio's words.
  */
 export const buildReadyStatusOf = ({ points, buildReady }: PartOpenPoints): BuildReadyStatus => {
   if (buildReady.ready) return { state: 'ready' };
-  if (buildReady.blockers.some((blocker) => CHECKING_KINDS.has(blocker.kind))) return { state: 'checking' };
+  const stale = buildReady.blockers.filter((blocker) => blocker.kind === 'stale-record');
+  const others = buildReady.blockers.filter((blocker) => blocker.kind !== 'stale-record');
+  if (buildReady.blockers.some((blocker) => blocker.kind === 'pending')) return { state: 'checking' };
+  if (stale.length > 0 && others.length === 0 && points.length === 0) return { state: 'checking' };
 
   const pointBlockers: BuildBlocker[] = points.map((point) =>
     point.kind === 'direct-edit'
@@ -108,10 +109,10 @@ export const buildReadyStatusOf = ({ points, buildReady }: PartOpenPoints): Buil
   const blockers: BuildBlocker[] = [
     ...(pointBlockers.length > 0
       ? pointBlockers
-      : buildReady.blockers
+      : others
           .filter((blocker) => blocker.kind === 'open-point')
           .map((blocker) => ({ kind: 'open-point' as const, text: blocker.text }))),
-    ...buildReady.blockers.filter((blocker) => blocker.kind !== 'open-point').map(ruleBlockerOf),
+    ...others.filter((blocker) => blocker.kind !== 'open-point').map(ruleBlockerOf),
   ];
 
   return { state: 'blocked', blockers };

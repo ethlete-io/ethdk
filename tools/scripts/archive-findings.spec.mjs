@@ -155,3 +155,27 @@ test('archives old dated decision sections and keeps cited, open and fresh ones'
   for (const kept of ['Cited body', 'Adr body', 'open finding', 'Fresh body', '## Next'])
     assert.match(rest, new RegExp(kept));
 });
+
+test('an old orphan finding with a built line leaves with its trailing notes; a new or unbuilt one stays', () => {
+  const orphanPlan = `# Plan
+
+30\\. Tom (2026-10-01): old built orphan.
+
+Built (2026-10-02): the fix.
+
+31\\. Tom (2026-10-01): old orphan, not built.
+
+32\\. Tom (2026-11-10): new built orphan.
+As built: today.
+
+## Next
+`;
+  const { plan: rest, moved } = archiveFindings(orphanPlan, status, { today: new Date('2026-11-10'), days: 5 });
+  assert.deepEqual(
+    moved.map((m) => m.number),
+    [30],
+  );
+  assert.equal(moved[0].text, '30\\. Tom (2026-10-01): old built orphan.\n\nBuilt (2026-10-02): the fix.');
+  assert.ok(!rest.includes('old built orphan') && !rest.includes('Built (2026-10-02)'));
+  assert.ok(rest.includes('31\\.') && rest.includes('32\\.') && rest.includes('## Next'));
+});

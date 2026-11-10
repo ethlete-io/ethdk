@@ -207,35 +207,6 @@ export const directEditsOf = (product: ResolvedProduct): { part: string; sketch:
   return [...open, ...changedOutsideSketchOf(product).map((part) => ({ part, sketch: null }))];
 };
 
-export const ACCEPTED_FILE = 'accepted.json';
-
-export type Acceptance = {
-  part: string;
-  by: string;
-  note: string;
-  hash: string;
-  at: string;
-  auto?: true;
-  refs?: string[];
-};
-
-export const readAccepted = (productDir: string): Acceptance[] => {
-  const file = resolve(productDir, ACCEPTED_FILE);
-
-  if (!existsSync(file)) return [];
-
-  try {
-    const parsed: unknown = JSON.parse(readFileSync(file, 'utf8'));
-
-    return Array.isArray(parsed) ? (parsed as Acceptance[]) : [];
-  } catch {
-    return [];
-  }
-};
-
-const logAcceptance = (productDir: string, entry: Acceptance) =>
-  writeJsonFile({ file: resolve(productDir, ACCEPTED_FILE), value: [...readAccepted(productDir), entry] });
-
 /**
  * Notes why a sketch merge went the way it did in the part's `merged.json` entry: the plan entry that let it go without
  * a pick in Studio (`planRef`), the merge reason (`reason`), or both.
@@ -262,51 +233,4 @@ export const recordMergeReason = (options: {
   };
 
   writeEntries(product.dir, entries);
-};
-
-export type AcceptRefusal = { reason: 'unknown-part' | 'open-sketch' | 'nothing-to-accept'; error: string };
-
-/** Why a direct edit of a part cannot be accepted, or `null` when it can. */
-export const acceptRefusalOf = (options: { product: ResolvedProduct; part: string }): AcceptRefusal | null => {
-  const { product, part } = options;
-
-  if (!product.parts.some((candidate) => partKeyOf(candidate) === part))
-    return { reason: 'unknown-part', error: `NO PART "${part}" in ${product.name}` };
-
-  if (sketchedPartsOf(product).has(part))
-    return {
-      reason: 'open-sketch',
-      error: `${part} has an open sketch - merge or discard it; a merge records the part`,
-    };
-
-  if (!changedOutsideSketchOf(product).includes(part))
-    return { reason: 'nothing-to-accept', error: `${part} has no change outside a sketch - nothing to accept` };
-
-  return null;
-};
-
-/**
- * Records a direct edit of a merged part the user approved: writes the part's current hash to `merged.json` and
- * logs who accepted it and why in `accepted.json`. Answers with why nothing was accepted, or `null`.
- */
-export const acceptPart = (options: {
-  product: ResolvedProduct;
-  part: string;
-  by: string;
-  note: string;
-  refs?: string[];
-}): string | null => {
-  const { product, part, by, note, refs } = options;
-  const refusal = acceptRefusalOf({ product, part });
-
-  if (refusal) return refusal.error;
-
-  recordMerged({ product, parts: [part] });
-
-  const hash = readMerged(product.dir)[part] ?? '';
-  const entry: Acceptance = { part, by, note, hash, at: new Date().toISOString(), ...(refs?.length ? { refs } : {}) };
-
-  logAcceptance(product.dir, entry);
-
-  return null;
 };

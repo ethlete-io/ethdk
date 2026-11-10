@@ -5,6 +5,7 @@ import { parseStatusRows } from './studio-status.mjs';
 
 const FINDING_START = /^(\d+)\\\. /;
 const DATE = /\b(\d{4})-(\d{2})-\d{2}\b/;
+const DAY_MS = 86_400_000;
 
 export const doneFindingNumbers = (rows) => {
   const open = new Set();
@@ -31,17 +32,40 @@ export const splitFindings = (planText) => {
   return blocks;
 };
 
-export const archiveFindings = (planText, statusText) => {
-  const done = doneFindingNumbers(parseStatusRows(statusText));
+const BUILT_LINE = /^(As built|Built)\b/;
+const HEADING = /^#/;
+
+const extentOf = (lines, from) => {
+  let to = from + 1;
+  while (to < lines.length && !FINDING_START.test(lines[to]) && !HEADING.test(lines[to])) to++;
+  while (to > from + 1 && lines[to - 1].trim() === '') to--;
+  return to;
+};
+
+export const archiveFindings = (planText, statusText, { today, days = 5 } = {}) => {
+  const rows = parseStatusRows(statusText);
+  const done = doneFindingNumbers(rows);
+  const cited = new Set(rows.flatMap((row) => [...row.findings]));
   const lines = planText.split('\n');
   const moved = [];
   const drop = new Set();
   for (const block of splitFindings(planText)) {
-    if (!done.has(block.number)) continue;
     const date = DATE.exec(block.lines.join('\n'));
     if (!date) continue;
-    moved.push({ number: block.number, month: `${date[1]}-${date[2]}`, text: block.lines.join('\n') });
-    let to = block.to;
+    let text;
+    let to;
+    if (done.has(block.number)) {
+      text = block.lines.join('\n');
+      to = block.to;
+    } else if (today && !cited.has(block.number) && (today - new Date(date[0])) / DAY_MS > days) {
+      to = extentOf(lines, block.from);
+      const extent = lines.slice(block.from, to);
+      if (!extent.some((line) => BUILT_LINE.test(line))) continue;
+      text = extent.join('\n');
+    } else {
+      continue;
+    }
+    moved.push({ number: block.number, month: `${date[1]}-${date[2]}`, text });
     while (to < lines.length && lines[to].trim() === '' && block.from < to) to++;
     for (let n = block.from; n < to; n++) drop.add(n);
   }
@@ -50,7 +74,6 @@ export const archiveFindings = (planText, statusText) => {
 };
 
 const SECTION_START = /^#{2,3} /;
-const DAY_MS = 86_400_000;
 
 const sectionTitle = (heading) =>
   heading
@@ -135,8 +158,9 @@ export const run = (root, days = 5) => {
   const studio = join(root, 'plans/ethlete-studio');
   const planFile = join(studio, 'design-to-code.md');
   const statusText = readFileSync(join(studio, 'STATUS.md'), 'utf8');
-  const first = archiveFindings(readFileSync(planFile, 'utf8'), statusText);
-  const second = archiveSections(first.plan, statusText, readAdrText(root), { today: new Date(), days });
+  const today = new Date();
+  const first = archiveFindings(readFileSync(planFile, 'utf8'), statusText, { today, days });
+  const second = archiveSections(first.plan, statusText, readAdrText(root), { today, days });
   const moved = [...first.moved, ...second.moved];
   writeArchive(join(studio, 'archive'), moved);
   writeFileSync(planFile, second.plan);

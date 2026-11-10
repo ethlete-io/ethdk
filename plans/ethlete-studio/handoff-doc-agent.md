@@ -36,6 +36,33 @@ until they say they are back.
   hides 1.5 s after lift; toggletip icon-button example). The Linux builder pushes it. Tell the human on return: the
   issue comment and close are theirs.
 
+## Since the last restart (2026-11-10 afternoon)
+
+- ADR 0254 (no harness = never build-ready; studio-lab stays blocked). Findings 717-721 recorded; 8 old findings archived.
+- B249: S4a (go/accept removed, apiLevel 8) and 720 fix 15746455b done; Linux builder next: push, real-config "Sketch
+  öffnen" re-check, step 4 data migration. Step 3 (go.json rule in git-safety.py) and finding 721 (merge exception in
+  git-safety.py, decided A by the human) are blocked: auto mode denies the builder a self-modification. The human must
+  approve it in the builder session (tmux claude-3); the doc agent never makes it.
+- Mac builder: 708 committed 4ae5bc51c (report not yet in), now 709 app-icon sketch, then B482. Mac mailbox wait must be
+  restarted after a restart (command above).
+- Issue #3172 tooltip touch: built 181eb140d, pushed; the human comments/closes the issue.
+- Step 4 part 1 8dd5634d0 (accepted.json removed); studio/go.json waits for step 3. pictures.json legacy keys: left
+  (doc agent), with a spec that a writePictures round trip rewrites go/review to record.
+- New idea of the human: `plans/windows-test-pc.md` (the `rack` PC, for later).
+
 ## Open questions for the human
 
-None. The human is afk again (said "afk" after the ADR 0254 round): collect questions.
+None open. The human is back (2026-11-10 evening), but away from the Mac. Steps 3 and 721 (git-safety.py) run: the human left auto mode in tmux claude-3 and approved.
+
+The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" re-check.
+
+- Step 3 + 721 built in 77e87c6b2 (merge path allowed only with MERGE_HEAD and merge-only staged paths; go.json rule
+  gone); studio/go.json removed in b52ff697c. Not pushed yet. Left in B249: re-check "Sketch öffnen", step 6, ADR built:.
+- Mac: 708 built (4ae5bc51c, c16d3856d); finding 722 recorded; lint scope decided (calls + pre-commit). 709 app-icon
+  sketch (studio foundations/logo@app-icon, variants a-d) is ready: tell the human on return, they pick by merge.
+- Collected for the human: (1) B482 release smoke bite needs an unlocked Mac screen (CEF page runs no CDP command while
+  locked). (2) console log file: decided a, ADR 0255. (3) 709 app icon pick by merge.
+- Linux builder restarted from `.claude/handoffs/builder-2026-11-10e.md` (tmux claude-3): merge origin/next by hand
+  (ready.json first, commit-hunks.spec.ts by hand), push:suite on the merge head, push the batch with the doc commits
+  (ADR 0255 fb1fe0b99 waits for it); then "Sketch öffnen" re-check, step 6, ADR built:, 723, 724. Mac: B482 console
+  hook (ADR 0255), then 726; findings 722 (built 8145d8357) and 727 (10b906189) pushed.

@@ -1,5 +1,5 @@
 import { execFileSync } from 'child_process';
-import { mkdtempSync } from 'fs';
+import { mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -10,12 +10,12 @@ type HookOutput = {
   hookSpecificOutput: { permissionDecision: string; permissionDecisionReason: string };
 };
 
-const runHook = (command: string, toolName = 'Bash') => {
-  const root = mkdtempSync(join(tmpdir(), 'agent-rules-git-safety-'));
+const runHook = (command: string, toolName = 'Bash', cwd?: string) => {
+  const root = cwd ?? mkdtempSync(join(tmpdir(), 'agent-rules-git-safety-'));
 
   const output = execFileSync('python3', [hookPath, '--agent', 'claude'], {
     encoding: 'utf8',
-    env: { ...process.env, CLAUDE_PROJECT_DIR: root },
+    env: { ...process.env, CLAUDE_PROJECT_DIR: root, GIT_DIR: undefined, GIT_INDEX_FILE: undefined },
     input: JSON.stringify({
       cwd: root,
       hook_event_name: 'PreToolUse',
@@ -72,15 +72,6 @@ describe('git-safety', () => {
   });
 
   it.each([
-    'git add .ethlete/design/studio/go.json',
-    'git add .ethlete/design/studio-lab/go.json a.ts',
-    'git commit -m "x" -- .ethlete/design/studio/go.json',
-    'git commit -m "x" -- a.ts ".ethlete/design/studio/go.json"',
-  ])('denies staging or committing a go.json: %s', (command) => {
-    expect(reasonOf(command)).toContain('go.json');
-  });
-
-  it.each([
     'git add apps/a.ts libs/b.ts',
     'git commit -m "feat(x): Add a thing" -- apps/a.ts libs/b.ts',
     'git commit -m "x" -- apps/a.ts',
@@ -104,5 +95,75 @@ describe('git-safety', () => {
 
   it('ignores tools other than Bash', () => {
     expect(runHook('git add -A', 'Write')).toBeNull();
+  });
+
+  it.each([
+    'grep -n "git commit" x',
+    "python3 - <<'EOF'\nprint('git commit')\ngit commit\nEOF",
+    "echo 'git add -A; git stash'",
+  ])('allows a mention that is not a command: %s', (command) => {
+    expect(runHook(command)).toBeNull();
+  });
+
+  it.each(['echo hi && git commit -m x', '(git add .)', 'echo $(git stash)', 'true\ngit commit -m x'])(
+    'denies the real command in %s',
+    (command) => {
+      expect(runHook(command)?.hookSpecificOutput.permissionDecision).toBe('deny');
+    },
+  );
+
+  describe('concluding a merge', () => {
+    const git = (cwd: string, ...args: string[]) =>
+      execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', ...args], {
+        cwd,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+
+    const conflictingMerge = () => {
+      const repo = mkdtempSync(join(tmpdir(), 'agent-rules-git-merge-'));
+      git(repo, 'init', '-q', '-b', 'main');
+      writeFileSync(join(repo, 'a.txt'), 'base\n');
+      writeFileSync(join(repo, 'other.txt'), 'other\n');
+      git(repo, 'add', '--', 'a.txt', 'other.txt');
+      git(repo, 'commit', '-q', '-m', 'base');
+      git(repo, 'checkout', '-q', '-b', 'side');
+      writeFileSync(join(repo, 'a.txt'), 'side\n');
+      git(repo, 'commit', '-q', '-m', 'side', '--', 'a.txt');
+      git(repo, 'checkout', '-q', 'main');
+      writeFileSync(join(repo, 'a.txt'), 'main\n');
+      git(repo, 'commit', '-q', '-m', 'main', '--', 'a.txt');
+      expect(() => git(repo, 'merge', 'side')).toThrow();
+      writeFileSync(join(repo, 'a.txt'), 'resolved\n');
+      git(repo, 'add', '--', 'a.txt');
+      return repo;
+    };
+
+    it('allows a pathless commit when only merge paths are staged', () => {
+      expect(runHook('git commit --no-edit', 'Bash', conflictingMerge())).toBeNull();
+    });
+
+    it('denies a pathless commit when a non-merge file is staged too', () => {
+      const repo = conflictingMerge();
+      writeFileSync(join(repo, 'other.txt'), 'changed\n');
+      git(repo, 'add', '--', 'other.txt');
+
+      expect(runHook('git commit --no-edit', 'Bash', repo)?.hookSpecificOutput.permissionDecisionReason).toContain(
+        '-- <paths>',
+      );
+    });
+
+    it('denies --amend during a merge', () => {
+      expect(
+        runHook('git commit --amend --no-edit', 'Bash', conflictingMerge())?.hookSpecificOutput.permissionDecision,
+      ).toBe('deny');
+    });
+
+    it('denies a pathless commit without a merge', () => {
+      const repo = conflictingMerge();
+      git(repo, 'merge', '--abort');
+
+      expect(runHook('git commit --no-edit', 'Bash', repo)?.hookSpecificOutput.permissionDecision).toBe('deny');
+    });
   });
 });

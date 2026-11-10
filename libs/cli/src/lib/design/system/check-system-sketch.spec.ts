@@ -6,7 +6,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { checkDesign } from '../check';
 import { DESIGN_DIR, readConfig } from '../design-config';
 import { createDesignServer } from '../serve';
-import { markPartGo } from './part-go';
 import { resolveProduct } from './resolve-product';
 import { recordMerged } from './sketch/merged-parts';
 import { createSketch, decideSketch, rebaseSketch, variantDirOf } from './sketch/sketch';
@@ -91,19 +90,19 @@ describe('checkDesign', () => {
     const dir = join(target, DESIGN_DIR, 'acme');
 
     vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void warnings.push(String(line)));
-    writeFileSync(join(dir, 'go.json'), '{}\n');
+    writeFileSync(join(dir, 'merged.json'), '{}\n');
     git('init', '-q');
     git('add', '.');
     git('commit', '-q', '--no-verify', '-m', 'base');
-    writeFileSync(join(dir, 'go.json'), '{ }\n');
+    writeFileSync(join(dir, 'merged.json'), '{ }\n');
     mkdirSync(join(dir, 'sketches/hero'), { recursive: true });
     writeFileSync(join(dir, 'sketches/hero/sketch.json'), '{}\n');
     writeFileSync(join(dir, 'sketches/hero/notes.md'), 'x\n');
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
     expect(warnings.filter((line) => line.includes('UNCOMMITTED-DECISIONS'))).toEqual([
-      'WARNING UNCOMMITTED-DECISIONS acme: go.json, sketches/hero/sketch.json differ from HEAD - Studio or Tom ' +
-        'commits them; an agent never commits go.json',
+      'WARNING UNCOMMITTED-DECISIONS acme: merged.json, sketches/hero/sketch.json differ from HEAD - Studio or Tom ' +
+        'commits them',
     ]);
   }, 60_000);
 
@@ -149,11 +148,6 @@ describe('checkDesign', () => {
 
   it('reports and lists only the part a positional names', async () => {
     const target = acme();
-    const config = readConfig(target) ?? {};
-    const product = resolveProduct({ target, name: 'acme', config: config.products?.['acme'] ?? {} });
-
-    markPartGo({ product, part: 'elements/hero', by: 'tom', via: 'design go' });
-
     const lines = output();
 
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);

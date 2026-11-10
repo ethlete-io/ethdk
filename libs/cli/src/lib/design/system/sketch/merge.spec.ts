@@ -466,7 +466,7 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     const ready = readySketch(target);
     const found = { ...ready, sketch: picked(ready.sketch) };
 
-    writeFileSync(join(target, DESIGN_DIR, 'acme/go.json'), '{}\n');
+    writeFileSync(join(target, DESIGN_DIR, 'acme/pictures.json'), '{}\n');
 
     expect(merge(target, found)).toEqual(['elements/hero']);
   }, 120_000);

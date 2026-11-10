@@ -32,13 +32,8 @@ export type StatePictures = Record<string, string>;
  */
 export type AcceptedPictures = { hash: string; states: StatePictures; slots: true; partHash?: string };
 
-/**
- * `record` is drawn at the part's design hash while it is merged and unchanged since. `review` (at the merged hash)
- * and `go` (at the go's design hash) are older kinds, still read.
- */
-export type PictureKind = 'record' | 'review' | 'go';
-
-export type PartPictures = Partial<Record<PictureKind, AcceptedPictures>>;
+/** `record` is drawn at the part's design hash while it is merged and unchanged since. */
+export type PartPictures = { record?: AcceptedPictures };
 
 /**
  * Draws every state of each part as `design compare` draws its design side, and answers per part with the picture
@@ -74,7 +69,19 @@ const isAccepted = (value: unknown): value is AcceptedPictures => {
   );
 };
 
-const KINDS: PictureKind[] = ['record', 'review', 'go'];
+const legacyRecordOf = (kinds: Record<string, unknown>): AcceptedPictures | undefined => {
+  const { review, go } = kinds;
+
+  if (isAccepted(review)) return { ...review, partHash: review.partHash ?? review.hash };
+
+  return isAccepted(go) ? go : undefined;
+};
+
+const recordOf = (kinds: Record<string, unknown>): PartPictures => {
+  const record = isAccepted(kinds['record']) ? kinds['record'] : legacyRecordOf(kinds);
+
+  return record ? { record } : {};
+};
 
 export const readPictures = (dir: string): Record<string, PartPictures> => {
   const file = picturesFileOf(dir);
@@ -90,10 +97,7 @@ export const readPictures = (dir: string): Record<string, PartPictures> => {
       Object.entries(parsed).map(([part, entry]) => {
         const kinds = (entry ?? {}) as Record<string, unknown>;
 
-        return [
-          part,
-          Object.fromEntries(KINDS.flatMap((kind) => (isAccepted(kinds[kind]) ? [[kind, kinds[kind]]] : []))),
-        ];
+        return [part, recordOf(kinds)];
       }),
     );
   } catch {
@@ -224,53 +228,9 @@ const drawPartsWith = async (options: {
   }
 };
 
-/**
- * Draws a part and stores its `record` pictures at its design hash, after a go or an acceptance verified `hash` (of
- * `kind`). Answers with why nothing was stored, or `null`; `design check` draws the pictures later when they are missing.
- */
-export const storePictures = async (options: {
-  target: string;
-  config: DesignConfig;
-  product: ResolvedProduct;
-  part: string;
-  kind: 'review' | 'go';
-  hash: string;
-  draw?: DrawStates;
-}) => {
-  const { target, config, product, part, kind, hash } = options;
-  const resolved = product.parts.find((candidate) => partKeyOf(candidate) === part);
-
-  if (!resolved) return `product "${product.name}" has no part "${part}"`;
-
-  const design = designHashOf({ product, part: resolved }).hash;
-  const drawn = (await (options.draw ?? drawStatePictures)({ target, config, product, parts: [part] })).get(part);
-  const partHash = partHashOf({ product, dir: dirname(resolved.file) });
-  const now = kind === 'review' ? partHash : design;
-
-  if (drawn === undefined || typeof drawn === 'string') return drawn ?? `${part} was not drawn`;
-  if (now !== hash || designHashOf({ product, part: resolved }).hash !== design)
-    return `${part} changed while it was drawn`;
-
-  writePictures({
-    dir: partOwnerOf({ product, part: resolved }).dir,
-    part,
-    pictures: { hash: design, states: drawn, partHash },
-  });
-
-  return null;
-};
-
-export const newStatesLineOf = ({ product, part, states }: { product: string; part: string; states: string[] }) =>
-  `NEW STATES ${product} ${part}: ${states.join(', ')} - for Tom's next review`;
-
-/**
- * The pictures a direct edit of the part is compared with: its `record` or `review` drawn at the merged part hash. A
- * `go` carries only a design hash, which cannot show that it was drawn at the merged part hash.
- */
+/** The pictures a direct edit of the part is compared with: its `record` drawn at the merged part hash. */
 const baselineOf = (pictures: PartPictures, merged: string | undefined) =>
-  (merged !== undefined && pictures.record?.partHash === merged ? pictures.record : undefined) ??
-  (merged !== undefined && pictures.review?.hash === merged ? pictures.review : undefined) ??
-  null;
+  merged !== undefined && pictures.record?.partHash === merged ? pictures.record : null;
 
 const isUndecidedEditSketch = (sketch: Sketch) =>
   sketch.target === `${partKeyOf(sketch)}@${EDIT_SKETCH}` &&

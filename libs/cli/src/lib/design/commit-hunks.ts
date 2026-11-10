@@ -127,8 +127,8 @@ const fail = (message: string, code = 1) => {
 };
 
 /**
- * `et design commit-hunks <file> --part <p>` commits only the entries of part `p` of a shared JSON file (`go.json`,
- * `merged.json`, `accepted.json`, ...): HEAD plus those entries is committed for that path, and the working file keeps
+ * `et design commit-hunks <file> --part <p>` commits only the entries of part `p` of a shared JSON file (`merged.json`,
+ * `ready.json`, ...): HEAD plus those entries is committed for that path, and the working file keeps
  * every other session's uncommitted entries.
  */
 export const designCommitHunks = async (options: { target: string; argv: string[]; invocation: string }) => {

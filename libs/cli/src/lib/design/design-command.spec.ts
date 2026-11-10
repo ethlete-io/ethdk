@@ -28,6 +28,19 @@ describe('designCommand', () => {
     error.mockRestore();
   });
 
+  it.each(['go', 'accept'])('reads the removed et design %s as an unknown command', async (command) => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await expect(
+      designCommand({ root: '/repo', argv: [command, 'components/chip'], invocation: 'et design' }),
+    ).resolves.toBe(2);
+    expect(error.mock.calls.flat().join('\n')).toContain(`unknown command or checkout "${command}"`);
+    expect(log.mock.calls.flat().join('\n')).not.toContain(`et design ${command} `);
+    log.mockRestore();
+    error.mockRestore();
+  });
+
   it('prints the usage of the one subcommand --help follows, and skips its checks', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);

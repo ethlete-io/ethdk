@@ -132,7 +132,6 @@ describe('designSketch', { timeout: 120_000 }, () => {
       '  et design commit-hunks .ethlete/design/acme/merged.json --part components/button',
     ]);
     expect(existsSync(join(product, 'sketches/components-button'))).toBe(false);
-    expect(existsSync(join(product, 'accepted.json'))).toBe(false);
     expect(JSON.parse(readFileSync(join(product, 'merged.json'), 'utf8'))).toMatchObject({
       'components/button': { decidedBy: 'auto: no visible change' },
     });
@@ -801,7 +800,6 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(await write(target, 'ready', 'elements/hero', '--product', 'acme')).toBe(0);
     expect(lines).toContain('No visible change in any state: merged components/button, elements/hero automatically.');
     expect(existsSync(join(product, 'sketches/components-button'))).toBe(false);
-    expect(existsSync(join(product, 'accepted.json'))).toBe(false);
     expect(JSON.parse(readFileSync(join(product, 'merged.json'), 'utf8'))).toMatchObject({
       'components/button': { decidedBy: 'auto: no visible change' },
       'elements/hero': { decidedBy: 'auto: no visible change' },
@@ -895,7 +893,6 @@ describe('designSketch', { timeout: 120_000 }, () => {
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     expect(existsSync(join(target, DESIGN_DIR, 'acme/sketches/components-button'))).toBe(true);
-    expect(existsSync(join(target, DESIGN_DIR, 'acme/accepted.json'))).toBe(false);
     expect(lines.pop()).toBe('auto-merge skipped: variant a changes default');
   });
 
@@ -2349,7 +2346,6 @@ export default definePart({
       expect(lines.pop()).toContain('merged components/button variant a into acme');
       expect(existsSync(sketchDir(target))).toBe(false);
       expect(readFileSync(join(target, DESIGN_DIR, 'acme/components/button/button.ts'), 'utf8')).not.toContain(PLAN);
-      expect(existsSync(join(target, DESIGN_DIR, 'acme/accepted.json'))).toBe(false);
       expect(JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/merged.json'), 'utf8'))).toMatchObject({
         'components/button': { decidedBy: `plan: ${PLAN}`, note: `merged without a pick: allowed by ${PLAN}` },
       });

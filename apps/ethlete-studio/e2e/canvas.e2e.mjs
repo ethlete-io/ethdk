@@ -1229,6 +1229,47 @@ const CASES = [
     },
   },
   {
+    name: 'a refused check record still offers the direct edit sketch',
+    listingMayPend:
+      'the evidence is the footer popover, read from a faked open-points response that the listing does not gate',
+    pages: ['System'],
+    viewport: WIDE,
+    run: async (page) => {
+      await page.route('**/__design/open-points?*', (route) =>
+        route.fulfill({
+          json: {
+            points: [{ kind: 'direct-edit', sketch: 'pages/system@edit' }],
+            buildReady: {
+              ready: false,
+              blockers: [
+                { kind: 'stale-record', text: 'no check record at the current design' },
+                { kind: 'open-point', text: 'changed outside a sketch - pick old or new in sketch pages/system@edit' },
+              ],
+            },
+          },
+        }),
+      );
+      await page.reload();
+      await page.locator('[data-open-points-chip]').first().click();
+
+      const open = page.locator('[role="dialog"] button', { hasText: 'Sketch öffnen' });
+      const status = page.locator('ethlete-build-ready-footer et-badge').first();
+
+      await page
+        .locator('ethlete-build-ready-footer button', { hasText: 'Gründe' })
+        .first()
+        .click({ timeout: 20000 })
+        .catch(() => undefined);
+      await open.waitFor({ timeout: 5000 }).catch(() => undefined);
+      await page.unroute('**/__design/open-points?*');
+
+      const offered = await open.count();
+      const badge = (await status.textContent().catch(() => null))?.trim() ?? null;
+
+      return { ok: offered === 1 && badge !== 'Wird geprüft', detail: `offered=${offered} badge=${badge}` };
+    },
+  },
+  {
     name: 'a part switch asks for its open points once',
     pages: ['System'],
     run: async (page) => {

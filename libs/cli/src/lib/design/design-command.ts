@@ -1,7 +1,6 @@
 import { existsSync, realpathSync } from 'fs';
 import { repairEditorTsconfigs } from './system/system-tsconfig';
 import { resolve } from 'path';
-import { ACCEPT_USAGE, designAccept } from './system/accept-command';
 import { checkDesign } from './check';
 import { COMPLETE_USAGE, designComplete } from './system/complete-command';
 import { DEFAULT_PORT, findCheckoutRoot, portOf, readConfig } from './design-config';
@@ -23,7 +22,6 @@ import { startedByStudio } from './started-by-studio';
 import { runningCliStaleWarning } from './stale-cli-dist';
 import { CALL_STATES, designStatus } from './status';
 import { designPart, PART_USAGE } from './system/part-command';
-import { designGo, GO_USAGE } from './system/go-command';
 import { ACTIONS_USAGE, designActions } from './system/actions-command';
 import { COMPARE_USAGE, designCompare } from './system/compare-command';
 import { designDom, DOM_USAGE } from './system/dom-command';
@@ -170,26 +168,17 @@ const helpOf = (invocation: string) =>
     '  Port what changed in the product since the sketch was cut into each variant (a 3-way merge per file), then record',
     '  the product as it is now for the merge. Any conflict lists the files and writes nothing.',
     '',
-    `${invocation} ${ACCEPT_USAGE}`,
-    "  Record a direct edit of a merged part that the user approved without a sketch: writes the part's hash to",
-    '  merged.json, so check stops warning of it, and logs who accepted it and why in accepted.json. Refuses an unknown',
-    '  part, a part with an open sketch, and a part with no change outside a sketch.',
-    '',
     `${invocation} ${READY_USAGE}`,
     '  Mark a part ready in .ethlete/design/<product>/ready.json. It draws the part and refuses with its open points',
     '  while it has any. The mark drops when the part changes.',
     '',
-    `${invocation} ${GO_USAGE}`,
-    '  Release a part for implementation in .ethlete/design/<product>/go.json at its current design. It needs no empty',
-    '  open-point list. A linked part without a current go lists an open point; the go drops when the part changes.',
-    '',
     `${invocation} ${TASK_USAGE}`,
-    '  Print what implementing a part with a current go takes: its implements link, each state with its props, the',
+    '  Print what implementing a build-ready part takes: its implements link, each state with its props, the',
     '  states new or changed since implemented.json, and the files it may change. --verify checks the files of a',
     '  commit or range (default HEAD) against them, then runs compare and records implemented.json when both pass.',
     '',
     `${invocation} ${COMPARE_USAGE}`,
-    '  Draw each state of a linked part with a current go, or the one --state names, and shoot the',
+    '  Draw each state of a linked build-ready part, or the one --state names, and shoot the',
     '  [data-design-harness-host] element of <url>/__design-harness?part=&state=&props= in the same Chromium. Prints ok,',
     '  DIFF <n> px or SIZE per state at tolerance 0 and keeps the pictures of a failing state in a temp folder.',
     '  A component or element is fitted to its content; a page draws at --preset (default: the first preset of the',
@@ -219,7 +208,7 @@ const helpOf = (invocation: string) =>
     '  active for pointer input, focus-visible for keyboard, and per kind: active for a button; a collapsed state and',
     '  its visible body for a disclosure; the open surface with hovered, focused and selected options for a select or',
     '  menu; a selected look and selected hover for a row; the visible tooltip for a tooltip; a disabled look when the',
-    '  control declares disabled. A part that changed since its last merge or accept fails too, and so does a drawn',
+    '  control declares disabled. A part that changed since its last merge fails too, and so does a drawn',
     '  control without a data-et-control marker, or an element with a pointer cursor or :hover rule but no control',
     '  role. A control',
     '  inside an embedded part (its data-et-part root) belongs to that part, which must be complete itself; a rule',
@@ -285,7 +274,7 @@ const helpOf = (invocation: string) =>
     '  --receipt.',
     '',
     `${invocation} ${COMMIT_HUNKS_USAGE}`,
-    '  Commit only the entries of the part from a shared JSON file (go.json, merged.json, accepted.json, ...): HEAD plus',
+    '  Commit only the entries of the part from a shared JSON file (merged.json, ready.json, ...): HEAD plus',
     '  those entries is committed for that path, and entries of other parts stay uncommitted in the working tree.',
     '',
     `${invocation} serve-state`,
@@ -313,7 +302,6 @@ const helpOf = (invocation: string) =>
 const HELP_FLAGS = new Set(['--help', '-h']);
 
 const TIMED_COMMANDS = new Set([
-  'accept',
   'actions',
   'check',
   'comment',
@@ -321,7 +309,6 @@ const TIMED_COMMANDS = new Set([
   'compare',
   'complete',
   'dom',
-  'go',
   'harness',
   'inbox',
   'legacy',
@@ -522,22 +509,10 @@ const dispatchDesign = async (options: { root: string; argv: string[]; invocatio
     return designSketch({ target, argv: rest, invocation });
   }
 
-  if (argv[0] === 'accept') {
-    const { target, rest } = splitCheckout(argv.slice(1), root);
-
-    return designAccept({ target, argv: rest, invocation });
-  }
-
   if (argv[0] === 'complete') {
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     return designComplete({ target, argv: rest, invocation });
-  }
-
-  if (argv[0] === 'go') {
-    const { target, rest } = splitCheckout(argv.slice(1), root);
-
-    return designGo({ target, argv: rest, invocation });
   }
 
   if (argv[0] === 'task') {

@@ -174,8 +174,7 @@ several variants at once; with `--round` they all start the new round. A new rou
 variant and mark the sketch `ready` again. `sketch new --round <title> --note <text>` names
 round 1 and sets its note; `--round` without `--note` fails. `sketch ready` refuses while the running round has no note; set it with `sketch round`.
 `sketch ready` also shoots every state of every variant and of the product's part: when not one pixel differs
-in any of them, it merges the sketch itself and logs it as an `auto` entry in the product's `accepted.json`
-("No visible change in any state: merged automatically."). Any difference or failed shot leaves it `ready`.
+in any of them, it merges the sketch itself. Any difference or failed shot leaves it `ready`.
 A problem the product already had before the merge does not block it (the check prints it as a note); only a problem the merge adds does.
 Run `sketch ready` again on a `ready` sketch to repeat the check and the auto merge.
 
@@ -207,6 +206,6 @@ in the product since the sketch was created, the merge refuses: bring each varia
 current shape. The user's reason is optional: with one, the merge sets the note from it; without
 one, the part keeps the `note` the picked variant file holds, so write that note while you draw.
 
-After the user approves a direct edit of a merged part (no sketch), run `et design accept <layer>/<name> --product <p> --by <model id> --note <why>` so `design check` stops warning `changed outside a sketch`. Never accept an edit the user did not approve.
+A part is build-ready when `design check` writes a current check record with no blockers (`ready.json`, tool-written, committed); Studio shows "Baubereit", "Nicht baubereit (n)" or "Wird geprüft". A direct edit of a merged part outside a sketch opens an old/new edit sketch that the user picks in Studio; there is no go and no accept command. `design check` warns `LEFTOVER-FILE` for a leftover gate file of the old go and accept flow and names the file to delete.
 
 To drop a merged part the user no longer wants (folded back into its host, say), run `et design part remove <layer>/<name> --product <p> --by <model id>`: it deletes the folder, its `merged.json` entry and its tsconfig path, and resolves its comments. It refuses while another part imports it or an open sketch targets it. Never `git rm` a part by hand.

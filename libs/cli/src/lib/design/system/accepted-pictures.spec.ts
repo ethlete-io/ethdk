@@ -4,8 +4,7 @@ import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../design-config';
-import { designAccept } from './accept-command';
-import { autoAcceptOf, DrawStates, readPictures, StatePictures } from './accepted-pictures';
+import { autoAcceptOf, DrawStates, readPictures, StatePictures, writePictures } from './accepted-pictures';
 import { designHashOf } from './design-hash';
 import { Problem } from './problem';
 import { partPointsOf, readOpenPoints } from './read-open-points';
@@ -83,7 +82,7 @@ describe('autoAcceptOf', () => {
     expect(calls).toHaveLength(1);
   });
 
-  it('holds a direct edit at once when every state draws as before, without accepted.json or a sketch', async () => {
+  it('holds a direct edit at once when every state draws as before, without a sketch', async () => {
     const { target, dir, chip } = checkout();
     const { draw, variants } = drawing({ default: 'a1', hover: 'b2' });
 
@@ -98,12 +97,11 @@ describe('autoAcceptOf', () => {
     expect(variants).toEqual([null, null]);
     expect(changedOutsideSketchOf(productOf(target))).toEqual([]);
     expect(readPictures(dir)[CHIP]?.record?.hash).toBe(designHashOfChip(target));
-    expect(existsSync(join(dir, 'accepted.json'))).toBe(false);
     expect(existsSync(join(dir, 'sketches'))).toBe(false);
   });
 
   it('opens the old/new sketch for a direct edit that changes a picture', async () => {
-    const { target, dir, chip } = checkout();
+    const { target, chip } = checkout();
     const { draw, pictures } = drawing({ default: 'a1', hover: 'b2' });
 
     recordMerged({ product: productOf(target), parts: [CHIP] });
@@ -119,7 +117,6 @@ describe('autoAcceptOf', () => {
       kind: 'direct-edit',
       sketch: `${CHIP}@edit`,
     });
-    expect(existsSync(join(dir, 'accepted.json'))).toBe(false);
   });
 
   it('compares a direct edit with the older review pictures at the merged hash', async () => {
@@ -271,7 +268,7 @@ describe('autoAcceptOf', () => {
         {
           rule: 'EDIT-OLD-NOT-FOUND',
           file: chip,
-          message: expect.stringContaining(`et design accept ${CHIP} --product app-a`),
+          message: expect.stringContaining(`${CHIP} gets a sketch with only the variant new`),
         },
       ]);
       expect(existsSync(join(dir, 'sketches', 'components-chip.edit'))).toBe(false);
@@ -475,29 +472,28 @@ describe('autoAcceptOf', () => {
     });
   });
 
-  it('stores pictures after design accept', async () => {
-    const { target, dir, chip } = checkout();
-    const { draw } = drawing({ default: 'a1', hover: 'b2' });
+  it('reads the older review and go pictures as the record, and writes only a record', () => {
+    const { dir } = checkout();
+    const pictures = { states: { default: 'a1' }, slots: true };
 
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-
-    recordMerged({ product: productOf(target), parts: [CHIP] });
-    appendFileSync(chip, '// edit\n');
-
-    expect(
-      await designAccept({
-        target,
-        argv: [CHIP, '--product', 'app-a', '--by', 'tom', '--note', 'approved'],
-        invocation: 'et',
-        draw,
-        prompt: { isTTY: true, ask: async () => 'y' },
+    writeFileSync(
+      join(dir, 'pictures.json'),
+      JSON.stringify({
+        'components/a': { review: { hash: 'm1', ...pictures } },
+        'components/b': { go: { hash: 'd1', ...pictures } },
+        [CHIP]: { go: { hash: 'd2', ...pictures } },
       }),
-    ).toBe(0);
-    expect(readPictures(dir)[CHIP]?.record).toEqual({
-      hash: designHashOfChip(target),
-      states: { default: 'a1', hover: 'b2' },
-      slots: true,
-      partHash: readMerged(dir)[CHIP],
+    );
+
+    expect(readPictures(dir)['components/a']).toEqual({ record: { hash: 'm1', partHash: 'm1', ...pictures } });
+    expect(readPictures(dir)['components/b']).toEqual({ record: { hash: 'd1', ...pictures } });
+
+    writePictures({ dir, part: CHIP, pictures: { hash: 'd3', states: { default: 'a2' } } });
+
+    expect(JSON.parse(readFileSync(join(dir, 'pictures.json'), 'utf8'))).toEqual({
+      'components/a': { record: { hash: 'm1', partHash: 'm1', ...pictures } },
+      'components/b': { record: { hash: 'd1', ...pictures } },
+      [CHIP]: { record: { hash: 'd3', states: { default: 'a2' }, slots: true } },
     });
   });
 });
