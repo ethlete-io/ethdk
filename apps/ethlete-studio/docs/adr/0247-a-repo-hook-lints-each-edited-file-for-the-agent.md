@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B476
+built: 674973c51
 decided: 2026-11-10
 source: grill session 2026-11-10 (morning round), after ADR 0246
 ---
