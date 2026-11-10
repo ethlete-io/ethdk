@@ -1,4 +1,4 @@
-# Doc agent handoff (2026-11-10, day shift, third part, from ethlete-sdk-a6 / tmux claude-2)
+# Doc agent handoff (2026-11-10, evening, fifth part, from ethlete-sdk-a6 / tmux claude-2)
 
 Run `/doc-agent` first. The human is **afk** (said "afk"): collect design questions, one chat line per event, no round
 until they say they are back.
@@ -66,3 +66,15 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   (ready.json first, commit-hunks.spec.ts by hand), push:suite on the merge head, push the batch with the doc commits
   (ADR 0255 fb1fe0b99 waits for it); then "Sketch öffnen" re-check, step 6, ADR built:, 723, 724. Mac: B482 console
   hook (ADR 0255), then 726; findings 722 (built 8145d8357) and 727 (10b906189) pushed.
+
+## Evening state (2026-11-10, after b6976eb26)
+
+- The human is back but away from the Mac. No open question for the human. Info given: 709 app icon pick by merge,
+  issue #3172 comment/close is theirs, the B482 bite needs an unlocked Mac screen.
+- Linux batch pushed 8e25eecda (ADR 0255, 724 fix). Linux builder (ethlete-sdk-3e, tmux claude-3, fresh after
+  builder-2026-11-10e): commit the 728 pre-commit Markdown prettier hook with a Built line under 728, watch CI, then the
+  real-config "Sketch öffnen" re-check, step 6 gutter skip, ADR built: lines (0048, 0252, 0253), 723, 729.
+- Mac: B482 console hook built and pushed (e57c40dd4, e35fcaeb5; ETHLETE_STUDIO_SMOKE_VIEW kept, decided under ADR 0255);
+  726 pushed (2f658146e). Now: A1 rest, 12 title-bar hover states (notice-hint is built, 332e49626). Pushes are free
+  again; merge origin/next first.
+- Findings 722-729 recorded; 722, 724, 726, 727 built. Doc agent rule (728): format every plan file before its commit.
