@@ -4135,3 +4135,13 @@ not the commands the shell runs.
 Built (2026-11-10, Linux): the commit that holds this line; `git-safety.py` allows a pathless `git commit` while `MERGE_HEAD`
 exists and every staged path is a merge path (changed HEAD..MERGE_HEAD or conflicted), matches only real command positions
 (heredoc bodies and quoted text are ignored), and the go.json rule is gone. A spec merges for real in a temp repo.
+
+722\. Mac builder (2026-11-10, 708 bite): `design check` refused to open the old/new edit sketch of components/button
+("already has an open sketch"). An empty leftover folder `.ethlete/design/sdk/sketches/components-button.edit/{old,new}`
+(2026-11-07, no files) counted as an open sketch. Cause (measured: the check passed after the empty dirs were deleted):
+open-sketch detection counts a folder with no files, and a merge or discard leaves empty parent folders behind. Tool
+fix (Mac builder, tool backlog after B482): open-sketch detection ignores a folder with no files, and merge and discard
+remove empty parent folders. A spec bites on an empty leftover folder.
+
+As decided (doc agent, tool internals, 2026-11-10, after 708): the design lint also covers `.ethlete/design/calls` (its
+33 old findings go into the lint baseline), and the pre-commit hook lints the staged `.ethlete/**/*.ts` files.
