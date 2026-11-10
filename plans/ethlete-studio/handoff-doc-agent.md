@@ -32,10 +32,9 @@ until they say they are back.
 
 ## Side work
 
-- Issue ethlete-io/ethdk#3172 (tooltip on touch): decided by the human (long press opens; toggletip keeps the
-  button trigger, docs get an icon-button example; tooltip docs name the toggletip for must-see hints). A new session
-  in tmux `claude-4@ethlete-sdk` builds it (brief /tmp/issue-3172-brief.txt) and reports to ethlete-sdk-a6. The
-  human comments on the issue, not the agents.
+- Issue ethlete-io/ethdk#3172 (tooltip on touch): built in 181eb140d by session ethlete-sdk-3b (500 ms long press,
+  hides 1.5 s after lift; toggletip icon-button example). The Linux builder pushes it. Tell the human on return: the
+  issue comment and close are theirs.
 
 ## Open questions for the human
 
