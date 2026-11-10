@@ -3978,6 +3978,16 @@ sits in the owner's backlog; bounded by the draw limit, not seen in the runs. A 
 (2 left after a plain run); the next waiter takes them over and the store sweep removes dead-pid locks. Not verified: a
 full `yarn studio:e2e`, CI, more than 3 workers, a waiter that really reaches the draw limit.
 
+As built (667 b, 8f45fbb32): each design server start removes the old path-keyed shot folders in
+`node_modules/.design-explore`. Correction: the old name was `shots-<10 hex>` (`viteCacheOf` cuts the sha1 to 10), not
+the full sha1. Only directories that match `^shots-[0-9a-f]{10}$` go; `part-shots`, `shots-foo`, `vite-*` and every other
+name stay. It runs once per start in `serveDesign`, under the same condition that turns on the shot store, and is not
+awaited, so the start is not slower; a failed removal logs one line and the server goes on. Bite: spec
+`old-shot-folders.spec.ts` (pattern, missing root, unremovable folder) red without the module, 3/3 with it, `spec:stress`
+4/4. Real run: 525 folders and 5.6 GB before, 0 folders and 304 MB after one server start (`part-shots` kept), about 8 s
+from launch including the boot. Not verified: a spec for the `serve.ts` wiring, several servers that start at once,
+Windows file locks.
+
 685\. Builder (2026-11-10, Mac night, 04eb763dc): the builder's own 8a473386c (673 parent watch) failed `nx lint cli`
 with 3 `prefer-rxjs-timer` errors; fixed with a scoped disable and the workaround reason (an RxJS interval cannot
 `unref`). Cause: `yarn commit` runs the related specs and the typecheck, not lint, so a lint error in an unpushed commit
