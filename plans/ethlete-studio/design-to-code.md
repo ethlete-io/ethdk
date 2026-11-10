@@ -3909,6 +3909,20 @@ failed, visible loaded at 6260 ms, 2 of 2 frame requests aborted at 20 ms (`init
 then detached`). Not verified: why the delayed load is only about 1.7 s later, not 3 s, and whether the aborts
 come from the `followLoad$` retry; that is the next slice.
 
+As built (B470 fix, 680): Cause (bitten): the case counted the frame requests of the page from before
+`page.reload()`, and the reload aborts them. With `--delay-frames 3000` the case failed `aborted requests of shown
+frames 2 of 2`, both at 20 ms, `iframe src then detached`: the old page's frames, not the new page's. Suspect (not
+proven): the original 680 red run (frames loaded 25.7 s after reload under load) had the same shape. The
+`followLoad$` retry suspect from the paragraph above is not what this bite shows. Why no tool caught it: the case
+had no way to slow frame documents until `--delay-frames`; on a fast run the frames were done before the reload.
+What I built: the case takes `page.frames()` right before `page.reload()` and `onFailed` skips a request whose
+frame is in that set. A frame the reloaded page creates is not in it, so its abort still counts, also when the
+iframe is detached later. Runs on a fresh build: `--delay-frames 3000` passed 3 of 3 (visible loaded at about 4760
+ms, 0 of 0 aborted); plain passed (1749 ms); `--hold-listings 14000` passed (15702 ms). Bite: after the reload an
+in-page `iframe.src = url + '&bite=1'; iframe.src = url` on each iframe made the case fail `aborted requests of
+shown frames 2 of 4`, so the check still bites; that injection is removed. Not verified: the original 25.7 s run
+under real load, and the full suite.
+
 681\. Builder (2026-11-10, Mac night, B466-only push:suite in a worktree at 11de10881 = origin/next f6a97186f + c11cc03ac,
 B471): the e2e step failed on `[System] page switch time is logged to the design timings` (`icons->shell-main first:
 mount 37, first 4730, all NOT (5 painted; 17 marked img/iframe, 8 canvas frames ...)`, 33.1 s): under load not every

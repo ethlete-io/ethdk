@@ -2835,7 +2835,9 @@ const CASES = [
     pages: ['Sketches'],
     run: async (page) => {
       const log = eventLog();
+      let oldPageFrames = new Set();
       const onFailed = (request) => {
+        if (oldPageFrames.has(request.frame())) return;
         if (request.resourceType() !== 'document' || request.frame() === page.mainFrame()) return;
 
         const frame = request.frame();
@@ -2902,6 +2904,7 @@ const CASES = [
           );
         });
         log.restart();
+        oldPageFrames = new Set(page.frames());
         await page.reload();
         await page.waitForFunction(({ CANVAS, FRAME }) => document.querySelector(CANVAS)?.querySelector(FRAME), {
           CANVAS,
