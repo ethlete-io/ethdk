@@ -3766,3 +3766,13 @@ of 230000". Cause: Prettier pads every table row to the widest cell, so the wide
 (872 chars each). The budget error names neither the cause nor the row. Tool fix: the STATUS check measures the rows
 without padding (or caps one cell, for example at 400 chars, and names the row over the cap), so a budget error points
 at real content; the error message names the widest row.
+
+695\. Builder (2026-11-10, day shift, 5ae1ecb24): dae1ed29d (691) made `base-issues.ts` import `sameRenderIssueKeyOf`
+from `render-check` as a value, so `check-system` loaded `render-check` first and the `vi.mock('./render-check')`
+factory of `check-ready-blockers.spec.ts` got the real module chain; the spec failed first in push:suite (proven with a
+log). Fix: the key lives in `render-issue-key.ts`; `oldIssuesOfRun` marks nothing if the base cannot be read. The tool
+worked as designed: push:suite caught it before the push (the builder skill says `yarn commit` runs no spec, so the
+builder's idea that `yarn commit` runs `vitest related` was wrong). The cost was one more push:suite run. Tool fix, no
+hook (ADR 0225 keeps slow checks out of git hooks): the builder skill and every slice brief run
+`vitest related --run <changed files>` for the touched project at the end of a slice that changes an import between
+modules, so a spec that mocks a module the slice re-imports fails in the slice.
