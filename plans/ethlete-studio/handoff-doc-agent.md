@@ -100,6 +100,6 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   tomorrow), then 748, 750 tool guard, 731, 745, 736+737, 738, 723, 714/710, the STATUS backlog line minus 628-633.
 - Mac builder: B345 change-crop sketch ready + push (the human picks tomorrow), B482 rest (e50636eaf paint probe),
   Built lines 746/749, 746 HEAD hint, 735, 739, Mac e2e speed.
-- Open question for the human (asked, not answered): watchdogs after usage-limit resets. Auto mode denied the Linux
-  builder the systemd-run timers ("Unauthorized Persistence"); `claude-at` no longer exists. Options: a) the human
-  allows it in tmux claude-3 (recommended), b) the human runs it, c) no watchdogs. The doc agent never sets them.
+- Watchdogs: the human chose a ("q1ok"): the Linux builder sets the systemd-run one-shot timers (/tmp/dx/kick.sh,
+  :35 each hour 23:35-12:35) after the human approves its permission prompt in tmux claude-3. The builder confirms when
+  they are set; check `systemctl --user list-timers`. No open question for the human.
