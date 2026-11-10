@@ -3842,8 +3842,10 @@ client. Not proven: that the move came from this case and not from the restart (
 on the same pane; no move from it was seen). Fix: the spec runs on a private server (temp `TMUX_TMPDIR`, `TMUX` and
 `TMUX_PANE` unset, `kill-server` after); `run` switches only a client attached to the caller's session, and none if it
 has none. Bite: 3 full spec runs with two real clients attached and a 0.5 s watch of the real server: no new session,
-no client move; 37/37 pass on runs 2 and 3, run 1 had one 5 s poll timeout at load 13 that passed alone. Open: the
-same watch during one live `restart --process`.
+no client move; 37/37 pass on runs 2 and 3, run 1 had one 5 s poll timeout at load 13 that passed alone. Live bite (builder, 2026-11-10, its own `restart --process`): the real-server watch showed only `claude-2`,
+`claude-3`, `mailbox-dispatch` and the clients `/dev/pts/4` on `claude-2` and `/dev/pts/7` on `claude-3` the whole
+time: pass, the restart moves no client. The new process has `ETHLETE_AGENT_ROLE=builder` and the rule prompt, but
+only because the old session set `@ethlete_role` by hand; a session with no stored role is still finding 703.
 
 697 live bite (builder, 2026-11-10, 11:32): (a) the script answered the dialog and wrote the stopped job to the mailbox
 and `restart.log`: pass. (b) same session `claude-3@ethlete-sdk`, no new `claude-N`: pass. (c) `@ethlete_command` holds
