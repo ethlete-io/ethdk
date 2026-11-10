@@ -3789,8 +3789,7 @@ installed after the start is live after the new restart mode, not after `/clear`
 Code dialog "Background work is running ... The following will stop when you exit: shell · gh run watch 42796254724"
 with the choices exit and stop tasks, move to background and exit, stay. The restart waited on it until someone
 answered (screenshot from the human). The new process then ran in a new tmux session `claude-3@ethlete-sdk`; the old
-`claude@ethlete-sdk` was gone, so a check by session name fails. Suspect: the respawn does not reuse the pane, or the
-pane died with the old process. Tool fix: `restart --process` stops the background work of the session first (or
+`claude@ethlete-sdk` was gone, so a check by session name fails. Cause (measured by the builder): the respawn runs `$SHELL -lic "claude <prompt>"`; in the login shell `claude` is the shell-install function, which calls `agent-sessions run`; with `$TMUX` set, `run` picks a free session name (claude-3), switches to it and exits, so the old pane dies and its session closes. Side defect: `run` stores the prompt in `@ethlete_command`, so the next `restart --process` types the stale `/handoff resume` first. Fix part: respawn with `command claude` (no shell function) and store only the base command. Tool fix: `restart --process` stops the background work of the session first (or
 answers the dialog with "exit and stop tasks", since the handoff names the work), the handoff names each stopped
 background job so the new process starts it again (here the CI watch), and the new process keeps the old tmux session
 name. Bite: a session with a running background shell restarts with `--process` without a human, in the same tmux
