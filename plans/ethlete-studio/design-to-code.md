@@ -3892,3 +3892,10 @@ specs fail on the old code. Not verified: a live block of a Stop hook and a live
 `waitFor` compared the lock age with `>` and the timeout with `>=`, so in the poll where both reach the wait the timeout
 won. Fix f0e3be39f: the age check uses `>=`; a new spec with 0 ms fails on the old code; `spec:stress` 4/4. Tool gap:
 none, a boundary race in a timing spec.
+
+703 live bite (builder, 2026-11-10, 11:05:56Z): the Stop hook blocked once and not again on the reply after it. Log:
+`{"words": 23, "lines": 2, "blocked": true}`, then `{"words": 0, "lines": 0, "blocked": false}` for the one-line reply.
+The turn had 3 text lines of about 30 words (2 mid-turn, 1 closing). Suspect: the hook reads the transcript before the
+final text block of the turn is in it, so a long closing summary alone is not counted, which is the main 703 case.
+Next: log the Stop payload keys and the last transcript entry type once, live; count the final message from a payload
+field if one exists, else wait briefly and read again. Bite: a fixture whose last text is not in the transcript yet.
