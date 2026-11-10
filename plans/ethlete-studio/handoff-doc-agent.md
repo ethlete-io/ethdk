@@ -32,6 +32,8 @@ round; one short German line per event. Builder: ethlete-sdk-22 in tmux `claude@
    window case under load that the change cannot touch (B471, finding 681). Four push:suites tonight were red, each on
    a different load-sensitive e2e case. Recommendation: yes, for this one push, so CI proves or disproves the B466 fix;
    the full local range waits for green e2e.
+   Since 0e1d59984 the B471 cause is proven: Chromium holds back off-screen pictures in a cold picture store, a perf
+   defect of Studio that the B466 change cannot touch.
 2. "Only visible frames are live" as a day-shift feature? Measured (design-to-code.md, after finding 688): the
    `liveShotsOf` cap already keeps 6 live frames, all in view; per frame 1-2 MB heap, about 0 % idle CPU; a
    visible-only emulation changed nothing beyond noise. Recommendation: no, drop the idea.
