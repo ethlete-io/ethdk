@@ -3808,6 +3808,27 @@ docs-only ADR edits under `apps/ethlete-studio/docs/adr/` without a changeset. O
 commits have the same gap. Tool fix, small: the builder and doc-agent skills say that an ADR edit is a change to
 `ethlete-studio` and gets an `'ethlete-studio': none` changeset in the same commit.
 
+699\. Builder ethlete-mac (2026-11-10, B469): a release build of Studio never leaves "Design-Server startet", on
+WKWebView and on CEF alike (macOS x64, 0.2.0-next.15). The server runs and answers on `[::1]:4402`, but the CSP in
+`tauri.conf.json` has `connect-src 'self' ipc: http://ipc.localhost`, so each `fetch` of
+`http://localhost:4402/__design/stamp` is refused (62 errors in 60 s, over CDP). Two more CSP refusals in the same
+run: Tauri adds a nonce to `style-src`, which makes `'unsafe-inline'` void (18 inline styles refused), and the inlined
+Google fonts load from `fonts.gstatic.com`, which `default-src 'self'` refuses. Cause: dev builds load `devUrl` with
+no CSP, and no check opens a release build; `cef-runtime.md` slice 2 step 5 already said "CSP not checked in a
+release build". Fixed in the B469 commit: `connect-src` and `img-src` allow `http://localhost:*` and
+`http://127.0.0.1:*`, `font-src` allows `https://fonts.gstatic.com`, and `dangerousDisableAssetCspModification:
+["style-src"]`. Bite: the CEF release build then opens the sketch `components/button` with six live frames and no
+console error. Not verified: a Linux deb with the fix, and the WKWebView release with the fix. Tool fix (proposal): a
+smoke step that starts the release bundle once and fails on a CSP refusal in the console.
+
+700\. Builder ethlete-mac (2026-11-10, B469): two defects of `tauri-runtime-cef` (rev `9d1a5b1`) with
+`RemoteDebugging::Port`. (a) A run with `Disabled` writes `devtools.remote_debugging.allowed: false` into
+`~/Library/Caches/<identifier>/cef/Local State`; a later run with `Port` does not reset it, so Chromium prints
+"DevTools remote debugging is disallowed by the system admin" and opens no port. Workaround: delete the key. (b) The
+CDP listen socket leaks into child processes: the design server (`node .../cli design`) held `127.0.0.1:9333` after
+Studio started it. Both matter only when a build turns the debug port on, for example a future Studio e2e over CDP.
+Tool fix: report (a) and (b) upstream; a CDP harness deletes the key before the start.
+
 701\. Builder (2026-11-10, day shift, CI 42796254724): Unit tests red, components
 `src/scenarios/progress-steps.scenario.spec.ts` 6/6 failed with NG0303 "Can't bind to 'state'". 9e7c567d0 (B478) renamed
 the input `state` to `stepState` and left the scenario spec on `[state]`. Fix 7e1842ce5 (spec only). Suspect: the

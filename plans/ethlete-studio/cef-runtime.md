@@ -52,3 +52,34 @@ Steps (all done; `.github/actions/cef` caches the extracted distribution in `~/.
 Risks: unreleased branch pinned by commit (a fix needs a new rev and a new npm alpha); X11 only;
 open Linux issues for focus (#16251, #16351), drag and drop (#16131), window drag (#16294) and IPC
 with DevTools open (#15764); bundles grow by about 100-200 MB.
+
+## As built (B469) - macOS spike, 2026-11-10
+
+Spike on ethlete-mac (Intel i7, x86_64, macOS 15.6), `tauri-runtime-cef` at the same rev, `@tauri-apps/cli-cef`
+3.0.0-alpha.27, CEF 151 (`cef-dll-sys` 151.8.1). Not committed: the release would then link CEF on macOS, which is
+the human's decision. The change is three gates: `tauri-runtime-cef` under
+`cfg(any(target_os = "linux", target_os = "macos"))` (the Wayland crates stay Linux only), `tauri-runtime-wry` under
+`cfg(target_os = "windows")`, and the same `any(...)` on `cef_entry_point` in `main.rs` and on `.runtime(Cef)` in
+`lib.rs`. `cargo check` and the build pass with no other code change; `Cargo.lock` does not change.
+
+1. **Runs.** `tauri build --bundles app,dmg` bundles `Chromium Embedded Framework.framework` and five helper apps
+   (`<binary> Helper`, `(GPU)`, `(Renderer)`, `(Plugin)`, `(Alerts)`), built at bundle time. CEF downloads into
+   `~/.cache/tauri-cef` (505 MB). A cold build takes about 5 min, a warm one 2 min. Studio starts, opens the
+   project, and the sketch `components/button` shows six live frames from the design server, with no console error.
+   This needed the CSP fix of finding 699; the WKWebView release build has the same defect.
+2. **Size (x64).** WKWebView: `.app` 109 MiB (94 MiB of it `cli-runtime`), `.dmg` 30.1 MiB, update `.app.tar.gz`
+   about 30 MiB. CEF, signed: `.app` 443 MiB (framework 326 MiB), `.dmg` 177.2 MiB, update tarball 177.6 MiB. So each
+   download and each update grows by about 147 MiB. Apple Silicon not measured; the framework is of a similar size.
+3. **Signing.** With a throwaway self-signed identity in a temporary keychain (the CI path), the bundler signs 13
+   items inner first (framework libraries, framework, helpers, binary, app) with hardened runtime. The helpers get
+   `allow-jit`, `allow-unsigned-executable-memory` and `disable-library-validation`.
+   `codesign --verify --deep --strict` passes, the `.dmg` is signed, the signed app runs, and `spctl` rejects it,
+   as it rejects today's bundle. **Notarization is not tested:** it needs an Apple Developer Program membership,
+   a "Developer ID Application" certificate and notary credentials (App Store Connect API key or Apple ID with an
+   app password). None exists; the release identity is self-signed. Hardened runtime, the precondition, is in place.
+
+Seen on the way: macOS asks for notification permission twice, for "Ethlete Studio" and for "ethlete-studio Helper"
+(the helper name comes from the binary name). A CEF window that other windows cover paints nothing, so
+`screencapture -l` gives a black picture; check over CDP instead. Each run logs
+`process_requirement.cc ... Signature validation of current process failed (-67030)`; it has no effect seen.
+Finding 700 has the two upstream defects of the debug port.

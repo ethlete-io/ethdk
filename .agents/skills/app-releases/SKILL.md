@@ -30,8 +30,9 @@ key in the secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PA
 Do not run it again: an installed app accepts only its own key, so a new key stops every update. Only a
 release build checks for updates, and `createUpdaterArtifacts` is on in CI only.
 
-On Linux, both apps run on Tauri's CEF (Chromium) runtime from its `feat/cef` branch, and macOS and
-Windows on wry. The branch's `tauri` has no runtime of its own, so `lib.rs` names one per platform, and
+On Linux both apps, and on macOS Studio, run on Tauri's CEF (Chromium) runtime from its `feat/cef`
+branch (ADR 0249); Timetrack on macOS and both apps on Windows run on wry. The Studio macOS bundle is
+built by `@tauri-apps/cli-cef` too and is about 147 MiB larger. The branch's `tauri` has no runtime of its own, so `lib.rs` names one per platform, and
 a plugin whose crates.io release asks for tauri's `wry` feature is patched to plugins-workspace's
 `feat/cef` branch. Building needs the GTK 4
 headers (`sudo dnf install gtk4-devel`, `libgtk-4-dev` on Debian). The first build downloads CEF
