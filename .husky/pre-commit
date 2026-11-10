@@ -64,3 +64,8 @@ if [ -n "$design_files" ]; then
   # shellcheck disable=SC2086
   node ./tools/scripts/lint-staged-design.mjs $design_files
 fi
+
+# Refuses a ✅ row, an Erledigt section and a Stand older than 3 days in the staged STATUS.md blob (about 0.05 s).
+if git diff --cached --name-only --diff-filter=ACM -- 'plans/ethlete-studio/STATUS.md' | grep -q .; then
+  git show :plans/ethlete-studio/STATUS.md | node ./tools/scripts/check-studio-status.mjs -
+fi
