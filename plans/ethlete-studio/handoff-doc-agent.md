@@ -21,7 +21,11 @@ Run `/doc-agent` first. The human is awake: grill rounds are allowed again. Buil
   high button text. 691 lesson done (61585f36a): no CI job (ADR 0226); the builder corrects its skill line, deletes the uncalled
   `design-rules-gate.mjs`, and `design check` marks findings the base already shows as old. 689: the builder adds the
   `tsconfig.lib.json` check to each lib `typecheck` target and fixes 2 story errors in components.
-- Builder queue: 689 (lib `typecheck` targets also check
+- ADR 0248 (row B478): the `et-progress-step` input `state` becomes `stepState` (collides with `RouterLink.state`);
+  the human answered "Ok". Finding 692: two night commits overwrote the November findings archive; restored in
+  bc2204c99, lint:studio-adrs is green. Builder work for 692: pre-commit stops on a failed ADR check (bite first), the
+  check catches a lost archive finding, skills archive only with `archive-findings.mjs`. Archive only with that script.
+- Builder queue: B478, 689 (lib `typecheck` targets also check
   `tsconfig.lib.json`; time per lib first, figures to the doc agent), then B476 (ESLint hook, ADR 0247), then B469 CEF spike (ADR 0242), then quiet-machine
   perf and a full studio:e2e.
 - B472 (683) stays open with no proven cause (18/18 under load). B471 fix is 7d72894fa (high fetch priority after a
