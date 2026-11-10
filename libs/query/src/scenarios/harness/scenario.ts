@@ -640,7 +640,8 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
 };
 
 const clockFraction = () => {
-  const raw = process.env['SCENARIO_CLOCK_FRACTION'];
+  const env = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env;
+  const raw = env?.['SCENARIO_CLOCK_FRACTION'];
 
   if (raw === undefined || raw === '') return 500;
   if (raw === '0' || raw === '999') return Number(raw);
