@@ -4004,3 +4004,11 @@ seen). The product `awaitOutput` is unchanged. Fix: the fixtures mutate and emit
 output reads (fire path: exactly 1) and quiet frames (2) in the page. Verified: `spec:stress --slow 13` 1/4 before, 4/4
 after; `--load 2` 4/4; removing the fire check fails 2 cases, removing the quiet return fails 1. Tool gap: none, B481
 found it.
+
+B442 as built (builder, 2026-11-10): Cause: the overlay open and close run on animation frames (`nextFrame` is a
+double `requestAnimationFrame`, and jsdom runs a frame on a timer), while the spec's `settle` waits a fixed 5
+macrotask rounds. Probe at 8% CPU: the second logo click closed the menu every time (`aria-expanded` true at the
+click), but the removal took 15 and 25 rounds (118 ms, 30 ms) in 2 of 9 calls. The click is not ignored. Fix: the spec
+waits for the menu state with a 3 s deadline (`until`), not a round count. Verified: 13/13 normal;
+`spec:stress --slow 13` 4/4 (2 of 3 failed before, finding 705); the multi-section case still fails when the second
+click is left out. Tool gap: none, B481 found it.

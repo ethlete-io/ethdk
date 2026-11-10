@@ -56,6 +56,19 @@ const settle = async (fixture: ComponentFixture<unknown>) => {
   }
 };
 
+const until = async (fixture: ComponentFixture<unknown>, done: () => boolean, timeout = 3_000) => {
+  const deadline = Date.now() + timeout;
+
+  await settle(fixture);
+
+  while (!done() && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    await fixture.whenStable();
+  }
+
+  return done();
+};
+
 const logoOf = (root: HTMLElement) =>
   root.querySelector<HTMLButtonElement>(
     'ethlete-shell-main > div > nav > div:first-child button[aria-label="Studio-Menü"]',
@@ -68,12 +81,10 @@ const opensTheStudioMenu = async (root: HTMLElement, fixture: ComponentFixture<u
   const closed = studioMenu() === null;
 
   logo?.click();
-  await settle(fixture);
-
-  const opened = studioMenu() !== null;
+  const opened = await until(fixture, () => studioMenu() !== null);
 
   logo?.click();
-  await settle(fixture);
+  await until(fixture, () => studioMenu() === null);
 
   return { button: logo !== null, closed, opened };
 };
