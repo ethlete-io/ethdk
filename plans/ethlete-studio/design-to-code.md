@@ -3759,3 +3759,10 @@ npm package exists only for the active Node version. Tool fix: the builder skill
 counts only when the LSP tool returns a diagnostic, not when the plugin is listed. Decided (the human: "q1ok"): the
 server is installed globally on both machines with `npm i -g typescript-language-server typescript`; done by the doc
 agent on Linux (fnm Node 24.17.0) and on ethlete-mac (`~/.local/node`). After a Node version switch, install again.
+
+694\. Doc agent (2026-11-10, day shift, B477 note): a 120-char longer B477 cell made STATUS.md grow by 9k chars, from
+230556 to 239564, and the pre-commit hook (now with `set -e`, 692) stopped the commit: "237930 chars exceeds the budget
+of 230000". Cause: Prettier pads every table row to the widest cell, so the widest row sets the size of all 231 rows
+(872 chars each). The budget error names neither the cause nor the row. Tool fix: the STATUS check measures the rows
+without padding (or caps one cell, for example at 400 chars, and names the row over the cap), so a budget error points
+at real content; the error message names the widest row.
