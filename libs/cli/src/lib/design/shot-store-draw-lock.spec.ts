@@ -80,6 +80,14 @@ describe('shot store draw lock', () => {
     expect(Date.now() - started).toBeGreaterThanOrEqual(50);
   });
 
+  it('takes over a live lock whose age reaches the wait in the same poll that the wait runs out', async () => {
+    const { client } = sharedStore();
+
+    client().claim('key');
+
+    expect(await client().waitFor('key', { address, ms: 0 })).toMatchObject({ why: 'too old' });
+  });
+
   it('hands the draw to the waiter when the drawing client fails and releases its lock', async () => {
     const { client } = sharedStore();
     const first = client();

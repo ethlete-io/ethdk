@@ -311,8 +311,8 @@ export const createShotStore = (options: {
       const ownerGone = typeof lock === 'object' && !isRunning(lock.pid);
       const tooOld =
         typeof lock === 'object'
-          ? Date.now() - lock.at > ms
-          : lock === 'unreadable' && Date.now() - mtimeOf(relative(dir, path)) > ms;
+          ? Date.now() - lock.at >= ms
+          : lock === 'unreadable' && Date.now() - mtimeOf(relative(dir, path)) >= ms;
       const stale = ownerGone || tooOld;
 
       if (stale) {
