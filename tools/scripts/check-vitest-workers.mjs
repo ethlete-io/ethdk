@@ -15,12 +15,12 @@ export const workerProblemsOf = (path, source) => {
     return [];
   }
 
-  if (/maxWorkers:\s*specWorkers\b/.test(source) && /from\s+['"][./]*tools\/vitest\/workers(\.mts)?['"]/.test(source)) {
+  if (/maxWorkers:\s*specWorkers\b/.test(source) && /from\s+['"][./]*tools\/vitest\/workers\.mjs['"]/.test(source)) {
     return [];
   }
 
   return [
-    `${path} runs vitest without \`maxWorkers: specWorkers\` from tools/vitest/workers.mts. The worker count follows the core count, so a big Mac starts a fork per core and timing specs time out where CI (about 3 workers) passes.`,
+    `${path} runs vitest without \`maxWorkers: specWorkers\` from tools/vitest/workers.mjs. The worker count follows the core count, so a big Mac starts a fork per core and timing specs time out where CI (about 3 workers) passes.`,
   ];
 };
 

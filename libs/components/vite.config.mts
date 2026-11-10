@@ -1,7 +1,7 @@
 /// <reference types='vitest' />
 import angular from '@analogjs/vite-plugin-angular';
 import { defineConfig } from 'vite';
-import { specWorkers } from '../../tools/vitest/workers.mts';
+import { specWorkers } from '../../tools/vitest/workers.mjs';
 
 // the date and time specs cover the runtime's own daylight-saving gap, which a zone without one (CI runs in UTC) never has
 process.env['TZ'] = 'Europe/Berlin';

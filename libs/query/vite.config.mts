@@ -1,7 +1,7 @@
 /// <reference types='vitest' />
 import angular from '@analogjs/vite-plugin-angular';
 import { defineConfig } from 'vite';
-import { specWorkers } from '../../tools/vitest/workers.mts';
+import { specWorkers } from '../../tools/vitest/workers.mjs';
 
 // The date-only URL scenarios only fail off UTC, and the threads pool ignores a TZ set inside a spec.
 process.env['TZ'] = 'America/Los_Angeles';

@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
-import { specWorkers } from '../../tools/vitest/workers.mts';
+import { specWorkers } from '../../tools/vitest/workers.mjs';
 
 export default defineConfig({
   // The lib is consumed from source rather than from `dist`: it is a workspace package whose only

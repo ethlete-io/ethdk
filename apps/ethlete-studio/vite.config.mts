@@ -2,7 +2,7 @@
 import angular from '@analogjs/vite-plugin-angular';
 import { defineConfig } from 'vite';
 import { nxReadySignal } from '@nx/vite/plugins/nx-ready-signal.plugin';
-import { specWorkers } from '../../tools/vitest/workers.mts';
+import { specWorkers } from '../../tools/vitest/workers.mjs';
 
 export default defineConfig(() => ({
   root: __dirname,

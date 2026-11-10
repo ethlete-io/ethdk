@@ -1,7 +1,7 @@
 /// <reference types='vitest' />
 import angular from '@analogjs/vite-plugin-angular';
 import { defineConfig } from 'vite';
-import { specWorkers } from '../../tools/vitest/workers.mts';
+import { specWorkers } from '../../tools/vitest/workers.mjs';
 
 export default defineConfig(() => ({
   root: __dirname,

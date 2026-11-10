@@ -4075,3 +4075,8 @@ project has no `test` target in project.json and is not inferred by `@nx/vitest`
 Bite: without the target the check exits 1 naming the config. Not verified: the CI run itself. Also found: the d906c4796
 `workers.mts` import fails `tsc` (TS5097) in every spec tsconfig that includes its vitest config; timetrack-app's is fixed
 with `allowImportingTsExtensions`; `tsc` on the spec tsconfigs of `timetrack` and `ethlete-studio` still fails.
+
+As built (finding 686, part 2): the preset is now `tools/vitest/workers.mjs` plus `workers.d.mts`, imported as
+`../../tools/vitest/workers.mjs` in all 14 configs, so no tsconfig needs `allowImportingTsExtensions` (reverted in
+timetrack-app). An extensionless import fails in vite's config bundler, a `.mts` import fails `tsc` (TS5097); `.mjs` with
+a `.d.mts` satisfies both. `check-vitest-workers.mjs` names `workers.mjs`.
