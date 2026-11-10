@@ -655,8 +655,14 @@ the current part's or an earlier variant's: make a state the variant changes its
 same diff that stops the merge on its own, below) and no shot of that variant was handed out since the variant last
 changed. `et design shot <layer>/<name> --states --variants` records a view for each variant on its sheet, and so does
 `GET /__design/shot?...&sketch=<target>&variant=<key>` without `priority=low`; an edit of the variant's files or of the
-sketch's `shared/` folder makes the view stale. The views live in `node_modules/.design-explore/viewed-shots/`, per
-checkout. A sketch whose variants draw like the product, and a new part, are not held back.
+sketch's `shared/` folder makes the view stale. A view holds the hash of the shot file the CLI drew, so it counts only
+while that file still holds that shot; a view recorded before shot hashes counts as no view, so view the shot again.
+The views live in `node_modules/.design-explore/viewed-shots/`, per checkout. A sketch whose variants draw like the
+product, and a new part, are not held back.
+
+`et design shot <layer>/<name>@<sketch name>` draws that named sketch. A bare `<layer>/<name>` draws the unnamed sketch
+on the part, or the only sketch on it; with several named sketches it refuses and names the `<layer>/<name>@<name>`
+targets. An `--at <commit>` shot of a sketch records a view for the content the sketch had at that commit.
 
 `sketch ready` also refuses (`SAMPLE-MARK-DRIFT`) while one sample carries different marks in two states of a
 target. A part opts in with `sample: { id: 'sample', marks: ['same', 'look'] }`: every instance a host draws with a

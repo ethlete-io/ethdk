@@ -9,7 +9,7 @@ import { workRootOf } from './work-root';
 import { INTERACTIONS } from './force-interactions';
 import { extractSketchAt } from './sketch-at';
 import { productDirOf } from './system/product';
-import { ResolvedProduct } from './system/resolve-product';
+import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { findSketch, parseTarget, rejectionOf, Sketch, SketchRejection } from './system/sketch/sketch';
 import { noteStep } from './run-deadline';
 import { recordShotViewed, shotFileOf } from './system/sketch/viewed-shots';
@@ -20,7 +20,7 @@ import { createDrawQueue, ThumbUnavailableError } from './thumb';
 import { BoxOf } from './variant-diff';
 import { unstableCellsOf, unstableReportOf } from './unstable-cells';
 
-export const SHOT_USAGE = `shot <layer>/<name> --states [--variants [--round <key>[,<key>...]] [--variant <name>[,<name>...]] [--all] [--at <commit>] [--diff-props]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--crop <x,y,width,height> | --crop changed] [--product <name>] [--surface <name>] [--color <name>] [--scheme <light|dark>] [--out <file>]`;
+export const SHOT_USAGE = `shot <layer>/<name>[@<sketch>] --states [--variants [--round <key>[,<key>...]] [--variant <name>[,<name>...]] [--all] [--at <commit>] [--diff-props]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--crop <x,y,width,height> | --crop changed] [--product <name>] [--surface <name>] [--color <name>] [--scheme <light|dark>] [--out <file>]`;
 
 /** The state names a shot of a part can draw: every state it defines, so the grid's interaction cells of an unchanged row draw too. */
 export const shotStateNamesOf = async (definition: unknown): Promise<string[]> => {
@@ -184,8 +184,24 @@ export const gridRowsOf = (row: Plan[], grid: ListedGrid): (Plan | EmptyGridCell
   return [rest, ...rows].filter((cells) => cells.some((cell) => !('empty' in cell)));
 };
 
-export const sketchHoldingOf = <T extends Pick<Sketch, 'targets'>>(sketches: T[], part: string) =>
-  sketches.find((sketch) => sketch.targets.includes(part));
+/**
+ * The open sketch a shot of `<part>[@<name>]` draws: the one with that name, else the unnamed one, else the only one on
+ * the part; `undefined` when none fits, and a refusal naming the `<part>@<name>` targets when several named ones do.
+ */
+export const sketchHoldingOf = <T extends Pick<Sketch, 'target' | 'targets'>>(
+  sketches: T[],
+  requested: string,
+): T | undefined | string => {
+  const [part = '', name] = requested.split('@');
+  const holders = sketches.filter((sketch) => sketch.targets.includes(part));
+  const named = holders.find((sketch) => sketch.target.split('@')[1] === name);
+
+  if (named) return named;
+  if (name !== undefined) return undefined;
+  if (holders.length < 2) return holders[0];
+
+  return `${part} has ${holders.length} open sketches - name one: ${holders.map((sketch) => `${part}@${sketch.target.split('@')[1]}`).join(', ')}`;
+};
 
 const rejectedLabelOf = (variant: string, rejection: SketchRejection | undefined) => {
   if (!rejection) return variant;
@@ -278,7 +294,8 @@ export const shotProductOf = (options: {
     (product) => findSketch({ productDir: productDirOf({ target, product }), product, sketch: parsed }) !== null,
   );
   const system = createSystemModules({ target, config });
-  const holders = sketched.length > 0 ? sketched : declared.filter((product) => system.partOf({ product, part }));
+  const holders =
+    sketched.length > 0 ? sketched : declared.filter((product) => system.partOf({ product, part: partKeyOf(parsed) }));
 
   return oneProductOf({ target, config, asked: holders.length === 1 ? holders[0] : undefined });
 };
@@ -410,7 +427,8 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     return 2;
   }
 
-  const [part = '', ...extra] = args.positional;
+  const [requested = '', ...extra] = args.positional;
+  const [part = '', sketchName] = requested.split('@');
   const asked = args.values['--state']?.split(',').filter(Boolean) ?? [];
   const states = args.flags.has('--states') || asked.length > 1;
   const variants = args.flags.has('--variants');
@@ -424,7 +442,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
   const cropChanged = args.values['--crop'] === CROP_CHANGED;
 
   const refusal = shotRefusalOf({
-    part,
+    part: requested,
     extra,
     states,
     variants,
@@ -454,7 +472,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     return 1;
   }
 
-  const resolved = shotProductOf({ target, config, asked: args.values['--product'], part });
+  const resolved = shotProductOf({ target, config, asked: args.values['--product'], part: requested });
 
   if (typeof resolved === 'string') {
     console.error(resolved);
@@ -467,7 +485,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
   let sketchesRoot: string | undefined;
 
   if (at !== undefined) {
-    const sketchTarget = parseTarget(part);
+    const sketchTarget = parseTarget(requested);
     const productDir = createSystemModules({ target, config }).productOf(product)?.dir;
 
     if (typeof sketchTarget === 'string' || !productDir) {
@@ -494,10 +512,18 @@ export const designShot = async (options: { target: string; argv: string[]; invo
   }
 
   const system = createSystemModules({ target, config, sketchesRoot });
-  const sketch = sketchHoldingOf(system.sketchesOf(product), part);
+  const held = sketchHoldingOf(system.sketchesOf(product), requested);
 
-  if (variants && !sketch?.variants.length) {
-    console.error(`design-explore: ${part} has no open sketch in product "${product}"`);
+  if (typeof held === 'string') {
+    console.error(`design-explore: ${held}`);
+
+    return 1;
+  }
+
+  const sketch = held;
+
+  if ((variants || sketchName !== undefined) && !sketch?.variants.length) {
+    console.error(`design-explore: ${requested} has no open sketch in product "${product}"`);
 
     return 1;
   }
@@ -640,7 +666,8 @@ export const designShot = async (options: { target: string; argv: string[]; invo
       const mergedIndex = rows.findIndex((axis) => axis.sketch === null);
       const sheetOut = resolve(
         target,
-        args.values['--out'] ?? shotFileOf({ target, product, part, variants: sketch ? onlyVariants : [] }),
+        args.values['--out'] ??
+          shotFileOf({ target, product, part, sketch: sketchName, variants: sketch ? onlyVariants : [] }),
       );
       const crops = cropChanged
         ? await changedCropsIn({ plan, sheet, mergedIndex, boxOf: shooter.changedBoxesOf, scale })
@@ -705,8 +732,14 @@ export const designShot = async (options: { target: string; argv: string[]; invo
         for (const line of shotReportOf({ out, diffs, sheet: shown })) console.log(line);
       }
 
-      if (at === undefined && sketch)
-        for (const variant of shownVariants ?? []) recordShotViewed({ target, sketch, variant });
+      const live =
+        at === undefined
+          ? sketch
+          : sketchHoldingOf(createSystemModules({ target, config }).sketchesOf(product), requested);
+
+      if (sketch && live && typeof live !== 'string')
+        for (const variant of shownVariants ?? [])
+          recordShotViewed({ target, sketch: live, variant, shot: takes[0]?.out ?? sheetOut, drawn: sketch });
 
       for (const line of unstableReportOf(unstable)) console.error(line);
 

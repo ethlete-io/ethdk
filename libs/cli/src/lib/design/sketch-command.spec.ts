@@ -1,7 +1,7 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { spawnSync } from 'child_process';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from './design-config';
 import {
@@ -16,7 +16,7 @@ import { designSketch } from './sketch-command';
 import { THEMING_TEXT } from './system/theming-text';
 import { sketchOpenPointsOf } from './system/read-open-points';
 import { renderIssuesOf } from './system/render-check';
-import { findSketch, readSketchReport, Sketch } from './system/sketch/sketch';
+import { findSketch, readSketchReport, Sketch, variantContentHashOf } from './system/sketch/sketch';
 import { recordShotViewed, shotFileOf, unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots';
 
 vi.mock('./ready-shots', () => ({
@@ -1004,7 +1004,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.pop()?.split('\n')).toEqual([
-      `SHOT-NOT-VIEWED variant a changes default - no shot of variant a was viewed since its last edit: view ${join(target, 'node_modules/.design-explore/shots/acme-components-button-a.png')} after ` +
+      `SHOT-NOT-VIEWED variant a changes default - variant a: no shot of it was viewed since its last edit: view ${join(target, 'node_modules/.design-explore/shots/acme-components-button-a.png')} after ` +
         '`et design shot components/button --states --variants --variant a --product acme`, or GET /__design/shot?product=acme&part=components/button&sketch=components/button&variant=a&state=<state>',
       'components/button draws a pixel diff - view its shot before ready',
     ]);
@@ -1017,16 +1017,96 @@ describe('designSketch', { timeout: 120_000 }, () => {
       ).size,
     ).toBe(4);
 
-    recordShotViewed({ target, sketch: sketch(), variant: 'a' });
+    const shot = shotFileOf({ target, product: 'acme', part: 'components/button', variants: ['a'] });
+
+    mkdirSync(dirname(shot), { recursive: true });
+    writeFileSync(shot, 'drawn');
+    recordShotViewed({ target, sketch: sketch(), variant: 'a', shot });
     writeFileSync(join(sketch().dir, 'a/components/button/button.css'), '.et-button { color: red; }\n');
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
 
-    recordShotViewed({ target, sketch: sketch(), variant: 'a' });
+    recordShotViewed({ target, sketch: sketch(), variant: 'a', shot });
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     expect(sketch().status).toBe('ready');
     expect(lines.pop()).toBe('auto-merge skipped: variant a changes default');
+  });
+
+  it('refuses ready on a viewed record without a shot the CLI drew of the current content', async () => {
+    const target = acme();
+    const lines = output();
+    const actual = await vi.importActual<typeof import('./system/sketch/viewed-shots')>('./system/sketch/viewed-shots');
+
+    vi.mocked(unviewedShotLinesOf).mockImplementation(actual.unviewedShotLinesOf);
+    await write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a',
+      '--round',
+      'Diff',
+      '--note',
+      'changes',
+      '--product',
+      'acme',
+    );
+    vi.mocked(variantChangesShown).mockResolvedValue([{ variant: 'a', change: 'variant a changes default' }]);
+
+    const sketch = () => {
+      const found = findSketch({
+        productDir: join(target, DESIGN_DIR, 'acme'),
+        product: 'acme',
+        sketch: { layer: 'components', name: 'button' },
+      });
+
+      if (!found || typeof found === 'string') throw new Error('no sketch');
+
+      return found;
+    };
+    const ready = async () => {
+      const code = await write(target, 'ready', 'components/button', '--product', 'acme');
+
+      return { code, reason: code === 0 ? null : (lines.pop()?.split('\n')[0]?.split(': view ')[0] ?? null) };
+    };
+    const shot = shotFileOf({ target, product: 'acme', part: 'components/button', variants: ['a'] });
+    const viewedFile = join(target, 'node_modules/.design-explore/viewed-shots');
+    const unviewed = {
+      code: 1,
+      reason: 'SHOT-NOT-VIEWED variant a changes default - variant a: no shot of it was viewed since its last edit',
+    };
+
+    expect(await ready()).toEqual(unviewed);
+
+    recordShotViewed({ target, sketch: sketch(), variant: 'a', shot });
+
+    expect(await ready()).toEqual(unviewed);
+
+    mkdirSync(dirname(shot), { recursive: true });
+    writeFileSync(shot, 'drawn');
+    recordShotViewed({ target, sketch: sketch(), variant: 'a', shot });
+    writeFileSync(shot, 'drawn over');
+
+    expect(await ready()).toEqual({
+      code: 1,
+      reason:
+        'SHOT-NOT-VIEWED variant a changes default - variant a: the shot it was viewed in is gone or was drawn over, so view the shot again',
+    });
+
+    for (const file of readdirSync(viewedFile).filter((name) => name.endsWith('.json')))
+      writeFileSync(join(viewedFile, file), JSON.stringify({ a: variantContentHashOf(sketch(), 'a') }));
+
+    expect(await ready()).toEqual({
+      code: 1,
+      reason:
+        'SHOT-NOT-VIEWED variant a changes default - variant a: its viewed record predates shot hashes, so view the shot again',
+    });
+
+    recordShotViewed({ target, sketch: sketch(), variant: 'a', shot });
+
+    expect(await ready()).toEqual({ code: 0, reason: null });
   });
 
   it('readies a sketch whose variants draw no pixel diff without a viewed shot', async () => {
