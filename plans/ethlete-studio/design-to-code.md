@@ -4087,3 +4087,36 @@ Persistence", then "Tmux Self Drive", because the script types into the builder'
 and the tool was lost. Decided by the doc agent (tool internal, night backlog): the agent-sessions script gets a
 `watchdog` command (one-shot resume after a usage-limit reset, log file, pane list) that the human installs once with
 an allow rule, so no night needs a hand-made timer.
+
+753\. Linux builder (2026-11-10, night, 750 sketch): `sketch note <variant>` overwrites the whole round note, so a note
+for variant b deleted the line of variant a; all three lines went in with one `sketch round pages/system r1 --note`.
+Lesson: the variant argument suggests a per-variant note, but the tool stores one note per round. Decided by the doc
+agent (tool internal, backlog): the round note keeps one line per variant, and `sketch note <variant>` replaces only
+that line; a spec writes notes for a, b and c in sequence and reads all three back.
+
+754\. Linux builder (same sketch): no command prints the number of changed states of a sketch variant; it shows only
+through the `sketch ready` lines. With finding 750 (a sketch with zero changed states reached the human) this count is
+the fact an agent needs first. Decided by the doc agent (tool internal, backlog): `sketch status` (or `sketch check`)
+prints the changed-state count per variant, and the 750 guard uses the same count.
+
+755\. Linux builder (same sketch, scratch copy `/tmp/sk750`): (a) `sketch check` flags the gitignored, regenerated
+`<variant>/tsconfig.json` as FORMAT; (b) with a `node_modules` symlink to the repo, the scratch writes its shots into
+the repo's `node_modules/.design-explore`. Lesson: a scratch copy is the documented safe way to verify a sketch off
+:4402, but the tool treats it like a repo and leaks into the real one. Decided by the doc agent (tool internal,
+backlog): the format check skips gitignored generated files, and the shot cache resolves from the project root, not
+through the `node_modules` real path.
+
+756\. Linux builder (same sketch): the repo's `pages/system` variant `a/tsconfig.json` is not formatted by Prettier.
+Suspect: the generator writes it with `JSON.stringify` and no format pass (not checked). Backlog: the generator
+formats what it writes; a spec runs Prettier `--check` on a freshly created variant.
+
+757\. Linux builder (same sketch): the SDK banner with type error drew teal in Studio, because no
+`data-et-semantic-color="error"` wrapper was around it. Suspect: the banner type sets the icon and the role, but not
+the semantic colour theme. Lesson: a component API that takes "error" and draws the brand colour lets a sketch show a
+wrong look without a warning. Open: the builder checks if `libs/components` banner should set the semantic colour from
+its type (an SDK API question for the human if it changes a default); until then the sketch uses the wrapper.
+
+758\. Linux builder (same sketch): Studio has no `components/banner` part, so variant c imports the SDK mock directly.
+Note only: if the human picks c, the pick adds the part first (ADR 0010 flow), not a direct SDK import in a page.
+
+Measured (same sketch, for 738): `sketch ready` took 29 s, and 1-2 min on a later run (target 10 s).
