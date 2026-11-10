@@ -4001,3 +4001,21 @@ the edit. The next repo serve creates `components-select.edit` (sdk) and `pages-
 terminal never binds 4402 without `DE_PORT=4402`. Cause (measured): the hint names the wrong command, and serve does not
 say it left 4402. Decided by the doc agent (tool internal): serve-state names the command that binds the Studio port,
 and a terminal serve prints "4402 left to Studio, serving on <port>". After 731.
+
+As built (Linux builder, B483 / 729): Cause (measured): 6530d25e7 (09:14 UTC) edited the merged part
+`components/title-bar` (`title-bar.ts`, `shared/chrome.ts`) directly and did not touch `merged.json`, whose entry still
+holds `d8eb542e980c46af` from 810b1f241. A direct edit is detected from the working part hash against `merged.json`,
+never against git, so `design check` opened `components/title-bar@edit` at 09:30 UTC, 16 minutes after the commit, with
+`new` equal to the HEAD folder (only the `@shared` import rewrite differs). Nothing closed it then: a part with an open
+edit sketch leaves `changedOutsideSketchOf`, so the serve slow runner never looks at it, and `autoAcceptOf` keeps it open
+while a picture differs from `old`. Fix: `headHoldsPart` (edit-sketch.ts) asks git whether the part folder is tracked
+and the part folder, the product `shared/` and the asset folders are clean; `settleCommittedEdits`
+(accepted-pictures.ts) records the hash of each direct edit, or each part with an undecided `<part>@edit` sketch (with
+or without `old`), that HEAD holds, and discards that sketch, with no line. `autoAcceptOf` (design check) runs it first,
+and the slow runner runs it on every poll before the settled edits. So a committed direct edit opens no sketch at all; an
+uncommitted one still gets the old/new or new-only sketch (ADR 0253). Bite: accepted-pictures.spec.ts (a committed edit
+with changed pictures records without a sketch; an open old/new sketch and an open new-only sketch are deleted once the
+chip is committed) and slow-run.spec.ts (one poll deletes an open edit sketch HEAD holds and records the hash); the old
+code fails all four. The committed-edit specs for a held refactor, for EDIT-OLD-NOT-FOUND and the 742 slow-run spec now
+put an uncommitted edit on top. Not verified: a real `design check` or serve on the repo (the builder runs it; it should
+delete `components-title-bar.edit` and record the title-bar hash), and Studio's view between a commit and the next poll.

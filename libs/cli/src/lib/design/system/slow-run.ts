@@ -27,7 +27,7 @@ import { implementsUnrenderedProblemsOf } from './rules/implements-unrendered';
 import { UNCOVERED_REGION_RULE, uncoveredRegionProblemsOf } from './rules/uncovered-region';
 import { visibleChangeProblemsOf } from './rules/visible-change';
 import { sdkErrorLineOf } from './sdk-errors';
-import { autoAcceptOf } from './accepted-pictures';
+import { autoAcceptOf, settleCommittedEdits } from './accepted-pictures';
 import { partHashOf } from './sketch/baseline';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
 import {
@@ -357,8 +357,9 @@ const settledEditsOf = (product: ResolvedProduct, seen: Map<string, string>) =>
 
 /**
  * Keeps the slow results of every harness product fresh while the design server runs: each poll reruns the parts whose
- * inputs changed and then held still for one poll, one run at a time. Before them it resolves each direct edit of a
- * merged part that held still for one poll: it holds, or it opens the old/new edit sketch. After a run it writes or drops
+ * inputs changed and then held still for one poll, one run at a time. Before them it settles each direct edit HEAD
+ * already holds, and resolves each other direct edit of a merged part that held still for one poll: it holds, or it
+ * opens the old/new edit sketch. After a run it writes or drops
  * the check record of each run part and its hosts, as `design check` does.
  */
 export const startSlowRunner = (options: {
@@ -383,6 +384,9 @@ export const startSlowRunner = (options: {
 
       for (const [name, entry] of Object.entries(config.products ?? {})) {
         const edited = resolveProduct({ target: options.target, name, config: entry });
+
+        settleCommittedEdits({ target: options.target, product: edited });
+
         const edits = settledEditsOf(edited, seen);
 
         if (edits.length > 0)

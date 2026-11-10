@@ -48,6 +48,29 @@ const blobsAt = ({ root, commit, paths }: { root: string; commit: string; paths:
       return type === 'blob' && oid && path ? [{ oid, path }] : [];
     });
 
+const editPathsOf = (product: ResolvedProduct, resolved: ResolvedPart) => {
+  const root = repoRootOf(product);
+
+  return [dirname(resolved.file), ...productSharedDirsOf(product), ...assetDirsOf(product)].map((dir) =>
+    relative(root, dir),
+  );
+};
+
+/** Whether HEAD holds the part as it is in the working tree: its folder is tracked and git sees no change in it, its product's `shared/` or its assets. */
+export const headHoldsPart = (product: ResolvedProduct, resolved: ResolvedPart) => {
+  const root = repoRootOf(product);
+  const paths = editPathsOf(product, resolved).map((path) => `./${path}`);
+
+  try {
+    return (
+      git(root, ['ls-files', '--', paths[0] ?? '.']) !== '' &&
+      git(root, ['status', '--porcelain', '--untracked-files=all', '--', ...paths]) === ''
+    );
+  } catch {
+    return false;
+  }
+};
+
 const oldDesignOf = (product: ResolvedProduct, resolved: ResolvedPart): OldDesign | EditOldNotFound | string => {
   const part = partKeyOf(resolved);
   const hash = readMerged(product.dir)[part];
@@ -56,10 +79,7 @@ const oldDesignOf = (product: ResolvedProduct, resolved: ResolvedPart): OldDesig
 
   const root = repoRootOf(product);
   const partDir = relative(root, dirname(resolved.file));
-  const paths = [
-    partDir,
-    ...[...productSharedDirsOf(product), ...assetDirsOf(product)].map((dir) => relative(root, dir)),
-  ];
+  const paths = editPathsOf(product, resolved);
   const blobs = new Map<string, Buffer>();
   const blobOf = (oid: string) => {
     const cached =

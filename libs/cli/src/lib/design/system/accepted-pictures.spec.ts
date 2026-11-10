@@ -34,6 +34,11 @@ const checkout = () => {
   return { target, dir: join(design, 'app-a'), chip: join(design, 'app-a/components/chip/chip.ts') };
 };
 
+const commitChip = (target: string, chip: string) => {
+  execFileSync('git', ['add', chip], { cwd: target });
+  execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
+};
+
 const productOf = (target: string) => resolveProduct({ target, name: 'app-a', config: {} });
 
 const designHashOfChip = (target: string) => {
@@ -237,22 +242,22 @@ describe('autoAcceptOf', () => {
       execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
     };
 
-    it('holds a refactor drawn against the part at its merged commit', async () => {
+    it('records an edit HEAD holds without drawing old, a line or a sketch', async () => {
       const { target, dir, chip } = checkout();
-      const { draw, variants } = drawing({ default: 'a1', hover: 'b2' });
+      const { draw, variants, pictures } = drawing({ default: 'a1', hover: 'b2' });
 
       recordMerged({ product: productOf(target), parts: [CHIP] });
       writeFileSync(chip, 'export default definePart({ states: { hover: {}, default: {} } });\n');
       commitAll(target);
+      pictures.now = { default: 'a1', hover: 'c3' };
 
-      expect(await autoAccept(target, draw)).toEqual([
-        `HELD app-a ${CHIP}: changed outside a sketch, every state draws as before`,
-      ]);
-      expect(variants).toContain('old');
+      expect(await autoAccept(target, draw)).toEqual([]);
+      expect(variants).not.toContain('old');
       expect(readMerged(dir)[CHIP]).toBe(partHashOf({ product: productOf(target), dir: dirname(chip) }));
+      expect(existsSync(join(dir, 'sketches'))).toBe(false);
     });
 
-    it('reports a merged hash no commit holds as a problem and opens a sketch with only new', async () => {
+    it('reports a merged hash no commit holds as a problem and opens a sketch with only new for an edit on top', async () => {
       const { target, dir, chip } = checkout();
       const { draw } = drawing({ default: 'a1', hover: 'b2' });
 
@@ -260,6 +265,7 @@ describe('autoAcceptOf', () => {
       recordMerged({ product: productOf(target), parts: [CHIP] });
       writeFileSync(chip, 'export default definePart({ states: { hover: {}, default: {} } });\n');
       commitAll(target);
+      appendFileSync(chip, '// edit on top\n');
 
       const problems: Problem[] = [];
 
@@ -333,6 +339,34 @@ describe('autoAcceptOf', () => {
         `HELD app-a ${CHIP}: changed outside a sketch, every state draws as before`,
       ]);
       expect(existsSync(sketchFileOf(dir))).toBe(false);
+      expect(directEditsOf(productOf(target))).toEqual([]);
+    });
+
+    it('is deleted and its edit recorded once HEAD holds the edit, without a line', async () => {
+      const { target, dir, chip, draw } = await openSketch();
+
+      commitChip(target, chip);
+
+      expect(await autoAccept(target, draw)).toEqual([]);
+      expect(existsSync(join(dir, 'sketches', 'components-chip.edit'))).toBe(false);
+      expect(readMerged(dir)[CHIP]).toBe(partHashOf({ product: productOf(target), dir: dirname(chip) }));
+      expect(directEditsOf(productOf(target))).toEqual([]);
+    });
+
+    it('is deleted with only new once HEAD holds the edit', async () => {
+      const { target, dir, chip } = checkout();
+      const { draw } = drawing({ default: 'a1', hover: 'b2' });
+
+      writeFileSync(chip, 'export default definePart({ states: { default: {} } });\n');
+      recordMerged({ product: productOf(target), parts: [CHIP] });
+      writeFileSync(chip, 'export default definePart({ states: { hover: {}, default: {} } });\n');
+      await autoAcceptOf({ target, config: {}, product: productOf(target), draw, problems: [] });
+      expect(existsSync(join(dir, 'sketches', 'components-chip.edit', 'new'))).toBe(true);
+
+      commitChip(target, chip);
+
+      expect(await autoAcceptOf({ target, config: {}, product: productOf(target), draw, problems: [] })).toEqual([]);
+      expect(existsSync(join(dir, 'sketches', 'components-chip.edit'))).toBe(false);
       expect(directEditsOf(productOf(target))).toEqual([]);
     });
 
@@ -413,6 +447,7 @@ describe('autoAcceptOf', () => {
       rmSync(join(sketchDir, 'old', 'shared'), { recursive: true, force: true });
       writeFileSync(chip, partOf('emptyCanvasOf'));
       commit();
+      appendFileSync(chip, '// edit on top\n');
 
       const problems: Problem[] = [];
 
