@@ -4159,3 +4159,14 @@ names a stopped design server with the server's own text.
 failed 2 of 4 runs at load 18. Suspect: a timing bound that the load breaks (not measured per phase). Lesson: a spec of
 the push gate itself can fail under the load that the gate exists to survive. Backlog: measure the case under the 735
 CPU throttle, then fix the wait at its cause (an event, not a longer timeout).
+
+In progress (Linux builder, 2026-11-10 night, 731): push:suite runs the changed Studio e2e cases under a CPU quota, with
+an own calibration and pass rule.
+
+764\. Linux builder (2026-11-10, night): CI 42907782323 (89aa166b4) red in `ci / Rust host`: `cargo install cargo-audit
+--locked --version 0.22.2` failed with "binary `cargo-audit` already exists in destination". Suspect (not proven by a
+CI run): Swatinem/rust-cache restores `~/.cargo/bin`, while the separate actions/cache key `cargo-audit-Linux-0.22.2`
+misses, so two caches own one binary. Fix cd266da38 adds `--force`. Lesson: a step that installs into a directory
+another cache restores has no single owner. Decided by the doc agent (tool internal, CI is red): the step skips the
+install when `cargo audit --version` already prints 0.22.2 and installs with `--force` otherwise, so a cache hit costs
+no rebuild; the next green run proves the suspect.
