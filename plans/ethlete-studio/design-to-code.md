@@ -4206,3 +4206,9 @@ stays hidden until CI. Why no tool caught it: the local commit gate and the push
 lint, and nothing says so. Tool fix (bug queue, next): `yarn commit` runs eslint on the staged files. Also queued from
 667 (c): (a) the design server shares an in-flight draw of the same key; (b) the design server prunes `shots-*` folders
 of the old path-keyed store, so the cache does not grow without a bound.
+
+Measured (2026-11-10, Mac night, 9e2572e8c, ADR 0240): full `yarn studio:e2e` 131/131 in 410.9 s on a warm shared shot
+store, 31.3 s (7 %) faster than 442.2 s; first case at 50.1 s, quiet tail from 361.2 s; one run, no spread yet. The run
+before it failed 0/131 in 1.4 s: the 673 fix made `dist/libs/cli` stale and `ensureCli` did not rebuild it. This is
+finding 663 (stale dist check before workers) seen again; it is still in the bug queue. 684 is built in 9e2572e8c
+(builder and doc agent skills).
