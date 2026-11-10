@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { checkAdr, checkAdrs, findingErrors, orphanWarnings } from './check-studio-adrs.mjs';
+import { checkAdr, checkAdrs, findingErrors, lostFindingErrors, orphanWarnings } from './check-studio-adrs.mjs';
 import { parseStatusRows } from './studio-status.mjs';
 
 const rows = parseStatusRows(`| ID | Was | Stand |
@@ -94,4 +94,30 @@ test('the pre-commit hook runs the check when STATUS.md or an ADR is staged', ()
   assert.match(hook, /plans\/ethlete-studio\/STATUS\.md/);
   assert.match(hook, /apps\/ethlete-studio\/docs\/adr\/\*\.md/);
   assert.match(hook, /node \.\/tools\/scripts\/check-studio-adrs\.mjs/);
+  assert.match(hook, /^set -e$/m);
+});
+
+test('an archive that lost a finding of its committed version fails', () => {
+  const committed = '1\\. one\n\n2\\. two\n\n3\\. three\n';
+  const errors = lostFindingErrors(
+    [{ name: 'findings-2026-11.md', text: '3\\. three\n\n4\\. four\n' }],
+    () => committed,
+  );
+
+  assert.deepEqual(errors, [
+    'findings-2026-11.md lost findings 1, 2 of its committed version; append with archive-findings.mjs',
+  ]);
+});
+
+test('an appended or new archive passes', () => {
+  const archives = [{ name: 'findings-2026-11.md', text: '1\\. one\n\n2\\. two\n' }];
+
+  assert.deepEqual(
+    lostFindingErrors(archives, () => '1\\. one\n'),
+    [],
+  );
+  assert.deepEqual(
+    lostFindingErrors(archives, () => null),
+    [],
+  );
 });

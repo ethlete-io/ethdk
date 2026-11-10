@@ -91,3 +91,4 @@ The UI builder investigates a tool gap only when it blocks its current UI item (
 - When your context runs high, write a handoff. Big new work goes to a fresh builder
   session.
 - No agent memory. Every lesson becomes a finding with a tool fix, recorded in the plan.
+- Archive findings only with `node tools/scripts/archive-findings.mjs`. It appends to `plans/ethlete-studio/archive/`; never rewrite an archive file by hand.

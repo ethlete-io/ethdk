@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -93,6 +94,31 @@ export const findingErrors = (planText, archives, statusText) => {
   return errors;
 };
 
+export const lostFindingErrors = (archives, committedTextOf) =>
+  archives.flatMap(({ name, text }) => {
+    const committed = committedTextOf(name);
+    if (committed === null) return [];
+    const kept = new Set(splitFindings(text).map(({ number }) => number));
+    const lost = splitFindings(committed)
+      .map(({ number }) => number)
+      .filter((number) => !kept.has(number));
+    return lost.length
+      ? [`${name} lost findings ${lost.join(', ')} of its committed version; append with archive-findings.mjs`]
+      : [];
+  });
+
+const committedArchiveOf = (root) => (name) => {
+  try {
+    return execFileSync('git', ['show', `HEAD:./plans/ethlete-studio/archive/${name}`], {
+      cwd: root,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+  } catch {
+    return null;
+  }
+};
+
 const readArchives = (dir) =>
   existsSync(dir)
     ? readdirSync(dir)
@@ -107,10 +133,11 @@ export const checkAdrs = (root) => {
   const statusText = existsSync(statusFile) ? readFileSync(statusFile, 'utf8') : '';
   const planText = existsSync(planFile) ? readFileSync(planFile, 'utf8') : null;
   const warnings = planText === null ? [] : orphanWarnings(planText, statusText);
+  const archives = readArchives(join(root, 'plans/ethlete-studio/archive'));
   const findings =
     planText === null
       ? []
-      : findingErrors(planText, readArchives(join(root, 'plans/ethlete-studio/archive')), statusText);
+      : [...findingErrors(planText, archives, statusText), ...lostFindingErrors(archives, committedArchiveOf(root))];
   const dir = join(root, 'apps/ethlete-studio/docs/adr');
   const files = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.md')) : [];
   const rows = parseStatusRows(statusText);

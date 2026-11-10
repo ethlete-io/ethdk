@@ -3720,6 +3720,15 @@ loses a finding number that its last committed version had; the doc-agent and bu
 `archive-findings.mjs`. More evidence: f1e5b1fd7 went through although the hook printed "STATUS.md: not
 formatted" from `check-staged-plans.mjs`.
 
+As built (692): Cause proven. In a scratch clone, a staged STATUS row that cites the missing finding 99999 made
+`check-studio-adrs.mjs` print the error and `check-staged-plans.mjs` print "STATUS.md: not formatted", and
+`sh .husky/pre-commit` still exited 0. `.husky/pre-commit` now runs with `set -e`; the same bite exits 1. The check
+also compares each archive file with its `HEAD` version (`lostFindingErrors`) and fails when a finding number is gone;
+bite: cutting finding 281 from `archive/findings-2026-11.md` fails with "findings-2026-11.md lost findings 281". The
+builder and doc-agent skills archive only with `archive-findings.mjs`. Specs: `check-studio-adrs.spec.mjs` (14 pass).
+Not verified: a real `git commit` that the hook stops; the other blocking checks (changeset lint, CSS property lint)
+now stop a commit too, which they did not before.
+
 As built (689, ADR 0245): each lib `typecheck` target runs `tsc -p libs/<lib>/tsconfig.spec.json --noEmit` and then
 the lib check `-p libs/<lib>/tsconfig.lib.json --noEmit`: `tsc` for bracket, cli, agent-rules and timetrack, `ngc` for
 core, query, cdk, components, contentful and query-devtools. Time of the lib check alone (Mac, load about 5, serial,

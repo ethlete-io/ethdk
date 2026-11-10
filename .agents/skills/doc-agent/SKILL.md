@@ -91,6 +91,7 @@ output; the designed Studio is the side product.
   enough to build from.
 
 - No agent memory. Every lesson becomes a finding with a tool fix, recorded in the plan.
+- Archive findings only with `node tools/scripts/archive-findings.mjs`. It appends to `plans/ethlete-studio/archive/`; never rewrite an archive file by hand.
 
 ## Never
 

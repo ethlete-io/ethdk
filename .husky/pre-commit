@@ -1,4 +1,6 @@
 #!/usr/bin/env sh
+# Without -e only the last command decides the exit code, so a failed check above it lets the commit through.
+set -e
 cd "$(git rev-parse --show-toplevel)" || exit 1
 # Holds staged changeset notes to the bar in the `changeset` skill (one to two sentences, 40 words).
 # Only staged files are passed, so a commit is never blocked by an over-long note someone else left
