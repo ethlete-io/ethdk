@@ -6,7 +6,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { checkDesign } from '../check';
 import { DESIGN_DIR, readConfig } from '../design-config';
 import { createDesignServer } from '../serve';
-import { markPartGo } from './part-go';
 import { resolveProduct } from './resolve-product';
 import { recordMerged } from './sketch/merged-parts';
 import { createSketch, decideSketch, rebaseSketch, variantDirOf } from './sketch/sketch';
