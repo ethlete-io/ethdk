@@ -4168,7 +4168,7 @@ CI run): Swatinem/rust-cache restores `~/.cargo/bin`, while the separate actions
 misses, so two caches own one binary. Fix cd266da38 adds `--force`. Lesson: a step that installs into a directory
 another cache restores has no single owner. Decided by the doc agent (tool internal, CI is red): the step skips the
 install when `cargo audit --version` already prints 0.22.2 and installs with `--force` otherwise, so a cache hit costs
-no rebuild; the next green run proves the suspect.
+no rebuild; the next green run proves the suspect. As built: cd266da38 + 59ca46802 (skip on a version match, else `--force`). Cause (measured, run 42912315216): the cargo-audit cache missed, the install step took under 1 s, so the version check found 0.22.2 already in `~/.cargo/bin` from rust-cache; Rust host green.
 
 As built (Linux builder, 731 e2e quota step): `yarn push:suite` has an `e2e-quota` step after `e2e` and before
 `repeat`. It is its own step, not a part of `quota`: it needs the drawing builds and a Studio build, and it runs after
@@ -4204,3 +4204,6 @@ As built (Linux builder, 745): `startCommandOf(base)` (stamp.ts) gives `DE_PORT=
 (`terminalPortLine`, serve.ts) in place of "not started by Studio, so it listens on a free port". Bite: with
 `startCommandOf` back to `et design`, 2 of 4 serve-state cases fail; with the change 4/4, the `terminalPortLine` case
 passes, cli typecheck passes. Not verified: a real terminal `et design` run that shows the new line.
+
+In progress (Linux builder, 2026-11-10 night, 736+737): shot resolves `<part>@<name>`, and the viewed record holds the
+hash of the drawn shot file.
