@@ -4149,3 +4149,12 @@ unresolved path although the product writes the real one. Fix (spec only): `with
 expectation uses `realpathSync`. Verified on macOS: both failed before, 9/9 after; push suite ok. Not verified on
 Linux (reasoned: `/tmp` is no symlink). Open, tool backlog: `realOf()` does not resolve a missing path under a
 symlinked parent; fix: realpath the nearest existing ancestor.
+
+716\. Builder (2026-11-10, day shift, 714 follow-up c4c0939ee): the first push suite blocked on `query:typecheck`; the
+`libs/query` ngc lib config includes `src/scenarios`, and the new harness used `process` with no Node types. The 714
+subagent ran only `tsc -p tsconfig.spec.json`, because its brief named only that. Cause: the agent memory
+"vitest-does-not-typecheck" told every brief to run the spec tsconfig, not the project's `typecheck` target. Fix: the
+harness reads the env through `globalThis`; the doc agent rewrote that memory to name `nx run <p>:typecheck`. Tool fix
+(builder default): the builder's slice brief template names the `typecheck` target of each touched project; the
+`builder-agent` skill already says so for the slice itself. As built 714 CI: `query-clock-edges` (18d325612), matrix
+fraction 0 and 999 in parallel to `test`, in the `verified` needs; the two real CI runs are still owed.
