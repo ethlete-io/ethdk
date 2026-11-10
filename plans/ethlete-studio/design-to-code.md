@@ -4066,3 +4066,12 @@ spec file can exist, look green in review and never run. Tool fix (doc agent dec
 runs): (1) give timetrack-app a `test` target that resolves `@ethlete/*` from source and make its specs pass or name
 each that cannot; (2) extend `check-vitest-workers.mjs` (or a sibling check in `yarn test:tools`) so a vitest config
 without a project `test` target fails, with a bite. Queue: after 672.
+
+As built (finding 686): Cause: the config resolved `@ethlete/*` through `node_modules` package exports; with
+`resolve.tsconfigPaths` and `root: import.meta.dirname` (in place of the single `@ethlete/timetrack` alias) all 18 specs
+(83 tests) pass, also 4/4 each under `spec:stress --runs 4 --load 2`. timetrack-app got a `test` target (`vitest run`, as
+in ethlete-studio), which CI's `nx run-many -t test` picks up. `check-vitest-workers.mjs` now also fails a config whose
+project has no `test` target in project.json and is not inferred by `@nx/vitest` in nx.json (browser-mode configs exempt).
+Bite: without the target the check exits 1 naming the config. Not verified: the CI run itself. Also found: the d906c4796
+`workers.mts` import fails `tsc` (TS5097) in every spec tsconfig that includes its vitest config; timetrack-app's is fixed
+with `allowImportingTsExtensions`; `tsc` on the spec tsconfigs of `timetrack` and `ethlete-studio` still fails.

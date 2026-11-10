@@ -75,6 +75,14 @@
         "command": "tsc -p apps/timetrack/tsconfig.app.json --noEmit && tsc -p apps/timetrack/tsconfig.spec.json --noEmit"
       }
     },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["default", "^production"],
+      "options": {
+        "command": "vitest run --config apps/timetrack/vitest.config.mts"
+      }
+    },
     "stage-reporter": {
       "executor": "nx:run-commands",
       "dependsOn": ["timetrack-vscode:package"],
