@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B469
+open: B480
 decided: 2026-11-10
 source: grill session 2026-11-10 (Mac night shift)
 ---

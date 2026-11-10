@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B479
+built: df49f570e
 decided: 2026-11-10
 source: grill session 2026-11-10 (day shift), after the B469 Mac spike
 ---

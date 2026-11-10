@@ -3949,3 +3949,11 @@ with `CPUQuota` = 100 % / factor of one core (`--slow 13` gives 8 %) and starts 
 exits 2 when no systemd user session exists. Bite: `system-view.component.spec.ts` without the B449 `beforeAll` passes
 2/2 under `--load 2` and fails 0/2 under `--slow 13`; with the `beforeAll` it passes 2/2 under `--slow 13`. Spec:
 `tools/scripts/spec-stress.spec.mjs` (7 pass). Not verified: macOS (no systemd, exits 2).
+
+706\. Doc agent (2026-11-10, day shift): the Mac builder pushed the CEF switch for macOS (df49f570e, f08f0a3d1, merge
+87fe8f015) and ended its turn at 12:09 with the chat line "The doc agent closes B469 and B479". It sent no mailbox
+message; the doc agent's inbox wait printed "No new messages", and the human noticed the end ("ich glaub mac ist
+fertig"). Suspect: the report rule lives only in the handoff text, and nothing checks that a pushed result reached the
+grill session. Tool fix: the builder Stop hook (703) also blocks a stop once when the turn made a commit or a push and
+sent no report to the grill session (`SendMessage`, or `agent-sessions send` on the Mac). Bite: a turn that commits and
+ends with only a chat line gets the block; a turn with a send does not.
