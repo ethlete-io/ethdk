@@ -11,8 +11,8 @@ round; one short German line per event. Builder: ethlete-sdk-22 in tmux `claude@
   the worktree `/tmp/b466-push` at 11de10881 (origin/next + c11cc03ac); its push:suite was blocked by B471, a paint
   window e2e case. The push needs the human (question 1 below).
 - Findings tonight: 654-685 in `plans/ethlete-studio/design-to-code.md`. Findings up to 310 are archived in
-  `archive/findings-2026-11.md`; the file budget is 440k chars, STATUS.md 230k: archive the next range (311 on) when a
-  commit hits the budget, and update the "Archived: Findings 263-310" line.
+  `archive/findings-2026-11.md`; the file budget is 440k chars, STATUS.md 230k: archive the next range (340 on) when a
+  commit hits the budget, and update the "Archived: Findings 263-339" line.
 - STATUS rows tonight: B464 done, B466 open, B467 done (Spotlight off), B468 fixed locally (220e4d6b5), B469 day-shift
   CEF spike (ADR 0242), B470 open (first-load aborts, detail now printed), B471 open (blocks B466 push), B472 open
   (683, no proven cause; the warm-up 995491fb1 was reverted in c009a879e).
