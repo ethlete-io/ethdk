@@ -3987,3 +3987,17 @@ the ready `<part>@edit` sketch with only `new` and answers the problem with it; 
 without `old`. Bite: `slow-run.spec.ts` polls four times over such a part and expects one `EDIT-OLD-NOT-FOUND` line and a
 ready sketch with only `new`; the old code logs it 3 times and opens none. Not verified: a real serve on the repo, the
 Studio view of a new-only sketch, and the merge after picking `new`.
+
+As built 742 (Linux builder, 6ada387e2): Cause, measured: ADR 0253 was never built. `openEditSketch` returned
+EDIT-OLD-NOT-FOUND and opened no sketch, so the part stayed "changed outside a sketch", and the serve slow runner (polls
+every 15 s) ran `autoAcceptOf` on it again each poll: 104 polls x 2 parts = 208 lines. Correction: the loop did not
+block the port; serve listened on `localhost:39489`, because a terminal serve without `DE_PORT` leaves 4402 to Studio.
+Fix: on EDIT-OLD-NOT-FOUND a ready `<part>@edit` sketch with only `new` is created once; `autoAcceptOf` skips an open
+edit sketch without `old`. Bite: `slow-run.spec.ts` polls 4 times; old code logs 3 times, new code once with a ready
+`['new']` sketch. Not verified: a real serve on the repo, how Studio shows a new-only sketch, that merging `new` records
+the edit. The next repo serve creates `components-select.edit` (sdk) and `pages-start.edit` (studio).
+
+745\. Linux builder (2026-11-10, 742): `et design serve-state` says "Start it with `et design`", but `et design` from a
+terminal never binds 4402 without `DE_PORT=4402`. Cause (measured): the hint names the wrong command, and serve does not
+say it left 4402. Decided by the doc agent (tool internal): serve-state names the command that binds the Studio port,
+and a terminal serve prints "4402 left to Studio, serving on <port>". After 731.
