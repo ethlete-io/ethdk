@@ -4141,6 +4141,10 @@ waits for every shot of the page. Rejected: warming every target of the run on e
 116 to 119 s for three targets. Not verified: a cold goto fail, a full `yarn studio:e2e`, the first pages of the other
 targets (System, Flow, Wide), CI.
 
+Reverted (grill decision, 540dc26db): 995491fb1 fixed no reproduced fail and cost a net 10 to 16 s per worker (ADR
+0230, ADR 0240). It had no diagnostics that stand alone: the `warmUp` phase timing was there before it. The measurement
+stays: each worker draws the same ~52 shots cold, which is 667 (c), one shot store for all workers.
+
 684\. Doc agent (2026-11-10, Mac night, 683): I recorded "e2e cases start while the build runs" as the cause of 683
 from the builder's first report, before any proof, and queued a fix for it; the bite then showed the rule already held.
 A fix round went into a cause nobody had proven. Why no tool caught it: the findings format has no field that says
