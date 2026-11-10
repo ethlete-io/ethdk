@@ -7,6 +7,7 @@ import { callsRootOf, DEFAULT_PORT, DesignConfig, portOf, readConfig } from './d
 import { buildStampOf, serverProblemOf } from './stamp';
 import { hooksProblemOf } from './hooks-problem';
 import { holdStatus, writeStatus } from './status';
+import { changedLintFilesOf, lintGateLinesOf } from './design-lint';
 import { checkRules, checkSystemRendered } from './system/check-system';
 import { liveUncoveredOf, uncoveredFindingLineOf } from './system/live-uncovered';
 import { appCanonicalClassesOf, fixAppCanonicalClassesOf, fixCanonicalClassesOf } from './system/rules/canonical-class';
@@ -378,6 +379,41 @@ export const checkDesign = async (options: {
   }
 };
 
+const lintedProducts = (options: { target: string; config: DesignConfig; products: string[]; part?: string }) => {
+  const { target, config, products, part } = options;
+  let code = 0;
+
+  for (const name of products) {
+    const entry = config.products?.[name];
+
+    if (!entry) continue;
+
+    const productDir = resolveProduct({ target, name, config: entry }).dir;
+    const lines = lintGateLinesOf({
+      target,
+      productDir,
+      files: changedLintFilesOf({ target, productDir, part }),
+      shrink: true,
+    });
+
+    if (lines.length === 0) continue;
+
+    for (const line of lines) console.error(line);
+
+    console.error(`${name} adds lint warnings - a design part or sketch variant adds none, fix them`);
+    code = 1;
+  }
+
+  return code;
+};
+
+const renderedAndLinted = async (options: Parameters<typeof checkSystemRendered>[0]) => {
+  const code = await checkSystemRendered(options);
+  const lint = lintedProducts(options);
+
+  return code === 0 ? lint : code;
+};
+
 const fixAppClasses = (options: { target: string; config: DesignConfig; products: string[] }) => {
   const { target, config, products } = options;
   let fixed = 0;
@@ -570,7 +606,7 @@ const checkWithStatus = async (options: {
     if (rules) return checkRules({ target, config: readConfig(target) ?? {}, products, base, invocation });
     if (live) return checkLive({ target, config: readConfig(target) ?? {}, products });
 
-    return checkSystemRendered({ target, config: readConfig(target) ?? {}, products, part, invocation, warm });
+    return renderedAndLinted({ target, config: readConfig(target) ?? {}, products, part, invocation, warm });
   }
 
   if (part) {
@@ -587,13 +623,13 @@ const checkWithStatus = async (options: {
       return 1;
     }
 
-    return checkSystemRendered({ target, config, products: holding, part, invocation, warm });
+    return renderedAndLinted({ target, config, products: holding, part, invocation, warm });
   }
 
   const config = argv.length === 0 ? readConfig(target) : null;
 
   if (config?.products && Object.keys(config.products).length > 0)
-    return checkSystemRendered({ target, config, products: Object.keys(config.products), invocation, warm });
+    return renderedAndLinted({ target, config, products: Object.keys(config.products), invocation, warm });
 
   const slug = flags['--call']?.[0];
   let failure = '';

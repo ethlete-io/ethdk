@@ -93,6 +93,7 @@ import {
   SKETCH_FILE,
 } from './system/sketch/sketch';
 import { spawnPlain } from '../plain-output';
+import { lintGateLinesOf, variantLintFilesOf } from './design-lint';
 
 export const SKETCH_USAGE = [
   'sketch new <layer>/<name> [<layer>/<name>…] --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--name <sketch name>] [--round <title>] [--note <text>] [--variant-note <variant>=<text>]… [--override | --into-base] [--ready] [--product <name>]',
@@ -815,6 +816,20 @@ const readied = (context: Context) => {
   const refused = timedPhase('gates', () => readyRefusalOf(context, current));
 
   if (refused !== null) return refused;
+
+  const unlinted = timedPhase('lint', () =>
+    lintGateLinesOf({
+      target: context.target,
+      productDir: current.product.dir,
+      files: variantLintFilesOf(
+        reopened,
+        reopened.variants.filter((variant) => !rejectionOf(reopened, variant)),
+      ),
+    }),
+  );
+
+  if (unlinted.length > 0)
+    return fail(`${unlinted.join('\n')}\n${reopened.target} adds lint warnings - fix them before ready`);
 
   const unlock = lockedReady(reopened);
 

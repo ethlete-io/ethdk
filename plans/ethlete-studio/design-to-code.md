@@ -4184,3 +4184,24 @@ stale against HEAD and the CLI refused to start in a scratch copy until rebuilt.
 `sketch-view.component.spec.ts` "draws the current page and the variants…" timed out at 5986 ms, and
 `open-points-answer.spec.ts` "answers the open points of every part…" at 30042 ms. Suspect: load-sensitive timeouts;
 the builder watches 42826707435 and 42830064915 for a recurrence. If they recur, red CI goes first.
+
+As built (708, builder subagent). Cause (measured): every lint target of the 23 projects with one runs `eslint .` in
+its own root (`nx show project <p>`), none of them under `.ethlete`, and the pre-commit hook lints only staged
+`libs/*`, `apps/*` and `tools/*` files. The root `eslint.config.mjs` does reach the folder (the editor warning):
+`npx eslint '.ethlete/design/**/*.ts'` finds 38 findings, 5 of them in sdk parts (button, breadcrumb, tabs, timeline,
+toolbar), the rest in calls. Nothing in the design tool ran ESLint on a part or a variant. Fix: `design-lint.ts` runs
+the checkout's ESLint (`--format json`, one spawn) on the changed files only. `design check` (product, `--part` and
+whole run) lints the part and variant files that differ from HEAD or are untracked, shrinks the product's
+`lint-baseline.json` to what fires now and fails on a finding over it; `sketch ready` lints the live variants and the
+sketch `shared/` folder before rendering; `mergeSketch` refuses the picked variant with a new finding (CLI and Studio
+merge). The baseline counts findings per part file and rule, a variant file counts as its part file, and an entry
+added or grown after the file's first commit fails (`addedBaselineNamesOf`, as the rule baseline). Seeded with the 4
+old sdk `!` (breadcrumb, tabs, timeline, toolbar). `button.ts:30` uses `?? fail('SDK_ICONS has no et-plus')` (a direct
+edit of a merged part: it shows as changed outside a sketch until the human approves it). The sketch
+`components-button.off-centre` is in no checkout here (not committed, not on disk), so nothing was merged or deleted.
+Bite (worktree at HEAD + the change, cli built there, `sketch new components/button@off-centre --variants a,b,c`):
+variant a with the `!` -> `sketch ready` exit 1, `LINT ...a/components/button/button.ts:34:25
+@typescript-eslint/no-non-null-assertion` and "adds lint warnings - fix them before ready"; with `?? fail(...)` -> no
+LINT line, ready passes the gate and goes on to render (then refuses "draws variants alike", the untouched copies).
+Specs: `design-lint.spec.ts` (5 cases); the merge case fails with the merge gate disabled. Not verified: `design check`
+against the real sdk product end to end, and a Studio merge in the app.

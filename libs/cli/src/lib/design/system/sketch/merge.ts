@@ -13,6 +13,7 @@ import {
 } from 'fs';
 import { dirname, relative, resolve } from 'path';
 import { DESIGN_DIR, DesignConfig, readConfig } from '../../design-config';
+import { lintGateLinesOf, variantLintFilesOf } from '../../design-lint';
 import { checkSystem, ruleLinesOf } from '../check-system';
 import { addressSketchComments, resolveSketchEndComments } from '../comments/comment';
 import { ASSETS_FOLDER, filesBelow } from '../assets';
@@ -427,6 +428,14 @@ const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal 
   if (typeof pick === 'string') return pick;
 
   const { variant } = pick;
+  const unlinted = lintGateLinesOf({ target, productDir: product.dir, files: variantLintFilesOf(sketch, [variant]) });
+
+  if (unlinted.length > 0)
+    return {
+      reason: `${unlinted.join('\n')}\n${sketch.target} variant ${variant} adds lint warnings - fix them before a merge`,
+      findings: unlinted,
+    };
+
   const decision = { variant, decidedBy: options.decidedBy ?? 'user', at: pick.at };
 
   const copy = cleanCopyOf({ target, cloned: clonedDirsOf({ target, product }) });
