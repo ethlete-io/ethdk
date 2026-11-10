@@ -36,6 +36,18 @@ until they say they are back.
   hides 1.5 s after lift; toggletip icon-button example). The Linux builder pushes it. Tell the human on return: the
   issue comment and close are theirs.
 
+## Since the last restart (2026-11-10 afternoon)
+
+- ADR 0254 (no harness = never build-ready; studio-lab stays blocked). Findings 717-721 recorded; 8 old findings archived.
+- B249: S4a (go/accept removed, apiLevel 8) and 720 fix 15746455b done; Linux builder next: push, real-config "Sketch
+  öffnen" re-check, step 4 data migration. Step 3 (go.json rule in git-safety.py) and finding 721 (merge exception in
+  git-safety.py, decided A by the human) are blocked: auto mode denies the builder a self-modification. The human must
+  approve it in the builder session (tmux claude-3); the doc agent never makes it.
+- Mac builder: 708 committed 4ae5bc51c (report not yet in), now 709 app-icon sketch, then B482. Mac mailbox wait must be
+  restarted after a restart (command above).
+- Issue #3172 tooltip touch: built 181eb140d, pushed; the human comments/closes the issue.
+- New idea of the human: `plans/windows-test-pc.md` (the `rack` PC, for later).
+
 ## Open questions for the human
 
-None. The human is back. Finding 721 hook change decided (A), queued to the Linux builder after 720.
+None open. The human is present (not afk).
