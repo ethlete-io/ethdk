@@ -30,9 +30,6 @@ until they say they are back.
 - Open: pages/start EDIT-OLD-NOT-FOUND — the builder says whether an ADR covers it (then agent pick) or it waits for
   the human. 714 tool fix and 710 sweep need a slow factor measured from CI, not 13.
 
-## Open questions for the human (collected while afk)
+## Open questions for the human
 
-- studio-lab has no `harness` in its config. After B249 (missing harness = definite blocker, decided by the doc agent
-  from Tom's B249 definition) every studio-lab part reads "Nicht baubereit (Kein Harness)". Question: does
-  studio-lab get a harness, or does it stay blocked on purpose? Recommendation: stays blocked; it is a lab product
-  with no app to build against. Not blocking the builder.
+None. The human is back (not afk). studio-lab harness answered: ADR 0254.
