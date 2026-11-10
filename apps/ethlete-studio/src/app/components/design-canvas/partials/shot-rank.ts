@@ -1,4 +1,4 @@
-import { Directive, ElementRef, effect, inject, input } from '@angular/core';
+import { Directive, ElementRef, InjectionToken, Signal, computed, effect, inject, input } from '@angular/core';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import { ShownShots, showShots } from '../../../../host/design';
 
@@ -87,6 +87,12 @@ export class ShotBoard {
   }
 }
 
+/**
+ * The fetch priority of the shot pictures below its provider: `high` asks for every picture at once, off-screen ones too,
+ * where the browser would otherwise hold them back.
+ */
+export const SHOT_FETCH_PRIORITY = new InjectionToken<Signal<'high' | null>>('SHOT_FETCH_PRIORITY');
+
 const SHOT_BOARD_DEF = /* @__PURE__ */ defineRootProvider(() => new ShotBoard());
 
 export const injectShotBoard = /* @__PURE__ */ toInjectFn(SHOT_BOARD_DEF);
@@ -95,13 +101,19 @@ export const injectShotBoard = /* @__PURE__ */ toInjectFn(SHOT_BOARD_DEF);
  * Puts the shot this picture loads on the `ShotBoard` while it is mounted, `shotRankActive` for the frame worked in,
  * and holds the picture once loaded.
  */
-@Directive({ selector: 'img[ethleteShotRank]', host: { '(load)': 'loaded()' } })
+@Directive({
+  selector: 'img[ethleteShotRank]',
+  host: { '[attr.fetchpriority]': 'fetchPriority()', '(load)': 'loaded()' },
+})
 export class ShotRankDirective {
   private board = injectShotBoard();
   private image = inject<ElementRef<HTMLImageElement>>(ElementRef);
+  private priority = inject(SHOT_FETCH_PRIORITY, { optional: true });
 
   public ethleteShotRank = input.required<string>();
+
   public shotRankActive = input(false);
+  protected fetchPriority = computed(() => this.priority?.() ?? null);
 
   constructor() {
     effect((onCleanup) => onCleanup(this.board.show(this.ethleteShotRank(), this.shotRankActive())));

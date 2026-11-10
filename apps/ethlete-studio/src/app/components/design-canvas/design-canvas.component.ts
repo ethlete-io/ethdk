@@ -62,6 +62,7 @@ import {
 import { keptLiveIds, liveIdsOf, sameIds } from './live-frames';
 import { leavesWindow } from './pointer-focus';
 import { CanvasFrameComponent } from './partials/canvas-frame.component';
+import { SHOT_FETCH_PRIORITY } from './partials/shot-rank';
 import { CommentPinComponent } from '../../design-parts/comment-pin/comment-pin.component';
 import { ZoomChipComponent } from '../../design-parts/zoom-chip/zoom-chip.component';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
@@ -209,6 +210,16 @@ const isInteractive = (target: EventTarget | null) => {
   templateUrl: './design-canvas.component.html',
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS, CanvasFrameComponent, CommentPinComponent, ZoomChipComponent],
+  providers: [
+    {
+      provide: SHOT_FETCH_PRIORITY,
+      useFactory: () => {
+        const canvas = inject(DesignCanvasComponent);
+
+        return canvas.shotPriority;
+      },
+    },
+  ],
   hostDirectives: [FocusRingDirective],
   host: {
     class:
@@ -309,8 +320,19 @@ export class DesignCanvasComponent {
 
   /** Frames the page projects into the world instead of `frames`, each marked with `ethleteCanvasFrame`. */
   private projected = contentChildren(CanvasFrameDirective, { descendants: true });
+
   private shellInsetProbe = viewChild.required<ElementRef<HTMLElement>>('shellInsetProbe');
+
   private world = viewChild.required<ElementRef<HTMLElement>>('world');
+  private keyShown = linkedSignal<string | null, { seen: boolean; switched: boolean }>({
+    source: this.cameraKey,
+    computation: (key, previous) => ({
+      seen: key !== null || !!previous?.value.seen,
+      switched: key !== null && !!previous?.value.seen,
+    }),
+  });
+  /** `high` after a switch to another key, so the pictures of the frames switched to all load at once; the first view keeps the browser's own order. */
+  public shotPriority = computed(() => (this.keyShown().switched ? 'high' : null));
 
   public projectedRects = signal<Rect[]>([], {
     equal: (a, b) =>

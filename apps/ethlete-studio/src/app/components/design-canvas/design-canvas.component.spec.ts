@@ -76,6 +76,30 @@ describe('DesignCanvasComponent', () => {
     button.remove();
   });
 
+  it('asks for the pictures of a switched-to view at high priority, and leaves the first view to the browser', async () => {
+    const shotFrame = (part: string): CanvasFrame => ({
+      id: part,
+      src: 'about:blank',
+      label: part,
+      width: 390,
+      height: 600,
+      screenshot: `http://localhost/__design/shot?part=${part}&priority=low`,
+    });
+    const fixture = await render([shotFrame('system')]);
+    const priorities = () =>
+      [...(fixture.nativeElement as HTMLElement).querySelectorAll('img[src*="/__design/shot?"]')].map((img) =>
+        img.getAttribute('fetchpriority'),
+      );
+
+    expect(priorities()).toEqual([null]);
+
+    fixture.componentRef.setInput('frames', [shotFrame('icons')]);
+    fixture.componentRef.setInput('cameraKey', 'acme foundations/icons');
+    await fixture.whenStable();
+
+    expect(priorities()).toEqual(['high']);
+  });
+
   it('draws no row label beside a frame row', async () => {
     const fixture = await render([
       { id: 'default 640', src: 'about:blank', label: 'button', row: 'default', width: 640 },
