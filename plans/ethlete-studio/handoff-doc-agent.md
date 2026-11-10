@@ -34,3 +34,9 @@ round; one short German line per event. Builder: ethlete-sdk-22 in tmux `claude@
    the full local range waits for green e2e.
 2. The iframe perf figures (if the builder has them): "only visible frames are live" as a day-shift feature?
    Recommendation depends on the figures.
+3. Type gate for a held push (findings 687, 688): two slices tonight went in red on types and nothing showed it; no
+   local gate runs a typecheck (ADR 0038: CI only), and ADR 0216's draft-PR push per slice is not built and did not run
+   at night. Options: (a) `push:suite` runs lint and typecheck for the touched projects (the lint step is in since
+   cef57a3d0, about 11 s per project, decided by the doc agent without ADR 0038); (b) the builder pushes each slice to
+   its own branch with a draft PR, also at night, and `push:suite` drops the lint step; (c) both. Recommendation: (a),
+   because it costs seconds per push, needs no network write at night, and finds the error before the push, not after.
