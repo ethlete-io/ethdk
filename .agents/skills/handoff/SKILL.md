@@ -197,6 +197,9 @@ before. Then run, with the slug of the file you saved:
 node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs restart <name> '/handoff resume <slug> [<text after the slug>]'
 ```
 
+Add `--process` after `restart` when the session changed a plugin, a settings file, an MCP server or `PATH`.
+A plain restart keeps the old process, so the change reaches only a new one.
+
 If the user wrote text after the slug of the save command, append it to the prompt word for word.
 Escape each `'` in it as `'\''`. The restart drops anything you leave out, and the fresh session has
 no other way to see it.

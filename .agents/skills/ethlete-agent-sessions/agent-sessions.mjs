@@ -39,6 +39,7 @@ const RESTART_POLL_MS = 2000;
 const RESTART_WAIT_MS = Number(process.env.AGENT_RESTART_WAIT_MS ?? 30 * 60 * 1000);
 const RESTART_DRAFT_NOTICE_MS = Number(process.env.AGENT_RESTART_DRAFT_NOTICE_MS ?? 2 * 60 * 1000);
 const RESTART_CLEAR_WAIT_MS = Number(process.env.AGENT_RESTART_CLEAR_WAIT_MS ?? 60 * 1000);
+const RESTART_EXIT_WAIT_MS = Number(process.env.AGENT_RESTART_EXIT_WAIT_MS ?? 30 * 1000);
 const repoSlug = basename(root).replace(/[.:]/g, '-');
 const sessionFor = (agent) => `${agent}@${repoSlug}`;
 const DISPATCH_SESSION = process.env.AGENT_MAILBOX_DISPATCH_SESSION ?? `mailbox-dispatch@${repoSlug}`;
@@ -64,6 +65,7 @@ const now = takeFlag(args, '--now', false);
 const dryRun = takeFlag(args, '--dry-run', false);
 const role = takeFlag(args, '--role', true);
 const notify = takeFlag(args, '--notify', true);
+const newProcess = takeFlag(args, '--process', false);
 const [command, sender, ...words] = args;
 
 const help = `Shared agent mailbox: ${mailbox}
@@ -83,9 +85,10 @@ Run:     node ${script} run <name> <command...> [--role builder] [--dry-run]
 Install: node ${script} shell-install [<agent>...] [--file <path>] [--remove] [--dry-run]
                                                       (write the shell functions into ~/.zshrc or ~/.bashrc)
 Shell:   node ${script} shell-init [<agent>...]       (print shell functions that wrap each agent with run; default: claude codex)
-Restart: node ${script} restart <name> [--after <seconds>] [--notify <agent,...>] <prompt...>
+Restart: node ${script} restart <name> [--after <seconds>] [--notify <agent,...>] [--process] <prompt...>
                                                       (type the clear command and then the prompt into the tmux session of <name>;
-                                                       a long wait on a draft and a give-up go to <name> and each --notify agent)
+                                                       a long wait on a draft and a give-up go to <name> and each --notify agent;
+                                                       --process ends the agent and starts it again in the same pane with the prompt)
 Down:    node ${script} down [<name>...]              (stop dispatch; stop the named sessions too)
 Dispatch: node ${script} dispatch                      (wake the tmux session named <agent> for each message sent --to <agent>)
 
@@ -106,6 +109,12 @@ const withRole = (words) =>
   role === 'builder' && basename(words[0]) === 'claude' ? [...words, '--append-system-prompt', BUILDER_PROMPT] : words;
 const sessionExists = (name) => tmux('has-session', '-t', `=${name}`).status === 0;
 const ROLE_OPTION = '@ethlete_role';
+const COMMAND_OPTION = '@ethlete_command';
+const agentCommandOf = (session) =>
+  tmux('show-options', '-v', '-t', `=${session}:`, COMMAND_OPTION).stdout.trim() ||
+  tmux('display-message', '-p', '-t', `=${session}:`, '#{pane_start_command}')
+    .stdout.trim()
+    .replace(/^"(.*)"$/, '$1');
 const roleOf = (session) => tmux('show-options', '-v', '-t', `=${session}:`, ROLE_OPTION).stdout.trim() || null;
 const arePaired = (a, b) => (roleOf(a) === 'builder') !== (roleOf(b) === 'builder');
 const ONE_SHOT_FLAGS = new Set(['-p', '--print', '-v', '--version', '-h', '--help']);
@@ -366,6 +375,7 @@ if (command === 'send' && sender) {
   if (process.env.TMUX) {
     if (!sessionExists(session)) {
       tmux('new-session', '-d', '-s', session, '-c', process.cwd(), shellCommand);
+      tmux('set-option', '-t', `=${session}:`, COMMAND_OPTION, shellCommand);
       if (role) tmux('set-option', '-t', `=${session}:`, ROLE_OPTION, role);
     }
     process.exitCode = spawnSync('tmux', ['switch-client', '-t', `=${session}`], { stdio: 'inherit' }).status ?? 1;
@@ -373,8 +383,10 @@ if (command === 'send' && sender) {
     const created = sessionExists(session)
       ? []
       : ['new-session', '-d', '-s', session, '-c', process.cwd(), shellCommand];
-    if (created.length && tmux(...created).status === 0 && role)
-      tmux('set-option', '-t', `=${session}:`, ROLE_OPTION, role);
+    if (created.length && tmux(...created).status === 0) {
+      tmux('set-option', '-t', `=${session}:`, COMMAND_OPTION, shellCommand);
+      if (role) tmux('set-option', '-t', `=${session}:`, ROLE_OPTION, role);
+    }
     process.exitCode = spawnSync('tmux', ['attach-session', '-t', `=${session}`], { stdio: 'inherit' }).status ?? 1;
   }
 } else if (command === 'shell-init' || command === 'shell-install') {
@@ -449,6 +461,22 @@ if (command === 'send' && sender) {
         `restart of ${session} gave up, the focus did not leave the agent panel after ${PANEL_UP_LIMIT} Up`,
       );
       process.exitCode = 1;
+    } else if (newProcess) {
+      const pane = `=${session}:`;
+      const base = agentCommandOf(session);
+      tmux('set-option', '-p', '-t', pane, 'remain-on-exit', 'on');
+      type('-l', sender.startsWith('codex') ? '/quit' : '/exit');
+      sleep(ENTER_DELAY_MS);
+      type('Enter');
+      const end = Date.now() + RESTART_EXIT_WAIT_MS;
+      const dead = () => tmux('display-message', '-p', '-t', pane, '#{pane_dead}').stdout.trim() === '1';
+      while (!dead() && Date.now() < end) sleep(RESTART_POLL_MS / 4);
+      if (!dead()) restartLog(`${session} did not exit ${RESTART_EXIT_WAIT_MS / 1000}s after the exit command, killed`);
+      const shell = process.env.SHELL || 'sh';
+      tmux('respawn-pane', '-k', '-t', pane, '-c', root, shell, '-lic', `${base} ${quote(words.join(' '))}`);
+      tmux('set-option', '-p', '-t', pane, 'remain-on-exit', 'off');
+      tmux('set-option', '-t', pane, COMMAND_OPTION, base);
+      restartLog(`${session} started a new process: ${base}`);
     } else {
       type('-l', sender.startsWith('codex') ? '/new' : '/clear');
       sleep(ENTER_DELAY_MS);
@@ -477,12 +505,17 @@ if (command === 'send' && sender) {
     if (own && own !== session) restartLog(`peer restart: ${own} restarted ${session}`);
     const delay = Number(afterSeconds ?? RESTART_AFTER_SECONDS);
     const forward = notify ? ['--notify', notify] : [];
-    spawn(process.execPath, [script, 'restart', sender, '--now', '--after', String(delay), ...forward, ...words], {
-      detached: true,
-      stdio: 'ignore',
-    }).unref();
+    const mode = newProcess ? ['--process'] : [];
+    spawn(
+      process.execPath,
+      [script, 'restart', sender, '--now', '--after', String(delay), ...forward, ...mode, ...words],
+      {
+        detached: true,
+        stdio: 'ignore',
+      },
+    ).unref();
     process.stdout.write(
-      `Restarting ${session} once its turn ended and its prompt is empty, ${delay} seconds at the earliest. End your turn now.\n`,
+      `${newProcess ? 'Starting a new process in' : 'Restarting'} ${session} once its turn ended and its prompt is empty, ${delay} seconds at the earliest. End your turn now.\n`,
     );
   }
 } else if (command === 'down') {

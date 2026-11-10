@@ -305,6 +305,40 @@ describe('agent-sessions', () => {
   );
 
   it.skipIf(!hasTmux)(
+    'ends the agent and starts its command again with the prompt for restart --process',
+    async () => {
+      const agent = `claude-process-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const exited = join(dir, 'exited.log');
+      const started = join(dir, 'started.log');
+      const fakeAgent = join(dir, 'fake-agent.sh');
+      writeFileSync(fakeAgent, `printf '%s\\n' "$*" > ${started}; exec cat\n`);
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, `read line; echo "$line" > ${exited}`]);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', `sh ${fakeAgent}`]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', '/handoff', 'resume', 'slug'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+        });
+
+        expect(readFileSync(exited, 'utf8')).toBe('/exit\n');
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toBe('/handoff resume slug\n');
+        expect(
+          spawnSync('tmux', ['display-message', '-p', '-t', `=${scoped}:`, '#{pane_dead}'], { encoding: 'utf8' })
+            .stdout,
+        ).toBe('0\n');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
     'types the prompt when only the IDE context chip sits on the prompt line',
     async () => {
       const agent = `claude-chip-${process.pid}`;
