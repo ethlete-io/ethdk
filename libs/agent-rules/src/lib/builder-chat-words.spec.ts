@@ -134,6 +134,82 @@ describe('builder-chat-words', () => {
     expect(log()).toMatchObject([{ committed: true, reported: true, blocked: false }]);
   });
 
+  it('blocks a commit turn whose only send is inside a heredoc body', () => {
+    const result = run(
+      [
+        prompt,
+        bash('git commit -m "fix" -- a.ts'),
+        toolResult,
+        bash(
+          "cat > /tmp/report.sh <<'EOF'\nnode tools/agent-sessions.mjs send claude --to doc-agent '- a.ts'\nEOF\necho saved",
+        ),
+        toolResult,
+      ],
+      undefined,
+      { last_assistant_message: 'Report saved.' },
+    );
+
+    expect(JSON.parse(result.stdout)).toEqual(reportBlock);
+    expect(log()).toMatchObject([{ committed: true, reported: false, blocked: true }]);
+  });
+
+  it('blocks a commit turn whose only send is inside a quoted string', () => {
+    const result = run([
+      prompt,
+      bash('git commit -m "fix" -- a.ts'),
+      toolResult,
+      bash('echo "next: yarn agents:sessions send claude --to doc-agent"'),
+      toolResult,
+      text('Done.'),
+    ]);
+
+    expect(JSON.parse(result.stdout)).toEqual(reportBlock);
+  });
+
+  it('does not count a commit named inside a commit message or heredoc', () => {
+    const result = run([
+      prompt,
+      bash('git log --grep "git commit" && cat <<EOF\ngit push\nEOF'),
+      toolResult,
+      text('Done.'),
+    ]);
+
+    expect(result.stdout).toBe('');
+    expect(log()).toMatchObject([{ committed: false }]);
+  });
+
+  it('lets a commit turn with a send after a heredoc report through', () => {
+    const result = run(
+      [
+        prompt,
+        bash('cd /repo && git -C /repo push origin next'),
+        toolResult,
+        bash(
+          'node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs send claude --to doc-agent "$(cat <<\'EOF\'\n- pushed\nEOF\n)"',
+        ),
+        toolResult,
+      ],
+      undefined,
+      { last_assistant_message: 'Report sent.' },
+    );
+
+    expect(result.stdout).toBe('');
+    expect(log()).toMatchObject([{ committed: true, reported: true, blocked: false }]);
+  });
+
+  it('lets a commit turn with a yarn agents:sessions send through', () => {
+    const result = run([
+      prompt,
+      bash('git commit -m x'),
+      toolResult,
+      bash('yarn agents:sessions send claude --to doc-agent "- x" | tail -1'),
+      toolResult,
+      text('Report sent.'),
+    ]);
+
+    expect(result.stdout).toBe('');
+  });
+
   it('lets a commit turn with a SendMessage through', () => {
     const result = run([
       prompt,

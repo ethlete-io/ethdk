@@ -10,7 +10,6 @@ no report (no SendMessage, no `agent-sessions send`). It always exits 0.
 
 import json
 import os
-import re
 import sys
 from datetime import datetime, timezone
 
@@ -23,8 +22,8 @@ REPORT_REASON = (
     "builder: this turn committed or pushed and sent no report. Send it to the grill session with SendMessage "
     "or `agent-sessions.mjs send`, then end the turn."
 )
-COMMIT_PATTERN = re.compile(r"\bgit\b[^\n;&|]*?\s(?:commit|push)\b")
-SEND_PATTERN = re.compile(r"(?:agent-sessions\.mjs|agents:sessions)\s+send\b")
+SEPARATORS = ";&|()\n"
+GIT_OPTIONS_WITH_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path"}
 
 
 def is_prompt(entry):
@@ -75,13 +74,147 @@ def bash_commands(tools):
                 yield command
 
 
+def read_heredoc_delimiter(command, index):
+    strip_tabs = command.startswith("-", index)
+    if strip_tabs:
+        index += 1
+    while index < len(command) and command[index] in " \t":
+        index += 1
+    delimiter = []
+    while index < len(command) and command[index] not in " \t" + SEPARATORS + "<>":
+        char = command[index]
+        if char in "'\"":
+            end = command.find(char, index + 1)
+            end = len(command) if end == -1 else end
+            delimiter.append(command[index + 1 : end])
+            index = end + 1
+        else:
+            if char != "\\":
+                delimiter.append(char)
+            index += 1
+    return "".join(delimiter), strip_tabs, index
+
+
+def skip_heredoc_bodies(command, index, heredocs):
+    for delimiter, strip_tabs in heredocs:
+        while index < len(command):
+            end = command.find("\n", index)
+            end = len(command) if end == -1 else end
+            row = command[index:end]
+            index = end + 1
+            if (row.lstrip("\t") if strip_tabs else row) == delimiter:
+                break
+    return index
+
+
+def simple_commands(command):
+    commands = [[]]
+    word = None
+    heredocs = []
+    index = 0
+
+    def end_word():
+        nonlocal word
+        if word is not None:
+            commands[-1].append(word)
+            word = None
+
+    def end_command():
+        end_word()
+        if commands[-1]:
+            commands.append([])
+
+    while index < len(command):
+        char = command[index]
+        if char == "\\":
+            if command.startswith("\n", index + 1):
+                index += 2
+                continue
+            word = (word or "") + command[index + 1 : index + 2]
+            index += 2
+        elif char == "'":
+            end = command.find("'", index + 1)
+            end = len(command) if end == -1 else end
+            word = (word or "") + command[index + 1 : end]
+            index = end + 1
+        elif char == '"':
+            index += 1
+            chars = []
+            while index < len(command) and command[index] != '"':
+                if command[index] == "\\" and index + 1 < len(command):
+                    index += 1
+                chars.append(command[index])
+                index += 1
+            word = (word or "") + "".join(chars)
+            index += 1
+        elif char == "#" and word is None:
+            end = command.find("\n", index)
+            index = len(command) if end == -1 else end
+        elif command.startswith("<<<", index):
+            end_word()
+            index += 3
+        elif command.startswith("<<", index):
+            end_word()
+            delimiter, strip_tabs, index = read_heredoc_delimiter(command, index + 2)
+            heredocs.append((delimiter, strip_tabs))
+        elif char == "\n":
+            end_command()
+            index = skip_heredoc_bodies(command, index + 1, heredocs)
+            heredocs = []
+        elif char in SEPARATORS:
+            end_command()
+            index += 1
+        elif char in " \t":
+            end_word()
+            index += 1
+        else:
+            word = (word or "") + char
+            index += 1
+    end_command()
+    return [words for words in commands if words]
+
+
+def command_words(words):
+    index = 0
+    while index < len(words) and "=" in words[index] and not words[index].startswith("-"):
+        index += 1
+    return words[index:]
+
+
+def is_git_commit(words):
+    words = command_words(words)
+    if not words or os.path.basename(words[0]) != "git":
+        return False
+    index = 1
+    while index < len(words) and words[index].startswith("-"):
+        index += 2 if words[index] in GIT_OPTIONS_WITH_VALUE else 1
+    return index < len(words) and words[index] in ("commit", "push")
+
+
+def is_report_send(words):
+    words = command_words(words)
+    if len(words) < 3:
+        return False
+    if words[0] == "yarn":
+        return words[1:3] == ["agents:sessions", "send"]
+    if os.path.basename(words[0]) != "node":
+        return False
+    scripts = [word for word in words[1:] if not word.startswith("-")]
+    return len(scripts) >= 2 and os.path.basename(scripts[0]) == "agent-sessions.mjs" and scripts[1] == "send"
+
+
+def bash_simple_commands(tools):
+    for command in bash_commands(tools):
+        yield from simple_commands(command)
+
+
 def has_commit(tools):
-    return any(COMMIT_PATTERN.search(command) for command in bash_commands(tools))
+    return any(is_git_commit(words) for words in bash_simple_commands(tools))
 
 
 def has_report(tools):
     return any(tool.get("name") == "SendMessage" for tool in tools) or any(
-        SEND_PATTERN.search(command) for command in bash_commands(tools)
+        is_report_send(words) for words in bash_simple_commands(tools)
     )
 
 
