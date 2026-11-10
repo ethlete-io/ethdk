@@ -52,4 +52,4 @@ until they say they are back.
 
 ## Open questions for the human
 
-None open. The human is present (not afk).
+None open. The human is afk until late evening (2026-11-10): collect questions, no round until they are back. Steps 3 and 721 (git-safety.py) wait for their approval in tmux claude-3.
