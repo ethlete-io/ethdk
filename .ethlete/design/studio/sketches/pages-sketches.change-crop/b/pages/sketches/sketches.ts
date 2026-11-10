@@ -99,7 +99,7 @@ const QUESTION = 'Wo soll der Reset-Knopf der Zoom-Pille stehen?';
 const foldedLabel = (count: number) =>
   count === 1 ? '1 unveränderter Zustand eingeklappt' : `${count} unveränderte Zustände eingeklappt`;
 
-const treeOf = (selected: string) =>
+const treeOf = (key: string) =>
   partTree.render({
     layers: [
       {
@@ -110,10 +110,17 @@ const treeOf = (selected: string) =>
           .map((name) => ({
             name,
             leaf: true,
-            ...(name === selected ? { selected: true } : {}),
+            ...(`components/${name}` === key ? { selected: true } : {}),
           })),
       },
-      { title: 'Pages', open: true, parts: [{ name: 'system', leaf: true }] },
+      {
+        title: 'Pages',
+        open: true,
+        parts: [
+          { name: 'system', leaf: true },
+          ...(key === SCREEN_KEY ? [{ name: 'sketches', leaf: true, selected: true }] : []),
+        ],
+      },
     ],
   });
 
@@ -522,7 +529,7 @@ export default definePart<Props>({
     const full = withSame(PARTS[kind], comparing ? [] : sameKeys);
     const rowStyles = await prepareShots(full);
     const part = fold > 0 ? { ...full, states: full.states.slice(0, full.states.length - fold) } : full;
-    const side = await treeOf(part.key.replace('components/', ''));
+    const side = await treeOf(screen ? SCREEN_KEY : part.key);
     const all = rowsOf(part, fresh);
     const rows = visibleRows(all, withdrawn);
     const hiddenCount = withdrawnCount(all, withdrawn);
