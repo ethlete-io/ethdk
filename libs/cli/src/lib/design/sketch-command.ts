@@ -409,7 +409,7 @@ const nextStepsOf = (sketch: Sketch, productSource: ResolvedProduct) => {
     `  shot ${sketch.targets[0]} --states --variants --product ${product}   look at it: ready refuses a pixel diff without a viewed shot`,
     `  sketch ready ${at} --by <model id>`,
     `  sketch report ${at} --variant ${first} --by <model id> --done              after ready, once you stop drawing a variant; no report runs yet, so none is needed now`,
-    `  a shared JSON file ready wrote (merged.json, go.json): commit it with \`et design commit-hunks <file> --part ${sketch.targets[0]}\`, never as a whole file another session also edits`,
+    `  a shared JSON file ready wrote (merged.json): commit it with \`et design commit-hunks <file> --part ${sketch.targets[0]}\`, never as a whole file another session also edits`,
     THEMING_TEXT,
   ];
 };

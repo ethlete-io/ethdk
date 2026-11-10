@@ -708,3 +708,22 @@ spec:stress 4/4. Not verified: a real `design check --part` on the repo design (
 and whether the scratch Studio serve was also running its slow runner.
 
 As built (718 pending count): a whole-product `design check` still leaves pending parts to the serve slow runner (grill decision), and now prints `PENDING <product>: <n> parts wait for slow rules - run design serve or design check --product <p> --part <part>` (`slowWaitingLineOf`, `check-record.ts`), so it never looks settled. Verified: a check-record spec case (whole-product call keeps `pending`, line text), cli typecheck, eslint. Not verified: the line in a real `design check` run.
+
+## As built: B249 S4a (CLI removal)
+
+- Removed: `design go` and `design accept` (`part-go`, `go-command`, `go-step`, `go-guard`, `go-batch`, `accept-command`,
+  `tom-confirm` and their specs), the MCP `part_go` tool, the Studio routes `/__design/part-go` and
+  `/__design/part-accept` (`STUDIO_API_LEVEL` 8), the `GO` / `NEW STATES` lines of `design check`, `storePictures`,
+  `acceptPart` and the `accepted.json` writer in `merged-parts.ts`. `et design go|accept` now exit 2 as unknown commands.
+  `DesignStep` lives in `sketch/merge-step.ts`.
+- Added: `design check` prints one `WARNING LEFTOVER-FILE <product>: go.json, accepted.json are no longer read ...` per
+  product that still holds them, naming the paths to delete (Q3, no migration).
+- `pictures.json`: the reader maps the legacy `review` (as `partHash`) and `go` kinds to `record`; the writer writes only
+  `record`. The `EDIT-OLD-NOT-FOUND` hint names the new-only sketch (ADR 0253) instead of `design accept`.
+- Commit: the commit that holds this section.
+- Verified: `nx run cli:typecheck`, `nx lint cli` (no new warnings), the 15 touched or added spec files, `vitest related`
+  over the changed sources (126 files), `lint:cli-related-map`.
+- Not done: the Studio app client (S6b; it calls neither route today), the docs and data files (S8), the
+  `commit-hunks.spec` SPLIT list still names `accepted.json`/`go.json` while the repo holds them (S8 deletes them),
+  `actionUndeclaredUnderGoOf` keeps its name (it already reads ready marks), and Studio does not yet open the new-only
+  sketch the hint names. `--allowed-by` (Q4) is untouched. No real `design check` on the repo design.

@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -141,7 +141,7 @@ describe('merge decisions', () => {
 describe('recordMergeReason', () => {
   const decision = { variant: 'b', decidedBy: 'plan: A10 S5', at: '2026-11-04T00:00:00.000Z' };
 
-  it("notes the plan ref and reason in the part's merged.json entry, not in accepted.json", () => {
+  it("notes the plan ref and reason in the part's merged.json entry", () => {
     const target = acme();
     const product = resolveAcme(target);
 
@@ -152,7 +152,6 @@ describe('recordMergeReason', () => {
       'merged without a pick: allowed by A10 S5 - merged: calmer',
     );
     expect(readMergeDecision(productDir(target), 'elements/hero')).toEqual(decision);
-    expect(existsSync(join(productDir(target), 'accepted.json'))).toBe(false);
   });
 
   it('keeps the note when a part is recorded again and drops it on the next merge decision', () => {

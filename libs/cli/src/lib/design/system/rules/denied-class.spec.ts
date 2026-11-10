@@ -6,11 +6,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, DesignDeniedClass, readConfig } from '../../design-config';
 import { checkDesign } from '../../check';
 import { designSketch } from '../../sketch-command';
-import { designAccept } from '../accept-command';
 import { resolveProduct } from '../resolve-product';
 import { openSketchProblemsOf } from '../sketch/check-sketches';
 import { mergeSketch } from '../sketch/merge';
-import { recordMerged } from '../sketch/merged-parts';
 import { createSketch, decideSketch, markSketchReady, Sketch } from '../sketch/sketch';
 import { deniedClassesOf } from './denied-class';
 
@@ -243,23 +241,4 @@ describe('a denied class in the flows', () => {
     expect(errors.join('\n')).toMatch(/^DENIED-CLASS .*`bg-surface` is denied/mu);
     expect(readFileSync(hero, 'utf8')).toBe(before);
   }, 30_000);
-
-  it('refuses accept', async () => {
-    const target = acme();
-    const productDir = join(target, DESIGN_DIR, 'acme');
-    const hero = join(productDir, 'elements/hero/hero.ts');
-    const errors = errorsOf();
-
-    recordMerged({ product: { dir: productDir, base: null }, parts: ['elements/hero'] });
-    writeFileSync(hero, readFileSync(hero, 'utf8').replace('class="acme-hero"', 'class="acme-hero bg-surface"'));
-
-    expect(
-      await designAccept({
-        target,
-        argv: ['elements/hero', '--product', 'acme', '--by', 'tom', '--note', 'Tom approved it'],
-        invocation: 'et design',
-      }),
-    ).toBe(1);
-    expect(errors.join('\n')).toMatch(/^DENIED-CLASS .*`bg-surface` is denied/mu);
-  });
 });

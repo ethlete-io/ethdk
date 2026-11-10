@@ -55,24 +55,22 @@ describe('designCommitHunks', () => {
   });
 
   it('commits the entries of a part from a list and leaves the entries of another part', async () => {
-    const target = repo({ 'p/accepted.json': [{ part: 'components/x', n: 1 }] });
+    const target = repo({ 'p/log.json': [{ part: 'components/x', n: 1 }] });
     const edited = [
       { part: 'components/x', n: 1 },
       { part: 'components/y', n: 2 },
       { part: 'components/x', n: 3 },
     ];
 
-    write(target, 'p/accepted.json', edited);
+    write(target, 'p/log.json', edited);
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    expect(await run(target, 'p/accepted.json', '--part', 'components/x', '--message', 'chore(repo): Accept x')).toBe(
-      0,
-    );
-    expect(JSON.parse(git(target, 'show', 'HEAD:p/accepted.json'))).toEqual([
+    expect(await run(target, 'p/log.json', '--part', 'components/x', '--message', 'chore(repo): Accept x')).toBe(0);
+    expect(JSON.parse(git(target, 'show', 'HEAD:p/log.json'))).toEqual([
       { part: 'components/x', n: 1 },
       { part: 'components/x', n: 3 },
     ]);
-    expect(JSON.parse(readFileSync(join(target, 'p/accepted.json'), 'utf8'))).toEqual(edited);
+    expect(JSON.parse(readFileSync(join(target, 'p/log.json'), 'utf8'))).toEqual(edited);
     expect(git(target, 'log', '-1', '--format=%s')).toBe('chore(repo): Accept x');
   });
 
@@ -110,31 +108,31 @@ describe('designCommitHunks key order', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('writes the part-keyed file sorted like the CLI writer and reports an order-only rest', async () => {
-    const target = repo({ 'p/go.json': { 'components/b': '1', 'components/c': '1', 'components/a': '1' } });
+    const target = repo({ 'p/ready.json': { 'components/b': '1', 'components/c': '1', 'components/a': '1' } });
     const edited = { 'components/b': '1', 'components/c': '1', 'components/a': '2' };
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    write(target, 'p/go.json', edited);
+    write(target, 'p/ready.json', edited);
 
-    expect(await run(target, 'p/go.json', '--part', 'components/a')).toBe(0);
-    expect(git(target, 'show', 'HEAD:p/go.json')).toBe(
+    expect(await run(target, 'p/ready.json', '--part', 'components/a')).toBe(0);
+    expect(git(target, 'show', 'HEAD:p/ready.json')).toBe(
       `${JSON.stringify({ 'components/a': '2', 'components/b': '1', 'components/c': '1' }, null, 2)}`,
     );
     expect(log.mock.calls.flat().join('\n')).toContain('(order only)');
-    expect(JSON.parse(readFileSync(join(target, 'p/go.json'), 'utf8'))).toEqual(edited);
+    expect(JSON.parse(readFileSync(join(target, 'p/ready.json'), 'utf8'))).toEqual(edited);
   });
 
   it('does not commit a pure reorder and names it as order only', async () => {
-    const target = repo({ 'p/go.json': { 'components/b': '1', 'components/a': '1' } });
+    const target = repo({ 'p/ready.json': { 'components/b': '1', 'components/a': '1' } });
     const before = git(target, 'rev-parse', 'HEAD');
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    expect(await run(target, 'p/go.json', '--part', 'components/a')).toBe(0);
+    expect(await run(target, 'p/ready.json', '--part', 'components/a')).toBe(0);
     expect(git(target, 'rev-parse', 'HEAD')).toBe(before);
     expect(log.mock.calls.flat().join('\n')).not.toContain('key order');
 
-    write(target, 'p/go.json', { 'components/a': '1', 'components/b': '1' });
-    expect(await run(target, 'p/go.json', '--part', 'components/a')).toBe(0);
+    write(target, 'p/ready.json', { 'components/a': '1', 'components/b': '1' });
+    expect(await run(target, 'p/ready.json', '--part', 'components/a')).toBe(0);
     expect(git(target, 'rev-parse', 'HEAD')).toBe(before);
     expect(log.mock.calls.flat().join('\n')).toContain('key order only');
   });

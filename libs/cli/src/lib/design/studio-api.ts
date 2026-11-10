@@ -32,10 +32,6 @@ import { approveException, listExceptions } from './system/exceptions';
 import { approveInventory, Inventory } from './system/inventory';
 import { drawnFindingsOf } from './system/drawn-open-points';
 import { openPointsInWorker } from './system/open-points-runner';
-import { readyPartOf } from './system/part-ready';
-import { refreshHarnessMap } from './system/harness-map';
-import { markPartGo } from './system/part-go';
-import { partActionsOf } from './system/action-lost';
 import { flowProblemsOf } from './system/rules/flow';
 import { Problem } from './system/problem';
 import { ResolvedProduct } from './system/resolve-product';
@@ -45,8 +41,7 @@ import { oneProductOf } from './system/sketch/cli-args';
 import { retriedHeldMerges } from './sketch-command';
 import { discardSketch, mergeRefusalOf } from './system/sketch/merge';
 import { mergeInWorker } from './system/sketch/merge-runner';
-import { acceptRunOf, partAcceptRefusalOf } from './system/accept-command';
-import { DrawStates, storePictures } from './system/accepted-pictures';
+import { DrawStates } from './system/accepted-pictures';
 import { readPartModule } from './system/list-system';
 import { compareMerge, PictureOf } from './merge-compare';
 import { BoxOf, changedAreaOf, diffVariant } from './variant-diff';
@@ -95,8 +90,6 @@ export const EXCEPTIONS_PATH = '/__design/exceptions';
 export const EXCEPTION_APPROVE_PATH = '/__design/exception-approve';
 export const MOTION_PATH = '/__design/motion';
 export const OPEN_POINTS_PATH = '/__design/open-points';
-export const PART_GO_PATH = '/__design/part-go';
-export const PART_ACCEPT_PATH = '/__design/part-accept';
 
 export type Answer = { status: number; body: unknown };
 
@@ -997,127 +990,4 @@ export const openPointsAnswer = withProduct('GET', async (found) => {
   const answer = await openPointsInWorker({ product: found.product, part, findings });
 
   return { status: 200, body: { ...answer, drawn: draw === 'true' } };
-});
-
-const STUDIO_CLICK = 'user';
-
-const shownHashRefusalOf = (options: { product: ResolvedProduct; part: string; shown: unknown }): Answer | null => {
-  const { product, part, shown } = options;
-
-  if (typeof shown !== 'string' || shown === '')
-    return refusal({ status: 400, reason: 'hash-missing', message: 'hash is required' });
-
-  const located = readyPartOf({ product, part });
-
-  return typeof located !== 'string' && located.hash !== shown
-    ? refusal({
-        status: 409,
-        reason: 'changed',
-        message: `${part} changed since it was shown - reload and check it again`,
-      })
-    : null;
-};
-
-/**
- * POST `?product=`, body `{ part, hash }`: stores the Studio user's go for a part at the hash Studio showed, with the action keys it declares, regenerates a
- * stale harness map (`harness` says why it could not; the go stands), then its go pictures (`unstored` says why not). A refusal answers `reason`: `hash-missing` (400), `unknown-part` (404) or
- * `changed` (409). A go needs no empty open-point list.
- */
-export const partGoAnswer = withProduct('POST', async (found) => {
-  const body = await bodyOf(found.asked.request);
-
-  if (!body) return failure(400, 'the body must be a JSON object');
-
-  const part = knownPartOf(found.product, body['part']);
-
-  if (typeof part !== 'string') return part;
-
-  const shown = shownHashRefusalOf({ product: found.product, part, shown: body['hash'] });
-
-  if (shown) return shown;
-
-  const load = found.asked.load;
-  const actions = load
-    ? await partActionsOf({
-        load: ({ file, product }) => load({ file, product, sketch: null }),
-        product: found.product,
-        part,
-      })
-    : undefined;
-  const marked = markPartGo({
-    product: found.product,
-    part,
-    by: STUDIO_CLICK,
-    via: 'studio click',
-    hash: body['hash'],
-    note: 'studio click',
-    ...(Array.isArray(actions) ? { actions } : {}),
-  });
-
-  if ('status' in marked)
-    return refusal({
-      status: marked.status,
-      reason: marked.status === 409 ? 'changed' : 'unknown-part',
-      message: marked.error,
-    });
-
-  const refreshed = refreshHarnessMap({ target: found.asked.target, product: found.product });
-  const harness = typeof refreshed === 'string' ? refreshed : undefined;
-
-  const unstored = await storePictures({
-    target: found.asked.target,
-    config: found.config,
-    product: found.product,
-    part,
-    kind: 'go',
-    hash: marked.hash,
-    draw: found.asked.drawStates,
-  });
-
-  return { status: 200, body: { part, hash: marked.hash, go: marked, unstored, ...(harness ? { harness } : {}) } };
-});
-
-/**
- * POST `?product=`, body `{ part, hash, note? }`: accepts the Studio user's approval of a direct edit of a merged part,
- * as `et design accept` does. Checks everything before it writes; a refusal answers `reason`: `hash-missing`,
- * `unknown-part`, `changed`, `findings` (with the `findings` lines), `open-sketch` or `nothing-to-accept`.
- */
-export const partAcceptAnswer = withProduct('POST', async (found) => {
-  const body = await bodyOf(found.asked.request);
-
-  if (!body) return failure(400, 'the body must be a JSON object');
-
-  const part = knownPartOf(found.product, body['part']);
-
-  if (typeof part !== 'string') return part;
-
-  const shown = shownHashRefusalOf({ product: found.product, part, shown: body['hash'] });
-
-  if (shown) return shown;
-
-  const refused = partAcceptRefusalOf({ target: found.asked.target, product: found.product, part });
-
-  if (refused)
-    return refusal({
-      status: refused.reason === 'unknown-part' ? 404 : 422,
-      reason: refused.reason,
-      message: refused.error,
-      extra: 'findings' in refused ? { findings: refused.findings } : {},
-    });
-
-  const note = textOf(body['note'])?.trim() || 'approved by a click in Studio';
-  const step = acceptRunOf({
-    target: found.asked.target,
-    config: found.config,
-    product: found.product,
-    part,
-    by: STUDIO_CLICK,
-    note,
-    draw: found.asked.drawStates,
-  });
-
-  if ((await step.run()) !== 0)
-    return refusal({ status: 409, reason: 'changed', message: `${part} changed while it was accepted - reload it` });
-
-  return { status: 200, body: { part, accepted: { by: STUDIO_CLICK, note } } };
 });

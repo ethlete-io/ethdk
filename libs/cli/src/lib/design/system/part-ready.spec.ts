@@ -13,7 +13,6 @@ import { harnessMapOf, writeHarnessMap } from './harness-map';
 import { checkLiveActions } from './live-actions';
 import { drawnFindingsOf } from './drawn-open-points';
 import { drawnPartPointsOf, markPartReady, readReady, readyMarkOf, readyPartOf, readyPartsOf } from './part-ready';
-import { markPartGo } from './part-go';
 import { designReady } from './ready-command';
 import { resolveProduct } from './resolve-product';
 
@@ -59,9 +58,6 @@ const hashOf = (target: string, part = 'components/chip') => {
 
   return typeof found === 'string' ? found : found.hash;
 };
-
-const goOf = (target: string, part = 'components/chip') =>
-  markPartGo({ product: productOf(target), part, by: 'tom', via: 'design go' });
 
 const post = async (target: string, body: { part?: string; hash?: string }) => {
   const product = productOf(target);
@@ -117,8 +113,6 @@ describe('part ready', () => {
   it('marks a part without open points ready, and drops the mark when the part changes', async () => {
     const { target, dir } = checkout();
 
-    goOf(target);
-
     const hash = hashOf(target);
     const answer = await post(target, { part: 'components/chip', hash });
 
@@ -144,7 +138,6 @@ describe('part ready', () => {
   it('refuses with the list while the part has open points, the drawn ones too', async () => {
     const { target, dir } = checkout();
 
-    goOf(target);
     vi.mocked(drawnFindingsOf).mockResolvedValueOnce({
       contrasts: [{ part: 'components/chip', state: 'default', path: 'span' }],
       missingStates: [],
@@ -179,8 +172,6 @@ describe('part ready', () => {
   it('answers the hash and the ready mark of a part with its open points', async () => {
     const { target } = checkout();
 
-    goOf(target);
-
     const hash = hashOf(target);
 
     await post(target, { part: 'components/chip', hash });
@@ -213,8 +204,6 @@ describe('part ready', () => {
     const { target, dir } = checkout();
     const lines = output();
 
-    goOf(target);
-
     const ready = (...argv: string[]) => designReady({ target, argv, invocation: 'et design' });
 
     expect(await ready('components/tag', '--product', 'app-a')).toBe(2);
@@ -236,7 +225,6 @@ describe('part ready', () => {
     const lines = output();
     const failed = ['default button "remove" click FAILED the output remove did not fire'];
 
-    goOf(target);
     vi.mocked(partActionFailuresOf).mockResolvedValueOnce(failed);
 
     expect(await post(target, { part: 'components/chip', hash: hashOf(target) })).toEqual({

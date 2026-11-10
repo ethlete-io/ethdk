@@ -1,7 +1,6 @@
 import { DesignConfig } from '../../design-config';
 import { timedPhase } from '../../phase-timing';
 import { decisionRefsOf } from '../decision-refs';
-import { DesignStep } from '../tom-confirm';
 import { refreshHarnessMap } from '../harness-map';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { configOf, oneProductOf } from './cli-args';
@@ -10,6 +9,8 @@ import { mergeSketch } from './merge';
 import { recordMergeReason } from './merged-parts';
 import { originOf } from '../write-origin';
 import { decideSketch, findSketch, parseTarget, rejectionOf, Sketch } from './sketch';
+
+export type DesignStep = { line: string; run: () => Promise<number> };
 
 /** The sketch with the pick a plan allows: its only live variant, when `variant` names it and nobody picked yet. */
 export const allowedMergeOf = (options: { sketch: Sketch; variant: string; by?: string; editRef?: boolean }) => {

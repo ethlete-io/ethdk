@@ -20,7 +20,7 @@ if (!entry) {
 }
 
 const sourceDir = join(designDir, product);
-const workspaceOnly = new Set(['tsconfig.json', 'accepted.json', 'merged.json', 'sketches', 'comments']);
+const workspaceOnly = new Set(['tsconfig.json', 'merged.json', 'sketches', 'comments']);
 const target = join(root, outDir);
 
 rmSync(target, { recursive: true, force: true });

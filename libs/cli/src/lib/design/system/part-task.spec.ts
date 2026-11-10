@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { originOf } from './write-origin';
 import { noVerdictOf } from './no-verdict';
 import { tmpdir } from 'os';
@@ -221,7 +221,7 @@ describe('part task', () => {
   });
 
   it('refuses a part without a link, with a route-only link, and a part that is not build-ready, listing its blockers', () => {
-    const { target, chip, dir } = checkout();
+    const { target, chip } = checkout();
     const product = withHarness(target);
     const refusal = (part: string, inputs = GREEN) => taskPartOf({ product, part, inputs });
 
@@ -238,7 +238,6 @@ describe('part task', () => {
     );
     record(target);
     expect(refusal('components/chip')).toMatchObject({ component: 'libs/chip/chip.component.ts' });
-    expect(existsSync(join(dir, 'go.json'))).toBe(false);
     expect(
       refusal('components/chip', {
         ...GREEN,
@@ -280,7 +279,6 @@ describe('part task', () => {
 
     lines.length = 0;
     expect(await task(target, [])).toBe(0);
-    expect(existsSync(join(dir, 'go.json'))).toBe(false);
     expect(lines).toEqual([
       'part components/chip in app-a',
       `design ${marked?.hash ?? ''}`,

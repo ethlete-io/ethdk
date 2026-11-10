@@ -176,7 +176,7 @@ describe('openEditSketch', () => {
 
     expect(openEditSketch({ target, product: resolveAcme(target), part: HERO })).toEqual({
       rule: 'EDIT-OLD-NOT-FOUND',
-      message: expect.stringContaining(`et design accept ${HERO} --product acme`),
+      message: expect.stringContaining(`${HERO} gets a sketch with only the variant new`),
     });
   });
 });

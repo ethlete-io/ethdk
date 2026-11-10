@@ -111,7 +111,7 @@ const oldDesignOf = (product: ResolvedProduct, resolved: ResolvedPart): OldDesig
     rule: EDIT_OLD_NOT_FOUND,
     message:
       `no commit holds ${part} at its merged hash ${hash}, so the edit has no old design to compare with - ` +
-      `run \`et design accept ${part} --product ${product.name} --by <model id> --note <why>\` once the user approved it as it is`,
+      `${part} gets a sketch with only the variant new: the user picks it to record the edit, or the change is reverted`,
   };
 };
 

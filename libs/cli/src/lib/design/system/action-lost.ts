@@ -139,14 +139,6 @@ export const actionLostProblemsOf = async (options: {
   return actionLostOf({ ...options, declared });
 };
 
-/** Reads the declared action keys of a part for its go, or why not. */
-export type GoActionsOf = (options: {
-  target: string;
-  config: DesignConfig;
-  product: ResolvedProduct;
-  part: string;
-}) => Promise<string[] | string>;
-
 /** Reads the declared action keys of a part on a design server, or why not; the check record holds them. */
 export const declaredPartActionsOf = (options: {
   target: string;
@@ -155,5 +147,3 @@ export const declaredPartActionsOf = (options: {
   part: string;
   warm?: WarmDraw;
 }) => withPartLoader(options, (load) => partActionsOf({ load, product: options.product, part: options.part }));
-
-export const goActionsOf: GoActionsOf = declaredPartActionsOf;
