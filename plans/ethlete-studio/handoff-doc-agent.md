@@ -32,10 +32,6 @@ until they say they are back.
 
 ## Side work
 
-- Issue ethlete-io/ethdk#3172 (tooltip on touch): built in 181eb140d by session ethlete-sdk-3b (500 ms long press,
-  hides 1.5 s after lift; toggletip icon-button example). The Linux builder pushes it. Tell the human on return: the
-  issue comment and close are theirs.
-
 ## Since the last restart (2026-11-10 afternoon)
 
 - ADR 0254 (no harness = never build-ready; studio-lab stays blocked). Findings 717-721 recorded; 8 old findings archived.
@@ -45,7 +41,6 @@ until they say they are back.
   approve it in the builder session (tmux claude-3); the doc agent never makes it.
 - Mac builder: 708 committed 4ae5bc51c (report not yet in), now 709 app-icon sketch, then B482. Mac mailbox wait must be
   restarted after a restart (command above).
-- Issue #3172 tooltip touch: built 181eb140d, pushed; the human comments/closes the issue.
 - Step 4 part 1 8dd5634d0 (accepted.json removed); studio/go.json waits for step 3. pictures.json legacy keys: left
   (doc agent), with a spec that a writePictures round trip rewrites go/review to record.
 - New idea of the human: `plans/windows-test-pc.md` (the `rack` PC, for later).
@@ -70,7 +65,7 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 ## Evening state (2026-11-10, after b6976eb26)
 
 - The human is back but away from the Mac. No open question for the human. Info given: 709 app icon pick by merge,
-  issue #3172 comment/close is theirs, the B482 bite needs an unlocked Mac screen.
+  the B482 bite needs an unlocked Mac screen.
 - Linux batch pushed 8e25eecda (ADR 0255, 724 fix). Linux builder (ethlete-sdk-3e, tmux claude-3, fresh after
   builder-2026-11-10e): commit the 728 pre-commit Markdown prettier hook with a Built line under 728, watch CI, then the
   real-config "Sketch öffnen" re-check, step 6 gutter skip, ADR built: lines (0048, 0252, 0253), 723, 729.

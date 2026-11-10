@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.31
+
+### Patch Changes
+
+- `no-silent-catch-error` also flags a `try/catch` whose catch ignores the error and returns a fallback value, such as `catch { return [] }`.
+
 ## 1.0.0-next.30
 
 ### Minor Changes

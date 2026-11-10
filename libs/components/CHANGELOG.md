@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.0-next.81
+
+### Minor Changes
+
+- Anchored overlays take `arrowAnchor`, an element the arrow points at instead of the origin; the `anchoredDialog()` design mock takes a matching `anchor` selector.
+- The focus ring takes public `--et-focus-ring-*` tokens; `design check` stops flagging base parts and spinner clipping.
+- Breaking: the `et-progress-step` input `state` is now `stepState`, so it no longer collides with the `state` input of `RouterLink`.
+- The window control button takes `shape: 'caption'`, a full-height 46px Windows caption tile with a 10px glyph.
+
+### Patch Changes
+
+- Name the scheduler appointment buttons with `aria-label` (the appointment title) in the month and time grid views. The `title` attribute stays. The scheduler test driver now selects appointments by `aria-label`.
+- The select design mock takes an `ariaLabel` and names its trigger like `et-select` does.
+- `etTooltip` now opens on touch devices with a long press. A normal tap still does only the trigger's own action. The tooltip hides 1.5s after the finger lifts.
+
 ## 1.0.0-next.80
 
 ### Minor Changes

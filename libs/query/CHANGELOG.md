@@ -1,5 +1,33 @@
 # @ethlete/query
 
+## 6.0.0-next.63
+
+### Minor Changes
+
+- `provideQueryDevtools({ ui: () => import('@ethlete/query-devtools/lazy') })` mounts the devtools once the app has rendered, with no template tag. `@ethlete/query-devtools/lazy` exports `mountQueryDevtools`.
+- The `migrate-from-ngrx-toolkit` generator rewrites `facade.on(x.success)` on a migrated facade to `toolkitOnSuccess(x)`.
+- The ngrx-toolkit interop adds `toolkitOnSuccess(creatorOrCreators)`, which emits the response on every success of a `toolkitCall` handle of those creators - the replacement for `facade.on(action.success)`.
+
+### Patch Changes
+
+- `migrate-to-query-v3` writes `provideQueryDevtools({ ui })` and removes the v2 devtools tag and component import. Without a legacy provider call it still switches to the lazy component.
+- The ET800 error names the query's route and says that repeated `execute({ skipCache: true })` calls count, e.g. a test that fakes responses in a tight loop.
+- The v3 migration names every `gqlQuery` and `gqlMutate` call in a task, also on an aliased client, in a class property or
+  inside a function, and warns about the implicit-any errors (TS7006) they leave.
+- A legacy `prepare()` on `createLegacyQueryCreator` queries now honours its `mock` argument: the query settles with the mock response or error after the delay and reports its progress.
+- A legacy query from `createLegacyQueryCreator` types `rawState` with the response of the wrapped creator again, not `unknown`. Templates that read it, such as `*etInfinityQuery`, typecheck again.
+- A subscriber that attaches to a legacy query's `state$` right after `execute()` no longer receives the previous `Success` after `Loading`, so `filterSuccess(), take(1)` waits for the new response.
+- The query v3 migration now casts the `responseAdapter` result in the scaffolded `extractTokens`, so the generated code no longer fails with TS2339 on `token`.
+- The `migrate-to-query-v3` report now flags a legacy `<et-query-devtools>`, `QueryDevtoolsComponent` or `provideQueryClientForDevtools` that the migration left behind.
+- The `migrate-from-ngrx-toolkit` generator no longer leaves a whole consumer file on the toolkit when it also names converted creators.
+- `migrate-from-ngrx-toolkit` reuses a creator whose args name the same branded type, and `NTK-DUPLICATE-ROUTE-MISMATCH` names the member that differs and where both types are declared.
+- The `NTK-SERVICE-HEADERS` task of the `migrate-from-ngrx-toolkit` generator now names the headers, the service property they come from, and the condition the service set them under, with the line of the request.
+- The `migrate-from-ngrx-toolkit` generator no longer keeps a whole feature store when code outside the feature uses only its service. It keeps the used file and the store files it imports, converts the rest, and names each kept file in `NTK-STORE-FILE-KEPT`.
+- `migrate-from-ngrx-toolkit`: `NTK-MODULE-RESOLUTION` now also flags a project that resolves modules with `node` and reaches a file importing `@ethlete/query/ngrx-toolkit` through a workspace `paths` alias, and names that alias.
+- `migrate-from-ngrx-toolkit` records an `NTK-MODULE-RESOLUTION` task for each project tsconfig that resolves modules with `node`, which cannot find `@ethlete/query/ngrx-toolkit`.
+- `migrate-to-query-v3` now migrates a creator declared next to its client, adds `destroyOnResponse` to `prepare()` inside async validators returned by a factory, and drops imports the devtools and `queryComputed` rewrites leave unused.
+- `migrate-to-query-v3` reports every tsconfig that resolves modules with `node` while its project imports an `@ethlete/*` subpath such as `@ethlete/query-devtools/lazy`, directly or through a `paths` alias.
+
 ## 6.0.0-next.62
 
 ### Patch Changes

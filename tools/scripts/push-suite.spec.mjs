@@ -9,6 +9,9 @@ import {
   missingVerdict,
   parseArgs,
   parseLog,
+  quotaCommand,
+  quotaSpecFiles,
+  quotaStep,
   reexecCommand,
   runStep,
   sampleMaxLoad,
@@ -245,4 +248,103 @@ test('samples the load while a step runs and reports the peak, not the end value
 
   assert.equal(stop(), 42);
   assert.equal(cleared, true);
+});
+
+test('the quota step takes only the changed Studio spec files', () => {
+  assert.deepEqual(
+    quotaSpecFiles([
+      'apps/ethlete-studio/src/b.spec.ts',
+      'apps/ethlete-studio/src/a.ts',
+      'apps/ethlete-studio/e2e/c.e2e.mjs',
+      'libs/cli/src/d.spec.ts',
+      'apps/ethlete-studio/src/a.spec.ts',
+    ]),
+    ['apps/ethlete-studio/src/a.spec.ts', 'apps/ethlete-studio/src/b.spec.ts'],
+  );
+});
+
+test('the quota step runs one spec file in a user scope with a CPU quota', () => {
+  assert.deepEqual(quotaCommand('apps/ethlete-studio/src/a.spec.ts', 15), {
+    command: 'systemd-run',
+    args: [
+      '--user',
+      '--scope',
+      '--quiet',
+      '-p',
+      'CPUQuota=15%',
+      'npx',
+      'vitest',
+      'run',
+      '--root',
+      'apps/ethlete-studio',
+      '--maxWorkers=1',
+      'src/a.spec.ts',
+    ],
+  });
+});
+
+const quotaHarness = (durations, statuses = {}) => {
+  let time = 0;
+  const ran = [];
+  return {
+    ran,
+    now: () => time,
+    run: async (command, args) => {
+      const file = args.at(-1);
+      ran.push(file);
+      time += durations[file] ?? 0;
+      return { status: statuses[file] ?? 0, output: `out ${file}` };
+    },
+  };
+};
+
+test('the quota step names the quota and the files it ran', async () => {
+  const harness = quotaHarness({});
+  const result = await quotaStep(['apps/ethlete-studio/a.spec.ts', 'apps/ethlete-studio/b.spec.ts'], {
+    ...harness,
+    quota: 15,
+    available: () => true,
+  });
+
+  assert.equal(result.status, 0);
+  assert.equal(result.note, 'CPUQuota=15%, ran apps/ethlete-studio/a.spec.ts, apps/ethlete-studio/b.spec.ts');
+});
+
+test('the quota step stops starting files at the budget and names the skipped ones', async () => {
+  const harness = quotaHarness({ 'a.spec.ts': 100_000, 'b.spec.ts': 100_000 });
+  const files = ['apps/ethlete-studio/a.spec.ts', 'apps/ethlete-studio/b.spec.ts', 'apps/ethlete-studio/c.spec.ts'];
+  const result = await quotaStep(files, { ...harness, quota: 15, budgetMs: 180_000, available: () => true });
+
+  assert.deepEqual(harness.ran, ['a.spec.ts', 'b.spec.ts']);
+  assert.equal(result.status, 0);
+  assert.match(result.note, /over the 180 s budget, skipped apps\/ethlete-studio\/c\.spec\.ts$/);
+});
+
+test('a failed file fails the quota step with its output', async () => {
+  const harness = quotaHarness({}, { 'a.spec.ts': 1 });
+  const result = await quotaStep(['apps/ethlete-studio/a.spec.ts', 'apps/ethlete-studio/b.spec.ts'], {
+    ...harness,
+    available: () => true,
+  });
+
+  assert.deepEqual(harness.ran, ['a.spec.ts']);
+  assert.equal(result.status, 1);
+  assert.equal(result.output, 'out a.spec.ts');
+});
+
+test('without systemd-run the quota step passes and says it skipped on this OS', async () => {
+  const harness = quotaHarness({});
+  const result = await quotaStep(['apps/ethlete-studio/a.spec.ts'], {
+    ...harness,
+    available: () => false,
+    os: 'darwin',
+  });
+
+  assert.deepEqual(harness.ran, []);
+  assert.equal(result.status, 0);
+  assert.match(result.note, /^skipped on darwin: the CPU quota needs systemd-run --user/);
+});
+
+test('the quota step runs after the Studio unit tests', () => {
+  assert.equal(STEPS.indexOf('quota'), STEPS.indexOf('studio') + 1);
 });
