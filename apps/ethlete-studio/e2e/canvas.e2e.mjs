@@ -3235,6 +3235,7 @@ const lead = async () => {
   const rows = [];
   const busy = new Set();
   let quietTail = false;
+  let firstCase = false;
   const scratch = built ? undefined : mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-build-'));
   const record = (job, result) => {
     rows.push({ ...job, ...result });
@@ -3294,11 +3295,17 @@ const lead = async () => {
           await new Promise((done) => setTimeout(done, 200));
         if (quiet(queue[0]) && !quietTail) {
           quietTail = true;
-          console.log(`[canvas-e2e] quiet tail: ${queue.length} case(s) on worker ${index} after the parallel cases`);
+          console.log(
+            `[canvas-e2e] quiet tail: ${queue.length} case(s) on worker ${index} after the parallel cases, at ${seconds(performance.now() - runStartedAt).trim()}`,
+          );
         }
         current = queue.shift();
         tookJob ||= !!current;
         if (current) busy.add(index);
+        if (current && !firstCase) {
+          firstCase = true;
+          console.log(`[canvas-e2e] first case starting at ${seconds(performance.now() - runStartedAt).trim()}`);
+        }
         child.send({ job: current ?? null });
       };
 
@@ -3337,7 +3344,7 @@ const lead = async () => {
 
     await Promise.all(
       Array.from({ length: workers }, async (_, index) => {
-        while (queue.length && (await runWorker(index)));
+        while (queue.length && (index === 0 || !quiet(queue[0])) && (await runWorker(index)));
       }),
     );
   } finally {

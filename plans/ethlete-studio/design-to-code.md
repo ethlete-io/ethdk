@@ -4083,3 +4083,16 @@ Studio. Tool fix (bug queue, before the 679 backlog item): the e2e runner starts
 run has ended; no load-scaled timeouts, because those hide a slow Studio. As built (681, 1cc2d2ee8): `quiet: true` cases
 run last on worker 0 alone, every failed row prints `load <1-min> on <n> worker(s)`; the full run took 533.6 s against
 503.6 s (+30 s, about 6 %, tail 62 s). Per ADR 0240 the tail cost is measured again after the build-order fix.
+
+As built (B472, finding 683): the order already held. The runner owns two build steps: `ensureCli` (sync, before any
+worker) and the Studio build (async); each worker runs its design server and the fixture listing during the build, then
+awaits the `built` message before warm-up and its first `next`, so no case starts before the build ends. The design
+server builds nothing the runner owns (a Vite dev server that compiles on request). In the 683 run the build ended at
+41.9 s and the cases started after every worker was ready; `Fit is stable` was in the first wave, on three cold design
+servers rendering their first pages, and the 1-min load still held the build. Built: a `first case starting at <s>`
+line, the quiet-tail line carries its start time, and workers 1+ no longer restart during the tail (681 restarted both
+for a 50 s setup only to get no job). Bite (fake 20 s build step, removed): HEAD `studio build done at 65.7s`, each
+worker `build 17.0s` waited, cases after; with the worker wait removed, `first case starting at 51.9s` before `studio
+build done at 54.6s`. Full run: 442.2 s, 131/131, load 4.9 at the start and 16.0 at the end, first case 51.4 s, tail
+from 395.1 s, 46.9 s for 9 rows (against 503.6 s before 681 and 533.6 s after). Not verified: push:suite, CI, a second
+full run for spread.
