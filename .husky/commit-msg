@@ -1,3 +1,4 @@
 #!/usr/bin/env sh
 cd "$(git rev-parse --show-toplevel)" || exit 1
-yarn commitlint --edit $1
+yarn commitlint --edit $1 || exit 1
+node ./tools/scripts/check-breaking-scenarios.mjs $1

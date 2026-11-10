@@ -3816,6 +3816,11 @@ rename slice ran only the specs it touched; `vitest related` follows imports, an
 fix: a breaking (`!`) commit in a lib runs that lib's whole `src/scenarios/` folder before the commit. Numbers 699 and
 700 are the Mac B469 findings.
 
+As built (701): `.husky/commit-msg` runs `tools/scripts/check-breaking-scenarios.mjs` after commitlint. A header with
+`!` before the colon runs `vitest run --config libs/<lib>/vite.config.mts libs/<lib>/src/scenarios` for each staged lib
+with that folder (components, core, query), and a failure blocks the commit. Bite: the run on an export of 9e7c567d0
+fails with the 6 progress-steps failures of CI 42796254724 (820 others pass). The builder skill names the exception.
+
 702\. Doc agent (2026-11-10, day shift, 697 live bite): twice in a few minutes the human's terminal lost its tmux
 session ("schon wieder"); `claude-3@ethlete-sdk` was left with no client. During the second time the builder ran
 `agent-sessions.spec.ts`, and the human's tmux server held a session `claude-waiting-950238@agent-mailbox-if8GNH`
