@@ -4099,6 +4099,17 @@ boundary flake where the expiry read sees a clock that did not advance on the fa
 and the expiry tick); last commits there 3bf4f45db, ab8d48ca2. The fresh builder fixes it first (ADR 0230). Tool gap:
 open until the cause; check whether `spec:stress --slow` reproduces it, since the scenario runs on a fake clock.
 
+As built (714, builder subagent). Cause: `useScenario` started the fake clock at the real wall time, so the millisecond
+fraction was random; tokens floor `exp`/`iat`/`eat` to whole seconds. At a .999 start the custom-claim test reads
+exactly 18000 (bite: the CI message, reproduced with `SCENARIO_CLOCK_FRACTION=999`), and at a .000 start 9 other auth
+tests failed, each ticking to exactly the instant the refresh fires while its response lands 1 ms later (8 tests), or to
+1 ms before the next expiry check (the expiration warning). No lib bug. Fix: the harness pins the clock at
+2100-01-01T00:00:00.500Z (`scenarioStartMs()`, far future because jsdom's cookie jar expires cookies against the real
+clock), `SCENARIO_CLOCK_FRACTION=0|999` moves it to a second edge, the tests tick past the boundary they mean, the
+custom-claim test asserts `>= 18000` (the floor a .999 mint reaches), and the persistence seeds read the pinned start
+instead of the real clock. `src/scenarios` passes at .500, .000 and .999. Tool gap: CI runs only the default pin; a CI
+step for the two edge runs is proposed, not built.
+
 As built (706a, Mac builder, bfd02499d, not pushed). Cause: the hook matched the raw Bash text, so a heredoc body or a
 quoted string with `agent-sessions.mjs send` counted as a report, and a quoted `git commit` as a commit. Fix: the hook
 splits each command into simple commands, keeps quoted text in one word, drops heredoc bodies and comments; a commit is

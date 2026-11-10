@@ -29,7 +29,7 @@ import {
   withSymfonyErrors,
   withSuccessHandling,
 } from '../index';
-import { createScenario, sequence, useScenario } from './harness';
+import { createScenario, sequence, useScenario, useScenarioClock } from './harness';
 
 // Error parsers are installed process-wide (see apps/docs/query/errors.md), not per client -
 // `registerQueryErrorParser` is a module-level singleton that is never reset between tests in this file.
@@ -222,7 +222,7 @@ describe('baseline error normalization (no client features)', () => {
 
 describe('connection failures (status 0)', () => {
   it('sets error() and clears loading() on a network failure', () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
+    useScenarioClock();
 
     // The fake API's `on()` handler always answers through `HttpResponse` / `HttpErrorResponse` with an
     // explicit status, and its own delivery path only treats a status >= 400 as an error (see
@@ -817,7 +817,7 @@ describe('the default retry policy (withDefaultRetry)', () => {
 
 describe('connection failures are retried by the default policy', () => {
   it('retries a status-0 network failure and recovers', () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
+    useScenarioClock();
 
     let attempt = 0;
     const flakyOfflineBackend: HttpBackend = {

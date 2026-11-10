@@ -11,7 +11,7 @@ import { createQueryBatch, withArgs } from '../../index';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MAX_EFFECT_RUNS_PER_FLUSH } from './effect-loop-guard';
 import { MAX_REQUESTS_PER_ROUTE } from './invariants';
-import { createScenario, inProductionMode, useScenario } from './scenario';
+import { createScenario, inProductionMode, useScenario, useScenarioClock } from './scenario';
 
 type GetUserArgs = { response: { id: string }; pathParams: { id: string } };
 
@@ -33,9 +33,7 @@ describe('buildScenario', () => {
 });
 
 describe('loop invariants', () => {
-  beforeEach(() =>
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] }),
-  );
+  beforeEach(() => useScenarioClock());
   afterEach(() => vi.useRealTimers());
 
   it('fails a scenario that sends more requests to one route than the storm threshold', () => {
