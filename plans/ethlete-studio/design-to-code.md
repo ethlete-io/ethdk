@@ -3986,3 +3986,13 @@ sketch, and `sketch ready` and the merge do not lint. Tool fix: `design check` a
 changed part and variant files and fail on any warning (a baseline for the old ones is allowed, then only smaller);
 the merge refuses a variant with a new warning. Bite: the `components-button.off-centre` variant with the `!` fails
 `sketch ready`; with `SDK_ICONS.find(...) ?? fail(...)` it passes.
+
+709\. The human (2026-11-10, day shift): "wir haben das logo mal neu gemacht aber ich glaub die app also appicon ist
+noch das alte". Facts (doc agent): `apps/ethlete-studio/src-tauri/app-icon.svg` and `icons/*` were last written by
+2173ee0b1 (2026-10-27, "Make the Studio mark the app icon"); the new logo came 4 days later in c2ce4a400 (2026-10-31,
+"Adopt Studio Pilot logo", `foundations/logo` and `assets/studio-mark.svg`). The app icon is the old mark. Suspect:
+`app-icon.svg` is a hand copy with no link to the design part, so a logo merge does not reach it and no check compares
+them. Tool fix: the app icon is drawn from a state of the logo part (for example `foundations/logo` state `app-icon`),
+a script writes `app-icon.svg` and runs `tauri icon` from it, and `design check` fails when `app-icon.svg` differs from
+that state. Bite: with the old `app-icon.svg` the check fails; after the script it passes. First a sketch of the app
+icon from the new mark (padding, background, corner shape as variants where there is a choice).
