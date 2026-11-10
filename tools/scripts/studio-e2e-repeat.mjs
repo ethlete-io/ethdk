@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '../..');
 const RUNNER = 'apps/ethlete-studio/e2e/canvas.e2e.mjs';
@@ -129,12 +129,17 @@ export const repeatVerdict = (jobs, runs) => {
 const listRunner = (runner, args, cwd) =>
   spawnSync(process.execPath, [runner, ...args], { cwd, encoding: 'utf8', env: process.env }).stdout;
 
-const runOnce = (runner, args, cwd) =>
+export const runOnce = (runner, args, cwd, liveLog) =>
   new Promise((done) => {
+    if (liveLog) {
+      mkdirSync(dirname(liveLog), { recursive: true });
+      writeFileSync(liveLog, '');
+    }
     const child = spawn(process.execPath, [runner, ...args], { cwd, env: process.env });
     let output = '';
     const take = (chunk) => {
       output += chunk;
+      if (liveLog) appendFileSync(liveLog, chunk);
       for (const line of String(chunk).split('\n')) if (/^( {2}[✓✘] |NOT RUN )/.test(line)) console.log(`  ${line}`);
     };
     child.stdout.on('data', take);
@@ -153,7 +158,10 @@ export const runArgs = (at, pageArgs, built) => [
 
 const minutes = (ms) => `${(ms / 60000).toFixed(1)} min`;
 
-export const runRepeatGate = async (diff, { log = console.log, cwd = root, runner = join(cwd, RUNNER) } = {}) => {
+export const runRepeatGate = async (
+  diff,
+  { log = console.log, cwd = root, runner = join(cwd, RUNNER), liveLog } = {},
+) => {
   const changes = new Map([...changedLines(diff)].filter(([file]) => TRIGGERS.includes(file)));
   if (!changes.size) return 0;
 
@@ -192,7 +200,7 @@ export const runRepeatGate = async (diff, { log = console.log, cwd = root, runne
       log(
         `[studio-e2e-repeat] run ${at + 1}/${RUNS}${hold ? ` (--hold-listings ${HOLD_LISTINGS_MS} --delay-pictures ${DELAY_PICTURES_MS})` : ''}`,
       );
-      const output = await runOnce(runner, runArgs(at, pageArgs, built), cwd);
+      const output = await runOnce(runner, runArgs(at, pageArgs, built), cwd, liveLog);
       runs.push({ hold, results: parseResults(output, jobs) });
     }
 

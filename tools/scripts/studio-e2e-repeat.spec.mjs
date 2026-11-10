@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import {
@@ -10,6 +11,7 @@ import {
   DELAY_PICTURES_MS,
   HOLD_LISTINGS_MS,
   keyOf,
+  runOnce,
   parseList,
   parseResults,
   repeatVerdict,
@@ -164,4 +166,20 @@ test('the hold run delays the pictures of the sketch edit case but never holds i
 
   assert.ok(row?.includes('[listings not held]'), row);
   assert.ok(!row.includes('[pictures not delayed]'), row);
+});
+
+test('each repeat run writes its runner output to a fresh live log for the e2e-progress mod', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'repeat-live-log-'));
+  const runner = join(dir, 'runner.mjs');
+  const liveLog = join(dir, 'handoffs/push-suite-repeat.log');
+  writeFileSync(
+    runner,
+    `console.log('Running 1 test using 1 worker\\n  ✓  1 [Large] › ' + process.argv[2] + ' (1.0s)');`,
+  );
+
+  await runOnce(runner, ['first'], dir, liveLog);
+  const output = await runOnce(runner, ['second'], dir, liveLog);
+
+  assert.match(output, /second/);
+  assert.equal(readFileSync(liveLog, 'utf8'), 'Running 1 test using 1 worker\n  ✓  1 [Large] › second (1.0s)\n');
 });

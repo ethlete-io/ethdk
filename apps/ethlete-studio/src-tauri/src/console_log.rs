@@ -21,6 +21,16 @@ pub trait ConsoleRuntime: Runtime {}
 #[cfg(target_os = "windows")]
 impl<R: Runtime> ConsoleRuntime for R {}
 
+/// The smoke starts the bundle with its own `HOME`, where an unsigned bundle finds no keychain and the
+/// keychain prompt blocks the page before it paints.
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+pub fn secret_storage() -> tauri_runtime_cef::SecretStorage {
+    match std::env::var_os(SMOKE_VIEW_ENV) {
+        Some(_) => tauri_runtime_cef::SecretStorage::Mock,
+        None => tauri_runtime_cef::SecretStorage::Auto,
+    }
+}
+
 pub fn path<R: Runtime>(app: &AppHandle<R>) -> Option<PathBuf> {
     std::env::var_os(LOG_ENV)
         .filter(|value| !value.is_empty())
@@ -129,13 +139,24 @@ fn smoke_script(view: &str) -> String {
         r#"(() => {{
   const key = 'ethlete-studio.call-view';
   if (window.top !== window) return;
-  if (localStorage.getItem(key) === null) localStorage.setItem(key, {view});
+  console.error('{SMOKE_MARKER} page loaded');
+  localStorage.setItem(key, {view});
+  let waiting = '';
   const timer = setInterval(() => {{
-    const live = document.querySelectorAll('ethlete-sketch-view iframe[data-state]').length;
-    const painted = document.querySelectorAll('ethlete-sketch-view iframe[data-state]:not(.opacity-0)').length;
-    if (!painted) return;
+    const view = document.querySelector('ethlete-sketch-view');
+    const frames = view ? view.querySelectorAll('iframe[data-state]') : [];
+    const pictures = view ? view.querySelectorAll('img[data-shot-picture]') : [];
+    const painted =
+      [...frames].filter((frame) => !frame.classList.contains('opacity-0')).length +
+      [...pictures].filter((picture) => picture.complete && picture.naturalWidth > 0).length;
+    if (!painted) {{
+      const now = `${{location.pathname}} sketch view ${{view ? 'shown' : 'missing'}}, ${{frames.length}} live frames, ${{pictures.length}} pictures`;
+      if (now !== waiting) console.error(`{SMOKE_MARKER} waiting: ${{now}}`);
+      waiting = now;
+      return;
+    }}
     clearInterval(timer);
-    console.error(`{SMOKE_MARKER} painted ${{painted}} of ${{live}} live frames`);
+    console.error(`{SMOKE_MARKER} painted ${{painted}} of ${{frames.length}} live frames and ${{pictures.length}} pictures`);
   }}, 500);
 }})();"#
     )
@@ -164,6 +185,19 @@ mod tests {
         let script = smoke_script(r#"{"checkout":"/a'b"}"#);
 
         assert!(script.contains(r#""{\"checkout\":\"/a'b\"}""#));
+    }
+
+    #[test]
+    fn every_platform_config_leaves_the_windows_to_start() {
+        for config in [
+            include_str!("../tauri.conf.json"),
+            include_str!("../tauri.macos.conf.json"),
+        ] {
+            let config: serde_json::Value = serde_json::from_str(config).unwrap();
+            for window in config["app"]["windows"].as_array().unwrap() {
+                assert_eq!(window["create"], false, "{}", window["label"]);
+            }
+        }
     }
 
     #[test]

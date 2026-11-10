@@ -138,3 +138,13 @@ frame painted in 90 s, empty log. Suspect: CEF on a locked macOS session never r
 Not verified: that the hook writes a line from a real bundle (needs an unlocked screen), the bite
 (`yarn studio:release-smoke --csp-from f08f0a3d1^` must fail naming the refusals, plain `yarn studio:release-smoke`
 must pass), the Windows and Linux builds of `console_log.rs`.
+
+## As built (B482 rest, findings 746 and 749) - the macOS smoke passes, 2026-11-10
+
+The empty log on macOS had a config cause, not the locked screen: `tauri.macos.conf.json` replaced the `windows` array
+without `"create": false`, so Tauri built the window without the hook (ccf39547a, with a Rust test that every platform
+config sets it). The smoke now opens the sketch target from `sketch.json` (4871b83a3), counts painted shot pictures
+(e50636eaf) and names what it waits for (7f7042561). Verified on an unlocked Mac: plain smoke PASS, 0 CSP refusals and
+0 console errors; the bite `--csp-from 'f08f0a3d1^'` FAIL with 17 CSP refusals. Not verified: the Windows and Linux
+builds of `console_log.rs`. The smoke needs a fresh `dist/libs/cli`, else the design server stops and the smoke reports
+only "sketch view missing".

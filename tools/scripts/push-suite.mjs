@@ -21,6 +21,7 @@ import { pathToFileURL } from 'node:url';
 const INNER_EXPORT = process.env['PUSH_SUITE_EXPORT'];
 const root = process.env['PUSH_SUITE_REPO'] ?? resolve(import.meta.dirname, '../..');
 export const E2E_LOG = join(root, '.claude/handoffs/push-suite-e2e.log');
+export const REPEAT_LOG = join(root, '.claude/handoffs/push-suite-repeat.log');
 const RUNNER = 'apps/ethlete-studio/e2e/canvas.e2e.mjs';
 const WORKSPACE_PARENTS = ['apps', 'libs', 'tools'];
 const DRAWING_BUILDS = ['cli', 'components', 'core'];
@@ -151,40 +152,45 @@ export const typecheckStep = async (projects, dir) => {
 
 const STUDIO_ROOT = 'apps/ethlete-studio';
 export const QUOTA_PERCENT = 20;
+export const QUOTA_PERCENT_DARWIN = 20;
 export const QUOTA_BUDGET_MS = 180_000;
 
 export const quotaSpecFiles = (files) =>
   files.filter((file) => file.startsWith(`${STUDIO_ROOT}/`) && file.endsWith('.spec.ts')).sort();
 
-export const quotaCommand = (file, quota = QUOTA_PERCENT) => ({
-  command: 'systemd-run',
-  args: [
-    '--user',
-    '--scope',
-    '--quiet',
-    '-p',
-    `CPUQuota=${quota}%`,
-    'npx',
-    'vitest',
-    'run',
-    '--root',
-    STUDIO_ROOT,
-    '--maxWorkers=1',
-    relative(STUDIO_ROOT, file),
-  ],
-});
+const quotaVitest = (file) => [
+  'npx',
+  'vitest',
+  'run',
+  '--root',
+  STUDIO_ROOT,
+  '--maxWorkers=1',
+  relative(STUDIO_ROOT, file),
+];
 
-const canQuota = () => spawnSync('systemd-run', ['--user', '--scope', '--quiet', 'true']).status === 0;
+export const quotaCommand = (file, quota = QUOTA_PERCENT, os = platform()) =>
+  os === 'darwin'
+    ? { command: 'node', args: ['tools/scripts/cpu-throttle.mjs', String(quota), '--', ...quotaVitest(file)] }
+    : {
+        command: 'systemd-run',
+        args: ['--user', '--scope', '--quiet', '-p', `CPUQuota=${quota}%`, ...quotaVitest(file)],
+      };
+
+export const quotaLabel = (quota, os = platform()) =>
+  os === 'darwin' ? `cpu-throttle ${quota}%` : `CPUQuota=${quota}%`;
+
+const canSystemdQuota = () => spawnSync('systemd-run', ['--user', '--scope', '--quiet', 'true']).status === 0;
+const canQuota = (os = platform()) => os === 'darwin' || canSystemdQuota();
 
 export const quotaStep = async (
   files,
   {
     run,
-    quota = QUOTA_PERCENT,
-    budgetMs = QUOTA_BUDGET_MS,
-    available = canQuota,
-    now = () => performance.now(),
     os = platform(),
+    quota = os === 'darwin' ? QUOTA_PERCENT_DARWIN : QUOTA_PERCENT,
+    budgetMs = QUOTA_BUDGET_MS,
+    available = () => canQuota(os),
+    now = () => performance.now(),
   },
 ) => {
   if (files.length === 0) return { status: 0, output: '', note: 'no changed Studio spec file' };
@@ -192,12 +198,12 @@ export const quotaStep = async (
     return {
       status: 0,
       output: '',
-      note: `skipped on ${os}: the CPU quota needs systemd-run --user, so a load-sensitive Studio case is not caught here`,
+      note: `skipped on ${os}: the CPU quota needs systemd-run --user on Linux or cpu-throttle on darwin, so a load-sensitive Studio case is not caught here`,
     };
-  return runUnderQuota(files, (file) => quotaCommand(file, quota), { run, quota, budgetMs, now });
+  return runUnderQuota(files, (file) => quotaCommand(file, quota, os), { run, quota, budgetMs, now, os });
 };
 
-const runUnderQuota = async (items, commandOf, { run, quota, budgetMs, now }) => {
+const runUnderQuota = async (items, commandOf, { run, quota, budgetMs, now, os = 'linux' }) => {
   const startedAt = now();
   const ran = [];
   for (const [index, item] of items.entries()) {
@@ -206,15 +212,15 @@ const runUnderQuota = async (items, commandOf, { run, quota, budgetMs, now }) =>
       return {
         status: 0,
         output: '',
-        note: `CPUQuota=${quota}%, ran ${ran.join(', ')}; over the ${seconds(budgetMs)} budget, skipped ${skipped.join(', ')}`,
+        note: `${quotaLabel(quota, os)}, ran ${ran.join(', ')}; over the ${seconds(budgetMs)} budget, skipped ${skipped.join(', ')}`,
       };
     }
     const { command, args } = commandOf(item);
     const result = await run(command, args);
     ran.push(item);
-    if (result.status !== 0) return { ...result, note: `CPUQuota=${quota}%, failed ${item}` };
+    if (result.status !== 0) return { ...result, note: `${quotaLabel(quota, os)}, failed ${item}` };
   }
-  return { status: 0, output: '', note: `CPUQuota=${quota}%, ran ${ran.join(', ')}` };
+  return { status: 0, output: '', note: `${quotaLabel(quota, os)}, ran ${ran.join(', ')}` };
 };
 
 export const E2E_QUOTA_PERCENT = 50;
@@ -248,7 +254,7 @@ export const e2eQuotaStep = async (
     built,
     quota = E2E_QUOTA_PERCENT,
     budgetMs = E2E_QUOTA_BUDGET_MS,
-    available = canQuota,
+    available = canSystemdQuota,
     now = () => performance.now(),
     os = platform(),
   },
@@ -444,7 +450,11 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
         const diff = git('diff', '-U0', range, '--', ...TRIGGERS);
         if (diff.status !== 0) return { status: 1, output: diff.stderr };
         const lines = [];
-        const status = await runRepeatGate(diff.stdout, { log: (line) => lines.push(line), cwd: dir });
+        const status = await runRepeatGate(diff.stdout, {
+          log: (line) => lines.push(line),
+          cwd: dir,
+          liveLog: REPEAT_LOG,
+        });
         const touched = [...changedLines(diff.stdout).keys()].length;
         return { status, output: lines.join('\n'), note: touched ? undefined : `no trigger change in ${range}` };
       }),

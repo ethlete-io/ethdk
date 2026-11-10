@@ -177,7 +177,7 @@ pub fn run() {
 
     let builder = tauri::Builder::default();
     #[cfg(any(target_os = "linux", target_os = "macos"))]
-    let builder = builder.runtime(tauri_runtime_cef::Cef::default());
+    let builder = builder.runtime(tauri_runtime_cef::Cef::default().secret_storage(console_log::secret_storage()));
     #[cfg(target_os = "windows")]
     let builder = builder.runtime(tauri_runtime_wry::Wry::default());
     #[cfg(target_os = "macos")]

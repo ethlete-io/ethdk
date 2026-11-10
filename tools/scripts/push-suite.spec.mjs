@@ -265,8 +265,26 @@ test('the quota step takes only the changed Studio spec files', () => {
   );
 });
 
+test('on darwin the quota step runs one spec file under the cpu throttle', () => {
+  assert.deepEqual(quotaCommand('apps/ethlete-studio/src/a.spec.ts', 15, 'darwin'), {
+    command: 'node',
+    args: [
+      'tools/scripts/cpu-throttle.mjs',
+      '15',
+      '--',
+      'npx',
+      'vitest',
+      'run',
+      '--root',
+      'apps/ethlete-studio',
+      '--maxWorkers=1',
+      'src/a.spec.ts',
+    ],
+  });
+});
+
 test('the quota step runs one spec file in a user scope with a CPU quota', () => {
-  assert.deepEqual(quotaCommand('apps/ethlete-studio/src/a.spec.ts', 15), {
+  assert.deepEqual(quotaCommand('apps/ethlete-studio/src/a.spec.ts', 15, 'linux'), {
     command: 'systemd-run',
     args: [
       '--user',
@@ -290,6 +308,7 @@ const quotaHarness = (durations, statuses = {}) => {
   const ran = [];
   return {
     ran,
+    os: 'linux',
     now: () => time,
     run: async (command, args) => {
       const file = args.at(-1);
@@ -339,12 +358,12 @@ test('without systemd-run the quota step passes and says it skipped on this OS',
   const result = await quotaStep(['apps/ethlete-studio/a.spec.ts'], {
     ...harness,
     available: () => false,
-    os: 'darwin',
+    os: 'win32',
   });
 
   assert.deepEqual(harness.ran, []);
   assert.equal(result.status, 0);
-  assert.match(result.note, /^skipped on darwin: the CPU quota needs systemd-run --user/);
+  assert.match(result.note, /^skipped on win32: the CPU quota needs systemd-run --user/);
 });
 
 test('the quota step runs after the Studio unit tests', () => {
