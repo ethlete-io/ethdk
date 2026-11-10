@@ -3924,3 +3924,10 @@ Cause (live probe, 11:06:48Z): the Stop payload has `last_assistant_message`, an
 time is `api-request`, not the final text. As built: the hook adds `last_assistant_message` to the turn's texts, once
 (not when the transcript already ends with it). Bite: a 3-line final message only in the payload fails on the old hook
 and blocks on the new one. Live 3-line close: pending, the next turn end of the builder after the commit.
+
+As built (703 hook lag, a7fdd3d5a). Cause (live probe, 11:06:48Z): the Stop payload has `last_assistant_message`; at
+hook time the last transcript entry is `api-request`, not the final text. Fix: the hook adds `last_assistant_message`
+to the texts of the turn once, and skips it when the transcript already ends with it. Spec bite: a 3-line final
+message only in the payload passes the old hook and is blocked by the new one; a dedupe spec; 9/9. Live bite 11:14:47Z:
+a 3-line closing summary with no mid-turn text logged `{"words": 41, "lines": 3, "blocked": true}`; a one-line close at
+11:12:37Z logged 1 line and no block. Pass.
