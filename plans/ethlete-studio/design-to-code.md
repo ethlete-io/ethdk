@@ -4067,8 +4067,7 @@ ccf39547a adds `"create": false` and a Rust test that every platform config sets
 works on the real repo). Left is the marker sketch `pages/system` (round 1 "Fehlende Build-Antwort der Auflistung",
 variant a, last change by a Sonnet subagent): Studio shows "27 unveränderte Zustände eingeklappt" and not one changed
 state, so the human sees a sketch with nothing to look at. Its files have uncommitted changes in the Linux tree
-(`build-ready-footer.ts`, `system.ts`, `sketch.json`); the sketch is from 21ff32b31 (2026-11-07). Suspect: the variant
-draws the new state, but the state has no frame in the design, so the compare finds no changed state. Lesson: a sketch
+(`build-ready-footer.ts`, `system.ts`, `sketch.json`); the sketch is from 21ff32b31 (2026-11-07). Cause (proven by diff, Linux builder): variant a was never drawn; the marker commit 21ff32b31 copied the design and added no state, and the uncommitted Sonnet edits only resync the variant to 7fec742b2. The doc agent suspect (a state without a frame) was wrong. Lesson: a sketch
 with zero changed states reached the human. Decided by the doc agent (tool internal): `sketch check` and `sketch ready`
 refuse a variant with zero changed states and name the state that should differ; Studio never lists such a sketch as
-waiting for the human. The Linux builder owns this sketch (the human: "deine baustelle") and finds the cause first.
+waiting for the human. The Linux builder owns this sketch (the human: "deine baustelle") and finds the cause first. Added: `sketch new` for a marker sketch refuses to finish when variant a has no state beyond the design. Decided by the doc agent (applies ADR 0010 to pages/system): variant a = the built look (subtle note line), b = an error card in the canvas like the empty-product card ("Auflistung fehlgeschlagen", server reason, "Erneut laden"), c = a head banner in the error colour with "Erneut laden", tree still shown; the human picks by merge.
