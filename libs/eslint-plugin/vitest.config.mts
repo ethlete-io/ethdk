@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import { specWorkers } from '../../tools/vitest/workers.mts';
 
 export default defineConfig({
   test: {
@@ -7,6 +8,7 @@ export default defineConfig({
     globals: true,
     include: ['src/**/*.spec.js'],
     reporters: ['default'],
+    maxWorkers: specWorkers,
     coverage: {
       reportsDirectory: '../../coverage/libs/eslint-plugin',
       provider: 'v8',

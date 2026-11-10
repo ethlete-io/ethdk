@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
+import { specWorkers } from '../../tools/vitest/workers.mts';
 
 export default defineConfig({
   // The lib is consumed from source rather than from `dist`: it is a workspace package whose only
@@ -15,6 +16,7 @@ export default defineConfig({
     globals: true,
     include: ['src/**/*.spec.ts'],
     reporters: ['default'],
+    maxWorkers: specWorkers,
     coverage: {
       reportsDirectory: '../../coverage/apps/timetrack-vscode',
       provider: 'v8',

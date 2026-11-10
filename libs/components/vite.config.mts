@@ -1,6 +1,7 @@
 /// <reference types='vitest' />
 import angular from '@analogjs/vite-plugin-angular';
 import { defineConfig } from 'vite';
+import { specWorkers } from '../../tools/vitest/workers.mts';
 
 // the date and time specs cover the runtime's own daylight-saving gap, which a zone without one (CI runs in UTC) never has
 process.env['TZ'] = 'Europe/Berlin';
@@ -19,6 +20,7 @@ export default defineConfig(() => ({
     include: ['{src,testing,tests,generators,design}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     setupFiles: ['src/test-setup.mjs'],
     reporters: ['default'],
+    maxWorkers: specWorkers,
     // The analog plugin defaults to `vmThreads`, whose heap grows across files. Vitest's default
     // recycle point (1/maxWorkers of system memory) sits above a worker thread's V8 heap cap, so
     // without this a worker dies with "Worker exited unexpectedly" before it is recycled.

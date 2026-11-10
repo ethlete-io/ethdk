@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
+import { specWorkers } from '../../tools/vitest/workers.mts';
 
 export default defineConfig({
   resolve: {
@@ -13,5 +14,6 @@ export default defineConfig({
     globals: true,
     include: ['src/**/*.spec.ts'],
     reporters: ['default'],
+    maxWorkers: specWorkers,
   },
 });

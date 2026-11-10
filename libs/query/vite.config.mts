@@ -1,6 +1,7 @@
 /// <reference types='vitest' />
 import angular from '@analogjs/vite-plugin-angular';
 import { defineConfig } from 'vite';
+import { specWorkers } from '../../tools/vitest/workers.mts';
 
 // The date-only URL scenarios only fail off UTC, and the threads pool ignores a TZ set inside a spec.
 process.env['TZ'] = 'America/Los_Angeles';
@@ -18,6 +19,7 @@ export default defineConfig(() => ({
     include: ['{src,tests,testing,generators}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     setupFiles: ['src/test-setup.ts'],
     reporters: ['default'],
+    maxWorkers: specWorkers,
     onConsoleLog: (log: string, type: 'stdout' | 'stderr') => {
       if (type === 'stderr') {
         // Suppress HttpErrorResponse logs

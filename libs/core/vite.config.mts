@@ -1,6 +1,7 @@
 /// <reference types='vitest' />
 import angular from '@analogjs/vite-plugin-angular';
 import { defineConfig } from 'vite';
+import { specWorkers } from '../../tools/vitest/workers.mts';
 
 export default defineConfig(() => ({
   root: __dirname,
@@ -15,6 +16,7 @@ export default defineConfig(() => ({
     include: ['{src,tests,generators}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     setupFiles: ['src/test-setup.ts'],
     reporters: ['default'],
+    maxWorkers: specWorkers,
     coverage: {
       reportsDirectory: '../../coverage/libs/core',
       provider: 'v8' as const,

@@ -3544,6 +3544,12 @@ caught it: the worker count follows the core count, so only a bigger machine tha
 one night): one shared vitest preset sets `maxWorkers`, and every project config uses it; a check fails a vitest
 config that does not.
 
+As built (finding 662): `tools/vitest/workers.mts` exports `specWorkers` (`min(4, cores - 1)`, at least 1); 14 configs set
+`maxWorkers: specWorkers` through a relative import, and the old hand comments are gone. `tools/scripts/check-vitest-workers.mjs`
+globs the same configs as `vitest.projects.ts` and fails on one without the preset; its spec runs in `yarn test:tools`.
+Exempt by rule: browser-mode configs (`apps/storybook/vitest.config.mts`, its own browser instances, not forks), serial
+`fileParallelism: false` (`libs/cli/vitest.perf.config.mts`) and `vite.config.mts` files a sibling `vitest.config` shadows.
+
 663\. Builder (2026-11-09, Mac night): after 343e968aa the cli dist was stale. The stale-dist guard then made each
 single-case canvas rerun "NOT RUN" with the summary "0 passed (1.7s)"; the text "This CLI build is stale" was only in
 the worker output. Why no tool caught it: the guard runs inside each worker, not before the run. Tool fix (tonight,
