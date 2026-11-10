@@ -13,6 +13,7 @@
     "windows": [
       {
         "label": "main",
+        "create": false,
         "title": "Ethlete Studio",
         "width": 1280,
         "height": 820,

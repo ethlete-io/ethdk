@@ -111,3 +111,30 @@ CEF. Not wired into `publish.yml`: the smoke needs its own patched build (2-9 mi
 ADR 0197 keeps slow steps from holding a release; recommendation: a separate `workflow_dispatch` job on
 `macos-15-intel` after the first local bite passes. Seen on the way: running a shipped bundle on the real `HOME`
 re-pins `devtools.remote_debugging.allowed: false` (finding 700a), which is why the smoke uses its own `HOME`.
+
+## As built (B482, ADR 0255) - console log instead of the debug port, 2026-11-10
+
+What: Studio sets the CEF runtime's `on_console_message` hook (`WebviewWindowBuilderCefExt`, tauri-runtime-cef
+`src/tauri_ext.rs`, fed by the display handler in `src/cef_impl/client/display.rs`) on its main window and appends
+each `Error`/`Fatal` message as one line (`<unix ms> ERROR <source>:<line> <message>`, newlines escaped) to
+`console.log` in the app log directory (`~/Library/Logs/io.ethlete.studio/` on macOS), always on; the file is dropped at
+start once it passes 1 MiB. `ETHLETE_STUDIO_CONSOLE_LOG` overrides the path. To attach the hook, the `main` window is
+`"create": false` in `tauri.conf.json` and `src-tauri/src/console_log.rs` builds it in `setup` (the macOS WebKit
+rebuild path goes through the same builder). Windows (wry) has no hook and writes nothing.
+
+The smoke (`tools/studio-release-smoke/smoke.mjs`) no longer patches `lib.rs` and no longer reads CDP (`cdp-log.mjs`
+is gone): it starts the bundle with its own `HOME`, `ETHLETE_STUDIO_CONSOLE_LOG` and `ETHLETE_STUDIO_SMOKE_VIEW`
+(the remembered view as JSON). With the last one set, the app adds an initialization script that seeds
+`ethlete-studio.call-view` when it is empty and, once a sketch frame paints, writes
+`console.error('[studio-release-smoke] painted <n> of <m> live frames')`. The smoke waits for that marker line, waits
+8 s more, then fails on any other line (CSP refusals split out). Without the marker it fails as "no frame painted".
+`--app` now takes any bundle, a shipped one included.
+
+Verified: `cargo check`, `cargo clippy --all-targets`, the two `console_log` unit tests; a bundle built from the
+working tree carries the new code. Ran `yarn studio:release-smoke --app <that bundle>` on a locked screen: FAIL, no
+frame painted in 90 s, empty log. Suspect: CEF on a locked macOS session never runs the page; the CEF profile's
+`Local Storage` held no key, so even the initialization script did not run.
+
+Not verified: that the hook writes a line from a real bundle (needs an unlocked screen), the bite
+(`yarn studio:release-smoke --csp-from f08f0a3d1^` must fail naming the refusals, plain `yarn studio:release-smoke`
+must pass), the Windows and Linux builds of `console_log.rs`.

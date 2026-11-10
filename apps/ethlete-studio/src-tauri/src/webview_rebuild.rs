@@ -11,13 +11,15 @@ use std::sync::atomic::{AtomicU32, Ordering};
 
 use tauri::utils::config::WindowConfig;
 use tauri::webview::WebContentProcessTermination;
-use tauri::{Manager, Runtime, Webview, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Manager, Runtime, Webview, WebviewUrl};
+
+use crate::console_log::{self, ConsoleRuntime};
 
 const MAIN: &str = "main";
 
 static REBUILDS: AtomicU32 = AtomicU32::new(0);
 
-pub fn on_terminate<R: Runtime>(webview: &Webview<R>, _termination: &WebContentProcessTermination) {
+pub fn on_terminate<R: ConsoleRuntime>(webview: &Webview<R>, _termination: &WebContentProcessTermination) {
     let config = (webview.label() == MAIN || webview.label().starts_with("main-"))
         .then(|| rebuilt_config(webview))
         .flatten();
@@ -33,7 +35,7 @@ pub fn on_terminate<R: Runtime>(webview: &Webview<R>, _termination: &WebContentP
     let _ = webview.clone().run_on_main_thread(move || {
         let handle = webview.app_handle();
 
-        match WebviewWindowBuilder::from_config(handle, &config).and_then(WebviewWindowBuilder::build) {
+        match console_log::build_window(handle, &config) {
             Ok(_) => {
                 let _ = webview.window().destroy();
             }
