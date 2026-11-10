@@ -50,6 +50,8 @@ const blockerTextOf = (blocker: BuildReadyBlocker) => {
       return LABELS.recordStale;
     case 'pending':
       return LABELS.slowChecksPending;
+    case 'no-harness':
+      return LABELS.noHarness;
     case 'embedded':
       return blocker.part ? LABELS.embeddedNotReady(blocker.part) : blocker.text;
     default:

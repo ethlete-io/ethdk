@@ -17,8 +17,16 @@ export type BuildReadyInputs = {
 
 type Target = { product: ResolvedProduct; part: string; inputs: BuildReadyInputs };
 
+const hasHarness = (product: ResolvedProduct) => product.config.harness !== undefined;
+
+const NO_HARNESS: Blocker = {
+  kind: 'no-harness',
+  text: 'the product has no harness in config.json, so its slow checks and actions never run',
+};
+
 const ownBlockersOf = ({ product, part, inputs }: Target): Blocker[] => {
-  const slow = (inputs.slowOf ?? slowProblemsOf)({ product, part });
+  const found = (inputs.slowOf ?? slowProblemsOf)({ product, part });
+  const slow = found === 'pending' && !hasHarness(product) ? [] : found;
 
   return [
     ...openPointGroupsOf(inputs.pointsOf(part)).map((text) => ({ kind: 'open-point' as const, text })),
@@ -31,10 +39,13 @@ const ownBlockersOf = ({ product, part, inputs }: Target): Blocker[] => {
           kind: blockerKindOfRule(problem.rule),
           text: `${problem.rule}: ${problem.message}`,
         }))),
+    ...(hasHarness(product) ? [] : [NO_HARNESS]),
   ];
 };
 
 const recordBlockersOf = ({ product, part }: Target): Blocker[] => {
+  if (!hasHarness(product)) return [];
+
   if (readyMarkOf({ product, part }) === null)
     return [{ kind: 'stale-record', text: `no check record at the current design - run design check or design ready` }];
 

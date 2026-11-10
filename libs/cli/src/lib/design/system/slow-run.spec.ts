@@ -98,4 +98,28 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
     });
     expect(JSON.parse(readFileSync(join(dir, 'ready.json'), 'utf8'))['components/chip'].actions).toEqual([]);
   });
+
+  it('blocks each part of a product without a harness definitely, not as pending', async () => {
+    const { target, config } = staleChip();
+    const bare = { ...config, products: { acme: { ...config.products.acme, harness: undefined } } };
+    const bareProduct = () => resolveProduct({ target, name: 'acme', config: bare.products.acme });
+    const runner = startSlowRunner({
+      target,
+      configOf: () => bare,
+      log: () => undefined,
+      intervalMs: 3_600_000,
+      runners: { controlState: async () => [], droppedProps: async () => [], actionLost: async () => [] },
+    });
+
+    await runner.poll();
+    await runner.poll();
+    runner.stop();
+
+    const answer = openPointsOf({ product: bareProduct(), part: 'components/chip' }) as PartOpenPointsAnswer;
+    const kinds = answer.buildReady.ready ? [] : answer.buildReady.blockers.map((blocker) => blocker.kind);
+
+    expect(kinds).toContain('no-harness');
+    expect(kinds).not.toContain('pending');
+    expect(kinds).not.toContain('stale-record');
+  });
 });

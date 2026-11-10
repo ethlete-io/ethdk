@@ -209,7 +209,7 @@ describe('part ready', () => {
     });
   }, 30_000);
 
-  it('et design ready exits 1 with the open points, and marks a part without any', async () => {
+  it('et design ready exits 1 with the open points, and on a part of a product without a harness', async () => {
     const { target, dir } = checkout();
     const lines = output();
 
@@ -223,9 +223,12 @@ describe('part ready', () => {
     expect(lines).toContain('  components/tag: no controls declared');
     expect(lines).toContain('components/tag has 1 open point - close them before ready');
 
-    expect(await ready('components/chip', '--product', 'app-a', '--by', 'human')).toBe(0);
-    expect(lines.at(-1)).toBe('components/chip is build-ready in app-a');
-    expect(Object.keys(readReady(dir))).toEqual(['components/chip']);
+    expect(await ready('components/chip', '--product', 'app-a', '--by', 'human')).toBe(1);
+    expect(lines.slice(-2)).toEqual([
+      '  no-harness: the product has no harness in config.json, so its slow checks and actions never run',
+      'components/chip has 1 blocker - fix them before ready',
+    ]);
+    expect(readReady(dir)).toEqual({});
   });
 
   it('refuses ready with the failed action checks, and answers 503 while they cannot run', async () => {
@@ -244,19 +247,7 @@ describe('part ready', () => {
       },
     });
 
-    vi.mocked(partActionFailuresOf).mockResolvedValueOnce(failed);
-
-    expect(
-      await designReady({
-        target,
-        argv: ['components/chip', '--product', 'app-a', '--by', 'human'],
-        invocation: 'et design',
-      }),
-    ).toBe(1);
-    expect(lines).toContain(`  ${failed[0]}`);
-    expect(lines).toContain(`components/chip fails 1 action check - fix them before ready (${PART_HARNESS_ONLY})`);
-
-    vi.mocked(partActionFailuresOf).mockResolvedValueOnce(failed);
+    const callsBefore = vi.mocked(partActionFailuresOf).mock.calls.length;
 
     expect(
       await designReady({
@@ -265,8 +256,11 @@ describe('part ready', () => {
         invocation: 'et design',
       }),
     ).toBe(1);
-    expect(lines).toContain('components/chip fails 1 action check - fix them before ready');
-    expect(partActionFailuresOf).toHaveBeenLastCalledWith(expect.objectContaining({ url: 'http://localhost:1' }));
+    expect(lines.slice(-2)).toEqual([
+      '  no-harness: the product has no harness in config.json, so its slow checks and actions never run',
+      'components/chip has 1 blocker - fix them before ready',
+    ]);
+    expect(vi.mocked(partActionFailuresOf).mock.calls.length).toBe(callsBefore);
 
     vi.mocked(partActionFailuresOf).mockResolvedValueOnce({ noVerdict: 'no harness' });
 

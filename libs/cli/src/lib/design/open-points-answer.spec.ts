@@ -63,7 +63,7 @@ describe('openPointsAnswer', { timeout: 30_000 }, () => {
         directEdit: false,
         buildReady: {
           ready: false,
-          blockers: expect.arrayContaining([expect.objectContaining({ kind: 'stale-record' })]),
+          blockers: expect.arrayContaining([expect.objectContaining({ kind: 'no-harness' })]),
         },
         drawn: false,
         points: [],
@@ -119,7 +119,7 @@ describe('openPointsAnswer', { timeout: 30_000 }, () => {
           ready: false,
           blockers: expect.arrayContaining([
             expect.objectContaining({ kind: 'open-point' }),
-            expect.objectContaining({ kind: 'stale-record' }),
+            expect.objectContaining({ kind: 'no-harness' }),
           ]),
         },
         drawn: true,
