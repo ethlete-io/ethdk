@@ -4057,6 +4057,8 @@ agent remembers fills the file again; the file needs a check. Doc agent cleanup:
 names the row to delete. Open: about 120 ⏳ rows are not checked against git; the builder checks each row against git
 when it takes one (ADR 0234).
 
+As built (Linux builder, 4b50bdb51, not pushed yet): `tools/scripts/check-studio-status.mjs` with a spec, wired in `.husky/pre-commit` on the staged STATUS.md blob. It refuses a ✅ row, a "## Erledigt" heading, a "Stand:" line older than 3 days, and a missing "Stand:" line (kept by the doc agent: without the line the age check checks nothing). Bite: with the check returning nothing, 3 of 5 spec cases fail. Hook verified: a throwaway index with row B101 set to ✅ makes `.husky/pre-commit` exit 1 with "row B101 has status ✅".
+
 749\. Mac builder (2026-11-10, B482): the console log of the macOS bundle stays empty. Suspect (from the config, not yet
 proven by a bundle run): `tauri.macos.conf.json` replaces the `windows` array without `"create": false`, so Tauri creates
 the macOS window itself, and `console_log::start()` sets the hook and the init script only on windows with
@@ -4067,8 +4069,79 @@ ccf39547a adds `"create": false` and a Rust test that every platform config sets
 works on the real repo). Left is the marker sketch `pages/system` (round 1 "Fehlende Build-Antwort der Auflistung",
 variant a, last change by a Sonnet subagent): Studio shows "27 unveränderte Zustände eingeklappt" and not one changed
 state, so the human sees a sketch with nothing to look at. Its files have uncommitted changes in the Linux tree
-(`build-ready-footer.ts`, `system.ts`, `sketch.json`); the sketch is from 21ff32b31 (2026-11-07). Suspect: the variant
-draws the new state, but the state has no frame in the design, so the compare finds no changed state. Lesson: a sketch
+(`build-ready-footer.ts`, `system.ts`, `sketch.json`); the sketch is from 21ff32b31 (2026-11-07). Cause (proven by diff, Linux builder): variant a was never drawn; the marker commit 21ff32b31 copied the design and added no state, and the uncommitted Sonnet edits only resync the variant to 7fec742b2. The doc agent suspect (a state without a frame) was wrong. Lesson: a sketch
 with zero changed states reached the human. Decided by the doc agent (tool internal): `sketch check` and `sketch ready`
 refuse a variant with zero changed states and name the state that should differ; Studio never lists such a sketch as
-waiting for the human. The Linux builder owns this sketch (the human: "deine baustelle") and finds the cause first.
+waiting for the human. The Linux builder owns this sketch (the human: "deine baustelle") and finds the cause first. Added: `sketch new` for a marker sketch refuses to finish when variant a has no state beyond the design. Decided by the doc agent (applies ADR 0010 to pages/system): variant a = the built look (subtle note line), b = an error card in the canvas like the empty-product card ("Auflistung fehlgeschlagen", server reason, "Erneut laden"), c = a head banner in the error colour with "Erneut laden", tree still shown; the human picks by merge. The human merged variant b (514dbc881, 2026-11-10 night); the app build is STATUS row B485.
+
+751\. The human (2026-11-10, late evening): "würde schon gern mal wieder ins schaffen mit resultaten kommen, aktuell
+haben wir echt wieder so ein fix loop". Cause (read in this session): the doc agent sent each new tool lesson (746 HEAD
+hint, 748 STATUS check, 750 sketch guard) to a builder as work at once, and the Mac builder ran B482 bite rounds, a tool
+item outside the binding order; the same failure as 711. Lesson: the rule against standstill exists, but a decided tool
+fix had no default place except a builder message. Decided by the doc agent: a tool fix decided by the doc agent goes
+into the "Werkzeug-Rückstand" line of STATUS.md, never into a builder message as work, unless CI is red or it blocks the
+current item. Both builders are back on the binding order; B482 is parked after its running smoke.
+
+752\. Linux builder (2026-11-10, night setup): the usage-limit watchdogs of ADR 0220 could not be set. `claude-at` no
+longer exists on the desk PC, and auto mode denied the builder's `systemd-run --user` timers twice ("Unauthorized
+Persistence", then "Tmux Self Drive", because the script types into the builder's own pane). The builder wrote
+`/tmp/dx/kick.sh` and gave the human a `!` command in tmux claude-3. Lesson: each night rebuilt its watchdog by hand,
+and the tool was lost. Decided by the doc agent (tool internal, night backlog): the agent-sessions script gets a
+`watchdog` command (one-shot resume after a usage-limit reset, log file, pane list) that the human installs once with
+an allow rule, so no night needs a hand-made timer.
+
+753\. Linux builder (2026-11-10, night, 750 sketch): `sketch note <variant>` overwrites the whole round note, so a note
+for variant b deleted the line of variant a; all three lines went in with one `sketch round pages/system r1 --note`.
+Lesson: the variant argument suggests a per-variant note, but the tool stores one note per round. Decided by the doc
+agent (tool internal, backlog): the round note keeps one line per variant, and `sketch note <variant>` replaces only
+that line; a spec writes notes for a, b and c in sequence and reads all three back.
+
+754\. Linux builder (same sketch): no command prints the number of changed states of a sketch variant; it shows only
+through the `sketch ready` lines. With finding 750 (a sketch with zero changed states reached the human) this count is
+the fact an agent needs first. Decided by the doc agent (tool internal, backlog): `sketch status` (or `sketch check`)
+prints the changed-state count per variant, and the 750 guard uses the same count.
+
+755\. Linux builder (same sketch, scratch copy `/tmp/sk750`): (a) `sketch check` flags the gitignored, regenerated
+`<variant>/tsconfig.json` as FORMAT; (b) with a `node_modules` symlink to the repo, the scratch writes its shots into
+the repo's `node_modules/.design-explore`. Lesson: a scratch copy is the documented safe way to verify a sketch off
+:4402, but the tool treats it like a repo and leaks into the real one. Decided by the doc agent (tool internal,
+backlog): the format check skips gitignored generated files, and the shot cache resolves from the project root, not
+through the `node_modules` real path.
+
+756\. Linux builder (same sketch): the repo's `pages/system` variant `a/tsconfig.json` is not formatted by Prettier.
+Suspect: the generator writes it with `JSON.stringify` and no format pass (not checked). Backlog: the generator
+formats what it writes; a spec runs Prettier `--check` on a freshly created variant.
+
+757\. Linux builder (same sketch): the SDK banner with type error drew teal in Studio, because no
+`data-et-semantic-color="error"` wrapper was around it. Suspect: the banner type sets the icon and the role, but not
+the semantic colour theme. Lesson: a component API that takes "error" and draws the brand colour lets a sketch show a
+wrong look without a warning. Open: the builder checks if `libs/components` banner should set the semantic colour from
+its type (an SDK API question for the human if it changes a default); until then the sketch uses the wrapper.
+
+758\. Linux builder (same sketch): Studio has no `components/banner` part, so variant c imports the SDK mock directly.
+Note only: if the human picks c, the pick adds the part first (ADR 0010 flow), not a direct SDK import in a page.
+
+Measured (same sketch, for 738): `sketch ready` took 29 s, and 1-2 min on a later run (target 10 s).
+
+759\. The human (2026-11-10, night, Studio screen shot of `pages/system` round 1): "ich kann hier nix mergen". The
+sketch shows variants b and c, but no merge action and no reason. Cause (read in the repo): `.ethlete/design/studio/ready.json`
+has no entry for `pages/system`; `sketch ready` ran only on the scratch copy `/tmp/sk750`, and there it listed
+`listing-error` as SHOT-NOT-VIEWED. The builder still reported the sketch as "waits for the human's pick". Lesson: two
+gaps. (a) Studio shows a not-ready sketch to the human like a ready one, with the merge action silently missing.
+(b) A builder report can call a sketch pickable without a passed `sketch ready` on the real repo. Decided by the doc
+agent (tool internal, applies "ready means final"): Studio draws "Noch nicht bereit" with the reason from `sketch
+ready` in the sketch head where the merge action would be, and lists no such sketch as waiting for the human; the
+builder runs `sketch ready` on the real repo before it reports a sketch to the human. Fix of this sketch now (blocks
+the human's pick).
+
+760\. Linux builder (2026-11-10, night): `check-studio-adrs` prints about 40 warning lines to stderr on every commit
+that stages STATUS.md (the hook hides only stdout). Lesson: a warning on every commit is noise that hides a real one.
+Backlog: the hook prints a one-line count and a command for the full list.
+
+761\. Linux builder (2026-11-10, night, push of 4b50bdb51 + 5039c0a8d): push:suite failed with 6 e2e timeouts (no frame
+after 10 s, slow `/__design` requests) at load 56-110 on 16 cores; the same e2e passed at b6da40338 30 min earlier. Top
+CPU: Playwright workers of the fifagg-frontend session, timetrack, a Studio debug build. Suspect: load, not the diff
+(not yet proven; a rerun at load < 20 decides). Lesson: the 726 gate checks the load only at the start of push:suite,
+so load from another session that rises mid-run still fails the e2e step. Backlog: push:suite checks the load again
+before the e2e step and, if a step fails with a load above the limit, reruns it once after the load drops, and says
+so in the report.

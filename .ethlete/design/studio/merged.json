@@ -27,7 +27,7 @@
     "at": "2026-11-03T16:58:15.525Z"
   },
   "components/title-bar": {
-    "hash": "d8eb542e980c46af",
+    "hash": "f3239ce89833a657",
     "variant": "a",
     "decidedBy": "user",
     "at": "2026-11-08T14:38:29.675Z"
@@ -107,15 +107,15 @@
     "note": "merged without a pick: allowed by B346: Empfehlung gebaut (c Tag; a Kopf weg, b Kopf skaliert)"
   },
   "pages/start": {
-    "hash": "5074133a3524678e",
+    "hash": "692644df2034dcd1",
     "variant": "new",
     "decidedBy": "user",
     "at": "2026-11-04T14:48:14.692Z"
   },
   "pages/system": {
-    "hash": "66ef59809504dd25",
+    "hash": "c633ad45fe3758d6",
     "variant": "b",
     "decidedBy": "user",
-    "at": "2026-11-10T20:44:50.271Z"
+    "at": "2026-11-10T21:33:52.752Z"
   }
 }

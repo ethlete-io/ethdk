@@ -86,3 +86,21 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   waits for push (person-name fix in sketch data, finding 743), then the human picks it. Then backlog 628-633, the darwin
   quota gap (735).
 - Mac mailbox wait: restart it at once (command at the top). Background task may still run from the old session.
+
+## Night state (2026-11-10, after d6bf3c863)
+
+- Night shift per ADR 0257: both builders work only the tool backlog (fixes, test failures, speed; no sketches, no
+  features; push after a green push suite) until the human says stop (about noon 2026-11-11 or later). Then the binding
+  STATUS order applies again (Linux: B249 rest, A1 rest, A13). The doc agent records findings, answers builders,
+  collects questions for the human. Never send a decided tool fix as builder work by day (finding 751).
+- Done tonight: B483 built and verified on the real repo; 747 (release bot commit failed commitlint) fixed 588bb8e8b,
+  the human said no re-run, the next push publishes (CI Next run 42903146591 on 34cb5e211; the Linux builder reports
+  the publish result); STATUS cleaned (aae2f3ab2, 145 open rows); findings 746-751; ADR 0256 extended (965f63494).
+- Linux builder (ethlete-sdk-3e, tmux claude-3): 750 pages/system marker sketch variants a/b/c (the human picks
+  tomorrow), then 748, 750 tool guard, 731, 745, 736+737, 738, 723, 714/710, the STATUS backlog line minus 628-633.
+- Mac builder: B345 change-crop sketch ready + push (the human picks tomorrow), B482 rest (e50636eaf paint probe),
+  Built lines 746/749, 746 HEAD hint, 735, 739, Mac e2e speed.
+- Watchdogs set by the human: 14 systemd one-shot timers kick-2335 … kick-1235 (:35 each hour, 2026-11-10 23:35 to
+  2026-11-11 12:35), script /tmp/dx/kick.sh, panes %2 %23 %207, log /tmp/dx/kick-report.log. Finding 752 (permanent
+  watchdog command) is night backlog. No open question for the human.
+- After restart (night): 750 pages/system sketch variants a/b/c are ready (e0d4c428f, b6da40338), the human picks by merge in the morning. Findings 753-758 recorded (68f6b3eff) and put in the STATUS backlog line. Linux builder next: 748.

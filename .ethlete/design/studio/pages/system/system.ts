@@ -222,6 +222,7 @@ const emptySide = html`<p class="px-space-3 py-space-2 text-et-surface-muted tex
 
 export default definePart<{
   empty?: boolean;
+  listingError?: boolean;
   manyStates?: boolean;
   nothingOpen?: boolean;
   closed?: boolean;
@@ -236,7 +237,7 @@ export default definePart<{
   agent?: AgentState;
   call?: 'open' | 'transferred';
 }>({
-  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text: a network or server error shows "Kommentar nicht gesendet. Erneut versuchen." under the field and turns Senden into Erneut senden; a send the server refuses with a 4xx shows the server reason there and keeps Senden, with no retry. The open-points popover also lists the exceptions of the part as an Ausnahmen group, each with its reason, state and a Freigeben button, and ends in a footer with the computed build-ready status as a badge (Baubereit, Nicht baubereit (n) in the warning colour, Wird geprüft while slow rules run) and, beside it, the progress of the agent as a second badge (Agent behebt, Agent wartet, Agent unterbrochen, Agent fehlgeschlagen in the error colour, the detail as its title); Gründe opens the blockers grouped by kind, and a direct edit offers Sketch öffnen; the chip counts the exceptions with the points. A legacy call shows a header with its slug and headline, the surface and colour theme switches, and Als übertragen markieren, which turns into an übertragen badge.',
+  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text: a network or server error shows "Kommentar nicht gesendet. Erneut versuchen." under the field and turns Senden into Erneut senden; a send the server refuses with a 4xx shows the server reason there and keeps Senden, with no retry. The open-points popover also lists the exceptions of the part as an Ausnahmen group, each with its reason, state and a Freigeben button, and ends in a footer with the computed build-ready status as a badge (Baubereit, Nicht baubereit (n) in the warning colour, Wird geprüft while slow rules run) and, beside it, the progress of the agent as a second badge (Agent behebt, Agent wartet, Agent unterbrochen, Agent fehlgeschlagen in the error colour, the detail as its title); Gründe opens the blockers grouped by kind, and a direct edit offers Sketch öffnen; the chip counts the exceptions with the points. A failed listing read shows an error card centred in the canvas, like the empty-product card: a small error icon, the title Auflistung fehlgeschlagen, the server reason as the muted line, for example "missing build: pages/system", and an Erneut laden button; the tree is empty and there are no frames and no open-points chip. A legacy call shows a header with its slug and headline, the surface and colour theme switches, and Als übertragen markieren, which turns into an übertragen badge.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6'],
   implements: {
     route: '/',
@@ -245,6 +246,7 @@ export default definePart<{
   states: {
     part: {},
     empty: { empty: true },
+    'listing-error': { listingError: true },
     'many-states': { manyStates: true },
     fit: { fit: true },
     'points-closed': { closed: true },
@@ -297,6 +299,7 @@ export default definePart<{
     'comment-send': { kind: 'button', part: 'components/button' },
     'comment-target': { kind: 'button', part: 'components/comment-target' },
     'open-points': { kind: 'button', part: 'components/button' },
+    reload: { kind: 'button', part: 'components/button' },
     'open-edit-sketch': { kind: 'button', part: 'components/button' },
     toggle: { kind: 'disclosure', part: 'components/disclosure', surfaces: { body: 'blockers-open' } },
     'exception-approve': { kind: 'button', part: 'components/button' },
@@ -306,6 +309,7 @@ export default definePart<{
   },
   render: async ({
     empty,
+    listingError,
     manyStates,
     nothingOpen: clear,
     closed,
@@ -341,6 +345,29 @@ export default definePart<{
 
     if (manyStates) {
       return manyStatesView(await treeRowGrid());
+    }
+
+    if (listingError) {
+      const reload = await button.render({ label: 'Erneut laden', variant: 'outline', size: 'sm' });
+      const menu = await studioMenu({ open: false });
+      const shell = await shellMain.render({
+        studio: menu.body,
+        section: 'System',
+        product: 'studio',
+        side: '',
+        content: html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)">
+          <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
+            <span class="contents" data-et-semantic-color="error"
+              >${icon('error', { size: 24, cls: 'text-et-theme' })}</span
+            >
+            <p class="m-0 text-et-surface font-ui-strong text-ui-md">Auflistung fehlgeschlagen</p>
+            <p class="m-0 text-et-surface-muted">missing build: pages/system</p>
+            ${control(withAction(reload.body, 'emit:reload'), 'reload')}
+          </div>
+        </div>`,
+      });
+
+      return drawing({ body: shell.body, setup: menu.setup, styles: shell.styles + menu.styles + reload.styles });
     }
 
     if (empty) {
