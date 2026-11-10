@@ -3996,3 +3996,11 @@ them. Tool fix: the app icon is drawn from a state of the logo part (for example
 a script writes `app-icon.svg` and runs `tauri icon` from it, and `design check` fails when `app-icon.svg` differs from
 that state. Bite: with the old `app-icon.svg` the check fails; after the script it passes. First a sketch of the app
 icon from the new mark (padding, background, corner shape as variants where there is a choice).
+
+As built (705, B443, f72739564). Cause (probe at 8 % CPU): under CPU starvation Chromium keeps the `requestAnimationFrame`
+polls running but delays timer tasks; the fixture's `setTimeout(60)` emit did not fire within 403 ms while 18 frame polls
+ran, other runs emitted 450 to 800 ms after load, and the 250 ms wall-clock asserts also counted CDP round trips (301 ms
+seen). The product `awaitOutput` is unchanged. Fix: the fixtures mutate and emit on animation frames; the asserts count
+output reads (fire path: exactly 1) and quiet frames (2) in the page. Verified: `spec:stress --slow 13` 1/4 before, 4/4
+after; `--load 2` 4/4; removing the fire check fails 2 cases, removing the quiet return fails 1. Tool gap: none, B481
+found it.
