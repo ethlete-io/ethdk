@@ -30,7 +30,7 @@ in a git worktree, not from the working tree (macOS, CEF, a few minutes when war
   --build-only        build, print the bundle path, do not run it
   --checkout <dir>    design checkout Studio opens (default: this repo)
   --product <name>    design product (default: the first product with a sketch)
-  --sketch <part>     part whose sketch to open (default: the first sketch of the product)
+  --sketch <part>     part whose sketch to open, or a sketch target like <part>@<name> (default: the first sketch)
   --timeout <s>       how long the sketch may take to paint (default: 120)
   --record <file>     copy the console log the bundle wrote`);
   process.exit(0);
@@ -58,9 +58,19 @@ const product =
   valueOf('--product') ??
   readdirSync(join(checkout, '.ethlete/design')).find((name) => sketchFolders(name).length > 0) ??
   'sdk';
-const sketch = valueOf('--sketch') ?? sketchFolders(product)[0]?.split('.')[0].replace('-', '/');
+const sketchTargets = sketchFolders(product).map(
+  (folder) =>
+    JSON.parse(readFileSync(join(checkout, '.ethlete/design', product, 'sketches', folder, 'sketch.json'), 'utf8'))
+      .target,
+);
+const asked = valueOf('--sketch');
+const sketch = asked
+  ? sketchTargets.find((target) => target === asked || target.startsWith(`${asked}@`))
+  : sketchTargets[0];
 
-if (!sketch) throw new Error(`no sketch in ${product}: pass --sketch <part> or open a sketch first`);
+if (!sketch) {
+  throw new Error(`no sketch ${asked ? `of ${asked} ` : ''}in ${product}: pass --sketch <part> or open a sketch first`);
+}
 const timeoutMs = Number(valueOf('--timeout', '120')) * 1000;
 const cspFrom = valueOf('--csp-from');
 const record = valueOf('--record');
