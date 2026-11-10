@@ -3827,7 +3827,7 @@ smoke step that starts the release bundle once and fails on a CSP refusal in the
 "DevTools remote debugging is disallowed by the system admin" and opens no port. Workaround: delete the key. (b) The
 CDP listen socket leaks into child processes: the design server (`node .../cli design`) held `127.0.0.1:9333` after
 Studio started it. Both matter only when a build turns the debug port on, for example a future Studio e2e over CDP.
-Tool fix: report (a) and (b) upstream; a CDP harness deletes the key before the start.
+Tool fix: a CDP harness deletes the key before the start. No upstream report: the human chose to keep it internal (ADR 0251).
 
 701\. Builder (2026-11-10, day shift, CI 42796254724): Unit tests red, components
 `src/scenarios/progress-steps.scenario.spec.ts` 6/6 failed with NG0303 "Can't bind to 'state'". 9e7c567d0 (B478) renamed
