@@ -4255,3 +4255,17 @@ progress): (a) on failure the case prints each navigation with time since case s
 or not; (b) the case starts only after every iframe has painted, bite proof by a route that delays `frame.html` by
 about 2 s; (c) the design server logs `full-reload` to stderr. Backlog: every count-only e2e assertion prints its
 events on failure.
+
+As built (B468, finding 679): (a) on failure the case lists each re-navigation as ms since the case start, the query
+keys that changed (`old -> new`, path and query when the origin or path differs), and `(new iframe)` for a frame that
+did not exist at the start; a pass prints the count as before. (b) The 6 s window starts only after every
+`[data-sk-frame] iframe` has lost `opacity-0` (the `paintedFrames` marker in `sketch-view.component.ts`) with the same
+`src` set for three polls 250 ms apart; after 30 s it fails with "painted N of M". (c) `serve.ts` writes
+`[design] vite full-reload: <triggeredBy or path>` to stderr, spec in `serve.spec.ts`. Bite: a context route that
+delays `frame.html` by 2 s, before (a)+(b): fail, 2 re-navigations (the count of the field red); after: pass, 0; wait
+removed with (a) kept: fail, 2, both `1025 ms about:blank -> /frame.html?...&epoch=1` on existing iframes, so the
+delayed run is the start race, the first commit landing in the window. Route removed; then 3 plain runs pass (13.6-14.4
+s) and one `--hold-listings 14000` run passes (24.7 s). Why 287/308 (B232) and 316 (B270) did not hold: they fixed
+one mechanism (rows moved by the quick listing) and marked timing budgets NOT MEASURED; none touched the start race,
+and the case printed only a count. Tool fix; the field red itself is not reproduced, so whether it was this race, a
+Vite `full-reload` or a retry `src` is not verified - the next red names it.

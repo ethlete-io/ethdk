@@ -744,6 +744,7 @@ const designExplore = ({
         ) => {
           // HMR is disabled: Studio must replace frames when Vite invalidates optimized dependency URLs.
           if (typeof payload === 'object' && payload.type === 'full-reload') {
+            console.error(`[design] vite full-reload: ${payload.triggeredBy ?? payload.path ?? 'no path'}`);
             thumbs.clear();
             redraw(ALL_PARTS);
           }

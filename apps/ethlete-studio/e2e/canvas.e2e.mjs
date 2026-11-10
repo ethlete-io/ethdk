@@ -558,6 +558,50 @@ const listingAnswered = (page) =>
     timeout: FULL_COMPARE_MS,
   });
 
+const framesPainted = async (page, timeoutMs) => {
+  const deadline = Date.now() + timeoutMs;
+  let last = null;
+  let same = 0;
+  let now = { total: 0, painted: 0 };
+
+  while (Date.now() < deadline) {
+    now = await page.evaluate(() => {
+      const iframes = [...document.querySelectorAll('[data-sk-frame] iframe')];
+
+      return {
+        total: iframes.length,
+        painted: iframes.filter((iframe) => !iframe.classList.contains('opacity-0')).length,
+        srcs: iframes.map((iframe) => iframe.src).join(' '),
+      };
+    });
+    const done = now.total > 0 && now.painted === now.total;
+
+    same = done && now.srcs === last ? same + 1 : 0;
+    if (same >= 2) return null;
+    last = done ? now.srcs : null;
+    await page.waitForTimeout(250);
+  }
+
+  return `[data-sk-frame] iframes painted after ${timeoutMs / 1000} s ${now.painted} of ${now.total} (all must paint before the refreshes start)`;
+};
+
+const srcChange = (from, to) => {
+  const parse = (url) => (url && URL.canParse(url) ? new URL(url) : null);
+  const [before, after] = [parse(from), parse(to)];
+
+  if (!before || !after || before.origin + before.pathname !== after.origin + after.pathname)
+    return [before ?? from ?? 'none', after ?? to]
+      .map((url) => (url instanceof URL && url.protocol.startsWith('http') ? url.pathname + url.search : String(url)))
+      .join(' -> ');
+
+  const keys = [...new Set([...before.searchParams.keys(), ...after.searchParams.keys()])].filter(
+    (key) => before.searchParams.getAll(key).join() !== after.searchParams.getAll(key).join(),
+  );
+  const side = (url) => keys.map((key) => `${key}=${url.searchParams.getAll(key).join() || '-'}`).join('&');
+
+  return keys.length ? `${side(before)} -> ${side(after)}` : `same src ${after.pathname}`;
+};
+
 const settled = async (page, selector) => {
   await listingAnswered(page);
   let last = '';
@@ -2351,9 +2395,20 @@ const CASES = [
     run: async (page) => {
       const sketchJson = join(checkout, '.ethlete/design/studio/sketches/elements-shell-main/sketch.json');
       const original = readFileSync(sketchJson, 'utf8');
+      const unpainted = await framesPainted(page, 30_000);
+
+      if (unpainted) return { ok: false, detail: unpainted };
+
+      const start = performance.now();
+      const known = new Set(page.frames());
+      const srcs = new Map(page.frames().map((frame) => [frame, frame.url()]));
       const navigations = [];
       const onNavigated = (frame) => {
-        if (frame !== page.mainFrame()) navigations.push(frame.url());
+        if (frame === page.mainFrame()) return;
+        navigations.push(
+          `${Math.round(performance.now() - start)} ms ${srcChange(srcs.get(frame), frame.url())}${known.has(frame) ? '' : ' (new iframe)'}`,
+        );
+        srcs.set(frame, frame.url());
       };
       let flip = false;
 
@@ -2378,9 +2433,11 @@ const CASES = [
       );
       const placeholder = heights.filter((row) => row.frame <= 0 || row.iframes.some((height) => height === 150));
 
+      const ok = heights.length > 0 && navigations.length === 0 && placeholder.length === 0;
+
       return {
-        ok: heights.length > 0 && navigations.length === 0 && placeholder.length === 0,
-        detail: `frames ${heights.length}, iframe re-navigations in 6 s ${navigations.length} (must be 0), frames with 150px placeholder or no height 1 s after the last refresh ${placeholder.length} (must be 0)`,
+        ok,
+        detail: `frames ${heights.length}, iframe re-navigations in 6 s ${navigations.length} (must be 0), frames with 150px placeholder or no height 1 s after the last refresh ${placeholder.length} (must be 0)${ok || !navigations.length ? '' : `; re-navigations: ${navigations.join('; ')}`}`,
       };
     },
   },

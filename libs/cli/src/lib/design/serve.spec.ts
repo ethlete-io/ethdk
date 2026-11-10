@@ -437,12 +437,18 @@ describe('the design server for a design system', () => {
       { on: () => undefined } as unknown as IncomingMessage,
       { writeHead: () => undefined, write: (chunk: string) => written.push(chunk) } as unknown as ServerResponse,
     );
-    hot.send({ type: 'full-reload', path: '*' });
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
+    hot.send({ type: 'full-reload', path: '*', triggeredBy: '/repo/libs/a.ts' });
+    const lines = logged.mock.calls.map(([line]) => line);
+
+    logged.mockRestore();
+
+    expect(lines).toContain('[design] vite full-reload: /repo/libs/a.ts');
     expect(written).toHaveLength(2);
     expect(written[1]).toContain('event: parts\n');
     expect(JSON.parse(written[1]?.split('data: ')[1] ?? '')).toMatchObject({ revision: 1, all: true });
-    expect(sent).toEqual([{ type: 'full-reload', path: '*' }]);
+    expect(sent).toEqual([{ type: 'full-reload', path: '*', triggeredBy: '/repo/libs/a.ts' }]);
     hot.send({ type: 'connected' });
     expect(written).toHaveLength(2);
   });
