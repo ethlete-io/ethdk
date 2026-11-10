@@ -4170,8 +4170,11 @@ so its parts read "Nicht baubereit (Kein Harness)"; whether it gets one is colle
 718\. Builder (2026-11-10, day shift, B249 "Sketch öffnen" browser check): the check reached the direct-edit footer only
 after the subagent removed the `harness` block of `studio` in its scratch config. With the harness, every studio part
 with a stale or absent record shows "Wird geprüft", and a scratch `design check components/disclosure` did not clear it.
-Suspect (no bite yet): a part-scoped `design check` in a harness product leaves a `pending` slow blocker, so the human
-may never see "Baubereit" in Studio. Tool gap: no e2e case drives a harness product from a stale record to a settled
+Cause (bite, 538b77b31): plain `design check` never runs the slow rules (only `design ready`, `check --slow` and the serve
+slow runner do; `--slow` writes no record), so a part with a missing or stale slow result stays `pending` and reads
+`[stale-record, pending]` ("Wird geprüft"). Fix: a `--part` check in a harness product runs the pending slow rules of
+that part, then records. A whole-product check still leaves pending parts to serve (doc agent decision: tool
+internal); its output must name the pending count and the command that settles them. Tool gap: no e2e case drives a harness product from a stale record to a settled
 footer, and a browser check may change the product config without saying the result no longer covers the real one.
 Tool fix (builder, ahead of the B249 CLI removal because it blocks B249): that e2e case first; a verify brief forbids
 config edits, or the report names them as "not verified on the real config". Also seen: repo `dist/libs/cli` was
