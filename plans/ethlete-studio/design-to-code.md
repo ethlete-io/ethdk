@@ -4114,3 +4114,11 @@ root through `realpath`, and the spec builds its expectation from the unresolved
 `next`; only the Mac push suite saw it. Tool fix (builder default): the spec helpers return `realpathSync` of every
 temp dir, and the cli unit job also runs on the macOS runner (or a lint flags `tmpdir()` without `realpathSync` in
 cli specs).
+714 Cause (builder bite): the query scenario harness (`libs/query/src/scenarios/harness/scenario.ts:655`) fakes `Date`
+without `setSystemTime`, so the clock starts at real wall time with a random millisecond fraction; tokens floor `exp`
+and `eat` to seconds and lose 0 to 999 ms. A start pinned at `.999` gives the exact CI message. A whole-second start
+fails 11 other scenarios (proactive refresh, expiration warning, multi-tab leader refresh, maxAge drop), so these flake
+about 1 in 1000 runs today. Fix in progress: the harness pins one start instant; each of the 11 is sorted into timing in
+the spec or a real lib boundary bug (lib bug: fix plus scenario). Tool fix: the pinned start makes a boundary fail on
+every run; the doc agent adds that the harness also runs the suite at the two edge fractions (`.000`, `.999`) once,
+so a boundary bug cannot hide behind the one pinned value.
