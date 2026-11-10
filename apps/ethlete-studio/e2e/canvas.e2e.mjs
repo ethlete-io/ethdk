@@ -3167,7 +3167,7 @@ const prepareCheckout = () => {
       replaceOnce(
         readFileSync(join(wide, variant, wideTs), 'utf8'),
         "styles: [styles, tooltipStyles, loaderStyles, notificationStyles, badgeStyles].join('\\n'),",
-        `styles: [styles, tooltipStyles, loaderStyles, notificationStyles, badgeStyles].join('\\n') + (props.push?.gate === 'green' ? '.st-title-bar { opacity: ${0.4 + index * 0.2}; }' : ''),`,
+        `styles: [styles, tooltipStyles, loaderStyles, notificationStyles, badgeStyles].join('\\n') + (props.push ? '.st-title-bar { opacity: ${0.4 + index * 0.2}; }' : ''),`,
       ),
     );
   });
