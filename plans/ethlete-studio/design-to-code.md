@@ -4211,4 +4211,6 @@ conflict, and auto mode denies the `commit-tree` way. The builder aborted and re
 d04fee738 dropped it again. Cause: the hook has no allowed path to conclude a conflicted merge, so the agent picks a
 strategy flag that drops hunks without a review. Tool fix (a safety-hook change, so the human decides; collected for the
 next round): the hook allows a pathless `git commit` while `MERGE_HEAD` exists and the index holds only the merge paths.
-Until then: resolve conflicts by hand, never `-X theirs` or `-X ours`.
+Until then: resolve conflicts by hand, never `-X theirs` or `-X ours`. Also seen (doc agent): the same hook denied a whole
+Bash call whose grep pattern and heredoc text only contained the words, with no commit in it; it matches command text,
+not the commands the shell runs.
