@@ -4019,3 +4019,12 @@ chip is committed) and slow-run.spec.ts (one poll deletes an open edit sketch HE
 code fails all four. The committed-edit specs for a held refactor, for EDIT-OLD-NOT-FOUND and the 742 slow-run spec now
 put an uncommitted edit on top. Not verified: a real `design check` or serve on the repo (the builder runs it; it should
 delete `components-title-bar.edit` and record the title-bar hash), and Studio's view between a commit and the next poll.
+
+746\. Mac builder (2026-11-10, B482 bite): the release smoke and its bite both failed "no frame painted". Cause (seen on a
+screen shot): the smoke starts the unsigned bundle with its own HOME, so it finds no keychain, and CEF shows the macOS
+prompt "Schlüsselbund nicht gefunden" (a keychain password prompt) that blocks the page. Suspect: the earlier
+locked-screen failure was the same prompt. The human had to click several of these prompts away. Fix in the tree: with
+`ETHLETE_STUDIO_SMOKE_VIEW` set, Studio passes `SecretStorage::Mock` (`--use-mock-keychain`) to the CEF runtime, and the
+smoke opens the first existing sketch and fails at once when there is none. Lesson: the smoke cannot see a native modal,
+so it waited for a frame that never came and named the wrong cause. Decided by the doc agent (tool internal): the smoke
+fails early when the console log stays empty and no CEF page loads in 30 s, and its message names "native dialog?".
