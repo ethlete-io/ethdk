@@ -100,6 +100,6 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   tomorrow), then 748, 750 tool guard, 731, 745, 736+737, 738, 723, 714/710, the STATUS backlog line minus 628-633.
 - Mac builder: B345 change-crop sketch ready + push (the human picks tomorrow), B482 rest (e50636eaf paint probe),
   Built lines 746/749, 746 HEAD hint, 735, 739, Mac e2e speed.
-- Watchdogs: the human chose a ("q1ok"): the Linux builder sets the systemd-run one-shot timers (/tmp/dx/kick.sh,
-  :35 each hour 23:35-12:35) after the human approves its permission prompt in tmux claude-3. The builder confirms when
-  they are set; check `systemctl --user list-timers`. No open question for the human.
+- Watchdogs: the human chose a ("q1ok"), but the builder cannot take a relayed approval, and auto mode shows no prompt.
+  The human must type in pane claude-3 (%23) a line such as "set the kick watchdogs" (told to the human). Check
+  `systemctl --user list-timers` for `kick-*` units; if none by the next restart, remind the human once.
