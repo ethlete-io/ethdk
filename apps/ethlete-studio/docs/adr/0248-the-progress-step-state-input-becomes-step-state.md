@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B478
+built: 9e7c567d0
 decided: 2026-11-10
 source: grill session 2026-11-10 (day shift), after finding 689
 ---

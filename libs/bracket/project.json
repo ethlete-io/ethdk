@@ -43,7 +43,7 @@
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc -p libs/bracket/tsconfig.spec.json --noEmit"
+        "command": "tsc -p libs/bracket/tsconfig.spec.json --noEmit && tsc -p libs/bracket/tsconfig.lib.json --noEmit"
       }
     }
   }

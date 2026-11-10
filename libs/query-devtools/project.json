@@ -44,7 +44,7 @@
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc -p libs/query-devtools/tsconfig.spec.json --noEmit"
+        "command": "tsc -p libs/query-devtools/tsconfig.spec.json --noEmit && ngc -p libs/query-devtools/tsconfig.lib.json --noEmit"
       }
     },
     "generate-version": {

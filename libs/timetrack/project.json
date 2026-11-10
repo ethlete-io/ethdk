@@ -25,7 +25,7 @@
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc -p libs/timetrack/tsconfig.spec.json --noEmit"
+        "command": "tsc -p libs/timetrack/tsconfig.spec.json --noEmit && tsc -p libs/timetrack/tsconfig.lib.json --noEmit"
       }
     },
     "lint": {

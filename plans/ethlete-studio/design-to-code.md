@@ -3719,3 +3719,13 @@ when the ADR check fails (bite: a STATUS row that cites a missing finding); the 
 loses a finding number that its last committed version had; the doc-agent and builder skills archive only with
 `archive-findings.mjs`. More evidence: f1e5b1fd7 went through although the hook printed "STATUS.md: not
 formatted" from `check-staged-plans.mjs`.
+
+As built (689, ADR 0245): each lib `typecheck` target runs `tsc -p libs/<lib>/tsconfig.spec.json --noEmit` and then
+the lib check `-p libs/<lib>/tsconfig.lib.json --noEmit`: `tsc` for bracket, cli, agent-rules and timetrack, `ngc` for
+core, query, cdk, components, contentful and query-devtools. Time of the lib check alone (Mac, load about 5, serial,
+cold): bracket 2 s, agent-rules 1 s, timetrack 4 s, cli 7 s (tsc), core 3 s, query 6 s, cdk 14 s, contentful 18 s,
+query-devtools 17 s, components 24 s; all 10 targets with nx in parallel, `--skip-nx-cache`: 83 s wall. The new check
+found 2 errors in components stories: dabaee37d (`viewChild` outside a member initializer) and the `state` input
+collision with `RouterLink`, fixed by B478 (9e7c567d0, ADR 0248). Bite: a type error in `libs/bracket/src/index.ts`
+fails `bracket:typecheck`; after the revert it passes. All 10 targets pass now. Not verified: the CI typecheck job
+with the new targets.
