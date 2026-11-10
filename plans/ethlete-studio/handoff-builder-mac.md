@@ -12,7 +12,7 @@ a config or a `.ts` file runs the `typecheck` target of each touched project.
 
 - No push (grill decision). CI red is B466 on origin/next; its fix waits for the human (B471, worktree
   `/tmp/b466-push`). No agent sets PUSH_SUITE_SKIP.
-- Commits of the sixth night session, all reported to the grill session: 66df9d82a (656 push-suite runs from its export,
+- Commits of the sixth night session, all reported to the grill session: 5d6078461 (B471 cause), 66df9d82a (656 push-suite runs from its export,
   658 vitest FAIL rows), ed5d4ed8c + 28ba414d2 (660 git regex dialect spec), d906c4796 + ef646f413 (662 shared vitest
   worker preset `tools/vitest/workers.mjs`, check in `yarn test:tools`), 0ecf33e8b (670 + 682 `yarn slice:paths`,
   source and age in the warning), 465f8f69e (686 timetrack-app `test` target, 18/18 specs), b7b0a37e6 (skill sentence).
@@ -25,6 +25,15 @@ a config or a `.ts` file runs the `typecheck` target of each touched project.
 
 ## Then
 
+0. Night scope from the grill session (bugs, ADR 0230 flake priority, cause first, no fix that costs wall time without a
+   bite per ADR 0240, no push:suite round), facts per item to the grill session:
+   - B471 / 681: done to the cause in 5d6078461 (fail print, `--cold-shots`); Cause: Chromium holds back off-viewport
+     pictures, 2-3 on the wire. The fix (high priority only for the current switch's frames, or newest view first on
+     the server) waits for the grill decision; it needs a bite against `system->icons` under load.
+   - B470 / 680, first-load aborts: read the printed URL/time/trigger detail from any run log that has it (the 680
+     print is in since 1ac3df506); else one targeted run of the Sketches case "first load creates one iframe per frame
+     and aborts no frame request", with `--cold-shots` and load. Write "Suspect:" until a bite.
+   - B472 / 683, `Fit is stable` `page.goto` timeout: no proven cause after the 995491fb1 revert. Same rule.
 1. B469 (day shift, ADR 0242, CEF on every platform): spike CEF on macOS (build runs, bundle size, signing and
    notarization), then the human confirms the switch to CEF everywhere. Read the `app-releases` skill first.
 2. Iframe perf measurement, only on a quiet machine (load under 4): live iframes, memory/CPU per iframe,
