@@ -4255,3 +4255,10 @@ fails on load, not on a defect; one red case blocks a push that cannot touch e2e
 680): the runner runs the cases that wait for paint in a quiet tail (one worker, after the parallel cases), and a case
 that hits its window prints the load next to the fail; a change set that touches no e2e input (here two vitest worker
 caps and a changeset) is a candidate for a gate the human decides on.
+
+682\. Builder (2026-11-10, Mac night, 1ac3df506): the slice-paths file still held the previous slice's paths, so the
+pre-commit hook warned about the 680 slice's own files. Same tool as 670, a second gap: the file has no owner and no
+age, so a stale list looks as valid as a fresh one. Workaround: the builder writes the file at each slice start. Tool
+fix (extends 670, same queue slot): the slice-paths file carries the slice name and the time it was written; the hook
+names both in its warning and says "stale" when the file is older than the last commit that changed it, or older than
+2 h.
