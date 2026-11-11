@@ -3729,7 +3729,9 @@ reports a Vite "outside of Vite serving allow list" line as a check problem, not
 path outside the allow list (night backlog, Linux). Mac builder verifies the fix on the Mac (night backlog). Check built df5226ee1 + d2e91cd78: a Vite `customLogger` records each denied id
 (`takeDeniedIds()`), `design check` prints one `SERVE-DENIED <id>` problem per id and fails; `check-denied.spec.ts`
 bites. Not built: `sketch check` still only logs the line (night backlog, Linux: same problem there); `compare` and
-`shot` are views, not gates, and may keep the log line.
+`shot` are views, not gates, and may keep the log line. Sketch check built af1e4e696 (`sketch-check-denied.spec.ts` bites); without a resident
+process its render check now draws on the run draw (else its denials were lost). Not verified: the Mac, and the
+resident path by its own spec (night backlog, Linux: a resident case in the same spec).
 
 As built (777): `createDesignServer` wraps Vite's logger and records each id of an "outside of Vite serving allow list"
 line (`takeDeniedIds()`, also on the run and resident `WarmDraw`); `design check` (`checkSystemRendered`) prints one
