@@ -154,3 +154,8 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   decided, Linux builds them after 650. Morning round now four items: (1) ADR summary of the night no-questions rule;
   (2) finding 776 app fix into the day order; (3) B345 change-crop sketch pick by merge (663088643); (4) 789 (3) chip
   label for a static sketch finding, builder default "Sketch-Regel verletzt: <rule>".
+- Night, 06:45 (after 3ae43d923): built by Linux (not pushed, hold until the Mac merge 6bca47ab5 lands; the Mac push suite
+  ran 31 min at 05:25, not stuck): 650 dd556d716 (+ real run 8c32f2f32), 789 (b) (1)+(2) 128f5a9ce, 791 003d9d457 (two
+  bites). Finding 792 (no Studio consumer of 128f5a9ce): B traced now by Linux; A is a day sketch. 652 step 1 decided
+  (pictures.json to a gitignored cache, condition first). Linux builder restarted from `builder-2026-11-11c`: 792 B,
+  664+659, 652. Morning round unchanged (four items).
