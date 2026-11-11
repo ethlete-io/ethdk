@@ -3978,4 +3978,10 @@ every caller must remember is a rule a new spec forgets (third case of the 783/7
 (tool internal, the builder's recommendation, scoped like 785): not a global setup file for every cli vitest worker
 (it would charge the cold start to specs that never reach the worker); the module through which a spec reaches the
 worker registers the warm `beforeAll` on import, so a spec that reaches it is warm and one that does not pays nothing.
-Bite: a new spec that calls the worker cold under `--slow 4` passes. Night backlog, Linux, after 789.
+Bite: a new spec that calls the worker cold under `--slow 4` passes. Night backlog, Linux, after 789. Revised (the
+builder: the modules through which specs reach the worker are product modules the CLI ships, so they cannot register a
+`beforeAll`): a spec entry module `system/open-points.fixtures.ts` re-exports `openPointsAnswer` and
+`openPointsInWorker` and registers the warm `beforeAll` (120 s) on import; a `no-restricted-imports` rule for
+`libs/cli` `*.spec.ts` forbids those two names from the product modules and names the fixtures module; per-spec
+`warmOpenPointsWorker` calls go. Bite: a spec that imports from the product module fails lint; a cold spec through the
+fixtures module passes at `--slow 4`. Not covered: a spec that reaches the worker through another product call.
