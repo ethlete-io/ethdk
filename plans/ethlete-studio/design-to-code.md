@@ -3593,6 +3593,15 @@ da746a43e on the other side of git merge 9df5ffa51 from the change-crop merge 2f
 after a git merge. Suspect (code read): the inbox (`staleBaseOf`) would have shown a rebase item after 9df5ffa51;
 `design status` does not check a stale base. The 821 fix therefore also runs the stale-base check after a git merge
 (post-merge hook or `design status`).
+821 as built (Linux builder, 2026-11-11, 16f091042): Cause (spec `status-stale-base.spec.ts`, fixture product): with
+a product part changed after an open and a ready sketch were drawn, `design status` printed no stale line; the inbox
+already listed both as `needs rebase`. Fix: `staleSketchBasesOf` moved to `sketch/stale-base.ts` (one source for
+SKETCH-BASE-STALE, check and status); `design status` prints one `SKETCH-BASE-STALE <product> <part>: ... sketch rebase
+<ref>` line per open or ready sketch, `--stale` prints only those, without git or `gh`. `.husky/post-merge` runs
+`tools/scripts/post-merge-stale-sketches.mjs`: `status --stale` from the built CLI copy, 0.46 s, always exit 0; when the
+head's CLI copy is not built it prints a hint to run `yarn et:design status` and builds nothing (`ensureCliCopy` with
+`build: null`). Verified: both specs red without the fix, green with it; live status names
+`components/button@off-centre`. Not verified: the hook fired by a real `git merge`.
 
 823\. Linux builder (2026-11-11, B489): `sketch rebase` named only variant b as a conflict ("the variant and the product
 both changed it"); a and c had the same kind of overlap and passed. Suspect. Tool fix (doc agent, tool internal): find
