@@ -3849,6 +3849,10 @@ workers, 4 cores, 12 busy loops) the first `/__design/sketches?product=studio` l
 33-43 s, more than half of its 60 s limit, with or without the 832 warm-up. Suspect: this is the margin that the CI
 runners lost in 829 and 843. Tool fix (grill decision): profile the first listing under the recipe and cut it. Target:
 under 15 s under the recipe. Bite: a timing check under the recipe that fails on today's 33-43 s. Build before 837.
+Profile (Linux builder, 2026-11-11, two runs): first listing 40.8 s and 41.3 s, 13763 bytes, 6 items. Targets of
+`components/title-bar@notice-hint` take 21-23 s (plain title-bar about 1 s); Suspect (timing only, no bite): it waits
+behind 26 pictures in flight, not its own compute. Worker sketch check 9.2 s steady; `inTurns` (9a7a040eb) costs almost
+nothing. Fix slice runs; it proves the wait first, keeps the answer byte-equal and does not reuse the 832 warm-up.
 
 847\. Linux builder (2026-11-11, 843 bite): heavy work in a scratch copy (`nx` builds of cli, components and core) ran
 outside the heavy run lock while the main push suite ran its hold pass, which then failed 12 cases at load 9-14.
