@@ -3778,6 +3778,11 @@ the workflow default and push; this is also the owed second real run), then reco
 finding (night backlog, Linux, fresh builder session).
 In progress (2026-11-11, builder): spec-sweep.yml runs a matrix of `--slow 1` and `--slow 2` on a push of the workflow or
 spec-stress.mjs; the default for the nightly and a dispatch is now 2 until the calibration picks N.
+As built (778 calibration, 85aa2c764): CI run 42941554007, 418 files, `--runs 2`, both jobs 43 min. `--slow 1` (no quota,
+`--load 0`): green. `--slow 2`: 416 green, 2 files 0/2 at about 52.8 s: open-points-answer.spec and system/check-system.spec.
+So the Suspect holds in part: N=4 was too high on CI; N=2 stays the nightly default. spec:stress in `--github` mode
+printed no output of the failed runs, so the cause per file is not proven. Locally under `CPUQuota=12%`, open-points-answer
+passes; check-system fails its two "without a browser" cases (not yet looked at). Not verified: the cause of each failure.
 
 779\. Linux builder (2026-11-11, night, 777 df5226ee1): the first push:suite failed: `serve.spec`, `shot-store.spec` and
 `serve.perf.spec` mock `vite` without `createLogger`, which `serve.ts` now imports. The subagent ran only its touched
