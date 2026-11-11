@@ -3822,3 +3822,12 @@ session put in chat. Tool fix (doc agent decision, tool internal): `agent-sessio
 and refuses while an assistant message with a `❓` question has no later human message, unless the handoff file names that
 question verbatim under "Open for the human". Bite: a restart after an unanswered `❓` and a handoff with "none" is
 refused. Queue: Linux builder, after 863.
+
+865\. Doc agent (2026-11-11): two days after ADR 0234 (Studio work goes first, binding order), STATUS item 1 (B249) is
+still open. On 2026-11-11 the builders made 80 code commits; 39 of them fix the agent machinery (push suite, /tmp, restart,
+mailbox, archive), and 160 of 303 commits are plan notes. The doc agent sent the builder queues of findings only, and at
+15:22 asked the human again "findings or STATUS rows first", which ADR 0234 already decides. The human: "irgendwie kommen
+wir doch nicht weiter oder? fortschritt ist extrem lahm". Cause: the doc agent queues each new finding at once and never
+checks the queue against "Gerade in Arbeit"; nothing in the tool does either. Tool fix (doc agent decision, tool internal):
+a builder queue message names the STATUS item first; a finding in it carries "blocks: <item>" or "CI red", else it goes to
+the tool backlog. Applied now: the Linux builder is back on B249 after 860. Queue: tool backlog.
