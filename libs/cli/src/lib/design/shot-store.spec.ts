@@ -21,6 +21,15 @@ type FakeModule = { id: string; file: string; importers: Set<FakeModule>; import
 const created: { plugins: Plugin[] }[] = [];
 
 vi.mock('vite', () => ({
+  createLogger: () => ({
+    info: () => undefined,
+    warn: () => undefined,
+    warnOnce: () => undefined,
+    error: () => undefined,
+    clearScreen: () => undefined,
+    hasErrorLogged: () => false,
+    hasWarned: false,
+  }),
   createServer: async (options: { plugins: Plugin[] }) => {
     created.push(options);
 

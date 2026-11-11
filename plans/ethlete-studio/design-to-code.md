@@ -3697,6 +3697,22 @@ after, cold and warm, in-process and resident, apart from timing lines. `check-w
 Follow-up (night backlog, Linux, after 775): prove or drop the cache-miss suspect with the real CLI copy in
 `tmp/studio-cli`; if a fresh server misses a cache entry it wrote, that is a cache-key defect of its own, with a spec.
 
+As built (774 cache): Cause (measured), not a cache key. In-process `design check --product studio` from
+`/tmp/sk750`, with a copy of the 6a87fdb4f CLI that logs every lookup and every input whose served hash differs,
+`.ethlete` restored before each run. On the second run all 167 keys were found, and 121 inputs differed. All of them were
+`/@fs/home/tom/dev/ethlete-sdk/dist/...component.css?inline`. `/tmp/sk750/dist` is a symlink, Vite serves a module by
+its real path, and that path was outside `fs.allow`. Vite 8.3.5 checks an `?inline` id against the allow list with its
+query, so `safeModulePaths` never admits it. The answer for the same URL then depends on what this server already
+loaded: 403 on a fresh server, raw CSS once a drawing made the file safe, and the JS module once it was transformed.
+A run wrote the hashes it saw after drawing, and the next fresh server answered differently before drawing, so it
+missed. A miss rewrote its entry with the answers from before the drawing, which is why a third run hit. The 34
+allow-list lines are the same defect. Fix: `linkedRootsOf(target)` adds the real path of the checkout and of each
+symlinked entry in it to `fs.allow`. Verified: after the fix, the first warm run hit every entry (0 differing inputs).
+render-inspect went from 36.9 to 2.0 s and wall from 79.0 to 44.2 s; completeness already hit (0.7 s); cold was 198 s. Output
+and written `.ethlete` are the same line for line, apart from timing lines. `linked-roots.spec.ts` (two fresh servers,
+`?inline` CSS in a symlinked dir; the second answers the same hash) fails without the `fs.allow` entry and passes with
+it. Not verified: a checkout without symlinks (nothing changes there), the Mac (`/tmp` there is itself a symlink).
+
 775\. Linux builder (2026-11-11, night, 710 sweep): pre-push `lint:runner-os` refused the push after a green push:suite
 (Linux cgroup path outside a Linux guard; fix a6c575f5f), so the push paid a full suite rerun. Cause: push:suite does
 not run the sub-second pre-push checks. Lesson: the cheapest gate runs first. Decided by the doc agent (tool internal):
@@ -3715,7 +3731,14 @@ push-suite.spec.mjs (33) and all tools specs (261) pass; the old script on the s
 about 4 s, so "sub-second" is not true for all). Not verified: a real `yarn push:suite` and a real push through the
 hook. Built 64c9306a3. Follow-up (night backlog, speed): `lint:person-names` takes about 4 s of the 9 s
 checks step; measure where, and make it sub-second or correct the "sub-second" claim in AGENTS.md. The Mac 770
-(de0087f0a, step reuse after a merge) also edits `push-suite.mjs`: whoever pushes second merges both by hand.
+(de0087f0a, step reuse after a merge) also edits `push-suite.mjs`: whoever pushes second merges both by hand. Person-names follow-up built 1d6a23453: 3.7 -> 0.87 s (cause measured: about 5 MB of text, every word hashed with no
+cache; fix: one token set per file, memoised hash per word, line pass only on a hit); same output on the real tree.
+As built (person-names lint): `check-person-names.mjs` ran `words()` (camel-case regex, split, lowercase) and a SHA-256 on
+every word of every line of 5 MB of tracked text. Now each file is tokenised once into a unique-token set, each distinct
+word hash is memoised, and the per-line pass runs only for a file that has a hit (or the git user name). Same findings
+(real tree: no output, exit 0, as before). Time 3.7 s to 0.87 s. Spec added for the line number of a deep hit. Verified:
+`node --test` on the spec (5 pass), eslint clean. Not verified: the 0.87 s inside a full pre-push run. So "sub-second"
+now holds for this check; AGENTS.md needed no change.
 
 776\. Mac builder (2026-11-11, night, 769 3483c7fcd): the fixed e2e case no longer passes through a live frame iframe,
 so no case covers a keyboard user inside a live frame. Suspect (injected, not seen live): when the app remounts the
@@ -3723,3 +3746,54 @@ frame iframe (address change, or `LIVE_GRACE_MS` drops an off-view frame after 5
 Shift+Tab lands on an `et-menu-trigger` (`focused=false rings=[]`). Lesson: a case that dodges a flaky path needs its
 own case for that path. Decided by the doc agent: an app fix (keep focus on the frame host when its iframe remounts)
 with its own e2e case; app work, so not at night; it waits for the day STATUS order (morning: put it to the human).
+
+777\. Linux builder (2026-11-11, night, 774 follow-up, ef45f64ac): a fresh design server missed render cache entries
+that an earlier run wrote (121 inputs, all `dist/...component.css?inline`). Cause (measured with the real CLI): cache
+keys are stable (167/167 found), but a symlinked checkout entry (`/tmp/sk750/dist`) is served by its real path outside
+Vite `fs.allow`; Vite 8.3.5 checks a `?inline` id with its query attached, so one URL answers 403 on a fresh server, raw
+CSS after one draw, and the JS module after a transform. The served hash differs per server state, so the cache misses.
+The 34 "outside of Vite serving allow list" log lines were the same gap, and nothing treated them as a defect. Lesson:
+a warning the tool logs and ignores hid a cache defect for every run. Fix (built ef45f64ac): `serve.ts`
+`linkedRootsOf(target)` adds the real paths of the checkout and its symlinked entries to `fs.allow`; first warm run
+render-inspect 36.9 -> 2.0 s, wall 79.0 -> 44.2 s, differing inputs 121 -> 0, output identical; `linked-roots.spec`
+bites. Not verified: the Mac (`/tmp` is a symlink there). Decided by the doc agent (tool internal): `design check`
+reports a Vite "outside of Vite serving allow list" line as a check problem, not a log line; a spec bites with a served
+path outside the allow list (night backlog, Linux). Mac builder verifies the fix on the Mac (night backlog). Check built df5226ee1 + d2e91cd78: a Vite `customLogger` records each denied id
+(`takeDeniedIds()`), `design check` prints one `SERVE-DENIED <id>` problem per id and fails; `check-denied.spec.ts`
+bites. Not built: `sketch check` still only logs the line (night backlog, Linux: same problem there); `compare` and
+`shot` are views, not gates, and may keep the log line. Sketch check built af1e4e696 (`sketch-check-denied.spec.ts` bites); without a resident
+process its render check now draws on the run draw (else its denials were lost). Not verified: the Mac, and the
+resident path by its own spec (night backlog, Linux: a resident case in the same spec).
+
+As built (777): `createDesignServer` wraps Vite's logger and records each id of an "outside of Vite serving allow list"
+line (`takeDeniedIds()`, also on the run and resident `WarmDraw`); `design check` (`checkSystemRendered`) prints one
+`SERVE-DENIED <id>` line per refused id after all its draws and fails. The log line itself stays. Verified:
+`system/check-denied.spec` (a part links a stylesheet outside the allow list) fails with the report removed and passes
+with it; cli typecheck, lint. Not verified: the Mac. Not built: `sketch check` and the other drawing commands still only log the line.
+
+As built (777 sketch check): `sketch check` (`checkedShots`) takes the denied ids of its run draw after all phases, prints
+the same `SERVE-DENIED <id>` line (`deniedLineOf`, exported from check-system) and returns 1; the render check now draws on
+that run draw when there is no resident warm process, so its requests are counted too. Verified: `sketch-check-denied.spec`
+(a sketch variant links a stylesheet outside the allow list) fails with the report removed and passes with it; related
+specs, cli typecheck, lint. Not verified: the Mac, the resident process path by a spec. `compare` and `shot` still only log.
+
+778\. Linux builder (2026-11-11, night, 710 sweep): the first real nightly spec sweep (CI run 42931941982) failed: 417
+files in 60 min, 17 under 100 % at `--slow 4` (Studio flows-page.component, sketches.component; cli open-points-answer,
+open-points-loop, serve, sketch-command at 1140 s, check-system-render, check-system-sketch, check-system, check-warm,
+live-actions, rules/denied-class, rules/option-values, rules/undefined-class, sketch/edit-sketch, sketch/merge-step-edit,
+git-regex-dialect). All pass in normal CI. Suspect (not measured): N=4 counts the slowness twice on CI: it was mapped
+from local runs to match a median runner, and on the runner the quota adds to its own slowness plus `--jobs nproc*N*3/4`
+contention. Lesson: a slow factor taken from local runs needs a CI calibration run before it gates. Decided by the doc
+agent (tool internal, the builder's recommendation): measure one failing file on CI at `--slow 1` and `--slow 2` (change
+the workflow default and push; this is also the owed second real run), then record each file that still fails as its own
+finding (night backlog, Linux, fresh builder session).
+In progress (2026-11-11, builder): spec-sweep.yml runs a matrix of `--slow 1` and `--slow 2` on a push of the workflow or
+spec-stress.mjs; the default for the nightly and a dispatch is now 2 until the calibration picks N.
+
+779\. Linux builder (2026-11-11, night, 777 df5226ee1): the first push:suite failed: `serve.spec`, `shot-store.spec` and
+`serve.perf.spec` mock `vite` without `createLogger`, which `serve.ts` now imports. The subagent ran only its touched
+specs. Cause (measured: d2e91cd78 stubs it, 68/68 pass): a slice brief that says "run only touched specs" misses a spec
+that mocks a module the slice now imports from. Lesson: the push:suite caught it, but one full suite run late. Decided
+by the doc agent (tool internal, general form of the builder's recommendation): every builder slice and subagent brief
+runs `npx vitest related --run <changed files>` before its commit, not only for changed imports between modules. Builder
+work (night backlog, Linux): put this rule in the builder-agent skill and the subagent brief template. Built 6447c4e1b.

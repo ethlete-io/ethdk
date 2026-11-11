@@ -12,6 +12,8 @@ export type WarmDraw = {
   server: (config: DesignConfig) => Promise<DesignServer>;
   queue: () => DrawQueue;
   perRun?: boolean;
+  /** The ids the started design server refused as outside its allow list since the last call, none before it starts. */
+  takeDeniedIds?: () => string[];
 };
 
 export type Drawing = { server: DesignServer; base: string; queue: DrawQueue };
@@ -64,6 +66,7 @@ export const loadingOn = async <T>(
 /** A design server and Chromium that start on first use and stay up until `close`, shared by every phase of one run. */
 export const createRunDraw = (target: string, options: { chromiumOf?: typeof chromiumOf } = {}) => {
   let server: Promise<DesignServer> | null = null;
+  let listening: DesignServer | null = null;
   let queue: DrawQueue | null = null;
 
   const warm: WarmDraw = {
@@ -77,10 +80,13 @@ export const createRunDraw = (target: string, options: { chromiumOf?: typeof chr
           throw error;
         }
 
+        listening = started;
+
         return started;
       })),
     queue: () => (queue ??= createDrawQueue({ target, chromiumOf: options.chromiumOf })),
     perRun: true,
+    takeDeniedIds: () => listening?.takeDeniedIds() ?? [],
   };
 
   const close = async () => {

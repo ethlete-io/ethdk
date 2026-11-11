@@ -127,3 +127,8 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   pending, then 770. Morning round for the human: (1) ADR summary of the night no-questions rule; (2) finding 776 app fix
   (focus in a remounted live frame) into the day order; (3) B345 change-crop sketch pick by merge (663088643).
   Send to the Linux builder only by SendMessage; the Mac only by the mailbox file + scp.
+- Night, 02:00 (after 0068e8f54): findings 777 (symlinked checkout missed the render cache, built ef45f64ac) and 778
+  (nightly sweep red at `--slow 4`, measure on CI at 1 and 2) recorded; 774, 775, person-names speed (1d6a23453) built
+  and pushed. Linux builder restarted from `builder-2026-11-11a`, next 778, then 777 (allow-list line as a check
+  problem). Mac: 770 merged with 775 (a144de0cd), lint fix cfda44c4d, push pending, then 777 Mac verify, 735
+  calibration. Morning round unchanged (three items above).

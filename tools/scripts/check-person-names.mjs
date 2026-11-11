@@ -10,6 +10,16 @@ const TEXT = /\.(?:ts|tsx|js|mjs|cjs|json|md|css|html|vue|yml|yaml|txt)$/;
 
 const hash = (word) => createHash('sha256').update(word).digest('hex').slice(0, 16);
 
+const knownWordCache = new Map();
+const isKnownName = (word) => {
+  let known = knownWordCache.get(word);
+  if (known === undefined) {
+    known = KNOWN_NAME_HASHES.has(hash(word));
+    knownWordCache.set(word, known);
+  }
+  return known;
+};
+
 const words = (line) =>
   line
     .replace(/([a-z])([A-Z])/g, '$1 $2')
@@ -17,11 +27,18 @@ const words = (line) =>
     .filter(Boolean)
     .map((w) => w.toLowerCase());
 
+const hasKnownName = (text) => {
+  const tokens = new Set(text.match(/\p{L}+/gu));
+  for (const token of tokens) if (words(token).some(isKnownName)) return true;
+  return false;
+};
+
 export const personNameFindings = (text, gitUserName = '') => {
   const full = gitUserName.trim().toLowerCase();
+  const nameInFull = full.length > 2 && text.toLowerCase().includes(full);
+  if (!nameInFull && !hasKnownName(text)) return [];
   return text.split('\n').flatMap((line, i) => {
-    const hit =
-      words(line).some((w) => KNOWN_NAME_HASHES.has(hash(w))) || (full.length > 2 && line.toLowerCase().includes(full));
+    const hit = words(line).some(isKnownName) || (full.length > 2 && line.toLowerCase().includes(full));
     return hit ? [{ line: i + 1, text: line.trim().slice(0, 160) }] : [];
   });
 };

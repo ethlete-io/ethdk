@@ -11,9 +11,9 @@ on:
   workflow_dispatch:
     inputs:
       slow:
-        description: Slow factor for spec:stress --slow (an integer).
+        description: Slow factor for spec:stress --slow (an integer; 1 runs with no quota and no load).
         type: string
-        default: '4'
+        default: '2'
       runs:
         description: Runs per spec file.
         type: string
@@ -23,7 +23,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: spec-sweep
+  group: spec-sweep-${{ github.event_name }}
   cancel-in-progress: false
 
 env:
@@ -31,9 +31,13 @@ env:
 
 jobs:
   sweep:
-    name: spec:stress over cli and Studio
+    name: spec:stress over cli and Studio (--slow ${{ matrix.slow }})
     runs-on: ubuntu-latest
     timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        slow: ${{ fromJSON(github.event_name == 'push' && '["1","2"]' || format('["{0}"]', inputs.slow || '2')) }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
@@ -63,15 +67,18 @@ jobs:
       - name: Sweep
         timeout-minutes: 140
         env:
-          SLOW: ${{ inputs.slow || '4' }}
+          SLOW: ${{ matrix.slow }}
           RUNS: ${{ inputs.runs || '2' }}
         run: |
           mapfile -t specs < <(git ls-files -- 'libs/cli/src/*.spec.ts' 'libs/cli/scripts/*.spec.mts' 'apps/ethlete-studio/src/*.spec.ts' | grep -v '\.perf\.spec\.')
           echo "${#specs[@]} spec files, --slow $SLOW, --runs $RUNS"
           set -o pipefail
-          yarn spec:stress "${specs[@]}" --runs "$RUNS" --slow "$SLOW" --jobs "$(( $(nproc) * SLOW * 3 / 4 ))" --github | tee spec-sweep.txt
+          if [ "$SLOW" = 1 ]; then slow=(--load 0); else slow=(--slow "$SLOW"); fi
+          yarn spec:stress "${specs[@]}" --runs "$RUNS" "${slow[@]}" --jobs "$(( $(nproc) * SLOW * 3 / 4 ))" --github | tee spec-sweep.txt
       - name: Summary
         if: always()
+        env:
+          SLOW: ${{ matrix.slow }}
         run: |
           [ -f spec-sweep.txt ] || exit 0
-          { echo '### Spec sweep'; echo '```'; grep -v '^::' spec-sweep.txt | sort; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          { echo "### Spec sweep, --slow $SLOW"; echo '```'; grep -v '^::' spec-sweep.txt | sort; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
