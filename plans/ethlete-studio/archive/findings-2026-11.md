@@ -8129,3 +8129,473 @@ As built (898 b): Cause (probe): no tool bug; only 14 of 272 ADRs carry `governs
 (898 c) Mac probe at 448c47f16, no sketch open: `design check --part components/title-bar` fails the visible-change gate, 7 states unjudged (5 notice rest states + linux-full-notice-hover/-active): "design draws 1 overlay pane, the app opened 0". On 2026-11-10 with components/title-bar@edit open the same check showed only "design changed outside a sketch". Suspect (two runs, no controlled bite): an open sketch of the part suppresses the gate verdict. Second gap: the state runner cannot open an etTooltip pane that the design draws always open. Tool fix (tool internal, builder default): a controlled bite for the suppression, then the verdict shows with a sketch open; a forced-open hook for overlay panes in the state runner (like `data-et-frozen-at`). Queue: tool backlog (ADR 0269). Not a push blocker (ADR 0226).
 
 875 update (Linux builder, 2026-11-11 night): Suspect (strong) = the `holdsFiles` ENOENT race fixed in 31d9002d7. `agent-results/867.md:48-49` notes the serve crash next to the ADR 0256 settle path removing the untracked `studio/sketches/pages-sketches.edit` folder; no merged.json commit in the 867 window (16:44-17:47 +0100). No crash time or trace exists, so no Cause. The 875 tool fix (crash log + "Design-Server abgestürzt") stays: the next crash would again leave no trace.
+
+426\. Grill (2026-11-04): `pages/sketches@merge-port` shows "Wartet auf deine Wahl", but the builder plans to align the
+sample marks of `narrow-part` and `comparing-narrow` after Tom's pick (finding 424). A sketch is ready only when no
+change to it waits (rule "ready means final"). Why no tool caught it: `sketch ready` does not run the sample-mark rule.
+Fix: the B363 rule runs in `sketch ready` and blocks there, not only as a warning in the sketch check.
+Built in b5aad92d0.
+
+435\. Tom (2026-11-04, screenshot after merge aa8c96889): every frame, the sample too, shows the Vite overlay
+`Failed to resolve import "@system/foundations/icons" from ".../components/tree-row/shared/tree-row.ts?design-product=studio&design-sketch=pages%2Fsketches%40merge-port&design-variant=a"`.
+Tom guessed the parallel Studio build; it is not. Cause (builder, code read): the listing has no sketch any more, but
+the frames still request the merged sketch. The server resolves imports of a module with `design-sketch=` through
+`drawnOf` (`libs/cli/src/lib/design/system/system-modules.ts:94`); for a gone sketch it returns null and caches the
+miss, so `@system/...` has no resolution. The sketch query spreads to product files, so every frame breaks. Probable,
+not proved: Tom's view still held the sketch frames, and Vite HMR reloaded them with their old URLs after the merge.
+Why no tool caught it: no spec or e2e requests a frame of a sketch after its merge or discard; the merge e2e ends at
+the merge result. Tool fix (B367): (a) `drawnOf` resolves a gone sketch to the product, does not cache the miss, and
+the frame shows a plain note instead of a Vite error; a spec. (b) Studio: when the open sketch drops from the
+listing, the sketch view leaves it and drops the old frames; an e2e merges a fixture sketch with its view open and
+asserts no error overlay and that the view leaves.
+
+438\. Tom (2026-11-04): the system view reports SAMPLE_DEFAULT, UNBOUND-INPUT, and on "Produkt/studio" ("was auch immer
+das ist") ORPHAN_ENDPOINT `design/stale-mocks`; "und vor allem; wieso hat er das nicht selbst entdeckt." Cause
+(builder): all three are real; `design check --product studio` exits 1 on them since 2026-11-04 13:25.
+SAMPLE-DEFAULT and UNBOUND-INPUT come from 4d78306ab: `system-page.component.ts:154` has
+`exceptions = input(PART_EXCEPTIONS_SAMPLE)` and no template binds it, so the live open-points chip probably counts
+sample exceptions. ORPHAN-ENDPOINT: 0f6e6682d removed the only caller of `/__design/stale-mocks` and kept the route.
+"Produkt/studio" is a pseudo part for problems in app code outside any design part. Why no tool caught it: no slice
+runs `design check --product <p>` at its end (CLI slices run tests, tsc, lint; product slices run compare; app slices
+ran Angular specs only), and no gate reads the check. Tool fix (B372): every slice ends with `design check --product
+<p>` and fails on any new problem, with the same list as the system view (builder-agent skill, every brief, pre-push
+when `apps/ethlete-studio` or `.ethlete/design` change); the pseudo part reads as app code with the file of each
+problem. Code fix (B372): bind `exceptions` to the real part exceptions or drop the input; remove the stale-mocks
+route and its snapshot entry.
+Built in 8f059ae72.
+
+440\. Tom (2026-11-04): "The e2e run is still going; I'm waiting for the monitor notification before committing. es
+ist extrem schleppend". The B367b subagent ran the full serial `yarn studio:e2e` (over 6.5 min) inside the slice.
+Cause (builder): `canvas.e2e.mjs` already has `--case <text>`; the brief said "run all cases", written before
+c431d0e50, so the filter went unused. Why no tool caught it: nothing tells a slice which e2e cases its change needs, and
+the skill did not name the filter. Tool fix: the builder-agent skill names `--case` for a slice (builder, next commit);
+parallel cases for the full suite are B377 (ADR 0191).
+Built in b573bb355.
+
+446\. Four migration generators have no `migrations.json` entry, so `et migrations` does not list them:
+`@ethlete/query:migrate-from-ngrx-toolkit` (reported by the fifagg session, 475 files still on `@tomtomb/ngrx-toolkit`),
+and in core `migrate-create-destroy`, `migrate-color-theme-variants`, `migrate-legacy-color-themes` (doc agent check,
+2026-11-05). Why no tool caught it: nothing compares `generators.json` with `migrations.json`. Tool fix (B383, builder
+default): a check in the pre-push Checks and in CI that fails when a generator is neither in `migrations.json` nor marked as a
+scaffold generator in `generators.json`; its message names both ways out.
+Built in c874d9dd2.
+
+447\. The pre-commit gate blocks every commit that touches `tools/scripts` (ethlete-sdk-ff, 2026-11-05): it runs
+`tools/scripts/e2e-check.spec.mjs` ("the result line carries the sha the suite ran at") in a `/tmp/pre-commit-*` copy
+without `.git`, and the spec calls `git rev-parse` in `process.cwd()`. The spec passes in the repo. Why no tool caught it:
+the spec was only run in the repo, never in the gate's copy. Tool fix (ethlete-sdk-ff, own commit before B383): the
+gate passes the repo root by env var and the spec uses it; no skip, because a skip hides the spec in the gate.
+Built in 93e816bec.
+
+474\. A vitest run in `libs/query` (generators spec) served a stale copy of the spec once from
+`node_modules/.vitest-cache`, so the run tested old code (ff, 2026-11-05, B385); ff worked around it with
+`--fsModuleCachePath /tmp/<dir>`. Why no tool caught it: nothing checks that the module cache matches the source on
+disk, and a stale pass looks like a real pass. Cause not proven (builder read vitest 5.0.5: the key is sha1 of module
+id, file content and env hash; fixtures are read at run time and are not the cause; suspects: a read during a
+half-written save, or the Angular plugin hiding a dependency; not reproduced). Tool fix (decided, builder default): the
+pre-commit spec gate runs with a fresh `--fsModuleCachePath` in a tmp dir, so a gate pass never rests on the cache.
+Not decided: `fsModuleCache: false` for all of `libs/query` (slower runs for an unproven cause).
+Built in 706414324.
+
+475\. Sketches `foundations/colors@foundations-check-fixes` (rule-only fix, Tom picked `a`) and `pages/system@check-fixes` (Tom: "gleiches bei system", with a screenshot) show every state as
+unchanged ("Unverändert: Variante a" folded), yet it did not merge itself, and the Merge button sits behind the folded
+"Unverändert" block, so Tom cannot find it (Tom, 2026-11-05, with a screenshot: "sollte das dann nicht auto mergen?").
+Why no tool caught it: no spec opens a sketch whose variants all draw the same pictures and asserts that it either
+closes itself or shows its merge action. Likely cause (not verified): the auto-merge refused on the dirty guard
+(uncommitted `ready.json`, see 468) and left the sketch open without saying so. Tool fix: (1) the builder finds the
+cause and reports it; (2) a refused auto-merge writes its reason on the sketch ("Auto-Merge verweigert: ...") and
+keeps the action visible; (3) a folded unchanged variant never hides the merge or pick action; (4) spec: a sketch with
+all-equal pictures either merges itself or shows the action plus the reason. The look of (3) goes to Tom as a sketch
+with variants.
+Built in db25edee8.
+
+Cause (verified by the builder from a run): `sketch ready` on `pages/system@check-fixes` printed "shows no visible change
+but did not merge: studio has uncommitted edits outside ..." (the dirty guard `dirtyOutsideOf` in merge.ts). The reason
+went only to stderr, never onto the sketch, so Studio showed "Wartet auf deine Wahl" without a reason. The foreign
+`ready.json` mark did not block (`.ethlete` was clean). The colors merge then dirtied the tree, which blocked system.
+
+476\. The "Aktuell" column of a sketch (`foundations/colors@foundations-check-fixes`, `pages/system@check-fixes`) still
+draws every state while the variant rows fold their unchanged states. Tom (2026-11-05): "in aktuell sollten eig dann
+auch nur die screens zu sehen sein die durch varianten änderungen bekämen?". ADR 0132 already decided it (only the
+states a round changes, the rest folds behind a count), so this is a defect, not a question. Why no tool caught it:
+the fold spec checks the variant rows only; nothing asserts that `Aktuell` and the variant rows draw the same state
+set. Tool fix: one shared function lists the shown states for `Aktuell` and every variant row; a sketch whose states
+are all unchanged shows only the question, the count and the action; spec: same state set per column, also for the
+all-unchanged case.
+Built in db25edee8.
+
+478\. After an automatic merge, `sketch ready` printed "ENOENT ... foundations-colors.foundations-check-fixes/sketch.json"
+and never printed "merged automatically", although the merge was complete (commit 479bdace3, builder, 2026-11-05).
+Why no tool caught it: no spec runs `sketch ready` to the end for an auto-merging sketch and asserts a clean exit and
+the message. Tool fix: find the step that reads `sketch.json` after the sketch folder is removed; a spec for the
+auto-merge path with exit code 0 and the "merged automatically" line. Also: an automatic merge commits its own
+result, so it never leaves a dirty tree that blocks the next sketch.
+Cause (corrected by the builder, faa6b4f70): two `sketch ready` runs on the same sketch at the same time; one merged, the
+other hit ENOENT. Not a merge-path bug. Fixed: a per-sketch lock (the second run fails with a clear message) and a
+check that `sketch.json` still exists; the auto-merge commits its own result when the product folder is clean apart from
+the sketch's own folder. Finding 475(2) is built: a refused or skipped auto-merge writes `mergeHold {reason, at}` on the
+sketch.
+Built in faa6b4f70.
+
+479\. A fresh sketch of a part that has a `.css` file (`components/kbd`, `components/divider`) fails `UTILITY-CSS` in
+`sketch check`, so `sketch ready` refuses after 2.5 s (builder measure, 2026-11-05). Why no tool caught it: no spec
+creates a sketch for a part with a `.css` file and runs `check`. Tool fix: `sketch new` copies the part so that it
+passes `check`, or says in German why it cannot; spec with a part that has a `.css` file.
+
+481\. `pages/sketches` carries 9 DROPPED-PROP findings that predate slice B: the design states withdrawn, agent, fold,
+question and port were merged earlier (62812a4c3, e0f6a4396, aa8c96889) without the matching `input()` on the app
+component (builder, 2026-11-06). Why no tool caught it: DROPPED-PROP stays a warning, so a merge of a design whose props
+the implemented app lacks passes, and the debt only shows when a check record is wanted. Tool fix: a sketch merge for
+an implemented part that adds props the app has no input for opens a port item (STATUS row or `design task`) at merge
+time; builder decides how, or gives it a STATUS row. The `pictures.json` entry written by a builder `design check` run
+is a check record, not a decision (committed 0a9bf6117).
+Widened (builder ethlete-sdk-c0, 2026-11-06, full design check after 30a5c27b9): DROPPED-PROP also on
+`canvas-frames` (4) and `pages/system` (8), so 21 states in three parts carry design props without an app input.
+
+486\. `design compare pages/sketches` lists 16 missed actions: the app shows a combobox "Runde" in every state and a
+disclosure "Alle Zustände zeigen", and the design draws neither (builder ethlete-sdk-c0, 2026-11-06). The app grew
+controls without a design; compare only lists them, and `check --rules` and the pre-push gate pass. Same class as 484
+(app content no design covers), here as controls instead of states. Why no tool caught it: a missed action is
+informational, not a failure, and nothing turns it into a design task. Tool fix: a missed action fails compare for an
+implemented part and opens the missing-state sketch of ADR 0048 and ADR 0010 (built look as variant a); the
+IMPLEMENTATION-UNCOMPARED gate in `check --rules --base` fails while one is open.
+
+488\. The doc agent committed ADRs 0198-0200 with `open:` values the ADR check refuses ("A1", "477", "et-update-findings
+11") and put finding 487 before 486; 478 already sat after 486 (doc agent, 2026-11-06). Only the pre-push
+`lint:studio-adrs` caught it, at Tom's "push ok", so the push stopped on plan files. Same defect as 455: B395 (ADR and
+finding-order check at commit time) is still backlog. Fix in this round: STATUS rows B398-B400, ADRs point at them,
+findings reordered. Tool fix (technical, decided): B395 moves up and also checks the finding order; the doc-agent skill
+says an open ADR needs its STATUS row in the same commit.
+Built in d9f0f0d2b.
+
+495\. c8, 2026-11-06: of the eight parts A1 left uncompared, three show drift older than A1. `pages/sketches` (page-100
+63644 px, zoomed-page 94023 px, 16 missed actions, see finding 486), `pages/system` (`part` 73606 px, 6 missed
+actions in call / call-transferred) and `elements/canvas-frames` (6 of 11 states uncheckable: the design prop `heads`
+has no app input; 4 DROPPED-PROP). c8 blamed uncommitted c0 work for the sketches drift, but the tree holds none; the
+sketches page changed in committed builder slices (b9367d285 to 30a5c27b9) with no compare after them. Why no tool
+caught it: nothing re-compares an implemented part after its app files change, and `compare` does not say since which
+commit a part drifts, so the builder guessed. Tool fix (technical): ADR 0203's commit check covers the first part;
+`compare` prints for each drifting part the last commit that matched and the commits since then that touched its app
+files.
+
+496\. c0, 2026-11-06, live check of the 494 fix: `compare pages/flows` prints `flow combobox "Bildschirmgröße" FAILED
+the design draws no such element, so it declares no action` and still exits 0. The app has a control the design never
+drew (same class as the "Runde" combobox of finding 486). Why no tool caught it: a FAILED action line does not fail the
+command, so the gate, the builder and the verify step read the run as clean. Tool fix (technical): `compare` exits
+non-zero on any FAILED action; a part whose app has an undeclared control gets a sketch for the control (UI item for
+c8, `pages/flows` "Bildschirmgröße").
+
+497\. cb, 2026-11-06, while building the B405 baseline (5ddcdf3f5): a pin scan of all implemented parts shows app-file
+drift also in `components/canvas-viewport` and `components/comment-pin`. The pre-push gate does not flag them, because
+it only checks implemented parts whose files are in the push range; they fail the next push that touches them. Why no
+tool caught it: no command lists every implemented part whose app files changed since its last compare, so drift sits
+unseen until an unrelated push trips over it. Tool fix (technical): the full `design check` (and the resident process,
+ADR 0204) reports every uncompared implemented part, independent of a push range. c8 compares both parts right after the
+push; real drift becomes a UI item, not a baseline entry. Also: `design-rules-gate.mjs` printed the check output only on
+failure, so the ADR 0205 `baselined` lines were hidden on a green push; it now always prints them.
+
+498\. c8, 2026-11-06: studio-menu, start, flows, inventory and merge pass `design check --part` (0 findings) and their
+compares match, yet `task --verify ff698951f` refuses "no check record at its current design". The record is written
+only when the part is build-ready, and build-ready needs every embedded part build-ready; bottom-up about 20 parts fail
+(button, select, list-row missing states; disclosure, start, inventory "changed outside a sketch"; logo, icons, menu
+"cannot check the actions: waiting for [data-design-harness-host] timed out"). So the IMPLEMENTATION-UNCOMPARED gate,
+which ADR 0203 clears by a compare, is in fact cleared only by the whole build-ready chain. Why no tool caught it: (1)
+verify reuses the build-ready record instead of a compare record, and no spec verifies a host whose embedded part is not
+build-ready; (2) the action run starts for parts without an `implements` link and times out on the harness host
+instead of skipping; (3) `design check --part` passes and writes no record without saying why. Tool fix (technical,
+doc-agent decision under ADR 0203): a passing compare plus the part's own passing check writes the record that clears
+IMPLEMENTATION-UNCOMPARED and `task --verify`; build-ready keeps its embedded chain for `design task`; the action run
+skips parts without an `implements` link; `check --part` prints why it wrote no record.
+**As built (498, builder c0, 2026-11-06):** `recordBuildReady` (`part-build-ready.ts`) writes and drops the check
+record on the part's own check (open points, rules, slow results incl. COMPARE, actions) only; an embedded part that is
+not build-ready keeps the host from build-ready (`design task`), not from its record, so `task --verify` (compare +
+actions + implemented record) runs once the part's own check passes. `partActionFailuresOf` (`actions-command.ts`)
+skips a part without an `implements` link with one line `actions <part>: skipped - no implements link, nothing to
+click` (printed by `check --part`). `check --part` prints why it wrote no record (`NO RECORD <product> <part>:
+<kind>: <text> (+n more)` or `the actions did not run`). A full check now also records unlinked parts whose own check
+passes (`READY` lists them). Verified: specs with bite in `part-build-ready.spec.ts`, `part-ready.spec.ts` and
+`check-system.spec.ts`.
+Built in 708a440fb.
+
+**Doc-agent decision under Q160 - multi-part verify, as built (2026-11-06):** `task <part> [<part>...] --product <p>
+--verify <rev>` verifies one commit as one task over several parts. The allowed files are the union of the named parts'
+allowed files. Files under `plans/`, `apps/ethlete-studio/docs/`, `.changeset/` and `apps/docs/components/` never count
+as implementation files: they are skipped with one line (`notImplementationFilesOf` in `part-task.ts`), also for a
+single part. Any other file outside the union is refused and named. Each part runs its own compare and actions check;
+a part is recorded only when every named part passed, each with its own implemented hash. A refused verify names the
+other linked parts whose allowed files hold the refused files: `verify together: et design task a b c --product <p>
+--verify <rev>` (`ownerPartsOf`). Several parts without `--verify` exit 2 with a usage message. Verified: specs with
+bite in `part-task.spec.ts` (union, foreign file, skipped plan/docs/changeset files, red compare on one part records
+nothing, the hint, no `--verify`). Not verified: the real verify of ff698951f.
+
+500\. Tom's screenshot of the sketch view, 2026-11-06 12:15, `components/title-bar@notice-hint` at "Fit" (54 %): (1) about
+550 px of empty canvas above the variant heads; (2) "Fit" does not fit: variant b is cut at the right edge and variant c
+is not visible at all, so Tom cannot compare the three; (3) the "Aktuell" column shows only the right end of the title
+bar (window controls), the left part is cropped; (4) in variant b the five notice rows are twice as tall with an empty
+band under the bar: the tooltip is drawn there (c8, `design shot --variant b`), but at 65-77 % of the 1440 px width,
+inside the part (2) cuts off; the merged notice state has the same empty 48 px band (`pb-12` in shared chrome); (5) "Keine Aktivität" while c8's `sketch check` was
+running. The sketch view is `pages/sketches`, a drift baseline entry of ADR 0205 (finding 495), so its compare could
+not flag this. Why no tool caught it: no check renders a real sketch of a wide part (a 1900 px title bar, 21856 px shot)
+in the sketch view and asserts that every variant column is inside the viewport at "Fit"; the sketch check checks the
+variant frames, not the view Tom picks in; no check flags a variant whose subject sits outside the visible part of its column. Fix: c8 takes
+`pages/sketches` out of the baseline first (fit width, top gap, Aktuell crop, activity state), with a Studio e2e that
+opens a wide-part sketch at Fit and asserts every column visible.
+
+518\. Tom opened `pages/sketches@edit` to pick it (screenshot 2026-11-06): the view said "sieht anders aus - wähle",
+but showed no pictures at all, only "Variante new / Variante old" heads and "30 unveränderte Zustände eingeklappt".
+Tom: "wird hier eigentlich überhaupt irgendwas überprüft bevor es zu mir geht? ... ein zustand den ein user NIEMALS
+sehen sollte". The sketch was opened at 11:21Z by cb's direct edit (before 1741d8bf8); every drawn state of
+old and new is the same. Why no tool caught it: (1) an `@edit` sketch whose states are all unchanged still counts as
+"waits for your pick" (it should have closed as HELD); (2) nobody looked at what Tom would see: neither the builder
+nor the doc agent opened the sketch before sending Tom to it. Cause of (1) asked from the builder. Fix: (a) a sketch
+with no changed state never waits for Tom: the tool closes an `@edit` one as HELD and marks any other as broken, with
+a spec; (b) process: before the doc agent sends Tom to a pick, the builder takes a `design shot` of the sketch view
+and the doc agent checks it shows a real choice.
+Tom then ran the accept command the doc agent had given him; it refused ("pages/sketches has an open sketch - merge
+or discard it"). The doc agent had sent a command it never checked against the open sketch. Rule: a command for Tom
+is run (or dry-run) by an agent first, or not sent.
+Cause of 518 (builder): the change is real (10 states differ from the merged pictures), but the `old` variant cannot
+show the old look: its `withdrawn.ts` imports `@shared/sketch-rows`, which resolves to the current shared file, and
+both variants draw against today's SDK, so old and new render the same. Fix (514/518 slice): the `old` variant of an
+`@edit` sketch shows the stored merged pictures and is never re-drawn from source; spec on an edit sketch where only
+a `@shared` import changed. Way out, decided by the doc agent under ADR 0210 (finding 500 is Tom's recorded report):
+the builder merges `new` itself with `--allowed-by "finding 500"`.
+Built in 64c27a08c.
+
+524\. c0 (2026-11-06), while measuring B416 phase 4+5: the first killed resident run wrote "browser has been closed"
+failures into the compare-actions cache, and every later run read them back as results. Fixed in e3f7a81dd. Why no
+tool caught it: no cache spec ran an aborted run; each cache was only tested with runs that finish. Tool fix: every
+on-disk cache of the compare (compare-actions, the S4 design and app picture caches, the shot store) gets a spec that
+aborts a run mid-way and proves nothing of it is kept; the shared cache writer refuses a write once the run signal is
+aborted, so a new cache gets this for free.
+Built in e3f7a81dd.
+
+526\. c0 (2026-11-06): the after-edit numbers of B416 slice 1 ran under load 12-17 from other sessions, so 12.3-18 s
+cannot be told from a slow tool. Why no tool caught it: a `.timings.jsonl` line holds no machine state, so a noisy run
+looks like a clean one. Tool fix: each line logs the 1-minute load average and the core count, `design timings` marks a
+line with load above the core count as noisy, and a target verdict uses only clean lines.
+Built in 56b3f7954.
+
+529\. c0 (2026-11-06), slice A: a stable URL alone painted 0/2 - Chromium drops a picture from its memory cache once no
+`<img>` holds it while the other page loads. ShotBoard now keeps the last 500 loaded pictures as `Image` objects. Why no
+tool caught it: the earlier reuse proof (measurement of finding 523) only worked because the old `<img>` was still
+alive; the proof had a hidden condition the real switch does not meet. Tool fix: done - the new e2e measures the real
+switch (old page gone) instead of a held element; a measurement that proves a fix names what it kept alive.
+Built in 0114e0d76.
+
+B416 slice 2 (as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06): each on-disk compare
+cache is keyed on the cli code that changes its result, not the whole cli build (`code-hash.ts`): the import graph of
+named producer modules, read from the built cli (or the source in specs), types-only imports dropped like tsc drops
+them, `timings`/`phase-timing`/`run-abort` left out, `serve` counted by its own text but not followed. Design pictures
+(Studio's and compare's shot store): serve, shot, thumb, render and the server transforms plus the frame assets. App
+pictures: the new `system/harness-shot.ts` (`harnessShotOf` moved out of compare-command, which is no longer in any key)
+and compare-cache. compare-actions: actions-command and its graph plus the design picture code. 524: the shared
+`writeCacheEntry` writes nothing once the run signal is aborted; an abort spec for the shot store, the app picture cache
+and compare-actions. 525/526: each `.timings.jsonl` line logs `commit` (short sha + dirty) and `load` (1-minute average,
+cores); `design timings` shows both, marks STALE (not HEAD) and NOISY (load above cores, or none logged), and its target
+verdict and miss list count only clean lines; a run's own over-target line says when it was noisy. Verified: specs
+(an edit between two hashes for each producer kind, abort per cache, timings), both tsc, lint. `VISIBLE_CHANGE_RULE`
+moved to `build-ready-contract.ts`: slow-checks imported it from the rule module, which pulled compare-command and
+part-build-ready into slow-checks' own load. Measured (pages/sketches, no resident, `timeout 30s`, load below cores):
+cold 29.8 s, timed out (harness build 15.7 s); warm 2.9 s, 105/105 hits; an unrelated built file edited, 3.0 s, 105 hits;
+`harness-shot` edited, 9.0 s, 44 misses (app pictures and actions; design pictures hit); `shot` edited, 14.1 s, 74
+misses. Details: `.claude/handoffs/agent-results/b416-slice2.md`.
+
+B416 after-edit floor (as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06): measured first
+(resident, load 4.8-15): a single-state edit (sketch-status-badge, state idle) - design edit 6.9 s median meets 10 s, app
+edit 10.8 s median misses; zoom-chip worst case 9.0-11.3 s. compare-actions re-checks only changed states (no bug; an app
+edit re-runs all by its built-app key). Built: compare-actions starts with compare-states once the harness is up, its
+note lines are held and printed where they were, so state lines and exit code are unchanged (spec: the shots wait for
+the action check to start). compare-pixels keeps each state's result and diff PNG in `compare-pixels` through
+`writeCacheEntry`, keyed on both picture hashes and `pixelCompareCodeOf()` (part-compare, pixel-cache). Verified: specs
+(an edit between two runs misses only that state with the new px count; same lines and diff files from the cache; abort
+keeps nothing), both tsc, lint. Not built: the slow unchanged-matrix states first - the batches run in turn, each in a
+fresh browser, so a reorder saves nothing; a pool needs the browser threaded through the check. Follow-up `perf(cli)`
+315a2e66c: the overlapped check waits for compare's design shots before it draws its own, which now hit the shared store
+(the first measurement drew them twice at once: actions 6.6-7.0 s after a design edit). Measured on 315a2e66c (worktree
+resident, `timeout 30s`, load 5.4-6.2 of 32, every line clean in `design timings`): app edit (studio-labels idle, fresh
+text) 5.69 / 5.77 / 5.78 s, 89/45 (app shots 3.8 s, actions 3.45 s hidden under them, pixels 0.04 s), **meets 10 s**;
+design edit 4.76 / 4.86 / 5.23 s, 102/32; zoom-chip app edit 6.78 s (pixels 1.31 s, all 30 app pictures change); every
+next run 0.91-1.04 s, 134/134 (was 2.6 s). Deferred: reuse design shots by render output.
+
+Studio frame B (as built in the `perf(cli)` commit that adds this note, perf subagent, 2026-11-06): measured first, the
+~520 ms of a warm `/__design/open-points?part=` call were the static rules of the whole product (`ruleProblemsOf` 535
+ms; `readOpenPoints` only 39 ms). Built: `system/open-points-cache.ts` keeps the product's open points and build-ready
+inputs keyed on a stat fingerprint (path, mtime, ctime, size) of the own and base product folders, the config file, the
+configured stylesheets and each harness app's `src` (~1300 files, 6-8 ms); the answer's ready mark, direct edit, slow
+results and build-ready stay live. Studio sent two requests per switch: the System view's open points and the part
+approval both asked; `openPointsAnswer$` now shares one request between overlapping calls. Verified: a spec with a
+comment, a sketch and a part file edited between calls (fails with a constant key), both tsc, lint, the Studio specs, and
+the new canvas e2e case "a part switch asks for its open points once" (2 + 2 requests before, 1 + 1 after). In-process
+(the handler, warm, load 6 of 32): first call ~2.0-2.7 s with module load (unchanged); repeat icons 520 -> 14-18 ms, logo
+14-16 ms, elements/shell-main ~650 -> 42 ms (the live build-ready over its embedded parts is 22 ms of it). `design check
+--product studio --part pages/system`: 0 findings (only host services changed, no rendered component). Not measured: the
+page-switch empty-frame time in headless Chromium and a curl against a served build (a second server would write into
+the checkout). Not cached: a rule input outside those folders (e.g. an app file outside the harness `src`)
+stays stale until a fingerprinted file changes. Details: `.claude/handoffs/agent-results/studio-frame-b.md`.
+
+Studio frame A (as built in the `perf(cli)` commit that adds this note, perf subagent, 2026-11-06): the shot URL no
+longer carries `view`/`rank`. Studio's `ShotBoard` posts the mounted shot URLs (active, shown) to `POST /__design/view`;
+the draw queue ranks by that board (active, shown, plain, asked under an older view), the URL params still work. The URL
+is keyed on session (Studio load), epoch and revision (edit spec: a part redraw changes the URL); the shot answer carries
+an ETag (304 on a match) and `private, max-age=3600`. A stable URL alone did not paint in the first frame: Chromium
+dropped the unreferenced picture from its memory cache, so `ShotBoard.hold` keeps the last 500 loaded pictures as
+`Image` objects. e2e `a part shown before paints every stored picture in the first frame` (canvas.e2e, not
+page-switch.e2e, which runs on the main checkout): before 0/2 pictures in rAF 1, after 2/2 in rAF 1 (+11-13 ms). Not
+measured: icons/logo and shell-main switch times. Not built: finding 523 timings line. Details:
+`.claude/handoffs/agent-results/studio-frame-a.md`.
+
+Studio frame A verified, finding 523 (as built in the `perf(cli)` commit that adds this note, perf subagent,
+2026-11-06): the e2e case `a part shown before` passes on the rebuilt CLI (2/2 pictures in rAF 1, +12 ms). `design check
+--product studio` on `pages/system` and `elements/canvas-frames`: 0 findings. New canvas e2e case `page switch time is
+logged to the design timings` (own temp servers): click until every new frame shows a loaded picture or its live
+iframe. icons -> logo seen 10-12 ms (no request), first visit 200-1700 ms (both shots `drawn` in the temp checkout).
+Each switch appends a `page-switch` line (page seen before, target 100 ms) or `page-switch (first)` (no target) to
+`.ethlete/design/.timings.jsonl`, so `design timings` shows them with STALE/NOISY; sub-second times print in ms. Not
+measured: icons <-> elements/shell-main; after that switch no `img` or `iframe` with the shell-main part URL was in the
+DOM within 15 s although 18 shell-main shots were drawn. Details: `.claude/handoffs/agent-results/studio-frame-a2.md`.
+
+531\. c0 (2026-11-06), revision guard: Studio showed an old picture after a change. Studio's `revision`
+(`frame-revisions.ts`) moved only on a server `parts` event, but two paths swapped a picture without one: a flows change
+cleared every shot and sent only `flows`, and a `fresh` draw (merge-compare) replaced the stored picture. With frame A's
+stable URL, the 1 h cache and `ShotBoard.hold`, the old picture stayed. Why no tool caught it: no spec tied a store
+write to Studio's revision; before frame A every switch fetched the picture again and hid the gap. Tool fix (done in
+934616670): the shooter hashes every kept picture per key, and a changed hash that no announced redraw dropped calls
+`changed(part)` (revision bump + `parts` event); `clear` requires `{announced}`. Guards: shot.spec and shot-store.spec
+(flows change then a changed picture sends a `parts` revision; fails if the flows path claims announced) and the e2e
+"a part edited on disk while away shows its new picture on return" (12/12 new pictures; fails with the revision held).
+Lesson: a cache that makes a page faster also hides a missing invalidation, so every cache slice adds an
+edit-while-away e2e before it is called done.
+Built in 934616670.
+
+533\. c0 (2026-11-06), checking slice C: `sketch-view.component.spec.ts` logs "NG0953 Unexpected emit for destroyed
+OutputRef" twice and still passes, before slice C (c77c781d5^, 16/16) and after it (17/17). A component emits an output
+after it was destroyed. Why no tool caught it: the Studio specs do not fail on an Angular runtime error that is only
+logged with `console.error`. Tool fix (queued after S7, not perf): the Studio test setup fails a spec on any logged
+`NG0` error, and the emit after destroy in the sketch view is fixed in the same slice.
+
+528 tool fix (as built, c0, 2026-11-06): `compare-draw-once.spec.ts` runs the real `designCompare`, `shootStatesWith`
+and `checkActions` on fake drawers (a shooter over a shared design store, a counted `harnessShotOf`, a disk-cached
+built app) and fails on any picture drawn twice in one run (`draw-count.test.ts`). Paths: cold with the overlapped
+action check (3 design + 3 app draws), warm (0), design edit (3 design, 0 app), app edit (3 app, 0 design), `--all`
+over two parts. Bite: dropping `designsDrawn` from compare or its `await` in `checkActions` fails 3/4 cases with
+"design components/chip default drawn 2 times". HEAD has no double draw. Not covered: `--live`, the real shot store.
+
+534\. c0 (2026-11-06), S7 measurement at b7b19adb7 (load 3.3/32): a full `design check --product studio` takes 308 s,
+warm the same as cold (0/131 cache hits, not resident). Its `.timings.jsonl` line had `unphasedMs` 307.3 s: the check
+has no phases, so `design timings` could not say where the time goes; only a hand-timestamped run split it
+(completeness draws ~154 s, render inspect ~90 s, auto-accept ~38 s, open points + READY/GO ~13 s, static system ~9 s).
+Why no tool caught it: a timings line accepts any size of unphased time. Tool fix (S7a): `timedPhase` around every check
+step, and `design timings` flags a line whose unphased share is above 10 % of the run as unexplained.
+Doc agent, S7 plan (applies ADR 0213 and ADR 0204): order S7a (check through the resident, warm draw threaded into
+every step, phases) -> S7b (per-part disk cache of render issues and completeness gaps) -> S7c (auto-accept on the
+picture cache, parallel lanes) accepted. A check in the resident must not push a compare past its 10 s target: the
+resident runs a waiting compare between two parts of a running check, with a spec for it. Each S7b cache input named as
+a risk (fonts, frame assets, dist CSS, generated Tailwind output, config, capabilities, merged and pictures JSON) gets
+its own edit-between-runs case (rule of 531).
+Built in ecb5057b2.
+
+S7a as built (ecb5057b2, 2026-11-06): `design check --product`/`--part` runs in the resident (not its --rules/--live/--slow/--visible-change/--app-classes/--receipt/call forms); the resident's WarmDraw reaches auto-accept, render inspect, completeness, bespoke controls, dropped props and action lost (the last two load on the warm server); every step is a phase (stale-dist, auto-accept, static, render-inspect, completeness, open-points, tail, summary). A waiting compare runs between two parts of a running check (yield points in auto-accept, inspect groups and completeness; a jumped compare reuses the check's lib-build read and never restarts the warm server), and `design timings` flags a run with over 10 % (and at least 1 s) unphased time as UNEXPLAINED. Numbers (load ~3/32, sha ecb5057b2 dirty only by the design json): before 308.0/307.5 s non-resident, unphased 307.3 s; after 306.4 s (cold resident) and 297.6 s (warm), unphased 16 ms and 31 ms, same 2 findings (EDIT-OLD-NOT-FOUND pages/start, SKETCH-BASE-STALE), 173 finding lines identical between the two runs. Phases of the warm run: completeness 156.6 s, render-inspect 93.8 s, auto-accept 37.6 s, static 7.1 s, open-points 1.4 s, tail 0.9 s - the warm server saves startups only, the draws stay; S7b's per-part cache is the win. Verified: specs for routing, yield (compare queued during a fake check starts after one part), warm threading without createDesignServer/createDrawQueue, the timings flag; tsc, lint. Not verified: a no-double-draw spec with draw-count (the threading spec runs without a browser); the resident-queue-wait a real check causes for a real concurrent compare; warm vs non-resident results on the same tree in one sitting (only against the S7 baseline's 2 findings); `cachedOpenPointsOf` is not used by check (it caches the draw-less points) and stays as it was.
+
+535\. c0 (2026-11-06), S7a: the as-built numbers needed a second commit (b8bbef168 after ecb5057b2), because
+`yarn et:design` builds and runs the last commit, not the working tree; a slice cannot measure its own change before
+it commits it. Why no tool caught it: nothing in a timings line says it ran code other than the one being changed
+(finding 525 only marks a dirty tree). Tool fix (queued after S7): `et:design` takes an option to build the working tree
+into its own scratch dist for a measurement, and its timings line is marked with the dirty commit, so a number is
+never mixed up with the committed build's.
+Doc agent: S7b split accepted - S7b-1 render-inspect cache with the key infra, the check draw-count spec and every
+edit-between-runs case of the S7 plan; S7b-2 completeness cache on that infra, keyed on recursed parts. S7b-1 also
+checks whether `partActionFailuresOf` in open-points starts its own harness server, and threads the warm draw into it
+if so.
+
+S7b-1 as built (df132a653, 2026-11-06): `design check` caches the render issues of each part group (product, part, sketch) on disk (`render-issues` under the checkout's vite cache, 64 MB LRU, `writeCacheEntry` so nothing is written after an abort). The key is the group's frame descriptors (computed fresh from the SSR load each run, so config, presets, states, skips and namespaces are in it), the render-inspect code hash with the frame assets (`renderInspectCodeOf`) and the Playwright version; the entry keeps every request the browser context made while drawing the group (url, accept header) with a hash of what the server answered, and is reused only while each of those urls answers the same when Node fetches it again (each url once per run, 30 s timeout). The drawing pages run with the browser cache off, so a module served from memory cache is still recorded. That covers part files, shared imports, tokens, the generated Tailwind output, fonts, frame.html and frame assets and the SDK dist CSS/JS without a hand-made fingerprint; merged.json, pictures.json and capabilities are neither served nor read by render inspect. The infra (`served-cache.ts`: `createServedHashes`, `createServedCache`, `servedHitOf`) is generic for S7b-2. Numbers (load ~3/32, sha df132a653 dirty only by the design json, resident): first run 309.2 s with render-inspect 95.1 s (cold cache), unchanged rerun 205.0 s with render-inspect 0.75 s; completeness 155.9 s is now the slowest phase. Same 2 findings, the finding lines identical between the two runs (the only diff: 20 `etProvideColor="brand" has no effect` console lines the first run printed). Verified: `render-cache-draw.spec.ts` drives the real `renderIssuesOf` on a fake WarmDraw (fake browser and page, real `inspect`), cold draws each frame once, warm 0, a part edit only that part, one case each for part file, shared import, CSS token, Tailwind output, font, frame asset, SDK dist CSS and JS, a changed state set, a no longer fetchable url, and config/capabilities/merged/pictures edits redrawing nothing; a broken `unchanged` fails 10 of 15. Not verified: a real edit between two real runs; a resident restart (another port) still hitting. Found: `partActionFailuresOf` in open points starts its own harness app per part (`withHarnessUrl`) and `checkActions` its own design server and Chromium (actions-command.ts:262), with no warm draw; threading it is still open (first run's open-points 13.1 s vs 1.4 s).
+
+536\. Doc agent (2026-11-06), S7b-1 (df132a653): a warm check prints 20 fewer lines than a cold one - the
+`etProvideColor="brand" has no effect` warnings of a draw are gone when the render result comes from the cache. The
+finding lines match, but a cached run must not hide what a drawn run shows. Why no tool caught it: the cache specs
+compare findings, not the whole output. Tool fix (S7b-2): a cache entry keeps the draw's warnings and a hit prints them
+again; a spec compares the full output of a cold and a warm run. Also in S7b-2: a spec for a hit after a resident
+restart on another port (the host is stripped from the recorded URLs, untested).
+Built in 44514b348.
+
+S7b-2 as built (6f2061c10, 52c079983, 2026-11-06), partly: `design check` caches each part's completeness drawing (`seeFrames`: seen, refused, changes) on the S7b-1 infra (`completeness-sights`, key = code hash, Playwright version, product, sketch, part, frames, own CSS, control parts); everything after the drawing (merged, exceptions, inventory, part hash, option values, recursion into embedded parts) still runs live each time, so config, capabilities, merged.json, pictures.json and sketch edits redraw nothing yet change the result, and an embedding part redraws because its drawing loaded the embedded module. POST requests (the `/__design/render` SDK renders) are now recorded with their body and fetched again with it, so SDK markup from the render worker is in the key (S7b-1 refetched them as a GET: a fixed 405). The worker returns what it logged per render; an entry keeps those lines and a hit prints them. Found with the real-edit run: every S7b-1 and S7b-2 input hash on disk was null - Node's fetch went to 127.0.0.1 while Vite listened on ::1 - and null == null counted as unchanged, so an edit of components/zoom-chip in a scratch worktree redrew nothing (render 0.78 s, completeness 0.31 s). Fixed in 52c079983 (fetch the listen address, a null hash never hits). The numbers measured before the fix are not valid: 6f2061c10 run 1 310.8 s, run 2 48.4 s (completeness 0.28 s), both with nothing verified. Also, in those runs the entries kept no lines, so the 30 warnings were still missing on run 2. Open: measure again after 52c079983 (two runs plus the worktree edit), and check that entries keep lines and the full logs match.
+
+538\. c0 (2026-11-06), S7b-3: the rule of 537 failed. In a scratch worktree the zoom-chip edit rewrote all 167 check
+entries (332 s), and an unchanged rerun right after it again all 167 (328.7 s). In every entry only
+`virtual:design-explore/env` and `virtual:design-explore/system` changed: `serve.ts` `env()`/`systemRegistry()` list
+every sketch (`sketchesOf`/`drawnOf`) and every part loads them, so any sketch change anywhere - including a check's own
+writes (`sketches/*.edit` folders, merged/ready/pictures.json) - redraws everything. The main tree only looked warm
+(50.7 s) because those writes had settled; that number does not count. Why no tool caught it: the edit-between-runs
+specs edit one input of a fake part graph, none loads the real global virtual modules, and nothing runs the check twice
+on a fresh tree, where a run's own writes become the next run's inputs. Tool fix (S7b-4): a real-tree test - cold
+check, then an unchanged rerun on a fresh worktree must redraw 0 parts - and the cache key of a part holds only the
+registry slice it reads, never a module that a check run rewrites. Done when the zoom-chip edit redraws exactly
+zoom-chip, canvas-viewport, pages/sketches, flows, system, merge and inbox, also after `yarn et:design stop`.
+538 causes and first fix (c0, 72457e493): auto-accept opens and closes `<part>.edit` sketches on every run
+(`openEditSketch`), which adds and removes `<part>@edit` in the global modules; the render worker's id counters keep
+growing (`et-label-30` -> 33), so the same template never hashed equal. Entries now key on a per-frame registry slice
+(the frame's product parts, tokens, stylesheets, named sketch variants), and SDK render ids are renumbered before
+hashing. Fresh worktree: cold 346.5 s; unchanged rerun 51.6 s, 0 of 167 entries rewritten, 0 null hashes; zoom-chip
+edit 103.6 s, exactly 9 entries rewritten (zoom-chip and elements/canvas-frames, render of the five pages that embed
+canvas-frames). Still open: a resident restart redraws everything (322.5 s) - `/@vite/client` holds a per-start
+`wsToken` and an inline sourcemap. The new `/__design/registry-slice` route raises STUDIO_API_LEVEL 6 -> 7, so an
+older resident restarts once (doc agent: accepted, Studio does not read the level). Doc agent for S7b-5: the spec
+"hits after a resident restart on another port" failed once under load; it is fixed or made deterministic in S7b-5,
+not rerun until green. For S7c: a check must not create and remove `.edit` sketches in the checkout on every run;
+auto-accept works on the picture cache without opening an edit sketch.
+Built in 07d3c5bcd.
+
+S7b-4 + S7b-5 as built (72457e493, 07d3c5bcd, 2026-11-06). S7b-4 (538): three causes made every entry redraw. Auto-accept opens and closes `<part>.edit` sketches in the global env/system modules on every run; the render worker's SDK id counters grow per render; a worktree with `dist` symlinked to main's took another session's builds as input (copy `dist` instead). Entries key on the per-frame registry slice (`/__design/registry-slice`, STUDIO_API_LEVEL 6 -> 7) and renumbered SDK ids; a zoom-chip edit rewrites exactly 9 entries (render and completeness of zoom-chip and elements/canvas-frames, render of pages/flows, sketches, system, merge, inbox). S7b-5: `/@vite/client` holds a random per-start `wsToken`, and inline `sourceMappingURL=data:` lines embed host and token; both are dropped before hashing (spec, bites). A restart probe (a second server against the stored inputs of all 167 entries) found no other input that changes across a restart. Fresh worktree, CLI 07d3c5bcd, dist copied: cold 346.3 s; unchanged rerun 51.2 s, 0 of 167 rewritten, 0 null hashes; zoom-chip edit 103.3 s, exactly the 9 entries; after `design stop` the rerun took 70.9 s, 0 rewritten (render-inspect 2.1 s, completeness 0.8 s, open-points 13.5 s), log identical to the run before it. Main tree (07d3c5bcd, load ~3.5/32): cold 314.1 s (the code hash changed), warm 51.4 s (auto-accept 39.0, static 7.2, render-inspect 1.9, completeness 0.8), the known 2 findings, logs identical minus the resident start and over-target lines. The flaky spec "hits after a resident restart on another port": its cache key salts with `renderInspectCodeOf()`/`completenessCodeOf()`, which hash the live `libs/cli` source and `libs/cli/design` on every run, so a write there by another session between the spec's two runs changes the key (reproduced: rewriting a file under `libs/cli/design` every 10 ms fails every warm spec in both files). Both specs now mock the code hash and pass under the same writes. Open: auto-accept (~39 s) dominates the warm run; open-points redraws after a restart.
+
+S7 check target met (c0, 07d3c5bcd, main tree, load ~3.7/32): full `design check --product studio` warm 51.4 s (was
+308 s), 0 null hashes, known 2 findings, identical logs. Fresh worktree: unchanged rerun 51.2 s, zoom-chip edit 103.3 s
+(exactly 9 entries), after `design stop` 70.9 s with 0 entries rewritten. Cold stays 314-346 s, above the 120 s hard
+timeout of ADR 0213; S7c (parallel lanes, auto-accept on the picture cache) works on it. Per ADR 0215 the next builder
+session runs the `ci-check` skill and pushes `next`.
+
+539\. c0 (2026-11-06), S7b-5: the spec "hits after a resident restart on another port" failed now and then. Cause: the
+check cache salt (`renderInspectCodeOf()`/`completenessCodeOf()`) hashes the whole live `libs/cli` source on every run,
+so any write there between the spec's two runs - another session, prettier, `lint --fix` - forced a redraw; a 10 ms
+write loop failed every warm case. The specs now mock the code hash. The same cause makes every `libs/cli` commit cost
+the next dev check a cold 314 s. Why no tool caught it: the specs ran on a quiet tree; nothing wrote under `libs/cli`
+while they ran. Tool fix (doc agent, S7c): the check caches use the per-producer import-graph hash of `code-hash.ts`
+that the compare caches already use (B416 slice 2), so only an edit to the code that draws or inspects invalidates
+them; a spec edits an unrelated `libs/cli` file between two runs and expects 0 redraws.
+Built in af933db63.
+
+540\. c0 (2026-11-06), ci-check before the push of `next` (259 commits): typecheck was red since 1518330a1 (ET800
+message, fifagg section 12 work): `legacy-state-replay.scenario.spec.ts:111` called `prepare()` without its argument.
+Fixed in 263654c41. Why no tool caught it: the pre-push hook leaves typecheck to CI, and with the push parked (ADR 0213) no CI ran for 259 commits, so a type error stayed hidden for hours. Tool fix (ADR 0216): while a push is held, the builder pushes each slice to its own branch with a draft pull request so the full CI runs. Also: the vitest
+cache `libs/query/.vitest/` is untracked and not ignored, so local `format:check` fails on it; `**/.vitest/` goes into
+`.gitignore` (builder).
+Built in 4aef2e30f.
+
+541\. Doc agent (2026-11-06), push of `next` (264 commits): the pre-push design gate refused seven parts with
+IMPLEMENTATION-UNCOMPARED. Compared: pages/flows and elements/studio-menu ok and verified; pages/inventory and
+pages/start compare ok but `--verify` needs a check record; pages/merge `merge-error DIFF 2 px`; pages/sketches 13
+states DIFF (up to 135 661 px) and 2 missed actions ("Alle Zustände zeigen"); pages/system 10+ states DIFF and 6
+missed actions ("Kommentar", "49 offen", "Gründe"). Why no tool caught it earlier: the gate runs only at push time, and
+the push was held for hours (ADR 0213), so app changes piled up uncompared. Tool fix: ADR 0216 (draft PR with full CI
+per slice while a push is held); the design-rules gate is part of that CI.
+Built in 4aef2e30f.
+
+542\. Builder on the Mac (2026-11-06): the subagent brief rule "run the gate with `timeout 600s`" fails on macOS,
+which has no `timeout` command. The rule lived only in the builder handoff, written on Linux, so no tool or skill
+checked it against the Mac. Tool fix (builder, with S7c): briefs use the Bash tool's own `timeout` parameter (max
+600000 ms, the same on every OS) or `run_in_background` with a Monitor deadline, never the shell `timeout`; the rule
+moves from the handoff into the builder-agent skill. A run with no deadline at all is not the fix: a hung gate then
+blocks the builder silently. Also: the full gate took 134.4 s on the Mac, 98.6 s of it lib-build-wait at load 13.9 on
+12 cores; S7c measures it again on a quiet machine. Gate now refuses five parts (inventory, merge, sketches, start,
+system); pages/flows and elements/studio-menu pass.
+
+543\. Builder on the Mac (2026-11-06), the four refused parts: (A) `harnessShotOf` photographed the harness host
+before the lazy part mounted, so a loaded machine got a blank page (merge `open` 1.29M px); fixed with
+`@else if (current)`. (B) design picks merged after 2026-11-01 were never ported to the app (comment-draft surface and
+role, sketches sample `fit`, fixed; system popover "Ausnahmen" group and the `agent`/`call` props without app inputs,
+open). (C) since 5a29b1b94 the sketches design draws real title-bar/zoom-chip renders per frame, but the harness gives
+SketchesComponent no `shot` template, so every frame is empty. Fonts Mac vs PC: not a cause. Why no tool caught it: CI
+`design compare --all` compares only done parts (`doneParts` in part-task.ts needs implemented hash == ready hash and
+no changed app files), so a merged pick or an app edit silently drops the part from the CI compare. Tool fixes
+(builder, after push safety): (1) `--all` compares every part with an implemented record and lists parts that drifted
+out of done; (2) a merged pick on a part with an `implements` link opens a port task; (3) `harnessShotOf` waits for a
+mounted child of the host, not only a visible host.
