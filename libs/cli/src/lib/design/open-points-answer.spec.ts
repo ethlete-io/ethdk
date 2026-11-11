@@ -10,6 +10,7 @@ import { createComment } from './system/comments/comment';
 import { drawnFindingsOf } from './system/drawn-open-points';
 import { oneProductOf } from './system/sketch/cli-args';
 import { createSketch } from './system/sketch/sketch';
+import { warmOpenPointsWorker } from './system/open-points-worker.fixtures';
 import { ResolvedProduct } from './system/resolve-product';
 
 vi.mock('./system/drawn-open-points', () => ({
@@ -44,6 +45,8 @@ const ask = (target: string, path: string, method = 'GET') => ({
 });
 
 describe('openPointsAnswer', { timeout: 30_000 }, () => {
+  warmOpenPointsWorker();
+
   it('answers the open points of every part, or of one, without a draw', async () => {
     const target = checkout();
 

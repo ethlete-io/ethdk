@@ -3841,6 +3841,16 @@ the first failed run's output from the next nightly run, then fix the bound or t
 the 30 s describe timeout, the second case took 16.4 s; neither draws (`drawnFindingsOf` mocked). The 50 s Suspect is
 wrong; new Suspect: cold work per `openPointsAnswer` call. In work (opus subagent: phases, fix, bite at `--slow 2`).
 
+As built (782): Cause (measured): not the answer. Both calls start the open-points worker, and in a spec the worker runs
+from source, so jiti transpiles its whole import graph on the first call. With an empty jiti cache that cold start takes
+7.0 s plain and 43.5 s at `CPUQuota=25%`; with a warm cache 0.5 s and 2.5 s. After the start, each call takes under 3 ms.
+The built CLI starts the compiled worker, so this cost is spec-only and no product change applies. Fix (commit "test(cli):
+Warm the open-points worker before the open-points answer spec"): the spec calls `warmOpenPointsWorker()`, as
+`part-ready.spec.ts` does, so the cold start falls in its 120 s `beforeAll`. Bite with `JITI_FS_CACHE=false`: before,
+`--slow 4` 0/2 (48.9 s) and `--slow 2` 2/2 at 24.3 s (near the 30 s bound); after, `--slow 4` 2/2 (slowest case 0.4 s,
+cold start 45 s in `beforeAll`), `--slow 2` 2/2. Warm cache: `--slow 2` 2/2 (3.4 s), `--runs 4 --load 2` 4/4. Not
+verified: a CI sweep run; why the CI cold start was slower than the local one at the same quota.
+
 783\. Linux builder (2026-11-11, night, 778 calibration, CI run 42941554007): at `--slow 2` on CI,
 `libs/cli/src/lib/design/system/check-system.spec.ts` failed 0/2 at about 52.8 s. Locally under `CPUQuota=12%` its two
 "without a browser" cases fail ("fails a part check without a browser on a dev machine…", "skips the render check
