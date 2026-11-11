@@ -3674,6 +3674,13 @@ cold first answer and the answer after any part edit stay over 1 s; only (b) mee
 and then measured or asserted, so a slow load showed as a wrong value instead of a timeout. Tool fix (doc agent, tool
 internal): a harness rule or lint check rejects a `waitFor` (or other wait) followed by `.catch(() => undefined)` in the
 Studio e2e files; fix every hit. Bite: the check fails on the old 829 case.
+831 as built (Linux builder, 2026-11-11, this commit: fix(repo) "Reject a swallowed wait in the Studio e2e files"): lint
+rule `no-restricted-syntax` in `apps/ethlete-studio/eslint.config.mjs` for `e2e/**/*.mjs`, selector in
+`e2e/no-swallowed-wait.mjs`: a `.catch` on a chain holding `waitFor*`, `poll` or `click`. Three hits, all in
+`canvas.e2e.mjs`: `showAllStates` (324) and the refused-check-record case (click and open wait, 1195/1200) now throw
+as a timeout. Bite: `no-swallowed-wait.spec.mjs` lints the old 829 code and fails to see it without the rule; the
+three callers of `showAllStates` and the refused-record case pass alone, plain and with `--hold-listings 14000`.
+Not proven: `showAllStates` on a page where the folded-states button is legally absent (all three callers had it).
 830 as built (Linux builder, 2026-11-11, dc37b06e8), warm only: each ready variant keeps its rule problems, keyed by
 product and sketch, reused while every file its run read is unchanged; the product rules run once and are shared with
 build-ready. Output byte-equal to HEAD. On studio, idle: repeat call 5.9 s to 82 ms; miss with held variants 710 ms;

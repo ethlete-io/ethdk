@@ -321,7 +321,7 @@ const SKETCH_CSS = {
 const showAllStates = async (page) => {
   const button = page.locator('[data-sk-folded]').getByRole('button', { name: 'Alle Zustände zeigen' }).first();
 
-  await button.waitFor({ timeout: FULL_COMPARE_MS }).catch(() => undefined);
+  await button.waitFor({ timeout: FULL_COMPARE_MS });
   if ((await button.count()) && (await button.getAttribute('aria-expanded')) !== 'true') {
     await button.click();
     await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
@@ -1192,12 +1192,8 @@ const CASES = [
       const open = page.locator('[role="dialog"] button', { hasText: 'Sketch öffnen' });
       const status = page.locator('ethlete-build-ready-footer et-badge').first();
 
-      await page
-        .locator('ethlete-build-ready-footer button', { hasText: 'Gründe' })
-        .first()
-        .click({ timeout: 20000 })
-        .catch(() => undefined);
-      await open.waitFor({ timeout: 5000 }).catch(() => undefined);
+      await page.locator('ethlete-build-ready-footer button', { hasText: 'Gründe' }).first().click({ timeout: 20000 });
+      await open.waitFor({ timeout: 5000 });
       await page.unroute('**/__design/open-points?*');
 
       const offered = await open.count();
