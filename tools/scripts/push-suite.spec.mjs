@@ -1,7 +1,16 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { gitEnv } from './git-test-env.mjs';
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -120,23 +129,32 @@ test('reads a captured git log and needs a verdict only for the code commit unde
   );
 });
 
-test('a step with a log file writes its output to a new file as it comes and still returns it', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'push-suite-log-'));
-  const logFile = join(dir, 'handoffs', 'step.log');
-  mkdirSync(join(dir, 'handoffs'));
-  writeFileSync(logFile, 'stale\n');
-  const script = "console.log('out'); setTimeout(() => console.error('err'), 300)";
-  const step = runStep(process.execPath, ['-e', script], dir, logFile);
+test(
+  'a step with a log file writes its output to a new file as it comes and still returns it',
+  { timeout: 30_000 },
+  async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'push-suite-log-'));
+    const logFile = join(dir, 'handoffs', 'step.log');
+    mkdirSync(join(dir, 'handoffs'));
+    writeFileSync(logFile, 'stale\n');
+    const go = join(dir, 'go');
+    const script = `console.log('out'); const t = setInterval(() => { if (require('fs').existsSync(${JSON.stringify(go)})) { clearInterval(t); console.error('err'); } }, 10)`;
+    const step = runStep(process.execPath, ['-e', script], dir, logFile);
 
-  await new Promise((done) => setTimeout(done, 150));
-  const runLog = readFileSync(logFile, 'utf8').replace('latest run log: ', '').trim();
-  assert.notEqual(runLog, logFile);
-  assert.equal(readFileSync(runLog, 'utf8'), 'out\n');
-  const { output } = await step;
-  assert.equal(readFileSync(runLog, 'utf8'), 'out\nerr\n');
-  assert.equal(output, 'out\nerr\n');
-  rmSync(dir, { recursive: true });
-});
+    const runLogOf = () => readFileSync(logFile, 'utf8').replace('latest run log: ', '').trim();
+    while (runLogOf() === 'stale' || !existsSync(runLogOf()) || readFileSync(runLogOf(), 'utf8') === '') {
+      await new Promise((done) => setTimeout(done, 10));
+    }
+    const runLog = runLogOf();
+    assert.notEqual(runLog, logFile);
+    assert.equal(readFileSync(runLog, 'utf8'), 'out\n');
+    writeFileSync(go, '');
+    const { output } = await step;
+    assert.equal(readFileSync(runLog, 'utf8'), 'out\nerr\n');
+    assert.equal(output, 'out\nerr\n');
+    rmSync(dir, { recursive: true });
+  },
+);
 
 test('two runs write two distinct log files and the first is not overwritten', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'push-suite-two-logs-'));

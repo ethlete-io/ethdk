@@ -3954,3 +3954,10 @@ failed crates.
 `warning: N studio ADR warning(s); run \`yarn lint:studio-adrs\` for the list`instead of one line per warning, and the
 pre-commit hook calls it with`--summary`. `yarn lint:studio-adrs`still prints the full list. Verified: a new spec for`warningLines` and the hook pattern (both fail on the old code: no export, no flag in the hook), 15/15 pass; live:
 309 warning lines become 1. Not changed: the 309 warnings are almost all "finding N is cited by no STATUS row".
+
+763 as built (Linux builder, 2026-11-11): the case "a step with a log file writes its output to a new file as it comes"
+waited a fixed 150 ms for the first line and let the child print the second line after a fixed 300 ms, so a child that
+starts slowly under load missed the first read. Cause (bite): the same case with a child that starts 200 ms late fails
+on the old code and passes on the new one. Fix: the case polls until the run log holds the first line, then writes a
+`go` file; the child prints the second line only after it sees that file. No fixed delay is left. Verified: spec:stress
+4/4 at `--load 2 --slow 4`. Not verified: the Mac at load 18.
