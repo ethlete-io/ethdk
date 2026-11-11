@@ -1,9 +1,20 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, mkdirSync, readdirSync, realpathSync } from 'node:fs';
+import { join, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { linkInstalledDependencies } from './commit-export.mjs';
+
+/** Returns an error when a scratch's shot store resolves into the main checkout. */
+export const storeEscapes = (repo, dir) => {
+  const store = join(dir, 'node_modules/.design-explore');
+  if (!existsSync(store)) return undefined;
+  const real = realpathSync(store);
+  const root = realpathSync(repo);
+  return real === root || real.startsWith(root + sep)
+    ? `the scratch shot store ${store} resolves to ${real}, inside the main checkout ${root}; a scratch run would write into the live store`
+    : undefined;
+};
 
 /** Copies the working tree (tracked files with uncommitted edits, plus untracked unignored files) into `dir` and links the repo's dependencies. */
 export const scratchCheckout = (repo, dir) => {
@@ -21,6 +32,9 @@ export const scratchCheckout = (repo, dir) => {
   );
   if (copy.status !== 0) return { error: copy.stderr.trim() || `copy exited ${copy.status}` };
   linkInstalledDependencies(repo, dir);
+  mkdirSync(join(dir, 'node_modules/.design-explore'), { recursive: true });
+  const escape = storeEscapes(repo, dir);
+  if (escape) return { error: escape };
   return { dir };
 };
 
