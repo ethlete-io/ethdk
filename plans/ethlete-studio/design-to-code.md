@@ -3808,3 +3808,22 @@ prints the usage and returns 0; an unknown argument prints `unknown argument: <a
 `--bogus` and `--dry-run` leave both files byte-identical, and a plain run moves an old done finding. Bite: with the
 argument check off, the `--help` and `--bogus` tests fail (2 of 13). Verified live: `--bogus` exits 2, `--dry-run` writes
 nothing. Not verified: nothing open.
+
+804\. Mac builder (2026-11-11, night, push:suite of bae08fb64): `serve.spec.ts` "keeps answering other requests while it
+checks two hundred sketches" took 75 s on the Mac (timeout 60 s) and blocked the push. Cause (bite): eea6f5c7e (788)
+formats each variant `tsconfig.json` with one Prettier process in `writeEditorTsconfig`, so each run spawns one process
+per sketch and variant; with the format stubbed the case took 9.0 s. Why no tool caught it: a per-item spawn passed on
+the fast Linux box, and no spec counted spawns. Lesson: a writer of many files spawns no process per file. Decided by
+the doc agent: the Mac builder builds it, no spawn per file, no timeout raise.
+
+804 as built (Mac builder, 2026-11-11, night, 1a6d924b1): `prettierJsonOf` (`system/prettier-json.ts`) writes JSON in
+the form Prettier writes for a `.json` file (objects one key per line, a scalar array on one line when it fits the print
+width). `jsonStyleOf` (`sketch/check-format.ts`) reads `printWidth`, `tabWidth` and `useTabs` of the checkout's Prettier
+config with one process per product folder and process; `formatText` is gone. A checkout without Prettier keeps the
+plain `JSON.stringify` text. Specs: `system-tsconfig.spec.ts` counts the `child_process` calls of `writeEditorTsconfig`
+over three sketches with two variants: at most 1, then 0 (the old writer: 9); `prettier-json.spec.ts` compares the
+output with the repo Prettier at, one under and one over the print width (it fails at a width of 119). Verified: the 788
+FORMAT case passes in a temp checkout with the Prettier default width 80; the serve case takes 18.4 s under load 24;
+`vitest related` 129 files pass; lint and typecheck of cli. Not verified: a resident server keeps the style of its first
+call, so a changed Prettier config takes effect after a restart; a config with `overrides` per sketch folder is read for
+the product folder only.
