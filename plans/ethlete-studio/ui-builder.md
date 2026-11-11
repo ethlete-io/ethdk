@@ -110,3 +110,5 @@ Verified: specs (change-box, unchanged-states, listing, sketches component), eac
 `vitest related` in libs/cli (1347 passed) and ethlete-studio; spec:stress 4/4 per spec alone. Not verified: a live
 shot of the crop in a running Studio, `design compare` of `change-crop`/`change-crop-whole` (the harness supplies no
 crop data for them), the unit word ("Stellen" for regions, the design mock says "Zellen").
+
+Built in 82c6e3025.
