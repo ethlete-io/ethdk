@@ -2422,69 +2422,12 @@ that needs a fresh picture opts out of the delay (`delayPictures: false`), and a
 list against the opt-outs. Backlog: a commit that changes `studio-e2e-repeat.mjs` arguments needs a full repeat-gate
 run before the push suite counts it.
 
-670\. Builder (2026-11-09, Mac night, f3e978adb): the slice-paths pre-commit hook warned about
-`tools/scripts/studio-e2e-perf.spec.mjs`, though the builder had `tools/scripts` in `ETHLETE_SLICE_PATHS`. The
-directory match in `check-slice-paths.mjs` is right (`path.startsWith(dir + '/')`). Doc agent check: the git-path
-file `slice-paths` still holds an older slice (`canvas.e2e.mjs`, `design-canvas`, `.changeset`), and an env var set
-in one agent shell call does not reach the next call that runs `git commit`, so the hook read the stale file. Why no
-tool caught it: the warning prints the patterns but not where they came from or how old they are. Tool fix (bug
-queue): the warning names its source (env or file, with the file's age), and the builder writes the file, not the env
-var, at each slice start.
-
-As built (672 tool part): the runtime check of 674 in `studio-e2e-listing-hold.mjs` (054fb039b) covers it; each
-opt-out names its reason since 678 (494fd4f4f). No slice of its own (builder, 2026-11-10).
-
 674\. Builder (2026-11-09, Mac night, 9e4ada3c5): the B465 case took its "had a picture" snapshot when only the
 `current` row, which the edit does not change, had painted. So the old code passed 3/3 even with a 60 s picture
 delay: the case did not touch the state it claims to guard. Fixed: it waits for a visible variant-a cell; the old
 component now fails 3/3 under the delay, the fix passes. Why no tool caught it: nothing proves that a case's
 precondition holds before its action. Tool fix (backlog): a case that guards cells asserts a non-empty set of guarded
 cells before the action, and the 651 bite proof is the check that a case can fail at all.
-
-675\. Builder (2026-11-09, Mac night, CI 42699047872 and its rerun): cli `part-go` and `part-ready` hit the 30 s
-timeout twice, `part-accept` once (B466); green in 42651661922. Suspect: the fixed `maxWorkers: 4` of 343e968aa,
-which can raise the CI runner above its old default. The worker count could not be proven, because a green CI run
-prints no vitest summary (Nx shows output only on failure), so there is no worker count or time per project to
-compare. No cause in 15 min, so per ADR 0230 the suspect is undone: both caps become `min(4, vitest default)` (not a
-git revert, 343e968aa also holds the regex fix of 660); the next CI run is the proof. Why no tool caught it: a green
-run leaves no per-project figures, and a config tuned on one machine went to CI with no CI-side measurement. Tool fix
-(bug queue): the cli and Studio test targets print workers and duration also when green, and the shared preset of
-662 sets `min(cap, default)`, never a fixed count.
-
-As built: CI run 42699047872 failed part-go and part-ready (and part-accept in attempt 1) at the 30 s timeout, twice. The cause is not proven; green runs print no vitest worker line. The fixed `maxWorkers: 4` may exceed vitest's default (cores - 1) on the CI runner, so the cap is now `Math.min(4, cores - 1)` in the cli and Studio configs. Verify in the next CI run.
-
-676\. Builder (2026-11-09, Mac night, c11cc03ac): the builder's plan note for c11cc03ac was in the shared
-`design-to-code.md` when the doc agent ran `git commit -- plans/ethlete-studio/design-to-code.md`, so d6cd9db4a
-carries it and c11cc03ac does not. No content was lost, but the as-built note sits in a commit that does not name the
-code sha. Why no tool caught it: a path commit takes the whole file, and nothing tells a session that another one has
-unsaved hunks in it. Tool fix (backlog): the pre-commit hook warns when a staged plan file has hunks that the claims
-file (`ethlete-agent-sessions`) gives to another live session; until then the builder commits its plan note in the
-same commit as its code.
-
-As built (finding 674 tool fix, findings 657/672): a runtime check, not a static one. In a hold run
-(`--hold-listings`) the runner (`tools/scripts/studio-e2e-listing-hold.mjs`, used by `canvas.e2e.mjs`) counts held
-listing responses still pending; a case whose `run()` passes while a listing it requested inside `run()` is still
-held fails with `ended while a held listing was pending: its wait is shorter than the 14000 ms hold; wait longer or
-set holdListings: false`. Listings held since the page load before `run()` do not count: with them, 126 of 131 cases
-tripped in a full hold run. With the narrower condition 16 runs of 9 cases tripped; open cases are exempt (their
-inverted result says nothing about a wait), and 8 cases that pass on their own evidence without the held listing
-(merge, discard, the two "edited on disk" picture cases, 30 %/100 %, first load, Fit, listing refresh every 1 s) opt
-out with `listingMayPend: true`; those 17 runs then pass 17/17 in a hold run. Bite: the sketch edit case without
-`holdListings: false` fails with the new detail under `--hold-listings 14000` (twice, broad and narrow condition) and
-passes with it restored; `studio-e2e-listing-hold.spec.mjs` covers the verdict. Not verified: whether the 8 opt-out
-cases trip only intermittently in other hold runs (one full hold run seen), and a push:suite run.
-
-As built (B464, finding 677): the hover case maps each element near the frame to its visible edges only: the outline
-and each border side when the style is not `none`/`hidden`, the width is above 0 and the colour is not transparent,
-and each box-shadow with a non-transparent colour and a non-zero length. An element with no visible edge counts as no
-edge, so a late-mounted transparent button is no change; a new visible edge still fails (`no edge -> ...`). Bite (a
-temporary button mounted over the frame on hover): transparent outline, border and shadow pass 4/4 pages, a red one
-fails 4/4; the case then passed 4 runs of 4/4 at load 45-66. Not verified: a push:suite run.
-
-As built (674): 054fb039b. In a hold run, a case fails when its `run()` passes while a listing that it requested inside
-`run()` is still held; listings held before `run()` are ignored. Bite: the sketch-edit case without
-`holdListings: false` fails with the new detail and passes when restored. 8 cases carry the opt-out
-`listingMayPend: true`.
 
 681\. Builder (2026-11-10, Mac night, B466-only push:suite in a worktree at 11de10881 = origin/next f6a97186f + c11cc03ac,
 B471): the e2e step failed on `[System] page switch time is logged to the design timings` (`icons->shell-main first:
@@ -4014,3 +3957,8 @@ and `check-plan-findings.mjs` only refuses dropped heads, never a repeated one. 
 `check-plan-findings.mjs` refuses a staged plan in which a `NNN\.` head occurs twice, naming the number and both lines;
 the pre-commit run then stops the merge commit that would carry the duplicate. Bite: the check passes a plan with two
 `814\.` heads without the fix.
+
+659 part 2 live (Linux builder, 2026-11-11): with a busy `npx vitest run` in `libs/cli` (pid 885101) started 8 s before
+`yarn push:suite` at HEAD 1665f5644, the suite log printed `push-suite: warning: 1 other test or build process(es) of this
+checkout run:` and the line `885101    4.0 % cpu  node node_modules/.bin/vitest run`. Verified live on Linux; not on the
+Mac.
