@@ -3858,3 +3858,21 @@ human). D6: `design serve` rewrote tracked `studio/merged.json` during the run. 
 and only the live run found D1-D3 and D5; the live verify list must run before a slice that changes old/new is pushed,
 not at the end. Tool fix (doc agent decision): slice 5 finds the old design by part content, not by the merged hash;
 `serve` never writes a tracked file; the live checks 4b and 4c become e2e cases. Side: user-facing, after 867.
+
+869\. Doc agent (2026-11-11): the 867 brief told the Linux builder to leave the design fix as a visible direct edit for
+the human to merge. The human had already called the clip a defect and the canvas under the panel "as intended", so no
+open choice existed; ADR 0211 and ADR 0256 say such an edit is committed and recorded as merged. The builder caught the
+conflict with ADR 0256 before the commit. Cause: the doc agent wrote the fix line from the 228 pattern without the ADR
+search it runs before a grill question. Lesson: a brief that routes a change to the human is a grill question in
+disguise and needs the same ADR search. Tool fix: none (process; doc-agent rule already says search before asking).
+Decision sent: commit all, name finding 867 and ADR 0211.
+
+870\. Linux builder (2026-11-11, B480 Windows release CEF smoke on rack): Studio never leaves "Design-Server startet";
+`design_server_state` stays `stale: true` for 230 s while `/__design/stamp` answers 200 with the same build. Cause (code +
+measured body): `is_stale` (`apps/ethlete-studio/src-tauri/src/design_server.rs:242`) compares the whole JSON, but
+`own_stamp` holds only {version, build} and the served body has eight more fields, so every served stamp reads as stale
+on every OS. The spec near line 1012 uses a hand-written {version, build} body, so it never bit. Suspect: `judged_with`
+caches a no-answer verdict per checkout+port until the port stops listening. Lesson: a spec for a parsed server answer
+must take its fixture from a captured real body (AGENTS.md rule); the hand-written one hid the defect. Tool fix: compare
+only version+build, spec with the captured body (bite first), never cache a no-answer verdict; rebuild on rack and re-run
+the smoke. Side: user-facing; part of B480, which runs in parallel (ADR 0268).
