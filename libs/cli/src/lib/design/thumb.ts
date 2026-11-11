@@ -101,6 +101,43 @@ export const openFrame = async (page: Page, url: string) => {
     });
 };
 
+/** What a part frame loads apart from its `state`: two frames with the same boot key can switch into each other. */
+export const bootKeyOf = (search: string) => {
+  const params = new URLSearchParams(search);
+
+  params.delete('state');
+
+  return params.toString();
+};
+
+/**
+ * Draws `state` in place on a part frame that `openFrame` opened, as a fresh load with that state would, and waits for
+ * its embedded frames. Resolves `false` when the frame cannot switch or drew nothing; open it with `openFrame` then.
+ */
+export const switchFrame = async (page: Page, state: string) => {
+  const switched = await page.evaluate(
+    `(async (state) => {
+      if (typeof window.etSwitchState !== 'function') return false;
+      await window.etSwitchState(state);
+      return document.querySelector('#root > :not(style)') !== null;
+    })(${JSON.stringify(state)})`,
+  );
+
+  if (switched !== true) return false;
+
+  const timeout = loadScaledMs(DRAW_TIMEOUT_MS);
+
+  await page
+    .locator('iframe[data-et-embed]:not([data-et-embed-drawn])')
+    .first()
+    .waitFor({ state: 'detached', timeout })
+    .catch(() => {
+      throw new ShotTimeoutError(`design-explore: ${page.url()} did not draw its embedded frames within ${timeout} ms`);
+    });
+
+  return true;
+};
+
 export const settled = `new Promise((done) => document.fonts.ready.then(() =>
   requestAnimationFrame(() => requestAnimationFrame(() => done(true)))))`;
 

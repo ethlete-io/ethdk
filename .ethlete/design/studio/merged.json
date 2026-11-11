@@ -27,10 +27,11 @@
     "at": "2026-11-11T13:00:59.616Z"
   },
   "components/title-bar": {
-    "hash": "f3239ce89833a657",
+    "hash": "10dca6e38b5e7560",
     "variant": "a",
-    "decidedBy": "user",
-    "at": "2026-11-08T14:38:29.675Z"
+    "decidedBy": "plan: ADR 0106 + ADR 0210",
+    "at": "2026-11-11T20:39:04.358Z",
+    "note": "merged without a pick: allowed by ADR 0106 + ADR 0210 - merged: ADR 0106/0210: notice restart hover, active, focus-visible in the existing styles"
   },
   "components/tree-row": "535509654924a68b",
   "components/update-dialog": {
@@ -105,7 +106,7 @@
   },
   "pages/merge": "44fd8307ce8b2ab0",
   "pages/sketches": {
-    "hash": "01bab45d2fc190a4",
+    "hash": "78077d0bc009c132",
     "variant": "c",
     "decidedBy": "user",
     "at": "2026-11-11T13:00:59.616Z"

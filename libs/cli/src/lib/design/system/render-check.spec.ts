@@ -7,7 +7,13 @@ import { DESIGN_DIR, readConfig } from '../design-config';
 import { checkSystem } from './check-system';
 import { completenessOf } from './complete';
 import { resolveProduct } from './resolve-product';
-import { groupedIssueLinesOf, renderIssueLineOf, renderIssuesOf, uniqueIssuesOf } from './render-check';
+import {
+  groupedIssueLinesOf,
+  INSPECTS_AT_ONCE,
+  renderIssueLineOf,
+  renderIssuesOf,
+  uniqueIssuesOf,
+} from './render-check';
 
 const skipWithoutBrowser = (context: { skip: (note?: string) => never }, reason: string) => {
   if (process.env['CI']) throw new Error(`No browser in CI: ${reason}`);
@@ -400,6 +406,88 @@ describe('renderIssuesOf', () => {
         'the open overlay pane lets "Round one text below" (p) under it show through - give the pane an opaque background',
       ],
     ]);
+  }, 120_000);
+
+  it('draws every state and scheme of a part on at most one page load per lane', async (context) => {
+    const target = checkout({});
+    const dir = join(target, DESIGN_DIR, 'shop', 'components', 'stated');
+
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, 'stated.css'),
+      '.shop-text { color: #000; background: #fff; } @media (prefers-color-scheme: dark) { .shop-text { color: #222; background: #111; } }',
+    );
+    writeFileSync(
+      join(dir, 'stated.ts'),
+      `import { definePart, drawing, html } from '@design-system';
+import styles from './stated.css?inline';
+
+export default definePart({
+  note: 'A fixture.',
+  states: { a: { cut: false }, b: { cut: true }, c: { cut: false }, d: { cut: false }, e: { cut: true }, f: { cut: false } },
+  render: ({ cut }: { cut: boolean }) =>
+    drawing({
+      body: cut
+        ? html\`<div style="width: 100px; overflow: hidden"><p class="shop-text" style="margin: 0; width: 300px">Wide</p></div>\`
+        : html\`<p class="shop-text" style="margin: 0">Fine</p>\`,
+      styles,
+    }),
+});
+`,
+    );
+    const config = readConfig(target) ?? {};
+    const navigations: string[] = [];
+    const countingChromiumOf = async (at: string) => {
+      const resolved = await chromiumOf(at);
+
+      if (!resolved) return null;
+
+      const launch: Chromium['launch'] = async (options) => {
+        const browser = await resolved.chromium.launch(options);
+        const newContext = browser.newContext.bind(browser);
+
+        browser.newContext = async (...args) => {
+          const created = await newContext(...args);
+
+          created.on('request', (request) => {
+            if (request.isNavigationRequest() && request.url().includes('/frame.html')) navigations.push(request.url());
+          });
+
+          return created;
+        };
+
+        return browser;
+      };
+
+      return { ...resolved, chromium: { ...resolved.chromium, launch } as Chromium };
+    };
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const rendered = await renderIssuesOf({
+      target,
+      config,
+      jobs: [{ product: 'shop', sketch: null, parts: null }],
+      chromiumOf: countingChromiumOf,
+    });
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+    expect([...new Set(rendered.issues.map((issue) => `${issue.rule} ${issue.state}`))].sort()).toEqual([
+      'CLIPPED b',
+      'CLIPPED e',
+      'CONTRAST a',
+      'CONTRAST b',
+      'CONTRAST c',
+      'CONTRAST d',
+      'CONTRAST e',
+      'CONTRAST f',
+    ]);
+    expect(
+      rendered.issues
+        .filter((issue) => issue.rule === 'CONTRAST')
+        .every((issue) => issue.detail.includes(' in the dark scheme')),
+    ).toBe(true);
+    expect(navigations.length).toBeGreaterThan(0);
+    expect(navigations.length).toBeLessThanOrEqual(INSPECTS_AT_ONCE);
   }, 120_000);
 
   it('names the states whose render is busy or holds a loading button, and keeps them out of the issues', async (context) => {

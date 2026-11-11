@@ -89,6 +89,35 @@ describe('a merge commits its own result', { timeout: 120_000 }, () => {
     expect(existsSync(hero.dir)).toBe(false);
   });
 
+  it('commits only its own entries of merged.json and leaves a foreign edit of it in the tree', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const target = acme();
+    const git = gitOf(target);
+    const merged = join(target, DESIGN_DIR, 'acme/merged.json');
+
+    writeFileSync(merged, `${JSON.stringify({ 'pages/home': 'aaaaaaaaaaaaaaaa' }, null, 2)}\n`);
+    git('init');
+    git('config', 'user.name', 't');
+    git('config', 'user.email', 't@t');
+    git('add', '.');
+    git('commit', '-m', 'base');
+
+    const hero = pickedSketch(target, { layer: 'elements', name: 'hero' });
+
+    writeFileSync(join(hero.dir, 'b/elements/hero/hero.css'), '.acme-hero { background: var(--acme-accent); }');
+    writeFileSync(merged, `${JSON.stringify({ 'pages/home': 'bbbbbbbbbbbbbbbb' }, null, 2)}\n`);
+
+    expect(mergeOf(target, hero)).toMatchObject({ parts: ['elements/hero'] });
+
+    const committed = JSON.parse(git('show', `HEAD:${DESIGN_DIR}/acme/merged.json`).stdout);
+
+    expect(committed['elements/hero']).toBeDefined();
+    expect(committed['pages/home']).toBe('aaaaaaaaaaaaaaaa');
+    expect(git('diff', '--', merged).stdout).toContain('bbbbbbbbbbbbbbbb');
+  });
+
   it('leaves the files in place outside a git checkout', () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
 

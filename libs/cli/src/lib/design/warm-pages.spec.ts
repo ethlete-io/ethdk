@@ -52,6 +52,31 @@ describe('createWarmPages', () => {
     await parked(contexts[0]?.pages[0], 2);
   });
 
+  it('leaves a page with a boot on its drawing and lends it first to the next draw with that boot', async () => {
+    const { browser, contexts } = fakeBrowser();
+    const warm = createWarmPages();
+    const lent: [unknown, boolean][] = [];
+    const draw = (boot: string) =>
+      warm.run({ browser, context: phone, boot }, async (page, booted) => void lent.push([page, booted]));
+
+    await Promise.all([draw('a'), draw('b')]);
+    await vi.waitFor(() => expect(contexts.flatMap((context) => context.pages)).toHaveLength(2));
+    await draw('b');
+    await draw('a');
+    await draw('c');
+
+    const [a, b] = contexts.map((context) => context.pages[0]);
+
+    expect(lent).toEqual([
+      [a, false],
+      [b, false],
+      [b, true],
+      [a, true],
+      [b, false],
+    ]);
+    expect(a?.goto).not.toHaveBeenCalled();
+  });
+
   it('closes the page of a failed draw and draws the next one on a new page', async () => {
     const { browser, contexts } = fakeBrowser();
     const warm = createWarmPages();

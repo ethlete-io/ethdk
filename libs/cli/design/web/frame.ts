@@ -1,4 +1,12 @@
-import { CallVariant, Drawing, fitOutOfFlow, mountDrawing, placeOverlays, withNgStyles } from '../define-call';
+import {
+  CallVariant,
+  Drawing,
+  fitOutOfFlow,
+  markNgStyles,
+  mountDrawing,
+  placeOverlays,
+  withNgStyles,
+} from '../define-call';
 import { drawState, Motion, Part } from '../define-part';
 import { applyEmbed, fitEmbed } from '../embed-page';
 import { paintFill } from './frame-fill';
@@ -17,7 +25,7 @@ const params = new URLSearchParams(location.search);
 const slug = params.get('call') ?? '';
 const product = params.get('product');
 const partKey = params.get('part') ?? '';
-const key = (product ? params.get('state') : params.get('variant')) ?? '';
+let key = (product ? params.get('state') : params.get('variant')) ?? '';
 const sketch = product ? params.get('sketch') : null;
 const sketchVariant = params.get('variant') ?? '';
 const fit = product !== null && params.has('fit');
@@ -107,6 +115,8 @@ const failMissing = (message: string) => {
   return fail(message);
 };
 
+const banners: HTMLElement[] = [];
+
 const showSetupError = (message: string) => {
   markFailed(message);
 
@@ -118,6 +128,7 @@ const showSetupError = (message: string) => {
     'position:fixed;top:0;left:0;right:0;z-index:2147483647;margin:0;padding:16px;white-space:pre-wrap;font:14px monospace;color:#f0a0a0;background:#1a1414',
   );
   document.body.append(banner);
+  banners.push(banner);
 };
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -171,6 +182,9 @@ const composed = async (name: string) => {
   );
 };
 
+let composing: Promise<void> | null = null;
+let ngStylesStart: (() => void) | null = null;
+
 const drawPart = async (name: string): Promise<Drawing | null> => {
   const load = sketch ? sketchParts[name]?.[sketch]?.[sketchVariant]?.[partKey] : parts[name]?.[partKey];
   if (!load)
@@ -187,13 +201,15 @@ const drawPart = async (name: string): Promise<Drawing | null> => {
     );
 
   try {
-    await composed(name);
+    composing ??= composed(name);
+    await composing;
 
     const [{ default: part }, { default: holder }] = await Promise.all([retried(load), retried(loadProps)]);
 
     if (!(key in holder.states)) return failMissing(`design-explore: part "${partKey}" has no state "${key}"`);
 
     drawnPart = { part: part as Part<unknown>, states: holder.states };
+    ngStylesStart ??= markNgStyles();
 
     return await drawState(part as Part<unknown>, holder.states[key]);
   } catch (error) {
@@ -395,11 +411,15 @@ const listenForDrive = (drawn: NonNullable<typeof drawnPart>, styles: string) =>
     },
   });
 
-  addEventListener('message', (event) => {
+  const listener = (event: MessageEvent) => {
     const message = event.source === parent ? motionDriveMessageOf(event.data) : null;
 
     if (message) void driver.handle(message);
-  });
+  };
+
+  addEventListener('message', listener);
+
+  return () => removeEventListener('message', listener);
 };
 
 const exposeFlowLine = (options: { product: string; to: string; styles: string }) => {
@@ -433,7 +453,7 @@ const exposeFlowLine = (options: { product: string; to: string; styles: string }
   });
 };
 
-const runPartRules = (drawn: NonNullable<typeof drawnPart>, styles: string) => {
+const runPartRules = (drawn: NonNullable<typeof drawnPart>, styles: string) =>
   runRules(root, {
     state: key,
     rules: drawn.part.rules ?? [],
@@ -446,14 +466,12 @@ const runPartRules = (drawn: NonNullable<typeof drawnPart>, styles: string) => {
     },
     failed: (error) => showSetupError(`design-explore: switch of part "${partKey}" failed\n${messageOf(error)}`),
   });
-};
 
 // macOS WebKit can loop in module evaluation when a frame with top-level await is removed.
-const drawFrame = async () => {
-  parent.postMessage({ type: 'design-explore:loading' }, '*');
-  await (product ? loadProductEnv({ product, sketch, variant: sketchVariant }) : loadEnv(slug.split('/')[0] ?? ''));
+const drawKey = async () => {
   const tokenStyles = product ? await tokensOf(product) : null;
   const loaded = await (product ? drawPart(product) : drawCall());
+  const undo: (() => void)[] = [];
 
   if (loaded) {
     if (tokenStyles !== null) {
@@ -461,15 +479,17 @@ const drawFrame = async () => {
 
       style.textContent = tokenStyles;
       document.head.append(style);
+      undo.push(() => style.remove());
     }
 
     const style = document.createElement('style');
 
     style.textContent = await forced(loaded.styles ?? '');
     document.head.append(style);
+    undo.push(() => style.remove());
     const error = mountDrawing(root, loaded);
 
-    watchSurfaces(root, surfaceInteractiveCss);
+    undo.push(watchSurfaces(root, surfaceInteractiveCss));
     const partRoot = partRootOf(root);
 
     if (interaction && partRoot) force(partRoot, interaction);
@@ -479,10 +499,56 @@ const drawFrame = async () => {
 
     if (flowTo && product) exposeFlowLine({ product, to: flowTo, styles: loaded.styles ?? '' });
     else if (motionName && drawnPart) exposeMotion({ drawn: drawnPart, name: motionName, styles: loaded.styles ?? '' });
-    else if (drawnPart?.part.rules?.length) runPartRules(drawnPart, loaded.styles ?? '');
+    else if (drawnPart?.part.rules?.length) undo.push(runPartRules(drawnPart, loaded.styles ?? ''));
 
-    if (!flowTo && !motionName && drawnPart) listenForDrive(drawnPart, loaded.styles ?? '');
+    if (!flowTo && !motionName && drawnPart) undo.push(listenForDrive(drawnPart, loaded.styles ?? ''));
   }
+
+  return () => undo.forEach((step) => step());
+};
+
+/**
+ * Draws another state of the same part on this page, as a fresh load of the frame with that `state` would. Exposed as
+ * `window.etSwitchState` on a part frame without a motion or flow line.
+ */
+const switchStateOf = (rootAttributes: [string, string][], undone: () => void) => {
+  let undo = undone;
+
+  return async (state: string) => {
+    undo();
+    banners.splice(0).forEach((banner) => banner.remove());
+    ['data-et-error', 'data-et-missing', 'data-et-building'].forEach((name) =>
+      document.documentElement.removeAttribute(name),
+    );
+    root.replaceChildren();
+    root.getAttributeNames().forEach((name) => root.removeAttribute(name));
+    rootAttributes.forEach(([name, value]) => root.setAttribute(name, value));
+    (document.activeElement as HTMLElement | null)?.blur?.();
+    scrollTo(0, 0);
+    errored = false;
+    drawnPart = null;
+    key = state;
+    ngStylesStart?.();
+
+    const url = new URL(location.href);
+
+    url.searchParams.set('state', state);
+    history.replaceState(history.state, '', url);
+    undo = await drawKey();
+    report();
+    reportPainted();
+  };
+};
+
+const drawFrame = async () => {
+  parent.postMessage({ type: 'design-explore:loading' }, '*');
+  await (product ? loadProductEnv({ product, sketch, variant: sketchVariant }) : loadEnv(slug.split('/')[0] ?? ''));
+  const rootAttributes = root
+    .getAttributeNames()
+    .map((name): [string, string] => [name, root.getAttribute(name) ?? '']);
+  const undo = await drawKey();
+
+  if (product && !flowTo && !motionName) Object.assign(window, { etSwitchState: switchStateOf(rootAttributes, undo) });
 
   const place = () => {
     applyEmbed(frameElement, root);

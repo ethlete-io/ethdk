@@ -2415,6 +2415,63 @@ describe('designSketch', { timeout: 120_000 }, () => {
     );
   }, 120_000);
 
+  it('reports a ready sketch whose variant changed since ready and leaves its sketch.json byte-equal', async () => {
+    const target = acme();
+    const warnings: string[] = [];
+
+    output();
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void warnings.push(String(line)));
+    await write(target, 'new', 'elements/hero', '--variants', 'a', '--note', 'n', '--product', 'acme');
+
+    const file = join(target, DESIGN_DIR, 'acme/sketches/elements-hero/sketch.json');
+    const ready = {
+      ...JSON.parse(readFileSync(file, 'utf8')),
+      status: 'ready',
+      readyContent: { a: 'judged-before' },
+      mergeHold: { reason: 'r', at: '2026-11-11T00:00:00.000Z' },
+    };
+
+    writeFileSync(file, `${JSON.stringify(ready, null, 2)}\n`);
+
+    const before = readFileSync(file, 'utf8');
+
+    await run(target, 'check', 'elements/hero', '--product', 'acme');
+
+    expect(readFileSync(file, 'utf8')).toBe(before);
+    expect(warnings).toContain(
+      'READY-STALE elements/hero: a changed since sketch ready judged it - run `et design sketch ready elements/hero --product acme` to judge it again',
+    );
+  }, 120_000);
+
+  it('keeps a ready sketch ready on sketch ready when its files equal the commit of a stale hash', async () => {
+    const target = acme();
+    const lines = output();
+    const warnings: string[] = [];
+    const file = join(target, DESIGN_DIR, 'acme/sketches/components-button/sketch.json');
+
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void warnings.push(String(line)));
+    const git = gitRepo(target);
+
+    writeFileSync(join(target, '.gitignore'), 'tsconfig.json\n');
+    await sameButton(target);
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    writeFileSync(
+      file,
+      `${JSON.stringify({ ...JSON.parse(readFileSync(file, 'utf8')), readyContent: { a: 'stale-hash' } }, null, 2)}\n`,
+    );
+    git('add', '.');
+    git('commit', '-m', 'ready');
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines.some((line) => String(line).includes('back to in progress'))).toBe(false);
+    expect(lines).toContain('components/button is still ready');
+    expect(JSON.parse(readFileSync(file, 'utf8')).readyContent.a).not.toBe('stale-hash');
+
+    await run(target, 'check', 'components/button', '--product', 'acme');
+
+    expect(warnings.filter((line) => line.startsWith('READY-STALE'))).toEqual([]);
+  }, 120_000);
+
   it('fails a sketch whose embedded part changed in the product and names that part', async () => {
     const target = acme();
     const lines = output();

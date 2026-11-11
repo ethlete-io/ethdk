@@ -20,6 +20,7 @@ import {
   rebaseSketch,
   rejectionOf,
   reopenChangedReady,
+  variantContentHashOf,
   reportSketch,
   Sketch,
   SketchMerge,
@@ -377,6 +378,16 @@ describe('status', () => {
     expect(markSketchReady({ checkout: target, sketch: reopened?.sketch as Sketch })).toMatchObject({
       status: 'ready',
     });
+  });
+
+  it('leaves the generated editor tsconfig of a variant out of its content hash', () => {
+    const target = acme();
+    const sketch = open(target, 'elements/hero');
+    const before = variantContentHashOf(sketch, 'a');
+
+    writeFileSync(join(sketch.dir, 'a', 'tsconfig.json'), '{"compilerOptions":{"paths":{"x":["/elsewhere"]}}}');
+
+    expect(variantContentHashOf(sketch, 'a')).toBe(before);
   });
 
   it('keeps the authors of each variant in the order of their first report, without duplicates', () => {

@@ -63,6 +63,12 @@ export const STUDIO_LABELS = {
     foldedStates: (count: number) =>
       count === 1 ? '1 unveränderter Zustand eingeklappt' : `${count} unveränderte Zustände eingeklappt`,
     showAllStates: 'Alle Zustände zeigen',
+    wholeScreen: 'Ganzer Screen',
+    cropScreen: 'Ausschnitt',
+    sameCrop: (count: number) => `${count} Zustände, gleicher Ausschnitt`,
+    changeReason: (pixels: number, regions: number) =>
+      `${pixels} px in ${regions} ${regions === 1 ? 'Stelle' : 'Stellen'}`,
+    magnified: (factor: string) => ` · ${factor}× vergrößert`,
     drawingMark: 'zeichnet',
     drawingVariant: 'zeichnet diese Variante',
     drawingHint: 'Der Rahmen füllt sich, sobald die erste Ansicht steht.',

@@ -6,6 +6,7 @@ import { productStylesheetFilesOf } from '../product-stylesheets';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { SketchVariant } from '../system-modules';
 import { baselineInTurnsOf, partHashOf } from './baseline';
+import { ChangeBox, changeBoxOf } from './change-box';
 import { EDIT_OLD } from './edit-sketch';
 import { isEditSketch } from './merged-parts';
 import { overlaySketch } from './overlay';
@@ -31,7 +32,9 @@ type Rendered = { part: LoadedPart; frames: string; states: Map<string, Markup |
 
 const CACHE_LIMIT = 200;
 
-const cache = new Map<string, { unchanged: string[]; drawn: DrawnPart[] }>();
+type Kept = { unchanged: string[]; drawn: DrawnPart[]; changes: Record<string, ChangeBox> };
+
+const cache = new Map<string, Kept>();
 
 /**
  * Drops the kept results of every part `change` redraws, in the product or in the compared variant, so the next call
@@ -82,7 +85,7 @@ const renderedOf = async (load: () => Promise<unknown>): Promise<Rendered | null
 
 const comparesNothing = (sketch: Sketch, variant: string) => isEditSketch(sketch) && variant !== EDIT_OLD;
 
-const remember = (key: string, kept: { unchanged: string[]; drawn: DrawnPart[] }) => {
+const remember = (key: string, kept: Kept) => {
   if (cache.size >= CACHE_LIMIT) cache.delete(cache.keys().next().value ?? '');
   cache.set(key, kept);
 
@@ -115,7 +118,7 @@ const drawsTheSame = async (options: {
   const { pictureOf, product, key, part, presets, state, sketch } = options;
 
   try {
-    const same = await Promise.all(
+    const changes = await Promise.all(
       framesOf(part, presets).map(async (frame) => {
         const draw = (drawn: SketchVariant | null, fresh: boolean) =>
           pictureOf({
@@ -128,13 +131,17 @@ const drawsTheSame = async (options: {
             fresh,
           });
 
-        return (await drawnPair(draw, sketch)).same;
+        const { now, after, same } = await drawnPair(draw, sketch);
+
+        return same ? null : (changeBoxOf(now.png, after.png) ?? undefined);
       }),
     );
 
-    return same.every(Boolean) ? 'same' : 'different';
+    return changes.every((change) => change === null)
+      ? ({ result: 'same' } as const)
+      : ({ result: 'different', change: changes.find((change) => !!change) } as const);
   } catch {
-    return 'failed';
+    return { result: 'failed' } as const;
   }
 };
 
@@ -166,21 +173,19 @@ const keyOf = async (options: {
   );
 };
 
+type KeptOptions = { product: ResolvedProduct; sketch: Sketch; variant: string; pictured: boolean; part?: string };
+
 /**
- * The states `unchangedStatesOf` found unchanged for the same sources with `keepPictures`, or `null` while no such
- * comparison is kept. It renders and draws nothing.
+ * The states `unchangedStatesOf` found unchanged for the same sources with `keepPictures`, and where each state it
+ * drew differently differs (`changes`), or `null` while no such comparison is kept. It renders and draws nothing.
  */
-export const keptUnchangedStatesOf = async (options: {
-  product: ResolvedProduct;
-  sketch: Sketch;
-  variant: string;
-  pictured: boolean;
-  part?: string;
-}): Promise<string[] | null> => {
+export const keptComparisonOf = async (
+  options: KeptOptions,
+): Promise<{ unchanged: string[]; changes: Record<string, ChangeBox> } | null> => {
   const { product, sketch, variant, pictured, part: compared = partKeyOf(sketch) } = options;
   const overlaid = overlaySketch({ product, sketch, variant });
 
-  if (comparesNothing(sketch, variant)) return [];
+  if (comparesNothing(sketch, variant)) return { unchanged: [], changes: {} };
   if (!product.parts.some((part) => partKeyOf(part) === compared)) return null;
   if (!overlaid.parts.some((part) => partKeyOf(part) === compared)) return null;
 
@@ -195,7 +200,9 @@ export const keptUnchangedStatesOf = async (options: {
     states: undefined,
   });
 
-  return cache.get(key)?.unchanged ?? null;
+  const kept = cache.get(key);
+
+  return kept ? { unchanged: kept.unchanged, changes: kept.changes } : null;
 };
 
 /**
@@ -264,7 +271,8 @@ export const unchangedStatesOf = async (options: {
     { product: product.name, part: compared, sketch: { target: sketch.target, variant } },
   ];
 
-  if (compareFrames && now.frames !== after.frames) return keeps ? remember(key, { unchanged: [], drawn: parts }) : [];
+  if (compareFrames && now.frames !== after.frames)
+    return keeps ? remember(key, { unchanged: [], drawn: parts, changes: {} }) : [];
 
   const imported = productStylesheetFilesOf(product);
   const restyled = overlaid.parts.some((part) => {
@@ -276,12 +284,12 @@ export const unchangedStatesOf = async (options: {
   const comparedStates = [...after.states].filter(([state]) => !states || states.includes(state));
   const same = await Promise.all(
     comparedStates.map(async ([state, markup]) => {
-      if (!now.states.has(state)) return 'different';
+      if (!now.states.has(state)) return { result: 'different' } as const;
 
       const before = now.states.get(state);
 
       if (!restyled && markup && before && markup.body === before.body && markup.styles === before.styles)
-        return 'same';
+        return { result: 'same' } as const;
 
       return pictureOf
         ? drawsTheSame({
@@ -293,11 +301,21 @@ export const unchangedStatesOf = async (options: {
             state,
             sketch: { target: sketch.target, variant },
           })
-        : 'different';
+        : ({ result: 'different' } as const);
     }),
   );
 
-  const unchanged = comparedStates.filter((_, index) => same[index] === 'same').map(([state]) => state);
+  const unchanged = comparedStates.filter((_, index) => same[index]?.result === 'same').map(([state]) => state);
+  const changes = Object.fromEntries(
+    comparedStates.flatMap(([state], index) => {
+      const entry = same[index];
+      const change = entry && 'change' in entry ? entry.change : undefined;
 
-  return keeps && !same.includes('failed') ? remember(key, { unchanged, drawn: parts }) : unchanged;
+      return change ? [[state, change]] : [];
+    }),
+  );
+
+  return keeps && !same.some((entry) => entry.result === 'failed')
+    ? remember(key, { unchanged, drawn: parts, changes })
+    : unchanged;
 };

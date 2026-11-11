@@ -457,7 +457,17 @@ export type SketchTarget = {
   unchanged?: string[];
   /** The states this variant adds and drops against the part now, and its part note when that differs. Missing from an `@ethlete/cli` older than this field. */
   changes?: SketchTargetChanges;
+  /** Where each changed state differs from the part now, by state. Missing while no compare is kept and from an `@ethlete/cli` older than this field. */
+  crops?: Record<string, SketchChange>;
   error?: string;
+};
+
+export type SketchChange = {
+  width: number;
+  height: number;
+  box: { x: number; y: number; width: number; height: number };
+  pixels: number;
+  regions: number;
 };
 
 export type SketchTargetChanges = {

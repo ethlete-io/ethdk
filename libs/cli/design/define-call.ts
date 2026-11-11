@@ -42,6 +42,18 @@ export const unseenStyles = (styles: Iterable<string>, seen: Set<string>) => {
   return fresh.join('\n');
 };
 
+/** Marks the component styles `ng()` rendered so far; the returned function takes the styles back to that mark. */
+export const markNgStyles = () => {
+  const kept = { rendered: [...rendered], taken: [...taken] };
+
+  return () => {
+    rendered.clear();
+    taken.clear();
+    kept.rendered.forEach((style) => rendered.add(style));
+    kept.taken.forEach((style) => taken.add(style));
+  };
+};
+
 /** `drawn` with the component styles `ng()` rendered since the last drawing appended to its `styles`. */
 export const withNgStyles = <T extends Drawing>(drawn: T): T => {
   const sdk = unseenStyles(rendered, taken);

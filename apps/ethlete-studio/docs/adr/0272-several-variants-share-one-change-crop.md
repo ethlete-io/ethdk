@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B345
+built: 82c6e3025
 decided: 2026-11-11
 source: grill session 2026-11-11 (night), Mac B345 slice 1, finding 881
 ---

@@ -6,7 +6,8 @@ import { readConfig } from '../../design-config';
 import { resolveProduct } from '../resolve-product';
 import { createSketch, sharedDirOf, Sketch, variantDirOf } from './sketch';
 import { PictureOf } from '../../merge-compare';
-import { forgetUnchangedStates, SketchPartLoader, unchangedStatesOf } from './unchanged-states';
+import { encodePng } from '../part-compare';
+import { forgetUnchangedStates, keptComparisonOf, SketchPartLoader, unchangedStatesOf } from './unchanged-states';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-unchanged-'));
@@ -226,6 +227,28 @@ describe('unchangedStatesOf', () => {
     });
 
     describe('with keepPictures', () => {
+      it('keeps where a changed state differs, and no box for an unchanged one', async () => {
+        const { product, sketch } = spaced();
+        const blank = Buffer.alloc(40 * 20 * 4, 255);
+        const marked = Buffer.from(blank);
+
+        marked.fill(0, (5 * 40 + 30) * 4, (5 * 40 + 34) * 4);
+
+        const pngOf: PictureOf = async ({ sketch: on }) => ({
+          png: encodePng({ width: 40, height: 20, data: on ? marked : blank }),
+          marks: [],
+        });
+        const options = { product, sketch, variant: 'a', load: counting().load, keepPictures: true, pictureOf: pngOf };
+
+        expect(await unchangedStatesOf(options)).toEqual([]);
+        expect(await keptComparisonOf({ product, sketch, variant: 'a', pictured: true })).toEqual({
+          unchanged: [],
+          changes: {
+            default: { width: 40, height: 20, box: { x: 30, y: 5, width: 4, height: 1 }, pixels: 4, regions: 1 },
+          },
+        });
+      });
+
       it('reuses the pixel compare until a source changes', async () => {
         const { product, sketch, hero } = spaced();
         const options = { product, sketch, variant: 'a', load: counting().load, keepPictures: true };

@@ -62,7 +62,7 @@ import {
 } from './system/sketch/sketch';
 import { noChangedStateLinesOf } from './system/sketch/no-visible-change';
 import { partKeyOf } from './system/resolve-product';
-import { keptUnchangedStatesOf, unchangedStatesOf } from './system/sketch/unchanged-states';
+import { keptComparisonOf, unchangedStatesOf } from './system/sketch/unchanged-states';
 import { SketchVariant } from './system/system-modules';
 
 export const SKETCHES_PATH = '/__design/sketches';
@@ -276,9 +276,26 @@ const keptOf = async (options: {
   pictured: boolean;
   problem: unknown;
 }) => {
-  const unchanged = options.problem ? null : await keptUnchangedStatesOf(options);
+  const kept = options.problem ? null : await keptComparisonOf(options);
 
-  return unchanged ? { unchanged } : {};
+  return kept ? { unchanged: kept.unchanged, crops: kept.changes } : {};
+};
+
+const comparedOf = async (options: {
+  product: ResolvedProduct;
+  sketch: Sketch;
+  variant: string;
+  part: string;
+  load: VariantPartLoader;
+  pictureOf?: PictureOf;
+  problem: unknown;
+}) => {
+  if (options.problem) return { unchanged: [] };
+
+  const unchanged = await unchangedStatesOf({ ...options, keepPictures: true });
+  const kept = await keptComparisonOf({ ...options, pictured: !!options.pictureOf });
+
+  return { unchanged, ...(kept ? { crops: kept.changes } : {}) };
 };
 
 const partTargetsOf = async ({
@@ -333,11 +350,7 @@ const partTargetsOf = async ({
       ...('widths' in widths ? { widths: widths.widths } : {}),
       interactions,
       ...(compare
-        ? {
-            unchanged: problem
-              ? []
-              : await unchangedStatesOf({ product, sketch, variant, load, pictureOf, keepPictures: true, part }),
-          }
+        ? await comparedOf({ product, sketch, variant, load, pictureOf, part, problem })
         : await keptOf({ product, sketch, variant, part, pictured: !!pictureOf, problem })),
       ...(problem || !current || current.problem
         ? {}
@@ -501,7 +514,8 @@ const startedListing = ({
  * The open sketches of `?product=`, each with its target parts (`targetParts`, the first one first), variants, status,
  * decision, the rule problems of every variant, the states, widths and interactions of each target part as each variant
  * draws it (`targets`, one entry per part and variant, tagged with `part`, the first part's entries first), with the states it
- * draws the same as the product now (`unchanged`), the states it adds and drops and its part note when that differs
+ * draws the same as the product now (`unchanged`), where each state it draws differently differs from the product's
+ * picture (`crops`, by state: picture size, box, pixel count and regions), the states it adds and drops and its part note when that differs
  * from the product's (`changes`), and the live report
  * of the agent (`report`, `null` when none runs). `?unchanged=no` answers without `problems`, and with the `unchanged` of a target only
  * while a full listing's comparison of the same sources is kept: no rule check, no pictures. `&targets=no` also leaves out `targets`: no part module loads.

@@ -62,12 +62,21 @@ const configure = () =>
   });
 
 describe('SketchesComponent', () => {
-  // The first JIT compile of the component would otherwise count against the first case's timeout.
+  // The cold JIT compile of the component tree takes seconds on a throttled CPU; outside this hook it lands in the 5 s budget of the first cases.
   beforeAll(async () => {
     configure();
-    await render({});
+    const rounds = [{ value: 'r1', label: 'Runde 1', note: 'Wo steht der Status?' }];
+
+    for (const inputs of [{ statesOpen: true }, { rounds, round: 'r1' }]) {
+      const fixture = await render({ camera: '100', ...inputs });
+
+      fixture.nativeElement.querySelector('[data-sk-folded] button')?.click();
+      await fixture.whenStable();
+      fixture.destroy();
+    }
+
     TestBed.resetTestingModule();
-  });
+  }, 30_000);
 
   afterEach(() => vi.restoreAllMocks());
 
@@ -569,5 +578,98 @@ describe('SketchesComponent', () => {
     expect(await transformAt({ zoom: 1, x: 120, y: 80 })).toBe('translate(0px, 0px) scale(1)');
     expect(await transformAt({ zoom: 1, x: -1700, y: -260 })).toBe('translate(-300px, -260px) scale(1)');
     expect(await transformAt({ zoom: 1, x: -100, y: -2000 })).toBe('translate(-100px, -500px) scale(1)');
+  });
+  describe('change crops of a wide part', () => {
+    const change = {
+      width: 3000,
+      height: 1000,
+      box: { x: 1200, y: 400, width: 600, height: 50 },
+      pixels: 1358,
+      regions: 3,
+    };
+    const states = ['rest', 'open', 'hover', 'moved'];
+    const cropRows: SketchRow[] = [
+      {
+        key: 'current',
+        note: '',
+        width: 3000,
+        shots: states.map((state) => ({ state, changed: false, height: 1000 })),
+      },
+      {
+        key: 'x',
+        note: 'Pillen',
+        width: 3000,
+        shots: [
+          { state: 'rest', changed: false, height: 1000 },
+          { state: 'open', changed: true, height: 1000, change },
+          { state: 'hover', changed: true, height: 1000, change },
+          {
+            state: 'moved',
+            changed: true,
+            height: 1000,
+            change: { ...change, box: { x: 0, y: 0, width: 3000, height: 1000 }, pixels: 90000, regions: 1 },
+          },
+        ],
+      },
+    ];
+
+    it('shows states with the same change once, cropped and enlarged, with the count, the reason and a locator', async () => {
+      const root: HTMLElement = (await render({ rows: cropRows, camera: '100' })).nativeElement;
+      const gutters = [...root.querySelectorAll('[data-sk-gutter]')];
+
+      expect(gutters.map((gutter) => gutter.querySelector('.font-code')?.textContent)).toEqual(['open', 'moved']);
+      expect(root.querySelectorAll('[data-sk-state="hover"]')).toHaveLength(0);
+      expect(textOf(gutters[0]?.querySelector('[data-sk-crop-count]'))).toBe(LABELS.sameCrop(2));
+      expect(textOf(gutters[0]?.querySelector('[data-sk-crop-reason]'))).toBe('1358 px in 3 Stellen · 4,6× vergrößert');
+      expect(textOf(gutters[1]?.querySelector('[data-sk-crop-reason]'))).toBe('90000 px in 1 Stelle · 1,0× vergrößert');
+      expect(gutters[1]?.querySelector('[data-sk-crop-count]')).toBeNull();
+      expect(gutters[1]?.querySelector('[data-sk-crop-locator]')).not.toBeNull();
+      expect(root.querySelectorAll('[data-sk-state="rest"]')).toHaveLength(0);
+
+      const frame = root.querySelector<HTMLElement>('[data-sk-frame="x open"]');
+
+      expect(frame?.hasAttribute('data-sk-cropped')).toBe(true);
+      expect(parseFloat(frame?.style.height ?? '')).toBeCloseTo((3000 * 98) / 648);
+      expect(root.querySelector<HTMLElement>('[data-sk-frame="current open"]')?.hasAttribute('data-sk-cropped')).toBe(
+        true,
+      );
+      expect(root.querySelectorAll('[data-sk-state="open"] [data-sk-crop-stack]')).toHaveLength(2);
+      expect(root.querySelectorAll('[data-sk-state="moved"] [data-sk-crop-stack]')).toHaveLength(0);
+    });
+
+    it('switches one crop group to the whole screen and back', async () => {
+      const fixture = await render({ rows: cropRows, camera: '100' });
+      const root: HTMLElement = fixture.nativeElement;
+      const toggleOf = (state: string) =>
+        root
+          .querySelectorAll('[data-sk-gutter]')
+          [state === 'open' ? 0 : 1]?.querySelector<HTMLButtonElement>('[data-sk-screen-toggle]');
+
+      expect(textOf(toggleOf('open'))).toBe(LABELS.wholeScreen);
+
+      toggleOf('open')?.click();
+      await fixture.whenStable();
+
+      expect(textOf(toggleOf('open'))).toBe(LABELS.cropScreen);
+      expect(root.querySelector('[data-sk-frame="x open"]')?.hasAttribute('data-sk-cropped')).toBe(false);
+      expect(root.querySelector<HTMLElement>('[data-sk-frame="x open"]')?.style.height).toBe('1000px');
+      expect(root.querySelector('[data-sk-state="open"] [data-sk-crop-mark]')).not.toBeNull();
+      expect(root.querySelector('[data-sk-frame="x moved"]')?.hasAttribute('data-sk-cropped')).toBe(true);
+      expect(textOf(root.querySelectorAll('[data-sk-crop-reason]')[0])).toBe('1358 px in 3 Stellen');
+
+      toggleOf('open')?.click();
+      await fixture.whenStable();
+
+      expect(root.querySelector('[data-sk-frame="x open"]')?.hasAttribute('data-sk-cropped')).toBe(true);
+    });
+
+    it('shows no crop for a part narrow enough for the list', async () => {
+      const narrow = cropRows.map((row) => ({ ...row, width: 300 }));
+      const root: HTMLElement = (await render({ rows: narrow, camera: '100' })).nativeElement;
+
+      expect(root.querySelector('[data-sk-matrix]')).toBeNull();
+      expect(root.querySelector('[data-sk-cropped]')).toBeNull();
+      expect(root.querySelectorAll('[data-sk-state="hover"]')).toHaveLength(2);
+    });
   });
 });

@@ -32,7 +32,8 @@ nimmt den nächsten. Kein Punkt und kein Rückstand läuft über Nacht als E2E-F
 0. Wartezeit (ADR 0236, 0237, 0238, Bef. 639): endet nach dem Beweis für 647 und dem Push (Tom, 09.11.). E2E-Schritt
    jetzt etwa 118 s statt 165-197 s; Fehler auf „Large“ an der Ursache behoben (Bef. 647). Rest im Werkzeug-Rückstand.
 1. A1-Rest: Titelleiste fertig (12 Hover-Zustände; der Hinweis `notice-hint` ist gebaut, 332e49626).
-2. B345: Sketch-Runde zeigt geänderte Zustände als Ausschnitt.
+2. B345: Sketch-Runde zeigt geänderte Zustände als Ausschnitt. 🔨 Mac-Builder: App-Umsetzung von change-crop b
+   (Design gemergt 2f83c46da).
    2a. B489 (ADR 0263): Folge-Sketch `pages/sketches`: Offene-Punkte-Chip für reine Sketch-Teile und Zustand
    „gewählt, wartet auf Merge“ (Bef. 792 A/B).
 3. A13: ein Knopf „Übernehmen“ öffnet direkt die Merge-Ansicht.

@@ -89,3 +89,48 @@ hover/active/focus-visible are not drawn, and the design changed outside a sketc
 Not verified: a real Windows window, the notice tooltip against the design (compare cannot open it), the spinner
 frame. The embedding compares were not recorded in `implemented.json` (`compare --affected` would also record
 parts other slices changed), so their IMPLEMENTATION-UNCOMPARED stays.
+
+## As built: finding 512 and 898 (a)
+
+- 512: the title-bar sketch for the notice restart interaction states (07acb199a), variant a merged by an agent
+  accept under ADR 0106 + 0210 (dea25f747). `design check --part components/title-bar` at 448c47f: the
+  visible-change gate fails on 7 unjudged notice states (5 rest + hover, active): the design draws the tooltip pane
+  open, the app opens none. Known gap, reported as a tool gap (forced-open overlay pane). OFF-CENTRE 5, all OLD.
+- 898 (a): a merge commits only its own entries of a `merged.json` that was dirty before the merge (448c47f16).
+  Verified: new merge-commit spec case fails on the old code; vitest related 1361 passed; cli typecheck. Not
+  verified: a real Studio merge with a dirty `merged.json`.
+- 898 (b): no tool bug; only 14 ADRs had a `governs` field. The doc agent added globs for the design tree.
+
+## B345 change-crop b (built, live shot done)
+
+App side of the merged `pages/sketches` change-crop b (2f83c46da). Slice 1: the server measures where a changed
+state differs (box, pixel count, regions) while it compares the pictures and lists it per target as `crops`.
+Slice 2: the matrix shows each changed state as an enlarged crop with its reason, a locator and the
+"Ganzer Screen"/"Ausschnitt" toggle. Slice 3: states with the same crop show once with a count.
+
+As built: the server compares the two pictures of each changed state (`change-box.ts`: box around every pixel past
+the `looksTheSame` tolerance, pixel count, regions of pixels closer than 8 px) and keeps it with the unchanged
+states; the listing names it per target as `crops` (full and quick listing). The app passes it through
+`sketchRowsOf` and the sketch view into `SketchShot.change`. In the matrix (wide part) `cropGroupsOf` groups states
+whose every variant changed the same pixels in the same place; a group shows once in the gutter with its count, the
+reason ("1358 px in 3 Stellen · 4,6× vergrößert"), a locator and the "Ganzer Screen"/"Ausschnitt" toggle; its cells
+show the crop (24 px margin, enlarged to the column width), the variant cell a frame around its change and the two
+stack edges. The list layout (narrow parts) is unchanged.
+
+Verified: specs (change-box, unchanged-states, listing, sketches component), each new case bitten on the old code;
+`vitest related` in libs/cli (1347 passed) and ethlete-studio; spec:stress 4/4 per spec alone. Not verified: a live
+shot of the crop in a running Studio, `design compare` of `change-crop`/`change-crop-whole` (the harness supplies no
+crop data for them), the unit word ("Stellen" for regions, the design mock says "Zellen").
+
+Built in 82c6e3025.
+
+Gutter fix (as built): at min zoom the hidden head kept the crop block at `noteSize() * 15` px, so the reason and
+state name left their box (e2e "no text leaves its box", pages Sketches and Large). The gutter now drops the crop
+block while the head is hidden. Verified: the e2e case 6/6, sketches spec 35/35, `vitest related` 125 passed,
+`design check --part pages/sketches` (4 DROPPED-PROP, all present before the fix). Not verified: a live shot.
+
+Live shot (finding 792; Chromium 1440x900, design server on the new CLI, studio-lab `pages/film-detail` round 1 variant
+a, shots in `.claude/handoffs/agent-results/b345/`): crop frames, reason ("687 px in 1 Stelle · 2,3× vergrößert"),
+locator and one toggle click ("Ausschnitt" shows the full frames, the reason drops the zoom) all pass. Suspect
+(cosmetic): the crop top cuts the "Your review" label in half; the locator draws no page content. Not verified: N > 1
+places, several variants (ADR 0272), the toggle back, other zoom levels, WebKit and the Tauri shell.

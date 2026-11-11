@@ -48,6 +48,7 @@ const context = createContext({
     }
   },
 });
+context.window = context;
 const modules = {
   '../define-call': {
     mountDrawing: (root, drawn) => {
@@ -57,6 +58,7 @@ const modules = {
     placeOverlays: () => undefined,
     fitOutOfFlow: () => undefined,
     withNgStyles: (drawn) => drawn,
+    markNgStyles: () => () => undefined,
   },
   '../define-part': {
     drawState: (part, props) =>

@@ -4,13 +4,18 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import { readConfig } from './design-config';
+import { PictureOf } from './merge-compare';
 import { detachRunningListings, sketchesAnswer } from './studio-api';
+import { encodePng } from './system/part-compare';
 import { resolveProduct } from './system/resolve-product';
 import { createSketch, markSketchReady, parseTarget } from './system/sketch/sketch';
 import { CheckSketches, openSketchListingAt } from './system/sketch/sketch-checker';
 
 type Listed = {
-  sketches: { target: string; targets?: { variant: string; unchanged?: string[] }[] }[];
+  sketches: {
+    target: string;
+    targets?: { variant: string; unchanged?: string[]; crops?: Record<string, { box: unknown }> }[];
+  }[];
 };
 
 const acme = () => {
@@ -73,6 +78,27 @@ describe('the sketch listing tiers', () => {
     expect(unchangedOf(await listing(target, '&unchanged=no', load))).toEqual([undefined, undefined]);
     expect(unchangedOf(await listing(target, '', load))).toEqual([['one'], ['one']]);
     expect(unchangedOf(await listing(target, '&unchanged=no', load))).toEqual([['one'], ['one']]);
+  });
+
+  it('lists where each changed state differs, in the full and in the quick listing', async () => {
+    const target = acme();
+    const load = async (file: string) => ({
+      default: { note: 'n', states: { one: {} }, render: () => ({ body: file.includes('sketch') ? 'y' : 'x' }) },
+    });
+    const blank = Buffer.alloc(20 * 10 * 4, 255);
+    const marked = Buffer.from(blank);
+
+    marked.fill(0, (2 * 20 + 3) * 4, (2 * 20 + 3) * 4 + 3);
+
+    const pictureOf: PictureOf = async ({ sketch }) => ({
+      png: encodePng({ width: 20, height: 10, data: sketch ? marked : blank }),
+      marks: [],
+    });
+    const boxesOf = (listed: Listed) => listed.sketches[0]?.targets?.map(({ crops }) => crops?.['one']?.box);
+    const box = { x: 3, y: 2, width: 1, height: 1 };
+
+    expect(boxesOf(await listing(target, '', load, { pictureOf }))).toEqual([box, box]);
+    expect(boxesOf(await listing(target, '&unchanged=no', load, { pictureOf }))).toEqual([box, box]);
   });
 
   it('lists a variant that draws no changed state as a NO-CHANGED-STATE problem of the sketch', async () => {
