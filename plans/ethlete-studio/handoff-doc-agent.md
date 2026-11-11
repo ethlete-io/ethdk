@@ -174,3 +174,8 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   (technical): 804 = Mac builds a no-spawn createSketch (serve.spec 200-sketch case blocked the Mac push, cause 788's
   prettier spawn per tsconfig); 805 = Linux builds `yarn push` + self-healing push slot (slot never released after a
   push). Mac mailbox wait runs in the background. Morning round unchanged (four items).
+- Morning round, 2026-11-11 ~08:00: the human answered q1-q3 ok: ADR 0259 (no night shift waits on the human, B486),
+  ADR 0260 (776 focus fix in the next night shift, B487), ADR 0261 (chip "Sketch-Regel verletzt: <rule>", B488). q4: the
+  human is only briefly at the desk, answers sporadically by phone until noon, can merge no sketches; so the night mode
+  (ADR 0257, tool backlog) goes on until they end it. B345 pick and the Mac ssh pid 96278 wait for the human at the desk.
+  Open: 811 (check drops baselined ready records) with the Linux builder.
