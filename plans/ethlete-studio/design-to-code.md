@@ -3781,3 +3781,10 @@ unknown flag. Lesson: a script that writes tracked files refuses arguments it do
 (tool internal, the builder's proposal): `--help` prints the usage and exits 0 with no write; an unknown argument prints
 the usage and exits 2 with no write; `--dry-run` lists what would move; a plain run moves as now. Bite: a spec with
 `--help` and with `--bogus` leaves both files byte-identical. Night backlog, Linux, small, after 659 part 2.
+
+798 as built (Linux builder, 2026-11-11, night): `archive-findings.mjs` exports `main(argv, { root, log })`. `--help`
+prints the usage and returns 0; an unknown argument prints `unknown argument: <arg>` and the usage and returns 2;
+`--dry-run` lists the month and first line of each block that would move; a plain run moves as before. Spec: `--help`,
+`--bogus` and `--dry-run` leave both files byte-identical, and a plain run moves an old done finding. Bite: with the
+argument check off, the `--help` and `--bogus` tests fail (2 of 13). Verified live: `--bogus` exits 2, `--dry-run` writes
+nothing. Not verified: nothing open.

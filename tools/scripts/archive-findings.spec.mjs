@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -8,6 +8,7 @@ import {
   archiveSections,
   orphanFindings,
   doneFindingNumbers,
+  main,
   splitFindings,
   writeArchive,
 } from './archive-findings.mjs';
@@ -203,4 +204,43 @@ As built (Linux builder, 32): done.
   );
   assert.match(rest, /31\\\. Builder/);
   assert.match(rest, /32\\\. Builder/);
+});
+
+const oldDonePlan = () => {
+  const root = mkdtempSync(join(tmpdir(), 'archive-cli-'));
+  const studio = join(root, 'plans/ethlete-studio');
+  mkdirSync(join(studio, 'archive'), { recursive: true });
+  writeFileSync(
+    join(studio, 'design-to-code.md'),
+    '# Plan\n\n## Findings\n\n1\\. Builder (2020-01-01): an old finding.\n\nBuilt 1 as abc.\n',
+  );
+  writeFileSync(join(studio, 'STATUS.md'), '# Status\n');
+  writeFileSync(join(studio, 'archive/findings-2020-01.md'), '# Findings 2020-01\n');
+  const files = ['design-to-code.md', 'archive/findings-2020-01.md'].map((name) => join(studio, name));
+
+  return { root, snapshot: () => files.map((file) => readFileSync(file, 'utf8')) };
+};
+
+for (const [argv, code] of [
+  [['--help'], 0],
+  [['--bogus'], 2],
+  [['--dry-run'], 0],
+]) {
+  test(`${argv.join(' ')} prints and leaves both files byte-identical`, () => {
+    const { root, snapshot } = oldDonePlan();
+    const before = snapshot();
+    const lines = [];
+    assert.equal(main(argv, { root, log: (line) => lines.push(line) }), code);
+    assert.deepEqual(snapshot(), before);
+    assert.ok(lines.length > 0);
+  });
+}
+
+test('a plain run moves the old done finding', () => {
+  const { root, snapshot } = oldDonePlan();
+  const before = snapshot();
+  const lines = [];
+  assert.equal(main([], { root, log: (line) => lines.push(line) }), 0);
+  assert.notDeepEqual(snapshot(), before);
+  assert.match(lines.at(-1), /^moved [1-9]/);
 });
