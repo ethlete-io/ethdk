@@ -4154,3 +4154,14 @@ drop is intended: ADR 0254 keeps `studio-lab` blocked until it gets an app. The 
 human" (second case of 793 in one night; `build-ready.md` still said "Tom's product call", now marked answered). Decided
 by the doc agent (applies ADR 0254): the builder commits the emptied `studio-lab/ready.json` by path, so the next check
 does not change the tree again. Side Suspect: no NO RECORD line was printed for the drop; it belongs to 796 (2).
+
+797\. Mac builder (2026-11-11, night, push of 6bca47ab5): `push-slot.mjs` runs `git fetch`/`git push` of
+`refs/push-slot/next` with no timeout. GitHub port 22 timed out on and off from the Mac; one ssh hung 1 h 39 min, and the
+pre-push `push-slot.mjs check` hung 5 min until the builder stopped the push. Cause (proven by `ps`: ssh
+`git-upload-pack` for `+refs/push-slot/next`, no exit). Why no tool caught it: 780 tested the slot logic, not a network
+that hangs. Lesson: every network call in a gate has a timeout and a stated fallback. Decided by the doc agent (tool
+internal, the builder's proposal): `spawnSync` timeout 30 s on each network git call, and a default `GIT_SSH_COMMAND` with
+`ConnectTimeout=10 ServerAliveInterval=5 ServerAliveCountMax=3` when the user sets none; a timeout counts as "slot
+unreadable" (warn, go on), as at the suite start. Bite: a fake remote that never answers ends the check within the
+timeout with the warning. Mac night backlog, after 777 Mac verify. Also: the Mac's earlier "Linux does not check the
+slot" is a Suspect, not a Cause.
