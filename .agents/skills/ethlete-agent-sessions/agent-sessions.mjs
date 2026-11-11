@@ -1,5 +1,5 @@
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, watchFile, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, watchFile, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -90,7 +90,9 @@ Restart: node ${script} restart <name> [--after <seconds>] [--notify <agent,...>
                                                        a long wait on a draft and a give-up go to <name> and each --notify agent;
                                                        --process ends the agent and starts it again in the same pane with the prompt;
                                                        it keeps the role, else takes it from a builder-* handoff name, and refuses
-                                                       a session with no role while another agent session runs in the repo)
+                                                       a session with no role while another agent session runs in the repo;
+                                                       refuses while a ❓ question of a claude session has no later human message
+                                                       and the resumed handoff does not name it under "Open for the human")
 Down:    node ${script} down [<name>...]              (stop dispatch; stop the named sessions too)
 Dispatch: node ${script} dispatch                      (wake the tmux session named <agent> for each message sent --to <agent>)
 
@@ -150,6 +152,94 @@ const restartRoleOf = (session, prompt) => {
   if (role === 'none') return null;
   const found = role ?? roleOf(session) ?? handoffRoleOf(prompt);
   return found === 'doc-agent' ? null : found;
+};
+const claudeDir = process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), '.claude');
+const isAlive = (pid) => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error.code === 'EPERM';
+  }
+};
+const readJson = (path) => {
+  try {
+    return JSON.parse(readFileSync(path, 'utf8'));
+  } catch {
+    return null;
+  }
+};
+const claudeSessionIdOf = (session, own) => {
+  const sessionsDir = join(claudeDir, 'sessions');
+  const live = existsSync(sessionsDir)
+    ? readdirSync(sessionsDir)
+        .filter((name) => name.endsWith('.json'))
+        .map((name) => readJson(join(sessionsDir, name)))
+        .filter((entry) => entry?.sessionId && entry.tmux?.startsWith(`${session}:`) && isAlive(entry.pid))
+        .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
+    : [];
+  if (live.length) return live[0].sessionId;
+  return own === session ? process.env.CLAUDE_CODE_SESSION_ID || null : null;
+};
+const transcriptOf = (sessionId) => {
+  const projects = join(claudeDir, 'projects');
+  if (!existsSync(projects)) return null;
+  return (
+    readdirSync(projects)
+      .map((project) => join(projects, project, `${sessionId}.jsonl`))
+      .find((path) => existsSync(path)) ?? null
+  );
+};
+const textOf = (content) =>
+  typeof content === 'string'
+    ? content
+    : (content ?? [])
+        .filter((block) => block?.type === 'text')
+        .map((block) => block.text)
+        .join('\n');
+const isHumanTurn = (entry) =>
+  entry.type === 'user' &&
+  entry.origin?.kind === 'human' &&
+  !/^\s*<command-(name|message)>/.test(textOf(entry.message?.content));
+const QUESTION_LINE = /^\s*(?:[-*]\s+)?❓\s*(.+)$/;
+const normalize = (text) => text.replace(/\s+/g, ' ').trim();
+const unansweredQuestions = (transcript) => {
+  let questions = [];
+  for (const line of readFileSync(transcript, 'utf8').split('\n')) {
+    let entry;
+    try {
+      entry = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    if (isHumanTurn(entry)) questions = [];
+    else if (entry.type === 'assistant')
+      textOf(entry.message?.content)
+        .split('\n')
+        .map((text) => text.match(QUESTION_LINE)?.[1])
+        .filter(Boolean)
+        .forEach((question) => questions.push(normalize(question)));
+  }
+  return [...new Set(questions)];
+};
+const HANDOFF_NAME = /^\/handoff\s+resume\s+(\S+)/;
+const openForHumanOf = (prompt) => {
+  const name = prompt.match(HANDOFF_NAME)?.[1];
+  const path = name && join(root, '.claude/handoffs', name.endsWith('.md') ? name : `${name}.md`);
+  if (!path || !existsSync(path)) return null;
+  const lines = readFileSync(path, 'utf8').split('\n');
+  const start = lines.findIndex((line) => /open for the human/i.test(line));
+  if (start < 0) return '';
+  const end = lines.findIndex((line, index) => index > start && /^#/.test(line));
+  return normalize(lines.slice(start, end < 0 ? undefined : end).join('\n'));
+};
+const droppedQuestions = (session, own, prompt) => {
+  if (session.startsWith('codex')) return [];
+  const sessionId = claudeSessionIdOf(session, own);
+  const transcript = sessionId && transcriptOf(sessionId);
+  if (!transcript) return [];
+  const open = openForHumanOf(prompt) ?? '';
+  return unansweredQuestions(transcript).filter((question) => !open.includes(question));
 };
 const hasUnknownRole = (session, prompt) => {
   if (role !== undefined || roleOf(session) || handoffRoleOf(prompt)) return false;
@@ -531,6 +621,7 @@ if (command === 'send' && sender) {
   const own = process.env.TMUX_PANE
     ? tmux('display-message', '-p', '-t', process.env.TMUX_PANE, '#{session_name}').stdout.trim()
     : null;
+  const dropped = session && !now ? droppedQuestions(session, own, words.join(' ')) : [];
   if (!session) {
     process.stderr.write(`No tmux session for ${sender}.\n`);
     process.exitCode = 1;
@@ -545,6 +636,11 @@ if (command === 'send' && sender) {
   } else if (newProcess && hasUnknownRole(session, words.join(' '))) {
     process.stderr.write(
       `Refused: ${session} has no role and another agent session runs in this repo, so the new process could lose the builder rule. Resume a builder-* or doc-agent-* handoff, or pass --role builder or --role none.\n`,
+    );
+    process.exitCode = 1;
+  } else if (dropped.length) {
+    process.stderr.write(
+      `Refused: ${session} asked the human a ❓ question that no later human message answers, and the handoff does not name it. Put each question verbatim under "Open for the human" in the handoff the prompt resumes (/handoff resume <name>), then restart again:\n${dropped.map((question) => `❓ ${question}`).join('\n')}\n`,
     );
     process.exitCode = 1;
   } else if (now) {

@@ -43,7 +43,14 @@ describe('agent-sessions', () => {
       input,
       encoding: 'utf8',
       timeout: 25_000,
-      env: { ...process.env, TMUX_PANE: '', AGENT_MAILBOX: join(dir, 'mailbox.jsonl'), ...env },
+      env: {
+        ...process.env,
+        TMUX_PANE: '',
+        AGENT_MAILBOX: join(dir, 'mailbox.jsonl'),
+        CLAUDE_CONFIG_DIR: join(dir, 'claude'),
+        CLAUDE_CODE_SESSION_ID: '',
+        ...env,
+      },
     });
 
   const paneOf = (session: string) =>
@@ -330,6 +337,70 @@ describe('agent-sessions', () => {
     },
     30_000,
   );
+
+  describe.skipIf(!hasTmux)('restart with a question to the human', () => {
+    const transcript = readFileSync(join(__dirname, 'fixtures/restart-transcript.jsonl'), 'utf8');
+    const question = '**Q1** - **Order**: findings or status rows first?';
+    let agent: string;
+    let scoped: string;
+
+    const restartWith = (lines: string, openForHuman: string) => {
+      const sessions = join(dir, 'claude/sessions');
+      const project = join(dir, 'claude/projects/-tmp-repo');
+      const handoffs = join(dir, '.claude/handoffs');
+      [sessions, project, handoffs].forEach((path) => mkdirSync(path, { recursive: true }));
+      writeFileSync(
+        join(sessions, `${process.pid}.json`),
+        JSON.stringify({ pid: process.pid, sessionId: 'fixture-session', tmux: `${scoped}:@1.%1`, updatedAt: 1 }),
+      );
+      writeFileSync(join(project, 'fixture-session.jsonl'), lines);
+      writeFileSync(
+        join(handoffs, 'doc-agent-a.md'),
+        `# Handoff\n\n## Open for the human\n\n${openForHuman}\n\n## Next\n\nGo on.\n`,
+      );
+      return run(['restart', agent, '--after', '0', '/handoff', 'resume', 'doc-agent-a'], undefined, {
+        TMUX_PANE: paneOf(scoped),
+        AGENT_RESTART_WAIT_MS: '1000',
+      });
+    };
+
+    beforeEach(() => {
+      agent = `claude-question-${process.pid}`;
+      scoped = `${agent}@${basename(dir)}`;
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'cat > /dev/null']);
+    });
+
+    afterEach(() => {
+      spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+    });
+
+    it('refuses while a question has no later human message and the handoff says none', () => {
+      const result = restartWith(transcript, 'none');
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain(`Refused: ${scoped} asked the human`);
+      expect(result.stderr).toContain(`❓ ${question}`);
+      expect(result.stderr).not.toContain('❓-question');
+    });
+
+    it('restarts when the handoff names the question verbatim', () => {
+      const result = restartWith(transcript, `- ${question}`);
+
+      expect(result.stderr).toBe('');
+      expect(result.stdout).toContain('Restarting');
+    });
+
+    it('restarts when a human message follows the question', () => {
+      const [command] = transcript.split('\n');
+      const answer = JSON.parse(command ?? '');
+      answer.message.content = 'status rows first';
+
+      const result = restartWith(`${transcript}${JSON.stringify(answer)}\n`, 'none');
+
+      expect(result.stderr).toBe('');
+      expect(result.stdout).toContain('Restarting');
+    });
+  });
 
   it.skipIf(!hasTmux)(
     'ends the agent and starts its command again with the prompt for restart --process',
