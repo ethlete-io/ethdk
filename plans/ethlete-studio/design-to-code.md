@@ -3782,3 +3782,9 @@ checkout; a waiting run prints who holds the lock. An "under foreign load" mark 
 cannot tell a running subagent from a frozen one. Tool fix (doc agent, tool internal): restart reads the subagent timers
 twice; a timer that does not advance for 10 min counts as frozen, and restart names the frozen agent in its log and the
 mailbox at once instead of waiting out 1800 s. Bite: a pane fixture with a fixed timer reports frozen within the check.
+
+842\. Linux builder (2026-11-11, from 835): a cold open-points run on studio still takes 2.6 s; the Tailwind class-facts
+subprocess is 1.4 s of it (profiled). Tool fix (grill decision): a disk cache of the class facts, keyed by the files
+Tailwind read. Target: a cold run under 1.5 s. Bite: a second cold start runs no class-facts subprocess when no input
+changed, and a changed input runs it. Build after 838 and 837. 830 option (b) stays off the human's list: the edit case
+meets the target, and the start warm-up covers the cold ask.
