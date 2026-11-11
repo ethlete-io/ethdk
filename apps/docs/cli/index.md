@@ -696,6 +696,11 @@ go together; the part note stays. With two live variants the user picks in Studi
 `sketch merge --decided-by <name>` records who picked the variant in `merged.json` (`user` without it): give it the name
 the designer told you at this terminal, for example `tom`. It does not go with `--allowed-by`, which records the plan.
 
+`et design sketch pick <layer>/<name> --variant <key> --decided-by "<the words and where they were said>" --by <model>`
+records a pick the designer gave outside Studio, for example in chat, in `sketch.json`: the same pick Studio writes
+(`by: designer`), with the words as its comment. It refuses an unknown or rejected variant and a sketch that is not
+ready. A later `sketch merge --decided-by <name>` merges it.
+
 `sketch ready` also draws each live variant's changed parts at rest and refuses with
 `CONTROL-UNDECLARED <part> - … (variant <key>)` for a control the variant draws that no `controls` entry declares, unless
 the merged part draws that same control undeclared. Declare it with `data-et-control` or `control(markup, name)`.

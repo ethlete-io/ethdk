@@ -2645,6 +2645,57 @@ export default definePart({
       expect(lines.pop()).toContain('go together');
       expect(existsSync(sketchDir(target))).toBe(true);
     });
+
+    it('records the pick the designer gave in chat as Studio does, so merge --decided-by goes through', async () => {
+      const { target, lines } = await readied('a,b');
+      const said = 'tom in chat: nimm b';
+
+      expect(await write(target, 'merge', 'components/button', '--decided-by', 'tom', '--product', 'acme')).toBe(1);
+      expect(lines.pop()).toContain('has no pick');
+      expect(
+        await write(target, 'pick', 'components/button', '--variant', 'b', '--decided-by', said, '--product', 'acme'),
+      ).toBe(0);
+      expect(JSON.parse(readFileSync(join(sketchDir(target), 'sketch.json'), 'utf8'))).toMatchObject({
+        decision: { kind: 'pick', variant: 'b', comment: said, by: 'designer', pid: process.pid },
+      });
+      expect(await write(target, 'merge', 'components/button', '--decided-by', 'tom', '--product', 'acme')).toBe(0);
+      expect(JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/merged.json'), 'utf8'))).toMatchObject({
+        'components/button': { variant: 'b', decidedBy: 'tom' },
+      });
+    });
+
+    it('refuses a pick of an unknown variant, and one without the words', async () => {
+      const { target, lines } = await readied('a,b');
+      const pick = (...argv: string[]) => write(target, 'pick', 'components/button', ...argv, '--product', 'acme');
+
+      expect(await pick('--variant', 'z', '--decided-by', 'tom in chat: z')).toBe(1);
+      expect(lines.pop()).toContain('has no variant "z"');
+      expect(await pick('--variant', 'a')).toBe(1);
+      expect(lines.pop()).toContain('usage: sketch pick');
+      expect(JSON.parse(readFileSync(join(sketchDir(target), 'sketch.json'), 'utf8')).decision).toBeUndefined();
+    });
+  });
+
+  it('refuses a pick on a sketch that is not ready', async () => {
+    const target = acme();
+    const lines = output();
+
+    await write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
+
+    expect(
+      await write(
+        target,
+        'pick',
+        'components/button',
+        '--variant',
+        'a',
+        '--decided-by',
+        'tom in chat: a',
+        '--product',
+        'acme',
+      ),
+    ).toBe(1);
+    expect(lines.pop()).toContain('a variant is picked once it is ready');
   });
 });
 

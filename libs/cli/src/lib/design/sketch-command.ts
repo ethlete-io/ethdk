@@ -112,6 +112,7 @@ export const SKETCH_USAGE = [
   'sketch check [<layer>/<name>] [--fix] [--no-visible-change] [--product <name>]',
   'sketch preview <layer>/<name> <variant> [--product <name>] [--json]',
   'sketch rebase <layer>/<name> [--ported] --by <model id> [--product <name>]',
+  'sketch pick <layer>/<name> --variant <key> --decided-by <the words and where they were said> --by <model id> [--product <name>]',
   'sketch merge <layer>/<name> [--note <reason> [--replace-note]] [--variant <key> --allowed-by <plan ref>] [--decided-by <name>] --by <model id> [--product <name>]',
   'sketch discard <layer>/<name> --by <model id> [--product <name>]',
   'sketch reject <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
@@ -143,7 +144,7 @@ const FLAG_HELP: Record<string, string> = {
   '--allowed-by':
     'the plan entry that lets the merge go without a pick in Studio; noted in merged.json, needs --variant',
   '--decided-by':
-    'on merge: who picked the variant, as merged.json records it (default user); a name the designer gave you at this terminal, e.g. tom - not with --allowed-by',
+    "on pick: the designer's words that pick the variant and where they were said, e.g. 'tom in chat: take b'; on merge: who picked the variant, as merged.json records it (default user); a name the designer gave you at this terminal, e.g. tom - not with --allowed-by",
   '--replace-note': "on merge: also write --note over each target part's note",
   '--reason':
     'why; on reject of a variant that is rejected already it sets the reason of that rejection; stored with who wrote it',
@@ -195,6 +196,7 @@ const WRITES = new Set([
   'hold',
   'release',
   'rebase',
+  'pick',
   'merge',
   'discard',
   ...VERDICTS,
@@ -1754,6 +1756,28 @@ const previewed = (context: Context) =>
     return 0;
   });
 
+const picked = (context: Context) =>
+  withSketch(context, ({ product, sketch }) => {
+    const { '--variant': variant, '--decided-by': decidedBy } = context.args.values;
+    const words = decidedBy?.trim() ?? '';
+
+    if (context.args.positional.length !== 1 || !variant || !words)
+      return fail(
+        'usage: sketch pick <layer>/<name> --variant <key> --decided-by <the words and where they were said> --by <model id> [--product <name>]',
+      );
+
+    const decided = decideSketch({
+      sketch,
+      decision: { kind: 'pick', variant, comment: words, ...originOf('designer') },
+    });
+
+    if (typeof decided === 'string') return fail(decided);
+
+    console.log(`picked ${sketch.target} variant ${variant} in ${product.name}: ${words}`);
+
+    return 0;
+  });
+
 const merged = (context: Context) =>
   withSketch(context, ({ product, sketch }) => {
     const {
@@ -1932,6 +1956,7 @@ const COMMANDS: Record<string, (context: Context) => number | Promise<number>> =
   check: checked,
   preview: previewed,
   rebase: rebased,
+  pick: picked,
   merge: merged,
   discard: discarded,
   target: targetAdded,
@@ -1953,7 +1978,7 @@ const flagsOf = (command: string) => {
 };
 
 /**
- * `et design sketch <command> …` opens, adds variants to, reports on, readies, checks, previews, rebases, merges and
+ * `et design sketch <command> …` opens, adds variants to, reports on, readies, checks, previews, rebases, picks, merges and
  * discards sketches, and rejects, reopens and withdraws their variants.
  */
 export const designSketch = (options: { target: string; argv: string[]; invocation: string; warm?: WarmDraw }) => {
