@@ -3734,6 +3734,7 @@ the repo's shot store, so scratch runs wrote into the live store. Tool fix (doc 
 `scratch:checkout` gives the scratch its own store and fails when the store path resolves into the main checkout. Bite:
 a spec that runs `scratch:checkout` and then writes a shot leaves the main store unchanged; before the fix the shot lands
 in it. Queue: Linux builder, right after 846, before B490, because it corrupts live data.
+Built in 2cf078a6e. As built: the cause was `linkDependencies` linking every `node_modules` entry, dot directories included. A scratch (and a push-suite export) now gets fresh real dirs for every dot directory except `.bin` (`.design-explore`, `.cache`, `.vite`, `.vitest-cache`, `.vite-temp` were all linked and written to), and `scratchCheckout` fails when the scratch store resolves into the main checkout. Verified: spec in `tools/scripts/scratch-checkout.spec.mjs` fails without the commit-export change; a real scratch in /tmp has an empty own store, removed afterwards. Only `.bin` still links into the main checkout (read only).
 
 855\. Linux builder (2026-11-11, from 846), measured: `ethlete-studio:build:production` fails since aaeef909d (B490 merge of
 foundations/type@font-pair variant c). The merged `type.css` holds `url('@assets/fonts/noto-sans-…woff2')`; the design
