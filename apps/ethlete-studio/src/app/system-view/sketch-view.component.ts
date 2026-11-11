@@ -21,6 +21,7 @@ import {
   catchError,
   concatMap,
   distinctUntilChanged,
+  exhaustMap,
   filter,
   finalize,
   fromEvent,
@@ -371,21 +372,31 @@ export class SketchViewComponent {
     return (preview?.changed.length ?? 0) + (preview?.affected.length ?? 0) > 0;
   });
 
+  private revision$ = toObservable(this.revision);
+
   private compareReading = toSignal(
     toObservable(
-      computed(() => ({
-        address: this.address(),
-        variant: this.mergeVariant(),
-        on: this.mode() === 'merge' && this.drawsAnyPart(),
-        surface: this.surface(),
-        color: this.color(),
-        revision: this.revision(),
-      })),
+      computed(
+        () => ({
+          address: this.address(),
+          variant: this.mergeVariant(),
+          on: this.mode() === 'merge' && this.drawsAnyPart(),
+          surface: this.surface(),
+          color: this.color(),
+        }),
+        { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
+      ),
     ).pipe(
       switchMap(({ address, variant, on, surface, color }) =>
         variant && on
-          ? // eslint-disable-next-line ethlete/no-silent-catch-error -- a missing comparison renders as the existing empty comparison
-            sketchCompare$({ ...address, variant, surface, color }).pipe(catchError(() => of(null)))
+          ? // A compare draws parts, and a changed picture it keeps announces a redraw that bumps `revision`; a revision
+            // that came while it ran must not cancel or re-ask it, or it never finishes.
+            this.revision$.pipe(
+              exhaustMap(() =>
+                // eslint-disable-next-line ethlete/no-silent-catch-error -- a missing comparison renders as the existing empty comparison
+                sketchCompare$({ ...address, variant, surface, color }).pipe(catchError(() => of(null))),
+              ),
+            )
           : of(null),
       ),
     ),

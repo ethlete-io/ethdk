@@ -1184,9 +1184,12 @@ export class SystemViewComponent {
   }
 
   protected leaveGone(target: string) {
+    const listed = this.sketchList()?.find((sketch) => sketch.target === target);
+    const part = listed ? sketchPartOf(listed) : (target.split('@')[0] ?? target);
+
     this.mergedSketches.update((merged) => [...merged, target]);
-    this.picked.set(target);
-    rememberView({ systemEntry: target });
+    this.picked.set(part);
+    rememberView({ systemEntry: part });
   }
 
   protected reloadSketches() {

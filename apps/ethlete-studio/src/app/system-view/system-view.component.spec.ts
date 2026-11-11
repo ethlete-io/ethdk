@@ -1187,64 +1187,76 @@ describe('SystemViewComponent on a merge', () => {
     vi.useRealTimers();
   });
 
-  it('marks the sketch "merging" while the merge runs, then selects the target part', async () => {
-    const sketch: ListedSketch = {
-      target: 'elements/rating',
-      status: 'ready',
-      createdAt: '2026-10-27T10:00:00Z',
-      decision: { kind: 'pick', variant: 'b', decidedAt: '2026-10-27T10:00:00Z' },
-      product: 'web',
-      layer: 'elements',
-      name: 'rating',
-      dir: 'rating',
-      variants: ['a', 'b'],
-      problems: [],
-    };
-    let sketches = [sketch];
-    let finishMerge = () => undefined as void;
+  it.each([
+    { kind: 'variant', target: 'elements/rating', extra: { variants: ['a', 'b'] } },
+    {
+      kind: 'edit',
+      target: 'elements/rating@edit',
+      extra: { variants: ['new', 'old'], targetParts: ['elements/rating'] },
+    },
+  ])(
+    'marks the $kind sketch "merging" while the merge runs, then selects the target part',
+    async ({ target, extra }) => {
+      const sketch: ListedSketch = {
+        target,
+        status: 'ready',
+        createdAt: '2026-10-27T10:00:00Z',
+        decision: { kind: 'pick', variant: 'b', decidedAt: '2026-10-27T10:00:00Z' },
+        product: 'web',
+        layer: 'elements',
+        name: 'rating',
+        dir: 'rating',
+        problems: [],
+        ...extra,
+      };
+      let sketches = [sketch];
+      let finishMerge = () => undefined as void;
 
-    vi.stubGlobal('fetch', (url: string) => {
-      if (url.includes('/__design/sketches')) return json({ sketches, unreadable: [] });
-      if (url.includes('/__design/system')) return json([PRODUCT]);
-      if (url.includes('/__design/calls')) return json([]);
-      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
-      if (url.includes('/__design/sketch-decision')) return json({});
-      if (url.includes('/__design/sketch-merge'))
-        return new Promise<Response>((done) => {
-          finishMerge = () => {
-            sketches = [];
-            done(new Response(JSON.stringify({ merged: ['elements/rating'] })));
-          };
-        });
+      vi.stubGlobal('fetch', (url: string) => {
+        if (url.includes('/__design/sketches')) return json({ sketches, unreadable: [] });
+        if (url.includes('/__design/system')) return json([PRODUCT]);
+        if (url.includes('/__design/calls')) return json([]);
+        if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+        if (url.includes('/__design/sketch-decision')) return json({});
+        if (url.includes('/__design/sketch-merge'))
+          return new Promise<Response>((done) => {
+            finishMerge = () => {
+              sketches = [];
+              done(new Response(JSON.stringify({ merged: ['elements/rating'] })));
+            };
+          });
 
-      return new Promise(() => undefined);
-    });
+        return new Promise(() => undefined);
+      });
 
-    const fixture = await mount({ systemEntry: 'sketch:elements/rating' });
-    const root: HTMLElement = fixture.nativeElement;
+      const fixture = await mount({ systemEntry: `sketch:${target}` });
+      const root: HTMLElement = fixture.nativeElement;
 
-    expect(fixture.componentInstance['selectedKey']()).toBe('sketch:elements/rating');
-    expect(fixture.debugElement.query(By.directive(SketchViewComponent))).not.toBeNull();
+      expect(fixture.componentInstance['selectedKey']()).toBe(`sketch:${target}`);
+      expect(fixture.debugElement.query(By.directive(SketchViewComponent))).not.toBeNull();
 
-    const clickButton = (label: string) =>
-      [...root.querySelectorAll<HTMLButtonElement>('button')].filter((button) => button.textContent?.trim() === label);
+      const clickButton = (label: string) =>
+        [...root.querySelectorAll<HTMLButtonElement>('button')].filter(
+          (button) => button.textContent?.trim() === label,
+        );
 
-    clickButton('Übernehmen')[1]?.click();
-    await settle(fixture);
+      clickButton('Übernehmen')[1]?.click();
+      await settle(fixture);
 
-    const clickMerge = () => clickButton('Merge')[0]?.click();
+      const clickMerge = () => clickButton('Merge')[0]?.click();
 
-    clickMerge();
-    await settle(fixture);
-    clickMerge();
-    await settle(fixture);
+      clickMerge();
+      await settle(fixture);
+      clickMerge();
+      await settle(fixture);
 
-    finishMerge();
-    await settle(fixture);
+      finishMerge();
+      await settle(fixture);
 
-    expect(fixture.componentInstance['selectedKey']()).toBe('elements/rating');
-    expect(rememberedView().systemEntry).toBe('elements/rating');
-  });
+      expect(fixture.componentInstance['selectedKey']()).toBe('elements/rating');
+      expect(rememberedView().systemEntry).toBe('elements/rating');
+    },
+  );
 });
 
 describe('SystemViewComponent on a flow', () => {

@@ -18,7 +18,7 @@ const acme = (target: string) => {
   return product;
 };
 
-const sketchOn = (layer: 'components' | 'pages', name: string, others: SketchTarget[] = []) => {
+const sketchOn = (layer: 'components' | 'pages', name: string, others: SketchTarget[] = [], sketchName?: string) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-compare-'));
 
   cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
@@ -27,7 +27,7 @@ const sketchOn = (layer: 'components' | 'pages', name: string, others: SketchTar
   const sketch = createSketch({
     merge: 'override',
     product,
-    sketch: { layer, name },
+    sketch: { layer, name, sketch: sketchName },
     others,
     variants: ['a'],
   }) as Sketch;
@@ -105,6 +105,25 @@ describe('compareMerge', () => {
       }),
     );
     expect(pictureOf).toHaveBeenCalledWith(expect.objectContaining({ state: 'default', sketch: null }));
+  });
+
+  it('outlines the part of an edit sketch, whose name is not a part key', async () => {
+    const { product, sketch } = sketchOn('components', 'card', [], 'edit');
+    const compared = await compareMerge({
+      product,
+      sketch,
+      variant: 'a',
+      size: null,
+      params: new URLSearchParams(),
+      pictureOf,
+      load: loadWith({ states: { default: {} } }),
+    });
+
+    expect(sketch.target).toBe('components/card@edit');
+    expect(compared.changed[0]?.outlines).toEqual({
+      now: [{ x: 10, y: 20, width: 300, height: 120 }],
+      merged: [{ x: 10, y: 20, width: 300, height: 140 }],
+    });
   });
 
   it('draws each sketched element and page itself, for a sketch with several targets', async () => {

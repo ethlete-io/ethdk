@@ -441,6 +441,46 @@ describe('SketchViewComponent', () => {
     ]);
   });
 
+  it('lets a running compare finish when the frames redraw meanwhile, and compares again on a later redraw', async () => {
+    const home: ListedPart = { ...CARD, layer: 'pages', name: 'home' };
+    const changed = { part: 'pages/home', state: 'default', outlines: { now: [], merged: [] } };
+    const answers: (() => void)[] = [];
+    const { fixture, root } = await render(SKETCH, (url) => {
+      if (url.includes('/__design/sketch-preview')) return json({ changed: [], affected: ['pages/home'] });
+      if (url.includes('/__design/sketch-compare'))
+        return new Promise<Response>((done) =>
+          answers.push(() => done(json({ target: SKETCH.target, variant: 'a', changed: [changed], unchanged: [] }))),
+        );
+      if (url.includes('/__design/sketch-decision')) return json({});
+
+      return noComments(url);
+    });
+
+    fixture.componentRef.setInput('product', { ...PRODUCT, parts: [home] });
+    await settle(fixture);
+    fixture.componentInstance['openMerge']('a');
+    await settle(fixture);
+
+    expect(answers).toHaveLength(1);
+
+    fixture.componentRef.setInput('sketch', { ...SKETCH });
+    await settle(fixture);
+    fixture.componentRef.setInput('revision', 1);
+    await settle(fixture);
+    fixture.componentRef.setInput('revision', 2);
+    await settle(fixture);
+    answers[0]?.();
+    await settle(fixture);
+
+    expect(root.querySelector('ethlete-merge li')?.textContent).toContain('pages/home');
+    expect(answers).toHaveLength(1);
+
+    fixture.componentRef.setInput('revision', 3);
+    await settle(fixture);
+
+    expect(answers).toHaveLength(2);
+  });
+
   it('crops the changed instance on each side and labels the state a variant adds', async () => {
     const home: ListedPart = { ...CARD, layer: 'pages', name: 'home' };
     const rect = { x: 40, y: 80, width: 120, height: 32 };

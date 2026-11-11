@@ -794,8 +794,41 @@ const withEditSketch = async (page, run) => {
       }
     }, variant);
     await page.locator('[data-e2e-pick]').first().click();
+
+    const rows = { changed: 0, outlined: 0 };
+
+    if (variant === 'old') {
+      await page.waitForFunction(() => document.querySelector('ethlete-merge li[tabindex="0"]'), null, {
+        timeout: EDIT_WAIT_MS,
+      });
+      Object.assign(
+        rows,
+        await page.evaluate(() => {
+          const texts = [...document.querySelectorAll('ethlete-merge li[tabindex="0"]')].map((row) => row.textContent);
+
+          return { changed: texts.length, outlined: texts.filter((text) => /\b[1-9]\d* Instanz/.test(text)).length };
+        }),
+      );
+    }
+
     await page.locator('ethlete-merge button[variant="filled"]').first().click();
     await page.waitForFunction(() => !document.querySelector('ethlete-sketch-view'), null, { timeout: EDIT_WAIT_MS });
+    await page.waitForFunction(
+      (part) =>
+        [...document.querySelectorAll('iframe')].some((frame) => {
+          const url = new URL(frame.src, location.href);
+
+          return url.searchParams.get('part') === part && !url.searchParams.has('sketch');
+        }),
+      EDIT_PART,
+      { timeout: EDIT_WAIT_MS },
+    );
+
+    const entry = await page.evaluate(
+      () => JSON.parse(localStorage.getItem('ethlete-studio.call-view') ?? '{}').systemEntry,
+    );
+
+    return { ...rows, opened: entry };
   };
 
   try {
@@ -836,7 +869,7 @@ const CASES = [
         if (!first.variants.includes('old'))
           return { ok: false, detail: `no old variant: ${first.variants.join(', ')}` };
 
-        await pick('old');
+        const oldPick = await pick('old');
 
         const design = readFileSync(file, 'utf8');
         const drift = git('diff', base, '--', file).toString();
@@ -848,14 +881,24 @@ const CASES = [
           !existsSync(sketchDir);
 
         await edit();
-        await pick('new');
+
+        const newPick = await pick('new');
 
         const recorded = JSON.parse(readFileSync(join(studio, 'merged.json'), 'utf8'))[EDIT_PART];
         const kept = readFileSync(file, 'utf8').includes(EDIT_LABEL.after);
 
+        const opened = [oldPick.opened, newPick.opened];
+
         return {
-          ok: restored && kept && recorded?.variant === 'new' && !existsSync(sketchDir),
-          detail: `old restored the design byte-identical to HEAD: ${restored}${drift ? ` (${drift.replace(/\s+/g, ' ')})` : ''}, new kept the edit: ${kept}, merged.json: ${JSON.stringify(recorded)}`,
+          ok:
+            restored &&
+            kept &&
+            recorded?.variant === 'new' &&
+            !existsSync(sketchDir) &&
+            oldPick.changed > 0 &&
+            oldPick.outlined > 0 &&
+            opened.every((part) => part === EDIT_PART),
+          detail: `old restored the design byte-identical to HEAD: ${restored}${drift ? ` (${drift.replace(/\s+/g, ' ')})` : ''}, new kept the edit: ${kept}, merged.json: ${JSON.stringify(recorded)}, Geändert rows of old: ${oldPick.changed} (${oldPick.outlined} with an outline), part opened after each merge: ${opened.join(', ')}`,
         };
       }),
   },

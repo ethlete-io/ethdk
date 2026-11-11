@@ -116,6 +116,7 @@ export const compareMerge = async (options: {
 }): Promise<MergeCompare> => {
   const { product, sketch, variant, size, params, pictureOf, load } = options;
   const target = sketch.target;
+  const outlined = sketch.targets[0] ?? target;
   const merged: SketchVariant = { target, variant };
   const { changed, affected } = mergePreviewOf({ product, sketch, variant });
   const drawn = [...changed.filter((key) => SHOWN.has(key.split('/')[0] ?? '')), ...affected].sort();
@@ -175,7 +176,7 @@ export const compareMerge = async (options: {
         try {
           if (missing) {
             const picture = await draw(missing === 'now' ? merged : null, false);
-            const outlines = outlinesOf(picture, target);
+            const outlines = outlinesOf(picture, outlined);
 
             return {
               row: {
@@ -196,7 +197,7 @@ export const compareMerge = async (options: {
               part: key,
               state,
               ...at,
-              outlines: { now: outlinesOf(now, target), merged: outlinesOf(after, target) },
+              outlines: { now: outlinesOf(now, outlined), merged: outlinesOf(after, outlined) },
             },
             changed: !same,
           };
