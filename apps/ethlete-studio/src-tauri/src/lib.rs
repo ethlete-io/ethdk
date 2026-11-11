@@ -177,7 +177,7 @@ pub fn run() {
 
     let builder = tauri::Builder::default();
     #[cfg(any(target_os = "linux", target_os = "macos"))]
-    let builder = builder.runtime(tauri_runtime_cef::Cef::default().secret_storage(console_log::secret_storage()));
+    let builder = builder.runtime(cef_runtime());
     #[cfg(target_os = "windows")]
     let builder = builder.runtime(tauri_runtime_wry::Wry::default());
     #[cfg(target_os = "macos")]
@@ -225,6 +225,18 @@ pub fn run() {
         });
 }
 
+/// The page fetches the design server on a loopback address. Chromium's Local Network Access holds
+/// that request until a permission prompt is answered, and on Windows CEF shows none, so the fetch
+/// never settles.
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+fn cef_runtime() -> tauri_runtime_cef::Cef {
+    use tauri_runtime_cef::cef::{ContentSettingTypes, ContentSettingValues};
+
+    tauri_runtime_cef::Cef::default()
+        .secret_storage(console_log::secret_storage())
+        .default_content_setting(ContentSettingTypes::LOOPBACK_NETWORK, ContentSettingValues::ALLOW)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -266,6 +278,19 @@ mod tests {
         assert_eq!(
             widened(&shell, &inherited).unwrap(),
             OsString::from(r"C:\Windows;C:\Program Files\nodejs;D:\tools")
+        );
+    }
+
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
+    #[test]
+    fn the_page_may_reach_the_design_server_on_loopback_without_a_prompt() {
+        let runtime = format!("{:?}", cef_runtime());
+        let settings = runtime.split_once("content_settings:").unwrap().1;
+        let settings = &settings[..settings.find(']').unwrap()];
+
+        assert!(
+            settings.contains("LOOPBACK_NETWORK") && settings.contains("ALLOW"),
+            "content settings: {settings}"
         );
     }
 
