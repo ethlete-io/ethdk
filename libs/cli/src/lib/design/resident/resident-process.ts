@@ -30,6 +30,7 @@ export const createWarmRuns = (options: { target: string }) => {
   const { target } = options;
   let stamp: string | null = null;
   let server: Promise<DesignServer> | null = null;
+  let listening: DesignServer | null = null;
   let queue: ReturnType<typeof createDrawQueue> | null = null;
   let active = 0;
   const harness = createHarnessWatch({ target });
@@ -38,6 +39,7 @@ export const createWarmRuns = (options: { target: string }) => {
     const [closingServer, closingQueue] = [server, queue];
 
     server = null;
+    listening = null;
     queue = null;
     await closingQueue?.close();
     await (await closingServer?.catch(() => null))?.close();
@@ -54,6 +56,8 @@ export const createWarmRuns = (options: { target: string }) => {
       throw error;
     }
 
+    listening = started;
+
     return started;
   };
 
@@ -68,6 +72,7 @@ export const createWarmRuns = (options: { target: string }) => {
       return server;
     },
     queue: () => (queue ??= createDrawQueue({ target })),
+    takeDeniedIds: () => listening?.takeDeniedIds() ?? [],
   };
 
   const start: StartHarnessServer = async ({ product }) => {

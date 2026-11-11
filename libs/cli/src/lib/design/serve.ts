@@ -1152,6 +1152,8 @@ export const linkedRootsOf = (target: string) => {
  * (0 picks a free one), quiet and unwatched. Only the user's server uses the checkout's dependency cache,
  * so a command can draw while that server runs.
  */
+const DENIED_REQUEST = /^The request id "(.*)" is outside of Vite serving allow list\.$/;
+
 export const createDesignServer = async (options: {
   target: string;
   config: DesignConfig;
@@ -1173,7 +1175,7 @@ export const createDesignServer = async (options: {
   // outside its root. From a directory that holds none, every call compiles to an empty module.
   process.chdir(target);
 
-  const { createServer } = await import('vite');
+  const { createServer, createLogger } = await import('vite');
   const { default: tailwind } = await import('@tailwindcss/postcss');
   const here = assetRoot();
   const system = createSystemModules({ target, config, sketchesRoot });
@@ -1192,6 +1194,18 @@ export const createDesignServer = async (options: {
   const cache = listen && !own ? null : claimViteCache(target, 'vite-check');
 
   if (listen && !own) void removeOldShotFolders(workRootOf(target));
+
+  const logger = createLogger(listen && !own ? 'info' : 'error');
+  const logError = logger.error;
+  let deniedIds: string[] = [];
+
+  logger.error = (message, errorOptions) => {
+    const denied = DENIED_REQUEST.exec(message)?.[1];
+
+    if (denied !== undefined) deniedIds.push(denied);
+
+    logError(message, errorOptions);
+  };
 
   const server = await createServer({
     configFile: false,
@@ -1241,6 +1255,7 @@ export const createDesignServer = async (options: {
     ],
     ...(listen ? {} : { appType: 'custom' as const }),
     ...(listen && !own ? {} : { logLevel: 'error' as const }),
+    customLogger: logger,
     server: {
       // Studio swaps a frame for a fresh one once it has painted; a Vite reload would blank every frame at once.
       hmr: false,
@@ -1281,6 +1296,14 @@ export const createDesignServer = async (options: {
         salt: `${designPictureCodeOf()} ${salt}`,
         moduleById: (id) => server.moduleGraph.getModuleById(id),
       });
+    },
+    /** The ids Vite refused to serve as outside `server.fs.allow` since the last call; each answered 403 instead of the file. */
+    takeDeniedIds: () => {
+      const taken = deniedIds;
+
+      deniedIds = [];
+
+      return taken;
     },
     /** Forgets every loaded part, sketch and module, so the next draw reads the files as they are now: a server started with `port` does not watch them. */
     forgetDrawn: () => {

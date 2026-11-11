@@ -3728,6 +3728,12 @@ bites. Not verified: the Mac (`/tmp` is a symlink there). Decided by the doc age
 reports a Vite "outside of Vite serving allow list" line as a check problem, not a log line; a spec bites with a served
 path outside the allow list (night backlog, Linux). Mac builder verifies the fix on the Mac (night backlog).
 
+As built (777): `createDesignServer` wraps Vite's logger and records each id of an "outside of Vite serving allow list"
+line (`takeDeniedIds()`, also on the run and resident `WarmDraw`); `design check` (`checkSystemRendered`) prints one
+`SERVE-DENIED <id>` line per refused id after all its draws and fails. The log line itself stays. Verified:
+`system/check-denied.spec` (a part links a stylesheet outside the allow list) fails with the report removed and passes
+with it; cli typecheck, lint. Not verified: the Mac. Not built: `sketch check` and the other drawing commands still only log the line.
+
 778\. Linux builder (2026-11-11, night, 710 sweep): the first real nightly spec sweep (CI run 42931941982) failed: 417
 files in 60 min, 17 under 100 % at `--slow 4` (Studio flows-page.component, sketches.component; cli open-points-answer,
 open-points-loop, serve, sketch-command at 1140 s, check-system-render, check-system-sketch, check-system, check-warm,

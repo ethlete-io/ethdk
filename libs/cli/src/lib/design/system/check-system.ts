@@ -1017,8 +1017,13 @@ export const checkSystemRendered = async (options: CheckOptions) => {
   }
 };
 
+const deniedLineOf = (id: string) =>
+  `SERVE-DENIED ${id}: the design server answered 403, the file is outside its allow list, so a drawing got other content`;
+
 const checkSystemRenderedOn = async (options: CheckOptions & { warm: WarmDraw }) => {
   const tally: Tally = new Map();
+
+  options.warm.takeDeniedIds?.();
   const counted = { ...options, tally };
 
   for (const line of timedPhase('stale-dist', () => staleDistWarningsOf(options))) console.warn(line);
@@ -1062,6 +1067,11 @@ const checkSystemRenderedOn = async (options: CheckOptions & { warm: WarmDraw })
       checkProductTail({ ...options, tally, name, entry, problemsOfEdits: editProblems.get(name) ?? [] }),
     );
   }
+
+  const denied = [...new Set(options.warm.takeDeniedIds?.() ?? [])];
+
+  denied.forEach((id) => console.error(deniedLineOf(id)));
+  failed += denied.length;
 
   timedPhase('summary', () => {
     const staleCli = runningCliStaleWarning();
