@@ -4,6 +4,7 @@ import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { stripVTControlCharacters } from 'node:util';
 import { CHECKS } from './pre-push-checks.mjs';
 import {
   e2eQuotaCommand,
@@ -150,7 +151,7 @@ test('a failed vitest spec reports its FAIL row, with and without colors', () =>
     const row = report.find((line) => line.includes('FAIL'));
 
     assert.ok(row, name);
-    assert.match(row.replace(/\x1b\[[0-9;]*m/g, ''), /FAIL\s+a\.spec\.mjs > serve > fails here/);
+    assert.match(stripVTControlCharacters(row), /FAIL\s+a\.spec\.mjs > serve > fails here/);
     assert.equal(report.length, 41);
   }
 });
