@@ -138,3 +138,7 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   check, resident case); 617, 614, 618 pushed. Linux builder restarted again from `builder-2026-11-11a`, next 784. Mac:
   merged origin as 81980de90, push:suite with the 29 min repeat step runs, then 780, 777 Mac verify, 735 calibration.
   Morning round unchanged.
+- Night, 04:30 (after 92770f203): findings 785 (one timeout for heavy design specs, built b0ef796f4) and 786 (one heavy
+  run per machine, Mac backlog) recorded; 780 push slot built by the Mac (bc219f75d, `refs/push-slot/next`; Linux rule
+  sent). Linux pushed 783, 784, 620, B438 (ADR 0229 built), 649 part 1 (part 2 in the STATUS backlog line). Linux
+  builder restarted from `builder-2026-11-11a`: B438 cold compare measurement, then 782. Mac: push, 777 Mac verify, 786, 735. Morning round unchanged.
