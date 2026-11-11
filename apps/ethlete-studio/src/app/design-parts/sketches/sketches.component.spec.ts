@@ -4,7 +4,7 @@ import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { SketchesComponent } from './sketches.component';
-import { SketchRow } from './sketches-sample';
+import { SKETCH_PINS, SketchRow } from './sketches-sample';
 
 const LABELS = STUDIO_LABELS.sketches;
 
@@ -85,6 +85,13 @@ describe('SketchesComponent', () => {
       return this.hasAttribute('data-sk-rows') ? LIST_WIDTH : 0;
     });
     configure();
+  });
+
+  it('names the sample pin after the design sample author', async () => {
+    const rows = ROWS.map((row) => (row.key === 'x' ? { ...row, key: 'a' } : row));
+    const root: HTMLElement = (await render({ camera: '100', rows, pins: SKETCH_PINS })).nativeElement;
+
+    expect(root.querySelector('ethlete-comment-pin [aria-label]')?.getAttribute('aria-label')).toBe('Comment by human');
   });
 
   it('draws one row per variant with every state, dims the unchanged ones and marks the first change', async () => {

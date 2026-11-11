@@ -104,7 +104,7 @@ export const SKETCH_IDLE: SketchIdle = { by: 'Opus 5.5', since: 'seit 25 Min' };
 
 export const SKETCH_ROUNDS: SketchRound[] = [{ value: 'round-1', label: 'Runde 1 · Suche und Update' }];
 
-export const SKETCH_PINS: SketchPin[] = [{ variant: 'a', author: 'Tom Bornholdt', initials: 'TB', count: 1 }];
+export const SKETCH_PINS: SketchPin[] = [{ variant: 'a', author: 'human', initials: 'TB', count: 1 }];
 
 export const SKETCH_TREE: PartTreeLayer[] = [
   {

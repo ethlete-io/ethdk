@@ -3856,3 +3856,9 @@ harness host is drawn in the design frame root's text ambient, so the part never
 a new spec fails on the old code; with the body set to 'Jost' the studio `elements/shell-main` compare failed every
 state with the new line, and passed the check after the revert (its pre-existing project-picker pixel diff stays). No
 sdk part has an `implements` link, so the check has no sdk hits.
+
+905 as built: Cause (verified): the app's `SKETCH_PINS` sample, which the harness renders as the `pins` default of
+`pages/sketches`, named a real person, while the design's sample pin author is "human"; the sample now uses "human".
+A spec fails on the old name. The pages/sketches compare went from 50 to 35 FAILED rows, the pin rows from 16 to 1. Left,
+separate gaps: `all-unchanged` still shows the pin where the design folds it, and the 19 "Alle Zustände zeigen" and the
+2 "Übernehmen" (2.) rows stay - the design draws no such element; the pin name was only the nearest unmatched hint.
