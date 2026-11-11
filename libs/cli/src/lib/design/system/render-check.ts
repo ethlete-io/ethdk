@@ -28,6 +28,7 @@ import { partKeyOf } from './resolve-product';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
 import { optionValuesChecker } from './rules/option-values';
 import { SEE_THROUGH_STATEMENTS } from './see-through';
+import { FONT_FACES_SCRIPT } from './font-faces';
 import { SURFACE_STATEMENTS } from './surface-nesting';
 import { NESTED_SCROLL_STATEMENTS } from './nested-scroll';
 import { ESCAPABLE_RULES } from './skip-classes';
@@ -673,9 +674,17 @@ const inspectedFrameOf = async (options: { page: Page; base: string; frame: Fram
   const inFrame = (await page.evaluate(inspectFrame(inspected))) as Found[];
   await page.evaluate(emptySlotsScriptOf(frame.address.part));
   const unstyled = (await page.evaluate(inspectFrame({ ...inspected, sdkStylesOnly: true }))) as Found[];
+  const fontFaces = (await page.evaluate(FONT_FACES_SCRIPT)) as Found[];
   const { product, part, state, sketch } = frame.address;
 
-  return [...inFrame, ...unstyled].map((issue) => ({ ...issue, product, part, state, sketch, size: frame.size }));
+  return [...inFrame, ...unstyled, ...fontFaces].map((issue) => ({
+    ...issue,
+    product,
+    part,
+    state,
+    sketch,
+    size: frame.size,
+  }));
 };
 
 const inspect = async (options: {

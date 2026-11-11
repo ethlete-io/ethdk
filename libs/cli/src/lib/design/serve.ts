@@ -74,7 +74,7 @@ import { createRenderer, FORCE_PATH, forceMiddleware, RENDER_PATH, renderMiddlew
 import { mappedSubpathOf, renderPackageDirsOf, renderPackagesOf } from './render-packages';
 import { partMarksTransform } from './part-marks';
 import { createGeneratedStylesheets } from './generated-stylesheets';
-import { sketchStylesheetsPlugin } from './sketch-stylesheets';
+import { importedAssetUrlsPlugin, sketchStylesheetsPlugin } from './sketch-stylesheets';
 import { createDrawLedger, QUEUE_PATH } from './draw-ledger';
 import {
   createPartShooter,
@@ -1222,6 +1222,7 @@ export const createDesignServer = async (options: {
               (generated) => new Map([...system.replacedStylesheetsOf(drawn), ...generated]),
             );
           }),
+          importedAssetUrlsPlugin(system.withAssetUrls),
           tailwind(),
           forceInteractionsPlugin(),
           stylesheetImportsPlugin(stylesheetImports),

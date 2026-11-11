@@ -3972,3 +3972,15 @@ Mac.
 running subagent. Suspect: the check reads the working tree, not the HEAD export the suite tests. Tool fix (doc agent,
 tool internal): the suite runs the changeset check inside the HEAD export, so untracked files of other agents never
 count.
+
+815 as built (Linux builder, 2026-11-11): the measured cause differs from the finding. The `type.css?inline` module
+already resolves `@assets` (system-modules spec). The unresolved copy is the product `styles.css`: it `@import`s
+`foundations/type/type.css`, the sketch swaps in the variant's file, and that inlined text never passed `withAssetUrls`.
+Built: `importedAssetUrlsPlugin` (`sketch-stylesheets.ts`), a PostCSS step after the swap that rewrites
+`url(@assets/...)` in every inlined declaration through `withAssetUrls`, so the variant's own `assets/` wins; and the
+render rule `FONT-FACE` (`system/font-faces.ts`, run in `inspectedFrameOf`): it loads each `@font-face` of the drawn
+frame as a FontFace and fails the part when one is not `loaded`: `@font-face "Roboto" from url("@assets/fonts/...")
+does not load (FontFace status error), so its text draws in a fallback font`. Bite: `sketch check
+foundations/type@font-pair --product studio` without the plugin fails with six FONT-FACE lines (two per variant); with
+it, ok. The new spec in `sketch-stylesheets.spec.ts` fails without the plugin. Product runs: studio and sdk have no
+FONT-FACE hit (their other findings are older). Not verified: the Mac.
