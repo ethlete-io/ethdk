@@ -215,7 +215,7 @@ export const typecheckStep = async (projects, dir) => {
 
 const STUDIO_ROOT = 'apps/ethlete-studio';
 export const QUOTA_PERCENT = 20;
-export const QUOTA_PERCENT_DARWIN = 20;
+export const QUOTA_PERCENT_DARWIN = 10;
 export const QUOTA_BUDGET_MS = 180_000;
 
 export const quotaSpecFiles = (files) =>
