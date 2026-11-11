@@ -3520,6 +3520,20 @@ the case reads focus before the page settles under load. Lesson: a load-sensitiv
 retry hides a real focus defect. Decided by the doc agent (tool internal): no single-case retry. Tool fix (night, Mac):
 reproduce under the CPU quota (731/735), find the cause, the case waits on a condition, bite under the quota.
 
+As built (769, Mac builder): canvas.e2e.mjs has `--cpu-rate <n>` (env `STUDIO_E2E_CPU_RATE`), which calls CDP
+`Emulation.setCPUThrottlingRate` on the case page; it slows the renderer (frame iframes share its process), not the
+design server. It did not reproduce the failure: 0 fails in 10 Inbox runs at 4, 8, 16 and 30x (one more on System
+and Sketches at 16x), three of them with `--delay-frames` 1500/3000. Diagnostics showed Tab from the canvas lands on a frame's live iframe (`pages/system`, state `part`) and
+Shift+Tab returns. Suspect: the frame swapped or dropped that iframe between Tab and Shift+Tab (canvas-frame mounts a
+new iframe for a new address and removes the old one; a frame leaves the live set 5 s after it leaves view), so focus
+fell out of the frame and Shift+Tab landed on an `et-menu-trigger` button. Removing the focused iframe in that gap gives
+the exact signature `focused=false rings=[]`. Not proven to be what happened at load 26. Now the case keys Shift+Tab to
+the chrome before the canvas, then Tab back, so it no longer passes through a frame iframe, and polls each focus state
+(`focusUntil`, up to `WAIT_MS`) instead of the fixed 600 ms; a failure names the focused element. Bite (iframes removed
+between the two keys, `--cpu-rate 16`, Inbox): old case 3/3 fail, new case 3/3 pass. Without injection all 3 page
+groups pass 3/3 plain and 3/3 at 16x. Open: whether a keyboard user who tabbed into a live frame loses focus when the
+frame swaps its iframe is an app question, not checked here; the case no longer covers it.
+
 770\. Mac builder (2026-11-11, night): the Mac push was refused twice in a row because the Linux builder pushed during
 the Mac push:suite (8c4bdb6a1, d3444f82a, 209facfa3); each merge starts a full push:suite again (8-40 min). Lesson: two
 builders on one branch pay a full suite per race. Tool fix (night backlog, Mac): after a merge of origin, push:suite
