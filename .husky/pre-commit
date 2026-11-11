@@ -84,3 +84,10 @@ if [ -n "$data_files" ]; then
   # shellcheck disable=SC2086
   node ./tools/scripts/staged-data-specs.mjs $data_files
 fi
+
+# A staged file that names a real person fails here with the pre-push message; the staged blob is read, not the working tree.
+name_files=$(git diff --cached --name-only --diff-filter=ACM -- 'libs' 'apps' '.ethlete/design')
+
+if [ -n "$name_files" ]; then
+  node ./tools/scripts/check-person-names.mjs --staged
+fi

@@ -3533,6 +3533,10 @@ Mac.
 `lint:person-names` runs only in pre-push, not in pre-commit. Tool fix (doc agent, tool internal): run
 `check-person-names` on the staged files in pre-commit.
 
+As built (TBD819). `check-person-names.mjs --staged` checks the staged blobs (not the working tree) of the staged files under libs, apps and
+`.ethlete/design` against the same baseline and prints the same message as pre-push; `.husky/pre-commit` runs it when such a file is
+staged. The spec stages a name, clears it in the working tree and fails on the old script. Not verified: a real commit through the hook.
+
 820\. Linux builder (2026-11-11, same run): `lint:changesets` in push:suite failed on the untracked 815 changeset of a
 running subagent. Suspect: the check reads the working tree, not the HEAD export the suite tests. Tool fix (doc agent,
 tool internal): the suite runs the changeset check inside the HEAD export, so untracked files of other agents never
