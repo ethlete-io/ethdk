@@ -3711,3 +3711,23 @@ check names every state it cannot judge) covers it; tool backlog.
 its origin. Suspect: a step of the 903 direct edit wrote it. Lesson: a tool can leave a ready sketch with no owner and
 no message. Tool fix (builder default, tool backlog): every sketch records the command and session that created it, and
 `et:design status` names sketches no session claims.
+
+920\. Mac builder (2026-11-12 night, 909): push:suite on d93a22db8 failed on typecheck ethlete-studio, 2x TS2345 in the 909
+spec (`sketches.component.spec.ts:442`, `ROWS[1]` possibly undefined); fixed in 43c4b5b8a. Suspect (code read): the 909
+subagent ran tsc only with `tsconfig.app.json`, and vitest does not typecheck, so a spec-only type error reached the push
+suite. Tool fix (builder default, tool backlog): the slice check runs the project `typecheck` target (spec config
+included) before a commit; the builder-agent subagent brief names it.
+
+921\. Mac builder (2026-11-12 night, 910 probe, group A): 19 "Alle Zustände zeigen" rows on pages/sketches are a design
+defect. Cause (code read + compare): the app folds unchanged states per ADR 0132 (`foldedStatesOf`,
+`sketches.component.ts:72`); the design draws the fold only with a hand-set `fold > 0` prop (`sketches.ts:644/689`),
+although its own rows leave states unchanged. Lesson: a hand-set design prop can contradict the design's own data, and
+no check sees it. Fix: a pages/sketches@all-states sketch that derives the fold from the rows and drops the prop; it
+waits for the human's pick by merge. Tool fix (builder default, tool backlog): a design check flags a prop whose value a
+sibling derived value contradicts, Suspect until a bite.
+
+922\. Mac builder (2026-11-12 night, 910 probe, group B): 2 "Übernehmen" rows in `withdrawn-hidden` and `withdrawn-shown`
+are an app defect. Cause (code read): the app part has no withdrawn concept (no row flag, no input, no "Zurückgezogene
+(n)" switch); compare names it ("design prop withdrawn has no input on the app component"). Fix (Mac, next): withdrawn
+rows in the app part, `withdrawn` mapped in `DESIGN_HARNESS_SAMPLES` (`design-harness-samples.ts:44`). The tool caught it;
+no tool fix.
