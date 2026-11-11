@@ -3668,8 +3668,58 @@ renderer-only `--cpu-rate` flag (CDP `setCPUThrottlingRate`) in canvas.e2e.mjs r
 c9b254f1b. Suspect: one shared draw per run saves time as it did there (19.8 s -> 15.6 s). Tool fix (night backlog,
 Linux): measure with `ETHLETE_DESIGN_PHASES=1`, then share one draw per run; a spec bites on a second draw.
 
+As built (774, builder subagent, Linux only). Measured with `ETHLETE_DESIGN_PHASES=1` on the scratch copy `/tmp/sk750`,
+`design check --product studio`, in-process (`ETHLETE_DESIGN_RESIDENT=0`), CLI copies `/tmp/cli774-before` (HEAD) and
+`/tmp/cli774-after`, `.ethlete` restored before each run; cold = render and completeness caches deleted, warm = the
+same copy's second run. Seconds:
+
+| Phase          | Before cold | After cold | Before warm | After warm |
+| -------------- | ----------: | ---------: | ----------: | ---------: |
+| auto-accept    |        30.2 |       30.5 |        30.6 |       30.5 |
+| static         |         3.9 |        3.9 |         3.8 |        3.9 |
+| render-inspect |        98.4 |       96.6 |        90.5 |       37.2 |
+| completeness   |        46.3 |       45.1 |        40.8 |        0.7 |
+| open-points    |         5.1 |        5.1 |         5.2 |        5.1 |
+| tail           |         3.8 |        1.2 |         3.9 |        1.3 |
+| wall           |       188.6 |      183.4 |       175.8 |       79.5 |
+
+A third after run hit every render entry (render-inspect 2.0, wall 44.3). `--part components/list-row`: in-process wall
+6.9 to 6.1 s (tail 1.04 to 0.21), resident warm 3.6 s before and after. Cause (measured): without a resident process
+each drawing step (auto-accept, render-inspect, completeness, bespoke controls, dropped props, action-lost) started its
+own design server and Chromium (four `browser-start` lines, one after). Suspect, not proven: the render and completeness
+caches miss on a fresh per-step server because its served answers differ from the run that wrote them; on the one
+server auto-accept already warmed they match. The scratch copy logs 34 "outside of Vite serving allow list" lines for
+the CLI's own `design/` files, so the copy location may take part. Fix: `checkSystemRendered` runs on one
+`createRunDraw` (now with the check's `chromiumOf`) closed in `finally`, or on the resident draw with `perRun: true`
+(no check step reads `perRun` yet, so the resident path is unchanged). Check output is the same line for line before and
+after, cold and warm, in-process and resident, apart from timing lines. `check-warm.spec.ts` fails on the old code
+(both cases) and passes. Not verified: the Mac, the cache hit with the CLI in `tmp/studio-cli`. Built 6a87fdb4f.
+Follow-up (night backlog, Linux, after 775): prove or drop the cache-miss suspect with the real CLI copy in
+`tmp/studio-cli`; if a fresh server misses a cache entry it wrote, that is a cache-key defect of its own, with a spec.
+
 775\. Linux builder (2026-11-11, night, 710 sweep): pre-push `lint:runner-os` refused the push after a green push:suite
 (Linux cgroup path outside a Linux guard; fix a6c575f5f), so the push paid a full suite rerun. Cause: push:suite does
 not run the sub-second pre-push checks. Lesson: the cheapest gate runs first. Decided by the doc agent (tool internal):
 push:suite runs every sub-second pre-push check before its specs. Tool fix (night backlog, Linux, after 774); a spec
 bites with a range that only the runner-os lint refuses.
+
+As built (775): `tools/scripts/pre-push-checks.mjs` holds the 14-check list (`CHECKS`) and `runChecks(base, head)`, which
+sets NX_BASE/NX_HEAD, prints `pre-push: <check> failed:` plus output, and keeps going; its CLI is what `.husky/pre-push`
+now calls (`|| failed=1`, same checks, same messages). `push-suite.mjs` runs the format check and those checks on its
+range before the load wait and the export, and stops with `blocked pre-push checks failed (<names>)` and the output;
+otherwise it logs `push-suite: checks ok in N s`. Commitlint stays in pre-push only (a slower yarn run). Also fixed:
+`parseArgs` ignored a lone range argument in first position. Spec: a fixture repo whose only workflow commit breaks
+`lint:runner-os` makes the CLI exit 1 at the checks step, before the export or any spec. Verified: `node --test` on
+push-suite.spec.mjs (33) and all tools specs (261) pass; the old script on the same fixture runs on into the export
+(no checks step), so the spec bites; the checks step takes about 9 s on a green range (the person-names check alone is
+about 4 s, so "sub-second" is not true for all). Not verified: a real `yarn push:suite` and a real push through the
+hook. Built 64c9306a3. Follow-up (night backlog, speed): `lint:person-names` takes about 4 s of the 9 s
+checks step; measure where, and make it sub-second or correct the "sub-second" claim in AGENTS.md. The Mac 770
+(de0087f0a, step reuse after a merge) also edits `push-suite.mjs`: whoever pushes second merges both by hand.
+
+776\. Mac builder (2026-11-11, night, 769 3483c7fcd): the fixed e2e case no longer passes through a live frame iframe,
+so no case covers a keyboard user inside a live frame. Suspect (injected, not seen live): when the app remounts the
+frame iframe (address change, or `LIVE_GRACE_MS` drops an off-view frame after 5 s), focus falls out of it, and
+Shift+Tab lands on an `et-menu-trigger` (`focused=false rings=[]`). Lesson: a case that dodges a flaky path needs its
+own case for that path. Decided by the doc agent: an app fix (keep focus on the frame host when its iframe remounts)
+with its own e2e case; app work, so not at night; it waits for the day STATUS order (morning: put it to the human).

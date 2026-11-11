@@ -1,4 +1,5 @@
 import { AddressInfo } from 'net';
+import { chromiumOf } from './browser';
 import { DesignConfig } from './design-config';
 import { createDesignServer } from './serve';
 import { createDrawQueue } from './thumb';
@@ -61,7 +62,7 @@ export const loadingOn = async <T>(
 };
 
 /** A design server and Chromium that start on first use and stay up until `close`, shared by every phase of one run. */
-export const createRunDraw = (target: string) => {
+export const createRunDraw = (target: string, options: { chromiumOf?: typeof chromiumOf } = {}) => {
   let server: Promise<DesignServer> | null = null;
   let queue: DrawQueue | null = null;
 
@@ -78,7 +79,7 @@ export const createRunDraw = (target: string) => {
 
         return started;
       })),
-    queue: () => (queue ??= createDrawQueue({ target })),
+    queue: () => (queue ??= createDrawQueue({ target, chromiumOf: options.chromiumOf })),
     perRun: true,
   };
 
