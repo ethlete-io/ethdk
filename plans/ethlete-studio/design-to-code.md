@@ -4009,3 +4009,6 @@ rust-audit run. Cause (read): `on.push.paths` in `rust-audit.yml` lists only the
 pulls in an unsound or yanked crate is audited only by the next 05:00 UTC run, after it is on `next`. Tool fix (doc agent,
 tool internal): add `apps/*/src-tauri/Cargo.lock` and `apps/*/src-tauri/Cargo.toml` (the real paths of both crates) to
 the push paths; verify with a lockfile-only push that starts a run.
+822 as built (Linux builder, 2026-11-11, c6184dbb0): `apps/{ethlete-studio,timetrack}/src-tauri/Cargo.{lock,toml}` added
+to `on.push.paths` of `rust-audit.yml`. Not verified: a run on a lockfile-only push (the push of this commit starts a run
+because the workflow file changed); the builder checks it on the next `Cargo.lock` push.
