@@ -3708,3 +3708,23 @@ only chip, popup and footer status, never the listing. A `listingAnswered` wait 
 element for the held request, so a wait on it passes silently. Suspect (code read). Tool fix (doc agent, tool internal):
 the helper fails when a hold is active and neither a pending marker nor an answered listing exists. Bite: the System page
 chip case with `listingAnswered` and a hold fails with a clear message instead of passing.
+832 as built (Linux builder, 2026-11-11, 32330be11): `open-points-warmer.ts` computes the open points of every product
+in the existing worker at `et design serve` start and 300 ms after each watched change; an ask waits for the run in
+progress and never starts a second. Bite: `open-points-warmer.spec.ts` counts rule runs inside an ask (first after start,
+first after a part edit, two concurrent asks, a change during a run): 2-4 inline runs without the warm-up, 0 after;
+spec:stress 4/4. Live (scratch :4517): an ask after a run 11-20 ms; an ask during the run waits 5.4 s after start and
+5.3-6.5 s after a studio part edit. Suspect: Studio asks right after start and after each reload, so its first answer
+still waits 5-6 s: 835.
+
+834\. Linux builder (2026-11-11, 832 push-suite): the e2e build failed with TS2688 "Cannot find type definition file for
+'@types'". Cause (seen): 93 self-links `node_modules/@x/@x -> node_modules/@x`, made at 12:01:55 while the 832 subagent
+built a scratch copy in /tmp by linking scope folders into a `node_modules` that pointed to the repo. Tool fix (doc
+agent, tool internal): one script makes the scratch checkout copy for live measurements (reuse the safe `node_modules`
+link of `commit-export.mjs`), and subagent briefs name it; push-suite checks `node_modules` for scope self-links before
+the build and names them. Bite: a planted self-link fails the check with its path.
+
+835\. Doc agent (2026-11-11, from 832): one open-points run still takes 5-6 s on studio, so the first Studio ask after
+start or a part edit waits that long. Tool fix (doc agent, tool internal): make the run itself faster first; one variant
+run reads all 91 studio part sources (830), so find what the rule check needs per variant and profile the run before a
+change. Target: a run under 1 s on studio. If that fails, sending the sketch problems later (830 option b) changes what
+the human sees and goes to the human as a question.
