@@ -4035,3 +4035,14 @@ summary prints. Verified: `case-filter.spec.mjs` passes, and fails with the clos
 and no "passed"; it fails with the early exit removed (bite); live `--case notice-hint` exits 1 with the line and five closest
 names, no "0/0 passed" (before: exit 1 with "0/0 passed in 0.0s"); live `--page Nowhere` exits 1 with the line. A
 filter that matches only through `--view` or a shard is not covered.
+
+792\. Linux builder (2026-11-11, night, live shot of 789 (b)): 128f5a9ce makes the open-points answer carry the pick point
+of the sketch-only `elements/rating`, but Studio shows none of it: the tree has only an orange warning icon, the sketch
+view has no open-points chip, and it says "Wartet auf deine Wahl" although the sketch is ready with "pick c". Suspect A
+(code read): the chip renders only in the part view (`system-view.component.ts` `openPointReads`), and a sketch-only
+target never gets a part view, so the CLI change has no Studio consumer. Suspect B (not traced): the sketch view does not
+count a pick that `canPick` refuses (pick c has 2 UTILITY-CSS findings). Why no tool caught it: the bite of 789 (b) tested
+the API answer, not the view the designer reads. Lesson: a fix for "Studio does not show X" is verified only by a live
+shot of the view that should show X; an API bite alone is not the fix. Decided by the doc agent: B is traced read-only at
+night (Linux, now); A is Studio app UI, so it is day work: the place of the chip in the sketch view goes to the builder
+as a sketch after the night (ADR 0257: no sketches at night), not as a grill question.
