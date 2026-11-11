@@ -754,10 +754,11 @@ const withEditSketch = async (page, run) => {
 
   const edit = async () => {
     writeFileSync(file, replaceOnce(before, EDIT_LABEL.before, EDIT_LABEL.after));
-    spawnSync(process.execPath, [cliEntry, 'design', 'check', '--product', 'studio', '--part', EDIT_PART], {
-      cwd: checkout,
-      stdio: 'pipe',
-    });
+    const check = spawnSync(
+      process.execPath,
+      [cliEntry, 'design', 'check', '--product', 'studio', '--part', EDIT_PART],
+      { cwd: checkout, stdio: 'pipe', encoding: 'utf8' },
+    );
     await page.evaluate(
       ({ checkout, part }) =>
         localStorage.setItem(
@@ -767,7 +768,22 @@ const withEditSketch = async (page, run) => {
       { checkout, part: EDIT_PART },
     );
     await page.reload();
-    await page.waitForSelector('ethlete-sketches [data-sk-state]', { timeout: EDIT_WAIT_MS });
+    try {
+      await page.waitForSelector('ethlete-sketches [data-sk-state]', { timeout: EDIT_WAIT_MS });
+    } catch (error) {
+      const shown = await page.evaluate(() => ({
+        sketchView: !!document.querySelector('ethlete-sketch-view'),
+        sketches: !!document.querySelector('ethlete-sketches'),
+        missing: !!document.querySelector('[data-sketch-missing]'),
+        entry: JSON.parse(localStorage.getItem('ethlete-studio.call-view') ?? '{}').systemEntry,
+      }));
+      const output = `${check.stdout ?? ''}${check.stderr ?? ''}`.trim().split('\n').slice(-6).join(' | ');
+
+      throw new Error(
+        `no edit sketch cell after ${EDIT_WAIT_MS} ms: design check exited ${check.status ?? check.signal} (${output}), sketch folder on disk: ${existsSync(join(studio, 'sketches', `${EDIT_PART.replace('/', '-')}.edit`))}, page ${JSON.stringify(shown)}: ${error.message.split('\n')[0]}`,
+        { cause: error },
+      );
+    }
     await page.waitForFunction(
       () => document.querySelectorAll('[data-sk-variant="new"], [data-sk-variant="old"]').length > 0,
       null,
