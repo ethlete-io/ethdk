@@ -3746,6 +3746,18 @@ run reads all 91 studio part sources (830), so find what the rule check needs pe
 change. Target: a run under 1 s on studio. If that fails, sending the sketch problems later (830 option b) changes what
 the human sees and goes to the human as a question.
 
+837\. Doc agent (2026-11-11): the Linux and the Mac builder take finding numbers from their own tree, so both used 828
+and 833 today. Suspect: no shared source hands out the next number. Tool fix (builder pick, tool internal): a number
+reservation that both builders read before they write a finding (for example `yarn finding:next`, reserved through
+origin or the shared mailbox), and `check-plan-findings.mjs` fails on a duplicate number after a merge. Bite: a merge
+that brings a second finding with the same number fails `check-plan-findings.mjs`.
+
+838\. Doc agent (2026-11-11, from the f106ddd4a hold run): a subagent's `studio:e2e` run and the push-suite repeat ran at
+the same time in one checkout, and the hold run failed 30 cases under that load. Suspect: the load from two parallel
+runs, not the change. Decision (grill): `studio:e2e` takes the heavy run lock too, so the two never overlap in one
+checkout; a waiting run prints who holds the lock. An "under foreign load" mark is only a fallback. Bite: a second
+`studio:e2e` that starts while the lock is held waits or refuses, and does not run.
+
 839\. Doc agent (2026-11-11, Mac builder self-restart): `agent-sessions restart` gave up after 1800 s (restart.log
 12:08Z) because it read the busy line "general-purpose Waiting for cli build log 14m 59s"; the same timer still showed
 30+ min later, so the subagents were frozen and the restart waited on a line that never changes. Suspect: the busy check
