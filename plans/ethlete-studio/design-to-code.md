@@ -2207,6 +2207,11 @@ part change but not on a sketch file change, so a request after the merge could 
 The specs covered the join in studio-api but not the serve trigger on a sketch file change. Tool fix: a serve spec that
 runs every watcher event kind against a gated listing and asserts a fresh answer.
 
+As built (620): `serve.spec.ts` replaces the one unlink case with a table: a sketch file added, changed and deleted, and a
+part file changed, each fired while a listing is held, and the next request must see the files after the event. Bite:
+without `detachRunningListings()` in `signalLists` the three sketch cases fail and the part case passes; without it in
+`redraw` only the part case fails. No serve.ts change. Not verified: a real chokidar watcher or a real Vite server.
+
 626\. Builder (2026-11-09, B457, b1af8f143): the full `design check` of B456 wrote build-ready records with the absolute
 home path in `cmd` into `.ethlete/design/*/ready.json`, and `yarn lint:person-names` refused them. Cause: `originOf` in
 `libs/cli/src/lib/design/system/write-origin.ts` wrote `process.argv` as it was, and the resident starts as
