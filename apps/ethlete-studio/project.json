@@ -20,14 +20,20 @@
     "build": {
       "executor": "@angular/build:application",
       "outputs": ["{options.outputPath}"],
-      "inputs": ["production", "^production", "{workspaceRoot}/.ethlete/design/studio/foundations/tokens/tokens.css"],
+      "inputs": [
+        "production",
+        "^production",
+        "{workspaceRoot}/.ethlete/design/studio/foundations/**/*.css",
+        "{workspaceRoot}/.ethlete/design/studio/assets/**/*"
+      ],
       "defaultConfiguration": "production",
       "options": {
         "browser": "apps/ethlete-studio/src/main.ts",
         "outputPath": "dist/apps/ethlete-studio",
         "index": "apps/ethlete-studio/src/index.html",
         "tsConfig": "apps/ethlete-studio/tsconfig.app.json",
-        "assets": [],
+        "assets": [{ "glob": "**/*", "input": ".ethlete/design/studio/assets", "output": "@assets" }],
+        "externalDependencies": ["@assets"],
         "styles": ["apps/ethlete-studio/src/styles.css"]
       },
       "configurations": {
