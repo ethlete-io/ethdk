@@ -34,6 +34,11 @@ export const embeddedBlocker: Blocker = {
   part: 'components/badge',
 };
 
+export const hardcodedColourBlocker: Blocker = {
+  kind: 'problem',
+  text: 'HARDCODED-COLOR: button.component.css',
+};
+
 export const manyBlockers = (openCount: number): Blocker[] => [
   { kind: 'open-point', text: `${openCount} offene Punkte und Ausnahmen` },
   embeddedBlocker,

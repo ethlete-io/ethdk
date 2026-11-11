@@ -27,6 +27,7 @@ import {
   embeddedBlocker,
   manyBlockers,
   slowRules,
+  hardcodedColourBlocker,
   type AgentProgress,
   type AgentState,
   type BuildReady,
@@ -232,12 +233,12 @@ export default definePart<{
   draft?: string;
   send?: SendPhase;
   reason?: string;
-  build?: 'one-blocker' | 'checking' | 'direct-edit';
+  build?: 'one-blocker' | 'checking' | 'blocked-checking' | 'direct-edit';
   blockersOpen?: boolean;
   agent?: AgentState;
   call?: 'open' | 'transferred';
 }>({
-  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text: a network or server error shows "Kommentar nicht gesendet. Erneut versuchen." under the field and turns Senden into Erneut senden; a send the server refuses with a 4xx shows the server reason there and keeps Senden, with no retry. The open-points popover also lists the exceptions of the part as an Ausnahmen group, each with its reason, state and a Freigeben button, and ends in a footer with the computed build-ready status as a badge (Baubereit, Nicht baubereit (n) in the warning colour, Wird geprüft while slow rules run) and, beside it, the progress of the agent as a second badge (Agent behebt, Agent wartet, Agent unterbrochen, Agent fehlgeschlagen in the error colour, the detail as its title); Gründe opens the blockers grouped by kind, and a direct edit offers Sketch öffnen; the chip counts the exceptions with the points. A failed listing read shows an error card centred in the canvas, like the empty-product card: a small error icon, the title Auflistung fehlgeschlagen, the server reason as the muted line, for example "missing build: pages/system", and an Erneut laden button; the tree is empty and there are no frames and no open-points chip. A legacy call shows a header with its slug and headline, the surface and colour theme switches, and Als übertragen markieren, which turns into an übertragen badge.',
+  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text: a network or server error shows "Kommentar nicht gesendet. Erneut versuchen." under the field and turns Senden into Erneut senden; a send the server refuses with a 4xx shows the server reason there and keeps Senden, with no retry. The open-points popover also lists the exceptions of the part as an Ausnahmen group, each with its reason, state and a Freigeben button, and ends in a footer with the computed build-ready status as a badge (Baubereit, Nicht baubereit (n) in the warning colour, Wird geprüft only while slow rules run and no blocker is definite: as soon as one blocker is definite the badge reads Nicht baubereit, even while a slow rule still runs, ADR 0270) and, beside it, the progress of the agent as a second badge (Agent behebt, Agent wartet, Agent unterbrochen, Agent fehlgeschlagen in the error colour, the detail as its title); Gründe opens the blockers grouped by kind, and a direct edit offers Sketch öffnen; the chip counts the exceptions with the points. A failed listing read shows an error card centred in the canvas, like the empty-product card: a small error icon, the title Auflistung fehlgeschlagen, the server reason as the muted line, for example "missing build: pages/system", and an Erneut laden button; the tree is empty and there are no frames and no open-points chip. A legacy call shows a header with its slug and headline, the surface and colour theme switches, and Als übertragen markieren, which turns into an übertragen badge.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6'],
   implements: {
     route: '/',
@@ -281,6 +282,7 @@ export default definePart<{
     },
     'one-blocker': { nothingOpen: true, build: 'one-blocker' },
     checking: { nothingOpen: true, build: 'checking' },
+    'blocked-checking': { nothingOpen: true, build: 'blocked-checking' },
     'direct-edit': { build: 'direct-edit', blockersOpen: true },
     'direct-edit-closed': { build: 'direct-edit' },
     'blockers-open': { blockersOpen: true },
@@ -406,14 +408,16 @@ export default definePart<{
         ? { state: 'checking', rules: slowRules }
         : build === 'one-blocker'
           ? { state: 'blocked', blockers: [embeddedBlocker] }
-          : build === 'direct-edit'
-            ? {
-                state: 'blocked',
-                blockers: [directEditBlocker, ...manyBlockers(points.points.length + exceptionCount)],
-              }
-            : clear
-              ? { state: 'ready' }
-              : { state: 'blocked', blockers: manyBlockers(points.points.length + exceptionCount) };
+          : build === 'blocked-checking'
+            ? { state: 'blocked', blockers: [hardcodedColourBlocker] }
+            : build === 'direct-edit'
+              ? {
+                  state: 'blocked',
+                  blockers: [directEditBlocker, ...manyBlockers(points.points.length + exceptionCount)],
+                }
+              : clear
+                ? { state: 'ready' }
+                : { state: 'blocked', blockers: manyBlockers(points.points.length + exceptionCount) };
     const dialog = closed
       ? undefined
       : await popover(

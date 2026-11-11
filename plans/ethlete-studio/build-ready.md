@@ -920,3 +920,11 @@ the edit or new to keep it`. The internal discard of `design check` is unchanged
   `components/zoom-chip` the same; an uncommitted different-drawing edit reads "Nicht baubereit (1)" with "Bild ohne
   Sketch geändert". `git status --untracked-files=no` showed only `ready.json` besides my edits. Shots in
   `.claude/handoffs/agent-results/b249-5c2b/`.
+
+## As built: B249 slice 5c-3, design pages match ADR 0270 and S6b (2026-11-11, Linux)
+
+- Direct edits accepted per ADR 0209 (note names ADR 0270 and S6b). `pages/system`: new state `blocked-checking` (one
+  definite blocker, slow rules still running, badge reads "Nicht baubereit (1)"); the note says "Wird geprüft" shows
+  only while no blocker is definite (`hardcodedColourBlocker` in `shared/build-ready.ts`).
+- `pages/sketches`: new state `edit-sketch` for `components/zoom-chip@edit` with the rows `old` and `new` (`old` is a
+  base row like Aktuell, never folded as unchanged); the header has no Verwerfen button and says to pick old or new.

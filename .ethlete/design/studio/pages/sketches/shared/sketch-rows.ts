@@ -6,7 +6,7 @@ import { panInsideRoom } from '../../../../../../apps/ethlete-studio/src/app/com
 import { variantCell } from '@system/elements/variant-cell';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
 
-export type RowKey = 'current' | 'a' | 'b' | 'c';
+export type RowKey = 'current' | 'old' | 'new' | 'a' | 'b' | 'c';
 
 type Model = { short: string; id: string; agent: Agent; when: string };
 
@@ -28,7 +28,7 @@ export type SketchPart = {
   render: (state: string) => Promise<Render>;
 };
 
-export type PartKind = 'wide' | 'narrow';
+export type PartKind = 'wide' | 'narrow' | 'edit';
 
 const OPUS: Omit<Model, 'when'> = { short: 'Opus 5.5', id: 'claude-opus-5-5', agent: 'claude' };
 const SOL: Omit<Model, 'when'> = { short: 'GPT-6.1 Sol', id: 'gpt-6.1-sol', agent: 'codex' };
@@ -43,6 +43,16 @@ const zoomChipStates = zoomChip.states as Record<string, ZoomChipProps>;
 
 const STEADY = ['fit-hover', 'fit-active', 'fit-focus-visible'];
 const NARROW_STATES = Object.keys(zoomChipStates).filter((name) => name.startsWith('reset') || name.startsWith('fit'));
+
+const isBase = (row: Row) => row.key === 'current' || row.key === 'old';
+
+const narrowPart = (): SketchPart => ({
+  key: 'components/zoom-chip',
+  width: 176,
+  states: NARROW_STATES,
+  render: async (state) => (await zoomChip.render(zoomChipStates[state] as ZoomChipProps)) as Render,
+  rows: [],
+});
 
 export const PARTS: Record<PartKind, SketchPart> = {
   wide: {
@@ -72,6 +82,19 @@ export const PARTS: Record<PartKind, SketchPart> = {
         model: { ...OPUS, when: '02.11. 10:30' },
         changed: ['macos', 'macos-update'],
         look: '[&_.st-title-bar]:grid-cols-[auto_1fr_auto]',
+      },
+    ],
+  },
+  edit: {
+    ...narrowPart(),
+    key: 'components/zoom-chip@edit',
+    rows: [
+      { key: 'old', note: 'Stand vor der direkten Änderung', changed: [], look: '' },
+      {
+        key: 'new',
+        note: 'Direkte Änderung: Prozentzahl in Halbfett.',
+        changed: NARROW_STATES.filter((name) => name.startsWith('reset')),
+        look: '[&_[data-camera-reset]_button]:font-ui-strong',
       },
     ],
   },
@@ -108,7 +131,7 @@ export const withSame = (part: SketchPart, same: RowKey[]): SketchPart => ({
   rows: part.rows.map((row) => (same.includes(row.key) ? { ...row, changed: [], look: '' } : row)),
 });
 
-export const isSame = (row: Row) => row.key !== 'current' && row.changed.length === 0;
+export const isSame = (row: Row) => !isBase(row) && row.changed.length === 0;
 
 export const sameLabel = (rows: Row[]) => `Unverändert: ${rows.map((row) => `Variante ${row.key}`).join(', ')}`;
 
@@ -124,9 +147,9 @@ export const prepareShots = async (part: SketchPart) => {
   return renders[0]?.styles ?? '';
 };
 
-const firstChanged = (row: Row) => (row.key === 'current' ? undefined : row.changed[0]);
+const firstChanged = (row: Row) => (isBase(row) ? undefined : row.changed[0]);
 
-const unchanged = (row: Row, state: string) => row.key !== 'current' && !row.changed.includes(state);
+const unchanged = (row: Row, state: string) => !isBase(row) && !row.changed.includes(state);
 
 export const cell = (part: SketchPart, row: Row, state: string, place = '', pending = false) =>
   variantCell({
