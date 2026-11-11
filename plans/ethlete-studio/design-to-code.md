@@ -3206,6 +3206,29 @@ shoot the same 28 states twice, through two paths (render worker vs part shooter
 6.5 s. Suspect: sharing the render-check pictures with the part shooter is the next cut; not local, so it stays
 backlog.
 
+As built (739, Mac builder, 2026-11-11, measurement only). Detached worktree of 87c279030, `ETHLETE_DESIGN_PHASES=1`,
+`sketch check pages/sketches@change-crop --product studio` (3 variants, after a `sketch rebase` in the worktree only:
+foundations/logo had changed). Seconds, resident run 1 / resident run 2 / no resident:
+
+| Phase           | Run 1 | Run 2 | No resident |
+| --------------- | ----: | ----: | ----------: |
+| gates           |   4.4 |   4.4 |        15.3 |
+| tsc a + b + c   |   6.6 |   6.7 |         7.0 |
+| aktuell         |  59.4 |  59.5 |        52.3 |
+| render-check    | 140.6 | 143.6 |       137.9 |
+| identical       |   4.8 |   4.6 |         4.2 |
+| changes-shot    |   1.6 |   1.9 |         1.7 |
+| draw-queue-wait |  26.8 |  25.2 |        24.5 |
+| wall            | 219.6 | 223.3 |       221.4 |
+
+Render-check per variant: 67 s, 36 s, 37 s. Load average 11-13 on 6 cores during the runs. Cause (measured): the time
+is in aktuell and render-check, and the resident process does not make run 2 faster. Not measured: the same sketch on
+Linux, so the Mac share of the gap is open. Side results: `sketch ready` with a wrong flag (`--variant`) or without
+`--by` failed only after the lib-build wait (46-59 s); a usage error does not need the lib build. Without a resident
+process, gates take 15 s instead of 4.4 s. 777 on the Mac (same night, `design check --product studio`): cold 202.7 s,
+warm 52.0 s, 0 cache hits both times; a `recordCache` bite in the part-picture cache read counted 0 reads, so the
+warm speedup is one-time work of the cold run (5 lib rebuilds, 3 dropped ready records), not a missed cache.
+
 740\. Mac builder (same sketch): the clipping check flags the intended crop of the variants, and skip-scope refuses
 the reason "intended" because the crop holds controls; only "inert" passes. Suspect only. Lesson: a check that accepts
 only a wrong reason teaches the agent to give a wrong reason (as 737). Tool fix (backlog): skip-scope accepts
