@@ -3812,6 +3812,23 @@ its e2e pass under CI-like limits (the 829 recipe: 2 workers, 4 cores with `task
 for changes under `libs/cli/src/lib/design`; the fixture check's fixed 60 s timeout (Mac builder, 828) gets a reason in
 its error (which request, how long the server was busy). Bite: the 832 warm-up re-applied fails push-suite locally.
 832 stays parked: re-land only with that bite green, and only if the cold run (2.6 s after 835) still needs it.
+843 as built (Linux builder, 2026-11-11, this commit: Run a CI-like e2e pass in push-suite for design server
+changes): Built: push-suite step `e2e-load` (after `e2e-quota`) runs shard 1/6 on 2 workers, pinned with `taskset` to
+cores 0-3 beside 12 busy loops on the same cores (the 829 recipe, now `tools/scripts/ci-like-load.mjs`, also a CLI:
+`node tools/scripts/ci-like-load.mjs -- <command>`); without `taskset` it runs unpinned and its note says so. It runs
+only when the pushed range touches `libs/cli/src/lib/design/`, where the causes of 829 and 843 lived: always would add
+about 2.5 min to every Studio push. The load generator takes the heavy run lock and holds it for its whole life (grill
+decision), so busy loops never run outside it; inside push-suite it takes none. The fixture check's error names the GET
+URL, the time waited against the 60 s limit, and a 2 s `/__design/queue` probe (answered, or busy/down). Suite time
+added: 134-152 s per push that touches the design dir, 0 s otherwise. Verified: specs (`ci-like-load.spec.mjs`, the
+STEPS and reuse cases in `push-suite.spec.mjs`) fail without the change; a second load generator refuses while the
+first holds the lock. Bite: does not fail. Shard 1/6 under the recipe, 3 runs each in scratch copies: the 832 warm-up
+re-applied 3/3 green, listing (`fixtures` phase) 36.5-40.2 s (median 38.6 s); HEAD 3/3 green, 32.8-43.1 s (median
+34.5 s). The warm-up costs about 4 s here, far from 60 s, so this machine under the recipe does not reproduce the CI
+timeout; the listing itself takes over half the limit under load with or without it. The bite of the lock rule ran in
+the wild: the main push-suite hold run on 436fee399 failed 12 cases "no frame after 10 s" at load 9-14 while a bite
+load of this slice ran (coordinator: outside the lock); the same case alone passed 6/6. Not verified: the new fixture error text
+on a real timeout, the step inside a full push-suite run (only its pieces), a CI-like failure of any kind.
 
 844\. Linux builder (2026-11-11, revert of 832): the revert deleted `.changeset/832-warm-sketch-problems.md`, and
 pre-push refused it in lint:changesets (an unreleased changeset must stay). Cause (seen): `yarn revert:check` does not

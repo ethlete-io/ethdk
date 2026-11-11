@@ -3086,12 +3086,30 @@ const FIXTURE_CHANGES = [
   },
 ];
 
+const PROBE_MS = 2000;
+
+const serverProbe = async (designPort) => {
+  const startedAt = performance.now();
+  const answer = await fetch(`http://[::1]:${designPort}/__design/queue`, { signal: AbortSignal.timeout(PROBE_MS) })
+    .then((response) => `answered ${response.status}`)
+    .catch(() => `did not answer within ${PROBE_MS} ms, so the server is busy or down`);
+
+  return `a /__design/queue probe ${answer} after ${Math.round(performance.now() - startedAt)} ms`;
+};
+
 const assertSketchFixtures = async (page, designPort, assertStates) => {
+  const url = `http://[::1]:${designPort}/__design/sketches?product=studio`;
+  const startedAt = performance.now();
   const listing = await page.request
-    .get(`http://[::1]:${designPort}/__design/sketches?product=studio`, { timeout: COLD_START_MS })
+    .get(url, { timeout: COLD_START_MS })
     .then((response) => response.json())
-    .catch((error) => {
-      throw new Error(`sketch fixture check could not list the sketches: ${String(error).split('\n')[0]}`);
+    .catch(async (error) => {
+      const waited = seconds(performance.now() - startedAt).trim();
+      const probe = await serverProbe(designPort);
+
+      throw new Error(
+        `sketch fixture check could not list the sketches: GET ${url} failed after ${waited} (limit ${COLD_START_MS} ms); ${probe}: ${String(error).split('\n')[0]}`,
+      );
     });
 
   if (!assertStates) return;
