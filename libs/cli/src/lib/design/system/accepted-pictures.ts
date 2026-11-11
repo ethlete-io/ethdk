@@ -6,6 +6,7 @@ import { DesignConfig } from '../design-config';
 import { createPartShooter } from '../shot';
 import { yieldRun } from '../run-yield';
 import { DesignServer, drawingOn, WarmDraw } from '../warm-draw';
+import { commentsOnSketch } from './comments/comment';
 import { compareFrameOf } from './harness-shot';
 import { designHashOf, designHolds, sha16 } from './design-hash';
 import { partOwnerOf } from './inventory-approval';
@@ -21,6 +22,7 @@ import {
   openEditSketch,
   refreshEditOld,
   rewordEditNotes,
+  tracksFileBelow,
 } from './sketch/edit-sketch';
 import { discardSketch } from './sketch/merge';
 import { changedOutsideSketchOf, EDIT_SKETCH, readMerged, recordMerged } from './sketch/merged-parts';
@@ -260,12 +262,23 @@ const undecidedEditSketchesOf = (product: ResolvedProduct) =>
     ),
   );
 
+const discardsUntracked = (product: ResolvedProduct, sketch: Sketch) =>
+  !tracksFileBelow(product, sketch.dir) &&
+  commentsOnSketch({ productDir: product.dir, product: product.name, sketch }).length === 0;
+
 /**
  * Settles each direct edit of a merged part, or of `parts`, that HEAD already holds: records its hash in `merged.json`
- * and deletes its open edit sketch, without a pick and without a line. Answers the parts it settled.
+ * and deletes its open edit sketch, without a pick and without a line. Answers the parts it settled. With
+ * `writesTracked: false` it records nothing and deletes only an edit sketch git does not track and no comment is on.
  */
-export const settleCommittedEdits = (options: { target: string; product: ResolvedProduct; parts?: string[] }) => {
+export const settleCommittedEdits = (options: {
+  target: string;
+  product: ResolvedProduct;
+  parts?: string[];
+  writesTracked?: boolean;
+}) => {
   const { target, product } = options;
+  const writesTracked = options.writesTracked ?? true;
   const sketches = undecidedEditSketchesOf(product);
   const candidates = new Set([...changedOutsideSketchOf(product), ...sketches.keys()]);
   const settled = product.parts.filter((resolved) => {
@@ -282,12 +295,13 @@ export const settleCommittedEdits = (options: { target: string; product: Resolve
   for (const resolved of settled) {
     const sketch = sketches.get(partKeyOf(resolved));
 
-    if (sketch) discardSketch({ target, sketch, author: 'design check' });
+    if (sketch && (writesTracked || discardsUntracked(product, sketch)))
+      discardSketch({ target, sketch, author: 'design check' });
   }
 
   const parts = settled.map(partKeyOf);
 
-  if (parts.length > 0) recordMerged({ product, parts });
+  if (writesTracked && parts.length > 0) recordMerged({ product, parts });
 
   return parts;
 };
@@ -301,7 +315,8 @@ export const settleCommittedEdits = (options: { target: string; product: Resolve
  * (an open sketch's `old` is rewritten from HEAD first). One that draws every
  * state as before holds at once (its new hash goes to `merged.json`, and the edit sketch closes); one that draws a state
  * differently leaves the edit sketch open. An `old` that does not draw, or a part HEAD does not hold, goes to
- * `problems`, else to the lines.
+ * `problems`, else to the lines. With `writesTracked: false` (the design server) it writes no file git tracks: a held
+ * or settled edit stays unrecorded for `design check`.
  * Answers with one line per part it drew or decided.
  */
 export const autoAcceptOf = async (options: {
@@ -314,8 +329,10 @@ export const autoAcceptOf = async (options: {
   problems?: Problem[];
   warm?: WarmDraw;
   cache?: PartPictureCache;
+  writesTracked?: boolean;
 }): Promise<string[]> => {
   const { target, config, product, only, warm } = options;
+  const writesTracked = options.writesTracked ?? true;
   const cache = options.cache ?? createPartPictureCache({ target, product });
   const cachedOf = (resolved: ResolvedPart, hash: string | undefined): AcceptedPictures | null => {
     const states = hash === undefined ? null : cache.read(resolved, hash);
@@ -324,11 +341,14 @@ export const autoAcceptOf = async (options: {
   };
   const partHashNowOf = (resolved: ResolvedPart) => partHashOf({ product, dir: dirname(resolved.file) });
 
-  settleCommittedEdits({
-    target,
-    product,
-    parts: only ? (options.parts ?? [only]).filter((part) => part === only) : options.parts,
-  });
+  const settled = new Set(
+    settleCommittedEdits({
+      target,
+      product,
+      parts: only ? (options.parts ?? [only]).filter((part) => part === only) : options.parts,
+      writesTracked,
+    }),
+  );
 
   const edited = new Set(changedOutsideSketchOf(product));
   const editSketches = undecidedEditSketchesOf(product);
@@ -361,7 +381,7 @@ export const autoAcceptOf = async (options: {
     const part = partKeyOf(resolved);
 
     if ((only && part !== only) || (options.parts && !options.parts.includes(part))) continue;
-    if (resolved.origin === 'base' || merged[part] === undefined) continue;
+    if (resolved.origin === 'base' || merged[part] === undefined || (!writesTracked && settled.has(part))) continue;
 
     const pictures = readPictures(partOwnerOf({ product, part: resolved }).dir)[part] ?? {};
     const designHash = designHashOf({ product, part: resolved });
@@ -383,6 +403,7 @@ export const autoAcceptOf = async (options: {
       else heads.push({ part: resolved, design, sketch });
     } else if (editSketch) {
       if (!editSketch.variants.includes(EDIT_OLD)) continue;
+      if (!writesTracked && tracksFileBelow(product, editSketch.dir)) continue;
 
       const old = cachedOf(resolved, merged[part]);
 
@@ -478,11 +499,15 @@ export const autoAcceptOf = async (options: {
       continue;
     }
 
-    if (sketch) discardSketch({ target, sketch, author: 'design check' });
+    if (sketch && (writesTracked || discardsUntracked(product, sketch)))
+      discardSketch({ target, sketch, author: 'design check' });
 
     if (baseline) {
-      recordMerged({ product, parts: [part] });
       lines.push(`HELD ${product.name} ${part}: changed outside a sketch, every state draws as before`);
+
+      if (!writesTracked) continue;
+
+      recordMerged({ product, parts: [part] });
     }
 
     writePictures({

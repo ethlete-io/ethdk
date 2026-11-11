@@ -164,7 +164,7 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
     expect([sketch.status, Object.keys(sketch.variantInfo)]).toEqual(['ready', ['new']]);
   });
 
-  it('deletes an open edit sketch whose edit HEAD already holds and records the edit', async () => {
+  it('deletes an untracked edit sketch whose edit HEAD already holds and leaves merged.json to design check', async () => {
     const { target, dir, config } = staleChip();
     const bare = { ...config, products: { acme: { ...config.products.acme, harness: undefined } } };
     const product = () => resolveProduct({ target, name: 'acme', config: bare.products.acme });
@@ -190,13 +190,42 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
       intervalMs: 3_600_000,
     });
 
+    const mergedBefore = readMerged(dir)['components/chip'];
+
     await runner.poll();
     runner.stop();
 
     expect(existsSync(join(dir, 'sketches', 'components-chip.edit'))).toBe(false);
-    expect(readMerged(dir)['components/chip']).toBe(
-      partHashOf({ product: product(), dir: join(dir, 'components/chip') }),
-    );
+    expect(readMerged(dir)['components/chip']).toBe(mergedBefore);
+    expect(mergedBefore).not.toBe(partHashOf({ product: product(), dir: join(dir, 'components/chip') }));
     expect(lines).toEqual([]);
+  });
+
+  it('writes no tracked file for a committed direct edit and its committed edit sketch', async () => {
+    const { target, dir, config } = staleChip();
+    const bare = { ...config, products: { acme: { ...config.products.acme, harness: undefined } } };
+    const product = () => resolveProduct({ target, name: 'acme', config: bare.products.acme });
+    const chip = join(dir, 'components/chip/chip.ts');
+    const commitAll = () => {
+      gitExec(['add', '.'], { cwd: target });
+      gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
+    };
+
+    writeFileSync(chip, 'export default definePart({ states: { default: {} } });\n');
+    writeFileSync(join(target, '.gitignore'), '.ethlete/cache/\n.ethlete/design/*/pictures.json\n');
+    gitExec(['init', '-q'], { cwd: target });
+    recordMerged({ product: product(), parts: ['components/chip'] });
+    commitAll();
+    writeFileSync(chip, 'export default definePart({ states: { hover: {}, default: {} } });\n');
+    expect(typeof openEditSketch({ target, product: product(), part: 'components/chip' })).toBe('object');
+    commitAll();
+
+    const runner = startSlowRunner({ target, configOf: () => bare, log: () => undefined, intervalMs: 3_600_000 });
+
+    for (let poll = 0; poll < 3; poll++) await runner.poll();
+    runner.stop();
+
+    expect(gitExec(['status', '--porcelain', '--untracked-files=no'], { cwd: target, encoding: 'utf8' })).toBe('');
+    expect(existsSync(join(dir, 'sketches', 'components-chip.edit', 'sketch.json'))).toBe(true);
   });
 });

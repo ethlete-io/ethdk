@@ -39,6 +39,7 @@ import { openSketchListingOf } from './system/sketch/check-sketches';
 import { CheckSketches } from './system/sketch/sketch-checker';
 import { oneProductOf } from './system/sketch/cli-args';
 import { retriedHeldMerges } from './sketch-command';
+import { editDiscardRefusalOf } from './system/sketch/edit-sketch';
 import { discardSketch, mergeRefusalOf } from './system/sketch/merge';
 import { mergeInWorker } from './system/sketch/merge-runner';
 import { DrawStates } from './system/accepted-pictures';
@@ -693,6 +694,10 @@ export const sketchMergeAnswer = withSketch('POST', async ({ asked, product, ske
 
 /** POST `?product=&sketch=`: deletes the sketch with all its variants, as `et design sketch discard` does. */
 export const sketchDiscardAnswer = withSketch('POST', ({ asked, sketch }) => {
+  const refused = editDiscardRefusalOf(sketch);
+
+  if (refused) return refusal({ status: 422, reason: 'edit-discard-refused', message: refused });
+
   const problem = discardSketch({ target: asked.target, sketch });
 
   return problem ? failure(422, problem) : { status: 200, body: { discarded: sketch.target } };

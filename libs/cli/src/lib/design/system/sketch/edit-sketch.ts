@@ -5,7 +5,7 @@ import { assetDirsOf, filesBelow } from '../assets';
 import { productSharedDirsOf } from '../imports';
 import { repoRootOf } from '../reachable-files';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';
-import { EDIT_SKETCH, readMerged } from './merged-parts';
+import { EDIT_SKETCH, isEditSketch, readMerged } from './merged-parts';
 import {
   createSketch,
   markSketchReady,
@@ -28,6 +28,14 @@ const newOnlyRoundNoteOf = (part: string) =>
   `${part} wurde außerhalb eines Sketches geändert und der zuletzt gemergte Stand ist nicht mehr zu finden - wähle die Änderung oder setze sie zurück`;
 
 export const EDIT_OLD_NOT_FOUND = 'EDIT-OLD-NOT-FOUND';
+
+export const EDIT_DISCARD_REFUSED = 'EDIT-DISCARD-REFUSED';
+
+/** Why `sketch discard` refuses the sketch: an old/new edit sketch has no discard. `null` for any other sketch. */
+export const editDiscardRefusalOf = (sketch: Pick<Sketch, 'target' | 'layer' | 'name'>) =>
+  isEditSketch(sketch)
+    ? `${EDIT_DISCARD_REFUSED}: ${sketch.target} is the old/new sketch of a direct edit and cannot be discarded - pick ${EDIT_OLD} to undo the edit or ${NEW} to keep it`
+    : null;
 
 export type EditOldNotFound = { rule: typeof EDIT_OLD_NOT_FOUND; message: string };
 
@@ -66,6 +74,17 @@ export const headHoldsPart = (product: ResolvedProduct, resolved: ResolvedPart) 
     );
   } catch {
     return false;
+  }
+};
+
+/** Whether git tracks a file below `dir`; answers `true` when git cannot tell. */
+export const tracksFileBelow = (product: ResolvedProduct, dir: string) => {
+  const root = repoRootOf(product);
+
+  try {
+    return git(root, ['ls-files', '--', `./${relative(root, dir)}`]) !== '';
+  } catch {
+    return true;
   }
 };
 

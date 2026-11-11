@@ -822,3 +822,27 @@ The serve rewrote `components/tree-row` and `components/zoom-chip` in the uncomm
   System page design note still says "Wird geprüft while slow rules run" and the Sketches design has no `@edit` state
   (a design edit makes the record stale; left for a sketch); the server still accepts `sketch discard` on an `@edit`
   sketch (S6b, `libs/cli` discard path, not in this slice).
+
+## As built: B249 slice 5c-1, serve writes no tracked file (D6), no discard on `@edit` (S6b) (2026-11-11, Linux)
+
+- D6 cause, proven by bites: the serve slow runner called `settleCommittedEdits` and `autoAcceptOf`, and both call
+  `recordMerged`; the settle path also deleted an edit sketch even when git tracks it. Suspect for the live run: the
+  tree-row write was the HELD path (uncommitted edit that draws as before), the zoom-chip write the settle path (HEAD
+  holds the part after the revert; matches "both edit sketches were removed").
+- Fix: `writesTracked: false` on `settleCommittedEdits` and `autoAcceptOf`, set by the slow runner. In that mode a
+  held or settled edit is not recorded (stays "changed outside a sketch" for `design check`, which still records it),
+  an edit sketch is deleted only when git tracks no file in it and no comment is on it, a held edit writes no
+  `pictures.json` record (the drawing stays in the untracked part-picture cache), and a tracked edit sketch is not
+  refreshed. The slow runner remembers each resolved edit hash in memory, so it does not redraw it on every poll.
+- S6b: `editDiscardRefusalOf` (`edit-sketch.ts`); `POST /__design/sketch-discard` answers 422 reason
+  `edit-discard-refused`, `sketch discard` exits 1; both with `EDIT-DISCARD-REFUSED: <part>@edit ... pick old to undo
+the edit or new to keep it`. The internal discard of `design check` is unchanged.
+- Bites (each failed on the old code): slow-run "writes no tracked file for a committed direct edit and its committed
+  edit sketch" (temp git repo, `git status --untracked-files=no` clean) and the reworded "deletes an untracked edit
+  sketch ... leaves merged.json to design check"; accepted-pictures "holds a direct edit without writing a tracked
+  file when told so"; `studio-sketch-discard.spec.ts` "refuses the old/new sketch of a direct edit"; sketch-command
+  "refuses to discard the old/new sketch of a direct edit".
+- Verified: `vitest related` on the changed files (131 files, 1346 tests), `nx run cli:typecheck`, eslint, prettier.
+- Not verified: no live serve run on a scratch checkout. Still open: the slow runner writes the tracked `ready.json`
+  (`recordSettledBuildReady`, also seen in the live run), against "serve never writes a tracked file"; not in this
+  slice. A draw error in serve is not retried at the same part hash.

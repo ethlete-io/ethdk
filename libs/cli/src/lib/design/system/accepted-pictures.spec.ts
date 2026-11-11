@@ -107,6 +107,30 @@ describe('autoAcceptOf', () => {
     expect(existsSync(join(dir, 'sketches'))).toBe(false);
   });
 
+  it('holds a direct edit without writing a tracked file when told so, as the design server does', async () => {
+    const { target, dir, chip } = checkout();
+    const { draw } = drawing({ default: 'a1', hover: 'b2' });
+
+    recordMerged({ product: productOf(target), parts: [CHIP] });
+    await autoAccept(target, draw);
+    writeFileSync(join(target, '.gitignore'), '.ethlete/cache/\n.ethlete/design/*/pictures.json\n');
+    gitExec(['add', '.'], { cwd: target });
+    gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'merged'], { cwd: target });
+    appendFileSync(chip, '// attribute-only edit\n');
+
+    const tracked = () =>
+      gitExec(['status', '--porcelain', '--untracked-files=no'], { cwd: target, encoding: 'utf8' })
+        .split('\n')
+        .filter((line) => line && !line.endsWith('chip.ts'));
+
+    expect(await autoAcceptOf({ target, config: {}, product: productOf(target), draw, writesTracked: false })).toEqual([
+      `HELD app-a ${CHIP}: changed outside a sketch, every state draws as before`,
+    ]);
+    expect(tracked()).toEqual([]);
+    expect(changedOutsideSketchOf(productOf(target))).toEqual([CHIP]);
+    expect(existsSync(join(dir, 'sketches'))).toBe(false);
+  });
+
   it('opens the old/new sketch for a direct edit that changes a picture', async () => {
     const { target, chip } = checkout();
     const { draw, pictures } = drawing({ default: 'a1', hover: 'b2' });

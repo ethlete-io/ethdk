@@ -344,13 +344,22 @@ export const checkSlow = async (options: {
 
 const SLOW_POLL_MS = 15_000;
 
-const settledEditsOf = (product: ResolvedProduct, seen: Map<string, string>) =>
+const settledEditsOf = ({
+  product,
+  seen,
+  resolved,
+}: {
+  product: ResolvedProduct;
+  seen: Map<string, string>;
+  resolved: Map<string, string>;
+}) =>
   changedOutsideSketchOf(product).filter((part) => {
     const key = `edit\0${product.name}\0${part}`;
     const hash = partHashOf({ product, dir: resolve(product.dir, part) });
-    const settled = seen.get(key) === hash;
+    const settled = seen.get(key) === hash && resolved.get(key) !== hash;
 
     seen.set(key, hash);
+    if (settled) resolved.set(key, hash);
 
     return settled;
   });
@@ -359,8 +368,9 @@ const settledEditsOf = (product: ResolvedProduct, seen: Map<string, string>) =>
  * Keeps the slow results of every harness product fresh while the design server runs: each poll reruns the parts whose
  * inputs changed and then held still for one poll, one run at a time. Before them it settles each direct edit HEAD
  * already holds, and resolves each other direct edit of a merged part that held still for one poll: it holds, or it
- * opens the old/new edit sketch. After a run it writes or drops
- * the check record of each run part and its hosts, as `design check` does.
+ * opens the old/new edit sketch. It writes neither `merged.json` nor any other file git tracks for them: `design check`
+ * records a held or settled edit. After a run it writes or drops the check record of each run part and its hosts, as
+ * `design check` does.
  */
 export const startSlowRunner = (options: {
   target: string;
@@ -372,6 +382,7 @@ export const startSlowRunner = (options: {
 }) => {
   const record = options.record ?? recordSettledBuildReady;
   const seen = new Map<string, string>();
+  const resolvedEdits = new Map<string, string>();
   let running = false;
 
   const poll = async () => {
@@ -385,12 +396,14 @@ export const startSlowRunner = (options: {
       for (const [name, entry] of Object.entries(config.products ?? {})) {
         const edited = resolveProduct({ target: options.target, name, config: entry });
 
-        settleCommittedEdits({ target: options.target, product: edited });
+        settleCommittedEdits({ target: options.target, product: edited, writesTracked: false });
 
-        const edits = settledEditsOf(edited, seen);
+        const edits = settledEditsOf({ product: edited, seen, resolved: resolvedEdits });
 
         if (edits.length > 0)
-          (await autoAcceptOf({ target: options.target, config, product: edited, parts: edits })).forEach(options.log);
+          (
+            await autoAcceptOf({ target: options.target, config, product: edited, parts: edits, writesTracked: false })
+          ).forEach(options.log);
       }
 
       for (const [name, entry] of Object.entries(config.products ?? {})) {
