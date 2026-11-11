@@ -1120,6 +1120,33 @@ export const installedRootsOf = (target: string) => {
 };
 
 /**
+ * The real path of a checkout and of each symlinked entry in it. Vite serves a module by its real path; outside the
+ * allow list, a `?inline` stylesheet answers by what the server already loaded, so a fresh server misses every cache
+ * entry that read one.
+ */
+export const linkedRootsOf = (target: string) => {
+  const roots = new Set<string>();
+
+  try {
+    roots.add(realpathSync(target));
+
+    for (const entry of readdirSync(target, { withFileTypes: true })) {
+      if (!entry.isSymbolicLink()) continue;
+
+      try {
+        roots.add(realpathSync(join(target, entry.name)));
+      } catch {
+        continue;
+      }
+    }
+  } catch {
+    return [...roots];
+  }
+
+  return [...roots];
+};
+
+/**
  * The Vite server that draws a checkout: listening on the configured port to serve the frames, or in
  * middleware mode only to load design modules for a command. With `port`, it listens there instead
  * (0 picks a free one), quiet and unwatched. Only the user's server uses the checkout's dependency cache,
@@ -1222,7 +1249,7 @@ export const createDesignServer = async (options: {
         : { middlewareMode: true, ws: false as const, watch: null }),
       // The frame page lives inside this package, which is outside the checkout it draws. Vite
       // serves neither root unless both are allowed.
-      fs: { allow: [target, here, ...baseDirs, ...installedRootsOf(target)] },
+      fs: { allow: [target, here, ...baseDirs, ...installedRootsOf(target), ...linkedRootsOf(target)] },
     },
   });
   const closing = server.close.bind(server);

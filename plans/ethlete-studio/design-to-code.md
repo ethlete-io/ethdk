@@ -3665,6 +3665,22 @@ after, cold and warm, in-process and resident, apart from timing lines. `check-w
 Follow-up (night backlog, Linux, after 775): prove or drop the cache-miss suspect with the real CLI copy in
 `tmp/studio-cli`; if a fresh server misses a cache entry it wrote, that is a cache-key defect of its own, with a spec.
 
+As built (774 cache): Cause (measured), not a cache key. In-process `design check --product studio` from
+`/tmp/sk750`, with a copy of the 6a87fdb4f CLI that logs every lookup and every input whose served hash differs,
+`.ethlete` restored before each run. On the second run all 167 keys were found, and 121 inputs differed. All of them were
+`/@fs/home/tom/dev/ethlete-sdk/dist/...component.css?inline`. `/tmp/sk750/dist` is a symlink, Vite serves a module by
+its real path, and that path was outside `fs.allow`. Vite 8.3.5 checks an `?inline` id against the allow list with its
+query, so `safeModulePaths` never admits it. The answer for the same URL then depends on what this server already
+loaded: 403 on a fresh server, raw CSS once a drawing made the file safe, and the JS module once it was transformed.
+A run wrote the hashes it saw after drawing, and the next fresh server answered differently before drawing, so it
+missed. A miss rewrote its entry with the answers from before the drawing, which is why a third run hit. The 34
+allow-list lines are the same defect. Fix: `linkedRootsOf(target)` adds the real path of the checkout and of each
+symlinked entry in it to `fs.allow`. Verified: after the fix, the first warm run hit every entry (0 differing inputs).
+render-inspect went from 36.9 to 2.0 s and wall from 79.0 to 44.2 s; completeness already hit (0.7 s); cold was 198 s. Output
+and written `.ethlete` are the same line for line, apart from timing lines. `linked-roots.spec.ts` (two fresh servers,
+`?inline` CSS in a symlinked dir; the second answers the same hash) fails without the `fs.allow` entry and passes with
+it. Not verified: a checkout without symlinks (nothing changes there), the Mac (`/tmp` there is itself a symlink).
+
 775\. Linux builder (2026-11-11, night, 710 sweep): pre-push `lint:runner-os` refused the push after a green push:suite
 (Linux cgroup path outside a Linux guard; fix a6c575f5f), so the push paid a full suite rerun. Cause: push:suite does
 not run the sub-second pre-push checks. Lesson: the cheapest gate runs first. Decided by the doc agent (tool internal):
