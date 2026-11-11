@@ -139,7 +139,10 @@ test('the worktree is the named revision, not the dirty main tree, and is remove
 test('the result line carries the sha the suite ran at and its own worktree is removed', () => {
   const repo = sh(process.env.ETHLETE_REPO_ROOT ?? process.cwd(), 'rev-parse', '--show-toplevel');
   const sha = sh(repo, 'rev-parse', '9e7ebf434');
-  const out = spawnSync('node', ['tools/scripts/e2e-check.mjs', sha, '--list'], { cwd: repo, encoding: 'utf8' }).stdout;
+  const out = spawnSync('node', [join(import.meta.dirname, 'e2e-check.mjs'), sha, '--list'], {
+    cwd: repo,
+    encoding: 'utf8',
+  }).stdout;
   const dir = /, tree (\S+)\)/.exec(out)?.[1];
   assert.ok(dir, out);
   assert.ok(out.split('\n').some((line) => line.startsWith('E2E ') && line.includes(`suite sha ${sha}`)));

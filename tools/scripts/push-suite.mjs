@@ -3,19 +3,15 @@ import { spawn, spawnSync } from 'node:child_process';
 import {
   appendFileSync,
   existsSync,
-  lstatSync,
   mkdirSync,
   mkdtempSync,
-  readdirSync,
   readFileSync,
-  readlinkSync,
   realpathSync,
   rmSync,
-  symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { cpus, loadavg, platform, tmpdir } from 'node:os';
-import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { basename, join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const INNER_EXPORT = process.env['PUSH_SUITE_EXPORT'];
@@ -24,7 +20,6 @@ export const E2E_LOG = join(root, '.claude/handoffs/push-suite-e2e.log');
 export const REPEAT_LOG = join(root, '.claude/handoffs/push-suite-repeat.log');
 const RUNNER = 'apps/ethlete-studio/e2e/canvas.e2e.mjs';
 const WORKSPACE_PARENTS = ['apps', 'libs', 'tools'];
-const DRAWING_BUILDS = ['cli', 'components', 'core'];
 
 export const STEPS = ['lint', 'typecheck', 'tools', 'cli', 'studio', 'quota', 'e2e', 'e2e-quota', 'repeat'];
 export const EXEMPT_PATHS = [/^plans\//, /^\.changeset\//, /\.md$/];
@@ -137,13 +132,6 @@ export const waitForLowLoad = async (
     log(`push-suite: waiting to start, load ${formatLoad(load())} is above the limit ${limit}`);
     await sleep(pollMs);
   }
-};
-
-export const linkTargetOf = (repo, entry, link) => {
-  if (link === undefined || isAbsolute(link)) return entry;
-  const target = relative(repo, resolve(dirname(entry), link)).split(sep);
-  const intoWorkspace = target[0] !== '..' && !target.includes('node_modules');
-  return intoWorkspace ? link : entry;
 };
 
 export const missingVerdict = (commits, hasOk) => {
@@ -373,39 +361,13 @@ export const preChecksStep = async (range) => {
 export const stepLine = (name, status, ms, note, load, max = load) =>
   `push-suite: ${name} ${status === 0 ? 'ok' : `failed at load ${formatLoad(load)} (max ${formatLoad(max)} during the step)`} in ${seconds(ms)}${note ? ` (${note})` : ''}`;
 
-const linkDependencies = (from, to) => {
-  mkdirSync(to);
-  for (const name of readdirSync(from)) {
-    const entry = join(from, name);
-    const link = lstatSync(entry).isSymbolicLink() ? readlinkSync(entry) : undefined;
-    if (link === undefined && name.startsWith('@')) linkDependencies(entry, join(to, name));
-    else symlinkSync(linkTargetOf(root, entry, link), join(to, name));
-  }
-};
-
-const exportCommit = (sha) => {
-  const dir = mkdtempSync(join(tmpdir(), `push-suite-${sha.slice(0, 12)}-`));
-  const extract = spawnSync('bash', ['-c', 'set -o pipefail; git archive "$1" | tar -x -C "$2"', 'export', sha, dir], {
-    cwd: root,
-    encoding: 'utf8',
-  });
-  if (extract.status !== 0) return { dir, error: extract.stderr.trim() || `git archive exited ${extract.status}` };
-  linkDependencies(join(root, 'node_modules'), join(dir, 'node_modules'));
-  for (const parent of WORKSPACE_PARENTS)
-    for (const name of readdirSync(join(dir, parent))) {
-      const dependencies = join(root, parent, name, 'node_modules');
-      if (existsSync(dependencies)) linkDependencies(dependencies, join(dir, parent, name, 'node_modules'));
-    }
-  return { dir };
-};
-
-export const runStep = async (command, args, cwd, logFile) => {
+export const runStep = async (command, args, cwd, logFile, env = {}) => {
   const runLog = logFile ? (await import('./run-log.mjs')).startRunLog(logFile) : undefined;
 
   return new Promise((done) => {
     const child = spawn(command, args, {
       cwd,
-      env: process.env,
+      env: { ...process.env, ...env },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let output = '';
@@ -561,7 +523,8 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
   Object.assign(process.env, { NX_NO_CLOUD: 'true', NX_DAEMON: 'false' });
   delete process.env['STUDIO_CLI_ENTRY'];
   const exportedAt = performance.now();
-  const { dir, error } = INNER_EXPORT ? { dir: INNER_EXPORT } : exportCommit(sha);
+  const { DRAWING_BUILDS, exportCommit, toolsStepEnv } = await import('./commit-export.mjs');
+  const { dir, error } = INNER_EXPORT ? { dir: INNER_EXPORT } : exportCommit(root, sha);
   const removeExport = () => (INNER_EXPORT ? undefined : rmSync(dir, { recursive: true, force: true }));
   if (!INNER_EXPORT)
     for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'])
@@ -590,7 +553,7 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
       if (changed.status !== 0) return Promise.resolve({ status: 1, output: changed.stderr });
       return typecheckStep(touchedProjects(changed.stdout.split('\n').filter(Boolean)), dir);
     },
-    tools: () => runStep('yarn', ['test:tools'], dir),
+    tools: () => runStep('yarn', ['test:tools'], dir, undefined, toolsStepEnv(root)),
     cli: () => runStep('npx', ['nx', 'test', 'cli'], dir),
     studio: () => runStep('npx', ['nx', 'test', 'ethlete-studio'], dir),
     quota: () => {

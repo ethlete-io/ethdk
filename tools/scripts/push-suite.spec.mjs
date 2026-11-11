@@ -6,12 +6,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { stripVTControlCharacters } from 'node:util';
+import { linkTargetOf } from './commit-export.mjs';
 import { CHECKS } from './pre-push-checks.mjs';
 import {
   e2eQuotaCommand,
   e2eQuotaStep,
   failureReport,
-  linkTargetOf,
   missingVerdict,
   otherProcessWarningLines,
   otherTestProcessesOf,

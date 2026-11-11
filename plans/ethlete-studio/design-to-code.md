@@ -2341,6 +2341,15 @@ blamed the delay route, which already turns on after `warmUp`. Why no tool caugh
 case on an export, so each proof builds its own. Tool fix (backlog, with 651): a bite proof runs through push-suite's
 `exportCommit` (one export path) with a flag that reverts a named commit.
 
+653 as built (2026-11-11): the export (`exportCommit`, the dependency links, `DRAWING_BUILDS`) moved from
+push-suite.mjs to `tools/scripts/commit-export.mjs`; push-suite imports it lazily (no sibling import at load time).
+`yarn studio:e2e:bite --revert <sha> [e2e args]` exports HEAD with it, applies the reverse of `<sha>` (`git apply -R`,
+refused with a message when it does not apply), builds `cli components core` in the export like push-suite, runs the
+export's own `canvas.e2e.mjs` and removes the export in `finally`; the `<ref>` mode is unchanged. Verified:
+`commit-export.spec.mjs` (temp repo: export, reverse diff, refused diff) and the `--revert` arg specs, each failed
+when its code was broken; `push-suite.spec.mjs` green. Not verified: a real `--revert` e2e run (machine busy), so the
+warmUp timeout of 653 is not yet shown gone.
+
 654\. Doc agent (2026-11-09, Mac night start): the builder handoff said the on-disk check cache waits for the human
 ("its cost goes to the human first"), while ADR 0239, written the same afternoon, puts it in the night scope. The
 handoff restated an older doc agent line instead of the ADR, so the builder would have stopped on a decided point.
@@ -3881,3 +3890,19 @@ copies are byte-identical, that they export the same names as the tools helper, 
 `libs/agent-rules/src/lib/git-test-env.spec.ts` is a copy of cli's spec. Bites: an extra export in the agent-rules copy
 fails tests 1 and 2; a renamed bite test fails test 3; the agent-rules helper without the stripping fails its spec.
 Not verified: behavioural sameness of the `.mjs` with the `.ts` copies (only names are compared).
+
+803\. Linux builder (2026-11-11, morning, first real push-suite run with 802): the new `tools` step failed at 0fece0102
+in 3 s, 333 pass, 1 fail: `e2e-check.spec.mjs` "the result line carries the sha" runs `git rev-parse --show-toplevel` in
+`process.cwd()`, and the HEAD export is a `git archive` copy, not a repo ("fatal: not a git repository"). Cause
+(measured): the spec read `ETHLETE_REPO_ROOT`, but nothing set it. Why no tool caught it: the 802 bite ran
+`yarn test:tools` in a worktree (a real repo), not in an export, so "not run end to end" in the 802 as-built line hid
+exactly this case. Lesson: a new push-suite step is proven only by a real `yarn push:suite` run before its commit is
+pushed. Fix: `runStep` takes an env, the `tools` step passes `ETHLETE_REPO_ROOT` (the live repo, used only for git
+history), and the spec runs the export's own `e2e-check.mjs` (`import.meta.dirname`), not the live tree's. Bite: in a
+HEAD export with the fixed spec, the case passes with `ETHLETE_REPO_ROOT` and fails without it.
+803 tool fix (asked by the doc agent; the rule alone is no fix): `commit-export.mjs` (from 653) exports
+`toolsStepEnv(repo)`, which push-suite passes to the `tools` step, and `commit-export.spec.mjs` builds a real HEAD export
+(`git archive`, no `.git`) and runs `yarn test:tools` in it with that env (nested run skips the case). A tools spec that
+needs a git repo now fails in `yarn test:tools` itself. Bite: with `toolsStepEnv` returning `{}`, the case fails and
+names the e2e-check case. Cost: about 4 s more per `yarn test:tools`. Not covered: the other steps (lint, typecheck, cli,
+studio, e2e) in an export; they are too slow for a spec and ran green in the export before 802.
