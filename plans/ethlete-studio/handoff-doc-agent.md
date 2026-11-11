@@ -179,3 +179,6 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   human is only briefly at the desk, answers sporadically by phone until noon, can merge no sketches; so the night mode
   (ADR 0257, tool backlog) goes on until they end it. B345 pick and the Mac ssh pid 96278 wait for the human at the desk.
   Open: 811 (check drops baselined ready records) with the Linux builder.
+- Later morning: the human picked B345 change-crop variant b ("change crop b mergen"), merge only after 811 is pushed.
+  The Mac merges b; the Linux builder sends the doc agent the 811 push sha, then the doc agent tells the Mac (mailbox
+  file + scp). Doc agent restarted (context 70 %); restart the Mac mailbox wait first.
