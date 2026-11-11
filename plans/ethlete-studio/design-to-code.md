@@ -3731,6 +3731,13 @@ spec:stress 4/4. Live (scratch :4517): an ask after a run 11-20 ms; an ask durin
 5.3-6.5 s after a studio part edit. Suspect: Studio asks right after start and after each reload, so its first answer
 still waits 5-6 s: 835.
 
+832 reverted (Linux builder, 2026-11-11, this commit): CI 43016617514 on a00d96078 went red in Studio e2e shards 1, 4
+and 6: `sketch fixture check could not list the sketches: TimeoutError: apiRequestContext.get: Timeout 60000ms
+exceeded.` The last green CI (43008876858, 4ed2e6b96) had no warm-up. Suspect: on a CI runner the warm-up runs of every
+product (7 s each before 835) take the CPU from the server, so the first sketch listing outlasts 60 s. The local push
+suite e2e on efe3e7832 passed, so the load did not show locally. Re-land the warm-up only with a bite that runs the e2e
+fixture check under CI-like CPU limits.
+
 834\. Linux builder (2026-11-11, 832 push-suite): the e2e build failed with TS2688 "Cannot find type definition file for
 '@types'". Cause (seen): 93 self-links `node_modules/@x/@x -> node_modules/@x`, made at 12:01:55 while the 832 subagent
 built a scratch copy in /tmp by linking scope folders into a `node_modules` that pointed to the repo. Tool fix (doc

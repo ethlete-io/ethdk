@@ -31,7 +31,7 @@ import {
 import { approveException, listExceptions } from './system/exceptions';
 import { approveInventory, Inventory } from './system/inventory';
 import { drawnFindingsOf } from './system/drawn-open-points';
-import { OpenPointsAnswer, openPointsInWorker, OpenPointsRequest } from './system/open-points-runner';
+import { openPointsInWorker } from './system/open-points-runner';
 import { flowProblemsOf } from './system/rules/flow';
 import { Problem } from './system/problem';
 import { ResolvedProduct } from './system/resolve-product';
@@ -114,7 +114,6 @@ type Asked = {
   inventoryOf?: (options: { product: ResolvedProduct; part: string }) => Promise<Inventory | string>;
   drawStates?: DrawStates;
   checkSketches?: CheckSketches;
-  openPointsOf?: (request: OpenPointsRequest) => Promise<OpenPointsAnswer>;
   /** Aborts when the client closes the request before it has its answer. */
   signal?: AbortSignal;
 };
@@ -1018,7 +1017,6 @@ const drawnFindingsAnswerOf = async ({ asked, config, product }: Found, part: st
  */
 export const openPointsAnswer = withProduct('GET', async (found) => {
   const { url } = found.asked;
-  const openPointsOf = found.asked.openPointsOf ?? openPointsInWorker;
   const draw = url.searchParams.get('draw');
   const asked = url.searchParams.get('part');
 
@@ -1028,7 +1026,7 @@ export const openPointsAnswer = withProduct('GET', async (found) => {
 
     return {
       status: 200,
-      body: { drawn: false, ...(await openPointsOf({ product: found.product, part: null })) },
+      body: { drawn: false, ...(await openPointsInWorker({ product: found.product, part: null })) },
     };
   }
 
@@ -1040,7 +1038,7 @@ export const openPointsAnswer = withProduct('GET', async (found) => {
 
   if (findings && 'error' in findings) return failure(findings.status, findings.error);
 
-  const answer = await openPointsOf({ product: found.product, part, findings });
+  const answer = await openPointsInWorker({ product: found.product, part, findings });
 
   return { status: 200, body: { ...answer, drawn: draw === 'true' } };
 });
