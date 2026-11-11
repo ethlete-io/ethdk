@@ -113,6 +113,11 @@ crop data for them), the unit word ("Stellen" for regions, the design mock says 
 
 Built in 82c6e3025.
 
+Gutter fix (as built): at min zoom the hidden head kept the crop block at `noteSize() * 15` px, so the reason and
+state name left their box (e2e "no text leaves its box", pages Sketches and Large). The gutter now drops the crop
+block while the head is hidden. Verified: the e2e case 6/6, sketches spec 35/35, `vitest related` 125 passed,
+`design check --part pages/sketches` (4 DROPPED-PROP, all present before the fix). Not verified: a live shot.
+
 Live shot (finding 792; Chromium 1440x900, design server on the new CLI, studio-lab `pages/film-detail` round 1 variant
 a, shots in `.claude/handoffs/agent-results/b345/`): crop frames, reason ("687 px in 1 Stelle · 2,3× vergrößert"),
 locator and one toggle click ("Ausschnitt" shows the full frames, the reason drops the zoom) all pass. Suspect

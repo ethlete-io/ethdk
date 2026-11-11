@@ -147,7 +147,7 @@
               data-sk-matrix
             >
               @for (state of matrixStates(); track state; let line = $index) {
-                @let group = groupOfState().get(state);
+                @let group = headHidden() ? undefined : groupOfState().get(state);
                 <div
                   #gutter
                   [style.font-size.px]="noteSize()"
