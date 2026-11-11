@@ -436,9 +436,12 @@ export class CanvasFrameGridComponent {
     return this.grid().sheet ? `minmax(12rem, max-content) ${groups.join(' 1.6rem ')}` : `auto ${groups.join(' 0 ')}`;
   });
 
+  private shotsKey = computed(() =>
+    [this.schemes().join(' '), ...this.grid().cells.map((cell) => `${cell.id}\n${cell.screenshot ?? ''}`)].join('\n'),
+  );
+
   private settledCells = linkedSignal<string, ReadonlySet<string>>({
-    source: () =>
-      [this.schemes().join(' '), ...this.grid().cells.map((cell) => `${cell.id}\n${cell.screenshot ?? ''}`)].join('\n'),
+    source: this.shotsKey,
     computation: () => new Set(),
   });
 

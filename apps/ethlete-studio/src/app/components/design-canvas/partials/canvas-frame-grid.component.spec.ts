@@ -386,6 +386,19 @@ describe('CanvasFrameGridComponent', () => {
       expect(host.querySelector('.invisible')).not.toBeNull();
     });
 
+    it('keeps the loaded shots settled when the grid arrives again with the same shots', async () => {
+      const fixture = await renderShots();
+
+      await settle(fixture, 0, 'load');
+      await settle(fixture, 1, 'load');
+
+      fixture.componentRef.setInput('grid', { columns, rows, cells: shots.map((cell) => ({ ...cell })) });
+      await fixture.whenStable();
+      await settle(fixture, 2, 'load');
+
+      expect(fixture.nativeElement.querySelector('.invisible')).toBeNull();
+    });
+
     it('reveals once a failed image has settled too', async () => {
       const fixture = await renderShots();
 
