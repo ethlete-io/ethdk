@@ -3974,6 +3974,11 @@ Cause (code read + build proof, Linux builder): the merge checks only the sketch
 `@assets` itself, so no design-side check compiles the CSS the way the app does. Build fixed in 210235327: the app's
 `project.json` copies the product's assets dir to `@assets/`, and the build cache inputs now list foundations CSS and
 assets (they listed a removed `tokens.css`, so a design CSS change never forced a rebuild).
+Second miss, same gap (spec run): `apps/ethlete-studio/src/styles.spec.ts` pinned `--font-ui: system-ui`; the merge set
+`'Noto Sans', system-ui, sans-serif` and the push suite went red (spec fixed in 137339aef). The merge runs no app spec,
+and `vitest related` on `project.json` did not reach the spec. Tool fix added to 855 (doc agent decision): the merge
+also runs `vitest related` on the merged files and refuses on a red spec. Bite: merging the old variant c refuses
+with `styles.spec.ts` named.
 
 856\. Linux builder (2026-11-11, from 855), measured: when the Studio build fails, the `canvas.e2e.mjs` lead process exits
 but leaves its `--worker` processes and their design servers running. Tool fix (doc agent decision, tool internal): the
