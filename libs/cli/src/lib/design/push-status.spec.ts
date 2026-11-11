@@ -30,6 +30,10 @@ const repo = () => {
 
 const RUNS_FIXTURE = join(__dirname, '__fixtures__', 'gh-run-list-ci-next.json');
 
+const RED_FIXTURE = join(__dirname, '__fixtures__', 'gh-run-list-ci-next-red.json');
+const QUEUED_OVER_RED_FIXTURE = join(__dirname, '__fixtures__', 'gh-run-list-ci-next-queued-over-red.json');
+const JOBS_FIXTURE = join(__dirname, '__fixtures__', 'gh-run-view-jobs-red.json');
+
 const dirs: string[] = [];
 
 const freshRepo = () => {
@@ -117,7 +121,7 @@ describe('ciStatusOfRuns', () => {
   const runs = () => JSON.parse(readFileSync(RUNS_FIXTURE, 'utf8')) as unknown[];
 
   it('takes the newest run of a captured gh run list', () => {
-    expect(ciStatusOfRuns(readFileSync(RUNS_FIXTURE, 'utf8'))).toEqual({
+    expect(ciStatusOfRuns(readFileSync(RUNS_FIXTURE, 'utf8'))).toMatchObject({
       ci: 'running',
       ciUrl: 'https://github.com/ethlete-io/ethdk/actions/runs/42477989128',
       ciAt: '2026-11-08T11:57:22Z',
@@ -129,5 +133,33 @@ describe('ciStatusOfRuns', () => {
   it('gives unknown for no runs or output that is not JSON', () => {
     expect(ciStatusOfRuns('[]').ci).toBe('unknown');
     expect(ciStatusOfRuns('gh: not logged in').ci).toBe('unknown');
+  });
+
+  it('names the failed jobs of the last finished run next to a running one', () => {
+    const dir = freshRepo();
+    const gh = join(dir, 'gh');
+
+    writeFileSync(
+      gh,
+      `#!/bin/sh\nif [ "$2" = view ]; then cat "${JOBS_FIXTURE}"; else cat "${QUEUED_OVER_RED_FIXTURE}"; fi\n`,
+    );
+    chmodSync(gh, 0o755);
+
+    const status = pushStatusOf(dir, { gh })!;
+
+    expect(status).toMatchObject({ ci: 'running', lastFinished: { ci: 'red' } });
+    expect(status.lastFinished?.failedJobs).toEqual(['ci / Studio e2e (5/6)', 'ci / Rust host', 'ci / Verified']);
+    expect(pushStatusLines(status)[1]).toBe(
+      'ci: running (https://github.com/ethlete-io/ethdk/actions/runs/42968006404) - last finished: red, failed jobs: ci / Studio e2e (5/6), ci / Rust host, ci / Verified (https://github.com/ethlete-io/ethdk/actions/runs/42967324179) - fix or revert before any feature slice',
+    );
+  });
+
+  it('reports a green last finished run and leaves a red newest run as it was', () => {
+    expect(ciStatusOfRuns(readFileSync(RUNS_FIXTURE, 'utf8')).lastFinished).toEqual({
+      ci: 'green',
+      url: 'https://github.com/ethlete-io/ethdk/actions/runs/42475773051',
+      failedJobs: [],
+    });
+    expect(ciStatusOfRuns(readFileSync(RED_FIXTURE, 'utf8'))).toMatchObject({ ci: 'red', lastFinished: null });
   });
 });
