@@ -3738,6 +3738,8 @@ agent, tool internal): one script makes the scratch checkout copy for live measu
 link of `commit-export.mjs`), and subagent briefs name it; push-suite checks `node_modules` for scope self-links before
 the build and names them. Bite: a planted self-link fails the check with its path.
 
+834 as built (Linux builder, 2026-11-11, this commit: fix(repo): Add a scratch checkout script and a node_modules self-link check): `yarn scratch:checkout <dir>` (`tools/scripts/scratch-checkout.mjs`) copies the working tree (tracked files with uncommitted edits plus untracked unignored files) and links dependencies through `linkInstalledDependencies` of `commit-export.mjs`; it never writes in the repo `node_modules`. `preChecksStep` of push-suite now fails with `node_modules-self-links`, naming each `node_modules/@scope/<name>` symlink that resolves to its own scope folder or an ancestor (depth 2 only). The builder-agent skill has the brief line. Verified: `scratch-checkout.spec.mjs` 4 of 4 green; red (2 of 4 fail) with the check stubbed out; the real repo `node_modules` has 0 self-links. Not verified: a full `yarn push:suite` run.
+
 835\. Doc agent (2026-11-11, from 832): one open-points run still takes 5-6 s on studio, so the first Studio ask after
 start or a part edit waits that long. Tool fix (doc agent, tool internal): make the run itself faster first; one variant
 run reads all 91 studio part sources (830), so find what the rule check needs per variant and profile the run before a

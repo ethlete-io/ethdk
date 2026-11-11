@@ -26,6 +26,42 @@ const linkDependencies = (repo, from, to) => {
 /** The env the push suite gives the `tools` step, which runs in an export that is not a git repo. */
 export const toolsStepEnv = (repo) => ({ ETHLETE_REPO_ROOT: repo });
 
+/** Links the installed dependencies of `repo` (root and workspace projects) into `dir`; never writes inside `repo`. */
+export const linkInstalledDependencies = (repo, dir) => {
+  if (existsSync(join(repo, 'node_modules')))
+    linkDependencies(repo, join(repo, 'node_modules'), join(dir, 'node_modules'));
+  for (const parent of WORKSPACE_PARENTS.filter((name) => existsSync(join(dir, name))))
+    for (const name of readdirSync(join(dir, parent))) {
+      const dependencies = join(repo, parent, name, 'node_modules');
+      if (existsSync(dependencies)) linkDependencies(repo, dependencies, join(dir, parent, name, 'node_modules'));
+    }
+};
+
+/** Lists `node_modules/@scope/<name>` symlinks of `repo` that resolve to their own scope folder or an ancestor of it. */
+export const scopeSelfLinks = (repo) => {
+  const modules = join(repo, 'node_modules');
+  if (!existsSync(modules)) return [];
+  const found = [];
+  for (const scope of readdirSync(modules).filter((name) => name.startsWith('@'))) {
+    const scopeDir = join(modules, scope);
+    if (!lstatSync(scopeDir).isDirectory()) continue;
+    for (const name of readdirSync(scopeDir)) {
+      const entry = join(scopeDir, name);
+      if (!lstatSync(entry).isSymbolicLink()) continue;
+      const target = resolve(scopeDir, readlinkSync(entry));
+      if (scopeDir === target || scopeDir.startsWith(target + sep)) found.push(entry);
+    }
+  }
+  return found;
+};
+
+export const scopeSelfLinksMessage = (links) =>
+  [
+    `node_modules holds ${links.length} scope self-link(s) that break the TypeScript type roots (TS2688):`,
+    ...links.map((link) => `  ${link}`),
+    'Remove them with `rm <path>` (they are symlinks; never `rm -r`). Never link into the repo node_modules; use `yarn scratch:checkout`.',
+  ].join('\n');
+
 /** Extracts `sha` of `repo` into a new temp dir and links the repo's installed dependencies into it. */
 export const exportCommit = (repo, sha, prefix = 'push-suite') => {
   const dir = mkdtempSync(join(tmpdir(), `${prefix}-${sha.slice(0, 12)}-`));
@@ -34,13 +70,7 @@ export const exportCommit = (repo, sha, prefix = 'push-suite') => {
     encoding: 'utf8',
   });
   if (extract.status !== 0) return { dir, error: extract.stderr.trim() || `git archive exited ${extract.status}` };
-  if (existsSync(join(repo, 'node_modules')))
-    linkDependencies(repo, join(repo, 'node_modules'), join(dir, 'node_modules'));
-  for (const parent of WORKSPACE_PARENTS.filter((name) => existsSync(join(dir, name))))
-    for (const name of readdirSync(join(dir, parent))) {
-      const dependencies = join(repo, parent, name, 'node_modules');
-      if (existsSync(dependencies)) linkDependencies(repo, dependencies, join(dir, parent, name, 'node_modules'));
-    }
+  linkInstalledDependencies(repo, dir);
   return { dir };
 };
 

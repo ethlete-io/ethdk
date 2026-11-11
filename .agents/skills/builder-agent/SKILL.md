@@ -71,6 +71,7 @@ that talks with the user and records decisions. Talk English.
 - Every subagent brief says: "Never wait with `pgrep -f`/`pkill -f` loops: the pattern matches the loop's own command line, so it never ends. Use `run_in_background` or Monitor." (finding 730; B99 is the tool fix.)
 - Every subagent brief says: "A refused gate is a finding: stop and report it, never call its internals to pass it." (finding 737.)
 - Every subagent brief says: "Before your commit, run `npx vitest related --run <changed files>` in each touched project." (finding 779.)
+- Every subagent brief says: "A live measurement on a copy of the checkout uses `yarn scratch:checkout <dir>` and never links into `node_modules`." (finding 834.)
 - A fix for "Studio does not show X" counts as verified only after a live shot of that view; an API answer alone does not (finding 792).
 - A condition check that gates a decision runs a probe (a spec or a live run) before it reports. Report a code read as "Suspect (code read)" (finding 794).
 - Before you write "open for the human" in a handoff or report, grep `apps/ethlete-studio/docs/adr` for the topic. An ADR that decided it closes the point (finding 793).
