@@ -19,7 +19,26 @@ import { formatProblemsOf, formatSketch } from './sketch/check-format';
 import { createSketch, Sketch } from './sketch/sketch';
 import { repairEditorTsconfigs, writeEditorTsconfig, writeSystemTsconfig } from './system-tsconfig';
 
-const running = vi.hoisted(() => ({ root: null as string | null }));
+const running = vi.hoisted(() => ({ root: null as string | null, spawns: 0 }));
+
+vi.mock('child_process', async (original) => {
+  const actual = await original<typeof import('child_process')>();
+  const counted =
+    <F extends (...args: never[]) => unknown>(run: F) =>
+    (...args: Parameters<F>) => {
+      running.spawns++;
+
+      return run(...args);
+    };
+
+  return {
+    ...actual,
+    spawn: counted(actual.spawn),
+    spawnSync: counted(actual.spawnSync),
+    execFileSync: counted(actual.execFileSync),
+    execSync: counted(actual.execSync),
+  };
+});
 
 vi.mock('../package-root', async (original) => {
   const actual = await original<typeof import('../package-root')>();
@@ -163,6 +182,24 @@ describe('editor tsconfigs', () => {
     repairEditorTsconfigs(target);
 
     expect(readFileSync(path, 'utf8')).toBe(good);
+  });
+
+  it('formats the editor tsconfigs of many sketches with at most one process spawn per run', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+
+    for (const name of ['hero', 'card', 'list'])
+      createSketch({ product, sketch: { layer: 'elements', name }, variants: ['a', 'b'] });
+
+    running.spawns = 0;
+    writeEditorTsconfig({ target, product: resolveAcme(target) });
+
+    expect(running.spawns).toBeLessThanOrEqual(1);
+
+    running.spawns = 0;
+    writeEditorTsconfig({ target, product: resolveAcme(target) });
+
+    expect(running.spawns).toBe(0);
   });
 
   it('writes a variant tsconfig that the FORMAT rule accepts', () => {

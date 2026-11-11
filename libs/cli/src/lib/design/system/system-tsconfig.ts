@@ -1,7 +1,6 @@
 import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { isAbsolute, relative, resolve, sep } from 'path';
 import { typecheck, TypecheckResult } from '../typecheck';
-import { formatText } from './sketch/check-format';
 import { DRAWING_COMPILER_OPTIONS, writeTsconfigText } from '../calls-tsconfig';
 import { editorAssetRootOf, installedAssetRoot } from '../package-root';
 import { readConfig } from '../design-config';
@@ -18,6 +17,8 @@ import {
 import { KIT_SPECIFIER } from './kit';
 import { productDirOf } from './product';
 import { ResolvedProduct, resolveProduct } from './resolve-product';
+import { JsonStyle, prettierJsonOf } from './prettier-json';
+import { jsonStyleOf } from './sketch/check-format';
 import { overlaySketch } from './sketch/overlay';
 import { listSketches, sharedDirOf, variantDirOf } from './sketch/sketch';
 
@@ -34,7 +35,7 @@ export const writeSystemTsconfig = (options: { target: string; product: Resolved
   const path = resolve(work, `system-${product.name}.tsconfig.json`);
 
   mkdirSync(work, { recursive: true });
-  writeTsconfigText(path, systemTsconfigText({ target, product }));
+  writeTsconfigText(path, jsonTextOf(systemTsconfigOf({ target, product })));
 
   return path;
 };
@@ -61,7 +62,12 @@ export const writeEditorTsconfig = (options: { target: string; product: Resolved
 
   if (!assetRoot) return;
 
-  writeTsconfigText(resolve(product.dir, 'tsconfig.json'), systemTsconfigText({ target, product, assetRoot }));
+  writeTsconfigText(
+    resolve(product.dir, 'tsconfig.json'),
+    jsonTextOf(systemTsconfigOf({ target, product, assetRoot })),
+  );
+
+  const style = jsonStyleOf({ target, dir: product.dir });
 
   for (const sketch of listSketches({ productDir: product.dir, product: product.name })) {
     if (typeof sketch === 'string') continue;
@@ -75,33 +81,30 @@ export const writeEditorTsconfig = (options: { target: string; product: Resolved
       product: variants[0]?.product ?? { ...product, sharedDir: sharedDirOf(sketch) },
     };
 
-    writeSketchEditorTsconfig({ target, assetRoot, file: resolve(sketch.dir, 'tsconfig.json'), ...shared });
+    writeSketchEditorTsconfig({ target, assetRoot, style, file: resolve(sketch.dir, 'tsconfig.json'), ...shared });
 
     for (const variant of variants)
-      writeSketchEditorTsconfig({ target, assetRoot, file: resolve(variant.dir, 'tsconfig.json'), ...variant });
+      writeSketchEditorTsconfig({ target, assetRoot, style, file: resolve(variant.dir, 'tsconfig.json'), ...variant });
   }
 };
 
 const writeSketchEditorTsconfig = (options: {
   target: string;
   assetRoot: string;
+  style: JsonStyle | null;
   file: string;
   dir: string;
   product: ResolvedProduct & SharedDirs;
-}) =>
-  writeTsconfigText(
-    options.file,
-    formatText({
-      target: options.target,
-      file: options.file,
-      text: systemTsconfigText({
-        target: options.target,
-        product: options.product,
-        assetRoot: options.assetRoot,
-        include: [options.dir],
-      }),
-    }),
-  );
+}) => {
+  const config = systemTsconfigOf({
+    target: options.target,
+    product: options.product,
+    assetRoot: options.assetRoot,
+    include: [options.dir],
+  });
+
+  writeTsconfigText(options.file, options.style ? prettierJsonOf(config, options.style) : jsonTextOf(config));
+};
 
 /**
  * Rewrites every editor tsconfig of `target` whose `@design-system` file is gone, e.g. after a run from a
@@ -130,7 +133,9 @@ const hasDeadDesignSystem = (path: string) => {
   }
 };
 
-const systemTsconfigText = (options: {
+const jsonTextOf = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
+
+const systemTsconfigOf = (options: {
   target: string;
   product: ResolvedProduct & SharedDirs;
   assetRoot?: string;
@@ -174,5 +179,5 @@ const systemTsconfigText = (options: {
     ],
   };
 
-  return `${JSON.stringify(config, null, 2)}\n`;
+  return config;
 };
