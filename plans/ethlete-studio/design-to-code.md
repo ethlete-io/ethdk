@@ -3738,3 +3738,5 @@ contention. Lesson: a slow factor taken from local runs needs a CI calibration r
 agent (tool internal, the builder's recommendation): measure one failing file on CI at `--slow 1` and `--slow 2` (change
 the workflow default and push; this is also the owed second real run), then record each file that still fails as its own
 finding (night backlog, Linux, fresh builder session).
+In progress (2026-11-11, builder): spec-sweep.yml runs a matrix of `--slow 1` and `--slow 2` on a push of the workflow or
+spec-stress.mjs; the default for the nightly and a dispatch is now 2 until the calibration picks N.
