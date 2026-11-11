@@ -32,7 +32,7 @@
     "decidedBy": "user",
     "at": "2026-11-08T14:38:29.675Z"
   },
-  "components/tree-row": "9b985495f700b73f",
+  "components/tree-row": "535509654924a68b",
   "components/update-dialog": {
     "hash": "fa791c1a54978622",
     "variant": "new",
@@ -40,7 +40,7 @@
     "at": "2026-11-07T14:50:56.608Z",
     "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit"
   },
-  "components/zoom-chip": "eac0eac1e633a857",
+  "components/zoom-chip": "51bd9a1615d87220",
   "elements/canvas-frames": {
     "hash": "0aba678db6202ece",
     "variant": "a",
