@@ -3636,3 +3636,11 @@ added a script out of key order and reported prettier clean without running it o
 `.husky/pre-commit:43`): pre-commit runs prettier only on staged Markdown blobs, so an unformatted `.json` or `.ts` file is
 caught one round later by pre-push or push:suite. Tool fix (doc agent, tool internal): pre-commit runs `prettier --check`
 on every staged Prettier-supported blob. Bite: a staged unformatted `package.json` fails the commit.
+
+829\. Linux builder (2026-11-11, CI runs 42992406760 on a55bc3218 and 42995939464 on be2aa4ff5): Studio e2e shard 6/6
+fails twice in a row in "[System] open points chip pressed matches its popup" with status=null at load 9-12 on 2
+workers; locally 3 of 3 green. Suspect: the case reads the status once, before the chip renders under load. Lesson: the
+local push gates did not run the case under CI load, so a timing defect reached CI twice. Tool fix (doc agent, tool
+internal, after the cause is proved): the fix keeps the assertion and carries a before/after proof under a CI-like
+reproduction (shard 6/6, 2 workers, load); if the cause is a one-shot read, a lint or review rule flags status reads in
+Studio e2e that do not retry. Builder holds feature slices and the 821 push until CI is green.
