@@ -3621,3 +3621,9 @@ changesets committed at that sha (`git ls-tree`, `git show`); pre-push-checks pa
 push:suite and pre-push. Deviation from the planned fix (run it in the HEAD export): the export has no `.git`; the blobs
 are the same content. New script `lint:changeset-coverage`; `yarn lint:changesets` runs both. Bite: 3 cases red on the
 old scripts; spec:stress 4/4.
+
+827\. Linux builder (2026-11-11, push:suite at c373dcfd0): "Not formatted in c373dcfd0: package.json"; the 820 subagent
+added a script out of key order and reported prettier clean without running it on `package.json`. Cause (read,
+`.husky/pre-commit:43`): pre-commit runs prettier only on staged Markdown blobs, so an unformatted `.json` or `.ts` file is
+caught one round later by pre-push or push:suite. Tool fix (doc agent, tool internal): pre-commit runs `prettier --check`
+on every staged Prettier-supported blob. Bite: a staged unformatted `package.json` fails the commit.
