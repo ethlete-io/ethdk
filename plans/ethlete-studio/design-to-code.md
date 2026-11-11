@@ -3793,3 +3793,12 @@ internal): the push suite checks free space on /tmp at start and refuses below 5
 export dir on every exit path; at start it removes stale `push-suite-*` exports with no live owner. Bite: a spec with a
 fake low free-space value refuses with the verdict line; a killed suite run leaves no export dir. Queue: Linux builder,
 after 860.
+Cause of the second block (measured, `df -i`): /tmp ran out of inodes (39 of 1048576 free) with 34G of bytes free.
+The guard checks free inodes too (refuse below 50k). The human allowed deleting the leftovers (jest_rs, Playwright
+profiles, push-suite exports, old tmp-<pid> dirs).
+
+862\. Linux builder (2026-11-11, from 861), measured: /tmp held 1603 `playwright_chromiumdev_profile-*` dirs (83k inodes)
+and about 81 `tmp-<pid>-*` dirs (about 208k inodes, 3355 each) from 2026-11-10 on, left by specs and tools. Suspect:
+`browser.close()` and the tmp dir removal are not reached on a failure or kill path. Tool fix (doc agent decision, tool
+internal): find the owners; each removes its profile and tmp dir on every exit path (also SIGTERM); the 861 start sweep
+removes such dirs with no live owner. Bite: a killed run of the owner leaves no profile or tmp dir. Queue: with 861.
