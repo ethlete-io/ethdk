@@ -49,8 +49,8 @@
     height: var(--et-fab-size);
     font-size: var(--et-button-font-size);
     font-weight: var(--et-button-font-weight);
-    letter-spacing: var(--et-button-letter-spacing);
-    text-transform: var(--et-button-text-transform);
+    letter-spacing: var(--et-button-letter-spacing, revert-layer);
+    text-transform: var(--et-button-text-transform, revert-layer);
     box-shadow: var(--et-button-shadow);
     cursor: var(--et-button-cursor);
     text-decoration: none;

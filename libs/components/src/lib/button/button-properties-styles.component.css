@@ -23,18 +23,6 @@
     initial-value: 500;
   }
 
-  @property --et-button-letter-spacing {
-    syntax: '*';
-    inherits: false;
-    initial-value: normal;
-  }
-
-  @property --et-button-text-transform {
-    syntax: '*';
-    inherits: false;
-    initial-value: none;
-  }
-
   @property --et-button-cursor {
     syntax: '*';
     inherits: false;

@@ -27,8 +27,8 @@
     border-radius: var(--et-icon-button-border-radius, 9999px);
     padding: 0;
     font-size: var(--et-button-font-size);
-    letter-spacing: var(--et-button-letter-spacing);
-    text-transform: var(--et-button-text-transform);
+    letter-spacing: var(--et-button-letter-spacing, revert-layer);
+    text-transform: var(--et-button-text-transform, revert-layer);
     cursor: var(--et-button-cursor);
     appearance: none;
     box-sizing: border-box;
