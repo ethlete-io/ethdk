@@ -125,12 +125,14 @@ test('a step with a log file writes its output to a new file as it comes and sti
   const logFile = join(dir, 'handoffs', 'step.log');
   mkdirSync(join(dir, 'handoffs'));
   writeFileSync(logFile, 'stale\n');
-  const script = "console.log('out'); setTimeout(() => console.error('err'), 300)";
+  const script = "console.log('out'); setTimeout(() => console.error('err'), 2000)";
   const step = runStep(process.execPath, ['-e', script], dir, logFile);
 
-  await new Promise((done) => setTimeout(done, 150));
+  const tick = () => new Promise((done) => setTimeout(done, 10));
+  while (!readFileSync(logFile, 'utf8').startsWith('latest run log: ')) await tick();
   const runLog = readFileSync(logFile, 'utf8').replace('latest run log: ', '').trim();
   assert.notEqual(runLog, logFile);
+  while (readFileSync(runLog, 'utf8') === '') await tick();
   assert.equal(readFileSync(runLog, 'utf8'), 'out\n');
   const { output } = await step;
   assert.equal(readFileSync(runLog, 'utf8'), 'out\nerr\n');
