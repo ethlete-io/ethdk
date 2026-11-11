@@ -3959,6 +3959,8 @@ weekly cleanup block (ADR 0269); it moves up if it blocks a push again after the
 and those iframes keep `opacity-0` although painted. Lesson: a smoke probe keyed to a DOM selector rots with the view
 and then reports nothing, not a failure. Tool fix: the probe reads a painted signal the view sets on purpose, and a probe
 that finds no target fails. Side: part of B480 (ADR 0268), parallel.
+As built 74d532e3d: cells set `data-painted`; the probe counts painted cells plus loaded pictures and logs
+`[studio-release-smoke] FAILED: nothing painted, ...` with the counts after 60 s. Bite: Rust test. Live rack run owed.
 
 879\. Linux builder (2026-11-11, B480): `serverAnswers$` uses `fromFetch` with no timeout, so any hung request keeps
 "Design-Server startet" forever (874 showed it). Lesson: a start screen that waits on a request with no timeout hides
