@@ -3671,6 +3671,18 @@ not run the sub-second pre-push checks. Lesson: the cheapest gate runs first. De
 push:suite runs every sub-second pre-push check before its specs. Tool fix (night backlog, Linux, after 774); a spec
 bites with a range that only the runner-os lint refuses.
 
+As built (775): `tools/scripts/pre-push-checks.mjs` holds the 14-check list (`CHECKS`) and `runChecks(base, head)`, which
+sets NX_BASE/NX_HEAD, prints `pre-push: <check> failed:` plus output, and keeps going; its CLI is what `.husky/pre-push`
+now calls (`|| failed=1`, same checks, same messages). `push-suite.mjs` runs the format check and those checks on its
+range before the load wait and the export, and stops with `blocked pre-push checks failed (<names>)` and the output;
+otherwise it logs `push-suite: checks ok in N s`. Commitlint stays in pre-push only (a slower yarn run). Also fixed:
+`parseArgs` ignored a lone range argument in first position. Spec: a fixture repo whose only workflow commit breaks
+`lint:runner-os` makes the CLI exit 1 at the checks step, before the export or any spec. Verified: `node --test` on
+push-suite.spec.mjs (33) and all tools specs (261) pass; the old script on the same fixture runs on into the export
+(no checks step), so the spec bites; the checks step takes about 9 s on a green range (the person-names check alone is
+about 4 s, so "sub-second" is not true for all). Not verified: a real `yarn push:suite` and a real push through the
+hook.
+
 776\. Mac builder (2026-11-11, night, 769 3483c7fcd): the fixed e2e case no longer passes through a live frame iframe,
 so no case covers a keyboard user inside a live frame. Suspect (injected, not seen live): when the app remounts the
 frame iframe (address change, or `LIVE_GRACE_MS` drops an off-view frame after 5 s), focus falls out of it, and

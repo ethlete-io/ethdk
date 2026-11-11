@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { CHECKS } from './pre-push-checks.mjs';
 import {
   e2eQuotaCommand,
   e2eQuotaStep,
@@ -465,4 +467,58 @@ test('without systemd-run the e2e quota step passes and says it skipped on this 
 
 test('the e2e quota step runs after the e2e suite passes unthrottled', () => {
   assert.equal(STEPS.indexOf('e2e-quota'), STEPS.indexOf('e2e') + 1);
+});
+
+const sh = (cwd, command, args) => {
+  const run = spawnSync(command, args, { cwd, encoding: 'utf8' });
+  assert.equal(run.status, 0, run.stderr);
+  return run;
+};
+
+const checksFixture = () => {
+  const repo = mkdtempSync(join(tmpdir(), 'push-suite-checks-'));
+  const here = import.meta.dirname;
+  const scripts = Object.fromEntries(CHECKS.map((check) => [check, 'node -e 0']));
+  scripts['lint:runner-os'] = 'node ./tools/scripts/check-runner-os-paths.mjs';
+  mkdirSync(join(repo, 'tools/scripts'), { recursive: true });
+  mkdirSync(join(repo, '.husky'));
+  mkdirSync(join(repo, '.github/workflows'), { recursive: true });
+  writeFileSync(join(repo, 'package.json'), JSON.stringify({ name: 'fixture', private: true, scripts }));
+  writeFileSync(join(repo, 'yarn.lock'), '');
+  writeFileSync(join(repo, '.gitignore'), 'node_modules\n');
+  copyFileSync(join(here, 'check-runner-os-paths.mjs'), join(repo, 'tools/scripts/check-runner-os-paths.mjs'));
+  copyFileSync(join(here, '../../.husky/format-check-committed.mjs'), join(repo, '.husky/format-check-committed.mjs'));
+  symlinkSync(join(here, '../../node_modules'), join(repo, 'node_modules'));
+  sh(repo, 'git', ['init', '-q']);
+  sh(repo, 'git', ['config', 'user.email', 't@example.com']);
+  sh(repo, 'git', ['config', 'user.name', 't']);
+  sh(repo, 'git', ['add', '.']);
+  sh(repo, 'git', ['commit', '-q', '-m', 'base']);
+  writeFileSync(
+    join(repo, '.github/workflows/ci.yml'),
+    'jobs:\n  a:\n    steps:\n      - run: cat /proc/self/cgroup\n',
+  );
+  sh(repo, 'git', ['add', '.github']);
+  sh(repo, 'git', ['commit', '-q', '-m', 'workflow']);
+  return repo;
+};
+
+test('push:suite stops at the checks step when a range only a pre-push check refuses, before any spec runs', () => {
+  const repo = checksFixture();
+  try {
+    const run = spawnSync(process.execPath, [join(import.meta.dirname, 'push-suite.mjs'), 'HEAD~1..HEAD'], {
+      encoding: 'utf8',
+      env: { ...process.env, PUSH_SUITE_REPO: repo, PUSH_SUITE_MAX_LOAD: '1000', PUSH_SUITE_EXPORT: '' },
+      timeout: 120_000,
+    });
+    const output = `${run.stdout}${run.stderr}`;
+
+    assert.equal(run.status, 1, output);
+    assert.match(output, /pre-push: lint:runner-os failed:/);
+    assert.match(output, /Linux-only path outside a Linux branch/);
+    assert.match(output, /push-suite: blocked pre-push checks failed \(lint:runner-os\)/);
+    assert.doesNotMatch(output, /push-suite: (exported|lint|typecheck|cli) /);
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
 });

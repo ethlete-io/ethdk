@@ -34,7 +34,9 @@ export const parseArgs = (argv) => {
   const only = at === -1 ? undefined : argv[at + 1];
   const loadAt = argv.indexOf('--max-load');
   const maxLoad = loadAt === -1 ? undefined : Number(argv[loadAt + 1]);
-  const range = argv.find((arg, index) => !arg.startsWith('--') && index !== at + 1 && index !== loadAt + 1);
+  const range = argv.find(
+    (arg, index) => !arg.startsWith('--') && (at === -1 || index !== at + 1) && (loadAt === -1 || index !== loadAt + 1),
+  );
 
   return { only, range: range ?? '@{upstream}..HEAD', ...(maxLoad === undefined ? {} : { maxLoad }) };
 };
@@ -284,6 +286,27 @@ export const verdictFileOf = (sha) =>
 
 const seconds = (ms) => `${(ms / 1000).toFixed(0)} s`;
 
+export const preChecksStep = async (range) => {
+  const [from, to = 'HEAD'] = range.split('..');
+  const [base, head] = [from, to].map((rev) => git('rev-parse', rev));
+  if (base.status !== 0 || head.status !== 0)
+    return { status: 1, output: (base.stderr || head.stderr).trim(), names: ['range'] };
+  const lines = [];
+  const format = spawnSync(
+    process.execPath,
+    [join(root, '.husky/format-check-committed.mjs'), base.stdout.trim(), head.stdout.trim()],
+    {
+      cwd: root,
+      encoding: 'utf8',
+    },
+  );
+  if (format.status !== 0) lines.push('pre-push: format check failed:', `${format.stdout}${format.stderr}`.trim());
+  const { runChecks } = await import('./pre-push-checks.mjs');
+  const failed = runChecks(base.stdout.trim(), head.stdout.trim(), { cwd: root, log: (line) => lines.push(line) });
+  const names = [...(format.status === 0 ? [] : ['format']), ...failed.map((item) => item.check)];
+  return { status: names.length ? 1 : 0, output: lines.join('\n'), names };
+};
+
 export const stepLine = (name, status, ms, note, load, max = load) =>
   `push-suite: ${name} ${status === 0 ? 'ok' : `failed at load ${formatLoad(load)} (max ${formatLoad(max)} during the step)`} in ${seconds(ms)}${note ? ` (${note})` : ''}`;
 
@@ -368,6 +391,16 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
   };
 
   if (only && !STEPS.includes(only)) return finish(`blocked unknown step ${only}, expected one of ${STEPS.join(', ')}`);
+
+  if (!INNER_EXPORT) {
+    const startedAt = performance.now();
+    const checks = await preChecksStep(range);
+    if (checks.status !== 0) {
+      log(checks.output);
+      return finish(`blocked pre-push checks failed (${checks.names.join(', ')}) at ${sha}`);
+    }
+    log(`push-suite: checks ok in ${seconds(performance.now() - startedAt)}`);
+  }
 
   if (!INNER_EXPORT) {
     const limit = maxLoad ?? Number(process.env['PUSH_SUITE_MAX_LOAD'] || cpus().length);
