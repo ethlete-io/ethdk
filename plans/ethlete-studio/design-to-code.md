@@ -3879,3 +3879,9 @@ proposed tool fix is built and its bite ("the sketch as it is fails") does not h
 so `document.fonts` holds a second "unloaded" copy of every family and `check()` answers false although the text draws
 in the loaded font. The open gap is visual: no check says that variants of a sketch look alike at the zoom Studio
 shows them.
+
+849\. Linux builder (2026-11-11, from 848): the font-pair variants loaded their fonts, but at Studio's fit zoom (49 %)
+the 10-17 px samples drew at 5-8 px, so the human saw no difference; no check says that variants look alike at the
+zoom Studio shows them. Tool fix (grill decision): sketch check warns when two variant shots at Studio's fit zoom differ
+by less than a threshold in a region whose source differs, and names the variants and the region. Bite: the old font-pair
+sketch (before ccd93dfee, small samples only) gives the warning, the new one does not. Queue: after 846.
