@@ -3597,3 +3597,8 @@ leaves :4402 to the Studio app and serves on a random port, so a shot from the o
 agent started `DE_PORT=4402 yarn design` in tmux `studio-serve`. Suspect: the skills that name :4402 still assume the old
 default. Tool fix (doc agent, tool internal): one source for the design server port, and the skills read it, or
 `yarn design` prints the port and the skills name the print.
+
+826\. Linux builder (2026-11-11, 816 live run): `shot foundations/type@font-pair --variants --in pages/sketches` exited 1
+because variant c's page-sketch cell differed between two renders (70861 px). Suspect (one run): an unstable render or a
+stability check that is too strict. Tool fix (doc agent, tool internal): repeat the run 5 times; if it comes back, find
+which pixels move (a diff image) before changing the check.
