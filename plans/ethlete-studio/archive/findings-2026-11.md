@@ -7805,3 +7805,19 @@ S7b-3 as built (294eef997, 44514b348, 2026-11-06), partly: the served caches wri
 536 closed (c0, 294eef997 + 44514b348): the 31 `etProvideColor` warnings come from the render worker drawing SDK
 components for the title-bar and update-dialog frames; entries keep them since the re-fetch works (52c079983), and a
 real-HTTP spec shows a hit prints them again. Full cold and warm logs are identical.
+
+470\. CI on `next` stayed red from 2026-11-04 15:23 to the evening of 2026-11-05, and 92 commits stayed unpushed. The
+Studio rules job failed: `pages/system` state `direct-edit` was unjudged, because the gate clicks the "Gründe" trigger
+and the app had no footer. Tom: "die ci ist NOCH IMMER rot?" - a release waits. Why no tool caught it: the slow gate
+checks only parts whose app files change (B393), so the local hook never ran `pages/system`; `clickOpen` did not
+search overlay roots (fixed in 5f105b30d with the footer). Process lesson: a red CI on `next` stops all finding work
+until it is green; the doc agent checks `gh run list` at session start and reports a red run to Tom at once. Built in 5f105b30d.
+
+860\. Linux builder (2026-11-11, from 859): after 859 the archive freed only 24k chars; most built findings carry no
+marker the script reads (free prose like "fixed in <sha>"). Tool fix (doc agent decision, tool internal): one marker,
+`Built in <sha>.` at sentence start, written by whoever records the as-built note; a one-time pass adds it to old
+findings whose fix commit is proven in git log (dry-run list first, no guess: unproven ones stay). No archive by "any
+sha cited": open findings cite context shas (855 cites aaeef909d). Bite: after the pass `archive-findings --dry-run`
+lists the proven ones; a fixture with only a context sha moves nothing. Queue: Linux builder, after 854.
+
+As built (Linux builder, 860): `archive-findings` reads only `Built in <sha>.` at sentence start (pushed sha); `mark-built-findings.mjs` (`--write`) marked the 7 findings whose "fixed/built in <sha>" names a `fix(`/`feat(` or finding-named commit dated on or after the finding. The pass also marked 855 from "Build fixed in 210235327", which fixed only the app build while the merge guard of 855 is still open; the builder removed that marker by hand, A hand check then found two more side fixes: 524 (e3f7a81dd fixed the cache defect, not the abort spec for every cache) and 592 (ffe60ce8b fixed the Neu starten case, not the fixture assert); their markers are removed too, so 4 findings carry it (470, 584, 599, 859). Built in 0e296ac14.

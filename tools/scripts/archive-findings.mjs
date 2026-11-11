@@ -35,7 +35,7 @@ export const splitFindings = (planText) => {
 
 const BUILT_LINE = /^(As built|Built)\b/;
 const AS_BUILT = /(?:^|[.;:] )As built\b/;
-const BUILT_SHA = /\bbuilt (?:in )?([0-9a-f]{7,40})\b/gi;
+const BUILT_SHA = /(?:^|[.;:!?] )Built in ([0-9a-f]{7,40})\./g;
 
 export const isPushedSha = (sha, root = process.cwd()) =>
   spawnSync('git', ['merge-base', '--is-ancestor', sha, 'origin/next'], { cwd: root }).status === 0;

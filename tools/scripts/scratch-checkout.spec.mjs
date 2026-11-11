@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { scopeSelfLinks, scopeSelfLinksMessage } from './commit-export.mjs';
 import { gitEnv } from './git-test-env.mjs';
-import { scratchCheckout } from './scratch-checkout.mjs';
+import { scratchCheckout, storeEscapes } from './scratch-checkout.mjs';
 
 const makeRepo = () => {
   const repo = mkdtempSync(join(tmpdir(), 'scratch-spec-'));
@@ -69,4 +69,32 @@ test('scratchCheckout copies uncommitted edits, links dependencies and leaves no
   assert.deepEqual(scopeSelfLinks(repo), []);
   rmSync(repo, { recursive: true, force: true });
   rmSync(join(dir, '..'), { recursive: true, force: true });
+});
+
+test('scratchCheckout gives the scratch its own shot store, never a link into the source', () => {
+  const repo = makeRepo();
+  writeFileSync(join(repo, '.gitignore'), 'node_modules\n');
+  mkdirSync(join(repo, 'node_modules/.design-explore/live'), { recursive: true });
+  writeFileSync(join(repo, 'node_modules/.design-explore/live/shot.png'), 'live');
+  const dir = join(mkdtempSync(join(tmpdir(), 'scratch-out-')), 'copy');
+  assert.deepEqual(scratchCheckout(repo, dir), { dir });
+  const store = join(dir, 'node_modules/.design-explore');
+  assert.equal(lstatSync(store).isSymbolicLink(), false);
+  assert.deepEqual(readdirSync(store), []);
+  writeFileSync(join(store, 'scratch.png'), 'scratch');
+  assert.deepEqual(readdirSync(join(repo, 'node_modules/.design-explore')), ['live']);
+  assert.equal(storeEscapes(repo, dir), undefined);
+  rmSync(repo, { recursive: true, force: true });
+  rmSync(join(dir, '..'), { recursive: true, force: true });
+});
+
+test('storeEscapes names a store that resolves into the source checkout', () => {
+  const repo = makeRepo();
+  mkdirSync(join(repo, 'node_modules/.design-explore'), { recursive: true });
+  const dir = mkdtempSync(join(tmpdir(), 'scratch-out-'));
+  mkdirSync(join(dir, 'node_modules'));
+  symlinkSync(join(repo, 'node_modules/.design-explore'), join(dir, 'node_modules/.design-explore'));
+  assert.match(storeEscapes(repo, dir), /inside the main checkout/);
+  rmSync(repo, { recursive: true, force: true });
+  rmSync(dir, { recursive: true, force: true });
 });

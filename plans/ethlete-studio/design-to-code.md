@@ -798,13 +798,6 @@ and 09953108c). Its stderr goes to a pipe of the Tauri app, and `serve.ts` turns
 so no server log exists. Second tool gap: a Studio server error leaves no trace. In `/tmp/b469` the old copy restored
 correctly on a failed check; a throw after the swap stays the lead, repro not done.
 
-470\. CI on `next` stayed red from 2026-11-04 15:23 to the evening of 2026-11-05, and 92 commits stayed unpushed. The
-Studio rules job failed: `pages/system` state `direct-edit` was unjudged, because the gate clicks the "Gründe" trigger
-and the app had no footer. Tom: "die ci ist NOCH IMMER rot?" - a release waits. Why no tool caught it: the slow gate
-checks only parts whose app files change (B393), so the local hook never ran `pages/system`; `clickOpen` did not
-search overlay roots (fixed in 5f105b30d with the footer). Process lesson: a red CI on `next` stops all finding work
-until it is green; the doc agent checks `gh run list` at session start and reports a red run to Tom at once.
-
 471\. Sessions in tmux do not clear and restart themselves. They ask Tom to run `/clear` or `/handoff`, though the
 `ethlete-agent-sessions` `restart` command clears the caller's own session and types a resume prompt. Tom: "viele
 sessions checken noch nicht dass sie in tmux mit agent sessions skill sind selbst clearen und neustarten können das
@@ -1757,7 +1750,7 @@ the file that holds it; a part with no app code loses its link; comment-pin gets
 `rule-baseline.json` did not hold, so only the first commit of the file could baseline anything and a second new rule
 could never baseline its old hits (against ADR 0201). No spec covered a second rule. Fixed in 994dd8bea: an entry
 counts as added only if an older version already held the same rule without it, with a spec for a second new rule.
-Lesson: a decision that names a ratchet ("may only shrink") gets a spec for its second use, not only its first.
+Lesson: a decision that names a ratchet ("may only shrink") gets a spec for its second use, not only its first. Built in 994dd8bea.
 
 585\. Builder (2026-11-07, d1fdccaa3): after the `implements` field left the design hash (finding 582),
 `design task elements/canvas-frames` still failed on "embedded: components/button is not build-ready", only because
@@ -1847,7 +1840,7 @@ a spec asserts that a listing after an unrelated edit draws nothing.
 libuv `fork()` on the server thread blocks in proportion to the RSS (29-173 ms per spawn at 3.8 GB), and a merge
 spawns git up to 5 times; macOS uses `posix_spawn` and hides the cost, so every local run was green. Fixed in b85f8fd40
 (git calls run in the merge worker). Tool fix (technical, built in b85f8fd40): a spec asserts that the server thread
-makes no `child_process` call, so the rule holds on every OS, not only where a stall shows.
+makes no `child_process` call, so the rule holds on every OS, not only where a stall shows. Built in b85f8fd40.
 
 600\. Builder (2026-11-08, B434): the Chip panel-hide case broke through the fixture change 2bb8d3d58, not the app.
 With one changed state, Fit capped at scale 1, so "Auf 100 % zoomen" stayed in Fit, and `measure()` keeps the pan in
@@ -3831,6 +3824,7 @@ the repo's shot store, so scratch runs wrote into the live store. Tool fix (doc 
 `scratch:checkout` gives the scratch its own store and fails when the store path resolves into the main checkout. Bite:
 a spec that runs `scratch:checkout` and then writes a shot leaves the main store unchanged; before the fix the shot lands
 in it. Queue: Linux builder, right after 846, before B490, because it corrupts live data.
+Built in 2cf078a6e. As built: the cause was `linkDependencies` linking every `node_modules` entry, dot directories included. A scratch (and a push-suite export) now gets fresh real dirs for every dot directory except `.bin` (`.design-explore`, `.cache`, `.vite`, `.vitest-cache`, `.vite-temp` were all linked and written to), and `scratchCheckout` fails when the scratch store resolves into the main checkout. Verified: spec in `tools/scripts/scratch-checkout.spec.mjs` fails without the commit-export change; a real scratch in /tmp has an empty own store, removed afterwards. Only `.bin` still links into the main checkout (read only).
 
 855\. Linux builder (2026-11-11, from 846), measured: `ethlete-studio:build:production` fails since aaeef909d (B490 merge of
 foundations/type@font-pair variant c). The merged `type.css` holds `url('@assets/fonts/noto-sans-…woff2')`; the design
@@ -3873,14 +3867,7 @@ a sentence, "built in <sha>"), so `--dry-run --days=1` moved 0. Age is the first
 Built in be2e24d8f: a sentence-start "As built", or `built <sha>` whose sha is an ancestor of `origin/next`, is a built
 marker. Bite: a spec fixture with a built marker and no STATUS row is archived, one with an unpushed sha and an open one
 stay; with the old script the spec gets no finding moved. Run for real: 7 findings moved (440013 to 415197 chars), each
-removed line byte-equal in `archive/findings-2026-11.md`.
-
-860\. Linux builder (2026-11-11, from 859): after 859 the archive freed only 24k chars; most built findings carry no
-marker the script reads (free prose like "fixed in <sha>"). Tool fix (doc agent decision, tool internal): one marker,
-`Built in <sha>.` at sentence start, written by whoever records the as-built note; a one-time pass adds it to old
-findings whose fix commit is proven in git log (dry-run list first, no guess: unproven ones stay). No archive by "any
-sha cited": open findings cite context shas (855 cites aaeef909d). Bite: after the pass `archive-findings --dry-run`
-lists the proven ones; a fixture with only a context sha moves nothing. Queue: Linux builder, after 854.
+removed line byte-equal in `archive/findings-2026-11.md`. Built in be2e24d8f.
 
 861\. Doc agent and Linux builder (2026-11-11): the /tmp tmpfs (47G) filled up (ENOSPC); no Bash call of either agent
 started, and the 859 push suite crashed in `commit-export.mjs` (symlink into `/tmp/push-suite-<sha>-*/node_modules`)
@@ -3899,3 +3886,29 @@ and about 81 `tmp-<pid>-*` dirs (about 208k inodes, 3355 each) from 2026-11-10 o
 `browser.close()` and the tmp dir removal are not reached on a failure or kill path. Tool fix (doc agent decision, tool
 internal): find the owners; each removes its profile and tmp dir on every exit path (also SIGTERM); the 861 start sweep
 removes such dirs with no live owner. Bite: a killed run of the owner leaves no profile or tmp dir. Queue: with 861.
+
+863\. Doc agent (2026-11-11): B480 (Windows spike on rack, ADR 0268: runs in a builder subagent) stopped silently. After
+SAC was turned off at noon, no subagent ran it, the builder handoffs never named one, and the doc agent handoff said
+"studio runs with CEF on rack" with no source. The human asked for the state and nobody had one. Suspect: the subagent
+died with a builder restart, unnamed. Tool fix (doc agent decision, tool internal): a STATUS row in work by a subagent
+carries the subagent's result file in its row; the builder `restart` refuses while such a row names no result file or a
+result file older than the row's last start. Bite: a restart with B480 "in work" and no newer result file is refused.
+Queue: Linux builder, after 862.
+
+864\. Doc agent (2026-11-11): a self-restart of the doc agent dropped an open grill question. At 15:22 the doc agent
+asked the human Q1 "findings or STATUS rows first: one finding, then one STATUS row per builder from tomorrow". The human
+did not answer. The handoff at 16:21 wrote "Open for the human: none", and the resumed session told the human "nothing
+open". The human noticed. Cause: the handoff line is written from memory; nothing compares it with the questions the
+session put in chat. Tool fix (doc agent decision, tool internal): `agent-sessions restart` reads the session transcript
+and refuses while an assistant message with a `❓` question has no later human message, unless the handoff file names that
+question verbatim under "Open for the human". Bite: a restart after an unanswered `❓` and a handoff with "none" is
+refused. Queue: Linux builder, after 863.
+
+865\. Doc agent (2026-11-11): two days after ADR 0234 (Studio work goes first, binding order), STATUS item 1 (B249) is
+still open. On 2026-11-11 the builders made 80 code commits; 39 of them fix the agent machinery (push suite, /tmp, restart,
+mailbox, archive), and 160 of 303 commits are plan notes. The doc agent sent the builder queues of findings only, and at
+15:22 asked the human again "findings or STATUS rows first", which ADR 0234 already decides. The human: "irgendwie kommen
+wir doch nicht weiter oder? fortschritt ist extrem lahm". Cause: the doc agent queues each new finding at once and never
+checks the queue against "Gerade in Arbeit"; nothing in the tool does either. Tool fix (doc agent decision, tool internal):
+a builder queue message names the STATUS item first; a finding in it carries "blocks: <item>" or "CI red", else it goes to
+the tool backlog. Applied now: the Linux builder is back on B249 after 860. Queue: tool backlog.

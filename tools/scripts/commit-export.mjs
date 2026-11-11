@@ -17,7 +17,12 @@ const linkDependencies = (repo, from, to) => {
   mkdirSync(to);
   for (const name of readdirSync(from)) {
     const entry = join(from, name);
-    const link = lstatSync(entry).isSymbolicLink() ? readlinkSync(entry) : undefined;
+    const stat = lstatSync(entry);
+    const link = stat.isSymbolicLink() ? readlinkSync(entry) : undefined;
+    if (from === join(repo, 'node_modules') && stat.isDirectory() && name.startsWith('.') && name !== '.bin') {
+      mkdirSync(join(to, name));
+      continue;
+    }
     if (link === undefined && name.startsWith('@')) linkDependencies(repo, entry, join(to, name));
     else symlinkSync(linkTargetOf(repo, entry, link), join(to, name));
   }
