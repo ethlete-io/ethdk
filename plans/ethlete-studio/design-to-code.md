@@ -3796,3 +3796,10 @@ for its run time; the other builder commits but holds its push until the slot en
 per checkout and does not reach the other machine, so the slot lives on origin (for example a ref with holder and
 expiry), has an expiry so a dead run cannot hold it, and is released when the push ends or the suite fails. A spec
 bites with two claimers. Tool fix (night backlog, Mac builder, after its push).
+
+781\. Linux builder (2026-11-11, night, 618 5577aacd1): a builder subagent put a Chromium spec
+(`probe-helpers.spec.mjs`) into `test:tools`, which runs in the CI Checks job with no Chromium; the builder's review
+caught it before the push (f708e2e0b: `yarn test:e2e-helpers` in the Unit tests job after its playwright install;
+verified locally only). Suspect, tool gap: nothing checks that a `node --test` spec that launches Chromium runs only in
+a job that installs it; push:suite runs where Chromium exists, so it cannot catch it. Decided by the doc agent (tool
+internal, the builder's recommendation): no tool fix for one case; a second case makes it night backlog.
