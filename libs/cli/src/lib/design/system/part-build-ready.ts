@@ -90,6 +90,9 @@ export type ActionsOf = (part: string) => Promise<string[] | NoVerdict>;
 /** The action keys a part declares now, or why they could not be read. */
 export type DeclaredActionsOf = (part: string) => Promise<string[] | string>;
 
+const recordDroppedLineOf = (options: { product: string; part: string; blockers: Blocker[] }) =>
+  `RECORD DROPPED ${options.product} ${options.part}: ${options.blockers.map((blocker) => `${blocker.kind}: ${blocker.text}`).join('; ')}`;
+
 const noRecordLineOf = (options: { product: string; part: string; blockers: Blocker[]; unverified: boolean }) => {
   const [first, ...rest] = options.blockers;
   const reason = options.unverified
@@ -107,7 +110,7 @@ const noRecordLineOf = (options: { product: string; part: string; blockers: Bloc
  * a holding record, or whose embedded parts changed since its actions ran, is written only after `actionsOf` passes. A
  * record is dropped only for a blocker that was checked: a pending slow result or actions that did not run (no
  * `actionsOf`) keep it. Embedded parts are decided before their hosts. `onNoRecord` gets one line for each part left
- * without a holding record, naming why. A written record holds the keys `declaredActionsOf` answers, or keeps the ones it
+ * without a holding record, naming why; `onRecordDropped` gets one for each record dropped. A written record holds the keys `declaredActionsOf` answers, or keeps the ones it
  * held when it answers why not.
  */
 export const recordBuildReady = async (options: {
@@ -117,6 +120,7 @@ export const recordBuildReady = async (options: {
   actionsOf?: ActionsOf;
   declaredActionsOf?: DeclaredActionsOf;
   onNoRecord?: (line: string) => void;
+  onRecordDropped?: (line: string) => void;
 }): Promise<Map<string, BuildReady>> => {
   const { product, inputs } = options;
   const results = new Map<string, BuildReady>();
@@ -163,7 +167,10 @@ export const recordBuildReady = async (options: {
       );
     }
 
-    if (own.some((blocker) => isDefinite(blocker, unverified))) dropPartRecord({ product, part });
+    const definite = own.filter((blocker) => isDefinite(blocker, unverified));
+
+    if (definite.length > 0 && dropPartRecord({ product, part }))
+      options.onRecordDropped?.(recordDroppedLineOf({ product: product.name, part, blockers: definite }));
 
     if (readyMarkOf({ product, part }) === null)
       options.onNoRecord?.(noRecordLineOf({ product: product.name, part, blockers: own, unverified }));

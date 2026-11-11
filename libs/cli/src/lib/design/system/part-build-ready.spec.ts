@@ -297,4 +297,23 @@ describe('recordBuildReady', () => {
     expect(readyMarkOf({ product, part: 'components/chip' })).toBeNull();
     expect(lines[0]).toMatch(/^NO RECORD app-a components\/chip: no-harness: /u);
   });
+
+  it('says which record it dropped and why, and stays silent for a part without a record', async () => {
+    const { target } = checkout();
+    const product = resolveProduct({ target, name: 'app-a', config: {} });
+    const lines: string[] = [];
+
+    writePartRecord({ product, part: 'components/chip', origin: originOf('spec') });
+
+    await recordBuildReady({
+      product,
+      parts: ['components/chip', 'pages/home'],
+      inputs: { pointsOf: () => [], problemsOf: () => [] },
+      actionsOf: async () => [],
+      onRecordDropped: (line) => lines.push(line),
+    });
+
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatch(/^RECORD DROPPED app-a components\/chip: no-harness: /u);
+  });
 });

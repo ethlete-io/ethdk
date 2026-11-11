@@ -4154,6 +4154,7 @@ drop is intended: ADR 0254 keeps `studio-lab` blocked until it gets an app. The 
 human" (second case of 793 in one night; `build-ready.md` still said "Tom's product call", now marked answered). Decided
 by the doc agent (applies ADR 0254): the builder commits the emptied `studio-lab/ready.json` by path, so the next check
 does not change the tree again. Side Suspect: no NO RECORD line was printed for the drop; it belongs to 796 (2).
+796 (2), as built (Linux builder, 2026-11-11): `recordBuildReady` takes `onRecordDropped`; when `dropPartRecord` really removes a record for a definite blocker, `design check` prints `RECORD DROPPED <product> <part>: <kind>: <text>[; ...]` (every check, not only with `--part`); no line when there was no record. Verified: bite spec (fails with the call removed, passes with it), related specs 127 files, typecheck, eslint, prettier. Not verified: a live run. NO RECORD is a Suspect, not a Cause: `check-record.ts` forwards `onNoRecord`, the existing spec prints it after a drop, and the code reads the same on the live path, so no cause for the missing line was found in the code; it was probably not seen in the run output.
 
 797\. Mac builder (2026-11-11, night, push of 6bca47ab5): `push-slot.mjs` runs `git fetch`/`git push` of
 `refs/push-slot/next` with no timeout. GitHub port 22 timed out on and off from the Mac; one ssh hung 1 h 39 min, and the

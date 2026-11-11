@@ -710,6 +710,7 @@ const printProductOpenPoints = async (
           },
         }),
     ...(options.part ? { onNoRecord: (line: string) => console.log(line) } : {}),
+    onRecordDropped: (line: string) => console.log(line),
   });
 
   const waiting = [...recorded.values()].filter(
