@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { cpuQuotaOf, parseArgs, slowed, summarize } from './spec-stress.mjs';
+import { cpuQuotaOf, parseArgs, reportLines, runPooled, slowed, summarize } from './spec-stress.mjs';
 
 test('parseArgs reads specs, runs and load', () => {
   assert.deepEqual(parseArgs(['a.spec.ts', 'b.spec.mjs', '--runs', '4', '--load', '2']), {
@@ -8,6 +8,8 @@ test('parseArgs reads specs, runs and load', () => {
     runs: 4,
     load: 2,
     slow: 0,
+    jobs: 0,
+    github: false,
   });
 });
 
@@ -59,4 +61,54 @@ test('slowed runs the command in a user scope with a CPU quota of one core divid
     ['--user', '--scope', '--quiet', '-p', 'CPUQuota=25%', 'npx', 'vitest', 'run'],
   ]);
   assert.deepEqual(slowed(['npx', ['vitest']], 0), ['npx', ['vitest']]);
+});
+
+test('parseArgs reads a job limit and the GitHub annotation switch', () => {
+  const options = parseArgs(['a', '--jobs', '12', '--github']);
+  assert.equal(options.jobs, 12);
+  assert.equal(options.github, true);
+  assert.throws(() => parseArgs(['a', '--jobs', '0']), /above 0/);
+});
+
+test('runPooled never runs more jobs at once than the limit and keeps the order', async () => {
+  let running = 0;
+  let peak = 0;
+  const results = await runPooled([1, 2, 3, 4, 5], 2, async (n) => {
+    running++;
+    peak = Math.max(peak, running);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    running--;
+    return n * 10;
+  });
+  assert.equal(peak, 2);
+  assert.deepEqual(results, [10, 20, 30, 40, 50]);
+});
+
+test('runPooled without a limit starts every job at once', async () => {
+  let running = 0;
+  let peak = 0;
+  await runPooled([1, 2, 3], 0, async () => {
+    running++;
+    peak = Math.max(peak, running);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    running--;
+  });
+  assert.equal(peak, 3);
+});
+
+test('reportLines annotates each file under 100 % for GitHub, and only with --github', () => {
+  const summary = summarize([
+    { spec: 'a.spec.ts', ok: true, ms: 1200 },
+    { spec: 'a.spec.ts', ok: false, ms: 31000 },
+    { spec: 'b.spec.ts', ok: true, ms: 800 },
+  ]);
+  assert.deepEqual(reportLines(summary, { slow: 4, github: true }), [
+    'FAIL a.spec.ts: 1/2 passed, slowest 31.0 s',
+    '::error file=a.spec.ts,title=spec:stress::a.spec.ts 1/2 passed under --slow 4',
+    'ok   b.spec.ts: 1/1 passed, slowest 0.8 s',
+  ]);
+  assert.equal(
+    reportLines(summary, { slow: 4, github: false }).some((l) => l.startsWith('::')),
+    false,
+  );
 });

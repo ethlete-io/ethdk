@@ -2915,6 +2915,26 @@ in CI; with it `--runs 4 --slow 6` 4/4 and `--load 2` 4/4. Open: at `--slow 13` 
 with theming findings" (no worker) takes 37 s, so `--slow 13` overstates the CI runners for these files; the sweep in
 the 710 tool fix needs a factor measured from CI, not 13. Also: `design-command.spec` (707) 6/6.
 
+As built (710 sweep, not pushed). Factor (measured): green CI runs print no per-file durations (Nx hides the output of
+a passed task), so the two latest `next` runs red in cli give them, 42912315216 (A) and 42916647044 (B), red in other
+files. Ratio CI file time / local file time alone (`--maxWorkers=1`, push:suite running beside): `part-compare` 2.8/3.4,
+`part-task` 3.8/5.4, `update-command` 3.8/6.9, `frame-bootstrap` 2.5/3.5, `accepted-pictures` 3.0/4.1, `shot`
+2.6/4.8; `part-ready` and `open-points-answer` give 16-42 against a warm jiti cache, 3.4/4.7 with `JITI_FS_CACHE=false`
+(CI starts cold: 0.8 s becomes 7.2 s). Median 3.6, max 6.9 (16 values). `--slow N` is a CPU quota of 1/N core;
+locally at N 4 a file runs 2.7 to 4.0 times slower (1.7 for the wait-bound `part-compare`), so a local repro of the
+slowest run needs `--slow 7`, of a median run `--slow 4`. Built: `spec-stress.mjs` takes `--jobs <n>` (a pool; before,
+every run started at once), `--github` (an `::error` annotation per file under 100 %) and prints the slowest run per
+file; `.github/workflows/spec-sweep.yml` runs nightly and on dispatch (inputs `slow`, default 4, and `runs`, default 2)
+over the 417 cli and Studio spec files without perf specs, on `next`, with `--jobs` at 3/4 of the cores times N, and
+writes the per-file lines to the step summary. N 4 on a runner adds to the runner's own slowness alone, so it should
+cover the 6.9; the dispatches calibrate it by the slowest times against the A/B column. The runner has no login
+session, so a step enables linger, sets `XDG_RUNTIME_DIR` and the bus, and fails loudly if the cpu controller is not
+delegated. Verified: 4 new specs in `spec-stress.spec.mjs` fail on the old script (11/11 pass); a local sweep of 3 cli
+files and `code-watch.spec` at `--slow 4 --runs 2 --jobs 4 --github` 2/2 each (slowest 5.4 to 50.9 s); eslint clean.
+Not verified: the workflow has not run in CI yet, so linger, the cpu delegation on ubuntu-latest and the runtime
+(estimate 30 to 40 min) are open; a `schedule` fires only from the default branch, so nightly runs start once the file
+is on `main`, until then a push to `next` that changes the workflow or `spec-stress.mjs` runs it (a dispatch needs the file on the default branch).
+
 712\. Builder (2026-11-10, day shift, B249 slice 1, 498d82393): `vitest related` over 1276 tests failed once in
 `check-system-sketch` with "port in use" under load; alone 12/12. Suspect: the spec picks a fixed or probed port and a
 parallel spec takes it between the probe and the listen. Tool fix (builder default, tool backlog): the spec server

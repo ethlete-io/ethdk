@@ -7,10 +7,15 @@ import { fileURLToPath } from 'node:url';
 const ROOT_MARKERS = ['project.json', 'vitest.config.mts', 'vitest.config.ts', 'vite.config.mts', 'vite.config.ts'];
 
 export const parseArgs = (argv) => {
-  const options = { specs: [], runs: 8, load: 0, slow: 0 };
+  const options = { specs: [], runs: 8, load: 0, slow: 0, jobs: 0, github: false };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg === '--slow') {
+    if (arg === '--github') options.github = true;
+    else if (arg === '--jobs') {
+      const value = Number(argv[++i]);
+      if (!Number.isInteger(value) || value < 1) throw new Error('--jobs needs an integer above 0');
+      options.jobs = value;
+    } else if (arg === '--slow') {
       const value = Number(argv[++i]);
       if (!(value > 1)) throw new Error('--slow needs a factor above 1');
       options.slow = value;
@@ -27,10 +32,11 @@ export const parseArgs = (argv) => {
 
 export const summarize = (results) => {
   const bySpec = new Map();
-  for (const { spec, ok } of results) {
-    const entry = bySpec.get(spec) ?? { spec, runs: 0, failed: 0 };
+  for (const { spec, ok, ms = 0 } of results) {
+    const entry = bySpec.get(spec) ?? { spec, runs: 0, failed: 0, maxMs: 0 };
     entry.runs++;
     if (!ok) entry.failed++;
+    entry.maxMs = Math.max(entry.maxMs, ms);
     bySpec.set(spec, entry);
   }
   const specs = [...bySpec.values()];
@@ -70,9 +76,32 @@ export const slowed = ([cmd, args], slow) =>
 const runOnce = (repo, spec, slow) =>
   new Promise((resolve) => {
     const [cmd, args] = slowed(commandFor(repo, spec), slow);
+    const started = Date.now();
     const child = spawn(cmd, args, { cwd: repo, stdio: 'ignore' });
-    child.on('exit', (code) => resolve({ spec, ok: code === 0 }));
-    child.on('error', () => resolve({ spec, ok: false }));
+    child.on('exit', (code) => resolve({ spec, ok: code === 0, ms: Date.now() - started }));
+    child.on('error', () => resolve({ spec, ok: false, ms: Date.now() - started }));
+  });
+
+export const runPooled = async (jobs, limit, run) => {
+  const results = new Array(jobs.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < jobs.length) {
+      const index = next++;
+      results[index] = await run(jobs[index]);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit || jobs.length, jobs.length) }, worker));
+  return results;
+};
+
+export const reportLines = (summary, { slow, github }) =>
+  summary.specs.flatMap((s) => {
+    const passed = `${s.runs - s.failed}/${s.runs} passed`;
+    const line = `${s.failed ? 'FAIL' : 'ok  '} ${s.spec}: ${passed}, slowest ${(s.maxMs / 1000).toFixed(1)} s`;
+    if (!github || !s.failed) return [line];
+    const under = slow ? ` under --slow ${slow}` : '';
+    return [line, `::error file=${s.spec},title=spec:stress::${s.spec} ${passed}${under}`];
   });
 
 const burn = (count) => {
@@ -91,14 +120,12 @@ const main = async () => {
   const jobs = options.specs.flatMap((spec) => Array.from({ length: options.runs }, () => spec));
   let results;
   try {
-    results = await Promise.all(jobs.map((spec) => runOnce(repo, spec, options.slow)));
+    results = await runPooled(jobs, options.jobs, (spec) => runOnce(repo, spec, options.slow));
   } finally {
     for (const hog of hogs) hog.kill();
   }
   const summary = summarize(results);
-  for (const s of summary.specs) {
-    console.log(`${s.failed ? 'FAIL' : 'ok  '} ${s.spec}: ${s.runs - s.failed}/${s.runs} passed`);
-  }
+  for (const line of reportLines(summary, options)) console.log(line);
   if (summary.flaky.length) console.log(`flaky: ${summary.flaky.map((s) => s.spec).join(', ')}`);
   process.exit(summary.ok ? 0 : 1);
 };
