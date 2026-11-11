@@ -1375,7 +1375,7 @@ failures into the compare-actions cache, and every later run read them back as r
 tool caught it: no cache spec ran an aborted run; each cache was only tested with runs that finish. Tool fix: every
 on-disk cache of the compare (compare-actions, the S4 design and app picture caches, the shot store) gets a spec that
 aborts a run mid-way and proves nothing of it is kept; the shared cache writer refuses a write once the run signal is
-aborted, so a new cache gets this for free. Built in e3f7a81dd.
+aborted, so a new cache gets this for free.
 
 526\. c0 (2026-11-06): the after-edit numbers of B416 slice 1 ran under load 12-17 from other sessions, so 12.3-18 s
 cannot be told from a slow tool. Why no tool caught it: a `.timings.jsonl` line holds no machine state, so a noisy run
@@ -1807,7 +1807,7 @@ compare and verify had nothing to report, and nothing checks that a fixture stil
 1b0e18653. Tool fix (technical): after setup the harness asserts that each sketch fixture variant has at least one
 changed state and fails with "fixture folds every state"; `design sketch check` warns on a sketch whose variants equal
 Aktuell in every state. The System case "Neu starten … 100 ms" could never pass, because the e2e started Studio without
-window chrome (fixed in ffe60ce8b); finding 588 covers the job that never ran green. Built in ffe60ce8b.
+window chrome (fixed in ffe60ce8b); finding 588 covers the job that never ran green.
 
 593\. Correction to finding 591: parallel cases (B377) are built. The worker default is cores/4, so the 4-core CI
 runner gets 1 worker. The doc agent read the parked STATUS row and did not check the code. Tool fix (technical): the
@@ -3786,7 +3786,7 @@ findings whose fix commit is proven in git log (dry-run list first, no guess: un
 sha cited": open findings cite context shas (855 cites aaeef909d). Bite: after the pass `archive-findings --dry-run`
 lists the proven ones; a fixture with only a context sha moves nothing. Queue: Linux builder, after 854.
 
-As built (Linux builder, 860): `archive-findings` reads only `Built in <sha>.` at sentence start (pushed sha); `mark-built-findings.mjs` (`--write`) marked the 7 findings whose "fixed/built in <sha>" names a `fix(`/`feat(` or finding-named commit dated on or after the finding. The pass also marked 855 from "Build fixed in 210235327", which fixed only the app build while the merge guard of 855 is still open; the builder removed that marker by hand, so 6 findings carry it. Built in 0e296ac14.
+As built (Linux builder, 860): `archive-findings` reads only `Built in <sha>.` at sentence start (pushed sha); `mark-built-findings.mjs` (`--write`) marked the 7 findings whose "fixed/built in <sha>" names a `fix(`/`feat(` or finding-named commit dated on or after the finding. The pass also marked 855 from "Build fixed in 210235327", which fixed only the app build while the merge guard of 855 is still open; the builder removed that marker by hand, A hand check then found two more side fixes: 524 (e3f7a81dd fixed the cache defect, not the abort spec for every cache) and 592 (ffe60ce8b fixed the Neu starten case, not the fixture assert); their markers are removed too, so 4 findings carry it (470, 584, 599, 859). Built in 0e296ac14.
 
 861\. Doc agent and Linux builder (2026-11-11): the /tmp tmpfs (47G) filled up (ENOSPC); no Bash call of either agent
 started, and the 859 push suite crashed in `commit-export.mjs` (symlink into `/tmp/push-suite-<sha>-*/node_modules`)
