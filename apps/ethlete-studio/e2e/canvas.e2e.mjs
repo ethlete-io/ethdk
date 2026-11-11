@@ -3828,4 +3828,5 @@ const lead = async () => {
   );
 };
 
-await (args.includes('--worker') ? work() : lead());
+if (args.includes('--prepare-checkout')) console.log(prepareCheckout());
+else await (args.includes('--worker') ? work() : lead());

@@ -15,6 +15,7 @@ import {
   RenderResponse,
   RenderResult,
   RenderWorkerData,
+  WarmRequest,
   watchedEntryOf,
 } from './render-packages';
 
@@ -199,7 +200,14 @@ const loggedWhile = async <T>(run: () => Promise<T>) => {
 
 let rendering: Promise<unknown> = Promise.resolve();
 
-parentPort?.on('message', (request: RenderRequest) => {
+parentPort?.on('message', (request: RenderRequest | WarmRequest) => {
+  if ('warm' in request) {
+    angular ??= explainMissing(importAngular);
+    angular.catch(() => undefined);
+
+    return;
+  }
+
   const rendered = rendering.then(() =>
     loggedWhile(() => render(request).catch((error: unknown) => ({ error: messageOf(error) }))),
   );

@@ -22,7 +22,19 @@ export const REPEAT_LOG = join(root, '.claude/handoffs/push-suite-repeat.log');
 const RUNNER = 'apps/ethlete-studio/e2e/canvas.e2e.mjs';
 const WORKSPACE_PARENTS = ['apps', 'libs', 'tools'];
 
-export const STEPS = ['lint', 'typecheck', 'tools', 'cli', 'studio', 'quota', 'e2e', 'e2e-quota', 'e2e-load', 'repeat'];
+export const STEPS = [
+  'lint',
+  'typecheck',
+  'tools',
+  'cli',
+  'studio',
+  'quota',
+  'e2e',
+  'e2e-quota',
+  'e2e-load',
+  'first-listing',
+  'repeat',
+];
 
 const DESIGN_INPUTS = [
   ...['bracket', 'cli', 'components', 'core', 'eslint-plugin', 'query', 'types'].map((lib) => `libs/${lib}/`),
@@ -44,6 +56,7 @@ export const STEP_INPUTS = {
   e2e: DESIGN_INPUTS,
   'e2e-quota': DESIGN_INPUTS,
   'e2e-load': DESIGN_INPUTS,
+  'first-listing': DESIGN_INPUTS,
   repeat: DESIGN_INPUTS,
 };
 const INERT_PATHS = [/^plans\//, /^\.changeset\//];
@@ -605,6 +618,15 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
         return e2eLoadStep(changed.stdout.split('\n').filter(Boolean), {
           run: (command, args) => runStep(command, args, dir, E2E_LOAD_LOG),
           runner: join(dir, RUNNER),
+        });
+      }),
+    'first-listing': () =>
+      afterBuild(async () => {
+        const { firstListingStep, timeFirstListing } = await import('./first-listing-time.mjs');
+        const changed = git('diff', '--name-only', range);
+        if (changed.status !== 0) return { status: 1, output: changed.stderr };
+        return firstListingStep(changed.stdout.split('\n').filter(Boolean), {
+          measure: (options) => timeFirstListing(dir, options),
         });
       }),
     repeat: () =>

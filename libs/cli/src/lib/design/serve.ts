@@ -1021,6 +1021,7 @@ const designExplore = ({
                 signal,
                 load: ({ file, product, sketch }) => vite.ssrLoadModule(productModuleIdOf({ file, product, sketch })),
                 pictureOf: shots.pictureOf,
+                warmRenderer: renderer.warm,
                 boxOf: shots.changedBoxesOf,
                 checkSketches: checkSketches ?? sketchChecker,
                 inventoryOf: ({ product, part }) =>

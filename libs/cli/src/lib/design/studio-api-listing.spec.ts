@@ -2,7 +2,7 @@ import { cpSync, mkdtempSync } from 'fs';
 import { IncomingMessage } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { readConfig } from './design-config';
 import { detachRunningListings, sketchesAnswer } from './studio-api';
 import { resolveProduct } from './system/resolve-product';
@@ -37,13 +37,19 @@ const checkSketches: CheckSketches = async (request) => {
   return listing;
 };
 
-const listing = async (target: string, query: string, load: (id: string) => Promise<unknown>) => {
+const listing = async (
+  target: string,
+  query: string,
+  load: (id: string) => Promise<unknown>,
+  asked: Partial<Parameters<typeof sketchesAnswer>[0]> = {},
+) => {
   const answer = await sketchesAnswer({
     target,
     url: new URL(`http://localhost/__design/sketches?product=acme${query}`),
     request: { method: 'GET' } as IncomingMessage,
     load: ({ file }) => load(file),
     checkSketches,
+    ...asked,
   });
 
   return answer.body as Listed;
@@ -135,5 +141,58 @@ describe('the sketch listing tiers', () => {
 
     expect(targetsOf(await earlier)).toEqual(['components/card']);
     expect(targetsOf(await later)).toEqual(['components/card', 'components/chip']);
+  });
+});
+
+describe('the first full sketch listing', () => {
+  const drawn = { default: { note: 'n', states: { one: {} }, render: () => ({ body: 'x' }) } };
+
+  it('loads the targets while the sketch check still runs', async () => {
+    const target = acme();
+    let loaded = () => undefined as void;
+    const firstLoad = new Promise<void>((resolve) => (loaded = resolve));
+    const checkAfterALoad: CheckSketches = async (request) => {
+      await firstLoad;
+
+      return checkSketches(request);
+    };
+    const listed = await listing(
+      target,
+      '',
+      async () => {
+        loaded();
+
+        return drawn;
+      },
+      { checkSketches: checkAfterALoad },
+    );
+
+    expect(listed.sketches[0]?.targets?.map(({ variant }) => variant)).toEqual(['a', 'b']);
+  });
+
+  it('loads the variants of a target side by side and keeps their order', async () => {
+    const target = acme();
+    let bLoaded = () => undefined as void;
+    const bAsked = new Promise<void>((resolve) => (bLoaded = resolve));
+    const listed = await listing(target, '', async (file) => {
+      if (file.includes('/b/')) bLoaded();
+      if (file.includes('/a/')) await bAsked;
+
+      return drawn;
+    });
+
+    expect(listed.sketches[0]?.targets?.map(({ variant }) => variant)).toEqual(['a', 'b']);
+  });
+
+  it('warms the renderer when a full listing will draw pictures, and not for a light one', async () => {
+    const target = acme();
+    const warmRenderer = vi.fn();
+    const pictureOf = () => new Promise<never>(() => undefined);
+
+    await listing(target, '&unchanged=no&targets=no', async () => drawn, { pictureOf, warmRenderer });
+    expect(warmRenderer).not.toHaveBeenCalled();
+
+    void listing(target, '', () => new Promise(() => undefined), { pictureOf, warmRenderer });
+    await vi.waitFor(() => expect(warmRenderer).toHaveBeenCalledTimes(1));
   });
 });

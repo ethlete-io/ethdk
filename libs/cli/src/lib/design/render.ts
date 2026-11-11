@@ -14,6 +14,7 @@ import {
   RenderResult,
   renderPackagesOf,
   RenderWorkerData,
+  WarmRequest,
 } from './render-packages';
 
 export const RENDER_PATH = '/__design/render';
@@ -108,7 +109,7 @@ export const createRenderer = (options: { target: string; config: DesignConfig; 
     return started;
   };
 
-  const render = (ask: RenderAsk, options: { quiet?: boolean } = {}) => {
+  const freshWorker = () => {
     if (worker && (isStale(watched) || startedWith !== JSON.stringify(workerDataOf()))) {
       void worker.terminate();
       worker = null;
@@ -116,6 +117,13 @@ export const createRenderer = (options: { target: string; config: DesignConfig; 
 
     worker ??= start();
 
+    return worker;
+  };
+
+  const warm = () => freshWorker().postMessage({ warm: true } satisfies WarmRequest);
+
+  const render = (ask: RenderAsk, options: { quiet?: boolean } = {}) => {
+    const sent = freshWorker();
     const providers = ask.product
       ? config.products?.[ask.product]?.providers
       : config.projects?.[ask.call.split('/')[0] ?? '']?.providers;
@@ -127,7 +135,6 @@ export const createRenderer = (options: { target: string; config: DesignConfig; 
       providers: providers ? resolve(target, providers) : null,
     };
     const result = new Promise<Rendered>((settle) => pending.set(request.id, settle));
-    const sent = worker;
 
     sentTo.set(request.id, sent);
     sent.postMessage(request);
@@ -164,7 +171,7 @@ export const createRenderer = (options: { target: string; config: DesignConfig; 
     await stopped?.terminate();
   };
 
-  return Object.assign(render, { close });
+  return Object.assign(render, { close, warm });
 };
 
 const readBody = (request: IncomingMessage) =>

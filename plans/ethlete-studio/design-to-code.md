@@ -3868,6 +3868,18 @@ is now the critical path. Next step: build those four in `studio-api.ts`, `rende
 (a warm message), `serve.ts`, then cut the check (run the Tailwind class facts async beside the other rules) for margin.
 Side finding (measured, not the e2e cause): with the slow runner on, each 15 s poll's `slowInputsOf` blocks the main
 thread about 14 s under the recipe (`app-files` `declaringFilesOf` regexes), which made the profiled listing 41 s.
+846 as built (Linux builder subagent, 2026-11-11, commit: this one): the first full listing starts the targets beside
+the sketch check, lists sketches, targets and variants side by side (`inTurns` keeps the order and still stops on abort),
+and asks `renderer.warm()` when a full listing will draw pictures (a `{ warm: true }` message loads Angular in the render
+worker; not at server start). Recipe, built scratch, cold store: before 28.7 / 29.5 / 30.4 s, after 13.5 / 13.9 / 14.2 / 14.7 s,
+answer JSON-equal. The async Tailwind class facts were not built: with the check answered from a file the listing still
+took 13.3 s, so the targets are the critical path and a faster check buys at most about 0.8 s. Margin is 0.3-1.5 s: the gate may flake; more needs
+the targets (pictures) faster.
+Gate (finding 852): `yarn studio:first-listing [<built checkout>]` and the push-suite step `first-listing` time the
+listing under the recipe with a 15 s limit; it failed on the old code (30.43 s) and passes on the new. Specs:
+`studio-api-listing.spec.ts` (3 cases, all fail on the old code), `render-restart.spec.ts` (warm), the tool specs.
+Not verified: the e2e case runs, blocked because aaeef909d breaks the Studio production build (`styles.css:2184`
+`@assets/fonts/noto-sans-latin-wght-normal.woff2` does not resolve).
 
 847\. Linux builder (2026-11-11, 843 bite): heavy work in a scratch copy (`nx` builds of cli, components and core) ran
 outside the heavy run lock while the main push suite ran its hold pass, which then failed 12 cases at load 9-14.
