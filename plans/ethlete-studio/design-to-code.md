@@ -3713,6 +3713,19 @@ The two existing `readyContent` hashes still do not match (with or without the t
 paths substituted), so both sketches report READY-STALE until `sketch ready` runs again. Not verified: which checkout
 wrote those hashes. Built in 8d2e106e1.
 
+845 b as built (Mac builder subagent, 2026-11-11): `reopenChangedReady` in
+`libs/cli/src/lib/design/system/sketch/sketch.ts` finds the commit that recorded the stored `readyContent` (`git log -S
+<hash> -- sketch.json`). When the variant folders and `shared/` equal that commit (`git diff --quiet`, no untracked
+files), it writes fresh hashes and keeps the sketch ready; `sketch ready` prints "is ready; its files equal the commit
+that recorded their hashes - hashed them again". Any other change, or no such commit, still demotes. Suspect for the
+mismatch: the stored hashes include the gitignored variant `tsconfig.json` as it was at ready time (09:23 and 10:12),
+and that text is lost. Probe (offline): tracked files equal the ready commits; hashing with today's tsconfig, with none,
+with other asset roots and with plain `JSON.stringify` matches no stored hash. The tsconfig of both sketches has mtime
+13:13, so its text changed after both ready marks. Verified: the sketch-command spec "keeps a ready sketch ready on
+sketch ready when its files equal the commit of a stale hash" fails on the old code and passes now. Not verified: what
+changed in the tsconfig at 13:13; a run on the two real sketches (both merged since); a git-backed spec that a real
+committed change still demotes.
+
 846\. Linux builder (2026-11-11, from the 843 bite): under the CI-like recipe (`tools/scripts/ci-like-load.mjs`: 2
 workers, 4 cores, 12 busy loops) the first `/__design/sketches?product=studio` listing of the e2e fixture check takes
 33-43 s, more than half of its 60 s limit, with or without the 832 warm-up. Suspect: this is the margin that the CI

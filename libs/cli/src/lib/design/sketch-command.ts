@@ -803,7 +803,9 @@ const reportedReopen = (sketch: Sketch) => {
 
   if (!reopened) return sketch;
 
-  console.log(`${sketch.target} was ready; ${reopened.changed.join(', ')} changed since - back to in progress`);
+  if (reopened.changed.length === 0)
+    console.log(`${sketch.target} is ready; its files equal the commit that recorded their hashes - hashed them again`);
+  else console.log(`${sketch.target} was ready; ${reopened.changed.join(', ')} changed since - back to in progress`);
 
   return reopened.sketch;
 };

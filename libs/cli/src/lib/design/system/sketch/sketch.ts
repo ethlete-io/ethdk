@@ -1,3 +1,4 @@
+import { spawnSync } from 'child_process';
 import { createHash } from 'crypto';
 import {
   cpSync,
@@ -1101,14 +1102,52 @@ export const changedSinceReadyOf = (sketch: Sketch) => {
   return sketch.variants.filter((variant) => judged[variant] !== variantContentHashOf(sketch, variant));
 };
 
+const readyCommitOf = (sketch: Sketch) => {
+  const recorded = Object.values(sketch.readyContent ?? {})[0];
+
+  if (!recorded) return null;
+
+  const log = spawnSync('git', ['log', '-1', '--format=%H', '-S', recorded, '--', SKETCH_FILE], {
+    cwd: sketch.dir,
+    encoding: 'utf8',
+  });
+
+  return log.status === 0 && log.stdout.trim() !== '' ? log.stdout.trim() : null;
+};
+
+const equalsReadyCommit = (sketch: Sketch) => {
+  const commit = readyCommitOf(sketch);
+
+  if (!commit) return false;
+
+  const paths = [...sketch.variants, SHARED_FOLDER];
+  const diff = spawnSync('git', ['diff', '--quiet', commit, '--', ...paths], { cwd: sketch.dir });
+  const untracked = spawnSync('git', ['ls-files', '--others', '--exclude-standard', '--', ...paths], {
+    cwd: sketch.dir,
+    encoding: 'utf8',
+  });
+
+  return diff.status === 0 && untracked.status === 0 && untracked.stdout === '';
+};
+
 /**
  * Moves an undecided ready sketch back to in progress when a variant changed since `sketch ready` judged it, and
- * answers the changed variants, or `null` when nothing changed or the sketch recorded no content.
+ * answers the changed variants, or `null` when nothing changed or the sketch recorded no content. A sketch whose
+ * hashes differ while its variant and `shared/` files equal the commit that recorded them keeps ready with fresh
+ * hashes and answers no changed variant.
  */
 export const reopenChangedReady = (sketch: Sketch): { sketch: Sketch; changed: string[] } | null => {
   const changed = changedSinceReadyOf(sketch);
 
   if (changed.length === 0) return null;
+
+  if (equalsReadyCommit(sketch)) {
+    const rehashed: Sketch = { ...sketch, readyContent: readyContentOf(sketch) };
+
+    writeSketchFile(rehashed);
+
+    return { sketch: rehashed, changed: [] };
+  }
 
   const { readyContent: _readyContent, mergeHold: _mergeHold, ...rest } = sketch;
   const reopened: Sketch = { ...rest, status: 'in progress' };
