@@ -3986,8 +3986,12 @@ direct edits); `readOpenPoints` gets them through it, `sketchOpenPointsOf` passe
 also accepts a key an open sketch targets. The open-points cache needed no change: it already re-reads when a tracked
 `sketch.json` or sketch listing changes. Bite: `open-points-answer.spec.ts` "answers the pick point of a part that exists
 only in a ready sketch" fails without the fix (404) and passes with it; `open-points.spec.ts` now expects the sketch-only
-`components/x` line. Verified: `vitest related` (1320 tests), `cli:typecheck`, eslint. Not verified: a live Studio serve
-on `elements/rating`, and how the Studio tree shows the new point; (3) is not built.
+`components/x` line. Verified: `vitest related` (1320 tests), `cli:typecheck`, eslint. Live (scratch /tmp/sk-lab, own ports): the open-points GET
+for `elements/rating` answers 200 with the pick point. Live Studio shot (headless, shots in /tmp/b789-shots/): the Studio
+does not render it. Rating shows only under "Sketches" with a warning icon; selecting it opens the sketch view with no
+open-points chip; no "null", "undefined" or empty badge. Suspect (code read only): the chip renders only in the part view
+(`system-view.component.ts:177`, reads at :762), and a sketch-only part never gets one, so the new answer has no consumer.
+Suspect, not traced: the sketch view shows "Wartet auf deine Wahl" although the answer says ready with c picked. (3) is not built.
 
 B438 measured (ADR 0229, before 0173ca7a8 vs after 789031753, cold, alternating): studio-lab scratch, 3 sketches, 82
 frames: wall 16 s in all 4 runs, compare phase 3.91/3.96 s before vs 3.29/3.30 s after; sdk scratch, 1 sketch: wall
