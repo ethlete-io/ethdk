@@ -195,3 +195,7 @@ Chromium's Local Network Access: requests from `http://tauri.localhost` to loopb
 prompt that the Windows CEF build never shows. The CEF runtime now sets `LOOPBACK_NETWORK` to allow; on `rack` the
 fetch answers 200 and the button sketch paints. Runs yes, sketch painted (the smoke marker's `ethlete-sketch-view`
 probe is stale for the canvas view), 141.17 MiB installer / 453 MiB installed, not signed.
+
+As built (finding 878): the smoke probe now counts `ethlete-canvas-frame-cell[data-painted]` (a host attribute
+the cell sets when its page painted) and logs `FAILED: nothing painted` after 60 s instead of staying silent. Not
+verified live.

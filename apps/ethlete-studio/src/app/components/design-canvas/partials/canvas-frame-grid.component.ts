@@ -89,6 +89,7 @@ export const LIVE_REVEAL_TIMEOUT_MS = 3000;
     '[style.height.px]': 'size()?.height ?? 0',
     '[attr.data-cell-id]': 'cell().id',
     '[attr.data-cell-scheme]': 'scheme()',
+    '[attr.data-painted]': 'painted() ? "" : null',
     '[class.min-h-20]': 'failed() || slow()',
     '[class.min-w-40]': 'failed() || slow()',
   },
