@@ -3962,3 +3962,13 @@ the pre-commit run then stops the merge commit that would carry the duplicate. B
 `yarn push:suite` at HEAD 1665f5644, the suite log printed `push-suite: warning: 1 other test or build process(es) of this
 checkout run:` and the line `885101    4.0 % cpu  node node_modules/.bin/vitest run`. Verified live on Linux; not on the
 Mac.
+
+819\. Linux builder (2026-11-11, push:suite at 5c75ada87): the B489 sketch (da746a43e) copied the pre-merge sample
+`author: 'Tom Bornholdt'` into its variants, and the commit went through. Cause (measured). Why no tool caught it:
+`lint:person-names` runs only in pre-push, not in pre-commit. Tool fix (doc agent, tool internal): run
+`check-person-names` on the staged files in pre-commit.
+
+820\. Linux builder (2026-11-11, same run): `lint:changesets` in push:suite failed on the untracked 815 changeset of a
+running subagent. Suspect: the check reads the working tree, not the HEAD export the suite tests. Tool fix (doc agent,
+tool internal): the suite runs the changeset check inside the HEAD export, so untracked files of other agents never
+count.
