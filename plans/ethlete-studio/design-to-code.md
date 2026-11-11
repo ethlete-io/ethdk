@@ -3880,6 +3880,10 @@ in slice 5c.
 As built eefbd4d8a (slice 5b): D3 no Verwerfen on `@edit`; D4 per ADR 0270; D5 popover lists "Bild ohne Sketch geändert".
 Bites: 4 spec cases. 5c owes: live shots, System note + Sketches `@edit` state as accepted direct edits (ADR 0209), server
 refuses discard on `@edit` (S6b), D6.
+As built de7098e65 (5c-1): D6 Cause (spec bite) the serve slow runner wrote merged.json and deleted tracked edit sketches;
+now it writes no merged.json, pictures.json or sketch file (ready.json stays, build-ready.md). Discard on `@edit` refused
+(EDIT-DISCARD-REFUSED). Doc agent: a same-drawing edit must not show as an open point while serve runs (verdict in
+memory, file record waits for `design check`); owed in 5c-2.
 
 869\. Doc agent (2026-11-11): the 867 brief told the Linux builder to leave the design fix as a visible direct edit for
 the human to merge. The human had already called the clip a defect and the canvas under the panel "as intended", so no
