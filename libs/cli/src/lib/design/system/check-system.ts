@@ -258,13 +258,17 @@ export const ruleProblemsOf = (product: ResolvedProduct): Problem[] => [
   ...RULES.flatMap((rule) => rule(product)),
 ];
 
-/** Build-ready inputs from the open points of `points`, read without a draw by default, and the static rules. */
+/**
+ * Build-ready inputs from the open points of `points`, read without a draw by default, and the static rule `problems`
+ * of the product, run by default.
+ */
 export const buildReadyInputsOf = (
   product: ResolvedProduct,
-  points: PartOpenPoints[] = readOpenPoints(product),
+  {
+    points = readOpenPoints(product),
+    problems = ruleProblemsOf(product),
+  }: { points?: PartOpenPoints[]; problems?: Problem[] } = {},
 ): BuildReadyInputs => {
-  const problems = ruleProblemsOf(product);
-
   return {
     pointsOf: (part) => partPointsOf(points, part),
     problemsOf: (part) => problems.filter((problem) => partOfFile(product, problem.file) === part),
@@ -662,7 +666,7 @@ const printProductOpenPoints = async (
     parts: options.part
       ? [options.part]
       : product.parts.filter((part) => part.origin !== 'base').map((part) => partKeyOf(part)),
-    inputs: withTalliedProblems(buildReadyInputsOf(product, allPoints), options.tally?.get(name)),
+    inputs: withTalliedProblems(buildReadyInputsOf(product, { points: allPoints }), options.tally?.get(name)),
     ...(rendered === null
       ? {}
       : {

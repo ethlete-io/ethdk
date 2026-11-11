@@ -129,7 +129,7 @@ describe('trackedRun', () => {
     }
     syncBuiltinESMExports();
 
-    const { inputs } = trackedRun(() => buildReadyInputsOf(product, readOpenPoints(product)));
+    const { inputs } = trackedRun(() => buildReadyInputsOf(product, { points: readOpenPoints(product) }));
     const tracked = new Set(inputs.map(({ input }) => `${input.kind}\0${input.path}`));
     const kindOf = (name: string) =>
       (LIST_READS as readonly string[]).includes(name)

@@ -1,17 +1,13 @@
-import { createHash } from 'crypto';
 import { buildReadyInputsOf } from './check-system';
 import { PartOpenPoints } from './open-points';
 import { BuildReadyInputs } from './part-build-ready';
-import { readOpenPoints } from './read-open-points';
+import { productPrintOf, productRuleRunOf, readOpenPoints } from './read-open-points';
 import { ResolvedProduct } from './resolve-product';
 import { inputsUnchanged, PrintedInput, trackedRun } from './tracked-reads';
 
 type Entry = { product: string; inputs: PrintedInput[]; points: PartOpenPoints[]; ready: BuildReadyInputs };
 
 const entries = new Map<string, Entry>();
-
-const productPrintOf = (product: ResolvedProduct) =>
-  createHash('sha1').update(JSON.stringify(product)).digest('base64url');
 
 /**
  * The open points of every part of `product` and its build-ready inputs without a draw, reused while the product
@@ -27,9 +23,10 @@ export const cachedOpenPointsOf = (
     return { points: held.points, inputs: held.ready };
 
   const { value, inputs } = trackedRun(() => {
-    const points = readOpenPoints(product, { sketchProblems: true });
+    const productRules = productRuleRunOf(product);
+    const points = readOpenPoints(product, { sketchProblems: true, productRules });
 
-    return { points, ready: buildReadyInputsOf(product, points) };
+    return { points, ready: buildReadyInputsOf(product, { points, problems: productRules().value }) };
   });
 
   entries.set(product.dir, { product: print, inputs, ...value });

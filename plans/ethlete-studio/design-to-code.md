@@ -3658,6 +3658,16 @@ after. Same kind of flaw as the Mac's 828 (1).
 Cause (measured): see 829 as built. Tool fix (doc agent, tool internal): cache `sketchProblemsOf` per sketch variant and
 content hash, or send the open points first and the sketch problems when the check is done; target an uncached answer
 under 1 s on studio. Bite: a spec or timing check that fails on the uncached 8.6 s answer.
+830 as built (Linux builder, 2026-11-11, option (a)): `read-open-points.ts` holds the rule problems of
+each ready sketch variant, keyed by the product print and the sketch, and reuses them while every file the variant's run
+read still reads the same; the open-points cache shares one product rule run between the sketch problems and
+build-ready (it ran twice). Narrower keys are unsound: a variant run reads all 91 studio part sources. Measured on
+studio, idle: `readOpenPoints` with sketch problems cold 8.4 s (HEAD 7.8 s), repeat 82 ms (HEAD 5.9 s); open-points
+cache miss with held variants 710 ms; same output as HEAD (byte-equal JSON). Live `curl /__design/open-points?product=studio`
+after a server restart: cold 5.5 s, warm 15 ms; part `pages/sketches` 2.2 s first, 0.25 s after. Bite:
+`sketch-problems-cache.spec.ts` counts rule runs, red on HEAD source (3 and 5 runs where 0 and 2 are due). Not met: the
+cold first answer and the answer after any part edit stay over 1 s; only (b) meets it, and (b) needs a Studio change
+(it asks once per part and re-asks only on its reload triggers), so it is left open. Not verified: Studio e2e.
 
 831\. Linux builder and Mac builder (2026-11-11, 828 and 829): two e2e cases waited a fixed time, swallowed the timeout
 and then measured or asserted, so a slow load showed as a wrong value instead of a timeout. Tool fix (doc agent, tool
