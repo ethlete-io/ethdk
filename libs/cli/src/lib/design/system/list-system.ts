@@ -6,7 +6,7 @@ import { partsReachedFrom } from './imports';
 import { kitUsesOf } from './kit';
 import { Problem } from './problem';
 import { partKeyOf, PartOrigin, ResolvedPart, ResolvedProduct } from './resolve-product';
-import { changedOutsideSketchOf } from './sketch/merged-parts';
+import { openDirectEditPartsOf } from './sketch/merged-parts';
 import { partLinkOf } from './sketch/part-definition';
 import { SystemModules } from './system-modules';
 import { drawnStateNamesOf, ownStylesheetOf } from './unchanged-rows';
@@ -241,7 +241,7 @@ export const listSystem = async (options: {
       if (!product) return [];
 
       const ruled = problemsOf(name, product);
-      const changedOutsideSketch = new Set(changedOutsideSketchOf(product));
+      const changedOutsideSketch = new Set(openDirectEditPartsOf(product));
       const unused = unusedBasePartsOf(product);
 
       return [

@@ -872,3 +872,19 @@ the edit or new to keep it`. The internal discard of `design check` is unchanged
 - Not done: the e2e cases for 4b/4c. Draft in `.claude/handoffs/agent-results/b249-5c2/e2e-cases.patch`; in the e2e
   checkout (slow checks off) `design check --product studio --part components/zoom-chip` opened no edit sketch even
   without the fixture zoom-chip sketch, cause not found.
+
+## As built: B249 slice 5c-1b, serve keeps the same-drawing verdict in memory (2026-11-11, Linux)
+
+- Cause, proven by the bite: with `writesTracked: false` a held edit is not recorded, and every open-points reader used
+  `changedOutsideSketchOf`, which compares only with `merged.json`; so serve showed a held edit as `direct-edit`.
+- Fix: `sketch/held-edits.ts` keeps, per product, each part the slow runner held with its part hash (`autoAcceptOf`
+  hands them out through the new `held` option). `openDirectEditPartsOf` drops a part whose hash still equals the held
+  one; `directEditsOf` (open points, build-ready, `ready.json`), `directEdit` of the part answer and the system listing
+  use it. The server sends its held edits with every open-points worker request, and the open-points cache keys on
+  them. `changedOutsideSketchOf` is unchanged, so `design check` and the recording paths still see the edit.
+- Bites: slow-run "shows no open point for a direct edit that draws as before while it runs, and writes no tracked
+  file" failed before (`directEdit` true, `direct-edit` point); it also failed with the worker sync removed. Guard:
+  "still shows a direct edit that draws differently as open while it runs" (D4/D5).
+- Verified: the slow-run spec, `vitest related` on the changed files, `nx run cli:typecheck`, eslint, prettier.
+- Not verified: no live serve run. Not covered: an edit HEAD already holds (the settle path) still shows as changed
+  outside a sketch until `design check`; the held state is lost when serve restarts (it redraws from the cache).

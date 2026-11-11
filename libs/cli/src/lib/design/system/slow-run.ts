@@ -29,6 +29,7 @@ import { visibleChangeProblemsOf } from './rules/visible-change';
 import { sdkErrorLineOf } from './sdk-errors';
 import { autoAcceptOf, settleCommittedEdits } from './accepted-pictures';
 import { partHashOf } from './sketch/baseline';
+import { holdEdit } from './sketch/held-edits';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
 import {
   linkedComponentOf,
@@ -369,7 +370,7 @@ const settledEditsOf = ({
  * inputs changed and then held still for one poll, one run at a time. Before them it settles each direct edit HEAD
  * already holds, and resolves each other direct edit of a merged part that held still for one poll: it holds, or it
  * opens the old/new edit sketch. It writes neither `merged.json` nor any other file git tracks for them: `design check`
- * records a held or settled edit. After a run it writes or drops the check record of each run part and its hosts, as
+ * records a held or settled edit; until then the server keeps a held edit in memory and shows it as no open point. After a run it writes or drops the check record of each run part and its hosts, as
  * `design check` does.
  */
 export const startSlowRunner = (options: {
@@ -400,10 +401,21 @@ export const startSlowRunner = (options: {
 
         const edits = settledEditsOf({ product: edited, seen, resolved: resolvedEdits });
 
-        if (edits.length > 0)
+        if (edits.length > 0) {
+          const held: { part: string; hash: string }[] = [];
+
           (
-            await autoAcceptOf({ target: options.target, config, product: edited, parts: edits, writesTracked: false })
+            await autoAcceptOf({
+              target: options.target,
+              config,
+              product: edited,
+              parts: edits,
+              writesTracked: false,
+              held,
+            })
           ).forEach(options.log);
+          held.forEach(({ part, hash }) => holdEdit({ product: edited, part, hash }));
+        }
       }
 
       for (const [name, entry] of Object.entries(config.products ?? {})) {
