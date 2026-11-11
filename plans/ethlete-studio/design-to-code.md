@@ -3833,3 +3833,16 @@ with no clip, as intended. A builder changed the sketch view canvas again. Suspe
 change (B345 on the Mac is in that area); no commit is proven yet. Owed by the Linux builder: the commit, the earlier
 fixes, why design compare and the e2e did not catch it, and a tool fix with a bite. Side: user-facing (ADR 0269), after
 B249 slice 2.
+Cause (Linux builder, diff + design shot `.claude/handoffs/agent-results/867/design-sticky-names.png`): the Studio design
+of pages/sketches has drawn the clip since 610ca0da1 (`sketches.ts:678`, `overflow-clip` on the box that starts at the
+panel edge). 41b71448d (Mac, 2026-11-06, harness work after 545) copied it into the app (`sketches.component.html:125`,
+line 130 forces `--st-shell-inset-left:0px`). Earlier times: 44, 00eecda8a (undone by 5a29b1b94), 182, 228 (same clip;
+its design change never came). Why no tool caught it. Cause: compare trusts the design, and render-check CUT-CONTROL and
+CLIPPED treat a clip on a pan viewport as on purpose (`render-check.ts:333-339, 381-387`). Suspect: the e2e case "Fit shows
+every column" measures inside the clipped box; the "canvas clip rect" check of 181/182 was never built. Lesson: a design
+can carry the defect, so a check that only compares app and design never sees it; the rule must hold for the design too.
+Tool fix (doc agent decision, tool internal): (a) e2e for the grid and sketch views with the panel open: the clip rect of
+the canvas viewport ancestors has left <= panel left and right = window right; (b) render-check rule CANVAS-UNDER-PANEL
+fails a pan viewport whose nearest clipping ancestor starts right of the floating panel's left edge; a CLIPPED skip does
+not silence it. Bite: both fail on next now. Fix: design `sketches.ts:678` as a visible direct edit (228 and ADR 0209;
+the grid view is the model) plus the app lines, by the Linux builder after B249; the Mac holds those lines until then.
