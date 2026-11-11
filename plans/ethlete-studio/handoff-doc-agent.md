@@ -188,3 +188,7 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   differ per OS. Mac merges B345 change-crop b with pages/sketches checks only and restores ready.json. Collected for the
   next round: self-host one monospace + the UI font in the design styles (Mac recommends; rejected: per-OS baseline, rule
   tool fix). Linux queue: B488, sketch-command cached fix (render-check split (4)). Mac: flake, render-check fixes (1)-(3).
+- After B488 commit e3008e59a (push waits on the Mac slot): STATUS row B489 added (day follow-up sketch pages/sketches:
+  chip for sketch-only parts + picked badge, finding 792 A/B). Collected for the next round: B489 into the day order
+  ("Gerade in Arbeit" changes only after the human's okay); recommendation: right after item 3 (B345). Set ADR 0261
+  `built: e3008e59a` and delete the B488 row when the Linux builder reports the push.
