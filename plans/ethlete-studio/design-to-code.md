@@ -3854,3 +3854,13 @@ with `GIT_DIR` pointing at a scratch repo leaves that repo's config byte-identic
 `git fsck`, rewritten with `git commit-graph write --reachable`, fsck clean; likely an older gc. Also: 779 was a skill rule,
 not a hook; ba0d3568e adds the first hook step (`tools/scripts/staged-data-specs.mjs`), and `matchesGlob` in
 `cli-related-map.mjs` no longer turns `**` into `[^/]*`.
+
+802\. Linux builder (2026-11-11, night, 801 verification): `tools/scripts/studio-e2e-perf.spec.mjs` ("--case finds a perf
+case only together with --perf") failed after 791 (003d9d457, a Linux commit, pushed in 0884cf03c): a no-match `--case`
+now exits 1 with the closest names on stderr, and the spec expected "0 of 0 cases" on stdout. Cause (measured); fixed
+a5026c273. Why no tool caught it: the push suite runs no `test:tools`, and 791's own run checked only its new spec. CI on
+0884cf03c may be red from it (not read). Lesson: a change to a tool script runs every spec of that tool, not only the new
+one. Decided by the doc agent (tool internal): the push suite runs all of `test:tools` (about 1 min; no map to keep in
+sync). Bite: a range that holds 003d9d457 without a5026c273 fails the push suite. Night backlog, Linux, next after the push.
+Also from 801 (Suspect): three copies of the git test helper (tools, libs/cli, libs/agent-rules, because lib code may not
+import tools); a sameness spec guards the drift (backlog, small).
