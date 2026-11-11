@@ -64,7 +64,7 @@ A directive cannot be applied conditionally, so each takes a value to switch it 
 | `scrollableClass`         | -              | Extra class(es) on the scroll container                                                                       |
 | `color`                   | -              | App-registered color theme for buttons/dots                                                                   |
 
-The edge fade is `--mask-size` wide on the `<et-scrollable>` (`25px` for the gradient variant, `32px` for the border variant, which draws the fade next to its edge line).
+The edge fade is a CSS `mask-image` on the scroll container, so the faded edge shows whatever is behind the track - a card's class background or a background image - instead of a painted colour. Only an edge that can scroll further fades. The fade is `--mask-size` wide on the `<et-scrollable>` (`25px` for the gradient variant, `32px` for the border variant, which also draws a line on that edge). The native scrollbar (`renderScrollbars`) is not faded.
 
 ### Snapping
 

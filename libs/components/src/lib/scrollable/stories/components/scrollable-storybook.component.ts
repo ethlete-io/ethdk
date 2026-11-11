@@ -31,37 +31,39 @@ import { SCROLLABLE_ITEMS } from './scrollable-storybook.data';
         </button>
       </div>
 
-      <et-scrollable
-        [etScrollableButtons]="{ position: buttonPosition(), sticky: stickyButtons(), enabled: renderButtons() }"
-        [etScrollableNavigation]="{ enabled: renderNavigation() }"
-        [etScrollableDarken]="darkenNonIntersectingItems()"
-        [etScrollableDrag]="cursorDragScroll()"
-        [etScrollableSnap]="snap()"
-        [itemSize]="itemSize()"
-        [direction]="direction()"
-        [color]="color()"
-        [scrollableRole]="scrollableRole() ?? null"
-        [scrollableClass]="scrollableClass()"
-        [renderMasks]="renderMasks()"
-        [maskVariant]="maskVariant()"
-        [renderScrollbars]="renderScrollbars()"
-        [scrollMode]="scrollMode()"
-        [scrollMargin]="scrollMargin()"
-        [scrollOrigin]="scrollOrigin()"
-      >
-        @for (item of ITEMS; track item.index) {
-          @if (item.index < 2 || makeScrollable()) {
-            <button
-              [etScrollableActiveChild]="item.active"
-              [style.background-color]="item.color"
-              (click)="doClick(item.index)"
-              class="et-sb-scrollable-item"
-            >
-              {{ item.label }}
-            </button>
+      <div [attr.data-card]="card()" class="et-sb-scrollable-card">
+        <et-scrollable
+          [etScrollableButtons]="{ position: buttonPosition(), sticky: stickyButtons(), enabled: renderButtons() }"
+          [etScrollableNavigation]="{ enabled: renderNavigation() }"
+          [etScrollableDarken]="darkenNonIntersectingItems()"
+          [etScrollableDrag]="cursorDragScroll()"
+          [etScrollableSnap]="snap()"
+          [itemSize]="itemSize()"
+          [direction]="direction()"
+          [color]="color()"
+          [scrollableRole]="scrollableRole() ?? null"
+          [scrollableClass]="scrollableClass()"
+          [renderMasks]="renderMasks()"
+          [maskVariant]="maskVariant()"
+          [renderScrollbars]="renderScrollbars()"
+          [scrollMode]="scrollMode()"
+          [scrollMargin]="scrollMargin()"
+          [scrollOrigin]="scrollOrigin()"
+        >
+          @for (item of ITEMS; track item.index) {
+            @if (item.index < 2 || makeScrollable()) {
+              <button
+                [etScrollableActiveChild]="item.active"
+                [style.background-color]="item.color"
+                (click)="doClick(item.index)"
+                class="et-sb-scrollable-item"
+              >
+                {{ item.label }}
+              </button>
+            }
           }
-        }
-      </et-scrollable>
+        </et-scrollable>
+      </div>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -98,6 +100,20 @@ import { SCROLLABLE_ITEMS } from './scrollable-storybook.data';
 
     .et-sb-scrollable-item:active {
       transform: scale(0.98);
+    }
+
+    .et-sb-scrollable-card[data-card='class'],
+    .et-sb-scrollable-card[data-card='image'] {
+      padding: 24px;
+      border-radius: 16px;
+    }
+
+    .et-sb-scrollable-card[data-card='class'] {
+      background-color: #19222d;
+    }
+
+    .et-sb-scrollable-card[data-card='image'] {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Crect width='8' height='8' fill='%23402060'/%3E%3C/svg%3E");
     }
 
     .et-scrollable {
@@ -141,6 +157,7 @@ export class ScrollableStorybookComponent {
   public scrollMode = input<ScrollableScrollMode>('container');
   public scrollMargin = input(0);
   public darkenNonIntersectingItems = input(false);
+  public card = input<'none' | 'class' | 'image'>('none');
 
   public scrollable = viewChild.required(ScrollableComponent);
   public makeScrollable = signal(true);

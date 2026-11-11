@@ -192,6 +192,7 @@ export class ScrollableDirective {
 
   /** @internal */
   public hostClassBindings = signalHostClasses({
+    'et-scrollable--masked': computed(() => !!this.masksDirective()),
     'et-scrollable--can-scroll': this.canScroll,
     'et-scrollable--is-at-start': this.isAtStart,
     'et-scrollable--is-at-end': this.isAtEnd,
@@ -200,6 +201,24 @@ export class ScrollableDirective {
         !!this.masksDirective() &&
         this.childIntersections().some((i) => i.intersectionRatio > 0 && i.intersectionRatio < 1),
     ),
+  });
+
+  /** @internal */
+  public scrollbarSize = computed(() => {
+    const { offset, client } = this.scrollableDimensions();
+    const scrollable = this.scrollContainerRef()?.nativeElement;
+    if (!scrollable || !offset || !client) return 0;
+
+    const computedStyle = scrollable.ownerDocument.defaultView?.getComputedStyle?.(scrollable);
+    if (!computedStyle) return 0;
+
+    const border = (side: 'Top' | 'Right' | 'Bottom' | 'Left') => parseFloat(computedStyle[`border${side}Width`]) || 0;
+    const size =
+      this.direction() === 'vertical'
+        ? offset.width - client.width - border('Left') - border('Right')
+        : offset.height - client.height - border('Top') - border('Bottom');
+
+    return Math.max(0, Math.round(size));
   });
 
   public gapValue = computed(() => {
@@ -225,6 +244,7 @@ export class ScrollableDirective {
     // `scrollMargin` has to reach the CSS snap positions too, or a snapped child would come to rest
     // somewhere a programmatic `scrollToElement` would not put it.
     '--_et-scrollable-scroll-margin': computed(() => `${this.scrollMargin()}px`),
+    '--_et-scrollable-scrollbar-size': computed(() => `${this.scrollbarSize()}px`),
   });
 
   constructor() {

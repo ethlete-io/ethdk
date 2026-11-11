@@ -141,6 +141,7 @@ export const scrollable = (options: ScrollableMockOptions) => {
   const classes = [
     'et-scrollable',
     `et-color--${options.color ?? 'inherited'}`,
+    renderMasks && 'et-scrollable--masked',
     canScroll && 'et-scrollable--can-scroll',
     atStart && 'et-scrollable--is-at-start',
     atEnd && 'et-scrollable--is-at-end',

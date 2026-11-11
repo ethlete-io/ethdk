@@ -2,7 +2,7 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import '../../test-helpers';
-import { fakeElementScroll, fakeIntersectionObserver, fakeLayout } from '../testing/fake-layout';
+import { fakeElementScroll, fakeIntersectionObserver, fakeLayout, fakeResizeObserver } from '../testing/fake-layout';
 import { ScrollableDirective } from './headless/scrollable.directive';
 import { ScrollableNavigationComponent } from './headless/scrollable-navigation.component';
 import { SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS } from './scrollable.imports';
@@ -127,5 +127,21 @@ describe('ScrollableDirective edge cases', () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     expect(fixture.nativeElement.querySelector('et-scrollable')).toBeNull();
+  });
+});
+
+describe('ScrollableDirective edge mask', () => {
+  it('exposes the measured scrollbar size so the edge mask can leave the scrollbar unmasked', async () => {
+    const resize = fakeResizeObserver();
+    const { fixture } = await create([0, 1, 2]);
+
+    fakeLayout([{ match: '.et-scrollable-container', offsetHeight: 143, clientHeight: 128 }]);
+    resize.fire(fixture.nativeElement.querySelector('.et-scrollable-container'));
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement.querySelector('et-scrollable') as HTMLElement;
+
+    expect(host.classList).toContain('et-scrollable--masked');
+    expect(host.style.getPropertyValue('--_et-scrollable-scrollbar-size')).toBe('15px');
   });
 });

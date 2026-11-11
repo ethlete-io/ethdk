@@ -1,7 +1,6 @@
 @layer components {
   :where(.et-scrollable) {
     --mask-size: 25px;
-    --_mask-color: var(--et-surface-background-solid, #121212);
     --darken-non-intersecting-items-amount: 0.75;
     --_auto-size: min-content;
 

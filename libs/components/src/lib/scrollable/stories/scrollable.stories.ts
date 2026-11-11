@@ -67,6 +67,10 @@ export default {
     darkenNonIntersectingItems: {
       control: { type: 'boolean' },
     },
+    card: {
+      control: { type: 'select' },
+      options: ['none', 'class', 'image'],
+    },
   },
   args: {
     color: null,
@@ -87,6 +91,7 @@ export default {
     renderNavigation: false,
     buttonPosition: 'inside',
     darkenNonIntersectingItems: false,
+    card: 'none',
   },
 } as Meta<ScrollableStorybookComponent>;
 
@@ -120,4 +125,12 @@ export const DarkenNonIntersecting: Story = {
 
 export const BorderMask: Story = {
   args: { maskVariant: 'border' },
+};
+
+export const OnClassBackgroundCard: Story = {
+  args: { card: 'class' },
+};
+
+export const OnImageBackgroundCard: Story = {
+  args: { card: 'image', renderScrollbars: true },
 };

@@ -1,4 +1,16 @@
 @layer components {
+  @property --_et-scrollable-mask-start {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+  }
+
+  @property --_et-scrollable-mask-end {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+  }
+
   .et-scrollable-masks {
     grid-row: 1 / 1;
     grid-column: 1 / 1;
@@ -10,139 +22,118 @@
     }
   }
 
-  .et-scrollable {
+  /* Blink counts a scrollbar into a scroll container's mask boxes, so the fade layer stops short of the
+     measured scrollbar and a solid layer keeps the scrollbar strip opaque. */
+  .et-scrollable.et-scrollable--masked.et-scrollable--can-scroll > .et-scrollable-wrapper > .et-scrollable-container {
+    mask-image:
+      linear-gradient(
+        to right,
+        transparent 0,
+        #000 var(--_et-scrollable-mask-start),
+        #000 calc(100% - var(--_et-scrollable-mask-end)),
+        transparent 100%
+      ),
+      linear-gradient(#000 0 0);
+    mask-size:
+      100% calc(100% - var(--_et-scrollable-scrollbar-size, 0px)),
+      100% var(--_et-scrollable-scrollbar-size, 0px);
+    mask-position:
+      left top,
+      left bottom;
+    mask-repeat: no-repeat;
+  }
+
+  .et-scrollable[direction='vertical'].et-scrollable--masked.et-scrollable--can-scroll
+    > .et-scrollable-wrapper
+    > .et-scrollable-container {
+    mask-image:
+      linear-gradient(
+        to bottom,
+        transparent 0,
+        #000 var(--_et-scrollable-mask-start),
+        #000 calc(100% - var(--_et-scrollable-mask-end)),
+        transparent 100%
+      ),
+      linear-gradient(#000 0 0);
+    mask-size:
+      calc(100% - var(--_et-scrollable-scrollbar-size, 0px)) 100%,
+      var(--_et-scrollable-scrollbar-size, 0px) 100%;
+    mask-position:
+      left top,
+      right top;
+
+    &:dir(rtl) {
+      mask-position:
+        right top,
+        left top;
+    }
+  }
+
+  .et-scrollable.et-scrollable--can-scroll.et-scrollable--has-partial-items:not(.et-scrollable--is-at-start) {
+    & > .et-scrollable-wrapper > .et-scrollable-container {
+      --_et-scrollable-mask-start: var(--mask-size);
+    }
+
+    & > .et-scrollable-wrapper > .et-scrollable-masks .et-scrollable-mask--start {
+      opacity: 1;
+    }
+  }
+
+  .et-scrollable.et-scrollable--can-scroll.et-scrollable--has-partial-items:not(.et-scrollable--is-at-end) {
+    & > .et-scrollable-wrapper > .et-scrollable-container {
+      --_et-scrollable-mask-end: var(--mask-size);
+    }
+
+    & > .et-scrollable-wrapper > .et-scrollable-masks .et-scrollable-mask--end {
+      opacity: 1;
+    }
+  }
+
+  .et-scrollable.et-scrollable--can-animate.et-scrollable--can-scroll {
+    & > .et-scrollable-wrapper > .et-scrollable-container {
+      transition:
+        --_et-scrollable-mask-start 300ms var(--ease-5),
+        --_et-scrollable-mask-end 300ms var(--ease-5);
+    }
+
+    & > .et-scrollable-wrapper > .et-scrollable-masks .et-scrollable-mask {
+      transition: opacity 300ms var(--ease-5);
+    }
+  }
+
+  .et-scrollable[mask-variant='border'] {
+    --mask-size: 32px;
+
     &[direction='horizontal'],
     &:not([direction]) {
       & .et-scrollable-mask {
-        inline-size: var(--mask-size);
-        block-size: 100%;
+        inset-block: 0;
+        inline-size: 0;
+        border-inline-start: 1px solid var(--et-surface-border-solid, #404040);
       }
 
       & .et-scrollable-mask--start {
-        inset-block-start: 0;
-        inset-inline: 0 0;
-        background: linear-gradient(to right, var(--_mask-color) 0, transparent 100%);
+        inset-inline-start: 0;
       }
 
       & .et-scrollable-mask--end {
-        inset-block-start: 0;
-        inset-inline: calc(100% - var(--mask-size)) 100%;
-        background: linear-gradient(to left, var(--_mask-color) 0, transparent 100%);
+        inset-inline-end: 0;
       }
     }
 
     &[direction='vertical'] {
       & .et-scrollable-mask {
-        block-size: var(--mask-size);
-        inline-size: 100%;
+        inset-inline: 0;
+        block-size: 0;
+        border-block-start: 1px solid var(--et-surface-border-solid, #404040);
       }
 
       & .et-scrollable-mask--start {
         inset-block-start: 0;
-        inset-inline-start: 0;
-        background: linear-gradient(to bottom, var(--_mask-color) 0, transparent 100%);
       }
 
       & .et-scrollable-mask--end {
         inset-block-end: 0;
-        inset-inline-start: 0;
-        background: linear-gradient(to top, var(--_mask-color) 0, transparent 100%);
-      }
-    }
-
-    &.et-scrollable--can-scroll.et-scrollable--has-partial-items:not(.et-scrollable--is-at-start) {
-      & .et-scrollable-masks .et-scrollable-mask--start {
-        opacity: 1;
-        transform: translate(0);
-      }
-    }
-
-    &.et-scrollable--can-scroll.et-scrollable--has-partial-items:not(.et-scrollable--is-at-end) {
-      & .et-scrollable-masks .et-scrollable-mask--end {
-        opacity: 1;
-        transform: translate(0);
-      }
-    }
-
-    &.et-scrollable--can-animate.et-scrollable--can-scroll {
-      & .et-scrollable-mask {
-        transition: opacity 300ms var(--ease-5);
-      }
-    }
-
-    &[mask-variant='border'] {
-      --mask-size: 32px;
-
-      & .et-scrollable-mask {
-        background: none;
-
-        &::after {
-          content: '';
-          position: absolute;
-        }
-      }
-
-      &[direction='horizontal'],
-      &:not([direction]) {
-        & .et-scrollable-mask {
-          inline-size: 0;
-          block-size: 100%;
-          border-inline-start: 1px solid var(--et-surface-border-solid, #404040);
-        }
-
-        & .et-scrollable-mask::after {
-          inset-block: 0;
-          inline-size: var(--mask-size);
-        }
-
-        & .et-scrollable-mask--start {
-          inset-inline: 0;
-
-          &::after {
-            inset-inline-start: 0;
-            background: linear-gradient(to right, var(--_mask-color) 0, transparent 100%);
-          }
-        }
-
-        & .et-scrollable-mask--end {
-          inset-inline: auto 0;
-
-          &::after {
-            inset-inline-end: 1px;
-            background: linear-gradient(to left, var(--_mask-color) 0, transparent 100%);
-          }
-        }
-      }
-
-      &[direction='vertical'] {
-        & .et-scrollable-mask {
-          block-size: 0;
-          inline-size: 100%;
-          border-block-start: 1px solid var(--et-surface-border-solid, #404040);
-        }
-
-        & .et-scrollable-mask::after {
-          inset-inline: 0;
-          block-size: var(--mask-size);
-        }
-
-        & .et-scrollable-mask--start {
-          inset-block-start: 0;
-
-          &::after {
-            inset-block-start: 0;
-            background: linear-gradient(to bottom, var(--_mask-color) 0, transparent 100%);
-          }
-        }
-
-        & .et-scrollable-mask--end {
-          inset-block: auto 0;
-
-          &::after {
-            inset-block-end: 1px;
-            background: linear-gradient(to top, var(--_mask-color) 0, transparent 100%);
-          }
-        }
       }
     }
   }
