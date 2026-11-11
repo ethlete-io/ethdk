@@ -3942,6 +3942,13 @@ Decided by the doc agent (tool internal, the builder's recommendation): every fi
 formatter when it is written; a spec asserts that a freshly generated sketch passes the FORMAT rule. Night backlog,
 Linux, after 787.
 
+As built (788): Cause: `writeEditorTsconfig` wrote each variant `tsconfig.json` as plain `JSON.stringify` text, and the
+FORMAT rule checks every `.json` in a variant folder. The other generated files already pass `formatSketch`. The editor
+tsconfig of a variant now goes through the checkout's Prettier (`formatText`, stdin) before it is compared and written,
+so an unchanged file is still not rewritten. Spec in `system-tsconfig.spec.ts`: a created and formatted sketch has no
+FORMAT finding; it fails on the old writer. Verified: related specs, typecheck, lint, stress. Not verified: a real
+scratch checkout run of `sketch check --product studio-lab`.
+
 789\. Linux builder (2026-11-11, night, B438 measurement): the committed sketch `elements/rating` has 8 UTILITY-CSS
 findings, so a sketch with open check findings reached git. Suspect: none yet; the cause is the question, which gate
 should have refused it (pre-commit, `sketch check` before ready, or the merge). Decided by the doc agent: the builder

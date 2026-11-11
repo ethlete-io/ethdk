@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { isAbsolute, relative, resolve, sep } from 'path';
 import { typecheck, TypecheckResult } from '../typecheck';
+import { formatText } from './sketch/check-format';
 import { DRAWING_COMPILER_OPTIONS, writeTsconfigText } from '../calls-tsconfig';
 import { editorAssetRootOf, installedAssetRoot } from '../package-root';
 import { readConfig } from '../design-config';
@@ -90,11 +91,15 @@ const writeSketchEditorTsconfig = (options: {
 }) =>
   writeTsconfigText(
     options.file,
-    systemTsconfigText({
+    formatText({
       target: options.target,
-      product: options.product,
-      assetRoot: options.assetRoot,
-      include: [options.dir],
+      file: options.file,
+      text: systemTsconfigText({
+        target: options.target,
+        product: options.product,
+        assetRoot: options.assetRoot,
+        include: [options.dir],
+      }),
     }),
   );
 

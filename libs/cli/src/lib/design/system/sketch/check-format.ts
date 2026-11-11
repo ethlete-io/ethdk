@@ -56,3 +56,15 @@ export const formatSketch = (options: { target: string; sketch: Sketch; variants
 
   spawnPlain([process.execPath, prettier, '--write', '--log-level', 'warn', ...files], { cwd: target });
 };
+
+/** `text` in the checkout's Prettier format for `file`, or `text` unchanged when the checkout has no Prettier. */
+export const formatText = (options: { target: string; file: string; text: string }) => {
+  const { target, file, text } = options;
+  const prettier = binaryOf({ target, pkg: 'prettier', bin: 'prettier' });
+
+  if (!prettier) return text;
+
+  const result = spawnPlain([process.execPath, prettier, '--stdin-filepath', file], { cwd: target, input: text });
+
+  return result.status === 0 ? result.stdout : text;
+};
