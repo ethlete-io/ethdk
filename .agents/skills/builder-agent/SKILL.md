@@ -99,6 +99,7 @@ The UI builder investigates a tool gap only when it blocks its current UI item (
 - If a step has an obvious default and it is safe to undo, do it and report it. Do not ask.
 - Keep building other work from the queue while you wait for the decision.
 - When the grill session sends a decision, build from it.
+- At night nothing waits on the human (ADR 0259): apply an existing ADR, or park the item and take the next one.
 
 ## Context
 

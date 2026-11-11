@@ -36,6 +36,17 @@ export const isAllowedPath = (path, patterns) =>
 export const pathsOutsideSlice = (paths, patterns) =>
   patterns.length === 0 ? [] : paths.filter((path) => !isAllowedPath(path, patterns));
 
+/**
+ * Drops the paths a merge took unchanged from one of `sides` (HEAD, MERGE_HEAD, the clean auto-merge tree).
+ * `blob(rev, path)` gives the object id, `null` when absent; rev `''` is the index.
+ */
+export const pathsChangedByMerge = (paths, blob, sides) =>
+  paths.filter((path) => {
+    const staged = blob('', path);
+
+    return sides.every((side) => staged !== blob(side, path));
+  });
+
 export const formatSlicePathsFile = (name, paths, now) =>
   `# slice: ${name}\n# written: ${new Date(now).toISOString()}\n${paths.join('\n')}\n`;
 
@@ -66,6 +77,20 @@ export const warningFor = (outside, patterns, source) => {
 };
 
 const git = (args) => spawnSync('git', args, { encoding: 'utf8' });
+
+const gitBlob = (rev, path) => {
+  const result = git(['rev-parse', '--verify', '--quiet', `${rev}:${path}`]);
+
+  return result.status === 0 ? result.stdout.trim() : null;
+};
+
+const isMerging = () => git(['rev-parse', '--verify', '--quiet', 'MERGE_HEAD']).status === 0;
+
+const mergeSides = () => {
+  const autoMerge = git(['merge-tree', '--write-tree', 'HEAD', 'MERGE_HEAD']).stdout.split('\n')[0].trim();
+
+  return ['HEAD', 'MERGE_HEAD', ...(/^[0-9a-f]{40,64}$/.test(autoMerge) ? [autoMerge] : [])];
+};
 
 const slicePathsFile = () => {
   const file = git(['rev-parse', '--git-path', 'slice-paths']);
@@ -101,13 +126,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const { patterns, source } = readSource();
 
     if (patterns.length > 0) {
-      const staged = git(['diff', '--cached', '--name-only', '--diff-filter=ACMRD']);
+      const staged = git(['diff', '--cached', '--name-only', '--diff-filter=ACMRD']).stdout.split('\n').filter(Boolean);
+      const own = isMerging() ? pathsChangedByMerge(staged, gitBlob, mergeSides()) : staged;
       const now = Date.now();
-      const warning = warningFor(
-        pathsOutsideSlice(staged.stdout.split('\n').filter(Boolean), patterns),
-        patterns,
-        describeSource(source, now),
-      );
+      const warning = warningFor(pathsOutsideSlice(own, patterns), patterns, describeSource(source, now));
 
       if (warning) console.warn(warning);
     }

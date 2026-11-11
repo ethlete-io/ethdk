@@ -1,10 +1,16 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { git, gitEnv, tempGitRepo } from './git-test-env.mjs';
 import {
   describeSource,
   formatSlicePathsFile,
   isAllowedPath,
   parseSlicePaths,
+  pathsChangedByMerge,
   pathsOutsideSlice,
   warningFor,
 } from './check-slice-paths.mjs';
@@ -99,4 +105,84 @@ test('the written file round-trips through parseSlicePaths and carries its heade
 
   assert.match(text, /^# slice: b1\n# written: 2026-11-10T12:00:00\.000Z\n/);
   assert.deepEqual(parseSlicePaths(text), ['apps/a/', 'libs/b']);
+});
+
+const SCRIPT = fileURLToPath(new URL('./check-slice-paths.mjs', import.meta.url));
+
+const write = (dir, path, content) => {
+  mkdirSync(dirname(join(dir, path)), { recursive: true });
+  writeFileSync(join(dir, path), content);
+};
+
+const commitAll = (dir, message) => {
+  git(dir, 'add', '-A');
+  git(dir, '-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--no-verify', '-m', message);
+};
+
+const mergeRepo = () => {
+  const dir = tempGitRepo('slice-merge-');
+  git(dir, 'checkout', '-q', '-b', 'main');
+  write(dir, 'tools/own.mjs', 'a\n');
+  write(dir, 'libs/x/a.ts', 'a\n');
+  write(dir, 'libs/x/both.ts', 'top\nmid\nend\n');
+  commitAll(dir, 'base');
+  git(dir, 'checkout', '-q', '-b', 'incoming');
+  write(dir, 'libs/x/a.ts', 'incoming\n');
+  write(dir, 'libs/x/new.ts', 'new\n');
+  write(dir, 'libs/x/both.ts', 'incoming\nmid\nend\n');
+  commitAll(dir, 'incoming');
+  git(dir, 'checkout', '-q', 'main');
+  write(dir, 'tools/own.mjs', 'mine\n');
+  write(dir, 'libs/x/both.ts', 'top\nmid\nmine\n');
+  commitAll(dir, 'mine');
+  git(dir, '-c', 'user.name=t', '-c', 'user.email=t@t', 'merge', '-q', '--no-commit', '--no-ff', 'incoming');
+  writeFileSync(join(dir, git(dir, 'rev-parse', '--git-path', 'slice-paths')), 'tools/\n');
+
+  return dir;
+};
+
+const runNode = (dir) => {
+  const env = gitEnv();
+  delete env.ETHLETE_SLICE_PATHS;
+
+  return spawnSync(process.execPath, [SCRIPT], { cwd: dir, encoding: 'utf8', env });
+};
+
+test('in a merge, paths taken unchanged from MERGE_HEAD or a clean auto-merge stay silent', () => {
+  const dir = mergeRepo();
+  const result = runNode(dir);
+
+  assert.equal(result.stderr, '');
+});
+
+test('in a merge, an own out-of-slice edit still warns', () => {
+  const dir = mergeRepo();
+  write(dir, 'libs/x/a.ts', 'incoming plus mine\n');
+  git(dir, 'add', 'libs/x/a.ts');
+  const result = runNode(dir);
+
+  assert.match(result.stderr, /1 staged path is outside the slice/);
+  assert.match(result.stderr, /libs\/x\/a\.ts/);
+  assert.doesNotMatch(result.stderr, /new\.ts/);
+});
+
+test('pathsChangedByMerge keeps only paths that differ from both sides', () => {
+  const blobs = {
+    ':a': '1',
+    'HEAD:a': '0',
+    'MERGE_HEAD:a': '1',
+    ':b': '2',
+    'HEAD:b': '0',
+    'MERGE_HEAD:b': '1',
+    'HEAD:c': '0',
+    'HEAD:d': '0',
+    'MERGE_HEAD:d': '0',
+  };
+  const blob = (rev, path) => blobs[`${rev}:${path}`] ?? null;
+
+  assert.deepEqual(pathsChangedByMerge(['a', 'b', 'c', 'd'], blob, ['HEAD', 'MERGE_HEAD']), ['b', 'd']);
+  assert.deepEqual(
+    pathsChangedByMerge(['b'], (rev, path) => (rev === 'T' ? '2' : blob(rev, path)), ['HEAD', 'MERGE_HEAD', 'T']),
+    [],
+  );
 });

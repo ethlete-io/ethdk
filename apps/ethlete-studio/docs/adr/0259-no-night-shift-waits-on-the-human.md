@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B486
+built: 0afe96985
 decided: 2026-11-11
 source: grill session 2026-11-11 (morning round)
 ---

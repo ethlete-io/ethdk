@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { splitFindings } from './archive-findings.mjs';
 import { gitExec } from './git-test-env.mjs';
 
 const PLAN = 'plans/ethlete-studio/design-to-code.md';
@@ -34,6 +35,16 @@ export const lostFindings = (oldText, newText, archivedText = '') => {
   return lost;
 };
 
+export const findingOrderErrors = (planText) => {
+  const errors = [];
+  let previous = 0;
+  for (const { number } of splitFindings(planText)) {
+    if (number <= previous) errors.push(`finding ${number} follows finding ${previous}; numbers must increase`);
+    previous = number;
+  }
+  return errors;
+};
+
 export const refusal = (lost) =>
   `plan finding lines removed from ${PLAN} without archiving: ${lost.map((l) => `${l.number} (${l.kind})`).join(', ')}\n` +
   'append it with `node tools/scripts/archive-findings.mjs`, or restore the lines';
@@ -62,9 +73,11 @@ export const main = (argv, log = console.error) => {
       }
     : stagedInputs();
   const lost = lostFindings(oldText, newText, added);
-  if (lost.length === 0) return 0;
-  log(refusal(lost));
-  return 1;
+  const order = findingOrderErrors(newText);
+  if (lost.length > 0) log(refusal(lost));
+  if (order.length > 0)
+    log(`${PLAN}: ${order.join('\n')}\nmove each finding to its place by number, or append new ones at the end`);
+  return lost.length > 0 || order.length > 0 ? 1 : 0;
 };
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
