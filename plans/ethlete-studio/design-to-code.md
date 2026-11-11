@@ -3705,3 +3705,20 @@ container of an action in 32 px wheel steps, up to 200 per direction, and runs a
 `pointer-events` scan, a forced-style toggle, `elementFromPoint` samples) after every step. Not fixed: a faster pan
 search changes what the check samples, so it needs its own proof. Not verified: a part setup that leaks timers or
 listeners across a switch (none in this sketch), and the resident server path.
+
+840\. Aktuell pass speed (Mac builder subagent, 2026-11-11, from 836): as built. The shared part shooter
+(`createPartShooter` in `shot.ts`) now hands each draw a boot key (the frame query without `state`); `createWarmPages`
+leaves a page that drew with a boot key on its drawing instead of parking it on `about:blank` (storage and cookies still
+cleared), lends such a page first to the next draw with the same boot key, and the draw switches the state in place
+with `switchFrame` (836), falling back to `openFrame` when it cannot. A checker draw parks as before. There is no dark
+twin to fold here: the aktuell pass draws the default scheme only. Cold, `ETHLETE_DESIGN_RESIDENT=0`,
+`et design sketch check pages/sketches@open-points --product studio`, runs alternated new/old: aktuell 54.6 s and
+53.9 s before, 40.7 s and 40.1 s after; whole command 89 s to 74-75 s (render check warm in all four), load 7 to 14 on
+6 cores. A profiled run: 82 of 128 draws switched (about 0.7 s each against 3.2 s for a load); the other 46 load,
+because `DRAWS_AT_ONCE` is 8 and the idle limit 8, so each new variant boots on up to 8 lanes again. Proof: every shot
+the part shooter drew in the command, taken with `animations: 'disabled'` next to its real shot, the
+aktuell warnings and the whole issue output, old code against new: 159 PNG and 1 JSON, 0 differences; the output
+differs only in timings. Not verified: Studio's own shot traffic through the same pool (a page now stays on its last
+drawing while idle), and the resident server path. The measuring runs flipped
+`.ethlete/design/studio/sketches/pages-sketches.open-points/sketch.json` from ready to in progress (stale
+`readyContent`); left uncommitted.

@@ -12,6 +12,7 @@ import { fileOfModuleId, SketchVariant, SystemModules } from './system/system-mo
 import { sketchIdOfName } from './system/sketch/sketch';
 import { recordShotViewed } from './system/sketch/viewed-shots';
 import {
+  bootKeyOf,
   Browser,
   callDrawsFrom,
   createDrawQueue,
@@ -24,6 +25,7 @@ import {
   ShotFailedError,
   ShotTimeoutError,
   ShotUnprocessableError,
+  switchFrame,
   ThumbMissingError,
 } from './thumb';
 import { MotionMode, MotionPictures, motionPicturesOf } from './motion-shot';
@@ -470,9 +472,14 @@ export const createPartShooter = (options: {
           ...(frame.scheme ? { colorScheme: frame.scheme } : {}),
         },
         limit: { ms: loadScaledMs(DRAW_LIMIT_MS), what: `the draw of frame.html?${frame.search}` },
+        ...(frame.checker ? {} : { boot: bootKeyOf(frame.search) }),
       },
-      async (page) => {
-        await openFrame(page, `${baseOf()}/frame.html?${frame.search}`);
+      async (page, booted) => {
+        const state = new URLSearchParams(frame.search).get('state');
+
+        if (!booted || state === null || !(await switchFrame(page, state)))
+          await openFrame(page, `${baseOf()}/frame.html?${frame.search}`);
+
         await settleFrames(page);
 
         if (frame.emptySlots) await page.evaluate(emptySlotsScriptOf(frame.emptySlots, frame.slotFill));

@@ -21,7 +21,15 @@ import { OFF_CENTRE_RULE, OFF_CENTRE_STATEMENTS } from './off-centre';
 import { classesOf, cssBlocksOf } from './css-source';
 import { createDesignServer } from '../serve';
 import { emptySlotsScriptOf, PartAddress, partFrameOf, viewportOf } from '../shot';
-import { awaitSettled, Browser, createDrawQueue, openFrame, switchFrame, ThumbUnavailableError } from '../thumb';
+import {
+  awaitSettled,
+  bootKeyOf,
+  Browser,
+  createDrawQueue,
+  openFrame,
+  switchFrame,
+  ThumbUnavailableError,
+} from '../thumb';
 import { gridReportOf } from './grid-report';
 import { watchSdkErrorLines } from './sdk-errors';
 import { partKeyOf } from './resolve-product';
@@ -655,14 +663,6 @@ export const inspectRetryingTimeouts = async (
 type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPage']>>;
 
 type Lane = { page: Page; sdkErrors: ReturnType<typeof watchSdkErrorLines>; booted: string | null };
-
-const bootKeyOf = (search: string) => {
-  const params = new URLSearchParams(search);
-
-  params.delete('state');
-
-  return params.toString();
-};
 
 /** @internal The frames of a part that draw the same page and differ only in their colour scheme, in drawing order. */
 export const loadsOf = <T extends Pick<Frame, 'search' | 'viewport'>>(frames: T[]) => {

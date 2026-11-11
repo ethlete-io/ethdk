@@ -101,6 +101,15 @@ export const openFrame = async (page: Page, url: string) => {
     });
 };
 
+/** What a part frame loads apart from its `state`: two frames with the same boot key can switch into each other. */
+export const bootKeyOf = (search: string) => {
+  const params = new URLSearchParams(search);
+
+  params.delete('state');
+
+  return params.toString();
+};
+
 /**
  * Draws `state` in place on a part frame that `openFrame` opened, as a fresh load with that state would, and waits for
  * its embedded frames. Resolves `false` when the frame cannot switch or drew nothing; open it with `openFrame` then.

@@ -17,6 +17,7 @@ import { createSystemModules, productModuleIdOf } from './system/system-modules'
 
 const goto = vi.fn<(url: string, options?: unknown) => Promise<void>>(async () => undefined);
 const drawnUrls = () => goto.mock.calls.flatMap(([url]) => (url === 'about:blank' ? [] : [url]));
+const switchedStates = () => evaluate.mock.calls.filter(([script]) => script.includes('etSwitchState'));
 const screenshot = vi.fn<(options: unknown) => Promise<Buffer>>(async () => Buffer.from('png'));
 const boundingBox = vi.fn<() => Promise<{ x: number; y: number; width: number; height: number } | null>>(async () => ({
   x: 10,
@@ -418,7 +419,7 @@ describe('createPartShooter', () => {
     await shots.pictureOf({ ...address, emptySlots: true });
     await shots.pictureOf({ ...address, emptySlots: true });
 
-    expect(drawnUrls()).toHaveLength(2);
+    expect(drawnUrls().length + switchedStates().length).toBe(2);
     expect(emptied()).toHaveLength(1);
     expect(evaluate.mock.invocationCallOrder[evaluate.mock.calls.indexOf(emptied()[0]!)]).toBeLessThan(
       screenshot.mock.invocationCallOrder[1]!,
@@ -477,6 +478,31 @@ describe('createPartShooter', () => {
     await shots.pictureOf(address);
     await shots.pictureOf({ ...address, fresh: true });
 
+    expect(drawnUrls()).toHaveLength(1);
+    expect(switchedStates()).toHaveLength(1);
+  });
+
+  it('loads the frame again when the page it drew on cannot switch the state in place', async () => {
+    const { shots } = acme();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams(),
+    };
+    const drawn = evaluate.getMockImplementation();
+
+    onTestFinished(() => void evaluate.mockImplementation(drawn ?? (async () => true)));
+    evaluate.mockImplementation(async (script) => (script.includes('etSwitchState') ? false : drawn?.(script)));
+
+    await shots.pictureOf(address);
+    await shots.pictureOf({ ...address, fresh: true });
+
+    expect(switchedStates()).toHaveLength(1);
     expect(drawnUrls()).toHaveLength(2);
   });
 
