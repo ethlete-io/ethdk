@@ -3998,6 +3998,7 @@ e2e case on an edit sketch merge view asserts the changed states. Side: B249 fol
 part. This breaks ADR 0187 (built 3c67d2143). Suspect: the target part of an `@edit` sketch is not read from its name.
 Owed: is it only for `@edit` sketches (then part of B249) or for every merge (regression, find the commit). Tool fix: an e2e
 case per sketch kind asserts the open part after merge and discard. Side: user-facing; inside B249 if B249 caused it.
+As built 884: `tools/scripts/ci-apt-retry.sh` (3 tries, `apt-get update` and `Acquire::Retries=3`, `::error::` with the last `E:` lines) wraps every apt and `playwright install --with-deps` step in ci.yml, spec-sweep.yml, publish.yml; spec `ci-apt-retry.spec.mjs` fails without the retry. Verified: spec, YAML parse. Not verified: a real CI run.
 
 884\. Linux builder (2026-11-11): CI red twice in one evening from apt, not from code: 04aebf37c at `yarn playwright install
 --with-deps chromium` in about every job, 605ca993d at the Rust host apt fetch (404 for libsoup-3.0-dev_3.6.6-1ubuntu0.1;

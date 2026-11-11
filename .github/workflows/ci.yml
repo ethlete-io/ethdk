@@ -116,7 +116,7 @@ jobs:
         with:
           nx-cache-key: test
 
-      - run: yarn playwright install --with-deps chromium
+      - run: bash tools/scripts/ci-apt-retry.sh yarn playwright install --with-deps chromium
 
       - name: Create a symlinked temp directory
         run: mkdir -p "$RUNNER_TEMP/real-tmp" && ln -s "$RUNNER_TEMP/real-tmp" "$RUNNER_TEMP/link-tmp"
@@ -229,7 +229,7 @@ jobs:
         with:
           nx-cache-key: storybook-test
 
-      - run: yarn playwright install --with-deps chromium
+      - run: bash tools/scripts/ci-apt-retry.sh yarn playwright install --with-deps chromium
 
       # Renders every story in Chromium through Vitest, which builds the stories itself; a11y
       # violations are reported, not failed.
@@ -256,7 +256,7 @@ jobs:
         uses: ./.github/actions/setup
 
       - if: env.E2E_FOLDERS != ''
-        run: yarn playwright install --with-deps chromium
+        run: bash tools/scripts/ci-apt-retry.sh yarn playwright install --with-deps chromium
 
       - if: env.E2E_FOLDERS != ''
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -287,7 +287,7 @@ jobs:
 
       - run: yarn nx run timetrack-app:build:e2e --exclude-task-dependencies
 
-      - run: yarn playwright install --with-deps chromium
+      - run: bash tools/scripts/ci-apt-retry.sh yarn playwright install --with-deps chromium
 
       - run: yarn nx e2e timetrack-e2e
         env:
@@ -305,7 +305,7 @@ jobs:
         with:
           nx-cache-key: csp-e2e
 
-      - run: yarn playwright install --with-deps chromium
+      - run: bash tools/scripts/ci-apt-retry.sh yarn playwright install --with-deps chromium
 
       - run: yarn nx e2e csp-e2e
 
@@ -328,7 +328,7 @@ jobs:
         with:
           nx-cache-key: studio-e2e
 
-      - run: yarn playwright install --with-deps chromium
+      - run: bash tools/scripts/ci-apt-retry.sh yarn playwright install --with-deps chromium
 
       # The design server answers 503 on /__design/system until the render packages of
       # .ethlete/design/config.json (dist/libs/components, dist/libs/core) exist.
@@ -367,8 +367,7 @@ jobs:
 
       - name: Install the Tauri Linux build dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libgtk-4-dev ninja-build libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+          bash tools/scripts/ci-apt-retry.sh sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libgtk-4-dev ninja-build libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
 
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
@@ -469,7 +468,7 @@ jobs:
 
       - run: yarn nx run cli:test-perf
 
-      - run: yarn playwright install --with-deps chromium
+      - run: bash tools/scripts/ci-apt-retry.sh yarn playwright install --with-deps chromium
 
       - run: yarn nx run-many -t build -p cli,components,core
 
