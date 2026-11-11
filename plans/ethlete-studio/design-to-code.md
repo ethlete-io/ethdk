@@ -3687,3 +3687,13 @@ server computes the sketch problems in the background at start and again after e
 cache is warm before Studio asks; an ask during a run waits for that run, it does not start a second one. Rejected for
 now: sending the sketch problems later with a push to Studio, because it changes what the human sees. Bite: a spec where
 the first ask after start and the first ask after a part edit do not run the rules inline.
+829b as built (Linux builder, 2026-11-11, 4ed2e6b96, pushed with 821, 829 and 830): after 830 the chip case ended before
+its held listing ("ended while a held listing was pending", load 30.9). Fix: `holdListings: false` on the case; it reads
+only chip, popup and footer status, never the listing. A `listingAnswered` wait did not work: 833. Bite: `--page System
+--hold-listings 14000 --delay-pictures 60000` red before, green after; hold alone passed in 5 idle runs. push-suite ok
+(repeat 3/3 of 26 System cases).
+
+833\. Linux builder (2026-11-11, from 829b): `listingAnswered` returns at once on a page with no `data-sk-changed="pending"`
+element for the held request, so a wait on it passes silently. Suspect (code read). Tool fix (doc agent, tool internal):
+the helper fails when a hold is active and neither a pending marker nor an answered listing exists. Bite: the System page
+chip case with `listingAnswered` and a hold fails with a clear message instead of passing.
