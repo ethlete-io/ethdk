@@ -1370,96 +1370,6 @@ aborts. Numbers (studio, read-only, resident off, harness cached): pages/sketche
 -> 2.5 s. Verified: specs (concurrency > 1 with order kept, fails at limit 1; pane cap and note), tsc, lint. Not
 verified: warm resident numbers (not restarted, shared). Still over 10 s: design shots (S4 cache) and compare-actions.
 
-523\. Tom (2026-11-06): "wenn ich zwischen 2 seiten wechsle wie icons und logo kommt immer pro frame noch ein loading
-state. ich hätte erwartet dass das mittlerweile instant ist. oder ist das nicht teil davon?" It was not: B416 sped up
-the CLI compare only. ADR 0186 (picture always under the live iframe) was decided 2026-11-04 for the sketch view and
-still sits unbuilt inside B365, queued behind B345/B346. Why no tool caught it: the perf block was scoped to CLI runs
-and `design timings`; Studio's own page switch has no timing and no target, so a slow switch is only seen by Tom. Fix
-(doc agent, applies ADR 0186 to every frame view and ADR 0213): the Studio frame part of B365 joins the perf block
-right after the resident cancel; measure first (per frame: picture available, loading shown), then build. Target: a
-page switch shows every frame's stored picture in the first paint. Tool fix: Studio logs the page-switch time to
-`design timings` with a target.
-Tom, same day, screenshot of elements/shell-main@edit at 32 %: "auf shell main sieht man beim scrollen auch noch
-stark pop in. auch bereits rendered sachen popen wieder rein wenn sie in den viewport kommen." Frames entering the
-viewport show empty boxes, and frames already drawn go empty again on the way back. Not new: finding 430 (2026-11-04) and ADR 0186 already recorded it, open in B365; the doc agent took it as new
-(a repeated report is a finding: check the findings list before recording). Added to the same item; target:
-a frame with a stored picture is never empty on screen, on switch or on scroll, and a frame drawn once stays drawn.
-Measured (c0 subagent, 2026-11-06, read-only, report `.claude/handoffs/agent-results/studio-page-switch.md`): the
-"loading state" is an empty box. icons <-> logo leaves frames empty 350-1000 ms on every switch, also back to a page
-seen seconds before: (a) the picture URL changes per switch (`view = Date.now()` in `system-view.component.ts:828-831`,
-into `&view=..&rank=visible`, `host/design.ts:339-348`), so the browser cache never hits; (b) `/__design/open-points`
-runs twice per switch, ~350 ms synchronous for the whole product (`read-open-points.ts:57`), and blocks the server, so
-a picture answered in <1 ms idle waits 330-970 ms. shell-main first visit 1.2-1.7 s empty (all pictures redrawn; the
-running server 5f60558 may predate 361d96eca, re-check after slice 2), second visit 414-799 ms (open-points + 6
-connections per host). Scroll pop-in (finding 430) unchanged since 2026-11-04: cells past the 400 px margin unmount and
-drop their picture, a live cell is an iframe with no picture under it (`sketch-view.component.ts:97-110`, template
-:184-206). Doc agent (applies ADR 0186 and 0213): go, as 3 slices after slice 2 and before S7, in this order: B
-`/__design/open-points` cheap (cached by input hash or per requested part) and called once per switch; A a stable
-picture URL - view/rank leave the `<img>` URL, the URL changes only when the picture's content key changes (so a stable
-URL never shows an old picture), with ETag/Cache-Control; C ADR 0186 in the sketch view: every cell renders its picture,
-the iframe lies on top and shows once drawn, a far cell unmounts only its iframe. Why no tool caught it:
-`page-switch.e2e.mjs` checks that the page renders, not that frames are non-empty in the first paint, and no e2e
-scrolls a sketch. Tool fix: per-frame empty checks in `page-switch.e2e.mjs`, a new sketch scroll e2e, and the
-page-switch time in `design timings` with a target (finding 523).
-B416 phase 3 = S4 (in progress, then as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06):
-compare keeps its pictures on disk under `node_modules/.design-explore/compare-{design,app}-shots-<hash>`. A design
-picture uses the design server's shot store (`server.shotStore`): its key is the frame (part, state, preset, width, bare,
-emptySlots, checker, theme), it is valid while every file it was drawn from is unchanged (part source, embedded parts and
-kit, styles, tokens, config), and the salt is the cli build and the Playwright version; the store now keeps the frame's
-text ambient. An app picture's key is the sha256 of the cli build, the Playwright version, the hash of every built
-harness file, the harness path and query (part, state, props, layout) and every other shot option (size, width,
-forced, opened control and its markup, room, panes, frozen, ambient, prop check). No app cache for `--url`. A hit skips
-the shot and counts in `design timings`; the action check reuses the design store. Numbers (studio, read-only, resident
-off): pages/sketches cold 21.1 s, warm 8.0 s (91 hits, 0 misses; compare-states 0.7 s, compare-actions 3.9 s, ~3 s
-process start); every design picture invalidated 14.4 s, the built app invalidated 13.6 s; pages/start 2.7 s cold, 1.8 s
-warm. Floor after an edit: 30 design or app shots 6-7 s; compare-actions 3.5-3.9 s, mostly `actions-state` per state
-(matrix states ~1.9 s).
-B416 pane count (as built in the `fix(cli)` commit that adds this note, c0 subagent, 2026-11-06): the pane
-`drawnPaneCountOf` counted on every pages/sketches state was the embedded `elements/studio-menu` panel (`<et-menu>`
-inside `#studio-menu-surface`), which the closed menu marks `hidden`; the same false count hit studio-menu's own
-four closed states. The counter now walks the tag tree and skips any mock inside a `hidden` element. A capped pane
-wait fails the state again ("the design draws N overlay pane(s), the app opened M ..."); the note path is gone. No
-time gained: the wrong count never cost the 1 s cap, because the wait already exits early once the open panes settle
-with no new one (settle 0.05-0.18 s per shot before and after). pages/sketches warm 6.7 s, app pictures dropped
-12.0 s, design pictures dropped 11.9 s (before: 6.6 / 12.0 / 12.1 s); pages/start 1.5-1.9 s. The rest after an edit
-is 30 shots 4 at once (5.6 s, ~0.6 s of a wide shot is queue wait), compare-actions 2.9 s and ~3 s process start.
-B416 compare-actions (as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06): the 30 s
-timeouts on elements/studio-menu and components/shell-project-switch were `readRingProbe` waiting Playwright's default
-30 s for a menu item its own click had removed; it now answers `null` at once for a gone element, waits at most 1 s
-otherwise and names that cap (`RingProbeTimeoutError`); the probe's click and focus got explicit timeouts. Each state's
-action check result is kept on disk (`compare-actions`) under the cli build, Playwright, built harness, state, its design
-markup and props; it stays valid while every design picture, embedded state and embedder list it read prints the same,
-so an edit re-checks only the states that read it (action-cache.spec). Shot concurrency 6/8 not tried yet.
-B416 phase 4+5 (as built in the `perf(cli)` commit that adds this note, c0 subagent, 2026-11-06): a resident request
-whose client closes its connection (a `timeout 30s` kill) is aborted: its queued draws reject, the browser contexts it
-opened close, a harness wait ends, the next request starts at once and the timings line logs exit 130
-(run-abort.spec, server.spec). The ~2.4 s outside any phase on pages/sketches was the pixel compare of its 30 states
-(PNG decode + per-pixel loop), not the file writes; it is now the `compare-pixels` phase and ~2.5x faster (same counts
-and diff pixels on 60 real pairs). Each timings line logs `unphasedMs` (total minus the union of its phases), `design
-timings` shows it, the compare target is 10 s, and a run over its target prints `over target: ... slowest phase ...` as
-its last line. `settle` caps at 3 s and fails the state with a named `SettleTimeoutError` instead of waiting 15 s
-silently. A compare of several parts already shares one harness start. Shot concurrency 6/8 not measured (context);
-numbers in `.claude/handoffs/agent-results/b416-phase45.md`.
-B416 abort follow-up (as built in e3f7a81dd, 2026-11-06): an aborted resident request no longer writes its
-compare-actions results to the cache, so a half-run check cannot leave a wrong cached answer (action-cache.spec).
-B416 phase 4+5 numbers (c0, resident, before a3a1e5c35 -> after): pages/sketches warm 3.59 -> 3.46 s, app pictures
-dropped 8.78 -> 7.70 s; pages/start 0.58 / 0.81 s; studio-menu 0.50 s; `compare-pixels` 2.52 -> 0.98 s; `unphasedMs`
-0.10-0.13 s. The compare part of ADR 0213 is met (warm 3.5 s, after an edit 7.7 s). Not met: the first cold compare
-after a new CLI build hit the 30 s kill (harness build 13.7 s + design shots 5.5 s + the rest cold), because every
-cache key holds the whole CLI build. Doc agent (applies ADR 0213): this joins the perf block as its own slice after the
-closing checks and before S7 - key each cache on the CLI files that change its result; it costs the builder a cold run
-after every cli commit and would also blur the S7 number. Still open: shot concurrency 6/8, a `compare-pixels` cache by
-picture hashes (1.1 s warm), a capped settle in `live-actions.ts` without a per-state catch (unverified).
-B416 closing checks + shot concurrency (as built in the `perf(cli)` commit that adds this note, c0 subagent,
-2026-11-06): compare shoots `COMPARE_SHOTS_AT_ONCE` = 8 states at once (the draw queue's cap), apart from the render
-check's `INSPECTS_AT_ONCE` = 4. pages/sketches with app pictures dropped, 3 runs each: 4 -> 8.13/7.50/7.70 s, 6 ->
-7.13/6.38/6.20 s, 8 -> 5.79/5.87/5.74 s (app shots 5.4 -> 3.6 s); state lines identical in all nine. Real edits in a
-scratch worktree (`--checkout`, its own resident): a design edit of components/zoom-chip re-shoots all 30 design
-pictures (all draw the chip) and the 15 app pictures whose forced button text changed, every diff px moves, the run
-after is all hits; an app edit re-shoots all 30 app pictures, design pictures stay hits, diff px fall back. Finding 519
-does not recur. After-edit runs miss the 10 s target under load 12-17: design edit 13-18 s (design shots 5.7-8 s,
-compare-actions 3-4.5 s), app edit 12.3-12.8 s; the next run 2.4-3.4 s.
-
 524\. c0 (2026-11-06), while measuring B416 phase 4+5: the first killed resident run wrote "browser has been closed"
 failures into the compare-actions cache, and every later run read them back as results. Fixed in e3f7a81dd. Why no
 tool caught it: no cache spec ran an aborted run; each cache was only tested with runs that finish. Tool fix: every
@@ -1467,75 +1377,10 @@ on-disk cache of the compare (compare-actions, the S4 design and app picture cac
 aborts a run mid-way and proves nothing of it is kept; the shared cache writer refuses a write once the run signal is
 aborted, so a new cache gets this for free.
 
-525\. Tom (2026-11-06), on the Mac perf session: "der mac perf test braucht auch den aktuellen stand des repos oder sonst
-machen dessen tests ja wenig sinn". The Mac session copies the repo by `git push` into its own checkout; nothing made it
-re-sync before a run, and nothing in a report said which commit was measured, so a Mac number from an old state looks
-like a current one. Fix (doc agent): the Mac session pushes and resets before every measurement and names the measured
-sha. Tool fix: each `.timings.jsonl` line logs the commit (short sha + dirty flag), `design timings` shows it, and it
-marks a line whose commit is not the checkout's HEAD as stale.
-B416 slice 1 (as built in ecb9a8f46, c0, 2026-11-06): the 519 edit-between-runs check passed with a real edit in a
-scratch worktree on its own resident (`--checkout <wt>`): a design edit of `components/zoom-chip` (text in all 30
-pages/sketches states) re-shot all 30 design pictures and only the 15 app pictures whose key holds the text; the
-matching app edit re-shot all 30 app pictures and kept the design hits; the next run 104/104 hits, no stale picture.
-Compare shots 8 at once (`COMPARE_SHOTS_AT_ONCE`; render check stays at 4): app cache dropped 4 = 7.5-8.1 s, 6 =
-6.2-7.1 s, 8 = 5.7-5.9 s. Warm sketches 2.55 s; the run after an edit 2.4-3.4 s. NOT met: the first run after a real
-edit 12.3-18 s (design shots 4.4-8 s, app shots 4-5.4 s, compare-actions 3-3.9 s, compare-pixels 1.1-1.5 s), under
-load 12-17 from other sessions, zoom-chip being the worst case. Doc agent (ADR 0213): an "after-edit floor" slice
-after slice 2: first measure a single-state part edit on an idle machine (the typical case) and the zoom-chip edit
-(worst case), then cut by measured phase: compare-actions re-checks only the states whose action inputs changed (the
-a3a1e5c35 note claims this already - verify why every state re-ran), compare-pixels cached by both picture hashes,
-design shots at 8. The 10 s target holds for the typical edit; the worst case is reported, not a gate.
-
 526\. c0 (2026-11-06): the after-edit numbers of B416 slice 1 ran under load 12-17 from other sessions, so 12.3-18 s
 cannot be told from a slow tool. Why no tool caught it: a `.timings.jsonl` line holds no machine state, so a noisy run
 looks like a clean one. Tool fix: each line logs the 1-minute load average and the core count, `design timings` marks a
 line with load above the core count as noisy, and a target verdict uses only clean lines.
-
-527\. c0 (2026-11-06), building B416 slice 2 (56b3f7954): `slow-checks.ts` imported one string constant from
-`rules/visible-change`, which pulled compare-command and part-build-ready into the load order; moving `harnessShotOf`
-changed that order, and part-ready.spec's `vi.mock` got the real `slowProblemsOf`. Fixed by moving
-`VISIBLE_CHANGE_RULE` to `system/build-ready-contract.ts`. The spec caught it; the cause is that specs depend on module
-load order. Tool fix (queued after the perf block, low priority): a lint rule that an import of a constant or type
-from a rules/command module fails; shared constants live in a contract file.
-B416 after-edit floor measured (c0, resident, HEAD 1b7621867, load 4.8-15, report
-`.claude/handoffs/agent-results/after-edit-floor.md`): typical edit (sketch-status-badge, one state of pages/sketches)
-design 6.9 s median (6.1-8.2) meets 10 s, app 10.8 s median (10.3-11.8) misses; worst case zoom-chip design 10.7-11.3
-s, app 9.0-9.6 s; the next run 2.6-3.0 s. compare-actions has no bug: a one-state design edit re-runs only that state,
-an app edit re-runs all 14 because the key holds the built app hash; the unchanged-matrix pair is the critical path
-(1.5-1.8 s each). compare-pixels ~1.1-1.5 s uncached on every run, and actions wait for it. Design shots: all 30
-re-shot after a one-state edit (shot key = the part module's whole dep file list, `serve.ts:454-505`), saturating at 4
-(design-server bound). Building: actions overlapped with shots/pixels, the slow pair first; compare-pixels cached on
-(design hash, app hash, pixel code hash); expected app edit 6.5-8.5 s. Doc agent: cut 2 (reuse design shots when the
-renderer's markup and styles match, ~-3 s on design edits) waits until after the Studio frame slices, since the design
-gate is met.
-B416 after-edit cuts (as built in 9374350cf + 315a2e66c, c0, 2026-11-06): compare-actions overlaps state shots and
-pixels; compare-pixels is cached on both picture hashes + the pixel code hash (`writeCacheEntry`). Clean lines
-(load 5.4-6.2/32): typical app edit median 5.77 s (5.69-5.78, was 10.8), typical design edit 4.76-5.23 s (was 6.9),
-zoom-chip app edit 6.78 s, every next run 0.91-1.04 s (was 2.6). The compare part of ADR 0213 is met, after an edit
-too. Not verified: cold resident, `--all`/`--live` in real runs, load above cores.
-
-528\. c0 (2026-11-06): the first after-edit commit (9374350cf) drew all 30 design pictures twice (the overlapped action
-check did not wait for compare's design shots); only the per-phase measurement showed it, no spec failed. Why no tool
-caught it: compare specs check results and order, not how often a picture is drawn. Tool fix (before S7, so the S7
-number is trustworthy): a draw-count invariant in the compare specs - each design and app picture is drawn at most once
-per run.
-Studio frame B (as built in 600073630, c0, 2026-11-06): a warm `?part=` open-points call spent ~535 ms in the static
-rules over the whole product (`ruleProblemsOf` via `buildReadyInputsOf`), ~39 ms in `readOpenPoints`; system-view and
-part-approval fetched the same URL at once. Now `open-points-cache.ts` keys the rule result on a stat fingerprint of
-~1300 files (6-8 ms); ready mark, hash, direct edit, slow results and build-ready stay live; Studio shares one in-flight
-request per URL. Repeat call icons 520 -> 14-18 ms, shell-main ~650 -> ~42 ms (22 ms live build-ready of embedded
-parts); first call after server start ~2-2.7 s unchanged. e2e "a part switch asks for its open points once" failed
-before (2+2). Why no tool caught the double request: no e2e counted requests per switch. Doc agent: the hand-made
-folder fingerprint is not accepted - it misses inputs outside the folders (an `implements` target in another app, the
-tailwind version) and then shows stale open points. The key records every file the rules actually read, like the
-compare-actions cache does, and a spec edits a file outside the old folder list.
-Studio frame A (as built in 0114e0d76, c0, 2026-11-06): the picture URL holds only session, epoch and revision;
-ranking goes by `POST /__design/view` from an `img[ethleteShotRank]` directive (ShotBoard); shot responses carry an
-ETag (PNG hash), 304 and `cache-control: private, max-age=3600`; STUDIO_API_LEVEL 6. New e2e "a part shown before
-paints every stored picture in the first frame": 0/2 before, 2/2 at 11-13 ms after. Risk: a content change that
-Studio's redraw events miss now stays stale until the next revision (before, every switch refetched and hid such
-gaps). Doc agent: a stale picture is the one outcome the stable URL must never cause, so the guard (every store write
-bumps the revision Studio sees) goes into the next slice with the open-points tracked key, not after C.
 
 529\. c0 (2026-11-06), slice A: a stable URL alone painted 0/2 - Chromium drops a picture from its memory cache once no
 `<img>` holds it while the other page loads. ShotBoard now keeps the last 500 loaded pictures as `Image` objects. Why no
@@ -1615,35 +1460,6 @@ Each switch appends a `page-switch` line (page seen before, target 100 ms) or `p
 measured: icons <-> elements/shell-main; after that switch no `img` or `iframe` with the shell-main part URL was in the
 DOM within 15 s although 18 shell-main shots were drawn. Details: `.claude/handoffs/agent-results/studio-frame-a2.md`.
 
-530\. c0 (2026-11-06), finding 523 verification (1dce81941): the page-switch e2e measured only icons, logo and system;
-the switch to `elements/shell-main` - the heaviest page and the one the Mac numbers flagged - drew 18 shots but no
-frame with its part URL mounted within 15 s. Cause open: a wrong selector or leaf in the e2e, or Studio not mounting
-the frames. Why no tool caught it: the switch list was picked by what worked, and a switch that never finishes was
-dropped instead of failing. Tool fix (slice C): shell-main joins `PAGE_SWITCHES`; a switch that shows no frame within
-the cap fails the e2e rather than being left out. c0 reports the cause; if Studio does not mount the frames, that is a
-Studio defect with its own finding.
-
-Open-points key and revision guard (as built in the commit that adds this note, subagent, 2026-11-06). Part 1:
-`cachedOpenPointsOf` runs `readOpenPoints` + `buildReadyInputsOf` inside `trackedRun` (`system/tracked-reads.ts`), which
-wraps the sync `fs` reads (stat-like and folder listings) for the run, so a new rule's read is recorded without a list.
-A hit needs the same product JSON and every recorded input printing the same (stat; listing; missing counts). Spec: an
-fs spy on every non-write `*Sync` function asserts the acme rules open nothing the tracker missed; guard spec (finding
-519): an `implements` target in another app, a config value, a package version, a vanished file and a new folder entry
-each give a fresh result. Repeat call on the main checkout: icons 12, logo 11, shell-main 38 ms (before 14-18, 14-16,
-~42). Part 2: the shooter hashes each kept picture; a changed hash for a key that no `forget` or announced `clear`
-dropped calls `changed`, and the server sends a `parts` event with the next revision. Bug fixed on the way: a flows
-change cleared the shots without a `parts` event. canvas e2e `a part edited on disk while away shows its new picture on
-return`: passes (12/12 pictures changed), fails with Studio's part revision held constant. Details:
-`.claude/handoffs/agent-results/open-points-key-revision-guard.md`.
-
-Open-points read-tracked key and revision guard (as built in 934616670, c0, 2026-11-06): `tracked-reads.ts` wraps the
-sync fs calls (read, exists, stat, readdir/opendir) during the rule run; a hit needs the same product JSON and every
-recorded input reading the same; the folder fingerprint is gone. Specs: an `implements` target in another app created
-and removed, a config value, a package version, a new folder entry and a vanished file each give a fresh answer; a
-completeness spec spies every non-write `fs.*Sync` and fails on an untracked read. Repeat calls: icons 12-19 ms, logo
-10-11 ms, shell-main 37-40 ms. Not tracked: `fs.promises`, child processes, an already-cached `require()`, a copy a rule
-holds in memory (no rule uses them; not proven).
-
 531\. c0 (2026-11-06), revision guard: Studio showed an old picture after a change. Studio's `revision`
 (`frame-revisions.ts`) moved only on a server `parts` event, but two paths swapped a picture without one: a flows change
 cleared every shot and sent only `flows`, and a `fresh` draw (merge-compare) replaced the stored picture. With frame A's
@@ -1655,31 +1471,6 @@ write to Studio's revision; before frame A every switch fetched the picture agai
 "a part edited on disk while away shows its new picture on return" (12/12 new pictures; fails with the revision held).
 Lesson: a cache that makes a page faster also hides a missing invalidation, so every cache slice adds an
 edit-while-away e2e before it is called done.
-
-532\. c0 (2026-11-06): the orphan-endpoint rule throws ENOENT when the app folder of an `implements` path is missing
-(found while building the read-tracked key, not perf). Why no tool caught it: the rule specs only use fixtures where
-every linked app exists. Tool fix (queued after S7): the rule reports a missing app folder as a finding instead of
-throwing, with a spec for it.
-
-Studio frame C (as built, 2026-11-06): ADR 0186 in the sketch view. Every cell keeps its stored `<img>` (with
-`ethleteShotRank`); a live cell lays its iframe over it, hidden until `FramePaintedDirective` (`paintedFrame$`, shared
-with the part-page frame) reports the page painted. canvas e2e: the sketch scroll case (fails on the old view with
-blank iframes on the way back up, 0 now), the edit-while-away sketch case (fails with the sketch revision held), and
-`elements/shell-main` in `PAGE_SWITCHES`. Finding 530's cause was the e2e: it clicked the sketch leaf `shell-main`
-under the part row, which opens the sketch view, not the part page.
-
-Studio frame C (as built in c77c781d5, c0, 2026-11-06): ADR 0186 in the sketch view. Every cell always renders its
-`<img>` (`ethleteShotRank`); the live iframe lies over it, invisible until painted, then the picture hides; a far cell
-drops only the iframe. Paint detection is a new `frame-painted` directive around the existing `paintedFrame$` (shared
-with `canvas-frame-grid`). The live-slot choice is unchanged. e2e scroll case: before 8 up-steps with a blank iframe at
-+30 ms, after 0 empty at every step and sample; edit-while-away for a sketch cell (rule of 531): fails with the
-revision held, passes with a new URL and ETag. 530 closed: the cause was the e2e selector, not Studio - the e2e
-checkout has two tree rows named shell-main (the part and a sketch), and the case clicked the sketch row. The case now
-picks the part row, and a switch without a frame fails with a DOM dump. icons -> shell-main seen 14 ms, back 11 ms;
-first visit 6.3 s (all drawn, nothing stored in the temp checkout). Verified: Studio tsc and lint, sketch-view spec
-17/17, merge/discard e2e. `design check --product studio --part pages/sketches` on c77c781d5: exit 0, 0 findings (42.8 s non-resident, only the
-baselined DROPPED-PROP lines of finding 489). Open: whether NG0953 "Unexpected emit for destroyed OutputRef" in the sketch-view merge spec
-predates C; the scroll e2e covers one column only.
 
 533\. c0 (2026-11-06), checking slice C: `sketch-view.component.spec.ts` logs "NG0953 Unexpected emit for destroyed
 OutputRef" twice and still passes, before slice C (c77c781d5^, 16/16) and after it (17/17). A component emits an output
@@ -1730,25 +1521,6 @@ again; a spec compares the full output of a cold and a warm run. Also in S7b-2: 
 restart on another port (the host is stripped from the recorded URLs, untested).
 
 S7b-2 as built (6f2061c10, 52c079983, 2026-11-06), partly: `design check` caches each part's completeness drawing (`seeFrames`: seen, refused, changes) on the S7b-1 infra (`completeness-sights`, key = code hash, Playwright version, product, sketch, part, frames, own CSS, control parts); everything after the drawing (merged, exceptions, inventory, part hash, option values, recursion into embedded parts) still runs live each time, so config, capabilities, merged.json, pictures.json and sketch edits redraw nothing yet change the result, and an embedding part redraws because its drawing loaded the embedded module. POST requests (the `/__design/render` SDK renders) are now recorded with their body and fetched again with it, so SDK markup from the render worker is in the key (S7b-1 refetched them as a GET: a fixed 405). The worker returns what it logged per render; an entry keeps those lines and a hit prints them. Found with the real-edit run: every S7b-1 and S7b-2 input hash on disk was null - Node's fetch went to 127.0.0.1 while Vite listened on ::1 - and null == null counted as unchanged, so an edit of components/zoom-chip in a scratch worktree redrew nothing (render 0.78 s, completeness 0.31 s). Fixed in 52c079983 (fetch the listen address, a null hash never hits). The numbers measured before the fix are not valid: 6f2061c10 run 1 310.8 s, run 2 48.4 s (completeness 0.28 s), both with nothing verified. Also, in those runs the entries kept no lines, so the 30 warnings were still missing on run 2. Open: measure again after 52c079983 (two runs plus the worktree edit), and check that entries keep lines and the full logs match.
-
-537\. c0 (2026-11-06), S7b-2 real-edit run: the S7b-1 render cache and the new completeness cache never verified
-anything. Node re-fetched the recorded URLs on 127.0.0.1 while Vite listened on ::1, so every input hash was null
-(14 814 render, 5 612 completeness entries), and null == null counted as unchanged: every entry always hit. A scratch
-edit of zoom-chip ('Fit' -> 'Fitting') redrew nothing. SDK renders (`POST /__design/render`) were re-fetched as GET and
-always got the same 405, so SDK markup was never in the key. The S7b-1 numbers (205 s warm) and the first S7b-2
-numbers (48.4 s warm) are invalid. Why no tool caught it: every cache spec used a fake server with a fetchable URL, none
-ran against a real Vite listen address, no spec required non-null input hashes for a hit, and S7b-1 reported its
-numbers before a real-edit run (rule of finding 519). Tool fix: built in 52c079983 (fetch the server's own listen
-address, a null hash never counts as unchanged, render requests re-posted with their recorded body, specs for each).
-Doc agent adds: the cache writes no entry unless every input hash is non-null; `design timings` shows the null-hash
-count per run and flags any above 0; and a cache slice reports no numbers and is not done until a real edit in a
-scratch worktree has redrawn exactly the edited part and its embedders.
-
-S7b-3 as built (294eef997, 44514b348, 2026-11-06), partly: the served caches write no entry when an input could not be fetched, the timings line records `nullHashes` and `design timings` flags runs above 0 (specs, both bite). Main tree after deleting the null-hash caches: cold 314.0 s, warm 50.7 s (auto-accept 38.2, static 7.1, render-inspect 2.0, completeness 0.93), load ~5/32, 0 null hashes on disk and in timings. Cold and warm logs are identical, the 31 `etProvideColor` warnings included: they come from the render worker and were lost only because the failed refetch carried no lines header. Not done: the real-edit worktree run. After the zoom-chip edit every one of 167 entries redrew, and an unchanged rerun redrew all again. The only changed inputs were the virtual modules `design-explore/env` and `design-explore/system`, which every part loads, so the cache is not verified and the 50.7 s does not count. Open: find what changes those modules between runs (a run's own writes to sketches, merged or ready are suspected), then the worktree edit and the resident restart.
-
-536 closed (c0, 294eef997 + 44514b348): the 31 `etProvideColor` warnings come from the render worker drawing SDK
-components for the title-bar and update-dialog frames; entries keep them since the re-fetch works (52c079983), and a
-real-HTTP spec shows a hit prints them again. Full cold and warm logs are identical.
 
 538\. c0 (2026-11-06), S7b-3: the rule of 537 failed. In a scratch worktree the zoom-chip edit rewrote all 167 check
 entries (332 s), and an unchanged rerun right after it again all 167 (328.7 s). In every entry only
@@ -3993,3 +3765,15 @@ with the 39faaabd1 fix undone the case fails. Queue: Mac, after 851.
 858\. Mac builder (2026-11-11, 840 b): a change in `shot.ts`/`warm-pages.ts`/`thumb.ts` named no Studio e2e case, so the
 840 slice did not run them. Tool fix (doc agent): the 851 related map also maps sources to e2e cases; the slice check
 names them and refuses a commit without a green run. Bite: a `warm-pages.ts` change names "[Edited]". Queue: with 851.
+
+859\. Linux builder (2026-11-11, grill session): `design-to-code.md` stood at its 440000-char budget, so no finding could
+be recorded; `archive-findings.mjs` moved 0 findings even with `--days=1`, and `--orphans` listed 225 findings with no
+STATUS row. Tool fix (doc agent decision, tool internal): a finding counts as done when it carries a built marker older
+than `--days`, with or without a STATUS row.
+Cause (script read + dry run): archiving took a finding only when STATUS marked it done, or when an uncited finding had
+a line that began with "As built" or "Built"; most findings never got a row and name the build inline ("As built" after
+a sentence, "built in <sha>"), so `--dry-run --days=1` moved 0. Age is the first date in the finding, as before.
+Built in be2e24d8f: a sentence-start "As built", or `built <sha>` whose sha is an ancestor of `origin/next`, is a built
+marker. Bite: a spec fixture with a built marker and no STATUS row is archived, one with an unpushed sha and an open one
+stay; with the old script the spec gets no finding moved. Run for real: 7 findings moved (440013 to 415197 chars), each
+removed line byte-equal in `archive/findings-2026-11.md`.
