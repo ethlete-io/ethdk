@@ -3673,7 +3673,7 @@ Second miss, same gap (spec run): `apps/ethlete-studio/src/styles.spec.ts` pinne
 and `vitest related` on `project.json` did not reach the spec. Tool fix added to 855 (doc agent decision): the merge
 also runs `vitest related` on the merged files and refuses on a red spec. Bite: merging the old variant c refuses
 with `styles.spec.ts` named.
-As built (Mac builder): a new `merge-app-gate.ts` wraps the merge in the CLI step and the Studio merge worker
+Built in 2c2e336fe. As built (Mac builder): a new `merge-app-gate.ts` wraps the merge in the CLI step and the Studio merge worker
 (`merge.ts` itself is unchanged). After the merge it reads every `project.json` target that lists `styles`, follows the
 relative `@import`s of those entries, and checks each `url()` of a changed stylesheet on that chain the way the build
 resolves it: relative to the file, or through an `externalDependencies` prefix into the `assets` output. Then each app
