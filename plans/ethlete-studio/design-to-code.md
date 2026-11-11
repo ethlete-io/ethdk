@@ -3877,6 +3877,9 @@ As built 5a42c253c (slice 5a): D1 Cause (bite) only a commit with the merged has
 HEAD (ADR 0256), new-only + EDIT-OLD-NOT-FOUND only for a part not at HEAD. D2 Cause (bite) `new` is the product, so
 every state compared unchanged; now an edit sketch with no `old` folds no state. Live API check ok; app shot and 4c owed
 in slice 5c.
+As built eefbd4d8a (slice 5b): D3 no Verwerfen on `@edit`; D4 per ADR 0270; D5 popover lists "Bild ohne Sketch geändert".
+Bites: 4 spec cases. 5c owes: live shots, System note + Sketches `@edit` state as accepted direct edits (ADR 0209), server
+refuses discard on `@edit` (S6b), D6.
 
 869\. Doc agent (2026-11-11): the 867 brief told the Linux builder to leave the design fix as a visible direct edit for
 the human to merge. The human had already called the clip a defect and the canvas under the panel "as intended", so no
