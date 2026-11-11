@@ -60,7 +60,7 @@ describe('checkDesign', () => {
       'UNLINKED acme: components/button, pages/home',
     ]);
     expect(lines).toContain('ok');
-  }, 60_000);
+  });
 
   it('prints the instant line of a part that declares instant switches, like sketch ready', async () => {
     const target = acme();
@@ -85,7 +85,7 @@ describe('checkDesign', () => {
     await checkDesign({ target, argv: ['--product', 'acme', '--part', 'components/button'], invocation: 'et design' });
 
     expect(lines.some((line) => line.includes('declares instant'))).toBe(false);
-  }, 60_000);
+  });
 
   it('lists the contrasts the render found and the missing states', async (context) => {
     const target = acme();

@@ -3860,6 +3860,14 @@ repeat is a rule a new case forgets. Decided by the doc agent (tool internal, th
 files), not a global `testTimeout` for every cli spec, so a fast spec still fails fast when it hangs; the per-case
 numbers then go. A case without its own timeout bites under the quota. Night backlog, Linux, after 620.
 
+As built (785): `check-system.fixtures.ts` exports `HEAVY_DESIGN_SPEC_TIMEOUT_MS` (60 s) and calls
+`vi.setConfig({ testTimeout })` at import, so every spec that imports the fixture (the check-system specs,
+check-denied, leftover-gate-files) gets 60 s; the per-case `60_000` in the five check-system specs are gone, larger
+ones stay. Bite: under `CPUQuota=12%`, `check-system.spec.ts` passes (13 tests, 94 s); with the `setConfig` line
+removed, the cases that build `acme()` fail at 5 s. A probe spec (6 s sleep, not committed) fails at 5 s next to an
+importing spec in the same run, so the setting does not leak across files (cli keeps vitest's default `isolate`).
+Not verified: a spec file that imports the fixture only through another helper; a run on CI.
+
 786\. Mac builder (2026-11-11, night, push:suite 81980de90): the repeat step blocked in run 3, six cases with a 10 s
 `page.goto` timeout in one burst at load 34. Suspect (not measured): the builder's own 780 subagent ran `spec:stress`
 at the same time. Lesson: two heavy runners on one machine make a red gate that says nothing about the code. Decided by

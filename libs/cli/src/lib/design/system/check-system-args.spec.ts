@@ -26,7 +26,7 @@ describe('checkDesign', () => {
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
     expect(withoutBrowserLines(lines)).toEqual([expect.stringMatching(/^IMPLEMENTS-MISSING .*hero\.ts: "src\/gone/)]);
-  }, 60_000);
+  });
 
   it('ends with one line per part with findings and the count of the clean parts', async () => {
     const target = acme();
@@ -41,7 +41,7 @@ describe('checkDesign', () => {
       'PART acme components/card: 3 open points',
       'PARTS acme: 2 of 4 clean',
     ]);
-  }, 60_000);
+  });
 
   it('ends with a count per rule, zeros included, then the complete line', async () => {
     const target = acme();
@@ -55,7 +55,7 @@ describe('checkDesign', () => {
     expect(lines).toContain('NESTED-SCROLL 0');
     expect(lines.at(-1)).toBe('check complete: 4 parts, 1 finding');
     expect(lines.indexOf('NESTED-SCROLL 0')).toBeGreaterThan(lines.findIndex((line) => line.startsWith('PARTS ')));
-  }, 60_000);
+  });
 
   it('keeps only the findings of one part with --part', async () => {
     const target = acme();
@@ -74,7 +74,7 @@ describe('checkDesign', () => {
       'PART acme elements/hero: 1 problem (HARD-CODED-COLOUR), 1 open point',
     ]);
     expect(lines).toContainEqual(expect.stringMatching(/^NO RECORD acme elements\/hero: open-point: .*\(\+2 more\)$/));
-  }, 60_000);
+  });
 
   it('runs only the static rules with --rules, and fails on a problem', async () => {
     vi.stubEnv('CI', '');
@@ -102,7 +102,7 @@ describe('checkDesign', () => {
       1,
     );
     expect(lines.at(-1)).toBe('2 problem(s) in acme, gone.');
-  }, 60_000);
+  });
 
   it('finds the product of a part without --product, and refuses an unknown part', async () => {
     const lines = output();
@@ -112,5 +112,5 @@ describe('checkDesign', () => {
     expect(lines).toContainEqual(expect.stringMatching(/^NO RECORD acme pages\/home: .*no-harness/));
     expect(await checkDesign({ target: acme(), argv: ['--part', 'pages/gone'], invocation: 'et design' })).toBe(1);
     expect(lines.at(-1)).toBe('NO PART "pages/gone" in any product of config.json.');
-  }, 60_000);
+  });
 });
