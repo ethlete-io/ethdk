@@ -25,6 +25,13 @@ test('fails only when a file exceeds its baseline', () => {
   assert.equal(personNameProblems({ 'a.ts': hits }, {}).length, 1);
 });
 
+test('an app sample file with a person name fails even when the baseline lists it', () => {
+  const hits = [{ line: 1, text: 'x' }];
+  const file = 'apps/ethlete-studio/src/app/sample.ts';
+  assert.equal(personNameProblems({ [file]: hits }, { [file]: 1 }).length, 1);
+  assert.equal(personNameProblems({ 'libs/a.ts': hits }, { 'libs/a.ts': 1 }).length, 0);
+});
+
 test('reports the right line when a name sits deep in a multi-line text', () => {
   const text = ['one', 'two Words', 'three', 'ask Tom here', 'five'].join('\n');
   assert.deepEqual(personNameFindings(text), [{ line: 4, text: 'ask Tom here' }]);

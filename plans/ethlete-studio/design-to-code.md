@@ -3862,3 +3862,9 @@ sdk part has an `implements` link, so the check has no sdk hits.
 A spec fails on the old name. The pages/sketches compare went from 50 to 35 FAILED rows, the pin rows from 16 to 1. Left,
 separate gaps: `all-unchanged` still shows the pin where the design folds it, and the 19 "Alle Zustände zeigen" and the
 2 "Übernehmen" (2.) rows stay - the design draws no such element; the pin name was only the nearest unmatched hint.
+
+911 as built: the inbox sample, its template pin and four specs under `apps/ethlete-studio/src` named a real person; they
+now use "human" with the initials "H". `check-person-names` already scanned `apps/`, but the baseline let those files
+pass, so it now ignores baseline entries for `apps/ethlete-studio/src/` and the entries were removed. A spec fails on the
+old code. The design's inbox sample (`.ethlete/design/studio`) still draws the old name and initials; it is a design
+file and was not touched.

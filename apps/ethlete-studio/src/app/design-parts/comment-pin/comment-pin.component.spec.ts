@@ -15,27 +15,27 @@ const render = async (inputs: Record<string, unknown>) => {
 
 describe('CommentPinComponent', () => {
   it('names the author, and the message count when there is more than one', async () => {
-    const single = await render({ author: 'Tom', initials: 'TB' });
+    const single = await render({ author: 'human', initials: 'H' });
 
     expect((single.nativeElement as HTMLElement).querySelector('[aria-label]')?.getAttribute('aria-label')).toBe(
-      'Comment by Tom',
+      'Comment by human',
     );
 
     TestBed.resetTestingModule();
 
-    const thread = await render({ author: 'Tom', initials: 'TB', count: 3 });
+    const thread = await render({ author: 'human', initials: 'H', count: 3 });
 
     expect((thread.nativeElement as HTMLElement).querySelector('[aria-label]')?.getAttribute('aria-label')).toBe(
-      'Comment by Tom, 3 messages',
+      'Comment by human, 3 messages',
     );
   });
 
   it('draws a resolved pin muted with a check mark instead of the initials and the count, also when selected', async () => {
-    const fixture = await render({ author: 'Tom', initials: 'TB', count: 3, selected: true, resolved: true });
+    const fixture = await render({ author: 'human', initials: 'H', count: 3, selected: true, resolved: true });
     const host = fixture.nativeElement as HTMLElement;
     const button = host.querySelector('button');
 
-    expect(button?.getAttribute('aria-label')).toBe('Comment by Tom, 3 messages, resolved');
+    expect(button?.getAttribute('aria-label')).toBe('Comment by human, 3 messages, resolved');
     expect(button?.getAttribute('aria-pressed')).toBe('true');
     expect(button?.classList).toContain('text-text-muted');
     expect(button?.classList).not.toContain('bg-et-theme');
@@ -45,7 +45,7 @@ describe('CommentPinComponent', () => {
   });
 
   it('emits pinToggle on a click', async () => {
-    const fixture = await render({ author: 'Tom', initials: 'TB', selected: true });
+    const fixture = await render({ author: 'human', initials: 'H', selected: true });
     let toggles = 0;
 
     fixture.componentInstance.pinToggle.subscribe(() => toggles++);

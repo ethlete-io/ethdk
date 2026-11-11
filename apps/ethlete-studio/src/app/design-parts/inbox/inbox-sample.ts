@@ -43,8 +43,8 @@ export const INBOX_SAMPLE: InboxComment[] = [
   },
   {
     id: 'c3',
-    author: 'Tom Bornholdt',
-    initials: 'TB',
+    author: 'human',
+    initials: 'H',
     when: 'vor 1 Std',
     part: 'button',
     state: 'tonal · rest',
@@ -84,8 +84,8 @@ export const INBOX_SAMPLE: InboxComment[] = [
   },
   {
     id: 'c7',
-    author: 'Tom Bornholdt',
-    initials: 'TB',
+    author: 'human',
+    initials: 'H',
     when: 'Fr',
     part: 'button',
     state: 'filled · focus-visible',

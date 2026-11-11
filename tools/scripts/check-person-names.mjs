@@ -13,6 +13,7 @@ const KNOWN_NAME_HASHES = new Set(
   ),
 );
 const ROOTS = ['libs', 'apps', '.ethlete/design'];
+const UNBASELINED = /^apps\/ethlete-studio\/src\//;
 const TEXT = /\.(?:ts|tsx|js|mjs|cjs|json|md|css|html|vue|yml|yaml|txt)$/;
 
 const hash = (word) => createHash('sha256').update(word).digest('hex').slice(0, 16);
@@ -84,7 +85,7 @@ export const personNameCounts = (root, files, userName = gitUserName(), read = r
 
 export const personNameProblems = (counts, baseline) =>
   Object.entries(counts).flatMap(([file, hits]) => {
-    const allowed = baseline[file] ?? 0;
+    const allowed = UNBASELINED.test(file) ? 0 : (baseline[file] ?? 0);
     return hits.length > allowed
       ? [
           `${file}: ${hits.length} person-name lines, ${allowed} allowed. Use the role "human". First: ${hits[0].line}: ${hits[0].text}`,
