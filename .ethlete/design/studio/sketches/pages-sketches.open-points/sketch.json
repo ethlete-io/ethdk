@@ -1,7 +1,7 @@
 {
   "target": "pages/sketches@open-points",
   "targets": ["pages/sketches", "components/sketch-status-badge"],
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-11-11T08:08:47.165Z",
   "baseline": {
     "foundations/agent-logos": "d8ad620ff101ae06",
@@ -92,7 +92,7 @@
     "pages/inbox": "077a7dad0176f8fe",
     "pages/inventory": "a7e25b0248e81b20",
     "pages/merge": "499e8e649decb18a",
-    "pages/sketches": "5a596bd604bb798b",
+    "pages/sketches": "1b52a802f0e92a15",
     "pages/start": "692644df2034dcd1",
     "pages/system": "c633ad45fe3758d6",
     "fixtures.ts": "909089fbef7b8f34"
@@ -120,5 +120,14 @@
       "round": "r1",
       "note": "Der Chip steht im Kopf der gewählten Variante neben Übernehmen und öffnet dort die Liste. Das Badge bekommt den neuen, knappen Zustand Variante gewählt; dass der Merge fehlt, sagt der erste Punkt der Liste, Sketch gewählt, noch nicht gemergt. Kostet: ein neuer Badge-Zustand; ohne Wahl fehlt dem Chip sein Platz, und Punkte ohne Variante hängen an der gewählten."
     }
+  },
+  "readyContent": {
+    "a": "8fbcce680a7a7828",
+    "b": "e0300b2f5823bbf6",
+    "c": "970189611875d132"
+  },
+  "mergeHold": {
+    "reason": "variant a changes pages/sketches picked, sketch-only-points, sketch-only-points-open; variant b changes pages/sketches picked, sketch-only-points; variant c changes pages/sketches picked, sketch-only-points, sketch-only-points-open",
+    "at": "2026-11-11T09:12:46.960Z"
   }
 }
