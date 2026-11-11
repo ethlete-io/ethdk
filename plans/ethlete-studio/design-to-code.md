@@ -3970,6 +3970,10 @@ refuse a merge that breaks the app build. Tool fix (doc agent decision, tool int
 of the merged CSS with the app build's resolver and refuses the merge with the unresolved URL named. Bite: merging the
 old font-pair variant c refuses with the `@assets` URL named; before the fix it merges. Queue: Mac builder (merge files
 are its area), right after 850. The build itself is fixed first by the Linux builder in the B490 slice.
+Cause (code read + build proof, Linux builder): the merge checks only the sketch state, and the design server resolves
+`@assets` itself, so no design-side check compiles the CSS the way the app does. Build fixed in 210235327: the app's
+`project.json` copies the product's assets dir to `@assets/`, and the build cache inputs now list foundations CSS and
+assets (they listed a removed `tokens.css`, so a design CSS change never forced a rebuild).
 
 856\. Linux builder (2026-11-11, from 855), measured: when the Studio build fails, the `canvas.e2e.mjs` lead process exits
 but leaves its `--worker` processes and their design servers running. Tool fix (doc agent decision, tool internal): the
