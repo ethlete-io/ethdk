@@ -3497,6 +3497,19 @@ measures wider than the serif fallback (none of Roboto, Inter, JetBrains Mono is
 never-loading `@font-face` and `document.fonts.check` returns false; the resolved face comes later and wins, but the
 order is the only thing that holds. Not done: the Mac shot (out of reach of this builder).
 
+B490 rest as built (Linux builder, 2026-11-11, 210235327): the Studio app build ships the design's `@assets`.
+`ethlete-studio:build` copies `.ethlete/design/studio/assets` to `@assets/` in the output and marks `@assets` as an
+external dependency, so `url('@assets/fonts/...')` stays relative to the emitted stylesheet and loads the copied file. The
+recipe holds for any app that imports a product's design CSS: one asset glob from `.ethlete/design/<product>/assets` and
+`externalDependencies: ["@assets"]`. The build inputs now name the foundations CSS and the assets instead of the removed
+`tokens.css`, so a change there no longer hits a stale Nx cache. Verified on Linux: `build:production` passes; the built
+CSS holds `url(@assets/fonts/noto-sans-...woff2)`, the copies equal the design files byte for byte; the built app served
+statically loads `/@assets/fonts/noto-sans-latin-wght-normal.woff2` and renders the start view in Noto Sans (shot in
+`.claude/handoffs/agent-results/b490-studio-linux-noto.png`); the 855-blocked e2e case passes normally (23 s) and with
+`--hold-listings 14000` (135 s); `design check --product studio --part foundations/type` 0 findings. The `ty-specimen`
+classes are not in `type.css`: they sit in the `styles` of `type.ts`, the foundation's own sheet, and never reach the app,
+so they stay. Not verified: Noto Sans Mono in the app (the start view shows no code text), the Mac shots (Mac builder).
+
 815\. Linux builder (2026-11-11, B490 font-pair sketch 523abcb77): `type.ts` imports `type.css?inline` for `tokenSheet`,
 and the inline copy keeps `url('@assets/...')` unresolved, so each family gets a second `@font-face` that never loads and
 `document.fonts.check` is false; the drawing renders right only because the resolved rule comes later. Cause (measured).
