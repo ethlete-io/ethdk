@@ -3985,3 +3985,9 @@ builder: the modules through which specs reach the worker are product modules th
 `libs/cli` `*.spec.ts` forbids those two names from the product modules and names the fixtures module; per-spec
 `warmOpenPointsWorker` calls go. Bite: a spec that imports from the product module fails lint; a cold spec through the
 fixtures module passes at `--slow 4`. Not covered: a spec that reaches the worker through another product call.
+As built (Linux builder, 2026-11-11): `system/open-points-worker.fixtures.ts` became `system/open-points.fixtures.ts`;
+it re-exports both names and registers the warm `beforeAll` on import. `libs/cli/eslint.config.mjs` restricts both names
+from `studio-api` and `open-points-runner` in `src/**/*.spec.ts`. The four specs moved; `slow-run.spec.ts` imports the
+module for its side effect (it reaches the worker through `startSlowRunner`). Verified: a spec with the product imports
+fails lint with both messages; with `JITI_FS_CACHE=false` at `--slow 4` a cold spec through the fixtures module passes
+(54.9 s), the same spec through `open-points-runner` fails (9.4 s); `vitest related` 128 files green; typecheck green.

@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../design-config';
 import { openPointsOf, PartOpenPointsAnswer } from './open-points-runner';
 import { recordSettledBuildReady } from './record-settled';
-import { warmOpenPointsWorker } from './open-points-worker.fixtures';
+import './open-points.fixtures';
 import { resolveProduct } from './resolve-product';
 import { startSlowRunner } from './slow-run';
 import { partHashOf } from './sketch/baseline';
@@ -42,8 +42,6 @@ const staleChip = () => {
 };
 
 describe('the slow runner of the design server', { timeout: 60_000 }, () => {
-  warmOpenPointsWorker();
-
   it('records the check record of a settled part whose checks are green, without a design check', async () => {
     const { target, dir, config, product } = staleChip();
     const buildReadyOf = () =>

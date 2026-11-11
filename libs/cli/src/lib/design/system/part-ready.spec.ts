@@ -5,9 +5,8 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { Readable } from 'stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { warmOpenPointsWorker } from './open-points-worker.fixtures';
 import { DESIGN_DIR } from '../design-config';
-import { openPointsAnswer } from '../studio-api';
+import { openPointsAnswer } from './open-points.fixtures';
 import { checkActions, PART_HARNESS_ONLY, partActionFailuresOf } from './actions-command';
 import { harnessMapOf, writeHarnessMap } from './harness-map';
 import { checkLiveActions } from './live-actions';
@@ -104,8 +103,6 @@ const output = () => {
 
   return lines;
 };
-
-warmOpenPointsWorker();
 
 describe('part ready', () => {
   afterEach(() => vi.restoreAllMocks());

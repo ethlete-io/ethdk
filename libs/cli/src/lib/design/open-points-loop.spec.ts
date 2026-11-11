@@ -6,7 +6,7 @@ import { Readable } from 'stream';
 import { setTimeout } from 'timers/promises';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from './design-config';
-import { openPointsAnswer } from './studio-api';
+import { openPointsAnswer } from './system/open-points.fixtures';
 
 const BLOCK_MS = 1000;
 
