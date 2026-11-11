@@ -3873,6 +3873,10 @@ human). D6: `design serve` rewrote tracked `studio/merged.json` during the run. 
 and only the live run found D1-D3 and D5; the live verify list must run before a slice that changes old/new is pushed,
 not at the end. Tool fix (doc agent decision): slice 5 finds the old design by part content, not by the merged hash;
 `serve` never writes a tracked file; the live checks 4b and 4c become e2e cases. Side: user-facing, after 867.
+As built 5a42c253c (slice 5a): D1 Cause (bite) only a commit with the merged hash counted; now `old` = the part folder at
+HEAD (ADR 0256), new-only + EDIT-OLD-NOT-FOUND only for a part not at HEAD. D2 Cause (bite) `new` is the product, so
+every state compared unchanged; now an edit sketch with no `old` folds no state. Live API check ok; app shot and 4c owed
+in slice 5c.
 
 869\. Doc agent (2026-11-11): the 867 brief told the Linux builder to leave the design fix as a visible direct edit for
 the human to merge. The human had already called the clip a defect and the canvas under the panel "as intended", so no
