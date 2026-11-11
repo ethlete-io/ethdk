@@ -3858,7 +3858,10 @@ timeout; the vitest default of 5 s then fails only on a slow machine. Lesson: a 
 repeat is a rule a new case forgets. Decided by the doc agent (tool internal, the builder's recommendation, scoped): the
 60 s timeout comes from one place for the heavy design specs (the `libs/cli` design specs, or the fixture helper's own
 files), not a global `testTimeout` for every cli spec, so a fast spec still fails fast when it hangs; the per-case
-numbers then go. A case without its own timeout bites under the quota. Night backlog, Linux, after 620.
+numbers then go. A case without its own timeout bites under the quota. Night backlog, Linux, after 620. Built b0ef796f4:
+`check-system.fixtures.ts` sets `vi.setConfig({ testTimeout: 60_000 })` on import (7 specs, 32 per-case numbers gone);
+under the quota 13/13 with it, every `acme()` case times out at 5 s without it; a spec without the fixture import still
+fails at 5 s.
 
 As built (785): `check-system.fixtures.ts` exports `HEAVY_DESIGN_SPEC_TIMEOUT_MS` (60 s) and calls
 `vi.setConfig({ testTimeout })` at import, so every spec that imports the fixture (the check-system specs,
@@ -3873,3 +3876,13 @@ Not verified: a spec file that imports the fixture only through another helper; 
 at the same time. Lesson: two heavy runners on one machine make a red gate that says nothing about the code. Decided by
 the doc agent (tool internal): push:suite and spec:stress take one local heavy-run lock per machine; the second waits or
 stops with the holder's name; a spec bites with two runners. Night backlog, Mac, after the 777 Mac verify.
+
+As built (B438, ADR 0229, commit `perf(cli): Draw the fresh compare pair only after a cached first pair`): the
+shooter's `pictureOf` now returns the picture with its `source` (`drawn`, `memory` or `disk`, from `onSource`), and
+`PictureOf` returns a `SourcedPicture`. `drawnPair` draws the fresh second pair only when the first pair differs and one
+of its pictures is not `drawn`; a picture without a `source` counts as possibly cached, so other `PictureOf`
+implementations keep the old second draw. Specs: a differing pair drawn fresh makes 2 draws (was 4) in
+`merge-compare.spec.ts` and `unchanged-states.spec.ts`; a stale cached picture is redrawn and the fresh pair decides;
+`shot.spec.ts` names `drawn`, then `memory`, then `drawn` for `fresh`. Bite: with the `drawnFresh` check removed, both
+2-draw cases fail. `spec:stress --runs 4 --load 2`: 3 specs 4/4. Not verified: the cold compare time of finding 598 on a
+real product; a Studio e2e run (none covers the merge compare by name).
