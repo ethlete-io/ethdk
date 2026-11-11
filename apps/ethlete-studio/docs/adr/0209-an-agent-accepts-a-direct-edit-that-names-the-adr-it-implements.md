@@ -1,6 +1,7 @@
 ---
 status: accepted
 open: B412
+governs: ['.ethlete/design/*/merged.json', '.ethlete/design/**/sketches/**']
 decided: 2026-11-06
 source: doc-agent session 2026-11-06, finding 514 (shell-main@edit)
 ---

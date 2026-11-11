@@ -1,6 +1,7 @@
 ---
 status: accepted
 open: none
+governs: ['.ethlete/design/*/merged.json', '.ethlete/design/**/sketches/**']
 decided: 2026-11-01
 source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Surfaces follow the elevation system, not picked names" (Q203-Q206), Q249
 ---
