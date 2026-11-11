@@ -2159,6 +2159,12 @@ and drops the sketch.
 614\. Builder (2026-11-09, B440): the e2e runner overwrites its log when a run starts, so a watcher that greps the log
 for "exit" can read the end of the previous run. Tool fix (technical): each run writes a new log file.
 
+As built (614): `tools/scripts/run-log.mjs` gives each push-suite e2e step and each repeat run its own timestamped log
+(`push-suite-e2e-<stamp>-<pid>-<n>.log`, newest 5 kept) and prints the path; `push-suite-e2e.log` and
+`push-suite-repeat.log` now hold one line, `latest run log: <path>`, so a grep for "exit" cannot hit an old run. Verified:
+specs for two runs giving two distinct files with the first untouched, push-suite and repeat specs 48/48. Not verified:
+a full `yarn studio:e2e` run; the e2e-progress mod (reads any `*.log` by mtime and run-log content) was read, not run.
+
 615\. Builder (2026-11-09, B440): `tsc -p` on the Studio `tsconfig.spec.json` fails in `shot-state.spec.ts`
 (`failedShots` possibly null) since 38d421711. vitest does not typecheck, so the specs stayed green. Cause: the
 `typecheck` target of `ethlete-studio` and `timetrack-app` checked only `tsconfig.app.json`, so no gate typechecked
@@ -2175,12 +2181,24 @@ use, the suspected cause of finding 616 and of the old unit flake. Tool fix (tec
 Decided by the grill session under ADR 0230: wait bounds that only tell "answers at once" from "waits for a timeout"
 stay in the unit run; one moves to the perf job when it flakes.
 
+As built (617): the fixture passes `listenOn: 0` and reads the port from `httpServer.address()`; no random port is left,
+so no clash is possible. Verified: both specs pass, `spec:stress ... --runs 4 --load 2` 4/4 each, related specs and
+`cli:typecheck` green. Not verified: a forced clash on the old port (reasoned only).
+
 618\. Builder (2026-11-09, B447, 90ef0eeb8): Large "a sketch scroll never empties a cell" printed `(iframe: null)`.
 Cause (proven): `sketchCells` listed all cells and then probed each frame by position, so a frame removed in between
 gave a null probe and the cell counted as empty. Why the frame left in CI is not proven (likely the cap of 6 live
 frames against 8 visible cells); the detail now prints "frames gone before their probe". The tool did not catch it
 because nothing tests the e2e probe helpers and the race never happened locally. Tool fix: a spec for the probe helpers
 with a forced-race fixture page for each outcome.
+
+As built (618 tool fix): `censusCells`, `probeCell`, `drawnIn`, `sketchCells` and `CANVAS` moved unchanged from
+`canvas.e2e.mjs` to `apps/ethlete-studio/e2e/probe-helpers.mjs`. `probe-helpers.spec.mjs` (node --test, Chromium,
+`fixtures/probe-cells.html`) covers a live frame (`drawn`), an empty frame (`blank`, counts as empty) and a frame that
+a MutationObserver removes once the census marks it, so it leaves between the listing and the probe (reported gone,
+its picture shows). `test:tools` now also runs `apps/ethlete-studio/e2e/*.spec.mjs`. Verified: the race case fails with
+the old null-probe behaviour put back by hand and passes restored; spec:stress 4/4 under load 2; the case "a sketch
+scroll never empties a cell that had a picture" passed after the move. Not verified: why the frame left in CI.
 
 620\. Builder (2026-11-09, B445, c88cf6ebd): Merge "the sketch view stays open after the sketch dropped from the
 listing" timed out. Cause (server bug): a request joins a running listing, and `serve.ts` detached running listings on a
@@ -3763,7 +3781,8 @@ path outside the allow list (night backlog, Linux). Mac builder verifies the fix
 bites. Not built: `sketch check` still only logs the line (night backlog, Linux: same problem there); `compare` and
 `shot` are views, not gates, and may keep the log line. Sketch check built af1e4e696 (`sketch-check-denied.spec.ts` bites); without a resident
 process its render check now draws on the run draw (else its denials were lost). Not verified: the Mac, and the
-resident path by its own spec (night backlog, Linux: a resident case in the same spec).
+resident path by its own spec (night backlog, Linux: a resident case in the same spec). Resident case built aa1fb0f2a (spec only; the
+resident path already reported the denial; the case bites without `takeDeniedIds` in `resident-process.ts`).
 
 As built (777): `createDesignServer` wraps Vite's logger and records each id of an "outside of Vite serving allow list"
 line (`takeDeniedIds()`, also on the run and resident `WarmDraw`); `design check` (`checkSystemRendered`) prints one
@@ -3777,6 +3796,8 @@ that run draw when there is no resident warm process, so its requests are counte
 (a sketch variant links a stylesheet outside the allow list) fails with the report removed and passes with it; related
 specs, cli typecheck, lint. Not verified: the Mac, the resident process path by a spec. `compare` and `shot` still only log.
 
+As built (777 resident): `sketch-check-denied.spec.ts` gains a case that runs `sketch check` through `createWarmRuns` (the resident path; `readFreshDist` is only called there) and still gets exit 1 and the `SERVE-DENIED` line, so `takeDeniedIds` survives the `WarmDraw` spread. It fails when `takeDeniedIds` is dropped from `resident-process.ts`. No code change.
+
 778\. Linux builder (2026-11-11, night, 710 sweep): the first real nightly spec sweep (CI run 42931941982) failed: 417
 files in 60 min, 17 under 100 % at `--slow 4` (Studio flows-page.component, sketches.component; cli open-points-answer,
 open-points-loop, serve, sketch-command at 1140 s, check-system-render, check-system-sketch, check-system, check-warm,
@@ -3789,6 +3810,11 @@ the workflow default and push; this is also the owed second real run), then reco
 finding (night backlog, Linux, fresh builder session).
 In progress (2026-11-11, builder): spec-sweep.yml runs a matrix of `--slow 1` and `--slow 2` on a push of the workflow or
 spec-stress.mjs; the default for the nightly and a dispatch is now 2 until the calibration picks N.
+As built (778 calibration, 85aa2c764): CI run 42941554007, 418 files, `--runs 2`, both jobs 43 min. `--slow 1` (no quota,
+`--load 0`): green. `--slow 2`: 416 green, 2 files 0/2 at about 52.8 s: open-points-answer.spec and system/check-system.spec.
+So the Suspect holds in part: N=4 was too high on CI; N=2 stays the nightly default. spec:stress in `--github` mode
+printed no output of the failed runs, so the cause per file is not proven. Locally under `CPUQuota=12%`, open-points-answer
+passes; check-system fails its two "without a browser" cases (not yet looked at). Not verified: the cause of each failure.
 
 779\. Linux builder (2026-11-11, night, 777 df5226ee1): the first push:suite failed: `serve.spec`, `shot-store.spec` and
 `serve.perf.spec` mock `vite` without `createLogger`, which `serve.ts` now imports. The subagent ran only its touched
@@ -3797,3 +3823,47 @@ that mocks a module the slice now imports from. Lesson: the push:suite caught it
 by the doc agent (tool internal, general form of the builder's recommendation): every builder slice and subagent brief
 runs `npx vitest related --run <changed files>` before its commit, not only for changed imports between modules. Builder
 work (night backlog, Linux): put this rule in the builder-agent skill and the subagent brief template. Built 6447c4e1b.
+
+780\. Mac builder (2026-11-11, night, 770 81980de90): the Mac push was refused four times tonight because origin moved
+while its push:suite ran (last: 14 commits, then a full rerun with the 29 min repeat step). Cause (measured in the push
+log): both builders push to `next`; every Linux range touched `libs/cli` or `tools/`, so the 770 step reuse never
+applies. Lesson: two pushers with half-hour gates need a slot, not luck. Decided by the doc agent (tool internal, the
+Mac builder's recommendation, with one change): a builder that starts push:suite for a push to `next` claims a push slot
+for its run time; the other builder commits but holds its push until the slot ends. The `agent-sessions claim` store is
+per checkout and does not reach the other machine, so the slot lives on origin (for example a ref with holder and
+expiry), has an expiry so a dead run cannot hold it, and is released when the push ends or the suite fails. A spec
+bites with two claimers. Tool fix (night backlog, Mac builder, after its push).
+
+781\. Linux builder (2026-11-11, night, 618 5577aacd1): a builder subagent put a Chromium spec
+(`probe-helpers.spec.mjs`) into `test:tools`, which runs in the CI Checks job with no Chromium; the builder's review
+caught it before the push (f708e2e0b: `yarn test:e2e-helpers` in the Unit tests job after its playwright install;
+verified locally only). Suspect, tool gap: nothing checks that a `node --test` spec that launches Chromium runs only in
+a job that installs it; push:suite runs where Chromium exists, so it cannot catch it. Decided by the doc agent (tool
+internal, the builder's recommendation): no tool fix for one case; a second case makes it night backlog.
+
+782\. Linux builder (2026-11-11, night, 778 calibration, CI run 42941554007): at `--slow 2` on CI,
+`libs/cli/src/lib/design/open-points-answer.spec.ts` failed 0/2 at about 52.8 s; at `--slow 1` it passes, and it passes
+locally under `CPUQuota=12%`. Suspect (not measured): a fixed timeout near 50 s that a slowed runner crosses. Lesson: a
+spec that passes only on a fast machine hides a timing bound. Decided by the doc agent (tool internal): after 784, read
+the first failed run's output from the next nightly run, then fix the bound or the slowness; a stress run at
+`--slow 2` bites (night backlog, Linux).
+
+783\. Linux builder (2026-11-11, night, 778 calibration, CI run 42941554007): at `--slow 2` on CI,
+`libs/cli/src/lib/design/system/check-system.spec.ts` failed 0/2 at about 52.8 s. Locally under `CPUQuota=12%` its two
+"without a browser" cases fail ("fails a part check without a browser on a dev machine…", "skips the render check
+without a browser under CI"). Suspect (not measured): an environment difference under the quota run, not slowness, for
+example a browser lookup or a CI variable that the quota wrapper changes. Decided by the doc agent (tool internal):
+reproduce the local failure first (it needs no CI), name the cause, fix it with a case that bites (night backlog,
+Linux, before 782).
+
+784\. Linux builder (2026-11-11, night, 778 calibration): `spec:stress --github` printed no output for the failed runs,
+so the CI log does not show why 782 and 783 failed. Cause: 616's "print the first failed run" does not reach the
+`--github` path (Suspect until the builder confirms in code). Lesson: a gate that fails without its reason costs a
+second run to learn it. Decided by the doc agent (tool internal, the builder's recommendation): in `--github` mode,
+print the first failed run's output in a `::group::`; a spec bites with a failing fixture in `--github` mode (night
+backlog, Linux, first of 782-784).
+As built (784): Cause (read in code): `runOnce` spawned each run with `stdio: 'ignore'`, so no mode kept any output.
+Now each run keeps the last 64 KiB of stdout and stderr, and `--github` prints the first failed run's output of each
+file in a `::group::` after its `::error`. The new spec runs the script on a failing `node --test` fixture with
+`--github` and finds the fixture's error text in the group; it fails with `stdio: 'ignore'` restored (bite, in a copy).
+Not verified: a real CI log with the group (the next nightly stress run shows it).

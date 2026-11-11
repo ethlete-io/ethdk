@@ -32,10 +32,13 @@ export const parseArgs = (argv) => {
 
 export const summarize = (results) => {
   const bySpec = new Map();
-  for (const { spec, ok, ms = 0 } of results) {
-    const entry = bySpec.get(spec) ?? { spec, runs: 0, failed: 0, maxMs: 0 };
+  for (const { spec, ok, ms = 0, output = '' } of results) {
+    const entry = bySpec.get(spec) ?? { spec, runs: 0, failed: 0, maxMs: 0, firstFailure: undefined };
     entry.runs++;
-    if (!ok) entry.failed++;
+    if (!ok) {
+      entry.failed++;
+      entry.firstFailure ??= output;
+    }
     entry.maxMs = Math.max(entry.maxMs, ms);
     bySpec.set(spec, entry);
   }
@@ -73,13 +76,23 @@ export const slowed = ([cmd, args], slow) =>
     ? ['systemd-run', ['--user', '--scope', '--quiet', '-p', `CPUQuota=${cpuQuotaOf(slow)}`, cmd, ...args]]
     : [cmd, args];
 
+export const OUTPUT_TAIL_BYTES = 64 * 1024;
+
+export const tailOf = (text, limit = OUTPUT_TAIL_BYTES) =>
+  text.length > limit ? `[... ${text.length - limit} earlier characters cut]\n${text.slice(-limit)}` : text;
+
 const runOnce = (repo, spec, slow) =>
   new Promise((resolve) => {
     const [cmd, args] = slowed(commandFor(repo, spec), slow);
     const started = Date.now();
-    const child = spawn(cmd, args, { cwd: repo, stdio: 'ignore' });
-    child.on('exit', (code) => resolve({ spec, ok: code === 0, ms: Date.now() - started }));
-    child.on('error', () => resolve({ spec, ok: false, ms: Date.now() - started }));
+    let output = '';
+    const keep = (chunk) => {
+      output = (output + chunk).slice(-2 * OUTPUT_TAIL_BYTES);
+    };
+    const child = spawn(cmd, args, { cwd: repo, stdio: ['ignore', 'pipe', 'pipe'] });
+    for (const stream of [child.stdout, child.stderr]) stream.setEncoding('utf8').on('data', keep);
+    child.on('close', (code) => resolve({ spec, ok: code === 0, ms: Date.now() - started, output: tailOf(output) }));
+    child.on('error', (error) => resolve({ spec, ok: false, ms: Date.now() - started, output: String(error) }));
   });
 
 export const runPooled = async (jobs, limit, run) => {
@@ -101,7 +114,13 @@ export const reportLines = (summary, { slow, github }) =>
     const line = `${s.failed ? 'FAIL' : 'ok  '} ${s.spec}: ${passed}, slowest ${(s.maxMs / 1000).toFixed(1)} s`;
     if (!github || !s.failed) return [line];
     const under = slow ? ` under --slow ${slow}` : '';
-    return [line, `::error file=${s.spec},title=spec:stress::${s.spec} ${passed}${under}`];
+    return [
+      line,
+      `::error file=${s.spec},title=spec:stress::${s.spec} ${passed}${under}`,
+      `::group::${s.spec}: output of the first failed run`,
+      ...(s.firstFailure || '(the run printed nothing)').trimEnd().split('\n'),
+      '::endgroup::',
+    ];
   });
 
 const burn = (count) => {

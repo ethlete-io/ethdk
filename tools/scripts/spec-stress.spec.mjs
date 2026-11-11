@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { test } from 'node:test';
-import { cpuQuotaOf, parseArgs, reportLines, runPooled, slowed, summarize } from './spec-stress.mjs';
+import { fileURLToPath } from 'node:url';
+import { cpuQuotaOf, parseArgs, reportLines, runPooled, slowed, summarize, tailOf } from './spec-stress.mjs';
 
 test('parseArgs reads specs, runs and load', () => {
   assert.deepEqual(parseArgs(['a.spec.ts', 'b.spec.mjs', '--runs', '4', '--load', '2']), {
@@ -99,16 +104,48 @@ test('runPooled without a limit starts every job at once', async () => {
 test('reportLines annotates each file under 100 % for GitHub, and only with --github', () => {
   const summary = summarize([
     { spec: 'a.spec.ts', ok: true, ms: 1200 },
-    { spec: 'a.spec.ts', ok: false, ms: 31000 },
+    { spec: 'a.spec.ts', ok: false, ms: 31000, output: 'first\nreason\n' },
+    { spec: 'a.spec.ts', ok: false, ms: 900, output: 'second' },
     { spec: 'b.spec.ts', ok: true, ms: 800 },
   ]);
   assert.deepEqual(reportLines(summary, { slow: 4, github: true }), [
-    'FAIL a.spec.ts: 1/2 passed, slowest 31.0 s',
-    '::error file=a.spec.ts,title=spec:stress::a.spec.ts 1/2 passed under --slow 4',
+    'FAIL a.spec.ts: 1/3 passed, slowest 31.0 s',
+    '::error file=a.spec.ts,title=spec:stress::a.spec.ts 1/3 passed under --slow 4',
+    '::group::a.spec.ts: output of the first failed run',
+    'first',
+    'reason',
+    '::endgroup::',
     'ok   b.spec.ts: 1/1 passed, slowest 0.8 s',
   ]);
   assert.equal(
     reportLines(summary, { slow: 4, github: false }).some((l) => l.startsWith('::')),
     false,
   );
+});
+
+test('tailOf keeps the end of a long output and says what it cut', () => {
+  assert.equal(tailOf('abc', 5), 'abc');
+  assert.equal(tailOf('abcdefgh', 3), '[... 5 earlier characters cut]\nfgh');
+});
+
+test('--github prints the output of the first failed run of a real spec in a group', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'spec-stress-'));
+  const fixture = join(dir, 'fails.spec.mjs');
+  writeFileSync(
+    fixture,
+    "import { test } from 'node:test';\ntest('fails', () => { throw new Error('marker-784-reason'); });\n",
+  );
+  const script = fileURLToPath(new URL('./spec-stress.mjs', import.meta.url));
+  const env = { ...process.env };
+  delete env.NODE_TEST_CONTEXT;
+  const run = spawnSync(process.execPath, [script, fixture, '--runs', '1', '--load', '1', '--github'], {
+    encoding: 'utf8',
+    env,
+  });
+  assert.equal(run.status, 1);
+  const lines = run.stdout.split('\n');
+  const open = lines.indexOf(`::group::${fixture}: output of the first failed run`);
+  const close = lines.indexOf('::endgroup::');
+  assert.ok(open > 0 && close > open, run.stdout);
+  assert.match(lines.slice(open, close).join('\n'), /marker-784-reason/);
 });

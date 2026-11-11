@@ -168,7 +168,7 @@ test('the hold run delays the pictures of the sketch edit case but never holds i
   assert.ok(!row.includes('[pictures not delayed]'), row);
 });
 
-test('each repeat run writes its runner output to a fresh live log for the e2e-progress mod', async () => {
+test('each repeat run writes its runner output to its own live log, named by the latest pointer, for the e2e-progress mod', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'repeat-live-log-'));
   const runner = join(dir, 'runner.mjs');
   const liveLog = join(dir, 'handoffs/push-suite-repeat.log');
@@ -181,5 +181,6 @@ test('each repeat run writes its runner output to a fresh live log for the e2e-p
   const output = await runOnce(runner, ['second'], dir, liveLog);
 
   assert.match(output, /second/);
-  assert.equal(readFileSync(liveLog, 'utf8'), 'Running 1 test using 1 worker\n  ✓  1 [Large] › second (1.0s)\n');
+  const latest = readFileSync(liveLog, 'utf8').replace('latest run log: ', '').trim();
+  assert.equal(readFileSync(latest, 'utf8'), 'Running 1 test using 1 worker\n  ✓  1 [Large] › second (1.0s)\n');
 });

@@ -125,6 +125,8 @@ jobs:
         env:
           TMPDIR: ${{ runner.temp }}/link-tmp
 
+      - run: yarn test:e2e-helpers
+
   query-clock-edges:
     name: Query scenarios at clock edge .${{ matrix.fraction }}
     runs-on: ubuntu-latest

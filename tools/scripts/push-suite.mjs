@@ -397,12 +397,10 @@ const exportCommit = (sha) => {
   return { dir };
 };
 
-export const runStep = (command, args, cwd, logFile) =>
-  new Promise((done) => {
-    if (logFile) {
-      mkdirSync(dirname(logFile), { recursive: true });
-      writeFileSync(logFile, '');
-    }
+export const runStep = async (command, args, cwd, logFile) => {
+  const runLog = logFile ? (await import('./run-log.mjs')).startRunLog(logFile) : undefined;
+
+  return new Promise((done) => {
     const child = spawn(command, args, {
       cwd,
       env: process.env,
@@ -411,12 +409,13 @@ export const runStep = (command, args, cwd, logFile) =>
     let output = '';
     const take = (chunk) => {
       output += chunk;
-      if (logFile) appendFileSync(logFile, chunk);
+      if (runLog) appendFileSync(runLog, chunk);
     };
     child.stdout.on('data', take);
     child.stderr.on('data', take);
     child.on('close', (status) => done({ status: status ?? 1, output }));
   });
+};
 
 export const reexecCommand = (exportDir, repo, { only, range }, env = process.env) => ({
   command: process.execPath,

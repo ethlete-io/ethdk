@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+  <head>
+    <style>
+      ethlete-design-canvas {
+        display: block;
+        width: 800px;
+        height: 600px;
+        overflow: hidden;
+      }
+      [data-shot] {
+        height: 160px;
+      }
+      [data-shot] img {
+        display: none;
+        width: 100px;
+        height: 100px;
+      }
+    </style>
+  </head>
+  <body>
+    <ethlete-sketch-view>
+      <ethlete-design-canvas>
+        <div data-shot="live"><iframe srcdoc="<p style='height: 20px'>drawn</p>"></iframe></div>
+        <div data-shot="empty"><iframe srcdoc=""></iframe></div>
+        <div data-shot="gone">
+          <img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'/%3E" />
+          <iframe data-leaves-on-census srcdoc="<p style='height: 20px'>drawn</p>"></iframe>
+        </div>
+      </ethlete-design-canvas>
+    </ethlete-sketch-view>
+    <script>
+      new MutationObserver((records) => {
+        for (const { target } of records) {
+          if (!target.matches('[data-leaves-on-census]')) continue;
+          target.previousElementSibling.style.display = 'block';
+          target.remove();
+        }
+      }).observe(document, { subtree: true, attributeFilter: ['data-census'] });
+    </script>
+  </body>
+</html>
