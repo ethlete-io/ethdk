@@ -132,3 +132,9 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   and pushed. Linux builder restarted from `builder-2026-11-11a`, next 778, then 777 (allow-list line as a check
   problem). Mac: 770 merged with 775 (a144de0cd), lint fix cfda44c4d, push pending, then 777 Mac verify, 735
   calibration. Morning round unchanged (three items above).
+- Night, 03:00 (after a2f8a4ff5): findings 779 (vitest related before every commit, built 6447c4e1b), 780 (push slot on
+  origin, Mac builds it after its push), 781 (Chromium spec in a job without Chromium, parked until a second case),
+  782-784 (sweep calibration: N=2 stays; order 784, 783, 782) recorded. 777 fully built and pushed (design check, sketch
+  check, resident case); 617, 614, 618 pushed. Linux builder restarted again from `builder-2026-11-11a`, next 784. Mac:
+  merged origin as 81980de90, push:suite with the 29 min repeat step runs, then 780, 777 Mac verify, 735 calibration.
+  Morning round unchanged.
