@@ -89,3 +89,24 @@ hover/active/focus-visible are not drawn, and the design changed outside a sketc
 Not verified: a real Windows window, the notice tooltip against the design (compare cannot open it), the spinner
 frame. The embedding compares were not recorded in `implemented.json` (`compare --affected` would also record
 parts other slices changed), so their IMPLEMENTATION-UNCOMPARED stays.
+
+## B345 change-crop b (slices 1-3 built, live shot open)
+
+App side of the merged `pages/sketches` change-crop b (2f83c46da). Slice 1: the server measures where a changed
+state differs (box, pixel count, regions) while it compares the pictures and lists it per target as `crops`.
+Slice 2: the matrix shows each changed state as an enlarged crop with its reason, a locator and the
+"Ganzer Screen"/"Ausschnitt" toggle. Slice 3: states with the same crop show once with a count.
+
+As built: the server compares the two pictures of each changed state (`change-box.ts`: box around every pixel past
+the `looksTheSame` tolerance, pixel count, regions of pixels closer than 8 px) and keeps it with the unchanged
+states; the listing names it per target as `crops` (full and quick listing). The app passes it through
+`sketchRowsOf` and the sketch view into `SketchShot.change`. In the matrix (wide part) `cropGroupsOf` groups states
+whose every variant changed the same pixels in the same place; a group shows once in the gutter with its count, the
+reason ("1358 px in 3 Stellen · 4,6× vergrößert"), a locator and the "Ganzer Screen"/"Ausschnitt" toggle; its cells
+show the crop (24 px margin, enlarged to the column width), the variant cell a frame around its change and the two
+stack edges. The list layout (narrow parts) is unchanged.
+
+Verified: specs (change-box, unchanged-states, listing, sketches component), each new case bitten on the old code;
+`vitest related` in libs/cli (1347 passed) and ethlete-studio; spec:stress 4/4 per spec alone. Not verified: a live
+shot of the crop in a running Studio, `design compare` of `change-crop`/`change-crop-whole` (the harness supplies no
+crop data for them), the unit word ("Stellen" for regions, the design mock says "Zellen").

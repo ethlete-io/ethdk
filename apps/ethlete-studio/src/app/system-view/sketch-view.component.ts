@@ -568,12 +568,13 @@ export class SketchViewComponent {
           : {}),
         width,
         sized: known !== undefined,
-        shots: row.shots.map(({ state, changed }) => {
+        shots: row.shots.map(({ state, changed, change }) => {
           const ratio = ratios[`${row.key} ${state}`];
 
           return {
             state,
             changed,
+            ...(change ? { change } : {}),
             height:
               sizeOf(state)?.height ??
               (ratio ? Math.round(ratio * width) : (tallestOf(state) ?? tallest ?? MEASURING_HEIGHT)),

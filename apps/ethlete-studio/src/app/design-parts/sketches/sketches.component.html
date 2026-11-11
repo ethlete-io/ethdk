@@ -145,19 +145,62 @@
               data-sk-matrix
             >
               @for (state of matrixStates(); track state; let line = $index) {
-                <span
+                @let group = groupOfState().get(state);
+                <div
                   #gutter
                   [style.font-size.px]="noteSize()"
+                  [style.width.px]="group ? noteSize() * 15 : null"
                   [style.grid-row]="matrixTop() + 1 + line * 2 + ' / span 2'"
                   [style.transform]="'translateX(' + canvas.stickyLeft() + 'px)'"
                   [class]="
                     (headHidden() ? 'text-transparent' : 'text-et-surface') +
                     (canvas.stickyLeft() > 0 ? ' shadow-[1px_0_0_var(--et-surface-border-solid)]' : '')
                   "
-                  class="relative z-2 col-start-1 flex items-center self-stretch bg-et-surface-bg pr-space-3 font-code leading-[1.35]"
+                  class="relative z-2 col-start-1 flex flex-col justify-center gap-space-1 self-stretch bg-et-surface-bg pr-space-3 leading-[1.35]"
                   data-sk-gutter
-                  >{{ state }}</span
                 >
+                  <span class="font-code">{{ state }}</span>
+                  @if (group) {
+                    @let whole = !croppedOf(state);
+                    @if (group.states.length > 1) {
+                      <span data-sk-crop-count>{{ LABELS.sameCrop(group.states.length) }}</span>
+                    }
+                    <span [class.text-et-surface-muted]="!headHidden()" data-sk-crop-reason
+                      >{{ LABELS.changeReason(group.change.pixels, group.change.regions)
+                      }}{{ whole ? '' : LABELS.magnified(magnifyTextOf(group)) }}</span
+                    >
+                    <span class="mt-space-1 flex items-end gap-space-2">
+                      @let locator = locatorOf(group);
+                      <span
+                        [style.width.px]="noteSize() * 9"
+                        [style.aspect-ratio]="locator.ratio"
+                        class="relative block rounded-control-sm bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+                        data-sk-crop-locator
+                      >
+                        <span
+                          class="absolute inset-y-0 left-0 w-[18%] shadow-[1px_0_0_var(--et-surface-border-solid)]"
+                        ></span>
+                        <span
+                          [style.left]="locator.left"
+                          [style.top]="locator.top"
+                          [style.width]="locator.width"
+                          [style.height]="locator.height"
+                          class="absolute rounded-[2px] border-2 border-et-theme"
+                        ></span>
+                      </span>
+                      <button
+                        (click)="toggleScreen(state)"
+                        et-button
+                        type="button"
+                        variant="transparent"
+                        size="sm"
+                        data-sk-screen-toggle
+                      >
+                        {{ whole ? LABELS.cropScreen : LABELS.wholeScreen }}
+                      </button>
+                    </span>
+                  }
+                </div>
               }
               @for (row of matrixRows(); track row.key; let column = $index) {
                 <section
@@ -179,12 +222,14 @@
                   </div>
                 } @else {
                   @for (item of row.shots; track item.state) {
-                    <ng-container
-                      *ngTemplateOutlet="
-                        cellTemplate;
-                        context: { $implicit: row, item, column: column + 2, line: matrixLineOf(item.state) }
-                      "
-                    />
+                    @if (matrixStates().includes(item.state)) {
+                      <ng-container
+                        *ngTemplateOutlet="
+                          cellTemplate;
+                          context: { $implicit: row, item, column: column + 2, line: matrixLineOf(item.state) }
+                        "
+                      />
+                    }
                   }
                 }
               }
@@ -425,33 +470,66 @@
       }
     </span>
     @let key = FRAME_KEY_OF(row, item.state);
-    <div
-      #frame
-      [style.width.px]="row.width * scale()"
-      [style.height.px]="item.height * scale()"
-      [attr.data-sk-frame]="key"
-      [attr.data-selected]="key === selectedFrame() ? '' : null"
-      class="relative row-start-2 overflow-hidden shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
-    >
+    @let shownHeight = shownHeightOf(row, item);
+    @let cropTransform = cropTransformOf(row, item.state);
+    @let mark = markOf(row, item);
+    <div class="row-start-2 flex min-w-0 flex-col">
       <div
-        [style.width.px]="row.width"
-        [style.height.px]="item.height"
-        [style.transform]="'scale(' + scale() + ')'"
-        class="pointer-events-none origin-top-left"
+        #frame
+        [style.width.px]="row.width * scale()"
+        [style.height.px]="shownHeight * scale()"
+        [attr.data-sk-frame]="key"
+        [attr.data-selected]="key === selectedFrame() ? '' : null"
+        [attr.data-sk-cropped]="cropTransform ? '' : null"
+        class="relative overflow-hidden shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
       >
-        @if (shot(); as template) {
-          <ng-container *ngTemplateOutlet="template; context: { $implicit: row, state: item.state }" />
-        }
+        <div
+          [style.width.px]="row.width"
+          [style.height.px]="shownHeight"
+          [style.transform]="'scale(' + scale() + ')'"
+          class="pointer-events-none origin-top-left"
+        >
+          <div
+            [style.width.px]="row.width"
+            [style.height.px]="item.height"
+            [style.transform]="cropTransform"
+            class="relative origin-top-left"
+          >
+            @if (shot(); as template) {
+              <ng-container *ngTemplateOutlet="template; context: { $implicit: row, state: item.state }" />
+            }
+            @if (mark) {
+              <span
+                [style.left.px]="mark.left"
+                [style.top.px]="mark.top"
+                [style.width.px]="mark.width"
+                [style.height.px]="mark.height"
+                class="pointer-events-none absolute rounded-control-sm border-2 border-et-theme"
+                data-sk-crop-mark
+              ></span>
+            }
+          </div>
+        </div>
+        <span
+          [class]="
+            key === selectedFrame()
+              ? 'outline-2 -outline-offset-2 outline-(--et-theme-color-primary-solid) outline-solid'
+              : ''
+          "
+          class="pointer-events-none absolute inset-0"
+          data-frame-border
+        ></span>
       </div>
-      <span
-        [class]="
-          key === selectedFrame()
-            ? 'outline-2 -outline-offset-2 outline-(--et-theme-color-primary-solid) outline-solid'
-            : ''
-        "
-        class="pointer-events-none absolute inset-0"
-        data-frame-border
-      ></span>
+      @if (cropTransform && mark && (groupOfState().get(item.state)?.states?.length ?? 0) > 1) {
+        @for (inset of STACK_INSETS; track inset) {
+          <div
+            [style.margin-inline.px]="inset * scale()"
+            [style.height.px]="20 * scale()"
+            class="rounded-b-control-md bg-et-surface-bg shadow-[0_0_0_2px_var(--et-surface-border-solid)]"
+            data-sk-crop-stack
+          ></div>
+        }
+      }
     </div>
   </div>
 </ng-template>

@@ -1,9 +1,10 @@
+import { SketchChange } from '../../../host/design';
 import { AgentLogoName } from '../../icons/agent-logos';
 import { PartTreeLayer } from '../part-tree/part-tree.component';
 
 export type SketchModel = { short: string; id: string; agent: AgentLogoName; when?: string };
 
-export type SketchShot = { state: string; changed: boolean | null; height: number };
+export type SketchShot = { state: string; changed: boolean | null; height: number; change?: SketchChange };
 
 export type SketchRow = {
   key: string;

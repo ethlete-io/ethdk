@@ -40,6 +40,7 @@ import { DisclosureComponent } from '../disclosure/disclosure.component';
 import { PartTreeComponent } from '../part-tree/part-tree.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { ZoomChipComponent } from '../zoom-chip/zoom-chip.component';
+import { cropGroupsOf, magnifyTextOf, SketchCropGroup } from './sketch-crops';
 import {
   SKETCH_CURRENT,
   SKETCH_DRAWN,
@@ -53,6 +54,7 @@ import {
   SketchIdle,
   SketchPin,
   SketchRow,
+  SketchShot,
   SketchStatus,
 } from './sketches-sample';
 
@@ -217,6 +219,7 @@ export class SketchesComponent {
   protected readonly CURRENT = SKETCH_CURRENT;
   protected readonly COLUMN_GAP = COLUMN_GAP;
   protected readonly FRAME_KEY_OF = frameKeyOf;
+  protected readonly STACK_INSETS = [32, 64];
 
   protected canvas = frameZoomCamera(() => {
     const camera = this.camera();
@@ -256,9 +259,18 @@ export class SketchesComponent {
     Math.max(0, ...this.shownRows().flatMap((row) => (row.sized === false ? [] : [row.width]))),
   );
   public transposed = computed(() => this.listWidth() > 0 && this.sizedWidest() > this.listWidth() / TRANSPOSE_SHARE);
-  protected matrixStates = computed(() => [
-    ...new Set(this.shownRows().flatMap((row) => row.shots.map((shot) => shot.state))),
-  ]);
+  private cropGroups = computed(() => (this.transposed() ? cropGroupsOf(this.shownRows()) : []));
+  protected groupOfState = computed(
+    () => new Map(this.cropGroups().flatMap((group) => group.states.map((state) => [state, group] as const))),
+  );
+  public wholeStates = signal<ReadonlySet<string>>(new Set());
+  protected matrixStates = computed(() => {
+    const groups = this.groupOfState();
+
+    return [...new Set(this.shownRows().flatMap((row) => row.shots.map((shot) => shot.state)))].filter(
+      (state) => (groups.get(state)?.states[0] ?? state) === state,
+    );
+  });
   private fitScale = computed(() => this.fitAt() ?? 1);
 
   protected scale = computed(() => {
@@ -414,6 +426,69 @@ export class SketchesComponent {
 
   protected matrixLineOf(state: string) {
     return `${this.matrixTop() + 1 + this.matrixStates().indexOf(state) * 2} / span 2`;
+  }
+
+  protected croppedOf(state: string) {
+    const group = this.groupOfState().get(state);
+
+    return group && !this.wholeStates().has(group.states[0] ?? state) ? group : undefined;
+  }
+
+  protected toggleScreen(state: string) {
+    this.wholeStates.update((whole) => {
+      const next = new Set(whole);
+
+      if (!next.delete(state)) next.add(state);
+
+      return next;
+    });
+  }
+
+  protected shownHeightOf(row: SketchRow, item: SketchShot) {
+    const crop = this.croppedOf(item.state)?.crop;
+
+    return crop ? (row.width * crop.height) / crop.width : item.height;
+  }
+
+  protected cropTransformOf(row: SketchRow, state: string) {
+    const group = this.croppedOf(state);
+
+    if (!group) return null;
+
+    const unit = row.width / group.change.width;
+
+    return `scale(${group.magnify}) translate(${-group.crop.x * unit}px, ${-group.crop.y * unit}px)`;
+  }
+
+  protected markOf(row: SketchRow, item: SketchShot) {
+    const change = this.groupOfState().get(item.state) ? item.change : undefined;
+
+    if (!change) return null;
+
+    const unit = row.width / change.width;
+
+    return {
+      left: change.box.x * unit - 4,
+      top: change.box.y * unit - 4,
+      width: change.box.width * unit + 8,
+      height: change.box.height * unit + 8,
+    };
+  }
+
+  protected locatorOf(group: SketchCropGroup) {
+    const percent = (part: number, whole: number) => `${(part / whole) * 100}%`;
+
+    return {
+      left: percent(group.crop.x, group.change.width),
+      top: percent(group.crop.y, group.change.height),
+      width: percent(group.crop.width, group.change.width),
+      height: percent(group.crop.height, group.change.height),
+      ratio: `${group.change.width} / ${group.change.height}`,
+    };
+  }
+
+  protected magnifyTextOf(group: SketchCropGroup) {
+    return magnifyTextOf(group.magnify);
   }
 
   protected isSame(row: SketchRow, unchanged: boolean | null) {

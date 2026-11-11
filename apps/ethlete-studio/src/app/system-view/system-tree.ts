@@ -6,6 +6,7 @@ import {
   ListedProduct,
   ListedSketch,
   PartAddress,
+  SketchChange,
   SketchRound,
   SystemProblem,
   callShotUrl,
@@ -1404,7 +1405,13 @@ export const callFramesOf = ({ port, call, epoch, revision, surface, color }: Ca
 };
 
 /** `picture` is the stored PNG of the state, shown in place of the live `src` frame when the frame is not live. */
-export type SketchRowShot = { state: string; changed: boolean | null; src: string; picture: string };
+export type SketchRowShot = {
+  state: string;
+  changed: boolean | null;
+  src: string;
+  picture: string;
+  change?: SketchChange;
+};
 
 export type SketchRowOf = { key: string; width: number | null; shots: SketchRowShot[] };
 
@@ -1454,9 +1461,12 @@ export const sketchRowsOf = ({
           ...(key === CURRENT ? {} : { sketch: sketch.target, variant: key }),
         };
 
+        const change = key === CURRENT ? undefined : target?.crops?.[state];
+
         return {
           state,
           changed: key === CURRENT ? false : target?.unchanged ? !target.unchanged.includes(state) : null,
+          ...(change ? { change } : {}),
           src: partFrameUrl({ ...address, ...(size === null ? { fit: true } : {}) }),
           picture: partShotUrl({ ...address, preset: cell.preset, width: cell.width }),
         };
