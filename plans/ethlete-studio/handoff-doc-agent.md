@@ -165,3 +165,7 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   792 A + B are day work (sketch for the chip and a picked badge state). Mac pushed 6bca47ab5; 797 0ffc0e452 and 786
   89671ec71 wait for its push (told to set ETHLETE_BUILDER in its push shell). Morning round: the four items above, plus a
   note (no question): the human kills the hung ssh pid 96278 on the Mac.
+- Night, 07:15 (after f4e0278ad): 801 built 2f3f64ab9 (shared temp-repo git helper, 3 copies), 802 recorded and decided
+  (push suite runs all of test:tools; the Linux builder checks CI on 0884cf03c, maybe red from studio-e2e-perf.spec, fixed
+  a5026c273). Linux push suite runs on HEAD, then it pushes 799, 800, 801 and the doc plan commits. Doc agent restarted
+  (context 70 %); restart the Mac mailbox wait first.
