@@ -3884,6 +3884,11 @@ As built de7098e65 (5c-1): D6 Cause (spec bite) the serve slow runner wrote merg
 now it writes no merged.json, pictures.json or sketch file (ready.json stays, build-ready.md). Discard on `@edit` refused
 (EDIT-DISCARD-REFUSED). Doc agent: a same-drawing edit must not show as an open point while serve runs (verdict in
 memory, file record waits for `design check`); owed in 5c-2.
+5c-2 live checks (own serve :4761, shots in `.claude/handoffs/agent-results/b249-5c2/`): 4b, 4c, D4, D5, D6 ok. D7 new:
+an edit sketch with new+old folded the whole `new` variant. Cause (spec bite) unchanged-states compared `new` with the
+product; fix e8f44f88d: only `old` of an edit sketch gets unchanged states. Missed because the 5a spec covered only
+new-only and the 5a live run read only `old`. e2e 4b/4c owed in 5c-2b: in a `--prepare-checkout` checkout `design
+check --part components/zoom-chip` opened no edit sketch (Suspect: settle or a baseline picture makes it HELD).
 
 869\. Doc agent (2026-11-11): the 867 brief told the Linux builder to leave the design fix as a visible direct edit for
 the human to merge. The human had already called the clip a defect and the canvas under the panel "as intended", so no
@@ -3981,3 +3986,12 @@ Suspect; measure it together with the 875 serve crash log. Side: user-facing, af
 boxes, but the reason text names the first variant only, so the reason of the other variants is lost. Accepted for now
 by the human (ADR 0272). Tool fix: the reason line lists each variant's reason, or one line per variant under the crop.
 Side: user-facing, after B249 (ADR 0269).
+
+882\. Linux builder (2026-11-11, B249 5c-2 live): the merge view of an edit sketch lists nothing under "Geändert".
+Suspect: the merge view reads the changed list from the variant compare, which an edit sketch does not feed. Tool fix: an
+e2e case on an edit sketch merge view asserts the changed states. Side: B249 follow-up, after 5c.
+
+883\. Linux builder (2026-11-11, B249 5c-2 live): after a merge Studio opens the first part (agent-logos), not the merged
+part. This breaks ADR 0187 (built 3c67d2143). Suspect: the target part of an `@edit` sketch is not read from its name.
+Owed: is it only for `@edit` sketches (then part of B249) or for every merge (regression, find the commit). Tool fix: an e2e
+case per sketch kind asserts the open part after merge and discard. Side: user-facing; inside B249 if B249 caused it.
