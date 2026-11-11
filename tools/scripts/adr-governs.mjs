@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -41,6 +41,21 @@ export const governingAdrs = (adrs, files) =>
     })
     .filter((adr) => adr.matched.length);
 
+export const citedAdrs = (adrs, citations) =>
+  adrs
+    .map((adr) => ({ ...adr, citedIn: citations.filter((c) => c.numbers.includes(adr.number)).map((c) => c.file) }))
+    .filter((adr) => adr.citedIn.length);
+
+export const citationsOf = (file, text) => ({
+  file,
+  numbers: [...new Set([...text.matchAll(/\bADRs? ?(\d{4})\b/g)].map((m) => m[1]))],
+});
+
+const readCitations = (root, files) =>
+  files
+    .filter((file) => existsSync(join(root, file)) && statSync(join(root, file)).isFile())
+    .map((file) => citationsOf(file, readFileSync(join(root, file), 'utf8')));
+
 const git = (root, args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean);
 
 export const filesOf = (root, args) => {
@@ -58,11 +73,24 @@ export const loadAdrs = (root) =>
 export const format = (hits) =>
   hits.map((adr) => [`ADR ${adr.number} ${adr.title} (${adr.path})`, ...adr.matched.map((f) => `  ${f}`)].join('\n'));
 
+export const formatCited = (hits) =>
+  hits.map((adr) =>
+    [`ADR ${adr.number} ${adr.title} [${adr.status}] (${adr.path})`, ...adr.citedIn.map((f) => `  cited in ${f}`)].join(
+      '\n',
+    ),
+  );
+
 const main = () => {
   const root = git(process.cwd(), ['rev-parse', '--show-toplevel'])[0];
   const files = filesOf(root, process.argv.slice(2));
-  const hits = governingAdrs(loadAdrs(root), files);
+  const adrs = loadAdrs(root);
+  const hits = governingAdrs(adrs, files);
   if (hits.length) console.log(`${format(hits).join('\n')}\nRead these ADRs before you change these files.`);
+  const cited = citedAdrs(adrs, readCitations(root, files));
+  if (cited.length)
+    console.log(
+      `${formatCited(cited).join('\n')}\nThese files cite these ADRs: reread them before you restate their scope.`,
+    );
 };
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();

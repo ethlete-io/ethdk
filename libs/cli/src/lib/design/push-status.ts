@@ -13,11 +13,13 @@ export type PushStatus = {
 
 export type CiState = 'green' | 'red' | 'running' | 'unknown';
 
-export type CiStatus = { ci: CiState; ciUrl: string | null; ciAt: string | null };
+export type LastFinishedCi = { ci: 'green' | 'red'; url: string | null; failedJobs: string[] };
 
-type CiRun = { status: string; conclusion: string; url: string; createdAt: string };
+export type CiStatus = { ci: CiState; ciUrl: string | null; ciAt: string | null; lastFinished?: LastFinishedCi | null };
 
-const UNKNOWN_CI: CiStatus = { ci: 'unknown', ciUrl: null, ciAt: null };
+type CiRun = { databaseId?: number; status: string; conclusion: string; url: string; createdAt: string };
+
+const UNKNOWN_CI: CiStatus = { ci: 'unknown', ciUrl: null, ciAt: null, lastFinished: null };
 
 const CI_WORKFLOW = 'ci-next.yml';
 
@@ -52,8 +54,12 @@ const ciOfRun = ({ status, conclusion }: CiRun): CiState => {
   return conclusion ? 'red' : 'unknown';
 };
 
-/** The CI state of the newest run in `gh run list --json status,conclusion,url,createdAt` output that was not cancelled or skipped. */
-export const ciStatusOfRuns = (json: string): CiStatus => {
+/**
+ * The CI state of the newest run in `gh run list --json status,conclusion,url,createdAt,databaseId` output that was not
+ * cancelled or skipped. While that run is still going, `lastFinished` holds the newest finished one, with its failed job
+ * names from `failedJobsOf` when it was red.
+ */
+export const ciStatusOfRuns = (json: string, failedJobsOf: (runId: number) => string[] = () => []): CiStatus => {
   let runs: CiRun[];
 
   try {
@@ -62,11 +68,39 @@ export const ciStatusOfRuns = (json: string): CiStatus => {
     return UNKNOWN_CI;
   }
 
-  const run = Array.isArray(runs) ? runs.find((entry) => !SKIPPED_CONCLUSIONS.includes(entry.conclusion)) : undefined;
+  const usable = Array.isArray(runs) ? runs.filter((entry) => !SKIPPED_CONCLUSIONS.includes(entry.conclusion)) : [];
+  const run = usable[0];
 
   if (!run) return UNKNOWN_CI;
 
-  return { ci: ciOfRun(run), ciUrl: run.url ?? null, ciAt: run.createdAt ?? null };
+  const ci = ciOfRun(run);
+  const finished = ci === 'running' ? usable.find((entry) => ciOfRun(entry) !== 'running') : undefined;
+  const finishedCi = finished ? ciOfRun(finished) : null;
+  const lastFinished: LastFinishedCi | null =
+    finished && (finishedCi === 'green' || finishedCi === 'red')
+      ? {
+          ci: finishedCi,
+          url: finished.url ?? null,
+          failedJobs:
+            finishedCi === 'red' && finished.databaseId !== undefined ? failedJobsOf(finished.databaseId) : [],
+        }
+      : null;
+
+  return { ci, ciUrl: run.url ?? null, ciAt: run.createdAt ?? null, lastFinished };
+};
+
+const failedJobsOfRun = (runId: number, { gh, cwd }: { gh: string; cwd: string }) => {
+  const result = spawnPlain([gh, 'run', 'view', String(runId), '--json', 'jobs'], { cwd, timeout: 15_000 });
+
+  if (result.status !== 0) return [];
+
+  try {
+    const { jobs } = JSON.parse(result.stdout) as { jobs?: { name: string; conclusion: string }[] };
+
+    return (jobs ?? []).filter((job) => job.conclusion === 'failure').map((job) => job.name);
+  } catch {
+    return [];
+  }
 };
 
 /** Where `ciStatusOf` caches the CI state of one checkout. */
@@ -113,11 +147,14 @@ export const ciStatusOf = (checkout: string, { now = Date.now(), gh = 'gh' }: St
       '--limit',
       '10',
       '--json',
-      'status,conclusion,url,createdAt',
+      'status,conclusion,url,createdAt,databaseId',
     ],
     { cwd: checkout, timeout: 15_000 },
   );
-  const status = result.status === 0 ? ciStatusOfRuns(result.stdout) : UNKNOWN_CI;
+  const status =
+    result.status === 0
+      ? ciStatusOfRuns(result.stdout, (runId) => failedJobsOfRun(runId, { gh, cwd: checkout }))
+      : UNKNOWN_CI;
 
   try {
     mkdirSync(join(ciCachePath(checkout), '..'), { recursive: true });
@@ -153,11 +190,20 @@ export const pushStatusOf = (
   };
 };
 
+const lastFinishedText = ({ lastFinished }: CiStatus) => {
+  if (!lastFinished) return '';
+  if (lastFinished.ci === 'green') return ' - last finished: green';
+
+  const jobs = lastFinished.failedJobs.length ? `, failed jobs: ${lastFinished.failedJobs.join(', ')}` : '';
+
+  return ` - last finished: red${jobs}${lastFinished.url ? ` (${lastFinished.url})` : ''} - fix or revert before any feature slice`;
+};
+
 export const pushStatusLines = (status: PushStatus) => [
   status.unpushed === 0
     ? `nothing unpushed (${status.base})`
     : `${status.unpushed} unpushed commit(s) on ${status.base}, oldest ${status.oldestAgeHours} h old`,
-  `ci: ${status.ci}${status.ci === 'red' ? ' - fix or revert before any feature slice' : ''}${status.ciUrl ? ` (${status.ciUrl})` : ''}`,
+  `ci: ${status.ci}${status.ci === 'red' ? ' - fix or revert before any feature slice' : ''}${status.ciUrl ? ` (${status.ciUrl})` : ''}${lastFinishedText(status)}`,
   ...(status.strayUpstream === null
     ? []
     : [

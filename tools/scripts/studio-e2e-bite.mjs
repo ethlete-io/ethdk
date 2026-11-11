@@ -22,12 +22,18 @@ export const parseBiteArgs = (argv) => {
   return { ref, e2eArgs: rest };
 };
 
-export const biteVerdict = (status, subject = 'the old CLI') =>
-  status === 0
-    ? { bites: false, message: `the e2e passes on ${subject}: the new case does not bite` }
-    : { bites: true, message: `the e2e fails on ${subject}: the new case bites` };
+export const E2E_REFUSED = 2;
+
+export const biteVerdict = (status, subject = 'the old CLI') => {
+  if (status === 0) return { bites: false, message: `the e2e passes on ${subject}: the new case does not bite` };
+  if (status === E2E_REFUSED)
+    return { refused: true, message: `the e2e refused its arguments on ${subject}: no proof` };
+
+  return { bites: true, message: `the e2e fails on ${subject}: the new case bites` };
+};
 
 const report = (verdict) => {
+  if (verdict.refused) return fail(verdict.message);
   console.log(`[studio-e2e-bite] ${verdict.message}`);
   process.exitCode = verdict.bites ? 0 : 1;
 };

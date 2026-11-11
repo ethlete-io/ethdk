@@ -161,6 +161,10 @@ Before writing, actually check `git status`, `git log -1`, and the branch - do
 not describe state from memory. Keep the file under ~150 lines; a handoff is a
 map, not a transcript.
 
+Name a scope or a rule that an ADR decided by its number, and copy its items word for word. After you
+save, run `node tools/scripts/adr-governs.mjs <handoff file>`: it lists each ADR the file cites. Reread
+them and fix any line that says less or more than the ADR.
+
 After writing, tell the user:
 
 > Handoff saved to `.claude/handoffs/<slug>.md`. Start a fresh session (`/clear`
