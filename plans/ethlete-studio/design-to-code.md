@@ -3806,3 +3806,14 @@ cache misses before it blames disk or CPU (Mac night backlog, after 735). 797 bu
 the timeout); 786 built 89671ec71 (one heavy-run lock per machine); both wait for the push slot. The hung ssh (pid 96278 on
 the Mac, 1 h 39 min) was not killed: the Mac's permission mode refused it; the human kills it. A `push-suite.spec` case
 ("a step with a log file writes its output") failed once under the 777 load and passed alone: Suspect, same class as 763.
+
+800\. Linux builder (2026-11-11, night, push of 0884cf03c): pre-push refused the push with "push slot held by
+linux-builder for 0884cf03c25d ... Wait for its push or expiry", and the holder was the builder itself. Cause (measured):
+`ETHLETE_BUILDER` was set only in the push:suite shell, so pre-push took the hostname as the name and saw a foreign
+holder; the message told the builder to wait 60 min for its own slot. Why no tool caught it: 780 keys the slot on a name
+that two shells of one builder can set differently, and its specs used one environment. Lesson: identify the holder by
+what it proved (the sha and its suite verdict), not by a name the caller may not set. Decided by the doc agent (tool
+internal, the builder's proposal): pre-push accepts the slot when the slot sha equals the pushed sha and a local
+push-suite ok verdict exists for that sha; otherwise the refusal names the holder and says "set ETHLETE_BUILDER=<holder>
+if this is you". Bite: a push with no `ETHLETE_BUILDER` after a suite ok for the same sha passes; a different sha is
+refused with the hint. Night backlog, Linux, after 799; the Mac must pull it before its next push.
