@@ -3635,3 +3635,9 @@ renderer-only `--cpu-rate` flag (CDP `setCPUThrottlingRate`) in canvas.e2e.mjs r
 774\. Linux builder (2026-11-11, night, 723 fa1746558): `design check` draws per phase, as `sketch check` did before
 c9b254f1b. Suspect: one shared draw per run saves time as it did there (19.8 s -> 15.6 s). Tool fix (night backlog,
 Linux): measure with `ETHLETE_DESIGN_PHASES=1`, then share one draw per run; a spec bites on a second draw.
+
+775\. Linux builder (2026-11-11, night, 710 sweep): pre-push `lint:runner-os` refused the push after a green push:suite
+(Linux cgroup path outside a Linux guard; fix a6c575f5f), so the push paid a full suite rerun. Cause: push:suite does
+not run the sub-second pre-push checks. Lesson: the cheapest gate runs first. Decided by the doc agent (tool internal):
+push:suite runs every sub-second pre-push check before its specs. Tool fix (night backlog, Linux, after 774); a spec
+bites with a range that only the runner-os lint refuses.
