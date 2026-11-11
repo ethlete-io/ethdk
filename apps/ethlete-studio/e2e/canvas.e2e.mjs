@@ -13,12 +13,14 @@ import {
 } from 'node:fs';
 import { createRequire } from 'node:module';
 import { createServer } from 'node:net';
-import { availableParallelism, loadavg, tmpdir } from 'node:os';
+import { availableParallelism, hostname, loadavg, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { listingHold } from '../../../tools/scripts/studio-e2e-listing-hold.mjs';
 import { ensureCli, withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 import { CANVAS, sketchCells } from './probe-helpers.mjs';
+import { noMatchLineOf } from './case-filter.mjs';
+import { isNoisy, runLoadLineOf, topProcesses } from './run-load.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
 const args = process.argv.slice(2);
@@ -3495,6 +3497,7 @@ const workerCount = () => {
 
 const lead = async () => {
   const runStartedAt = performance.now();
+  const loadAtStart = loadavg()[0];
   const noReason = CASES.filter(
     (testCase) =>
       'listingMayPend' in testCase && (typeof testCase.listingMayPend !== 'string' || !testCase.listingMayPend.trim()),
@@ -3522,6 +3525,19 @@ const lead = async () => {
     ),
   );
   const matched = queue.length;
+
+  if (!matched && (only || pageGroups)) {
+    console.error(
+      only
+        ? noMatchLineOf({ flag: '--case', only, names: CASES.map((testCase) => testCase.name) })
+        : noMatchLineOf({
+            flag: '--page',
+            only: pageGroups.join('|'),
+            names: PAGES.map((page) => page.label ?? page.name),
+          }),
+    );
+    process.exit(1);
+  }
   const skippedPerf = perfOnly ? 0 : CASES.filter((testCase) => testCase.perf).length;
 
   if (shard) {
@@ -3725,6 +3741,7 @@ const lead = async () => {
   }
 
   const suiteMs = performance.now() - runStartedAt;
+  const loadAtEnd = loadavg()[0];
   const overBudget = suiteMs > BUDGET_MS;
   const enforceBudget = process.env['STUDIO_E2E_BUDGET_ENFORCE'] === '1';
 
@@ -3747,6 +3764,9 @@ const lead = async () => {
   console.log(
     `suite${shard ? ` shard ${shard.index}/${shard.count}` : ''} ${minutes(suiteMs)} of ${minutes(BUDGET_MS)} budget${overBudget ? ` - over budget${enforceBudget ? ', failing the run' : ' (STUDIO_E2E_BUDGET_ENFORCE=1 fails the run)'}` : ''}`,
   );
+  const load = { start: loadAtStart, end: loadAtEnd, cores: availableParallelism() };
+  console.log(runLoadLineOf({ ...load, workers, machine: hostname() }));
+  if (isNoisy(load)) console.log(['top processes by cpu:', ...topProcesses()].join('\n'));
   process.exit(
     fixtureFault || failed.length || rows.length < total || !matched || (overBudget && enforceBudget) ? 1 : 0,
   );

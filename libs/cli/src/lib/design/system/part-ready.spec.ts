@@ -1,18 +1,34 @@
-import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  statSync,
+  utimesSync,
+  writeFileSync,
+} from 'fs';
 import { originOf } from './write-origin';
 import { IncomingMessage } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { Readable } from 'stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { warmOpenPointsWorker } from './open-points-worker.fixtures';
 import { DESIGN_DIR } from '../design-config';
-import { openPointsAnswer } from '../studio-api';
+import { openPointsAnswer } from './open-points.fixtures';
 import { checkActions, PART_HARNESS_ONLY, partActionFailuresOf } from './actions-command';
 import { harnessMapOf, writeHarnessMap } from './harness-map';
 import { checkLiveActions } from './live-actions';
 import { drawnFindingsOf } from './drawn-open-points';
-import { drawnPartPointsOf, markPartReady, readReady, readyMarkOf, readyPartOf, readyPartsOf } from './part-ready';
+import {
+  drawnPartPointsOf,
+  markPartReady,
+  readReady,
+  readyMarkOf,
+  readyPartOf,
+  readyPartsOf,
+  writePartRecord,
+} from './part-ready';
 import { designReady } from './ready-command';
 import { resolveProduct } from './resolve-product';
 
@@ -105,8 +121,6 @@ const output = () => {
   return lines;
 };
 
-warmOpenPointsWorker();
-
 describe('part ready', () => {
   afterEach(() => vi.restoreAllMocks());
 
@@ -133,6 +147,27 @@ describe('part ready', () => {
 
     expect(readyMarkOf({ product: productOf(target), part: 'components/chip' })).toBeNull();
     expect(readyPartsOf(productOf(target))).toEqual([]);
+  });
+
+  it('leaves an equal ready.json untouched when the same record is written again', () => {
+    const { target, dir } = checkout();
+    const file = join(dir, 'ready.json');
+    const write = () =>
+      writePartRecord({
+        product: productOf(target),
+        part: 'components/chip',
+        origin: originOf('spec', 'design ready'),
+      });
+
+    write();
+    const before = readFileSync(file, 'utf8');
+    const past = new Date('2020-01-01T00:00:00Z');
+
+    utimesSync(file, past, past);
+    write();
+
+    expect(readFileSync(file, 'utf8')).toBe(before);
+    expect(statSync(file).mtimeMs).toBe(past.getTime());
   });
 
   it('refuses with the list while the part has open points, the drawn ones too', async () => {

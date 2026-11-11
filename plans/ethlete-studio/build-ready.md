@@ -693,7 +693,7 @@ output, the wiring list and ACTION-LOST). Verified: related specs in libs/cli (o
 `check-system-sketch.spec.ts` expectation fails, handed to its owner) and apps/ethlete-studio, both typecheck targets,
 eslint, prettier, spec:stress 4/4. Not verified: a real `design check` or `design serve` on the repo design. The repo
 product `studio-lab` has no harness, so after the next `design check` its 1 record is dropped and its parts read
-"Nicht baubereit (Kein Harness)"; whether it gets a harness is Tom's product call.
+"Nicht baubereit (Kein Harness)"; answered by ADR 0254: it stays blocked until it gets an app.
 
 As built (718 harness product pending): Cause, proven by `libs/cli/src/lib/design/system/check-record.spec.ts`: `design check`
 without `--slow` never runs the slow rules; only `design ready`, `design check --slow` (which writes no record) and the

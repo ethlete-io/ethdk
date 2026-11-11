@@ -138,3 +138,24 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   check, resident case); 617, 614, 618 pushed. Linux builder restarted again from `builder-2026-11-11a`, next 784. Mac:
   merged origin as 81980de90, push:suite with the 29 min repeat step runs, then 780, 777 Mac verify, 735 calibration.
   Morning round unchanged.
+- Night, 04:30 (after 92770f203): findings 785 (one timeout for heavy design specs, built b0ef796f4) and 786 (one heavy
+  run per machine, Mac backlog) recorded; 780 push slot built by the Mac (bc219f75d, `refs/push-slot/next`; Linux rule
+  sent). Linux pushed 783, 784, 620, B438 (ADR 0229 built), 649 part 1 (part 2 in the STATUS backlog line). Linux
+  builder restarted from `builder-2026-11-11a`: B438 cold compare measurement, then 782. Mac: push, 777 Mac verify, 786, 735. Morning round unchanged.
+- Night, 05:30 (after 62fa5a00a): findings 787-790 recorded (787 built 04d6485bc, 788 built eea6f5c7e, 789 cause: the
+  rule came after the sketch; decided under ADR 0226: no hook or CI gate, (a) builder-agent rule built d0db285ce, (b)
+  Studio live display of a static finding on a ready sketch, still open; 790 option A: spec entry module + lint rule).
+  782 built 191ab7c46. B438 measured (no real gain; recorded below 789). STATUS: 614, 617, 618, 620, 756 struck.
+  Linux holds every push until the Mac merge 6bca47ab5 lands (its clone lacks the 780 slot code); then pushes 191ab7c46,
+  04d6485bc, eea6f5c7e, d0db285ce; next 790, 789 (b), 650. Linux builder restarts from its own handoff. Mac: push
+  6bca47ab5 (brings 780 slot, 769 Tab-focus fix), then 777 Mac verify, 786, 735. Day order addition: merge the
+  `elements/rating` sketch pick c with the UTILITY-CSS fix (789). Morning round unchanged (three items).
+- Night, 06:00 (after 358caa9f2): 790 built 0b52e8820 (not pushed, hold stays). 789 (b) cause recorded; fixes (1)+(2)
+  decided, Linux builds them after 650. Morning round now four items: (1) ADR summary of the night no-questions rule;
+  (2) finding 776 app fix into the day order; (3) B345 change-crop sketch pick by merge (663088643); (4) 789 (3) chip
+  label for a static sketch finding, builder default "Sketch-Regel verletzt: <rule>".
+- Night, 06:45 (after 3ae43d923): built by Linux (not pushed, hold until the Mac merge 6bca47ab5 lands; the Mac push suite
+  ran 31 min at 05:25, not stuck): 650 dd556d716 (+ real run 8c32f2f32), 789 (b) (1)+(2) 128f5a9ce, 791 003d9d457 (two
+  bites). Finding 792 (no Studio consumer of 128f5a9ce): B traced now by Linux; A is a day sketch. 652 step 1 decided
+  (pictures.json to a gitignored cache, condition first). Linux builder restarted from `builder-2026-11-11c`: 792 B,
+  664+659, 652. Morning round unchanged (four items).

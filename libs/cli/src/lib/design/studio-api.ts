@@ -51,6 +51,7 @@ import {
   decideSketch,
   findSketch,
   SketchDecisionInput,
+  listSketches,
   listSketchesInTurns,
   parseTarget,
   readSketchReport,
@@ -992,7 +993,12 @@ const knownPartOf = (product: ResolvedProduct, part: unknown): string | Answer =
   if (typeof part !== 'string' || part === '')
     return refusal({ status: 400, reason: 'part-missing', message: 'part is required' });
 
-  return product.parts.some((candidate) => partKeyOf(candidate) === part)
+  const sketched = () =>
+    listSketches({ productDir: product.dir, product: product.name }).some(
+      (sketch) => typeof sketch !== 'string' && sketch.targets.includes(part),
+    );
+
+  return product.parts.some((candidate) => partKeyOf(candidate) === part) || sketched()
     ? part
     : refusal({ status: 404, reason: 'unknown-part', message: `product "${product.name}" has no part "${part}"` });
 };

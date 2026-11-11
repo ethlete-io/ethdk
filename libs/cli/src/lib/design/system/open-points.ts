@@ -110,47 +110,66 @@ export type PartOpenPoints = { part: string; points: OpenPoint[] };
 
 const rankOf = (point: OpenPoint) => OPEN_POINT_KINDS.indexOf(point.kind);
 
-/** The open points of each part that has any, in the order of `parts`, each list in the order of `OPEN_POINT_KINDS`. */
-export const openPointsOf = (input: OpenPointsInput): PartOpenPoints[] =>
-  input.parts.flatMap(({ key, layer, controls, declaredNoControls, motion }) => {
-    const stateful = !STATELESS_LAYERS.includes(layer);
-    const points: OpenPoint[] = [
-      ...(stateful && !controls && !declaredNoControls ? [{ kind: 'missing-state' as const, control: null }] : []),
-      ...(stateful ? (input.missingStates ?? []) : [])
-        .filter((missing) => missing.part === key)
-        .map(({ control }) => ({ kind: 'missing-state' as const, control })),
-      ...(input.contrasts ?? [])
-        .filter((contrast) => contrast.part === key)
-        .map(({ state, path }) => ({ kind: 'contrast' as const, state, path })),
-      ...missingMotionsOf({
-        layer,
-        motion,
-        busy: (input.busyStates ?? []).filter((busy) => busy.part === key).map(({ state }) => state),
-      }),
-      ...(input.directEdits ?? [])
-        .filter((edit) => edit.part === key)
-        .map(({ sketch }) => ({ kind: 'direct-edit' as const, sketch })),
-      ...input.sketches
-        .filter((sketch) => sketch.targets.includes(key))
-        .map((sketch) => ({
-          kind: 'unmerged-sketch' as const,
-          sketch: sketch.name,
-          primary: sketch.targets[0] === key,
-          status: sketch.status,
-          decision: sketch.decision,
-        })),
-      ...input.comments
-        .filter((comment) => comment.part === key && !comment.resolved)
-        .map((comment) => ({
-          kind: 'open-comment' as const,
-          comment: comment.id,
-          state: comment.state,
-          answered: comment.answered,
-        })),
-    ].sort((a, b) => rankOf(a) - rankOf(b));
+const keyedPointsOf = (input: OpenPointsInput, key: string): OpenPoint[] => [
+  ...(input.contrasts ?? [])
+    .filter((contrast) => contrast.part === key)
+    .map(({ state, path }) => ({ kind: 'contrast' as const, state, path })),
+  ...(input.directEdits ?? [])
+    .filter((edit) => edit.part === key)
+    .map(({ sketch }) => ({ kind: 'direct-edit' as const, sketch })),
+  ...input.sketches
+    .filter((sketch) => sketch.targets.includes(key))
+    .map((sketch) => ({
+      kind: 'unmerged-sketch' as const,
+      sketch: sketch.name,
+      primary: sketch.targets[0] === key,
+      status: sketch.status,
+      decision: sketch.decision,
+    })),
+  ...input.comments
+    .filter((comment) => comment.part === key && !comment.resolved)
+    .map((comment) => ({
+      kind: 'open-comment' as const,
+      comment: comment.id,
+      state: comment.state,
+      answered: comment.answered,
+    })),
+];
 
-    return points.length > 0 ? [{ part: key, points }] : [];
-  });
+/**
+ * The open points of each part that has any, in the order of `parts`, then each part only an unmerged sketch targets;
+ * each list in the order of `OPEN_POINT_KINDS`.
+ */
+export const openPointsOf = (input: OpenPointsInput): PartOpenPoints[] => {
+  const known = new Set(input.parts.map(({ key }) => key));
+  const sketchOnly = [...new Set(input.sketches.flatMap(({ targets }) => targets))].filter((key) => !known.has(key));
+  const listed = [
+    ...input.parts.map(({ key, layer, controls, declaredNoControls, motion }) => {
+      const stateful = !STATELESS_LAYERS.includes(layer);
+
+      return {
+        key,
+        points: [
+          ...(stateful && !controls && !declaredNoControls ? [{ kind: 'missing-state' as const, control: null }] : []),
+          ...(stateful ? (input.missingStates ?? []) : [])
+            .filter((missing) => missing.part === key)
+            .map(({ control }) => ({ kind: 'missing-state' as const, control })),
+          ...missingMotionsOf({
+            layer,
+            motion,
+            busy: (input.busyStates ?? []).filter((busy) => busy.part === key).map(({ state }) => state),
+          }),
+          ...keyedPointsOf(input, key),
+        ],
+      };
+    }),
+    ...sketchOnly.map((key) => ({ key, points: keyedPointsOf(input, key) })),
+  ];
+
+  return listed.flatMap(({ key, points }) =>
+    points.length > 0 ? [{ part: key, points: [...points].sort((a, b) => rankOf(a) - rankOf(b)) }] : [],
+  );
+};
 
 const subjectOf = (point: OpenPoint) => {
   switch (point.kind) {

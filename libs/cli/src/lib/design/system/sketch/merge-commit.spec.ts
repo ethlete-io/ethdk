@@ -1,9 +1,9 @@
-import { spawnSync } from 'child_process';
 import { cpSync, existsSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../design-config';
+import { gitResult } from '../git-repo.fixtures';
 import { resolveProduct } from '../resolve-product';
 import { mergeInWorker } from './merge-runner';
 import { mergeAndRecord } from './merge-step';
@@ -22,7 +22,7 @@ const acme = () => {
 const gitOf =
   (target: string) =>
   (...args: string[]) =>
-    spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: target, encoding: 'utf8' });
+    gitResult(target, ...args);
 
 const productOf = (target: string) =>
   resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });

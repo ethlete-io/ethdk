@@ -56,6 +56,8 @@ that talks with the user and records decisions. Talk English.
   a hold failure stops the push, and the pre-push hook of `next` refuses a code push without that verdict. `PUSH_SUITE_SKIP=1` is for the human only;
   no agent sets it, and no subagent brief names it. Push at the end of
   each slice (ADR 0230). A subagent runs no full suite. Tell each subagent the same.
+- A change that adds or tightens a static design rule runs that rule over every committed sketch and part of every
+  product before its commit, and fixes or exempts each finding in the same change (finding 789).
 - A slice that changes `apps/<app>` or `.ethlete/design` ends with `design check --product <p> --part <part>` for each
   part it touched and each part that embeds one, in the background. A problem that is not known and was not there
   before the slice fails the slice. The full `design check --product <p>` runs on demand at each slice end until the live check (B424) replaces it;
@@ -69,6 +71,9 @@ that talks with the user and records decisions. Talk English.
 - Every subagent brief says: "Never wait with `pgrep -f`/`pkill -f` loops: the pattern matches the loop's own command line, so it never ends. Use `run_in_background` or Monitor." (finding 730; B99 is the tool fix.)
 - Every subagent brief says: "A refused gate is a finding: stop and report it, never call its internals to pass it." (finding 737.)
 - Every subagent brief says: "Before your commit, run `npx vitest related --run <changed files>` in each touched project." (finding 779.)
+- A fix for "Studio does not show X" counts as verified only after a live shot of that view; an API answer alone does not (finding 792).
+- A condition check that gates a decision runs a probe (a spec or a live run) before it reports. Report a code read as "Suspect (code read)" (finding 794).
+- Before you write "open for the human" in a handoff or report, grep `apps/ethlete-studio/docs/adr` for the topic. An ADR that decided it closes the point (finding 793).
 - After a slice, write an "as built" section in the plan: what was built, the commits, and
   what you verified and what you did not verify.
 

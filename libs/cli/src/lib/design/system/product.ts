@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, statSync } from 'fs';
-import { resolve } from 'path';
-import { DESIGN_DIR } from '../design-config';
+import { basename, resolve } from 'path';
+import { CACHE_DIR, DESIGN_DIR } from '../design-config';
 import { LAYERS, Layer } from './layers';
 import { Problem } from './problem';
 
@@ -8,6 +8,10 @@ export type PartFile = { layer: Layer; name: string; file: string; css?: string 
 
 export const productDirOf = (options: { target: string; product: string }) =>
   resolve(options.target, DESIGN_DIR, options.product);
+
+/** The gitignored cache folder of the product whose folder {@link productDirOf} answered. */
+export const productCacheDirOf = (productDir: string) =>
+  resolve(productDir, '..', ...DESIGN_DIR.split('/').map(() => '..'), CACHE_DIR, basename(productDir));
 
 const foldersOf = (dir: string) =>
   existsSync(dir) ? readdirSync(dir).filter((name) => statSync(resolve(dir, name)).isDirectory()) : [];

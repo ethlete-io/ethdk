@@ -9,6 +9,7 @@ import { DesignServer, drawingOn, WarmDraw } from '../warm-draw';
 import { compareFrameOf } from './harness-shot';
 import { designHashOf, designHolds, sha16 } from './design-hash';
 import { partOwnerOf } from './inventory-approval';
+import { productCacheDirOf } from './product';
 import { createPartPictureCache, PartPictureCache } from './part-picture-cache';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
@@ -58,7 +59,9 @@ export type DrawStates = (options: {
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-const picturesFileOf = (dir: string) => resolve(dir, PICTURES_FILE);
+const picturesFileOf = (dir: string) => resolve(productCacheDirOf(dir), PICTURES_FILE);
+
+const committedPicturesFileOf = (dir: string) => resolve(dir, PICTURES_FILE);
 
 const isAccepted = (value: unknown): value is AcceptedPictures => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
@@ -90,8 +93,10 @@ const recordOf = (kinds: Record<string, unknown>): PartPictures => {
   return record ? { record } : {};
 };
 
+/** The pictures in the product's cache, or in the pictures.json its folder held before the cache while no cache exists. */
 export const readPictures = (dir: string): Record<string, PartPictures> => {
-  const file = picturesFileOf(dir);
+  const cached = picturesFileOf(dir);
+  const file = existsSync(cached) ? cached : committedPicturesFileOf(dir);
 
   if (!existsSync(file)) return {};
 
@@ -112,7 +117,7 @@ export const readPictures = (dir: string): Record<string, PartPictures> => {
   }
 };
 
-/** Writes the `record` pictures of one part into the pictures.json in `dir`, dropping its older kinds, sorted by part. */
+/** Writes the `record` pictures of one part into the product's cached pictures.json, dropping its older kinds, sorted by part. */
 export const writePictures = (options: { dir: string; part: string; pictures: Omit<AcceptedPictures, 'slots'> }) => {
   const { dir, part, pictures } = options;
   const all = readPictures(dir);

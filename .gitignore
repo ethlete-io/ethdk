@@ -92,4 +92,8 @@ playwright-report
 # Local timings of every et design run
 .ethlete/design/.timings.jsonl
 
+# Local state of the design tools
+.ethlete/cache/
+.ethlete/design/*/pictures.json
+
 **/.vitest/

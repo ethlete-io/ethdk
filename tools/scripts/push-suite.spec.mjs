@@ -12,6 +12,8 @@ import {
   failureReport,
   linkTargetOf,
   missingVerdict,
+  otherProcessWarningLines,
+  otherTestProcessesOf,
   parseArgs,
   parseLog,
   passedSteps,
@@ -602,4 +604,55 @@ test('push:suite stops at the checks step when a range only a pre-push check ref
   } finally {
     rmSync(repo, { recursive: true, force: true });
   }
+});
+
+const ROOT = '/home/tom/dev/app-a';
+const SAMPLE = [
+  { pid: 100, ppid: 1, cpu: 0, cwd: ROOT, args: 'node /usr/bin/yarn push:suite' },
+  { pid: 101, ppid: 100, cpu: 3, cwd: ROOT, args: 'node tools/scripts/push-suite.mjs' },
+  { pid: 102, ppid: 101, cpu: 40, cwd: ROOT, args: 'node /usr/lib/node_modules/nx/bin/nx.js run cli:test' },
+  { pid: 200, ppid: 1, cpu: 55, cwd: ROOT, args: `node ${ROOT}/node_modules/vitest/vitest.mjs run` },
+  { pid: 201, ppid: 1, cpu: 4, cwd: ROOT, args: `node ${ROOT}/node_modules/nx/dist/src/daemon/server/start.js` },
+  {
+    pid: 300,
+    ppid: 1,
+    cpu: 1,
+    cwd: ROOT,
+    args: 'node /opt/cli/src/index.js design __resident --checkout /home/tom/dev/app-a',
+  },
+  {
+    pid: 301,
+    ppid: 300,
+    cpu: 2,
+    cwd: ROOT,
+    args: '/home/tom/.cache/ms-playwright/chromium-1/chrome-headless-shell --disable-field-trial-config',
+  },
+  { pid: 400, ppid: 1, cpu: 1, cwd: ROOT, args: '/ext/typescript-linux-x64/lib/tsc --lsp --stdio' },
+  { pid: 500, ppid: 1, cpu: 70, cwd: '/home/tom/dev/app-b', args: 'node /usr/lib/node_modules/vitest/vitest.mjs run' },
+  { pid: 501, ppid: 1, cpu: 70, cwd: null, args: 'node /usr/lib/node_modules/vitest/vitest.mjs run' },
+  {
+    pid: 502,
+    ppid: 1,
+    cpu: 9,
+    cwd: `${ROOT}/libs/core`,
+    args: 'node /usr/lib/node_modules/typescript/bin/tsc -p tsconfig.json',
+  },
+];
+
+test('other test or build work of this checkout is selected, not the suite itself, servers or other checkouts', () => {
+  const found = otherTestProcessesOf({ processes: SAMPLE, root: ROOT, selfPid: 101 });
+
+  assert.deepEqual(
+    found.map(({ pid }) => pid),
+    [200, 502],
+  );
+});
+
+test('the warning is one header and one line per process', () => {
+  const found = otherTestProcessesOf({ processes: SAMPLE, root: ROOT, selfPid: 101 });
+  const lines = otherProcessWarningLines(found, ROOT);
+
+  assert.equal(lines[0], 'push-suite: warning: 2 other test or build process(es) of this checkout run:');
+  assert.equal(lines.length, 3);
+  assert.match(lines[1], /^ {2}200 {3}55\.0 % cpu {2}node node_modules\/vitest\/vitest\.mjs run$/);
 });

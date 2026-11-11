@@ -76,4 +76,28 @@ export default [
   },
   // Relaxed rules for spec files (non-null assertions are common and intentional in tests)
   ethlete.configs.recommendedSpec,
+  {
+    files: ['src/**/*.spec.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '(^|/)studio-api$',
+              importNames: ['openPointsAnswer'],
+              message:
+                'Import openPointsAnswer from src/lib/design/system/open-points.fixtures: it warms the open-points worker first.',
+            },
+            {
+              regex: '(^|/)open-points-runner$',
+              importNames: ['openPointsInWorker'],
+              message:
+                'Import openPointsInWorker from src/lib/design/system/open-points.fixtures: it warms the open-points worker first.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];

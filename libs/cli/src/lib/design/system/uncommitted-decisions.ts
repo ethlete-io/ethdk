@@ -1,7 +1,7 @@
 import { execFileSync } from 'child_process';
 import { ResolvedProduct } from './resolve-product';
 
-const DECISION_FILES = ['merged.json', 'pictures.json', ':(glob)sketches/*/sketch.json'];
+const DECISION_FILES = ['merged.json', ':(glob)sketches/*/sketch.json'];
 
 const gitLines = (cwd: string, args: string[]) =>
   execFileSync('git', [...args, '--', ...DECISION_FILES], {

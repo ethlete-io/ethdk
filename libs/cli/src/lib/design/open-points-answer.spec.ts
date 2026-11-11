@@ -5,11 +5,11 @@ import { join } from 'path';
 import { Readable } from 'stream';
 import { describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from './design-config';
-import { openPointsAnswer } from './studio-api';
+import { openPointsAnswer } from './system/open-points.fixtures';
 import { createComment } from './system/comments/comment';
 import { drawnFindingsOf } from './system/drawn-open-points';
 import { oneProductOf } from './system/sketch/cli-args';
-import { createSketch } from './system/sketch/sketch';
+import { createSketch, decideSketch, markSketchReady, Sketch } from './system/sketch/sketch';
 import { ResolvedProduct } from './system/resolve-product';
 
 vi.mock('./system/drawn-open-points', () => ({
@@ -103,6 +103,28 @@ describe('openPointsAnswer', { timeout: 30_000 }, () => {
     );
 
     expect(await pointsOf('components/chip')).toEqual(['missing-state']);
+  });
+
+  it('answers the pick point of a part that exists only in a ready sketch', async () => {
+    const target = checkout();
+    const product = oneProductOf({ target, config: readConfig(target)!, asked: 'app-a' }) as ResolvedProduct;
+    const sketch = createSketch({ product, sketch: { layer: 'elements', name: 'rating' }, variants: ['a', 'b'] });
+    const ready = markSketchReady({ checkout: target, sketch: sketch as Sketch });
+
+    decideSketch({
+      sketch: ready as Sketch,
+      decision: { kind: 'pick', variant: 'b', by: 'user', cmd: 'studio', pid: 1 },
+    });
+
+    const pick = { kind: 'unmerged-sketch', sketch: 'rating', primary: true, status: 'ready', decision: 'pick' };
+    const one = await openPointsAnswer(ask(target, '/?product=app-a&part=elements/rating'));
+
+    expect(one.status).toBe(200);
+    expect((one.body as { points: unknown[] }).points).toEqual([pick]);
+    expect(await openPointsAnswer(ask(target, '/?product=app-a'))).toEqual({
+      status: 200,
+      body: { drawn: false, parts: [{ part: 'elements/rating', points: [pick] }] },
+    });
   });
 
   it('draws one part for its contrasts and missing control states', async () => {

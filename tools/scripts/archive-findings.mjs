@@ -158,31 +158,63 @@ export const writeArchive = (archiveDir, moved) => {
   }
 };
 
-export const run = (root, days = 5) => {
+const USAGE = `usage: node tools/scripts/archive-findings.mjs [--days=<n>] [--dry-run] [--orphans] [--help]
+  moves done findings and old decision sections of plans/ethlete-studio/design-to-code.md into archive/
+  --days=<n>  age in days a done finding must reach (default 5)
+  --dry-run   list what would move, write nothing
+  --orphans   list old findings with no STATUS row, write nothing`;
+
+const planMoves = (root, days) => {
   const studio = join(root, 'plans/ethlete-studio');
   const planFile = join(studio, 'design-to-code.md');
   const statusText = readFileSync(join(studio, 'STATUS.md'), 'utf8');
   const today = new Date();
   const first = archiveFindings(readFileSync(planFile, 'utf8'), statusText, { today, days });
   const second = archiveSections(first.plan, statusText, readAdrText(root), { today, days });
-  const moved = [...first.moved, ...second.moved];
+
+  return { studio, planFile, plan: second.plan, moved: [...first.moved, ...second.moved] };
+};
+
+export const run = (root, days = 5) => {
+  const { studio, planFile, plan, moved } = planMoves(root, days);
   writeArchive(join(studio, 'archive'), moved);
-  writeFileSync(planFile, second.plan);
+  writeFileSync(planFile, plan);
   return moved.length;
 };
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-  if (process.argv.includes('--orphans')) {
+const DAYS_ARG = /^--days=(\d+)$/;
+const KNOWN = new Set(['--help', '--dry-run', '--orphans']);
+
+export const main = (argv, { root, log = console.log }) => {
+  const unknown = argv.filter((arg) => !KNOWN.has(arg) && !DAYS_ARG.test(arg));
+  if (argv.includes('--help') || unknown.length > 0) {
+    if (unknown.length > 0) log(`unknown argument: ${unknown.join(' ')}`);
+    log(USAGE);
+    return unknown.length > 0 ? 2 : 0;
+  }
+  if (argv.includes('--orphans')) {
     const studio = join(root, 'plans/ethlete-studio');
     const orphans = orphanFindings(
       readFileSync(join(studio, 'design-to-code.md'), 'utf8'),
       readFileSync(join(studio, 'STATUS.md'), 'utf8'),
     );
-    for (const o of orphans) console.log(`${o.number}\t${o.date}\t${o.title}`);
-    console.log(`${orphans.length} orphans`);
-    process.exit(0);
+    for (const o of orphans) log(`${o.number}\t${o.date}\t${o.title}`);
+    log(`${orphans.length} orphans`);
+    return 0;
   }
-  const daysArg = process.argv.find((arg) => arg.startsWith('--days='));
-  console.log(`moved ${run(root, daysArg ? Number(daysArg.slice(7)) : 5)} findings and sections`);
+  const daysArg = argv.find((arg) => DAYS_ARG.test(arg));
+  const days = daysArg ? Number(daysArg.slice(7)) : 5;
+  if (argv.includes('--dry-run')) {
+    const { moved } = planMoves(root, days);
+    for (const m of moved) log(`${m.month}\t${m.text.split('\n')[0].slice(0, 100)}`);
+    log(`would move ${moved.length} findings and sections`);
+    return 0;
+  }
+  log(`moved ${run(root, days)} findings and sections`);
+  return 0;
+};
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+  process.exitCode = main(process.argv.slice(2), { root });
 }

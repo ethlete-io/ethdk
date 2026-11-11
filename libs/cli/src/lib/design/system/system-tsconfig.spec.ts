@@ -15,6 +15,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { writeCallsTsconfig } from '../calls-tsconfig';
 import { DESIGN_DIR, readConfig } from '../design-config';
 import { resolveProduct } from './resolve-product';
+import { formatProblemsOf, formatSketch } from './sketch/check-format';
 import { createSketch, Sketch } from './sketch/sketch';
 import { repairEditorTsconfigs, writeEditorTsconfig, writeSystemTsconfig } from './system-tsconfig';
 
@@ -162,6 +163,22 @@ describe('editor tsconfigs', () => {
     repairEditorTsconfigs(target);
 
     expect(readFileSync(path, 'utf8')).toBe(good);
+  });
+
+  it('writes a variant tsconfig that the FORMAT rule accepts', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a'],
+    }) as Sketch;
+
+    formatSketch({ target, sketch, variants: sketch.variants });
+    writeEditorTsconfig({ target, product });
+
+    expect(existsSync(join(sketch.dir, 'a/tsconfig.json'))).toBe(true);
+    expect(formatProblemsOf({ target, sketch, variant: 'a' })).toEqual([]);
   });
 
   it('gives each sketch variant an editor tsconfig with the paths of its typecheck', () => {
