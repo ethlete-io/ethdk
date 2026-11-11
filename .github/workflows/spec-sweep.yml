@@ -1,0 +1,77 @@
+name: Spec sweep
+
+on:
+  push:
+    branches: [next]
+    paths:
+      - .github/workflows/spec-sweep.yml
+      - tools/scripts/spec-stress.mjs
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      slow:
+        description: Slow factor for spec:stress --slow (an integer).
+        type: string
+        default: '4'
+      runs:
+        description: Runs per spec file.
+        type: string
+        default: '2'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: spec-sweep
+  cancel-in-progress: false
+
+env:
+  NX_NO_CLOUD: 'true'
+
+jobs:
+  sweep:
+    name: spec:stress over cli and Studio
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: next
+
+      - uses: ./.github/actions/setup
+
+      - run: yarn playwright install --with-deps chromium
+
+      # spec:stress --slow needs `systemd-run --user` with the cpu controller delegated; the runner has no login
+      # session, so its user manager only starts with linger.
+      - name: Start the user systemd manager
+        if: runner.os == 'Linux'
+        timeout-minutes: 2
+        run: |
+          sudo loginctl enable-linger "$USER"
+          uid="$(id -u)"
+          echo "XDG_RUNTIME_DIR=/run/user/$uid" >> "$GITHUB_ENV"
+          echo "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus" >> "$GITHUB_ENV"
+          export XDG_RUNTIME_DIR="/run/user/$uid" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus"
+          for _ in $(seq 30); do systemd-run --user --scope --quiet true && break; sleep 1; done
+          systemd-run --user --scope --quiet true
+          controllers="/sys/fs/cgroup/user.slice/user-$uid.slice/user@$uid.service/cgroup.controllers"
+          cat "$controllers"
+          grep -qw cpu "$controllers" || { echo "::error::the cpu controller is not delegated, CPUQuota would not apply"; exit 1; }
+
+      - name: Sweep
+        timeout-minutes: 140
+        env:
+          SLOW: ${{ inputs.slow || '4' }}
+          RUNS: ${{ inputs.runs || '2' }}
+        run: |
+          mapfile -t specs < <(git ls-files -- 'libs/cli/src/*.spec.ts' 'libs/cli/scripts/*.spec.mts' 'apps/ethlete-studio/src/*.spec.ts' | grep -v '\.perf\.spec\.')
+          echo "${#specs[@]} spec files, --slow $SLOW, --runs $RUNS"
+          set -o pipefail
+          yarn spec:stress "${specs[@]}" --runs "$RUNS" --slow "$SLOW" --jobs "$(( $(nproc) * SLOW * 3 / 4 ))" --github | tee spec-sweep.txt
+      - name: Summary
+        if: always()
+        run: |
+          [ -f spec-sweep.txt ] || exit 0
+          { echo '### Spec sweep'; echo '```'; grep -v '^::' spec-sweep.txt | sort; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

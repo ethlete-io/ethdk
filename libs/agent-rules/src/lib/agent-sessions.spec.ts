@@ -24,6 +24,9 @@ describe('agent-sessions', () => {
     delete process.env['TMUX'];
     delete process.env['TMUX_PANE'];
     process.env['TMUX_TMPDIR'] = tmuxDir;
+    // A case that kills the last session leaves a server that exits after kill-session returns; the next case's
+    // first tmux call then reaches the exiting server and fails with "server exited unexpectedly".
+    if (hasTmux) spawnSync('tmux', ['new-session', '-d', '-s', 'spec-keepalive', 'cat']);
   });
 
   afterAll(() => {

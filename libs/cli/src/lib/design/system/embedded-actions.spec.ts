@@ -18,6 +18,16 @@ vi.mock('./complete', async (actual) => ({
   partsCompletenessOf: vi.fn(async () => ({ gaps: new Map(), exceptions: [], hints: new Map() })),
 }));
 
+vi.mock('./system-tsconfig', async (actual) => ({
+  ...(await actual<typeof import('./system-tsconfig')>()),
+  typecheckProduct: vi.fn(() => ({ kind: 'ok' })),
+}));
+
+vi.mock('./bespoke-controls', async (actual) => ({
+  ...(await actual<typeof import('./bespoke-controls')>()),
+  bespokeControlProblemsOf: vi.fn(async () => []),
+}));
+
 const checkout = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-embedded-actions-'));
   const design = join(target, DESIGN_DIR);

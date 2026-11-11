@@ -2915,6 +2915,26 @@ in CI; with it `--runs 4 --slow 6` 4/4 and `--load 2` 4/4. Open: at `--slow 13` 
 with theming findings" (no worker) takes 37 s, so `--slow 13` overstates the CI runners for these files; the sweep in
 the 710 tool fix needs a factor measured from CI, not 13. Also: `design-command.spec` (707) 6/6.
 
+As built (710 sweep, not pushed). Factor (measured): green CI runs print no per-file durations (Nx hides the output of
+a passed task), so the two latest `next` runs red in cli give them, 42912315216 (A) and 42916647044 (B), red in other
+files. Ratio CI file time / local file time alone (`--maxWorkers=1`, push:suite running beside): `part-compare` 2.8/3.4,
+`part-task` 3.8/5.4, `update-command` 3.8/6.9, `frame-bootstrap` 2.5/3.5, `accepted-pictures` 3.0/4.1, `shot`
+2.6/4.8; `part-ready` and `open-points-answer` give 16-42 against a warm jiti cache, 3.4/4.7 with `JITI_FS_CACHE=false`
+(CI starts cold: 0.8 s becomes 7.2 s). Median 3.6, max 6.9 (16 values). `--slow N` is a CPU quota of 1/N core;
+locally at N 4 a file runs 2.7 to 4.0 times slower (1.7 for the wait-bound `part-compare`), so a local repro of the
+slowest run needs `--slow 7`, of a median run `--slow 4`. Built: `spec-stress.mjs` takes `--jobs <n>` (a pool; before,
+every run started at once), `--github` (an `::error` annotation per file under 100 %) and prints the slowest run per
+file; `.github/workflows/spec-sweep.yml` runs nightly and on dispatch (inputs `slow`, default 4, and `runs`, default 2)
+over the 417 cli and Studio spec files without perf specs, on `next`, with `--jobs` at 3/4 of the cores times N, and
+writes the per-file lines to the step summary. N 4 on a runner adds to the runner's own slowness alone, so it should
+cover the 6.9; the dispatches calibrate it by the slowest times against the A/B column. The runner has no login
+session, so a step enables linger, sets `XDG_RUNTIME_DIR` and the bus, and fails loudly if the cpu controller is not
+delegated. Verified: 4 new specs in `spec-stress.spec.mjs` fail on the old script (11/11 pass); a local sweep of 3 cli
+files and `code-watch.spec` at `--slow 4 --runs 2 --jobs 4 --github` 2/2 each (slowest 5.4 to 50.9 s); eslint clean.
+Not verified: the workflow has not run in CI yet, so linger, the cpu delegation on ubuntu-latest and the runtime
+(estimate 30 to 40 min) are open; a `schedule` fires only from the default branch, so nightly runs start once the file
+is on `main`, until then a push to `next` that changes the workflow or `spec-stress.mjs` runs it (a dispatch needs the file on the default branch).
+
 712\. Builder (2026-11-10, day shift, B249 slice 1, 498d82393): `vitest related` over 1276 tests failed once in
 `check-system-sketch` with "port in use" under load; alone 12/12. Suspect: the spec picks a fixed or probed port and a
 parallel spec takes it between the probe and the listen. Tool fix (builder default, tool backlog): the spec server
@@ -3042,6 +3062,7 @@ the record of an embedding part..." timed out at 5000 ms; `spec:stress --load 2`
 5.1-5.3 s at load 17-26. Measured: the 708 lint step is not on its path. Suspect: a slow case near its limit under load;
 recent `system/` commits 538b77b31, f83b0bded, c58f340a0, 498d82393 changed its path. Tool fix (Linux builder): time
 `checkSystemRendered` and `markPartReady` per step before 538b77b31 and at f83b0bded; fix the slow step, not the limit.
+As built (723, Linux, spec only): measured at HEAD (laps, `ETHLETE_DESIGN_PHASES=1`, CPU profile, one run pinned to one core with `taskset -c 5`), not before 538b77b31. Steps free / one core: `tsc` of the product 0.40 / 0.81-0.96 s (static phase); `bespokeControlProblemsOf` 0.2 / 0.34-0.42 s, of it the first Playwright import in `chromiumOf` 0.14 s, Vite `createDesignServer` 0.145 s, two SSR loads 0.04 s, and it finds nothing (a page and a part with no controls); three Prettier runs of `ready.json` 0.05-0.10 s each (`markPartReady` x2, the check's record drop); open points 0.06 s. Cause (measured): no wasted step; the case pays a cold `tsc`, the first Vite and Playwright imports and three Prettier processes it does not check, and child processes and cold imports slow down most under load. Fix: the spec mocks `typecheckProduct` (ok) and `bespokeControlProblemsOf` ([]) as it already mocks render and completeness. Case 0.81 s to 0.20 s free, 1.28 s to 0.23 s on one core. Verified: the case still fails with the record drop in `part-build-ready.ts` disabled; `vitest related`, `cli:typecheck`, eslint, prettier. Not done: no tool change (a page can skip the bespoke server, but a component part still needs the SSR load; `check` without `warm` starts a draw server per rule, which a per-run draw as in c9b254f1b would share); no timing on code before 538b77b31 and no run at load 17+.
 
 724\. Mac builder (2026-11-10, B482): the pre-commit check refused a one-line as-built note in `design-to-code.md` at
 its 440,000-character budget, and `archive-findings.mjs` (also `--days=2`) moved 0 findings. Cause (measured, doc agent):
@@ -3179,6 +3200,34 @@ render-check about 13 s. Suspect only (no measurement of the phases). Backlog: m
 739\. Mac builder (2026-11-10, B345 sketch `pages/sketches@change-crop`, a5bf3bff2): `sketch ready` takes 140-280 s on
 the Mac, and each finding needs a full rerun. Suspect only, as 738 on Linux (34-37 s). Backlog with 738: measure the
 phases on both machines; a rerun after a fix checks only the states the fix touched.
+
+As built (738, builder subagent, Linux only). Measured with `ETHLETE_DESIGN_PHASES=1` (the existing `timedPhase`
+timer) on the scratch copy `/tmp/sk750`, `sketch check pages/system@probe750 --fix` (1 variant, 28 states, 1 width),
+resident process; run 1 starts the resident cold, run 2 reuses it. Seconds:
+
+| Phase        | Before run 1 | Before run 2 | After run 1 | After run 2 |
+| ------------ | -----------: | -----------: | ----------: | ----------: |
+| gates        |         2.32 |         0.76 |        2.29 |        0.76 |
+| tsc a        |         0.99 |         0.97 |        1.00 |        0.98 |
+| aktuell      |         0.37 |         0.31 |        0.36 |        0.32 |
+| render-check |         9.03 |         7.89 |        9.19 |        8.03 |
+| identical    |         4.68 |         4.67 |        4.75 |        4.75 |
+| changes-shot |         4.40 |         4.47 |        0.12 |        0.11 |
+| wall         |         23.2 |         19.8 |        19.5 |        15.6 |
+
+Load and mark-drift take under 0.03 s. `sketch ready` on the same sketch (before): render-check 7.9, identical 4.9,
+undeclared 6.5, changes-shot 0.13, wall 20.8 s. Cause (measured): `sketch ready` wraps the warm draw in a per-run draw
+(`perRun`), so the change shot of NO-CHANGED-STATE reuses the pictures the identical phase shot (0.13 s);
+`sketch check` passed the bare resident draw, so each shot phase built a new shooter with an empty cache and shot all
+28 states of the variant and of the part again (4.4 s). Fix: `sketch check` runs its shot phases (aktuell, load,
+mark-drift, identical, changes-shot) on one per-run draw like `sketch ready`; without a resident process it is one
+`createRunDraw` for the run instead of a design server and Chromium per phase. Render-check still gets the draw it got
+before. The check output of run 2 is the same before and after, line for line, apart from the timing lines.
+`sketch-check-run-draw.spec.ts` fails on the old code (both tests) and passes on the new one. Not verified: the Mac
+(739), and the run without a resident process. Remaining over target: render-check (8 s) and identical (4.7 s) still
+shoot the same 28 states twice, through two paths (render worker vs part shooter), and ready's undeclared phase takes
+6.5 s. Suspect: sharing the render-check pictures with the part shooter is the next cut; not local, so it stays
+backlog.
 
 740\. Mac builder (same sketch): the clipping check flags the intended crop of the variants, and skip-scope refuses
 the reason "intended" because the crop holds controls; only "inert" passes. Suspect only. Lesson: a check that accepts
@@ -3580,3 +3629,29 @@ passes alone. A 6 s delayed start bites the 5 s budget, but that is not the CI f
 not slow it (tmux runs outside the scope). Suspect: an earlier case of the file leaves tmux state (the shared private
 server, a dispatch or scoped session name) that keeps `run` from creating or tagging its session. Next step: run the
 file with `--sequence.shuffle=false` and bisect the earlier cases.
+
+As built (772): Cause: the case before it, "answers the background work dialog ...", kills the last session of the
+spec's private tmux server; tmux exits that server after `kill-session` returns, so the next case's first call
+(`new-session` of the runner) reaches the exiting server, fails with "server exited unexpectedly", and no session is
+ever made, so `@ethlete_command` reads `''` for any poll budget. That pane runs a login shell (`sh -lic`) from the
+respawn, which widens the exit window; other preceding cases lose the race only rarely. Not a tool defect: the spec's own
+`new-session` failed. Fix: `beforeAll` starts a `spec-keepalive` session, so no case empties the server. Bite: the two
+cases together (`-t "answers the background work dialog|stores the command of run without the prompt"`) fail 5 of 5
+without the fix and pass 3 of 3 with it; the full file failed 3 of 4 runs before and passed twice after. Not verified:
+CI.
+
+773\. Mac builder (2026-11-11, night, 769 side finding): the darwin cpu-throttle (735) and plain CPU burners cannot
+reproduce an e2e case: both stall the design server, the sketch-fixture listing times out after 60 s, and the case does
+not run (throttle 50/35/20/10 %, 20 burners at load 34). Cause (measured): a whole-machine slowdown starves the server
+before it starves the page. Lesson: `QUOTA_PERCENT_DARWIN` suits specs only, never e2e. Tool fix (Mac, in progress): a
+renderer-only `--cpu-rate` flag (CDP `setCPUThrottlingRate`) in canvas.e2e.mjs reproduces a load-sensitive case.
+
+774\. Linux builder (2026-11-11, night, 723 fa1746558): `design check` draws per phase, as `sketch check` did before
+c9b254f1b. Suspect: one shared draw per run saves time as it did there (19.8 s -> 15.6 s). Tool fix (night backlog,
+Linux): measure with `ETHLETE_DESIGN_PHASES=1`, then share one draw per run; a spec bites on a second draw.
+
+775\. Linux builder (2026-11-11, night, 710 sweep): pre-push `lint:runner-os` refused the push after a green push:suite
+(Linux cgroup path outside a Linux guard; fix a6c575f5f), so the push paid a full suite rerun. Cause: push:suite does
+not run the sub-second pre-push checks. Lesson: the cheapest gate runs first. Decided by the doc agent (tool internal):
+push:suite runs every sub-second pre-push check before its specs. Tool fix (night backlog, Linux, after 774); a spec
+bites with a range that only the runner-os lint refuses.
