@@ -3875,7 +3875,8 @@ on every OS. The spec near line 1012 uses a hand-written {version, build} body, 
 caches a no-answer verdict per checkout+port until the port stops listening. Lesson: a spec for a parsed server answer
 must take its fixture from a captured real body (AGENTS.md rule); the hand-written one hid the defect. Tool fix: compare
 only version+build, spec with the captured body (bite first), never cache a no-answer verdict; rebuild on rack and re-run
-the smoke. Side: user-facing; part of B480, which runs in parallel (ADR 0268).
+the smoke. Side: user-facing; part of B480, which runs in parallel (ADR 0268). Built 2f8743432 (bites: real-body
+spec and no-answer spec fail on old code); on rack `stale: false` now.
 
 871\. Mac builder (2026-11-11, B345 slice 1, 82c6e3025): `et:design check` runs the committed CLI build, so it cannot see
 an uncommitted server change; a builder checks the old server and reads the result as a check of its own change.
@@ -3892,3 +3893,12 @@ part, and the harness samples carry crop data for the change-crop states. Side: 
 873\. Mac builder (2026-11-11): `spec:stress` does not name the failing case, and `sketches.component.spec` first case
 times out cold under load (2/4 stressed with cli specs, 4/4 alone; Suspect). Side: machinery backlog for the weekly
 cleanup block (ADR 0269).
+
+874\. Linux builder (2026-11-11, B480 after 870, rack): Studio still shows "Design-Server startet" after 241 s, 0 live
+frames. Suspect (probe lost Studio mid-run): the page waits on `serverAnswers$` (`studio-view.component.ts:358`), which
+fetches `http://localhost:4402/__design/stamp`; the server listens only on `::1:4402`; from PowerShell `localhost` gives
+200, `127.0.0.1` is refused; an in-page CDP fetch to `localhost` got no answer in about 90 s. Lesson: no spec or e2e
+fetches the server on both loopback addresses, so an IPv6-only bind passes on Linux and hangs on Windows. Tool fix: the
+design server binds both loopback addresses (every OS); a spec or e2e fetches `127.0.0.1` and `::1` (bite first); re-run
+the rack smoke. Side: user-facing; part of B480 (ADR 0268). B480 values after 870: runs yes, 0 live frames, installer
+141.17 MiB, installed 467 MiB, NotSigned.
