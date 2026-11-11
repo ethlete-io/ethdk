@@ -3745,6 +3745,8 @@ that run draw when there is no resident warm process, so its requests are counte
 (a sketch variant links a stylesheet outside the allow list) fails with the report removed and passes with it; related
 specs, cli typecheck, lint. Not verified: the Mac, the resident process path by a spec. `compare` and `shot` still only log.
 
+As built (777 resident): `sketch-check-denied.spec.ts` gains a case that runs `sketch check` through `createWarmRuns` (the resident path; `readFreshDist` is only called there) and still gets exit 1 and the `SERVE-DENIED` line, so `takeDeniedIds` survives the `WarmDraw` spread. It fails when `takeDeniedIds` is dropped from `resident-process.ts`. No code change.
+
 778\. Linux builder (2026-11-11, night, 710 sweep): the first real nightly spec sweep (CI run 42931941982) failed: 417
 files in 60 min, 17 under 100 % at `--slow 4` (Studio flows-page.component, sketches.component; cli open-points-answer,
 open-points-loop, serve, sketch-command at 1140 s, check-system-render, check-system-sketch, check-system, check-warm,
