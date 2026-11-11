@@ -2713,19 +2713,26 @@ const CASES = [
       const original = JSON.stringify({ ...sketch, variantInfo: { ...sketch.variantInfo, b: sketch.variantInfo.a } });
       const listings = { quick: 0, full: 0 };
       const log = eventLog();
-      const onResponse = (response) => {
-        if (!response.url().includes('/__design/sketches?')) return;
-        const kind = response.url().includes('unchanged=no') ? 'quick' : 'full';
+      const askedAt = new WeakMap();
+      let writtenAt = 0;
+      const isListing = (request) => request.url().includes('/__design/sketches?');
+      const onRequest = (request) => {
+        if (isListing(request)) askedAt.set(request, Date.now());
+      };
+      const onListed = async (request) => {
+        if (!isListing(request) || (askedAt.get(request) ?? 0) < writtenAt) return;
+        const kind = request.url().includes('unchanged=no') ? 'quick' : 'full';
 
         listings[kind] += 1;
-        log.add(`${kind} listing`, response.url(), `${response.status()}`);
+        log.add(`${kind} listing answered`, request.url(), `${(await request.response())?.status()}`);
       };
       const refresh = async (content) => {
         listings.quick = 0;
         listings.full = 0;
         log.add('write', 'sketch.json');
+        writtenAt = Date.now();
         writeFileSync(sketchJson, content);
-        const deadline = Date.now() + FULL_COMPARE_MS;
+        const deadline = Date.now() + 2 * FULL_COMPARE_MS;
 
         while ((listings.quick === 0 || listings.full === 0) && Date.now() < deadline) await page.waitForTimeout(250);
         await page.waitForTimeout(1000);
@@ -2771,18 +2778,14 @@ const CASES = [
         return record;
       };
 
-      page.on('response', onResponse);
+      page.on('request', onRequest);
+      page.on('requestfinished', onListed);
 
       try {
         cpSync(join(checkout, '.ethlete/design/studio/elements/shell-main'), join(sketchDir, 'b/elements/shell-main'), {
           recursive: true,
         });
-        writeFileSync(sketchJson, original);
-        await page
-          .locator('[data-sk-same]')
-          .first()
-          .waitFor({ timeout: FULL_COMPARE_MS })
-          .catch(() => undefined);
+        const setupListings = await refresh(original);
         const folded = await page.evaluate(() => !!document.querySelector('[data-sk-same]'));
 
         await watch();
@@ -2812,6 +2815,7 @@ const CASES = [
         const listed = (counts) => counts.quick > 0 && counts.full > 0;
         const ok =
           folded &&
+          listed(setupListings) &&
           listed(collapsedListings) &&
           listed(openListings) &&
           collapsed.added + collapsed.removed === 0 &&
@@ -2821,10 +2825,11 @@ const CASES = [
 
         return {
           ok,
-          detail: `folded ${folded}; collapsed: listings ${JSON.stringify(collapsedListings)}, iframe/row adds ${collapsed.added} removes ${collapsed.removed} (must be 0); open: listings ${JSON.stringify(openListings)}, adds ${open.added} removes ${open.removed} (must be 0), iframes ${kept.before} kept ${kept.same}${ok ? '' : await log.lines()}`,
+          detail: `setup: listings ${JSON.stringify(setupListings)}, folded ${folded}; collapsed: listings ${JSON.stringify(collapsedListings)}, iframe/row adds ${collapsed.added} removes ${collapsed.removed} (must be 0); open: listings ${JSON.stringify(openListings)}, adds ${open.added} removes ${open.removed} (must be 0), iframes ${kept.before} kept ${kept.same}${ok ? '' : await log.lines()}`,
         };
       } finally {
-        page.off('response', onResponse);
+        page.off('request', onRequest);
+        page.off('requestfinished', onListed);
         writeFileSync(sketchJson, base);
         rmSync(join(sketchDir, 'b'), { recursive: true, force: true });
       }
