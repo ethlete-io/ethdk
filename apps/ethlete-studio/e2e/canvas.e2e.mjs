@@ -784,6 +784,7 @@ const withEditSketch = async (page, run) => {
     }));
   };
   const pick = async (variant) => {
+    await listingAnswered(page);
     await page.evaluate((variant) => {
       for (const button of document.querySelectorAll('[data-sk-merge]')) {
         let row = button.parentElement;
@@ -825,7 +826,7 @@ const CASES = [
   },
   {
     name: 'picking old of an edit sketch restores the design, picking new records the edit as merged',
-    listingMayPend: 'the evidence is the design files and merged.json after each merge',
+    listingMayPend: 'waits for the listing itself (listingAnswered) before each pick',
     pages: ['System'],
     run: (page) =>
       withEditSketch(page, async ({ edit, pick, file, studio, git, base }) => {
