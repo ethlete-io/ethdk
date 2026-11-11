@@ -3937,3 +3937,10 @@ wait, and only one block of state cells shows; the shot does not show where the 
 of the "Aktuell" column did not load. Owed by the Linux builder: does the column stay empty after a full load, which
 request is missing, and why the e2e does not fail on an empty column. Tool fix (if confirmed): e2e and render-check fail a
 sketch column whose label has no cell under it after the listing is complete. Side: user-facing, after B249 (ADR 0269).
+
+877\. Linux builder (2026-11-11, push suite on 545d5d656): the first-listing gate failed at 20.43 s and 19.85 s (limit
+15 s, load 27.6). A/B probe, 6 alternating runs under the same load: HEAD 18.04/18.28/15.97 s, origin/next
+18.52/16.58/15.63 s. Suspect: machine load (finding 846), not the range. Lesson: an absolute time limit cannot tell a slow
+range from a loaded machine, so it blocks a clean push and costs an A/B probe by hand. Tool fix: the gate runs a baseline
+on origin/next in the same step and judges the difference, not the absolute 15 s. Side: machinery backlog for the
+weekly cleanup block (ADR 0269); it moves up if it blocks a push again after the load wait.
