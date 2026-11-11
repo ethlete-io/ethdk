@@ -3927,6 +3927,12 @@ fetches the server on both loopback addresses, so an IPv6-only bind passes on Li
 design server binds both loopback addresses (every OS); a spec or e2e fetches `127.0.0.1` and `::1` (bite first); re-run
 the rack smoke. Side: user-facing; part of B480 (ADR 0268). B480 values after 870: runs yes, 0 live frames, installer
 141.17 MiB, installed 467 MiB, NotSigned.
+Cause (measured, 37eebcfda): not the bind. Chromium Local Network Access holds every fetch from http://tauri.localhost to
+loopback for a `loopback-network` prompt that Windows CEF never shows (app fetch timed out 6 s with the permission at
+`prompt`; a tab on localhost:4402 got 200 in 362 ms). Fix: `cef_runtime()` (`src-tauri/src/lib.rs`) allows
+LOOPBACK_NETWORK by default; the test checks the runtime config, no real prompt (CI has no Windows CEF; backlog).
+B480 values after 874: runs, stale false; live frames paint (12 frames, 100 pictures, shot
+`.claude/handoffs/agent-results/b480/shot-874.png`); installer 141.17 MiB (old bundle), installed 453.2 MiB; NotSigned.
 
 875\. Linux builder (2026-11-11, during 867): the tmux `studio-serve` (:4402) had crashed with a node stack trace; a
 subagent restarted it. Cause unknown; the trace was not kept. Lesson: a crashed serve is visible to the human (Studio
@@ -3947,3 +3953,17 @@ sketch column whose label has no cell under it after the listing is complete. Si
 range from a loaded machine, so it blocks a clean push and costs an A/B probe by hand. Tool fix: the gate runs a baseline
 on origin/next in the same step and judges the difference, not the absolute 15 s. Side: machinery backlog for the
 weekly cleanup block (ADR 0269); it moves up if it blocks a push again after the load wait.
+
+878\. Linux builder (2026-11-11, B480): the CEF smoke never logs "painted": `smoke_script` (`console_log.rs`) looks for
+`ethlete-sketch-view iframe[data-state]`, but the view now renders `ethlete-design-canvas` / `ethlete-canvas-frame-cell`,
+and those iframes keep `opacity-0` although painted. Lesson: a smoke probe keyed to a DOM selector rots with the view
+and then reports nothing, not a failure. Tool fix: the probe reads a painted signal the view sets on purpose, and a probe
+that finds no target fails. Side: part of B480 (ADR 0268), parallel.
+
+879\. Linux builder (2026-11-11, B480): `serverAnswers$` uses `fromFetch` with no timeout, so any hung request keeps
+"Design-Server startet" forever (874 showed it). Lesson: a start screen that waits on a request with no timeout hides
+every server fault. Tool fix: timeout plus retry, and after the timeout Studio says the server does not answer, with the
+URL. Side: user-facing, after B249 (ADR 0269).
+
+880\. Linux builder (2026-11-11, B480, rack): after a cold start the design server does not answer for about 60-90 s.
+Suspect; measure it together with the 875 serve crash log. Side: user-facing, after B249 (ADR 0269).
