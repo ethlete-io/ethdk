@@ -3778,3 +3778,13 @@ that mocks a module the slice now imports from. Lesson: the push:suite caught it
 by the doc agent (tool internal, general form of the builder's recommendation): every builder slice and subagent brief
 runs `npx vitest related --run <changed files>` before its commit, not only for changed imports between modules. Builder
 work (night backlog, Linux): put this rule in the builder-agent skill and the subagent brief template. Built 6447c4e1b.
+
+780\. Mac builder (2026-11-11, night, 770 81980de90): the Mac push was refused four times tonight because origin moved
+while its push:suite ran (last: 14 commits, then a full rerun with the 29 min repeat step). Cause (measured in the push
+log): both builders push to `next`; every Linux range touched `libs/cli` or `tools/`, so the 770 step reuse never
+applies. Lesson: two pushers with half-hour gates need a slot, not luck. Decided by the doc agent (tool internal, the
+Mac builder's recommendation, with one change): a builder that starts push:suite for a push to `next` claims a push slot
+for its run time; the other builder commits but holds its push until the slot ends. The `agent-sessions claim` store is
+per checkout and does not reach the other machine, so the slot lives on origin (for example a ref with holder and
+expiry), has an expiry so a dead run cannot hold it, and is released when the push ends or the suite fails. A spec
+bites with two claimers. Tool fix (night backlog, Mac builder, after its push).
