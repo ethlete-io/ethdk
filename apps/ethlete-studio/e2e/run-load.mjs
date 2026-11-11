@@ -24,7 +24,7 @@ export const topProcessLinesOf = (processes, count = TOP_PROCESSES) =>
     .map(({ pid, cpu, command, cwd }) => `  ${cpu.toFixed(1).padStart(5)} % cpu  ${pid}  ${command}  in ${cwd ?? '?'}`);
 
 /** Parses `ps -A -o pid=,pcpu=,args=` output into `{ pid, cpu, command }` rows. */
-export const psRowsOf = (output) =>
+export const psRowsOf = (output, commandLength = COMMAND_LENGTH) =>
   output
     .split('\n')
     .map((line) => line.trim().match(/^(\d+)\s+([\d.]+)\s+(.+)$/))
@@ -32,7 +32,7 @@ export const psRowsOf = (output) =>
     .map(([, pid, cpu, command]) => ({
       pid: Number(pid),
       cpu: Number(cpu),
-      command: command.slice(0, COMMAND_LENGTH),
+      command: command.slice(0, commandLength),
     }));
 
 const cwdOf = (pid) => {
@@ -83,20 +83,39 @@ const sampledCpu = () => {
   }
 };
 
+const parentOf = (pid) => {
+  try {
+    const stat = readFileSync(`/proc/${pid}/stat`, 'utf8');
+
+    return Number(stat.slice(stat.lastIndexOf(')') + 2).split(' ')[1]);
+  } catch {
+    return null;
+  }
+};
+
 /**
- * The top processes by CPU on this machine, with their checkout on Linux; empty when `ps` fails. On Linux the CPU share
- * is measured over one second; elsewhere it is the `ps` average over the life of the process.
+ * Every process with its pid, parent pid, CPU share, short `command`, full `args` and checkout (`cwd`, null when unknown); empty when `ps`
+ * fails. On Linux the CPU share is measured over one second; elsewhere it is the `ps` average over the life of the process.
  */
-export const topProcesses = () => {
+export const processList = () => {
   try {
     const sampled = sampledCpu();
-    const rows = psRowsOf(execFileSync('ps', ['-A', '-o', 'pid=,pcpu=,args='], { encoding: 'utf8' }));
+    const rows = psRowsOf(execFileSync('ps', ['-A', '-o', 'pid=,pcpu=,args='], { encoding: 'utf8' }), Infinity);
     const measured = sampled
       ? rows.filter((row) => sampled.has(row.pid)).map((row) => ({ ...row, cpu: sampled.get(row.pid) }))
       : rows;
 
-    return topProcessLinesOf(measured.map((row) => ({ ...row, cwd: cwdOf(row.pid) })));
+    return measured.map((row) => ({
+      ...row,
+      args: row.command,
+      command: row.command.slice(0, COMMAND_LENGTH),
+      ppid: parentOf(row.pid),
+      cwd: cwdOf(row.pid),
+    }));
   } catch {
     return [];
   }
 };
+
+/** The top processes by CPU on this machine, with their checkout on Linux; empty when `ps` fails. */
+export const topProcesses = () => topProcessLinesOf(processList());

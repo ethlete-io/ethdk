@@ -3688,6 +3688,15 @@ each with its pid, command and checkout (`/proc/<pid>/cwd` on Linux, `?` elsewhe
 Linux, and one e2e case run. Not verified: the Mac (no `/proc`, so the checkout prints `?`). Not built: the push-suite
 warning before its start (659 part 2) and the goal check per machine (the 90 s goal machine is a human question).
 `ps` CPU share is the average over the life of the process, not the last minute.
+659 part 2, as built by the Linux builder (2026-11-11, night): `push-suite` calls `processList()` (new in `run-load.mjs`,
+`topProcesses()` now uses it) before its slot claim and prints `push-suite: warning: N other test or build process(es) of
+this checkout run:` plus one `pid  cpu % cpu  command` line each. `otherTestProcessesOf` (exported, `push-suite.spec.mjs`)
+selects by checkout (`/proc/<pid>/cwd` under the repo root), skips push-suite, its ancestors and children, long-lived servers
+(Nx daemon, language servers, `design __resident` and what they started) and judges only the first three words of a
+command. It warns, never refuses. No `/proc` (Mac): one line, `other processes of this checkout not checked: no /proc on
+this OS`. Verified: 2 new specs (both fail with the self/ancestor exclusion removed), a live call with a busy `vitest.mjs`
+in the checkout. Not verified: the Mac, a real push-suite start with a warning; the fixture is hand-assembled from real
+`ps` shapes, not one capture. Only processes that used CPU in the one-second sample appear, so an idle waiting run is not named.
 
 793\. Linux builder (2026-11-11, night, 664 + 659 part 1 b05de1e05): the builder and its handoff kept "on which machine
 does the 90 s goal count" as a question for the human, and finding 664 still says "Open for the human". ADR 0240 decided

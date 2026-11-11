@@ -15,7 +15,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { cpus, loadavg, platform, tmpdir } from 'node:os';
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const INNER_EXPORT = process.env['PUSH_SUITE_EXPORT'];
@@ -437,6 +437,73 @@ export const warnStaleDesignServers = async (log) => {
   for (const line of staleServerWarnings(staleDesignServers(ps.stdout, { root }))) log(line);
 };
 
+const TEST_OR_BUILD_WORK =
+  /(^|[\s/])(tsc|vitest|jest|playwright|nx|ng|vite|webpack|esbuild|cargo|rustc|storybook)([\s/.]|$)|ms-playwright|chrome-headless-shell|design (check|task)/;
+const LONG_LIVED = /nx\/dist\/src\/daemon|design __resident|--lsp|--node-ipc|--type=/;
+
+const relatives = (processes, pid, next) => {
+  const found = new Set([pid]);
+  for (let grew = true; grew;) {
+    grew = false;
+    for (const candidate of processes) {
+      if (found.has(candidate.pid) || !found.has(next(candidate))) continue;
+      found.add(candidate.pid);
+      grew = true;
+    }
+  }
+  return found;
+};
+
+/**
+ * The processes of this checkout that look like test or build work: not this process, its ancestors or descendants,
+ * not a long-lived server (the Nx daemon, a language server, the design resident) or what it started. A process whose
+ * checkout is unknown never matches. Only the first three words of a command are judged, so a prompt in its arguments
+ * never matches.
+ */
+export const otherTestProcessesOf = ({ processes, root: checkout, selfPid }) => {
+  const byPid = new Map(processes.map((candidate) => [candidate.pid, candidate]));
+  const own = relatives(processes, selfPid, (candidate) => candidate.ppid);
+  for (let pid = byPid.get(selfPid)?.ppid; pid && byPid.has(pid); pid = byPid.get(pid).ppid) own.add(pid);
+  const longLived = new Set();
+  for (const server of processes.filter((candidate) => LONG_LIVED.test(candidate.args))) {
+    for (const pid of relatives(processes, server.pid, (child) => child.ppid)) longLived.add(pid);
+  }
+
+  return processes.filter(
+    ({ pid, args, cwd }) =>
+      cwd !== null &&
+      (cwd === checkout || cwd.startsWith(checkout + sep)) &&
+      !own.has(pid) &&
+      !longLived.has(pid) &&
+      TEST_OR_BUILD_WORK.test(args.split(' ').slice(0, 3).join(' ')),
+  );
+};
+
+export const otherProcessWarningLines = (found, checkout) => [
+  `push-suite: warning: ${found.length} other test or build process(es) of this checkout run:`,
+  ...found.map(({ pid, cpu, args }) => {
+    const command = args
+      .split(' ')
+      .map((token) =>
+        token.startsWith(checkout + sep) ? relative(checkout, token) : token.startsWith('/') ? basename(token) : token,
+      )
+      .join(' ');
+
+    return `  ${pid}  ${cpu.toFixed(1).padStart(5)} % cpu  ${command.slice(0, 100)}`;
+  }),
+];
+
+const warnAboutOtherProcesses = async (log) => {
+  const { processList } = await import('../../apps/ethlete-studio/e2e/run-load.mjs');
+  const processes = processList();
+  if (processes.length > 0 && processes.every(({ cwd }) => cwd === null)) {
+    log('push-suite: other processes of this checkout not checked: no /proc on this OS');
+    return;
+  }
+  const found = otherTestProcessesOf({ processes, root, selfPid: process.pid });
+  if (found.length > 0) for (const line of otherProcessWarningLines(found, root)) log(line);
+};
+
 export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loadProbe = {}) => {
   const sha = git('rev-parse', 'HEAD').stdout.trim();
   const passed = new Map();
@@ -462,6 +529,7 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
   if (only && !STEPS.includes(only)) return finish(`blocked unknown step ${only}, expected one of ${STEPS.join(', ')}`);
 
   if (!INNER_EXPORT && !only) {
+    await warnAboutOtherProcesses(log);
     const { claimSlot, heldLine, releaseSlot } = await import('./push-slot.mjs');
     const claim = claimSlot({ cwd: root, sha });
     if (claim.ok) {
