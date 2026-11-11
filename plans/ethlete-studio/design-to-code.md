@@ -3715,6 +3715,14 @@ only chip, popup and footer status, never the listing. A `listingAnswered` wait 
 element for the held request, so a wait on it passes silently. Suspect (code read). Tool fix (doc agent, tool internal):
 the helper fails when a hold is active and neither a pending marker nor an answered listing exists. Bite: the System page
 chip case with `listingAnswered` and a hold fails with a clear message instead of passing.
+833 as built (Linux builder, 2026-11-11, this commit: fix(repo): Wait for held listings in listingAnswered): the e2e route
+counts listing requests per job and those still held; `listingAnswered` polls `listingWait` (`probe-helpers.mjs`) until no
+pending marker exists and, with a hold active, a listing was requested and none is still held; otherwise it throws
+"listingAnswered timed out: <reason>" after 60 s. Bite: the System chip case with `holdListings` on and
+`listingAnswered` added, `--hold-listings 14000 --delay-pictures 60000`: the old helper ended with "ended while a held
+listing was pending" (829b); the new one waits out the hold and the case passes (55.3 s). `listing-wait.spec.mjs` 5/5.
+Verified: callers run alone, plain and held (see the commit message list in the result file). Not verified: the thrown
+timeout message live (only the pure `listingWait` reasons are specced).
 832 as built (Linux builder, 2026-11-11, 32330be11): `open-points-warmer.ts` computes the open points of every product
 in the existing worker at `et design serve` start and 300 ms after each watched change; an ask waits for the run in
 progress and never starts a second. Bite: `open-points-warmer.spec.ts` counts rule runs inside an ask (first after start,

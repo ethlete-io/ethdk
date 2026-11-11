@@ -89,3 +89,12 @@ export const sketchCells = async (page) => {
 
   return cells;
 };
+
+export const listingWait = ({ holdActive, requested, outstanding, pendingMarker }) => {
+  if (pendingMarker) return { done: false, reason: 'a listing request is still pending in the page' };
+  if (!holdActive) return { done: true };
+  if (!requested) return { done: false, reason: 'a listing hold is active but no listing was requested' };
+  if (outstanding) return { done: false, reason: `${outstanding} held listing request(s) are still unanswered` };
+
+  return { done: true };
+};
