@@ -3855,3 +3855,12 @@ outside the heavy run lock while the main push suite ran its hold pass, which th
 Suspect: those builds. Tool fix (builder pick, tool internal): heavy work in a scratch copy takes the heavy run lock
 too, for example through `yarn scratch:checkout` builds or a wrapper that the briefs name. Bite: a build in a scratch
 copy started while the lock is held waits or refuses.
+
+848\. The human (2026-11-11, B490 font-pair sketch in Studio): "ich seh hier keine unterschiede zwischen den vars. ich
+glaub die nutzen alle den gleichen font oder? ist nen edge case". Variants b (Inter + JetBrains Mono) and c (Noto Sans +
+Noto Sans Mono) show the same glyphs, although the woff2 files and `@font-face` rules exist per variant. Suspect: the
+`@font-face` url does not resolve in the variant frame, so every variant falls back to `system-ui`. Lesson: the sketch
+was marked ready and shown for a pick while its whole point (the font) was not visible, and no gate looked. Tool fix
+(doc agent, tool internal): sketch check and the ready gate fail when a declared `@font-face` family does not load in the
+frame (`document.fonts` status "error", or `document.fonts.check` false after load), naming family and url. Bite: the
+B490 sketch as it is fails the check.
