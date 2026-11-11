@@ -3536,7 +3536,7 @@ const lead = async () => {
             names: PAGES.map((page) => page.label ?? page.name),
           }),
     );
-    process.exit(1);
+    process.exit(2);
   }
   const skippedPerf = perfOnly ? 0 : CASES.filter((testCase) => testCase.perf).length;
 

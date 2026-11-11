@@ -16,6 +16,11 @@ test('a passing e2e on the old CLI does not bite', () => {
   assert.equal(biteVerdict(1).bites, true);
 });
 
+test('a refused e2e run (exit 2, e.g. a --case that matches no case) is no bite', () => {
+  assert.equal(biteVerdict(2).bites, undefined);
+  assert.equal(biteVerdict(2).refused, true);
+});
+
 test('--revert takes the fix sha and passes the rest to the e2e', () => {
   assert.deepEqual(parseBiteArgs(['--revert', 'abc123', '--case', 'Merge']), {
     revert: 'abc123',

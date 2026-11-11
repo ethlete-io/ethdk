@@ -17,14 +17,14 @@ test('a filter that matches no case names the closest case names first', () => {
   );
 });
 
-test('a run whose filter matches no case exits 1 with the line and no pass summary', () => {
+test('a run whose filter matches no case exits 2 (refused, not failed) with the line and no pass summary', () => {
   const run = spawnSync(
     process.execPath,
     [fileURLToPath(new URL('./canvas.e2e.mjs', import.meta.url)), '--case', 'zz-matches-no-case'],
     { encoding: 'utf8', timeout: 30_000 },
   );
 
-  assert.equal(run.status, 1);
+  assert.equal(run.status, 2);
   assert.match(run.stderr, /^--case "zz-matches-no-case" matches no case; closest names:/);
   assert.doesNotMatch(run.stdout + run.stderr, /passed/);
 });
