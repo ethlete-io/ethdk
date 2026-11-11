@@ -3808,3 +3808,25 @@ caught it before the push (f708e2e0b: `yarn test:e2e-helpers` in the Unit tests 
 verified locally only). Suspect, tool gap: nothing checks that a `node --test` spec that launches Chromium runs only in
 a job that installs it; push:suite runs where Chromium exists, so it cannot catch it. Decided by the doc agent (tool
 internal, the builder's recommendation): no tool fix for one case; a second case makes it night backlog.
+
+782\. Linux builder (2026-11-11, night, 778 calibration, CI run 42941554007): at `--slow 2` on CI,
+`libs/cli/src/lib/design/open-points-answer.spec.ts` failed 0/2 at about 52.8 s; at `--slow 1` it passes, and it passes
+locally under `CPUQuota=12%`. Suspect (not measured): a fixed timeout near 50 s that a slowed runner crosses. Lesson: a
+spec that passes only on a fast machine hides a timing bound. Decided by the doc agent (tool internal): after 784, read
+the first failed run's output from the next nightly run, then fix the bound or the slowness; a stress run at
+`--slow 2` bites (night backlog, Linux).
+
+783\. Linux builder (2026-11-11, night, 778 calibration, CI run 42941554007): at `--slow 2` on CI,
+`libs/cli/src/lib/design/system/check-system.spec.ts` failed 0/2 at about 52.8 s. Locally under `CPUQuota=12%` its two
+"without a browser" cases fail ("fails a part check without a browser on a dev machine…", "skips the render check
+without a browser under CI"). Suspect (not measured): an environment difference under the quota run, not slowness, for
+example a browser lookup or a CI variable that the quota wrapper changes. Decided by the doc agent (tool internal):
+reproduce the local failure first (it needs no CI), name the cause, fix it with a case that bites (night backlog,
+Linux, before 782).
+
+784\. Linux builder (2026-11-11, night, 778 calibration): `spec:stress --github` printed no output for the failed runs,
+so the CI log does not show why 782 and 783 failed. Cause: 616's "print the first failed run" does not reach the
+`--github` path (Suspect until the builder confirms in code). Lesson: a gate that fails without its reason costs a
+second run to learn it. Decided by the doc agent (tool internal, the builder's recommendation): in `--github` mode,
+print the first failed run's output in a `::group::`; a spec bites with a failing fixture in `--github` mode (night
+backlog, Linux, first of 782-784).
