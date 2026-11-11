@@ -1,22 +1,16 @@
-import { execFileSync } from 'child_process';
 import { originOf } from '../write-origin';
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readConfig } from '../../design-config';
+import { git } from '../git-repo.fixtures';
 import { resolveProduct } from '../resolve-product';
 import { baselineOf } from './baseline';
 import { mergeSketch } from './merge';
 import { createSketch, decideSketch, markSketchReady, readSketch, Sketch, SketchTarget } from './sketch';
 
 const targets: string[] = [];
-
-const git = (target: string, ...args: string[]) =>
-  execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', ...args], {
-    cwd: target,
-    stdio: 'pipe',
-  });
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-after-merge-'));

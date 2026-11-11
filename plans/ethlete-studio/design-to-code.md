@@ -3922,6 +3922,16 @@ a slow one. Suspect: none yet; the builder reads the failed run's `::group::` ou
 class, so the 785 pattern grows): the shared helper that builds a real git repo for a spec sets the 60 s timeout on
 import, as `check-system.fixtures.ts` does, so every spec that runs a real merge gets it; no per-case numbers.
 
+As built (787): new `libs/cli/src/lib/design/system/git-repo.fixtures.ts` exports `git`, `gitResult`, `commitAll` and
+`initGitRepo`. It sets `testTimeout` to `HEAVY_DESIGN_SPEC_TIMEOUT_MS` on import (the one constant, imported from
+`check-system.fixtures.ts`). `edit-sketch`, `after-merge`, `rebase-port` and `merge-commit` specs use it in place of
+their own git helpers. No per-case number was removed: the 60 s, 120 s and 240 s numbers in `merge.spec.ts`,
+`after-merge.spec.ts` and `merge-commit.spec.ts` cover merge-worker time, not only git, so they stay. Verified: with
+both `setConfig` lines off, `edit-sketch.spec.ts` at `--slow 6` fails 2 of 2 runs (`--slow 4` still passed 2 of 2, so
+it does not bite there); with the fix it passes at `--slow 6`; `--runs 4 --load 2` passes on all four specs; related
+specs, `cli:typecheck`, eslint and prettier are clean. Not verified: the CI sweep at `--slow 2`; other specs that
+inline `git init` (for example `lib/update/*`, `lib/design/*.spec.ts`) were not moved.
+
 788\. Linux builder (2026-11-11, night, B438 measurement): whole-product `sketch check --product studio-lab` exits 1
 before it draws, because the CLI writes its generated per-variant `tsconfig.json` files unformatted (FORMAT findings);
 `--fix` formats them. Suspect: the writer skips Prettier. Lesson: the tool writes files that its own gate refuses.

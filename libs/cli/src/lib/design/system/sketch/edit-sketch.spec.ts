@@ -1,4 +1,3 @@
-import { execFileSync } from 'child_process';
 import { originOf } from '../write-origin';
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
@@ -6,6 +5,7 @@ import { join, resolve } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../design-config';
 import { readOpenPoints } from '../read-open-points';
+import { commitAll, initGitRepo } from '../git-repo.fixtures';
 import { resolveProduct } from '../resolve-product';
 import { openEditSketch } from './edit-sketch';
 import { mergeSketch } from './merge';
@@ -25,17 +25,12 @@ const acme = (seed?: (heroDir: string) => void) => {
   const css = join(product.dir, HERO, 'hero.css');
 
   recordMerged({ product, parts: [HERO] });
-  execFileSync('git', ['init', '-q'], { cwd: target });
-  execFileSync('git', ['add', '.'], { cwd: target });
-  execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'base'], { cwd: target });
+  initGitRepo(target, 'base');
 
   return { target, css, head: readFileSync(css, 'utf8') };
 };
 
-const commit = (target: string) => {
-  execFileSync('git', ['add', '.'], { cwd: target });
-  execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
-};
+const commit = (target: string) => commitAll(target, 'edit');
 
 const resolveAcme = (target: string) =>
   resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });

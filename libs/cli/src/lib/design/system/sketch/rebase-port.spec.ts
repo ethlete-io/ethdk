@@ -1,20 +1,14 @@
-import { execFileSync } from 'child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { readConfig } from '../../design-config';
+import { git } from '../git-repo.fixtures';
 import { resolveProduct } from '../resolve-product';
 import { portBaseChanges } from './rebase-port';
 import { createSketch, Sketch } from './sketch';
 
 const targets: string[] = [];
-
-const git = (target: string, ...args: string[]) =>
-  execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', ...args], {
-    cwd: target,
-    stdio: 'pipe',
-  });
 
 const resolveAcme = (target: string) =>
   resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
