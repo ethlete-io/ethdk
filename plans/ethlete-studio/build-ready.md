@@ -749,3 +749,9 @@ Docs commit "docs(cli): Document build-ready instead of go and accept". `apps/do
 The commit that holds this section removes `.ethlete/design/studio/go.json` (possible after 77e87c6b2 dropped the
 go.json rule of the git-safety hook), its person-names baseline entry, and `go.json` from the commit-hunks spec list.
 Verified: commit-hunks spec, `check-person-names.mjs`. Not verified: a `design check` on the repo design.
+
+## As built: B249 gutter skip (2026-11-11, Linux)
+
+The two frozen `sk-gutter` spans in `pages/sketches` now carry `data-et-skip="COVERED OFF-CENTRE"` (they already skipped COVERED), and the four OFF-CENTRE baseline entries (finding 635) are removed. No libs/cli change: OFF-CENTRE already honours `data-et-skip`.
+
+Verified: `et design check --product studio --part pages/sketches` shows no OFF-CENTRE on `sk-gutter` and nothing new (the remaining 37 OFF-CENTRE are zoom-chip `on purpose` findings, 4 DROPPED-PROP, both not from this change). Not verified: a pixel shot (an attribute change cannot alter rendering); parts embedding pages/sketches were not checked separately.
