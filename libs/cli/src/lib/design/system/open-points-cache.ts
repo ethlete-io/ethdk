@@ -27,7 +27,7 @@ export const cachedOpenPointsOf = (
     return { points: held.points, inputs: held.ready };
 
   const { value, inputs } = trackedRun(() => {
-    const points = readOpenPoints(product);
+    const points = readOpenPoints(product, { sketchProblems: true });
 
     return { points, ready: buildReadyInputsOf(product, points) };
   });

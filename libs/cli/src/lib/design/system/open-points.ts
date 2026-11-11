@@ -7,6 +7,7 @@ export const OPEN_POINT_KINDS = [
   'contrast',
   'open-comment',
   'unmerged-sketch',
+  'sketch-problem',
   'direct-edit',
   'plan-question',
   'missing-motion',
@@ -21,7 +22,7 @@ export const SKETCH_KINDS: readonly OpenPointKind[] = ['missing-state', 'contras
  * Something that keeps a part from being done. `missing-state` is a control without a drawn state (`control` null when
  * the part declares no controls); `contrast` is a drawn state under the contrast rule; `open-comment` is a thread the
  * user has not resolved, `answered` when it waits on the user; `unmerged-sketch` is a sketch on the part that is still
- * there, picked or not; `direct-edit` is a merged part changed outside a sketch, with the old/new sketch it waits on
+ * there, picked or not; `sketch-problem` is a static rule problem a variant of a ready sketch brings in; `direct-edit` is a merged part changed outside a sketch, with the old/new sketch it waits on
  * (`sketch` null until one is open); `missing-motion` is a pair of states without a motion between them, or, with `from` equal to
  * `to`, an ongoing-work state without its looping motion.
  */
@@ -36,6 +37,7 @@ export type OpenPoint =
       status: SketchStatus;
       decision: SketchDecision['kind'] | null;
     }
+  | { kind: 'sketch-problem'; sketch: string; variant: string; rule: string; message: string }
   | { kind: 'direct-edit'; sketch: string | null }
   | { kind: 'missing-motion'; from: string; to: string };
 
@@ -73,6 +75,7 @@ export type OpenPointsInput = {
   contrasts?: { part: string; state: string; path: string }[];
   busyStates?: { part: string; state: string }[];
   directEdits?: { part: string; sketch: string | null }[];
+  sketchProblems?: { part: string; sketch: string; variant: string; rule: string; message: string }[];
 };
 
 const STATELESS_LAYERS: Layer[] = ['foundations', 'pages'];
@@ -126,6 +129,9 @@ const keyedPointsOf = (input: OpenPointsInput, key: string): OpenPoint[] => [
       status: sketch.status,
       decision: sketch.decision,
     })),
+  ...(input.sketchProblems ?? [])
+    .filter((problem) => problem.part === key)
+    .map(({ sketch, variant, rule, message }) => ({ kind: 'sketch-problem' as const, sketch, variant, rule, message })),
   ...input.comments
     .filter((comment) => comment.part === key && !comment.resolved)
     .map((comment) => ({
@@ -142,7 +148,12 @@ const keyedPointsOf = (input: OpenPointsInput, key: string): OpenPoint[] => [
  */
 export const openPointsOf = (input: OpenPointsInput): PartOpenPoints[] => {
   const known = new Set(input.parts.map(({ key }) => key));
-  const sketchOnly = [...new Set(input.sketches.flatMap(({ targets }) => targets))].filter((key) => !known.has(key));
+  const sketchOnly = [
+    ...new Set([
+      ...input.sketches.flatMap(({ targets }) => targets),
+      ...(input.sketchProblems ?? []).map(({ part }) => part),
+    ]),
+  ].filter((key) => !known.has(key));
   const listed = [
     ...input.parts.map(({ key, layer, controls, declaredNoControls, motion }) => {
       const stateful = !STATELESS_LAYERS.includes(layer);
@@ -183,6 +194,8 @@ const subjectOf = (point: OpenPoint) => {
       return point.comment;
     case 'direct-edit':
       return point.sketch ?? '';
+    case 'sketch-problem':
+      return `${point.sketch} ${point.variant} ${point.rule} ${point.message}`;
     default:
       return '';
   }
@@ -281,6 +294,15 @@ const groupText = (kind: OpenPointKind, points: OpenPoint[]) => {
 
     return `${ids.length} open comment${ids.length === 1 ? '' : 's'} (${ids.join(', ')})`;
   }
+
+  if (kind === 'sketch-problem')
+    return points
+      .map((point) =>
+        point.kind === 'sketch-problem'
+          ? `sketch ${point.sketch} variant ${point.variant} breaks ${point.rule}: ${point.message}`
+          : '',
+      )
+      .join('; ');
 
   if (kind === 'direct-edit')
     return points

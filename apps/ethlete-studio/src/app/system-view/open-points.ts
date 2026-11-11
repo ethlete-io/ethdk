@@ -20,6 +20,8 @@ const iconOf = (point: ListedPoint): OpenPointIcon => {
       return 'grid';
     case 'contrast':
       return 'warning';
+    case 'sketch-problem':
+      return 'error';
     case 'open-comment':
       return 'comment';
     case 'missing-motion':
@@ -39,6 +41,8 @@ const lineOf = (point: ListedPoint): OpenPointGroup['lines'][number] => {
       return { text: point.answered ? LABELS.commentAnswered : LABELS.commentWaiting, detail: point.state };
     case 'unmerged-sketch':
       return { text: point.decision === 'pick' ? LABELS.sketchPicked : LABELS.sketchOpen, detail: 'sketch' };
+    case 'sketch-problem':
+      return { text: LABELS.sketchProblem(point.rule), detail: point.variant };
     case 'missing-motion':
       return { text: `${point.from} → ${point.to}`, detail: 'motion' };
   }

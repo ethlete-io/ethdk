@@ -43,7 +43,10 @@ export const openPointsOf = ({ product, part, findings }: OpenPointsRequest): Op
 
   if (part === null) return { parts: cached.points };
 
-  const points = partPointsOf(findings ? readOpenPoints(product, findings) : cached.points, part);
+  const points = partPointsOf(
+    findings ? readOpenPoints(product, { ...findings, sketchProblems: true }) : cached.points,
+    part,
+  );
   const located = readyPartOf({ product, part });
   const { inputs } = cached;
 

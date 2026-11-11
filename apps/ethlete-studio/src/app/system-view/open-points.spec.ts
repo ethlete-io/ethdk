@@ -53,6 +53,23 @@ describe('openPointGroupsOf', () => {
     ]);
   });
 
+  it('lists a rule problem of a sketch variant as an error that names the rule', () => {
+    expect(
+      openPointGroupsOf({
+        points: [
+          {
+            kind: 'sketch-problem',
+            sketch: 'rating',
+            variant: 'c',
+            rule: 'UTILITY-CSS',
+            message: 'display: flex outside foundations',
+          },
+        ],
+        buildReady: { ready: true },
+      }),
+    ).toEqual([{ icon: 'error', lines: [{ text: 'Sketch-Regel verletzt: UTILITY-CSS', detail: 'c' }] }]);
+  });
+
   it('has no group without a point on a build-ready part', () => {
     expect(openPointGroupsOf({ points: [], buildReady: { ready: true } })).toEqual([]);
   });
