@@ -3687,6 +3687,17 @@ server computes the sketch problems in the background at start and again after e
 cache is warm before Studio asks; an ask during a run waits for that run, it does not start a second one. Rejected for
 now: sending the sketch problems later with a push to Studio, because it changes what the human sees. Bite: a spec where
 the first ask after start and the first ask after a part edit do not run the rules inline.
+832 as built (Linux builder, 2026-11-11, this commit: perf(cli) "Warm the open points in the background"): `open-points-warmer.ts` warms the open points of every product in
+the open-points worker at server start and 300 ms after each watcher event (add, unlink, change); a change during a run
+queues one more run. `/__design/open-points` asks through the warmer: an ask waits for the run in flight (or starts a
+pending one at once) and then hits the cache, so it never starts a second run. Only `et design` serve warms
+(`warmOpenPoints`); check, shot and spec servers do not. Bite: `open-points-warmer.spec.ts` counts inline rule runs;
+with the warm-up removed it is red in all 4 cases (2 to 4 inline runs where 0 are due), on HEAD the module is missing;
+green after, spec:stress 4/4. Measured live on a scratch copy of the checkout (port 4517, from source): the start warm
+takes about 17.5 s for all three products (studio 13.5 s, while Vite starts); an ask after it 20 ms (830 measured 5.5 s cold).
+After a part edit the studio warm takes 6.5 s; an ask after it 11 ms, an ask during it waits the rest of the run (5.3
+to 6.5 s, no faster than HEAD). The 1 s target holds only for an ask after the run. Suspect: Studio asks right after
+start and right after its reload triggers, so its first answer still waits. Not verified: Studio e2e, the real :4402 server.
 829b as built (Linux builder, 2026-11-11, 4ed2e6b96, pushed with 821, 829 and 830): after 830 the chip case ended before
 its held listing ("ended while a held listing was pending", load 30.9). Fix: `holdListings: false` on the case; it reads
 only chip, popup and footer status, never the listing. A `listingAnswered` wait did not work: 833. Bite: `--page System
