@@ -3688,7 +3688,7 @@ cache is warm before Studio asks; an ask during a run waits for that run, it doe
 now: sending the sketch problems later with a push to Studio, because it changes what the human sees. Bite: a spec where
 the first ask after start and the first ask after a part edit do not run the rules inline.
 
-833\. Render-check speed (Mac builder, 2026-11-11): `et design sketch check pages/sketches@open-points --product studio`
+836\. Render-check speed (Mac builder, 2026-11-11; numbered 833 at first): `et design sketch check pages/sketches@open-points --product studio`
 (3 variants, 35 states, light and dark), `ETHLETE_DESIGN_RESIDENT=0`, load 9 to 14 on 6 cores. The render check now boots
 one frame per variant, switches the states in place (`window.etSwitchState`, falls back to a load when it cannot) and
 inspects the dark twin on the same load after `emulateMedia`. Cold: pages/sketches variants 68/37/37 s to 37/21/22 s,
