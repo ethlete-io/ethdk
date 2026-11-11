@@ -1,4 +1,3 @@
-import { execFileSync } from 'child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -19,6 +18,7 @@ import {
   timingsFileOf,
   unphasedMsOf,
 } from './timings';
+import { gitExec } from '../git-test-env.fixtures';
 
 const NO_SESSION = { CLAUDE_CODE_SESSION_ID: '', TMUX_PANE: '', ETHLETE_AGENT_ROLE: '' };
 
@@ -310,7 +310,7 @@ describe('the commit and load of a run', () => {
 
   it('reads the short sha of HEAD and whether a tracked file differs from it', async () => {
     const git = (...args: string[]) =>
-      execFileSync('git', ['-C', dir, '-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { encoding: 'utf8' });
+      gitExec(['-C', dir, '-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { encoding: 'utf8' });
 
     expect(await checkoutCommitOf(dir)).toBeNull();
 

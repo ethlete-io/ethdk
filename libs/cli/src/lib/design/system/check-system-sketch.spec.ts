@@ -1,4 +1,3 @@
-import { execFileSync } from 'child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { AddressInfo, createServer as createNetServer, Server } from 'net';
 import { join } from 'path';
@@ -11,6 +10,7 @@ import { recordMerged } from './sketch/merged-parts';
 import { createSketch, decideSketch, rebaseSketch, variantDirOf } from './sketch/sketch';
 import { originOf } from './write-origin';
 import { acme, output, withoutOpenPoints, withoutBrowserLines, renderWarningsOf } from './check-system.fixtures';
+import { gitExec } from '../../git-test-env.fixtures';
 
 const probe = vi.hoisted(() => ({ port: null as number | null }));
 
@@ -83,7 +83,7 @@ describe('checkDesign', () => {
     output();
     const warnings: string[] = [];
     const git = (...args: string[]) =>
-      execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', ...args], {
+      gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', ...args], {
         cwd: target,
         stdio: 'ignore',
       });

@@ -6,6 +6,7 @@ import { dirname, join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { waitForLock } from './commit-wait.mjs';
+import { gitEnv, gitSpawn } from './git-test-env.mjs';
 
 test('waits while the lock exists, reports it and never deletes it', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'commit-wait-'));
@@ -30,8 +31,8 @@ test('returns at once without a lock', async () => {
 
 test('commits the given paths and adds an untracked one without git add', () => {
   const repo = mkdtempSync(join(tmpdir(), 'commit-wait-repo-'));
-  const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
-  const git = (...args) => spawnSync('git', args, { cwd: repo, env, encoding: 'utf8' });
+  const env = gitEnv();
+  const git = (...args) => gitSpawn(args, { cwd: repo, env, encoding: 'utf8' });
   const script = join(resolve(dirname(fileURLToPath(import.meta.url))), 'commit-wait.mjs');
 
   try {
@@ -57,8 +58,8 @@ test('commits the given paths and adds an untracked one without git add', () => 
 
 test('passes more than ten paths to git as separate arguments', () => {
   const repo = mkdtempSync(join(tmpdir(), 'commit-wait-many-'));
-  const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
-  const git = (...args) => spawnSync('git', args, { cwd: repo, env, encoding: 'utf8' });
+  const env = gitEnv();
+  const git = (...args) => gitSpawn(args, { cwd: repo, env, encoding: 'utf8' });
   const script = join(resolve(dirname(fileURLToPath(import.meta.url))), 'commit-wait.mjs');
   const paths = Array.from({ length: 15 }, (_, index) => `dir with space/file-${index}.txt`);
 

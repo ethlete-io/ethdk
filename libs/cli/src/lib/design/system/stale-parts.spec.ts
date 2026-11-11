@@ -1,4 +1,3 @@
-import { execFileSync } from 'child_process';
 import { createHash } from 'crypto';
 import { originOf } from './write-origin';
 import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
@@ -14,6 +13,7 @@ import { doneParts, markImplemented } from './part-task';
 import { partKeyOf, resolveProduct } from './resolve-product';
 import { partHashesHold, partHashHolds, partHashOf } from './sketch/baseline';
 import { staleLineOf, stalePartsOf, UNLISTED_FILES, upgradeLegacyMarksOf } from './stale-parts';
+import { gitExec } from '../../git-test-env.fixtures';
 
 const CHIP = 'components/chip';
 
@@ -62,7 +62,7 @@ const checkout = () => {
 
 const commitAt = (target: string, date: string) => {
   const git = (...args: string[]) =>
-    execFileSync('git', args, {
+    gitExec(args, {
       cwd: target,
       stdio: 'pipe',
       env: { ...process.env, GIT_COMMITTER_DATE: date, GIT_AUTHOR_DATE: date },
@@ -154,7 +154,7 @@ describe('transitive part hash', () => {
     const legacy = partHashOf({ product: productOf(target), dir: join(dir, 'components/chip') });
     const at = '2026-10-01T00:00:00.000Z';
 
-    execFileSync('git', ['init', '-q'], { cwd: target });
+    gitExec(['init', '-q'], { cwd: target });
     commitAt(target, '2026-09-01T00:00:00Z');
 
     writeFileSync(
@@ -185,7 +185,7 @@ describe('transitive part hash', () => {
     const legacy = partHashOf({ product: productOf(target), dir: join(dir, 'components/chip') });
     const at = '2026-10-01T00:00:00.000Z';
 
-    execFileSync('git', ['init', '-q'], { cwd: target });
+    gitExec(['init', '-q'], { cwd: target });
     commitAt(target, '2026-09-01T00:00:00Z');
     writeFileSync(join(dir, 'ready.json'), JSON.stringify({ [CHIP]: { hash: legacy, by: 'tom', at } }));
     appendFileSync(join(dir, 'elements/icon/icon.ts'), '// moved\n');
@@ -205,7 +205,7 @@ describe('transitive part hash', () => {
       states: { default: {} },
       app: appFilesOf({ root: target, component: 'apps/a/chip/chip.component.ts' }),
     });
-    execFileSync('git', ['init', '-q'], { cwd: target });
+    gitExec(['init', '-q'], { cwd: target });
     commitAt(target, '2026-09-01T00:00:00Z');
     appendFileSync(join(target, 'apps/a/chip/chip.component.html'), '<b aria-label="x"></b>\n');
     appendFileSync(join(target, 'libs/lib/src/unused.ts'), '// not reached\n');
@@ -300,7 +300,7 @@ describe('implements link', () => {
   it('holds a record and a merged hash written while the hash still covered the link, also at a link git history held', () => {
     const { target, dir } = checkout();
 
-    execFileSync('git', ['init', '-q'], { cwd: target });
+    gitExec(['init', '-q'], { cwd: target });
     linkIcon(dir, 'apps/a/icon/icon.component.ts');
     commitAt(target, '2026-09-01T00:00:00Z');
     const record = withLinkRecordOf(target, CHIP);

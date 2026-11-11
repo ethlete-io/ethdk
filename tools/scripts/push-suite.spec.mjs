@@ -1,16 +1,17 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { gitEnv } from './git-test-env.mjs';
 import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { stripVTControlCharacters } from 'node:util';
+import { linkTargetOf } from './commit-export.mjs';
 import { CHECKS } from './pre-push-checks.mjs';
 import {
   e2eQuotaCommand,
   e2eQuotaStep,
   failureReport,
-  linkTargetOf,
   missingVerdict,
   otherProcessWarningLines,
   otherTestProcessesOf,
@@ -202,7 +203,9 @@ test('typechecks only the touched projects that have a typecheck target, right a
 
   assert.deepEqual(touched, ['cli', 'ethlete-studio']);
   assert.deepEqual(withTarget(touched, ['core', 'ethlete-studio']), ['ethlete-studio']);
-  assert.deepEqual(STEPS.slice(0, 2), ['lint', 'typecheck']);
+  assert.deepEqual(STEPS.slice(0, 3), ['lint', 'typecheck', 'tools']);
+  assert.deepEqual(stepsTouchedBy(['tools/scripts/x.mjs']).has('tools'), true);
+  assert.deepEqual(stepsTouchedBy(['apps/ethlete-studio/e2e/a.mjs']).has('tools'), true);
 });
 
 const loadHarness = (loads, limit = 4) => {
@@ -553,7 +556,7 @@ test('a blocked verdict keeps the steps that passed, and a reused step keeps the
 });
 
 const sh = (cwd, command, args) => {
-  const run = spawnSync(command, args, { cwd, encoding: 'utf8' });
+  const run = spawnSync(command, args, { cwd, encoding: 'utf8', env: gitEnv() });
   assert.equal(run.status, 0, run.stderr);
   return run;
 };

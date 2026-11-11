@@ -69,3 +69,12 @@ fi
 if git diff --cached --name-only --diff-filter=ACM -- 'plans/ethlete-studio/STATUS.md' | grep -q .; then
   git show :plans/ethlete-studio/STATUS.md | node ./tools/scripts/check-studio-status.mjs -
 fi
+
+# A staged path under a data glob of tools/scripts/data-spec-map.json runs the specs that read that data (finding 799);
+# a commit touching none of them skips it. Fails the commit on a red spec.
+data_files=$(git diff --cached --name-only --diff-filter=ACMR -- '.ethlete' '.github/workflows')
+
+if [ -n "$data_files" ]; then
+  # shellcheck disable=SC2086
+  node ./tools/scripts/staged-data-specs.mjs $data_files
+fi

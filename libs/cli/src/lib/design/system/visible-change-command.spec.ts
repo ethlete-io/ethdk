@@ -1,15 +1,15 @@
-import { execFileSync } from 'child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { sketchedPartsOf } from './visible-change';
 import { baseCheckoutOf, baseCommitOf, mergedInRangeOf, sketchEvidenceOf } from './visible-change-command';
+import { gitExec } from '../../git-test-env.fixtures';
 
 const repoOf = () => {
   const root = mkdtempSync(join(tmpdir(), 'et-visible-change-spec-'));
   const git = (...args: string[]) =>
-    execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', ...args], {
+    gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', ...args], {
       cwd: root,
       encoding: 'utf8',
     }).trim();

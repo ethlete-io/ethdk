@@ -32,14 +32,16 @@ export const specsForFiles = (files, map) => [
   ...(files.some((file) => file.startsWith('libs/cli/src/')) ? (map[SOURCE_WIDE] ?? []) : []),
 ];
 
-const matchesGlob = (file, glob) => {
+export const matchesGlob = (file, glob) => {
   const pattern = new RegExp(
     '^' +
       glob
         .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-        .replace(/\*\*\//g, '(?:.*/)?')
-        .replace(/\*\*/g, '.*')
-        .replace(/\*/g, '[^/]*') +
+        .replace(/\*\*\//g, '@DEEP@')
+        .replace(/\*\*/g, '@ANY@')
+        .replace(/\*/g, '[^/]*')
+        .replace(/@DEEP@/g, '(?:.*/)?')
+        .replace(/@ANY@/g, '.*') +
       '$',
   );
   return pattern.test(file);

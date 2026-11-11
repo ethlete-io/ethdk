@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
-import { realpathSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { hostname } from 'node:os';
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 export const SLOT_REF = 'refs/push-slot/next';
@@ -76,6 +76,13 @@ export const slotState = (read, now = Date.now()) => {
   return 'held';
 };
 
+export const releasedLine = (slot) =>
+  `push slot of ${slot.holder} for ${slot.sha.slice(0, 12)} treated as released: origin/next contains it`;
+
+const noteReleased = (read, now, log) => {
+  if (read.slot && read.pushed && read.slot.expires > now) log(releasedLine(read.slot));
+};
+
 const writeSlot = (cwd, remote, observed, target) =>
   remoteGit(
     cwd,
@@ -93,10 +100,20 @@ const writeSlot = (cwd, remote, observed, target) =>
  * blocks; two concurrent claimers lease on the slot they read, so exactly one wins.
  */
 export const claimSlot = (
-  { cwd, holder = builderName(), sha, now = Date.now(), ttlMs = SLOT_TTL_MS, remote = 'origin', branch = 'next' },
+  {
+    cwd,
+    holder = builderName(),
+    sha,
+    now = Date.now(),
+    ttlMs = SLOT_TTL_MS,
+    remote = 'origin',
+    branch = 'next',
+    log = console.error,
+  },
   read = readSlot({ cwd, remote, branch }),
 ) => {
   if (read.error) return { ok: false, reason: `slot unreadable: ${read.error}` };
+  noteReleased(read, now, log);
   if (slotState(read, now) === 'held' && read.slot.holder !== holder) return { ok: false, slot: read.slot };
   const treeSha = spawnSync('git', ['mktree'], { cwd, input: '', encoding: 'utf8' }).stdout.trim();
   const slot = { holder, sha, expires: now + ttlMs };
@@ -140,11 +157,20 @@ export const releaseSlot = ({ cwd, holder = builderName(), remote = 'origin', br
 export const heldLine = (slot) =>
   `push slot held by ${slot.holder} for ${slot.sha.slice(0, 12)} until ${new Date(slot.expires).toISOString()}`;
 
+export const hasOkVerdict = (cwd, sha) => {
+  const dir = resolve(cwd, git(cwd, 'rev-parse', '--git-path', 'push-suite').stdout.trim());
+  const file = join(dir, sha);
+  return existsSync(file) && readFileSync(file, 'utf8').startsWith('ok ');
+};
+
+/** A slot passes for its holder by name, or for anyone pushing the slot's own sha with a local push-suite ok verdict. */
 export const checkSlot = ({
   cwd,
   holder = builderName(),
+  pushedSha,
   now = Date.now(),
   log = console.error,
+  hasVerdict = (sha) => hasOkVerdict(cwd, sha),
   remote = 'origin',
   timeoutMs = NETWORK_TIMEOUT_MS,
 }) => {
@@ -153,17 +179,19 @@ export const checkSlot = ({
     log(`pre-push: push slot not readable, pushing anyway: ${read.error}`);
     return 0;
   }
+  noteReleased(read, now, log);
   if (slotState(read, now) === 'free' || read.slot.holder === holder) return 0;
+  if (pushedSha && read.slot.sha === pushedSha && hasVerdict(pushedSha)) return 0;
   log(
-    `pre-push: ${heldLine(read.slot)}. Wait for its push or expiry, then merge origin/next and run \`yarn push:suite\`.`,
+    `pre-push: ${heldLine(read.slot)}. Wait for its push or expiry, then merge origin/next and run \`yarn push:suite\`. Set ETHLETE_BUILDER=${read.slot.holder} if this is you.`,
   );
   return 1;
 };
 
 if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
-  const [command] = process.argv.slice(2);
+  const [command, pushedSha] = process.argv.slice(2);
   const cwd = resolve(import.meta.dirname, '../..');
-  if (command === 'check') process.exit(checkSlot({ cwd }));
+  if (command === 'check') process.exit(checkSlot({ cwd, pushedSha }));
   if (command === 'release') {
     const released = releaseSlot({ cwd });
     console.log(released.ok ? 'push slot released' : released.slot ? heldLine(released.slot) : released.reason);
@@ -172,9 +200,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.ar
   if (command === 'status') {
     const read = readSlot({ cwd });
     if (read.error) console.log(`push slot unreadable: ${read.error}`);
-    else console.log(slotState(read) === 'held' ? heldLine(read.slot) : 'push slot free');
+    else {
+      noteReleased(read, Date.now(), console.log);
+      console.log(slotState(read) === 'held' ? heldLine(read.slot) : 'push slot free');
+    }
     process.exit(read.error ? 1 : 0);
   }
-  console.error('usage: push-slot.mjs status | release | check');
+  console.error('usage: push-slot.mjs status | release | check [<pushed sha>]');
   process.exit(2);
 }

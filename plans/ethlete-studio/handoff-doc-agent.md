@@ -159,3 +159,18 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   bites). Finding 792 (no Studio consumer of 128f5a9ce): B traced now by Linux; A is a day sketch. 652 step 1 decided
   (pictures.json to a gitignored cache, condition first). Linux builder restarted from `builder-2026-11-11c`: 792 B,
   664+659, 652. Morning round unchanged (four items).
+- Night, 07:00 (after 2efac40ae): Linux pushed up to 0884cf03c (650, 664+659, 789 (b), 790, 791, 796 (2), 798, 652 step 1:
+  pictures.json untracked into `.ethlete/cache`). Local, not pushed: 799 ba0d3568e, 800 9d92d58d1; 801 (shared temp-repo
+  helper, after a spec in a hook wrote into the main .git/config, repaired and checked) runs. Findings 791-801 recorded;
+  792 A + B are day work (sketch for the chip and a picked badge state). Mac pushed 6bca47ab5; 797 0ffc0e452 and 786
+  89671ec71 wait for its push (told to set ETHLETE_BUILDER in its push shell). Morning round: the four items above, plus a
+  note (no question): the human kills the hung ssh pid 96278 on the Mac.
+- Night, 07:15 (after f4e0278ad): 801 built 2f3f64ab9 (shared temp-repo git helper, 3 copies), 802 recorded and decided
+  (push suite runs all of test:tools; the Linux builder checks CI on 0884cf03c, maybe red from studio-e2e-perf.spec, fixed
+  a5026c273). Linux push suite runs on HEAD, then it pushes 799, 800, 801 and the doc plan commits. Doc agent restarted
+  (context 70 %); restart the Mac mailbox wait first.
+- Morning, 06:45 (after 879285238): Linux pushed 0884cf03c..879285238 (CI fix a5026c273, 799-803, 795, 653, sameness
+  spec); CI run 42967324179 runs. 793 (b) checked: the six "waits for Tom" lines are all stale, no new question. Decided
+  (technical): 804 = Mac builds a no-spawn createSketch (serve.spec 200-sketch case blocked the Mac push, cause 788's
+  prettier spawn per tsconfig); 805 = Linux builds `yarn push` + self-healing push slot (slot never released after a
+  push). Mac mailbox wait runs in the background. Morning round unchanged (four items).

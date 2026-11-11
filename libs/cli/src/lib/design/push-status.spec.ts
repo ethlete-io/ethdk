@@ -1,13 +1,13 @@
-import { spawnSync } from 'child_process';
 import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ciCachePath, ciStatusOfRuns, pushStatusLines, pushStatusOf } from './push-status';
 import { designStatus } from './status';
+import { gitSpawn } from '../git-test-env.fixtures';
 
 const git = (cwd: string, args: string[], date?: string) =>
-  spawnSync('git', args, {
+  gitSpawn(args, {
     cwd,
     encoding: 'utf8',
     env: { ...process.env, ...(date ? { GIT_COMMITTER_DATE: date, GIT_AUTHOR_DATE: date } : {}) },

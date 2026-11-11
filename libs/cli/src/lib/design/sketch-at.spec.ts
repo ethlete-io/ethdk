@@ -1,13 +1,13 @@
-import { execFileSync } from 'child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { extractSketchAt } from './sketch-at';
+import { gitExec } from '../git-test-env.fixtures';
 
 describe('extractSketchAt', () => {
   let repo = '';
-  const git = (...args: string[]) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
+  const git = (...args: string[]) => gitExec(args, { cwd: repo, encoding: 'utf8' }).trim();
 
   beforeEach(() => {
     repo = mkdtempSync(join(tmpdir(), 'sketch-at-'));

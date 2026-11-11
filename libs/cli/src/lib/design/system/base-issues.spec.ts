@@ -1,13 +1,13 @@
-import { execFileSync } from 'child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { oldRenderIssuesOf } from './base-issues';
 import { RenderIssue } from './render-check';
+import { gitExec } from '../../git-test-env.fixtures';
 
 const git = (root: string, ...args: string[]) =>
-  execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: root, stdio: 'pipe' });
+  gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: root, stdio: 'pipe' });
 
 const roots: string[] = [];
 

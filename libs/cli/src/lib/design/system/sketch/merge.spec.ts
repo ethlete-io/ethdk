@@ -1,6 +1,6 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { originOf } from '../write-origin';
-import childProcess, { spawnSync } from 'child_process';
+import childProcess from 'child_process';
 import { IncomingMessage } from 'http';
 import { syncBuiltinESMExports } from 'module';
 import { tmpdir } from 'os';
@@ -31,6 +31,7 @@ import {
   sketchReportPath,
   SketchTarget,
 } from './sketch';
+import { gitSpawn } from '../../../git-test-env.fixtures';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-merge-'));
@@ -386,7 +387,7 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
 
   const committed = (target: string) => {
     const git = (...args: string[]) =>
-      spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: target, encoding: 'utf8' });
+      gitSpawn(['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: target, encoding: 'utf8' });
 
     git('init');
     git('add', '.');
@@ -457,7 +458,7 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
 
     const target = acme();
     const git = (...args: string[]) =>
-      spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: target, encoding: 'utf8' });
+      gitSpawn(['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: target, encoding: 'utf8' });
 
     git('init');
     git('add', '.');

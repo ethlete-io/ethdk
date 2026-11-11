@@ -1,11 +1,11 @@
-import { execFileSync } from 'child_process';
 import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { commitStep, dirtySnapshot, parsePorcelain, startCommits } from './commits';
+import { gitExec } from '../git-test-env.fixtures';
 
-const git = (root: string, ...args: string[]) => execFileSync('git', args, { cwd: root, encoding: 'utf8' });
+const git = (root: string, ...args: string[]) => gitExec(args, { cwd: root, encoding: 'utf8' });
 
 const write = (root: string, path: string, content: string) => {
   mkdirSync(join(root, path, '..'), { recursive: true });

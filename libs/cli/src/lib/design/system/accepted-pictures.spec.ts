@@ -1,4 +1,3 @@
-import { execFileSync } from 'child_process';
 import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
@@ -11,6 +10,7 @@ import { partPointsOf, readOpenPoints } from './read-open-points';
 import { partKeyOf, resolveProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
 import { changedOutsideSketchOf, directEditsOf, readMerged, recordMerged } from './sketch/merged-parts';
+import { gitExec } from '../../git-test-env.fixtures';
 
 const CHIP = 'components/chip';
 
@@ -27,16 +27,16 @@ const checkout = () => {
     'export default definePart({ states: { default: {}, hover: {} } });\n',
   );
   writeFileSync(join(design, 'config.json'), JSON.stringify({ products: { 'app-a': {} } }));
-  execFileSync('git', ['init', '-q'], { cwd: target });
-  execFileSync('git', ['add', '.'], { cwd: target });
-  execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'base'], { cwd: target });
+  gitExec(['init', '-q'], { cwd: target });
+  gitExec(['add', '.'], { cwd: target });
+  gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'base'], { cwd: target });
 
   return { target, dir: join(design, 'app-a'), chip: join(design, 'app-a/components/chip/chip.ts') };
 };
 
 const commitChip = (target: string, chip: string) => {
-  execFileSync('git', ['add', chip], { cwd: target });
-  execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
+  gitExec(['add', chip], { cwd: target });
+  gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
 };
 
 const cacheOf = (target: string) => join(target, '.ethlete/cache/app-a/pictures.json');
@@ -240,8 +240,8 @@ describe('autoAcceptOf', () => {
 
   describe('a committed direct edit', () => {
     const commitAll = (target: string) => {
-      execFileSync('git', ['add', '.'], { cwd: target });
-      execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
+      gitExec(['add', '.'], { cwd: target });
+      gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
     };
 
     it('records an edit HEAD holds without drawing old, a line or a sketch', async () => {
@@ -302,7 +302,7 @@ describe('autoAcceptOf', () => {
 
     it('draws nothing and leaves git status as it was on a rerun over an unchanged tree', async () => {
       const { target, dir, draw, calls } = await openSketch();
-      const status = () => execFileSync('git', ['status', '--porcelain', '-uall'], { cwd: target, encoding: 'utf8' });
+      const status = () => gitExec(['status', '--porcelain', '-uall'], { cwd: target, encoding: 'utf8' });
       const sketchJson = readFileSync(sketchFileOf(dir), 'utf8');
       const before = status();
 
@@ -406,8 +406,8 @@ describe('autoAcceptOf', () => {
       const sketchDir = join(dir, 'sketches', 'components-chip.edit');
       const shared = join(dirname(chip), 'shared', 'canvas.ts');
       const commit = () => {
-        execFileSync('git', ['add', '.'], { cwd: target });
-        execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'next'], { cwd: target });
+        gitExec(['add', '.'], { cwd: target });
+        gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'next'], { cwd: target });
       };
       const partOf = (name: string) =>
         `import { ${name} } from './shared/canvas';\nexport default definePart({ states: { default: {}, hover: {} } });\n`;

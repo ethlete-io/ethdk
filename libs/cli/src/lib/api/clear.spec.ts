@@ -1,4 +1,3 @@
-import { execFileSync } from 'child_process';
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -7,6 +6,7 @@ import { LOCAL_CONFIG_FILE_NAME } from '../config/local-config';
 import * as utils from '../utils';
 import { clearApiCheckouts, planApiClear } from './clear';
 import { ApiDefinition } from './definition';
+import { gitExec } from '../git-test-env.fixtures';
 
 const HUB: ApiDefinition = { composeDir: 'development', services: ['app'], execService: 'app', port: 8040 };
 
@@ -24,7 +24,7 @@ afterEach(() => {
   logs.length = 0;
 });
 
-const git = (cwd: string, args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: 'pipe' });
+const git = (cwd: string, args: string[]) => gitExec(args, { cwd, encoding: 'utf8', stdio: 'pipe' });
 
 /** A managed checkout that looks like a clone: one commit, and a remote that holds it. */
 const makeManagedCheckout = (options: { push?: boolean } = {}) => {
@@ -34,7 +34,7 @@ const makeManagedCheckout = (options: { push?: boolean } = {}) => {
   const remotePath = join(root, 'origin.git');
 
   mkdirSync(join(repoPath, 'development'), { recursive: true });
-  execFileSync('git', ['init', '--bare', remotePath], { stdio: 'pipe' });
+  gitExec(['init', '--bare', remotePath], { stdio: 'pipe' });
   git(repoPath, ['init', '--initial-branch', 'main']);
   git(repoPath, ['config', 'user.email', 'test@example.com']);
   git(repoPath, ['config', 'user.name', 'Test']);

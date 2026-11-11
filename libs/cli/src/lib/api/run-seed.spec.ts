@@ -1,4 +1,3 @@
-import { spawnSync } from 'child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -7,6 +6,7 @@ import { LOCAL_CONFIG_FILE_NAME } from '../config/local-config';
 import { apiStateDirectory, readApiState, writeApiState } from './api-state';
 import { ApiDefinition } from './definition';
 import { runApiCommand } from './run';
+import { gitSpawn } from '../git-test-env.fixtures';
 
 type ComposeCallRecord = { args: string[]; input?: Buffer };
 
@@ -189,7 +189,7 @@ describe('gitignore', () => {
   const gitRoot = (ignore: string) => {
     const root = makeRoot();
 
-    spawnSync('git', ['init', '-q'], { cwd: root });
+    gitSpawn(['init', '-q'], { cwd: root });
     writeFileSync(join(root, '.gitignore'), ignore, 'utf8');
 
     return root;
@@ -211,7 +211,7 @@ describe('gitignore', () => {
   it('ignores the managed checkout it clones into, and nothing beside it', async () => {
     const root = mkdtempSync(join(tmpdir(), 'cli-api-clone-'));
 
-    spawnSync('git', ['init', '-q'], { cwd: root });
+    gitSpawn(['init', '-q'], { cwd: root });
 
     await runApiCommand({
       apis: { hub: { ...HUB, repoUrl: join(root, 'missing.git') } },

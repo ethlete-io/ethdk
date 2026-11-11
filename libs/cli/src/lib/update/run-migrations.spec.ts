@@ -1,4 +1,3 @@
-import { execFileSync } from 'child_process';
 import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -12,6 +11,7 @@ import {
   missingRequirements,
   runPendingMigrations,
 } from './run-migrations';
+import { gitExec } from '../git-test-env.fixtures';
 
 const yarn: PackageManager = { name: 'yarn', install: ['yarn', 'install'], run: ['yarn'] };
 
@@ -124,7 +124,7 @@ describe('missingRequirements', () => {
     const root = withCore('5.0.0-next.46');
     const entry = pending({ addsWhenFound: { '@ethlete/extra': ['ExtraComponent'] } });
 
-    execFileSync('git', ['init', '-q'], { cwd: root });
+    gitExec(['init', '-q'], { cwd: root });
     writeFileSync(join(root, 'app.ts'), 'export const a = 1;\n');
 
     expect(missingRequirements({ root, pending: entry })).toEqual([]);

@@ -1,17 +1,17 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
 import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { gitEnv, gitSpawn } from './git-test-env.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 test('the pre-commit hook sees the paths of `git commit -- <paths>`, not the whole working tree', () => {
   const repo = mkdtempSync(join(tmpdir(), 'pre-commit-paths-'));
-  const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
-  const git = (...args) => spawnSync('git', args, { cwd: repo, env, encoding: 'utf8' });
+  const env = gitEnv();
+  const git = (...args) => gitSpawn(args, { cwd: repo, env, encoding: 'utf8' });
   const hook = readFileSync(join(root, '.husky', 'pre-commit'), 'utf8');
   const log = join(repo, '.hook-log');
 

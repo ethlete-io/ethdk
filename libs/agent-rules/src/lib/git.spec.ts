@@ -1,10 +1,10 @@
-import { execFileSync } from 'child_process';
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { commitPathsOnDays, remoteBranchExists } from './git';
+import { gitExec } from './git-test-env.fixtures';
 
 const MINE = 'me@example.com';
 const THEIRS = 'them@example.com';
@@ -12,7 +12,7 @@ const THEIRS = 'them@example.com';
 let root = '';
 
 const run = (args: string[], env: Record<string, string> = {}) =>
-  execFileSync('git', args, { cwd: root, encoding: 'utf8', env: { ...process.env, ...env } });
+  gitExec(args, { cwd: root, encoding: 'utf8', env: { ...process.env, ...env } });
 
 const commit = (options: { day: string; email: string; path: string; subject: string }) => {
   const file = join(root, options.path);
@@ -76,10 +76,10 @@ describe('remoteBranchExists', () => {
     const base = mkdtempSync(join(tmpdir(), 'agent-rules-remote-'));
     const bare = join(base, 'origin.git');
     const clone = join(base, 'clone');
-    const inClone = (args: string[]) => execFileSync('git', args, { cwd: clone, encoding: 'utf8', stdio: 'pipe' });
+    const inClone = (args: string[]) => gitExec(args, { cwd: clone, encoding: 'utf8', stdio: 'pipe' });
 
-    execFileSync('git', ['init', '-q', '--bare', '-b', 'main', bare], { stdio: 'pipe' });
-    execFileSync('git', ['clone', '-q', bare, clone], { stdio: 'pipe' });
+    gitExec(['init', '-q', '--bare', '-b', 'main', bare], { stdio: 'pipe' });
+    gitExec(['clone', '-q', bare, clone], { stdio: 'pipe' });
     inClone(['config', 'user.email', MINE]);
     inClone(['config', 'user.name', 'A']);
     inClone(['commit', '-q', '--allow-empty', '-m', 'init']);

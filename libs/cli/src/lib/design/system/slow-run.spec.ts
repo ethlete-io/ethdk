@@ -1,4 +1,3 @@
-import { execFileSync } from 'child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -12,6 +11,7 @@ import { startSlowRunner } from './slow-run';
 import { partHashOf } from './sketch/baseline';
 import { openEditSketch } from './sketch/edit-sketch';
 import { readMerged, recordMerged } from './sketch/merged-parts';
+import { gitExec } from '../../git-test-env.fixtures';
 
 const harness = { app: 'apps/acme', map: 'apps/acme/src/map.ts', baseBranch: 'x' };
 
@@ -137,9 +137,9 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
       parts: ['components/chip'],
     });
     writeFileSync(chip, 'export default definePart({ states: { hover: {}, default: {} } });\n');
-    execFileSync('git', ['init', '-q'], { cwd: target });
-    execFileSync('git', ['add', '.'], { cwd: target });
-    execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
+    gitExec(['init', '-q'], { cwd: target });
+    gitExec(['add', '.'], { cwd: target });
+    gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
     writeFileSync(chip, 'export default definePart({ states: { hover: {}, active: {}, default: {} } });\n');
 
     const runner = startSlowRunner({
@@ -168,16 +168,16 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
     const product = () => resolveProduct({ target, name: 'acme', config: bare.products.acme });
     const chip = join(dir, 'components/chip/chip.ts');
     const commit = () =>
-      execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
+      gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
 
     writeFileSync(chip, 'export default definePart({ states: { default: {} } });\n');
     recordMerged({ product: product(), parts: ['components/chip'] });
-    execFileSync('git', ['init', '-q'], { cwd: target });
-    execFileSync('git', ['add', '.'], { cwd: target });
+    gitExec(['init', '-q'], { cwd: target });
+    gitExec(['add', '.'], { cwd: target });
     commit();
     writeFileSync(chip, 'export default definePart({ states: { hover: {}, default: {} } });\n');
     expect(typeof openEditSketch({ target, product: product(), part: 'components/chip' })).toBe('object');
-    execFileSync('git', ['add', chip], { cwd: target });
+    gitExec(['add', chip], { cwd: target });
     commit();
 
     const lines: string[] = [];

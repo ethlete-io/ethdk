@@ -1,10 +1,10 @@
-import { execFileSync } from 'child_process';
 import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../design-config';
 import { checkRules } from './check-system';
+import { gitExec } from '../../git-test-env.fixtures';
 
 const CONFIG = { products: { 'app-a': { presets: { desktop: { width: 1280, height: 800 } } } } };
 
@@ -16,7 +16,7 @@ const checkout = () => {
   writeFileSync(file, `export default definePart({ states: { default: {} } });\n`);
   writeFileSync(join(target, DESIGN_DIR, 'config.json'), JSON.stringify(CONFIG));
 
-  const git = (...args: string[]) => execFileSync('git', args, { cwd: target, stdio: 'pipe' });
+  const git = (...args: string[]) => gitExec(args, { cwd: target, stdio: 'pipe' });
 
   git('init', '-q');
   git('add', '-A');

@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { literalsOf, removedLiterals, staleSpecHits } from './studio-label-specs.mjs';
+import { gitExec } from './git-test-env.mjs';
 
 test('splits template literals around placeholders and drops short ones', () => {
   assert.deepEqual(literalsOf("a: (f: string) => `Kommentar zu ${f} danach`, b: 'ja'"), ['Kommentar zu', 'danach']);
@@ -34,12 +35,12 @@ const spec = 'apps/ethlete-studio/src/app/go.spec.ts';
 const stagedRepo = () => {
   const root = mkdtempSync(join(tmpdir(), 'studio-label-specs-'));
   const remote = mkdtempSync(join(tmpdir(), 'studio-label-specs-remote-'));
-  const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' });
+  const git = (...args) => gitExec(args, { cwd: root, encoding: 'utf8' });
   const write = (path, text) => {
     mkdirSync(dirname(join(root, path)), { recursive: true });
     writeFileSync(join(root, path), text);
   };
-  execFileSync('git', ['init', '-q', '--bare', remote]);
+  gitExec(['init', '-q', '--bare', remote]);
   git('init', '-q', '-b', 'next');
   git('config', 'user.email', 'spec@example.com');
   git('config', 'user.name', 'spec');

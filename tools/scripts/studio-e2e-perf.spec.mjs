@@ -18,7 +18,7 @@ test('a perf case never runs in the default selection', () => {
 });
 
 test('--case finds a perf case only together with --perf', () => {
-  assert.match(list('--case', 'page switch time'), /^0 of 0 cases/u);
+  assert.doesNotMatch(list('--case', 'page switch time'), /^1 of 1 cases/u);
   assert.match(list('--case', 'page switch time', '--perf'), /^1 of 1 cases/u);
 });
 

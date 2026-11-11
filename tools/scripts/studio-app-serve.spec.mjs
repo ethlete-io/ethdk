@@ -1,16 +1,16 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { createAppServer } from './studio-app-serve.mjs';
 import { ensureAppCopy } from './studio-code.mjs';
+import { gitSpawn } from './git-test-env.mjs';
 
 const quiet = () => undefined;
 
 const git = (cwd, ...args) => {
-  const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
+  const result = gitSpawn(args, { cwd, encoding: 'utf8' });
 
   assert.equal(result.status, 0, result.stderr);
 
@@ -71,7 +71,7 @@ test('an uncommitted Studio app edit never reaches the served app', async () => 
     assert.equal((await served(root, '/main.js')).body, 'committed two\n');
     assert.equal(ensureAppCopy(root, { log: quiet, build: () => assert.fail('rebuilt') }).switched, false);
   } finally {
-    spawnSync('git', ['worktree', 'prune'], { cwd: root });
+    gitSpawn(['worktree', 'prune'], { cwd: root });
     rmSync(root, { recursive: true, force: true });
   }
 });
@@ -118,7 +118,7 @@ test('a libs-only commit switches the copy and only the current and previous cop
     assert.deepEqual(copies.sort(), [second.sha, third.sha].sort());
     assert.notEqual(first.sha, second.sha);
   } finally {
-    spawnSync('git', ['worktree', 'prune'], { cwd: root });
+    gitSpawn(['worktree', 'prune'], { cwd: root });
     rmSync(root, { recursive: true, force: true });
   }
 });

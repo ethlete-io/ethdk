@@ -1,4 +1,3 @@
-import { execFileSync } from 'child_process';
 import { cpSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -6,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from './design-config';
 import { designSketch } from './sketch-command';
 import { renderIssuesOf } from './system/render-check';
+import { gitExec } from '../git-test-env.fixtures';
 
 vi.mock('./ready-shots', () => ({
   aktuellPlaceholderWarnings: vi.fn(async (): Promise<string[]> => []),
@@ -67,7 +67,7 @@ describe('sketch ready on a stale base', { timeout: 120_000 }, () => {
     const lines = output();
 
     expect(await write(target, 'new', 'pages/home', '--variants', 'a', '--note', 'n', '--product', 'acme')).toBe(0);
-    const git = (...args: string[]) => execFileSync('git', args, { cwd: target, encoding: 'utf8' }).trim();
+    const git = (...args: string[]) => gitExec(args, { cwd: target, encoding: 'utf8' }).trim();
     const commit = (message: string) =>
       git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', message);
 

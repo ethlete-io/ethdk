@@ -1,15 +1,16 @@
 import assert from 'node:assert/strict';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { readVitestReport, verdictOf } from './red-check.mjs';
+import { gitExec } from './git-test-env.mjs';
 
 const script = fileURLToPath(new URL('./red-check.mjs', import.meta.url));
 
-const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
+const git = (cwd, ...args) => gitExec(args, { cwd, encoding: 'utf8' }).trim();
 
 const specFor = (expected) =>
   `import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { value } from './value.mjs';\ntest('value is ${expected}', () => assert.equal(value, ${expected}));\n`;

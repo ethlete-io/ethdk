@@ -1,4 +1,3 @@
-import { execFileSync } from 'child_process';
 import { EventEmitter } from 'events';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
@@ -8,6 +7,7 @@ import { writeMigrationRun } from './migration-record';
 import { PENDING_FILE, readPendingUpdate, writePendingUpdate } from './pending';
 import { TASKS_DATA_FILE, TASKS_FILE, UPDATE_DIR } from './tasks';
 import { updateCommand } from './update-command';
+import { gitExec } from '../git-test-env.fixtures';
 
 const spawnSync = vi.hoisted(() =>
   vi.fn<(binary: string, args: string[], options?: { env?: NodeJS.ProcessEnv }) => { status: number }>(),
@@ -495,7 +495,7 @@ describe('the printed plan', () => {
   });
 });
 
-const gitIn = (root: string, ...args: string[]) => execFileSync('git', args, { cwd: root, encoding: 'utf8' });
+const gitIn = (root: string, ...args: string[]) => gitExec(args, { cwd: root, encoding: 'utf8' });
 
 let gitRepoTemplate: string | null = null;
 

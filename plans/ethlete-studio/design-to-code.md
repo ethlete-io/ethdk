@@ -2341,6 +2341,15 @@ blamed the delay route, which already turns on after `warmUp`. Why no tool caugh
 case on an export, so each proof builds its own. Tool fix (backlog, with 651): a bite proof runs through push-suite's
 `exportCommit` (one export path) with a flag that reverts a named commit.
 
+653 as built (2026-11-11): the export (`exportCommit`, the dependency links, `DRAWING_BUILDS`) moved from
+push-suite.mjs to `tools/scripts/commit-export.mjs`; push-suite imports it lazily (no sibling import at load time).
+`yarn studio:e2e:bite --revert <sha> [e2e args]` exports HEAD with it, applies the reverse of `<sha>` (`git apply -R`,
+refused with a message when it does not apply), builds `cli components core` in the export like push-suite, runs the
+export's own `canvas.e2e.mjs` and removes the export in `finally`; the `<ref>` mode is unchanged. Verified:
+`commit-export.spec.mjs` (temp repo: export, reverse diff, refused diff) and the `--revert` arg specs, each failed
+when its code was broken; `push-suite.spec.mjs` green. Not verified: a real `--revert` e2e run (machine busy), so the
+warmUp timeout of 653 is not yet shown gone.
+
 654\. Doc agent (2026-11-09, Mac night start): the builder handoff said the on-disk check cache waits for the human
 ("its cost goes to the human first"), while ADR 0239, written the same afternoon, puts it in the night scope. The
 handoff restated an older doc agent line instead of the ADR, so the builder would have stopped on a decided point.
@@ -3757,6 +3766,11 @@ scratch repo before it is sent. Decided by the doc agent (tool internal): a `yar
 out, commits the removal by path, puts the file back and checks the hash; the git-commit skill names it. Bite: after
 `yarn untrack x`, `git ls-files x` is empty and `x` is byte-identical. Tool backlog, Linux, small, after 793. Effect on
 other clones: a pull deletes their tracked `pictures.json`; the Mac must know before it pulls.
+795 as built: `yarn untrack -m "<message>" <paths>` (`tools/scripts/untrack.mjs`) refuses an untracked or missing path,
+parks each file in a temp dir, commits the removal by path, puts the file back (also when the commit fails) and checks
+its sha256. The git-commit skill names it. Spec `tools/scripts/untrack.spec.mjs` (4 cases, temp repos). Bite: with the
+`git rm --cached` recipe in place of the park step, the removal case and the failed-commit case fail. Not verified: a
+real run in this repo (no file waits for it now; the commit hooks run there).
 
 796\. Linux builder (2026-11-11, night, 652 live bite): `design check --product studio-lab` emptied the tracked
 `.ethlete/design/studio-lab/ready.json` (the `foundations/tokens` check record of 2026-11-08), although the tokens files
@@ -3808,6 +3822,112 @@ prints the usage and returns 0; an unknown argument prints `unknown argument: <a
 `--bogus` and `--dry-run` leave both files byte-identical, and a plain run moves an old done finding. Bite: with the
 argument check off, the `--help` and `--bogus` tests fail (2 of 13). Verified live: `--bogus` exits 2, `--dry-run` writes
 nothing. Not verified: nothing open.
+
+799\. Linux builder (2026-11-11, night, push suite on 0884cf03c): `commit-hunks.spec.ts` reads every committed
+`.ethlete/design` file; 081e7f16d made `studio-lab/ready.json` `{}` (the intended ADR 0254 drop), and the spec took
+`Object.keys(real)[0]` as a part (undefined). Cause (measured); spec fix d7f7f36a3 (an empty file gets a synthetic part).
+Why no tool caught it: the pre-commit `vitest related` run (779) follows imports only, so a commit of only design data
+runs no spec, although the data is spec input. Lesson: a spec that reads repo data must be found by a change to that
+data. Decided by the doc agent (tool internal, generalizes the builder's proposal): the 779 pre-commit step gets a small
+map from data globs to the specs that read them (first entry `.ethlete/design/**/*.json` → `commit-hunks.spec.ts`; the
+builder greps the cli specs for other readers of committed repo files and adds them); a commit that touches a glob runs
+its specs. Bite: a commit of only an emptied `ready.json` on the commit before d7f7f36a3 fails in pre-commit. Night
+backlog, Linux, after the push.
+799 as built (Linux builder, 2026-11-11): the 779 rule was only a brief convention (no hook ran `vitest related`), so the map is a new pre-commit step: `tools/scripts/data-spec-map.json` (spec path to data globs) read by `tools/scripts/staged-data-specs.mjs`, called from `.husky/pre-commit` when a staged path is under `.ethlete` or `.github/workflows`; vitest specs run with `--root libs/cli`, `.spec.mjs` with `node --test`. Mapped specs: `commit-hunks.spec.ts` (`.ethlete/design/**/*.json`), `product-tailwind.spec.ts` (`.ethlete/design/config.json`), `real-open-points.spec.ts` (`.ethlete/design/**`), `generate-studio-themes.spec.mjs` (the studio `colors.css`), `check-workflow-commit-messages.spec.mjs` (`.github/workflows/*.yml`). Also fixed: `matchesGlob` of `cli-related-map.mjs` turned `**` into `[^/]*` (never crossed more than one folder); now exported and shared. Bite: worktree at d7f7f36a3^, a staged `{ }` for `studio-lab/ready.json` fails the commit (`commit-hunks.spec.ts > studio-lab/ready.json splits per entry or refuses with a message`, 1 failed, exit 1). Cost 1.7 s per matching commit, 0 s otherwise. Defect found by the first bite run: a hook sets `GIT_DIR`/`GIT_INDEX_FILE`, so `git init` in the spec's temp repos wrote into the real repo (`core.bare = true`, a fake `[user]` and `[commit]` in `.git/config`, an `init` commit in the worktree); the runner now strips every `GIT_*` variable. The main `.git/config` was repaired by hand. Verified: the glob spec, the bite, a manual run. Not verified: a hook run in the main checkout with a real commit (this commit is the first).
+
+Mac night notes (2026-11-11, 06:00): 777 verified on the Mac (worktree in the symlinked /tmp, 0 allow-list lines and 0
+SERVE-DENIED in two runs). Open (Suspect): warm render-inspect 9.6 s on the Mac vs 2.0 s on Linux; the builder counts
+cache misses before it blames disk or CPU (Mac night backlog, after 735). 797 built 0ffc0e452 (spec bites: 60 s without
+the timeout); 786 built 89671ec71 (one heavy-run lock per machine); both wait for the push slot. The hung ssh (pid 96278 on
+the Mac, 1 h 39 min) was not killed: the Mac's permission mode refused it; the human kills it. A `push-suite.spec` case
+("a step with a log file writes its output") failed once under the 777 load and passed alone: Suspect, same class as 763.
+
+800\. Linux builder (2026-11-11, night, push of 0884cf03c): pre-push refused the push with "push slot held by
+linux-builder for 0884cf03c25d ... Wait for its push or expiry", and the holder was the builder itself. Cause (measured):
+`ETHLETE_BUILDER` was set only in the push:suite shell, so pre-push took the hostname as the name and saw a foreign
+holder; the message told the builder to wait 60 min for its own slot. Why no tool caught it: 780 keys the slot on a name
+that two shells of one builder can set differently, and its specs used one environment. Lesson: identify the holder by
+what it proved (the sha and its suite verdict), not by a name the caller may not set. Decided by the doc agent (tool
+internal, the builder's proposal): pre-push accepts the slot when the slot sha equals the pushed sha and a local
+push-suite ok verdict exists for that sha; otherwise the refusal names the holder and says "set ETHLETE_BUILDER=<holder>
+if this is you". Bite: a push with no `ETHLETE_BUILDER` after a suite ok for the same sha passes; a different sha is
+refused with the hint. Night backlog, Linux, after 799; the Mac must pull it before its next push.
+
+800 as built: `push-slot.mjs check "$local_sha"` (the hook passes the pushed sha as an argument, so the loop's stdin stays
+untouched and `git push origin <sha>:next` works). `checkSlot` passes for the holder name, or when the slot sha equals
+the pushed sha and `.git/push-suite/<sha>` (the file push-suite writes) starts with `ok `; the refusal ends with "Set
+ETHLETE_BUILDER=<holder> if this is you." Bite: the new "slot sha with ok verdict, other name" spec fails with the sha
+rule removed, passes with it; the different-sha and no-verdict specs also pass. The spec's git helper strips `GIT_*`.
+Verified: `node --test tools/scripts/push-slot.spec.mjs` (9 pass), eslint clean. Not verified: a real pre-push run
+against origin; the Mac must pull before its next push.
+
+801\. Linux builder (2026-11-11, night, 799 bite run; incident): the first bite run of the new pre-commit data-spec step
+801 as built (Linux builder): `tools/scripts/git-test-env.mjs` (+ `.d.mts`) exports `gitEnv(extra)`, `gitExec(args, opts)`,
+`gitSpawn(args, opts)`, `git(dir, ...args)` and `tempGitRepo(prefix)`; they strip every inherited `GIT_*` (an explicit
+`GIT_AUTHOR_*` extra stays). `@nx/enforce-module-boundaries` refuses a lib importing from `tools/`, so `libs/cli` and
+`libs/agent-rules` each carry a typed copy, `src/lib/git-test-env.fixtures.ts` (three copies, one API). Migrated: every
+spec in libs/cli, libs/agent-rules and tools/scripts that spawns git for a temp repo (`execFileSync/spawnSync('git'`
+became `gitExec/gitSpawn`), plus `push-slot.spec.mjs`, `commit-wait`, `pre-commit-hook` and `staged-data-specs.mjs`, which
+stripped their own way. Left: `orphan-endpoint.spec.ts` (read-only `git archive` of the real repo), `libs/timetrack`
+(fake git backend), `apps/timetrack*` and `tools/changesets-action` (own harness, no hook path). Bite:
+`tools/scripts/git-test-env.spec.mjs` points `GIT_DIR` at a scratch repo and runs git in a temp repo; with the stripping
+removed it fails, restored it passes. Verified: all tools/scripts specs (one unrelated failure, `studio-e2e-perf`,
+file untouched), `vitest related` in libs/cli (35 files) and the two agent-rules specs, cli and agent-rules typecheck,
+eslint zero warnings. Not verified: a real hook run of the specs; the cli/agent-rules copies have no bite of their own
+beyond cli's `git-test-env.spec.ts` (agent-rules copy untested).
+wrote into the main repo's `.git/config`: `core.bare = true`, a fake `[user]`, `commit.gpgsign=false`. Cause (measured): a
+git hook runs with `GIT_DIR`/`GIT_INDEX_FILE` set, and the temp-repo `git init`/`git config` calls of
+`commit-hunks.spec.ts` inherited them. The subagent repaired it; the builder and the doc agent checked: `core.bare=false`,
+no fake sections, HEAD and refs intact. The step's runner now strips `GIT_*` for specs. Why no tool caught it: each spec
+spawns git for its temp repos its own way, and no spec ran inside a hook before. Lesson: a spec that makes a temp repo
+must be safe in any environment, not only in a clean shell. Decided by the doc agent (tool internal, the builder's
+proposal, made central): one shared spec helper makes temp git repos with `GIT_*` stripped; `commit-hunks.spec.ts` and
+every other spec that spawns git for a temp repo (the builder greps `libs/`, `tools/`, `apps/`) use it. Bite: a spec run
+with `GIT_DIR` pointing at a scratch repo leaves that repo's config byte-identical. Night backlog, Linux, before 800
+(it guards every hook path, also commit-msg running `src/scenarios/`). Side (Suspect): stale commit-graph entries in
+`git fsck`, rewritten with `git commit-graph write --reachable`, fsck clean; likely an older gc. Also: 779 was a skill rule,
+not a hook; ba0d3568e adds the first hook step (`tools/scripts/staged-data-specs.mjs`), and `matchesGlob` in
+`cli-related-map.mjs` no longer turns `**` into `[^/]*`.
+
+802\. Linux builder (2026-11-11, night, 801 verification): `tools/scripts/studio-e2e-perf.spec.mjs` ("--case finds a perf
+case only together with --perf") failed after 791 (003d9d457, a Linux commit, pushed in 0884cf03c): a no-match `--case`
+now exits 1 with the closest names on stderr, and the spec expected "0 of 0 cases" on stdout. Cause (measured); fixed
+a5026c273. Why no tool caught it: the push suite runs no `test:tools`, and 791's own run checked only its new spec. CI on
+0884cf03c may be red from it (not read). Lesson: a change to a tool script runs every spec of that tool, not only the new
+one. Decided by the doc agent (tool internal): the push suite runs all of `test:tools` (about 1 min; no map to keep in
+sync). Bite: a range that holds 003d9d457 without a5026c273 fails the push suite. Night backlog, Linux, next after the push.
+802 as built (Linux builder): new push-suite step `tools` (`yarn test:tools`, runs in the HEAD export) at position 3, after
+lint and typecheck, before cli. Never reused: any non-inert merged path (not plans/, .changeset/) reruns it. Bite: in a
+worktree at a5026c273^ (003d9d457 without the fix) with the new push-suite copied over, `yarn test:tools` fails with
+`✖ --case finds a perf case only together with --perf` (`input did not match /^0 of 0 cases/u`); on HEAD 327 pass. Time:
+about 4 s wall locally (measured, not the estimated 1 min). Verified: push-suite.spec (41 pass), test:tools (327 pass),
+eslint clean. Not verified: a real `yarn push:suite` run (it claims the push slot), so the step inside the export was
+not run end to end; the bite called the step's command directly.
+Also from 801 (Suspect): three copies of the git test helper (tools, libs/cli, libs/agent-rules, because lib code may not
+import tools); a sameness spec guards the drift (backlog, small).
+Sameness spec as built: `tools/scripts/git-test-env-copies.spec.mjs` (in `yarn test:tools`) checks that the two lib
+copies are byte-identical, that they export the same names as the tools helper, and that each lib has a bite spec;
+`libs/agent-rules/src/lib/git-test-env.spec.ts` is a copy of cli's spec. Bites: an extra export in the agent-rules copy
+fails tests 1 and 2; a renamed bite test fails test 3; the agent-rules helper without the stripping fails its spec.
+Not verified: behavioural sameness of the `.mjs` with the `.ts` copies (only names are compared).
+
+803\. Linux builder (2026-11-11, morning, first real push-suite run with 802): the new `tools` step failed at 0fece0102
+in 3 s, 333 pass, 1 fail: `e2e-check.spec.mjs` "the result line carries the sha" runs `git rev-parse --show-toplevel` in
+`process.cwd()`, and the HEAD export is a `git archive` copy, not a repo ("fatal: not a git repository"). Cause
+(measured): the spec read `ETHLETE_REPO_ROOT`, but nothing set it. Why no tool caught it: the 802 bite ran
+`yarn test:tools` in a worktree (a real repo), not in an export, so "not run end to end" in the 802 as-built line hid
+exactly this case. Lesson: a new push-suite step is proven only by a real `yarn push:suite` run before its commit is
+pushed. Fix: `runStep` takes an env, the `tools` step passes `ETHLETE_REPO_ROOT` (the live repo, used only for git
+history), and the spec runs the export's own `e2e-check.mjs` (`import.meta.dirname`), not the live tree's. Bite: in a
+HEAD export with the fixed spec, the case passes with `ETHLETE_REPO_ROOT` and fails without it.
+803 tool fix (asked by the doc agent; the rule alone is no fix): `commit-export.mjs` (from 653) exports
+`toolsStepEnv(repo)`, which push-suite passes to the `tools` step, and `commit-export.spec.mjs` builds a real HEAD export
+(`git archive`, no `.git`) and runs `yarn test:tools` in it with that env (nested run skips the case). A tools spec that
+needs a git repo now fails in `yarn test:tools` itself. Bite: with `toolsStepEnv` returning `{}`, the case fails and
+names the e2e-check case. Cost: about 4 s more per `yarn test:tools`. Not covered: the other steps (lint, typecheck, cli,
+studio, e2e) in an export; they are too slow for a spec and ran green in the export before 802.
+805\. Linux builder (2026-11-11 morning): after a successful push of `next`, the push slot (`refs/push-slot/next`) stayed held until its 1 h expiry. `push:suite` claims it and keeps it on `ok`, pre-push only checks it, nothing released it, so the Mac builder was blocked for up to an hour.
+805 as built: `yarn push` (`tools/scripts/push-next.mjs`, `pushNext`; no yarn builtin of that name) refuses without a push-suite ok verdict for HEAD, runs `git push origin <sha>:next` with inherited stdio (pre-push runs), then releases the slot; on a failed push it keeps the slot and exits non-zero. `hasOkVerdict` is now exported from `push-slot.mjs`. `slotState` already treated a slot whose sha `origin/next` contains as free; claim, `check` and `status` now also print `push slot of <holder> for <sha12> treated as released: origin/next contains it`. The builder-agent skill names `yarn push`. Bites (each fails the named case): no release call, no verdict check, no released line, `pushed` ignored in `slotState` (the claim over a pushed slot is blocked). Verified: `node --test` on `push-slot.spec.mjs` and `push-next.spec.mjs` (fake bare origin). Not verified: a real `yarn push` through the pre-push hook against the real origin.
 
 804\. Mac builder (2026-11-11, night, push:suite of bae08fb64): `serve.spec.ts` "keeps answering other requests while it
 checks two hundred sketches" took 75 s on the Mac (timeout 60 s) and blocked the push. Cause (bite): eea6f5c7e (788)
