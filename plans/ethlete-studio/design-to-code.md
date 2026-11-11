@@ -3923,3 +3923,10 @@ subagent restarted it. Cause unknown; the trace was not kept. Lesson: a crashed 
 waits on it) and leaves no record. Tool fix: `design serve` writes an uncaught error with its stack to a log file under
 the project's design folder, and Studio shows "Design-Server abgestürzt" with the log path instead of waiting. Side:
 user-facing, after B249 (ADR 0269).
+
+876\. Doc agent (2026-11-11, live app shot of 867, `.claude/handoffs/agent-results/867/app-sketch-button2.png`): on
+`components/button@off-centre` the "Aktuell" column label shows at x about 356 with no cells under it after a 20-25 s
+wait, and only one block of state cells shows; the shot does not show where the variants a, b, c are. Suspect: the frames
+of the "Aktuell" column did not load. Owed by the Linux builder: does the column stay empty after a full load, which
+request is missing, and why the e2e does not fail on an empty column. Tool fix (if confirmed): e2e and render-check fail a
+sketch column whose label has no cell under it after the listing is complete. Side: user-facing, after B249 (ADR 0269).
