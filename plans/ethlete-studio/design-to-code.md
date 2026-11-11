@@ -3995,3 +3995,10 @@ e2e case on an edit sketch merge view asserts the changed states. Side: B249 fol
 part. This breaks ADR 0187 (built 3c67d2143). Suspect: the target part of an `@edit` sketch is not read from its name.
 Owed: is it only for `@edit` sketches (then part of B249) or for every merge (regression, find the commit). Tool fix: an e2e
 case per sketch kind asserts the open part after merge and discard. Side: user-facing; inside B249 if B249 caused it.
+
+884\. Linux builder (2026-11-11): CI red twice in one evening from apt, not from code: 04aebf37c at `yarn playwright install
+--with-deps chromium` in about every job, 605ca993d at the Rust host apt fetch (404 for libsoup-3.0-dev_3.6.6-1ubuntu0.1;
+the job runs `apt-get update` first, `ci.yml:370`). Cause: infra (mirror). Lesson: one mirror hiccup turns the whole run red
+and costs a re-run plus a by-hand diagnosis each time. Tool fix: the apt and playwright install steps retry (3 tries,
+`apt-get update` before each, `Acquire::Retries`); a step that still fails names the package and the mirror. Side: CI red
+counts as blocking under ADR 0269, so the Linux builder builds it next after the B249 slice in work.
