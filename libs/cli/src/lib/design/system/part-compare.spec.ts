@@ -798,6 +798,28 @@ describe('harnessShotOf', () => {
     ).toMatchObject({ kind: 'ok' });
   });
 
+  it("fails a state whose app body renders in another font than the design frame root's", async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const shot = await harnessShotOf({
+      browser,
+      url: harnessUrlOf({ url, part: 'components/ambient', state: 'a', props: {} }),
+      ambient: {
+        fontFamily: '"Noto Sans", system-ui, sans-serif',
+        fontSize: '5px',
+        fontWeight: '400',
+        fontStyle: 'normal',
+        lineHeight: '5px',
+        letterSpacing: 'normal',
+      },
+    }).catch(appShotProblemOf);
+
+    expect(shot).toEqual({
+      problem:
+        "the app's body renders in monospace, but the design's root font is noto sans - compare draws the part in the design's font, so it cannot see this",
+    });
+  });
+
   it('rounds a fractional host to whole pixels as the design picture does', async (context) => {
     if (!browser) return context.skip('no browser');
 

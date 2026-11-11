@@ -3848,3 +3848,11 @@ and costs a re-run plus a by-hand diagnosis each time. Tool fix: the apt and pla
 counts as blocking under ADR 0269, so the Linux builder builds it next after the B249 slice in work.
 
 901 as built: the app body now uses `var(--font-ui)` (Noto Sans) and the canvas frame uses `font-(--font-code)`; the `--font-sans` (Jost) and `--font-mono` (IBM Plex Mono) variables and the Google Fonts link in index.html are removed. Commit: see `git log` for "Render the app text in the design fonts". Verified: related specs, lint, production build and the measured body font (see the commit report).
+
+901 tool fix as built: `et design compare` now reads the computed font-family of the app body and of the harness
+host (before the design's text ambient is set on it) and fails each state with "the app's body renders in X, but the
+design's root font is Y" when the first family differs from the design frame root's. Cause (proven by the bite): the
+harness host is drawn in the design frame root's text ambient, so the part never inherits the app's body font. Verified:
+a new spec fails on the old code; with the body set to 'Jost' the studio `elements/shell-main` compare failed every
+state with the new line, and passed the check after the revert (its pre-existing project-picker pixel diff stays). No
+sdk part has an `implements` link, so the check has no sdk hits.

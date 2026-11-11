@@ -57,6 +57,31 @@ export class DroppedPropsError extends Error {}
 
 export class LookMissError extends Error {}
 
+export class AppFontError extends Error {}
+
+const firstFamilyOf = (family: string) =>
+  (family.split(',')[0] ?? '')
+    .trim()
+    .replace(/^["']|["']$/g, '')
+    .toLowerCase();
+
+const APP_FONTS_SCRIPT = `(() => ({
+  'body': getComputedStyle(document.body).fontFamily,
+  'harness host': getComputedStyle(document.querySelector(${JSON.stringify(HARNESS_HOST_SELECTOR)})).fontFamily,
+}))()`;
+
+/** @internal The problem of a state whose app element renders in another first font family than the design frame root. */
+export const appFontProblemOf = (options: { element: string; app: string; design: string }) =>
+  `the app's ${options.element} renders in ${firstFamilyOf(options.app)}, but the design's root font is ${firstFamilyOf(options.design)} - compare draws the part in the design's font, so it cannot see this`;
+
+/** @internal The first app element whose first font family differs from the design frame root's, or null. */
+export const appFontMissOf = (options: { fonts: Record<string, string>; design: string }) => {
+  const design = firstFamilyOf(options.design);
+  const missed = Object.entries(options.fonts).find(([, app]) => firstFamilyOf(app) !== design);
+
+  return missed ? { element: missed[0], app: missed[1], design: options.design } : null;
+};
+
 const STYLE_RULES_WALK = `const rules = [];
   const walk = (list) => {
     for (const rule of list) {
@@ -350,6 +375,13 @@ export const harnessShotOf = async (options: {
       await page.evaluate(
         `document.querySelector(${JSON.stringify(HARNESS_HOST_SELECTOR)}).style.width = '${width}px'`,
       );
+
+    if (options.ambient) {
+      const fonts = (await page.evaluate(APP_FONTS_SCRIPT)) as Record<string, string>;
+      const missed = appFontMissOf({ fonts, design: options.ambient.fontFamily });
+
+      if (missed) throw new AppFontError(appFontProblemOf(missed));
+    }
 
     if (options.ambient)
       await page.evaluate(
