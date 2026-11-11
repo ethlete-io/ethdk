@@ -261,7 +261,7 @@ describe('designCommitHunks over every shared file under .ethlete/design', () =>
         return;
       }
 
-      const [part, other = part] = Object.keys(real as object) as [string, ...string[]];
+      const [part = 'components/zz-old', other = part] = Object.keys(real as object);
       const changed = { ...(real as object), [part]: 'changed', [other]: 'changed', 'components/zz-new': 1 };
 
       write(target, 'p/x.json', changed);
