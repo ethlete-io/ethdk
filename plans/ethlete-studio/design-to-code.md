@@ -3846,6 +3846,10 @@ the canvas viewport ancestors has left <= panel left and right = window right; (
 fails a pan viewport whose nearest clipping ancestor starts right of the floating panel's left edge; a CLIPPED skip does
 not silence it. Bite: both fail on next now. Fix: design `sketches.ts:678` as a visible direct edit (228 and ADR 0209;
 the grid view is the model) plus the app lines, by the Linux builder after B249; the Mac holds those lines until then.
+As built 3ef78653b: committed as a direct edit with no pick (finding 869, ADR 0211, ADR 0256). Rule guards (sweep had 49
+false hits): panel ends where the clip starts, clip fills >= 3/4 of the room right of the panel, cursor: grab only on
+its own element; 0 hits after. LOST-SURFACE x2 on the panel: Cause (elementsFromPoint) a cell under the panel; backdrop
+search now skips pan-viewport content under a floating card. Live shot of the app owed.
 As built (Linux builder): design `sketches.ts` and app `sketches.component.html` clip at the stage
 edge (`left-0 right-0`) and pad by the panel inset; e2e case "the canvas runs under the open panel" (sketch and grid
 views); render rule CANVAS-UNDER-PANEL in `render-check.ts` (a viewport is the element that sets `cursor: grab` or has a
@@ -3913,3 +3917,9 @@ fetches the server on both loopback addresses, so an IPv6-only bind passes on Li
 design server binds both loopback addresses (every OS); a spec or e2e fetches `127.0.0.1` and `::1` (bite first); re-run
 the rack smoke. Side: user-facing; part of B480 (ADR 0268). B480 values after 870: runs yes, 0 live frames, installer
 141.17 MiB, installed 467 MiB, NotSigned.
+
+875\. Linux builder (2026-11-11, during 867): the tmux `studio-serve` (:4402) had crashed with a node stack trace; a
+subagent restarted it. Cause unknown; the trace was not kept. Lesson: a crashed serve is visible to the human (Studio
+waits on it) and leaves no record. Tool fix: `design serve` writes an uncaught error with its stack to a log file under
+the project's design folder, and Studio shows "Design-Server abgestürzt" with the log path instead of waiting. Side:
+user-facing, after B249 (ADR 0269).
