@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B249
+open: B295
 governs: ['.husky/*', 'tools/scripts/*gate*']
 decided: 2026-11-04
 source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Solo focus, sketch view, behavior tests and pre-push decisions", what stops a defect

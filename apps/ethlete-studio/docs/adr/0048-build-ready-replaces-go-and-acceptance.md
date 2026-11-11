@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B249
+built: b52ff697c
 decided: 2026-11-02
 source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Studio order, explorer, merge canvas and build-ready decisions" item 5 (A10)
 ---

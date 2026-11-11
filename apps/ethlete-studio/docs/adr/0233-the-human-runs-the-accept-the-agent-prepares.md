@@ -1,6 +1,6 @@
 ---
 status: superseded by 0048
-open: B249
+built: 57bac0dc0
 decided: 2026-11-09
 source: grill session 2026-11-09, finding 635
 governs: ['libs/cli/src/lib/design/system/accept-command.ts']

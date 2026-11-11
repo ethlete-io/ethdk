@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B249
+built: 57bac0dc0
 decided: 2026-11-11
 source: grill session 2026-11-11 (night), finding 868 D4
 ---
