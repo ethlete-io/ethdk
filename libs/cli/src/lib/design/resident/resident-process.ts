@@ -14,6 +14,7 @@ import { runSignal, unlessAborted, withRunSignal } from '../run-abort';
 import { withRunYield } from '../run-yield';
 import { recordPhase, recordRun, timingsFileOf } from '../timings';
 import { WarmDraw } from '../warm-draw';
+import { checkoutGoneOf, watchCheckout } from './checkout-gone';
 import { runsInResident } from './client';
 import { removeDiscovery, writeDiscovery } from './discovery';
 import { ABORTED_EXIT, ResidentRequest, ResidentRun, startResidentServer } from './server';
@@ -185,11 +186,24 @@ export const serveResident = async (options: { target: string }) => {
     if (exiting) return;
 
     exiting = true;
+    watch.unsubscribe();
     console.error(`resident design process exits: ${reason}`);
     removeDiscovery(target, process.pid);
     await close();
     await runs.close();
     process.exit(0);
+  };
+
+  const entry = process.argv[1];
+  const watch = watchCheckout({ target, entry, onGone: (reason) => void exit(reason) });
+  const run: ResidentRun = (request) => {
+    const gone = checkoutGoneOf({ target, entry });
+
+    if (!gone) return runs.run(request);
+
+    void exit(gone);
+
+    return Promise.resolve(ABORTED_EXIT);
   };
 
   process.once('SIGTERM', () => void exit('SIGTERM'));
@@ -198,7 +212,7 @@ export const serveResident = async (options: { target: string }) => {
   const server = await startResidentServer({
     token,
     identity: { pid: process.pid, build, checkout: target },
-    run: runs.run,
+    run,
     jumps: runs.jumps,
     onExit: (reason) => void exit(reason === 'idle' ? 'idle for 30 min' : 'stopped'),
   });
