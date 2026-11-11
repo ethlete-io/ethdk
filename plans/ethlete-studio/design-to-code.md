@@ -3175,77 +3175,6 @@ builder subagent briefs say "a refused gate is a finding, never call its interna
 738\. Linux builder (2026-11-10, same sketch): `sketch check` 34 s and `sketch ready` 36.6 s against the 10 s target,
 render-check about 13 s. Suspect only (no measurement of the phases). Backlog: measure the phases before a fix.
 
-739\. Mac builder (2026-11-10, B345 sketch `pages/sketches@change-crop`, a5bf3bff2): `sketch ready` takes 140-280 s on
-the Mac, and each finding needs a full rerun. Suspect only, as 738 on Linux (34-37 s). Backlog with 738: measure the
-phases on both machines; a rerun after a fix checks only the states the fix touched.
-
-As built (738, builder subagent, Linux only). Measured with `ETHLETE_DESIGN_PHASES=1` (the existing `timedPhase`
-timer) on the scratch copy `/tmp/sk750`, `sketch check pages/system@probe750 --fix` (1 variant, 28 states, 1 width),
-resident process; run 1 starts the resident cold, run 2 reuses it. Seconds:
-
-| Phase        | Before run 1 | Before run 2 | After run 1 | After run 2 |
-| ------------ | -----------: | -----------: | ----------: | ----------: |
-| gates        |         2.32 |         0.76 |        2.29 |        0.76 |
-| tsc a        |         0.99 |         0.97 |        1.00 |        0.98 |
-| aktuell      |         0.37 |         0.31 |        0.36 |        0.32 |
-| render-check |         9.03 |         7.89 |        9.19 |        8.03 |
-| identical    |         4.68 |         4.67 |        4.75 |        4.75 |
-| changes-shot |         4.40 |         4.47 |        0.12 |        0.11 |
-| wall         |         23.2 |         19.8 |        19.5 |        15.6 |
-
-Load and mark-drift take under 0.03 s. `sketch ready` on the same sketch (before): render-check 7.9, identical 4.9,
-undeclared 6.5, changes-shot 0.13, wall 20.8 s. Cause (measured): `sketch ready` wraps the warm draw in a per-run draw
-(`perRun`), so the change shot of NO-CHANGED-STATE reuses the pictures the identical phase shot (0.13 s);
-`sketch check` passed the bare resident draw, so each shot phase built a new shooter with an empty cache and shot all
-28 states of the variant and of the part again (4.4 s). Fix: `sketch check` runs its shot phases (aktuell, load,
-mark-drift, identical, changes-shot) on one per-run draw like `sketch ready`; without a resident process it is one
-`createRunDraw` for the run instead of a design server and Chromium per phase. Render-check still gets the draw it got
-before. The check output of run 2 is the same before and after, line for line, apart from the timing lines.
-`sketch-check-run-draw.spec.ts` fails on the old code (both tests) and passes on the new one. Not verified: the Mac
-(739), and the run without a resident process. Remaining over target: render-check (8 s) and identical (4.7 s) still
-shoot the same 28 states twice, through two paths (render worker vs part shooter), and ready's undeclared phase takes
-6.5 s. Suspect: sharing the render-check pictures with the part shooter is the next cut; not local, so it stays
-backlog.
-
-As built (739, Mac builder, 2026-11-11, measurement only). Detached worktree of 87c279030, `ETHLETE_DESIGN_PHASES=1`,
-`sketch check pages/sketches@change-crop --product studio` (3 variants, after a `sketch rebase` in the worktree only:
-foundations/logo had changed). Seconds, resident run 1 / resident run 2 / no resident:
-
-| Phase           | Run 1 | Run 2 | No resident |
-| --------------- | ----: | ----: | ----------: |
-| gates           |   4.4 |   4.4 |        15.3 |
-| tsc a + b + c   |   6.6 |   6.7 |         7.0 |
-| aktuell         |  59.4 |  59.5 |        52.3 |
-| render-check    | 140.6 | 143.6 |       137.9 |
-| identical       |   4.8 |   4.6 |         4.2 |
-| changes-shot    |   1.6 |   1.9 |         1.7 |
-| draw-queue-wait |  26.8 |  25.2 |        24.5 |
-| wall            | 219.6 | 223.3 |       221.4 |
-
-Render-check per variant: 67 s, 36 s, 37 s. Load average 11-13 on 6 cores during the runs. Cause (measured): the time
-is in aktuell and render-check, and the resident process does not make run 2 faster. Not measured: the same sketch on
-Linux, so the Mac share of the gap is open. Side results: `sketch ready` with a wrong flag (`--variant`) or without
-`--by` failed only after the lib-build wait (46-59 s); a usage error does not need the lib build. Without a resident
-process, gates take 15 s instead of 4.4 s. 777 on the Mac (same night, `design check --product studio`): cold 202.7 s,
-warm 52.0 s, 0 cache hits both times; a `recordCache` bite in the part-picture cache read counted 0 reads, so the
-warm speedup is one-time work of the cold run (5 lib rebuilds, 3 dropped ready records), not a missed cache.
-
-739 render-check split (Mac builder subagent, same sketch, instrumented dist, restored after). Render-check 136-140 s
-over 3 runs, CPU-bound (868 s user CPU in 296 s wall). Cause (measured): each variant draws 32 states x 2 schemes = 64
-frames, 4 at once, each a `page.goto` of frame.html at about 2 s: open 1.06 s (0.2 s goto, 0.85 s app boot in the
-iframe), first `inspectFrame` evaluate 0.88 s; settle, media and compare under 0.03 s; no sleep or fixed timeout. Variant
-1 takes 64 s because the baseline inspection of the product page (60 frames) runs on the same browser at the same time
-(DRAWS_AT_ONCE 8); a frame then takes 4.1 s. Aktuell: 120 frame opens at 2.5 s, about 6 at once. Fix ideas (Suspect,
-not built): draw the dark twin on the loaded page with `emulateMedia` (about 30 s less), switch states in one booted
-frame (about 50 s less), profile the first `inspectFrame` evaluate, and pass `cached: true` to `renderIssuesOf` in
-`sketch-command.ts` like `check-system.ts` does, so a re-check of unchanged variants hits the cache.
-
-Mac e2e speed (Mac builder, same night, measurement only): `yarn studio:e2e --workers 5` ran 131/132 in 433.5 s, load
-4.7 at start and 31.7 at the end; push:suite #16 ran the same 132 cases on the default 3 workers in 476 s. The one
-fail was Large "a variant equal to Aktuell keeps its iframes across a quick and a full listing" (iframe/row removes 22,
-must be 0). Cause (measured): 5 workers save 9 % and overload the 12-core Mac, so the default of 3 stays. The case
-fail under load is a Suspect for a load flake; it passed in #16.
-
 740\. Mac builder (same sketch): the clipping check flags the intended crop of the variants, and skip-scope refuses
 the reason "intended" because the crop holds controls; only "inert" passes. Suspect only. Lesson: a check that accepts
 only a wrong reason teaches the agent to give a wrong reason (as 737). Tool fix (backlog): skip-scope accepts
@@ -3592,30 +3521,6 @@ caught it before the push (f708e2e0b: `yarn test:e2e-helpers` in the Unit tests 
 verified locally only). Suspect, tool gap: nothing checks that a `node --test` spec that launches Chromium runs only in
 a job that installs it; push:suite runs where Chromium exists, so it cannot catch it. Decided by the doc agent (tool
 internal, the builder's recommendation): no tool fix for one case; a second case makes it night backlog.
-
-786\. Mac builder (2026-11-11, night, push:suite 81980de90): the repeat step blocked in run 3, six cases with a 10 s
-`page.goto` timeout in one burst at load 34. Suspect (not measured): the builder's own 780 subagent ran `spec:stress`
-at the same time. Lesson: two heavy runners on one machine make a red gate that says nothing about the code. Decided by
-the doc agent (tool internal): push:suite and spec:stress take one local heavy-run lock per machine; the second waits or
-stops with the holder's name; a spec bites with two runners. Night backlog, Mac, after the 777 Mac verify.
-
-As built (786, Mac builder): `tools/scripts/heavy-run-lock.mjs` holds one lock file per machine
-(`<tmpdir>/ethlete-heavy-run.lock`: pid, name, start). `push:suite` takes it first (before the push slot) and waits
-for it; `spec:stress` waits too, or stops at once with `--no-wait` and the holder line (exit 2). A dead holder's lock
-is taken over; a child of a holder (env `ETHLETE_HEAVY_RUN_HELD`) takes none. The lock ends with the suite (ok or
-blocked) and on process exit. Specs: `heavy-run-lock.spec.mjs`, two real runner processes; the second stops with
-`heavy run lock held by push-suite (pid ...)`. Bite: without the holder check it fails. Not verified: a live
-push:suite next to a spec:stress; a subagent run in another checkout of the same machine (same tmpdir, so covered).
-
-As built (B438, ADR 0229, commit `perf(cli): Draw the fresh compare pair only after a cached first pair`): the
-shooter's `pictureOf` now returns the picture with its `source` (`drawn`, `memory` or `disk`, from `onSource`), and
-`PictureOf` returns a `SourcedPicture`. `drawnPair` draws the fresh second pair only when the first pair differs and one
-of its pictures is not `drawn`; a picture without a `source` counts as possibly cached, so other `PictureOf`
-implementations keep the old second draw. Specs: a differing pair drawn fresh makes 2 draws (was 4) in
-`merge-compare.spec.ts` and `unchanged-states.spec.ts`; a stale cached picture is redrawn and the fresh pair decides;
-`shot.spec.ts` names `drawn`, then `memory`, then `drawn` for `fresh`. Bite: with the `drawnFresh` check removed, both
-2-draw cases fail. `spec:stress --runs 4 --load 2`: 3 specs 4/4. Not verified: the cold compare time of finding 598 on a
-real product; a Studio e2e run (none covers the merge compare by name).
 
 789\. Linux builder (2026-11-11, night, B438 measurement): the committed sketch `elements/rating` has 8 UTILITY-CSS
 findings, so a sketch with open check findings reached git. Suspect: none yet; the cause is the question, which gate
@@ -4011,7 +3916,25 @@ the product folder only.
 
 812\. Linux builder (2026-11-11, grill decision): `yarn push` (push-next.mjs) accepted only a push-suite ok verdict for HEAD itself, so a docs-only commit on top of a green sha (0afe96985 skills and ab32641a1 plan on top of green cfd98cddc) refused the push and forced a rerun of the whole suite (minutes). No tool caught it: the push-next spec covers only a verdict for HEAD or none, and the pre-push check already walks back to the newest ok verdict, so the gap showed only at `yarn push`. Decided fix: push-next accepts the ok verdict of an ancestor when every later commit touches only `plans/**`, `apps/ethlete-studio/docs/adr/*.md`, `.changeset/*.md`, `.claude/handoffs/**` or `.agents/skills/**/*.md`, after a rerun of the fast checks on HEAD, and prints which ancestor verdict it reused; the walk lives in one module shared with the pre-push check.
 812 as built (Linux builder, 2026-11-11): new `tools/scripts/verdict-reuse.mjs` holds the walk to the newest ok verdict (`verdictBelow`), the docs allowlist and the line `push-next: reused push-suite ok of <sha> (n docs-only commits on top)`; `push-next.mjs` uses it with the allowlist, reruns the fast checks on `<ancestor>..HEAD` (push-suite's `preChecksStep`: committed-file format check plus every `pre-push-checks.mjs` script, a superset of lint:studio-adrs, lint:changesets and lint:person-names that also covers lint:size and lint:no-verify-briefs, which read `.agents/skills` and `.claude/handoffs`), and has `--dry-run`. The pre-push check (`push-suite.mjs --check`) already accepted an ancestor verdict under its own broader exemption (plans/, .changeset/, any .md); it now runs the same walk from the shared module (loaded by dynamic import, push-suite keeps no static sibling import) and prints the reuse line. Condition probe: no `test:tools`, `nx test cli` or studio spec reads the working-tree files under the allowlist; only temp-repo fixtures and fixed-sha history reads (`git show 0c2451802:plans/...`). Verified: 5 push-next specs in temp repos (docs-only on a green ancestor accepted and named, a code commit refused before the checks, a failing fast check refused, no green ancestor refused, dry run pushes nothing), with the reuse disabled 4 of them fail; spec:stress 4/4; the live `node tools/scripts/push-next.mjs --dry-run` on ab32641a1 printed `push-next: reused push-suite ok of cfd98cddc (2 docs-only commits on top)`, and `push-suite.mjs --check origin/next HEAD` printed the same with `pre-push:`. Not verified: a real `yarn push`, and the push-slot check of a slot held by another builder on the same sha, which still asks for a verdict of that sha itself.
+B488 as built (Linux builder, 2026-11-11, ADR 0261, 789 (3)): new open-point kind `sketch-problem` (sketch, variant, rule,
+message) in `open-points.ts`, one per distinct static problem a variant of a ready, not discarded sketch brings in
+(`variantProblemsOf`, the same problems the `/__design/sketches` badge shows), on the sketch's primary target, so a
+sketch-only part gets it too. Only the Studio path reads it (`readOpenPoints(product, { sketchProblems: true })` from the
+open-points cache and the draw path): laying every variant over the product costs ~8 s on studio and ~2 s on studio-lab
+(measured), which timed out `real-open-points.spec.ts` (5 s) when `design check` paid it too. Studio: the chip popover
+lists it under the error icon as "Sketch-Regel verletzt: <rule>" with the variant as detail (`open-points.ts`,
+`STUDIO_LABELS.system.sketchProblem`). Bite: `open-points-answer.spec.ts` "answers a sketch-problem point ..." fails without
+the change (read-open-points, then the cache flag) and passes with it. Real data: studio-lab `elements/rating` yields 8
+UTILITY-CSS points (variants a, b, c). Live (scratch /tmp/b488-lab, own ports, `withStudio`, shots /tmp/b488-shots/):
+the part view of studio-lab `components/card` with a scratch `display: flex` in ready sketch variant a shows the chip
+"6 offen" and the line "Sketch-Regel verletzt: UTILITY-CSS" in the popover DOM (card-chip-open.png). Not built: the chip
+on the Sketches page, so the sketch-only `elements/rating` still shows none there (rating-sketch.png, chip count 0): the
+page is the design part `pages/sketches`, which has no chip in its design, and adding one is a design change with an open
+sketch (`pages-sketches.change-crop`) already on it. Not measured: the open-points answer delay on a cold cache in Studio.
+
+813\. Linux builder (2026-11-11, grill decision, from Mac 6e5e8e5f7 fix (4)): `sketch check` called `renderIssuesOf` without `cached: true` (`sketch-command.ts`, `renderedVariantsOf`), while `design check` passes it (`check-system.ts`), so a second `sketch check` of an unchanged variant drew every frame again instead of reading the render-check cache. Decided: pass `cached: true`; an unchanged variant hits, a changed variant (its files or what `sketch.json` draws) misses.
+813 as built (Linux builder, 2026-11-11): `renderedVariantsOf` in `sketch-command.ts` passes `cached: true`. Cache key finding: no extension needed; the key hashes the salt and the whole frame group, whose address and frame search carry the sketch target and variant, and a hit also needs every response the drawing loaded to answer the same, the variant's part modules and its registry slice (what `sketch.json` lists) included; a `sketch.json` edit that changes nothing drawn still hits. Specs: `render-cache-draw.spec.ts` (unchanged variant draws nothing; an edited variant file redraws exactly its part; an edited registry slice redraws the variant; a sibling variant and the merged parts do not share entries, which fails when the key drops the sketch) and `sketch-check-run-draw.spec.ts` (two checks both ask for the cache). Bite: without `cached: true` the run-draw spec fails (`[undefined, undefined]`). Live (HEAD export d5624bffb + the fix, studio-lab `components/card`, `ETHLETE_DESIGN_PHASES=1`): cold 4.5 s with `PHASE render-check 1.35s`, then unchanged 3.1 s with `PHASE render-check 0.09s`; variant b padding edit 4.1 s / 0.78 s, then 3.5 s / 0.11 s. `elements/rating` from the brief fails static UTILITY-CSS, so `sketch check` skips its render check. Not verified: a `sketch.json` edit live, and the Mac.
 
 Sketch pick tool gap as built (Mac builder subagent, 2026-11-11): new `et design sketch pick <layer>/<name>[@<sketch>] --variant <key> --decided-by "<the words and where they were said>" --by <model id> [--product <name>]` writes the same `decision` into `sketch.json` that Studio's `POST` pick writes (`decideSketch`, `kind: pick`, `by: designer`, `cmd`, `pid`, `decidedAt`), with the words as its `comment`; it refuses an unknown or rejected variant and a sketch that is not ready (exit 1, message from `decideSketch`). Verified: 3 new cases in `sketch-command.spec.ts` (merge `--decided-by` exits 1 "has no pick" before the pick and 0 after; unknown variant; not ready), all 3 fail with the command unregistered. Gap 2 not reproduced: a refused `sketch merge` already exits 1 - the existing spec "refuses a sketch with two live variants" asserts 1, and a live probe of the built CLI in a temp copy of the fixtures exited 1 for "has 2 live variants ... the user picks in Studio" and for "has no pick", so no code change and no bite; the 0 seen live most likely came from a pipe or wrapper, not the CLI. `sketch ready` exits 0 when ready is written but the auto-merge is skipped or held (`stillReady`, "shows no visible change but did not merge"): ready itself succeeded and the held merge is retried, so left as is. Not verified: a pick and merge on the real repo sketches.
 
-813\. Linux builder (2026-11-12, grill decision): `et design sketch merge --decided-by tom` wrote `"decidedBy": "tom"` into `merged.json`, and the push was blocked by `yarn lint:person-names`. Cause: sketch merge wrote the --decided-by value verbatim, the help suggested a person name, and no write-time check matched lint:person-names; the push suite caught it at pre-push (14ea73f7c fixed the record). Fix: the help of `merge` and `pick` names the role (`human`, `'human in chat: take b'`), and both refuse a `--decided-by` that holds a person name (exit 1, message names the role "human") before any write; the name hashes live in `libs/cli/src/lib/person-name-hashes.json`, read by the CLI (`person-names.ts`) and by `check-person-names.mjs`. Bite: `sketch-command.spec.ts` runs `pick --decided-by "tom in chat: b"` and `merge --decided-by tom` and expects exit 1 with `sketch.json` unchanged and no `merged.json`; `human` passes.
+814\. Mac builder (2026-11-11, grill decision): `et design sketch merge --decided-by tom` wrote `"decidedBy": "tom"` into `merged.json`, and the push was blocked by `yarn lint:person-names`. Cause: sketch merge wrote the --decided-by value verbatim, the help suggested a person name, and no write-time check matched lint:person-names; the push suite caught it at pre-push (14ea73f7c fixed the record). Fix: the help of `merge` and `pick` names the role (`human`, `'human in chat: take b'`), and both refuse a `--decided-by` that holds a person name (exit 1, message names the role "human") before any write; the name hashes live in `libs/cli/src/lib/person-name-hashes.json`, read by the CLI (`person-names.ts`) and by `check-person-names.mjs`. Bite: `sketch-command.spec.ts` runs `pick --decided-by "tom in chat: b"` and `merge --decided-by tom` and expects exit 1 with `sketch.json` unchanged and no `merged.json`; `human` passes.

@@ -182,3 +182,13 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - Later morning: the human picked B345 change-crop variant b ("change crop b mergen"), merge only after 811 is pushed.
   The Mac merges b; the Linux builder sends the doc agent the 811 push sha, then the doc agent tells the Mac (mailbox
   file + scp). Doc agent restarted (context 70 %); restart the Mac mailbox wait first.
+- 2026-11-11, after 42ced4579: B486 closed (ADR 0259 built 0afe96985). 812 built and pushed 0e7c0b60b (yarn push reuses an
+  ancestor verdict under docs-only commits; first real reuse on 42ced4579 worked). 811 Cause (Mac, 61dbc7717): the design
+  frame loads no web font, so `--font-code` resolves to SF Mono on the Mac and generic monospace on Linux; OFF-CENTRE hits
+  differ per OS. Mac merges B345 change-crop b with pages/sketches checks only and restores ready.json. Collected for the
+  next round: self-host one monospace + the UI font in the design styles (Mac recommends; rejected: per-OS baseline, rule
+  tool fix). Linux queue: B488, sketch-command cached fix (render-check split (4)). Mac: flake, render-check fixes (1)-(3).
+- After B488 commit e3008e59a (push waits on the Mac slot): STATUS row B489 added (day follow-up sketch pages/sketches:
+  chip for sketch-only parts + picked badge, finding 792 A/B). Collected for the next round: B489 into the day order
+  ("Gerade in Arbeit" changes only after the human's okay); recommendation: right after item 3 (B345). Set ADR 0261
+  `built: e3008e59a` and delete the B488 row when the Linux builder reports the push.

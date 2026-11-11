@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B488
+built: e3008e59a
 decided: 2026-11-11
 source: grill session 2026-11-11 (morning round), finding 789
 ---

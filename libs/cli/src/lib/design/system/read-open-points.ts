@@ -20,7 +20,9 @@ import {
   unreachableOf,
 } from './sketch/part-definition';
 import { directEditsOf } from './sketch/merged-parts';
-import { listSketches } from './sketch/sketch';
+import { variantProblemsOf } from './sketch/check-sketches';
+import { listSketches, Sketch } from './sketch/sketch';
+import { ruleProblemsOf } from './check-system';
 
 const isPair = <T extends { from: string | null; to: string | null }>(
   pair: T,
@@ -50,17 +52,47 @@ const partInputsOf = (product: ResolvedProduct): OpenPointsInput['parts'] =>
     ...motionOf(part.source),
   }));
 
+const sketchProblemsOf = (product: ResolvedProduct, sketches: Sketch[]): OpenPointsInput['sketchProblems'] => {
+  const ready = sketches.filter((sketch) => sketch.status === 'ready' && sketch.decision?.kind !== 'discard');
+
+  if (ready.length === 0) return [];
+
+  const productProblems = ruleProblemsOf(product);
+  const seen = new Set<string>();
+
+  return ready.flatMap((sketch) =>
+    variantProblemsOf({ product, sketch, productProblems }).flatMap(({ variant, problems }) =>
+      problems.flatMap(({ rule, message }) => {
+        const key = `${sketch.target}\n${variant}\n${rule}\n${message}`;
+
+        if (seen.has(key)) return [];
+
+        seen.add(key);
+
+        return [{ part: sketch.target, sketch: sketch.name, variant, rule, message }];
+      }),
+    ),
+  );
+};
+
 /**
  * The open points of every part of a product, read from its part files, comments and sketches, plus the
- * `rendered` findings of a check that drew the parts.
+ * `rendered` findings of a check that drew the parts. `sketchProblems` adds the static rule problems of each variant of
+ * a ready sketch, which lays every such variant over the product and runs the rules.
  */
 export const readOpenPoints = (
   product: ResolvedProduct,
-  rendered: Pick<OpenPointsInput, 'missingStates' | 'contrasts' | 'busyStates'> = {},
+  {
+    sketchProblems = false,
+    ...rendered
+  }: Pick<OpenPointsInput, 'missingStates' | 'contrasts' | 'busyStates'> & { sketchProblems?: boolean } = {},
 ): PartOpenPoints[] => {
   const source = { productDir: product.dir, product: product.name };
   const directEdits = directEditsOf(product);
   const editSketches = new Set(directEdits.flatMap(({ sketch }) => (sketch ? [sketch] : [])));
+  const sketches = listSketches(source).filter(
+    (sketch): sketch is Sketch => typeof sketch !== 'string' && !editSketches.has(sketch.target),
+  );
 
   return openPointsOf({
     parts: partInputsOf(product),
@@ -71,19 +103,14 @@ export const readOpenPoints = (
       answered: comment.addressed !== undefined,
       resolved: comment.resolved !== undefined,
     })),
-    sketches: listSketches(source).flatMap((sketch) =>
-      typeof sketch === 'string' || editSketches.has(sketch.target)
-        ? []
-        : [
-            {
-              name: sketch.name,
-              target: sketch.target,
-              targets: sketch.targets,
-              status: sketch.status,
-              decision: sketch.decision?.kind ?? null,
-            },
-          ],
-    ),
+    sketches: sketches.map((sketch) => ({
+      name: sketch.name,
+      target: sketch.target,
+      targets: sketch.targets,
+      status: sketch.status,
+      decision: sketch.decision?.kind ?? null,
+    })),
+    sketchProblems: sketchProblems ? sketchProblemsOf(product, sketches) : [],
     directEdits,
     ...rendered,
   });

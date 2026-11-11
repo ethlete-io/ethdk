@@ -122,4 +122,17 @@ describe('sketch check', { timeout: 120_000 }, () => {
     expect(new Set(warms).size).toBe(1);
     expect(warms[0]?.perRun).toBe(true);
   });
+
+  it('reads the render inspect cache on every check, so a second check of an unchanged variant draws nothing', async () => {
+    const target = await sketched();
+
+    vi.mocked(renderIssuesOf).mockClear();
+
+    await designSketch({ target, argv: ['check', ID, '--product', 'acme'], invocation: 'et design' });
+    await designSketch({ target, argv: ['check', ID, '--product', 'acme'], invocation: 'et design' });
+
+    const calls = vi.mocked(renderIssuesOf).mock.calls.map(([options]) => options.cached);
+
+    expect(calls).toEqual([true, true]);
+  });
 });

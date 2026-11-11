@@ -1472,6 +1472,7 @@ const renderedVariantsOf = async ({
     config,
     warm: drawOn ?? warm,
     jobs,
+    cached: true,
     onProgress: (line) => console.error(line),
     before: [...new Set(entries.flatMap(({ sketch }) => sketch.targets))].map((part) => ({
       product: product.name,

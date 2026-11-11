@@ -9,7 +9,7 @@ import { openPointsAnswer } from './system/open-points.fixtures';
 import { createComment } from './system/comments/comment';
 import { drawnFindingsOf } from './system/drawn-open-points';
 import { oneProductOf } from './system/sketch/cli-args';
-import { createSketch, decideSketch, markSketchReady, Sketch } from './system/sketch/sketch';
+import { createSketch, decideSketch, markSketchReady, Sketch, variantDirOf } from './system/sketch/sketch';
 import { ResolvedProduct } from './system/resolve-product';
 
 vi.mock('./system/drawn-open-points', () => ({
@@ -125,6 +125,37 @@ describe('openPointsAnswer', { timeout: 30_000 }, () => {
       status: 200,
       body: { drawn: false, parts: [{ part: 'elements/rating', points: [pick] }] },
     });
+  });
+
+  it('answers a sketch-problem point for each static rule problem a variant of a ready sketch brings in', async () => {
+    const target = checkout();
+
+    writeFileSync(join(target, DESIGN_DIR, 'app-a/styles.css'), "@import 'tailwindcss';\n");
+    writeFileSync(
+      join(target, DESIGN_DIR, 'config.json'),
+      JSON.stringify({ products: { 'app-a': { styles: [`${DESIGN_DIR}/app-a/styles.css`] } } }),
+    );
+
+    const product = oneProductOf({ target, config: readConfig(target)!, asked: 'app-a' }) as ResolvedProduct;
+    const sketch = createSketch({ product, sketch: { layer: 'elements', name: 'rating' }, variants: ['a', 'b'] });
+    const ready = markSketchReady({ checkout: target, sketch: sketch as Sketch }) as Sketch;
+
+    writeFileSync(join(variantDirOf(ready, 'a'), 'elements/rating/rating.css'), '.rating { display: flex; }\n');
+
+    const answer = await openPointsAnswer(ask(target, '/?product=app-a&part=elements/rating'));
+
+    expect((answer.body as { points: unknown[] }).points).toContainEqual({
+      kind: 'sketch-problem',
+      sketch: 'rating',
+      variant: 'a',
+      rule: 'UTILITY-CSS',
+      message: expect.stringContaining('display: flex'),
+    });
+    expect(
+      (answer.body as { points: { kind: string; variant?: string }[] }).points.filter(
+        (point) => point.kind === 'sketch-problem' && point.variant === 'b',
+      ),
+    ).toEqual([]);
   });
 
   it('draws one part for its contrasts and missing control states', async () => {
