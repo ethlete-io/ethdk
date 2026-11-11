@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { run as archive } from './archive-findings.mjs';
 import { lostFindings } from './check-plan-findings.mjs';
 import { git, gitExec, tempGitRepo } from './git-test-env.mjs';
 
@@ -66,4 +67,55 @@ test('the real 0c2451802 cut is refused in a temp repo and names the lost findin
   assert.equal(status, 1);
   for (const number of expected) assert.ok(stderr.includes(number), `names ${number}`);
   assert.match(stderr, /append it with `node tools\/scripts\/archive-findings.mjs`, or restore the lines/);
+});
+
+const runCheck = (repo) => {
+  try {
+    execFileSync('node', [SCRIPT], { cwd: repo, stdio: 'pipe', encoding: 'utf8' });
+    return { status: 0, stderr: '' };
+  } catch (error) {
+    return { status: error.status, stderr: String(error.stderr) };
+  }
+};
+
+const archivedRepo = () => {
+  const repo = tempGitRepo('plan-findings-archive-');
+  git(repo, 'config', 'user.email', 'a@b.c');
+  git(repo, 'config', 'user.name', 'a');
+  const studio = join(repo, 'plans/ethlete-studio');
+  mkdirSync(studio, { recursive: true });
+  const findings = [101, 102, 103].map(
+    (n) => `${n}\\. Tom (2026-10-01): head ${n}\nbody ${n}\n${n} as built (2026-10-02): built ${n}`,
+  );
+  writeFileSync(join(studio, 'design-to-code.md'), `# Plan\n\n${findings.join('\n\n')}\n`);
+  writeFileSync(
+    join(studio, 'STATUS.md'),
+    '| ID | Was | Stand | Wo |\n| -- | -- | -- | -- |\n| B1 | one (Bef. 101) | ✅ | |\n| B2 | two (Bef. 102) | ✅ | |\n| B3 | three (Bef. 103) | ✅ | |\n',
+  );
+  git(repo, 'add', '--', 'plans');
+  git(repo, 'commit', '-q', '-m', 'base');
+  assert.equal(archive(repo), 3);
+  return { repo, archiveFile: join(studio, 'archive/findings-2026-10.md') };
+};
+
+test('archive-findings output passes the check when staged with the plan', () => {
+  const { repo } = archivedRepo();
+  git(repo, 'add', '--', 'plans');
+  assert.deepEqual(runCheck(repo), { status: 0, stderr: '' });
+});
+
+test('an archive line edited after archive-findings is refused and named', () => {
+  const { repo, archiveFile } = archivedRepo();
+  writeFileSync(
+    archiveFile,
+    readFileSync(archiveFile, 'utf8').replace(
+      '102 as built (2026-10-02): built 102',
+      '102 as built (2026-10-02): changed',
+    ),
+  );
+  git(repo, 'add', '--', 'plans');
+  const result = runCheck(repo);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /102 \(as built\)/);
+  assert.doesNotMatch(result.stderr, /101|103/);
 });
