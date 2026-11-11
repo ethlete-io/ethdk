@@ -3699,7 +3699,8 @@ push-suite.spec.mjs (33) and all tools specs (261) pass; the old script on the s
 about 4 s, so "sub-second" is not true for all). Not verified: a real `yarn push:suite` and a real push through the
 hook. Built 64c9306a3. Follow-up (night backlog, speed): `lint:person-names` takes about 4 s of the 9 s
 checks step; measure where, and make it sub-second or correct the "sub-second" claim in AGENTS.md. The Mac 770
-(de0087f0a, step reuse after a merge) also edits `push-suite.mjs`: whoever pushes second merges both by hand.
+(de0087f0a, step reuse after a merge) also edits `push-suite.mjs`: whoever pushes second merges both by hand. Person-names follow-up built 1d6a23453: 3.7 -> 0.87 s (cause measured: about 5 MB of text, every word hashed with no
+cache; fix: one token set per file, memoised hash per word, line pass only on a hit); same output on the real tree.
 As built (person-names lint): `check-person-names.mjs` ran `words()` (camel-case regex, split, lowercase) and a SHA-256 on
 every word of every line of 5 MB of tracked text. Now each file is tokenised once into a unique-token set, each distinct
 word hash is memoised, and the per-line pass runs only for a file that has a hit (or the git user name). Same findings
