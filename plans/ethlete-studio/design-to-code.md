@@ -3992,3 +3992,10 @@ sketch, `sketchStylesheetsPlugin` swaps in the variant file, and that inlined te
 render rule `FONT-FACE` (`font-faces.ts`, run in `inspectedFrameOf`) fails a part whose `@font-face` does not reach
 status loaded. Bite: `sketch check foundations/type@font-pair` exits 1 with 6 FONT-FACE lines without the fix, 0 with it;
 the `sketch-stylesheets.spec` case fails without the plugin. studio and sdk have 0 FONT-FACE hits. Not verified: Mac.
+
+821\. Linux builder (2026-11-11, B489 a8621f4ab): the `pages/sketches@open-points` sketch was drawn while the
+change-crop sketch on the same part was open; the Mac merged change-crop b (2f83c46da), and open-points went stale with no
+notice. It showed only because a person-name fix touched the sketch and `sketch ready` refused with SKETCH-BASE-STALE.
+Suspect (code not traced). Why no tool caught it: only `sketch ready` checks the base. Tool fix (doc agent, tool
+internal): when a merge changes a part, `design status` and the inbox name every open or ready sketch on that part as
+stale.
