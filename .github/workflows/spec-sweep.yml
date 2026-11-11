@@ -45,7 +45,7 @@ jobs:
 
       - uses: ./.github/actions/setup
 
-      - run: yarn playwright install --with-deps chromium
+      - run: bash tools/scripts/ci-apt-retry.sh yarn playwright install --with-deps chromium
 
       # spec:stress --slow needs `systemd-run --user` with the cpu controller delegated; the runner has no login
       # session, so its user manager only starts with linger.

@@ -316,7 +316,7 @@ export const settleCommittedEdits = (options: {
  * state as before holds at once (its new hash goes to `merged.json`, and the edit sketch closes); one that draws a state
  * differently leaves the edit sketch open. An `old` that does not draw, or a part HEAD does not hold, goes to
  * `problems`, else to the lines. With `writesTracked: false` (the design server) it writes no file git tracks: a held
- * or settled edit stays unrecorded for `design check`.
+ * or settled edit stays unrecorded for `design check`. `held` gets each held part with its part hash.
  * Answers with one line per part it drew or decided.
  */
 export const autoAcceptOf = async (options: {
@@ -330,6 +330,7 @@ export const autoAcceptOf = async (options: {
   warm?: WarmDraw;
   cache?: PartPictureCache;
   writesTracked?: boolean;
+  held?: { part: string; hash: string }[];
 }): Promise<string[]> => {
   const { target, config, product, only, warm } = options;
   const writesTracked = options.writesTracked ?? true;
@@ -504,6 +505,7 @@ export const autoAcceptOf = async (options: {
 
     if (baseline) {
       lines.push(`HELD ${product.name} ${part}: changed outside a sketch, every state draws as before`);
+      options.held?.push({ part, hash: partHashNowOf(resolved) });
 
       if (!writesTracked) continue;
 

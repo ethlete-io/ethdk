@@ -846,3 +846,45 @@ the edit or new to keep it`. The internal discard of `design check` is unchanged
 - Not verified: no live serve run on a scratch checkout. Still open: the slow runner writes the tracked `ready.json`
   (`recordSettledBuildReady`, also seen in the live run), against "serve never writes a tracked file"; not in this
   slice. A draw error in serve is not retried at the same part hash.
+
+## As built: B249 slice 5c-2, live verify on an own server (2026-11-11, Linux)
+
+- Own server: `yarn scratch:checkout /tmp/b249-5c2/co` with its own git (HEAD `merged.json`, zoom-chip at the drifted
+  `eac0eac1e633a857`), cli, components and Studio built there, `design serve` on :4761, Studio headless with the
+  stubbed host. Shots in `.claude/handoffs/agent-results/b249-5c2/`, each looked at.
+- New defect D7 (4b): with `old` present, `new` of an edit sketch compared with the product (itself), so every state
+  was unchanged; Studio folded the variant ("Unverändert: Variante new", shot `c4b-before-fix-new-folded-studio.png`)
+  and `new` carried NO-CHANGED-STATE. Cause proven by the `unchanged-states.spec.ts` case "names no state of the edit
+  sketch variant new when the sketch has old" (failed before: `expected [ 'default' ] to deeply equal []`). Fix:
+  `unchanged-states.ts` answers no unchanged state for any variant of an edit sketch except `old`. Missed because the
+  5a spec covered only a new-only sketch and the 5a live run read only `old`'s `unchanged` list.
+- 4b ok after the fix: `components/zoom-chip@edit` with `new` and `old`, nothing folded, no Verwerfen
+  (`c4b-edit-sketch-view-studio.png`).
+- 4c ok: Übernehmen + Merge on `new` merged it (`merged.json` `variant: new`), zoom-chip "Baubereit" / "Nichts offen"
+  after the slow run (`c4c-after-new-zoom-chip-studio.png`); a second edit picked `old` restored the HEAD design
+  (`c4c-picked-old-studio*.png`).
+- D4/D5 ok: tree-row with `#ff0000` during a slow run reads "Nicht baubereit (2)", popover lists "Bild ohne Sketch
+  geändert" and HARD-CODED-COLOUR (`d4-hardcoded-pending-tree-row-studio.png`); zoom-chip direct edit with pending
+  reads "Nicht baubereit (1)" (`d5-direct-edit-zoom-chip-studio.png`).
+- D6 ok: `git status --untracked-files=no` every 5 s over both serve runs showed only `ready.json` besides my own edits.
+- Observations: the merge view of an edit sketch lists nothing under "Geändert"; after the merge Studio opens the
+  first part (agent-logos), not the merged one.
+- Not done: the e2e cases for 4b/4c. Draft in `.claude/handoffs/agent-results/b249-5c2/e2e-cases.patch`; in the e2e
+  checkout (slow checks off) `design check --product studio --part components/zoom-chip` opened no edit sketch even
+  without the fixture zoom-chip sketch, cause not found.
+
+## As built: B249 slice 5c-1b, serve keeps the same-drawing verdict in memory (2026-11-11, Linux)
+
+- Cause, proven by the bite: with `writesTracked: false` a held edit is not recorded, and every open-points reader used
+  `changedOutsideSketchOf`, which compares only with `merged.json`; so serve showed a held edit as `direct-edit`.
+- Fix: `sketch/held-edits.ts` keeps, per product, each part the slow runner held with its part hash (`autoAcceptOf`
+  hands them out through the new `held` option). `openDirectEditPartsOf` drops a part whose hash still equals the held
+  one; `directEditsOf` (open points, build-ready, `ready.json`), `directEdit` of the part answer and the system listing
+  use it. The server sends its held edits with every open-points worker request, and the open-points cache keys on
+  them. `changedOutsideSketchOf` is unchanged, so `design check` and the recording paths still see the edit.
+- Bites: slow-run "shows no open point for a direct edit that draws as before while it runs, and writes no tracked
+  file" failed before (`directEdit` true, `direct-edit` point); it also failed with the worker sync removed. Guard:
+  "still shows a direct edit that draws differently as open while it runs" (D4/D5).
+- Verified: the slow-run spec, `vitest related` on the changed files, `nx run cli:typecheck`, eslint, prettier.
+- Not verified: no live serve run. Not covered: an edit HEAD already holds (the settle path) still shows as changed
+  outside a sketch until `design check`; the held state is lost when serve restarts (it redraws from the cache).

@@ -11,7 +11,8 @@ import { readyMarkOf, readyPartOf } from './part-ready';
 import { partPointsOf, readOpenPoints } from './read-open-points';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
-import { changedOutsideSketchOf } from './sketch/merged-parts';
+import { allHeldEdits, HeldEdits } from './sketch/held-edits';
+import { openDirectEditPartsOf } from './sketch/merged-parts';
 
 export type OpenPointsRequest = {
   product: ResolvedProduct;
@@ -32,7 +33,7 @@ export type OpenPointsAnswer = { parts: PartOpenPoints[] } | PartOpenPointsAnswe
 
 type Message = { id: number; result?: unknown; error?: string };
 
-export type WorkerRequest = { request: OpenPointsRequest } | { inputs: ResolvedProduct };
+export type WorkerRequest = ({ request: OpenPointsRequest } | { inputs: ResolvedProduct }) & { held: HeldEdits };
 
 /** The build-ready inputs of every part of a product as data, so they cross from the worker. */
 export type BuildReadyData = { points: PartOpenPoints[]; problems: Record<string, Problem[]> };
@@ -54,7 +55,7 @@ export const openPointsOf = ({ product, part, findings }: OpenPointsRequest): Op
     part,
     hash: typeof located === 'string' ? null : located.hash,
     ready: readyMarkOf({ product, part }),
-    directEdit: changedOutsideSketchOf(product).includes(part),
+    directEdit: openDirectEditPartsOf(product).includes(part),
     buildReady: buildReadyOf({
       product,
       part,
@@ -122,14 +123,14 @@ const runningWorker = () => {
   return started;
 };
 
-const askWorker = (message: WorkerRequest) =>
+const askWorker = (message: Omit<WorkerRequest, 'held'>) =>
   new Promise<unknown>((done, fail) => {
     const id = nextId++;
     const running = runningWorker();
 
     pending.set(id, { done, fail });
     running.ref();
-    running.postMessage({ id, ...message });
+    running.postMessage({ id, held: allHeldEdits(), ...message });
   });
 
 /**

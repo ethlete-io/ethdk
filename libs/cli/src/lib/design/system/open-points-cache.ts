@@ -3,6 +3,7 @@ import { PartOpenPoints } from './open-points';
 import { BuildReadyInputs } from './part-build-ready';
 import { productPrintOf, productRuleRunOf, readOpenPoints } from './read-open-points';
 import { ResolvedProduct } from './resolve-product';
+import { heldEditsOf } from './sketch/held-edits';
 import { inputsUnchanged, PrintedInput, trackedRun } from './tracked-reads';
 
 type Entry = { product: string; inputs: PrintedInput[]; points: PartOpenPoints[]; ready: BuildReadyInputs };
@@ -16,7 +17,7 @@ const entries = new Map<string, Entry>();
 export const cachedOpenPointsOf = (
   product: ResolvedProduct,
 ): { points: PartOpenPoints[]; inputs: BuildReadyInputs } => {
-  const print = productPrintOf(product);
+  const print = `${productPrintOf(product)}\0${JSON.stringify(heldEditsOf(product))}`;
   const held = entries.get(product.dir);
 
   if (held && held.product === print && inputsUnchanged(held.inputs))

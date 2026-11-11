@@ -4,6 +4,7 @@ import { dirname, resolve } from 'path';
 import { partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { partHashesHold, partHashHolds, partHashOf } from './baseline';
+import { heldEditsOf } from './held-edits';
 import { listSketches, Sketch, variantDirOf } from './sketch';
 
 export const MERGED_FILE = 'merged.json';
@@ -188,6 +189,15 @@ export const changedOutsideSketchOf = (product: ResolvedProduct): string[] => {
   return changed.map(partKeyOf).filter((key) => !sketched.has(key));
 };
 
+/** The parts `changedOutsideSketchOf` answers, without a direct edit the design server holds at its part hash. */
+export const openDirectEditPartsOf = (product: ResolvedProduct): string[] => {
+  const held = heldEditsOf(product);
+
+  return changedOutsideSketchOf(product).filter(
+    (part) => held[part] === undefined || held[part] !== partHashOf({ product, dir: resolve(product.dir, part) }),
+  );
+};
+
 /** The sketch name of the old/new sketch a direct edit of a merged part opens. */
 export const EDIT_SKETCH = 'edit';
 
@@ -206,7 +216,7 @@ export const directEditsOf = (product: ResolvedProduct): { part: string; sketch:
     typeof sketch !== 'string' && isEditSketch(sketch) ? [{ part: partKeyOf(sketch), sketch: sketch.target }] : [],
   );
 
-  return [...open, ...changedOutsideSketchOf(product).map((part) => ({ part, sketch: null }))];
+  return [...open, ...openDirectEditPartsOf(product).map((part) => ({ part, sketch: null }))];
 };
 
 /**

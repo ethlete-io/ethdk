@@ -3816,3 +3816,25 @@ URL. Side: user-facing, after B249 (ADR 0269).
 
 880\. Linux builder (2026-11-11, B480, rack): after a cold start the design server does not answer for about 60-90 s.
 Suspect; measure it together with the 875 serve crash log. Side: user-facing, after B249 (ADR 0269).
+
+881\. Mac builder (2026-11-11, B345 slice 1): with several variant columns, the change crop is the union of all variant
+boxes, but the reason text names the first variant only, so the reason of the other variants is lost. Accepted for now
+by the human (ADR 0272). Tool fix: the reason line lists each variant's reason, or one line per variant under the crop.
+Side: user-facing, after B249 (ADR 0269).
+
+882\. Linux builder (2026-11-11, B249 5c-2 live): the merge view of an edit sketch lists nothing under "Geändert".
+Suspect: the merge view reads the changed list from the variant compare, which an edit sketch does not feed. Tool fix: an
+e2e case on an edit sketch merge view asserts the changed states. Side: B249 follow-up, after 5c.
+
+883\. Linux builder (2026-11-11, B249 5c-2 live): after a merge Studio opens the first part (agent-logos), not the merged
+part. This breaks ADR 0187 (built 3c67d2143). Suspect: the target part of an `@edit` sketch is not read from its name.
+Owed: is it only for `@edit` sketches (then part of B249) or for every merge (regression, find the commit). Tool fix: an e2e
+case per sketch kind asserts the open part after merge and discard. Side: user-facing; inside B249 if B249 caused it.
+As built 884: `tools/scripts/ci-apt-retry.sh` (3 tries, `apt-get update` and `Acquire::Retries=3`, `::error::` with the last `E:` lines) wraps every apt and `playwright install --with-deps` step in ci.yml, spec-sweep.yml, publish.yml; spec `ci-apt-retry.spec.mjs` fails without the retry. Verified: spec, YAML parse. Not verified: a real CI run.
+
+884\. Linux builder (2026-11-11): CI red twice in one evening from apt, not from code: 04aebf37c at `yarn playwright install
+--with-deps chromium` in about every job, 605ca993d at the Rust host apt fetch (404 for libsoup-3.0-dev_3.6.6-1ubuntu0.1;
+the job runs `apt-get update` first, `ci.yml:370`). Cause: infra (mirror). Lesson: one mirror hiccup turns the whole run red
+and costs a re-run plus a by-hand diagnosis each time. Tool fix: the apt and playwright install steps retry (3 tries,
+`apt-get update` before each, `Acquire::Retries`); a step that still fails names the package and the mirror. Side: CI red
+counts as blocking under ADR 0269, so the Linux builder builds it next after the B249 slice in work.

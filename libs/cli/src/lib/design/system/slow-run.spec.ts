@@ -3,15 +3,19 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../design-config';
+import { StatePictures } from './accepted-pictures';
 import { openPointsOf, PartOpenPointsAnswer } from './open-points-runner';
 import { recordSettledBuildReady } from './record-settled';
-import './open-points.fixtures';
-import { resolveProduct } from './resolve-product';
+import { openPointsInWorker } from './open-points.fixtures';
+import { createPartPictureCache } from './part-picture-cache';
+import { partKeyOf, resolveProduct } from './resolve-product';
 import { startSlowRunner } from './slow-run';
 import { partHashOf } from './sketch/baseline';
 import { openEditSketch } from './sketch/edit-sketch';
-import { readMerged, recordMerged } from './sketch/merged-parts';
+import { changedOutsideSketchOf, readMerged, recordMerged } from './sketch/merged-parts';
 import { gitExec } from '../../git-test-env.fixtures';
+
+const CHIP = 'components/chip';
 
 const harness = { app: 'apps/acme', map: 'apps/acme/src/map.ts', baseBranch: 'x' };
 
@@ -227,5 +231,73 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
 
     expect(gitExec(['status', '--porcelain', '--untracked-files=no'], { cwd: target, encoding: 'utf8' })).toBe('');
     expect(existsSync(join(dir, 'sketches', 'components-chip.edit', 'sketch.json'))).toBe(true);
+  });
+
+  const directEdit = async (now: StatePictures) => {
+    const { target, dir, config } = staleChip();
+    const bare = { ...config, products: { acme: { ...config.products.acme, harness: undefined } } };
+    const product = () => resolveProduct({ target, name: 'acme', config: bare.products.acme });
+    const chip = join(dir, 'components/chip/chip.ts');
+    const writeCache = (states: StatePictures) => {
+      const current = product();
+      const part = current.parts.find((each) => partKeyOf(each) === CHIP);
+
+      if (!part) throw new Error('no chip');
+
+      createPartPictureCache({ target, product: current }).write({
+        part,
+        partHash: partHashOf({ product: current, dir: join(dir, CHIP) }),
+        states,
+      });
+    };
+
+    writeFileSync(chip, 'export default definePart({ states: { default: {} } });\n');
+    writeFileSync(join(target, '.gitignore'), '.ethlete/cache/\n.ethlete/design/*/pictures.json\n');
+    gitExec(['init', '-q'], { cwd: target });
+    recordMerged({ product: product(), parts: [CHIP] });
+    writeCache({ default: 'a1' });
+    gitExec(['add', '.'], { cwd: target });
+    gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'merged'], { cwd: target });
+    writeFileSync(chip, 'export default definePart({ states: { default: {} } });\n// direct edit\n');
+    writeCache(now);
+
+    const lines: string[] = [];
+    const runner = startSlowRunner({
+      target,
+      configOf: () => bare,
+      log: (line) => lines.push(line),
+      intervalMs: 3_600_000,
+    });
+
+    for (let poll = 0; poll < 3; poll++) await runner.poll();
+    runner.stop();
+
+    const tracked = gitExec(['status', '--porcelain', '--untracked-files=no'], { cwd: target, encoding: 'utf8' })
+      .split('\n')
+      .filter((line) => line && !line.endsWith('chip.ts'));
+    const answer = (await openPointsInWorker({ product: product(), part: CHIP })) as PartOpenPointsAnswer;
+    const here = openPointsOf({ product: product(), part: CHIP }) as PartOpenPointsAnswer;
+    const kindsOf = ({ points }: PartOpenPointsAnswer) => points.map(({ kind }) => kind);
+
+    return { lines, tracked, answer, here, kindsOf, product };
+  };
+
+  it('shows no open point for a direct edit that draws as before while it runs, and writes no tracked file', async () => {
+    const { lines, tracked, answer, here, kindsOf, product } = await directEdit({ default: 'a1' });
+
+    expect(lines).toEqual([`HELD acme ${CHIP}: changed outside a sketch, every state draws as before`]);
+    expect(tracked).toEqual([]);
+    expect([here.directEdit, kindsOf(here)]).toEqual([false, expect.not.arrayContaining(['direct-edit'])]);
+    expect([answer.directEdit, kindsOf(answer)]).toEqual([false, expect.not.arrayContaining(['direct-edit'])]);
+    expect(changedOutsideSketchOf(product())).toEqual([CHIP]);
+  });
+
+  it('still shows a direct edit that draws differently as open while it runs', async () => {
+    const { lines, tracked, answer, here, kindsOf } = await directEdit({ default: 'b2' });
+
+    expect(lines[0]).toBe(`PICTURES CHANGED acme ${CHIP}: default`);
+    expect(tracked).toEqual([]);
+    expect(kindsOf(here)).toContain('direct-edit');
+    expect(kindsOf(answer)).toContain('direct-edit');
   });
 });
