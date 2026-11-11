@@ -4148,3 +4148,9 @@ twice, 1 s apart, and ranks by the CPU share in that second; a process that did 
 (the Mac) it keeps the `ps` lifetime average. Specs: `cpuTicksOf` parses a stat line with spaces and parens in the
 command; an idle process with a high lifetime average does not appear. Verified: 6/6 specs, eslint, a live sample on
 Linux. Not verified: the Mac.
+796 (1) result (Linux builder, check runs in scratch clones at 033c17c27 and bb4648025; Cause): both drop the record the
+same way, so 652 step 1 is ruled out. The definite blocker is `no-harness` on every `studio-lab` part (7093784d7). The
+drop is intended: ADR 0254 keeps `studio-lab` blocked until it gets an app. The builder again named this "open for the
+human" (second case of 793 in one night; `build-ready.md` still said "Tom's product call", now marked answered). Decided
+by the doc agent (applies ADR 0254): the builder commits the emptied `studio-lab/ready.json` by path, so the next check
+does not change the tree again. Side Suspect: no NO RECORD line was printed for the drop; it belongs to 796 (2).
