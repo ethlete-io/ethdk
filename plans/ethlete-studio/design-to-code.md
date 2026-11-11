@@ -3777,3 +3777,10 @@ Built in be2e24d8f: a sentence-start "As built", or `built <sha>` whose sha is a
 marker. Bite: a spec fixture with a built marker and no STATUS row is archived, one with an unpushed sha and an open one
 stay; with the old script the spec gets no finding moved. Run for real: 7 findings moved (440013 to 415197 chars), each
 removed line byte-equal in `archive/findings-2026-11.md`.
+
+860\. Linux builder (2026-11-11, from 859): after 859 the archive freed only 24k chars; most built findings carry no
+marker the script reads (free prose like "fixed in <sha>"). Tool fix (doc agent decision, tool internal): one marker,
+`Built in <sha>.` at sentence start, written by whoever records the as-built note; a one-time pass adds it to old
+findings whose fix commit is proven in git log (dry-run list first, no guess: unproven ones stay). No archive by "any
+sha cited": open findings cite context shas (855 cites aaeef909d). Bite: after the pass `archive-findings --dry-run`
+lists the proven ones; a fixture with only a context sha moves nothing. Queue: Linux builder, after 854.
