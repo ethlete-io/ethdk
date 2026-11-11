@@ -1,6 +1,6 @@
 import { html } from '@design-system';
 import zoomChip from '@system/components/zoom-chip';
-import { type Row } from '@shared/sketch-rows';
+import { type Row } from './sketch-rows';
 
 type Box = { x: number; y: number; width: number; height: number };
 

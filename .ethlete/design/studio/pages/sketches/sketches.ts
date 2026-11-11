@@ -6,7 +6,7 @@ import badge from '@system/components/badge';
 import { commentPinMark } from '@system/components/comment-pin';
 import { holdTrigger } from '@system/components/hold-trigger';
 import { type SketchStatus, sketchStatusBadge } from '@system/components/sketch-status-badge';
-import { variantCellStyles } from '@system/elements/variant-cell';
+import { variantCell, variantCellStyles } from '@system/elements/variant-cell';
 import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
@@ -50,8 +50,25 @@ import {
 } from './shared/sketch-rows';
 import { type Withdrawn, isWithdrawn, visibleRows, withdrawnCount, withdrawnMark } from './shared/withdrawn';
 import { type Camera } from 'ethlete-studio/canvas';
+import {
+  type ChangeGroup,
+  GROUPS,
+  SCREEN_KEY,
+  SCREEN_HEIGHT,
+  SCREEN_ROWS,
+  SCREEN_WIDTH,
+  UNCHANGED_COUNT,
+  cropOf,
+  cropShot,
+  markedScreen,
+  reasonOf,
+  screenOf,
+  zoomTextOf,
+} from './shared/change-crop';
 
 type MergePort = 'one' | 'two';
+
+type ScreenMode = 'crop' | 'whole';
 
 type Props = {
   camera: 'fit' | '100' | Camera;
@@ -68,6 +85,7 @@ type Props = {
   fold?: number;
   question?: string;
   port?: MergePort;
+  screen?: ScreenMode;
 };
 
 type View = { selected?: RowKey; status: SketchStatus; comparing: boolean; withdrawn?: Withdrawn; take: string };
@@ -81,7 +99,7 @@ const QUESTION = 'Wo soll der Reset-Knopf der Zoom-Pille stehen?';
 const foldedLabel = (count: number) =>
   count === 1 ? '1 unveränderter Zustand eingeklappt' : `${count} unveränderte Zustände eingeklappt`;
 
-const treeOf = (selected: string) =>
+const treeOf = (key: string) =>
   partTree.render({
     layers: [
       {
@@ -92,10 +110,17 @@ const treeOf = (selected: string) =>
           .map((name) => ({
             name,
             leaf: true,
-            ...(name === selected ? { selected: true } : {}),
+            ...(`components/${name}` === key ? { selected: true } : {}),
           })),
       },
-      { title: 'Pages', open: true, parts: [{ name: 'system', leaf: true }] },
+      {
+        title: 'Pages',
+        open: true,
+        parts: [
+          { name: 'system', leaf: true },
+          ...(key === SCREEN_KEY ? [{ name: 'sketches', leaf: true, selected: true }] : []),
+        ],
+      },
     ],
   });
 
@@ -122,6 +147,7 @@ const controlsOf = async () => ({
   pickers: {
     wide: await pickerOf('Runde 1 · Suche und Update'),
     narrow: await pickerOf('Runde 1 · Reset control: SDK button or own part'),
+    screen: await pickerOf('Runde 2 · Port nach dem Merge'),
   },
   tags: {
     drawing: await sketchStatusBadge('drawing'),
@@ -327,6 +353,113 @@ const matrix = (part: SketchPart, shown: Row[], same: Row[], view: View, open: b
   </div>`;
 };
 
+const screenHead = (row: Row, at: number, view: View) =>
+  html`<section
+    class="sk-row relative min-w-0 rounded-control-md p-space-2"
+    data-sk-row="${row.key}"
+    style="grid-column: ${at}; grid-row: 1"
+  >
+    <span
+      class="hidden w-fit items-center rounded-full px-space-2 py-0.5 text-ui-xs font-ui-medium text-et-surface shadow-[0_0_0_1px_var(--et-surface-border-solid)] in-data-sk-head-hidden:inline-flex"
+      data-sk-head-tag
+      >${row.key === 'current' ? 'Aktuell' : row.key}</span
+    >
+    <div class="in-data-sk-head-hidden:hidden" data-sk-head-full>${headOf(row, view)}</div>
+  </section>`;
+
+const percent = (part: number, whole: number) => `${(part / whole) * 100}%`;
+
+const locator = (group: ChangeGroup) => {
+  const crop = cropOf(group.box);
+  return html`<span
+    class="relative block aspect-16/10 w-[calc(var(--sk-note)*9)] rounded-control-sm bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+    data-cc-locator
+  >
+    <span class="absolute inset-y-0 left-0 w-[18%] shadow-[1px_0_0_var(--et-surface-border-solid)]"></span>
+    <span
+      class="absolute rounded-[2px] border-2 border-et-theme"
+      style="left: ${percent(crop.x, SCREEN_WIDTH)}; top: ${percent(crop.y, SCREEN_HEIGHT)}; width: ${percent(crop.width, SCREEN_WIDTH)}; height: ${percent(crop.height, SCREEN_HEIGHT)}"
+    ></span>
+  </span>`;
+};
+
+const stackEdges = html`<div
+    class="mx-8 h-5 rounded-b-control-md bg-et-surface-bg shadow-[0_0_0_2px_var(--et-surface-border-solid)]"
+  ></div>
+  <div
+    class="mx-16 h-5 rounded-b-control-md bg-et-surface-bg shadow-[0_0_0_2px_var(--et-surface-border-solid)]"
+  ></div>`;
+
+const buttonsOf = async () => {
+  const toggleOf = async (label: string) =>
+    withAction(
+      ((await button.render({ label, variant: 'transparent', size: 'sm' })) as { body: string }).body,
+      'emit:screenToggle',
+    );
+  return { wholeButton: await toggleOf('Ganzer Screen'), cropButton: await toggleOf('Ausschnitt') };
+};
+
+type Buttons = Awaited<ReturnType<typeof buttonsOf>>;
+
+const screenGutter = (group: ChangeGroup, line: number, whole: boolean, buttons: Buttons) => {
+  const { wholeButton, cropButton } = buttons;
+  const [first = ''] = group.states;
+  const count = group.states.length;
+  return html`<div
+    class="sk-gutter relative z-2 flex w-[calc(var(--sk-note)*15)] flex-col justify-center gap-space-1 self-stretch bg-et-surface-bg pr-space-3 text-(length:--sk-note) leading-[1.35]"
+    data-sk-gutter
+    data-et-skip="COVERED"
+    style="grid-column: 1; grid-row: ${line} / span 2"
+  >
+    <span class="font-code text-et-surface">${first}</span>
+    ${count > 1 ? html`<span class="text-et-surface">${count} Zustände, gleicher Ausschnitt</span>` : ''}
+    <span class="text-et-surface-muted" data-cc-reason
+      >${reasonOf(group)}${whole ? '' : ` · ${zoomTextOf(cropOf(group.box))} vergrößert`}</span
+    >
+    <span class="mt-space-1 flex items-end gap-space-2">${locator(group)}${whole ? cropButton : wholeButton}</span>
+  </div>`;
+};
+
+const shotsOf = async (group: ChangeGroup, whole: boolean) => {
+  const state = group.states[0] ?? '';
+  const [before, after] = await Promise.all([screenOf(state, false), screenOf(state, true)]);
+  const marked = markedScreen(after.body, group.box);
+  if (whole) return { current: before.body, changed: marked };
+  const crop = cropOf(group.box);
+  const stack = group.states.length > 1 ? stackEdges : '';
+  return { current: cropShot(before.body, crop), changed: cropShot(marked, crop) + stack };
+};
+
+const screenWorld = async (view: View, mode: ScreenMode) => {
+  const buttons = await buttonsOf();
+  const lines = await Promise.all(
+    GROUPS.map(async (group, index) => {
+      const line = 2 + index * 2;
+      const state = group.states[0] ?? '';
+      const whole = mode === 'whole' && index === 0;
+      const { current, changed } = await shotsOf(group, whole);
+      return (
+        screenGutter(group, line, whole, buttons) +
+        variantCell({
+          state,
+          width: SCREEN_WIDTH,
+          shot: current,
+          place: `grid-column: 2; grid-row: ${line} / span 2`,
+        }) +
+        variantCell({ state, width: SCREEN_WIDTH, shot: changed, place: `grid-column: 3; grid-row: ${line} / span 2` })
+      );
+    }),
+  );
+  return html`<div
+    class="grid w-max grid-cols-[max-content_repeat(var(--sk-cols),var(--sk-frame))] gap-x-6 gap-y-space-3"
+    data-sk-matrix
+  >
+    ${SCREEN_ROWS.map((row, index) => screenHead(row, index + 2, view)).join('')} ${lines.join('')}
+  </div>`;
+};
+
+const screenControl = async () => ({ body: '', styles: '' });
+
 const zoomOf = (camera: Props['camera']): Zoom => (camera === 'fit' ? 'fit' : camera === '100' ? 1 : camera.zoom);
 const startOf = (camera: Props['camera']) => (typeof camera === 'object' ? { x: camera.x, y: camera.y } : undefined);
 
@@ -370,6 +503,8 @@ export default definePart<Props>({
     'question-only': { camera: 'fit', part: 'narrow', question: QUESTION },
     'port-after-merge': { camera: 'fit', part: 'narrow', port: 'one' },
     'port-after-merge-long': { camera: 'fit', part: 'narrow', port: 'two' },
+    'change-crop': { camera: 'fit', part: 'narrow', screen: 'crop' },
+    'change-crop-whole': { camera: 'fit', part: 'narrow', screen: 'whole' },
   },
   render: async ({
     camera,
@@ -386,6 +521,7 @@ export default definePart<Props>({
     fold = 0,
     question = '',
     port,
+    screen,
   }) => {
     const { discard, chip, pickers, tags } = await controlsOf();
     const take = await takeButton();
@@ -393,7 +529,7 @@ export default definePart<Props>({
     const full = withSame(PARTS[kind], comparing ? [] : sameKeys);
     const rowStyles = await prepareShots(full);
     const part = fold > 0 ? { ...full, states: full.states.slice(0, full.states.length - fold) } : full;
-    const side = await treeOf(part.key.replace('components/', ''));
+    const side = await treeOf(screen ? SCREEN_KEY : part.key);
     const all = rowsOf(part, fresh);
     const rows = visibleRows(all, withdrawn);
     const hiddenCount = withdrawnCount(all, withdrawn);
@@ -410,9 +546,13 @@ export default definePart<Props>({
         : { body: '', styles: '' };
     const transposed = isTransposed(part, LIST_WIDTH);
     const columns = transposed && sameOpen ? rows.length : shown.length;
-    const world = transposed
-      ? matrix(part, shown, same, view, sameOpen)
-      : shown.map((row) => gridRow(part, row, view)).join('') + sameRows(part, same, view, sameOpen);
+    const world = screen
+      ? await screenWorld(view, screen)
+      : transposed
+        ? matrix(part, shown, same, view, sameOpen)
+        : shown.map((row) => gridRow(part, row, view)).join('') + sameRows(part, same, view, sameOpen);
+    const folded = screen ? UNCHANGED_COUNT : fold;
+    const control = screen ? await screenControl() : { body: '', styles: '' };
     const toggle = await disclosurePart.render({ label: '', body: '', open: false });
     const content = html`<div
       class="relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))]"
@@ -421,7 +561,7 @@ export default definePart<Props>({
       <header
         class="absolute z-3 top-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] right-space-5 flex items-center gap-space-3"
       >
-        <span class="text-ui-lg font-ui-strong">${part.key}</span>
+        <span class="text-ui-lg font-ui-strong">${screen ? SCREEN_KEY : part.key}</span>
         ${fresh ? tags.fresh.body : ''} ${statusMarkup((run && !run.failed) || port ? 'drawing' : status, reason, tags)}
         <span class="flex-1"></span>
         <span class="w-56 flex-none" data-sk-view-toggle-room></span>
@@ -440,7 +580,8 @@ export default definePart<Props>({
       <div
         class="zr-picker absolute z-2 ${question ? 'top-24' : 'top-14'} left-[calc(var(--st-shell-inset-left)+var(--space-5))] flex items-center gap-space-4"
       >
-        ${pickers[kind].body} ${run ? agentLine(run) : ''} ${port ? portLine(port) : ''}
+        ${pickers[screen ? 'screen' : kind].body} ${run ? agentLine(run) : ''} ${port ? portLine(port) : ''}
+        ${control.body}
         ${showWithdrawn.body ? withAction(showWithdrawn.body, { action: 'emit:withdrawnToggle', on: '.et-switch' }) : ''}
       </div>
       <div
@@ -450,14 +591,14 @@ export default definePart<Props>({
         <div
           class="flex flex-col gap-space-2 pb-16 ${transposed ? 'w-max' : ''}"
           data-sk-rows-world
-          data-w="${part.width}"
-          data-cols="${transposed ? columns : wrapColumns(part)}"
+          data-w="${screen ? SCREEN_WIDTH : part.width}"
+          data-cols="${screen ? SCREEN_ROWS.length : transposed ? columns : wrapColumns(part)}"
         >
           ${world}
           ${
-            fold > 0
+            folded > 0
               ? html`<section class="sk-same rounded-control-md p-space-2" data-sk-folded>
-                  ${html`<span class="flex items-center gap-space-3"><span class="text-ui-sm text-et-surface-muted">${foldedLabel(fold)}</span>${disclosure({ label: 'Alle Zustände zeigen', body: '', open: false, size: 'xs', action: 'emit:statesToggle' })}</span>`}
+                  ${html`<span class="flex items-center gap-space-3"><span class="text-ui-sm text-et-surface-muted">${foldedLabel(folded)}</span>${disclosure({ label: 'Alle Zustände zeigen', body: '', open: false, size: 'xs', action: 'emit:statesToggle' })}</span>`}
                 </section>`
               : ''
           }
@@ -492,6 +633,7 @@ export default definePart<Props>({
         discard.styles +
         pickers.wide.styles +
         showWithdrawn.styles +
+        control.styles +
         (toggle as { styles: string }).styles +
         take.styles +
         rowStyles +

@@ -100,11 +100,10 @@
   },
   "pages/merge": "44fd8307ce8b2ab0",
   "pages/sketches": {
-    "hash": "5b61db05f80c7d13",
-    "variant": "c",
-    "decidedBy": "plan: B346: Empfehlung gebaut (c Tag; a Kopf weg, b Kopf skaliert)",
-    "at": "2026-11-07T15:23:55.052Z",
-    "note": "merged without a pick: allowed by B346: Empfehlung gebaut (c Tag; a Kopf weg, b Kopf skaliert)"
+    "hash": "1b52a802f0e92a15",
+    "variant": "b",
+    "decidedBy": "tom",
+    "at": "2026-11-11T07:53:12.045Z"
   },
   "pages/start": {
     "hash": "692644df2034dcd1",
