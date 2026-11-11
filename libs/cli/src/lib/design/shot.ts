@@ -453,6 +453,7 @@ export const createPartShooter = (options: {
   const motions = new Map<string, { drawn: Drawn; pictures: Promise<MotionPictures> }>();
   const boxes = new Map<string, Promise<ChangedBox[]>>();
   const shown = new Map<string, string>();
+  let edits = 0;
 
   const show = (key: string, { drawn, picture }: { drawn: Drawn; picture: Picture }) => {
     const hash = createHash('sha1').update(picture.png).digest('base64url');
@@ -472,7 +473,7 @@ export const createPartShooter = (options: {
           ...(frame.scheme ? { colorScheme: frame.scheme } : {}),
         },
         limit: { ms: loadScaledMs(DRAW_LIMIT_MS), what: `the draw of frame.html?${frame.search}` },
-        ...(frame.checker ? {} : { boot: bootKeyOf(frame.search) }),
+        ...(frame.checker ? {} : { boot: `${edits} ${bootKeyOf(frame.search)}` }),
       },
       async (page, booted) => {
         const state = new URLSearchParams(frame.search).get('state');
@@ -1028,6 +1029,7 @@ export const createPartShooter = (options: {
     },
     /** Drops the pictures of the parts `change` redraws. */
     forget: (change: PartsChange) => {
+      edits++;
       for (const [key, { drawn }] of cache) {
         if ('part' in drawn && redraws(change, drawn.part)) {
           cache.delete(key);
@@ -1041,12 +1043,14 @@ export const createPartShooter = (options: {
     },
     /** Drops the call pictures a changed file under the calls root may draw into. */
     forgetCalls: (file: string) => {
+      edits++;
       for (const [key, { drawn }] of cache) {
         if ('slug' in drawn && callDrawsFrom({ slug: drawn.slug, file })) cache.delete(key);
       }
     },
     /** Drops every picture; `announced` says the caller told Studio that every part redraws. */
     clear: ({ announced }: { announced: boolean }) => {
+      edits++;
       for (const [key, { drawn }] of cache) {
         if ('part' in drawn) store?.drop(key);
       }

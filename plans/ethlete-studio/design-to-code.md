@@ -3781,6 +3781,20 @@ drawing while idle), and the resident server path. The measuring runs flipped
 `.ethlete/design/studio/sketches/pages-sketches.open-points/sketch.json` from ready to in progress (stale
 `readyContent`); left uncommitted.
 
+840 b as built (Mac builder subagent, 2026-11-11, from a failed `yarn push:suite`): 840 broke Studio. The Studio e2e
+case "a part edited on disk while away shows its new picture on return" failed with "0/12 pictures changed after the
+edit": a warm page left on the old drawing switched the state in place and drew from the old modules. Probe, the case
+alone: HEAD 1/12 (green, the case accepts one changed picture) and 0/12; with 840 undone in `shot.ts` and
+`warm-pages.ts`, 12/12 and 12/12. Fix: the part shooter counts its `forget`, `forgetCalls` and `clear` calls (Studio's
+serve makes one for every part, kit, stylesheet or token change) and puts the count in the boot key, so no page booted
+before a change switches in place after it. The aktuell pass of one command makes none of these calls, so the 840
+speed holds. A `shot.spec.ts` case (draw, `forget` the part, draw again: two loads, no switch) fails on 840 and passes
+now. The case with the fix: 12/12 in four runs in a row, the last with `--hold-listings 14000` (one earlier
+run right after the build reported 0 passed without a case line; its log was not kept). Why 840's proof missed it: it compared the shots of one `et design sketch check` run, where no file changes
+between draws, and it listed Studio's own traffic as not verified. Tool fixes: make the e2e case demand that every
+picture changed (1/12 passed on the broken code), and have `yarn adr:governs` or the push hook name the Studio e2e
+cases that drive `shot.ts`, `warm-pages.ts` and `thumb.ts` so a change there runs them before the commit.
+
 841\. Reach check speed (Mac builder subagent, 2026-11-11, from 836): as built. A profile of `judge` on
 pages/sketches@open-points (3494 judges, 9640 wheel steps, 318 frames) put 167 of 357 s in the two full style recalcs
 that adding and removing the `* { pointer-events: auto !important }` sheet costs on every judge; the all-element scan

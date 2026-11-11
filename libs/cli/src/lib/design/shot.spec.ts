@@ -482,6 +482,27 @@ describe('createPartShooter', () => {
     expect(switchedStates()).toHaveLength(1);
   });
 
+  it('loads the frame again instead of switching in place after a change to the drawn part', async () => {
+    const { shots } = acme();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams(),
+    };
+
+    await shots.pictureOf(address);
+    shots.forget({ all: false, parts: [{ product: 'acme', part: 'components/card', sketch: null }] });
+    await shots.pictureOf(address);
+
+    expect(switchedStates()).toHaveLength(0);
+    expect(drawnUrls()).toHaveLength(2);
+  });
+
   it('loads the frame again when the page it drew on cannot switch the state in place', async () => {
     const { shots } = acme();
     const address = {
