@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { checkSlot, claimSlot, readSlot, releaseSlot, slotState, SLOT_TTL_MS } from './push-slot.mjs';
+import { checkSlot, claimSlot, readSlot, releaseSlot, remoteEnv, slotState, SLOT_TTL_MS } from './push-slot.mjs';
 
 const run = (cwd, ...args) => {
   const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
@@ -106,4 +106,24 @@ test('a slot whose sha reached next is free', (t) => {
 
   assert.equal(slotState(readSlot({ cwd: linux })), 'free');
   assert.equal(checkSlot({ cwd: linux, holder: 'linux', log: () => undefined }), 0);
+});
+
+test('a remote that never answers ends the check within the timeout, warns, and lets the push go on', (t) => {
+  const { mac } = setup(t);
+  run(mac, 'remote', 'add', 'dead', 'ssh://push-slot.invalid/never.git');
+  const ssh = process.env['GIT_SSH_COMMAND'];
+  process.env['GIT_SSH_COMMAND'] = 'sleep 30 #';
+  t.after(() => (ssh === undefined ? delete process.env['GIT_SSH_COMMAND'] : (process.env['GIT_SSH_COMMAND'] = ssh)));
+  const lines = [];
+  const started = Date.now();
+  const exit = checkSlot({ cwd: mac, remote: 'dead', timeoutMs: 1000, log: (line) => lines.push(line) });
+  assert.ok(Date.now() - started < 5000, `took ${Date.now() - started} ms`);
+  assert.equal(exit, 0);
+  assert.match(lines.join('\n'), /push slot not readable, pushing anyway: git ls-remote timed out after 1 s/);
+});
+
+test('a network git call gets an ssh command that gives up on a dead link, unless one is set', () => {
+  assert.match(remoteEnv({}).GIT_SSH_COMMAND, /ConnectTimeout=10 .*ServerAliveInterval=5 .*ServerAliveCountMax=3/);
+  assert.equal(remoteEnv({ GIT_SSH_COMMAND: 'ssh -v' }).GIT_SSH_COMMAND, 'ssh -v');
+  assert.equal(remoteEnv({ GIT_SSH: '/bin/ssh' }).GIT_SSH_COMMAND, undefined);
 });
