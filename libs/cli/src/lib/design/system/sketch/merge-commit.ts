@@ -1,4 +1,4 @@
-import { existsSync, realpathSync } from 'fs';
+import { existsSync, readFileSync, realpathSync, writeFileSync } from 'fs';
 import { relative, resolve, sep } from 'path';
 import { ResolvedProduct } from '../resolve-product';
 import { Sketch, sketchesDirOf } from './sketch';
@@ -35,11 +35,45 @@ function* dirtyFilesFlow(product: ResolvedProduct): GitFlow<Map<string, string> 
     .map((entry) => resolve(top, entry.slice(3)));
   const present = files.filter((file) => existsSync(file));
   const hashed =
-    present.length > 0 ? yield { args: ['hash-object', '--stdin-paths'], input: present.join('\n') } : null;
+    present.length > 0 ? yield { args: ['hash-object', '-w', '--stdin-paths'], input: present.join('\n') } : null;
   const hashes = hashed?.status === 0 ? hashed.stdout.trim().split('\n') : [];
 
   return new Map(files.map((file) => [file, hashes[present.indexOf(file)] ?? 'deleted']));
 }
+
+type Entries = Record<string, unknown>;
+
+const entriesOf = (text: string): Entries | null => {
+  try {
+    const value: unknown = JSON.parse(text);
+
+    return typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Entries) : null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * HEAD's entries of a JSON file that was already dirty before the merge, with only the entries the merge changed taken
+ * from the working tree; `null` when one of the three is not a JSON object.
+ */
+const ownEntriesOf = (texts: { head: string; before: string; work: string }) => {
+  const [head, before, work] = [entriesOf(texts.head), entriesOf(texts.before), entriesOf(texts.work)];
+
+  if (!head || !before || !work) return null;
+
+  const changed = (key: string) => JSON.stringify(before[key]) !== JSON.stringify(work[key]);
+  const own: Entries = {};
+
+  for (const key of Object.keys(work)) {
+    if (changed(key)) own[key] = work[key];
+    else if (key in head) own[key] = head[key];
+  }
+
+  for (const key of Object.keys(head)) if (!(key in own) && !changed(key) && !(key in work)) own[key] = head[key];
+
+  return `${JSON.stringify(own, null, 2)}\n`;
+};
 
 function* commitFlow(options: {
   product: ResolvedProduct;
@@ -62,6 +96,29 @@ function* commitFlow(options: {
 
   if (files.length === 0) return true;
 
+  const restore: { file: string; text: string }[] = [];
+
+  for (const file of files) {
+    const earlier = before.get(file);
+
+    if (!file.endsWith('.json') || !earlier || earlier === 'deleted' || !existsSync(file)) continue;
+
+    const root = yield { args: ['rev-parse', '--show-toplevel'] };
+    const path = relative(realpathSync(root.stdout.trim()), file).split(sep).join('/');
+    const head = yield { args: ['show', `HEAD:${path}`] };
+    const blob = yield { args: ['cat-file', 'blob', earlier] };
+    const text = readFileSync(file, 'utf8');
+    const own =
+      head.status === 0 && blob.status === 0
+        ? ownEntriesOf({ head: head.stdout, before: blob.stdout, work: text })
+        : null;
+
+    if (own === null || own === text) continue;
+
+    restore.push({ file, text });
+    writeFileSync(file, own);
+  }
+
   const added = yield { args: ['add', '--all', '--', ...files] };
   const committed =
     added.status === 0
@@ -75,6 +132,8 @@ function* commitFlow(options: {
           ],
         }
       : added;
+
+  for (const { file, text } of restore) writeFileSync(file, text);
 
   if (committed.status !== 0)
     console.warn(`Could not commit the merge: ${(committed.stderr || committed.stdout).trim()}`);
