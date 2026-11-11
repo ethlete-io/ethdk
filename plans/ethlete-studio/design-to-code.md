@@ -3990,3 +3990,15 @@ measures wider than the serif fallback (none of Roboto, Inter, JetBrains Mono is
 `type.css?inline` copy that `tokenSheet` injects keeps `url('@assets/...')` unresolved, so each family has a second,
 never-loading `@font-face` and `document.fonts.check` returns false; the resolved face comes later and wins, but the
 order is the only thing that holds. Not done: the Mac shot (out of reach of this builder).
+
+815\. Linux builder (2026-11-11, B490 font-pair sketch 523abcb77): `type.ts` imports `type.css?inline` for `tokenSheet`,
+and the inline copy keeps `url('@assets/...')` unresolved, so each family gets a second `@font-face` that never loads and
+`document.fonts.check` is false; the drawing renders right only because the resolved rule comes later. Cause (measured).
+Why no tool caught it: no gate checks that an `@font-face` in a drawing loads. Tool fix (doc agent, tool internal):
+resolve `@assets` URLs in `?inline` CSS in the design frame build, and a check that every `@font-face` of a part reaches
+status `loaded` (fails the part otherwise). Bite: the check fails on 523abcb77 without the URL fix.
+
+816\. Linux builder (2026-11-11, B490): `et design shot` refuses a page the sketch does not target, so a foundations change
+cannot be shot in a page that embeds it; the subagent fell back to its own Playwright script. Suspect (one run). Why no
+tool caught it: `shot` knows only the sketch targets. Tool fix (doc agent, tool internal): `shot --in <page>` for a
+foundations or components sketch, drawing the page with the sketch variant applied.
