@@ -1,8 +1,10 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { callsRootOf } from './design-config';
+import { callsRootOf, readConfig } from './design-config';
 import { pushStatusLines, pushStatusOf } from './push-status';
+import { oneProductOf } from './system/sketch/cli-args';
+import { staleSketchBasesOf } from './system/sketch/stale-base';
 
 export const CALL_STATES = ['scaffolded', 'drawing', 'checking', 'ready', 'failed'] as const;
 
@@ -53,24 +55,52 @@ export const holdStatus = (options: { checkout: string; slug: string }) => {
   };
 };
 
+/** One SKETCH-BASE-STALE line per open or ready sketch, in every product of the checkout, whose base changed since it was drawn or rebased. */
+export const staleSketchLinesOf = (options: { target: string; invocation: string }) => {
+  const { target, invocation } = options;
+  const config = readConfig(target);
+
+  return Object.keys(config?.products ?? {}).flatMap((name) => {
+    const product = config ? oneProductOf({ target, config, asked: name }) : null;
+
+    return product && typeof product !== 'string'
+      ? staleSketchBasesOf({ product, invocation }).map(({ line }) => line)
+      : [];
+  });
+};
+
 const isState = (value: string | undefined): value is CallState => CALL_STATES.includes(value as CallState);
 
-/** `et design status` shows the unpushed commits and the CI state; with a slug and a state it records a call's state by hand. */
+/**
+ * `et design status` shows the unpushed commits, the CI state and each sketch whose base is stale; `--stale` shows only
+ * the stale sketches, without git or `gh`. With a slug and a state it records a call's state by hand.
+ */
 export const designStatus = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
   const json = argv.includes('--json');
-  const [slug, state] = argv.filter((arg) => arg !== '--json');
+  const staleOnly = argv.includes('--stale');
+  const [slug, state] = argv.filter((arg) => arg !== '--json' && arg !== '--stale');
 
   if (!slug && !state) {
+    const stale = staleSketchLinesOf({ target, invocation });
+
+    if (staleOnly) {
+      if (json) console.log(JSON.stringify({ stale }));
+      else if (stale.length > 0) console.log(stale.join('\n'));
+
+      return 0;
+    }
+
     const push = pushStatusOf(target);
 
     if (push === null) {
       console.error('NO GIT RANGE - the checkout has no commits to compare.');
+      if (stale.length > 0) console.log(stale.join('\n'));
 
       return 1;
     }
 
-    console.log(json ? JSON.stringify({ push }) : pushStatusLines(push).join('\n'));
+    console.log(json ? JSON.stringify({ push, stale }) : [...pushStatusLines(push), ...stale].join('\n'));
 
     return 0;
   }

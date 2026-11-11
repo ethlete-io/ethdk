@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+# Prints the sketches whose base is stale; it must never fail the merge, so every exit is 0.
+cd "$(git rev-parse --show-toplevel)" || exit 0
+node ./tools/scripts/post-merge-stale-sketches.mjs || true
+exit 0
