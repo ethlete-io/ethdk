@@ -295,10 +295,21 @@ const foldersOf = (dir: string) =>
 
 const GENERATED_FILE = 'tsconfig.json';
 
-const holdsFiles = (dir: string) =>
-  (readdirSync(dir, { recursive: true, withFileTypes: true }) as Dirent[]).some(
+const holdsFiles = (dir: string) => {
+  let entries: Dirent[];
+
+  // A merge worker removes a sketch folder while this process may be listing it.
+  try {
+    entries = readdirSync(dir, { recursive: true, withFileTypes: true }) as Dirent[];
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false;
+    throw error;
+  }
+
+  return entries.some(
     (entry) => entry.isFile() && !(entry.name === GENERATED_FILE && resolve(entry.parentPath) === resolve(dir)),
   );
+};
 
 const sketchFoldersOf = (productDir: string) =>
   foldersOf(sketchesDirOf(productDir)).filter((folder) => holdsFiles(resolve(sketchesDirOf(productDir), folder)));
