@@ -3802,3 +3802,16 @@ shows equal "no issue" verdicts; positive cases rest on `reach.spec.ts`. Also no
 `attributes: true` (`element-children`, `element-scroll-state`) now get records for the toggled attribute after the
 evaluate (the attribute is gone by then), and the resident server path. Every old and new run of open-points and
 font-pair flipped its `sketch.json` from ready to in progress (845); each was restored with `git checkout`.
+
+845\. `sketch check` rewrites a ready sketch.json (Mac builder subagent, 2026-11-11): as built. Cause: `checked` in
+`libs/cli/src/lib/design/sketch-command.ts` called `reportedReopen`, which runs `reopenChangedReady` and writes the sketch
+back to in progress without `readyContent` and `mergeHold`. Probe: the old built cli on `pages/sketches@open-points
+--product studio` printed "was ready; a, b, c changed since - back to in progress" and left sketch.json changed (restored).
+Only open-points and `foundations/type@font-pair` carry `readyContent`; card, rating and film-detail have none (card and
+rating are also decided), so the reopen returned early on them. Their hashes differ because `variantContentHashOf` hashed the gitignored,
+generated `<variant>/tsconfig.json`, whose `paths` hold absolute checkout paths; no tracked file in either sketch changed
+since its ready commit (`git diff 780683501`, `523abcb77`). The check now only prints `READY-STALE <target>: <variants>
+changed since sketch ready judged it`; the demotion stays in `sketch ready`. The hash leaves out the generated tsconfig.
+The two existing `readyContent` hashes still do not match (with or without the tsconfig, and with other local checkout
+paths substituted), so both sketches report READY-STALE until `sketch ready` runs again. Not verified: which checkout
+wrote those hashes.

@@ -2401,6 +2401,34 @@ describe('designSketch', { timeout: 120_000 }, () => {
     );
   }, 120_000);
 
+  it('reports a ready sketch whose variant changed since ready and leaves its sketch.json byte-equal', async () => {
+    const target = acme();
+    const warnings: string[] = [];
+
+    output();
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void warnings.push(String(line)));
+    await write(target, 'new', 'elements/hero', '--variants', 'a', '--note', 'n', '--product', 'acme');
+
+    const file = join(target, DESIGN_DIR, 'acme/sketches/elements-hero/sketch.json');
+    const ready = {
+      ...JSON.parse(readFileSync(file, 'utf8')),
+      status: 'ready',
+      readyContent: { a: 'judged-before' },
+      mergeHold: { reason: 'r', at: '2026-11-11T00:00:00.000Z' },
+    };
+
+    writeFileSync(file, `${JSON.stringify(ready, null, 2)}\n`);
+
+    const before = readFileSync(file, 'utf8');
+
+    await run(target, 'check', 'elements/hero', '--product', 'acme');
+
+    expect(readFileSync(file, 'utf8')).toBe(before);
+    expect(warnings).toContain(
+      'READY-STALE elements/hero: a changed since sketch ready judged it - run `et design sketch ready elements/hero --product acme` to judge it again',
+    );
+  }, 120_000);
+
   it('fails a sketch whose embedded part changed in the product and names that part', async () => {
     const target = acme();
     const lines = output();

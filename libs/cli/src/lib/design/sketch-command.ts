@@ -74,6 +74,7 @@ import {
   isVariantName,
   listSketches,
   markSketchReady,
+  changedSinceReadyOf,
   reopenChangedReady,
   parseTarget,
   rebaseSketch,
@@ -1580,7 +1581,12 @@ const checked = async (context: Context) => {
     );
 
   new Set(chosen.map((entry) => entry.sketch)).forEach((sketch) => {
-    reportedReopen(sketch);
+    const changed = changedSinceReadyOf(sketch);
+
+    if (changed.length > 0)
+      console.warn(
+        `READY-STALE ${sketch.target}: ${changed.join(', ')} changed since sketch ready judged it - run \`et design sketch ready ${sketch.target} --product ${product.name}\` to judge it again`,
+      );
 
     if (product.config.noteLanguage)
       noteLanguageWarningsOf(sketch, product.config.noteLanguage).forEach((warning) => console.warn(warning));

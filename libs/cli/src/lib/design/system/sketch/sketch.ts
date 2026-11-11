@@ -1075,7 +1075,10 @@ const filesIn = (dir: string) =>
 /** The content hash of every file a variant draws from: its folder and the `shared/` folder of the sketch. */
 export const variantContentHashOf = (sketch: Sketch, variant: string) => {
   const hash = createHash('sha256');
-  const files = [...filesIn(variantDirOf(sketch, variant)), ...filesIn(sharedDirOf(sketch))].sort();
+  const generated = resolve(variantDirOf(sketch, variant), GENERATED_FILE);
+  const files = [...filesIn(variantDirOf(sketch, variant)), ...filesIn(sharedDirOf(sketch))]
+    .filter((file) => file !== generated)
+    .sort();
 
   for (const file of files)
     hash
@@ -1089,15 +1092,21 @@ export const variantContentHashOf = (sketch: Sketch, variant: string) => {
 const readyContentOf = (sketch: Sketch) =>
   Object.fromEntries(sketch.variants.map((variant) => [variant, variantContentHashOf(sketch, variant)]));
 
+/** The variants of an undecided ready sketch that changed since `sketch ready` judged them; reads only. */
+export const changedSinceReadyOf = (sketch: Sketch) => {
+  if (sketch.status !== 'ready' || sketch.decision || !sketch.readyContent) return [];
+
+  const judged = sketch.readyContent;
+
+  return sketch.variants.filter((variant) => judged[variant] !== variantContentHashOf(sketch, variant));
+};
+
 /**
  * Moves an undecided ready sketch back to in progress when a variant changed since `sketch ready` judged it, and
  * answers the changed variants, or `null` when nothing changed or the sketch recorded no content.
  */
 export const reopenChangedReady = (sketch: Sketch): { sketch: Sketch; changed: string[] } | null => {
-  if (sketch.status !== 'ready' || sketch.decision || !sketch.readyContent) return null;
-
-  const judged = sketch.readyContent;
-  const changed = sketch.variants.filter((variant) => judged[variant] !== variantContentHashOf(sketch, variant));
+  const changed = changedSinceReadyOf(sketch);
 
   if (changed.length === 0) return null;
 
