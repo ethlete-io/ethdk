@@ -38,8 +38,18 @@ const MACOS: Props = { os: 'macos', left: [], right: [], update: false, ...WHERE
 
 const INTERACTIONS = ['hover', 'active', 'focus-visible'] as const;
 
+const CONTENTS = {
+  notice: { update: true, notice: true, noticeText: 'CLI geändert - neu starten' },
+  'cli-dirty': { noticeText: 'CLI hat uncommittete Änderungen, Studio läuft auf Stand 5dbc7ca' },
+  update: { update: true },
+  rest: {},
+} satisfies Record<string, Partial<Props>>;
+
+type Content = keyof typeof CONTENTS;
+
 const ROWS = [
   ['linux-full-update', { ...LINUX_FULL, update: true }, 'update'],
+  ['linux-full-notice', { ...LINUX_FULL, ...CONTENTS.notice }, 'notice'],
   ['linux-left', LINUX_LEFT, 'minimize'],
   ['linux-close', LINUX_CLOSE, 'close'],
   ['windows', WINDOWS, 'maximize'],
@@ -74,15 +84,6 @@ const LAYOUTS = {
 };
 
 type Layout = keyof typeof LAYOUTS;
-
-const CONTENTS = {
-  notice: { update: true, notice: true, noticeText: 'CLI geändert - neu starten' },
-  'cli-dirty': { noticeText: 'CLI hat uncommittete Änderungen, Studio läuft auf Stand 5dbc7ca' },
-  update: { update: true },
-  rest: {},
-} satisfies Record<string, Partial<Props>>;
-
-type Content = keyof typeof CONTENTS;
 
 const contentStates = (content: Content) =>
   Object.fromEntries(
