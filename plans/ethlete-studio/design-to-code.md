@@ -3681,7 +3681,9 @@ otherwise it logs `push-suite: checks ok in N s`. Commitlint stays in pre-push o
 push-suite.spec.mjs (33) and all tools specs (261) pass; the old script on the same fixture runs on into the export
 (no checks step), so the spec bites; the checks step takes about 9 s on a green range (the person-names check alone is
 about 4 s, so "sub-second" is not true for all). Not verified: a real `yarn push:suite` and a real push through the
-hook.
+hook. Built 64c9306a3. Follow-up (night backlog, speed): `lint:person-names` takes about 4 s of the 9 s
+checks step; measure where, and make it sub-second or correct the "sub-second" claim in AGENTS.md. The Mac 770
+(de0087f0a, step reuse after a merge) also edits `push-suite.mjs`: whoever pushes second merges both by hand.
 
 776\. Mac builder (2026-11-11, night, 769 3483c7fcd): the fixed e2e case no longer passes through a live frame iframe,
 so no case covers a keyboard user inside a live frame. Suspect (injected, not seen live): when the app remounts the
