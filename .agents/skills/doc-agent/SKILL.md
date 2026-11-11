@@ -66,6 +66,8 @@ output; the designed Studio is the side product.
 - Keep chat output to one short line per event. The user does not read it while away.
 - Still record findings and decisions at once, and still answer the builder.
 - When the user says they are back, send all collected questions in one round.
+- Every night shift counts as away (ADR 0259): nothing waits on the user, the builder applies an ADR or parks the
+  item, and you put the collected questions to the user in one morning round.
 - If a collected question blocks the builder (it cannot go on with any other work), play a system sound once:
   Linux `pw-play /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga`; Windows (also from WSL)
   `powershell.exe -c "[System.Media.SystemSounds]::Exclamation.Play()"`. Then write one short line on what blocks.
