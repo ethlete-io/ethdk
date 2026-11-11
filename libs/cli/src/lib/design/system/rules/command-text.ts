@@ -5,7 +5,7 @@ import { harnessOf } from '../harness-map';
 import { Problem } from '../problem';
 import { ResolvedProduct } from '../resolve-product';
 import { skipRule } from '../rule-skips';
-import { sourceFileOf } from '../ts-source';
+import { perSource, sourceFileOf } from '../ts-source';
 
 const TAG = /<(?:"[^"]*"|'[^']*'|[^"'>])*>/gu;
 const INTERPOLATION = /\{\{[\s\S]*?\}\}/gu;
@@ -33,9 +33,7 @@ const visibleTextIn = (markup: string) =>
 
 const commandsIn = (text: string) => visibleTextIn(text).filter((line) => COMMAND.test(line));
 
-const commandsInSource = (file: string, source: string) => {
-  if (file.endsWith('.html')) return commandsIn(source);
-
+const commandsInScript = perSource((source) => {
   const found: string[] = [];
   const visit = (node: ts.Node) => {
     if (ts.isNoSubstitutionTemplateLiteral(node) || ts.isStringLiteral(node)) {
@@ -52,7 +50,10 @@ const commandsInSource = (file: string, source: string) => {
   visit(sourceFileOf(source));
 
   return found;
-};
+});
+
+const commandsInSource = (file: string, source: string) =>
+  file.endsWith('.html') ? commandsIn(source) : commandsInScript(source);
 
 /**
  * Command text (`npx`, `nx `, `yarn `, `--flag`, `NAME=value`) in the visible text of a design drawing or of the

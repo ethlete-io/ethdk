@@ -244,3 +244,26 @@ test('a plain run moves the old done finding', () => {
   assert.notDeepEqual(snapshot(), before);
   assert.match(lines.at(-1), /^moved [1-9]/);
 });
+
+test('an old finding with no STATUS row and a built marker in its text leaves; a pushed sha counts, an unpushed one does not', () => {
+  const markerPlan = `# Plan
+
+40\\. Tom (2026-10-01): old. As built in the note.
+
+41\\. Tom (2026-10-01): old, built in bbbbbbb2 (not pushed).
+
+42\\. Tom (2026-10-01): old, open.
+
+43\\. Tom (2026-10-01): old, built in aaaaaaa1 only.
+`;
+  const { plan: rest, moved } = archiveFindings(markerPlan, status, {
+    today: new Date('2026-11-10'),
+    days: 5,
+    isPushed: (sha) => sha === 'aaaaaaa1',
+  });
+  assert.deepEqual(
+    moved.map((m) => m.number),
+    [40, 43],
+  );
+  assert.ok(rest.includes('41\\.') && rest.includes('42\\.') && !rest.includes('40\\.'));
+});

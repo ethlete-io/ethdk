@@ -19,6 +19,9 @@ export type RenderRequest = {
   providers: string | null;
 };
 
+/** Asks the render worker to load Angular and the render modules before the first render needs them. */
+export type WarmRequest = { warm: true };
+
 export type RenderResult = { markup: string; styles: string[] } | { error: string };
 
 export type RenderResponse = RenderResult & { id: number; watched: Record<string, number>; lines: string[] };

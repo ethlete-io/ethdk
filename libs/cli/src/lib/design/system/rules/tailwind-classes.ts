@@ -8,7 +8,7 @@ import { ownSharedFilesOf, SharedDirs } from '../imports';
 import { productStylesheetFilesOf } from '../product-stylesheets';
 import { ResolvedPart, ResolvedProduct } from '../resolve-product';
 import { inputsUnchanged, PrintedInput, readInputsOf, trackedRun } from '../tracked-reads';
-import { sourceFileOf, textsOf } from '../ts-source';
+import { perSource, sourceFileOf, textsOf } from '../ts-source';
 
 const CLASS_FACTS = `
 const fs = require('fs');
@@ -160,7 +160,7 @@ const classTextsOf = (node: ts.Node, renderers: Set<string>): string[] => {
   return isProse(literal.text) ? [] : [literal.text];
 };
 
-const classesIn = (source: string) => {
+const classesIn = perSource((source) => {
   const texts: string[] = [];
   const file = sourceFileOf(source);
   const renderers = rendererNamesOf(file);
@@ -172,7 +172,7 @@ const classesIn = (source: string) => {
   visit(file);
 
   return [...new Set(texts.flatMap((text) => text.split(/\s+/u).filter(Boolean)))];
-};
+});
 
 const tsSourcesIn = (dir: string) =>
   existsSync(dir)

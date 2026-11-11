@@ -129,9 +129,6 @@ import {
   readConfig,
 } from './design-config';
 import { startSlowRunner } from './system/slow-run';
-import { openPointsInWorker } from './system/open-points-runner';
-import { createOpenPointsWarmer } from './system/open-points-warmer';
-import { oneProductOf } from './system/sketch/cli-args';
 import { relaunch, RELOAD_EXIT_CODE, superviseReloads, SUPERVISED_ENV, watchBuild } from './build-watch';
 
 type ViteDevServer = import('vite', { with: { 'resolution-mode': 'import' } }).ViteDevServer;
@@ -590,7 +587,6 @@ const designExplore = ({
   stylesheetImports,
   shotCacheDir,
   checkSketches,
-  warmOpenPoints,
 }: {
   target: string;
   config: DesignConfig;
@@ -598,7 +594,6 @@ const designExplore = ({
   stylesheetImports: StylesheetImports;
   shotCacheDir: string | null;
   checkSketches?: CheckSketches;
-  warmOpenPoints?: boolean;
 }) => {
   const renderer = createRenderer({ target, config });
   const transform = withAssetUrls(system);
@@ -810,22 +805,6 @@ const designExplore = ({
         !isInside(callsRoot, file) &&
         !isSketchFile(designRoot, file) &&
         [designRoot, ...baseDirs].some((dir) => isInside(dir, file));
-
-      const openPoints = warmOpenPoints
-        ? createOpenPointsWarmer({
-            productsOf: () => {
-              const read = readConfig(target) ?? {};
-
-              return Object.keys(read.products ?? {}).flatMap((asked) => {
-                const product = oneProductOf({ target, config: read, asked });
-
-                return typeof product === 'string' ? [] : [product];
-              });
-            },
-            warm: (product) => openPointsInWorker({ product, part: null }),
-            ask: openPointsInWorker,
-          })
-        : null;
 
       const modulesOf = (file: string) => [...(vite.moduleGraph.getModulesByFile(resolve(file)) ?? [])];
       const rebuilt = new Set<string>();
@@ -1042,9 +1021,9 @@ const designExplore = ({
                 signal,
                 load: ({ file, product, sketch }) => vite.ssrLoadModule(productModuleIdOf({ file, product, sketch })),
                 pictureOf: shots.pictureOf,
+                warmRenderer: renderer.warm,
                 boxOf: shots.changedBoxesOf,
                 checkSketches: checkSketches ?? sketchChecker,
-                ...(openPoints ? { openPointsOf: openPoints.ask } : {}),
                 inventoryOf: ({ product, part }) =>
                   inventoryOf({
                     product,
@@ -1089,7 +1068,6 @@ const designExplore = ({
       vite.httpServer?.on('close', () => {
         events.close();
         settling?.abort();
-        openPoints?.close();
         void Promise.all([
           thumbs.close(),
           shots.close(),
@@ -1102,7 +1080,6 @@ const designExplore = ({
       vite.watcher.on('add', (file: string) => (isPackageFile(file) ? packageChanged(file) : refresh(file)));
       vite.watcher.on('unlink', refresh);
       vite.watcher.on('change', change);
-      if (openPoints) vite.watcher.on('all', openPoints.changed);
     },
     closeBundle: () => renderer.close(),
   };
@@ -1187,9 +1164,8 @@ export const createDesignServer = async (options: {
   host?: string;
   sketchesRoot?: string;
   checkSketches?: CheckSketches;
-  warmOpenPoints?: boolean;
 }) => {
-  const { target, config, listen, sketchesRoot, checkSketches, warmOpenPoints } = options;
+  const { target, config, listen, sketchesRoot, checkSketches } = options;
   const host = options.host || process.env['DE_HOST'] || undefined;
   const own = listen && options.port !== undefined;
   const port = own ? await freePortOf() : options.listenOn;
@@ -1277,7 +1253,6 @@ export const createDesignServer = async (options: {
         stylesheetImports,
         shotCacheDir: listen && !own ? resolve(workRootOf(target), SHOT_STORE_DIR) : null,
         checkSketches,
-        warmOpenPoints,
       }),
     ],
     ...(listen ? {} : { appType: 'custom' as const }),
@@ -1394,7 +1369,6 @@ export const serveDesign = async (options: {
     host,
     listenOn: freePort,
     checkSketches,
-    warmOpenPoints: true,
   });
 
   await server.listen();

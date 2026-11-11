@@ -2,18 +2,19 @@ import { describe, expect, it, vi } from 'vitest';
 import { createRenderer } from './render';
 import { DesignConfig } from './design-config';
 
-const workers: { workerData: { packages: Record<string, string> }; terminate: () => void }[] = [];
+const workers: { workerData: { packages: Record<string, string> }; terminate: () => void; posted: unknown[] }[] = [];
 
 vi.mock('worker_threads', () => ({
   Worker: class {
+    posted: unknown[] = [];
     constructor(_file: string, options: { workerData: { packages: Record<string, string> } }) {
-      workers.push({ workerData: options.workerData, terminate: vi.fn() });
+      workers.push({ workerData: options.workerData, terminate: vi.fn(), posted: this.posted });
     }
     on() {
       return this;
     }
-    postMessage() {
-      return undefined;
+    postMessage(message: unknown) {
+      this.posted.push(message);
     }
     terminate() {
       workers.at(-1)?.terminate();
@@ -69,5 +70,17 @@ describe('createRenderer', () => {
 
     expect(workers).toHaveLength(2);
     vi.useRealTimers();
+  });
+
+  it('starts the worker on warm and draws the next render with that same worker', () => {
+    workers.length = 0;
+
+    const render = createRenderer({ target: '/tmp/x', config: {} });
+
+    render.warm();
+    void render({ call: 'app/one', template: '<p></p>', imports: [] });
+
+    expect(workers).toHaveLength(1);
+    expect(workers[0]?.posted).toEqual([{ warm: true }, expect.objectContaining({ template: '<p></p>' })]);
   });
 });

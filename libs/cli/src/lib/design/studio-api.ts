@@ -31,7 +31,7 @@ import {
 import { approveException, listExceptions } from './system/exceptions';
 import { approveInventory, Inventory } from './system/inventory';
 import { drawnFindingsOf } from './system/drawn-open-points';
-import { OpenPointsAnswer, openPointsInWorker, OpenPointsRequest } from './system/open-points-runner';
+import { openPointsInWorker } from './system/open-points-runner';
 import { flowProblemsOf } from './system/rules/flow';
 import { Problem } from './system/problem';
 import { ResolvedProduct } from './system/resolve-product';
@@ -114,7 +114,8 @@ type Asked = {
   inventoryOf?: (options: { product: ResolvedProduct; part: string }) => Promise<Inventory | string>;
   drawStates?: DrawStates;
   checkSketches?: CheckSketches;
-  openPointsOf?: (request: OpenPointsRequest) => Promise<OpenPointsAnswer>;
+  /** Starts loading the renderer the listing's pictures draw with, so the first picture does not wait for it. */
+  warmRenderer?: () => void;
   /** Aborts when the client closes the request before it has its answer. */
   signal?: AbortSignal;
 };
@@ -248,21 +249,23 @@ const variantChangesOf = ({ current, drawn }: { current: PartFacts; drawn: PartF
   note: drawn.note === current.note ? null : { before: current.note, after: drawn.note },
 });
 
-/** Maps `items` one after another, letting the server answer other requests before each, and stops once `signal` aborts. */
-const inTurns = async <TItem, TResult>(
+/** Maps `items` side by side, each started once the server could answer other requests, and stops once `signal` aborts. */
+const inTurns = <TItem, TResult>(
   { items, signal }: { items: readonly TItem[]; signal?: AbortSignal | undefined },
   run: (item: TItem) => Promise<TResult>,
-) => {
-  const results: TResult[] = [];
+) =>
+  Promise.all(
+    items.map(async (item) => {
+      await setImmediate();
+      signal?.throwIfAborted();
 
-  for (const item of items) {
-    await setImmediate();
-    signal?.throwIfAborted();
-    results.push(await run(item));
-  }
+      const result = await run(item);
 
-  return results;
-};
+      signal?.throwIfAborted();
+
+      return result;
+    }),
+  );
 
 const keptOf = async (options: {
   product: ResolvedProduct;
@@ -405,11 +408,21 @@ const listingOf = async ({
   const listOnly = light && asked.url.searchParams.get('targets') === 'no';
   const listed = await listSketchesInTurns({ productDir: product.dir, product: product.name });
   const sketches = listed.filter((sketch): sketch is Sketch => typeof sketch !== 'string');
-  const checked = light
-    ? null
-    : asked.checkSketches
-      ? await asked.checkSketches({ target, product: product.name })
-      : openSketchListingOf(product);
+  if (!light && asked.pictureOf) asked.warmRenderer?.();
+
+  const targetsListed = inTurns({ items: sketches, signal }, (sketch) =>
+    listOnly
+      ? Promise.resolve(null)
+      : targetsOf({ product, sketch, load: asked.load, pictureOf: asked.pictureOf, signal, compare: !light }),
+  );
+  const [checked, sketchTargets] = await Promise.all([
+    light
+      ? null
+      : asked.checkSketches
+        ? asked.checkSketches({ target, product: product.name })
+        : openSketchListingOf(product),
+    targetsListed,
+  ]);
   const unreadable =
     checked?.unreadable ??
     listed.flatMap((sketch): Problem[] =>
@@ -419,17 +432,8 @@ const listingOf = async ({
   return {
     status: 200,
     body: {
-      sketches: await inTurns({ items: sketches, signal }, async (sketch) => {
-        const targets = listOnly
-          ? null
-          : await targetsOf({
-              product,
-              sketch,
-              load: asked.load,
-              pictureOf: asked.pictureOf,
-              signal,
-              compare: !light,
-            });
+      sketches: sketches.map((sketch, index) => {
+        const targets = sketchTargets[index] ?? null;
         const unchanged = checked && targets ? noChangedStateProblemsOf({ sketch, targets }) : [];
         const variants = checked?.variants.filter((entry) => entry.target === sketch.target) ?? [];
 
@@ -1018,7 +1022,6 @@ const drawnFindingsAnswerOf = async ({ asked, config, product }: Found, part: st
  */
 export const openPointsAnswer = withProduct('GET', async (found) => {
   const { url } = found.asked;
-  const openPointsOf = found.asked.openPointsOf ?? openPointsInWorker;
   const draw = url.searchParams.get('draw');
   const asked = url.searchParams.get('part');
 
@@ -1028,7 +1031,7 @@ export const openPointsAnswer = withProduct('GET', async (found) => {
 
     return {
       status: 200,
-      body: { drawn: false, ...(await openPointsOf({ product: found.product, part: null })) },
+      body: { drawn: false, ...(await openPointsInWorker({ product: found.product, part: null })) },
     };
   }
 
@@ -1040,7 +1043,7 @@ export const openPointsAnswer = withProduct('GET', async (found) => {
 
   if (findings && 'error' in findings) return failure(findings.status, findings.error);
 
-  const answer = await openPointsOf({ product: found.product, part, findings });
+  const answer = await openPointsInWorker({ product: found.product, part, findings });
 
   return { status: 200, body: { ...answer, drawn: draw === 'true' } };
 });

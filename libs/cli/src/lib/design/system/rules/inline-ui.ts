@@ -1,5 +1,5 @@
 import ts from 'typescript';
-import { sourceFileOf } from '../ts-source';
+import { perSource, sourceFileOf } from '../ts-source';
 
 /** One interactive element written as markup in a source instead of embedded from a part's render. */
 export type InlineUi = {
@@ -85,7 +85,7 @@ const markupOf = (node: ts.Node) => {
  * tag or attribute, or bare markup made interactive with an interactive `role`, `tabindex` or `data-et-action`.
  * Markup that carries `data-et-part` is an embedded part's and is skipped; each tag counts once.
  */
-export const inlineUiOf = (source: string): InlineUi[] => {
+export const inlineUiOf = perSource((source): InlineUi[] => {
   const file = sourceFileOf(source);
   const found: InlineUi[] = [];
   const visit = (node: ts.Node) => {
@@ -114,4 +114,4 @@ export const inlineUiOf = (source: string): InlineUi[] => {
   visit(file);
 
   return found;
-};
+});

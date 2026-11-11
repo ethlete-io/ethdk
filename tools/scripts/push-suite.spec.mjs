@@ -514,6 +514,16 @@ test('the e2e quota step runs after the e2e suite passes unthrottled', () => {
   assert.equal(STEPS.indexOf('e2e-quota'), STEPS.indexOf('e2e') + 1);
 });
 
+test('the CI-like load pass runs after the e2e suite and a design server change reruns it', () => {
+  assert.ok(STEPS.indexOf('e2e-load') > STEPS.indexOf('e2e'));
+  assert.equal(stepsTouchedBy(['libs/cli/src/lib/design/serve.ts']).has('e2e-load'), true);
+});
+
+test('the first-listing timing runs after the CI-like load pass and a design server change reruns it', () => {
+  assert.equal(STEPS.indexOf('first-listing'), STEPS.indexOf('e2e-load') + 1);
+  assert.equal(stepsTouchedBy(['libs/cli/src/lib/design/studio-api.ts']).has('first-listing'), true);
+});
+
 const FIRST = 'a'.repeat(40);
 const OTHER = 'b'.repeat(40);
 const reuseAfterMerge = (changed, verdict = `ok ${FIRST}\n`, parents = [FIRST, OTHER]) =>
@@ -526,7 +536,10 @@ const reuseAfterMerge = (changed, verdict = `ok ${FIRST}\n`, parents = [FIRST, O
 test('a merge that changes one lib only reuses the design steps and reruns lint and typecheck', () => {
   const reused = reuseAfterMerge(['libs/agent-rules/src/index.ts', 'plans/x.md', '.changeset/y.md']);
 
-  assert.deepEqual([...reused.keys()], ['cli', 'studio', 'quota', 'e2e', 'e2e-quota', 'repeat']);
+  assert.deepEqual(
+    [...reused.keys()],
+    ['cli', 'studio', 'quota', 'e2e', 'e2e-quota', 'e2e-load', 'first-listing', 'repeat'],
+  );
   assert.ok([...reused.values()].every((from) => from === FIRST));
   assert.equal(
     reusedLine('cli', FIRST),

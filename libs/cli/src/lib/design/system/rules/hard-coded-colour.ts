@@ -2,17 +2,21 @@ import { coloursIn } from '../colour';
 import { cssBlocksOf, declarationValueOf } from '../css-source';
 import { Problem } from '../problem';
 import { ResolvedPart, ResolvedProduct } from '../resolve-product';
-import { textsOf } from '../ts-source';
+import { perSource, textsOf } from '../ts-source';
 import { isExemptFrom } from './exemptions';
 
 const valueColoursOf = (css: string) =>
   cssBlocksOf(css).declarations.flatMap((declaration) => coloursIn(declarationValueOf(declaration) ?? ''));
+
+const cssColoursOf = perSource(valueColoursOf);
 
 const textColoursOf = (text: string) => {
   const whole = coloursIn(text.trim());
 
   return whole.length === 1 && whole[0] === text.trim() ? whole : valueColoursOf(text);
 };
+
+const sourceColoursOf = perSource((source) => textsOf(source).flatMap(textColoursOf));
 
 const problemsOf = (file: string, colours: string[]): Problem[] =>
   [...new Set(colours)].map((colour) => ({
@@ -22,8 +26,8 @@ const problemsOf = (file: string, colours: string[]): Problem[] =>
   }));
 
 const partProblemsOf = (part: ResolvedPart) => [
-  ...problemsOf(part.file, textsOf(part.source).flatMap(textColoursOf)),
-  ...(part.css && part.cssSource ? problemsOf(part.css, valueColoursOf(part.cssSource)) : []),
+  ...problemsOf(part.file, sourceColoursOf(part.source)),
+  ...(part.css && part.cssSource ? problemsOf(part.css, cssColoursOf(part.cssSource)) : []),
 ];
 
 /**

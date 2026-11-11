@@ -5,12 +5,12 @@ import { Problem } from '../problem';
 import { SharedDirs } from '../imports';
 import { reachableFilesOf } from '../reachable-files';
 import { ResolvedProduct } from '../resolve-product';
-import { sourceFileOf } from '../ts-source';
+import { perSource, sourceFileOf } from '../ts-source';
 
 const SCRIPT = /\.[cm]?[jt]sx?$/u;
 
 /** The 1-based lines of every `await` and `for await` that runs while `source` evaluates as a module. */
-export const topLevelAwaitLinesOf = (source: string): number[] => {
+export const topLevelAwaitLinesOf = perSource((source): number[] => {
   const file = sourceFileOf(source);
   const lines: number[] = [];
   const visit = (node: ts.Node): void => {
@@ -25,7 +25,7 @@ export const topLevelAwaitLinesOf = (source: string): number[] => {
   ts.forEachChild(file, visit);
 
   return [...new Set(lines)];
-};
+});
 
 const problemOf = ({ file, source, fix }: { file: string; source: string; fix: string }): Problem[] => {
   const lines = topLevelAwaitLinesOf(source);
