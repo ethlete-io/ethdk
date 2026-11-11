@@ -3688,3 +3688,26 @@ the rule names `node --test <related specs>` for `tools/**`.
 the declared slice. Suspect: the builder set the "903 token map" slice in the same checkout while the 912 subagent ran,
 and one slice-paths file per checkout holds only the newest slice. Tool fix (builder default, tool backlog): slice paths
 per session, not one file per checkout.
+
+916\. Linux builder (2026-11-12 night, 903 slice): after the token-map patch, pages/sketches kept 1 OFF-CENTRE finding on
+title-search. Cause (measured: the rule maths rebuilt at scale 0.2 gives the reported 1.4/0.1 px): OFF-CENTRE counts the
+visually hidden "Control K" text inside `et-kbd`; its baseline sits below the 24 px button. At scale 1 the line-middle
+test skips it, in the 0.2 thumbnail it does not. A false positive that blocked 903 (ADR 0202). Lesson: a render rule
+judged hidden text only at one scale. Tool fix (builder default, built first): `libs/cli` `design/system/off-centre.ts`
+skips text in clipped or visually hidden elements; spec with an xs button + `et-kbd` at scale 0.2.
+
+917\. Linux builder (2026-11-12 night, 903 slice): the xs button with a kbd chip rendered 25.25 px instead of its 24 px
+token, and no check saw it. Suspect (grep only): no rule compares a sized control's rendered height with its
+`--control-*` token; compare diffs design against app with the same CSS, so 25.25 matched 25.25. Lesson: compare finds
+drift between two copies, never a shared defect. Tool fix (builder default, tool backlog): a CONTROL-HEIGHT render rule,
+tolerance 0.5 px.
+
+918\. Linux builder (2026-11-12 night, 903 slice): the pages/sketches states `change-crop` and `change-crop-whole` cannot
+be driven in the visible-change gate, before the 903 edit too. Same class as 913. Tool fix: the 913 warning (design
+check names every state it cannot judge) covers it; tool backlog.
+
+919\. Doc agent (2026-11-12 night): an untracked ready sketch `.ethlete/design/studio/sketches/pages-sketches.edit`
+(target `pages/sketches@edit`, createdAt 2026-11-11T23:42:43Z) appeared during the 903 slice; the builder did not know
+its origin. Suspect: a step of the 903 direct edit wrote it. Lesson: a tool can leave a ready sketch with no owner and
+no message. Tool fix (builder default, tool backlog): every sketch records the command and session that created it, and
+`et:design status` names sketches no session claims.
