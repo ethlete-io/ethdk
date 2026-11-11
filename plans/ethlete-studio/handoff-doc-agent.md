@@ -121,3 +121,9 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   committed, not pushed. 766 item 1 (pane regex, send refuses a SendMessage peer) and 767 (stale variant views) wait in
   the Linux queue.
 - Night: B345 change-crop sketch is on origin (663088643); told the human in chat, they pick by merge in the morning.
+- Night, 00:45 (after 2fabd0e2c): findings 765-776 recorded. Linux builder pushed 768, 771, 766 (focus regex), 767, 772,
+  738 (part), 723, 710 sweep (nightly spec-sweep.yml; second real run owed, run 42931941982 runs); queue 774, 775. 766 (b)
+  parked by the builder. Mac: pushed 6473f8466 (B482, 735, repeat log); 769 committed 3483c7fcd (Suspect only), push
+  pending, then 770. Morning round for the human: (1) ADR summary of the night no-questions rule; (2) finding 776 app fix
+  (focus in a remounted live frame) into the day order; (3) B345 change-crop sketch pick by merge (663088643).
+  Send to the Linux builder only by SendMessage; the Mac only by the mailbox file + scp.
