@@ -3726,7 +3726,10 @@ a warning the tool logs and ignores hid a cache defect for every run. Fix (built
 render-inspect 36.9 -> 2.0 s, wall 79.0 -> 44.2 s, differing inputs 121 -> 0, output identical; `linked-roots.spec`
 bites. Not verified: the Mac (`/tmp` is a symlink there). Decided by the doc agent (tool internal): `design check`
 reports a Vite "outside of Vite serving allow list" line as a check problem, not a log line; a spec bites with a served
-path outside the allow list (night backlog, Linux). Mac builder verifies the fix on the Mac (night backlog).
+path outside the allow list (night backlog, Linux). Mac builder verifies the fix on the Mac (night backlog). Check built df5226ee1 + d2e91cd78: a Vite `customLogger` records each denied id
+(`takeDeniedIds()`), `design check` prints one `SERVE-DENIED <id>` problem per id and fails; `check-denied.spec.ts`
+bites. Not built: `sketch check` still only logs the line (night backlog, Linux: same problem there); `compare` and
+`shot` are views, not gates, and may keep the log line.
 
 As built (777): `createDesignServer` wraps Vite's logger and records each id of an "outside of Vite serving allow list"
 line (`takeDeniedIds()`, also on the run and resident `WarmDraw`); `design check` (`checkSystemRendered`) prints one
@@ -3746,3 +3749,11 @@ the workflow default and push; this is also the owed second real run), then reco
 finding (night backlog, Linux, fresh builder session).
 In progress (2026-11-11, builder): spec-sweep.yml runs a matrix of `--slow 1` and `--slow 2` on a push of the workflow or
 spec-stress.mjs; the default for the nightly and a dispatch is now 2 until the calibration picks N.
+
+779\. Linux builder (2026-11-11, night, 777 df5226ee1): the first push:suite failed: `serve.spec`, `shot-store.spec` and
+`serve.perf.spec` mock `vite` without `createLogger`, which `serve.ts` now imports. The subagent ran only its touched
+specs. Cause (measured: d2e91cd78 stubs it, 68/68 pass): a slice brief that says "run only touched specs" misses a spec
+that mocks a module the slice now imports from. Lesson: the push:suite caught it, but one full suite run late. Decided
+by the doc agent (tool internal, general form of the builder's recommendation): every builder slice and subagent brief
+runs `npx vitest related --run <changed files>` before its commit, not only for changed imports between modules. Builder
+work (night backlog, Linux): put this rule in the builder-agent skill and the subagent brief template.
