@@ -3797,6 +3797,9 @@ died with a builder restart, unnamed. Tool fix (doc agent decision, tool interna
 carries the subagent's result file in its row; the builder `restart` refuses while such a row names no result file or a
 result file older than the row's last start. Bite: a restart with B480 "in work" and no newer result file is refused.
 Queue: Linux builder, after 862.
+Cause (Linux builder, proven by the task notice): the subagent was not lost. A builder restart does not end the subagents
+of the old conversation; the old B480 agent still ran beside the fresh one. The builder stopped the old one. The restart
+guard of 863 and 864 also lists the live subagents of the session and refuses unless the handoff names each one.
 
 864\. Doc agent (2026-11-11): a self-restart of the doc agent dropped an open grill question. At 15:22 the doc agent
 asked the human Q1 "findings or STATUS rows first: one finding, then one STATUS row per builder from tomorrow". The human
