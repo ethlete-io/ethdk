@@ -183,3 +183,9 @@ Windows build of the repo needs that.
 Open for the human: Smart App Control cannot be turned back on without a Windows reinstall, and `rack` is a guest
 PC. The spike goes on only after one of: turning Smart App Control off on `rack`, a Windows PC or VM without it,
 or the move of the dev PC to Windows. The setup above and the patch stay in `C:\b480` on `rack`.
+
+As built (finding 870, 2026-11-11 evening, 2f8743432): the host compares only the stamp's version and build and
+does not cache a no-answer verdict; on `rack` the rebuilt release CEF exe reports `stale: false`, but the sketch view
+still does not open (0 live frames): the page's fetch of `http://localhost:4402/__design/stamp` never answers while the
+server listens on `::1` only (Suspect: localhost resolves to 127.0.0.1 in CEF on Windows). Size 141.17 MiB installer /
+467 MiB installed, not signed.
