@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { psRowsOf, runLoadLineOf, topProcessLinesOf } from './run-load.mjs';
+import { cpuDeltaOf, cpuTicksOf, psRowsOf, runLoadLineOf, topProcessLinesOf } from './run-load.mjs';
 
 test('a run under the core count is a measurement and names machine, cores and workers', () => {
   assert.equal(
@@ -35,4 +35,22 @@ test('ps output parses into rows, a command with spaces kept whole', () => {
     { pid: 12, cpu: 3.5, command: 'node' },
     { pid: 345, cpu: 80, command: 'Google Chrome Helper' },
   ]);
+});
+
+test('the CPU ticks of a stat line sum user and system time, a command with spaces and parens kept apart', () => {
+  assert.equal(cpuTicksOf('42 (node (x) y) S 1 42 42 0 -1 4194560 100 0 0 0 250 50 0 0 20 0 1 0'), 300);
+});
+
+test('an idle process with a high lifetime average does not appear in the one-second sample', () => {
+  const before = new Map([
+    [1, 90000],
+    [2, 500],
+  ]);
+  const after = new Map([
+    [1, 90000],
+    [2, 580],
+    [3, 10],
+  ]);
+
+  assert.deepEqual([...cpuDeltaOf({ before, after, seconds: 1, ticksPerSecond: 100 })], [[2, 80]]);
 });

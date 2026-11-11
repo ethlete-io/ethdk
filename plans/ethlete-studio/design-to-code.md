@@ -4142,3 +4142,9 @@ why. Decided by the doc agent (tool internal): (1) probe the same check on the c
 rule step 1 in or out, before the Linux push of 652; (2) the check prints "RECORD DROPPED <product> <part>: <blocker>",
 with a bite spec; (3) a live run that writes a new picture record shows the cache file. Order: (1) now, then 793 (a), (2),
 (3).
+
+793 (a), as built by the Linux builder (2026-11-11): the top-process list of `run-load.mjs` samples `/proc/<pid>/stat`
+twice, 1 s apart, and ranks by the CPU share in that second; a process that did not run is left out. Without `/proc`
+(the Mac) it keeps the `ps` lifetime average. Specs: `cpuTicksOf` parses a stat line with spaces and parens in the
+command; an idle process with a high lifetime average does not appear. Verified: 6/6 specs, eslint, a live sample on
+Linux. Not verified: the Mac.
