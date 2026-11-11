@@ -3912,3 +3912,28 @@ that pushes back-to-back always polls first. Tool fix (doc agent decision, tool 
 taken enters a waiting list; on release or expiry the slot goes to the oldest waiter; a holder that just released cannot
 take it again while someone waits; the busy message names the waiters and the queue position. Bite: a spec with holder A
 releasing and re-acquiring while B waits gives the slot to B; without the fix A wins. Queue: Mac builder, after 845.
+
+851\. Mac builder (2026-11-11): `push:suite` for 840+841 failed; `frame-bootstrap.spec` was 11/11 red since 4a4345f28
+(836). Its fixture loads `frame.ts` by path into a vm context with stub modules; the stub lacked `markNgStyles` and the
+context had no `window` (fixed in 6795d9e78). Cause (proven by the miss): `vitest related` does not reach a spec whose
+fixture loads a source file by path into a vm, because there is no import edge, so the finding 779 rule passed on a
+broken spec. Tool fix (doc agent decision, tool internal): a related map lists the vm-loaded sources per spec, the
+related run adds those specs when a listed source changes, and a check fails when a spec loads a source path that the map
+does not list. Bite: a change to `frame.ts` that breaks the stub selects `frame-bootstrap.spec` and fails; without the
+map the related run skips it. Queue: Mac builder, after 850.
+
+852\. Linux builder (2026-11-11, from 846): no check times the first sketch listing; the e2e fails only at 60 s, so 29-43 s
+passed silently. Tool fix (doc agent decision, tool internal): the 846 timing gate (under 15 s under the CI-like recipe,
+on a built scratch) becomes a `push:suite` step. Bite: the step fails on the code before 846. Queue: Linux builder, in
+the 846 slice or right after it.
+
+853\. Linux builder (2026-11-11, from 846), measured: with slow checks on, each 15 s poll blocks the Studio server main
+thread about 14 s under the CI-like recipe (`slowInputsOf` → app-files `declaringFilesOf` regexes). Tool fix (doc agent
+decision, tool internal): move this work to the worker. Bite: a main-thread stall probe under the recipe sees no block
+over 1 s during a poll; before the fix it sees about 14 s. Queue: Linux builder, after 849.
+
+854\. Linux builder (2026-11-11, from 846), measured: the scratch checkout's `node_modules/.design-explore` was a link into
+the repo's shot store, so scratch runs wrote into the live store. Tool fix (doc agent decision, tool internal):
+`scratch:checkout` gives the scratch its own store and fails when the store path resolves into the main checkout. Bite:
+a spec that runs `scratch:checkout` and then writes a shot leaves the main store unchanged; before the fix the shot lands
+in it. Queue: Linux builder, right after 846, before B490, because it corrupts live data.
