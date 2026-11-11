@@ -3907,4 +3907,7 @@ real product; a Studio e2e run (none covers the merge compare by name).
 1 of 2 runs (18.0 s). Not a known finding. A spec that fails one run in two on a slow runner is a flaky gate, worse than
 a slow one. Suspect: none yet; the builder reads the failed run's `::group::` output first. Decided by the doc agent
 (tool internal, the builder's recommendation): night backlog, Linux, after 782; name the cause, fix it, a stress run at
-`--slow 2` bites.
+`--slow 2` bites. Cause (measured on CI): "merges a pick of old like any sketch" timed out at the vitest default
+5 s (5020 ms; its sibling took 4570 ms); a merge case that spawns git, the same class as 783. Decided (second case of the
+class, so the 785 pattern grows): the shared helper that builds a real git repo for a spec sets the 60 s timeout on
+import, as `check-system.fixtures.ts` does, so every spec that runs a real merge gets it; no per-case numbers.
