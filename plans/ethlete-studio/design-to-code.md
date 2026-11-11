@@ -2175,6 +2175,10 @@ use, the suspected cause of finding 616 and of the old unit flake. Tool fix (tec
 Decided by the grill session under ADR 0230: wait bounds that only tell "answers at once" from "waits for a timeout"
 stay in the unit run; one moves to the perf job when it flakes.
 
+As built (617): the fixture passes `listenOn: 0` and reads the port from `httpServer.address()`; no random port is left,
+so no clash is possible. Verified: both specs pass, `spec:stress ... --runs 4 --load 2` 4/4 each, related specs and
+`cli:typecheck` green. Not verified: a forced clash on the old port (reasoned only).
+
 618\. Builder (2026-11-09, B447, 90ef0eeb8): Large "a sketch scroll never empties a cell" printed `(iframe: null)`.
 Cause (proven): `sketchCells` listed all cells and then probed each frame by position, so a frame removed in between
 gave a null probe and the cell counted as empty. Why the frame left in CI is not proven (likely the cap of 6 live

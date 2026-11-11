@@ -7,7 +7,11 @@ import { join, resolve } from 'path';
 const cliRoot = resolve(__dirname, '../../..');
 const workspace = resolve(cliRoot, '../..');
 
-type Server = { listen: () => Promise<unknown>; close: () => Promise<void>; resolvedUrls: { local: string[] } | null };
+type Server = {
+  listen: () => Promise<unknown>;
+  close: () => Promise<void>;
+  httpServer: { address: () => unknown } | null;
+};
 type ServeModule = {
   createDesignServer: (options: {
     target: string;
@@ -41,10 +45,11 @@ export const startMissingDistServer = async () => {
   );
 
   const serve = createRequire(__filename)(join(compiled, 'libs/cli/src/lib/design/serve.js')) as ServeModule;
-  const port = 20000 + Math.floor(Math.random() * 30000);
-
-  const server = await serve.createDesignServer({ target, config, listen: true, listenOn: port, host: '127.0.0.1' });
+  const server = await serve.createDesignServer({ target, config, listen: true, listenOn: 0, host: '127.0.0.1' });
   await server.listen();
+
+  const address = server.httpServer?.address();
+  const port = address && typeof address === 'object' ? (address as { port: number }).port : 0;
 
   return {
     base: `http://127.0.0.1:${port}`,
