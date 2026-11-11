@@ -4,7 +4,14 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const KNOWN_NAME_HASHES = new Set(['e1608f75c5d7813f', 'b9dcf580941247c1']);
+const KNOWN_NAME_HASHES = new Set(
+  JSON.parse(
+    readFileSync(
+      resolve(dirname(fileURLToPath(import.meta.url)), '../../libs/cli/src/lib/person-name-hashes.json'),
+      'utf8',
+    ),
+  ),
+);
 const ROOTS = ['libs', 'apps', '.ethlete/design'];
 const TEXT = /\.(?:ts|tsx|js|mjs|cjs|json|md|css|html|vue|yml|yaml|txt)$/;
 

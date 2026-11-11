@@ -429,7 +429,7 @@ unknown part 404, and a draw that cannot run 503. The one-part answer also holds
 mark, or `null`.
 
 A part is ready only when its open-point list is empty and `et design actions` passes for it.
-`et design ready components/chip --product app-a --by tom [--url …]` draws the part, prints its open points and exits 1
+`et design ready components/chip --product app-a --by human [--url …]` draws the part, prints its open points and exits 1
 while there are any; then it runs the action check on the harness app (`--url`, or one it starts) and exits 1 with the
 failed lines. With `--url` and a live spec it also runs `et design actions --live` for the part and adds its failed
 lines prefixed `live `; without `--url` the refusal notes that it checked the part harness only. Otherwise it stores the part hash, who and when in `.ethlete/design/<product>/ready.json`
@@ -693,8 +693,13 @@ drawn yet).
 sketch the user has not picked in, only when `<key>` is its one live (not rejected) variant; both flags
 go together; the part note stays. With two live variants the user picks in Studio.
 
-`sketch merge --decided-by <name>` records who picked the variant in `merged.json` (`user` without it): give it the name
-the designer told you at this terminal, for example `tom`. It does not go with `--allowed-by`, which records the plan.
+`sketch merge --decided-by <role>` records who picked the variant in `merged.json` (`user` without it): give it the role,
+for example `human`. Both `merge` and `pick` refuse a person name in `--decided-by` (exit 1), as `yarn lint:person-names` does. It does not go with `--allowed-by`, which records the plan.
+
+`et design sketch pick <layer>/<name> --variant <key> --decided-by "<the words and where they were said>" --by <model>`
+records a pick the designer gave outside Studio, for example in chat, in `sketch.json`: the same pick Studio writes
+(`by: designer`), with the words as its comment. It refuses an unknown or rejected variant and a sketch that is not
+ready. A later `sketch merge --decided-by <role>` merges it.
 
 `sketch ready` also draws each live variant's changed parts at rest and refuses with
 `CONTROL-UNDECLARED <part> - … (variant <key>)` for a control the variant draws that no `controls` entry declares, unless

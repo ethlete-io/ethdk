@@ -16,6 +16,7 @@ const SUBCOMMANDS = [
   'release',
   'preview',
   'rebase',
+  'pick',
   'merge',
   'discard',
   'target',
