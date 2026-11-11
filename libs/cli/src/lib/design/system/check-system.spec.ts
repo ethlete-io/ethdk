@@ -173,7 +173,7 @@ describe('summaryText', () => {
         /^RENDER CHECK FAILED - no usable browser: neither .+ nor this package .+ resolves playwright/,
       ),
     );
-  });
+  }, 60_000);
 
   it('skips the render check without a browser under CI', async () => {
     vi.stubEnv('CI', '1');
@@ -190,5 +190,5 @@ describe('summaryText', () => {
     expect(code).toBe(0);
     expect(lines).toContainEqual(expect.stringMatching(/^RENDER CHECK SKIPPED - neither /));
     expect(lines.some((line) => line.startsWith('RENDER CHECK FAILED'))).toBe(false);
-  });
+  }, 60_000);
 });

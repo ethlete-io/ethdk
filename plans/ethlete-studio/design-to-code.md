@@ -3823,6 +3823,10 @@ without a browser under CI"). Suspect (not measured): an environment difference 
 example a browser lookup or a CI variable that the quota wrapper changes. Decided by the doc agent (tool internal):
 reproduce the local failure first (it needs no CI), name the cause, fix it with a case that bites (night backlog,
 Linux, before 782).
+As built (783): Cause (measured): no environment difference. Both cases had vitest's default 5 s timeout, while every
+other case that builds the `acme()` fixture has 60 s; under `CPUQuota=12%` they took 7.9 s and 8.6 s and timed out.
+Fix: `60_000` on both. Bite: the same quota run failed both cases before and passes 13/13 after;
+`spec:stress --slow 8 --runs 2` passes 2/2 (slowest 81.5 s for the file). The Suspect (an env difference) was wrong.
 
 784\. Linux builder (2026-11-11, night, 778 calibration): `spec:stress --github` printed no output for the failed runs,
 so the CI log does not show why 782 and 783 failed. Cause: 616's "print the first failed run" does not reach the
