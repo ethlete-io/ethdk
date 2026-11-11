@@ -3207,6 +3207,45 @@ shoot the same 28 states twice, through two paths (render worker vs part shooter
 6.5 s. Suspect: sharing the render-check pictures with the part shooter is the next cut; not local, so it stays
 backlog.
 
+As built (739, Mac builder, 2026-11-11, measurement only). Detached worktree of 87c279030, `ETHLETE_DESIGN_PHASES=1`,
+`sketch check pages/sketches@change-crop --product studio` (3 variants, after a `sketch rebase` in the worktree only:
+foundations/logo had changed). Seconds, resident run 1 / resident run 2 / no resident:
+
+| Phase           | Run 1 | Run 2 | No resident |
+| --------------- | ----: | ----: | ----------: |
+| gates           |   4.4 |   4.4 |        15.3 |
+| tsc a + b + c   |   6.6 |   6.7 |         7.0 |
+| aktuell         |  59.4 |  59.5 |        52.3 |
+| render-check    | 140.6 | 143.6 |       137.9 |
+| identical       |   4.8 |   4.6 |         4.2 |
+| changes-shot    |   1.6 |   1.9 |         1.7 |
+| draw-queue-wait |  26.8 |  25.2 |        24.5 |
+| wall            | 219.6 | 223.3 |       221.4 |
+
+Render-check per variant: 67 s, 36 s, 37 s. Load average 11-13 on 6 cores during the runs. Cause (measured): the time
+is in aktuell and render-check, and the resident process does not make run 2 faster. Not measured: the same sketch on
+Linux, so the Mac share of the gap is open. Side results: `sketch ready` with a wrong flag (`--variant`) or without
+`--by` failed only after the lib-build wait (46-59 s); a usage error does not need the lib build. Without a resident
+process, gates take 15 s instead of 4.4 s. 777 on the Mac (same night, `design check --product studio`): cold 202.7 s,
+warm 52.0 s, 0 cache hits both times; a `recordCache` bite in the part-picture cache read counted 0 reads, so the
+warm speedup is one-time work of the cold run (5 lib rebuilds, 3 dropped ready records), not a missed cache.
+
+739 render-check split (Mac builder subagent, same sketch, instrumented dist, restored after). Render-check 136-140 s
+over 3 runs, CPU-bound (868 s user CPU in 296 s wall). Cause (measured): each variant draws 32 states x 2 schemes = 64
+frames, 4 at once, each a `page.goto` of frame.html at about 2 s: open 1.06 s (0.2 s goto, 0.85 s app boot in the
+iframe), first `inspectFrame` evaluate 0.88 s; settle, media and compare under 0.03 s; no sleep or fixed timeout. Variant
+1 takes 64 s because the baseline inspection of the product page (60 frames) runs on the same browser at the same time
+(DRAWS_AT_ONCE 8); a frame then takes 4.1 s. Aktuell: 120 frame opens at 2.5 s, about 6 at once. Fix ideas (Suspect,
+not built): draw the dark twin on the loaded page with `emulateMedia` (about 30 s less), switch states in one booted
+frame (about 50 s less), profile the first `inspectFrame` evaluate, and pass `cached: true` to `renderIssuesOf` in
+`sketch-command.ts` like `check-system.ts` does, so a re-check of unchanged variants hits the cache.
+
+Mac e2e speed (Mac builder, same night, measurement only): `yarn studio:e2e --workers 5` ran 131/132 in 433.5 s, load
+4.7 at start and 31.7 at the end; push:suite #16 ran the same 132 cases on the default 3 workers in 476 s. The one
+fail was Large "a variant equal to Aktuell keeps its iframes across a quick and a full listing" (iframe/row removes 22,
+must be 0). Cause (measured): 5 workers save 9 % and overload the 12-core Mac, so the default of 3 stays. The case
+fail under load is a Suspect for a load flake; it passed in #16.
+
 740\. Mac builder (same sketch): the clipping check flags the intended crop of the variants, and skip-scope refuses
 the reason "intended" because the crop holds controls; only "inert" passes. Suspect only. Lesson: a check that accepts
 only a wrong reason teaches the agent to give a wrong reason (as 737). Tool fix (backlog): skip-scope accepts
@@ -3967,6 +4006,8 @@ the product folder only.
 
 811\. Linux builder (2026-11-11, from the Mac): `design check --product studio` on a clean HEAD 87c279030 rewrote the committed `.ethlete/design/studio/ready.json` (+20/-136): "RECORD DROPPED" for foundations/colors, foundations/spacing and pages/inventory, each with an OFF-CENTRE problem "found by design check". OFF-CENTRE has a rule baseline (d8cf6cd80, ADR 0201): a baselined old hit must not drop a ready record. Suspect until reproduced: either the baseline misses these 3 parts, or the ready auto-accept path reads the render result without the baseline.
 811 not reproduced on Linux (Linux builder, 2026-11-11), stays Suspect: in a HEAD export (0afe96985) with its own cli build and an empty `node_modules/.cache`, `design check --product studio --part` for foundations/colors, foundations/spacing and pages/inventory each printed "clean", 0 findings, and kept all 3 records; the full `design check --product studio` had no OFF-CENTRE hit in studio, no RECORD DROPPED, and only added or refreshed records (foundations/logo, foundations/type, pages/inventory). The code path matches ADR 0201: `renderSystem` tallies only the OFF-CENTRE issues the rule baseline does not list, and `withTalliedProblems` turns only those into "found by design check" blockers. So on the Mac those 3 parts most likely hit OFF-CENTRE without a baseline entry: the check measures text against font metrics, and the baseline was recorded on Linux. Next step: run the Mac check with `--part foundations/colors` and keep the OFF-CENTRE line it prints (state, size, element path), so the hit is either fixed or baselined.
+
+811 on the Mac (Mac builder subagent, 2026-11-11, measured in a worktree with a patched copy of the rule). Cause (measured): the flagged text is set in `10px ui-monospace, "SF Mono", Menlo, Consolas, monospace` (`--font-code` in `.ethlete/design/studio/foundations/type/type.css`); the design frame loads no web font (`document.fonts.size` 0, status `loaded`), so the Mac draws SF Mono and Linux the generic `monospace`. SF Mono at 10px: ascent 9, descent 2, cap 7.29, an 11px line box. In the 22px content box of `co-ratio` and `sp-height` the 11px slack splits 5/6, so above 7.71 and below 9.0 (1.29 > the 1px tolerance); in the 16px `pages/inventory` box the slack splits 0/1 (3.71 / 5.0). The same font makes most `pages/sketches` `sk-gutter` gaps 0.65-0.95px, so their baseline entries no longer hit on the Mac. Not the cause: font load timing (no web fonts). Not measured: the Linux fallback numbers. Recommendation: self-host one monospace font and the UI font in the design styles, so both OSes measure the same font; a per-OS baseline entry (ADR 0201) keeps two truths and still drops records on the other OS; a tool fix in the rule removes only the 0.29px font share, not the 1px layout split. Side result: the main checkout's `dist/libs/cli` was stale against HEAD and the CLI gate refused it.
 
 812\. Linux builder (2026-11-11, grill decision): `yarn push` (push-next.mjs) accepted only a push-suite ok verdict for HEAD itself, so a docs-only commit on top of a green sha (0afe96985 skills and ab32641a1 plan on top of green cfd98cddc) refused the push and forced a rerun of the whole suite (minutes). No tool caught it: the push-next spec covers only a verdict for HEAD or none, and the pre-push check already walks back to the newest ok verdict, so the gap showed only at `yarn push`. Decided fix: push-next accepts the ok verdict of an ancestor when every later commit touches only `plans/**`, `apps/ethlete-studio/docs/adr/*.md`, `.changeset/*.md`, `.claude/handoffs/**` or `.agents/skills/**/*.md`, after a rerun of the fast checks on HEAD, and prints which ancestor verdict it reused; the walk lives in one module shared with the pre-push check.
 812 as built (Linux builder, 2026-11-11): new `tools/scripts/verdict-reuse.mjs` holds the walk to the newest ok verdict (`verdictBelow`), the docs allowlist and the line `push-next: reused push-suite ok of <sha> (n docs-only commits on top)`; `push-next.mjs` uses it with the allowlist, reruns the fast checks on `<ancestor>..HEAD` (push-suite's `preChecksStep`: committed-file format check plus every `pre-push-checks.mjs` script, a superset of lint:studio-adrs, lint:changesets and lint:person-names that also covers lint:size and lint:no-verify-briefs, which read `.agents/skills` and `.claude/handoffs`), and has `--dry-run`. The pre-push check (`push-suite.mjs --check`) already accepted an ancestor verdict under its own broader exemption (plans/, .changeset/, any .md); it now runs the same walk from the shared module (loaded by dynamic import, push-suite keeps no static sibling import) and prints the reuse line. Condition probe: no `test:tools`, `nx test cli` or studio spec reads the working-tree files under the allowlist; only temp-repo fixtures and fixed-sha history reads (`git show 0c2451802:plans/...`). Verified: 5 push-next specs in temp repos (docs-only on a green ancestor accepted and named, a code commit refused before the checks, a failing fast check refused, no green ancestor refused, dry run pushes nothing), with the reuse disabled 4 of them fail; spec:stress 4/4; the live `node tools/scripts/push-next.mjs --dry-run` on ab32641a1 printed `push-next: reused push-suite ok of cfd98cddc (2 docs-only commits on top)`, and `push-suite.mjs --check origin/next HEAD` printed the same with `pre-push:`. Not verified: a real `yarn push`, and the push-slot check of a slot held by another builder on the same sha, which still asks for a verdict of that sha itself.
