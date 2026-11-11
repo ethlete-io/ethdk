@@ -236,6 +236,8 @@ const helpOf = (invocation: string) =>
     '  Without --preset or --width, a page draws at its first product preset and any other part fitted.',
     '  With --variants --crop changed, every cell is cut to one box around the pixels any shown variant changes',
     '  from the merged part, plus a margin, and the box is printed for a later --crop x,y,width,height.',
+    '  With --variants --in <layer>/<name>, the sketch variants draw inside that part instead, e.g. a foundations or',
+    '  components sketch in a page; it refuses a part that neither imports a sketch target nor takes it as tokens.',
     '  --scheme pins the colour scheme the frame draws in, as a Studio scheme copy does; --surface only sets the',
     '  surface class of the root, so light-dark() and scheme-bound theme rules still draw light without it.',
     '',

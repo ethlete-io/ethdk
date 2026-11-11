@@ -665,6 +665,9 @@ product, and a new part, are not held back.
 `et design shot <layer>/<name>@<sketch name>` draws that named sketch. A bare `<layer>/<name>` draws the unnamed sketch
 on the part, or the only sketch on it; with several named sketches it refuses and names the `<layer>/<name>@<name>`
 targets. An `--at <commit>` shot of a sketch records a view for the content the sketch had at that commit.
+`et design shot <layer>/<name> --variants --in <layer>/<name>` draws the sketch's variants inside another part,
+for example a foundations or components sketch in a page that embeds it. It refuses a part that neither imports a
+sketch target, directly or through another part, nor takes it as a tokens part of the product.
 
 `sketch ready` also refuses (`SAMPLE-MARK-DRIFT`) while one sample carries different marks in two states of a
 target. A part opts in with `sample: { id: 'sample', marks: ['same', 'look'] }`: every instance a host draws with a

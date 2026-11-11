@@ -7,6 +7,7 @@ import {
   changedCropsIn,
   designShot,
   gridRowsOf,
+  inPageRefusalOf,
   NEW_STATE_NOTE,
   planOf,
   rowsOf,
@@ -469,6 +470,69 @@ describe('two open sketches on one part', () => {
     expect(await run('components/button@c')).toEqual({
       code: 1,
       text: 'design-explore: components/button@c has no open sketch in product "acme"',
+    });
+  });
+});
+
+describe('a sketch drawn in a page that embeds its part', () => {
+  const acme = () => {
+    const target = realpathSync(mkdtempSync(join(tmpdir(), 'cli-design-shot-in-')));
+
+    cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
+
+    const product = createSystemModules({ target, config: readConfig(target) ?? {} }).productOf('acme');
+
+    if (!product) throw new Error('no acme');
+
+    return { target, product };
+  };
+  const sketchOn = (part: string) => ({ target: part, targets: [part] });
+
+  it('takes a page that imports the part through another part, or a part every part takes as tokens', () => {
+    const { product } = acme();
+
+    expect(inPageRefusalOf({ product, sketch: sketchOn('components/button'), page: 'pages/home' })).toBeNull();
+    expect(inPageRefusalOf({ product, sketch: sketchOn('foundations/tokens'), page: 'elements/hero' })).toBeNull();
+  });
+
+  it('refuses a page that does not embed the part, and a part the product lacks', () => {
+    const { product } = acme();
+
+    expect(inPageRefusalOf({ product, sketch: sketchOn('foundations/palette'), page: 'pages/home' })).toBe(
+      '--in pages/home: pages/home does not embed foundations/palette (not imported, directly or through another part, and not a tokens part of product "acme")',
+    );
+    expect(inPageRefusalOf({ product, sketch: sketchOn('components/button'), page: 'pages/nowhere' })).toBe(
+      '--in pages/nowhere: product "acme" has no part "pages/nowhere"',
+    );
+  });
+
+  it('refuses --in without --variants, and a page that does not embed the sketch before it draws', async () => {
+    const { target, product } = acme();
+    const palette = parseTarget('foundations/palette');
+
+    if (typeof palette === 'string') throw new Error(palette);
+
+    const created = createSketch({ product, sketch: palette, variants: ['one'] });
+
+    if (typeof created === 'string') throw new Error(created);
+
+    const run = async (argv: string[]) => {
+      const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const code = await designShot({ target, argv: [...argv, '--product', 'acme'], invocation: 'et design' });
+      const text = error.mock.calls.flat().join('\n').split('\n')[0];
+
+      error.mockRestore();
+
+      return { code, text };
+    };
+
+    expect(await run(['foundations/palette', '--states', '--in', 'pages/home'])).toEqual({
+      code: 2,
+      text: '--in needs --variants',
+    });
+    expect(await run(['foundations/palette', '--variants', '--in', 'pages/home'])).toEqual({
+      code: 1,
+      text: 'design-explore: --in pages/home: pages/home does not embed foundations/palette (not imported, directly or through another part, and not a tokens part of product "acme")',
     });
   });
 });
