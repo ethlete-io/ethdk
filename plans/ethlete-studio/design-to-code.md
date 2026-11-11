@@ -3925,6 +3925,14 @@ at the same time. Lesson: two heavy runners on one machine make a red gate that 
 the doc agent (tool internal): push:suite and spec:stress take one local heavy-run lock per machine; the second waits or
 stops with the holder's name; a spec bites with two runners. Night backlog, Mac, after the 777 Mac verify.
 
+As built (786, Mac builder): `tools/scripts/heavy-run-lock.mjs` holds one lock file per machine
+(`<tmpdir>/ethlete-heavy-run.lock`: pid, name, start). `push:suite` takes it first (before the push slot) and waits
+for it; `spec:stress` waits too, or stops at once with `--no-wait` and the holder line (exit 2). A dead holder's lock
+is taken over; a child of a holder (env `ETHLETE_HEAVY_RUN_HELD`) takes none. The lock ends with the suite (ok or
+blocked) and on process exit. Specs: `heavy-run-lock.spec.mjs`, two real runner processes; the second stops with
+`heavy run lock held by push-suite (pid ...)`. Bite: without the holder check it fails. Not verified: a live
+push:suite next to a spec:stress; a subagent run in another checkout of the same machine (same tmpdir, so covered).
+
 As built (B438, ADR 0229, commit `perf(cli): Draw the fresh compare pair only after a cached first pair`): the
 shooter's `pictureOf` now returns the picture with its `source` (`drawn`, `memory` or `disk`, from `onSource`), and
 `PictureOf` returns a `SourcedPicture`. `drawnPair` draws the fresh second pair only when the first pair differs and one

@@ -441,7 +441,10 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
   const sha = git('rev-parse', 'HEAD').stdout.trim();
   const passed = new Map();
   let slot;
+  let heavyLock;
   const release = () => {
+    heavyLock?.release();
+    heavyLock = undefined;
     if (!slot) return;
     const released = slot.releaseSlot({ cwd: root });
     slot = undefined;
@@ -449,7 +452,10 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
   };
   const finish = (verdict) => {
     log(`push-suite: ${verdict}`);
-    if (!verdict.startsWith('ok')) release();
+    if (verdict.startsWith('ok')) {
+      heavyLock?.release();
+      heavyLock = undefined;
+    } else release();
     if (only) log(`push-suite: --only ${only} writes no verdict file`);
     else {
       const file = verdictFileOf(sha);
@@ -460,6 +466,13 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
   };
 
   if (only && !STEPS.includes(only)) return finish(`blocked unknown step ${only}, expected one of ${STEPS.join(', ')}`);
+
+  if (!INNER_EXPORT) {
+    const { holderLine, takeHeavyLock } = await import('./heavy-run-lock.mjs');
+    const lock = await takeHeavyLock('push-suite', { log });
+    if (!lock.ok) return finish(`blocked ${holderLine(lock.holder)}`);
+    heavyLock = lock;
+  }
 
   if (!INNER_EXPORT && !only) {
     const { claimSlot, heldLine, releaseSlot } = await import('./push-slot.mjs');
@@ -581,6 +594,7 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
       log(`push-suite: exported ${sha.slice(0, 12)} to ${dir} in ${seconds(performance.now() - exportedAt)}`);
       const status = await runInner(reexecCommand(dir, root, { only, range }));
       if (status !== 0) release();
+      else heavyLock?.release();
       return status;
     }
     await warnStaleDesignServers(log);

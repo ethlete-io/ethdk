@@ -15,7 +15,12 @@ test('parseArgs reads specs, runs and load', () => {
     slow: 0,
     jobs: 0,
     github: false,
+    wait: true,
   });
+});
+
+test('parseArgs reads --no-wait', () => {
+  assert.equal(parseArgs(['a.spec.ts', '--no-wait']).wait, false);
 });
 
 test('parseArgs defaults runs to 8', () => {
