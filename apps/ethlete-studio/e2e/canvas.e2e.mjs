@@ -16,6 +16,7 @@ import { createServer } from 'node:net';
 import { availableParallelism, hostname, loadavg, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { holderLine, takeHeavyLock } from '../../../tools/scripts/heavy-run-lock.mjs';
 import { listingHold } from '../../../tools/scripts/studio-e2e-listing-hold.mjs';
 import { ensureCli, withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 import { CANVAS, listingWait, sketchCells } from './probe-helpers.mjs';
@@ -34,6 +35,7 @@ const VIEWS = {
 };
 const view = args.includes('--view') ? args[args.indexOf('--view') + 1] : undefined;
 const listOnly = args.includes('--list');
+const waitForLock = !args.includes('--no-wait-lock');
 const keepTimings = !args.includes('--no-timings');
 const coldShots = args.includes('--cold-shots') || process.env['STUDIO_E2E_COLD_SHOTS'] === '1';
 
@@ -3514,6 +3516,15 @@ const workerCount = () => {
 };
 
 const lead = async () => {
+  if (!listOnly) {
+    const lock = await takeHeavyLock('studio:e2e', { wait: waitForLock });
+
+    if (!lock.ok) {
+      console.error(`[canvas-e2e] ${holderLine(lock.holder)}`);
+      process.exit(2);
+    }
+  }
+
   const runStartedAt = performance.now();
   const loadAtStart = loadavg()[0];
   const noReason = CASES.filter(

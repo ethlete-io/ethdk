@@ -3776,6 +3776,13 @@ runs, not the change. Decision (grill): `studio:e2e` takes the heavy run lock to
 checkout; a waiting run prints who holds the lock. An "under foreign load" mark is only a fallback. Bite: a second
 `studio:e2e` that starts while the lock is held waits or refuses, and does not run.
 
+838 as built (Linux builder, 2026-11-11, this commit: fix(repo): Take the heavy run lock in studio:e2e): `lead()` in
+`canvas.e2e.mjs` takes `takeHeavyLock('studio:e2e')` before any server start (skipped for `--list`); a refused lock prints
+`holderLine` and exits 2; `--no-wait-lock` refuses at once, the default waits. Verified: new `heavy-lock.spec.mjs` was red
+before the edit (the run started, rebuilt the CLI and hit the 60 s timeout) and is green after (60 ms). Push-suite children
+inherit `ETHLETE_HEAVY_RUN_HELD` and take none; repeat and bite spawn their runs one after another, each takes and releases.
+Not verified: a full `studio:e2e` run, the waiting path with a live holder, push-suite end to end.
+
 839\. Doc agent (2026-11-11, Mac builder self-restart): `agent-sessions restart` gave up after 1800 s (restart.log
 12:08Z) because it read the busy line "general-purpose Waiting for cli build log 14m 59s"; the same timer still showed
 30+ min later, so the subagents were frozen and the restart waited on a line that never changes. Suspect: the busy check
