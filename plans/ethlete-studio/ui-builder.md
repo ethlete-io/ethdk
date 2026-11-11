@@ -90,6 +90,17 @@ Not verified: a real Windows window, the notice tooltip against the design (comp
 frame. The embedding compares were not recorded in `implemented.json` (`compare --affected` would also record
 parts other slices changed), so their IMPLEMENTATION-UNCOMPARED stays.
 
+## As built: finding 512 and 898 (a)
+
+- 512: the title-bar sketch for the notice restart interaction states (07acb199a), variant a merged by an agent
+  accept under ADR 0106 + 0210 (dea25f747). `design check --part components/title-bar` at 448c47f: the
+  visible-change gate fails on 7 unjudged notice states (5 rest + hover, active): the design draws the tooltip pane
+  open, the app opens none. Known gap, reported as a tool gap (forced-open overlay pane). OFF-CENTRE 5, all OLD.
+- 898 (a): a merge commits only its own entries of a `merged.json` that was dirty before the merge (448c47f16).
+  Verified: new merge-commit spec case fails on the old code; vitest related 1361 passed; cli typecheck. Not
+  verified: a real Studio merge with a dirty `merged.json`.
+- 898 (b): no tool bug; only 14 ADRs had a `governs` field. The doc agent added globs for the design tree.
+
 ## B345 change-crop b (built, live shot done)
 
 App side of the merged `pages/sketches` change-crop b (2f83c46da). Slice 1: the server measures where a changed
