@@ -4,7 +4,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { run as archive } from './archive-findings.mjs';
-import { lostFindings } from './check-plan-findings.mjs';
+import { findingOrderErrors, lostFindings } from './check-plan-findings.mjs';
 import { git, gitExec, tempGitRepo } from './git-test-env.mjs';
 
 const PLAN = 'plans/ethlete-studio/design-to-code.md';
@@ -118,4 +118,35 @@ test('an archive line edited after archive-findings is refused and named', () =>
   assert.equal(result.status, 1);
   assert.match(result.stderr, /102 \(as built\)/);
   assert.doesNotMatch(result.stderr, /101|103/);
+});
+
+test('a finding out of number order is named', () => {
+  assert.deepEqual(findingOrderErrors(base), []);
+  assert.deepEqual(findingOrderErrors('103\\. c\n\n101\\. a\n\n104\\. d\n'), [
+    'finding 101 follows finding 103; numbers must increase',
+  ]);
+});
+
+test('the real 34b823e8f order is refused by the pre-commit hook in a temp repo', () => {
+  const root = join(import.meta.dirname, '../..');
+  let before;
+  let after;
+  try {
+    before = gitExec(['show', `34b823e8f^:${PLAN}`], { cwd: root, encoding: 'utf8', maxBuffer: 1 << 28 });
+    after = gitExec(['show', `34b823e8f:${PLAN}`], { cwd: root, encoding: 'utf8', maxBuffer: 1 << 28 });
+  } catch {
+    return;
+  }
+  const repo = tempGitRepo('plan-findings-order-');
+  git(repo, 'config', 'user.email', 'a@b.c');
+  git(repo, 'config', 'user.name', 'a');
+  mkdirSync(join(repo, 'plans/ethlete-studio'), { recursive: true });
+  writeFileSync(join(repo, PLAN), before);
+  git(repo, 'add', '--', PLAN);
+  git(repo, 'commit', '-q', '-m', 'base');
+  writeFileSync(join(repo, PLAN), after);
+  git(repo, 'add', '--', PLAN);
+  const result = runCheck(repo);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /finding 797 follows finding 807; numbers must increase/);
 });

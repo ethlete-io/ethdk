@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { orphanFindings, splitFindings } from './archive-findings.mjs';
+import { findingOrderErrors } from './check-plan-findings.mjs';
 import { parseStatusRows } from './studio-status.mjs';
 
 const STATUS_VALUE = /^(accepted|superseded by \d{4})$/;
@@ -79,13 +80,11 @@ export const findingErrors = (planText, archives, statusText) => {
       known.add(number);
     }
   }
-  let previous = 0;
   for (const { number } of splitFindings(planText)) {
     if (known.has(number)) errors.push(`finding ${number} exists twice (design-to-code.md)`);
-    if (number <= previous) errors.push(`finding ${number} follows finding ${previous}; numbers must increase`);
     known.add(number);
-    previous = number;
   }
+  errors.push(...findingOrderErrors(planText));
   for (const row of parseStatusRows(statusText)) {
     for (const number of row.findings) {
       if (!known.has(number)) errors.push(`${row.id} cites Bef. ${number}, but no finding ${number} exists`);
