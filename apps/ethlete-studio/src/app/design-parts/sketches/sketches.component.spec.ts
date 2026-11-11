@@ -56,16 +56,26 @@ const mockWorldSize = (width: number, height: number) => {
   });
 };
 
+const configure = () =>
+  TestBed.configureTestingModule({
+    providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+  });
+
 describe('SketchesComponent', () => {
+  // The first JIT compile of the component would otherwise count against the first case's timeout.
+  beforeAll(async () => {
+    configure();
+    await render({});
+    TestBed.resetTestingModule();
+  });
+
   afterEach(() => vi.restoreAllMocks());
 
   beforeEach(() => {
     vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
       return this.hasAttribute('data-sk-rows') ? LIST_WIDTH : 0;
     });
-    TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
-    });
+    configure();
   });
 
   it('draws one row per variant with every state, dims the unchanged ones and marks the first change', async () => {
