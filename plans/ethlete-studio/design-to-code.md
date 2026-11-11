@@ -4082,3 +4082,16 @@ each with its pid, command and checkout (`/proc/<pid>/cwd` on Linux, `?` elsewhe
 Linux, and one e2e case run. Not verified: the Mac (no `/proc`, so the checkout prints `?`). Not built: the push-suite
 warning before its start (659 part 2) and the goal check per machine (the 90 s goal machine is a human question).
 `ps` CPU share is the average over the life of the process, not the last minute.
+
+793\. Linux builder (2026-11-11, night, 664 + 659 part 1 b05de1e05): the builder and its handoff kept "on which machine
+does the 90 s goal count" as a question for the human, and finding 664 still says "Open for the human". ADR 0240 decided
+it on 2026-11-09 (the desk PC; the Mac reports its time and does not gate). Why no tool caught it: a finding that a later
+ADR answers keeps its "Open for the human" line, and nothing links the ADR back to the finding. Lesson: an open line in a
+finding is stale as soon as an ADR decides it. Decided by the doc agent: the goal check of 664 applies ADR 0240 (gate
+only on the desk PC, report elsewhere); 664 is marked answered by ADR 0240 below. Tool fix (night backlog, Linux, small):
+`yarn adr:governs` or the ADR pre-commit check lists findings whose "Open for the human" line names the topic of an ADR
+committed with a `source:` that cites them; first step a read-only report of findings with an open line older than a
+day, so the doc agent checks each against the ADR index. Also in b05de1e05: the top-process list uses `ps` CPU, the
+lifetime average of a process, so a long-lived idle process can top the list. Decided (tool internal): sample CPU twice
+over about 1 s and rank by the delta. Bite: an idle process with a high lifetime average does not appear.
+664, answered by ADR 0240 (2026-11-09): the goal counts on the desk PC.
