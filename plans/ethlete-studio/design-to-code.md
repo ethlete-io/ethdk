@@ -3780,3 +3780,25 @@ differs only in timings. Not verified: Studio's own shot traffic through the sam
 drawing while idle), and the resident server path. The measuring runs flipped
 `.ethlete/design/studio/sketches/pages-sketches.open-points/sketch.json` from ready to in progress (stale
 `readyContent`); left uncommitted.
+
+841\. Reach check speed (Mac builder subagent, 2026-11-11, from 836): as built. A profile of `judge` on
+pages/sketches@open-points (3494 judges, 9640 wheel steps, 318 frames) put 167 of 357 s in the two full style recalcs
+that adding and removing the `* { pointer-events: auto !important }` sheet costs on every judge; the all-element scan
+took 15 s, the `elementFromPoint` samples 32 s, `coverOf` under 1 s. A toggle through an attribute on `:root` costs the
+same (still a full recalc), so the pan search itself was left alone. `judge` now finds every element whose computed
+`pointer-events` is not `auto` (the only elements the `*` rule changes; `passive` is derived from the same scan) and
+forces only those, through a `data-et-reach-force` attribute and a resident `:where([data-et-reach-force])` rule
+(specificity 0, unlayered, re-appended when it is no longer the last child of `head`, so the cascade matches `*`), and it
+skips the paint pass when no action is sampled. The projected-region pass is unchanged. Cold,
+`ETHLETE_DESIGN_RESIDENT=0`, alternated old/new: open-points render-check phase 88.3 s and 88.5 s old, 61.4 s and 61.2 s
+new (summed `inspectFrame` time 345 s to 180 s; whole command 158-159 s to 131-132 s; load 3 to 15 on 6 cores);
+components/card 3.5/3.4 s, pages/film-detail 1.2/1.3 s, foundations/type@font-pair 5.2/5.3 s (too few pan steps to
+matter). Proof: every `inspectFrame` result dumped per frame (an injected hook in copies of the built cli under
+`tmp/p841/`), old against new, on the four ready sketches that reach the render check: 394 frames (318 + 60 + 8 + 8),
+0 differences; stdout identical, stderr differs only in timing lines. elements/rating exits 1 at "ready will refuse"
+(no controls declared, 6 missing motions) before the render check in old and new alike, with the same output, so it
+has no frames to compare. Not verified: none of the five sketches has a COVERED or UNREACHABLE hit, so the proof only
+shows equal "no issue" verdicts; positive cases rest on `reach.spec.ts`. Also not verified: app MutationObservers with
+`attributes: true` (`element-children`, `element-scroll-state`) now get records for the toggled attribute after the
+evaluate (the attribute is gone by then), and the resident server path. Every old and new run of open-points and
+font-pair flipped its `sketch.json` from ready to in progress (845); each was restored with `git checkout`.

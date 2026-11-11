@@ -11,6 +11,7 @@ const REGION_SAMPLES_PER_SIDE = 5;
 const OPAQUE = 0.95;
 const PAN_STEP = 32;
 const PAN_MAX_STEPS = 200;
+const FORCED_ATTRIBUTE = 'data-et-reach-force';
 
 /**
  * The statements of the reach check inside the frame script of `render-check`. They use `root`, `report` and
@@ -113,8 +114,12 @@ export const REACH_STATEMENTS = `
     }
     const force = document.createElement('style');
     force.textContent = '* { pointer-events: auto !important; }';
+    const forceBound = document.createElement('style');
+    forceBound.textContent = ':where([${FORCED_ATTRIBUTE}]) { pointer-events: auto !important; }';
+    document.head.append(forceBound);
     const judge = (pose) => {
-      passive = new Set([...root.querySelectorAll('*')].filter((element) => getComputedStyle(element).pointerEvents === 'none'));
+      const bound = [...document.querySelectorAll('*')].filter((element) => getComputedStyle(element).pointerEvents !== 'auto');
+      passive = new Set(bound.filter((element) => element !== root && root.contains(element) && getComputedStyle(element).pointerEvents === 'none'));
       const sampled = [];
       for (const element of shownActions) {
         const box = visibleBoxOf(element);
@@ -122,12 +127,14 @@ export const REACH_STATEMENTS = `
       }
       for (const { points, element } of sampled)
         for (const sample of points) sample.click = coverOf(document.elementFromPoint(...sample.point), element, false, document.documentElement);
-      document.head.append(force);
+      if (sampled.length === 0) return;
+      if (document.head.lastElementChild !== forceBound) document.head.append(forceBound);
+      for (const element of bound) element.setAttribute('${FORCED_ATTRIBUTE}', '');
       try {
         for (const { points, element } of sampled)
           for (const sample of points) sample.cover = coverOf(document.elementFromPoint(...sample.point), element, true, document.documentElement) ?? sample.click;
       } finally {
-        force.remove();
+        for (const element of bound) element.removeAttribute('${FORCED_ATTRIBUTE}');
       }
       for (const { element, points } of sampled) {
         const counts = new Map();
@@ -168,6 +175,7 @@ export const REACH_STATEMENTS = `
         if (back[0] || back[1]) wheel(canvas, back[0], back[1]);
       }
     }
+    forceBound.remove();
     document.head.append(force);
     try {
       for (const element of root.querySelectorAll('[data-et-projected]')) {
