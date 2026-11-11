@@ -3911,3 +3911,21 @@ a slow one. Suspect: none yet; the builder reads the failed run's `::group::` ou
 5 s (5020 ms; its sibling took 4570 ms); a merge case that spawns git, the same class as 783. Decided (second case of the
 class, so the 785 pattern grows): the shared helper that builds a real git repo for a spec sets the 60 s timeout on
 import, as `check-system.fixtures.ts` does, so every spec that runs a real merge gets it; no per-case numbers.
+
+788\. Linux builder (2026-11-11, night, B438 measurement): whole-product `sketch check --product studio-lab` exits 1
+before it draws, because the CLI writes its generated per-variant `tsconfig.json` files unformatted (FORMAT findings);
+`--fix` formats them. Suspect: the writer skips Prettier. Lesson: the tool writes files that its own gate refuses.
+Decided by the doc agent (tool internal, the builder's recommendation): every file the CLI generates goes through the
+formatter when it is written; a spec asserts that a freshly generated sketch passes the FORMAT rule. Night backlog,
+Linux, after 787.
+
+789\. Linux builder (2026-11-11, night, B438 measurement): the committed sketch `elements/rating` has 8 UTILITY-CSS
+findings, so a sketch with open check findings reached git. Suspect: none yet; the cause is the question, which gate
+should have refused it (pre-commit, `sketch check` before ready, or the merge). Decided by the doc agent: the builder
+names the cause first (night backlog, Linux, after 788, read only); the gate fix is tool work, the sketch fix itself
+waits for the day order (no sketch work at night, ADR 0257).
+
+B438 measured (ADR 0229, before 0173ca7a8 vs after 789031753, cold, alternating): studio-lab scratch, 3 sketches, 82
+frames: wall 16 s in all 4 runs, compare phase 3.91/3.96 s before vs 3.29/3.30 s after; sdk scratch, 1 sketch: wall
+22 s, compare phase 6.85/7.03 vs 6.58/6.74 s. Findings lines identical. The 150-280 s cold compare of finding 598 does
+not reproduce on today's products. Not measured: a product with many differing frames.
