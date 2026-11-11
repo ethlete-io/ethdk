@@ -142,3 +142,11 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   run per machine, Mac backlog) recorded; 780 push slot built by the Mac (bc219f75d, `refs/push-slot/next`; Linux rule
   sent). Linux pushed 783, 784, 620, B438 (ADR 0229 built), 649 part 1 (part 2 in the STATUS backlog line). Linux
   builder restarted from `builder-2026-11-11a`: B438 cold compare measurement, then 782. Mac: push, 777 Mac verify, 786, 735. Morning round unchanged.
+- Night, 05:30 (after 62fa5a00a): findings 787-790 recorded (787 built 04d6485bc, 788 built eea6f5c7e, 789 cause: the
+  rule came after the sketch; decided under ADR 0226: no hook or CI gate, (a) builder-agent rule built d0db285ce, (b)
+  Studio live display of a static finding on a ready sketch, still open; 790 option A: spec entry module + lint rule).
+  782 built 191ab7c46. B438 measured (no real gain; recorded below 789). STATUS: 614, 617, 618, 620, 756 struck.
+  Linux holds every push until the Mac merge 6bca47ab5 lands (its clone lacks the 780 slot code); then pushes 191ab7c46,
+  04d6485bc, eea6f5c7e, d0db285ce; next 790, 789 (b), 650. Linux builder restarts from its own handoff. Mac: push
+  6bca47ab5 (brings 780 slot, 769 Tab-focus fix), then 777 Mac verify, 786, 735. Day order addition: merge the
+  `elements/rating` sketch pick c with the UTILITY-CSS fix (789). Morning round unchanged (three items).
