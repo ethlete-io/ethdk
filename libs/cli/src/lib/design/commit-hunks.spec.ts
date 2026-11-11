@@ -1,11 +1,12 @@
-import { execFileSync, spawn } from 'child_process';
+import { spawn } from 'child_process';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, relative, resolve } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { designCommitHunks, withPartHunks } from './commit-hunks';
+import { gitExec } from '../git-test-env.fixtures';
 
-const git = (cwd: string, ...args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
+const git = (cwd: string, ...args: string[]) => gitExec(args, { cwd, encoding: 'utf8' }).trim();
 
 const repo = (files: Record<string, unknown>) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-commit-hunks-'));

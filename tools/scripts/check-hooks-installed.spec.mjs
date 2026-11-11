@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
 import { hooksProblemOf } from './check-hooks-installed.mjs';
 import { useTrackedHooksPath } from './postinstall.mjs';
+import { gitSpawn } from './git-test-env.mjs';
 
 const created = [];
 
@@ -14,7 +14,7 @@ after(() => created.forEach((dir) => rmSync(dir, { recursive: true, force: true 
 const repoOf = () => {
   const repo = realpathSync(mkdtempSync(join(tmpdir(), 'hooks-installed-')));
   created.push(repo);
-  spawnSync('git', ['init', '--quiet'], { cwd: repo });
+  gitSpawn(['init', '--quiet'], { cwd: repo });
 
   return repo;
 };
@@ -24,7 +24,7 @@ const addHooks = (repo) => {
   writeFileSync(join(repo, '.husky', 'pre-commit'), '');
 };
 
-const setHooksPath = (repo, value) => spawnSync('git', ['config', 'core.hooksPath', value], { cwd: repo });
+const setHooksPath = (repo, value) => gitSpawn(['config', 'core.hooksPath', value], { cwd: repo });
 
 test('fails when core.hooksPath is unset', () => {
   assert.match(hooksProblemOf(repoOf()), /core\.hooksPath is unset/);
@@ -57,11 +57,11 @@ test('passes outside a git repository', () => {
 });
 
 const worktreeOf = (repo) => {
-  spawnSync('git', ['-c', 'user.email=a@b.c', '-c', 'user.name=t', 'commit', '--allow-empty', '-m', 'x', '--quiet'], {
+  gitSpawn(['-c', 'user.email=a@b.c', '-c', 'user.name=t', 'commit', '--allow-empty', '-m', 'x', '--quiet'], {
     cwd: repo,
   });
   const worktree = join(repo, '.claude', 'worktrees', 'wt');
-  spawnSync('git', ['worktree', 'add', '--quiet', '-b', 'wt', worktree], { cwd: repo });
+  gitSpawn(['worktree', 'add', '--quiet', '-b', 'wt', worktree], { cwd: repo });
 
   return realpathSync(worktree);
 };
@@ -77,13 +77,10 @@ test('an absolute path to the main checkout fails in a worktree', () => {
 test('postinstall sets the relative path and a worktree runs its own hooks', () => {
   const repo = repoOf();
   addHooks(repo);
-  spawnSync('git', ['add', '.'], { cwd: repo });
+  gitSpawn(['add', '.'], { cwd: repo });
   const worktree = worktreeOf(repo);
   assert.equal(useTrackedHooksPath(repo), '.husky');
-  assert.equal(
-    spawnSync('git', ['config', 'core.hooksPath'], { cwd: worktree, encoding: 'utf8' }).stdout.trim(),
-    '.husky',
-  );
+  assert.equal(gitSpawn(['config', 'core.hooksPath'], { cwd: worktree, encoding: 'utf8' }).stdout.trim(), '.husky');
   assert.equal(hooksProblemOf(repo), null);
 });
 

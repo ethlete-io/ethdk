@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { gitEnv } from './git-test-env.mjs';
 import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -553,7 +554,7 @@ test('a blocked verdict keeps the steps that passed, and a reused step keeps the
 });
 
 const sh = (cwd, command, args) => {
-  const run = spawnSync(command, args, { cwd, encoding: 'utf8' });
+  const run = spawnSync(command, args, { cwd, encoding: 'utf8', env: gitEnv() });
   assert.equal(run.status, 0, run.stderr);
   return run;
 };

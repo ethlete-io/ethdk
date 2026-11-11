@@ -1,15 +1,13 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { checkSlot, claimSlot, readSlot, releaseSlot, slotState, SLOT_TTL_MS } from './push-slot.mjs';
-
-const cleanEnv = () => Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
+import { gitSpawn } from './git-test-env.mjs';
 
 const run = (cwd, ...args) => {
-  const result = spawnSync('git', args, { cwd, encoding: 'utf8', env: cleanEnv() });
+  const result = gitSpawn(args, { cwd, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   return result.stdout.trim();
 };

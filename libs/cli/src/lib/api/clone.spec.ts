@@ -1,4 +1,3 @@
-import { execFileSync } from 'child_process';
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -6,8 +5,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { gitUrlHost } from './auth-hint';
 import { cloneApiRepo, isGitIgnored } from './clone';
 import { runApiCommand } from './run';
+import { gitExec } from '../git-test-env.fixtures';
 
-const git = (cwd: string, ...args: string[]) => execFileSync('git', args, { cwd, stdio: 'pipe' });
+const git = (cwd: string, ...args: string[]) => gitExec(args, { cwd, stdio: 'pipe' });
 
 const errors: string[] = [];
 
@@ -53,9 +53,7 @@ describe('cloneApiRepo', () => {
 
     cloneApiRepo({ repoUrl: origin, into, branch: 'develop' });
 
-    expect(execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: into, encoding: 'utf8' }).trim()).toBe(
-      'develop',
-    );
+    expect(gitExec(['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: into, encoding: 'utf8' }).trim()).toBe('develop');
   });
 
   it('refuses to clone over a directory that is already there', () => {

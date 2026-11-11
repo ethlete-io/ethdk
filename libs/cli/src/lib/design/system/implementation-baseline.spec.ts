@@ -1,4 +1,3 @@
-import { execFileSync } from 'child_process';
 import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
@@ -11,6 +10,7 @@ import { writePartRecord } from './part-ready';
 import { markImplemented } from './part-task';
 import { resolveProduct } from './resolve-product';
 import { originOf } from './write-origin';
+import { gitExec } from '../../git-test-env.fixtures';
 
 const CHIP = 'components/chip';
 const BADGE = 'components/badge';
@@ -50,7 +50,7 @@ const checkout = () => {
     });
   }
 
-  const git = (...args: string[]) => execFileSync('git', args, { cwd: target, stdio: 'pipe' }).toString();
+  const git = (...args: string[]) => gitExec(args, { cwd: target, stdio: 'pipe' }).toString();
   const commit = () => {
     git('add', '-A');
     git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'x');

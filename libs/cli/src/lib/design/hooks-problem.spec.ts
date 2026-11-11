@@ -1,16 +1,16 @@
-import { spawnSync } from 'child_process';
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { hooksProblemOf } from './hooks-problem';
+import { gitSpawn } from '../git-test-env.fixtures';
 
 const dirs: string[] = [];
 
 const repoOf = (options: { husky: boolean }) => {
   const repo = realpathSync(mkdtempSync(join(tmpdir(), 'hooks-problem-')));
   dirs.push(repo);
-  spawnSync('git', ['init', '--quiet'], { cwd: repo });
+  gitSpawn(['init', '--quiet'], { cwd: repo });
 
   if (options.husky) {
     mkdirSync(join(repo, '.husky'), { recursive: true });
@@ -29,7 +29,7 @@ describe('hooksProblemOf', () => {
 
   it('is silent once core.hooksPath is the relative .husky', () => {
     const repo = repoOf({ husky: true });
-    spawnSync('git', ['config', 'core.hooksPath', '.husky'], { cwd: repo });
+    gitSpawn(['config', 'core.hooksPath', '.husky'], { cwd: repo });
 
     expect(hooksProblemOf(repo)).toBeNull();
   });

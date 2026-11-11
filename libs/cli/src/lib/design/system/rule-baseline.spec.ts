@@ -1,4 +1,3 @@
-import { execFileSync } from 'child_process';
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
@@ -7,6 +6,7 @@ import { DESIGN_DIR } from '../design-config';
 import { Problem } from './problem';
 import { resolveProduct } from './resolve-product';
 import { RULE_BASELINE_FILE, ruleBaselineOf, writeRuleBaseline } from './rule-baseline';
+import { gitExec } from '../../git-test-env.fixtures';
 
 const checkout = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-rule-baseline-'));
@@ -20,7 +20,7 @@ const checkout = () => {
 
   write(`${DESIGN_DIR}/config.json`, JSON.stringify({ products: { 'app-a': {} } }));
 
-  const git = (...args: string[]) => execFileSync('git', args, { cwd: target, stdio: 'pipe' }).toString();
+  const git = (...args: string[]) => gitExec(args, { cwd: target, stdio: 'pipe' }).toString();
   const commit = () => {
     git('add', '-A');
     git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'x');

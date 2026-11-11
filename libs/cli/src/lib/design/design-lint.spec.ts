@@ -1,4 +1,3 @@
-import { spawnSync } from 'child_process';
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -19,6 +18,7 @@ import { originOf } from './system/write-origin';
 import { resolveProduct } from './system/resolve-product';
 import { mergeSketch } from './system/sketch/merge';
 import { createSketch, decideSketch, markSketchReady, Sketch, variantDirOf } from './system/sketch/sketch';
+import { gitSpawn } from '../git-test-env.fixtures';
 
 const BANG = "const plus = ICONS.find((each) => each === 'et-plus')!;\n";
 const FAILED = "const plus = ICONS.find((each) => each === 'et-plus') ?? fail('no et-plus');\n";
@@ -44,7 +44,7 @@ const eslintConfig = () => {
 };
 
 const git = (target: string, ...args: string[]) =>
-  spawnSync('git', ['-c', 'user.name=spec', '-c', 'user.email=spec@example.com', ...args], {
+  gitSpawn(['-c', 'user.name=spec', '-c', 'user.email=spec@example.com', ...args], {
     cwd: target,
     encoding: 'utf8',
   });

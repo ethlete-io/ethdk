@@ -1,4 +1,3 @@
-import { execFileSync } from 'child_process';
 import {
   cpSync,
   existsSync,
@@ -32,6 +31,7 @@ import { resolveProduct } from './system/resolve-product';
 import { createSketch, markSketchReady, parseTarget, Sketch } from './system/sketch/sketch';
 import { CheckSketches, openSketchListingAt } from './system/sketch/sketch-checker';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
+import { gitExec } from '../git-test-env.fixtures';
 
 type ServerOptions = {
   root: string;
@@ -1438,8 +1438,8 @@ describe('the design server for sketches and comments', () => {
 
   it('writes, lists and finishes a canvas comment', async () => {
     const target = acme();
-    execFileSync('git', ['init', '--quiet'], { cwd: target });
-    execFileSync('git', ['config', 'user.name', 'Tom Test'], { cwd: target });
+    gitExec(['init', '--quiet'], { cwd: target });
+    gitExec(['config', 'user.name', 'Tom Test'], { cwd: target });
 
     const { ask } = await serveAcme(target);
     const on = { part: 'pages/home', state: 'empty', size: 'phone', text: 'Say why it is empty.' };

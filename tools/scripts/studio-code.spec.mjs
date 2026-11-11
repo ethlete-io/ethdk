@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { connect, createServer } from 'node:net';
 import { tmpdir } from 'node:os';
@@ -14,6 +14,7 @@ import {
   ensureCliCopy,
   pushStateOf,
 } from './studio-code.mjs';
+import { gitSpawn } from './git-test-env.mjs';
 
 const A = 'a'.repeat(40);
 const B = 'b'.repeat(40);
@@ -68,7 +69,7 @@ test('a clean libs/cli whose build does not match builds the commit', () => {
 const quiet = () => undefined;
 
 const git = (cwd, ...args) => {
-  const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
+  const result = gitSpawn(args, { cwd, encoding: 'utf8' });
 
   assert.equal(result.status, 0, result.stderr);
 
@@ -148,7 +149,7 @@ test('a dirty libs/cli with a copy without a pinned commit still serves the last
     assert.equal(await waitForPort(port), true);
   } finally {
     server?.kill();
-    spawnSync('git', ['worktree', 'prune'], { cwd: root });
+    gitSpawn(['worktree', 'prune'], { cwd: root });
     rmSync(root, { recursive: true, force: true });
   }
 });
@@ -171,7 +172,7 @@ test('a clean libs/cli without dist/libs/cli builds the last commit', () => {
     assert.equal(copy.dirty, false);
     assert.ok(existsSync(copy.entry));
   } finally {
-    spawnSync('git', ['worktree', 'prune'], { cwd: root });
+    gitSpawn(['worktree', 'prune'], { cwd: root });
     rmSync(root, { recursive: true, force: true });
   }
 });

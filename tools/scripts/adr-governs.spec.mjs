@@ -6,6 +6,7 @@ import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { governingAdrs, parseAdr } from './adr-governs.mjs';
+import { gitSpawn } from './git-test-env.mjs';
 
 const script = join(dirname(fileURLToPath(import.meta.url)), 'adr-governs.mjs');
 const created = [];
@@ -43,7 +44,7 @@ test('skips a superseded ADR', () => {
 test('--staged reads the staged files of a temp repo', () => {
   const repo = realpathSync(mkdtempSync(join(tmpdir(), 'adr-governs-')));
   created.push(repo);
-  const run = (...args) => spawnSync('git', args, { cwd: repo });
+  const run = (...args) => gitSpawn(args, { cwd: repo });
   run('init', '--quiet');
   mkdirSync(join(repo, 'docs', 'adr'), { recursive: true });
   mkdirSync(join(repo, '.husky'));

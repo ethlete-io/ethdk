@@ -1,4 +1,3 @@
-import { execFileSync } from 'child_process';
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
@@ -12,6 +11,7 @@ import {
   readManifest,
   writeRanges,
 } from './packages';
+import { gitExec } from '../git-test-env.fixtures';
 
 const makeRoot = () => mkdtempSync(join(tmpdir(), 'cli-packages-'));
 
@@ -68,7 +68,7 @@ describe('findManifests', () => {
   it('leaves out a manifest git ignores in a checkout', () => {
     const root = makeRoot();
 
-    execFileSync('git', ['init', '-q'], { cwd: root });
+    gitExec(['init', '-q'], { cwd: root });
     writeManifest(root, { name: 'root' });
     writeManifest(root, { name: 'lib' }, join('libs', 'a', 'package.json'));
     writeManifest(root, { name: 'vendored' }, join('vendor', 'x', 'package.json'));

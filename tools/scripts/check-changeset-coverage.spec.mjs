@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { after, describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { gitSpawn } from './git-test-env.mjs';
 
 const sdk = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const created = [];
@@ -40,7 +41,7 @@ const fixture = (initial, preChangesets = []) => {
   put(repo, '.changeset/pre.json', JSON.stringify({ mode: 'pre', tag: 'next', changesets: preChangesets }));
   put(repo, '.changeset/silent-catch-try-catch.md', initial);
 
-  const git = (...args) => spawnSync('git', args, { cwd: repo, encoding: 'utf8' });
+  const git = (...args) => gitSpawn(args, { cwd: repo, encoding: 'utf8' });
   git('init', '-q');
   git('config', 'user.name', 't');
   git('config', 'user.email', 't@example.com');

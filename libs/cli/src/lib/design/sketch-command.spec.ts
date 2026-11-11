@@ -1,5 +1,4 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
-import { spawnSync } from 'child_process';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -24,6 +23,7 @@ import {
   VariantChange,
   viewedShotFileOf,
 } from './system/sketch/viewed-shots';
+import { gitSpawn } from '../git-test-env.fixtures';
 
 vi.mock('./ready-shots', () => ({
   aktuellPlaceholderWarnings: vi.fn(async (): Promise<string[]> => []),
@@ -149,7 +149,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const product = join(target, DESIGN_DIR, 'acme');
     const home = join(product, 'pages/home/home.ts');
     const git = (...args: string[]) =>
-      spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: target, encoding: 'utf8' });
+      gitSpawn(['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: target, encoding: 'utf8' });
 
     vi.mocked(variantChangesShown).mockImplementationOnce(async ({ sketch }) =>
       sketch.variants.map((variant) => ({ variant, change: null })),
@@ -201,7 +201,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
 
   const gitRepo = (target: string) => {
     const git = (...args: string[]) =>
-      spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: target, encoding: 'utf8' });
+      gitSpawn(['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: target, encoding: 'utf8' });
 
     writeFileSync(join(target, '.gitignore'), `${DESIGN_DIR}/tsconfig.json\n${DESIGN_DIR}/*/tsconfig.json\n`);
     git('init');

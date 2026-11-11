@@ -3,6 +3,7 @@ import { mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { describe, expect, it } from 'vitest';
+import { gitExec } from './git-test-env.fixtures';
 
 const hookPath = resolve(__dirname, '../../content/hooks/git-safety.py');
 
@@ -114,7 +115,7 @@ describe('git-safety', () => {
 
   describe('concluding a merge', () => {
     const git = (cwd: string, ...args: string[]) =>
-      execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', ...args], {
+      gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', ...args], {
         cwd,
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'pipe'],

@@ -1,9 +1,9 @@
-import { execFileSync } from 'child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { harnessBuildKeyOf } from './harness-build-cache';
+import { gitExec } from '../../git-test-env.fixtures';
 
 const roots: string[] = [];
 
@@ -15,7 +15,7 @@ const checkout = () => {
   };
 
   roots.push(root);
-  execFileSync('git', ['init', '-q'], { cwd: root });
+  gitExec(['init', '-q'], { cwd: root });
   write(
     'tsconfig.base.json',
     JSON.stringify({

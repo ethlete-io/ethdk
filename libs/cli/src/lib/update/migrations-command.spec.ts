@@ -1,4 +1,3 @@
-import { execFileSync } from 'child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -8,6 +7,7 @@ import { migrationsCommand } from './migrations-command';
 import { writePendingUpdate } from './pending';
 import { SCAN_FILE_ENV } from './scan';
 import { TASKS_DATA_FILE, UPDATE_DIR } from './tasks';
+import { gitExec } from '../git-test-env.fixtures';
 
 const spawnSync = vi.hoisted(() =>
   vi.fn<
@@ -38,7 +38,7 @@ const writeJson = (path: string, value: unknown) => {
   writeFileSync(path, JSON.stringify(value), 'utf8');
 };
 
-const gitIn = (root: string, ...args: string[]) => execFileSync('git', args, { cwd: root, encoding: 'utf8' });
+const gitIn = (root: string, ...args: string[]) => gitExec(args, { cwd: root, encoding: 'utf8' });
 
 const installQuery = (root: string, version: string) => {
   const query = join(root, 'node_modules', '@ethlete', 'query');

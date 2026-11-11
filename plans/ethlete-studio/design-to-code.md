@@ -3828,6 +3828,19 @@ Verified: `node --test tools/scripts/push-slot.spec.mjs` (9 pass), eslint clean.
 against origin; the Mac must pull before its next push.
 
 801\. Linux builder (2026-11-11, night, 799 bite run; incident): the first bite run of the new pre-commit data-spec step
+801 as built (Linux builder): `tools/scripts/git-test-env.mjs` (+ `.d.mts`) exports `gitEnv(extra)`, `gitExec(args, opts)`,
+`gitSpawn(args, opts)`, `git(dir, ...args)` and `tempGitRepo(prefix)`; they strip every inherited `GIT_*` (an explicit
+`GIT_AUTHOR_*` extra stays). `@nx/enforce-module-boundaries` refuses a lib importing from `tools/`, so `libs/cli` and
+`libs/agent-rules` each carry a typed copy, `src/lib/git-test-env.fixtures.ts` (three copies, one API). Migrated: every
+spec in libs/cli, libs/agent-rules and tools/scripts that spawns git for a temp repo (`execFileSync/spawnSync('git'`
+became `gitExec/gitSpawn`), plus `push-slot.spec.mjs`, `commit-wait`, `pre-commit-hook` and `staged-data-specs.mjs`, which
+stripped their own way. Left: `orphan-endpoint.spec.ts` (read-only `git archive` of the real repo), `libs/timetrack`
+(fake git backend), `apps/timetrack*` and `tools/changesets-action` (own harness, no hook path). Bite:
+`tools/scripts/git-test-env.spec.mjs` points `GIT_DIR` at a scratch repo and runs git in a temp repo; with the stripping
+removed it fails, restored it passes. Verified: all tools/scripts specs (one unrelated failure, `studio-e2e-perf`,
+file untouched), `vitest related` in libs/cli (35 files) and the two agent-rules specs, cli and agent-rules typecheck,
+eslint zero warnings. Not verified: a real hook run of the specs; the cli/agent-rules copies have no bite of their own
+beyond cli's `git-test-env.spec.ts` (agent-rules copy untested).
 wrote into the main repo's `.git/config`: `core.bare = true`, a fake `[user]`, `commit.gpgsign=false`. Cause (measured): a
 git hook runs with `GIT_DIR`/`GIT_INDEX_FILE` set, and the temp-repo `git init`/`git config` calls of
 `commit-hunks.spec.ts` inherited them. The subagent repaired it; the builder and the doc agent checked: `core.bare=false`,

@@ -5,13 +5,14 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { gitSpawn } from './git-test-env.mjs';
 
 const hook = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '.husky', 'pre-push');
 const created = [];
 
 after(() => created.forEach((dir) => rmSync(dir, { recursive: true, force: true })));
 
-const git = (cwd, ...args) => spawnSync('git', args, { cwd, encoding: 'utf8' }).stdout.trim();
+const git = (cwd, ...args) => gitSpawn(args, { cwd, encoding: 'utf8' }).stdout.trim();
 
 const stub = (path, body) => {
   writeFileSync(path, `#!/bin/sh\n${body}\n`);

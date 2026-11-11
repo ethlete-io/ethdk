@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { matchesGlob } from './cli-related-map.mjs';
+import { gitEnv } from './git-test-env.mjs';
 
 const root = join(fileURLToPath(import.meta.url), '../../..');
 
@@ -11,11 +12,8 @@ export const specsForData = (files, map) =>
     .filter(([, globs]) => files.some((file) => globs.some((glob) => matchesGlob(file, glob))))
     .map(([spec]) => spec);
 
-const withoutGitEnv = () => Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
-
 // A hook runs with GIT_DIR and GIT_INDEX_FILE set; specs that `git init` a temp repo would otherwise write into this one.
-const run = (command, args) =>
-  spawnSync(command, args, { cwd: root, stdio: 'inherit', env: withoutGitEnv() }).status ?? 1;
+const run = (command, args) => spawnSync(command, args, { cwd: root, stdio: 'inherit', env: gitEnv() }).status ?? 1;
 
 export const runSpecs = (specs) => {
   const vitest = specs.filter((spec) => spec.endsWith('.spec.ts'));
