@@ -3920,7 +3920,10 @@ a slow one. Suspect: none yet; the builder reads the failed run's `::group::` ou
 `--slow 2` bites. Cause (measured on CI): "merges a pick of old like any sketch" timed out at the vitest default
 5 s (5020 ms; its sibling took 4570 ms); a merge case that spawns git, the same class as 783. Decided (second case of the
 class, so the 785 pattern grows): the shared helper that builds a real git repo for a spec sets the 60 s timeout on
-import, as `check-system.fixtures.ts` does, so every spec that runs a real merge gets it; no per-case numbers.
+import, as `check-system.fixtures.ts` does, so every spec that runs a real merge gets it; no per-case numbers. Built
+04d6485bc: no shared git helper existed; new `git-repo.fixtures.ts` sets the 60 s timeout on import; edit-sketch,
+after-merge, rebase-port and merge-commit specs use it (merge.spec spies on `child_process` and stays). Bite: edit-sketch
+fails at `--slow 6` before, passes after. Not moved: specs that init git without a sketch merge (`lib/update/*`).
 
 As built (787): new `libs/cli/src/lib/design/system/git-repo.fixtures.ts` exports `git`, `gitResult`, `commitAll` and
 `initGitRepo`. It sets `testTimeout` to `HEAVY_DESIGN_SPEC_TIMEOUT_MS` on import (the one constant, imported from
