@@ -46,7 +46,7 @@ test('refuses a reverse diff that does not apply and leaves the export as it was
 
 test(
   'the tools step passes in a real HEAD export with the env the push suite gives it',
-  { skip: process.env.COMMIT_EXPORT_NESTED === '1' },
+  { skip: process.env.ETHLETE_REPO_ROOT !== undefined },
   (t) => {
     const repo = join(import.meta.dirname, '..', '..');
     const { dir, error } = exportCommit(repo, git(repo, 'rev-parse', 'HEAD'), 'commit-export-spec');
@@ -55,7 +55,7 @@ test(
 
     const run = spawnSync('yarn', ['test:tools'], {
       cwd: dir,
-      env: { ...process.env, ...toolsStepEnv(repo), COMMIT_EXPORT_NESTED: '1', NODE_TEST_CONTEXT: undefined },
+      env: { ...process.env, ...toolsStepEnv(repo), NODE_TEST_CONTEXT: undefined },
       encoding: 'utf8',
     });
 
