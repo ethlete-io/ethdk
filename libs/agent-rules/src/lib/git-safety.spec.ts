@@ -1,5 +1,5 @@
 import { execFileSync } from 'child_process';
-import { mkdtempSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -152,6 +152,15 @@ describe('git-safety', () => {
       expect(runHook('git commit --no-edit', 'Bash', repo)?.hookSpecificOutput.permissionDecisionReason).toContain(
         '-- <paths>',
       );
+    });
+
+    it('allows a pathless commit when a plan archive is staged next to the merge paths', () => {
+      const repo = conflictingMerge();
+      mkdirSync(join(repo, 'plans/studio/archive'), { recursive: true });
+      writeFileSync(join(repo, 'plans/studio/archive/findings.md'), 'moved\n');
+      git(repo, 'add', '--', 'plans/studio/archive/findings.md');
+
+      expect(runHook('git commit --no-edit', 'Bash', repo)).toBeNull();
     });
 
     it('denies --amend during a merge', () => {

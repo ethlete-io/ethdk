@@ -8,7 +8,8 @@ Denies, for a Bash call:
   `create`, `store`); `git stash list` and `git stash show` stay allowed
 - `git commit --amend`
 - `git commit` without a ` -- <paths>` pathspec, except the commit that concludes a merge: while
-  `MERGE_HEAD` exists and every staged path changed between HEAD and MERGE_HEAD or is conflicted
+  `MERGE_HEAD` exists and every staged path changed between HEAD and MERGE_HEAD, is conflicted, or is a
+  plan archive under `plans/**/archive/` (an archive run that shrinks a merged plan writes there)
 
 `git commit-tree` and `git update-index` stay allowed, so a merge commit built on a temporary
 GIT_INDEX_FILE works. Only real command positions count: commit messages (`-m`, `--message`), quoted text and heredoc
@@ -120,9 +121,13 @@ def concludes_merge(cwd):
         merge_paths = git_lines(cwd, "diff", "--name-only", "HEAD", "MERGE_HEAD") | git_lines(
             cwd, "diff", "--name-only", "--diff-filter=U"
         )
-        return staged <= merge_paths
+        return all(path in merge_paths or is_plan_archive(path) for path in staged)
     except Exception:
         return False
+
+
+def is_plan_archive(path):
+    return path.startswith("plans/") and "/archive/" in path
 
 
 def stages_everything(args):
