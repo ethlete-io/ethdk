@@ -1985,19 +1985,31 @@ const flagsOf = (command: string) => {
  * `et design sketch <command> …` opens, adds variants to, reports on, readies, checks, previews, rebases, picks, merges and
  * discards sketches, and rejects, reopens and withdraws their variants.
  */
+/** The usage-error lines `sketch <argv>` would print and exit 2 with, or null when its arguments parse. */
+export const sketchUsageErrorOf = (argv: string[], invocation: string): string[] | null => {
+  const [command = '', ...rest] = argv;
+  const args = argsOf(rest, flagsOf(command));
+  const unauthored = typeof args !== 'string' && WRITES.has(command) && authorOf(args) === null;
+
+  if (COMMANDS[command] && typeof args !== 'string' && !unauthored) return null;
+
+  return [
+    ...(typeof args === 'string' ? [args] : []),
+    ...(COMMANDS[command] ? [] : [`unknown sketch command "${command}"`]),
+    ...(unauthored ? [`sketch ${command} ${NEEDS_AUTHOR}`] : []),
+    SKETCH_USAGE.map((line) => `usage: ${invocation} ${line}`).join('\n'),
+  ];
+};
+
 export const designSketch = (options: { target: string; argv: string[]; invocation: string; warm?: WarmDraw }) => {
   const { target, argv, invocation, warm } = options;
   const [command = '', ...rest] = argv;
   const run = COMMANDS[command];
+  const usageError = sketchUsageErrorOf(argv, invocation);
   const args = argsOf(rest, flagsOf(command));
-  const unauthored = typeof args !== 'string' && WRITES.has(command) && authorOf(args) === null;
 
-  if (!run || typeof args === 'string' || unauthored) {
-    if (typeof args === 'string') console.error(args);
-    if (!run) console.error(`unknown sketch command "${command}"`);
-    if (unauthored) console.error(`sketch ${command} ${NEEDS_AUTHOR}`);
-
-    console.error(SKETCH_USAGE.map((line) => `usage: ${invocation} ${line}`).join('\n'));
+  if (usageError || !run || typeof args === 'string') {
+    for (const line of usageError ?? []) console.error(line);
 
     return 2;
   }

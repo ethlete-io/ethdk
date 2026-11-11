@@ -1,6 +1,6 @@
-import { cpSync, mkdtempSync, realpathSync, readFileSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, realpathSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { join, resolve } from 'path';
+import { dirname, join, resolve } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from './design-config';
 import { createDesignServer } from './serve';
@@ -122,6 +122,23 @@ describe('a product stylesheet drawn for a sketch variant', () => {
     expect(cssOf(a)).not.toContain(MERGED);
     expect(cssOf(b)).toContain(`.acme-generated{border-color:${MERGED};}`);
     expect(merged).toBe(plainMerged.replaceAll(plain.target, generated.target));
+  });
+
+  it("resolves the variant's own @assets URL in the stylesheet it inlines", async () => {
+    const { compiled, variantCss } = await serveAcme();
+    const font = resolve(variantCss, '../../../assets/fonts/face.woff2');
+
+    mkdirSync(dirname(font), { recursive: true });
+    writeFileSync(font, '');
+    writeFileSync(
+      variantCss,
+      `${readFileSync(variantCss, 'utf8')}\n@font-face { font-family: Face; src: url('@assets/fonts/face.woff2'); }\n`,
+    );
+
+    const a = await compiled('a');
+
+    expect(a).toContain(`/@fs${font}`);
+    expect(a).not.toContain('@assets/');
   });
 
   it('is what a frame of a variant that draws a part stylesheet of its own loads', async () => {

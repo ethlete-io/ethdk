@@ -21,13 +21,23 @@ export const CHECKS = [
   'sdk:tokens:check',
 ];
 
+export const commandsFor = (check, head) =>
+  check === 'lint:changesets'
+    ? [
+        ['node', ['tools/scripts/lint-changesets.js', '--rev', head]],
+        ['yarn', ['lint:changeset-coverage']],
+      ]
+    : [['yarn', [check]]];
+
 /** Runs every sub-second pre-push check on the range, in order, and returns the failed ones with their output. */
 export const runChecks = (base, head, { cwd = process.cwd(), stopAtFirst = false, log = console.log } = {}) => {
   const env = { ...process.env, NX_BASE: base, NX_HEAD: head, NX_NO_CLOUD: 'true', NX_DAEMON: 'false' };
   const failed = [];
   for (const check of CHECKS) {
-    const run = spawnSync('yarn', [check], { cwd, env, encoding: 'utf8' });
-    if (run.status === 0) continue;
+    const run = commandsFor(check, head)
+      .map(([command, args]) => spawnSync(command, args, { cwd, env, encoding: 'utf8' }))
+      .find((result) => result.status !== 0);
+    if (!run) continue;
     const output = `${run.stdout ?? ''}${run.stderr ?? ''}`.replace(/\n$/, '');
     log(`pre-push: ${check} failed:`);
     log(output);

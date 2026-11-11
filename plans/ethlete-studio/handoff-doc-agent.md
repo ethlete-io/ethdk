@@ -192,3 +192,13 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   chip for sketch-only parts + picked badge, finding 792 A/B). Collected for the next round: B489 into the day order
   ("Gerade in Arbeit" changes only after the human's okay); recommendation: right after item 3 (B345). Set ADR 0261
   `built: e3008e59a` and delete the B488 row when the Linux builder reports the push.
+- Late morning (after cd85458e0): ADRs 0262 (design styles ship their own fonts; B490 is now a day sketch on
+  foundations/type with 2-3 font pairs, the pair is the human's pick), 0263 (B489 = day item 3a), 0264 (night over; day
+  order, sketches ready for a later review), 0265 (docs-only paths need no changeset, built 853a1a9e3, B491 closed). Mac:
+  `design sketch pick --decided-by` built 8bddab2bc, B345 change-crop b merged 2f83c46da, decidedBy name check in work,
+  then the flake and render-check fixes (1)+(2) also on the aktuell pass. Linux: waits for the Mac push slot; B489
+  sketch and B480 (Windows CEF spike on `rack`, woken by the doc agent) run in subagents; then B490 sketch, then the
+  query item (human "q1ok": QueryConfig stays first; docs line + readable type error, @ethlete/query patch). ethlete-sdk-3b
+  forwards a second fifagg message (tab token gaps): route it. Open for the human: none.
+- 2026-11-11 midday: fifagg-frontend-52 sent 10 SDK findings; answered. Builder queue (sent to ethlete-sdk-3e): components carousel goTo during lock (port cdk e93f3c679), components overlay close keeps routerLink nav (port cdk b7188130b), select open() while closing, app-styling.md spacing wording, @ethlete/theming deprecation line in docs + agent-rules. Open for the human (collected, day shift): (1) tabs token gaps - typography tokens, separate baseline size, inactive hover, align token - public API, recommend adding them as --et-tab-* tokens; (2) npm deprecate @ethlete/theming with a message naming @ethlete/core theming - recommend yes. Waiting: fifagg says which carousel/overlay (cdk or components) it uses; B489 sketch ready (da746a43e, pick by merge); B480 result; builder push on the Mac slot.
+- 2026-11-11 noon: human afk again. Decided: ADR 0266 (Smart App Control off on rack, done by the doc agent), ADR 0267 (tab tokens, row B492; human runs npm deprecate for @ethlete/theming from the desk). Findings 815 (built 91cdff2ed), 816, 818-821 recorded. Linux builder pushed a55bc3218 and restarted from builder-2026-11-11h.md; its queue: rust-audit dispatch, B489 rebase, 816, 819, 820, 821, B492, B480 resume, fifagg items. Open for the human: none; B490 sketch waits for a pick.

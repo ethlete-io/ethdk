@@ -147,9 +147,15 @@ export const checkAdrs = (root) => {
   };
 };
 
+export const warningLines = (warnings, { summary = false } = {}) => {
+  if (!summary || warnings.length === 0) return warnings.map((w) => `warning: ${w}`);
+
+  return [`warning: ${warnings.length} studio ADR warning(s); run \`yarn lint:studio-adrs\` for the list`];
+};
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { errors, warnings } = checkAdrs(resolve(dirname(fileURLToPath(import.meta.url)), '../..'));
-  for (const w of warnings) console.warn(`warning: ${w}`);
+  for (const line of warningLines(warnings, { summary: process.argv.includes('--summary') })) console.warn(line);
   for (const e of errors) console.error(e);
   if (errors.length) process.exit(1);
   console.log('studio ADRs ok');

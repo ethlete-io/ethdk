@@ -105,6 +105,13 @@
         "command": "cargo test"
       }
     },
+    "audit-rust": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/ethlete-studio/src-tauri",
+        "command": "cargo audit"
+      }
+    },
     "serve-committed": {
       "executor": "nx:run-commands",
       "continuous": true,

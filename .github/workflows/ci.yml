@@ -389,7 +389,7 @@ jobs:
 
       # Pinned: a new cargo-audit release must not turn this job red on its own. What the audit
       # denies, and which advisory is accepted with a reason, live in
-      # `apps/timetrack/src-tauri/.cargo/audit.toml`.
+      # `.cargo/audit.toml` of each Tauri crate. `rust-audit.yml` runs the same audit daily.
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: cargo-audit-bin
         with:
@@ -404,6 +404,8 @@ jobs:
       # Not cached by nx: the answer depends on the advisory database, which changes without the
       # lockfile. A cache hit would hide an advisory published since the last run.
       - run: yarn nx run timetrack-app:audit-rust
+
+      - run: yarn nx run ethlete-studio:audit-rust
 
   design-changes:
     name: Design server changes

@@ -31,7 +31,7 @@ node ./tools/scripts/check-slice-paths.mjs
 adr_files=$(git diff --cached --name-only --diff-filter=ACM -- 'plans/ethlete-studio/STATUS.md' 'apps/ethlete-studio/docs/adr/*.md')
 
 if [ -n "$adr_files" ]; then
-  node ./tools/scripts/check-studio-adrs.mjs >/dev/null
+  node ./tools/scripts/check-studio-adrs.mjs --summary >/dev/null
 fi
 
 # A commit that cuts finding head or as-built lines from the design plan must archive them, and finding numbers
@@ -83,4 +83,11 @@ data_files=$(git diff --cached --name-only --diff-filter=ACMR -- '.ethlete' '.gi
 if [ -n "$data_files" ]; then
   # shellcheck disable=SC2086
   node ./tools/scripts/staged-data-specs.mjs $data_files
+fi
+
+# A staged file that names a real person fails here with the pre-push message; the staged blob is read, not the working tree.
+name_files=$(git diff --cached --name-only --diff-filter=ACM -- 'libs' 'apps' '.ethlete/design')
+
+if [ -n "$name_files" ]; then
+  node ./tools/scripts/check-person-names.mjs --staged
 fi

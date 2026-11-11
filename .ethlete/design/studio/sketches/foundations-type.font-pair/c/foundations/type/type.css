@@ -1,0 +1,43 @@
+@font-face {
+  font-family: 'Noto Sans';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: block;
+  src: url('@assets/fonts/noto-sans-latin-wght-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Noto Sans Mono';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: block;
+  src: url('@assets/fonts/noto-sans-mono-latin-wght-normal.woff2') format('woff2');
+}
+
+:root {
+  font-size: 62.5%;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  line-height: var(--text-md-line);
+}
+
+:root {
+  --font-ui: 'Noto Sans', system-ui, sans-serif;
+  --font-code: 'Noto Sans Mono', ui-monospace, monospace;
+  --text-xs: 1rem;
+  --text-xs-line: 1.4rem;
+  --text-sm: 1.15rem;
+  --text-sm-line: 1.6rem;
+  --text-md: 1.3rem;
+  --text-md-line: 1.8rem;
+  --text-lg: 1.5rem;
+  --text-lg-line: 2rem;
+  --text-xl: 1.7rem;
+  --text-xl-line: 2.2rem;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-strong: 600;
+}

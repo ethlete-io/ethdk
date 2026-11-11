@@ -1,4 +1,8 @@
 import assert from 'node:assert/strict';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { test } from 'node:test';
 import { personNameFindings, personNameProblems } from './check-person-names.mjs';
 
@@ -25,4 +29,23 @@ test('reports the right line when a name sits deep in a multi-line text', () => 
   const text = ['one', 'two Words', 'three', 'ask Tom here', 'five'].join('\n');
   assert.deepEqual(personNameFindings(text), [{ line: 4, text: 'ask Tom here' }]);
   assert.deepEqual(personNameFindings('plain\ntext\ntomorrow'), []);
+});
+
+test('--staged blocks a commit whose staged blob names a person and ignores the working tree', () => {
+  const repo = mkdtempSync(join(tmpdir(), 'person-names-'));
+  const git = (...args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' });
+  git('init', '-q');
+  mkdirSync(join(repo, 'libs'));
+  writeFileSync(join(repo, 'libs/a.ts'), "export const author = 'Tom Bornholdt';\n");
+  git('add', 'libs/a.ts');
+  writeFileSync(join(repo, 'libs/a.ts'), 'export const author = "human";\n');
+  const run = (...flags) =>
+    spawnSync(process.execPath, [join(import.meta.dirname, 'check-person-names.mjs'), ...flags], {
+      cwd: repo,
+      encoding: 'utf8',
+    });
+  const staged = run('--staged');
+  assert.equal(staged.status, 1);
+  assert.match(staged.stderr, /libs\/a\.ts: 1 person-name lines, 0 allowed/);
+  rmSync(repo, { recursive: true, force: true });
 });

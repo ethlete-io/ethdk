@@ -148,3 +148,38 @@ config sets it). The smoke now opens the sketch target from `sketch.json` (4871b
 0 console errors; the bite `--csp-from 'f08f0a3d1^'` FAIL with 17 CSP refusals. Not verified: the Windows and Linux
 builds of `console_log.rs`. The smoke needs a fresh `dist/libs/cli`, else the design server stops and the smoke reports
 only "sketch view missing".
+
+## As built (B480) - Windows spike on `rack`, 2026-11-11: blocked by Smart App Control
+
+Set up on `rack` (Windows 11 Pro, PowerShell 5.1 over SSH, every script sent as
+`powershell -NoProfile -EncodedCommand <base64 UTF-16LE>`): `winget install -e --silent` of `Git.Git` (2.55.0),
+`OpenJS.NodeJS.LTS` (v24.19.0; `OpenJS.NodeJS --version 24.17.0` has no winget package), `Rustlang.Rustup`
+(rustc 1.99.1, `stable-x86_64-pc-windows-msvc`) and `Microsoft.VisualStudio.2022.BuildTools` with
+`--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended`, all without a prompt. Scratch copy:
+`git archive HEAD` (cd85458e0) unpacked to `C:\b480\ethdk`, `git init` there. `yarn install` passed in 87 s. The
+spike patch, scratch only: `tauri-runtime-cef` and every `any(target_os = "linux", target_os = "macos")` gate in
+`Cargo.toml`, `main.rs`, `lib.rs` and `console_log.rs` widened by `target_os = "windows"`, the Windows
+`tauri-runtime-wry` dependency dropped, and its three `#[cfg(target_os = "windows")]` items in `lib.rs` and
+`console_log.rs` turned off.
+
+1. **Runs: not measured.** `cargo check` (with `CEF_PATH=C:\b480\cef`) failed after 142 s:
+   `could not execute process ...\build-script-build (never executed)`, `Eine Anwendungssteuerungsrichtlinie hat
+diese Datei blockiert. (os error 4551)`. Cause: Smart App Control is on in enforce mode
+   (`HKLM:\SYSTEM\CurrentControlSet\Control\CI\Policy` `VerifiedAndReputablePolicyState = 1`; the CodeIntegrity
+   log has event 3118 "Smart App Control Block" for each). It blocked 4 cargo `build-script-build.exe`, dart-sass's
+   `dart.exe` (`spawn UNKNOWN [plugin angular-sass]` in `query:build:production`) and the swc native `.node` module.
+   So neither the Rust host nor the Angular frontend builds on `rack` today. The CEF download never started
+   (`C:\b480\cef` absent).
+2. **Live frames: not measured** (no build).
+3. **Size: not measured** (no bundle).
+4. **Signature: not measured.** Suspect: the unsigned NSIS installer and an unsigned CEF bundle are blocked
+   the same way on any PC with Smart App Control in enforce mode, so signing on Windows may be a must, not an
+   option. The current Windows installer is not signed.
+
+Also found: the Nx targets `core:build-generators`, `query:build-generators` and `components:build-generators`
+run `rm -rf`, which `cmd` does not know; with `C:\Program Files\Git\usr\bin` first on `PATH` they pass. Any native
+Windows build of the repo needs that.
+
+Open for the human: Smart App Control cannot be turned back on without a Windows reinstall, and `rack` is a guest
+PC. The spike goes on only after one of: turning Smart App Control off on `rack`, a Windows PC or VM without it,
+or the move of the dev PC to Windows. The setup above and the patch stay in `C:\b480` on `rack`.

@@ -58,22 +58,27 @@ const gitUserName = () => {
   }
 };
 
-const countsIn = (root, file, userName) => {
+const readWorkingTree = (root, file) => readFileSync(resolve(root, file), 'utf8');
+
+export const readStaged = (root, file) =>
+  execFileSync('git', ['show', `:${file}`], { cwd: root, encoding: 'utf8', maxBuffer: 1 << 28 });
+
+const countsIn = (root, file, userName, read) => {
   let text;
   try {
-    text = readFileSync(resolve(root, file), 'utf8');
+    text = read(root, file);
   } catch {
     return [];
   }
   return personNameFindings(text, userName);
 };
 
-export const personNameCounts = (root, files, userName = gitUserName()) =>
+export const personNameCounts = (root, files, userName = gitUserName(), read = readWorkingTree) =>
   Object.fromEntries(
     files
       .filter((file) => TEXT.test(file) && ROOTS.some((r) => file.startsWith(`${r}/`)))
       .filter((file) => !/(?:^|\/)CHANGELOG\.md$|\/node_modules\//.test(file))
-      .map((file) => [file, countsIn(root, file, userName)])
+      .map((file) => [file, countsIn(root, file, userName, read)])
       .filter(([, hits]) => hits.length),
   );
 
@@ -90,11 +95,16 @@ export const personNameProblems = (counts, baseline) =>
 const BASELINE_FILE = 'tools/scripts/person-names-baseline.json';
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-  const files = execFileSync('git', ['ls-files', '--', ...ROOTS], { cwd: root, encoding: 'utf8', maxBuffer: 1 << 28 })
+  const staged = process.argv.includes('--staged');
+  const root = staged ? process.cwd() : resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const files = execFileSync(
+    'git',
+    staged ? ['diff', '--cached', '--name-only', '--diff-filter=ACM', '--', ...ROOTS] : ['ls-files', '--', ...ROOTS],
+    { cwd: root, encoding: 'utf8', maxBuffer: 1 << 28 },
+  )
     .split('\n')
     .filter(Boolean);
-  const counts = personNameCounts(root, files);
+  const counts = personNameCounts(root, files, undefined, staged ? readStaged : readWorkingTree);
   if (process.argv.includes('--write-baseline')) {
     const next = Object.fromEntries(Object.entries(counts).map(([f, h]) => [f, h.length]));
     writeFileSync(resolve(root, BASELINE_FILE), `${JSON.stringify(next, null, 2)}\n`);

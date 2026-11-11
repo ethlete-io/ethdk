@@ -14,13 +14,14 @@ import { findSketch, parseTarget, rejectionOf, Sketch, SketchRejection } from '.
 import { noteStep } from './run-deadline';
 import { recordShotViewed, shotFileOf } from './system/sketch/viewed-shots';
 import { createPartShooter, cropOf, drawParamsOf, isSchemeFlag, PartAddress } from './shot';
+import { partsReachedFrom } from './system/imports';
 import { gridOf, ListedGrid } from './system/list-system';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';
 import { createDrawQueue, ThumbUnavailableError } from './thumb';
 import { BoxOf } from './variant-diff';
 import { unstableCellsOf, unstableReportOf } from './unstable-cells';
 
-export const SHOT_USAGE = `shot <layer>/<name>[@<sketch>] --states [--variants [--round <key>[,<key>...]] [--variant <name>[,<name>...]] [--all] [--at <commit>] [--diff-props]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--crop <x,y,width,height> | --crop changed] [--product <name>] [--surface <name>] [--color <name>] [--scheme <light|dark>] [--out <file>]`;
+export const SHOT_USAGE = `shot <layer>/<name>[@<sketch>] --states [--variants [--round <key>[,<key>...]] [--variant <name>[,<name>...]] [--all] [--at <commit>] [--diff-props] [--in <layer>/<name>]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--crop <x,y,width,height> | --crop changed] [--product <name>] [--surface <name>] [--color <name>] [--scheme <light|dark>] [--out <file>]`;
 
 /** The state names a shot of a part can draw: every state it defines, so the grid's interaction cells of an unchanged row draw too. */
 export const shotStateNamesOf = async (definition: unknown): Promise<string[]> => {
@@ -203,6 +204,27 @@ export const sketchHoldingOf = <T extends Pick<Sketch, 'target' | 'targets'>>(
   return `${part} has ${holders.length} open sketches - name one: ${holders.map((sketch) => `${part}@${sketch.target.split('@')[1]}`).join(', ')}`;
 };
 
+/**
+ * Why `--in <page>` cannot draw a sketch: the product has no such part, or the part neither is a sketch target nor
+ * reaches one through its imports or a tokens stylesheet of the product; `null` when the page shows the sketch.
+ */
+export const inPageRefusalOf = (options: {
+  product: ResolvedProduct;
+  sketch: Pick<Sketch, 'target' | 'targets'>;
+  page: string;
+}): string | null => {
+  const { product, sketch, page } = options;
+  const host = product.parts.find((candidate) => partKeyOf(candidate) === page);
+
+  if (!host) return `--in ${page}: product "${product.name}" has no part "${page}"`;
+
+  const reached = new Set([page, ...partsReachedFrom({ product, from: host }).map(partKeyOf), ...product.tokens]);
+
+  if (sketch.targets.some((part) => reached.has(part))) return null;
+
+  return `--in ${page}: ${page} does not embed ${sketch.targets.join(', ')} (not imported, directly or through another part, and not a tokens part of product "${product.name}")`;
+};
+
 const rejectedLabelOf = (variant: string, rejection: SketchRejection | undefined) => {
   if (!rejection) return variant;
   if (rejection.status !== 'withdrawn') return `${variant} rejected`;
@@ -331,6 +353,7 @@ export const shotRefusalOf = (options: {
     if (onlyRounds.length > 0) return '--round needs --variants';
     if (onlyVariants.length > 0) return '--variant needs --variants';
     if (cropChanged) return '--crop changed needs --variants';
+    if (values['--in'] !== undefined) return '--in needs --variants';
   }
 
   if (width !== null && !(Number.isInteger(width) && width > 0))
@@ -404,6 +427,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     values: [
       '--product',
       '--at',
+      '--in',
       '--round',
       '--variant',
       '--state',
@@ -428,7 +452,9 @@ export const designShot = async (options: { target: string; argv: string[]; invo
   }
 
   const [requested = '', ...extra] = args.positional;
-  const [part = '', sketchName] = requested.split('@');
+  const [sketchPart = '', sketchName] = requested.split('@');
+  const inPage = args.values['--in'];
+  const part = inPage ?? sketchPart;
   const asked = args.values['--state']?.split(',').filter(Boolean) ?? [];
   const states = args.flags.has('--states') || asked.length > 1;
   const variants = args.flags.has('--variants');
@@ -533,8 +559,19 @@ export const designShot = async (options: { target: string; argv: string[]; invo
       ? shownVariantsOf({ sketch, rounds: onlyRounds, variants: onlyVariants, all: args.flags.has('--all') })
       : null;
 
+  if (inPage !== undefined && sketch) {
+    const drawn = system.productOf(product);
+    const outside = drawn && inPageRefusalOf({ product: drawn, sketch, page: inPage });
+
+    if (outside) {
+      console.error(`design-explore: ${outside}`);
+
+      return 1;
+    }
+  }
+
   if (typeof shownVariants === 'string') {
-    console.error(`design-explore: ${part} has ${shownVariants}`);
+    console.error(`design-explore: ${sketchPart} has ${shownVariants}`);
 
     return 1;
   }
@@ -667,7 +704,13 @@ export const designShot = async (options: { target: string; argv: string[]; invo
       const sheetOut = resolve(
         target,
         args.values['--out'] ??
-          shotFileOf({ target, product, part, sketch: sketchName, variants: sketch ? onlyVariants : [] }),
+          shotFileOf({
+            target,
+            product,
+            part,
+            sketch: inPage === undefined ? sketchName : requested.replace('/', '-'),
+            variants: sketch ? onlyVariants : [],
+          }),
       );
       const crops = cropChanged
         ? await changedCropsIn({ plan, sheet, mergedIndex, boxOf: shooter.changedBoxesOf, scale })

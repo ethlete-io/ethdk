@@ -53,7 +53,7 @@
       "executor": "nx:run-commands",
       "cache": false,
       "options": {
-        "command": "rm -rf tmp/perf && vitest run --config libs/cli/vitest.perf.config.mts"
+        "command": "node -e \"require('node:fs').rmSync('tmp/perf',{recursive:true,force:true})\" && vitest run --config libs/cli/vitest.perf.config.mts"
       }
     },
     "lint": {

@@ -116,6 +116,16 @@ const query = getPost(
 );
 ```
 
+The `QueryConfig` goes first, before the feature arguments. A config in any later position is a type error that names this rule:
+
+```ts
+// ✗ The QueryConfig must come first, before the feature arguments
+const query = getPost(
+  withArgs(() => ({ pathParams: { postId: '1' } })),
+  { onlyManualExecution: true },
+);
+```
+
 | `QueryConfig` option                 | Default   | Description                                                                                                                                                                                                                                                |
 | ------------------------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `key`                                | -         | Custom cache key. Only allowed on cacheable queries (throws otherwise).                                                                                                                                                                                    |

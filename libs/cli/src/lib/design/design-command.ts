@@ -16,7 +16,7 @@ import { designShot, SHOT_USAGE } from './shot-command';
 import { COMMIT_HUNKS_USAGE, designCommitHunks } from './commit-hunks';
 import { designMcp, MCP_USAGE } from './mcp-command';
 import { designMotion, MOTION_USAGE } from './motion-command';
-import { designSketch, SKETCH_USAGE, sketchFlagHelpOf } from './sketch-command';
+import { designSketch, SKETCH_USAGE, sketchFlagHelpOf, sketchUsageErrorOf } from './sketch-command';
 import { buildStampOf } from './stamp';
 import { startedByStudio } from './started-by-studio';
 import { runningCliStaleWarning } from './stale-cli-dist';
@@ -236,6 +236,8 @@ const helpOf = (invocation: string) =>
     '  Without --preset or --width, a page draws at its first product preset and any other part fitted.',
     '  With --variants --crop changed, every cell is cut to one box around the pixels any shown variant changes',
     '  from the merged part, plus a margin, and the box is printed for a later --crop x,y,width,height.',
+    '  With --variants --in <layer>/<name>, the sketch variants draw inside that part instead, e.g. a foundations or',
+    '  components sketch in a page; it refuses a part that neither imports a sketch target nor takes it as tokens.',
     '  --scheme pins the colour scheme the frame draws in, as a Studio scheme copy does; --surface only sets the',
     '  surface class of the root, so light-dark() and scheme-bound theme rules still draw light without it.',
     '',
@@ -417,6 +419,16 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
   );
 };
 
+const usageErrorOf = (options: { argv: string[]; invocation: string; root: string }) => {
+  const { argv, invocation, root } = options;
+
+  if (!drawsWithSdkLibs(argv) && !runsInResident(argv)) return null;
+
+  const { rest } = splitCheckout(argv.slice(1), root);
+
+  return argv[0] === 'sketch' ? sketchUsageErrorOf(rest, invocation) : null;
+};
+
 const runDesign = async (options: { root: string; argv: string[]; invocation: string }): Promise<number> => {
   const { root, argv, invocation } = options;
   const staleWarning = argv[0] === 'stamp' ? null : runningCliStaleWarning();
@@ -427,6 +439,14 @@ const runDesign = async (options: { root: string; argv: string[]; invocation: st
     console.log(JSON.stringify(buildStampOf()));
 
     return 0;
+  }
+
+  const usageError = usageErrorOf({ argv, invocation, root });
+
+  if (usageError) {
+    for (const line of usageError) console.error(line);
+
+    return 2;
   }
 
   repairEditorTsconfigs(splitCheckout(argv.slice(1), root).target);

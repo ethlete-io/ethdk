@@ -1,0 +1,48 @@
+name: Rust audit
+
+on:
+  push:
+    branches: [next]
+    paths:
+      - .github/workflows/rust-audit.yml
+      - apps/ethlete-studio/src-tauri/Cargo.lock
+      - apps/ethlete-studio/src-tauri/Cargo.toml
+      - apps/timetrack/src-tauri/Cargo.lock
+      - apps/timetrack/src-tauri/Cargo.toml
+  schedule:
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-audit
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: cargo audit (${{ matrix.crate }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        crate: [apps/timetrack/src-tauri, apps/ethlete-studio/src-tauri]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: next
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: cargo-audit-bin
+        with:
+          path: ~/.cargo/bin/cargo-audit
+          key: cargo-audit-${{ runner.os }}-0.22.2
+
+      - if: steps.cargo-audit-bin.outputs.cache-hit != 'true'
+        run: |
+          if cargo audit --version 2>/dev/null | grep -q ' 0\.22\.2$'; then exit 0; fi
+          cargo install cargo-audit --locked --force --version 0.22.2
+
+      - run: cargo audit
+        working-directory: ${{ matrix.crate }}

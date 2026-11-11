@@ -99,7 +99,8 @@ The self-hosted instance is unstable, so every workflow sets `NX_NO_CLOUD: 'true
 
 Every change to a workspace package needs a changeset: every `@ethlete/*` lib, and the private
 `timetrack-app`, `ethlete-studio` and `@ethlete/timetrack` too. A test or story change names the package with the
-level `none`. `yarn lint:changesets` fails the push when a changed package has none. Use the **`changeset`**
+level `none`. `yarn lint:changesets` fails the push when a changed package has none. Studio ADRs
+(`apps/ethlete-studio/docs/adr/**`) and `plans/**` are docs-only and need none (ADR 0265). Use the **`changeset`**
 skill (`.agents/skills/changeset/`) - write the file directly; don't run the
 interactive `npx changeset` CLI.
 
