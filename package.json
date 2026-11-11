@@ -44,6 +44,7 @@
     "lint:studio-label-specs": "node ./tools/scripts/studio-label-specs.mjs",
     "prepare:release": "node ./tools/scripts/prepare-release.js",
     "push:slice": "node ./tools/scripts/push-slice.mjs",
+    "push:slot": "node ./tools/scripts/push-slot.mjs",
     "push:suite": "node ./tools/scripts/push-suite.mjs",
     "query:export-coverage": "node ./tools/export-coverage/check.mjs query",
     "red-check": "node ./tools/scripts/red-check.mjs",

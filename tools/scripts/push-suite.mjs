@@ -29,6 +29,67 @@ const DRAWING_BUILDS = ['cli', 'components', 'core'];
 export const STEPS = ['lint', 'typecheck', 'cli', 'studio', 'quota', 'e2e', 'e2e-quota', 'repeat'];
 export const EXEMPT_PATHS = [/^plans\//, /^\.changeset\//, /\.md$/];
 
+const DESIGN_INPUTS = [
+  ...['bracket', 'cli', 'components', 'core', 'eslint-plugin', 'query', 'types'].map((lib) => `libs/${lib}/`),
+  'apps/ethlete-studio/',
+  'apps/timetrack/',
+  '.ethlete/',
+];
+/**
+ * Path prefixes each step reads. A merged path outside every prefix (root configs, yarn.lock, tools/) reruns all
+ * steps; the lib list is the import closure of libs/cli and apps/ethlete-studio, kept by hand.
+ */
+export const STEP_INPUTS = {
+  lint: ['apps/', 'libs/'],
+  typecheck: ['apps/', 'libs/'],
+  cli: DESIGN_INPUTS,
+  studio: DESIGN_INPUTS,
+  quota: DESIGN_INPUTS,
+  e2e: DESIGN_INPUTS,
+  'e2e-quota': DESIGN_INPUTS,
+  repeat: DESIGN_INPUTS,
+};
+const INERT_PATHS = [/^plans\//, /^\.changeset\//];
+
+export const stepsTouchedBy = (files) => {
+  const touched = new Set();
+  for (const file of files) {
+    if (INERT_PATHS.some((path) => path.test(file))) continue;
+    const steps = STEPS.filter((step) => STEP_INPUTS[step].some((prefix) => file.startsWith(prefix)));
+    if (steps.length === 0 && !file.endsWith('.md')) return new Set(STEPS);
+    for (const step of steps) touched.add(step);
+  }
+  return touched;
+};
+
+export const passedSteps = (verdict, sha) => {
+  const [head = '', ...rest] = verdict.split('\n');
+  const passed = new Map();
+  for (const line of rest) {
+    const match = /^step (\S+) ok (\S+)$/.exec(line);
+    if (match && STEPS.includes(match[1])) passed.set(match[1], match[2]);
+  }
+  if (head.startsWith('ok ') && passed.size === 0) for (const step of STEPS) passed.set(step, sha);
+  return passed;
+};
+
+export const verdictText = (verdict, passed) =>
+  [verdict, ...[...passed].map(([step, from]) => `step ${step} ok ${from}`)].join('\n') + '\n';
+
+export const reusableSteps = (parents, readVerdict, changedSince) => {
+  if (parents.length !== 2) return new Map();
+  const [first] = parents;
+  const verdict = readVerdict(first);
+  if (verdict === undefined) return new Map();
+  const changed = changedSince(first);
+  if (changed === undefined) return new Map();
+  const touched = stepsTouchedBy(changed);
+  return new Map([...passedSteps(verdict, first)].filter(([step]) => !touched.has(step)));
+};
+
+export const reusedLine = (name, from) =>
+  `push-suite: ${name} reused from ${from.slice(0, 12)} (the merge changes none of its inputs)`;
+
 export const parseArgs = (argv) => {
   const at = argv.indexOf('--only');
   const only = at === -1 ? undefined : argv[at + 1];
@@ -378,18 +439,39 @@ export const warnStaleDesignServers = async (log) => {
 
 export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loadProbe = {}) => {
   const sha = git('rev-parse', 'HEAD').stdout.trim();
+  const passed = new Map();
+  let slot;
+  const release = () => {
+    if (!slot) return;
+    const released = slot.releaseSlot({ cwd: root });
+    slot = undefined;
+    log(released.ok ? 'push-suite: push slot released' : `push-suite: push slot not released: ${released.reason}`);
+  };
   const finish = (verdict) => {
     log(`push-suite: ${verdict}`);
+    if (!verdict.startsWith('ok')) release();
     if (only) log(`push-suite: --only ${only} writes no verdict file`);
     else {
       const file = verdictFileOf(sha);
       mkdirSync(resolve(file, '..'), { recursive: true });
-      writeFileSync(file, `${verdict}\n`);
+      writeFileSync(file, verdictText(verdict, passed));
     }
     return verdict.startsWith('ok') ? 0 : 1;
   };
 
   if (only && !STEPS.includes(only)) return finish(`blocked unknown step ${only}, expected one of ${STEPS.join(', ')}`);
+
+  if (!INNER_EXPORT && !only) {
+    const { claimSlot, heldLine, releaseSlot } = await import('./push-slot.mjs');
+    const claim = claimSlot({ cwd: root, sha });
+    if (claim.ok) {
+      slot = { releaseSlot };
+      log(`push-suite: ${heldLine(claim.slot)}`);
+    } else if (claim.slot) return finish(`blocked ${heldLine(claim.slot)}; commit on, push after its push or expiry`);
+    else if (claim.lost)
+      return finish('blocked another builder claimed the push slot first; see `yarn push:slot status`');
+    else log(`push-suite: push slot not claimed, running anyway: ${claim.reason}`);
+  }
 
   if (!INNER_EXPORT) {
     const startedAt = performance.now();
@@ -414,6 +496,7 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
   if (!INNER_EXPORT)
     for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'])
       process.once(signal, () => {
+        release();
         removeExport();
         process.exit(1);
       });
@@ -496,10 +579,24 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
     if (error) return finish(`blocked export of ${sha} failed: ${error}`);
     if (!INNER_EXPORT) {
       log(`push-suite: exported ${sha.slice(0, 12)} to ${dir} in ${seconds(performance.now() - exportedAt)}`);
-      return await runInner(reexecCommand(dir, root, { only, range }));
+      const status = await runInner(reexecCommand(dir, root, { only, range }));
+      if (status !== 0) release();
+      return status;
     }
     await warnStaleDesignServers(log);
+    const reused = only
+      ? new Map()
+      : reusableSteps(git('rev-parse', `${sha}^@`).stdout.split('\n').filter(Boolean), readVerdict, (first) => {
+          const changed = git('diff', '--name-only', first, sha);
+          return changed.status === 0 ? changed.stdout.split('\n').filter(Boolean) : undefined;
+        });
     for (const name of only ? [only] : STEPS) {
+      const from = reused.get(name);
+      if (from) {
+        log(reusedLine(name, from));
+        passed.set(name, from);
+        continue;
+      }
       const startedAt = performance.now();
       const stopSampling = sampleMaxLoad(loadProbe.load, loadProbe.timers);
       const { status, output, note } = await steps[name]();
@@ -510,6 +607,7 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
         return finish(`blocked ${name} failed at ${sha}`);
       }
       if (name === 'repeat' && output) log(output);
+      passed.set(name, sha);
     }
     return finish(`ok ${sha}`);
   } finally {
@@ -517,13 +615,15 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
   }
 };
 
+const readVerdict = (commit) => {
+  const file = verdictFileOf(commit);
+  return existsSync(file) ? readFileSync(file, 'utf8') : undefined;
+};
+
 export const checkPush = (base, sha, log = console.error) => {
   if (process.env['PUSH_SUITE_SKIP'] === '1') return 0;
   const commits = parseLog(git('log', '--format=%x00%H', '--name-only', `${base}..${sha}`).stdout);
-  const hasOk = (commit) => {
-    const file = verdictFileOf(commit);
-    return existsSync(file) && readFileSync(file, 'utf8').startsWith('ok ');
-  };
+  const hasOk = (commit) => readVerdict(commit)?.startsWith('ok ') ?? false;
   const missing = missingVerdict(commits, hasOk);
   if (!missing) return 0;
   log(

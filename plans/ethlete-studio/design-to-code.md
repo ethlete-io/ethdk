@@ -3612,11 +3612,43 @@ the case reads focus before the page settles under load. Lesson: a load-sensitiv
 retry hides a real focus defect. Decided by the doc agent (tool internal): no single-case retry. Tool fix (night, Mac):
 reproduce under the CPU quota (731/735), find the cause, the case waits on a condition, bite under the quota.
 
+As built (769, Mac builder): canvas.e2e.mjs has `--cpu-rate <n>` (env `STUDIO_E2E_CPU_RATE`), which calls CDP
+`Emulation.setCPUThrottlingRate` on the case page; it slows the renderer (frame iframes share its process), not the
+design server. It did not reproduce the failure: 0 fails in 10 Inbox runs at 4, 8, 16 and 30x (one more on System
+and Sketches at 16x), three of them with `--delay-frames` 1500/3000. Diagnostics showed Tab from the canvas lands on a frame's live iframe (`pages/system`, state `part`) and
+Shift+Tab returns. Suspect: the frame swapped or dropped that iframe between Tab and Shift+Tab (canvas-frame mounts a
+new iframe for a new address and removes the old one; a frame leaves the live set 5 s after it leaves view), so focus
+fell out of the frame and Shift+Tab landed on an `et-menu-trigger` button. Removing the focused iframe in that gap gives
+the exact signature `focused=false rings=[]`. Not proven to be what happened at load 26. Now the case keys Shift+Tab to
+the chrome before the canvas, then Tab back, so it no longer passes through a frame iframe, and polls each focus state
+(`focusUntil`, up to `WAIT_MS`) instead of the fixed 600 ms; a failure names the focused element. Bite (iframes removed
+between the two keys, `--cpu-rate 16`, Inbox): old case 3/3 fail, new case 3/3 pass. Without injection all 3 page
+groups pass 3/3 plain and 3/3 at 16x. Open: whether a keyboard user who tabbed into a live frame loses focus when the
+frame swaps its iframe is an app question, not checked here; the case no longer covers it.
+
 770\. Mac builder (2026-11-11, night): the Mac push was refused twice in a row because the Linux builder pushed during
 the Mac push:suite (8c4bdb6a1, d3444f82a, 209facfa3); each merge starts a full push:suite again (8-40 min). Lesson: two
 builders on one branch pay a full suite per race. Tool fix (night backlog, Mac): after a merge of origin, push:suite
 reuses the verdict of the steps whose inputs the merged range does not touch; a spec bites with a merge that changes one
 lib only.
+
+As built (770, Mac builder): when HEAD is a merge, push:suite reads the verdict of the first parent and reuses each step
+that passed there and whose inputs `git diff --name-only <first parent> HEAD` misses; it prints `push-suite: <step>
+reused from <sha>` and runs only the other steps. The verdict file keeps `ok <sha>` / `blocked ...` as its first line
+(the pre-push check is unchanged) and now lists `step <name> ok <sha it ran on>` per passed step, also in a blocked
+verdict; an old verdict without step lines counts as all steps passed if it is `ok`. Mapping (`STEP_INPUTS`, kept by
+hand, not from the project graph): lint and typecheck read `apps/**` and `libs/**`; cli, studio, quota, e2e, e2e-quota
+and repeat read libs bracket, cli, components, core, eslint-plugin, query, types, plus `apps/ethlete-studio/**`,
+`apps/timetrack/**` (the cli spec reads its styles.css through `.ethlete/design/config.json`) and `.ethlete/**`.
+`plans/` and `.changeset/` touch nothing; any other path outside those prefixes (root configs, yarn.lock, tools/,
+.github/) reruns all steps unless it is `.md`. Specs: a merge of libs/agent-rules reuses the six design steps and
+reruns lint and typecheck; yarn.lock, package.json, nx.json, tsconfig.base.json or tools/ rerun all; no verdict, a
+blocked verdict without step lines, or a non-merge HEAD reuse nothing. Bite: the spec against the HEAD push-suite.mjs
+fails on import; mutations (no reuse, no unknown-path rule, no merge check, reuse without a verdict) each fail their
+case. 37 of 37 pass, spec:stress 4/4 at load 2. Not verified: a real `yarn push:suite` after a merge (one ran for the
+coordinator at the time); the reuse on the real merge ca8549bce gives no reuse (.github/ changed), as expected. Commit: the one that adds this note. Known
+gap: a reused lint or typecheck covered the projects of the first parent's range, which can differ from the new range
+when the merge resolves an origin change back to the first parent's content.
 
 As built (766 item 1, Linux builder): Cause (bite): this Claude Code build marks the focus below the input box with
 inverse video (`ESC[7m`, first on the `1 shell` footer pill after one Down) and draws panel rows as `  ● main` /
@@ -3830,6 +3862,8 @@ bites with two claimers. Tool fix (night backlog, Mac builder, after its push). 
 hostname), the sha and a 60 min expiry; claim and release with `--force-with-lease` on the read slot; free when absent,
 expired, or its sha is in origin/next; released on a blocked verdict or SIGINT/TERM/HUP. Spec bites with plain
 `--force`. Verified live: GitHub accepts the ref. Not verified: a two-machine run, clock skew, signal release.
+
+As built (780, `bc219f75d`): `tools/scripts/push-slot.mjs` keeps a push slot on origin at `refs/push-slot/next`. It is a commit with no parent whose message holds the holder (`ETHLETE_BUILDER`, else the hostname), the sha and an expiry 60 min out: 40 min of suite plus up to 10 min of load wait. Claim and release lease on the slot commit they read (`--force-with-lease`), so of two claimers exactly one wins. The slot is free when it is absent, expired, or its sha has reached `origin/next`, so the push itself releases it. `push:suite` claims at the start and stops with a blocked verdict naming the holder and expiry; it releases on a failed verdict or signal. `.husky/pre-push` refuses a push of `next` while another holder has a live slot. Verified: `push-slot.spec.mjs` (6 cases, bare origin and two clones; it bites when the lease is replaced by `--force`), spec:stress 4/4, `push-suite.spec.mjs` green, and a manual blocked run. Not verified: GitHub accepting the custom ref, a real two-machine run, clock skew. Rule for the other builder: when `push:suite` says the slot is held, keep committing and rerun it after the holder's push lands or the slot expires (`yarn push:slot status`); `yarn push:slot release` frees a dead run's slot.
 
 781\. Linux builder (2026-11-11, night, 618 5577aacd1): a builder subagent put a Chromium spec
 (`probe-helpers.spec.mjs`) into `test:tools`, which runs in the CI Checks job with no Chromium; the builder's review

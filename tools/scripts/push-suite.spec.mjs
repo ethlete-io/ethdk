@@ -4,6 +4,7 @@ import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { stripVTControlCharacters } from 'node:util';
 import { CHECKS } from './pre-push-checks.mjs';
 import {
   e2eQuotaCommand,
@@ -13,16 +14,21 @@ import {
   missingVerdict,
   parseArgs,
   parseLog,
+  passedSteps,
   quotaCommand,
   quotaSpecFiles,
   quotaStep,
   reexecCommand,
+  reusableSteps,
+  reusedLine,
   runStep,
   sampleMaxLoad,
   waitForLowLoad,
   STEPS,
+  stepsTouchedBy,
   stepLine,
   touchedProjects,
+  verdictText,
   withTarget,
 } from './push-suite.mjs';
 
@@ -162,7 +168,7 @@ test('a failed vitest spec reports its FAIL row, with and without colors', () =>
     const row = report.find((line) => line.includes('FAIL'));
 
     assert.ok(row, name);
-    assert.match(row.replace(/\x1b\[[0-9;]*m/g, ''), /FAIL\s+a\.spec\.mjs > serve > fails here/);
+    assert.match(stripVTControlCharacters(row), /FAIL\s+a\.spec\.mjs > serve > fails here/);
     assert.equal(report.length, 41);
   }
 });
@@ -484,6 +490,64 @@ test('without systemd-run the e2e quota step passes and says it skipped on this 
 
 test('the e2e quota step runs after the e2e suite passes unthrottled', () => {
   assert.equal(STEPS.indexOf('e2e-quota'), STEPS.indexOf('e2e') + 1);
+});
+
+const FIRST = 'a'.repeat(40);
+const OTHER = 'b'.repeat(40);
+const reuseAfterMerge = (changed, verdict = `ok ${FIRST}\n`, parents = [FIRST, OTHER]) =>
+  reusableSteps(
+    parents,
+    (sha) => (sha === FIRST && verdict !== null ? verdict : undefined),
+    () => changed,
+  );
+
+test('a merge that changes one lib only reuses the design steps and reruns lint and typecheck', () => {
+  const reused = reuseAfterMerge(['libs/agent-rules/src/index.ts', 'plans/x.md', '.changeset/y.md']);
+
+  assert.deepEqual([...reused.keys()], ['cli', 'studio', 'quota', 'e2e', 'e2e-quota', 'repeat']);
+  assert.ok([...reused.values()].every((from) => from === FIRST));
+  assert.equal(
+    reusedLine('cli', FIRST),
+    `push-suite: cli reused from ${FIRST.slice(0, 12)} (the merge changes none of its inputs)`,
+  );
+});
+
+test('a merge that touches yarn.lock, a root config or tools/ reruns every step', () => {
+  for (const file of ['yarn.lock', 'package.json', 'nx.json', 'tsconfig.base.json', 'tools/scripts/x.mjs'])
+    assert.equal(reuseAfterMerge([file]).size, 0, file);
+  assert.deepEqual(stepsTouchedBy(['yarn.lock']), new Set(STEPS));
+});
+
+test('a merge that changes a lib in the Studio closure reruns every step', () => {
+  assert.equal(reuseAfterMerge(['libs/core/src/index.ts']).size, 0);
+  assert.equal(reuseAfterMerge(['.ethlete/design/config.json']).size, 2);
+});
+
+test('reuses nothing when the first parent has no verdict, a blocked one, or HEAD is no merge', () => {
+  assert.equal(reuseAfterMerge(['plans/x.md'], null).size, 0);
+  assert.equal(reuseAfterMerge(['plans/x.md'], `blocked cli failed at ${FIRST}\n`).size, 0);
+  assert.equal(reuseAfterMerge(['plans/x.md'], `ok ${FIRST}\n`, [FIRST]).size, 0);
+});
+
+test('a blocked verdict keeps the steps that passed, and a reused step keeps the commit it ran on', () => {
+  const ran = 'c'.repeat(40);
+  const text = verdictText(
+    `blocked studio failed at ${FIRST}`,
+    new Map([
+      ['lint', FIRST],
+      ['cli', ran],
+    ]),
+  );
+
+  assert.ok(text.startsWith(`blocked studio failed at ${FIRST}\n`));
+  assert.deepEqual(
+    passedSteps(text, FIRST),
+    new Map([
+      ['lint', FIRST],
+      ['cli', ran],
+    ]),
+  );
+  assert.deepEqual([...reuseAfterMerge(['libs/agent-rules/a.ts'], text)], [['cli', ran]]);
 });
 
 const sh = (cwd, command, args) => {

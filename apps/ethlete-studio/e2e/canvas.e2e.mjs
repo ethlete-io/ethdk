@@ -89,6 +89,17 @@ if (delayFramesMs) process.env['ETHLETE_DESIGN_DELAY_FRAMES_MS'] = String(delayF
 
 const framesDelayedNote = delayFramesMs ? `, frame documents delayed ${delayFramesMs} ms` : '';
 
+if (args.includes('--cpu-rate')) process.env['STUDIO_E2E_CPU_RATE'] = args[args.indexOf('--cpu-rate') + 1];
+
+const cpuRate = Number(process.env['STUDIO_E2E_CPU_RATE'] ?? 1);
+
+if (!(Number.isInteger(cpuRate) && cpuRate >= 1)) {
+  console.error(`invalid --cpu-rate ${process.env['STUDIO_E2E_CPU_RATE']}, expected a whole number of 1 or more`);
+  process.exit(2);
+}
+
+const slowedNote = `${framesDelayedNote}${cpuRate === 1 ? '' : `, renderer CPU slowed ${cpuRate}x`}`;
+
 const TIMINGS_FILE = join(root, 'node_modules/.cache/studio-e2e/canvas-timings.json');
 
 const cliEntry = resolve(root, process.env['STUDIO_CLI_ENTRY'] ?? 'dist/libs/cli/src/index.js');
@@ -343,10 +354,26 @@ const ringOf = (page) =>
         if (visible) rings.push(`${at.localName} ${style.outlineWidth} ${style.outlineColor}`);
       }
 
-      return { focused: document.activeElement === canvas, rings };
+      const active = document.activeElement;
+
+      return {
+        focused: active === canvas,
+        rings,
+        active: active ? `${active.localName}${active.id ? `#${active.id}` : ''}` : 'nothing',
+      };
     },
     { CANVAS },
   );
+
+const focusUntil = async (page, done) => {
+  let ring = await ringOf(page);
+
+  for (const until = Date.now() + WAIT_MS; !done(ring) && Date.now() < until; ring = await ringOf(page)) {
+    await page.waitForTimeout(100);
+  }
+
+  return ring;
+};
 
 const noRingAfterPointer = async (page, point) => {
   await page.mouse.click(point.x, point.y);
@@ -2032,13 +2059,18 @@ const CASES = [
     run: async (page, state) => {
       if (!state.empty) return { ok: false, detail: 'no empty point' };
       await page.mouse.click(state.empty.x, state.empty.y);
-      await settle(page);
-      await page.keyboard.press('Tab');
+      const clicked = await focusUntil(page, (ring) => ring.focused);
+      if (!clicked.focused) return { ok: false, detail: `the click left focus on ${clicked.active}` };
       await page.keyboard.press('Shift+Tab');
-      await settle(page);
-      const ring = await ringOf(page);
+      const left = await focusUntil(page, (ring) => !ring.focused);
+      if (left.focused) return { ok: false, detail: 'Shift+Tab kept focus on the canvas' };
+      await page.keyboard.press('Tab');
+      const ring = await focusUntil(page, (ring) => ring.focused && ring.rings.length > 0);
 
-      return { ok: ring.focused && ring.rings.length > 0, detail: `focused=${ring.focused} rings=[${ring.rings}]` };
+      return {
+        ok: ring.focused && ring.rings.length > 0,
+        detail: `focused=${ring.focused} rings=[${ring.rings}] active=${ring.active}`,
+      };
     },
   },
   {
@@ -3224,8 +3256,18 @@ const waitForFirstFrame = async (page, studioUrl, designPort, frame) => {
 };
 
 const BLANK_PATH = '/__canvas-e2e-blank';
+
+const cpuSessions = new WeakMap();
+
+const throttleCpu = async (page) => {
+  if (cpuRate === 1) return;
+  if (!cpuSessions.has(page)) cpuSessions.set(page, await page.context().newCDPSession(page));
+  await cpuSessions.get(page).send('Emulation.setCPUThrottlingRate', { rate: cpuRate });
+};
+
 const runCase = async (page, studioUrl, designPort, target, testCase) => {
   await page.goto(`${studioUrl}${BLANK_PATH}`);
+  await throttleCpu(page);
   await page.evaluate(
     ({ view, checkout }) => {
       localStorage.clear();
@@ -3549,7 +3591,7 @@ const lead = async () => {
   const record = (job, result) => {
     rows.push({ ...job, ...result });
     console.log(
-      `  ${result.ok ? '✓' : '✘'}  ${rows.length} [${job.page}] › ${job.name} ${result.detail}${result.ok ? '' : ` - load ${loadavg()[0].toFixed(1)} on ${busy.size || 1} worker(s)${framesDelayedNote}`} (${seconds(result.ms ?? 0).trim()})`,
+      `  ${result.ok ? '✓' : '✘'}  ${rows.length} [${job.page}] › ${job.name} ${result.detail}${result.ok ? '' : ` - load ${loadavg()[0].toFixed(1)} on ${busy.size || 1} worker(s)${slowedNote}`} (${seconds(result.ms ?? 0).trim()})`,
     );
   };
   let fixtureFault;
@@ -3573,7 +3615,7 @@ const lead = async () => {
       for (const child of children) child.send({ type: 'built' });
     });
     console.log(
-      `[canvas-e2e] ${total} cases${shardLabel} on ${workers} worker(s)${perfOnly ? ' (perf only)' : skippedPerf ? `, ${skippedPerf} perf case(s) skipped (--perf runs them)` : ''}${framesDelayedNote}`,
+      `[canvas-e2e] ${total} cases${shardLabel} on ${workers} worker(s)${perfOnly ? ' (perf only)' : skippedPerf ? `, ${skippedPerf} perf case(s) skipped (--perf runs them)` : ''}${slowedNote}`,
     );
     console.log(`Running ${total} test${total === 1 ? '' : 's'} using ${workers} worker${workers === 1 ? '' : 's'}`);
 
