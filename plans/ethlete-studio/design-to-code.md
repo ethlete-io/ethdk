@@ -3756,4 +3756,4 @@ specs. Cause (measured: d2e91cd78 stubs it, 68/68 pass): a slice brief that says
 that mocks a module the slice now imports from. Lesson: the push:suite caught it, but one full suite run late. Decided
 by the doc agent (tool internal, general form of the builder's recommendation): every builder slice and subagent brief
 runs `npx vitest related --run <changed files>` before its commit, not only for changed imports between modules. Builder
-work (night backlog, Linux): put this rule in the builder-agent skill and the subagent brief template.
+work (night backlog, Linux): put this rule in the builder-agent skill and the subagent brief template. Built 6447c4e1b.
