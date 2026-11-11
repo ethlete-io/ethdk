@@ -4064,3 +4064,12 @@ marks, picks); the tool writes them only when a decision changes (no rewrite of 
 design run with no decision leaves `git status` clean. Condition: before the move, the builder confirms that no reader on
 another clone (the Mac, CI, a scratch copy, the push suite) needs the committed `pictures.json`; if one does, it reports
 before it builds. Leave the uncommitted `merged.json` and `ready.json` edits in the tree untouched.
+652 condition hit (Linux builder, code read + grep): `design check` (`accepted-pictures.ts` `baselineOf`) takes the
+baseline of a part changed outside a sketch from the committed `pictures.json` record, else from the local part-picture
+cache; on a clone with neither (the Mac, a fresh clone, a scratch copy) it opens an old/new edit sketch that waits for a
+pick, where Linux auto-accepts an unchanged picture. No CI workflow, push suite or e2e reads the file. So today the file
+is a shared baseline, not a cache. Decided by the doc agent (tool internal; it applies the existing auto-accept of an
+unchanged picture to every clone): step 0 before the move: when baseline and cache miss, the tool draws the part at its
+merged commit itself (the EDIT_OLD draw of `edit-sketch.ts` `refreshEditOld`) and compares on the same machine; only a
+changed picture opens the edit sketch. If the old draw fails, ADR 0253 applies (sketch with only `new`). Bite: a fresh
+clone with a direct edit that changes no picture auto-accepts and opens no edit sketch. Then step 1 (the move) as above.
