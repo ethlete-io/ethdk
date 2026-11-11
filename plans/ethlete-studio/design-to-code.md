@@ -2392,24 +2392,6 @@ and starts a new one in the same tmux pane (for example `/exit`, then the agent 
 `/handoff resume` prompt), and the skills say which change needs it (plugin, settings, `PATH`). Bite: a plugin
 installed after the start is live after the new restart mode, not after `/clear`.
 
-697\. Doc agent (2026-11-10, day shift, first `restart --process`, 3cfdb35d0): the typed `/exit` opened the Claude
-Code dialog "Background work is running ... The following will stop when you exit: shell · gh run watch 42796254724"
-with the choices exit and stop tasks, move to background and exit, stay. The restart waited on it until someone
-answered (screenshot from the human). The new process then ran in a new tmux session `claude-3@ethlete-sdk`; the old
-`claude@ethlete-sdk` was gone, so a check by session name fails. Cause (measured by the builder): the respawn runs `$SHELL -lic "claude <prompt>"`; in the login shell `claude` is the shell-install function, which calls `agent-sessions run`; with `$TMUX` set, `run` picks a free session name (claude-3), switches to it and exits, so the old pane dies and its session closes. Side defect: `run` stores the prompt in `@ethlete_command`, so the next `restart --process` types the stale `/handoff resume` first. Fix part: respawn with `command claude` (no shell function) and store only the base command. Tool fix: `restart --process` stops the background work of the session first (or
-answers the dialog with "exit and stop tasks", since the handoff names the work), the handoff names each stopped
-background job so the new process starts it again (here the CI watch), and the new process keeps the old tmux session
-name. Bite: a session with a running background shell restarts with `--process` without a human, in the same tmux
-session, and the new process resumes the watch.
-
-As built (697): the respawn command starts with `command` (after any `VAR=value` prefix), so the shell function does
-not run and the pane keeps its session. `run` stores the command without the trailing prompt (a last word that is not
-a flag and not the value of a flag, or the words after `--`). After `/exit`, the restart reads the pane; on "will stop
-when you exit" it moves the cursor to "exit and stop tasks", presses Enter, and writes the listed jobs to
-`restart.log` and a mailbox notice. The handoff skill says to name each background job before `--process`. Verified:
-three new specs (respawn bypasses a shell function, `run` stores no prompt, the dialog is answered), each fails with its
-part reverted. Not verified: live bite with a real Claude session and the real dialog text and cursor.
-
 698\. Builder (2026-11-10, day shift, cfa266758): `lint:changesets` refused the push of 17913b655 and 1c72a5026, two
 docs-only ADR edits under `apps/ethlete-studio/docs/adr/` without a changeset. Only pre-push catches it; doc-agent ADR
 commits have the same gap. Tool fix, small: the builder and doc-agent skills say that an ADR edit is a change to
@@ -3846,3 +3828,162 @@ the job runs `apt-get update` first, `ci.yml:370`). Cause: infra (mirror). Lesso
 and costs a re-run plus a by-hand diagnosis each time. Tool fix: the apt and playwright install steps retry (3 tries,
 `apt-get update` before each, `Acquire::Retries`); a step that still fails names the package and the mirror. Side: CI red
 counts as blocking under ADR 0269, so the Linux builder builds it next after the B249 slice in work.
+
+886\. Doc agent (2026-11-11): two ssh commands handed to the human for the Mac failed before the third worked: `zsh -lc`
+finds no `yarn` (commit-msg hook), `zsh -ic` finds no `fnm` and `node` (pre-commit). Only `zsh -lic` loads both. Cause:
+the Mac PATH needs the login profile (Homebrew) and `.zshrc` (fnm); the doc agent did not dry-run the command first. Lesson:
+a command for the human costs a round trip per failure. Tool fix: the agent-sessions skill names `zsh -lic` as the one form
+for a Mac command that runs git hooks, and the doc agent runs `ssh ethlete-mac 'zsh -lic "command -v yarn node"'` before
+it hands a Mac command to the human. Side: process; no human decision.
+
+887\. Doc agent (2026-11-11): `archive-findings --days=0` moved findings 867 and 868 to the archive although B249, which 868
+tracks, is still in work. A parallel merge then lost the 8 newer 868 lines (5c-2 D7, 5c-1b, 5c-1c as built). Cause: the
+script archives by age and an "as built" line, not by the STATUS row. Lesson: a finding with an open STATUS row is live
+state, not history. Tool fix: `archive-findings` skips a finding whose `B<row>` is not closed in STATUS. Side: this finding
+continues 868 as "B249 progress"; new B249 as-built notes go here. The lines from 868 follow.
+
+5c-2 live checks (own serve :4761, shots in `.claude/handoffs/agent-results/b249-5c2/`): 4b, 4c, D4, D5, D6 ok. D7 new:
+an edit sketch with new+old folded the whole `new` variant. Cause (spec bite) unchanged-states compared `new` with the
+product; fix e8f44f88d: only `old` of an edit sketch gets unchanged states. Missed because the 5a spec covered only
+new-only and the 5a live run read only `old`. e2e 4b/4c owed in 5c-2b: in a `--prepare-checkout` checkout `design
+check --part components/zoom-chip` opened no edit sketch (Suspect: settle or a baseline picture makes it HELD).
+As built e1881998d (5c-1b): Cause (spec bite) every open-point reader used merged.json only; now serve holds
+same-drawing edits in memory (`sketch/held-edits.ts`) and drops them from open points, build-ready and ready.json.
+5c-1c (doc agent, ADR 0256): the same hold for an edit HEAD already holds. Live run owed in 5c-2b.
+As built a4a54f211 (5c-1c): Cause (spec bite) `settleCommittedEdits` with `writesTracked:false` neither recorded nor held the part; the settle path now reports settled parts with hash and the slow runner holds them. Live run owed in 5c-2b.
+As built 487e24844 (883+882, not pushed): 883 Cause (spec bite): `leaveGone` picked the `@edit` name; now picks
+`sketchPartOf` (fallback: name before `@`), discard shares the path; spec: system-view merge case for variant + edit
+sketch. 882 outlines Cause (spec bite): merge-compare looked marks up by the `@edit` name; now `targets[0]`. 882
+cancelled compare Cause (live event log + spec bite): the compare raised its own revision (serve announces pictures drawn
+under the edit sketch name) and every sketch-list re-read gave a new object; fix in sketch-view: a change of sketch,
+variant, mode, surface or colour (by value) still cancels, a revision change waits for the running compare, then asks
+again. Suspect "sketchRevisionOf plain-part fallback" refuted. e2e 4c extended (Geändert row with outline; open part
+zoom-chip after each merge): the committed version fails plain and with hold (`page.waitForFunction` 120 s timeout); an
+earlier version with a fixed 3 s wait passed; a fresh subagent fixes it, the push waits for it.
+As built 31d9002d7 (4c, not pushed): Cause (spec bite `sketch-vanished.spec.ts` + saved serve log): serve crashed
+(exit 1, ENOENT scandir `sketches/components-zoom-chip.edit` in `holdsFiles` < `listSketches` < `drawnSystemsOf`) when the
+merge worker removed the sketch folder during a listing; Studio then got ERR_CONNECTION_REFUSED. Fix: `holdsFiles`
+returns false on ENOENT. Tool gap: no spec raced a folder removal against a listing; the old 4c "sketch view gone" wait
+passed only because serve was down. 4c plain passes (85.6 s). Still open: with `--hold-listings 14000` the merged part's
+frame stays empty (shot requests aborted with the held listing, never asked again). Suspect (no measurement): Studio
+under a slow listing after a merge (design-canvas `wantedLiveIds`/targets). Next subagent, push waits for it.
+B249 closed 388f7a1dc (2026-11-11 night): ADR gate ok; 0037 open B295, 0190 built d66a54869, 0233 built 57bac0dc0, 0239 kept 12ff23c55. Hold case fixed 57bac0dc0 (finding 899).
+
+888\. Mac builder (2026-11-11, B345 live shot, 82c6e3025): the change crop cuts the "Your review" label at its top edge,
+and the locator shows no page content. Suspect: the crop box uses the changed element's rect with no room for a label that
+sits just above it; the locator draws before the page paints. Not verified: N>1 places, several variants (ADR 0272),
+toggle back, WebKit/Tauri; `design compare` for change-crop and change-crop-whole is still not run (finding 872 gap). Tool
+fix: a live-shot check that fails when a crop edge cuts a text box, and one that fails on an empty locator. Side: cosmetic;
+Mac queue after 855.
+As built c33958a86 (5c-2b): e2e cases 4b and 4c (`canvas.e2e.mjs`, helper `withEditSketch`) pass, also with `--hold-listings 14000`; both fail on a cli from 5a42c253c~1. The D7 fold fix has no bite of its own (the old cli has no old variant). The old "no DIRECT EDIT in a prepared checkout" blocker did not reproduce with a HEAD cli build. Suspect: stale `dist/libs/cli`. Live pass on :4761 (shots `.claude/handoffs/agent-results/b249-5c2b/`): 5c-1b and 5c-1c show "Nichts offen"/"Baubereit"; a different-drawing edit shows "Nicht baubereit (1)". Next: 5c-3.
+
+889\. Linux builder (2026-11-11, B249 5c-2b e2e): a pick of `old` in a `<part>@edit` sketch does not write the exact HEAD
+copy back: merge adds the variant authors to `madeBy` (`merge.ts:114`), and `old` has the author "design check", so the file
+gains 'design check'. This breaks ADR 0135. Cause: e2e diff. Lesson: the 4b/4c e2e compared states, not the bytes against
+HEAD. Tool fix: a merge of `old` in an `@edit` sketch adds no author, and the e2e case asserts `git diff --exit-code` on the
+part after an `old` pick. Side: inside B249 (applies ADR 0135); the Linux builder builds it.
+
+890\. Linux builder (2026-11-11, B249 5c-2b bite): `STUDIO_CLI_ENTRY` at an old cli is refused by `staleCliBuildMessage`
+(`index.ts`), because the e2e checkout links the main checkout's `libs/cli`. Worked around with a scratch copy at the old
+ref. Suspect: `yarn studio:e2e:bite <ref>` hits the same refusal (not run). Lesson: the bite path, the proof that a test
+bites, had no test of its own. Tool fix: the stale check compares against the `libs/cli` the entry was built from, or bite
+mode names its source dir; a spec runs bite mode on one old ref. Side: tool backlog.
+
+891\. Linux builder (2026-11-11, B249 5c-2b live): in the no-op edit check the API still listed a stale-record blocker
+while Studio showed "Baubereit". Suspect: stale-record is a check-only blocker that Studio filters. Lesson: API and UI read
+build-ready from two paths. Tool fix: owed after the cause; a spec asserts that the API and the Studio label agree. Side:
+the Linux builder checks it with 882/883 inside B249.
+As built b685abce7 (5c-3): System page shows "Wird geprüft" only while no blocker is definite (ADR 0270), new state blocked-checking; Sketches page state edit-sketch (old never folded, no Verwerfen). Not verified: a shot. The two visible design edits implement ADR 0270 and S6b, so by ADR 0211 and ADR 0256 they are committed, not left as `@edit` sketches for the human (doc agent, as in 869).
+
+893\. Linux builder (2026-11-11, 889 e2e): case 4c failed under `--hold-listings 14000` (pick timed out: the merge buttons
+wait for the held listing). It also failed on the 5c-2b code, so the 5c-2b report "passes with hold" was wrong. Cause: e2e
+run; fix 903adf5d0, pick waits for `listingAnswered` (hold 1/1, plain 1/1). Lesson: a "passes under X" claim in a report
+had no log behind it. Tool fix: the e2e runner prints one result line with its flags (for example `hold=14000 4c pass`),
+and a builder report quotes that line for each claimed run. Side: process plus e2e helper; Linux builder.
+
+894\. Doc agent (2026-11-11): the grill round on app-wide button tokens recommended "put them in `@layer components` with
+`:where()`", and the human accepted it. The SDK's own rule `libs/agent-rules/content/rules/app-styling.md:35` forbids
+exactly that: SDK styles are injected into `@layer components` at runtime, after the app stylesheet, so an app rule there
+ties on layer and specificity and loses on source order. fifagg-frontend caught it. Cause: the doc agent took the
+recommendation from the docs page and did not search the agent rules. Lesson: a recommendation on app styling must be
+checked against the shipped agent rules, not only the docs. Tool fix: the doc agent's fact check before a recommendation
+greps `libs/agent-rules/content` too; and the docs page "Overriding component styles" names the runtime injection (it
+says nothing about it today). Side: the decision is withdrawn; the Linux builder works out an SDK option; the human decides
+again.
+B249 investigation (report `.claude/handoffs/agent-results/b249-882-883-891.md`): 883 Cause (spec probe): only `@edit` sketches, so inside B249; `sketch-view.component.ts:775` emits the sketch name, `leaveGone` (system-view :1186) matches no part and falls back to the first. Fix: `leaveGone` picks `sketchPartOf(sketch)`; e2e asserts the open part per sketch kind (the e2e merge case merged by API, so the button path never ran). 882 Cause (live Playwright): Studio aborts every `/__design/sketch-compare` (17 aborts in 75 s) because the sketch revision keeps changing; Suspect: `sketchRevisionOf` (`frame-revisions.ts:109-118`) counts the redraws the compare itself causes. Second defect, Cause (API answer): every row has empty outlines, `merge-compare.ts:114/125` looks marks up by `sketch.target` instead of `targets[0]`. Tool fix: an e2e case asserts a "Geändert" row on an edit sketch. 891 closed as no defect: stale-record maps to "Wird geprüft" for about 2 min after a no-op edit (intended, build-ready.md); the 5c-2b API read and the shot were taken at different moments.
+
+895\. Doc agent (2026-11-11): finding 864 happened again. At about 21:00 the doc agent asked the human Q1 "how does
+`rack` come back on" (Wake-on-LAN vs the human switches it on), then saved a handoff with "Open for the human: None" and
+restarted itself. The resumed session said "nichts offen". The human: "du witzbold hast mit dem reset schon wieder deine
+letze frage eliminiert". Cause: the 864 tool fix (restart refuses while a `❓` in the transcript has no later human
+message, unless the handoff names it) was never built; under ADR 0269 it sat in the agent machinery backlog. Tool fix:
+the 864 fix, unchanged, now ranked as a user-facing fix (the human sees the lost question), built right after the current
+B249 slice. Bite: a restart after an unanswered `❓` and a handoff with "none" is refused.
+As built 7fa27a42c (not pushed): `agent-sessions restart` exits 1 when the target Claude session has a line starting
+with `❓` in an assistant message after the last human turn, unless the handoff named in the prompt lists it verbatim
+under "Open for the human". Human turn = type user, origin human, no slash command. Transcript via
+`~/.claude/sessions/<pid>.json` (tmux field) or `CLAUDE_CODE_SESSION_ID` for a self-restart; Codex sessions skipped.
+Bite: the refuse case failed on HEAD, 44/44 pass with the fix; fixture trimmed from a real doc-agent transcript. Not
+verified: a live restart; the pid-file session id after /clear; a `❓` written after the restart call in the same turn.
+Side: the 863 guard (refuse unless the handoff names each live subagent) does not exist in `agent-sessions.mjs`,
+although finding 863 reads as built. 863 stays open, tool backlog after B249.
+
+896\. Doc agent (2026-11-11): to shut `rack` down, the doc agent found its SSH target only by a grep over old session
+transcripts: no plan, ADR or ssh config alias names it (`cef-runtime.md` says "over SSH" only). Cause: the B480 setup
+notes leave out the address. Tool fix (tool internal): the builder adds the `rack` SSH target and the Windows host name
+to the B480 setup notes in `plans/ethlete-studio/cef-runtime.md`. Queue: with the next rack batch (ADR 0273).
+
+897\. Linux builder (2026-11-11): Claude Code killed the push suite of 903adf5d0 at about 20:31Z (system low on memory,
+load 40), in the e2e step (log `.claude/handoffs/push-suite-e2e-20261111T203116243Z-3886201-0.log`). A spec helper
+(pid 3335492, 8 h old, `node -e ... existsSync("/tmp/push-suite-log-vVycAR/go")`, polls every 10 ms) still runs.
+Suspect (no code read yet): `push-suite.spec.mjs` does not kill its child when the "go" file never appears. Tool fix:
+the spec kills the child in afterEach. Queue: tool backlog (ADR 0269, agent machinery).
+
+899\. Linux builder (2026-11-11 night, B249 e2e 4c under `--hold-listings 14000`): the merged part's frame stayed empty.
+Cause (probe + spec bite `canvas-frame-grid.component.spec.ts`): the `settledCells` linkedSignal of a state grid took an
+inline source that read `grid()`; an equal re-read of the frames (held listing) reset the loaded count 7 -> 0, and loaded
+imgs never fire `load` again, so the grid never revealed. Pre-existing, not from 487e24844. Built 57bac0dc0: the source is
+a computed `shotsKey`. Suspect "aborted shot requests" refuted. Bite 883: with `leaveGone` reverted, 4c times out at the
+open-part wait. Lesson: no spec set an equal grid input again while pictures load, and nothing flags a linkedSignal source
+written as an inline function over an input (one more site: `loadedShot` in `canvas-frame.component.ts`, harmless). Tool
+fix: a lint rule that asks for a computed source there. Open for the human (morning round): the rule would go into the
+published `@ethlete/eslint-plugin`, so it changes lint for every consumer. Queue: tool backlog until decided.
+
+900\. Linux builder (2026-11-11 night): the approved push suite failed on 86f8b0497, no push. e2e 136 passed, 2 failed
+with `page.waitForSelector` 120 s timeouts in the full run (2 workers, load 8.8): 128 [System] "picking old of an edit
+sketch restores the design, picking new records the edit as merged" and 129 [System] "a visible edit of a merged design
+part opens its old/new sketch with nothing folded". 128 passed alone (plain + hold) on 57bac0dc0. Suspect (no
+measurement): the two edit-sketch cases share the zoom-chip fixture or sketch folder across workers, or 31d9002d7 /
+57bac0dc0 changed a wait 129 relies on. Log: `.claude/handoffs/push-suite-e2e-20261111T222955938Z-200555-0.log`.
+Lesson: a case proved alone is not proved in the full run; the push suite was the first run with both cases on two
+workers. Tool fix (builder default): before a push-suite request, run the changed e2e cases together with their
+neighbours at the push-suite worker count; a fixture or sketch folder used by two cases gets a per-worker copy.
+Open for the human (morning round): one more push-suite run after the fix proves 128 and 129 pass together (q1ok
+covered one run). Builder recommends yes.
+
+901\. Mac builder (2026-11-11 night, B490 Mac shot): Chromium and WebKit equal, Noto Sans and Noto Sans Mono load from
+dist and resolve for `--font-ui` / `--font-code`. But the Studio app body still renders Jost: `apps/ethlete-studio/src/styles.css:131`
+body `font-family: var(--font-sans)` (Jost, `:66-67`, `--font-mono` IBM Plex Mono), `index.html:11` loads Jost + Plex
+from Google Fonts, `canvas-frame.component.ts:122` uses `font-mono` (Plex). Text that inherits from body is Jost. The
+Linux note "start view in Noto Sans" did not measure body. Suspect (code read): the compare missed it because every
+design part sets `--font-ui` on its own root, so no part state sees the body font. Decided by the doc agent (applies
+ADR 0262 + the design-part rule "the app implements the design, no drift" to the app root): body -> `var(--font-ui)`,
+canvas-frame `font-mono` -> `--font-code`, drop `--font-sans`/`--font-mono` and the Google Fonts link, then compare the
+embedding pages. Lesson: a part root that sets its own font hides the app's inherited font from every check. Tool fix
+(builder default): the compare reads the computed font family of the app root and of each part host and fails when the
+app root font is not the design's `--font-ui`; then a bite with Jost on body.
+
+900 update (Linux builder, 785facf09): still Suspect, no Cause. Not reproduced in 7 runs (pair 2/2; pair + 6 heavy cases
+on 8 workers 9/9; scratch with HEAD .ethlete + cold store 2/2; `--page System` 29/29 twice; pair --hold-listings 14000
+2/2). The hang: `waitForSelector('ethlete-sketches [data-sk-state]', 120 s)` in `edit()` of `withEditSketch`
+(canvas.e2e.mjs); 128 failed at 126.4 s, 41 pictures drawn vs 487 on a pass. Ruled out by runs: shared fixture, load,
+dirty tree, cold store, 31d9002d7, 57bac0dc0. The failed case dropped the `design check` exit code and output; 785facf09
+now names them, the sketch folder state and the page state on that timeout. Tool gaps (builder default, tool backlog):
+on a failed case print the tail of the worker and design-server output; `studio:e2e --like-push-suite` for chosen cases.
+
+902\. Linux builder (2026-11-11 night): the merge of origin/next aborted because four uncommitted `.ethlete/design`
+record files (sdk/studio `ready.json` and `merged.json`) would be overwritten. Every hunk came from `et design check`
+(11 pids, 09:12Z to 20:24Z), so no session owned them. Doc agent applied ADR 0009: the builder commits them, then
+merges. Suspect: no command commits the records a design check writes, so they pile up in the shared tree for hours.
+Tool fix (builder default): pre-push or the push suite names uncommitted design record files with their age; tool
+backlog.

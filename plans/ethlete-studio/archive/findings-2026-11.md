@@ -8078,3 +8078,54 @@ and then reports nothing, not a failure. Tool fix: the probe reads a painted sig
 that finds no target fails. Side: part of B480 (ADR 0268), parallel.
 As built 74d532e3d: cells set `data-painted`; the probe counts painted cells plus loaded pictures and logs
 `[studio-release-smoke] FAILED: nothing painted, ...` with the counts after 60 s. Bite: Rust test. Live rack run owed.
+
+697\. Doc agent (2026-11-10, day shift, first `restart --process`, 3cfdb35d0): the typed `/exit` opened the Claude
+Code dialog "Background work is running ... The following will stop when you exit: shell · gh run watch 42796254724"
+with the choices exit and stop tasks, move to background and exit, stay. The restart waited on it until someone
+answered (screenshot from the human). The new process then ran in a new tmux session `claude-3@ethlete-sdk`; the old
+`claude@ethlete-sdk` was gone, so a check by session name fails. Cause (measured by the builder): the respawn runs `$SHELL -lic "claude <prompt>"`; in the login shell `claude` is the shell-install function, which calls `agent-sessions run`; with `$TMUX` set, `run` picks a free session name (claude-3), switches to it and exits, so the old pane dies and its session closes. Side defect: `run` stores the prompt in `@ethlete_command`, so the next `restart --process` types the stale `/handoff resume` first. Fix part: respawn with `command claude` (no shell function) and store only the base command. Tool fix: `restart --process` stops the background work of the session first (or
+answers the dialog with "exit and stop tasks", since the handoff names the work), the handoff names each stopped
+background job so the new process starts it again (here the CI watch), and the new process keeps the old tmux session
+name. Bite: a session with a running background shell restarts with `--process` without a human, in the same tmux
+session, and the new process resumes the watch.
+
+As built (697): the respawn command starts with `command` (after any `VAR=value` prefix), so the shell function does
+not run and the pane keeps its session. `run` stores the command without the trailing prompt (a last word that is not
+a flag and not the value of a flag, or the words after `--`). After `/exit`, the restart reads the pane; on "will stop
+when you exit" it moves the cursor to "exit and stop tasks", presses Enter, and writes the listed jobs to
+`restart.log` and a mailbox notice. The handoff skill says to name each background job before `--process`. Verified:
+three new specs (respawn bypasses a shell function, `run` stores no prompt, the dialog is answered), each fails with its
+part reverted. Not verified: live bite with a real Claude session and the real dialog text and cursor.
+
+885\. Mac builder (2026-11-11): a merge commit that also carries an `archive-findings` run cannot pass. The pre-commit
+`check-plan-findings` needs `plans/ethlete-studio/archive/findings-2026-11.md` staged; the git-safety hook allows a
+pathspec-less `git commit` during a merge only if every staged path is in `HEAD..MERGE_HEAD`, and the archive file is not.
+`git commit -i -- <archive>` passes the hook, but git does not stage it. Cause: `concludes_merge()` in `git-safety.py` does
+not know the files `archive-findings` writes. Lesson: two gates were each tested alone, never the pair on a merge. Tool fix:
+`concludes_merge()` allows `plans/ethlete-studio/archive/**`, and a spec runs both gates on a merge with an archive run.
+`commit-tree` on a temp index is rejected: it skips pre-commit. Side: blocked the Mac merge and push; machinery, decided by
+the doc agent. As built 885: cc9e932d0, `concludes_merge()` also allows `plans/**/archive/**`; spec bites. Not verified: a real merge with an archive run.
+
+892\. Mac builder (2026-11-11, push suite at 1344bb37a): the e2e case "no text leaves its box at min zoom" fails on Sketches
+and Large: at min zoom the B345 crop reason ("4780 px in 3 Stellen · 1,0× ve") and the state names "empty"/"hidden" leave
+their box in the sketch gutter. Cause: reproduced alone; B345 slice 1 added the reason without a min-zoom fit. A third
+failure ("[Edited]" on disk, at load 27): Suspect flake. Lesson: the B345 slices were closed on push suites that stopped
+before the e2e stage, so this page-group case never ran on them. Tool fix: a slice counts as built only on a push suite that
+reached and passed e2e; the suite log names the last stage it reached, and the builder report quotes it. Side: blocks the
+Mac push; the Mac builder fixes the gutter first.
+As built 892: 718e2fc26, no crop block while the gutter head is hidden at min zoom (it kept `noteSize()*15` px). Cause: e2e bite. Verified: the e2e case 6/6, sketches spec 35/35. Not verified: live shot. Second gap, Suspect (code read): `design compare` drives pages/sketches only at camera fit and drops the screen prop, so no compare state shows the gutter at min zoom; change-crop states stay undrivable (16 "Einpassen" aria-labels, 872 gap). Tool fix, decided by the doc agent: `slice:paths` maps each touched page group to its e2e cases, and the slice report names them as run.
+As built 889: 0273e8361, `notedTargetOf` in `merge.ts` adds no author for `old` of an `@edit` sketch. Cause: unit bite (`edit-sketch.spec`). The e2e case 4c now diffs the part file against the base commit after the `old` pick and bit with `merge.ts` reverted.
+
+898\. Mac builder (2026-11-11): finding 512 (title-bar notice states) built; sketch components/title-bar r1 a
+(07acb199a) merged as agent accept under ADR 0106 + 0210 (dea25f747). Three tool gaps, all Suspect (not probed):
+(a) the merge also rewrote the pages/sketches hash in `studio/merged.json` (352141771af03198 -> 78077d0bc009c132, a
+dirty value from a design check): the merge may refresh every stale hash, not only the merged part. (b) `adr:governs`
+lists no ADR for `.ethlete/design/**` files: its globs miss that tree. (c) the visible-change gate failure of the 5
+notice states (overlay pane) did not show while the sketch was open. Not verified: design compare of the new states
+against the app, live shot. Tool fix: the Mac builder probes (a)-(c) and writes Cause or drops each. Queue: tool
+backlog (ADR 0269), (a) first because it changes merged.json without a merge of that part.
+As built 448c47f16 (898 a): Cause (spec bite, new merge-commit.spec case): `commitFlow` staged every file whose hash changed during the merge, so a hash a design check wrote into `studio/merged.json` before the merge went into dea25f747. Fix: a JSON file dirty before the merge gets the HEAD entries plus only the entries the merge changed; the foreign edit stays in the tree. Not verified: a real Studio merge with a dirty merged.json. (b) and (c) still Suspect.
+As built (898 b): Cause (probe): no tool bug; only 14 of 272 ADRs carry `governs`, none of the merge/agent-accept ADRs. Doc agent added `governs` for `.ethlete/design/*/merged.json` and `.ethlete/design/**/sketches/**` to ADRs 0106, 0209, 0210 (7119f26fd).
+(898 c) Mac probe at 448c47f16, no sketch open: `design check --part components/title-bar` fails the visible-change gate, 7 states unjudged (5 notice rest states + linux-full-notice-hover/-active): "design draws 1 overlay pane, the app opened 0". On 2026-11-10 with components/title-bar@edit open the same check showed only "design changed outside a sketch". Suspect (two runs, no controlled bite): an open sketch of the part suppresses the gate verdict. Second gap: the state runner cannot open an etTooltip pane that the design draws always open. Tool fix (tool internal, builder default): a controlled bite for the suppression, then the verdict shows with a sketch open; a forced-open hook for overlay panes in the state runner (like `data-et-frozen-at`). Queue: tool backlog (ADR 0269). Not a push blocker (ADR 0226).
+
+875 update (Linux builder, 2026-11-11 night): Suspect (strong) = the `holdsFiles` ENOENT race fixed in 31d9002d7. `agent-results/867.md:48-49` notes the serve crash next to the ADR 0256 settle path removing the untracked `studio/sketches/pages-sketches.edit` folder; no merged.json commit in the 867 window (16:44-17:47 +0100). No crash time or trace exists, so no Cause. The 875 tool fix (crash log + "Design-Server abgestürzt") stays: the next crash would again leave no trace.
