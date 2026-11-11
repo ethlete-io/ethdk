@@ -3629,3 +3629,21 @@ caught one round later by pre-push or push:suite. Tool fix (doc agent, tool inte
 on every staged Prettier-supported blob. Bite: a staged unformatted `package.json` fails the commit.
 
 828\. Large iframe flake (Mac builder, 2026-11-11; numbered 815 on the Mac, renumbered at the merge): "a variant equal to Aktuell keeps its iframes across a quick and a full listing" failed once at `--workers 5`, load 31.7 to 55, with "folded false; collapsed: iframe/row adds 2 removes 22". Cause: the case waited a fixed 60 s for the fold after its setup write, then measured anyway; under load the setup's full listing took longer, so the first fold of variant b (row b and the folded states leave the DOM, the `hidden` frames enter) landed inside the measured "collapsed" window. The case also counted a listing at its `response` event, but `sendHeldJson` sends the headers after the first 15 s keep-alive, so "answered" could mean "headers only": in loaded runs the full listing's body came 5 s after its headers, and in the failed run 25 s after. The product drops no iframe: the removes are the fold the setup expects. Fix (test only): the setup goes through the same `refresh` as the two measured phases, a listing counts on `requestfinished` and only when it was asked after the write, the deadline is 2 x `FULL_COMPARE_MS`, and the setup listings are part of `ok`. Bite: `--hold-listings 25000` failed before with the same "folded false, adds 2 removes 22" (setup full listing cancelled by the 60 s write, fold at 113 s in the collapsed window) and passes after.
+
+833\. Render-check speed (Mac builder, 2026-11-11): `et design sketch check pages/sketches@open-points --product studio`
+(3 variants, 35 states, light and dark), `ETHLETE_DESIGN_RESIDENT=0`, load 9 to 14 on 6 cores. The render check now boots
+one frame per variant, switches the states in place (`window.etSwitchState`, falls back to a load when it cannot) and
+inspects the dark twin on the same load after `emulateMedia`. Cold: pages/sketches variants 68/37/37 s to 37/21/22 s,
+render-check phase 152 s to 88 s, whole command 237 s to 171 s. Warm: both 4.4 s (every frame a cache hit). The aktuell
+pass stays at 54 s: it draws through the shared `createPartShooter` pool in `shot.ts`, not the render check, so the
+change does not reach it (open). Proof: every frame shot before and after `emptySlots` plus its issue list, old against
+new, 636 PNG and 318 JSON, 0 differences. The proof screenshots need `animations: 'disabled'`: without it two runs of
+the old code alone differ in 152 shots (a pulsing dot, rail button transitions, the canvas pan). First new run differed
+in 755 shots: `withNgStyles` hands each SDK component style out once per module, so the switch dropped them for every
+later state (a visually hidden et-kbd label drew, a new UNSTYLED-SDK hit); `markNgStyles()` after the module imports, restored on
+every switch, fixed it. Profile of `inspectFrame` (~1 s per frame, 17.5 s on page-100): forced layout, stylesheet text
+and a `getComputedStyle` walk take 13 ms together; 88 % is `REACH_STATEMENTS` (`reach.ts`), which pans each scroll
+container of an action in 32 px wheel steps, up to 200 per direction, and runs a full `judge` (an all-element
+`pointer-events` scan, a forced-style toggle, `elementFromPoint` samples) after every step. Not fixed: a faster pan
+search changes what the check samples, so it needs its own proof. Not verified: a part setup that leaks timers or
+listeners across a switch (none in this sketch), and the resident server path.

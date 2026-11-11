@@ -255,11 +255,11 @@ export const resolveTheming = (root: ParentNode, themes: FrameThemes) => {
 /**
  * Resolves the theming attributes under `root` now and again after every change of its markup or of the page's
  * stylesheets: auto surfaces and semantic colours as `resolveTheming`, and `[data-et-surface-interactive]` as `etSurfaceInteractive`, whose CSS
- * (`interactiveCss`) goes into the page once. Returns the resolve function.
+ * (`interactiveCss`) goes into the page once. Returns a function that stops watching and takes that CSS out again.
  */
 export const watchSurfaces = (root: HTMLElement, interactiveCss: string) => {
   const document = root.ownerDocument;
-  let styled = false;
+  let styled: HTMLStyleElement | null = null;
 
   const resolve = () => {
     const interactive = Array.from(root.querySelectorAll(`[${SURFACE_INTERACTIVE_ATTRIBUTE}]`));
@@ -269,11 +269,9 @@ export const watchSurfaces = (root: HTMLElement, interactiveCss: string) => {
     });
 
     if (interactive.length > 0 && !styled) {
-      const style = document.createElement('style');
-
-      styled = true;
-      style.textContent = interactiveCss;
-      document.head.append(style);
+      styled = document.createElement('style');
+      styled.textContent = interactiveCss;
+      document.head.append(styled);
     }
 
     if (root.querySelector(`[${AUTO_SURFACE_ATTRIBUTE}], [${SEMANTIC_COLOR_ATTRIBUTE}]`))
@@ -282,13 +280,20 @@ export const watchSurfaces = (root: HTMLElement, interactiveCss: string) => {
 
   resolve();
 
-  new MutationObserver(resolve).observe(root, {
+  const markup = new MutationObserver(resolve);
+  const sheets = new MutationObserver(resolve);
+
+  markup.observe(root, {
     childList: true,
     subtree: true,
     attributes: true,
     attributeFilter: ['class', AUTO_SURFACE_ATTRIBUTE, SURFACE_INTERACTIVE_ATTRIBUTE, SEMANTIC_COLOR_ATTRIBUTE],
   });
-  new MutationObserver(resolve).observe(document.head, { childList: true, subtree: true, characterData: true });
+  sheets.observe(document.head, { childList: true, subtree: true, characterData: true });
 
-  return resolve;
+  return () => {
+    markup.disconnect();
+    sheets.disconnect();
+    styled?.remove();
+  };
 };

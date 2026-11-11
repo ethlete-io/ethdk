@@ -21,7 +21,7 @@ import { OFF_CENTRE_RULE, OFF_CENTRE_STATEMENTS } from './off-centre';
 import { classesOf, cssBlocksOf } from './css-source';
 import { createDesignServer } from '../serve';
 import { emptySlotsScriptOf, PartAddress, partFrameOf, viewportOf } from '../shot';
-import { awaitSettled, Browser, createDrawQueue, openFrame, ThumbUnavailableError } from '../thumb';
+import { awaitSettled, Browser, createDrawQueue, openFrame, switchFrame, ThumbUnavailableError } from '../thumb';
 import { gridReportOf } from './grid-report';
 import { watchSdkErrorLines } from './sdk-errors';
 import { partKeyOf } from './resolve-product';
@@ -654,37 +654,105 @@ export const inspectRetryingTimeouts = async (
 
 type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPage']>>;
 
-const inspectedFrameOf = async (options: { page: Page; base: string; frame: Frame }): Promise<RenderIssue[]> => {
-  const { page, base, frame } = options;
+type Lane = { page: Page; sdkErrors: ReturnType<typeof watchSdkErrorLines>; booted: string | null };
 
-  await page.emulateMedia({ colorScheme: frame.contrast.scheme });
-  await page.setViewportSize(frame.viewport);
-  await openFrame(page, `${base}/frame.html?${frame.search}`);
+const bootKeyOf = (search: string) => {
+  const params = new URLSearchParams(search);
+
+  params.delete('state');
+
+  return params.toString();
+};
+
+/** @internal The frames of a part that draw the same page and differ only in their colour scheme, in drawing order. */
+export const loadsOf = <T extends Pick<Frame, 'search' | 'viewport'>>(frames: T[]) => {
+  const loads = new Map<string, number[]>();
+
+  frames.forEach((frame, at) => {
+    const key = JSON.stringify([frame.search, frame.viewport]);
+
+    loads.set(key, [...(loads.get(key) ?? []), at]);
+  });
+
+  return [...loads.values()];
+};
+
+const FINISHED_TRANSITIONS = `document.getAnimations()
+  .filter((animation) => animation instanceof CSSTransition)
+  .forEach((animation) => animation.finish())`;
+
+const schemeSwitched = async (page: Page, scheme: ColorScheme | null) => {
+  await page.emulateMedia({ colorScheme: scheme });
+  await page.evaluate(FINISHED_TRANSITIONS);
+  await awaitSettled(page);
+};
+
+const inspectedOptionsOf = (frame: Frame) => ({
+  fixed: frame.fixed,
+  fit: frame.fit,
+  skips: frame.skips,
+  namespaces: frame.namespaces,
+  contrast: frame.contrast,
+  part: frame.controlInputs ? frame.address.part : null,
+  embedControls: frame.embedControls,
+});
+
+const inspectedLoadOf = async (options: { lane: Lane; base: string; frames: Frame[] }): Promise<RenderIssue[][]> => {
+  const { lane, base, frames } = options;
+  const { page } = lane;
+  const [first] = frames;
+
+  if (!first) return [];
+
+  const booted = bootKeyOf(first.search);
+
+  await page.emulateMedia({ colorScheme: first.contrast.scheme });
+  await page.setViewportSize(first.viewport);
+
+  if (lane.booted !== booted || !(await switchFrame(page, first.address.state))) {
+    lane.booted = null;
+    await openFrame(page, `${base}/frame.html?${first.search}`);
+    lane.booted = booted;
+  }
+
   await awaitSettled(page);
 
-  const inspected = {
-    fixed: frame.fixed,
-    fit: frame.fit,
-    skips: frame.skips,
-    namespaces: frame.namespaces,
-    contrast: frame.contrast,
-    part: frame.controlInputs ? frame.address.part : null,
-    embedControls: frame.embedControls,
-  };
-  const inFrame = (await page.evaluate(inspectFrame(inspected))) as Found[];
-  await page.evaluate(emptySlotsScriptOf(frame.address.part));
-  const unstyled = (await page.evaluate(inspectFrame({ ...inspected, sdkStylesOnly: true }))) as Found[];
-  const fontFaces = (await page.evaluate(FONT_FACES_SCRIPT)) as Found[];
-  const { product, part, state, sketch } = frame.address;
+  const inFrame: Found[][] = [];
 
-  return [...inFrame, ...unstyled, ...fontFaces].map((issue) => ({
-    ...issue,
-    product,
-    part,
-    state,
-    sketch,
-    size: frame.size,
-  }));
+  for (const [at, frame] of frames.entries()) {
+    if (at > 0) await schemeSwitched(page, frame.contrast.scheme);
+
+    inFrame.push((await page.evaluate(inspectFrame(inspectedOptionsOf(frame)))) as Found[]);
+  }
+
+  await page.evaluate(emptySlotsScriptOf(first.address.part));
+
+  const unstyled: Found[][] = [];
+  const fontFaces: Found[][] = [];
+
+  for (let at = frames.length - 1; at >= 0; at--) {
+    const frame = frames[at] as Frame;
+
+    if (at < frames.length - 1) await schemeSwitched(page, frame.contrast.scheme);
+
+    unstyled[at] = (await page.evaluate(
+      inspectFrame({ ...inspectedOptionsOf(frame), sdkStylesOnly: true }),
+    )) as Found[];
+    fontFaces[at] = (await page.evaluate(FONT_FACES_SCRIPT)) as Found[];
+  }
+
+  return frames.map((frame, at) => {
+    const { product, part, state, sketch } = frame.address;
+
+    return [...(inFrame[at] ?? []), ...(unstyled[at] ?? []), ...(fontFaces[at] ?? [])].map((issue) => ({
+      ...issue,
+      product,
+      part,
+      state,
+      sketch,
+      size: frame.size,
+    }));
+  });
 };
 
 const inspect = async (options: {
@@ -715,7 +783,7 @@ const inspect = async (options: {
   }
 
   try {
-    let lanes: { page: Page; sdkErrors: ReturnType<typeof watchSdkErrorLines> }[] = [];
+    let lanes: Lane[] = [];
     let done = 0;
 
     for (const group of groups.values()) {
@@ -735,14 +803,15 @@ const inspect = async (options: {
         continue;
       }
 
-      const width = Math.min(INSPECTS_AT_ONCE, group.length);
+      const loads = loadsOf(group);
+      const width = Math.min(INSPECTS_AT_ONCE, loads.length);
 
       while (lanes.length < width) {
         const page = await context.newPage();
 
         if (cache) await (await context.newCDPSession(page)).send('Network.setCacheDisabled', { cacheDisabled: true });
 
-        lanes.push({ page, sdkErrors: watchSdkErrorLines(page) });
+        lanes.push({ page, sdkErrors: watchSdkErrorLines(page), booted: null });
       }
 
       requested = [];
@@ -750,11 +819,16 @@ const inspect = async (options: {
       const found: RenderIssue[][] = group.map(() => []);
       let next = 0;
       const drawn = Promise.all(
-        lanes.slice(0, width).map(async ({ page }) => {
-          for (let at = next++; at < group.length; at = next++) {
-            const frame = group[at];
+        lanes.slice(0, width).map(async (lane) => {
+          for (let at = next++; at < loads.length; at = next++) {
+            const load = loads[at] ?? [];
+            const loadIssues = await inspectedLoadOf({
+              lane,
+              base,
+              frames: load.map((index) => group[index] as Frame),
+            });
 
-            if (frame) found[at] = await inspectedFrameOf({ page, base, frame });
+            load.forEach((index, of) => (found[index] = loadIssues[of] ?? []));
           }
         }),
       );
