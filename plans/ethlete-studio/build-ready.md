@@ -801,3 +801,24 @@ The serve rewrote `components/tree-row` and `components/zoom-chip` in the uncomm
   `fit` shows "Fit" (old) and "Fit all" (new).
 - Not verified: the Studio app sketch view (no Studio build; the fold reads only the `unchanged` lists), the pick of
   `new` (check 4c), D3 (Verwerfen on `@edit`).
+
+## As built: B249 slice 5b, Studio view (D3, D4, D5) (2026-11-11, Linux)
+
+- D3 cause, proven by the `sketches.component.spec.ts` case "offers Verwerfen on a sketch, but not on the old/new
+  sketch of a direct edit" (failed before: Verwerfen in the header of `components/card@edit`): the header always drew
+  Verwerfen. Fix: `SketchesComponent` hides it when `part` ends in `@edit` (S6b); no new input.
+- D4 cause, proven by the `open-points.spec.ts` cases "reads a definite blocker as blocked while a slow check still
+  runs" (HARD-CODED-COLOUR plus `pending`) and "reads a direct edit as blocked while a slow check still runs" (both
+  failed before with `{ state: 'checking' }`): `buildReadyStatusOf` returned checking on any `pending`. Fix (ADR 0270):
+  checking only when nothing but `pending` / `stale-record` is left; blocked lists the definite blockers, without the
+  pending one (the popover list still says the slow checks have not run).
+- D5 cause, proven by the `open-points.spec.ts` case "lists a direct edit with the blockers" (failed before: no line
+  for the direct edit): `openPointGroupsOf` dropped `direct-edit` points and the `open-point` blocker that carries
+  them. Fix: each direct edit lists in the error group as "Bild ohne Sketch geändert", detail its edit sketch or
+  `direct-edit`.
+- Verified: `vitest related` on the changed files (6 files, 137 tests), system-view and sketch-view specs (67),
+  `nx run ethlete-studio:typecheck`, eslint, prettier.
+- Not verified live: no Studio shot of the badge, popover or sketch header (the shot tool reads :4402). Not done: the
+  System page design note still says "Wird geprüft while slow rules run" and the Sketches design has no `@edit` state
+  (a design edit makes the record stale; left for a sketch); the server still accepts `sketch discard` on an `@edit`
+  sketch (S6b, `libs/cli` discard path, not in this slice).

@@ -241,6 +241,7 @@ export class SketchesComponent {
       .map((row) => ({ ...row, shots: row.shots.filter((shot) => shown.has(shot.state)) }))
       .filter((row) => shown.size > 0 || row.key !== SKETCH_CURRENT);
   });
+  protected discardable = computed(() => !this.part().endsWith('@edit'));
   protected question = computed(() => this.rounds().find((option) => option.value === this.round())?.note ?? '');
   public columns = computed(() => {
     const rows = this.shownRows();

@@ -103,9 +103,11 @@
           {{ LABELS.reload }}
         </button>
       }
-      <button [color]="errorTheme()" (click)="discard.emit()" et-button type="button" variant="transparent" size="sm">
-        {{ LABELS.discard }}
-      </button>
+      @if (discardable()) {
+        <button [color]="errorTheme()" (click)="discard.emit()" et-button type="button" variant="transparent" size="sm">
+          {{ LABELS.discard }}
+        </button>
+      }
     </header>
     <div
       class="absolute top-14 right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] z-2 flex items-center gap-space-4 [&_.et-form-field]:w-auto"

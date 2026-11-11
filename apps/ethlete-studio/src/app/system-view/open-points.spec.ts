@@ -70,6 +70,33 @@ describe('openPointGroupsOf', () => {
     ).toEqual([{ icon: 'error', lines: [{ text: 'Sketch-Regel verletzt: UTILITY-CSS', detail: 'c' }] }]);
   });
 
+  it('lists a direct edit with the blockers, with its edit sketch or without one', () => {
+    expect(
+      openPointGroupsOf({
+        points: [
+          { kind: 'direct-edit', sketch: null },
+          { kind: 'direct-edit', sketch: 'components/tree-row@edit' },
+        ],
+        buildReady: {
+          ready: false,
+          blockers: [
+            { kind: 'pending', text: 'slow checks running' },
+            { kind: 'open-point', text: 'changed outside a sketch - design check draws it' },
+          ],
+        },
+      }),
+    ).toEqual([
+      {
+        icon: 'error',
+        lines: [
+          { text: 'Bild ohne Sketch geändert', detail: 'direct-edit' },
+          { text: 'Bild ohne Sketch geändert', detail: 'components/tree-row@edit' },
+          { text: 'Die langsamen Prüfungen sind für den aktuellen Stand noch nicht gelaufen', detail: 'pending' },
+        ],
+      },
+    ]);
+  });
+
   it('has no group without a point on a build-ready part', () => {
     expect(openPointGroupsOf({ points: [], buildReady: { ready: true } })).toEqual([]);
   });
@@ -110,15 +137,49 @@ describe('buildReadyStatusOf', () => {
       ).toEqual({ state: 'checking' });
   });
 
-  it('reads a pending check as checking even with other blockers', () => {
+  it('reads a definite blocker as blocked while a slow check still runs, without the pending check', () => {
     expect(
       buildReadyStatusOf({
-        points: [{ kind: 'direct-edit', sketch: 'components/title-bar@edit' }],
+        points: [],
         buildReady: {
           ready: false,
           blockers: [
+            { kind: 'problem', text: 'HARD-CODED-COLOUR: button.ts uses #ff0000' },
             { kind: 'pending', text: 'slow checks running' },
-            { kind: 'open-point', text: 'changed outside a sketch' },
+          ],
+        },
+      }),
+    ).toEqual({
+      state: 'blocked',
+      blockers: [{ kind: 'problem', text: 'HARD-CODED-COLOUR: button.ts uses #ff0000' }],
+    });
+  });
+
+  it('reads a direct edit as blocked while a slow check still runs', () => {
+    expect(
+      buildReadyStatusOf({
+        points: [{ kind: 'direct-edit', sketch: null }],
+        buildReady: {
+          ready: false,
+          blockers: [
+            { kind: 'stale-record', text: 'no check record at the current design' },
+            { kind: 'pending', text: 'slow checks running' },
+            { kind: 'open-point', text: 'changed outside a sketch - design check draws it' },
+          ],
+        },
+      }),
+    ).toEqual({ state: 'blocked', blockers: [{ kind: 'direct-edit', text: 'Bild ohne Sketch geändert' }] });
+  });
+
+  it('reads a pending check beside a missing check record as checking', () => {
+    expect(
+      buildReadyStatusOf({
+        points: [],
+        buildReady: {
+          ready: false,
+          blockers: [
+            { kind: 'stale-record', text: 'no check record at the current design' },
+            { kind: 'pending', text: 'slow checks running' },
           ],
         },
       }),
