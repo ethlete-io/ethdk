@@ -159,3 +159,9 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   bites). Finding 792 (no Studio consumer of 128f5a9ce): B traced now by Linux; A is a day sketch. 652 step 1 decided
   (pictures.json to a gitignored cache, condition first). Linux builder restarted from `builder-2026-11-11c`: 792 B,
   664+659, 652. Morning round unchanged (four items).
+- Night, 07:00 (after 2efac40ae): Linux pushed up to 0884cf03c (650, 664+659, 789 (b), 790, 791, 796 (2), 798, 652 step 1:
+  pictures.json untracked into `.ethlete/cache`). Local, not pushed: 799 ba0d3568e, 800 9d92d58d1; 801 (shared temp-repo
+  helper, after a spec in a hook wrote into the main .git/config, repaired and checked) runs. Findings 791-801 recorded;
+  792 A + B are day work (sketch for the chip and a picked badge state). Mac pushed 6bca47ab5; 797 0ffc0e452 and 786
+  89671ec71 wait for its push (told to set ETHLETE_BUILDER in its push shell). Morning round: the four items above, plus a
+  note (no question): the human kills the hung ssh pid 96278 on the Mac.
