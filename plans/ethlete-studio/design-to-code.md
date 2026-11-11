@@ -3811,3 +3811,12 @@ died with a builder restart, unnamed. Tool fix (doc agent decision, tool interna
 carries the subagent's result file in its row; the builder `restart` refuses while such a row names no result file or a
 result file older than the row's last start. Bite: a restart with B480 "in work" and no newer result file is refused.
 Queue: Linux builder, after 862.
+
+864\. Doc agent (2026-11-11): a self-restart of the doc agent dropped an open grill question. At 15:22 the doc agent
+asked the human Q1 "findings or STATUS rows first: one finding, then one STATUS row per builder from tomorrow". The human
+did not answer. The handoff at 16:21 wrote "Open for the human: none", and the resumed session told the human "nothing
+open". The human noticed. Cause: the handoff line is written from memory; nothing compares it with the questions the
+session put in chat. Tool fix (doc agent decision, tool internal): `agent-sessions restart` reads the session transcript
+and refuses while an assistant message with a `❓` question has no later human message, unless the handoff file names that
+question verbatim under "Open for the human". Bite: a restart after an unanswered `❓` and a handoff with "none" is
+refused. Queue: Linux builder, after 863.
