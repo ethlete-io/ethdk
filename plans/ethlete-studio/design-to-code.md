@@ -3786,6 +3786,8 @@ findings whose fix commit is proven in git log (dry-run list first, no guess: un
 sha cited": open findings cite context shas (855 cites aaeef909d). Bite: after the pass `archive-findings --dry-run`
 lists the proven ones; a fixture with only a context sha moves nothing. Queue: Linux builder, after 854.
 
+As built (Linux builder, 860): `archive-findings` reads only `Built in <sha>.` at sentence start (pushed sha); `mark-built-findings.mjs` (`--write`) marked the 7 findings whose "fixed/built in <sha>" names a `fix(`/`feat(` or finding-named commit dated on or after the finding. Built in 0e296ac14.
+
 861\. Doc agent and Linux builder (2026-11-11): the /tmp tmpfs (47G) filled up (ENOSPC); no Bash call of either agent
 started, and the 859 push suite crashed in `commit-export.mjs` (symlink into `/tmp/push-suite-<sha>-*/node_modules`)
 with no verdict line. About 20G was freed again before anyone could look. Suspect (not proven): a parallel e2e or repeat
