@@ -20,7 +20,7 @@ import { listingHold } from '../../../tools/scripts/studio-e2e-listing-hold.mjs'
 import { ensureCli, withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 import { CANVAS, sketchCells } from './probe-helpers.mjs';
 import { noMatchLineOf } from './case-filter.mjs';
-import { isNoisy, runLoadLineOf, topProcesses } from './run-load.mjs';
+import { goalLineOf, isNoisy, runLoadLineOf, topProcesses } from './run-load.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
 const args = process.argv.slice(2);
@@ -3766,6 +3766,15 @@ const lead = async () => {
   );
   const load = { start: loadAtStart, end: loadAtEnd, cores: availableParallelism() };
   console.log(runLoadLineOf({ ...load, workers, machine: hostname() }));
+  if (!only && !pageGroups && !view && !shard && !perfOnly && !holdListingsMs && !delayPicturesMs && !delayFramesMs)
+    console.log(
+      goalLineOf({
+        ms: suiteMs,
+        machine: hostname(),
+        noisy: isNoisy(load),
+        goalMachine: process.env['STUDIO_E2E_GOAL_MACHINE'] || undefined,
+      }),
+    );
   if (isNoisy(load)) console.log(['top processes by cpu:', ...topProcesses()].join('\n'));
   process.exit(
     fixtureFault || failed.length || rows.length < total || !matched || (overBudget && enforceBudget) ? 1 : 0,

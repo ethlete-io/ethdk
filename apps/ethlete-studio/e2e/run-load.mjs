@@ -16,6 +16,22 @@ export const isNoisy = ({ start, end, cores }) => Math.max(start, end) > cores;
 export const runLoadLineOf = ({ start, end, cores, workers, machine }) =>
   `load ${start.toFixed(1)} at start, ${end.toFixed(1)} at end on ${machine}, ${cores} cores, ${workers} worker(s)${isNoisy({ start, end, cores }) ? ' - noisy, not a measurement' : ''}`;
 
+export const GOAL_MS = 90_000;
+export const GOAL_MACHINE = 'tank';
+
+/**
+ * The 90 s goal line of a full e2e run (ADR 0240): it counts on the desk PC (`GOAL_MACHINE`, or
+ * `STUDIO_E2E_GOAL_MACHINE`); every other machine reports its time only. A noisy run is no measurement.
+ */
+export const goalLineOf = ({ ms, machine, noisy, goalMachine = GOAL_MACHINE }) => {
+  const time = `${Math.round(ms / 1000)} s`;
+  if (machine !== goalMachine)
+    return `goal: ${time} on ${machine}, reported only (the ${GOAL_MS / 1000} s goal counts on ${goalMachine})`;
+  if (noisy) return `goal: ${time} on ${machine}, noisy, not a measurement of the ${GOAL_MS / 1000} s goal`;
+
+  return `goal: ${time} on ${machine}, ${ms <= GOAL_MS ? 'within' : 'over'} the ${GOAL_MS / 1000} s goal`;
+};
+
 /** One line per process, highest CPU first: its CPU share, pid, command and checkout (`?` when unknown). */
 export const topProcessLinesOf = (processes, count = TOP_PROCESSES) =>
   [...processes]

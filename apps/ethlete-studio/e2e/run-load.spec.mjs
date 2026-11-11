@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { cpuDeltaOf, cpuTicksOf, psRowsOf, runLoadLineOf, topProcessLinesOf } from './run-load.mjs';
+import { goalLineOf, cpuDeltaOf, cpuTicksOf, psRowsOf, runLoadLineOf, topProcessLinesOf } from './run-load.mjs';
 
 test('a run under the core count is a measurement and names machine, cores and workers', () => {
   assert.equal(
@@ -53,4 +53,21 @@ test('an idle process with a high lifetime average does not appear in the one-se
   ]);
 
   assert.deepEqual([...cpuDeltaOf({ before, after, seconds: 1, ticksPerSecond: 100 })], [[2, 80]]);
+});
+
+test('the 90 s goal counts on the goal machine and is only reported elsewhere', () => {
+  assert.equal(goalLineOf({ ms: 84_400, machine: 'tank', noisy: false }), 'goal: 84 s on tank, within the 90 s goal');
+  assert.equal(goalLineOf({ ms: 117_000, machine: 'tank', noisy: false }), 'goal: 117 s on tank, over the 90 s goal');
+  assert.equal(
+    goalLineOf({ ms: 117_000, machine: 'tank', noisy: true }),
+    'goal: 117 s on tank, noisy, not a measurement of the 90 s goal',
+  );
+  assert.equal(
+    goalLineOf({ ms: 450_000, machine: 'mac', noisy: false }),
+    'goal: 450 s on mac, reported only (the 90 s goal counts on tank)',
+  );
+  assert.equal(
+    goalLineOf({ ms: 80_000, machine: 'mac', noisy: false, goalMachine: 'mac' }),
+    'goal: 80 s on mac, within the 90 s goal',
+  );
 });
