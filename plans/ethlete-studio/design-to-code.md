@@ -2355,6 +2355,10 @@ verified: a Tailwind `@plugin` or `@config` JS module the child loads through ES
 the times cannot show if the 90 s goal is met. Why no tool caught it: the e2e timing report has no load figure, so a
 noisy measurement looks like a clean one. Tool fix (backlog, with ADR 0208 run timings): every e2e timing report
 prints the load average at start and end and marks a run above a load threshold as "noisy, not a measurement".
+As built (Linux builder, 2026-11-11): `apps/ethlete-studio/e2e/run-load.mjs` `runLoadLineOf`; `canvas.e2e.mjs` prints
+`load <start> at start, <end> at end on <cores> cores` after the budget line, with " - noisy, not a measurement" when
+either one-minute load is above the core count (the threshold of the design timings, ADR 0208). Verified: `run-load.spec.mjs`
+2/2, fails with the threshold broken; one live `yarn studio:e2e --case` run prints the line.
 
 651\. Builder (2026-11-09, 647 bite proof): the committed `--delay-pictures` mode (2b0227f8e) also delays the
 canvas's first frame, so every single-case run with it times out in `warmUp` (`canvas.e2e.mjs`, "Timeout 60000ms

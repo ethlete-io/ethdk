@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { listingHold } from '../../../tools/scripts/studio-e2e-listing-hold.mjs';
 import { ensureCli, withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 import { CANVAS, sketchCells } from './probe-helpers.mjs';
+import { runLoadLineOf } from './run-load.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
 const args = process.argv.slice(2);
@@ -3453,6 +3454,7 @@ const workerCount = () => {
 
 const lead = async () => {
   const runStartedAt = performance.now();
+  const loadAtStart = loadavg()[0];
   const noReason = CASES.filter(
     (testCase) =>
       'listingMayPend' in testCase && (typeof testCase.listingMayPend !== 'string' || !testCase.listingMayPend.trim()),
@@ -3683,6 +3685,7 @@ const lead = async () => {
   }
 
   const suiteMs = performance.now() - runStartedAt;
+  const loadAtEnd = loadavg()[0];
   const overBudget = suiteMs > BUDGET_MS;
   const enforceBudget = process.env['STUDIO_E2E_BUDGET_ENFORCE'] === '1';
 
@@ -3705,6 +3708,7 @@ const lead = async () => {
   console.log(
     `suite${shard ? ` shard ${shard.index}/${shard.count}` : ''} ${minutes(suiteMs)} of ${minutes(BUDGET_MS)} budget${overBudget ? ` - over budget${enforceBudget ? ', failing the run' : ' (STUDIO_E2E_BUDGET_ENFORCE=1 fails the run)'}` : ''}`,
   );
+  console.log(runLoadLineOf({ start: loadAtStart, end: loadAtEnd, cores: availableParallelism() }));
   process.exit(
     fixtureFault || failed.length || rows.length < total || !matched || (overBudget && enforceBudget) ? 1 : 0,
   );
