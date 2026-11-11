@@ -3784,3 +3784,12 @@ marker the script reads (free prose like "fixed in <sha>"). Tool fix (doc agent 
 findings whose fix commit is proven in git log (dry-run list first, no guess: unproven ones stay). No archive by "any
 sha cited": open findings cite context shas (855 cites aaeef909d). Bite: after the pass `archive-findings --dry-run`
 lists the proven ones; a fixture with only a context sha moves nothing. Queue: Linux builder, after 854.
+
+861\. Doc agent and Linux builder (2026-11-11): the /tmp tmpfs (47G) filled up (ENOSPC); no Bash call of either agent
+started, and the 859 push suite crashed in `commit-export.mjs` (symlink into `/tmp/push-suite-<sha>-*/node_modules`)
+with no verdict line. About 20G was freed again before anyone could look. Suspect (not proven): a parallel e2e or repeat
+run. Measured: a crashed or stopped suite leaves its export dir (two of 143M found). Tool fix (doc agent decision, tool
+internal): the push suite checks free space on /tmp at start and refuses below 5G with a verdict line; it removes its
+export dir on every exit path; at start it removes stale `push-suite-*` exports with no live owner. Bite: a spec with a
+fake low free-space value refuses with the verdict line; a killed suite run leaves no export dir. Queue: Linux builder,
+after 860.
