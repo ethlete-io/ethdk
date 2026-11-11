@@ -3999,3 +3999,13 @@ notice. It showed only because a person-name fix touched the sketch and `sketch 
 Suspect (code not traced). Why no tool caught it: only `sketch ready` checks the base. Tool fix (doc agent, tool
 internal): when a merge changes a part, `design status` and the inbox name every open or ready sketch on that part as
 stale.
+
+655 (2) closed (doc agent, 2026-11-11): push run of ffb61f392 (the workflow change) and dispatch run 42992543540 on
+a55bc3218 (rustix 1.1.6 for RUSTSEC-2026-0486) are green in both jobs. The dispatch 42991716047 failed on de075868f,
+before the fix: the audit did its job.
+
+822\. Linux builder (2026-11-11, 655 (2) close): the rustix fix a55bc3218 changed both `Cargo.lock` files and started no
+rust-audit run. Cause (read): `on.push.paths` in `rust-audit.yml` lists only the workflow file. So a lockfile change that
+pulls in an unsound or yanked crate is audited only by the next 05:00 UTC run, after it is on `next`. Tool fix (doc agent,
+tool internal): add `apps/*/src-tauri/Cargo.lock` and `apps/*/src-tauri/Cargo.toml` (the real paths of both crates) to
+the push paths; verify with a lockfile-only push that starts a run.
