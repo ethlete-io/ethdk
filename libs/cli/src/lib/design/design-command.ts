@@ -16,7 +16,7 @@ import { designShot, SHOT_USAGE } from './shot-command';
 import { COMMIT_HUNKS_USAGE, designCommitHunks } from './commit-hunks';
 import { designMcp, MCP_USAGE } from './mcp-command';
 import { designMotion, MOTION_USAGE } from './motion-command';
-import { designSketch, SKETCH_USAGE, sketchFlagHelpOf } from './sketch-command';
+import { designSketch, SKETCH_USAGE, sketchFlagHelpOf, sketchUsageErrorOf } from './sketch-command';
 import { buildStampOf } from './stamp';
 import { startedByStudio } from './started-by-studio';
 import { runningCliStaleWarning } from './stale-cli-dist';
@@ -413,6 +413,16 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
   );
 };
 
+const usageErrorOf = (options: { argv: string[]; invocation: string; root: string }) => {
+  const { argv, invocation, root } = options;
+
+  if (!drawsWithSdkLibs(argv) && !runsInResident(argv)) return null;
+
+  const { rest } = splitCheckout(argv.slice(1), root);
+
+  return argv[0] === 'sketch' ? sketchUsageErrorOf(rest, invocation) : null;
+};
+
 const runDesign = async (options: { root: string; argv: string[]; invocation: string }): Promise<number> => {
   const { root, argv, invocation } = options;
   const staleWarning = argv[0] === 'stamp' ? null : runningCliStaleWarning();
@@ -423,6 +433,14 @@ const runDesign = async (options: { root: string; argv: string[]; invocation: st
     console.log(JSON.stringify(buildStampOf()));
 
     return 0;
+  }
+
+  const usageError = usageErrorOf({ argv, invocation, root });
+
+  if (usageError) {
+    for (const line of usageError) console.error(line);
+
+    return 2;
   }
 
   repairEditorTsconfigs(splitCheckout(argv.slice(1), root).target);

@@ -6959,3 +6959,127 @@ tsconfig of a variant now goes through the checkout's Prettier (`formatText`, st
 so an unchanged file is still not rewritten. Spec in `system-tsconfig.spec.ts`: a created and formatted sketch has no
 FORMAT finding; it fails on the old writer. Verified: related specs, typecheck, lint, stress. Not verified: a real
 scratch checkout run of `sketch check --product studio-lab`.
+
+739\. Mac builder (2026-11-10, B345 sketch `pages/sketches@change-crop`, a5bf3bff2): `sketch ready` takes 140-280 s on
+the Mac, and each finding needs a full rerun. Suspect only, as 738 on Linux (34-37 s). Backlog with 738: measure the
+phases on both machines; a rerun after a fix checks only the states the fix touched.
+
+As built (738, builder subagent, Linux only). Measured with `ETHLETE_DESIGN_PHASES=1` (the existing `timedPhase`
+timer) on the scratch copy `/tmp/sk750`, `sketch check pages/system@probe750 --fix` (1 variant, 28 states, 1 width),
+resident process; run 1 starts the resident cold, run 2 reuses it. Seconds:
+
+| Phase        | Before run 1 | Before run 2 | After run 1 | After run 2 |
+| ------------ | -----------: | -----------: | ----------: | ----------: |
+| gates        |         2.32 |         0.76 |        2.29 |        0.76 |
+| tsc a        |         0.99 |         0.97 |        1.00 |        0.98 |
+| aktuell      |         0.37 |         0.31 |        0.36 |        0.32 |
+| render-check |         9.03 |         7.89 |        9.19 |        8.03 |
+| identical    |         4.68 |         4.67 |        4.75 |        4.75 |
+| changes-shot |         4.40 |         4.47 |        0.12 |        0.11 |
+| wall         |         23.2 |         19.8 |        19.5 |        15.6 |
+
+Load and mark-drift take under 0.03 s. `sketch ready` on the same sketch (before): render-check 7.9, identical 4.9,
+undeclared 6.5, changes-shot 0.13, wall 20.8 s. Cause (measured): `sketch ready` wraps the warm draw in a per-run draw
+(`perRun`), so the change shot of NO-CHANGED-STATE reuses the pictures the identical phase shot (0.13 s);
+`sketch check` passed the bare resident draw, so each shot phase built a new shooter with an empty cache and shot all
+28 states of the variant and of the part again (4.4 s). Fix: `sketch check` runs its shot phases (aktuell, load,
+mark-drift, identical, changes-shot) on one per-run draw like `sketch ready`; without a resident process it is one
+`createRunDraw` for the run instead of a design server and Chromium per phase. Render-check still gets the draw it got
+before. The check output of run 2 is the same before and after, line for line, apart from the timing lines.
+`sketch-check-run-draw.spec.ts` fails on the old code (both tests) and passes on the new one. Not verified: the Mac
+(739), and the run without a resident process. Remaining over target: render-check (8 s) and identical (4.7 s) still
+shoot the same 28 states twice, through two paths (render worker vs part shooter), and ready's undeclared phase takes
+6.5 s. Suspect: sharing the render-check pictures with the part shooter is the next cut; not local, so it stays
+backlog.
+
+As built (739, Mac builder, 2026-11-11, measurement only). Detached worktree of 87c279030, `ETHLETE_DESIGN_PHASES=1`,
+`sketch check pages/sketches@change-crop --product studio` (3 variants, after a `sketch rebase` in the worktree only:
+foundations/logo had changed). Seconds, resident run 1 / resident run 2 / no resident:
+
+| Phase           | Run 1 | Run 2 | No resident |
+| --------------- | ----: | ----: | ----------: |
+| gates           |   4.4 |   4.4 |        15.3 |
+| tsc a + b + c   |   6.6 |   6.7 |         7.0 |
+| aktuell         |  59.4 |  59.5 |        52.3 |
+| render-check    | 140.6 | 143.6 |       137.9 |
+| identical       |   4.8 |   4.6 |         4.2 |
+| changes-shot    |   1.6 |   1.9 |         1.7 |
+| draw-queue-wait |  26.8 |  25.2 |        24.5 |
+| wall            | 219.6 | 223.3 |       221.4 |
+
+Render-check per variant: 67 s, 36 s, 37 s. Load average 11-13 on 6 cores during the runs. Cause (measured): the time
+is in aktuell and render-check, and the resident process does not make run 2 faster. Not measured: the same sketch on
+Linux, so the Mac share of the gap is open. Side results: `sketch ready` with a wrong flag (`--variant`) or without
+`--by` failed only after the lib-build wait (46-59 s); a usage error does not need the lib build. Without a resident
+process, gates take 15 s instead of 4.4 s. 777 on the Mac (same night, `design check --product studio`): cold 202.7 s,
+warm 52.0 s, 0 cache hits both times; a `recordCache` bite in the part-picture cache read counted 0 reads, so the
+warm speedup is one-time work of the cold run (5 lib rebuilds, 3 dropped ready records), not a missed cache.
+
+739 render-check split (Mac builder subagent, same sketch, instrumented dist, restored after). Render-check 136-140 s
+over 3 runs, CPU-bound (868 s user CPU in 296 s wall). Cause (measured): each variant draws 32 states x 2 schemes = 64
+frames, 4 at once, each a `page.goto` of frame.html at about 2 s: open 1.06 s (0.2 s goto, 0.85 s app boot in the
+iframe), first `inspectFrame` evaluate 0.88 s; settle, media and compare under 0.03 s; no sleep or fixed timeout. Variant
+1 takes 64 s because the baseline inspection of the product page (60 frames) runs on the same browser at the same time
+(DRAWS_AT_ONCE 8); a frame then takes 4.1 s. Aktuell: 120 frame opens at 2.5 s, about 6 at once. Fix ideas (Suspect,
+not built): draw the dark twin on the loaded page with `emulateMedia` (about 30 s less), switch states in one booted
+frame (about 50 s less), profile the first `inspectFrame` evaluate, and pass `cached: true` to `renderIssuesOf` in
+`sketch-command.ts` like `check-system.ts` does, so a re-check of unchanged variants hits the cache.
+
+As built (739 (a), Linux builder subagent, 2026-11-11, measurement only). HEAD export of c5f268edc (with 813), the
+same sketch after a `sketch rebase` in the export only, `ETHLETE_DESIGN_PHASES=1`, 32 cores, load 11-14. Seconds,
+resident run 1 (render-check cold) / resident run 2 (warm) / `ETHLETE_DESIGN_RESIDENT=0` (warm):
+
+As built (739 (b), Linux builder subagent, 2026-11-11). `sketchUsageErrorOf` in `sketch-command.ts` is now the one
+parser check for `sketch` arguments, and `designSketch` uses it too. `runDesign` calls it first for every command that
+draws or runs in the resident, so a usage error exits 2 with the same message before the resident call and before
+`readFreshDist`. Only `sketch` has a pure check so far; the other drawing commands still parse their flags in their own
+command. Bite: `design-usage-first.spec.ts` (unknown flag, missing `--by`, `sketch check --nope`, with stubs that count
+lib-build and resident calls) fails 3 of 4 on the old order and passes on the new. Live, with the real CLI from `dist`
+and a fresh build: `sketch ready pages/sketches@change-crop --product studio --variant x` exits in 0.23 s. Not verified:
+the Mac, where the lib build is stale. One existing spec (`stale-design-mocks`) passed `sketch ready a` without `--by`
+and now gets the usage error first, so it passes `--by m`.
+
+| Phase         | Run 1 | Run 2 | No resident |
+| ------------- | ----: | ----: | ----------: |
+| gates         |   2.3 |   2.4 |         6.7 |
+| tsc a + b + c |   3.4 |   3.2 |         3.3 |
+| aktuell       |  17.4 |  17.0 |        17.4 |
+| render-check  |  45.5 |   2.0 |         2.1 |
+| identical     |   1.6 |   1.7 |         1.5 |
+| changes-shot  |   0.5 |   0.5 |         0.5 |
+| wall          |  72.0 |  28.0 |        32.9 |
+
+Render-check per variant, cold: 18 s, 13 s, 13 s. Cause (measured): every phase is about 3x slower on the Mac (6 cores,
+load 11-13) than on Linux (32 cores); no phase is Mac-only. With 813 a re-check of unchanged variants skips render-check
+(45.5 s to 2.0 s). Aktuell stays at 17 s warm: the render cache does not cover it, so it is the next cut. Not measured:
+a cold run without the resident process, and no `draw-queue-wait` line printed on Linux.
+
+Mac e2e speed (Mac builder, same night, measurement only): `yarn studio:e2e --workers 5` ran 131/132 in 433.5 s, load
+4.7 at start and 31.7 at the end; push:suite #16 ran the same 132 cases on the default 3 workers in 476 s. The one
+fail was Large "a variant equal to Aktuell keeps its iframes across a quick and a full listing" (iframe/row removes 22,
+must be 0). Cause (measured): 5 workers save 9 % and overload the 12-core Mac, so the default of 3 stays. The case
+fail under load is a Suspect for a load flake; it passed in #16.
+
+786\. Mac builder (2026-11-11, night, push:suite 81980de90): the repeat step blocked in run 3, six cases with a 10 s
+`page.goto` timeout in one burst at load 34. Suspect (not measured): the builder's own 780 subagent ran `spec:stress`
+at the same time. Lesson: two heavy runners on one machine make a red gate that says nothing about the code. Decided by
+the doc agent (tool internal): push:suite and spec:stress take one local heavy-run lock per machine; the second waits or
+stops with the holder's name; a spec bites with two runners. Night backlog, Mac, after the 777 Mac verify.
+
+As built (786, Mac builder): `tools/scripts/heavy-run-lock.mjs` holds one lock file per machine
+(`<tmpdir>/ethlete-heavy-run.lock`: pid, name, start). `push:suite` takes it first (before the push slot) and waits
+for it; `spec:stress` waits too, or stops at once with `--no-wait` and the holder line (exit 2). A dead holder's lock
+is taken over; a child of a holder (env `ETHLETE_HEAVY_RUN_HELD`) takes none. The lock ends with the suite (ok or
+blocked) and on process exit. Specs: `heavy-run-lock.spec.mjs`, two real runner processes; the second stops with
+`heavy run lock held by push-suite (pid ...)`. Bite: without the holder check it fails. Not verified: a live
+push:suite next to a spec:stress; a subagent run in another checkout of the same machine (same tmpdir, so covered).
+
+As built (B438, ADR 0229, commit `perf(cli): Draw the fresh compare pair only after a cached first pair`): the
+shooter's `pictureOf` now returns the picture with its `source` (`drawn`, `memory` or `disk`, from `onSource`), and
+`PictureOf` returns a `SourcedPicture`. `drawnPair` draws the fresh second pair only when the first pair differs and one
+of its pictures is not `drawn`; a picture without a `source` counts as possibly cached, so other `PictureOf`
+implementations keep the old second draw. Specs: a differing pair drawn fresh makes 2 draws (was 4) in
+`merge-compare.spec.ts` and `unchanged-states.spec.ts`; a stale cached picture is redrawn and the fresh pair decides;
+`shot.spec.ts` names `drawn`, then `memory`, then `drawn` for `fresh`. Bite: with the `drawnFresh` check removed, both
+2-draw cases fail. `spec:stress --runs 4 --load 2`: 3 specs 4/4. Not verified: the cold compare time of finding 598 on a
+real product; a Studio e2e run (none covers the merge compare by name).

@@ -56,7 +56,7 @@ describe('guardsDesignMocks', () => {
 });
 
 describe('designCommand with stale mocks', () => {
-  it.each([['check'], ['shot', 'x/y'], ['sketch', 'check'], ['sketch', 'ready', 'a']])(
+  it.each([['check'], ['shot', 'x/y'], ['sketch', 'check'], ['sketch', 'ready', 'a', '--by', 'm']])(
     'refuses %j with a non-zero exit and the build command',
     async (...argv) => {
       const target = checkout({ source: 'b', built: 'a' });
