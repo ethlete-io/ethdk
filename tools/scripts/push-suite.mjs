@@ -26,7 +26,7 @@ const RUNNER = 'apps/ethlete-studio/e2e/canvas.e2e.mjs';
 const WORKSPACE_PARENTS = ['apps', 'libs', 'tools'];
 const DRAWING_BUILDS = ['cli', 'components', 'core'];
 
-export const STEPS = ['lint', 'typecheck', 'cli', 'studio', 'quota', 'e2e', 'e2e-quota', 'repeat'];
+export const STEPS = ['lint', 'typecheck', 'tools', 'cli', 'studio', 'quota', 'e2e', 'e2e-quota', 'repeat'];
 export const EXEMPT_PATHS = [/^plans\//, /^\.changeset\//, /\.md$/];
 
 const DESIGN_INPUTS = [
@@ -42,6 +42,7 @@ const DESIGN_INPUTS = [
 export const STEP_INPUTS = {
   lint: ['apps/', 'libs/'],
   typecheck: ['apps/', 'libs/'],
+  tools: [],
   cli: DESIGN_INPUTS,
   studio: DESIGN_INPUTS,
   quota: DESIGN_INPUTS,
@@ -55,6 +56,7 @@ export const stepsTouchedBy = (files) => {
   const touched = new Set();
   for (const file of files) {
     if (INERT_PATHS.some((path) => path.test(file))) continue;
+    touched.add('tools');
     const steps = STEPS.filter((step) => STEP_INPUTS[step].some((prefix) => file.startsWith(prefix)));
     if (steps.length === 0 && !file.endsWith('.md')) return new Set(STEPS);
     for (const step of steps) touched.add(step);
@@ -588,6 +590,7 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
       if (changed.status !== 0) return Promise.resolve({ status: 1, output: changed.stderr });
       return typecheckStep(touchedProjects(changed.stdout.split('\n').filter(Boolean)), dir);
     },
+    tools: () => runStep('yarn', ['test:tools'], dir),
     cli: () => runStep('npx', ['nx', 'test', 'cli'], dir),
     studio: () => runStep('npx', ['nx', 'test', 'ethlete-studio'], dir),
     quota: () => {

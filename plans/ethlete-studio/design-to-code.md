@@ -3862,5 +3862,12 @@ a5026c273. Why no tool caught it: the push suite runs no `test:tools`, and 791's
 0884cf03c may be red from it (not read). Lesson: a change to a tool script runs every spec of that tool, not only the new
 one. Decided by the doc agent (tool internal): the push suite runs all of `test:tools` (about 1 min; no map to keep in
 sync). Bite: a range that holds 003d9d457 without a5026c273 fails the push suite. Night backlog, Linux, next after the push.
+802 as built (Linux builder): new push-suite step `tools` (`yarn test:tools`, runs in the HEAD export) at position 3, after
+lint and typecheck, before cli. Never reused: any non-inert merged path (not plans/, .changeset/) reruns it. Bite: in a
+worktree at a5026c273^ (003d9d457 without the fix) with the new push-suite copied over, `yarn test:tools` fails with
+`✖ --case finds a perf case only together with --perf` (`input did not match /^0 of 0 cases/u`); on HEAD 327 pass. Time:
+about 4 s wall locally (measured, not the estimated 1 min). Verified: push-suite.spec (41 pass), test:tools (327 pass),
+eslint clean. Not verified: a real `yarn push:suite` run (it claims the push slot), so the step inside the export was
+not run end to end; the bite called the step's command directly.
 Also from 801 (Suspect): three copies of the git test helper (tools, libs/cli, libs/agent-rules, because lib code may not
 import tools); a sameness spec guards the drift (backlog, small).

@@ -51,7 +51,7 @@ that talks with the user and records decisions. Talk English.
   stages, in the commit-msg hook; a slice that changes a config or a `.ts` file runs the `typecheck` target of each touched project.
   Every slice runs `npx vitest related --run <changed files>` in each touched project before its commit (finding 779): a spec
   that mocks a module the slice now imports from fails there, not in the push suite. Before you push, run `yarn push:suite` in the
-  background and start the next slice while it runs; it tests an export of HEAD, so your live edits never leak in: `nx test cli`, `nx test ethlete-studio`, `yarn studio:e2e`, then the page groups the unpushed diff touches in `canvas.e2e.mjs`, `serve.ts` or `studio-api.ts`
+  background and start the next slice while it runs; it tests an export of HEAD, so your live edits never leak in: `yarn test:tools`, `nx test cli`, `nx test ethlete-studio`, `yarn studio:e2e`, then the page groups the unpushed diff touches in `canvas.e2e.mjs`, `serve.ts` or `studio-api.ts`
   3 times (the last with `--hold-listings 14000`). Push only after `push-suite: ok <sha>`; a failure, a changed result or
   a hold failure stops the push, and the pre-push hook of `next` refuses a code push without that verdict. `PUSH_SUITE_SKIP=1` is for the human only;
   no agent sets it, and no subagent brief names it. Push at the end of

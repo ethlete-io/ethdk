@@ -203,7 +203,9 @@ test('typechecks only the touched projects that have a typecheck target, right a
 
   assert.deepEqual(touched, ['cli', 'ethlete-studio']);
   assert.deepEqual(withTarget(touched, ['core', 'ethlete-studio']), ['ethlete-studio']);
-  assert.deepEqual(STEPS.slice(0, 2), ['lint', 'typecheck']);
+  assert.deepEqual(STEPS.slice(0, 3), ['lint', 'typecheck', 'tools']);
+  assert.deepEqual(stepsTouchedBy(['tools/scripts/x.mjs']).has('tools'), true);
+  assert.deepEqual(stepsTouchedBy(['apps/ethlete-studio/e2e/a.mjs']).has('tools'), true);
 });
 
 const loadHarness = (loads, limit = 4) => {
