@@ -1,6 +1,6 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { dirname, join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../design-config';
 import { StatePictures } from './accepted-pictures';
@@ -233,7 +233,7 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
     expect(existsSync(join(dir, 'sketches', 'components-chip.edit', 'sketch.json'))).toBe(true);
   });
 
-  const directEdit = async (now: StatePictures) => {
+  const directEdit = async (now: StatePictures, { commits = false }: { commits?: boolean } = {}) => {
     const { target, dir, config } = staleChip();
     const bare = { ...config, products: { acme: { ...config.products.acme, harness: undefined } } };
     const product = () => resolveProduct({ target, name: 'acme', config: bare.products.acme });
@@ -261,6 +261,9 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
     writeFileSync(chip, 'export default definePart({ states: { default: {} } });\n// direct edit\n');
     writeCache(now);
 
+    if (commits)
+      gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qam', 'direct edit'], { cwd: target });
+
     const lines: string[] = [];
     const runner = startSlowRunner({
       target,
@@ -279,7 +282,7 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
     const here = openPointsOf({ product: product(), part: CHIP }) as PartOpenPointsAnswer;
     const kindsOf = ({ points }: PartOpenPointsAnswer) => points.map(({ kind }) => kind);
 
-    return { lines, tracked, answer, here, kindsOf, product };
+    return { lines, tracked, answer, here, kindsOf, product, chip, target };
   };
 
   it('shows no open point for a direct edit that draws as before while it runs, and writes no tracked file', async () => {
@@ -290,6 +293,27 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
     expect([here.directEdit, kindsOf(here)]).toEqual([false, expect.not.arrayContaining(['direct-edit'])]);
     expect([answer.directEdit, kindsOf(answer)]).toEqual([false, expect.not.arrayContaining(['direct-edit'])]);
     expect(changedOutsideSketchOf(product())).toEqual([CHIP]);
+  });
+
+  it('shows no open point for a committed direct edit while it runs, until the part changes again', async () => {
+    const { tracked, answer, here, kindsOf, product, chip, target } = await directEdit(
+      { default: 'b2' },
+      { commits: true },
+    );
+
+    expect(tracked).toEqual([]);
+    expect(gitExec(['status', '--porcelain', '--untracked-files=no'], { cwd: target, encoding: 'utf8' })).toBe('');
+    expect([here.directEdit, kindsOf(here)]).toEqual([false, expect.not.arrayContaining(['direct-edit'])]);
+    expect([answer.directEdit, kindsOf(answer)]).toEqual([false, expect.not.arrayContaining(['direct-edit'])]);
+    expect(readMerged(product().dir)[CHIP]).not.toBe(partHashOf({ product: product(), dir: dirname(chip) }));
+
+    writeFileSync(chip, 'export default definePart({ states: { default: {} } });\n// another edit\n');
+
+    const again = openPointsOf({ product: product(), part: CHIP }) as PartOpenPointsAnswer;
+    const againInWorker = (await openPointsInWorker({ product: product(), part: CHIP })) as PartOpenPointsAnswer;
+
+    expect(kindsOf(again)).toContain('direct-edit');
+    expect(kindsOf(againInWorker)).toContain('direct-edit');
   });
 
   it('still shows a direct edit that draws differently as open while it runs', async () => {
