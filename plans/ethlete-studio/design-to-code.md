@@ -3944,3 +3944,8 @@ yoke-derive` (0.8.4), a new `ethlete-studio:audit-rust` target, and a step in th
 (measured): `cargo audit` exits 0 on both crates locally. Not verified: the push run and a dispatch run on GitHub;
 the schedule fires only once the workflow file reaches `main` (GitHub runs scheduled workflows from the default
 branch). Suspect: a red scheduled run does not show in `et design status`, which reads only the CI run of `next`.
+
+814\. Linux builder (2026-11-11, night, after 655 (2) ffb61f392): `et design status` reads only the CI run of `next`, so
+a red scheduled `rust-audit.yml` run (a new advisory) shows nowhere a builder looks at slice start. Suspect (code read).
+Tool fix (backlog, grill decision): the status line also reads the last finished `rust-audit` run and prints its
+failed crates.
