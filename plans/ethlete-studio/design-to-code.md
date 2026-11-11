@@ -3707,3 +3707,16 @@ frame iframe (address change, or `LIVE_GRACE_MS` drops an off-view frame after 5
 Shift+Tab lands on an `et-menu-trigger` (`focused=false rings=[]`). Lesson: a case that dodges a flaky path needs its
 own case for that path. Decided by the doc agent: an app fix (keep focus on the frame host when its iframe remounts)
 with its own e2e case; app work, so not at night; it waits for the day STATUS order (morning: put it to the human).
+
+777\. Linux builder (2026-11-11, night, 774 follow-up, ef45f64ac): a fresh design server missed render cache entries
+that an earlier run wrote (121 inputs, all `dist/...component.css?inline`). Cause (measured with the real CLI): cache
+keys are stable (167/167 found), but a symlinked checkout entry (`/tmp/sk750/dist`) is served by its real path outside
+Vite `fs.allow`; Vite 8.3.5 checks a `?inline` id with its query attached, so one URL answers 403 on a fresh server, raw
+CSS after one draw, and the JS module after a transform. The served hash differs per server state, so the cache misses.
+The 34 "outside of Vite serving allow list" log lines were the same gap, and nothing treated them as a defect. Lesson:
+a warning the tool logs and ignores hid a cache defect for every run. Fix (built ef45f64ac): `serve.ts`
+`linkedRootsOf(target)` adds the real paths of the checkout and its symlinked entries to `fs.allow`; first warm run
+render-inspect 36.9 -> 2.0 s, wall 79.0 -> 44.2 s, differing inputs 121 -> 0, output identical; `linked-roots.spec`
+bites. Not verified: the Mac (`/tmp` is a symlink there). Decided by the doc agent (tool internal): `design check`
+reports a Vite "outside of Vite serving allow list" line as a check problem, not a log line; a spec bites with a served
+path outside the allow list (night backlog, Linux). Mac builder verifies the fix on the Mac (night backlog).
