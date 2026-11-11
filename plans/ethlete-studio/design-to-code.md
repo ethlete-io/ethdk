@@ -3818,3 +3818,11 @@ wir doch nicht weiter oder? fortschritt ist extrem lahm". Cause: the doc agent q
 checks the queue against "Gerade in Arbeit"; nothing in the tool does either. Tool fix (doc agent decision, tool internal):
 a builder queue message names the STATUS item first; a finding in it carries "blocks: <item>" or "CI red", else it goes to
 the tool backlog. Applied now: the Linux builder is back on B249 after 860. Queue: tool backlog.
+
+866\. Doc agent (2026-11-11): the human saw STATUS still talk of "Go" after B249 removed the go system (ADR 0048). Eight
+STATUS rows and bullets planned work on Go, go.json or Go hashes (B63, B70, B78, B83, B87, B98, B113, B175, B219, B280,
+B319, update-dialog). Cause: the slices that removed `design go` and go.json never searched the plans for the removed
+words; the doc agent did not either. Fix now: the doc agent deleted B70, B113, B219, B280 and reworded the rest. Tool fix
+(doc agent decision, tool internal): the last slice that removes a concept greps `plans/ethlete-studio/STATUS.md` for its
+words and closes or rewords each hit in the same commit; B249 slice 4 does it for Go. Side: machinery backlog for a
+general check.
