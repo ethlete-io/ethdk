@@ -437,6 +437,18 @@ describe('SketchesComponent', () => {
     ).toEqual(['y', 'z']);
   });
 
+  it('folds every variant and its pin when no variant changes any state', async () => {
+    const unchanged = (row: SketchRow) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: false })) });
+    const rows = [ROWS[0], { ...unchanged(ROWS[1]), key: 'a' }, { ...unchanged(ROWS[1]), key: 'b' }];
+    const root: HTMLElement = (await render({ camera: '100', rows, pins: SKETCH_PINS })).nativeElement;
+
+    expect(textOf(root.querySelector('[data-sk-same] button'))).toBe(
+      LABELS.sameVariants(['a', 'b']).replace(/\s/g, ' '),
+    );
+    expect(root.querySelector('[data-sk-row="a"]')).toBeNull();
+    expect(root.querySelector('ethlete-comment-pin')).toBeNull();
+  });
+
   it('keeps a folded variant folded while a quick listing knows nothing about its compare', async () => {
     const same: SketchRow = {
       key: 'y',

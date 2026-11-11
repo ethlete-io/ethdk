@@ -304,17 +304,21 @@ export class SketchesComponent {
   );
 
   protected drawnKey = computed(() => (this.status() === 'drawing' ? this.drawn() : null));
-  protected sameRows = linkedSignal<{ part: string; rows: SketchRow[]; drawn: string | null }, SketchRow[]>({
-    source: () => ({ part: this.part(), rows: this.shownRows(), drawn: this.drawnKey() }),
-    computation: ({ part, rows, drawn }, previous) => {
+  protected sameRows = linkedSignal<
+    { part: string; rows: SketchRow[]; listed: SketchRow[]; drawn: string | null },
+    SketchRow[]
+  >({
+    source: () => ({ part: this.part(), rows: this.shownRows(), listed: this.listedRows(), drawn: this.drawnKey() }),
+    computation: ({ part, rows, listed, drawn }, previous) => {
       const wasSame = new Set(previous?.source.part === part ? previous.value.map((row) => row.key) : []);
+      const shotsOf = (key: string) => listed.find((row) => row.key === key)?.shots ?? [];
 
       return rows.filter(
         (row) =>
           row.key !== SKETCH_CURRENT &&
           row.key !== drawn &&
-          row.shots.length > 0 &&
-          row.shots.every((shot) => shot.changed === false || (shot.changed === null && wasSame.has(row.key))),
+          shotsOf(row.key).length > 0 &&
+          shotsOf(row.key).every((shot) => shot.changed === false || (shot.changed === null && wasSame.has(row.key))),
       );
     },
   });

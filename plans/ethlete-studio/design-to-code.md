@@ -3868,3 +3868,10 @@ now use "human" with the initials "H". `check-person-names` already scanned `app
 pass, so it now ignores baseline entries for `apps/ethlete-studio/src/` and the entries were removed. A spec fails on the
 old code. The design's inbox sample (`.ethlete/design/studio`) still draws the old name and initials; it is a design
 file and was not touched.
+
+909 as built: Cause (verified): when no variant changes any state, every state folds, so `shownRows` hands the variants
+zero shots and `sameRows` (which skipped rows without shots) folded none of them; variant a stayed a row with its comment
+pin. Sameness is now judged on the unfiltered rows, so a and b fold into "Unverändert: Variante a, Variante b". No ADR
+decides against the fold. A spec fails on the old code. The pages/sketches compare went from 35 to 34 FAILED rows: the
+`all-unchanged` pin row is gone and its "Unverändert" button matches; its "Alle Zustände zeigen" row stays (the
+separate state-fold gap from 905). No other state got a new failure.
