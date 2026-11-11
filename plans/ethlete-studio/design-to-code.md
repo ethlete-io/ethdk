@@ -3788,3 +3788,14 @@ prints the usage and returns 0; an unknown argument prints `unknown argument: <a
 `--bogus` and `--dry-run` leave both files byte-identical, and a plain run moves an old done finding. Bite: with the
 argument check off, the `--help` and `--bogus` tests fail (2 of 13). Verified live: `--bogus` exits 2, `--dry-run` writes
 nothing. Not verified: nothing open.
+
+799\. Linux builder (2026-11-11, night, push suite on 0884cf03c): `commit-hunks.spec.ts` reads every committed
+`.ethlete/design` file; 081e7f16d made `studio-lab/ready.json` `{}` (the intended ADR 0254 drop), and the spec took
+`Object.keys(real)[0]` as a part (undefined). Cause (measured); spec fix d7f7f36a3 (an empty file gets a synthetic part).
+Why no tool caught it: the pre-commit `vitest related` run (779) follows imports only, so a commit of only design data
+runs no spec, although the data is spec input. Lesson: a spec that reads repo data must be found by a change to that
+data. Decided by the doc agent (tool internal, generalizes the builder's proposal): the 779 pre-commit step gets a small
+map from data globs to the specs that read them (first entry `.ethlete/design/**/*.json` → `commit-hunks.spec.ts`; the
+builder greps the cli specs for other readers of committed repo files and adds them); a commit that touches a glob runs
+its specs. Bite: a commit of only an emptied `ready.json` on the commit before d7f7f36a3 fails in pre-commit. Night
+backlog, Linux, after the push.
