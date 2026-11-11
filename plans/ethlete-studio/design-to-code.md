@@ -3812,3 +3812,8 @@ its e2e pass under CI-like limits (the 829 recipe: 2 workers, 4 cores with `task
 for changes under `libs/cli/src/lib/design`; the fixture check's fixed 60 s timeout (Mac builder, 828) gets a reason in
 its error (which request, how long the server was busy). Bite: the 832 warm-up re-applied fails push-suite locally.
 832 stays parked: re-land only with that bite green, and only if the cold run (2.6 s after 835) still needs it.
+
+844\. Linux builder (2026-11-11, revert of 832): the revert deleted `.changeset/832-warm-sketch-problems.md`, and
+pre-push refused it in lint:changesets (an unreleased changeset must stay). Cause (seen): `yarn revert:check` does not
+name a changeset file the revert would delete. Tool fix (doc agent, tool internal): revert:check names each changeset the
+revert deletes and says to keep it. Bite: a revert that deletes an unreleased changeset fails revert:check with its path.
