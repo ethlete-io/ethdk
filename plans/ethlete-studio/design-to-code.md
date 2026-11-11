@@ -3589,6 +3589,24 @@ builders on one branch pay a full suite per race. Tool fix (night backlog, Mac):
 reuses the verdict of the steps whose inputs the merged range does not touch; a spec bites with a merge that changes one
 lib only.
 
+As built (770, Mac builder): when HEAD is a merge, push:suite reads the verdict of the first parent and reuses each step
+that passed there and whose inputs `git diff --name-only <first parent> HEAD` misses; it prints `push-suite: <step>
+reused from <sha>` and runs only the other steps. The verdict file keeps `ok <sha>` / `blocked ...` as its first line
+(the pre-push check is unchanged) and now lists `step <name> ok <sha it ran on>` per passed step, also in a blocked
+verdict; an old verdict without step lines counts as all steps passed if it is `ok`. Mapping (`STEP_INPUTS`, kept by
+hand, not from the project graph): lint and typecheck read `apps/**` and `libs/**`; cli, studio, quota, e2e, e2e-quota
+and repeat read libs bracket, cli, components, core, eslint-plugin, query, types, plus `apps/ethlete-studio/**`,
+`apps/timetrack/**` (the cli spec reads its styles.css through `.ethlete/design/config.json`) and `.ethlete/**`.
+`plans/` and `.changeset/` touch nothing; any other path outside those prefixes (root configs, yarn.lock, tools/,
+.github/) reruns all steps unless it is `.md`. Specs: a merge of libs/agent-rules reuses the six design steps and
+reruns lint and typecheck; yarn.lock, package.json, nx.json, tsconfig.base.json or tools/ rerun all; no verdict, a
+blocked verdict without step lines, or a non-merge HEAD reuse nothing. Bite: the spec against the HEAD push-suite.mjs
+fails on import; mutations (no reuse, no unknown-path rule, no merge check, reuse without a verdict) each fail their
+case. 37 of 37 pass, spec:stress 4/4 at load 2. Not verified: a real `yarn push:suite` after a merge (one ran for the
+coordinator at the time); the reuse on the real merge ca8549bce gives no reuse (.github/ changed), as expected. Commit: the one that adds this note. Known
+gap: a reused lint or typecheck covered the projects of the first parent's range, which can differ from the new range
+when the merge resolves an origin change back to the first parent's content.
+
 As built (766 item 1, Linux builder): Cause (bite): this Claude Code build marks the focus below the input box with
 inverse video (`ESC[7m`, first on the `1 shell` footer pill after one Down) and draws panel rows as `  ● main` /
 `  ◯ general-purpose`, with no `❯`. `panelFocused` knew only `❯ [⏺◯]`, so it never saw the focus and typed into the
