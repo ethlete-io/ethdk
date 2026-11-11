@@ -189,3 +189,9 @@ does not cache a no-answer verdict; on `rack` the rebuilt release CEF exe report
 still does not open (0 live frames): the page's fetch of `http://localhost:4402/__design/stamp` never answers while the
 server listens on `::1` only (Suspect: localhost resolves to 127.0.0.1 in CEF on Windows). Size 141.17 MiB installer /
 467 MiB installed, not signed.
+
+As built (finding 874, 2026-11-11 evening, 37eebcfda): Cause: not the IPv6-only bind (CEF reaches `::1`), but
+Chromium's Local Network Access: requests from `http://tauri.localhost` to loopback wait for a `loopback-network`
+prompt that the Windows CEF build never shows. The CEF runtime now sets `LOOPBACK_NETWORK` to allow; on `rack` the
+fetch answers 200 and the button sketch paints. Runs yes, sketch painted (the smoke marker's `ethlete-sketch-view`
+probe is stale for the canvas view), 141.17 MiB installer / 453 MiB installed, not signed.
