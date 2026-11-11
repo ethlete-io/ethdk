@@ -31,7 +31,7 @@ node ./tools/scripts/check-slice-paths.mjs
 adr_files=$(git diff --cached --name-only --diff-filter=ACM -- 'plans/ethlete-studio/STATUS.md' 'apps/ethlete-studio/docs/adr/*.md')
 
 if [ -n "$adr_files" ]; then
-  node ./tools/scripts/check-studio-adrs.mjs >/dev/null
+  node ./tools/scripts/check-studio-adrs.mjs --summary >/dev/null
 fi
 
 # A commit that cuts finding head or as-built lines from the design plan must archive them, and finding numbers

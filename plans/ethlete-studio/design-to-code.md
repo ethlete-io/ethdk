@@ -3949,3 +3949,8 @@ branch). Suspect: a red scheduled run does not show in `et design status`, which
 a red scheduled `rust-audit.yml` run (a new advisory) shows nowhere a builder looks at slice start. Suspect (code read).
 Tool fix (backlog, grill decision): the status line also reads the last finished `rust-audit` run and prints its
 failed crates.
+
+760 as built (Linux builder, 2026-11-11, night): `check-studio-adrs.mjs --summary` prints one line
+`warning: N studio ADR warning(s); run \`yarn lint:studio-adrs\` for the list`instead of one line per warning, and the
+pre-commit hook calls it with`--summary`. `yarn lint:studio-adrs`still prints the full list. Verified: a new spec for`warningLines` and the hook pattern (both fail on the old code: no export, no flag in the hook), 15/15 pass; live:
+309 warning lines become 1. Not changed: the 309 warnings are almost all "finding N is cited by no STATUS row".

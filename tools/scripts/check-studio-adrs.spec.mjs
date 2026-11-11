@@ -3,7 +3,14 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { checkAdr, checkAdrs, findingErrors, lostFindingErrors, orphanWarnings } from './check-studio-adrs.mjs';
+import {
+  checkAdr,
+  checkAdrs,
+  findingErrors,
+  lostFindingErrors,
+  orphanWarnings,
+  warningLines,
+} from './check-studio-adrs.mjs';
 import { parseStatusRows } from './studio-status.mjs';
 
 const rows = parseStatusRows(`| ID | Was | Stand |
@@ -93,7 +100,7 @@ test('the pre-commit hook runs the check when STATUS.md or an ADR is staged', ()
   const hook = readFileSync(new URL('../../.husky/pre-commit', import.meta.url), 'utf8');
   assert.match(hook, /plans\/ethlete-studio\/STATUS\.md/);
   assert.match(hook, /apps\/ethlete-studio\/docs\/adr\/\*\.md/);
-  assert.match(hook, /node \.\/tools\/scripts\/check-studio-adrs\.mjs/);
+  assert.match(hook, /node \.\/tools\/scripts\/check-studio-adrs\.mjs --summary/);
   assert.match(hook, /^set -e$/m);
 });
 
@@ -120,4 +127,13 @@ test('an appended or new archive passes', () => {
     lostFindingErrors(archives, () => null),
     [],
   );
+});
+
+test('the summary prints one line for many warnings and every line without it', () => {
+  const warnings = ['a', 'b', 'c'];
+  assert.deepEqual(warningLines(warnings, { summary: true }), [
+    'warning: 3 studio ADR warning(s); run `yarn lint:studio-adrs` for the list',
+  ]);
+  assert.deepEqual(warningLines(warnings), ['warning: a', 'warning: b', 'warning: c']);
+  assert.deepEqual(warningLines([], { summary: true }), []);
 });
