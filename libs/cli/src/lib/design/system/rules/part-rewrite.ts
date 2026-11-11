@@ -3,6 +3,7 @@ import { join } from 'path';
 import ts from 'typescript';
 import { classifyImport, folderModulesOf } from '../imports';
 import { Problem } from '../problem';
+import { perSource } from '../ts-source';
 import { ResolvedProduct } from '../resolve-product';
 import { listSketches } from '../sketch/sketch';
 
@@ -86,7 +87,7 @@ const partBehind = (
 };
 
 /** @internal Each `.replace`/`.replaceAll` in `source` on markup or a class string that an imported part produced. */
-export const partRewritesIn = (source: string): Rewrite[] => {
+export const partRewritesIn = perSource((source): Rewrite[] => {
   const file = ts.createSourceFile('module.ts', source, ts.ScriptTarget.Latest, true);
   const context = { parts: partImportsOf(file), initializers: initializersOf(file), seen: new Set<string>() };
   const rewrites: Rewrite[] = [];
@@ -115,7 +116,7 @@ export const partRewritesIn = (source: string): Rewrite[] => {
   visit(file);
 
   return rewrites;
-};
+});
 
 const typeScriptFilesIn = (dir: string): string[] =>
   readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {

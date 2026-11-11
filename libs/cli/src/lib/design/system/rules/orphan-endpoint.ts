@@ -17,7 +17,7 @@ const sourcesOf = (dir: string): string[] =>
     return entry.name.endsWith('.ts') && !entry.name.endsWith('.spec.ts') ? [readFileSync(path, 'utf8')] : [];
   });
 
-const sourcesCallDesign = (dir: string) => sourcesOf(dir).some((source) => source.includes('__design'));
+const callsDesign = (sources: string[]) => sources.some((source) => source.includes('__design'));
 
 const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
 
@@ -60,11 +60,8 @@ const isCalledIn = (path: string, sources: string[]) => {
   );
 };
 
-/** Every `/__design/…` path the CLI serves that no source file of `appDir` writes, as a path, as a `path:` property or as the name argument of a `…Url(…)` helper inside a function the app calls. */
-export const orphanEndpointsOf = (options: { served: string[]; appDir: string; checkout: string }): Problem[] => {
-  const sources = sourcesOf(options.appDir);
-
-  if (!sources.some((source) => source.includes('__design'))) return [];
+const orphansIn = (options: { served: string[]; appDir: string; checkout: string }, sources: string[]): Problem[] => {
+  if (!callsDesign(sources)) return [];
 
   const dir = relative(options.checkout, options.appDir);
 
@@ -76,6 +73,10 @@ export const orphanEndpointsOf = (options: { served: string[]; appDir: string; c
       message: `${path}: served by the design CLI, called nowhere in ${dir}`,
     }));
 };
+
+/** Every `/__design/…` path the CLI serves that no source file of `appDir` writes, as a path, as a `path:` property or as the name argument of a `…Url(…)` helper inside a function the app calls. */
+export const orphanEndpointsOf = (options: { served: string[]; appDir: string; checkout: string }): Problem[] =>
+  orphansIn(options, sourcesOf(options.appDir));
 
 const appDirsOf = (product: ResolvedProduct) =>
   new Set(
@@ -94,16 +95,16 @@ const servedPathsOf = (): string[] => {
   );
 };
 
+type VerdictOptions = { served: string[]; appDir: string; checkout: string; known: KnownOrphan[] };
+
+type Verdict = { errors: Problem[]; warnings: Problem[] };
+
+const heldVerdicts = new Map<string, { sources: string[]; verdict: Verdict }>();
+
 const pathOf = (problem: Problem) => problem.message.slice(0, problem.message.indexOf(':'));
 
-/** Splits the orphans of an app into errors (unlisted) and warnings (listed as never written). A known entry whose state no longer holds is an error: a never-written path that has a caller, or a written-by path whose writer is gone, uncalled or not writing it. */
-export const orphanEndpointVerdictOf = (options: {
-  served: string[];
-  appDir: string;
-  checkout: string;
-  known: KnownOrphan[];
-}): { errors: Problem[]; warnings: Problem[] } => {
-  const orphans = orphanEndpointsOf(options);
+const verdictIn = (options: VerdictOptions, sources: string[]): Verdict => {
+  const orphans = orphansIn(options, sources);
   const dir = relative(options.checkout, options.appDir);
   const backlogOf = new Map(options.known.map(({ path, backlog }) => [path, backlog]));
   const neverWritten = new Map(
@@ -112,7 +113,7 @@ export const orphanEndpointVerdictOf = (options: {
     ),
   );
   const orphanPaths = new Set(orphans.map((problem) => pathOf(problem)));
-  const checked = sourcesCallDesign(options.appDir);
+  const checked = callsDesign(sources);
 
   const errors = orphans.filter((problem) => !backlogOf.has(pathOf(problem)));
   const warnings = orphans.flatMap((problem) => {
@@ -121,7 +122,6 @@ export const orphanEndpointVerdictOf = (options: {
 
     return backlog ? [{ ...problem, message: `${path}: orphan endpoint, known and tracked in ${backlog}` }] : [];
   });
-  const sources = checked ? sourcesOf(options.appDir) : [];
   const drifted = checked
     ? options.known.flatMap(({ path, state }) => {
         if (state.kind !== 'written-by') return [];
@@ -156,6 +156,22 @@ export const orphanEndpointVerdictOf = (options: {
     : [];
 
   return { errors: [...errors, ...drifted, ...stale], warnings };
+};
+
+/** Splits the orphans of an app into errors (unlisted) and warnings (listed as never written). A known entry whose state no longer holds is an error: a never-written path that has a caller, or a written-by path whose writer is gone, uncalled or not writing it. */
+export const orphanEndpointVerdictOf = (options: VerdictOptions): Verdict => {
+  const sources = sourcesOf(options.appDir);
+  const slot = JSON.stringify(options);
+  const held = heldVerdicts.get(slot);
+
+  if (held?.sources.length === sources.length && held.sources.every((source, index) => source === sources[index]))
+    return held.verdict;
+
+  const verdict = verdictIn(options, sources);
+
+  heldVerdicts.set(slot, { sources, verdict });
+
+  return verdict;
 };
 
 const verdictsOf = (product: ResolvedProduct) => {

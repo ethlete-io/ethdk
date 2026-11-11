@@ -3,7 +3,7 @@ import { dirname, resolve } from 'path';
 import ts from 'typescript';
 import { Problem } from '../problem';
 import { ResolvedProduct } from '../resolve-product';
-import { sourceFileOf } from '../ts-source';
+import { perSource, sourceFileOf } from '../ts-source';
 
 const HOLE = '\u0001';
 const OPENS_A_NAME = /[-_:/[(.,]$/u;
@@ -28,7 +28,7 @@ const startsWithSpace = (node: ts.Expression): boolean => {
   return false;
 };
 
-const classValuesIn = (source: string) => {
+const classValuesIn = perSource((source) => {
   const values: string[] = [];
   const visit = (node: ts.Node) => {
     if (ts.isTemplateExpression(node)) {
@@ -48,7 +48,7 @@ const classValuesIn = (source: string) => {
   visit(sourceFileOf(source));
 
   return values;
-};
+});
 
 const gluedTokensIn = (value: string) =>
   value

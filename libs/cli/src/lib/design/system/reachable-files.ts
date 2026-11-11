@@ -5,13 +5,13 @@ import { sourceFileOf } from '../vite-paths';
 import { ProductSource } from './base';
 import { classifyImport, sharedDirsOf, sharedFileOf, SharedDirs } from './imports';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
-import { importsOf } from './ts-source';
+import { importsOf, perSource } from './ts-source';
 
 const SDK_DESIGN_MODULE = /^@ethlete\/([\w-]+)\/design((?:\/[\w-]+)*)$/u;
 
 export const repoRootOf = (source: ProductSource) => resolve(dirname(source.configFile), '../..');
 
-const stylesheetImportsOf = (css: string) => {
+const stylesheetImportsOf = perSource((css) => {
   const imports: string[] = [];
 
   try {
@@ -26,7 +26,7 @@ const stylesheetImportsOf = (css: string) => {
   }
 
   return imports;
-};
+});
 
 const relativeFileOf = (file: string, specifier: string) => {
   const path = resolve(dirname(file), specifier.split('?')[0] ?? specifier);

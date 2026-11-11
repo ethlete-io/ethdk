@@ -1,31 +1,40 @@
 import ts from 'typescript';
 
-const PARSED_LIMIT = 512;
-const parsed = new Map<string, ts.SourceFile>();
+const PER_SOURCE_LIMIT = 512;
 
-/** The syntax tree of a TS source, parsed once per text and shared by every caller, so never mutate it. */
-export const sourceFileOf = (source: string): ts.SourceFile => {
-  const known = parsed.get(source);
+/**
+ * Wraps a pure function of a source text so it runs once per text; the last 512 texts are kept. Callers share the
+ * result, so never mutate it.
+ */
+export const perSource = <T>(of: (source: string) => T): ((source: string) => T) => {
+  const known = new Map<string, T>();
 
-  if (known) {
-    parsed.delete(source);
-    parsed.set(source, known);
+  return (source) => {
+    if (known.has(source)) {
+      const value = known.get(source) as T;
 
-    return known;
-  }
+      known.delete(source);
+      known.set(source, value);
 
-  const file = ts.createSourceFile('part.ts', source, ts.ScriptTarget.Latest, true);
+      return value;
+    }
 
-  parsed.set(source, file);
+    const value = of(source);
 
-  const oldest = parsed.size > PARSED_LIMIT ? parsed.keys().next().value : undefined;
+    known.set(source, value);
 
-  if (oldest !== undefined) parsed.delete(oldest);
+    const oldest = known.size > PER_SOURCE_LIMIT ? known.keys().next().value : undefined;
 
-  return file;
+    if (oldest !== undefined) known.delete(oldest);
+
+    return value;
+  };
 };
 
-const nodesOf = (source: string) => {
+/** The syntax tree of a TS source, parsed once per text and shared by every caller, so never mutate it. */
+export const sourceFileOf = perSource((source) => ts.createSourceFile('part.ts', source, ts.ScriptTarget.Latest, true));
+
+const nodesOf = perSource((source) => {
   const nodes: ts.Node[] = [];
   const visit = (node: ts.Node) => {
     nodes.push(node);
@@ -35,14 +44,15 @@ const nodesOf = (source: string) => {
   visit(sourceFileOf(source));
 
   return nodes;
-};
+});
 
 /** The module specifiers a TS file imports, static and dynamic. */
-export const importsOf = (source: string) =>
-  ts.preProcessFile(source, true, true).importedFiles.map((imported) => imported.fileName);
+export const importsOf = perSource((source) =>
+  ts.preProcessFile(source, true, true).importedFiles.map((imported) => imported.fileName),
+);
 
 /** The text of each string literal and template chunk, so markup and inline CSS can be scanned. */
-export const textsOf = (source: string) =>
+export const textsOf = perSource((source) =>
   nodesOf(source).flatMap((node) =>
     ts.isStringLiteral(node) ||
     ts.isNoSubstitutionTemplateLiteral(node) ||
@@ -51,10 +61,11 @@ export const textsOf = (source: string) =>
     ts.isTemplateTail(node)
       ? [node.text]
       : [],
-  );
+  ),
+);
 
 /** The name of each function a TS file calls, `requestAnimationFrame` for `window.requestAnimationFrame(…)` too. */
-export const calledNamesOf = (source: string) =>
+export const calledNamesOf = perSource((source) =>
   nodesOf(source).flatMap((node) => {
     if (!ts.isCallExpression(node)) return [];
 
@@ -64,7 +75,8 @@ export const calledNamesOf = (source: string) =>
     if (ts.isPropertyAccessExpression(callee)) return [callee.name.text];
 
     return [];
-  });
+  }),
+);
 
 const hasExportKeyword = (node: ts.Node) =>
   ts.canHaveModifiers(node) && (ts.getModifiers(node) ?? []).some((m) => m.kind === ts.SyntaxKind.ExportKeyword);

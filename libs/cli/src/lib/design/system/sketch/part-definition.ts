@@ -1,7 +1,7 @@
 import ts from 'typescript';
-import { sourceFileOf } from '../ts-source';
+import { perSource, sourceFileOf } from '../ts-source';
 
-const definitionOf = (source: string) => {
+const definitionOf = perSource((source) => {
   const file = sourceFileOf(source);
   let found: ts.ObjectLiteralExpression | null = null;
   const visit = (node: ts.Node) => {
@@ -25,7 +25,7 @@ const definitionOf = (source: string) => {
   visit(file);
 
   return { file, definition: found as ts.ObjectLiteralExpression | null };
-};
+});
 
 const nameOf = (name: ts.PropertyName) =>
   ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isNumericLiteral(name) ? name.text : null;

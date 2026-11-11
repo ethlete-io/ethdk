@@ -3745,6 +3745,24 @@ start or a part edit waits that long. Tool fix (doc agent, tool internal): make 
 run reads all 91 studio part sources (830), so find what the rule check needs per variant and profile the run before a
 change. Target: a run under 1 s on studio. If that fails, sending the sketch problems later (830 option b) changes what
 the human sees and goes to the human as a question.
+835 as built (Linux builder, 2026-11-11, this commit: perf(cli) "Parse and scan each source once per text"): profile
+first, on a scratch checkout of studio (91 parts, 2 ready sketches, 6 variants, 3 with `shared/`): one run is 10 full
+rule runs (product 1, variants 6, merged layout 3) of 35 rules, about 600 ms each; cold 7.0-7.6 s, after a part edit
+5.7-6.9 s. Cause (profiled): every rule run re-walks the syntax tree and re-scans the text of every source (definitionOf
+1.0-1.5 s, Tailwind class texts 1.4-2.4 s, part rewrites 0.6-1.0 s with a fresh parse each call, command text 0.6-1.0 s,
+reachable files 0.5-0.8 s, orphan endpoints 0.4-0.7 s over the 600 KB app source); plus, cold only, the Tailwind
+class-facts subprocess 1.35-1.45 s. Why a variant reads all 91 sources: the rules are product-wide (imports, reachable
+files, orphan endpoints, shared files) and the variant answer is the difference of two whole-product runs, so narrowing
+the read set stays unsound. Built: `perSource` in `ts-source.ts`, a 512-text memo of a pure function of a source text,
+on `sourceFileOf`, the node list, `textsOf`, `importsOf`, `calledNamesOf`, `definitionOf`, the Tailwind class texts, part
+rewrites, command text, top-level awaits, stylesheet imports, inline UI, glued interpolations, phase unions and
+hard-coded colours; the orphan-endpoint verdict is held per app while its sources read the same. Files are still read
+each run, so the tracked inputs do not change. Measured (script over `readOpenPoints`, scratch, idle): after a part edit
+5.7-6.9 s to 650 ms; cold 7.0-7.6 s to 2.6 s; repeat 35 ms. Not met: cold stays at 2.6 s, of it the Tailwind subprocess
+1.4 s and the first parse 0.5 s (suspect: a disk cache of the class facts keyed by their read prints would fix it).
+Output byte-equal to HEAD for studio, sdk and studio-lab. Bite: `open-points-reparse.spec.ts` records each syntax-tree
+walk after a part edit; red on HEAD source (3 unchanged sources walked again), green after; spec:stress 4/4. Not
+verified: a live `/__design/open-points` ask on a server, Studio e2e.
 
 837\. Doc agent (2026-11-11): the Linux and the Mac builder take finding numbers from their own tree, so both used 828
 and 833 today. Suspect: no shared source hands out the next number. Tool fix (builder pick, tool internal): a number

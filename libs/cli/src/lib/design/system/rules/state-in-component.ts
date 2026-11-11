@@ -4,7 +4,7 @@ import ts from 'typescript';
 import { Problem } from '../problem';
 import { ResolvedProduct } from '../resolve-product';
 import { partLinkOf, stateLiteralPropsOf } from '../sketch/part-definition';
-import { sourceFileOf } from '../ts-source';
+import { perSource, sourceFileOf } from '../ts-source';
 
 export const STATE_NOT_IN_COMPONENT = 'STATE-NOT-IN-COMPONENT';
 
@@ -38,7 +38,7 @@ const inputTypeOf = (initializer: ts.Expression | undefined) => {
 };
 
 /** @internal The phase and state unions an app component takes as signal inputs, read without running it. */
-export const phaseUnionsOf = (source: string): PhaseUnion[] => {
+export const phaseUnionsOf = perSource((source): PhaseUnion[] => {
   const file = sourceFileOf(source);
   const aliases = new Map<string, string[]>();
   const found: PhaseUnion[] = [];
@@ -76,7 +76,7 @@ export const phaseUnionsOf = (source: string): PhaseUnion[] => {
   collect(file);
 
   return found;
-};
+});
 
 const namedAfter = (state: string, value: string) => state === value || state.startsWith(`${value}-`);
 
