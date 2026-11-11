@@ -3230,6 +3230,16 @@ process, gates take 15 s instead of 4.4 s. 777 on the Mac (same night, `design c
 warm 52.0 s, 0 cache hits both times; a `recordCache` bite in the part-picture cache read counted 0 reads, so the
 warm speedup is one-time work of the cold run (5 lib rebuilds, 3 dropped ready records), not a missed cache.
 
+739 render-check split (Mac builder subagent, same sketch, instrumented dist, restored after). Render-check 136-140 s
+over 3 runs, CPU-bound (868 s user CPU in 296 s wall). Cause (measured): each variant draws 32 states x 2 schemes = 64
+frames, 4 at once, each a `page.goto` of frame.html at about 2 s: open 1.06 s (0.2 s goto, 0.85 s app boot in the
+iframe), first `inspectFrame` evaluate 0.88 s; settle, media and compare under 0.03 s; no sleep or fixed timeout. Variant
+1 takes 64 s because the baseline inspection of the product page (60 frames) runs on the same browser at the same time
+(DRAWS_AT_ONCE 8); a frame then takes 4.1 s. Aktuell: 120 frame opens at 2.5 s, about 6 at once. Fix ideas (Suspect,
+not built): draw the dark twin on the loaded page with `emulateMedia` (about 30 s less), switch states in one booted
+frame (about 50 s less), profile the first `inspectFrame` evaluate, and pass `cached: true` to `renderIssuesOf` in
+`sketch-command.ts` like `check-system.ts` does, so a re-check of unchanged variants hits the cache.
+
 Mac e2e speed (Mac builder, same night, measurement only): `yarn studio:e2e --workers 5` ran 131/132 in 433.5 s, load
 4.7 at start and 31.7 at the end; push:suite #16 ran the same 132 cases on the default 3 workers in 476 s. The one
 fail was Large "a variant equal to Aktuell keeps its iframes across a quick and a full listing" (iframe/row removes 22,
