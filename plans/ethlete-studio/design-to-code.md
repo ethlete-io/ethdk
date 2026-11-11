@@ -3949,3 +3949,16 @@ the repo's shot store, so scratch runs wrote into the live store. Tool fix (doc 
 `scratch:checkout` gives the scratch its own store and fails when the store path resolves into the main checkout. Bite:
 a spec that runs `scratch:checkout` and then writes a shot leaves the main store unchanged; before the fix the shot lands
 in it. Queue: Linux builder, right after 846, before B490, because it corrupts live data.
+
+855\. Linux builder (2026-11-11, from 846), measured: `ethlete-studio:build:production` fails since aaeef909d (B490 merge of
+foundations/type@font-pair variant c). The merged `type.css` holds `url('@assets/fonts/noto-sans-…woff2')`; the design
+server resolves `@assets`, the Angular build does not, so every studio e2e and every push suite fails. The merge did not
+refuse a merge that breaks the app build. Tool fix (doc agent decision, tool internal): the merge resolves every `url()`
+of the merged CSS with the app build's resolver and refuses the merge with the unresolved URL named. Bite: merging the
+old font-pair variant c refuses with the `@assets` URL named; before the fix it merges. Queue: Mac builder (merge files
+are its area), right after 850. The build itself is fixed first by the Linux builder in the B490 slice.
+
+856\. Linux builder (2026-11-11, from 855), measured: when the Studio build fails, the `canvas.e2e.mjs` lead process exits
+but leaves its `--worker` processes and their design servers running. Tool fix (doc agent decision, tool internal): the
+lead stops its workers and their servers on every exit path. Bite: a spec with a failing build leaves no worker or
+server process; before the fix they stay. Queue: Linux builder, after 853.
