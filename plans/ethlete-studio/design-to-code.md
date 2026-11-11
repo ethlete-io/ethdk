@@ -3653,6 +3653,7 @@ a fixed 20 s, swallowed the timeout and read status=null. push:suite missed it: 
 7 s. Fix: the case waits for the badge with `waitFor` at `COLD_START_MS` and no longer swallows the timeout; the
 assertion is unchanged. Bite: a CI-like run (shard 6/6, 2 workers, 4 cores, 12 busy loops) red 3/3 before, green 22/22
 after. Same kind of flaw as the Mac's 828 (1).
+829 b as built (Linux builder, 2026-11-11, test only): `push:suite` run 3/3 (`--hold-listings 14000`) ended the chip case while a held listing was pending, since 830 made the answer fast. The case reads only the chip, popup and footer status, never the listing: `holdListings: false`. Waiting with `listingAnswered` did not help, since no `data-sk-changed` element of the System page tracks the held request (run 3/3 failed again with it).
 
 830\. Linux builder (2026-11-11, from 829): the open-points answer got 50 times slower with B488 and no gate saw it.
 Cause (measured): see 829 as built. Tool fix (doc agent, tool internal): cache `sketchProblemsOf` per sketch variant and

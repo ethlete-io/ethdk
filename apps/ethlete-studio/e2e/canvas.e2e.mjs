@@ -1129,6 +1129,7 @@ const CASES = [
   },
   {
     name: 'open points chip pressed matches its popup',
+    holdListings: false,
     pages: ['System'],
     viewport: WIDE,
     run: async (page) => {
