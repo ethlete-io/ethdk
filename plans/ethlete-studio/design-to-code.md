@@ -3849,6 +3849,10 @@ workers, 4 cores, 12 busy loops) the first `/__design/sketches?product=studio` l
 33-43 s, more than half of its 60 s limit, with or without the 832 warm-up. Suspect: this is the margin that the CI
 runners lost in 829 and 843. Tool fix (grill decision): profile the first listing under the recipe and cut it. Target:
 under 15 s under the recipe. Bite: a timing check under the recipe that fails on today's 33-43 s. Build before 837.
+Profile (Linux builder, 2026-11-11, two runs): first listing 40.8 s and 41.3 s, 13763 bytes, 6 items. Targets of
+`components/title-bar@notice-hint` take 21-23 s (plain title-bar about 1 s); Suspect (timing only, no bite): it waits
+behind 26 pictures in flight, not its own compute. Worker sketch check 9.2 s steady; `inTurns` (9a7a040eb) costs almost
+nothing. Fix slice runs; it proves the wait first, keeps the answer byte-equal and does not reuse the 832 warm-up.
 
 846 measured, not built (Linux builder subagent, 2026-11-11, no code change): `/tmp/s846` scratch, first studio listing
 of the e2e fixture checkout under the recipe, cold shot store, `ETHLETE_DESIGN_SLOW_CHECKS=off` as the e2e worker sets it.
@@ -3860,7 +3864,7 @@ picture waits for the render worker, which starts only on the first `/__design/r
 `@ethlete/components`). Experiments on the dist (answers JSON-equal; bytes differ only by the keep-alive leading space past
 15 s): targets started beside the check 19.0 s; plus all sketches in parallel 16.7 s; plus `inTurns` parallel 15.3 s; plus
 the render worker started at the listing start 13.8 / 14.2 / 14.1 s - under 15 s but with no margin, the check (12.4 s)
-is now the critical path. Next step: build those three in `studio-api.ts`, `render.ts` (a `warm()`), `render-worker.ts`
+is now the critical path. Next step: build those four in `studio-api.ts`, `render.ts` (a `warm()`), `render-worker.ts`
 (a warm message), `serve.ts`, then cut the check (run the Tailwind class facts async beside the other rules) for margin.
 Side finding (measured, not the e2e cause): with the slow runner on, each 15 s poll's `slowInputsOf` blocks the main
 thread about 14 s under the recipe (`app-files` `declaringFilesOf` regexes), which made the profiled listing 41 s.
