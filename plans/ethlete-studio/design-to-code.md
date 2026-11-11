@@ -4130,3 +4130,15 @@ scratch repo before it is sent. Decided by the doc agent (tool internal): a `yar
 out, commits the removal by path, puts the file back and checks the hash; the git-commit skill names it. Bite: after
 `yarn untrack x`, `git ls-files x` is empty and `x` is byte-identical. Tool backlog, Linux, small, after 793. Effect on
 other clones: a pull deletes their tracked `pictures.json`; the Mac must know before it pulls.
+
+796\. Linux builder (2026-11-11, night, 652 live bite): `design check --product studio-lab` emptied the tracked
+`.ethlete/design/studio-lab/ready.json` (the `foundations/tokens` check record of 2026-11-08), although the tokens files
+are unchanged, and its output named no part and no reason. Writer: `part-build-ready.ts` `dropPartRecord` when a blocker of
+the part is definite. Suspect (code read): a definite blocker on `foundations/tokens`, not caused by 652 step 1; not probed
+on the commit before c7d88a573. The run also wrote no cache file, so the 652 cache write is proven only by spec, and the
+652 bite "a design run with no decision leaves git status clean" is not met. Why no tool caught it: a check changes a
+tracked file with no output line. Lesson: every write of a tracked decision file by a check prints what it changed and
+why. Decided by the doc agent (tool internal): (1) probe the same check on the commit before c7d88a573 (scratch copy) to
+rule step 1 in or out, before the Linux push of 652; (2) the check prints "RECORD DROPPED <product> <part>: <blocker>",
+with a bite spec; (3) a live run that writes a new picture record shows the cache file. Order: (1) now, then 793 (a), (2),
+(3).
