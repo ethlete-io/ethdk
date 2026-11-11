@@ -6,6 +6,7 @@ import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { configOf, oneProductOf } from './cli-args';
 import { commitMergeResultSync, dirtyFilesOfSync } from './merge-commit';
 import { mergeSketch } from './merge';
+import { appGatedMergeOf } from './merge-app-gate';
 import { recordMergeReason } from './merged-parts';
 import { originOf } from '../write-origin';
 import { decideSketch, findSketch, parseTarget, rejectionOf, Sketch } from './sketch';
@@ -46,15 +47,21 @@ export const mergeAndRecord = (options: {
 
   const before = dirtyFilesOfSync({ target, product });
   const result = timedPhase('merge-files', () =>
-    mergeSketch({
+    appGatedMergeOf({
       target,
-      config,
       product,
       sketch: decided,
-      note,
-      replaceNote,
-      author: by,
-      ...(allowed ? { decidedBy: `plan: ${allowed.planRef.trim()}` } : decidedBy ? { decidedBy } : {}),
+      merge: () =>
+        mergeSketch({
+          target,
+          config,
+          product,
+          sketch: decided,
+          note,
+          replaceNote,
+          author: by,
+          ...(allowed ? { decidedBy: `plan: ${allowed.planRef.trim()}` } : decidedBy ? { decidedBy } : {}),
+        }),
     }),
   );
 

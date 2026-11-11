@@ -3673,6 +3673,14 @@ Second miss, same gap (spec run): `apps/ethlete-studio/src/styles.spec.ts` pinne
 and `vitest related` on `project.json` did not reach the spec. Tool fix added to 855 (doc agent decision): the merge
 also runs `vitest related` on the merged files and refuses on a red spec. Bite: merging the old variant c refuses
 with `styles.spec.ts` named.
+As built (Mac builder): a new `merge-app-gate.ts` wraps the merge in the CLI step and the Studio merge worker
+(`merge.ts` itself is unchanged). After the merge it reads every `project.json` target that lists `styles`, follows the
+relative `@import`s of those entries, and checks each `url()` of a changed stylesheet on that chain the way the build
+resolves it: relative to the file, or through an `externalDependencies` prefix into the `assets` output. Then each app
+whose chain reaches the product runs `vitest related` on the changed files plus its specs that name one of its chain
+stylesheets (`vitest related` on a stylesheet alone does not reach `styles.spec.ts`, measured). An unresolved URL or a
+red spec puts every design file back, skips the merge commit, and refuses with the URL or spec named. Live: the real
+`type.css` resolves against today's `project.json` and names both Noto Sans URLs against the one before 210235327.
 
 856\. Linux builder (2026-11-11, from 855), measured: when the Studio build fails, the `canvas.e2e.mjs` lead process exits
 but leaves its `--worker` processes and their design servers running. Tool fix (doc agent decision, tool internal): the
