@@ -798,13 +798,6 @@ and 09953108c). Its stderr goes to a pipe of the Tauri app, and `serve.ts` turns
 so no server log exists. Second tool gap: a Studio server error leaves no trace. In `/tmp/b469` the old copy restored
 correctly on a failed check; a throw after the swap stays the lead, repro not done.
 
-470\. CI on `next` stayed red from 2026-11-04 15:23 to the evening of 2026-11-05, and 92 commits stayed unpushed. The
-Studio rules job failed: `pages/system` state `direct-edit` was unjudged, because the gate clicks the "Gründe" trigger
-and the app had no footer. Tom: "die ci ist NOCH IMMER rot?" - a release waits. Why no tool caught it: the slow gate
-checks only parts whose app files change (B393), so the local hook never ran `pages/system`; `clickOpen` did not
-search overlay roots (fixed in 5f105b30d with the footer). Process lesson: a red CI on `next` stops all finding work
-until it is green; the doc agent checks `gh run list` at session start and reports a red run to Tom at once. Built in 5f105b30d.
-
 471\. Sessions in tmux do not clear and restart themselves. They ask Tom to run `/clear` or `/handoff`, though the
 `ethlete-agent-sessions` `restart` command clears the caller's own session and types a resume prompt. Tom: "viele
 sessions checken noch nicht dass sie in tmux mit agent sessions skill sind selbst clearen und neustarten können das
@@ -3778,15 +3771,6 @@ Built in be2e24d8f: a sentence-start "As built", or `built <sha>` whose sha is a
 marker. Bite: a spec fixture with a built marker and no STATUS row is archived, one with an unpushed sha and an open one
 stay; with the old script the spec gets no finding moved. Run for real: 7 findings moved (440013 to 415197 chars), each
 removed line byte-equal in `archive/findings-2026-11.md`. Built in be2e24d8f.
-
-860\. Linux builder (2026-11-11, from 859): after 859 the archive freed only 24k chars; most built findings carry no
-marker the script reads (free prose like "fixed in <sha>"). Tool fix (doc agent decision, tool internal): one marker,
-`Built in <sha>.` at sentence start, written by whoever records the as-built note; a one-time pass adds it to old
-findings whose fix commit is proven in git log (dry-run list first, no guess: unproven ones stay). No archive by "any
-sha cited": open findings cite context shas (855 cites aaeef909d). Bite: after the pass `archive-findings --dry-run`
-lists the proven ones; a fixture with only a context sha moves nothing. Queue: Linux builder, after 854.
-
-As built (Linux builder, 860): `archive-findings` reads only `Built in <sha>.` at sentence start (pushed sha); `mark-built-findings.mjs` (`--write`) marked the 7 findings whose "fixed/built in <sha>" names a `fix(`/`feat(` or finding-named commit dated on or after the finding. The pass also marked 855 from "Build fixed in 210235327", which fixed only the app build while the merge guard of 855 is still open; the builder removed that marker by hand, A hand check then found two more side fixes: 524 (e3f7a81dd fixed the cache defect, not the abort spec for every cache) and 592 (ffe60ce8b fixed the Neu starten case, not the fixture assert); their markers are removed too, so 4 findings carry it (470, 584, 599, 859). Built in 0e296ac14.
 
 861\. Doc agent and Linux builder (2026-11-11): the /tmp tmpfs (47G) filled up (ENOSPC); no Bash call of either agent
 started, and the 859 push suite crashed in `commit-export.mjs` (symlink into `/tmp/push-suite-<sha>-*/node_modules`)
