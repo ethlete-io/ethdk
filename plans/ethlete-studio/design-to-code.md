@@ -3864,3 +3864,18 @@ was marked ready and shown for a pick while its whole point (the font) was not v
 (doc agent, tool internal): sketch check and the ready gate fail when a declared `@font-face` family does not load in the
 frame (`document.fonts` status "error", or `document.fonts.check` false after load), naming family and url. Bite: the
 B490 sketch as it is fails the check.
+
+848 as built (Linux builder, 2026-11-11, this commit: fix(repo): Show the font pairs large in the font-pair sketch):
+the suspect was wrong. Measured on :4402 in Chromium and WebKit: every variant fetches its own two woff2 (200, from
+`<variant>/assets/fonts`), both families reach status "loaded", and the computed `--font-ui` differs per variant; the
+server shots of a, b and c differ in every glyph region. The cause was the drawing: the only font samples were
+"Aa 0123 {}" and "Pick variant" at 10-17px, which Studio shows at 49 % fit zoom, and three close neo-grotesques (c is
+the Linux `system-ui` font of the Aktuell column) do not tell apart at 5-8px. Fix: a specimen at 4rem (UI) and 3rem
+(code) with telling glyphs (`Rag Qty 1Il 0O ß`, `0O 1lI {} => !=`) heads the sheet in all three variants; the Studio
+sketch view now shows it legibly at fit zoom. Sketch check could not catch it: the FONT-FACE rule
+(`libs/cli/src/lib/design/system/font-faces.ts`) already fails a face that does not load, and here all load, so the
+proposed tool fix is built and its bite ("the sketch as it is fails") does not hold. Do not add the
+`document.fonts.check` criterion: in Chromium the product stylesheet and the token sheet both carry each `@font-face`,
+so `document.fonts` holds a second "unloaded" copy of every family and `check()` answers false although the text draws
+in the loaded font. The open gap is visual: no check says that variants of a sketch look alike at the zoom Studio
+shows them.

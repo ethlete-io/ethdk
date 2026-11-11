@@ -17,6 +17,11 @@ const sampleOf = (name: string) => {
   return html`<span style="font-size: var(--${name}); line-height: var(--${name}-line)">Pick variant</span>`;
 };
 
+const specimen = html`<div class="ty-specimen">
+  <span class="ty-specimen-ui">Rag Qty 1Il 0O ß &amp; @ · Pick variant</span>
+  <span class="ty-specimen-code">0O 1lI {} =&gt; != ; const merge = 42;</span>
+</div>`;
+
 const typeSample = (step: string) =>
   html`<div class="ty-step">
     <span class="ts-name">--text-${step}</span
@@ -39,7 +44,7 @@ export default definePart({
     tokenSheet({
       title: 'Type scale',
       css: tokens,
-      sample: steps.map(typeSample).join(''),
+      sample: specimen + steps.map(typeSample).join(''),
       sampleClass: 'ty-stack',
       sampleOf,
       pixels: true,
@@ -48,6 +53,9 @@ export default definePart({
         .ty-step { display: grid; grid-template-columns: 120px 300px 1fr; align-items: center; gap: var(--space-3); }
         .ty-step-text { min-width: 0; }
         .ty-line { background: var(--accent-subtle); }
+        .ty-specimen { display: flex; flex-direction: column; gap: var(--space-2); padding-bottom: var(--space-3); }
+        .ty-specimen-ui { font-family: var(--font-ui); font-size: 4rem; line-height: 4.8rem; }
+        .ty-specimen-code { font-family: var(--font-code); font-size: 3rem; line-height: 3.8rem; }
       `,
     }),
 });

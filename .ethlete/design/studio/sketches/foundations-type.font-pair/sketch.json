@@ -121,12 +121,12 @@
     }
   },
   "readyContent": {
-    "a": "48de6ac5260c850a",
-    "b": "4d9fb92ee95803e7",
-    "c": "f63c40f598229ad5"
+    "a": "262da75229f316b6",
+    "b": "809cbff2e0c3c23f",
+    "c": "b3bc169c0632a833"
   },
   "mergeHold": {
     "reason": "variant a changes scale; variant b changes scale; variant c changes scale",
-    "at": "2026-11-11T08:23:16.185Z"
+    "at": "2026-11-11T13:09:36.079Z"
   }
 }
