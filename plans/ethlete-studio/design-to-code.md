@@ -2192,6 +2192,14 @@ frames against 8 visible cells); the detail now prints "frames gone before their
 because nothing tests the e2e probe helpers and the race never happened locally. Tool fix: a spec for the probe helpers
 with a forced-race fixture page for each outcome.
 
+As built (618 tool fix): `censusCells`, `probeCell`, `drawnIn`, `sketchCells` and `CANVAS` moved unchanged from
+`canvas.e2e.mjs` to `apps/ethlete-studio/e2e/probe-helpers.mjs`. `probe-helpers.spec.mjs` (node --test, Chromium,
+`fixtures/probe-cells.html`) covers a live frame (`drawn`), an empty frame (`blank`, counts as empty) and a frame that
+a MutationObserver removes once the census marks it, so it leaves between the listing and the probe (reported gone,
+its picture shows). `test:tools` now also runs `apps/ethlete-studio/e2e/*.spec.mjs`. Verified: the race case fails with
+the old null-probe behaviour put back by hand and passes restored; spec:stress 4/4 under load 2; the case "a sketch
+scroll never empties a cell that had a picture" passed after the move. Not verified: why the frame left in CI.
+
 620\. Builder (2026-11-09, B445, c88cf6ebd): Merge "the sketch view stays open after the sketch dropped from the
 listing" timed out. Cause (server bug): a request joins a running listing, and `serve.ts` detached running listings on a
 part change but not on a sketch file change, so a request after the merge could get the deleted sketch back. Fix:
