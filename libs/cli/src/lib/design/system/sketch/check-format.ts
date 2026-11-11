@@ -1,7 +1,9 @@
 import { spawnPlain } from '../../../plain-output';
 import { existsSync, readdirSync } from 'fs';
 import { join, resolve } from 'path';
+import { pathToFileURL } from 'url';
 import { binaryOf } from '../../typecheck';
+import { DEFAULT_JSON_STYLE, JsonStyle } from '../prettier-json';
 import { Problem } from '../problem';
 import { sharedDirOf, Sketch, SKETCH_FILE, variantDirOf } from './sketch';
 
@@ -57,14 +59,35 @@ export const formatSketch = (options: { target: string; sketch: Sketch; variants
   spawnPlain([process.execPath, prettier, '--write', '--log-level', 'warn', ...files], { cwd: target });
 };
 
-/** `text` in the checkout's Prettier format for `file`, or `text` unchanged when the checkout has no Prettier. */
-export const formatText = (options: { target: string; file: string; text: string }) => {
-  const { target, file, text } = options;
-  const prettier = binaryOf({ target, pkg: 'prettier', bin: 'prettier' });
+const RESOLVE_CONFIG = `import(process.argv[1])
+  .then((module) => (module.resolveConfig ? module : module.default).resolveConfig(process.argv[2], { editorconfig: true }))
+  .then((config) => process.stdout.write(JSON.stringify(config ?? {})));`;
 
-  if (!prettier) return text;
+const PRETTIER = 'prettier';
 
-  const result = spawnPlain([process.execPath, prettier, '--stdin-filepath', file], { cwd: target, input: text });
+const jsonStyles = new Map<string, JsonStyle | null>();
 
-  return result.status === 0 ? result.stdout : text;
+/**
+ * The Prettier options of the checkout that shape a `.json` file in `dir`, or `null` when the checkout has no
+ * Prettier. Spawns one process per folder and run, so a writer of many files formats them in-process.
+ */
+export const jsonStyleOf = (options: { target: string; dir: string }): JsonStyle | null => {
+  const { target, dir } = options;
+  const known = jsonStyles.get(dir);
+
+  if (known !== undefined) return known;
+
+  const prettier = binaryOf({ target, pkg: PRETTIER, bin: PRETTIER });
+  const entry = prettier ? require.resolve(PRETTIER, { paths: [target, __dirname] }) : null;
+  const result = entry
+    ? spawnPlain([process.execPath, '-e', RESOLVE_CONFIG, pathToFileURL(entry).href, join(dir, 'x.json')], {
+        cwd: target,
+      })
+    : null;
+  const config = result?.status === 0 ? (JSON.parse(result.stdout) as Partial<JsonStyle>) : null;
+  const style = config ? { ...DEFAULT_JSON_STYLE, ...config } : null;
+
+  jsonStyles.set(dir, style);
+
+  return style;
 };

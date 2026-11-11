@@ -9,7 +9,28 @@ export const SLOT_REF = 'refs/push-slot/next';
 const SEEN_REF = 'refs/push-slot-seen/next';
 export const SLOT_TTL_MS = 60 * 60_000;
 
+export const NETWORK_TIMEOUT_MS = 30_000;
+const SSH_COMMAND = 'ssh -o ConnectTimeout=10 -o ServerAliveInterval=5 -o ServerAliveCountMax=3';
+
 const git = (cwd, ...args) => spawnSync('git', args, { cwd, encoding: 'utf8' });
+
+/** The environment of a network git call: a default `GIT_SSH_COMMAND` that gives up on a dead link, unless one is set. */
+export const remoteEnv = (env = process.env) =>
+  env['GIT_SSH_COMMAND'] || env['GIT_SSH'] ? env : { ...env, GIT_SSH_COMMAND: SSH_COMMAND };
+
+const remoteGit = (cwd, timeoutMs, ...args) => {
+  const result = spawnSync('git', args, {
+    cwd,
+    encoding: 'utf8',
+    env: remoteEnv(),
+    timeout: timeoutMs,
+    killSignal: 'SIGKILL',
+  });
+  if (result.error?.code === 'ETIMEDOUT') {
+    return { status: null, stderr: `git ${args[0]} timed out after ${timeoutMs / 1000} s` };
+  }
+  return result;
+};
 
 /** The builder name a slot is held under: `ETHLETE_BUILDER`, else the host name. */
 export const builderName = (env = process.env) => env['ETHLETE_BUILDER'] || hostname();
@@ -25,8 +46,8 @@ export const parseSlotMessage = (message) => {
   return holder && sha && !Number.isNaN(expires) ? { holder, sha, expires } : undefined;
 };
 
-const lsRemote = (cwd, remote, ref) => {
-  const listed = git(cwd, 'ls-remote', remote, ref);
+const lsRemote = (cwd, remote, ref, timeoutMs) => {
+  const listed = remoteGit(cwd, timeoutMs, 'ls-remote', remote, ref);
   if (listed.status !== 0) return { error: listed.stderr.trim() };
   return { sha: listed.stdout.split('\t')[0] || undefined };
 };
@@ -34,13 +55,13 @@ const lsRemote = (cwd, remote, ref) => {
 const isPushed = (cwd, slotSha, nextSha) =>
   !!nextSha && (slotSha === nextSha || git(cwd, 'merge-base', '--is-ancestor', slotSha, nextSha).status === 0);
 
-export const readSlot = ({ cwd, remote = 'origin', branch = 'next' }) => {
-  const listed = lsRemote(cwd, remote, SLOT_REF);
+export const readSlot = ({ cwd, remote = 'origin', branch = 'next', timeoutMs = NETWORK_TIMEOUT_MS }) => {
+  const listed = lsRemote(cwd, remote, SLOT_REF, timeoutMs);
   if (listed.error) return { error: listed.error };
-  const next = lsRemote(cwd, remote, `refs/heads/${branch}`);
+  const next = lsRemote(cwd, remote, `refs/heads/${branch}`, timeoutMs);
   if (next.error) return { error: next.error };
   if (!listed.sha) return { observed: '', nextSha: next.sha };
-  const fetched = git(cwd, 'fetch', '-q', '--no-write-fetch-head', remote, `+${SLOT_REF}:${SEEN_REF}`);
+  const fetched = remoteGit(cwd, timeoutMs, 'fetch', '-q', '--no-write-fetch-head', remote, `+${SLOT_REF}:${SEEN_REF}`);
   if (fetched.status !== 0) return { error: fetched.stderr.trim() };
   const observed = git(cwd, 'rev-parse', SEEN_REF).stdout.trim();
   const slot = parseSlotMessage(git(cwd, 'log', '-1', '--format=%B', observed).stdout);
@@ -63,7 +84,16 @@ const noteReleased = (read, now, log) => {
 };
 
 const writeSlot = (cwd, remote, observed, target) =>
-  git(cwd, 'push', '-q', '--no-verify', `--force-with-lease=${SLOT_REF}:${observed}`, remote, `${target}:${SLOT_REF}`);
+  remoteGit(
+    cwd,
+    NETWORK_TIMEOUT_MS,
+    'push',
+    '-q',
+    '--no-verify',
+    `--force-with-lease=${SLOT_REF}:${observed}`,
+    remote,
+    `${target}:${SLOT_REF}`,
+  );
 
 /**
  * Claims the push slot of `next` on `remote` for `holder` and `sha` until `now + ttlMs`. A live slot of another holder
@@ -101,6 +131,7 @@ export const claimSlot = (
   });
   if (commit.status !== 0) return { ok: false, reason: commit.stderr.trim() };
   const pushed = writeSlot(cwd, remote, read.observed, commit.stdout.trim());
+  if (pushed.status === null) return { ok: false, reason: `slot unreadable: ${pushed.stderr}` };
   if (pushed.status !== 0) return { ok: false, reason: 'another claim won the race', lost: true };
   return { ok: true, slot };
 };
@@ -110,8 +141,9 @@ export const releaseSlot = ({ cwd, holder = builderName(), remote = 'origin', br
   if (read.error) return { ok: false, reason: `slot unreadable: ${read.error}` };
   if (!read.observed) return { ok: true };
   if (read.slot && read.slot.holder !== holder) return { ok: false, slot: read.slot };
-  const deleted = git(
+  const deleted = remoteGit(
     cwd,
+    NETWORK_TIMEOUT_MS,
     'push',
     '-q',
     '--no-verify',
@@ -139,8 +171,10 @@ export const checkSlot = ({
   now = Date.now(),
   log = console.error,
   hasVerdict = (sha) => hasOkVerdict(cwd, sha),
+  remote = 'origin',
+  timeoutMs = NETWORK_TIMEOUT_MS,
 }) => {
-  const read = readSlot({ cwd });
+  const read = readSlot({ cwd, remote, timeoutMs });
   if (read.error) {
     log(`pre-push: push slot not readable, pushing anyway: ${read.error}`);
     return 0;

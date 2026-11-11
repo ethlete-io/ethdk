@@ -20,7 +20,7 @@ test('a throttled busy loop gets about its share of the wall time', async () => 
   const free = Number(execFileSync(process.execPath, ['-e', busy], { encoding: 'utf8' }));
   const script = fileURLToPath(new URL('./cpu-throttle.mjs', import.meta.url));
   const throttled = Number(
-    execFileSync(process.execPath, [script, '25', '--', process.execPath, '-e', busy], { encoding: 'utf8' }),
+    execFileSync(process.execPath, [script, '10', '--', process.execPath, '-e', busy], { encoding: 'utf8' }),
   );
 
   assert.ok(throttled < free * 0.5, `throttled ${throttled} vs free ${free}`);

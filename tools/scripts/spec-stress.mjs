@@ -3,14 +3,16 @@ import { existsSync } from 'node:fs';
 import { cpus } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { holderLine, takeHeavyLock } from './heavy-run-lock.mjs';
 
 const ROOT_MARKERS = ['project.json', 'vitest.config.mts', 'vitest.config.ts', 'vite.config.mts', 'vite.config.ts'];
 
 export const parseArgs = (argv) => {
-  const options = { specs: [], runs: 8, load: 0, slow: 0, jobs: 0, github: false };
+  const options = { specs: [], runs: 8, load: 0, slow: 0, jobs: 0, github: false, wait: true };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--github') options.github = true;
+    else if (arg === '--no-wait') options.wait = false;
     else if (arg === '--jobs') {
       const value = Number(argv[++i]);
       if (!Number.isInteger(value) || value < 1) throw new Error('--jobs needs an integer above 0');
@@ -133,6 +135,11 @@ const main = async () => {
   const repo = process.cwd();
   if (options.slow && spawnSync('systemd-run', ['--user', '--scope', '--quiet', 'true']).status !== 0) {
     console.error('--slow needs systemd-run --user (a Linux user session with systemd)');
+    process.exit(2);
+  }
+  const lock = await takeHeavyLock('spec:stress', { wait: options.wait });
+  if (!lock.ok) {
+    console.error(`spec:stress: ${holderLine(lock.holder)}; run again after it ends`);
     process.exit(2);
   }
   const hogs = burn(options.load || (options.slow ? 0 : cpus().length));

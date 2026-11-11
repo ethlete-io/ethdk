@@ -3525,6 +3525,13 @@ not run (throttle 50/35/20/10 %, 20 burners at load 34). Cause (measured): a who
 before it starves the page. Lesson: `QUOTA_PERCENT_DARWIN` suits specs only, never e2e. Tool fix (Mac, in progress): a
 renderer-only `--cpu-rate` flag (CDP `setCPUThrottlingRate`) in canvas.e2e.mjs reproduces a load-sensitive case.
 
+As built (735 Mac calibration, archived finding): the 719 case "keeps at most six near cells live" in
+`sketch-view.component.spec.ts`, under `cpu-throttle.mjs <p> -- npx vitest run --root apps/ethlete-studio --maxWorkers=1`,
+one run each, 1-minute load 2.3-5.6 on 6 cores: p 100 passes in 235 ms, p 20 passes in 1440 ms, p 10 fails at 3187 ms
+(the slow-case guard, 5000 ms timeout), p 5 fails at 7379 ms. Linux fails it at 1.7-2.7 s under CPUQuota=20%, so the
+Mac p 10 matches the Linux p 20: `QUOTA_PERCENT_DARWIN` is now 10. Not verified: a second run per p on a quieter
+machine; a new changed spec under the quota step.
+
 776\. Mac builder (2026-11-11, night, 769 3483c7fcd): the fixed e2e case no longer passes through a live frame iframe,
 so no case covers a keyboard user inside a live frame. Suspect (injected, not seen live): when the app remounts the
 frame iframe (address change, or `LIVE_GRACE_MS` drops an off-view frame after 5 s), focus falls out of it, and
@@ -3552,6 +3559,14 @@ internal, the builder's recommendation): no tool fix for one case; a second case
 at the same time. Lesson: two heavy runners on one machine make a red gate that says nothing about the code. Decided by
 the doc agent (tool internal): push:suite and spec:stress take one local heavy-run lock per machine; the second waits or
 stops with the holder's name; a spec bites with two runners. Night backlog, Mac, after the 777 Mac verify.
+
+As built (786, Mac builder): `tools/scripts/heavy-run-lock.mjs` holds one lock file per machine
+(`<tmpdir>/ethlete-heavy-run.lock`: pid, name, start). `push:suite` takes it first (before the push slot) and waits
+for it; `spec:stress` waits too, or stops at once with `--no-wait` and the holder line (exit 2). A dead holder's lock
+is taken over; a child of a holder (env `ETHLETE_HEAVY_RUN_HELD`) takes none. The lock ends with the suite (ok or
+blocked) and on process exit. Specs: `heavy-run-lock.spec.mjs`, two real runner processes; the second stops with
+`heavy run lock held by push-suite (pid ...)`. Bite: without the holder check it fails. Not verified: a live
+push:suite next to a spec:stress; a subagent run in another checkout of the same machine (same tmpdir, so covered).
 
 As built (B438, ADR 0229, commit `perf(cli): Draw the fresh compare pair only after a cached first pair`): the
 shooter's `pictureOf` now returns the picture with its `source` (`drawn`, `memory` or `disk`, from `onSource`), and
@@ -3719,6 +3734,11 @@ committed with a `source:` that cites them; first step a read-only report of fin
 day, so the doc agent checks each against the ADR index. Also in b05de1e05: the top-process list uses `ps` CPU, the
 lifetime average of a process, so a long-lived idle process can top the list. Decided (tool internal): sample CPU twice
 over about 1 s and rank by the delta. Bite: an idle process with a high lifetime average does not appear.
+793 (a), as built (Mac builder, 2026-11-11): `run-load.mjs` samples `ps -A -o pid=,time=` twice 1 s apart on darwin
+(`psTicksOf`, hundredths of a second) and ranks by the delta through the same `cpuDeltaOf` as Linux; a process that did not
+run is left out. Spec fixture: lines of a captured real Mac `ps` run. Verified: `node --test run-load.spec.mjs` 8/8; live
+on the Mac `processList()` gives 9 rows without pid 1 (launchd, 192 min lifetime, idle), the old code gave 721 rows with
+it. Not verified: the day prefix `1-02:03:04.50` comes from the BSD ps format, not from a captured run.
 664, answered by ADR 0240 (2026-11-09): the goal counts on the desk PC.
 ADR 0240 goal line, as built (Linux builder, 2026-11-11): a full e2e run (no `--case`, `--page`, `--view`, `--shard`, `--perf`, held listings or delays) prints a goal line after the load line: `goal: <s> on <host>, within|over the 90 s goal` on the goal machine (`GOAL_MACHINE` = `tank`, the desk PC; `STUDIO_E2E_GOAL_MACHINE` overrides), `... noisy, not a measurement of the 90 s goal` when the load is above the cores, and `goal: <s> on <host>, reported only (the 90 s goal counts on tank)` on any other machine. The line reports; it fails no run. Verified: `run-load.spec.mjs` (the goal test fails with the within/over check reversed); a live full run on tank: `132/132 passed in 117.7s on 8 worker(s)`, `goal: 118 s on tank, over the 90 s goal`. Not verified: the Mac line (its next push-suite shows it).
 
@@ -3912,6 +3932,25 @@ HEAD export with the fixed spec, the case passes with `ETHLETE_REPO_ROOT` and fa
 needs a git repo now fails in `yarn test:tools` itself. Bite: with `toolsStepEnv` returning `{}`, the case fails and
 names the e2e-check case. Cost: about 4 s more per `yarn test:tools`. Not covered: the other steps (lint, typecheck, cli,
 studio, e2e) in an export; they are too slow for a spec and ran green in the export before 802.
+804\. Mac builder (2026-11-11, night, push:suite of bae08fb64): `serve.spec.ts` "keeps answering other requests while it
+checks two hundred sketches" took 75 s on the Mac (timeout 60 s) and blocked the push. Cause (bite): eea6f5c7e (788)
+formats each variant `tsconfig.json` with one Prettier process in `writeEditorTsconfig`, so each run spawns one process
+per sketch and variant; with the format stubbed the case took 9.0 s. Why no tool caught it: a per-item spawn passed on
+the fast Linux box, and no spec counted spawns. Lesson: a writer of many files spawns no process per file. Decided by
+the doc agent: the Mac builder builds it, no spawn per file, no timeout raise.
+
+804 as built (Mac builder, 2026-11-11, night, 1a6d924b1): `prettierJsonOf` (`system/prettier-json.ts`) writes JSON in
+the form Prettier writes for a `.json` file (objects one key per line, a scalar array on one line when it fits the print
+width). `jsonStyleOf` (`sketch/check-format.ts`) reads `printWidth`, `tabWidth` and `useTabs` of the checkout's Prettier
+config with one process per product folder and process; `formatText` is gone. A checkout without Prettier keeps the
+plain `JSON.stringify` text. Specs: `system-tsconfig.spec.ts` counts the `child_process` calls of `writeEditorTsconfig`
+over three sketches with two variants: at most 1, then 0 (the old writer: 9); `prettier-json.spec.ts` compares the
+output with the repo Prettier at, one under and one over the print width (it fails at a width of 119). Verified: the 788
+FORMAT case passes in a temp checkout with the Prettier default width 80; the serve case takes 18.4 s under load 24;
+`vitest related` 129 files pass; lint and typecheck of cli. Not verified: a resident server keeps the style of its first
+call, so a changed Prettier config takes effect after a restart; a config with `overrides` per sketch folder is read for
+the product folder only.
+
 805\. Linux builder (2026-11-11 morning): after a successful push of `next`, the push slot (`refs/push-slot/next`) stayed held until its 1 h expiry. `push:suite` claims it and keeps it on `ok`, pre-push only checks it, nothing released it, so the Mac builder was blocked for up to an hour.
 805 as built: `yarn push` (`tools/scripts/push-next.mjs`, `pushNext`; no yarn builtin of that name) refuses without a push-suite ok verdict for HEAD, runs `git push origin <sha>:next` with inherited stdio (pre-push runs), then releases the slot; on a failed push it keeps the slot and exits non-zero. `hasOkVerdict` is now exported from `push-slot.mjs`. `slotState` already treated a slot whose sha `origin/next` contains as free; claim, `check` and `status` now also print `push slot of <holder> for <sha12> treated as released: origin/next contains it`. The builder-agent skill names `yarn push`. Bites (each fails the named case): no release call, no verdict check, no released line, `pushed` ignored in `slotState` (the claim over a pushed slot is blocked). Verified: `node --test` on `push-slot.spec.mjs` and `push-next.spec.mjs` (fake bare origin). Not verified: a real `yarn push` through the pre-push hook against the real origin.
 806\. Linux builder (2026-11-11, 653 live proof): `yarn studio:e2e:bite --revert 1b41de840 --case sketches` printed "the e2e fails on HEAD with 1b41de840 reverted: the new case bites" and exited 0, but the `--case` matched no case: the e2e exited 1 for the no-match refusal, the same code as a failed case, and `biteVerdict` read every non-zero exit as a bite. A typo in a case name gave a false bite proof. Why no tool caught it: the bite spec covered only exits 0 and 1, and the no-match exit was chosen to fail a run, not to be told apart from a failure.

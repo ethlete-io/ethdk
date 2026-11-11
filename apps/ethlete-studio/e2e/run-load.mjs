@@ -87,13 +87,32 @@ const procTicks = () =>
       }),
   );
 
+/** Parses `ps -A -o pid=,time=` output into the CPU time of each process in hundredths of a second. */
+export const psTicksOf = (output) =>
+  new Map(
+    output
+      .split('\n')
+      .map((line) => line.trim().match(/^(\d+)\s+(?:(\d+)-)?(?:(\d+):)?(\d+):(\d+)\.(\d+)$/))
+      .filter(Boolean)
+      .map(([, pid, days = '0', hours = '0', minutes, seconds, fraction]) => [
+        Number(pid),
+        ((Number(days) * 24 + Number(hours)) * 60 + Number(minutes)) * 6000 +
+          Number(seconds) * 100 +
+          Number(fraction.padEnd(2, '0').slice(0, 2)),
+      ]),
+  );
+
+const psTicks = () => psTicksOf(execFileSync('ps', ['-A', '-o', 'pid=,time='], { encoding: 'utf8' }));
+
 const sampledCpu = () => {
+  const ticks = process.platform === 'darwin' ? psTicks : procTicks;
+
   try {
-    const before = procTicks();
+    const before = ticks();
 
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, SAMPLE_MS);
 
-    return cpuDeltaOf({ before, after: procTicks(), seconds: SAMPLE_MS / 1000 });
+    return cpuDeltaOf({ before, after: ticks(), seconds: SAMPLE_MS / 1000 });
   } catch {
     return null;
   }
@@ -111,7 +130,8 @@ const parentOf = (pid) => {
 
 /**
  * Every process with its pid, parent pid, CPU share, short `command`, full `args` and checkout (`cwd`, null when unknown); empty when `ps`
- * fails. On Linux the CPU share is measured over one second; elsewhere it is the `ps` average over the life of the process.
+ * fails. On Linux and macOS the CPU share is measured over one second and a process that did not run is left out; elsewhere
+ * it is the `ps` average over the life of the process.
  */
 export const processList = () => {
   try {
