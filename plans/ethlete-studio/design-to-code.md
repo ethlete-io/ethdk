@@ -3953,7 +3953,17 @@ scratch checkout run of `sketch check --product studio-lab`.
 findings, so a sketch with open check findings reached git. Suspect: none yet; the cause is the question, which gate
 should have refused it (pre-commit, `sketch check` before ready, or the merge). Decided by the doc agent: the builder
 names the cause first (night backlog, Linux, after 788, read only); the gate fix is tool work, the sketch fix itself
-waits for the day order (no sketch work at night, ADR 0257).
+waits for the day order (no sketch work at night, ADR 0257). Cause (read in git): the rule came after the sketch. `rating.css` in all 3
+variants last changed 2026-10-27 (fb8c7a0a5, 793d9381b, 95a6b82e7); UTILITY-CSS landed 2026-10-30 (80d70d9eb); later
+commits touched only `sketch.json`. No gate let a refused file through; nothing re-checks committed sketches when a rule
+lands. Decided by the doc agent (applies ADR 0226: no design check in a git hook or CI, so the builder's
+recommendation of a rule-commit gate is out): (a) a change that adds or tightens a static design rule runs that rule
+over every committed sketch and part of every product before its commit and fixes or exempts the findings in the same
+change (builder-agent skill rule, not a hook); (b) the builder finds out whether Studio shows a static finding on an
+existing ready sketch live when the designer opens it; if not, that is the tool fix (night backlog, Linux, after 790).
+Side fact: the sketch is ready with decision "pick c" since 2026-11-01 and is still not merged, although a picked sketch
+is merged by the builder. Day order: merge pick c with the UTILITY-CSS fix; a ready sketch with a pick that waits more
+than a day is its own Studio signal (Suspect: Studio shows no such age; the builder checks).
 
 B438 measured (ADR 0229, before 0173ca7a8 vs after 789031753, cold, alternating): studio-lab scratch, 3 sketches, 82
 frames: wall 16 s in all 4 runs, compare phase 3.91/3.96 s before vs 3.29/3.30 s after; sdk scratch, 1 sketch: wall
