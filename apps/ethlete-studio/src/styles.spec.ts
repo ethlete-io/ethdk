@@ -40,7 +40,9 @@ describe('styles.css', () => {
   it('exposes the renamed font and radius tokens without shadowing Tailwind defaults', () => {
     const css = compileStyles();
 
-    expect(css).toMatch(/@layer studio-tokens\s*{[\s\S]*--font-ui: system-ui[\s\S]*--radius-control-md: 0\.6rem/);
+    expect(css).toMatch(
+      /@layer studio-tokens\s*{[\s\S]*--font-ui: 'Noto Sans', system-ui[\s\S]*--radius-control-md: 0\.6rem/,
+    );
     expect(css).not.toMatch(/--radius-md: 0\.6rem/);
     expect(css).not.toMatch(/--radius-control-md: var\(--radius-control-md\)/);
     expect(css).not.toMatch(/--font-ui: var\(--font-ui\)/);
