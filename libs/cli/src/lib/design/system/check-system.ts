@@ -90,7 +90,7 @@ import { repoInvocation } from '../../invocation';
 import { leftoverGateFilesWarningOf } from './leftover-gate-files';
 import { uncommittedDecisionsWarningOf } from './uncommitted-decisions';
 import { timedPhase } from '../phase-timing';
-import { WarmDraw } from '../warm-draw';
+import { createRunDraw, WarmDraw } from '../warm-draw';
 
 const RULES = [
   importProblemsOf,
@@ -1006,6 +1006,18 @@ const checkProductTail = async (
  * the exit code.
  */
 export const checkSystemRendered = async (options: CheckOptions) => {
+  const run = options.warm
+    ? { warm: { ...options.warm, perRun: true }, close: async () => undefined }
+    : createRunDraw(options.target, { chromiumOf: options.chromiumOf });
+
+  try {
+    return await checkSystemRenderedOn({ ...options, warm: run.warm });
+  } finally {
+    await run.close();
+  }
+};
+
+const checkSystemRenderedOn = async (options: CheckOptions & { warm: WarmDraw }) => {
   const tally: Tally = new Map();
   const counted = { ...options, tally };
 

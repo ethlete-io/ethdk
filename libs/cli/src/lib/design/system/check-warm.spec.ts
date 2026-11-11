@@ -12,6 +12,7 @@ const spies = vi.hoisted(() => ({
   bespoke: vi.fn(async () => []),
   dropped: vi.fn(async () => []),
   actionLost: vi.fn(async () => []),
+  render: vi.fn(async () => ({ unavailable: 'no Chromium in this spec' })),
 }));
 
 vi.mock('../serve', async (actual) => ({
@@ -21,6 +22,10 @@ vi.mock('../serve', async (actual) => ({
 vi.mock('../thumb', async (actual) => ({
   ...(await actual<typeof import('../thumb')>()),
   createDrawQueue: spies.createDrawQueue,
+}));
+vi.mock('./render-check', async (actual) => ({
+  ...(await actual<typeof import('./render-check')>()),
+  renderIssuesOf: spies.render,
 }));
 vi.mock('./bespoke-controls', () => ({ bespokeControlProblemsOf: spies.bespoke }));
 vi.mock('./dropped-props', async (actual) => ({
@@ -40,27 +45,46 @@ const acme = () => {
   return target;
 };
 
+const drawsOf = () =>
+  [spies.render, spies.bespoke, spies.dropped, spies.actionLost].map(
+    (step) => (step.mock.calls.at(-1) as unknown as [{ warm?: WarmDraw }] | undefined)?.[0].warm,
+  );
+
+const checked = async (warm?: WarmDraw) => {
+  vi.stubEnv('CI', '1');
+  vi.spyOn(console, 'log').mockImplementation(() => undefined);
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  Object.values(spies).forEach((spy) => spy.mockClear());
+
+  const target = acme();
+
+  await checkSystemRendered({
+    target,
+    config: readConfig(target) ?? {},
+    products: ['acme'],
+    chromiumOf: async () => null,
+    warm,
+  });
+
+  return drawsOf();
+};
+
 describe('design check on a warm draw', () => {
-  it('hands the warm draw to every drawing step and starts no design server or Chromium of its own', async () => {
-    vi.stubEnv('CI', '1');
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-
-    const target = acme();
+  it('hands one per-run draw of the warm process to every drawing step and starts no design server or Chromium of its own', async () => {
     const warm: WarmDraw = { server: vi.fn(), queue: vi.fn() };
+    const draws = await checked(warm);
 
-    await checkSystemRendered({
-      target,
-      config: readConfig(target) ?? {},
-      products: ['acme'],
-      chromiumOf: async () => null,
-      warm,
-    });
-
-    for (const step of [spies.bespoke, spies.dropped, spies.actionLost])
-      expect(step).toHaveBeenCalledWith(expect.objectContaining({ warm }));
+    expect(new Set(draws).size).toBe(1);
+    expect(draws[0]).toMatchObject({ server: warm.server, queue: warm.queue, perRun: true });
     expect(spies.createDesignServer).not.toHaveBeenCalled();
     expect(spies.createDrawQueue).not.toHaveBeenCalled();
+  });
+
+  it('shares one per-run draw between the drawing steps without a warm process', async () => {
+    const draws = await checked();
+
+    expect(new Set(draws).size).toBe(1);
+    expect(draws[0]?.perRun).toBe(true);
   });
 });
