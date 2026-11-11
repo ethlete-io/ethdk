@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { listingHold } from '../../../tools/scripts/studio-e2e-listing-hold.mjs';
 import { ensureCli, withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 import { CANVAS, sketchCells } from './probe-helpers.mjs';
+import { noMatchLineOf } from './case-filter.mjs';
 import { runLoadLineOf } from './run-load.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -3482,6 +3483,19 @@ const lead = async () => {
     ),
   );
   const matched = queue.length;
+
+  if (!matched && (only || pageGroups)) {
+    console.error(
+      only
+        ? noMatchLineOf({ flag: '--case', only, names: CASES.map((testCase) => testCase.name) })
+        : noMatchLineOf({
+            flag: '--page',
+            only: pageGroups.join('|'),
+            names: PAGES.map((page) => page.label ?? page.name),
+          }),
+    );
+    process.exit(1);
+  }
   const skippedPerf = perfOnly ? 0 : CASES.filter((testCase) => testCase.perf).length;
 
   if (shard) {
