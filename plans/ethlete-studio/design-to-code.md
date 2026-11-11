@@ -3827,7 +3827,9 @@ re-applied 3/3 green, listing (`fixtures` phase) 36.5-40.2 s (median 38.6 s); HE
 34.5 s). The warm-up costs about 4 s here, far from 60 s, so this machine under the recipe does not reproduce the CI
 timeout; the listing itself takes over half the limit under load with or without it. The bite of the lock rule ran in
 the wild: the main push-suite hold run on 436fee399 failed 12 cases "no frame after 10 s" at load 9-14 while a bite
-load of this slice ran (coordinator: outside the lock); the same case alone passed 6/6. Not verified: the new fixture error text
+load of this slice ran; the same case alone passed 6/6. Suspect: the load outside the lock was two `nx` builds of
+cli, components and core in the scratch copies (they ended at about 13:29 local), not the busy loops, which took the
+lock first (847). Not verified: the new fixture error text
 on a real timeout, the step inside a full push-suite run (only its pieces), a CI-like failure of any kind.
 
 844\. Linux builder (2026-11-11, revert of 832): the revert deleted `.changeset/832-warm-sketch-problems.md`, and
@@ -3841,3 +3843,15 @@ Suspect (not probed). A check must never change a sketch's status: a ready sketc
 read-only command, and the human's pick (by merge) would have met a sketch that is no longer ready. Tool fix (doc
 agent, tool internal): find which step of `sketch check` writes `sketch.json`; `sketch check` writes nothing there (or
 only through an explicit flag). Bite: `sketch check` on a ready sketch leaves `sketch.json` byte-equal.
+
+846\. Linux builder (2026-11-11, from the 843 bite): under the CI-like recipe (`tools/scripts/ci-like-load.mjs`: 2
+workers, 4 cores, 12 busy loops) the first `/__design/sketches?product=studio` listing of the e2e fixture check takes
+33-43 s, more than half of its 60 s limit, with or without the 832 warm-up. Suspect: this is the margin that the CI
+runners lost in 829 and 843. Tool fix (grill decision): profile the first listing under the recipe and cut it. Target:
+under 15 s under the recipe. Bite: a timing check under the recipe that fails on today's 33-43 s. Build before 837.
+
+847\. Linux builder (2026-11-11, 843 bite): heavy work in a scratch copy (`nx` builds of cli, components and core) ran
+outside the heavy run lock while the main push suite ran its hold pass, which then failed 12 cases at load 9-14.
+Suspect: those builds. Tool fix (builder pick, tool internal): heavy work in a scratch copy takes the heavy run lock
+too, for example through `yarn scratch:checkout` builds or a wrapper that the briefs name. Bite: a build in a scratch
+copy started while the lock is held waits or refuses.
