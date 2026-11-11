@@ -3605,3 +3605,9 @@ respawn, which widens the exit window; other preceding cases lose the race only 
 cases together (`-t "answers the background work dialog|stores the command of run without the prompt"`) fail 5 of 5
 without the fix and pass 3 of 3 with it; the full file failed 3 of 4 runs before and passed twice after. Not verified:
 CI.
+
+773\. Mac builder (2026-11-11, night, 769 side finding): the darwin cpu-throttle (735) and plain CPU burners cannot
+reproduce an e2e case: both stall the design server, the sketch-fixture listing times out after 60 s, and the case does
+not run (throttle 50/35/20/10 %, 20 burners at load 34). Cause (measured): a whole-machine slowdown starves the server
+before it starves the page. Lesson: `QUOTA_PERCENT_DARWIN` suits specs only, never e2e. Tool fix (Mac, in progress): a
+renderer-only `--cpu-rate` flag (CDP `setCPUThrottlingRate`) in canvas.e2e.mjs reproduces a load-sensitive case.
