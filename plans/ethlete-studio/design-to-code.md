@@ -3745,3 +3745,10 @@ start or a part edit waits that long. Tool fix (doc agent, tool internal): make 
 run reads all 91 studio part sources (830), so find what the rule check needs per variant and profile the run before a
 change. Target: a run under 1 s on studio. If that fails, sending the sketch problems later (830 option b) changes what
 the human sees and goes to the human as a question.
+
+839\. Doc agent (2026-11-11, Mac builder self-restart): `agent-sessions restart` gave up after 1800 s (restart.log
+12:08Z) because it read the busy line "general-purpose Waiting for cli build log 14m 59s"; the same timer still showed
+30+ min later, so the subagents were frozen and the restart waited on a line that never changes. Suspect: the busy check
+cannot tell a running subagent from a frozen one. Tool fix (doc agent, tool internal): restart reads the subagent timers
+twice; a timer that does not advance for 10 min counts as frozen, and restart names the frozen agent in its log and the
+mailbox at once instead of waiting out 1800 s. Bite: a pane fixture with a fixed timer reports frozen within the check.
