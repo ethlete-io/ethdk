@@ -3737,6 +3737,11 @@ scratch repo before it is sent. Decided by the doc agent (tool internal): a `yar
 out, commits the removal by path, puts the file back and checks the hash; the git-commit skill names it. Bite: after
 `yarn untrack x`, `git ls-files x` is empty and `x` is byte-identical. Tool backlog, Linux, small, after 793. Effect on
 other clones: a pull deletes their tracked `pictures.json`; the Mac must know before it pulls.
+795 as built: `yarn untrack -m "<message>" <paths>` (`tools/scripts/untrack.mjs`) refuses an untracked or missing path,
+parks each file in a temp dir, commits the removal by path, puts the file back (also when the commit fails) and checks
+its sha256. The git-commit skill names it. Spec `tools/scripts/untrack.spec.mjs` (4 cases, temp repos). Bite: with the
+`git rm --cached` recipe in place of the park step, the removal case and the failed-commit case fail. Not verified: a
+real run in this repo (no file waits for it now; the commit hooks run there).
 
 796\. Linux builder (2026-11-11, night, 652 live bite): `design check --product studio-lab` emptied the tracked
 `.ethlete/design/studio-lab/ready.json` (the `foundations/tokens` check record of 2026-11-08), although the tokens files
