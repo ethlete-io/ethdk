@@ -9,6 +9,7 @@ const LOG_ENV: &str = "ETHLETE_STUDIO_CONSOLE_LOG";
 const SMOKE_VIEW_ENV: &str = "ETHLETE_STUDIO_SMOKE_VIEW";
 const LOG_FILE: &str = "console.log";
 const MAX_LOG_BYTES: u64 = 1024 * 1024;
+const SMOKE_PAINT_TIMEOUT_MS: u32 = 60_000;
 const SMOKE_MARKER: &str = "[studio-release-smoke]";
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
@@ -142,17 +143,22 @@ fn smoke_script(view: &str) -> String {
   console.error('{SMOKE_MARKER} page loaded');
   localStorage.setItem(key, {view});
   let waiting = '';
+  const deadline = Date.now() + {SMOKE_PAINT_TIMEOUT_MS};
   const timer = setInterval(() => {{
     const view = document.querySelector('ethlete-sketch-view');
-    const frames = view ? view.querySelectorAll('iframe[data-state]') : [];
+    const frames = view ? view.querySelectorAll('ethlete-canvas-frame-cell') : [];
     const pictures = view ? view.querySelectorAll('img[data-shot-picture]') : [];
     const painted =
-      [...frames].filter((frame) => !frame.classList.contains('opacity-0')).length +
+      [...frames].filter((frame) => frame.hasAttribute('data-painted')).length +
       [...pictures].filter((picture) => picture.complete && picture.naturalWidth > 0).length;
     if (!painted) {{
       const now = `${{location.pathname}} sketch view ${{view ? 'shown' : 'missing'}}, ${{frames.length}} live frames, ${{pictures.length}} pictures`;
       if (now !== waiting) console.error(`{SMOKE_MARKER} waiting: ${{now}}`);
       waiting = now;
+      if (Date.now() > deadline) {{
+        clearInterval(timer);
+        console.error(`{SMOKE_MARKER} FAILED: nothing painted, ${{now}}`);
+      }}
       return;
     }}
     clearInterval(timer);

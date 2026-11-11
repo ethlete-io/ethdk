@@ -355,7 +355,7 @@ const gutter = (part: SketchPart, top: number) =>
         html`<span
           class="sk-gutter relative z-2 flex items-center self-stretch bg-et-surface-bg pr-space-3 font-code text-(length:--sk-note) leading-[1.35] text-et-surface in-data-sk-head-hidden:text-transparent"
           data-sk-gutter
-          data-et-skip="COVERED"
+          data-et-skip="COVERED OFF-CENTRE"
           style="grid-column: 1; grid-row: ${top + 1 + index * 2} / span 2"
           >${state}</span
         >`,
@@ -474,7 +474,7 @@ const screenGutter = (group: ChangeGroup, line: number, whole: boolean, buttons:
   return html`<div
     class="sk-gutter relative z-2 flex w-[calc(var(--sk-note)*15)] flex-col justify-center gap-space-1 self-stretch bg-et-surface-bg pr-space-3 text-(length:--sk-note) leading-[1.35]"
     data-sk-gutter
-    data-et-skip="COVERED"
+    data-et-skip="COVERED OFF-CENTRE"
     style="grid-column: 1; grid-row: ${line} / span 2"
   >
     <span class="font-code text-et-surface">${first}</span>
@@ -675,23 +675,24 @@ export default definePart<Props>({
         ${showWithdrawn.body ? withAction(showWithdrawn.body, { action: 'emit:withdrawnToggle', on: '.et-switch' }) : ''}
       </div>
       <div
-        class="absolute ${question ? 'top-37' : 'top-27'} right-space-5 bottom-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] overflow-clip [overflow-clip-margin:4px]"
-        data-sk-rows
+        class="absolute ${question ? 'top-37' : 'top-27'} right-0 bottom-space-5 left-0 box-border overflow-clip pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
       >
-        <div
-          class="flex flex-col gap-space-2 pb-16 ${transposed ? 'w-max' : ''}"
-          data-sk-rows-world
-          data-w="${screen ? SCREEN_WIDTH : part.width}"
-          data-cols="${screen ? SCREEN_ROWS.length : transposed ? columns : wrapColumns(part)}"
-        >
-          ${world}
-          ${
-            folded > 0
-              ? html`<section class="sk-same rounded-control-md p-space-2" data-sk-folded>
-                  ${html`<span class="flex items-center gap-space-3"><span class="text-ui-sm text-et-surface-muted">${foldedLabel(folded)}</span>${disclosure({ label: 'Alle Zustände zeigen', body: '', open: false, size: 'xs', action: 'emit:statesToggle' })}</span>`}
-                </section>`
-              : ''
-          }
+        <div class="size-full" data-sk-rows>
+          <div
+            class="flex flex-col gap-space-2 pb-16 ${transposed ? 'w-max' : ''}"
+            data-sk-rows-world
+            data-w="${screen ? SCREEN_WIDTH : part.width}"
+            data-cols="${screen ? SCREEN_ROWS.length : transposed ? columns : wrapColumns(part)}"
+          >
+            ${world}
+            ${
+              folded > 0
+                ? html`<section class="sk-same rounded-control-md p-space-2" data-sk-folded>
+                    ${html`<span class="flex items-center gap-space-3"><span class="text-ui-sm text-et-surface-muted">${foldedLabel(folded)}</span>${disclosure({ label: 'Alle Zustände zeigen', body: '', open: false, size: 'xs', action: 'emit:statesToggle' })}</span>`}
+                  </section>`
+                : ''
+            }
+          </div>
         </div>
       </div>
       ${chip.body}

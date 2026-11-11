@@ -1,18 +1,33 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { FIRST_LISTING_LIMIT_MS, firstListingStep, firstListingVerdict } from './first-listing-time.mjs';
+import { firstListingStep, firstListingVerdict } from './first-listing-time.mjs';
 
-const harness = (measured) => {
+const samples = (...seconds) => seconds.map((s) => ({ ms: s * 1000, listed: 6 }));
+
+const harness = ({ head, base }) => {
   const loops = [];
+  const order = [];
+  const removed = [];
+  const sampler = (name, measured) => {
+    const queue = measured instanceof Error ? measured : [...measured];
+    return async () => {
+      assert.equal(loops.filter((loop) => !loop.stopped).length, 1);
+      order.push(name);
+      if (queue instanceof Error) throw queue;
+      return queue.shift();
+    };
+  };
   return {
     loops,
+    order,
+    removed,
     options: {
       taskset: true,
-      measure: async () => {
-        assert.equal(loops.filter((loop) => !loop.stopped).length, 1);
-        if (measured instanceof Error) throw measured;
-        return measured;
+      measure: sampler('head', head),
+      prepareBase: async () => {
+        if (base instanceof Error && base.message.startsWith('build')) throw base;
+        return { measure: sampler('base', base), remove: () => removed.push(true) };
       },
       busy: async (count) => {
         const loop = { count, stopped: false };
@@ -23,48 +38,80 @@ const harness = (measured) => {
   };
 };
 
-test('a first listing under the limit passes and one at or over it fails', () => {
-  assert.equal(firstListingVerdict({ ms: FIRST_LISTING_LIMIT_MS - 1, listed: 6 }).ok, true);
-  assert.equal(firstListingVerdict({ ms: FIRST_LISTING_LIMIT_MS, listed: 6 }).ok, false);
-  assert.match(firstListingVerdict({ ms: 28_700, listed: 6 }).line, /took 28\.70 s for 6 sketches, limit 15\.00 s/);
+const design = ['libs/cli/src/lib/design/studio-api.ts'];
+
+test('a loaded machine where base and head are both slow passes', async () => {
+  const run = harness({ base: samples(18.52, 16.58, 15.63), head: samples(20.43, 18.28, 15.97) });
+  const result = await firstListingStep(design, run.options);
+
+  assert.equal(result.status, 0);
+  assert.deepEqual(run.order, ['base', 'head', 'base', 'head', 'base', 'head']);
+  assert.match(result.output, /median head 18\.28 s .* vs base 16\.58 s/);
+  assert.match(result.output, /max\(3 s, 20 %\) = 3\.32 s; passed, head and base over the 15\.00 s reference/);
 });
 
-test('a fast listing that answers no sketch fails', () => {
-  const verdict = firstListingVerdict({ ms: 100, listed: 0 });
-
-  assert.equal(verdict.ok, false);
-  assert.match(verdict.line, /answered no sketch/);
-});
-
-test('the step times the listing beside the CI-like busy loops and stops them after', async () => {
-  const { loops, options } = harness({ ms: 29_000, listed: 6 });
-  const result = await firstListingStep(['libs/cli/src/lib/design/studio-api.ts'], options);
+test('a head clearly slower than base fails', async () => {
+  const run = harness({ base: samples(6, 7, 6.5), head: samples(11, 10.5, 12) });
+  const result = await firstListingStep(design, run.options);
 
   assert.equal(result.status, 1);
-  assert.equal(loops.length, 1);
-  assert.equal(loops[0].count, 12);
-  assert.equal(loops[0].stopped, true);
+  assert.match(result.output, /FAILED, both under the 15\.00 s reference/);
+});
+
+test('a head slower by less than 20 % of a slow base passes', () => {
+  assert.equal(firstListingVerdict(samples(20, 20, 20), samples(23.9, 23.9, 23.9)).ok, true);
+  assert.equal(firstListingVerdict(samples(20, 20, 20), samples(24.1, 24.1, 24.1)).ok, false);
+});
+
+test('a base that fails to build fails the step before the load starts', async () => {
+  const run = harness({ base: new Error('build of base abc failed'), head: samples(5, 5, 5) });
+  const result = await firstListingStep(design, run.options);
+
+  assert.equal(result.status, 1);
+  assert.match(result.output, /^the base measure failed: build of base abc failed/);
+  assert.equal(run.loops.length, 0);
+});
+
+test('a base listing that throws fails the step, stops the load and removes the base', async () => {
+  const run = harness({ base: new Error('the design server exited with 1'), head: samples(5, 5, 5) });
+  const result = await firstListingStep(design, run.options);
+
+  assert.equal(result.status, 1);
+  assert.match(result.output, /^the base measure failed: the design server exited with 1/);
+  assert.equal(run.loops[0].stopped, true);
+  assert.equal(run.removed.length, 1);
+});
+
+test('a head listing that throws fails the step', async () => {
+  const run = harness({ base: samples(5, 5, 5), head: new Error('the design server exited with 1') });
+  const result = await firstListingStep(design, run.options);
+
+  assert.equal(result.status, 1);
+  assert.match(result.output, /^the head measure failed/);
+});
+
+test('a listing that answers no sketch fails on either side', () => {
+  const empty = [{ ms: 100, listed: 0 }];
+
+  assert.match(firstListingVerdict(samples(5), empty).line, /on head answered no sketch/);
+  assert.equal(firstListingVerdict(empty, samples(5)).ok, false);
+});
+
+test('the step times the listings beside the CI-like busy loops and stops them after', async () => {
+  const run = harness({ base: samples(5, 5, 5), head: samples(5, 5, 5) });
+  const result = await firstListingStep(design, run.options);
+
+  assert.equal(run.loops.length, 1);
+  assert.equal(run.loops[0].count, 12);
+  assert.equal(run.loops[0].stopped, true);
+  assert.equal(run.removed.length, 1);
   assert.match(result.note, /^CI-like: 12 busy loops, pinned to cores 0-3$/);
 });
 
-test('the step passes a fast listing and fails a measurement that throws', async () => {
-  assert.equal(
-    (await firstListingStep(['libs/cli/src/lib/design/a.ts'], harness({ ms: 9_000, listed: 6 }).options)).status,
-    0,
-  );
-
-  const failed = harness(new Error('the design server exited with 1 before it was ready'));
-  const result = await firstListingStep(['libs/cli/src/lib/design/a.ts'], failed.options);
-
-  assert.equal(result.status, 1);
-  assert.match(result.output, /exited with 1/);
-  assert.equal(failed.loops[0].stopped, true);
-});
-
 test('the step is skipped without a design server change', async () => {
-  const { loops, options } = harness({ ms: 29_000, listed: 6 });
-  const result = await firstListingStep(['apps/ethlete-studio/src/a.ts'], options);
+  const run = harness({ base: samples(5), head: samples(29) });
+  const result = await firstListingStep(['apps/ethlete-studio/src/a.ts'], run.options);
 
   assert.equal(result.status, 0);
-  assert.equal(loops.length, 0);
+  assert.equal(run.loops.length, 0);
 });

@@ -7,6 +7,8 @@ import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { SketchVariant } from '../system-modules';
 import { baselineInTurnsOf, partHashOf } from './baseline';
 import { ChangeBox, changeBoxOf } from './change-box';
+import { EDIT_OLD } from './edit-sketch';
+import { isEditSketch } from './merged-parts';
 import { overlaySketch } from './overlay';
 import { sharedDirOf, Sketch, variantDirOf } from './sketch';
 
@@ -80,6 +82,8 @@ const renderedOf = async (load: () => Promise<unknown>): Promise<Rendered | null
     return null;
   }
 };
+
+const comparesNothing = (sketch: Sketch) => isEditSketch(sketch) && !sketch.variants.includes(EDIT_OLD);
 
 const remember = (key: string, kept: Kept) => {
   if (cache.size >= CACHE_LIMIT) cache.delete(cache.keys().next().value ?? '');
@@ -181,6 +185,7 @@ export const keptComparisonOf = async (
   const { product, sketch, variant, pictured, part: compared = partKeyOf(sketch) } = options;
   const overlaid = overlaySketch({ product, sketch, variant });
 
+  if (comparesNothing(sketch)) return { unchanged: [], changes: {} };
   if (!product.parts.some((part) => partKeyOf(part) === compared)) return null;
   if (!overlaid.parts.some((part) => partKeyOf(part) === compared)) return null;
 
@@ -206,7 +211,7 @@ export const keptComparisonOf = async (
  * part stylesheet the product's stylesheets `@import`. With `pictureOf`, any other state, or one that cannot be
  * rendered outside a browser (`ng()`), is unchanged when every frame draws the
  * same pixels in the default theme. A state the product lacks, or one that fails to draw on either side, is never
- * unchanged. Markup-only comparisons are kept by source hashes. Pixel comparisons are kept the same way only with
+ * unchanged, and neither is any state of an edit sketch without `old`: its `new` is the product itself. Markup-only comparisons are kept by source hashes. Pixel comparisons are kept the same way only with
  * `keepPictures`, and never when a draw failed; `forgetUnchangedStates` drops them. Set `compareFrames` to false
  * to compare drawings without requiring matching widths and interactions.
  */
@@ -237,7 +242,7 @@ export const unchangedStatesOf = async (options: {
   const overlaid = overlaySketch({ product, sketch, variant });
   const drawn = overlaid.parts.find((part) => partKeyOf(part) === compared)?.file;
 
-  if (!merged || !drawn) return [];
+  if (!merged || !drawn || comparesNothing(sketch)) return [];
 
   const key = await keyOf({
     product,

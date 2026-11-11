@@ -63,6 +63,11 @@ const blockerTextOf = (blocker: BuildReadyBlocker) => {
   }
 };
 
+const directEditLinesOf = ({ points }: PartOpenPoints): OpenPointGroup['lines'] =>
+  points.flatMap((point) =>
+    point.kind === 'direct-edit' ? [{ text: LABELS.directEdit, detail: point.sketch ?? point.kind }] : [],
+  );
+
 const blockerLinesOf = ({ buildReady }: PartOpenPoints): OpenPointGroup['lines'] =>
   buildReady.ready
     ? []
@@ -80,7 +85,7 @@ export const openPointGroupsOf = (answer: PartOpenPoints): OpenPointGroup[] =>
       ...answer.points
         .filter((point): point is ListedPoint => point.kind !== 'direct-edit' && iconOf(point) === icon)
         .map(lineOf),
-      ...(icon === 'error' ? blockerLinesOf(answer) : []),
+      ...(icon === 'error' ? [...directEditLinesOf(answer), ...blockerLinesOf(answer)] : []),
     ];
 
     return lines.length > 0 ? [{ icon, lines }] : [];
@@ -95,15 +100,14 @@ const ruleBlockerOf = (blocker: BuildReadyBlocker): BuildBlocker => ({
 });
 
 /**
- * The build-ready status the chip popover shows: checking only while a slow check is pending or a missing check record
- * is the sole finding, otherwise each blocker with a direct edit as its own kind and the open points in Studio's words.
+ * The build-ready status the chip popover shows: blocked as soon as one blocker is definite, even while a slow check
+ * runs; checking while only a pending check or a missing check record is left. A blocked status lists each definite
+ * blocker, with a direct edit as its own kind and the open points in Studio's words.
  */
 export const buildReadyStatusOf = ({ points, buildReady }: PartOpenPoints): BuildReadyStatus => {
   if (buildReady.ready) return { state: 'ready' };
-  const stale = buildReady.blockers.filter((blocker) => blocker.kind === 'stale-record');
-  const others = buildReady.blockers.filter((blocker) => blocker.kind !== 'stale-record');
-  if (buildReady.blockers.some((blocker) => blocker.kind === 'pending')) return { state: 'checking' };
-  if (stale.length > 0 && others.length === 0 && points.length === 0) return { state: 'checking' };
+  const others = buildReady.blockers.filter((blocker) => blocker.kind !== 'stale-record' && blocker.kind !== 'pending');
+  if (others.length === 0 && points.length === 0) return { state: 'checking' };
 
   const pointBlockers: BuildBlocker[] = points.map((point) =>
     point.kind === 'direct-edit'

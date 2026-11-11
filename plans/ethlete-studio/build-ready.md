@@ -749,3 +749,100 @@ Docs commit "docs(cli): Document build-ready instead of go and accept". `apps/do
 The commit that holds this section removes `.ethlete/design/studio/go.json` (possible after 77e87c6b2 dropped the
 go.json rule of the git-safety hook), its person-names baseline entry, and `go.json` from the commit-hunks spec list.
 Verified: commit-hunks spec, `check-person-names.mjs`. Not verified: a `design check` on the repo design.
+
+## As built: B249 gutter skip (2026-11-11, Linux)
+
+The two frozen `sk-gutter` spans in `pages/sketches` now carry `data-et-skip="COVERED OFF-CENTRE"` (they already skipped COVERED), and the four OFF-CENTRE baseline entries (finding 635) are removed. No libs/cli change: OFF-CENTRE already honours `data-et-skip`.
+
+Verified: `et design check --product studio --part pages/sketches` shows no OFF-CENTRE on `sk-gutter` and nothing new (the remaining 37 OFF-CENTRE are zoom-chip `on purpose` findings, 4 DROPPED-PROP, both not from this change). Not verified: a pixel shot (an attribute change cannot alter rendering); parts embedding pages/sketches were not checked separately.
+
+## As built: B249 live verify (2026-11-11, Linux)
+
+Against `studio-serve` :4402. Studio-app shots: a scratch Studio build in headless Chromium with the stubbed host of
+`verify-studio-headless.mjs`, pointed at :4402; each check also has a `/__design/shot` picture. Shots in
+`.claude/handoffs/agent-results/b249-live/` (gitignored); details in `.claude/handoffs/agent-results/b249-live.md`.
+
+1. ok - `c1-green-zoom-chip-studio.png`, `c1-system-nothing-open-shot.png`: zoom-chip popover "Nichts offen",
+   "Baubereit", no "Go geben".
+2. ok - `c2-hardcoded-tree-row-studio.png`, `c2-tree-row-shot.png`, `c2-reverted-tree-row-studio.png`: `#ff0000` in
+   tree-row.css shows HARD-CODED-COLOUR within 3 s, build-ready drops, `et design task` exits 1 naming it; Baubereit
+   again 6 min after the revert. The badge read "Wird geprüft", not "Nicht baubereit", while `pending` was also open,
+   and the `open-point` blocker (changed outside a sketch) was not listed.
+3. ok - `c3-embedded-part-tree-studio.png`, `c3-part-tree-shot.png`: part-tree lists "components/tree-row ist noch
+   nicht baubereit".
+4. VISIBLE-CHANGE ok (`c4-visible-change-zoom-chip-studio.png`: app "Fit" -> "Fit all" gives "Nicht baubereit (1)",
+   VISIBLE-CHANGE on 16 states). Old/new sketch failed (`c4-edit-sketch-view-studio.png`, `c4-edit-sketch-new-shot.png`):
+   `components/zoom-chip@edit` has only `new`, because no commit holds the `merged.json` hash `eac0eac1e633a857`
+   (`oldDesignOf`, edit-sketch.ts), so the view folds all 16 states as unchanged and shows Verwerfen. Pick "new" not
+   run: a pick merges into the shared, dirty `studio/merged.json`.
+5. ok - `c5-checking-zoom-chip-studio.png`, `c5-zoom-chip-shot.png`: during a serve slow run the popover shows
+   `pending` and "Wird geprüft".
+
+The serve rewrote `components/tree-row` and `components/zoom-chip` in the uncommitted `studio/merged.json`; left.
+
+## As built: B249 slice 5a, edit sketch old/new (D1, D2) (2026-11-11, Linux)
+
+- D1 cause, proven by the `edit-sketch.spec.ts` case "takes old from the part at HEAD when no commit holds its merged
+  hash" (failed before: `expected undefined to deeply equal [ 'new', 'old' ]`, EDIT-OLD-NOT-FOUND): `oldDesignOf` only
+  took a commit whose rebuilt part hash equals the `merged.json` hash, and a drifted hash is in no commit. Fix:
+  `old` is the part folder at HEAD. Why: ADR 0256 records every committed state of a merged part as merged, so HEAD
+  holds the last merged design; reading it needs no hash, so drift cannot lose it, and there is no history walk. A part
+  HEAD holds no file of still gets the new-only sketch and EDIT-OLD-NOT-FOUND. Specs that expected old from an older
+  commit for a committed edit now expect HEAD (ADR 0256).
+- D2 cause, proven by the `unchanged-states.spec.ts` case "names no state of the edit sketch variant new when the sketch
+  has no old" (failed before: `expected [ 'default' ] to deeply equal []`): `new` of an edit sketch is the product
+  itself, so every state compared unchanged and Studio folded all. Fix: `unchangedStatesOf` /
+  `keptUnchangedStatesOf` answer no unchanged state for an edit sketch without `old`; with `old` the fold already
+  needs `old` to draw the same as `new`. No app change.
+- Verified: `vitest related` on the changed files (132 files, 1356 tests), `nx run cli:typecheck`, eslint, prettier.
+  Live on a scratch checkout (own git, HEAD `merged.json` with zoom-chip at the drifted `eac0eac1e633a857`, cli
+  built there, server on :4733): design "Fit" -> "Fit all" opened `components/zoom-chip@edit` with `new` and `old`
+  in 21 s; `/__design/sketches` answers `unchanged: []` for `old`, so no state folds; `/__design/shot` of state
+  `fit` shows "Fit" (old) and "Fit all" (new).
+- Not verified: the Studio app sketch view (no Studio build; the fold reads only the `unchanged` lists), the pick of
+  `new` (check 4c), D3 (Verwerfen on `@edit`).
+
+## As built: B249 slice 5b, Studio view (D3, D4, D5) (2026-11-11, Linux)
+
+- D3 cause, proven by the `sketches.component.spec.ts` case "offers Verwerfen on a sketch, but not on the old/new
+  sketch of a direct edit" (failed before: Verwerfen in the header of `components/card@edit`): the header always drew
+  Verwerfen. Fix: `SketchesComponent` hides it when `part` ends in `@edit` (S6b); no new input.
+- D4 cause, proven by the `open-points.spec.ts` cases "reads a definite blocker as blocked while a slow check still
+  runs" (HARD-CODED-COLOUR plus `pending`) and "reads a direct edit as blocked while a slow check still runs" (both
+  failed before with `{ state: 'checking' }`): `buildReadyStatusOf` returned checking on any `pending`. Fix (ADR 0270):
+  checking only when nothing but `pending` / `stale-record` is left; blocked lists the definite blockers, without the
+  pending one (the popover list still says the slow checks have not run).
+- D5 cause, proven by the `open-points.spec.ts` case "lists a direct edit with the blockers" (failed before: no line
+  for the direct edit): `openPointGroupsOf` dropped `direct-edit` points and the `open-point` blocker that carries
+  them. Fix: each direct edit lists in the error group as "Bild ohne Sketch geändert", detail its edit sketch or
+  `direct-edit`.
+- Verified: `vitest related` on the changed files (6 files, 137 tests), system-view and sketch-view specs (67),
+  `nx run ethlete-studio:typecheck`, eslint, prettier.
+- Not verified live: no Studio shot of the badge, popover or sketch header (the shot tool reads :4402). Not done: the
+  System page design note still says "Wird geprüft while slow rules run" and the Sketches design has no `@edit` state
+  (a design edit makes the record stale; left for a sketch); the server still accepts `sketch discard` on an `@edit`
+  sketch (S6b, `libs/cli` discard path, not in this slice).
+
+## As built: B249 slice 5c-1, serve writes no tracked file (D6), no discard on `@edit` (S6b) (2026-11-11, Linux)
+
+- D6 cause, proven by bites: the serve slow runner called `settleCommittedEdits` and `autoAcceptOf`, and both call
+  `recordMerged`; the settle path also deleted an edit sketch even when git tracks it. Suspect for the live run: the
+  tree-row write was the HELD path (uncommitted edit that draws as before), the zoom-chip write the settle path (HEAD
+  holds the part after the revert; matches "both edit sketches were removed").
+- Fix: `writesTracked: false` on `settleCommittedEdits` and `autoAcceptOf`, set by the slow runner. In that mode a
+  held or settled edit is not recorded (stays "changed outside a sketch" for `design check`, which still records it),
+  an edit sketch is deleted only when git tracks no file in it and no comment is on it, a held edit writes no
+  `pictures.json` record (the drawing stays in the untracked part-picture cache), and a tracked edit sketch is not
+  refreshed. The slow runner remembers each resolved edit hash in memory, so it does not redraw it on every poll.
+- S6b: `editDiscardRefusalOf` (`edit-sketch.ts`); `POST /__design/sketch-discard` answers 422 reason
+  `edit-discard-refused`, `sketch discard` exits 1; both with `EDIT-DISCARD-REFUSED: <part>@edit ... pick old to undo
+the edit or new to keep it`. The internal discard of `design check` is unchanged.
+- Bites (each failed on the old code): slow-run "writes no tracked file for a committed direct edit and its committed
+  edit sketch" (temp git repo, `git status --untracked-files=no` clean) and the reworded "deletes an untracked edit
+  sketch ... leaves merged.json to design check"; accepted-pictures "holds a direct edit without writing a tracked
+  file when told so"; `studio-sketch-discard.spec.ts` "refuses the old/new sketch of a direct edit"; sketch-command
+  "refuses to discard the old/new sketch of a direct edit".
+- Verified: `vitest related` on the changed files (131 files, 1346 tests), `nx run cli:typecheck`, eslint, prettier.
+- Not verified: no live serve run on a scratch checkout. Still open: the slow runner writes the tracked `ready.json`
+  (`recordSettledBuildReady`, also seen in the live run), against "serve never writes a tracked file"; not in this
+  slice. A draw error in serve is not retried at the same part hash.

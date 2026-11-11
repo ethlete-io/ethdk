@@ -100,23 +100,5 @@
       "finding": "583",
       "sketch": "link pages/system to the host the app renders (system-view), ADR 0113"
     }
-  },
-  "OFF-CENTRE": {
-    "pages/sketches: page-100 at desktop: div.absolute > div.flex > div.grid > span.sk-gutter": {
-      "finding": "635",
-      "sketch": "pages/sketches@off-centre"
-    },
-    "pages/sketches: sticky-names at desktop: div.absolute > div.flex > div.grid > span.sk-gutter": {
-      "finding": "635",
-      "sketch": "pages/sketches@off-centre"
-    },
-    "pages/sketches: unchanged-matrix at desktop: div.absolute > div.flex > div.grid > span.sk-gutter": {
-      "finding": "635",
-      "sketch": "pages/sketches@off-centre"
-    },
-    "pages/sketches: zoomed-page at desktop: div.absolute > div.flex > div.grid > span.sk-gutter": {
-      "finding": "635",
-      "sketch": "pages/sketches@off-centre"
-    }
   }
 }

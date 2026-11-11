@@ -95,11 +95,13 @@ describe('CanvasFrameCellComponent', () => {
       await flush();
 
       expect(shown()).toEqual({ shot: true, page: false, mounted: true });
+      expect((fixture.nativeElement as HTMLElement).hasAttribute('data-painted')).toBe(false);
 
       post({ type: 'design-explore:painted' });
       await flush();
 
       expect(shown()).toEqual({ shot: false, page: true, mounted: true });
+      expect((fixture.nativeElement as HTMLElement).hasAttribute('data-painted')).toBe(true);
     });
 
     it('keeps the page after it leaves live until the shot decoded, then shows the shot in one step', async () => {

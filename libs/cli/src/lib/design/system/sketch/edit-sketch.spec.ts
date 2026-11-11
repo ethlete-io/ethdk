@@ -5,7 +5,7 @@ import { join, resolve } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../design-config';
 import { readOpenPoints } from '../read-open-points';
-import { commitAll, initGitRepo } from '../git-repo.fixtures';
+import { commitAll, git, initGitRepo } from '../git-repo.fixtures';
 import { resolveProduct } from '../resolve-product';
 import { openEditSketch } from './edit-sketch';
 import { mergeSketch } from './merge';
@@ -122,52 +122,58 @@ describe('openEditSketch', () => {
     expect(`${resolve(sketch.dir, 'old', 'shared', written)}.ts`).toBe(join(product.dir, 'outside.ts'));
   });
 
-  it('opens no sketch when the part folder is at its merged commit', () => {
+  it('takes old from the part at HEAD when no commit holds its merged hash', () => {
+    const { target, css, head } = acme();
+    const mergedFile = join(resolveAcme(target).dir, 'merged.json');
+    const entries = JSON.parse(readFileSync(mergedFile, 'utf8')) as Record<string, { hash: string }>;
+
+    writeFileSync(mergedFile, JSON.stringify({ ...entries, [HERO]: { ...entries[HERO], hash: '0123456789abcdef' } }));
+    commit(target);
+    writeFileSync(css, '.acme-hero { padding: 0; }\n');
+
+    const sketch = openEditSketch({ target, product: resolveAcme(target), part: HERO }) as Sketch;
+
+    expect(sketch.variants).toEqual(['new', 'old']);
+    expect(readFileSync(join(sketch.dir, 'old', HERO, 'hero.css'), 'utf8')).toBe(head);
+  });
+
+  it('opens no sketch when the part folder is at HEAD', () => {
     const { target } = acme();
 
-    expect(openEditSketch({ target, product: resolveAcme(target), part: HERO })).toMatch(
-      new RegExp(`^the folder of ${HERO} at its merged commit [0-9a-f]{9} equals the working one`, 'u'),
+    expect(openEditSketch({ target, product: resolveAcme(target), part: HERO })).toBe(
+      `the folder of ${HERO} at HEAD equals the working one - there is no old design to show`,
     );
   });
 
-  it('takes old from the newest commit at the merged hash when the edit is committed', () => {
-    const { target, css, head } = acme();
-
-    writeFileSync(css, '.acme-hero { padding: 1px; }\n');
-    commit(target);
-    writeFileSync(css, '.acme-hero { padding: 0; }\n');
-    commit(target);
-
-    const sketch = openEditSketch({ target, product: resolveAcme(target), part: HERO }) as Sketch;
-
-    expect(readFileSync(join(sketch.dir, 'old', HERO, 'hero.css'), 'utf8')).toBe(head);
-    expect(readFileSync(join(sketch.dir, 'new', HERO, 'hero.css'), 'utf8')).toBe('.acme-hero { padding: 0; }\n');
-  });
-
-  it('writes the part at its merged commit back on a pick of old of a committed edit', () => {
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-
-    const { target, css, head } = acme();
+  it('opens no sketch for a committed edit, which HEAD holds as its merged design', () => {
+    const { target, css } = acme();
 
     writeFileSync(css, '.acme-hero { padding: 0; }\n');
     commit(target);
 
-    const sketch = openEditSketch({ target, product: resolveAcme(target), part: HERO }) as Sketch;
-    const picked = decideSketch({ sketch, decision: { kind: 'pick', variant: 'old', ...originOf('spec') } }) as Sketch;
-
-    mergeSketch({ target, config: readConfig(target) ?? {}, product: resolveAcme(target), sketch: picked });
-
-    expect(readFileSync(css, 'utf8')).toBe(head);
-    expect(changedOutsideSketchOf(resolveAcme(target))).toEqual([]);
+    expect(openEditSketch({ target, product: resolveAcme(target), part: HERO })).toMatch(
+      /at HEAD equals the working one/u,
+    );
   });
 
-  it('opens a ready sketch with only new and answers EDIT-OLD-NOT-FOUND when no commit has the merged hash', () => {
+  it('takes old from the newest committed edit when the part changed again after it', () => {
     const { target, css } = acme();
 
     writeFileSync(css, '.acme-hero { padding: 1px; }\n');
-    recordMerged({ product: resolveAcme(target), parts: [HERO] });
-    writeFileSync(css, '.acme-hero { padding: 0; }\n');
     commit(target);
+    writeFileSync(css, '.acme-hero { padding: 0; }\n');
+
+    const sketch = openEditSketch({ target, product: resolveAcme(target), part: HERO }) as Sketch;
+
+    expect(readFileSync(join(sketch.dir, 'old', HERO, 'hero.css'), 'utf8')).toBe('.acme-hero { padding: 1px; }\n');
+    expect(readFileSync(join(sketch.dir, 'new', HERO, 'hero.css'), 'utf8')).toBe('.acme-hero { padding: 0; }\n');
+  });
+
+  it('opens a ready sketch with only new and answers EDIT-OLD-NOT-FOUND when HEAD holds no file of the part', () => {
+    const { target } = acme();
+
+    git(target, 'rm', '-r', '--cached', '-q', join(resolveAcme(target).dir, HERO));
+    git(target, 'commit', '-qm', 'untrack');
 
     expect(openEditSketch({ target, product: resolveAcme(target), part: HERO })).toEqual({
       rule: 'EDIT-OLD-NOT-FOUND',

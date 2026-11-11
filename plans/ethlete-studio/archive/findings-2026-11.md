@@ -7821,3 +7821,260 @@ sha cited": open findings cite context shas (855 cites aaeef909d). Bite: after t
 lists the proven ones; a fixture with only a context sha moves nothing. Queue: Linux builder, after 854.
 
 As built (Linux builder, 860): `archive-findings` reads only `Built in <sha>.` at sentence start (pushed sha); `mark-built-findings.mjs` (`--write`) marked the 7 findings whose "fixed/built in <sha>" names a `fix(`/`feat(` or finding-named commit dated on or after the finding. The pass also marked 855 from "Build fixed in 210235327", which fixed only the app build while the merge guard of 855 is still open; the builder removed that marker by hand, A hand check then found two more side fixes: 524 (e3f7a81dd fixed the cache defect, not the abort spec for every cache) and 592 (ffe60ce8b fixed the Neu starten case, not the fixture assert); their markers are removed too, so 4 findings carry it (470, 584, 599, 859). Built in 0e296ac14.
+
+599\. Builder (2026-11-08, CI at 334243fe4): `merge.spec` stall 277 ms over a 91 ms bound, Linux only. Cause real:
+libuv `fork()` on the server thread blocks in proportion to the RSS (29-173 ms per spawn at 3.8 GB), and a merge
+spawns git up to 5 times; macOS uses `posix_spawn` and hides the cost, so every local run was green. Fixed in b85f8fd40
+(git calls run in the merge worker). Tool fix (technical, built in b85f8fd40): a spec asserts that the server thread
+makes no `child_process` call, so the rule holds on every OS, not only where a stall shows. Built in b85f8fd40.
+
+716\. Builder (2026-11-10, day shift, 714 follow-up c4c0939ee): the first push suite blocked on `query:typecheck`; the
+`libs/query` ngc lib config includes `src/scenarios`, and the new harness used `process` with no Node types. The 714
+subagent ran only `tsc -p tsconfig.spec.json`, because its brief named only that. Cause: the agent memory
+"vitest-does-not-typecheck" told every brief to run the spec tsconfig, not the project's `typecheck` target. Fix: the
+harness reads the env through `globalThis`; the doc agent rewrote that memory to name `nx run <p>:typecheck`. Tool fix
+(builder default): the builder's slice brief template names the `typecheck` target of each touched project; the
+`builder-agent` skill already says so for the slice itself. As built 714 CI: `query-clock-edges` (18d325612), matrix
+fraction 0 and 999 in parallel to `test`, in the `verified` needs; the two real CI runs are still owed.
+
+764\. Linux builder (2026-11-10, night): CI 42907782323 (89aa166b4) red in `ci / Rust host`: `cargo install cargo-audit
+--locked --version 0.22.2` failed with "binary `cargo-audit` already exists in destination". Suspect (not proven by a
+CI run): Swatinem/rust-cache restores `~/.cargo/bin`, while the separate actions/cache key `cargo-audit-Linux-0.22.2`
+misses, so two caches own one binary. Fix cd266da38 adds `--force`. Lesson: a step that installs into a directory
+another cache restores has no single owner. Decided by the doc agent (tool internal, CI red). As built: cd266da38 + 59ca46802 (skip on a version match, else `--force`). Cause (measured, run 42912315216): the cargo-audit cache missed, the install step took under 1 s, so the version check found 0.22.2 already in `~/.cargo/bin` from rust-cache; Rust host green.
+
+771\. Linux builder (2026-11-11, night, CI run 42916647044): two cli specs timed out (open-points-answer 30 s,
+merge.spec 60 s; 2-3 s locally). Cause (bite, subagent): the workers start from source through jiti, which caches in
+`<tmpdir>/jiti`, and vitest.setup.ts gives each spec file its own TMPDIR, so every file transpiled the 262-file worker
+graph again. As built a3df386fa: the spec tmpdir links `jiti` to `libs/cli/node_modules/.cache/jiti-specs`. Bite on one
+busy core: 30 s timeout without the fix, 12 s with it. Not verified: a CI run; the first worker start of a CI run is
+still a full transpile.
+
+773\. Mac builder (2026-11-11, night, 769 side finding): the darwin cpu-throttle (735) and plain CPU burners cannot
+reproduce an e2e case: both stall the design server, the sketch-fixture listing times out after 60 s, and the case does
+not run (throttle 50/35/20/10 %, 20 burners at load 34). Cause (measured): a whole-machine slowdown starves the server
+before it starves the page. Lesson: `QUOTA_PERCENT_DARWIN` suits specs only, never e2e. Tool fix (Mac, in progress): a
+renderer-only `--cpu-rate` flag (CDP `setCPUThrottlingRate`) in canvas.e2e.mjs reproduces a load-sensitive case.
+
+As built (735 Mac calibration, archived finding): the 719 case "keeps at most six near cells live" in
+`sketch-view.component.spec.ts`, under `cpu-throttle.mjs <p> -- npx vitest run --root apps/ethlete-studio --maxWorkers=1`,
+one run each, 1-minute load 2.3-5.6 on 6 cores: p 100 passes in 235 ms, p 20 passes in 1440 ms, p 10 fails at 3187 ms
+(the slow-case guard, 5000 ms timeout), p 5 fails at 7379 ms. Linux fails it at 1.7-2.7 s under CPUQuota=20%, so the
+Mac p 10 matches the Linux p 20: `QUOTA_PERCENT_DARWIN` is now 10. Not verified: a second run per p on a quieter
+machine; a new changed spec under the quota step.
+
+789\. Linux builder (2026-11-11, night, B438 measurement): the committed sketch `elements/rating` has 8 UTILITY-CSS
+findings, so a sketch with open check findings reached git. Suspect: none yet; the cause is the question, which gate
+should have refused it (pre-commit, `sketch check` before ready, or the merge). Decided by the doc agent: the builder
+names the cause first (night backlog, Linux, after 788, read only); the gate fix is tool work, the sketch fix itself
+waits for the day order (no sketch work at night, ADR 0257). Cause (read in git): the rule came after the sketch. `rating.css` in all 3
+variants last changed 2026-10-27 (fb8c7a0a5, 793d9381b, 95a6b82e7); UTILITY-CSS landed 2026-10-30 (80d70d9eb); later
+commits touched only `sketch.json`. No gate let a refused file through; nothing re-checks committed sketches when a rule
+lands. Decided by the doc agent (applies ADR 0226: no design check in a git hook or CI, so the builder's
+recommendation of a rule-commit gate is out): (a) a change that adds or tightens a static design rule runs that rule
+over every committed sketch and part of every product before its commit and fixes or exempts the findings in the same
+change (builder-agent skill rule, not a hook); (b) the builder finds out whether Studio shows a static finding on an
+existing ready sketch live when the designer opens it; if not, that is the tool fix (night backlog, Linux, after 790).
+Side fact: the sketch is ready with decision "pick c" since 2026-11-01 and is still not merged, although a picked sketch
+is merged by the builder. Day order: merge pick c with the UTILITY-CSS fix; a ready sketch with a pick that waits more
+than a day is its own Studio signal (Suspect: Studio shows no such age; the builder checks).
+(b) Cause (Linux builder, live read on a scratch serve + code, 2026-11-11 night): `elements/rating` is sketch-only, so
+the open-points call returns 404 `unknown-part` (`studio-api.ts` `knownPartOf`); static findings live only in
+`/__design/sketches` and show only as the tree error badge with a hover tooltip and a refused pick; the variant column
+filters to load errors; `openPointsOf` makes the `unmerged-sketch` pick point only for keys in `product.parts`, so a
+sketch-only part with a waiting pick gets none (the tree says plain `ready`). Pick c itself has 2 UTILITY-CSS findings, so
+Studio refuses pick c today. Decided by the doc agent (tool internals, no new wording): (1) `readOpenPoints`/`openPointsOf`
+add the targets of unmerged sketches to the part keys; (2) `knownPartOf` accepts a key an open sketch targets. Bite: a
+sketch-only part with a ready pick shows the existing pick point and no 404. Night backlog, Linux, after 650. (3) a new
+open-point kind `sketch-problem` (variant, rule, message) needs a chip label the human sees: morning round, builder
+default "Sketch-Regel verletzt: <rule>"; not built until the human answers.
+As built (Linux builder, 2026-11-11): (1) and (2), nothing more. `openPointsOf` lists the targets of unmerged sketches
+that are no part key after the parts, with their key-bound points (`unmerged-sketch` with its pick, comments, contrasts,
+direct edits); `readOpenPoints` gets them through it, `sketchOpenPointsOf` passes no sketches and is unchanged. `knownPartOf`
+also accepts a key an open sketch targets. The open-points cache needed no change: it already re-reads when a tracked
+`sketch.json` or sketch listing changes. Bite: `open-points-answer.spec.ts` "answers the pick point of a part that exists
+only in a ready sketch" fails without the fix (404) and passes with it; `open-points.spec.ts` now expects the sketch-only
+`components/x` line. Verified: `vitest related` (1320 tests), `cli:typecheck`, eslint. Live (scratch /tmp/sk-lab, own ports): the open-points GET
+for `elements/rating` answers 200 with the pick point. Live Studio shot (headless, shots in /tmp/b789-shots/): the Studio
+does not render it. Rating shows only under "Sketches" with a warning icon; selecting it opens the sketch view with no
+open-points chip; no "null", "undefined" or empty badge. Suspect (code read only): the chip renders only in the part view
+(`system-view.component.ts:177`, reads at :762), and a sketch-only part never gets one, so the new answer has no consumer.
+Suspect, not traced: the sketch view shows "Wartet auf deine Wahl" although the answer says ready with c picked. (3) is not built.
+
+B438 measured (ADR 0229, before 0173ca7a8 vs after 789031753, cold, alternating): studio-lab scratch, 3 sketches, 82
+frames: wall 16 s in all 4 runs, compare phase 3.91/3.96 s before vs 3.29/3.30 s after; sdk scratch, 1 sketch: wall
+22 s, compare phase 6.85/7.03 vs 6.58/6.74 s. Findings lines identical. The 150-280 s cold compare of finding 598 does
+not reproduce on today's products. Not measured: a product with many differing frames.
+
+790\. Linux builder (2026-11-11, night, 782 191ab7c46): nothing ties "a spec reaches the open-points worker" to "the spec
+warms it". Cause of 782 (measured): the first `openPointsAnswer` call starts the worker from `.ts` source and jiti
+transpiles its whole import graph (empty cache 7.0 s plain, 43.5 s at `CPUQuota=25%`); each spec author must know
+`warmOpenPointsWorker()`. Suspect (not measured): `open-points-loop.spec.ts` reaches the worker cold too. Lesson: a cost
+every caller must remember is a rule a new spec forgets (third case of the 783/787 class). Decided by the doc agent
+(tool internal, the builder's recommendation, scoped like 785): not a global setup file for every cli vitest worker
+(it would charge the cold start to specs that never reach the worker); the module through which a spec reaches the
+worker registers the warm `beforeAll` on import, so a spec that reaches it is warm and one that does not pays nothing.
+Bite: a new spec that calls the worker cold under `--slow 4` passes. Night backlog, Linux, after 789. Revised (the
+builder: the modules through which specs reach the worker are product modules the CLI ships, so they cannot register a
+`beforeAll`): a spec entry module `system/open-points.fixtures.ts` re-exports `openPointsAnswer` and
+`openPointsInWorker` and registers the warm `beforeAll` (120 s) on import; a `no-restricted-imports` rule for
+`libs/cli` `*.spec.ts` forbids those two names from the product modules and names the fixtures module; per-spec
+`warmOpenPointsWorker` calls go. Bite: a spec that imports from the product module fails lint; a cold spec through the
+fixtures module passes at `--slow 4`. Not covered: a spec that reaches the worker through another product call.
+As built (Linux builder, 2026-11-11): `system/open-points-worker.fixtures.ts` became `system/open-points.fixtures.ts`;
+it re-exports both names and registers the warm `beforeAll` on import. `libs/cli/eslint.config.mjs` restricts both names
+from `studio-api` and `open-points-runner` in `src/**/*.spec.ts`. The four specs moved; `slow-run.spec.ts` imports the
+module for its side effect (it reaches the worker through `startSlowRunner`). Verified: a spec with the product imports
+fails lint with both messages; with `JITI_FS_CACHE=false` at `--slow 4` a cold spec through the fixtures module passes
+(54.9 s), the same spec through `open-points-runner` fails (9.4 s); `vitest related` 128 files green; typecheck green.
+
+791\. Linux builder (2026-11-11, night, 650 verification): `yarn studio:e2e --case notice-hint` matched no case, and the
+builder reported the run as a check of the 650 load line. Cause (measured): `canvas.e2e.mjs` exits 1 when no case
+matches (`!matched`), but the builder read the exit code of `tail` after a pipe, and the log says only "0 cases on 0
+worker(s)" and "0/0 passed in 0.0s". Why no tool caught it: a filter that matches nothing prints a pass-shaped summary.
+Lesson: an empty run must say it is empty in words, not as a count a reader takes for green. Decided by the doc agent
+(tool internal, the builder's proposal): when a `--case` or `--page` filter matches nothing, print "--case <x> matches no
+case; names: ..." (closest names first) and skip the "0/0 passed" line. Bite: a spec with a filter that matches nothing
+expects the line and no "passed" summary. Night backlog, Linux, after 789 (b) (1)+(2). Owed for 650: one real case run
+that shows the load line.
+As built (Linux builder, 2026-11-11): `apps/ethlete-studio/e2e/case-filter.mjs` `noMatchLineOf`; `canvas.e2e.mjs`
+prints it to stderr and exits 1 before the Studio build when a `--case` or `--page` filter matches no case, so no
+summary prints. Verified: `case-filter.spec.mjs` passes, and fails with the closest-first sort removed (bite); its second case spawns `canvas.e2e.mjs --case zz-matches-no-case` and expects exit 1, the line
+and no "passed"; it fails with the early exit removed (bite); live `--case notice-hint` exits 1 with the line and five closest
+names, no "0/0 passed" (before: exit 1 with "0/0 passed in 0.0s"); live `--page Nowhere` exits 1 with the line. A
+filter that matches only through `--view` or a shard is not covered.
+
+819\. Linux builder (2026-11-11, push:suite at 5c75ada87): the B489 sketch (da746a43e) copied the pre-merge sample
+`author: 'Tom Bornholdt'` into its variants, and the commit went through. Cause (measured). Why no tool caught it:
+`lint:person-names` runs only in pre-push, not in pre-commit. Tool fix (doc agent, tool internal): run
+`check-person-names` on the staged files in pre-commit.
+
+As built (ffaf42f02). `check-person-names.mjs --staged` checks the staged blobs (not the working tree) of the staged files under libs, apps and
+`.ethlete/design` against the same baseline and prints the same message as pre-push; `.husky/pre-commit` runs it when such a file is
+staged. The spec stages a name, clears it in the working tree and fails on the old script. Not verified: a real commit through the hook.
+
+820\. Linux builder (2026-11-11, same run): `lint:changesets` in push:suite failed on the untracked 815 changeset of a
+running subagent. Suspect: the check reads the working tree, not the HEAD export the suite tests. Tool fix (doc agent,
+tool internal): the suite runs the changeset check inside the HEAD export, so untracked files of other agents never
+count.
+
+Cause (measured). An untracked `.changeset/zz-temp-820-bad.md` with two paragraphs made `node tools/scripts/lint-changesets.js` exit 1: it
+lists the directory on disk. `check-changeset-coverage.js` already reads git. Also, the check runs in `preChecksStep` before the export, in the
+checkout, and in pre-push. As built: `lint-changesets.js --rev <sha>` reads the changesets committed in that commit via `git ls-tree`/`git show`, and
+`runChecks` (`pre-push-checks.mjs`) runs it with the pushed head, then the coverage check as `yarn lint:changeset-coverage`, so push:suite and pre-push both ignore untracked and edited files. Deviation:
+no export is made for this, the git blobs of HEAD are the same content. The spec fails on the old script. Not verified: a full `yarn push:suite` run.
+
+815 as built (Linux builder, 2026-11-11): the measured cause differs from the finding. The `type.css?inline` module
+already resolves `@assets` (system-modules spec). The unresolved copy is the product `styles.css`: it `@import`s
+`foundations/type/type.css`, the sketch swaps in the variant's file, and that inlined text never passed `withAssetUrls`.
+Built: `importedAssetUrlsPlugin` (`sketch-stylesheets.ts`), a PostCSS step after the swap that rewrites
+`url(@assets/...)` in every inlined declaration through `withAssetUrls`, so the variant's own `assets/` wins; and the
+render rule `FONT-FACE` (`system/font-faces.ts`, run in `inspectedFrameOf`): it loads each `@font-face` of the drawn
+frame as a FontFace and fails the part when one is not `loaded`: `@font-face "Roboto" from url("@assets/fonts/...")
+does not load (FontFace status error), so its text draws in a fallback font`. Bite: `sketch check
+foundations/type@font-pair --product studio` without the plugin fails with six FONT-FACE lines (two per variant); with
+it, ok. The new spec in `sketch-stylesheets.spec.ts` fails without the plugin. Product runs: studio and sdk have no
+FONT-FACE hit (their other findings are older). Not verified: the Mac.
+
+815 as built (Linux builder, 2026-11-11, 91cdff2ed): Cause corrected (measured with a debug line): not the `?inline`
+copy. The failing `@font-face` sat in the product's `styles.css`, which `@import`s `foundations/type/type.css`; for a
+sketch, `sketchStylesheetsPlugin` swaps in the variant file, and that inlined text never passed `withAssetUrls`. Fix: new
+`importedAssetUrlsPlugin` (PostCSS, after the swap) rewrites `url(@assets/...)`, so a variant's own `assets/` wins. New
+render rule `FONT-FACE` (`font-faces.ts`, run in `inspectedFrameOf`) fails a part whose `@font-face` does not reach
+status loaded. Bite: `sketch check foundations/type@font-pair` exits 1 with 6 FONT-FACE lines without the fix, 0 with it;
+the `sketch-stylesheets.spec` case fails without the plugin. studio and sdk have 0 FONT-FACE hits. Not verified: Mac.
+
+854\. Linux builder (2026-11-11, from 846), measured: the scratch checkout's `node_modules/.design-explore` was a link into
+the repo's shot store, so scratch runs wrote into the live store. Tool fix (doc agent decision, tool internal):
+`scratch:checkout` gives the scratch its own store and fails when the store path resolves into the main checkout. Bite:
+a spec that runs `scratch:checkout` and then writes a shot leaves the main store unchanged; before the fix the shot lands
+in it. Queue: Linux builder, right after 846, before B490, because it corrupts live data.
+Built in 2cf078a6e. As built: the cause was `linkDependencies` linking every `node_modules` entry, dot directories included. A scratch (and a push-suite export) now gets fresh real dirs for every dot directory except `.bin` (`.design-explore`, `.cache`, `.vite`, `.vitest-cache`, `.vite-temp` were all linked and written to), and `scratchCheckout` fails when the scratch store resolves into the main checkout. Verified: spec in `tools/scripts/scratch-checkout.spec.mjs` fails without the commit-export change; a real scratch in /tmp has an empty own store, removed afterwards. Only `.bin` still links into the main checkout (read only).
+
+859\. Linux builder (2026-11-11, grill session): `design-to-code.md` stood at its 440000-char budget, so no finding could
+be recorded; `archive-findings.mjs` moved 0 findings even with `--days=1`, and `--orphans` listed 225 findings with no
+STATUS row. Tool fix (doc agent decision, tool internal): a finding counts as done when it carries a built marker older
+than `--days`, with or without a STATUS row.
+Cause (script read + dry run): archiving took a finding only when STATUS marked it done, or when an uncited finding had
+a line that began with "As built" or "Built"; most findings never got a row and name the build inline ("As built" after
+a sentence, "built in <sha>"), so `--dry-run --days=1` moved 0. Age is the first date in the finding, as before.
+Built in be2e24d8f: a sentence-start "As built", or `built <sha>` whose sha is an ancestor of `origin/next`, is a built
+marker. Bite: a spec fixture with a built marker and no STATUS row is archived, one with an unpushed sha and an open one
+stay; with the old script the spec gets no finding moved. Run for real: 7 findings moved (440013 to 415197 chars), each
+removed line byte-equal in `archive/findings-2026-11.md`. Built in be2e24d8f.
+
+867\. Human (2026-11-11, live Studio, "zum xten mal"): the sketch view (e.g. components/button@off-centre) clips the canvas
+at the right edge of the floating sidebar, so the first column of cells is cut. The normal canvas runs under the sidebar
+with no clip, as intended. A builder changed the sketch view canvas again. Suspect: a recent sketch view or sketches page
+change (B345 on the Mac is in that area); no commit is proven yet. Owed by the Linux builder: the commit, the earlier
+fixes, why design compare and the e2e did not catch it, and a tool fix with a bite. Side: user-facing (ADR 0269), after
+B249 slice 2.
+Cause (Linux builder, diff + design shot `.claude/handoffs/agent-results/867/design-sticky-names.png`): the Studio design
+of pages/sketches has drawn the clip since 610ca0da1 (`sketches.ts:678`, `overflow-clip` on the box that starts at the
+panel edge). 41b71448d (Mac, 2026-11-06, harness work after 545) copied it into the app (`sketches.component.html:125`,
+line 130 forces `--st-shell-inset-left:0px`). Earlier times: 44, 00eecda8a (undone by 5a29b1b94), 182, 228 (same clip;
+its design change never came). Why no tool caught it. Cause: compare trusts the design, and render-check CUT-CONTROL and
+CLIPPED treat a clip on a pan viewport as on purpose (`render-check.ts:333-339, 381-387`). Suspect: the e2e case "Fit shows
+every column" measures inside the clipped box; the "canvas clip rect" check of 181/182 was never built. Lesson: a design
+can carry the defect, so a check that only compares app and design never sees it; the rule must hold for the design too.
+Tool fix (doc agent decision, tool internal): (a) e2e for the grid and sketch views with the panel open: the clip rect of
+the canvas viewport ancestors has left <= panel left and right = window right; (b) render-check rule CANVAS-UNDER-PANEL
+fails a pan viewport whose nearest clipping ancestor starts right of the floating panel's left edge; a CLIPPED skip does
+not silence it. Bite: both fail on next now. Fix: design `sketches.ts:678` as a visible direct edit (228 and ADR 0209;
+the grid view is the model) plus the app lines, by the Linux builder after B249; the Mac holds those lines until then.
+As built 3ef78653b: committed as a direct edit with no pick (finding 869, ADR 0211, ADR 0256). Rule guards (sweep had 49
+false hits): panel ends where the clip starts, clip fills >= 3/4 of the room right of the panel, cursor: grab only on
+its own element; 0 hits after. LOST-SURFACE x2 on the panel: Cause (elementsFromPoint) a cell under the panel; backdrop
+search now skips pan-viewport content under a floating card. Live shot of the app owed.
+As built (Linux builder): design `sketches.ts` and app `sketches.component.html` clip at the stage
+edge (`left-0 right-0`) and pad by the panel inset; e2e case "the canvas runs under the open panel" (sketch and grid
+views); render rule CANVAS-UNDER-PANEL in `render-check.ts` (a viewport is the element that sets `cursor: grab` or has a
+panned child; the panel ends where the clip starts; the clip box fills 3/4 of the room right of the panel); LOST-SURFACE
+looks through pan content under a floating card (`surface-nesting.ts`; the fix made 2 hits on `aside.st-shell-side`, as
+a title-bar sample cell now sits under the panel's centre). Bite: e2e and spec fail on HEAD; HEAD `sketches.ts` gives 35
+CANVAS-UNDER-PANEL; each guard's spec fixture fails without it. Verified: `design check` pages/sketches has only the HEAD
+DROPPED-PROP 4 and OFF-CENTRE 37; e2e 4/4, also with `--hold-listings 14000`; sweep over studio, sdk, studio-lab and 8
+studio-lab variants has 0 hits (the first version had 49 false hits); cli specs and both typechecks pass; design shot of
+pages/sketches desktop. Not verified: the running app, and `components/button@off-centre` in the sketch view (the shot
+route draws designs, not the app).
+
+868\. Linux builder (2026-11-11, B249 slice 2 live verify, 35c0441ba, `.claude/handoffs/agent-results/b249-live.md`):
+checks 1, 2, 3, 5, 4a ok with shots; 4b failed, 4c not run. D1: a visible edit of merged components/zoom-chip opened
+`@edit` with only `new`. Cause (hash read): `oldDesignOf` (`edit-sketch.ts:74`) looks for a commit with the merged.json
+hash, and no commit holds it, so EDIT_OLD_NOT_FOUND. Suspect: merged hashes drift when inputs outside the part folder
+change. D2: that sketch folds all 16 states as unchanged. Suspect: without `old` it compares `new` with itself. D3:
+"Verwerfen" shows on an `@edit` sketch, against S6b. D5: the popover drops the blocker "changed outside a sketch" ("3
+offen" for 4). D4: a definite blocker plus a pending check shows "Wird geprüft", not "Nicht baubereit" (question to the
+human). D6: `design serve` rewrote tracked `studio/merged.json` during the run. Lesson: the B249 slices passed their specs,
+and only the live run found D1-D3 and D5; the live verify list must run before a slice that changes old/new is pushed,
+not at the end. Tool fix (doc agent decision): slice 5 finds the old design by part content, not by the merged hash;
+`serve` never writes a tracked file; the live checks 4b and 4c become e2e cases. Side: user-facing, after 867.
+As built 5a42c253c (slice 5a): D1 Cause (bite) only a commit with the merged hash counted; now `old` = the part folder at
+HEAD (ADR 0256), new-only + EDIT-OLD-NOT-FOUND only for a part not at HEAD. D2 Cause (bite) `new` is the product, so
+every state compared unchanged; now an edit sketch with no `old` folds no state. Live API check ok; app shot and 4c owed
+in slice 5c.
+As built eefbd4d8a (slice 5b): D3 no Verwerfen on `@edit`; D4 per ADR 0270; D5 popover lists "Bild ohne Sketch geändert".
+Bites: 4 spec cases. 5c owes: live shots, System note + Sketches `@edit` state as accepted direct edits (ADR 0209), server
+refuses discard on `@edit` (S6b), D6.
+As built de7098e65 (5c-1): D6 Cause (spec bite) the serve slow runner wrote merged.json and deleted tracked edit sketches;
+now it writes no merged.json, pictures.json or sketch file (ready.json stays, build-ready.md). Discard on `@edit` refused
+(EDIT-DISCARD-REFUSED). Doc agent: a same-drawing edit must not show as an open point while serve runs (verdict in
+memory, file record waits for `design check`); owed in 5c-2.
+
+877\. Linux builder (2026-11-11, push suite on 545d5d656): the first-listing gate failed at 20.43 s and 19.85 s (limit
+15 s, load 27.6). A/B probe, 6 alternating runs under the same load: HEAD 18.04/18.28/15.97 s, origin/next
+18.52/16.58/15.63 s. Suspect: machine load (finding 846), not the range. Lesson: an absolute time limit cannot tell a slow
+range from a loaded machine, so it blocks a clean push and costs an A/B probe by hand. Tool fix: the gate runs a baseline
+on origin/next in the same step and judges the difference, not the absolute 15 s. Side: machinery backlog for the
+weekly cleanup block (ADR 0269); it moves up if it blocks a push again after the load wait.
+As built 079daaf4d, e7df5e0cb: the step exports and builds `@{upstream}`, times base and head alternately (3 each)
+under the load and fails when the head median exceeds the base median by more than max(3 s, 20 %); 15 s is only
+reported; a base export, build or listing failure fails the step. Live: head 16.48 s vs base 16.76 s, passed.
+
+878\. Linux builder (2026-11-11, B480): the CEF smoke never logs "painted": `smoke_script` (`console_log.rs`) looks for
+`ethlete-sketch-view iframe[data-state]`, but the view now renders `ethlete-design-canvas` / `ethlete-canvas-frame-cell`,
+and those iframes keep `opacity-0` although painted. Lesson: a smoke probe keyed to a DOM selector rots with the view
+and then reports nothing, not a failure. Tool fix: the probe reads a painted signal the view sets on purpose, and a probe
+that finds no target fails. Side: part of B480 (ADR 0268), parallel.
+As built 74d532e3d: cells set `data-painted`; the probe counts painted cells plus loaded pictures and logs
+`[studio-release-smoke] FAILED: nothing painted, ...` with the counts after 60 s. Bite: Rust test. Live rack run owed.

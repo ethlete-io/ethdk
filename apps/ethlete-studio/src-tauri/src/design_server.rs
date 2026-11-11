@@ -231,23 +231,42 @@ async fn own_stamp(checkout: &str) -> Option<serde_json::Value> {
     serde_json::from_slice(&output.stdout).ok()
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Verdict {
+    Current,
+    Stale,
+    /// The server answered no stamp yet. It reads as stale, but a server still starting answers later.
+    Unanswered,
+}
+
 /// A listening server is stale when it answers no stamp, or one that differs from the stamp of the
 /// cli Studio would start it with. A cli that cannot print its own stamp cannot be compared with.
-async fn is_stale(checkout: &str, port: u16) -> bool {
+async fn is_stale(checkout: &str, port: u16) -> Verdict {
     let Ok(Some(served)) = tokio::task::spawn_blocking(move || served_stamp(port)).await else {
-        return true;
+        return Verdict::Unanswered;
     };
 
     match own_stamp(checkout).await {
-        Some(own) => own != served,
-        None => false,
+        Some(own) if stamps_differ(&own, &served) => Verdict::Stale,
+        _ => Verdict::Current,
     }
 }
 
-async fn judge_stale(checkout: String, port: u16) -> bool {
+/// The served stamp carries more fields than `design stamp` prints; only the version and build name the cli.
+fn stamps_differ(own: &serde_json::Value, served: &serde_json::Value) -> bool {
+    ["version", "build"]
+        .iter()
+        .any(|field| own.get(field) != served.get(field))
+}
+
+async fn judge_stale(checkout: String, port: u16) -> Verdict {
     let outdated = cfg!(debug_assertions) && tokio::task::spawn_blocking(built_cli_outdated).await.unwrap_or(false);
 
-    outdated || is_stale(&checkout, port).await
+    if outdated {
+        return Verdict::Stale;
+    }
+
+    is_stale(&checkout, port).await
 }
 
 fn forget_verdict(servers: &DesignServers, checkout: &str, port: u16) -> StudioResult<()> {
@@ -269,7 +288,7 @@ async fn judged_with<F, J>(
 ) -> StudioResult<ServerState>
 where
     J: FnOnce() -> F,
-    F: Future<Output = bool>,
+    F: Future<Output = Verdict>,
 {
     let mut current = state(servers, checkout, port, known_log).await?;
 
@@ -290,13 +309,17 @@ where
     current.stale = match cached {
         Some(stale) => stale,
         None => {
-            let stale = judge().await;
+            let verdict = judge().await;
+            let stale = verdict != Verdict::Current;
 
-            servers
-                .verdicts
-                .lock()
-                .map_err(|_| StudioError::Poisoned)?
-                .insert(key, stale);
+            if verdict != Verdict::Unanswered {
+                servers
+                    .verdicts
+                    .lock()
+                    .map_err(|_| StudioError::Poisoned)?
+                    .insert(key, stale);
+            }
+
             stale
         }
     };
@@ -986,6 +1009,8 @@ mod tests {
         assert!(parse_ss_pids("").is_empty());
     }
 
+    const CAPTURED_STAMP: &str = r#"{"version":"3.0.0-next.28","build":"652c69c9dd2d","stamp":{"version":"3.0.0-next.28","build":"652c69c9dd2d"},"apiLevel":8,"builtAt":1794413247021,"projectRoot":"/home/tom/dev/ethlete-sdk","installed":{"stamp":{"version":"3.0.0-next.28","build":"efa41b631129"},"builtAt":1794413226278},"pid":901644,"owner":"terminal","cliRoot":"/home/tom/dev/ethlete-sdk/dist/libs/cli/src/lib/design"}"#;
+
     #[test]
     fn a_stamp_is_read_from_a_server_and_a_server_without_one_reads_as_none() {
         let serve = |body: &'static str, status: &'static str| {
@@ -1013,6 +1038,16 @@ mod tests {
         );
         assert_eq!(served_stamp(bare), None);
         assert_eq!(served_stamp(missing), None);
+    }
+
+    #[test]
+    fn a_served_stamp_with_more_fields_than_the_own_stamp_is_not_stale() {
+        let served: serde_json::Value = serde_json::from_str(CAPTURED_STAMP).expect("the captured stamp");
+        let own = serde_json::json!({ "version": "3.0.0-next.28", "build": "652c69c9dd2d" });
+        let older = serde_json::json!({ "version": "3.0.0-next.28", "build": "efa41b631129" });
+
+        assert!(!stamps_differ(&own, &served));
+        assert!(stamps_differ(&older, &served));
     }
 
     #[cfg(unix)]
@@ -1112,15 +1147,15 @@ mod tests {
         let port = listener.local_addr().expect("an address").port();
         let servers = DesignServers::default();
         let judged = std::sync::atomic::AtomicUsize::new(0);
-        let judge = |stale: bool| {
+        let judge = |verdict: Verdict| {
             judged.fetch_add(1, Ordering::SeqCst);
-            async move { stale }
+            async move { verdict }
         };
 
-        let first = judged_with(&servers, "/checkout", port, None, || judge(true))
+        let first = judged_with(&servers, "/checkout", port, None, || judge(Verdict::Stale))
             .await
             .expect("a state");
-        let second = judged_with(&servers, "/checkout", port, None, || judge(false))
+        let second = judged_with(&servers, "/checkout", port, None, || judge(Verdict::Current))
             .await
             .expect("a state");
 
@@ -1129,7 +1164,7 @@ mod tests {
 
         forget_verdict(&servers, "/checkout", port).expect("forgotten");
 
-        let restarted = judged_with(&servers, "/checkout", port, None, || judge(false))
+        let restarted = judged_with(&servers, "/checkout", port, None, || judge(Verdict::Current))
             .await
             .expect("a state");
 
@@ -1144,7 +1179,7 @@ mod tests {
             .expect("the verdicts")
             .insert(("/checkout".to_owned(), STOPPED), true);
 
-        let stopped = judged_with(&servers, "/checkout", STOPPED, None, || judge(true))
+        let stopped = judged_with(&servers, "/checkout", STOPPED, None, || judge(Verdict::Stale))
             .await
             .expect("a state");
 
@@ -1155,6 +1190,24 @@ mod tests {
             .lock()
             .expect("the verdicts")
             .contains_key(&("/checkout".to_owned(), STOPPED)));
+        drop(listener);
+    }
+
+    #[tokio::test]
+    async fn a_server_that_answered_no_stamp_yet_is_judged_again() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("a listener");
+        let port = listener.local_addr().expect("an address").port();
+        let servers = DesignServers::default();
+
+        let starting = judged_with(&servers, "/checkout", port, None, || async { Verdict::Unanswered })
+            .await
+            .expect("a state");
+        let answered = judged_with(&servers, "/checkout", port, None, || async { Verdict::Current })
+            .await
+            .expect("a state");
+
+        assert!(starting.stale);
+        assert!(!answered.stale);
         drop(listener);
     }
 

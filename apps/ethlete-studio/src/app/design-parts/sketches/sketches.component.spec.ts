@@ -264,6 +264,13 @@ describe('SketchesComponent', () => {
     expect(textOf(root.querySelector('header'))).toContain(LABELS.fresh);
   });
 
+  it('offers Verwerfen on a sketch, but not on the old/new sketch of a direct edit', async () => {
+    const buttons = (root: HTMLElement) => [...root.querySelectorAll('header button')].map(textOf);
+
+    expect(buttons((await render({ part: 'components/card' })).nativeElement)).toContain(LABELS.discard);
+    expect(buttons((await render({ part: 'components/card@edit' })).nativeElement)).not.toContain(LABELS.discard);
+  });
+
   it('shows In Arbeit and the drawing placeholder for the drawn variant', async () => {
     const root: HTMLElement = (await render({ status: 'drawing', drawn: 'x' })).nativeElement;
 

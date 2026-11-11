@@ -2385,6 +2385,20 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines.pop()).toBe('NO SKETCH on components/button in acme');
   });
 
+  it('refuses to discard the old/new sketch of a direct edit', async () => {
+    const target = acme();
+    const lines = output();
+
+    expect(
+      await write(target, 'new', 'elements/hero@edit', '--variants', 'old,new', '--note', 'n', '--product', 'acme'),
+    ).toBe(0);
+    expect(await write(target, 'discard', 'elements/hero@edit', '--product', 'acme')).toBe(1);
+    expect(lines.pop()).toMatch(
+      /^EDIT-DISCARD-REFUSED: elements\/hero@edit .* pick old to undo the edit or new to keep it$/u,
+    );
+    expect(existsSync(join(target, DESIGN_DIR, 'acme/sketches/elements-hero.edit'))).toBe(true);
+  });
+
   it('checks each variant of the open sketches', async () => {
     const target = acme();
     const lines = output();

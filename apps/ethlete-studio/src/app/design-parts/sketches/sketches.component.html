@@ -103,9 +103,11 @@
           {{ LABELS.reload }}
         </button>
       }
-      <button [color]="errorTheme()" (click)="discard.emit()" et-button type="button" variant="transparent" size="sm">
-        {{ LABELS.discard }}
-      </button>
+      @if (discardable()) {
+        <button [color]="errorTheme()" (click)="discard.emit()" et-button type="button" variant="transparent" size="sm">
+          {{ LABELS.discard }}
+        </button>
+      }
     </header>
     <div
       class="absolute top-14 right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] z-2 flex items-center gap-space-4 [&_.et-form-field]:w-auto"
@@ -122,7 +124,7 @@
       }
     </div>
     <div
-      class="absolute top-27 right-space-5 bottom-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] overflow-clip [overflow-clip-margin:4px]"
+      class="absolute top-27 right-0 bottom-space-5 left-0 box-border overflow-clip pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
     >
       <ethlete-canvas-viewport
         #list

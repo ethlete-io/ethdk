@@ -1836,12 +1836,6 @@ listing, so it showed only as 60 s e2e timeouts. Tool fix (technical): the serve
 misses, draws, fresh redraws, time) to the timings file; the e2e prints that line when a `FULL_COMPARE_MS` wait fails;
 a spec asserts that a listing after an unrelated edit draws nothing.
 
-599\. Builder (2026-11-08, CI at 334243fe4): `merge.spec` stall 277 ms over a 91 ms bound, Linux only. Cause real:
-libuv `fork()` on the server thread blocks in proportion to the RSS (29-173 ms per spawn at 3.8 GB), and a merge
-spawns git up to 5 times; macOS uses `posix_spawn` and hides the cost, so every local run was green. Fixed in b85f8fd40
-(git calls run in the merge worker). Tool fix (technical, built in b85f8fd40): a spec asserts that the server thread
-makes no `child_process` call, so the rule holds on every OS, not only where a stall shows. Built in b85f8fd40.
-
 600\. Builder (2026-11-08, B434): the Chip panel-hide case broke through the fixture change 2bb8d3d58, not the app.
 With one changed state, Fit capped at scale 1, so "Auf 100 % zoomen" stayed in Fit, and `measure()` keeps the pan in
 Fit by design; the case measured a state it never meant to test. The fixture slice ran only its own cases. Fixed in
@@ -2507,15 +2501,6 @@ in pre-push, and a slice subagent never runs pre-push, so the slice commit passe
 backlog): pre-commit runs `lint:studio-label-specs` on staged spec files under `apps/ethlete-studio` (sub-second);
 bite: a staged spec that names a label the app no longer has is refused at commit.
 
-716\. Builder (2026-11-10, day shift, 714 follow-up c4c0939ee): the first push suite blocked on `query:typecheck`; the
-`libs/query` ngc lib config includes `src/scenarios`, and the new harness used `process` with no Node types. The 714
-subagent ran only `tsc -p tsconfig.spec.json`, because its brief named only that. Cause: the agent memory
-"vitest-does-not-typecheck" told every brief to run the spec tsconfig, not the project's `typecheck` target. Fix: the
-harness reads the env through `globalThis`; the doc agent rewrote that memory to name `nx run <p>:typecheck`. Tool fix
-(builder default): the builder's slice brief template names the `typecheck` target of each touched project; the
-`builder-agent` skill already says so for the slice itself. As built 714 CI: `query-clock-edges` (18d325612), matrix
-fraction 0 and 999 in parallel to `test`, in the `verified` needs; the two real CI runs are still owed.
-
 717\. Builder (2026-11-10, day shift, B249 missing harness 7093784d7): with "no harness = definite blocker", 12 cli spec
 cases had to change, and `part-ready` lost two cases: a CLI ready mark that succeeds, and the CLI action-failure lines
 with `--url` (the POST path still covers both). Cause: the cli fixtures hold no product with a valid harness map, so a
@@ -2738,38 +2723,12 @@ failed 2 of 4 runs at load 18. Suspect: a timing bound that the load breaks (not
 the push gate itself can fail under the load that the gate exists to survive. Backlog: measure the case under the 735
 CPU throttle, then fix the wait at its cause (an event, not a longer timeout).
 
-764\. Linux builder (2026-11-10, night): CI 42907782323 (89aa166b4) red in `ci / Rust host`: `cargo install cargo-audit
---locked --version 0.22.2` failed with "binary `cargo-audit` already exists in destination". Suspect (not proven by a
-CI run): Swatinem/rust-cache restores `~/.cargo/bin`, while the separate actions/cache key `cargo-audit-Linux-0.22.2`
-misses, so two caches own one binary. Fix cd266da38 adds `--force`. Lesson: a step that installs into a directory
-another cache restores has no single owner. Decided by the doc agent (tool internal, CI red). As built: cd266da38 + 59ca46802 (skip on a version match, else `--force`). Cause (measured, run 42912315216): the cargo-audit cache missed, the install step took under 1 s, so the version check found 0.22.2 already in `~/.cargo/bin` from rust-cache; Rust host green.
-
 765\. Mac builder (2026-11-10, night): `/e2e` shows "No active run log" in the push:suite `repeat` step. Cause: only the
 `e2e` step writes a live log. Lesson: every long step writes one. Fix d06bd6f34 (Mac).
 
 766\. Doc agent (2026-11-10, 23:33): a mailbox `send` to the Linux builder made the dispatcher type into its pane (history
 line recalled). Suspect: `panelFocused` knows only `❯ ⏺` rows, this build draws `● main`.
 Tool fix (night, Linux): `send` refuses a SendMessage peer; panel regexes from a real pane.
-
-771\. Linux builder (2026-11-11, night, CI run 42916647044): two cli specs timed out (open-points-answer 30 s,
-merge.spec 60 s; 2-3 s locally). Cause (bite, subagent): the workers start from source through jiti, which caches in
-`<tmpdir>/jiti`, and vitest.setup.ts gives each spec file its own TMPDIR, so every file transpiled the 262-file worker
-graph again. As built a3df386fa: the spec tmpdir links `jiti` to `libs/cli/node_modules/.cache/jiti-specs`. Bite on one
-busy core: 30 s timeout without the fix, 12 s with it. Not verified: a CI run; the first worker start of a CI run is
-still a full transpile.
-
-773\. Mac builder (2026-11-11, night, 769 side finding): the darwin cpu-throttle (735) and plain CPU burners cannot
-reproduce an e2e case: both stall the design server, the sketch-fixture listing times out after 60 s, and the case does
-not run (throttle 50/35/20/10 %, 20 burners at load 34). Cause (measured): a whole-machine slowdown starves the server
-before it starves the page. Lesson: `QUOTA_PERCENT_DARWIN` suits specs only, never e2e. Tool fix (Mac, in progress): a
-renderer-only `--cpu-rate` flag (CDP `setCPUThrottlingRate`) in canvas.e2e.mjs reproduces a load-sensitive case.
-
-As built (735 Mac calibration, archived finding): the 719 case "keeps at most six near cells live" in
-`sketch-view.component.spec.ts`, under `cpu-throttle.mjs <p> -- npx vitest run --root apps/ethlete-studio --maxWorkers=1`,
-one run each, 1-minute load 2.3-5.6 on 6 cores: p 100 passes in 235 ms, p 20 passes in 1440 ms, p 10 fails at 3187 ms
-(the slow-case guard, 5000 ms timeout), p 5 fails at 7379 ms. Linux fails it at 1.7-2.7 s under CPUQuota=20%, so the
-Mac p 10 matches the Linux p 20: `QUOTA_PERCENT_DARWIN` is now 10. Not verified: a second run per p on a quieter
-machine; a new changed spec under the quota step.
 
 776\. Mac builder (2026-11-11, night, 769 3483c7fcd): the fixed e2e case no longer passes through a live frame iframe,
 so no case covers a keyboard user inside a live frame. Suspect (injected, not seen live): when the app remounts the
@@ -2792,87 +2751,6 @@ caught it before the push (f708e2e0b: `yarn test:e2e-helpers` in the Unit tests 
 verified locally only). Suspect, tool gap: nothing checks that a `node --test` spec that launches Chromium runs only in
 a job that installs it; push:suite runs where Chromium exists, so it cannot catch it. Decided by the doc agent (tool
 internal, the builder's recommendation): no tool fix for one case; a second case makes it night backlog.
-
-789\. Linux builder (2026-11-11, night, B438 measurement): the committed sketch `elements/rating` has 8 UTILITY-CSS
-findings, so a sketch with open check findings reached git. Suspect: none yet; the cause is the question, which gate
-should have refused it (pre-commit, `sketch check` before ready, or the merge). Decided by the doc agent: the builder
-names the cause first (night backlog, Linux, after 788, read only); the gate fix is tool work, the sketch fix itself
-waits for the day order (no sketch work at night, ADR 0257). Cause (read in git): the rule came after the sketch. `rating.css` in all 3
-variants last changed 2026-10-27 (fb8c7a0a5, 793d9381b, 95a6b82e7); UTILITY-CSS landed 2026-10-30 (80d70d9eb); later
-commits touched only `sketch.json`. No gate let a refused file through; nothing re-checks committed sketches when a rule
-lands. Decided by the doc agent (applies ADR 0226: no design check in a git hook or CI, so the builder's
-recommendation of a rule-commit gate is out): (a) a change that adds or tightens a static design rule runs that rule
-over every committed sketch and part of every product before its commit and fixes or exempts the findings in the same
-change (builder-agent skill rule, not a hook); (b) the builder finds out whether Studio shows a static finding on an
-existing ready sketch live when the designer opens it; if not, that is the tool fix (night backlog, Linux, after 790).
-Side fact: the sketch is ready with decision "pick c" since 2026-11-01 and is still not merged, although a picked sketch
-is merged by the builder. Day order: merge pick c with the UTILITY-CSS fix; a ready sketch with a pick that waits more
-than a day is its own Studio signal (Suspect: Studio shows no such age; the builder checks).
-(b) Cause (Linux builder, live read on a scratch serve + code, 2026-11-11 night): `elements/rating` is sketch-only, so
-the open-points call returns 404 `unknown-part` (`studio-api.ts` `knownPartOf`); static findings live only in
-`/__design/sketches` and show only as the tree error badge with a hover tooltip and a refused pick; the variant column
-filters to load errors; `openPointsOf` makes the `unmerged-sketch` pick point only for keys in `product.parts`, so a
-sketch-only part with a waiting pick gets none (the tree says plain `ready`). Pick c itself has 2 UTILITY-CSS findings, so
-Studio refuses pick c today. Decided by the doc agent (tool internals, no new wording): (1) `readOpenPoints`/`openPointsOf`
-add the targets of unmerged sketches to the part keys; (2) `knownPartOf` accepts a key an open sketch targets. Bite: a
-sketch-only part with a ready pick shows the existing pick point and no 404. Night backlog, Linux, after 650. (3) a new
-open-point kind `sketch-problem` (variant, rule, message) needs a chip label the human sees: morning round, builder
-default "Sketch-Regel verletzt: <rule>"; not built until the human answers.
-As built (Linux builder, 2026-11-11): (1) and (2), nothing more. `openPointsOf` lists the targets of unmerged sketches
-that are no part key after the parts, with their key-bound points (`unmerged-sketch` with its pick, comments, contrasts,
-direct edits); `readOpenPoints` gets them through it, `sketchOpenPointsOf` passes no sketches and is unchanged. `knownPartOf`
-also accepts a key an open sketch targets. The open-points cache needed no change: it already re-reads when a tracked
-`sketch.json` or sketch listing changes. Bite: `open-points-answer.spec.ts` "answers the pick point of a part that exists
-only in a ready sketch" fails without the fix (404) and passes with it; `open-points.spec.ts` now expects the sketch-only
-`components/x` line. Verified: `vitest related` (1320 tests), `cli:typecheck`, eslint. Live (scratch /tmp/sk-lab, own ports): the open-points GET
-for `elements/rating` answers 200 with the pick point. Live Studio shot (headless, shots in /tmp/b789-shots/): the Studio
-does not render it. Rating shows only under "Sketches" with a warning icon; selecting it opens the sketch view with no
-open-points chip; no "null", "undefined" or empty badge. Suspect (code read only): the chip renders only in the part view
-(`system-view.component.ts:177`, reads at :762), and a sketch-only part never gets one, so the new answer has no consumer.
-Suspect, not traced: the sketch view shows "Wartet auf deine Wahl" although the answer says ready with c picked. (3) is not built.
-
-B438 measured (ADR 0229, before 0173ca7a8 vs after 789031753, cold, alternating): studio-lab scratch, 3 sketches, 82
-frames: wall 16 s in all 4 runs, compare phase 3.91/3.96 s before vs 3.29/3.30 s after; sdk scratch, 1 sketch: wall
-22 s, compare phase 6.85/7.03 vs 6.58/6.74 s. Findings lines identical. The 150-280 s cold compare of finding 598 does
-not reproduce on today's products. Not measured: a product with many differing frames.
-
-790\. Linux builder (2026-11-11, night, 782 191ab7c46): nothing ties "a spec reaches the open-points worker" to "the spec
-warms it". Cause of 782 (measured): the first `openPointsAnswer` call starts the worker from `.ts` source and jiti
-transpiles its whole import graph (empty cache 7.0 s plain, 43.5 s at `CPUQuota=25%`); each spec author must know
-`warmOpenPointsWorker()`. Suspect (not measured): `open-points-loop.spec.ts` reaches the worker cold too. Lesson: a cost
-every caller must remember is a rule a new spec forgets (third case of the 783/787 class). Decided by the doc agent
-(tool internal, the builder's recommendation, scoped like 785): not a global setup file for every cli vitest worker
-(it would charge the cold start to specs that never reach the worker); the module through which a spec reaches the
-worker registers the warm `beforeAll` on import, so a spec that reaches it is warm and one that does not pays nothing.
-Bite: a new spec that calls the worker cold under `--slow 4` passes. Night backlog, Linux, after 789. Revised (the
-builder: the modules through which specs reach the worker are product modules the CLI ships, so they cannot register a
-`beforeAll`): a spec entry module `system/open-points.fixtures.ts` re-exports `openPointsAnswer` and
-`openPointsInWorker` and registers the warm `beforeAll` (120 s) on import; a `no-restricted-imports` rule for
-`libs/cli` `*.spec.ts` forbids those two names from the product modules and names the fixtures module; per-spec
-`warmOpenPointsWorker` calls go. Bite: a spec that imports from the product module fails lint; a cold spec through the
-fixtures module passes at `--slow 4`. Not covered: a spec that reaches the worker through another product call.
-As built (Linux builder, 2026-11-11): `system/open-points-worker.fixtures.ts` became `system/open-points.fixtures.ts`;
-it re-exports both names and registers the warm `beforeAll` on import. `libs/cli/eslint.config.mjs` restricts both names
-from `studio-api` and `open-points-runner` in `src/**/*.spec.ts`. The four specs moved; `slow-run.spec.ts` imports the
-module for its side effect (it reaches the worker through `startSlowRunner`). Verified: a spec with the product imports
-fails lint with both messages; with `JITI_FS_CACHE=false` at `--slow 4` a cold spec through the fixtures module passes
-(54.9 s), the same spec through `open-points-runner` fails (9.4 s); `vitest related` 128 files green; typecheck green.
-
-791\. Linux builder (2026-11-11, night, 650 verification): `yarn studio:e2e --case notice-hint` matched no case, and the
-builder reported the run as a check of the 650 load line. Cause (measured): `canvas.e2e.mjs` exits 1 when no case
-matches (`!matched`), but the builder read the exit code of `tail` after a pipe, and the log says only "0 cases on 0
-worker(s)" and "0/0 passed in 0.0s". Why no tool caught it: a filter that matches nothing prints a pass-shaped summary.
-Lesson: an empty run must say it is empty in words, not as a count a reader takes for green. Decided by the doc agent
-(tool internal, the builder's proposal): when a `--case` or `--page` filter matches nothing, print "--case <x> matches no
-case; names: ..." (closest names first) and skip the "0/0 passed" line. Bite: a spec with a filter that matches nothing
-expects the line and no "passed" summary. Night backlog, Linux, after 789 (b) (1)+(2). Owed for 650: one real case run
-that shows the load line.
-As built (Linux builder, 2026-11-11): `apps/ethlete-studio/e2e/case-filter.mjs` `noMatchLineOf`; `canvas.e2e.mjs`
-prints it to stderr and exits 1 before the Studio build when a `--case` or `--page` filter matches no case, so no
-summary prints. Verified: `case-filter.spec.mjs` passes, and fails with the closest-first sort removed (bite); its second case spawns `canvas.e2e.mjs --case zz-matches-no-case` and expects exit 1, the line
-and no "passed"; it fails with the early exit removed (bite); live `--case notice-hint` exits 1 with the line and five closest
-names, no "0/0 passed" (before: exit 1 with "0/0 passed in 0.0s"); live `--page Nowhere` exits 1 with the line. A
-filter that matches only through `--view` or a shard is not covered.
 
 792\. Linux builder (2026-11-11, night, live shot of 789 (b)): 128f5a9ce makes the open-points answer carry the pick point
 of the sketch-only `elements/rating`, but Studio shows none of it: the tree has only an orange warning icon, the sketch
@@ -3305,46 +3183,6 @@ the pre-commit run then stops the merge commit that would carry the duplicate. B
 `yarn push:suite` at HEAD 1665f5644, the suite log printed `push-suite: warning: 1 other test or build process(es) of this
 checkout run:` and the line `885101    4.0 % cpu  node node_modules/.bin/vitest run`. Verified live on Linux; not on the
 Mac.
-
-819\. Linux builder (2026-11-11, push:suite at 5c75ada87): the B489 sketch (da746a43e) copied the pre-merge sample
-`author: 'Tom Bornholdt'` into its variants, and the commit went through. Cause (measured). Why no tool caught it:
-`lint:person-names` runs only in pre-push, not in pre-commit. Tool fix (doc agent, tool internal): run
-`check-person-names` on the staged files in pre-commit.
-
-As built (ffaf42f02). `check-person-names.mjs --staged` checks the staged blobs (not the working tree) of the staged files under libs, apps and
-`.ethlete/design` against the same baseline and prints the same message as pre-push; `.husky/pre-commit` runs it when such a file is
-staged. The spec stages a name, clears it in the working tree and fails on the old script. Not verified: a real commit through the hook.
-
-820\. Linux builder (2026-11-11, same run): `lint:changesets` in push:suite failed on the untracked 815 changeset of a
-running subagent. Suspect: the check reads the working tree, not the HEAD export the suite tests. Tool fix (doc agent,
-tool internal): the suite runs the changeset check inside the HEAD export, so untracked files of other agents never
-count.
-
-Cause (measured). An untracked `.changeset/zz-temp-820-bad.md` with two paragraphs made `node tools/scripts/lint-changesets.js` exit 1: it
-lists the directory on disk. `check-changeset-coverage.js` already reads git. Also, the check runs in `preChecksStep` before the export, in the
-checkout, and in pre-push. As built: `lint-changesets.js --rev <sha>` reads the changesets committed in that commit via `git ls-tree`/`git show`, and
-`runChecks` (`pre-push-checks.mjs`) runs it with the pushed head, then the coverage check as `yarn lint:changeset-coverage`, so push:suite and pre-push both ignore untracked and edited files. Deviation:
-no export is made for this, the git blobs of HEAD are the same content. The spec fails on the old script. Not verified: a full `yarn push:suite` run.
-
-815 as built (Linux builder, 2026-11-11): the measured cause differs from the finding. The `type.css?inline` module
-already resolves `@assets` (system-modules spec). The unresolved copy is the product `styles.css`: it `@import`s
-`foundations/type/type.css`, the sketch swaps in the variant's file, and that inlined text never passed `withAssetUrls`.
-Built: `importedAssetUrlsPlugin` (`sketch-stylesheets.ts`), a PostCSS step after the swap that rewrites
-`url(@assets/...)` in every inlined declaration through `withAssetUrls`, so the variant's own `assets/` wins; and the
-render rule `FONT-FACE` (`system/font-faces.ts`, run in `inspectedFrameOf`): it loads each `@font-face` of the drawn
-frame as a FontFace and fails the part when one is not `loaded`: `@font-face "Roboto" from url("@assets/fonts/...")
-does not load (FontFace status error), so its text draws in a fallback font`. Bite: `sketch check
-foundations/type@font-pair --product studio` without the plugin fails with six FONT-FACE lines (two per variant); with
-it, ok. The new spec in `sketch-stylesheets.spec.ts` fails without the plugin. Product runs: studio and sdk have no
-FONT-FACE hit (their other findings are older). Not verified: the Mac.
-
-815 as built (Linux builder, 2026-11-11, 91cdff2ed): Cause corrected (measured with a debug line): not the `?inline`
-copy. The failing `@font-face` sat in the product's `styles.css`, which `@import`s `foundations/type/type.css`; for a
-sketch, `sketchStylesheetsPlugin` swaps in the variant file, and that inlined text never passed `withAssetUrls`. Fix: new
-`importedAssetUrlsPlugin` (PostCSS, after the swap) rewrites `url(@assets/...)`, so a variant's own `assets/` wins. New
-render rule `FONT-FACE` (`font-faces.ts`, run in `inspectedFrameOf`) fails a part whose `@font-face` does not reach
-status loaded. Bite: `sketch check foundations/type@font-pair` exits 1 with 6 FONT-FACE lines without the fix, 0 with it;
-the `sketch-stylesheets.spec` case fails without the plugin. studio and sdk have 0 FONT-FACE hits. Not verified: Mac.
 
 821\. Linux builder (2026-11-11, B489 a8621f4ab): the `pages/sketches@open-points` sketch was drawn while the
 change-crop sketch on the same part was open; the Mac merged change-crop b (2f83c46da), and open-points went stale with no
@@ -3819,13 +3657,6 @@ thread about 14 s under the CI-like recipe (`slowInputsOf` → app-files `declar
 decision, tool internal): move this work to the worker. Bite: a main-thread stall probe under the recipe sees no block
 over 1 s during a poll; before the fix it sees about 14 s. Queue: Linux builder, after 849.
 
-854\. Linux builder (2026-11-11, from 846), measured: the scratch checkout's `node_modules/.design-explore` was a link into
-the repo's shot store, so scratch runs wrote into the live store. Tool fix (doc agent decision, tool internal):
-`scratch:checkout` gives the scratch its own store and fails when the store path resolves into the main checkout. Bite:
-a spec that runs `scratch:checkout` and then writes a shot leaves the main store unchanged; before the fix the shot lands
-in it. Queue: Linux builder, right after 846, before B490, because it corrupts live data.
-Built in 2cf078a6e. As built: the cause was `linkDependencies` linking every `node_modules` entry, dot directories included. A scratch (and a push-suite export) now gets fresh real dirs for every dot directory except `.bin` (`.design-explore`, `.cache`, `.vite`, `.vitest-cache`, `.vite-temp` were all linked and written to), and `scratchCheckout` fails when the scratch store resolves into the main checkout. Verified: spec in `tools/scripts/scratch-checkout.spec.mjs` fails without the commit-export change; a real scratch in /tmp has an empty own store, removed afterwards. Only `.bin` still links into the main checkout (read only).
-
 855\. Linux builder (2026-11-11, from 846), measured: `ethlete-studio:build:production` fails since aaeef909d (B490 merge of
 foundations/type@font-pair variant c). The merged `type.css` holds `url('@assets/fonts/noto-sans-…woff2')`; the design
 server resolves `@assets`, the Angular build does not, so every studio e2e and every push suite fails. The merge did not
@@ -3857,18 +3688,6 @@ with the 39faaabd1 fix undone the case fails. Queue: Mac, after 851.
 840 slice did not run them. Tool fix (doc agent): the 851 related map also maps sources to e2e cases; the slice check
 names them and refuses a commit without a green run. Bite: a `warm-pages.ts` change names "[Edited]". Queue: with 851.
 
-859\. Linux builder (2026-11-11, grill session): `design-to-code.md` stood at its 440000-char budget, so no finding could
-be recorded; `archive-findings.mjs` moved 0 findings even with `--days=1`, and `--orphans` listed 225 findings with no
-STATUS row. Tool fix (doc agent decision, tool internal): a finding counts as done when it carries a built marker older
-than `--days`, with or without a STATUS row.
-Cause (script read + dry run): archiving took a finding only when STATUS marked it done, or when an uncited finding had
-a line that began with "As built" or "Built"; most findings never got a row and name the build inline ("As built" after
-a sentence, "built in <sha>"), so `--dry-run --days=1` moved 0. Age is the first date in the finding, as before.
-Built in be2e24d8f: a sentence-start "As built", or `built <sha>` whose sha is an ancestor of `origin/next`, is a built
-marker. Bite: a spec fixture with a built marker and no STATUS row is archived, one with an unpushed sha and an open one
-stay; with the old script the spec gets no finding moved. Run for real: 7 findings moved (440013 to 415197 chars), each
-removed line byte-equal in `archive/findings-2026-11.md`. Built in be2e24d8f.
-
 861\. Doc agent and Linux builder (2026-11-11): the /tmp tmpfs (47G) filled up (ENOSPC); no Bash call of either agent
 started, and the 859 push suite crashed in `commit-export.mjs` (symlink into `/tmp/push-suite-<sha>-*/node_modules`)
 with no verdict line. About 20G was freed again before anyone could look. Suspect (not proven): a parallel e2e or repeat
@@ -3894,6 +3713,9 @@ died with a builder restart, unnamed. Tool fix (doc agent decision, tool interna
 carries the subagent's result file in its row; the builder `restart` refuses while such a row names no result file or a
 result file older than the row's last start. Bite: a restart with B480 "in work" and no newer result file is refused.
 Queue: Linux builder, after 862.
+Cause (Linux builder, proven by the task notice): the subagent was not lost. A builder restart does not end the subagents
+of the old conversation; the old B480 agent still ran beside the fresh one. The builder stopped the old one. The restart
+guard of 863 and 864 also lists the live subagents of the session and refuses unless the handoff names each one.
 
 864\. Doc agent (2026-11-11): a self-restart of the doc agent dropped an open grill question. At 15:22 the doc agent
 asked the human Q1 "findings or STATUS rows first: one finding, then one STATUS row per builder from tomorrow". The human
@@ -3912,3 +3734,85 @@ wir doch nicht weiter oder? fortschritt ist extrem lahm". Cause: the doc agent q
 checks the queue against "Gerade in Arbeit"; nothing in the tool does either. Tool fix (doc agent decision, tool internal):
 a builder queue message names the STATUS item first; a finding in it carries "blocks: <item>" or "CI red", else it goes to
 the tool backlog. Applied now: the Linux builder is back on B249 after 860. Queue: tool backlog.
+
+866\. Doc agent (2026-11-11): the human saw STATUS still talk of "Go" after B249 removed the go system (ADR 0048). Eight
+STATUS rows and bullets planned work on Go, go.json or Go hashes (B63, B70, B78, B83, B87, B98, B113, B175, B219, B280,
+B319, update-dialog). Cause: the slices that removed `design go` and go.json never searched the plans for the removed
+words; the doc agent did not either. Fix now: the doc agent deleted B70, B113, B219, B280 and reworded the rest. Tool fix
+(doc agent decision, tool internal): the last slice that removes a concept greps `plans/ethlete-studio/STATUS.md` for its
+words and closes or rewords each hit in the same commit; B249 slice 4 does it for Go. Side: machinery backlog for a
+general check.
+
+869\. Doc agent (2026-11-11): the 867 brief told the Linux builder to leave the design fix as a visible direct edit for
+the human to merge. The human had already called the clip a defect and the canvas under the panel "as intended", so no
+open choice existed; ADR 0211 and ADR 0256 say such an edit is committed and recorded as merged. The builder caught the
+conflict with ADR 0256 before the commit. Cause: the doc agent wrote the fix line from the 228 pattern without the ADR
+search it runs before a grill question. Lesson: a brief that routes a change to the human is a grill question in
+disguise and needs the same ADR search. Tool fix: none (process; doc-agent rule already says search before asking).
+Decision sent: commit all, name finding 867 and ADR 0211.
+
+870\. Linux builder (2026-11-11, B480 Windows release CEF smoke on rack): Studio never leaves "Design-Server startet";
+`design_server_state` stays `stale: true` for 230 s while `/__design/stamp` answers 200 with the same build. Cause (code +
+measured body): `is_stale` (`apps/ethlete-studio/src-tauri/src/design_server.rs:242`) compares the whole JSON, but
+`own_stamp` holds only {version, build} and the served body has eight more fields, so every served stamp reads as stale
+on every OS. The spec near line 1012 uses a hand-written {version, build} body, so it never bit. Suspect: `judged_with`
+caches a no-answer verdict per checkout+port until the port stops listening. Lesson: a spec for a parsed server answer
+must take its fixture from a captured real body (AGENTS.md rule); the hand-written one hid the defect. Tool fix: compare
+only version+build, spec with the captured body (bite first), never cache a no-answer verdict; rebuild on rack and re-run
+the smoke. Side: user-facing; part of B480, which runs in parallel (ADR 0268). Built 2f8743432 (bites: real-body
+spec and no-answer spec fail on old code); on rack `stale: false` now.
+
+871\. Mac builder (2026-11-11, B345 slice 1, 82c6e3025): `et:design check` runs the committed CLI build, so it cannot see
+an uncommitted server change; a builder checks the old server and reads the result as a check of its own change.
+Suspect: the check resolves the CLI from the build output, not from source. Lesson: a check that cannot see the change
+under test must say so, not pass. Tool fix: the check prints which CLI build it runs and warns when `libs/cli` has
+uncommitted or unbuilt changes. Side: user-facing (every Studio project), after B249 (ADR 0269).
+
+872\. Mac builder (2026-11-11, B345 slice 1): design check cannot drive the change-crop states of pages/sketches
+("undrivable", 16 same aria-labels), so no design compare covered the new view before the live shot. Suspect: the harness
+samples feed no crop data. Lesson: a state the harness cannot drive is a hole in compare, and it was found by the
+builder, not reported by the tool as a gap. Tool fix: design check lists every undrivable state as a finding with its
+part, and the harness samples carry crop data for the change-crop states. Side: user-facing, after B249 (ADR 0269).
+
+873\. Mac builder (2026-11-11): `spec:stress` does not name the failing case, and `sketches.component.spec` first case
+times out cold under load (2/4 stressed with cli specs, 4/4 alone; Suspect). Side: machinery backlog for the weekly
+cleanup block (ADR 0269).
+Cause of the spec flake (run-proved, 3a3e014f5): the first Angular JIT compile counted inside the first cases; pre-B345
+code fails the same way. Fix: beforeAll warm-up, 3/3 runs 34/34. Machinery gap (same backlog): scratch:checkout copies
+only the current checkout, so testing an older commit needs files overwritten by hand.
+
+874\. Linux builder (2026-11-11, B480 after 870, rack): Studio still shows "Design-Server startet" after 241 s, 0 live
+frames. Suspect (probe lost Studio mid-run): the page waits on `serverAnswers$` (`studio-view.component.ts:358`), which
+fetches `http://localhost:4402/__design/stamp`; the server listens only on `::1:4402`; from PowerShell `localhost` gives
+200, `127.0.0.1` is refused; an in-page CDP fetch to `localhost` got no answer in about 90 s. Lesson: no spec or e2e
+fetches the server on both loopback addresses, so an IPv6-only bind passes on Linux and hangs on Windows. Tool fix: the
+design server binds both loopback addresses (every OS); a spec or e2e fetches `127.0.0.1` and `::1` (bite first); re-run
+the rack smoke. Side: user-facing; part of B480 (ADR 0268). B480 values after 870: runs yes, 0 live frames, installer
+141.17 MiB, installed 467 MiB, NotSigned.
+Cause (measured, 37eebcfda): not the bind. Chromium Local Network Access holds every fetch from http://tauri.localhost to
+loopback for a `loopback-network` prompt that Windows CEF never shows (app fetch timed out 6 s with the permission at
+`prompt`; a tab on localhost:4402 got 200 in 362 ms). Fix: `cef_runtime()` (`src-tauri/src/lib.rs`) allows
+LOOPBACK_NETWORK by default; the test checks the runtime config, no real prompt (CI has no Windows CEF; backlog).
+B480 values after 874: runs, stale false; live frames paint (12 frames, 100 pictures, shot
+`.claude/handoffs/agent-results/b480/shot-874.png`); installer 141.17 MiB (old bundle), installed 453.2 MiB; NotSigned.
+
+875\. Linux builder (2026-11-11, during 867): the tmux `studio-serve` (:4402) had crashed with a node stack trace; a
+subagent restarted it. Cause unknown; the trace was not kept. Lesson: a crashed serve is visible to the human (Studio
+waits on it) and leaves no record. Tool fix: `design serve` writes an uncaught error with its stack to a log file under
+the project's design folder, and Studio shows "Design-Server abgestürzt" with the log path instead of waiting. Side:
+user-facing, after B249 (ADR 0269).
+
+876\. Doc agent (2026-11-11, live app shot of 867, `.claude/handoffs/agent-results/867/app-sketch-button2.png`): on
+`components/button@off-centre` the "Aktuell" column label shows at x about 356 with no cells under it after a 20-25 s
+wait, and only one block of state cells shows; the shot does not show where the variants a, b, c are. Suspect: the frames
+of the "Aktuell" column did not load. Owed by the Linux builder: does the column stay empty after a full load, which
+request is missing, and why the e2e does not fail on an empty column. Tool fix (if confirmed): e2e and render-check fail a
+sketch column whose label has no cell under it after the listing is complete. Side: user-facing, after B249 (ADR 0269).
+
+879\. Linux builder (2026-11-11, B480): `serverAnswers$` uses `fromFetch` with no timeout, so any hung request keeps
+"Design-Server startet" forever (874 showed it). Lesson: a start screen that waits on a request with no timeout hides
+every server fault. Tool fix: timeout plus retry, and after the timeout Studio says the server does not answer, with the
+URL. Side: user-facing, after B249 (ADR 0269).
+
+880\. Linux builder (2026-11-11, B480, rack): after a cold start the design server does not answer for about 60-90 s.
+Suspect; measure it together with the 875 serve crash log. Side: user-facing, after B249 (ADR 0269).

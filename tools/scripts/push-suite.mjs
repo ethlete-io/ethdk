@@ -627,6 +627,27 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
         if (changed.status !== 0) return { status: 1, output: changed.stderr };
         return firstListingStep(changed.stdout.split('\n').filter(Boolean), {
           measure: (options) => timeFirstListing(dir, options),
+          prepareBase: async () => {
+            const base = git('rev-parse', '--verify', `${range.split(/\.{2,3}/)[0] || 'HEAD'}^{commit}`);
+            if (base.status !== 0) throw new Error(`no base commit for ${range}: ${base.stderr.trim()}`);
+            const baseSha = base.stdout.trim();
+            const exported = exportCommit(root, baseSha, 'push-suite-base');
+            const remove = () => rmSync(exported.dir, { recursive: true, force: true });
+            if (exported.error) {
+              remove();
+              throw new Error(`the export of base ${baseSha.slice(0, 12)} failed: ${exported.error}`);
+            }
+            const build = await runStep(
+              'npx',
+              ['nx', 'run-many', '-t', 'build', '-p', ...DRAWING_BUILDS],
+              exported.dir,
+            );
+            if (build.status !== 0) {
+              remove();
+              throw new Error(`the build of base ${baseSha.slice(0, 12)} failed:\n${build.output.slice(-2000)}`);
+            }
+            return { measure: (options) => timeFirstListing(exported.dir, options), remove };
+          },
         });
       }),
     repeat: () =>
@@ -677,7 +698,7 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
         log(failureReport(output));
         return finish(`blocked ${name} failed at ${sha}`);
       }
-      if (name === 'repeat' && output) log(output);
+      if ((name === 'repeat' || name === 'first-listing') && output) log(output);
       passed.set(name, sha);
     }
     return finish(`ok ${sha}`);

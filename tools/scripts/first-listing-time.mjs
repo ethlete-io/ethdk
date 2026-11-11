@@ -8,18 +8,47 @@ import { CI_LIKE, hasTaskset, loadPassTriggers, pinnedCommand, startBusyLoops } 
 import { holderLine } from './heavy-run-lock.mjs';
 
 export const FIRST_LISTING_LIMIT_MS = 15_000;
+export const FIRST_LISTING_ROUNDS = 3;
+export const FIRST_LISTING_SLACK_MS = 3_000;
+export const FIRST_LISTING_SLACK_SHARE = 0.2;
 const FIRST_LISTING_PATH = '/__design/sketches?product=studio';
 const SERVER_READY_MS = 120_000;
 const LISTING_TIMEOUT_MS = 120_000;
 
+const messageOf = (error) => (error instanceof Error ? error.message : String(error));
 const secondsOf = (ms) => `${(ms / 1000).toFixed(2)} s`;
+const medianOf = (values) => {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+};
+const timesOf = (samples) => samples.map(({ ms }) => (ms / 1000).toFixed(2)).join('/');
 
-/** Whether a first listing that took `ms` and answered `listed` sketches passes the gate. */
-export const firstListingVerdict = ({ ms, listed }, limit = FIRST_LISTING_LIMIT_MS) => {
-  if (listed === 0) return { ok: false, line: `first studio listing answered no sketch after ${secondsOf(ms)}` };
+/**
+ * Judges head's first listings against base's, measured alternately under the same load: head fails when its median is
+ * slower than base's by more than max(3 s, 20 %). The 15 s limit is only reported.
+ */
+export const firstListingVerdict = (base, head, limit = FIRST_LISTING_LIMIT_MS) => {
+  const empty = [...base.map((sample) => ['base', sample]), ...head.map((sample) => ['head', sample])].find(
+    ([, { listed }]) => listed === 0,
+  );
+  if (empty)
+    return {
+      ok: false,
+      line: `first studio listing on ${empty[0]} answered no sketch after ${secondsOf(empty[1].ms)}`,
+    };
+  const baseMs = medianOf(base.map(({ ms }) => ms));
+  const headMs = medianOf(head.map(({ ms }) => ms));
+  const slack = Math.max(FIRST_LISTING_SLACK_MS, baseMs * FIRST_LISTING_SLACK_SHARE);
+  const ok = headMs - baseMs <= slack;
+  const over = [headMs >= limit && 'head', baseMs >= limit && 'base'].filter(Boolean);
   return {
-    ok: ms < limit,
-    line: `first studio listing took ${secondsOf(ms)} for ${listed} sketches, limit ${secondsOf(limit)}`,
+    ok,
+    line: [
+      `first studio listing median head ${secondsOf(headMs)} (${timesOf(head)}) vs base ${secondsOf(baseMs)} (${timesOf(base)}),`,
+      `${head[0]?.listed} sketches; rule: fail when head is slower than base by more than max(3 s, 20 %) = ${secondsOf(slack)};`,
+      `${ok ? 'passed' : 'FAILED'}, ${over.length ? `${over.join(' and ')} over` : 'both under'} the ${secondsOf(limit)} reference`,
+    ].join(' '),
   };
 };
 
@@ -88,35 +117,67 @@ export const timeFirstListing = async (built, { taskset = hasTaskset() } = {}) =
   }
 };
 
-/** The push suite's first-listing step: under the CI-like load, for design server changes. */
+/**
+ * The push suite's first-listing step: for design server changes, prepares the base build, then times base and head
+ * alternately under the CI-like load and judges the difference.
+ */
 export const firstListingStep = async (
   files,
-  { measure, busy = startBusyLoops, taskset = hasTaskset(), limit = FIRST_LISTING_LIMIT_MS },
+  {
+    measure,
+    prepareBase,
+    busy = startBusyLoops,
+    taskset = hasTaskset(),
+    limit = FIRST_LISTING_LIMIT_MS,
+    rounds = FIRST_LISTING_ROUNDS,
+  },
 ) => {
   const triggers = loadPassTriggers(files);
   if (triggers.length === 0) return { status: 0, output: '', note: 'no design server change' };
-  const load = await busy(CI_LIKE.busyLoops, { taskset });
-  if (!load.ok) return { status: 1, output: '', note: `no load started: ${holderLine(load.holder)}` };
+  let base;
   try {
-    const verdict = firstListingVerdict(await measure({ taskset }), limit);
+    base = await prepareBase();
+  } catch (error) {
+    return { status: 1, output: `the base measure failed: ${messageOf(error)}` };
+  }
+  const load = await busy(CI_LIKE.busyLoops, { taskset });
+  if (!load.ok) {
+    base.remove();
+    return { status: 1, output: '', note: `no load started: ${holderLine(load.holder)}` };
+  }
+  let phase = 'base';
+  try {
+    const samples = { base: [], head: [] };
+    for (let round = 0; round < rounds; round++) {
+      phase = 'base';
+      samples.base.push(await base.measure({ taskset }));
+      phase = 'head';
+      samples.head.push(await measure({ taskset }));
+    }
+    const verdict = firstListingVerdict(samples.base, samples.head, limit);
     const note = `CI-like: ${CI_LIKE.busyLoops} busy loops, ${taskset ? `pinned to cores ${CI_LIKE.cores}` : 'ran unpinned: no taskset on this machine'}`;
     return { status: verdict.ok ? 0 : 1, output: verdict.line, note };
   } catch (error) {
-    return { status: 1, output: error instanceof Error ? error.message : String(error) };
+    return { status: 1, output: `the ${phase} measure failed: ${messageOf(error)}` };
   } finally {
     load.stop();
+    base.remove();
   }
 };
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const args = process.argv.slice(2);
-  const limitAt = args.indexOf('--limit-ms');
-  const limit = limitAt === -1 ? FIRST_LISTING_LIMIT_MS : Number(args[limitAt + 1]);
-  const built = resolve(
-    args.find((arg, index) => !arg.startsWith('--') && (limitAt === -1 || index !== limitAt + 1)) ?? '.',
-  );
+  const valueOf = (flag) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined);
+  const flagValues = new Set([valueOf('--limit-ms'), valueOf('--base')]);
+  const limit = Number(valueOf('--limit-ms') ?? FIRST_LISTING_LIMIT_MS);
+  const built = resolve(args.find((arg) => !arg.startsWith('--') && !flagValues.has(arg)) ?? '.');
+  const baseBuilt = valueOf('--base');
   const result = await firstListingStep(['libs/cli/src/lib/design/'], {
     measure: (options) => timeFirstListing(built, options),
+    prepareBase: async () => {
+      if (!baseBuilt) throw new Error('no --base <built checkout> given');
+      return { measure: (options) => timeFirstListing(resolve(baseBuilt), options), remove: () => undefined };
+    },
     busy: (count, options) => startBusyLoops(count, { ...options, lock: { wait: true } }),
     limit,
   });

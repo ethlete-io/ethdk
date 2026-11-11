@@ -47,6 +47,7 @@ import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { editRefOf, mergeAndRecord } from './system/sketch/merge-step';
 import { staleBaseOf, staleSketchBasesOf } from './system/sketch/stale-base';
 import { repoInvocation } from '../invocation';
+import { editDiscardRefusalOf } from './system/sketch/edit-sketch';
 import { MERGED_FILE } from './system/sketch/merged-parts';
 import { noVerdictLineOf } from './system/no-verdict';
 import { BusyState, groupedIssueLinesOf, RenderIssue, renderIssueLineOf, renderIssuesOf } from './system/render-check';
@@ -1839,6 +1840,10 @@ const merged = (context: Context) =>
 
 const discarded = (context: Context) =>
   withSketch(context, ({ sketch }) => {
+    const refused = editDiscardRefusalOf(sketch);
+
+    if (refused) return fail(refused);
+
     const problem = discardSketch({ target: context.target, sketch, author: authorOf(context.args) ?? undefined });
 
     if (problem) return fail(problem);

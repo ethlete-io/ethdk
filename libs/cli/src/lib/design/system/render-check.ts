@@ -338,7 +338,8 @@ const inspectFrame = (options: {
   };
   const clipMarginOf = (style, axis) => (style[axis] === 'clip' ? parseFloat((style.overflowClipMargin ?? '').split(' ').pop()) || 0 : 0);
   const drawsByClipping = (element) => element.closest('.et-spinner') !== null;
-  const pans = (element, style) => /^grab/.test(style.cursor) || [...element.children].some((child) => isPanned(getComputedStyle(child)));
+  const pansItself = (element, style) => /^grab/.test(style.cursor) || [...element.children].some((child) => isPanned(getComputedStyle(child)));
+  const pans = (element, style) => pansItself(element, style) || [...element.children].some((child) => pansItself(child, getComputedStyle(child)));
   for (const element of root.querySelectorAll('*')) {
     const style = getComputedStyle(element);
     const drawn = drawnSizeOf(element);
@@ -346,6 +347,32 @@ const inspectFrame = (options: {
     const cutY = clips(style.overflowY) && drawn.height > element.clientHeight + clipMarginOf(style, 'overflowY');
     const cutsOnPurpose = style.textOverflow === 'ellipsis' || style.webkitLineClamp !== 'none' || pans(element, style) || drawsByClipping(element);
     if ((cutX || cutY) && !cutsOnPurpose) report('CLIPPED', element, 'content ' + drawn.width + 'x' + drawn.height + ' in ' + element.clientWidth + 'x' + element.clientHeight);
+  }
+  const floating = [...root.querySelectorAll('*')].filter((element) => {
+    const style = getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    return (style.position === 'absolute' || style.position === 'fixed') && style.visibility !== 'hidden' && rect.width >= 120 && rect.height > 0;
+  });
+  for (const viewport of floating.length ? root.querySelectorAll('*') : []) {
+    const viewportStyle = getComputedStyle(viewport);
+    const inheritsGrab = /^grab/.test(viewportStyle.cursor) && viewport.parentElement && /^grab/.test(getComputedStyle(viewport.parentElement).cursor);
+    if (!pansItself(viewport, viewportStyle) || (inheritsGrab && ![...viewport.children].some((child) => isPanned(getComputedStyle(child))))) continue;
+    let clipper = viewport;
+    while (clipper && clipper !== root && getComputedStyle(clipper).overflowX === 'visible') clipper = clipper.parentElement;
+    if (!clipper || clipper === root) continue;
+    const box = clipper.getBoundingClientRect();
+    const clipLeft = box.left + clipper.clientLeft - clipMarginOf(getComputedStyle(clipper), 'overflowX');
+    const panel = floating.find((element) => {
+      if (element.contains(clipper) || clipper.contains(element)) return false;
+      const holder = getComputedStyle(element).position === 'fixed' ? root : element.offsetParent;
+      if (!holder || !holder.contains(clipper)) return false;
+      const rect = element.getBoundingClientRect();
+      const overlap = Math.min(rect.bottom, box.bottom) - Math.max(rect.top, box.top);
+      const room = holder.getBoundingClientRect().right - rect.right;
+      return overlap >= box.height / 2 && rect.left < clipLeft - 1 && rect.right <= clipLeft + 1 && box.width >= room * 0.75;
+    });
+    if (panel)
+      report('CANVAS-UNDER-PANEL', clipper, 'clips the pan viewport ' + pathOf(viewport) + ' from x=' + Math.round(clipLeft) + ', right of the floating panel ' + pathOf(panel) + ' at x=' + Math.round(panel.getBoundingClientRect().left) + ', so the canvas stops at the panel instead of running under it - clip at the edge of the panel\\'s container and pad the content by the panel width');
   }
 ${NESTED_SCROLL_STATEMENTS}
 
