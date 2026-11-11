@@ -3978,6 +3978,14 @@ add the targets of unmerged sketches to the part keys; (2) `knownPartOf` accepts
 sketch-only part with a ready pick shows the existing pick point and no 404. Night backlog, Linux, after 650. (3) a new
 open-point kind `sketch-problem` (variant, rule, message) needs a chip label the human sees: morning round, builder
 default "Sketch-Regel verletzt: <rule>"; not built until the human answers.
+As built (Linux builder, 2026-11-11): (1) and (2), nothing more. `openPointsOf` lists the targets of unmerged sketches
+that are no part key after the parts, with their key-bound points (`unmerged-sketch` with its pick, comments, contrasts,
+direct edits); `readOpenPoints` gets them through it, `sketchOpenPointsOf` passes no sketches and is unchanged. `knownPartOf`
+also accepts a key an open sketch targets. The open-points cache needed no change: it already re-reads when a tracked
+`sketch.json` or sketch listing changes. Bite: `open-points-answer.spec.ts` "answers the pick point of a part that exists
+only in a ready sketch" fails without the fix (404) and passes with it; `open-points.spec.ts` now expects the sketch-only
+`components/x` line. Verified: `vitest related` (1320 tests), `cli:typecheck`, eslint. Not verified: a live Studio serve
+on `elements/rating`, and how the Studio tree shows the new point; (3) is not built.
 
 B438 measured (ADR 0229, before 0173ca7a8 vs after 789031753, cold, alternating): studio-lab scratch, 3 sketches, 82
 frames: wall 16 s in all 4 runs, compare phase 3.91/3.96 s before vs 3.29/3.30 s after; sdk scratch, 1 sketch: wall
