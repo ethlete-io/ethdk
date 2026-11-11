@@ -177,6 +177,25 @@ test('a clean libs/cli without dist/libs/cli builds the last commit', () => {
   }
 });
 
+test('with build null, a copy that needs a build is null and nothing is built', () => {
+  const root = mkdtempSync(join(tmpdir(), 'studio-code-spec-'));
+
+  try {
+    git(root, 'init', '-q');
+    git(root, 'config', 'user.email', 'spec@example.com');
+    git(root, 'config', 'user.name', 'spec');
+    mkdirSync(join(root, 'libs/cli'), { recursive: true });
+    writeFileSync(join(root, 'libs/cli/file.txt'), 'one\n');
+    git(root, 'add', '.');
+    git(root, 'commit', '-qm', 'init');
+
+    assert.equal(ensureCliCopy(root, { log: quiet, build: null }), null);
+    assert.equal(existsSync(join(root, 'tmp/studio-cli', git(root, 'rev-parse', 'HEAD'))), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('the frontend area is the path list the app copy is built from', () => {
   assert.equal(AREAS.frontend, APP_SOURCES);
 });

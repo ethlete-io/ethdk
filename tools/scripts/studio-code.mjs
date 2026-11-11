@@ -194,8 +194,13 @@ export const ensureCliCopy = (
   const plan = cliCopyPlan({ latest, dirty, copies, distMatches });
   const target = join(cache, plan.sha);
 
+  if (build === null && plan.action === 'build') return null;
   if (plan.action !== 'use') rmSync(target, { recursive: true, force: true });
-  if (plan.action === 'copy' && !copyDist(root, target, plan.sha)) buildInWorktree(root, plan.sha, target, log, build);
+  if (plan.action === 'copy' && !copyDist(root, target, plan.sha)) {
+    if (build === null) return null;
+
+    buildInWorktree(root, plan.sha, target, log, build);
+  }
   if (plan.action === 'build') buildInWorktree(root, plan.sha, target, log, build);
 
   if (keepWhenDirty) writeFileSync(currentFile, `${plan.sha}\n`);

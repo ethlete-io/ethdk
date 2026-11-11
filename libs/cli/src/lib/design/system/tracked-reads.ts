@@ -125,6 +125,11 @@ export const trackedRun = <T>(run: () => T): { value: T; inputs: PrintedInput[] 
   }
 };
 
+/** Records the inputs of a held value in every tracked run around the call, as if the call had read them again. */
+export const recordInputs = (inputs: PrintedInput[]) => {
+  for (const { input } of inputs) recording?.(input);
+};
+
 /** The stat inputs of the files another process read, each also recorded by every tracked run around the call. */
 export const readInputsOf = (paths: Iterable<string>): PrintedInput[] =>
   [...new Set([...paths].map((path) => resolve(path)))].map((path) => {
