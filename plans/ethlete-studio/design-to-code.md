@@ -3964,6 +3964,16 @@ existing ready sketch live when the designer opens it; if not, that is the tool 
 Side fact: the sketch is ready with decision "pick c" since 2026-11-01 and is still not merged, although a picked sketch
 is merged by the builder. Day order: merge pick c with the UTILITY-CSS fix; a ready sketch with a pick that waits more
 than a day is its own Studio signal (Suspect: Studio shows no such age; the builder checks).
+(b) Cause (Linux builder, live read on a scratch serve + code, 2026-11-11 night): `elements/rating` is sketch-only, so
+the open-points call returns 404 `unknown-part` (`studio-api.ts` `knownPartOf`); static findings live only in
+`/__design/sketches` and show only as the tree error badge with a hover tooltip and a refused pick; the variant column
+filters to load errors; `openPointsOf` makes the `unmerged-sketch` pick point only for keys in `product.parts`, so a
+sketch-only part with a waiting pick gets none (the tree says plain `ready`). Pick c itself has 2 UTILITY-CSS findings, so
+Studio refuses pick c today. Decided by the doc agent (tool internals, no new wording): (1) `readOpenPoints`/`openPointsOf`
+add the targets of unmerged sketches to the part keys; (2) `knownPartOf` accepts a key an open sketch targets. Bite: a
+sketch-only part with a ready pick shows the existing pick point and no 404. Night backlog, Linux, after 650. (3) a new
+open-point kind `sketch-problem` (variant, rule, message) needs a chip label the human sees: morning round, builder
+default "Sketch-Regel verletzt: <rule>"; not built until the human answers.
 
 B438 measured (ADR 0229, before 0173ca7a8 vs after 789031753, cold, alternating): studio-lab scratch, 3 sketches, 82
 frames: wall 16 s in all 4 runs, compare phase 3.91/3.96 s before vs 3.29/3.30 s after; sdk scratch, 1 sketch: wall
