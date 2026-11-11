@@ -5,7 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QUIET_HEADER, SERVED_LINES_HEADER } from '../render';
 import { WarmDraw } from '../warm-draw';
 import { createDrawCount, drawnMoreThanOnce } from './draw-count.test';
-import { renderIssuesOf } from './render-check';
+import { renderIssuesOf, RenderJob } from './render-check';
+import { SketchVariant } from './system-modules';
 
 const draws = createDrawCount();
 const RENDERED = { path: '/__design/render', body: '{"call":"b","template":"<et-card />"}' };
@@ -26,6 +27,17 @@ const SERVED_BY: Record<string, string[]> = {
   c: ['/src/c.ts'],
 };
 const served = new Map<string, string>();
+const SKETCH = 'components/a';
+const SYSTEM_REGISTRY = '/@id/__x00__virtual:design-explore/system';
+const variantFileOf = (variant: string, file: string) =>
+  file.startsWith('/src/') ? `/sketches/a/${variant}${file}` : file;
+const registrySliceOf = (variant: string) =>
+  `/__design/registry-slice?${new URLSearchParams({ sketch: SKETCH, variant })}`;
+const sketchJob = (variant: string): RenderJob => ({
+  product: 'studio',
+  sketch: { target: SKETCH, variant },
+  parts: null,
+});
 const states = new Map<string, Record<string, unknown>>();
 
 vi.mock('../code-hash', async (importOriginal) => ({
@@ -39,8 +51,12 @@ vi.mock('../thumb', async (importOriginal) => ({
 }));
 vi.mock('../shot', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../shot')>()),
-  partFrameOf: (address: { part: string; state: string }) => ({
-    search: new URLSearchParams({ part: address.part, state: address.state }),
+  partFrameOf: (address: { part: string; state: string; sketch: SketchVariant | null }) => ({
+    search: new URLSearchParams({
+      part: address.part,
+      state: address.state,
+      ...(address.sketch ? { sketch: address.sketch.target, variant: address.sketch.variant } : {}),
+    }),
     size: null,
   }),
 }));
@@ -98,10 +114,14 @@ const fakeBrowser = (base: string) => ({
         goto: async (url: string) => {
           const search = new URL(url).searchParams;
           const part = (search.get('part') ?? '').replace('components/', '');
+          const variant = search.get('variant');
 
           draws.drawn('design', `${part} ${search.get('state')}`);
-          request('/frame.html');
-          (SERVED_BY[part] ?? []).forEach((file) => request(file));
+          request(variant ? `/frame.html?${search}` : '/frame.html');
+
+          if (variant) request(SYSTEM_REGISTRY);
+
+          (SERVED_BY[part] ?? []).forEach((file) => request(variant ? variantFileOf(variant, file) : file));
 
           if (part === 'b') request(RENDERED.path, RENDERED.body);
         },
@@ -123,13 +143,13 @@ const warmOn = (port: number) =>
 
 let target = '';
 
-const run = async (port = 1) => {
+const run = async (port = 1, job: RenderJob = { product: 'studio', sketch: null, parts: null }) => {
   printed.length = 0;
 
   const result = await renderIssuesOf({
     target,
     config: {} as never,
-    jobs: [{ product: 'studio', sketch: null, parts: null }],
+    jobs: [job],
     chromiumOf: async () => ({ chromium: {} as never, from: '/playwright' }),
     warm: warmOn(port),
     cached: true,
@@ -149,18 +169,26 @@ const run = async (port = 1) => {
 
 const check = async (port = 1) => (await run(port)).redrawn;
 
+const checkSketch = async (variant = 'a') => (await run(1, sketchJob(variant))).redrawn;
+
 describe('render inspect cache', () => {
   beforeEach(() => {
     target = mkdtempSync(join(tmpdir(), 'render-cache-'));
     served.clear();
 
     for (const url of ['/frame.html', ...Object.values(SERVED_BY).flat()]) served.set(url, `v1 ${url}`);
+    for (const variant of ['a', 'b']) {
+      served.set(registrySliceOf(variant), `v1 sketch ${variant}`);
+
+      for (const file of Object.values(SERVED_BY).flat())
+        served.set(variantFileOf(variant, file), `v1 ${variant} ${file}`);
+    }
     for (const name of Object.keys(SERVED_BY)) states.set(`/design/${name}.ts`, { default: {}, open: {} });
 
     served.set(RENDERED.path, '<et-card />');
 
     vi.stubGlobal('fetch', async (url: URL, init?: { headers?: Record<string, string>; body?: string }) => {
-      const body = served.get(url.pathname);
+      const body = served.get(`${url.pathname}${url.search}`) ?? served.get(url.pathname);
       const posted = init?.body !== undefined;
 
       if (body === undefined) return new Response('missing', { status: 404 });
@@ -249,5 +277,35 @@ describe('render inspect cache', () => {
     served.delete('/src/c.ts');
 
     expect(await check()).toEqual(['c']);
+  });
+
+  it('reads an unchanged sketch variant from the cache, drawing nothing', async () => {
+    expect(await checkSketch()).toEqual(['a', 'b', 'c']);
+    expect(await checkSketch()).toEqual([]);
+  });
+
+  it('redraws exactly the parts that loaded an edited file of the sketch variant', async () => {
+    await checkSketch();
+
+    served.set(variantFileOf('a', '/src/b.ts'), 'edited');
+
+    expect(await checkSketch()).toEqual(['b']);
+    expect(await checkSketch()).toEqual([]);
+  });
+
+  it('redraws the variant when its sketch.json changes what the variant draws', async () => {
+    await checkSketch();
+
+    served.set(registrySliceOf('a'), 'edited');
+
+    expect(await checkSketch()).toEqual(['a', 'b', 'c']);
+  });
+
+  it('keys a sketch variant apart from the merged parts and from its sibling variants', async () => {
+    await check();
+
+    expect(await checkSketch('a')).toEqual(['a', 'b', 'c']);
+    expect(await checkSketch('b')).toEqual(['a', 'b', 'c']);
+    expect(await checkSketch('a')).toEqual([]);
   });
 });
