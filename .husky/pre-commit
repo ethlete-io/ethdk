@@ -34,6 +34,11 @@ if [ -n "$adr_files" ]; then
   node ./tools/scripts/check-studio-adrs.mjs >/dev/null
 fi
 
+# A commit that cuts finding head or as-built lines from the design plan must archive them (about 0.1 s).
+if git diff --cached --name-only --diff-filter=M -- 'plans/ethlete-studio/design-to-code.md' | grep -q .; then
+  node ./tools/scripts/check-plan-findings.mjs
+fi
+
 # Prettier check of every staged Markdown blob; size budget and cell cap of the two big plan files.
 plan_files=$(git diff --cached --name-only --diff-filter=ACM -- '*.md')
 
