@@ -29,7 +29,7 @@ const put = (repo, file, content) => {
   writeFileSync(join(repo, file), content);
 };
 
-const fixture = (initial, preChangesets = []) => {
+const fixture = (initial, preChangesets = [], setup = () => undefined) => {
   const repo = mkdtempSync(join(tmpdir(), 'changeset-coverage-'));
   created.push(repo);
   mkdirSync(join(repo, 'tools/scripts'), { recursive: true });
@@ -40,6 +40,7 @@ const fixture = (initial, preChangesets = []) => {
   put(repo, 'package.json', JSON.stringify({ workspaces: [] }));
   put(repo, '.changeset/pre.json', JSON.stringify({ mode: 'pre', tag: 'next', changesets: preChangesets }));
   put(repo, '.changeset/silent-catch-try-catch.md', initial);
+  setup(repo);
 
   const git = (...args) => gitSpawn(args, { cwd: repo, encoding: 'utf8' });
   git('init', '-q');
@@ -131,5 +132,40 @@ describe('check-changeset-coverage dropped changesets', () => {
     commit((repo) => unlinkSync(join(repo, '.changeset/silent-catch-try-catch.md')));
 
     assert.equal(check().status, 0);
+  });
+});
+
+describe('check-changeset-coverage docs-only paths', () => {
+  const withPackages = (repo) => {
+    put(repo, 'package.json', JSON.stringify({ workspaces: ['apps/*', 'libs/*'] }));
+    put(repo, 'apps/ethlete-studio/package.json', JSON.stringify({ name: 'ethlete-studio' }));
+    put(repo, 'libs/cli/package.json', JSON.stringify({ name: '@ethlete/cli' }));
+  };
+
+  test('an ADR-only range passes without a changeset', () => {
+    const { commit, check } = fixture(REAL_BEFORE, [], withPackages);
+    commit((repo) => put(repo, 'apps/ethlete-studio/docs/adr/0001-a.md', '# A\n'));
+
+    assert.equal(check().status, 0);
+  });
+
+  test('a README change in libs/ still needs a changeset', () => {
+    const { commit, check } = fixture(REAL_BEFORE, [], withPackages);
+    commit((repo) => put(repo, 'libs/cli/README.md', '# cli\n'));
+
+    const result = check();
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /@ethlete\/cli changed/);
+  });
+
+  test('a Studio code change next to an ADR still needs a changeset', () => {
+    const { commit, check } = fixture(REAL_BEFORE, [], withPackages);
+    commit((repo) => {
+      put(repo, 'apps/ethlete-studio/docs/adr/0001-a.md', '# A\n');
+      put(repo, 'apps/ethlete-studio/src/a.ts', 'export const a = 1;\n');
+    });
+
+    assert.equal(check().status, 1);
   });
 });

@@ -3961,3 +3961,9 @@ starts slowly under load missed the first read. Cause (bite): the same case with
 on the old code and passes on the new one. Fix: the case polls until the run log holds the first line, then writes a
 `go` file; the child prints the second line only after it sees that file. No fixed delay is left. Verified: spec:stress
 4/4 at `--load 2 --slow 4`. Not verified: the Mac at load 18.
+
+B491 as built (Linux builder, 2026-11-11, ADR 0265): `check-changeset-coverage.js` skips the docs-only paths
+`DOCS_ONLY` (`apps/ethlete-studio/docs/adr/**`, `plans/**`) before it maps a path to a package. AGENTS.md "Releasing"
+and the changeset skill name the rule. Verified: 3 new specs in temp repos (an ADR-only range passes; a `libs/cli`
+README change and a Studio code change next to an ADR still fail); the ADR-only case fails on the old script, 11/11
+pass on the new one. Not changed: the pre-existing `no-useless-assignment` lint error at the `kept = null` line.

@@ -8,7 +8,8 @@
  * record of that release. A text-only rewrite is allowed.
  *
  * Only first-parent, non-merge commits count: a merge brings in commits another range already
- * checked. Commits by the release bot are skipped.
+ * checked. Commits by the release bot are skipped. Docs-only paths (`DOCS_ONLY`: Studio ADRs, `plans/`) need no
+ * changeset (ADR 0265).
  *
  * Usage:
  *   NX_BASE=<sha> [NX_HEAD=<sha>] node tools/scripts/check-changeset-coverage.js
@@ -20,6 +21,7 @@ const { join, resolve } = require('path');
 
 const ROOT = resolve(__dirname, '../..');
 const RELEASE_BOT = 'github-actions[bot]';
+const DOCS_ONLY = [/^apps\/ethlete-studio\/docs\/adr\//, /^plans\//];
 
 const git = (...args) =>
   execFileSync('git', args, {
@@ -96,7 +98,9 @@ for (const [sha, , subject] of commits) {
 
   const touched = new Set(
     changes.flatMap(([, ...paths]) =>
-      paths.flatMap((path) => dirs.filter(({ dir }) => path.startsWith(dir)).map(({ name }) => name)),
+      paths
+        .filter((path) => !DOCS_ONLY.some((pattern) => pattern.test(path)))
+        .flatMap((path) => dirs.filter(({ dir }) => path.startsWith(dir)).map(({ name }) => name)),
     ),
   );
 
