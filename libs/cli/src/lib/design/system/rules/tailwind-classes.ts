@@ -1,5 +1,4 @@
 import { execFileSync } from 'child_process';
-import { createHash } from 'crypto';
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { dirname, join, relative, resolve } from 'path';
 import postcss from 'postcss';
@@ -8,16 +7,28 @@ import { ProductSource } from '../base';
 import { ownSharedFilesOf, SharedDirs } from '../imports';
 import { productStylesheetFilesOf } from '../product-stylesheets';
 import { ResolvedPart, ResolvedProduct } from '../resolve-product';
+import { inputsUnchanged, PrintedInput, readInputsOf, trackedRun } from '../tracked-reads';
 import { sourceFileOf, textsOf } from '../ts-source';
 
 const CLASS_FACTS = `
+const fs = require('fs');
+const reads = new Set();
+const recorded = (read) => (path, ...rest) => {
+  if (typeof path === 'string') reads.add(path);
+  return read(path, ...rest);
+};
+fs.readFileSync = recorded(fs.readFileSync.bind(fs));
+fs.promises.readFile = recorded(fs.promises.readFile.bind(fs.promises));
 const { __unstable__loadDesignSystem } = require(process.argv[1]);
-const { css, base, rem, candidates } = JSON.parse(require('fs').readFileSync(0, 'utf8'));
+const { css, base, rem, candidates } = JSON.parse(fs.readFileSync(0, 'utf8'));
 __unstable__loadDesignSystem(css, { base })
-  .then((system) => process.stdout.write(JSON.stringify(candidates.map((c) => ({
-    canonical: system.canonicalizeCandidates([c], { rem }).join(' '),
-    emitsNothing: system.parseCandidate(c).some((p) => p.kind !== 'functional' || p.value !== null) && system.candidatesToCss([c])[0] === null,
-  })))))
+  .then((system) => process.stdout.write(JSON.stringify({
+    reads: [...reads],
+    facts: candidates.map((c) => ({
+      canonical: system.canonicalizeCandidates([c], { rem }).join(' '),
+      emitsNothing: system.parseCandidate(c).some((p) => p.kind !== 'functional' || p.value !== null) && system.candidatesToCss([c])[0] === null,
+    })),
+  })))
   .catch((error) => { process.stderr.write(String(error && error.message || error)); process.exit(1); });
 `;
 
@@ -258,41 +269,52 @@ export const stylesheetClassesOf = (product: ResolvedProduct) => {
   return names;
 };
 
-const factsCache = new Map<string, Map<string, ClassFacts>>();
+type Facts = { inputs: PrintedInput[]; rem: number; known: Map<string, ClassFacts> };
 
-/** Tailwind's facts on each candidate under the product's stylesheets; the root font size they set on `html` is the rem base. */
+const factsCache = new Map<string, Facts>();
+
+const freshFactsOf = (source: ProductSource | undefined): Facts => {
+  const { value: rem, inputs } = trackedRun(() =>
+    remOf([...(source ? productStylesheetFilesOf(source) : [])].map((file) => readFileSync(file, 'utf8'))),
+  );
+
+  return { inputs, rem, known: new Map() };
+};
+
+/**
+ * Tailwind's facts on each candidate under the product's stylesheets; the root font size they set on `html` is the rem
+ * base. Kept until a file this process or Tailwind read for them changes.
+ */
 export const classFactsOf = (options: { product: StyleHolder; classes: PartClasses }) => {
   const { target, stylesheets, files } = options.classes;
   const source = styleSourceOf(options.product);
-  const sheets = [...(source ? productStylesheetFilesOf(source) : [])].map((file) => readFileSync(file, 'utf8'));
-  const rem = remOf(sheets);
   const css = stylesheets.map((file) => `@import ${JSON.stringify(file)};`).join('\n');
-  const key = createHash('sha1')
-    .update(JSON.stringify([rem, css, sheets]))
-    .digest('base64url');
-  const known = factsCache.get(key) ?? new Map<string, ClassFacts>();
+  const slot = JSON.stringify([target, css, source?.configFile ?? null, source?.config.styles ?? []]);
+  const held = factsCache.get(slot);
+  const facts = held && inputsUnchanged(held.inputs) ? held : freshFactsOf(source);
   const missing = [...new Set(files.flatMap((file) => [...file.candidates, ...file.classes]))].filter(
-    (candidate) => !known.has(candidate),
+    (candidate) => !facts.known.has(candidate),
   );
 
-  factsCache.set(key, known);
+  factsCache.set(slot, facts);
 
   if (missing.length > 0) {
     const tailwind = require.resolve('@tailwindcss/node', { paths: [target, __dirname] });
     const output = execFileSync(process.execPath, ['-e', CLASS_FACTS, tailwind], {
-      input: JSON.stringify({ css, base: target, rem, candidates: missing }),
+      input: JSON.stringify({ css, base: target, rem: facts.rem, candidates: missing }),
       encoding: 'utf8',
       maxBuffer: 1 << 28,
       stdio: ['pipe', 'pipe', 'pipe'],
     });
-    const facts = JSON.parse(output) as ClassFacts[];
+    const answer = JSON.parse(output) as { reads: string[]; facts: ClassFacts[] };
 
+    facts.inputs.push(...readInputsOf([tailwind, ...answer.reads]));
     missing.forEach((candidate, index) =>
-      known.set(candidate, facts[index] ?? { canonical: candidate, emitsNothing: false }),
+      facts.known.set(candidate, answer.facts[index] ?? { canonical: candidate, emitsNothing: false }),
     );
   }
 
-  return known;
+  return facts.known;
 };
 
 /** Why Tailwind could not load the product's design system. */

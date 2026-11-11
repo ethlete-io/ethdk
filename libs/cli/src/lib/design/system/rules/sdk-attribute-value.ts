@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, statSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { DesignConfig } from '../../design-config';
 import { renderPackagesOf, typePathsOf } from '../../render-packages';
@@ -7,25 +7,17 @@ import { ResolvedProduct } from '../resolve-product';
 import { skipRule } from '../rule-skips';
 import { SdkDeclarations, sdkDeclarationsOf } from '../sdk-declarations';
 import { sdkCompoundsOf } from '../sdk-selectors';
+import { readsCacheOf } from '../tracked-reads';
 
 export const SDK_ATTRIBUTE_VALUE_RULE = 'SDK-ATTRIBUTE-VALUE';
 
 const SDK_PACKAGE = '@ethlete/components';
 
-const read = new Map<string, { mtime: number; declarations: SdkDeclarations }>();
-
-const declarationsIn = (file: string) => {
-  const mtime = statSync(file).mtimeMs;
-  const known = read.get(file);
-
-  if (known?.mtime === mtime) return known.declarations;
-
-  const declarations = sdkDeclarationsOf(readFileSync(file, 'utf8'));
-
-  read.set(file, { mtime, declarations });
-
-  return declarations;
-};
+/** The SDK declarations a built declaration file holds, read again once the file changes. */
+export const sdkDeclarationsIn = readsCacheOf({
+  slotOf: (file: string) => file,
+  run: (file: string) => sdkDeclarationsOf(readFileSync(file, 'utf8')),
+});
 
 const declarationFileOf = (product: ResolvedProduct) => {
   const target = resolve(product.configFile, '../../..');
@@ -65,7 +57,7 @@ export const sdkAttributeValuesOf = (
     return [];
   }
 
-  const known = declarations ?? declarationsIn(file as string);
+  const known = declarations ?? sdkDeclarationsIn(file as string);
 
   return styled.flatMap((part) => {
     const seen = new Set<string>();

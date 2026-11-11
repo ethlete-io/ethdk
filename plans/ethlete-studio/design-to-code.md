@@ -2337,6 +2337,20 @@ hand, and nothing checks that the key covers every input the store reads. Tool f
 takes its key from the shared fingerprint of the files the run read, never a hand-built key; a spec per store changes
 each input once and expects a fresh answer.
 
+As built (649): `readsCacheOf` in `system/tracked-reads.ts` is the shared store: the slot names the request, and an
+entry lives while every file and folder listing the run read still prints the same (`trackedRun` now nests, so an inner
+cached run no longer ends the outer run's recording). Moved onto it: the Tailwind facts store (`classFactsOf`: its
+Tailwind child process reports the files it read, so a theme in a package counts), the SDK declarations store
+(`sdkDeclarationsIn`, was mtime), the app files store (`appFilesOf`, was mtimes of reached files only, so a missing
+template or a `tsconfig.base.json` change was stale) and `cachedCheckOf`. A spec per store changes each input once;
+bite with the old keys: package theme (Tailwind), same-mtime edit (declarations, app files), appearing template and
+tsconfig path (app files) fail; the nesting spec fails without the outer chain. Remaining stores, not checked: the
+disk and async caches `action-cache`, `compare-cache`, `harness-build-cache`, `part-picture-cache`, `pixel-cache`,
+`served-cache`, `generated-stylesheets`, `shot-store`, `vite-cache`, `sketch/unchanged-states`, `link-free`
+`earlierFields`, `slow-checks` `bases`; `trackedRun` is synchronous, so they need an async fingerprint first. Not
+verified: a Tailwind `@plugin` or `@config` JS module the child loads through ESM `import` is not recorded, and no
+`design check` ran on a real product.
+
 650\. Builder (2026-11-09, ADR 0237): the 3 measured e2e runs ran at a load average of 39-51 from other sessions, so
 the times cannot show if the 90 s goal is met. Why no tool caught it: the e2e timing report has no load figure, so a
 noisy measurement looks like a clean one. Tool fix (backlog, with ADR 0208 run timings): every e2e timing report
