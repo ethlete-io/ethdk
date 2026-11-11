@@ -4073,3 +4073,12 @@ unchanged picture to every clone): step 0 before the move: when baseline and cac
 merged commit itself (the EDIT_OLD draw of `edit-sketch.ts` `refreshEditOld`) and compares on the same machine; only a
 changed picture opens the edit sketch. If the old draw fails, ADR 0253 applies (sketch with only `new`). Bite: a fresh
 clone with a direct edit that changes no picture auto-accepts and opens no edit sketch. Then step 1 (the move) as above.
+
+664 + 659 (part 1), as built by the Linux builder (2026-11-11, night): `apps/ethlete-studio/e2e/run-load.mjs` prints
+the machine (hostname), the cores and the workers on the load line of each e2e run
+(`load 3.1 at start, 7.9 at end on tank, 8 cores, 4 worker(s)`). A noisy run adds the top 5 processes by `ps` CPU share,
+each with its pid, command and checkout (`/proc/<pid>/cwd` on Linux, `?` elsewhere). Spec: `run-load.spec.mjs`
+(4 tests, the machine and process lines fail on the old code). Verified: the spec, a live `topProcesses()` sample on
+Linux, and one e2e case run. Not verified: the Mac (no `/proc`, so the checkout prints `?`). Not built: the push-suite
+warning before its start (659 part 2) and the goal check per machine (the 90 s goal machine is a human question).
+`ps` CPU share is the average over the life of the process, not the last minute.
