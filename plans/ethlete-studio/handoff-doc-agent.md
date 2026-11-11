@@ -150,3 +150,7 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   04d6485bc, eea6f5c7e, d0db285ce; next 790, 789 (b), 650. Linux builder restarts from its own handoff. Mac: push
   6bca47ab5 (brings 780 slot, 769 Tab-focus fix), then 777 Mac verify, 786, 735. Day order addition: merge the
   `elements/rating` sketch pick c with the UTILITY-CSS fix (789). Morning round unchanged (three items).
+- Night, 06:00 (after 358caa9f2): 790 built 0b52e8820 (not pushed, hold stays). 789 (b) cause recorded; fixes (1)+(2)
+  decided, Linux builds them after 650. Morning round now four items: (1) ADR summary of the night no-questions rule;
+  (2) finding 776 app fix into the day order; (3) B345 change-crop sketch pick by merge (663088643); (4) 789 (3) chip
+  label for a static sketch finding, builder default "Sketch-Regel verletzt: <rule>".
