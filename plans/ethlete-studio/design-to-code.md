@@ -3915,6 +3915,9 @@ part, and the harness samples carry crop data for the change-crop states. Side: 
 873\. Mac builder (2026-11-11): `spec:stress` does not name the failing case, and `sketches.component.spec` first case
 times out cold under load (2/4 stressed with cli specs, 4/4 alone; Suspect). Side: machinery backlog for the weekly
 cleanup block (ADR 0269).
+Cause of the spec flake (run-proved, 3a3e014f5): the first Angular JIT compile counted inside the first cases; pre-B345
+code fails the same way. Fix: beforeAll warm-up, 3/3 runs 34/34. Machinery gap (same backlog): scratch:checkout copies
+only the current checkout, so testing an older commit needs files overwritten by hand.
 
 874\. Linux builder (2026-11-11, B480 after 870, rack): Studio still shows "Design-Server startet" after 241 s, 0 live
 frames. Suspect (probe lost Studio mid-run): the page waits on `serverAnswers$` (`studio-view.component.ts:358`), which
