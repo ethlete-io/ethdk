@@ -3737,6 +3737,12 @@ line (`takeDeniedIds()`, also on the run and resident `WarmDraw`); `design check
 `system/check-denied.spec` (a part links a stylesheet outside the allow list) fails with the report removed and passes
 with it; cli typecheck, lint. Not verified: the Mac. Not built: `sketch check` and the other drawing commands still only log the line.
 
+As built (777 sketch check): `sketch check` (`checkedShots`) takes the denied ids of its run draw after all phases, prints
+the same `SERVE-DENIED <id>` line (`deniedLineOf`, exported from check-system) and returns 1; the render check now draws on
+that run draw when there is no resident warm process, so its requests are counted too. Verified: `sketch-check-denied.spec`
+(a sketch variant links a stylesheet outside the allow list) fails with the report removed and passes with it; related
+specs, cli typecheck, lint. Not verified: the Mac, the resident process path by a spec. `compare` and `shot` still only log.
+
 778\. Linux builder (2026-11-11, night, 710 sweep): the first real nightly spec sweep (CI run 42931941982) failed: 417
 files in 60 min, 17 under 100 % at `--slow 4` (Studio flows-page.component, sketches.component; cli open-points-answer,
 open-points-loop, serve, sketch-command at 1140 s, check-system-render, check-system-sketch, check-system, check-warm,

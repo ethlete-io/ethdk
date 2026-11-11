@@ -1017,7 +1017,7 @@ export const checkSystemRendered = async (options: CheckOptions) => {
   }
 };
 
-const deniedLineOf = (id: string) =>
+export const deniedLineOf = (id: string) =>
   `SERVE-DENIED ${id}: the design server answered 403, the file is outside its allow list, so a drawing got other content`;
 
 const checkSystemRenderedOn = async (options: CheckOptions & { warm: WarmDraw }) => {

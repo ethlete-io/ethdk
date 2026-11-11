@@ -9,6 +9,7 @@ import { originOf } from './system/write-origin';
 import { ASSETS_FOLDER } from './system/assets';
 import { addressSketchComments, commentsOnSketch } from './system/comments/comment';
 import { productDirOf } from './system/product';
+import { deniedLineOf } from './system/check-system';
 import { Problem } from './system/problem';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { formatProblemsOf, formatSketch } from './system/sketch/check-format';
@@ -1433,6 +1434,7 @@ const renderedVariantsOf = async ({
   entries,
   drawn,
   warm,
+  drawOn,
 }: {
   target: string;
   config: DesignConfig;
@@ -1440,6 +1442,7 @@ const renderedVariantsOf = async ({
   entries: { sketch: Sketch; variant: string }[];
   drawn: boolean;
   warm?: WarmDraw;
+  drawOn?: WarmDraw;
 }) => {
   const jobs = await Promise.all(
     entries.map(async ({ sketch, variant }) => {
@@ -1464,7 +1467,7 @@ const renderedVariantsOf = async ({
   const rendered = await renderIssuesOf({
     target,
     config,
-    warm,
+    warm: drawOn ?? warm,
     jobs,
     onProgress: (line) => console.error(line),
     before: [...new Set(entries.flatMap(({ sketch }) => sketch.targets))].map((part) => ({
@@ -1649,6 +1652,7 @@ const checkedShots = async (
           entries: chosen,
           drawn: true,
           warm: context.warm,
+          drawOn: context.warm ? undefined : shots,
         }),
       );
   const busy = rendered !== null && 'issues' in rendered ? (rendered.busy ?? []) : [];
@@ -1713,7 +1717,11 @@ const checkedShots = async (
 
   staleSince.forEach((problem) => console.error(problem.line));
 
-  if (failed || staleSince.length > 0) return 1;
+  const denied = [...new Set(shots.takeDeniedIds?.() ?? [])];
+
+  denied.forEach((id) => console.error(deniedLineOf(id)));
+
+  if (failed || staleSince.length > 0 || denied.length > 0) return 1;
 
   if (rendered !== null && 'issues' in rendered && (rendered.noVerdict || rendered.issues.length > 0)) return 1;
 
