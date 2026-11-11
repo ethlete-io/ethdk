@@ -2,4 +2,4 @@
 '@ethlete/core': patch
 ---
 
-The `tailwind-4-surface-theme` generator reads `elevation: -1` and fails, naming the theme, when a surface theme cannot be parsed, instead of dropping it with a warning.
+The `tailwind-4-surface-theme` generator reads a negative `elevation` such as `-1`. A theme the generator cannot parse now rejects with the theme name instead of being skipped with a warning.
