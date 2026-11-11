@@ -3724,6 +3724,11 @@ committed with a `source:` that cites them; first step a read-only report of fin
 day, so the doc agent checks each against the ADR index. Also in b05de1e05: the top-process list uses `ps` CPU, the
 lifetime average of a process, so a long-lived idle process can top the list. Decided (tool internal): sample CPU twice
 over about 1 s and rank by the delta. Bite: an idle process with a high lifetime average does not appear.
+793 (a), as built (Mac builder, 2026-11-11): `run-load.mjs` samples `ps -A -o pid=,time=` twice 1 s apart on darwin
+(`psTicksOf`, hundredths of a second) and ranks by the delta through the same `cpuDeltaOf` as Linux; a process that did not
+run is left out. Spec fixture: lines of a captured real Mac `ps` run. Verified: `node --test run-load.spec.mjs` 8/8; live
+on the Mac `processList()` gives 9 rows without pid 1 (launchd, 192 min lifetime, idle), the old code gave 721 rows with
+it. Not verified: the day prefix `1-02:03:04.50` comes from the BSD ps format, not from a captured run.
 664, answered by ADR 0240 (2026-11-09): the goal counts on the desk PC.
 
 794\. Linux builder (2026-11-11, night, 652 condition check): the builder reported "condition hit" with file and line

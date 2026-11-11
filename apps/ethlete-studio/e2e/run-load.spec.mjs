@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { cpuDeltaOf, cpuTicksOf, psRowsOf, runLoadLineOf, topProcessLinesOf } from './run-load.mjs';
+import { cpuDeltaOf, cpuTicksOf, psRowsOf, psTicksOf, runLoadLineOf, topProcessLinesOf } from './run-load.mjs';
 
 test('a run under the core count is a measurement and names machine, cores and workers', () => {
   assert.equal(
@@ -53,4 +53,40 @@ test('an idle process with a high lifetime average does not appear in the one-se
   ]);
 
   assert.deepEqual([...cpuDeltaOf({ before, after, seconds: 1, ticksPerSecond: 100 })], [[2, 80]]);
+});
+
+const MAC_PS_BEFORE = `    1 192:15.96
+   82 102:12.86
+  150  79:00.86
+91257   0:05.01
+91612   0:09.41
+91622   0:00.00
+`;
+const MAC_PS_AFTER = `    1 192:15.96
+   82 102:12.87
+  150  79:00.86
+91257   0:05.13
+91612   0:11.31
+91624   0:00.00
+`;
+
+test('macOS ps time output parses into hundredths of a second, minutes past sixty and day prefixes kept', () => {
+  assert.deepEqual([...psTicksOf(MAC_PS_BEFORE)].slice(0, 2), [
+    [1, 1_153_596],
+    [82, 613_286],
+  ]);
+  assert.deepEqual([...psTicksOf('  7 1-02:03:04.50\n')], [[7, 9_378_450]]);
+});
+
+test('on macOS an idle process with a high lifetime average does not appear in the one-second sample', () => {
+  const delta = cpuDeltaOf({ before: psTicksOf(MAC_PS_BEFORE), after: psTicksOf(MAC_PS_AFTER), seconds: 1 });
+
+  assert.deepEqual(
+    [...delta].map(([pid, cpu]) => [pid, Math.round(cpu)]),
+    [
+      [82, 1],
+      [91257, 12],
+      [91612, 190],
+    ],
+  );
 });
