@@ -3822,7 +3822,9 @@ the first failed run's output from the next nightly run, then fix the bound or t
 without a browser under CI"). Suspect (not measured): an environment difference under the quota run, not slowness, for
 example a browser lookup or a CI variable that the quota wrapper changes. Decided by the doc agent (tool internal):
 reproduce the local failure first (it needs no CI), name the cause, fix it with a case that bites (night backlog,
-Linux, before 782).
+Linux, before 782). Built 3c609e94e. Cause (measured): no environment difference (the Suspect was wrong); the two
+cases had the vitest default 5 s timeout while every other `acme()` case has 60 s, and under the quota they took 7.9 and
+8.6 s. Fix: 60 s; quota run 13/13, `spec:stress --slow 8` 2/2.
 As built (783): Cause (measured): no environment difference. Both cases had vitest's default 5 s timeout, while every
 other case that builds the `acme()` fixture has 60 s; under `CPUQuota=12%` they took 7.9 s and 8.6 s and timed out.
 Fix: `60_000` on both. Bite: the same quota run failed both cases before and passes 13/13 after;
@@ -3833,9 +3835,18 @@ so the CI log does not show why 782 and 783 failed. Cause: 616's "print the firs
 `--github` path (Suspect until the builder confirms in code). Lesson: a gate that fails without its reason costs a
 second run to learn it. Decided by the doc agent (tool internal, the builder's recommendation): in `--github` mode,
 print the first failed run's output in a `::group::`; a spec bites with a failing fixture in `--github` mode (night
-backlog, Linux, first of 782-784).
+backlog, Linux, first of 782-784). Built 87ce00dc9. Cause (read in code): `runOnce` spawned every run with stdio `ignore`, so no
+mode kept output; the 616 print never existed in spec-stress. Each run now keeps its last 64 KiB; `--github` prints the
+first failed run per file in a `::group::` after the `::error`. Not verified: a real CI log with the group.
 As built (784): Cause (read in code): `runOnce` spawned each run with `stdio: 'ignore'`, so no mode kept any output.
 Now each run keeps the last 64 KiB of stdout and stderr, and `--github` prints the first failed run's output of each
 file in a `::group::` after its `::error`. The new spec runs the script on a failing `node --test` fixture with
 `--github` and finds the fixture's error text in the group; it fails with `stdio: 'ignore'` restored (bite, in a copy).
 Not verified: a real CI log with the group (the next nightly stress run shows it).
+
+785\. Linux builder (2026-11-11, night, 783 3c609e94e): nothing flags a heavy-fixture design spec case that omits its
+timeout; the vitest default of 5 s then fails only on a slow machine. Lesson: a per-case number that every case must
+repeat is a rule a new case forgets. Decided by the doc agent (tool internal, the builder's recommendation, scoped): the
+60 s timeout comes from one place for the heavy design specs (the `libs/cli` design specs, or the fixture helper's own
+files), not a global `testTimeout` for every cli spec, so a fast spec still fails fast when it hangs; the per-case
+numbers then go. A case without its own timeout bites under the quota. Night backlog, Linux, after 620.
