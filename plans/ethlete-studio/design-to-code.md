@@ -3837,7 +3837,9 @@ internal, the builder's recommendation): no tool fix for one case; a second case
 locally under `CPUQuota=12%`. Suspect (not measured): a fixed timeout near 50 s that a slowed runner crosses. Lesson: a
 spec that passes only on a fast machine hides a timing bound. Decided by the doc agent (tool internal): after 784, read
 the first failed run's output from the next nightly run, then fix the bound or the slowness; a stress run at
-`--slow 2` bites (night backlog, Linux).
+`--slow 2` bites (night backlog, Linux). Sweep run 42949358908 (with 784): "answers the open points ... without a draw" timed out at
+the 30 s describe timeout, the second case took 16.4 s; neither draws (`drawnFindingsOf` mocked). The 50 s Suspect is
+wrong; new Suspect: cold work per `openPointsAnswer` call. In work (opus subagent: phases, fix, bite at `--slow 2`).
 
 783\. Linux builder (2026-11-11, night, 778 calibration, CI run 42941554007): at `--slow 2` on CI,
 `libs/cli/src/lib/design/system/check-system.spec.ts` failed 0/2 at about 52.8 s. Locally under `CPUQuota=12%` its two
@@ -3900,3 +3902,9 @@ implementations keep the old second draw. Specs: a differing pair drawn fresh ma
 `shot.spec.ts` names `drawn`, then `memory`, then `drawn` for `fresh`. Bite: with the `drawnFresh` check removed, both
 2-draw cases fail. `spec:stress --runs 4 --load 2`: 3 specs 4/4. Not verified: the cold compare time of finding 598 on a
 real product; a Studio e2e run (none covers the merge compare by name).
+
+787\. Linux builder (2026-11-11, night, sweep run 42949358908, `--slow 2`): `libs/cli/.../edit-sketch.spec.ts` passed
+1 of 2 runs (18.0 s). Not a known finding. A spec that fails one run in two on a slow runner is a flaky gate, worse than
+a slow one. Suspect: none yet; the builder reads the failed run's `::group::` output first. Decided by the doc agent
+(tool internal, the builder's recommendation): night backlog, Linux, after 782; name the cause, fix it, a stress run at
+`--slow 2` bites.
