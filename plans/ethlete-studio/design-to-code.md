@@ -4073,6 +4073,14 @@ unchanged picture to every clone): step 0 before the move: when baseline and cac
 merged commit itself (the EDIT_OLD draw of `edit-sketch.ts` `refreshEditOld`) and compares on the same machine; only a
 changed picture opens the edit sketch. If the old draw fails, ADR 0253 applies (sketch with only `new`). Bite: a fresh
 clone with a direct edit that changes no picture auto-accepts and opens no edit sketch. Then step 1 (the move) as above.
+Corrected (Linux builder, probe spec, 2026-11-11 night): the condition line above came from a code read and is wrong.
+Today a clone with no record and an empty cache already auto-accepts an unchanged direct edit: `autoAcceptOf` opens a
+temporary ready `<part>@edit` sketch, draws `old`, compares, and on no change discards it and records the merge (specs in
+`accepted-pictures.spec.ts` cover both cases). So step 0 is already built, the committed `pictures.json` is a speed
+cache, and step 1 goes ahead. Rest gap (Suspect, not measured): while the two draws run, the temporary edit sketch is on
+disk, so a slow run can show "waits for your pick" for that time, and a killed run or `EDIT-OLD-NOT-DRAWN` leaves it
+open. A sketch-free draw needs a sketches root through `DrawStates` and the warm server (large). Tool backlog, Linux,
+after 793; first measure how long the sketch shows on the Mac.
 
 664 + 659 (part 1), as built by the Linux builder (2026-11-11, night): `apps/ethlete-studio/e2e/run-load.mjs` prints
 the machine (hostname), the cores and the workers on the load line of each e2e run
@@ -4095,3 +4103,11 @@ day, so the doc agent checks each against the ADR index. Also in b05de1e05: the 
 lifetime average of a process, so a long-lived idle process can top the list. Decided (tool internal): sample CPU twice
 over about 1 s and rank by the delta. Bite: an idle process with a high lifetime average does not appear.
 664, answered by ADR 0240 (2026-11-09): the goal counts on the desk PC.
+
+794\. Linux builder (2026-11-11, night, 652 condition check): the builder reported "condition hit" with file and line
+numbers from a code read, the doc agent decided step 0 on it (b6b7bdf05), and a probe spec then showed the behaviour
+already exists. Why no tool caught it: a code read written with line numbers reads like a measurement, and the report
+did not say Suspect. Lesson: a fact that a decision rests on needs a probe or a bite, not a read; a read is a Suspect
+and must say so. Decided by the doc agent: builder-agent skill line: a condition check that gates a decision runs a
+probe (spec or live run) before it reports; a code read is reported as "Suspect (code read)". The doc agent asks
+"probe or read?" before it decides on a reported cause.
