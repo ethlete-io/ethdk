@@ -2599,9 +2599,9 @@ export default definePart({
         ),
       ).toBe(1);
       expect(lines.pop()).toContain('does not go with --allowed-by');
-      expect(write(target, 'merge', 'components/button', '--decided-by', 'tom', '--product', 'acme')).toBe(0);
+      expect(write(target, 'merge', 'components/button', '--decided-by', 'human', '--product', 'acme')).toBe(0);
       expect(JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/merged.json'), 'utf8'))).toMatchObject({
-        'components/button': { variant: 'a', decidedBy: 'tom' },
+        'components/button': { variant: 'a', decidedBy: 'human' },
       });
     });
 
@@ -2648,9 +2648,9 @@ export default definePart({
 
     it('records the pick the designer gave in chat as Studio does, so merge --decided-by goes through', async () => {
       const { target, lines } = await readied('a,b');
-      const said = 'tom in chat: nimm b';
+      const said = 'human in chat: nimm b';
 
-      expect(await write(target, 'merge', 'components/button', '--decided-by', 'tom', '--product', 'acme')).toBe(1);
+      expect(await write(target, 'merge', 'components/button', '--decided-by', 'human', '--product', 'acme')).toBe(1);
       expect(lines.pop()).toContain('has no pick');
       expect(
         await write(target, 'pick', 'components/button', '--variant', 'b', '--decided-by', said, '--product', 'acme'),
@@ -2658,9 +2658,9 @@ export default definePart({
       expect(JSON.parse(readFileSync(join(sketchDir(target), 'sketch.json'), 'utf8'))).toMatchObject({
         decision: { kind: 'pick', variant: 'b', comment: said, by: 'designer', pid: process.pid },
       });
-      expect(await write(target, 'merge', 'components/button', '--decided-by', 'tom', '--product', 'acme')).toBe(0);
+      expect(await write(target, 'merge', 'components/button', '--decided-by', 'human', '--product', 'acme')).toBe(0);
       expect(JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/merged.json'), 'utf8'))).toMatchObject({
-        'components/button': { variant: 'b', decidedBy: 'tom' },
+        'components/button': { variant: 'b', decidedBy: 'human' },
       });
     });
 
@@ -2668,7 +2668,7 @@ export default definePart({
       const { target, lines } = await readied('a,b');
       const pick = (...argv: string[]) => write(target, 'pick', 'components/button', ...argv, '--product', 'acme');
 
-      expect(await pick('--variant', 'z', '--decided-by', 'tom in chat: z')).toBe(1);
+      expect(await pick('--variant', 'z', '--decided-by', 'human in chat: z')).toBe(1);
       expect(lines.pop()).toContain('has no variant "z"');
       expect(await pick('--variant', 'a')).toBe(1);
       expect(lines.pop()).toContain('usage: sketch pick');
@@ -2690,7 +2690,7 @@ export default definePart({
         '--variant',
         'a',
         '--decided-by',
-        'tom in chat: a',
+        'human in chat: a',
         '--product',
         'acme',
       ),
