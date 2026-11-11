@@ -46,6 +46,7 @@ jobs:
       # spec:stress --slow needs `systemd-run --user` with the cpu controller delegated; the runner has no login
       # session, so its user manager only starts with linger.
       - name: Start the user systemd manager
+        if: runner.os == 'Linux'
         timeout-minutes: 2
         run: |
           sudo loginctl enable-linger "$USER"
