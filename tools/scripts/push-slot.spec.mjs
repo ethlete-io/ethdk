@@ -1,13 +1,15 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { checkSlot, claimSlot, readSlot, releaseSlot, slotState, SLOT_TTL_MS } from './push-slot.mjs';
 
+const cleanEnv = () => Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
+
 const run = (cwd, ...args) => {
-  const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
+  const result = spawnSync('git', args, { cwd, encoding: 'utf8', env: cleanEnv() });
   assert.equal(result.status, 0, result.stderr);
   return result.stdout.trim();
 };
@@ -106,4 +108,44 @@ test('a slot whose sha reached next is free', (t) => {
 
   assert.equal(slotState(readSlot({ cwd: linux })), 'free');
   assert.equal(checkSlot({ cwd: linux, holder: 'linux', log: () => undefined }), 0);
+});
+
+const writeVerdict = (cwd, sha, text) => {
+  const dir = resolve(cwd, run(cwd, 'rev-parse', '--git-path', 'push-suite'));
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, sha), text);
+};
+
+test('the slot sha with a push-suite ok verdict passes without the holder name', (t) => {
+  const { mac } = setup(t);
+  const sha = commit(mac, 'mac work');
+  claimSlot({ cwd: mac, holder: 'builder', sha });
+  writeVerdict(mac, sha, `ok ${sha}\n`);
+  const lines = [];
+
+  assert.equal(checkSlot({ cwd: mac, holder: 'other-host', pushedSha: sha, log: (l) => lines.push(l) }), 0);
+
+  assert.deepEqual(lines, []);
+});
+
+test('a different pushed sha is refused with the holder hint', (t) => {
+  const { mac } = setup(t);
+  const sha = commit(mac, 'mac work');
+  claimSlot({ cwd: mac, holder: 'builder', sha });
+  const other = commit(mac, 'more work');
+  writeVerdict(mac, other, `ok ${other}\n`);
+  const lines = [];
+
+  assert.equal(checkSlot({ cwd: mac, holder: 'other-host', pushedSha: other, log: (l) => lines.push(l) }), 1);
+
+  assert.match(lines[0], /set ETHLETE_BUILDER=builder if this is you/i);
+});
+
+test('the slot sha without an ok verdict is refused', (t) => {
+  const { mac } = setup(t);
+  const sha = commit(mac, 'mac work');
+  claimSlot({ cwd: mac, holder: 'builder', sha });
+  writeVerdict(mac, sha, `failed\n`);
+
+  assert.equal(checkSlot({ cwd: mac, holder: 'other-host', pushedSha: sha, log: () => undefined }), 1);
 });

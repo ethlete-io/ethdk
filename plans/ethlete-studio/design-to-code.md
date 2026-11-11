@@ -3819,6 +3819,14 @@ push-suite ok verdict exists for that sha; otherwise the refusal names the holde
 if this is you". Bite: a push with no `ETHLETE_BUILDER` after a suite ok for the same sha passes; a different sha is
 refused with the hint. Night backlog, Linux, after 799; the Mac must pull it before its next push.
 
+800 as built: `push-slot.mjs check "$local_sha"` (the hook passes the pushed sha as an argument, so the loop's stdin stays
+untouched and `git push origin <sha>:next` works). `checkSlot` passes for the holder name, or when the slot sha equals
+the pushed sha and `.git/push-suite/<sha>` (the file push-suite writes) starts with `ok `; the refusal ends with "Set
+ETHLETE_BUILDER=<holder> if this is you." Bite: the new "slot sha with ok verdict, other name" spec fails with the sha
+rule removed, passes with it; the different-sha and no-verdict specs also pass. The spec's git helper strips `GIT_*`.
+Verified: `node --test tools/scripts/push-slot.spec.mjs` (9 pass), eslint clean. Not verified: a real pre-push run
+against origin; the Mac must pull before its next push.
+
 801\. Linux builder (2026-11-11, night, 799 bite run; incident): the first bite run of the new pre-commit data-spec step
 wrote into the main repo's `.git/config`: `core.bare = true`, a fake `[user]`, `commit.gpgsign=false`. Cause (measured): a
 git hook runs with `GIT_DIR`/`GIT_INDEX_FILE` set, and the temp-repo `git init`/`git config` calls of
