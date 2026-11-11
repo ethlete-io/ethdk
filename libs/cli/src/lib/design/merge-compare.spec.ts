@@ -252,4 +252,30 @@ describe('looksTheSame', () => {
 
     expect((await drawnPair(draw, { target: 'elements/pill', variant: 'a' })).same).toBe(true);
   });
+
+  it('takes a differing pair drawn fresh as the result, with no second draw', async () => {
+    const draw = vi.fn(async (sketch: unknown) => ({
+      png: Buffer.from(sketch ? 'after' : 'now'),
+      marks: [],
+      source: 'drawn' as const,
+    }));
+
+    expect((await drawnPair(draw, { target: 'elements/pill', variant: 'a' })).same).toBe(false);
+    expect(draw).toHaveBeenCalledTimes(2);
+  });
+
+  it('draws a differing pair with a cached picture fresh, and only the fresh pair decides', async () => {
+    const draw = vi.fn(async (sketch: unknown, fresh: boolean) =>
+      fresh
+        ? { png: Buffer.from('same'), marks: [], source: 'drawn' as const }
+        : {
+            png: Buffer.from(sketch ? 'same' : 'stale'),
+            marks: [],
+            source: sketch ? ('drawn' as const) : ('disk' as const),
+          },
+    );
+
+    expect((await drawnPair(draw, { target: 'elements/pill', variant: 'a' })).same).toBe(true);
+    expect(draw.mock.calls.map(([, fresh]) => fresh)).toEqual([false, false, true, true]);
+  });
 });

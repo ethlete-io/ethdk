@@ -927,8 +927,13 @@ export const createPartShooter = (options: {
      * Draws one state of a part as `partShotOf` does for the middleware, with the part roots it holds,
      * ahead of every shot asked with `priority=low`.
      */
-    pictureOf: (options: PartAddress & { params: URLSearchParams; fresh?: boolean }) =>
-      partShotOf({ ...options, want: { priority: 'high' } }),
+    pictureOf: (options: PartAddress & { params: URLSearchParams; fresh?: boolean }) => {
+      let source: ShotSource | undefined;
+
+      return partShotOf({ ...options, want: { priority: 'high' }, onSource: (from) => (source = from) }).then(
+        (picture) => ({ ...picture, source }),
+      );
+    },
     /**
      * Draws `motion` of a part from its `from` state, `address.state`, at each keyframe time, with the motion's tracks;
      * `mode` picks `prefers-reduced-motion`. Kept until a change redraws the part. With `flowTo`, `motion` names a flow

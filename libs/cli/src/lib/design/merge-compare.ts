@@ -1,4 +1,4 @@
-import { PartMark, Picture } from './shot';
+import { PartMark, Picture, ShotSource } from './shot';
 import { pixelsDiffer } from './system/anti-alias';
 import { decodePng } from './system/part-compare';
 import { readPartModule } from './system/list-system';
@@ -29,6 +29,9 @@ export type CompareRow = {
 /** The rows of a merge preview, split by whether the merge changes a pixel of their picture. */
 export type MergeCompare = { target: string; variant: string; changed: CompareRow[]; unchanged: CompareRow[] };
 
+/** A picture with where it came from; without `source` it may have come from a cache. */
+export type SourcedPicture = Picture & { source?: ShotSource };
+
 export type PictureOf = (options: {
   product: string;
   part: string;
@@ -39,7 +42,7 @@ export type PictureOf = (options: {
   interaction: string | null;
   params: URLSearchParams;
   fresh?: boolean;
-}) => Promise<Picture>;
+}) => Promise<SourcedPicture>;
 
 /**
  * `true` when two pictures have the same size and no channel of any pixel differs by more than 8 of 255, so an
@@ -64,17 +67,19 @@ export const looksTheSame = (a: Buffer, b: Buffer) => {
 };
 
 /**
- * Draws a state without and with `merged`. A pair that differs is drawn once more, bypassing any kept picture,
- * and only that second pair counts, so one odd picture under load is not taken for a change.
+ * Draws a state without and with `merged`. A pair that differs and has a picture that may have come from a cache is
+ * drawn once more, bypassing any kept picture, and only that second pair counts, so a stale kept picture is not taken
+ * for a change.
  */
 export const drawnPair = async (
-  draw: (sketch: SketchVariant | null, fresh: boolean) => Promise<Picture>,
+  draw: (sketch: SketchVariant | null, fresh: boolean) => Promise<SourcedPicture>,
   merged: SketchVariant,
 ) => {
   const both = (fresh: boolean) => Promise.all([draw(null, fresh), draw(merged, fresh)]);
   let [now, after] = await both(false);
+  const drawnFresh = now.source === 'drawn' && after.source === 'drawn';
 
-  if (!looksTheSame(now.png, after.png)) [now, after] = await both(true);
+  if (!drawnFresh && !looksTheSame(now.png, after.png)) [now, after] = await both(true);
 
   return { now, after, same: looksTheSame(now.png, after.png) };
 };

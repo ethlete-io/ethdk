@@ -170,6 +170,31 @@ describe('unchangedStatesOf', () => {
       expect(shots).toBe(4);
     });
 
+    it('leaves out a state whose pair was drawn fresh and differs, with no second draw', async () => {
+      const { product, sketch } = spaced();
+      let shots = 0;
+      const pictureOf: PictureOf = async ({ sketch: on }) => {
+        shots++;
+
+        return { png: Buffer.from(on ? 'after' : 'now'), marks: [], source: 'drawn' };
+      };
+
+      expect(await unchangedStatesOf({ product, sketch, variant: 'a', load: counting().load, pictureOf })).toEqual([]);
+      expect(shots).toBe(2);
+    });
+
+    it('names a state whose stale cached picture differs but whose fresh pair draws the same', async () => {
+      const { product, sketch } = spaced();
+      const pictureOf: PictureOf = async ({ sketch: on, fresh }) =>
+        fresh
+          ? { png: Buffer.from('same'), marks: [], source: 'drawn' }
+          : { png: Buffer.from(on ? 'same' : 'stale'), marks: [], source: on ? 'drawn' : 'memory' };
+
+      expect(await unchangedStatesOf({ product, sketch, variant: 'a', load: counting().load, pictureOf })).toEqual([
+        'default',
+      ]);
+    });
+
     it('does not reuse a matching image result for a later screenshot session', async () => {
       const { product, sketch } = spaced();
       const options = { product, sketch, variant: 'a', load: counting().load };
