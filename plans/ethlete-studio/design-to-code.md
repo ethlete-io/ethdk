@@ -3805,7 +3805,11 @@ Mac builder's recommendation, with one change): a builder that starts push:suite
 for its run time; the other builder commits but holds its push until the slot ends. The `agent-sessions claim` store is
 per checkout and does not reach the other machine, so the slot lives on origin (for example a ref with holder and
 expiry), has an expiry so a dead run cannot hold it, and is released when the push ends or the suite fails. A spec
-bites with two claimers. Tool fix (night backlog, Mac builder, after its push).
+bites with two claimers. Tool fix (night backlog, Mac builder, after its push). Built bc219f75d (note 28e202402): ref
+`refs/push-slot/next` on origin, a parentless commit whose message holds the holder (`ETHLETE_BUILDER`, else the
+hostname), the sha and a 60 min expiry; claim and release with `--force-with-lease` on the read slot; free when absent,
+expired, or its sha is in origin/next; released on a blocked verdict or SIGINT/TERM/HUP. Spec bites with plain
+`--force`. Verified live: GitHub accepts the ref. Not verified: a two-machine run, clock skew, signal release.
 
 781\. Linux builder (2026-11-11, night, 618 5577aacd1): a builder subagent put a Chromium spec
 (`probe-helpers.spec.mjs`) into `test:tools`, which runs in the CI Checks job with no Chromium; the builder's review
@@ -3855,3 +3859,9 @@ repeat is a rule a new case forgets. Decided by the doc agent (tool internal, th
 60 s timeout comes from one place for the heavy design specs (the `libs/cli` design specs, or the fixture helper's own
 files), not a global `testTimeout` for every cli spec, so a fast spec still fails fast when it hangs; the per-case
 numbers then go. A case without its own timeout bites under the quota. Night backlog, Linux, after 620.
+
+786\. Mac builder (2026-11-11, night, push:suite 81980de90): the repeat step blocked in run 3, six cases with a 10 s
+`page.goto` timeout in one burst at load 34. Suspect (not measured): the builder's own 780 subagent ran `spec:stress`
+at the same time. Lesson: two heavy runners on one machine make a red gate that says nothing about the code. Decided by
+the doc agent (tool internal): push:suite and spec:stress take one local heavy-run lock per machine; the second waits or
+stops with the holder's name; a spec bites with two runners. Night backlog, Mac, after the 777 Mac verify.
