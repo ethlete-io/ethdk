@@ -3957,6 +3957,9 @@ sketch column whose label has no cell under it after the listing is complete. Si
 range from a loaded machine, so it blocks a clean push and costs an A/B probe by hand. Tool fix: the gate runs a baseline
 on origin/next in the same step and judges the difference, not the absolute 15 s. Side: machinery backlog for the
 weekly cleanup block (ADR 0269); it moves up if it blocks a push again after the load wait.
+As built 079daaf4d, e7df5e0cb: the step exports and builds `@{upstream}`, times base and head alternately (3 each)
+under the load and fails when the head median exceeds the base median by more than max(3 s, 20 %); 15 s is only
+reported; a base export, build or listing failure fails the step. Live: head 16.48 s vs base 16.76 s, passed.
 
 878\. Linux builder (2026-11-11, B480): the CEF smoke never logs "painted": `smoke_script` (`console_log.rs`) looks for
 `ethlete-sketch-view iframe[data-state]`, but the view now renders `ethlete-design-canvas` / `ethlete-canvas-frame-cell`,
