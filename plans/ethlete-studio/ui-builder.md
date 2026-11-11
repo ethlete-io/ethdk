@@ -90,7 +90,7 @@ Not verified: a real Windows window, the notice tooltip against the design (comp
 frame. The embedding compares were not recorded in `implemented.json` (`compare --affected` would also record
 parts other slices changed), so their IMPLEMENTATION-UNCOMPARED stays.
 
-## B345 change-crop b (slices 1-3 built, live shot open)
+## B345 change-crop b (built, live shot done)
 
 App side of the merged `pages/sketches` change-crop b (2f83c46da). Slice 1: the server measures where a changed
 state differs (box, pixel count, regions) while it compares the pictures and lists it per target as `crops`.
@@ -112,3 +112,9 @@ shot of the crop in a running Studio, `design compare` of `change-crop`/`change-
 crop data for them), the unit word ("Stellen" for regions, the design mock says "Zellen").
 
 Built in 82c6e3025.
+
+Live shot (finding 792; Chromium 1440x900, design server on the new CLI, studio-lab `pages/film-detail` round 1 variant
+a, shots in `.claude/handoffs/agent-results/b345/`): crop frames, reason ("687 px in 1 Stelle · 2,3× vergrößert"),
+locator and one toggle click ("Ausschnitt" shows the full frames, the reason drops the zoom) all pass. Suspect
+(cosmetic): the crop top cuts the "Your review" label in half; the locator draws no page content. Not verified: N > 1
+places, several variants (ADR 0272), the toggle back, other zoom levels, WebKit and the Tauri shell.
