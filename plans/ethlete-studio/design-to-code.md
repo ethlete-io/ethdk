@@ -3979,3 +3979,14 @@ badge unchanged was refused by `sketch check` (same pixels as a), so every varia
 (only ROUND-NOT-READY before ready), `design check --lint <7 files> --tsconfig` ok, `et design shot` of the new states of
 every variant read at full scale, `sketch ready` ok (auto-merge skipped, variants differ). Not done: the app
 (`sketchStatus` reading the pick, one shared "waits for a pick" function, the bite) waits for the pick.
+
+B490 as built (Linux builder, 2026-11-11, ADR 0262/0264, finding 811): sketch `foundations/type@font-pair`, ready, no
+pick. Each variant ships its two fonts as self-hosted variable woff2 (fontsource 5.3.0, Latin subset, OFL 1.1) in its
+own `assets/fonts/`, with `@font-face` in `type.css` and the face first in `--font-ui`/`--font-code`. a: Roboto + Roboto
+Mono (74 kB). b: Inter + JetBrains Mono (86 kB). c: Noto Sans + Noto Sans Mono (66 kB, today's Linux look). Verified on
+Linux: `sketch check` ok, `design check --lint <6 files> --tsconfig` ok, `et design shot --variants` of the type sheet,
+`pages/merge` open drawn per variant in the design frame, every woff2 served 200 and its FontFace `loaded`, and each face
+measures wider than the serif fallback (none of Roboto, Inter, JetBrains Mono is installed here). Found: the
+`type.css?inline` copy that `tokenSheet` injects keeps `url('@assets/...')` unresolved, so each family has a second,
+never-loading `@font-face` and `document.fonts.check` returns false; the resolved face comes later and wins, but the
+order is the only thing that holds. Not done: the Mac shot (out of reach of this builder).
