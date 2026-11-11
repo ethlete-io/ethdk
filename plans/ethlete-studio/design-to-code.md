@@ -3802,3 +3802,13 @@ subprocess is 1.4 s of it (profiled). Tool fix (grill decision): a disk cache of
 Tailwind read. Target: a cold run under 1.5 s. Bite: a second cold start runs no class-facts subprocess when no input
 changed, and a changed input runs it. Build after 838 and 837. 830 option (b) stays off the human's list: the edit case
 meets the target, and the start warm-up covers the cold ask.
+
+843\. Linux builder (2026-11-11, CI 43016617514 on a00d96078): Studio e2e shards 1, 4 and 6 stopped at "sketch fixture
+check could not list the sketches: TimeoutError ... 60000ms"; the local push-suite on the same code passed. 832 was
+reverted (3ab01b2e6). Suspect (code read): the 832 warm-up loads the CPU at serve start and starves the first listing on
+the CI runner. Lesson: this is the second CI-only e2e failure today (829 too); push-suite runs on 32 idle cores, CI on
+2 workers under load, so the local gate cannot see a load defect. Tool fix (doc agent, tool internal): push-suite runs
+its e2e pass under CI-like limits (the 829 recipe: 2 workers, 4 cores with `taskset`, busy loops), or adds one such pass
+for changes under `libs/cli/src/lib/design`; the fixture check's fixed 60 s timeout (Mac builder, 828) gets a reason in
+its error (which request, how long the server was busy). Bite: the 832 warm-up re-applied fails push-suite locally.
+832 stays parked: re-land only with that bite green, and only if the cold run (2.6 s after 835) still needs it.
