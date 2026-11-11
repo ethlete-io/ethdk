@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -33,6 +34,14 @@ export const splitFindings = (planText) => {
 };
 
 const BUILT_LINE = /^(As built|Built)\b/;
+const AS_BUILT = /(?:^|[.;:] )As built\b/;
+const BUILT_SHA = /\bbuilt (?:in )?([0-9a-f]{7,40})\b/gi;
+
+export const isPushedSha = (sha, root = process.cwd()) =>
+  spawnSync('git', ['merge-base', '--is-ancestor', sha, 'origin/next'], { cwd: root }).status === 0;
+
+const isBuiltLine = (line, isPushed) =>
+  BUILT_LINE.test(line) || AS_BUILT.test(line) || [...line.matchAll(BUILT_SHA)].some((match) => isPushed(match[1]));
 const namedIn = (text, number) => new RegExp(`(?<![\\d.])${number}(?![\\d])`).test(text);
 const HEADING = /^#/;
 
@@ -43,7 +52,7 @@ const extentOf = (lines, from) => {
   return to;
 };
 
-export const archiveFindings = (planText, statusText, { today, days = 5 } = {}) => {
+export const archiveFindings = (planText, statusText, { today, days = 5, isPushed = isPushedSha } = {}) => {
   const rows = parseStatusRows(statusText);
   const done = doneFindingNumbers(rows);
   const cited = new Set(rows.flatMap((row) => [...row.findings]));
@@ -62,7 +71,7 @@ export const archiveFindings = (planText, statusText, { today, days = 5 } = {}) 
       to = extentOf(lines, block.from);
       const extent = lines.slice(block.from, to);
       const old = today && (today - new Date(date[0])) / DAY_MS > days;
-      const builtLines = extent.filter((line) => BUILT_LINE.test(line));
+      const builtLines = extent.filter((line) => isBuiltLine(line, isPushed));
       if (!builtLines.length) continue;
       if (!old && !builtLines.some((line) => namedIn(line, block.number))) continue;
       text = extent.join('\n');
