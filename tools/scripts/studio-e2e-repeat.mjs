@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
-import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
+import { startRunLog } from './run-log.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
 const RUNNER = 'apps/ethlete-studio/e2e/canvas.e2e.mjs';
@@ -131,15 +132,12 @@ const listRunner = (runner, args, cwd) =>
 
 export const runOnce = (runner, args, cwd, liveLog) =>
   new Promise((done) => {
-    if (liveLog) {
-      mkdirSync(dirname(liveLog), { recursive: true });
-      writeFileSync(liveLog, '');
-    }
+    const runLog = liveLog ? startRunLog(liveLog) : undefined;
     const child = spawn(process.execPath, [runner, ...args], { cwd, env: process.env });
     let output = '';
     const take = (chunk) => {
       output += chunk;
-      if (liveLog) appendFileSync(liveLog, chunk);
+      if (runLog) appendFileSync(runLog, chunk);
       for (const line of String(chunk).split('\n')) if (/^( {2}[✓✘] |NOT RUN )/.test(line)) console.log(`  ${line}`);
     };
     child.stdout.on('data', take);

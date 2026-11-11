@@ -112,7 +112,7 @@ test('reads a captured git log and needs a verdict only for the code commit unde
   );
 });
 
-test('a step with a log file writes its output there as it comes and still returns it', async () => {
+test('a step with a log file writes its output to a new file as it comes and still returns it', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'push-suite-log-'));
   const logFile = join(dir, 'handoffs', 'step.log');
   mkdirSync(join(dir, 'handoffs'));
@@ -121,10 +121,27 @@ test('a step with a log file writes its output there as it comes and still retur
   const step = runStep(process.execPath, ['-e', script], dir, logFile);
 
   await new Promise((done) => setTimeout(done, 150));
-  assert.equal(readFileSync(logFile, 'utf8'), 'out\n');
+  const runLog = readFileSync(logFile, 'utf8').replace('latest run log: ', '').trim();
+  assert.notEqual(runLog, logFile);
+  assert.equal(readFileSync(runLog, 'utf8'), 'out\n');
   const { output } = await step;
-  assert.equal(readFileSync(logFile, 'utf8'), 'out\nerr\n');
+  assert.equal(readFileSync(runLog, 'utf8'), 'out\nerr\n');
   assert.equal(output, 'out\nerr\n');
+  rmSync(dir, { recursive: true });
+});
+
+test('two runs write two distinct log files and the first is not overwritten', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'push-suite-two-logs-'));
+  const logFile = join(dir, 'step.log');
+  await runStep(process.execPath, ['-e', "console.log('first run exit')"], dir, logFile);
+  const first = readFileSync(logFile, 'utf8').replace('latest run log: ', '').trim();
+  await runStep(process.execPath, ['-e', "console.log('second run')"], dir, logFile);
+  const second = readFileSync(logFile, 'utf8').replace('latest run log: ', '').trim();
+
+  assert.notEqual(first, second);
+  assert.equal(readFileSync(first, 'utf8'), 'first run exit\n');
+  assert.equal(readFileSync(second, 'utf8'), 'second run\n');
+  assert.ok(!readFileSync(logFile, 'utf8').includes('exit'));
   rmSync(dir, { recursive: true });
 });
 

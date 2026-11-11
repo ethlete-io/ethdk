@@ -2159,6 +2159,12 @@ and drops the sketch.
 614\. Builder (2026-11-09, B440): the e2e runner overwrites its log when a run starts, so a watcher that greps the log
 for "exit" can read the end of the previous run. Tool fix (technical): each run writes a new log file.
 
+As built (614): `tools/scripts/run-log.mjs` gives each push-suite e2e step and each repeat run its own timestamped log
+(`push-suite-e2e-<stamp>-<pid>-<n>.log`, newest 5 kept) and prints the path; `push-suite-e2e.log` and
+`push-suite-repeat.log` now hold one line, `latest run log: <path>`, so a grep for "exit" cannot hit an old run. Verified:
+specs for two runs giving two distinct files with the first untouched, push-suite and repeat specs 48/48. Not verified:
+a full `yarn studio:e2e` run; the e2e-progress mod (reads any `*.log` by mtime and run-log content) was read, not run.
+
 615\. Builder (2026-11-09, B440): `tsc -p` on the Studio `tsconfig.spec.json` fails in `shot-state.spec.ts`
 (`failedShots` possibly null) since 38d421711. vitest does not typecheck, so the specs stayed green. Cause: the
 `typecheck` target of `ethlete-studio` and `timetrack-app` checked only `tsconfig.app.json`, so no gate typechecked
