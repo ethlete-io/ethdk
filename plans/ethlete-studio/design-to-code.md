@@ -3885,3 +3885,11 @@ the 10-17 px samples drew at 5-8 px, so the human saw no difference; no check sa
 zoom Studio shows them. Tool fix (grill decision): sketch check warns when two variant shots at Studio's fit zoom differ
 by less than a threshold in a region whose source differs, and names the variants and the region. Bite: the old font-pair
 sketch (before ccd93dfee, small samples only) gives the warning, the new one does not. Queue: after 846.
+
+850\. Mac builder (2026-11-11): `push:suite` was blocked three times in a row; each time the push slot expired, the
+Linux builder took it again at once (dd1a4b2527fb, until 13:58:38Z), so the Mac commits 840 and 841 stayed local.
+Suspect: `tools/scripts/push-slot.mjs` has no waiting list, so whoever polls first after a release wins, and a holder
+that pushes back-to-back always polls first. Tool fix (doc agent decision, tool internal): a builder that finds the slot
+taken enters a waiting list; on release or expiry the slot goes to the oldest waiter; a holder that just released cannot
+take it again while someone waits; the busy message names the waiters and the queue position. Bite: a spec with holder A
+releasing and re-acquiring while B waits gives the slot to B; without the fix A wins. Queue: Mac builder, after 845.
