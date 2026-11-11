@@ -3764,3 +3764,11 @@ internal, the builder's proposal): `spawnSync` timeout 30 s on each network git 
 unreadable" (warn, go on), as at the suite start. Bite: a fake remote that never answers ends the check within the
 timeout with the warning. Mac night backlog, after 777 Mac verify. Also: the Mac's earlier "Linux does not check the
 slot" is a Suspect, not a Cause.
+
+798\. Linux builder (2026-11-11, night, size gate): `node tools/scripts/archive-findings.mjs --help` ran the archive and
+moved 22 findings (b0d74fa72). Cause (measured): the script ignores its arguments. Harmless this time, but `--help` or a
+typo writes two tracked files. Why no tool caught it: the script has no argument check, and no spec calls it with an
+unknown flag. Lesson: a script that writes tracked files refuses arguments it does not know. Decided by the doc agent
+(tool internal, the builder's proposal): `--help` prints the usage and exits 0 with no write; an unknown argument prints
+the usage and exits 2 with no write; `--dry-run` lists what would move; a plain run moves as now. Bite: a spec with
+`--help` and with `--bogus` leaves both files byte-identical. Night backlog, Linux, small, after 659 part 2.
