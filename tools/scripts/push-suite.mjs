@@ -441,8 +441,16 @@ export const warnStaleDesignServers = async (log) => {
 export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loadProbe = {}) => {
   const sha = git('rev-parse', 'HEAD').stdout.trim();
   const passed = new Map();
+  let slot;
+  const release = () => {
+    if (!slot) return;
+    const released = slot.releaseSlot({ cwd: root });
+    slot = undefined;
+    log(released.ok ? 'push-suite: push slot released' : `push-suite: push slot not released: ${released.reason}`);
+  };
   const finish = (verdict) => {
     log(`push-suite: ${verdict}`);
+    if (!verdict.startsWith('ok')) release();
     if (only) log(`push-suite: --only ${only} writes no verdict file`);
     else {
       const file = verdictFileOf(sha);
@@ -453,6 +461,18 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
   };
 
   if (only && !STEPS.includes(only)) return finish(`blocked unknown step ${only}, expected one of ${STEPS.join(', ')}`);
+
+  if (!INNER_EXPORT && !only) {
+    const { claimSlot, heldLine, releaseSlot } = await import('./push-slot.mjs');
+    const claim = claimSlot({ cwd: root, sha });
+    if (claim.ok) {
+      slot = { releaseSlot };
+      log(`push-suite: ${heldLine(claim.slot)}`);
+    } else if (claim.slot) return finish(`blocked ${heldLine(claim.slot)}; commit on, push after its push or expiry`);
+    else if (claim.lost)
+      return finish('blocked another builder claimed the push slot first; see `yarn push:slot status`');
+    else log(`push-suite: push slot not claimed, running anyway: ${claim.reason}`);
+  }
 
   if (!INNER_EXPORT) {
     const startedAt = performance.now();
@@ -477,6 +497,7 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
   if (!INNER_EXPORT)
     for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'])
       process.once(signal, () => {
+        release();
         removeExport();
         process.exit(1);
       });
@@ -559,7 +580,9 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
     if (error) return finish(`blocked export of ${sha} failed: ${error}`);
     if (!INNER_EXPORT) {
       log(`push-suite: exported ${sha.slice(0, 12)} to ${dir} in ${seconds(performance.now() - exportedAt)}`);
-      return await runInner(reexecCommand(dir, root, { only, range }));
+      const status = await runInner(reexecCommand(dir, root, { only, range }));
+      if (status !== 0) release();
+      return status;
     }
     await warnStaleDesignServers(log);
     const reused = only
