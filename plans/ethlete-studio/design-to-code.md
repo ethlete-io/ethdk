@@ -3661,7 +3661,9 @@ the CLI's own `design/` files, so the copy location may take part. Fix: `checkSy
 `createRunDraw` (now with the check's `chromiumOf`) closed in `finally`, or on the resident draw with `perRun: true`
 (no check step reads `perRun` yet, so the resident path is unchanged). Check output is the same line for line before and
 after, cold and warm, in-process and resident, apart from timing lines. `check-warm.spec.ts` fails on the old code
-(both cases) and passes. Not verified: the Mac, the cache hit with the CLI in `tmp/studio-cli`.
+(both cases) and passes. Not verified: the Mac, the cache hit with the CLI in `tmp/studio-cli`. Built 6a87fdb4f.
+Follow-up (night backlog, Linux, after 775): prove or drop the cache-miss suspect with the real CLI copy in
+`tmp/studio-cli`; if a fresh server misses a cache entry it wrote, that is a cache-key defect of its own, with a spec.
 
 775\. Linux builder (2026-11-11, night, 710 sweep): pre-push `lint:runner-os` refused the push after a green push:suite
 (Linux cgroup path outside a Linux guard; fix a6c575f5f), so the push paid a full suite rerun. Cause: push:suite does
