@@ -3889,6 +3889,9 @@ an edit sketch with new+old folded the whole `new` variant. Cause (spec bite) un
 product; fix e8f44f88d: only `old` of an edit sketch gets unchanged states. Missed because the 5a spec covered only
 new-only and the 5a live run read only `old`. e2e 4b/4c owed in 5c-2b: in a `--prepare-checkout` checkout `design
 check --part components/zoom-chip` opened no edit sketch (Suspect: settle or a baseline picture makes it HELD).
+As built e1881998d (5c-1b): Cause (spec bite) every open-point reader used merged.json only; now serve holds
+same-drawing edits in memory (`sketch/held-edits.ts`) and drops them from open points, build-ready and ready.json.
+5c-1c (doc agent, ADR 0256): the same hold for an edit HEAD already holds. Live run owed in 5c-2b.
 
 869\. Doc agent (2026-11-11): the 867 brief told the Linux builder to leave the design fix as a visible direct edit for
 the human to merge. The human had already called the clip a defect and the canvas under the panel "as intended", so no
