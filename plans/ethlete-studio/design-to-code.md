@@ -2156,15 +2156,6 @@ that names its ADR (`--by builder --note "ADR <n>"`). The question repeated a de
 `design accept --by builder` works without a terminal when the note names an ADR; the builder then accepts the label
 and drops the sketch.
 
-614\. Builder (2026-11-09, B440): the e2e runner overwrites its log when a run starts, so a watcher that greps the log
-for "exit" can read the end of the previous run. Tool fix (technical): each run writes a new log file.
-
-As built (614): `tools/scripts/run-log.mjs` gives each push-suite e2e step and each repeat run its own timestamped log
-(`push-suite-e2e-<stamp>-<pid>-<n>.log`, newest 5 kept) and prints the path; `push-suite-e2e.log` and
-`push-suite-repeat.log` now hold one line, `latest run log: <path>`, so a grep for "exit" cannot hit an old run. Verified:
-specs for two runs giving two distinct files with the first untouched, push-suite and repeat specs 48/48. Not verified:
-a full `yarn studio:e2e` run; the e2e-progress mod (reads any `*.log` by mtime and run-log content) was read, not run.
-
 615\. Builder (2026-11-09, B440): `tsc -p` on the Studio `tsconfig.spec.json` fails in `shot-state.spec.ts`
 (`failedShots` possibly null) since 38d421711. vitest does not typecheck, so the specs stayed green. Cause: the
 `typecheck` target of `ethlete-studio` and `timetrack-app` checked only `tsconfig.app.json`, so no gate typechecked
@@ -2175,42 +2166,6 @@ their specs. Fix (d536fee67): both targets also run `tsc -p tsconfig.spec.json`.
 616\. Builder (2026-11-09, B441): a first run of `render-missing-dist.perf` failed in its `beforeAll`, and
 `spec:stress` showed no error output for the failed run, so the cause stayed a guess. Tool fix (technical):
 `spec:stress` prints the output of the first failed run.
-
-617\. Builder (2026-11-09, B441): the `render-missing-dist` specs listen on a random port that can clash with a port in
-use, the suspected cause of finding 616 and of the old unit flake. Tool fix (technical): the specs listen on port 0.
-Decided by the grill session under ADR 0230: wait bounds that only tell "answers at once" from "waits for a timeout"
-stay in the unit run; one moves to the perf job when it flakes.
-
-As built (617): the fixture passes `listenOn: 0` and reads the port from `httpServer.address()`; no random port is left,
-so no clash is possible. Verified: both specs pass, `spec:stress ... --runs 4 --load 2` 4/4 each, related specs and
-`cli:typecheck` green. Not verified: a forced clash on the old port (reasoned only).
-
-618\. Builder (2026-11-09, B447, 90ef0eeb8): Large "a sketch scroll never empties a cell" printed `(iframe: null)`.
-Cause (proven): `sketchCells` listed all cells and then probed each frame by position, so a frame removed in between
-gave a null probe and the cell counted as empty. Why the frame left in CI is not proven (likely the cap of 6 live
-frames against 8 visible cells); the detail now prints "frames gone before their probe". The tool did not catch it
-because nothing tests the e2e probe helpers and the race never happened locally. Tool fix: a spec for the probe helpers
-with a forced-race fixture page for each outcome.
-
-As built (618 tool fix): `censusCells`, `probeCell`, `drawnIn`, `sketchCells` and `CANVAS` moved unchanged from
-`canvas.e2e.mjs` to `apps/ethlete-studio/e2e/probe-helpers.mjs`. `probe-helpers.spec.mjs` (node --test, Chromium,
-`fixtures/probe-cells.html`) covers a live frame (`drawn`), an empty frame (`blank`, counts as empty) and a frame that
-a MutationObserver removes once the census marks it, so it leaves between the listing and the probe (reported gone,
-its picture shows). `test:tools` now also runs `apps/ethlete-studio/e2e/*.spec.mjs`. Verified: the race case fails with
-the old null-probe behaviour put back by hand and passes restored; spec:stress 4/4 under load 2; the case "a sketch
-scroll never empties a cell that had a picture" passed after the move. Not verified: why the frame left in CI.
-
-620\. Builder (2026-11-09, B445, c88cf6ebd): Merge "the sketch view stays open after the sketch dropped from the
-listing" timed out. Cause (server bug): a request joins a running listing, and `serve.ts` detached running listings on a
-part change but not on a sketch file change, so a request after the merge could get the deleted sketch back. Fix:
-`signalLists` detaches running listings first. That CI took this path is not proven; it is the only stale path found.
-The specs covered the join in studio-api but not the serve trigger on a sketch file change. Tool fix: a serve spec that
-runs every watcher event kind against a gated listing and asserts a fresh answer.
-
-As built (620): `serve.spec.ts` replaces the one unlink case with a table: a sketch file added, changed and deleted, and a
-part file changed, each fired while a listing is held, and the next request must see the files after the event. Bite:
-without `detachRunningListings()` in `signalLists` the three sketch cases fail and the part case passes; without it in
-`redraw` only the part case fails. No serve.ts change. Not verified: a real chokidar watcher or a real Vite server.
 
 626\. Builder (2026-11-09, B457, b1af8f143): the full `design check` of B456 wrote build-ready records with the absolute
 home path in `cmd` into `.ethlete/design/*/ready.json`, and `yarn lint:person-names` refused them. Cause: `originOf` in
@@ -3100,13 +3055,6 @@ As built (Mac, 8145d8357): a sketch folder with no files (recursive; a lone gene
 As decided (doc agent, tool internals, 2026-11-10, after 708): the design lint also covers `.ethlete/design/calls` (its
 33 old findings go into the lint baseline), and the pre-commit hook lints the staged `.ethlete/**/*.ts` files.
 
-723\. Mac builder (2026-11-10, 708 push): push:suite on c16d3856d failed once. `system/embedded-actions.spec.ts` "drops
-the record of an embedding part..." timed out at 5000 ms; `spec:stress --load 2` gives 0/4 fails; alone 3.0 s at load 13,
-5.1-5.3 s at load 17-26. Measured: the 708 lint step is not on its path. Suspect: a slow case near its limit under load;
-recent `system/` commits 538b77b31, f83b0bded, c58f340a0, 498d82393 changed its path. Tool fix (Linux builder): time
-`checkSystemRendered` and `markPartReady` per step before 538b77b31 and at f83b0bded; fix the slow step, not the limit.
-As built (723, Linux, spec only): measured at HEAD (laps, `ETHLETE_DESIGN_PHASES=1`, CPU profile, one run pinned to one core with `taskset -c 5`), not before 538b77b31. Steps free / one core: `tsc` of the product 0.40 / 0.81-0.96 s (static phase); `bespokeControlProblemsOf` 0.2 / 0.34-0.42 s, of it the first Playwright import in `chromiumOf` 0.14 s, Vite `createDesignServer` 0.145 s, two SSR loads 0.04 s, and it finds nothing (a page and a part with no controls); three Prettier runs of `ready.json` 0.05-0.10 s each (`markPartReady` x2, the check's record drop); open points 0.06 s. Cause (measured): no wasted step; the case pays a cold `tsc`, the first Vite and Playwright imports and three Prettier processes it does not check, and child processes and cold imports slow down most under load. Fix: the spec mocks `typecheckProduct` (ok) and `bespokeControlProblemsOf` ([]) as it already mocks render and completeness. Case 0.81 s to 0.20 s free, 1.28 s to 0.23 s on one core. Verified: the case still fails with the record drop in `part-build-ready.ts` disabled; `vitest related`, `cli:typecheck`, eslint, prettier. Not done: no tool change (a page can skip the bespoke server, but a component part still needs the SSR load; `check` without `warm` starts a draw server per rule, which a per-run draw as in c9b254f1b would share); no timing on code before 538b77b31 and no run at load 17+.
-
 724\. Mac builder (2026-11-10, B482): the pre-commit check refused a one-line as-built note in `design-to-code.md` at
 its 440,000-character budget, and `archive-findings.mjs` (also `--days=2`) moved 0 findings. Cause (measured, doc agent):
 `--orphans` lists 195 findings that no STATUS row names, so the archive never takes them; only findings of done rows
@@ -3199,29 +3147,6 @@ quota runs at about half the CI time: 20%. At 12% and 15% the warmed file fails 
 ms timeout`; with it `status=0 note=CPUQuota=20%, ran …sketch-view.component.spec.ts`. Still at risk: "keeps at most
 six" takes 1.7-2.7 s at 20% (one of five warmed runs failed at 2698 ms), so a push that changes that spec can fail the
 step until the case gets faster. Not verified: a full `yarn push:suite` run, the step on the Mac.
-
-735\. Linux builder (2026-11-10, 719 quota step, 0372514ff): push:suite runs each changed Studio spec file once under
-`CPUQuota=20%` (calibrated: the local budget fails a case at half its timeout, so 20% times at about half of CI). The
-step fails "keeps at most six near cells live" (100 cells) at 1.7-2.7 s, the at-risk case from the 719 As built, so a
-push that changes `sketch-view.component.spec.ts` can fail until the case is cheaper. Gap: on the Mac the step prints
-"skipped on darwin", so Mac pushes get no quota run. Decided by the doc agent (tool internal): Linux builder makes the
-case cheaper at the cause (fewer cells or a warm render, product code unchanged unless it does needless work), after
-the 732 sketch; then 731 (e2e under quota) as its own slice with its own calibration. Mac gap: the Mac builder finds a
-darwin throttle (for example `taskpolicy` or a cpulimit equivalent) in its tool backlog, or the step says on the Mac
-that the Linux push suite covers it.
-
-As built (Mac builder, 735 Mac gap): `tools/scripts/cpu-throttle.mjs` runs a command in its own process group and
-lets it run 20 ms of each 100 ms (SIGSTOP/SIGCONT, the `cpulimit` way); on darwin the quota step runs each changed
-Studio spec file under it (`cpu-throttle 20%` in the note). Verified: `cpu-throttle.spec.mjs` (a throttled busy loop
-gets less than half the count of a free one) and the push-suite spec. Not verified: the calibration. 20% of wall time
-on all cores is not `CPUQuota=20%` of one core; the at-risk case (719) must still fail at about half its timeout on
-the Mac. Found on the way: the push-suite spec case "a step with a log file writes its output there" failed 2 of 4
-runs at load 18 (flaky under load, not caused by this change).
-
-As built (732): sketch `pages/system@footer-open-points` (a in Gründe, b top level, new state `direct-edit-closed`).
-Tool defect: `design shot <part>@<name> --variants` cannot address a named sketch (`sketchHoldingOf` matches only the
-part, so the first sketch holding the part wins), and `ready` then wants a viewed shot it cannot get; the check used
-`shot --at` on a temp commit and recorded the view by hand.
 
 736\. Linux builder (2026-11-10, 732 sketch `pages/system@footer-open-points`, 6c2fc5cc0): `design shot
 pages/system@footer-open-points` fails "has no open sketch in product studio", and `shot pages/system --variants` draws
@@ -3407,24 +3332,6 @@ when it takes one (ADR 0234).
 
 As built (Linux builder, 4b50bdb51, not pushed yet): `tools/scripts/check-studio-status.mjs` with a spec, wired in `.husky/pre-commit` on the staged STATUS.md blob. It refuses a ✅ row, a "## Erledigt" heading, a "Stand:" line older than 3 days, and a missing "Stand:" line (kept by the doc agent: without the line the age check checks nothing). Bite: with the check returning nothing, 3 of 5 spec cases fail. Hook verified: a throwaway index with row B101 set to ✅ makes `.husky/pre-commit` exit 1 with "row B101 has status ✅".
 
-749\. Mac builder (2026-11-10, B482): the console log of the macOS bundle stays empty. Suspect (from the config, not yet
-proven by a bundle run): `tauri.macos.conf.json` replaces the `windows` array without `"create": false`, so Tauri creates
-the macOS window itself, and `console_log::start()` sets the hook and the init script only on windows with
-`create: false`. Lesson: nothing checked a per-OS config override against the base config. Built by the Mac builder:
-ccf39547a adds `"create": false` and a Rust test that every platform config sets it. Smoke rebuild runs.
-
-As built (Mac builder, 749 and 746 rest): Cause proven: after ccf39547a the bundle console log holds the "page loaded"
-line (before: empty). Three more causes behind "no frame painted", each proven by a run: the paint probe counted only
-visible live iframes, but the sketch view shows shot pictures and only some live frames (e50636eaf counts loaded
-`img[data-shot-picture]` too); the smoke passed `sketch:<part>` but the tree key is the target `sketch:<part>@<name>`
-(4871b83a3 reads the targets from `sketch.json`; the old default also broke on folder names like
-`components-title-bar.edit`); a stale `dist/libs/cli` stopped the design server ("Design-Server gestoppt" on a screen
-shot). 7f7042561 logs a `waiting:` line and the FAIL line names the last one. The smoke view is now set on every load,
-so `--sketch` always wins. Verified: plain smoke on the bundle of 7f7042561 PASS "painted 1 of 6 live frames and 126
-pictures, 0 CSP refusals, 0 console errors"; bite `--csp-from 'f08f0a3d1^'` on 4871b83a3 FAIL with 17 CSP refusals
-(fonts.gstatic.com against `default-src 'self'`). Not verified: the bite also failed "no frame painted" (the old CSP
-blocks the frames too), and a Linux bundle run. Open (tool backlog): the smoke does not name a stopped design server.
-
 750\. The human (2026-11-10, Studio screen shot after the B483 serve restart): `components-title-bar.edit` is gone (B483
 works on the real repo). Left is the marker sketch `pages/system` (round 1 "Fehlende Build-Antwort der Auflistung",
 variant a, last change by a Sonnet subagent): Studio shows "27 unveränderte Zustände eingeklappt" and not one changed
@@ -3595,73 +3502,6 @@ deletes done rows, so no finding is ever done, and the age rule (over 5 days) he
 First run moved 22 findings (641-715), plan 440205 to about 364000 chars. Bite: the new spec case fails with the old age
 gate and with the STATUS prose check off.
 
-768\. Linux builder (2026-11-11, night, CI run 42912315216): `nx test cli` failed in complete.spec.ts with ENOENT on
-`libs/cli/design/web/rebuild-probe-<pid>.txt`. Cause (bite): serve.spec.ts writes and removes a probe file in the
-real package `design/web` folder, and `buildStampOf` in a parallel spec listed the folder, then called `statSync` on a
-file that was gone. The same race hits a real server that starts while `nx build cli` rewrites its assets. Why no
-tool caught it: the push suite runs `nx test cli` once, and the window is a few milliseconds.
-
-As built (768): `filesUnder` in stamp.ts stats with `throwIfNoEntry: false`, and the hash loop skips a file that
-is gone before it reads it. stamp-vanished.spec.ts removes a `vanishing-` file between `readdirSync` and the stat;
-it failed with the CI ENOENT without the fix and passes with it. Verified: the two stamp specs and `cli:typecheck`.
-Not verified: the full cli suite under CI load; the push suite runs it.
-
-769\. Mac builder (2026-11-11, night, push:suite 8c4bdb6a1): `[Inbox] Tab focus shows the ring` failed with
-`focused=false rings=[]` at load 26.2; alone at load about 10 it passes 3/3. CI failed the same case class (731). Suspect:
-the case reads focus before the page settles under load. Lesson: a load-sensitive case needs its cause, not a retry; a
-retry hides a real focus defect. Decided by the doc agent (tool internal): no single-case retry. Tool fix (night, Mac):
-reproduce under the CPU quota (731/735), find the cause, the case waits on a condition, bite under the quota.
-
-As built (769, Mac builder): canvas.e2e.mjs has `--cpu-rate <n>` (env `STUDIO_E2E_CPU_RATE`), which calls CDP
-`Emulation.setCPUThrottlingRate` on the case page; it slows the renderer (frame iframes share its process), not the
-design server. It did not reproduce the failure: 0 fails in 10 Inbox runs at 4, 8, 16 and 30x (one more on System
-and Sketches at 16x), three of them with `--delay-frames` 1500/3000. Diagnostics showed Tab from the canvas lands on a frame's live iframe (`pages/system`, state `part`) and
-Shift+Tab returns. Suspect: the frame swapped or dropped that iframe between Tab and Shift+Tab (canvas-frame mounts a
-new iframe for a new address and removes the old one; a frame leaves the live set 5 s after it leaves view), so focus
-fell out of the frame and Shift+Tab landed on an `et-menu-trigger` button. Removing the focused iframe in that gap gives
-the exact signature `focused=false rings=[]`. Not proven to be what happened at load 26. Now the case keys Shift+Tab to
-the chrome before the canvas, then Tab back, so it no longer passes through a frame iframe, and polls each focus state
-(`focusUntil`, up to `WAIT_MS`) instead of the fixed 600 ms; a failure names the focused element. Bite (iframes removed
-between the two keys, `--cpu-rate 16`, Inbox): old case 3/3 fail, new case 3/3 pass. Without injection all 3 page
-groups pass 3/3 plain and 3/3 at 16x. Open: whether a keyboard user who tabbed into a live frame loses focus when the
-frame swaps its iframe is an app question, not checked here; the case no longer covers it.
-
-770\. Mac builder (2026-11-11, night): the Mac push was refused twice in a row because the Linux builder pushed during
-the Mac push:suite (8c4bdb6a1, d3444f82a, 209facfa3); each merge starts a full push:suite again (8-40 min). Lesson: two
-builders on one branch pay a full suite per race. Tool fix (night backlog, Mac): after a merge of origin, push:suite
-reuses the verdict of the steps whose inputs the merged range does not touch; a spec bites with a merge that changes one
-lib only.
-
-As built (770, Mac builder): when HEAD is a merge, push:suite reads the verdict of the first parent and reuses each step
-that passed there and whose inputs `git diff --name-only <first parent> HEAD` misses; it prints `push-suite: <step>
-reused from <sha>` and runs only the other steps. The verdict file keeps `ok <sha>` / `blocked ...` as its first line
-(the pre-push check is unchanged) and now lists `step <name> ok <sha it ran on>` per passed step, also in a blocked
-verdict; an old verdict without step lines counts as all steps passed if it is `ok`. Mapping (`STEP_INPUTS`, kept by
-hand, not from the project graph): lint and typecheck read `apps/**` and `libs/**`; cli, studio, quota, e2e, e2e-quota
-and repeat read libs bracket, cli, components, core, eslint-plugin, query, types, plus `apps/ethlete-studio/**`,
-`apps/timetrack/**` (the cli spec reads its styles.css through `.ethlete/design/config.json`) and `.ethlete/**`.
-`plans/` and `.changeset/` touch nothing; any other path outside those prefixes (root configs, yarn.lock, tools/,
-.github/) reruns all steps unless it is `.md`. Specs: a merge of libs/agent-rules reuses the six design steps and
-reruns lint and typecheck; yarn.lock, package.json, nx.json, tsconfig.base.json or tools/ rerun all; no verdict, a
-blocked verdict without step lines, or a non-merge HEAD reuse nothing. Bite: the spec against the HEAD push-suite.mjs
-fails on import; mutations (no reuse, no unknown-path rule, no merge check, reuse without a verdict) each fail their
-case. 37 of 37 pass, spec:stress 4/4 at load 2. Not verified: a real `yarn push:suite` after a merge (one ran for the
-coordinator at the time); the reuse on the real merge ca8549bce gives no reuse (.github/ changed), as expected. Commit: the one that adds this note. Known
-gap: a reused lint or typecheck covered the projects of the first parent's range, which can differ from the new range
-when the merge resolves an origin change back to the first parent's content.
-
-As built (766 item 1, Linux builder): Cause (bite): this Claude Code build marks the focus below the input box with
-inverse video (`ESC[7m`, first on the `1 shell` footer pill after one Down) and draws panel rows as `  ● main` /
-`  ◯ general-purpose`, with no `❯`. `panelFocused` knew only `❯ [⏺◯]`, so it never saw the focus and typed into the
-pill. Now `panelFocused` also accepts an inverse SGR code below the last rule (colour arguments of 38/48 skipped), and
-`isPanelRow` accepts `●`. Fixtures claude-pane-footer-pill-focused/unfocused.txt are real captures of this pane; the
-only edit drops " · esc to interrupt", which marks a busy pane. The new spec failed on the old script and passes now;
-the agent-sessions spec runs 40 of 41 green, "stores the command of run without the prompt" failed once at 5 s under
-load and passes alone (not this change). `run` in the spec has a 25 s spawn timeout, so a hung script fails the case
-instead of the whole file. Not verified: a focused panel row (two Downs): the auto-mode classifier refused the second
-self-drive capture; Suspect: it is also inverse. Item (b) parked: every Claude session is a SendMessage peer, so a
-refusal would end the typed wake for all of them; the focus fix removes the wrong typing.
-
 771\. Linux builder (2026-11-11, night, CI run 42916647044): two cli specs timed out (open-points-answer 30 s,
 merge.spec 60 s; 2-3 s locally). Cause (bite, subagent): the workers start from source through jiti, which caches in
 `<tmpdir>/jiti`, and vitest.setup.ts gives each spec file its own TMPDIR, so every file transpiled the 262-file worker
@@ -3669,119 +3509,11 @@ graph again. As built a3df386fa: the spec tmpdir links `jiti` to `libs/cli/node_
 busy core: 30 s timeout without the fix, 12 s with it. Not verified: a CI run; the first worker start of a CI run is
 still a full transpile.
 
-772\. Linux builder (2026-11-11, night): the agent-sessions spec "stores the command of run without the prompt" failed
-once under load (5 s poll) and passes alone. Suspect: a fixed poll budget, not a wait on the stored command. Lesson: a
-spec that polls a fixed time fails under load like 769. Tool fix (night backlog, Linux, after 767): the case waits on the
-condition; a bite under the CPU quota. 766 (b) parked by the builder (tool internal): every Claude session is a
-SendMessage peer, so `send` refusing them would end every typed wake; d3e2a7c58 fixes the wrong typing.
-
-As built (767): `recordShotViewed` copies the shot it is handed (a file from the CLI, the bytes from the design server)
-into the variant's own `viewed-shots/<sketch>-<variant>.png` and records that copy's hash; the design server path calls
-the same helper, so there is one copy rule. A CLI sheet that holds several variants gives each variant its own copy, so a
-later shot that rewrites the sheet file leaves earlier views intact. Bite: the sketch-command spec "keeps a variant
-viewed after a later shot of another variant rewrites the same sheet file" fails on HEAD (`sketch ready` exits 1) and
-passes with the fix; the "drawn over" case now draws over the per-view copy. Not verified: a real `et design shot
---states --variants` run in a browser, and old records that point at a sheet file (they stay valid until that sheet is
-redrawn, then ask for a new view).
-
-772 note (Linux builder, not fixed): the Suspect "fixed poll budget" is wrong. With every 5 s poll of agent-sessions.spec.ts
-raised to 20 s, the case still failed in a full-file run after 20 s (the `@ethlete_command` option read `''`), and it
-passes alone. A 6 s delayed start bites the 5 s budget, but that is not the CI failure. A 4% CPU quota on vitest did
-not slow it (tmux runs outside the scope). Suspect: an earlier case of the file leaves tmux state (the shared private
-server, a dispatch or scoped session name) that keeps `run` from creating or tagging its session. Next step: run the
-file with `--sequence.shuffle=false` and bisect the earlier cases.
-
-As built (772): Cause: the case before it, "answers the background work dialog ...", kills the last session of the
-spec's private tmux server; tmux exits that server after `kill-session` returns, so the next case's first call
-(`new-session` of the runner) reaches the exiting server, fails with "server exited unexpectedly", and no session is
-ever made, so `@ethlete_command` reads `''` for any poll budget. That pane runs a login shell (`sh -lic`) from the
-respawn, which widens the exit window; other preceding cases lose the race only rarely. Not a tool defect: the spec's own
-`new-session` failed. Fix: `beforeAll` starts a `spec-keepalive` session, so no case empties the server. Bite: the two
-cases together (`-t "answers the background work dialog|stores the command of run without the prompt"`) fail 5 of 5
-without the fix and pass 3 of 3 with it; the full file failed 3 of 4 runs before and passed twice after. Not verified:
-CI.
-
 773\. Mac builder (2026-11-11, night, 769 side finding): the darwin cpu-throttle (735) and plain CPU burners cannot
 reproduce an e2e case: both stall the design server, the sketch-fixture listing times out after 60 s, and the case does
 not run (throttle 50/35/20/10 %, 20 burners at load 34). Cause (measured): a whole-machine slowdown starves the server
 before it starves the page. Lesson: `QUOTA_PERCENT_DARWIN` suits specs only, never e2e. Tool fix (Mac, in progress): a
 renderer-only `--cpu-rate` flag (CDP `setCPUThrottlingRate`) in canvas.e2e.mjs reproduces a load-sensitive case.
-
-774\. Linux builder (2026-11-11, night, 723 fa1746558): `design check` draws per phase, as `sketch check` did before
-c9b254f1b. Suspect: one shared draw per run saves time as it did there (19.8 s -> 15.6 s). Tool fix (night backlog,
-Linux): measure with `ETHLETE_DESIGN_PHASES=1`, then share one draw per run; a spec bites on a second draw.
-
-As built (774, builder subagent, Linux only). Measured with `ETHLETE_DESIGN_PHASES=1` on the scratch copy `/tmp/sk750`,
-`design check --product studio`, in-process (`ETHLETE_DESIGN_RESIDENT=0`), CLI copies `/tmp/cli774-before` (HEAD) and
-`/tmp/cli774-after`, `.ethlete` restored before each run; cold = render and completeness caches deleted, warm = the
-same copy's second run. Seconds:
-
-| Phase          | Before cold | After cold | Before warm | After warm |
-| -------------- | ----------: | ---------: | ----------: | ---------: |
-| auto-accept    |        30.2 |       30.5 |        30.6 |       30.5 |
-| static         |         3.9 |        3.9 |         3.8 |        3.9 |
-| render-inspect |        98.4 |       96.6 |        90.5 |       37.2 |
-| completeness   |        46.3 |       45.1 |        40.8 |        0.7 |
-| open-points    |         5.1 |        5.1 |         5.2 |        5.1 |
-| tail           |         3.8 |        1.2 |         3.9 |        1.3 |
-| wall           |       188.6 |      183.4 |       175.8 |       79.5 |
-
-A third after run hit every render entry (render-inspect 2.0, wall 44.3). `--part components/list-row`: in-process wall
-6.9 to 6.1 s (tail 1.04 to 0.21), resident warm 3.6 s before and after. Cause (measured): without a resident process
-each drawing step (auto-accept, render-inspect, completeness, bespoke controls, dropped props, action-lost) started its
-own design server and Chromium (four `browser-start` lines, one after). Suspect, not proven: the render and completeness
-caches miss on a fresh per-step server because its served answers differ from the run that wrote them; on the one
-server auto-accept already warmed they match. The scratch copy logs 34 "outside of Vite serving allow list" lines for
-the CLI's own `design/` files, so the copy location may take part. Fix: `checkSystemRendered` runs on one
-`createRunDraw` (now with the check's `chromiumOf`) closed in `finally`, or on the resident draw with `perRun: true`
-(no check step reads `perRun` yet, so the resident path is unchanged). Check output is the same line for line before and
-after, cold and warm, in-process and resident, apart from timing lines. `check-warm.spec.ts` fails on the old code
-(both cases) and passes. Not verified: the Mac, the cache hit with the CLI in `tmp/studio-cli`. Built 6a87fdb4f.
-Follow-up (night backlog, Linux, after 775): prove or drop the cache-miss suspect with the real CLI copy in
-`tmp/studio-cli`; if a fresh server misses a cache entry it wrote, that is a cache-key defect of its own, with a spec.
-
-As built (774 cache): Cause (measured), not a cache key. In-process `design check --product studio` from
-`/tmp/sk750`, with a copy of the 6a87fdb4f CLI that logs every lookup and every input whose served hash differs,
-`.ethlete` restored before each run. On the second run all 167 keys were found, and 121 inputs differed. All of them were
-`/@fs/home/tom/dev/ethlete-sdk/dist/...component.css?inline`. `/tmp/sk750/dist` is a symlink, Vite serves a module by
-its real path, and that path was outside `fs.allow`. Vite 8.3.5 checks an `?inline` id against the allow list with its
-query, so `safeModulePaths` never admits it. The answer for the same URL then depends on what this server already
-loaded: 403 on a fresh server, raw CSS once a drawing made the file safe, and the JS module once it was transformed.
-A run wrote the hashes it saw after drawing, and the next fresh server answered differently before drawing, so it
-missed. A miss rewrote its entry with the answers from before the drawing, which is why a third run hit. The 34
-allow-list lines are the same defect. Fix: `linkedRootsOf(target)` adds the real path of the checkout and of each
-symlinked entry in it to `fs.allow`. Verified: after the fix, the first warm run hit every entry (0 differing inputs).
-render-inspect went from 36.9 to 2.0 s and wall from 79.0 to 44.2 s; completeness already hit (0.7 s); cold was 198 s. Output
-and written `.ethlete` are the same line for line, apart from timing lines. `linked-roots.spec.ts` (two fresh servers,
-`?inline` CSS in a symlinked dir; the second answers the same hash) fails without the `fs.allow` entry and passes with
-it. Not verified: a checkout without symlinks (nothing changes there), the Mac (`/tmp` there is itself a symlink).
-
-775\. Linux builder (2026-11-11, night, 710 sweep): pre-push `lint:runner-os` refused the push after a green push:suite
-(Linux cgroup path outside a Linux guard; fix a6c575f5f), so the push paid a full suite rerun. Cause: push:suite does
-not run the sub-second pre-push checks. Lesson: the cheapest gate runs first. Decided by the doc agent (tool internal):
-push:suite runs every sub-second pre-push check before its specs. Tool fix (night backlog, Linux, after 774); a spec
-bites with a range that only the runner-os lint refuses.
-
-As built (775): `tools/scripts/pre-push-checks.mjs` holds the 14-check list (`CHECKS`) and `runChecks(base, head)`, which
-sets NX_BASE/NX_HEAD, prints `pre-push: <check> failed:` plus output, and keeps going; its CLI is what `.husky/pre-push`
-now calls (`|| failed=1`, same checks, same messages). `push-suite.mjs` runs the format check and those checks on its
-range before the load wait and the export, and stops with `blocked pre-push checks failed (<names>)` and the output;
-otherwise it logs `push-suite: checks ok in N s`. Commitlint stays in pre-push only (a slower yarn run). Also fixed:
-`parseArgs` ignored a lone range argument in first position. Spec: a fixture repo whose only workflow commit breaks
-`lint:runner-os` makes the CLI exit 1 at the checks step, before the export or any spec. Verified: `node --test` on
-push-suite.spec.mjs (33) and all tools specs (261) pass; the old script on the same fixture runs on into the export
-(no checks step), so the spec bites; the checks step takes about 9 s on a green range (the person-names check alone is
-about 4 s, so "sub-second" is not true for all). Not verified: a real `yarn push:suite` and a real push through the
-hook. Built 64c9306a3. Follow-up (night backlog, speed): `lint:person-names` takes about 4 s of the 9 s
-checks step; measure where, and make it sub-second or correct the "sub-second" claim in AGENTS.md. The Mac 770
-(de0087f0a, step reuse after a merge) also edits `push-suite.mjs`: whoever pushes second merges both by hand. Person-names follow-up built 1d6a23453: 3.7 -> 0.87 s (cause measured: about 5 MB of text, every word hashed with no
-cache; fix: one token set per file, memoised hash per word, line pass only on a hit); same output on the real tree.
-As built (person-names lint): `check-person-names.mjs` ran `words()` (camel-case regex, split, lowercase) and a SHA-256 on
-every word of every line of 5 MB of tracked text. Now each file is tokenised once into a unique-token set, each distinct
-word hash is memoised, and the per-line pass runs only for a file that has a hit (or the git user name). Same findings
-(real tree: no output, exit 0, as before). Time 3.7 s to 0.87 s. Spec added for the line number of a deep hit. Verified:
-`node --test` on the spec (5 pass), eslint clean. Not verified: the 0.87 s inside a full pre-push run. So "sub-second"
-now holds for this check; AGENTS.md needed no change.
 
 776\. Mac builder (2026-11-11, night, 769 3483c7fcd): the fixed e2e case no longer passes through a live frame iframe,
 so no case covers a keyboard user inside a live frame. Suspect (injected, not seen live): when the app remounts the
@@ -3789,57 +3521,6 @@ frame iframe (address change, or `LIVE_GRACE_MS` drops an off-view frame after 5
 Shift+Tab lands on an `et-menu-trigger` (`focused=false rings=[]`). Lesson: a case that dodges a flaky path needs its
 own case for that path. Decided by the doc agent: an app fix (keep focus on the frame host when its iframe remounts)
 with its own e2e case; app work, so not at night; it waits for the day STATUS order (morning: put it to the human).
-
-777\. Linux builder (2026-11-11, night, 774 follow-up, ef45f64ac): a fresh design server missed render cache entries
-that an earlier run wrote (121 inputs, all `dist/...component.css?inline`). Cause (measured with the real CLI): cache
-keys are stable (167/167 found), but a symlinked checkout entry (`/tmp/sk750/dist`) is served by its real path outside
-Vite `fs.allow`; Vite 8.3.5 checks a `?inline` id with its query attached, so one URL answers 403 on a fresh server, raw
-CSS after one draw, and the JS module after a transform. The served hash differs per server state, so the cache misses.
-The 34 "outside of Vite serving allow list" log lines were the same gap, and nothing treated them as a defect. Lesson:
-a warning the tool logs and ignores hid a cache defect for every run. Fix (built ef45f64ac): `serve.ts`
-`linkedRootsOf(target)` adds the real paths of the checkout and its symlinked entries to `fs.allow`; first warm run
-render-inspect 36.9 -> 2.0 s, wall 79.0 -> 44.2 s, differing inputs 121 -> 0, output identical; `linked-roots.spec`
-bites. Not verified: the Mac (`/tmp` is a symlink there). Decided by the doc agent (tool internal): `design check`
-reports a Vite "outside of Vite serving allow list" line as a check problem, not a log line; a spec bites with a served
-path outside the allow list (night backlog, Linux). Mac builder verifies the fix on the Mac (night backlog). Check built df5226ee1 + d2e91cd78: a Vite `customLogger` records each denied id
-(`takeDeniedIds()`), `design check` prints one `SERVE-DENIED <id>` problem per id and fails; `check-denied.spec.ts`
-bites. Not built: `sketch check` still only logs the line (night backlog, Linux: same problem there); `compare` and
-`shot` are views, not gates, and may keep the log line. Sketch check built af1e4e696 (`sketch-check-denied.spec.ts` bites); without a resident
-process its render check now draws on the run draw (else its denials were lost). Not verified: the Mac, and the
-resident path by its own spec (night backlog, Linux: a resident case in the same spec). Resident case built aa1fb0f2a (spec only; the
-resident path already reported the denial; the case bites without `takeDeniedIds` in `resident-process.ts`).
-
-As built (777): `createDesignServer` wraps Vite's logger and records each id of an "outside of Vite serving allow list"
-line (`takeDeniedIds()`, also on the run and resident `WarmDraw`); `design check` (`checkSystemRendered`) prints one
-`SERVE-DENIED <id>` line per refused id after all its draws and fails. The log line itself stays. Verified:
-`system/check-denied.spec` (a part links a stylesheet outside the allow list) fails with the report removed and passes
-with it; cli typecheck, lint. Not verified: the Mac. Not built: `sketch check` and the other drawing commands still only log the line.
-
-As built (777 sketch check): `sketch check` (`checkedShots`) takes the denied ids of its run draw after all phases, prints
-the same `SERVE-DENIED <id>` line (`deniedLineOf`, exported from check-system) and returns 1; the render check now draws on
-that run draw when there is no resident warm process, so its requests are counted too. Verified: `sketch-check-denied.spec`
-(a sketch variant links a stylesheet outside the allow list) fails with the report removed and passes with it; related
-specs, cli typecheck, lint. Not verified: the Mac, the resident process path by a spec. `compare` and `shot` still only log.
-
-As built (777 resident): `sketch-check-denied.spec.ts` gains a case that runs `sketch check` through `createWarmRuns` (the resident path; `readFreshDist` is only called there) and still gets exit 1 and the `SERVE-DENIED` line, so `takeDeniedIds` survives the `WarmDraw` spread. It fails when `takeDeniedIds` is dropped from `resident-process.ts`. No code change.
-
-778\. Linux builder (2026-11-11, night, 710 sweep): the first real nightly spec sweep (CI run 42931941982) failed: 417
-files in 60 min, 17 under 100 % at `--slow 4` (Studio flows-page.component, sketches.component; cli open-points-answer,
-open-points-loop, serve, sketch-command at 1140 s, check-system-render, check-system-sketch, check-system, check-warm,
-live-actions, rules/denied-class, rules/option-values, rules/undefined-class, sketch/edit-sketch, sketch/merge-step-edit,
-git-regex-dialect). All pass in normal CI. Suspect (not measured): N=4 counts the slowness twice on CI: it was mapped
-from local runs to match a median runner, and on the runner the quota adds to its own slowness plus `--jobs nproc*N*3/4`
-contention. Lesson: a slow factor taken from local runs needs a CI calibration run before it gates. Decided by the doc
-agent (tool internal, the builder's recommendation): measure one failing file on CI at `--slow 1` and `--slow 2` (change
-the workflow default and push; this is also the owed second real run), then record each file that still fails as its own
-finding (night backlog, Linux, fresh builder session).
-In progress (2026-11-11, builder): spec-sweep.yml runs a matrix of `--slow 1` and `--slow 2` on a push of the workflow or
-spec-stress.mjs; the default for the nightly and a dispatch is now 2 until the calibration picks N.
-As built (778 calibration, 85aa2c764): CI run 42941554007, 418 files, `--runs 2`, both jobs 43 min. `--slow 1` (no quota,
-`--load 0`): green. `--slow 2`: 416 green, 2 files 0/2 at about 52.8 s: open-points-answer.spec and system/check-system.spec.
-So the Suspect holds in part: N=4 was too high on CI; N=2 stays the nightly default. spec:stress in `--github` mode
-printed no output of the failed runs, so the cause per file is not proven. Locally under `CPUQuota=12%`, open-points-answer
-passes; check-system fails its two "without a browser" cases (not yet looked at). Not verified: the cause of each failure.
 
 779\. Linux builder (2026-11-11, night, 777 df5226ee1): the first push:suite failed: `serve.spec`, `shot-store.spec` and
 `serve.perf.spec` mock `vite` without `createLogger`, which `serve.ts` now imports. The subagent ran only its touched
@@ -3849,93 +3530,12 @@ by the doc agent (tool internal, general form of the builder's recommendation): 
 runs `npx vitest related --run <changed files>` before its commit, not only for changed imports between modules. Builder
 work (night backlog, Linux): put this rule in the builder-agent skill and the subagent brief template. Built 6447c4e1b.
 
-780\. Mac builder (2026-11-11, night, 770 81980de90): the Mac push was refused four times tonight because origin moved
-while its push:suite ran (last: 14 commits, then a full rerun with the 29 min repeat step). Cause (measured in the push
-log): both builders push to `next`; every Linux range touched `libs/cli` or `tools/`, so the 770 step reuse never
-applies. Lesson: two pushers with half-hour gates need a slot, not luck. Decided by the doc agent (tool internal, the
-Mac builder's recommendation, with one change): a builder that starts push:suite for a push to `next` claims a push slot
-for its run time; the other builder commits but holds its push until the slot ends. The `agent-sessions claim` store is
-per checkout and does not reach the other machine, so the slot lives on origin (for example a ref with holder and
-expiry), has an expiry so a dead run cannot hold it, and is released when the push ends or the suite fails. A spec
-bites with two claimers. Tool fix (night backlog, Mac builder, after its push). Built bc219f75d (note 28e202402): ref
-`refs/push-slot/next` on origin, a parentless commit whose message holds the holder (`ETHLETE_BUILDER`, else the
-hostname), the sha and a 60 min expiry; claim and release with `--force-with-lease` on the read slot; free when absent,
-expired, or its sha is in origin/next; released on a blocked verdict or SIGINT/TERM/HUP. Spec bites with plain
-`--force`. Verified live: GitHub accepts the ref. Not verified: a two-machine run, clock skew, signal release.
-
-As built (780, `bc219f75d`): `tools/scripts/push-slot.mjs` keeps a push slot on origin at `refs/push-slot/next`. It is a commit with no parent whose message holds the holder (`ETHLETE_BUILDER`, else the hostname), the sha and an expiry 60 min out: 40 min of suite plus up to 10 min of load wait. Claim and release lease on the slot commit they read (`--force-with-lease`), so of two claimers exactly one wins. The slot is free when it is absent, expired, or its sha has reached `origin/next`, so the push itself releases it. `push:suite` claims at the start and stops with a blocked verdict naming the holder and expiry; it releases on a failed verdict or signal. `.husky/pre-push` refuses a push of `next` while another holder has a live slot. Verified: `push-slot.spec.mjs` (6 cases, bare origin and two clones; it bites when the lease is replaced by `--force`), spec:stress 4/4, `push-suite.spec.mjs` green, and a manual blocked run. Not verified: GitHub accepting the custom ref, a real two-machine run, clock skew. Rule for the other builder: when `push:suite` says the slot is held, keep committing and rerun it after the holder's push lands or the slot expires (`yarn push:slot status`); `yarn push:slot release` frees a dead run's slot.
-
 781\. Linux builder (2026-11-11, night, 618 5577aacd1): a builder subagent put a Chromium spec
 (`probe-helpers.spec.mjs`) into `test:tools`, which runs in the CI Checks job with no Chromium; the builder's review
 caught it before the push (f708e2e0b: `yarn test:e2e-helpers` in the Unit tests job after its playwright install;
 verified locally only). Suspect, tool gap: nothing checks that a `node --test` spec that launches Chromium runs only in
 a job that installs it; push:suite runs where Chromium exists, so it cannot catch it. Decided by the doc agent (tool
 internal, the builder's recommendation): no tool fix for one case; a second case makes it night backlog.
-
-782\. Linux builder (2026-11-11, night, 778 calibration, CI run 42941554007): at `--slow 2` on CI,
-`libs/cli/src/lib/design/open-points-answer.spec.ts` failed 0/2 at about 52.8 s; at `--slow 1` it passes, and it passes
-locally under `CPUQuota=12%`. Suspect (not measured): a fixed timeout near 50 s that a slowed runner crosses. Lesson: a
-spec that passes only on a fast machine hides a timing bound. Decided by the doc agent (tool internal): after 784, read
-the first failed run's output from the next nightly run, then fix the bound or the slowness; a stress run at
-`--slow 2` bites (night backlog, Linux). Sweep run 42949358908 (with 784): "answers the open points ... without a draw" timed out at
-the 30 s describe timeout, the second case took 16.4 s; neither draws (`drawnFindingsOf` mocked). The 50 s Suspect is
-wrong; new Suspect: cold work per `openPointsAnswer` call. In work (opus subagent: phases, fix, bite at `--slow 2`).
-
-As built (782): Cause (measured): not the answer. Both calls start the open-points worker, and in a spec the worker runs
-from source, so jiti transpiles its whole import graph on the first call. With an empty jiti cache that cold start takes
-7.0 s plain and 43.5 s at `CPUQuota=25%`; with a warm cache 0.5 s and 2.5 s. After the start, each call takes under 3 ms.
-The built CLI starts the compiled worker, so this cost is spec-only and no product change applies. Fix (commit "test(cli):
-Warm the open-points worker before the open-points answer spec"): the spec calls `warmOpenPointsWorker()`, as
-`part-ready.spec.ts` does, so the cold start falls in its 120 s `beforeAll`. Bite with `JITI_FS_CACHE=false`: before,
-`--slow 4` 0/2 (48.9 s) and `--slow 2` 2/2 at 24.3 s (near the 30 s bound); after, `--slow 4` 2/2 (slowest case 0.4 s,
-cold start 45 s in `beforeAll`), `--slow 2` 2/2. Warm cache: `--slow 2` 2/2 (3.4 s), `--runs 4 --load 2` 4/4. Not
-verified: a CI sweep run; why the CI cold start was slower than the local one at the same quota.
-
-783\. Linux builder (2026-11-11, night, 778 calibration, CI run 42941554007): at `--slow 2` on CI,
-`libs/cli/src/lib/design/system/check-system.spec.ts` failed 0/2 at about 52.8 s. Locally under `CPUQuota=12%` its two
-"without a browser" cases fail ("fails a part check without a browser on a dev machine…", "skips the render check
-without a browser under CI"). Suspect (not measured): an environment difference under the quota run, not slowness, for
-example a browser lookup or a CI variable that the quota wrapper changes. Decided by the doc agent (tool internal):
-reproduce the local failure first (it needs no CI), name the cause, fix it with a case that bites (night backlog,
-Linux, before 782). Built 3c609e94e. Cause (measured): no environment difference (the Suspect was wrong); the two
-cases had the vitest default 5 s timeout while every other `acme()` case has 60 s, and under the quota they took 7.9 and
-8.6 s. Fix: 60 s; quota run 13/13, `spec:stress --slow 8` 2/2.
-As built (783): Cause (measured): no environment difference. Both cases had vitest's default 5 s timeout, while every
-other case that builds the `acme()` fixture has 60 s; under `CPUQuota=12%` they took 7.9 s and 8.6 s and timed out.
-Fix: `60_000` on both. Bite: the same quota run failed both cases before and passes 13/13 after;
-`spec:stress --slow 8 --runs 2` passes 2/2 (slowest 81.5 s for the file). The Suspect (an env difference) was wrong.
-
-784\. Linux builder (2026-11-11, night, 778 calibration): `spec:stress --github` printed no output for the failed runs,
-so the CI log does not show why 782 and 783 failed. Cause: 616's "print the first failed run" does not reach the
-`--github` path (Suspect until the builder confirms in code). Lesson: a gate that fails without its reason costs a
-second run to learn it. Decided by the doc agent (tool internal, the builder's recommendation): in `--github` mode,
-print the first failed run's output in a `::group::`; a spec bites with a failing fixture in `--github` mode (night
-backlog, Linux, first of 782-784). Built 87ce00dc9. Cause (read in code): `runOnce` spawned every run with stdio `ignore`, so no
-mode kept output; the 616 print never existed in spec-stress. Each run now keeps its last 64 KiB; `--github` prints the
-first failed run per file in a `::group::` after the `::error`. Not verified: a real CI log with the group.
-As built (784): Cause (read in code): `runOnce` spawned each run with `stdio: 'ignore'`, so no mode kept any output.
-Now each run keeps the last 64 KiB of stdout and stderr, and `--github` prints the first failed run's output of each
-file in a `::group::` after its `::error`. The new spec runs the script on a failing `node --test` fixture with
-`--github` and finds the fixture's error text in the group; it fails with `stdio: 'ignore'` restored (bite, in a copy).
-Not verified: a real CI log with the group (the next nightly stress run shows it).
-
-785\. Linux builder (2026-11-11, night, 783 3c609e94e): nothing flags a heavy-fixture design spec case that omits its
-timeout; the vitest default of 5 s then fails only on a slow machine. Lesson: a per-case number that every case must
-repeat is a rule a new case forgets. Decided by the doc agent (tool internal, the builder's recommendation, scoped): the
-60 s timeout comes from one place for the heavy design specs (the `libs/cli` design specs, or the fixture helper's own
-files), not a global `testTimeout` for every cli spec, so a fast spec still fails fast when it hangs; the per-case
-numbers then go. A case without its own timeout bites under the quota. Night backlog, Linux, after 620. Built b0ef796f4:
-`check-system.fixtures.ts` sets `vi.setConfig({ testTimeout: 60_000 })` on import (7 specs, 32 per-case numbers gone);
-under the quota 13/13 with it, every `acme()` case times out at 5 s without it; a spec without the fixture import still
-fails at 5 s.
-
-As built (785): `check-system.fixtures.ts` exports `HEAVY_DESIGN_SPEC_TIMEOUT_MS` (60 s) and calls
-`vi.setConfig({ testTimeout })` at import, so every spec that imports the fixture (the check-system specs,
-check-denied, leftover-gate-files) gets 60 s; the per-case `60_000` in the five check-system specs are gone, larger
-ones stay. Bite: under `CPUQuota=12%`, `check-system.spec.ts` passes (13 tests, 94 s); with the `setConfig` line
-removed, the cases that build `acme()` fail at 5 s. A probe spec (6 s sleep, not committed) fails at 5 s next to an
-importing spec in the same run, so the setting does not leak across files (cli keeps vitest's default `isolate`).
-Not verified: a spec file that imports the fixture only through another helper; a run on CI.
 
 786\. Mac builder (2026-11-11, night, push:suite 81980de90): the repeat step blocked in run 3, six cases with a 10 s
 `page.goto` timeout in one burst at load 34. Suspect (not measured): the builder's own 780 subagent ran `spec:stress`
@@ -3952,42 +3552,6 @@ implementations keep the old second draw. Specs: a differing pair drawn fresh ma
 `shot.spec.ts` names `drawn`, then `memory`, then `drawn` for `fresh`. Bite: with the `drawnFresh` check removed, both
 2-draw cases fail. `spec:stress --runs 4 --load 2`: 3 specs 4/4. Not verified: the cold compare time of finding 598 on a
 real product; a Studio e2e run (none covers the merge compare by name).
-
-787\. Linux builder (2026-11-11, night, sweep run 42949358908, `--slow 2`): `libs/cli/.../edit-sketch.spec.ts` passed
-1 of 2 runs (18.0 s). Not a known finding. A spec that fails one run in two on a slow runner is a flaky gate, worse than
-a slow one. Suspect: none yet; the builder reads the failed run's `::group::` output first. Decided by the doc agent
-(tool internal, the builder's recommendation): night backlog, Linux, after 782; name the cause, fix it, a stress run at
-`--slow 2` bites. Cause (measured on CI): "merges a pick of old like any sketch" timed out at the vitest default
-5 s (5020 ms; its sibling took 4570 ms); a merge case that spawns git, the same class as 783. Decided (second case of the
-class, so the 785 pattern grows): the shared helper that builds a real git repo for a spec sets the 60 s timeout on
-import, as `check-system.fixtures.ts` does, so every spec that runs a real merge gets it; no per-case numbers. Built
-04d6485bc: no shared git helper existed; new `git-repo.fixtures.ts` sets the 60 s timeout on import; edit-sketch,
-after-merge, rebase-port and merge-commit specs use it (merge.spec spies on `child_process` and stays). Bite: edit-sketch
-fails at `--slow 6` before, passes after. Not moved: specs that init git without a sketch merge (`lib/update/*`).
-
-As built (787): new `libs/cli/src/lib/design/system/git-repo.fixtures.ts` exports `git`, `gitResult`, `commitAll` and
-`initGitRepo`. It sets `testTimeout` to `HEAVY_DESIGN_SPEC_TIMEOUT_MS` on import (the one constant, imported from
-`check-system.fixtures.ts`). `edit-sketch`, `after-merge`, `rebase-port` and `merge-commit` specs use it in place of
-their own git helpers. No per-case number was removed: the 60 s, 120 s and 240 s numbers in `merge.spec.ts`,
-`after-merge.spec.ts` and `merge-commit.spec.ts` cover merge-worker time, not only git, so they stay. Verified: with
-both `setConfig` lines off, `edit-sketch.spec.ts` at `--slow 6` fails 2 of 2 runs (`--slow 4` still passed 2 of 2, so
-it does not bite there); with the fix it passes at `--slow 6`; `--runs 4 --load 2` passes on all four specs; related
-specs, `cli:typecheck`, eslint and prettier are clean. Not verified: the CI sweep at `--slow 2`; other specs that
-inline `git init` (for example `lib/update/*`, `lib/design/*.spec.ts`) were not moved.
-
-788\. Linux builder (2026-11-11, night, B438 measurement): whole-product `sketch check --product studio-lab` exits 1
-before it draws, because the CLI writes its generated per-variant `tsconfig.json` files unformatted (FORMAT findings);
-`--fix` formats them. Suspect: the writer skips Prettier. Lesson: the tool writes files that its own gate refuses.
-Decided by the doc agent (tool internal, the builder's recommendation): every file the CLI generates goes through the
-formatter when it is written; a spec asserts that a freshly generated sketch passes the FORMAT rule. Night backlog,
-Linux, after 787.
-
-As built (788): Cause: `writeEditorTsconfig` wrote each variant `tsconfig.json` as plain `JSON.stringify` text, and the
-FORMAT rule checks every `.json` in a variant folder. The other generated files already pass `formatSketch`. The editor
-tsconfig of a variant now goes through the checkout's Prettier (`formatText`, stdin) before it is compared and written,
-so an unchanged file is still not rewritten. Spec in `system-tsconfig.spec.ts`: a created and formatted sketch has no
-FORMAT finding; it fails on the old writer. Verified: related specs, typecheck, lint, stress. Not verified: a real
-scratch checkout run of `sketch check --product studio-lab`.
 
 789\. Linux builder (2026-11-11, night, B438 measurement): the committed sketch `elements/rating` has 8 UTILITY-CSS
 findings, so a sketch with open check findings reached git. Suspect: none yet; the cause is the question, which gate
