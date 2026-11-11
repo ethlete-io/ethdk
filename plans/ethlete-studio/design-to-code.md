@@ -3818,3 +3818,18 @@ internal, the builder's proposal): pre-push accepts the slot when the slot sha e
 push-suite ok verdict exists for that sha; otherwise the refusal names the holder and says "set ETHLETE_BUILDER=<holder>
 if this is you". Bite: a push with no `ETHLETE_BUILDER` after a suite ok for the same sha passes; a different sha is
 refused with the hint. Night backlog, Linux, after 799; the Mac must pull it before its next push.
+
+801\. Linux builder (2026-11-11, night, 799 bite run; incident): the first bite run of the new pre-commit data-spec step
+wrote into the main repo's `.git/config`: `core.bare = true`, a fake `[user]`, `commit.gpgsign=false`. Cause (measured): a
+git hook runs with `GIT_DIR`/`GIT_INDEX_FILE` set, and the temp-repo `git init`/`git config` calls of
+`commit-hunks.spec.ts` inherited them. The subagent repaired it; the builder and the doc agent checked: `core.bare=false`,
+no fake sections, HEAD and refs intact. The step's runner now strips `GIT_*` for specs. Why no tool caught it: each spec
+spawns git for its temp repos its own way, and no spec ran inside a hook before. Lesson: a spec that makes a temp repo
+must be safe in any environment, not only in a clean shell. Decided by the doc agent (tool internal, the builder's
+proposal, made central): one shared spec helper makes temp git repos with `GIT_*` stripped; `commit-hunks.spec.ts` and
+every other spec that spawns git for a temp repo (the builder greps `libs/`, `tools/`, `apps/`) use it. Bite: a spec run
+with `GIT_DIR` pointing at a scratch repo leaves that repo's config byte-identical. Night backlog, Linux, before 800
+(it guards every hook path, also commit-msg running `src/scenarios/`). Side (Suspect): stale commit-graph entries in
+`git fsck`, rewritten with `git commit-graph write --reachable`, fsck clean; likely an older gc. Also: 779 was a skill rule,
+not a hook; ba0d3568e adds the first hook step (`tools/scripts/staged-data-specs.mjs`), and `matchesGlob` in
+`cli-related-map.mjs` no longer turns `**` into `[^/]*`.
