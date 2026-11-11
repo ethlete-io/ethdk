@@ -4121,3 +4121,12 @@ left the decision files of the UNCOMMITTED-DECISIONS warning. The same commit re
 `accepted-pictures.spec.ts` (cache write, product folder unchanged, old-path fallback) and `part-ready.spec.ts` (equal
 ready.json untouched) fail without the fix and pass with it; typecheck and lint clean. Not verified: a live
 `et design check` run on this checkout.
+
+795\. Linux builder (2026-11-11, night, 652 step 1 c7d88a573): the doc agent's recipe "`git rm --cached`, then `git commit --
+<paths>`" loses the removal: a pathspec commit stages the working copy again (proved in a scratch repo). The subagent
+moved the files out for the commit and back (sha256 checked). Why no tool caught it: the repo forbids a commit without
+paths (shared index), and no helper commits an index-only removal. Lesson: a git recipe in a decision is checked in a
+scratch repo before it is sent. Decided by the doc agent (tool internal): a `yarn untrack <paths>` helper moves each file
+out, commits the removal by path, puts the file back and checks the hash; the git-commit skill names it. Bite: after
+`yarn untrack x`, `git ls-files x` is empty and `x` is byte-identical. Tool backlog, Linux, small, after 793. Effect on
+other clones: a pull deletes their tracked `pictures.json`; the Mac must know before it pulls.
