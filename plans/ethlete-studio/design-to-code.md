@@ -3799,3 +3799,10 @@ map from data globs to the specs that read them (first entry `.ethlete/design/**
 builder greps the cli specs for other readers of committed repo files and adds them); a commit that touches a glob runs
 its specs. Bite: a commit of only an emptied `ready.json` on the commit before d7f7f36a3 fails in pre-commit. Night
 backlog, Linux, after the push.
+
+Mac night notes (2026-11-11, 06:00): 777 verified on the Mac (worktree in the symlinked /tmp, 0 allow-list lines and 0
+SERVE-DENIED in two runs). Open (Suspect): warm render-inspect 9.6 s on the Mac vs 2.0 s on Linux; the builder counts
+cache misses before it blames disk or CPU (Mac night backlog, after 735). 797 built 0ffc0e452 (spec bites: 60 s without
+the timeout); 786 built 89671ec71 (one heavy-run lock per machine); both wait for the push slot. The hung ssh (pid 96278 on
+the Mac, 1 h 39 min) was not killed: the Mac's permission mode refused it; the human kills it. A `push-suite.spec` case
+("a step with a log file writes its output") failed once under the 777 load and passed alone: Suspect, same class as 763.
