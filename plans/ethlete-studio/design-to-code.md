@@ -3612,3 +3612,12 @@ default. Tool fix (doc agent, tool internal): one source for the design server p
 because variant c's page-sketch cell differed between two renders (70861 px). Suspect (one run): an unstable render or a
 stability check that is too strict. Tool fix (doc agent, tool internal): repeat the run 5 times; if it comes back, find
 which pixels move (a diff image) before changing the check.
+819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
+libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
+Bite: a spec stages a name and clears it in the working tree; red on the old script. Not verified: a real refused commit.
+820 as built (Linux builder, 2026-11-11, c373dcfd0): Cause (proved): `lint-changesets.js` read `.changeset` from disk in
+the checkout, so an untracked file of another agent counted. Fix: `lint-changesets.js --rev <sha>` reads only the
+changesets committed at that sha (`git ls-tree`, `git show`); pre-push-checks passes the pushed head, which covers
+push:suite and pre-push. Deviation from the planned fix (run it in the HEAD export): the export has no `.git`; the blobs
+are the same content. New script `lint:changeset-coverage`; `yarn lint:changesets` runs both. Bite: 3 cases red on the
+old scripts; spec:stress 4/4.
