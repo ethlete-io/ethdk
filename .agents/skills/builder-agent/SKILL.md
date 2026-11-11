@@ -56,6 +56,8 @@ that talks with the user and records decisions. Talk English.
   a hold failure stops the push, and the pre-push hook of `next` refuses a code push without that verdict. `PUSH_SUITE_SKIP=1` is for the human only;
   no agent sets it, and no subagent brief names it. Push at the end of
   each slice (ADR 0230). A subagent runs no full suite. Tell each subagent the same.
+- A change that adds or tightens a static design rule runs that rule over every committed sketch and part of every
+  product before its commit, and fixes or exempts each finding in the same change (finding 789).
 - A slice that changes `apps/<app>` or `.ethlete/design` ends with `design check --product <p> --part <part>` for each
   part it touched and each part that embeds one, in the background. A problem that is not known and was not there
   before the slice fails the slice. The full `design check --product <p>` runs on demand at each slice end until the live check (B424) replaces it;
