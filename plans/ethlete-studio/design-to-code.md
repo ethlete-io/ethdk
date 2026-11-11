@@ -3830,3 +3830,8 @@ so the CI log does not show why 782 and 783 failed. Cause: 616's "print the firs
 second run to learn it. Decided by the doc agent (tool internal, the builder's recommendation): in `--github` mode,
 print the first failed run's output in a `::group::`; a spec bites with a failing fixture in `--github` mode (night
 backlog, Linux, first of 782-784).
+As built (784): Cause (read in code): `runOnce` spawned each run with `stdio: 'ignore'`, so no mode kept any output.
+Now each run keeps the last 64 KiB of stdout and stderr, and `--github` prints the first failed run's output of each
+file in a `::group::` after its `::error`. The new spec runs the script on a failing `node --test` fixture with
+`--github` and finds the fixture's error text in the group; it fails with `stdio: 'ignore'` restored (bite, in a copy).
+Not verified: a real CI log with the group (the next nightly stress run shows it).
