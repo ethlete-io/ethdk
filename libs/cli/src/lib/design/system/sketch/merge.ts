@@ -24,7 +24,15 @@ import { rebaseAfterMerge } from './after-merge';
 import { conflictsOf } from './baseline';
 import { prettierBinOf } from '../prettier';
 import { carryShared, productSharedChangesOf, sharedPlanOf } from './merge-shared';
-import { EDIT_SKETCH, forgetMerged, recordMerged, rerecordChangedMerged, unchangedMergedOf } from './merged-parts';
+import { EDIT_OLD } from './edit-sketch';
+import {
+  EDIT_SKETCH,
+  forgetMerged,
+  recordMerged,
+  rerecordChangedMerged,
+  unchangedMergedOf,
+  isEditSketch,
+} from './merged-parts';
 import { madeByOf, noteOf, withMadeBy, withNote } from './part-definition';
 import { staleEmbeddedOf } from './stale-base';
 import { CleanCopy, cleanCopyOf, contentsBelow } from './clean-copy';
@@ -111,7 +119,8 @@ const notedTargetOf = (options: {
   const variantNote = sketch.variantInfo[variant]?.note;
   const newNote = (replaceNote ? note?.trim() : undefined) || (noteOf(source)?.trim() === '' ? variantNote : undefined);
   const withNewNote = newNote ? withNote(source, newNote) : source;
-  const madeBy = [...new Set([...madeByOf(source), ...authorsOf(sketch, variant)])];
+  const authors = isEditSketch(sketch) && variant === EDIT_OLD ? [] : authorsOf(sketch, variant);
+  const madeBy = [...new Set([...madeByOf(source), ...authors])];
   const noted = withNewNote === null || madeBy.length === 0 ? withNewNote : withMadeBy(withNewNote, madeBy);
 
   if (noted === null) return `${held} holds no definePart({ note: '…' }) to set the note on`;

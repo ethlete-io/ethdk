@@ -78,6 +78,28 @@ describe('openEditSketch', () => {
     expect(Object.keys(readMerged(join(target, DESIGN_DIR, 'acme')))).toContain(HERO);
   });
 
+  it('adds no author to the part file when old is picked', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const { target, css } = acme();
+    const heroTs = join(resolveAcme(target).dir, HERO, 'hero.ts');
+    const head = readFileSync(heroTs, 'utf8');
+
+    writeFileSync(css, '.acme-hero { padding: 0; }\n');
+
+    const sketch = openEditSketch({
+      target,
+      product: resolveAcme(target),
+      part: HERO,
+      author: 'design check',
+    }) as Sketch;
+    const picked = decideSketch({ sketch, decision: { kind: 'pick', variant: 'old', ...originOf('spec') } }) as Sketch;
+
+    mergeSketch({ target, config: readConfig(target) ?? {}, product: resolveAcme(target), sketch: picked });
+
+    expect(readFileSync(heroTs, 'utf8')).toBe(head);
+  });
+
   it('keeps the shared files at HEAD for old when the edit changed them', () => {
     const { target } = acme((heroDir) => {
       mkdirSync(join(heroDir, 'shared'));

@@ -750,6 +750,8 @@ const withEditSketch = async (page, run) => {
   git('add', '--', '.ethlete');
   git('commit', '-qm', 'canvas e2e base', '--', '.ethlete');
 
+  const base = git('rev-parse', 'HEAD').toString().trim();
+
   const edit = async () => {
     writeFileSync(file, replaceOnce(before, EDIT_LABEL.before, EDIT_LABEL.after));
     spawnSync(process.execPath, [cliEntry, 'design', 'check', '--product', 'studio', '--part', EDIT_PART], {
@@ -796,7 +798,7 @@ const withEditSketch = async (page, run) => {
   };
 
   try {
-    return await run({ edit, pick, file, studio });
+    return await run({ edit, pick, file, studio, git, base });
   } finally {
     rmSync(join(checkout, '.git'), { recursive: true, force: true });
     rmSync(studio, { recursive: true, force: true });
@@ -826,7 +828,7 @@ const CASES = [
     listingMayPend: 'the evidence is the design files and merged.json after each merge',
     pages: ['System'],
     run: (page) =>
-      withEditSketch(page, async ({ edit, pick, file, studio }) => {
+      withEditSketch(page, async ({ edit, pick, file, studio, git, base }) => {
         const sketchDir = join(studio, 'sketches', `${EDIT_PART.replace('/', '-')}.edit`);
         const first = await edit();
 
@@ -836,8 +838,13 @@ const CASES = [
         await pick('old');
 
         const design = readFileSync(file, 'utf8');
+        const drift = git('diff', base, '--', file).toString();
+        const identical = drift === '';
         const restored =
-          design.includes(EDIT_LABEL.before) && !design.includes(EDIT_LABEL.after) && !existsSync(sketchDir);
+          design.includes(EDIT_LABEL.before) &&
+          !design.includes(EDIT_LABEL.after) &&
+          identical &&
+          !existsSync(sketchDir);
 
         await edit();
         await pick('new');
@@ -847,7 +854,7 @@ const CASES = [
 
         return {
           ok: restored && kept && recorded?.variant === 'new' && !existsSync(sketchDir),
-          detail: `old restored the design: ${restored}, new kept the edit: ${kept}, merged.json: ${JSON.stringify(recorded)}`,
+          detail: `old restored the design byte-identical to HEAD: ${restored}${drift ? ` (${drift.replace(/\s+/g, ' ')})` : ''}, new kept the edit: ${kept}, merged.json: ${JSON.stringify(recorded)}`,
         };
       }),
   },

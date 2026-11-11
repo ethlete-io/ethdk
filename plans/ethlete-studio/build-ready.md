@@ -928,3 +928,11 @@ the edit or new to keep it`. The internal discard of `design check` is unchanged
   only while no blocker is definite (`hardcodedColourBlocker` in `shared/build-ready.ts`).
 - `pages/sketches`: new state `edit-sketch` for `components/zoom-chip@edit` with the rows `old` and `new` (`old` is a
   base row like Aktuell, never folded as unchanged); the header has no Verwerfen button and says to pick old or new.
+
+## As built: finding 889, picking old of an edit sketch adds no author (2026-11-11, Linux)
+
+- Cause: `notedTargetOf` in `sketch/merge.ts` set `madeBy` to the file's own plus `authorsOf(sketch, variant)`, and `old`
+  is authored by "design check", so the restored part file gained `'design check'` (ADR 0135 wants HEAD back exactly).
+- Fix: a merge of `old` in an `@edit` sketch adds no author; `new` and every other sketch keep today's behaviour.
+- Tests: `edit-sketch.spec.ts` "adds no author to the part file when old is picked" (failed before the fix); the 4c e2e
+  case now also diffs the part file against the base commit after the `old` pick (the merge commits, so a diff against the index would be empty). Under `--hold-listings 14000` the case fails on HEAD too (a 10 s click timeout and a 120 s selector wait), not caused by this slice.
