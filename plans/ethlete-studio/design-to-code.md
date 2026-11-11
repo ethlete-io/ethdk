@@ -3641,3 +3641,10 @@ Linux): measure with `ETHLETE_DESIGN_PHASES=1`, then share one draw per run; a s
 not run the sub-second pre-push checks. Lesson: the cheapest gate runs first. Decided by the doc agent (tool internal):
 push:suite runs every sub-second pre-push check before its specs. Tool fix (night backlog, Linux, after 774); a spec
 bites with a range that only the runner-os lint refuses.
+
+776\. Mac builder (2026-11-11, night, 769 3483c7fcd): the fixed e2e case no longer passes through a live frame iframe,
+so no case covers a keyboard user inside a live frame. Suspect (injected, not seen live): when the app remounts the
+frame iframe (address change, or `LIVE_GRACE_MS` drops an off-view frame after 5 s), focus falls out of it, and
+Shift+Tab lands on an `et-menu-trigger` (`focused=false rings=[]`). Lesson: a case that dodges a flaky path needs its
+own case for that path. Decided by the doc agent: an app fix (keep focus on the frame host when its iframe remounts)
+with its own e2e case; app work, so not at night; it waits for the day STATUS order (morning: put it to the human).
