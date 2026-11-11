@@ -50,7 +50,10 @@
     "build-generators": {
       "executor": "nx:run-commands",
       "options": {
-        "commands": ["rm -rf libs/query/generators/dist", "tsc -p libs/query/generators/tsconfig.json"],
+        "commands": [
+          "node -e \"require('node:fs').rmSync('libs/query/generators/dist',{recursive:true,force:true})\"",
+          "tsc -p libs/query/generators/tsconfig.json"
+        ],
         "parallel": false
       }
     },
