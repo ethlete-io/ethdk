@@ -3180,6 +3180,34 @@ render-check about 13 s. Suspect only (no measurement of the phases). Backlog: m
 the Mac, and each finding needs a full rerun. Suspect only, as 738 on Linux (34-37 s). Backlog with 738: measure the
 phases on both machines; a rerun after a fix checks only the states the fix touched.
 
+As built (738, builder subagent, Linux only). Measured with `ETHLETE_DESIGN_PHASES=1` (the existing `timedPhase`
+timer) on the scratch copy `/tmp/sk750`, `sketch check pages/system@probe750 --fix` (1 variant, 28 states, 1 width),
+resident process; run 1 starts the resident cold, run 2 reuses it. Seconds:
+
+| Phase        | Before run 1 | Before run 2 | After run 1 | After run 2 |
+| ------------ | -----------: | -----------: | ----------: | ----------: |
+| gates        |         2.32 |         0.76 |        2.29 |        0.76 |
+| tsc a        |         0.99 |         0.97 |        1.00 |        0.98 |
+| aktuell      |         0.37 |         0.31 |        0.36 |        0.32 |
+| render-check |         9.03 |         7.89 |        9.19 |        8.03 |
+| identical    |         4.68 |         4.67 |        4.75 |        4.75 |
+| changes-shot |         4.40 |         4.47 |        0.12 |        0.11 |
+| wall         |         23.2 |         19.8 |        19.5 |        15.6 |
+
+Load and mark-drift take under 0.03 s. `sketch ready` on the same sketch (before): render-check 7.9, identical 4.9,
+undeclared 6.5, changes-shot 0.13, wall 20.8 s. Cause (measured): `sketch ready` wraps the warm draw in a per-run draw
+(`perRun`), so the change shot of NO-CHANGED-STATE reuses the pictures the identical phase shot (0.13 s);
+`sketch check` passed the bare resident draw, so each shot phase built a new shooter with an empty cache and shot all
+28 states of the variant and of the part again (4.4 s). Fix: `sketch check` runs its shot phases (aktuell, load,
+mark-drift, identical, changes-shot) on one per-run draw like `sketch ready`; without a resident process it is one
+`createRunDraw` for the run instead of a design server and Chromium per phase. Render-check still gets the draw it got
+before. The check output of run 2 is the same before and after, line for line, apart from the timing lines.
+`sketch-check-run-draw.spec.ts` fails on the old code (both tests) and passes on the new one. Not verified: the Mac
+(739), and the run without a resident process. Remaining over target: render-check (8 s) and identical (4.7 s) still
+shoot the same 28 states twice, through two paths (render worker vs part shooter), and ready's undeclared phase takes
+6.5 s. Suspect: sharing the render-check pictures with the part shooter is the next cut; not local, so it stays
+backlog.
+
 740\. Mac builder (same sketch): the clipping check flags the intended crop of the variants, and skip-scope refuses
 the reason "intended" because the crop holds controls; only "inert" passes. Suspect only. Lesson: a check that accepts
 only a wrong reason teaches the agent to give a wrong reason (as 737). Tool fix (backlog): skip-scope accepts

@@ -1539,7 +1539,7 @@ const noChangedStateLines = async (options: {
 };
 
 const checked = async (context: Context) => {
-  const { target, config, args } = context;
+  const { target, args } = context;
   const product = sketchProductOf(context);
 
   if (typeof product === 'string') return fail(product);
@@ -1611,12 +1611,32 @@ const checked = async (context: Context) => {
     failed ||= all.length > 0;
   }
 
+  const run = context.warm
+    ? { warm: { ...context.warm, perRun: true }, close: async () => undefined }
+    : createRunDraw(target);
+
+  try {
+    return await checkedShots({ ...context, product, chosen, failed, stale, shots: run.warm });
+  } finally {
+    await run.close();
+  }
+};
+
+const checkedShots = async (
+  context: Context & {
+    product: ResolvedProduct;
+    chosen: { sketch: Sketch; variant: string }[];
+    failed: boolean;
+    stale: ReturnType<typeof staleBasesOf>;
+    shots: WarmDraw;
+  },
+) => {
+  const { target, config, product, chosen, failed, stale, shots } = context;
+
   if (!failed)
     for (const sketch of new Set(chosen.map((entry) => entry.sketch)))
       (
-        await timedPhase('aktuell', () =>
-          aktuellPlaceholderWarnings({ target, config, product, sketch, warm: context.warm }),
-        )
+        await timedPhase('aktuell', () => aktuellPlaceholderWarnings({ target, config, product, sketch, warm: shots }))
       ).forEach((warning) => console.warn(warning));
 
   const rendered = failed
@@ -1650,9 +1670,7 @@ const checked = async (context: Context) => {
   };
 
   for (const sketch of new Set(chosen.map((entry) => entry.sketch))) {
-    const unloaded = await timedPhase('load', () =>
-      unloadedLinesOf({ target, config, product, sketch, warm: context.warm }),
-    );
+    const unloaded = await timedPhase('load', () => unloadedLinesOf({ target, config, product, sketch, warm: shots }));
 
     const before = refused;
 
@@ -1664,18 +1682,14 @@ const checked = async (context: Context) => {
 
     if (!failed && unloaded.length === 0) {
       refuse(
-        await timedPhase('mark-drift', () =>
-          sampleMarkDriftLines({ target, config, product, sketch, warm: context.warm }),
-        ),
+        await timedPhase('mark-drift', () => sampleMarkDriftLines({ target, config, product, sketch, warm: shots })),
       );
       refuse(
-        await timedPhase('identical', () =>
-          identicalRenderLines({ target, config, product, sketch, warm: context.warm }),
-        ),
+        await timedPhase('identical', () => identicalRenderLines({ target, config, product, sketch, warm: shots })),
       );
       refuse(
         await timedPhase('changes-shot', () =>
-          noChangedStateLines({ product, sketch, target, config, warm: context.warm, args: context.args }),
+          noChangedStateLines({ product, sketch, target, config, warm: shots, args: context.args }),
         ),
       );
     }
