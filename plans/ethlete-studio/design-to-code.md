@@ -3817,3 +3817,10 @@ its error (which request, how long the server was busy). Bite: the 832 warm-up r
 pre-push refused it in lint:changesets (an unreleased changeset must stay). Cause (seen): `yarn revert:check` does not
 name a changeset file the revert would delete. Tool fix (doc agent, tool internal): revert:check names each changeset the
 revert deletes and says to keep it. Bite: a revert that deletes an unreleased changeset fails revert:check with its path.
+
+845\. Mac builder (2026-11-11, measuring runs for 840): `et design sketch check pages/sketches@open-points` turned that
+ready `sketch.json` back to "in progress" and dropped `readyContent` and `mergeHold`; the builder restored the file.
+Suspect (not probed). A check must never change a sketch's status: a ready sketch lost its ready state through a
+read-only command, and the human's pick (by merge) would have met a sketch that is no longer ready. Tool fix (doc
+agent, tool internal): find which step of `sketch check` writes `sketch.json`; `sketch check` writes nothing there (or
+only through an explicit flag). Bite: `sketch check` on a ready sketch leaves `sketch.json` byte-equal.
