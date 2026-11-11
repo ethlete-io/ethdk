@@ -3229,6 +3229,12 @@ process, gates take 15 s instead of 4.4 s. 777 on the Mac (same night, `design c
 warm 52.0 s, 0 cache hits both times; a `recordCache` bite in the part-picture cache read counted 0 reads, so the
 warm speedup is one-time work of the cold run (5 lib rebuilds, 3 dropped ready records), not a missed cache.
 
+Mac e2e speed (Mac builder, same night, measurement only): `yarn studio:e2e --workers 5` ran 131/132 in 433.5 s, load
+4.7 at start and 31.7 at the end; push:suite #16 ran the same 132 cases on the default 3 workers in 476 s. The one
+fail was Large "a variant equal to Aktuell keeps its iframes across a quick and a full listing" (iframe/row removes 22,
+must be 0). Cause (measured): 5 workers save 9 % and overload the 12-core Mac, so the default of 3 stays. The case
+fail under load is a Suspect for a load flake; it passed in #16.
+
 740\. Mac builder (same sketch): the clipping check flags the intended crop of the variants, and skip-scope refuses
 the reason "intended" because the crop holds controls; only "inert" passes. Suspect only. Lesson: a check that accepts
 only a wrong reason teaches the agent to give a wrong reason (as 737). Tool fix (backlog): skip-scope accepts
