@@ -3802,3 +3802,11 @@ and about 81 `tmp-<pid>-*` dirs (about 208k inodes, 3355 each) from 2026-11-10 o
 `browser.close()` and the tmp dir removal are not reached on a failure or kill path. Tool fix (doc agent decision, tool
 internal): find the owners; each removes its profile and tmp dir on every exit path (also SIGTERM); the 861 start sweep
 removes such dirs with no live owner. Bite: a killed run of the owner leaves no profile or tmp dir. Queue: with 861.
+
+863\. Doc agent (2026-11-11): B480 (Windows spike on rack, ADR 0268: runs in a builder subagent) stopped silently. After
+SAC was turned off at noon, no subagent ran it, the builder handoffs never named one, and the doc agent handoff said
+"studio runs with CEF on rack" with no source. The human asked for the state and nobody had one. Suspect: the subagent
+died with a builder restart, unnamed. Tool fix (doc agent decision, tool internal): a STATUS row in work by a subagent
+carries the subagent's result file in its row; the builder `restart` refuses while such a row names no result file or a
+result file older than the row's last start. Bite: a restart with B480 "in work" and no newer result file is refused.
+Queue: Linux builder, after 862.
