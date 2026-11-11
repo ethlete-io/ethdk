@@ -2605,6 +2605,48 @@ export default definePart({
       });
     });
 
+    it('refuses a person name in --decided-by on merge and pick before any write', async () => {
+      const { target, lines } = await readied('a,b');
+      const file = join(sketchDir(target), 'sketch.json');
+      const before = readFileSync(file, 'utf8');
+
+      expect(
+        await write(
+          target,
+          'pick',
+          'components/button',
+          '--variant',
+          'b',
+          '--decided-by',
+          'tom in chat: b',
+          '--product',
+          'acme',
+        ),
+      ).toBe(1);
+      expect(lines.pop()).toContain('"human"');
+      expect(readFileSync(file, 'utf8')).toBe(before);
+
+      expect(
+        await write(
+          target,
+          'pick',
+          'components/button',
+          '--variant',
+          'b',
+          '--decided-by',
+          'human in chat: b',
+          '--product',
+          'acme',
+        ),
+      ).toBe(0);
+      const picked = readFileSync(file, 'utf8');
+
+      expect(await write(target, 'merge', 'components/button', '--decided-by', 'tom', '--product', 'acme')).toBe(1);
+      expect(lines.pop()).toContain('"human"');
+      expect(readFileSync(file, 'utf8')).toBe(picked);
+      expect(existsSync(join(target, DESIGN_DIR, 'acme/merged.json'))).toBe(false);
+    });
+
     it('writes the --note over the part note with --replace-note', async () => {
       const { target } = await readied('a');
       const args = ['merge', 'components/button', '--variant', 'a', '--allowed-by', PLAN, '--product', 'acme'];

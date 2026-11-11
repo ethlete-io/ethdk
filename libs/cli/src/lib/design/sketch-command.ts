@@ -94,6 +94,7 @@ import {
   SKETCH_FILE,
 } from './system/sketch/sketch';
 import { spawnPlain } from '../plain-output';
+import { hasPersonName, PERSON_NAME_REFUSAL } from '../person-names';
 import { lintGateLinesOf, variantLintFilesOf } from './design-lint';
 
 export const SKETCH_USAGE = [
@@ -113,7 +114,7 @@ export const SKETCH_USAGE = [
   'sketch preview <layer>/<name> <variant> [--product <name>] [--json]',
   'sketch rebase <layer>/<name> [--ported] --by <model id> [--product <name>]',
   'sketch pick <layer>/<name> --variant <key> --decided-by <the words and where they were said> --by <model id> [--product <name>]',
-  'sketch merge <layer>/<name> [--note <reason> [--replace-note]] [--variant <key> --allowed-by <plan ref>] [--decided-by <name>] --by <model id> [--product <name>]',
+  'sketch merge <layer>/<name> [--note <reason> [--replace-note]] [--variant <key> --allowed-by <plan ref>] [--decided-by <role>] --by <model id> [--product <name>]',
   'sketch discard <layer>/<name> --by <model id> [--product <name>]',
   'sketch reject <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
   'sketch reopen <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
@@ -144,7 +145,7 @@ const FLAG_HELP: Record<string, string> = {
   '--allowed-by':
     'the plan entry that lets the merge go without a pick in Studio; noted in merged.json, needs --variant',
   '--decided-by':
-    "on pick: the designer's words that pick the variant and where they were said, e.g. 'tom in chat: take b'; on merge: who picked the variant, as merged.json records it (default user); a name the designer gave you at this terminal, e.g. tom - not with --allowed-by",
+    "on pick: the designer's words that pick the variant and where they were said, e.g. 'human in chat: take b'; on merge: who picked the variant, as merged.json records it (default user); the role of who picked, e.g. human (never a person name; the command refuses one) - not with --allowed-by",
   '--replace-note': "on merge: also write --note over each target part's note",
   '--reason':
     'why; on reject of a variant that is rejected already it sets the reason of that rejection; stored with who wrote it',
@@ -1765,6 +1766,7 @@ const picked = (context: Context) =>
       return fail(
         'usage: sketch pick <layer>/<name> --variant <key> --decided-by <the words and where they were said> --by <model id> [--product <name>]',
       );
+    if (hasPersonName(words)) return fail(`--decided-by ${PERSON_NAME_REFUSAL}`);
 
     const decided = decideSketch({
       sketch,
@@ -1799,6 +1801,7 @@ const merged = (context: Context) =>
 
     if (decidedBy !== undefined && (decidedBy.trim() === '' || planRef !== undefined))
       return fail('--decided-by needs a name and does not go with --allowed-by, which records the plan');
+    if (decidedBy !== undefined && hasPersonName(decidedBy)) return fail(`--decided-by ${PERSON_NAME_REFUSAL}`);
 
     const by = authorOf(context.args) ?? undefined;
     const allowed =

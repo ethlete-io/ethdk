@@ -166,7 +166,7 @@ const helpOf = (invocation: string) =>
     '',
     `${invocation} sketch pick <layer>/<name> --variant <key> --decided-by <the words and where they were said> --by <model id>`,
     '  Record the pick the designer gave outside Studio (in chat, at this terminal) in sketch.json, the same pick Studio',
-    '  writes, with the words as its comment. Refuses an unknown or rejected variant and a sketch that is not ready.',
+    '  writes, with the words as its comment, e.g. "human in chat: take b" (a person name is refused). Refuses an unknown or rejected variant and a sketch that is not ready.',
     '',
     `${invocation} sketch rebase <layer>/<name> --by <model id>`,
     '  Port what changed in the product since the sketch was cut into each variant (a 3-way merge per file), then record',
