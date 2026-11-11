@@ -4046,3 +4046,12 @@ the API answer, not the view the designer reads. Lesson: a fix for "Studio does 
 shot of the view that should show X; an API bite alone is not the fix. Decided by the doc agent: B is traced read-only at
 night (Linux, now); A is Studio app UI, so it is day work: the place of the chip in the sketch view goes to the builder
 as a sketch after the night (ADR 0257: no sketches at night), not as a grill question.
+
+652, decided by the doc agent (2026-11-11, night; tool internal, the builder's recommendation; no ADR covers it, ADR 0009
+was a one-time commit): step 1 moves only `pictures.json` (pure tool state: shot hashes) to a gitignored
+`.ethlete/cache/<product>/pictures.json`; the tool reads the old path once as a fallback and never writes it again; one
+commit removes the tracked files. `ready.json` and `sketch.json` stay tracked because they carry designer decisions (ready
+marks, picks); the tool writes them only when a decision changes (no rewrite of an equal file, stable key order). Bite: a
+design run with no decision leaves `git status` clean. Condition: before the move, the builder confirms that no reader on
+another clone (the Mac, CI, a scratch copy, the push suite) needs the committed `pictures.json`; if one does, it reports
+before it builds. Leave the uncommitted `merged.json` and `ready.json` edits in the tree untouched.
