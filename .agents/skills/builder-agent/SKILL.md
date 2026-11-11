@@ -49,7 +49,8 @@ that talks with the user and records decisions. Talk English.
   before they mount fails locally as on a cold CI server; 14000 outlasts the case setup. The bite proof runs only the new specs. `yarn commit`
   runs no spec and no typecheck, except one: a breaking (`!`) commit runs the whole `src/scenarios/` folder of each lib it
   stages, in the commit-msg hook; a slice that changes a config or a `.ts` file runs the `typecheck` target of each touched project.
-  A slice that changes an import between modules ends with `npx vitest related --run <changed files>` in each touched project. Before you push, run `yarn push:suite` in the
+  Every slice runs `npx vitest related --run <changed files>` in each touched project before its commit (finding 779): a spec
+  that mocks a module the slice now imports from fails there, not in the push suite. Before you push, run `yarn push:suite` in the
   background and start the next slice while it runs; it tests an export of HEAD, so your live edits never leak in: `nx test cli`, `nx test ethlete-studio`, `yarn studio:e2e`, then the page groups the unpushed diff touches in `canvas.e2e.mjs`, `serve.ts` or `studio-api.ts`
   3 times (the last with `--hold-listings 14000`). Push only after `push-suite: ok <sha>`; a failure, a changed result or
   a hold failure stops the push, and the pre-push hook of `next` refuses a code push without that verdict. `PUSH_SUITE_SKIP=1` is for the human only;
@@ -67,6 +68,7 @@ that talks with the user and records decisions. Talk English.
 - Every slice brief names the slice's allowed paths; write them at slice start with `yarn slice:paths "<name>" <path>...` (an env var set in one shell call does not reach the later `git commit` call). The pre-commit hook warns on a staged path outside them.
 - Every subagent brief says: "Never wait with `pgrep -f`/`pkill -f` loops: the pattern matches the loop's own command line, so it never ends. Use `run_in_background` or Monitor." (finding 730; B99 is the tool fix.)
 - Every subagent brief says: "A refused gate is a finding: stop and report it, never call its internals to pass it." (finding 737.)
+- Every subagent brief says: "Before your commit, run `npx vitest related --run <changed files>` in each touched project." (finding 779.)
 - After a slice, write an "as built" section in the plan: what was built, the commits, and
   what you verified and what you did not verify.
 
