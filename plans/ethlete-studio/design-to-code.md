@@ -4005,3 +4005,13 @@ from `studio-api` and `open-points-runner` in `src/**/*.spec.ts`. The four specs
 module for its side effect (it reaches the worker through `startSlowRunner`). Verified: a spec with the product imports
 fails lint with both messages; with `JITI_FS_CACHE=false` at `--slow 4` a cold spec through the fixtures module passes
 (54.9 s), the same spec through `open-points-runner` fails (9.4 s); `vitest related` 128 files green; typecheck green.
+
+791\. Linux builder (2026-11-11, night, 650 verification): `yarn studio:e2e --case notice-hint` matched no case, and the
+builder reported the run as a check of the 650 load line. Cause (measured): `canvas.e2e.mjs` exits 1 when no case
+matches (`!matched`), but the builder read the exit code of `tail` after a pipe, and the log says only "0 cases on 0
+worker(s)" and "0/0 passed in 0.0s". Why no tool caught it: a filter that matches nothing prints a pass-shaped summary.
+Lesson: an empty run must say it is empty in words, not as a count a reader takes for green. Decided by the doc agent
+(tool internal, the builder's proposal): when a `--case` or `--page` filter matches nothing, print "--case <x> matches no
+case; names: ..." (closest names first) and skip the "0/0 passed" line. Bite: a spec with a filter that matches nothing
+expects the line and no "passed" summary. Night backlog, Linux, after 789 (b) (1)+(2). Owed for 650: one real case run
+that shows the load line.
