@@ -3533,7 +3533,7 @@ Mac.
 `lint:person-names` runs only in pre-push, not in pre-commit. Tool fix (doc agent, tool internal): run
 `check-person-names` on the staged files in pre-commit.
 
-As built (TBD819). `check-person-names.mjs --staged` checks the staged blobs (not the working tree) of the staged files under libs, apps and
+As built (ffaf42f02). `check-person-names.mjs --staged` checks the staged blobs (not the working tree) of the staged files under libs, apps and
 `.ethlete/design` against the same baseline and prints the same message as pre-push; `.husky/pre-commit` runs it when such a file is
 staged. The spec stages a name, clears it in the working tree and fails on the old script. Not verified: a real commit through the hook.
 
@@ -3541,6 +3541,12 @@ staged. The spec stages a name, clears it in the working tree and fails on the o
 running subagent. Suspect: the check reads the working tree, not the HEAD export the suite tests. Tool fix (doc agent,
 tool internal): the suite runs the changeset check inside the HEAD export, so untracked files of other agents never
 count.
+
+Cause (measured). An untracked `.changeset/zz-temp-820-bad.md` with two paragraphs made `node tools/scripts/lint-changesets.js` exit 1: it
+lists the directory on disk. `check-changeset-coverage.js` already reads git. Also, the check runs in `preChecksStep` before the export, in the
+checkout, and in pre-push. As built: `lint-changesets.js --rev <sha>` reads the changesets committed in that commit via `git ls-tree`/`git show`, and
+`runChecks` (`pre-push-checks.mjs`) runs it with the pushed head, then the coverage check as `yarn lint:changeset-coverage`, so push:suite and pre-push both ignore untracked and edited files. Deviation:
+no export is made for this, the git blobs of HEAD are the same content. The spec fails on the old script. Not verified: a full `yarn push:suite` run.
 
 815 as built (Linux builder, 2026-11-11): the measured cause differs from the finding. The `type.css?inline` module
 already resolves `@assets` (system-modules spec). The unresolved copy is the product `styles.css`: it `@import`s

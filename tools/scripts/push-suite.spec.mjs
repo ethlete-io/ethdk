@@ -582,6 +582,7 @@ const checksFixture = () => {
   const repo = mkdtempSync(join(tmpdir(), 'push-suite-checks-'));
   const here = import.meta.dirname;
   const scripts = Object.fromEntries(CHECKS.map((check) => [check, 'node -e 0']));
+  scripts['lint:changeset-coverage'] = 'node -e 0';
   scripts['lint:runner-os'] = 'node ./tools/scripts/check-runner-os-paths.mjs';
   mkdirSync(join(repo, 'tools/scripts'), { recursive: true });
   mkdirSync(join(repo, '.husky'));
@@ -590,6 +591,7 @@ const checksFixture = () => {
   writeFileSync(join(repo, 'yarn.lock'), '');
   writeFileSync(join(repo, '.gitignore'), 'node_modules\n');
   copyFileSync(join(here, 'check-runner-os-paths.mjs'), join(repo, 'tools/scripts/check-runner-os-paths.mjs'));
+  copyFileSync(join(here, 'lint-changesets.js'), join(repo, 'tools/scripts/lint-changesets.js'));
   copyFileSync(join(here, '../../.husky/format-check-committed.mjs'), join(repo, '.husky/format-check-committed.mjs'));
   symlinkSync(join(here, '../../node_modules'), join(repo, 'node_modules'));
   sh(repo, 'git', ['init', '-q']);

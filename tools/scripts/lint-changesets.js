@@ -9,9 +9,11 @@
  * Usage:
  *   node tools/scripts/lint-changesets.js              # every unreleased changeset
  *   node tools/scripts/lint-changesets.js <paths...>   # only these files (skips any under .changeset/pre/)
+ *   node tools/scripts/lint-changesets.js --rev <sha>  # the changesets committed in <sha>, untracked files never count
  */
 
 const { readFileSync, readdirSync, existsSync } = require('fs');
+const { execFileSync } = require('child_process');
 const { join, basename, resolve } = require('path');
 
 const CHANGESET_DIR = resolve(__dirname, '../../.changeset');
@@ -116,19 +118,30 @@ const checkNote = (note) => {
   return problems;
 };
 
-const lint = (paths) => {
-  const files = (
-    paths.length > 0 ? paths.map((path) => basename(path)) : readdirSync(CHANGESET_DIR).filter((f) => f.endsWith('.md'))
-  ).filter((file) => file !== 'README.md');
+const git = (...args) =>
+  execFileSync('git', args, { cwd: resolve(__dirname, '../..'), encoding: 'utf8', maxBuffer: 1 << 26 });
+
+const lint = (paths, rev) => {
+  const names = rev
+    ? git('ls-tree', '--name-only', rev, '.changeset/')
+        .split('\n')
+        .map((path) => basename(path))
+        .filter((f) => f.endsWith('.md'))
+    : paths.length > 0
+      ? paths.map((path) => basename(path))
+      : readdirSync(CHANGESET_DIR).filter((f) => f.endsWith('.md'));
+  const files = names.filter((file) => file !== 'README.md');
 
   const failures = [];
 
   for (const file of files) {
     const path = join(CHANGESET_DIR, file);
 
-    if (!existsSync(path)) continue;
+    if (!rev && !existsSync(path)) continue;
 
-    const { error, frontmatter, note } = parse(readFileSync(path, 'utf8'));
+    const { error, frontmatter, note } = parse(
+      rev ? git('show', `${rev}:.changeset/${file}`) : readFileSync(path, 'utf8'),
+    );
     const releasesNothing = !error && frontmatter.every((line) => /:\s*none\s*$/.test(line));
     const problems = error
       ? [error]
@@ -140,10 +153,16 @@ const lint = (paths) => {
   return { checked: files.length, failures };
 };
 
-const { checked, failures } = lint(process.argv.slice(2));
+const args = process.argv.slice(2);
+const revAt = args.indexOf('--rev');
+const rev = revAt === -1 ? undefined : args[revAt + 1];
+const { checked, failures } = lint(
+  args.filter((_, i) => revAt === -1 || (i !== revAt && i !== revAt + 1)),
+  rev,
+);
 
 if (failures.length === 0) {
-  if (process.argv.length === 2) console.log(`✔ ${checked} unreleased changeset(s) within the bar.`);
+  if (args.length === 0 || rev) console.log(`✔ ${checked} unreleased changeset(s) within the bar.`);
   process.exit(0);
 }
 
