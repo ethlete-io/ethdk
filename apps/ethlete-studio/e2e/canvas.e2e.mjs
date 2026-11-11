@@ -1139,11 +1139,7 @@ const CASES = [
         await chip.click();
         await page.waitForTimeout(SETTLE_MS);
         if (click === 1)
-          await page
-            .locator('ethlete-build-ready-footer et-badge')
-            .first()
-            .waitFor({ timeout: 20000 })
-            .catch(() => undefined);
+          await page.locator('ethlete-build-ready-footer et-badge').first().waitFor({ timeout: COLD_START_MS });
         steps.push(
           await page.evaluate(() => ({
             pressed: document.querySelector('[data-open-points-chip]')?.getAttribute('aria-pressed') === 'true',
