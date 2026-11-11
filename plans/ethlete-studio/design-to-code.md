@@ -4027,6 +4027,6 @@ expects the line and no "passed" summary. Night backlog, Linux, after 789 (b) (1
 that shows the load line.
 As built (Linux builder, 2026-11-11): `apps/ethlete-studio/e2e/case-filter.mjs` `noMatchLineOf`; `canvas.e2e.mjs`
 prints it to stderr and exits 1 before the Studio build when a `--case` or `--page` filter matches no case, so no
-summary prints. Verified: `case-filter.spec.mjs` passes; live `--case notice-hint` exits 1 with the line and five closest
+summary prints. Verified: `case-filter.spec.mjs` passes, and fails with the closest-first sort removed (bite); live `--case notice-hint` exits 1 with the line and five closest
 names, no "0/0 passed" (before: exit 1 with "0/0 passed in 0.0s"); live `--page Nowhere` exits 1 with the line. A
 filter that matches only through `--view` or a shard is not covered.
