@@ -698,7 +698,7 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
         log(failureReport(output));
         return finish(`blocked ${name} failed at ${sha}`);
       }
-      if (name === 'repeat' && output) log(output);
+      if ((name === 'repeat' || name === 'first-listing') && output) log(output);
       passed.set(name, sha);
     }
     return finish(`ok ${sha}`);
