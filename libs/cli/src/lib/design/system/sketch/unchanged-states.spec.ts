@@ -62,6 +62,17 @@ describe('unchangedStatesOf', () => {
     expect(await unchangedStatesOf({ product, sketch, variant: 'new', load: counting().load })).toEqual([]);
   });
 
+  it('names no state of the edit sketch variant new when the sketch has old', async () => {
+    const { product } = acme();
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero', sketch: 'edit' },
+      variants: ['new', 'old'],
+    }) as Sketch;
+
+    expect(await unchangedStatesOf({ product, sketch, variant: 'new', load: counting().load })).toEqual([]);
+  });
+
   it('leaves out a state whose demo frame the variant changed', async () => {
     const { product, sketch, hero } = acme();
     const file = resolve(hero, 'hero.ts');
