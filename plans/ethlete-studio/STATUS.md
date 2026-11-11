@@ -50,6 +50,11 @@ der Wiederholungs-Prüfung, ruhige Messung gegen 90 s, Prüf-Cache auf der Festp
 (b) er den laufenden Punkt blockiert. Jeder Fix geht an die Ursache, eine neue Prüfregel nur, wenn ein Baustein,
 ein Typ oder ein Standardwert den Fehler nicht unmöglich machen kann (ADR 0235). Sonst trägt der Doc-Agent ihn ein und hängt den Werkzeug-Fix an den Rückstand.
 
+**Welche Befunde gebaut werden (ADR 0269):** Ein Werkzeug-Fix, den jedes Studio-Projekt spürt, baut der Builder
+direkt nach dem laufenden Punkt. Ein Fix an der Agenten-Maschinerie (Push-Reihenfolge, `/tmp`, Neustart, Postkasten,
+Archiv, Plan-Vermerke) kommt nur bei rotem CI oder echter Blockade dran; sonst eine Zeile im Maschinerie-Rückstand,
+der in einem festen Aufräumblock einmal pro Woche läuft.
+
 Ältere 🔨-Zeilen unten sind noch nicht gegen git geprüft (Stand der Zeile kann veraltet sein).
 
 Stand der aktuellen Welle. 🔨 läuft, ⏳ geplant, ⛔ hakt, ⏸️ geparkt. Die Grill-Session hält die
