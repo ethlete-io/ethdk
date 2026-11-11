@@ -3967,3 +3967,15 @@ B491 as built (Linux builder, 2026-11-11, ADR 0265): `check-changeset-coverage.j
 and the changeset skill name the rule. Verified: 3 new specs in temp repos (an ADR-only range passes; a `libs/cli`
 README change and a Studio code change next to an ADR still fail); the ADR-only case fails on the old script, 11/11
 pass on the new one. Not changed: the pre-existing `no-useless-assignment` lint error at the `kept = null` line.
+
+B489 as built (Linux builder, 2026-11-11, ADR 0263/0264, finding 792 A/B): sketch `pages/sketches@open-points` (targets
+`pages/sketches`, `components/sketch-status-badge`), ready, no pick. New page states `picked`, `sketch-only-points`
+(a sketch-only part with a pick and two UTILITY-CSS problems), and in a and c `sketch-only-points-open`; new badge state
+`picked`. a: the part-view chip "3 offen" top right beside Verwerfen with the Offene Punkte popover; badge "Sketch
+gewählt, noch nicht gemergt" (the pick shows twice). b: no chip, one points line beside the round picker; badge
+"Gewählt, Merge offen" (long lists truncate). c: the chip in the head of the picked variant beside Übernehmen; badge
+"Variante gewählt" (no place for the chip without a pick). No existing badge state fits a pick: a variant that left the
+badge unchanged was refused by `sketch check` (same pixels as a), so every variant adds `picked`. Verified: `sketch check`
+(only ROUND-NOT-READY before ready), `design check --lint <7 files> --tsconfig` ok, `et design shot` of the new states of
+every variant read at full scale, `sketch ready` ok (auto-merge skipped, variants differ). Not done: the app
+(`sketchStatus` reading the pick, one shared "waits for a pick" function, the bite) waits for the pick.
