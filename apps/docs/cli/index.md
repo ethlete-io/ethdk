@@ -492,7 +492,8 @@ after the record's `at`, stays stale and is not moved, listed with `files unknow
 
 An edit that changes no pixel keeps its review. `design check` draws every state of
 the part as `design compare` draws the design side and stores the hash of each picture in
-`.ethlete/design/<product>/pictures.json`, under `record`.
+`.ethlete/cache/<product>/pictures.json`, under `record`. That cache is gitignored; while it does not exist, the
+tool reads `.ethlete/design/<product>/pictures.json` of an older checkout once.
 `et design check` stores the `record` pictures of a merged part unchanged since its merge. When a merged part
 changed outside a sketch, `et design check` draws every state again and compares it with the pictures at the
 `merged.json` hash. With every state identical it records the new hash in `merged.json` and prints
@@ -762,7 +763,7 @@ When `sketch ready` merges a sketch by itself it writes the shared file `merged.
 commits only the entries of the named part (an object key, or the list entries whose `part` it is; repeat `--part` for
 several) as HEAD plus those entries for that path, and leaves the entries of every other part uncommitted in the working
 file. A locked `.git/index.lock` is retried with a short backoff, up to ten times. `--message` sets the commit message; the default is `chore(repo): Record <part> in <file>`. It works on
-`implemented.json`, `ready.json`, `pictures.json` and the other part-keyed files too. There is no auto-commit in `ready`.
+`implemented.json`, `ready.json` and the other part-keyed files too. There is no auto-commit in `ready`.
 
 A problem the product already had does not fail a variant: `sketch check` and `sketch ready` print one count line per
 variant, `NOTE elements/hero a: 2 problems were there before (design check lists them)`.

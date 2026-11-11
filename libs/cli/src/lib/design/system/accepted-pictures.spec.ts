@@ -39,6 +39,8 @@ const commitChip = (target: string, chip: string) => {
   execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
 };
 
+const cacheOf = (target: string) => join(target, '.ethlete/cache/app-a/pictures.json');
+
 const productOf = (target: string) => resolveProduct({ target, name: 'app-a', config: {} });
 
 const designHashOfChip = (target: string) => {
@@ -508,8 +510,39 @@ describe('autoAcceptOf', () => {
     });
   });
 
+  it('keeps the pictures of a run in the cache and leaves the product folder unchanged', async () => {
+    const { target, dir } = checkout();
+    const { draw } = drawing({ default: 'a1', hover: 'b2' });
+
+    recordMerged({ product: productOf(target), parts: [CHIP] });
+    const committed = JSON.stringify({ [CHIP]: { record: { hash: 'old', states: { default: 'zz' }, slots: true } } });
+
+    writeFileSync(join(dir, 'pictures.json'), committed);
+    await autoAccept(target, draw);
+
+    expect(readFileSync(join(dir, 'pictures.json'), 'utf8')).toBe(committed);
+    expect(JSON.parse(readFileSync(cacheOf(target), 'utf8'))[CHIP].record.states).toEqual({
+      default: 'a1',
+      hover: 'b2',
+    });
+  });
+
+  it('reads the pictures.json of the product folder only while no cache exists', () => {
+    const { target, dir } = checkout();
+    const record = (hash: string) => ({ [CHIP]: { record: { hash, states: { default: 'a1' }, slots: true } } });
+
+    writeFileSync(join(dir, 'pictures.json'), JSON.stringify(record('committed')));
+
+    expect(readPictures(dir)[CHIP]?.record?.hash).toBe('committed');
+
+    mkdirSync(dirname(cacheOf(target)), { recursive: true });
+    writeFileSync(cacheOf(target), JSON.stringify(record('cached')));
+
+    expect(readPictures(dir)[CHIP]?.record?.hash).toBe('cached');
+  });
+
   it('reads the older review and go pictures as the record, and writes only a record', () => {
-    const { dir } = checkout();
+    const { target, dir } = checkout();
     const pictures = { states: { default: 'a1' }, slots: true };
 
     writeFileSync(
@@ -526,7 +559,7 @@ describe('autoAcceptOf', () => {
 
     writePictures({ dir, part: CHIP, pictures: { hash: 'd3', states: { default: 'a2' } } });
 
-    expect(JSON.parse(readFileSync(join(dir, 'pictures.json'), 'utf8'))).toEqual({
+    expect(JSON.parse(readFileSync(cacheOf(target), 'utf8'))).toEqual({
       'components/a': { record: { hash: 'm1', partHash: 'm1', ...pictures } },
       'components/b': { record: { hash: 'd1', ...pictures } },
       [CHIP]: { record: { hash: 'd3', states: { default: 'a2' }, slots: true } },

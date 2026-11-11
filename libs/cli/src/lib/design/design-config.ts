@@ -4,6 +4,9 @@ import { dirname, resolve } from 'path';
 /** Where every repository keeps its design work. The layout is convention, not configuration. */
 export const DESIGN_DIR = '.ethlete/design';
 
+/** Where the design tools keep their gitignored per-product state, beside {@link DESIGN_DIR}. */
+export const CACHE_DIR = '.ethlete/cache';
+
 /**
  * One project's drawing environment: the stylesheets a frame loads, the markup it puts in `<head>`,
  * the module whose default export is the Angular providers array `ng()` renders under, and the

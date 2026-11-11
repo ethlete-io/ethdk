@@ -13,6 +13,7 @@ import {
 } from 'fs';
 import { dirname, isAbsolute, relative, resolve, sep } from 'path';
 import { setImmediate } from 'timers/promises';
+import { writeChangedFile } from '../../../json-file';
 import { jsonLayoutOf } from '../../json-layout';
 import { statusPath } from '../../status';
 import { ASSETS_FOLDER, filesBelow } from '../assets';
@@ -598,7 +599,7 @@ export const writeSketchFile = (sketch: Sketch) => {
     ...(sketch.mergeHold && sketch.status === 'ready' ? { mergeHold: sketch.mergeHold } : {}),
   };
 
-  writeFileSync(resolve(sketch.dir, SKETCH_FILE), jsonLayoutOf(file));
+  writeChangedFile(resolve(sketch.dir, SKETCH_FILE), jsonLayoutOf(file));
 };
 
 const stubOf = (name: string) =>

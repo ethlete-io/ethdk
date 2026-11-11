@@ -4111,3 +4111,13 @@ did not say Suspect. Lesson: a fact that a decision rests on needs a probe or a 
 and must say so. Decided by the doc agent: builder-agent skill line: a condition check that gates a decision runs a
 probe (spec or live run) before it reports; a code read is reported as "Suspect (code read)". The doc agent asks
 "probe or read?" before it decides on a reported cause.
+
+652 step 1, as built (2026-11-11): `accepted-pictures.ts` writes the shot hashes only to the gitignored
+`.ethlete/cache/<product>/pictures.json` (`productCacheDirOf` in `product.ts`, `CACHE_DIR` in `design-config.ts`). It
+reads the old `<product>/pictures.json` only while no cache exists. `writeJsonFile` and the `sketch.json` writer skip a
+file that already holds the same text (`writeChangedFile`), so an equal `ready.json` keeps its mtime. `pictures.json`
+left the decision files of the UNCOMMITTED-DECISIONS warning. The same commit removes the three tracked
+`pictures.json` files from the index (`git rm --cached`; the working files stay). Verified: specs in
+`accepted-pictures.spec.ts` (cache write, product folder unchanged, old-path fallback) and `part-ready.spec.ts` (equal
+ready.json untouched) fail without the fix and pass with it; typecheck and lint clean. Not verified: a live
+`et design check` run on this checkout.
