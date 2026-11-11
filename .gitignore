@@ -94,5 +94,6 @@ playwright-report
 
 # Local state of the design tools
 .ethlete/cache/
+.ethlete/design/*/pictures.json
 
 **/.vitest/
