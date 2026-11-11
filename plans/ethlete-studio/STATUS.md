@@ -34,8 +34,10 @@ nimmt den nächsten. Kein Punkt und kein Rückstand läuft über Nacht als E2E-F
 1. A10 / B249: „Baubereit“ statt Go und Abnahme, `go.json`, `accepted.json`, `design go` und `design accept` weg
    (ADR 0048); unsichtbare direkte Änderungen gelten sofort; danach Gutter-Skip in `pages/sketches`. Nichts am Go-System
    wird vorher noch geändert.
-2. A1-Rest: Titelleiste fertig (12 Hover-Zustände; der Hinweis `notice-hint` ist gebaut, 332e49626).
-3. B345: Sketch-Runde zeigt geänderte Zustände als Ausschnitt.
+2. ~~A1-Rest: Titelleiste fertig~~ gebaut (7b6236922, git-Prüfung ADR 0234 am 11.11.). Hover/Active/Focus-visible
+   des Hinweises: kleine Sketch-Runde auf dem Hinweis-Teil nach B345.
+3. B345: Sketch-Runde zeigt geänderte Zustände als Ausschnitt. 🔨 Mac-Builder: App-Umsetzung von change-crop b
+   (Design gemergt 2f83c46da).
    3a. B489 (ADR 0263): Folge-Sketch `pages/sketches`: Offene-Punkte-Chip für reine Sketch-Teile und Zustand
    „gewählt, wartet auf Merge“ (Bef. 792 A/B).
 4. A13: ein Knopf „Übernehmen“ öffnet direkt die Merge-Ansicht.
