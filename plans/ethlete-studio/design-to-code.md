@@ -3876,3 +3876,19 @@ caches a no-answer verdict per checkout+port until the port stops listening. Les
 must take its fixture from a captured real body (AGENTS.md rule); the hand-written one hid the defect. Tool fix: compare
 only version+build, spec with the captured body (bite first), never cache a no-answer verdict; rebuild on rack and re-run
 the smoke. Side: user-facing; part of B480, which runs in parallel (ADR 0268).
+
+871\. Mac builder (2026-11-11, B345 slice 1, 82c6e3025): `et:design check` runs the committed CLI build, so it cannot see
+an uncommitted server change; a builder checks the old server and reads the result as a check of its own change.
+Suspect: the check resolves the CLI from the build output, not from source. Lesson: a check that cannot see the change
+under test must say so, not pass. Tool fix: the check prints which CLI build it runs and warns when `libs/cli` has
+uncommitted or unbuilt changes. Side: user-facing (every Studio project), after B249 (ADR 0269).
+
+872\. Mac builder (2026-11-11, B345 slice 1): design check cannot drive the change-crop states of pages/sketches
+("undrivable", 16 same aria-labels), so no design compare covered the new view before the live shot. Suspect: the harness
+samples feed no crop data. Lesson: a state the harness cannot drive is a hole in compare, and it was found by the
+builder, not reported by the tool as a gap. Tool fix: design check lists every undrivable state as a finding with its
+part, and the harness samples carry crop data for the change-crop states. Side: user-facing, after B249 (ADR 0269).
+
+873\. Mac builder (2026-11-11): `spec:stress` does not name the failing case, and `sketches.component.spec` first case
+times out cold under load (2/4 stressed with cli specs, 4/4 alone; Suspect). Side: machinery backlog for the weekly
+cleanup block (ADR 0269).
