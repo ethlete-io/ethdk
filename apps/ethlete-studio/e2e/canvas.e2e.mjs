@@ -18,7 +18,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { listingHold } from '../../../tools/scripts/studio-e2e-listing-hold.mjs';
 import { ensureCli, withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
-import { CANVAS, sketchCells } from './probe-helpers.mjs';
+import { CANVAS, listingWait, sketchCells } from './probe-helpers.mjs';
 import { noMatchLineOf } from './case-filter.mjs';
 import { goalLineOf, isNoisy, runLoadLineOf, topProcesses } from './run-load.mjs';
 
@@ -321,7 +321,7 @@ const SKETCH_CSS = {
 const showAllStates = async (page) => {
   const button = page.locator('[data-sk-folded]').getByRole('button', { name: 'Alle Zustände zeigen' }).first();
 
-  await button.waitFor({ timeout: FULL_COMPARE_MS }).catch(() => undefined);
+  await button.waitFor({ timeout: FULL_COMPARE_MS });
   if ((await button.count()) && (await button.getAttribute('aria-expanded')) !== 'true') {
     await button.click();
     await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
@@ -509,10 +509,22 @@ const withChangedCliAndSlowRestart = (key) => {
   };
 };
 
-const listingAnswered = (page) =>
-  page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
-    timeout: FULL_COMPARE_MS,
-  });
+const listingCounts = { requested: 0, outstanding: 0 };
+let listingHoldOn = true;
+
+const listingAnswered = async (page) => {
+  const deadline = Date.now() + FULL_COMPARE_MS;
+  let wait;
+
+  for (;;) {
+    const pendingMarker = await page.evaluate(() => !!document.querySelector('[data-sk-changed="pending"]'));
+
+    wait = listingWait({ holdActive: !!holdListingsMs && listingHoldOn, ...listingCounts, pendingMarker });
+    if (wait.done) return;
+    if (Date.now() > deadline) throw new Error(`listingAnswered timed out: ${wait.reason}`);
+    await page.waitForTimeout(50);
+  }
+};
 
 const framesPainted = async (page, timeoutMs) => {
   const deadline = Date.now() + timeoutMs;
@@ -1192,12 +1204,8 @@ const CASES = [
       const open = page.locator('[role="dialog"] button', { hasText: 'Sketch öffnen' });
       const status = page.locator('ethlete-build-ready-footer et-badge').first();
 
-      await page
-        .locator('ethlete-build-ready-footer button', { hasText: 'Gründe' })
-        .first()
-        .click({ timeout: 20000 })
-        .catch(() => undefined);
-      await open.waitFor({ timeout: 5000 }).catch(() => undefined);
+      await page.locator('ethlete-build-ready-footer button', { hasText: 'Gründe' }).first().click({ timeout: 20000 });
+      await open.waitFor({ timeout: 5000 });
       await page.unroute('**/__design/open-points?*');
 
       const offered = await open.count();
@@ -3302,14 +3310,21 @@ const runCase = async (page, studioUrl, designPort, target, testCase) => {
     : { ok: true, detail: `open, ${testCase.open}: ${result.detail}` };
 };
 
-let listingHoldOn = true;
 const heldListings = listingHold(holdListingsMs);
 
 const holdListings = (page) =>
   page.context().route(
     (url) => url.pathname === '/__design/sketches' && url.searchParams.get('targets') !== 'no',
     async (route) => {
-      if (listingHoldOn && route.request().method() === 'GET') await heldListings.hold();
+      if (listingHoldOn && route.request().method() === 'GET') {
+        listingCounts.requested++;
+        listingCounts.outstanding++;
+        try {
+          await heldListings.hold();
+        } finally {
+          listingCounts.outstanding--;
+        }
+      }
       await route.fallback().catch(() => undefined);
     },
   );
@@ -3422,6 +3437,7 @@ const work = async () => {
         pictureDelayOn = CASES[job.case].delayPictures !== false;
         listingHoldOn = CASES[job.case].holdListings !== false;
         heldListings.startJob();
+        listingCounts.requested = 0;
 
         try {
           result = await Promise.race([

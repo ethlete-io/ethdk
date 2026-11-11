@@ -334,9 +334,16 @@ export const preChecksStep = async (range) => {
     },
   );
   if (format.status !== 0) lines.push('pre-push: format check failed:', `${format.stdout}${format.stderr}`.trim());
+  const { scopeSelfLinks, scopeSelfLinksMessage } = await import('./commit-export.mjs');
+  const selfLinks = scopeSelfLinks(root);
+  if (selfLinks.length) lines.push(scopeSelfLinksMessage(selfLinks));
   const { runChecks } = await import('./pre-push-checks.mjs');
   const failed = runChecks(base.stdout.trim(), head.stdout.trim(), { cwd: root, log: (line) => lines.push(line) });
-  const names = [...(format.status === 0 ? [] : ['format']), ...failed.map((item) => item.check)];
+  const names = [
+    ...(format.status === 0 ? [] : ['format']),
+    ...(selfLinks.length ? ['node_modules-self-links'] : []),
+    ...failed.map((item) => item.check),
+  ];
   return { status: names.length ? 1 : 0, output: lines.join('\n'), names };
 };
 

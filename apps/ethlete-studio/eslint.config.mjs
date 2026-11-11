@@ -2,6 +2,7 @@ import ethlete from '@ethlete/eslint-plugin';
 import nx from '@nx/eslint-plugin';
 import baseConfig from '../../eslint.config.mjs';
 import { CANVAS_CAMERA_KNOWN } from './eslint-rules/canvas-camera-known.mjs';
+import { SWALLOWED_WAIT_MESSAGE, SWALLOWED_WAIT_SELECTOR } from './e2e/no-swallowed-wait.mjs';
 import { canvasCameraOwn } from './eslint-rules/canvas-camera-own.mjs';
 
 export default [
@@ -56,6 +57,13 @@ export default [
     ignores: ['**/*.spec.ts'],
     plugins: { studio: { rules: { 'canvas-camera-own': canvasCameraOwn } } },
     rules: { 'studio/canvas-camera-own': ['error', { known: CANVAS_CAMERA_KNOWN }] },
+  },
+  {
+    files: ['e2e/**/*.mjs'],
+    ignores: ['**/*.spec.mjs'],
+    rules: {
+      'no-restricted-syntax': ['error', { selector: SWALLOWED_WAIT_SELECTOR, message: SWALLOWED_WAIT_MESSAGE }],
+    },
   },
   ethlete.configs.recommendedTemplate,
   ethlete.configs.recommendedSpec,
