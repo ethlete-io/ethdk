@@ -803,7 +803,7 @@ Studio rules job failed: `pages/system` state `direct-edit` was unjudged, becaus
 and the app had no footer. Tom: "die ci ist NOCH IMMER rot?" - a release waits. Why no tool caught it: the slow gate
 checks only parts whose app files change (B393), so the local hook never ran `pages/system`; `clickOpen` did not
 search overlay roots (fixed in 5f105b30d with the footer). Process lesson: a red CI on `next` stops all finding work
-until it is green; the doc agent checks `gh run list` at session start and reports a red run to Tom at once.
+until it is green; the doc agent checks `gh run list` at session start and reports a red run to Tom at once. Built in 5f105b30d.
 
 471\. Sessions in tmux do not clear and restart themselves. They ask Tom to run `/clear` or `/handoff`, though the
 `ethlete-agent-sessions` `restart` command clears the caller's own session and types a resume prompt. Tom: "viele
@@ -1375,7 +1375,7 @@ failures into the compare-actions cache, and every later run read them back as r
 tool caught it: no cache spec ran an aborted run; each cache was only tested with runs that finish. Tool fix: every
 on-disk cache of the compare (compare-actions, the S4 design and app picture caches, the shot store) gets a spec that
 aborts a run mid-way and proves nothing of it is kept; the shared cache writer refuses a write once the run signal is
-aborted, so a new cache gets this for free.
+aborted, so a new cache gets this for free. Built in e3f7a81dd.
 
 526\. c0 (2026-11-06): the after-edit numbers of B416 slice 1 ran under load 12-17 from other sessions, so 12.3-18 s
 cannot be told from a slow tool. Why no tool caught it: a `.timings.jsonl` line holds no machine state, so a noisy run
@@ -1757,7 +1757,7 @@ the file that holds it; a part with no app code loses its link; comment-pin gets
 `rule-baseline.json` did not hold, so only the first commit of the file could baseline anything and a second new rule
 could never baseline its old hits (against ADR 0201). No spec covered a second rule. Fixed in 994dd8bea: an entry
 counts as added only if an older version already held the same rule without it, with a spec for a second new rule.
-Lesson: a decision that names a ratchet ("may only shrink") gets a spec for its second use, not only its first.
+Lesson: a decision that names a ratchet ("may only shrink") gets a spec for its second use, not only its first. Built in 994dd8bea.
 
 585\. Builder (2026-11-07, d1fdccaa3): after the `implements` field left the design hash (finding 582),
 `design task elements/canvas-frames` still failed on "embedded: components/button is not build-ready", only because
@@ -1807,7 +1807,7 @@ compare and verify had nothing to report, and nothing checks that a fixture stil
 1b0e18653. Tool fix (technical): after setup the harness asserts that each sketch fixture variant has at least one
 changed state and fails with "fixture folds every state"; `design sketch check` warns on a sketch whose variants equal
 Aktuell in every state. The System case "Neu starten … 100 ms" could never pass, because the e2e started Studio without
-window chrome (fixed in ffe60ce8b); finding 588 covers the job that never ran green.
+window chrome (fixed in ffe60ce8b); finding 588 covers the job that never ran green. Built in ffe60ce8b.
 
 593\. Correction to finding 591: parallel cases (B377) are built. The worker default is cores/4, so the 4-core CI
 runner gets 1 worker. The doc agent read the parked STATUS row and did not check the code. Tool fix (technical): the
@@ -1847,7 +1847,7 @@ a spec asserts that a listing after an unrelated edit draws nothing.
 libuv `fork()` on the server thread blocks in proportion to the RSS (29-173 ms per spawn at 3.8 GB), and a merge
 spawns git up to 5 times; macOS uses `posix_spawn` and hides the cost, so every local run was green. Fixed in b85f8fd40
 (git calls run in the merge worker). Tool fix (technical, built in b85f8fd40): a spec asserts that the server thread
-makes no `child_process` call, so the rule holds on every OS, not only where a stall shows.
+makes no `child_process` call, so the rule holds on every OS, not only where a stall shows. Built in b85f8fd40.
 
 600\. Builder (2026-11-08, B434): the Chip panel-hide case broke through the fixture change 2bb8d3d58, not the app.
 With one changed state, Fit capped at scale 1, so "Auf 100 % zoomen" stayed in Fit, and `measure()` keeps the pan in
@@ -3751,7 +3751,7 @@ Second miss, same gap (spec run): `apps/ethlete-studio/src/styles.spec.ts` pinne
 `'Noto Sans', system-ui, sans-serif` and the push suite went red (spec fixed in 137339aef). The merge runs no app spec,
 and `vitest related` on `project.json` did not reach the spec. Tool fix added to 855 (doc agent decision): the merge
 also runs `vitest related` on the merged files and refuses on a red spec. Bite: merging the old variant c refuses
-with `styles.spec.ts` named.
+with `styles.spec.ts` named. Built in 210235327.
 
 856\. Linux builder (2026-11-11, from 855), measured: when the Studio build fails, the `canvas.e2e.mjs` lead process exits
 but leaves its `--worker` processes and their design servers running. Tool fix (doc agent decision, tool internal): the
@@ -3777,7 +3777,7 @@ a sentence, "built in <sha>"), so `--dry-run --days=1` moved 0. Age is the first
 Built in be2e24d8f: a sentence-start "As built", or `built <sha>` whose sha is an ancestor of `origin/next`, is a built
 marker. Bite: a spec fixture with a built marker and no STATUS row is archived, one with an unpushed sha and an open one
 stay; with the old script the spec gets no finding moved. Run for real: 7 findings moved (440013 to 415197 chars), each
-removed line byte-equal in `archive/findings-2026-11.md`.
+removed line byte-equal in `archive/findings-2026-11.md`. Built in be2e24d8f.
 
 860\. Linux builder (2026-11-11, from 859): after 859 the archive freed only 24k chars; most built findings carry no
 marker the script reads (free prose like "fixed in <sha>"). Tool fix (doc agent decision, tool internal): one marker,

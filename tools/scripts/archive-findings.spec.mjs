@@ -250,11 +250,11 @@ test('an old finding with no STATUS row and a built marker in its text leaves; a
 
 40\\. Tom (2026-10-01): old. As built in the note.
 
-41\\. Tom (2026-10-01): old, built in bbbbbbb2 (not pushed).
+41\\. Tom (2026-10-01): old. Built in bbbbbbb2.
 
 42\\. Tom (2026-10-01): old, open.
 
-43\\. Tom (2026-10-01): old, built in aaaaaaa1 only.
+43\\. Tom (2026-10-01): old. Built in aaaaaaa1.
 `;
   const { plan: rest, moved } = archiveFindings(markerPlan, status, {
     today: new Date('2026-11-10'),
@@ -266,4 +266,24 @@ test('an old finding with no STATUS row and a built marker in its text leaves; a
     [40, 43],
   );
   assert.ok(rest.includes('41\\.') && rest.includes('42\\.') && !rest.includes('40\\.'));
+});
+
+test('a context sha or loose built prose moves nothing; only the Built in marker does', () => {
+  const contextPlan = `# Plan
+
+50\\. Tom (2026-10-01): old, cites context aaaaaaa1 and was not built in aaaaaaa1 yet.
+
+51\\. Tom (2026-10-01): old, fixed in aaaaaaa1.
+
+52\\. Tom (2026-10-01): old. Built in aaaaaaa1.
+`;
+  const { moved } = archiveFindings(contextPlan, status, {
+    today: new Date('2026-11-10'),
+    days: 5,
+    isPushed: () => true,
+  });
+  assert.deepEqual(
+    moved.map((m) => m.number),
+    [52],
+  );
 });
