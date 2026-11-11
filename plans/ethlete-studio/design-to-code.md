@@ -3846,3 +3846,15 @@ the canvas viewport ancestors has left <= panel left and right = window right; (
 fails a pan viewport whose nearest clipping ancestor starts right of the floating panel's left edge; a CLIPPED skip does
 not silence it. Bite: both fail on next now. Fix: design `sketches.ts:678` as a visible direct edit (228 and ADR 0209;
 the grid view is the model) plus the app lines, by the Linux builder after B249; the Mac holds those lines until then.
+
+868\. Linux builder (2026-11-11, B249 slice 2 live verify, 35c0441ba, `.claude/handoffs/agent-results/b249-live.md`):
+checks 1, 2, 3, 5, 4a ok with shots; 4b failed, 4c not run. D1: a visible edit of merged components/zoom-chip opened
+`@edit` with only `new`. Cause (hash read): `oldDesignOf` (`edit-sketch.ts:74`) looks for a commit with the merged.json
+hash, and no commit holds it, so EDIT_OLD_NOT_FOUND. Suspect: merged hashes drift when inputs outside the part folder
+change. D2: that sketch folds all 16 states as unchanged. Suspect: without `old` it compares `new` with itself. D3:
+"Verwerfen" shows on an `@edit` sketch, against S6b. D5: the popover drops the blocker "changed outside a sketch" ("3
+offen" for 4). D4: a definite blocker plus a pending check shows "Wird geprüft", not "Nicht baubereit" (question to the
+human). D6: `design serve` rewrote tracked `studio/merged.json` during the run. Lesson: the B249 slices passed their specs,
+and only the live run found D1-D3 and D5; the live verify list must run before a slice that changes old/new is pushed,
+not at the end. Tool fix (doc agent decision): slice 5 finds the old design by part content, not by the merged hash;
+`serve` never writes a tracked file; the live checks 4b and 4c become e2e cases. Side: user-facing, after 867.
