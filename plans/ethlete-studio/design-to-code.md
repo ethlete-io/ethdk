@@ -3644,3 +3644,20 @@ local push gates did not run the case under CI load, so a timing defect reached 
 internal, after the cause is proved): the fix keeps the assertion and carries a before/after proof under a CI-like
 reproduction (shard 6/6, 2 workers, load); if the cause is a one-shot read, a lint or review rule flags status reads in
 Studio e2e that do not retry. Builder holds feature slices and the 821 push until CI is green.
+829 as built (Linux builder, 2026-11-11, a48464908, test only): Cause (measured): since e3008e59a (B488) an uncached
+`/__design/open-points` applies each variant of each ready sketch and runs the full rule check (`sketchProblemsOf` in
+`read-open-points.ts`); on studio, idle, 171 ms before and 8.6 s after (5 ms cached), 35.1 s at load 18. The case waited
+a fixed 20 s, swallowed the timeout and read status=null. push:suite missed it: 32 idle cores show the badge after about
+7 s. Fix: the case waits for the badge with `waitFor` at `COLD_START_MS` and no longer swallows the timeout; the
+assertion is unchanged. Bite: a CI-like run (shard 6/6, 2 workers, 4 cores, 12 busy loops) red 3/3 before, green 22/22
+after. Same kind of flaw as the Mac's 828 (1).
+
+830\. Linux builder (2026-11-11, from 829): the open-points answer got 50 times slower with B488 and no gate saw it.
+Cause (measured): see 829 as built. Tool fix (doc agent, tool internal): cache `sketchProblemsOf` per sketch variant and
+content hash, or send the open points first and the sketch problems when the check is done; target an uncached answer
+under 1 s on studio. Bite: a spec or timing check that fails on the uncached 8.6 s answer.
+
+831\. Linux builder and Mac builder (2026-11-11, 828 and 829): two e2e cases waited a fixed time, swallowed the timeout
+and then measured or asserted, so a slow load showed as a wrong value instead of a timeout. Tool fix (doc agent, tool
+internal): a harness rule or lint check rejects a `waitFor` (or other wait) followed by `.catch(() => undefined)` in the
+Studio e2e files; fix every hit. Bite: the check fails on the old 829 case.
