@@ -3846,3 +3846,5 @@ the job runs `apt-get update` first, `ci.yml:370`). Cause: infra (mirror). Lesso
 and costs a re-run plus a by-hand diagnosis each time. Tool fix: the apt and playwright install steps retry (3 tries,
 `apt-get update` before each, `Acquire::Retries`); a step that still fails names the package and the mirror. Side: CI red
 counts as blocking under ADR 0269, so the Linux builder builds it next after the B249 slice in work.
+
+901 as built: the app body now uses `var(--font-ui)` (Noto Sans) and the canvas frame uses `font-(--font-code)`; the `--font-sans` (Jost) and `--font-mono` (IBM Plex Mono) variables and the Google Fonts link in index.html are removed. Commit: see `git log` for "Render the app text in the design fonts". Verified: related specs, lint, production build and the measured body font (see the commit report).
