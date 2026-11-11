@@ -2432,7 +2432,7 @@ measurement) ran 133 cases on 3 workers in 513.3 s; the PC ran them on 8 workers
 0237 names no machine and no worker count, so a Mac figure and a PC figure cannot be compared. Why no tool caught it:
 the timing report prints the time but not the worker count and the machine next to the goal. Tool fix (with 650): the
 report prints machine, core count, worker count and load next to the time, and checks the goal only on the machine
-the goal names. Open for the human in the morning: on which machine does the 90 s goal count.
+the goal names. Answered by ADR 0240: the goal counts on the desk PC (see 793).
 
 665\. Builder (2026-11-09, Mac night): two push:suite runs in a row failed e2e 132/133, each in another case (B462
 Sketches first load, B463 System page switch timing); each passes alone. The red-CI fix 2bc4d42f2 waits behind
