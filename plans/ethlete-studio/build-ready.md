@@ -900,3 +900,23 @@ the edit or new to keep it`. The internal discard of `design check` is unchanged
   later edit shows as open again, in process and in the worker.
 - Verified: the slow-run spec, `vitest related` on the changed files (131 files), `nx run cli:typecheck`, eslint,
   prettier, `spec:stress` on slow-run.spec.ts. Not verified: no live serve run (goes into 5c-2b).
+
+## As built: B249 slice 5c-2b, e2e cases for 4b/4c and live pass of 5c-1b/5c-1c (2026-11-11, Linux)
+
+- Two canvas e2e cases (`withEditSketch` in `canvas.e2e.mjs`): 4b "a visible edit of a merged design part opens its
+  old/new sketch with nothing folded", 4c "picking old of an edit sketch restores the design, picking new records the
+  edit as merged". Both pass, also with `--hold-listings 14000`. Bite: run from a scratch copy with `libs/cli` at
+  `5a42c253c~1` (cli built there), both fail ("no old variant: current, new").
+- The 5c-2 blocker (no DIRECT EDIT line in the e2e checkout) did not reproduce: with a cli built from HEAD, a
+  `--prepare-checkout` probe and the e2e itself print DIRECT EDIT and open `components-zoom-chip.edit`. Cause of the
+  earlier run not found; suspect a cli build older than the sources it ran on.
+- Bite note: `STUDIO_CLI_ENTRY` at an old cli is refused by the stale-build gate (`design` compares the cwd's
+  `libs/cli` with the build), so the bite runs the runner from the scratch copy. `studio:e2e:bite <ref>` runs the same way, so it
+  should hit the same refusal (not run: it uses a git worktree).
+- New finding: picking `old` writes the HEAD copy plus `design check` in `madeBy` (`merge.ts` adds the variant's
+  authors), so the file is not the literal HEAD copy ADR 0135 names. The case checks the drawn label, not the bytes.
+- Live pass on an own server (scratch copy with its own git, :4761, slow checks on): a no-op whitespace edit of
+  `components/disclosure` reads "Nichts offen" / "Baubereit" after the slow run; a committed visible edit of
+  `components/zoom-chip` the same; an uncommitted different-drawing edit reads "Nicht baubereit (1)" with "Bild ohne
+  Sketch geändert". `git status --untracked-files=no` showed only `ready.json` besides my edits. Shots in
+  `.claude/handoffs/agent-results/b249-5c2b/`.

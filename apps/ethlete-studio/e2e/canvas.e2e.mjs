@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { execFileSync, fork, spawn } from 'node:child_process';
+import { execFileSync, fork, spawn, spawnSync } from 'node:child_process';
 import {
   cpSync,
   existsSync,
@@ -724,7 +724,133 @@ const goneSketchLeavesToThePart = async (page, { designPort }, target, decide) =
   };
 };
 
+const EDIT_PART = 'components/zoom-chip';
+const EDIT_LABEL = { before: "chipButton('fit', 'Fit', props)", after: "chipButton('fit', 'Fit all', props)" };
+const EDIT_WAIT_MS = 120000;
+
+const withEditSketch = async (page, run) => {
+  const studio = join(checkout, '.ethlete/design/studio');
+  const saved = mkdtempSync(join(tmpdir(), 'studio-e2e-edit-'));
+  const file = join(studio, EDIT_PART, 'zoom-chip.ts');
+  const before = readFileSync(file, 'utf8');
+  const git = (...gitArgs) =>
+    execFileSync('git', ['-c', 'user.email=e2e@canvas', '-c', 'user.name=canvas-e2e', ...gitArgs], {
+      cwd: checkout,
+      stdio: 'pipe',
+    });
+  const merged = JSON.parse(readFileSync(join(studio, 'merged.json'), 'utf8'));
+  const entry = merged[EDIT_PART];
+
+  cpSync(studio, saved, { recursive: true });
+  // A part with an open sketch is never a direct edit, so the fixture sketch of the part goes first.
+  rmSync(join(studio, 'sketches', EDIT_PART.replace('/', '-')), { recursive: true, force: true });
+  merged[EDIT_PART] = typeof entry === 'string' ? '0'.repeat(16) : { ...entry, hash: '0'.repeat(16) };
+  writeFileSync(join(studio, 'merged.json'), `${JSON.stringify(merged, null, 2)}\n`);
+  git('init', '-q');
+  git('add', '--', '.ethlete');
+  git('commit', '-qm', 'canvas e2e base', '--', '.ethlete');
+
+  const edit = async () => {
+    writeFileSync(file, replaceOnce(before, EDIT_LABEL.before, EDIT_LABEL.after));
+    spawnSync(process.execPath, [cliEntry, 'design', 'check', '--product', 'studio', '--part', EDIT_PART], {
+      cwd: checkout,
+      stdio: 'pipe',
+    });
+    await page.evaluate(
+      ({ checkout, part }) =>
+        localStorage.setItem(
+          'ethlete-studio.call-view',
+          JSON.stringify({ checkout, systemProduct: 'studio', systemEntry: `sketch:${part}@edit` }),
+        ),
+      { checkout, part: EDIT_PART },
+    );
+    await page.reload();
+    await page.waitForSelector('ethlete-sketches [data-sk-state]', { timeout: EDIT_WAIT_MS });
+    await page.waitForFunction(
+      () => document.querySelectorAll('[data-sk-variant="new"], [data-sk-variant="old"]').length > 0,
+      null,
+      { timeout: EDIT_WAIT_MS },
+    );
+    await page.waitForTimeout(SETTLE_MS);
+
+    return page.evaluate(() => ({
+      variants: [...new Set([...document.querySelectorAll('[data-sk-variant]')].map((cell) => cell.dataset.skVariant))],
+      folded: !!document.querySelector('[data-sk-folded]'),
+      discard: [...document.querySelectorAll('ethlete-sketches button')].some((button) =>
+        button.textContent.includes('Verwerfen'),
+      ),
+    }));
+  };
+  const pick = async (variant) => {
+    await page.evaluate((variant) => {
+      for (const button of document.querySelectorAll('[data-sk-merge]')) {
+        let row = button.parentElement;
+
+        while (row && !/Variante \S+/.test(row.textContent)) row = row.parentElement;
+        if (row?.textContent.match(/Variante (\S+)/)[1].startsWith(variant)) button.setAttribute('data-e2e-pick', '');
+      }
+    }, variant);
+    await page.locator('[data-e2e-pick]').first().click();
+    await page.locator('ethlete-merge button[variant="filled"]').first().click();
+    await page.waitForFunction(() => !document.querySelector('ethlete-sketch-view'), null, { timeout: EDIT_WAIT_MS });
+  };
+
+  try {
+    return await run({ edit, pick, file, studio });
+  } finally {
+    rmSync(join(checkout, '.git'), { recursive: true, force: true });
+    rmSync(studio, { recursive: true, force: true });
+    cpSync(saved, studio, { recursive: true });
+    rmSync(saved, { recursive: true, force: true });
+  }
+};
+
 const CASES = [
+  {
+    name: 'a visible edit of a merged design part opens its old/new sketch with nothing folded',
+    listingMayPend: 'the evidence is the sketch the design check opens, which the case waits for itself',
+    pages: ['System'],
+    run: (page) =>
+      withEditSketch(page, async ({ edit }) => {
+        const shown = await edit();
+        const ok = shown.variants.includes('new') && shown.variants.includes('old') && !shown.folded && !shown.discard;
+
+        return {
+          ok,
+          detail: `variants ${shown.variants.join(', ')}, folded states: ${shown.folded}, Verwerfen: ${shown.discard}`,
+        };
+      }),
+  },
+  {
+    name: 'picking old of an edit sketch restores the design, picking new records the edit as merged',
+    listingMayPend: 'the evidence is the design files and merged.json after each merge',
+    pages: ['System'],
+    run: (page) =>
+      withEditSketch(page, async ({ edit, pick, file, studio }) => {
+        const sketchDir = join(studio, 'sketches', `${EDIT_PART.replace('/', '-')}.edit`);
+        const first = await edit();
+
+        if (!first.variants.includes('old'))
+          return { ok: false, detail: `no old variant: ${first.variants.join(', ')}` };
+
+        await pick('old');
+
+        const design = readFileSync(file, 'utf8');
+        const restored =
+          design.includes(EDIT_LABEL.before) && !design.includes(EDIT_LABEL.after) && !existsSync(sketchDir);
+
+        await edit();
+        await pick('new');
+
+        const recorded = JSON.parse(readFileSync(join(studio, 'merged.json'), 'utf8'))[EDIT_PART];
+        const kept = readFileSync(file, 'utf8').includes(EDIT_LABEL.after);
+
+        return {
+          ok: restored && kept && recorded?.variant === 'new' && !existsSync(sketchDir),
+          detail: `old restored the design: ${restored}, new kept the edit: ${kept}, merged.json: ${JSON.stringify(recorded)}`,
+        };
+      }),
+  },
   {
     name: 'a sketch merged while its view is open opens the part view of the target',
     listingMayPend:
