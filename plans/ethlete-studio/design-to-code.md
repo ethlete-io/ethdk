@@ -3984,3 +3984,12 @@ with `styles.spec.ts` named.
 but leaves its `--worker` processes and their design servers running. Tool fix (doc agent decision, tool internal): the
 lead stops its workers and their servers on every exit path. Bite: a spec with a failing build leaves no worker or
 server process; before the fix they stay. Queue: Linux builder, after 853.
+
+857\. Mac builder (2026-11-11, 840 b): the Studio e2e "[Edited]" case passed with 1/12 pictures changed on broken code.
+Cause (probe: 1/12 then 0/12 on HEAD; 12/12 twice with 840 undone): a warm page booted before a change kept its old
+module (fixed in 39faaabd1). Tool fix (doc agent): the case requires every picture of the edited part to change. Bite:
+with the 39faaabd1 fix undone the case fails. Queue: Mac, after 851.
+
+858\. Mac builder (2026-11-11, 840 b): a change in `shot.ts`/`warm-pages.ts`/`thumb.ts` named no Studio e2e case, so the
+840 slice did not run them. Tool fix (doc agent): the 851 related map also maps sources to e2e cases; the slice check
+names them and refuses a commit without a green run. Bite: a `warm-pages.ts` change names "[Edited]". Queue: with 851.
