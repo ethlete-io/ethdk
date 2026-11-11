@@ -3871,3 +3871,8 @@ eslint clean. Not verified: a real `yarn push:suite` run (it claims the push slo
 not run end to end; the bite called the step's command directly.
 Also from 801 (Suspect): three copies of the git test helper (tools, libs/cli, libs/agent-rules, because lib code may not
 import tools); a sameness spec guards the drift (backlog, small).
+Sameness spec as built: `tools/scripts/git-test-env-copies.spec.mjs` (in `yarn test:tools`) checks that the two lib
+copies are byte-identical, that they export the same names as the tools helper, and that each lib has a bite spec;
+`libs/agent-rules/src/lib/git-test-env.spec.ts` is a copy of cli's spec. Bites: an extra export in the agent-rules copy
+fails tests 1 and 2; a renamed bite test fails test 3; the agent-rules helper without the stripping fails its spec.
+Not verified: behavioural sameness of the `.mjs` with the `.ts` copies (only names are compared).
