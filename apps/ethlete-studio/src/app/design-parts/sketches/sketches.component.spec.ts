@@ -439,7 +439,8 @@ describe('SketchesComponent', () => {
 
   it('folds every variant and its pin when no variant changes any state', async () => {
     const unchanged = (row: SketchRow) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: false })) });
-    const rows = [ROWS[0], { ...unchanged(ROWS[1]), key: 'a' }, { ...unchanged(ROWS[1]), key: 'b' }];
+    const base = ROWS[1] as SketchRow;
+    const rows = [ROWS[0], { ...unchanged(base), key: 'a' }, { ...unchanged(base), key: 'b' }];
     const root: HTMLElement = (await render({ camera: '100', rows, pins: SKETCH_PINS })).nativeElement;
 
     expect(textOf(root.querySelector('[data-sk-same] button'))).toBe(
