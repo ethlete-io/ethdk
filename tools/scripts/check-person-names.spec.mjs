@@ -20,3 +20,9 @@ test('fails only when a file exceeds its baseline', () => {
   assert.equal(personNameProblems({ 'a.ts': hits }, { 'a.ts': 1 }).length, 0);
   assert.equal(personNameProblems({ 'a.ts': hits }, {}).length, 1);
 });
+
+test('reports the right line when a name sits deep in a multi-line text', () => {
+  const text = ['one', 'two Words', 'three', 'ask Tom here', 'five'].join('\n');
+  assert.deepEqual(personNameFindings(text), [{ line: 4, text: 'ask Tom here' }]);
+  assert.deepEqual(personNameFindings('plain\ntext\ntomorrow'), []);
+});

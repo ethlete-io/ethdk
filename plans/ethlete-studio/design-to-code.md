@@ -3700,6 +3700,12 @@ about 4 s, so "sub-second" is not true for all). Not verified: a real `yarn push
 hook. Built 64c9306a3. Follow-up (night backlog, speed): `lint:person-names` takes about 4 s of the 9 s
 checks step; measure where, and make it sub-second or correct the "sub-second" claim in AGENTS.md. The Mac 770
 (de0087f0a, step reuse after a merge) also edits `push-suite.mjs`: whoever pushes second merges both by hand.
+As built (person-names lint): `check-person-names.mjs` ran `words()` (camel-case regex, split, lowercase) and a SHA-256 on
+every word of every line of 5 MB of tracked text. Now each file is tokenised once into a unique-token set, each distinct
+word hash is memoised, and the per-line pass runs only for a file that has a hit (or the git user name). Same findings
+(real tree: no output, exit 0, as before). Time 3.7 s to 0.87 s. Spec added for the line number of a deep hit. Verified:
+`node --test` on the spec (5 pass), eslint clean. Not verified: the 0.87 s inside a full pre-push run. So "sub-second"
+now holds for this check; AGENTS.md needed no change.
 
 776\. Mac builder (2026-11-11, night, 769 3483c7fcd): the fixed e2e case no longer passes through a live frame iframe,
 so no case covers a keyboard user inside a live frame. Suspect (injected, not seen live): when the app remounts the
