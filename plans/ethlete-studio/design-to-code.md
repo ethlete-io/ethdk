@@ -3826,3 +3826,10 @@ words; the doc agent did not either. Fix now: the doc agent deleted B70, B113, B
 (doc agent decision, tool internal): the last slice that removes a concept greps `plans/ethlete-studio/STATUS.md` for its
 words and closes or rewords each hit in the same commit; B249 slice 4 does it for Go. Side: machinery backlog for a
 general check.
+
+867\. Human (2026-11-11, live Studio, "zum xten mal"): the sketch view (e.g. components/button@off-centre) clips the canvas
+at the right edge of the floating sidebar, so the first column of cells is cut. The normal canvas runs under the sidebar
+with no clip, as intended. A builder changed the sketch view canvas again. Suspect: a recent sketch view or sketches page
+change (B345 on the Mac is in that area); no commit is proven yet. Owed by the Linux builder: the commit, the earlier
+fixes, why design compare and the e2e did not catch it, and a tool fix with a bite. Side: user-facing (ADR 0269), after
+B249 slice 2.
