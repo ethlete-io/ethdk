@@ -83,7 +83,7 @@ import { designCoverageOf } from './rules/design-coverage';
 import { badWidthsOf } from './rules/widths';
 import { typecheckVariant } from './sketch/check-sketches';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
-import { staleBaseOf } from './sketch/stale-base';
+import { staleSketchBasesOf } from './sketch/stale-base';
 import { listSketches, variantDirOf } from './sketch/sketch';
 import { typecheckProduct, writeEditorTsconfig } from './system-tsconfig';
 import { repoInvocation } from '../../invocation';
@@ -258,13 +258,17 @@ export const ruleProblemsOf = (product: ResolvedProduct): Problem[] => [
   ...RULES.flatMap((rule) => rule(product)),
 ];
 
-/** Build-ready inputs from the open points of `points`, read without a draw by default, and the static rules. */
+/**
+ * Build-ready inputs from the open points of `points`, read without a draw by default, and the static rule `problems`
+ * of the product, run by default.
+ */
 export const buildReadyInputsOf = (
   product: ResolvedProduct,
-  points: PartOpenPoints[] = readOpenPoints(product),
+  {
+    points = readOpenPoints(product),
+    problems = ruleProblemsOf(product),
+  }: { points?: PartOpenPoints[]; problems?: Problem[] } = {},
 ): BuildReadyInputs => {
-  const problems = ruleProblemsOf(product);
-
   return {
     pointsOf: (part) => partPointsOf(points, part),
     problemsOf: (part) => problems.filter((problem) => partOfFile(product, problem.file) === part),
@@ -408,39 +412,6 @@ const typecheckOpenSketches = (options: { target: string; product: ResolvedProdu
               ];
         }),
   );
-
-/**
- * One SKETCH-BASE-STALE problem, with its printed line, per undiscarded sketch (open or picked) whose base changed since it was drawn or
- * rebased; with `parts`, only the sketches where one of those parts changed; with `targets`, only the sketches on those targets.
- */
-export const staleSketchBasesOf = (options: {
-  product: ResolvedProduct;
-  invocation: string;
-  parts?: Set<string>;
-  targets?: Set<string>;
-}): (Problem & { line: string })[] => {
-  const { product, invocation, parts, targets } = options;
-
-  return listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) => {
-    if (typeof sketch === 'string' || sketch.decision?.kind === 'discard') return [];
-    if (targets && !targets.has(sketch.target)) return [];
-
-    const changed = staleBaseOf({ product, sketch });
-
-    if (!changed?.length || (parts && !changed.some((part) => parts.has(part)))) return [];
-
-    const message = `${changed.join(', ')} changed since the sketch was drawn - bring each variant up to date, then run ${invocation} sketch rebase ${sketch.target} --product ${product.name} --by <model id>`;
-
-    return [
-      {
-        rule: 'SKETCH-BASE-STALE',
-        file: sketch.dir,
-        message,
-        line: `SKETCH-BASE-STALE ${product.name} ${sketch.target}: ${message}`,
-      },
-    ];
-  });
-};
 
 const warnChangedOutsideSketch = (product: ResolvedProduct) => {
   for (const part of changedOutsideSketchOf(product))
@@ -695,7 +666,7 @@ const printProductOpenPoints = async (
     parts: options.part
       ? [options.part]
       : product.parts.filter((part) => part.origin !== 'base').map((part) => partKeyOf(part)),
-    inputs: withTalliedProblems(buildReadyInputsOf(product, allPoints), options.tally?.get(name)),
+    inputs: withTalliedProblems(buildReadyInputsOf(product, { points: allPoints }), options.tally?.get(name)),
     ...(rendered === null
       ? {}
       : {

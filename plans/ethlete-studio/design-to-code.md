@@ -3593,6 +3593,15 @@ da746a43e on the other side of git merge 9df5ffa51 from the change-crop merge 2f
 after a git merge. Suspect (code read): the inbox (`staleBaseOf`) would have shown a rebase item after 9df5ffa51;
 `design status` does not check a stale base. The 821 fix therefore also runs the stale-base check after a git merge
 (post-merge hook or `design status`).
+821 as built (Linux builder, 2026-11-11, 16f091042): Cause (spec `status-stale-base.spec.ts`, fixture product): with
+a product part changed after an open and a ready sketch were drawn, `design status` printed no stale line; the inbox
+already listed both as `needs rebase`. Fix: `staleSketchBasesOf` moved to `sketch/stale-base.ts` (one source for
+SKETCH-BASE-STALE, check and status); `design status` prints one `SKETCH-BASE-STALE <product> <part>: ... sketch rebase
+<ref>` line per open or ready sketch, `--stale` prints only those, without git or `gh`. `.husky/post-merge` runs
+`tools/scripts/post-merge-stale-sketches.mjs`: `status --stale` from the built CLI copy, 0.46 s, always exit 0; when the
+head's CLI copy is not built it prints a hint to run `yarn et:design status` and builds nothing (`ensureCliCopy` with
+`build: null`). Verified: both specs red without the fix, green with it; live status names
+`components/button@off-centre`. Not verified: the hook fired by a real `git merge`.
 
 823\. Linux builder (2026-11-11, B489): `sketch rebase` named only variant b as a conflict ("the variant and the product
 both changed it"); a and c had the same kind of overlap and passed. Suspect. Tool fix (doc agent, tool internal): find
@@ -3629,3 +3638,52 @@ caught one round later by pre-push or push:suite. Tool fix (doc agent, tool inte
 on every staged Prettier-supported blob. Bite: a staged unformatted `package.json` fails the commit.
 
 828\. Large iframe flake (Mac builder, 2026-11-11; numbered 815 on the Mac, renumbered at the merge): "a variant equal to Aktuell keeps its iframes across a quick and a full listing" failed once at `--workers 5`, load 31.7 to 55, with "folded false; collapsed: iframe/row adds 2 removes 22". Cause: the case waited a fixed 60 s for the fold after its setup write, then measured anyway; under load the setup's full listing took longer, so the first fold of variant b (row b and the folded states leave the DOM, the `hidden` frames enter) landed inside the measured "collapsed" window. The case also counted a listing at its `response` event, but `sendHeldJson` sends the headers after the first 15 s keep-alive, so "answered" could mean "headers only": in loaded runs the full listing's body came 5 s after its headers, and in the failed run 25 s after. The product drops no iframe: the removes are the fold the setup expects. Fix (test only): the setup goes through the same `refresh` as the two measured phases, a listing counts on `requestfinished` and only when it was asked after the write, the deadline is 2 x `FULL_COMPARE_MS`, and the setup listings are part of `ok`. Bite: `--hold-listings 25000` failed before with the same "folded false, adds 2 removes 22" (setup full listing cancelled by the 60 s write, fold at 113 s in the collapsed window) and passes after.
+
+829\. Linux builder (2026-11-11, CI runs 42992406760 on a55bc3218 and 42995939464 on be2aa4ff5): Studio e2e shard 6/6
+fails twice in a row in "[System] open points chip pressed matches its popup" with status=null at load 9-12 on 2
+workers; locally 3 of 3 green. Suspect: the case reads the status once, before the chip renders under load. Lesson: the
+local push gates did not run the case under CI load, so a timing defect reached CI twice. Tool fix (doc agent, tool
+internal, after the cause is proved): the fix keeps the assertion and carries a before/after proof under a CI-like
+reproduction (shard 6/6, 2 workers, load); if the cause is a one-shot read, a lint or review rule flags status reads in
+Studio e2e that do not retry. Builder holds feature slices and the 821 push until CI is green.
+829 as built (Linux builder, 2026-11-11, a48464908, test only): Cause (measured): since e3008e59a (B488) an uncached
+`/__design/open-points` applies each variant of each ready sketch and runs the full rule check (`sketchProblemsOf` in
+`read-open-points.ts`); on studio, idle, 171 ms before and 8.6 s after (5 ms cached), 35.1 s at load 18. The case waited
+a fixed 20 s, swallowed the timeout and read status=null. push:suite missed it: 32 idle cores show the badge after about
+7 s. Fix: the case waits for the badge with `waitFor` at `COLD_START_MS` and no longer swallows the timeout; the
+assertion is unchanged. Bite: a CI-like run (shard 6/6, 2 workers, 4 cores, 12 busy loops) red 3/3 before, green 22/22
+after. Same kind of flaw as the Mac's 828 (1).
+829 b as built (Linux builder, 2026-11-11, test only): `push:suite` run 3/3 (`--hold-listings 14000`) ended the chip case while a held listing was pending, since 830 made the answer fast. The case reads only the chip, popup and footer status, never the listing: `holdListings: false`. Waiting with `listingAnswered` did not help, since no `data-sk-changed` element of the System page tracks the held request (run 3/3 failed again with it).
+
+830\. Linux builder (2026-11-11, from 829): the open-points answer got 50 times slower with B488 and no gate saw it.
+Cause (measured): see 829 as built. Tool fix (doc agent, tool internal): cache `sketchProblemsOf` per sketch variant and
+content hash, or send the open points first and the sketch problems when the check is done; target an uncached answer
+under 1 s on studio. Bite: a spec or timing check that fails on the uncached 8.6 s answer.
+830 as built (Linux builder, 2026-11-11, option (a)): `read-open-points.ts` holds the rule problems of
+each ready sketch variant, keyed by the product print and the sketch, and reuses them while every file the variant's run
+read still reads the same; the open-points cache shares one product rule run between the sketch problems and
+build-ready (it ran twice). Narrower keys are unsound: a variant run reads all 91 studio part sources. Measured on
+studio, idle: `readOpenPoints` with sketch problems cold 8.4 s (HEAD 7.8 s), repeat 82 ms (HEAD 5.9 s); open-points
+cache miss with held variants 710 ms; same output as HEAD (byte-equal JSON). Live `curl /__design/open-points?product=studio`
+after a server restart: cold 5.5 s, warm 15 ms; part `pages/sketches` 2.2 s first, 0.25 s after. Bite:
+`sketch-problems-cache.spec.ts` counts rule runs, red on HEAD source (3 and 5 runs where 0 and 2 are due). Not met: the
+cold first answer and the answer after any part edit stay over 1 s; only (b) meets it, and (b) needs a Studio change
+(it asks once per part and re-asks only on its reload triggers), so it is left open. Not verified: Studio e2e.
+
+831\. Linux builder and Mac builder (2026-11-11, 828 and 829): two e2e cases waited a fixed time, swallowed the timeout
+and then measured or asserted, so a slow load showed as a wrong value instead of a timeout. Tool fix (doc agent, tool
+internal): a harness rule or lint check rejects a `waitFor` (or other wait) followed by `.catch(() => undefined)` in the
+Studio e2e files; fix every hit. Bite: the check fails on the old 829 case.
+830 as built (Linux builder, 2026-11-11, dc37b06e8), warm only: each ready variant keeps its rule problems, keyed by
+product and sketch, reused while every file its run read is unchanged; the product rules run once and are shared with
+build-ready. Output byte-equal to HEAD. On studio, idle: repeat call 5.9 s to 82 ms; miss with held variants 710 ms;
+cold 7.8 s to 8.4 s (no change). One variant run reads all 91 studio part sources, so any part edit reruns every
+variant. Bite: `sketch-problems-cache.spec.ts` counts rule runs, red in 2 cases on HEAD, green after; spec:stress 4/4.
+Not proven: the recordInputs replay. Cold path and first answer after a part edit: 832.
+
+832\. Doc agent (2026-11-11, from 830): the cold open-points answer (about 8 s on studio) and the first answer after a
+part edit stay far over the 1 s target. Tool fix (doc agent, tool internal, no change in what the human sees): the
+server computes the sketch problems in the background at start and again after each file change it watches, so the
+cache is warm before Studio asks; an ask during a run waits for that run, it does not start a second one. Rejected for
+now: sending the sketch problems later with a push to Studio, because it changes what the human sees. Bite: a spec where
+the first ask after start and the first ask after a part edit do not run the rules inline.

@@ -45,8 +45,7 @@ import { unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots
 import { addedUndeclaredControlsOf } from './system/complete';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { editRefOf, mergeAndRecord } from './system/sketch/merge-step';
-import { staleSketchBasesOf } from './system/check-system';
-import { staleBaseOf } from './system/sketch/stale-base';
+import { staleBaseOf, staleSketchBasesOf } from './system/sketch/stale-base';
 import { repoInvocation } from '../invocation';
 import { MERGED_FILE } from './system/sketch/merged-parts';
 import { noVerdictLineOf } from './system/no-verdict';

@@ -3,7 +3,8 @@ import { reachableFilesOf } from '../reachable-files';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { partHashHolds, staleBaselineOf } from './baseline';
 import { overlaySketch } from './overlay';
-import { Sketch } from './sketch';
+import { Problem } from '../problem';
+import { listSketches, Sketch } from './sketch';
 
 const isInside = (dir: string, file: string) => {
   const path = relative(dir, file);
@@ -60,4 +61,37 @@ export const staleBaseOf = (options: { product: ResolvedProduct; sketch: Sketch 
   const changed = [...new Set([...held, ...embedded])];
 
   return changed.length > 0 ? changed : null;
+};
+
+/**
+ * One SKETCH-BASE-STALE problem, with its printed line, per undiscarded sketch (open or picked) whose base changed since it was drawn or
+ * rebased; with `parts`, only the sketches where one of those parts changed; with `targets`, only the sketches on those targets.
+ */
+export const staleSketchBasesOf = (options: {
+  product: ResolvedProduct;
+  invocation: string;
+  parts?: Set<string>;
+  targets?: Set<string>;
+}): (Problem & { line: string })[] => {
+  const { product, invocation, parts, targets } = options;
+
+  return listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) => {
+    if (typeof sketch === 'string' || sketch.decision?.kind === 'discard') return [];
+    if (targets && !targets.has(sketch.target)) return [];
+
+    const changed = staleBaseOf({ product, sketch });
+
+    if (!changed?.length || (parts && !changed.some((part) => parts.has(part)))) return [];
+
+    const message = `${changed.join(', ')} changed since the sketch was drawn - bring each variant up to date, then run ${invocation} sketch rebase ${sketch.target} --product ${product.name} --by <model id>`;
+
+    return [
+      {
+        rule: 'SKETCH-BASE-STALE',
+        file: sketch.dir,
+        message,
+        line: `SKETCH-BASE-STALE ${product.name} ${sketch.target}: ${message}`,
+      },
+    ];
+  });
 };
