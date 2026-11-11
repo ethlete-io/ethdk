@@ -56,16 +56,35 @@ const mockWorldSize = (width: number, height: number) => {
   });
 };
 
+const configure = () =>
+  TestBed.configureTestingModule({
+    providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+  });
+
 describe('SketchesComponent', () => {
+  // The cold JIT compile of the component tree takes seconds on a throttled CPU; outside this hook it lands in the 5 s budget of the first cases.
+  beforeAll(async () => {
+    configure();
+    const rounds = [{ value: 'r1', label: 'Runde 1', note: 'Wo steht der Status?' }];
+
+    for (const inputs of [{ statesOpen: true }, { rounds, round: 'r1' }]) {
+      const fixture = await render({ camera: '100', ...inputs });
+
+      fixture.nativeElement.querySelector('[data-sk-folded] button')?.click();
+      await fixture.whenStable();
+      fixture.destroy();
+    }
+
+    TestBed.resetTestingModule();
+  }, 30_000);
+
   afterEach(() => vi.restoreAllMocks());
 
   beforeEach(() => {
     vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
       return this.hasAttribute('data-sk-rows') ? LIST_WIDTH : 0;
     });
-    TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
-    });
+    configure();
   });
 
   it('draws one row per variant with every state, dims the unchanged ones and marks the first change', async () => {
