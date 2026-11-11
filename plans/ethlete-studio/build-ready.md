@@ -779,3 +779,25 @@ Against `studio-serve` :4402. Studio-app shots: a scratch Studio build in headle
    `pending` and "Wird geprüft".
 
 The serve rewrote `components/tree-row` and `components/zoom-chip` in the uncommitted `studio/merged.json`; left.
+
+## As built: B249 slice 5a, edit sketch old/new (D1, D2) (2026-11-11, Linux)
+
+- D1 cause, proven by the `edit-sketch.spec.ts` case "takes old from the part at HEAD when no commit holds its merged
+  hash" (failed before: `expected undefined to deeply equal [ 'new', 'old' ]`, EDIT-OLD-NOT-FOUND): `oldDesignOf` only
+  took a commit whose rebuilt part hash equals the `merged.json` hash, and a drifted hash is in no commit. Fix:
+  `old` is the part folder at HEAD. Why: ADR 0256 records every committed state of a merged part as merged, so HEAD
+  holds the last merged design; reading it needs no hash, so drift cannot lose it, and there is no history walk. A part
+  HEAD holds no file of still gets the new-only sketch and EDIT-OLD-NOT-FOUND. Specs that expected old from an older
+  commit for a committed edit now expect HEAD (ADR 0256).
+- D2 cause, proven by the `unchanged-states.spec.ts` case "names no state of the edit sketch variant new when the sketch
+  has no old" (failed before: `expected [ 'default' ] to deeply equal []`): `new` of an edit sketch is the product
+  itself, so every state compared unchanged and Studio folded all. Fix: `unchangedStatesOf` /
+  `keptUnchangedStatesOf` answer no unchanged state for an edit sketch without `old`; with `old` the fold already
+  needs `old` to draw the same as `new`. No app change.
+- Verified: `vitest related` on the changed files (132 files, 1356 tests), `nx run cli:typecheck`, eslint, prettier.
+  Live on a scratch checkout (own git, HEAD `merged.json` with zoom-chip at the drifted `eac0eac1e633a857`, cli
+  built there, server on :4733): design "Fit" -> "Fit all" opened `components/zoom-chip@edit` with `new` and `old`
+  in 21 s; `/__design/sketches` answers `unchanged: []` for `old`, so no state folds; `/__design/shot` of state
+  `fit` shows "Fit" (old) and "Fit all" (new).
+- Not verified: the Studio app sketch view (no Studio build; the fold reads only the `unchanged` lists), the pick of
+  `new` (check 4c), D3 (Verwerfen on `@edit`).

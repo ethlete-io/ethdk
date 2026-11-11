@@ -140,6 +140,8 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
     gitExec(['init', '-q'], { cwd: target });
     gitExec(['add', '.'], { cwd: target });
     gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'edit'], { cwd: target });
+    gitExec(['rm', '-r', '--cached', '-q', join(dir, 'components/chip')], { cwd: target });
+    gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'untrack'], { cwd: target });
     writeFileSync(chip, 'export default definePart({ states: { hover: {}, active: {}, default: {} } });\n');
 
     const runner = startSlowRunner({

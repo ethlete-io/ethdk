@@ -1,12 +1,10 @@
 import { execFileSync } from 'child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
-import { tmpdir } from 'os';
-import { dirname, join, relative, resolve } from 'path';
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { dirname, relative, resolve } from 'path';
 import { assetDirsOf, filesBelow } from '../assets';
 import { productSharedDirsOf } from '../imports';
 import { repoRootOf } from '../reachable-files';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';
-import { partHashOf } from './baseline';
 import { EDIT_SKETCH, readMerged } from './merged-parts';
 import {
   createSketch,
@@ -33,7 +31,7 @@ export const EDIT_OLD_NOT_FOUND = 'EDIT-OLD-NOT-FOUND';
 
 export type EditOldNotFound = { rule: typeof EDIT_OLD_NOT_FOUND; message: string };
 
-type OldDesign = { commit: string; files: Map<string, Buffer> };
+type OldDesign = Map<string, Buffer>;
 
 const git = (root: string, args: string[]) =>
   execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: 'pipe', maxBuffer: 64 * 1024 * 1024 });
@@ -73,74 +71,38 @@ export const headHoldsPart = (product: ResolvedProduct, resolved: ResolvedPart) 
 
 const oldDesignOf = (product: ResolvedProduct, resolved: ResolvedPart): OldDesign | EditOldNotFound | string => {
   const part = partKeyOf(resolved);
-  const hash = readMerged(product.dir)[part];
 
-  if (hash === undefined) return `${part} has no merged hash - there is no old design to show`;
+  if (readMerged(product.dir)[part] === undefined) return `${part} has no merged hash - there is no old design to show`;
 
   const root = repoRootOf(product);
   const partDir = relative(root, dirname(resolved.file));
-  const paths = editPathsOf(product, resolved);
-  const blobs = new Map<string, Buffer>();
-  const blobOf = (oid: string) => {
-    const cached =
-      blobs.get(oid) ??
-      execFileSync('git', ['cat-file', 'blob', oid], { cwd: root, stdio: 'pipe', maxBuffer: 256 * 1024 * 1024 });
-
-    blobs.set(oid, cached);
-
-    return cached;
-  };
-  const scratch = mkdtempSync(join(tmpdir(), 'et-design-edit-old-'));
-  const at = (dir: string) => join(scratch, relative(root, dir));
 
   try {
-    const commits = git(root, ['log', '--format=%H', 'HEAD', '--', ...paths.map((path) => `./${path}`)])
-      .split('\n')
-      .filter((line) => line !== '');
+    const tree = blobsAt({ root, commit: 'HEAD', paths: [partDir] });
 
-    for (const commit of commits) {
-      rmSync(scratch, { recursive: true, force: true });
-      mkdirSync(scratch);
-
-      const tree = blobsAt({ root, commit, paths });
-
-      for (const { oid, path } of tree) {
-        mkdirSync(dirname(join(scratch, path)), { recursive: true });
-        writeFileSync(join(scratch, path), blobOf(oid));
-      }
-
-      const moved = {
-        ...product,
-        dir: at(product.dir),
-        base: product.base && { ...product.base, dir: at(product.base.dir) },
-      };
-
-      if (partHashOf({ product: moved, dir: join(scratch, partDir) }) !== hash) continue;
-
-      const files = tree.flatMap(({ oid, path }) =>
-        path.startsWith(`${partDir}/`) ? [[relative(partDir, path), blobOf(oid)] as const] : [],
+    if (tree.length > 0)
+      return new Map(
+        tree.map(({ oid, path }) => [
+          relative(partDir, path),
+          execFileSync('git', ['cat-file', 'blob', oid], { cwd: root, stdio: 'pipe', maxBuffer: 256 * 1024 * 1024 }),
+        ]),
       );
-
-      return { commit, files: new Map(files) };
-    }
   } catch (error) {
     return `${part} has no history to find its old design in: ${error instanceof Error ? error.message : String(error)}`;
-  } finally {
-    rmSync(scratch, { recursive: true, force: true });
   }
 
   return {
     rule: EDIT_OLD_NOT_FOUND,
     message:
-      `no commit holds ${part} at its merged hash ${hash}, so the edit has no old design to compare with - ` +
+      `HEAD holds no file of ${part}, so the edit has no old design to compare with - ` +
       `${part} gets a sketch with only the variant new: the user picks it to record the edit, or the change is reverted`,
   };
 };
 
 /**
  * Opens the old/new sketch of a merged part edited outside a sketch, ready for a pick: `old` holds the part's folder at
- * the newest commit whose part hash is its merged hash, `new` the working one. When no commit has that hash it opens the
- * sketch with only `new` and answers `EDIT-OLD-NOT-FOUND` with it; else the sketch, or why it cannot open.
+ * HEAD, `new` the working one. When HEAD holds no file of the part it opens the sketch with only `new` and answers
+ * `EDIT-OLD-NOT-FOUND` with it; else the sketch, or why it cannot open.
  */
 export const openEditSketch = (options: {
   target: string;
@@ -156,7 +118,7 @@ export const openEditSketch = (options: {
   const old = oldDesignOf(product, resolved);
 
   if (typeof old === 'string') return old;
-  if ('rule' in old) {
+  if (!(old instanceof Map)) {
     const created = createSketch({
       product,
       sketch: { layer: resolved.layer, name: resolved.name, sketch: EDIT_SKETCH },
@@ -178,11 +140,10 @@ export const openEditSketch = (options: {
   const partDir = dirname(resolved.file);
   const working = filesBelow(partDir);
   const unchanged =
-    working.length === old.files.size &&
-    working.every((file) => old.files.get(relative(partDir, file))?.equals(readFileSync(file)));
+    working.length === old.size &&
+    working.every((file) => old.get(relative(partDir, file))?.equals(readFileSync(file)));
 
-  if (unchanged)
-    return `the folder of ${part} at its merged commit ${old.commit.slice(0, 9)} equals the working one - there is no old design to show`;
+  if (unchanged) return `the folder of ${part} at HEAD equals the working one - there is no old design to show`;
 
   const created = createSketch({
     product,
@@ -197,13 +158,13 @@ export const openEditSketch = (options: {
 
   if (typeof created === 'string') return created;
 
-  writeOld({ sketch: created, resolved }, old.files);
+  writeOld({ sketch: created, resolved }, old);
 
   return markSketchReady({ checkout: target, sketch: created, author: options.author });
 };
 
 /**
- * Rewrites the `old` variant of an edit sketch from the part at its merged commit, as `openEditSketch` finds it, so `old` draws against the sketch's `shared/` of
+ * Rewrites the `old` variant of an edit sketch from the part at HEAD, as `openEditSketch` finds it, so `old` draws against the sketch's `shared/` of
  * today, and its round and variant notes in today's wording. Answers why it cannot, else null.
  */
 export const refreshEditOld = ({
@@ -219,9 +180,9 @@ export const refreshEditOld = ({
 
   const old = oldDesignOf(product, resolved);
 
-  if (typeof old === 'string' || 'rule' in old) return old;
+  if (!(old instanceof Map)) return old;
 
-  writeOld({ sketch, resolved }, old.files);
+  writeOld({ sketch, resolved }, old);
   rewordEditNotes(sketch);
 
   return null;

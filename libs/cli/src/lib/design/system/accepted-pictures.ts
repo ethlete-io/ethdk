@@ -297,10 +297,10 @@ export const settleCommittedEdits = (options: { target: string; product: Resolve
  * unchanged since its merge when none are stored at its design hash, and resolves a direct edit of a part changed
  * outside a sketch, and of a part whose old/new edit sketch is open without a decision. A direct edit HEAD already
  * holds is settled first, as `settleCommittedEdits` does. Any other direct edit is compared with
- * its pictures at the merged hash, else with the `old` variant of the old/new edit sketch, which holds the part at the
- * newest commit with its merged hash (an open sketch's `old` is rewritten from that commit first). One that draws every
+ * its pictures at the merged hash, else with the `old` variant of the old/new edit sketch, which holds the part at HEAD
+ * (an open sketch's `old` is rewritten from HEAD first). One that draws every
  * state as before holds at once (its new hash goes to `merged.json`, and the edit sketch closes); one that draws a state
- * differently leaves the edit sketch open. An `old` that does not draw, or no commit with the merged hash, goes to
+ * differently leaves the edit sketch open. An `old` that does not draw, or a part HEAD does not hold, goes to
  * `problems`, else to the lines.
  * Answers with one line per part it drew or decided.
  */
@@ -345,7 +345,7 @@ export const autoAcceptOf = async (options: {
   const oldNotDrawn = ({ resolved, sketch }: { resolved: ResolvedPart; sketch: Sketch }, why: string) =>
     problem(resolved, {
       rule: 'EDIT-OLD-NOT-DRAWN',
-      message: `variant ${EDIT_OLD} of ${sketch.target} (the part at its merged commit) does not draw: ${why}`,
+      message: `variant ${EDIT_OLD} of ${sketch.target} (the part at HEAD) does not draw: ${why}`,
     });
   const isNotFound = (result: object | string | null): result is EditOldNotFound =>
     typeof result === 'object' && result !== null && 'rule' in result;

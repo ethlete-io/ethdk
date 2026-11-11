@@ -259,8 +259,8 @@ describe('autoAcceptOf', () => {
       expect(existsSync(join(dir, 'sketches'))).toBe(false);
     });
 
-    it('reports a merged hash no commit holds as a problem and opens a sketch with only new for an edit on top', async () => {
-      const { target, dir, chip } = checkout();
+    it('compares an edit on top of a committed edit with HEAD when no commit holds the merged hash', async () => {
+      const { target, chip } = checkout();
       const { draw } = drawing({ default: 'a1', hover: 'b2' });
 
       writeFileSync(chip, 'export default definePart({ states: { default: {} } });\n');
@@ -271,16 +271,10 @@ describe('autoAcceptOf', () => {
 
       const problems: Problem[] = [];
 
-      expect(await autoAcceptOf({ target, config: {}, product: productOf(target), draw, problems })).toEqual([]);
-      expect(problems).toEqual([
-        {
-          rule: 'EDIT-OLD-NOT-FOUND',
-          file: chip,
-          message: expect.stringContaining(`${CHIP} gets a sketch with only the variant new`),
-        },
+      expect(await autoAcceptOf({ target, config: {}, product: productOf(target), draw, problems })).toEqual([
+        `HELD app-a ${CHIP}: changed outside a sketch, every state draws as before`,
       ]);
-      expect(existsSync(join(dir, 'sketches', 'components-chip.edit', 'new'))).toBe(true);
-      expect(existsSync(join(dir, 'sketches', 'components-chip.edit', 'old'))).toBe(false);
+      expect(problems).toEqual([]);
     });
   });
 
@@ -362,6 +356,8 @@ describe('autoAcceptOf', () => {
       writeFileSync(chip, 'export default definePart({ states: { default: {} } });\n');
       recordMerged({ product: productOf(target), parts: [CHIP] });
       writeFileSync(chip, 'export default definePart({ states: { hover: {}, default: {} } });\n');
+      gitExec(['rm', '-r', '--cached', '-q', dirname(chip)], { cwd: target });
+      gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'untrack'], { cwd: target });
       await autoAcceptOf({ target, config: {}, product: productOf(target), draw, problems: [] });
       expect(existsSync(join(dir, 'sketches', 'components-chip.edit', 'new'))).toBe(true);
 
@@ -475,12 +471,12 @@ describe('autoAcceptOf', () => {
         {
           rule: 'EDIT-OLD-NOT-DRAWN',
           file: join(dir, 'components', 'chip', 'chip.ts'),
-          message: `variant old of ${CHIP}@edit (the part at its merged commit) does not draw: Importing binding name 'emptyCanvas' is not found.`,
+          message: `variant old of ${CHIP}@edit (the part at HEAD) does not draw: Importing binding name 'emptyCanvas' is not found.`,
         },
       ]);
       expect(existsSync(sketchFileOf(dir))).toBe(true);
       expect(await autoAccept(target, draw)).toEqual([
-        `EDIT-OLD-NOT-DRAWN app-a ${CHIP}: variant old of ${CHIP}@edit (the part at its merged commit) does not draw: Importing binding name 'emptyCanvas' is not found.`,
+        `EDIT-OLD-NOT-DRAWN app-a ${CHIP}: variant old of ${CHIP}@edit (the part at HEAD) does not draw: Importing binding name 'emptyCanvas' is not found.`,
       ]);
     });
 

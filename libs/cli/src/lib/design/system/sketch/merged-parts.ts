@@ -4,7 +4,7 @@ import { dirname, resolve } from 'path';
 import { partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { partHashesHold, partHashHolds, partHashOf } from './baseline';
-import { listSketches, variantDirOf } from './sketch';
+import { listSketches, Sketch, variantDirOf } from './sketch';
 
 export const MERGED_FILE = 'merged.json';
 
@@ -193,15 +193,17 @@ export const EDIT_SKETCH = 'edit';
 
 const editSketchIdOf = (part: string) => `${part}@${EDIT_SKETCH}`;
 
+/** Whether `sketch` is the old/new sketch of a direct edit (`<part>@edit`). */
+export const isEditSketch = (sketch: Pick<Sketch, 'target' | 'layer' | 'name'>) =>
+  sketch.target === editSketchIdOf(partKeyOf(sketch));
+
 /**
  * The direct edits of a product's merged parts: each part with an open edit sketch, with its id, and each part changed
  * outside a sketch that has none yet (`sketch: null`).
  */
 export const directEditsOf = (product: ResolvedProduct): { part: string; sketch: string | null }[] => {
   const open = listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) =>
-    typeof sketch !== 'string' && sketch.target === editSketchIdOf(partKeyOf(sketch))
-      ? [{ part: partKeyOf(sketch), sketch: sketch.target }]
-      : [],
+    typeof sketch !== 'string' && isEditSketch(sketch) ? [{ part: partKeyOf(sketch), sketch: sketch.target }] : [],
   );
 
   return [...open, ...changedOutsideSketchOf(product).map((part) => ({ part, sketch: null }))];
