@@ -169,3 +169,8 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
   (push suite runs all of test:tools; the Linux builder checks CI on 0884cf03c, maybe red from studio-e2e-perf.spec, fixed
   a5026c273). Linux push suite runs on HEAD, then it pushes 799, 800, 801 and the doc plan commits. Doc agent restarted
   (context 70 %); restart the Mac mailbox wait first.
+- Morning, 06:45 (after 879285238): Linux pushed 0884cf03c..879285238 (CI fix a5026c273, 799-803, 795, 653, sameness
+  spec); CI run 42967324179 runs. 793 (b) checked: the six "waits for Tom" lines are all stale, no new question. Decided
+  (technical): 804 = Mac builds a no-spawn createSketch (serve.spec 200-sketch case blocked the Mac push, cause 788's
+  prettier spawn per tsconfig); 805 = Linux builds `yarn push` + self-healing push slot (slot never released after a
+  push). Mac mailbox wait runs in the background. Morning round unchanged (four items).
