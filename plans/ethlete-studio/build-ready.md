@@ -755,3 +755,27 @@ Verified: commit-hunks spec, `check-person-names.mjs`. Not verified: a `design c
 The two frozen `sk-gutter` spans in `pages/sketches` now carry `data-et-skip="COVERED OFF-CENTRE"` (they already skipped COVERED), and the four OFF-CENTRE baseline entries (finding 635) are removed. No libs/cli change: OFF-CENTRE already honours `data-et-skip`.
 
 Verified: `et design check --product studio --part pages/sketches` shows no OFF-CENTRE on `sk-gutter` and nothing new (the remaining 37 OFF-CENTRE are zoom-chip `on purpose` findings, 4 DROPPED-PROP, both not from this change). Not verified: a pixel shot (an attribute change cannot alter rendering); parts embedding pages/sketches were not checked separately.
+
+## As built: B249 live verify (2026-11-11, Linux)
+
+Against `studio-serve` :4402. Studio-app shots: a scratch Studio build in headless Chromium with the stubbed host of
+`verify-studio-headless.mjs`, pointed at :4402; each check also has a `/__design/shot` picture. Shots in
+`.claude/handoffs/agent-results/b249-live/` (gitignored); details in `.claude/handoffs/agent-results/b249-live.md`.
+
+1. ok - `c1-green-zoom-chip-studio.png`, `c1-system-nothing-open-shot.png`: zoom-chip popover "Nichts offen",
+   "Baubereit", no "Go geben".
+2. ok - `c2-hardcoded-tree-row-studio.png`, `c2-tree-row-shot.png`, `c2-reverted-tree-row-studio.png`: `#ff0000` in
+   tree-row.css shows HARD-CODED-COLOUR within 3 s, build-ready drops, `et design task` exits 1 naming it; Baubereit
+   again 6 min after the revert. The badge read "Wird geprüft", not "Nicht baubereit", while `pending` was also open,
+   and the `open-point` blocker (changed outside a sketch) was not listed.
+3. ok - `c3-embedded-part-tree-studio.png`, `c3-part-tree-shot.png`: part-tree lists "components/tree-row ist noch
+   nicht baubereit".
+4. VISIBLE-CHANGE ok (`c4-visible-change-zoom-chip-studio.png`: app "Fit" -> "Fit all" gives "Nicht baubereit (1)",
+   VISIBLE-CHANGE on 16 states). Old/new sketch failed (`c4-edit-sketch-view-studio.png`, `c4-edit-sketch-new-shot.png`):
+   `components/zoom-chip@edit` has only `new`, because no commit holds the `merged.json` hash `eac0eac1e633a857`
+   (`oldDesignOf`, edit-sketch.ts), so the view folds all 16 states as unchanged and shows Verwerfen. Pick "new" not
+   run: a pick merges into the shared, dirty `studio/merged.json`.
+5. ok - `c5-checking-zoom-chip-studio.png`, `c5-zoom-chip-shot.png`: during a serve slow run the popover shows
+   `pending` and "Wird geprüft".
+
+The serve rewrote `components/tree-row` and `components/zoom-chip` in the uncommitted `studio/merged.json`; left.
