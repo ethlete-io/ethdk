@@ -888,3 +888,15 @@ the edit or new to keep it`. The internal discard of `design check` is unchanged
 - Verified: the slow-run spec, `vitest related` on the changed files, `nx run cli:typecheck`, eslint, prettier.
 - Not verified: no live serve run. Not covered: an edit HEAD already holds (the settle path) still shows as changed
   outside a sketch until `design check`; the held state is lost when serve restarts (it redraws from the cache).
+
+## As built: B249 slice 5c-1c, serve holds a committed direct edit in memory (2026-11-11, Linux)
+
+- Cause, proven by the bite: `settleCommittedEdits` with `writesTracked: false` records nothing and held nothing, so a
+  direct edit HEAD already holds stayed `direct-edit` until `design check` (ADR 0256 counts it as merged).
+- Fix: `settleCommittedEdits` takes a `held` option and hands out each settled part with its part hash (`autoAcceptOf`
+  passes its own through); the slow runner holds them with `holdEdit`. A later change of the part's hash drops the hold.
+- Bites: slow-run "shows no open point for a committed direct edit while it runs, until the part changes again" failed
+  before (`directEdit` true, `direct-edit` point); it also checks `git status --untracked-files=no` is clean and that a
+  later edit shows as open again, in process and in the worker.
+- Verified: the slow-run spec, `vitest related` on the changed files (131 files), `nx run cli:typecheck`, eslint,
+  prettier, `spec:stress` on slow-run.spec.ts. Not verified: no live serve run (goes into 5c-2b).

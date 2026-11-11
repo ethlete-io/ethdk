@@ -270,12 +270,14 @@ const discardsUntracked = (product: ResolvedProduct, sketch: Sketch) =>
  * Settles each direct edit of a merged part, or of `parts`, that HEAD already holds: records its hash in `merged.json`
  * and deletes its open edit sketch, without a pick and without a line. Answers the parts it settled. With
  * `writesTracked: false` it records nothing and deletes only an edit sketch git does not track and no comment is on.
+ * `held` gets each settled part with its part hash.
  */
 export const settleCommittedEdits = (options: {
   target: string;
   product: ResolvedProduct;
   parts?: string[];
   writesTracked?: boolean;
+  held?: { part: string; hash: string }[];
 }) => {
   const { target, product } = options;
   const writesTracked = options.writesTracked ?? true;
@@ -301,6 +303,9 @@ export const settleCommittedEdits = (options: {
 
   const parts = settled.map(partKeyOf);
 
+  for (const resolved of settled)
+    options.held?.push({ part: partKeyOf(resolved), hash: partHashOf({ product, dir: dirname(resolved.file) }) });
+
   if (writesTracked && parts.length > 0) recordMerged({ product, parts });
 
   return parts;
@@ -316,7 +321,7 @@ export const settleCommittedEdits = (options: {
  * state as before holds at once (its new hash goes to `merged.json`, and the edit sketch closes); one that draws a state
  * differently leaves the edit sketch open. An `old` that does not draw, or a part HEAD does not hold, goes to
  * `problems`, else to the lines. With `writesTracked: false` (the design server) it writes no file git tracks: a held
- * or settled edit stays unrecorded for `design check`. `held` gets each held part with its part hash.
+ * or settled edit stays unrecorded for `design check`. `held` gets each held or settled part with its part hash.
  * Answers with one line per part it drew or decided.
  */
 export const autoAcceptOf = async (options: {
@@ -348,6 +353,7 @@ export const autoAcceptOf = async (options: {
       product,
       parts: only ? (options.parts ?? [only]).filter((part) => part === only) : options.parts,
       writesTracked,
+      held: options.held,
     }),
   );
 

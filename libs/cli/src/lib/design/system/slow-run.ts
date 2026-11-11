@@ -370,7 +370,7 @@ const settledEditsOf = ({
  * inputs changed and then held still for one poll, one run at a time. Before them it settles each direct edit HEAD
  * already holds, and resolves each other direct edit of a merged part that held still for one poll: it holds, or it
  * opens the old/new edit sketch. It writes neither `merged.json` nor any other file git tracks for them: `design check`
- * records a held or settled edit; until then the server keeps a held edit in memory and shows it as no open point. After a run it writes or drops the check record of each run part and its hosts, as
+ * records a held or settled edit; until then the server keeps it in memory and shows it as no open point. After a run it writes or drops the check record of each run part and its hosts, as
  * `design check` does.
  */
 export const startSlowRunner = (options: {
@@ -397,7 +397,10 @@ export const startSlowRunner = (options: {
       for (const [name, entry] of Object.entries(config.products ?? {})) {
         const edited = resolveProduct({ target: options.target, name, config: entry });
 
-        settleCommittedEdits({ target: options.target, product: edited, writesTracked: false });
+        const settled: { part: string; hash: string }[] = [];
+
+        settleCommittedEdits({ target: options.target, product: edited, writesTracked: false, held: settled });
+        settled.forEach(({ part, hash }) => holdEdit({ product: edited, part, hash }));
 
         const edits = settledEditsOf({ product: edited, seen, resolved: resolvedEdits });
 
