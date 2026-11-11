@@ -3939,3 +3939,13 @@ B438 measured (ADR 0229, before 0173ca7a8 vs after 789031753, cold, alternating)
 frames: wall 16 s in all 4 runs, compare phase 3.91/3.96 s before vs 3.29/3.30 s after; sdk scratch, 1 sketch: wall
 22 s, compare phase 6.85/7.03 vs 6.58/6.74 s. Findings lines identical. The 150-280 s cold compare of finding 598 does
 not reproduce on today's products. Not measured: a product with many differing frames.
+
+790\. Linux builder (2026-11-11, night, 782 191ab7c46): nothing ties "a spec reaches the open-points worker" to "the spec
+warms it". Cause of 782 (measured): the first `openPointsAnswer` call starts the worker from `.ts` source and jiti
+transpiles its whole import graph (empty cache 7.0 s plain, 43.5 s at `CPUQuota=25%`); each spec author must know
+`warmOpenPointsWorker()`. Suspect (not measured): `open-points-loop.spec.ts` reaches the worker cold too. Lesson: a cost
+every caller must remember is a rule a new spec forgets (third case of the 783/787 class). Decided by the doc agent
+(tool internal, the builder's recommendation, scoped like 785): not a global setup file for every cli vitest worker
+(it would charge the cold start to specs that never reach the worker); the module through which a spec reaches the
+worker registers the warm `beforeAll` on import, so a spec that reaches it is warm and one that does not pays nothing.
+Bite: a new spec that calls the worker cold under `--slow 4` passes. Night backlog, Linux, after 789.
