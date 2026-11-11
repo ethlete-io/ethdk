@@ -3751,7 +3751,7 @@ Second miss, same gap (spec run): `apps/ethlete-studio/src/styles.spec.ts` pinne
 `'Noto Sans', system-ui, sans-serif` and the push suite went red (spec fixed in 137339aef). The merge runs no app spec,
 and `vitest related` on `project.json` did not reach the spec. Tool fix added to 855 (doc agent decision): the merge
 also runs `vitest related` on the merged files and refuses on a red spec. Bite: merging the old variant c refuses
-with `styles.spec.ts` named. Built in 210235327.
+with `styles.spec.ts` named.
 
 856\. Linux builder (2026-11-11, from 855), measured: when the Studio build fails, the `canvas.e2e.mjs` lead process exits
 but leaves its `--worker` processes and their design servers running. Tool fix (doc agent decision, tool internal): the
@@ -3786,7 +3786,7 @@ findings whose fix commit is proven in git log (dry-run list first, no guess: un
 sha cited": open findings cite context shas (855 cites aaeef909d). Bite: after the pass `archive-findings --dry-run`
 lists the proven ones; a fixture with only a context sha moves nothing. Queue: Linux builder, after 854.
 
-As built (Linux builder, 860): `archive-findings` reads only `Built in <sha>.` at sentence start (pushed sha); `mark-built-findings.mjs` (`--write`) marked the 7 findings whose "fixed/built in <sha>" names a `fix(`/`feat(` or finding-named commit dated on or after the finding. Built in 0e296ac14.
+As built (Linux builder, 860): `archive-findings` reads only `Built in <sha>.` at sentence start (pushed sha); `mark-built-findings.mjs` (`--write`) marked the 7 findings whose "fixed/built in <sha>" names a `fix(`/`feat(` or finding-named commit dated on or after the finding. The pass also marked 855 from "Build fixed in 210235327", which fixed only the app build while the merge guard of 855 is still open; the builder removed that marker by hand, so 6 findings carry it. Built in 0e296ac14.
 
 861\. Doc agent and Linux builder (2026-11-11): the /tmp tmpfs (47G) filled up (ENOSPC); no Bash call of either agent
 started, and the 859 push suite crashed in `commit-export.mjs` (symlink into `/tmp/push-suite-<sha>-*/node_modules`)
