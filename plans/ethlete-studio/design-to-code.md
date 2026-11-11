@@ -4046,6 +4046,15 @@ the API answer, not the view the designer reads. Lesson: a fix for "Studio does 
 shot of the view that should show X; an API bite alone is not the fix. Decided by the doc agent: B is traced read-only at
 night (Linux, now); A is Studio app UI, so it is day work: the place of the chip in the sketch view goes to the builder
 as a sketch after the night (ADR 0257: no sketches at night), not as a grill question.
+B traced (Linux builder, code read, no bite or shot; Suspect): `sketchStatus` in `sketch-view.component.ts` maps status
+`ready` to `waiting` ("Wartet auf deine Wahl") and never reads the decision; `pickedVariantOf` exists in the same
+component but the badge does not use it; `canPick` gates only "Übernehmen". The sketches part (`SketchStatus` in
+`sketches-sample.ts`) has no state for "picked, waiting for merge". Second lesson: the CLI open-points answer and the
+view derive "open" from different fields (decision vs status), so they disagree. Decided by the doc agent: the day
+sketch of A also covers a picked badge state (reuse the existing open-point wording "Sketch gewählt, noch nicht
+gemergt" where it fits, reuse before a new state); then `sketchStatus` reads the pick, and one shared function decides
+"waits for a pick" for both the CLI and the view (tool internal). Bite: a spec with a ready sketch that has a pick
+expects the picked state, not `waiting`.
 
 652, decided by the doc agent (2026-11-11, night; tool internal, the builder's recommendation; no ADR covers it, ADR 0009
 was a one-time commit): step 1 moves only `pictures.json` (pure tool state: shot hashes) to a gitignored
