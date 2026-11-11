@@ -3984,3 +3984,11 @@ does not load (FontFace status error), so its text draws in a fallback font`. Bi
 foundations/type@font-pair --product studio` without the plugin fails with six FONT-FACE lines (two per variant); with
 it, ok. The new spec in `sketch-stylesheets.spec.ts` fails without the plugin. Product runs: studio and sdk have no
 FONT-FACE hit (their other findings are older). Not verified: the Mac.
+
+815 as built (Linux builder, 2026-11-11, 91cdff2ed): Cause corrected (measured with a debug line): not the `?inline`
+copy. The failing `@font-face` sat in the product's `styles.css`, which `@import`s `foundations/type/type.css`; for a
+sketch, `sketchStylesheetsPlugin` swaps in the variant file, and that inlined text never passed `withAssetUrls`. Fix: new
+`importedAssetUrlsPlugin` (PostCSS, after the swap) rewrites `url(@assets/...)`, so a variant's own `assets/` wins. New
+render rule `FONT-FACE` (`font-faces.ts`, run in `inspectedFrameOf`) fails a part whose `@font-face` does not reach
+status loaded. Bite: `sketch check foundations/type@font-pair` exits 1 with 6 FONT-FACE lines without the fix, 0 with it;
+the `sketch-stylesheets.spec` case fails without the plugin. studio and sdk have 0 FONT-FACE hits. Not verified: Mac.
