@@ -3976,3 +3976,8 @@ URL. Side: user-facing, after B249 (ADR 0269).
 
 880\. Linux builder (2026-11-11, B480, rack): after a cold start the design server does not answer for about 60-90 s.
 Suspect; measure it together with the 875 serve crash log. Side: user-facing, after B249 (ADR 0269).
+
+881\. Mac builder (2026-11-11, B345 slice 1): with several variant columns, the change crop is the union of all variant
+boxes, but the reason text names the first variant only, so the reason of the other variants is lost. Accepted for now
+by the human (ADR 0272). Tool fix: the reason line lists each variant's reason, or one line per variant under the crop.
+Side: user-facing, after B249 (ADR 0269).
