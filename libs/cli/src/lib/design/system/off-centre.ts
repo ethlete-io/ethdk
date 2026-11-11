@@ -7,7 +7,8 @@ export const OFF_CENTRE_RULE = 'OFF-CENTRE';
  * and nothing that reaches above or below that line, must have the same gap above the capitals as below the baseline
  * (1px tolerance), and no icon in it may stick out of the box by more than 0.5px. A box counts only when a background
  * or a border on both the top and the bottom closes it, its line box is not all of it, its row is not aligned to the
- * top, and no form control in it draws text the walker cannot measure. Text in a scaled box is measured at its scale.
+ * top, and no form control in it draws text the walker cannot measure. Text in a scaled box is measured at its scale;
+ * text clipped away (visually hidden: `clip-path: inset(50%)`, a zero `clip`, or a 1px `overflow: hidden` box) is skipped.
  */
 export const OFF_CENTRE_STATEMENTS = `
   const backed = (style) => (style.backgroundColor && !invisible(style.backgroundColor)) || style.backgroundImage !== 'none';
@@ -17,10 +18,18 @@ export const OFF_CENTRE_STATEMENTS = `
     for (let at = node.parentElement; at && at !== root; at = at.parentElement) if (filled(getComputedStyle(at))) return at;
     return null;
   };
+  const clippedAway = (element) => {
+    for (let at = element; at && at !== root; at = at.parentElement) {
+      const style = getComputedStyle(at);
+      if (/^inset\\(50%/.test(style.clipPath) || /^rect\\(0px,? 0px,? 0px,? 0px\\)$/.test(style.clip)) return true;
+      if (style.overflow === 'hidden' && (at.offsetWidth <= 1 || at.offsetHeight <= 1)) return true;
+    }
+    return false;
+  };
   const textLines = new Map();
   const capWalker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   for (let node = capWalker.nextNode(); node; node = capWalker.nextNode()) {
-    if (!node.textContent.trim() || node.parentElement.closest('svg, style, script, template')) continue;
+    if (!node.textContent.trim() || node.parentElement.closest('svg, style, script, template') || clippedAway(node.parentElement)) continue;
     const box = boxOfText(node);
     if (!box) continue;
     metrics.font = getComputedStyle(node.parentElement).font;

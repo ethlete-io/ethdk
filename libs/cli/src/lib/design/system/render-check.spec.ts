@@ -318,6 +318,9 @@ describe('renderIssuesOf', () => {
       'components/top-aligned': {
         body: `<div style="padding: 8px"><span style="display: flex; align-items: flex-start; height: 48px; font: 12px/12px sans-serif; padding: 4px 8px; ${fill}">Daily sync</span></div>`,
       },
+      'components/visually-hidden': {
+        body: `<div style="padding: 8px; transform: scale(0.2); transform-origin: 0 0"><span style="display: inline-block; position: relative; box-sizing: border-box; height: 120px; font: 60px/80px sans-serif; padding: 20px 40px; ${fill}">Search<span style="position: absolute; top: 45px; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap">Control K</span></span></div>`,
+      },
       'components/with-input': {
         body: `<div style="padding: 8px"><label style="display: block; position: relative; width: 200px; font: 12px/12px sans-serif; padding: 4px 8px 32px; ${fill}">Name<input value="Ada" style="position: absolute; left: 8px; top: 10px; height: 30px; margin: 0; border: 0; padding: 0; font: 16px/30px sans-serif" /></label></div>`,
       },
