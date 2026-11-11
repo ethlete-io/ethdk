@@ -21,10 +21,10 @@
   "components/shell-collapse": "fd8adc8a7443f113",
   "components/shell-project-switch": "9306921f2b0a9db8",
   "components/sketch-status-badge": {
-    "hash": "87c9680992712dee",
-    "variant": "b",
+    "hash": "1f05f263d2e08ada",
+    "variant": "c",
     "decidedBy": "user",
-    "at": "2026-11-03T16:58:15.525Z"
+    "at": "2026-11-11T13:00:59.616Z"
   },
   "components/title-bar": {
     "hash": "f3239ce89833a657",
@@ -100,10 +100,10 @@
   },
   "pages/merge": "44fd8307ce8b2ab0",
   "pages/sketches": {
-    "hash": "1b52a802f0e92a15",
-    "variant": "b",
-    "decidedBy": "human",
-    "at": "2026-11-11T07:53:12.045Z"
+    "hash": "352141771af03198",
+    "variant": "c",
+    "decidedBy": "user",
+    "at": "2026-11-11T13:00:59.616Z"
   },
   "pages/start": {
     "hash": "692644df2034dcd1",
