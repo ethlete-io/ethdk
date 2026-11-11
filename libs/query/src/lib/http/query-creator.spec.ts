@@ -169,6 +169,15 @@ describe('query creator', () => {
       );
       // @ts-expect-error the route needs an id
       getUser(withArgs(() => ({ pathParams: {} })));
+      // @ts-expect-error the config has to come first
+      getUser(
+        withArgs(() => ({ pathParams: { id: '1' } })),
+        { key: 'user' },
+      );
+      // @ts-expect-error the config has to come first
+      getList(log as unknown as QueryFeature<ListArgs>, { key: 'list' });
+      // @ts-expect-error only one config
+      getUser({ key: 'user' }, { key: 'other' });
     };
 
     const typeOnlyCallSites = (getUser: QueryCreator<UserArgs>, log: QueryFeature<UserArgs>) => {

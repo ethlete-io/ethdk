@@ -198,6 +198,8 @@ export type CreateQueryCreatorOptions<TArgs extends QueryArgs = QueryArgs> = Bas
 export type QueryCreatorInput<TArgs extends QueryArgs> =
   readonly [QueryConfig, ...QueryFeature<TArgs>[]] | readonly QueryFeature<TArgs>[];
 
+type QueryCreatorCallInput<TArgs extends QueryArgs> = readonly (QueryConfig | QueryFeature<TArgs>)[];
+
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 type RequiresWithArgs<TArgs extends QueryArgs> =
@@ -220,10 +222,24 @@ type IsWithArgsErrorSilenced<TInput extends readonly unknown[]> = TInput extends
 type MissingWithArgsError =
   "withArgs() is required: this query's route uses pathParams. Pass withArgs(() => ({ pathParams: … })), or set silenceMissingWithArgsFeatureError as an escape hatch.";
 
+export type QueryConfigMustComeFirst =
+  'The QueryConfig must come first, before the feature arguments: query({ key: … }, withArgs(…)), not query(withArgs(…), { key: … }).';
+
+type HasQueryConfig<T> = [Exclude<T, { type: unknown }>] extends [never] ? false : true;
+
+type HasLateQueryConfig<TInput extends readonly unknown[]> = TInput extends readonly [unknown, ...infer TRest]
+  ? HasQueryConfig<TRest[number]>
+  : number extends TInput['length']
+    ? HasQueryConfig<TInput[number]>
+    : false;
+
 type SilencedWithArgsError =
   'silenceMissingWithArgsFeatureError: true is set, but withArgs() is passed. Remove one of them.';
 
 export type WithArgsCheck<TArgs extends QueryArgs, TInput extends readonly unknown[]> =
+  HasLateQueryConfig<TInput> extends true ? QueryConfigMustComeFirst : WithArgsPresenceCheck<TArgs, TInput>;
+
+type WithArgsPresenceCheck<TArgs extends QueryArgs, TInput extends readonly unknown[]> =
   IsWithArgsErrorSilenced<TInput> extends true
     ? HasWithArgsFeature<TInput> extends true
       ? number extends TInput['length']
@@ -237,7 +253,7 @@ export type WithArgsCheck<TArgs extends QueryArgs, TInput extends readonly unkno
       : unknown;
 
 export type QueryCreator<TArgs extends QueryArgs> = {
-  <const TInput extends QueryCreatorInput<TArgs>>(
+  <const TInput extends QueryCreatorCallInput<TArgs>>(
     this: WithArgsCheck<TArgs, TInput>,
     ...args: TInput | QueryCreatorInput<TArgs>
   ): Query<TArgs>;
