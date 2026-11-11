@@ -21,6 +21,15 @@ const created: ServerOptions[] = [];
 const targets: string[] = [];
 
 vi.mock('vite', () => ({
+  createLogger: () => ({
+    info: () => undefined,
+    warn: () => undefined,
+    warnOnce: () => undefined,
+    error: () => undefined,
+    clearScreen: () => undefined,
+    hasErrorLogged: () => false,
+    hasWarned: false,
+  }),
   createServer: async (options: ServerOptions) => {
     created.push(options);
 
