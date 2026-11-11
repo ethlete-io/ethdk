@@ -1,6 +1,6 @@
 ---
 status: accepted
-built: 2c014df00
+built: d01f388d2
 decided: 2026-11-11
 source: grill session 2026-11-11 (phone, late morning)
 ---
