@@ -12,6 +12,8 @@
     border-radius: 0.2rem;
     font-size: var(--et-button-font-size);
     font-weight: var(--et-button-font-weight);
+    letter-spacing: var(--et-button-letter-spacing);
+    text-transform: var(--et-button-text-transform);
     cursor: var(--et-button-cursor);
     text-decoration: none;
     appearance: none;

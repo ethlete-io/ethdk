@@ -27,6 +27,8 @@
     border-radius: var(--et-icon-button-border-radius, 9999px);
     padding: 0;
     font-size: var(--et-button-font-size);
+    letter-spacing: var(--et-button-letter-spacing);
+    text-transform: var(--et-button-text-transform);
     cursor: var(--et-button-cursor);
     appearance: none;
     box-sizing: border-box;
@@ -108,7 +110,8 @@
     }
 
     &:where([data-variant='outline']) {
-      border: var(--et-button-border-width, 0.1rem) solid var(--et-theme-color-ink-solid);
+      border: var(--et-button-border-width, 0.1rem) solid
+        var(--et-button-outline-border-color, var(--et-theme-color-ink-solid));
     }
 
     &[data-pressed='true']:where([data-pressed-variant='filled']) {
@@ -123,9 +126,13 @@
       height: 100%;
       transition: opacity 120ms ease;
 
-      .et-icon {
+      :is(.et-icon, [etIcon]) {
         width: var(--et-icon-button-icon-size);
         height: var(--et-icon-button-icon-size);
+      }
+
+      [etIcon]:not(.et-icon) {
+        font-size: var(--et-icon-button-icon-size);
       }
     }
 

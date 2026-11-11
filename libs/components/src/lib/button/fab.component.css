@@ -49,6 +49,8 @@
     height: var(--et-fab-size);
     font-size: var(--et-button-font-size);
     font-weight: var(--et-button-font-weight);
+    letter-spacing: var(--et-button-letter-spacing);
+    text-transform: var(--et-button-text-transform);
     box-shadow: var(--et-button-shadow);
     cursor: var(--et-button-cursor);
     text-decoration: none;
@@ -181,7 +183,7 @@
 
     &:where([data-variant='outline'])::after {
       border-width: var(--et-button-border-width, 0.1rem);
-      border-color: var(--et-theme-color-ink-solid);
+      border-color: var(--et-button-outline-border-color, var(--et-theme-color-ink-solid));
     }
 
     &[data-icon-alignment='end'] {

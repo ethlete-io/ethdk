@@ -16,6 +16,8 @@
     padding: var(--et-button-padding);
     font-size: var(--et-button-font-size);
     font-weight: var(--et-button-font-weight);
+    letter-spacing: var(--et-button-letter-spacing);
+    text-transform: var(--et-button-text-transform);
     border: var(--et-button-border-width, 0.1rem) solid var(--_et-button-border-color);
     box-shadow: var(--et-button-shadow, 0 0 #0000);
     cursor: var(--et-button-cursor);
@@ -93,14 +95,14 @@
     &:where([data-variant='outline']) {
       --_et-button-background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
       --_et-button-color: var(--et-theme-color-ink-solid);
-      --_et-button-border-color: var(--et-theme-color-ink-solid);
+      --_et-button-border-color: var(--et-button-outline-border-color, var(--et-theme-color-ink-solid));
     }
 
     &[data-pressed='true']:where([data-pressed-variant='outline']) {
       --et-theme-color-primary-opacity: 0;
       --_et-button-background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
       --_et-button-color: var(--et-theme-color-ink-solid);
-      --_et-button-border-color: var(--et-theme-color-ink-solid);
+      --_et-button-border-color: var(--et-button-outline-border-color, var(--et-theme-color-ink-solid));
 
       @media (hover: hover) {
         &:not([disabled], [aria-disabled='true']):hover {
