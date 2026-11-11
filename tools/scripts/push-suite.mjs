@@ -22,7 +22,6 @@ const RUNNER = 'apps/ethlete-studio/e2e/canvas.e2e.mjs';
 const WORKSPACE_PARENTS = ['apps', 'libs', 'tools'];
 
 export const STEPS = ['lint', 'typecheck', 'tools', 'cli', 'studio', 'quota', 'e2e', 'e2e-quota', 'repeat'];
-export const EXEMPT_PATHS = [/^plans\//, /^\.changeset\//, /\.md$/];
 
 const DESIGN_INPUTS = [
   ...['bracket', 'cli', 'components', 'core', 'eslint-plugin', 'query', 'types'].map((lib) => `libs/${lib}/`),
@@ -133,23 +132,6 @@ export const waitForLowLoad = async (
     await sleep(pollMs);
   }
 };
-
-export const missingVerdict = (commits, hasOk) => {
-  for (const { sha, files } of commits) {
-    if (hasOk(sha)) return undefined;
-    if (files.some((file) => !EXEMPT_PATHS.some((path) => path.test(file)))) return sha;
-  }
-  return undefined;
-};
-
-export const parseLog = (output) =>
-  output
-    .split('\0')
-    .filter((entry) => entry.trim())
-    .map((entry) => {
-      const [sha, ...files] = entry.split('\n').filter(Boolean);
-      return { sha, files };
-    });
 
 const FAILED_ROW = /^\s*(✘\s|\d+\) \[|NOT RUN |HOLD FAIL |FAIL\s)/;
 const ANSI = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g');
@@ -668,11 +650,14 @@ const readVerdict = (commit) => {
   return existsSync(file) ? readFileSync(file, 'utf8') : undefined;
 };
 
-export const checkPush = (base, sha, log = console.error) => {
+export const checkPush = async (base, sha, log = console.error) => {
   if (process.env['PUSH_SUITE_SKIP'] === '1') return 0;
+  const { EXEMPT_PATHS, parseLog, reusedVerdictLine, verdictBelow } = await import('./verdict-reuse.mjs');
   const commits = parseLog(git('log', '--format=%x00%H', '--name-only', `${base}..${sha}`).stdout);
   const hasOk = (commit) => readVerdict(commit)?.startsWith('ok ') ?? false;
-  const missing = missingVerdict(commits, hasOk);
+  const below = verdictBelow(commits, hasOk, EXEMPT_PATHS);
+  if (below.onTop) log(reusedVerdictLine('pre-push', below));
+  const missing = below.blocker;
   if (!missing) return 0;
   log(
     `pre-push: ${missing.slice(0, 10)} changes more than plans/, .changeset/ or Markdown, and no later commit in this push has an ok verdict. Run \`yarn push:suite\` on this HEAD and push after \`push-suite: ok\`; PUSH_SUITE_SKIP=1 skips the check for a push the suite does not cover.`,
@@ -682,5 +667,5 @@ export const checkPush = (base, sha, log = console.error) => {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   const argv = process.argv.slice(2);
-  process.exit(argv[0] === '--check' ? checkPush(argv[1], argv[2]) : await pushSuite(parseArgs(argv)));
+  process.exit(argv[0] === '--check' ? await checkPush(argv[1], argv[2]) : await pushSuite(parseArgs(argv)));
 }

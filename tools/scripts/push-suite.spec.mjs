@@ -5,6 +5,7 @@ import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { missingVerdict, parseLog } from './verdict-reuse.mjs';
 import { stripVTControlCharacters } from 'node:util';
 import { linkTargetOf } from './commit-export.mjs';
 import { CHECKS } from './pre-push-checks.mjs';
@@ -12,11 +13,9 @@ import {
   e2eQuotaCommand,
   e2eQuotaStep,
   failureReport,
-  missingVerdict,
   otherProcessWarningLines,
   otherTestProcessesOf,
   parseArgs,
-  parseLog,
   passedSteps,
   quotaCommand,
   quotaSpecFiles,
