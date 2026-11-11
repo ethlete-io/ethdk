@@ -3673,3 +3673,16 @@ cold first answer and the answer after any part edit stay over 1 s; only (b) mee
 and then measured or asserted, so a slow load showed as a wrong value instead of a timeout. Tool fix (doc agent, tool
 internal): a harness rule or lint check rejects a `waitFor` (or other wait) followed by `.catch(() => undefined)` in the
 Studio e2e files; fix every hit. Bite: the check fails on the old 829 case.
+830 as built (Linux builder, 2026-11-11, dc37b06e8), warm only: each ready variant keeps its rule problems, keyed by
+product and sketch, reused while every file its run read is unchanged; the product rules run once and are shared with
+build-ready. Output byte-equal to HEAD. On studio, idle: repeat call 5.9 s to 82 ms; miss with held variants 710 ms;
+cold 7.8 s to 8.4 s (no change). One variant run reads all 91 studio part sources, so any part edit reruns every
+variant. Bite: `sketch-problems-cache.spec.ts` counts rule runs, red in 2 cases on HEAD, green after; spec:stress 4/4.
+Not proven: the recordInputs replay. Cold path and first answer after a part edit: 832.
+
+832\. Doc agent (2026-11-11, from 830): the cold open-points answer (about 8 s on studio) and the first answer after a
+part edit stay far over the 1 s target. Tool fix (doc agent, tool internal, no change in what the human sees): the
+server computes the sketch problems in the background at start and again after each file change it watches, so the
+cache is warm before Studio asks; an ask during a run waits for that run, it does not start a second one. Rejected for
+now: sending the sketch problems later with a push to Studio, because it changes what the human sees. Bite: a spec where
+the first ask after start and the first ask after a part edit do not run the rules inline.
