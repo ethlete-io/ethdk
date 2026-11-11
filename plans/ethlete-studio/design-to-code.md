@@ -3240,6 +3240,25 @@ not built): draw the dark twin on the loaded page with `emulateMedia` (about 30 
 frame (about 50 s less), profile the first `inspectFrame` evaluate, and pass `cached: true` to `renderIssuesOf` in
 `sketch-command.ts` like `check-system.ts` does, so a re-check of unchanged variants hits the cache.
 
+As built (739 (a), Linux builder subagent, 2026-11-11, measurement only). HEAD export of c5f268edc (with 813), the
+same sketch after a `sketch rebase` in the export only, `ETHLETE_DESIGN_PHASES=1`, 32 cores, load 11-14. Seconds,
+resident run 1 (render-check cold) / resident run 2 (warm) / `ETHLETE_DESIGN_RESIDENT=0` (warm):
+
+| Phase         | Run 1 | Run 2 | No resident |
+| ------------- | ----: | ----: | ----------: |
+| gates         |   2.3 |   2.4 |         6.7 |
+| tsc a + b + c |   3.4 |   3.2 |         3.3 |
+| aktuell       |  17.4 |  17.0 |        17.4 |
+| render-check  |  45.5 |   2.0 |         2.1 |
+| identical     |   1.6 |   1.7 |         1.5 |
+| changes-shot  |   0.5 |   0.5 |         0.5 |
+| wall          |  72.0 |  28.0 |        32.9 |
+
+Render-check per variant, cold: 18 s, 13 s, 13 s. Cause (measured): every phase is about 3x slower on the Mac (6 cores,
+load 11-13) than on Linux (32 cores); no phase is Mac-only. With 813 a re-check of unchanged variants skips render-check
+(45.5 s to 2.0 s). Aktuell stays at 17 s warm: the render cache does not cover it, so it is the next cut. Not measured:
+a cold run without the resident process, and no `draw-queue-wait` line printed on Linux.
+
 Mac e2e speed (Mac builder, same night, measurement only): `yarn studio:e2e --workers 5` ran 131/132 in 433.5 s, load
 4.7 at start and 31.7 at the end; push:suite #16 ran the same 132 cases on the default 3 workers in 476 s. The one
 fail was Large "a variant equal to Aktuell keeps its iframes across a quick and a full listing" (iframe/row removes 22,
