@@ -52,38 +52,87 @@ const extentOf = (lines, from) => {
   return to;
 };
 
+const BACKLOG_HEAD = '**Werkzeug-Rückstand**';
+export const BACKLOG_WHERE = 'STATUS.md Werkzeug-Rückstand';
+const BACKLOG_NUMBER = /(?<![\w.])(?<!ADR )(\d+)(?:-(\d+))?(?![\w])/g;
+
+/** Finding numbers the tool backlog paragraph of STATUS.md names, ranges like `628-633` expanded. */
+export const backlogNumbers = (statusText) => {
+  const lines = statusText.split('\n');
+  const from = lines.findIndex((line) => line.startsWith(BACKLOG_HEAD));
+  if (from < 0) return new Set();
+  let to = from + 1;
+  while (to < lines.length && !lines[to].startsWith('**') && !HEADING.test(lines[to])) to++;
+  const text = lines
+    .slice(from, to)
+    .join('\n')
+    .replace(/`[^`]*`/g, '');
+  const numbers = new Set();
+  for (const [, first, last] of text.matchAll(BACKLOG_NUMBER)) {
+    const end = last !== undefined && Number(last) - Number(first) < 50 ? Number(last) : Number(first);
+    for (let n = Number(first); n <= end; n++) numbers.add(n);
+  }
+  return numbers;
+};
+
+export const STAY_REASONS = {
+  open: 'open in STATUS',
+  named: 'named in STATUS outside a row and the backlog',
+  unbuilt: 'no built line, no backlog row',
+};
+
 export const archiveFindings = (planText, statusText, { today, days = 5, isPushed = isPushedSha } = {}) => {
   const rows = parseStatusRows(statusText);
   const done = doneFindingNumbers(rows);
   const cited = new Set(rows.flatMap((row) => [...row.findings]));
+  const backlog = backlogNumbers(statusText);
   const lines = planText.split('\n');
   const moved = [];
+  const stays = [];
   const drop = new Set();
+  const index = new Map();
   for (const block of splitFindings(planText)) {
     const date = DATE.exec(block.lines.join('\n'));
     if (!date) continue;
+    const old = Boolean(today) && (today - new Date(date[0])) / DAY_MS > days;
+    const month = `${date[1]}-${date[2]}`;
+    const stay = (reason) => {
+      if (old) stays.push({ number: block.number, reason });
+    };
     let text;
     let to;
     if (done.has(block.number)) {
       text = block.lines.join('\n');
       to = block.to;
-    } else if (!cited.has(block.number) && !namedIn(statusText, block.number)) {
+    } else if (cited.has(block.number)) {
+      stay(STAY_REASONS.open);
+      continue;
+    } else if (old && backlog.has(block.number)) {
+      to = extentOf(lines, block.from);
+      moved.push({ number: block.number, month, text: lines.slice(block.from, to).join('\n') });
+      index.set(block.from, `${block.number} -> archive/findings-${month}.md, backlog ${BACKLOG_WHERE}`);
+      for (let n = block.from + 1; n < to; n++) drop.add(n);
+      continue;
+    } else if (!namedIn(statusText, block.number)) {
       to = extentOf(lines, block.from);
       const extent = lines.slice(block.from, to);
-      const old = today && (today - new Date(date[0])) / DAY_MS > days;
       const builtLines = extent.filter((line) => isBuiltLine(line, isPushed));
-      if (!builtLines.length) continue;
+      if (!builtLines.length) {
+        stay(STAY_REASONS.unbuilt);
+        continue;
+      }
       if (!old && !builtLines.some((line) => namedIn(line, block.number))) continue;
       text = extent.join('\n');
     } else {
+      stay(STAY_REASONS.named);
       continue;
     }
-    moved.push({ number: block.number, month: `${date[1]}-${date[2]}`, text });
+    moved.push({ number: block.number, month, text });
     while (to < lines.length && lines[to].trim() === '' && block.from < to) to++;
     for (let n = block.from; n < to; n++) drop.add(n);
   }
-  const plan = lines.filter((_, n) => !drop.has(n)).join('\n');
-  return { plan, moved };
+  const plan = lines.flatMap((line, n) => (index.has(n) ? [index.get(n)] : drop.has(n) ? [] : [line])).join('\n');
+  return { plan, moved, stays };
 };
 
 const SECTION_START = /^#{2,3} /;
@@ -169,8 +218,9 @@ export const writeArchive = (archiveDir, moved) => {
 
 const USAGE = `usage: node tools/scripts/archive-findings.mjs [--days=<n>] [--dry-run] [--orphans] [--help]
   moves done findings and old decision sections of plans/ethlete-studio/design-to-code.md into archive/
-  --days=<n>  age in days a done finding must reach (default 5)
-  --dry-run   list what would move, write nothing
+  --days=<n>  age in days an orphan finding (no STATUS row) must reach to move by a built line or a
+              tool-backlog entry in STATUS.md, and a decision section to move (default 5)
+  --dry-run   list what would move and why each old finding stays, write nothing
   --orphans   list old findings with no STATUS row, write nothing`;
 
 const planMoves = (root, days) => {
@@ -181,13 +231,28 @@ const planMoves = (root, days) => {
   const first = archiveFindings(readFileSync(planFile, 'utf8'), statusText, { today, days });
   const second = archiveSections(first.plan, statusText, readAdrText(root), { today, days });
 
-  return { studio, planFile, plan: second.plan, moved: [...first.moved, ...second.moved] };
+  const before = readFileSync(planFile, 'utf8').length;
+  return {
+    studio,
+    planFile,
+    plan: second.plan,
+    moved: [...first.moved, ...second.moved],
+    stays: first.stays,
+    freed: before - second.plan.length,
+  };
 };
 
-export const run = (root, days = 5) => {
-  const { studio, planFile, plan, moved } = planMoves(root, days);
+const logStays = (stays, log) => {
+  for (const s of stays) log(`stays\t${s.number}\t${s.reason}`);
+  const counts = Map.groupBy(stays, (s) => s.reason);
+  for (const [reason, list] of counts) log(`${list.length} stay: ${reason}`);
+};
+
+export const run = (root, days = 5, log = console.log) => {
+  const { studio, planFile, plan, moved, stays } = planMoves(root, days);
   writeArchive(join(studio, 'archive'), moved);
   writeFileSync(planFile, plan);
+  logStays(stays, log);
   return moved.length;
 };
 
@@ -214,12 +279,13 @@ export const main = (argv, { root, log = console.log }) => {
   const daysArg = argv.find((arg) => DAYS_ARG.test(arg));
   const days = daysArg ? Number(daysArg.slice(7)) : 5;
   if (argv.includes('--dry-run')) {
-    const { moved } = planMoves(root, days);
+    const { moved, stays, freed } = planMoves(root, days);
     for (const m of moved) log(`${m.month}\t${m.text.split('\n')[0].slice(0, 100)}`);
-    log(`would move ${moved.length} findings and sections`);
+    logStays(stays, log);
+    log(`would move ${moved.length} findings and sections, freeing ${freed} chars`);
     return 0;
   }
-  log(`moved ${run(root, days)} findings and sections`);
+  log(`moved ${run(root, days, log)} findings and sections`);
   return 0;
 };
 

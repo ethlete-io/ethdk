@@ -6,10 +6,13 @@ import { test } from 'node:test';
 import {
   archiveFindings,
   archiveSections,
+  BACKLOG_WHERE,
+  backlogNumbers,
   orphanFindings,
   doneFindingNumbers,
   main,
   splitFindings,
+  STAY_REASONS,
   writeArchive,
 } from './archive-findings.mjs';
 import { parseStatusRows } from './studio-status.mjs';
@@ -286,4 +289,55 @@ test('a context sha or loose built prose moves nothing; only the Built in marker
     moved.map((m) => m.number),
     [52],
   );
+});
+
+test('an old orphan in the tool backlog leaves an index line; an unlisted or young one stays, the old one with its reason', () => {
+  const backlogStatus = `| ID | Was | Stand | Wo |
+| -- | -- | -- | -- |
+| B1 | open (Bef. 44) | ⏳ | |
+
+**Werkzeug-Rückstand** (only while waiting): sketches 40-41, Bef. 43 (fix), ADR 0042, \`tool 45\`.
+
+**Next rule:** 46.
+`;
+  const orphanPlan = `# Plan
+
+40\\. Tom (2026-11-01): in a backlog range.
+Follow-up note.
+
+42\\. Tom (2026-11-01): in no backlog.
+
+43\\. Tom (2026-11-09): young, in the backlog.
+
+44\\. Tom (2026-11-01): open row.
+
+46\\. Tom (2026-11-01): named outside the backlog.
+
+Prose after.
+`;
+  assert.deepEqual([...backlogNumbers(backlogStatus)].sort(), [40, 41, 43]);
+  const {
+    plan: rest,
+    moved,
+    stays,
+  } = archiveFindings(orphanPlan, backlogStatus, {
+    today: new Date('2026-11-10'),
+    days: 5,
+    isPushed: () => false,
+  });
+  assert.deepEqual(moved, [
+    { number: 40, month: '2026-11', text: '40\\. Tom (2026-11-01): in a backlog range.\nFollow-up note.' },
+  ]);
+  assert.equal(
+    rest,
+    orphanPlan.replace(
+      '40\\. Tom (2026-11-01): in a backlog range.\nFollow-up note.',
+      `40 -> archive/findings-2026-11.md, backlog ${BACKLOG_WHERE}`,
+    ),
+  );
+  assert.deepEqual(stays, [
+    { number: 42, reason: STAY_REASONS.unbuilt },
+    { number: 44, reason: STAY_REASONS.open },
+    { number: 46, reason: STAY_REASONS.named },
+  ]);
 });
