@@ -3731,7 +3731,8 @@ path outside the allow list (night backlog, Linux). Mac builder verifies the fix
 bites. Not built: `sketch check` still only logs the line (night backlog, Linux: same problem there); `compare` and
 `shot` are views, not gates, and may keep the log line. Sketch check built af1e4e696 (`sketch-check-denied.spec.ts` bites); without a resident
 process its render check now draws on the run draw (else its denials were lost). Not verified: the Mac, and the
-resident path by its own spec (night backlog, Linux: a resident case in the same spec).
+resident path by its own spec (night backlog, Linux: a resident case in the same spec). Resident case built aa1fb0f2a (spec only; the
+resident path already reported the denial; the case bites without `takeDeniedIds` in `resident-process.ts`).
 
 As built (777): `createDesignServer` wraps Vite's logger and records each id of an "outside of Vite serving allow list"
 line (`takeDeniedIds()`, also on the run and resident `WarmDraw`); `design check` (`checkSystemRendered`) prints one
