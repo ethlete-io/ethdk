@@ -3727,3 +3727,14 @@ render-inspect 36.9 -> 2.0 s, wall 79.0 -> 44.2 s, differing inputs 121 -> 0, ou
 bites. Not verified: the Mac (`/tmp` is a symlink there). Decided by the doc agent (tool internal): `design check`
 reports a Vite "outside of Vite serving allow list" line as a check problem, not a log line; a spec bites with a served
 path outside the allow list (night backlog, Linux). Mac builder verifies the fix on the Mac (night backlog).
+
+778\. Linux builder (2026-11-11, night, 710 sweep): the first real nightly spec sweep (CI run 42931941982) failed: 417
+files in 60 min, 17 under 100 % at `--slow 4` (Studio flows-page.component, sketches.component; cli open-points-answer,
+open-points-loop, serve, sketch-command at 1140 s, check-system-render, check-system-sketch, check-system, check-warm,
+live-actions, rules/denied-class, rules/option-values, rules/undefined-class, sketch/edit-sketch, sketch/merge-step-edit,
+git-regex-dialect). All pass in normal CI. Suspect (not measured): N=4 counts the slowness twice on CI: it was mapped
+from local runs to match a median runner, and on the runner the quota adds to its own slowness plus `--jobs nproc*N*3/4`
+contention. Lesson: a slow factor taken from local runs needs a CI calibration run before it gates. Decided by the doc
+agent (tool internal, the builder's recommendation): measure one failing file on CI at `--slow 1` and `--slow 2` (change
+the workflow default and push; this is also the owed second real run), then record each file that still fails as its own
+finding (night backlog, Linux, fresh builder session).
