@@ -63,6 +63,8 @@ A `SurfaceTheme` - all colors are `"R G B"` channel strings:
 | `semanticColorThemes` | `{ success?, warning?, error? }` | no       | **Deprecated.** Use `colorThemeVariants`.                                                                            |
 | `colorTheme`          | color theme name                 | no       | **Deprecated.** Use `colorThemeVariants`.                                                                            |
 
+`elevation` may be negative: write `elevation: -1` as a literal (a unary minus on a number). The `tailwind-4-surface-theme` generator fails, naming the theme, when it cannot read one; it no longer skips it with a warning. A theme at `-1` matters to whatever resolves relative to its parent - filled form fields, table card rows and grid items resolve `parent.elevation + 1`, so under a `-1` surface they resolve elevation `0`. A toast and an `@ethlete/cdk` overlay with a backdrop always resolve elevation `1` and do not follow the parent; a `@ethlete/cdk` overlay without a backdrop resolves `parent.elevation + 1`. When a theme matches, the overlay's scope class changes from `et-surface--inherited` to `et-surface--<theme>`. `@ethlete/cdk` CSS reads no `--et-surface-*` token, so `etProvideSurface` on a cdk host does nothing.
+
 As an example, this repo's Storybook registers `light` (elevation 0), `light-elevated` (1), `dark` (0), `dark-elevated` (1) and `dark-elevated-2` (2).
 
 `interactionColor` is shaped like a color theme's swatch and does two jobs:

@@ -112,6 +112,11 @@ full-strength neutral tint, so in dark mode it gives a light row with near-white
 
 ## Pitfalls
 
+- A surface theme may have `elevation: -1` (a literal unary minus); the generator fails on a theme it cannot
+  parse. Filled form fields, table card rows and grid items resolve `parent.elevation + 1`; toasts and
+  `@ethlete/cdk` overlays with a backdrop always resolve elevation 1 (without a backdrop, `parent + 1`), and the
+  overlay scope class goes from `et-surface--inherited` to `et-surface--<theme>`. `@ethlete/cdk` CSS reads no
+  `--et-surface-*` token, so `etProvideSurface` on a cdk host does nothing.
 - `@property` `initial-value` cannot contain `var()`, so a public `--et-*`
   token declared via `@property` can never default to a theme token. If the
   default should come from the theme, don't declare an `@property` - consume the

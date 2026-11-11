@@ -94,7 +94,7 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
     logger.error(`   ${error instanceof Error ? error.message : String(error)}`);
     logger.log('\nThe surface themes file must export themes as:');
     logger.log('  export const SURFACE_THEMES = [...] satisfies SurfaceTheme[];\n');
-    return;
+    throw error;
   }
 
   // Apply the generation-time default overrides, if any. The shared theme definitions may
@@ -239,8 +239,9 @@ function extractSurfaceThemesFromContent(content: string, filePath: string): Sur
       const theme = parseSurfaceThemeObject(themeObj, sourceFile);
       themes.push(theme);
     } catch (error) {
-      logger.warn(
-        `⚠️  Failed to parse surface theme ${name}: ${error instanceof Error ? error.message : String(error)}`,
+      throw new Error(
+        `Failed to parse surface theme ${name}: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
       );
     }
   }
@@ -405,6 +406,12 @@ function parseSurfaceThemeObject(obj: ObjectLiteralExpression, sourceFile: Sourc
     if (propName === 'elevation') {
       if (initializer.isKind(SyntaxKind.NumericLiteral)) {
         theme.elevation = Number(initializer.getLiteralValue());
+      } else if (
+        initializer.isKind(SyntaxKind.PrefixUnaryExpression) &&
+        initializer.getOperatorToken() === SyntaxKind.MinusToken &&
+        initializer.getOperand().isKind(SyntaxKind.NumericLiteral)
+      ) {
+        theme.elevation = -Number(initializer.getOperand().getText());
       }
       continue;
     }

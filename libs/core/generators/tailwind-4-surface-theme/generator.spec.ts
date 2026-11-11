@@ -315,9 +315,10 @@ describe('tailwind-4-surface-theme generator', () => {
     it('points at the migration when a theme still uses the flat map', async () => {
       tree.write('src/surface-themes.ts', withInteractionColor(COLOR_MAP));
 
-      await migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
+      await expect(
+        migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true }),
+      ).rejects.toThrow(/migrate-surface-interaction-swatch/u);
 
-      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('migrate-surface-interaction-swatch'));
       expect(tree.exists('src/styles/tw.css')).toBe(false);
     });
 
@@ -364,7 +365,7 @@ describe('tailwind-4-surface-theme generator', () => {
       expect(content).toContain('--color-et-surface-sheet-interaction-hover: rgb(64 64 64);');
     });
 
-    it('should skip a theme whose swatch cannot be resolved and keep the others', async () => {
+    it('should fail the generator when a theme swatch cannot be resolved', async () => {
       tree.write(
         'src/surface-themes.ts',
         `
@@ -397,14 +398,62 @@ describe('tailwind-4-surface-theme generator', () => {
       `,
       );
 
-      await migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
+      await expect(
+        migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true }),
+      ).rejects.toThrow(/BROKEN.*cannot be resolved/u);
 
-      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('cannot be resolved'));
-
-      const content = tree.read('src/styles/tw.css', 'utf-8');
-      expect(content).toContain('--color-et-surface-card-bg: rgb(255 255 255);');
-      expect(content).not.toContain('broken');
+      expect(tree.exists('src/styles/tw.css')).toBe(false);
     });
+  });
+
+  it('should read a negative elevation written as a unary minus', async () => {
+    tree.write(
+      'src/surface-themes.ts',
+      `
+      export const BASE = {
+        name: 'base',
+        type: 'light',
+        elevation: -1,
+        isDefault: true,
+        background: '250 250 250',
+        color: '0 0 0',
+        colorMuted: '100 100 100',
+        colorSubtle: '200 200 200',
+        border: '220 220 220',
+      } as const;
+
+      export const SURFACE_THEMES = [BASE] satisfies SurfaceTheme[];
+    `,
+    );
+
+    await migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
+
+    expect(tree.read('src/styles/tw.css', 'utf-8')).toContain('--color-et-surface-base-bg: rgb(250 250 250);');
+  });
+
+  it('should fail the generator when a theme cannot be parsed', async () => {
+    tree.write(
+      'src/surface-themes.ts',
+      `
+      export const BROKEN = {
+        name: 'broken',
+        type: 'light',
+        elevation: 1 + 1,
+        isDefault: true,
+        background: '250 250 250',
+        color: '0 0 0',
+        colorMuted: '100 100 100',
+        colorSubtle: '200 200 200',
+        border: '220 220 220',
+      } as const;
+
+      export const SURFACE_THEMES = [BROKEN] satisfies SurfaceTheme[];
+    `,
+    );
+
+    await expect(
+      migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true }),
+    ).rejects.toThrow(/BROKEN/u);
   });
 
   it('should read themes written as inline literals in the SURFACE_THEMES array', async () => {
