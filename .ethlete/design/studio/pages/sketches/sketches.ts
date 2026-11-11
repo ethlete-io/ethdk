@@ -675,23 +675,24 @@ export default definePart<Props>({
         ${showWithdrawn.body ? withAction(showWithdrawn.body, { action: 'emit:withdrawnToggle', on: '.et-switch' }) : ''}
       </div>
       <div
-        class="absolute ${question ? 'top-37' : 'top-27'} right-space-5 bottom-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] overflow-clip [overflow-clip-margin:4px]"
-        data-sk-rows
+        class="absolute ${question ? 'top-37' : 'top-27'} right-0 bottom-space-5 left-0 box-border overflow-clip pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
       >
-        <div
-          class="flex flex-col gap-space-2 pb-16 ${transposed ? 'w-max' : ''}"
-          data-sk-rows-world
-          data-w="${screen ? SCREEN_WIDTH : part.width}"
-          data-cols="${screen ? SCREEN_ROWS.length : transposed ? columns : wrapColumns(part)}"
-        >
-          ${world}
-          ${
-            folded > 0
-              ? html`<section class="sk-same rounded-control-md p-space-2" data-sk-folded>
-                  ${html`<span class="flex items-center gap-space-3"><span class="text-ui-sm text-et-surface-muted">${foldedLabel(folded)}</span>${disclosure({ label: 'Alle Zustände zeigen', body: '', open: false, size: 'xs', action: 'emit:statesToggle' })}</span>`}
-                </section>`
-              : ''
-          }
+        <div class="size-full" data-sk-rows>
+          <div
+            class="flex flex-col gap-space-2 pb-16 ${transposed ? 'w-max' : ''}"
+            data-sk-rows-world
+            data-w="${screen ? SCREEN_WIDTH : part.width}"
+            data-cols="${screen ? SCREEN_ROWS.length : transposed ? columns : wrapColumns(part)}"
+          >
+            ${world}
+            ${
+              folded > 0
+                ? html`<section class="sk-same rounded-control-md p-space-2" data-sk-folded>
+                    ${html`<span class="flex items-center gap-space-3"><span class="text-ui-sm text-et-surface-muted">${foldedLabel(folded)}</span>${disclosure({ label: 'Alle Zustände zeigen', body: '', open: false, size: 'xs', action: 'emit:statesToggle' })}</span>`}
+                  </section>`
+                : ''
+            }
+          </div>
         </div>
       </div>
       ${chip.body}

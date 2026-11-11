@@ -3846,6 +3846,17 @@ the canvas viewport ancestors has left <= panel left and right = window right; (
 fails a pan viewport whose nearest clipping ancestor starts right of the floating panel's left edge; a CLIPPED skip does
 not silence it. Bite: both fail on next now. Fix: design `sketches.ts:678` as a visible direct edit (228 and ADR 0209;
 the grid view is the model) plus the app lines, by the Linux builder after B249; the Mac holds those lines until then.
+As built (Linux builder): design `sketches.ts` and app `sketches.component.html` clip at the stage
+edge (`left-0 right-0`) and pad by the panel inset; e2e case "the canvas runs under the open panel" (sketch and grid
+views); render rule CANVAS-UNDER-PANEL in `render-check.ts` (a viewport is the element that sets `cursor: grab` or has a
+panned child; the panel ends where the clip starts; the clip box fills 3/4 of the room right of the panel); LOST-SURFACE
+looks through pan content under a floating card (`surface-nesting.ts`; the fix made 2 hits on `aside.st-shell-side`, as
+a title-bar sample cell now sits under the panel's centre). Bite: e2e and spec fail on HEAD; HEAD `sketches.ts` gives 35
+CANVAS-UNDER-PANEL; each guard's spec fixture fails without it. Verified: `design check` pages/sketches has only the HEAD
+DROPPED-PROP 4 and OFF-CENTRE 37; e2e 4/4, also with `--hold-listings 14000`; sweep over studio, sdk, studio-lab and 8
+studio-lab variants has 0 hits (the first version had 49 false hits); cli specs and both typechecks pass; design shot of
+pages/sketches desktop. Not verified: the running app, and `components/button@off-centre` in the sketch view (the shot
+route draws designs, not the app).
 
 868\. Linux builder (2026-11-11, B249 slice 2 live verify, 35c0441ba, `.claude/handoffs/agent-results/b249-live.md`):
 checks 1, 2, 3, 5, 4a ok with shots; 4b failed, 4c not run. D1: a visible edit of merged components/zoom-chip opened

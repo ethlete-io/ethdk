@@ -548,10 +548,12 @@ describe('renderIssuesOf', () => {
     ]);
   }, 120_000);
 
-  it('does not flag a card that hides the dot pattern of the surface around it as a lost surface', async (context) => {
+  it('does not flag a card that hides the dot pattern of the surface around it, also over panning content, as a lost surface', async (context) => {
     const card = `<div class="card" style="width: 200px; background: rgb(30 30 30); border: 1px solid rgb(90 90 90); padding: 8px"><p style="margin: 0">Shot</p></div>`;
     const dots =
       'background-color: rgb(30 30 30); background-image: radial-gradient(rgb(90 90 90) 1px, transparent 1px); background-size: 8px 8px';
+    const overContent = (pan: string) =>
+      `<div style="position: relative; width: 300px; height: 160px; background: rgb(30 30 30)"><main style="position: absolute; inset: 0; overflow: clip; ${pan}; ${dots}"><div style="width: 280px; height: 140px; background: rgb(30 30 30)"></div></main><aside style="position: absolute; top: 12px; left: 12px">${card}</aside></div>`;
     const target = checkout({
       'components/on-dots': {
         body: `<div style="width: 300px; padding: 12px; ${dots}"><h2 style="margin: 0">Titel</h2>${card}</div>`,
@@ -561,6 +563,12 @@ describe('renderIssuesOf', () => {
       },
       'components/over-dotted-sibling': {
         body: `<div style="position: relative; width: 300px; height: 120px; background: rgb(30 30 30)"><main style="position: absolute; inset: 0; ${dots}"></main><aside style="position: absolute; top: 12px; left: 12px">${card}</aside></div>`,
+      },
+      'components/over-panned-content': {
+        body: overContent('cursor: grab'),
+      },
+      'components/over-static-content': {
+        body: overContent(''),
       },
     });
     const config = readConfig(target) ?? {};
@@ -574,6 +582,7 @@ describe('renderIssuesOf', () => {
 
     expect(rendered.issues.filter((issue) => issue.rule === 'LOST-SURFACE').map((issue) => issue.part)).toEqual([
       'components/on-plain',
+      'components/over-static-content',
     ]);
   }, 120_000);
 
@@ -701,6 +710,64 @@ describe('renderIssuesOf', () => {
       'CUT-CONTROL components/pan-cut: div[data-et-part=components/pan-cut] > div > button - 60px of its width is cut by div[data-et-part=components/pan-cut], so the control is only partly reachable',
       'SKIP-SCOPE components/pan-cut: div[data-et-part=components/pan-cut] - data-et-skip=CLIPPED on div[data-et-part=components/pan-cut] covers interactive controls - put the skip on the clipped element itself',
     ]);
+  }, 120_000);
+
+  it('flags a pan viewport clipped right of a floating panel, also under a CLIPPED skip', async (context) => {
+    const page = (clip: string, world = 'transform: translate(-40px, 0px)') =>
+      `<div style="position: relative; width: 400px; height: 200px"><aside style="position: absolute; top: 8px; bottom: 8px; left: 8px; width: 140px">Panel</aside><div ${clip}><div style="width: 480px; ${world}">World</div></div></div>`;
+    const target = checkout({
+      'components/beside-panel': { body: page('style="position: absolute; inset: 0 0 0 168px; overflow: clip"') },
+      'components/beside-panel-skipped': {
+        body: page('data-et-skip="CLIPPED" style="position: absolute; inset: 0 0 0 168px; overflow: clip"'),
+      },
+      'components/under-panel': {
+        body: page('style="position: absolute; inset: 0; padding-left: 168px; overflow: clip"'),
+      },
+      'components/under-panel-wrapped': {
+        body: page(
+          'style="position: absolute; inset: 0; padding-left: 168px; overflow: clip"><div style="cursor: grab; height: 100%"',
+        ).replace('World</div></div>', 'World</div></div></div>'),
+      },
+      'components/beside-panel-still': {
+        body: page('style="position: absolute; inset: 0 0 0 168px; overflow: clip"', ''),
+      },
+      'components/beside-overlay': {
+        body: page('style="position: absolute; inset: 0 0 0 168px; overflow: clip"').replace(
+          'left: 8px; width: 140px',
+          'left: 8px; right: 8px',
+        ),
+      },
+      'components/inside-draggable': {
+        body: `<div style="cursor: grab">${page('style="position: absolute; inset: 0 0 0 168px; overflow: clip"', '')}</div>`,
+      },
+      'components/thumbnail-beside-panel': {
+        body: page('style="position: absolute; top: 8px; left: 168px; width: 120px; height: 184px; overflow: clip"'),
+      },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(
+      rendered.issues
+        .filter(
+          (issue) =>
+            issue.rule === 'CANVAS-UNDER-PANEL' ||
+            (issue.rule === 'CLIPPED' && issue.part === 'components/under-panel-wrapped'),
+        )
+        .map((issue) => `${issue.part}: ${issue.path} - ${issue.detail}`)
+        .sort(),
+    ).toEqual(
+      ['components/beside-panel-skipped', 'components/beside-panel'].map(
+        (part) =>
+          `${part}: div[data-et-part=${part}] > div - clips the pan viewport div[data-et-part=${part}] > div from x=184, right of the floating panel div[data-et-part=${part}] > aside at x=24, so the canvas stops at the panel instead of running under it - clip at the edge of the panel's container and pad the content by the panel width`,
+      ),
+    );
   }, 120_000);
 
   it('does not flag a ring cut at the edge of a pan or scroll container, but one cut by a box its content fits', async (context) => {

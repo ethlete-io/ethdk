@@ -305,6 +305,60 @@ const probe = (page) =>
 
 const settle = (page) => page.waitForTimeout(SETTLE_MS);
 
+const underPanel = (page) =>
+  page.evaluate(
+    ({ CANVAS, FRAME }) => {
+      const panel = document.querySelector('main ~ aside')?.getBoundingClientRect();
+      const canvas = [...document.querySelectorAll(CANVAS)]
+        .map((element) => ({ element, box: element.getBoundingClientRect() }))
+        .sort((a, b) => b.box.width * b.box.height - a.box.width * a.box.height)[0]?.element;
+
+      if (!panel || !canvas) return null;
+
+      const clip = { left: 0, right: innerWidth, top: 0, bottom: innerHeight };
+
+      for (let at = canvas; at instanceof HTMLElement; at = at.parentElement) {
+        const style = getComputedStyle(at);
+        const rect = at.getBoundingClientRect();
+
+        if (style.overflowX !== 'visible') {
+          clip.left = Math.max(clip.left, rect.left + at.clientLeft);
+          clip.right = Math.min(clip.right, rect.left + at.clientLeft + at.clientWidth);
+        }
+        if (style.overflowY !== 'visible') {
+          clip.top = Math.max(clip.top, rect.top + at.clientTop);
+          clip.bottom = Math.min(clip.bottom, rect.top + at.clientTop + at.clientHeight);
+        }
+      }
+
+      const x = panel.right + 2;
+      const straddling = [...canvas.querySelectorAll(FRAME)]
+        .map((frame) => ({ frame, rect: frame.getBoundingClientRect() }))
+        .filter(
+          ({ rect }) =>
+            rect.left < x - 4 && rect.right > x + 4 && rect.bottom > clip.top + 24 && rect.top < clip.bottom - 24,
+        )
+        .map(({ frame, rect }) => {
+          const y = Math.round(Math.min(Math.max((rect.top + rect.bottom) / 2, clip.top + 24), clip.bottom - 24));
+          const hit = document.elementFromPoint(x, y);
+
+          return {
+            y,
+            hit: hit?.closest(FRAME) === frame,
+            by: hit ? hit.localName + (hit.className ? '.' + String(hit.className).split(' ')[0] : '') : 'nothing',
+          };
+        })[0];
+
+      return {
+        clip: Object.fromEntries(Object.entries(clip).map(([edge, value]) => [edge, Math.round(value)])),
+        panel: { left: Math.round(panel.left), right: Math.round(panel.right) },
+        window: innerWidth,
+        straddling: straddling ?? null,
+      };
+    },
+    { CANVAS, FRAME },
+  );
+
 const stillInFit = async (page, after) =>
   (await page.locator('[data-sk-rows][data-sk-fit]').count())
     ? {
@@ -2402,6 +2456,46 @@ const CASES = [
       return {
         ok: faults.length === 0,
         detail: faults.join('; ') || `${shown.length} columns inside, head gap ${gap} px`,
+      };
+    },
+  },
+  {
+    name: 'the canvas runs under the open panel, clipped only at the window edge',
+    pages: ['System', 'Sketches'],
+    run: async (page, state) => {
+      if (!state.empty) return { ok: false, detail: 'no empty point' };
+      const first = await underPanel(page);
+
+      if (!first) return { ok: false, detail: 'no open panel' };
+      await page.mouse.click(state.empty.x, state.empty.y);
+      let after = first;
+
+      for (let press = 0; press < 30 && !after.straddling; press++) {
+        await page.keyboard.press('ArrowRight');
+        await page.waitForTimeout(120);
+        after = await underPanel(page);
+      }
+      await settle(page);
+      after = await underPanel(page);
+
+      const { clip, panel, window: right, straddling } = after;
+      const faults = [
+        ...(clip.left <= panel.left + 1
+          ? []
+          : [`the canvas clip starts at ${clip.left}, right of the panel at ${panel.left}`]),
+        ...(Math.abs(clip.right - right) <= 1
+          ? []
+          : [`the canvas clip ends at ${clip.right}, not the window edge ${right}`]),
+        ...(straddling
+          ? straddling.hit
+            ? []
+            : [`at ${panel.right + 2},${straddling.y} the frame across the panel edge is hidden by ${straddling.by}`]
+          : ['no frame reached the panel edge']),
+      ];
+
+      return {
+        ok: faults.length === 0,
+        detail: faults.join('; ') || `clip ${clip.left}..${clip.right}, panel ${panel.left}..${panel.right}`,
       };
     },
   },

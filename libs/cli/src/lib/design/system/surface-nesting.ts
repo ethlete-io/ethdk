@@ -12,9 +12,10 @@ const OPAQUE = 0.95;
 
 /**
  * The statements of the surface checks inside the frame script of `render-check`. They use `root` and `report` of
- * that script. A card is a box with a fill and a border or shadow; its surface is the nearest ancestor with an opaque
+ * that script, and `pansItself` of its clip checks. A card is a box with a fill and a border or shadow; its surface is the nearest ancestor with an opaque
  * fill, or the page canvas. A card over a patterned backdrop (a `background-image` between it and its surface, or on a
- * sibling painted under its centre) hides the pattern, so its fill is a surface of its own.
+ * sibling painted under its centre) hides the pattern, so its fill is a surface of its own. Content of a pan viewport
+ * under a floating card moves past it, so the backdrop search looks through that content.
  */
 export const SURFACE_STATEMENTS = `
   {
@@ -41,11 +42,15 @@ export const SURFACE_STATEMENTS = `
       }
       return { pane: null, fill: 'rgb(255, 255, 255)', patterned };
     };
+    const pansUnder = (element) => {
+      for (let at = element.parentElement; at && at !== root; at = at.parentElement) if (pansItself(at, getComputedStyle(at))) return true;
+      return false;
+    };
     const patternedBackdrop = (card, rect) => {
       const below = document.elementsFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
       if (!below.includes(card)) return false;
       for (const at of below.slice(below.indexOf(card) + 1)) {
-        if (at.contains(card)) continue;
+        if (at.contains(card) || pansUnder(at)) continue;
         const style = getComputedStyle(at);
         if (style.backgroundImage !== 'none') return true;
         if (opaque(style.backgroundColor)) return false;
