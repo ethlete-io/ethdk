@@ -43,6 +43,7 @@
     "lint:studio-adrs": "node ./tools/scripts/check-studio-adrs.mjs",
     "lint:studio-label-specs": "node ./tools/scripts/studio-label-specs.mjs",
     "prepare:release": "node ./tools/scripts/prepare-release.js",
+    "push": "node ./tools/scripts/push-next.mjs",
     "push:slice": "node ./tools/scripts/push-slice.mjs",
     "push:slot": "node ./tools/scripts/push-slot.mjs",
     "push:suite": "node ./tools/scripts/push-suite.mjs",
