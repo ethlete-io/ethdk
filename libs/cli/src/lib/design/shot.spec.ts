@@ -355,6 +355,24 @@ describe('createPartShooter', () => {
     expect(new URL(drawnUrls()[1] ?? '').search).toBe('?product=acme&part=components%2Fcard&state=long&fit=&bare=');
   });
 
+  it('names a picture drawn now apart from one kept in memory or bypassing the cache', async () => {
+    const { shots } = acme();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams(),
+    };
+
+    expect((await shots.pictureOf(address)).source).toBe('drawn');
+    expect((await shots.pictureOf(address)).source).toBe('memory');
+    expect((await shots.pictureOf({ ...address, fresh: true })).source).toBe('drawn');
+  });
+
   it('draws over the compare checkerboard, without omitting the background, as a picture of its own', async () => {
     const { shots } = acme();
     const address = {
@@ -1005,8 +1023,8 @@ describe('createPartShooter pictures', () => {
         params: new URLSearchParams(),
       });
 
-    expect(await ask(null)).toEqual({ png: Buffer.from('png'), marks, markup: '<p>card</p>' });
-    expect(await ask('phone')).toEqual({ png: Buffer.from('png'), marks, markup: '<p>card</p>' });
+    expect(await ask(null)).toEqual({ png: Buffer.from('png'), marks, markup: '<p>card</p>', source: 'drawn' });
+    expect(await ask('phone')).toEqual({ png: Buffer.from('png'), marks, markup: '<p>card</p>', source: 'drawn' });
     expect(evaluate.mock.calls.map(([script]) => script).filter((script) => script.includes('data-et-part'))).toEqual([
       expect.stringContaining('true ?'),
       expect.stringContaining('false ?'),

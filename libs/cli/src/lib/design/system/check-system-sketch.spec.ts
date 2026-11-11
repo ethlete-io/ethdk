@@ -52,7 +52,7 @@ describe('own design server', () => {
       await server.close();
       await new Promise((closed) => blocker.close(closed));
     }
-  }, 60_000);
+  });
 });
 
 describe('checkDesign', () => {
@@ -76,7 +76,7 @@ describe('checkDesign', () => {
       ...renderWarningsOf(lines),
     ]);
     expect(lines).toContain('ok');
-  }, 60_000);
+  });
 
   it('warns once per product of decision files that differ from HEAD or are untracked, and passes', async () => {
     const target = acme();
@@ -104,7 +104,7 @@ describe('checkDesign', () => {
       'WARNING UNCOMMITTED-DECISIONS acme: merged.json, sketches/hero/sketch.json differ from HEAD - Studio or Tom ' +
         'commits them',
     ]);
-  }, 60_000);
+  });
 
   it('checks only the part named as a positional, as --part does', async () => {
     const target = acme();
@@ -124,7 +124,7 @@ describe('checkDesign', () => {
     expect(flagged.lines).toContain('HARD-CODED-COLOUR 0');
     expect(await run(['components/button', '--product', 'acme'])).toEqual(flagged);
     expect(await run(['components/button'])).toEqual(await run(['--part', 'components/button']));
-  }, 60_000);
+  });
 
   it('rejects a positional part it cannot honour with a hint to --part', async () => {
     const target = acme();
@@ -144,7 +144,7 @@ describe('checkDesign', () => {
       expect.stringContaining('--part hero'),
       expect.stringContaining('--part elements/hero'),
     ]);
-  }, 60_000);
+  });
 
   it('reports and lists only the part a positional names', async () => {
     const target = acme();
@@ -156,7 +156,7 @@ describe('checkDesign', () => {
 
     expect(lines.filter((line) => line.includes('elements/hero'))).toEqual([]);
     expect(lines.at(-1)).toMatch(/^check complete: 1 part, /);
-  }, 60_000);
+  });
 
   it('rejects an argument the check does not read', async () => {
     const target = acme();
@@ -178,7 +178,7 @@ describe('checkDesign', () => {
       'check does not read --prodcut - see et design check --help',
       'check does not read --part with --live - see et design check --help',
     ]);
-  }, 60_000);
+  });
 
   it("warns of an export in a part's shared/ that nothing imports, and passes", async () => {
     const target = acme();
@@ -197,7 +197,7 @@ describe('checkDesign', () => {
       ...renderWarningsOf(lines),
     ]);
     expect(lines).toContain('ok');
-  }, 60_000);
+  });
 
   it('fails on a type error in a variant of an open sketch', async () => {
     const target = acme();
@@ -216,7 +216,7 @@ describe('checkDesign', () => {
     expect(withoutBrowserLines(lines)).toEqual([
       expect.stringMatching(/^TYPE-ERROR .*sketches\/elements-hero\/b: \n[^]*TS2322/),
     ]);
-  }, 60_000);
+  });
 
   it('fails when an old variant imports a name its sketch shared folder no longer exports', async () => {
     const target = acme();
@@ -243,7 +243,7 @@ describe('checkDesign', () => {
     expect(withoutBrowserLines(lines)).toEqual([
       expect.stringMatching(/^TYPE-ERROR .*sketches\/elements-hero\/old: \n[^]*emptyCanvas/),
     ]);
-  }, 60_000);
+  });
 
   it('fails while a part an open sketch replaces changed since the sketch, until the sketch is rebased', async () => {
     const target = acme();
@@ -265,7 +265,7 @@ describe('checkDesign', () => {
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'yarn design' })).toBe(0);
     expect(lines).toContain('SKETCH-BASE-STALE 0');
-  }, 60_000);
+  });
 
   it('reports a stale base on a picked sketch and skips a discarded one', async () => {
     const target = acme();
@@ -295,7 +295,7 @@ describe('checkDesign', () => {
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'yarn design' })).toBe(0);
     expect(lines).toContain('SKETCH-BASE-STALE 0');
-  }, 60_000);
+  });
 
   it('checks one product with --product', async () => {
     const lines = output();
@@ -306,5 +306,5 @@ describe('checkDesign', () => {
         (line) => !/^RENDER CHECK (SKIPPED|FAILED)/.test(line) && !line.startsWith('HINT '),
       ),
     ).toEqual(['ok']);
-  }, 60_000);
+  });
 });

@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B438
+built: 789031753
 decided: 2026-11-09
 source: doc-agent session 2026-11-09, morning round after the night of ADR 0228
 ---

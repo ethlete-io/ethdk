@@ -1,8 +1,9 @@
-import { existsSync, readFileSync, statSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import ts from 'typescript';
 import { sourceFileOf as moduleFileOf } from '../vite-paths';
 import { fileHashesOf, FileHashes } from './design-hash';
+import { readsCacheOf } from './tracked-reads';
 import { exportedNamesOf, importedNamesOf, sourceFileOf, textsOf } from './ts-source';
 
 type Paths = Record<string, string[]>;
@@ -92,16 +93,6 @@ const exportSummaryOf = (file: string, source: string): ExportSummary => {
 
   return summary;
 };
-
-const stampOf = (file: string) => {
-  try {
-    return statSync(file).mtimeMs;
-  } catch {
-    return -1;
-  }
-};
-
-const reached = new Map<string, { stamps: [string, number][]; hashes: FileHashes }>();
 
 const reachedFilesOf = (options: { root: string; component: string }) => {
   const { root } = options;
@@ -195,16 +186,8 @@ const reachedFilesOf = (options: { root: string; component: string }) => {
  * for an import through a `tsconfig.base.json` path (an `@ethlete/<lib>` entry point) or a barrel, only the files that
  * declare the imported names, not the whole barrel. Each reached file adds its own imports the same way.
  */
-export const appFilesOf = (options: { root: string; component: string }): FileHashes => {
-  const key = `${options.root}\0${options.component}`;
-  const known = reached.get(key);
-
-  if (known && known.stamps.every(([file, stamp]) => stampOf(file) === stamp)) return known.hashes;
-
-  const files = reachedFilesOf(options);
-  const hashes = fileHashesOf(options.root, files);
-
-  reached.set(key, { stamps: files.map((file) => [file, stampOf(file)]), hashes });
-
-  return hashes;
-};
+export const appFilesOf = readsCacheOf({
+  slotOf: (options: { root: string; component: string }) => `${options.root}\0${options.component}`,
+  run: (options: { root: string; component: string }): FileHashes =>
+    fileHashesOf(options.root, reachedFilesOf(options)),
+});

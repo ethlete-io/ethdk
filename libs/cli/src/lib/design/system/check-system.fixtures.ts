@@ -5,6 +5,10 @@ import { expect, vi } from 'vitest';
 import { readConfig } from '../design-config';
 import { checkSystem } from './check-system';
 
+export const HEAVY_DESIGN_SPEC_TIMEOUT_MS = 60_000;
+
+vi.setConfig({ testTimeout: HEAVY_DESIGN_SPEC_TIMEOUT_MS });
+
 export const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-system-'));
 

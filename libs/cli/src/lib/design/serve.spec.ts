@@ -1143,28 +1143,113 @@ describe('the design server for sketches and comments', () => {
     expect(loaded).toHaveLength(started);
   });
 
-  it('starts a new listing for a client that asks after a sketch file changed instead of joining the running one', async () => {
+  type WatcherCase = {
+    name: string;
+    event: 'add' | 'change' | 'unlink';
+    act: (context: { target: string; modulesByFile: Map<string, { id: string; importers: Set<never> }[]> }) => {
+      file: string;
+      states?: string[];
+    };
+    after: string[];
+  };
+
+  const cardDir = (target: string) => join(target, DESIGN_DIR, 'acme/sketches/components-card');
+
+  it.each<WatcherCase>([
+    {
+      name: 'a sketch file added',
+      event: 'add',
+      act: ({ target }) => {
+        const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+        const parsed = parseTarget('elements/hero');
+        const created =
+          typeof parsed === 'string' ? parsed : createSketch({ product, sketch: parsed, variants: ['a'] });
+
+        if (typeof created === 'string') throw new Error(created);
+
+        markSketchReady({ checkout: target, sketch: created });
+
+        return { file: join(target, DESIGN_DIR, 'acme/sketches/elements-hero/sketch.json') };
+      },
+      after: ['components/card  one', 'elements/hero  one'],
+    },
+    {
+      name: 'a sketch file changed',
+      event: 'change',
+      act: ({ target }) => {
+        const file = join(cardDir(target), 'sketch.json');
+        const sketch = JSON.parse(readFileSync(file, 'utf8')) as { rounds?: { title: string }[] };
+
+        writeFileSync(
+          file,
+          JSON.stringify({ ...sketch, rounds: sketch.rounds?.map((round) => ({ ...round, title: 'edited' })) }),
+        );
+
+        return { file };
+      },
+      after: ['components/card edited one'],
+    },
+    {
+      name: 'a sketch file deleted',
+      event: 'unlink',
+      act: ({ target }) => {
+        rmSync(cardDir(target), { recursive: true });
+
+        return { file: join(cardDir(target), 'sketch.json') };
+      },
+      after: [],
+    },
+    {
+      name: 'a part file changed',
+      event: 'change',
+      act: ({ target, modulesByFile }) => {
+        const file = join(target, DESIGN_DIR, 'acme/components/button/button.ts');
+
+        modulesByFile.set(file, [{ id: `${file}?design-product=acme`, importers: new Set() }]);
+
+        return { file, states: ['one', 'two'] };
+      },
+      after: ['components/card  one,two'],
+    },
+  ])('starts a new listing after $name instead of joining the running one', async ({ event, act, after }) => {
     const target = acme();
-    const sketchDir = join(target, DESIGN_DIR, 'acme/sketches/components-card');
 
     readySketch(target);
 
-    const { moduleOf, release } = gatedSketchModules();
-    const { ask, loaded, watchers } = await serveAcme(target, moduleOf);
-    const targetsOf = (answered: { body: unknown }) =>
-      (answered.body as { sketches: { target: string }[] }).sketches.map((sketch) => sketch.target);
+    let states = ['one'];
+    let release = () => undefined as void;
+    const gate = new Promise<void>((done) => (release = done));
+    const moduleOf = (id: string) => {
+      if (!id.includes('design-sketch')) return undefined;
+
+      const drawn = Object.fromEntries(states.map((state) => [state, {}]));
+
+      return gate.then(() => ({ default: { note: 'n', states: drawn } }));
+    };
+    const { ask, loaded, watchers, modulesByFile } = await serveAcme(target, moduleOf);
+    const listed = (answered: { body: unknown }) =>
+      (
+        answered.body as {
+          sketches: { target: string; rounds: { title: string }[]; targets?: { states: string[] }[] }[];
+        }
+      ).sketches.map(
+        (sketch) => `${sketch.target} ${sketch.rounds[0]?.title ?? ''} ${sketch.targets?.[0]?.states.join(',') ?? ''}`,
+      );
     const before = ask('/__design/sketches', '?product=acme');
 
     await vi.waitFor(() => expect(loaded.some((id) => id.includes('design-sketch'))).toBe(true));
-    rmSync(sketchDir, { recursive: true });
-    watchers.get('unlink')?.(join(sketchDir, 'sketch.json'));
 
-    const after = ask('/__design/sketches', '?product=acme');
+    const acted = act({ target, modulesByFile });
+
+    states = acted.states ?? states;
+    watchers.get(event)?.(acted.file);
+
+    const later = ask('/__design/sketches', '?product=acme');
 
     release();
 
-    expect(targetsOf(await before)).toEqual(['components/card']);
-    expect(targetsOf(await after)).toEqual([]);
+    expect(listed(await before)).toEqual(['components/card  one']);
+    expect(listed(await later)).toEqual(after);
   });
 
   it('registers the parts of each sketch variant, resolved through that variant', async () => {

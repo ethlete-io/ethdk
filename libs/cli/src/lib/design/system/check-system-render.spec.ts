@@ -19,7 +19,7 @@ describe('checkDesign', () => {
 
     expect(await checkDesign({ target, argv: [], invocation: 'et design' })).toBe(1);
     expect(withoutBrowserLines(lines)).toEqual([expect.stringMatching(/^HARD-CODED-COLOUR .*hero\.css: #fff/)]);
-  }, 60_000);
+  });
 
   it('runs the render check past a static failure and reports both', async (context) => {
     const target = acme();
@@ -151,5 +151,5 @@ describe('checkDesign', () => {
       expect.stringMatching(/^HARD-CODED-COLOUR .*acme-base\/components\/button\/button\.css: #000/),
       expect.stringMatching(/^HARD-CODED-COLOUR .*acme-base\/components\/card\/card\.css: #000/),
     ]);
-  }, 60_000);
+  });
 });

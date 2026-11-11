@@ -108,13 +108,51 @@ export const trackedRun = <T>(run: () => T): { value: T; inputs: PrintedInput[] 
   // The recorders stay installed once a run needs them: a loader such as jiti keeps the `fs` function a module first
   // called, so a recorder put back after one run would record nothing in the next.
   installRecorders();
-  recording = (input) => seen.set(JSON.stringify(input), input);
+
+  const outer = recording;
+
+  recording = (input) => {
+    seen.set(JSON.stringify(input), input);
+    outer?.(input);
+  };
 
   try {
     const value = run();
 
     return { value, inputs: [...seen.values()].map((input) => ({ input, print: printOf(input) })) };
   } finally {
-    recording = null;
+    recording = outer;
   }
+};
+
+/** The stat inputs of the files another process read, each also recorded by every tracked run around the call. */
+export const readInputsOf = (paths: Iterable<string>): PrintedInput[] =>
+  [...new Set([...paths].map((path) => resolve(path)))].map((path) => {
+    const input: TrackedInput = { kind: 'stat', path };
+
+    recording?.(input);
+
+    return { input, print: printOf(input) };
+  });
+
+/**
+ * Wraps a synchronous `run` so a call reuses the value of the last call with the same slot while every file and
+ * folder listing that call read still prints the same; a throwing call keeps nothing. The slot names the request, never
+ * the files: what was read decides freshness.
+ */
+export const readsCacheOf = <TArgs, T>(options: { slotOf: (args: TArgs) => string; run: (args: TArgs) => T }) => {
+  const entries = new Map<string, { inputs: PrintedInput[]; value: T }>();
+
+  return (args: TArgs): T => {
+    const slot = options.slotOf(args);
+    const held = entries.get(slot);
+
+    if (held && inputsUnchanged(held.inputs)) return held.value;
+
+    const { value, inputs } = trackedRun(() => options.run(args));
+
+    entries.set(slot, { inputs, value });
+
+    return value;
+  };
 };

@@ -2207,6 +2207,11 @@ part change but not on a sketch file change, so a request after the merge could 
 The specs covered the join in studio-api but not the serve trigger on a sketch file change. Tool fix: a serve spec that
 runs every watcher event kind against a gated listing and asserts a fresh answer.
 
+As built (620): `serve.spec.ts` replaces the one unlink case with a table: a sketch file added, changed and deleted, and a
+part file changed, each fired while a listing is held, and the next request must see the files after the event. Bite:
+without `detachRunningListings()` in `signalLists` the three sketch cases fail and the part case passes; without it in
+`redraw` only the part case fails. No serve.ts change. Not verified: a real chokidar watcher or a real Vite server.
+
 626\. Builder (2026-11-09, B457, b1af8f143): the full `design check` of B456 wrote build-ready records with the absolute
 home path in `cmd` into `.ethlete/design/*/ready.json`, and `yarn lint:person-names` refused them. Cause: `originOf` in
 `libs/cli/src/lib/design/system/write-origin.ts` wrote `process.argv` as it was, and the resident starts as
@@ -2331,6 +2336,20 @@ gave stale answers; the bug existed before the cache. Why no tool caught it: eac
 hand, and nothing checks that the key covers every input the store reads. Tool fix (backlog): every design CLI cache
 takes its key from the shared fingerprint of the files the run read, never a hand-built key; a spec per store changes
 each input once and expects a fresh answer.
+
+As built (649): `readsCacheOf` in `system/tracked-reads.ts` is the shared store: the slot names the request, and an
+entry lives while every file and folder listing the run read still prints the same (`trackedRun` now nests, so an inner
+cached run no longer ends the outer run's recording). Moved onto it: the Tailwind facts store (`classFactsOf`: its
+Tailwind child process reports the files it read, so a theme in a package counts), the SDK declarations store
+(`sdkDeclarationsIn`, was mtime), the app files store (`appFilesOf`, was mtimes of reached files only, so a missing
+template or a `tsconfig.base.json` change was stale) and `cachedCheckOf`. A spec per store changes each input once;
+bite with the old keys: package theme (Tailwind), same-mtime edit (declarations, app files), appearing template and
+tsconfig path (app files) fail; the nesting spec fails without the outer chain. Remaining stores, not checked: the
+disk and async caches `action-cache`, `compare-cache`, `harness-build-cache`, `part-picture-cache`, `pixel-cache`,
+`served-cache`, `generated-stylesheets`, `shot-store`, `vite-cache`, `sketch/unchanged-states`, `link-free`
+`earlierFields`, `slow-checks` `bases`; `trackedRun` is synchronous, so they need an async fingerprint first. Not
+verified: a Tailwind `@plugin` or `@config` JS module the child loads through ESM `import` is not recorded, and no
+`design check` ran on a real product.
 
 650\. Builder (2026-11-09, ADR 0237): the 3 measured e2e runs ran at a load average of 39-51 from other sessions, so
 the times cannot show if the 90 s goal is met. Why no tool caught it: the e2e timing report has no load figure, so a
@@ -3832,7 +3851,11 @@ Mac builder's recommendation, with one change): a builder that starts push:suite
 for its run time; the other builder commits but holds its push until the slot ends. The `agent-sessions claim` store is
 per checkout and does not reach the other machine, so the slot lives on origin (for example a ref with holder and
 expiry), has an expiry so a dead run cannot hold it, and is released when the push ends or the suite fails. A spec
-bites with two claimers. Tool fix (night backlog, Mac builder, after its push).
+bites with two claimers. Tool fix (night backlog, Mac builder, after its push). Built bc219f75d (note 28e202402): ref
+`refs/push-slot/next` on origin, a parentless commit whose message holds the holder (`ETHLETE_BUILDER`, else the
+hostname), the sha and a 60 min expiry; claim and release with `--force-with-lease` on the read slot; free when absent,
+expired, or its sha is in origin/next; released on a blocked verdict or SIGINT/TERM/HUP. Spec bites with plain
+`--force`. Verified live: GitHub accepts the ref. Not verified: a two-machine run, clock skew, signal release.
 
 As built (780, `bc219f75d`): `tools/scripts/push-slot.mjs` keeps a push slot on origin at `refs/push-slot/next`. It is a commit with no parent whose message holds the holder (`ETHLETE_BUILDER`, else the hostname), the sha and an expiry 60 min out: 40 min of suite plus up to 10 min of load wait. Claim and release lease on the slot commit they read (`--force-with-lease`), so of two claimers exactly one wins. The slot is free when it is absent, expired, or its sha has reached `origin/next`, so the push itself releases it. `push:suite` claims at the start and stops with a blocked verdict naming the holder and expiry; it releases on a failed verdict or signal. `.husky/pre-push` refuses a push of `next` while another holder has a live slot. Verified: `push-slot.spec.mjs` (6 cases, bare origin and two clones; it bites when the lease is replaced by `--force`), spec:stress 4/4, `push-suite.spec.mjs` green, and a manual blocked run. Not verified: GitHub accepting the custom ref, a real two-machine run, clock skew. Rule for the other builder: when `push:suite` says the slot is held, keep committing and rerun it after the holder's push lands or the slot expires (`yarn push:slot status`); `yarn push:slot release` frees a dead run's slot.
 
@@ -3856,16 +3879,58 @@ the first failed run's output from the next nightly run, then fix the bound or t
 without a browser under CI"). Suspect (not measured): an environment difference under the quota run, not slowness, for
 example a browser lookup or a CI variable that the quota wrapper changes. Decided by the doc agent (tool internal):
 reproduce the local failure first (it needs no CI), name the cause, fix it with a case that bites (night backlog,
-Linux, before 782).
+Linux, before 782). Built 3c609e94e. Cause (measured): no environment difference (the Suspect was wrong); the two
+cases had the vitest default 5 s timeout while every other `acme()` case has 60 s, and under the quota they took 7.9 and
+8.6 s. Fix: 60 s; quota run 13/13, `spec:stress --slow 8` 2/2.
+As built (783): Cause (measured): no environment difference. Both cases had vitest's default 5 s timeout, while every
+other case that builds the `acme()` fixture has 60 s; under `CPUQuota=12%` they took 7.9 s and 8.6 s and timed out.
+Fix: `60_000` on both. Bite: the same quota run failed both cases before and passes 13/13 after;
+`spec:stress --slow 8 --runs 2` passes 2/2 (slowest 81.5 s for the file). The Suspect (an env difference) was wrong.
 
 784\. Linux builder (2026-11-11, night, 778 calibration): `spec:stress --github` printed no output for the failed runs,
 so the CI log does not show why 782 and 783 failed. Cause: 616's "print the first failed run" does not reach the
 `--github` path (Suspect until the builder confirms in code). Lesson: a gate that fails without its reason costs a
 second run to learn it. Decided by the doc agent (tool internal, the builder's recommendation): in `--github` mode,
 print the first failed run's output in a `::group::`; a spec bites with a failing fixture in `--github` mode (night
-backlog, Linux, first of 782-784).
+backlog, Linux, first of 782-784). Built 87ce00dc9. Cause (read in code): `runOnce` spawned every run with stdio `ignore`, so no
+mode kept output; the 616 print never existed in spec-stress. Each run now keeps its last 64 KiB; `--github` prints the
+first failed run per file in a `::group::` after the `::error`. Not verified: a real CI log with the group.
 As built (784): Cause (read in code): `runOnce` spawned each run with `stdio: 'ignore'`, so no mode kept any output.
 Now each run keeps the last 64 KiB of stdout and stderr, and `--github` prints the first failed run's output of each
 file in a `::group::` after its `::error`. The new spec runs the script on a failing `node --test` fixture with
 `--github` and finds the fixture's error text in the group; it fails with `stdio: 'ignore'` restored (bite, in a copy).
 Not verified: a real CI log with the group (the next nightly stress run shows it).
+
+785\. Linux builder (2026-11-11, night, 783 3c609e94e): nothing flags a heavy-fixture design spec case that omits its
+timeout; the vitest default of 5 s then fails only on a slow machine. Lesson: a per-case number that every case must
+repeat is a rule a new case forgets. Decided by the doc agent (tool internal, the builder's recommendation, scoped): the
+60 s timeout comes from one place for the heavy design specs (the `libs/cli` design specs, or the fixture helper's own
+files), not a global `testTimeout` for every cli spec, so a fast spec still fails fast when it hangs; the per-case
+numbers then go. A case without its own timeout bites under the quota. Night backlog, Linux, after 620. Built b0ef796f4:
+`check-system.fixtures.ts` sets `vi.setConfig({ testTimeout: 60_000 })` on import (7 specs, 32 per-case numbers gone);
+under the quota 13/13 with it, every `acme()` case times out at 5 s without it; a spec without the fixture import still
+fails at 5 s.
+
+As built (785): `check-system.fixtures.ts` exports `HEAVY_DESIGN_SPEC_TIMEOUT_MS` (60 s) and calls
+`vi.setConfig({ testTimeout })` at import, so every spec that imports the fixture (the check-system specs,
+check-denied, leftover-gate-files) gets 60 s; the per-case `60_000` in the five check-system specs are gone, larger
+ones stay. Bite: under `CPUQuota=12%`, `check-system.spec.ts` passes (13 tests, 94 s); with the `setConfig` line
+removed, the cases that build `acme()` fail at 5 s. A probe spec (6 s sleep, not committed) fails at 5 s next to an
+importing spec in the same run, so the setting does not leak across files (cli keeps vitest's default `isolate`).
+Not verified: a spec file that imports the fixture only through another helper; a run on CI.
+
+786\. Mac builder (2026-11-11, night, push:suite 81980de90): the repeat step blocked in run 3, six cases with a 10 s
+`page.goto` timeout in one burst at load 34. Suspect (not measured): the builder's own 780 subagent ran `spec:stress`
+at the same time. Lesson: two heavy runners on one machine make a red gate that says nothing about the code. Decided by
+the doc agent (tool internal): push:suite and spec:stress take one local heavy-run lock per machine; the second waits or
+stops with the holder's name; a spec bites with two runners. Night backlog, Mac, after the 777 Mac verify.
+
+As built (B438, ADR 0229, commit `perf(cli): Draw the fresh compare pair only after a cached first pair`): the
+shooter's `pictureOf` now returns the picture with its `source` (`drawn`, `memory` or `disk`, from `onSource`), and
+`PictureOf` returns a `SourcedPicture`. `drawnPair` draws the fresh second pair only when the first pair differs and one
+of its pictures is not `drawn`; a picture without a `source` counts as possibly cached, so other `PictureOf`
+implementations keep the old second draw. Specs: a differing pair drawn fresh makes 2 draws (was 4) in
+`merge-compare.spec.ts` and `unchanged-states.spec.ts`; a stale cached picture is redrawn and the fresh pair decides;
+`shot.spec.ts` names `drawn`, then `memory`, then `drawn` for `fresh`. Bite: with the `drawnFresh` check removed, both
+2-draw cases fail. `spec:stress --runs 4 --load 2`: 3 specs 4/4. Not verified: the cold compare time of finding 598 on a
+real product; a Studio e2e run (none covers the merge compare by name).

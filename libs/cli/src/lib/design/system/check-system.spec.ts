@@ -13,7 +13,7 @@ describe('checkSystem', () => {
 
     expect(check(acme(), ['acme'])).toBe(0);
     expect(lines).toEqual(['ok']);
-  }, 60_000);
+  });
 
   it('prints each problem as rule, file and message', () => {
     const target = acme();
@@ -25,7 +25,7 @@ describe('checkSystem', () => {
     expect(lines).toEqual([
       `HARD-CODED-COLOUR ${DESIGN_DIR}/acme/elements/hero/hero.css: #fff outside foundations - use a foundations token`,
     ]);
-  }, 60_000);
+  });
 
   it('fails on an interaction Studio does not know', () => {
     const target = acme();
@@ -38,7 +38,7 @@ describe('checkSystem', () => {
     expect(lines[0]).toBe(
       `INTERACTIONS ${DESIGN_DIR}/acme/components/button/button.ts: unknown interaction "pressed" - interactions are hover, focus-visible, active, disabled; rest is always drawn, and pressed or loading is a state`,
     );
-  }, 60_000);
+  });
 
   it('types a page drawn with the wireframe kit and fails a component that imports it', () => {
     const target = acme();
@@ -63,7 +63,7 @@ export default definePart({
     expect(lines).toEqual([
       `WIREFRAME-KIT ${DESIGN_DIR}/acme/components/button/button.ts: components may not use @design-system/kit - only elements and pages draw with the wireframe kit`,
     ]);
-  }, 60_000);
+  });
 
   it('lets a page import a named helper of a foundation, and refuses a foundation that imports one of a page', () => {
     const target = acme();
@@ -88,7 +88,7 @@ export default definePart({
 
     expect(check(target, ['acme'])).toBe(1);
     expect(lines).toEqual([expect.stringMatching(/^UPWARD-DEPENDENCY .*palette\.ts: /)]);
-  }, 60_000);
+  });
 
   it('fails on a type error', () => {
     const target = acme();
@@ -102,7 +102,7 @@ export default definePart({
     expect(check(target, ['acme'])).toBe(1);
     expect(lines[0]).toMatch(/^TYPE-ERROR \.ethlete\/design\/acme: /);
     expect(lines[0]).toContain("'note'");
-  }, 60_000);
+  });
 
   it('checks a product on the built-in @ethlete/components base', () => {
     const target = acme();
@@ -115,7 +115,7 @@ export default definePart({
 
     expect(check(target, ['app'])).toBe(0);
     expect(lines).toEqual(['ok']);
-  }, 60_000);
+  });
 
   it('names the declared products when asked for an unknown one', () => {
     const lines = output();
