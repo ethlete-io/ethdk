@@ -2112,11 +2112,7 @@ and the tool was lost. Decided by the doc agent (tool internal, night backlog): 
 `watchdog` command (one-shot resume after a usage-limit reset, log file, pane list) that the human installs once with
 an allow rule, so no night needs a hand-made timer.
 
-753\. Linux builder (2026-11-10, night, 750 sketch): `sketch note <variant>` overwrites the whole round note, so a note
-for variant b deleted the line of variant a; all three lines went in with one `sketch round pages/system r1 --note`.
-Lesson: the variant argument suggests a per-variant note, but the tool stores one note per round. Decided by the doc
-agent (tool internal, backlog): the round note keeps one line per variant, and `sketch note <variant>` replaces only
-that line; a spec writes notes for a, b and c in sequence and reads all three back.
+753 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
 754\. Linux builder (same sketch): no command prints the number of changed states of a sketch variant; it shows only
 through the `sketch ready` lines. With finding 750 (a sketch with zero changed states reached the human) this count is
@@ -2145,42 +2141,15 @@ Note only: if the human picks c, the pick adds the part first (ADR 0010 flow), n
 
 Measured (same sketch, for 738): `sketch ready` took 29 s, and 1-2 min on a later run (target 10 s).
 
-759\. The human (2026-11-10, night, Studio screen shot of `pages/system` round 1): "ich kann hier nix mergen". The
-sketch shows variants b and c, but no merge action and no reason. Cause (read in the repo): `.ethlete/design/studio/ready.json`
-has no entry for `pages/system`; `sketch ready` ran only on the scratch copy `/tmp/sk750`, and there it listed
-`listing-error` as SHOT-NOT-VIEWED. The builder still reported the sketch as "waits for the human's pick". Lesson: two
-gaps. (a) Studio shows a not-ready sketch to the human like a ready one, with the merge action silently missing.
-(b) A builder report can call a sketch pickable without a passed `sketch ready` on the real repo. Decided by the doc
-agent (tool internal, applies "ready means final"): Studio draws "Noch nicht bereit" with the reason from `sketch
-ready` in the sketch head where the merge action would be, and lists no such sketch as waiting for the human; the
-builder runs `sketch ready` on the real repo before it reports a sketch to the human. Fix of this sketch now (blocks
-the human's pick).
+759 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
-760\. Linux builder (2026-11-10, night): `check-studio-adrs` prints about 40 warning lines to stderr on every commit
-that stages STATUS.md (the hook hides only stdout). Lesson: a warning on every commit is noise that hides a real one.
-Backlog: the hook prints a one-line count and a command for the full list.
+760 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
-761\. Linux builder (2026-11-10, night, push of 4b50bdb51 + 5039c0a8d): push:suite failed with 6 e2e timeouts (no frame
-after 10 s, slow `/__design` requests) at load 56-110 on 16 cores; the same e2e passed at b6da40338 30 min earlier. Top
-CPU: Playwright workers of the fifagg-frontend session, timetrack, a Studio debug build. Suspect: load, not the diff
-(not yet proven; a rerun at load < 20 decides). Lesson: the 726 gate checks the load only at the start of push:suite,
-so load from another session that rises mid-run still fails the e2e step. Backlog: push:suite checks the load again
-before the e2e step and, if a step fails with a load above the limit, reruns it once after the load drops, and says
-so in the report.
+761 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
-762\. Mac builder (2026-11-10, night, B482 release smoke): the plain smoke passed on 7f7042561 after two causes, both
-proven by run. (1) Cause: the smoke opened `sketch:pages/sketches`, but the tree key is the target
-`sketch:pages/sketches@change-crop`; fixed 4871b83a3 (the smoke reads the targets from sketch.json; the old default
-also broke on folder names like `components-title-bar.edit`). (2) Cause: `dist/libs/cli` was stale after a merge, so
-the bundle showed "Design-Server gestoppt", and the smoke reported only "sketch view missing". Lesson: a stale CLI
-build and a stopped design server look like a missing view to the smoke. Decided by the doc agent (tool internal,
-backlog): the smoke checks that `dist/libs/cli` is not older than its sources before the run, and its waiting line
-names a stopped design server with the server's own text.
+762 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
-763\. Mac builder (2026-11-10, night, 735): the push-suite spec case "a step with a log file writes its output there"
-failed 2 of 4 runs at load 18. Suspect: a timing bound that the load breaks (not measured per phase). Lesson: a spec of
-the push gate itself can fail under the load that the gate exists to survive. Backlog: measure the case under the 735
-CPU throttle, then fix the wait at its cause (an event, not a longer timeout).
+763 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
 765\. Mac builder (2026-11-10, night): `/e2e` shows "No active run log" in the push:suite `repeat` step. Cause: only the
 `e2e` step writes a live log. Lesson: every long step writes one. Fix d06bd6f34 (Mac).
@@ -4188,3 +4157,10 @@ merge refuses, restore the sketch file; the `merged` command treats an existing 
 978\. Linux builder (2026-11-12 night, 938): a picked sketch that `sketch ready` reopens is in progress and still holds the
 pick. Suspect: Studio shows it in a mixed state. Tool fix (builder default, tool backlog): a shot of pages/sketches with
 such a sketch; if the state reads wrong, a sketch for the human, else a state in the part that covers it.
+
+979\. Linux builder (2026-11-12 night): CI on origin/next red (Unit tests, run 43153034062) from the Mac's 4a24296fd:
+`run-load.spec.mjs` "the --load busy loops end when the run gets SIGINT" left 2 of 3 busy loops alive, though the Mac
+push-suite passed. Cause (probe, 15 of 15 leaked): `ci-like-load.mjs` BUSY reads `process.ppid` in the child; if the
+parent exits first, the child stores the reaper pid and spins forever. Fix (probe, 0 of 15): pass the parent pid as an
+argument. Lesson: a timing race passes one local run; the push gate ran the spec once. Tool fix (builder default, Mac
+builds it on origin first): the fix plus a spec:stress repeat that bites on the old BUSY.
