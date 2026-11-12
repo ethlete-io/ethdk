@@ -4084,3 +4084,8 @@ run; sketches get no warnings.
 warnings on every check, 13 lines for one part, so the real warnings drown. Suspect. Tool fix (doc agent applies ADR 0201:
 a baselined hit is accepted; builder default, tool backlog): skip the warning for a state whose DROPPED-PROP hit is
 baselined, with a biting spec.
+
+915 built (Linux, 095a1a4bd): the slice-paths file holds one block per slice name; `--set` replaces only its own block
+and drops blocks older than 2 h; pre-commit applies the union of the fresh blocks and names every slice. Cause (reproduced):
+a second `--set` overwrote the first slice, so its staged files warned. Block per name, not per session: builder and
+subagent share one session. 4 specs, node --test 19/19; the bite ran by hand, old vs new script in a temp repo.
