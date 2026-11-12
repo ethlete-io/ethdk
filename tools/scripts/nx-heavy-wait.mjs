@@ -1,31 +1,9 @@
-import { execFileSync } from 'node:child_process';
-import { join } from 'node:path';
-import {
-  HEAVY_LOCK_FILE,
-  HEAVY_LOCK_MAX_WAIT_MS,
-  HEAVY_LOCK_POLL_MS,
-  holderLine,
-  waitForNoHeavyRun,
-} from './heavy-run-lock.mjs';
+import { HEAVY_LOCK_MAX_WAIT_MS, HEAVY_LOCK_POLL_MS, holderLine, waitForNoHeavyRun } from './heavy-run-lock.mjs';
 
 export const name = 'ethlete-heavy-wait';
 
 // Nx rejects an isolated plugin's hook call after 10 min (isolated-plugin.js MAX_MESSAGE_WAIT).
 const HOOK_MAX_WAIT_MS = 9 * 60_000;
-
-// The Nx daemon runs without the caller's TMPDIR (Nx does not forward it), so on macOS its os.tmpdir() is /tmp while
-// push:suite writes the lock into the per-user temp dir.
-export const lockFileOf = (env = process.env, platform = process.platform) => {
-  if (env['TMPDIR'] || platform !== 'darwin') return HEAVY_LOCK_FILE;
-  try {
-    return join(
-      execFileSync('getconf', ['DARWIN_USER_TEMP_DIR'], { encoding: 'utf8' }).trim(),
-      'ethlete-heavy-run.lock',
-    );
-  } catch {
-    return HEAVY_LOCK_FILE;
-  }
-};
 
 /**
  * Waits before an Nx run while another process holds the heavy-run lock; see `waitForNoHeavyRun`. A design wrapper's
@@ -38,7 +16,6 @@ export const heavyWaitBeforeTasks = async ({ env = process.env, ...lock } = {}) 
     maxWaitMs: Math.min(Number(env['ETHLETE_HEAVY_MAX_WAIT_MS']) || HEAVY_LOCK_MAX_WAIT_MS, HOOK_MAX_WAIT_MS),
     pollMs: Number(env['ETHLETE_HEAVY_POLL_MS']) || HEAVY_LOCK_POLL_MS,
     env,
-    file: lockFileOf(env),
     ...lock,
   });
 };

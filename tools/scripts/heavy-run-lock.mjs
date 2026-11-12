@@ -1,11 +1,36 @@
+import { execFileSync } from 'node:child_process';
 import { closeSync, openSync, readFileSync, rmSync, writeSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-export const HEAVY_LOCK_FILE = join(tmpdir(), 'ethlete-heavy-run.lock');
+const LOCK_NAME = 'ethlete-heavy-run.lock';
+const FILE_ENV = 'ETHLETE_HEAVY_LOCK_FILE';
+export const HEAVY_LOCK_FILE = join(tmpdir(), LOCK_NAME);
 export const HEAVY_LOCK_POLL_MS = 10_000;
 export const HEAVY_LOCK_MAX_WAIT_MS = 60 * 60_000;
 const HELD_ENV = 'ETHLETE_HEAVY_RUN_HELD';
+
+// The Nx daemon runs without the caller's TMPDIR (Nx does not forward it), so on macOS its os.tmpdir() is /tmp while
+// push:suite writes the lock into the per-user temp dir.
+/**
+ * Resolves the machine's heavy-run lock file. Env `ETHLETE_HEAVY_LOCK_FILE` wins: specs and live checks set it to a
+ * private file so they never touch the real lock.
+ */
+export const lockFileOf = (env = process.env, platform = process.platform) => {
+  if (env[FILE_ENV]) return env[FILE_ENV];
+  if (env['TMPDIR'] || platform !== 'darwin') return HEAVY_LOCK_FILE;
+  try {
+    return join(execFileSync('getconf', ['DARWIN_USER_TEMP_DIR'], { encoding: 'utf8' }).trim(), LOCK_NAME);
+  } catch {
+    return HEAVY_LOCK_FILE;
+  }
+};
+
+const takenLockFileOf = (env) => {
+  if (process.env['NODE_TEST_CONTEXT'] && !env[FILE_ENV])
+    throw new Error(`heavy-run-lock: a test takes the real lock; pass the file option or env ${FILE_ENV}`);
+  return lockFileOf(env);
+};
 
 const isAlive = (pid) => {
   try {
@@ -16,7 +41,7 @@ const isAlive = (pid) => {
   }
 };
 
-export const readHolder = (file = HEAVY_LOCK_FILE) => {
+export const readHolder = (file = lockFileOf()) => {
   try {
     return JSON.parse(readFileSync(file, 'utf8'));
   } catch {
@@ -50,7 +75,7 @@ const tryTake = (file, name, now) => {
 export const takeHeavyLock = async (
   name,
   {
-    file = HEAVY_LOCK_FILE,
+    file: fileOption,
     wait = true,
     maxWaitMs = HEAVY_LOCK_MAX_WAIT_MS,
     pollMs = HEAVY_LOCK_POLL_MS,
@@ -61,6 +86,7 @@ export const takeHeavyLock = async (
   } = {},
 ) => {
   if (env[HELD_ENV]) return { ok: true, release: () => undefined };
+  const file = fileOption ?? takenLockFileOf(env);
   const startedAt = now();
   let logged;
   for (;;) {
@@ -91,7 +117,7 @@ export const takeHeavyLock = async (
 export const waitForNoHeavyRun = async (
   name,
   {
-    file = HEAVY_LOCK_FILE,
+    file: fileOption,
     wait = true,
     maxWaitMs = HEAVY_LOCK_MAX_WAIT_MS,
     pollMs = HEAVY_LOCK_POLL_MS,
@@ -102,6 +128,7 @@ export const waitForNoHeavyRun = async (
   } = {},
 ) => {
   if (env[HELD_ENV]) return { ok: true };
+  const file = fileOption ?? lockFileOf(env);
   const startedAt = now();
   let logged;
   for (;;) {

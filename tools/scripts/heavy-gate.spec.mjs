@@ -20,7 +20,12 @@ const envOf = (dir, extra = {}) => {
   const env = { ...process.env };
   delete env['ETHLETE_HEAVY_RUN_HELD'];
   delete env['ETHLETE_HEAVY_NO_WAIT'];
-  return { ...env, TMPDIR: dir, ETHLETE_HEAVY_POLL_MS: '100', ...extra };
+  return {
+    ...env,
+    ETHLETE_HEAVY_LOCK_FILE: join(dir, 'ethlete-heavy-run.lock'),
+    ETHLETE_HEAVY_POLL_MS: '100',
+    ...extra,
+  };
 };
 
 const runGate = (args, env) =>

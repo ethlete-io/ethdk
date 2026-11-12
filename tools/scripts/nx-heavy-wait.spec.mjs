@@ -4,10 +4,11 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { test } from 'node:test';
-import { HEAVY_LOCK_FILE } from './heavy-run-lock.mjs';
-import { heavyWaitBeforeTasks, lockFileOf } from './nx-heavy-wait.mjs';
+import { HEAVY_LOCK_FILE, lockFileOf } from './heavy-run-lock.mjs';
+import { heavyWaitBeforeTasks } from './nx-heavy-wait.mjs';
 
 const plugin = new URL('./nx-heavy-wait.mjs', import.meta.url).href;
+const lockModule = new URL('./heavy-run-lock.mjs', import.meta.url).href;
 
 const lockFile = (t, holder) => {
   const dir = mkdtempSync(join(tmpdir(), 'nx-heavy-wait-'));
@@ -61,7 +62,7 @@ test(
     t.after(() => rmSync(dir, { recursive: true, force: true }));
     const env = {
       ...process.env,
-      TMPDIR: dir,
+      ETHLETE_HEAVY_LOCK_FILE: join(dir, 'ethlete-heavy-run.lock'),
       ETHLETE_HEAVY_NO_WAIT: '1',
       ETHLETE_HEAVY_MAX_WAIT_MS: '2000',
       ETHLETE_HEAVY_POLL_MS: '100',
@@ -91,13 +92,15 @@ test(
 test("under the Nx daemon, which drops TMPDIR, the hook still reads the callers' lock file on macOS", () => {
   assert.equal(lockFileOf({ TMPDIR: '/x' }, 'darwin'), HEAVY_LOCK_FILE);
   assert.equal(lockFileOf({}, 'linux'), HEAVY_LOCK_FILE);
+  assert.equal(lockFileOf({ ETHLETE_HEAVY_LOCK_FILE: '/x/own.lock' }, 'darwin'), '/x/own.lock');
   if (process.platform !== 'darwin') return;
   const userTemp = spawnSync('getconf', ['DARWIN_USER_TEMP_DIR'], { encoding: 'utf8' }).stdout.trim();
   const env = { ...process.env };
   delete env['TMPDIR'];
+  delete env['ETHLETE_HEAVY_LOCK_FILE'];
   const daemonLike = spawnSync(
     process.execPath,
-    ['-e', `import(${JSON.stringify(plugin)}).then((m) => console.log(m.lockFileOf()))`],
+    ['-e', `import(${JSON.stringify(lockModule)}).then((m) => console.log(m.lockFileOf()))`],
     { env, encoding: 'utf8', timeout: 10_000 },
   );
   assert.equal(daemonLike.stdout.trim(), join(userTemp, 'ethlete-heavy-run.lock'));

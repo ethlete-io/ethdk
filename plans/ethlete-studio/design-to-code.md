@@ -3986,3 +3986,12 @@ cached no-lock `cli:lint`: about 450 ms daemon off (1.83 s to 2.28 s), 200-900 m
 start. Spec: `nx-heavy-wait.spec.mjs`; without the exempt check, the env handoff, the holder check or the no-wait flag,
 or with `lockFileOf` ignoring the daemon case, a case fails. Suspect: two daemon callers at once share the worker's env,
 so one may see the other's held or exempt flag.
+
+### As built: 982
+
+`lockFileOf` moved into `heavy-run-lock.mjs`; env `ETHLETE_HEAVY_LOCK_FILE` wins over the TMPDIR/darwin logic, and
+every lock taker and waiter resolves through it. `takeHeavyLock` throws when `NODE_TEST_CONTEXT` is set and no file
+option or env override is given. The lock specs, the spec-stress `--github` case and the push:suite checks case now
+pass a private lock file (the last two took the real lock before). Verified: the guard spec fails with the guard off
+(the child prints `took`); `yarn test:tools` 424/425, the one failure an e2e-check timing case that passes alone; the
+real lock file was absent before and after. Not verified: a live `push:suite` or Nx daemon run with the moved resolver.

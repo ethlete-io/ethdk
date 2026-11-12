@@ -623,10 +623,17 @@ const checksFixture = () => {
 
 test('push:suite stops at the checks step when a range only a pre-push check refuses, before any spec runs', () => {
   const repo = checksFixture();
+  const lockDir = mkdtempSync(join(tmpdir(), 'push-suite-lock-'));
   try {
     const run = spawnSync(process.execPath, [join(import.meta.dirname, 'push-suite.mjs'), 'HEAD~1..HEAD'], {
       encoding: 'utf8',
-      env: { ...process.env, PUSH_SUITE_REPO: repo, PUSH_SUITE_MAX_LOAD: '1000', PUSH_SUITE_EXPORT: '' },
+      env: {
+        ...process.env,
+        PUSH_SUITE_REPO: repo,
+        PUSH_SUITE_MAX_LOAD: '1000',
+        PUSH_SUITE_EXPORT: '',
+        ETHLETE_HEAVY_LOCK_FILE: join(lockDir, 'heavy.lock'),
+      },
       timeout: 120_000,
     });
     const output = `${run.stdout}${run.stderr}`;
@@ -638,6 +645,7 @@ test('push:suite stops at the checks step when a range only a pre-push check ref
     assert.doesNotMatch(output, /push-suite: (exported|lint|typecheck|cli) /);
   } finally {
     rmSync(repo, { recursive: true, force: true });
+    rmSync(lockDir, { recursive: true, force: true });
   }
 });
 
