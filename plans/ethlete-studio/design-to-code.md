@@ -4102,3 +4102,39 @@ Why no tool caught it: no run checks free inodes, and 906/907/965 cover only our
 (builder default, tool backlog): the push suite and the e2e runners check /tmp inode use at start and stop with one clear
 line past 90 %; Playwright runs get a private artifacts dir that the runner removes on every exit. The sweep itself needs
 the human (the builder's sweep was refused by the permission check).
+
+959 built (Linux, 5fd4a3d0a): the pre-commit hook runs tools/scripts/staged-script-specs.mjs for a staged tools/scripts or
+.husky file; it runs every tools spec that names the file and follows script-to-script imports. Spec bites. test:tools had
+1 fail (commit-export.spec, HEAD export) that fails on HEAD~1 too. Suspect: export setup or TMPDIR (/tmp was full).
+
+960 built (Linux, d6910d9c9): the throttle spec skips with a note when the free run gets less than 40 % of a core. The Mac
+failure was not reproduced on 32 cores. Suspect: the macOS scheduler starves the free run.
+
+956 built (Linux, b8b64cfff): Studio posts its measured list width to POST /__design/list-width; sketch check uses it for
+the fit zoom (1280 px fallback). STUDIO_API_LEVEL 9. Spec bites. Not verified live. 957 not built: calibration needs live
+checks on the 7 committed sketches after `nx build components`.
+
+977 built (Mac, adeddd202, pushed): a refused merge writes the original sketch back; humanPickOf counts a pick whose
+decision.by is a model id as no pick. Open point (Suspect, code read): a --by that is not a model id still counts as
+human; kept, because --by is documented as a model id (doc agent, technical).
+
+983 built (Mac, c40928708, pushed): under the Nx daemon the wait hook ignores EXEMPT and RUN_HELD; takeHeavyLock sets
+NX_DAEMON=false while held. Cause (live probe): Nx 24 passes the hook the env of the client that connected last. Not
+verified: ci-like-load and spec-stress children without the daemon.
+
+991\. Night shift (2026-11-12): /tmp ran full again after 990 was recorded; Claude Code then refused every shell call in
+every session (output capture in /tmp/claude-1000), so no agent could alarm the human. Cause (seen): the largest holders
+were our own test folders (93 `tmp-<pid>-*` with node_modules, 305k inodes; 141 et-design-visible-change-*, 80k), not
+Playwright. Tool fix: decided by the human (ADR 0275, B494): an hourly timer sweeps them; sessions keep their temp dir on
+/home. 990 stays for the early inode check and the spec that finds which spec leaks `tmp-<pid>-*`.
+
+992\. Mac builder (2026-11-12, 983): an e2e case failed with `apiRequestContext.get: read ECONNRESET` at load 33.5 in the
+shot ETag fetch (canvas.e2e.mjs:1467). Suspect (not proven): keep-alive socket race; Playwright retries only with
+maxRetries. Tool fix (builder default): `maxRetries: 2` at canvas.e2e.mjs:1467 and :1749, with a bite if one can be made.
+
+993\. Mac builder (2026-11-12, 983): push-suite keeps only the latest e2e failure log, so an earlier failure lost its
+error text. Cause (seen). Tool fix (builder default): keep each failure log, one file per attempt.
+
+994\. Mac builder (2026-11-12, 983): the e2e step in push:suite reached load 33-36 with 3 workers and took 7 min against a
+5 min budget in every run. Suspect: 3 workers are too many on the Mac. Tool fix (builder default, tool backlog): measure
+2 against 3 workers and set the count from the numbers.
