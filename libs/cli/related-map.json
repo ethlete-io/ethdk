@@ -7,6 +7,14 @@
     "src/lib/update/generator-requirements.spec.ts"
   ],
   "src/bin.spec.ts": ["libs/cli/package.json", "libs/cli/src/index.ts"],
+  "src/lib/design/font-proof.spec.ts": [
+    ".ethlete/design/config.json",
+    ".ethlete/design/*/components/**",
+    ".ethlete/design/*/elements/**",
+    ".ethlete/design/*/foundations/**",
+    ".ethlete/design/*/pages/**",
+    "libs/cli/src/lib/design/render-worker.ts"
+  ],
   "src/lib/design/frame-bootstrap.spec.ts": ["libs/cli/design/web/frame.ts"],
   "src/lib/design/frame-surfaces.spec.ts": ["libs/core/design/theme-css.ts"],
   "src/lib/design/new-call.spec.ts": ["libs/cli/design/define-call.ts"],
