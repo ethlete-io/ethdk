@@ -33,7 +33,7 @@ export const serveStatic = (dir, answer) =>
     response.end(readFileSync(path));
   });
 
-export const startDesignServer = (checkout, stamp) =>
+export const startDesignServer = (checkout, stamp, echo = false) =>
   new Promise((resolvePort, reject) => {
     stamp(`design server starting in ${checkout}`);
     const child = spawn(process.execPath, [cliEntry, 'design', checkout], {
@@ -44,6 +44,7 @@ export const startDesignServer = (checkout, stamp) =>
     let ready = false;
     const onData = (chunk) => {
       output += chunk;
+      if (echo) process.stderr.write(chunk);
       const port = /Local:\s+https?:\/\/localhost:(\d+)/.exec(stripVTControlCharacters(output))?.[1];
 
       if (port && !ready) {
@@ -153,7 +154,7 @@ export const studioHostAnswer = async (command, checkout, designPort) => {
  * `chrome: { value, delayMs }` answers `window_chrome_watch` with `value` after `delayMs`, like the desktop shell does;
  * without it the stubbed shell has no window chrome and Studio draws no title bar.
  */
-export const withStudio = async (run, { checkout = root, build = true, built, chrome } = {}) => {
+export const withStudio = async (run, { checkout = root, build = true, built, chrome, echoDesign = false } = {}) => {
   const startedAt = Date.now();
   const stamp = (phase) => console.log(phaseLine(phase, startedAt));
   const scratch = mkdtempSync(join(tmpdir(), 'studio-headless-'));
@@ -166,7 +167,7 @@ export const withStudio = async (run, { checkout = root, build = true, built, ch
 
     if (build && !built) buildStudio(scratch, stamp);
 
-    design = await startDesignServer(checkout, stamp);
+    design = await startDesignServer(checkout, stamp, echoDesign);
 
     const app = serveStatic(join(built ?? scratch, 'browser'));
     servers.push(app);
@@ -219,7 +220,7 @@ export const withStudio = async (run, { checkout = root, build = true, built, ch
         });
       }
       await new Promise((done) => setTimeout(done, downMs));
-      design = await startDesignServer(checkout, stamp);
+      design = await startDesignServer(checkout, stamp, echoDesign);
     };
 
     stamp('first case starting');

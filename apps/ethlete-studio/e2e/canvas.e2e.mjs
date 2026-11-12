@@ -3951,7 +3951,7 @@ const work = async () => {
         process.send({ type: 'result', ok: result.ok, detail: result.detail, ms, ...drawsSince(draws, drawsBefore) });
       }
     },
-    { built, checkout },
+    { built, checkout, echoDesign: true },
   ).finally(() => rmSync(checkout, { recursive: true, force: true }));
 
   process.exit(0);
@@ -4176,6 +4176,7 @@ const lead = async () => {
       child.on('message', (message) => {
         if (message.type === 'result') {
           record(current, message);
+          if (!message.ok) console.log(`[canvas-e2e] worker ${index} output tail:\n${output.slice(-3000)}`);
           console.log(
             `[canvas-e2e] worker ${index} drew ${message.drawn ?? '?'} picture(s) in the case, waited for ${message.waited ?? '?'}`,
           );
