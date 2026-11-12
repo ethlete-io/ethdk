@@ -4110,3 +4110,14 @@ push:suite on a quiet machine; the 10 s budget stays. If it fails again quiet, p
 (an effect calls `leaveGone()` when the merging sketch leaves the listing while it is still picked). The spec fails
 without the fix; 128 alone, 128+129, and 128+129 with hold 14000 pass. Not verified: the full suite. Each e2e run leaves
 one orphan resident (6 now, about 4.3 GB), so the 955 teardown part is a push-suite blocker; Linux builds it next.
+
+904 built (Mac, f15c2cf25, unpushed, quiet push:suite runs): Cause (probe): the B191 stale-CLI check
+(`runningCliStaleWarning`, 2086f4cda) returned null unless the CLI runs from `dist/libs/cli`, but `yarn et:design` runs a
+copy under `tmp/studio-cli/<sha>/`, so the check never ran. Fix: `build-info.json` gets the commit; one `git diff --quiet
+<commit>` over the libs/cli sources; one WARN line naming the build sha. Bite: build-commit.spec.ts, 6 cases failed
+before. Not verified: plain `yarn et:design` without `ETHLETE_DESIGN_CLI_ENTRY`.
+
+964\. Mac builder (2026-11-12 night, 904): the stale-CLI diff does not see untracked new files in libs/cli, and why
+`et:design` picked the 448c47f16 copy is not probed (Suspect: the copy is keyed by the last commit that touched
+libs/cli). Tool fix (builder default, tool backlog): the check also lists untracked libs/cli source files; probe the copy
+pick and name the rule in the WARN line.

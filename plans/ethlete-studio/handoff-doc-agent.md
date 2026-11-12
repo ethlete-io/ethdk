@@ -1,1 +1,1 @@
-- 128 race fixed (37841f237); 955 e2e teardown is a push blocker, Linux builds it; 6 orphan residents now. Next free finding: 964.
+- 904 built on the Mac (f15c2cf25); finding 964. Linux builder resumed (builder-2026-11-12b). Next free finding: 965.
