@@ -366,7 +366,8 @@ export const stepLine = (name, status, ms, note, load, max = load) =>
   `push-suite: ${name} ${status === 0 ? 'ok' : `failed at load ${formatLoad(load)} (max ${formatLoad(max)} during the step)`} in ${seconds(ms)}${note ? ` (${note})` : ''}`;
 
 export const runStep = async (command, args, cwd, logFile, env = {}) => {
-  const runLog = logFile ? (await import('./run-log.mjs')).startRunLog(logFile) : undefined;
+  const runLogs = logFile ? await import('./run-log.mjs') : undefined;
+  const runLog = runLogs?.startRunLog(logFile);
 
   return new Promise((done) => {
     const child = spawn(command, args, {
@@ -381,7 +382,10 @@ export const runStep = async (command, args, cwd, logFile, env = {}) => {
     };
     child.stdout.on('data', take);
     child.stderr.on('data', take);
-    child.on('close', (status) => done({ status: status ?? 1, output }));
+    child.on('close', (status) => {
+      if (runLog && status !== 0) runLogs.markRunLogFailed(runLog);
+      done({ status: status ?? 1, output });
+    });
   });
 };
 

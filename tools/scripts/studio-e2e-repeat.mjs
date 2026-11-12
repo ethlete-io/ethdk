@@ -3,7 +3,7 @@ import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { appendFileSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { startRunLog } from './run-log.mjs';
+import { markRunLogFailed, startRunLog } from './run-log.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
 const RUNNER = 'apps/ethlete-studio/e2e/canvas.e2e.mjs';
@@ -142,7 +142,10 @@ export const runOnce = (runner, args, cwd, liveLog) =>
     };
     child.stdout.on('data', take);
     child.stderr.on('data', (chunk) => (output += chunk));
-    child.on('close', () => done(output));
+    child.on('close', (status) => {
+      if (runLog && status !== 0) markRunLogFailed(runLog);
+      done(output);
+    });
   });
 
 export const runArgs = (at, pageArgs, built) => [
