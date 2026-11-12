@@ -1,10 +1,12 @@
-import { Browser } from './thumb';
+import { fromEvent, Subscription, take, tap } from 'rxjs';
+import { RunAbortedError } from './run-abort';
+import { abortingOf, Browser } from './thumb';
 import { withinLimit } from './wait';
 
 type ContextOptions = NonNullable<Parameters<Browser['newContext']>[0]>;
 type Context = Awaited<ReturnType<Browser['newContext']>>;
 type Page = Awaited<ReturnType<Context['newPage']>>;
-type Warm = { key: string; context: Context; page: Page; booted: string | null };
+type Warm = { key: string; context: Context; page: Page; booted: string | null; dropped: boolean };
 type Idle = { warm: Warm; parked: Promise<boolean> };
 type Lent = { browser: Browser; context: ContextOptions };
 
@@ -29,13 +31,16 @@ export const createWarmPages = (options: { idleLimit?: number } = {}) => {
     return kept;
   };
 
-  const drop = (warm: Warm) => void warm.context.close().catch(() => undefined);
+  const drop = (warm: Warm) => {
+    warm.dropped = true;
+    void warm.context.close().catch(() => undefined);
+  };
 
   const open = async ({ browser, context: contextOptions }: Lent, key: string): Promise<Warm> => {
     const context = await browser.newContext(contextOptions);
 
     try {
-      return { key, context, page: await context.newPage(), booted: null };
+      return { key, context, page: await context.newPage(), booted: null, dropped: false };
     } catch (error) {
       await context.close().catch(() => undefined);
       throw error;
@@ -65,30 +70,49 @@ export const createWarmPages = (options: { idleLimit?: number } = {}) => {
 
     if (!idle) return open(lent, key);
 
-    return (await idle.parked) ? idle.warm : borrow(lent, { key, boot });
+    return (await idle.parked) && !idle.warm.dropped ? idle.warm : borrow(lent, { key, boot });
   };
 
   return {
     /**
      * Runs `draw` on an idle page of `browser` opened with the same `context` options, or on a new one. With `limit`,
      * a draw still running after `limit.ms` rejects with a `WaitTimeoutError` and its page closes. With `boot`, an idle
-     * page left on a drawing with the same `boot` goes first, and `draw` gets `booted: true` for it.
+     * page left on a drawing with the same `boot` goes first, and `draw` gets `booted: true` for it. A `closingOnAbort`
+     * browser shares the idle pages of the browser it wraps, and closes the page of a draw whose run aborts.
      */
     run: async <T>(
       lent: Lent & { limit?: { ms: number; what: string }; boot?: string },
       draw: (page: Page, booted: boolean) => Promise<T>,
     ) => {
+      const { browser, signal } = abortingOf(lent.browser);
+
+      if (signal?.aborted) throw new RunAbortedError();
+
       const key = JSON.stringify(lent.context);
       const boot = lent.boot ?? null;
-      const warm = await borrow(lent, { key, boot });
+      const warm = await borrow({ browser, context: lent.context }, { key, boot });
+
+      if (signal?.aborted) {
+        drop(warm);
+        throw new RunAbortedError();
+      }
+
       const booted = boot !== null && warm.booted === boot;
+      const aborting: Subscription | null = signal
+        ? fromEvent(signal, 'abort')
+            .pipe(
+              take(1),
+              tap(() => drop(warm)),
+            )
+            .subscribe()
+        : null;
 
       warm.booted = null;
 
       try {
         const drawing = draw(warm.page, booted);
         const drawn = await (lent.limit ? withinLimit(drawing, lent.limit) : drawing);
-        const kept = idleOf(lent.browser);
+        const kept = idleOf(browser);
 
         warm.booted = boot;
 
@@ -99,6 +123,8 @@ export const createWarmPages = (options: { idleLimit?: number } = {}) => {
       } catch (error) {
         drop(warm);
         throw error;
+      } finally {
+        aborting?.unsubscribe();
       }
     },
   };

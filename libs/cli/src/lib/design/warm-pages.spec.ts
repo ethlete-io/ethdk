@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { Browser } from './thumb';
+import { RunAbortedError } from './run-abort';
+import { closingOnAbort, type Browser } from './thumb';
 import { createWarmPages } from './warm-pages';
 
 const fakeBrowser = () => {
@@ -13,6 +14,7 @@ const fakeBrowser = () => {
       pages: [] as { goto: ReturnType<typeof vi.fn> }[],
       close: vi.fn(async () => undefined),
       clearCookies,
+      once: vi.fn(),
       newPage: async () => {
         const page = { goto: vi.fn(async () => undefined), evaluate };
 
@@ -143,5 +145,44 @@ describe('createWarmPages', () => {
     expect(first.contexts[0]?.close).toHaveBeenCalled();
     expect(first.contexts[1]?.close).not.toHaveBeenCalled();
     expect(second.contexts).toHaveLength(1);
+  });
+
+  it('keeps one page open over many runs that each wrap the browser in closingOnAbort', async () => {
+    const { browser, contexts } = fakeBrowser();
+    const warm = createWarmPages();
+
+    for (let run = 0; run < 20; run++) {
+      await warm.run({ browser: closingOnAbort(browser, new AbortController().signal), context: phone }, async () => 0);
+      await parked(contexts.at(-1)?.pages[0], contexts.length === 1 ? run + 1 : 1);
+    }
+
+    expect(contexts.filter((context) => !context.close.mock.calls.length)).toHaveLength(1);
+  });
+
+  it('closes the page of a draw whose run aborts and draws the next run on a new page', async () => {
+    const { browser, contexts } = fakeBrowser();
+    const warm = createWarmPages();
+    const run = new AbortController();
+    const started = vi.fn();
+    const drawing = warm.run(
+      { browser: closingOnAbort(browser, run.signal), context: phone },
+      () =>
+        new Promise((_, reject) => {
+          started();
+          run.signal.addEventListener('abort', () => reject(new Error('page closed')));
+        }),
+    );
+
+    await vi.waitFor(() => expect(started).toHaveBeenCalled());
+    run.abort();
+
+    await expect(drawing).rejects.toThrow('page closed');
+    expect(contexts[0]?.close).toHaveBeenCalled();
+    await expect(
+      warm.run({ browser: closingOnAbort(browser, run.signal), context: phone }, async () => 0),
+    ).rejects.toBeInstanceOf(RunAbortedError);
+    await warm.run({ browser: closingOnAbort(browser, new AbortController().signal), context: phone }, async () => 0);
+
+    expect(contexts).toHaveLength(2);
   });
 });

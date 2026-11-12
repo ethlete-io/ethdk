@@ -204,10 +204,21 @@ export const DRAWS_AT_ONCE = 8;
  * A drawing every ask withdrew before it started is dropped. A failed launch is not kept, so the next ask
  * tries again.
  */
+const CLOSING_ON_ABORT = Symbol('closingOnAbort');
+
+/** The browser and the abort signal behind a `closingOnAbort` browser; a plain browser has no signal. */
+export const abortingOf = (browser: Browser): { browser: Browser; signal: AbortSignal | null } =>
+  (Reflect.get(browser, CLOSING_ON_ABORT) as { browser: Browser; signal: AbortSignal } | undefined) ?? {
+    browser,
+    signal: null,
+  };
+
 /** `browser` with every context it opens closed when `signal` aborts, so a draw of an aborted run fails at once. */
 export const closingOnAbort = (browser: Browser, signal: AbortSignal): Browser =>
   new Proxy(browser, {
     get: (target, key) => {
+      if (key === CLOSING_ON_ABORT) return { browser: target, signal };
+
       const value = Reflect.get(target, key, target) as unknown;
 
       if (key !== 'newContext' || typeof value !== 'function') {
