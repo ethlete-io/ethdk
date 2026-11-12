@@ -1,5 +1,38 @@
 import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync, readlinkSync } from 'node:fs';
+import { startBusyLoops } from '../../../tools/scripts/ci-like-load.mjs';
+
+/** Reads `--load <n>` from the e2e args: `{ ok: true, count }` (0 without the flag) or `{ ok: false, line }`. */
+export const loadArgOf = (args) => {
+  const at = args.indexOf('--load');
+
+  if (at === -1) return { ok: true, count: 0 };
+
+  const value = args[at + 1];
+  const count = Number(value);
+
+  return /^\d+$/u.test(value ?? '') && Number.isSafeInteger(count)
+    ? { ok: true, count }
+    : { ok: false, line: `invalid --load ${value ?? '(no value)'}, expected a whole number of busy loops` };
+};
+
+/**
+ * Starts `count` unpinned busy loops for an e2e run and resolves to their stop function. Call it while the run holds
+ * the heavy run lock; the loops end with this process on every exit path.
+ */
+export const startRunLoad = async (count, { start = startBusyLoops } = {}) => {
+  if (!count) return () => undefined;
+
+  const load = await start(count, { taskset: false, lock: { wait: false } });
+
+  if (!load.ok) throw new Error(`no busy loops started: heavy run lock held by ${load.holder?.name ?? 'another run'}`);
+  process.once('exit', load.stop);
+
+  return () => {
+    process.off('exit', load.stop);
+    load.stop();
+  };
+};
 
 const TOP_PROCESSES = 5;
 const COMMAND_LENGTH = 80;

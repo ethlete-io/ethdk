@@ -21,7 +21,7 @@ import { listingHold } from '../../../tools/scripts/studio-e2e-listing-hold.mjs'
 import { ensureCli, withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 import { CANVAS, listingWait, sketchCells } from './probe-helpers.mjs';
 import { noMatchLineOf } from './case-filter.mjs';
-import { goalLineOf, isNoisy, runLoadLineOf, topProcesses } from './run-load.mjs';
+import { goalLineOf, isNoisy, loadArgOf, runLoadLineOf, startRunLoad, topProcesses } from './run-load.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
 const args = process.argv.slice(2);
@@ -100,7 +100,15 @@ if (!(Number.isInteger(cpuRate) && cpuRate >= 1)) {
   process.exit(2);
 }
 
-const slowedNote = `${framesDelayedNote}${cpuRate === 1 ? '' : `, renderer CPU slowed ${cpuRate}x`}`;
+const loadArg = loadArgOf(args);
+
+if (!loadArg.ok) {
+  console.error(loadArg.line);
+  process.exit(2);
+}
+
+const busyLoops = loadArg.count;
+const slowedNote = `${framesDelayedNote}${cpuRate === 1 ? '' : `, renderer CPU slowed ${cpuRate}x`}${busyLoops ? `, ${busyLoops} busy loops` : ''}`;
 
 const TIMINGS_FILE = join(root, 'node_modules/.cache/studio-e2e/canvas-timings.json');
 
@@ -1774,14 +1782,31 @@ const CASES = [
           await page.waitForTimeout(100);
         }
 
-        const after = await loadedCell(top.key, (cell) => cell.pictureSrc !== before.pictureSrc);
-        const newTag = after && (await tagOf(after.pictureSrc));
+        const returned = Date.now();
+        const renewed = (cell) => !!cell?.pictureSrc && cell.pictureSrc !== before.pictureSrc;
+        let cell = await cellOf(top.key);
+
+        for (const until = returned + WAIT_MS; !renewed(cell) && Date.now() < until; cell = await cellOf(top.key))
+          await page.waitForTimeout(250);
+
+        if (!renewed(cell))
+          return { ok: false, detail: `${top.key} kept its old picture URL for ${WAIT_MS} ms after the edit` };
+
+        const renewedMs = Date.now() - returned;
+        const after = await loadedCell(top.key, renewed, FULL_COMPARE_MS);
+
+        if (!after)
+          return {
+            ok: false,
+            detail: `${top.key}: new picture URL at ${renewedMs} ms, but not drawn within ${FULL_COMPARE_MS} ms`,
+          };
+
+        const drawnMs = Date.now() - returned;
+        const newTag = await tagOf(after.pictureSrc);
 
         return {
-          ok: !!after && newTag !== tag,
-          detail: after
-            ? `${top.key}: new picture URL, ETag ${newTag === tag ? 'unchanged' : 'changed'}`
-            : `${top.key} kept its old picture URL for ${WAIT_MS} ms after the edit`,
+          ok: newTag !== tag,
+          detail: `${top.key}: new picture URL at ${renewedMs} ms, drawn at ${drawnMs} ms, ETag ${newTag === tag ? 'unchanged' : 'changed'}`,
         };
       } finally {
         writeFileSync(stylesheet, original);
@@ -3653,6 +3678,7 @@ const lead = async () => {
       console.error(`[canvas-e2e] ${holderLine(lock.holder)}`);
       process.exit(2);
     }
+    await startRunLoad(busyLoops);
   }
 
   const runStartedAt = performance.now();
@@ -3925,7 +3951,17 @@ const lead = async () => {
   );
   const load = { start: loadAtStart, end: loadAtEnd, cores: availableParallelism() };
   console.log(runLoadLineOf({ ...load, workers, machine: hostname() }));
-  if (!only && !pageGroups && !view && !shard && !perfOnly && !holdListingsMs && !delayPicturesMs && !delayFramesMs)
+  if (
+    !only &&
+    !pageGroups &&
+    !view &&
+    !shard &&
+    !perfOnly &&
+    !holdListingsMs &&
+    !delayPicturesMs &&
+    !delayFramesMs &&
+    !busyLoops
+  )
     console.log(
       goalLineOf({
         ms: suiteMs,

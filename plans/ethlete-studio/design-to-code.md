@@ -3916,3 +3916,19 @@ before the fix. A 20-commit range takes about 3.5 s. Follow-up: the first wiring
 `node tools/scripts/check-person-names.mjs` relative to the cwd, and the push-suite checks fixture has no such file, so
 `push-suite.spec.mjs` failed. `pre-push-checks.mjs` resolves the script from its own directory now; the yarn script is
 no way out, since the fixture stubs it as `node -e 0`, which rejects `--range`. `yarn test:tools` would have caught it, and is the per-slice check for a change in `tools/scripts`.
+
+929 as built: `yarn studio:e2e --load <n>` starts n busy loops once the run holds the heavy run lock, through
+`startRunLoad` in `apps/ethlete-studio/e2e/run-load.mjs`, which calls `startBusyLoops` from
+`tools/scripts/ci-like-load.mjs` unpinned. Each loop ends once its parent is gone, and the lead also kills them on
+`exit`, so a failed, interrupted or killed run leaks none (`ps` showed 0 after every run). An invalid value exits 2;
+failure lines and the start line name the busy loops, and the 90 s goal line is skipped under load. Spec:
+`run-load.spec.mjs` (arg parsing, refusal, and the loops ending on stop, `process.exit(1)`, SIGINT and SIGKILL); with a
+plain `for(;;)` loop the SIGINT and SIGKILL cases fail, and without the exit hook the exit case fails too. Picture cases:
+"a sketch cell edited on disk while scrolled away shows its new picture on return" waited one 10 s window for a new
+URL and a drawn picture; it now waits 10 s for the URL and 60 s for the drawing, and reports both times. Cause (probe):
+under `--load 24` its new URL came at 21.2 s and the drawing 47 ms later; under `--load 12` at 5.4 s and 5 ms later. So
+this case fails under heavy load on the URL stage, not the draw, and the split names that stage; whether the URL budget
+should grow is open. Checked and left, no shared new-and-drawn window: "a part shown before paints every stored picture
+in the first frame", "a sketch scroll never empties a cell that had a picture", "a sketch keeps its frame count and
+pictures through a sketch edit" (a fixed watch window), "page switch time is logged to the design timings" (records
+mounted, first and all painted separately), "the sketch view at 30 % and 100 % draws no failed picture ...".
