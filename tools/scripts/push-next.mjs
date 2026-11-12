@@ -1,10 +1,27 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
-import { realpathSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { realpathSync, statSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { hasOkVerdict, releaseSlot } from './push-slot.mjs';
 import { firstParentLog, reusedVerdictLine, verdictBelow } from './verdict-reuse.mjs';
+
+const DESIGN_RECORD = /^\.ethlete\/design\/[^/]+\/(ready|merged)\.json$/;
+
+/** One line per uncommitted design record file (`ready.json`, `merged.json`) with the age of its last write. */
+export const uncommittedDesignRecordLines = ({ cwd, now = Date.now() }) =>
+  spawnSync('git', ['status', '--porcelain', '--untracked-files=all', '--', '.ethlete/design'], {
+    cwd,
+    encoding: 'utf8',
+  })
+    .stdout.split('\n')
+    .map((line) => line.slice(3))
+    .filter((path) => DESIGN_RECORD.test(path))
+    .map((path) => {
+      const minutes = Math.floor((now - statSync(join(cwd, path)).mtimeMs) / 60_000);
+
+      return `push-next: ${path} is uncommitted, last written ${minutes} min ago; commit it before a merge refuses it.`;
+    });
 
 const fastChecks = async (base, head) => (await import('./push-suite.mjs')).preChecksStep(`${base}..${head}`);
 
@@ -43,6 +60,7 @@ export const pushNext = async ({
   log = console.error,
 }) => {
   const sha = spawnSync('git', ['rev-parse', 'HEAD'], { cwd, encoding: 'utf8' }).stdout.trim();
+  for (const line of uncommittedDesignRecordLines({ cwd })) log(line);
   if (!(await pushableVerdict({ cwd, sha, hasVerdict, checks, log })).ok) return 1;
   if (dryRun) {
     log(`push-next: --dry-run, would push ${sha.slice(0, 12)} to ${remote} ${branch}`);

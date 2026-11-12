@@ -192,3 +192,17 @@ test('--dry-run names the reused verdict and pushes nothing', async (t) => {
   assert.notEqual(originRef(origin, SLOT_REF), '');
   assert.match(lines.join('\n'), new RegExp(`reused push-suite ok of ${green.slice(0, 9)}`));
 });
+
+test('a push names each uncommitted design record file with its age', async (t) => {
+  const { mac } = setup(t);
+  const ready = join(mac, '.ethlete/design/studio/ready.json');
+  mkdirSync(dirname(ready), { recursive: true });
+  writeFileSync(ready, '{}\n');
+  writeFileSync(join(mac, '.ethlete/design/studio/other.json'), '{}\n');
+  const lines = [];
+
+  await pushNext({ cwd: mac, hasVerdict: () => false, log: (l) => lines.push(l) });
+
+  assert.equal(lines.filter((l) => l.includes('is uncommitted')).length, 1);
+  assert.match(lines[0], /\.ethlete\/design\/studio\/ready\.json is uncommitted, last written 0 min ago/);
+});
