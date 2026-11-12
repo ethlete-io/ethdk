@@ -4141,3 +4141,15 @@ folder "differs from" the source and lists 55 files; the build command it names 
 975\. Linux builder (2026-11-12 night, 928): `compare --base` over a wide range prints one line per changed state (33).
 Suspect: a long list hides the new failures. Tool fix (builder default, tool backlog): NEW lines first, the list capped at
 about 10 with "+k more", with a spec.
+
+926 built (Mac, 55fd668cd): the refusal names the commit order; the clean copy stays (taking dirty embedded parts in would
+merge on content the commit lacks, ADR 0206). Cause (code read, spec bite): the clean copy holds HEAD + sketch + the @edit
+part folder, so a dirty embedded part misses the baseline hash, and `sketch rebase` records the same checkout state again.
+`merge.ts` commitOrderRefusalOf: a conflicting part whose checkout still matches the baseline gets "commit <parts> first,
+then merge <sketch>"; real changes keep the rebase advice. Bite in `edit-sketch.spec.ts`. Not verified: a live merge of
+the real title-search slice.
+
+976\. Mac builder (2026-11-12 night, 926): a merge refusal advice ("run sketch rebase") could not fix its cause, and no spec
+applied the advice. Tool fix (builder default, tool backlog): every merge refusal that names a remedy gets a spec that
+applies the remedy and checks that the merge then passes. Suspect (code read): SKETCH-BASE-STALE (staleSketchBasesOf) loops
+the same way when the dirty part is the drawn-on part; the new specs cover it.

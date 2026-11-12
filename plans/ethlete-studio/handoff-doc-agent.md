@@ -278,3 +278,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - 963 built on the Mac (4a24296fd); finding 973. Next free finding: 974.
 - 927 (e59dea1b4) and 928 (43f0ba62c) built; findings 974-975. Next free finding: 976.
 - Mac pushed f15c2cf25..4a24296fd (963); 926 in progress, then 973. Next free finding: 976.
+- 926 built on the Mac (55fd668cd); finding 976. Next free finding: 977.
