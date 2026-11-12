@@ -738,7 +738,7 @@ const EDIT_PART = 'components/comment-row';
 const EDIT_LABEL = { before: 'font-ui-medium">${c.author}</span>', after: 'font-ui-medium">${c.author}:</span>' };
 const EDIT_WAIT_MS = 120000;
 
-const withEditSketch = async (page, run) => {
+const withEditSketch = async (page, designPort, run) => {
   const studio = join(checkout, '.ethlete/design/studio');
   const saved = mkdtempSync(join(tmpdir(), 'studio-e2e-edit-'));
   const file = join(studio, EDIT_PART, 'comment-row.ts');
@@ -869,6 +869,11 @@ const withEditSketch = async (page, run) => {
     rmSync(studio, { recursive: true, force: true });
     cpSync(saved, studio, { recursive: true });
     rmSync(saved, { recursive: true, force: true });
+    // The restore leaves the server's rule check cold (4 s on 2 idle cores); without this listing the next case's
+    // first frame pays that full rule run inside its WAIT_MS.
+    await fetch(`http://[::1]:${designPort}/__design/system`, { signal: AbortSignal.timeout(EDIT_WAIT_MS) }).then(
+      (response) => response.arrayBuffer(),
+    );
   }
 };
 
@@ -877,8 +882,8 @@ const CASES = [
     name: 'a visible edit of a merged design part opens its old/new sketch with nothing folded',
     listingMayPend: 'the evidence is the sketch the design check opens, which the case waits for itself',
     pages: ['System'],
-    run: (page) =>
-      withEditSketch(page, async ({ edit }) => {
+    run: (page, _state, _target, { designPort }) =>
+      withEditSketch(page, designPort, async ({ edit }) => {
         const shown = await edit();
         const ok = shown.variants.includes('new') && shown.variants.includes('old') && !shown.folded && !shown.discard;
 
@@ -892,8 +897,8 @@ const CASES = [
     name: 'picking old of an edit sketch restores the design, picking new records the edit as merged',
     listingMayPend: 'waits for the listing itself (listingAnswered) before each pick',
     pages: ['System'],
-    run: (page) =>
-      withEditSketch(page, async ({ edit, pick, file, studio, git, base }) => {
+    run: (page, _state, _target, { designPort }) =>
+      withEditSketch(page, designPort, async ({ edit, pick, file, studio, git, base }) => {
         const sketchDir = join(studio, 'sketches', `${EDIT_PART.replace('/', '-')}.edit`);
         const first = await edit();
 
