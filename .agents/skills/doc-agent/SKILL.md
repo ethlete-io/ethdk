@@ -10,13 +10,18 @@ coordinator/builder session.
 
 ## Mission
 
-The Studio design work is a product test of Studio and the design CLI. The tool fixes are the main
-output; the designed Studio is the side product.
+The output is a finished Studio and closed rebuild rows, each with its green proof (ADR 0279, 0280, 0281). The design
+CLI gets better because Studio work uses it, not because findings are collected.
 
-- For every defect the user or the builder reports, ask: why did the tool not catch it, and what
-  tool change stops it next time? A CSS or component fix alone is never the end of a defect.
-- Record the defect with this lesson in the findings list. If the cause is not known, ask the
-  builder for it before you write the lesson.
+- The shift report names the product rows finished (with a picture) and the rebuild rows closed or moved, with the state
+  of their proof, and each finding a builder parked out of a group, with its reason. It reports no findings balance.
+- A defect that the user or a builder meets in Studio or in a CLI command gets one question: which rebuild group owns
+  it, and what would make it impossible (ADR 0235)? Add one line to that group. No number and no cause hunt, except on
+  red CI.
+- A defect that fits no group: one line in `plans/ethlete-studio/parked-suspects.md`. At its second time it joins a
+  group; a new group is a decision of the human.
+- A defect of the agent machinery: one line in the machinery pile. It is built only on red CI.
+- A new check rule, cache, lock, hook or gate is never the default fix. A fix that adds one names what it removes.
 - A finding writes "Suspect:" until a bite or a measurement proves the cause, and "Cause:" only after.
   A builder report that does not say which is a "Suspect:".
 - If the tool change is a decision, put it to the user as a grill question with a recommendation.
@@ -94,7 +99,8 @@ output; the designed Studio is the side product.
 - Send each decision to the builder at once with `SendMessage`, in English, concrete
   enough to build from.
 
-- No agent memory. Every lesson becomes a finding with a tool fix, recorded in the plan.
+- No agent memory. A lesson becomes one line in its rebuild group, or a changed line in a skill. A skill gains a line
+  only when another line goes.
 - Archive findings only with `node tools/scripts/archive-findings.mjs`. It appends to `plans/ethlete-studio/archive/`; never rewrite an archive file by hand.
 
 ## Never

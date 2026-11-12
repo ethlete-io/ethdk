@@ -68,10 +68,7 @@ that talks with the user and records decisions. Talk English.
 - Commit in a bite or throwaway worktree only with `git -C <worktree> commit`, never after a bare `cd`: a failed
   `cd` lands the commit on `next` in the main checkout. Put the same line in every bite brief.
 - Every slice brief names the slice's allowed paths; write them at slice start with `yarn slice:paths "<name>" <path>...` (an env var set in one shell call does not reach the later `git commit` call). The pre-commit hook warns on a staged path outside them.
-- Every subagent brief says: "Never wait with `pgrep -f`/`pkill -f` loops: the pattern matches the loop's own command line, so it never ends. Use `run_in_background` or Monitor." (finding 730; B99 is the tool fix.)
-- Every subagent brief says: "A refused gate is a finding: stop and report it, never call its internals to pass it." (finding 737.)
-- Every subagent brief says: "Before your commit, run `npx vitest related --run <changed files>` in the dir of each touched vitest project, and `node --test <related specs>` for `tools/**`." (finding 779, 914.)
-- Every subagent brief says: "A live measurement on a copy of the checkout uses `yarn scratch:checkout <dir>` and never links into `node_modules`." (finding 834.)
+- Every subagent brief includes the lines of `subagent-brief.md` next to this skill.
 - A fix for "Studio does not show X" counts as verified only after a live shot of that view; an API answer alone does not (finding 792).
 - A condition check that gates a decision runs a probe (a spec or a live run) before it reports. Report a code read as "Suspect (code read)" (finding 794).
 - Before you write "open for the human" in a handoff or report, grep `apps/ethlete-studio/docs/adr` for the topic. An ADR that decided it closes the point (finding 793).
@@ -80,15 +77,15 @@ that talks with the user and records decisions. Talk English.
 
 ## Mission
 
-The Studio design work is a product test of the design CLI and Studio. For every defect you fix,
-also find why the tool (compare, verify, check) did not catch it. Report the cause and a tool fix
-with your recommendation to the grill session. A defect is not done with only the CSS or
-component fix.
+Build the queue row to its proof (ADR 0279, 0280, 0281). A defect your own change causes is part of the slice: fix it
+or revert the change; after two follow-up repairs, revert and choose another way. A defect that was there before: one
+sentence to the doc agent, then go on. Do not hunt its cause and build no tool fix for it. Fix it only when the proof
+of the current row cannot turn green without it; say so in one sentence in the report. That fix belongs to the slice
+and gets no number. A new finding number only on red CI.
 
 Write "Suspect:" for a cause that no bite or measurement has proven, and "Cause:" only after one has.
 Each report names which of the two it is.
 
-The UI builder investigates a tool gap only when it blocks its current UI item (ADR 0202). It sends every other gap in one sentence to the doc agent. The tool builder (c0) builds it.
 
 ## Questions
 
@@ -106,5 +103,6 @@ The UI builder investigates a tool gap only when it blocks its current UI item (
 
 - When your context runs high, write a handoff. Big new work goes to a fresh builder
   session.
-- No agent memory. Every lesson becomes a finding with a tool fix, recorded in the plan.
+- No agent memory. A lesson becomes one line in its rebuild group, or a changed line in a skill. A skill gains a line
+  only when another line goes.
 - Archive findings only with `node tools/scripts/archive-findings.mjs`. It appends to `plans/ethlete-studio/archive/`; never rewrite an archive file by hand.
