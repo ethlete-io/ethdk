@@ -707,15 +707,15 @@ describe('harnessShotOf', () => {
           : request.url?.includes('components%2Fnative')
             ? em(5)
             : request.url?.includes('components%2Finputs')
-              ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><i></i></div><script>window.ng={getComponent:()=>({}),getDirectiveMetadata:()=>({inputs:{label:"label"}})};</script></body>'
+              ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><i style="display:block;height:100%"></i></div><script>window.ng={getComponent:()=>({}),getDirectiveMetadata:()=>({inputs:{label:"label"}})};</script></body>'
               : request.url?.includes('components%2Ferroring')
-                ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div><script>console.error("ERROR", new Error("ET1234: The control has no accessible name."));console.error("plain error");</script></body>'
+                ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><b style="display:block;height:100%"></b></div><script>console.error("ERROR", new Error("ET1234: The control has no accessible name."));console.error("plain error");</script></body>'
                 : request.url?.includes('components%2Fclear')
-                  ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"></div></body>'
+                  ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><b style="display:block;height:100%"></b></div></body>'
                   : request.url?.includes('components%2Fupward')
                     ? "<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;width:7px;height:4px;background:#ff0000}</style><body style=\"margin:0\"><div data-design-harness-host style=\"width:7px;height:5px\"><button aria-expanded=\"false\" onclick=\"const {top,left}=this.getBoundingClientRect();this.setAttribute('aria-expanded', 'true');document.body.insertAdjacentHTML('beforeend', '<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane style=top:'+(top>=4?top-4:top+5)+'px;left:'+(left>=2?left-2:left)+'px></div></div>')\">Pick</button></div></body>"
                     : request.url?.includes('components%2Ffraction')
-                      ? '<body style="margin:0"><div data-design-harness-host style="width:7.25px;height:5px;background:#0000ff"></div></body>'
+                      ? '<body style="margin:0"><div data-design-harness-host style="width:7.25px;height:5px;background:#0000ff"><b style="display:block;height:100%"></b></div></body>'
                       : request.url?.includes('components%2Fbadge')
                         ? '<body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><span style="position:absolute;left:5px;top:-2px;width:4px;height:3px;background:#ff0000"></span></div></body>'
                         : request.url?.includes('components%2Finpane')
@@ -734,9 +734,9 @@ describe('harnessShotOf', () => {
                                       ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
                                       : request.url?.startsWith('/__design-harness') &&
                                           request.url.includes('layout=page')
-                                        ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
+                                        ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"><b style="display:block;height:100%"></b></div></body>'
                                         : request.url?.startsWith('/__design-harness')
-                                          ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
+                                          ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><b style="display:block;height:100%"></b></div></body>'
                                           : '<body>no harness</body>',
       );
     });

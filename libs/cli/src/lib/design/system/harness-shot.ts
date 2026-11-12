@@ -205,6 +205,8 @@ const clickOpen = async (options: {
 
 const OVERLAY_ROOTS = '.et-overlay-runtime-root, .cdk-overlay-container';
 
+const MOUNTED_PART_SCRIPT = `[...document.querySelectorAll(${JSON.stringify(`${HARNESS_HOST_SELECTOR} *, .et-overlay-runtime-root *, .cdk-overlay-container *`)})].some((element) => [...element.getClientRects()].some(({ width, height }) => width > 0 && height > 0))`;
+
 const VOID_TAGS = new Set([
   'area',
   'base',
@@ -367,6 +369,12 @@ export const harnessShotOf = async (options: {
       await host.waitFor({ state: 'visible', timeout }).catch(() => {
         throw new HarnessError(
           `the harness page ${url} showed no ${HARNESS_HOST_SELECTOR} element within ${timeout} ms - does the app serve the design harness route?`,
+        );
+      });
+
+      await page.waitForFunction(MOUNTED_PART_SCRIPT, undefined, { timeout }).catch(() => {
+        throw new HarnessError(
+          `the harness page ${url} mounted no part that renders into ${HARNESS_HOST_SELECTOR} within ${timeout} ms`,
         );
       });
     });
