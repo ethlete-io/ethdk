@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
@@ -105,4 +105,29 @@ test('ends a run past its deadline with a log', async () => {
   assert.ok(log && existsSync(log), `a log is named: ${run.stderr}`);
   assert.match(readFileSync(log, 'utf8'), /design shot stuck did not end within/);
   assert.ok(await until(() => !alive(cli), 10_000), 'the cli ended');
+});
+
+test('runs an injected cli outside a git checkout, and refuses to build the CLI copy there', async (t) => {
+  const copy = mkdtempSync(join(tmpdir(), 'et-design-spec-export-'));
+
+  t.after(() => rmSync(copy, { recursive: true, force: true }));
+  mkdirSync(join(copy, 'tools', 'scripts'), { recursive: true });
+  for (const name of ['et-design.mjs', 'studio-code.mjs'])
+    copyFileSync(join(dirname(wrapper), name), join(copy, 'tools', 'scripts', name));
+
+  const copied = join(copy, 'tools', 'scripts', 'et-design.mjs');
+  const run = spawn(process.execPath, [copied, 'export'], { env, stdio: 'ignore' });
+
+  started.add(run.pid);
+  await cliPidOf('export');
+  run.kill('SIGTERM');
+
+  const refused = spawnSync(process.execPath, [copied, 'export'], {
+    env: { ...env, ETHLETE_DESIGN_CLI_ENTRY: '' },
+    encoding: 'utf8',
+    timeout: 10_000,
+  });
+
+  assert.equal(refused.status, 2);
+  assert.match(refused.stderr, /is no git checkout/);
 });

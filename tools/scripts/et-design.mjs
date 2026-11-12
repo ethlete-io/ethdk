@@ -15,7 +15,10 @@ const FORWARDED = ['SIGTERM', 'SIGINT', 'SIGHUP'];
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const args = process.argv.slice(2);
 
-if (spawnSync('git', ['rev-parse', '--git-dir'], { cwd: root, stdio: 'ignore' }).status !== 0) {
+if (
+  !process.env.ETHLETE_DESIGN_CLI_ENTRY &&
+  spawnSync('git', ['rev-parse', '--git-dir'], { cwd: root, stdio: 'ignore' }).status !== 0
+) {
   console.error(
     `et-design: ${root} is no git checkout, and the CLI copy needs git. In a scratch copy run \`npx nx build cli\`, then \`node dist/libs/cli/src/index.js design ...\`.`,
   );
