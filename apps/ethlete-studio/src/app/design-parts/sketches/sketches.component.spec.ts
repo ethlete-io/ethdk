@@ -597,6 +597,33 @@ describe('SketchesComponent', () => {
     expect(idle.querySelector('[data-sk-row="x"] button')).toBeNull();
   });
 
+  it('keeps Übernehmen after a pick and opens the sketch points from the chip in the head of the picked variant only', async () => {
+    const y = { ...ROWS[1], key: 'y', note: 'Variante y' } as SketchRow;
+    const groups = [{ icon: 'error', lines: [{ text: STUDIO_LABELS.system.sketchProblem('NO-HEX'), detail: 'y' }] }];
+    const fixture = await render({
+      camera: '100',
+      status: 'picked',
+      fresh: true,
+      rows: [ROWS[1], y],
+      selected: 'y',
+      openPoints: groups,
+      part: 'elements/rating',
+    });
+    const root: HTMLElement = fixture.nativeElement;
+    const chip = root.querySelector<HTMLButtonElement>('[data-sk-row="y"] [data-open-points-chip]');
+
+    expect(textOf(root.querySelector('header [data-sk-picked]'))).toBe(LABELS.status.picked);
+    expect(textOf(root.querySelector('[data-sk-row="x"] [data-sk-merge]'))).toBe(LABELS.merge);
+    expect(root.querySelector('[data-sk-row="x"] [data-open-points-chip]')).toBeNull();
+    expect(textOf(chip)).toBe(STUDIO_LABELS.system.openCount(1));
+
+    chip?.click();
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.pointsClosed()).toBe(false);
+    expect(textOf(document.querySelector('[role="dialog"]'))).toContain(STUDIO_LABELS.system.sketchProblem('NO-HEX'));
+  });
+
   it('offers no Übernehmen for a variant with an errored frame and says the round has a render error', async () => {
     const y = { ...ROWS[1], key: 'y', note: 'Variante y' } as SketchRow;
     const root: HTMLElement = (await render({ camera: '100', status: 'waiting', rows: [...ROWS, y], errored: ['x'] }))

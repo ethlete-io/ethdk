@@ -125,3 +125,9 @@ export const buildReadyStatusOf = ({ points, buildReady }: PartOpenPoints): Buil
 
   return { state: 'blocked', blockers };
 };
+
+const SKETCH_KINDS = new Set<OpenPoint['kind']>(['unmerged-sketch', 'sketch-problem']);
+
+/** The open points a sketch brings to its target, grouped like the chip popover lists them. */
+export const sketchPointGroupsOf = ({ points }: PartOpenPoints): OpenPointGroup[] =>
+  openPointGroupsOf({ points: points.filter((point) => SKETCH_KINDS.has(point.kind)), buildReady: { ready: true } });

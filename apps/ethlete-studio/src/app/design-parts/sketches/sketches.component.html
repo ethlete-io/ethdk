@@ -60,6 +60,13 @@
             }
           </span>
         }
+        @case ('picked') {
+          <span class="flex items-center gap-space-2">
+            <div class="flex flex-wrap items-center">
+              <et-badge variant="tonal" size="sm" data-sk-picked>{{ LABELS.status.picked }}</et-badge>
+            </div>
+          </span>
+        }
         @case ('errored') {
           <span class="flex items-center gap-space-2">
             <div class="flex flex-wrap items-center">
@@ -347,11 +354,23 @@
   </section>
 </ng-template>
 <ng-template #mergeTemplate let-row>
-  @if (status() === 'waiting' && !errored().includes(row.key) && !sameKeys().has(row.key)) {
-    <span class="flex">
-      <button (click)="merge.emit(row.key)" et-button type="button" variant="outline" size="sm" data-sk-merge>
-        {{ LABELS.merge }}
-      </button>
+  @let take =
+    (status() === 'waiting' || status() === 'picked') && !errored().includes(row.key) && !sameKeys().has(row.key);
+  @let points = openPoints().length > 0 && row.key === selected();
+  @if (take || points) {
+    <span class="relative flex flex-wrap items-center gap-space-2">
+      @if (take) {
+        <span class="flex">
+          <button (click)="merge.emit(row.key)" et-button type="button" variant="outline" size="sm" data-sk-merge>
+            {{ LABELS.merge }}
+          </button>
+        </span>
+      }
+      @if (points) {
+        <span class="flex" data-sk-points>
+          <ethlete-open-points-chip [(closed)]="pointsClosed" [part]="part()" [groups]="openPoints()" />
+        </span>
+      }
     </span>
   }
 </ng-template>

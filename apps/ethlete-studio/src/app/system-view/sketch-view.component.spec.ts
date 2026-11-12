@@ -653,6 +653,43 @@ describe('SketchViewComponent', () => {
     expect(buttonNamed(ready.root, STUDIO_LABELS.sketches.merge)).toBeDefined();
   });
 
+  it('shows a pick the rules refuse as picked, with the sketch points in the head of the picked variant of a sketch-only part', async () => {
+    const asked: string[] = [];
+    const sketch: ListedSketch = {
+      ...SKETCH,
+      target: 'elements/rating',
+      variants: ['a', 'b', 'c'],
+      decision: { kind: 'pick', variant: 'c', decidedAt: '2026-10-27T10:00:00Z' },
+      problems: [{ variant: 'c', problems: [{ file: 'c.ts', rule: 'UTILITY-CSS', message: 'flex' }] }],
+    };
+    const fetch = (url: string) => {
+      if (!url.includes('/__design/open-points')) return noComments(url);
+      asked.push(new URL(url).searchParams.get('part') ?? '');
+
+      return json({
+        points: [
+          { kind: 'unmerged-sketch', status: 'ready', decision: 'pick' },
+          { kind: 'sketch-problem', sketch: 'elements/rating', variant: 'c', rule: 'UTILITY-CSS', message: 'flex' },
+          { kind: 'sketch-problem', sketch: 'elements/rating', variant: 'c', rule: 'UTILITY-CSS', message: 'gap' },
+          { kind: 'contrast', state: 'hover', path: 'label' },
+        ],
+        buildReady: { ready: false, blockers: [{ kind: 'pending', text: 'pending' }] },
+      });
+    };
+
+    const { root } = await render(sketch, fetch, null as unknown as ListedPart);
+    const chip = root.querySelector('[data-selected] [data-sk-points] [data-open-points-chip]');
+
+    const badges = [...root.querySelectorAll('header et-badge')].map((badge) => badge.textContent?.trim());
+
+    expect(badges).toContain(STUDIO_LABELS.sketches.status.picked);
+    expect(badges).not.toContain(STUDIO_LABELS.sketches.status.waiting);
+    expect(asked).toEqual(['elements/rating']);
+    expect(chip?.textContent?.trim()).toBe(STUDIO_LABELS.system.openCount(3));
+    expect(root.querySelectorAll('[data-sk-points]')).toHaveLength(1);
+    expect(chip?.closest('[data-sk-points]')?.parentElement?.querySelector('[data-sk-merge]')).not.toBeNull();
+  });
+
   it('shows a held sketch as paused with what it waits on, who held it and since when', async () => {
     const heldAt = new Date(Date.now() - 7 * 60_000).toISOString();
     const { root } = await render(

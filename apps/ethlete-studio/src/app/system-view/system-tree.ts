@@ -1339,6 +1339,9 @@ export const pickedVariantOf = (sketch: ListedSketch) =>
     ? sketch.decision.variant
     : null;
 
+/** Whether a ready sketch still waits for the user's pick; a picked variant counts even when `canPick` refuses it. */
+export const waitsForPick = (sketch: ListedSketch) => sketch.status === 'ready' && pickedVariantOf(sketch) === null;
+
 /**
  * The tag, "Rejected: <reason>" or "Rejected", and who rejected the variant and who wrote the reason; a variant its
  * agent withdrew reads "withdrawn by the agent" instead. `null` while it is live.

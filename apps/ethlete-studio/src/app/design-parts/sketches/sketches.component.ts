@@ -47,6 +47,8 @@ import { DisclosureComponent } from '../disclosure/disclosure.component';
 import { PartTreeComponent } from '../part-tree/part-tree.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { ZoomChipComponent } from '../zoom-chip/zoom-chip.component';
+import { OpenPointsChipComponent } from '../system-page/open-points-chip.component';
+import { OpenPointGroup } from '../system-page/system-page-sample';
 import { cropGroupsOf, magnifyTextOf, SketchCropGroup } from './sketch-crops';
 import {
   SKETCH_CURRENT,
@@ -171,6 +173,7 @@ const isPending = (row: SketchRow) => row.shots.some((shot) => shot.changed === 
     PartTreeComponent,
     ShellPageComponent,
     ZoomChipComponent,
+    OpenPointsChipComponent,
   ],
   host: { class: 'block h-screen w-full' },
 })
@@ -188,6 +191,8 @@ export class SketchesComponent {
   public rows = input<SketchRow[]>(SKETCH_ROWS);
   public fresh = input(false);
   public status = input<SketchStatus>('waiting');
+  public openPoints = input<OpenPointGroup[]>([]);
+  public pointsClosed = model(true);
   public errored = input<readonly string[]>([]);
   public mergeHold = input<SketchMergeHold | null>(null);
   public drawn = input<string | null>(SKETCH_DRAWN);

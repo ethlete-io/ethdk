@@ -77,6 +77,7 @@ export const STUDIO_LABELS = {
     status: {
       drawing: 'zeichnet',
       waiting: 'Wartet auf deine Wahl',
+      picked: 'Variante gewählt',
       paused: 'Pausiert',
       idle: 'Keine Aktivität',
       errored: 'Render-Fehler in dieser Runde',

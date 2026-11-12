@@ -13,6 +13,7 @@ import { DesignHarnessSketchShotsComponent } from './design-harness-sketch-shots
 import {
   SKETCH_CURRENT,
   SKETCH_NARROW_SAMPLE,
+  SKETCH_POINTS_SAMPLE,
   SKETCH_ROWS,
   SKETCH_WITHDRAWN,
   SketchRow,
@@ -46,13 +47,19 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     cameraKey: 'elements/canvas-frames',
     restoredCamera: { x: 0, y: 0, zoom: parseFloat(String(zoom ?? '100%')) / 100 },
   }),
-  'pages/sketches': ({ part, same, comparing, withdrawn, ...props }) => {
+  'pages/sketches': ({ part, same, comparing, withdrawn, points, pointsOpen, ...props }) => {
     const { looks: _looks, ...sample } = part === 'narrow' ? SKETCH_NARROW_SAMPLE : { rows: SKETCH_ROWS, looks: {} };
     const rows = sketchRowsOf(sample.rows, { same: same as string[] | undefined, comparing: comparing === true }).map(
       (row) => (withdrawn && row.key === SKETCH_WITHDRAWN.key ? { ...row, withdrawn: SKETCH_WITHDRAWN.reason } : row),
     );
 
-    return { ...props, ...sample, rows, ...(withdrawn ? { withdrawn } : {}) };
+    return {
+      ...props,
+      ...sample,
+      rows,
+      ...(withdrawn ? { withdrawn } : {}),
+      ...(points ? { openPoints: SKETCH_POINTS_SAMPLE, pointsClosed: pointsOpen !== true } : {}),
+    };
   },
   'pages/system': ({ build, agent, call, ...props }) => {
     const exceptions = PART_EXCEPTIONS_SAMPLE;

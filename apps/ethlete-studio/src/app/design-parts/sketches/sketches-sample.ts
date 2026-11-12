@@ -1,6 +1,8 @@
 import { SketchChange } from '../../../host/design';
 import { AgentLogoName } from '../../icons/agent-logos';
+import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { PartTreeLayer } from '../part-tree/part-tree.component';
+import { OpenPointGroup } from '../system-page/system-page-sample';
 
 export type SketchModel = { short: string; id: string; agent: AgentLogoName; when?: string };
 
@@ -18,7 +20,7 @@ export type SketchRow = {
 
 export type SketchWithdrawn = 'hidden' | 'shown';
 
-export type SketchStatus = 'drawing' | 'waiting' | 'paused' | 'idle';
+export type SketchStatus = 'drawing' | 'waiting' | 'picked' | 'paused' | 'idle';
 
 export type SketchHold = { until: string; by: SketchModel; since: string };
 
@@ -177,3 +179,14 @@ export const SKETCH_NARROW_SAMPLE = {
     { title: 'Pages', open: true, parts: [{ name: 'system', leaf: true }] },
   ] satisfies PartTreeLayer[],
 };
+
+export const SKETCH_POINTS_SAMPLE: OpenPointGroup[] = [
+  { icon: 'grid', lines: [{ text: STUDIO_LABELS.system.sketchPicked, detail: 'sketch' }] },
+  {
+    icon: 'error',
+    lines: [
+      { text: STUDIO_LABELS.system.sketchProblem('UTILITY-CSS'), detail: 'b' },
+      { text: STUDIO_LABELS.system.sketchProblem('UTILITY-CSS'), detail: 'b' },
+    ],
+  },
+];

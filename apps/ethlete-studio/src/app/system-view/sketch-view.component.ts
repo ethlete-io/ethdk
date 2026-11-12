@@ -90,7 +90,12 @@ import {
   sketchRoundsOf,
   sketchRowsOf,
   sketchUsingPagesOf,
+  waitsForPick,
 } from './system-tree';
+import { partOpenPoints$ } from '../../host/design-open-points';
+import { keptRead$ } from './kept-read';
+import { sketchPointGroupsOf } from './open-points';
+import { OpenPointGroup } from '../design-parts/system-page/system-page-sample';
 
 type Busy = 'merge' | 'discard';
 
@@ -175,6 +180,7 @@ export const liveShotsOf = ({
         [round]="shownRoundKey()"
         [pins]="variantPins()"
         [selected]="picked() ?? undefined"
+        [openPoints]="openPointGroups()"
         [errored]="erroredVariants()"
         [mergeHold]="sketch().mergeHold ?? null"
         [error]="mergeError()"
@@ -704,8 +710,30 @@ export class SketchViewComponent {
     if (this.drawnVariant() !== null) return 'drawing';
     if (this.sketch().hold) return 'paused';
 
-    return this.sketch().status === 'ready' ? 'waiting' : 'idle';
+    if (this.sketch().status !== 'ready') return 'idle';
+
+    return waitsForPick(this.sketch()) ? 'waiting' : 'picked';
   });
+
+  private openPointReads = toSignal(
+    toObservable(
+      computed(() => {
+        const { port, product, sketch } = this.address();
+
+        return this.picked() === null ? null : { address: { port, product }, part: sketch, revision: this.revision() };
+      }),
+    ).pipe(
+      keptRead$({
+        read: (asked) =>
+          asked ? partOpenPoints$(asked.address, asked.part).pipe(map(sketchPointGroupsOf)) : of<OpenPointGroup[]>([]),
+        empty: [] as OpenPointGroup[],
+        subjectOf: (asked) => asked && `${asked.address.port}/${asked.address.product}/${asked.part}`,
+      }),
+    ),
+    { initialValue: null },
+  );
+
+  protected openPointGroups = computed(() => this.openPointReads()?.items ?? []);
 
   private contextPages = computed(
     () =>
