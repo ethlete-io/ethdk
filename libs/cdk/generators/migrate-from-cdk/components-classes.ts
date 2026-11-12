@@ -845,6 +845,7 @@ export const COMPONENTS_CLASSES: readonly string[] = [
   'et-scrollable--darken-non-intersecting-items',
   'et-scrollable--is-at-end',
   'et-scrollable--is-at-start',
+  'et-scrollable--masked',
   'et-scrollable--sticky-buttons',
   'et-scrollable-body--is-at-end',
   'et-scrollable-body--is-at-start',
