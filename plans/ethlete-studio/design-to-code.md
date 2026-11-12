@@ -3875,3 +3875,11 @@ pin. Sameness is now judged on the unfiltered rows, so a and b fold into "Unver�
 decides against the fold. A spec fails on the old code. The pages/sketches compare went from 35 to 34 FAILED rows: the
 `all-unchanged` pin row is gone and its "Unverändert" button matches; its "Alle Zustände zeigen" row stays (the
 separate state-fold gap from 905). No other state got a new failure.
+
+911 design as built: the design's sample author in `components/comment-row`, `pages/inbox` and `components/comment-pin`
+named a real person; it is now "human" with the initials "H", like the app samples. One sketch with the three targets,
+merged as an agent accept on finding 911 option A (`e1557311c`); the shots showed only the author text, initials and pin
+glyph changing (no layout shift). `check-person-names` now ignores baseline entries for design parts and sketches
+(`.ethlete/design/<product>/{foundations,components,elements,pages,sketches}/`) and those entries were removed; comment
+records, `capabilities.json` and old calls keep their baseline. A spec fails on the old checker. The three part checks
+had 0 findings before and after.

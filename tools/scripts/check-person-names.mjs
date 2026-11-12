@@ -13,7 +13,8 @@ const KNOWN_NAME_HASHES = new Set(
   ),
 );
 const ROOTS = ['libs', 'apps', '.ethlete/design'];
-const UNBASELINED = /^apps\/ethlete-studio\/src\//;
+const UNBASELINED =
+  /^(?:apps\/ethlete-studio\/src|\.ethlete\/design\/[^/]+\/(?:foundations|components|elements|pages|sketches))\//;
 const TEXT = /\.(?:ts|tsx|js|mjs|cjs|json|md|css|html|vue|yml|yaml|txt)$/;
 
 const hash = (word) => createHash('sha256').update(word).digest('hex').slice(0, 16);

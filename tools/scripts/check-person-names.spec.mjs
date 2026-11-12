@@ -32,6 +32,18 @@ test('an app sample file with a person name fails even when the baseline lists i
   assert.equal(personNameProblems({ 'libs/a.ts': hits }, { 'libs/a.ts': 1 }).length, 0);
 });
 
+test('a design part or sketch file with a person name fails even when the baseline lists it', () => {
+  const hits = [{ line: 1, text: 'x' }];
+  for (const file of [
+    '.ethlete/design/studio/components/comment-row/comment-row.ts',
+    '.ethlete/design/studio/pages/inbox/shared/inbox.ts',
+    '.ethlete/design/studio/sketches/components-comment-row/shared/inbox.ts',
+  ])
+    assert.equal(personNameProblems({ [file]: hits }, { [file]: 1 }).length, 1, file);
+  const comment = '.ethlete/design/studio/comments/c.json';
+  assert.equal(personNameProblems({ [comment]: hits }, { [comment]: 1 }).length, 0);
+});
+
 test('reports the right line when a name sits deep in a multi-line text', () => {
   const text = ['one', 'two Words', 'three', 'ask Tom here', 'five'].join('\n');
   assert.deepEqual(personNameFindings(text), [{ line: 4, text: 'ask Tom here' }]);
