@@ -4074,3 +4074,8 @@ with 400, with a biting spec.
 988\. Linux builder (2026-11-12 night, 951): `sketch check` stays at about 30 s against its 10 s target; aktuell (~11 s)
 and changes-shot (~7 s) take most of it. Cause (measured, 951). Tool fix (builder default, tool backlog): make the aktuell
 and changes-shot steps faster, measured against the 951 numbers.
+
+982 built (Mac, 882228e5a, pushed): one resolver `lockFileOf(env, platform)` in heavy-run-lock.mjs; ETHLETE_HEAVY_LOCK_FILE
+wins. takeHeavyLock throws under `node --test` without a file option or env override; spec bites. The guard covers taking,
+not reading. Not verified: a live Nx daemon run. The first push-suite had one e2e failure at load 33 (min-zoom text box)
+while a 976 agent ran; the rerun passed. Suspect: load (finding 960 class).
