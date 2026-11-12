@@ -3839,3 +3839,25 @@ below 3:1, and when onColor spreads the colour map.
 `libs/uikit/src/lib/presentation/theming/themes.ts` in fifagg-frontend): most themes set `onColor: { ...onColorDark,
 disabled: '<same value as color.disabled>' }` by hand. fifagg fixes its theme file and drops its app token workaround;
 no SDK fix. The generator warning of 933 (onColor.disabled vs color.disabled below 3:1) would have caught it.
+
+930 update (Linux, withdrawn): the 930 Cause was wrong. Measured (Playwright on the app harness and the design
+`frame.html`): one source holds already (`.ethlete/design/studio/styles.css` imports `apps/ethlete-studio/src/styles.css`,
+which imports `sdk-token-map.css`; kbd line-height 14 px on both sides). The scrollbar Suspect is ruled out too. 930 has
+no tool fix; the 903 DIFF Cause is below.
+
+903 update 5 / 924 update 2 (Linux): Cause (measured): a font-load race in the pages/sketches matrix fit. The fit measures
+the state-label gutter (font-code labels). The design `mountFit` (`pages/sketches/shared/sketch-rows.ts`) fits once while
+Noto Sans Mono still loads (gutter 141.6 px, frames 205.6 px) and never refits; the app
+(`design-parts/sketches/sketches.component.ts`) refits after the font on an Angular re-render (gutter 138, frames 206.5),
+so the columns are 5 px wider and the rows move 16 px. HEAD matched only because neither side refit. Likely also the 924
+flake. Trial `void document.fonts.ready.then(fit)` in mountFit: idle, paused, paused-reason 2785 (HEAD idle 2778). Fix
+(builder default, direct edit naming 903 + 924): both fits re-run on `document.fonts.ready`; then 903 lands as commit A
+(title-search + token map) and commit B (pages/sketches @edit merge). Tool fix (builder default, tool backlog, with 924):
+the check shoots after `document.fonts.ready` and flags a layout that changes after the fonts load.
+
+934\. Linux builder (2026-11-12 night, 903): the resident design server's `frame.html` did not pick up a source edit until
+a `design compare` ran. Tool fix (builder default, tool backlog): the resident serves a frame from the current source, or
+names its build time.
+
+935\. Linux builder (2026-11-12 night, 903): `design dom --app` prints markup only, no layout, so measuring the app needed a
+hand-served harness. Tool fix (builder default, tool backlog): `design dom` prints box geometry for both sides.
