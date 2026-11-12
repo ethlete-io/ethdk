@@ -17,7 +17,7 @@ import { DESIGN_DIR } from '../../design-config';
 import { ResolvedProduct } from '../resolve-product';
 import { contentsBelow } from './clean-copy';
 import { MergeRefusal } from './merge';
-import { Sketch, sketchReportPath } from './sketch';
+import { Sketch, sketchReportPath, staleReadyRefusalOf } from './sketch';
 
 type AssetMapping = { input: string; output: string };
 
@@ -295,7 +295,7 @@ const appGateRefusalOf = (options: {
 };
 
 /**
- * Runs `merge` and holds its result against the app builds that bundle the product: a merged stylesheet `url()` an app
+ * Refuses a picked variant whose files changed since `sketch ready` judged them. Runs `merge` and holds its result against the app builds that bundle the product: a merged stylesheet `url()` an app
  * build cannot resolve, or a failing app spec related to the merged files, puts every design file back as it was and
  * answers the refusal instead.
  */
@@ -307,6 +307,10 @@ export const appGatedMergeOf = (options: {
   runAppSpecs?: AppSpecRunner;
 }): string[] | MergeRefusal => {
   const { target, product, sketch } = options;
+  const stale = staleReadyRefusalOf(sketch);
+
+  if (stale !== null) return { reason: stale };
+
   const dirs = [product.dir, ...(product.base ? [product.base.dir] : [])];
   const roots = [resolve(target, DESIGN_DIR), ...dirs, sketchReportPath({ checkout: target, sketch })];
   const before = contentsBelow(roots);

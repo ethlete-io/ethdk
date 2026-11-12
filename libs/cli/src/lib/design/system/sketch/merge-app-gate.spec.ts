@@ -3,12 +3,14 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../design-config';
+import { git, initGitRepo } from '../git-repo.fixtures';
 import { resolveProduct } from '../resolve-product';
 import { originOf } from '../write-origin';
 import { mergeSketch } from './merge';
 import { appGatedMergeOf, AppSpecRunner } from './merge-app-gate';
 import { studioMergeOf } from './merge-runner';
-import { createSketch, decideSketch, markSketchReady, Sketch } from './sketch';
+import { portBaseChanges } from './rebase-port';
+import { createSketch, decideSketch, markSketchReady, rebaseSketch, Sketch } from './sketch';
 
 const FONT_URL = "url('@assets/fonts/noto-sans.woff2')";
 
@@ -130,5 +132,42 @@ describe('mergeSketch app gate', { timeout: 60_000 }, () => {
     expect(heroCss(target)).toBe(before);
     expect(existsSync(join(target, DESIGN_DIR, 'acme/assets/fonts/noto-sans.woff2'))).toBe(false);
     expect(existsSync(sketch.dir)).toBe(true);
+  });
+
+  it('refuses a picked variant that a rebase ported a product change into since sketch ready', () => {
+    const target = mkdtempSync(join(tmpdir(), 'cli-design-merge-stale-'));
+
+    cpSync(join(__dirname, '..', '__fixtures__'), target, { recursive: true });
+    initGitRepo(target, 'base');
+
+    const productOf = () =>
+      resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+    const created = createSketch({
+      product: productOf(),
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a', 'b'],
+    }) as Sketch;
+    const ready = markSketchReady({ checkout: target, sketch: created }) as Sketch;
+    const picked = decideSketch({
+      sketch: ready,
+      decision: { kind: 'pick', variant: 'b', ...originOf('spec') },
+    }) as Sketch;
+    const heroTs = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
+
+    writeFileSync(heroTs, readFileSync(heroTs, 'utf8').replace('One featured film', 'The featured film'));
+    git(target, 'commit', '-qam', 'product change');
+
+    expect(portBaseChanges({ target, product: productOf(), sketch: picked }).ported).not.toEqual([]);
+
+    const rebased = rebaseSketch({ product: productOf(), sketch: picked });
+    const merge = vi.fn(() => ['elements/hero']);
+    const refused = appGatedMergeOf({ target, product: productOf(), sketch: rebased, merge });
+
+    expect(refused).toEqual({
+      reason: expect.stringMatching(
+        /^elements\/hero variant b changed since sketch ready judged it \(readyContent [0-9a-f]{16}, now [0-9a-f]{16}\)/,
+      ),
+    });
+    expect(merge).not.toHaveBeenCalled();
   });
 });

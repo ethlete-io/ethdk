@@ -1104,13 +1104,27 @@ export const variantContentHashOf = (sketch: Sketch, variant: string) => {
 const readyContentOf = (sketch: Sketch) =>
   Object.fromEntries(sketch.variants.map((variant) => [variant, variantContentHashOf(sketch, variant)]));
 
-/** The variants of an undecided ready sketch that changed since `sketch ready` judged them; reads only. */
+/** The variants of a ready sketch, not discarded, that changed since `sketch ready` judged them; reads only. */
 export const changedSinceReadyOf = (sketch: Sketch) => {
-  if (sketch.status !== 'ready' || sketch.decision || !sketch.readyContent) return [];
+  if (sketch.status !== 'ready' || sketch.decision?.kind === 'discard' || !sketch.readyContent) return [];
 
   const judged = sketch.readyContent;
 
   return sketch.variants.filter((variant) => judged[variant] !== variantContentHashOf(sketch, variant));
+};
+
+/** Why the picked variant of `sketch` cannot merge as judged, its files changed since `sketch ready`; `null` when unchanged or unrecorded. */
+export const staleReadyRefusalOf = (sketch: Sketch) => {
+  const variant = sketch.decision?.kind === 'pick' ? sketch.decision.variant : null;
+  const judged = variant ? sketch.readyContent?.[variant] : undefined;
+
+  if (!variant || !judged) return null;
+
+  const now = variantContentHashOf(sketch, variant);
+
+  return now === judged
+    ? null
+    : `${sketch.target} variant ${variant} changed since sketch ready judged it (readyContent ${judged}, now ${now}) - run \`et design sketch ready ${sketch.target}\` to judge it again`;
 };
 
 const readyCommitOf = (sketch: Sketch) => {

@@ -27,8 +27,11 @@ const gitOf =
 const productOf = (target: string) =>
   resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
 
-const pickedSketch = (target: string, sketch: SketchTarget) => {
+const pickedSketch = (target: string, sketch: SketchTarget, css: string) => {
   const created = createSketch({ product: productOf(target), sketch, variants: ['a', 'b'] }) as Sketch;
+
+  writeFileSync(join(created.dir, 'b', sketch.layer, sketch.name, `${sketch.name}.css`), css);
+
   const ready = markSketchReady({ checkout: target, sketch: created }) as Sketch;
 
   return decideSketch({ sketch: ready, decision: { kind: 'pick', variant: 'b', ...originOf('spec') } }) as Sketch;
@@ -53,12 +56,14 @@ describe('a merge commits its own result', { timeout: 120_000 }, () => {
     git('add', '.');
     git('commit', '-m', 'base');
 
-    const hero = pickedSketch(target, { layer: 'elements', name: 'hero' });
-    const home = pickedSketch(target, { layer: 'pages', name: 'home' });
+    const hero = pickedSketch(
+      target,
+      { layer: 'elements', name: 'hero' },
+      '.acme-hero { background: var(--acme-accent); }',
+    );
+    pickedSketch(target, { layer: 'pages', name: 'home' }, '.acme-home { color: var(--acme-accent); }');
     const stray = join(target, DESIGN_DIR, 'acme/foundations/palette/palette.css');
 
-    writeFileSync(join(hero.dir, 'b/elements/hero/hero.css'), '.acme-hero { background: var(--acme-accent); }');
-    writeFileSync(join(home.dir, 'b/pages/home/home.css'), '.acme-home { color: var(--acme-accent); }');
     writeFileSync(stray, '.acme-palette { margin: 0; }\n');
 
     expect(mergeOf(target, hero)).toMatchObject({ parts: ['elements/hero'] });
@@ -104,9 +109,12 @@ describe('a merge commits its own result', { timeout: 120_000 }, () => {
     git('add', '.');
     git('commit', '-m', 'base');
 
-    const hero = pickedSketch(target, { layer: 'elements', name: 'hero' });
+    const hero = pickedSketch(
+      target,
+      { layer: 'elements', name: 'hero' },
+      '.acme-hero { background: var(--acme-accent); }',
+    );
 
-    writeFileSync(join(hero.dir, 'b/elements/hero/hero.css'), '.acme-hero { background: var(--acme-accent); }');
     writeFileSync(merged, `${JSON.stringify({ 'pages/home': 'bbbbbbbbbbbbbbbb' }, null, 2)}\n`);
 
     expect(mergeOf(target, hero)).toMatchObject({ parts: ['elements/hero'] });
@@ -135,9 +143,11 @@ describe('a merge commits its own result', { timeout: 120_000 }, () => {
     git('add', '.');
     git('commit', '-m', 'base');
 
-    const hero = pickedSketch(target, { layer: 'elements', name: 'hero' });
-
-    writeFileSync(join(hero.dir, 'b/elements/hero/hero.css'), '.acme-hero { background: var(--acme-accent); }');
+    const hero = pickedSketch(
+      target,
+      { layer: 'elements', name: 'hero' },
+      '.acme-hero { background: var(--acme-accent); }',
+    );
 
     expect(mergeOf(target, hero)).toMatchObject({ parts: ['elements/hero'] });
     expect(git('show', '--name-only', '--format=', 'HEAD').stdout).toContain(
@@ -162,9 +172,11 @@ describe('a merge commits its own result', { timeout: 120_000 }, () => {
     git('add', '.');
     git('commit', '-m', 'base');
 
-    const hero = pickedSketch(target, { layer: 'elements', name: 'hero' });
-
-    writeFileSync(join(hero.dir, 'b/elements/hero/hero.css'), '.acme-hero { background: var(--acme-accent); }');
+    const hero = pickedSketch(
+      target,
+      { layer: 'elements', name: 'hero' },
+      '.acme-hero { background: var(--acme-accent); }',
+    );
 
     expect(mergeOf(target, hero)).toMatchObject({ parts: ['elements/hero'] });
     expect(git('show', '--name-only', '--format=', 'HEAD').stdout).not.toContain('.changeset/');
@@ -174,9 +186,11 @@ describe('a merge commits its own result', { timeout: 120_000 }, () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
     const target = acme();
-    const hero = pickedSketch(target, { layer: 'elements', name: 'hero' });
-
-    writeFileSync(join(hero.dir, 'b/elements/hero/hero.css'), '.acme-hero { background: var(--acme-accent); }');
+    const hero = pickedSketch(
+      target,
+      { layer: 'elements', name: 'hero' },
+      '.acme-hero { background: var(--acme-accent); }',
+    );
 
     expect(mergeOf(target, hero)).toMatchObject({ parts: ['elements/hero'] });
   });
@@ -191,9 +205,11 @@ describe('a merge commits its own result', { timeout: 120_000 }, () => {
     git('add', '.');
     git('commit', '-m', 'base');
 
-    const hero = pickedSketch(target, { layer: 'elements', name: 'hero' });
-
-    writeFileSync(join(hero.dir, 'b/elements/hero/hero.css'), '.acme-hero { background: var(--acme-accent); }');
+    const hero = pickedSketch(
+      target,
+      { layer: 'elements', name: 'hero' },
+      '.acme-hero { background: var(--acme-accent); }',
+    );
 
     expect(await mergeInWorker({ target, product: 'acme', sketch: hero })).toEqual(['elements/hero']);
     expect(git('log', '-1', '--format=%s').stdout.trim()).toBe('feat(repo): Merge elements/hero variant b into acme');

@@ -722,6 +722,10 @@ A merge commits what it wrote as `feat(repo): Merge <target> variant <key> into 
 `.changeset` folder and a merged file lies in a workspace package, the commit also holds a changeset that names each
 such package with the level `none`.
 
+A merge refuses a picked variant whose files changed since `sketch ready` judged them, for example after a
+`sketch rebase` ported a product change into it. `sketch ready` then takes the sketch back to in progress, judges it
+again and keeps the pick.
+
 `sketch merge --decided-by <role>` records who picked the variant in `merged.json` (`user` without it): give it the role,
 for example `human`. Both `merge` and `pick` refuse a person name in `--decided-by` (exit 1), as `yarn lint:person-names` does. It does not go with `--allowed-by`, which records the plan.
 

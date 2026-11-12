@@ -498,10 +498,14 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     const target = acme();
-    const ready = readySketch(target);
+    const created = createSketch({
+      product: resolveAcme(target),
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a', 'b'],
+    }) as Sketch;
 
-    picked(ready.sketch);
-    writeFileSync(join(ready.sketch.dir, 'b/elements/hero/hero.css'), '.acme-hero { color: #fff; }');
+    writeFileSync(join(created.dir, 'b/elements/hero/hero.css'), '.acme-hero { color: #fff; }');
+    picked(markSketchReady({ checkout: target, sketch: created }) as Sketch);
 
     const answer = await sketchMergeAnswer({
       target,

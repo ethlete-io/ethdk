@@ -380,6 +380,26 @@ describe('status', () => {
     });
   });
 
+  it('reopens a picked ready sketch whose variant changed since ready and keeps its pick', () => {
+    const target = acme();
+    const sketch = open(target, 'elements/hero');
+    const ready = markSketchReady({ checkout: target, sketch }) as Sketch;
+    const picked = decideSketch({
+      sketch: ready,
+      decision: { kind: 'pick', variant: 'a', ...originOf('spec') },
+    }) as Sketch;
+
+    writeFileSync(join(sketch.dir, 'a', 'extra.css'), '.x { color: red; }');
+
+    const reopened = reopenChangedReady(picked);
+
+    expect(reopened?.changed).toEqual(['a']);
+    expect(markSketchReady({ checkout: target, sketch: reopened?.sketch as Sketch })).toMatchObject({
+      status: 'ready',
+      decision: { kind: 'pick', variant: 'a' },
+    });
+  });
+
   it('leaves the generated editor tsconfig of a variant out of its content hash', () => {
     const target = acme();
     const sketch = open(target, 'elements/hero');
