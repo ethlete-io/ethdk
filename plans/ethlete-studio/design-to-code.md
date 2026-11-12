@@ -3912,10 +3912,20 @@ disabled controls; the look choice stays with the human): variant a declares `de
 for its 4 disabled chips, so the human compares both floors.
 
 943\. Linux builder (2026-11-12 night, 933): `sketch ready` exits 0 when it refuses a variant. Tool fix (builder default,
-tool backlog): exit 1 on a refusal, with a spec.
+tool backlog): exit 1 on a refusal, with a spec. Two more cases of the same class (Linux, 63d53b7b6): `sketch ready` without
+`--by` prints a usage error and exits 0; a SHOT-NOT-VIEWED refusal exits 0. The fix covers every refusal and usage error.
 
 944\. Linux builder (2026-11-12 night, 933): `sketch new --name "..."` parses the name as a target. Tool fix (builder
 default, tool backlog): `--name` takes a value, with a spec.
 
 945\. Linux builder (2026-11-12 night, 933): `sketch ready` prints about 30 UNBOUND-INPUT note lines per variant. Tool fix
 (builder default, tool backlog): one summary line per variant, details behind `--verbose`.
+
+933 update 3 (Linux, 63d53b7b6): the sketch `foundations/colors` (studio) is ready, variants a (4 disabled-label chips
+with a contrast exception, WCAG 1.4.3, ratios 3.1-3.4) and b (no exception, 4.7-5.1). It waits for the human's pick by
+merge. After a pick, `generate-studio-themes.mjs` must read the new `--on-surface-disabled` token (DARK_INTERACTION onColor).
+
+946\. Linux builder (2026-11-12 night, 933): `.ethlete/design/studio/ready.json` shows stale hashes for
+components/canvas-viewport (`button.component.css`, `icon-button.component.css`) in the working tree, uncommitted. Suspect:
+a shot or a ready run rewrote it after the 903 button change. Tool fix (builder default, tool backlog): find which command
+writes ready.json outside `sketch ready`; only `sketch ready` may write it, with a spec.
