@@ -83,6 +83,7 @@ import {
   dependentIdsOf,
   ImportingModule,
   SHOT_PATH,
+  AppStateAddress,
   StylesheetImports,
   stylesheetImportsPlugin,
 } from './shot';
@@ -116,6 +117,7 @@ import { CheckSketches, createSketchChecker } from './system/sketch/sketch-check
 import { forgetUnchangedStates } from './system/sketch/unchanged-states';
 import { inventoryOf } from './system/inventory';
 import { SHOT_VIEW_PATH } from './shot-board';
+import { createAppStateShots } from './system/app-state-shot';
 import { createDrawQueue, createThumbnailer, send, THUMB_PATH, ThumbMissingError } from './thumb';
 import { DeclaredMotion, motionMiddleware } from './motion-endpoint';
 import { assetRoot, snapshotPackage, installedAssetRoot } from './package-root';
@@ -590,6 +592,7 @@ const designExplore = ({
   shotCacheDir,
   checkSketches,
   beforeFrame,
+  appShotOf,
 }: {
   target: string;
   config: DesignConfig;
@@ -598,6 +601,7 @@ const designExplore = ({
   shotCacheDir: string | null;
   checkSketches?: CheckSketches;
   beforeFrame?: () => void;
+  appShotOf?: (address: AppStateAddress) => Promise<Buffer>;
 }) => {
   const renderer = createRenderer({ target, config });
   const transform = withAssetUrls(system);
@@ -681,6 +685,7 @@ const designExplore = ({
         base,
         ledger,
         system,
+        appShotOf,
         changed: (part) => {
           revision += 1;
           events.signal('parts', { revision, all: false, parts: [part] });
@@ -1219,6 +1224,15 @@ export const createDesignServer = async (options: {
     logError(message, errorOptions);
   };
 
+  let appDraws: ReturnType<typeof createDrawQueue> | null = null;
+  const appShots =
+    listen && !own
+      ? createAppStateShots({
+          target,
+          config,
+          warm: { server: async () => designServer, queue: () => (appDraws ??= createDrawQueue({ target })) },
+        })
+      : null;
   const server = await createServer({
     configFile: false,
     root: resolve(here, 'web'),
@@ -1265,6 +1279,7 @@ export const createDesignServer = async (options: {
         shotCacheDir: listen && !own ? resolve(workRootOf(target), SHOT_STORE_DIR) : null,
         checkSketches,
         ...(own ? { beforeFrame: () => sourceChangedSince(loadedFilesOf(server), drawnSince) && forgetDrawn() } : {}),
+        ...(appShots ? { appShotOf: appShots.shotOf } : {}),
       }),
     ],
     ...(listen ? {} : { appType: 'custom' as const }),
@@ -1288,7 +1303,12 @@ export const createDesignServer = async (options: {
   };
   const closing = server.close.bind(server);
 
-  server.close = () => closing().finally(() => cache?.release());
+  server.close = () =>
+    closing().finally(async () => {
+      cache?.release();
+      await appShots?.close();
+      await appDraws?.close();
+    });
 
   const listening = server.listen.bind(server);
 
@@ -1303,7 +1323,7 @@ export const createDesignServer = async (options: {
       );
     });
 
-  return Object.assign(server, {
+  const designServer = Object.assign(server, {
     /** A disk store of this server's part pictures under `dir`; an entry is served while every file it was drawn from is unchanged. */
     shotStore: (dir: string, salt: string) => {
       return shotStoreOf({
@@ -1327,6 +1347,8 @@ export const createDesignServer = async (options: {
     /** Forgets every loaded part, sketch and module, so the next draw reads the files as they are now: a server started with `port` does not watch them, and forgets on its own only when a frame is asked for after a loaded source changed. */
     forgetDrawn,
   });
+
+  return designServer;
 };
 
 const exitWhenParentIsGone = (server: { close: () => Promise<void> }) =>

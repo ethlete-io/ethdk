@@ -546,6 +546,11 @@ unknown path answered by its `index.html`, and stops the server and removes the 
 Ctrl-C. This works next to a running dev server of the same app. When another nx process runs the same build, it
 fails at once and asks for `--url`.
 
+The design server shoots the same app side: `GET /__design/shot?product=&part=&state=&source=app` (with an optional
+`preset`) answers the PNG compare takes of that state in the harness app, from a watch build of the harness the server
+keeps while it runs. It takes no `call`, `sketch`, `width` or `interaction`, and answers 422 with compare's reason when
+it cannot shoot the state. `source=design`, the default, draws the design.
+
 `et design compare --affected --product app-a` compares every implemented part whose app files changed since its
 `implemented.json` record, the parts a shared change reaches, in one run on one harness. Each part's output starts with
 `== <part> (changed: <files>)`. A part whose states are all ok gets its actions check on the same harness, and when every

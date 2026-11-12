@@ -39,6 +39,27 @@ import { recordCache } from './timings';
 
 export const SHOT_PATH = '/__design/shot';
 
+/** One state of a part as its product's harness app draws it: what `source=app` on the shot route shoots. */
+export type AppStateAddress = { product: string; part: string; state: string; preset: string | null };
+
+/** Why the shot route refuses `source`, `null` for a design or an app shot it can take. */
+export const sourceProblemOf = (params: URLSearchParams, canShootApp: boolean) => {
+  const source = params.get('source');
+
+  if (source === null || source === 'design') return null;
+  if (source !== 'app') return `design-explore: source is design or app, not "${source}"`;
+  if (!canShootApp)
+    return 'design-explore: this server cannot shoot the app harness - run design serve in the checkout';
+
+  const passed = ['call', 'sketch', 'width', 'interaction'].filter((name) => params.has(name));
+
+  if (passed.length > 0) return `design-explore: source=app shoots the built app, so it takes no ${passed.join(', ')}`;
+  if (!['product', 'part', 'state'].every((name) => params.get(name)))
+    return 'design-explore: source=app needs product, part and state';
+
+  return null;
+};
+
 const BOX_CACHE_LIMIT = 500;
 
 const isPositiveWhole = (pixels: number) => Number.isInteger(pixels) && pixels > 0;
@@ -450,6 +471,8 @@ export const createPartShooter = (options: {
   queue?: ReturnType<typeof createDrawQueue>;
   /** Called when a part's picture changed although no `forget` or announced `clear` dropped it. */
   changed?: (part: DrawnPart) => void;
+  /** Shoots a state in the product's harness app, for `source=app`; without it the route refuses that source. */
+  appShotOf?: (address: AppStateAddress) => Promise<Buffer>;
 }) => {
   const { system, statesOf, store, ledger } = options;
   const baseOf = () => (typeof options.base === 'function' ? options.base() : options.base);
@@ -804,6 +827,30 @@ export const createPartShooter = (options: {
           type: 'text/plain; charset=utf-8',
           body: 'design-explore: clip is x,y,width,height in whole CSS pixels, width and height above 0',
         });
+
+        return;
+      }
+
+      const sourceProblem = sourceProblemOf(params, !!options.appShotOf);
+
+      if (sourceProblem !== null) {
+        send(response, { status: 400, type: 'text/plain; charset=utf-8', body: sourceProblem });
+
+        return;
+      }
+
+      if (options.appShotOf && params.get('source') === 'app') {
+        const named = (name: string) => params.get(name) ?? '';
+
+        sendShot(
+          response,
+          options.appShotOf({
+            product: named('product'),
+            part: named('part'),
+            state: named('state'),
+            preset: params.get('preset'),
+          }),
+        );
 
         return;
       }

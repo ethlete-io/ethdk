@@ -10,7 +10,7 @@ import { DESIGN_DIR, readConfig } from './design-config';
 import { createDesignServer } from './serve';
 import { createPartShooter, dependentIdsOf } from './shot';
 import { createShotStore } from './shot-store';
-import { DRAWS_AT_ONCE } from './thumb';
+import { DRAWS_AT_ONCE, ShotUnprocessableError } from './thumb';
 import { createSketch, parseTarget } from './system/sketch/sketch';
 import { unviewedShotLinesOf } from './system/sketch/viewed-shots';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
@@ -76,7 +76,10 @@ afterEach(async () => {
   process.chdir(cwd);
 });
 
-const acme = (statesOf?: Parameters<typeof createPartShooter>[0]['statesOf']) => {
+const acme = (
+  statesOf?: Parameters<typeof createPartShooter>[0]['statesOf'],
+  appShotOf?: Parameters<typeof createPartShooter>[0]['appShotOf'],
+) => {
   const target = realpathSync(mkdtempSync(join(tmpdir(), 'cli-design-shot-')));
 
   cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
@@ -91,6 +94,7 @@ const acme = (statesOf?: Parameters<typeof createPartShooter>[0]['statesOf']) =>
     chromiumOf: withBrowser,
     statesOf,
     ledger,
+    appShotOf,
   });
 
   closing.push(() => shots.close());
@@ -154,6 +158,66 @@ const asking = (shots: ReturnType<typeof createPartShooter>, query: string) => {
 const ask = (shots: ReturnType<typeof createPartShooter>, query: string) => asking(shots, query).answer;
 
 describe('createPartShooter', () => {
+  it('shoots the app harness of the asked part and state with source=app, not the design', async () => {
+    const appShotOf = vi.fn(async () => Buffer.from('app png'));
+    const { shots } = acme(undefined, appShotOf);
+    const shot = await ask(shots, 'product=acme&part=components/card&state=long&preset=phone&source=app');
+
+    expect(shot).toMatchObject({ status: 200, type: 'image/png', body: Buffer.from('app png') });
+    expect(appShotOf).toHaveBeenCalledWith({
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: 'phone',
+    });
+    expect(drawnUrls()).toEqual([]);
+  });
+
+  it('answers 422 with the reason the app harness cannot shoot a state', async () => {
+    const { shots } = acme(undefined, async () => {
+      throw new ShotUnprocessableError('product "acme" has no harness in config.json');
+    });
+
+    expect(await ask(shots, 'product=acme&part=components/card&state=long&source=app')).toMatchObject({
+      status: 422,
+      body: 'product "acme" has no harness in config.json',
+    });
+  });
+
+  it.each([
+    ['source=nope', 'source is design or app, not "nope"'],
+    ['source=app&part=components/card&state=long', 'source=app needs product, part and state'],
+    ['source=app&part=components/card&state=long&product=acme&sketch=x&variant=a', 'takes no sketch'],
+    ['source=app&part=components/card&state=long&product=acme&width=300', 'takes no width'],
+  ])('answers 400 to %s', async (query, message) => {
+    const appShotOf = vi.fn(async () => Buffer.from('app png'));
+    const { shots } = acme(undefined, appShotOf);
+    const shot = await ask(shots, query);
+
+    expect(shot.status).toBe(400);
+    expect(String(shot.body)).toContain(message);
+    expect(appShotOf).not.toHaveBeenCalled();
+  });
+
+  it('answers 400 to source=app on a server that cannot shoot the app', async () => {
+    const { shots } = acme();
+    const shot = await ask(shots, 'product=acme&part=components/card&state=long&source=app');
+
+    expect(shot.status).toBe(400);
+    expect(String(shot.body)).toContain('cannot shoot the app harness');
+    expect(drawnUrls()).toEqual([]);
+  });
+
+  it('draws the design with source=design', async () => {
+    const appShotOf = vi.fn(async () => Buffer.from('app png'));
+    const { shots } = acme(undefined, appShotOf);
+    const shot = await ask(shots, 'product=acme&part=components/card&state=long&preset=phone&source=design');
+
+    expect(shot.status).toBe(200);
+    expect(appShotOf).not.toHaveBeenCalled();
+    expect(drawnUrls()).toHaveLength(1);
+  });
+
   it('draws a state at the preset width, at full height, under the asked theme', async () => {
     const { shots } = acme();
     const shot = await ask(shots, 'product=acme&part=components/card&state=long&preset=phone&surface=dark');
