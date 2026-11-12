@@ -60,9 +60,12 @@ export const sketchStylesheetsPlugin = (
 
 /**
  * A PostCSS plugin that turns each `url(@assets/<file>)` a stylesheet inlined through an `@import` into the URL
- * `rewrite` answers for the stylesheet's module id. It must run after the `@import`s are inlined and swapped.
+ * `rewrite` answers for the stylesheet's module id and the file the declaration came from. It must run after the
+ * `@import`s are inlined and swapped.
  */
-export const importedAssetUrlsPlugin = (rewrite: (code: string, id: string) => string | null): Plugin => ({
+export const importedAssetUrlsPlugin = (
+  rewrite: (code: string, from: { id: string; sourceFile?: string }) => string | null,
+): Plugin => ({
   postcssPlugin: 'ethlete-imported-asset-urls',
   Once: (root, { result }) => {
     const from = result.opts.from;
@@ -70,7 +73,8 @@ export const importedAssetUrlsPlugin = (rewrite: (code: string, id: string) => s
     if (!from) return;
 
     root.walkDecls((decl) => {
-      if (decl.value.includes('@assets/')) decl.value = rewrite(decl.value, from) ?? decl.value;
+      if (decl.value.includes('@assets/'))
+        decl.value = rewrite(decl.value, { id: from, sourceFile: decl.source?.input.file }) ?? decl.value;
     });
   },
 });

@@ -292,13 +292,13 @@ describe('createSystemModules', () => {
       join(design, 'acme/elements/hero/hero.css') +
       productModuleIdOf({ file: '', product: 'acme', sketch: sketched }).replace('?', '?inline&');
 
-    expect(system.withAssetUrls(css, stylesheet())).toBe(
+    expect(system.withAssetUrls(css, { id: stylesheet() })).toBe(
       `.a { background: url("/@fs${join(design, 'acme/assets/mark.png')}"); } .b { src: url(@assets/missing.woff2); }`,
     );
-    expect(system.withAssetUrls(css, stylesheet(sketch))).toContain(
+    expect(system.withAssetUrls(css, { id: stylesheet(sketch) })).toContain(
       `url("/@fs${join(design, 'acme/sketches/elements-hero/a/assets/mark.png')}")`,
     );
-    expect(system.withAssetUrls(css, join(design, 'acme/elements/hero/hero.css'))).toBeNull();
+    expect(system.withAssetUrls(css, { id: join(design, 'acme/elements/hero/hero.css') })).toBeNull();
   });
 
   it('lists the stylesheets of the default tokens part when a product names none', () => {

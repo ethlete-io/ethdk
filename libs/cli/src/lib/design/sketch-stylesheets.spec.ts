@@ -141,6 +141,43 @@ describe('a product stylesheet drawn for a sketch variant', () => {
     expect(a).not.toContain('@assets/');
   });
 
+  it('resolves an @assets URL in a stylesheet of another product as that product resolves it', async () => {
+    const target = realpathSync(mkdtempSync(join(tmpdir(), 'cli-design-foreign-assets-')));
+
+    cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
+
+    const font = join(target, DESIGN_DIR, 'acme/assets/fonts/face.woff2');
+    const palette = join(target, DESIGN_DIR, 'acme/foundations/palette/palette.css');
+    const styles = join(target, 'app/styles.css');
+    const config = readConfig(target) ?? {};
+
+    mkdirSync(dirname(font), { recursive: true });
+    writeFileSync(font, '');
+    writeFileSync(
+      palette,
+      `${readFileSync(palette, 'utf8')}\n@font-face { font-family: Face; src: url('@assets/fonts/face.woff2'); }\n`,
+    );
+    mkdirSync(dirname(styles), { recursive: true });
+    writeFileSync(styles, `@import '../${DESIGN_DIR}/acme/foundations/palette/palette.css';\n`);
+    mkdirSync(join(target, DESIGN_DIR, 'lab'), { recursive: true });
+    config.products = { ...config.products, lab: { styles: ['app/styles.css'] } };
+    writeFileSync(join(target, DESIGN_DIR, 'config.json'), JSON.stringify(config));
+
+    const vite = await createDesignServer({ target, config, listen: false });
+
+    closing.push(() => vite.close());
+
+    const id = productModuleIdOf({ file: styles, product: 'lab' });
+    const [plain, inline] = await Promise.all(
+      [id, id.replace('?', '?inline&')].map(async (url) => (await vite.transformRequest(url))?.code ?? ''),
+    );
+
+    for (const code of [plain, inline]) {
+      expect(code).toContain(`/@fs${font}`);
+      expect(code).not.toContain('@assets/');
+    }
+  });
+
   it('is what a frame of a variant that draws a part stylesheet of its own loads', async () => {
     const { vite } = await serveAcme();
     const env = String((await vite.pluginContainer.load('\0virtual:design-explore/env'))?.toString() ?? '');

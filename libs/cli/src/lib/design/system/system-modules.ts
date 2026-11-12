@@ -1,9 +1,10 @@
 import { existsSync } from 'fs';
-import { dirname, resolve } from 'path';
+import { dirname, resolve, sep } from 'path';
 import { DesignConfig } from '../design-config';
 import { fsUrl, sourceFileOf } from '../vite-paths';
 import { ASSET_URL, assetFileOf, ASSETS_PREFIX } from './assets';
 import { classifyImport, productSharedDirsOf, sharedFileOf as sharedFileIn } from './imports';
+import { productDirOf } from './product';
 import { partKeyOf, resolveProduct, ResolvedProduct } from './resolve-product';
 import { overlaySketch } from './sketch/overlay';
 import { findSketch, listSketches, parseTarget, sharedDirOf, Sketch, variantSharedDirOf } from './sketch/sketch';
@@ -241,17 +242,33 @@ export const createSystemModules = (options: { target: string; config: DesignCon
     return file ? productModuleIdOf({ file, product: name, sketch }) : null;
   };
 
-  /** A product's stylesheet with each `url(@assets/<file>)` turned into the URL of the file the product resolves. */
-  const withAssetUrls = (code: string, id: string) => {
+  const ownerOf = (drawn: ResolvedProduct, file: string) => {
+    const isIn = (dir: string) => resolve(file).startsWith(`${resolve(dir)}${sep}`);
+
+    if (isIn(drawn.dir) || (drawn.base && isIn(drawn.base.dir))) return drawn;
+
+    const owner = Object.keys(config.products ?? {}).find((name) => isIn(productDirOf({ target, product: name })));
+
+    return (owner && productOf(owner)) || drawn;
+  };
+
+  /**
+   * A product's stylesheet with each `url(@assets/<file>)` turned into the URL of the file it names: as the
+   * product of `sourceFile` (default: the stylesheet itself) resolves it when that file lies in another product's
+   * folder, as the drawn product resolves it otherwise.
+   */
+  const withAssetUrls = (code: string, from: { id: string; sourceFile?: string }) => {
+    const { id, sourceFile = fileOfModuleId(id) } = from;
     const name = productOfModuleId(id);
 
     if (!name || !STYLESHEET_FILE.test(fileOfModuleId(id)) || !code.includes(ASSETS_PREFIX)) return null;
 
     const drawn = drawnOf(name, sketchOfModuleId(id));
+    const product = drawn && ownerOf(drawn, sourceFile);
 
-    return drawn
+    return product
       ? code.replace(ASSET_URL, (...[whole = '', , path = '']: string[]) => {
-          const file = assetFileOf({ product: drawn, path });
+          const file = assetFileOf({ product, path });
 
           return file ? `url("${fsUrl(file)}")` : whole;
         })

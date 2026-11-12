@@ -502,7 +502,7 @@ const isInside = (folder: string, file: string) => file.startsWith(`${folder}${s
 const withAssetUrls = (system: SystemModules) => {
   const marks = partMarksTransform(system);
 
-  return (code: string, id: string) => system.withAssetUrls(code, id) ?? marks(code, id);
+  return (code: string, id: string) => system.withAssetUrls(code, { id }) ?? marks(code, id);
 };
 
 const filesUnder = (dir: string) =>
