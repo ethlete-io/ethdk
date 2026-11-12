@@ -4073,3 +4073,14 @@ measurement, then a fix with a biting spec; `yarn spec:tmp-leaks` must pass on i
 tools/** and `vitest.projects.ts`; `vitest.projects.ts` skips it. Root `npx vitest related` exits 1; a project-dir run and
 `yarn vitest:projects:check` still work. Spec `tools/scripts/root-vitest-guard.spec.mjs` bites. The builder-agent skill
 rule (779) names the project dir and `node --test` for tools/** (914). Not verified: the VS Code vitest extension.
+
+913 + 918 built (Linux, 147f38202): the slow run records per part each state it cannot draw at HEAD (undrivable, missing
+pane, look miss, dropped prop) with the reason, also for the design-only compare (it dropped them silently before). Every
+`design check` prints `WARNING <product> <part>: state <s> cannot be judged - <why>`; never a failure. 2 specs bite;
+live: pages/sketches names change-crop and change-crop-whole. Gaps: old slow-cache entries warn only after the next slow
+run; sketches get no warnings.
+
+970\. Linux builder (2026-11-12 night, 913): the 9 baselined DROPPED-PROP hits of pages/sketches (ADR 0201) now print as
+warnings on every check, 13 lines for one part, so the real warnings drown. Suspect. Tool fix (doc agent applies ADR 0201:
+a baselined hit is accepted; builder default, tool backlog): skip the warning for a state whose DROPPED-PROP hit is
+baselined, with a biting spec.
