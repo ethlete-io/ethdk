@@ -77,12 +77,16 @@ describe('background-design-commands', () => {
     expect(decisionOf({ command, background: true })).toBeNull();
   });
 
-  it.each(['yarn design --help', 'yarn design shot studio x', 'yarn design sketch start studio x', 'yarn lint'])(
-    'allows the short command %s',
-    (command) => {
-      expect(decisionOf({ command })).toBeNull();
-    },
-  );
+  it.each([
+    'yarn design compare --help',
+    'node dist/libs/cli/src/index.js design check -h',
+    'yarn design --help',
+    'yarn design shot studio x',
+    'yarn design sketch start studio x',
+    'yarn lint',
+  ])('allows the short command %s', (command) => {
+    expect(decisionOf({ command })).toBeNull();
+  });
 
   it('ignores quoted text such as a commit message', () => {
     expect(decisionOf({ command: 'git commit -m "docs: run design check in background"' })).toBeNull();
@@ -108,6 +112,7 @@ describe('background-design-commands', () => {
     'echo $(yarn design check)',
     'cat <<EOF\nhello\nEOF\nyarn design harness studio',
     'timeout 600 yarn design check',
+    'yarn studio:e2e --help',
   ])('still denies the command-position form %s', (command) => {
     expect(decisionOf({ command })).toBe('deny');
   });

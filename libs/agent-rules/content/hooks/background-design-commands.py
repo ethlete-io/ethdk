@@ -2,7 +2,8 @@
 """PreToolUse hook: long design commands must run in the background.
 
 `design check`, `design compare`, `design ready`, `design sketch ready`, `design harness`,
-the `studio:e2e` target and the `--visible-change` gate each take minutes. In the foreground
+the `studio:e2e` target and the `--visible-change` gate each take minutes. A `--help` or `-h`
+call of a `design` command only prints usage and passes; `studio:e2e --help` runs the suite. In the foreground
 they block the whole session, so a Bash call that runs one without `run_in_background: true`
 is denied and the agent repeats it in the background.
 
@@ -43,6 +44,8 @@ QUOTED = re.compile(r"\"(?:\\.|[^\"\\])*\"|'[^']*'")
 HEREDOC = re.compile(r"<<-?\s*(?:\"(\w+)\"|'(\w+)'|\\?(\w+))")
 SEPARATORS = re.compile(r"&&|\|\||[;&|\n(){}`]")
 ASSIGNMENT = re.compile(r"^[A-Za-z_]\w*=")
+HELP_PRINTS_USAGE = frozenset(("design check", "design compare", "design ready", "design sketch ready", "design harness"))
+HELP_FLAG = re.compile(r"(?:^|\s)(?:--help|-h)(?=\s|$)")
 
 
 def without_heredoc_bodies(command):
@@ -117,7 +120,7 @@ def long_command_in(command):
         if not at_command_position(segment):
             continue
         for name, pattern in LONG_COMMANDS:
-            if pattern.search(segment):
+            if pattern.search(segment) and not (name in HELP_PRINTS_USAGE and HELP_FLAG.search(segment)):
                 return name
     return None
 
