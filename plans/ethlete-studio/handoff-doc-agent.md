@@ -300,3 +300,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - 957 built (01f0cd0c6); finding 995. Next free finding: 996.
 - B494 timer part built (7f71406ec), install waits for the human (yarn tmp-sweep:install); finding 996 (Linux next after the leak check). Next free finding: 997.
 - B494 timer installed by the doc agent on the human's word ("instslliere ihn"); first run deleted 2278 entries, /tmp 52 % -> 45 % inodes; next run hourly.
+- ADR 0276: findings only with Cause or when blocking; Suspects to parked-suspects.md; a shift may not open more than it closes; night balance +94/-50. Doc agent sorts open 903-996 next.
