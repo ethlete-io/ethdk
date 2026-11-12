@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'crypto';
 import {
   closeSync,
+  existsSync,
   mkdirSync,
   openSync,
   readdirSync,
@@ -125,6 +126,7 @@ export const createShotStore = (options: {
   const hashes = new Map<string, { stamp: string; hash: string }>();
   const used = new Map<string, string>();
   let sizes: Map<string, number> | null = null;
+  const checkoutGone = () => !existsSync(options.checkout);
 
   const checkouts = [...new Set([resolve(options.checkout), realOf(options.checkout)])].sort(
     (a, b) => b.length - a.length,
@@ -174,6 +176,8 @@ export const createShotStore = (options: {
   const claim = (key: string): DrawClaim | null => {
     const path = lockOf(key);
     const token = randomUUID();
+
+    if (checkoutGone()) return null;
 
     try {
       mkdirSync(dirname(path), { recursive: true });
@@ -347,7 +351,7 @@ export const createShotStore = (options: {
       try {
         const files = inputsOf(address);
 
-        if (!files) return;
+        if (!files || checkoutGone()) return;
 
         const scope = storedScopeOf(address);
         const inputs = [...new Set(files.map(storedPathOf))]

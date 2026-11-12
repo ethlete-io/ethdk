@@ -1,4 +1,14 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'fs';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
@@ -317,6 +327,20 @@ describe('createShotStore', () => {
     expect(store.read('before', address)).toEqual(picture);
     expect(store.read('after', address)).toBeNull();
     expect((readdirSync(dir, { recursive: true }) as string[]).filter((name) => name.includes('/.'))).toEqual([]);
+  });
+
+  it('writes nothing into a removed checkout, so its resident still sees the checkout gone', () => {
+    const checkout = mkdtempSync(join(tmpdir(), 'cli-shot-store-'));
+    const dir = join(checkout, 'node_modules/.design-explore', SHOT_STORE_DIR);
+    const input = join(checkout, 'input.ts');
+    const store = createShotStore({ dir, salt: 's', checkout, inputsOf: () => [input], scopeOf: () => '' });
+
+    writeFileSync(input, 'one');
+    rmSync(checkout, { recursive: true, force: true });
+    store.write('key', { address, picture });
+
+    expect(store.claim('key')).toBeNull();
+    expect(existsSync(checkout)).toBe(false);
   });
 
   it('treats a corrupt entry as a miss', () => {
