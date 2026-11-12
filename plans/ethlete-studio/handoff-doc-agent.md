@@ -293,3 +293,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - 954 (a5e51621c), 958 (527f74c97), 941 (903012491) built; 954 merge-side half to the Mac; finding 986. Next free finding: 987.
 - 984 (4684f3e18), 985 (ab7f0cc87) built; 951 closed (measured); findings 987-988. Next free finding: 989.
 - 982 built and pushed on the Mac (882228e5a); 976 in build there, overlaps Linux 984 (sketch.ts rebase), told the Mac. Next free finding: 989.
+- 965 (503be9a2a), 967 (fcc9b1f15) built; 961 closed; findings 989-990. /tmp at 99 % inodes: sweep waits for the human (alarm played). Next free finding: 991.

@@ -4079,3 +4079,26 @@ and changes-shot steps faster, measured against the 951 numbers.
 wins. takeHeavyLock throws under `node --test` without a file option or env override; spec bites. The guard covers taking,
 not reading. Not verified: a live Nx daemon run. The first push-suite had one e2e failure at load 33 (min-zoom text box)
 while a 976 agent ran; the rerun passed. Suspect: load (finding 960 class).
+
+965 built (Linux, 503be9a2a): canvas.e2e.mjs (helper e2e/resident-survivors.mjs) fails the run when a
+`design __resident --checkout <dir>` of a worker lives more than 15 s after that worker's exit. Spec bites; live with a
+fake resident. Not verified: a real survivor, the Mac. Gap: /tmp checkout dirs are not counted, only residents.
+
+967 built (Linux, fcc9b1f15): .husky/commit-msg runs tools/scripts/check-handoff-shrink.mjs; it refuses a commit where a
+staged plans/**/handoff-*.md keeps fewer than half its lines, unless the message says "shrink handoff". Spec bites; live
+in a throwaway repo. Not verified: a real commit in this repo.
+
+961 closed (measured, no commit): cli:typecheck runs `tsc -p libs/cli/tsconfig.lib.json` since 7107649b0; a temporary
+`.at(-1)` fails it with TS2550. Suspect: the 875 slice did not rerun typecheck after its last crash-log.ts edit.
+
+989\. Linux builder (2026-11-12 night, 961): libs/eslint-plugin and libs/types have no typecheck target, and
+apps/timetrack-vscode checks only its spec tsconfig. Cause (measured). Tool fix (builder default, tool backlog): add the
+targets, with a temporary type error that fails each.
+
+990\. Linux builder (2026-11-12 night): /tmp reached 99 % inodes (1,028,315 of 1,048,576) and ENOSPC failed unrelated
+specs (commit-export, e2e-check, red-check). Holders: 1,647 playwright-artifacts-* dirs, node-compile-cache,
+et-design-harness-cache, jest_rs, studio-verify*. Suspect: killed or crashed Playwright runs leave their artifacts dir.
+Why no tool caught it: no run checks free inodes, and 906/907/965 cover only our own temp prefixes and residents. Tool fix
+(builder default, tool backlog): the push suite and the e2e runners check /tmp inode use at start and stop with one clear
+line past 90 %; Playwright runs get a private artifacts dir that the runner removes on every exit. The sweep itself needs
+the human (the builder's sweep was refused by the permission check).
