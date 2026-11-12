@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { tempDir } from './git-test-env.mjs';
 import {
   archiveFindings,
   archiveSections,
@@ -99,7 +99,7 @@ test('moves done findings, keeps open ones and the order', () => {
 });
 
 test('appends to an existing month file', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'archive-'));
+  const dir = tempDir('archive-');
   writeArchive(dir, [{ number: 1, month: '2026-11', text: '1\\. a' }]);
   writeArchive(dir, [{ number: 2, month: '2026-11', text: '2\\. b' }]);
   assert.equal(readFileSync(join(dir, 'findings-2026-11.md'), 'utf8'), '# Findings 2026-11\n\n1\\. a\n\n2\\. b\n');
@@ -210,7 +210,7 @@ As built (Linux builder, 32): done.
 });
 
 const oldDonePlan = () => {
-  const root = mkdtempSync(join(tmpdir(), 'archive-cli-'));
+  const root = tempDir('archive-cli-');
   const studio = join(root, 'plans/ethlete-studio');
   mkdirSync(join(studio, 'archive'), { recursive: true });
   writeFileSync(

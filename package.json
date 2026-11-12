@@ -59,6 +59,7 @@
     "sessions": "node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs",
     "slice:paths": "node ./tools/scripts/check-slice-paths.mjs --set",
     "spec:stress": "node ./tools/scripts/spec-stress.mjs",
+    "spec:tmp-leaks": "node ./tools/scripts/spec-tmp-leaks.mjs",
     "storybook": "nx run storybook:storybook:network",
     "studio": "node tools/scripts/studio-dev.mjs",
     "studio:classes:check": "nx build cli && node dist/libs/cli/src/index.js design check --product studio --app-classes",

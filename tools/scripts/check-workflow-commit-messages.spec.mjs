@@ -1,15 +1,15 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { test } from 'node:test';
+import { tempDir } from './git-test-env.mjs';
 import { fileURLToPath } from 'node:url';
 import { commitMessageProblems, workflowCommitMessages } from './check-workflow-commit-messages.mjs';
 
 const repoRoot = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
 
 const problemsFor = (message) => {
-  const root = mkdtempSync(join(tmpdir(), 'wf-'));
+  const root = tempDir('wf-');
   mkdirSync(join(root, '.github', 'workflows'), { recursive: true });
   writeFileSync(join(root, '.github', 'workflows', 'a.yml'), `with:\n  commit_message: '${message}'\n`);
   return commitMessageProblems(root, (_root, text) => {

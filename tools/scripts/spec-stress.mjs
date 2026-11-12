@@ -62,7 +62,7 @@ const owningRoot = (repo, spec) => {
   return '.';
 };
 
-const commandFor = (repo, spec) => {
+export const commandFor = (repo, spec) => {
   if (spec.endsWith('.mjs')) return ['node', ['--test', spec]];
   const root = owningRoot(repo, spec);
   const perfConfig = 'vitest.perf.config.mts';

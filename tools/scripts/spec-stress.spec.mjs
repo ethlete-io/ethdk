@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { tempDir } from './git-test-env.mjs';
 import { fileURLToPath } from 'node:url';
 import { cpuQuotaOf, parseArgs, reportLines, runPooled, slowed, summarize, tailOf } from './spec-stress.mjs';
 
@@ -134,7 +134,7 @@ test('tailOf keeps the end of a long output and says what it cut', () => {
 });
 
 test('--github prints the output of the first failed run of a real spec in a group', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'spec-stress-'));
+  const dir = tempDir('spec-stress-');
   const fixture = join(dir, 'fails.spec.mjs');
   writeFileSync(
     fixture,

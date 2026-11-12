@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { tempDir } from './git-test-env.mjs';
 import {
   checkAdr,
   checkAdrs,
@@ -51,14 +51,14 @@ test('fails a bad status and missing frontmatter', () => {
 });
 
 test('a missing or empty adr folder passes', () => {
-  const root = mkdtempSync(join(tmpdir(), 'adr-'));
+  const root = tempDir('adr-');
   assert.deepEqual(checkAdrs(root), { errors: [], warnings: [] });
   mkdirSync(join(root, 'apps/ethlete-studio/docs/adr'), { recursive: true });
   assert.deepEqual(checkAdrs(root), { errors: [], warnings: [] });
 });
 
 test('reads ADR files against STATUS.md from disk', () => {
-  const root = mkdtempSync(join(tmpdir(), 'adr-'));
+  const root = tempDir('adr-');
   mkdirSync(join(root, 'apps/ethlete-studio/docs/adr'), { recursive: true });
   mkdirSync(join(root, 'plans/ethlete-studio'), { recursive: true });
   writeFileSync(join(root, 'plans/ethlete-studio/STATUS.md'), '| B1 | x | ✅ |\n');

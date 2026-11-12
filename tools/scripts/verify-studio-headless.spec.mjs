@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { tempDir } from './git-test-env.mjs';
 import { missingBuildInputs, WEBKIT_BLIND_EXIT, webkitVerdict } from './verify-studio-headless.mjs';
 
 test('names each missing build input with the command that builds it', () => {
-  const checkout = mkdtempSync(join(tmpdir(), 'studio-headless-inputs-'));
+  const checkout = tempDir('studio-headless-inputs-');
   const entry = join(checkout, 'cli.js');
 
   assert.deepEqual(missingBuildInputs(checkout, entry), [
@@ -16,7 +16,7 @@ test('names each missing build input with the command that builds it', () => {
 });
 
 test('answers nothing when both builds exist', () => {
-  const checkout = mkdtempSync(join(tmpdir(), 'studio-headless-inputs-'));
+  const checkout = tempDir('studio-headless-inputs-');
   const entry = join(checkout, 'cli.js');
 
   mkdirSync(join(checkout, 'dist/libs/components'), { recursive: true });

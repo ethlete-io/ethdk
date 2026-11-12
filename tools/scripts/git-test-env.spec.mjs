@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { git, gitEnv, tempGitRepo } from './git-test-env.mjs';
+import { git, gitEnv, tempDir, tempGitRepo } from './git-test-env.mjs';
 
 test('git in a temp repo leaves the repo a hook points at untouched', () => {
   const hookRepo = tempGitRepo('git-env-hook-');
@@ -41,7 +40,7 @@ test('gitEnv keeps GIT_* values set explicitly for the call', () => {
 
 test('an inherited GIT_DIR does reach unstripped git (the failure the helper prevents)', () => {
   const hookRepo = tempGitRepo('git-env-hook-');
-  const temp = mkdtempSync(join(tmpdir(), 'git-env-raw-'));
+  const temp = tempDir('git-env-raw-');
   const out = execFileSync('git', ['rev-parse', '--git-dir'], {
     cwd: temp,
     encoding: 'utf8',
