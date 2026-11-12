@@ -3553,3 +3553,21 @@ so numbered. Tool fix (Linux, after the push): find which of the three, and make
 trigger only from the default branch `main`, and `rust-audit.yml` exists only on `next`; `gh run list` shows no schedule
 run. Second gap: nothing in tools/, libs/cli or Studio reads rust-audit runs. Fix choice goes to the human (a commit on
 `main`).
+
+B499 proof (ADR 0280, recorded 2026-11-13 by the doc agent from the builder's proposal), one script
+`tools/scripts/design-server-proof.mjs`:
+
+- P1 sketch check cold ≤ 10 s, warm ≤ 5 s (3 runs), also with CI=1 (today cold 30.4 s, warm 3.5-6.8 s).
+- P2 shot 5 runs: from run 2 no server or browser start, each ≤ 2 s (today 8.9 s).
+- P3 one owner: with `design serve` up, after sketch check, shot and compare, one design process and one Chrome root
+  per checkout (today 2 servers, up to 3 browser roots).
+- P4 idle end: idle 60 s in the test; after 90 s no server and no Chromium left.
+- P5 e2e "B498 R3" case 5x through studio:e2e:repeat: 0 empty cells, 0 ECONNRESET; Studio e2e on CI green twice.
+- P6 no main-thread block > 1 s during a slow-checks poll (today ~14 s); warm /__design/system ≤ 300 ms; cold
+  open-points ≤ 1.5 s (today 2.6 s).
+- P7 spec: two parallel rules() calls make 1 worker run; abort of the last waiter cancels the work.
+
+Slices: S1 rebuildStaleDist from the owning Nx root, async; S2 `design serve` and `__resident` one process (CI flag
+first; the slice names when the flag goes); S3 rules() shares an in-flight run, abort, one idle end; S4 slow-checks and
+class facts into the worker (the disk cache for class facts names which cache or step it removes); S5 cold path of
+sketch check and ready; S6 CI stability (992, 986, 519/598 guards). 417, 519, 598, 640 close with a guard only.
