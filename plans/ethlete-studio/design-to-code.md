@@ -4089,3 +4089,21 @@ baselined, with a biting spec.
 and drops blocks older than 2 h; pre-commit applies the union of the fresh blocks and names every slice. Cause (reproduced):
 a second `--set` overwrote the first slice, so its staged files warned. Block per name, not per session: builder and
 subagent share one session. 4 specs, node --test 19/19; the bite ran by hand, old vs new script in a temp repo.
+
+917 built (Linux, ab22c55f4): new CONTROL-HEIGHT render rule (`design/system/control-height.ts`) fails a control whose
+rendered height differs from its `--control-*` token by more than 0.5 px; baselined (ADR 0201), `data-et-skip` escapes it.
+It skips controls with overridden padding and controls with their own fixed height; it reads the computed style, so the
+0.2 thumbnail judges like full size (916). Spec bites (xs button + et-kbd, 25.25 vs 24, scale 1 and 0.2). Finding 789
+run: 0 hits in sdk, studio and studio-lab; the 903 case is already fixed at HEAD. Not verified: the 106 studio hits of the
+first version without skips (studio-menu trigger, canvas-frames buttons at 28.67 and 34 px, padding overridden) are not
+proven harmless.
+
+971\. Linux builder (2026-11-12 night, 917): the sdk ACTION-UNDECLARED count went from 852 to 1041 between two `design
+check` runs minutes apart. Suspect: the untracked `.ethlete/design/sdk/sketches/` changed under another session, or the rule
+is not deterministic. Tool fix (builder default, tool backlog): run it twice on a clean tree; if the count moves, make the
+rule deterministic with a biting spec; if the untracked dir moves it, the check names untracked design files it read.
+
+972\. Linux builder (2026-11-12 night, 917): Studio's `sdk-token-map.css` ties only the md and xs `et-button` to
+`--control-*` tokens; sm, lg and xl get md padding, so CONTROL-HEIGHT would fail them. No committed part draws one today.
+Suspect (code read). Tool fix (builder default, tool backlog): map every size, with a part state per size that the rule
+judges, so a missing size fails the check.

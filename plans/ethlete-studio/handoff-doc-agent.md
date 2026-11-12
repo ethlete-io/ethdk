@@ -271,3 +271,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - 968 + 914 built (9d366dbcc); Linux builder restarts at 70 %, then 913. Next free finding: 970.
 - 913 + 918 built (147f38202); finding 970. Next free finding: 971.
 - 915 built (095a1a4bd). Next free finding: 971.
+- 917 built (ab22c55f4); findings 971-972. Next free finding: 973.
