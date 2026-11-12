@@ -282,3 +282,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - 931 (1fe2bcc91) and 932 (803c592d5) built. Next free finding: 977.
 - 940 built (afd882fa5); Linux next 936/938/939 in one subagent (no merge.ts), then 934, 935, 937, 941, 942. Next free finding: 977.
 - Mac pushed 4a24296fd..55fd668cd (926); 973 in progress, then 976. Next free finding: 977.
+- 936 (d11895195), 938 (d17cbb1dc), 939 (2b4a85177) built; findings 977 (Mac) and 978. Linux builder hands off at 72 %; next 934, 935, 937, 941, 942. Next free finding: 979.

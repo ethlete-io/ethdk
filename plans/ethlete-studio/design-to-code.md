@@ -4166,3 +4166,25 @@ scratch copy, the first stops the resident under the second (that one then runs 
 940 built (Linux, afd882fa5): a `--help` or `-h` call of design check, compare, ready, sketch ready and harness passes the
 background hook in the foreground; `studio:e2e --help` stays denied (it still starts the full suite, see the 900 note above).
 Spec: 2 new cases fail on the old hook.
+
+936 built (Linux, d11895195): `sketch/merge-changeset.ts` adds a `none` changeset for each workspace package a merge commit
+changes (root workspaces, `.changeset/config.json` ignore respected; nothing without a `.changeset` dir). Cause (measured):
+in this repo the extra commit was never needed; `.ethlete/design/studio` is in no workspace.
+
+938 built (Linux, d17cbb1dc): Cause (fixture): a rebase that ports product changes rewrote the variant files but kept
+readyContent, ready status and pick, and changedSinceReadyOf skipped picked sketches. staleReadyRefusalOf now runs first in
+appGatedMergeOf (CLI + Studio merge) and names both hashes; `sketch check` warns READY-STALE on picked sketches too and
+`sketch ready` reopens the sketch and keeps the pick.
+
+939 built (Linux, 2b4a85177): `sketch rebase` drops an agent pick with no "Merge <target> variant <v> into <product>" commit
+since decidedAt and prints DROPPED; `merge` prints REUSED for an old pick; designer picks stay. Each spec bites. Not
+verified: a live merge or rebase in a scratch copy.
+
+977\. Linux builder (2026-11-12 night, 939 root): `merge-step.ts` allowedMergeOf writes the pick before the merge and never
+removes it on a refusal, and `merge --allowed-by` silently reuses an existing pick, also for another variant. Suspect (code
+read, not run). Tool fix (builder default, Mac: merge-step.ts is Mac-only): in mergeAndRecord, when `allowed` is set and the
+merge refuses, restore the sketch file; the `merged` command treats an existing agent pick as no pick; biting specs.
+
+978\. Linux builder (2026-11-12 night, 938): a picked sketch that `sketch ready` reopens is in progress and still holds the
+pick. Suspect: Studio shows it in a mixed state. Tool fix (builder default, tool backlog): a shot of pages/sketches with
+such a sketch; if the state reads wrong, a sketch for the human, else a state in the part that covers it.
