@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
-import { missingDistOf, rebuildStaleDist, staleDistWarningsOf } from './stale-dist';
+import { buildFailureLineOf, missingDistOf, rebuildStaleDist, staleDistWarningsOf } from './stale-dist';
 
 const file = (path: string, content: string, at: number) => {
   mkdirSync(dirname(path), { recursive: true });
@@ -98,6 +98,26 @@ describe('rebuildStaleDist', () => {
 
     expect(rebuildStaleDist({ target, config, build })).toBe(true);
     expect(build).not.toHaveBeenCalled();
+  });
+});
+
+describe('buildFailureLineOf', () => {
+  it('keeps the last output lines of a failed build in one line without colour codes', () => {
+    const output = [
+      ...Array.from({ length: 20 }, (_, i) => `line ${i}`),
+      '\u001b[31mError: ENOENT dist/libs/types\u001b[39m',
+      '',
+    ].join('\n');
+
+    expect(buildFailureLineOf({ name: 'types', output, status: 1, signal: null })).toBe(
+      `BUILD OUTPUT types (exit 1): ${[...Array.from({ length: 11 }, (_, i) => `line ${i + 9}`), 'Error: ENOENT dist/libs/types'].join(' / ')}`,
+    );
+  });
+
+  it('names the signal and an empty output', () => {
+    expect(buildFailureLineOf({ name: 'types', output: '', status: null, signal: 'SIGKILL' })).toBe(
+      'BUILD OUTPUT types (exit SIGKILL): (none)',
+    );
   });
 });
 

@@ -104,14 +104,44 @@ export const staleDistWarningsOf = (options: { target: string; config: DesignCon
 
 export type LibBuildRunner = (options: { target: string; name: string; dir: string }) => boolean;
 
+const ANSI = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g');
+
+/** One line with the tail of a failed lib build's output, so a caller that keeps only the last lines still sees why. */
+export const buildFailureLineOf = (options: {
+  name: string;
+  output: string;
+  status: number | null;
+  signal: string | null;
+}) => {
+  const { name, output, status, signal } = options;
+  const tail = output
+    .replace(ANSI, '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(-12)
+    .join(' / ');
+
+  return `BUILD OUTPUT ${name} (exit ${status ?? signal}): ${tail.length > 2000 ? `...${tail.slice(-2000)}` : tail || '(none)'}`;
+};
+
 const runLibBuild: LibBuildRunner = ({ target, name, dir }) => {
   const result = spawnSync('npx', ['nx', 'build', name, '--skip-nx-cache'], {
     cwd: target,
     env: { ...process.env, NX_NO_CLOUD: 'true' },
-    stdio: ['ignore', 2, 2],
+    stdio: ['ignore', 'pipe', 'pipe'],
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
   });
+  const output = `${result.stdout ?? ''}${result.stderr ?? ''}${result.error ? `\n${result.error.message}` : ''}`;
 
-  if (result.status !== 0) return false;
+  process.stderr.write(output);
+
+  if (result.status !== 0) {
+    console.error(buildFailureLineOf({ name, output, status: result.status, signal: result.signal }));
+
+    return false;
+  }
 
   // A cache hit whose outputs already match leaves the build folder untouched, which would still read as stale.
   const now = new Date();
