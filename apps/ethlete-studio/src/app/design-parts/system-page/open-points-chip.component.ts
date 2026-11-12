@@ -1,4 +1,5 @@
 import {
+  booleanAttribute,
   Component,
   computed,
   ElementRef,
@@ -85,7 +86,7 @@ export class OpenPointsChipComponent {
   public buildReady = input<BuildReadyStatus | null>(null);
   public agent = input<AgentProgress | null>(null);
   public missingShots = input(0);
-  public dividers = input(true);
+  public dividers = input(true, { transform: booleanAttribute });
   public closed = model(true);
   public blockersOpen = model(false);
   public openEditSketch = output<BuildBlocker>();
