@@ -4013,3 +4013,9 @@ ran the same rebase three times with the same refusal. Only `--ported` clears it
 `sketch rebase <target> --ported --product <name> --by <model id>` command; the spec follows the printed remedies, clears
 SKETCH-BASE-STALE, and merges after the part is committed. Not verified: the "built-in base - --override" refusal has
 no spec (the fixture has no built-in base).
+
+### As built: 977
+
+Cause: a refused `merge --allowed-by` kept its agent pick in `sketch.json`; a later `--variant b` merged the stale `a`.
+Now a refused allowed merge and the `mergeStepOf` pre-check restore the sketch, and a pick by a model id counts as no
+pick. Verified: three biting specs, related specs, lint, typecheck. Not verified: a live run; a non-model-id `--by`.

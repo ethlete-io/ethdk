@@ -44,7 +44,7 @@ import { coverPartProblemOf, editCovers } from './system/sketch/covered-diffs';
 import { unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots';
 import { addedUndeclaredControlsOf } from './system/complete';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
-import { editRefOf, mergeAndRecord } from './system/sketch/merge-step';
+import { editRefOf, humanPickOf, mergeAndRecord } from './system/sketch/merge-step';
 import { staleBaseOf, staleSketchBasesOf } from './system/sketch/stale-base';
 import { repoInvocation } from '../invocation';
 import { editDiscardRefusalOf } from './system/sketch/edit-sketch';
@@ -1814,7 +1814,7 @@ const merged = (context: Context) =>
 
     const by = authorOf(context.args) ?? undefined;
     const allowed =
-      flagVariant !== undefined && planRef !== undefined && sketch.decision?.kind !== 'pick'
+      flagVariant !== undefined && planRef !== undefined && humanPickOf(sketch) === undefined
         ? { variant: flagVariant, planRef, editRef: editRefOf({ target: context.target, sketch, planRef }) }
         : undefined;
     const result = timedPhase('merge', () =>
