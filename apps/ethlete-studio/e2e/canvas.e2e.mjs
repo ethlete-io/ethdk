@@ -381,6 +381,8 @@ const stillInFit = async (page, after) =>
 
 const SCROLL_STEP_PX = 300;
 const SCROLL_SAMPLES_MS = [30, 300];
+const SHOT_URL = '**/__design/shot?**';
+const EDITED_SHOT_DELAY_MS = 3000;
 const SKETCH_CSS = {
   current: 'elements/shell-main/shell-main.css',
   a: 'sketches/elements-shell-main/a/elements/shell-main/shell-main.css',
@@ -1883,6 +1885,10 @@ const CASES = [
       let renewed;
 
       try {
+        await page.route(SHOT_URL, async (route) => {
+          await new Promise((done) => setTimeout(done, EDITED_SHOT_DELAY_MS));
+          await route.fallback().catch(() => undefined);
+        });
         writeFileSync(
           stylesheet,
           `${original}\n.st-shell { outline: 3px solid rgb(255 0 0); outline-offset: -3px; }\n`,
@@ -1901,6 +1907,7 @@ const CASES = [
         );
       } finally {
         writeFileSync(stylesheet, original);
+        await page.unroute(SHOT_URL);
       }
 
       const columns = await emptyColumns();
