@@ -65,12 +65,14 @@ test('the lock of a dead holder is taken over', async (t) => {
 
 test('a child of a holder takes no lock of its own', async (t) => {
   const file = lockFile(t);
-  const env = {};
+  const env = { NX_DAEMON: 'true' };
   const outer = await takeHeavyLock('push-suite', { file, wait: false, env });
+  assert.equal(env['NX_DAEMON'], 'false', "a holder's nx children skip the daemon, which drops the held flag");
   const inner = await takeHeavyLock('spec:stress', { file, wait: false, env });
   assert.equal(inner.ok, true);
   assert.equal(readHolder(file).name, 'push-suite');
   outer.release();
+  assert.deepEqual(env, { NX_DAEMON: 'true' });
 });
 
 test('a lock taker under node --test without a private lock file fails instead of taking the real lock', (t) => {

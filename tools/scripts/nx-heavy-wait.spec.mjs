@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { test } from 'node:test';
@@ -105,3 +105,33 @@ test("under the Nx daemon, which drops TMPDIR, the hook still reads the callers'
   );
   assert.equal(daemonLike.stdout.trim(), join(userTemp, 'ethlete-heavy-run.lock'));
 });
+
+test(
+  "under the Nx daemon, whose worker holds the last client's env, an exempt or held flag never skips the wait",
+  { timeout: 20_000 },
+  async (t) => {
+    const dir = mkdtempSync(join(tmpdir(), 'nx-heavy-wait-'));
+    t.after(() => rmSync(dir, { recursive: true, force: true }));
+    const lock = join(dir, 'ethlete-heavy-run.lock');
+    writeFileSync(lock, JSON.stringify({ name: 'push-suite', pid: process.pid, started: 0 }));
+    const hook = `import(${JSON.stringify(plugin)}).then((m) => m.preTasksExecution()).then(() => console.log('ran'), (error) => { console.error(error.message); process.exit(2); })`;
+    const daemon = join(dir, 'nx/dist/src/daemon/server/start.js');
+    mkdirSync(join(dir, 'nx/dist/src/daemon/server'), { recursive: true });
+    writeFileSync(
+      daemon,
+      `const r = require('node:child_process').spawnSync(process.execPath, ['-e', ${JSON.stringify(hook)}], { encoding: 'utf8' });
+process.stdout.write(r.stdout); process.stderr.write(r.stderr); process.exit(r.status);`,
+    );
+    const base = { ...process.env, ETHLETE_HEAVY_LOCK_FILE: lock, ETHLETE_HEAVY_NO_WAIT: '1' };
+    delete base['ETHLETE_HEAVY_RUN_HELD'];
+    delete base['ETHLETE_HEAVY_EXEMPT'];
+    for (const flag of [{ ETHLETE_HEAVY_EXEMPT: 'design' }, { ETHLETE_HEAVY_RUN_HELD: '1' }]) {
+      const env = { ...base, ...flag };
+      const daemonless = spawnSync(process.execPath, ['-e', hook], { env, encoding: 'utf8', timeout: 10_000 });
+      assert.equal(daemonless.stdout, 'ran\n', daemonless.stderr);
+      const onDaemon = spawnSync(process.execPath, [daemon], { env, encoding: 'utf8', timeout: 10_000 });
+      assert.equal(onDaemon.status, 2, onDaemon.stdout);
+      assert.match(onDaemon.stderr, /^nx: heavy run lock held by push-suite .+, or with NX_DAEMON=false\n$/);
+    }
+  },
+);

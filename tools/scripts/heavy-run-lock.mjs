@@ -70,7 +70,8 @@ const tryTake = (file, name, now) => {
 /**
  * Takes the one heavy-run lock of this machine for `name` (push:suite, spec:stress). A held lock of a live process
  * makes the caller wait up to `maxWaitMs`, or stop at once with `wait: false`; a dead holder's lock is taken over.
- * Returns `{ ok, release }` or `{ ok: false, holder }`. A child of a holder (env `ETHLETE_HEAVY_RUN_HELD`) takes none.
+ * Returns `{ ok, release }` or `{ ok: false, holder }`. A child of a holder (env `ETHLETE_HEAVY_RUN_HELD`) takes none;
+ * the holder sets `NX_DAEMON=false` too, since the Nx daemon cannot pass that env to the wait hook.
  */
 export const takeHeavyLock = async (
   name,
@@ -92,10 +93,14 @@ export const takeHeavyLock = async (
   for (;;) {
     const taken = tryTake(file, name, now());
     if (taken.ok) {
+      const daemon = env['NX_DAEMON'];
       env[HELD_ENV] = String(process.pid);
+      env['NX_DAEMON'] = 'false';
       const release = () => {
         if (readHolder(file)?.pid === process.pid) rmSync(file, { force: true });
         delete env[HELD_ENV];
+        if (daemon === undefined) delete env['NX_DAEMON'];
+        else env['NX_DAEMON'] = daemon;
       };
       process.once('exit', release);
       return { ok: true, release };
