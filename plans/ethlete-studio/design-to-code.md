@@ -3820,3 +3820,17 @@ on exit in a scratch copy, with a spec that counts the processes.
 
 932\. Linux builder (2026-11-12 night): `design compare --state` takes one state only, so a repeat over idle, paused and
 paused-reason needs three runs. Tool fix (builder default, tool backlog): `--state` takes a list.
+
+933\. Linux builder (2026-11-12 night, 7d): the reported defect (a disabled filled et-button gets onColor.disabled ==
+color.disabled, label and spinner invisible) does not reproduce. Measured in Chromium (story
+components-actions-button-surface--default): the token chain falls back from `onColor.disabled` to `onColor.default`,
+never to `color.disabled`; no generated `themes.css` in the repo has equal values. Not checked: a consumer theme that
+spreads the colour map into onColor (`onColor: { ...COLOR_MAP, default }`). What reproduces is low contrast: Storybook
+brand/surface about 3.0:1, Studio brand/danger/warning/surface 1.6-2.1:1. Cause (measured): Studio `colors.css` sets
+`--on-*-disabled` very dark on dark muted fills, `generate-studio-themes.mjs` copies them, and `DARK_INTERACTION` has no
+onColor, so the surface disabled label falls back to the surface background (15 15 15 on 56 56 56). Lesson: no check
+measures disabled contrast (jsdom has no cascade, axe exempts disabled controls, design check skips disabled
+elements, Studio themes are not in Storybook). Fix: a foundations/colors sketch with variants for the disabled label
+contrast, waits for the human's pick by merge. Tool fix (builder default, tool backlog, Suspect until a bite): the theme
+generators (`theme-css.ts`, tailwind-4, `generate-studio-themes.mjs`) warn when onColor.disabled vs color.disabled is
+below 3:1, and when onColor spreads the colour map.

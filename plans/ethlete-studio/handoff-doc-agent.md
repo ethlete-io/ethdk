@@ -238,3 +238,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - Findings 926-928 (@edit merge clean copy ignores embedded part changes; scratch copy without dist; compare without --base). Next free finding: 929.
 - Finding 929 (Mac push-suite e2e timeout under load, class 761/763). Next free finding: 930.
 - 903 decided: design side gets the app's button metrics from one source (930). Findings 930-932. Next free finding: 933.
+- Finding 933 (7d not reproduced; Studio disabled label contrast 1.6-2.1:1 -> sketch waits for the human). Next free finding: 934.
