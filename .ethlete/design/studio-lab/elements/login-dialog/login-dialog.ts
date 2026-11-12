@@ -10,11 +10,11 @@ export default definePart<Props>({
     const submit = await button.render({ label: 'Log in', variant: 'solid' });
 
     return drawing({
-      body: `<div class="lab-login flex flex-col" role="dialog" aria-label="Log in"><h2 class="m-0">Log in</h2><label class="flex flex-col">Email<input value="ada@filmbox.test"></label><label class="flex flex-col">Password<input type="password" value="••••••"></label>${
+      body: `<div class="lab-login flex flex-col font-ui" role="dialog" aria-label="Log in"><h2 class="m-0">Log in</h2><label class="flex flex-col">Email<input value="ada@filmbox.test"></label><label class="flex flex-col">Password<input type="password" value="••••••"></label>${
         error ? '<p class="lab-login-error m-0">That password does not match.</p>' : ''
       }${submit.body}</div>`,
       styles: `${submit.styles}
-        .lab-login { gap: 12px; width: 320px; padding: 24px; border-radius: 12px; background: var(--lab-surface); color: var(--lab-ink); font-family: sans-serif; }
+        .lab-login { gap: 12px; width: 320px; padding: 24px; border-radius: 12px; background: var(--lab-surface); color: var(--lab-ink); }
         .lab-login h2 { font-size: 20px; }
         .lab-login label { gap: 4px; font-size: 13px; }
         .lab-login input { padding: 8px; border: 1px solid var(--lab-ink); border-radius: 6px; font: inherit; }

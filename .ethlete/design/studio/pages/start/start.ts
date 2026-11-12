@@ -43,7 +43,9 @@ const noProducts = (copy: string, repo: string) =>
         Lege in ${repo} das Produkt shop an, für das Design-System der Shop-App.
       </p>
       ${withAction(copy, 'emit:copyPrompt')}
-      <p class="m-0 text-et-surface-muted">Oder im Terminal: <code>et design product new shop</code></p>`,
+      <p class="m-0 text-et-surface-muted">
+        Oder im Terminal: <code class="font-code">et design product new shop</code>
+      </p>`,
   );
 
 export default definePart<Props>({

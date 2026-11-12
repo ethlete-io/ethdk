@@ -637,6 +637,8 @@
 :root {
   --et-font-family: 'Noto Sans', system-ui, sans-serif;
   --et-font-family-mono: 'Noto Sans Mono', ui-monospace, monospace;
+  --font-ui: var(--et-font-family);
+  --font-code: var(--et-font-family-mono);
   font-size: 62.5%;
 }
 

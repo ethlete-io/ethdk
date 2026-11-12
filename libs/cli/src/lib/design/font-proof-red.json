@@ -1,12 +1,6 @@
 [
   {
     "product": "sdk",
-    "part": "components/description-list",
-    "property": "text",
-    "count": 4
-  },
-  {
-    "product": "sdk",
     "part": "components/kbd",
     "property": "text",
     "count": 3
@@ -21,13 +15,7 @@
     "product": "sdk",
     "part": "foundations/icons",
     "property": "text",
-    "count": 6
-  },
-  {
-    "product": "studio",
-    "part": "components/description-list",
-    "property": "text",
-    "count": 4
+    "count": 2
   },
   {
     "product": "studio",
@@ -73,55 +61,7 @@
   },
   {
     "product": "studio",
-    "part": "pages/start",
-    "property": "text",
-    "count": 2
-  },
-  {
-    "product": "studio",
     "part": "pages/system",
-    "property": "text",
-    "count": 1
-  },
-  {
-    "product": "studio-lab",
-    "part": "components/button",
-    "property": "text",
-    "count": 1
-  },
-  {
-    "product": "studio-lab",
-    "part": "components/card",
-    "property": "text",
-    "count": 2
-  },
-  {
-    "product": "studio-lab",
-    "part": "elements/add-film-dialog",
-    "property": "text",
-    "count": 4
-  },
-  {
-    "product": "studio-lab",
-    "part": "elements/list-row",
-    "property": "text",
-    "count": 1
-  },
-  {
-    "product": "studio-lab",
-    "part": "elements/login-dialog",
-    "property": "text",
-    "count": 5
-  },
-  {
-    "product": "studio-lab",
-    "part": "elements/shell-main",
-    "property": "text",
-    "count": 4
-  },
-  {
-    "product": "studio-lab",
-    "part": "foundations/tokens",
     "property": "text",
     "count": 1
   },
@@ -130,11 +70,5 @@
     "part": "pages/film-detail",
     "property": "text",
     "count": 3
-  },
-  {
-    "product": "studio-lab",
-    "part": "pages/library",
-    "property": "text",
-    "count": 17
   }
 ]

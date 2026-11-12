@@ -3,17 +3,18 @@
   "status": "in progress",
   "createdAt": "2026-10-27T00:48:22.919Z",
   "baseline": {
-    "foundations/tokens": "6cc47d5fc0ab874e",
-    "components/button": "f18c8ec725b0a452",
-    "components/card": "ae4dca8205da35f5",
-    "elements/add-film-dialog": "7c8a3f4a7a3f34f6",
-    "elements/list-row": "a69aacc50adeb343",
-    "elements/login-dialog": "caa9575b9acd2dd8",
-    "elements/shell-main": "f7b0328eb2f489ca",
+    "foundations/tokens": "74e098c777bf03d6",
+    "components/button": "d08728add95185b3",
+    "components/card": "a9cfc22bd0ca638e",
+    "elements/add-film-dialog": "a24ca386c76a8abd",
+    "elements/list-row": "5ec8e814acee0ef0",
+    "elements/login-dialog": "a63936c507d68526",
+    "elements/shell-main": "0b17670cb0223d48",
     "pages/film-detail": "d0a345c5e093ffa8",
-    "pages/library": "98aa11cc9a25c286",
+    "pages/library": "a19646b72c9e3989",
     "fixtures.ts": "cc87e40089c46ba6"
   },
+  "baselineTree": "727cf5ae6a9a77902432e44241f31fa2590664f3",
   "rounds": [
     {
       "key": "r1",

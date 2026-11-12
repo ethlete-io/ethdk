@@ -14,7 +14,7 @@ export default definePart<Props>({
     drawing({
       body: `<button class="lab-button lab-button--${variant} cursor-pointer disabled:cursor-not-allowed ${variant === 'outline' ? 'bg-transparent' : ''}">${label}</button>`,
       styles: `
-        .lab-button { padding: 8px 16px; border-radius: 6px; font: 600 14px sans-serif; border: 2px solid var(--lab-accent, currentColor); }
+        .lab-button { padding: 8px 16px; border-radius: 6px; font: 600 14px var(--font-ui); border: 2px solid var(--lab-accent, currentColor); }
         .lab-button--solid { background: var(--lab-accent); color: var(--lab-surface); }
         .lab-button--outline { color: var(--lab-accent); }
         .lab-button--solid:hover:not(:disabled) { background: color-mix(in srgb, var(--lab-accent) 80%, white); }

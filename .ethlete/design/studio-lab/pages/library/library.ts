@@ -41,7 +41,7 @@ export default definePart<Props>({
     const framed = await shell.render({
       active: 'library',
       user,
-      content: `<main class="lab-page"><h1>Library</h1>${rows}</main>${
+      content: `<main class="lab-page font-ui"><h1>Library</h1>${rows}</main>${
         dialog ? `<div class="lab-page-scrim fixed inset-0 grid place-items-center">${dialog.body}</div>` : ''
       }`,
     });
@@ -49,7 +49,7 @@ export default definePart<Props>({
     return drawing({
       body: framed.body,
       styles: `${framed.styles}${empty.styles}${addButton.styles}${dialog?.styles ?? ''}
-        .lab-page { padding: 24px; font-family: sans-serif; color: var(--lab-ink); }
+        .lab-page { padding: 24px; color: var(--lab-ink); }
         .lab-page h1 { margin: 0 0 12px; font-size: 24px; }
         .lab-page-action { margin-top: 12px; }
         .lab-page-row { padding: 8px 0; font-size: 14px; }

@@ -12,7 +12,7 @@ export default definePart<Props>({
     return drawing({
       body: `<div class="lab-row flex justify-between ${selected ? 'is-selected' : ''}"><span>${film.title}</span><span>${film.year}</span></div>`,
       styles: `
-        .lab-row { width: 320px; padding: 10px 14px; font: 14px sans-serif; color: var(--lab-ink); border-bottom: 1px solid var(--lab-surface); }
+        .lab-row { width: 320px; padding: 10px 14px; font: 14px var(--font-ui); color: var(--lab-ink); border-bottom: 1px solid var(--lab-surface); }
         .lab-row.is-selected { background: var(--lab-surface); font-weight: 600; }
       `,
     });

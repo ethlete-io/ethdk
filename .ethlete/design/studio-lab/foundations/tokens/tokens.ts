@@ -7,7 +7,7 @@ export default definePart<{ tone: 'ink' | 'accent' | 'surface' }>({
     drawing({
       body: `<div class="swatch swatch--${tone}">${tone}</div>`,
       styles: `
-        .swatch { width: 120px; height: 72px; display: grid; place-items: center; border-radius: 8px; font: 14px sans-serif; }
+        .swatch { width: 120px; height: 72px; display: grid; place-items: center; border-radius: 8px; font: 14px var(--font-ui); }
         .swatch--ink { background: var(--lab-ink); color: var(--lab-surface); }
         .swatch--accent { background: var(--lab-accent); color: var(--lab-surface); }
         .swatch--surface { background: var(--lab-surface); color: var(--lab-ink); }
