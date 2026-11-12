@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { scopeSelfLinks, scopeSelfLinksMessage } from './commit-export.mjs';
 import { gitEnv } from './git-test-env.mjs';
-import { scratchCheckout, storeEscapes } from './scratch-checkout.mjs';
+import { removeScratch, scratchArgsOf, scratchCheckout, storeEscapes } from './scratch-checkout.mjs';
 
 const makeRepo = () => {
   const repo = mkdtempSync(join(tmpdir(), 'scratch-spec-'));
@@ -97,4 +97,31 @@ test('storeEscapes names a store that resolves into the source checkout', () => 
   assert.match(storeEscapes(repo, dir), /inside the main checkout/);
   rmSync(repo, { recursive: true, force: true });
   rmSync(dir, { recursive: true, force: true });
+});
+
+test('scratchArgsOf takes no flag for a dir, keeps scratch copies out of the temp dir and defaults to the home disk', () => {
+  const where = { home: '/home/u', temp: '/tmp', now: 7 };
+  assert.equal(scratchArgsOf(['--help'], where).code, 0);
+  assert.equal(scratchArgsOf(['-x'], where).code, 2);
+  assert.equal(scratchArgsOf(['/tmp/copy'], where).code, 2);
+  assert.equal(scratchArgsOf(['/tmp'], where).code, 2);
+  assert.deepEqual(scratchArgsOf(['/tmpfoo'], where), { dir: '/tmpfoo' });
+  assert.deepEqual(scratchArgsOf([], where), { dir: '/home/u/.cache/ethlete-scratch/scratch-7' });
+  assert.deepEqual(scratchArgsOf(['--remove', '/home/u/s'], where), { remove: '/home/u/s' });
+  assert.equal(scratchArgsOf(['--remove'], where).code, 2);
+});
+
+test('removeScratch removes a scratch copy and refuses any other dir', () => {
+  const repo = makeRepo();
+  const other = mkdtempSync(join(tmpdir(), 'scratch-other-'));
+  const dir = join(mkdtempSync(join(tmpdir(), 'scratch-out-')), 'copy');
+  scratchCheckout(repo, dir);
+
+  assert.match(removeScratch(other).error, /no scratch checkout/);
+  assert.equal(readdirSync(other).length, 0);
+  assert.deepEqual(removeScratch(dir), { removed: dir });
+  assert.throws(() => readdirSync(dir));
+  rmSync(repo, { recursive: true, force: true });
+  rmSync(other, { recursive: true, force: true });
+  rmSync(join(dir, '..'), { recursive: true, force: true });
 });
