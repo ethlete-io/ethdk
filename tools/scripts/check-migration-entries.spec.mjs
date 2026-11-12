@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { tempDir } from './temp-dir.mjs';
 import { checkMigrationEntries, generatorsWithoutEntry } from './check-migration-entries.mjs';
 
 const generators = { generators: { a: {}, b: {}, c: { scaffold: true } } };
@@ -18,7 +18,7 @@ test('a generator without an entry and without the scaffold mark is reported', (
 });
 
 test('the message names both ways out', () => {
-  const root = mkdtempSync(join(tmpdir(), 'migration-entries-'));
+  const root = tempDir('migration-entries-');
   mkdirSync(join(root, 'libs', 'core', 'generators'), { recursive: true });
   writeFileSync(join(root, 'libs', 'core', 'generators', 'generators.json'), JSON.stringify({ generators: { a: {} } }));
 

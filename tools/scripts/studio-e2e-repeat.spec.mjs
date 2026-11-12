@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { tempDir } from './temp-dir.mjs';
 import {
   affectedCases,
   caseSpans,
@@ -169,7 +169,7 @@ test('the hold run delays the pictures of the sketch edit case but never holds i
 });
 
 test('each repeat run writes its runner output to its own live log, named by the latest pointer, for the e2e-progress mod', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'repeat-live-log-'));
+  const dir = tempDir('repeat-live-log-');
   const runner = join(dir, 'runner.mjs');
   const liveLog = join(dir, 'handoffs/push-suite-repeat.log');
   writeFileSync(

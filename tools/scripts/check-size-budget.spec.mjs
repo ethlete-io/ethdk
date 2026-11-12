@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { tempDir } from './temp-dir.mjs';
 import { checkSizeBudget } from './check-size-budget.mjs';
 
 const config = {
@@ -14,7 +14,7 @@ const config = {
 };
 
 test('flags files over budget and honours per-file overrides', () => {
-  const root = mkdtempSync(join(tmpdir(), 'size-budget-'));
+  const root = tempDir('size-budget-');
   writeFileSync(join(root, 'AGENTS.md'), 'x'.repeat(11));
   for (const [name, n] of [
     ['small', 5],

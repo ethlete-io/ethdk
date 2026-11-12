@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { test } from 'node:test';
-import { tempDir } from './git-test-env.mjs';
+import { tempDir } from './temp-dir.mjs';
 import { fileURLToPath } from 'node:url';
 import { commitMessageProblems, workflowCommitMessages } from './check-workflow-commit-messages.mjs';
 

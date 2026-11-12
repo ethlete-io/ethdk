@@ -3,7 +3,8 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { git, gitEnv, tempDir, tempGitRepo } from './git-test-env.mjs';
+import { git, gitEnv, tempGitRepo } from './git-test-env.mjs';
+import { tempDir } from './temp-dir.mjs';
 
 test('git in a temp repo leaves the repo a hook points at untouched', () => {
   const hookRepo = tempGitRepo('git-env-hook-');

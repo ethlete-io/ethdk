@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { tempDir } from './git-test-env.mjs';
+import { tempDir } from './temp-dir.mjs';
 import { fileURLToPath } from 'node:url';
 import { cpuQuotaOf, parseArgs, reportLines, runPooled, slowed, summarize, tailOf } from './spec-stress.mjs';
 

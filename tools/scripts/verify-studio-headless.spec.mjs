@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { tempDir } from './git-test-env.mjs';
+import { tempDir } from './temp-dir.mjs';
 import { missingBuildInputs, WEBKIT_BLIND_EXIT, webkitVerdict } from './verify-studio-headless.mjs';
 
 test('names each missing build input with the command that builds it', () => {

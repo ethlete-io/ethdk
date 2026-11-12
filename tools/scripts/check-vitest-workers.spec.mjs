@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { tempDir } from './temp-dir.mjs';
 import { testTargetProblemsOf, vitestConfigs, workerProblemsOf } from './check-vitest-workers.mjs';
 
 test('every vitest config that runs tests uses the shared worker preset', () => {
@@ -35,7 +35,7 @@ test('every vitest config that runs tests belongs to a project with a test targe
 });
 
 test('a config whose project has no test target is reported, an explicit or inferred one passes', () => {
-  const root = mkdtempSync(join(tmpdir(), 'vitest-targets-'));
+  const root = tempDir('vitest-targets-');
   const nxJson = {
     plugins: [{ plugin: '@nx/vitest', options: { testTargetName: 'test' }, include: ['libs/inferred/**/*'] }],
   };
