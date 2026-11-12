@@ -20,3 +20,14 @@ The scheduled Rust audit never ran: GitHub starts a `schedule` trigger only from
 - One commit on `main` adds a small workflow that runs the Rust audit and the spec sweep on a schedule against `next`.
 - A red scheduled run opens a GitHub issue. The doc agent names open issues in the shift report.
 - `et design status` does not show the scheduled runs, so a new advisory does not stop Studio work.
+
+## Follow-up: the audit leaves ci.yml
+
+The doc agent asked whether the audit in `ci.yml` should block only a push that changes a Cargo file. The human
+answered (German, verbatim): "Q6 – Ja, aber einfacher: den Audit ganz aus der normalen CI nehmen. […] Mein Vorschlag:
+den Audit-Schritt aus ci.yml löschen. Übrig bleiben zwei klare Fälle: rust-audit.yml blockiert bei Cargo-Änderungen,
+und der tägliche Lauf von main aus legt für neue Lücken ein Issue an." The doc agent checked: `rust-audit.yml` already
+runs on a push to `next` that changes a `Cargo.lock` or `Cargo.toml` of either Tauri app (c6184dbb0).
+
+- The `audit-rust` steps and the cargo-audit install leave `ci.yml`.
+- `rust-audit.yml` keeps its push trigger on Cargo files; the scheduled run from `main` covers new advisories.
