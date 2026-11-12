@@ -4095,3 +4095,11 @@ sketch folder, the listing drops the sketch before `mergeSketch$` answers, Sketc
 `takeUntilDestroyed` swallows `mergeComplete.emit` (`sketch-view.component.ts` ~787), so `leaveGone()` never runs. Fix
 (Linux, push blocker): Studio opens the part when a picked sketch leaves the listing after a merge; 128 is the bite.
 Timeout diagnostics at `canvas.e2e.mjs:772` (785facf09) name the cause next time.
+
+963\. Mac builder (2026-11-12 night, 929): push:suite at 5c5a1908a was blocked by the e2e case "[Large] a sketch cell
+edited on disk while scrolled away shows its new picture on return" (URL kept 10000 ms), at load 48 (max 61) on 3
+workers, while a 904 subagent built and tested in parallel. The case passes at load ~30 and alone. Suspect: the parallel
+slice's load; the URL stage may itself be load-bound (server re-render). So the e2e verdict depends on what the builder
+runs meanwhile. Tool fix (decided by the doc agent, tool internal): push:suite holds a "heavy" lock during its e2e step,
+and the build and test commands of a slice wait for it (or print one line and refuse), with a spec. The Mac reruns
+push:suite on a quiet machine; the 10 s budget stays. If it fails again quiet, probe the URL stage under load.
