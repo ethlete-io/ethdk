@@ -4163,3 +4163,6 @@ tool-run dirs (the leak check decides on those).
 fails: inside the export et-design.spec.mjs times out ("fake cli … started", 10 s) under load; alone 3/3. Two subagents
 hit it today (959 too). Suspect: load-sensitive 10 s timeout inside the export. Tool fix (builder default): fix it before
 the morning push, with a run under load that bites.
+
+989 built (Mac, 57ba6a45c, pushed): typecheck targets for libs/types and libs/eslint-plugin; apps/timetrack-vscode also
+checks tsconfig.app.json. Bites on a temp type error. libs/eslint-plugin is .js only, so its target checks no file today.
