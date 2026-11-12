@@ -10,7 +10,13 @@ import {
   THEME_SWITCHES_SAMPLE,
 } from '../design-parts/system-page/system-page-sample';
 import { DesignHarnessSketchShotsComponent } from './design-harness-sketch-shots.component';
-import { SKETCH_CURRENT, SKETCH_NARROW_SAMPLE, SKETCH_ROWS, SketchRow } from '../design-parts/sketches/sketches-sample';
+import {
+  SKETCH_CURRENT,
+  SKETCH_NARROW_SAMPLE,
+  SKETCH_ROWS,
+  SKETCH_WITHDRAWN,
+  SketchRow,
+} from '../design-parts/sketches/sketches-sample';
 
 type Props = Record<string, unknown>;
 
@@ -40,11 +46,13 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     cameraKey: 'elements/canvas-frames',
     restoredCamera: { x: 0, y: 0, zoom: parseFloat(String(zoom ?? '100%')) / 100 },
   }),
-  'pages/sketches': ({ part, same, comparing, ...props }) => {
+  'pages/sketches': ({ part, same, comparing, withdrawn, ...props }) => {
     const { looks: _looks, ...sample } = part === 'narrow' ? SKETCH_NARROW_SAMPLE : { rows: SKETCH_ROWS, looks: {} };
-    const rows = sketchRowsOf(sample.rows, { same: same as string[] | undefined, comparing: comparing === true });
+    const rows = sketchRowsOf(sample.rows, { same: same as string[] | undefined, comparing: comparing === true }).map(
+      (row) => (withdrawn && row.key === SKETCH_WITHDRAWN.key ? { ...row, withdrawn: SKETCH_WITHDRAWN.reason } : row),
+    );
 
-    return { ...props, ...sample, rows };
+    return { ...props, ...sample, rows, ...(withdrawn ? { withdrawn } : {}) };
   },
   'pages/system': ({ build, agent, call, ...props }) => {
     const exceptions = PART_EXCEPTIONS_SAMPLE;

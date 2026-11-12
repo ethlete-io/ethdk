@@ -21,7 +21,14 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime, Subject, tap } from 'rxjs';
-import { BADGE_IMPORTS, BUTTON_IMPORTS, FORM_FIELD_IMPORTS, SELECT_IMPORTS } from '@ethlete/components';
+import {
+  BADGE_IMPORTS,
+  BUTTON_IMPORTS,
+  CHOICE_FIELD_IMPORTS,
+  FORM_FIELD_IMPORTS,
+  SELECT_IMPORTS,
+  SWITCH_IMPORTS,
+} from '@ethlete/components';
 import {
   ProvideColorDirective,
   injectRenderer,
@@ -54,6 +61,7 @@ import {
   SketchIdle,
   SketchPin,
   SketchRow,
+  SketchWithdrawn,
   SketchShot,
   SketchStatus,
 } from './sketches-sample';
@@ -139,6 +147,8 @@ const noteAt = (scale: number, fit: number) => {
   return scale >= fit ? Math.max(MIN_TEXT, NOTE_TEXT * scale) : (floor * scale) / fit;
 };
 
+const isWithdrawn = (row: SketchRow) => row.withdrawn !== undefined;
+
 const isPending = (row: SketchRow) => row.shots.some((shot) => shot.changed === null);
 
 @Component({
@@ -151,6 +161,8 @@ const isPending = (row: SketchRow) => row.shots.some((shot) => shot.changed === 
     ProvideColorDirective,
     FORM_FIELD_IMPORTS,
     SELECT_IMPORTS,
+    CHOICE_FIELD_IMPORTS,
+    SWITCH_IMPORTS,
     NgTemplateOutlet,
     AgentLogoComponent,
     CanvasViewportComponent,
@@ -186,6 +198,7 @@ export class SketchesComponent {
   public pins = input<SketchPin[]>(SKETCH_PINS);
   public sameOpen = model(false);
   public statesOpen = model(false);
+  public withdrawn = model<SketchWithdrawn>('hidden');
 
   public shot = input<TemplateRef<SketchShotContext> | null>(null);
   public tree = input(SKETCH_TREE);
@@ -216,6 +229,7 @@ export class SketchesComponent {
   private listSize = signalElementDimensions(this.list);
 
   protected readonly LABELS = STUDIO_LABELS.sketches;
+  protected readonly IS_WITHDRAWN = isWithdrawn;
   protected readonly CURRENT = SKETCH_CURRENT;
   protected readonly COLUMN_GAP = COLUMN_GAP;
   protected readonly FRAME_KEY_OF = frameKeyOf;
@@ -230,8 +244,11 @@ export class SketchesComponent {
   protected selectedFrame = signal<string | null>(null);
   private fitAt = signal<number | null>(null);
   private userCamera$ = new Subject<Camera | null>();
+  protected withdrawnCount = computed(() => this.rows().filter(isWithdrawn).length);
   private listedRows = computed(() =>
-    this.fresh() ? this.rows().filter((row) => row.key !== SKETCH_CURRENT) : this.rows(),
+    this.rows().filter(
+      (row) => !(this.fresh() && row.key === SKETCH_CURRENT) && (this.withdrawn() === 'shown' || !isWithdrawn(row)),
+    ),
   );
   protected foldedStates = computed(() => foldedStatesOf(this.listedRows()));
   public shownRows = computed(() => {
@@ -494,6 +511,10 @@ export class SketchesComponent {
 
   protected magnifyTextOf(group: SketchCropGroup) {
     return magnifyTextOf(group.magnify);
+  }
+
+  protected withdrawnMarkOf(reason: string) {
+    return reason ? STUDIO_LABELS.systemTree.withdrawnWith(reason) : STUDIO_LABELS.systemTree.withdrawnLabel;
   }
 
   protected isSame(row: SketchRow, unchanged: boolean | null) {

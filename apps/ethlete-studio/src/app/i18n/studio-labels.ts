@@ -50,6 +50,7 @@ export const STUDIO_LABELS = {
         ? `Automatischer Merge wartet auf ungespeicherte Änderungen in ${dirty.join(', ')} - committen oder verwerfen, dann läuft er von selbst.`
         : `Nicht automatisch gemerged: ${reason}`,
     variant: (label: string) => `Variante ${label}`,
+    withdrawnToggle: (count: number) => `Zurückgezogene (${count})`,
     fitHint: 'Doppelklick zum Einpassen',
     current: 'Aktuell',
     modelTitle: (id: string, when?: string) => [id, when].filter(Boolean).join(' · '),

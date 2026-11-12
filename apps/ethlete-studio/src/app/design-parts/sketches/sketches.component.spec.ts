@@ -251,6 +251,48 @@ describe('SketchesComponent', () => {
     expect(model?.title).toBe('claude-sonnet-5-5 · 01.11. 09:00');
   });
 
+  it('hides withdrawn variants behind Zurückgezogene (n) and marks them in place of Übernehmen when shown', async () => {
+    const withdrawn: SketchRow[] = [
+      ...ROWS,
+      { ...ROWS[1]!, key: 'y', withdrawn: 'Zu breit für die Leiste' },
+      { ...ROWS[1]!, key: 'z', withdrawn: '' },
+    ];
+    // jsdom ignores rules inside `@layer`, so et-choice-field reads `display: inline` and the SDK logs an error.
+    const layerShim = Object.assign(document.createElement('style'), { textContent: 'et-choice-field{display:flex}' });
+
+    document.head.append(layerShim);
+    onTestFinished(() => layerShim.remove());
+
+    const fixture = await render({ rows: withdrawn });
+    const root = fixture.nativeElement as HTMLElement;
+    const shownKeys = () => [...root.querySelectorAll('[data-sk-row]')].map((row) => row.getAttribute('data-sk-row'));
+    const changes: string[] = [];
+
+    fixture.componentInstance.withdrawn.subscribe((value) => changes.push(value));
+
+    expect(shownKeys()).toEqual(['current', 'x']);
+    expect(textOf(root.querySelector('[data-sk-withdrawn-toggle]'))).toBe('Zurückgezogene (2)');
+
+    root.querySelector<HTMLElement>('[data-sk-withdrawn-toggle] et-switch')?.click();
+    await fixture.whenStable();
+
+    expect(changes).toEqual(['shown']);
+    expect(shownKeys()).toEqual(['current', 'x', 'y', 'z']);
+    expect(textOf(root.querySelector('[data-sk-row="y"] [data-sk-withdrawn]'))).toBe(
+      'Vom Agent zurückgezogen: Zu breit für die Leiste',
+    );
+    expect(textOf(root.querySelector('[data-sk-row="z"] [data-sk-withdrawn]'))).toBe('Vom Agent zurückgezogen');
+    expect(root.querySelector('[data-sk-row="y"] [data-sk-merge]')).toBeNull();
+    expect(root.querySelector('[data-sk-row="x"] [data-sk-merge]')).not.toBeNull();
+    expect(root.querySelector('[data-sk-row="x"] [data-sk-withdrawn]')).toBeNull();
+  });
+
+  it('shows no Zurückgezogene toggle while no variant is withdrawn', async () => {
+    const root = (await render({})).nativeElement as HTMLElement;
+
+    expect(root.querySelector('[data-sk-withdrawn-toggle]')).toBeNull();
+  });
+
   it('emits merge with the variant from Übernehmen', async () => {
     const fixture = await render({});
     const merged: string[] = [];

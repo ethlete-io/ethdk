@@ -53,14 +53,6 @@
     "pages/sketches: question-only": {
       "finding": "489",
       "sketch": "pages/sketches: not opened yet - an app input for the prop, or a state that does not set it"
-    },
-    "pages/sketches: withdrawn-hidden": {
-      "finding": "489",
-      "sketch": "pages/sketches: not opened yet - an app input for the prop, or a state that does not set it"
-    },
-    "pages/sketches: withdrawn-shown": {
-      "finding": "489",
-      "sketch": "pages/sketches: not opened yet - an app input for the prop, or a state that does not set it"
     }
   },
   "IMPLEMENTS-UNRENDERED": {

@@ -12,8 +12,11 @@ export type SketchRow = {
   model?: SketchModel;
   width: number;
   sized?: boolean;
+  withdrawn?: string;
   shots: SketchShot[];
 };
+
+export type SketchWithdrawn = 'hidden' | 'shown';
 
 export type SketchStatus = 'drawing' | 'waiting' | 'paused' | 'idle';
 
@@ -132,6 +135,11 @@ const CHIP_STATES = [
 const CHIP_HEIGHT = 30;
 
 const chipShotsOf = (changed: string[]) => shotsOf(changed, { height: () => CHIP_HEIGHT, states: CHIP_STATES });
+
+export const SKETCH_WITHDRAWN = {
+  key: 'b',
+  reason: 'Halbfett macht die Prozentzahl breiter, der Chip springt beim Zoomen um 4 px',
+};
 
 export const SKETCH_NARROW_SAMPLE = {
   part: 'components/zoom-chip',

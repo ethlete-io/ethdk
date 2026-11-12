@@ -122,6 +122,12 @@
       @if (question()) {
         <span class="min-w-0 truncate text-ui-sm text-et-surface-muted" data-sk-question>{{ question() }}</span>
       }
+      @if (withdrawnCount() > 0) {
+        <et-choice-field size="sm" color="brand" data-sk-withdrawn-toggle>
+          <et-switch [checked]="withdrawn() === 'shown'" (checkedChange)="withdrawn.set($event ? 'shown' : 'hidden')" />
+          <et-label>{{ LABELS.withdrawnToggle(withdrawnCount()) }}</et-label>
+        </et-choice-field>
+      }
     </div>
     <div
       class="absolute top-27 right-0 bottom-space-5 left-0 box-border overflow-clip pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
@@ -319,7 +325,7 @@
     <div class="relative min-w-0">
       <ng-container *ngTemplateOutlet="headTemplate; context: { $implicit: row }" />
     </div>
-    <div class="min-w-0">
+    <div [class.opacity-60]="IS_WITHDRAWN(row)" class="min-w-0">
       @if (drawn) {
         <ng-container *ngTemplateOutlet="placeholderTemplate; context: { $implicit: row }" />
       } @else if (row.shots.length > 0) {
@@ -416,7 +422,14 @@
       {{ row.note }}
     </p>
     @if (row.key !== CURRENT) {
-      @if (drawn) {
+      @if (IS_WITHDRAWN(row)) {
+        <span
+          [style.font-size.px]="noteSize()"
+          class="leading-[1.35] text-et-surface-muted italic wrap-anywhere"
+          data-sk-withdrawn
+          >{{ withdrawnMarkOf(row.withdrawn) }}</span
+        >
+      } @else if (drawn) {
         <span class="flex items-center gap-space-1 text-ui-sm text-et-surface-muted"
           ><span class="size-1.5 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></span
           >{{ LABELS.drawingMark }}</span
@@ -426,7 +439,7 @@
       }
     }
   </div>
-  @if (!drawn) {
+  @if (!drawn && !IS_WITHDRAWN(row)) {
     @if (pinOf(row.key); as pin) {
       <span [class.hidden]="headHidden()" class="absolute top-space-1 right-space-1 z-1 flex">
         <ethlete-comment-pin

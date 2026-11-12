@@ -3883,3 +3883,16 @@ glyph changing (no layout shift). `check-person-names` now ignores baseline entr
 (`.ethlete/design/<product>/{foundations,components,elements,pages,sketches}/`) and those entries were removed; comment
 records, `capabilities.json` and old calls keep their baseline. A spec fails on the old checker. The three part checks
 had 0 findings before and after.
+
+922 as built: `SketchRow` has `withdrawn?: string` (the agent's reason, empty when it gave none) and
+`SketchesComponent` a `withdrawn` model (`'hidden' | 'shown'`, default `'hidden'`). With a withdrawn row the picker
+line shows the SDK switch "Zurückgezogene (n)" in an `et-choice-field size="sm" color="brand"`; hidden rows leave the
+list before the fold and the same-row grouping, as in the design's `visibleRows`. A shown withdrawn row reads "Vom Agent
+zurückgezogen: …" (the `systemTree` labels) in place of "Übernehmen", drops its pin and dims its stage to 60 %.
+`sketch-view` fills `withdrawn` from `rejectionOf(...).status === 'withdrawn'` and binds `[(withdrawn)]`; the harness
+sample marks variant b of the narrow sample with the design's reason. The two stale `withdrawn-*` DROPPED-PROP entries
+left `rule-baseline.json`. Verified: the spec fails without the change and passes with it; compare turns
+`withdrawn-hidden`/`withdrawn-shown` from FAILED (dropped prop) to DIFF 84596/88947 px; the shot shows the switch, mark
+and dimming as drawn, the rest is the fold of the `fit-*` states that `narrow-part` (84885 px) has too. `design check`
+for pages/sketches lists 4 DROPPED-PROP findings (points, screen) that HEAD has too; pages/flows has 0. Not verified:
+a live shot of the Studio app with a real withdrawn variant, and no spec covers the `sketch-view` mapping.
