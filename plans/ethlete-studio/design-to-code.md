@@ -3800,3 +3800,23 @@ default): the same as 761/763; the suite reruns.
 929 update (Mac): the rerun at 08c6de8a3 failed on the same case (load 30.5); alone it passes. Not pushed
 (b3854241c..08c6de8a3). Suspect now also the 911 design commits (more pictures to refresh). The resumed Mac builder
 probes it in a scratch copy at 43c4b5b8a vs HEAD under load before the push.
+
+903 update 4 (Linux, not committed): the patch causes the pages/sketches idle DIFF; not the 924 flake. Repeat: HEAD 2778
+x4, patch 49443 x4. Cause (measured, bisect): each of the two app files alone moves it (`sdk-token-map.css` button
+line-height, `title-search.component.ts` kbd leading); design files do not. The app's variant columns get about 5 px
+wider and the rows move up 16 px; the design picture stays. Suspect (not checked): the shorter app page loses a vertical
+scrollbar that the design frame keeps. Decided by the doc agent (applies ADR 0209 and the 903 decision; no look choice):
+the design side gets the same button metrics as the app, from one source, then compare re-runs (finding 930).
+
+930\. Linux builder (2026-11-12 night, 903 slice): a button metric fix in the app token map (`sdk-token-map.css`) moved the
+app picture but not the design picture, so a correct fix showed as a 49443 px DIFF. Cause (measured): design and app
+take button metrics from different sources. Lesson: an app-only token override makes design and app drift by
+construction. Tool fix (builder default, tool backlog): design check flags a component token the app token map sets
+that the design side does not, so a metric has one source.
+
+931\. Linux builder (2026-11-12 night): `design compare` in a scratch copy leaves about 170 processes (a `__resident` node
+and headless Chromium) after it exits. Tool fix (builder default, tool backlog): compare stops its resident and browsers
+on exit in a scratch copy, with a spec that counts the processes.
+
+932\. Linux builder (2026-11-12 night): `design compare --state` takes one state only, so a repeat over idle, paused and
+paused-reason needs three runs. Tool fix (builder default, tool backlog): `--state` takes a list.
