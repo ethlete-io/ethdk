@@ -31,7 +31,7 @@ nimmt den nächsten. Kein Punkt und kein Rückstand läuft über Nacht als E2E-F
 
 0. Wartezeit (ADR 0236, 0237, 0238, Bef. 639): endet nach dem Beweis für 647 und dem Push (Tom, 09.11.). E2E-Schritt
    jetzt etwa 118 s statt 165-197 s; Fehler auf „Large“ an der Ursache behoben (Bef. 647). Rest im Werkzeug-Rückstand.
-1. A2 + A3 (ADR 0290: die Reihenfolge vom 09.11. gilt als zweite Liste): Suche mit Strg+K und Update-Knopf in der Titelleiste.
+1. A2 (ADR 0290: die Reihenfolge vom 09.11. gilt als zweite Liste): Suche mit Strg+K; wartet auf Toms Wahl in der Skizze `components/command-palette`. Bis dahin B498.
 
 **Werkzeug-Rückstand** (nur, wenn der Builder auf Toms Wahl in einer Skizze wartet): Off-centre-Skizzen 628-633,
 Bef. 638 (Changeset im Pre-Commit), 649 Teil 2 (asynchroner Fingerabdruck, dann die 12 asynchronen und Platten-Caches: action-cache, compare-cache, harness-build-cache, part-picture-cache, pixel-cache, served-cache, generated-stylesheets, shot-store, vite-cache, sketch/unchanged-states, link-free earlierFields, slow-checks bases; Tailwind-@plugin/@config per ESM-Import nicht erfasst, Spec beißt mit einer Plugin-Änderung; warme design-check-Messung der Stat-Kosten an einem echten Produkt gegen den Vorgänger von d761342b3, Zahl in die As-built-Notiz), 650 (Last in E2E-Messungen), 652 (Werkzeug-Dateien im Arbeitsbaum), 653 (Beweis über exportCommit), 654 (Übergabe widerspricht ADR), 655 (rotes CI aus Rust-Audit nicht gesehen), 659 (Last ohne Quelle), 661 (Systemschrift in Fixtures), 664 (90-s-Ziel ohne Maschine), 753 (Rundennotiz pro Variante), 754 (Zahl geänderter Zustände), 755 (Scratch-Kopie leckt ins Repo), 757 (Banner-Fehlerfarbe), 759 (Studio zeigt nicht bereite Skizze ohne Grund), 760 (ADR-Warnungen bei jedem Commit), 761 (Last steigt während push:suite), 762 (Smoke nennt gestoppten Design-Server nicht), 763 (push-suite-Spec wackelt unter Last), 435 (Studio-E2E beim Verlassen der Ansicht), 479 (sketch new mit CSS-Teil), 481 (Port-Aufgabe beim Merge), 486 (Skizze für fehlenden Zustand), 495 (Drift-Commits in compare), 496 (Skizze für unbekannte Kontrolle), 497 (voller Check ohne Push-Bereich), 500 (restliche Fit-Punkte), 533 (Studio-Specs scheitern nicht an NG0), 535 (Arbeitsbaum-Build für et:design), 542 (Shell-Timeout im Briefing), 543 (Port-Aufgabe und --all-Drift), Rest von Punkt 0 (ADR 0238: verzögerte Bilder in
@@ -238,8 +238,7 @@ pages/sketches, auf B34 aufgesetzt); Berichte unter `.claude/handoffs/agent-resu
   Gebaut ff698951f (c8, ungepusht; SDK-Fensterknopf `shape: 'caption'`). Offen: die 12 übersprungenen Hover-Zustände
   (Befund 483), ein echtes Windows-Fenster, Sketch `components/title-bar@notice-hint` (Befund 484). `check --part
 elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a sketch“ (vermutlich d961cb00d).
-- **A2** Nach A1: Suche in der Titelleiste; Klick oder Strg+K öffnet die Command Palette.
-- **A3** Nach A1: Knopf „Update“ in der Titelleiste, nur wenn ein Update bereit ist (Q90).
+- **A2** Nach A1: Suche in der Titelleiste; Klick oder Strg+K öffnet die Command Palette. Wartet auf die Skizze `components/command-palette` (B398: Skizze zuerst).
 - **A4** Arbeit (Rendern, Mergen) nur in der Ansicht zeigen, auf die man wartet.
 - **A5** Seitenleiste: Repo-Wechsel und „Projekt öffnen“ ins Logo-Menü; oben die Auswahl der Design-Systeme; die Auswahl
   unten entfällt.
