@@ -734,14 +734,14 @@ const goneSketchLeavesToThePart = async (page, { designPort }, target, decide) =
   };
 };
 
-const EDIT_PART = 'components/zoom-chip';
-const EDIT_LABEL = { before: "chipButton('fit', 'Fit', props)", after: "chipButton('fit', 'Fit all', props)" };
+const EDIT_PART = 'components/comment-row';
+const EDIT_LABEL = { before: 'font-ui-medium">${c.author}</span>', after: 'font-ui-medium">${c.author}:</span>' };
 const EDIT_WAIT_MS = 120000;
 
 const withEditSketch = async (page, run) => {
   const studio = join(checkout, '.ethlete/design/studio');
   const saved = mkdtempSync(join(tmpdir(), 'studio-e2e-edit-'));
-  const file = join(studio, EDIT_PART, 'zoom-chip.ts');
+  const file = join(studio, EDIT_PART, 'comment-row.ts');
   const before = readFileSync(file, 'utf8');
   const git = (...gitArgs) =>
     execFileSync('git', ['-c', 'user.email=e2e@canvas', '-c', 'user.name=canvas-e2e', ...gitArgs], {
@@ -830,7 +830,12 @@ const withEditSketch = async (page, run) => {
       Object.assign(
         rows,
         await page.evaluate(() => {
-          const texts = [...document.querySelectorAll('ethlete-merge li[tabindex="0"]')].map((row) => row.textContent);
+          const texts = [...document.querySelectorAll('ethlete-merge li[tabindex="0"]')].map((row) =>
+            [...row.querySelectorAll('*')]
+              .filter((node) => node.children.length === 0)
+              .map((node) => node.textContent.trim())
+              .join(' '),
+          );
 
           return { changed: texts.length, outlined: texts.filter((text) => /\b[1-9]\d* Instanz/.test(text)).length };
         }),
