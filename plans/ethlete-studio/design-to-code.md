@@ -3591,3 +3591,5 @@ lacks and the visible-change gate failed; that is a design call (STATUS A8 rest)
 drawings lost their `title` (comment-target keeps the text as `aria-label`); drawings draw a tooltip only as an open
 state (`tooltip()` from `@ethlete/components/design/tooltip`), so the hover tooltips are not drawn. foundations/colors
 keeps its `title` on the ratio chips: it is the chip's only label. B11 stays open.
+
+A17 as built (Linux builder, 2026-11-13): the part tree list scroll position is stored as `treeScroll` in the remembered ViewState (one tree for all views) and written 150 ms after the last scroll. `RememberedTreeScrollDirective` on the tree scroller restores it after the first render whose content is tall enough (afterEveryRender, no timer), so a slow listing does not break it. Verified: unit spec (store and `canRestoreScroll`), e2e case "the part tree keeps its scroll position after a reload" red without the directive (0 after the reload, target 300), green with it, also with `--hold-listings 14000`. Not verified: other platforms, a tree shorter than the stored position (stays at the clamp until rows grow).

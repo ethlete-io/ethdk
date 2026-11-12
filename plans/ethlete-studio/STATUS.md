@@ -249,7 +249,6 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 - **A14** Hinweis an Sketches, die sehr wahrscheinlich automatisch mergen.
 - **A15** Kopf eines Sketches mit mehreren Teilen: Titel und „n Teile“ zum Aufklappen (Q244).
 - **A16** Offene Punkte: veraltete Sketch-Basis, Sketch mit Namen, Entscheidung offen bis gebaut (Befunde 92, 93, 94).
-- **A17** Teil-Baum behält die Scroll-Position beim Neuladen (Befund 99).
 - **A18** Kommentar-Pins auch für gemergte Sketches und erledigte Kommentare in Sketches (Befund 122).
 - **A19** Inbox: echte Benutzer statt „Du“, Zustand „unterbrochen“, echte Fehlermeldung (Q18, Q19, Q26).
 - **A20** Eigener Baum für Flows; Abschnitte im Teil-Baum (Q22, Q60).

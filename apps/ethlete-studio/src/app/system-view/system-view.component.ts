@@ -78,6 +78,7 @@ import { keptRead$ } from './kept-read';
 import { SketchRead, sketchRead$ } from './sketch-read';
 import { FlowViewComponent } from './flow-view.component';
 import { InventoryViewComponent } from './inventory-view.component';
+import { RememberedTreeScrollDirective } from './remembered-tree-scroll.directive';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { PageShell, PageShellAction } from './page-shell';
 import { createExceptionStore } from './exception-store';
@@ -330,7 +331,11 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
       </ethlete-system-page>
     } @else {
       <ethlete-shell-page [section]="section()" [shell]="pageShell()" (action)="runShellAction($event)">
-        <div class="-m-space-2 h-[calc(100%+var(--space-2)*2)] overflow-y-auto" shellMainSide>
+        <div
+          class="-m-space-2 h-[calc(100%+var(--space-2)*2)] overflow-y-auto"
+          shellMainSide
+          ethleteRememberedTreeScroll
+        >
           <ng-container [ngTemplateOutlet]="sideTree" />
         </div>
         <ng-container [ngTemplateOutlet]="shellCanvas" />
@@ -339,6 +344,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
+    RememberedTreeScrollDirective,
     BUTTON_IMPORTS,
     NgTemplateOutlet,
     PartTreeComponent,

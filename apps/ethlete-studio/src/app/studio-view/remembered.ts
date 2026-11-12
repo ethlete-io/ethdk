@@ -28,6 +28,8 @@ export type ViewState = {
   flowPresets: Record<string, string>;
   /** Whether a page shows its control inventory in place of the canvas. */
   inventoryShown: boolean;
+  /** How far the part tree list was scrolled, in pixels. */
+  treeScroll: number;
 };
 
 /**
@@ -225,6 +227,7 @@ export const rememberedView = (): Partial<ViewState> => {
       sketchViews,
       flowPresets,
       inventoryShown,
+      treeScroll,
     } = stored as Partial<ViewState>;
 
     return {
@@ -240,6 +243,8 @@ export const rememberedView = (): Partial<ViewState> => {
       sketchViews: sketchViewMap(sketchViews),
       flowPresets: nameMap(flowPresets),
       inventoryShown: typeof inventoryShown === 'boolean' ? inventoryShown : undefined,
+      treeScroll:
+        typeof treeScroll === 'number' && Number.isFinite(treeScroll) && treeScroll > 0 ? treeScroll : undefined,
     };
     // eslint-disable-next-line ethlete/no-silent-catch-error -- unreadable or absent stored view means defaults
   } catch {

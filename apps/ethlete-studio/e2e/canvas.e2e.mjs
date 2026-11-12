@@ -1414,6 +1414,44 @@ const CASES = [
     },
   },
   {
+    name: 'the part tree keeps its scroll position after a reload',
+    listingMayPend: 'it waits up to 15 s for the restored scroll position itself',
+    pages: ['System'],
+    run: async (page) => {
+      const scroller = () =>
+        page.evaluate(() => {
+          const element = document.querySelector('ethlete-part-tree')?.closest('.overflow-y-auto');
+
+          return element
+            ? { top: element.scrollTop, max: element.scrollHeight - element.clientHeight }
+            : { top: -1, max: -1 };
+        });
+
+      await page.waitForSelector('ethlete-part-tree [etTreeNode]');
+      const before = await scroller();
+
+      if (before.max < 40) return { ok: false, detail: `the tree cannot scroll, scrollable ${before.max} px` };
+
+      const target = Math.min(300, before.max);
+
+      await page.evaluate((top) => {
+        document.querySelector('ethlete-part-tree')?.closest('.overflow-y-auto')?.scrollTo({ top });
+      }, target);
+      await page.waitForTimeout(600);
+      await page.reload();
+      await page.waitForSelector('ethlete-part-tree [etTreeNode]');
+
+      let after = await scroller();
+
+      for (let waited = 0; waited < 15000 && Math.abs(after.top - target) > 2; waited += 250) {
+        await page.waitForTimeout(250);
+        after = await scroller();
+      }
+
+      return { ok: Math.abs(after.top - target) <= 2, detail: `scrolled to ${target}, ${after.top} after the reload` };
+    },
+  },
+  {
     name: 'open points chip pressed matches its popup',
     holdListings: false,
     pages: ['System'],
