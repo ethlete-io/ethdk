@@ -3893,3 +3893,14 @@ whose merge commit does not exist, and merge names a reused decision.
 
 940\. Linux builder (2026-11-12 night, 903): the PreToolUse hook blocks `design compare --help` in the foreground as a
 compare run. Tool fix (builder default, tool backlog): the hook lets `--help` pass.
+
+941\. Linux builder (2026-11-12 night): the design server on :4402 was down: the studio-serve pane showed "FATAL ERROR:
+Reached heap limit ... JavaScript heap out of memory" after a 4 h 18 min run. Restarted in tmux studio-serve. Suspect: a
+leak in the resident or the shot browser pool. Tool fix (builder default, tool backlog): find the leak with two heap
+snapshots an hour apart; until then the serve command names its heap use in its status line.
+
+942\. Doc agent (2026-11-12 night, 903 live shot): `/__design/shot` renders the design part in its own headless browser;
+`shot.ts` has no app or source parameter, so no route shoots the running app build, and an app fix can only be judged by
+compare numbers. The design shot of pages/sketches idle after 903 is right (4 columns, rows under the notes, variant-a
+note in 4 lines, centred xs search button with Ctrl K). Tool fix (builder default, tool backlog): the shot route takes a
+`source=app` parameter that shoots the app harness of the same part and state.
