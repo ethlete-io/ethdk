@@ -85,6 +85,15 @@ if [ -n "$data_files" ]; then
   node ./tools/scripts/staged-data-specs.mjs $data_files
 fi
 
+# A staged tools script runs every tools spec that imports it or copies it as a fixture; a commit
+# touching none skips it. Fails the commit on a red spec.
+script_files=$(git diff --cached --name-only --diff-filter=ACMR -- 'tools/scripts' '.husky')
+
+if [ -n "$script_files" ]; then
+  # shellcheck disable=SC2086
+  node ./tools/scripts/staged-script-specs.mjs $script_files
+fi
+
 # A staged file that names a real person fails here with the pre-push message; the staged blob is read, not the working tree.
 name_files=$(git diff --cached --name-only --diff-filter=ACM -- 'libs' 'apps' '.ethlete/design')
 
