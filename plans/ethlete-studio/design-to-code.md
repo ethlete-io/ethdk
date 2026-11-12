@@ -4162,3 +4162,7 @@ scratch copy, the first stops the resident under the second (that one then runs 
 
 932 built (Linux, 803c592d5): `compare --state` takes a comma list or a repeated flag, drops duplicates, `--state ,` exits
 2; harness and `--live` filter by it and name the first unknown state. Spec bites. Not verified live: `--live` with a list.
+
+940 built (Linux, afd882fa5): a `--help` or `-h` call of design check, compare, ready, sketch ready and harness passes the
+background hook in the foreground; `studio:e2e --help` stays denied (it still starts the full suite, see the 900 note above).
+Spec: 2 new cases fail on the old hook.
