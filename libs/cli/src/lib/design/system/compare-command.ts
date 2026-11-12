@@ -1,6 +1,6 @@
 import { createHash } from 'crypto';
 import { noVerdictLineOf } from './no-verdict';
-import { mkdtempSync, writeFileSync } from 'fs';
+import { mkdtempSync, realpathSync, writeFileSync } from 'fs';
 import { AddressInfo } from 'net';
 import { tmpdir } from 'os';
 import { join, relative } from 'path';
@@ -604,7 +604,7 @@ const startBaseHarness = async (options: {
 }): Promise<BaseHarness> => {
   const short = options.commit.slice(0, 9);
   const checkout = baseCheckoutOf({ root: options.root, commit: options.commit });
-  const target = join(checkout.dir, relative(options.root, options.target));
+  const target = join(checkout.dir, relative(options.root, realpathSync(options.target)));
   const entry = readConfig(target)?.products?.[options.product.name];
 
   process.env['NX_DAEMON'] ??= 'false';
