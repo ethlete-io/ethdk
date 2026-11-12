@@ -26,7 +26,7 @@ type Props = {
   switchFocus?: boolean;
   studio?: string;
   force?: RailForce;
-  server?: 'stopped' | 'starting';
+  server?: 'stopped' | 'starting' | 'unanswered';
   log?: string[];
   chrome?: Chrome;
   update?: boolean;
@@ -168,12 +168,19 @@ const restartButton = withAction(
   'emit:restartServer',
 );
 
-const serverScreen = (server: 'stopped' | 'starting', log: string[]) =>
+const serverScreen = (server: 'stopped' | 'starting' | 'unanswered', log: string[]) =>
   html`<div class="box-border size-full overflow-auto pl-(--st-shell-inset-left)">
     ${
-      server === 'starting'
+      server === 'starting' || server === 'unanswered'
         ? html`<div class="mx-auto mt-15 w-full max-w-6xl box-border px-space-5">
             <h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">Design-Server startet</h3>
+            ${
+              server === 'unanswered'
+                ? html`<p class="m-0 mt-space-2 text-ui-sm text-et-surface-muted">
+                    Design-Server antwortet nicht: http://localhost:4402
+                  </p>`
+                : ''
+            }
           </div>`
         : html`<div
             class="mx-auto mt-15 flex w-full max-w-6xl box-border flex-col items-start gap-space-3 px-space-5 text-ui-sm text-et-surface-muted"
@@ -218,6 +225,7 @@ export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
     'project-picker-focus-visible': { ...BASE, projectPicker: 'open', pickerKeyboard: true },
     'server-stopped': { ...BASE, server: 'stopped', log: SERVER_LOG },
     'server-starting': { ...BASE, server: 'starting' },
+    'server-unanswered': { ...BASE, server: 'unanswered' },
     open: BASE,
     'open-focus-visible': { ...BASE, switchFocus: true },
     hidden: { ...BASE, panel: 'hidden' },

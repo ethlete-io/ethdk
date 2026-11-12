@@ -58,11 +58,10 @@
   },
   "elements/part-tree": "4decbdf07174f4c8",
   "elements/shell-main": {
-    "hash": "ddbdedeb1ef8f441",
-    "variant": "new",
-    "decidedBy": "plan: finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit",
-    "at": "2026-11-07T14:51:01.266Z",
-    "note": "merged without a pick: allowed by finding 507: Empfehlung gebaut (builder) - new is the shipped direct edit"
+    "hash": "8b721f55a6439559",
+    "variant": "a",
+    "decidedBy": "user",
+    "at": "2026-11-12T09:58:56.318Z"
   },
   "elements/studio-menu": "3e69133852294818",
   "elements/variant-cell": {
