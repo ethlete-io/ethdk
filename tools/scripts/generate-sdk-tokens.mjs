@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createJiti } from 'jiti';
 import { format, resolveConfig } from 'prettier';
@@ -186,8 +186,8 @@ ${dark}
 };
 
 const BASE = `:root {
-  --et-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --et-font-family-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --et-font-family: 'Noto Sans', system-ui, sans-serif;
+  --et-font-family-mono: 'Noto Sans Mono', ui-monospace, monospace;
   font-size: 62.5%;
 }
 
@@ -198,11 +198,21 @@ body {
   background: var(--et-surface-background-solid);
   color: var(--et-surface-color-solid);
 }
+
+@layer base {
+  button[class*='et-'],
+  input[class*='et-'],
+  select[class*='et-'],
+  textarea[class*='et-'] {
+    font-family: inherit;
+  }
+}
 `;
 
 const header =
   '/* Generated from libs/core/design/theme-css.ts by tools/scripts/generate-sdk-tokens.mjs. Rerun: yarn sdk:tokens */';
-const source = `${header}\n${withElevatedFill(withSchemeInk(withShadowColor(withoutUtilityColors(themeCss({ surfaceThemes, colorThemes })))))}\n${BASE}`;
+const faces = relative(dirname(file), resolve(root, '.ethlete/design/studio/foundations/type/faces.css'));
+const source = `${header}\n@import '${faces}';\n${withElevatedFill(withSchemeInk(withShadowColor(withoutUtilityColors(themeCss({ surfaceThemes, colorThemes })))))}\n${BASE}`;
 const formatted = await format(source, { ...(await resolveConfig(file)), filepath: file });
 
 if (check) {
