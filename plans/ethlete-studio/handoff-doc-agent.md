@@ -246,3 +246,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - 933 sketch ready (63d53b7b6), waits for the human's pick; 943 extended (usage error, SHOT-NOT-VIEWED exit 0); finding 946 (stale ready.json hashes). Next free finding: 947.
 - 894/7e options arrived (option 1 `@layer components.sdk` recommended); morning round question for the human. Next free finding: 947.
 - 7f built (6700dfd3d, 00abccaea); disabled+loading `<a>` looks normal, accepted by the doc agent; finding 947 (frame copy of surface-interactive.css drifts). Next free finding: 948.
+- 879 timeout built (405ad80ee); shell-main `unanswered` sketch goes to the human's pick by merge. Next free finding: 948.

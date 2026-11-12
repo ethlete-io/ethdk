@@ -3952,3 +3952,9 @@ at build, or a spec that compares its rules with the core source.
 
 946 update: `.ethlete/design/studio/ready.json` is now rewritten in 279 lines by a writer that is not the builder's
 command; still uncommitted.
+
+879 update (Linux, 405ad80ee): `serverAnswers$` has a 5 s `timeout` per stamp request before `retry`; bite: the new spec
+failed without the fix. The visible half (a "server does not answer, URL" screen) is new UI in elements/shell-main, so
+decided by the doc agent (night shift, look questions go to a sketch): the builder sketches state `unanswered` on
+elements/shell-main, marks it ready, and the human picks by merge in the morning; wiring (30 s wait, signal, spec) after
+the pick.
