@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B506
+built: 5c9f1e37e
 decided: 2026-11-12
 source: chat with the doc agent 2026-11-12 (morning), exits from B498 (ADR 0280)
 ---
