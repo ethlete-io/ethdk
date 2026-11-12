@@ -303,3 +303,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - ADR 0276: findings only with Cause or when blocking; Suspects to parked-suspects.md; a shift may not open more than it closes; night balance +94/-50. Doc agent sorts open 903-996 next.
 - Doc agent restarts at 70 % (handoff doc-agent-2026-11-10); morning round Q1-Q3 sent; B495 sorting next.
 - 989 built on the Mac (57ba6a45c); eslint-plugin checkJs parked (ADR 0276). Balance this shift: closed 989.
+- Morning round answered: Q1 push round ok (Linux after the leak check and 996: merge origin/next, push-suite, push when green); Q2 ok -> ADR 0278 / B497; Q3 ok -> ADR 0277 / B496; both to the Mac after 993.
