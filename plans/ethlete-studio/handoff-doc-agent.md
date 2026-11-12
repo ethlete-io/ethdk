@@ -1,1 +1,1 @@
-- Mac pushed b9802b4d6..78b23d84f (925); 929 built (5c5a1908a); finding 962. Next free finding: 963.
+- 900: 128 fails every run (race from 487e24844, Linux fixes it as a push blocker); 955 extended (e2e teardown leaves residents). 3 orphan residents (pids 2167899, 2182703, 2194360) need the human's kill OK. Next free finding: 963.

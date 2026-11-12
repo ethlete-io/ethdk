@@ -4022,7 +4022,9 @@ min, about 6.5 GB with its Chromium) brought available memory from 1.5 GB to 45 
 
 955\. Linux builder (2026-11-12 night, 941): the sketch-check resident has no idle exit, so a resident started by a
 subagent's `sketch check` keeps its Chromium (a 4.5 GB GPU process) after the subagent ends. Suspect (owner not checked,
-not measured). Tool fix (builder default, tool backlog): the resident stops itself after N idle minutes, with a spec.
+not measured). Tool fix (builder default, tool backlog): the resident stops itself after N idle minutes, with a spec. Same class (Linux, 900): the e2e tool removes
+a temp checkout without stopping its resident, so 3 `design __resident --checkout /tmp/studio-canvas-e2e-*` (about 0.75
+GB each) stay and `design stop` cannot find them; the teardown must stop the resident first.
 
 849 built (Linux, a8768fc01): `sketch check` warns "variants X and Y look alike at Studio's fit zoom (N %)" when no state
 reaches 1500 differing pixels at fit zoom but the best state does at 100 %; a warning only, `sketch ready` does not
@@ -4085,3 +4087,11 @@ push-suite load is 28-30, and a slower reaction is a real defect).
 962\. Mac builder (2026-11-12 night, 929): `studio:e2e --load` starts the busy loops before the 125 s Studio build, so
 `--load 24` on 12 cores gives load 100-135, not the push-suite 28-30. Tool fix (builder default, tool backlog): start the
 loops after the build, or a `--load-target <loadavg>` mode that holds a set load.
+
+900 update (Linux, HEAD 77b0cc55c): the 120 s timeouts did not reproduce in 3 runs (128+129 on 2 workers, 128 alone,
+128+129 with hold 14000). Case 128 now fails every run with "part opened after each merge:
+sketch:components/zoom-chip@edit, ...". Suspect (code read): a race from the unpushed 487e24844: the merge removes the
+sketch folder, the listing drops the sketch before `mergeSketch$` answers, SketchViewComponent is destroyed, and
+`takeUntilDestroyed` swallows `mergeComplete.emit` (`sketch-view.component.ts` ~787), so `leaveGone()` never runs. Fix
+(Linux, push blocker): Studio opens the part when a picked sketch leaves the listing after a merge; 128 is the bite.
+Timeout diagnostics at `canvas.e2e.mjs:772` (785facf09) name the cause next time.
