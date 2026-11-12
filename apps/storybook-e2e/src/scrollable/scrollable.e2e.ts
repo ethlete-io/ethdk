@@ -319,9 +319,7 @@ test.describe('scrollable / edges and chrome', () => {
     await scrollTrackTo(container, 'end');
     await expect.poll(() => maskOpacities(root)).toEqual([1, 0]);
 
-    expect(await root.locator(START_MASK).evaluate((el) => getComputedStyle(el).backgroundImage)).toContain(
-      'linear-gradient',
-    );
+    expect(await container.evaluate((el) => getComputedStyle(el).maskImage)).toContain('linear-gradient');
   });
 
   test('the border mask variant draws an edge line instead of a gradient', async ({ page }) => {
