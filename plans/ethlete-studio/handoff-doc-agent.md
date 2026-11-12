@@ -294,3 +294,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - 984 (4684f3e18), 985 (ab7f0cc87) built; 951 closed (measured); findings 987-988. Next free finding: 989.
 - 982 built and pushed on the Mac (882228e5a); 976 in build there, overlaps Linux 984 (sketch.ts rebase), told the Mac. Next free finding: 989.
 - 965 (503be9a2a), 967 (fcc9b1f15) built; 961 closed; findings 989-990. /tmp at 99 % inodes: sweep waits for the human (alarm played). Next free finding: 991.
+- Linux builder restarts at 72 % (handoff builder-2026-11-12c); 956/957/959/960 subagent writes agent-results/956-960.md; then 986. No push until /tmp is swept.
