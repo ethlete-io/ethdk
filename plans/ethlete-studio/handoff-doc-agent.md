@@ -275,3 +275,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - 923 built (e98f58658, 5d2dd4e9f). Next free finding: 973.
 - 926 parked on Linux (merge.ts is Mac-only), sent to the Mac after 963. Next free finding: 973.
 - Mac pushed 78b23d84f..f15c2cf25 (929 + 904) after a quiet push-suite (2479 s); next 963, then 926. Next free finding: 973.
+- 963 built on the Mac (4a24296fd); finding 973. Next free finding: 974.

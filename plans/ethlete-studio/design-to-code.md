@@ -4113,3 +4113,14 @@ inset(50%), a zero clip, or a 1x1 overflow-hidden box, on the element or an ance
 and OFF-CENTRE use it; ring checks and CONTROL-HEIGHT judge boxes and stay. Spec bites (hidden "Control K" in 3 forms). The
 builder's review fix 5d2dd4e9f narrowed the subagent's "1 px wide OR high" to 1x1, so a 200x1 clipped box still fails
 (spec bites). Design check after e98f58658: 0 CLIPPED hits. Not run: a check after 5d2dd4e9f.
+
+963 built (Mac, 4a24296fd): push:suite already held `$TMPDIR/ethlete-heavy-run.lock` (89671ec71). New: `waitForNoHeavyRun`
+and `tools/scripts/heavy-gate.mjs <name> [--no-wait] -- <cmd>` (one wait line; exit 2 on `--no-wait`,
+`ETHLETE_HEAVY_NO_WAIT=1` or after 60 min); test:tools, test:e2e-helpers and the nx build of verify:webkit-studio go
+through it. Spec bites (6 cases). Not verified: a real push:suite with a waiting slice.
+
+973\. Mac builder (2026-11-12 night, 963): `npx nx` build/test/lint, `npx vitest` and a direct `node --test` still skip the
+heavy lock, so the rule "no build or test in a slice during a push:suite e2e" stays a prose rule for them. Suspect: under
+the Nx daemon a hook does not see `ETHLETE_HEAVY_RUN_HELD` (safe today only because push:suite sets NX_DAEMON=false).
+Tool fix (builder default, tool backlog): probe the daemon env first, then a local Nx plugin whose preTasksExecution calls
+`waitForNoHeavyRun`, registered in nx.json, with a biting spec. `yarn design` reads stay out on purpose.
