@@ -7,6 +7,7 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -21,6 +22,7 @@ import { listingHold } from '../../../tools/scripts/studio-e2e-listing-hold.mjs'
 import { ensureCli, withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 import { CANVAS, listingWait, sketchCells } from './probe-helpers.mjs';
 import { noMatchLineOf } from './case-filter.mjs';
+import { residentSurvivors, survivorLinesOf } from './resident-survivors.mjs';
 import { goalLineOf, isNoisy, runLoadLineOf, topProcesses } from './run-load.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -3702,6 +3704,7 @@ const drawsSince = (now, before) => ({
 
 const work = async () => {
   checkout = prepareCheckout();
+  process.send({ type: 'checkout', checkout: realpathSync(checkout) });
 
   await withStudio(
     async ({ page, studioUrl, designPort }) => {
@@ -3929,6 +3932,7 @@ const lead = async () => {
     );
   };
   let fixtureFault;
+  const teardowns = new Map();
 
   try {
     ensureCli();
@@ -3973,6 +3977,7 @@ const lead = async () => {
       let output = '';
       let current;
       let tookJob = false;
+      let workerCheckout;
 
       const giveJob = async () => {
         if (quiet(queue[0]) && index !== 0) return child.send({ job: null });
@@ -4017,9 +4022,12 @@ const lead = async () => {
               .join(', ')}, ${message.drawn ?? '?'} picture(s) drawn, ${message.waited ?? '?'} waited for`,
           );
         if (message.type === 'next') void giveJob();
+        if (message.type === 'checkout') workerCheckout = message.checkout;
       });
 
       const code = await new Promise((done) => child.on('exit', done));
+
+      if (workerCheckout) teardowns.set(workerCheckout, Date.now());
 
       if (code !== 0 || current) {
         console.log(`[canvas-e2e] worker ${index} on port ${port} exited with ${code}\n${output.slice(-4000)}`);
@@ -4038,6 +4046,8 @@ const lead = async () => {
   } finally {
     if (scratch) rmSync(scratch, { recursive: true, force: true });
   }
+
+  const survivors = await residentSurvivors({ teardowns });
 
   const groups = Object.entries(Object.groupBy(rows, (row) => row.page)).map(([page, pageRows]) => ({
     page,
@@ -4092,6 +4102,7 @@ const lead = async () => {
   if (failed.length) console.log(`  ${failed.length} failed`);
   if (fixtureFault) console.log(`  ${fixtureFault}`);
   if (notRun.length) console.log(`  ${notRun.length} did not run`);
+  for (const line of survivorLinesOf(survivors)) console.log(`  ${line}`);
   console.log(
     `\n${rows.length - failed.length}/${total} passed${shardLabel} in ${seconds(suiteMs).trim()} on ${workers} worker(s)`,
   );
@@ -4111,7 +4122,14 @@ const lead = async () => {
     );
   if (isNoisy(load)) console.log(['top processes by cpu:', ...topProcesses()].join('\n'));
   process.exit(
-    fixtureFault || failed.length || rows.length < total || !matched || (overBudget && enforceBudget) ? 1 : 0,
+    fixtureFault ||
+      failed.length ||
+      survivors.length ||
+      rows.length < total ||
+      !matched ||
+      (overBudget && enforceBudget)
+      ? 1
+      : 0,
   );
 };
 
