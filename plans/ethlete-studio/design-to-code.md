@@ -3905,3 +3905,10 @@ The new spec bites. test:tools 449/449.
 
 997 built (Linux, 0509d4f23; archive run a07a9df66): the script counts "NNN built|closed|withdrawn|as built" paragraphs
 and parked-suspects.md lines as done; the budget refusal names the script; 47 findings archived.
+
+998\. Linux builder (2026-11-12, push round): CI on origin/next red (run 43190178268): timetrack-app:audit-rust fails on
+RUSTSEC-2026-0502 (sqlcipher-src 419.0.6, advisory of 2026-10-30); fix rusqlite 0.41 -> 0.42 goes into the push round.
+Second occurrence of 655: 655 (2) built a scheduled `rust-audit.yml` on 2026-11-11, and still nothing warned before the
+push. Suspect: the scheduled run did not run, failed unseen, or `et design status` does not read it. Blocking (CI red),
+so numbered. Tool fix (Linux, after the push): find which of the three, and make a red scheduled audit show in
+`et design status` like a red push run.
