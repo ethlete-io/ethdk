@@ -13,7 +13,7 @@ export const lastCrashOf = (target: string) => {
 
   if (!existsSync(path)) return null;
 
-  const entry = readFileSync(path, 'utf8').split(SEPARATOR).filter(Boolean).at(-1);
+  const entry = readFileSync(path, 'utf8').split(SEPARATOR).filter(Boolean).pop();
   const summary = entry?.split('\n')[0];
 
   return summary ? { path, summary } : null;
