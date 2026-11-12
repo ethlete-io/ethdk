@@ -4,6 +4,7 @@ import { DesignConfig } from '../design-config';
 import { createDesignServer } from '../serve';
 import { createPartShooter, viewportOf } from '../shot';
 import { awaitFonts, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
+import { boxedMarkupScriptOf } from './dom-boxes';
 import { compareFrameOf } from './harness-shot';
 import { harnessStaleOf } from './harness-map';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
@@ -104,6 +105,7 @@ export const readDom: ReadDom = async ({ target, config, product, part, state: a
         bare: true,
         emptySlots: true,
         checker: false,
+        boxes: true,
         params: new URLSearchParams(),
       });
 
@@ -138,9 +140,7 @@ export const readDom: ReadDom = async ({ target, config, product, part, state: a
         await page.locator(HARNESS_HOST_SELECTOR).first().waitFor({ state: 'visible', timeout: DRAW_TIMEOUT_MS });
         await awaitFonts(page);
 
-        return (await page.evaluate(
-          `document.querySelector(${JSON.stringify(HARNESS_HOST_SELECTOR)})?.outerHTML ?? null`,
-        )) as string | null;
+        return (await page.evaluate(boxedMarkupScriptOf(HARNESS_HOST_SELECTOR, 'outer'))) as string | null;
       } finally {
         await context.close();
       }
@@ -158,7 +158,7 @@ export const readDom: ReadDom = async ({ target, config, product, part, state: a
 
 /**
  * `et design dom <layer>/<name> …` prints the pretty-printed HTML of one state of a part: its rendered design, or
- * with `--app` the harness host element of the app that compare shoots.
+ * with `--app` the harness host element of the app that compare shoots, each element with its box in `data-box`.
  */
 export const designDom = async (options: {
   target: string;

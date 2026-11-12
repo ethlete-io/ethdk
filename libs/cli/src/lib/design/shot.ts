@@ -9,6 +9,7 @@ import { DrawnPart, PartsChange, redraws } from './changed-parts';
 import { DesignPreset } from './design-config';
 import { DrawLedger } from './draw-ledger';
 import { fileOfModuleId, SketchVariant, SystemModules } from './system/system-modules';
+import { boxedMarkupScriptOf } from './system/dom-boxes';
 import { sketchIdOfName } from './system/sketch/sketch';
 import { recordShotViewed } from './system/sketch/viewed-shots';
 import {
@@ -131,6 +132,7 @@ type Frame = {
   slotFill: string | null;
   checker: boolean;
   pan: Pan | null;
+  boxes: boolean;
 };
 
 type GraphModule = { id: string | null; file?: string | null; importers: Set<GraphModule> };
@@ -354,6 +356,8 @@ export type PartAddress = {
   checker?: boolean;
   /** Pans part of the picture before the shot, as the live compare moves the app's canvas camera. */
   pan?: Pan | null;
+  /** Marks each element of the markup with its box, as `design dom` prints it. */
+  boxes?: boolean;
 };
 
 /** The frame query, viewport and cache key that draw one state of a part, or why the part cannot be drawn. */
@@ -374,6 +378,7 @@ export const partFrameOf = (options: PartAddress & { system: SystemModules }) =>
     compose,
     checker,
     pan,
+    boxes,
   } = options;
   const drawn = sketch ? system.drawnOf(product, sketch) : null;
   const file = drawn && 'sketchGone' in drawn ? undefined : system.partOf({ product, part, sketch })?.file;
@@ -406,6 +411,7 @@ export const partFrameOf = (options: PartAddress & { system: SystemModules }) =>
       ...(compose ? ['compose', JSON.stringify(compose)] : []),
       ...(checker ? ['checker'] : []),
       ...(pan ? ['pan', pan.selector, pan.x, pan.y] : []),
+      ...(boxes ? ['boxes'] : []),
     ] as unknown[],
     drawn: { part: { product, part, sketch } } as Drawn,
     search: new URLSearchParams({
@@ -424,6 +430,7 @@ export const partFrameOf = (options: PartAddress & { system: SystemModules }) =>
     slotFill: emptySlots ? (slotFill ?? null) : null,
     checker: checker ?? false,
     pan: pan ?? null,
+    boxes: boxes ?? false,
   };
 };
 
@@ -555,7 +562,9 @@ export const createPartShooter = (options: {
           throw typeof missing === 'string' ? new ThumbMissingError(failure) : new ShotFailedError(failure, png);
         }
 
-        const markup: unknown = await page.evaluate("document.getElementById('root')?.innerHTML ?? null");
+        const markup: unknown = await page.evaluate(
+          frame.boxes ? boxedMarkupScriptOf('#root', 'inner') : "document.getElementById('root')?.innerHTML ?? null",
+        );
         const ambient: unknown = await page.evaluate(AMBIENT_SCRIPT);
 
         return {
@@ -585,6 +594,7 @@ export const createPartShooter = (options: {
     slotFill?: string | null;
     checker?: boolean;
     pan?: Pan | null;
+    boxes?: boolean;
     want: DrawWant;
     fresh?: boolean;
     gone?: () => ThumbMissingError | null;
@@ -646,6 +656,7 @@ export const createPartShooter = (options: {
               slotFill: options.slotFill ?? null,
               checker: options.checker ?? false,
               pan: options.pan ?? null,
+              boxes: options.boxes ?? false,
             });
       }, options.want);
 

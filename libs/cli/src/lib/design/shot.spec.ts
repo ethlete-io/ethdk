@@ -1077,6 +1077,29 @@ describe('createPartShooter pictures', () => {
       expect.stringContaining('false ?'),
     ]);
   });
+  it('reads the markup with each element box only when asked for boxes, as a picture of its own', async () => {
+    const { shots } = acme();
+    const ask = (boxes: boolean) =>
+      shots.pictureOf({
+        product: 'acme',
+        part: 'components/card',
+        state: 'long',
+        preset: null,
+        width: null,
+        sketch: null,
+        interaction: null,
+        boxes,
+        params: new URLSearchParams(),
+      });
+    const markupReads = () =>
+      evaluate.mock.calls.map(([script]) => script).filter((script) => script.includes('innerHTML'));
+
+    await ask(false);
+    expect(markupReads()).toEqual([expect.not.stringContaining('data-box')]);
+
+    await ask(true);
+    expect(markupReads()).toEqual([expect.not.stringContaining('data-box'), expect.stringContaining('data-box')]);
+  });
 });
 
 describe('createPartShooter for a call', () => {
