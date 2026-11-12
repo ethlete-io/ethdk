@@ -75,7 +75,7 @@
     "components/textarea": "7ac4a67d54c0a797",
     "components/timeline": "f80aff4bf0d6c3b4",
     "components/title-bar": "10dca6e38b5e7560",
-    "components/title-search": "a7a33c269192e16d",
+    "components/title-search": "5ecaabf10ac93d2f",
     "components/toolbar": "8963a8ba9a488f1b",
     "components/tooltip": "d8d78f8928e32679",
     "components/tree": "7826d5e508a8602c",
@@ -84,17 +84,26 @@
     "components/zoom-chip": "51bd9a1615d87220",
     "elements/canvas-frames": "3a487354d74113f2",
     "elements/part-tree": "dae9f86aab07e116",
-    "elements/shell-main": "ee9aa7a4ac523767",
+    "elements/shell-main": "8b721f55a6439559",
     "elements/studio-menu": "1aaa41df671aa8ea",
     "elements/variant-cell": "fb0b925497ff1069",
     "pages/flows": "df04c02df74ca95e",
     "pages/inbox": "43ddb718c7d133f1",
     "pages/inventory": "a7e25b0248e81b20",
     "pages/merge": "499e8e649decb18a",
-    "pages/sketches": "78077d0bc009c132",
+    "pages/sketches": "df26c2a860d54b1e",
     "pages/start": "692644df2034dcd1",
-    "pages/system": "c633ad45fe3758d6",
+    "pages/system": "63588c79559d0ecc",
     "fixtures.ts": "909089fbef7b8f34"
+  },
+  "baselineTree": "f2aae59b047cca0129ae74bc116e763b04e00507",
+  "decision": {
+    "kind": "pick",
+    "variant": "a",
+    "by": "designer",
+    "cmd": "POST /__design/sketch-decision",
+    "pid": 1608629,
+    "decidedAt": "2026-11-12T10:02:32.686Z"
   },
   "rounds": [
     {
@@ -128,11 +137,11 @@
     ]
   },
   "readyContent": {
-    "a": "bf018fba3608c4aa",
-    "b": "5eedd14d99610351"
+    "a": "d6ef035287feef36",
+    "b": "58a8d44a4ae9656c"
   },
   "mergeHold": {
-    "reason": "variant a changes narrow-part, narrow-below-fit, narrow-far-out, unchanged, unchanged-open, unchanged-matrix, unchanged-matrix-open, withdrawn-hidden, withdrawn-shown, agent-round, agent-variant, agent-failed, question-only, port-after-merge, port-after-merge-long, picked, sketch-only-points, sketch-only-points-open",
-    "at": "2026-11-12T01:42:59.372Z"
+    "reason": "variant a changes narrow-part, narrow-below-fit, narrow-far-out, unchanged, unchanged-open, unchanged-matrix, unchanged-matrix-open, withdrawn-hidden, withdrawn-shown, agent-round, agent-variant, agent-failed, question-only, port-after-merge, port-after-merge-long, picked, sketch-only-points, sketch-only-points-open, edit-sketch",
+    "at": "2026-11-12T20:32:45.617Z"
   }
 }

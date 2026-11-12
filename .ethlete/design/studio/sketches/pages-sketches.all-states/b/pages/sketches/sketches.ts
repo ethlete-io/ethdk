@@ -160,6 +160,7 @@ const controlsOf = async () => ({
   pickers: {
     wide: await pickerOf('Runde 1 · Suche und Update'),
     narrow: await pickerOf('Runde 1 · Reset control: SDK button or own part'),
+    edit: await pickerOf('Direkte Änderung'),
     screen: await pickerOf('Runde 2 · Port nach dem Merge'),
   },
   tags: {
@@ -259,15 +260,26 @@ const pointsChip = async (open: boolean) => {
 };
 
 const pointsPopover = async (part: string) => {
-  const lines = SKETCH_POINTS.map(
-    ({ icon: name, text, detail }) =>
-      html`<li class="flex items-center gap-space-2 px-space-3 py-space-1">
-        ${icon(name, { size: 14, cls: 'flex-none text-(--et-surface-color-muted-solid)' })}<span
-          class="min-w-0 flex-1 truncate text-(--et-surface-color-solid)"
-          >${text}</span
-        ><span class="font-code text-ui-xs text-(--et-surface-color-muted-solid)">${detail}</span>
-      </li>`,
-  ).join('');
+  const groups = [...new Set(SKETCH_POINTS.map((point) => point.icon))].map((name) =>
+    SKETCH_POINTS.filter((point) => point.icon === name),
+  );
+  const line = ({ icon: name, text, detail }: (typeof SKETCH_POINTS)[number]) =>
+    html`<li class="flex items-center gap-space-2 px-space-3 py-space-1">
+      ${icon(name, { size: 14, cls: 'flex-none text-(--et-surface-color-muted-solid)' })}<span
+        class="min-w-0 flex-1 truncate text-(--et-surface-color-solid)"
+        >${text}</span
+      ><span class="font-code text-ui-xs text-(--et-surface-color-muted-solid)">${detail}</span>
+    </li>`;
+  const lines = groups
+    .map(
+      (group) =>
+        html`<li>
+          <ul class="m-0 list-none p-0 py-space-1">
+            ${group.map(line).join('')}
+          </ul>
+        </li>`,
+    )
+    .join('');
   const dialog = await anchoredDialog.render({
     label: 'Offene Punkte',
     modal: false,
@@ -279,7 +291,7 @@ const pointsPopover = async (part: string) => {
         <span class="font-ui-strong text-(--et-surface-color-solid)">Offene Punkte</span>
         <span class="ms-auto font-code text-ui-xs text-(--et-surface-color-muted-solid)">${part}</span>
       </header>
-      <ul class="m-0 list-none p-0 py-space-1">
+      <ul class="m-0 list-none divide-y divide-(--et-surface-border-solid) p-0 py-space-1">
         ${lines}
       </ul>
     </div>`,
@@ -531,8 +543,8 @@ const zoomOf = (camera: Props['camera']): Zoom => (camera === 'fit' ? 'fit' : ca
 const startOf = (camera: Props['camera']) => (typeof camera === 'object' ? { x: camera.x, y: camera.y } : undefined);
 
 export default definePart<Props>({
-  note: 'Eine Zeile je Variante, ganz oben Aktuell, bei einem neuen Teil ohne Aktuell und mit dem Badge neu. Links steht der Kopf: Variante, kurzer Modellname (Tooltip mit voller Kennung und Zeit), die Notiz und Übernehmen, das direkt die Merge-Ansicht öffnet; Übernehmen steht nur da, wenn der Sketch auf die Wahl wartet. Das Badge oben folgt dem echten Zustand: zeichnet, solange eine Variante gezeichnet wird, Wartet auf deine Wahl, wenn alle stehen und nichts gewählt ist, Variante gewählt, sobald eine Variante gewählt ist; was noch fehlt, steht als erster offener Punkt, sonst Pausiert oder Keine Aktivität. Die offenen Punkte des Sketches stehen im Kopf der gewählten Variante als Chip neben Übernehmen, der die Liste Offene Punkte öffnet, auch für einen Teil, der noch keine gemergte Ansicht hat. Die Notiz wächst mit dem Zoom (15 px bei 100 %, nie unter 12 px bis Einpassen); weiter herausgezoomt skaliert der Kopf mit der Fläche, unter 9 px ist sein Text ausgeblendet. Rechts stehen die Zustände in einem Raster, jeder mit Namen (13 px mal Zoom, unter 9 px ausgeblendet). Ein Teil breiter als ein Viertel der Ansicht zeigt eine Matrix: eine Spalte je Variante, Aktuell zuerst, die Zustände als Zeilen, der Zustandsname einmal je Zeile links; beim Verschieben bleibt diese Spalte am linken Rand stehen. Einpassen nimmt Aktuell und die erste Variante, in der Matrix deren zwei Spalten; weitere erreicht man durch Verschieben. Solange der Vergleich läuft, sind alle Rahmen neutral und der Kopf zeigt vergleicht …; danach sind unveränderte Zustände gedimmt und der erste geänderte markiert. Varianten, die in jedem Zustand gleich Aktuell sind, liegen zusammen in einem zugeklappten Bereich unter den geänderten (in der Matrix eine schmale Spalte rechts), aufgeklappt wie vorher.',
-  madeBy: ['claude-opus-5-5', 'gpt-6', 'claude-sonnet-5-5'],
+  note: 'A <part>@edit sketch (a direct edit without an ADR) has the rows old and new and no Verwerfen button: the server refuses a discard (EDIT-DISCARD-REFUSED), the header says to pick old to undo the edit or new to keep it. Eine Zeile je Variante, ganz oben Aktuell, bei einem neuen Teil ohne Aktuell und mit dem Badge neu. Links steht der Kopf: Variante, kurzer Modellname (Tooltip mit voller Kennung und Zeit), die Notiz und Übernehmen, das direkt die Merge-Ansicht öffnet; Übernehmen steht nur da, wenn der Sketch auf die Wahl wartet. Das Badge oben folgt dem echten Zustand: zeichnet, solange eine Variante gezeichnet wird, Wartet auf deine Wahl, wenn alle stehen und nichts gewählt ist, Variante gewählt, sobald eine Variante gewählt ist; was noch fehlt, steht als erster offener Punkt, sonst Pausiert oder Keine Aktivität. Die offenen Punkte des Sketches stehen im Kopf der gewählten Variante als Chip neben Übernehmen, der die Liste Offene Punkte öffnet, auch für einen Teil, der noch keine gemergte Ansicht hat. Die Notiz wächst mit dem Zoom (15 px bei 100 %, nie unter 12 px bis Einpassen); weiter herausgezoomt skaliert der Kopf mit der Fläche, unter 9 px ist sein Text ausgeblendet. Rechts stehen die Zustände in einem Raster, jeder mit Namen (13 px mal Zoom, unter 9 px ausgeblendet). Ein Teil breiter als ein Viertel der Ansicht zeigt eine Matrix: eine Spalte je Variante, Aktuell zuerst, die Zustände als Zeilen, der Zustandsname einmal je Zeile links; beim Verschieben bleibt diese Spalte am linken Rand stehen. Einpassen nimmt Aktuell und die erste Variante, in der Matrix deren zwei Spalten; weitere erreicht man durch Verschieben. Solange der Vergleich läuft, sind alle Rahmen neutral und der Kopf zeigt vergleicht …; danach sind unveränderte Zustände gedimmt und der erste geänderte markiert. Varianten, die in jedem Zustand gleich Aktuell sind, liegen zusammen in einem zugeklappten Bereich unter den geänderten (in der Matrix eine schmale Spalte rechts), aufgeklappt wie vorher.',
+  madeBy: ['claude-opus-5-5', 'gpt-6', 'claude-sonnet-5-5', 'design check'],
   implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/sketches/sketches.component.ts' },
   controls: {
     canvas: { kind: 'field', part: 'components/canvas-viewport' },
@@ -581,6 +593,7 @@ export default definePart<Props>({
       points: true,
       pointsOpen: true,
     },
+    'edit-sketch': { camera: 'fit', part: 'edit' },
     'change-crop': { camera: 'fit', part: 'narrow', screen: 'crop' },
     'change-crop-whole': { camera: 'fit', part: 'narrow', screen: 'whole' },
   },
@@ -657,7 +670,13 @@ export default definePart<Props>({
         ${fresh ? tags.fresh.body : ''} ${statusMarkup((run && !run.failed) || port ? 'drawing' : status, reason, tags)}
         <span class="flex-1"></span>
         <span class="w-56 flex-none" data-sk-view-toggle-room></span>
-        ${withAction(discard.body, 'emit:discard')}
+        ${
+          kind === 'edit' && !screen
+            ? html`<span class="text-ui-sm text-et-surface-muted whitespace-nowrap" data-sk-edit-hint
+                >Kein Verwerfen: old macht die Änderung rückgängig, new behält sie</span
+              >`
+            : withAction(discard.body, 'emit:discard')
+        }
       </header>
       ${
         question
