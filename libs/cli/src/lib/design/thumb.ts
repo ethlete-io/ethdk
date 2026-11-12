@@ -210,7 +210,7 @@ type WaitingDraw = { job: () => Promise<void>; wants: Set<DrawWant>; drop: () =>
 
 // Partial raster redraws only the invalidated part of a tile, so the anti-aliased edge of a rounded clip over an
 // embedded frame depends on which frame painted first: two draws of the same page differed under load.
-const DRAW_BROWSER_ARGS = ['--disable-partial-raster'];
+export const DRAW_BROWSER_ARGS = ['--disable-partial-raster'];
 export const DRAWS_AT_ONCE = 8;
 
 /**

@@ -16,7 +16,7 @@ import { comparePngs, HARNESS_PATH } from './system/part-compare';
 import { partKeyOf } from './system/resolve-product';
 import { reachableBaseOf } from './system/served-cache';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
-import { createDrawQueue, openFrame, switchFrame } from './thumb';
+import { createDrawQueue, DRAW_BROWSER_ARGS, openFrame, switchFrame } from './thumb';
 
 // A worker thread cannot load the TypeScript source of the render worker, so the parts drawn by an app render need it bundled.
 vi.mock('./package-root', async (importOriginal) => {
@@ -48,6 +48,7 @@ const LATE_MS = Number(process.env['B498_LATE_MS'] ?? 1500);
 const PAGES_AT_ONCE = Number(process.env['B498_PAGES'] ?? 6);
 const OUT = resolve(TARGET, process.env['B498_OUT'] ?? 'tmp/b498-ready-proof');
 const PRODUCTS = process.env['B498_PRODUCTS']?.split(',') ?? null;
+const PARTS = process.env['B498_PARTS']?.split(',') ?? null;
 const SHOWN = 60;
 
 type Drift = { side: 'design' | 'app'; where: string; state: string; pixels: number | string };
@@ -229,7 +230,7 @@ describe('B498 R2: a picture taken at the ready signal equals one taken later', 
 
   beforeAll(async () => {
     rmSync(OUT, { recursive: true, force: true });
-    browser = await chromium.launch();
+    browser = await chromium.launch({ args: DRAW_BROWSER_ARGS });
   });
 
   afterAll(() => browser?.close());
@@ -285,7 +286,8 @@ describe('B498 R2: a picture taken at the ready signal equals one taken later', 
       const queue = system
         .products()
         .filter((product) => !PRODUCTS || PRODUCTS.includes(product))
-        .flatMap((product) => framesOf(system, product));
+        .flatMap((product) => framesOf(system, product))
+        .filter((frame) => !PARTS || PARTS.includes(frame.part));
       const worker = async () => {
         const context = await (browser as Browser).newContext({ viewport: viewportOf(null) });
         const page = await context.newPage();
