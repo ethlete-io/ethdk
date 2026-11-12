@@ -305,3 +305,5 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - 989 built on the Mac (57ba6a45c); eslint-plugin checkJs parked (ADR 0276). Balance this shift: closed 989.
 - Morning round answered: Q1 push round ok (Linux after the leak check and 996: merge origin/next, push-suite, push when green); Q2 ok -> ADR 0278 / B497; Q3 ok -> ADR 0277 / B496; both to the Mac after 993.
 - Canvas clip question (867 guard) closed: the human said it was only an example, not a real defect. No finding.
+- B495 built (3c2285cfe, 6b28d10ee): 19 suspects parked; open 919 921 933 944 969 974 981 986 988 990 993 996. Order sent to both builders.
+- B494 leak check built (98cd69ccf, ADR 0275 built in 9697e9e7c); 991 Cause (Nx daemon nx@latest install) fixed by NX_DAEMON=false in scratch copies, rest parked. Linux next: 996 + 969 (opus subagent, Cause under load), then the push round. Balance this shift: closed 989, B494, 991.
