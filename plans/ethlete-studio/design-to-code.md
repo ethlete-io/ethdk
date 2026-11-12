@@ -4036,3 +4036,15 @@ list width where the CLI reads it.
 957\. Linux builder (2026-11-12 night, 849): the look-alike threshold is an absolute 1500 px and does not scale with the
 region size. Suspect. Tool fix (builder default, tool backlog): a threshold relative to the region area, measured on the
 known sketches.
+
+875 server half built (Linux, 4ca55ca3c): a dying design server appends `<ISO time> pid <pid> port <port>: <stack>` to
+`.ethlete/cache/design-server-crash.log` (one per checkout, gitignored, never deleted on start), prints the path and
+exits 1; the next server reports `ServerIdentity.lastCrash`. Bite: crash-log.spec fails without the module. Not verified:
+a real end-to-end crash. The Studio "Design-Server abgestürzt" screen is not built; decided by the doc agent (look
+question, night shift): after the human's 879 pick, the builder sketches a `crashed` state on elements/shell-main for
+the human's pick by merge.
+
+958\. Linux builder (2026-11-12 night, 875): a subagent's multi-line shell command ran as one line, so `vitest related`
+got the rest of the chain as file arguments and its wrapper shell stayed as a background job. Suspect (not reproduced).
+Tool fix (builder default, tool backlog): `vitest related` refuses an argument that is not an existing path, with one
+line, instead of running.

@@ -1,1 +1,1 @@
-- 849 built (a8768fc01); findings 956-957, 954 extended (sweep stops on a non-sketch folder). Next free finding: 958.
+- 875 server half built (4ca55ca3c); `crashed` shell-main sketch after the 879 pick; finding 958. Next free finding: 959.
