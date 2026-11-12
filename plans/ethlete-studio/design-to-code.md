@@ -3862,3 +3862,10 @@ names its build time.
 
 935\. Linux builder (2026-11-12 night, 903): `design dom --app` prints markup only, no layout, so measuring the app needed a
 hand-served harness. Tool fix (builder default, tool backlog): `design dom` prints box geometry for both sides.
+
+929 update 2 (Mac): Cause (probe under a 24-busy-loop load): load, not the 911 slice. The app shows the new URL in about
+258 ms; the test shared one 10 s window for "new URL" and "all 12 drawn", and under load the drawing took 12.9 s (0.5 s
+idle). Fix d672e8c89 (test only): the new URL within WAIT_MS, then drawn within FULL_COMPARE_MS, separate messages, the
+pass prints timings; passes under load (drawn 12941 ms) and alone. Tool fix (builder default, tool backlog, with 761/763):
+`yarn studio:e2e --load N` reproduces suite-only load failures; the other picture cases (`canvas.e2e.mjs` ~1642) get the
+same split windows.
