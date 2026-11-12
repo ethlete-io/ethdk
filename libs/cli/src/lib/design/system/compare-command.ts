@@ -74,7 +74,7 @@ import { createSystemModules, productModuleIdOf } from './system-modules';
 import { drawnStateNamesOf, skippedStatesLineOf } from './unchanged-rows';
 
 export const COMPARE_USAGE =
-  'compare <layer>/<name> | --all --product <name> | --affected --product <name> [--url <app dev server url>] [--state <name>] [--preset <name>] [--live [--sketch <variant>]] [--base <rev>]';
+  'compare <layer>/<name> | --all --product <name> | --affected --product <name> [--url <app dev server url>] [--state <name>[,<name>...]] [--preset <name>] [--live [--sketch <variant>]] [--base <rev>]';
 
 /** A state compare could not draw; `undrivable` when the app has no element to force the design's interaction on. */
 export type StateShot =
@@ -86,7 +86,7 @@ export type ShootStates = (options: {
   product: ResolvedProduct;
   part: string;
   url: string;
-  only: string | null;
+  only: readonly string[] | null;
   preset?: string | null;
   sketch?: string | null;
   /** Draws the app even for a state compare cannot check against its design: one that differs only inside slots, or sends props the app has no input for. */
@@ -103,7 +103,7 @@ export type ComparePart = (options: {
   product: ResolvedProduct;
   part: string;
   url: string;
-  only: string | null;
+  only: readonly string[] | null;
   preset?: string | null;
   sketch?: string | null;
   appRoot?: string | null;
@@ -301,11 +301,15 @@ export const shootStatesWith =
       const states = Object.fromEntries(declared.filter(([state]) => drawn.has(state)));
       const skipped = declared.flatMap(([state]) => (drawn.has(state) ? [] : [state]));
 
-      if (only !== null && skipped.includes(only))
-        return `${part} does not draw "${only}": it is an interaction state of a row of unchanged SDK controls`;
+      const unshown = only?.find((state) => skipped.includes(state));
 
-      if (only !== null && !(only in states))
-        return `${part} has no state "${only}" - its states: ${Object.keys(states).join(', ')}`;
+      if (unshown !== undefined)
+        return `${part} does not draw "${unshown}": it is an interaction state of a row of unchanged SDK controls`;
+
+      const unknown = only?.find((state) => !(state in states));
+
+      if (unknown !== undefined)
+        return `${part} has no state "${unknown}" - its states: ${Object.keys(states).join(', ')}`;
 
       const controls = module.default?.controls;
       const pictures = shooter;
@@ -359,7 +363,7 @@ export const shootStatesWith =
 
       const unshot = await timedPhase('compare-app-shots', () =>
         appShotsOf({
-          states: only === null ? Object.keys(states) : [only],
+          states: Object.keys(states).filter((state) => only === null || only.includes(state)),
           designs,
           opens,
           slotOnly: appOnly ? new Map() : slotOnly,
@@ -434,7 +438,7 @@ export const shootStatesWith =
     }
   };
 
-/** Draws each state of a part, or the `only` one, as its design frame and as the app's harness page, in one Chromium. */
+/** Draws each state of a part, or the `only` ones, as its design frame and as the app's harness page, in one Chromium. */
 export const shootStates: ShootStates = shootStatesWith();
 
 const fileNameOf = (state: string) => state.replace(/[^\w.-]/g, '-');
@@ -638,6 +642,11 @@ export const baseChangeLinesOf = (options: {
 
 export const ACTIONS_NOT_CHECKED = 'FAILED actions: not checked, so no action counts as working';
 
+const statesAskedOf = (values: string[] | undefined) =>
+  values === undefined
+    ? null
+    : [...new Set(values.flatMap((value) => value.split(',')).map((state) => state.trim()))].filter(Boolean);
+
 /**
  * `et design compare --all` compares every done part and fails on any deviation or part it cannot compare; a foundation has nothing to compare.
  * `et design compare --affected` compares, on one harness, every implemented part whose app files changed since its
@@ -646,6 +655,7 @@ export const ACTIONS_NOT_CHECKED = 'FAILED actions: not checked, so no action co
  * failing states new at HEAD and those fixed since `rev`; the exit code stays HEAD's.
  * `et design compare <layer>/<name> …` compares each state of a part with the app's harness page of its component;
  * with `--live` each live state of a page with the app's real page on the fixed sample of `harness.live`.
+ * `--state` limits it to the named states: a comma-separated list, a repeated flag, or both.
  */
 export const designCompare = async (options: {
   target: string;
@@ -690,6 +700,13 @@ export const designCompare = async (options: {
   }
 
   const live = args.flags.has('--live');
+  const only = statesAskedOf(args.repeated['--state']);
+
+  if (only?.length === 0) {
+    console.error('--state needs a state name');
+
+    return 2;
+  }
 
   if (args.values['--sketch'] !== undefined && !live) {
     console.error('--sketch compares live states only: pass --live');
@@ -829,7 +846,7 @@ export const designCompare = async (options: {
           product,
           part: task.part,
           url,
-          only: args.values['--state'] ?? null,
+          only,
           preset: args.values['--preset'] ?? null,
           sketch: args.values['--sketch'] ?? null,
           appRoot: root,
@@ -847,7 +864,7 @@ export const designCompare = async (options: {
             product,
             part: task.part,
             url: baseHarness.server.url,
-            only: args.values['--state'] ?? null,
+            only,
             preset: args.values['--preset'] ?? null,
             appRoot: baseHarness.server.root ?? null,
             shoot: options.shoot,

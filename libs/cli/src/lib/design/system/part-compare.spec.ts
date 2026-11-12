@@ -419,8 +419,13 @@ describe('part compare', () => {
 
     expect(await compare(['--url', 'http://localhost:9', '--state', 'default'])).toBe(0);
     expect(shoot).toHaveBeenCalledWith(
-      expect.objectContaining({ url: 'http://localhost:9', only: 'default', preset: null }),
+      expect.objectContaining({ url: 'http://localhost:9', only: ['default'], preset: null }),
     );
+    expect(
+      await compare(['--url', 'http://localhost:9', '--state', 'idle,paused', '--state', 'paused-reason,idle']),
+    ).toBe(0);
+    expect(shoot).toHaveBeenLastCalledWith(expect.objectContaining({ only: ['idle', 'paused', 'paused-reason'] }));
+    expect(await compare(['--url', 'http://localhost:9', '--state', ','])).toBe(2);
     expect(await compare(['--url', 'http://localhost:9', '--preset', 'phone'])).toBe(0);
     expect(shoot).toHaveBeenLastCalledWith(expect.objectContaining({ preset: 'phone' }));
 

@@ -484,7 +484,7 @@ export const liveSketchOf = (options: {
   return file ? { file, drawn: { target: sketch.target, variant } } : `variant "${variant}" holds no part ${part}`;
 };
 
-/** Draws each live state of a page part, or the `only` one: its design state, and the app's real page on the sample. */
+/** Draws each live state of a page part, or the `only` ones: its design state, and the app's real page on the sample. */
 export const shootLiveStates: ShootStates = async ({ target, config, product, part, url, only, preset, sketch }) => {
   if (!part.startsWith('pages/')) return `--live compares a pages part only, not ${part}`;
 
@@ -495,8 +495,10 @@ export const shootLiveStates: ShootStates = async ({ target, config, product, pa
   const page = live.spec.pages[part];
 
   if (!page) return `${part} has no live states in the live spec`;
-  if (only !== null && !(only in page.states))
-    return `${part} has no live state "${only}" - its live states: ${Object.keys(page.states).join(', ')}`;
+  const unknown = only?.find((state) => !(state in page.states));
+
+  if (unknown !== undefined)
+    return `${part} has no live state "${unknown}" - its live states: ${Object.keys(page.states).join(', ')}`;
 
   const sketched = sketch ? liveSketchOf({ product, part, variant: sketch }) : null;
 
@@ -535,7 +537,7 @@ export const shootLiveStates: ShootStates = async ({ target, config, product, pa
     const shots: StateShot[] = [];
 
     for (const [name, state] of Object.entries(page.states)) {
-      if (only !== null && name !== only) continue;
+      if (only !== null && !only.includes(name)) continue;
 
       if (!(state.design in states)) {
         shots.push({
