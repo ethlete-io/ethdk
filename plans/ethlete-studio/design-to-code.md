@@ -3394,7 +3394,7 @@ part matches HEAD again.
 spec (`sketches.component.spec.ts:442`, `ROWS[1]` possibly undefined); fixed in 43c4b5b8a. Suspect (code read): the 909
 subagent ran tsc only with `tsconfig.app.json`, and vitest does not typecheck, so a spec-only type error reached the push
 suite. Tool fix (builder default, tool backlog): the slice check runs the project `typecheck` target (spec config
-included) before a commit; the builder-agent subagent brief names it.
+included) before a commit; the builder-agent subagent brief names it. Parked (ADR 0276), see parked-suspects.md.
 
 921\. Mac builder (2026-11-12 night, 910 probe, group A): 19 "Alle Zustände zeigen" rows on pages/sketches are a design
 defect. Cause (code read + compare): the app folds unchanged states per ADR 0132 (`foldedStatesOf`,
@@ -3592,7 +3592,7 @@ default, tool backlog): `--name` takes a value, with a spec. Same class (Linux, 
 starts the full suite.
 
 945\. Linux builder (2026-11-12 night, 933): `sketch ready` prints about 30 UNBOUND-INPUT note lines per variant. Tool fix
-(builder default, tool backlog): one summary line per variant, details behind `--verbose`.
+(builder default, tool backlog): one summary line per variant, details behind `--verbose`. Parked (ADR 0276), see parked-suspects.md.
 
 933 update 3 (Linux, 63d53b7b6): the sketch `foundations/colors` (studio) is ready, variants a (4 disabled-label chips
 with a contrast exception, WCAG 1.4.3, ratios 3.1-3.4) and b (no exception, 4.7-5.1). It waits for the human's pick by
@@ -3639,15 +3639,15 @@ its checkout: the doc commits are unpushed and ride with the Linux push.
 
 948\. Mac builder (2026-11-12 night, 922): design check keeps reporting baseline entries that no longer fire (2 stale
 withdrawn-* DROPPED-PROP entries, removed by hand). Tool fix (builder default, tool backlog): design check names a
-baseline entry that matched nothing, with a spec.
+baseline entry that matched nothing, with a spec. Parked (ADR 0276), see parked-suspects.md.
 
 949\. Mac builder (2026-11-12 night, 922): compare does not say when the app rebuilt in the middle of a run, so a mixed
 result reads as one. Tool fix (builder default, tool backlog): compare prints one line when a rebuild happened during the
-run.
+run. Parked (ADR 0276), see parked-suspects.md.
 
 950\. Mac builder (2026-11-12 night, 922): jsdom ignores rules inside `@layer`, so a spec that reads computed styles of
 an SDK component needs a hand shim (`display:flex` for et-choice-field). Suspect: jsdom's CSSOM has no cascade layers.
-Tool fix (builder default, tool backlog): one shared spec helper or note in the Studio spec setup, not a shim per spec.
+Tool fix (builder default, tool backlog): one shared spec helper or note in the Studio spec setup, not a shim per spec. Parked (ADR 0276), see parked-suspects.md.
 
 879 update 2 (Linux, 150df1db6): the elements/shell-main sketch is ready, one variant `a` (state `server-unanswered`:
 the `starting` screen plus one muted line "Design-Server antwortet nicht: http://localhost:4402"; no other state
@@ -3673,10 +3673,10 @@ merge (a, or reject and keep fold 3; the Mac recommends a). Screen mode still us
 
 952\. Mac builder (2026-11-12 night, 921): `sketch withdraw` without `--reason` wrote the reason "identisch mit a", but
 variant b matched Aktuell. Tool fix (builder default, tool backlog): the default reason names what the variant really
-matches (measured), or `--reason` is required, with a spec.
+matches (measured), or `--reason` is required, with a spec. Parked (ADR 0276), see parked-suspects.md.
 
 953\. Mac builder (2026-11-12 night, 921): `design check --lint` refuses `--product` (exit 2), while the sketch commands
-want it. Tool fix (builder default, tool backlog): every design and sketch command accepts `--product`.
+want it. Tool fix (builder default, tool backlog): every design and sketch command accepts `--product`. Parked (ADR 0276), see parked-suspects.md.
 
 954\. Mac builder (2026-11-12 night, 921): folders with only a tsconfig stay under `sketches/` after a merge
 (foundations-logo.app-icon, foundations-type.font-pair, pages-sketches.open-points, pages-system), and `sketch list`
@@ -3759,7 +3759,7 @@ push-suite load is 28-30, and a slower reaction is a real defect).
 
 962\. Mac builder (2026-11-12 night, 929): `studio:e2e --load` starts the busy loops before the 125 s Studio build, so
 `--load 24` on 12 cores gives load 100-135, not the push-suite 28-30. Tool fix (builder default, tool backlog): start the
-loops after the build, or a `--load-target <loadavg>` mode that holds a set load.
+loops after the build, or a `--load-target <loadavg>` mode that holds a set load. Parked (ADR 0276), see parked-suspects.md.
 
 900 update (Linux, HEAD 77b0cc55c): the 120 s timeouts did not reproduce in 3 runs (128+129 on 2 workers, 128 alone,
 128+129 with hold 14000). Case 128 now fails every run with "part opened after each merge:
@@ -3792,7 +3792,7 @@ before. Not verified: plain `yarn et:design` without `ETHLETE_DESIGN_CLI_ENTRY`.
 964\. Mac builder (2026-11-12 night, 904): the stale-CLI diff does not see untracked new files in libs/cli, and why
 `et:design` picked the 448c47f16 copy is not probed (Suspect: the copy is keyed by the last commit that touched
 libs/cli). Tool fix (builder default, tool backlog): the check also lists untracked libs/cli source files; probe the copy
-pick and name the rule in the WARN line.
+pick and name the rule in the WARN line. Parked (ADR 0276), see parked-suspects.md.
 
 955 update (Linux, 6e15e4093): Cause of the e2e orphan residents (bite): at teardown the design server dies on `write
 EPIPE` after the rmSync; the 875 crash log (4ca55ca3c) then mkdirs `<checkout>/.ethlete/cache` and writes its log, so
@@ -3854,7 +3854,7 @@ run; sketches get no warnings.
 970\. Linux builder (2026-11-12 night, 913): the 9 baselined DROPPED-PROP hits of pages/sketches (ADR 0201) now print as
 warnings on every check, 13 lines for one part, so the real warnings drown. Suspect. Tool fix (doc agent applies ADR 0201:
 a baselined hit is accepted; builder default, tool backlog): skip the warning for a state whose DROPPED-PROP hit is
-baselined, with a biting spec.
+baselined, with a biting spec. Parked (ADR 0276), see parked-suspects.md.
 
 915 built (Linux, 095a1a4bd): the slice-paths file holds one block per slice name; `--set` replaces only its own block
 and drops blocks older than 2 h; pre-commit applies the union of the fresh blocks and names every slice. Cause (reproduced):
@@ -3872,12 +3872,12 @@ proven harmless.
 971\. Linux builder (2026-11-12 night, 917): the sdk ACTION-UNDECLARED count went from 852 to 1041 between two `design
 check` runs minutes apart. Suspect: the untracked `.ethlete/design/sdk/sketches/` changed under another session, or the rule
 is not deterministic. Tool fix (builder default, tool backlog): run it twice on a clean tree; if the count moves, make the
-rule deterministic with a biting spec; if the untracked dir moves it, the check names untracked design files it read.
+rule deterministic with a biting spec; if the untracked dir moves it, the check names untracked design files it read. Parked (ADR 0276), see parked-suspects.md.
 
 972\. Linux builder (2026-11-12 night, 917): Studio's `sdk-token-map.css` ties only the md and xs `et-button` to
 `--control-*` tokens; sm, lg and xl get md padding, so CONTROL-HEIGHT would fail them. No committed part draws one today.
 Suspect (code read). Tool fix (builder default, tool backlog): map every size, with a part state per size that the rule
-judges, so a missing size fails the check.
+judges, so a missing size fails the check. Parked (ADR 0276), see parked-suspects.md.
 
 923 built (Linux, e98f58658, 5d2dd4e9f): `design/system/visually-hidden.ts` holds one clippedAway test (clip-path
 inset(50%), a zero clip, or a 1x1 overflow-hidden box, on the element or an ancestor); CLIPPED content and underline, WRAP
@@ -3911,7 +3911,7 @@ folder "differs from" the source and lists 55 files; the build command it names 
 
 975\. Linux builder (2026-11-12 night, 928): `compare --base` over a wide range prints one line per changed state (33).
 Suspect: a long list hides the new failures. Tool fix (builder default, tool backlog): NEW lines first, the list capped at
-about 10 with "+k more", with a spec.
+about 10 with "+k more", with a spec. Parked (ADR 0276), see parked-suspects.md.
 
 926 built (Mac, 55fd668cd): the refusal names the commit order; the clean copy stays (taking dirty embedded parts in would
 merge on content the commit lacks, ADR 0206). Cause (code read, spec bite): the clean copy holds HEAD + sketch + the @edit
@@ -3958,7 +3958,7 @@ merge refuses, restore the sketch file; the `merged` command treats an existing 
 
 978\. Linux builder (2026-11-12 night, 938): a picked sketch that `sketch ready` reopens is in progress and still holds the
 pick. Suspect: Studio shows it in a mixed state. Tool fix (builder default, tool backlog): a shot of pages/sketches with
-such a sketch; if the state reads wrong, a sketch for the human, else a state in the part that covers it.
+such a sketch; if the state reads wrong, a sketch for the human, else a state in the part that covers it. Parked (ADR 0276), see parked-suspects.md.
 
 979\. Linux builder (2026-11-12 night): CI on origin/next red (Unit tests, run 43153034062) from the Mac's 4a24296fd:
 `run-load.spec.mjs` "the --load busy loops end when the run gets SIGINT" left 2 of 3 busy loops alive, though the Mac
@@ -3994,7 +3994,7 @@ commits the working-tree `ready.json` of sdk and studio after a fresh `design ch
 
 980\. Linux builder (2026-11-12 night, 947): any other cli copy of SDK source has the same affected-graph gap: a change to the
 SDK source runs no cli spec. Suspect. Tool fix (builder default, tool backlog): list the cli copies of SDK files and add each
-to the cli project's implicit dependencies or give it a spec in the source lib, with a bite.
+to the cli project's implicit dependencies or give it a spec in the source lib, with a bite. Parked (ADR 0276), see parked-suspects.md.
 
 981\. Linux builder (2026-11-12 night, 946): a `ready.json` record's `cmd` holds the writer's argv, so 20 entries written by a
 server read only "design". Cause (measured). Tool fix (builder default, tool backlog): record the command name
@@ -4069,7 +4069,7 @@ changes-shot ~7 s, gates 3.3 s, draw-queue-wait ~2.8 s, render-check 1.8-7 s, id
 
 987\. Linux builder (2026-11-12 night, 985): `clip` and `view` on `shot?source=app` are likely ignored the same way as the
 theme params were. Suspect (code read). Tool fix (builder default, tool backlog): pass them to the harness or refuse them
-with 400, with a biting spec.
+with 400, with a biting spec. Parked (ADR 0276), see parked-suspects.md.
 
 988\. Linux builder (2026-11-12 night, 951): `sketch check` stays at about 30 s against its 10 s target; aktuell (~11 s)
 and changes-shot (~7 s) take most of it. Cause (measured, 951). Tool fix (builder default, tool backlog): make the aktuell
@@ -4130,14 +4130,14 @@ Playwright. Tool fix: decided by the human (ADR 0275, B494): an hourly timer swe
 
 992\. Mac builder (2026-11-12, 983): an e2e case failed with `apiRequestContext.get: read ECONNRESET` at load 33.5 in the
 shot ETag fetch (canvas.e2e.mjs:1467). Suspect (not proven): keep-alive socket race; Playwright retries only with
-maxRetries. Tool fix (builder default): `maxRetries: 2` at canvas.e2e.mjs:1467 and :1749, with a bite if one can be made.
+maxRetries. Tool fix (builder default): `maxRetries: 2` at canvas.e2e.mjs:1467 and :1749, with a bite if one can be made. Parked (ADR 0276), see parked-suspects.md.
 
 993\. Mac builder (2026-11-12, 983): push-suite keeps only the latest e2e failure log, so an earlier failure lost its
 error text. Cause (seen). Tool fix (builder default): keep each failure log, one file per attempt.
 
 994\. Mac builder (2026-11-12, 983): the e2e step in push:suite reached load 33-36 with 3 workers and took 7 min against a
 5 min budget in every run. Suspect: 3 workers are too many on the Mac. Tool fix (builder default, tool backlog): measure
-2 against 3 workers and set the count from the numbers.
+2 against 3 workers and set the count from the numbers. Parked (ADR 0276), see parked-suspects.md.
 
 957 built (Linux, 01f0cd0c6): the look-alike bar is min(1500, 0.25 × the region's screen pixels at fit); a pair counts as
 different at 100 % only if it clears the same bar at scale 1. Cause (measured) why not a pure relative rule: the
@@ -4149,7 +4149,7 @@ of 957 (the 200×40 case); new pixel-bar checks name a small-region case in thei
 995\. Linux builder (2026-11-12, 957): `sketch check` on studio-lab elements/rating exits 1 on UTILITY-CSS lines in variants
 b and c before the look-alike step, so a refusal hides the later steps. Suspect: refusal ordering. Tool fix (builder
 default, tool backlog): `sketch check` runs every step and lists all problems before it exits 1; the rating b/c
-UTILITY-CSS lines get fixed in the sketch.
+UTILITY-CSS lines get fixed in the sketch. Parked (ADR 0276), see parked-suspects.md.
 
 B494 timer part built (Linux, 7f71406ec): tools/scripts/tmp-sweep.mjs deletes /tmp top-level entries with our prefixes
 (26 spec-only prefixes added) and old entries in ~/.cache/claude-tmp, only when the newest inner mtime is older than 6 h
