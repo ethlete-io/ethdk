@@ -1,13 +1,12 @@
 import { definePart, drawing, html, slot, withAction } from '@design-system';
 import { loaderStyles } from '@ethlete/components/design/loader';
 import button from '@system/components/button';
-import { disclosure } from '@system/components/disclosure';
 import { listRow } from '@system/components/list-row';
 import disclosureStyles from '@system/components/disclosure.css?inline';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import { icon } from '@system/foundations/icons';
-import { TARGET, changedOf, type Row, picked, rowCaption, shot, unchangedBody, unchangedLabel } from './merge-data';
+import { TARGET, changedOf, type Row, picked, rowCaption, shot, unchangedList } from './merge-data';
 import kit from './merge-kit.css?inline';
 import styles from './merge.css?inline';
 
@@ -76,9 +75,7 @@ const panelOf = (
     <ul class="flex flex-col gap-0.5 m-0 p-0 list-none">
       ${changed.map((row) => listRow({ content: rowCaption(row, true), selected: row === selected })).join('')}
     </ul>
-    <div data-et-skip="WRAP">
-      ${disclosure({ label: unchangedLabel, body: unchangedBody, open: unchanged, size: 'xs' })}
-    </div>
+    <div data-et-skip="WRAP">${unchangedList(unchanged)}</div>
     <span class="flex-1"></span>
     <div class="flex flex-col gap-space-3 pt-space-3 border-t border-et-surface-border">
       ${withAction(merging ? buttons.mergeBusy.body : buttons.merge.body, 'emit:merge')}${error ? html`<p class="m-0 text-et-theme-ink text-ui-xs" data-et-semantic-color="error">${error}</p>` : ''}

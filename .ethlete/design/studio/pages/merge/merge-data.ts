@@ -1,5 +1,6 @@
 import { embedPage, html, slot } from '@design-system';
-import { disclosureBodyClass } from '@system/components/disclosure';
+import { disclosure, disclosureBodyClass } from '@system/components/disclosure';
+import { UNCHANGED, stateCount, unchangedGroups } from './shared/unchanged';
 import canvasFrames from '@system/elements/canvas-frames';
 
 export type Row = {
@@ -37,10 +38,6 @@ export const changedOf = async (): Promise<{ rows: Row[]; styles: string }> => {
   };
 };
 
-export const UNCHANGED = { part: 'pages/inbox', states: ['all', 'none'] };
-
-export const unchangedLabel = `${UNCHANGED.states.length} Zustände von ${UNCHANGED.part} ohne sichtbare Änderung`;
-
 export const shot = (row: Row, side: 'now' | 'after', scale: number, projected = true) =>
   html`<div
     class="mg-shot relative flex-none overflow-hidden rounded-control-md bg-et-surface-bg"
@@ -70,6 +67,19 @@ export const picked = (variant: string) =>
     >Gewählt <code class="font-code">${variant}</code></span
   >`;
 
-export const unchangedBody = html`<ul class="${disclosureBodyClass}">
-  ${UNCHANGED.states.map((state) => html`<li><span class="text-et-surface font-code">${UNCHANGED.part}</span><span class="text-et-surface-muted">${state}</span></li>`).join('')}
-</ul>`;
+const unchangedBody = (states: string[]) =>
+  html`<ul class="${disclosureBodyClass}">
+    ${states.map((state) => html`<li>${state}</li>`).join('')}
+  </ul>`;
+
+export const unchangedList = (open: boolean) =>
+  unchangedGroups(UNCHANGED)
+    .map((group) =>
+      disclosure({
+        label: `${stateCount(group.states.length)} von ${group.part} ohne sichtbare Änderung`,
+        body: unchangedBody(group.states),
+        open,
+        size: 'xs',
+      }),
+    )
+    .join('');
