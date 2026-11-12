@@ -268,3 +268,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - Handoff file restored (it was cut to one line from 215c5f183 on); finding 967. Next free finding: 968.
 - 906 built (d04ed6a63); "903a" in the handoff was a slip, no such item. Next free finding: 968.
 - 907 built (43d71245b, 2136dae62); findings 968-969. Next free finding: 970.
+- 968 + 914 built (9d366dbcc); Linux builder restarts at 70 %, then 913. Next free finding: 970.

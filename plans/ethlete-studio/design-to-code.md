@@ -4068,3 +4068,8 @@ run and names the project dir to use, with a spec.
 run 3 `et-design.spec.mjs` wrapper tests time out after 10 s (they pass alone), and it leaves about 14 `yarn--*` dirs.
 Suspect: load or a shared resource in the export run. Tool fix (builder default, tool backlog): find the cause with a
 measurement, then a fix with a biting spec; `yarn spec:tmp-leaks` must pass on it.
+
+968 + 914 built (Linux, 9d366dbcc): a root `vitest.config.mjs` throws and names the project dir, `node --test` for
+tools/** and `vitest.projects.ts`; `vitest.projects.ts` skips it. Root `npx vitest related` exits 1; a project-dir run and
+`yarn vitest:projects:check` still work. Spec `tools/scripts/root-vitest-guard.spec.mjs` bites. The builder-agent skill
+rule (779) names the project dir and `node --test` for tools/** (914). Not verified: the VS Code vitest extension.
