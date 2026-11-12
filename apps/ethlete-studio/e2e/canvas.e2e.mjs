@@ -1441,16 +1441,18 @@ const CASES = [
             ].map((img) => ({ src: img.src, loaded: img.complete && img.naturalWidth > 0 })),
           { CANVAS },
         );
-      const loaded = async (accept) => {
-        for (const until = Date.now() + WAIT_MS; Date.now() < until;) {
+      const shownUntil = async (accept, wait) => {
+        for (const until = Date.now() + wait; Date.now() < until;) {
           await page.waitForTimeout(250);
           const shown = await pictures();
 
-          if (shown.length > 0 && shown.every((picture) => picture.loaded) && accept(shown)) return shown;
+          if (shown.length > 0 && accept(shown)) return shown;
         }
 
         return null;
       };
+      const loaded = (accept, wait = WAIT_MS) =>
+        shownUntil((shown) => shown.every((picture) => picture.loaded) && accept(shown), wait);
       const tagsOf = (shown) =>
         Promise.all(
           shown.map(({ src }) =>
@@ -1487,14 +1489,30 @@ const CASES = [
         await rowOf(home).click();
 
         const seen = new Set(before.map(({ src }) => src));
-        const after = await loaded((shown) => shown.some(({ src }) => !seen.has(src)));
-        const changed = after && (await tagsOf(after)).filter((tag) => !tags.has(tag));
+        const returned = Date.now();
+        const renewed = await shownUntil((shown) => shown.some(({ src }) => !seen.has(src)), WAIT_MS);
+
+        if (!renewed)
+          return { ok: false, detail: `no new picture URL within ${WAIT_MS} ms (${before.length} pictures)` };
+
+        const renewedMs = Date.now() - returned;
+        const after = await loaded((shown) => shown.some(({ src }) => !seen.has(src)), FULL_COMPARE_MS);
+
+        if (!after) {
+          const last = await pictures();
+
+          return {
+            ok: false,
+            detail: `new picture URL at ${renewedMs} ms, but ${last.filter((picture) => !picture.loaded).length}/${last.length} pictures not drawn within ${FULL_COMPARE_MS} ms`,
+          };
+        }
+
+        const drawnMs = Date.now() - returned;
+        const changed = (await tagsOf(after)).filter((tag) => !tags.has(tag));
 
         return {
-          ok: !!changed && changed.length > 0,
-          detail: after
-            ? `${changed.length}/${after.length} pictures changed after the edit`
-            : `no new picture URL within ${WAIT_MS} ms (${before.length} pictures)`,
+          ok: changed.length > 0,
+          detail: `${changed.length}/${after.length} pictures changed after the edit, new URL at ${renewedMs} ms, drawn at ${drawnMs} ms`,
         };
       } finally {
         writeFileSync(stylesheet, original);
