@@ -40,7 +40,8 @@ that talks with the user and records decisions. Talk English.
 - One topic at a time: work the queue in order and start the next topic only when the current one
   is committed. Do not run several topics in parallel. You coordinate, verify, push and report.
 - Commit each finished slice once, with `git commit -- <paths>`: code, spec, changeset and the
-  "as built" note together. Fix format, lint and review findings before that commit, not after.
+  "as built" note together; the commit that finishes a row also deletes it from `STATUS.md` and sets `built:` on its
+  ADRs (ADR 0284). Fix format, lint and review findings before that commit, not after.
   Tell each subagent the same. Never `git add -A`, never stash, never amend, never rebase.
 - An ADR edit under `apps/ethlete-studio` is a change to ethlete-studio: put an `'ethlete-studio': none` changeset in
   the same commit, or pre-push refuses the range.
