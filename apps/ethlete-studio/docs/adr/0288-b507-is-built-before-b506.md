@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B507
+built: ce1eb19f3
 decided: 2026-11-12
 source: decision of the human in the doc agent chat, about 15:00 local; supersedes the order line of ADR 0286
 ---

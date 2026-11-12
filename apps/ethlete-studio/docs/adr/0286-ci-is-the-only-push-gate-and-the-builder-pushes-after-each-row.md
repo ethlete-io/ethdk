@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B507
+built: ce1eb19f3
 decided: 2026-11-12
 source: decision of the human, about 13:00 local, relayed by the analysis session (claude2); supersedes rules of ADR 0239, 0245 and 0285
 ---
