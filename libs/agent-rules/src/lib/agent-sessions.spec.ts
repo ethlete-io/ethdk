@@ -20,7 +20,8 @@ describe('agent-sessions', () => {
   // Every tmux call of the spec and of the script must reach a private server: on the default server a
   // switch-client or a new session moves the attached clients of the user.
   beforeAll(() => {
-    tmuxDir = mkdtempSync(join(tmpdir(), 'agent-sessions-tmux-'));
+    // A tmux socket path must fit the 108-byte sun_path; the nested spec temp dirs of CI already pass it.
+    tmuxDir = mkdtempSync('/tmp/et-tmux-');
     delete process.env['TMUX'];
     delete process.env['TMUX_PANE'];
     process.env['TMUX_TMPDIR'] = tmuxDir;
