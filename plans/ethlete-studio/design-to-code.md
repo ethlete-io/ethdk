@@ -2535,6 +2535,17 @@ B498 as built (Linux builder, 2026-11-13): R2.1-R2.3 ba4321e8c 949e944ba 2ebc71d
 and on a cell that leaves the DOM (b05693b31, 82497ff2c: a state in a crop group counts as shown); R3 green 2/2 and
 under `--load 24` 2/2. The 32->4 cells after an edit is crop grouping by design (cropGroupsOf), not a defect. Fonts
 suspect parked by the doc agent (CI 153.9 s after 436e3064d).
+B499 S1 as built (Linux builder, 2026-11-13): Cause (probe): the Studio e2e checkout (`prepareCheckout` in
+`canvas.e2e.mjs`) links every top-level entry of the main checkout, `libs` and `dist` included, and Nx does not find
+projects through a linked `libs` (in such a copy `nx show projects` lists none, `nx show project types` says "Could not
+find project types"), so the stale rebuild with `cwd: target` failed for a lib the main checkout's source had made
+stale. Fix: `rebuildStaleDist` runs `nx build` in the Nx workspace that owns the real path of the build folder (nearest
+`nx.json` above it, else the target). Running in the owner is right for both: a real checkout owns its `dist`, and in
+the e2e copy the linked `dist` and `libs` are the main checkout's, so skipping them would draw from an old build. The
+build stays `spawnSync`: async breaks `shot-stale-dist.spec.ts`, which mocks `spawnSync` and lies outside the slice
+paths; S2 or a later slice takes it. Bite: a stale-dist spec with a linked checkout, red on HEAD (nx cwd was the linked
+copy), green after. Verified: cases 128 and 129 green after touching `libs/types/src/index.ts`, `dist/libs/types` was
+rebuilt during the run. Not verified: a full `yarn studio:e2e` run, CI.
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
 Bite: a spec stages a name and clears it in the working tree; red on the old script. Not verified: a real refused commit.

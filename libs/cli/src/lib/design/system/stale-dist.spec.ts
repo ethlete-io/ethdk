@@ -1,8 +1,11 @@
-import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from 'fs';
+import { spawnSync } from 'child_process';
+import { mkdirSync, mkdtempSync, realpathSync, symlinkSync, utimesSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import { buildFailureLineOf, missingDistOf, rebuildStaleDist, staleDistWarningsOf } from './stale-dist';
+
+vi.mock('child_process', async (importOriginal) => ({ ...(await importOriginal<object>()), spawnSync: vi.fn() }));
 
 const file = (path: string, content: string, at: number) => {
   mkdirSync(dirname(path), { recursive: true });
@@ -87,6 +90,22 @@ describe('rebuildStaleDist', () => {
 
     expect(rebuildStaleDist({ target, config, build: () => true })).toBe(false);
     expect(errors.mock.calls.flat().join('\n')).toContain('run NX_NO_CLOUD=true npx nx build types --skip-nx-cache');
+    errors.mockRestore();
+  });
+
+  it('builds in the Nx workspace that owns the build folder when the checkout links its libs and dist', () => {
+    const errors = quiet();
+    const workspace = realpathSync(checkout({ coreSource: 1_000, coreBuild: 2_000 }));
+    const linked = mkdtempSync(join(tmpdir(), 'cli-design-stale-dist-linked-'));
+
+    file(join(workspace, 'nx.json'), '{}', 1_000);
+
+    for (const entry of ['libs', 'dist', 'nx.json']) symlinkSync(join(workspace, entry), join(linked, entry));
+
+    vi.mocked(spawnSync).mockReturnValue({ status: 0 } as ReturnType<typeof spawnSync>);
+
+    expect(rebuildStaleDist({ target: linked, config })).toBe(true);
+    expect(vi.mocked(spawnSync).mock.calls.map(([, , options]) => options?.cwd)).toEqual([workspace]);
     errors.mockRestore();
   });
 

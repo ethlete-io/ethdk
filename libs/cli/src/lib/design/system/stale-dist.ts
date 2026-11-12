@@ -1,6 +1,6 @@
 import { spawnSync } from 'child_process';
-import { existsSync, readdirSync, readFileSync, statSync, utimesSync } from 'fs';
-import { basename, join, relative, resolve } from 'path';
+import { existsSync, readdirSync, readFileSync, realpathSync, statSync, utimesSync } from 'fs';
+import { basename, dirname, join, relative, resolve } from 'path';
 import { DesignConfig } from '../design-config';
 import { readFreshLibBuild } from './lib-build-lock';
 import { DEFAULT_RENDER_MODULES, mapPackage, renderPackagesOf } from '../render-packages';
@@ -102,7 +102,21 @@ export const staleDistWarningsOf = (options: { target: string; config: DesignCon
       `WARNING STALE BUILD ${specifier} - ${relative(options.target, source)} changed after ${relative(options.target, dir)} was built; the drawings use the old build - run npx nx build ${name}`,
   );
 
-export type LibBuildRunner = (options: { target: string; name: string; dir: string }) => boolean;
+export type LibBuildRunner = (options: { workspace: string; name: string; dir: string }) => boolean;
+
+const workspaceOwning = (options: { dir: string; target: string }) => {
+  let current = realpathSync(options.dir);
+
+  while (!existsSync(join(current, 'nx.json'))) {
+    const parent = dirname(current);
+
+    if (parent === current) return options.target;
+
+    current = parent;
+  }
+
+  return current;
+};
 
 const ANSI = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g');
 
@@ -125,9 +139,9 @@ export const buildFailureLineOf = (options: {
   return `BUILD OUTPUT ${name} (exit ${status ?? signal}): ${tail.length > 2000 ? `...${tail.slice(-2000)}` : tail || '(none)'}`;
 };
 
-const runLibBuild: LibBuildRunner = ({ target, name, dir }) => {
+const runLibBuild: LibBuildRunner = ({ workspace, name, dir }) => {
   const result = spawnSync('npx', ['nx', 'build', name, '--skip-nx-cache'], {
-    cwd: target,
+    cwd: workspace,
     env: { ...process.env, NX_NO_CLOUD: 'true' },
     stdio: ['ignore', 'pipe', 'pipe'],
     encoding: 'utf8',
@@ -153,6 +167,7 @@ const runLibBuild: LibBuildRunner = ({ target, name, dir }) => {
 /**
  * Rebuilds every stale checkout lib the drawings load from a build folder, then checks again. Answers false, after
  * printing the build command to run, when a build fails or a lib is still stale - a drawing must not use an old build.
+ * Each build runs in the Nx workspace that owns the build folder, which differs from `target` when its `dist` is a link.
  */
 export const rebuildStaleDist = (options: { target: string; config: DesignConfig | null; build?: LibBuildRunner }) => {
   const { target, config, build = runLibBuild } = options;
@@ -163,7 +178,7 @@ export const rebuildStaleDist = (options: { target: string; config: DesignConfig
   for (const lib of [...stale].reverse()) {
     console.error(`STALE BUILD ${lib.specifier} - rebuilding: ${libBuildCommandOf(lib.name)}`);
 
-    if (!build({ target, name: lib.name, dir: lib.dir })) {
+    if (!build({ workspace: workspaceOwning({ dir: lib.dir, target }), name: lib.name, dir: lib.dir })) {
       console.error(
         `REFUSED STALE BUILD ${lib.specifier} - the build failed; fix it and run ${libBuildCommandOf(lib.name)}`,
       );
