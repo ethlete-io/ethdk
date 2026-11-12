@@ -51,12 +51,11 @@ The German grill/docs session talks with the user and records decisions. Talk En
   runs no spec and no typecheck, except one: a breaking (`!`) commit runs the whole `src/scenarios/` folder of each lib it
   stages, in the commit-msg hook; a slice that changes a config or a `.ts` file runs the `typecheck` target of each touched project.
   Every slice runs `npx vitest related --run <changed files>` in the dir of each touched vitest project, and `node --test <related specs>` for `tools/**`, before its commit (finding 779, 914); vitest at the repo root refuses to run: a spec
-  that mocks a module the slice now imports from fails there, not in the push suite. Before you push, run `yarn push:suite` in the
-  background and start the next slice while it runs; it tests an export of HEAD, so your live edits never leak in: `yarn test:tools`, `nx test cli`, `nx test ethlete-studio`, `yarn studio:e2e`, then the page groups the unpushed diff touches in `canvas.e2e.mjs`, `serve.ts` or `studio-api.ts`
-  3 times (the last with `--hold-listings 14000`). Push only after `push-suite: ok <sha>`, with `yarn push` (it pushes HEAD to `next` and then releases the push slot; a bare `git push` leaves the slot held until it expires); a failure, a changed result or
-  a hold failure stops the push, and the pre-push hook of `next` refuses a code push without that verdict. `PUSH_SUITE_SKIP=1` is for the human only;
-  no agent sets it, and no subagent brief names it. Push at the end of
-  each slice (ADR 0230). A subagent runs no full suite. Tell each subagent the same.
+  that mocks a module the slice now imports from fails there, not in CI. Push with `yarn push` after each finished row
+  and do not wait for CI (ADR 0286); it pushes HEAD to `next` and releases the push slot. The pre-push hook of `next`
+  first runs checks, lint, typecheck and `yarn test:tools` on an export of the pushed range (about 30 s); fix what it
+  reports. CI runs the cli specs, quota and e2e; a red CI is fixed first, before new work. A subagent runs no full
+  suite. Tell each subagent the same.
 - A change that adds or tightens a static design rule runs that rule over every committed sketch and part of every
   product before its commit, and fixes or exempts each finding in the same change (finding 789).
 - A slice that changes `apps/<app>` or `.ethlete/design` ends with `design check --product <p> --part <part>` for each

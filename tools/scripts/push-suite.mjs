@@ -1,105 +1,15 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from 'node:child_process';
-import {
-  appendFileSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  realpathSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
-import { cpus, loadavg, platform, tmpdir } from 'node:os';
+import { existsSync, readFileSync, realpathSync, rmSync } from 'node:fs';
+import { cpus, loadavg, tmpdir } from 'node:os';
 import { basename, join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const INNER_EXPORT = process.env['PUSH_SUITE_EXPORT'];
 const root = process.env['PUSH_SUITE_REPO'] ?? resolve(import.meta.dirname, '../..');
-export const E2E_LOG = join(root, '.claude/handoffs/push-suite-e2e.log');
-export const E2E_LOAD_LOG = join(root, '.claude/handoffs/push-suite-e2e-load.log');
-export const REPEAT_LOG = join(root, '.claude/handoffs/push-suite-repeat.log');
-const RUNNER = 'apps/ethlete-studio/e2e/canvas.e2e.mjs';
 const WORKSPACE_PARENTS = ['apps', 'libs', 'tools'];
 
-export const STEPS = [
-  'lint',
-  'typecheck',
-  'tools',
-  'cli',
-  'studio',
-  'quota',
-  'e2e',
-  'e2e-quota',
-  'e2e-load',
-  'first-listing',
-  'repeat',
-];
-
-const DESIGN_INPUTS = [
-  ...['bracket', 'cli', 'components', 'core', 'eslint-plugin', 'query', 'types'].map((lib) => `libs/${lib}/`),
-  'apps/ethlete-studio/',
-  'apps/timetrack/',
-  '.ethlete/',
-];
-/**
- * Path prefixes each step reads. A merged path outside every prefix (root configs, yarn.lock, tools/) reruns all
- * steps; the lib list is the import closure of libs/cli and apps/ethlete-studio, kept by hand.
- */
-export const STEP_INPUTS = {
-  lint: ['apps/', 'libs/'],
-  typecheck: ['apps/', 'libs/'],
-  tools: [],
-  cli: DESIGN_INPUTS,
-  studio: DESIGN_INPUTS,
-  quota: DESIGN_INPUTS,
-  e2e: DESIGN_INPUTS,
-  'e2e-quota': DESIGN_INPUTS,
-  'e2e-load': DESIGN_INPUTS,
-  'first-listing': DESIGN_INPUTS,
-  repeat: DESIGN_INPUTS,
-};
-const INERT_PATHS = [/^plans\//, /^\.changeset\//];
-
-export const stepsTouchedBy = (files) => {
-  const touched = new Set();
-  for (const file of files) {
-    if (INERT_PATHS.some((path) => path.test(file))) continue;
-    touched.add('tools');
-    const steps = STEPS.filter((step) => STEP_INPUTS[step].some((prefix) => file.startsWith(prefix)));
-    if (steps.length === 0 && !file.endsWith('.md')) return new Set(STEPS);
-    for (const step of steps) touched.add(step);
-  }
-  return touched;
-};
-
-export const passedSteps = (verdict, sha) => {
-  const [head = '', ...rest] = verdict.split('\n');
-  const passed = new Map();
-  for (const line of rest) {
-    const match = /^step (\S+) ok (\S+)$/.exec(line);
-    if (match && STEPS.includes(match[1])) passed.set(match[1], match[2]);
-  }
-  if (head.startsWith('ok ') && passed.size === 0) for (const step of STEPS) passed.set(step, sha);
-  return passed;
-};
-
-export const verdictText = (verdict, passed) =>
-  [verdict, ...[...passed].map(([step, from]) => `step ${step} ok ${from}`)].join('\n') + '\n';
-
-export const reusableSteps = (parents, readVerdict, changedSince) => {
-  if (parents.length !== 2) return new Map();
-  const [first] = parents;
-  const verdict = readVerdict(first);
-  if (verdict === undefined) return new Map();
-  const changed = changedSince(first);
-  if (changed === undefined) return new Map();
-  const touched = stepsTouchedBy(changed);
-  return new Map([...passedSteps(verdict, first)].filter(([step]) => !touched.has(step)));
-};
-
-export const reusedLine = (name, from) =>
-  `push-suite: ${name} reused from ${from.slice(0, 12)} (the merge changes none of its inputs)`;
+export const STEPS = ['lint', 'typecheck', 'tools'];
 
 export const parseArgs = (argv) => {
   const at = argv.indexOf('--only');
@@ -200,137 +110,7 @@ export const typecheckStep = async (projects, dir) => {
   return { ...run, note: checked.join(', ') };
 };
 
-const STUDIO_ROOT = 'apps/ethlete-studio';
-export const QUOTA_PERCENT = 20;
-export const QUOTA_PERCENT_DARWIN = 10;
-export const QUOTA_BUDGET_MS = 180_000;
-
-export const quotaSpecFiles = (files) =>
-  files.filter((file) => file.startsWith(`${STUDIO_ROOT}/`) && file.endsWith('.spec.ts')).sort();
-
-const quotaVitest = (file) => [
-  'npx',
-  'vitest',
-  'run',
-  '--root',
-  STUDIO_ROOT,
-  '--maxWorkers=1',
-  relative(STUDIO_ROOT, file),
-];
-
-export const quotaCommand = (file, quota = QUOTA_PERCENT, os = platform()) =>
-  os === 'darwin'
-    ? { command: 'node', args: ['tools/scripts/cpu-throttle.mjs', String(quota), '--', ...quotaVitest(file)] }
-    : {
-        command: 'systemd-run',
-        args: ['--user', '--scope', '--quiet', '-p', `CPUQuota=${quota}%`, ...quotaVitest(file)],
-      };
-
-export const quotaLabel = (quota, os = platform()) =>
-  os === 'darwin' ? `cpu-throttle ${quota}%` : `CPUQuota=${quota}%`;
-
-const canSystemdQuota = () => spawnSync('systemd-run', ['--user', '--scope', '--quiet', 'true']).status === 0;
-const canQuota = (os = platform()) => os === 'darwin' || canSystemdQuota();
-
-export const quotaStep = async (
-  files,
-  {
-    run,
-    os = platform(),
-    quota = os === 'darwin' ? QUOTA_PERCENT_DARWIN : QUOTA_PERCENT,
-    budgetMs = QUOTA_BUDGET_MS,
-    available = () => canQuota(os),
-    now = () => performance.now(),
-  },
-) => {
-  if (files.length === 0) return { status: 0, output: '', note: 'no changed Studio spec file' };
-  if (!available())
-    return {
-      status: 0,
-      output: '',
-      note: `skipped on ${os}: the CPU quota needs systemd-run --user on Linux or cpu-throttle on darwin, so a load-sensitive Studio case is not caught here`,
-    };
-  return runUnderQuota(files, (file) => quotaCommand(file, quota, os), { run, quota, budgetMs, now, os });
-};
-
-const runUnderQuota = async (items, commandOf, { run, quota, budgetMs, now, os = 'linux' }) => {
-  const startedAt = now();
-  const ran = [];
-  for (const [index, item] of items.entries()) {
-    if (now() - startedAt >= budgetMs) {
-      const skipped = items.slice(index);
-      return {
-        status: 0,
-        output: '',
-        note: `${quotaLabel(quota, os)}, ran ${ran.join(', ')}; over the ${seconds(budgetMs)} budget, skipped ${skipped.join(', ')}`,
-      };
-    }
-    const { command, args } = commandOf(item);
-    const result = await run(command, args);
-    ran.push(item);
-    if (result.status !== 0) return { ...result, note: `${quotaLabel(quota, os)}, failed ${item}` };
-  }
-  return { status: 0, output: '', note: `${quotaLabel(quota, os)}, ran ${ran.join(', ')}` };
-};
-
-export const E2E_QUOTA_PERCENT = 50;
-export const E2E_QUOTA_BUDGET_MS = 300_000;
-
-export const e2eQuotaCommand = (name, built, quota = E2E_QUOTA_PERCENT) => ({
-  command: 'systemd-run',
-  args: [
-    '--user',
-    '--scope',
-    '--quiet',
-    '-p',
-    `CPUQuota=${quota}%`,
-    process.execPath,
-    RUNNER,
-    '--built',
-    built,
-    '--no-timings',
-    '--workers',
-    '1',
-    '--case',
-    name,
-  ],
-});
-
-export const e2eQuotaStep = async (
-  { all, cases, reasons },
-  {
-    run,
-    build,
-    built,
-    quota = E2E_QUOTA_PERCENT,
-    budgetMs = E2E_QUOTA_BUDGET_MS,
-    available = canSystemdQuota,
-    now = () => performance.now(),
-    os = platform(),
-  },
-) => {
-  if (all)
-    return {
-      status: 0,
-      output: '',
-      note: `no case run under the quota: ${reasons.join('; ')}, and it runs changed cases only`,
-    };
-  if (cases.length === 0) return { status: 0, output: '', note: 'no changed e2e case' };
-  if (!available())
-    return {
-      status: 0,
-      output: '',
-      note: `skipped on ${os}: the CPU quota needs systemd-run --user, so a load-sensitive e2e case is not caught here`,
-    };
-  const studio = await build();
-  if (studio.status !== 0) return { ...studio, note: 'the Studio build for the quota run failed' };
-  return runUnderQuota(cases, (name) => e2eQuotaCommand(name, built, quota), { run, quota, budgetMs, now });
-};
-
 const git = (...args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
-
-export const verdictFileOf = (sha) =>
-  join(resolve(root, git('rev-parse', '--git-path', 'push-suite').stdout.trim()), sha);
 
 const seconds = (ms) => `${(ms / 1000).toFixed(0)} s`;
 
@@ -384,11 +164,8 @@ export const withStepTmp = async (name, run, env = process.env) => {
 export const stepLine = (name, status, ms, note, load, max = load) =>
   `push-suite: ${name} ${status === 0 ? 'ok' : `failed at load ${formatLoad(load)} (max ${formatLoad(max)} during the step)`} in ${seconds(ms)}${note ? ` (${note})` : ''}`;
 
-export const runStep = async (command, args, cwd, logFile, env = {}) => {
-  const runLogs = logFile ? await import('./run-log.mjs') : undefined;
-  const runLog = runLogs?.startRunLog(logFile);
-
-  return new Promise((done) => {
+export const runStep = (command, args, cwd, env = {}) =>
+  new Promise((done) => {
     const child = spawn(command, args, {
       cwd,
       env: { ...process.env, ...env },
@@ -397,16 +174,11 @@ export const runStep = async (command, args, cwd, logFile, env = {}) => {
     let output = '';
     const take = (chunk) => {
       output += chunk;
-      if (runLog) appendFileSync(runLog, chunk);
     };
     child.stdout.on('data', take);
     child.stderr.on('data', take);
-    child.on('close', (status) => {
-      if (runLog && status !== 0) runLogs.markRunLogFailed(runLog);
-      done({ status: status ?? 1, output });
-    });
+    child.on('close', (status) => done({ status: status ?? 1, output }));
   });
-};
 
 export const reexecCommand = (exportDir, repo, { only, range }, env = process.env) => ({
   command: process.execPath,
@@ -496,8 +268,8 @@ const warnAboutOtherProcesses = async (log) => {
 };
 
 export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loadProbe = {}) => {
-  const sha = git('rev-parse', 'HEAD').stdout.trim();
-  const passed = new Map();
+  const sha = git('rev-parse', range.split('..')[1] || 'HEAD').stdout.trim();
+  const chosen = only ? only.split(',') : STEPS;
   let slot;
   let heavyLock;
   const release = () => {
@@ -508,22 +280,17 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
     slot = undefined;
     log(released.ok ? 'push-suite: push slot released' : `push-suite: push slot not released: ${released.reason}`);
   };
-  const finish = (verdict) => {
-    log(`push-suite: ${verdict}`);
-    if (verdict.startsWith('ok')) {
+  const finish = (outcome) => {
+    log(`push-suite: ${outcome}`);
+    if (outcome.startsWith('ok')) {
       heavyLock?.release();
       heavyLock = undefined;
     } else release();
-    if (only) log(`push-suite: --only ${only} writes no verdict file`);
-    else {
-      const file = verdictFileOf(sha);
-      mkdirSync(resolve(file, '..'), { recursive: true });
-      writeFileSync(file, verdictText(verdict, passed));
-    }
-    return verdict.startsWith('ok') ? 0 : 1;
+    return outcome.startsWith('ok') ? 0 : 1;
   };
 
-  if (only && !STEPS.includes(only)) return finish(`blocked unknown step ${only}, expected one of ${STEPS.join(', ')}`);
+  const unknown = chosen.find((step) => !STEPS.includes(step));
+  if (unknown) return finish(`blocked unknown step ${unknown}, expected one of ${STEPS.join(', ')}`);
 
   if (!INNER_EXPORT) {
     const { holderLine, takeHeavyLock } = await import('./heavy-run-lock.mjs');
@@ -563,7 +330,7 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
   Object.assign(process.env, { NX_NO_CLOUD: 'true', NX_DAEMON: 'false' });
   delete process.env['STUDIO_CLI_ENTRY'];
   const exportedAt = performance.now();
-  const { DRAWING_BUILDS, exportCommit, toolsStepEnv } = await import('./commit-export.mjs');
+  const { exportCommit, toolsStepEnv } = await import('./commit-export.mjs');
   const { dir, error } = INNER_EXPORT ? { dir: INNER_EXPORT } : exportCommit(root, sha);
   const removeExport = () => (INNER_EXPORT ? undefined : rmSync(dir, { recursive: true, force: true }));
   if (!INNER_EXPORT)
@@ -573,14 +340,6 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
         removeExport();
         process.exit(1);
       });
-
-  let built;
-  const buildDrawingLibs = () =>
-    (built ??= runStep('npx', ['nx', 'run-many', '-t', 'build', '-p', ...DRAWING_BUILDS], dir));
-  const afterBuild = async (run) => {
-    const build = await buildDrawingLibs();
-    return build.status === 0 ? run() : build;
-  };
 
   const steps = {
     lint: () => {
@@ -593,100 +352,7 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
       if (changed.status !== 0) return Promise.resolve({ status: 1, output: changed.stderr });
       return typecheckStep(touchedProjects(changed.stdout.split('\n').filter(Boolean)), dir);
     },
-    tools: () => runStep('yarn', ['test:tools'], dir, undefined, toolsStepEnv(root)),
-    cli: () => runStep('npx', ['nx', 'test', 'cli'], dir),
-    studio: () => runStep('npx', ['nx', 'test', 'ethlete-studio'], dir),
-    quota: () => {
-      const changed = git('diff', '--name-only', '--diff-filter=d', range);
-      if (changed.status !== 0) return Promise.resolve({ status: 1, output: changed.stderr });
-      return quotaStep(quotaSpecFiles(changed.stdout.split('\n').filter(Boolean)), {
-        run: (command, args) => runStep(command, args, dir),
-      });
-    },
-    e2e: () => afterBuild(() => runStep(process.execPath, [join(dir, RUNNER)], dir, E2E_LOG)),
-    'e2e-quota': () =>
-      afterBuild(async () => {
-        const { affectedCases, caseSpans, changedLines, TRIGGERS } = await import('./studio-e2e-repeat.mjs');
-        const diff = git('diff', '-U0', range, '--', ...TRIGGERS);
-        if (diff.status !== 0) return { status: 1, output: diff.stderr };
-        const spans = caseSpans(readFileSync(join(dir, RUNNER), 'utf8'));
-        const built = mkdtempSync(join(tmpdir(), 'push-suite-e2e-quota-'));
-        try {
-          return await e2eQuotaStep(affectedCases(changedLines(diff.stdout), spans), {
-            run: (command, args) => runStep(command, args, dir),
-            build: () =>
-              runStep(
-                'npx',
-                [
-                  'nx',
-                  'build',
-                  'ethlete-studio',
-                  `--outputPath=${built}`,
-                  '--excludeTaskDependencies',
-                  '--skip-nx-cache',
-                ],
-                dir,
-              ),
-            built,
-          });
-        } finally {
-          rmSync(built, { recursive: true, force: true });
-        }
-      }),
-    'e2e-load': () =>
-      afterBuild(async () => {
-        const { e2eLoadStep } = await import('./ci-like-load.mjs');
-        const changed = git('diff', '--name-only', range);
-        if (changed.status !== 0) return { status: 1, output: changed.stderr };
-        return e2eLoadStep(changed.stdout.split('\n').filter(Boolean), {
-          run: (command, args) => runStep(command, args, dir, E2E_LOAD_LOG),
-          runner: join(dir, RUNNER),
-        });
-      }),
-    'first-listing': () =>
-      afterBuild(async () => {
-        const { firstListingStep, timeFirstListing } = await import('./first-listing-time.mjs');
-        const changed = git('diff', '--name-only', range);
-        if (changed.status !== 0) return { status: 1, output: changed.stderr };
-        return firstListingStep(changed.stdout.split('\n').filter(Boolean), {
-          measure: (options) => timeFirstListing(dir, options),
-          prepareBase: async () => {
-            const base = git('rev-parse', '--verify', `${range.split(/\.{2,3}/)[0] || 'HEAD'}^{commit}`);
-            if (base.status !== 0) throw new Error(`no base commit for ${range}: ${base.stderr.trim()}`);
-            const baseSha = base.stdout.trim();
-            const exported = exportCommit(root, baseSha, 'push-suite-base');
-            const remove = () => rmSync(exported.dir, { recursive: true, force: true });
-            if (exported.error) {
-              remove();
-              throw new Error(`the export of base ${baseSha.slice(0, 12)} failed: ${exported.error}`);
-            }
-            const build = await runStep(
-              'npx',
-              ['nx', 'run-many', '-t', 'build', '-p', ...DRAWING_BUILDS],
-              exported.dir,
-            );
-            if (build.status !== 0) {
-              remove();
-              throw new Error(`the build of base ${baseSha.slice(0, 12)} failed:\n${build.output.slice(-2000)}`);
-            }
-            return { measure: (options) => timeFirstListing(exported.dir, options), remove };
-          },
-        });
-      }),
-    repeat: () =>
-      afterBuild(async () => {
-        const { changedLines, runRepeatGate, TRIGGERS } = await import('./studio-e2e-repeat.mjs');
-        const diff = git('diff', '-U0', range, '--', ...TRIGGERS);
-        if (diff.status !== 0) return { status: 1, output: diff.stderr };
-        const lines = [];
-        const status = await runRepeatGate(diff.stdout, {
-          log: (line) => lines.push(line),
-          cwd: dir,
-          liveLog: REPEAT_LOG,
-        });
-        const touched = [...changedLines(diff.stdout).keys()].length;
-        return { status, output: lines.join('\n'), note: touched ? undefined : `no trigger change in ${range}` };
-      }),
+    tools: () => runStep('yarn', ['test:tools'], dir, toolsStepEnv(root)),
   };
 
   try {
@@ -699,19 +365,7 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
       return status;
     }
     await warnStaleDesignServers(log);
-    const reused = only
-      ? new Map()
-      : reusableSteps(git('rev-parse', `${sha}^@`).stdout.split('\n').filter(Boolean), readVerdict, (first) => {
-          const changed = git('diff', '--name-only', first, sha);
-          return changed.status === 0 ? changed.stdout.split('\n').filter(Boolean) : undefined;
-        });
-    for (const name of only ? [only] : STEPS) {
-      const from = reused.get(name);
-      if (from) {
-        log(reusedLine(name, from));
-        passed.set(name, from);
-        continue;
-      }
+    for (const name of chosen) {
       const startedAt = performance.now();
       const stopSampling = sampleMaxLoad(loadProbe.load, loadProbe.timers);
       const { status, output, note } = await withStepTmp(name, steps[name]);
@@ -721,8 +375,6 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
         log(failureReport(output));
         return finish(`blocked ${name} failed at ${sha}`);
       }
-      if ((name === 'repeat' || name === 'first-listing') && output) log(output);
-      passed.set(name, sha);
     }
     return finish(`ok ${sha}`);
   } finally {
@@ -730,27 +382,6 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
   }
 };
 
-const readVerdict = (commit) => {
-  const file = verdictFileOf(commit);
-  return existsSync(file) ? readFileSync(file, 'utf8') : undefined;
-};
-
-export const checkPush = async (base, sha, log = console.error) => {
-  if (process.env['PUSH_SUITE_SKIP'] === '1') return 0;
-  const { EXEMPT_PATHS, parseLog, reusedVerdictLine, verdictBelow } = await import('./verdict-reuse.mjs');
-  const commits = parseLog(git('log', '--format=%x00%H', '--name-only', `${base}..${sha}`).stdout);
-  const hasOk = (commit) => readVerdict(commit)?.startsWith('ok ') ?? false;
-  const below = verdictBelow(commits, hasOk, EXEMPT_PATHS);
-  if (below.onTop) log(reusedVerdictLine('pre-push', below));
-  const missing = below.blocker;
-  if (!missing) return 0;
-  log(
-    `pre-push: ${missing.slice(0, 10)} changes more than plans/, .changeset/ or Markdown, and no later commit in this push has an ok verdict. Run \`yarn push:suite\` on this HEAD and push after \`push-suite: ok\`; PUSH_SUITE_SKIP=1 skips the check for a push the suite does not cover.`,
-  );
-  return 1;
-};
-
 if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
-  const argv = process.argv.slice(2);
-  process.exit(argv[0] === '--check' ? await checkPush(argv[1], argv[2]) : await pushSuite(parseArgs(argv)));
+  process.exit(await pushSuite(parseArgs(process.argv.slice(2))));
 }

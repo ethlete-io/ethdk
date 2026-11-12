@@ -33,38 +33,25 @@ const setup = (t) => {
 
 const originRef = (origin, ref) => run(origin, 'for-each-ref', '--format=%(objectname)', ref);
 
-test('a push with a verdict reaches next and releases the slot', async (t) => {
+test('a push reaches next and releases the slot', (t) => {
   const { origin, mac, sha } = setup(t);
   assert.equal(claimSlot({ cwd: mac, holder: 'mac', sha }).ok, true);
   assert.notEqual(originRef(origin, SLOT_REF), '');
 
-  const code = await pushNext({ cwd: mac, holder: 'mac', hasVerdict: () => true, log: () => undefined });
+  const code = pushNext({ cwd: mac, holder: 'mac', log: () => undefined });
 
   assert.equal(code, 0);
   assert.equal(originRef(origin, 'refs/heads/next'), sha);
   assert.equal(originRef(origin, SLOT_REF), '');
 });
 
-test('a push without a verdict pushes nothing and keeps the slot', async (t) => {
-  const { origin, mac, sha } = setup(t);
-  claimSlot({ cwd: mac, holder: 'mac', sha });
-  const lines = [];
-
-  const code = await pushNext({ cwd: mac, hasVerdict: () => false, log: (l) => lines.push(l) });
-
-  assert.equal(code, 1);
-  assert.notEqual(originRef(origin, 'refs/heads/next'), sha);
-  assert.notEqual(originRef(origin, SLOT_REF), '');
-  assert.match(lines[0], /no push-suite ok verdict/);
-});
-
-test('a failed push keeps the slot and exits non-zero', async (t) => {
+test('a failed push keeps the slot and exits non-zero', (t) => {
   const { origin, mac, sha } = setup(t);
   claimSlot({ cwd: mac, holder: 'mac', sha });
   run(origin, 'config', 'receive.denyNonFastForwards', 'true');
   run(mac, 'remote', 'set-url', '--push', 'origin', join(origin, 'missing'));
 
-  const code = await pushNext({ cwd: mac, holder: 'mac', hasVerdict: () => true, log: () => undefined });
+  const code = pushNext({ cwd: mac, holder: 'mac', log: () => undefined });
 
   assert.notEqual(code, 0);
   assert.notEqual(originRef(origin, SLOT_REF), '');
@@ -83,117 +70,20 @@ test('a held slot on a sha that next already contains does not block a claim and
   assert.equal(readSlot({ cwd: mac }).slot.holder, 'mac');
 });
 
-const commitFiles = (repo, ...files) => {
-  for (const file of files) {
-    mkdirSync(dirname(join(repo, file)), { recursive: true });
-    writeFileSync(join(repo, file), `${file}\n`);
-  }
-  run(repo, 'add', '--', ...files);
-  run(repo, 'commit', '-q', '-m', `touch ${files.join(' ')}`);
-  return run(repo, 'rev-parse', 'HEAD');
-};
-
-const docsOnTop = (t) => {
-  const { origin, mac, sha: green } = setup(t);
-  commitFiles(mac, 'plans/ethlete-studio/design-to-code.md');
-  const head = commitFiles(mac, '.agents/skills/builder-agent/SKILL.md', 'apps/ethlete-studio/docs/adr/0001-a.md');
-  return { origin, mac, green, head };
-};
-
-const passing = (calls) => (base, head) => {
-  calls.push([base, head]);
-  return { status: 0, output: '', names: [] };
-};
-
-test('docs-only commits on a green ancestor reuse its verdict after the fast checks on HEAD', async (t) => {
-  const { origin, mac, green, head } = docsOnTop(t);
-  const calls = [];
+test('--dry-run names the sha and pushes nothing', (t) => {
+  const { origin, mac, sha } = setup(t);
+  claimSlot({ cwd: mac, holder: 'mac', sha });
   const lines = [];
 
-  const code = await pushNext({
-    cwd: mac,
-    holder: 'mac',
-    hasVerdict: (sha) => sha === green,
-    checks: passing(calls),
-    log: (l) => lines.push(l),
-  });
+  const code = pushNext({ cwd: mac, holder: 'mac', dryRun: true, log: (l) => lines.push(l) });
 
   assert.equal(code, 0);
-  assert.equal(originRef(origin, 'refs/heads/next'), head);
-  assert.deepEqual(calls, [[green, head]]);
-  assert.ok(lines.includes(`push-next: reused push-suite ok of ${green.slice(0, 9)} (2 docs-only commits on top)`));
-});
-
-test('a code commit above the green ancestor refuses the push without running the fast checks', async (t) => {
-  const { origin, mac, green, head } = docsOnTop(t);
-  const code = commitFiles(mac, 'tools/scripts/x.mjs');
-  commitFiles(mac, '.changeset/a.md');
-  const calls = [];
-  const lines = [];
-
-  const exit = await pushNext({
-    cwd: mac,
-    hasVerdict: (sha) => sha === green,
-    checks: passing(calls),
-    log: (l) => lines.push(l),
-  });
-
-  assert.equal(exit, 1);
-  assert.notEqual(originRef(origin, 'refs/heads/next'), head);
-  assert.deepEqual(calls, []);
-  assert.match(lines.join('\n'), new RegExp(`${code.slice(0, 9)} changes tools/scripts/x\\.mjs`));
-});
-
-test('a failing fast check refuses the reuse', async (t) => {
-  const { origin, mac, green, head } = docsOnTop(t);
-  const lines = [];
-
-  const code = await pushNext({
-    cwd: mac,
-    hasVerdict: (sha) => sha === green,
-    checks: () => ({ status: 1, output: 'lint:person-names failed', names: ['lint:person-names'] }),
-    log: (l) => lines.push(l),
-  });
-
-  assert.equal(code, 1);
-  assert.notEqual(originRef(origin, 'refs/heads/next'), head);
-  assert.match(lines.join('\n'), /fast checks failed \(lint:person-names\)/);
-});
-
-test('docs-only commits without a green ancestor refuse the push', async (t) => {
-  const { origin, mac, head } = docsOnTop(t);
-  const calls = [];
-  const lines = [];
-
-  const code = await pushNext({ cwd: mac, hasVerdict: () => false, checks: passing(calls), log: (l) => lines.push(l) });
-
-  assert.equal(code, 1);
-  assert.notEqual(originRef(origin, 'refs/heads/next'), head);
-  assert.deepEqual(calls, []);
-  assert.match(lines[0], /no push-suite ok verdict for .* or an ancestor/);
-});
-
-test('--dry-run names the reused verdict and pushes nothing', async (t) => {
-  const { origin, mac, green, head } = docsOnTop(t);
-  claimSlot({ cwd: mac, holder: 'mac', sha: head });
-  const lines = [];
-
-  const code = await pushNext({
-    cwd: mac,
-    holder: 'mac',
-    hasVerdict: (sha) => sha === green,
-    checks: passing([]),
-    dryRun: true,
-    log: (l) => lines.push(l),
-  });
-
-  assert.equal(code, 0);
-  assert.notEqual(originRef(origin, 'refs/heads/next'), head);
+  assert.notEqual(originRef(origin, 'refs/heads/next'), sha);
   assert.notEqual(originRef(origin, SLOT_REF), '');
-  assert.match(lines.join('\n'), new RegExp(`reused push-suite ok of ${green.slice(0, 9)}`));
+  assert.deepEqual(lines, [`push-next: --dry-run, would push ${sha.slice(0, 12)} to origin next`]);
 });
 
-test('a push names each uncommitted design record file with its age', async (t) => {
+test('a push names each uncommitted design record file with its age', (t) => {
   const { mac } = setup(t);
   const ready = join(mac, '.ethlete/design/studio/ready.json');
   mkdirSync(dirname(ready), { recursive: true });
@@ -201,7 +91,7 @@ test('a push names each uncommitted design record file with its age', async (t) 
   writeFileSync(join(mac, '.ethlete/design/studio/other.json'), '{}\n');
   const lines = [];
 
-  await pushNext({ cwd: mac, hasVerdict: () => false, log: (l) => lines.push(l) });
+  pushNext({ cwd: mac, dryRun: true, log: (l) => lines.push(l) });
 
   assert.equal(lines.filter((l) => l.includes('is uncommitted')).length, 1);
   assert.match(lines[0], /\.ethlete\/design\/studio\/ready\.json is uncommitted, last written 0 min ago/);

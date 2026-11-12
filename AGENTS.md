@@ -132,9 +132,9 @@ patterns), see the **`styleguide`** skill.
 
 To run what CI runs before pushing - format, changesets, lint, test, build, bundle-size
 goldens, Storybook build - use the **`ci-check`** skill (`.agents/skills/ci-check/`). The
-`.husky/pre-push` hook runs format (on the committed files of the pushed range, so uncommitted edits never
-count), changesets, the sub-second "Checks" scripts, and, when `apps/docs` changes, the VitePress build; lint,
-typecheck, specs and the Studio gates run in CI. Fix what the hook reports rather than skipping it.
+`.husky/pre-push` hook runs format (committed files only), changesets, the sub-second "Checks" scripts, on `next`
+lint, typecheck and tools specs, and, when `apps/docs` changes, the VitePress build; other specs and the Studio gates
+run in CI. Fix what the hook reports rather than skipping it.
 
 Before you change a file or ask a question about it, run `yarn adr:governs <files>` (or `--staged`, or `<a>..<b>`) and read the ADRs it lists.
 

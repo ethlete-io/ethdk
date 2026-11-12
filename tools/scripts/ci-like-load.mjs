@@ -41,33 +41,6 @@ export const startBusyLoops = async (count = CI_LIKE.busyLoops, { lock = {}, ...
   };
 };
 
-export const e2eLoadArgs = (runner, { workers = CI_LIKE.workers, shard = CI_LIKE.shard } = {}) => [
-  runner,
-  '--workers',
-  String(workers),
-  '--shard',
-  shard,
-  '--no-timings',
-];
-
-export const loadLabel = ({ note, busyLoops = CI_LIKE.busyLoops, workers = CI_LIKE.workers, shard = CI_LIKE.shard }) =>
-  `CI-like: shard ${shard}, ${workers} workers, ${busyLoops} busy loops, ${note}`;
-
-/** The push suite's CI-like e2e pass: one shard on 2 workers, pinned to 4 cores beside busy loops, for design server changes. */
-export const e2eLoadStep = async (files, { run, runner, taskset = hasTaskset(), busy = startBusyLoops }) => {
-  const triggers = loadPassTriggers(files);
-  if (triggers.length === 0) return { status: 0, output: '', note: `no change under ${LOAD_PASS_TRIGGERS.join(', ')}` };
-  const pinned = pinnedCommand(process.execPath, e2eLoadArgs(runner), { taskset });
-  const load = await busy(CI_LIKE.busyLoops, { taskset });
-  if (!load.ok) return { status: 1, output: '', note: `no load started: ${holderLine(load.holder)}` };
-  try {
-    const result = await run(pinned.command, pinned.args);
-    return { ...result, note: loadLabel({ note: pinned.note }) };
-  } finally {
-    load.stop();
-  }
-};
-
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const dash = process.argv.indexOf('--');
   if (dash === -1 || dash === process.argv.length - 1) {
