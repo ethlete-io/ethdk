@@ -138,7 +138,23 @@ export const switchFrame = async (page: Page, state: string) => {
   return true;
 };
 
-const loadedFonts = `Promise.all([...document.fonts].map((face) => face.load().catch(() => undefined)))
+/**
+ * Evaluates in a page to the font faces its text can draw with: each face that covers every character, and each
+ * unicode-range face whose range holds a character of the page's markup or of a field's value.
+ */
+export const facesInUse = `(() => {
+  const text = [document.documentElement.outerHTML, ...[...document.querySelectorAll('input, textarea')].map((field) => field.value)].join('');
+  return [...document.fonts].filter((face) => {
+    if (face.unicodeRange.toUpperCase() === 'U+0-10FFFF') return true;
+    const spans = face.unicodeRange.split(',').map((span) => {
+      const [from, to = from] = span.trim().slice(2).split('-');
+      return '\\\\u{' + from.replaceAll('?', '0') + '}-\\\\u{' + to.replaceAll('?', 'F') + '}';
+    });
+    return new RegExp('[' + spans.join('') + ']', 'u').test(text);
+  });
+})()`;
+
+const loadedFonts = `Promise.all(${facesInUse}.map((face) => face.load().catch(() => undefined)))
   .then(() => document.fonts.ready)`;
 
 export const settled = `new Promise((done) => ${loadedFonts}.then(() =>

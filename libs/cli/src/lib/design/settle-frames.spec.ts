@@ -19,6 +19,11 @@ const FONT = readFileSync(
 const UNUSED_FACE = `<style>@font-face { font-family: Unused; src: url('/unused.woff2') format('woff2'); }</style>
 <p>text in the default font</p>`;
 
+const rangedFace = (
+  text: string,
+) => `<style>@font-face { font-family: Ranged; src: url('/ranged.woff2') format('woff2'); unicode-range: U+2190-21FF; }</style>
+<p>${text}</p>`;
+
 describe('settleFrames', () => {
   let browser: Browser | undefined;
 
@@ -93,6 +98,34 @@ describe('settleFrames', () => {
       await settleFrames(page);
 
       expect(await page.evaluate(() => [...document.fonts].map((face) => face.status))).toEqual(['error']);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it.each([
+    { text: 'plain text', status: 'unloaded', fetched: 0 },
+    { text: 'an arrow →', status: 'loaded', fetched: 1 },
+  ])('settles the ranged face of "$text" as $status', async ({ text, status, fetched }, context) => {
+    if (!browser) return context.skip();
+
+    const page = await browser.newPage({ viewport: { width: 40, height: 40 } });
+    let requests = 0;
+
+    try {
+      await page.route('**/ranged.woff2', (route) => {
+        requests += 1;
+
+        return route.fulfill({ body: FONT, contentType: 'font/woff2' });
+      });
+      await page.route('http://frame.test/', (route) =>
+        route.fulfill({ body: rangedFace(text), contentType: 'text/html; charset=utf-8' }),
+      );
+      await page.goto('http://frame.test/');
+      await settleFrames(page);
+
+      expect(await page.evaluate(() => [...document.fonts].map((face) => face.status))).toEqual([status]);
+      expect(requests).toBe(fetched);
     } finally {
       await page.close();
     }

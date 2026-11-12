@@ -8,7 +8,7 @@ import { settleFrames } from './settle-frames';
 import { partKeyOf } from './system/resolve-product';
 import { reachableBaseOf } from './system/served-cache';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
-import { openFrame, switchFrame } from './thumb';
+import { facesInUse, openFrame, switchFrame } from './thumb';
 
 // A worker thread cannot load the TypeScript source of the render worker, so the parts drawn by an app render need it bundled.
 vi.mock('./package-root', async (importOriginal) => {
@@ -69,11 +69,12 @@ const unloadedFaces = `(() => {
   for (const sheet of [...document.styleSheets, ...document.adoptedStyleSheets]) collect(sheet.cssRules);
   const unquoted = (family) => family.replace(/^["']|["']$/g, '');
   const seen = new Map();
+  const inUse = new Set(${facesInUse});
   return Array.from(document.fonts).flatMap((face) => {
     const family = unquoted(face.family);
     const index = (seen.get(family) ?? -1) + 1;
     seen.set(family, index);
-    if (face.status === 'loaded') return [];
+    if (face.status === 'loaded' || !inUse.has(face)) return [];
     const rule = rules.filter((candidate) => unquoted(candidate.style.getPropertyValue('font-family')) === family)[index];
     const url = /url\\(["']?([^"')]+)/.exec(rule?.style.getPropertyValue('src') ?? '')?.[1] ?? 'no src';
     const src = url.startsWith('@assets') ? url : url.split('/').pop();
