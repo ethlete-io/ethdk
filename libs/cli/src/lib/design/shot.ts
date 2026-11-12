@@ -51,7 +51,9 @@ export const sourceProblemOf = (params: URLSearchParams, canShootApp: boolean) =
   if (!canShootApp)
     return 'design-explore: this server cannot shoot the app harness - run design serve in the checkout';
 
-  const passed = ['call', 'sketch', 'width', 'interaction'].filter((name) => params.has(name));
+  const passed = ['call', 'sketch', 'width', 'interaction', 'surface', 'color', 'fill', 'scheme', 'scale'].filter(
+    (name) => params.has(name),
+  );
 
   if (passed.length > 0) return `design-explore: source=app shoots the built app, so it takes no ${passed.join(', ')}`;
   if (!['product', 'part', 'state'].every((name) => params.get(name)))

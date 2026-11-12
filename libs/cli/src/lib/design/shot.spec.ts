@@ -189,6 +189,8 @@ describe('createPartShooter', () => {
     ['source=app&part=components/card&state=long', 'source=app needs product, part and state'],
     ['source=app&part=components/card&state=long&product=acme&sketch=x&variant=a', 'takes no sketch'],
     ['source=app&part=components/card&state=long&product=acme&width=300', 'takes no width'],
+    ['source=app&part=components/card&state=long&product=acme&surface=dark', 'takes no surface'],
+    ['source=app&part=components/card&state=long&product=acme&color=brand&scale=2', 'takes no color, scale'],
   ])('answers 400 to %s', async (query, message) => {
     const appShotOf = vi.fn(async () => Buffer.from('app png'));
     const { shots } = acme(undefined, appShotOf);
