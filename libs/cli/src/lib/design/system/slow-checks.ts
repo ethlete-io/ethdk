@@ -44,8 +44,11 @@ export const isSlowRule = (rule: string) =>
 
 const DECLARES_CONTROLS = /\bcontrols\s*:/u;
 
+/** A state of a part whose app picture a slow run could not take, and why. */
+export type UnjudgedState = { state: string; why: string };
+
 /** One part's slow-rule problems and the input hash they were found at. */
-export type SlowEntry = { hash: string; problems: Problem[]; at: string };
+export type SlowEntry = { hash: string; problems: Problem[]; at: string; unjudged?: UnjudgedState[] };
 
 export type SlowCache = Record<string, SlowEntry>;
 
@@ -70,13 +73,17 @@ export const writeSlowResults = (options: {
   product: ResolvedProduct;
   hashes: Record<string, string>;
   results: Map<string, Problem[]>;
+  unjudged?: Map<string, UnjudgedState[]>;
 }) => {
   const file = slowCacheFileOf(options.product);
   const cache = readSlowCache(options.product);
   const at = new Date().toISOString();
 
-  for (const [part, hash] of Object.entries(options.hashes))
-    cache[part] = { hash, problems: options.results.get(part) ?? [], at };
+  for (const [part, hash] of Object.entries(options.hashes)) {
+    const unjudged = options.unjudged?.get(part) ?? [];
+
+    cache[part] = { hash, problems: options.results.get(part) ?? [], at, ...(unjudged.length > 0 ? { unjudged } : {}) };
+  }
 
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(file, `${JSON.stringify(cache, null, 2)}\n`);
@@ -309,7 +316,7 @@ export const staleSlowPartsOf = (product: ResolvedProduct) => {
     .map(([part]) => part);
 };
 
-export const slowProblemsOf: SlowProblemsOf = ({ product, part }) => {
+const freshSlowEntryOf = ({ product, part }: { product: ResolvedProduct; part: string }) => {
   const context = contextOf(product);
   const inputs =
     part === PRODUCT_PART
@@ -320,11 +327,30 @@ export const slowProblemsOf: SlowProblemsOf = ({ product, part }) => {
           return found ? partInputsOf(context, found) : undefined;
         })();
 
-  if (!inputs || inputs.rules.length === 0) return [];
+  if (!inputs || inputs.rules.length === 0) return null;
 
   const entry = readSlowCache(product)[part];
 
-  if (entry?.hash !== inputs.hash) return 'pending';
+  return entry?.hash === inputs.hash ? entry : 'pending';
+};
+
+export const slowProblemsOf: SlowProblemsOf = ({ product, part }) => {
+  const entry = freshSlowEntryOf({ product, part });
+
+  if (entry === null) return [];
+  if (entry === 'pending') return 'pending';
 
   return unbaselinedProblemsOf(product, entry.problems);
 };
+
+/** One warning line per state of `parts` whose current slow result could not judge it, naming the product, part, state and why. */
+export const unjudgedStateWarningsOf = (options: { product: ResolvedProduct; parts: string[] }) =>
+  options.parts.flatMap((part) => {
+    const entry = freshSlowEntryOf({ product: options.product, part });
+
+    return entry === null || entry === 'pending'
+      ? []
+      : (entry.unjudged ?? []).map(
+          ({ state, why }) => `WARNING ${options.product.name} ${part}: state ${state} cannot be judged - ${why}`,
+        );
+  });

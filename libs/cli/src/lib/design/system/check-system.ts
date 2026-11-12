@@ -23,7 +23,7 @@ import { BuildReadyInputs } from './part-build-ready';
 import { recordCheckedBuildReady, slowWaitingLineOf } from './check-record';
 import { partActionFailuresOf } from './actions-command';
 import { renderProblemOf, ruleBaselineLinesOf, ruleBaselineOf } from './rule-baseline';
-import { isDrawRule, isSlowRule } from './slow-checks';
+import { isDrawRule, isSlowRule, unjudgedStateWarningsOf } from './slow-checks';
 import {
   staleLineOf,
   stalePartsOf,
@@ -683,6 +683,14 @@ const printProductOpenPoints = async (
     ...(options.part ? { onNoRecord: (line: string) => console.log(line) } : {}),
     onRecordDropped: (line: string) => console.log(line),
   });
+
+  for (const [part] of recorded) {
+    const warnings = unjudgedStateWarningsOf({ product, parts: [part] });
+    const counted = warnings.length > 0 ? tallyOf(options.tally, { product: name, part }) : null;
+
+    warnings.forEach((line) => console.warn(line));
+    if (counted) counted.warnings += warnings.length;
+  }
 
   const waiting = [...recorded.values()].filter(
     (result) => !result.ready && result.blockers.some((blocker) => blocker.kind === 'pending'),

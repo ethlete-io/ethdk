@@ -8,7 +8,13 @@ import { designHashOf } from './design-hash';
 import { Problem } from './problem';
 import { partKeyOf, resolveProduct } from './resolve-product';
 import { RULE_BASELINE_FILE } from './rule-baseline';
-import { slowInputsOf, slowProblemsOf, staleSlowPartsOf, writeSlowResults } from './slow-checks';
+import {
+  slowInputsOf,
+  slowProblemsOf,
+  staleSlowPartsOf,
+  unjudgedStateWarningsOf,
+  writeSlowResults,
+} from './slow-checks';
 import { runSlowChecks } from './slow-run';
 
 const acme = () => {
@@ -205,6 +211,69 @@ describe('a design-only change in the slow set', { timeout: 30_000 }, () => {
     expect(problems[0]?.rule).toBe('COMPARE');
     expect(problems[0]?.message).toContain('direct-edit');
     expect(problems[0]?.message).toContain('apps/acme/src/chip.component.ts');
+  });
+
+  it('warns on every check of each state it could not judge, also one the design-only compare does not fail', async () => {
+    const { target, product } = acme();
+
+    implemented(join(target, DESIGN_DIR, 'acme'), 'older');
+
+    await runSlowChecks({
+      target,
+      config: readConfig(target) ?? {},
+      product: product(),
+      parts: ['components/chip'],
+      runners: runners([
+        { state: 'direct-edit', problem: 'no "Gründe" trigger', undrivable: true },
+        { state: 'open', problem: 'the app opens no overlay pane' },
+        { state: 'default', design: Buffer.from('a'), app: Buffer.from('b') },
+      ]),
+    });
+
+    const warnings = () => unjudgedStateWarningsOf({ product: product(), parts: ['components/chip'] });
+
+    expect(warnings()).toEqual([
+      'WARNING acme components/chip: state direct-edit cannot be judged - no "Gründe" trigger',
+      'WARNING acme components/chip: state open cannot be judged - the app opens no overlay pane',
+    ]);
+    expect(warnings()).toEqual(warnings());
+  });
+
+  it('warns of a state the visible-change gate cannot drive at HEAD, not of one only the base cannot', async () => {
+    const { target, product } = acme();
+
+    await runSlowChecks({
+      target,
+      config: readConfig(target) ?? {},
+      product: product(),
+      parts: ['components/chip'],
+      runners: {
+        ...runners([]),
+        visibleChange: async (options) => {
+          const asked = { target, config: options.config, product: product(), part: 'components/chip', only: null };
+
+          await options.shoot?.({ ...asked, url: 'http://base' });
+          await options
+            .start?.({ target, product: product() })
+            .then((server) =>
+              typeof server === 'string' ? undefined : options.shoot?.({ ...asked, url: server.url }),
+            );
+
+          return new Map<string, Problem[]>();
+        },
+        shoot: async ({ url }) => ({
+          states: {},
+          shots:
+            url === 'http://app'
+              ? [{ state: 'change-crop', problem: '16 elements to force hover on', undrivable: true as const }]
+              : [{ state: 'base-only', problem: 'no pane' }],
+        }),
+      },
+    });
+
+    expect(unjudgedStateWarningsOf({ product: product(), parts: ['components/chip'] })).toEqual([
+      'WARNING acme components/chip: state change-crop cannot be judged - 16 elements to force hover on',
+    ]);
   });
 
   it('passes a design-only change whose states are all drivable', async () => {

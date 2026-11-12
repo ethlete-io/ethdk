@@ -393,6 +393,11 @@ or has other inputs is pending, so it is not build-ready yet. `et design serve` 
 seconds it reruns the parts whose inputs changed and then held still, one run at a time. Set
 `ETHLETE_DESIGN_SLOW_CHECKS=off` to turn that off.
 
+A stored result also lists each state the run could not draw in the app, for example one the app cannot be driven
+into or an overlay pane it no longer opens. Every `et design check` prints one warning per such state, with the
+product, part, state and why, for example `WARNING studio pages/sketches: state change-crop cannot be judged - …`. A
+warning does not fail the check.
+
 After the checks, `et design check` lists the open points of each product: one line per part, with the total,
 for example `components/tree-row: 1 open comment (c-1); sketch ready, not merged`. A point is a
 comment the user has not resolved (an addressed one too, listed as `c-2 addressed, waits on the user`), or a sketch on the part that is not merged yet. A part outside `foundations/` without `implements` is

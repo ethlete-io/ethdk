@@ -37,6 +37,8 @@ import {
   readSlowCache,
   isSlowRule,
   slowInputsOf,
+  UnjudgedState,
+  unjudgedStateWarningsOf,
   writeSlowResults,
 } from './slow-checks';
 import { repoInvocation } from '../../invocation';
@@ -143,7 +145,24 @@ export const runSlowChecks = async (options: {
   const whole = !options.parts;
   const ruled = (rule: string) => keys.filter((part) => inputs[part]?.rules.includes(rule));
   const results = new Map<string, Problem[]>();
+  const unjudged = new Map<string, UnjudgedState[]>();
   const harness = product.config.harness;
+  let headUrl: string | null = null;
+  const shoot: ShootStates = async (asked) => {
+    const shot = await runners.shoot(asked);
+
+    if (typeof shot !== 'string' && asked.url === headUrl) {
+      const known = unjudged.get(asked.part) ?? [];
+
+      for (const state of shot.shots)
+        if ('problem' in state && !known.some((seen) => seen.state === state.state))
+          known.push({ state: state.state, why: state.problem });
+
+      if (known.length > 0) unjudged.set(asked.part, known);
+    }
+
+    return shot;
+  };
   const fileOf = (part: string) => {
     const found = product.parts.find((candidate) => partKeyOf(candidate) === part);
 
@@ -224,6 +243,8 @@ export const runSlowChecks = async (options: {
         ]),
       );
     } else {
+      headUrl = server.url;
+
       try {
         if (harness.live && (ruled(UNCOVERED_REGION_RULE).length > 0 || whole)) {
           const states = await runners.live({
@@ -252,7 +273,7 @@ export const runSlowChecks = async (options: {
             part,
             file: fileOf(part),
             url: server.url,
-            shoot: runners.shoot,
+            shoot,
             designOnly: inputs[part]?.designOnly === true,
             component: componentOf(part),
           });
@@ -270,7 +291,7 @@ export const runSlowChecks = async (options: {
               harnessMap: harness.map,
               base: options.base,
               parts: ruled(VISIBLE_CHANGE_RULE),
-              shoot: runners.shoot,
+              shoot,
               start: (asked) =>
                 asked.target === target
                   ? Promise.resolve({ url: server.url, stop: async () => undefined })
@@ -289,6 +310,7 @@ export const runSlowChecks = async (options: {
     product,
     hashes: Object.fromEntries(Object.entries(inputs).map(([part, { hash }]) => [part, hash])),
     results,
+    unjudged,
   });
 
   return results;
@@ -324,6 +346,9 @@ export const checkSlow = async (options: {
     });
 
     baselined.lines.forEach((line) => console.log(line));
+    unjudgedStateWarningsOf({ product, parts: options.parts ?? product.parts.map((part) => partKeyOf(part)) }).forEach(
+      (line) => console.warn(line),
+    );
 
     for (const problem of baselined.problems) {
       const part = found.find((hit) => hit.problem === problem)?.part ?? partOfFile(product, problem.file);
