@@ -3843,7 +3843,8 @@ no SDK fix. The generator warning of 933 (onColor.disabled vs color.disabled bel
 930 update (Linux, withdrawn): the 930 Cause was wrong. Measured (Playwright on the app harness and the design
 `frame.html`): one source holds already (`.ethlete/design/studio/styles.css` imports `apps/ethlete-studio/src/styles.css`,
 which imports `sdk-token-map.css`; kbd line-height 14 px on both sides). The scrollbar Suspect is ruled out too. 930 has
-no tool fix; the 903 DIFF Cause is below.
+no tool fix; the 903 DIFF Cause is below. Lesson (doc agent): it wrote "Cause" for its own inference from a bisect; an
+inference stays "Suspect" until a measurement names the mechanism.
 
 903 update 5 / 924 update 2 (Linux): Cause (measured): a font-load race in the pages/sketches matrix fit. The fit measures
 the state-label gutter (font-code labels). The design `mountFit` (`pages/sketches/shared/sketch-rows.ts`) fits once while
