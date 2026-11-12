@@ -4124,3 +4124,20 @@ heavy lock, so the rule "no build or test in a slice during a push:suite e2e" st
 the Nx daemon a hook does not see `ETHLETE_HEAVY_RUN_HELD` (safe today only because push:suite sets NX_DAEMON=false).
 Tool fix (builder default, tool backlog): probe the daemon env first, then a local Nx plugin whose preTasksExecution calls
 `waitForNoHeavyRun`, registered in nx.json, with a biting spec. `yarn design` reads stay out on purpose.
+
+927 built (Linux, e59dea1b4): `design compare` calls missingDistOf after its argument checks, prints one "<dir> is missing -
+run <build>" line per missing lib build folder, exits 1 and runs no part. Spec bites; live in a scratch copy without dist.
+
+928 built (Linux, 43f0ba62c): `design compare --base <rev>` (every mode but `--live`) builds the harness of <rev> from the
+base clone of `check --visible-change` and prints "vs <sha9>: n new failure(s), m fixed" plus NEW/FIXED lines; the exit
+code is HEAD's. Cause (first live run): the resident harness start served its HEAD watch build for the base clone too, so
+base always equalled HEAD; fixed in `resident/resident-process.ts`, spec bites. Live: `--base HEAD~3` 0/0,
+`--base c538efb84~1` 33 fixed. Not verified live: `--base` with `--url`, a single-part compare with `--base`.
+
+974\. Linux builder (2026-11-12 night, 927): with `dist/libs/components/design` missing, the design-mocks guard says the
+folder "differs from" the source and lists 55 files; the build command it names is right. Cause (seen live). Tool fix
+(builder default, tool backlog): a missing folder gives one line that names it missing, with a biting spec.
+
+975\. Linux builder (2026-11-12 night, 928): `compare --base` over a wide range prints one line per changed state (33).
+Suspect: a long list hides the new failures. Tool fix (builder default, tool backlog): NEW lines first, the list capped at
+about 10 with "+k more", with a spec.
