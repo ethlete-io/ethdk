@@ -15,6 +15,7 @@ import {
   ET_DUMMY_DATA_DOUBLE_SYNC,
   ET_DUMMY_DATA_SINGLE,
   ET_DUMMY_DATA_SWISS,
+  withThirdPlaceMatch,
 } from './dummy-data';
 import { FIFA_DUMMY_DATA_DOUBLE, GgData } from './dummy-data/FIFA_DUMMY_DATA_DOUBLE';
 import { FIFA_DUMMY_DATA_SINGLE } from './dummy-data/FIFA_DUMMY_DATA_SINGLE';
@@ -139,6 +140,11 @@ export default {
         type: 'number',
       },
     },
+    thirdPlaceTopOffset: {
+      control: {
+        type: 'number',
+      },
+    },
   },
   args: {
     columnGap: 60,
@@ -163,6 +169,7 @@ export default {
     continueColumnWidth: 250,
     continueElementHeight: 75,
     continueLineDashArray: 6,
+    thirdPlaceTopOffset: null,
   },
 } as Meta<StorybookBracketNewComponent>;
 
@@ -254,5 +261,35 @@ export const SingleWithContinue = {
   args: {
     source: generateBracketDataForEthlete(ET_DUMMY_DATA_SINGLE as unknown as RoundStageStructureWithMatchesView[]),
     showContinueElement: true,
+  },
+};
+
+const SINGLE_WITH_THIRD_PLACE = withThirdPlaceMatch(
+  generateBracketDataForEthlete(ET_DUMMY_DATA_SINGLE as unknown as RoundStageStructureWithMatchesView[]),
+);
+
+/** Without `thirdPlaceTopOffset`, the third place match gets a column of its own after the final. */
+export const SingleWithThirdPlace = {
+  render: Template,
+  args: {
+    source: SINGLE_WITH_THIRD_PLACE,
+  },
+};
+
+/** With `thirdPlaceTopOffset`, the third place match sits in the final's column, below the final. */
+export const SingleWithThirdPlaceFolded = {
+  render: Template,
+  args: {
+    source: SINGLE_WITH_THIRD_PLACE,
+    thirdPlaceTopOffset: 300,
+  },
+};
+
+/** A mirrored layout always folds the third place match below the final. */
+export const SingleWithThirdPlaceMirrored = {
+  render: Template,
+  args: {
+    source: SINGLE_WITH_THIRD_PLACE,
+    layout: BRACKET_DATA_LAYOUT.MIRRORED,
   },
 };

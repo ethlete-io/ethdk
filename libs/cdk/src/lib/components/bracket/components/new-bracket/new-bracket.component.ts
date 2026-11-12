@@ -62,6 +62,16 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   columnGap = input(this.config.columnGap ?? 60, { transform: numberAttribute });
   rowGap = input(this.config.rowGap ?? 30, { transform: numberAttribute });
   rowRoundGap = input(this.config.rowRoundGap ?? 20, { transform: numberAttribute });
+
+  /**
+   * Single elimination only. How far below the top of the final's card the third place match sits, in px.
+   * The third place then shares the final's column. `null` gives it a column of its own, except in a
+   * mirrored layout, which always folds it one `rowGap` below the final's card.
+   */
+  thirdPlaceTopOffset = input<number | null, number | string | null | undefined>(
+    this.config.thirdPlaceTopOffset ?? null,
+    { transform: (value) => (value === null || value === undefined || value === '' ? null : numberAttribute(value)) },
+  );
   lineStartingCurveAmount = input(this.config.lineStartingCurveAmount ?? 10, { transform: numberAttribute });
   lineEndingCurveAmount = input(this.config.lineEndingCurveAmount ?? 0, { transform: numberAttribute });
   lineWidth = input(this.config.lineWidth ?? 2, { transform: numberAttribute });
@@ -103,6 +113,7 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
       layout: this.layout(),
       finalMatchHeight: this.finalMatchHeight(),
       finalColumnWidth: this.finalColumnWidth(),
+      thirdPlaceTopOffset: this.thirdPlaceTopOffset(),
       roundHeaderGap: this.hideRoundHeaders() ? 0 : this.roundHeaderGap(),
       swissGroupPadding: this.swissGroupPadding(),
       swissGroupBorderWidth: this.lineWidth(),

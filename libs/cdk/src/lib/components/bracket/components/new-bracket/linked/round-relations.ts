@@ -355,7 +355,8 @@ export const generateRoundRelationsNew = <TRoundData, TMatchData>(
 ): BracketRoundRelation<TRoundData, TMatchData>[] => {
   const relations: BracketRoundRelation<TRoundData, TMatchData>[] = [];
 
-  const allRounds = [...bracketData.rounds.values()];
+  // A third place match is fed by losers, so it is no step in the chain that ends in the final.
+  const allRounds = [...bracketData.rounds.values()].filter((r) => r.type !== COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE);
   const upperRounds = allRounds.filter((r) => r.type !== DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET);
   const lowerRounds = allRounds.filter((r) => r.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET);
 

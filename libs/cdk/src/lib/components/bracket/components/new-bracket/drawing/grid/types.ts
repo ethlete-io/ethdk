@@ -18,6 +18,13 @@ export type CreateBracketGridConfig = {
   rowGap: number;
   finalMatchHeight: number;
   finalColumnWidth: number;
+
+  /**
+   * How far below the top of the final's card a third place match sits, in px, when the two share a
+   * column. Unset (or `null`) gives the third place a column of its own, except in a mirrored layout,
+   * which folds it one `rowGap` below the final's card. Only used by single elimination.
+   */
+  thirdPlaceTopOffset?: number | null;
   swissGroupPadding: number;
   swissGroupBorderWidth: number;
   layout: BracketDataLayout;
