@@ -3896,3 +3896,12 @@ left `rule-baseline.json`. Verified: the spec fails without the change and passe
 and dimming as drawn, the rest is the fold of the `fit-*` states that `narrow-part` (84885 px) has too. `design check`
 for pages/sketches lists 4 DROPPED-PROP findings (points, screen) that HEAD has too; pages/flows has 0. Not verified:
 a live shot of the Studio app with a real withdrawn variant, and no spec covers the `sketch-view` mapping.
+
+921 in progress: sketch `pages/sketches@all-states` (`.ethlete/design/studio/sketches/pages-sketches.all-states`) is
+ready and waits for the human's pick; nothing is merged and the app is unchanged. Variant a drops the `fold` count and
+folds the states no variant row changes, from `unchangedStates(part)` in the sketch's `shared/sketch-rows.ts` (none when
+every state is unchanged; then the same-row fold applies), in every state of the part except while comparing, as the
+app already folds (the `fit-*` DIFF of `narrow-part` and `withdrawn-*` in 922). For the narrow sample that is `STEADY`
+(fit-hover, fit-active, fit-focus-visible). Variant b, a `foldSame` switch for the `folded` state only, drew the same
+pixels as Aktuell in every state (the last three states are exactly `STEADY`), so it is withdrawn: a code-only change
+is no pick. The screen mode keeps `UNCHANGED_COUNT`: the page's own state list is not reachable from `shared/`.
