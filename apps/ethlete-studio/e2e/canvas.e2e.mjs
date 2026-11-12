@@ -22,6 +22,7 @@ import { listingHold } from '../../../tools/scripts/studio-e2e-listing-hold.mjs'
 import { ensureCli, withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 import { CANVAS, listingWait, sketchCells } from './probe-helpers.mjs';
 import { noMatchLineOf } from './case-filter.mjs';
+import { shardShareOf } from './shard-share.mjs';
 import { residentSurvivors, survivorLinesOf } from './resident-survivors.mjs';
 import { goalLineOf, isNoisy, loadArgOf, runLoadLineOf, startRunLoad, topProcesses } from './run-load.mjs';
 
@@ -897,6 +898,7 @@ const CASES = [
   {
     name: 'picking old of an edit sketch restores the design, picking new records the edit as merged',
     listingMayPend: 'waits for the listing itself (listingAnswered) before each pick',
+    ownShard: true,
     pages: ['System'],
     run: (page, _state, _target, { designPort }) =>
       withEditSketch(page, designPort, async ({ edit, pick, file, studio, git, base }) => {
@@ -4025,7 +4027,15 @@ const lead = async () => {
       (!only || only.split('|').some((part) => testCase.name.includes(part))) &&
       (!view || VIEWS[view].includes(target.name)) &&
       (!pageGroups || pageGroups.includes(target.label ?? target.name))
-        ? [{ target: targetIndex, case: caseIndex, page: target.label ?? target.name, name: testCase.name }]
+        ? [
+            {
+              target: targetIndex,
+              case: caseIndex,
+              page: target.label ?? target.name,
+              name: testCase.name,
+              ownShard: !!testCase.ownShard,
+            },
+          ]
         : [],
     ),
   );
@@ -4045,20 +4055,7 @@ const lead = async () => {
   }
   const skippedPerf = perfOnly ? 0 : CASES.filter((testCase) => testCase.perf).length;
 
-  if (shard) {
-    const slot = Object.fromEntries(
-      Object.values(Object.groupBy(queue, (job) => job.page)).flatMap((jobs) =>
-        jobs.map((job, at) => [keyOf(job), at]),
-      ),
-    );
-    const share = queue
-      .toSorted((a, b) => slot[keyOf(a)] - slot[keyOf(b)])
-      .filter(
-        (_, at) => Math.min(at % (2 * shard.count), 2 * shard.count - 1 - (at % (2 * shard.count))) === shard.index - 1,
-      );
-
-    queue.splice(0, queue.length, ...share);
-  }
+  if (shard) queue.splice(0, queue.length, ...shardShareOf(queue, shard, keyOf));
   const quiet = (job) => !!job && !!CASES[job.case].quiet;
 
   queue.sort((a, b) => quiet(a) - quiet(b) || (known[keyOf(b)] ?? Infinity) - (known[keyOf(a)] ?? Infinity));
