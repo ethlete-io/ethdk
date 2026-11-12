@@ -20,7 +20,7 @@ export const pinnedCommand = (command, args, { cores = CI_LIKE.cores, taskset = 
     ? { command: 'taskset', args: ['--cpu-list', cores, command, ...args], note: `pinned to cores ${cores}` }
     : { command, args, note: 'ran unpinned: no taskset on this machine' };
 
-const BUSY = 'const parent=process.ppid;while(process.ppid===parent);';
+const BUSY = 'const parent=Number(process.argv[1]);while(process.ppid===parent);';
 
 /**
  * Takes the heavy run lock, then starts `count` busy loops on the same cores as the pinned command. Resolves to
@@ -30,7 +30,7 @@ const BUSY = 'const parent=process.ppid;while(process.ppid===parent);';
 export const startBusyLoops = async (count = CI_LIKE.busyLoops, { lock = {}, ...options } = {}) => {
   const held = await takeHeavyLock('ci-like-load', lock);
   if (!held.ok) return held;
-  const { command, args } = pinnedCommand(process.execPath, ['-e', BUSY], options);
+  const { command, args } = pinnedCommand(process.execPath, ['-e', BUSY, String(process.pid)], options);
   const loops = Array.from({ length: count }, () => spawn(command, args, { stdio: 'ignore' }));
   return {
     ok: true,
