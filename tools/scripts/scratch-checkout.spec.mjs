@@ -71,6 +71,15 @@ test('scratchCheckout copies uncommitted edits, links dependencies and leaves no
   rmSync(join(dir, '..'), { recursive: true, force: true });
 });
 
+test('scratchCheckout turns the Nx daemon off in the copy, so no nx@latest install is left in /tmp', () => {
+  const repo = makeRepo();
+  const dir = join(mkdtempSync(join(tmpdir(), 'scratch-out-')), 'copy');
+  scratchCheckout(repo, dir);
+  assert.equal(readFileSync(join(dir, '.local.env'), 'utf8'), 'NX_DAEMON=false\n');
+  rmSync(repo, { recursive: true, force: true });
+  rmSync(join(dir, '..'), { recursive: true, force: true });
+});
+
 test('scratchCheckout gives the scratch its own shot store, never a link into the source', () => {
   const repo = makeRepo();
   writeFileSync(join(repo, '.gitignore'), 'node_modules\n');

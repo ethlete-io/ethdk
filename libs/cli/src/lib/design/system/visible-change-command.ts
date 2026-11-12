@@ -1,9 +1,8 @@
-import { mkdtempSync, writeFileSync } from 'fs';
-import { tmpdir } from 'os';
+import { writeFileSync } from 'fs';
 import { join, relative } from 'path';
 import { DesignConfig, readConfig } from '../design-config';
 import { shootStates, ShootStates, StateShot } from './compare-command';
-import { baseCheckoutOf, baseCommitOf, git, gitOrNull } from './base-checkout';
+import { baseCheckoutOf, baseCommitOf, git, gitOrNull, picturesDirOf } from './base-checkout';
 import { harnessEntriesOf, harnessOf, harnessStaleOf } from './harness-map';
 import { HarnessServer, startHarnessServer, StartHarnessServer } from './harness-server';
 import { resolveProduct, ResolvedProduct } from './resolve-product';
@@ -242,7 +241,7 @@ export const checkVisibleChange = async (options: {
           if (verdict.why !== 'invisible' || state.kind === 'undrivable') console.log(`  ${stateLineOf(state)}`);
           if (state.kind !== 'differs') continue;
 
-          pictures ??= mkdtempSync(join(tmpdir(), 'et-design-visible-change-'));
+          pictures ??= picturesDirOf({ root, product: fileNameOf(name) });
           writeFileSync(join(pictures, `${fileNameOf(part)}.${fileNameOf(state.state)}.diff.png`), state.diff);
         }
 

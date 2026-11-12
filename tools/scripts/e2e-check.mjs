@@ -209,7 +209,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         execFileSync('npx', ['nx', 'build', 'cli', '--skip-nx-cache'], {
           cwd: repo,
           stdio: 'ignore',
-          env: { ...process.env, NX_NO_CLOUD: 'true' },
+          env: { ...process.env, NX_NO_CLOUD: 'true', NX_DAEMON: 'false' },
         });
         const problem = cliBuildProblem(repo);
 
@@ -219,7 +219,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         execFileSync(
           'npx',
           ['nx', 'build', 'ethlete-studio', `--outputPath=${scratch}`, '--excludeTaskDependencies', '--skip-nx-cache'],
-          { cwd: repo, stdio: 'ignore', env: { ...process.env, NX_NO_CLOUD: 'true' } },
+          { cwd: repo, stdio: 'ignore', env: { ...process.env, NX_NO_CLOUD: 'true', NX_DAEMON: 'false' } },
         );
         stamp('studio build done');
         for (const suite of suites) {

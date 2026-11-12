@@ -7,6 +7,8 @@ import { pathToFileURL } from 'node:url';
 import { linkInstalledDependencies } from './commit-export.mjs';
 
 const MARKER = '.scratch-checkout';
+// An Nx daemon installs nx@latest into /tmp/tmp-<pid>-* and leaves it there when the copy goes away under it.
+export const NX_LOCAL_ENV = 'NX_DAEMON=false\n';
 const USAGE = 'usage: yarn scratch:checkout [<dir>] | --remove <dir>';
 
 export const NO_GIT_NOTE =
@@ -74,6 +76,7 @@ export const scratchCheckout = (repo, dir) => {
   );
   if (copy.status !== 0) return { error: copy.stderr.trim() || `copy exited ${copy.status}` };
   linkInstalledDependencies(repo, dir);
+  writeFileSync(join(dir, '.local.env'), NX_LOCAL_ENV);
   mkdirSync(join(dir, 'node_modules/.design-explore'), { recursive: true });
   const escape = storeEscapes(repo, dir);
   if (escape) return { error: escape };

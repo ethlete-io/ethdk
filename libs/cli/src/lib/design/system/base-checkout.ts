@@ -92,17 +92,25 @@ const alive = (pid: number) => {
   }
 };
 
+const checkoutKeyOf = (root: string) => createHash('sha256').update(root).digest('hex').slice(0, 16);
+
+/** The diff picture folder of one product in this checkout: the same path on every run, emptied when it is taken. */
+export const picturesDirOf = (options: { root: string; product: string }) => {
+  const dir = join(tmpdir(), 'et-design-visible-change', `${checkoutKeyOf(options.root)}.${options.product}.pictures`);
+
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+
+  return dir;
+};
+
 /**
  * A shared clone of the checkout at `commit`, with the checkout's node_modules linked in. It reuses one folder per
  * checkout so the harness build cache, keyed by that path, survives runs; a second run at once gets a fresh folder. A
  * reused clone that cannot check out `commit` is cloned again in the same folder.
  */
 export const baseCheckoutOf = (options: { root: string; commit: string }) => {
-  const stable = join(
-    tmpdir(),
-    'et-design-visible-change',
-    createHash('sha256').update(options.root).digest('hex').slice(0, 16),
-  );
+  const stable = join(tmpdir(), 'et-design-visible-change', checkoutKeyOf(options.root));
   const lock = `${stable}.lock`;
 
   mkdirSync(join(stable, '..'), { recursive: true });
