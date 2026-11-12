@@ -3,7 +3,8 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { sketchedPartsOf } from './visible-change';
-import { baseCheckoutOf, baseCommitOf, mergedInRangeOf, sketchEvidenceOf } from './visible-change-command';
+import { baseCheckoutOf, baseCommitOf } from './base-checkout';
+import { mergedInRangeOf, sketchEvidenceOf } from './visible-change-command';
 import { gitExec } from '../../git-test-env.fixtures';
 
 const repoOf = () => {

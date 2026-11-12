@@ -76,7 +76,9 @@ export const createWarmRuns = (options: { target: string }) => {
     takeDeniedIds: () => listening?.takeDeniedIds() ?? [],
   };
 
-  const start: StartHarnessServer = async ({ product }) => {
+  const start: StartHarnessServer = async ({ target: asked, product }) => {
+    if (asked !== target) return startHarnessServer({ target: asked, product });
+
     const served = await unlessAborted(runSignal(), harness.current(product));
 
     if (served === null) return startHarnessServer({ target, product });

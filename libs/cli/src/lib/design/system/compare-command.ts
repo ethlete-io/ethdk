@@ -3,9 +3,9 @@ import { noVerdictLineOf } from './no-verdict';
 import { mkdtempSync, writeFileSync } from 'fs';
 import { AddressInfo } from 'net';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { join, relative } from 'path';
 import { chromiumOf } from '../browser';
-import { DesignConfig } from '../design-config';
+import { DesignConfig, readConfig } from '../design-config';
 import { viteCacheOf } from '../vite-cache';
 import { createDesignServer } from '../serve';
 import { timedPhase } from '../phase-timing';
@@ -27,7 +27,8 @@ import {
 import { harnessStaleOf } from './harness-map';
 import { productSampledPropsOf } from './harness-samples';
 import { shootLiveStates } from './live-compare';
-import { StartHarnessServer, withHarnessUrl } from './harness-server';
+import { HarnessServer, startHarnessServer, StartHarnessServer, withHarnessUrl } from './harness-server';
+import { baseCheckoutOf, baseCommitOf, gitOrNull } from './base-checkout';
 import {
   compareFrameOf,
   DroppedPropsError,
@@ -61,7 +62,7 @@ import {
 } from './part-task';
 import { appFilesOf } from './app-files';
 import { repoRootOf } from './reachable-files';
-import { partKeyOf, ResolvedProduct } from './resolve-product';
+import { partKeyOf, resolveProduct, ResolvedProduct } from './resolve-product';
 import { inOrderAtOnce } from './in-order-at-once';
 import { frozenAnimationsOf } from './frozen-animations';
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
@@ -73,7 +74,7 @@ import { createSystemModules, productModuleIdOf } from './system-modules';
 import { drawnStateNamesOf, skippedStatesLineOf } from './unchanged-rows';
 
 export const COMPARE_USAGE =
-  'compare <layer>/<name> | --all --product <name> | --affected --product <name> [--url <app dev server url>] [--state <name>] [--preset <name>] [--live [--sketch <variant>]]';
+  'compare <layer>/<name> | --all --product <name> | --affected --product <name> [--url <app dev server url>] [--state <name>] [--preset <name>] [--live [--sketch <variant>]] [--base <rev>]';
 
 /** A state compare could not draw; `undrivable` when the app has no element to force the design's interaction on. */
 export type StateShot =
@@ -439,16 +440,19 @@ export const shootStates: ShootStates = shootStatesWith();
 const fileNameOf = (state: string) => state.replace(/[^\w.-]/g, '-');
 
 /** Compares the design and app pictures of each state at 0 px, prints a line per state, and keeps the pictures of each failing one in a temp folder. */
-export const comparePart: ComparePart = async (options) => {
+export const comparePart = async (
+  options: Parameters<ComparePart>[0] & { quiet?: boolean },
+): Promise<{ green: boolean; states: Record<string, unknown>; failing: string[] } | string> => {
   const shot = await timedPhase('compare-states', () => (options.shoot ?? shootStates)(options));
 
   if (typeof shot === 'string') return shot;
   if (shot.shots.length === 0) return `${options.part} has no states to compare`;
 
   const { states, shots } = shot;
+  const log = options.quiet ? () => undefined : (line: string) => console.log(line);
   const skippedLine = skippedStatesLineOf(shot.skipped ?? []);
 
-  if (skippedLine !== null) console.log(skippedLine);
+  if (skippedLine !== null) log(skippedLine);
 
   const sketches =
     options.sketches ??
@@ -460,14 +464,14 @@ export const comparePart: ComparePart = async (options) => {
     let dir: string | null = null;
     const cache = { dir: viteCacheOf(options.target, COMPARE_PIXELS), salt: pixelCompareCodeOf() };
 
-    let failed = false;
+    const failing: string[] = [];
 
     for (const stateShot of shots) {
       const { state } = stateShot;
 
       if ('problem' in stateShot) {
-        console.log(`${state} FAILED ${stateShot.problem}`);
-        failed = true;
+        log(`${state} FAILED ${stateShot.problem}`);
+        failing.push(state);
         continue;
       }
 
@@ -486,18 +490,21 @@ export const comparePart: ComparePart = async (options) => {
       const line = compareLineOf(state, result);
 
       if (result.kind === 'ok') {
-        console.log(line);
+        log(line);
         continue;
       }
 
       const covering = coveringSketchOf({ sketches, part: options.part, state, result });
 
       if (covering !== null) {
-        console.log(coveredLineOf(line, covering));
+        log(coveredLineOf(line, covering));
         continue;
       }
 
-      console.log(line);
+      log(line);
+      failing.push(state);
+
+      if (options.quiet) continue;
 
       dir ??= mkdtempSync(join(tmpdir(), 'et-design-compare-'));
       writeFileSync(join(dir, `${fileNameOf(state)}.design.png`), design);
@@ -505,9 +512,9 @@ export const comparePart: ComparePart = async (options) => {
       writeFileSync(join(dir, `${fileNameOf(state)}.diff.png`), result.diff);
     }
 
-    if (dir !== null) console.log(`pictures: ${dir}`);
+    if (dir !== null) log(`pictures: ${dir}`);
 
-    return { green: dir === null && !failed, states };
+    return { green: failing.length === 0, states, failing };
   });
 };
 
@@ -566,12 +573,77 @@ const recordAffected = async (options: {
 };
 
 /** The summary line of a compare whose action check could not run: a skipped check never passes. */
+const baseOf = (options: { target: string; rev: string }) => {
+  const root = gitOrNull(options.target, ['rev-parse', '--show-toplevel'])?.trim();
+
+  if (!root) return `${options.target} is not a git checkout - --base needs one`;
+
+  const commit = baseCommitOf({ root, base: options.rev });
+
+  return /^[0-9a-f]{40}$/.test(commit) ? { root, commit } : commit;
+};
+
+type BaseHarness = { short: string; server: HarnessServer | null; stop: () => Promise<void> };
+
+const startBaseHarness = async (options: {
+  target: string;
+  product: ResolvedProduct;
+  root: string;
+  commit: string;
+  start: StartHarnessServer;
+}): Promise<BaseHarness> => {
+  const short = options.commit.slice(0, 9);
+  const checkout = baseCheckoutOf({ root: options.root, commit: options.commit });
+  const target = join(checkout.dir, relative(options.root, options.target));
+  const entry = readConfig(target)?.products?.[options.product.name];
+
+  process.env['NX_DAEMON'] ??= 'false';
+
+  const server = entry
+    ? await timedPhase('harness-start', () =>
+        options.start({ target, product: resolveProduct({ target, name: options.product.name, config: entry }) }),
+      )
+    : `no product "${options.product.name}"`;
+
+  if (typeof server === 'string') console.log(`base ${short}: ${server} - every failure counts as new`);
+  else console.log(`started the base harness app (${short}) on ${server.url}`);
+
+  return {
+    short,
+    server: typeof server === 'string' ? null : server,
+    stop: async () => {
+      if (typeof server !== 'string') await server.stop();
+
+      checkout.release();
+    },
+  };
+};
+
+/** One line with the counts of failing states new at HEAD and fixed since the base, then one line per such state. */
+export const baseChangeLinesOf = (options: {
+  short: string;
+  head: Map<string, string[]>;
+  base: Map<string, string[]>;
+}) => {
+  const parts = [...options.head];
+  const fresh = parts.flatMap(([part, failing]) =>
+    failing.filter((state) => !options.base.get(part)?.includes(state)).map((state) => `NEW ${part} ${state}`),
+  );
+  const fixed = parts.flatMap(([part, failing]) =>
+    (options.base.get(part) ?? []).filter((state) => !failing.includes(state)).map((state) => `FIXED ${part} ${state}`),
+  );
+
+  return [`vs ${options.short}: ${fresh.length} new failure(s), ${fixed.length} fixed`, ...fresh, ...fixed];
+};
+
 export const ACTIONS_NOT_CHECKED = 'FAILED actions: not checked, so no action counts as working';
 
 /**
  * `et design compare --all` compares every done part and fails on any deviation or part it cannot compare; a foundation has nothing to compare.
  * `et design compare --affected` compares, on one harness, every implemented part whose app files changed since its
  * record, runs its action check and records each part that passes both.
+ * `--base <rev>` also compares each part with the harness app built at `rev`, against HEAD's design, and lists the
+ * failing states new at HEAD and those fixed since `rev`; the exit code stays HEAD's.
  * `et design compare <layer>/<name> …` compares each state of a part with the app's harness page of its component;
  * with `--live` each live state of a page with the app's real page on the fixed sample of `harness.live`.
  */
@@ -585,7 +657,7 @@ export const designCompare = async (options: {
 }) => {
   const { target, invocation } = options;
   const args = argsOf(options.argv, {
-    values: ['--product', '--url', '--state', '--preset', '--sketch'],
+    values: ['--product', '--url', '--state', '--preset', '--sketch', '--base'],
     switches: ['--all', '--affected', '--live'],
   });
   const many = typeof args !== 'string' && (args.flags.has('--all') || args.flags.has('--affected'));
@@ -625,6 +697,12 @@ export const designCompare = async (options: {
     return 2;
   }
 
+  if (args.values['--base'] !== undefined && live) {
+    console.error('--base compares harness states only: pass no --live');
+
+    return 2;
+  }
+
   if (all && affected) {
     console.error('pass --all or --affected, not both');
 
@@ -643,6 +721,14 @@ export const designCompare = async (options: {
 
   if (missing.length > 0) {
     missing.forEach((line) => console.error(line));
+
+    return 1;
+  }
+
+  const base = args.values['--base'] === undefined ? null : baseOf({ target, rev: args.values['--base'] });
+
+  if (typeof base === 'string') {
+    console.error(base);
 
     return 1;
   }
@@ -698,6 +784,12 @@ export const designCompare = async (options: {
 
   if (pending.length === 0) return 1;
 
+  const baseHarness =
+    base === null
+      ? null
+      : await startBaseHarness({ target, product, ...base, start: options.start ?? startHarnessServer });
+  const headFailing = new Map<string, string[]>();
+  const baseFailing = new Map<string, string[]>();
   const compared = await withHarnessUrl({
     target,
     product,
@@ -746,6 +838,24 @@ export const designCompare = async (options: {
         });
 
         designsShot();
+        headFailing.set(task.part, typeof result === 'string' ? ['*'] : result.failing);
+
+        if (baseHarness?.server) {
+          const was = await comparePart({
+            target,
+            config,
+            product,
+            part: task.part,
+            url: baseHarness.server.url,
+            only: args.values['--state'] ?? null,
+            preset: args.values['--preset'] ?? null,
+            appRoot: baseHarness.server.root ?? null,
+            shoot: options.shoot,
+            quiet: true,
+          });
+
+          baseFailing.set(task.part, typeof was === 'string' ? ['*'] : was.failing);
+        }
 
         if (typeof result === 'string') {
           console.error(result);
@@ -770,6 +880,11 @@ export const designCompare = async (options: {
         }
       }
 
+      if (baseHarness)
+        baseChangeLinesOf({ short: baseHarness.short, head: headFailing, base: baseFailing }).forEach((line) =>
+          console.log(line),
+        );
+
       if (actions === null) return { failed, missed: null };
 
       const settled = await actions;
@@ -780,7 +895,7 @@ export const designCompare = async (options: {
 
       return { failed, missed: settled.missed };
     },
-  });
+  }).finally(() => baseHarness?.stop());
 
   if (typeof compared === 'string') {
     console.error(compared);

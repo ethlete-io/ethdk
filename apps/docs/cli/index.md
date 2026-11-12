@@ -553,6 +553,12 @@ is not recorded: that needs `task --verify`. It exits 1 unless every affected pa
 it shows in the app and `compare --affected` is green (ADR 0203); `check --rules --base` and the design rules gate
 refuse a change that leaves an implemented part uncompared and name the parts.
 
+`--base <rev>` adds a baseline to any compare but `--live`: it builds the harness app of `<rev>` from a clone, as the
+visible-change gate does, and compares each part there too, against HEAD's design. After the parts it prints
+`vs <sha>: <n> new failure(s), <m> fixed`, then a `NEW <part> <state>` line per state that fails at HEAD only and a
+`FIXED <part> <state>` line per state that failed at `<rev>` only. The exit code stays that of HEAD. A checkout with a
+missing lib build folder (`dist/libs/<name>`) refuses every compare with one line naming the build command.
+
 Compare runs in a resident design process of the checkout. The first compare starts it detached and prints
 `starting the resident design process (cold start, ~N s)`; later ones send it their request, get its output and exit
 code back, and reuse its design server, Chromium and harness app, which it rebuilds only when an input of the build

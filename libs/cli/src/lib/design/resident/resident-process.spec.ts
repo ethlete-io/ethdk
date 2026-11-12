@@ -10,11 +10,14 @@ const designCompare = vi.hoisted(() => vi.fn());
 const forgetDrawn = vi.hoisted(() => vi.fn());
 const checkDesign = vi.hoisted(() => vi.fn());
 const readFreshDist = vi.hoisted(() => vi.fn());
+const current = vi.hoisted(() => vi.fn());
+const startHarnessServer = vi.hoisted(() => vi.fn());
 
 vi.mock('../sketch-command', () => ({ designSketch }));
 vi.mock('../check', () => ({ checkDesign }));
 vi.mock('../system/compare-command', () => ({ designCompare, shootStatesWith: () => vi.fn() }));
-vi.mock('../system/harness-watch', () => ({ createHarnessWatch: () => ({ current: vi.fn(), stop: vi.fn() }) }));
+vi.mock('../system/harness-watch', () => ({ createHarnessWatch: () => ({ current, stop: vi.fn() }) }));
+vi.mock('../system/harness-server', () => ({ startHarnessServer }));
 vi.mock('../system/stale-design-mocks', () => ({ guardsDesignMocks: () => false, designMocksFresh: () => true }));
 vi.mock('../system/stale-dist', () => ({
   libBuildStampOf: () => 'stamp',
@@ -112,5 +115,19 @@ describe('the resident design process', () => {
     expect(await runs.run({ argv: ['check', '--product', 'studio'], invocation: 'et design', env: {} })).toBe(0);
     expect(designCompare).toHaveBeenCalledTimes(1);
     expect(readFreshDist).toHaveBeenCalledTimes(1);
+  });
+
+  it('builds the harness app of another checkout, such as a compare base, instead of serving its own watch build', async () => {
+    const runs = runsIn();
+    const product = { name: 'app-a' };
+
+    startHarnessServer.mockResolvedValue({ url: 'http://base', stop: async () => undefined });
+    await runs.run({ argv: ['compare', 'pages/start', '--base', 'HEAD~1'], invocation: 'et design', env: {} });
+
+    const { start } = designCompare.mock.calls[0]?.[0] as { start: (options: unknown) => Promise<unknown> };
+
+    expect(await start({ target: '/elsewhere', product })).toEqual({ url: 'http://base', stop: expect.any(Function) });
+    expect(startHarnessServer).toHaveBeenCalledWith({ target: '/elsewhere', product });
+    expect(current).not.toHaveBeenCalled();
   });
 });

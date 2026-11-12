@@ -8,6 +8,7 @@ import { appFilesOf } from './app-files';
 import { designCompare, ShootStates } from './compare-command';
 import { StartHarnessServer } from './harness-server';
 import { encodePng } from './part-compare';
+import { gitExec } from '../../git-test-env.fixtures';
 import { affectedPartsOf, markImplemented } from './part-task';
 import { resolveProduct } from './resolve-product';
 
@@ -226,5 +227,56 @@ describe('compare --affected', () => {
     ]);
     expect(start).not.toHaveBeenCalled();
     expect(shoot).not.toHaveBeenCalled();
+  }, 30_000);
+
+  it('with --base lists the failing states new at HEAD and those fixed since the base harness app', async () => {
+    const { target } = checkout();
+    const git = (...args: string[]) =>
+      gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', ...args], {
+        cwd: target,
+        encoding: 'utf8',
+      }).trim();
+
+    git('init', '--quiet');
+    git('add', '.');
+    git('commit', '--quiet', '-m', 'base');
+    appendFileSync(join(target, 'apps/a/shared/bar.ts'), '// moved\n');
+
+    const lines = output();
+    const stop = vi.fn(async () => undefined);
+    const start = vi.fn<StartHarnessServer>(async (options) => ({
+      url: options.target === target ? 'http://head' : 'http://base',
+      stop,
+    }));
+    const shoot = vi.fn<ShootStates>(async (options) => ({
+      states: { default: {} },
+      shots: [
+        {
+          state: 'default',
+          design: pngOf(RED),
+          app: pngOf(
+            (options.url === 'http://head' ? 'components/tag' : 'components/chip') === options.part ? BLUE : RED,
+          ),
+        },
+      ],
+    }));
+
+    expect(
+      await designCompare({
+        target,
+        argv: ['--affected', '--product', 'app-a', '--base', 'HEAD'],
+        invocation: 'et design',
+        shoot,
+        start,
+        actions: async () => [],
+      }),
+    ).toBe(1);
+    expect(start).toHaveBeenCalledTimes(2);
+    expect(stop).toHaveBeenCalledTimes(2);
+    expect(lines.slice(-3)).toEqual([
+      `vs ${git('rev-parse', '--short=9', 'HEAD')}: 1 new failure(s), 1 fixed`,
+      'NEW components/tag default',
+      'FIXED components/chip default',
+    ]);
   }, 30_000);
 });

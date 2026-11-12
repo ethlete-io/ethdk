@@ -394,7 +394,7 @@ describe('part compare', () => {
           shots: [{ state: 'a', design: pngOf(1, 1, () => RED), app: pngOf(1, 1, () => RED) }],
         }),
       }),
-    ).toEqual({ green: true, states: { a: {} } });
+    ).toEqual({ green: true, states: { a: {} }, failing: [] });
     expect(lines).toEqual(['a ok']);
   });
 

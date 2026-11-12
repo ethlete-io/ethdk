@@ -192,6 +192,8 @@ const helpOf = (invocation: string) =>
     '  stops it afterwards, also next to a running dev server of the same app; exits 1 unless every state is ok.',
     '  --affected compares, on one harness, every implemented part whose app files changed since its implemented.json',
     '  record, runs its actions check there and records each part that passes both.',
+    '  --base <rev> also compares each part with the harness app built at <rev> and lists the failing states new at',
+    '  HEAD (NEW) and fixed since <rev> (FIXED); the exit code stays that of HEAD.',
     '',
     `${invocation} ${DOM_USAGE}`,
     '  Print the pretty-printed HTML of one state of a part (default: its first): the rendered design, or with --app the',
