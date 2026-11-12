@@ -285,3 +285,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - 936 (d11895195), 938 (d17cbb1dc), 939 (2b4a85177) built; findings 977 (Mac) and 978. Linux builder hands off at 72 %; next 934, 935, 937, 941, 942. Next free finding: 979.
 - CI red on origin/next from 4a24296fd (finding 979, ci-like-load BUSY ppid race); Mac fixes it on origin first. Local next 117 ahead / 17 behind, merge conflicts (sketches.component.ts, edit-sketch.spec.ts, design-to-code.md) wait for the morning push round. Next free finding: 980.
 - 934 (90f4ea850) and 935 (753cb38ea) built. Next free finding: 980.
+- 979 fixed on origin (95a46cf1b); 947 built (ba7ffe701); 943 and 946 closed; ready.json commit decided (ADR 0009 applied); findings 980-981. Next free finding: 982.

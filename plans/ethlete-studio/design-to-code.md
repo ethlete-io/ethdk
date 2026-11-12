@@ -4172,3 +4172,28 @@ a live resident run, the per-request cost on a large graph; files outside Vite's
 935 built (Linux, 753cb38ea): `design dom` marks each element with `data-box="x y w h"` from the drawn root, design and
 `--app` side (`dom-boxes.ts`, `shot.ts`, `dom-command.ts`). Spec bites; live on components/comment-pin both sides agree.
 Not verified: no boxes inside a shadow root.
+
+979 fix (Mac, 95a46cf1b, pushed): `ci-like-load.mjs` BUSY reads the parent pid from argv[1]; startBusyLoops passes it
+through pinnedCommand. Bite only on Linux (probe 15/15 -> 0/15); macOS never reproduced the race (0/10). No stress repeat:
+spec:stress runs vitest only. CI run 43158747719 on 95a46cf1b was in progress at the report.
+
+947 built (Linux, ba7ffe701): core spec `surface-interactive-styles.component.spec.ts` asserts the cli copy
+`libs/cli/design/web/surface-interactive.css` is byte-identical to the core CSS. Cause (measured): the equal cli spec
+never ran for a core-only change, because `nx show projects --affected` does not list cli. Bite with the copy from
+00abccaea^.
+
+943 closed (Linux, not reproduced): `.timings.jsonl` holds exit 1 for each refusal of the 933 `sketch ready` runs and 2 for
+the usage error; sketch-command.spec.ts asserts exit 1. Suspect: a pipe or wrapper hid the code.
+
+946 closed (Linux, not a bug): `design check`, the slow runner and `design ready` write `ready.json` by design; Cause
+(measured): they wrote fresh records at 01:31 and 03:50 after the 903 and 7f CSS changes, and the committed file is the
+stale side. Decided by the doc agent (applies ADR 0009: the builder commits tool-written design records): the Linux builder
+commits the working-tree `ready.json` of sdk and studio after a fresh `design check`.
+
+980\. Linux builder (2026-11-12 night, 947): any other cli copy of SDK source has the same affected-graph gap: a change to the
+SDK source runs no cli spec. Suspect. Tool fix (builder default, tool backlog): list the cli copies of SDK files and add each
+to the cli project's implicit dependencies or give it a spec in the source lib, with a bite.
+
+981\. Linux builder (2026-11-12 night, 946): a `ready.json` record's `cmd` holds the writer's argv, so 20 entries written by a
+server read only "design". Cause (measured). Tool fix (builder default, tool backlog): record the command name
+(check, slow-run, ready) in `cmd`, with a spec.
