@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-input-clear {
     --_et-input-clear-target: 24px;
     --_et-input-clear-gap: var(--et-form-field-control-affix-gap, 8px);

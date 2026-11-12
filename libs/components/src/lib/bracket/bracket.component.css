@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-bracket {
     position: relative;
     transition: transform var(--et-bracket-move-duration, 0.2s) ease;

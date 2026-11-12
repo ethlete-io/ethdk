@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-scheduler-time-grid-hour-size {
     syntax: '<length>';
     inherits: true;

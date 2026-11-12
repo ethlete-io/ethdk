@@ -29,7 +29,7 @@ export const cardPlaceholderMedia =
 export const cardStyles = /* @__PURE__ */ [
   buttonStyles,
   cardBase,
-  `@layer components {
+  `@layer components.sdk {
   .et-card-mock-media {
     display: block;
     inline-size: calc(100% + 2 * var(--et-card-padding));

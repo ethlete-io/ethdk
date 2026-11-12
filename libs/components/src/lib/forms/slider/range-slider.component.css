@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* shares the --et-slider-* token set with et-slider — identical @property redeclarations are legal */
   @property --et-slider-track-size {
     syntax: '<length>';

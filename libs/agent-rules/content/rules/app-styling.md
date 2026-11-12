@@ -1,6 +1,6 @@
 ---
 name: app-styling
-description: App components are styled with Tailwind utilities in their templates; app CSS stays out of @layer components; the SDK needs a 10px rem root; hardcoded colours are never primary values.
+description: App components are styled with Tailwind utilities in their templates; app CSS goes in @layer components, @layer utilities or unlayered; the SDK needs a 10px rem root; hardcoded colours are never primary values.
 kind: rule
 scope: consumer
 requires: ['@ethlete/core']
@@ -31,12 +31,12 @@ tell the user once at first contact, with the size of the conversion (files, cla
 colours), and record it as owed work in the plan or handoff. Never skip it silently. This holds
 for a deviation from any rule here: report it once and record it.
 
-Write CSS only for what utilities cannot express. With Tailwind 4, keep that CSS **unlayered**
-or in `@layer utilities` — never in `@layer components`, and that includes the global
-stylesheet. SDK component styles are injected into `@layer components` at runtime, after your
-stylesheet, so an app rule in the same layer ties on layer and loses on source order. With
-Tailwind 3, `@layer` is a Tailwind directive that emits unlayered CSS, so app CSS already beats
-the SDK's layered styles.
+Write CSS only for what utilities cannot express. With Tailwind 4, put that CSS in
+`@layer components`, `@layer utilities` or leave it unlayered: SDK component styles sit in
+`@layer components.sdk`, a layer nested in `components`, so each of the three beats them. In
+`@layer components` a utility on the same element still wins over the app rule. With Tailwind
+3, `@layer` is a Tailwind directive that emits unlayered CSS, so app CSS already beats the
+SDK's layered styles.
 
 To change an SDK component's look, set its `--et-*` tokens first (documented per
 component), then use a utility class or unlayered CSS on the element — see "Overriding

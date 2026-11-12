@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* Pinned cells stay put during horizontal scroll. The inline offset comes from a per-cell style
      binding, fed by the widths `etTableStickyColumns` measures; the edge shadow marks the pinned
      boundary. */

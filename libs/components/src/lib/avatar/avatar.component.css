@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-avatar-font-size {
     syntax: '<length>';
     inherits: true;

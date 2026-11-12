@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-scheduler-agenda-view {
     display: flex;
     flex-direction: column;

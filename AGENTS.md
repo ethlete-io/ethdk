@@ -65,7 +65,7 @@ Tailwind theme is trimmed (no default color palette, no `text-sm`-style scale), 
 read the **`storybook-styling`** skill (`.agents/skills/storybook-styling/`) before
 styling a story. An unknown utility emits nothing and fails silently.
 
-The `@layer components` wrap and the `:where()` modifiers are in **Component styling** in the
+The `@layer components.sdk` wrap and the `:where()` modifiers are in **Component styling** in the
 generated block. The canonical pattern is `libs/components/src/lib/button/*.component.css`.
 
 A sheet past a few hundred lines can be split into styles-only components:
@@ -281,13 +281,15 @@ Component styles are **plain CSS** — global `et-`-prefixed classes with
 in component source.** Utilities belong in application templates and story files, not in
 the stylesheet a component ships.
 
-**Wrap every component CSS file in `@layer components { … }`** — the whole file inside one
-block. Component CSS is injected as a global `<style>` tag; unlayered, it beats Tailwind v4
+**Wrap every component CSS file in `@layer components.sdk { … }`** — the whole file inside
+one block. Component CSS is injected as a global `<style>` tag; unlayered, it beats Tailwind v4
 utilities (which live in `@layer utilities`) regardless of specificity, because layer
 precedence is resolved before specificity — so overriding `.et-button` would need
 `flex!` instead of `flex`. `:where()` does not help across layers. Tailwind v4 pre-declares
 `@layer theme, base, components, utilities`, so the wrap puts component styles where a
-utility can win.
+utility can win. `components.sdk` is nested in `components`, and a layer's own rules beat its
+nested layers, so an app rule in `@layer components` also wins. Never wrap SDK CSS in plain
+`@layer components`: it would tie with the app's rules again.
 
 `:where()` has a separate job: keeping a component's own config modifiers
 (`[data-size]`, `[data-variant]`, `[disabled]`) at the same single-class weight as its base

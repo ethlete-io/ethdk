@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* The cell is sized by the grid engine (`columnWidth` × `matchHeight`); the card fills it, and the
      card's own container query then picks the density that width affords. */
   .et-bracket-default-match-host {

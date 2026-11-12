@@ -31,7 +31,7 @@ export const avatarStyles = /* @__PURE__ */ [
   iconBase,
   avatarBase,
   avatarGroupBase,
-  `@layer components {
+  `@layer components.sdk {
   .et-avatar-mock-row {
     display: flex;
     flex-wrap: wrap;

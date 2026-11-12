@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-query-devtools-host {
     /* Self-contained chrome tokens: resolve to the host surface theme when present, otherwise fall
        back to a coherent dark devtools palette so the panel is legible in any (even theme-less) app. */

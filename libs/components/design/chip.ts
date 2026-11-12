@@ -23,7 +23,7 @@ export type ChipMockOptions = {
 export const chipStyles = /* @__PURE__ */ [
   iconBase,
   chipBase,
-  `@layer components {
+  `@layer components.sdk {
   .et-chip-mock-row {
     display: flex;
     flex-wrap: wrap;

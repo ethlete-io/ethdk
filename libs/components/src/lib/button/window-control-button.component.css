@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --_et-window-control-button-size {
     syntax: '<length>';
     inherits: false;

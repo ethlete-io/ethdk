@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   et-scheduler-badge-color-dot,
   et-scheduler-badge-title,
   et-scheduler-badge-time-range,

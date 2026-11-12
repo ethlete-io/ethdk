@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-kbd-gap {
     syntax: '<length>';
     inherits: true;

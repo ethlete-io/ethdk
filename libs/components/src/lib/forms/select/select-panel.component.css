@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-select-panel-max-height {
     syntax: '<length-percentage>';
     inherits: true;

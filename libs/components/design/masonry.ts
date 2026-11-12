@@ -24,7 +24,7 @@ export type MasonryMockOptions = {
 /** The stylesheets the masonry mock draws with: the real masonry CSS plus a neutral demo tile. */
 export const masonryStyles = /* @__PURE__ */ [
   masonryBase,
-  `@layer components {
+  `@layer components.sdk {
   .et-masonry-mock-tile {
     display: flex;
     flex-direction: column;

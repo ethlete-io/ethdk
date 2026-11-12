@@ -52,7 +52,7 @@ import { NavTabsDirective } from './headless/nav-tabs.directive';
     '[attr.data-variant]': 'tabBar.variant()',
   },
   styles: `
-    @layer components {
+    @layer components.sdk {
       @property --et-nav-tabs-gap {
         syntax: '<length>';
         inherits: true;

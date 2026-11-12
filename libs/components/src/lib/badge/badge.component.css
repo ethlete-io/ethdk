@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-badge-gap {
     syntax: '<length>';
     inherits: true;

@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* `start`/`end` in the position names are logical, so the insets are too — the stack docks to the
      inline-start/end edge and flips under `dir="rtl"`. `align-items: flex-start/flex-end` is already
      logical (it resolves against the writing direction), so it needs no counterpart. The `center`

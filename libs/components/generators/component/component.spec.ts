@@ -186,7 +186,9 @@ describe('component generator', () => {
   it('wraps the styles in the components layer', async () => {
     await generate(tree, { name: 'stat-tile' });
 
-    expect(read(tree, 'libs/components/src/lib/stat-tile/stat-tile.component.css')).toContain('@layer components {');
+    expect(read(tree, 'libs/components/src/lib/stat-tile/stat-tile.component.css')).toContain(
+      '@layer components.sdk {',
+    );
   });
 
   it('exports the domain from the lib barrel', async () => {

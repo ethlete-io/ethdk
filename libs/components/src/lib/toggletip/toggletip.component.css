@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-toggletip-font-size {
     syntax: '<length>';
     inherits: true;

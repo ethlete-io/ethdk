@@ -132,7 +132,7 @@ full-strength neutral tint, so in dark mode it gives a light row with near-white
   components degrade in theme-less setups. A `type: 'error'` theme however is a
   hard requirement - form-field and menu throw on rendering without one.
 - **Cascade layers, not `:where()`, are what make Tailwind utilities override
-  component CSS.** Every component CSS file is wrapped in `@layer components { … }`
+  component CSS.** Every component CSS file is wrapped in `@layer components.sdk { … }`
   - keep doing so in new/edited files. Component styles are injected unlayered
   otherwise, which beats Tailwind's `@layer utilities` by layer precedence, so a
   consumer would need `!important`; specificity (and therefore `:where()`) never

@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* What differs between two rows of the same endpoint is its params, so those are picked out of the
      static path: path params in the accent, the query string dimmed behind them. */
   .et-query-devtools-route-param {

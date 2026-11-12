@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* Sits at the trailing edge of a row, where it can be scanned down the list as a column of figures. */
   .et-query-devtools-traffic {
     margin-inline-start: auto;

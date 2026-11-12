@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* Detail-row chrome and its grow-open animation, mounted by etTableRowExpansion. Sizeable — the
      keyframes alone are most of it — and useless to a table that never expands a row.
 

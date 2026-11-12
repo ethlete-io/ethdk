@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-table-sort-priority {
     flex: none;
     min-inline-size: 1.4em;

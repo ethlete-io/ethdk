@@ -74,8 +74,9 @@ rows = computed(() => this.items().map((item) => ({ ...item, createdAtLabel: for
 
 - Inline template/styles for small components; external `.html` / `.css` files
   for complex ones.
-- Component CSS is plain CSS wrapped in `@layer components`, with every primary colour
-  value coming from the repository's theme tokens.
+- Component CSS is plain CSS wrapped in `@layer components` (`@layer components.sdk` in
+  the Ethlete SDK itself), with every primary colour value coming from the repository's
+  theme tokens.
 
 ## Reactive state
 

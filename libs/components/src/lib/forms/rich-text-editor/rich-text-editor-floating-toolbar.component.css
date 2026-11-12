@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-overlay.et-rte-floating-toolbar-overlay {
     overflow: visible;
     background: transparent;

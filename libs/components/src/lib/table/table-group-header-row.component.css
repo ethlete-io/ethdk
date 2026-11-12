@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* The spanning group-header row, mounted with etTableGroupHeaders. Layout-transparent like every other
      table row, so its cells span the table's own column tracks. */
   .et-table-group-row {

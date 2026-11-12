@@ -55,7 +55,7 @@ export const notificationStyles = /* @__PURE__ */ [
   textButtonBase,
   spinnerBase,
   notificationBase,
-  `@layer components {
+  `@layer components.sdk {
   .et-notification-mock-stack {
     display: flex;
     flex-direction: column;

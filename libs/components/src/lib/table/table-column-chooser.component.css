@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* The stamped host is layout-transparent so the trigger sits directly in whatever row it is dropped
      into — a footer bar, a toolbar — rather than adding a wrapper box of its own. */
   et-table-column-chooser {

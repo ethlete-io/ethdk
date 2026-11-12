@@ -46,8 +46,8 @@ export const appConfig: ApplicationConfig = {
   a responsive rule) is taken as intentional and stays silent.
 
 - **Tailwind CSS v4.** The theme generators emit Tailwind 4 CSS (`@theme` blocks and
-  utilities), and component styles sit in `@layer components` so utilities can override
-  them - see [Overriding component styles](/components/#overriding-component-styles).
+  utilities), and component styles sit in `@layer components.sdk` so utilities and your own
+  `@layer components` rules can override them - see [Overriding component styles](/components/#overriding-component-styles).
   `@import 'tailwindcss';` comes first in the global stylesheet.
 - **Generated theme CSS imported.** Define themes in TypeScript, then generate the CSS and
   the `.d.ts` that types your theme names ([Theming](/core/theming)):

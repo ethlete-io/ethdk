@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-chart-grid-line {
     stroke: var(--et-surface-border-solid, rgb(127 127 127 / 0.25));
     stroke-width: 1px;

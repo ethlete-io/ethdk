@@ -62,7 +62,7 @@ export const gridStyles = /* @__PURE__ */ [
   gridItemBase,
   toolbarBase,
   defaultActionsBase,
-  `@layer components {
+  `@layer components.sdk {
   .et-grid-mock-content {
     display: flex;
     flex-direction: column;

@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-rich-text-editor-image-editor-width {
     syntax: '<length>';
     inherits: true;

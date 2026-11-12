@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-menu-item {
     .et-menu-item-icon {
       display: inline-flex;

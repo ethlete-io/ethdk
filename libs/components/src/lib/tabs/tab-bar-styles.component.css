@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-tab-bar-underline-size {
     syntax: '<length>';
     inherits: true;

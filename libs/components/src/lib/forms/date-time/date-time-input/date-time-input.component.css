@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   et-date-time-input {
     display: grid;
     grid-template-columns: minmax(0, 1fr);

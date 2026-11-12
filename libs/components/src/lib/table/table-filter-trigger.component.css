@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* The stamped host is layout-transparent so the trigger's own auto margin can push it against the
      trailing edge of the header cell — as a block box the margin would resolve inside it and do nothing. */
   et-table-filter-trigger {

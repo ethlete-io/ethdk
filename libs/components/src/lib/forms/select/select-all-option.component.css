@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-select-option.et-select-all-option {
     .et-select-all-option-dash {
       inline-size: 10px;

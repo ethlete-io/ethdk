@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-accordion-group {
     display: block;
 

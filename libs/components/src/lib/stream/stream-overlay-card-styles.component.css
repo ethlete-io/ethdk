@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-stream-consent-card,
   .et-stream-player-error-card,
   .et-pip-slot-placeholder-card {

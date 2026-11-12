@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-scrollable-buttons {
     grid-row: 1 / 1;
     grid-column: 1 / 1;

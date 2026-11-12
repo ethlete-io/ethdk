@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-overlay.et-with-default-animation {
     &.et-overlay--full-screen-dialog {
       &.et-animation-enter-from,

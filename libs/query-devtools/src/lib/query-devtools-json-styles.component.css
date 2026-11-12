@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-query-devtools-json-node,
   .et-query-devtools-json-children {
     display: flex;

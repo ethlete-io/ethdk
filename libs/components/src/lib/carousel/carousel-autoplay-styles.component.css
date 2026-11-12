@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* The autoplay countdown ring. Deliberately smaller than the tap target and thicker than a hairline —
      drawn at the target size it read as a stray outline rather than as a countdown. */
   @property --et-carousel-dot-ring-size {

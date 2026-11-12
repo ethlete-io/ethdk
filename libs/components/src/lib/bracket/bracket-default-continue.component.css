@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* Dashed to match its connector, which the engine also dashes: this column is a hand-off, not a match. */
   .et-bracket-default-continue-host {
     display: flex;

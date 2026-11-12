@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-scheduler {
     container-type: inline-size;
     container-name: et-scheduler;

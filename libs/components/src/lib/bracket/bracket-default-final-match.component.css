@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* The frame is the whole distinction: an accent border and a soft glow in the color theme in scope, so a
      bracket rendered inside a branded scope crowns its winner in that brand rather than in a colour this
      file picked. Everything else is the standard card. */

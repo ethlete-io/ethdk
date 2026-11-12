@@ -885,7 +885,7 @@ These are not declared via `@property`: an `@property` `initial-value` can't con
 `var()`, and the defaults intentionally resolve to a theme token. The bracket doesn't
 provide its own surface - it reads the border color from the surface scope you place it in.
 
-Component CSS ships inside the `@layer components` cascade layer, so app utilities and custom
+Component CSS ships inside the `@layer components.sdk` cascade layer, so app utilities and custom
 rules override it without `!important`. See the [components overview](/components/) and
 [surface/color theming](/core/theming).
 
@@ -937,7 +937,7 @@ are naming, packaging, and how a layout is chosen:
 | CSS classes   | `et-new-bracket*` / `et-bracket-new*` (+ `et-legacy` marker)                 | `et-bracket*` (no `et-legacy`)                                                                                    |
 | Color tokens  | `--bracket-line-color` (default `red`), `--bracket-swiss-group-border-color` | `--et-bracket-line-color` / `--et-bracket-swiss-group-border-color` (default `--et-surface-border-solid`)         |
 | Errors        | native `Error`                                                               | `BracketRuntimeError` / `RuntimeError` (ET34xx, with a `code`)                                                    |
-| Styling       | unlayered global CSS                                                         | wrapped in `@layer components` (utilities override without `!important`)                                          |
+| Styling       | unlayered global CSS                                                         | wrapped in `@layer components.sdk` (utilities override without `!important`)                                      |
 
 Also note:
 

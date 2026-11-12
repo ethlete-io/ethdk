@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* Detail-pane hierarchy: divide the header, the meta block and the value explorer. */
   .et-query-devtools-detail .et-query-devtools-detail-head,
   .et-query-devtools-drawer .et-query-devtools-detail-head {

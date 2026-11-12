@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-query-devtools-faults {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));

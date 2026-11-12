@@ -125,8 +125,9 @@ full-strength neutral tint, so in dark mode it gives a light row with near-white
   permitted for theme-less setups, but themes make it unnecessary. `injectSemanticColorTheme()`
   is a hard requirement wherever it is read.
 - **Cascade layers, not `:where()`, decide who wins against SDK component CSS.** SDK
-  styles live in `@layer components`, so a utility or unlayered app CSS overrides them.
-  An app rule inside `@layer components` loses. See the `app-styling` rule.
+  styles live in `@layer components.sdk`, nested in `components`, so an app rule in
+  `@layer components`, a utility, or unlayered app CSS overrides them. See the
+  `app-styling` rule.
 
 Styling a **story** file rather than a component? The colour rule is the same. Check the
 repository's Storybook guidance before assuming a Tailwind utility exists.

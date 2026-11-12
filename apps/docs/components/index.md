@@ -53,16 +53,19 @@ meaning and coercion would destroy it - bind these even for static values:
 
 ## Overriding component styles
 
-Component styles ship inside the `components` CSS cascade layer (`@layer components`).
-Tailwind v4 orders that layer before `utilities`, so **you can override layout,
-spacing and sizing with plain utility classes - no `!important` needed**:
+Component styles ship inside the `components.sdk` CSS cascade layer
+(`@layer components.sdk`), nested in Tailwind's `components` layer. Tailwind v4 orders
+`components` before `utilities`, so **you can override layout, spacing and sizing with
+plain utility classes - no `!important` needed**:
 
 ```html
 <button class="flex w-full" et-button>Full width</button>
 ```
 
-The same holds for your own CSS: any rule that is unlayered or in a later layer
-wins over component styles by default. If your app customizes its cascade layer
+The same holds for your own CSS: a rule that is unlayered, in `@layer utilities`, or in
+`@layer components` wins over every SDK component style, internal parts included. Rules
+directly in a layer beat the layers nested in it, so `@layer components { .et-button { … } }`
+overrides the button whatever the selector specificity. If your app customizes its cascade layer
 order, make sure `components` sorts before your utilities layer (the default
 Tailwind v4 order - `theme, base, components, utilities` - already does).
 

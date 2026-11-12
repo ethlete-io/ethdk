@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-progress-steps-gap {
     syntax: '<length>';
     /* Inherited so each step's connector (progress-step.component.css) can span the gap too - a

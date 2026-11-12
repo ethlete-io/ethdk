@@ -19,7 +19,7 @@ export type BadgeMockOptions = {
 export const badgeStyles = /* @__PURE__ */ [
   iconBase,
   badgeBase,
-  `@layer components {
+  `@layer components.sdk {
   .et-badge-mock-row {
     display: flex;
     flex-wrap: wrap;

@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-grid-padding {
     syntax: '<length>';
     inherits: false;

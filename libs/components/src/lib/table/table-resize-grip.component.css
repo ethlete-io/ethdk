@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* The stamped host is layout-transparent, like the other header adornments: as a box it would be a
      zero-width flex item in the header cell, and the cell's `gap` would then reserve space after the
      last real control. The grip inside is absolutely positioned, so it keeps its containing block

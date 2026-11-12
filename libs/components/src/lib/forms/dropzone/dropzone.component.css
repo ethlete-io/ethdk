@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-dropzone-min-height {
     syntax: '<length>';
     inherits: true;

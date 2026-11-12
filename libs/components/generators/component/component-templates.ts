@@ -58,7 +58,7 @@ export class ${n.className}Component {}
 }
 
 export function stylesFile(n: ComponentNames): string {
-  return `@layer components {
+  return `@layer components.sdk {
   .${n.elementSelector} {
     display: block;
   }

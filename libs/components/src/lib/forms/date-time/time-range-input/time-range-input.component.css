@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   et-time-range-input {
     --et-range-input-stack-threshold: 11em;
     container: et-time-range-input / inline-size;

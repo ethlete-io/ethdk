@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-banner-gap {
     syntax: '<length>';
     inherits: true;

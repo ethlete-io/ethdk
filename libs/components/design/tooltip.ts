@@ -25,7 +25,7 @@ export const tooltipStyles = /* @__PURE__ */ [
   overlayArrow,
   floatingTip,
   tooltipBase,
-  `@layer components {
+  `@layer components.sdk {
   .et-tooltip-mock-frame > .et-tooltip-panel {
     --_et-overlay-arrow-pane-border-width: 1px;
     inline-size: max-content;

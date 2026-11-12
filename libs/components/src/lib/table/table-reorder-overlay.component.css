@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* The affordance is put on the table host by the feature, so only a reorderable table's headers
      advertise the grab — pinned columns are excluded, they can't be dragged. */
   .et-table-host--reorderable

@@ -36,7 +36,7 @@ export const anchoredDialogStyles = /* @__PURE__ */ [
   overlayMain,
   anchoredDialogStrategy,
   overlayArrow,
-  `@layer components {
+  `@layer components.sdk {
   .et-anchored-dialog-mock {
     --_et-overlay-arrow-pane-border-width: var(--et-overlay-surface-border-width);
     inline-size: max-content;
