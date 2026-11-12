@@ -1046,6 +1046,18 @@ export class SystemViewComponent {
 
       if (remaining.length !== merged.length) this.mergedSketches.set(remaining);
     });
+
+    effect(() => {
+      const merging = this.mergingSketch();
+      const listed = this.sketchList();
+
+      if (!merging || !listed || listed.some((sketch) => sketch.target === merging)) return;
+
+      untracked(() => {
+        if (this.picked() === sketchKeyOf(merging)) this.leaveGone(merging);
+        else this.mergingSketch.set(null);
+      });
+    });
   }
 
   /** Shows the part or sketch a comment sits on, moves the camera to its pin and opens it. */
@@ -1187,6 +1199,7 @@ export class SystemViewComponent {
     const listed = this.sketchList()?.find((sketch) => sketch.target === target);
     const part = listed ? sketchPartOf(listed) : (target.split('@')[0] ?? target);
 
+    this.mergingSketch.set(null);
     this.mergedSketches.update((merged) => [...merged, target]);
     this.picked.set(part);
     rememberView({ systemEntry: part });

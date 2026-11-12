@@ -1257,6 +1257,63 @@ describe('SystemViewComponent on a merge', () => {
       expect(rememberedView().systemEntry).toBe('elements/rating');
     },
   );
+
+  it('selects the target part when the listing drops the merged edit sketch before the merge answers', async () => {
+    const target = 'elements/rating@edit';
+    const sketch: ListedSketch = {
+      target,
+      status: 'ready',
+      createdAt: '2026-10-27T10:00:00Z',
+      decision: { kind: 'pick', variant: 'new', decidedAt: '2026-10-27T10:00:00Z' },
+      product: 'web',
+      layer: 'elements',
+      name: 'rating',
+      dir: 'rating',
+      problems: [],
+      variants: ['new', 'old'],
+      targetParts: ['elements/rating'],
+    };
+    let sketches = [sketch];
+    let finishMerge = () => undefined as void;
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/sketches')) return json({ sketches, unreadable: [] });
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+      if (url.includes('/__design/sketch-decision')) return json({});
+      if (url.includes('/__design/sketch-merge'))
+        return new Promise<Response>((done) => {
+          finishMerge = () => done(new Response(JSON.stringify({ merged: ['elements/rating'] })));
+        });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemEntry: `sketch:${target}` });
+    const root: HTMLElement = fixture.nativeElement;
+    const clickButton = (label: string) =>
+      [...root.querySelectorAll<HTMLButtonElement>('button')].filter((button) => button.textContent?.trim() === label);
+
+    clickButton('Übernehmen')[1]?.click();
+    await settle(fixture);
+    clickButton('Merge')[0]?.click();
+    await settle(fixture);
+    clickButton('Merge')[0]?.click();
+    await settle(fixture);
+
+    sketches = [];
+    fixture.componentRef.setInput('lists', { ...NO_LIST_REVISIONS, sketches: 1 });
+    await settle(fixture);
+
+    expect(fixture.debugElement.query(By.directive(SketchViewComponent))).toBeNull();
+
+    finishMerge();
+    await settle(fixture);
+
+    expect(fixture.componentInstance['selectedKey']()).toBe('elements/rating');
+    expect(rememberedView().systemEntry).toBe('elements/rating');
+  });
 });
 
 describe('SystemViewComponent on a flow', () => {
