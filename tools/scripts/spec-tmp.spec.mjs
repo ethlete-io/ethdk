@@ -101,7 +101,7 @@ describe('the node --test hook, exit cleanup', () => {
 });
 
 describe('withStepTmp', () => {
-  it('fails a push-suite step that leaves a folder and names the step', async () => {
+  it('warns on a push-suite step that leaves a folder, names the step, and keeps its status', async () => {
     const env = { TMPDIR: fixtures };
     const result = await withStepTmp(
       'tools',
@@ -112,8 +112,8 @@ describe('withStepTmp', () => {
       env,
     );
 
-    assert.equal(result.status, 1);
-    assert.match(result.output, /tmp leak: push-suite step tools left 1 folder in \/tmp \(wf-abc123\)/);
+    assert.equal(result.status, 0);
+    assert.match(result.note, /tmp leak: push-suite step tools left 1 folder in \/tmp \(wf-abc123\)/);
     assert.equal(env['TMPDIR'], fixtures);
   });
 

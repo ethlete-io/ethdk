@@ -378,11 +378,7 @@ export const withStepTmp = async (name, run, env = process.env) => {
     left = tmp.close();
   }
   if (left.length === 0) return result;
-  return {
-    ...result,
-    status: result.status || 1,
-    output: `${result.output}\n${leakMessageOf(`push-suite step ${name}`, left)}`,
-  };
+  return { ...result, note: [result.note, leakMessageOf(`push-suite step ${name}`, left)].filter(Boolean).join('; ') };
 };
 
 export const stepLine = (name, status, ms, note, load, max = load) =>
