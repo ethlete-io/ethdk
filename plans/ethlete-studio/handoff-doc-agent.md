@@ -296,3 +296,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - 965 (503be9a2a), 967 (fcc9b1f15) built; 961 closed; findings 989-990. /tmp at 99 % inodes: sweep waits for the human (alarm played). Next free finding: 991.
 - Linux builder restarts at 72 % (handoff builder-2026-11-12c); 956/957/959/960 subagent writes agent-results/956-960.md; then 986. No push until /tmp is swept.
 - /tmp ran full; the human swept it. ADR 0275 (B494: timer + CLAUDE_CODE_TMPDIR on /home). 956, 959, 960 (Linux), 977, 983 (Mac) built; 957 open; findings 991-994. Mac next: 989, 993, then 992 after Linux pushes 965. Next free finding: 995.
+- ADR 0275 changed with the human: leak check first (a spec run fails on a new /tmp folder), timer only a safety net, no sound, no /home check.
