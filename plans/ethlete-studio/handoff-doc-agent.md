@@ -1,1 +1,1 @@
-- Mac pushed d672e8c89..ca232c417 (922). 921 sketch ready (b9802b4d6), waits for the human's pick; findings 952-954. Next free finding: 955.
+- Linux memory critical (design server 6.0 + 4.5 GB, 941 update); builder asked to restart studio-serve. The Mac mailbox wait was killed for memory; not restarted. Next free finding: 955.

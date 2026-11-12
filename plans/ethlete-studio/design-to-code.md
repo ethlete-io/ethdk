@@ -4009,3 +4009,8 @@ want it. Tool fix (builder default, tool backlog): every design and sketch comma
 (foundations-logo.app-icon, foundations-type.font-pair, pages-sketches.open-points, pages-system), and `sketch list`
 shows them. Suspect (not bitten): the merge removes the sketch files but not the tsconfig. Tool fix (builder default,
 tool backlog): the merge removes the whole sketch folder; `sketch list` skips a folder without a sketch file.
+
+941 update (doc agent, 2026-11-12 02:10, ps): the design server (`yarn design`, pid 1055162) held 6.0 GB RSS after 38 min
+and its child (pid 1185015) 4.5 GB; Linux had 1.5 GB available and a full swap, and Claude Code killed background
+shells for memory. So the heap growth shows in under an hour, not only after 4 h. The ready.json writer in 946 is this
+server process (the builder saw pid 1055162 as `et design check`). Suspect for both until a bite.
