@@ -426,6 +426,16 @@ in 32 px steps right, left, down and up to its end and judges the actions at eve
 sticky column or a header covers only after a pan fails with the position in the finding (`… when <canvas> is
 panned 384px right`).
 
+`CONTROL-HEIGHT` fails a control sized by a `--control-*` token whose rendered height differs from that token by more
+than 0.5 px, for example `CONTROL-HEIGHT studio components/title-search default at desktop: button.et-button - renders
+25.25px high, its token --control-sm is 24px`. A control counts as sized when a rule that matches it sets `height` or
+`block-size` to the token, or sets a custom property from the token that the control's own height or padding reads
+(`--et-button-padding: calc((var(--control-sm) - …) / 2)`); a control whose padding another rule overrides (`p-0`), or
+that sets a fixed `height` of its own, is not judged. The height is read from the computed style, so a scaled
+thumbnail measures the same as the full size. A compare of design and app never sees this: both share the CSS, so
+both are off by the same amount. Like `OFF-CENTRE`, its hits on merged parts that predate it are listed in the
+product's `rule-baseline.json` (ADR 0201), and `data-et-skip="CONTROL-HEIGHT"` marks one on purpose.
+
 The design server answers the same list as JSON: `GET /__design/open-points?product=` lists every part with
 open points as `{ drawn: false, parts: [{ part, points }] }`, and `&part=<layer>/<name>` answers one part as
 `{ part, drawn, points }`. Contrasts and missing control states need a draw, so only `&draw=true` with a `part`

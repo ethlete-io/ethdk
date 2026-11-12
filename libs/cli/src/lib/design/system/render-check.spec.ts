@@ -300,6 +300,65 @@ describe('renderIssuesOf', () => {
     ]);
   }, 120_000);
 
+  it('flags a control whose rendered height is not its --control-* token, at full size and in a thumbnail', async (context) => {
+    const css = `:root { --control-sm: 24px; --line: 16px; }
+@layer components {
+  .btn { display: inline-flex; align-items: center; box-sizing: border-box; border: 1px solid rgb(0, 0, 0); font: 12px/16px sans-serif; padding: var(--btn-padding); --btn-padding: 4px 8px;
+    &:where([data-size='xs']) { --btn-padding: 2px 8px; }
+  }
+}
+.btn {
+  &:where([data-size='xs']) { line-height: var(--line); --btn-padding: calc((var(--control-sm) - var(--line)) / 2 - 1px) 8px; }
+}
+.kbd-key { display: inline-flex; box-sizing: border-box; height: 17.25px; border: 1px solid rgb(0, 0, 0); font-size: 11px; }
+.flush { padding: 0; }
+.square { height: 40px; }`;
+    const button = (inner: string, extra = '') => `<button class="btn" data-size="xs"${extra}>Search${inner}</button>`;
+    const kbd = '<span class="et-kbd"><span class="kbd-key">K</span></span>';
+    const target = checkout({
+      'components/xs-kbd': { body: `<div style="padding: 8px">${button(kbd)}</div>`, css },
+      'components/xs-kbd-thumb': {
+        body: `<div style="padding: 8px; transform: scale(0.2); transform-origin: 0 0">${button(kbd)}</div>`,
+        css,
+      },
+      'components/xs-plain': { body: `<div style="padding: 8px">${button('')}</div>`, css },
+      'components/md-kbd': {
+        body: `<div style="padding: 8px"><button class="btn" data-size="md">Search${kbd}</button></div>`,
+        css,
+      },
+      'components/xs-kbd-skipped': {
+        body: `<div style="padding: 8px">${button(kbd, ' data-et-skip="CONTROL-HEIGHT"')}</div>`,
+        css,
+      },
+      'components/xs-kbd-flush': {
+        body: `<div style="padding: 8px"><button class="btn flush" data-size="xs">Search${kbd}</button></div>`,
+        css,
+      },
+      'components/xs-square': {
+        body: `<div style="padding: 8px"><button class="btn square" data-size="xs">Search</button></div>`,
+        css,
+      },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(
+      rendered.issues
+        .filter((issue) => issue.rule === 'CONTROL-HEIGHT')
+        .map((issue) => [issue.part, issue.detail.split(';')[0]])
+        .sort(),
+    ).toEqual([
+      ['components/xs-kbd', 'renders 25.25px high, its token --control-sm is 24px'],
+      ['components/xs-kbd-thumb', 'renders 25.25px high, its token --control-sm is 24px'],
+    ]);
+  }, 120_000);
+
   it('does not flag text whose centre the box does not set', async (context) => {
     const fill = 'background: rgb(20, 120, 60); color: white';
     const target = checkout({

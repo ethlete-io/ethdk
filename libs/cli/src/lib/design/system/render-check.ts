@@ -18,6 +18,7 @@ import { ACTION_UNDECLARED_STATEMENTS, CLICK_LISTENER_INIT_SCRIPT } from './acti
 import { DISABLED_INTERACTION_STATEMENTS } from './disabled-interaction';
 import { ARROW_ANCHOR_STATEMENTS } from './arrow-anchor';
 import { OFF_CENTRE_RULE, OFF_CENTRE_STATEMENTS } from './off-centre';
+import { CONTROL_HEIGHT_RULE, CONTROL_HEIGHT_STATEMENTS } from './control-height';
 import { classesOf, cssBlocksOf } from './css-source';
 import { createDesignServer } from '../serve';
 import { emptySlotsScriptOf, PartAddress, partFrameOf, viewportOf } from '../shot';
@@ -189,7 +190,7 @@ const ESCAPABLE = ESCAPABLE_RULES;
 export const WARNING_RULES: ReadonlySet<string> = new Set(['UNDEFINED-CLASS', 'EMBED-SCALE']);
 
 /** The render rules whose hits on merged parts the rule baseline of their product lists (ADR 0201). */
-export const BASELINED_RENDER_RULES: ReadonlySet<string> = new Set([OFF_CENTRE_RULE]);
+export const BASELINED_RENDER_RULES: ReadonlySet<string> = new Set([OFF_CENTRE_RULE, CONTROL_HEIGHT_RULE]);
 
 const BUSY_SELECTOR = '[aria-busy="true"], [data-loading="true"]';
 
@@ -580,6 +581,7 @@ ${SURFACE_STATEMENTS}
 ${ACTION_UNDECLARED_STATEMENTS}
 ${ARROW_ANCHOR_STATEMENTS}
 ${OFF_CENTRE_STATEMENTS}
+${CONTROL_HEIGHT_STATEMENTS}
 ${DISABLED_INTERACTION_STATEMENTS}
   return found;
 })(${JSON.stringify({ ...options, escapable: ESCAPABLE, controlInputs: PLAIN_CONTROL_SELECTOR, sdkControls: SDK_CONTROLS.join(', ') })})`;
