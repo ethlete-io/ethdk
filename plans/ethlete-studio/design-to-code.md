@@ -4166,3 +4166,13 @@ the morning push, with a run under load that bites.
 
 989 built (Mac, 57ba6a45c, pushed): typecheck targets for libs/types and libs/eslint-plugin; apps/timetrack-vscode also
 checks tsconfig.app.json. Bites on a temp type error. libs/eslint-plugin is .js only, so its target checks no file today.
+
+997\. Doc agent (2026-11-12, push-round merge): the merge of origin/next is blocked: design-to-code.md is 449519 chars
+against the 440000 budget, and `archive-findings.mjs --dry-run` moves 0 even with `--days=0` (247 "no built line").
+Cause (measured): the script counts a finding as done only by a done STATUS row or a line that starts with "Built"/"As
+built" inside its own block. Since about 900 the agents record "NNN built (sha)", "NNN closed" and "Parked (ADR 0276)"
+as separate paragraphs, and findings have no STATUS rows, so no finding ever qualifies and the file only grows. Lesson:
+the archive rule and the record format drifted apart with no check. Tool fix (Linux, now, blocking): the script also
+counts a finding as done when a paragraph that starts with "NNN built", "NNN closed", "NNN withdrawn" or a line in
+parked-suspects.md names it; it moves the finding with all its "NNN update"/"NNN built" paragraphs; a spec bites on
+today's format; the budget gate names `archive-findings.mjs` in its refusal.
