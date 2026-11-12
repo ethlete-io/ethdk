@@ -4164,3 +4164,11 @@ push-suite passed. Cause (probe, 15 of 15 leaked): `ci-like-load.mjs` BUSY reads
 parent exits first, the child stores the reaper pid and spins forever. Fix (probe, 0 of 15): pass the parent pid as an
 argument. Lesson: a timing race passes one local run; the push gate ran the spec once. Tool fix (builder default, Mac
 builds it on origin first): the fix plus a spec:stress repeat that bites on the old BUSY.
+
+934 built (Linux, 90f4ea850): the resident server in port mode (no file watch) checks on each `/frame.html` request whether
+a loaded source outside node_modules changed and reloads first (`frame-fresh.ts`, `serve.ts`). Spec bites. Not verified:
+a live resident run, the per-request cost on a large graph; files outside Vite's module list stay unchecked.
+
+935 built (Linux, 753cb38ea): `design dom` marks each element with `data-box="x y w h"` from the drawn root, design and
+`--app` side (`dom-boxes.ts`, `shot.ts`, `dom-command.ts`). Spec bites; live on components/comment-pin both sides agree.
+Not verified: no boxes inside a shadow root.
