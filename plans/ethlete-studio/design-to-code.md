@@ -3912,4 +3912,7 @@ reads the working tree, so another session's uncommitted file refused a push of 
 reads each one, and the baseline, with `git show <head>:<path>`, as `.husky/format-check-committed.mjs` does. Plain
 `yarn lint:person-names` still reads the tree, `--staged` the index. Spec: `check-person-names.spec.mjs` (uncommitted
 hit over a clean range passes, committed hit fails) and `lint-changesets.spec.mjs` (the pre-push wiring); both failed
-before the fix. A 20-commit range takes about 3.5 s.
+before the fix. A 20-commit range takes about 3.5 s. Follow-up: the first wiring called
+`node tools/scripts/check-person-names.mjs` relative to the cwd, and the push-suite checks fixture has no such file, so
+`push-suite.spec.mjs` failed. `pre-push-checks.mjs` resolves the script from its own directory now; the yarn script is
+no way out, since the fixture stubs it as `node -e 0`, which rejects `--range`. `yarn test:tools` would have caught it, and is the per-slice check for a change in `tools/scripts`.

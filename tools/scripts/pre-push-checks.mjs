@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
 import { realpathSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 export const CHECKS = [
@@ -21,13 +21,15 @@ export const CHECKS = [
   'sdk:tokens:check',
 ];
 
+const PERSON_NAMES_SCRIPT = join(import.meta.dirname, 'check-person-names.mjs');
+
 export const commandsFor = (check, head, base) => {
   if (check === 'lint:changesets')
     return [
       ['node', ['tools/scripts/lint-changesets.js', '--rev', head]],
       ['yarn', ['lint:changeset-coverage']],
     ];
-  if (check === 'lint:person-names') return [['node', ['tools/scripts/check-person-names.mjs', '--range', base, head]]];
+  if (check === 'lint:person-names') return [['node', [PERSON_NAMES_SCRIPT, '--range', base, head]]];
   return [['yarn', [check]]];
 };
 
