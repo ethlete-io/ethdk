@@ -103,7 +103,7 @@ describe('settleFrames', () => {
     }
   });
 
-  it.each([
+  it.for([
     { text: 'plain text', status: 'unloaded', fetched: 0 },
     { text: 'an arrow →', status: 'loaded', fetched: 1 },
   ])('settles the ranged face of "$text" as $status', async ({ text, status, fetched }, context) => {
