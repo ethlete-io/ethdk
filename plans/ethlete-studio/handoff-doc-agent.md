@@ -1,1 +1,1 @@
-- 880 closed (no start delay, measured; speed-up joins 846); finding 961 (cli typecheck missed es2020, fixed 12a5a6551). Next free finding: 962.
+- Mac pushed b9802b4d6..78b23d84f (925); 929 built (5c5a1908a); finding 962. Next free finding: 963.

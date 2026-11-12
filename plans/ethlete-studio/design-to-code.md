@@ -4074,3 +4074,14 @@ cli:typecheck --skip-nx-cache` TS2550 before, clean after). The 875 slice saw `c
 typecheck reaches lib files only through `tsconfig.spec.json` (lib es2022), or it was a cache hit. Tool fix (builder
 default, tool backlog): the typecheck target checks non-spec files with the lib tsconfig, with a bite that adds `.at()`
 to a lib file.
+
+929 built (Mac, 5c5a1908a, push:suite runs): `yarn studio:e2e --load <n>` (run-load.mjs reuses `startBusyLoops`; exit 2
+on a bad value; loops die with the parent; run-load.spec bites). One more shared picture window split ("a sketch cell
+edited on disk while scrolled away shows its new picture on return"); 5 other picture cases checked, none share a window.
+Cause (probe): under `--load 24` (load 100+) that case fails on the URL stage (21 s vs 10 s), drawing < 50 ms; at `--load
+12` it passes. No fail-then-pass bite for the split. The 10 s URL budget stays (the Mac's call, accepted by the doc agent:
+push-suite load is 28-30, and a slower reaction is a real defect).
+
+962\. Mac builder (2026-11-12 night, 929): `studio:e2e --load` starts the busy loops before the 125 s Studio build, so
+`--load 24` on 12 cores gives load 100-135, not the push-suite 28-30. Tool fix (builder default, tool backlog): start the
+loops after the build, or a `--load-target <loadavg>` mode that holds a set load.
