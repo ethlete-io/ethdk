@@ -4140,3 +4140,9 @@ with a biting spec.
 with the minutes since its last write; it blocks nothing. Bite: the spec fails without the wiring. 966 built (Linux,
 8b5106a2c): Cause (spec bite): a shot-store write after the rm recreated the checkout; the store now skips `write` and
 `claim` once its checkout is gone. Not verified: a live cold-shots e2e run.
+
+967\. Doc agent (2026-11-12 night, restart): from 215c5f183 on, every doc commit replaced
+`plans/ethlete-studio/handoff-doc-agent.md` with its one new note line, so 16 commits shipped a 1-line handoff and the
+Mac mailbox command at its top was gone. Suspect: the doc agent wrote the note with `>` (or a Write) instead of an append.
+Restored from 95ceb7027 plus all 16 notes. Tool fix (builder default, tool backlog): the pre-commit hook refuses a commit
+that cuts a `plans/**/handoff-*.md` file by more than half of its lines, unless the message says "shrink handoff", with a spec.
