@@ -3995,3 +3995,21 @@ option or env override is given. The lock specs, the spec-stress `--github` case
 pass a private lock file (the last two took the real lock before). Verified: the guard spec fails with the guard off
 (the child prints `took`); `yarn test:tools` 424/425, the one failure an e2e-check timing case that passes alone; the
 real lock file was absent before and after. Not verified: a live `push:suite` or Nx daemon run with the moved resolver.
+
+### As built: 976
+
+Each sketch merge refusal that names a remedy has a spec that applies the remedy and then merges:
+`merge-remedies.spec.ts` (not ready; no pick; rejected pick - reopen; no baseline - rebase; changed part - port and
+rebase; uncommitted drawn-on part - commit; uncommitted edits in the way - revert, or commit then rebase; product not
+in the committed config.json - commit it; another part imports @shared/ - move the code in; the three `mergeStepOf`
+refusals), `merge-shared.spec.ts` (orphan shared/ file - delete it; target's own shared/ folder - rename it),
+`design-lint.spec.ts` (new lint warnings - fix them). Through the API, rejecting the picked variant drops the pick, so
+the "rejected - reopen it first" refusal only meets a sketch file that holds both; the spec builds that state.
+
+Cause (bite in `sketch-base-stale-remedy.spec.ts`): a sketch drawn while its own part had an uncommitted change
+records a baseline no commit holds; SKETCH-BASE-STALE names `sketch rebase`, `portBaseChanges` refuses "no commit holds
+the state the baseline recorded, port it by hand", and the refusal said "then run sketch rebase again", so following it
+ran the same rebase three times with the same refusal. Only `--ported` clears it. The refusal now names the full
+`sketch rebase <target> --ported --product <name> --by <model id>` command; the spec follows the printed remedies, clears
+SKETCH-BASE-STALE, and merges after the part is committed. Not verified: the "built-in base - --override" refusal has
+no spec (the fixture has no built-in base).

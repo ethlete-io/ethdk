@@ -1352,7 +1352,7 @@ const rebased = (context: Context) =>
     if (kept) conflicts.forEach((line) => console.log(`KEPT ${line} (ported by hand)`));
     else if (conflicts.length > 0)
       return fail(
-        `${conflicts.join('\n')}\n${sketch.target} not rebased - port these by hand, then run sketch rebase again`,
+        `${conflicts.join('\n')}\n${sketch.target} not rebased - port these by hand, then run ${context.invocation ?? repoInvocation({ root: context.target, subcommand: 'design' })} sketch rebase ${sketch.target} --ported --product ${product.name} --by <model id>`,
       );
 
     ported.forEach(({ variant, file, how }) => console.log(`PORTED ${variant}: ${file} (${how})`));

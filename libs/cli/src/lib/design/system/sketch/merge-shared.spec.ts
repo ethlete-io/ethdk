@@ -1,4 +1,14 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join, relative } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -75,6 +85,36 @@ describe('sharedPlanOf', () => {
         { targetDir: join(product.dir, 'pages/flows'), paths: ['flow.ts', 'old.ts'] },
       ],
     });
+  });
+
+  it('plans the merge once the shared/ file nobody imports is deleted, as the refusal says', () => {
+    const { sketch, product, parts } = twoTargets();
+    const old = join(sketch.dir, 'shared/old.ts');
+
+    write(old, 'export const old = 1;\n');
+
+    expect(sharedPlanOf({ sketch, variant: 'a', parts, product })).toBe(
+      'shared/old.ts is imported by no target and was held by none in the product - import it or delete it',
+    );
+
+    rmSync(old);
+
+    expect(sharedPlanOf({ sketch, variant: 'a', parts, product })).not.toBeTypeOf('string');
+  });
+
+  it('plans the merge once the target renames the shared/ folder of its own, as the refusal says', () => {
+    const { sketch, product, parts } = twoTargets();
+    const pinDir = dirname(parts[0]?.file ?? '');
+
+    write(join(pinDir, 'shared/own.ts'), 'export const own = 1;\n');
+
+    expect(sharedPlanOf({ sketch, variant: 'a', parts, product })).toBe(
+      'components/pin holds a shared/ folder of its own and imports @shared/ - rename the folder',
+    );
+
+    renameSync(join(pinDir, 'shared'), join(pinDir, 'own'));
+
+    expect(sharedPlanOf({ sketch, variant: 'a', parts, product })).not.toBeTypeOf('string');
   });
 
   it("still gives a one-target sketch every shared/ file, the variant's own winning", () => {
