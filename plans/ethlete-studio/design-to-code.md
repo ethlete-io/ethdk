@@ -4037,3 +4037,19 @@ weeks and rebase falls back to the commit search. Suspect. Tool fix (builder def
 985\. Linux builder (2026-11-12 night, 942): the app side of compare and of `shot?source=app` ignores the theme params
 (surface, color, scale), so a themed state is compared or shot in the default theme. Suspect (code read). Tool fix
 (builder default, tool backlog): pass them to the harness or refuse them with 400, with a biting spec.
+
+954 built (Linux, a5e51621c): `sketch list` and the `sketch check` sweep skip a sketches folder that holds only generated
+tsconfigs (`NOTE <dir>: holds no sketch, skipped`). Cause (spec-proven): the scan ignored the generated tsconfig.json only
+at the folder top, not in variant folders. A folder with real files and no sketch.json still reports unreadable. Open
+half: the merge-side cleanup lives in merge.ts/merge-step.ts and goes to the Mac.
+
+958 built (Linux, 527f74c97): `tools/vitest/workers.mjs` runs `tools/vitest/related-paths.mjs`, which refuses a
+`vitest related` argument that is not an existing path (exit 2, one line, no tests). Bite: real vitest exited 0 before.
+Cause of the flattened argument: Suspect, not reproduced.
+
+941 built (Linux, 903012491): `design serve` logs `design-explore: heap <used>/<limit> MB` every 5 min and one WARNING when
+the heap first passes 80 % (`heap-watch.ts`). Spec bites; live in a growing 2 GB process the WARNING came at 1817/2240 MB.
+
+986\. Linux builder (2026-11-12 night, 941): the design server heap leak behind 941 is not hunted. Suspect: the resident or
+the shot browser pool. Tool fix (builder default, tool backlog): a heap snapshot diff over two hours of `design serve`
+names the retainer; then a fix with a spec that bounds the heap over 200 shots.
