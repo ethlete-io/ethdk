@@ -3893,3 +3893,15 @@ no spec (the fixture has no built-in base).
 Cause: a refused `merge --allowed-by` kept its agent pick in `sketch.json`; a later `--variant b` merged the stale `a`.
 Now a refused allowed merge and the `mergeStepOf` pre-check restore the sketch, and a pick by a model id counts as no
 pick. Verified: three biting specs, related specs, lint, typecheck. Not verified: a live run; a non-model-id `--by`.
+
+993 built (Mac, 13b5cfde3, pushed): run-log.mjs prunes only the exact stem; a failed run log is renamed to -failed.log and
+never rotates. run-log.spec.mjs bites (0/2 old, 2/2 new). Failed logs now pile up until deleted by hand.
+
+996 built (Linux, d7036f901): Cause (measured): et-design.mjs refused a non-git checkout before it read the injected
+ETHLETE_DESIGN_CLI_ENTRY, so in a commit export every fake-cli test waited 10 s; load was not the cause (3/3 at load 0).
+The new spec bites. test:tools 449/449.
+
+969 built (Linux, d7036f901 with 996, and 98cd69ccf for the yarn--\* part): same cause as 996.
+
+997 built (Linux, 0509d4f23; archive run a07a9df66): the script counts "NNN built|closed|withdrawn|as built" paragraphs
+and parked-suspects.md lines as done; the budget refusal names the script; 47 findings archived.
