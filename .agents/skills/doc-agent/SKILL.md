@@ -87,8 +87,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
 
 - After the user confirms a short summary, write each decision as an ADR in `apps/ethlete-studio/docs/adr/`
   (English, the human's words verbatim and named "the human", never by name; run `yarn lint:person-names` before the commit; frontmatter `built: <sha>` or `open: B<row>`). Never in a plan section.
-- An ADR edit under `apps/ethlete-studio` is a change to ethlete-studio: put an `'ethlete-studio': none` changeset in
-  the same commit, or pre-push refuses the range.
+- A Studio ADR needs no changeset (ADR 0265).
 - Commit only plan and docs files: `git commit -- <paths>`. Never `git add -A`, never stash, never amend.
 - Collect notes, new group lines and closed rows in `.claude/handoffs/doc-agent-collect.md` (outside git; no archive,
   script or check), never open in `STATUS.md`. Once an hour and at shift end, fold them in (ten notes on one group are
