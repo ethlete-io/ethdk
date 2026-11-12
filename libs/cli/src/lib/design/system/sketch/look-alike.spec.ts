@@ -95,6 +95,23 @@ describe('sketchRendersOf look-alike warnings', () => {
     ]);
   });
 
+  it('zooms to the sketch list width Studio measured', async () => {
+    const { product, sketch } = acme(['a', 'b']);
+    const pictureOf = drawing({ a: fineEven, b: fineOdd });
+
+    const { lookAlike } = await sketchRendersOf({
+      product,
+      sketch,
+      load,
+      pictureOf,
+      boxOf,
+      lookAlike: true,
+      listWidth: 2600,
+    });
+
+    expect(lookAlike).toEqual([expect.stringContaining("look alike at Studio's fit zoom (59 %)")]);
+  });
+
   it('stays quiet about variants that differ in large shapes', async () => {
     const { product, sketch } = acme(['a', 'b']);
     const pictureOf = drawing({ a: largeLeft, b: largeRight });

@@ -5,7 +5,7 @@ import { startedByStudio } from './started-by-studio';
 import { BuildStamp, buildInfoOf, installedBuildInfoOf } from './stamp';
 
 /** Bumped whenever the contract between Studio and the design server changes. */
-export const STUDIO_API_LEVEL = 8;
+export const STUDIO_API_LEVEL = 9;
 
 export type ServerBuild = { stamp: BuildStamp; builtAt: number };
 

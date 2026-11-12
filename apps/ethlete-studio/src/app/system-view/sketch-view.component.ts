@@ -47,6 +47,7 @@ import {
   decideSketch$,
   discardSketch$,
   mergeSketch$,
+  saveListWidth,
   sketchPartOf,
   sketchPreview$,
 } from '../../host/design';
@@ -175,6 +176,7 @@ export const liveShotsOf = ({
         [restoredCamera]="openedCamera()"
         (retry)="retry.emit()"
         (cameraChange)="cameraChange.emit($event)"
+        (listWidthChange)="saveListWidth($event)"
         (discard)="discard()"
         (merge)="openMerge($event)"
         (roundChange)="pickRound($event)"
@@ -797,6 +799,10 @@ export class SketchViewComponent {
         finalize(() => this.merging.emit(false)),
       ),
     );
+  }
+
+  protected saveListWidth(width: number) {
+    void saveListWidth(this.port(), width);
   }
 
   protected discard() {

@@ -118,6 +118,7 @@ import { CheckSketches, createSketchChecker } from './system/sketch/sketch-check
 import { forgetUnchangedStates } from './system/sketch/unchanged-states';
 import { inventoryOf } from './system/inventory';
 import { SHOT_VIEW_PATH } from './shot-board';
+import { STUDIO_LIST_WIDTH_PATH, studioListWidthMiddleware } from './studio-list-width';
 import { createAppStateShots } from './system/app-state-shot';
 import { createDrawQueue, createThumbnailer, send, THUMB_PATH, ThumbMissingError } from './thumb';
 import { DeclaredMotion, motionMiddleware } from './motion-endpoint';
@@ -944,6 +945,7 @@ const designExplore = ({
       vite.middlewares.use(THUMB_PATH, thumbs.middleware);
       vite.middlewares.use(SHOT_PATH, shots.middleware);
       vite.middlewares.use(SHOT_VIEW_PATH, shots.viewMiddleware);
+      vite.middlewares.use(STUDIO_LIST_WIDTH_PATH, studioListWidthMiddleware(target));
       vite.middlewares.use(
         MOTION_PATH,
         motionMiddleware({

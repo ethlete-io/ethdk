@@ -9,6 +9,7 @@ import { Sketch } from './system/sketch/sketch';
 import { VariantChange } from './system/sketch/viewed-shots';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';
 import { DesignServer, Drawing, drawingOn, loadingOn, WarmDraw } from './warm-draw';
+import { studioListWidthOf } from './studio-list-width';
 
 type SketchShots = {
   target: string;
@@ -137,6 +138,7 @@ export const sketchRenderLines = async (options: SketchShots): Promise<{ refusal
         boxOf: shooter.changedBoxesOf,
         load: loaderOf(drawing.server),
         lookAlike: true,
+        listWidth: studioListWidthOf(options.target) ?? undefined,
       });
     });
 

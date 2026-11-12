@@ -169,6 +169,7 @@ export const sketchRendersOf = async (options: {
   pictureOf: PictureOf;
   boxOf: BoxOf;
   lookAlike?: boolean;
+  listWidth?: number;
 }): Promise<{ identical: IdenticalRender[]; lookAlike: string[] }> => {
   const { product, sketch, load, pictureOf, boxOf } = options;
   const lookAlike: string[] = [];
@@ -194,7 +195,15 @@ export const sketchRendersOf = async (options: {
     const current = now ? { name: AKTUELL, states: now } : null;
 
     if (options.lookAlike)
-      lookAlike.push(...(await lookAlikeWarningsOf({ target: `${sketch.target}${of}`, variants, current, boxOf })));
+      lookAlike.push(
+        ...(await lookAlikeWarningsOf({
+          target: `${sketch.target}${of}`,
+          variants,
+          current,
+          boxOf,
+          listWidth: options.listWidth,
+        })),
+      );
 
     for (const render of await refusalsOf({ variants, current, of, target: sketch.target, boxOf }))
       found.push({ ...render, line: `${sketch.target} ${render.line}` });

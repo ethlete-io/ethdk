@@ -591,6 +591,13 @@ export const showShots = (origin: string, shots: ShownShots) =>
     () => undefined,
   );
 
+/** Tells the design server on `port` how wide the sketch list is, so its look-alike check zooms as Studio does. */
+export const saveListWidth = (port: number, width: number) =>
+  fetch(`http://localhost:${port}/__design/list-width`, postJson({ width })).then(
+    () => undefined,
+    () => undefined,
+  );
+
 /** A full sketch listing renders and compares every variant, which takes 30 s and more on a cold server. */
 export const LISTED_SKETCHES_TIMEOUT_MS = 120_000;
 

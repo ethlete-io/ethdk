@@ -21,8 +21,8 @@ export const LOOK_ALIKE_PIXELS = 1500;
 /**
  * The zoom the Studio sketch view fits a sketch's frames to, by the width rule of `fitScaleOf` in
  * `apps/ethlete-studio/src/app/design-parts/sketches/sketches.component.ts`: one row per variant and Aktuell side by
- * side once a frame is wider than a quarter of the list, else up to four states per row. The list is taken as wide as
- * Studio's default window.
+ * side once a frame is wider than a quarter of the list, else up to four states per row. Without `listWidth` the list
+ * is taken as wide as Studio's default window.
  */
 export const studioFitZoomOf = (options: { width: number; rows: number; states: number; listWidth?: number }) => {
   const { width, rows, states, listWidth = STUDIO_WINDOW_WIDTH } = options;
@@ -123,15 +123,16 @@ const regionText = (box: ChangedBox) => `${box.width}x${box.height} at ${box.x},
 /**
  * One warning per pair of `variants` whose shots differ by at least `LOOK_ALIKE_PIXELS` visibly different pixels at
  * 100 %, but in no state by that many screen pixels at Studio's fit zoom; it names the state and the region in which they differ most. The zoom follows
- * `studioFitZoomOf` for the widest shot, times `cropMagnifyOf` the changes against `current` when Studio crops to them.
+ * `studioFitZoomOf` for the widest shot and `listWidth`, times `cropMagnifyOf` the changes against `current` when Studio crops to them.
  */
 export const lookAlikeWarningsOf = async (options: {
   target: string;
   variants: readonly LookAlikeVariant[];
   current: LookAlikeVariant | null;
   boxOf: BoxOf;
+  listWidth?: number;
 }): Promise<string[]> => {
-  const { target, variants, current, boxOf } = options;
+  const { target, variants, current, boxOf, listWidth = STUDIO_WINDOW_WIDTH } = options;
   const decoded = new Map<Buffer, Pixels | null>();
   const pixelsOf = (shot: Buffer) => {
     if (!decoded.has(shot))
@@ -149,8 +150,8 @@ export const lookAlikeWarningsOf = async (options: {
     1,
     ...shown.flatMap((drawn) => [...drawn.states.values()].map((state) => pixelsOf(state.shot)?.width ?? 0)),
   );
-  const fit = studioFitZoomOf({ width: widest, rows: shown.length, states: states.size });
-  const transposed = widest > STUDIO_WINDOW_WIDTH / TRANSPOSE_SHARE;
+  const fit = studioFitZoomOf({ width: widest, rows: shown.length, states: states.size, listWidth });
+  const transposed = widest > listWidth / TRANSPOSE_SHARE;
   const scaleOf = async (state: string) => {
     const now = current?.states.get(state);
 

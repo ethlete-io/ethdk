@@ -19,8 +19,8 @@ import {
   viewChildren,
   ViewEncapsulation,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { debounceTime, from, map, Subject, tap } from 'rxjs';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { debounceTime, distinctUntilChanged, filter, from, map, Subject, tap } from 'rxjs';
 import { BADGE_IMPORTS, BUTTON_IMPORTS, FORM_FIELD_IMPORTS, SELECT_IMPORTS } from '@ethlete/components';
 import {
   ProvideColorDirective,
@@ -202,6 +202,7 @@ export class SketchesComponent {
   public pick = output<string>();
   public expandedChange = output<readonly string[]>();
   public cameraChange = output<Camera | null>();
+  public listWidthChange = output<number>();
   private list = viewChild.required('list', { read: ElementRef<HTMLElement> });
   private world = viewChild.required('world', { read: ElementRef<HTMLElement> });
   private matrix = viewChild('matrix', { read: ElementRef<HTMLElement> });
@@ -419,6 +420,16 @@ export class SketchesComponent {
       .pipe(
         debounceTime(300),
         tap((camera) => this.cameraChange.emit(camera)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    toObservable(this.listWidth)
+      .pipe(
+        filter((width) => width > 0),
+        debounceTime(500),
+        distinctUntilChanged(),
+        tap((width) => this.listWidthChange.emit(width)),
         takeUntilDestroyed(),
       )
       .subscribe();
