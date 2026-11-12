@@ -3932,3 +3932,13 @@ should grow is open. Checked and left, no shared new-and-drawn window: "a part s
 in the first frame", "a sketch scroll never empties a cell that had a picture", "a sketch keeps its frame count and
 pictures through a sketch edit" (a fixed watch window), "page switch time is logged to the design timings" (records
 mounted, first and all painted separately), "the sketch view at 30 % and 100 % draws no failed picture ...".
+
+904 as built: `write-build-info.mts` stamps `commit` (`git rev-parse HEAD`) into `build-info.json`; the copies
+`yarn et:design` runs from `tmp/studio-cli/<sha>` already carried it as `pinned-commit`. `runningCliStaleWarning` in
+`libs/cli/src/lib/design/stale-cli-dist.ts` now reads that commit and runs one `git diff --quiet <commit>` over the
+built paths of `libs/cli` (specs and `.md` excluded); a change prints one stderr line naming the commit. A build made
+from uncommitted sources stays silent while its `sourceHash` still matches them. Silent under `node_modules`, for an
+unknown commit and outside git. Cause of the miss (probe): the B191 check (2086f4cda) returned null unless the CLI ran
+from `dist/libs/cli`, and `yarn et:design` runs a copy under `tmp/studio-cli/`; `runningCliStaleWarning()` loaded
+from the 448c47f16 copy returned null. Spec: `build-commit.spec.ts` (temp git repo); it also caught the build dir's own
+`src` being taken for the source root.
