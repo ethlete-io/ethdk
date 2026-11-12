@@ -100,7 +100,7 @@
     {
       "key": "r1",
       "title": "",
-      "note": "Adds the unanswered server state: the starting screen plus one muted line 'Design-Server antwortet nicht: http://localhost:4402'."
+      "note": "Neuer Zustand: der Server lauscht, antwortet aber 30 s nicht. Startbildschirm plus eine gedämpfte Zeile 'Design-Server antwortet nicht: http://localhost:4402'."
     }
   ],
   "variantInfo": {
