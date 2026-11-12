@@ -1,11 +1,12 @@
+import { spawn } from 'child_process';
 import { randomUUID } from 'crypto';
-import { mkdtempSync } from 'fs';
+import { mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { setTimeout as delay } from 'timers/promises';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ResidentClient, runThroughResident, stopResident } from './client';
-import { readDiscovery, writeDiscovery } from './discovery';
+import { ResidentClient, runThroughResident, SCRATCH_MARKER, stopResident } from './client';
+import { isAlive, readDiscovery, writeDiscovery } from './discovery';
 import { ResidentRun, startResidentServer } from './server';
 
 const DEAD_PID = 2 ** 22 + 17;
@@ -19,10 +20,19 @@ afterEach(async () => {
 
 const checkoutOf = () => mkdtempSync(join(tmpdir(), 'cli-resident-client-'));
 
-const startFake = async (options: { target: string; build?: string; run?: ResidentRun; pid?: number }) => {
+const startFake = async (options: {
+  target: string;
+  build?: string;
+  run?: ResidentRun;
+  pid?: number;
+  onStop?: () => void;
+}) => {
   const { target, build = 'b1', pid = nextPid++ } = options;
   const token = randomUUID();
-  const stopped = vi.fn(() => void live.delete(pid));
+  const stopped = vi.fn(() => {
+    live.delete(pid);
+    options.onStop?.();
+  });
 
   live.add(pid);
 
@@ -178,6 +188,37 @@ describe('runThroughResident', () => {
     expect(err).toEqual([
       `the resident design process (pid ${fake.pid}) ended without an answer - running in-process\n`,
     ]);
+  });
+});
+
+describe('runThroughResident in a scratch copy', () => {
+  const residentProcessesOf = async (scratch: boolean) => {
+    const target = checkoutOf();
+
+    if (scratch) writeFileSync(join(target, SCRATCH_MARKER), '');
+
+    const child = spawn(process.execPath, ['-e', 'setInterval(() => undefined, 1e6)'], { stdio: 'ignore' });
+    const pid = child.pid ?? 0;
+
+    closers.push(async () => void child.kill('SIGKILL'));
+    await startFake({ target, pid, onStop: () => child.kill('SIGKILL') });
+
+    const { client } = clientOf({ alive: isAlive, kill: (dead) => process.kill(dead, 'SIGKILL') });
+
+    expect(
+      await runThroughResident({ target, argv: ['compare', 'pages/start'], invocation: 'et design', client }),
+    ).toBe(0);
+    await delay(100);
+
+    return [pid].filter(isAlive).length;
+  };
+
+  it('leaves no resident process running after the call', async () => {
+    expect(await residentProcessesOf(true)).toBe(0);
+  });
+
+  it('keeps the resident process of a real checkout warm for the next call', async () => {
+    expect(await residentProcessesOf(false)).toBe(1);
   });
 });
 

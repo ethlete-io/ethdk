@@ -1,5 +1,5 @@
 import { spawn } from 'child_process';
-import { mkdirSync, openSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from 'fs';
 import { request as httpRequest } from 'http';
 import { join, resolve } from 'path';
 import { setTimeout as delay } from 'timers/promises';
@@ -15,6 +15,9 @@ export const RESIDENT_ENV = 'ETHLETE_DESIGN_RESIDENT';
 export const RESIDENT_SERVE = '__resident';
 
 const DEFAULT_COLD_START_S = 20;
+
+/** Must match MARKER in tools/scripts/scratch-checkout.mjs. */
+export const SCRATCH_MARKER = '.scratch-checkout';
 
 export type ResidentClient = {
   build: string;
@@ -294,6 +297,7 @@ export const sendRun = ({
 /**
  * Runs `et design <argv>` in the resident process of the checkout and answers its exit code, or null after one printed
  * line when the call must run in its own process: in CI, with `ETHLETE_DESIGN_RESIDENT=0`, or when the process fails.
+ * In a `yarn scratch:checkout` copy it stops the process after the run, so no resident or Chromium outlives the call.
  */
 export const runThroughResident = async (options: {
   target: string;
@@ -318,6 +322,11 @@ export const runThroughResident = async (options: {
 
   if (code === null)
     client.err(`the resident design process (pid ${found.pid}) ended without an answer - running in-process\n`);
+
+  if (existsSync(join(target, SCRATCH_MARKER))) {
+    await stopProcess({ found, target, client });
+    client.err(`stopped the resident design process (pid ${found.pid}) of this scratch copy\n`);
+  }
 
   return code;
 };
