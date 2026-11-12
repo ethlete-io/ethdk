@@ -6,12 +6,15 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { git, gitEnv, tempGitRepo } from './git-test-env.mjs';
 import {
+  activeSliceBlocks,
   describeSource,
   formatSlicePathsFile,
   isAllowedPath,
+  parseSliceBlocks,
   parseSlicePaths,
   pathsChangedByMerge,
   pathsOutsideSlice,
+  upsertSliceBlock,
   warningFor,
 } from './check-slice-paths.mjs';
 
@@ -185,4 +188,58 @@ test('pathsChangedByMerge keeps only paths that differ from both sides', () => {
     pathsChangedByMerge(['b'], (rev, path) => (rev === 'T' ? '2' : blob(rev, path)), ['HEAD', 'MERGE_HEAD', 'T']),
     [],
   );
+});
+
+test('a second --set keeps the fresh slice of another name and replaces its own name', () => {
+  const first = upsertSliceBlock('', 0, 'a', ['tools/'], NOW);
+  const second = upsertSliceBlock(first, 0, 'b', ['libs/x/'], NOW + 60000);
+  const third = upsertSliceBlock(second, 0, 'b', ['libs/y/'], NOW + 120000);
+
+  assert.deepEqual(parseSlicePaths(third), ['tools/', 'libs/y/']);
+  assert.deepEqual(
+    parseSliceBlocks(third, 0).map((block) => block.name),
+    ['a', 'b'],
+  );
+});
+
+test('a --set drops stale slices, and the check falls back to them only when none is fresh', () => {
+  const old = formatSlicePathsFile('old', ['apps/'], NOW - 3 * HOUR);
+
+  assert.deepEqual(parseSlicePaths(upsertSliceBlock(old, 0, 'new', ['tools/'], NOW)), ['tools/']);
+  assert.deepEqual(
+    activeSliceBlocks(old + formatSlicePathsFile('new', ['tools/'], NOW), 0, NOW).map((block) => block.name),
+    ['new'],
+  );
+  assert.deepEqual(
+    activeSliceBlocks(old, 0, NOW).map((block) => block.name),
+    ['old'],
+  );
+});
+
+test('a legacy file with no header stays one block', () => {
+  assert.deepEqual(
+    parseSliceBlocks('apps/a/\n', NOW).map((block) => block.writtenAt),
+    [NOW],
+  );
+});
+
+test('two slices set in one checkout both cover their staged paths', () => {
+  const dir = tempGitRepo('slice-two-');
+  write(dir, 'tools/own.mjs', 'a\n');
+  write(dir, 'libs/x/a.ts', 'a\n');
+  commitAll(dir, 'base');
+  const env = gitEnv();
+  delete env.ETHLETE_SLICE_PATHS;
+  spawnSync(process.execPath, [SCRIPT, '--set', 'one', 'tools/'], { cwd: dir, env });
+  spawnSync(process.execPath, [SCRIPT, '--set', 'two', 'libs/x/'], { cwd: dir, env });
+  write(dir, 'tools/own.mjs', 'b\n');
+  write(dir, 'libs/x/a.ts', 'b\n');
+  write(dir, 'apps/z.ts', 'b\n');
+  git(dir, 'add', '-A');
+  const result = runNode(dir);
+
+  assert.match(result.stderr, /1 staged path is outside the slice/);
+  assert.match(result.stderr, /slices "one", "two"/);
+  assert.match(result.stderr, /apps\/z\.ts/);
+  assert.doesNotMatch(result.stderr, /^  (tools|libs)\//m);
 });

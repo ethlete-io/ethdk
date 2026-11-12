@@ -50,17 +50,53 @@ export const pathsChangedByMerge = (paths, blob, sides) =>
 export const formatSlicePathsFile = (name, paths, now) =>
   `# slice: ${name}\n# written: ${new Date(now).toISOString()}\n${paths.join('\n')}\n`;
 
+const writtenAtOf = (content, mtimeMs) => {
+  const written = /^#\s*written:\s*(\S+)/m.exec(content)?.[1];
+
+  return written && !Number.isNaN(Date.parse(written)) ? Date.parse(written) : mtimeMs;
+};
+
+/** Splits a slice-paths file into one block per `# slice:` header; text before the first header is one unnamed block. */
+export const parseSliceBlocks = (content, mtimeMs) =>
+  content
+    .split(/^(?=#\s*slice:)/m)
+    .filter((text) => parseSlicePaths(text).length > 0)
+    .map((text) => ({
+      name: /^#\s*slice:\s*(.+)$/m.exec(text)?.[1].trim(),
+      writtenAt: writtenAtOf(text, mtimeMs),
+      text: text.endsWith('\n') ? text : `${text}\n`,
+    }));
+
+/** Keeps every fresh block of other slices, so a second slice in the same checkout does not drop the first one. */
+export const upsertSliceBlock = (content, mtimeMs, name, paths, now) =>
+  [
+    ...parseSliceBlocks(content, mtimeMs)
+      .filter((block) => block.name !== name && now - block.writtenAt <= STALE_AFTER_MS)
+      .map((block) => block.text),
+    formatSlicePathsFile(name, paths, now),
+  ].join('');
+
+/** The blocks the check applies: every fresh block, or all blocks when none is fresh. */
+export const activeSliceBlocks = (content, mtimeMs, now) => {
+  const blocks = parseSliceBlocks(content, mtimeMs);
+  const fresh = blocks.filter((block) => now - block.writtenAt <= STALE_AFTER_MS);
+
+  return fresh.length > 0 ? fresh : blocks;
+};
+
 export const describeSource = ({ env, file }, now) => {
   if (env) return { text: 'env ETHLETE_SLICE_PATHS', stale: false };
 
-  const name = /^#\s*slice:\s*(.+)$/m.exec(file.content)?.[1].trim();
-  const written = /^#\s*written:\s*(\S+)/m.exec(file.content)?.[1];
-  const writtenAt = written && !Number.isNaN(Date.parse(written)) ? Date.parse(written) : file.mtimeMs;
-  const ageMs = Math.max(0, now - writtenAt);
+  const blocks = parseSliceBlocks(file.content, file.mtimeMs);
+  const names = blocks.map((block) => block.name).filter(Boolean);
+  const writtenAt = Math.max(...blocks.map((block) => block.writtenAt), Number.NEGATIVE_INFINITY);
+  const ageMs = Math.max(0, now - (Number.isFinite(writtenAt) ? writtenAt : file.mtimeMs));
   const minutes = Math.round(ageMs / 60000);
   const age = minutes < 90 ? `${minutes} min` : `${Math.round(minutes / 6) / 10} h`;
   const stale = ageMs > STALE_AFTER_MS;
-  const label = `file ${file.path}${name ? `, slice "${name}"` : ''}, written ${age} ago`;
+  const named =
+    names.length === 0 ? '' : `, slice${names.length > 1 ? 's' : ''} ${names.map((n) => `"${n}"`).join(', ')}`;
+  const label = `file ${file.path}${named}, written ${age} ago`;
 
   return { text: stale ? `${label} - stale` : label, stale };
 };
@@ -107,9 +143,12 @@ const readSource = () => {
 
   if (!path || !existsSync(path)) return { patterns: [], source: null };
 
-  const content = readFileSync(path, 'utf8');
+  const mtimeMs = statSync(path).mtimeMs;
+  const content = activeSliceBlocks(readFileSync(path, 'utf8'), mtimeMs, Date.now())
+    .map((block) => block.text)
+    .join('');
 
-  return { patterns: parseSlicePaths(content), source: { file: { path, content, mtimeMs: statSync(path).mtimeMs } } };
+  return { patterns: parseSlicePaths(content), source: { file: { path, content, mtimeMs } } };
 };
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
@@ -121,7 +160,19 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       process.exit(1);
     }
 
-    writeFileSync(slicePathsFile(), formatSlicePathsFile(name, paths, Date.now()));
+    const file = slicePathsFile();
+    const exists = existsSync(file);
+
+    writeFileSync(
+      file,
+      upsertSliceBlock(
+        exists ? readFileSync(file, 'utf8') : '',
+        exists ? statSync(file).mtimeMs : 0,
+        name,
+        paths,
+        Date.now(),
+      ),
+    );
   } else {
     const { patterns, source } = readSource();
 
