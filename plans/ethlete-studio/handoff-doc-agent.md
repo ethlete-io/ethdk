@@ -6,12 +6,7 @@ until they say they are back.
 ## Sessions
 
 - Linux builder: ethlete-sdk-3e in tmux `claude-3@ethlete-sdk`, role builder.
-- Mac builder: tmux `claude@ethlete-sdk` on ethlete-mac (told to restart itself with `--role builder`; check with a
-  pane capture). Send work with a file: `scp -q /tmp/x.txt ethlete-mac:/tmp/x.txt && ssh ethlete-mac 'zsh -lc "cd
-~/dev/ethlete-sdk && node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs send doc-agent --to claude <
-/tmp/x.txt"'`. Never put the message inline in the ssh string: backticks ran `git pull` and `git push` on the Mac once.
-- Start the Mac mailbox wait in the background at once:
-  `ssh ethlete-mac 'zsh -lc "cd ~/dev/ethlete-sdk && node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs inbox doc-agent --wait 3500"'`
+- Mac builder: offline for good (the human, 2026-11-12). Send it nothing; no Mac mailbox wait. One builder only (ADR 0285).
 
 ## State
 
@@ -318,3 +313,6 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - ADR 0282 (B505: main workflow for rust-audit + spec-sweep, issue on red, not in et design status) and ADR 0283 (B506 fonts self-hosted, 811 815, before B498; 466 out, 733 -> B503). Open to the human: Q6 must cargo audit in ci.yml block a push?
 - Q6 answered -> ADR 0282 follow-up: audit-rust steps leave ci.yml; rust-audit.yml keeps its Cargo push trigger (c6184dbb0).
 - 12.11.: the human rejects the foundations/colors 933 sketch (text-colour-only disabled button irritates) -> rework sent to Linux; stale ready mark of pages/sketches@all-states -> line in B501 (7b4713793), to Linux.
+- 12.11. late morning: ADR 0284 (hourly doc commits, collect in .claude/handoffs/doc-agent-collect.md; builder closes its rows), ADR 0285 (one builder on Linux; night order evening list, second list, then B498-B506). Skill growth counted in words (0e2c2ee70); skills trimmed (faf18ab47, 70077f183, 684e0391a). B496 closed (778d724ee).
+- Studio compare view (B504, Linux after B505): far-apart changes merged into one crop against ADR 0126; inserted content gets no change mark. Shots in /tmp/doc-agent/.
+- Linux push blocked by the B494 step leak check (13 old e2e tmp folders); fixed in slice per ADR 0280, revert on a third follow-up.
