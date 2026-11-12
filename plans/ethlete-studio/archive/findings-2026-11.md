@@ -9428,3 +9428,38 @@ maxRetries. Tool fix (builder default): `maxRetries: 2` at canvas.e2e.mjs:1467 a
 b and c before the look-alike step, so a refusal hides the later steps. Suspect: refusal ordering. Tool fix (builder
 default, tool backlog): `sketch check` runs every step and lists all problems before it exits 1; the rating b/c
 UTILITY-CSS lines get fixed in the sketch. Parked (ADR 0276), see parked-suspects.md.
+
+905\. Mac builder (2026-11-11 night, compare after 284ec66fb): `pages/sketches` compare fails `action-name` on the comment
+pins, and the "Übernehmen" (2.) and "Alle Zustände zeigen" rows fail as a follow-on of the name match. No finding named
+it before. Suspect (code read, no run before 284ec66fb): the app pin carries the real author name of the human ("Comment
+by <name>"), the design sample draws "Comment by human"; a sample-data gap between app and design, not a ready-record
+drop. Lesson: the compare harness feeds the app real local data where the design draws sample data, so a name check
+fails on content, not on design drift. Tool fix (builder default): the harness gives the app the design's sample author,
+or the name matcher masks author names; probe first (compare at 238235493 in a scratch checkout). Queue: Mac, after its push.
+
+905 update (Mac, b3854241c): Cause (spec bite): the author came from the app sample `SKETCH_PINS` (`sketches-sample.ts`,
+default of the pins input of pages/sketches) and held a real name; not harness, not git. Fix: sample author "human" as in
+the design; new spec fails on old code. pages/sketches compare FAILED rows 50 -> 35, pin-name rows 16 -> 1.
+
+905 as built: Cause (verified): the app's `SKETCH_PINS` sample, which the harness renders as the `pins` default of
+`pages/sketches`, named a real person, while the design's sample pin author is "human"; the sample now uses "human".
+A spec fails on the old name. The pages/sketches compare went from 50 to 35 FAILED rows, the pin rows from 16 to 1. Left,
+separate gaps: `all-unchanged` still shows the pin where the design folds it, and the 19 "Alle Zustände zeigen" and the
+2 "Übernehmen" (2.) rows stay - the design draws no such element; the pin name was only the nearest unmatched hint.
+
+909\. Mac builder (2026-11-12 night, after 905): pages/sketches state `all-unchanged`: the design folds the pin into the
+"Unverändert: Variante a, Variante b" disclosure; the app does not. Suspect (one compare). The design is the truth (the
+app implements it): the app gets the fold, unless a later ADR changed the design intent. Queue: Mac, after 911.
+
+909 as built: Cause (verified): when no variant changes any state, every state folds, so `shownRows` hands the variants
+zero shots and `sameRows` (which skipped rows without shots) folded none of them; variant a stayed a row with its comment
+pin. Sameness is now judged on the unfiltered rows, so a and b fold into "Unverändert: Variante a, Variante b". No ADR
+decides against the fold. A spec fails on the old code. The pages/sketches compare went from 35 to 34 FAILED rows: the
+`all-unchanged` pin row is gone and its "Unverändert" button matches; its "Alle Zustände zeigen" row stays (the
+separate state-fold gap from 905). No other state got a new failure.
+
+993\. Mac builder (2026-11-12, 983): push-suite keeps only the latest e2e failure log, so an earlier failure lost its
+error text. Cause (seen). Tool fix (builder default): keep each failure log, one file per attempt.
+
+993 built (Mac, 13b5cfde3, pushed): run-log.mjs prunes only the exact stem; a failed run log is renamed to -failed.log and
+never rotates. run-log.spec.mjs bites (0/2 old, 2/2 new). Failed logs now pile up until deleted by hand.

@@ -3071,14 +3071,6 @@ the harness host before the app shot, so the part inherited the design font and 
 that differs from the design root's first family fails the state with a problem line. Live bite: body Jost -> all 15
 elements/shell-main states FAILED "app body renders in jost, design root font is noto sans"; reverted -> passes.
 
-905\. Mac builder (2026-11-11 night, compare after 284ec66fb): `pages/sketches` compare fails `action-name` on the comment
-pins, and the "Übernehmen" (2.) and "Alle Zustände zeigen" rows fail as a follow-on of the name match. No finding named
-it before. Suspect (code read, no run before 284ec66fb): the app pin carries the real author name of the human ("Comment
-by <name>"), the design sample draws "Comment by human"; a sample-data gap between app and design, not a ready-record
-drop. Lesson: the compare harness feeds the app real local data where the design draws sample data, so a name check
-fails on content, not on design drift. Tool fix (builder default): the harness gives the app the design's sample author,
-or the name matcher masks author names; probe first (compare at 238235493 in a scratch checkout). Queue: Mac, after its push.
-
 903 update (Linux builder): Cause (measured): OFF-CENTRE on studio `components/zoom-chip` is 0 at aaeef909d^ and 28 at
 aaeef909d (B490 merge, `--font-ui` -> Noto Sans) and at HEAD; 210235327 only changes project.json. `apps/ethlete-studio/src/styles/sdk-token-map.css`
 gives every `.et-button` line-height 1.5 at `--text-md` (13 px) = 19.5 px; Noto fills 18 px and Chromium puts the 1.5 px
@@ -3123,14 +3115,6 @@ no fallback becomes `unset` and the author rule beats the UA sheet, so `<button>
 before the push. Lesson: the doc agent sent a CSS mechanism it had not measured; send the intent and the probe, not an
 unmeasured mechanism.
 908: revert-layer fallback measured equal in Chromium 156, Firefox 157, WebKit 27.2 (Playwright builds); older iOS Safari not tested.
-
-905 update (Mac, b3854241c): Cause (spec bite): the author came from the app sample `SKETCH_PINS` (`sketches-sample.ts`,
-default of the pins input of pages/sketches) and held a real name; not harness, not git. Fix: sample author "human" as in
-the design; new spec fails on old code. pages/sketches compare FAILED rows 50 -> 35, pin-name rows 16 -> 1.
-
-909\. Mac builder (2026-11-12 night, after 905): pages/sketches state `all-unchanged`: the design folds the pin into the
-"Unverändert: Variante a, Variante b" disclosure; the app does not. Suspect (one compare). The design is the truth (the
-app implements it): the app gets the fold, unless a later ADR changed the design intent. Queue: Mac, after 911.
 
 910\. Mac builder (2026-11-12 night, after 905): 19 "Alle Zustände zeigen" rows and 2 "Übernehmen" (2.) rows
 (`withdrawn-hidden` / `-shown`) fail with "design draws no such element"; the props compare cannot check withdrawn,
@@ -3688,9 +3672,6 @@ failure was not reproduced on 32 cores. Suspect: the macOS scheduler starves the
 the fit zoom (1280 px fallback). STUDIO_API_LEVEL 9. Spec bites. Not verified live. 957 not built: calibration needs live
 checks on the 7 committed sketches after `nx build components`.
 
-993\. Mac builder (2026-11-12, 983): push-suite keeps only the latest e2e failure log, so an earlier failure lost its
-error text. Cause (seen). Tool fix (builder default): keep each failure log, one file per attempt.
-
 957 built (Linux, 01f0cd0c6): the look-alike bar is min(1500, 0.25 × the region's screen pixels at fit); a pair counts as
 different at 100 % only if it clears the same bar at scale 1. Cause (measured) why not a pure relative rule: the
 checkerboard spec needs k > 0.113, the committed pairs need k < 0.102 (merge a/c). Spec bites (200×40 block). Live re-run
@@ -3731,24 +3712,11 @@ a new spec fails on the old code; with the body set to 'Jost' the studio `elemen
 state with the new line, and passed the check after the revert (its pre-existing project-picker pixel diff stays). No
 sdk part has an `implements` link, so the check has no sdk hits.
 
-905 as built: Cause (verified): the app's `SKETCH_PINS` sample, which the harness renders as the `pins` default of
-`pages/sketches`, named a real person, while the design's sample pin author is "human"; the sample now uses "human".
-A spec fails on the old name. The pages/sketches compare went from 50 to 35 FAILED rows, the pin rows from 16 to 1. Left,
-separate gaps: `all-unchanged` still shows the pin where the design folds it, and the 19 "Alle Zustände zeigen" and the
-2 "Übernehmen" (2.) rows stay - the design draws no such element; the pin name was only the nearest unmatched hint.
-
 911 as built: the inbox sample, its template pin and four specs under `apps/ethlete-studio/src` named a real person; they
 now use "human" with the initials "H". `check-person-names` already scanned `apps/`, but the baseline let those files
 pass, so it now ignores baseline entries for `apps/ethlete-studio/src/` and the entries were removed. A spec fails on the
 old code. The design's inbox sample (`.ethlete/design/studio`) still draws the old name and initials; it is a design
 file and was not touched.
-
-909 as built: Cause (verified): when no variant changes any state, every state folds, so `shownRows` hands the variants
-zero shots and `sameRows` (which skipped rows without shots) folded none of them; variant a stayed a row with its comment
-pin. Sameness is now judged on the unfiltered rows, so a and b fold into "Unverändert: Variante a, Variante b". No ADR
-decides against the fold. A spec fails on the old code. The pages/sketches compare went from 35 to 34 FAILED rows: the
-`all-unchanged` pin row is gone and its "Unverändert" button matches; its "Alle Zustände zeigen" row stays (the
-separate state-fold gap from 905). No other state got a new failure.
 
 911 design as built: the design's sample author in `components/comment-row`, `pages/inbox` and `components/comment-pin`
 named a real person; it is now "human" with the initials "H", like the app samples. One sketch with the three targets,
@@ -3893,9 +3861,6 @@ no spec (the fixture has no built-in base).
 Cause: a refused `merge --allowed-by` kept its agent pick in `sketch.json`; a later `--variant b` merged the stale `a`.
 Now a refused allowed merge and the `mergeStepOf` pre-check restore the sketch, and a pick by a model id counts as no
 pick. Verified: three biting specs, related specs, lint, typecheck. Not verified: a live run; a non-model-id `--by`.
-
-993 built (Mac, 13b5cfde3, pushed): run-log.mjs prunes only the exact stem; a failed run log is renamed to -failed.log and
-never rotates. run-log.spec.mjs bites (0/2 old, 2/2 new). Failed logs now pile up until deleted by hand.
 
 996 built (Linux, d7036f901): Cause (measured): et-design.mjs refused a non-git checkout before it read the injected
 ETHLETE_DESIGN_CLI_ENTRY, so in a commit export every fake-cli test waited 10 s; load was not the cause (3/3 at load 0).
