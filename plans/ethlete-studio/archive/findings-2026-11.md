@@ -9463,3 +9463,346 @@ error text. Cause (seen). Tool fix (builder default): keep each failure log, one
 
 993 built (Mac, 13b5cfde3, pushed): run-log.mjs prunes only the exact stem; a failed run log is renamed to -failed.log and
 never rotates. run-log.spec.mjs bites (0/2 old, 2/2 new). Failed logs now pile up until deleted by hand.
+
+849\. Linux builder (2026-11-11, from 848): the font-pair variants loaded their fonts, but at Studio's fit zoom (49 %)
+the 10-17 px samples drew at 5-8 px, so the human saw no difference; no check says that variants look alike at the
+zoom Studio shows them. Tool fix (grill decision): sketch check warns when two variant shots at Studio's fit zoom differ
+by less than a threshold in a region whose source differs, and names the variants and the region. Bite: the old font-pair
+sketch (before ccd93dfee, small samples only) gives the warning, the new one does not. Queue: after 846.
+
+849 built (Linux, a8768fc01): `sketch check` warns "variants X and Y look alike at Studio's fit zoom (N %)" when no state
+reaches 1500 differing pixels at fit zoom but the best state does at 100 %; a warning only, `sketch ready` does not
+refuse. Bite: the spec fails without the wiring; live, the font-pair sketch gives 3 warnings before ccd93dfee and none at
+it (margin only 1.7x). Not verified: the rule assumes the 1280 px default window (30 %); the human saw 49 % in a wider one.
+
+902\. Linux builder (2026-11-11 night): the merge of origin/next aborted because four uncommitted `.ethlete/design`
+record files (sdk/studio `ready.json` and `merged.json`) would be overwritten. Every hunk came from `et design check`
+(11 pids, 09:12Z to 20:24Z), so no session owned them. Doc agent applied ADR 0009: the builder commits them, then
+merges. Suspect: no command commits the records a design check writes, so they pile up in the shared tree for hours.
+Tool fix (builder default): pre-push or the push suite names uncommitted design record files with their age; tool
+backlog.
+
+902 built (Linux, a63f2683a): `yarn push` prints one warning line per uncommitted `.ethlete/design/<product>/{ready,merged}.json`
+with the minutes since its last write; it blocks nothing. Bite: the spec fails without the wiring. 966 built (Linux,
+8b5106a2c): Cause (spec bite): a shot-store write after the rm recreated the checkout; the store now skips `write` and
+`claim` once its checkout is gone. Not verified: a live cold-shots e2e run.
+
+906\. Linux builder (2026-11-12 night, 903 measurement): scratch tool gaps. `yarn scratch:checkout --help` copied the
+checkout to `./--help`; `et:design` needs git in a scratch copy (`git log -- libs/cli`) that `scratch:checkout` does not
+give; /tmp holds about 95 % of its inodes, and a components build in a /tmp scratch hit ENOSPC. Lesson: scratch copies
+pile up in /tmp with no cleanup, and a full /tmp fails builds with an error that does not name the cause. Tool fix
+(builder default): reject a target that starts with `-`; scratch tools default to the home disk and remove their copy;
+et:design runs without git or the scratch tool says so. Cleanup of own stale /tmp dirs now.
+
+906 update: the builder deleted its named stale scratch dirs; /tmp inodes 95 % -> 78 %. A broader sweep by age was
+refused by the permission check of its session; not worked around. Morning round: the human's OK for that sweep.
+
+906 built (Linux, d04ed6a63): `yarn scratch:checkout` refuses a target that starts with `-` (`--help` prints usage, exit 0)
+and a target in /tmp; no target gives `~/.cache/ethlete-scratch/scratch-<ms>`; `--remove` removes only a dir with the
+`.scratch-checkout` marker; `yarn et:design` without git exits 2 with the build-and-node command. Spec 8/8. Not verified:
+a full copy and `--remove` on the real repo.
+
+907\. Linux builder (2026-11-12 night, 906 cleanup): specs leak temp dirs into /tmp. Entries by prefix:
+playwright-artifacts 1624, archive-cli 296, untrack-spec 240, playwright_chromiumdev_profile 222, wf 195,
+cli-design-sketch-command 194, cli-design-system 180, adr 152, git-env-hook 130, studio-headless-inputs 120,
+plan-findings-archive 110, e2e-tokens 108. Suspect (counts, no per-spec bite). Lesson: no check asserts that a spec cleans
+up, so leaks grow until a build fails with ENOSPC. Tool fix (builder default, tool backlog): each spec removes its
+mkdtemp dir in afterEach/afterAll; a tools spec asserts no new /tmp entries after a spec file.
+
+907 built (Linux, 43d71245b, 2136dae62): `tools/scripts/temp-dir.mjs` `tempDir(prefix)` removes its dirs on exit; 14 tools
+specs use it, each measured prefix went to 0 new /tmp entries per run. `yarn spec:tmp-leaks <spec>...` runs each spec alone
+and names each spec that leaves new /tmp entries. Cause (measured) for the cli-design-* dirs: vitest at the repo root with
+no config skips the cli globalSetup that owns TMPDIR. Suspect (measured) for playwright-artifacts and chromium profiles:
+hard kills only (a SIGKILL leaves 2, a throw leaves 0). e2e-tokens belong to another repo.
+
+913\. Linux builder (2026-11-12 night, 903 slice): stale sketch states (an overlay pane the app no longer opens, a look
+that matches nothing) stayed invisible until a visible change hit the part. Suspect: no check flags an unreachable
+sketch state outside the visible-change gate. Tool fix (builder default, tool backlog): design check warns on every run
+for a state it cannot judge.
+
+913 + 918 built (Linux, 147f38202): the slow run records per part each state it cannot draw at HEAD (undrivable, missing
+pane, look miss, dropped prop) with the reason, also for the design-only compare (it dropped them silently before). Every
+`design check` prints `WARNING <product> <part>: state <s> cannot be judged - <why>`; never a failure. 2 specs bite;
+live: pages/sketches names change-crop and change-crop-whole. Gaps: old slow-cache entries warn only after the next slow
+run; sketches get no warnings.
+
+914\. Linux builder (2026-11-12 night, 912 slice): the finding-779 rule ("run the related specs") sent the builder to
+`npx vitest related`, which is the wrong runner for `tools/scripts` node:test specs: it picked about 698 files and 694
+"failed" with no tests. Cause: the rule names one runner for the whole repo. Tool fix (builder default, tool backlog):
+the rule names `node --test <related specs>` for `tools/**`.
+
+915\. Linux builder (2026-11-12 night, 912 slice): the pre-commit slice-path warning fired on `tools/scripts` files inside
+the declared slice. Suspect: the builder set the "903 token map" slice in the same checkout while the 912 subagent ran,
+and one slice-paths file per checkout holds only the newest slice. Tool fix (builder default, tool backlog): slice paths
+per session, not one file per checkout.
+
+915 built (Linux, 095a1a4bd): the slice-paths file holds one block per slice name; `--set` replaces only its own block
+and drops blocks older than 2 h; pre-commit applies the union of the fresh blocks and names every slice. Cause (reproduced):
+a second `--set` overwrote the first slice, so its staged files warned. Block per name, not per session: builder and
+subagent share one session. 4 specs, node --test 19/19; the bite ran by hand, old vs new script in a temp repo.
+
+917\. Linux builder (2026-11-12 night, 903 slice): the xs button with a kbd chip rendered 25.25 px instead of its 24 px
+token, and no check saw it. Suspect (grep only): no rule compares a sized control's rendered height with its
+`--control-*` token; compare diffs design against app with the same CSS, so 25.25 matched 25.25. Lesson: compare finds
+drift between two copies, never a shared defect. Tool fix (builder default, tool backlog): a CONTROL-HEIGHT render rule,
+tolerance 0.5 px.
+
+917 built (Linux, ab22c55f4): new CONTROL-HEIGHT render rule (`design/system/control-height.ts`) fails a control whose
+rendered height differs from its `--control-*` token by more than 0.5 px; baselined (ADR 0201), `data-et-skip` escapes it.
+It skips controls with overridden padding and controls with their own fixed height; it reads the computed style, so the
+0.2 thumbnail judges like full size (916). Spec bites (xs button + et-kbd, 25.25 vs 24, scale 1 and 0.2). Finding 789
+run: 0 hits in sdk, studio and studio-lab; the 903 case is already fixed at HEAD. Not verified: the 106 studio hits of the
+first version without skips (studio-menu trigger, canvas-frames buttons at 28.67 and 34 px, padding overridden) are not
+proven harmless.
+
+918\. Linux builder (2026-11-12 night, 903 slice): the pages/sketches states `change-crop` and `change-crop-whole` cannot
+be driven in the visible-change gate, before the 903 edit too. Same class as 913. Tool fix: the 913 warning (design
+check names every state it cannot judge) covers it; tool backlog.
+
+923\. Linux builder (2026-11-12 night, 916 spec): CLIPPED has no hidden-text exemption either; the spec's visually
+hidden span gets CLIPPED. Same class as 916: each render rule decides hidden text alone. Tool fix (builder default, tool
+backlog): one shared "visually hidden" test that every render rule uses, CLIPPED first.
+
+923 built (Linux, e98f58658, 5d2dd4e9f): `design/system/visually-hidden.ts` holds one clippedAway test (clip-path
+inset(50%), a zero clip, or a 1x1 overflow-hidden box, on the element or an ancestor); CLIPPED content and underline, WRAP
+and OFF-CENTRE use it; ring checks and CONTROL-HEIGHT judge boxes and stay. Spec bites (hidden "Control K" in 3 forms). The
+builder's review fix 5d2dd4e9f narrowed the subagent's "1 px wide OR high" to 1x1, so a 200x1 clipped box still fails
+(spec bites). Design check after e98f58658: 0 CLIPPED hits. Not run: a check after 5d2dd4e9f.
+
+927\. Linux builder (2026-11-12 night, 903 slice): a `scratch:checkout` copy has no `dist/`; compare there fails every
+harness part with "dist/libs/components missing", which reads like real results. Tool fix (builder default, tool
+backlog): `scratch:checkout` builds or links the dist, or compare refuses with one line. Seen again on the Mac (922).
+
+927 built (Linux, e59dea1b4): `design compare` calls missingDistOf after its argument checks, prints one "<dir> is missing -
+run <build>" line per missing lib build folder, exits 1 and runs no part. Spec bites; live in a scratch copy without dist.
+
+928\. Linux builder (2026-11-12 night, 903 slice): `compare --affected` has no baseline option, so old vs new needs a full
+second run in a scratch copy. Tool fix (builder default, tool backlog): `--base <sha>`, like `check --visible-change`.
+
+928 built (Linux, 43f0ba62c): `design compare --base <rev>` (every mode but `--live`) builds the harness of <rev> from the
+base clone of `check --visible-change` and prints "vs <sha9>: n new failure(s), m fixed" plus NEW/FIXED lines; the exit
+code is HEAD's. Cause (first live run): the resident harness start served its HEAD watch build for the base clone too, so
+base always equalled HEAD; fixed in `resident/resident-process.ts`, spec bites. Live: `--base HEAD~3` 0/0,
+`--base c538efb84~1` 33 fixed. Not verified live: `--base` with `--url`, a single-part compare with `--base`.
+
+931\. Linux builder (2026-11-12 night): `design compare` in a scratch copy leaves about 170 processes (a `__resident` node
+and headless Chromium) after it exits. Tool fix (builder default, tool backlog): compare stops its resident and browsers
+on exit in a scratch copy, with a spec that counts the processes.
+
+931 built (Linux, 1fe2bcc91): Cause (measured): after a compare in a scratch copy the detached `design __resident` stays
+30 min with its Chromium pool (8 processes, 189 threads; the "~170" was threads). `resident/client.ts` runThroughResident
+stops the resident after the run in a checkout with the `.scratch-checkout` marker (compare, check, sketch check/ready).
+Spec counts live children and bites; live 0 resident, 0 Chromium after a compare. Suspect, not tested: two runs in one
+scratch copy, the first stops the resident under the second (that one then runs in-process).
+
+932\. Linux builder (2026-11-12 night): `design compare --state` takes one state only, so a repeat over idle, paused and
+paused-reason needs three runs. Tool fix (builder default, tool backlog): `--state` takes a list.
+
+932 built (Linux, 803c592d5): `compare --state` takes a comma list or a repeated flag, drops duplicates, `--state ,` exits
+2; harness and `--live` filter by it and name the first unknown state. Spec bites. Not verified live: `--live` with a list.
+
+934\. Linux builder (2026-11-12 night, 903): the resident design server's `frame.html` did not pick up a source edit until
+a `design compare` ran. Tool fix (builder default, tool backlog): the resident serves a frame from the current source, or
+names its build time.
+
+934 built (Linux, 90f4ea850): the resident server in port mode (no file watch) checks on each `/frame.html` request whether
+a loaded source outside node_modules changed and reloads first (`frame-fresh.ts`, `serve.ts`). Spec bites. Not verified:
+a live resident run, the per-request cost on a large graph; files outside Vite's module list stay unchecked.
+
+935\. Linux builder (2026-11-12 night, 903): `design dom --app` prints markup only, no layout, so measuring the app needed a
+hand-served harness. Tool fix (builder default, tool backlog): `design dom` prints box geometry for both sides.
+
+935 built (Linux, 753cb38ea): `design dom` marks each element with `data-box="x y w h"` from the drawn root, design and
+`--app` side (`dom-boxes.ts`, `shot.ts`, `dom-command.ts`). Spec bites; live on components/comment-pin both sides agree.
+Not verified: no boxes inside a shadow root.
+
+936\. Linux builder (2026-11-12 night, 903): `sketch merge` commits itself as `feat` with no changeset, so each merge needs
+an extra changeset commit. Tool fix (builder default, tool backlog): the merge commit carries the `ethlete-studio: none`
+changeset.
+
+936 built (Linux, d11895195): `sketch/merge-changeset.ts` adds a `none` changeset for each workspace package a merge commit
+changes (root workspaces, `.changeset/config.json` ignore respected; nothing without a `.changeset` dir). Cause (measured):
+in this repo the extra commit was never needed; `.ethlete/design/studio` is in no workspace.
+
+937\. Linux builder (2026-11-12 night, 903): a sketch that design check cut from an uncommitted tree always needs
+`sketch rebase --ported` ("no commit holds the state the baseline recorded"). Tool fix (builder default, tool backlog):
+design check records the tree it cut from, and rebase accepts a baseline that matches the working tree.
+
+937 built (Linux, c23145e85): createSketch and rebaseSketch save the product folders as a git tree (temporary index) and
+record `baselineTree` in sketch.json; rebase tries it first. Cause (spec-proven): the baseline hash came from working-tree
+files no commit holds, and rebase searched only commits. Bite: 2 cases. Not verified live. Old sketches have no tree.
+
+938\. Linux builder (2026-11-12 night, 903): after a rebase the variant-new `readyContent` hash in `sketch.json` was stale,
+and merge did not complain. Tool fix (builder default, tool backlog): merge refuses a stale readyContent hash, with a bite.
+
+938 built (Linux, d17cbb1dc): Cause (fixture): a rebase that ports product changes rewrote the variant files but kept
+readyContent, ready status and pick, and changedSinceReadyOf skipped picked sketches. staleReadyRefusalOf now runs first in
+appGatedMergeOf (CLI + Studio merge) and names both hashes; `sketch check` warns READY-STALE on picked sketches too and
+`sketch ready` reopens the sketch and keeps the pick.
+
+939\. Linux builder (2026-11-12 night, 903): the sketch held an old `decision` (claude-sonnet-5-5) from a merge that never
+reached git; rebase and merge accepted it silently. Tool fix (builder default, tool backlog): rebase drops a decision
+whose merge commit does not exist, and merge names a reused decision.
+
+939 built (Linux, 2b4a85177): `sketch rebase` drops an agent pick with no "Merge <target> variant <v> into <product>" commit
+since decidedAt and prints DROPPED; `merge` prints REUSED for an old pick; designer picks stay. Each spec bites. Not
+verified: a live merge or rebase in a scratch copy.
+
+940\. Linux builder (2026-11-12 night, 903): the PreToolUse hook blocks `design compare --help` in the foreground as a
+compare run. Tool fix (builder default, tool backlog): the hook lets `--help` pass.
+
+940 built (Linux, afd882fa5): a `--help` or `-h` call of design check, compare, ready, sketch ready and harness passes the
+background hook in the foreground; `studio:e2e --help` stays denied (it still starts the full suite, see the 900 note above).
+Spec: 2 new cases fail on the old hook.
+
+942\. Doc agent (2026-11-12 night, 903 live shot): `/__design/shot` renders the design part in its own headless browser;
+`shot.ts` has no app or source parameter, so no route shoots the running app build, and an app fix can only be judged by
+compare numbers. The design shot of pages/sketches idle after 903 is right (4 columns, rows under the notes, variant-a
+note in 4 lines, centred xs search button with Ctrl K). Tool fix (builder default, tool backlog): the shot route takes a
+`source=app` parameter that shoots the app harness of the same part and state.
+
+942 built (Linux, 2422cc459): `/__design/shot?source=app` (product, part, state, optional preset) shoots the state in the app
+harness with compare's app-side steps (`system/app-state-shot.ts`), only on the explore `design serve`; 400 elsewhere and
+for call/sketch/width/interaction, 422 with compare's reason. Spec: 7 of 8 cases bite. Live on :4402: pages/sketches idle,
+200, 1440x900 in 14.7 s, the picture shows the app.
+
+947\. Linux builder (2026-11-12 night, 7f): no check keeps the design frame copy `libs/cli/design/web/surface-interactive.css`
+in sync with `libs/core/src/lib/theming/surface-interactive-styles.component.css`. Cause (measured by grep): the copy kept
+the old selector after the core change, and nothing failed. Tool fix (builder default, tool backlog): generate the copy
+at build, or a spec that compares its rules with the core source.
+
+947 built (Linux, ba7ffe701): core spec `surface-interactive-styles.component.spec.ts` asserts the cli copy
+`libs/cli/design/web/surface-interactive.css` is byte-identical to the core CSS. Cause (measured): the equal cli spec
+never ran for a core-only change, because `nx show projects --affected` does not list cli. Bite with the copy from
+00abccaea^.
+
+954\. Mac builder (2026-11-12 night, 921): folders with only a tsconfig stay under `sketches/` after a merge
+(foundations-logo.app-icon, foundations-type.font-pair, pages-sketches.open-points, pages-system), and `sketch list`
+shows them. Suspect (not bitten): the merge removes the sketch files but not the tsconfig. Tool fix (builder default,
+tool backlog): the merge removes the whole sketch folder; `sketch list` skips a folder without a sketch file. Same class (Linux, 849 sweep): `sketch check --product studio` stops on
+the untracked `pages-sketches.change-crop` folder without sketch.json; the sweep must skip a non-sketch folder with a
+note.
+
+954 built (Linux, a5e51621c): `sketch list` and the `sketch check` sweep skip a sketches folder that holds only generated
+tsconfigs (`NOTE <dir>: holds no sketch, skipped`). Cause (spec-proven): the scan ignored the generated tsconfig.json only
+at the folder top, not in variant folders. A folder with real files and no sketch.json still reports unreadable. Open
+half: the merge-side cleanup lives in merge.ts/merge-step.ts and goes to the Mac.
+
+956\. Linux builder (2026-11-12 night, 849): the fit-zoom rule guesses the Studio window width (1280 px default), so its
+zoom can differ from what the human sees (30 % vs 49 %). Tool fix (builder default, tool backlog): Studio saves its real
+list width where the CLI reads it.
+
+956 built (Linux, b8b64cfff): Studio posts its measured list width to POST /__design/list-width; sketch check uses it for
+the fit zoom (1280 px fallback). STUDIO_API_LEVEL 9. Spec bites. Not verified live. 957 not built: calibration needs live
+checks on the 7 committed sketches after `nx build components`.
+
+957\. Linux builder (2026-11-12 night, 849): the look-alike threshold is an absolute 1500 px and does not scale with the
+region size. Suspect. Tool fix (builder default, tool backlog): a threshold relative to the region area, measured on the
+known sketches.
+
+957 built (Linux, 01f0cd0c6): the look-alike bar is min(1500, 0.25 × the region's screen pixels at fit); a pair counts as
+different at 100 % only if it clears the same bar at scale 1. Cause (measured) why not a pure relative rule: the
+checkerboard spec needs k > 0.113, the committed pairs need k < 0.102 (merge a/c). Spec bites (200×40 block). Live re-run
+on button, card, colors, merge: no warning. Not verified: elements/rating (see 995). Lesson (Suspect): the check was
+specified and tested only on a full-width region; no committed sketch had a small region below 100 % fit. Tool fix: part
+of 957 (the 200×40 case); new pixel-bar checks name a small-region case in their spec.
+
+958\. Linux builder (2026-11-12 night, 875): a subagent's multi-line shell command ran as one line, so `vitest related`
+got the rest of the chain as file arguments and its wrapper shell stayed as a background job. Suspect (not reproduced).
+Tool fix (builder default, tool backlog): `vitest related` refuses an argument that is not an existing path, with one
+line, instead of running.
+
+958 built (Linux, 527f74c97): `tools/vitest/workers.mjs` runs `tools/vitest/related-paths.mjs`, which refuses a
+`vitest related` argument that is not an existing path (exit 2, one line, no tests). Bite: real vitest exited 0 before.
+Cause of the flattened argument: Suspect, not reproduced.
+
+959\. Mac builder (2026-11-12 night, 925): a tools/scripts slice that runs only its touched specs misses fixture specs
+elsewhere (push-suite.spec copies no tools/scripts), so push:suite caught it, not the slice. Tool fix (builder default,
+tool backlog): the slice check runs `yarn test:tools` for any tools/scripts change, or vitest related maps the fixture
+copies to their source scripts.
+
+959 built (Linux, 5fd4a3d0a): the pre-commit hook runs tools/scripts/staged-script-specs.mjs for a staged tools/scripts or
+.husky file; it runs every tools spec that names the file and follows script-to-script imports. Spec bites. test:tools had
+1 fail (commit-export.spec, HEAD export) that fails on HEAD~1 too. Suspect: export setup or TMPDIR (/tmp was full).
+
+960\. Mac builder (2026-11-12 night, 925): `cpu-throttle.spec` ("throttled busy loop gets about its share") fails alone at
+load 42/56, and `e2e-check` "started case is the last case reached" failed once in the full run (25/25 alone). Suspect:
+machine load for both. Tool fix (builder default, tool backlog): measure both under a set load; make the throttle
+assertion relative to the measured load, or mark it load-skipped with a note.
+
+960 built (Linux, d6910d9c9): the throttle spec skips with a note when the free run gets less than 40 % of a core. The Mac
+failure was not reproduced on 32 cores. Suspect: the macOS scheduler starves the free run.
+
+965\. Linux builder (2026-11-12 night, 955): no e2e or push-suite gate counts residents or /tmp checkouts before and after
+a run, so 6 orphans (4.3 GB) grew unseen. Tool fix (builder default, tool backlog): the e2e runner fails when a `design
+__resident --checkout <its checkout>` survives the teardown by more than 15 s, with a spec.
+
+965 built (Linux, 503be9a2a): canvas.e2e.mjs (helper e2e/resident-survivors.mjs) fails the run when a
+`design __resident --checkout <dir>` of a worker lives more than 15 s after that worker's exit. Spec bites; live with a
+fake resident. Not verified: a real survivor, the Mac. Gap: /tmp checkout dirs are not counted, only residents.
+
+967\. Doc agent (2026-11-12 night, restart): from 215c5f183 on, every doc commit replaced
+`plans/ethlete-studio/handoff-doc-agent.md` with its one new note line, so 16 commits shipped a 1-line handoff and the
+Mac mailbox command at its top was gone. Suspect: the doc agent wrote the note with `>` (or a Write) instead of an append.
+Restored from 95ceb7027 plus all 16 notes. Tool fix (builder default, tool backlog): the pre-commit hook refuses a commit
+that cuts a `plans/**/handoff-*.md` file by more than half of its lines, unless the message says "shrink handoff", with a spec.
+
+967 built (Linux, fcc9b1f15): .husky/commit-msg runs tools/scripts/check-handoff-shrink.mjs; it refuses a commit where a
+staged plans/**/handoff-*.md keeps fewer than half its lines, unless the message says "shrink handoff". Spec bites; live
+in a throwaway repo. Not verified: a real commit in this repo.
+
+968\. Linux builder (2026-11-12 night, 907): a root `npx vitest related --run <file>` runs 705 files with no config
+(694 failed) and leaves /tmp dirs; the builder's own subagent did it once. The builder skill says to run it per project, but
+nothing enforces it. Cause (measured, 907). Tool fix (builder default, tool backlog): a root vitest config that refuses to
+run and names the project dir to use, with a spec.
+
+968 + 914 built (Linux, 9d366dbcc): a root `vitest.config.mjs` throws and names the project dir, `node --test` for
+tools/** and `vitest.projects.ts`; `vitest.projects.ts` skips it. Root `npx vitest related` exits 1; a project-dir run and
+`yarn vitest:projects:check` still work. Spec `tools/scripts/root-vitest-guard.spec.mjs` bites. The builder-agent skill
+rule (779) names the project dir and `node --test` for tools/** (914). Not verified: the VS Code vitest extension.
+
+969\. Linux builder (2026-11-12 night, 907): `tools/scripts/commit-export.spec.mjs` fails before and after 907: in its export
+run 3 `et-design.spec.mjs` wrapper tests time out after 10 s (they pass alone), and it leaves about 14 `yarn--*` dirs.
+Suspect: load or a shared resource in the export run. Tool fix (builder default, tool backlog): find the cause with a
+measurement, then a fix with a biting spec; `yarn spec:tmp-leaks` must pass on it.
+
+969 built (Linux, d7036f901 with 996, and 98cd69ccf for the yarn--\* part): same cause as 996.
+
+984\. Linux builder (2026-11-12 night, 937): no ref holds a sketch's `baselineTree`, so `git gc` may prune it after about two
+weeks and rebase falls back to the commit search. Suspect. Tool fix (builder default, tool backlog): a ref per sketch
+(`refs/ethlete/sketch/<id>`), removed on merge or delete, with a spec that runs `git gc --prune=now`.
+
+984 built (Linux, 4684f3e18): createSketch and rebaseSketch write `refs/ethlete/sketch/<12-hex hash of the sketches
+dir>/<folder>` when they record `baselineTree`; removeSketchDir deletes it. Discard and merge both go through
+removeSketchDir, so no merge-side half is open. Spec bites (port after `git gc --prune=now`; ref gone after remove). Old
+sketches get a ref only at their next rebase.
+
+985\. Linux builder (2026-11-12 night, 942): the app side of compare and of `shot?source=app` ignores the theme params
+(surface, color, scale), so a themed state is compared or shot in the default theme. Suspect (code read). Tool fix
+(builder default, tool backlog): pass them to the harness or refuse them with 400, with a biting spec.
+
+985 built (Linux, ab7f0cc87): `shot?source=app` answers 400 to surface, color, fill, scheme and scale. Cause (code + live):
+the app harness cannot apply a theme and shoots at scale 1. compare has no theme flags (exit 2, unknown flag). Docs in
+apps/docs/cli/index.md; spec bites; live on a scratch server.
+
+996\. Linux builder (2026-11-12, B494): in `yarn test:tools`, push-suite "the tools step passes in a real HEAD export"
+fails: inside the export et-design.spec.mjs times out ("fake cli … started", 10 s) under load; alone 3/3. Two subagents
+hit it today (959 too). Suspect: load-sensitive 10 s timeout inside the export. Tool fix (builder default): fix it before
+the morning push, with a run under load that bites.
+
+996 built (Linux, d7036f901): Cause (measured): et-design.mjs refused a non-git checkout before it read the injected
+ETHLETE_DESIGN_CLI_ENTRY, so in a commit export every fake-cli test waited 10 s; load was not the cause (3/3 at load 0).
+The new spec bites. test:tools 449/449.
+
+997\. Doc agent (2026-11-12, push-round merge): the merge of origin/next is blocked: design-to-code.md is 449519 chars
+against the 440000 budget, and `archive-findings.mjs --dry-run` moves 0 even with `--days=0` (247 "no built line").
+Cause (measured): the script counts a finding as done only by a done STATUS row or a line that starts with "Built"/"As
+built" inside its own block. Since about 900 the agents record "NNN built (sha)", "NNN closed" and "Parked (ADR 0276)"
+as separate paragraphs, and findings have no STATUS rows, so no finding ever qualifies and the file only grows. Lesson:
+the archive rule and the record format drifted apart with no check. Tool fix (Linux, now, blocking): the script also
+counts a finding as done when a paragraph that starts with "NNN built", "NNN closed", "NNN withdrawn" or a line in
+parked-suspects.md names it; it moves the finding with all its "NNN update"/"NNN built" paragraphs; a spec bites on
+today's format; the budget gate names `archive-findings.mjs` in its refusal.
+
+997 built (Linux, 0509d4f23; archive run a07a9df66): the script counts "NNN built|closed|withdrawn|as built" paragraphs
+and parked-suspects.md lines as done; the budget refusal names the script; 47 findings archived.
