@@ -4138,3 +4138,15 @@ error text. Cause (seen). Tool fix (builder default): keep each failure log, one
 994\. Mac builder (2026-11-12, 983): the e2e step in push:suite reached load 33-36 with 3 workers and took 7 min against a
 5 min budget in every run. Suspect: 3 workers are too many on the Mac. Tool fix (builder default, tool backlog): measure
 2 against 3 workers and set the count from the numbers.
+
+957 built (Linux, 01f0cd0c6): the look-alike bar is min(1500, 0.25 × the region's screen pixels at fit); a pair counts as
+different at 100 % only if it clears the same bar at scale 1. Cause (measured) why not a pure relative rule: the
+checkerboard spec needs k > 0.113, the committed pairs need k < 0.102 (merge a/c). Spec bites (200×40 block). Live re-run
+on button, card, colors, merge: no warning. Not verified: elements/rating (see 995). Lesson (Suspect): the check was
+specified and tested only on a full-width region; no committed sketch had a small region below 100 % fit. Tool fix: part
+of 957 (the 200×40 case); new pixel-bar checks name a small-region case in their spec.
+
+995\. Linux builder (2026-11-12, 957): `sketch check` on studio-lab elements/rating exits 1 on UTILITY-CSS lines in variants
+b and c before the look-alike step, so a refusal hides the later steps. Suspect: refusal ordering. Tool fix (builder
+default, tool backlog): `sketch check` runs every step and lists all problems before it exits 1; the rating b/c
+UTILITY-CSS lines get fixed in the sketch.
