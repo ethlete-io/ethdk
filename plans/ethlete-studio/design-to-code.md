@@ -3929,3 +3929,13 @@ merge. After a pick, `generate-studio-themes.mjs` must read the new `--on-surfac
 components/canvas-viewport (`button.component.css`, `icon-button.component.css`) in the working tree, uncommitted. Suspect:
 a shot or a ready run rewrote it after the 903 button change. Tool fix (builder default, tool backlog): find which command
 writes ready.json outside `sketch ready`; only `sketch ready` may write it, with a spec.
+
+894 update (Linux, 7e, measured in Chromium, table `.claude/handoffs/agent-results/7e.md`): the conflict exists only for
+an app rule in `@layer components` or for tokens; an app rule in `@layer utilities` or unlayered beats every SDK rule,
+the internal button rules too (pagination, scheduler today-button, scrollable-buttons, carousel play-toggle, toolbar
+pressed icon-button). Option 1 (builder recommends): all SDK component CSS in one sublayer `@layer components.sdk` (236
+files, mechanical); an app rule in `@layer components` then wins on every button in any injection order; behaviour
+change for apps with low-specificity rules in `components`, changeset plus docs note, no migration; two sublayers fail
+(measured). Option 2 (private tokens on internal buttons) misses the goal. Option 3 (public token first in a fallback
+chain) is blocked by `@property --et-button-padding` (initial value, `inherits: false`). Short term the shipped rule
+(`app-styling.md:33-38`, unlayered or `@layer utilities`) already works. Decision for the human in the morning round.
