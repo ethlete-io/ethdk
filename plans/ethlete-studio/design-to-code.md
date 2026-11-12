@@ -3992,3 +3992,20 @@ of parts, with a biting spec.
 951\. Linux builder (2026-11-12 night, A24): `sketch check` takes 25-35 s against its 10 s target; about 20.6 s of it is
 resident-queue-wait. Suspect (one run, not measured in isolation). Tool fix (builder default, tool backlog): measure the
 queue wait over several runs, then let `sketch check` skip or shorten the resident queue.
+
+921 update (Mac, b9802b4d6): the pages/sketches all-states sketch is ready, not merged. Variant a: no fold prop; the
+unchanged states fold from the rows in every state except while comparing (what the app already does); 18 narrow states
+redraw. Variant b (foldSame switch) drew the same pixels as Aktuell and was withdrawn. It waits for the human's pick by
+merge (a, or reject and keep fold 3; the Mac recommends a). Screen mode still uses `UNCHANGED_COUNT = 16`.
+
+952\. Mac builder (2026-11-12 night, 921): `sketch withdraw` without `--reason` wrote the reason "identisch mit a", but
+variant b matched Aktuell. Tool fix (builder default, tool backlog): the default reason names what the variant really
+matches (measured), or `--reason` is required, with a spec.
+
+953\. Mac builder (2026-11-12 night, 921): `design check --lint` refuses `--product` (exit 2), while the sketch commands
+want it. Tool fix (builder default, tool backlog): every design and sketch command accepts `--product`.
+
+954\. Mac builder (2026-11-12 night, 921): folders with only a tsconfig stay under `sketches/` after a merge
+(foundations-logo.app-icon, foundations-type.font-pair, pages-sketches.open-points, pages-system), and `sketch list`
+shows them. Suspect (not bitten): the merge removes the sketch files but not the tsconfig. Tool fix (builder default,
+tool backlog): the merge removes the whole sketch folder; `sketch list` skips a folder without a sketch file.
