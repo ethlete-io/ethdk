@@ -4062,3 +4062,15 @@ copies to their source scripts.
 load 42/56, and `e2e-check` "started case is the last case reached" failed once in the full run (25/25 alone). Suspect:
 machine load for both. Tool fix (builder default, tool backlog): measure both under a set load; make the throttle
 assertion relative to the measured load, or mark it load-skipped with a note.
+
+880 closed as "no start delay" (Linux, measured in scratch, cold Vite cache): listening 1.7 s idle, 6.2 s with a cold nx
+daemon, 4.4 s under load 12-26. Cause (measured): the slow part is the first full sketch listing (targets phase 8.5 s
+idle, 34.3 s under load), not the server start. Suspect: the 60-90 s on rack is that listing under load 20+. Decided by
+the doc agent: close 880; a listing speed-up joins 846 (same targets phase).
+
+961\. Linux builder (2026-11-12 night, 880): 4ca55ca3c used `.at(-1)` in `crash-log.ts`, but the cli lib compiles
+against es2020, so `nx build cli` and `yarn design` on a cache miss failed; fixed 12a5a6551 (bite: `nx run
+cli:typecheck --skip-nx-cache` TS2550 before, clean after). The 875 slice saw `cli:typecheck` clean. Suspect: the
+typecheck reaches lib files only through `tsconfig.spec.json` (lib es2022), or it was a cache hit. Tool fix (builder
+default, tool backlog): the typecheck target checks non-spec files with the lib tsconfig, with a bite that adds `.at()`
+to a lib file.

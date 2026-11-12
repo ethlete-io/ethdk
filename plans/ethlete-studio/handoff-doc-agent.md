@@ -1,1 +1,1 @@
-- 925 built on the Mac (782f48d5f, 78b23d84f); findings 959-960. Next free finding: 961.
+- 880 closed (no start delay, measured; speed-up joins 846); finding 961 (cli typecheck missed es2020, fixed 12a5a6551). Next free finding: 962.
