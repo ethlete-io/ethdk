@@ -392,7 +392,7 @@
     "pid": 1932842
   },
   "components/title-search": {
-    "hash": "c384a5f6cceaaa14",
+    "hash": "17077754afdb0942",
     "files": {
       ".ethlete/design/studio/assets/icons/arrow-left.svg": "abb6abd09d460189",
       ".ethlete/design/studio/assets/icons/check.svg": "4af09beffbcc19b8",
@@ -413,14 +413,15 @@
       ".ethlete/design/studio/assets/icons/search.svg": "3826f566b7d86a3c",
       ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
-      ".ethlete/design/studio/components/title-search/title-search.ts": "4f240df1a5f493e0",
+      ".ethlete/design/studio/components/title-search/title-search.ts": "17bfcaa0c8ee0cbb",
       ".ethlete/design/studio/foundations/icons/icons.ts": "c1871a82f392f464",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
     },
-    "at": "2026-11-08T14:58:18.942Z",
+    "actions": [],
+    "at": "2026-11-12T00:07:47.724Z",
     "by": "et design check",
-    "cmd": "design check",
-    "pid": 1454598
+    "cmd": "design __resident --checkout .",
+    "pid": 795505
   },
   "components/tree-row": {
     "hash": "a6641f0691d5e8b2",
@@ -457,15 +458,15 @@
     "pid": 3841192
   },
   "components/zoom-chip": {
-    "hash": "d60122c5294af39d",
+    "hash": "99b2e03f5fd73a69",
     "files": {
       ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "b71a4248f5ca83d6",
       "libs/components/design/button.ts": "48f441533cf5bb8f",
       "libs/components/design/loader.ts": "05dd66f547119eb5",
       "libs/components/src/lib/button/button-properties-styles.component.css": "83b177f186fcba5e",
-      "libs/components/src/lib/button/button.component.css": "3fdffd80ea5224a1",
+      "libs/components/src/lib/button/button.component.css": "bf9dba81301481f9",
       "libs/components/src/lib/button/button.types.ts": "acca1b3657e54715",
-      "libs/components/src/lib/button/icon-button.component.css": "5078362cb58dd2df",
+      "libs/components/src/lib/button/icon-button.component.css": "19209151b0f4daf6",
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "1b9022d9ce191e5a",
       "libs/components/src/lib/loader/brand-loader/brand-loader.component.css": "0451148d909d800c",
       "libs/components/src/lib/loader/progress-bar/progress-bar.component.css": "37abbab5cfec62a0",
@@ -475,10 +476,10 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
     },
     "actions": ["emit:fit", "emit:zoomIn", "emit:zoomOut", "emit:zoomReset"],
-    "at": "2026-11-11T15:51:23.751Z",
+    "at": "2026-11-12T00:07:56.184Z",
     "by": "et design check",
-    "cmd": "design",
-    "pid": 3841192
+    "cmd": "design __resident --checkout .",
+    "pid": 795505
   },
   "elements/canvas-frames": {
     "hash": "933a00827a3986ec",

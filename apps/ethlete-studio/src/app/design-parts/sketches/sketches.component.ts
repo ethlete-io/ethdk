@@ -1,4 +1,4 @@
-import { NgTemplateOutlet } from '@angular/common';
+import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
 import {
   afterNextRender,
   afterRenderEffect,
@@ -19,8 +19,8 @@ import {
   viewChildren,
   ViewEncapsulation,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { debounceTime, Subject, tap } from 'rxjs';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { debounceTime, from, map, Subject, tap } from 'rxjs';
 import { BADGE_IMPORTS, BUTTON_IMPORTS, FORM_FIELD_IMPORTS, SELECT_IMPORTS } from '@ethlete/components';
 import {
   ProvideColorDirective,
@@ -165,6 +165,7 @@ const isPending = (row: SketchRow) => row.shots.some((shot) => shot.changed === 
 export class SketchesComponent {
   protected errorTheme = injectSemanticColorTheme('error');
   private destroyRef = inject(DestroyRef);
+  private document = inject(DOCUMENT);
   private injector = inject(Injector);
   private renderer = injectRenderer();
   public shell = input<ShellState>(SHELL_SAMPLE);
@@ -229,6 +230,7 @@ export class SketchesComponent {
   protected reasonOpen = linkedSignal(() => this.reason());
   protected selectedFrame = signal<string | null>(null);
   private fitAt = signal<number | null>(null);
+  private fontsReady = toSignal(from(this.document.fonts.ready).pipe(map(() => true)), { initialValue: false });
   private userCamera$ = new Subject<Camera | null>();
   private listedRows = computed(() =>
     this.fresh() ? this.rows().filter((row) => row.key !== SKETCH_CURRENT) : this.rows(),
@@ -369,6 +371,7 @@ export class SketchesComponent {
     });
 
     afterRenderEffect(() => {
+      this.fontsReady();
       this.listSize();
       this.shownRows();
       this.matrixRows();
