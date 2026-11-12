@@ -63,6 +63,13 @@
         "command": "vitest run --config libs/cli/vitest.dist.config.mts"
       }
     },
+    "proof": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "vitest run --config libs/cli/vitest.proof.config.mts"
+      }
+    },
     "lint": {
       "inputs": [
         "default",

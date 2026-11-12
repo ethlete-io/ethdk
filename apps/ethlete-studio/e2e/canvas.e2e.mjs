@@ -43,6 +43,7 @@ const coldShots = args.includes('--cold-shots') || process.env['STUDIO_E2E_COLD_
 
 if (coldShots) process.env['STUDIO_E2E_COLD_SHOTS'] = '1';
 const perfOnly = args.includes('--perf');
+const proofRow = args.includes('--proof') ? args[args.indexOf('--proof') + 1] : undefined;
 
 if (view && !VIEWS[view]) {
   console.error(`unknown --view ${view}, one of: ${Object.keys(VIEWS).join(', ')}`);
@@ -1814,6 +1815,118 @@ const CASES = [
       return {
         ok: empties.length === 0,
         detail: `empty/visible cells per step at +${SCROLL_SAMPLES_MS.join(' +')} ms: ${steps.join(', ')}; frames gone before their probe: ${reread}${empties.length ? `; first: ${empties.slice(0, 6).join(' | ')}` : ''}`,
+      };
+    },
+  },
+  {
+    name: 'B498 R3: scroll, edit and wait never leave a sketch cell or column empty',
+    proof: 'B498',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const had = new Set();
+      const empties = new Map();
+      const sample = async (phase) => {
+        const cells = await sketchCells(page);
+
+        for (const cell of cells.filter((each) => each.visible)) {
+          if (cell.shows) had.add(cell.key);
+          else if (had.has(cell.key) && !empties.has(`${phase} ${cell.key}`))
+            empties.set(`${phase} ${cell.key}`, cell.framed ? `iframe ${cell.probe}` : 'no picture');
+        }
+
+        return cells;
+      };
+      const scrollThrough = async (phase, steps) => {
+        for (const [name, by] of [
+          ['down', SCROLL_STEP_PX],
+          ['up', -SCROLL_STEP_PX],
+        ])
+          for (let step = 1; step <= steps; step++) {
+            await wheelCanvas(page, by);
+            for (const at of SCROLL_SAMPLES_MS) {
+              await page.waitForTimeout(at);
+              await sample(`${phase} ${name}${step}+${at}`);
+            }
+          }
+      };
+      const urlsOutside = (cells, variant) =>
+        new Map(cells.filter((cell) => !cell.key.startsWith(`${variant} `)).map((cell) => [cell.key, cell.pictureSrc]));
+      const emptyColumns = () =>
+        page.evaluate(() =>
+          [...document.querySelectorAll('ethlete-sketch-view [data-sk-variant]')]
+            .filter((row) => !row.querySelector('[data-shot]'))
+            .map((row) => row.getAttribute('data-sk-variant')),
+        );
+
+      await showAllStates(page);
+
+      let first = await sample('start');
+
+      for (const until = Date.now() + FULL_COMPARE_MS; Date.now() < until; first = await sample('start')) {
+        const visible = first.filter((cell) => cell.visible);
+
+        if (visible.length > 0 && visible.every((cell) => cell.shows)) break;
+        await page.waitForTimeout(250);
+      }
+      if (had.size === 0) return { ok: false, detail: 'no visible cell shows a picture or a drawn frame' };
+
+      const steps = Math.max(3, Math.ceil(Math.max(...first.map((cell) => cell.below)) / SCROLL_STEP_PX));
+
+      await scrollThrough('scroll', steps);
+
+      const stylesheet = join(checkout, '.ethlete/design/studio', SKETCH_CSS.a);
+      const original = readFileSync(stylesheet, 'utf8');
+      const before = urlsOutside(await sketchCells(page), 'a');
+      let renewed;
+
+      try {
+        writeFileSync(
+          stylesheet,
+          `${original}\n.st-shell { outline: 3px solid rgb(255 0 0); outline-offset: -3px; }\n`,
+        );
+        for (const until = Date.now() + WAIT_MS; Date.now() < until;) {
+          await sample('edit');
+          await page.waitForTimeout(100);
+        }
+        await scrollThrough('edited scroll', steps);
+        for (const until = Date.now() + WAIT_MS; Date.now() < until;) {
+          await sample('wait');
+          await page.waitForTimeout(250);
+        }
+        renewed = [...urlsOutside(await sketchCells(page), 'a')].filter(
+          ([key, src]) => before.has(key) && before.get(key) && src && before.get(key) !== src,
+        );
+      } finally {
+        writeFileSync(stylesheet, original);
+      }
+
+      const columns = await emptyColumns();
+      const faults = [
+        ...(empties.size
+          ? [
+              `${empties.size} empty samples of cells that had a picture: ${[...empties]
+                .slice(0, 8)
+                .map(([at, why]) => `${at} (${why})`)
+                .join(' | ')}`,
+            ]
+          : []),
+        ...(renewed.length
+          ? [
+              `an edit of variant a renewed ${renewed.length} picture URLs of other rows: ${renewed
+                .slice(0, 3)
+                .map(([key]) => key)
+                .join(', ')}`,
+            ]
+          : []),
+        ...(columns.length ? [`columns with no cell: ${columns.join(', ')}`] : []),
+      ];
+
+      return {
+        ok: faults.length === 0,
+        detail: faults.length
+          ? faults.join('; ')
+          : `${had.size} cells kept their picture through ${steps} scroll steps, an edit and a wait`,
       };
     },
   },
@@ -3906,6 +4019,7 @@ const lead = async () => {
   const queue = PAGES.flatMap((target, targetIndex) =>
     CASES.flatMap((testCase, caseIndex) =>
       !!testCase.perf === perfOnly &&
+      testCase.proof === proofRow &&
       (testCase.pages ?? ['System', 'Sketches']).includes(target.name) &&
       (!testCase.labels || testCase.labels.includes(target.label)) &&
       (!only || only.split('|').some((part) => testCase.name.includes(part))) &&
