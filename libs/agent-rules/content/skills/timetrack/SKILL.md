@@ -49,9 +49,8 @@ answer proposes waits for the user's approval as auto mode's own does.
 A subject the app does not offer the press on is refused: an unknown or resolved stand-in, one
 the day holds no time of, a context a rule names or the user named by hand.
 
-Tell the user a request waits in Timetrack, then read `approval` once they say they decided -
-do not poll in a loop. A request that is still waiting at the end of the day it was asked on
-expires; ask again rather than assuming it landed. Set `TIMETRACK_CLIENT` to name yourself in the
+Tell the user a request waits, then read `approval` once they say they decided - do not poll.
+A request still waiting at the end of its day expires; ask again. Set `TIMETRACK_CLIENT` to name yourself in the
 queue (Claude Code is named without it).
 
 **Never ask the user for a Jira token, and never write one into a file.** If a command reports
@@ -61,33 +60,44 @@ nobody can rotate.
 
 ## What each command is for
 
-| Command                                    | Use it when                                                                 |
-| ------------------------------------------ | --------------------------------------------------------------------------- |
-| `status`                                   | Before anything else, when a Jira command failed and you need the cause     |
-| `instance`                                 | A setup step needs the instance's levels or its branch-subject field        |
-| `issue <KEY>`                              | The user names a key and you need its summary, type or parent               |
-| `search [text]`                            | The user describes work but names no key                                    |
-| `project [path]`                           | You need the project a repository files into                                |
-| `create --summary "…"`                     | The work has no ticket and the user asked for one                           |
-| `log --issue <KEY> --minutes <n>`          | The user asks to record time that nothing observed                          |
-| `day [YYYY-MM-DD]`                         | You need the evidence a day holds, not a screenshot of it                   |
-| `rows [YYYY-MM-DD]`                        | You need the rows the day drew, and the ids an edit names them by           |
-| `edit <row-id> …`                          | The user asks you to correct one row of a day                               |
-| `rules`                                    | You need to know why a band was named, or why it was not                    |
-| `standins`                                 | You need to know which work still waits for a ticket, and for how long      |
-| `standins --remove <id>`                   | A placeholder is wrong or too wide, and the user asked you to delete it     |
-| `standins --rename <id> --name <text>`     | The name a placeholder carries is wrong, and the user asked you to fix it   |
-| `standins --merge <id> --into <id>`        | Two placeholders are one piece of work, and the user asked you to join them |
-| `standins --resolve <id> --issue <KEY>`    | The user named the issue a placeholder is, or the one a resolved one is now |
-| `naming [YYYY-MM-DD]`                      | A checkout was never offered a name and you need the step that stopped      |
-| `worklogs [from] [to]`                     | You need what the user already booked in Tempo over a span of days          |
-| `calendar [from] [to]`                     | You need the user's meetings and calendar entries over a span of days       |
-| `sync <YYYY-MM-DD>`                        | The user asks what a Tempo sync of a day would write, or asks to sync it    |
-| `worklog --delete <id> --day <YYYY-MM-DD>` | The user asked you to delete one of their own Tempo worklogs                |
-| `approval <id>`                            | A write you queued: whether the user approved it, and what it answered      |
-| `approvals`                                | You need what waits in the queue, from every caller                         |
-| `approval <id> --reject`                   | The user asked you to drop a waiting write, or you queued one by mistake    |
-| `ask --stand-in <id>` / `--context <id>`   | The user asks auto mode to look at a stand-in or an unnamed band again      |
+| Command                                    | Use it when                                                                  |
+| ------------------------------------------ | ---------------------------------------------------------------------------- |
+| `status`                                   | Before anything else, when a Jira command failed and you need the cause      |
+| `instance`                                 | A setup step needs the instance's levels or its branch-subject field         |
+| `issue <KEY>`                              | The user names a key and you need its summary, type or parent                |
+| `search [text]`                            | The user describes work but names no key                                     |
+| `project [path]`                           | You need the project a repository files into                                 |
+| `create --summary "…"`                     | The work has no ticket and the user asked for one                            |
+| `log --issue <KEY> --minutes <n>`          | The user asks to record time that nothing observed                           |
+| `day [YYYY-MM-DD]`                         | You need the evidence a day holds, not a screenshot of it                    |
+| `rows [YYYY-MM-DD]`                        | You need the rows the day drew, and the ids an edit names them by            |
+| `edit <row-id> …`                          | The user asks you to correct one row of a day                                |
+| `rules`                                    | You need to know why a band was named, or why it was not                     |
+| `standins`                                 | You need to know which work still waits for a ticket, and for how long       |
+| `standins --remove <id>`                   | A placeholder is wrong or too wide, and the user asked you to delete it      |
+| `standins --rename <id> --name <text>`     | The name a placeholder carries is wrong, and the user asked you to fix it    |
+| `standins --merge <id> --into <id>`        | Two placeholders are one piece of work, and the user asked you to join them  |
+| `standins --resolve <id> --issue <KEY>`    | The user named the issue a placeholder is, or the one a resolved one is now  |
+| `naming [YYYY-MM-DD]`                      | A checkout was never offered a name and you need the step that stopped       |
+| `transcript [YYYY-MM-DD]`                  | You need what the user said in the day's calls (their microphone)            |
+| `resync [path…] [--replace]`               | Checkouts got a project link and their agent session logs must be read again |
+| `worklogs [from] [to]`                     | You need what the user already booked in Tempo over a span of days           |
+| `calendar [from] [to]`                     | You need the user's meetings and calendar entries over a span of days        |
+| `sync <YYYY-MM-DD>`                        | The user asks what a Tempo sync of a day would write, or asks to sync it     |
+| `worklog --delete <id> --day <YYYY-MM-DD>` | The user asked you to delete one of their own Tempo worklogs                 |
+| `approval <id>`                            | A write you queued: whether the user approved it, and what it answered       |
+| `approvals`                                | You need what waits in the queue, from every caller                          |
+| `approval <id> --reject`                   | The user asked you to drop a waiting write, or you queued one by mistake     |
+| `ask --stand-in <id>` / `--context <id>`   | The user asks auto mode to look at a stand-in or an unnamed band again       |
+
+`naming` reports whether a Tempo token is stored, how far the worklog history got, and per checkout the
+offer or the reason there is none (`already-named`, `no-project-link`, `no-history`,
+`project-too-small`, `too-few-days`, `share-too-low`); read a `history` of `failed` or `no-token` first.
+`rules` reads the settings that name a day's work - attribution rules, project links, background
+projects, ruled applications - and holds no host, account or token, so it is safe to quote. A
+rule that donates its time carries no issue key, and a `backgroundProjects` project keeps only the
+minutes no other band claims. `resync` queues a re-read, `--replace` overwrites what the store holds
+(after a parser fix).
 
 `git-flow start` uses the same channel, so a branch is named from the real issue rather than
 from a key you typed. Follow the repository's branch workflow when creating a branch.
@@ -144,148 +154,33 @@ minutes ago.
 An edit may correct a row's times, its name, its note and whether it syncs. It may not split, merge
 or delete one - restructuring a day is the user's own decision, made on the screen.
 
-## Why a band carries the name it does
-
-`rules` reads the settings that name a day's work - the attribution rules, the project links,
-the background projects and the applications the user has ruled in or out. It holds no host, no
-account and no token, so it is safe to quote back to the user.
-
-```bash
-{%packageRunner%} ethlete-agents timetrack rules            # a summary of the rules
-{%packageRunner%} ethlete-agents timetrack rules --json     # the whole answer
-```
-
-Read it before claiming a band should have been named something: a rule that donates its time
-carries no issue key, and a project in `backgroundProjects` keeps only the minutes no other
-band claims.
-
 ## Work with no ticket yet
 
 A **stand-in** is a name the user gave work that Jira does not hold yet. It takes bands across
-days and across checkouts, and it books nothing. `standins` lists them:
+days and checkouts and books nothing. `standins` lists the open ones, oldest first (`--json`
+adds the resolved ones).
+
+**Never open or resolve a stand-in without the user asking.** The name is the user's own word for
+their work, and the app is the only place they give it. If the user asks for a ticket, use
+`create` and tell them to resolve the stand-in in Timetrack.
 
 ```bash
-{%packageRunner%} ethlete-agents timetrack standins         # the open ones, oldest first
-{%packageRunner%} ethlete-agents timetrack standins --json  # the whole answer, resolved ones included
-```
-
-**Never open or resolve a stand-in.** The name is the user's own word for their work, and the
-app is the only place they give it. If the user asks for a ticket, use `create` and tell them
-to resolve the stand-in in Timetrack.
-
-A placeholder is drawn per branch, and per directory where the branch names no piece of work.
-A base branch, or no branch at all, says nothing about what was worked on, so the directory the
-commits touched answers instead. That directory is the project the repository declares - the one
-carrying the `project.json` or `package.json` above the changed files. A repository that declares
-none lets its own commits pick the grain between them. A directory named with a leading dot is
-the checkout's own tooling, so it never answers: a commit in `.changeset` or `.github` is
-bookkeeping for another piece of work.
-
-Where the directories cannot answer either, the branch the checkout was next cut onto does. A
-branch is very often cut once the work on it has started, so the minutes before the cut sit on
-the base branch although they are that branch's work.
-
-One placeholder written before any of that was true covers a whole checkout, and it blocks a
-per-branch placeholder for every branch of it. The list says so:
-
-```
-Competition journey spec frontend in FIFAGG  3d old, 3 day(s) of work
-  covers all of /home/tom/dev/fifagg/specs, so no branch of it gets one of its own
-```
-
-Two separate things cause that, and either alone is enough: the record names no branch, or the
-rule naming it names no branch. The line above reports both, so take it at its word rather than
-reading `--json` yourself.
-
-### Give one another name
-
-The name is only wrong, and the work behind it is right:
-
-```bash
-{%packageRunner%} ethlete-agents timetrack standins --rename <id> --name '20260921 competition navigation rework'
-```
-
-The days it holds and the rules that name it stay, which is what a delete and a fresh record would
-lose. Rename one only when the user asks. The name is their own word for their work, so a name you
-find unclear is not a fault to correct.
-
-### Resolve one to its issue
-
-The user told you which Jira issue a placeholder is:
-
-```bash
-{%packageRunner%} ethlete-agents timetrack standins --resolve <id> --issue <KEY>
-```
-
-It resolves the placeholder as the user's own pick in the app does, so every band on every day it
-held takes the key. One that is resolved already moves to the new key, as the app's Undo and a new
-pick would. It writes nothing to Tempo, so a day of it already booked keeps the old key there. The
-app reads the issue from Jira before it queues anything, so an unknown key or placeholder answers an
-error and nothing waits. A done issue is fine. The approval card shows the name, the old key and the
-new one with its summary.
-
-### Re-cut one that named two pieces of work
-
-A record covering a whole checkout is repaired rather than deleted, because a delete strands its
-days. `--split` re-cuts it into one record per directory, and moves each day onto the right one:
-
-```bash
-{%packageRunner%} ethlete-agents timetrack standins --split <id>              # the plan, writes nothing
-{%packageRunner%} ethlete-agents timetrack standins --split <id> --force      # queue it for approval
-```
-
-Without `--force` it prints every directory the commits name, with its commit count and its days,
-then says which of them it would write. A directory under three commits is an edit made in
-passing rather than a piece of work, so it is listed but not written. Pass
-`--paths <dir>,<dir>` to pick the pieces yourself.
-
-The commits are read across every branch, and only the ones the checkout's own `user.email`
-authored. That is the history the collector that opened the record read, so work left on an
-unmerged branch still counts and a colleague's commits never shape a piece. `--author <email>`
-overrides the address.
-
-A day the record covers that holds no commit of yours goes back to unnamed, and the split names
-it. That is the honest answer: nothing says which directory it was. The day review is where it
-gets named, and `--claim <dir>` gives every such day to one directory instead.
-
-The record and its checkout-wide rule always go, even when a day is left unnamed. Both are read
-as covering every branch of the checkout, so keeping either would block any later branch from
-getting a record of its own — which is the fault the repair exists to cure.
-
-The record must name the checkout it was opened for. One the user opened by hand names none, and
-the split refuses it.
-
-You may delete one, because that takes a name away rather than putting one on the day:
-
-```bash
+{%packageRunner%} ethlete-agents timetrack standins --rename <id> --name '<text>'    # only the name is wrong
+{%packageRunner%} ethlete-agents timetrack standins --resolve <id> --issue <KEY>     # the user named the issue
+{%packageRunner%} ethlete-agents timetrack standins --merge <id> --into <id>         # two are one piece of work
+{%packageRunner%} ethlete-agents timetrack standins --split <id>                     # plan only; add --force to queue
 {%packageRunner%} ethlete-agents timetrack standins --remove <id>
 ```
 
-The rule that named it goes with it, and what happens next is worth knowing before you ask:
-
-- The record names a branch. The delete refuses that branch, and no second one opens for it.
-- It names none. The delete refuses nothing, so the next pass opens one per branch instead.
-
-**Deleting one strands every day but today.** Only the day the app next reviews gets a new
-placeholder; every earlier day the record covered then reads as unnamed, with nothing left to
-say what it was. The command refuses such a delete and lists the days, and `--force` makes it
-anyway. Ask the user before you use `--force`, and tell them which days they will lose.
-
-## Why a checkout was never offered a name
-
-The day screen offers a whole checkout one issue when the user's own record already answers it. The
-card is either drawn or it is not, and every step that can stop it is invisible from the screen.
-`naming` names the step:
-
-```bash
-{%packageRunner%} ethlete-agents timetrack naming              # today
-{%packageRunner%} ethlete-agents timetrack naming 2026-09-14
-```
-
-It reports whether a Tempo token is stored, how far the read of the worklog history got, and for each
-checkout the day saw either the offer or the reason there is none - `already-named`,
-`no-project-link`, `no-history`, `project-too-small`, `too-few-days` or `share-too-low`. A `history`
-of `failed` or `no-token` explains every checkout at once, so read that line first.
+- `--resolve` moves every band on every day the placeholder held to the key, and writes nothing to
+  Tempo, so a day already booked keeps the old key there. An unknown key or placeholder errors
+  and nothing waits.
+- `--split` re-cuts a record that covers a whole checkout into one record per directory, from the
+  commits the checkout's own `user.email` authored (`--author <email>` overrides). Without
+  `--force` it prints the plan; `--paths <dir>,<dir>` picks the pieces, `--claim <dir>` gives
+  the days without a commit to one directory. The record must name the checkout it was opened for.
+- **`--remove` strands every day but today** as unnamed. It refuses such a delete and lists the
+  days; ask the user before you pass `--force`, and tell them which days they lose.
 
 ## What Tempo already holds
 
@@ -342,8 +237,7 @@ printed:
 {%packageRunner%} ethlete-agents timetrack sync 2026-09-07 --write --plan 1a2b3c4d
 ```
 
-The write is queued, and the user approves it in the app as well - "Approve all" never includes
-it. On approval the app plans the day again and refuses, writing nothing, when the hash differs -
+"Approve all" never includes it. On approval the app plans the day again and refuses when the hash differs -
 the day changed since the user saw it, so read it again and ask again. `--write` without `--plan`
 is refused at once. Once approved, `approval <id>` prints each row as `written`, `blocked`,
 `skipped` or `failed`, with the worklog id or the error, and exits non-zero while a row did not
@@ -363,17 +257,14 @@ id and its day off `worklogs --json`:
 {%packageRunner%} ethlete-agents timetrack worklog --delete 98765 --day 2026-09-07
 ```
 
-It is a Tempo write, so the same rule holds: **name the worklog to the user, and delete only after
-they confirmed that one in this conversation.** The app refuses, deleting nothing, an id that is not
-among the account's own worklogs on that day. The delete is queued for the user's approval like
-`sync --write`; once approved, `approval <id>` answers what went, and the app drops its own record
-of the worklog, so the next `sync` of the day plans from what Tempo holds.
+**Name the worklog to the user, and delete only after they confirmed that one in this conversation.**
+The app refuses an id that is not among the account's own worklogs on that day. Once approved,
+`approval <id>` answers what went, and the next `sync` of the day plans from what Tempo holds.
 
 ## Writes
 
-Four commands write to Jira or Tempo, so all need the user to have asked for them in this
-conversation - `sync --write` and `worklog --delete` are described above. Each is queued for the
-user's approval in the app:
+Writes to Jira or Tempo need the user to have asked for them in this conversation (`sync --write` and
+`worklog --delete` are above):
 
 ```bash
 {%packageRunner%} ethlete-agents timetrack create --summary "Reset password mail is not sent" --project FIP
