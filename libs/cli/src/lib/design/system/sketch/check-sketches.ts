@@ -13,7 +13,7 @@ import { overlaySketch, SketchedProduct } from './overlay';
 import { sharedClassWarningsOf } from './shared-class';
 import { unusedFileWarningsOf } from './unused-files';
 import { stateNamesOf, withMadeBy, withNote } from './part-definition';
-import { listSketches, Sketch, sketchFolderOf, variantDirOf } from './sketch';
+import { leftoverSketchFoldersOf, listSketches, Sketch, sketchFolderOf, variantDirOf } from './sketch';
 
 /** `problems` are the ones a variant brings in; `before` are the ones the product already has, which do not fail the variant. */
 export type VariantProblems = { sketch: Sketch; variant: string; problems: Problem[]; before: Problem[] };
@@ -155,7 +155,7 @@ export const variantWarningsOf = (options: {
 
 /**
  * The rule problems of every variant of every open sketch of a product. A sketch folder that
- * cannot be read is a `SKETCH` problem of its own.
+ * cannot be read is a `SKETCH` problem of its own; `leftovers` names the folders that hold no sketch at all.
  */
 export const openSketchProblemsOf = (product: ResolvedProduct) => {
   const sketches = listSketches({ productDir: product.dir, product: product.name });
@@ -168,6 +168,7 @@ export const openSketchProblemsOf = (product: ResolvedProduct) => {
     variants: sketches.flatMap((sketch) =>
       typeof sketch === 'string' ? [] : variantProblemsOf({ product, sketch, productProblems }),
     ),
+    leftovers: leftoverSketchFoldersOf(product.dir),
   };
 };
 

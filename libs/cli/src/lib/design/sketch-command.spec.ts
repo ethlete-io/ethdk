@@ -3049,3 +3049,22 @@ describe('sketch new --name', () => {
     );
   });
 });
+
+describe('a sketches folder that holds only generated tsconfigs', { timeout: 120_000 }, () => {
+  it('stays out of sketch list and gets one note in the check sweep', async () => {
+    const target = acme();
+    const leftover = join(target, DESIGN_DIR, 'acme/sketches/pages-sketches.change-crop');
+
+    mkdirSync(join(leftover, 'a'), { recursive: true });
+    writeFileSync(join(leftover, 'tsconfig.json'), '{}');
+    writeFileSync(join(leftover, 'a/tsconfig.json'), '{}');
+
+    const lines = output();
+
+    expect(await run(target, 'list', '--product', 'acme')).toBe(0);
+    expect(lines).toEqual(['no open sketch']);
+    expect(await run(target, 'check', '--product', 'acme')).toBe(0);
+    expect(lines).toContain(`NOTE ${DESIGN_DIR}/acme/sketches/pages-sketches.change-crop: holds no sketch, skipped`);
+    expect(lines.filter((line) => line.includes('change-crop'))).toHaveLength(1);
+  });
+});

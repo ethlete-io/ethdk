@@ -310,13 +310,21 @@ const holdsFiles = (dir: string) => {
     throw error;
   }
 
-  return entries.some(
-    (entry) => entry.isFile() && !(entry.name === GENERATED_FILE && resolve(entry.parentPath) === resolve(dir)),
-  );
+  return entries.some((entry) => entry.isFile() && !isGeneratedFile({ dir, entry }));
 };
+
+const isGeneratedFile = ({ dir, entry }: { dir: string; entry: Dirent }) =>
+  entry.name === GENERATED_FILE &&
+  (resolve(entry.parentPath) === resolve(dir) || dirname(resolve(entry.parentPath)) === resolve(dir));
 
 const sketchFoldersOf = (productDir: string) =>
   foldersOf(sketchesDirOf(productDir)).filter((folder) => holdsFiles(resolve(sketchesDirOf(productDir), folder)));
+
+/** The folders under a product's `sketches/` that hold no file besides generated tsconfigs, so no sketch reads them. */
+export const leftoverSketchFoldersOf = (productDir: string) =>
+  foldersOf(sketchesDirOf(productDir))
+    .filter((folder) => !holdsFiles(resolve(sketchesDirOf(productDir), folder)))
+    .map((folder) => resolve(sketchesDirOf(productDir), folder));
 
 const isOpenSketchDir = (dir: string) => existsSync(dir) && holdsFiles(dir);
 

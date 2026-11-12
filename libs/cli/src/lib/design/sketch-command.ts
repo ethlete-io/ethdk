@@ -1566,7 +1566,7 @@ const checked = async (context: Context) => {
   if (typeof product === 'string') return fail(product);
 
   const asked = args.positional[0];
-  const { unreadable, variants } = timedPhase('gates', () => openSketchProblemsOf(product));
+  const { unreadable, variants, leftovers } = timedPhase('gates', () => openSketchProblemsOf(product));
   const named = asked === undefined ? variants : variants.filter((entry) => entry.sketch.target === asked);
 
   if (asked !== undefined && named.length === 0) return fail(`NO SKETCH on ${asked} in ${product.name}`);
@@ -1588,6 +1588,9 @@ const checked = async (context: Context) => {
     );
 
   let failed = asked === undefined && unreadable.length > 0;
+
+  if (asked === undefined)
+    leftovers.forEach((folder) => console.log(`NOTE ${relative(target, folder)}: holds no sketch, skipped`));
 
   if (asked === undefined)
     unreadable.forEach((problem) =>
