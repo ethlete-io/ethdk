@@ -4150,3 +4150,16 @@ of 957 (the 200×40 case); new pixel-bar checks name a small-region case in thei
 b and c before the look-alike step, so a refusal hides the later steps. Suspect: refusal ordering. Tool fix (builder
 default, tool backlog): `sketch check` runs every step and lists all problems before it exits 1; the rating b/c
 UTILITY-CSS lines get fixed in the sketch.
+
+B494 timer part built (Linux, 7f71406ec): tools/scripts/tmp-sweep.mjs deletes /tmp top-level entries with our prefixes
+(26 spec-only prefixes added) and old entries in ~/.cache/claude-tmp, only when the newest inner mtime is older than 6 h
+and no process holds them (/proc). Caches and claude-1000 stay. `yarn tmp-sweep:install` writes and enables an hourly
+systemd user timer (node by its resolved fnm path; rerun after a node change). agent-sessions `run`, `restart --process`
+and the shell functions set CLAUDE_CODE_TMPDIR=~/.cache/claude-tmp. Spec bites. Not verified: installed units, a real
+session in ~/.cache/claude-tmp. Not swept on purpose: yarn--_, xfs-_, playwright_chromiumdev_profile-_, e2e-tokens-_, and
+tool-run dirs (the leak check decides on those).
+
+996\. Linux builder (2026-11-12, B494): in `yarn test:tools`, push-suite "the tools step passes in a real HEAD export"
+fails: inside the export et-design.spec.mjs times out ("fake cli … started", 10 s) under load; alone 3/3. Two subagents
+hit it today (959 too). Suspect: load-sensitive 10 s timeout inside the export. Tool fix (builder default): fix it before
+the morning push, with a run under load that bites.

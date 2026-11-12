@@ -298,3 +298,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - /tmp ran full; the human swept it. ADR 0275 (B494: timer + CLAUDE_CODE_TMPDIR on /home). 956, 959, 960 (Linux), 977, 983 (Mac) built; 957 open; findings 991-994. Mac next: 989, 993, then 992 after Linux pushes 965. Next free finding: 995.
 - ADR 0275 changed with the human: leak check first (a spec run fails on a new /tmp folder), timer only a safety net, no sound, no /home check.
 - 957 built (01f0cd0c6); finding 995. Next free finding: 996.
+- B494 timer part built (7f71406ec), install waits for the human (yarn tmp-sweep:install); finding 996 (Linux next after the leak check). Next free finding: 997.
