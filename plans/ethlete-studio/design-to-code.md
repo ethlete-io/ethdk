@@ -3750,3 +3750,12 @@ backlog): one shared "visually hidden" test that every render rule uses, CLIPPED
 52852 px off the design over 238235493..HEAD (title-bar thumbnail rows about 15 px lower, a note wraps one more line,
 "Übernehmen" shows twice). The first attempt passed with the same patch. Suspect: a commit in the range (7b/7c button
 tokens) or the line-height patch. Next: bisect at 238235493, HEAD, HEAD + patch.
+
+924 update (Linux): Cause (measured): the visible-change shots of pages/sketches are not deterministic; neither the patch
+nor a commit in the range moves page-sketch. Two runs of the same code at 238235493: page-sketch 5744 vs 54552,
+paused-reason 49443 vs 2573. At six bases (238235493 to 84c3f4926) the base app is 54552 each time, HEAD + patch 52852,
+verdict PASS 6/6. What flips: the variant notes in the title-bar sketch header break at different words, and one more
+line moves the rows about 16 px. Suspect (not traced): the note column width settles late (fonts, model chip load, or a
+fit-zoom race in `design-parts/sketches`). Lesson: the gate judged one shot of a layout that had not settled. Tool fix
+(builder default, tool backlog): shoot each state twice or after layout is stable, and report a state with two
+different shots as unsettled, not judged.

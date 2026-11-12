@@ -232,3 +232,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - Findings 916-919 (OFF-CENTRE counts hidden kbd text at scale 0.2; no CONTROL-HEIGHT rule; change-crop states undrivable; ownerless pages-sketches.edit sketch). Next free finding: 920.
 - Findings 920-922 (spec type error past tsc app config; 910 group A design fold prop -> sketch waits for the human; group B app withdrawn rows, Mac builds). Next free finding: 923.
 - Findings 923-924 (CLIPPED lacks the hidden-text skip; 903 gate refusal on page-sketch, bisect); 916 built 516b5b8be; 919 Cause. Next free finding: 925.
+- 924 Cause: visible-change shots not deterministic (note wrap flips); 903 finishes on the passing gate. Next free finding: 925.
