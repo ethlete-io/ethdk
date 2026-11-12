@@ -45,14 +45,35 @@ describe('MergeComponent', () => {
   beforeEach(() => TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] }));
 
   it('shows the unchanged disclosure when states are unchanged', async () => {
-    const el = (await render({ unchangedStates: { part: 'pages/inbox', states: ['all'] } }))
+    const el = (await render({ unchangedStates: [{ part: 'pages/inbox', states: ['all'] }] }))
       .nativeElement as HTMLElement;
 
     expect(el.querySelector('ethlete-disclosure')).not.toBeNull();
   });
 
+  it('shows one disclosure per part with unchanged states', async () => {
+    const el = (
+      await render({
+        unchanged: true,
+        unchangedStates: [
+          { part: 'pages/inbox', states: ['all', 'none'] },
+          { part: 'elements/shell-main', states: ['panel-hidden'] },
+        ],
+      })
+    ).nativeElement as HTMLElement;
+    const disclosures = [...el.querySelectorAll('ethlete-disclosure')];
+    const statesOf = (disclosure: Element) =>
+      [...disclosure.querySelectorAll('li')].map((item) => item.textContent?.trim());
+
+    expect(disclosures.map((disclosure) => disclosure.querySelector('button')?.textContent?.trim())).toEqual([
+      STUDIO_LABELS.merge.unchanged(2, 'pages/inbox'),
+      STUDIO_LABELS.merge.unchanged(1, 'elements/shell-main'),
+    ]);
+    expect(disclosures.map(statesOf)).toEqual([['all', 'none'], ['panel-hidden']]);
+  });
+
   it('hides the unchanged disclosure when no state is unchanged', async () => {
-    const el = (await render({ unchangedStates: { part: 'pages/inbox', states: [] } })).nativeElement as HTMLElement;
+    const el = (await render({ unchangedStates: [] })).nativeElement as HTMLElement;
 
     expect(el.querySelector('ethlete-disclosure')).toBeNull();
   });

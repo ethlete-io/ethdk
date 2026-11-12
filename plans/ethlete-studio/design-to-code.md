@@ -3274,6 +3274,12 @@ recommends), b (one disclosure per part), c (one disclosure with a nested one pe
 merge. After the pick: `sketch-view.component.ts:453` groups `compare.unchanged` by part, MergeUnchanged becomes a list
 of parts, with a biting spec.
 
+A24 app (Linux, 2026-11-12, as built): the merge page draws one disclosure per part (design b, 2014b27cd);
+`MergeUnchanged` is a list of `{ part, states }`, sketch-view groups `compare.unchanged` by part, the label says
+"1 Zustand" for one state. All groups share the `unchanged` toggle, as the design's one prop states. Verified: two
+biting specs (merge, sketch-view), compare open/unchanged-open/added/merging ok; merge-error DIFF 2 px at the Merge
+button corners also fails at HEAD (known). Not verified: the real merge page against a live compare.
+
 921 update (Mac, b9802b4d6): the pages/sketches all-states sketch is ready, not merged. Variant a: no fold prop; the
 unchanged states fold from the rows in every state except while comparing (what the app already does); 18 narrow states
 redraw. Variant b (foldSame switch) drew the same pixels as Aktuell and was withdrawn. It waits for the human's pick by

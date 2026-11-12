@@ -468,10 +468,12 @@ export class SketchViewComponent {
   });
 
   protected unchangedStates = computed<MergeUnchanged>(() => {
-    const rows = this.compareReading()?.unchanged ?? [];
-    const part = rows[0]?.part ?? '';
+    const byPart = new Map<string, string[]>();
 
-    return { part, states: rows.filter((row) => row.part === part).map((row) => row.state) };
+    for (const { part, state } of this.compareReading()?.unchanged ?? [])
+      byPart.set(part, [...(byPart.get(part) ?? []), state]);
+
+    return [...byPart].map(([part, states]) => ({ part, states }));
   });
 
   protected selected = linkedSignal({ source: this.changed, computation: () => 0 });

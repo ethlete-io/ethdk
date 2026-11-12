@@ -413,6 +413,37 @@ describe('SketchViewComponent', () => {
     expect(completed).toEqual(['components/card']);
   });
 
+  it('groups the unchanged states of the merge page by part', async () => {
+    const home: ListedPart = { ...CARD, layer: 'pages', name: 'home' };
+    const changed = { part: 'pages/home', state: 'default', outlines: { now: [], merged: [] } };
+    const unchanged = [
+      { part: 'pages/home', state: 'empty' },
+      { part: 'pages/inbox', state: 'all' },
+      { part: 'pages/home', state: 'wide' },
+    ];
+    const { fixture, root } = await render(SKETCH, (url) => {
+      if (url.includes('/__design/sketch-preview')) return json({ changed: ['pages/home'], affected: [] });
+      if (url.includes('/__design/sketch-compare'))
+        return json({ target: SKETCH.target, variant: 'a', changed: [changed], unchanged });
+
+      return noComments(url);
+    });
+
+    fixture.componentRef.setInput('product', { ...PRODUCT, parts: [home] });
+    await settle(fixture);
+    fixture.componentInstance['openMerge']('a');
+    await settle(fixture);
+
+    const labels = [...root.querySelectorAll('ethlete-merge ethlete-disclosure button')].map((button) =>
+      button.textContent?.trim(),
+    );
+
+    expect(labels).toEqual([
+      STUDIO_LABELS.merge.unchanged(2, 'pages/home'),
+      STUDIO_LABELS.merge.unchanged(1, 'pages/inbox'),
+    ]);
+  });
+
   it('compares a merge that changes only the sketched page, and draws a state only the variant has after the merge', async () => {
     const home: ListedPart = { ...CARD, layer: 'pages', name: 'home' };
     const added = { part: 'pages/home', state: 'added', missing: 'now', outlines: { now: [], merged: [] } };

@@ -277,7 +277,8 @@ export const STUDIO_LABELS = {
     addedIn: (variant: string) => `Neu in ${variant}`,
     instances: (count: number) => (count === 1 ? '1 Instanz' : `${count} Instanzen`),
     instance: (count: number, percent: number) => `Instanz 1 von ${count} · ${percent} %`,
-    unchanged: (count: number, part: string) => `${count} Zustände von ${part} ohne sichtbare Änderung`,
+    unchanged: (count: number, part: string) =>
+      `${count === 1 ? '1 Zustand' : `${count} Zustände`} von ${part} ohne sichtbare Änderung`,
     needsRebase: (parts: readonly string[]) =>
       parts.length === 0
         ? 'Der Sketch hat keine Baseline. Lass deinen Agent den Sketch rebasen.'

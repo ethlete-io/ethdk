@@ -72,21 +72,22 @@ const CROP = { width: 266, height: 64, scale: 2, margin: 4 };
             </li>
           }
         </ul>
-        @if (unchangedStates().states.length > 0) {
-          <ethlete-disclosure
-            [(open)]="unchanged"
-            [label]="LABELS.unchanged(unchangedStates().states.length, unchangedStates().part)"
-            size="xs"
-          >
-            <ul [class]="DISCLOSURE_BODY_CLASS">
-              @for (state of unchangedStates().states; track state) {
-                <li>
-                  <span class="font-code text-et-surface">{{ unchangedStates().part }}</span
-                  ><span class="text-et-surface-muted">{{ state }}</span>
-                </li>
-              }
-            </ul>
-          </ethlete-disclosure>
+        @if (unchangedStates().length > 0) {
+          <div>
+            @for (group of unchangedStates(); track group.part) {
+              <ethlete-disclosure
+                [(open)]="unchanged"
+                [label]="LABELS.unchanged(group.states.length, group.part)"
+                size="xs"
+              >
+                <ul [class]="DISCLOSURE_BODY_CLASS">
+                  @for (state of group.states; track state) {
+                    <li>{{ state }}</li>
+                  }
+                </ul>
+              </ethlete-disclosure>
+            }
+          </div>
         }
         <span class="flex-1"></span>
         <div class="flex flex-col gap-space-3 border-t border-et-surface-border pt-space-3">

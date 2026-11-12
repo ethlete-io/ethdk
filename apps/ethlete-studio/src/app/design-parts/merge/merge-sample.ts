@@ -16,7 +16,7 @@ export type MergeRow = {
 
 export type MergeTarget = { part: string; name: string; variant: string; note: string };
 
-export type MergeUnchanged = { part: string; states: string[] };
+export type MergeUnchanged = { part: string; states: string[] }[];
 
 const frameSrc = (part: string, state: string) => `/frame.html?product=studio&part=${part}&state=${state}`;
 
@@ -58,4 +58,8 @@ export const MERGE_SAMPLE_CHANGED: MergeRow[] = [
   },
 ];
 
-export const MERGE_SAMPLE_UNCHANGED: MergeUnchanged = { part: 'pages/inbox', states: ['all', 'none'] };
+export const MERGE_SAMPLE_UNCHANGED: MergeUnchanged = [
+  { part: 'pages/inbox', states: ['all', 'none'] },
+  { part: 'components/canvas-viewport', states: ['default', 'zoomed-in', 'zoomed-out'] },
+  { part: 'elements/shell-main', states: ['panel-hidden'] },
+];
