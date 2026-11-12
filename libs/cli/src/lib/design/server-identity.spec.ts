@@ -126,6 +126,7 @@ describe('judgeServerIdentity', () => {
     builtAt: 2000,
     projectRoot: '/work/app',
     installed: { stamp: stamp('aaa'), builtAt: 2000 },
+    lastCrash: null,
     pid: 1,
     owner: 'terminal',
     cliRoot: '/work/cli',

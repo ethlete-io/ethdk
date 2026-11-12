@@ -90,6 +90,7 @@ import { createShotStore, SHOT_STORE_DIR, StoredAddress } from './shot-store';
 import { sharedDirsOf } from './system/imports';
 import { REGISTRY_SLICE_PATH } from './system/served-cache';
 import { ALL_PARTS, changedPartsOf, addedPartsOf, PartsChange } from './changed-parts';
+import { installCrashLog } from './crash-log';
 import { serverIdentityOf } from './server-identity';
 import { buildStampOf, STAMP_PATH } from './stamp';
 import { designPictureCodeOf } from './code-hash';
@@ -1354,6 +1355,10 @@ export const serveDesign = async (options: {
     return 1;
   }
 
+  let crashPort = portOf(config);
+
+  installCrashLog({ target, port: () => crashPort });
+
   const cwd = process.cwd();
   const served = reloadOnRebuild ? installedStampOf() : '';
 
@@ -1372,6 +1377,11 @@ export const serveDesign = async (options: {
   });
 
   await server.listen();
+
+  const listening = server.httpServer?.address();
+
+  if (listening && typeof listening === 'object') crashPort = listening.port;
+
   console.log(`design-explore: drawing ${target}`);
   if (freePort) console.log(terminalPortLine(portOf(config), freePort));
   server.printUrls();
