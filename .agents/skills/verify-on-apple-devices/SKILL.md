@@ -200,6 +200,30 @@ readable - to see the zoom itself, open the bare story via `sim-open` and tap.
   driver from a dead tunnel is still running on the Mac - `ipad-start` now
   pre-kills it, but `ipad-end` is the polite cleanup.
 
+## Long-press gestures - safaridriver W3C Actions
+
+`idb ui swipe` moves immediately, so it cannot press, hold, then drag (the
+scheduler's drag-to-create arms after 400ms held still). `safaridriver` can: its
+Actions endpoint accepts `pointerType: "touch"` against a simulator.
+
+```bash
+/usr/bin/safaridriver --port 4444 &
+curl -s -X POST http://localhost:4444/session -H 'Content-Type: application/json' \
+  -d '{"capabilities":{"alwaysMatch":{"browserName":"safari","platformName":"ios","safari:useSimulator":true}}}'
+```
+
+`POST /session/<id>/actions` with one `pointer` source: `pointerMove`, `pointerDown`,
+`pause` (800), several `pointerMove`s, `pointerUp`. Read results with
+`POST /session/<id>/execute/sync` and `xcrun simctl io <udid> screenshot`.
+
+- `pointerUp` only lands in the same `actions` call as the `pointerDown`. To probe
+  mid-gesture, end the first call after the moves, probe, then
+  `DELETE /session/<id>/actions` (the implicit release fires `touchend`).
+- A fling swipe wedges the driver: the next request hangs. The gesture still
+  happened, so screenshot instead of retrying.
+- `already paired with another WebDriver session` after a wedge:
+  `xcrun simctl terminate <udid> com.apple.mobilesafari`, then create the session again.
+
 ## The probe page
 
 `apps/storybook/src/assets/viewport-probe.html`, served by Storybook at
