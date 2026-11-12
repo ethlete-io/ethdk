@@ -59,8 +59,8 @@ export const commentRow = ({ thread: c, selected = false }: Props) => {
 };
 
 const person: Thread = {
-  author: 'Tom Bornholdt',
-  initials: 'TB',
+  author: 'human',
+  initials: 'H',
   when: 'vor 1 Std',
   part: 'button',
   state: 'tonal · rest',
