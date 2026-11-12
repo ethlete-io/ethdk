@@ -3759,3 +3759,9 @@ line moves the rows about 16 px. Suspect (not traced): the note column width set
 fit-zoom race in `design-parts/sketches`). Lesson: the gate judged one shot of a layout that had not settled. Tool fix
 (builder default, tool backlog): shoot each state twice or after layout is stable, and report a state with two
 different shots as unsettled, not judged.
+
+925\. Mac builder (2026-11-12 night, push of 43c4b5b8a): the push suite passed, then pre-push refused the push:
+`lint:person-names` read the working tree, where a running 911-design subagent held an uncommitted checker change (zero
+names allowed under `.ethlete/design`) while the design files still held the name. Cause (this run): the pre-push
+person-names check reads the live tree, not the pushed range; an uncommitted edit of another agent blocks a clean push.
+Tool fix (builder default, tool backlog): the check reads the blobs of the pushed commits, like the format step.
