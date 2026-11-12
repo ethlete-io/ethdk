@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { runSpecs } from './staged-data-specs.mjs';
 
 const root = join(fileURLToPath(import.meta.url), '../../..');
-const specDirs = ['tools/scripts', 'apps/ethlete-studio/eslint-rules'];
+const specDirs = ['tools/scripts', 'apps/ethlete-studio/eslint-rules', 'apps/ethlete-studio/e2e'];
 
 export const toolFiles = (repoRoot = root) =>
   specDirs.flatMap((dir) =>

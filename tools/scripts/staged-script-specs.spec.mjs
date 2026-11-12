@@ -42,3 +42,10 @@ test('a staged spec runs itself, and a name only as a prefix of another selects 
     ['b.spec.mjs'],
   );
 });
+
+test('a script the Studio e2e imports selects the e2e specs that spawn it', () => {
+  const specs = specsForScripts(['tools/scripts/heavy-run-lock.mjs'], toolFiles(), read);
+
+  assert.ok(specs.includes('apps/ethlete-studio/e2e/heavy-lock.spec.mjs'));
+  assert.ok(specs.includes('apps/ethlete-studio/e2e/case-filter.spec.mjs'));
+});

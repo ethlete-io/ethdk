@@ -85,7 +85,7 @@ if [ -n "$data_files" ]; then
   node ./tools/scripts/staged-data-specs.mjs $data_files
 fi
 
-# A staged tools script runs every tools spec that imports it or copies it as a fixture; a commit
+# A staged tools script runs every tools or Studio e2e spec that imports, spawns or copies it; a commit
 # touching none skips it. Fails the commit on a red spec.
 script_files=$(git diff --cached --name-only --diff-filter=ACMR -- 'tools/scripts' '.husky')
 
