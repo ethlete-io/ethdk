@@ -9,6 +9,7 @@ import {
   BACKLOG_WHERE,
   backlogNumbers,
   orphanFindings,
+  parkedNumbers,
   doneFindingNumbers,
   main,
   splitFindings,
@@ -340,4 +341,63 @@ Prose after.
     { number: 44, reason: STAY_REASONS.open },
     { number: 46, reason: STAY_REASONS.named },
   ]);
+});
+
+const today = join(import.meta.dirname, 'fixtures/archive-findings-2026-11-12');
+const todayPlan = readFileSync(join(today, 'design-to-code.md'), 'utf8');
+const todayParked = parkedNumbers(readFileSync(join(today, 'parked-suspects.md'), 'utf8'));
+const todayStatus = `| ID | Was | Stand | Wo |
+| -- | -- | -- | -- |
+| B1 | open (Bef. 922) | ⏳ | |
+`;
+const archiveToday = (plan = todayPlan) =>
+  archiveFindings(plan, todayStatus, {
+    today: new Date('2026-11-12'),
+    parked: todayParked,
+    isPushed: (sha) => sha !== '9d366dbcc',
+  });
+const paragraph = (plan, lead) => {
+  const from = plan.indexOf(`\n\n${lead}`) + 2;
+  return plan.slice(from, plan.indexOf('\n\n', from));
+};
+
+test('parked-suspects.md names a finding by the number that closes its parenthesis', () => {
+  assert.deepEqual([...todayParked], [945, 991]);
+});
+
+test("today's format: built, closed and parked findings leave with every paragraph of their number", () => {
+  const { plan: rest, moved, stays } = archiveToday();
+  assert.deepEqual(
+    moved.map((m) => m.number),
+    [941, 945, 946],
+  );
+  const leads = (m) => m.text.split('\n\n').map((part) => part.split(' (')[0].split(':')[0]);
+  assert.deepEqual(leads(moved[0]), ['941\\. Linux builder', '941 update', '941 update 2', '941 built']);
+  assert.deepEqual(leads(moved[2]), ['946\\. Linux builder', '946 update', '946 update', '946 closed']);
+  assert.ok(!/^94[156]\b/m.test(rest));
+  for (const kept of [
+    '875\\. ',
+    '875 server half built',
+    '900\\. ',
+    '900 update 2',
+    '914\\. ',
+    '922 built',
+    '968 + 914 built',
+    '997\\. ',
+  ])
+    assert.ok(rest.includes(`\n${kept}`), kept);
+  assert.deepEqual(stays, [
+    { number: 914, reason: STAY_REASONS.unpushed },
+    { number: 922, reason: STAY_REASONS.open },
+    { number: 968, reason: STAY_REASONS.unpushed },
+  ]);
+  assert.doesNotMatch(rest, /\n\n\n/);
+});
+
+test('a finding whose last paragraph follows its built one stays', () => {
+  const update = paragraph(todayPlan, '941 update 2');
+  const reordered = todayPlan.replace(`${update}\n\n`, '').replace('\n\n997\\.', `\n\n${update}\n\n997\\.`);
+  const { moved, stays } = archiveToday(reordered);
+  assert.ok(!moved.some((m) => m.number === 941));
+  assert.ok(stays.some((s) => s.number === 941 && s.reason === STAY_REASONS.reopened));
 });

@@ -25,6 +25,7 @@ test('an oversize staged plan file is reported with its size', async () => {
   });
   assert.equal(problems.length, 1);
   assert.match(problems[0], /11 chars without table padding exceeds the budget of 10/);
+  assert.match(problems[0], /Archive findings with `node tools\/scripts\/archive-findings.mjs`/);
 });
 
 test('an unformatted staged plan file is reported', async () => {

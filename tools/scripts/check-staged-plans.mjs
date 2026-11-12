@@ -28,7 +28,7 @@ export const checkStagedPlans = async ({ files, read, config, isFormatted }) => 
 
     if (budget !== undefined && size > budget) {
       problems.push(
-        `${file}: ${size} chars without table padding exceeds the budget of ${budget}. Archive findings or shrink it.`,
+        `${file}: ${size} chars without table padding exceeds the budget of ${budget}. Archive findings with \`node tools/scripts/archive-findings.mjs\` (\`--dry-run\` first) or shrink it.`,
       );
     }
 
