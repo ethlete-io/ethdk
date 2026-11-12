@@ -13,6 +13,8 @@ const tester = new RuleTester({
 });
 
 const tempFixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'template-member-accessibility-'));
+
+afterAll(() => fs.rmSync(tempFixtureRoot, { recursive: true, force: true }));
 const externalTemplatePath = path.join(tempFixtureRoot, 'fixture.component.html');
 const externalComponentPath = path.join(tempFixtureRoot, 'fixture.component.ts');
 const externalContractPath = path.join(tempFixtureRoot, 'fixture.contract.ts');

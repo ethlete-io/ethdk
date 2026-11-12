@@ -40,6 +40,8 @@ const INLINE_COMPONENT_IMPLICIT = [
 ].join('\n');
 
 const tempFixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'inject-member-accessibility-'));
+
+afterAll(() => fs.rmSync(tempFixtureRoot, { recursive: true, force: true }));
 const externalTemplatePath = path.join(tempFixtureRoot, 'fixture.component.html');
 const externalComponentPath = path.join(tempFixtureRoot, 'fixture.component.ts');
 

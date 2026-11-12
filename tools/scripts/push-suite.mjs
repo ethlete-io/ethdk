@@ -362,6 +362,29 @@ export const preChecksStep = async (range) => {
   return { status: names.length ? 1 : 0, output: lines.join('\n'), names };
 };
 
+export const withStepTmp = async (name, run, env = process.env) => {
+  const { leakMessageOf, openSpecTmp } = await import('./spec-tmp.mjs');
+  const previous = env['TMPDIR'];
+  const tmp = openSpecTmp(previous || tmpdir());
+  let result;
+  let left;
+
+  env['TMPDIR'] = tmp.dir;
+  try {
+    result = await run();
+  } finally {
+    if (previous === undefined) delete env['TMPDIR'];
+    else env['TMPDIR'] = previous;
+    left = tmp.close();
+  }
+  if (left.length === 0) return result;
+  return {
+    ...result,
+    status: result.status || 1,
+    output: `${result.output}\n${leakMessageOf(`push-suite step ${name}`, left)}`,
+  };
+};
+
 export const stepLine = (name, status, ms, note, load, max = load) =>
   `push-suite: ${name} ${status === 0 ? 'ok' : `failed at load ${formatLoad(load)} (max ${formatLoad(max)} during the step)`} in ${seconds(ms)}${note ? ` (${note})` : ''}`;
 
@@ -691,7 +714,7 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
       }
       const startedAt = performance.now();
       const stopSampling = sampleMaxLoad(loadProbe.load, loadProbe.timers);
-      const { status, output, note } = await steps[name]();
+      const { status, output, note } = await withStepTmp(name, steps[name]);
       const maxLoad = stopSampling();
       log(stepLine(name, status, performance.now() - startedAt, note, (loadProbe.load ?? oneMinuteLoad)(), maxLoad));
       if (status !== 0) {

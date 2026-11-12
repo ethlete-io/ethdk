@@ -9,6 +9,8 @@ const tsParser = require('@typescript-eslint/parser');
 const templateMemberAccessibility = require('../template-member-accessibility');
 
 const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'angular-member-visibility-'));
+
+afterAll(() => fs.rmSync(fixtureRoot, { recursive: true, force: true }));
 const templatePath = path.join(fixtureRoot, 'fixture.component.html');
 const componentPath = path.join(fixtureRoot, 'fixture.component.ts');
 

@@ -166,6 +166,7 @@ describe('no-cdk-import migration map cache', () => {
 
   it('picks up a map that appears or changes after the first run', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'no-cdk-import-'));
+    onTestFinished(() => fs.rmSync(dir, { recursive: true, force: true }));
     const mapPath = path.join(dir, 'map.json');
 
     expect(verify(mapPath)[0].message).toContain('Move it to');

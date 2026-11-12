@@ -13,6 +13,7 @@ export default defineConfig({
   test: {
     name: 'timetrack-vscode',
     environment: 'node',
+    setupFiles: ['../../tools/vitest/spec-tmp.setup.mjs'],
     globals: true,
     include: ['src/**/*.spec.ts'],
     reporters: ['default'],

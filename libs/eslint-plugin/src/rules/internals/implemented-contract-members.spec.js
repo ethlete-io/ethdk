@@ -7,6 +7,8 @@ const path = require('path');
 const { getImplementedContractMemberNames } = require('./implemented-contract-members');
 
 const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'implemented-contract-members-'));
+
+afterAll(() => fs.rmSync(fixtureRoot, { recursive: true, force: true }));
 const componentPath = path.join(fixtureRoot, 'fixture.component.ts');
 const contractPath = path.join(fixtureRoot, 'fixture.contract.ts');
 const componentText = "import { PublicApi } from './fixture.contract';\nclass C implements PublicApi {}";

@@ -9,6 +9,6 @@ export default defineConfig({
     include: ['src/**/*.perf.spec.ts'],
     fileParallelism: false,
     globalSetup: ['./vitest.global-setup.ts'],
-    setupFiles: ['./vitest.setup.ts'],
+    setupFiles: ['../../tools/vitest/spec-tmp.setup.mjs', './vitest.setup.ts'],
   },
 });

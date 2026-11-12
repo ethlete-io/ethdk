@@ -9,7 +9,7 @@ export default defineConfig({
     include: ['src/**/*.spec.ts', 'scripts/**/*.spec.mts'],
     exclude: [...configDefaults.exclude, 'src/**/*.perf.spec.ts'],
     globalSetup: ['./vitest.global-setup.ts'],
-    setupFiles: ['./vitest.setup.ts'],
+    setupFiles: ['../../tools/vitest/spec-tmp.setup.mjs', './vitest.setup.ts'],
     maxWorkers: specWorkers,
     reporters: ['default', './vitest.skip-reporter.mts'],
     coverage: {

@@ -1,6 +1,6 @@
 import { Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
-import { mkdtempSync, readFileSync } from 'fs';
+import { mkdtempSync, readFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { migrateLegacyColorThemesInFile } from './legacy-color-themes';
@@ -192,7 +192,9 @@ export const surfaces = provideSurfaceThemesWithTailwind4([]);
   });
 
   it('lists the affected files and changes nothing in a scan', async () => {
-    const scanFile = join(mkdtempSync(join(tmpdir(), 'legacy-color-themes-')), 'scan.json');
+    const scanDir = mkdtempSync(join(tmpdir(), 'legacy-color-themes-'));
+    const scanFile = join(scanDir, 'scan.json');
+    onTestFinished(() => rmSync(scanDir, { recursive: true, force: true }));
     process.env['ETHLETE_SCAN_FILE'] = scanFile;
 
     await migrateLegacyColorThemes(tree, { skipFormat: true });

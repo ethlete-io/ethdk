@@ -15,7 +15,7 @@ export default defineConfig(() => ({
     environment: 'jsdom',
     passWithNoTests: true,
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    setupFiles: ['src/test-setup.mjs'],
+    setupFiles: ['../../tools/vitest/spec-tmp.setup.mjs', 'src/test-setup.mjs'],
     reporters: ['default'],
     maxWorkers: specWorkers,
     coverage: {

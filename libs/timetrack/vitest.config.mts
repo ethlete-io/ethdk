@@ -6,6 +6,7 @@ export default defineConfig({
   test: {
     name: 'timetrack',
     environment: 'node',
+    setupFiles: ['../../tools/vitest/spec-tmp.setup.mjs'],
     globals: true,
     include: ['src/**/*.spec.ts', 'testing/**/*.spec.ts'],
     reporters: ['default'],

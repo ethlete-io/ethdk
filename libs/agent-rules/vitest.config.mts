@@ -7,7 +7,7 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     include: ['src/**/*.spec.ts'],
-    setupFiles: ['./vitest.setup.ts'],
+    setupFiles: ['../../tools/vitest/spec-tmp.setup.mjs', './vitest.setup.ts'],
     reporters: ['default'],
     maxWorkers: specWorkers,
     coverage: {

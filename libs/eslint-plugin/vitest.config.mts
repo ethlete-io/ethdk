@@ -5,6 +5,7 @@ export default defineConfig({
   test: {
     name: 'eslint-plugin',
     environment: 'node',
+    setupFiles: ['../../tools/vitest/spec-tmp.setup.mjs'],
     globals: true,
     include: ['src/**/*.spec.js'],
     reporters: ['default'],

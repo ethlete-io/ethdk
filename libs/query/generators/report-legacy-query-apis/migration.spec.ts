@@ -1,6 +1,6 @@
 import { Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
-import { mkdtempSync, readFileSync } from 'fs';
+import { mkdtempSync, readFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { QUERY_V3_MIGRATION_REPORT_PATH } from '../migrate-to-query-v3/report';
@@ -204,7 +204,9 @@ describe('report-legacy-query-apis', () => {
   });
 
   it('writes the affected files to ETHLETE_SCAN_FILE and changes nothing when et migrations scans', async () => {
-    const scanFile = join(mkdtempSync(join(tmpdir(), 'query-scan-')), 'files.json');
+    const scanDir = mkdtempSync(join(tmpdir(), 'query-scan-'));
+    const scanFile = join(scanDir, 'files.json');
+    onTestFinished(() => rmSync(scanDir, { recursive: true, force: true }));
 
     vi.stubEnv('ETHLETE_SCAN_FILE', scanFile);
     tree.write(
