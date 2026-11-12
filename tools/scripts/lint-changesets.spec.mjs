@@ -39,3 +39,9 @@ test('the pre-push changeset check reads the pushed commit, not the working tree
   assert.deepEqual(first, ['node', ['tools/scripts/lint-changesets.js', '--rev', 'abc123']]);
   assert.deepEqual(commandsFor('lint:size', 'abc123'), [['yarn', ['lint:size']]]);
 });
+
+test('the pre-push person-names check reads the pushed range', () => {
+  assert.deepEqual(commandsFor('lint:person-names', 'abc123', 'def456'), [
+    ['node', [join(import.meta.dirname, 'check-person-names.mjs'), '--range', 'def456', 'abc123']],
+  ]);
+});

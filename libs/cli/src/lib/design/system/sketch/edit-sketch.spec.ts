@@ -100,6 +100,31 @@ describe('openEditSketch', () => {
     expect(readFileSync(heroTs, 'utf8')).toBe(head);
   });
 
+  it('refuses the merge naming the commit order while a part the edit embeds holds an uncommitted change', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const { target, css } = acme();
+    const button = join(resolveAcme(target).dir, 'components/button/button.css');
+
+    writeFileSync(button, '.acme-button { padding: 0; }\n');
+    writeFileSync(css, '.acme-hero { padding: 0; }\n');
+
+    const sketch = openEditSketch({ target, product: resolveAcme(target), part: HERO }) as Sketch;
+    const picked = decideSketch({ sketch, decision: { kind: 'pick', variant: 'new', ...originOf('spec') } }) as Sketch;
+    const mergeOnce = () =>
+      mergeSketch({ target, config: readConfig(target) ?? {}, product: resolveAcme(target), sketch: picked });
+
+    expect(mergeOnce()).toEqual({
+      reason: `components/button holds uncommitted changes that ${HERO}@edit was drawn on, and a merge checks against HEAD - commit components/button first, then merge ${HERO}@edit`,
+      changed: ['components/button'],
+    });
+
+    git(target, 'commit', '-m', 'button', '--', button);
+
+    expect(mergeOnce()).toEqual([HERO]);
+    expect(readFileSync(css, 'utf8')).toContain('padding: 0;');
+  });
+
   it('keeps the shared files at HEAD for old when the edit changed them', () => {
     const { target } = acme((heroDir) => {
       mkdirSync(join(heroDir, 'shared'));

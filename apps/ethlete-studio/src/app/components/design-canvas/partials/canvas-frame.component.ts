@@ -119,7 +119,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     } @else if (frame().error) {
       <div
         [etProvideColor]="errorTheme()"
-        class="absolute inset-0 box-border size-full overflow-hidden border-0 p-4 font-mono text-[1.3rem] whitespace-pre-wrap text-(--et-theme-color-primary-solid)"
+        class="absolute inset-0 box-border size-full overflow-hidden border-0 p-4 font-(--font-code) text-[1.3rem] whitespace-pre-wrap text-(--et-theme-color-primary-solid)"
         role="alert"
       >
         {{ frame().error }}

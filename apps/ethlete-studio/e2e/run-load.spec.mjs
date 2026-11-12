@@ -1,14 +1,20 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { join, resolve } from 'node:path';
 import { test } from 'node:test';
+import { pathToFileURL } from 'node:url';
 import {
   cpuDeltaOf,
   cpuTicksOf,
   goalLineOf,
+  loadArgOf,
   psRowsOf,
   psTicksOf,
   runLoadLineOf,
   topProcessLinesOf,
 } from './run-load.mjs';
+
+const root = resolve(import.meta.dirname, '../../..');
 
 test('a run under the core count is a measurement and names machine, cores and workers', () => {
   assert.equal(
@@ -115,3 +121,69 @@ test('on macOS an idle process with a high lifetime average does not appear in t
     ],
   );
 });
+
+test('--load reads a whole number of busy loops and refuses anything else', () => {
+  assert.deepEqual(loadArgOf(['--case', 'x']), { ok: true, count: 0 });
+  assert.deepEqual(loadArgOf(['--load', '24', '--case', 'x']), { ok: true, count: 24 });
+  assert.deepEqual(loadArgOf(['--load', '0']), { ok: true, count: 0 });
+  for (const bad of [['--load'], ['--load', '-1'], ['--load', '2.5'], ['--load', 'many'], ['--load', '--case']])
+    assert.equal(loadArgOf(bad).ok, false, bad.join(' '));
+  assert.equal(loadArgOf(['--load', 'many']).line, 'invalid --load many, expected a whole number of busy loops');
+});
+
+test('studio:e2e refuses an invalid --load with exit 2 before it lists or runs a case', () => {
+  const run = spawnSync(process.execPath, ['apps/ethlete-studio/e2e/canvas.e2e.mjs', '--list', '--load', 'many'], {
+    cwd: root,
+    encoding: 'utf8',
+    timeout: 60_000,
+  });
+
+  assert.equal(run.status, 2, `${run.stdout}${run.stderr}`);
+  assert.match(run.stderr, /invalid --load many/);
+});
+
+const driver = (ending) => `
+  import { execFileSync } from 'node:child_process';
+  import { startRunLoad } from ${JSON.stringify(pathToFileURL(join(root, 'apps/ethlete-studio/e2e/run-load.mjs')).href)};
+  const stop = await startRunLoad(3);
+  const rows = execFileSync('ps', ['-A', '-o', 'pid=,ppid=,comm='], { encoding: 'utf8' }).trim().split('\\n');
+  const loops = rows.map((row) => row.trim().split(/\\s+/)).map(([pid, ppid, comm]) => [Number(pid), Number(ppid), comm]).filter(([, ppid, comm]) => ppid === process.pid && !/\\bps$/.test(comm));
+  console.log(JSON.stringify(loops.map(([pid]) => pid)));
+  ${ending}
+`;
+
+const alive = (pid) => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+for (const [how, ending] of [
+  ['stopped', 'stop();'],
+  ['exits on a failure', 'process.exit(1);'],
+  [
+    'gets SIGINT (Ctrl-C)',
+    "process.kill(process.pid, 'SIGINT'); await new Promise(() => setInterval(() => {}, 1000));",
+  ],
+  ['is killed', "process.kill(process.pid, 'SIGKILL');"],
+]) {
+  test(`the --load busy loops end when the run ${how}`, async () => {
+    const run = spawnSync(process.execPath, ['--input-type=module', '-e', driver(ending)], {
+      cwd: root,
+      env: { ...process.env, ETHLETE_HEAVY_RUN_HELD: String(process.pid) },
+      encoding: 'utf8',
+      timeout: 30_000,
+    });
+    const loops = JSON.parse(run.stdout.trim().split('\n')[0] || '[]');
+
+    assert.equal(loops.length, 3, `${run.stdout}${run.stderr}`);
+    for (let poll = 0; poll < 30 && loops.some(alive); poll++) await new Promise((done) => setTimeout(done, 100));
+    const leaked = loops.filter(alive);
+
+    leaked.forEach((pid) => process.kill(pid, 'SIGKILL'));
+    assert.deepEqual(leaked, [], 'busy loops still running after the run ended');
+  });
+}

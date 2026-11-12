@@ -62,9 +62,6 @@
 
   --text-mono: 1.3rem;
   --text-mono--line-height: 150%;
-
-  --font-sans: 'Jost', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
 
 @theme inline {
@@ -128,7 +125,7 @@ body {
   margin: 0;
   background-color: var(--surface);
   color: var(--text);
-  font-family: var(--font-sans);
+  font-family: var(--font-ui);
   /* 1rem is 10px here, so text that inherits its size would read at 10px without this. */
   font-size: var(--text-base);
   line-height: var(--text-base--line-height);

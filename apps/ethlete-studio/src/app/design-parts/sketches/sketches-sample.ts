@@ -12,8 +12,11 @@ export type SketchRow = {
   model?: SketchModel;
   width: number;
   sized?: boolean;
+  withdrawn?: string;
   shots: SketchShot[];
 };
+
+export type SketchWithdrawn = 'hidden' | 'shown';
 
 export type SketchStatus = 'drawing' | 'waiting' | 'paused' | 'idle';
 
@@ -104,7 +107,7 @@ export const SKETCH_IDLE: SketchIdle = { by: 'Opus 5.5', since: 'seit 25 Min' };
 
 export const SKETCH_ROUNDS: SketchRound[] = [{ value: 'round-1', label: 'Runde 1 · Suche und Update' }];
 
-export const SKETCH_PINS: SketchPin[] = [{ variant: 'a', author: 'Tom Bornholdt', initials: 'TB', count: 1 }];
+export const SKETCH_PINS: SketchPin[] = [{ variant: 'a', author: 'human', initials: 'H', count: 1 }];
 
 export const SKETCH_TREE: PartTreeLayer[] = [
   {
@@ -132,6 +135,11 @@ const CHIP_STATES = [
 const CHIP_HEIGHT = 30;
 
 const chipShotsOf = (changed: string[]) => shotsOf(changed, { height: () => CHIP_HEIGHT, states: CHIP_STATES });
+
+export const SKETCH_WITHDRAWN = {
+  key: 'b',
+  reason: 'Halbfett macht die Prozentzahl breiter, der Chip springt beim Zoomen um 4 px',
+};
 
 export const SKETCH_NARROW_SAMPLE = {
   part: 'components/zoom-chip',

@@ -187,6 +187,12 @@ describe('the design lint gate', { timeout: 60_000 }, () => {
     expect(Array.isArray(result) ? result : result.reason).toMatch(
       /no-non-null-assertion[^\n]*\nelements\/hero variant b adds lint warnings - fix them before a merge$/u,
     );
+
+    writeFileSync(heroFile(variantDirOf(picked, 'b')), PRELUDE + FAILED);
+
+    expect(mergeSketch({ target, config: readConfig(target) ?? {}, product, sketch: picked })).toEqual([
+      'elements/hero',
+    ]);
   });
 
   it('fails a changed call file with a warning over the calls baseline and lets it keep the old ones', async () => {

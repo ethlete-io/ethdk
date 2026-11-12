@@ -45,7 +45,7 @@ import { coverPartProblemOf, editCovers } from './system/sketch/covered-diffs';
 import { unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots';
 import { addedUndeclaredControlsOf } from './system/complete';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
-import { editRefOf, mergeAndRecord } from './system/sketch/merge-step';
+import { editRefOf, humanPickOf, mergeAndRecord } from './system/sketch/merge-step';
 import { staleBaseOf, staleSketchBasesOf } from './system/sketch/stale-base';
 import { repoInvocation } from '../invocation';
 import { editDiscardRefusalOf } from './system/sketch/edit-sketch';
@@ -1354,7 +1354,7 @@ const rebased = (context: Context) =>
     if (kept) conflicts.forEach((line) => console.log(`KEPT ${line} (ported by hand)`));
     else if (conflicts.length > 0)
       return fail(
-        `${conflicts.join('\n')}\n${sketch.target} not rebased - port these by hand, then run sketch rebase again`,
+        `${conflicts.join('\n')}\n${sketch.target} not rebased - port these by hand, then run ${context.invocation ?? repoInvocation({ root: context.target, subcommand: 'design' })} sketch rebase ${sketch.target} --ported --product ${product.name} --by <model id>`,
       );
 
     ported.forEach(({ variant, file, how }) => console.log(`PORTED ${variant}: ${file} (${how})`));
@@ -1831,7 +1831,7 @@ const merged = (context: Context) =>
 
     const by = authorOf(context.args) ?? undefined;
     const allowed =
-      flagVariant !== undefined && planRef !== undefined && sketch.decision?.kind !== 'pick'
+      flagVariant !== undefined && planRef !== undefined && humanPickOf(sketch) === undefined
         ? { variant: flagVariant, planRef, editRef: editRefOf({ target: context.target, sketch, planRef }) }
         : undefined;
     if (sketch.decision?.kind === 'pick' && sketch.decision.by && sketch.decision.by !== 'designer')

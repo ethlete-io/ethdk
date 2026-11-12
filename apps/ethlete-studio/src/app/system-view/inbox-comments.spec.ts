@@ -44,9 +44,9 @@ describe('inboxCommentOf', () => {
   });
 
   it('names a comment by the user with the git user name and its initials', () => {
-    expect(inboxCommentOf(comment({}), { now: NOW, userName: 'Tom Bornholdt' })).toMatchObject({
-      author: 'Tom Bornholdt',
-      initials: 'TB',
+    expect(inboxCommentOf(comment({}), { now: NOW, userName: 'human' })).toMatchObject({
+      author: 'human',
+      initials: 'H',
     });
   });
 

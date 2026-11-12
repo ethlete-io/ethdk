@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join, resolve } from 'node:path';
@@ -10,7 +11,10 @@ const { cliSourceHash } = createRequire(import.meta.url)(join(resolve(target), '
   cliSourceHash: (root: string) => string;
 };
 
+const head = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: resolve(cliRoot), encoding: 'utf8' });
+const commit = head.status === 0 ? head.stdout.trim() : null;
+
 writeFileSync(
   join(resolve(target), 'build-info.json'),
-  `${JSON.stringify({ builtAt: new Date().toISOString(), sourceHash: cliSourceHash(resolve(cliRoot)) })}\n`,
+  `${JSON.stringify({ builtAt: new Date().toISOString(), commit, sourceHash: cliSourceHash(resolve(cliRoot)) })}\n`,
 );

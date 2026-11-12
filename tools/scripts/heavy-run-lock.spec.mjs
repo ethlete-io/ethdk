@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
+import { mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -65,10 +65,31 @@ test('the lock of a dead holder is taken over', async (t) => {
 
 test('a child of a holder takes no lock of its own', async (t) => {
   const file = lockFile(t);
-  const env = {};
+  const env = { NX_DAEMON: 'true' };
   const outer = await takeHeavyLock('push-suite', { file, wait: false, env });
+  assert.equal(env['NX_DAEMON'], 'false', "a holder's nx children skip the daemon, which drops the held flag");
   const inner = await takeHeavyLock('spec:stress', { file, wait: false, env });
   assert.equal(inner.ok, true);
   assert.equal(readHolder(file).name, 'push-suite');
   outer.release();
+  assert.deepEqual(env, { NX_DAEMON: 'true' });
+});
+
+test('a lock taker under node --test without a private lock file fails instead of taking the real lock', (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'heavy-run-lock-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const env = { ...process.env, TMPDIR: dir, NODE_TEST_CONTEXT: 'child-v8' };
+  delete env['ETHLETE_HEAVY_LOCK_FILE'];
+  delete env['ETHLETE_HEAVY_RUN_HELD'];
+  const script = `
+    const { takeHeavyLock } = await import(${JSON.stringify(new URL('./heavy-run-lock.mjs', import.meta.url).href)});
+    const lock = await takeHeavyLock('bite', { wait: false });
+    console.log(lock.ok ? 'took' : 'refused');`;
+  const run = spawnSync(process.execPath, ['--input-type=module', '-e', script], { env, encoding: 'utf8' });
+  assert.equal(run.stdout, '');
+  assert.match(
+    run.stderr,
+    /heavy-run-lock: a test takes the real lock; pass the file option or env ETHLETE_HEAVY_LOCK_FILE/,
+  );
+  assert.deepEqual(readdirSync(dir), []);
 });

@@ -2775,6 +2775,21 @@ export default definePart({
       expect(existsSync(sketchDir(target))).toBe(true);
     });
 
+    it('never merges the stale agent pick of an earlier refused merge', async () => {
+      const { target, lines } = await readied('a,b');
+      const file = join(sketchDir(target), 'sketch.json');
+      const sketch = JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
+      const stale = { kind: 'pick', variant: 'a', decidedAt: 'now', by: 'claude-opus-5-5', cmd: 'x', pid: 1 };
+
+      writeFileSync(file, JSON.stringify({ ...sketch, decision: stale }));
+
+      expect(
+        await write(target, 'merge', 'components/button', '--variant', 'b', '--allowed-by', PLAN, '--product', 'acme'),
+      ).toBe(1);
+      expect(lines.pop()).toContain('the user picks in Studio');
+      expect(existsSync(join(target, DESIGN_DIR, 'acme/merged.json'))).toBe(false);
+    });
+
     it('refuses a key that is not the live variant', async () => {
       const { target, lines } = await readied('a');
 

@@ -34,6 +34,7 @@ import {
   DroppedPropsError,
   drawnPaneCountOf,
   harnessShotOf,
+  AppFontError,
   LookMissError,
   MissingPanesError,
   UndrivableError,
@@ -121,7 +122,12 @@ type AppShot = { app: Buffer } | { problem: string; undrivable?: true };
 
 /** @internal The failed state a harness shot's error stands for; rethrows any error that fails the whole compare. */
 export const appShotProblemOf = (error: unknown): AppShot => {
-  if (error instanceof DroppedPropsError || error instanceof MissingPanesError || error instanceof LookMissError)
+  if (
+    error instanceof DroppedPropsError ||
+    error instanceof MissingPanesError ||
+    error instanceof LookMissError ||
+    error instanceof AppFontError
+  )
     return { problem: error.message };
   if (error instanceof UndrivableError) return { problem: error.message, undrivable: true };
 

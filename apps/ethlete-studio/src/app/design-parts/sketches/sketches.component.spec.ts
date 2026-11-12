@@ -4,7 +4,7 @@ import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { SketchesComponent } from './sketches.component';
-import { SketchRow } from './sketches-sample';
+import { SKETCH_PINS, SketchRow } from './sketches-sample';
 
 const LABELS = STUDIO_LABELS.sketches;
 
@@ -85,6 +85,13 @@ describe('SketchesComponent', () => {
       return this.hasAttribute('data-sk-rows') ? LIST_WIDTH : 0;
     });
     configure();
+  });
+
+  it('names the sample pin after the design sample author', async () => {
+    const rows = ROWS.map((row) => (row.key === 'x' ? { ...row, key: 'a' } : row));
+    const root: HTMLElement = (await render({ camera: '100', rows, pins: SKETCH_PINS })).nativeElement;
+
+    expect(root.querySelector('ethlete-comment-pin [aria-label]')?.getAttribute('aria-label')).toBe('Comment by human');
   });
 
   it('draws one row per variant with every state, dims the unchanged ones and marks the first change', async () => {
@@ -242,6 +249,48 @@ describe('SketchesComponent', () => {
 
     expect(textOf(model)).toBe('Sonnet 5.5');
     expect(model?.title).toBe('claude-sonnet-5-5 · 01.11. 09:00');
+  });
+
+  it('hides withdrawn variants behind Zurückgezogene (n) and marks them in place of Übernehmen when shown', async () => {
+    const withdrawn: SketchRow[] = [
+      ...ROWS,
+      { ...ROWS[1]!, key: 'y', withdrawn: 'Zu breit für die Leiste' },
+      { ...ROWS[1]!, key: 'z', withdrawn: '' },
+    ];
+    // jsdom ignores rules inside `@layer`, so et-choice-field reads `display: inline` and the SDK logs an error.
+    const layerShim = Object.assign(document.createElement('style'), { textContent: 'et-choice-field{display:flex}' });
+
+    document.head.append(layerShim);
+    onTestFinished(() => layerShim.remove());
+
+    const fixture = await render({ rows: withdrawn });
+    const root = fixture.nativeElement as HTMLElement;
+    const shownKeys = () => [...root.querySelectorAll('[data-sk-row]')].map((row) => row.getAttribute('data-sk-row'));
+    const changes: string[] = [];
+
+    fixture.componentInstance.withdrawn.subscribe((value) => changes.push(value));
+
+    expect(shownKeys()).toEqual(['current', 'x']);
+    expect(textOf(root.querySelector('[data-sk-withdrawn-toggle]'))).toBe('Zurückgezogene (2)');
+
+    root.querySelector<HTMLElement>('[data-sk-withdrawn-toggle] et-switch')?.click();
+    await fixture.whenStable();
+
+    expect(changes).toEqual(['shown']);
+    expect(shownKeys()).toEqual(['current', 'x', 'y', 'z']);
+    expect(textOf(root.querySelector('[data-sk-row="y"] [data-sk-withdrawn]'))).toBe(
+      'Vom Agent zurückgezogen: Zu breit für die Leiste',
+    );
+    expect(textOf(root.querySelector('[data-sk-row="z"] [data-sk-withdrawn]'))).toBe('Vom Agent zurückgezogen');
+    expect(root.querySelector('[data-sk-row="y"] [data-sk-merge]')).toBeNull();
+    expect(root.querySelector('[data-sk-row="x"] [data-sk-merge]')).not.toBeNull();
+    expect(root.querySelector('[data-sk-row="x"] [data-sk-withdrawn]')).toBeNull();
+  });
+
+  it('shows no Zurückgezogene toggle while no variant is withdrawn', async () => {
+    const root = (await render({})).nativeElement as HTMLElement;
+
+    expect(root.querySelector('[data-sk-withdrawn-toggle]')).toBeNull();
   });
 
   it('emits merge with the variant from Übernehmen', async () => {
@@ -428,6 +477,19 @@ describe('SketchesComponent', () => {
     expect(
       [...root.querySelectorAll('[data-sk-same] [data-sk-row]')].map((row) => row.getAttribute('data-sk-row')),
     ).toEqual(['y', 'z']);
+  });
+
+  it('folds every variant and its pin when no variant changes any state', async () => {
+    const unchanged = (row: SketchRow) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: false })) });
+    const base = ROWS[1] as SketchRow;
+    const rows = [ROWS[0], { ...unchanged(base), key: 'a' }, { ...unchanged(base), key: 'b' }];
+    const root: HTMLElement = (await render({ camera: '100', rows, pins: SKETCH_PINS })).nativeElement;
+
+    expect(textOf(root.querySelector('[data-sk-same] button'))).toBe(
+      LABELS.sameVariants(['a', 'b']).replace(/\s/g, ' '),
+    );
+    expect(root.querySelector('[data-sk-row="a"]')).toBeNull();
+    expect(root.querySelector('ethlete-comment-pin')).toBeNull();
   });
 
   it('keeps a folded variant folded while a quick listing knows nothing about its compare', async () => {

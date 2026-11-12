@@ -53,8 +53,8 @@ const COMMENTS: Comment[] = [
   },
   {
     id: 'c3',
-    author: 'Tom Bornholdt',
-    initials: 'TB',
+    author: 'human',
+    initials: 'H',
     when: 'vor 1 Std',
     part: 'button',
     state: 'tonal · rest',
@@ -95,8 +95,8 @@ const COMMENTS: Comment[] = [
   },
   {
     id: 'c7',
-    author: 'Tom Bornholdt',
-    initials: 'TB',
+    author: 'human',
+    initials: 'H',
     when: 'Fr',
     part: 'button',
     state: 'filled · focus-visible',
@@ -147,7 +147,7 @@ const MORE: [string, string, Agent | undefined, string, string, string, string][
     'Der Fokus springt beim Öffnen auf Schließen statt auf das erste Feld.',
   ],
   ['Gemini', 'G', 'gemini', 'So', 'tooltip', 'top', 'Der Pfeil sitzt einen Pixel neben der Mitte des Ankers.'],
-  ['Tom Bornholdt', 'TB', undefined, 'Sa', 'chip', 'removable', 'Das Schließen-Icon ist zu klein für den Daumen.'],
+  ['human', 'H', undefined, 'Sa', 'chip', 'removable', 'Das Schließen-Icon ist zu klein für den Daumen.'],
   [
     'Claude',
     'C',
@@ -167,7 +167,7 @@ const MORE: [string, string, Agent | undefined, string, string, string, string][
     'QC: Der Kopf verliert beim Scrollen seine untere Linie.',
   ],
   ['Codex', 'CX', 'codex', 'Fr', 'slider', 'range', 'Beide Griffe lassen sich übereinander ziehen. Soll das gehen?'],
-  ['Tom Bornholdt', 'TB', undefined, 'Do', 'badge', 'dot', 'Der Punkt ist neben der Schrift kaum zu sehen.'],
+  ['human', 'H', undefined, 'Do', 'badge', 'dot', 'Der Punkt ist neben der Schrift kaum zu sehen.'],
   [
     'Gemini',
     'G',
@@ -271,7 +271,7 @@ export const inbox = (commentEditor: CommentEditor) =>
           : null;
       const editor = dialog
         ? html`<div class="fixed top-46.75 left-152.25 w-80 z-10 text-ui-sm">
-            ${commentPinMark({ author: 'Tom Bornholdt', initials: 'TB', selected: true })}
+            ${commentPinMark({ author: 'human', initials: 'H', selected: true })}
             <div class="mt-1.25">${dialog.body}</div>
           </div>`
         : '';
@@ -346,8 +346,8 @@ export const inbox = (commentEditor: CommentEditor) =>
                       .filter((c) => c.cell !== 12)
                       .concat({
                         id: 'draft',
-                        author: 'Tom Bornholdt',
-                        initials: 'TB',
+                        author: 'human',
+                        initials: 'H',
                         when: '',
                         part: 'button',
                         state: 'tonal · rest',

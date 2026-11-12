@@ -73,25 +73,25 @@ export const pin = (p: Props) => {
   return !badge ? button : `<span class="relative inline-flex">${button}${badge}</span>`;
 };
 
-const tom: Props = { author: 'Tom', initials: 'TB' };
+const human: Props = { author: 'human', initials: 'H' };
 const claude: Props = { author: 'Claude', agent: 'claude' };
-const selectedTom: Props = { ...tom, selected: true };
+const selectedHuman: Props = { ...human, selected: true };
 const selectedClaude: Props = { ...claude, selected: true };
 
 export const { states, grid } = interactionRows(
   {
-    initials: tom,
+    initials: human,
     logo: claude,
-    selected: selectedTom,
+    selected: selectedHuman,
     'selected-logo': selectedClaude,
-    count: { ...tom, count: 3 },
+    count: { ...human, count: 3 },
     'logo-count': { ...claude, count: 3 },
-    'selected-count': { ...selectedTom, count: 3 },
+    'selected-count': { ...selectedHuman, count: 3 },
     'selected-logo-count': { ...selectedClaude, count: 3 },
-    'count-12': { ...tom, count: 12 },
+    'count-12': { ...human, count: 12 },
     'selected-logo-count-12': { ...selectedClaude, count: 12 },
-    resolved: { ...tom, count: 3, resolved: true },
-    'selected-resolved': { ...selectedTom, count: 3, resolved: true },
+    resolved: { ...human, count: 3, resolved: true },
+    'selected-resolved': { ...selectedHuman, count: 3, resolved: true },
   },
   { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
 );

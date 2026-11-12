@@ -1,5 +1,7 @@
+import { spawnSync } from 'child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
-import { join, resolve, sep } from 'path';
+import { dirname, join, resolve, sep } from 'path';
+import { cliSourceHash } from '../source-hash';
 import { BUILD_INFO_FILE } from './stamp';
 
 export const CLI_REBUILD_COMMAND = 'NX_NO_CLOUD=true npx nx build cli';
@@ -51,9 +53,84 @@ export const staleCliDistWarning = (options: { distDir: string; repoRoot: string
   return `WARN: the built cli is older than libs/cli/src (built ${new Date(builtAt).toISOString()}, newest source ${new Date(newest).toISOString()}); a fix in the source may not be in this build. Rebuild: ${CLI_REBUILD_COMMAND}`;
 };
 
-/** The warning for the cli this process runs from, or null outside a repo checkout's `dist/libs/cli`. */
+// Must match PINNED_FILE in tools/scripts/studio-code.mjs.
+const PINNED_COMMIT_FILE = 'pinned-commit';
+
+const BUILT_PATHS = [
+  ':(top)libs/cli/src',
+  ':(top)libs/cli/design',
+  ':(top)libs/cli/playwright',
+  ':(top,exclude,glob)libs/cli/**/*.spec.ts',
+  ':(top,exclude,glob)libs/cli/**/*.md',
+];
+
+const readOrNull = (path: string) => {
+  try {
+    return readFileSync(path, 'utf8');
+  } catch {
+    return null;
+  }
+};
+
+const buildInfoOf = (distDir: string): { commit?: unknown; sourceHash?: unknown } => {
+  try {
+    return JSON.parse(readOrNull(join(distDir, BUILD_INFO_FILE)) ?? '{}') as { commit?: unknown; sourceHash?: unknown };
+  } catch {
+    return {};
+  }
+};
+
+/** The commit the cli at `distDir` was built from: the et:design copy's pin, else the build stamp. */
+export const buildCommitOf = (distDir: string): string | null => {
+  const pinned = readOrNull(join(distDir, PINNED_COMMIT_FILE))?.trim();
+
+  if (pinned) return pinned;
+
+  const { commit } = buildInfoOf(distDir);
+
+  return typeof commit === 'string' && commit ? commit : null;
+};
+
+const sourceRootAbove = (distDir: string, dir = dirname(distDir)): string | null => {
+  const cliRoot = join(dir, 'libs', 'cli');
+
+  if (cliRoot !== distDir && existsSync(join(cliRoot, 'src'))) return cliRoot;
+
+  return dirname(dir) === dir ? null : sourceRootAbove(distDir, dirname(dir));
+};
+
+const builtFromCurrentSources = (distDir: string) => {
+  const cliRoot = sourceRootAbove(distDir);
+  const { sourceHash } = buildInfoOf(distDir);
+
+  return !!cliRoot && typeof sourceHash === 'string' && sourceHash === cliSourceHash(cliRoot);
+};
+
+/**
+ * The WARN line when the built sources of `libs/cli` differ from the commit the cli at `distDir` was built from,
+ * committed or not, else null. Silent for an installed package, an unknown commit, or no git checkout.
+ */
+export const builtCliChangedWarning = (options: { distDir: string }): string | null => {
+  const distDir = resolve(options.distDir);
+
+  if (distDir.split(sep).includes('node_modules')) return null;
+
+  const commit = buildCommitOf(distDir);
+
+  if (!commit) return null;
+
+  const diff = spawnSync('git', ['-C', distDir, 'diff', '--quiet', commit, '--', ...BUILT_PATHS], { stdio: 'ignore' });
+
+  if (diff.status !== 1 || builtFromCurrentSources(distDir)) return null;
+
+  return `WARN: this cli was built from ${commit.slice(0, 9)}; libs/cli has commits or uncommitted changes since, so a fix in the source may not be in this build. Rebuild: ${CLI_REBUILD_COMMAND}`;
+};
+
+/** The warning for the cli this process runs from, or null when it is no build inside a repo checkout. */
 export const runningCliStaleWarning = (): string | null => {
   const distDir = resolve(__dirname, '../../../');
+
+  if (buildCommitOf(distDir)) return builtCliChangedWarning({ distDir });
 
   if (!distDir.endsWith(`${sep}dist${sep}libs${sep}cli`)) return null;
 

@@ -21,7 +21,7 @@ import { fixturesOf, partFilesOf } from '../product';
 import { isBuiltInBase } from '../base';
 import { partKeyOf, ResolvedPart, ResolvedProduct, resolveProduct } from '../resolve-product';
 import { rebaseAfterMerge } from './after-merge';
-import { conflictsOf } from './baseline';
+import { conflictsOf, partHashHolds } from './baseline';
 import { prettierBinOf } from '../prettier';
 import { carryShared, productSharedChangesOf, sharedPlanOf } from './merge-shared';
 import { EDIT_OLD } from './edit-sketch';
@@ -412,6 +412,39 @@ const editedPartDirOf = (options: { product: ResolvedProduct; sketch: Sketch }) 
 
 const isInside = (dir: string, path: string) => path === dir || path.startsWith(`${dir}/`);
 
+const uncommittedBaseOf = (options: { product: ResolvedProduct; sketch: Sketch; changed: string[] }) =>
+  options.changed.filter((key) => {
+    const part = options.product.parts.find((candidate) => partKeyOf(candidate) === key);
+
+    return (
+      part !== undefined &&
+      partHashHolds({ product: options.product, dir: dirname(part.file), hash: options.sketch.baseline?.[key] })
+    );
+  });
+
+const commitOrderRefusalOf = (options: {
+  product: ResolvedProduct;
+  sketch: Sketch;
+  refusal: MergeRefusal;
+}): MergeRefusal => {
+  const { sketch, refusal } = options;
+  const changed = refusal.changed ?? [];
+  const uncommitted = uncommittedBaseOf({ ...options, changed });
+
+  if (uncommitted.length === 0) return refusal;
+
+  const rest = changed.filter((key) => !uncommitted.includes(key));
+  const restLine =
+    rest.length > 0
+      ? `; ${rest.join(', ')} also changed since the sketch was created - bring it up to date, then run sketch rebase ${sketch.target}`
+      : '';
+
+  return {
+    reason: `${uncommitted.join(', ')} holds uncommitted changes that ${sketch.target} was drawn on, and a merge checks against HEAD - commit ${uncommitted.join(', ')} first, then merge ${sketch.target}${restLine}`,
+    changed,
+  };
+};
+
 /** Why `sketch` cannot be merged as it stands - not ready, no valid pick, or a rejected pick - or `null` when it can. */
 export const mergeRefusalOf = (options: { product: ResolvedProduct; sketch: Sketch }) => {
   const { product, sketch } = options;
@@ -478,7 +511,8 @@ const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal 
       variant,
     });
 
-    if (typeof checked === 'string' || 'reason' in checked) return checked;
+    if (typeof checked === 'string') return checked;
+    if ('reason' in checked) return commitOrderRefusalOf({ product, sketch, refusal: checked });
 
     const dirty = dirtyAmongOf({
       target,

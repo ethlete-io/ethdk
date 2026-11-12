@@ -143,6 +143,7 @@ test('--github prints the output of the first failed run of a real spec in a gro
   const script = fileURLToPath(new URL('./spec-stress.mjs', import.meta.url));
   const env = { ...process.env };
   delete env.NODE_TEST_CONTEXT;
+  env.ETHLETE_HEAVY_LOCK_FILE = join(dir, 'heavy.lock');
   const run = spawnSync(process.execPath, [script, fixture, '--runs', '1', '--load', '1', '--github'], {
     encoding: 'utf8',
     env,

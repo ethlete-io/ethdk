@@ -3,13 +3,13 @@ import { timedPhase } from '../../phase-timing';
 import { decisionRefsOf } from '../decision-refs';
 import { refreshHarnessMap } from '../harness-map';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
-import { configOf, oneProductOf } from './cli-args';
+import { configOf, isModelId, oneProductOf } from './cli-args';
 import { commitMergeResultSync, dirtyFilesOfSync } from './merge-commit';
 import { mergeSketch } from './merge';
 import { appGatedMergeOf } from './merge-app-gate';
 import { recordMergeReason } from './merged-parts';
 import { originOf } from '../write-origin';
-import { decideSketch, findSketch, parseTarget, rejectionOf, Sketch } from './sketch';
+import { decideSketch, findSketch, parseTarget, rejectionOf, Sketch, writeSketchFile } from './sketch';
 
 export type DesignStep = { line: string; run: () => Promise<number> };
 
@@ -23,6 +23,13 @@ export const allowedMergeOf = (options: { sketch: Sketch; variant: string; by?: 
 
   return decideSketch({ sketch, decision: { kind: 'pick', variant, ...originOf(by) } });
 };
+
+/** The variant a person picked; a pick an agent wrote with `merge --allowed-by` counts as no pick. */
+export const humanPickOf = (sketch: Sketch) =>
+  sketch.decision?.kind === 'pick' && !isModelId(sketch.decision.by ?? '') ? sketch.decision.variant : undefined;
+
+const withoutAgentPickOf = (sketch: Sketch): Sketch =>
+  sketch.decision?.kind === 'pick' && humanPickOf(sketch) === undefined ? { ...sketch, decision: undefined } : sketch;
 
 export const editRefOf = (options: { target: string; sketch: Sketch; planRef: string }) =>
   options.sketch.target.endsWith('@edit') &&
@@ -41,7 +48,10 @@ export const mergeAndRecord = (options: {
   allowed?: { variant: string; planRef: string; editRef?: boolean };
 }): { variant: string; parts: string[] } | string => {
   const { target, config, product, sketch, note, replaceNote, by, decidedBy, allowed } = options;
-  const decided = allowed ? allowedMergeOf({ sketch, variant: allowed.variant, by, editRef: allowed.editRef }) : sketch;
+  const own = withoutAgentPickOf(sketch);
+  const decided = allowed
+    ? allowedMergeOf({ sketch: own, variant: allowed.variant, by, editRef: allowed.editRef })
+    : own;
 
   if (typeof decided === 'string') return decided;
 
@@ -65,7 +75,11 @@ export const mergeAndRecord = (options: {
     }),
   );
 
-  if (!Array.isArray(result)) return result.reason;
+  if (!Array.isArray(result)) {
+    if (allowed) writeSketchFile(sketch);
+
+    return result.reason;
+  }
 
   const refreshed = timedPhase('harness-map', () => refreshHarnessMap({ target, product }));
 
@@ -112,7 +126,7 @@ export const mergeStepOf = (options: {
   if (sketch.status !== 'ready')
     return `${sketch.target} is ${sketch.status} - mark it ready first: design sketch ready ${sketch.target} --by <model id> --product ${product.name}`;
 
-  const picked = sketch.decision?.kind === 'pick' ? sketch.decision.variant : undefined;
+  const picked = humanPickOf(sketch);
   const allowed =
     variant !== undefined && picked === undefined
       ? { variant, planRef: note, editRef: editRefOf({ target, sketch, planRef: note }) }
@@ -122,9 +136,16 @@ export const mergeStepOf = (options: {
     return `${sketch.target} was picked as variant "${picked}", not "${variant}"`;
 
   if (allowed) {
-    const decided = allowedMergeOf({ sketch, variant: allowed.variant, by, editRef: allowed.editRef });
+    const decided = allowedMergeOf({
+      sketch: withoutAgentPickOf(sketch),
+      variant: allowed.variant,
+      by,
+      editRef: allowed.editRef,
+    });
 
     if (typeof decided === 'string') return decided;
+
+    writeSketchFile(sketch);
   } else if (picked === undefined)
     return `${sketch.target} has no pick - name the variant in the entry, or the user picks in Studio`;
 

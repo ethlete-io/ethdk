@@ -47,6 +47,7 @@ import {
   decideSketch$,
   discardSketch$,
   mergeSketch$,
+  rejectionOf,
   saveListWidth,
   sketchPartOf,
   sketchPreview$,
@@ -54,7 +55,14 @@ import {
 import { MergeComponent } from '../design-parts/merge/merge.component';
 import { MergeRow, MergeTarget, MergeUnchanged } from '../design-parts/merge/merge-sample';
 import { SketchesComponent } from '../design-parts/sketches/sketches.component';
-import { SketchHold, SketchIdle, SketchPin, SketchRow, SketchStatus } from '../design-parts/sketches/sketches-sample';
+import {
+  SketchHold,
+  SketchIdle,
+  SketchPin,
+  SketchRow,
+  SketchStatus,
+  SketchWithdrawn,
+} from '../design-parts/sketches/sketches-sample';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { SketchViewPick, rememberSketchView, rememberedView } from '../studio-view/remembered';
 import { isInSketch } from './comment-pins';
@@ -155,6 +163,7 @@ export const liveShotsOf = ({
       <ethlete-sketches
         [(sameOpen)]="sameOpen"
         [(statesOpen)]="statesOpen"
+        [(withdrawn)]="withdrawn"
         [part]="sketch().target"
         [rows]="rows()"
         [fresh]="!part()"
@@ -573,9 +582,12 @@ export class SketchViewComponent {
       const known = row.width ?? widestOf(row.shots.map((shot) => sizeOf(shot.state)?.width)) ?? partWidth;
       const width = known ?? FALLBACK_SIZE.width;
 
+      const rejection = row.key === CURRENT ? null : rejectionOf(sketch, row.key);
+
       return {
         key: row.key,
         note: row.key === CURRENT ? '' : (sketch.variantInfo?.[row.key]?.note ?? ''),
+        ...(rejection?.status === 'withdrawn' ? { withdrawn: rejection.reason ?? '' } : {}),
         ...(author && agent
           ? { model: { short: modelNameOf(author), id: author, agent, ...(when ? { when } : {}) } }
           : {}),
@@ -683,6 +695,8 @@ export class SketchViewComponent {
   protected sameOpen = signal(false);
 
   protected statesOpen = signal(false);
+
+  protected withdrawn = signal<SketchWithdrawn>('hidden');
 
   protected drawnVariant = computed(() => this.matrix().columns.find((column) => column.drawing)?.key ?? null);
 

@@ -54,13 +54,13 @@ describe('createCheckouts', () => {
   });
 
   it('names a Windows checkout by its folder, and picks a checkout by that name', async () => {
-    const { checkouts, picks } = await mount(keeping(['C:\\Users\\tom\\dev\\alpha', '/dev/beta']), '');
+    const { checkouts, picks } = await mount(keeping(['C:\\Users\\user\\dev\\alpha', '/dev/beta']), '');
 
     checkouts.chooseByName('beta');
 
     expect(checkouts.names()).toEqual(['alpha', 'beta']);
     expect(checkouts.current()).toBe('/dev/beta');
-    expect(picks).toEqual(['C:\\Users\\tom\\dev\\alpha', '/dev/beta']);
+    expect(picks).toEqual(['C:\\Users\\user\\dev\\alpha', '/dev/beta']);
   });
 
   it('keeps the folder picked in the OS dialog and opens it', async () => {

@@ -3720,3 +3720,176 @@ the archive rule and the record format drifted apart with no check. Tool fix (Li
 counts a finding as done when a paragraph that starts with "NNN built", "NNN closed", "NNN withdrawn" or a line in
 parked-suspects.md names it; it moves the finding with all its "NNN update"/"NNN built" paragraphs; a spec bites on
 today's format; the budget gate names `archive-findings.mjs` in its refusal.
+
+901 as built: the app body now uses `var(--font-ui)` (Noto Sans) and the canvas frame uses `font-(--font-code)`; the `--font-sans` (Jost) and `--font-mono` (IBM Plex Mono) variables and the Google Fonts link in index.html are removed. Commit: see `git log` for "Render the app text in the design fonts". Verified: related specs, lint, production build and the measured body font (see the commit report).
+
+901 tool fix as built: `et design compare` now reads the computed font-family of the app body and of the harness
+host (before the design's text ambient is set on it) and fails each state with "the app's body renders in X, but the
+design's root font is Y" when the first family differs from the design frame root's. Cause (proven by the bite): the
+harness host is drawn in the design frame root's text ambient, so the part never inherits the app's body font. Verified:
+a new spec fails on the old code; with the body set to 'Jost' the studio `elements/shell-main` compare failed every
+state with the new line, and passed the check after the revert (its pre-existing project-picker pixel diff stays). No
+sdk part has an `implements` link, so the check has no sdk hits.
+
+905 as built: Cause (verified): the app's `SKETCH_PINS` sample, which the harness renders as the `pins` default of
+`pages/sketches`, named a real person, while the design's sample pin author is "human"; the sample now uses "human".
+A spec fails on the old name. The pages/sketches compare went from 50 to 35 FAILED rows, the pin rows from 16 to 1. Left,
+separate gaps: `all-unchanged` still shows the pin where the design folds it, and the 19 "Alle Zustände zeigen" and the
+2 "Übernehmen" (2.) rows stay - the design draws no such element; the pin name was only the nearest unmatched hint.
+
+911 as built: the inbox sample, its template pin and four specs under `apps/ethlete-studio/src` named a real person; they
+now use "human" with the initials "H". `check-person-names` already scanned `apps/`, but the baseline let those files
+pass, so it now ignores baseline entries for `apps/ethlete-studio/src/` and the entries were removed. A spec fails on the
+old code. The design's inbox sample (`.ethlete/design/studio`) still draws the old name and initials; it is a design
+file and was not touched.
+
+909 as built: Cause (verified): when no variant changes any state, every state folds, so `shownRows` hands the variants
+zero shots and `sameRows` (which skipped rows without shots) folded none of them; variant a stayed a row with its comment
+pin. Sameness is now judged on the unfiltered rows, so a and b fold into "Unverändert: Variante a, Variante b". No ADR
+decides against the fold. A spec fails on the old code. The pages/sketches compare went from 35 to 34 FAILED rows: the
+`all-unchanged` pin row is gone and its "Unverändert" button matches; its "Alle Zustände zeigen" row stays (the
+separate state-fold gap from 905). No other state got a new failure.
+
+911 design as built: the design's sample author in `components/comment-row`, `pages/inbox` and `components/comment-pin`
+named a real person; it is now "human" with the initials "H", like the app samples. One sketch with the three targets,
+merged as an agent accept on finding 911 option A (`e1557311c`); the shots showed only the author text, initials and pin
+glyph changing (no layout shift). `check-person-names` now ignores baseline entries for design parts and sketches
+(`.ethlete/design/<product>/{foundations,components,elements,pages,sketches}/`) and those entries were removed; comment
+records, `capabilities.json` and old calls keep their baseline. A spec fails on the old checker. The three part checks
+had 0 findings before and after.
+
+922 as built: `SketchRow` has `withdrawn?: string` (the agent's reason, empty when it gave none) and
+`SketchesComponent` a `withdrawn` model (`'hidden' | 'shown'`, default `'hidden'`). With a withdrawn row the picker
+line shows the SDK switch "Zurückgezogene (n)" in an `et-choice-field size="sm" color="brand"`; hidden rows leave the
+list before the fold and the same-row grouping, as in the design's `visibleRows`. A shown withdrawn row reads "Vom Agent
+zurückgezogen: …" (the `systemTree` labels) in place of "Übernehmen", drops its pin and dims its stage to 60 %.
+`sketch-view` fills `withdrawn` from `rejectionOf(...).status === 'withdrawn'` and binds `[(withdrawn)]`; the harness
+sample marks variant b of the narrow sample with the design's reason. The two stale `withdrawn-*` DROPPED-PROP entries
+left `rule-baseline.json`. Verified: the spec fails without the change and passes with it; compare turns
+`withdrawn-hidden`/`withdrawn-shown` from FAILED (dropped prop) to DIFF 84596/88947 px; the shot shows the switch, mark
+and dimming as drawn, the rest is the fold of the `fit-*` states that `narrow-part` (84885 px) has too. `design check`
+for pages/sketches lists 4 DROPPED-PROP findings (points, screen) that HEAD has too; pages/flows has 0. Not verified:
+a live shot of the Studio app with a real withdrawn variant, and no spec covers the `sketch-view` mapping.
+
+921 in progress: sketch `pages/sketches@all-states` (`.ethlete/design/studio/sketches/pages-sketches.all-states`) is
+ready and waits for the human's pick; nothing is merged and the app is unchanged. Variant a drops the `fold` count and
+folds the states no variant row changes, from `unchangedStates(part)` in the sketch's `shared/sketch-rows.ts` (none when
+every state is unchanged; then the same-row fold applies), in every state of the part except while comparing, as the
+app already folds (the `fit-*` DIFF of `narrow-part` and `withdrawn-*` in 922). For the narrow sample that is `STEADY`
+(fit-hover, fit-active, fit-focus-visible). Variant b, a `foldSame` switch for the `folded` state only, drew the same
+pixels as Aktuell in every state (the last three states are exactly `STEADY`), so it is withdrawn: a code-only change
+is no pick. The screen mode keeps `UNCHANGED_COUNT`: the page's own state list is not reachable from `shared/`.
+
+925 as built: Cause (verified): `pre-push-checks.mjs` ran `yarn lint:person-names`, which lists `git ls-files` and
+reads the working tree, so another session's uncommitted file refused a push of clean commits. The pre-push call is now
+`check-person-names.mjs --range <base> <head>`: it checks the files `git diff --name-only <base> <head>` changed and
+reads each one, and the baseline, with `git show <head>:<path>`, as `.husky/format-check-committed.mjs` does. Plain
+`yarn lint:person-names` still reads the tree, `--staged` the index. Spec: `check-person-names.spec.mjs` (uncommitted
+hit over a clean range passes, committed hit fails) and `lint-changesets.spec.mjs` (the pre-push wiring); both failed
+before the fix. A 20-commit range takes about 3.5 s. Follow-up: the first wiring called
+`node tools/scripts/check-person-names.mjs` relative to the cwd, and the push-suite checks fixture has no such file, so
+`push-suite.spec.mjs` failed. `pre-push-checks.mjs` resolves the script from its own directory now; the yarn script is
+no way out, since the fixture stubs it as `node -e 0`, which rejects `--range`. `yarn test:tools` would have caught it, and is the per-slice check for a change in `tools/scripts`.
+
+929 as built: `yarn studio:e2e --load <n>` starts n busy loops once the run holds the heavy run lock, through
+`startRunLoad` in `apps/ethlete-studio/e2e/run-load.mjs`, which calls `startBusyLoops` from
+`tools/scripts/ci-like-load.mjs` unpinned. Each loop ends once its parent is gone, and the lead also kills them on
+`exit`, so a failed, interrupted or killed run leaks none (`ps` showed 0 after every run). An invalid value exits 2;
+failure lines and the start line name the busy loops, and the 90 s goal line is skipped under load. Spec:
+`run-load.spec.mjs` (arg parsing, refusal, and the loops ending on stop, `process.exit(1)`, SIGINT and SIGKILL); with a
+plain `for(;;)` loop the SIGINT and SIGKILL cases fail, and without the exit hook the exit case fails too. Picture cases:
+"a sketch cell edited on disk while scrolled away shows its new picture on return" waited one 10 s window for a new
+URL and a drawn picture; it now waits 10 s for the URL and 60 s for the drawing, and reports both times. Cause (probe):
+under `--load 24` its new URL came at 21.2 s and the drawing 47 ms later; under `--load 12` at 5.4 s and 5 ms later. So
+this case fails under heavy load on the URL stage, not the draw, and the split names that stage; whether the URL budget
+should grow is open. Checked and left, no shared new-and-drawn window: "a part shown before paints every stored picture
+in the first frame", "a sketch scroll never empties a cell that had a picture", "a sketch keeps its frame count and
+pictures through a sketch edit" (a fixed watch window), "page switch time is logged to the design timings" (records
+mounted, first and all painted separately), "the sketch view at 30 % and 100 % draws no failed picture ...".
+
+904 as built: `write-build-info.mts` stamps `commit` (`git rev-parse HEAD`) into `build-info.json`; the copies
+`yarn et:design` runs from `tmp/studio-cli/<sha>` already carried it as `pinned-commit`. `runningCliStaleWarning` in
+`libs/cli/src/lib/design/stale-cli-dist.ts` now reads that commit and runs one `git diff --quiet <commit>` over the
+built paths of `libs/cli` (specs and `.md` excluded); a change prints one stderr line naming the commit. A build made
+from uncommitted sources stays silent while its `sourceHash` still matches them. Silent under `node_modules`, for an
+unknown commit and outside git. Cause of the miss (probe): the B191 check (2086f4cda) returned null unless the CLI ran
+from `dist/libs/cli`, and `yarn et:design` runs a copy under `tmp/studio-cli/`; `runningCliStaleWarning()` loaded
+from the 448c47f16 copy returned null. Spec: `build-commit.spec.ts` (temp git repo); it also caught the build dir's own
+`src` being taken for the source root.
+
+963 as built: push:suite already held the heavy run lock (`tools/scripts/heavy-run-lock.mjs`, `$TMPDIR/ethlete-heavy-run.lock`,
+`{ pid, name, started }`) from before its checks until its verdict, so over studio:e2e and the repeat runs; its
+children inherit `ETHLETE_HEAVY_RUN_HELD` and take none. A dead holder's lock is taken over, and a signal before the
+export leaves only such a stale file. studio:e2e, spec:stress and ci-like-load took it already. New:
+`waitForNoHeavyRun` waits without taking the lock, and `tools/scripts/heavy-gate.mjs <name> [--no-wait] -- <cmd>`
+wraps `yarn test:tools`, `yarn test:e2e-helpers` and the nx build of `yarn verify:webkit-studio`. It prints one
+`<name>: waiting for push-suite (pid N, since T)` line and runs the command when the holder ends or dies; with
+`--no-wait` (or `ETHLETE_HEAVY_NO_WAIT=1`), or after 60 min, it prints one line and exits 2. Default wait, as
+studio:e2e and spec:stress do: the slice's check runs late instead of failing into a retry loop. Spec:
+`heavy-gate.spec.mjs`; with the holder check removed the refuse, wait and limit cases fail, without the held-env check
+the owner case fails. Still unchecked: `npx nx ...`, `npx vitest ...`, `node --test <file>` and `yarn design` (its
+`nx build cli`). Suggestion: an Nx `preTasksExecution` hook in a local plugin in `nx.json` that calls
+`waitForNoHeavyRun`; Suspect: under the Nx daemon the hook runs in the daemon process, so it would not see the
+caller's `ETHLETE_HEAVY_RUN_HELD` and would block push:suite's own builds unless they run with `NX_DAEMON=false`
+(push:suite sets that).
+
+926 as built: Cause: the merge checks in a clean copy of HEAD plus the sketch and, for an @edit sketch, its own part
+folder. A part the edit embeds (here `title-search`) with an uncommitted change stays at HEAD in the copy, so its hash
+misses the baseline the sketch recorded from the checkout, and `sketch rebase` records the same checkout state again.
+Choice: the refusal names the commit order, not a clean copy that takes the other changed parts, because a merge must
+not pass on content its commit will not hold (ADR 0206). `merge.ts` `commitOrderRefusalOf`: each conflicting part
+whose checkout state still holds the baseline hash is named as "holds uncommitted changes that <sketch> was drawn on
+... commit <parts> first, then merge <sketch>"; a part that really changed keeps the rebase advice. Spec:
+`edit-sketch.spec.ts` (an embedded `components/button` with an uncommitted change: refused with the commit order,
+merges after the commit); before the fix it got the rebase advice.
+
+973 as built: `tools/scripts/nx-heavy-wait.mjs` is a local Nx plugin in `nx.json` whose `preTasksExecution` calls
+`waitForNoHeavyRun('nx')`, so a direct `npx nx ...` waits while push:suite or studio:e2e holds the heavy run lock. Probe
+(Nx 24.0.2, `cli:lint` in a scratch copy): Cause: with the daemon off the hook runs in a plugin worker the CLI spawns,
+sees the caller's `ETHLETE_HEAVY_RUN_HELD`, and its stderr reaches the caller. Cause: with the daemon on it runs in a
+worker under the daemon that gets the caller's env per call (held `222`, `333`, then unset, each seen), but its stderr
+goes to the daemon log, and Nx does not forward `TMPDIR`: the daemon's `os.tmpdir()` is `/tmp`, the callers' lock is in
+the macOS per-user temp dir, so the first daemon-on refusal check ran the task. `lockFileOf` reads that dir with
+`getconf DARWIN_USER_TEMP_DIR` when `TMPDIR` is unset; after it the daemon-on check refuses too. Cause: the worker
+cannot exit the CLI with 2 (`process.exit(2)` reads "Plugin worker exited unexpectedly", exit 1), so the hook throws the
+heavy-gate line instead: one `NX nx: heavy run lock held by ...; run again after it ends` line, exit 1. Cause: Nx fails
+an isolated plugin call after 10 min, so the hook waits at most 9 min, then refuses. A lock-holder child, no lock or a
+dead holder return at once; `ETHLETE_HEAVY_NO_WAIT=1` refuses at once. Exempt with `ETHLETE_HEAVY_EXEMPT=design`: `yarn
+design`, `yarn design:check` and the cli/app builds of `studio-code.mjs` (et:design, studio app serve). Added time on a
+cached no-lock `cli:lint`: about 450 ms daemon off (1.83 s to 2.28 s), 200-900 ms daemon on, nearly all of it the worker
+start. Spec: `nx-heavy-wait.spec.mjs`; without the exempt check, the env handoff, the holder check or the no-wait flag,
+or with `lockFileOf` ignoring the daemon case, a case fails. Suspect: two daemon callers at once share the worker's env,
+so one may see the other's held or exempt flag.
+
+### As built: 982
+
+`lockFileOf` moved into `heavy-run-lock.mjs`; env `ETHLETE_HEAVY_LOCK_FILE` wins over the TMPDIR/darwin logic, and
+every lock taker and waiter resolves through it. `takeHeavyLock` throws when `NODE_TEST_CONTEXT` is set and no file
+option or env override is given. The lock specs, the spec-stress `--github` case and the push:suite checks case now
+pass a private lock file (the last two took the real lock before). Verified: the guard spec fails with the guard off
+(the child prints `took`); `yarn test:tools` 424/425, the one failure an e2e-check timing case that passes alone; the
+real lock file was absent before and after. Not verified: a live `push:suite` or Nx daemon run with the moved resolver.
+
+### As built: 976
+
+Each sketch merge refusal that names a remedy has a spec that applies the remedy and then merges:
+`merge-remedies.spec.ts` (not ready; no pick; rejected pick - reopen; no baseline - rebase; changed part - port and
+rebase; uncommitted drawn-on part - commit; uncommitted edits in the way - revert, or commit then rebase; product not
+in the committed config.json - commit it; another part imports @shared/ - move the code in; the three `mergeStepOf`
+refusals), `merge-shared.spec.ts` (orphan shared/ file - delete it; target's own shared/ folder - rename it),
+`design-lint.spec.ts` (new lint warnings - fix them). Through the API, rejecting the picked variant drops the pick, so
+the "rejected - reopen it first" refusal only meets a sketch file that holds both; the spec builds that state.
+
+Cause (bite in `sketch-base-stale-remedy.spec.ts`): a sketch drawn while its own part had an uncommitted change
+records a baseline no commit holds; SKETCH-BASE-STALE names `sketch rebase`, `portBaseChanges` refuses "no commit holds
+the state the baseline recorded, port it by hand", and the refusal said "then run sketch rebase again", so following it
+ran the same rebase three times with the same refusal. Only `--ported` clears it. The refusal now names the full
+`sketch rebase <target> --ported --product <name> --by <model id>` command; the spec follows the printed remedies, clears
+SKETCH-BASE-STALE, and merges after the part is committed. Not verified: the "built-in base - --override" refusal has
+no spec (the fixture has no built-in base).
+
+### As built: 977
+
+Cause: a refused `merge --allowed-by` kept its agent pick in `sketch.json`; a later `--variant b` merged the stale `a`.
+Now a refused allowed merge and the `mergeStepOf` pre-check restore the sketch, and a pick by a model id counts as no
+pick. Verified: three biting specs, related specs, lint, typecheck. Not verified: a live run; a non-model-id `--by`.

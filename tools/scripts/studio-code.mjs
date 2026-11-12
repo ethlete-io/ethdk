@@ -130,7 +130,7 @@ const nxBuild = (label, args) => (root, tree, log) => {
   const build = spawnSync('npx', ['nx', 'build', ...args], {
     cwd: tree,
     encoding: 'utf8',
-    env: { ...process.env, NX_NO_CLOUD: 'true', NX_DAEMON: 'false' },
+    env: { ...process.env, NX_NO_CLOUD: 'true', NX_DAEMON: 'false', ETHLETE_HEAVY_EXEMPT: 'design' },
   });
 
   log(`${build.stdout}${build.stderr}`.trim());
