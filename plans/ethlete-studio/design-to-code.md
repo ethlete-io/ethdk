@@ -4053,3 +4053,24 @@ the heap first passes 80 % (`heap-watch.ts`). Spec bites; live in a growing 2 GB
 986\. Linux builder (2026-11-12 night, 941): the design server heap leak behind 941 is not hunted. Suspect: the resident or
 the shot browser pool. Tool fix (builder default, tool backlog): a heap snapshot diff over two hours of `design serve`
 names the retainer; then a fix with a spec that bounds the heap over 200 shots.
+
+984 built (Linux, 4684f3e18): createSketch and rebaseSketch write `refs/ethlete/sketch/<12-hex hash of the sketches
+dir>/<folder>` when they record `baselineTree`; removeSketchDir deletes it. Discard and merge both go through
+removeSketchDir, so no merge-side half is open. Spec bites (port after `git gc --prune=now`; ref gone after remove). Old
+sketches get a ref only at their next rebase.
+
+985 built (Linux, ab7f0cc87): `shot?source=app` answers 400 to surface, color, fill, scheme and scale. Cause (code + live):
+the app harness cannot apply a theme and shoots at scale 1. compare has no theme flags (exit 2, unknown flag). Docs in
+apps/docs/cli/index.md; spec bites; live on a scratch server.
+
+951 closed (measured, no commit). Cause: the 20.6 s was a one-off wait behind an overlapping run. Four sequential runs:
+28.7-34.5 s, queue wait 0; two concurrent: 37-38 s, queue wait 0; 1 of 34 recorded runs waited. Time: aktuell ~11 s,
+changes-shot ~7 s, gates 3.3 s, draw-queue-wait ~2.8 s, render-check 1.8-7 s, identical 1.5 s.
+
+987\. Linux builder (2026-11-12 night, 985): `clip` and `view` on `shot?source=app` are likely ignored the same way as the
+theme params were. Suspect (code read). Tool fix (builder default, tool backlog): pass them to the harness or refuse them
+with 400, with a biting spec.
+
+988\. Linux builder (2026-11-12 night, 951): `sketch check` stays at about 30 s against its 10 s target; aktuell (~11 s)
+and changes-shot (~7 s) take most of it. Cause (measured, 951). Tool fix (builder default, tool backlog): make the aktuell
+and changes-shot steps faster, measured against the 951 numbers.

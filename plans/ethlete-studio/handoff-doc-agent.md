@@ -291,3 +291,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - Mac pushed 95a46cf1b..7e18765f6 (973), restarts at 86 % (handoff builder-mac); next 982, 976, 977, 983; CI 43158747719 on 95a46cf1b still runs. Next free finding: 986.
 - CI 43158747719 on 95a46cf1b green; 979 closed. Next free finding: 986.
 - 954 (a5e51621c), 958 (527f74c97), 941 (903012491) built; 954 merge-side half to the Mac; finding 986. Next free finding: 987.
+- 984 (4684f3e18), 985 (ab7f0cc87) built; 951 closed (measured); findings 987-988. Next free finding: 989.
