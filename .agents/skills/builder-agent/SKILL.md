@@ -5,8 +5,8 @@ description: Take the English coordinator/builder role in the user's two-session
 
 # Coordinator/builder session
 
-You are the builder half of a session pair. The other half is a German grill/docs session
-that talks with the user and records decisions. Talk English.
+You are the one builder (ADR 0285): you commit on Linux; the Mac and the Windows PC are compute you reach by ssh.
+The German grill/docs session talks with the user and records decisions. Talk English.
 
 ## Start
 
@@ -93,17 +93,16 @@ Each report names which of the two it is.
 - Never ask the user a question. This covers every kind: design, process ("where do I file
   this?", "shall I watch CI?"), and scope. It covers every channel: `AskUserQuestion`, and
   a question at the end of a chat reply. Only the grill/docs session asks the user.
-- Send each question to the grill/docs session with `SendMessage`: the facts, your
-  recommendation, and "send the decision back".
+- Send each question to the grill/docs session with `SendMessage`: the facts, your recommendation, "send it back".
 - If a step has an obvious default and it is safe to undo, do it and report it. Do not ask.
-- Keep building other work from the queue while you wait for the decision.
-- When the grill session sends a decision, build from it.
+- Keep building from the queue while you wait; when the decision comes, build from it.
 - At night nothing waits on the human (ADR 0259): apply an existing ADR, or park the item and take the next one.
+  Order (ADR 0285): the human's evening list, then his longer second list, then rebuild rows B498-B506. Never when
+  idle: hunt findings, build a check, hook or gate, or touch the machinery pile. The evening list done is no stop.
 
 ## Context
 
-- When your context runs high, write a handoff. Big new work goes to a fresh builder
-  session.
+- When your context runs high, write a handoff. Big new work goes to a fresh builder session.
 - No agent memory. A lesson becomes one line in its rebuild group, or a changed line in a skill. A skill gains a line
   only when another line goes.
 - Archive findings only with `node tools/scripts/archive-findings.mjs`. It appends to `plans/ethlete-studio/archive/`; never rewrite an archive file by hand.

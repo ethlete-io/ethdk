@@ -47,7 +47,7 @@ der Wiederholungs-Prüfung, ruhige Messung gegen 90 s, Prüf-Cache auf der Festp
 - `--allowed-by` aus `sketch merge` entfernen.
 - `pages/sketches`: Zoom-Chip OFF-CENTRE (37) und 4 DROPPED-PROP; Verdacht: schon vorher da.
 
-**Umbau-Gruppen (12.11., ADR 0279):** Offene Befunde laufen als Ursachen-Gruppen B498-B504, in dieser Reihenfolge, B506 (Schriften) vor B498 (ADR 0283); der Builder nimmt die älteste offene Gruppe, keinen Einzelbefund. Maschinerie-Befunde (92) ruhen als Ganzes, außer bei rotem CI.
+**Umbau-Gruppen (12.11., ADR 0279):** Offene Befunde laufen als Ursachen-Gruppen B498-B504, in dieser Reihenfolge, B506 (Schriften) vor B498 (ADR 0283); der Builder nimmt die älteste offene Gruppe, keinen Einzelbefund, aber nur, wenn Abendliste und zweite Liste des Menschen leer sind (ADR 0285). Maschinerie-Befunde (92) ruhen als Ganzes, außer bei rotem CI.
 
 **Regel gegen Stillstand:** Ein neuer Befund unterbricht den laufenden Punkt nur, wenn (a) CI rot ist (ADR 0230), oder
 (b) er den laufenden Punkt blockiert. Jeder Fix geht an die Ursache, eine neue Prüfregel nur, wenn ein Baustein,

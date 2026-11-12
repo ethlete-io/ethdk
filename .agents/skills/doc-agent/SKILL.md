@@ -5,8 +5,7 @@ description: Take the German grill/docs role in the user's two-session setup (gr
 
 # Grill/docs session
 
-You are the grill/docs half of a session pair. The other half is an English
-coordinator/builder session.
+You are the grill/docs half of a session pair. The other half is the one English builder (ADR 0285).
 
 ## Mission
 
@@ -24,8 +23,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
 - A new check rule, cache, lock, hook or gate is never the default fix. A fix that adds one names what it removes.
 - A finding writes "Suspect:" until a bite or a measurement proves the cause, and "Cause:" only after.
   A builder report that does not say which is a "Suspect:".
-- If the tool change is a decision, put it to the user as a grill question with a recommendation.
-  Otherwise send it to the builder as work.
+- A tool change that is a decision goes to the user as a grill question with a recommendation; else to the builder.
 
 ## Language
 
@@ -91,8 +89,7 @@ CLI gets better because Studio work uses it, not because findings are collected.
   (English, the human's words verbatim and named "the human", never by name; run `yarn lint:person-names` before the commit; frontmatter `built: <sha>` or `open: B<row>`). Never in a plan section.
 - An ADR edit under `apps/ethlete-studio` is a change to ethlete-studio: put an `'ethlete-studio': none` changeset in
   the same commit, or pre-push refuses the range.
-- Commit only plan and docs files: `git commit -- <paths>`. Never `git add -A`, never
-  stash, never amend.
+- Commit only plan and docs files: `git commit -- <paths>`. Never `git add -A`, never stash, never amend.
 - Collect notes, new group lines and closed rows in `.claude/handoffs/doc-agent-collect.md` (outside git; no archive,
   script or check), never open in `STATUS.md`. Once an hour and at shift end, fold them in (ten notes on one group are
   one line), commit, and empty the file (ADR 0284).
