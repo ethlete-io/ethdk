@@ -103,7 +103,7 @@
   }
 
   :where(.et-color-interactive[disabled]),
-  :where(.et-color-interactive[aria-disabled='true']) {
+  :where(.et-color-interactive[aria-disabled='true']:not([data-loading='true'])) {
     --et-theme-color-primary-rgb: var(
       --et-color-primary-disabled,
       var(

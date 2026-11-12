@@ -81,7 +81,7 @@
     }
 
     &:where([disabled]),
-    &:where([aria-disabled='true']) {
+    &:where([aria-disabled='true']:not([data-loading='true'])) {
       opacity: var(--et-button-opacity-disabled);
       cursor: not-allowed;
       pointer-events: none;

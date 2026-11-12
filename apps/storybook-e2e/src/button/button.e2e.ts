@@ -368,3 +368,25 @@ test.describe('button / query progress', () => {
     expect(firstFrame?.ringOpacity).toBeLessThan(1);
   });
 });
+
+test.describe('button / loading look', () => {
+  for (const variant of ['filled', 'tonal', 'outline', 'transparent']) {
+    test(`a loading ${variant} button keeps the opacity and background of the idle one`, async ({ page }) => {
+      const look = async (loading: boolean) => {
+        const root = await openStory(page, STORY_ID, { args: { loading } });
+        const button = root.locator(`button[et-button][data-variant='${variant}']`).first();
+        await settle(page, 400);
+
+        return button.evaluate((el) => {
+          const style = getComputedStyle(el);
+          return { opacity: style.opacity, background: style.backgroundColor };
+        });
+      };
+
+      const idle = await look(false);
+      const loading = await look(true);
+
+      expect(loading).toEqual(idle);
+    });
+  }
+});
