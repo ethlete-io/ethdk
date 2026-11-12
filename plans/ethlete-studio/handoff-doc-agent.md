@@ -289,3 +289,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - 973 built on the Mac (7e18765f6); findings 982 (fake lock in the real TMPDIR, Mac next) and 983. Next free finding: 984.
 - 942 (2422cc459), 937 (c23145e85) built; ready records committed (da1ed6296); findings 984-985. Next free finding: 986.
 - Mac pushed 95a46cf1b..7e18765f6 (973), restarts at 86 % (handoff builder-mac); next 982, 976, 977, 983; CI 43158747719 on 95a46cf1b still runs. Next free finding: 986.
+- CI 43158747719 on 95a46cf1b green; 979 closed. Next free finding: 986.
