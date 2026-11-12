@@ -23,6 +23,7 @@ import { isBuiltInBase } from '../base';
 import { isLayer, Layer, LAYER_USES, mayUse } from '../layers';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { baselineOf } from './baseline';
+import { baselineTreeOf } from './baseline-tree';
 import { hasActor, WriteOrigin } from '../write-origin';
 import { withMadeBy } from './part-definition';
 
@@ -88,6 +89,8 @@ export type SketchFile = {
   createdAt: string;
   /** The content hash of each part and of the fixtures in the product when the sketch was created or rebased. */
   baseline?: Record<string, string>;
+  /** The git tree of the product folders the baseline was recorded from, for a rebase when no commit holds that state. */
+  baselineTree?: string;
   decision?: SketchDecision;
   variantInfo?: Record<string, SketchVariantInfo>;
   /** Per variant, every rejection it had, oldest first. */
@@ -525,6 +528,8 @@ export const readSketch = (options: { product: string; dir: string }): Sketch | 
     return `${file}: portAfterMerge must be { merged: string[], parts: string[], reasons: string[], at }`;
   if (parsed.mergeHold !== undefined && !isMergeHold(parsed.mergeHold))
     return `${file}: mergeHold must be { reason, at }`;
+  if (parsed.baselineTree !== undefined && (typeof parsed.baselineTree !== 'string' || !parsed.baselineTree))
+    return `${file}: baselineTree must be a git tree id`;
   if (parsed.covers !== undefined && !isStringList(parsed.covers))
     return `${file}: covers must be a list of <state> or <state>@<x>,<y>,<w>,<h>`;
 
@@ -592,6 +597,12 @@ export const findSketch = (options: { productDir: string; product: string; sketc
 
 const parseSketchName = (target: string) => target.split('@')[1];
 
+const baselineTreeFieldOf = (product: ResolvedProduct) => {
+  const tree = baselineTreeOf({ product, sketchesDirOf });
+
+  return tree ? { baselineTree: tree } : {};
+};
+
 export const writeSketchFile = (sketch: Sketch) => {
   const file: SketchFile = {
     target: sketch.target,
@@ -599,6 +610,7 @@ export const writeSketchFile = (sketch: Sketch) => {
     status: sketch.status,
     createdAt: sketch.createdAt,
     ...(sketch.baseline ? { baseline: sketch.baseline } : {}),
+    ...(sketch.baselineTree ? { baselineTree: sketch.baselineTree } : {}),
     ...(sketch.decision ? { decision: sketch.decision } : {}),
     rounds: sketch.rounds,
     ...(Object.keys(sketch.variantInfo).length > 0 ? { variantInfo: sketch.variantInfo } : {}),
@@ -841,6 +853,7 @@ export const createSketch = (options: {
     status: 'in progress',
     createdAt: new Date().toISOString(),
     baseline: baselineOf(product),
+    ...baselineTreeFieldOf(product),
     rounds: [firstRoundOf(roundTitle, roundNote)],
     variantInfo: Object.fromEntries(
       variants.map((variant) => [
@@ -1378,7 +1391,12 @@ export const rebaseSketch = (options: { product: ResolvedProduct; sketch: Sketch
   const { portAfterMerge: _ported, ...ported } = options.sketch;
   const { decision: _decision, ...undecided } = ported;
   const sketch = orphanedPickOf(options.sketch, options.product.name) ? undecided : ported;
-  const rebased: Sketch = { ...sketch, baseline: baselineOf(options.product) };
+  const { baselineTree: _tree, ...untreed } = sketch;
+  const rebased: Sketch = {
+    ...untreed,
+    baseline: baselineOf(options.product),
+    ...baselineTreeFieldOf(options.product),
+  };
 
   writeSketchFile(rebased);
 

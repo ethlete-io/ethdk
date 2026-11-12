@@ -67,8 +67,9 @@ const oldBaseDirOf = (options: {
   partDir: string;
   hash: string;
   scratch: string;
+  tree: string | undefined;
 }) => {
-  const { top, product, partDir, hash, scratch } = options;
+  const { top, product, partDir, hash, scratch, tree } = options;
   const inRepo = (dir: string) => !relative(top, dir).startsWith('..');
   const owners = [product.dir, ...(product.base && inRepo(product.base.dir) ? [product.base.dir] : [])];
   const paths = [
@@ -79,12 +80,19 @@ const oldBaseDirOf = (options: {
     .toString()
     .split('\n')
     .filter(Boolean);
+  const filesOf = (commit: string) => {
+    try {
+      return git(top, ['ls-tree', '-r', '--name-only', commit, '--', ...paths])
+        .toString()
+        .split('\n')
+        .filter(Boolean);
+    } catch {
+      return [];
+    }
+  };
 
-  for (const commit of commits) {
-    const files = git(top, ['ls-tree', '-r', '--name-only', commit, '--', ...paths])
-      .toString()
-      .split('\n')
-      .filter(Boolean);
+  for (const commit of tree ? [tree, ...commits] : commits) {
+    const files = filesOf(commit);
 
     if (files.length === 0) continue;
 
@@ -182,7 +190,7 @@ const withoutHeldHunks = (options: { scratch: string; mine: Buffer; old: Buffer;
 /**
  * Ports the changes the product made to each part the sketch's variants replace since its baseline into those
  * variants: a 3-way merge per file of the variant, the part as the baseline held it (found in git history by its
- * hash) and the part now. Writes nothing when any file conflicts or a baseline state is not in history, and then
+ * hash, or in the tree the baseline was recorded from) and the part now. Writes nothing when any file conflicts or a baseline state is not in history, and then
  * answers with the conflicts; with `keepConflicts` it keeps the variant's version of those and ports the rest.
  */
 export const portBaseChanges = (options: {
@@ -221,7 +229,14 @@ export const portBaseChanges = (options: {
 
         top ??= gitTopOf(target);
 
-        const oldDir = oldBaseDirOf({ top, product, partDir, hash: baseline[part], scratch });
+        const oldDir = oldBaseDirOf({
+          top,
+          product,
+          partDir,
+          hash: baseline[part],
+          scratch,
+          tree: sketch.baselineTree,
+        });
 
         if (oldDir === null) {
           conflicts.push(`${variant}: ${part} - no commit holds the state the baseline recorded, port it by hand`);

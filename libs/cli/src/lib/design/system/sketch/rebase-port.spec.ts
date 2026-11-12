@@ -6,7 +6,7 @@ import { readConfig } from '../../design-config';
 import { git } from '../git-repo.fixtures';
 import { resolveProduct } from '../resolve-product';
 import { portBaseChanges } from './rebase-port';
-import { createSketch, Sketch } from './sketch';
+import { createSketch, rebaseSketch, Sketch } from './sketch';
 
 const targets: string[] = [];
 
@@ -160,7 +160,7 @@ describe('portBaseChanges', () => {
     expect(existsSync(variantFile(sketch, 'a', 'shared/label.ts'))).toBe(false);
   });
 
-  it('refuses when no commit holds the state the baseline recorded', () => {
+  const cutFromUncommittedTree = () => {
     const { target } = sketched();
 
     rmSync(join(target, '.ethlete/design/acme/sketches'), { recursive: true, force: true });
@@ -174,7 +174,45 @@ describe('portBaseChanges', () => {
 
     changeProduct(target, 'hero.css', 'filter', 'transform');
 
-    expect(portBaseChanges({ target, product: resolveAcme(target), sketch }).conflicts).toEqual([
+    return { target, sketch };
+  };
+
+  it('ports from the tree the baseline was recorded from when no commit holds it, and leaves the index alone', () => {
+    const { target, sketch } = cutFromUncommittedTree();
+
+    expect(sketch.baselineTree).toMatch(/^[0-9a-f]{40}$/u);
+    expect(git(target, 'diff', '--cached', '--name-only').toString()).toBe('');
+
+    const port = portBaseChanges({ target, product: resolveAcme(target), sketch });
+
+    expect(port.conflicts).toEqual([]);
+    expect(port.ported.map(({ variant, file, how }) => `${variant} ${file} ${how}`)).toEqual([
+      'a elements/hero/hero.css taken',
+    ]);
+    expect(readFileSync(variantFile(sketch, 'a', 'hero.css'), 'utf8')).toContain('transform');
+  });
+
+  it('records the tree again on rebase, so a second uncommitted rebase ports too', () => {
+    const { target, sketch } = cutFromUncommittedTree();
+
+    edit(join(heroDir(target), 'hero.css'), 'transform', 'rotate');
+    portBaseChanges({ target, product: resolveAcme(target), sketch });
+
+    const rebased = rebaseSketch({ product: resolveAcme(target), sketch });
+
+    edit(join(heroDir(target), 'hero.css'), 'rotate', 'scale');
+    git(target, 'commit', '-qam', 'another product change');
+
+    expect(rebased.baselineTree).not.toBe(sketch.baselineTree);
+    expect(portBaseChanges({ target, product: resolveAcme(target), sketch: rebased }).conflicts).toEqual([]);
+    expect(readFileSync(variantFile(sketch, 'a', 'hero.css'), 'utf8')).toContain('scale');
+  });
+
+  it('refuses when neither a commit nor a recorded tree holds the state the baseline recorded', () => {
+    const { target, sketch } = cutFromUncommittedTree();
+    const untreed = { ...sketch, baselineTree: undefined };
+
+    expect(portBaseChanges({ target, product: resolveAcme(target), sketch: untreed }).conflicts).toEqual([
       'a: elements/hero - no commit holds the state the baseline recorded, port it by hand',
     ]);
   });
