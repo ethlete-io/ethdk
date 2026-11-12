@@ -4016,3 +4016,24 @@ touches the real lock path.
 983\. Mac builder (2026-11-12 night, 973): two concurrent nx callers on one daemon may share the worker env, so the held or
 exempt flag of one leaks to the other. Suspect. Tool fix (builder default, tool backlog): a probe with two callers; if it
 leaks, read the flags per call, with a biting spec.
+
+942 built (Linux, 2422cc459): `/__design/shot?source=app` (product, part, state, optional preset) shoots the state in the app
+harness with compare's app-side steps (`system/app-state-shot.ts`), only on the explore `design serve`; 400 elsewhere and
+for call/sketch/width/interaction, 422 with compare's reason. Spec: 7 of 8 cases bite. Live on :4402: pages/sketches idle,
+200, 1440x900 in 14.7 s, the picture shows the app.
+
+937 built (Linux, c23145e85): createSketch and rebaseSketch save the product folders as a git tree (temporary index) and
+record `baselineTree` in sketch.json; rebase tries it first. Cause (spec-proven): the baseline hash came from working-tree
+files no commit holds, and rebase searched only commits. Bite: 2 cases. Not verified live. Old sketches have no tree.
+
+Ready records committed (Linux, da1ed6296) after a fresh `design check` (946 decision): studio 26 hits, sdk 1283; the check
+dropped the records of studio foundations/colors and of comment-target, hold-trigger, list-row and comment-row (missing
+states). Slow checks on :4402: components/title-bar (7 states) and components/update-dialog (4) fail the visible-change gate.
+
+984\. Linux builder (2026-11-12 night, 937): no ref holds a sketch's `baselineTree`, so `git gc` may prune it after about two
+weeks and rebase falls back to the commit search. Suspect. Tool fix (builder default, tool backlog): a ref per sketch
+(`refs/ethlete/sketch/<id>`), removed on merge or delete, with a spec that runs `git gc --prune=now`.
+
+985\. Linux builder (2026-11-12 night, 942): the app side of compare and of `shot?source=app` ignores the theme params
+(surface, color, scale), so a themed state is compared or shot in the default theme. Suspect (code read). Tool fix
+(builder default, tool backlog): pass them to the harness or refuse them with 400, with a biting spec.
