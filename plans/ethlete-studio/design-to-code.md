@@ -4107,3 +4107,9 @@ rule deterministic with a biting spec; if the untracked dir moves it, the check 
 `--control-*` tokens; sm, lg and xl get md padding, so CONTROL-HEIGHT would fail them. No committed part draws one today.
 Suspect (code read). Tool fix (builder default, tool backlog): map every size, with a part state per size that the rule
 judges, so a missing size fails the check.
+
+923 built (Linux, e98f58658, 5d2dd4e9f): `design/system/visually-hidden.ts` holds one clippedAway test (clip-path
+inset(50%), a zero clip, or a 1x1 overflow-hidden box, on the element or an ancestor); CLIPPED content and underline, WRAP
+and OFF-CENTRE use it; ring checks and CONTROL-HEIGHT judge boxes and stay. Spec bites (hidden "Control K" in 3 forms). The
+builder's review fix 5d2dd4e9f narrowed the subagent's "1 px wide OR high" to 1x1, so a 200x1 clipped box still fails
+(spec bites). Design check after e98f58658: 0 CLIPPED hits. Not run: a check after 5d2dd4e9f.
