@@ -195,4 +195,36 @@ describe('compare --affected', () => {
       expect(await designCompare({ target, argv: [...argv, '--product', 'app-a'], invocation: 'et design' })).toBe(2);
     }
   }, 30_000);
+
+  it('refuses with the build command and compares nothing when a render module build folder is missing', async () => {
+    const { target } = checkout();
+    const lines = output();
+    const start = vi.fn<StartHarnessServer>();
+    const shoot = shootOf();
+
+    writeFileSync(
+      join(target, DESIGN_DIR, 'config.json'),
+      JSON.stringify({ render: { packages: { '@ethlete/*': 'dist/libs/*' } }, products: { 'app-a': {} } }),
+    );
+    mkdirSync(join(target, 'libs/components/src'), { recursive: true });
+    mkdirSync(join(target, 'dist/libs/core'), { recursive: true });
+    writeFileSync(join(target, 'dist/libs/core/package.json'), '{}');
+    appendFileSync(join(target, 'apps/a/shared/bar.ts'), '// moved\n');
+
+    expect(
+      await designCompare({
+        target,
+        argv: ['--affected', '--product', 'app-a'],
+        invocation: 'et design',
+        shoot,
+        start,
+        actions: async () => [],
+      }),
+    ).toBe(1);
+    expect(lines).toEqual([
+      'dist/libs/components is missing - run NX_NO_CLOUD=true npx nx build components --skip-nx-cache',
+    ]);
+    expect(start).not.toHaveBeenCalled();
+    expect(shoot).not.toHaveBeenCalled();
+  }, 30_000);
 });

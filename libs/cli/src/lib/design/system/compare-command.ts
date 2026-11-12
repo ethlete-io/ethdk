@@ -65,6 +65,7 @@ import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { inOrderAtOnce } from './in-order-at-once';
 import { frozenAnimationsOf } from './frozen-animations';
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
+import { missingDistOf } from './stale-dist';
 import { coveredLineOf, coveringSketchOf } from './sketch/covered-diffs';
 import { listSketches, parseTarget, Sketch, SketchTarget } from './sketch/sketch';
 import { cachedComparePngs, COMPARE_PIXELS } from './pixel-cache';
@@ -636,6 +637,14 @@ export const designCompare = async (options: {
     );
 
     return 2;
+  }
+
+  const missing = missingDistOf({ target, config });
+
+  if (missing.length > 0) {
+    missing.forEach((line) => console.error(line));
+
+    return 1;
   }
 
   const changedFiles = new Map(affected ? affectedPartsOf(product).map(({ part, files }) => [part, files]) : []);
