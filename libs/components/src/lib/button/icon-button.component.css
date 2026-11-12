@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-icon-button-size {
     syntax: '<length>';
     inherits: true;

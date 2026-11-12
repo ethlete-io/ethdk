@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-query-devtools-dropped {
     display: flex;
     flex-direction: column;

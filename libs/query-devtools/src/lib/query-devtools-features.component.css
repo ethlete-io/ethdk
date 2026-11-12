@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* One grid for the whole list (rows are `display: contents`), so every feature's options start in
      the same column however long the feature names are. */
   .et-query-devtools-features {

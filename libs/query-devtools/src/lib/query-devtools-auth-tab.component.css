@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-query-devtools-auth-real-expiry {
     color: var(--_et-qdt-subtle);
     font-size: 1.1rem;

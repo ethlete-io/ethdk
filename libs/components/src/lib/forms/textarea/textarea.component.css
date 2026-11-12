@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   et-textarea {
     display: block;
     flex: 1;

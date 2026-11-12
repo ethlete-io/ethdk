@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* The shared toolbar centres its controls against a one-line hint; this one's wraps. */
   .et-query-devtools-settings-toolbar {
     align-items: flex-start;

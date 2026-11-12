@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* The stamped component host is layout-transparent, so the checkbox itself is the cell's flex item
      and picks up its `align-items: center`. As a block box the host would instead establish a line
      box and the inline-flex checkbox would sit on its text baseline — a few px above centre. */

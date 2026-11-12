@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-menu-min-width {
     syntax: '<length>';
     inherits: false;

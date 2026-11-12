@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-select-option-height {
     syntax: '<length>';
     inherits: true;

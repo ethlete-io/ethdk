@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-overlay.et-with-default-animation.et-floating-panel {
     &.et-animation-enter-from,
     &.et-animation-leave-to {

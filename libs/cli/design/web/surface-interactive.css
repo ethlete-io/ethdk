@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   :where(.et-surface-interactive) {
     --et-surface-interaction-rgb: var(--et-surface-interaction);
     --et-surface-interaction-solid: rgb(var(--et-surface-interaction-rgb));

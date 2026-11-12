@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* All inherited: they are documented as settable once on `et-timeline`, and only the item ever
      reads them. Flipping any of them to `inherits: false` silently drops that override. */
   @property --et-timeline-gap {

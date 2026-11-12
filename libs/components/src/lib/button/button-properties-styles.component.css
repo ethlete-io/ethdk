@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-button-border-radius {
     syntax: '<length>';
     inherits: false;

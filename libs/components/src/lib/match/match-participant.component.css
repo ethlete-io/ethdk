@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-match-participant-emblem-size {
     syntax: '<length>';
     inherits: true;

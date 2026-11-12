@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   et-pip-player {
     position: relative;
     display: flex;

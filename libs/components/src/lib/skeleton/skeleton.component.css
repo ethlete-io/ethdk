@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* `syntax: '*'` with no initial-value, so the fallback at each use site resolves `1em` against the
      element's own font. A registered `<length>` cannot carry a relative initial-value - the whole
      @property rule is dropped - which left this token unregistered and every unsized bone at

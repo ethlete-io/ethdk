@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* The host hook is a bare attribute selector, not `:where([data-control-type='rich-text'])`: this
      sheet is injected by the editor, so a standalone editor instantiated before any form-field would
      inject it *before* the base sheet and lose every source-order tie against the base frame rules. */

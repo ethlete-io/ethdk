@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-scheduler-edit-surface-breadcrumb {
     display: flex;
     flex-wrap: wrap;

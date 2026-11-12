@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-resize-handles-z-index {
     syntax: '<integer>';
     inherits: true;

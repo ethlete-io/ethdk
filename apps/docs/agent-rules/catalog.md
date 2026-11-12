@@ -18,15 +18,15 @@ machine-specific values only, keeping generated output identical locally and in 
 
 ## Always-loaded rules
 
-| Name              | Guidance                                                                                                                                                     | Availability                               |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------ |
-| `app-styling`     | Styles app components with Tailwind utilities in templates, keeps app CSS out of `@layer components` and never uses a hardcoded colour as the primary value. | Consumer profile; requires `@ethlete/core` |
-| `comments`        | Allows comments only for timing constraints, type-inexpressible invariants, documented workarounds and public API JSDoc.                                     | All profiles                               |
-| `lint-and-format` | Runs lint with auto-fixes first and formats every edited file before completion.                                                                             | All profiles                               |
-| `nx-layout`       | Nx workspace layout: thin apps, feature code in libs grouped by kind, path-mirroring aliases and scope tags.                                                 | Consumer profile; requires `nx`            |
-| `reactive-state`  | Uses signals for synchronous state, RxJS for asynchronous work and bridges rather than copied state.                                                         | All profiles                               |
-| `styling`         | Keeps component styling in plain layered CSS and resolves every color through theme tokens.                                                                  | SDK profile; requires `@ethlete/core`      |
-| `subagent-models` | Names the model on every subagent call: haiku for a lookup, opus for real work, fable for judgment-heavy work.                                               | All profiles                               |
+| Name              | Guidance                                                                                                                                                                                  | Availability                               |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `app-styling`     | Styles app components with Tailwind utilities in templates, keeps app CSS in `@layer components`, `@layer utilities` or unlayered and never uses a hardcoded colour as the primary value. | Consumer profile; requires `@ethlete/core` |
+| `comments`        | Allows comments only for timing constraints, type-inexpressible invariants, documented workarounds and public API JSDoc.                                                                  | All profiles                               |
+| `lint-and-format` | Runs lint with auto-fixes first and formats every edited file before completion.                                                                                                          | All profiles                               |
+| `nx-layout`       | Nx workspace layout: thin apps, feature code in libs grouped by kind, path-mirroring aliases and scope tags.                                                                              | Consumer profile; requires `nx`            |
+| `reactive-state`  | Uses signals for synchronous state, RxJS for asynchronous work and bridges rather than copied state.                                                                                      | All profiles                               |
+| `styling`         | Keeps component styling in plain layered CSS and resolves every color through theme tokens.                                                                                               | SDK profile; requires `@ethlete/core`      |
+| `subagent-models` | Names the model on every subagent call: haiku for a lookup, opus for real work, fable for judgment-heavy work.                                                                            | All profiles                               |
 
 Rules are always loaded by the configured agents. Use `exclude` when a repository has
 its own replacement for one of them.

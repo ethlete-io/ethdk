@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-calendar {
     .et-calendar-coarse-row {
       display: grid;

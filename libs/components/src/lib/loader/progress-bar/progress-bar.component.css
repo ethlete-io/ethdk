@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* Both are read by the track and the bars, never by the host - registered as inheriting so that
      setting them on the `et-progress-bar` element (or anywhere above it) reaches those descendants.
      With `inherits: false` a descendant resolves the initial value no matter what the host says. */

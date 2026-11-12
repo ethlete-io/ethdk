@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-overlay-sidebar-host {
     display: none;
   }

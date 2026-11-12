@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   et-pip-window:has(.et-stream-pip-chrome__stage:not(.et-stream-pip-chrome__stage--grid)):not(
       :has(.et-stream-pip-chrome__cell--featured .et-pip-player--ready)
     ) {

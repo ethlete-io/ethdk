@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   et-description {
     display: block;
     font-size: var(--et-description-font-size, 12px);

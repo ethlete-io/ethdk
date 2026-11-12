@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-cascader-panel {
     /* the row follows the columns' width instead of contributing its own to the panel's
        max-content measurement (a long path would otherwise stretch the panel) */

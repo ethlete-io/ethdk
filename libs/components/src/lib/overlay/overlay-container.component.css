@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-overlay {
     --et-overlay-padding-inline: 16px;
     --et-overlay-padding-block: 16px;

@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-color-picker-area-size {
     syntax: '<length>';
     inherits: true;

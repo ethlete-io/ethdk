@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-menu-separator {
     display: block;
     block-size: 1px;

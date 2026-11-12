@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* Only where the table can actually be dragged: a table whose columns fit takes no grab cursor, and a
      touch pointer already scrolls it by dragging without any of this. */
   @media (hover: hover) and (pointer: fine) {

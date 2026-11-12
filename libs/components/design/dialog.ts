@@ -64,7 +64,7 @@ export const dialogStyles = /* @__PURE__ */ [
   overlayMain,
   dialogStrategy,
   alertDialogBase,
-  `@layer components {
+  `@layer components.sdk {
   .et-dialog-mock-header {
     display: flex;
     align-items: center;

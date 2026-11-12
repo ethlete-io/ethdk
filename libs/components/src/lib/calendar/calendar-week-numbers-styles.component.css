@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-calendar-week-number-size {
     syntax: '<length>';
     inherits: true;

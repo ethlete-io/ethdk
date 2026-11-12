@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* A row with a box of its own, in place of the layout-transparent default. `subgrid` is what keeps the
      cells in the table's own column tracks, so every column still lines up across the header, the rows
      and the footer — the same shape the detail row already uses inside this grid.

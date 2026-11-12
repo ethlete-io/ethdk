@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-floating-action-inset-inline-end {
     syntax: '<length>';
     inherits: true;

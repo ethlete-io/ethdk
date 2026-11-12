@@ -35,7 +35,7 @@ describe('StreamPlayerLoadingComponent', () => {
       if (css[index] === '}' && --depth === 0) layerCloseIndex = index;
     }
 
-    expect(css.startsWith('@layer components {')).toBe(true);
+    expect(css.startsWith('@layer components.sdk {')).toBe(true);
     expect(layerCloseIndex).toBe(css.length - 1);
     expect(css).toContain('position: absolute');
   });

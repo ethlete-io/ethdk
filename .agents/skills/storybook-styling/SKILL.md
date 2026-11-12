@@ -8,7 +8,7 @@ description: How to style Storybook story files in this repo - where Tailwind is
 Two separate rules, often confused:
 
 1. **Component source is plain CSS, never Tailwind.** The `.css` next to a
-   component, wrapped in `@layer components`, using surface/color tokens - see the
+   component, wrapped in `@layer components.sdk`, using surface/color tokens - see the
    **`theming`** skill.
 2. **Story files may use Tailwind** (`*.stories.ts`, anything under a `stories/`
    folder) for demo layout only - the frame around the component, not the

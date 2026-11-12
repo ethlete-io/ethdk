@@ -170,6 +170,15 @@
       "description": "Remove determinate from et-spinner and indeterminate from et-progress-bar, which now follow whether value is bound, and rewrite value where the mode was dynamic.",
       "generator": "@ethlete/components:migrate-loader-determinate",
       "docs": "/components/loader"
+    },
+    {
+      "name": "components-sdk-layer",
+      "version": "1.0.0-next.82",
+      "kind": "assisted",
+      "level": "required",
+      "description": "Check the app CSS in @layer components that now beats SDK component styles, and drop the overrides that only existed to beat them.",
+      "instructions": "./migrations/components-sdk-layer.md",
+      "docs": "/components/setup"
     }
   ]
 }

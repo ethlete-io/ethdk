@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-query-devtools-ws-message {
     border: 1px solid var(--_et-qdt-border);
     border-radius: var(--_et-qdt-radius);

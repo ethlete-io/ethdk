@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-pip-border-radius {
     syntax: '<length>';
     inherits: true;

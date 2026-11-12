@@ -46,7 +46,7 @@ export const breadcrumbStyles = /* @__PURE__ */ [
   toggletipBase,
   breadcrumbBase,
   breadcrumbOverflowBase,
-  `@layer components {
+  `@layer components.sdk {
   .et-breadcrumb-mock-pane {
     --_et-overlay-arrow-pane-border-width: 1px;
     inline-size: max-content;

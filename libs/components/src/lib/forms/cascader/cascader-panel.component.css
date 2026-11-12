@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-cascader-column-inline-size {
     syntax: '<length>';
     /* inherits so one ancestor override reaches both the columns and the carousel viewport

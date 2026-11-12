@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-rich-text-editor-token-palette-gap {
     syntax: '<length>';
     inherits: true;

@@ -94,7 +94,7 @@ export class MyThingDirective {
 }
 ```
 
-Without the declaration the whole `transition` shorthand is invalid at computed-value time and computes to `all 0s`, so the element snaps instead of animating. An application that declares its own `--ease-*` unlayered still wins, because the token sheet sits in `@layer components`.
+Without the declaration the whole `transition` shorthand is invalid at computed-value time and computes to `all 0s`, so the element snaps instead of animating. An application that declares its own `--ease-*` unlayered or in `@layer components` still wins, because the token sheet sits in `@layer components.sdk`.
 
 ## FLIP animations
 

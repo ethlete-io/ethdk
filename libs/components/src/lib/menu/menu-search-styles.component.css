@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-menu-search-height {
     syntax: '<length>';
     inherits: false;

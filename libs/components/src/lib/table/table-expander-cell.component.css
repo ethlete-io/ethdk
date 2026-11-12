@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* The expander column's chrome. It lives with the stamped cell component rather than in the table's
      own sheet, so Angular injects it the first time a table actually renders an expander — a table
      without a detail template never puts these rules in the document. */

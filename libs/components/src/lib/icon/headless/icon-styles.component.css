@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-icon {
     display: flex;
     align-items: center;

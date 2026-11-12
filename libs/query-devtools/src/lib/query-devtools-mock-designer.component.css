@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-query-devtools-designer {
     padding-block-start: 0.4rem;
   }

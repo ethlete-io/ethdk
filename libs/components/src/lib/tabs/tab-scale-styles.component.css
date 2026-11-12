@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* These inherit because every read site is a descendant of the element carrying `data-size` - the
      trigger, the label, the underline. A non-inheriting registered property resolves to its initial
      value there, which silently kills both the scale and any consumer override set on the host. */

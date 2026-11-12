@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* A fixed box the two values cross inside, so a rolling score never nudges the row it sits in. */
   .et-match-score {
     display: grid;

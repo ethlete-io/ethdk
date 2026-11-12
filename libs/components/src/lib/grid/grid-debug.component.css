@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-grid-debug-panel {
     font-family: monospace;
     font-size: 11px;

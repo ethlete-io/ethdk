@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   et-form-field[data-control-type='textarea'] {
     .et-form-field-control-frame {
       align-items: stretch;

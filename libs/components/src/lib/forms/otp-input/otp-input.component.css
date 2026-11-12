@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @keyframes et-otp-input-caret-blink {
     0% {
       opacity: 1;

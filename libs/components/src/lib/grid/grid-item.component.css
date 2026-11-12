@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-grid-item {
     /* Never past half the gap: adjacent items are siblings at one z-index, so overlapping strips
        would be resolved by DOM order and the later item would swallow its neighbour's handle. */

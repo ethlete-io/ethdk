@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   et-dropzone[data-readonly] {
     .et-dropzone-trigger,
     .et-icon-button:disabled {

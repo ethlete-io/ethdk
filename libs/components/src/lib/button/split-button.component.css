@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-split-button-divider-color {
     syntax: '*';
     inherits: true;

@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-scheduler-time-grid-all-day-resize {
     position: absolute;
     inset-block: 0;

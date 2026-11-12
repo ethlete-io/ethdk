@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* Registered so keyframes interpolate it; inherits so slide content can read it. */
   @property --et-carousel-slide-progress {
     syntax: '<number>';

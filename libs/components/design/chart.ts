@@ -68,7 +68,7 @@ export const chartStyles = /* @__PURE__ */ [
   barChartBase,
   lineChartBase,
   pieChartBase,
-  `@layer components {
+  `@layer components.sdk {
   .et-chart-mock-plot {
     position: relative;
   }

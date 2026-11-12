@@ -59,7 +59,7 @@ The codemod lists every `.et-*` selector in an app `.css`/`.scss` file that no `
 stylesheet defines, grouped by component. For each group, open the component's guide and move the
 override to its Theming section: set the CSS variable or the theme, not the class. A selector whose
 class still exists is not listed, but it may target different markup - check it against the guide too.
-Component CSS sits in `@layer components`, so an unlayered app rule or a Tailwind utility wins without
+Component CSS sits in `@layer components.sdk`, so an app rule (unlayered or in `@layer components`) or a Tailwind utility wins without
 `!important`.
 
 ## Removed before v5 {#removed-before-v5}

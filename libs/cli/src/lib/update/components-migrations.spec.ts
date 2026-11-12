@@ -77,6 +77,12 @@ describe('the @ethlete/components migrations', () => {
     }
   });
 
+  it('name instructions files the package ships', () => {
+    for (const migration of migrations.filter((entry) => entry.instructions !== undefined)) {
+      expect(existsSync(join(componentsSource, migration.instructions ?? '')), migration.name).toBe(true);
+    }
+  });
+
   it('link docs pages that exist', () => {
     for (const migration of migrations.filter((entry) => entry.docs !== undefined)) {
       expect(existsSync(join(docsSource, `${migration.docs}.md`)), migration.name).toBe(true);

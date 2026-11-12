@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-overlay.et-with-default-animation {
     &.et-overlay--anchored-dialog {
       /* composes the floating-ui anchor position, which the position strategy writes as custom properties */

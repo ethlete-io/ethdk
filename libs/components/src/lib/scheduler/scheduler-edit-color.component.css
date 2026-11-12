@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   .et-scheduler-edit-color-swatch {
     display: inline-block;
     vertical-align: middle;

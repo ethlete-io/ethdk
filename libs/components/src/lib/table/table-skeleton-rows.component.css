@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   /* The placeholder body of a first load, mounted with etTableSkeleton. The bones themselves are
      `<et-skeleton-item>`s, so a loading table matches every other loading surface in the app - all this
      adds is the cell chrome around them. */

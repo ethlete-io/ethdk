@@ -4,6 +4,11 @@
   "assets": [
     "CHANGELOG.md",
     "migrations.json",
+    {
+      "glob": "**/*.md",
+      "input": "migrations",
+      "output": "./migrations"
+    },
     "generators/generators.json",
     {
       "glob": "**/*.js",

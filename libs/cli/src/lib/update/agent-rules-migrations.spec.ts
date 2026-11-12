@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -6,7 +6,7 @@ import { readPackageMigrations } from './migration-manifest';
 import { PackageManager } from './package-manager';
 import { orderMigrations, pendingMigrations } from './plan';
 import { runPendingMigrations } from './run-migrations';
-import { UPDATE_DIR, writeUpdateTasks } from './tasks';
+import { writeUpdateTasks } from './tasks';
 
 const agentRulesSource = join(__dirname, '../../../../agent-rules');
 const docsSource = join(__dirname, '../../../../../apps/docs');
@@ -46,19 +46,11 @@ const update = (options: { root: string; from: string }) => {
 };
 
 describe('the @ethlete/agent-rules migrations', () => {
-  it('leave a task for the required guidance fix for a repo on 0.1.0-next.13', () => {
-    const root = installAgentRules();
-    const { problems, written } = update({ root, from: '0.1.0-next.13' });
+  it('leave no required task for a repo on 0.1.0-next.13', () => {
+    const { problems, written } = update({ root: installAgentRules(), from: '0.1.0-next.13' });
 
     expect(problems).toEqual([]);
-    expect(written.tasks.map((task) => `${task.name} (${task.kind})`)).toEqual(['app-styling-utilities (assisted)']);
-
-    for (const task of written.tasks) {
-      expect(task.instructionsFile).toBeDefined();
-      expect(readFileSync(join(root, task.instructionsFile ?? ''), 'utf8')).toContain('## ');
-    }
-
-    expect(readFileSync(join(root, UPDATE_DIR, 'tasks.md'), 'utf8')).toContain('agent-rules — app-styling-utilities');
+    expect(written.tasks).toEqual([]);
   });
 
   it('keep the other guidance fixes optional', () => {

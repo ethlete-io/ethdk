@@ -1,4 +1,4 @@
-@layer components {
+@layer components.sdk {
   @property --et-pagination-item-size {
     syntax: '<length>';
     inherits: true;
