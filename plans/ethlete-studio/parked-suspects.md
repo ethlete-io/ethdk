@@ -19,7 +19,6 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - reopened picked sketch (Linux, 978): a picked sketch that `sketch ready` reopens may show a mixed state in Studio. Parked (ADR 0276).
 - cli copies affected graph (Linux, 980): other cli copies of SDK source have the same affected-graph gap as the surface-interactive copy. Parked (ADR 0276).
 - shot source=app clip/view (Linux, 987): `clip` and `view` on `shot?source=app` are likely ignored like the theme params were. Parked (ADR 0276).
-- e2e ECONNRESET (Mac, 992): an e2e case failed with `read ECONNRESET` in the shot ETag fetch at load 33.5. Parked (ADR 0276).
 - e2e worker count (Mac, 994): the e2e step of push:suite takes 7 min against a 5 min budget with 3 workers. Parked (ADR 0276).
 - sketch check refusal order (Linux, 995): `sketch check` exits 1 on UTILITY-CSS lines before the look-alike step, so a refusal hides later steps. Parked (ADR 0276).
 - Nx daemon tmp leak (Linux, 991): a daemon in another throwaway checkout still leaks /tmp/tmp-<pid>-* (nx@latest install, removed only on clean shutdown); scratch copies and e2e-check builds run with NX_DAEMON=false (9697e9e7c); the hourly timer catches the rest. Not measured live. Parked (ADR 0276).
