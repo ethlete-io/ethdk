@@ -4153,3 +4153,12 @@ the real title-search slice.
 applied the advice. Tool fix (builder default, tool backlog): every merge refusal that names a remedy gets a spec that
 applies the remedy and checks that the merge then passes. Suspect (code read): SKETCH-BASE-STALE (staleSketchBasesOf) loops
 the same way when the dirty part is the drawn-on part; the new specs cover it.
+
+931 built (Linux, 1fe2bcc91): Cause (measured): after a compare in a scratch copy the detached `design __resident` stays
+30 min with its Chromium pool (8 processes, 189 threads; the "~170" was threads). `resident/client.ts` runThroughResident
+stops the resident after the run in a checkout with the `.scratch-checkout` marker (compare, check, sketch check/ready).
+Spec counts live children and bites; live 0 resident, 0 Chromium after a compare. Suspect, not tested: two runs in one
+scratch copy, the first stops the resident under the second (that one then runs in-process).
+
+932 built (Linux, 803c592d5): `compare --state` takes a comma list or a repeated flag, drops duplicates, `--state ,` exits
+2; harness and `--live` filter by it and name the first unknown state. Spec bites. Not verified live: `--live` with a list.
