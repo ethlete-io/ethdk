@@ -4135,3 +4135,8 @@ __resident --checkout <its checkout>` survives the teardown by more than 15 s, w
 `node_modules/.design-explore/part-shots` written after the rm. Suspect (code read): the shot store recreates the checkout
 like the crash log did. Tool fix (builder default, tool backlog): the shot store writes nothing into a removed checkout,
 with a biting spec.
+
+902 built (Linux, a63f2683a): `yarn push` prints one warning line per uncommitted `.ethlete/design/<product>/{ready,merged}.json`
+with the minutes since its last write; it blocks nothing. Bite: the spec fails without the wiring. 966 built (Linux,
+8b5106a2c): Cause (spec bite): a shot-store write after the rm recreated the checkout; the store now skips `write` and
+`claim` once its checkout is gone. Not verified: a live cold-shots e2e run.
