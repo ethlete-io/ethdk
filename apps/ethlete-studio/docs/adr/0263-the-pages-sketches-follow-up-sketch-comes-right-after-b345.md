@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B489
+built: b81d52c88
 decided: 2026-11-11
 source: grill session 2026-11-11 (phone round), finding 792
 ---
