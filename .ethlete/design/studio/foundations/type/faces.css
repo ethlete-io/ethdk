@@ -13,3 +13,39 @@
   font-display: block;
   src: url('@assets/fonts/noto-sans-mono-latin-wght-normal.woff2') format('woff2');
 }
+
+@font-face {
+  font-family: 'Noto Sans';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: block;
+  src: url('@assets/fonts/noto-sans-math-latin-400-normal.woff2') format('woff2');
+  unicode-range: U+2190-22FF;
+}
+
+@font-face {
+  font-family: 'Noto Sans';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: block;
+  src: url('@assets/fonts/noto-sans-symbols-2-symbols-400-normal.woff2') format('woff2');
+  unicode-range: U+2300-23FF;
+}
+
+@font-face {
+  font-family: 'Noto Sans Mono';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: block;
+  src: url('@assets/fonts/noto-sans-math-latin-400-normal.woff2') format('woff2');
+  unicode-range: U+2190-22FF;
+}
+
+@font-face {
+  font-family: 'Noto Sans Mono';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: block;
+  src: url('@assets/fonts/noto-sans-symbols-2-symbols-400-normal.woff2') format('woff2');
+  unicode-range: U+2300-23FF;
+}

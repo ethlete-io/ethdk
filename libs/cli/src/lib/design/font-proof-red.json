@@ -1,12 +1,6 @@
 [
   {
     "product": "sdk",
-    "part": "components/kbd",
-    "property": "text",
-    "count": 3
-  },
-  {
-    "product": "sdk",
     "part": "components/toolbar",
     "property": "text",
     "count": 1
@@ -19,49 +13,7 @@
   },
   {
     "product": "studio",
-    "part": "components/kbd",
-    "property": "text",
-    "count": 3
-  },
-  {
-    "product": "studio",
-    "part": "components/title-bar",
-    "property": "text",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/title-search",
-    "property": "text",
-    "count": 1
-  },
-  {
-    "product": "studio",
     "part": "components/toolbar",
-    "property": "text",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "foundations/colors",
-    "property": "text",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "pages/flows",
-    "property": "text",
-    "count": 2
-  },
-  {
-    "product": "studio",
-    "part": "pages/sketches",
-    "property": "text",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "pages/system",
     "property": "text",
     "count": 1
   },

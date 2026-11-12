@@ -122,6 +122,8 @@
     "@commitlint/config-conventional": "21.2.4",
     "@contentful/rich-text-types": "17.2.7",
     "@eslint/js": "10.0.1",
+    "@fontsource/noto-sans-math": "5.3.0",
+    "@fontsource/noto-sans-symbols-2": "5.3.0",
     "@nx/angular": "24.0.2",
     "@nx/devkit": "24.0.2",
     "@nx/eslint": "24.0.2",
