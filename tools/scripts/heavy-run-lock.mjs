@@ -82,3 +82,36 @@ export const takeHeavyLock = async (
     await sleep(pollMs);
   }
 };
+
+/**
+ * Waits while another process holds the heavy-run lock, without taking it: slice tests and builds yield to a running
+ * push:suite or studio:e2e. Returns `{ ok: true }` once the lock is free or its holder is dead, `{ ok: false, holder }`
+ * with `wait: false` or after `maxWaitMs`. A child of a holder (env `ETHLETE_HEAVY_RUN_HELD`) never waits.
+ */
+export const waitForNoHeavyRun = async (
+  name,
+  {
+    file = HEAVY_LOCK_FILE,
+    wait = true,
+    maxWaitMs = HEAVY_LOCK_MAX_WAIT_MS,
+    pollMs = HEAVY_LOCK_POLL_MS,
+    log = console.error,
+    env = process.env,
+    now = Date.now,
+    sleep = (ms) => new Promise((done) => setTimeout(done, ms)),
+  } = {},
+) => {
+  if (env[HELD_ENV]) return { ok: true };
+  const startedAt = now();
+  let logged;
+  for (;;) {
+    const holder = readHolder(file);
+    if (!holder || !isAlive(holder.pid)) return { ok: true };
+    if (!wait || now() - startedAt >= maxWaitMs) return { ok: false, holder };
+    if (logged !== holder.pid) {
+      log(`${name}: waiting for ${holder.name} (pid ${holder.pid}, since ${new Date(holder.started).toISOString()})`);
+      logged = holder.pid;
+    }
+    await sleep(pollMs);
+  }
+};

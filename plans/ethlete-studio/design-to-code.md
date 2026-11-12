@@ -3942,3 +3942,19 @@ unknown commit and outside git. Cause of the miss (probe): the B191 check (2086f
 from `dist/libs/cli`, and `yarn et:design` runs a copy under `tmp/studio-cli/`; `runningCliStaleWarning()` loaded
 from the 448c47f16 copy returned null. Spec: `build-commit.spec.ts` (temp git repo); it also caught the build dir's own
 `src` being taken for the source root.
+
+963 as built: push:suite already held the heavy run lock (`tools/scripts/heavy-run-lock.mjs`, `$TMPDIR/ethlete-heavy-run.lock`,
+`{ pid, name, started }`) from before its checks until its verdict, so over studio:e2e and the repeat runs; its
+children inherit `ETHLETE_HEAVY_RUN_HELD` and take none. A dead holder's lock is taken over, and a signal before the
+export leaves only such a stale file. studio:e2e, spec:stress and ci-like-load took it already. New:
+`waitForNoHeavyRun` waits without taking the lock, and `tools/scripts/heavy-gate.mjs <name> [--no-wait] -- <cmd>`
+wraps `yarn test:tools`, `yarn test:e2e-helpers` and the nx build of `yarn verify:webkit-studio`. It prints one
+`<name>: waiting for push-suite (pid N, since T)` line and runs the command when the holder ends or dies; with
+`--no-wait` (or `ETHLETE_HEAVY_NO_WAIT=1`), or after 60 min, it prints one line and exits 2. Default wait, as
+studio:e2e and spec:stress do: the slice's check runs late instead of failing into a retry loop. Spec:
+`heavy-gate.spec.mjs`; with the holder check removed the refuse, wait and limit cases fail, without the held-env check
+the owner case fails. Still unchecked: `npx nx ...`, `npx vitest ...`, `node --test <file>` and `yarn design` (its
+`nx build cli`). Suggestion: an Nx `preTasksExecution` hook in a local plugin in `nx.json` that calls
+`waitForNoHeavyRun`; Suspect: under the Nx daemon the hook runs in the daemon process, so it would not see the
+caller's `ETHLETE_HEAVY_RUN_HELD` and would block push:suite's own builds unless they run with `NX_DAEMON=false`
+(push:suite sets that).
