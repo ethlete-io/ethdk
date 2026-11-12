@@ -1,7 +1,8 @@
 import { execFileSync } from 'child_process';
-import { mkdtempSync, rmSync } from 'fs';
+import { createHash } from 'crypto';
+import { mkdtempSync, realpathSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
-import { join, relative, sep } from 'path';
+import { basename, dirname, join, relative, sep } from 'path';
 import { gitTopOf } from '../../git-top';
 import { ResolvedProduct } from '../resolve-product';
 
@@ -46,3 +47,27 @@ export const baselineTreeOf = (options: {
     rmSync(scratch, { recursive: true, force: true });
   }
 };
+
+/** The ref that keeps a sketch's baseline tree from `git gc`, one per sketch folder of this checkout. */
+export const baselineTreeRefOf = (sketchDir: string) => {
+  const dir = realpathSync(sketchDir);
+  const place = createHash('sha1').update(dirname(dir)).digest('hex').slice(0, 12);
+
+  return `refs/ethlete/sketch/${place}/${basename(dir)}`;
+};
+
+const gitIn = (dir: string, args: string[]) => {
+  try {
+    execFileSync('git', args, { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch {
+    return;
+  }
+};
+
+/** Points the sketch's ref at `tree`, so `git gc` keeps the tree as long as the sketch exists. */
+export const keepBaselineTree = (options: { sketchDir: string; tree: string }) =>
+  gitIn(options.sketchDir, ['update-ref', baselineTreeRefOf(options.sketchDir), options.tree]);
+
+/** Deletes the sketch's baseline tree ref; call it before the sketch folder goes. */
+export const dropBaselineTree = (sketchDir: string) =>
+  gitIn(sketchDir, ['update-ref', '-d', baselineTreeRefOf(sketchDir)]);

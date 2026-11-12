@@ -23,7 +23,7 @@ import { isBuiltInBase } from '../base';
 import { isLayer, Layer, LAYER_USES, mayUse } from '../layers';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { baselineOf } from './baseline';
-import { baselineTreeOf } from './baseline-tree';
+import { baselineTreeOf, dropBaselineTree, keepBaselineTree } from './baseline-tree';
 import { hasActor, WriteOrigin } from '../write-origin';
 import { withMadeBy } from './part-definition';
 
@@ -328,8 +328,9 @@ export const leftoverSketchFoldersOf = (productDir: string) =>
 
 const isOpenSketchDir = (dir: string) => existsSync(dir) && holdsFiles(dir);
 
-/** Deletes a sketch folder, then its `sketches/` folder when nothing else is left in it. */
+/** Deletes a sketch folder and its baseline tree ref, then its `sketches/` folder when nothing else is left in it. */
 export const removeSketchDir = (dir: string) => {
+  if (existsSync(dir)) dropBaselineTree(dir);
   rmSync(dir, { recursive: true, force: true });
 
   const parent = resolve(dir, '..');
@@ -605,10 +606,14 @@ export const findSketch = (options: { productDir: string; product: string; sketc
 
 const parseSketchName = (target: string) => target.split('@')[1];
 
-const baselineTreeFieldOf = (product: ResolvedProduct) => {
-  const tree = baselineTreeOf({ product, sketchesDirOf });
+const baselineTreeFieldOf = (options: { product: ResolvedProduct; sketchDir: string }) => {
+  const tree = baselineTreeOf({ product: options.product, sketchesDirOf });
 
-  return tree ? { baselineTree: tree } : {};
+  if (!tree) return {};
+
+  keepBaselineTree({ sketchDir: options.sketchDir, tree });
+
+  return { baselineTree: tree };
 };
 
 export const writeSketchFile = (sketch: Sketch) => {
@@ -861,7 +866,7 @@ export const createSketch = (options: {
     status: 'in progress',
     createdAt: new Date().toISOString(),
     baseline: baselineOf(product),
-    ...baselineTreeFieldOf(product),
+    ...baselineTreeFieldOf({ product, sketchDir: dir }),
     rounds: [firstRoundOf(roundTitle, roundNote)],
     variantInfo: Object.fromEntries(
       variants.map((variant) => [
@@ -1403,7 +1408,7 @@ export const rebaseSketch = (options: { product: ResolvedProduct; sketch: Sketch
   const rebased: Sketch = {
     ...untreed,
     baseline: baselineOf(options.product),
-    ...baselineTreeFieldOf(options.product),
+    ...baselineTreeFieldOf({ product: options.product, sketchDir: options.sketch.dir }),
   };
 
   writeSketchFile(rebased);

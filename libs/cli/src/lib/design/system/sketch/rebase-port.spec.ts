@@ -6,7 +6,8 @@ import { readConfig } from '../../design-config';
 import { git } from '../git-repo.fixtures';
 import { resolveProduct } from '../resolve-product';
 import { portBaseChanges } from './rebase-port';
-import { createSketch, rebaseSketch, Sketch } from './sketch';
+import { baselineTreeRefOf } from './baseline-tree';
+import { createSketch, rebaseSketch, removeSketchDir, Sketch } from './sketch';
 
 const targets: string[] = [];
 
@@ -206,6 +207,20 @@ describe('portBaseChanges', () => {
     expect(rebased.baselineTree).not.toBe(sketch.baselineTree);
     expect(portBaseChanges({ target, product: resolveAcme(target), sketch: rebased }).conflicts).toEqual([]);
     expect(readFileSync(variantFile(sketch, 'a', 'hero.css'), 'utf8')).toContain('scale');
+  });
+
+  it('keeps the recorded tree through git gc while the sketch exists, and lets it go with the sketch', () => {
+    const { target, sketch } = cutFromUncommittedTree();
+    const ref = baselineTreeRefOf(sketch.dir);
+
+    git(target, 'gc', '-q', '--prune=now');
+
+    expect(portBaseChanges({ target, product: resolveAcme(target), sketch }).conflicts).toEqual([]);
+    expect(readFileSync(variantFile(sketch, 'a', 'hero.css'), 'utf8')).toContain('transform');
+
+    removeSketchDir(sketch.dir);
+
+    expect(() => git(target, 'rev-parse', '--verify', '-q', ref)).toThrow();
   });
 
   it('refuses when neither a commit nor a recorded tree holds the state the baseline recorded', () => {
