@@ -267,3 +267,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - 902 built (a63f2683a), 966 built (8b5106a2c). Next free finding: 967.
 - Handoff file restored (it was cut to one line from 215c5f183 on); finding 967. Next free finding: 968.
 - 906 built (d04ed6a63); "903a" in the handoff was a slip, no such item. Next free finding: 968.
+- 907 built (43d71245b, 2136dae62); findings 968-969. Next free finding: 970.

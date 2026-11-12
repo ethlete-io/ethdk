@@ -1509,35 +1509,17 @@ home path in `cmd` into `.ethlete/design/*/ready.json`, and `yarn lint:person-na
 path. The tool caught it at the commit, not at the write. Tool fix (built): `portableCmdOf` writes each absolute
 argument relative to the working directory (`--checkout .`); `write-origin.spec.ts` bites without it.
 
-628\. Builder (2026-11-09, B459a, 2facac8ea): OFF-CENTRE baseline hit, sdk `components/button`, `size-lg` and `size-xl`: the text sits off the
-box centre. Cause: the lib CSS has no `text-box` trim and a height that does not fit the trimmed line. It goes into the
-OFF-CENTRE baseline (ADR 0201, finding 625). Fix: a sketch `components/button@off-centre` with the trim and height fix; the
-human picks by merge, then the hit leaves the baseline. Tool fix: none, OFF-CENTRE caught it.
+628 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
-629\. Builder (2026-11-09, B459a, 2facac8ea): OFF-CENTRE baseline hit, sdk `components/pagination`, `first`, `sm` and the links: the text sits off the
-box centre. Cause: the lib CSS has no `text-box` trim and a height that does not fit the trimmed line. It goes into the
-OFF-CENTRE baseline (ADR 0201, finding 625). Fix: a sketch `components/pagination@off-centre` with the trim and height fix; the
-human picks by merge, then the hit leaves the baseline. Tool fix: none, OFF-CENTRE caught it.
+629 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
-630\. Builder (2026-11-09, B459a, 2facac8ea): OFF-CENTRE baseline hit, sdk `components/scrollable`, `vertical-start`: the text sits off the
-box centre. Cause: the lib CSS has no `text-box` trim and a height that does not fit the trimmed line. It goes into the
-OFF-CENTRE baseline (ADR 0201, finding 625). Fix: a sketch `components/scrollable@off-centre` with the trim and height fix; the
-human picks by merge, then the hit leaves the baseline. Tool fix: none, OFF-CENTRE caught it.
+630 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
-631\. Builder (2026-11-09, B459a, 2facac8ea): OFF-CENTRE baseline hit, sdk `components/chart`, the pie tooltip: the text sits off the
-box centre. Cause: the lib CSS has no `text-box` trim and a height that does not fit the trimmed line. It goes into the
-OFF-CENTRE baseline (ADR 0201, finding 625). Fix: a sketch `components/chart@off-centre` with the trim and height fix; the
-human picks by merge, then the hit leaves the baseline. Tool fix: none, OFF-CENTRE caught it.
+631 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
-632\. Builder (2026-11-09, B459a, 2facac8ea): OFF-CENTRE baseline hit, sdk `components/table`, the group header: the text sits off the
-box centre. Cause: the lib CSS has no `text-box` trim and a height that does not fit the trimmed line. It goes into the
-OFF-CENTRE baseline (ADR 0201, finding 625). Fix: a sketch `components/table@off-centre` with the trim and height fix; the
-human picks by merge, then the hit leaves the baseline. Tool fix: none, OFF-CENTRE caught it.
+632 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
-633\. Builder (2026-11-09, B459a, 2facac8ea): OFF-CENTRE baseline hit, sdk `components/skeleton`, the in-text skeleton (1.0 px): the text sits off the
-box centre. Cause: the lib CSS has no `text-box` trim and a height that does not fit the trimmed line. It goes into the
-OFF-CENTRE baseline (ADR 0201, finding 625). Fix: a sketch `components/skeleton@off-centre` with the trim and height fix; the
-human picks by merge, then the hit leaves the baseline. Tool fix: none, OFF-CENTRE caught it.
+633 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
 634\. Builder (2026-11-09, B459a, 2facac8ea): the first OFF-CENTRE run counted 264 hits, but after deduplication and the
 false-class filters 13 are left (studio 25 to 4, sdk 21 to 9). Filtered false classes, each with a spec that bites:
@@ -1565,13 +1547,7 @@ builder): until B249 lands, `design go` and `design accept` print that ADR 0048 
 EDIT-OLD-NOT-FOUND does not fire when the edit leaves every picture of the part unchanged. Process fix: before a grill
 question names a cli command, the doc agent runs `yarn adr:governs` on the file that defines that command.
 
-638\. Builder (2026-11-09): pre-push `lint:changesets` refused the push of B460, because the doc agent's ADR commit
-2d0b4e14d changed `ethlete-studio` with no changeset; the builder added `.changeset/adr-0233-withdrawn.md`. Why no tool
-caught it: the pre-commit hook runs `lint:person-names` and `lint:studio-adrs`, but not the changeset check, so a
-docs-only commit learns of the missing changeset only at the next push, in the builder's session. Same class as
-findings 589 and 594. Tool fix (general, builder): the pre-commit hook fails a commit that stages a file of a workspace
-package without a changeset for it, staged or already in `.changeset/` on the branch; it names the `none` changeset to
-add.
+638 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
 639\. Doc agent (2026-11-09, ADR 0236): measured loop time of the builder on 2026-11-08 (4 builder sessions, 16
 subagents, 8 push-suite logs in `/tmp/push-suite*.log`). Studio e2e dominates: 26 min of direct runs, most of the 25 min
@@ -1621,36 +1597,9 @@ under the anti-stall rule because it blocks the push): fix the empty cell at its
 gets a load mode (CPU pressure on purpose) that the repeat gate runs, so a load fault fails every time and not one
 push in three.
 
-649\. Builder (2026-11-09, check cache): the Tailwind facts store was keyed only by stylesheet paths, so a theme change
-gave stale answers; the bug existed before the cache. Why no tool caught it: each store builds its own cache key by
-hand, and nothing checks that the key covers every input the store reads. Tool fix (backlog): every design CLI cache
-takes its key from the shared fingerprint of the files the run read, never a hand-built key; a spec per store changes
-each input once and expects a fresh answer.
+649 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
-As built (649): `readsCacheOf` in `system/tracked-reads.ts` is the shared store: the slot names the request, and an
-entry lives while every file and folder listing the run read still prints the same (`trackedRun` now nests, so an inner
-cached run no longer ends the outer run's recording). Moved onto it: the Tailwind facts store (`classFactsOf`: its
-Tailwind child process reports the files it read, so a theme in a package counts), the SDK declarations store
-(`sdkDeclarationsIn`, was mtime), the app files store (`appFilesOf`, was mtimes of reached files only, so a missing
-template or a `tsconfig.base.json` change was stale) and `cachedCheckOf`. A spec per store changes each input once;
-bite with the old keys: package theme (Tailwind), same-mtime edit (declarations, app files), appearing template and
-tsconfig path (app files) fail; the nesting spec fails without the outer chain. Remaining stores, not checked: the
-disk and async caches `action-cache`, `compare-cache`, `harness-build-cache`, `part-picture-cache`, `pixel-cache`,
-`served-cache`, `generated-stylesheets`, `shot-store`, `vite-cache`, `sketch/unchanged-states`, `link-free`
-`earlierFields`, `slow-checks` `bases`; `trackedRun` is synchronous, so they need an async fingerprint first. Not
-verified: a Tailwind `@plugin` or `@config` JS module the child loads through ESM `import` is not recorded, and no
-`design check` ran on a real product.
-
-650\. Builder (2026-11-09, ADR 0237): the 3 measured e2e runs ran at a load average of 39-51 from other sessions, so
-the times cannot show if the 90 s goal is met. Why no tool caught it: the e2e timing report has no load figure, so a
-noisy measurement looks like a clean one. Tool fix (backlog, with ADR 0208 run timings): every e2e timing report
-prints the load average at start and end and marks a run above a load threshold as "noisy, not a measurement".
-As built (Linux builder, 2026-11-11): `apps/ethlete-studio/e2e/run-load.mjs` `runLoadLineOf`; `canvas.e2e.mjs` prints
-`load <start> at start, <end> at end on <cores> cores` after the budget line, with " - noisy, not a measurement" when
-either one-minute load is above the core count (the threshold of the design timings, ADR 0208). Verified: `run-load.spec.mjs`
-2/2, fails with the threshold broken; one live `yarn studio:e2e --case` run prints the line. Real case run (2026-11-11):
-`--case 'a sketch merged while its view is open opens the part view of the target'` passed 1/1 in 24.6 s, exit 0, and
-printed `load 0.7 at start, 1.7 at end on 32 cores`. A noisy live run is not verified.
+650 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
 651\. Builder (2026-11-09, 647 bite proof): the committed `--delay-pictures` mode (2b0227f8e) also delays the
 canvas's first frame, so every single-case run with it times out in `warmUp` (`canvas.e2e.mjs`, "Timeout 60000ms
@@ -1662,46 +1611,13 @@ the exact command; a result from a scratch or export tree says so. Fix now (doc 
 delay route turns on only after `warmUp`; one more bite proof; if it again gives no result, push without it and the
 proof moves to the tool backlog.
 
-652\. Doc agent (2026-11-09): the design tools rewrite tracked files on every run (`.ethlete/design/*/pictures.json`,
-`.ethlete/design/studio/ready.json`, a sketch's `sketch.json`), so the working tree is never clean. Sessions learn
-"never commit them, not ours", and the doc agent even called them the human's files. Why no tool caught it: nothing
-separates tool state from design source in the tree. Tool fix (backlog): tool-written state goes to a gitignored
-cache, or the tool commits it itself in its own commit; `git status` after a design run shows only what a person
-changed.
+652 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
-653\. Builder (2026-11-09, 647 bite proof): a hand-made HEAD export (`STUDIO_CLI_ENTRY` = main tree dist) could not
-start the canvas: all 4 runs ended in a `warmUp` timeout, also with no delay at load 4-8. The push-suite export runs
-the same e2e step without this, so the hand copy of `exportCommit` misses something (not found). The first report
-blamed the delay route, which already turns on after `warmUp`. Why no tool caught it: there is no shared way to run a
-case on an export, so each proof builds its own. Tool fix (backlog, with 651): a bite proof runs through push-suite's
-`exportCommit` (one export path) with a flag that reverts a named commit.
+653 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
-653 as built (2026-11-11): the export (`exportCommit`, the dependency links, `DRAWING_BUILDS`) moved from
-push-suite.mjs to `tools/scripts/commit-export.mjs`; push-suite imports it lazily (no sibling import at load time).
-`yarn studio:e2e:bite --revert <sha> [e2e args]` exports HEAD with it, applies the reverse of `<sha>` (`git apply -R`,
-refused with a message when it does not apply), builds `cli components core` in the export like push-suite, runs the
-export's own `canvas.e2e.mjs` and removes the export in `finally`; the `<ref>` mode is unchanged. Verified:
-`commit-export.spec.mjs` (temp repo: export, reverse diff, refused diff) and the `--revert` arg specs, each failed
-when its code was broken; `push-suite.spec.mjs` green. Live proof (2026-11-11, load 3-5 of 32): `yarn studio:e2e:bite
---revert 1b41de840 --case "a frame renders real content, not an error page"` ran 4/4 green in the export in 23 s, warmUp
-3.7-3.8 s on each worker: the warmUp timeout of 653 is gone. The first try with a `--case` that matched nothing found 806.
+654 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
-654\. Doc agent (2026-11-09, Mac night start): the builder handoff said the on-disk check cache waits for the human
-("its cost goes to the human first"), while ADR 0239, written the same afternoon, puts it in the night scope. The
-handoff restated an older doc agent line instead of the ADR, so the builder would have stopped on a decided point.
-Why no tool caught it: a handoff is free prose; nothing compares its scope lines with the ADRs it names. Tool fix
-(backlog): a handoff names its scope only by ADR number and lists the ADR's items verbatim (no paraphrase), and
-`yarn adr:governs` on a handoff file lists the ADRs it cites so the writer rereads them before the commit.
-
-655\. Doc agent (2026-11-09, Mac night, reported by the human): CI on next was red in "ci / Rust host" from run
-42632896727 (14:15) on: `cargo audit` found RUSTSEC-2026-0459 (libsqlite3-sys 0.38.2 through rusqlite 0.40.2 in
-`apps/timetrack/src-tauri`, solution >=0.39.0). The repo did not change; the advisory database did. The builder
-started the night with "ci running, push gate unknown" and did not see the earlier red run; the human found it. Why
-no tool caught it: `cargo audit` runs only inside the CI push run (no pre-push step, no scheduled run), and the
-status line shows only the newest run, not the last finished one with its failed jobs. Tool fix (backlog): (1) the
-status line shows the last finished CI run on the branch with its failed job names next to a running one; (2) a
-daily scheduled `cargo audit` on both Tauri lockfiles, so a new advisory goes red on a fixed time and not on the next
-unrelated push. Fix work: sent to the builder before queue 1 (ADR 0230).
+655 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
 657\. Builder (2026-11-09, Mac night, 6cafe2129): the hold run masks a short picture delay. With the `liveShotsOf`
 fix reverted, hold 14000 plus delay 3000/6000/15000 all pass 2/2; hold 0 plus 15000 fails 2/2; hold 14000 plus 20000
@@ -1713,26 +1629,11 @@ two fault injections in one run had no check that each one still bites; only the
 (in 6cafe2129 for this pair): the gate spec asserts delay > hold. Open: the 646 hold bite with the delay on, and the
 extra time of run 3 (measured in the idle runs).
 
-659\. Doc agent (2026-11-09, Mac night): the builder blamed a load of 81-107 on "other sessions". A `ps` at load 91
-showed only this checkout's own work: two `tsc --noEmit`, a `libs/cli` tsc build, cli vitest workers, Playwright
-Chromium and Tailwind design-system loaders, from the builder's parallel subagents next to a running push-suite; plus
-an Nx daemon 2.6 days old at 17 % CPU. Spotlight and media analysis were idle. No other session ran on the Mac. So
-the push-suite fail of 658 may be self-made load. Why no tool caught it: the load figure of 650 is a bare number with
-no source. Tool fix (with 650): when the load is over the threshold, the timing report lists the top processes by CPU
-with their checkout and parent session, and push-suite warns before its start when other test or build processes of
-the checkout run.
+659 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
-661\. Builder (2026-11-09, Mac night, 343e968aa): `render-check.spec` fixture `components/underline-cut` put a 16px
-font in a 16px line. The Mac font draws 17px, so a second CLIPPED issue came out (14 vs 13). Fix: 12px font, 6px
-underline offset. Why no tool caught it: render fixtures use the system font, and CI has only one system. Tool fix
-(backlog): render fixtures load a bundled font, so a metric is the same on every machine.
+661 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
-664\. Doc agent (2026-11-09, Mac night): the first Mac e2e step (push-suite on 077bd0543, load 8-35, so not a
-measurement) ran 133 cases on 3 workers in 513.3 s; the PC ran them on 8 workers in 117-127 s. The 90 s goal of ADR
-0237 names no machine and no worker count, so a Mac figure and a PC figure cannot be compared. Why no tool caught it:
-the timing report prints the time but not the worker count and the machine next to the goal. Tool fix (with 650): the
-report prints machine, core count, worker count and load next to the time, and checks the goal only on the machine
-the goal names. Answered by ADR 0240: the goal counts on the desk PC (see 793).
+664 -> archive/findings-2026-11.md, backlog STATUS.md Werkzeug-Rückstand
 
 665\. Builder (2026-11-09, Mac night): two push:suite runs in a row failed e2e 132/133, each in another case (B462
 Sketches first load, B463 System page switch timing); each passes alone. The red-CI fix 2bc4d42f2 waits behind
@@ -4151,3 +4052,19 @@ that cuts a `plans/**/handoff-*.md` file by more than half of its lines, unless 
 and a target in /tmp; no target gives `~/.cache/ethlete-scratch/scratch-<ms>`; `--remove` removes only a dir with the
 `.scratch-checkout` marker; `yarn et:design` without git exits 2 with the build-and-node command. Spec 8/8. Not verified:
 a full copy and `--remove` on the real repo.
+
+907 built (Linux, 43d71245b, 2136dae62): `tools/scripts/temp-dir.mjs` `tempDir(prefix)` removes its dirs on exit; 14 tools
+specs use it, each measured prefix went to 0 new /tmp entries per run. `yarn spec:tmp-leaks <spec>...` runs each spec alone
+and names each spec that leaves new /tmp entries. Cause (measured) for the cli-design-* dirs: vitest at the repo root with
+no config skips the cli globalSetup that owns TMPDIR. Suspect (measured) for playwright-artifacts and chromium profiles:
+hard kills only (a SIGKILL leaves 2, a throw leaves 0). e2e-tokens belong to another repo.
+
+968\. Linux builder (2026-11-12 night, 907): a root `npx vitest related --run <file>` runs 705 files with no config
+(694 failed) and leaves /tmp dirs; the builder's own subagent did it once. The builder skill says to run it per project, but
+nothing enforces it. Cause (measured, 907). Tool fix (builder default, tool backlog): a root vitest config that refuses to
+run and names the project dir to use, with a spec.
+
+969\. Linux builder (2026-11-12 night, 907): `tools/scripts/commit-export.spec.mjs` fails before and after 907: in its export
+run 3 `et-design.spec.mjs` wrapper tests time out after 10 s (they pass alone), and it leaves about 14 `yarn--*` dirs.
+Suspect: load or a shared resource in the export run. Tool fix (builder default, tool backlog): find the cause with a
+measurement, then a fix with a biting spec; `yarn spec:tmp-leaks` must pass on it.
