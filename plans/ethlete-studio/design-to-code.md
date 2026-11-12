@@ -3916,7 +3916,8 @@ tool backlog): exit 1 on a refusal, with a spec. Two more cases of the same clas
 `--by` prints a usage error and exits 0; a SHOT-NOT-VIEWED refusal exits 0. The fix covers every refusal and usage error.
 
 944\. Linux builder (2026-11-12 night, 933): `sketch new --name "..."` parses the name as a target. Tool fix (builder
-default, tool backlog): `--name` takes a value, with a spec.
+default, tool backlog): `--name` takes a value, with a spec. Same class (Linux, 900): `yarn studio:e2e --help` has no help and
+starts the full suite.
 
 945\. Linux builder (2026-11-12 night, 933): `sketch ready` prints about 30 UNBOUND-INPUT note lines per variant. Tool fix
 (builder default, tool backlog): one summary line per variant, details behind `--verbose`.
@@ -4103,3 +4104,9 @@ slice's load; the URL stage may itself be load-bound (server re-render). So the 
 runs meanwhile. Tool fix (decided by the doc agent, tool internal): push:suite holds a "heavy" lock during its e2e step,
 and the build and test commands of a slice wait for it (or print one line and refuse), with a spec. The Mac reruns
 push:suite on a quiet machine; the 10 s budget stays. If it fails again quiet, probe the URL stage under load.
+
+900 update 2 (Linux, 37841f237): the 128 race is fixed. Cause (bite): the listing drops the merged edit sketch before
+`mergeSketch$` answers, so the merge answer is lost with the destroyed child. Fix: system-view owns the end of the merge
+(an effect calls `leaveGone()` when the merging sketch leaves the listing while it is still picked). The spec fails
+without the fix; 128 alone, 128+129, and 128+129 with hold 14000 pass. Not verified: the full suite. Each e2e run leaves
+one orphan resident (6 now, about 4.3 GB), so the 955 teardown part is a push-suite blocker; Linux builds it next.

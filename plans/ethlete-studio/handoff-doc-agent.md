@@ -1,1 +1,1 @@
-- Mac push:suite blocked at 5c5a1908a by load from a parallel slice (finding 963, heavy lock); rerun on a quiet machine. Next free finding: 964.
+- 128 race fixed (37841f237); 955 e2e teardown is a push blocker, Linux builds it; 6 orphan residents now. Next free finding: 964.
