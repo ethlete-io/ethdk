@@ -3869,3 +3869,27 @@ idle). Fix d672e8c89 (test only): the new URL within WAIT_MS, then drawn within 
 pass prints timings; passes under load (drawn 12941 ms) and alone. Tool fix (builder default, tool backlog, with 761/763):
 `yarn studio:e2e --load N` reproduces suite-only load failures; the other picture cases (`canvas.e2e.mjs` ~1642) get the
 same split windows.
+
+903 update 6 (Linux): built in c538efb84 (shared button metrics, title-search design + app, the app sketches fit refits
+on `document.fonts.ready`), 1c0421859 (pages/sketches@edit merge, direct edit by ADR 0262 + 903 + 924) and cc0a514d1
+(changeset). Measured: pages/sketches idle, paused and paused-reason 2785 (HEAD 2778); page-sketch 52852 -> 2785;
+OFF-CENTRE 0 on title-search, zoom-chip and pages/sketches (was 38); xs + kbd 24 px. Not verified: a live shot of the
+app's pages/sketches (asked for).
+
+936\. Linux builder (2026-11-12 night, 903): `sketch merge` commits itself as `feat` with no changeset, so each merge needs
+an extra changeset commit. Tool fix (builder default, tool backlog): the merge commit carries the `ethlete-studio: none`
+changeset.
+
+937\. Linux builder (2026-11-12 night, 903): a sketch that design check cut from an uncommitted tree always needs
+`sketch rebase --ported` ("no commit holds the state the baseline recorded"). Tool fix (builder default, tool backlog):
+design check records the tree it cut from, and rebase accepts a baseline that matches the working tree.
+
+938\. Linux builder (2026-11-12 night, 903): after a rebase the variant-new `readyContent` hash in `sketch.json` was stale,
+and merge did not complain. Tool fix (builder default, tool backlog): merge refuses a stale readyContent hash, with a bite.
+
+939\. Linux builder (2026-11-12 night, 903): the sketch held an old `decision` (claude-sonnet-5-5) from a merge that never
+reached git; rebase and merge accepted it silently. Tool fix (builder default, tool backlog): rebase drops a decision
+whose merge commit does not exist, and merge names a reused decision.
+
+940\. Linux builder (2026-11-12 night, 903): the PreToolUse hook blocks `design compare --help` in the foreground as a
+compare run. Tool fix (builder default, tool backlog): the hook lets `--help` pass.
