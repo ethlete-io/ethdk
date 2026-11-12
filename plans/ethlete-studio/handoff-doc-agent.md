@@ -242,3 +242,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - 930 withdrawn (one source holds); 903/924 Cause = font-load race in the sketches fit; findings 934-935. Next free finding: 936.
 - 903 built (c538efb84, 1c0421859, cc0a514d1); findings 936-940 (sketch merge/rebase gaps, hook blocks --help). Next free finding: 941.
 - Findings 941 (design server heap OOM after 4 h) and 942 (no shot of the app build). Next free finding: 943.
+- 933 decided: variant a gets contrast exceptions for its 4 disabled chips; findings 943-945. Next free finding: 946.

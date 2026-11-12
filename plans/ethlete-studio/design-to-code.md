@@ -3904,3 +3904,18 @@ snapshots an hour apart; until then the serve command names its heap use in its 
 compare numbers. The design shot of pages/sketches idle after 903 is right (4 columns, rows under the notes, variant-a
 note in 4 lines, centred xs search button with Ctrl K). Tool fix (builder default, tool backlog): the shot route takes a
 `source=app` parameter that shoots the app harness of the same part and state.
+
+933 update 2 (Linux, not ready, not committed): the sketch `foundations-colors` (variants a >= 3:1, b >= 4.5:1, a new
+`--on-surface-disabled` token that `generate-studio-themes.mjs` must read after a pick) is in progress. `sketch ready`
+refused variant a: the part's contrast rule wants 4.5:1 for every ink chip. Decided by the doc agent (WCAG 1.4.3 exempts
+disabled controls; the look choice stays with the human): variant a declares `definePart({ contrast: { exceptions } })`
+for its 4 disabled chips, so the human compares both floors.
+
+943\. Linux builder (2026-11-12 night, 933): `sketch ready` exits 0 when it refuses a variant. Tool fix (builder default,
+tool backlog): exit 1 on a refusal, with a spec.
+
+944\. Linux builder (2026-11-12 night, 933): `sketch new --name "..."` parses the name as a target. Tool fix (builder
+default, tool backlog): `--name` takes a value, with a spec.
+
+945\. Linux builder (2026-11-12 night, 933): `sketch ready` prints about 30 UNBOUND-INPUT note lines per variant. Tool fix
+(builder default, tool backlog): one summary line per variant, details behind `--verbose`.
