@@ -1,1 +1,1 @@
-- Linux memory critical (design server 6.0 + 4.5 GB, 941 update); builder asked to restart studio-serve. The Mac mailbox wait was killed for memory; not restarted. Next free finding: 955.
+- Memory fixed (45 GB free) by a studio-serve restart and `yarn design stop`; finding 955 (resident has no idle exit). Next free finding: 956.

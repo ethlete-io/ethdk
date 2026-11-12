@@ -4014,3 +4014,10 @@ tool backlog): the merge removes the whole sketch folder; `sketch list` skips a 
 and its child (pid 1185015) 4.5 GB; Linux had 1.5 GB available and a full swap, and Claude Code killed background
 shells for memory. So the heap growth shows in under an hour, not only after 4 h. The ready.json writer in 946 is this
 server process (the builder saw pid 1055162 as `et design check`). Suspect for both until a bite.
+
+941 update 2 (Linux builder): restarting studio-serve and `yarn design stop` on an orphaned resident (pid 1281248, 23
+min, about 6.5 GB with its Chromium) brought available memory from 1.5 GB to 45 GB.
+
+955\. Linux builder (2026-11-12 night, 941): the sketch-check resident has no idle exit, so a resident started by a
+subagent's `sketch check` keeps its Chromium (a 4.5 GB GPU process) after the subagent ends. Suspect (owner not checked,
+not measured). Tool fix (builder default, tool backlog): the resident stops itself after N idle minutes, with a spec.
