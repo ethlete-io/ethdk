@@ -1,6 +1,13 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
-import { BADGE_IMPORTS, BUTTON_IMPORTS, CHECK_ICON, ICON_IMPORTS, provideIcons } from '@ethlete/components';
+import {
+  BADGE_IMPORTS,
+  BUTTON_IMPORTS,
+  CHECK_ICON,
+  ICON_IMPORTS,
+  provideIcons,
+  TOOLTIP_IMPORTS,
+} from '@ethlete/components';
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { DisclosureComponent } from '../disclosure/disclosure.component';
@@ -58,13 +65,13 @@ const GROUPS: { kind: BuildBlockerKind; icon: BlockerIcon }[] = [
         }
         @if (agent(); as progress) {
           @if (progress.state === 'failed') {
-            <span [etProvideColor]="errorTheme()" [title]="progress.detail" class="flex">
+            <span [etProvideColor]="errorTheme()" [etTooltip]="progress.detail" class="flex">
               <div class="flex flex-wrap items-center">
                 <et-badge variant="tonal" size="sm">{{ LABELS.agent.failed }}</et-badge>
               </div>
             </span>
           } @else {
-            <span [title]="progress.detail" class="flex">
+            <span [etTooltip]="progress.detail" class="flex">
               <div class="flex flex-wrap items-center">
                 <et-badge variant="outline" size="sm">
                   {{
@@ -163,7 +170,15 @@ const GROUPS: { kind: BuildBlockerKind; icon: BlockerIcon }[] = [
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BADGE_IMPORTS, BUTTON_IMPORTS, DisclosureComponent, ICON_IMPORTS, NgTemplateOutlet, ProvideColorDirective],
+  imports: [
+    BADGE_IMPORTS,
+    BUTTON_IMPORTS,
+    DisclosureComponent,
+    ICON_IMPORTS,
+    NgTemplateOutlet,
+    ProvideColorDirective,
+    TOOLTIP_IMPORTS,
+  ],
   providers: [provideIcons(CHECK_ICON)],
   host: { class: 'block' },
 })

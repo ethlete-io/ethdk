@@ -243,7 +243,7 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
   unten entfällt.
 - **A6** Schnellwahl in der Leiste zeigt Logo oder zwei eindeutige Buchstaben, mit Tooltip (Q21).
 - **A7** Breite der Seitenleiste mit der Maus ziehen (Q133).
-- **A8** Tooltips aus ethlete/components statt nativer `title`-Tooltips (Befund 116).
+- **A8** Rest: zoom-chip und shell-collapse behalten `title`. Das SDK-Tooltip öffnet auch bei Tastaturfokus, die Zustände `*-focus-visible` weichen dann vom Design ab (Visible-Change-Gate). Design-Entscheid: Tooltip im Focus-State zeichnen oder dort ohne Tooltip (Befund 116).
 - **A9** Merge-Ansicht mit dem einen Canvas (Zoom, Verschieben) und einem E2E-Test dafür (Befund 117; dl 02.11.).
 - **A10** Baubereit (ADR 0048): der Kern ist gebaut, offen sind B250 und B251.
 - **A14** Hinweis an Sketches, die sehr wahrscheinlich automatisch mergen.

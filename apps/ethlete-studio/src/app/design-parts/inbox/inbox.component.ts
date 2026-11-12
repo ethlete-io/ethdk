@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, model, output, TemplateRef, ViewEncapsulation } from '@angular/core';
-import { BUTTON_IMPORTS, SWITCH_IMPORTS } from '@ethlete/components';
+import { BUTTON_IMPORTS, SWITCH_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective, injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
@@ -21,6 +21,7 @@ export type InboxLoad = 'loaded' | 'loading' | 'error';
   imports: [
     BUTTON_IMPORTS,
     SWITCH_IMPORTS,
+    TOOLTIP_IMPORTS,
     AutoSurfaceDirective,
     ProvideColorDirective,
     NgTemplateOutlet,

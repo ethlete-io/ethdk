@@ -4,6 +4,13 @@ import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
 import { PartTreeComponent, PartTreeLayer } from './part-tree.component';
 
+const withTooltip = (root: Element | null | undefined, text: string) =>
+  [...(root?.querySelectorAll<HTMLElement>('[aria-describedby]') ?? [])].find((element) =>
+    (element.getAttribute('aria-describedby') ?? '')
+      .split(' ')
+      .some((id) => document.getElementById(id)?.textContent?.trim() === text),
+  ) ?? null;
+
 const LAYERS: PartTreeLayer[] = [
   { title: 'Foundations', open: false, parts: [{ name: 'colors', leaf: true }] },
   {
@@ -63,7 +70,7 @@ describe('PartTreeComponent', () => {
     const [, , button, , , , select] = rowsOf(element);
 
     expect(button?.getAttribute('aria-current')).toBe('true');
-    expect(select?.querySelector('[title="Render-Check: 1 Warnung"]')).not.toBeNull();
+    expect(withTooltip(select, 'Render-Check: 1 Warnung')).not.toBeNull();
   });
 
   it('opens a closed layer on click and emits the key of the activated row', async () => {
@@ -122,7 +129,7 @@ describe('PartTreeComponent', () => {
     fixture.componentInstance.expandedChange.subscribe((keys) => expanded.push(keys));
 
     expect(labelsOf(element)).toEqual(['Components', 'select']);
-    expect(element.querySelector('[title="LOAD: broken"]')).not.toBeNull();
+    expect(withTooltip(element, 'LOAD: broken')).not.toBeNull();
 
     rowsOf(element)[1]?.click();
     await fixture.whenStable();

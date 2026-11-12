@@ -42,9 +42,7 @@ const agentBadge = async (agent: AgentProgress) => {
     badges: [{ label: agentLabel(agent), variant: failed ? 'tonal' : 'outline', size: 'sm' }],
   });
   return {
-    body: html`<span class="flex" title="${agent.detail}" ${failed ? 'data-et-semantic-color="error"' : ''}
-      >${drawn.body}</span
-    >`,
+    body: html`<span class="flex" ${failed ? 'data-et-semantic-color="error"' : ''}>${drawn.body}</span>`,
     styles: drawn.styles,
   };
 };

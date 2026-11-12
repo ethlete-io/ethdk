@@ -5,7 +5,7 @@ type Props = { frame: string; action?: string };
 export const commentTarget = ({ frame, action = 'emit:comment' }: Props) =>
   html`<div
     class="absolute inset-0 cursor-crosshair bg-(--et-theme-color-primary-solid)/6"
-    title="Kommentar zu ${frame}"
+    aria-label="Kommentar zu ${frame}"
     role="button"
     tabindex="0"
     data-et-control="target"

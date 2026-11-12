@@ -6,6 +6,13 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { SketchesComponent } from './sketches.component';
 import { SKETCH_PINS, SketchRow } from './sketches-sample';
 
+const withTooltip = (root: Element | null | undefined, text: string) =>
+  [...(root?.querySelectorAll<HTMLElement>('[aria-describedby]') ?? [])].find((element) =>
+    (element.getAttribute('aria-describedby') ?? '')
+      .split(' ')
+      .some((id) => document.getElementById(id)?.textContent?.trim() === text),
+  ) ?? null;
+
 const LABELS = STUDIO_LABELS.sketches;
 
 const ROWS: SketchRow[] = [
@@ -243,12 +250,11 @@ describe('SketchesComponent', () => {
     expect(root.querySelector('[data-sk-merge-hold]')).toBeNull();
   });
 
-  it('shows the short model name with the full id and time as its title', async () => {
+  it('shows the short model name with the full id and time as its tooltip', async () => {
     const root: HTMLElement = (await render({})).nativeElement;
-    const model = root.querySelector<HTMLElement>('[data-sk-row="x"] [title]');
+    const model = withTooltip(root.querySelector('[data-sk-row="x"]'), 'claude-sonnet-5-5 · 01.11. 09:00');
 
     expect(textOf(model)).toBe('Sonnet 5.5');
-    expect(model?.title).toBe('claude-sonnet-5-5 · 01.11. 09:00');
   });
 
   it('hides withdrawn variants behind Zurückgezogene (n) and marks them in place of Übernehmen when shown', async () => {

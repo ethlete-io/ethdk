@@ -155,7 +155,7 @@
         <span [class]="strong" class="font-ui-medium">{{ comment.author }}</span>
         <span class="flex-1 text-et-surface-muted">{{ comment.when }}</span>
         @if (comment.unread) {
-          <span class="size-1.5 rounded-full bg-et-theme" title="Ungelesen"></span>
+          <span class="size-1.5 rounded-full bg-et-theme" etTooltip="Ungelesen"></span>
         }
       </div>
       <p [class]="strong" class="m-0 line-clamp-2 text-ui-sm">{{ comment.text }}</p>

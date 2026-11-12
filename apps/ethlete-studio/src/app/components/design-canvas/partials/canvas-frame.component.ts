@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { BUTTON_IMPORTS } from '@ethlete/components';
+import { BUTTON_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective, injectSemanticColorTheme, signalHostElementIntersection } from '@ethlete/core';
 import {
   EMPTY,
@@ -72,7 +72,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
       @if (reload(); as state) {
         <span
           [class.animate-pulse]="state === 'rendering'"
-          [title]="state === 'rendering' ? 'Rendering' : 'Waiting to render'"
+          [etTooltip]="state === 'rendering' ? 'Rendering' : 'Waiting to render'"
           [attr.data-reload]="state"
           class="size-[0.6em] shrink-0 self-center rounded-full bg-(--et-theme-color-primary-solid)"
         ></span>
@@ -311,6 +311,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
   encapsulation: ViewEncapsulation.None,
   imports: [
     BUTTON_IMPORTS,
+    TOOLTIP_IMPORTS,
     NgTemplateOutlet,
     ProvideColorDirective,
     CanvasFrameBorderComponent,

@@ -1,3 +1,4 @@
+import { TOOLTIP_IMPORTS } from '@ethlete/components';
 import { Component, computed, input, output, ViewEncapsulation } from '@angular/core';
 import { injectSemanticColorTheme, ProvideColorDirective, SurfaceInteractiveDirective } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
@@ -57,7 +58,7 @@ const SELECTED_CLASS =
     </span>
     <span class="min-w-0 flex-1 overflow-hidden text-ellipsis">{{ row.label }}</span>
     @if (row.warning) {
-      <span [etProvideColor]="warningTheme()" [title]="row.warning" class="flex flex-none text-et-theme">
+      <span [etProvideColor]="warningTheme()" [etTooltip]="row.warning" class="flex flex-none text-et-theme">
         <svg
           width="12"
           height="12"
@@ -76,7 +77,7 @@ const SELECTED_CLASS =
       </span>
     }
     @if (row.status) {
-      <span [class]="'flex flex-none ' + STATUS_CLASS[row.status]" [title]="STATUS_TITLE[row.status]">
+      <span [class]="'flex flex-none ' + STATUS_CLASS[row.status]" [etTooltip]="STATUS_TITLE[row.status]">
         <svg
           width="12"
           height="12"
@@ -100,7 +101,7 @@ const SELECTED_CLASS =
     @if (row.comments) {
       <span
         [class]="'flex flex-none items-center gap-0.5 text-(length:--text-xs) ' + accentClass()"
-        [title]="OPEN_COMMENTS_LABEL(row.comments)"
+        [etTooltip]="OPEN_COMMENTS_LABEL(row.comments)"
       >
         <svg
           width="12"
@@ -119,7 +120,7 @@ const SELECTED_CLASS =
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [ProvideColorDirective],
+  imports: [ProvideColorDirective, TOOLTIP_IMPORTS],
   hostDirectives: [SurfaceInteractiveDirective],
   host: {
     '[class]': 'hostClass()',

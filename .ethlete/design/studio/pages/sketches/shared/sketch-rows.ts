@@ -194,9 +194,7 @@ export const rowHead = (row: Row, action: string, mark = '') =>
       }
       ${
         row.model
-          ? html`<span
-              class="flex items-center gap-space-1 text-ui-sm text-et-surface-muted"
-              title="${row.model.id} · ${row.model.when}"
+          ? html`<span class="flex items-center gap-space-1 text-ui-sm text-et-surface-muted"
               >${agentLogo(row.model.agent, 'size-3 flex-none')}${row.model.short}</span
             >`
           : ''

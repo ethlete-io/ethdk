@@ -28,6 +28,7 @@ import {
   FORM_FIELD_IMPORTS,
   SELECT_IMPORTS,
   SWITCH_IMPORTS,
+  TOOLTIP_IMPORTS,
 } from '@ethlete/components';
 import {
   ProvideColorDirective,
@@ -165,6 +166,7 @@ const isPending = (row: SketchRow) => row.shots.some((shot) => shot.changed === 
     SELECT_IMPORTS,
     CHOICE_FIELD_IMPORTS,
     SWITCH_IMPORTS,
+    TOOLTIP_IMPORTS,
     NgTemplateOutlet,
     AgentLogoComponent,
     CanvasViewportComponent,

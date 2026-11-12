@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, model, output, TemplateRef, ViewEncapsulation } from '@angular/core';
-import { BADGE_IMPORTS, BUTTON_IMPORTS } from '@ethlete/components';
+import { BADGE_IMPORTS, BUTTON_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component';
 import { PartTreeComponent } from '../part-tree/part-tree.component';
@@ -142,7 +142,8 @@ export const FRAME_HEAD_CLASS =
               </div>
               @if (commentMode()) {
                 <div
-                  [title]="LABELS.commentOn(frame())"
+                  [etTooltip]="LABELS.commentOn(frame())"
+                  [attr.aria-label]="LABELS.commentOn(frame())"
                   (click)="draft.set('')"
                   (keydown.enter)="draft.set('')"
                   class="absolute inset-0 cursor-crosshair bg-(--et-theme-color-primary-solid)/6"
@@ -200,6 +201,7 @@ export const FRAME_HEAD_CLASS =
   imports: [
     BADGE_IMPORTS,
     BUTTON_IMPORTS,
+    TOOLTIP_IMPORTS,
     CanvasFramesComponent,
     CommentDraftComponent,
     NgTemplateOutlet,

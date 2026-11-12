@@ -16,7 +16,7 @@
     >
       @if (head.note) {
         <span
-          [title]="head.note"
+          [etTooltip]="head.note"
           class="truncate text-[calc(1.3rem*var(--et-design-canvas-label-scale))] text-text-muted"
           data-row-head-note
           >{{ head.note }}</span
@@ -26,7 +26,7 @@
     <button
       [style.top.px]="head.y"
       [style.transform]="'translateX(-4rem) scale(' + rowHeadScale() + ')'"
-      [title]="head.title ?? head.label"
+      [etTooltip]="head.title ?? head.label"
       [attr.aria-expanded]="head.open"
       (click)="toggleRow(head.key, $event)"
       class="absolute right-0 origin-top-right whitespace-nowrap"
@@ -49,7 +49,7 @@
       class="absolute top-[calc(-6rem*var(--et-design-canvas-label-scale))] flex origin-top-left items-center gap-2 text-[1.3rem] whitespace-nowrap"
     >
       <button
-        [title]="group.title ?? group.label"
+        [etTooltip]="group.title ?? group.label"
         (click)="toggleColumn(group.key, $event)"
         class="min-w-0 shrink-0"
         et-button
@@ -64,7 +64,7 @@
       @if (group.switch; as groupSwitch) {
         <button
           [pressed]="groupSwitch.on"
-          [title]="groupSwitch.title ?? groupSwitch.label"
+          [etTooltip]="groupSwitch.title ?? groupSwitch.label"
           [attr.data-group-switch]="group.key"
           (click)="switchGroup(group.key, $event)"
           class="shrink-0"
@@ -78,7 +78,7 @@
         </button>
       }
       @if (group.note) {
-        <span [title]="group.note" class="min-w-0 truncate text-text-muted">
+        <span [etTooltip]="group.note" class="min-w-0 truncate text-text-muted">
           {{ group.note }}
         </span>
       }
@@ -95,7 +95,7 @@
         class="absolute top-[calc(-6rem*var(--et-design-canvas-label-scale))] flex origin-top-left flex-col gap-3 text-[1.3rem] leading-[1.4]"
       >
         <button
-          [title]="column.title ?? column.label"
+          [etTooltip]="column.title ?? column.label"
           (click)="toggleColumn(column.key, $event)"
           class="w-full whitespace-normal"
           et-button
@@ -117,7 +117,7 @@
         [style.margin-top.px]="column.y"
         [style.max-width.px]="column.width"
         [class]="column.muted ? 'italic text-text-muted' : 'text-text'"
-        [title]="column.title ?? column.label"
+        [etTooltip]="column.title ?? column.label"
         class="absolute top-[calc(-3.2rem*var(--et-design-canvas-label-scale))] -translate-y-full overflow-hidden text-[calc(1.6rem*var(--et-design-canvas-label-scale))] leading-[1.4] font-semibold text-ellipsis whitespace-nowrap"
       >
         {{ column.label }}
@@ -171,7 +171,8 @@
       [style.top.px]="target.y"
       [style.width.px]="target.width"
       [style.height.px]="target.height"
-      [title]="pointingTitle()(target.frame.label)"
+      [etTooltip]="pointingTitle()(target.frame.label)"
+      [attr.aria-label]="pointingTitle()(target.frame.label)"
       (click)="pickPoint({ id: target.frame.id, width: target.width, crop: target.frame.crop }, $event)"
       (keydown.enter)="pickPoint({ id: target.frame.id, width: target.width, crop: target.frame.crop }, $event)"
       class="absolute cursor-crosshair bg-(--et-theme-color-primary-solid)/6"

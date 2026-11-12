@@ -4,6 +4,13 @@ import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
 import { BuildBlocker, BuildReadyFooterComponent, BuildReadyStatus } from './build-ready-footer.component';
 
+const withTooltip = (root: Element | null | undefined, text: string) =>
+  [...(root?.querySelectorAll<HTMLElement>('[aria-describedby]') ?? [])].find((element) =>
+    (element.getAttribute('aria-describedby') ?? '')
+      .split(' ')
+      .some((id) => document.getElementById(id)?.textContent?.trim() === text),
+  ) ?? null;
+
 const render = async (status: BuildReadyStatus) => {
   TestBed.configureTestingModule({
     providers: [provideZonelessChangeDetection(), provideColorThemesWithTailwind4(THEMES)],
@@ -59,20 +66,20 @@ describe('BuildReadyFooterComponent', () => {
     expect(element.textContent).not.toContain('Sketch öffnen');
   });
 
-  it('shows the agent progress beside the status with its detail as the title', async () => {
+  it('shows the agent progress beside the status with its detail as the tooltip', async () => {
     const { fixture, element } = await render({ state: 'ready' });
 
     fixture.componentRef.setInput('agent', { state: 'working', doing: 'prüft', detail: 'compare für pressed' });
     await fixture.whenStable();
 
-    const badge = element.querySelector('[title="compare für pressed"]');
+    const badge = withTooltip(element, 'compare für pressed');
 
     expect(badge?.textContent?.trim()).toBe('Agent prüft');
 
     fixture.componentRef.setInput('agent', { state: 'failed', detail: 'tsc bricht ab' });
     await fixture.whenStable();
 
-    expect(element.querySelector('[title="tsc bricht ab"]')?.textContent?.trim()).toBe('Agent fehlgeschlagen');
+    expect(withTooltip(element, 'tsc bricht ab')?.textContent?.trim()).toBe('Agent fehlgeschlagen');
   });
 
   it('emits the direct edit from Sketch öffnen', async () => {

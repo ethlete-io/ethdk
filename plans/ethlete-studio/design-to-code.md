@@ -3582,3 +3582,12 @@ Slices: S1 rebuildStaleDist from the owning Nx root, async; S2 `design serve` an
 first; the slice names when the flag goes); S3 rules() shares an in-flight run, abort, one idle end; S4 slow-checks and
 class facts into the worker (the disk cache for class facts names which cache or step it removes); S5 cold path of
 sketch check and ready; S6 CI stability (992, 986, 519/598 guards). 417, 519, 598, 640 close with a guard only.
+
+A8 as built (Linux builder, 2026-11-13): 16 native `title` bindings in apps/ethlete-studio/src became `etTooltip`
+(`TOOLTIP_IMPORTS`); the two `role="button"` comment targets got an `aria-label` with the same text. The six `title`s
+on `<iframe>` elements stay: they name the frame for screen readers. zoom-chip (2) and shell-collapse (1) keep their
+`title`: the SDK tooltip also opens on keyboard focus, so their `*-focus-visible` states drew a tooltip the design
+lacks and the visible-change gate failed; that is a design call (STATUS A8 rest). In .ethlete/design/studio six
+drawings lost their `title` (comment-target keeps the text as `aria-label`); drawings draw a tooltip only as an open
+state (`tooltip()` from `@ethlete/components/design/tooltip`), so the hover tooltips are not drawn. foundations/colors
+keeps its `title` on the ratio chips: it is the chip's only label. B11 stays open.

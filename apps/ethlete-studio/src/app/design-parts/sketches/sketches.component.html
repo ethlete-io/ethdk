@@ -418,7 +418,7 @@
       }
       @if (row.model; as model) {
         <span
-          [title]="LABELS.modelTitle(model.id, model.when)"
+          [etTooltip]="LABELS.modelTitle(model.id, model.when)"
           class="flex items-center gap-space-1 text-ui-sm text-et-surface-muted"
           ><svg [agent]="model.agent" class="size-3 flex-none" ethlete-agent-logo></svg>{{ model.short }}</span
         >

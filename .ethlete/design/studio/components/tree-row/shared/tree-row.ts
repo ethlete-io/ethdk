@@ -31,8 +31,6 @@ const statusIcon = {
   ready: icon('check', { size: 12 }),
 };
 
-const statusTitle = { 'in-progress': 'Sketch in progress', ready: 'Sketch ready' };
-
 const dot = (inert?: boolean) =>
   `<span class="st-trow-dot box-border ${inert ? '' : 'bg-current'}"${inert ? ' data-inert' : ''}></span>`;
 
@@ -58,9 +56,9 @@ const rowMarkup = (r: Row) => {
       >
         <span class="st-trow-lead flex flex-none items-center justify-center ${accent}">${lead(r)}</span>
         <span class="flex-1 min-w-0 overflow-hidden text-ellipsis">${r.label}</span>
-        ${r.warning ? `<span class="flex flex-none text-et-theme" data-et-semantic-color="warning" title="${r.warning}">${warningIcon}</span>` : ''}
-        ${r.status ? `<span class="flex flex-none ${statusClass[r.status]}" title="${statusTitle[r.status]}">${statusIcon[r.status]}</span>` : ''}
-        ${r.comments ? `<span class="flex flex-none items-center gap-0.5 ${accent} text-(length:--text-xs)" title="${r.comments} open comments">${bubble}</span>` : ''}
+        ${r.warning ? `<span class="flex flex-none text-et-theme" data-et-semantic-color="warning">${warningIcon}</span>` : ''}
+        ${r.status ? `<span class="flex flex-none ${statusClass[r.status]}">${statusIcon[r.status]}</span>` : ''}
+        ${r.comments ? `<span class="flex flex-none items-center gap-0.5 ${accent} text-(length:--text-xs)">${bubble}</span>` : ''}
       </div>`;
 };
 

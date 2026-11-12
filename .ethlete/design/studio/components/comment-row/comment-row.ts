@@ -44,7 +44,7 @@ export const commentRow = ({ thread: c, selected = false }: Props) => {
       <div class="flex items-center gap-space-1 text-ui-xs whitespace-nowrap">
         <span class="${strong} font-ui-medium">${c.author}</span>
         <span class="flex-1 text-et-surface-muted">${c.when}</span>
-        ${c.unread ? '<span class="st-crow-unread size-1.5 bg-et-theme" title="Ungelesen"></span>' : ''}
+        ${c.unread ? '<span class="st-crow-unread size-1.5 bg-et-theme"></span>' : ''}
       </div>
       <p class="m-0 line-clamp-2 ${strong} text-ui-sm">${c.text}</p>
       <div class="flex items-center gap-space-1 text-ui-xs whitespace-nowrap">

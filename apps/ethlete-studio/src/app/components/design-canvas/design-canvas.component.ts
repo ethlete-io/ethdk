@@ -17,7 +17,7 @@ import {
   viewChildren,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { BUTTON_IMPORTS, FocusRingDirective } from '@ethlete/components';
+import { BUTTON_IMPORTS, FocusRingDirective, TOOLTIP_IMPORTS } from '@ethlete/components';
 import { dragGestureFrom, signalElementDimensions } from '@ethlete/core';
 import { EMPTY, Subject, buffer, debounceTime, exhaustMap, map, startWith, switchMap, tap, timer } from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
@@ -209,7 +209,7 @@ const isInteractive = (target: EventTarget | null) => {
   selector: 'ethlete-design-canvas',
   templateUrl: './design-canvas.component.html',
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, CanvasFrameComponent, CommentPinComponent, ZoomChipComponent],
+  imports: [BUTTON_IMPORTS, CanvasFrameComponent, CommentPinComponent, ZoomChipComponent, TOOLTIP_IMPORTS],
   providers: [
     {
       provide: SHOT_FETCH_PRIORITY,

@@ -15,6 +15,13 @@ import { SketchViewComponent } from './sketch-view.component';
 import { SystemViewComponent } from './system-view.component';
 import { OpenPointsChipComponent } from '../design-parts/system-page/open-points-chip.component';
 
+const withTooltip = (root: Element | null | undefined, text: string) =>
+  [...(root?.querySelectorAll<HTMLElement>('[aria-describedby]') ?? [])].find((element) =>
+    (element.getAttribute('aria-describedby') ?? '')
+      .split(' ')
+      .some((id) => document.getElementById(id)?.textContent?.trim() === text),
+  ) ?? null;
+
 const watchChannels: { onmessage: () => void }[] = [];
 
 vi.mock('@tauri-apps/api/core', () => ({
@@ -298,7 +305,7 @@ describe('SystemViewComponent on a reload', () => {
       ['rating', 'leaf'],
     ]);
     expect(rating?.getAttribute('aria-current')).toBe('true');
-    expect(rating?.querySelector('[title="1 offener Kommentar"]')).toBeNull();
+    expect(withTooltip(rating, '1 offener Kommentar')).toBeNull();
     expect(rating?.style.getPropertyValue('--depth')).toBe('1');
 
     rating?.focus();

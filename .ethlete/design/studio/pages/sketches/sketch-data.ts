@@ -52,7 +52,6 @@ export const pageShot = (variant: PageVariant['key'], page: string, pin = '') =>
   html`<div
     class="sk-shot relative h-225 w-360 cursor-[inherit] overflow-hidden rounded-control-md"
     data-page="${variant}"
-    title="Doppelklick zum Einpassen"
   >
     <div class="pointer-events-none h-225 w-360 origin-top-left scale-100" ${slot('shot')}>${page}</div>
     ${pin}

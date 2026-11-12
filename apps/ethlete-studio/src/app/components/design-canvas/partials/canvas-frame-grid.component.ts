@@ -1,3 +1,4 @@
+import { TOOLTIP_IMPORTS } from '@ethlete/components';
 import { NgTemplateOutlet } from '@angular/common';
 import {
   Component,
@@ -399,13 +400,13 @@ export class CanvasFrameCellComponent {
     @if (!revealed()) {
       <span
         class="absolute left-6 top-6 size-3 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"
-        title="Rendering"
+        etTooltip="Rendering"
         data-grid-loading
       ></span>
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [CanvasFrameCellComponent, NgTemplateOutlet],
+  imports: [CanvasFrameCellComponent, NgTemplateOutlet, TOOLTIP_IMPORTS],
 })
 export class CanvasFrameGridComponent {
   public grid = input.required<FrameGrid>();
