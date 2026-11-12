@@ -259,6 +259,23 @@ export const drawnPaneCountOf = (markup: string) => {
 
 const FORCED_POLL_MS = 50;
 
+type HostBox = { x: number; y: number; width: number; height: number };
+
+/**
+ * The viewport a full-page screenshot of `box` would resize the page to while it captures, or null when `viewport`
+ * already covers it.
+ */
+export const viewportCoveringOf = (options: { viewport: { width: number; height: number } | null; box: HostBox }) => {
+  const { viewport, box } = options;
+
+  if (!viewport) return null;
+
+  const width = Math.max(viewport.width, Math.ceil(box.x + box.width));
+  const height = Math.max(viewport.height, Math.ceil(box.y + box.height));
+
+  return width === viewport.width && height === viewport.height ? null : { width, height };
+};
+
 const escapedForRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
@@ -472,14 +489,20 @@ export const harnessShotOf = async (options: {
     // Waits for a stable host as an element screenshot does; without it an overlay a click opened is not drawn yet.
     await step('stable', () => host.scrollIntoViewIfNeeded({ timeout }));
 
-    const box = (await page.evaluate(hostBoxScriptOf({ up: room }))) as {
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-    };
+    const boxNow = async () => pixelBoxOf((await page.evaluate(hostBoxScriptOf({ up: room }))) as HostBox);
+    let clip = await boxNow();
+    const covering = viewportCoveringOf({ viewport: page.viewportSize(), box: clip });
 
-    const clip = pixelBoxOf(box);
+    if (covering) {
+      await step('cover', async () => {
+        await page.setViewportSize(covering);
+        await page.evaluate('scrollTo(0, 0); window.__etSettledFrames = 0');
+
+        if (!(await settledPanesOf({ page, count: 0, timeout })).settled)
+          throw new HarnessError(`the harness page ${url} did not settle its overlay panes within ${timeout} ms`);
+      });
+      clip = await boxNow();
+    }
 
     await page.evaluate(checkerScriptOf(clip));
 

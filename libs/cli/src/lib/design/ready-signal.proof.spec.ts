@@ -373,7 +373,7 @@ describe('B498 R2: a picture taken at the ready signal equals one taken later', 
           .ssrLoadModule(productModuleIdOf({ file: part.file, product: product.name }))
           .catch(() => null)) as { default?: { implements?: unknown } } | null;
 
-        if (module?.default?.implements) parts.push(partKeyOf(part));
+        if (module?.default?.implements && (!PARTS || PARTS.includes(partKeyOf(part)))) parts.push(partKeyOf(part));
       }
 
       const shoot = shootStatesWith({ server: async () => server, queue: () => queue });
