@@ -67,6 +67,7 @@
     }
   },
   "plugins": [
+    "./tools/scripts/nx-heavy-wait.mjs",
     {
       "plugin": "@nx/playwright/plugin",
       "options": {

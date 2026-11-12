@@ -3968,3 +3968,21 @@ whose checkout state still holds the baseline hash is named as "holds uncommitte
 ... commit <parts> first, then merge <sketch>"; a part that really changed keeps the rebase advice. Spec:
 `edit-sketch.spec.ts` (an embedded `components/button` with an uncommitted change: refused with the commit order,
 merges after the commit); before the fix it got the rebase advice.
+
+973 as built: `tools/scripts/nx-heavy-wait.mjs` is a local Nx plugin in `nx.json` whose `preTasksExecution` calls
+`waitForNoHeavyRun('nx')`, so a direct `npx nx ...` waits while push:suite or studio:e2e holds the heavy run lock. Probe
+(Nx 24.0.2, `cli:lint` in a scratch copy): Cause: with the daemon off the hook runs in a plugin worker the CLI spawns,
+sees the caller's `ETHLETE_HEAVY_RUN_HELD`, and its stderr reaches the caller. Cause: with the daemon on it runs in a
+worker under the daemon that gets the caller's env per call (held `222`, `333`, then unset, each seen), but its stderr
+goes to the daemon log, and Nx does not forward `TMPDIR`: the daemon's `os.tmpdir()` is `/tmp`, the callers' lock is in
+the macOS per-user temp dir, so the first daemon-on refusal check ran the task. `lockFileOf` reads that dir with
+`getconf DARWIN_USER_TEMP_DIR` when `TMPDIR` is unset; after it the daemon-on check refuses too. Cause: the worker
+cannot exit the CLI with 2 (`process.exit(2)` reads "Plugin worker exited unexpectedly", exit 1), so the hook throws the
+heavy-gate line instead: one `NX nx: heavy run lock held by ...; run again after it ends` line, exit 1. Cause: Nx fails
+an isolated plugin call after 10 min, so the hook waits at most 9 min, then refuses. A lock-holder child, no lock or a
+dead holder return at once; `ETHLETE_HEAVY_NO_WAIT=1` refuses at once. Exempt with `ETHLETE_HEAVY_EXEMPT=design`: `yarn
+design`, `yarn design:check` and the cli/app builds of `studio-code.mjs` (et:design, studio app serve). Added time on a
+cached no-lock `cli:lint`: about 450 ms daemon off (1.83 s to 2.28 s), 200-900 ms daemon on, nearly all of it the worker
+start. Spec: `nx-heavy-wait.spec.mjs`; without the exempt check, the env handoff, the holder check or the no-wait flag,
+or with `lockFileOf` ignoring the daemon case, a case fails. Suspect: two daemon callers at once share the worker's env,
+so one may see the other's held or exempt flag.
