@@ -3,12 +3,12 @@ export const OFF_CENTRE_RULE = 'OFF-CENTRE';
 
 /**
  * The statements of the off-centre check inside the frame script of `render-check`. They use `root`, `report`, `px`,
- * `invisible`, `unseen` and `metrics` of that script. A box with a background or a border that holds one line of text,
+ * `invisible`, `unseen`, `clippedAway` and `metrics` of that script. A box with a background or a border that holds one line of text,
  * and nothing that reaches above or below that line, must have the same gap above the capitals as below the baseline
  * (1px tolerance), and no icon in it may stick out of the box by more than 0.5px. A box counts only when a background
  * or a border on both the top and the bottom closes it, its line box is not all of it, its row is not aligned to the
  * top, and no form control in it draws text the walker cannot measure. Text in a scaled box is measured at its scale;
- * text clipped away (visually hidden: `clip-path: inset(50%)`, a zero `clip`, or a 1px `overflow: hidden` box) is skipped.
+ * visually hidden text is skipped.
  */
 export const OFF_CENTRE_STATEMENTS = `
   const backed = (style) => (style.backgroundColor && !invisible(style.backgroundColor)) || style.backgroundImage !== 'none';
@@ -17,14 +17,6 @@ export const OFF_CENTRE_STATEMENTS = `
   const boxOfText = (node) => {
     for (let at = node.parentElement; at && at !== root; at = at.parentElement) if (filled(getComputedStyle(at))) return at;
     return null;
-  };
-  const clippedAway = (element) => {
-    for (let at = element; at && at !== root; at = at.parentElement) {
-      const style = getComputedStyle(at);
-      if (/^inset\\(50%/.test(style.clipPath) || /^rect\\(0px,? 0px,? 0px,? 0px\\)$/.test(style.clip)) return true;
-      if (style.overflow === 'hidden' && (at.offsetWidth <= 1 || at.offsetHeight <= 1)) return true;
-    }
-    return false;
   };
   const textLines = new Map();
   const capWalker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);

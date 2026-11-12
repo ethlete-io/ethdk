@@ -18,6 +18,7 @@ import { ACTION_UNDECLARED_STATEMENTS, CLICK_LISTENER_INIT_SCRIPT } from './acti
 import { DISABLED_INTERACTION_STATEMENTS } from './disabled-interaction';
 import { ARROW_ANCHOR_STATEMENTS } from './arrow-anchor';
 import { OFF_CENTRE_RULE, OFF_CENTRE_STATEMENTS } from './off-centre';
+import { VISUALLY_HIDDEN_STATEMENTS } from './visually-hidden';
 import { CONTROL_HEIGHT_RULE, CONTROL_HEIGHT_STATEMENTS } from './control-height';
 import { classesOf, cssBlocksOf } from './css-source';
 import { createDesignServer } from '../serve';
@@ -231,6 +232,7 @@ const inspectFrame = (options: {
     const same = [...(element.parentElement?.children ?? [])].filter((other) => other.tagName === element.tagName);
     return same.length > 1 ? tag + ':nth-of-type(' + (same.indexOf(element) + 1) + ')' : tag;
   };
+${VISUALLY_HIDDEN_STATEMENTS}
   const pathOf = (element) => {
     const names = [];
     for (let at = element; at && at !== root && names.length < ${PATH_DEPTH}; at = at.parentElement) names.unshift(nameOf(at));
@@ -346,6 +348,7 @@ const inspectFrame = (options: {
     const drawn = drawnSizeOf(element);
     const cutX = clips(style.overflowX) && drawn.width > element.clientWidth + clipMarginOf(style, 'overflowX');
     const cutY = clips(style.overflowY) && drawn.height > element.clientHeight + clipMarginOf(style, 'overflowY');
+    if (clippedAway(element)) continue;
     const cutsOnPurpose = style.textOverflow === 'ellipsis' || style.webkitLineClamp !== 'none' || pans(element, style) || drawsByClipping(element);
     if ((cutX || cutY) && !cutsOnPurpose) report('CLIPPED', element, 'content ' + drawn.width + 'x' + drawn.height + ' in ' + element.clientWidth + 'x' + element.clientHeight);
   }
@@ -503,7 +506,7 @@ ${REACH_STATEMENTS}
     let most = 0;
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-      if (!node.textContent.trim()) continue;
+      if (!node.textContent.trim() || clippedAway(node.parentElement)) continue;
       metrics.font = getComputedStyle(node.parentElement).font;
       const descent = metrics.measureText(node.textContent).fontBoundingBoxDescent;
       const range = document.createRange();
@@ -525,7 +528,7 @@ ${REACH_STATEMENTS}
   const groups = new Map();
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    if (!node.textContent.trim()) continue;
+    if (!node.textContent.trim() || clippedAway(node.parentElement)) continue;
     let block = node.parentElement;
     while (block && block !== root && ['inline', 'contents'].includes(getComputedStyle(block).display)) block = block.parentElement;
     if (!block || block === root) continue;

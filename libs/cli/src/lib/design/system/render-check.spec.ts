@@ -401,6 +401,28 @@ describe('renderIssuesOf', () => {
     ).toEqual(['components/high']);
   }, 120_000);
 
+  it('does not flag a visually hidden span inside a button as clipped', async (context) => {
+    const hidden = (style: string) =>
+      `<div style="padding: 8px"><button style="font: 12px/16px sans-serif; padding: 4px 8px">Search<span style="position: absolute; white-space: nowrap; ${style}">Control K</span></button></div>`;
+    const target = checkout({
+      'components/hidden-box': { body: hidden('width: 1px; height: 1px; margin: -1px; overflow: hidden') },
+      'components/hidden-clip-path': {
+        body: hidden('width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%)'),
+      },
+      'components/hidden-clip': { body: hidden('width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0)') },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(rendered.issues.filter((issue) => issue.rule === 'CLIPPED')).toEqual([]);
+  }, 120_000);
+
   it('flags text that shows through an open overlay pane, and not under an opaque one', async (context) => {
     const page = (pane: string) =>
       `<div style="position: relative; width: 300px; height: 160px"><p style="margin: 0; padding: 40px 8px">Round one text below</p>${pane}</div>`;
