@@ -30,7 +30,7 @@ const SHOWN_LINES = 3;
         <span class="ms-auto font-code text-ui-xs text-(--et-surface-color-muted-solid)">{{ part() }}</span>
       </header>
       @if (shown().length) {
-        <ul class="m-0 list-none divide-y divide-(--et-surface-border-solid) p-0 py-space-1">
+        <ul [class.divide-y]="dividers()" class="m-0 list-none divide-(--et-surface-border-solid) p-0 py-space-1">
           @for (group of shown(); track group.icon) {
             <li>
               <ul class="m-0 list-none p-0 py-space-1">
@@ -155,6 +155,7 @@ export class OpenPointsPopoverComponent {
   public groups = input.required<OpenPointGroup[]>();
   public exceptions = input<PartException[]>([]);
   public missingShots = input(0);
+  public dividers = input(true);
   public buildReady = input<BuildReadyStatus | null>(null);
   public agent = input<AgentProgress | null>(null);
   public blockersOpen = model(false);

@@ -368,7 +368,12 @@
       }
       @if (points) {
         <span class="flex" data-sk-points>
-          <ethlete-open-points-chip [(closed)]="pointsClosed" [part]="part()" [groups]="openPoints()" />
+          <ethlete-open-points-chip
+            [(closed)]="pointsClosed"
+            [part]="part()"
+            [groups]="openPoints()"
+            [dividers]="false"
+          />
         </span>
       }
     </span>

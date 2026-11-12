@@ -29,6 +29,19 @@ describe('OpenPointsPopoverComponent', () => {
     expect(element.textContent).toContain('Nichts offen');
   });
 
+  it('divides the groups by default and not with dividers off', async () => {
+    const { fixture, element } = await render([]);
+    fixture.componentRef.setInput('groups', [{ icon: 'error', lines: [{ text: 'a', detail: 'b' }] }]);
+    await fixture.whenStable();
+
+    expect(element.querySelector('ul')?.classList.contains('divide-y')).toBe(true);
+
+    fixture.componentRef.setInput('dividers', false);
+    await fixture.whenStable();
+
+    expect(element.querySelector('ul')?.classList.contains('divide-y')).toBe(false);
+  });
+
   it('does not say Nichts offen while shots are missing', async () => {
     const { element } = await render([], 2);
 

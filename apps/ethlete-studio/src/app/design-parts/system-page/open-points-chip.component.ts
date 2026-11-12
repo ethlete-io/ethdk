@@ -85,6 +85,7 @@ export class OpenPointsChipComponent {
   public buildReady = input<BuildReadyStatus | null>(null);
   public agent = input<AgentProgress | null>(null);
   public missingShots = input(0);
+  public dividers = input(true);
   public closed = model(true);
   public blockersOpen = model(false);
   public openEditSketch = output<BuildBlocker>();
@@ -124,6 +125,7 @@ export class OpenPointsChipComponent {
                     inputBinding('groups', this.groups),
                     inputBinding('exceptions', this.exceptions),
                     inputBinding('missingShots', this.missingShots),
+                    inputBinding('dividers', this.dividers),
                     inputBinding('buildReady', this.buildReady),
                     inputBinding('agent', this.agent),
                     twoWayBinding('blockersOpen', this.blockersOpen),

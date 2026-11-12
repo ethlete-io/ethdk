@@ -622,6 +622,7 @@ describe('SketchesComponent', () => {
 
     expect(fixture.componentInstance.pointsClosed()).toBe(false);
     expect(textOf(document.querySelector('[role="dialog"]'))).toContain(STUDIO_LABELS.system.sketchProblem('NO-HEX'));
+    expect(document.querySelector('[role="dialog"] ul')?.classList.contains('divide-y')).toBe(false);
   });
 
   it('offers no Übernehmen for a variant with an errored frame and says the round has a render error', async () => {
