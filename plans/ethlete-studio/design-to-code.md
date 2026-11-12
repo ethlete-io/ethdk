@@ -3975,3 +3975,8 @@ run.
 950\. Mac builder (2026-11-12 night, 922): jsdom ignores rules inside `@layer`, so a spec that reads computed styles of
 an SDK component needs a hand shim (`display:flex` for et-choice-field). Suspect: jsdom's CSSOM has no cascade layers.
 Tool fix (builder default, tool backlog): one shared spec helper or note in the Studio spec setup, not a shim per spec.
+
+879 update 2 (Linux, 150df1db6): the elements/shell-main sketch is ready, one variant `a` (state `server-unanswered`:
+the `starting` screen plus one muted line "Design-Server antwortet nicht: http://localhost:4402"; no other state
+changes). It waits for the human's pick by merge; wiring after the pick. The LOST-SURFACE lines for the project-picker
+states are the known shell-main ones (line 541), no new finding.
