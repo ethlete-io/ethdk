@@ -2527,6 +2527,14 @@ default. Tool fix (doc agent, tool internal): one source for the design server p
 because variant c's page-sketch cell differed between two renders (70861 px). Suspect (one run): an unstable render or a
 stability check that is too strict. Tool fix (doc agent, tool internal): repeat the run 5 times; if it comes back, find
 which pixels move (a diff image) before changing the check.
+826 closed (Linux builder, 2026-11-13): not reproduced after R2.1-R2.3 (ba4321e8c 949e944ba 2ebc71d48). The
+font-pair sketch was merged (aaeef909d), so the same command ran on the open tokens sketch: `et:design shot
+foundations/colors --variants --in pages/sketches --product studio` 5/5 exit 0, no pixel change. Not verified on the
+original sketch.
+B498 as built (Linux builder, 2026-11-13): R2.1-R2.3 ba4321e8c 949e944ba 2ebc71d48; R3 bites on 597/603 (4c1a4b820)
+and on a cell that leaves the DOM (b05693b31, 82497ff2c: a state in a crop group counts as shown); R3 green 2/2 and
+under `--load 24` 2/2. The 32->4 cells after an edit is crop grouping by design (cropGroupsOf), not a defect. Fonts
+suspect parked by the doc agent (CI 153.9 s after 436e3064d).
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
 Bite: a spec stages a name and clears it in the working tree; red on the old script. Not verified: a real refused commit.
