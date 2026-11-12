@@ -299,3 +299,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - ADR 0275 changed with the human: leak check first (a spec run fails on a new /tmp folder), timer only a safety net, no sound, no /home check.
 - 957 built (01f0cd0c6); finding 995. Next free finding: 996.
 - B494 timer part built (7f71406ec), install waits for the human (yarn tmp-sweep:install); finding 996 (Linux next after the leak check). Next free finding: 997.
+- B494 timer installed by the doc agent on the human's word ("instslliere ihn"); first run deleted 2278 entries, /tmp 52 % -> 45 % inodes; next run hourly.
