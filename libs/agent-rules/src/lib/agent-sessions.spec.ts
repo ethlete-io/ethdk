@@ -219,17 +219,27 @@ describe('agent-sessions', () => {
   );
 
   it('builds a builder run with the role env and a quoted system prompt for claude', () => {
-    const result = run(['run', 'claude', 'claude', '--role', 'builder', '--dry-run']);
+    const result = run(['run', 'claude', 'claude', '--role', 'builder', '--dry-run'], undefined, { HOME: dir });
 
     expect(result.status).toBe(0);
     expect(result.stdout).toBe(
-      "ETHLETE_AGENT_ROLE=builder 'claude' '--append-system-prompt' 'The user does not read this chat. Write no text between tool calls; end each turn with at most one line. Reports go to the grill session via SendMessage.'\n",
+      `CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' ETHLETE_AGENT_ROLE=builder 'claude' '--append-system-prompt' 'The user does not read this chat. Write no text between tool calls; end each turn with at most one line. Reports go to the grill session via SendMessage.'\n`,
     );
+    expect(existsSync(join(dir, '.cache/claude-tmp'))).toBe(true);
+  });
+
+  it('runs a one-shot command outside tmux with the temp dir under the home folder', () => {
+    const printer = join(dir, 'printer');
+    writeFileSync(printer, `#!/bin/sh\nprintf '%s' "$CLAUDE_CODE_TMPDIR"\n`, { mode: 0o755 });
+
+    const result = run(['run', 'claude', printer, '--version'], undefined, { HOME: dir });
+
+    expect(result.stdout).toBe(`${dir}/.cache/claude-tmp`);
   });
 
   it('adds no system prompt for another program and rejects an unknown role', () => {
-    expect(run(['run', 'codex', 'codex', '--role', 'builder', '--dry-run']).stdout).toBe(
-      "ETHLETE_AGENT_ROLE=builder 'codex'\n",
+    expect(run(['run', 'codex', 'codex', '--role', 'builder', '--dry-run'], undefined, { HOME: dir }).stdout).toBe(
+      `CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' ETHLETE_AGENT_ROLE=builder 'codex'\n`,
     );
     expect(run(['run', 'claude', 'claude', '--role', 'x', '--dry-run']).status).toBe(1);
   });
@@ -437,6 +447,37 @@ describe('agent-sessions', () => {
   );
 
   it.skipIf(!hasTmux)(
+    'gives the restarted process the temp dir under the home folder for restart --process',
+    async () => {
+      const agent = `claude-tmpdir-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const started = join(dir, 'started.log');
+      const fakeAgent = join(dir, 'fakeagent');
+      writeFileSync(fakeAgent, `#!/bin/sh\nprintf '%s\\n' "$CLAUDE_CODE_TMPDIR" > ${started}; exec cat\n`, {
+        mode: 0o755,
+      });
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line']);
+      spawnSync('tmux', ['set-option', '-t', `=${scoped}:`, '@ethlete_command', fakeAgent]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          SHELL: 'sh',
+          HOME: dir,
+        });
+
+        await expect
+          .poll(() => (existsSync(started) ? readFileSync(started, 'utf8') : ''), { timeout: 5_000, interval: 250 })
+          .toBe(`${dir}/.cache/claude-tmp\n`);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
     'drops a prompt that an older run stored with the command for restart --process',
     async () => {
       const agent = `claude-stale-${process.pid}`;
@@ -458,6 +499,7 @@ describe('agent-sessions', () => {
         run(['restart', agent, '--now', '--after', '0', '--process', 'resume'], undefined, {
           TMUX_PANE: paneOf(scoped),
           SHELL: 'sh',
+          HOME: dir,
         });
 
         await expect
@@ -466,7 +508,7 @@ describe('agent-sessions', () => {
         expect(
           spawnSync('tmux', ['show-options', '-v', '-t', `=${scoped}:`, '@ethlete_command'], { encoding: 'utf8' })
             .stdout,
-        ).toBe(`'${fakeAgent}'\n`);
+        ).toBe(`CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' '${fakeAgent}'\n`);
       } finally {
         spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
       }
@@ -687,6 +729,8 @@ describe('agent-sessions', () => {
         `AGENT_MAILBOX=${join(dir, 'mailbox.jsonl')}`,
         '-e',
         `AGENT_MAILBOX_DISPATCH_SESSION=${dispatch}`,
+        '-e',
+        `HOME=${dir}`,
         `node ${SCRIPT} run ${agent} sh ${fakeAgent} --flag value 'do the thing'; cat`,
       ]);
 
@@ -698,7 +742,7 @@ describe('agent-sessions', () => {
                 .stdout,
             { timeout: 5_000, interval: 250 },
           )
-          .toBe(`'sh' '${fakeAgent}' '--flag' 'value'\n`);
+          .toBe(`CLAUDE_CODE_TMPDIR='${dir}/.cache/claude-tmp' 'sh' '${fakeAgent}' '--flag' 'value'\n`);
       } finally {
         [runner, scoped, dispatch].forEach((name) => spawnSync('tmux', ['kill-session', '-t', `=${name}`]));
       }

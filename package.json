@@ -74,6 +74,8 @@
     "test:tools": "node --test tools/scripts/*.spec.mjs apps/ethlete-studio/eslint-rules/*.spec.mjs",
     "timetrack": "nx tauri:dev timetrack-app",
     "timetrack:build": "nx tauri:build timetrack-app",
+    "tmp-sweep": "node ./tools/scripts/tmp-sweep.mjs",
+    "tmp-sweep:install": "node ./tools/scripts/tmp-sweep.mjs install",
     "tokens:report": "node ./tools/scripts/token-report.mjs",
     "untrack": "node tools/scripts/untrack.mjs",
     "update-nx": "rm -f migrations.json && yarn dlx nx migrate latest && yarn dlx nx migrate --run-migrations --if-exists",

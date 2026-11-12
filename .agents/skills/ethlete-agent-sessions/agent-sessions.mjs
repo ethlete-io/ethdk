@@ -109,6 +109,13 @@ const tmux = (...tmuxArgs) => spawnSync('tmux', tmuxArgs, { encoding: 'utf8' });
 const quote = (text) => `'${text.replaceAll("'", "'\\''")}'`;
 const BUILDER_PROMPT =
   'The user does not read this chat. Write no text between tool calls; end each turn with at most one line. Reports go to the grill session via SendMessage.';
+const claudeTmpDir = join(homedir(), '.cache', 'claude-tmp');
+const ensuredClaudeTmpDir = () => {
+  mkdirSync(claudeTmpDir, { recursive: true });
+  return claudeTmpDir;
+};
+const tempDirEnv = () => `CLAUDE_CODE_TMPDIR=${quote(ensuredClaudeTmpDir())} `;
+const withTempDir = (command) => (/(^|\s)CLAUDE_CODE_TMPDIR=/.test(command) ? command : `${tempDirEnv()}${command}`);
 const withRole = (words) =>
   role === 'builder' && basename(words[0]) === 'claude' ? [...words, '--append-system-prompt', BUILDER_PROMPT] : words;
 const sessionExists = (name) => tmux('has-session', '-t', `=${name}`).status === 0;
@@ -522,13 +529,19 @@ if (command === 'send' && sender) {
   process.stderr.write(`Unknown role ${role}. Only builder exists.\n`);
   process.exitCode = 1;
 } else if (command === 'run' && sender && words.length && dryRun) {
-  process.stdout.write(`${role ? `ETHLETE_AGENT_ROLE=${role} ` : ''}${withRole(words).map(quote).join(' ')}\n`);
+  process.stdout.write(
+    `${withTempDir(`${role ? `ETHLETE_AGENT_ROLE=${role} ` : ''}${withRole(words).map(quote).join(' ')}`)}\n`,
+  );
 } else if (command === 'run' && sender && words.length && !runsInSession(words.slice(1))) {
   const [program, ...programArgs] = withRole(words);
   process.exitCode =
     spawnSync(program, programArgs, {
       stdio: 'inherit',
-      env: role ? { ...process.env, ETHLETE_AGENT_ROLE: role } : process.env,
+      env: {
+        ...process.env,
+        CLAUDE_CODE_TMPDIR: ensuredClaudeTmpDir(),
+        ...(role ? { ETHLETE_AGENT_ROLE: role } : {}),
+      },
     }).status ?? 1;
 } else if (command === 'run' && sender && words.length) {
   const withEnv = process.env.AGENT_MAILBOX ? `AGENT_MAILBOX=${quote(process.env.AGENT_MAILBOX)} ` : '';
@@ -536,8 +549,8 @@ if (command === 'send' && sender) {
     startSession(DISPATCH_SESSION, `${withEnv}node ${quote(script)} dispatch`, true);
   const session = freeSessionFor(sender);
   const roleEnv = role ? `ETHLETE_AGENT_ROLE=${role} ` : '';
-  const shellCommand = `${roleEnv}${withRole(words).map(quote).join(' ')}`;
-  const baseCommand = `${roleEnv}${withRole(withoutPrompt(words)).map(quote).join(' ')}`;
+  const shellCommand = withTempDir(`${roleEnv}${withRole(words).map(quote).join(' ')}`);
+  const baseCommand = withTempDir(`${roleEnv}${withRole(withoutPrompt(words)).map(quote).join(' ')}`);
   if (process.env.TMUX) {
     if (!sessionExists(session)) {
       tmux('new-session', '-d', '-s', session, '-c', process.cwd(), shellCommand);
@@ -658,7 +671,7 @@ if (command === 'send' && sender) {
       const pane = `=${session}:`;
       const restartRole = restartRoleOf(session, words.join(' '));
       const stored = commandWithoutPrompt(agentCommandOf(session));
-      const base = restartRole ? commandWithRole(stored, restartRole) : stored;
+      const base = withTempDir(restartRole ? commandWithRole(stored, restartRole) : stored);
       if (restartRole) tmux('set-option', '-t', pane, ROLE_OPTION, restartRole);
       tmux('set-option', '-p', '-t', pane, 'remain-on-exit', 'on');
       type('-l', sender.startsWith('codex') ? '/quit' : '/exit');
