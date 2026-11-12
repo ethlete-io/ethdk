@@ -7,7 +7,7 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     include: ['src/**/*.spec.ts', 'scripts/**/*.spec.mts'],
-    exclude: [...configDefaults.exclude, 'src/**/*.perf.spec.ts'],
+    exclude: [...configDefaults.exclude, 'src/**/*.perf.spec.ts', 'src/lib/design/font-proof.spec.ts'],
     globalSetup: ['./vitest.global-setup.ts'],
     setupFiles: ['../../tools/vitest/spec-tmp.setup.mjs', './vitest.setup.ts'],
     maxWorkers: specWorkers,

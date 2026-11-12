@@ -334,6 +334,10 @@ jobs:
       # .ethlete/design/config.json (dist/libs/components, dist/libs/core) exist.
       - run: yarn nx run-many -t build -p cli,components,core
 
+      - if: matrix.shard == 1
+        run: yarn nx run cli:test-dist
+        timeout-minutes: 5
+
       - run: yarn studio:e2e
         timeout-minutes: 40
         env:

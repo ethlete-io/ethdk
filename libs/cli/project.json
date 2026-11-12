@@ -56,6 +56,13 @@
         "command": "node -e \"require('node:fs').rmSync('tmp/perf',{recursive:true,force:true})\" && vitest run --config libs/cli/vitest.perf.config.mts"
       }
     },
+    "test-dist": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "vitest run --config libs/cli/vitest.dist.config.mts"
+      }
+    },
     "lint": {
       "inputs": [
         "default",
