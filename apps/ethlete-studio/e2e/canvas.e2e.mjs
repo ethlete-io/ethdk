@@ -1830,8 +1830,15 @@ const CASES = [
     run: async (page) => {
       const had = new Set();
       const empties = new Map();
+      const mounted = new Set();
+      const left = new Map();
       const sample = async (phase) => {
         const cells = await sketchCells(page);
+        const keys = new Set(cells.map((cell) => cell.key));
+
+        for (const key of mounted)
+          if (!keys.has(key) && !left.has(key)) left.set(key, `${phase} (${keys.size} of ${mounted.size} cells)`);
+        if (phase === 'start') for (const key of keys) mounted.add(key);
 
         for (const cell of cells.filter((each) => each.visible)) {
           if (cell.shows) had.add(cell.key);
@@ -1929,13 +1936,21 @@ const CASES = [
             ]
           : []),
         ...(columns.length ? [`columns with no cell: ${columns.join(', ')}`] : []),
+        ...(left.size
+          ? [
+              `${left.size} of ${mounted.size} cells left the DOM: ${[...left]
+                .slice(0, 4)
+                .map(([key, at]) => `${key} at ${at}`)
+                .join(' | ')}`,
+            ]
+          : []),
       ];
 
       return {
         ok: faults.length === 0,
         detail: faults.length
           ? faults.join('; ')
-          : `${had.size} cells kept their picture through ${steps} scroll steps, an edit and a wait`,
+          : `${had.size} of ${mounted.size} cells kept their picture through ${steps} scroll steps, an edit and a wait`,
       };
     },
   },
