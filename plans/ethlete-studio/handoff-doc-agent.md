@@ -1,1 +1,1 @@
-- Memory fixed (45 GB free) by a studio-serve restart and `yarn design stop`; finding 955 (resident has no idle exit). Next free finding: 956.
+- 849 built (a8768fc01); findings 956-957, 954 extended (sweep stops on a non-sketch folder). Next free finding: 958.

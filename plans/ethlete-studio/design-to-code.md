@@ -4008,7 +4008,9 @@ want it. Tool fix (builder default, tool backlog): every design and sketch comma
 954\. Mac builder (2026-11-12 night, 921): folders with only a tsconfig stay under `sketches/` after a merge
 (foundations-logo.app-icon, foundations-type.font-pair, pages-sketches.open-points, pages-system), and `sketch list`
 shows them. Suspect (not bitten): the merge removes the sketch files but not the tsconfig. Tool fix (builder default,
-tool backlog): the merge removes the whole sketch folder; `sketch list` skips a folder without a sketch file.
+tool backlog): the merge removes the whole sketch folder; `sketch list` skips a folder without a sketch file. Same class (Linux, 849 sweep): `sketch check --product studio` stops on
+the untracked `pages-sketches.change-crop` folder without sketch.json; the sweep must skip a non-sketch folder with a
+note.
 
 941 update (doc agent, 2026-11-12 02:10, ps): the design server (`yarn design`, pid 1055162) held 6.0 GB RSS after 38 min
 and its child (pid 1185015) 4.5 GB; Linux had 1.5 GB available and a full swap, and Claude Code killed background
@@ -4021,3 +4023,16 @@ min, about 6.5 GB with its Chromium) brought available memory from 1.5 GB to 45 
 955\. Linux builder (2026-11-12 night, 941): the sketch-check resident has no idle exit, so a resident started by a
 subagent's `sketch check` keeps its Chromium (a 4.5 GB GPU process) after the subagent ends. Suspect (owner not checked,
 not measured). Tool fix (builder default, tool backlog): the resident stops itself after N idle minutes, with a spec.
+
+849 built (Linux, a8768fc01): `sketch check` warns "variants X and Y look alike at Studio's fit zoom (N %)" when no state
+reaches 1500 differing pixels at fit zoom but the best state does at 100 %; a warning only, `sketch ready` does not
+refuse. Bite: the spec fails without the wiring; live, the font-pair sketch gives 3 warnings before ccd93dfee and none at
+it (margin only 1.7x). Not verified: the rule assumes the 1280 px default window (30 %); the human saw 49 % in a wider one.
+
+956\. Linux builder (2026-11-12 night, 849): the fit-zoom rule guesses the Studio window width (1280 px default), so its
+zoom can differ from what the human sees (30 % vs 49 %). Tool fix (builder default, tool backlog): Studio saves its real
+list width where the CLI reads it.
+
+957\. Linux builder (2026-11-12 night, 849): the look-alike threshold is an absolute 1500 px and does not scale with the
+region size. Suspect. Tool fix (builder default, tool backlog): a threshold relative to the region area, measured on the
+known sketches.
