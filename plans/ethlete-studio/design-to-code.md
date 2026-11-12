@@ -4146,3 +4146,8 @@ with the minutes since its last write; it blocks nothing. Bite: the spec fails w
 Mac mailbox command at its top was gone. Suspect: the doc agent wrote the note with `>` (or a Write) instead of an append.
 Restored from 95ceb7027 plus all 16 notes. Tool fix (builder default, tool backlog): the pre-commit hook refuses a commit
 that cuts a `plans/**/handoff-*.md` file by more than half of its lines, unless the message says "shrink handoff", with a spec.
+
+906 built (Linux, d04ed6a63): `yarn scratch:checkout` refuses a target that starts with `-` (`--help` prints usage, exit 0)
+and a target in /tmp; no target gives `~/.cache/ethlete-scratch/scratch-<ms>`; `--remove` removes only a dir with the
+`.scratch-checkout` marker; `yarn et:design` without git exits 2 with the build-and-node command. Spec 8/8. Not verified:
+a full copy and `--remove` on the real repo.
