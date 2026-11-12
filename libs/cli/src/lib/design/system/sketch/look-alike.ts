@@ -18,6 +18,9 @@ export const VISIBLE_STEP = 32;
 /** The fewest visibly different screen pixels at which two variants count as told apart at Studio's fit zoom. */
 export const LOOK_ALIKE_PIXELS = 1500;
 
+/** The share of a changed region's screen pixels that tells two variants apart when it is fewer than `LOOK_ALIKE_PIXELS`. */
+export const LOOK_ALIKE_SHARE = 0.25;
+
 /**
  * The zoom the Studio sketch view fits a sketch's frames to, by the width rule of `fitScaleOf` in
  * `apps/ethlete-studio/src/app/design-parts/sketches/sketches.component.ts`: one row per variant and Aktuell side by
@@ -120,8 +123,16 @@ export type LookAlikeVariant = { name: string; states: ReadonlyMap<string, LookA
 
 const regionText = (box: ChangedBox) => `${box.width}x${box.height} at ${box.x},${box.y}`;
 
+const lookAlikeNeedOf = (region: ChangedBox, scale: number) =>
+  Math.ceil(
+    Math.min(
+      LOOK_ALIKE_PIXELS,
+      LOOK_ALIKE_SHARE * Math.max(1, Math.ceil(region.width * scale)) * Math.max(1, Math.ceil(region.height * scale)),
+    ),
+  );
+
 /**
- * One warning per pair of `variants` whose shots differ by at least `LOOK_ALIKE_PIXELS` visibly different pixels at
+ * One warning per pair of `variants` whose shots differ by at least `lookAlikeNeedOf` visibly different pixels at
  * 100 %, but in no state by that many screen pixels at Studio's fit zoom; it names the state and the region in which they differ most. The zoom follows
  * `studioFitZoomOf` for the widest shot and `listWidth`, times `cropMagnifyOf` the changes against `current` when Studio crops to them.
  */
@@ -173,7 +184,15 @@ export const lookAlikeWarningsOf = async (options: {
 
   for (const [index, one] of variants.entries())
     for (const other of variants.slice(index + 1)) {
-      let most: { state: string; region: ChangedBox; visible: number; scale: number; full: number } | null = null;
+      let most: {
+        state: string;
+        region: ChangedBox;
+        visible: number;
+        need: number;
+        scale: number;
+        before: Pixels;
+        after: Pixels;
+      } | null = null;
 
       for (const [state, { shot }] of one.states) {
         const otherShot = other.states.get(state)?.shot;
@@ -189,16 +208,22 @@ export const lookAlikeWarningsOf = async (options: {
         const region = unionOf(boxes);
         const scale = Math.min(1, await scaleOf(state));
         const visible = visiblePixelsAt({ before, after, region, scale });
+        const need = lookAlikeNeedOf(region, scale);
 
-        if (!most || visible > most.visible)
-          most = { state, region, visible, scale, full: visiblePixelsAt({ before, after, region, scale: 1 }) };
+        if (!most || visible / need > most.visible / most.need)
+          most = { state, region, visible, need, scale, before, after };
       }
 
-      if (most && most.visible < LOOK_ALIKE_PIXELS && most.full >= LOOK_ALIKE_PIXELS)
+      if (!most || most.visible >= most.need) continue;
+
+      const { before, after, region } = most;
+      const full = visiblePixelsAt({ before, after, region, scale: 1 });
+
+      if (full >= lookAlikeNeedOf(region, 1))
         warnings.push(
           `${target}: WARNING variants ${one.name} and ${other.name} look alike at Studio's fit zoom (${Math.round(most.scale * 100)} %): ` +
-            `they differ most in ${most.state}, region ${regionText(most.region)}, by ${most.visible} visible screen pixels ` +
-            `(${most.full} at 100 %), fewer than ${LOOK_ALIKE_PIXELS} - draw the difference larger`,
+            `they differ most in ${most.state}, region ${regionText(region)}, by ${most.visible} visible screen pixels ` +
+            `(${full} at 100 %), fewer than ${most.need} - draw the difference larger`,
         );
     }
 

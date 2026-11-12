@@ -90,7 +90,7 @@ describe('sketchRendersOf look-alike warnings', () => {
     expect(identical).toEqual([]);
     expect(lookAlike).toEqual([
       expect.stringMatching(
-        /^elements\/hero: WARNING variants a and b look alike at Studio's fit zoom \(28 %\): they differ most in default, region 1440x12 at 0,40, by \d+ visible screen pixels \(\d+ at 100 %\), fewer than 1500 - draw the difference larger$/,
+        /^elements\/hero: WARNING variants a and b look alike at Studio's fit zoom \(28 %\): they differ most in default, region 1440x12 at 0,40, by \d+ visible screen pixels \(\d+ at 100 %\), fewer than \d+ - draw the difference larger$/,
       ),
     ]);
   });
@@ -115,6 +115,17 @@ describe('sketchRendersOf look-alike warnings', () => {
   it('stays quiet about variants that differ in large shapes', async () => {
     const { product, sketch } = acme(['a', 'b']);
     const pictureOf = drawing({ a: largeLeft, b: largeRight });
+
+    expect((await sketchRendersOf({ product, sketch, load, pictureOf, boxOf, lookAlike: true })).lookAlike).toEqual([]);
+  });
+
+  it('stays quiet about a small region that differs in most of its screen pixels', async () => {
+    const { product, sketch } = acme(['a', 'b']);
+    const pictureOf = drawing({
+      now: pngOf((x, y) => y < 2),
+      a: pngOf((x, y) => x < 200 && y >= 40 && y < 80),
+      b: blank,
+    });
 
     expect((await sketchRendersOf({ product, sketch, load, pictureOf, boxOf, lookAlike: true })).lookAlike).toEqual([]);
   });
