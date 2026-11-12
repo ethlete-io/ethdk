@@ -6,7 +6,6 @@ const noTrivialReturnType = require('./rules/no-trivial-return-type');
 const noSubscribeInPipe = require('./rules/no-subscribe-in-pipe');
 const noRxjsInEffect = require('./rules/no-rxjs-in-effect');
 const noEffectCleanupReturn = require('./rules/no-effect-cleanup-return');
-const preferComputedLinkedSignalSource = require('./rules/prefer-computed-linked-signal-source');
 const noReadonlySignal = require('./rules/no-readonly-signal');
 const noScreamingCaseLocal = require('./rules/no-screaming-case-local');
 const preferRxjsTimer = require('./rules/prefer-rxjs-timer');
@@ -87,7 +86,6 @@ const plugin = {
     'no-screaming-case-local': noScreamingCaseLocal,
     'prefer-rxjs-timer': preferRxjsTimer,
     'prefer-linked-signal': preferLinkedSignal,
-    'prefer-computed-linked-signal-source': preferComputedLinkedSignalSource,
     'no-trivial-wrapper-method': noTrivialWrapperMethod,
     'no-direct-dom-manipulation': noDirectDomManipulation,
     'no-native-observers': noNativeObservers,

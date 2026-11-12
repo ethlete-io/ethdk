@@ -256,7 +256,6 @@ const recommendedTs = {
 
     // Prefer linkedSignal over signal + .set() inside effect()
     'ethlete/prefer-linked-signal': 'warn',
-    'ethlete/prefer-computed-linked-signal-source': 'warn',
 
     // No trivial wrapper methods that only forward all args to another call
     'ethlete/no-trivial-wrapper-method': 'error',

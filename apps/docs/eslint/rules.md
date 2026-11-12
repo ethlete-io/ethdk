@@ -160,19 +160,18 @@ export class ProfileAvatarComponent {
 
 ## RxJS & signals
 
-| Rule                                   | What it enforces                                                                                                                                                          | Fix | Default |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
-| `require-dollar-suffix`                | Observable variables and class properties end with `$`                                                                                                                    |     | error   |
-| `no-subscribe-with-body`               | `subscribe()` is called with an empty body - side effects go into `tap()` inside the pipe                                                                                 |     | error   |
-| `no-subscribe-in-pipe`                 | No `.subscribe()` calls inside `.pipe()` callbacks                                                                                                                        |     | error   |
-| `take-until-destroyed-last`            | `takeUntilDestroyed()` is the last operator in a `.pipe()` - an operator after it can keep the subscription alive                                                         |     | error   |
-| `no-async-await`                       | No `async` / `await` - asynchronous work returns a cold Observable; a Storybook `play` function in a story file is exempt                                                 |     | error   |
-| `no-rxjs-in-effect`                    | No `.subscribe()` inside `effect()`, `computed()`, `afterRenderEffect()` or `linkedSignal()` - bridge with `toObservable()` instead                                       |     | error   |
-| `no-effect-cleanup-return`             | No cleanup function returned from `effect()` - Angular ignores it; use the `onCleanup` parameter or `DestroyRef`                                                          | 🔧  | error   |
-| `no-readonly-signal`                   | No `readonly` on class properties initialized with reactive APIs (`signal`, `input`, `computed`, `inject`, …)                                                             | 🔧  | error   |
-| `prefer-linked-signal`                 | `linkedSignal()` instead of an `effect()` that only calls `.set()` on a signal, also behind an `if`/`else`                                                                |     | warn    |
-| `prefer-computed-linked-signal-source` | `linkedSignal()` takes a `computed()` as its source, not an inline function over an input or model                                                                        |     | warn    |
-| `prefer-rxjs-timer`                    | RxJS `timer` / `interval` / `fromEvent` instead of `setTimeout` / `setInterval` / `addEventListener`; also flags `clearTimeout` / `clearInterval` / `removeEventListener` |     | error   |
+| Rule                        | What it enforces                                                                                                                                                          | Fix | Default |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `require-dollar-suffix`     | Observable variables and class properties end with `$`                                                                                                                    |     | error   |
+| `no-subscribe-with-body`    | `subscribe()` is called with an empty body - side effects go into `tap()` inside the pipe                                                                                 |     | error   |
+| `no-subscribe-in-pipe`      | No `.subscribe()` calls inside `.pipe()` callbacks                                                                                                                        |     | error   |
+| `take-until-destroyed-last` | `takeUntilDestroyed()` is the last operator in a `.pipe()` - an operator after it can keep the subscription alive                                                         |     | error   |
+| `no-async-await`            | No `async` / `await` - asynchronous work returns a cold Observable; a Storybook `play` function in a story file is exempt                                                 |     | error   |
+| `no-rxjs-in-effect`         | No `.subscribe()` inside `effect()`, `computed()`, `afterRenderEffect()` or `linkedSignal()` - bridge with `toObservable()` instead                                       |     | error   |
+| `no-effect-cleanup-return`  | No cleanup function returned from `effect()` - Angular ignores it; use the `onCleanup` parameter or `DestroyRef`                                                          | 🔧  | error   |
+| `no-readonly-signal`        | No `readonly` on class properties initialized with reactive APIs (`signal`, `input`, `computed`, `inject`, …)                                                             | 🔧  | error   |
+| `prefer-linked-signal`      | `linkedSignal()` instead of an `effect()` that only calls `.set()` on a signal, also behind an `if`/`else`                                                                |     | warn    |
+| `prefer-rxjs-timer`         | RxJS `timer` / `interval` / `fromEvent` instead of `setTimeout` / `setInterval` / `addEventListener`; also flags `clearTimeout` / `clearInterval` / `removeEventListener` |     | error   |
 
 ```ts
 // ❌ logic in the subscribe callback
