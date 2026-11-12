@@ -3834,3 +3834,8 @@ elements, Studio themes are not in Storybook). Fix: a foundations/colors sketch 
 contrast, waits for the human's pick by merge. Tool fix (builder default, tool backlog, Suspect until a bite): the theme
 generators (`theme-css.ts`, tailwind-4, `generate-studio-themes.mjs`) warn when onColor.disabled vs color.disabled is
 below 3:1, and when onColor spreads the colour map.
+
+933 update (fifagg-frontend-52): the 7d defect is a consumer bug. Cause (named by the consumer, file
+`libs/uikit/src/lib/presentation/theming/themes.ts` in fifagg-frontend): most themes set `onColor: { ...onColorDark,
+disabled: '<same value as color.disabled>' }` by hand. fifagg fixes its theme file and drops its app token workaround;
+no SDK fix. The generator warning of 933 (onColor.disabled vs color.disabled below 3:1) would have caught it.
