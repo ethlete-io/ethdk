@@ -423,6 +423,26 @@ describe('renderIssuesOf', () => {
     expect(rendered.issues.filter((issue) => issue.rule === 'CLIPPED')).toEqual([]);
   }, 120_000);
 
+  it('still flags text clipped by a collapsed box that is only 1px high', async (context) => {
+    const target = checkout({
+      'components/collapsed': {
+        body: '<div style="padding: 8px"><div style="width: 200px; height: 1px; overflow: hidden; font: 12px/16px sans-serif">Round one text</div></div>',
+      },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(rendered.issues.filter((issue) => issue.rule === 'CLIPPED').map((issue) => issue.part)).toContain(
+      'components/collapsed',
+    );
+  }, 120_000);
+
   it('flags text that shows through an open overlay pane, and not under an opaque one', async (context) => {
     const page = (pane: string) =>
       `<div style="position: relative; width: 300px; height: 160px"><p style="margin: 0; padding: 40px 8px">Round one text below</p>${pane}</div>`;
