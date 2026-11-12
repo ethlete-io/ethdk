@@ -65,6 +65,14 @@ const readWorkingTree = (root, file) => readFileSync(resolve(root, file), 'utf8'
 export const readStaged = (root, file) =>
   execFileSync('git', ['show', `:${file}`], { cwd: root, encoding: 'utf8', maxBuffer: 1 << 28 });
 
+const readAt = (rev) => (root, file) =>
+  execFileSync('git', ['show', `${rev}:${file}`], {
+    cwd: root,
+    encoding: 'utf8',
+    maxBuffer: 1 << 28,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+
 const countsIn = (root, file, userName, read) => {
   let text;
   try {
@@ -98,24 +106,37 @@ const BASELINE_FILE = 'tools/scripts/person-names-baseline.json';
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const staged = process.argv.includes('--staged');
-  const root = staged ? process.cwd() : resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-  const files = execFileSync(
-    'git',
-    staged ? ['diff', '--cached', '--name-only', '--diff-filter=ACM', '--', ...ROOTS] : ['ls-files', '--', ...ROOTS],
-    { cwd: root, encoding: 'utf8', maxBuffer: 1 << 28 },
-  )
+  const rangeAt = process.argv.indexOf('--range');
+  const [base, head] = rangeAt === -1 ? [] : process.argv.slice(rangeAt + 1, rangeAt + 3);
+  const fromGit = staged || head;
+  const root = fromGit ? process.cwd() : resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const listArgs = head
+    ? ['diff', '--name-only', '--no-renames', '--diff-filter=ACM', base, head, '--', ...ROOTS]
+    : staged
+      ? ['diff', '--cached', '--name-only', '--diff-filter=ACM', '--', ...ROOTS]
+      : ['ls-files', '--', ...ROOTS];
+  const read = head ? readAt(head) : staged ? readStaged : readWorkingTree;
+  const files = execFileSync('git', listArgs, { cwd: root, encoding: 'utf8', maxBuffer: 1 << 28 })
     .split('\n')
     .filter(Boolean);
-  const counts = personNameCounts(root, files, undefined, staged ? readStaged : readWorkingTree);
+  const counts = personNameCounts(root, files, undefined, read);
   if (process.argv.includes('--write-baseline')) {
     const next = Object.fromEntries(Object.entries(counts).map(([f, h]) => [f, h.length]));
     writeFileSync(resolve(root, BASELINE_FILE), `${JSON.stringify(next, null, 2)}\n`);
     console.log(`baseline: ${Object.keys(next).length} files, ${Object.values(next).reduce((a, b) => a + b, 0)} lines`);
   } else {
-    const baseline = existsSync(resolve(root, BASELINE_FILE))
-      ? JSON.parse(readFileSync(resolve(root, BASELINE_FILE), 'utf8'))
-      : {};
-    const problems = personNameProblems(counts, baseline);
+    const baselineText = head
+      ? (() => {
+          try {
+            return read(root, BASELINE_FILE);
+          } catch {
+            return '{}';
+          }
+        })()
+      : existsSync(resolve(root, BASELINE_FILE))
+        ? readFileSync(resolve(root, BASELINE_FILE), 'utf8')
+        : '{}';
+    const problems = personNameProblems(counts, JSON.parse(baselineText));
     if (problems.length) {
       console.error(problems.join('\n'));
       process.exit(1);

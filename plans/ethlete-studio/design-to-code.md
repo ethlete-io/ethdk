@@ -3905,3 +3905,11 @@ app already folds (the `fit-*` DIFF of `narrow-part` and `withdrawn-*` in 922). 
 (fit-hover, fit-active, fit-focus-visible). Variant b, a `foldSame` switch for the `folded` state only, drew the same
 pixels as Aktuell in every state (the last three states are exactly `STEADY`), so it is withdrawn: a code-only change
 is no pick. The screen mode keeps `UNCHANGED_COUNT`: the page's own state list is not reachable from `shared/`.
+
+925 as built: Cause (verified): `pre-push-checks.mjs` ran `yarn lint:person-names`, which lists `git ls-files` and
+reads the working tree, so another session's uncommitted file refused a push of clean commits. The pre-push call is now
+`check-person-names.mjs --range <base> <head>`: it checks the files `git diff --name-only <base> <head>` changed and
+reads each one, and the baseline, with `git show <head>:<path>`, as `.husky/format-check-committed.mjs` does. Plain
+`yarn lint:person-names` still reads the tree, `--staged` the index. Spec: `check-person-names.spec.mjs` (uncommitted
+hit over a clean range passes, committed hit fails) and `lint-changesets.spec.mjs` (the pre-push wiring); both failed
+before the fix. A 20-commit range takes about 3.5 s.
