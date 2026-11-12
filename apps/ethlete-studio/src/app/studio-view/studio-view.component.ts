@@ -17,6 +17,7 @@ import {
   startWith,
   switchMap,
   tap,
+  timeout,
   timer,
 } from 'rxjs';
 import { fromFetch } from 'rxjs/fetch';
@@ -48,6 +49,8 @@ const SETTLE_MS = 300;
 const FOREIGN_SERVER_POLL_MS = 3000;
 
 const SERVER_ANSWER_RETRY_MS = 1000;
+
+const SERVER_ANSWER_TIMEOUT_MS = 5000;
 
 @Component({
   selector: 'ethlete-studio-view',
@@ -362,6 +365,7 @@ const serverAnswers$ = (port: number) =>
 
       return true;
     }),
+    timeout(SERVER_ANSWER_TIMEOUT_MS),
     retry({ delay: () => timer(SERVER_ANSWER_RETRY_MS) }),
     startWith(false),
   );

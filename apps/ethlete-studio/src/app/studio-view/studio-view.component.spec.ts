@@ -311,6 +311,33 @@ describe('StudioViewComponent', () => {
     }
   });
 
+  it('asks the design server again when a stamp request hangs', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+
+    let answer: () => Promise<Response> = () => new Promise<Response>(() => undefined);
+
+    vi.stubGlobal('fetch', () => answer());
+
+    try {
+      const fixture = TestBed.createComponent(StudioViewComponent);
+
+      localStorage.setItem('ethlete-studio.call-view', JSON.stringify({ checkout: CHECKOUT }));
+      fixture.autoDetectChanges();
+      await vi.advanceTimersByTimeAsync(10);
+      await fixture.whenStable();
+
+      expect(element(fixture).textContent).toContain('Design-Server startet');
+
+      answer = () => Promise.resolve(new Response('[]', { status: 200 }));
+      await vi.advanceTimersByTimeAsync(10_000);
+      await fixture.whenStable();
+
+      expect(system(fixture)?.port()).toBe(4402);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('starts its own server and draws the frames again when a server Studio did not start ends', async () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
 
