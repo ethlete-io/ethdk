@@ -36,6 +36,7 @@ import {
   identicalRenderLines,
   identicalRenders,
   sampleMarkDriftLines,
+  sketchRenderLines,
   variantChangesShown,
   variantsThatDoNotLoad,
 } from './ready-shots';
@@ -1700,9 +1701,12 @@ const checkedShots = async (
       refuse(
         await timedPhase('mark-drift', () => sampleMarkDriftLines({ target, config, product, sketch, warm: shots })),
       );
-      refuse(
-        await timedPhase('identical', () => identicalRenderLines({ target, config, product, sketch, warm: shots })),
+      const renders = await timedPhase('identical', () =>
+        sketchRenderLines({ target, config, product, sketch, warm: shots }),
       );
+
+      refuse(renders.refusals);
+      renders.warnings.forEach((warning) => console.warn(warning));
       refuse(
         await timedPhase('changes-shot', () =>
           noChangedStateLines({ product, sketch, target, config, warm: shots, args: context.args }),

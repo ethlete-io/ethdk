@@ -2,7 +2,7 @@ import { createPartShooter } from './shot';
 import { DesignConfig } from './design-config';
 import { ResolvedProduct } from './system/resolve-product';
 import { aktuellPlaceholderWarningsOf } from './system/sketch/aktuell-placeholders';
-import { IdenticalRender, identicalRendersOf } from './system/sketch/identical-renders';
+import { IdenticalRender, identicalRendersOf, sketchRendersOf } from './system/sketch/identical-renders';
 import { variantChangesOf, variantLoadProblemsOf } from './system/sketch/no-visible-change';
 import { sampleMarkDriftLinesOf } from './system/sketch/sample-mark-drift';
 import { Sketch } from './system/sketch/sketch';
@@ -121,5 +121,27 @@ export const identicalRenders = async (options: SketchShots): Promise<IdenticalR
     });
   } catch (error) {
     return [{ variant: '', sibling: null, line: couldNotRender(options.sketch, error) }];
+  }
+};
+
+/** Shoots the sketch once; the lines of `identicalRenderLines` and the warnings of `lookAlikeWarningsOf`. */
+export const sketchRenderLines = async (options: SketchShots): Promise<{ refusals: string[]; warnings: string[] }> => {
+  try {
+    const renders = await drawingOn(options, (drawing) => {
+      const shooter = shooterOf(options, drawing);
+
+      return sketchRendersOf({
+        product: options.product,
+        sketch: options.sketch,
+        pictureOf: shooter.pictureOf,
+        boxOf: shooter.changedBoxesOf,
+        load: loaderOf(drawing.server),
+        lookAlike: true,
+      });
+    });
+
+    return { refusals: renders.identical.map((render) => render.line), warnings: renders.lookAlike };
+  } catch (error) {
+    return { refusals: [couldNotRender(options.sketch, error)], warnings: [] };
   }
 };

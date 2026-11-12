@@ -25,16 +25,24 @@ import {
 } from './system/sketch/viewed-shots';
 import { gitSpawn } from '../git-test-env.fixtures';
 
-vi.mock('./ready-shots', () => ({
-  aktuellPlaceholderWarnings: vi.fn(async (): Promise<string[]> => []),
-  identicalRenderLines: vi.fn(async (): Promise<string[]> => []),
-  identicalRenders: vi.fn(async (): Promise<{ variant: string; sibling: string | null; line: string }[]> => []),
-  sampleMarkDriftLines: vi.fn(async (): Promise<string[]> => []),
-  variantChangesShown: vi.fn(async (): Promise<VariantChange[] | string> => [
-    { variant: 'a', change: 'variant a changes default' },
-  ]),
-  variantsThatDoNotLoad: vi.fn(async (): Promise<string[]> => []),
-}));
+vi.mock('./ready-shots', () => {
+  const identicalRenderLines = vi.fn<(options: object) => Promise<string[]>>(async () => []);
+
+  return {
+    aktuellPlaceholderWarnings: vi.fn(async (): Promise<string[]> => []),
+    identicalRenderLines,
+    sketchRenderLines: vi.fn(async (options: object) => ({
+      refusals: await identicalRenderLines(options),
+      warnings: [],
+    })),
+    identicalRenders: vi.fn(async (): Promise<{ variant: string; sibling: string | null; line: string }[]> => []),
+    sampleMarkDriftLines: vi.fn(async (): Promise<string[]> => []),
+    variantChangesShown: vi.fn(async (): Promise<VariantChange[] | string> => [
+      { variant: 'a', change: 'variant a changes default' },
+    ]),
+    variantsThatDoNotLoad: vi.fn(async (): Promise<string[]> => []),
+  };
+});
 
 vi.mock('./system/render-check', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./system/render-check')>()),

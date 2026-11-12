@@ -3,6 +3,7 @@ import { PictureOf } from '../../merge-compare';
 import { DRAWS_AT_ONCE } from '../../thumb';
 import { BoxOf } from '../../variant-diff';
 import { inOrderAtOnce } from '../in-order-at-once';
+import { lookAlikeWarningsOf } from './look-alike';
 import { readPartModule } from '../list-system';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { SketchVariant } from '../system-modules';
@@ -154,14 +155,23 @@ export const identicalRenderLinesOf = async (options: Parameters<typeof identica
  * The variants `identicalRenderLinesOf` names, each with the sibling variant it draws like in its first changed state
  * (`null` when it draws like the product's part) and its line, which starts with the sketch's target.
  */
-export const identicalRendersOf = async (options: {
+export const identicalRendersOf = async (options: Omit<Parameters<typeof sketchRendersOf>[0], 'lookAlike'>) =>
+  (await sketchRendersOf(options)).identical;
+
+/**
+ * The variants `identicalRendersOf` names and, with `lookAlike`, the warnings of `lookAlikeWarningsOf` for each target,
+ * from one shot of each state.
+ */
+export const sketchRendersOf = async (options: {
   product: ResolvedProduct;
   sketch: Sketch;
   load: SketchPartLoader;
   pictureOf: PictureOf;
   boxOf: BoxOf;
-}): Promise<IdenticalRender[]> => {
+  lookAlike?: boolean;
+}): Promise<{ identical: IdenticalRender[]; lookAlike: string[] }> => {
   const { product, sketch, load, pictureOf, boxOf } = options;
+  const lookAlike: string[] = [];
   const live = sketch.variants.filter((variant) => !rejectionOf(sketch, variant));
   const found: IdenticalRender[] = [];
 
@@ -183,9 +193,12 @@ export const identicalRendersOf = async (options: {
 
     const current = now ? { name: AKTUELL, states: now } : null;
 
+    if (options.lookAlike)
+      lookAlike.push(...(await lookAlikeWarningsOf({ target: `${sketch.target}${of}`, variants, current, boxOf })));
+
     for (const render of await refusalsOf({ variants, current, of, target: sketch.target, boxOf }))
       found.push({ ...render, line: `${sketch.target} ${render.line}` });
   }
 
-  return found;
+  return { identical: found, lookAlike };
 };

@@ -8,14 +8,22 @@ import { designSketch } from './sketch-command';
 import { renderIssuesOf } from './system/render-check';
 import { findSketch } from './system/sketch/sketch';
 
-vi.mock('./ready-shots', () => ({
-  aktuellPlaceholderWarnings: vi.fn(async (): Promise<string[]> => []),
-  identicalRenderLines: vi.fn(async (): Promise<string[]> => []),
-  sampleMarkDriftLines: vi.fn(async (): Promise<string[]> => []),
-  identicalRenders: vi.fn(async (): Promise<{ variant: string; sibling: string | null; line: string }[]> => []),
-  variantChangesShown: vi.fn(async () => [{ variant: 'a', change: 'variant a changes default' }]),
-  variantsThatDoNotLoad: vi.fn(async (): Promise<string[]> => []),
-}));
+vi.mock('./ready-shots', () => {
+  const identicalRenderLines = vi.fn<(options: object) => Promise<string[]>>(async () => []);
+
+  return {
+    aktuellPlaceholderWarnings: vi.fn(async (): Promise<string[]> => []),
+    identicalRenderLines,
+    sketchRenderLines: vi.fn(async (options: object) => ({
+      refusals: await identicalRenderLines(options),
+      warnings: [],
+    })),
+    sampleMarkDriftLines: vi.fn(async (): Promise<string[]> => []),
+    identicalRenders: vi.fn(async (): Promise<{ variant: string; sibling: string | null; line: string }[]> => []),
+    variantChangesShown: vi.fn(async () => [{ variant: 'a', change: 'variant a changes default' }]),
+    variantsThatDoNotLoad: vi.fn(async (): Promise<string[]> => []),
+  };
+});
 
 vi.mock('./system/sketch/viewed-shots', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./system/sketch/viewed-shots')>()),
