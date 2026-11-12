@@ -1835,9 +1835,18 @@ const CASES = [
       const sample = async (phase) => {
         const cells = await sketchCells(page);
         const keys = new Set(cells.map((cell) => cell.key));
+        const stateOf = (key) => key.slice(key.indexOf(' ') + 1);
+        const grouped = await page.evaluate(() =>
+          [...document.querySelectorAll('ethlete-sketch-view [data-sk-crop-count]')]
+            .map((count) => Number.parseInt(count.textContent ?? '', 10) - 1)
+            .filter((extra) => extra > 0)
+            .reduce((sum, extra) => sum + extra, 0),
+        );
+        const covered = new Set([...keys].map(stateOf)).size + grouped;
 
-        for (const key of mounted)
-          if (!keys.has(key) && !left.has(key)) left.set(key, `${phase} (${keys.size} of ${mounted.size} cells)`);
+        if (covered < new Set([...mounted].map(stateOf)).size)
+          for (const key of mounted)
+            if (!keys.has(key) && !left.has(key)) left.set(key, `${phase} (${keys.size} of ${mounted.size} cells)`);
         if (phase === 'start') for (const key of keys) mounted.add(key);
 
         for (const cell of cells.filter((each) => each.visible)) {
