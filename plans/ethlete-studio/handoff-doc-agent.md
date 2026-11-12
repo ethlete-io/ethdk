@@ -1,1 +1,1 @@
-- 879 shell-main sketch ready (150df1db6), waits for the human's pick. Next free finding: 951.
+- Linux builder resumed (builder-2026-11-12a), starts A24 (STATUS item 4) with a pages/merge sketch; 946 writer = `et design check` (Suspect). Next free finding: 951.

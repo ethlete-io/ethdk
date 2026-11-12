@@ -3980,3 +3980,6 @@ Tool fix (builder default, tool backlog): one shared spec helper or note in the 
 the `starting` screen plus one muted line "Design-Server antwortet nicht: http://localhost:4402"; no other state
 changes). It waits for the human's pick by merge; wiring after the pick. The LOST-SURFACE lines for the project-picker
 states are the known shell-main ones (line 541), no new finding.
+
+946 update (Linux, process read): `.ethlete/design/studio/ready.json` was written by `et design check` at 01:31 (pid
+1055162). Suspect stays until a bite: `design check` writes ready.json, which only `sketch ready` may do.
