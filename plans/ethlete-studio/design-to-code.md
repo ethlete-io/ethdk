@@ -4121,3 +4121,17 @@ before. Not verified: plain `yarn et:design` without `ETHLETE_DESIGN_CLI_ENTRY`.
 `et:design` picked the 448c47f16 copy is not probed (Suspect: the copy is keyed by the last commit that touched
 libs/cli). Tool fix (builder default, tool backlog): the check also lists untracked libs/cli source files; probe the copy
 pick and name the rule in the WARN line.
+
+955 update (Linux, 6e15e4093): Cause of the e2e orphan residents (bite): at teardown the design server dies on `write
+EPIPE` after the rmSync; the 875 crash log (4ca55ca3c) then mkdirs `<checkout>/.ethlete/cache` and writes its log, so
+the checkout exists again and the resident's checkout-gone watcher (8a22c93af) never fires. Fix: crash-log.ts writes no
+log when the target is gone. The spec fails without the fix; one e2e case on 4 workers left no resident and no checkout.
+
+965\. Linux builder (2026-11-12 night, 955): no e2e or push-suite gate counts residents or /tmp checkouts before and after
+a run, so 6 orphans (4.3 GB) grew unseen. Tool fix (builder default, tool backlog): the e2e runner fails when a `design
+__resident --checkout <its checkout>` survives the teardown by more than 15 s, with a spec.
+
+966\. Linux builder (2026-11-12 night, 955): older leftover dirs (for example `/tmp/studio-canvas-e2e-Ewd1tR`) hold
+`node_modules/.design-explore/part-shots` written after the rm. Suspect (code read): the shot store recreates the checkout
+like the crash log did. Tool fix (builder default, tool backlog): the shot store writes nothing into a removed checkout,
+with a biting spec.

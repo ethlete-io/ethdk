@@ -1,1 +1,1 @@
-- 904 built on the Mac (f15c2cf25); finding 964. Linux builder resumed (builder-2026-11-12b). Next free finding: 965.
+- 955 e2e orphan cause fixed (6e15e4093); findings 965-966. Next free finding: 967.
