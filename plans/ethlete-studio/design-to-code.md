@@ -3791,3 +3791,8 @@ backlog): `scratch:checkout` builds or links the dist, or compare refuses with o
 
 928\. Linux builder (2026-11-12 night, 903 slice): `compare --affected` has no baseline option, so old vs new needs a full
 second run in a scratch copy. Tool fix (builder default, tool backlog): `--base <sha>`, like `check --visible-change`.
+
+929\. Mac builder (2026-11-12 night, push:suite on 08c6de8a3): the e2e case "[Edited] a part edited on disk while away
+shows its new picture on return" found no new picture URL within 10000 ms at load 27.8 (max 35.9); alone it passes
+(1/1, 50 s). Suspect: a fixed 10 s window under load, the class of 761 and 763 (tool backlog). Tool fix (builder
+default): the same as 761/763; the suite reruns.
