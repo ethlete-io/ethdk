@@ -15,7 +15,7 @@ test('studio:e2e refuses at once while another run holds the heavy run lock', ()
       join(dir, 'ethlete-heavy-run.lock'),
       JSON.stringify({ pid: process.pid, name: 'push-suite', started: Date.now() }),
     );
-    const env = { ...process.env, TMPDIR: dir };
+    const env = { ...process.env, TMPDIR: dir, ETHLETE_HEAVY_LOCK_FILE: join(dir, 'ethlete-heavy-run.lock') };
 
     delete env['ETHLETE_HEAVY_RUN_HELD'];
     const startedAt = Date.now();
