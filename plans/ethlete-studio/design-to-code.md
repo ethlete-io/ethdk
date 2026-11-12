@@ -3765,3 +3765,10 @@ different shots as unsettled, not judged.
 names allowed under `.ethlete/design`) while the design files still held the name. Cause (this run): the pre-push
 person-names check reads the live tree, not the pushed range; an uncommitted edit of another agent blocks a clean push.
 Tool fix (builder default, tool backlog): the check reads the blobs of the pushed commits, like the format step.
+
+911 update (Mac): design copy built in e1557311c (sketch merge, variant a, agent accept citing the doc agent's option A:
+the existing no-real-name rule applied to the design copy of the same sample) + 08c6de8a3 (checker). The sketch also
+covered components/comment-pin (9 hits in its shared file). Compare: only author text, initials and the pin glyph
+changed, no layout shift. Checker: zero names under `.ethlete/design/<product>/{foundations,components,elements,pages,sketches}/`;
+34 other files under `.ethlete/design/` stay baselined (31 comment records, capabilities.json, a call, a stale
+sketch-data entry). Bite: the new case fails on the old checker.

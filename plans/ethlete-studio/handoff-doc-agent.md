@@ -234,3 +234,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - Findings 923-924 (CLIPPED lacks the hidden-text skip; 903 gate refusal on page-sketch, bisect); 916 built 516b5b8be; 919 Cause. Next free finding: 925.
 - 924 Cause: visible-change shots not deterministic (note wrap flips); 903 finishes on the passing gate. Next free finding: 925.
 - Finding 925 (pre-push person-names reads the working tree). Next free finding: 926.
+- 911 design copy built (e1557311c, 08c6de8a3); morning: tell the human the agent accept rests on the doc agent's 911 decision. Next free finding: 926.
