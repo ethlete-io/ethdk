@@ -317,3 +317,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - ADR 0281: doc-agent and builder-agent skills rewritten (mission = closed groups with proof; revealed defect fixed only when the row proof needs it); brief lines in .agents/skills/builder-agent/subagent-brief.md. Builder + doc agent restart. Q4 (scheduled rust-audit on main, finding 998) still open.
 - ADR 0282 (B505: main workflow for rust-audit + spec-sweep, issue on red, not in et design status) and ADR 0283 (B506 fonts self-hosted, 811 815, before B498; 466 out, 733 -> B503). Open to the human: Q6 must cargo audit in ci.yml block a push?
 - Q6 answered -> ADR 0282 follow-up: audit-rust steps leave ci.yml; rust-audit.yml keeps its Cargo push trigger (c6184dbb0).
+- 12.11.: the human rejects the foundations/colors 933 sketch (text-colour-only disabled button irritates) -> rework sent to Linux; stale ready mark of pages/sketches@all-states -> line in B501 (7b4713793), to Linux.
