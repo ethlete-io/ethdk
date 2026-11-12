@@ -3958,3 +3958,13 @@ the owner case fails. Still unchecked: `npx nx ...`, `npx vitest ...`, `node --t
 `waitForNoHeavyRun`; Suspect: under the Nx daemon the hook runs in the daemon process, so it would not see the
 caller's `ETHLETE_HEAVY_RUN_HELD` and would block push:suite's own builds unless they run with `NX_DAEMON=false`
 (push:suite sets that).
+
+926 as built: Cause: the merge checks in a clean copy of HEAD plus the sketch and, for an @edit sketch, its own part
+folder. A part the edit embeds (here `title-search`) with an uncommitted change stays at HEAD in the copy, so its hash
+misses the baseline the sketch recorded from the checkout, and `sketch rebase` records the same checkout state again.
+Choice: the refusal names the commit order, not a clean copy that takes the other changed parts, because a merge must
+not pass on content its commit will not hold (ADR 0206). `merge.ts` `commitOrderRefusalOf`: each conflicting part
+whose checkout state still holds the baseline hash is named as "holds uncommitted changes that <sketch> was drawn on
+... commit <parts> first, then merge <sketch>"; a part that really changed keeps the rebase advice. Spec:
+`edit-sketch.spec.ts` (an embedded `components/button` with an uncommitted change: refused with the commit order,
+merges after the commit); before the fix it got the rebase advice.
