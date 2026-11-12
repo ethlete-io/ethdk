@@ -1344,11 +1344,40 @@ export const decideSketch = (options: { sketch: Sketch; decision: SketchDecision
 };
 
 /**
+ * The pick an agent recorded for a merge of `sketch` that never reached git: no commit since the pick merges its variant
+ * into `product`; `null` for a designer's pick, a pick without an actor, or no pick.
+ */
+export const orphanedPickOf = (sketch: Sketch, product: string) => {
+  const decision = sketch.decision;
+
+  if (decision?.kind !== 'pick' || !decision.by || decision.by === 'designer') return null;
+
+  const subject = `Merge ${sketch.target} variant ${decision.variant} into ${product}`;
+  const log = spawnSync(
+    'git',
+    [
+      'log',
+      '-1',
+      '--format=%H',
+      '--fixed-strings',
+      `--grep=${subject}`,
+      `--since=${decision.decidedAt.replace(/\.\d+Z$/, 'Z')}`,
+    ],
+    { cwd: sketch.dir, encoding: 'utf8' },
+  );
+
+  return log.status === 0 && log.stdout.trim() !== '' ? null : decision;
+};
+
+/**
  * Records the product as it is now as the sketch's baseline, once the agent has brought each variant
- * up to date with the parts that changed in the product since the sketch was created.
+ * up to date with the parts that changed in the product since the sketch was created. Drops a pick whose merge never
+ * reached git (`orphanedPickOf`).
  */
 export const rebaseSketch = (options: { product: ResolvedProduct; sketch: Sketch }): Sketch => {
-  const { portAfterMerge: _ported, ...sketch } = options.sketch;
+  const { portAfterMerge: _ported, ...ported } = options.sketch;
+  const { decision: _decision, ...undecided } = ported;
+  const sketch = orphanedPickOf(options.sketch, options.product.name) ? undecided : ported;
   const rebased: Sketch = { ...sketch, baseline: baselineOf(options.product) };
 
   writeSketchFile(rebased);

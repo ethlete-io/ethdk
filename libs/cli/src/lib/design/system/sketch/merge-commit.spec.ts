@@ -34,7 +34,7 @@ const pickedSketch = (target: string, sketch: SketchTarget, css: string) => {
 
   const ready = markSketchReady({ checkout: target, sketch: created }) as Sketch;
 
-  return decideSketch({ sketch: ready, decision: { kind: 'pick', variant: 'b', ...originOf('spec') } }) as Sketch;
+  return decideSketch({ sketch: ready, decision: { kind: 'pick', variant: 'b', ...originOf('designer') } }) as Sketch;
 };
 
 const mergeOf = (target: string, sketch: Sketch) =>

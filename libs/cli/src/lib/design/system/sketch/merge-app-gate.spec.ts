@@ -150,7 +150,7 @@ describe('mergeSketch app gate', { timeout: 60_000 }, () => {
     const ready = markSketchReady({ checkout: target, sketch: created }) as Sketch;
     const picked = decideSketch({
       sketch: ready,
-      decision: { kind: 'pick', variant: 'b', ...originOf('spec') },
+      decision: { kind: 'pick', variant: 'b', ...originOf('designer') },
     }) as Sketch;
     const heroTs = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
 

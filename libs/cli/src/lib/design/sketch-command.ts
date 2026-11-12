@@ -79,6 +79,7 @@ import {
   changedSinceReadyOf,
   reopenChangedReady,
   parseTarget,
+  orphanedPickOf,
   rebaseSketch,
   authorsOf,
   rejectionOf,
@@ -1357,7 +1358,16 @@ const rebased = (context: Context) =>
       );
 
     ported.forEach(({ variant, file, how }) => console.log(`PORTED ${variant}: ${file} (${how})`));
+
+    const orphan = orphanedPickOf(sketch, product.name);
+
     rebaseSketch({ product, sketch });
+
+    if (orphan)
+      console.log(
+        `DROPPED the pick of variant ${orphan.variant} by ${orphan.by} from ${orphan.decidedAt}: no commit holds its merge`,
+      );
+
     console.log(`${sketch.target} now compares with the product as it is`);
 
     if (ported.length > 0 && sketch.status === 'ready')
@@ -1821,6 +1831,11 @@ const merged = (context: Context) =>
       flagVariant !== undefined && planRef !== undefined && sketch.decision?.kind !== 'pick'
         ? { variant: flagVariant, planRef, editRef: editRefOf({ target: context.target, sketch, planRef }) }
         : undefined;
+    if (sketch.decision?.kind === 'pick' && sketch.decision.by && sketch.decision.by !== 'designer')
+      console.log(
+        `REUSED the pick of variant ${sketch.decision.variant} by ${sketch.decision.by} from ${sketch.decision.decidedAt}, recorded before this merge`,
+      );
+
     const result = timedPhase('merge', () =>
       mergeAndRecord({
         target: context.target,

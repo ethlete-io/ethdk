@@ -2393,6 +2393,34 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines.pop()).toBe('NO SKETCH on components/button in acme');
   });
 
+  it('names an agent pick a merge reuses, and drops it on rebase when no commit holds its merge', async () => {
+    const target = acme();
+    const lines = output();
+    const sketchFile = join(target, DESIGN_DIR, 'acme/sketches/components-button/sketch.json');
+    const withPick = () =>
+      writeFileSync(
+        sketchFile,
+        JSON.stringify({
+          ...JSON.parse(readFileSync(sketchFile, 'utf8')),
+          decision: { kind: 'pick', variant: 'b', decidedAt: '2026-11-01T00:00:00.000Z', by: 'claude-sonnet-5-5' },
+        }),
+      );
+
+    expect(
+      await write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme'),
+    ).toBe(0);
+    withPick();
+    expect(await write(target, 'merge', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines).toContain(
+      'REUSED the pick of variant b by claude-sonnet-5-5 from 2026-11-01T00:00:00.000Z, recorded before this merge',
+    );
+    expect(await write(target, 'rebase', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines).toContain(
+      'DROPPED the pick of variant b by claude-sonnet-5-5 from 2026-11-01T00:00:00.000Z: no commit holds its merge',
+    );
+    expect(JSON.parse(readFileSync(sketchFile, 'utf8')).decision).toBeUndefined();
+  });
+
   it('refuses to discard the old/new sketch of a direct edit', async () => {
     const target = acme();
     const lines = output();

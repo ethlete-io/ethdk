@@ -57,7 +57,7 @@ const readySketch = (
 };
 
 const picked = (sketch: Sketch, variant = 'b') =>
-  decideSketch({ sketch, decision: { kind: 'pick', variant, ...originOf('spec') } }) as Sketch;
+  decideSketch({ sketch, decision: { kind: 'pick', variant, ...originOf('designer') } }) as Sketch;
 
 const reasonOf = (result: ReturnType<typeof mergeSketch>) => (Array.isArray(result) ? result : result.reason);
 

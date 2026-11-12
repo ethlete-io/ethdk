@@ -726,6 +726,11 @@ A merge refuses a picked variant whose files changed since `sketch ready` judged
 `sketch rebase` ported a product change into it. `sketch ready` then takes the sketch back to in progress, judges it
 again and keeps the pick.
 
+`sketch merge` prints `REUSED the pick of variant <key> by <model> from <time>` when it merges a pick an agent
+recorded before this merge, for example in a merge that was refused. `sketch rebase` drops such a pick when no
+`Merge <target> variant <key> into <product>` commit since the pick holds it, and prints a `DROPPED` line. A designer's
+pick stays.
+
 `sketch merge --decided-by <role>` records who picked the variant in `merged.json` (`user` without it): give it the role,
 for example `human`. Both `merge` and `pick` refuse a person name in `--decided-by` (exit 1), as `yarn lint:person-names` does. It does not go with `--allowed-by`, which records the plan.
 

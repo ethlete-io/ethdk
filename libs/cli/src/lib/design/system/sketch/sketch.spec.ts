@@ -28,6 +28,7 @@ import {
   sketchSourceOf,
 } from './sketch';
 import { baselineOf } from './baseline';
+import { git, initGitRepo } from '../git-repo.fixtures';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-sketch-'));
@@ -398,6 +399,29 @@ describe('status', () => {
       status: 'ready',
       decision: { kind: 'pick', variant: 'a' },
     });
+  });
+
+  it('drops on rebase an agent pick no merge commit holds, and keeps a merged one and a designer pick', () => {
+    const target = acme();
+    const sketch = open(target, 'elements/hero');
+    const ready = markSketchReady({ checkout: target, sketch }) as Sketch;
+    const pickBy = (by: string) =>
+      decideSketch({ sketch: ready, decision: { kind: 'pick', variant: 'b', ...originOf(by) } }) as Sketch;
+
+    initGitRepo(target, 'base');
+
+    expect(
+      rebaseSketch({ product: resolveAcme(target), sketch: pickBy('claude-sonnet-5-5') }).decision,
+    ).toBeUndefined();
+    expect(rebaseSketch({ product: resolveAcme(target), sketch: pickBy('designer') }).decision).toMatchObject({
+      variant: 'b',
+    });
+
+    const merged = pickBy('claude-sonnet-5-5');
+
+    git(target, 'commit', '-q', '--allow-empty', '-m', 'feat(repo): Merge elements/hero variant b into acme');
+
+    expect(rebaseSketch({ product: resolveAcme(target), sketch: merged }).decision).toMatchObject({ variant: 'b' });
   });
 
   it('leaves the generated editor tsconfig of a variant out of its content hash', () => {
