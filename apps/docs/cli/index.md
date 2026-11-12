@@ -718,6 +718,10 @@ drawn yet).
 sketch the user has not picked in, only when `<key>` is its one live (not rejected) variant; both flags
 go together; the part note stays. With two live variants the user picks in Studio.
 
+A merge commits what it wrote as `feat(repo): Merge <target> variant <key> into <product>`. When the checkout has a
+`.changeset` folder and a merged file lies in a workspace package, the commit also holds a changeset that names each
+such package with the level `none`.
+
 `sketch merge --decided-by <role>` records who picked the variant in `merged.json` (`user` without it): give it the role,
 for example `human`. Both `merge` and `pick` refuse a person name in `--decided-by` (exit 1), as `yarn lint:person-names` does. It does not go with `--allowed-by`, which records the plan.
 

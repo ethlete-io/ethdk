@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdtempSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -116,6 +116,58 @@ describe('a merge commits its own result', { timeout: 120_000 }, () => {
     expect(committed['elements/hero']).toBeDefined();
     expect(committed['pages/home']).toBe('aaaaaaaaaaaaaaaa');
     expect(git('diff', '--', merged).stdout).toContain('bbbbbbbbbbbbbbbb');
+  });
+
+  it('carries a none changeset for the workspace package the merge changes', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const target = acme();
+    const git = gitOf(target);
+
+    writeFileSync(join(target, 'package.json'), JSON.stringify({ name: 'root', workspaces: ['.ethlete', 'libs/*'] }));
+    writeFileSync(join(target, '.ethlete/package.json'), JSON.stringify({ name: 'acme-app' }));
+    mkdirSync(join(target, '.changeset'));
+    writeFileSync(join(target, '.changeset/config.json'), '{}');
+    git('init');
+    git('config', 'user.name', 't');
+    git('config', 'user.email', 't@t');
+    git('add', '.');
+    git('commit', '-m', 'base');
+
+    const hero = pickedSketch(target, { layer: 'elements', name: 'hero' });
+
+    writeFileSync(join(hero.dir, 'b/elements/hero/hero.css'), '.acme-hero { background: var(--acme-accent); }');
+
+    expect(mergeOf(target, hero)).toMatchObject({ parts: ['elements/hero'] });
+    expect(git('show', '--name-only', '--format=', 'HEAD').stdout).toContain(
+      '.changeset/design-merge-elements-hero-b.md',
+    );
+    expect(git('show', 'HEAD:.changeset/design-merge-elements-hero-b.md').stdout).toBe("---\n'acme-app': none\n---\n");
+    expect(git('status', '--porcelain', '--', '.changeset').stdout).toBe('');
+  });
+
+  it('writes no changeset when the changed files lie in no workspace package', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const target = acme();
+    const git = gitOf(target);
+
+    writeFileSync(join(target, 'package.json'), JSON.stringify({ name: 'root', workspaces: ['libs/*'] }));
+    mkdirSync(join(target, '.changeset'));
+    git('init');
+    git('config', 'user.name', 't');
+    git('config', 'user.email', 't@t');
+    git('add', '.');
+    git('commit', '-m', 'base');
+
+    const hero = pickedSketch(target, { layer: 'elements', name: 'hero' });
+
+    writeFileSync(join(hero.dir, 'b/elements/hero/hero.css'), '.acme-hero { background: var(--acme-accent); }');
+
+    expect(mergeOf(target, hero)).toMatchObject({ parts: ['elements/hero'] });
+    expect(git('show', '--name-only', '--format=', 'HEAD').stdout).not.toContain('.changeset/');
   });
 
   it('leaves the files in place outside a git checkout', () => {

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, realpathSync, writeFileSync } from 'fs';
 import { relative, resolve, sep } from 'path';
 import { ResolvedProduct } from '../resolve-product';
+import { writeMergeChangeset } from './merge-changeset';
 import { Sketch, sketchesDirOf } from './sketch';
 import { PlainResult, spawnPlain } from '../../../plain-output';
 
@@ -119,6 +120,18 @@ function* commitFlow(options: {
     writeFileSync(file, own);
   }
 
+  const top = yield { args: ['rev-parse', '--show-toplevel'] };
+  const changeset =
+    top.status === 0
+      ? writeMergeChangeset({
+          top: realpathSync(top.stdout.trim()),
+          files,
+          slug: `${sketch.target}-${options.variant}`,
+        })
+      : null;
+
+  if (changeset) files.push(changeset);
+
   const added = yield { args: ['add', '--all', '--', ...files] };
   const committed =
     added.status === 0
@@ -155,6 +168,7 @@ export const dirtyFilesOfSync = (options: { target: string; product: ResolvedPro
 
 /**
  * Commits what a merge wrote into the product's folders - the files dirty now that were clean or different before,
- * and the merged sketch's own deletion, never another open sketch - as one commit. A failed commit warns and leaves the files as they are.
+ * and the merged sketch's own deletion, never another open sketch - as one commit, with a `none` changeset for each
+ * workspace package they lie in when the checkout has a `.changeset` folder. A failed commit warns and leaves the files as they are.
  */
 export const commitMergeResultSync = (options: CommitOptions) => runSync(options.target, commitFlow(options));
