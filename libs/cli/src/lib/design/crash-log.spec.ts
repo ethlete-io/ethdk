@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from 'fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -73,6 +73,17 @@ describe('crash log', () => {
       path: crashLogPathOf(target),
       summary: '2026-11-12T11:00:00.000Z pid 77 port 4402: Error: second',
     });
+  });
+
+  it('does not recreate a removed checkout, so its resident still sees the checkout gone', () => {
+    const { fire, exit, stderr } = install();
+
+    rmSync(target, { recursive: true, force: true });
+    fire('uncaughtException', new Error('write EPIPE'));
+
+    expect(existsSync(target)).toBe(false);
+    expect(stderr).toHaveBeenCalledWith(expect.stringContaining('write EPIPE'));
+    expect(exit).toHaveBeenCalledWith(1);
   });
 
   it('reports no crash when there is no log', () => {

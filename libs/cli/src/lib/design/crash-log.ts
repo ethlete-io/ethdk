@@ -46,6 +46,13 @@ export const installCrashLog = (options: {
     const entry = `${new Date().toISOString()} pid ${pid} port ${port()}: ${text}\n`;
 
     try {
+      if (!existsSync(target)) {
+        stderr(`design-explore: crashed after its checkout ${target} was removed\n${text}\n`);
+        exit(1);
+
+        return;
+      }
+
       mkdirSync(dirname(path), { recursive: true });
       appendFileSync(path, `${existsSync(path) ? SEPARATOR : ''}${entry}`);
       stderr(`design-explore: crashed, see ${path}\n${text}\n`);
