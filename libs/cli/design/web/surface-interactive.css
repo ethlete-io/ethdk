@@ -29,7 +29,7 @@
   }
 
   :where(.et-surface-interactive[disabled]),
-  :where(.et-surface-interactive[aria-disabled='true']) {
+  :where(.et-surface-interactive[aria-disabled='true']:not([data-loading='true'])) {
     --et-surface-interaction-rgb: var(
       --et-surface-interaction-disabled,
       var(
