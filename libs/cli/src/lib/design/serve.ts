@@ -8,6 +8,7 @@ import { interval, Subscription, tap, timer } from 'rxjs';
 import { CALLS_PATH, callSlugsOf, listCalls } from './calls';
 import { writeCallsTsconfig } from './calls-tsconfig';
 import { exitWhenParentGone } from './parent-watch';
+import { watchHeap } from './heap-watch';
 import { markTransferred, TRANSFER_PATH } from './legacy';
 import { aliasPattern, fsUrl, isCallFile } from './vite-paths';
 import { loadedFilesOf, sourceChangedSince } from './frame-fresh';
@@ -1420,6 +1421,8 @@ export const serveDesign = async (options: {
   console.log(`design-explore: drawing ${target}`);
   if (freePort) console.log(terminalPortLine(portOf(config), freePort));
   server.printUrls();
+
+  watchHeap({ log: (line) => console.log(`design-explore: ${line}`) });
 
   if (process.env['ETHLETE_DESIGN_SLOW_CHECKS'] !== 'off')
     startSlowRunner({
