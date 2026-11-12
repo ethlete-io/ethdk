@@ -42,6 +42,24 @@ describe('OpenPointsPopoverComponent', () => {
     expect(element.querySelector('ul')?.classList.contains('divide-y')).toBe(false);
   });
 
+  it('pads each group with dividers and draws the lines as one flat list without', async () => {
+    const { fixture, element } = await render([]);
+    fixture.componentRef.setInput('groups', [
+      { icon: 'error', lines: [{ text: 'a', detail: 'b' }] },
+      { icon: 'grid', lines: [{ text: 'c', detail: 'd' }] },
+    ]);
+    await fixture.whenStable();
+
+    const padded = () => [...element.querySelectorAll('ul ul')].filter((list) => list.classList.contains('py-space-1'));
+
+    expect(padded().length).toBe(2);
+
+    fixture.componentRef.setInput('dividers', false);
+    await fixture.whenStable();
+
+    expect(padded().length).toBe(0);
+  });
+
   it('does not say Nichts offen while shots are missing', async () => {
     const { element } = await render([], 2);
 

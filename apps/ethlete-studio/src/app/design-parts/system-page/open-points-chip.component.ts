@@ -13,7 +13,12 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { anchoredDialogOverlayStrategy, BUTTON_IMPORTS, injectOverlayManager } from '@ethlete/components';
+import {
+  anchoredDialogOverlayStrategy,
+  AnchoredDialogOverlayStrategyOptions,
+  BUTTON_IMPORTS,
+  injectOverlayManager,
+} from '@ethlete/components';
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { defer, EMPTY, finalize, switchMap, tap } from 'rxjs';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
@@ -87,6 +92,8 @@ export class OpenPointsChipComponent {
   public agent = input<AgentProgress | null>(null);
   public missingShots = input(0);
   public dividers = input(true, { transform: booleanAttribute });
+  public popoverOrigin = input<HTMLElement | null>(null);
+  public popoverPlacement = input<AnchoredDialogOverlayStrategyOptions['placement']>();
   public closed = model(true);
   public blockersOpen = model(false);
   public openEditSketch = output<BuildBlocker>();
@@ -115,12 +122,15 @@ export class OpenPointsChipComponent {
             ? EMPTY
             : defer(() => {
                 const ref = this.overlay.open(OpenPointsPopoverComponent, {
-                  origin: this.chip().nativeElement,
+                  origin: this.popoverOrigin() ?? this.chip().nativeElement,
                   mode: 'non-modal',
                   role: 'dialog',
                   ariaLabel: this.LABELS.openPoints,
                   autoFocus: false,
-                  strategies: anchoredDialogOverlayStrategy(),
+                  strategies: anchoredDialogOverlayStrategy({
+                    placement: this.popoverPlacement(),
+                    arrowAnchor: this.chip().nativeElement,
+                  }),
                   bindings: [
                     inputBinding('part', this.part),
                     inputBinding('groups', this.groups),

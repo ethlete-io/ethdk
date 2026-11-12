@@ -33,7 +33,7 @@ const SHOWN_LINES = 3;
         <ul [class.divide-y]="dividers()" class="m-0 list-none divide-(--et-surface-border-solid) p-0 py-space-1">
           @for (group of shown(); track group.icon) {
             <li>
-              <ul class="m-0 list-none p-0 py-space-1">
+              <ul [class.py-space-1]="dividers()" class="m-0 list-none p-0">
                 @for (line of group.lines; track $index) {
                   <li class="flex items-center gap-space-2 px-space-3 py-space-1">
                     <svg

@@ -358,7 +358,7 @@
     (status() === 'waiting' || status() === 'picked') && !errored().includes(row.key) && !sameKeys().has(row.key);
   @let points = openPoints().length > 0 && row.key === selected();
   @if (take || points) {
-    <span class="relative flex flex-wrap items-center gap-space-2">
+    <span #pointsHead class="relative flex flex-wrap items-center gap-space-2">
       @if (take) {
         <span class="flex">
           <button (click)="merge.emit(row.key)" et-button type="button" variant="outline" size="sm" data-sk-merge>
@@ -372,7 +372,9 @@
             [(closed)]="pointsClosed"
             [part]="part()"
             [groups]="openPoints()"
+            [popoverOrigin]="pointsHead"
             dividers="false"
+            popoverPlacement="bottom-start"
           />
         </span>
       }
