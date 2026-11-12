@@ -4048,3 +4048,17 @@ the human's pick by merge.
 got the rest of the chain as file arguments and its wrapper shell stayed as a background job. Suspect (not reproduced).
 Tool fix (builder default, tool backlog): `vitest related` refuses an argument that is not an existing path, with one
 line, instead of running.
+
+925 built (Mac, 782f48d5f + 78b23d84f): `check-person-names --range <base> <head>` reads `git show <head>:<path>`;
+pre-push uses it. Bite: check-person-names.spec and lint-changesets.spec. The follow-up fixed a cwd-relative script path
+that broke the push-suite.spec fixture (resolved from `import.meta.dirname`).
+
+959\. Mac builder (2026-11-12 night, 925): a tools/scripts slice that runs only its touched specs misses fixture specs
+elsewhere (push-suite.spec copies no tools/scripts), so push:suite caught it, not the slice. Tool fix (builder default,
+tool backlog): the slice check runs `yarn test:tools` for any tools/scripts change, or vitest related maps the fixture
+copies to their source scripts.
+
+960\. Mac builder (2026-11-12 night, 925): `cpu-throttle.spec` ("throttled busy loop gets about its share") fails alone at
+load 42/56, and `e2e-check` "started case is the last case reached" failed once in the full run (25/25 alone). Suspect:
+machine load for both. Tool fix (builder default, tool backlog): measure both under a set load; make the throttle
+assertion relative to the measured load, or mark it load-skipped with a note.

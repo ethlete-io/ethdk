@@ -1,1 +1,1 @@
-- 875 server half built (4ca55ca3c); `crashed` shell-main sketch after the 879 pick; finding 958. Next free finding: 959.
+- 925 built on the Mac (782f48d5f, 78b23d84f); findings 959-960. Next free finding: 961.
