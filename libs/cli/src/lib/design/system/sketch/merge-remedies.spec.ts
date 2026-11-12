@@ -48,7 +48,7 @@ const created = (target: string, variants = ['a', 'b']) =>
 const ready = (target: string, sketch: Sketch) => markSketchReady({ checkout: target, sketch }) as Sketch;
 
 const picked = (sketch: Sketch, variant = 'b') =>
-  decideSketch({ sketch, decision: { kind: 'pick', variant, ...originOf('spec') } }) as Sketch;
+  decideSketch({ sketch, decision: { kind: 'pick', variant, ...originOf('designer') } }) as Sketch;
 
 const merged = (target: string, sketch: Sketch) =>
   mergeSketch({ target, config: readConfig(target) ?? {}, product: resolveAcme(target), sketch, note: 'n' });

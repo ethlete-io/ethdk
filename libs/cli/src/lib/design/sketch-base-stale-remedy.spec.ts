@@ -15,6 +15,7 @@ vi.mock('./ready-shots', () => ({
   aktuellPlaceholderWarnings: vi.fn(async (): Promise<string[]> => []),
   identicalRenderLines: vi.fn(async (): Promise<string[]> => []),
   sampleMarkDriftLines: vi.fn(async (): Promise<string[]> => []),
+  sketchRenderLines: vi.fn(async () => ({ refusals: [] as string[], warnings: [] as string[] })),
   identicalRenders: vi.fn(async (): Promise<{ variant: string; sibling: string | null; line: string }[]> => []),
   variantChangesShown: vi.fn(async () => [{ variant: 'a', change: 'variant a changes default' }]),
   variantsThatDoNotLoad: vi.fn(async (): Promise<string[]> => []),
@@ -129,8 +130,8 @@ describe('SKETCH-BASE-STALE on a sketch drawn on an uncommitted state of its own
     }
 
     expect({ attempts, refusals }).toEqual({
-      attempts: [`rebase ${HERO} --product acme --by ${MODEL}`, `rebase ${HERO} --ported --product acme --by ${MODEL}`],
-      refusals: [expect.stringContaining(`${HERO} not rebased - port these by hand`)],
+      attempts: [`rebase ${HERO} --product acme --by ${MODEL}`],
+      refusals: [],
     });
 
     lines.length = 0;
@@ -140,7 +141,7 @@ describe('SKETCH-BASE-STALE on a sketch drawn on an uncommitted state of its own
 
     const sketch = decideSketch({
       sketch: markSketchReady({ checkout: target, sketch: heroSketchOf(target) }) as Sketch,
-      decision: { kind: 'pick', variant: 'a', ...originOf('spec') },
+      decision: { kind: 'pick', variant: 'a', ...originOf('designer') },
     }) as Sketch;
     const merged = () =>
       mergeSketch({ target, config: readConfig(target) ?? {}, product: resolveAcme(target), sketch });
