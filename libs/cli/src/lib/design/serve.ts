@@ -10,6 +10,7 @@ import { writeCallsTsconfig } from './calls-tsconfig';
 import { exitWhenParentGone } from './parent-watch';
 import { markTransferred, TRANSFER_PATH } from './legacy';
 import { aliasPattern, fsUrl, isCallFile } from './vite-paths';
+import { loadedFilesOf, sourceChangedSince } from './frame-fresh';
 import {
   Answer,
   COMMENT_DONE_PATH,
@@ -588,6 +589,7 @@ const designExplore = ({
   stylesheetImports,
   shotCacheDir,
   checkSketches,
+  beforeFrame,
 }: {
   target: string;
   config: DesignConfig;
@@ -595,6 +597,7 @@ const designExplore = ({
   stylesheetImports: StylesheetImports;
   shotCacheDir: string | null;
   checkSketches?: CheckSketches;
+  beforeFrame?: () => void;
 }) => {
   const renderer = createRenderer({ target, config });
   const transform = withAssetUrls(system);
@@ -899,6 +902,12 @@ const designExplore = ({
 
       const frameDelayMs = frameDelayMsOf();
 
+      if (beforeFrame)
+        vite.middlewares.use('/frame.html', (...[, , next]: [unknown, unknown, () => void]) => {
+          beforeFrame();
+          next();
+        });
+
       if (frameDelayMs)
         vite.middlewares.use('/frame.html', (...[, , next]: [unknown, unknown, () => void]) =>
           timer(frameDelayMs)
@@ -1200,6 +1209,7 @@ export const createDesignServer = async (options: {
   const logger = createLogger(listen && !own ? 'info' : 'error');
   const logError = logger.error;
   let deniedIds: string[] = [];
+  let drawnSince = Date.now();
 
   logger.error = (message, errorOptions) => {
     const denied = DENIED_REQUEST.exec(message)?.[1];
@@ -1254,6 +1264,7 @@ export const createDesignServer = async (options: {
         stylesheetImports,
         shotCacheDir: listen && !own ? resolve(workRootOf(target), SHOT_STORE_DIR) : null,
         checkSketches,
+        ...(own ? { beforeFrame: () => sourceChangedSince(loadedFilesOf(server), drawnSince) && forgetDrawn() } : {}),
       }),
     ],
     ...(listen ? {} : { appType: 'custom' as const }),
@@ -1270,6 +1281,11 @@ export const createDesignServer = async (options: {
       fs: { allow: [target, here, ...baseDirs, ...installedRootsOf(target), ...linkedRootsOf(target)] },
     },
   });
+  const forgetDrawn = () => {
+    drawnSince = Date.now();
+    system.forget();
+    Object.values(server.environments).forEach((environment) => environment.moduleGraph.invalidateAll());
+  };
   const closing = server.close.bind(server);
 
   server.close = () => closing().finally(() => cache?.release());
@@ -1308,11 +1324,8 @@ export const createDesignServer = async (options: {
 
       return taken;
     },
-    /** Forgets every loaded part, sketch and module, so the next draw reads the files as they are now: a server started with `port` does not watch them. */
-    forgetDrawn: () => {
-      system.forget();
-      Object.values(server.environments).forEach((environment) => environment.moduleGraph.invalidateAll());
-    },
+    /** Forgets every loaded part, sketch and module, so the next draw reads the files as they are now: a server started with `port` does not watch them, and forgets on its own only when a frame is asked for after a loaded source changed. */
+    forgetDrawn,
   });
 };
 
