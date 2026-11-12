@@ -94,7 +94,7 @@ export const PARTS: Record<PartKind, SketchPart> = {
         key: 'new',
         note: 'Direkte Änderung: Prozentzahl in Halbfett.',
         changed: NARROW_STATES.filter((name) => name.startsWith('reset')),
-        look: '[&_[data-camera-reset]_button]:font-ui-strong',
+        look: '',
       },
     ],
   },
@@ -339,6 +339,7 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
 
   new ResizeObserver(fit).observe(list);
   fit();
+  void document.fonts.ready.then(fit);
   pan(-start.x, -start.y);
   return fit;
 };
