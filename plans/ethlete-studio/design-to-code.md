@@ -3772,3 +3772,22 @@ covered components/comment-pin (9 hits in its shared file). Compare: only author
 changed, no layout shift. Checker: zero names under `.ethlete/design/<product>/{foundations,components,elements,pages,sketches}/`;
 34 other files under `.ethlete/design/` stay baselined (31 comment records, capabilities.json, a call, a stale
 sketch-data entry). Bite: the new case fails on the old checker.
+
+903 update 3 (Linux, not committed): compare --affected against a HEAD baseline shows pages/sketches idle, paused and
+paused-reason DIFF 2778 -> 49443, also without the token-map change; the variant-a note wraps 4 or 5 lines. Suspect: the
+924 note-wrap flake (49443 is the exact flaky paused-reason value there); the builder repeats idle 4x with and without
+the patch. edit-sketch FAILED on HEAD already (the zoom-chip look targets a missing element). The builder splits 903 into
+two commits (finding 926).
+
+926\. Linux builder (2026-11-12 night, 903 slice): `sketch merge` of an @edit sketch refused again after a rebase.
+Cause (code read of `merge.ts` + `clean-copy.ts`, reproduced): the merge checks a clean copy of HEAD plus only the @edit
+part folder; an uncommitted change in an embedded part (title-search) of the same slice makes it refuse forever, and its
+"run sketch rebase" advice cannot help. Lesson: the advice named a step that cannot fix the cause. Tool fix (builder
+default, tool backlog): the clean copy takes the slice's other changed parts, or the refusal names the commit order.
+
+927\. Linux builder (2026-11-12 night, 903 slice): a `scratch:checkout` copy has no `dist/`; compare there fails every
+harness part with "dist/libs/components missing", which reads like real results. Tool fix (builder default, tool
+backlog): `scratch:checkout` builds or links the dist, or compare refuses with one line.
+
+928\. Linux builder (2026-11-12 night, 903 slice): `compare --affected` has no baseline option, so old vs new needs a full
+second run in a scratch copy. Tool fix (builder default, tool backlog): `--base <sha>`, like `check --visible-change`.
