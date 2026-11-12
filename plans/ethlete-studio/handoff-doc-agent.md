@@ -1,1 +1,1 @@
-- Linux builder resumed (builder-2026-11-12a), starts A24 (STATUS item 4) with a pages/merge sketch; 946 writer = `et design check` (Suspect). Next free finding: 951.
+- A24 pages/merge sketch ready (6fb0ba194), waits for the human's pick; finding 951 (sketch check queue wait). Next free finding: 952.

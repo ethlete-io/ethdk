@@ -3983,3 +3983,12 @@ states are the known shell-main ones (line 541), no new finding.
 
 946 update (Linux, process read): `.ethlete/design/studio/ready.json` was written by `et design check` at 01:31 (pid
 1055162). Suspect stays until a bite: `design check` writes ready.json, which only `sketch ready` may do.
+
+A24 (Linux, 6fb0ba194): the pages/merge sketch is ready, variants a (one disclosure with part headings; builder
+recommends), b (one disclosure per part), c (one disclosure with a nested one per part). It waits for the human's pick by
+merge. After the pick: `sketch-view.component.ts:453` groups `compare.unchanged` by part, MergeUnchanged becomes a list
+of parts, with a biting spec.
+
+951\. Linux builder (2026-11-12 night, A24): `sketch check` takes 25-35 s against its 10 s target; about 20.6 s of it is
+resident-queue-wait. Suspect (one run, not measured in isolation). Tool fix (builder default, tool backlog): measure the
+queue wait over several runs, then let `sketch check` skip or shorten the resident queue.
