@@ -1,4 +1,5 @@
 import { definePart, drawing, html, withAction } from '@design-system';
+import anchoredDialog from '@system/components/anchored-dialog';
 import button from '@system/components/button';
 import { icon } from '@system/foundations/icons';
 import select from '@system/components/select';
@@ -45,6 +46,7 @@ import {
   sameLabel,
   takeAction,
   takeButton,
+  unchangedStates,
   wrapColumns,
   withSame,
   wrapStage,
@@ -84,7 +86,6 @@ type Props = {
   sameOpen?: boolean;
   withdrawn?: Withdrawn;
   agent?: AgentRun;
-  fold?: number;
   question?: string;
   port?: MergePort;
   points?: boolean;
@@ -254,6 +255,40 @@ const pointsChip = async (open: boolean) => {
   return {
     body: withAction(drawn.body, open ? 'sketch-only-points' : 'sketch-only-points-open'),
     styles: drawn.styles,
+  };
+};
+
+const pointsPopover = async (part: string) => {
+  const lines = SKETCH_POINTS.map(
+    ({ icon: name, text, detail }) =>
+      html`<li class="flex items-center gap-space-2 px-space-3 py-space-1">
+        ${icon(name, { size: 14, cls: 'flex-none text-(--et-surface-color-muted-solid)' })}<span
+          class="min-w-0 flex-1 truncate text-(--et-surface-color-solid)"
+          >${text}</span
+        ><span class="font-code text-ui-xs text-(--et-surface-color-muted-solid)">${detail}</span>
+      </li>`,
+  ).join('');
+  const dialog = await anchoredDialog.render({
+    label: 'Offene Punkte',
+    modal: false,
+    anchor: '[data-sk-points]',
+    content: html`<div class="w-96 text-ui-sm">
+      <header
+        class="flex items-baseline gap-space-2 border-b border-(--et-surface-border-solid) px-space-3 pt-space-3 pb-space-2"
+      >
+        <span class="font-ui-strong text-(--et-surface-color-solid)">Offene Punkte</span>
+        <span class="ms-auto font-code text-ui-xs text-(--et-surface-color-muted-solid)">${part}</span>
+      </header>
+      <ul class="m-0 list-none p-0 py-space-1">
+        ${lines}
+      </ul>
+    </div>`,
+  });
+  return {
+    body: html`<div class="absolute top-full left-0 z-10 mt-2.5" style="transform: translate3d(0, 0, 0)">
+      ${dialog.body}
+    </div>`,
+    styles: dialog.styles,
   };
 };
 
@@ -496,7 +531,7 @@ const zoomOf = (camera: Props['camera']): Zoom => (camera === 'fit' ? 'fit' : ca
 const startOf = (camera: Props['camera']) => (typeof camera === 'object' ? { x: camera.x, y: camera.y } : undefined);
 
 export default definePart<Props>({
-  note: 'A <part>@edit sketch (a direct edit without an ADR) has the rows old and new and no Verwerfen button: the server refuses a discard (EDIT-DISCARD-REFUSED), the header says to pick old to undo the edit or new to keep it. Eine Zeile je Variante, ganz oben Aktuell, bei einem neuen Teil ohne Aktuell und mit dem Badge neu. Links steht der Kopf: Variante, kurzer Modellname (Tooltip mit voller Kennung und Zeit), die Notiz und Übernehmen, das direkt die Merge-Ansicht öffnet; Übernehmen steht nur da, wenn der Sketch auf die Wahl wartet. Das Badge oben folgt dem echten Zustand: zeichnet, solange eine Variante gezeichnet wird, Wartet auf deine Wahl, wenn alle stehen und nichts gewählt ist, Variante gewählt, sobald eine Variante gewählt ist; was noch fehlt, steht als erster offener Punkt, sonst Pausiert oder Keine Aktivität. Die offenen Punkte des Sketches stehen im Kopf der gewählten Variante als Chip neben Übernehmen, auch für einen Teil, der noch keine gemergte Ansicht hat. Die Notiz wächst mit dem Zoom (15 px bei 100 %, nie unter 12 px bis Einpassen); weiter herausgezoomt skaliert der Kopf mit der Fläche, unter 9 px ist sein Text ausgeblendet. Rechts stehen die Zustände in einem Raster, jeder mit Namen (13 px mal Zoom, unter 9 px ausgeblendet). Ein Teil breiter als ein Viertel der Ansicht zeigt eine Matrix: eine Spalte je Variante, Aktuell zuerst, die Zustände als Zeilen, der Zustandsname einmal je Zeile links; beim Verschieben bleibt diese Spalte am linken Rand stehen. Einpassen nimmt Aktuell und die erste Variante, in der Matrix deren zwei Spalten; weitere erreicht man durch Verschieben. Solange der Vergleich läuft, sind alle Rahmen neutral und der Kopf zeigt vergleicht …; danach sind unveränderte Zustände gedimmt und der erste geänderte markiert. Varianten, die in jedem Zustand gleich Aktuell sind, liegen zusammen in einem zugeklappten Bereich unter den geänderten (in der Matrix eine schmale Spalte rechts), aufgeklappt wie vorher.',
+  note: 'A <part>@edit sketch (a direct edit without an ADR) has the rows old and new and no Verwerfen button: the server refuses a discard (EDIT-DISCARD-REFUSED), the header says to pick old to undo the edit or new to keep it. Eine Zeile je Variante, ganz oben Aktuell, bei einem neuen Teil ohne Aktuell und mit dem Badge neu. Links steht der Kopf: Variante, kurzer Modellname (Tooltip mit voller Kennung und Zeit), die Notiz und Übernehmen, das direkt die Merge-Ansicht öffnet; Übernehmen steht nur da, wenn der Sketch auf die Wahl wartet. Das Badge oben folgt dem echten Zustand: zeichnet, solange eine Variante gezeichnet wird, Wartet auf deine Wahl, wenn alle stehen und nichts gewählt ist, Variante gewählt, sobald eine Variante gewählt ist; was noch fehlt, steht als erster offener Punkt, sonst Pausiert oder Keine Aktivität. Die offenen Punkte des Sketches stehen im Kopf der gewählten Variante als Chip neben Übernehmen, der die Liste Offene Punkte öffnet, auch für einen Teil, der noch keine gemergte Ansicht hat. Die Notiz wächst mit dem Zoom (15 px bei 100 %, nie unter 12 px bis Einpassen); weiter herausgezoomt skaliert der Kopf mit der Fläche, unter 9 px ist sein Text ausgeblendet. Rechts stehen die Zustände in einem Raster, jeder mit Namen (13 px mal Zoom, unter 9 px ausgeblendet). Ein Teil breiter als ein Viertel der Ansicht zeigt eine Matrix: eine Spalte je Variante, Aktuell zuerst, die Zustände als Zeilen, der Zustandsname einmal je Zeile links; beim Verschieben bleibt diese Spalte am linken Rand stehen. Einpassen nimmt Aktuell und die erste Variante, in der Matrix deren zwei Spalten; weitere erreicht man durch Verschieben. Solange der Vergleich läuft, sind alle Rahmen neutral und der Kopf zeigt vergleicht …; danach sind unveränderte Zustände gedimmt und der erste geänderte markiert. Varianten, die in jedem Zustand gleich Aktuell sind, liegen zusammen in einem zugeklappten Bereich unter den geänderten (in der Matrix eine schmale Spalte rechts), aufgeklappt wie vorher.',
   madeBy: ['claude-opus-5-5', 'gpt-6', 'claude-sonnet-5-5', 'design check'],
   implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/sketches/sketches.component.ts' },
   controls: {
@@ -531,7 +566,7 @@ export default definePart<Props>({
     'agent-round': { camera: 'fit', part: 'narrow', agent: 'round' },
     'agent-variant': { camera: 'fit', part: 'narrow', agent: 'variant' },
     'agent-failed': { camera: 'fit', part: 'narrow', agent: 'failed' },
-    folded: { camera: 'fit', part: 'narrow', fold: 3, question: QUESTION },
+    folded: { camera: 'fit', part: 'narrow', question: QUESTION },
     'question-only': { camera: 'fit', part: 'narrow', question: QUESTION },
     'port-after-merge': { camera: 'fit', part: 'narrow', port: 'one' },
     'port-after-merge-long': { camera: 'fit', part: 'narrow', port: 'two' },
@@ -562,7 +597,6 @@ export default definePart<Props>({
     sameOpen = false,
     withdrawn,
     agent,
-    fold = 0,
     question = '',
     port,
     points = false,
@@ -574,7 +608,8 @@ export default definePart<Props>({
     const run = agent ? AGENT_RUNS[agent] : undefined;
     const full = withSame(PARTS[kind], comparing ? [] : sameKeys);
     const rowStyles = await prepareShots(full);
-    const part = fold > 0 ? { ...full, states: full.states.slice(0, full.states.length - fold) } : full;
+    const hidden = comparing ? [] : unchangedStates(full);
+    const part = hidden.length > 0 ? { ...full, states: full.states.filter((state) => !hidden.includes(state)) } : full;
     const side = await treeOf(screen ? SCREEN_KEY : part.key);
     const all = rowsOf(part, fresh);
     const rows = visibleRows(all, withdrawn);
@@ -582,13 +617,16 @@ export default definePart<Props>({
     const same = comparing ? [] : rows.filter(isSame);
     const shown = rows.filter((row) => !same.includes(row));
     const pointsButton = points ? await pointsChip(pointsOpen) : undefined;
+    const popover = points && pointsOpen ? await pointsPopover(full.key) : undefined;
     const view: View = {
       selected,
       status,
       comparing,
       withdrawn,
       take: takeAction(take.body),
-      points: pointsButton ? html`<span class="flex" data-sk-points>${pointsButton.body}</span>` : '',
+      points: pointsButton
+        ? html`<span class="flex" data-sk-points>${pointsButton.body}</span>${popover?.body ?? ''}`
+        : '',
     };
     const showWithdrawn =
       hiddenCount > 0
@@ -605,7 +643,7 @@ export default definePart<Props>({
       : transposed
         ? matrix(part, shown, same, view, sameOpen)
         : shown.map((row) => gridRow(part, row, view)).join('') + sameRows(part, same, view, sameOpen);
-    const folded = screen ? UNCHANGED_COUNT : fold;
+    const folded = screen ? UNCHANGED_COUNT : hidden.length;
     const control = screen ? await screenControl() : { body: '', styles: '' };
     const toggle = await disclosurePart.render({ label: '', body: '', open: false });
     const content = html`<div
@@ -698,6 +736,7 @@ export default definePart<Props>({
         (toggle as { styles: string }).styles +
         take.styles +
         (pointsButton?.styles ?? '') +
+        (popover?.styles ?? '') +
         rowStyles +
         Object.values(tags)
           .map((entry) => entry.styles)

@@ -133,6 +133,11 @@ export const withSame = (part: SketchPart, same: RowKey[]): SketchPart => ({
 
 export const isSame = (row: Row) => !isBase(row) && row.changed.length === 0;
 
+export const unchangedStates = (part: SketchPart) => {
+  const unchanged = part.states.filter((state) => part.rows.every((row) => !row.changed.includes(state)));
+  return unchanged.length < part.states.length ? unchanged : [];
+};
+
 export const sameLabel = (rows: Row[]) => `Unverändert: ${rows.map((row) => `Variante ${row.key}`).join(', ')}`;
 
 export const isTransposed = (part: SketchPart, viewWidth: number) => part.width > viewWidth / 4;
