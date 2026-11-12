@@ -3787,7 +3787,7 @@ default, tool backlog): the clean copy takes the slice's other changed parts, or
 
 927\. Linux builder (2026-11-12 night, 903 slice): a `scratch:checkout` copy has no `dist/`; compare there fails every
 harness part with "dist/libs/components missing", which reads like real results. Tool fix (builder default, tool
-backlog): `scratch:checkout` builds or links the dist, or compare refuses with one line.
+backlog): `scratch:checkout` builds or links the dist, or compare refuses with one line. Seen again on the Mac (922).
 
 928\. Linux builder (2026-11-12 night, 903 slice): `compare --affected` has no baseline option, so old vs new needs a full
 second run in a scratch copy. Tool fix (builder default, tool backlog): `--base <sha>`, like `check --visible-change`.
@@ -3958,3 +3958,20 @@ failed without the fix. The visible half (a "server does not answer, URL" screen
 decided by the doc agent (night shift, look questions go to a sketch): the builder sketches state `unanswered` on
 elements/shell-main, marks it ready, and the human picks by merge in the morning; wiring (30 s wait, signal, spec) after
 the pick.
+
+922 built (Mac, ca232c417, unpushed, push:suite runs): withdrawn rows in the app part ("Zurückgezogene (n)" switch, mark
+in place of "Übernehmen", pin dropped). Bite: spec failed without the fix. Compare withdrawn-hidden/shown went from FAILED
+(no input) to DIFF 84596/88947 px; not verified by a live shot with a real withdrawn variant. The Mac found no 922 text in
+its checkout: the doc commits are unpushed and ride with the Linux push.
+
+948\. Mac builder (2026-11-12 night, 922): design check keeps reporting baseline entries that no longer fire (2 stale
+withdrawn-* DROPPED-PROP entries, removed by hand). Tool fix (builder default, tool backlog): design check names a
+baseline entry that matched nothing, with a spec.
+
+949\. Mac builder (2026-11-12 night, 922): compare does not say when the app rebuilt in the middle of a run, so a mixed
+result reads as one. Tool fix (builder default, tool backlog): compare prints one line when a rebuild happened during the
+run.
+
+950\. Mac builder (2026-11-12 night, 922): jsdom ignores rules inside `@layer`, so a spec that reads computed styles of
+an SDK component needs a hand shim (`display:flex` for et-choice-field). Suspect: jsdom's CSSOM has no cascade layers.
+Tool fix (builder default, tool backlog): one shared spec helper or note in the Studio spec setup, not a shim per spec.
