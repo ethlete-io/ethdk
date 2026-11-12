@@ -3939,3 +3939,16 @@ change for apps with low-specificity rules in `components`, changeset plus docs 
 (measured). Option 2 (private tokens on internal buttons) misses the goal. Option 3 (public token first in a fallback
 chain) is blocked by `@property --et-button-padding` (initial value, `inherits: false`). Short term the shipped rule
 (`app-styling.md:33-38`, unlayered or `@layer utilities`) already works. Decision for the human in the morning round.
+
+7f built (Linux, 6700dfd3d components + core, 00abccaea cli): a loading button keeps its normal colours; the
+`aria-disabled` look skips `[data-loading='true']`. Bite: new e2e `button / loading look` failed 4/4 without the fix,
+passed 4/4 with it. A disabled `<a>` that loads now looks normal (clicks stay blocked); decided by the doc agent: accept,
+it applies the human's 7f decision (loading keeps normal colours) to a rare case.
+
+947\. Linux builder (2026-11-12 night, 7f): no check keeps the design frame copy `libs/cli/design/web/surface-interactive.css`
+in sync with `libs/core/src/lib/theming/surface-interactive-styles.component.css`. Cause (measured by grep): the copy kept
+the old selector after the core change, and nothing failed. Tool fix (builder default, tool backlog): generate the copy
+at build, or a spec that compares its rules with the core source.
+
+946 update: `.ethlete/design/studio/ready.json` is now rewritten in 279 lines by a writer that is not the builder's
+command; still uncommitted.
