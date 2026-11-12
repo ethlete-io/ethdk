@@ -138,7 +138,10 @@ export const switchFrame = async (page: Page, state: string) => {
   return true;
 };
 
-export const settled = `new Promise((done) => document.fonts.ready.then(() =>
+const loadedFonts = `Promise.all([...document.fonts].map((face) => face.load().catch(() => undefined)))
+  .then(() => document.fonts.ready)`;
+
+export const settled = `new Promise((done) => ${loadedFonts}.then(() =>
   requestAnimationFrame(() => requestAnimationFrame(() => done(true)))))`;
 
 /** Waits for `settled` on `page`, and throws a `WaitTimeoutError` naming the page after `DRAW_TIMEOUT_MS`. */
@@ -148,9 +151,12 @@ export const awaitSettled = (page: Pick<Page, 'evaluate' | 'url'>) =>
     what: `the fonts and the first frames of ${page.url()}`,
   });
 
-/** Waits for the fonts of `page`, and throws a `WaitTimeoutError` naming the page after `DRAW_TIMEOUT_MS`. */
+/** Loads every font face `page` declares and waits for its fonts, and throws a `WaitTimeoutError` naming the page after `DRAW_TIMEOUT_MS`. */
 export const awaitFonts = (page: Pick<Page, 'evaluate' | 'url'>) =>
-  withinLimit(page.evaluate('document.fonts.ready'), { ms: DRAW_TIMEOUT_MS, what: `the fonts of ${page.url()}` });
+  withinLimit(page.evaluate(`${loadedFonts}.then(() => true)`), {
+    ms: DRAW_TIMEOUT_MS,
+    what: `the fonts of ${page.url()}`,
+  });
 
 /** Finishes the page's finite time-based animations; scroll-driven ones keep the progress their scroll position gives. */
 export const finished = `document.getAnimations()

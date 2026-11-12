@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { chromium, type Browser } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { settleFrames } from './settle-frames';
@@ -9,6 +11,13 @@ const EMBEDDED_TRANSITION = `<style>
 </style>
 <div class="bubble"></div>
 <script>requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('.bubble').classList.add('on')));</script>`;
+
+const FONT = readFileSync(
+  resolve(__dirname, '../../../../../apps/storybook/src/assets/fonts/archivo/archivo-v18-latin-300.woff2'),
+);
+
+const UNUSED_FACE = `<style>@font-face { font-family: Unused; src: url('/unused.woff2') format('woff2'); }</style>
+<p>text in the default font</p>`;
 
 describe('settleFrames', () => {
   let browser: Browser | undefined;
@@ -43,6 +52,47 @@ describe('settleFrames', () => {
         .evaluate((element) => getComputedStyle(element).backgroundColor);
 
       expect(background).toBe('rgb(0, 0, 0)');
+    } finally {
+      await page.close();
+    }
+  });
+
+  it('loads a face of an embedded frame that no text uses', async (context) => {
+    if (!browser) return context.skip();
+
+    const page = await browser.newPage({ viewport: { width: 40, height: 40 } });
+
+    try {
+      await page.route('**/unused.woff2', (route) => route.fulfill({ body: FONT, contentType: 'font/woff2' }));
+      await page.route('http://frame.test/', (route) =>
+        route.fulfill({ body: `<iframe src="/inner"></iframe>`, contentType: 'text/html' }),
+      );
+      await page.route('http://frame.test/inner', (route) =>
+        route.fulfill({ body: UNUSED_FACE, contentType: 'text/html' }),
+      );
+      await page.goto('http://frame.test/');
+      await settleFrames(page);
+
+      const statuses = await page.frames()[1]?.evaluate(() => [...document.fonts].map((face) => face.status));
+
+      expect(statuses).toEqual(['loaded']);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it('settles a frame whose face fails, and leaves that face an error', async (context) => {
+    if (!browser) return context.skip();
+
+    const page = await browser.newPage({ viewport: { width: 40, height: 40 } });
+
+    try {
+      await page.route('**/unused.woff2', (route) => route.fulfill({ status: 404 }));
+      await page.route('http://frame.test/', (route) => route.fulfill({ body: UNUSED_FACE, contentType: 'text/html' }));
+      await page.goto('http://frame.test/');
+      await settleFrames(page);
+
+      expect(await page.evaluate(() => [...document.fonts].map((face) => face.status))).toEqual(['error']);
     } finally {
       await page.close();
     }

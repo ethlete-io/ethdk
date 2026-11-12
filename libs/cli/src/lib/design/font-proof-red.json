@@ -337,201 +337,9 @@
   },
   {
     "product": "studio",
-    "part": "components/accent-on-light",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/accordion",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/anchored-dialog",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/avatar",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/badge",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/banner",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/bracket",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/breadcrumb",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/button",
-    "property": "faces",
-    "count": 2
-  },
-  {
-    "product": "studio",
-    "part": "components/calendar",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/canvas-viewport",
-    "property": "faces",
-    "count": 2
-  },
-  {
-    "product": "studio",
-    "part": "components/card",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/carousel",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/chart",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/checkbox",
-    "property": "faces",
-    "count": 2
-  },
-  {
-    "product": "studio",
-    "part": "components/chip",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/comment-draft",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/comment-pin",
-    "property": "faces",
-    "count": 2
-  },
-  {
-    "product": "studio",
-    "part": "components/comment-target",
-    "property": "faces",
-    "count": 2
-  },
-  {
-    "product": "studio",
-    "part": "components/copy-button",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/description-list",
-    "property": "faces",
-    "count": 2
-  },
-  {
-    "product": "studio",
     "part": "components/description-list",
     "property": "text",
     "count": 4
-  },
-  {
-    "product": "studio",
-    "part": "components/dialog",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/disclosure",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/divider",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/empty-state",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/error-toast",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/floating-action",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/form-field",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/grid",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/hold-trigger",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/input",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/kbd",
-    "property": "faces",
-    "count": 1
   },
   {
     "product": "studio",
@@ -541,194 +349,8 @@
   },
   {
     "product": "studio",
-    "part": "components/loader",
-    "property": "faces",
-    "count": 2
-  },
-  {
-    "product": "studio",
-    "part": "components/masonry",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/match",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/menu",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/notification",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/otp-input",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/pagination",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/picture",
-    "property": "faces",
-    "count": 2
-  },
-  {
-    "product": "studio",
-    "part": "components/progress-steps",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/query-error",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/radio-group",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/scheduler",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/scrollable",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/scrollbar",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/select",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/select-panel",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/shell-collapse",
-    "property": "faces",
-    "count": 2
-  },
-  {
-    "product": "studio",
-    "part": "components/shell-project-switch",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/skeleton",
-    "property": "faces",
-    "count": 2
-  },
-  {
-    "product": "studio",
-    "part": "components/sketch-status-badge",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/slider",
-    "property": "faces",
-    "count": 2
-  },
-  {
-    "product": "studio",
-    "part": "components/standings",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/stat-tile",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/stream",
-    "property": "faces",
-    "count": 2
-  },
-  {
-    "product": "studio",
-    "part": "components/switch",
-    "property": "faces",
-    "count": 2
-  },
-  {
-    "product": "studio",
-    "part": "components/table",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/tabs",
-    "property": "faces",
-    "count": 2
-  },
-  {
-    "product": "studio",
-    "part": "components/textarea",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/timeline",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/title-bar",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
     "part": "components/title-bar",
     "property": "text",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/title-search",
-    "property": "faces",
     "count": 1
   },
   {
@@ -740,74 +362,8 @@
   {
     "product": "studio",
     "part": "components/toolbar",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/toolbar",
     "property": "text",
     "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/tooltip",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/tree",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/tree-row",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/update-dialog",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "components/zoom-chip",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "elements/canvas-frames",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "elements/part-tree",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "elements/shell-main",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "elements/studio-menu",
-    "property": "faces",
-    "count": 2
-  },
-  {
-    "product": "studio",
-    "part": "foundations/agent-logos",
-    "property": "faces",
-    "count": 2
   },
   {
     "product": "studio",
@@ -817,39 +373,9 @@
   },
   {
     "product": "studio",
-    "part": "foundations/elevation",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "foundations/logo",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "pages/flows",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
     "part": "pages/flows",
     "property": "text",
     "count": 2
-  },
-  {
-    "product": "studio",
-    "part": "pages/inventory",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "pages/merge",
-    "property": "faces",
-    "count": 1
   },
   {
     "product": "studio",
@@ -860,31 +386,13 @@
   {
     "product": "studio",
     "part": "pages/start",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "pages/start",
     "property": "text",
     "count": 2
   },
   {
     "product": "studio",
     "part": "pages/system",
-    "property": "faces",
-    "count": 1
-  },
-  {
-    "product": "studio",
-    "part": "pages/system",
     "property": "text",
-    "count": 1
-  },
-  {
-    "product": "studio-lab",
-    "part": "components/button",
-    "property": "faces",
     "count": 1
   },
   {
@@ -896,19 +404,7 @@
   {
     "product": "studio-lab",
     "part": "components/card",
-    "property": "faces",
-    "count": 2
-  },
-  {
-    "product": "studio-lab",
-    "part": "components/card",
     "property": "text",
-    "count": 2
-  },
-  {
-    "product": "studio-lab",
-    "part": "elements/add-film-dialog",
-    "property": "faces",
     "count": 2
   },
   {
@@ -920,20 +416,8 @@
   {
     "product": "studio-lab",
     "part": "elements/list-row",
-    "property": "faces",
-    "count": 2
-  },
-  {
-    "product": "studio-lab",
-    "part": "elements/list-row",
     "property": "text",
     "count": 1
-  },
-  {
-    "product": "studio-lab",
-    "part": "elements/login-dialog",
-    "property": "faces",
-    "count": 2
   },
   {
     "product": "studio-lab",
@@ -944,20 +428,8 @@
   {
     "product": "studio-lab",
     "part": "elements/shell-main",
-    "property": "faces",
-    "count": 2
-  },
-  {
-    "product": "studio-lab",
-    "part": "elements/shell-main",
     "property": "text",
     "count": 4
-  },
-  {
-    "product": "studio-lab",
-    "part": "foundations/tokens",
-    "property": "faces",
-    "count": 2
   },
   {
     "product": "studio-lab",
@@ -968,20 +440,8 @@
   {
     "product": "studio-lab",
     "part": "pages/film-detail",
-    "property": "faces",
-    "count": 2
-  },
-  {
-    "product": "studio-lab",
-    "part": "pages/film-detail",
     "property": "text",
     "count": 3
-  },
-  {
-    "product": "studio-lab",
-    "part": "pages/library",
-    "property": "faces",
-    "count": 2
   },
   {
     "product": "studio-lab",
