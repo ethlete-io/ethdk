@@ -3796,3 +3796,7 @@ second run in a scratch copy. Tool fix (builder default, tool backlog): `--base 
 shows its new picture on return" found no new picture URL within 10000 ms at load 27.8 (max 35.9); alone it passes
 (1/1, 50 s). Suspect: a fixed 10 s window under load, the class of 761 and 763 (tool backlog). Tool fix (builder
 default): the same as 761/763; the suite reruns.
+
+929 update (Mac): the rerun at 08c6de8a3 failed on the same case (load 30.5); alone it passes. Not pushed
+(b3854241c..08c6de8a3). Suspect now also the 911 design commits (more pictures to refresh). The resumed Mac builder
+probes it in a scratch copy at 43c4b5b8a vs HEAD under load before the push.
