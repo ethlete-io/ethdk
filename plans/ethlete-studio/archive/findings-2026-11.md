@@ -8971,3 +8971,460 @@ Bite: the refuse case failed on HEAD, 44/44 pass with the fix; fixture trimmed f
 verified: a live restart; the pid-file session id after /clear; a `❓` written after the restart call in the same turn.
 Side: the 863 guard (refuse unless the handoff names each live subagent) does not exist in `agent-sessions.mjs`,
 although finding 863 reads as built. 863 stays open, tool backlog after B249.
+
+549\. Builder (2026-11-07), pages/system compare at load 157: a fixed 15 s design draw timeout skipped the whole action
+check, and only one trailing line said so; the run took 473 s. Why no tool caught it: a skipped check counts as a
+pass in the summary, the same class as finding 545 (a rule that silently does nothing). Doc agent decisions
+(technical): retry once with a timeout scaled by the machine load, and a skipped action check counts as FAIL in the
+summary. The parallel work of ADR 0219 drove the load to 110-157 on 12 cores; the builder caps parallel compare
+agents so that a compare result still carries a verdict. pages/system port questions, decided by the doc agent as the
+design-is-truth rule: the old Ausnahmen toggle in system-view goes, the popover is the design; system-view moves to the
+page component for call and themes now; `agent` becomes a known unbound input with the reason "no progress source",
+removed when a source exists.
+
+549 as built (2026-11-07): the design draw wait stretches by machine load (`loadScaledMs`), and a compare whose action
+check could not run prints `actions: no verdict - <why>, retry` (b56914c71's NoVerdict shape), then
+`FAILED actions: not checked, so no action counts as working` and exits 1, so a skipped check never passes. Cherry-picked
+onto `next` as 1f9f7a87e (conflict with b56914c71 in `compare-command.ts` and `part-compare.spec.ts` resolved by keeping
+the NoVerdict print and adding the FAILED line); the Studio System page port is 9bc56da98. Verified: part-compare,
+part-picture-cache and unbound-input specs. Not verified: no real compare run under load.
+
+557\. Builder (2026-11-07): the first commit with the hooks on took about 15 min (related specs and typecheck at high
+load). Why no tool caught it: no budget covers the pre-commit hook; on the Mac it never ran (555). Doc agent decision
+(applies ADRs 0017 and 0218, a fault seen on the slow machine becomes a budget): the hook joins the performance block
+(S7c). The builder measures it at low load per step and proposes a target; the target number goes to Tom.
+
+557 data point (2026-11-07): S7c-1 (part picture cache, 539 render-inspect key 202 -> 64 modules, 553 physical cores
+and one shot file per variant) is staged in worktree agent-afba22bc5202ed617, not committed. For a cli change the
+pre-commit hook runs 1354 related specs; at load 60-135 they failed with 49, then 40 failures (23 timeouts). The agent
+did not bypass the hook.
+
+557 as built (2026-11-07): `design/paths.ts` is split into `design-config` (config types, `DESIGN_DIR`,
+`readConfig`), `package-root` (`assetRoot`, `snapshotPackage`), `work-root`, `vite-cache` and `is-running`; 192 imports
+moved, no barrel. `system/base.ts` stays whole: `loadBase` and `baseDirOf` reach the same 167 specs, so a split gains
+nothing. Related spec files (static import graph, 316 cli spec files): paths 177 -> design-config 169, package-root and
+work-root 175, vite-cache 111; base 167 unchanged. The split barely helps. The real hub is a cycle of 48 modules
+through `serve.ts`: 7 system modules (actions-command, compare-command, complete, live-actions, live-compare,
+live-uncovered, render-check) and warm-draw import `serve.ts`, so any module in the cycle relates at least 111 specs.
+Breaking that cycle is the next step.
+
+559\. Doc agent (2026-11-07): the builder said "the session restarts after this turn" and then sat idle for about one
+hour; nothing landed. `agent-sessions.mjs restart` waited the whole time: `.ethlete/restart.log` shows "waits, draft:
+⏺ main" again and again. `draftLine` takes the last pane line that starts with `❯` as the prompt, but with background
+agents open Claude Code shows the agent panel below the prompt (`❯ ⏺ main`), so the empty prompt reads as typed text.
+Why no tool caught it: the draft spec has no captured pane with the agent panel, and a restart that waits or gives up
+tells nobody. Doc agent decision (technical): `draftLine` reads the prompt line above the footer rule, not the last
+`❯` line, with a spec on a captured real pane that holds the panel; a restart that still waits after 2 min of draft
+sends one mailbox line to the caller and the doc agent, and a restart that gives up says so in the same way.
+Addendum (2026-11-07 11:40): the builder hung about 9 h until Tom asked. A manual clear by the doc agent showed a second
+cause: the keyboard focus sat in the agent panel, so typed text and Escape went into the panel, not the prompt. Two Up
+presses moved the focus to the prompt and recalled a history entry; C-u then emptied the line before `/clear`. Tool
+fix: `restart` moves the focus out of the panel (Up until the prompt line is focused, then C-u) before it types, and the
+spec covers a pane with panel focus. Process lesson: the doc agent waited for Tom to type `/clear` by hand although Tom
+allowed it to restart the builder; when a restart hangs, the doc agent drives the pane itself.
+
+559 as built (builder, 2026-11-07): `draftLine` reads the text between the last two rules of the input box; a `❯` menu
+line below the last rule still wins, and panel rows (`❯ ⏺`, `◯`) never count. `leavePanel` presses Up (at most 10) while
+a panel row holds the `❯`, then C-u; `restart` and the dispatch wake call it before they type. A draft that blocks 2 min
+and each give-up send a mailbox line to the caller and each `--notify` agent. Specs: a captured real pane with panel
+focus (fixture `claude-pane-agent-panel.txt`, a fake pane that drops the panel focus on Up), and the notices. Verified:
+the agent-sessions spec file. Not verified: a bite run of the new specs on the old script, a live restart of a real
+Claude pane, Codex panes.
+
+564\. Doc agent (2026-11-07): the agent-sessions `restart` refused a peer session, so the doc session's idle check could not
+restart a stuck builder and Tom had to step in. Fix: `restart <name>` accepts the paired session.
+
+564 as built (2026-11-07): `run --role builder` marks its tmux session with `@ethlete_role`; two sessions are paired when
+exactly one is a builder. `restart` accepts a paired target and logs `peer restart: <caller> restarted <target>` to
+`restart.log`; any other peer is still refused. The builder-agent and doc-agent skills each got one line.
+Verified: new spec in agent-sessions.spec.ts. A builder started before this change has no marker; restart it once by hand.
+
+708\. The human (2026-11-10, day shift, editor screenshot): "und wir solten auch hier schauen dass wir keine lint
+warnings einbauen". `@typescript-eslint/no-non-null-assertion` on
+`SDK_ICONS.find((each) => each.name === 'et-plus')!` in `.ethlete/design/sdk/components/button/button.ts:30` (merged
+in c8f5ac740, "Merge the button size round") and in the three variants of the sketch `components-button.off-centre`.
+Suspect: no lint target covers `.ethlete/design/**`, so the zero-new-warnings rule never reaches a design part or a
+sketch, and `sketch ready` and the merge do not lint. Tool fix: `design check` and `sketch ready` run ESLint on the
+changed part and variant files and fail on any warning (a baseline for the old ones is allowed, then only smaller);
+the merge refuses a variant with a new warning. Bite: the `components-button.off-centre` variant with the `!` fails
+`sketch ready`; with `SDK_ICONS.find(...) ?? fail(...)` it passes.
+As built (Mac, 708 follow-ups): calls gate in design check against `.ethlete/design/calls/lint-baseline.json` and a pre-commit lint of staged `.ethlete/**/*.ts` (65acd20da); 713 was already built in 27f3a3d35, its bite ran.
+As built (708, builder subagent). Cause (measured): every lint target of the 23 projects with one runs `eslint .` in
+its own root (`nx show project <p>`), none of them under `.ethlete`, and the pre-commit hook lints only staged
+`libs/*`, `apps/*` and `tools/*` files. The root `eslint.config.mjs` does reach the folder (the editor warning):
+`npx eslint '.ethlete/design/**/*.ts'` finds 38 findings, 5 of them in sdk parts (button, breadcrumb, tabs, timeline,
+toolbar), the rest in calls. Nothing in the design tool ran ESLint on a part or a variant. Fix: `design-lint.ts` runs
+the checkout's ESLint (`--format json`, one spawn) on the changed files only. `design check` (product, `--part` and
+whole run) lints the part and variant files that differ from HEAD or are untracked, shrinks the product's
+`lint-baseline.json` to what fires now and fails on a finding over it; `sketch ready` lints the live variants and the
+sketch `shared/` folder before rendering; `mergeSketch` refuses the picked variant with a new finding (CLI and Studio
+merge). The baseline counts findings per part file and rule, a variant file counts as its part file, and an entry
+added or grown after the file's first commit fails (`addedBaselineNamesOf`, as the rule baseline). Seeded with the 4
+old sdk `!` (breadcrumb, tabs, timeline, toolbar). `button.ts:30` uses `?? fail('SDK_ICONS has no et-plus')` (a direct
+edit of a merged part: it shows as changed outside a sketch until the human approves it). The sketch
+`components-button.off-centre` is in no checkout here (not committed, not on disk), so nothing was merged or deleted.
+Bite (worktree at HEAD + the change, cli built there, `sketch new components/button@off-centre --variants a,b,c`):
+variant a with the `!` -> `sketch ready` exit 1, `LINT ...a/components/button/button.ts:34:25
+@typescript-eslint/no-non-null-assertion` and "adds lint warnings - fix them before ready"; with `?? fail(...)` -> no
+LINT line, ready passes the gate and goes on to render (then refuses "draws variants alike", the untouched copies).
+Specs: `design-lint.spec.ts` (5 cases); the merge case fails with the merge gate disabled. Not verified: `design check`
+against the real sdk product end to end, and a Studio merge in the app.
+
+798\. Linux builder (2026-11-11, night, size gate): `node tools/scripts/archive-findings.mjs --help` ran the archive and
+moved 22 findings (b0d74fa72). Cause (measured): the script ignores its arguments. Harmless this time, but `--help` or a
+typo writes two tracked files. Why no tool caught it: the script has no argument check, and no spec calls it with an
+unknown flag. Lesson: a script that writes tracked files refuses arguments it does not know. Decided by the doc agent
+(tool internal, the builder's proposal): `--help` prints the usage and exits 0 with no write; an unknown argument prints
+the usage and exits 2 with no write; `--dry-run` lists what would move; a plain run moves as now. Bite: a spec with
+`--help` and with `--bogus` leaves both files byte-identical. Night backlog, Linux, small, after 659 part 2.
+
+798 as built (Linux builder, 2026-11-11, night): `archive-findings.mjs` exports `main(argv, { root, log })`. `--help`
+prints the usage and returns 0; an unknown argument prints `unknown argument: <arg>` and the usage and returns 2;
+`--dry-run` lists the month and first line of each block that would move; a plain run moves as before. Spec: `--help`,
+`--bogus` and `--dry-run` leave both files byte-identical, and a plain run moves an old done finding. Bite: with the
+argument check off, the `--help` and `--bogus` tests fail (2 of 13). Verified live: `--bogus` exits 2, `--dry-run` writes
+nothing. Not verified: nothing open.
+
+804\. Mac builder (2026-11-11, night, push:suite of bae08fb64): `serve.spec.ts` "keeps answering other requests while it
+checks two hundred sketches" took 75 s on the Mac (timeout 60 s) and blocked the push. Cause (bite): eea6f5c7e (788)
+formats each variant `tsconfig.json` with one Prettier process in `writeEditorTsconfig`, so each run spawns one process
+per sketch and variant; with the format stubbed the case took 9.0 s. Why no tool caught it: a per-item spawn passed on
+the fast Linux box, and no spec counted spawns. Lesson: a writer of many files spawns no process per file. Decided by
+the doc agent: the Mac builder builds it, no spawn per file, no timeout raise.
+
+804 as built (Mac builder, 2026-11-11, night, 1a6d924b1): `prettierJsonOf` (`system/prettier-json.ts`) writes JSON in
+the form Prettier writes for a `.json` file (objects one key per line, a scalar array on one line when it fits the print
+width). `jsonStyleOf` (`sketch/check-format.ts`) reads `printWidth`, `tabWidth` and `useTabs` of the checkout's Prettier
+config with one process per product folder and process; `formatText` is gone. A checkout without Prettier keeps the
+plain `JSON.stringify` text. Specs: `system-tsconfig.spec.ts` counts the `child_process` calls of `writeEditorTsconfig`
+over three sketches with two variants: at most 1, then 0 (the old writer: 9); `prettier-json.spec.ts` compares the
+output with the repo Prettier at, one under and one over the print width (it fails at a width of 119). Verified: the 788
+FORMAT case passes in a temp checkout with the Prettier default width 80; the serve case takes 18.4 s under load 24;
+`vitest related` 129 files pass; lint and typecheck of cli. Not verified: a resident server keeps the style of its first
+call, so a changed Prettier config takes effect after a restart; a config with `overrides` per sketch folder is read for
+the product folder only.
+
+816\. Linux builder (2026-11-11, B490): `et design shot` refuses a page the sketch does not target, so a foundations change
+cannot be shot in a page that embeds it; the subagent fell back to its own Playwright script. Suspect (one run). Why no
+tool caught it: `shot` knows only the sketch targets. Tool fix (doc agent, tool internal): `shot --in <page>` for a
+foundations or components sketch, drawing the page with the sketch variant applied.
+
+816 as built (Linux builder subagent, 2026-11-11, 6beeee554): Reproduced: `yarn design shot pages/sketches@font-pair --variants --product studio` exited 1 with `design-explore: pages/sketches@font-pair has no open sketch in product "studio"`, and `shot` had no way to name a host part. Fix: `shot <layer>/<name>[@<sketch>] --variants --in <layer>/<name>` draws the merged host and each variant of the sketch inside it (the product overlaid with the variant, as the open server draws `part=` with `sketch=`); `inPageRefusalOf` refuses a host the product lacks and a host that neither is a sketch target, reaches one through its imports, nor takes it as a tokens part (`--in <page>: <page> does not embed <part> (...)`, exit 1); `--in` without `--variants` exits 2. Help text and `apps/docs/cli/index.md` name the flag. Bite: 3 cases in `shot-command.spec.ts` fail with the source at HEAD (`inPageRefusalOf is not a function`, and the flag refused as unknown). Verified: cli typecheck, eslint, `vitest related` 143 tests, a live `yarn design shot foundations/type@font-pair --variants --in pages/sketches --product studio` sheet (merged plus a, b, c with diff rows; variant a draws the page labels and buttons in the mono pair, 79871 px changed) and a `GET /__design/shot?part=pages/sketches&state=page-sketch&sketch=foundations/type@font-pair&variant=a` from :4402 that shows the same font change. The open server never refused this; only the CLI did. Not verified: a components sketch in a page live, `--in` with `--at` or `--crop changed`; the live CLI run flagged variant c's page-sketch cell as unstable between two renders (70861 px), exit 1, not investigated.
+
+838\. Doc agent (2026-11-11, from the f106ddd4a hold run): a subagent's `studio:e2e` run and the push-suite repeat ran at
+the same time in one checkout, and the hold run failed 30 cases under that load. Suspect: the load from two parallel
+runs, not the change. Decision (grill): `studio:e2e` takes the heavy run lock too, so the two never overlap in one
+checkout; a waiting run prints who holds the lock. An "under foreign load" mark is only a fallback. Bite: a second
+`studio:e2e` that starts while the lock is held waits or refuses, and does not run.
+
+838 as built (Linux builder, 2026-11-11, this commit: fix(repo): Take the heavy run lock in studio:e2e): `lead()` in
+`canvas.e2e.mjs` takes `takeHeavyLock('studio:e2e')` before any server start (skipped for `--list`); a refused lock prints
+`holderLine` and exits 2; `--no-wait-lock` refuses at once, the default waits. Verified: new `heavy-lock.spec.mjs` was red
+before the edit (the run started, rebuilt the CLI and hit the 60 s timeout) and is green after (60 ms). Push-suite children
+inherit `ETHLETE_HEAVY_RUN_HELD` and take none; repeat and bite spawn their runs one after another, each takes and releases.
+Not verified: a full `studio:e2e` run, the waiting path with a live holder, push-suite end to end.
+
+848\. The human (2026-11-11, B490 font-pair sketch in Studio): "ich seh hier keine unterschiede zwischen den vars. ich
+glaub die nutzen alle den gleichen font oder? ist nen edge case". Variants b (Inter + JetBrains Mono) and c (Noto Sans +
+Noto Sans Mono) show the same glyphs, although the woff2 files and `@font-face` rules exist per variant. Suspect: the
+`@font-face` url does not resolve in the variant frame, so every variant falls back to `system-ui`. Lesson: the sketch
+was marked ready and shown for a pick while its whole point (the font) was not visible, and no gate looked. Tool fix
+(doc agent, tool internal): sketch check and the ready gate fail when a declared `@font-face` family does not load in the
+frame (`document.fonts` status "error", or `document.fonts.check` false after load), naming family and url. Bite: the
+B490 sketch as it is fails the check.
+
+848 as built (Linux builder, 2026-11-11, this commit: fix(repo): Show the font pairs large in the font-pair sketch):
+the suspect was wrong. Measured on :4402 in Chromium and WebKit: every variant fetches its own two woff2 (200, from
+`<variant>/assets/fonts`), both families reach status "loaded", and the computed `--font-ui` differs per variant; the
+server shots of a, b and c differ in every glyph region. The cause was the drawing: the only font samples were
+"Aa 0123 {}" and "Pick variant" at 10-17px, which Studio shows at 49 % fit zoom, and three close neo-grotesques (c is
+the Linux `system-ui` font of the Aktuell column) do not tell apart at 5-8px. Fix: a specimen at 4rem (UI) and 3rem
+(code) with telling glyphs (`Rag Qty 1Il 0O ß`, `0O 1lI {} => !=`) heads the sheet in all three variants; the Studio
+sketch view now shows it legibly at fit zoom. Sketch check could not catch it: the FONT-FACE rule
+(`libs/cli/src/lib/design/system/font-faces.ts`) already fails a face that does not load, and here all load, so the
+proposed tool fix is built and its bite ("the sketch as it is fails") does not hold. Do not add the
+`document.fonts.check` criterion: in Chromium the product stylesheet and the token sheet both carry each `@font-face`,
+so `document.fonts` holds a second "unloaded" copy of every family and `check()` answers false although the text draws
+in the loaded font. The open gap is visual: no check says that variants of a sketch look alike at the zoom Studio
+shows them.
+
+880\. Linux builder (2026-11-11, B480, rack): after a cold start the design server does not answer for about 60-90 s.
+Suspect; measure it together with the 875 serve crash log. Side: user-facing, after B249 (ADR 0269).
+
+880 closed as "no start delay" (Linux, measured in scratch, cold Vite cache): listening 1.7 s idle, 6.2 s with a cold nx
+daemon, 4.4 s under load 12-26. Cause (measured): the slow part is the first full sketch listing (targets phase 8.5 s
+idle, 34.3 s under load), not the server start. Suspect: the 60-90 s on rack is that listing under load 20+. Decided by
+the doc agent: close 880; a listing speed-up joins 846 (same targets phase).
+
+904\. Mac builder (2026-11-11 night, 901 tool fix): `yarn et:design` still built the CLI at 448c47f16 although HEAD was
+later; the agent used `node dist/libs/cli` for the bite. Suspect: the build pin reads a stale ref. Lesson: a check run
+with a stale CLI proves nothing about HEAD and says so nowhere. Tool fix (builder default, tool backlog): the CLI prints
+the commit it was built from and warns when it differs from HEAD for a changed `libs/cli` file.
+
+904 built (Mac, f15c2cf25, unpushed, quiet push:suite runs): Cause (probe): the B191 stale-CLI check
+(`runningCliStaleWarning`, 2086f4cda) returned null unless the CLI runs from `dist/libs/cli`, but `yarn et:design` runs a
+copy under `tmp/studio-cli/<sha>/`, so the check never ran. Fix: `build-info.json` gets the commit; one `git diff --quiet
+<commit>` over the libs/cli sources; one WARN line naming the build sha. Bite: build-commit.spec.ts, 6 cases failed
+before. Not verified: plain `yarn et:design` without `ETHLETE_DESIGN_CLI_ENTRY`.
+
+920\. Mac builder (2026-11-12 night, 909): push:suite on d93a22db8 failed on typecheck ethlete-studio, 2x TS2345 in the 909
+spec (`sketches.component.spec.ts:442`, `ROWS[1]` possibly undefined); fixed in 43c4b5b8a. Suspect (code read): the 909
+subagent ran tsc only with `tsconfig.app.json`, and vitest does not typecheck, so a spec-only type error reached the push
+suite. Tool fix (builder default, tool backlog): the slice check runs the project `typecheck` target (spec config
+included) before a commit; the builder-agent subagent brief names it. Parked (ADR 0276), see parked-suspects.md.
+
+922\. Mac builder (2026-11-12 night, 910 probe, group B): 2 "Übernehmen" rows in `withdrawn-hidden` and `withdrawn-shown`
+are an app defect. Cause (code read): the app part has no withdrawn concept (no row flag, no input, no "Zurückgezogene
+(n)" switch); compare names it ("design prop withdrawn has no input on the app component"). Fix (Mac, next): withdrawn
+rows in the app part, `withdrawn` mapped in `DESIGN_HARNESS_SAMPLES` (`design-harness-samples.ts:44`). The tool caught it;
+no tool fix.
+
+922 built (Mac, ca232c417, unpushed, push:suite runs): withdrawn rows in the app part ("Zurückgezogene (n)" switch, mark
+in place of "Übernehmen", pin dropped). Bite: spec failed without the fix. Compare withdrawn-hidden/shown went from FAILED
+(no input) to DIFF 84596/88947 px; not verified by a live shot with a real withdrawn variant. The Mac found no 922 text in
+its checkout: the doc commits are unpushed and ride with the Linux push.
+
+925\. Mac builder (2026-11-12 night, push of 43c4b5b8a): the push suite passed, then pre-push refused the push:
+`lint:person-names` read the working tree, where a running 911-design subagent held an uncommitted checker change (zero
+names allowed under `.ethlete/design`) while the design files still held the name. Cause (this run): the pre-push
+person-names check reads the live tree, not the pushed range; an uncommitted edit of another agent blocks a clean push.
+Tool fix (builder default, tool backlog): the check reads the blobs of the pushed commits, like the format step.
+
+925 built (Mac, 782f48d5f + 78b23d84f): `check-person-names --range <base> <head>` reads `git show <head>:<path>`;
+pre-push uses it. Bite: check-person-names.spec and lint-changesets.spec. The follow-up fixed a cwd-relative script path
+that broke the push-suite.spec fixture (resolved from `import.meta.dirname`).
+
+926\. Linux builder (2026-11-12 night, 903 slice): `sketch merge` of an @edit sketch refused again after a rebase.
+Cause (code read of `merge.ts` + `clean-copy.ts`, reproduced): the merge checks a clean copy of HEAD plus only the @edit
+part folder; an uncommitted change in an embedded part (title-search) of the same slice makes it refuse forever, and its
+"run sketch rebase" advice cannot help. Lesson: the advice named a step that cannot fix the cause. Tool fix (builder
+default, tool backlog): the clean copy takes the slice's other changed parts, or the refusal names the commit order.
+
+926 built (Mac, 55fd668cd): the refusal names the commit order; the clean copy stays (taking dirty embedded parts in would
+merge on content the commit lacks, ADR 0206). Cause (code read, spec bite): the clean copy holds HEAD + sketch + the @edit
+part folder, so a dirty embedded part misses the baseline hash, and `sketch rebase` records the same checkout state again.
+`merge.ts` commitOrderRefusalOf: a conflicting part whose checkout still matches the baseline gets "commit <parts> first,
+then merge <sketch>"; real changes keep the rebase advice. Bite in `edit-sketch.spec.ts`. Not verified: a live merge of
+the real title-search slice.
+
+929\. Mac builder (2026-11-12 night, push:suite on 08c6de8a3): the e2e case "[Edited] a part edited on disk while away
+shows its new picture on return" found no new picture URL within 10000 ms at load 27.8 (max 35.9); alone it passes
+(1/1, 50 s). Suspect: a fixed 10 s window under load, the class of 761 and 763 (tool backlog). Tool fix (builder
+default): the same as 761/763; the suite reruns.
+
+929 update (Mac): the rerun at 08c6de8a3 failed on the same case (load 30.5); alone it passes. Not pushed
+(b3854241c..08c6de8a3). Suspect now also the 911 design commits (more pictures to refresh). The resumed Mac builder
+probes it in a scratch copy at 43c4b5b8a vs HEAD under load before the push.
+
+929 update 2 (Mac): Cause (probe under a 24-busy-loop load): load, not the 911 slice. The app shows the new URL in about
+258 ms; the test shared one 10 s window for "new URL" and "all 12 drawn", and under load the drawing took 12.9 s (0.5 s
+idle). Fix d672e8c89 (test only): the new URL within WAIT_MS, then drawn within FULL_COMPARE_MS, separate messages, the
+pass prints timings; passes under load (drawn 12941 ms) and alone. Tool fix (builder default, tool backlog, with 761/763):
+`yarn studio:e2e --load N` reproduces suite-only load failures; the other picture cases (`canvas.e2e.mjs` ~1642) get the
+same split windows.
+
+929 built (Mac, 5c5a1908a, push:suite runs): `yarn studio:e2e --load <n>` (run-load.mjs reuses `startBusyLoops`; exit 2
+on a bad value; loops die with the parent; run-load.spec bites). One more shared picture window split ("a sketch cell
+edited on disk while scrolled away shows its new picture on return"); 5 other picture cases checked, none share a window.
+Cause (probe): under `--load 24` (load 100+) that case fails on the URL stage (21 s vs 10 s), drawing < 50 ms; at `--load
+12` it passes. No fail-then-pass bite for the split. The 10 s URL budget stays (the Mac's call, accepted by the doc agent:
+push-suite load is 28-30, and a slower reaction is a real defect).
+
+941\. Linux builder (2026-11-12 night): the design server on :4402 was down: the studio-serve pane showed "FATAL ERROR:
+Reached heap limit ... JavaScript heap out of memory" after a 4 h 18 min run. Restarted in tmux studio-serve. Suspect: a
+leak in the resident or the shot browser pool. Tool fix (builder default, tool backlog): find the leak with two heap
+snapshots an hour apart; until then the serve command names its heap use in its status line.
+
+941 update (doc agent, 2026-11-12 02:10, ps): the design server (`yarn design`, pid 1055162) held 6.0 GB RSS after 38 min
+and its child (pid 1185015) 4.5 GB; Linux had 1.5 GB available and a full swap, and Claude Code killed background
+shells for memory. So the heap growth shows in under an hour, not only after 4 h. The ready.json writer in 946 is this
+server process (the builder saw pid 1055162 as `et design check`). Suspect for both until a bite.
+
+941 update 2 (Linux builder): restarting studio-serve and `yarn design stop` on an orphaned resident (pid 1281248, 23
+min, about 6.5 GB with its Chromium) brought available memory from 1.5 GB to 45 GB.
+
+941 built (Linux, 903012491): `design serve` logs `design-explore: heap <used>/<limit> MB` every 5 min and one WARNING when
+the heap first passes 80 % (`heap-watch.ts`). Spec bites; live in a growing 2 GB process the WARNING came at 1817/2240 MB.
+
+943\. Linux builder (2026-11-12 night, 933): `sketch ready` exits 0 when it refuses a variant. Tool fix (builder default,
+tool backlog): exit 1 on a refusal, with a spec. Two more cases of the same class (Linux, 63d53b7b6): `sketch ready` without
+`--by` prints a usage error and exits 0; a SHOT-NOT-VIEWED refusal exits 0. The fix covers every refusal and usage error.
+
+943 closed (Linux, not reproduced): `.timings.jsonl` holds exit 1 for each refusal of the 933 `sketch ready` runs and 2 for
+the usage error; sketch-command.spec.ts asserts exit 1. Suspect: a pipe or wrapper hid the code.
+
+945\. Linux builder (2026-11-12 night, 933): `sketch ready` prints about 30 UNBOUND-INPUT note lines per variant. Tool fix
+(builder default, tool backlog): one summary line per variant, details behind `--verbose`. Parked (ADR 0276), see parked-suspects.md.
+
+946\. Linux builder (2026-11-12 night, 933): `.ethlete/design/studio/ready.json` shows stale hashes for
+components/canvas-viewport (`button.component.css`, `icon-button.component.css`) in the working tree, uncommitted. Suspect:
+a shot or a ready run rewrote it after the 903 button change. Tool fix (builder default, tool backlog): find which command
+writes ready.json outside `sketch ready`; only `sketch ready` may write it, with a spec.
+
+946 update: `.ethlete/design/studio/ready.json` is now rewritten in 279 lines by a writer that is not the builder's
+command; still uncommitted.
+
+946 update (Linux, process read): `.ethlete/design/studio/ready.json` was written by `et design check` at 01:31 (pid
+1055162). Suspect stays until a bite: `design check` writes ready.json, which only `sketch ready` may do.
+
+946 closed (Linux, not a bug): `design check`, the slow runner and `design ready` write `ready.json` by design; Cause
+(measured): they wrote fresh records at 01:31 and 03:50 after the 903 and 7f CSS changes, and the committed file is the
+stale side. Decided by the doc agent (applies ADR 0009: the builder commits tool-written design records): the Linux builder
+commits the working-tree `ready.json` of sdk and studio after a fresh `design check`.
+
+948\. Mac builder (2026-11-12 night, 922): design check keeps reporting baseline entries that no longer fire (2 stale
+withdrawn-* DROPPED-PROP entries, removed by hand). Tool fix (builder default, tool backlog): design check names a
+baseline entry that matched nothing, with a spec. Parked (ADR 0276), see parked-suspects.md.
+
+949\. Mac builder (2026-11-12 night, 922): compare does not say when the app rebuilt in the middle of a run, so a mixed
+result reads as one. Tool fix (builder default, tool backlog): compare prints one line when a rebuild happened during the
+run. Parked (ADR 0276), see parked-suspects.md.
+
+950\. Mac builder (2026-11-12 night, 922): jsdom ignores rules inside `@layer`, so a spec that reads computed styles of
+an SDK component needs a hand shim (`display:flex` for et-choice-field). Suspect: jsdom's CSSOM has no cascade layers.
+Tool fix (builder default, tool backlog): one shared spec helper or note in the Studio spec setup, not a shim per spec. Parked (ADR 0276), see parked-suspects.md.
+
+951\. Linux builder (2026-11-12 night, A24): `sketch check` takes 25-35 s against its 10 s target; about 20.6 s of it is
+resident-queue-wait. Suspect (one run, not measured in isolation). Tool fix (builder default, tool backlog): measure the
+queue wait over several runs, then let `sketch check` skip or shorten the resident queue.
+
+951 closed (measured, no commit). Cause: the 20.6 s was a one-off wait behind an overlapping run. Four sequential runs:
+28.7-34.5 s, queue wait 0; two concurrent: 37-38 s, queue wait 0; 1 of 34 recorded runs waited. Time: aktuell ~11 s,
+changes-shot ~7 s, gates 3.3 s, draw-queue-wait ~2.8 s, render-check 1.8-7 s, identical 1.5 s.
+
+952\. Mac builder (2026-11-12 night, 921): `sketch withdraw` without `--reason` wrote the reason "identisch mit a", but
+variant b matched Aktuell. Tool fix (builder default, tool backlog): the default reason names what the variant really
+matches (measured), or `--reason` is required, with a spec. Parked (ADR 0276), see parked-suspects.md.
+
+953\. Mac builder (2026-11-12 night, 921): `design check --lint` refuses `--product` (exit 2), while the sketch commands
+want it. Tool fix (builder default, tool backlog): every design and sketch command accepts `--product`. Parked (ADR 0276), see parked-suspects.md.
+
+961\. Linux builder (2026-11-12 night, 880): 4ca55ca3c used `.at(-1)` in `crash-log.ts`, but the cli lib compiles
+against es2020, so `nx build cli` and `yarn design` on a cache miss failed; fixed 12a5a6551 (bite: `nx run
+cli:typecheck --skip-nx-cache` TS2550 before, clean after). The 875 slice saw `cli:typecheck` clean. Suspect: the
+typecheck reaches lib files only through `tsconfig.spec.json` (lib es2022), or it was a cache hit. Tool fix (builder
+default, tool backlog): the typecheck target checks non-spec files with the lib tsconfig, with a bite that adds `.at()`
+to a lib file.
+
+961 closed (measured, no commit): cli:typecheck runs `tsc -p libs/cli/tsconfig.lib.json` since 7107649b0; a temporary
+`.at(-1)` fails it with TS2550. Suspect: the 875 slice did not rerun typecheck after its last crash-log.ts edit.
+
+962\. Mac builder (2026-11-12 night, 929): `studio:e2e --load` starts the busy loops before the 125 s Studio build, so
+`--load 24` on 12 cores gives load 100-135, not the push-suite 28-30. Tool fix (builder default, tool backlog): start the
+loops after the build, or a `--load-target <loadavg>` mode that holds a set load. Parked (ADR 0276), see parked-suspects.md.
+
+963\. Mac builder (2026-11-12 night, 929): push:suite at 5c5a1908a was blocked by the e2e case "[Large] a sketch cell
+edited on disk while scrolled away shows its new picture on return" (URL kept 10000 ms), at load 48 (max 61) on 3
+workers, while a 904 subagent built and tested in parallel. The case passes at load ~30 and alone. Suspect: the parallel
+slice's load; the URL stage may itself be load-bound (server re-render). So the e2e verdict depends on what the builder
+runs meanwhile. Tool fix (decided by the doc agent, tool internal): push:suite holds a "heavy" lock during its e2e step,
+and the build and test commands of a slice wait for it (or print one line and refuse), with a spec. The Mac reruns
+push:suite on a quiet machine; the 10 s budget stays. If it fails again quiet, probe the URL stage under load.
+
+963 built (Mac, 4a24296fd): push:suite already held `$TMPDIR/ethlete-heavy-run.lock` (89671ec71). New: `waitForNoHeavyRun`
+and `tools/scripts/heavy-gate.mjs <name> [--no-wait] -- <cmd>` (one wait line; exit 2 on `--no-wait`,
+`ETHLETE_HEAVY_NO_WAIT=1` or after 60 min); test:tools, test:e2e-helpers and the nx build of verify:webkit-studio go
+through it. Spec bites (6 cases). Not verified: a real push:suite with a waiting slice.
+
+964\. Mac builder (2026-11-12 night, 904): the stale-CLI diff does not see untracked new files in libs/cli, and why
+`et:design` picked the 448c47f16 copy is not probed (Suspect: the copy is keyed by the last commit that touched
+libs/cli). Tool fix (builder default, tool backlog): the check also lists untracked libs/cli source files; probe the copy
+pick and name the rule in the WARN line. Parked (ADR 0276), see parked-suspects.md.
+
+970\. Linux builder (2026-11-12 night, 913): the 9 baselined DROPPED-PROP hits of pages/sketches (ADR 0201) now print as
+warnings on every check, 13 lines for one part, so the real warnings drown. Suspect. Tool fix (doc agent applies ADR 0201:
+a baselined hit is accepted; builder default, tool backlog): skip the warning for a state whose DROPPED-PROP hit is
+baselined, with a biting spec. Parked (ADR 0276), see parked-suspects.md.
+
+971\. Linux builder (2026-11-12 night, 917): the sdk ACTION-UNDECLARED count went from 852 to 1041 between two `design
+check` runs minutes apart. Suspect: the untracked `.ethlete/design/sdk/sketches/` changed under another session, or the rule
+is not deterministic. Tool fix (builder default, tool backlog): run it twice on a clean tree; if the count moves, make the
+rule deterministic with a biting spec; if the untracked dir moves it, the check names untracked design files it read. Parked (ADR 0276), see parked-suspects.md.
+
+972\. Linux builder (2026-11-12 night, 917): Studio's `sdk-token-map.css` ties only the md and xs `et-button` to
+`--control-*` tokens; sm, lg and xl get md padding, so CONTROL-HEIGHT would fail them. No committed part draws one today.
+Suspect (code read). Tool fix (builder default, tool backlog): map every size, with a part state per size that the rule
+judges, so a missing size fails the check. Parked (ADR 0276), see parked-suspects.md.
+
+973\. Mac builder (2026-11-12 night, 963): `npx nx` build/test/lint, `npx vitest` and a direct `node --test` still skip the
+heavy lock, so the rule "no build or test in a slice during a push:suite e2e" stays a prose rule for them. Suspect: under
+the Nx daemon a hook does not see `ETHLETE_HEAVY_RUN_HELD` (safe today only because push:suite sets NX_DAEMON=false).
+Tool fix (builder default, tool backlog): probe the daemon env first, then a local Nx plugin whose preTasksExecution calls
+`waitForNoHeavyRun`, registered in nx.json, with a biting spec. `yarn design` reads stay out on purpose.
+
+973 built (Mac, 7e18765f6): `tools/scripts/nx-heavy-wait.mjs`, first in the nx.json plugins, calls `waitForNoHeavyRun("nx")`
+in preTasksExecution; it returns at once for a held child, no lock or a dead holder (CI unaffected). Probe (Nx 24.0.2):
+under the daemon the wait notice goes to the daemon log and TMPDIR is not forwarded; lockFileOf now uses
+`getconf DARWIN_USER_TEMP_DIR` when TMPDIR is unset. A refusal exits 1 (an isolated worker cannot set the code); wait cap
+9 min (Nx kills an isolated plugin call at 10). `ETHLETE_HEAVY_EXEMPT=design` exempts yarn design and the studio builds of
+et:design. Bite: 5 cases. Cost about 0.2-0.9 s per nx run. Not verified: the 9-min cap against a real timeout.
+
+975\. Linux builder (2026-11-12 night, 928): `compare --base` over a wide range prints one line per changed state (33).
+Suspect: a long list hides the new failures. Tool fix (builder default, tool backlog): NEW lines first, the list capped at
+about 10 with "+k more", with a spec. Parked (ADR 0276), see parked-suspects.md.
+
+977\. Linux builder (2026-11-12 night, 939 root): `merge-step.ts` allowedMergeOf writes the pick before the merge and never
+removes it on a refusal, and `merge --allowed-by` silently reuses an existing pick, also for another variant. Suspect (code
+read, not run). Tool fix (builder default, Mac: merge-step.ts is Mac-only): in mergeAndRecord, when `allowed` is set and the
+merge refuses, restore the sketch file; the `merged` command treats an existing agent pick as no pick; biting specs.
+
+977 built (Mac, adeddd202, pushed): a refused merge writes the original sketch back; humanPickOf counts a pick whose
+decision.by is a model id as no pick. Open point (Suspect, code read): a --by that is not a model id still counts as
+human; kept, because --by is documented as a model id (doc agent, technical).
+
+978\. Linux builder (2026-11-12 night, 938): a picked sketch that `sketch ready` reopens is in progress and still holds the
+pick. Suspect: Studio shows it in a mixed state. Tool fix (builder default, tool backlog): a shot of pages/sketches with
+such a sketch; if the state reads wrong, a sketch for the human, else a state in the part that covers it. Parked (ADR 0276), see parked-suspects.md.
+
+980\. Linux builder (2026-11-12 night, 947): any other cli copy of SDK source has the same affected-graph gap: a change to the
+SDK source runs no cli spec. Suspect. Tool fix (builder default, tool backlog): list the cli copies of SDK files and add each
+to the cli project's implicit dependencies or give it a spec in the source lib, with a bite. Parked (ADR 0276), see parked-suspects.md.
+
+982\. Mac builder (2026-11-12 night, 973): the live check of 973 put a fake lock in the real TMPDIR 4 s before the Mac's
+push:suite on 95a46cf1b; the suite waited, the agent deleted the dead-pid fake and maybe the suite's own lock, then wrote
+`{pid,push-suite}` back; the suite still ended ok. Cause (seen live). Tool fix (builder default, Mac, next): heavy-lock
+specs and live checks use a private lock file (lockFileOf honours `ETHLETE_HEAVY_LOCK_FILE`), and a spec fails when a test
+touches the real lock path.
+
+982 built (Mac, 882228e5a, pushed): one resolver `lockFileOf(env, platform)` in heavy-run-lock.mjs; ETHLETE_HEAVY_LOCK_FILE
+wins. takeHeavyLock throws under `node --test` without a file option or env override; spec bites. The guard covers taking,
+not reading. Not verified: a live Nx daemon run. The first push-suite had one e2e failure at load 33 (min-zoom text box)
+while a 976 agent ran; the rerun passed. Suspect: load (finding 960 class).
+
+983\. Mac builder (2026-11-12 night, 973): two concurrent nx callers on one daemon may share the worker env, so the held or
+exempt flag of one leaks to the other. Suspect. Tool fix (builder default, tool backlog): a probe with two callers; if it
+leaks, read the flags per call, with a biting spec.
+
+983 built (Mac, c40928708, pushed): under the Nx daemon the wait hook ignores EXEMPT and RUN_HELD; takeHeavyLock sets
+NX_DAEMON=false while held. Cause (live probe): Nx 24 passes the hook the env of the client that connected last. Not
+verified: ci-like-load and spec-stress children without the daemon.
+
+987\. Linux builder (2026-11-12 night, 985): `clip` and `view` on `shot?source=app` are likely ignored the same way as the
+theme params were. Suspect (code read). Tool fix (builder default, tool backlog): pass them to the harness or refuse them
+with 400, with a biting spec. Parked (ADR 0276), see parked-suspects.md.
+
+989\. Linux builder (2026-11-12 night, 961): libs/eslint-plugin and libs/types have no typecheck target, and
+apps/timetrack-vscode checks only its spec tsconfig. Cause (measured). Tool fix (builder default, tool backlog): add the
+targets, with a temporary type error that fails each.
+
+989 built (Mac, 57ba6a45c, pushed): typecheck targets for libs/types and libs/eslint-plugin; apps/timetrack-vscode also
+checks tsconfig.app.json. Bites on a temp type error. libs/eslint-plugin is .js only, so its target checks no file today.
+
+991\. Night shift (2026-11-12): /tmp ran full again after 990 was recorded; Claude Code then refused every shell call in
+every session (output capture in /tmp/claude-1000), so no agent could alarm the human. Cause (seen): the largest holders
+were our own test folders (93 `tmp-<pid>-*` with node_modules, 305k inodes; 141 et-design-visible-change-*, 80k), not
+Playwright. Tool fix: decided by the human (ADR 0275, B494): an hourly timer sweeps them; sessions keep their temp dir on
+/home. 990 stays for the early inode check and the spec that finds which spec leaks `tmp-<pid>-*`.
+
+992\. Mac builder (2026-11-12, 983): an e2e case failed with `apiRequestContext.get: read ECONNRESET` at load 33.5 in the
+shot ETag fetch (canvas.e2e.mjs:1467). Suspect (not proven): keep-alive socket race; Playwright retries only with
+maxRetries. Tool fix (builder default): `maxRetries: 2` at canvas.e2e.mjs:1467 and :1749, with a bite if one can be made. Parked (ADR 0276), see parked-suspects.md.
+
+994\. Mac builder (2026-11-12, 983): the e2e step in push:suite reached load 33-36 with 3 workers and took 7 min against a
+5 min budget in every run. Suspect: 3 workers are too many on the Mac. Tool fix (builder default, tool backlog): measure
+2 against 3 workers and set the count from the numbers. Parked (ADR 0276), see parked-suspects.md.
+
+995\. Linux builder (2026-11-12, 957): `sketch check` on studio-lab elements/rating exits 1 on UTILITY-CSS lines in variants
+b and c before the look-alike step, so a refusal hides the later steps. Suspect: refusal ordering. Tool fix (builder
+default, tool backlog): `sketch check` runs every step and lists all problems before it exits 1; the rating b/c
+UTILITY-CSS lines get fixed in the sketch. Parked (ADR 0276), see parked-suspects.md.
