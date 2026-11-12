@@ -3912,3 +3912,8 @@ Second occurrence of 655: 655 (2) built a scheduled `rust-audit.yml` on 2026-11-
 push. Suspect: the scheduled run did not run, failed unseen, or `et design status` does not read it. Blocking (CI red),
 so numbered. Tool fix (Linux, after the push): find which of the three, and make a red scheduled audit show in
 `et design status` like a red push run.
+
+998 update (Linux builder): Cause (proven with gh and git): the scheduled audit never ran. GitHub runs a `schedule`
+trigger only from the default branch `main`, and `rust-audit.yml` exists only on `next`; `gh run list` shows no schedule
+run. Second gap: nothing in tools/, libs/cli or Studio reads rust-audit runs. Fix choice goes to the human (a commit on
+`main`).
