@@ -3712,6 +3712,12 @@ its origin. Suspect: a step of the 903 direct edit wrote it. Lesson: a tool can 
 no message. Tool fix (builder default, tool backlog): every sketch records the command and session that created it, and
 `et:design status` names sketches no session claims.
 
+919 update (Linux): Cause (code read + reproduced): `design check` (`accepted-pictures.ts` ~385) opens an old/new edit
+sketch, author "design check", for every merged part whose folder differs from HEAD, and prints only a DIRECT EDIT line.
+The 903 subagent restored the part; the sketch stayed. It is the intended ADR 0209 vehicle; deleted (untracked). Tool
+fix (builder default, tool backlog): the check summary names each sketch it opened, and drops an edit sketch when its
+part matches HEAD again.
+
 920\. Mac builder (2026-11-12 night, 909): push:suite on d93a22db8 failed on typecheck ethlete-studio, 2x TS2345 in the 909
 spec (`sketches.component.spec.ts:442`, `ROWS[1]` possibly undefined); fixed in 43c4b5b8a. Suspect (code read): the 909
 subagent ran tsc only with `tsconfig.app.json`, and vitest does not typecheck, so a spec-only type error reached the push
@@ -3731,3 +3737,16 @@ are an app defect. Cause (code read): the app part has no withdrawn concept (no 
 (n)" switch); compare names it ("design prop withdrawn has no input on the app component"). Fix (Mac, next): withdrawn
 rows in the app part, `withdrawn` mapped in `DESIGN_HARNESS_SAMPLES` (`design-harness-samples.ts:44`). The tool caught it;
 no tool fix.
+
+916 update (Linux): built in 516b5b8be (skips text under `clip-path: inset(50%)`, a zero clip, or overflow hidden on a
+box of 1 px or less; bite: spec part components/visually-hidden at scale 0.2). OFF-CENTRE pages/sketches 38 -> 0,
+zoom-chip 28 -> 0.
+
+923\. Linux builder (2026-11-12 night, 916 spec): CLIPPED has no hidden-text exemption either; the spec's visually
+hidden span gets CLIPPED. Same class as 916: each render rule decides hidden text alone. Tool fix (builder default, tool
+backlog): one shared "visually hidden" test that every render rule uses, CLIPPED first.
+
+924\. Linux builder (2026-11-12 night, 903 slice): the visible-change gate refused the 903 commit: page-sketch 5744 ->
+52852 px off the design over 238235493..HEAD (title-bar thumbnail rows about 15 px lower, a note wraps one more line,
+"Übernehmen" shows twice). The first attempt passed with the same patch. Suspect: a commit in the range (7b/7c button
+tokens) or the line-height patch. Next: bisect at 238235493, HEAD, HEAD + patch.

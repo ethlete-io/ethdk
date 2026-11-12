@@ -231,3 +231,4 @@ The human answered "ja" (2026-11-10): the builder restarts the "Sketch öffnen" 
 - 2026-11-12 night (afk): findings 903-915 recorded; 912 built (c35380b93), 22 old orphans got built lines, 12 open ones went to the STATUS tool backlog. Finding 903 (zoom-chip OFF-CENTRE after the font switch, Suspect). findings 914-915 (vitest related wrong runner for tools/, slice paths per checkout). Next free finding: 916.
 - Findings 916-919 (OFF-CENTRE counts hidden kbd text at scale 0.2; no CONTROL-HEIGHT rule; change-crop states undrivable; ownerless pages-sketches.edit sketch). Next free finding: 920.
 - Findings 920-922 (spec type error past tsc app config; 910 group A design fold prop -> sketch waits for the human; group B app withdrawn rows, Mac builds). Next free finding: 923.
+- Findings 923-924 (CLIPPED lacks the hidden-text skip; 903 gate refusal on page-sketch, bisect); 916 built 516b5b8be; 919 Cause. Next free finding: 925.
