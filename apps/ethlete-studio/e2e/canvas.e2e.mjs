@@ -817,6 +817,9 @@ const namedWait = async (page, label, predicate, arg) => {
       .evaluate(() => ({
         sketchView: !!document.querySelector('ethlete-sketch-view'),
         merge: !!document.querySelector('ethlete-merge'),
+        alerts: [...document.querySelectorAll('ethlete-sketch-view [role="alert"]')].map((alert) =>
+          alert.textContent.trim(),
+        ),
         variants: document.querySelectorAll('[data-sk-variant]').length,
         frames: [...document.querySelectorAll('iframe')].map((frame) => frame.getAttribute('src')).slice(0, 6),
       }))
