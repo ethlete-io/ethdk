@@ -90,8 +90,11 @@
         &:not([disabled], [aria-disabled='true']):hover {
           --et-theme-color-primary-opacity: 1;
           --et-theme-color-primary-rgb: var(
-            --et-color-primary-active,
-            var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))
+            --et-button-filled-hover-rgb,
+            var(
+              --et-color-primary-active,
+              var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))
+            )
           );
         }
       }
