@@ -809,6 +809,28 @@ const EDIT_PART = 'components/comment-row';
 const EDIT_LABEL = { before: 'font-ui-medium">${c.author}</span>', after: 'font-ui-medium">${c.author}:</span>' };
 const EDIT_WAIT_MS = 120000;
 
+const namedWait = async (page, label, predicate, arg) => {
+  try {
+    await page.waitForFunction(predicate, arg, { timeout: EDIT_WAIT_MS });
+  } catch (error) {
+    const shown = await page
+      .evaluate(() => ({
+        sketchView: !!document.querySelector('ethlete-sketch-view'),
+        merge: !!document.querySelector('ethlete-merge'),
+        variants: document.querySelectorAll('[data-sk-variant]').length,
+        frames: [...document.querySelectorAll('iframe')].map((frame) => frame.getAttribute('src')).slice(0, 6),
+      }))
+      .catch((evaluateError) => ({ evaluateError: evaluateError.message }));
+
+    throw new Error(
+      `${label} not met after ${EDIT_WAIT_MS} ms, page ${JSON.stringify(shown)}: ${error.message.split('\n')[0]}`,
+      {
+        cause: error,
+      },
+    );
+  }
+};
+
 const withEditSketch = async (page, designPort, run) => {
   const studio = join(checkout, '.ethlete/design/studio');
   const saved = mkdtempSync(join(tmpdir(), 'studio-e2e-edit-'));
@@ -865,10 +887,11 @@ const withEditSketch = async (page, designPort, run) => {
         { cause: error },
       );
     }
-    await page.waitForFunction(
+    await namedWait(
+      page,
+      'edit: new/old variant cells',
       () => document.querySelectorAll('[data-sk-variant="new"], [data-sk-variant="old"]').length > 0,
       null,
-      { timeout: EDIT_WAIT_MS },
     );
     await page.waitForTimeout(SETTLE_MS);
 
@@ -895,9 +918,12 @@ const withEditSketch = async (page, designPort, run) => {
     const rows = { changed: 0, outlined: 0 };
 
     if (variant === 'old') {
-      await page.waitForFunction(() => document.querySelector('ethlete-merge li[tabindex="0"]'), null, {
-        timeout: EDIT_WAIT_MS,
-      });
+      await namedWait(
+        page,
+        `pick ${variant}: merge rows`,
+        () => document.querySelector('ethlete-merge li[tabindex="0"]'),
+        null,
+      );
       Object.assign(
         rows,
         await page.evaluate(() => {
@@ -914,8 +940,15 @@ const withEditSketch = async (page, designPort, run) => {
     }
 
     await page.locator('ethlete-merge button[variant="filled"]').first().click();
-    await page.waitForFunction(() => !document.querySelector('ethlete-sketch-view'), null, { timeout: EDIT_WAIT_MS });
-    await page.waitForFunction(
+    await namedWait(
+      page,
+      `pick ${variant}: sketch view closed`,
+      () => !document.querySelector('ethlete-sketch-view'),
+      null,
+    );
+    await namedWait(
+      page,
+      `pick ${variant}: part frame without sketch`,
       (part) =>
         [...document.querySelectorAll('iframe')].some((frame) => {
           const url = new URL(frame.src, location.href);
@@ -923,7 +956,6 @@ const withEditSketch = async (page, designPort, run) => {
           return url.searchParams.get('part') === part && !url.searchParams.has('sketch');
         }),
       EDIT_PART,
-      { timeout: EDIT_WAIT_MS },
     );
 
     const entry = await page.evaluate(
