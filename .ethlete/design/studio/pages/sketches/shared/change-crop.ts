@@ -1,4 +1,4 @@
-import { html } from '@design-system';
+import { html, slot } from '@design-system';
 import zoomChip from '@system/components/zoom-chip';
 import { type Row } from './sketch-rows';
 
@@ -109,6 +109,7 @@ export const screenOf = async (state: string, changed: boolean) => {
     style="width: ${SCREEN_WIDTH}px; height: ${SCREEN_HEIGHT}px"
     data-cc-screen="${state}"
     inert
+    ${slot('screen')}
   >
     <div class="absolute inset-y-0 left-0 w-65 shadow-[1px_0_0_var(--et-surface-border-solid)]">
       <div class="flex flex-col gap-space-2 p-space-5 text-ui-sm text-et-surface-muted">
