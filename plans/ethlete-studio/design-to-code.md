@@ -2546,6 +2546,7 @@ build stays `spawnSync`: async breaks `shot-stale-dist.spec.ts`, which mocks `sp
 paths; S2 or a later slice takes it. Bite: a stale-dist spec with a linked checkout, red on HEAD (nx cwd was the linked
 copy), green after. Verified: cases 128 and 129 green after touching `libs/types/src/index.ts`, `dist/libs/types` was
 rebuilt during the run. Not verified: a full `yarn studio:e2e` run, CI.
+B499 S2 in progress (Linux builder, 2026-11-13): `design serve` and the resident become one process per checkout behind a CI flag.
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
 Bite: a spec stages a name and clears it in the working tree; red on the old script. Not verified: a real refused commit.
