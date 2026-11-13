@@ -1,0 +1,16 @@
+
+ RUN  v5.0.5 <checkout>/libs/cli
+
+ ✓ |cli| src/lib/design/system/sketch/sketch-checker.spec.ts (4 tests) 2148ms
+   ✓ createSketchChecker (2)
+     ✓ answers what the checks find on this thread, once for listings asked at once, and fails an unknown product 2134ms
+ ✓ |cli| src/lib/design/resident/server.spec.ts (9 tests) 3495ms
+   ✓ startResidentServer (9)
+     ✓ exits after the idle time without a request, counted from the end of the last request 2619ms
+     ✓ runs a waiting compare between two parts of a running check, each with its own output 504ms
+
+ Test Files  2 passed (2)
+      Tests  13 passed (13)
+   Start at  04:16:01
+   Duration  3.63s (tests 85%, transform 10%, import 4%)
+
