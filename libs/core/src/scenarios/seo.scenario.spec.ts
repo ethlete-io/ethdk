@@ -173,6 +173,38 @@ describe('seo scenarios', () => {
     parent.destroy();
   });
 
+  it('brings a pre-existing meta tag back once the last binding is released', async () => {
+    const s = scenario();
+    const c = s.consumer();
+    const description = signal<string | null>('bound');
+    const fromIndex = document.createElement('meta');
+    fromIndex.setAttribute('name', 'description');
+    fromIndex.setAttribute('content', 'from-index');
+    document.head.appendChild(fromIndex);
+
+    c.run(() => applyDescriptionBinding(description));
+    await settle(s);
+
+    expect(metaContent('name="description"')).toEqual(['bound']);
+
+    description.set(null);
+    await settle(s);
+
+    expect(metaContent('name="description"')).toEqual(['from-index']);
+
+    description.set('bound again');
+    await settle(s);
+
+    expect(metaContent('name="description"')).toEqual(['bound again']);
+
+    c.destroy();
+    await settle(s);
+
+    expect(metaContent('name="description"')).toEqual(['from-index']);
+
+    document.head.querySelectorAll('meta[name="description"]').forEach((meta) => meta.remove());
+  });
+
   it('removes every tag a binding owns when its owner is destroyed', async () => {
     const s = scenario();
     const c = s.consumer();

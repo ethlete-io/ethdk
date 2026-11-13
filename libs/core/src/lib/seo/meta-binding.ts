@@ -129,6 +129,7 @@ const META_STORE_DEF = /* @__PURE__ */ defineRootProvider(
     const { currentLocale } = injectLocale();
 
     const metaTagsBySelector = signal<Map<string, Map<symbol, MetaTagBinding>>>(new Map());
+    const originals = new Map<string, Record<string, string>[]>();
     let priorityCounter = 0;
 
     const getSelector = (config: MetaTagConfig) => {
@@ -161,9 +162,20 @@ const META_STORE_DEF = /* @__PURE__ */ defineRootProvider(
       const bindings = untracked(() => metaTagsBySelector().get(selector));
 
       if (!bindings || bindings.size === 0) {
-        metaService.removeTag(selector);
+        metaService.getTags(selector).forEach((tag) => metaService.removeTagElement(tag));
+        originals.get(selector)?.forEach((definition) => metaService.addTag(definition, true));
+        originals.delete(selector);
 
         return;
+      }
+
+      if (!originals.has(selector)) {
+        originals.set(
+          selector,
+          metaService
+            .getTags(selector)
+            .map((tag) => Object.fromEntries(Array.from(tag.attributes, (attr) => [attr.name, attr.value]))),
+        );
       }
 
       const allowMultiple =
@@ -273,7 +285,8 @@ export const provideMetaStore = /* @__PURE__ */ toProvideFn(META_STORE_DEF);
 export const injectMetaStore = /* @__PURE__ */ toInjectFn(META_STORE_DEF);
 
 /**
- * Binds a meta tag. Removes any pre-existing tags matching the same selector, unlike link bindings, which leave pre-existing links alone.
+ * Binds a meta tag. While it is bound, pre-existing tags matching the same selector (e.g. from `index.html`) are removed;
+ * they come back once the last binding for that selector is released. Link bindings leave pre-existing links alone.
  */
 export const applyMetaBinding = (binding: MaybeSignal<MetaTagConfig | null | undefined>) => {
   const metaStore = injectMetaStore();
