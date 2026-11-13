@@ -2546,7 +2546,25 @@ build stays `spawnSync`: async breaks `shot-stale-dist.spec.ts`, which mocks `sp
 paths; S2 or a later slice takes it. Bite: a stale-dist spec with a linked checkout, red on HEAD (nx cwd was the linked
 copy), green after. Verified: cases 128 and 129 green after touching `libs/types/src/index.ts`, `dist/libs/types` was
 rebuilt during the run. Not verified: a full `yarn studio:e2e` run, CI.
-B499 S2 in progress (Linux builder, 2026-11-13): `design serve` and the resident become one process per checkout behind a CI flag.
+B499 S2 as built (Linux builder, 2026-11-13): `design serve` hosts the resident (`hostResidentInServe` in
+`libs/cli/src/lib/design/resident/resident-process.ts`): under the start lock it stops a standalone resident of the
+checkout and writes the discovery file with `owner: "serve"`; compare, check and sketch runs draw with the serve's design
+server, and serve's thumbnails, inventory, shots, app shots and the hosted runs share one Chromium
+(`shared-chromium.ts`, a lease per draw queue). The client never stops a serve-owned process: `et design stop` says it
+ends with the server, and another CLI build or a serve that does not answer runs in-process. A second serve leaves the
+resident to the first; when the serve exits, the discovery file goes and the next call starts a standalone resident.
+Flag `ETHLETE_DESIGN_SHARED_SERVE`: on locally, off in CI and with `ETHLETE_DESIGN_RESIDENT=0`; `0` turns it off, `1`
+turns it on in CI (a CI call then uses a serve-hosted resident but never starts one). The flag goes after P5: Studio e2e
+on CI green twice with `ETHLETE_DESIGN_SHARED_SERVE=1`. Bite: `resident/serve-host.spec.ts`, 5 of 7 red with the
+serve-owner checks and the shared server taken out, 7 green after; `shared-chromium.spec.ts`; spec:stress 4/4. Measured
+in a scratch copy (scratch marker moved aside, slow checks off), serve up, then sketch check
+`components/command-palette`, `shot components/zoom-chip --state out`, compare `components/zoom-chip`, GET
+/__design/shot on the serve: flag off 2 design processes and 2 Chrome roots, flag on 1 and 1. Reverse: a running
+standalone resident was stopped by a starting serve (1 process); after the serve exited the next compare started a
+standalone one. Not verified: Studio's own serve (`ETHLETE_DESIGN_EXIT_ON_STDIN_CLOSE`) with a CLI build other than the
+agents' (calls then run in-process), the reload path after a CLI rebuild, CI, the Studio e2e. Suspect: a run in the
+serve also captures the serve's own log lines while it runs, and a design config change no longer restarts the design
+server for hosted runs (serve's own watcher has to cover it). `rebuildStaleDist` stays `spawnSync` (not taken).
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
 Bite: a spec stages a name and clears it in the working tree; red on the old script. Not verified: a real refused commit.

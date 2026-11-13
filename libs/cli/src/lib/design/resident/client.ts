@@ -11,6 +11,12 @@ import { FORWARDED_ENV, ResidentFrame, ResidentRequest, TOKEN_HEADER } from './s
 /** `ETHLETE_DESIGN_RESIDENT=0` keeps every design call in its own process, as `CI` does. */
 export const RESIDENT_ENV = 'ETHLETE_DESIGN_RESIDENT';
 
+/**
+ * `ETHLETE_DESIGN_SHARED_SERVE=0` keeps the resident out of `design serve`, and `1` lets a CI run use the one a serve
+ * hosts; unset, it follows `ETHLETE_DESIGN_RESIDENT` and `CI`. It goes once P5 of B499 holds with it on in CI.
+ */
+export const SHARED_SERVE_ENV = 'ETHLETE_DESIGN_SHARED_SERVE';
+
 /** The hidden `et design` subcommand that runs the resident process. */
 export const RESIDENT_SERVE = '__resident';
 
@@ -108,6 +114,12 @@ export const runsInResident = (argv: string[]) =>
 
 export const residentWanted = (env: NodeJS.ProcessEnv) => !env['CI'] && env[RESIDENT_ENV] !== '0';
 
+/** Whether `design serve` hosts the resident of its checkout, so both share one design server and one Chromium. */
+export const sharedServeWanted = (env: NodeJS.ProcessEnv) =>
+  env[SHARED_SERVE_ENV] === '1' || (env[SHARED_SERVE_ENV] !== '0' && residentWanted(env));
+
+const servedBy = (found: Discovery) => found.owner === 'serve';
+
 const call = (options: {
   found: Discovery;
   method: 'GET' | 'POST';
@@ -192,6 +204,48 @@ const startResident = async (target: string, client: ResidentClient): Promise<Di
   return `the resident design process did not start within ${Math.round(client.startTimeoutMs / 1000)} s (log: ${residentLogOf(target)})`;
 };
 
+const servedRefusalOf = (found: Discovery, client: ResidentClient) =>
+  found.build === client.build
+    ? `design serve (pid ${found.pid}) hosts the resident design process but did not answer`
+    : `design serve (pid ${found.pid}) hosts the resident design process with another cli build`;
+
+/**
+ * Takes the resident of the checkout for a `design serve` under the start lock: stops a standalone resident process,
+ * and answers a reason instead when another serve already hosts one that answers. `release` must run once the serve
+ * wrote its discovery file.
+ */
+export const takeResidentForServe = async (
+  target: string,
+  client: ResidentClient,
+): Promise<{ ok: true; release: () => void } | { ok: false; reason: string }> => {
+  const directory = join(residentDirOf(target), 'start');
+  const lock = await acquireApiLock({
+    directory,
+    command: 'design serve hosts the resident',
+    wait: client.startTimeoutMs / 1000,
+    cwd: target,
+    onHeld: () => client.err('waiting for the start lock of the resident design process\n'),
+  });
+
+  if (!lock.ok) return { ok: false, reason: 'the start lock of the resident design process stayed taken' };
+
+  const release = () => releaseApiLock(directory, lock.lock.token);
+  const found = liveDiscoveryOf({ target, alive: client.alive });
+
+  if (found && servedBy(found) && (await answers(found, client))) {
+    release();
+
+    return { ok: false, reason: `design serve (pid ${found.pid}) already hosts the resident design process` };
+  }
+
+  if (found && !servedBy(found)) {
+    await stopProcess({ found, target, client });
+    client.err(`stopped the resident design process (pid ${found.pid}); this design serve hosts it now\n`);
+  }
+
+  return { ok: true, release };
+};
+
 /**
  * The live resident process of the checkout, started detached when there is none or the one there runs another CLI
  * build; a reason string when it cannot be reached and the call must run in its own process.
@@ -200,6 +254,7 @@ export const ensureResident = async (target: string, client: ResidentClient): Pr
   const first = liveDiscoveryOf({ target, alive: client.alive });
 
   if (first && fits({ found: first, target, client }) && (await answers(first, client))) return first;
+  if (first && servedBy(first)) return servedRefusalOf(first, client);
 
   const directory = join(residentDirOf(target), 'start');
   const lock = await acquireApiLock({
@@ -214,6 +269,10 @@ export const ensureResident = async (target: string, client: ResidentClient): Pr
 
   try {
     const found = liveDiscoveryOf({ target, alive: client.alive });
+
+    if (found && servedBy(found)) {
+      return fits({ found, target, client }) && (await answers(found, client)) ? found : servedRefusalOf(found, client);
+    }
 
     if (found && found.checkout === resolve(target)) {
       if (fits({ found, target, client })) {
@@ -294,6 +353,12 @@ export const sendRun = ({
     request.end(JSON.stringify(asked));
   });
 
+const servedResidentOf = async (target: string, client: ResidentClient) => {
+  const found = liveDiscoveryOf({ target, alive: client.alive });
+
+  return found && servedBy(found) && fits({ found, target, client }) && (await answers(found, client)) ? found : null;
+};
+
 /**
  * Runs `et design <argv>` in the resident process of the checkout and answers its exit code, or null after one printed
  * line when the call must run in its own process: in CI, with `ETHLETE_DESIGN_RESIDENT=0`, or when the process fails.
@@ -307,9 +372,13 @@ export const runThroughResident = async (options: {
 }): Promise<number | null> => {
   const { target, argv, invocation, client } = options;
 
-  if (!residentWanted(client.env)) return null;
+  if (!residentWanted(client.env) && !sharedServeWanted(client.env)) return null;
 
-  const found = await ensureResident(target, client);
+  const found = residentWanted(client.env)
+    ? await ensureResident(target, client)
+    : await servedResidentOf(target, client);
+
+  if (found === null) return null;
 
   if (typeof found === 'string') {
     client.err(`${found} - running in-process\n`);
@@ -323,7 +392,7 @@ export const runThroughResident = async (options: {
   if (code === null)
     client.err(`the resident design process (pid ${found.pid}) ended without an answer - running in-process\n`);
 
-  if (existsSync(join(target, SCRATCH_MARKER))) {
+  if (!servedBy(found) && existsSync(join(target, SCRATCH_MARKER))) {
     await stopProcess({ found, target, client });
     client.err(`stopped the resident design process (pid ${found.pid}) of this scratch copy\n`);
   }
@@ -337,6 +406,12 @@ export const stopResident = async (target: string, client: ResidentClient) => {
 
   if (!found) {
     client.out('no resident design process runs\n');
+
+    return 0;
+  }
+
+  if (servedBy(found)) {
+    client.out(`design serve (pid ${found.pid}) hosts the resident design process; it ends with that server\n`);
 
     return 0;
   }

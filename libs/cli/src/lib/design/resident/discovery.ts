@@ -9,6 +9,8 @@ export type Discovery = {
   build: string;
   token: string;
   startedAt: string;
+  /** `serve` when a running `design serve` hosts the resident; the client never stops that process. */
+  owner?: 'serve';
 };
 
 export type IsAlive = (pid: number) => boolean;

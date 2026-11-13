@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import { chromiumOf } from '../browser';
 import { checkDesign } from '../check';
 import { DesignConfig, readConfig } from '../design-config';
 import { buildStampOf } from '../stamp';
@@ -15,11 +16,14 @@ import { withRunYield } from '../run-yield';
 import { recordPhase, recordRun, timingsFileOf } from '../timings';
 import { WarmDraw } from '../warm-draw';
 import { checkoutGoneOf, watchCheckout } from './checkout-gone';
-import { runsInResident } from './client';
+import { ResidentClient, runsInResident, takeResidentForServe } from './client';
 import { removeDiscovery, writeDiscovery } from './discovery';
 import { ABORTED_EXIT, ResidentRequest, ResidentRun, startResidentServer } from './server';
 
 type DesignServer = Awaited<ReturnType<typeof createDesignServer>>;
+
+/** The design server and Chromium of a running `design serve` that its hosted resident draws with. */
+export type SharedDraw = { server: DesignServer; chromiumOf: typeof chromiumOf };
 
 /**
  * Runs `compare`, `check --product`/`--part`, `sketch check` and `sketch ready` with a design server, Chromium and a watch-built harness app that stay up
@@ -27,8 +31,8 @@ type DesignServer = Awaited<ReturnType<typeof createDesignServer>>;
  * design config restarts the design server and Chromium before it draws, and every request draws the design files as
  * they are when it starts.
  */
-export const createWarmRuns = (options: { target: string }) => {
-  const { target } = options;
+export const createWarmRuns = (options: { target: string; shared?: SharedDraw }) => {
+  const { target, shared } = options;
   let stamp: string | null = null;
   let server: Promise<DesignServer> | null = null;
   let listening: DesignServer | null = null;
@@ -43,7 +47,7 @@ export const createWarmRuns = (options: { target: string }) => {
     listening = null;
     queue = null;
     await closingQueue?.close();
-    await (await closingServer?.catch(() => null))?.close();
+    if (!shared) await (await closingServer?.catch(() => null))?.close();
   };
 
   const startServer = async (config: DesignConfig) => {
@@ -64,6 +68,13 @@ export const createWarmRuns = (options: { target: string }) => {
 
   const warm: WarmDraw = {
     server: (config) => {
+      if (shared) {
+        listening = shared.server;
+        server ??= Promise.resolve(shared.server);
+
+        return server;
+      }
+
       server ??= startServer(config).catch((error: unknown) => {
         server = null;
 
@@ -72,7 +83,7 @@ export const createWarmRuns = (options: { target: string }) => {
 
       return server;
     },
-    queue: () => (queue ??= createDrawQueue({ target })),
+    queue: () => (queue ??= createDrawQueue({ target, chromiumOf: shared?.chromiumOf })),
     takeDeniedIds: () => listening?.takeDeniedIds() ?? [],
   };
 
@@ -91,7 +102,7 @@ export const createWarmRuns = (options: { target: string }) => {
   const refresh = async (config: DesignConfig | null) => {
     const next = stampOf(config);
 
-    if (stamp !== null && stamp !== next && (server || queue)) {
+    if (!shared && stamp !== null && stamp !== next && (server || queue)) {
       console.error('the lib build or the design config changed - restarting the warm design server and Chromium');
       await closeDraw();
     }
@@ -234,4 +245,66 @@ export const serveResident = async (options: { target: string }) => {
   console.error(`resident design process ${process.pid} serves on 127.0.0.1:${server.port}`);
 
   return new Promise<number>(() => undefined);
+};
+
+/**
+ * Hosts the resident design process of the checkout inside a running `design serve`, so compare, check and sketch runs
+ * draw with the server's design server and Chromium. Resolves the function that ends the hosting; a serve that cannot
+ * take the resident logs why and hosts nothing.
+ */
+export const hostResidentInServe = async (options: {
+  target: string;
+  shared: SharedDraw;
+  client: ResidentClient;
+  log: (line: string) => void;
+}): Promise<() => Promise<void>> => {
+  const { target, shared, client, log } = options;
+  const taken = await takeResidentForServe(target, client);
+
+  if (!taken.ok) {
+    log(`${taken.reason} - this server hosts none`);
+
+    return async () => undefined;
+  }
+
+  const token = randomUUID();
+  const runs = createWarmRuns({ target, shared });
+  const forget = () => removeDiscovery(target, process.pid);
+  let server: Awaited<ReturnType<typeof startResidentServer>> | null = null;
+
+  try {
+    server = await startResidentServer({
+      token,
+      identity: { pid: process.pid, build: client.build, checkout: target, owner: 'serve' },
+      run: runs.run,
+      jumps: runs.jumps,
+      onExit: (reason) => {
+        if (reason === 'stop') void close();
+      },
+    });
+    writeDiscovery(target, {
+      pid: process.pid,
+      port: server.port,
+      checkout: target,
+      build: client.build,
+      token,
+      startedAt: new Date().toISOString(),
+      owner: 'serve',
+    });
+  } finally {
+    taken.release();
+  }
+
+  process.once('exit', forget);
+  log(`hosts the resident design process on 127.0.0.1:${server.port}`);
+
+  const close = async () => {
+    process.off('exit', forget);
+    forget();
+    await server?.close();
+    server = null;
+    await runs.close();
+  };
+
+  return close;
 };

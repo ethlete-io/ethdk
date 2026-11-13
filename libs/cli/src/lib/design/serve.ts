@@ -120,6 +120,7 @@ import { inventoryOf } from './system/inventory';
 import { SHOT_VIEW_PATH } from './shot-board';
 import { STUDIO_LIST_WIDTH_PATH, studioListWidthMiddleware } from './studio-list-width';
 import { createAppStateShots } from './system/app-state-shot';
+import { ChromiumOf, sharedChromiumOf } from './shared-chromium';
 import { createDrawQueue, createThumbnailer, send, THUMB_PATH, ThumbMissingError } from './thumb';
 import { DeclaredMotion, motionMiddleware } from './motion-endpoint';
 import { assetRoot, snapshotPackage, installedAssetRoot } from './package-root';
@@ -593,6 +594,7 @@ const designExplore = ({
   stylesheetImports,
   shotCacheDir,
   checkSketches,
+  chromiumOf,
   beforeFrame,
   appShotOf,
 }: {
@@ -602,6 +604,7 @@ const designExplore = ({
   stylesheetImports: StylesheetImports;
   shotCacheDir: string | null;
   checkSketches?: CheckSketches;
+  chromiumOf?: ChromiumOf;
   beforeFrame?: () => void;
   appShotOf?: (address: AppStateAddress) => Promise<Buffer>;
 }) => {
@@ -676,8 +679,8 @@ const designExplore = ({
 
         return !sketch || (!!drawn && !('sketchGone' in drawn));
       });
-      const thumbs = createThumbnailer({ target, base, ledger });
-      const inventoryDraws = createDrawQueue({ target, ledger });
+      const thumbs = createThumbnailer({ target, base, ledger, chromiumOf });
+      const inventoryDraws = createDrawQueue({ target, ledger, chromiumOf });
       const sketchChecker = checkSketches ? undefined : createSketchChecker();
       const ruleChecker = checkSketches ? undefined : createSketchChecker();
       const events = createDesignEvents();
@@ -686,6 +689,7 @@ const designExplore = ({
         target,
         base,
         ledger,
+        chromiumOf,
         system,
         appShotOf,
         changed: (part) => {
@@ -1182,8 +1186,9 @@ export const createDesignServer = async (options: {
   host?: string;
   sketchesRoot?: string;
   checkSketches?: CheckSketches;
+  chromiumOf?: ChromiumOf;
 }) => {
-  const { target, config, listen, sketchesRoot, checkSketches } = options;
+  const { target, config, listen, sketchesRoot, checkSketches, chromiumOf } = options;
   const host = options.host || process.env['DE_HOST'] || undefined;
   const own = listen && options.port !== undefined;
   const port = own ? await freePortOf() : options.listenOn;
@@ -1233,7 +1238,10 @@ export const createDesignServer = async (options: {
       ? createAppStateShots({
           target,
           config,
-          warm: { server: async () => designServer, queue: () => (appDraws ??= createDrawQueue({ target })) },
+          warm: {
+            server: async () => designServer,
+            queue: () => (appDraws ??= createDrawQueue({ target, chromiumOf })),
+          },
         })
       : null;
   const server = await createServer({
@@ -1281,6 +1289,7 @@ export const createDesignServer = async (options: {
         stylesheetImports,
         shotCacheDir: listen && !own ? resolve(workRootOf(target), SHOT_STORE_DIR) : null,
         checkSketches,
+        chromiumOf,
         ...(own ? { beforeFrame: () => sourceChangedSince(loadedFilesOf(server), drawnSince) && forgetDrawn() } : {}),
         ...(appShots ? { appShotOf: appShots.shotOf } : {}),
       }),
@@ -1383,8 +1392,13 @@ export const serveDesign = async (options: {
   host?: string;
   reloadOnRebuild?: boolean;
   checkSketches?: CheckSketches;
+  /** Hosts the resident design process on the started server; the server then draws with one shared Chromium. */
+  hostResident?: (shared: {
+    server: Awaited<ReturnType<typeof createDesignServer>>;
+    chromiumOf: ChromiumOf;
+  }) => Promise<() => Promise<void>>;
 }): Promise<number> => {
-  const { target, host, reloadOnRebuild, checkSketches } = options;
+  const { target, host, reloadOnRebuild, checkSketches, hostResident } = options;
   const config = readConfig(target);
 
   if (!config) {
@@ -1405,6 +1419,7 @@ export const serveDesign = async (options: {
   const ownedByStudio = process.env['ETHLETE_DESIGN_EXIT_ON_STDIN_CLOSE'] === '1';
   const portPinned = ownedByStudio || !!Number(process.env['DE_PORT']);
   const freePort = portPinned ? undefined : await freePortOf();
+  const chromiumOf = hostResident ? sharedChromiumOf() : undefined;
   const server = await createDesignServer({
     target,
     config,
@@ -1412,9 +1427,19 @@ export const serveDesign = async (options: {
     host,
     listenOn: freePort,
     checkSketches,
+    chromiumOf,
   });
 
   await server.listen();
+
+  const stopHosting =
+    hostResident && chromiumOf
+      ? await hostResident({ server, chromiumOf }).catch((error: unknown) => {
+          console.error(`design-explore: the server hosts no resident design process: ${String(error)}`);
+
+          return async () => undefined;
+        })
+      : async () => undefined;
 
   const listening = server.httpServer?.address();
 
@@ -1450,8 +1475,8 @@ export const serveDesign = async (options: {
 
         console.log('design-explore: the cli was rebuilt, restarting the server from the new build');
 
-        void server
-          .close()
+        void stopHosting()
+          .then(() => server.close())
           .then(() =>
             process.env[SUPERVISED_ENV] === '1'
               ? process.exit(RELOAD_EXIT_CODE)

@@ -36,9 +36,10 @@ import {
   RESIDENT_SERVE,
   runsInResident,
   runThroughResident,
+  sharedServeWanted,
   stopResident,
 } from './resident/client';
-import { serveResident } from './resident/resident-process';
+import { hostResidentInServe, serveResident } from './resident/resident-process';
 import { recordRun, skipRunTimings, timingsFileOf } from './timings';
 import { designTimings, TIMINGS_USAGE } from './timings-command';
 
@@ -666,9 +667,22 @@ const dispatchDesign = async (options: { root: string; argv: string[]; invocatio
     return 2;
   }
 
+  const served = positional ? realOf(resolve(root, positional)) : target;
+
   return serveDesign({
-    target: positional ? realOf(resolve(root, positional)) : target,
+    target: served,
     host,
     reloadOnRebuild: !startedByStudio(),
+    ...(sharedServeWanted(process.env)
+      ? {
+          hostResident: (shared) =>
+            hostResidentInServe({
+              target: served,
+              shared,
+              client: realResidentClient(buildStampOf().build),
+              log: (line) => console.log(`design-explore: ${line}`),
+            }),
+        }
+      : {}),
   });
 };
