@@ -1,3 +1,4 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
 import { BUTTON_SIZES, BUTTON_VARIANTS } from './button.types';
@@ -76,5 +77,38 @@ describe('IconButtonComponent', () => {
   it('renders icon slot', () => {
     fixture.detectChanges();
     expect(host.querySelector('.et-icon-button-icon')).not.toBeNull();
+  });
+
+  describe('content without etIcon', () => {
+    @Component({
+      imports: [IconButtonComponent],
+      template: `
+        <button id="unmarked" et-icon-button aria-label="Copy"><i class="glyph"></i></button>
+        <button id="marked" et-icon-button aria-label="Edit"><i class="glyph" etIcon></i></button>
+      `,
+    })
+    class HostComponent {}
+
+    const render = async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const hostFixture = TestBed.createComponent(HostComponent);
+      hostFixture.detectChanges();
+      await hostFixture.whenStable();
+
+      return { warn, element: hostFixture.nativeElement as HTMLElement };
+    };
+
+    it('renders the content in the icon slot', async () => {
+      const { element } = await render();
+
+      expect(element.querySelector('#unmarked .et-icon-button-icon .glyph')).not.toBeNull();
+    });
+
+    it('warns once, for the button whose content lacks etIcon', async () => {
+      const { warn, element } = await render();
+
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0]?.[1]).toMatchObject({ element: element.querySelector('#unmarked') });
+    });
   });
 });

@@ -1,10 +1,33 @@
-import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
-import { ColorInteractiveDirective, createCanAnimateSignal } from '@ethlete/core';
+import {
+  afterNextRender,
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  input,
+  viewChild,
+  ViewEncapsulation,
+} from '@angular/core';
+import { ColorInteractiveDirective, createCanAnimateSignal, injectHostElement } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import { SpinnerComponent } from '../loader';
 import { ButtonStylesDirective } from './button-styles.directive';
 import { BUTTON_SIZES, BUTTON_SPINNER_CONFIG, BUTTON_VARIANTS, ButtonSize, ButtonVariant } from './button.types';
 import { ButtonColorDirective, ButtonDirective } from './headless';
+
+const warnUnmarkedIconButtonContent = (host: HTMLElement, iconSlot: HTMLElement) => {
+  const unmarked = Array.from(iconSlot.childNodes).filter((node) =>
+    node instanceof Element ? !node.matches('[etIcon], .et-icon') : node.nodeType === 3 && !!node.textContent?.trim(),
+  );
+
+  if (!unmarked.length) return;
+
+  console.warn(
+    '[et-icon-button] Content without the etIcon attribute is not sized by the icon button. ' +
+      'Add etIcon to the icon element, or bind the icon with [etIcon]="name".',
+    { element: host, content: unmarked },
+  );
+};
 
 const PRESSED_VARIANT_MAP: Record<ButtonVariant, string> = {
   filled: 'transparent',
@@ -16,8 +39,9 @@ const PRESSED_VARIANT_MAP: Record<ButtonVariant, string> = {
 @Component({
   selector: '[et-icon-button]',
   template: `
-    <div class="et-icon-button-icon">
+    <div #iconSlot class="et-icon-button-icon">
       <ng-content select="[etIcon]" />
+      <ng-content />
     </div>
 
     @if (buttonDir.isLoading()) {
@@ -58,13 +82,22 @@ const PRESSED_VARIANT_MAP: Record<ButtonVariant, string> = {
 })
 export class IconButtonComponent {
   protected buttonDir = inject(ButtonDirective);
+  private hostElement = injectHostElement();
 
   public variant = input<ButtonVariant>(BUTTON_VARIANTS.TRANSPARENT);
   public size = input<ButtonSize>(BUTTON_SIZES.MD);
+
+  private iconSlot = viewChild.required<ElementRef<HTMLElement>>('iconSlot');
 
   public canAnimate = createCanAnimateSignal();
 
   public spinnerConfig = computed(() => BUTTON_SPINNER_CONFIG[this.size()]);
 
   public pressedVariant = computed(() => (this.buttonDir.pressed() ? PRESSED_VARIANT_MAP[this.variant()] : null));
+
+  constructor() {
+    if (ngDevMode) {
+      afterNextRender(() => warnUnmarkedIconButtonContent(this.hostElement, this.iconSlot().nativeElement));
+    }
+  }
 }

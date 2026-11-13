@@ -206,6 +206,8 @@ An icon button sizes its projected `etIcon` content with `--et-icon-button-icon-
 <button et-icon-button aria-label="Edit"><i class="fa-solid fa-pen" etIcon></i></button>
 ```
 
+Content without `etIcon` still renders in the icon slot, but the token does not size it, and dev mode logs a warning that names the button.
+
 The two icon-shaped flavors size themselves from their own tokens instead of `padding`: the icon button takes `--et-icon-button-size` (diameter), `--et-icon-button-icon-size` and `--et-icon-button-border-radius`; the FAB takes `--et-fab-size` (collapsed diameter), `--et-fab-icon-size`, `--et-fab-label-font-size` and `--et-fab-contents-gap`. The split button adds `--et-split-button-divider-color`. The window-control button's `kind: 'close'` state colours come from `--et-window-control-button-close-background`, `--et-window-control-button-close-background-active` and `--et-window-control-button-close-color` (defaults: a Windows-style red with white text). `shape: 'round'` draws a GNOME (Adwaita) style circle with a faint tint at rest instead of the default square tile, and its `close` kind has no red hover. `shape: 'caption'` draws a Windows caption tile: 46px wide, the full height of its container, square corners, a 10px glyph and a fainter hover tint; place it in a stretched flex row.
 
 Most of them are set **per size** by the component (`--et-button-padding`, the two icon-button sizes, all four FAB sizes, …), in a `:where([data-size='…'])` block on the button itself. Two consequences:
