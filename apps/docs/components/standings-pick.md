@@ -149,7 +149,7 @@ crests); the drawn `et-standings-pick` reads exactly the same state.
 
 The list is an `<ol>` named by the `pickCaption` label, one `<li>` per participant.
 
-A pointer drags the whole card: it lifts on press, follows the pointer from the first pixel, stops at
+A pointer drags the whole card (a finger after holding it still for 250ms, so a swipe scrolls the page): it lifts on press, follows the pointer from the first pixel, stops at
 the viewport edge instead of growing the page's scroll area, and on release lands in the slot it was
 dropped on before the order changes. A dashed ghost marks that slot while the drag runs and fades out on release. The card is also the row's only control and its arrow-key target; a
 moved card keeps focus and slides into place. It is named `Move <participant>. Drag it, or use the arrow keys.` (the `pickMoveRow` label),

@@ -164,17 +164,28 @@ test.describe('standings pick / pointer drag', () => {
 test.describe('standings pick / touch drag', () => {
   test.skip(({ isMobile }) => !isMobile, 'touch-only: finger drag');
 
-  test('the grip keeps the page from scrolling under the finger', async ({ page }) => {
+  test('a card lets the page pan until a hold picks it up', async ({ page }) => {
     const root = await openStory(page, PICK_ID);
 
-    await expect(handles(root).first()).toHaveCSS('touch-action', 'none');
+    await expect(handles(root).first()).toHaveCSS('touch-action', 'manipulation');
   });
 
-  test('a finger drag on the grip reorders the row', async ({ page }) => {
+  test('a finger that moves at once leaves the order alone', async ({ page }) => {
     const root = await openStory(page, PICK_ID);
     const before = await trimmed(root);
 
     await touchDrag(page, await centerOf(handles(root).first()), await centerOf(rowSlots(root).nth(2)));
+
+    await expect(names(root)).toHaveText(before);
+  });
+
+  test('a finger that holds, then drags, reorders the row', async ({ page }) => {
+    const root = await openStory(page, PICK_ID);
+    const before = await trimmed(root);
+
+    await touchDrag(page, await centerOf(handles(root).first()), await centerOf(rowSlots(root).nth(2)), {
+      holdMs: 350,
+    });
 
     await expect(names(root)).toHaveText(moved(before, 0, 2));
   });
