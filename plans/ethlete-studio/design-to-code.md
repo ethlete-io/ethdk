@@ -2811,7 +2811,7 @@ removed: `pages/inventory` open/approved ("Inventory freigeben"), loading ("Neu 
 are disabled SDK buttons (`pointer-events: none`) that carry their action in every state; disabled is the design.
 COVERED, 1/1 false, removed: `pages/sketches` `sticky-names` "Übernehmen" lies under the floating shell side panel
 because the state's camera pans the row head there; the canvas runs under the panel by design (CANVAS-UNDER-PANEL) and
-the user pans back (not shot: no server on :4402). Both lived in `reach.ts`, deleted with its spec; `data-et-skip`
+the user pans back. Live shot (2026-11-13, `GET /__design/shot?product=studio&part=pages/sketches&state=sticky-names` on the running serve at f0e2405f8): the sticky row heads (linux-close ... macos-update) and variant b's "Übernehmen" draw right of the panel; only variant a's column head, cut at the panel edge, lies under it. No real cover; COVERED stays removed. Both lived in `reach.ts`, deleted with its spec; `data-et-skip`
 still accepts `COVERED` and `OFF-CENTRE` (ready studio parts carry them), they escape nothing. The docs drop the
 reach paragraph and say where a base component's render finding counts. Findings closed: 634 and 691 (OFF-CENTRE).
 Result: studio exit 1, 3 findings, the same in three runs (DROPPED-PROP 3), 136 s cold, 25 s and 19 s warm (render
