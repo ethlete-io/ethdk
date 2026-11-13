@@ -75,15 +75,27 @@ graph by default; for a source whose slots do not carry it, pass `previousMatchI
 explicitly - and bind the same function to `<et-bracket [previousMatchIds]>`, so the connectors it draws
 follow the graph your picks resolve against.
 
+`picks.standingRank({ standingId, rank, match, side })` also names the match and side that ask, so an
+app can answer a section with its final table and another with the viewer's own order.
+
+A later stage whose `match-outcome` slots point at matches of an earlier stage resolves across both:
+pass the earlier stages as `linkedBrackets`. A feeder is looked up in `bracket` first, then in each
+linked bracket in order, so match ids must be unique across all of them.
+
+```ts
+resolveBracketSlot({ bracket: knockout, linkedBrackets: [groupStage], picks, matchId, side });
+```
+
 ### Resolution policies
 
-Two options change how strictly a resolution reads the graph. Both default to the behaviour above,
+Three options change how strictly a resolution reads the graph. All default to the behaviour above,
 so an existing call is unaffected.
 
 | Option                          | Type                               | Default       |
 | ------------------------------- | ---------------------------------- | ------------- |
 | `realParticipantOutranksPick`   | `(match: BracketMatch) => boolean` | `() => false` |
 | `keepPickWhileFeederSideIsOpen` | `boolean`                          | `false`       |
+| `fallBackToRealParticipant`     | `boolean`                          | `false`       |
 
 **`realParticipantOutranksPick`** decides, per match, whether the participant actually standing on a
 slot beats what the picks predict for it. It is a predicate rather than a flag because the answer
@@ -116,6 +128,10 @@ half-empty. By default a `match-outcome` slot resolves to `null` as soon as eith
 is unknown. Set it to `true` to keep the pick until both sides are known and it is neither of them -
 until then nothing contradicts it. A predicted _loser_ still needs both sides either way, since it is
 defined as whoever the viewer did not pick.
+
+**`fallBackToRealParticipant`** decides what a `match-outcome` or `standing-rank` slot answers when
+the picks leave it empty. By default it stays empty; set it to `true` to answer with the participant
+really standing there instead.
 
 Slots that no prediction can reach (`seed`, `swiss-bucket`, `external`, `unknown`, a slot with no provenance)
 still answer with whoever really stands there; a `bye` still advances its occupied side without a pick.
@@ -253,15 +269,17 @@ migration.movedFromByMatchId[matchId];
 migration.strandedByMatchId[matchId];
 ```
 
-| Option           | Type                                                          | Notes                                         |
-| ---------------- | ------------------------------------------------------------- | --------------------------------------------- |
-| `bracket`        | `Bracket`                                                     | Linked, from `createBracket()`                |
-| `pickAsMade`     | `(matchId: string) => string \| null`                         | The pick exactly as the viewer made it        |
-| `lockedMatchIds` | `ReadonlySet<string>`                                         | Optional. Picks here neither leave nor arrive |
-| `standingRank`   | `(o: { standingId: string; rank: number }) => string \| null` | Optional. For `standing-rank` slots           |
+| Option           | Type                                                  | Notes                                          |
+| ---------------- | ----------------------------------------------------- | ---------------------------------------------- |
+| `bracket`        | `Bracket`                                             | Linked, from `createBracket()`                 |
+| `pickAsMade`     | `(matchId: string) => string \| null`                 | The pick exactly as the viewer made it         |
+| `lockedMatchIds` | `ReadonlySet<string>`                                 | Optional. Picks here neither leave nor arrive  |
+| `standingRank`   | `(o: BracketStandingRankPickQuery) => string \| null` | Optional. For `standing-rank` slots            |
+| `linkedBrackets` | `readonly Bracket[]`                                  | Optional. Earlier stages a slot may point into |
 
-It also takes the two [resolution policies](#resolution-policies) and forwards them to every
-resolution it performs.
+It also takes the three [resolution policies](#resolution-policies) and forwards them to every
+resolution it performs. A pick on a match of a linked stage is read from `pickAsMade` as given, so
+migrate an earlier stage first and answer with its result.
 
 **The rules, in order:**
 

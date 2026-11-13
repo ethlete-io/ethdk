@@ -2,11 +2,19 @@ import { BracketMatchId, MatchParticipantSide } from '../core';
 import { BracketMatchOutcomeSlotSource, BracketSlotSource } from '../integrations';
 import { Bracket, BracketMatch } from './bracket';
 
+/** The table position a `standing-rank` slot asks about, and the slot that asks. */
+export type BracketStandingRankPickQuery = {
+  standingId: string;
+  rank: number;
+  match: BracketMatch<unknown, unknown>;
+  side: MatchParticipantSide;
+};
+
 export type BracketPickSet = {
   /** The participant the viewer picked to win a match. */
   matchWinner: (matchId: string) => string | null;
   /** The participant the viewer put on a table position. */
-  standingRank: (options: { standingId: string; rank: number }) => string | null;
+  standingRank: (options: BracketStandingRankPickQuery) => string | null;
 };
 
 export const isBracketSlotPredictable = (source: BracketSlotSource | null): boolean =>
@@ -32,11 +40,25 @@ export type BracketSlotResolutionPolicy = {
    * known and it is neither of them - until then nothing contradicts it.
    */
   keepPickWhileFeederSideIsOpen?: boolean;
+
+  /**
+   * Whether a `match-outcome` or `standing-rank` slot the picks leave empty answers with the
+   * participant really standing there. `false`, the default, leaves it empty.
+   */
+  fallBackToRealParticipant?: boolean;
 };
 
-type ResolveBracketSlotOptions = BracketSlotResolutionPolicy & {
+type BracketSlotResolverOptions = BracketSlotResolutionPolicy & {
   bracket: Bracket<unknown, unknown>;
   picks: BracketPickSet;
+  /**
+   * Earlier stages a `match-outcome` slot of `bracket` may point into. A feeder is looked up in
+   * `bracket` first, then in these in order, so match ids must be unique across all of them.
+   */
+  linkedBrackets?: readonly Bracket<unknown, unknown>[];
+};
+
+type ResolveBracketSlotOptions = BracketSlotResolverOptions & {
   matchId: string;
   side: MatchParticipantSide;
 };
@@ -47,10 +69,11 @@ const sourceFor = (match: BracketMatch<unknown, unknown>, side: MatchParticipant
 const participantIdFor = (match: BracketMatch<unknown, unknown>, side: MatchParticipantSide) => match[side]?.id ?? null;
 
 type ResolveWalk = {
-  bracket: Bracket<unknown, unknown>;
+  lookupMatch: (matchId: string) => BracketMatch<unknown, unknown> | undefined;
   picks: BracketPickSet;
   realParticipantOutranksPick: (match: BracketMatch<unknown, unknown>) => boolean;
   keepPickWhileFeederSideIsOpen: boolean;
+  fallBackToRealParticipant: boolean;
   visitDepths: Map<string, number>;
   resolved: Map<string, string | null>;
   shallowestCycleHit: number;
@@ -59,7 +82,7 @@ type ResolveWalk = {
 const resolveMatchOutcome = (options: { walk: ResolveWalk; source: BracketMatchOutcomeSlotSource }): string | null => {
   const { walk, source } = options;
 
-  const feeder = walk.bracket.matches.get(source.matchId as BracketMatchId);
+  const feeder = walk.lookupMatch(source.matchId);
 
   if (!feeder) return null;
 
@@ -99,7 +122,7 @@ const resolveSource = (options: {
     case 'match-outcome':
       return resolveMatchOutcome({ walk, source });
     case 'standing-rank':
-      return walk.picks.standingRank({ standingId: source.standingId, rank: source.rank });
+      return walk.picks.standingRank({ standingId: source.standingId, rank: source.rank, match, side });
     case 'seed':
     case 'swiss-bucket':
     case 'external':
@@ -122,7 +145,13 @@ const resolveSlotOccupant = (options: {
 
   const source = sourceFor(match, side);
 
-  return source ? resolveSource({ walk, match, side, source }) : real;
+  if (!source) return real;
+
+  const resolved = resolveSource({ walk, match, side, source });
+
+  if (resolved !== null || !walk.fallBackToRealParticipant) return resolved;
+
+  return source.kind === 'match-outcome' || source.kind === 'standing-rank' ? real : null;
 };
 
 const resolveSlot = (options: {
@@ -165,13 +194,22 @@ const resolveSlot = (options: {
   }
 };
 
-const createResolveWalk = (
-  options: BracketSlotResolutionPolicy & { bracket: Bracket<unknown, unknown>; picks: BracketPickSet },
-): ResolveWalk => ({
-  bracket: options.bracket,
+const matchLookupFor = (brackets: readonly Bracket<unknown, unknown>[]) => (matchId: string) => {
+  for (const bracket of brackets) {
+    const match = bracket.matches.get(matchId as BracketMatchId);
+
+    if (match) return match;
+  }
+
+  return undefined;
+};
+
+const createResolveWalk = (options: BracketSlotResolverOptions): ResolveWalk => ({
+  lookupMatch: matchLookupFor([options.bracket, ...(options.linkedBrackets ?? [])]),
   picks: options.picks,
   realParticipantOutranksPick: options.realParticipantOutranksPick ?? (() => false),
   keepPickWhileFeederSideIsOpen: options.keepPickWhileFeederSideIsOpen ?? false,
+  fallBackToRealParticipant: options.fallBackToRealParticipant ?? false,
   visitDepths: new Map(),
   resolved: new Map(),
   shallowestCycleHit: Infinity,
@@ -181,9 +219,7 @@ const createResolveWalk = (
  * @internal A {@link resolveBracketSlot} that shares one memo across its calls. Valid only while the
  * picks it was created with do not change.
  */
-export const createBracketSlotResolver = (
-  options: BracketSlotResolutionPolicy & { bracket: Bracket<unknown, unknown>; picks: BracketPickSet },
-) => {
+export const createBracketSlotResolver = (options: BracketSlotResolverOptions) => {
   const walk = createResolveWalk(options);
 
   return (matchId: string, side: MatchParticipantSide): string | null => {

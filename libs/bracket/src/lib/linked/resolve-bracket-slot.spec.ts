@@ -1,5 +1,5 @@
 import { BRACKET_DATA_LAYOUT, BracketMatchId, SINGLE_ELIMINATION_BRACKET_ROUND_TYPE } from '../core';
-import { BracketDataSource, bracketSlot } from '../integrations';
+import { BracketDataSource, BracketSlotSource, bracketSlot } from '../integrations';
 import { BracketMatch, createBracket } from './bracket';
 import { BracketPickSet, resolveBracketSlot } from './resolve-bracket-slot';
 
@@ -423,5 +423,64 @@ describe('resolveBracketSlot, keepPickWhileFeederSideIsOpen', () => {
         keepPickWhileFeederSideIsOpen: true,
       }),
     ).toBe('a');
+  });
+});
+
+describe('resolveBracketSlot, resolution context', () => {
+  const laterStage = (homeSource: BracketSlotSource): BracketDataSource<null, null> => ({
+    mode: 'single-elimination',
+    rounds: [{ id: 'k1', name: 'Knockout', type: 'final', data: null }],
+    matches: [
+      {
+        id: 'n1',
+        roundId: 'k1',
+        home: 'real-home',
+        away: 'z',
+        homeSource,
+        winner: null,
+        status: 'pending',
+        data: null,
+      },
+    ],
+  });
+  const create = (input: BracketDataSource<null, null>) =>
+    createBracket(input, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT, onWarning: () => undefined });
+
+  it('tells the standing rank lookup which match and side ask', () => {
+    const bracket = create(laterStage(bracketSlot.standingRank('group-a', 1)));
+    const asked: string[] = [];
+
+    resolveBracketSlot({
+      bracket,
+      picks: {
+        matchWinner: () => null,
+        standingRank: ({ standingId, rank, match, side }) => {
+          asked.push(`${standingId}:${rank}:${match.id}:${side}`);
+
+          return null;
+        },
+      },
+      matchId: 'n1',
+      side: 'home',
+    });
+
+    expect(asked).toEqual(['group-a:1:n1:home']);
+  });
+
+  it('falls back to the real participant where the picks leave a predictable slot empty', () => {
+    const bracket = create(laterStage(bracketSlot.standingRank('group-a', 1)));
+    const options = { bracket, picks: picks({}), matchId: 'n1', side: 'home' } as const;
+
+    expect(resolveBracketSlot(options)).toBeNull();
+    expect(resolveBracketSlot({ ...options, fallBackToRealParticipant: true })).toBe('real-home');
+  });
+
+  it('follows a match outcome into a linked earlier stage', () => {
+    const earlier = create(source());
+    const bracket = create(laterStage(bracketSlot.matchOutcome('m3', 'winner')));
+    const options = { bracket, picks: picks({ m1: 'a', m2: 'c', m3: 'c' }), matchId: 'n1', side: 'home' } as const;
+
+    expect(resolveBracketSlot(options)).toBeNull();
+    expect(resolveBracketSlot({ ...options, linkedBrackets: [earlier] })).toBe('c');
   });
 });

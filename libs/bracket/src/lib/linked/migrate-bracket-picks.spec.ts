@@ -301,3 +301,26 @@ describe('migrateBracketPicks', () => {
     expect(seedVisits).toBe(length * 2);
   });
 });
+
+describe('migrateBracketPicks, linked stages', () => {
+  it('keeps a pick that a linked earlier stage puts on the match', () => {
+    const create = (input: BracketDataSource<null, null>) =>
+      createBracket(input, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT, onWarning: () => undefined });
+    const earlier = create(twoIntoOne());
+    const bracket = create(
+      sourceOf(
+        ['k1'],
+        [match({ id: 'n1', roundId: 'k1', away: 'z', homeSource: bracketSlot.matchOutcome('m3', 'winner') })],
+      ),
+    );
+    const picks: Record<string, string> = { m1: 'a', m2: 'c', m3: 'c', n1: 'c' };
+    const pickAsMade = (matchId: string) => picks[matchId] ?? null;
+
+    expect(migrateBracketPicks({ bracket, pickAsMade }).strandedByMatchId).toEqual({ n1: 'c' });
+    expect(migrateBracketPicks({ bracket, pickAsMade, linkedBrackets: [earlier] })).toEqual({
+      pickByMatchId: { n1: 'c' },
+      movedFromByMatchId: {},
+      strandedByMatchId: {},
+    });
+  });
+});

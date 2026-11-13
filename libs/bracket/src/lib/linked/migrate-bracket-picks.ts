@@ -1,12 +1,23 @@
+import { BracketMatchId } from '../core';
 import { Bracket, BracketMatch } from './bracket';
-import { BracketPickSet, BracketSlotResolutionPolicy, createBracketSlotResolver } from './resolve-bracket-slot';
+import {
+  BracketPickSet,
+  BracketSlotResolutionPolicy,
+  BracketStandingRankPickQuery,
+  createBracketSlotResolver,
+} from './resolve-bracket-slot';
 
 export type BracketPickMigrationOptions = BracketSlotResolutionPolicy & {
   bracket: Bracket<unknown, unknown>;
+  /**
+   * Earlier stages a `match-outcome` slot of `bracket` may point into. Their picks are read from
+   * {@link pickAsMade} as given, so migrate an earlier stage first and answer with its result.
+   */
+  linkedBrackets?: readonly Bracket<unknown, unknown>[];
   /** The participant the viewer picked on a match, on the match they picked it on. */
   pickAsMade: (matchId: string) => string | null;
   /** The participant the viewer put on a table position, for the `standing-rank` slots a round resolves from. */
-  standingRank?: (options: { standingId: string; rank: number }) => string | null;
+  standingRank?: (options: BracketStandingRankPickQuery) => string | null;
   /** Matches whose picks the backend already keeps. Their picks neither travel out nor take one in. */
   lockedMatchIds?: ReadonlySet<string>;
 };
@@ -88,7 +99,8 @@ export const migrateBracketPicks = (options: BracketPickMigrationOptions): Brack
   const strandedByMatchId: Record<string, string | undefined> = {};
 
   const settled: BracketPickSet = {
-    matchWinner: (matchId) => pickByMatchId[matchId] ?? null,
+    matchWinner: (matchId) =>
+      bracket.matches.has(matchId as BracketMatchId) ? (pickByMatchId[matchId] ?? null) : pickAsMade(matchId),
     standingRank: options.standingRank ?? (() => null),
   };
 
@@ -100,9 +112,11 @@ export const migrateBracketPicks = (options: BracketPickMigrationOptions): Brack
 
     const resolve = createBracketSlotResolver({
       bracket,
+      linkedBrackets: options.linkedBrackets,
       picks: settled,
       realParticipantOutranksPick: options.realParticipantOutranksPick,
       keepPickWhileFeederSideIsOpen: options.keepPickWhileFeederSideIsOpen,
+      fallBackToRealParticipant: options.fallBackToRealParticipant,
     });
 
     for (const match of round) {
