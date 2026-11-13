@@ -3,6 +3,7 @@ import { DesignConfig } from '../design-config';
 import { createPartShooter } from '../shot';
 import { DesignServer, drawingOn, WarmDraw } from '../warm-draw';
 import { CONTRAST_PAIR_RULE } from './build-ready-contract';
+import { ColorScheme } from './color-scheme';
 import { compareFrameOf } from './harness-shot';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
@@ -12,8 +13,11 @@ import { createSystemModules, productModuleIdOf } from './system-modules';
 const TAG = /<[a-zA-Z][^\s/>]*(?:\s+[^\s=/>]+(?:="[^"]*")?)*\s*\/?>/gu;
 const ATTRIBUTE = /\s([^\s=/>]+)(?:="([^"]*)")?/gu;
 
-/** The pairs a drawn part marks below their need, as `measureContrastPairs` wrote them into its `markup`. */
-export const lowContrastPairsOf = (markup: string) =>
+/**
+ * The pairs a drawn part marks below their need, as `measureContrastPairs` wrote them into its `markup`, each named
+ * with the theme of its `data-et-contrast-theme` and the `scheme` it was drawn in.
+ */
+export const lowContrastPairsOf = (markup: string, scheme: ColorScheme | null = null) =>
   [...markup.matchAll(TAG)].flatMap(([tag]) => {
     const attributes = new Map([...tag.matchAll(ATTRIBUTE)].map(([, name, value]) => [name, value ?? '']));
     const pair = attributes.get('data-et-contrast');
@@ -21,18 +25,30 @@ export const lowContrastPairsOf = (markup: string) =>
     if (pair === undefined || !attributes.has('data-et-contrast-low')) return [];
 
     const [text = '', on = ''] = pair.split(' ');
+    const theme = [attributes.get('data-et-contrast-theme'), scheme && `${scheme} scheme`].filter(Boolean).join(', ');
+    const where = theme ? ` in ${theme}` : '';
 
     return [
       {
-        pair: `${text} ${on}`,
-        message: `${text} on ${on} ${attributes.get('data-et-contrast-ratio') ?? '?'} < ${attributes.get('data-et-contrast-needs') ?? '?'}`,
+        pair: `${text} ${on}${where}`,
+        message: `${text} on ${on} ${attributes.get('data-et-contrast-ratio') ?? '?'} < ${attributes.get('data-et-contrast-needs') ?? '?'}${where}`,
       },
     ];
   });
 
+/** One `CONTRAST-PAIR` per low pair and theme across the `drawings` of a part, in each of its states and schemes. */
+export const contrastPairFindingsOf = (drawings: readonly { markup: string; scheme: ColorScheme | null }[]) => {
+  const found = new Map<string, { pair: string; message: string }>();
+
+  for (const { markup, scheme } of drawings)
+    for (const low of lowContrastPairsOf(markup, scheme)) if (!found.has(low.pair)) found.set(low.pair, low);
+
+  return [...found.values()];
+};
+
 /**
  * `CONTRAST-PAIR` for each theme token pair a part measures with `measureContrastPairs` and draws below its need, read
- * from the ratio the drawing shows in each of its states.
+ * from the ratio the drawing shows in each of its states and each scheme the product draws.
  */
 export const contrastPairProblemsOf = async (options: {
   target: string;
@@ -83,29 +99,29 @@ const lowPairsDrawn = async (options: {
 
     if (typeof frame === 'string') continue;
 
-    const seen = new Set<string>();
+    const drawings: { markup: string; scheme: ColorScheme }[] = [];
 
-    for (const state of states) {
-      const { markup } = await partShooter.pictureOf({
-        product: product.name,
-        part: key,
-        state,
-        preset: frame.preset,
-        width: null,
-        sketch: null,
-        interaction: null,
-        bare: true,
-        emptySlots: true,
-        checker: false,
-        params: new URLSearchParams(),
-      });
+    for (const scheme of product.schemes)
+      for (const state of states) {
+        const { markup } = await partShooter.pictureOf({
+          product: product.name,
+          part: key,
+          state,
+          preset: frame.preset,
+          width: null,
+          sketch: null,
+          interaction: null,
+          bare: true,
+          emptySlots: true,
+          checker: false,
+          params: new URLSearchParams({ scheme }),
+        });
 
-      for (const low of lowContrastPairsOf(markup ?? ''))
-        if (!seen.has(low.message)) {
-          seen.add(low.message);
-          problems.push({ rule: CONTRAST_PAIR_RULE, file: part.file, message: low.message, at: low.pair });
-        }
-    }
+        drawings.push({ markup: markup ?? '', scheme });
+      }
+
+    for (const low of contrastPairFindingsOf(drawings))
+      problems.push({ rule: CONTRAST_PAIR_RULE, file: part.file, message: low.message, at: low.pair });
   }
 
   return problems;

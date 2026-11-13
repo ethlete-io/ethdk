@@ -48,17 +48,28 @@ export const contrastRatioOf = (options: { text: string; on: string; within?: El
   }
 };
 
+const CHANNELS = /^\d+(?:\.\d+)?\s+\d+(?:\.\d+)?\s+\d+(?:\.\d+)?$/u;
+
+const colorOfToken = (element: Element, token: string) =>
+  CHANNELS.test(getComputedStyle(element).getPropertyValue(token).trim()) ? `rgb(var(${token}))` : `var(${token})`;
+
 /**
  * Measures each element under `root` marked `data-et-contrast="<text token> <background token>"`, with its need in
  * `data-et-contrast-needs` (left empty when exempt), and writes the ratio it shows to `data-et-contrast-ratio` and
- * `data-et-contrast-low` when it is below the need; the ratio is rounded down, so a low one never shows its need. `design check` reports each low mark as `CONTRAST-PAIR`, so draw the
- * returned `ratio` and `low` instead of measuring again.
+ * `data-et-contrast-low` when it is below the need; the ratio is rounded down, so a low one never shows its need.
+ * The tokens resolve on the marked element, as a colour or as `r g b` channels, and `data-et-contrast-theme` names
+ * the theme they come from. `design check` reports each low mark as `CONTRAST-PAIR` in every scheme the product draws,
+ * so draw the returned `ratio` and `low` instead of measuring again.
  */
 export const measureContrastPairs = (root: HTMLElement) =>
   [...root.querySelectorAll<HTMLElement>('[data-et-contrast]')].map((element) => {
     const [text = '', on = ''] = (element.dataset['etContrast'] ?? '').split(' ');
     const needs = Number(element.dataset['etContrastNeeds']) || null;
-    const measured = contrastRatioOf({ text: `var(${text})`, on: `var(${on})`, within: root });
+    const measured = contrastRatioOf({
+      text: colorOfToken(element, text),
+      on: colorOfToken(element, on),
+      within: element,
+    });
     const ratio = (Math.floor(measured * 10) / 10).toFixed(1);
     const low = needs !== null && measured < needs;
 

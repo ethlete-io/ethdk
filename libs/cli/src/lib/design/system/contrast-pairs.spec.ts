@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../design-config';
-import { lowContrastPairsOf } from './contrast-pairs';
+import { contrastPairFindingsOf, lowContrastPairsOf } from './contrast-pairs';
 import { resolveProduct } from './resolve-product';
 import { slowInputsOf, slowProblemsOf } from './slow-checks';
 import { runSlowChecks } from './slow-run';
@@ -29,6 +29,49 @@ describe('lowContrastPairsOf', () => {
           '<span data-et-contrast="--surface-border --surface" data-et-contrast-needs="" data-et-contrast-ratio="1.5"></span>',
       ),
     ).toEqual([]);
+  });
+});
+
+describe('contrastPairFindingsOf', () => {
+  it('names the theme and the scheme of a low pair drawn in two schemes', () => {
+    const markup = readFileSync(
+      join(__dirname, '..', '__fixtures__', 'contrast-pairs-sdk-muted-light-low.html'),
+      'utf8',
+    );
+
+    expect(
+      contrastPairFindingsOf([
+        { markup, scheme: 'light' },
+        { markup, scheme: 'dark' },
+      ]),
+    ).toEqual([
+      {
+        pair: '--et-surface-color-muted --et-surface-background in et-surface--light, light scheme',
+        message: '--et-surface-color-muted on --et-surface-background 1.8 < 4.5 in et-surface--light, light scheme',
+      },
+      {
+        pair: '--et-surface-color-muted --et-surface-background in et-surface--light, dark scheme',
+        message: '--et-surface-color-muted on --et-surface-background 1.8 < 4.5 in et-surface--light, dark scheme',
+      },
+    ]);
+  });
+
+  const muted = (theme: string, ratio: string) =>
+    `<strong data-et-contrast="--et-surface-color-muted --et-surface-background" data-et-contrast-needs="4.5" data-et-contrast-theme="${theme}" data-et-contrast-ratio="${ratio}" data-et-contrast-low></strong>`;
+
+  it('reports a low pair once per theme and scheme, with both named', () => {
+    const light = muted('et-surface--light', '2.9');
+
+    expect(
+      contrastPairFindingsOf([
+        { markup: light + light, scheme: 'light' },
+        { markup: light + muted('et-surface--dark', '3.1'), scheme: 'dark' },
+      ]).map(({ message }) => message),
+    ).toEqual([
+      '--et-surface-color-muted on --et-surface-background 2.9 < 4.5 in et-surface--light, light scheme',
+      '--et-surface-color-muted on --et-surface-background 2.9 < 4.5 in et-surface--light, dark scheme',
+      '--et-surface-color-muted on --et-surface-background 3.1 < 4.5 in et-surface--dark, dark scheme',
+    ]);
   });
 });
 

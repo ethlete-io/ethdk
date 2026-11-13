@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: B508
+built: 9ebd61bc0
 decided: 2026-11-13
 source: doc agent chat 2026-11-13, morning round after the night shift
 ---
