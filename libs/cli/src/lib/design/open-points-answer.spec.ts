@@ -14,7 +14,6 @@ import { ResolvedProduct } from './system/resolve-product';
 
 vi.mock('./system/drawn-open-points', () => ({
   drawnFindingsOf: vi.fn(async () => ({
-    contrasts: [{ part: 'components/chip', state: 'default', path: 'span' }],
     missingStates: [{ part: 'components/chip', control: 'remove' }],
   })),
 }));
@@ -158,7 +157,7 @@ describe('openPointsAnswer', { timeout: 30_000 }, () => {
     ).toEqual([]);
   });
 
-  it('draws one part for its contrasts and missing control states', async () => {
+  it('draws one part for its missing control states', async () => {
     const answer = await openPointsAnswer(ask(checkout(), '/?product=app-a&part=components/chip&draw=true'));
 
     expect(answer).toEqual({
@@ -176,10 +175,7 @@ describe('openPointsAnswer', { timeout: 30_000 }, () => {
           ]),
         },
         drawn: true,
-        points: [
-          { kind: 'missing-state', control: 'remove' },
-          { kind: 'contrast', state: 'default', path: 'span' },
-        ],
+        points: [{ kind: 'missing-state', control: 'remove' }],
       },
     });
   });

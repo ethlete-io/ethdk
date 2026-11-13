@@ -9,7 +9,7 @@ import { STUDIO_LABELS } from '../i18n/studio-labels';
 
 const LABELS = STUDIO_LABELS.system;
 
-const ICONS: OpenPointIcon[] = ['grid', 'warning', 'comment', 'error', 'flow'];
+const ICONS: OpenPointIcon[] = ['grid', 'comment', 'error', 'flow'];
 
 type ListedPoint = Exclude<OpenPoint, { kind: 'direct-edit' }>;
 
@@ -18,8 +18,6 @@ const iconOf = (point: ListedPoint): OpenPointIcon => {
     case 'missing-state':
     case 'unmerged-sketch':
       return 'grid';
-    case 'contrast':
-      return 'warning';
     case 'sketch-problem':
       return 'error';
     case 'open-comment':
@@ -35,12 +33,6 @@ const lineOf = (point: ListedPoint): OpenPointLine => {
       return point.control
         ? { text: LABELS.controlUndrawn(point.control), detail: point.control }
         : { text: LABELS.noControls, detail: 'controls' };
-    case 'contrast':
-      return {
-        text: LABELS.belowContrast(point.path),
-        detail: point.state,
-        target: { kind: 'state', state: point.state },
-      };
     case 'open-comment':
       return {
         text: point.answered ? LABELS.commentAnswered : LABELS.commentWaiting,

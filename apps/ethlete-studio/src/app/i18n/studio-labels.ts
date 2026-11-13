@@ -118,7 +118,6 @@ export const STUDIO_LABELS = {
     allDone: 'Jeder Zustand ist gezeichnet, verknüpft und besprochen.',
     noControls: 'Keine Controls deklariert',
     controlUndrawn: (control: string) => `${control} hat keinen gezeichneten Zustand`,
-    belowContrast: (path: string) => `${path} liegt unter der Kontrastregel`,
     commentAnswered: 'Beantwortet, wartet auf dich',
     commentWaiting: 'Wartet auf den Agenten',
     sketchPicked: 'Sketch gewählt, noch nicht gemergt',

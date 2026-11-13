@@ -8,7 +8,7 @@ import { resolveProduct } from './resolve-product';
 const REPO = resolve(__dirname, '../../../../../..');
 const BUDGET_FILE = resolve(__dirname, 'real-open-points.budget.json');
 
-const RATCHETED = ['missing-state', 'contrast', 'missing-motion'];
+const RATCHETED = ['missing-state', 'missing-motion'];
 
 type Budget = Record<string, Record<string, number>>;
 

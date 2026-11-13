@@ -152,7 +152,7 @@ export const readOpenPoints = (
     sketchProblems = false,
     productRules = productRuleRunOf(product),
     ...rendered
-  }: Pick<OpenPointsInput, 'missingStates' | 'contrasts' | 'busyStates'> & {
+  }: Pick<OpenPointsInput, 'missingStates' | 'busyStates'> & {
     sketchProblems?: boolean;
     productRules?: ProductRuleRun;
   } = {},

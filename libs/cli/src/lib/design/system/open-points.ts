@@ -4,7 +4,6 @@ import { SketchDecision, SketchStatus } from './sketch/sketch';
 /** Every kind of open point, in the order a part lists them. */
 export const OPEN_POINT_KINDS = [
   'missing-state',
-  'contrast',
   'open-comment',
   'unmerged-sketch',
   'sketch-problem',
@@ -16,11 +15,11 @@ export const OPEN_POINT_KINDS = [
 export type OpenPointKind = (typeof OPEN_POINT_KINDS)[number];
 
 /** The kinds a sketch closes in its own variant; the others exist only after a merge or outside the sketch. */
-export const SKETCH_KINDS: readonly OpenPointKind[] = ['missing-state', 'contrast', 'missing-motion'];
+export const SKETCH_KINDS: readonly OpenPointKind[] = ['missing-state', 'missing-motion'];
 
 /**
  * Something that keeps a part from being done. `missing-state` is a control without a drawn state (`control` null when
- * the part declares no controls); `contrast` is a drawn state under the contrast rule; `open-comment` is a thread the
+ * the part declares no controls); `open-comment` is a thread the
  * user has not resolved, `answered` when it waits on the user; `unmerged-sketch` is a sketch on the part that is still
  * there, picked or not; `sketch-problem` is a static rule problem a variant of a ready sketch brings in; `direct-edit` is a merged part changed outside a sketch, with the old/new sketch it waits on
  * (`sketch` null until one is open); `missing-motion` is a pair of states without a motion between them, or, with `from` equal to
@@ -28,7 +27,6 @@ export const SKETCH_KINDS: readonly OpenPointKind[] = ['missing-state', 'contras
  */
 export type OpenPoint =
   | { kind: 'missing-state'; control: string | null }
-  | { kind: 'contrast'; state: string; path: string }
   | { kind: 'open-comment'; comment: string; state: string; answered: boolean }
   | {
       kind: 'unmerged-sketch';
@@ -51,7 +49,7 @@ export type PartMotions = {
 
 /**
  * What the open points are read from. `controls` is whether the part declares any, `declaredNoControls` that it says outright it has none, `motion` is left out when its
- * states cannot be read; `missingStates` and `contrasts` come
+ * states cannot be read; `missingStates` comes
  * from drawing the parts, so a check without a browser leaves them out. `busyStates` are drawn states whose render
  * holds `aria-busy="true"` or a loading button: each is ongoing work whatever its name.
  */
@@ -72,7 +70,6 @@ export type OpenPointsInput = {
     decision: SketchDecision['kind'] | null;
   }[];
   missingStates?: { part: string; control: string }[];
-  contrasts?: { part: string; state: string; path: string }[];
   busyStates?: { part: string; state: string }[];
   directEdits?: { part: string; sketch: string | null }[];
   sketchProblems?: { part: string; sketch: string; variant: string; rule: string; message: string }[];
@@ -114,9 +111,6 @@ export type PartOpenPoints = { part: string; points: OpenPoint[] };
 const rankOf = (point: OpenPoint) => OPEN_POINT_KINDS.indexOf(point.kind);
 
 const keyedPointsOf = (input: OpenPointsInput, key: string): OpenPoint[] => [
-  ...(input.contrasts ?? [])
-    .filter((contrast) => contrast.part === key)
-    .map(({ state, path }) => ({ kind: 'contrast' as const, state, path })),
   ...(input.directEdits ?? [])
     .filter((edit) => edit.part === key)
     .map(({ sketch }) => ({ kind: 'direct-edit' as const, sketch })),
@@ -186,8 +180,6 @@ const subjectOf = (point: OpenPoint) => {
   switch (point.kind) {
     case 'missing-state':
       return point.control ?? '';
-    case 'contrast':
-      return `${point.state} ${point.path}`;
     case 'missing-motion':
       return `${point.from} -> ${point.to}`;
     case 'open-comment':
@@ -251,12 +243,6 @@ const missingStateText = (points: OpenPoint[]) => {
   ].join('; ');
 };
 
-const contrastText = (points: OpenPoint[]) => {
-  const states = [...new Set(points.map((point) => (point.kind === 'contrast' ? point.state : '')))];
-
-  return `${plural(points.length, 'contrast')} under the rule (state${states.length === 1 ? '' : 's'} ${states.join(', ')})`;
-};
-
 const LISTED_MOTIONS = 6;
 
 const loopEntriesOf = (states: string[]) =>
@@ -278,8 +264,6 @@ const missingMotionText = (points: OpenPoint[]) => {
 
 const groupText = (kind: OpenPointKind, points: OpenPoint[]) => {
   if (kind === 'missing-state') return missingStateText(points);
-
-  if (kind === 'contrast') return contrastText(points);
 
   if (kind === 'missing-motion') return missingMotionText(points);
 

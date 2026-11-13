@@ -203,7 +203,7 @@ describe('SystemViewComponent on a reload', () => {
     TestBed.configureTestingModule({ providers: provideColorThemesWithTailwind4(THEMES) });
     vi.stubGlobal('fetch', (url: string) => {
       if (url.includes('/__design/open-points'))
-        return json({ points: [{ kind: 'contrast', state: 'hover', path: 'label' }], buildReady: { ready: true } });
+        return json({ points: [{ kind: 'missing-motion', from: 'rest', to: 'hover' }], buildReady: { ready: true } });
       if (url.includes('/__design/exceptions'))
         return json([
           { key: 'elements/rating.star.focus', state: 'pending', reason: 'never takes focus' },
@@ -234,7 +234,7 @@ describe('SystemViewComponent on a reload', () => {
         return json({
           points: [
             { kind: 'missing-motion', from: 'rest', to: 'hover' },
-            { kind: 'contrast', state: 'hover', path: 'label' },
+            { kind: 'open-comment', comment: 'c-1', state: 'hover', answered: false },
           ],
           buildReady: { ready: false, blockers: [{ kind: 'stale-record', text: 'no check record' }] },
         });
@@ -263,14 +263,14 @@ describe('SystemViewComponent on a reload', () => {
     );
 
     expect(lines).toEqual([
-      ['label liegt unter der Kontrastregel', 'hover'],
+      ['Wartet auf den Agenten', 'hover'],
       ['Kein Prüfergebnis zum aktuellen Design - Design-Check oder Design-Ready ausführen', 'stale-record'],
       ['rest → hover', 'motion'],
     ]);
 
     const rows = document.querySelectorAll<HTMLButtonElement>('ethlete-open-points-popover [data-open-point-target]');
 
-    expect([...rows].map((row) => row.textContent?.trim())).toEqual(['label liegt unter der Kontrastregelhover']);
+    expect([...rows].map((row) => row.textContent?.trim())).toEqual(['Wartet auf den Agentenhover']);
 
     rows[0]?.click();
     await settle(fixture);

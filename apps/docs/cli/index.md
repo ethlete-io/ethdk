@@ -415,7 +415,7 @@ product's `rule-baseline.json` (ADR 0201), and `data-et-skip="CONTROL-HEIGHT"` m
 
 The design server answers the same list as JSON: `GET /__design/open-points?product=` lists every part with
 open points as `{ drawn: false, parts: [{ part, points }] }`, and `&part=<layer>/<name>` answers one part as
-`{ part, drawn, points }`. Contrasts and missing control states need a draw, so only `&draw=true` with a `part`
+`{ part, drawn, points }`. Missing control states need a draw, so only `&draw=true` with a `part`
 lists them; it draws that part as `design check` does, which takes seconds. A bad parameter answers 400, an
 unknown part 404, and a draw that cannot run 503. The one-part answer also holds the part `hash` and its `ready`
 mark, or `null`.

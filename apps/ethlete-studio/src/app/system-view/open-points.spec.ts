@@ -8,7 +8,6 @@ describe('openPointGroupsOf', () => {
           { kind: 'missing-motion', from: 'rest', to: 'hover' },
           { kind: 'open-comment', comment: 'a', state: 'outline', answered: false },
           { kind: 'unmerged-sketch', sketch: 'rating', status: 'ready', decision: 'pick' },
-          { kind: 'contrast', state: 'tonal', path: 'label' },
           { kind: 'missing-state', control: null },
           { kind: 'missing-state', control: 'size' },
           { kind: 'open-comment', comment: 'b', state: 'filled', answered: true },
@@ -33,16 +32,6 @@ describe('openPointGroupsOf', () => {
           },
           { text: 'Keine Controls deklariert', detail: 'controls' },
           { text: 'size hat keinen gezeichneten Zustand', detail: 'size' },
-        ],
-      },
-      {
-        icon: 'warning',
-        lines: [
-          {
-            text: 'label liegt unter der Kontrastregel',
-            detail: 'tonal',
-            target: { kind: 'state', state: 'tonal' },
-          },
         ],
       },
       {

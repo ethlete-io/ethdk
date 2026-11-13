@@ -1034,8 +1034,8 @@ const drawnFindingsAnswerOf = async ({ asked, config, product }: Found, part: st
 };
 
 /**
- * GET `?product=&part=&draw=`: the open points of one part, or of every part without `part`. Contrasts and missing
- * control states need a draw: only `draw=true` with a `part` lists them, and `drawn` says whether they are in.
+ * GET `?product=&part=&draw=`: the open points of one part, or of every part without `part`. Missing control
+ * states need a draw: only `draw=true` with a `part` lists them, and `drawn` says whether they are in.
  * `directEdit` says whether the merged part changed outside a sketch and waits for an accept; `buildReady` whether the
  * part may be built now, or its blockers.
  */

@@ -708,7 +708,7 @@ describe('SketchViewComponent', () => {
           { kind: 'unmerged-sketch', status: 'ready', decision: 'pick' },
           { kind: 'sketch-problem', sketch: 'elements/rating', variant: 'c', rule: 'UTILITY-CSS', message: 'flex' },
           { kind: 'sketch-problem', sketch: 'elements/rating', variant: 'c', rule: 'UTILITY-CSS', message: 'gap' },
-          { kind: 'contrast', state: 'hover', path: 'label' },
+          { kind: 'missing-motion', from: 'rest', to: 'hover' },
         ],
         buildReady: { ready: false, blockers: [{ kind: 'pending', text: 'pending' }] },
       });

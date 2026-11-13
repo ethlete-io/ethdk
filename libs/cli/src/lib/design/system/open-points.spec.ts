@@ -86,7 +86,7 @@ describe('openPointsOf', () => {
     ]);
   });
 
-  it('takes the rendered missing states and contrasts of each part, missing states not on a page', () => {
+  it('takes the rendered missing states of each part, missing states not on a page', () => {
     expect(
       openPointsOf(
         input({
@@ -98,13 +98,9 @@ describe('openPointsOf', () => {
             { part: 'components/a', control: 'trigger.hover' },
             { part: 'pages/b', control: 'link.hover' },
           ],
-          contrasts: [{ part: 'pages/b', state: 'default', path: 'p' }],
         }),
       ),
-    ).toEqual([
-      { part: 'components/a', points: [{ kind: 'missing-state', control: 'trigger.hover' }] },
-      { part: 'pages/b', points: [{ kind: 'contrast', state: 'default', path: 'p' }] },
-    ]);
+    ).toEqual([{ part: 'components/a', points: [{ kind: 'missing-state', control: 'trigger.hover' }] }]);
   });
 
   it('counts an answered comment until the user resolves it, and only on its own part', () => {
@@ -228,7 +224,7 @@ describe('openPointsText', () => {
     ]);
   });
 
-  it('prints missing states and contrasts first', () => {
+  it('prints missing states first', () => {
     const list = openPointsOf(
       input({
         parts: [
@@ -239,18 +235,14 @@ describe('openPointsText', () => {
           { part: 'components/b', control: 'trigger.hover' },
           { part: 'components/b', control: 'menu' },
         ],
-        contrasts: [
-          { part: 'components/b', state: 'default', path: 'span' },
-          { part: 'components/b', state: 'hover', path: 'span' },
-        ],
         comments: [comment('c-1', 'components/b')],
       }),
     );
 
     expect(openPointsText('acme', list)).toEqual([
-      'OPEN POINTS acme: 6 in 2 parts',
+      'OPEN POINTS acme: 4 in 2 parts',
       '  components/a: no controls declared',
-      '  components/b: 2 missing states (trigger.hover, menu); 2 contrasts under the rule (states default, hover); 1 open comment (c-1)',
+      '  components/b: 2 missing states (trigger.hover, menu); 1 open comment (c-1)',
     ]);
   });
   it('prints missing motions last, a single pair, a capped list and the loops', () => {
@@ -319,7 +311,7 @@ describe('sketchAddedPointsOf', () => {
             points: [
               { kind: 'missing-state', control: null },
               { kind: 'missing-motion', from: 'rest', to: 'hover' },
-              { kind: 'contrast', state: 'rest', path: 'span' },
+              { kind: 'missing-motion', from: 'rest', to: 'focus' },
             ],
           },
         ],
@@ -330,7 +322,7 @@ describe('sketchAddedPointsOf', () => {
               { kind: 'missing-state', control: null },
               { kind: 'missing-motion', from: 'rest', to: 'hover' },
               { kind: 'missing-motion', from: 'hover', to: 'rest' },
-              { kind: 'contrast', state: 'rest', path: 'b' },
+              { kind: 'missing-motion', from: 'rest', to: 'focus' },
             ],
           },
           { part: 'components/new', points: [{ kind: 'missing-motion', from: 'rest', to: 'hover' }] },
@@ -340,10 +332,7 @@ describe('sketchAddedPointsOf', () => {
       added: [
         {
           part: 'components/a',
-          points: [
-            { kind: 'missing-motion', from: 'hover', to: 'rest' },
-            { kind: 'contrast', state: 'rest', path: 'b' },
-          ],
+          points: [{ kind: 'missing-motion', from: 'hover', to: 'rest' }],
         },
         { part: 'components/new', points: [{ kind: 'missing-motion', from: 'rest', to: 'hover' }] },
       ],
@@ -353,6 +342,7 @@ describe('sketchAddedPointsOf', () => {
           points: [
             { kind: 'missing-state', control: null },
             { kind: 'missing-motion', from: 'rest', to: 'hover' },
+            { kind: 'missing-motion', from: 'rest', to: 'focus' },
           ],
         },
       ],
