@@ -76,7 +76,7 @@ export const designReady = async (options: { target: string; argv: string[]; inv
   const marked = await markPartReady({
     product,
     part,
-    origin: originOf(author, `design ready ${argv.join(' ')}`),
+    origin: originOf(author, 'ready'),
     hash: typeof located === 'string' ? '-' : located.hash,
     pointsOf: async () => {
       const points = await drawnPartPointsOf({ target, config, product, part });

@@ -7,6 +7,7 @@ import { DESIGN_DIR, readConfig } from '../design-config';
 import { checkSystemRendered } from './check-system';
 import { partsCompletenessOf } from './complete';
 import { renderIssuesOf } from './render-check';
+import { readStampText } from './stamp-files';
 
 vi.mock('./render-check', async (actual) => ({
   ...(await actual<typeof import('./render-check')>()),
@@ -67,7 +68,7 @@ describe('a design check and the tracked stamp files', () => {
   });
 
   it.each([undefined, 'elements/hero'])(
-    'leaves merged.json and ready.json byte-identical and still reports the dropped record (part %s)',
+    'leaves merged.json and ready.json byte-identical, reports the dropped record and caches it for later reads (part %s)',
     async (part) => {
       const { target, dir } = committedAcme();
 
@@ -95,6 +96,7 @@ describe('a design check and the tracked stamp files', () => {
 
       expect(files.map((file) => readFileSync(file, 'utf8'))).toEqual(before);
       expect(lines).toContainEqual(expect.stringMatching(/^RECORD DROPPED acme elements\/hero: open-point/));
+      expect(JSON.parse(readStampText(join(dir, 'ready.json')) ?? '{}')).not.toHaveProperty(['elements/hero', 'hash']);
     },
     120_000,
   );

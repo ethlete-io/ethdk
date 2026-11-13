@@ -17,7 +17,7 @@ import { droppedPropProblemsOf } from './dropped-props';
 import { DrawnFindings, drawnFindingsFrom, isPartUndrawn, isStateUndrawn, statefulPartsOf } from './drawn-open-points';
 import { openPointsText, PartOpenPoints } from './open-points';
 import { doneParts, gitDiffFilesOf } from './part-task';
-import { actionsRerunOf, readyPartsOf } from './part-ready';
+import { actionsRerunOf, READY_FILE, readyPartsOf } from './part-ready';
 import { BuildReadyInputs } from './part-build-ready';
 import { recordCheckedBuildReady, slowWaitingLineOf } from './check-record';
 import { partActionFailuresOf } from './actions-command';
@@ -81,7 +81,7 @@ import { designCoverageOf } from './rules/design-coverage';
 import { badWidthsOf } from './rules/widths';
 import { typecheckVariant } from './sketch/check-sketches';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
-import { withStampsInMemory } from './stamp-files';
+import { keepHeldStampsInCache, withStampsInMemory } from './stamp-files';
 import { staleSketchBasesOf } from './sketch/stale-base';
 import { listSketches, variantDirOf } from './sketch/sketch';
 import { typecheckProduct, writeEditorTsconfig } from './system-tsconfig';
@@ -977,7 +977,13 @@ export const checkSystemRendered = async (options: CheckOptions) => {
     : createRunDraw(options.target, { chromiumOf: options.chromiumOf });
 
   try {
-    return await withStampsInMemory(() => checkSystemRenderedOn({ ...options, warm: run.warm }));
+    return await withStampsInMemory(async () => {
+      const code = await checkSystemRenderedOn({ ...options, warm: run.warm });
+
+      keepHeldStampsInCache(READY_FILE);
+
+      return code;
+    });
   } finally {
     await run.close();
   }

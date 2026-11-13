@@ -163,6 +163,13 @@ export const drawnPartPointsOf = async (options: {
 export const readyPartsOf = (product: ResolvedProduct) =>
   product.parts.map(partKeyOf).filter((part) => readyMarkOf({ product, part }) !== null);
 
+const sameRecord = (previous: PartReady, next: PartReady) => {
+  const { pid: _previousPid, ...held } = previous;
+  const { pid: _nextPid, ...written } = next;
+
+  return JSON.stringify(held) === JSON.stringify(written);
+};
+
 const writeReady = (dir: string, records: Record<string, PartReady | ActionBaseline>) =>
   writeStampFile(readyFileOf(dir), Object.fromEntries(Object.entries(records).sort(([a], [b]) => a.localeCompare(b))));
 
@@ -199,6 +206,8 @@ export const writePartRecord = (options: {
     cmd: options.origin.cmd,
     pid: options.origin.pid,
   };
+
+  if (previous && isReady(previous) && sameRecord(previous, record)) return previous;
 
   writeReady(found.dir, { ...existing, [options.part]: record });
 

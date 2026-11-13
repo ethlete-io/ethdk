@@ -10,6 +10,9 @@ import { openPointsInWorker } from './open-points.fixtures';
 import { createPartPictureCache } from './part-picture-cache';
 import { partKeyOf, resolveProduct } from './resolve-product';
 import { startSlowRunner } from './slow-run';
+import { readStampText, withStampsInMemory } from './stamp-files';
+import { upgradeLegacyMarksOf } from './stale-parts';
+import { designStatus } from '../status';
 import { partHashOf } from './sketch/baseline';
 import { HeldEdits } from './sketch/held-edits';
 import { openEditSketch } from './sketch/edit-sketch';
@@ -17,6 +20,9 @@ import { changedOutsideSketchOf, readMerged, recordMerged } from './sketch/merge
 import { gitExec } from '../../git-test-env.fixtures';
 
 const CHIP = 'components/chip';
+
+const readyOf = (dir: string) =>
+  JSON.parse(readStampText(join(dir, 'ready.json')) ?? '{}') as Record<string, Record<string, unknown>>;
 
 const harness = { app: 'apps/acme', map: 'apps/acme/src/map.ts' };
 
@@ -76,8 +82,50 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
     runner.stop();
 
     expect(buildReadyOf()).toEqual({ ready: true });
-    expect(JSON.parse(readFileSync(join(dir, 'ready.json'), 'utf8'))['components/chip'].actions).toEqual(['open']);
-    expect(JSON.parse(readFileSync(join(dir, 'ready.json'), 'utf8'))['components/chip'].by).toBe('et design serve');
+    expect(readyOf(dir)['components/chip']?.['actions']).toEqual(['open']);
+    expect(readyOf(dir)['components/chip']).toMatchObject({ by: 'et design serve', cmd: 'serve' });
+  });
+
+  it('writes no tracked file through a serve slow run, the legacy upgrade of design check and design status', async () => {
+    const { target, dir, config, product } = staleChip();
+    const legacy = partHashOf({ product: product(), dir: join(dir, CHIP) });
+    const at = '2026-11-06T00:00:00.000Z';
+
+    writeFileSync(join(dir, 'ready.json'), JSON.stringify({ [CHIP]: { hash: legacy, at, actions: ['open'] } }));
+    gitExec(['init', '-q'], { cwd: target });
+    gitExec(['add', '-A'], { cwd: target });
+    gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', 'x'], { cwd: target });
+
+    const tracked = () =>
+      gitExec(['status', '--porcelain', '--untracked-files=all', '--', DESIGN_DIR], { cwd: target }).toString();
+    const runner = startSlowRunner({
+      target,
+      configOf: () => config,
+      log: () => undefined,
+      intervalMs: 3_600_000,
+      runners: {
+        specs: async () => [],
+        start: async () => ({ url: 'http://app', stop: async () => undefined }),
+        live: async () => [],
+        controlState: async () => [],
+        droppedProps: async () => [],
+        actionLost: async () => [],
+      },
+      record: (request) =>
+        recordSettledBuildReady({ ...request, actionsOf: async () => [], declaredActionsOf: async () => ['open'] }),
+    });
+
+    await runner.poll();
+    await runner.poll();
+    runner.stop();
+
+    expect(await withStampsInMemory(async () => upgradeLegacyMarksOf({ product: product() }))).toEqual([
+      { part: CHIP, marks: ['ready'] },
+    ]);
+    await designStatus({ target, argv: [], invocation: 'et design' });
+    expect(tracked()).toBe('');
+    expect(openPointsOf({ product: product(), part: CHIP })).toMatchObject({ buildReady: { ready: true } });
+    expect(readyOf(dir)['pages/home']).toMatchObject({ by: 'et design serve', cmd: 'serve' });
   });
 
   it('records an unlinked part with its declared actions through the default checks', async () => {
@@ -103,7 +151,7 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
     expect(openPointsOf({ product: product(), part: 'components/chip' })).toMatchObject({
       buildReady: { ready: true },
     });
-    expect(JSON.parse(readFileSync(join(dir, 'ready.json'), 'utf8'))['components/chip'].actions).toEqual([]);
+    expect(readyOf(dir)['components/chip']?.['actions']).toEqual([]);
   });
 
   it('blocks each part of a product without a harness definitely, not as pending', async () => {

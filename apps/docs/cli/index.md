@@ -428,12 +428,13 @@ points when a mark holds.
 
 ## Build-ready
 
-A part is build-ready when a current check record with no blockers holds for it. `et design ready` and the design
-server write the record; it lives in `.ethlete/design/<product>/ready.json`, is written by the tool only and is
-committed. `et design check` reports the same verdict but leaves `ready.json` and `merged.json` as they are. There is no
-go and no acceptance step: Studio computes the state and `design task` starts only for build-ready parts. Any edit of
-the part changes its hash, and the record then reads as stale until `et design ready` or the design server writes it
-again.
+A part is build-ready when a current check record with no blockers holds for it. Only `et design ready` writes the
+committed record in `.ethlete/design/<product>/ready.json`. The design server and `et design check` write theirs to the
+gitignored `.ethlete/cache/<product>/stamps/ready.json`, which every later command and Studio read until `ready.json`
+itself changes; neither touches `ready.json` or `merged.json`. A record names its writer, with `cmd` set to `ready`,
+`check` or `serve`. There is no go and no acceptance step: Studio computes the state and `design task` starts only for
+build-ready parts. Any edit of the part changes its hash, and the record then reads as stale until `et design ready`,
+`et design check` or the design server writes it again.
 
 Studio shows the state on the part as "Baubereit", "Nicht baubereit (n)" with the reasons, or "Wird geprüft" while the
 slow checks run. A change to a merged part outside a sketch is not accepted by hand: `design check` opens an old/new

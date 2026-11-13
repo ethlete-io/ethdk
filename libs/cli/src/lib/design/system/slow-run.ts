@@ -19,6 +19,7 @@ import { compareLineOf, comparePngs } from './part-compare';
 import { Problem } from './problem';
 import { repoRootOf } from './reachable-files';
 import { RecordSettledRequest, recordSettledBuildReady } from './record-settled';
+import { withStampsInCache } from './stamp-files';
 import { partKeyOf, partOfFile, ResolvedProduct, resolveProduct } from './resolve-product';
 import { ruleBaselineOf } from './rule-baseline';
 import { APP_SPEC_RULE, appSpecProblemsOf, RunRelatedSpecs, runRelatedSpecs } from './rules/app-spec';
@@ -366,7 +367,8 @@ const settledEditsOf = ({
  * inputs changed and then held still for one poll, one run at a time. Before them it settles each direct edit HEAD
  * already holds, and resolves each other direct edit of a merged part that held still for one poll: it holds, or it
  * opens the old/new edit sketch. It writes neither `merged.json` nor any other file git tracks for them: the server keeps
- * a held or settled edit in memory and shows it as no open point. After a run it writes or drops the check record of each run part and its hosts.
+ * a held or settled edit in memory and shows it as no open point. After a run it writes or drops the check record of each
+ * run part and its hosts in the stamp cache (`withStampsInCache`), never in the tracked `ready.json`.
  */
 export const startSlowRunner = (options: {
   target: string;
@@ -445,7 +447,7 @@ export const startSlowRunner = (options: {
         const count = [...results.values()].reduce((sum, problems) => sum + problems.length, 0);
 
         options.log(`slow checks: ${name} done, ${count} problem(s)`);
-        await record({ target: options.target, config, product, settled });
+        await withStampsInCache(() => record({ target: options.target, config, product, settled }));
       }
     } catch (error) {
       options.log(`slow checks failed: ${error instanceof Error ? error.message : String(error)}`);

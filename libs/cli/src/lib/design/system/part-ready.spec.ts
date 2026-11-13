@@ -170,6 +170,24 @@ describe('part ready', () => {
     expect(statSync(file).mtimeMs).toBe(past.getTime());
   });
 
+  it('keeps the record byte-equal when the same writer rewrites it at the same hash from another process', () => {
+    const { target, dir } = checkout();
+    const file = join(dir, 'ready.json');
+    const write = (pid: number) =>
+      writePartRecord({
+        product: productOf(target),
+        part: 'components/chip',
+        origin: { by: 'et design serve', cmd: 'serve', pid },
+      });
+
+    write(1);
+    const before = readFileSync(file, 'utf8');
+
+    write(2);
+
+    expect(readFileSync(file, 'utf8')).toBe(before);
+  });
+
   it('refuses with the list while the part has open points, the drawn ones too', async () => {
     const { target, dir } = checkout();
 

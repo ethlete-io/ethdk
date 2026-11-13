@@ -1,7 +1,6 @@
 import { execFileSync } from 'child_process';
 import { writeJsonFile } from '../../json-file';
 import { createHash } from 'crypto';
-import { existsSync, readFileSync } from 'fs';
 import { posix, resolve } from 'path';
 import { appFilesOf } from './app-files';
 import { changedFilesOf, designHolds, FileHashes, isOptionalFileHashes } from './design-hash';
@@ -10,6 +9,7 @@ import { matchesPattern } from './harness-config';
 import { buildReadyOf, BuildReadyInputs } from './part-build-ready';
 import { readyMarkOf, readyPartOf } from './part-ready';
 import { repoRootOf } from './reachable-files';
+import { readStampText } from './stamp-files';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { partLinkOf } from './sketch/part-definition';
 
@@ -51,12 +51,12 @@ export const stateHashOf = (props: unknown) =>
     .slice(0, 16);
 
 export const readImplemented = (dir: string): Record<string, PartImplemented> => {
-  const file = implementedFileOf(dir);
+  const text = readStampText(implementedFileOf(dir));
 
-  if (!existsSync(file)) return {};
+  if (text === null) return {};
 
   try {
-    const parsed: unknown = JSON.parse(readFileSync(file, 'utf8'));
+    const parsed: unknown = JSON.parse(text);
 
     return isRecord(parsed)
       ? Object.fromEntries(

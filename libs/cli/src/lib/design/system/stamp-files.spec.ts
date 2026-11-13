@@ -1,8 +1,8 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { readStampText, withStampsInMemory, writeStampFile } from './stamp-files';
+import { readStampText, withStampsInCache, withStampsInMemory, writeStampFile } from './stamp-files';
 
 const dirs: string[] = [];
 
@@ -83,5 +83,44 @@ describe('withStampsInMemory', () => {
     await Promise.all([first, second]);
 
     expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({ a: 1 });
+  });
+});
+
+describe('withStampsInCache', () => {
+  const productReadyFile = () => {
+    const root = mkdtempSync(join(tmpdir(), 'cli-stamp-cache-'));
+
+    dirs.push(root);
+
+    const dir = join(root, '.ethlete/design/acme');
+
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'ready.json'), '{"a":1}\n');
+
+    return { root, file: join(dir, 'ready.json') };
+  };
+
+  it('keeps a write in the gitignored cache, which every later read sees until the tracked file changes', async () => {
+    const { root, file } = productReadyFile();
+
+    await withStampsInCache(async () => writeStampFile(file, { a: 2 }));
+
+    expect(readFileSync(file, 'utf8')).toBe('{"a":1}\n');
+    expect(existsSync(join(root, '.ethlete/cache/acme/stamps/ready.json'))).toBe(true);
+    expect(JSON.parse(readStampText(file) ?? '')).toEqual({ a: 2 });
+
+    writeFileSync(file, '{"a":3}\n');
+
+    expect(readStampText(file)).toBe('{"a":3}\n');
+  });
+
+  it('drops the cached copy once a write equals the tracked file again', async () => {
+    const { root, file } = productReadyFile();
+
+    await withStampsInCache(async () => writeStampFile(file, { a: 2 }));
+    await withStampsInCache(async () => writeStampFile(file, { a: 1 }));
+
+    expect(existsSync(join(root, '.ethlete/cache/acme/stamps/ready.json'))).toBe(false);
+    expect(readStampText(file)).toBe('{"a":1}\n');
   });
 });

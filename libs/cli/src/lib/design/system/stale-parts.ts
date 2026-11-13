@@ -1,5 +1,4 @@
 import { execFileSync } from 'child_process';
-import { writeJsonFile } from '../../json-file';
 import { dirname, relative, resolve, sep } from 'path';
 import { appFilesOf } from './app-files';
 import { changedDesignFilesOf, designHashOf, DesignHash, HashRecord, legacyHolds, recordHolds } from './design-hash';
@@ -15,6 +14,7 @@ import {
 } from './implementation-baseline';
 import { Problem } from './problem';
 import { repoRootOf } from './reachable-files';
+import { writeStampFile } from './stamp-files';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 
 export const UNLISTED_FILES = 'files unknown: recorded before file lists';
@@ -141,7 +141,7 @@ export const uncomparedAppProblemsOf = (options: {
 const rewrite = (file: string, entries: Record<string, unknown>) => {
   const sorted = Object.entries(entries).sort(([a], [b]) => a.localeCompare(b));
 
-  writeJsonFile({ file: file, value: Object.fromEntries(sorted) });
+  writeStampFile(file, Object.fromEntries(sorted));
 };
 
 const newerThanOf = ({ root, paths, at }: { root: string; paths: string[]; at: string }) => {

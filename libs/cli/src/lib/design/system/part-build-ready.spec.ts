@@ -124,6 +124,7 @@ describe('recordBuildReady', () => {
     const written = await recordBuildReady({
       product,
       by: 'spec writer',
+      cmd: 'check',
       parts: ['pages/home', 'components/chip'],
       inputs: green,
       actionsOf,
@@ -137,6 +138,7 @@ describe('recordBuildReady', () => {
     const blocked = await recordBuildReady({
       product,
       by: 'et design check',
+      cmd: 'check',
       parts: ['components/chip'],
       inputs: { ...green, problemsOf: () => [{ rule: 'HARD-CODED-COLOUR', file: 'chip.ts', message: '#fff' }] },
       actionsOf,
@@ -153,13 +155,14 @@ describe('recordBuildReady', () => {
     const { target, dir } = checkout();
     const product = productOf(target);
 
-    await recordBuildReady({ product, by: 'et design check', parts: ['components/chip'], inputs: green });
+    await recordBuildReady({ product, by: 'et design check', cmd: 'check', parts: ['components/chip'], inputs: green });
 
     expect(readReady(dir)).toEqual({});
 
     const failed = await recordBuildReady({
       product,
       by: 'et design check',
+      cmd: 'check',
       parts: ['components/chip'],
       inputs: green,
       actionsOf: async () => ['default button "remove" click FAILED'],
@@ -179,6 +182,7 @@ describe('recordBuildReady', () => {
       recordBuildReady({
         product,
         by: 'et design check',
+        cmd: 'check',
         parts: ['components/chip'],
         inputs: green,
         actionsOf: async () => [],
@@ -215,6 +219,7 @@ describe('recordBuildReady', () => {
     const results = await recordBuildReady({
       product,
       by: 'et design check',
+      cmd: 'check',
       parts: ['pages/home', 'components/chip'],
       inputs,
       actionsOf: async () => [],
@@ -251,6 +256,7 @@ describe('recordBuildReady', () => {
     await recordBuildReady({
       product,
       by: 'et design check',
+      cmd: 'check',
       parts: ['pages/shell', 'pages/home', 'components/chip'],
       inputs,
       actionsOf: async () => [],
@@ -270,6 +276,7 @@ describe('recordBuildReady', () => {
     await recordBuildReady({
       product: productOf(target),
       by: 'spec',
+      cmd: 'check',
       parts: ['components/chip'],
       inputs: green,
       onNoRecord: (line) => lines.push(line),
@@ -288,6 +295,7 @@ describe('recordBuildReady', () => {
     const results = await recordBuildReady({
       product,
       by: 'et design check',
+      cmd: 'check',
       parts: ['components/chip', 'pages/home'],
       inputs: { pointsOf: () => [], problemsOf: () => [] },
       actionsOf: async () => [],
@@ -316,6 +324,7 @@ describe('recordBuildReady', () => {
     await recordBuildReady({
       product,
       by: 'et design check',
+      cmd: 'check',
       parts: ['components/chip', 'pages/home'],
       inputs: { pointsOf: () => [], problemsOf: () => [] },
       actionsOf: async () => [],
