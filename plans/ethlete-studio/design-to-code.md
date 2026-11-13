@@ -3008,7 +3008,7 @@ DROPPED-PROP and CONTROL-HEIGHT have clean samples), P3 dropped, P4 met (studio 
 - 457 closed: LOST-SURFACE and SKIP-SCOPE removed (0035ddced).
 - 489 parked: no removed rule or built fix touches it; the full check shows no CONTROL-STATE hit, and the picture fix
   (control part `components/rail-bubble`) is a separate sketch; its gate half is moot under ADR 0226.
-- 490 parked: it asks for a `check --rules` rule on content props per OS layout that no B500 slice built or removed.
+- 490 closed, dropped under ADR 0281/0226 (grill 2026-11-13): it asks for a new `check --rules` rule on content props per OS layout; a new check is never the default fix, and deleting a check wins.
 - 501 closed: its DROPPED-PROP hits are gone, the check lists 0 findings (see the DROPPED-PROP as built block).
 - 502 closed: as 501; the 3 true hits left were fixed as app work (3700677b6).
 - 503 closed: as 501; `pages/system` `listing-error` got its view (3700677b6).
