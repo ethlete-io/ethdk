@@ -861,6 +861,41 @@ describe('SystemViewComponent on a merge', () => {
     expect(element.querySelector('nav button[aria-label="System"]')?.getAttribute('aria-current')).toBe('page');
   });
 
+  it('lists the targets of the open sketch with several parts under it in the tree', async () => {
+    const sketch: ListedSketch = {
+      target: 'elements/rating@stars',
+      targetParts: ['elements/rating', 'components/a-long-target-name'],
+      status: 'ready',
+      createdAt: '2026-10-27T10:00:00Z',
+      product: 'web',
+      layer: 'elements',
+      name: 'rating',
+      dir: 'rating',
+      variants: ['a', 'b'],
+      problems: [],
+    };
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/sketches')) return json({ sketches: [sketch], unreadable: [] });
+      if (url.includes('/__design/flows')) return json({ flows: [], unreadable: [] });
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'sketch:elements/rating@stars' });
+    const view = fixture.componentInstance;
+
+    expect(view['partTree']().sketches?.items.map((item) => item.nested)).toEqual([
+      [
+        { name: 'elements/rating', key: 'sketch:elements/rating@stars/elements/rating' },
+        { name: 'components/a-long-target-name', key: 'sketch:elements/rating@stars/components/a-long-target-name' },
+      ],
+    ]);
+  });
+
   it('shows the part a merged sketch targeted, once the sketches list no longer has the sketch', async () => {
     const sketch: ListedSketch = {
       target: 'elements/rating',

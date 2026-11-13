@@ -196,6 +196,7 @@ export class SketchesComponent {
   public restoredCamera = input<Camera | null>(null);
   public selected = input<string | undefined>(undefined);
   public part = input('components/title-bar');
+  public heading = input<string | null>(null);
   public rows = input<SketchRow[]>(SKETCH_ROWS);
   public fresh = input(false);
   public status = input<SketchStatus>('waiting');

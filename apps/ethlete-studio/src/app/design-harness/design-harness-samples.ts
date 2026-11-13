@@ -18,6 +18,7 @@ import {
   SKETCH_ROWS,
   SKETCH_SCREEN_SAMPLE,
   SKETCH_WITHDRAWN,
+  sketchMultiSampleOf,
   SketchRow,
 } from '../design-parts/sketches/sketches-sample';
 
@@ -49,7 +50,7 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     cameraKey: 'elements/canvas-frames',
     restoredCamera: { x: 0, y: 0, zoom: parseFloat(String(zoom ?? '100%')) / 100 },
   }),
-  'pages/sketches': ({ part, same, comparing, withdrawn, points, pointsOpen, screen, ...props }) => {
+  'pages/sketches': ({ part, same, comparing, withdrawn, points, pointsOpen, screen, multi, ...props }) => {
     const { wholeScreen, ...screenSample } = SKETCH_SCREEN_SAMPLE;
     const { looks: _looks, ...sample } = screen
       ? { ...screenSample, looks: {}, wholeScreens: screen === 'whole' ? [wholeScreen] : [] }
@@ -66,6 +67,7 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
       rows,
       ...(withdrawn ? { withdrawn } : {}),
       ...(points ? { openPoints: SKETCH_POINTS_SAMPLE, pointsClosed: pointsOpen !== true } : {}),
+      ...(multi === 'three' || multi === 'many' ? sketchMultiSampleOf(multi) : {}),
     };
   },
   'pages/system': ({ build, agent, call, listingError, ...props }) => {

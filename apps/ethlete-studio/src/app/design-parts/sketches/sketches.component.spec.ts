@@ -94,6 +94,25 @@ describe('SketchesComponent', () => {
     configure();
   });
 
+  it('heads a sketch with the part key, or with its title when it has one', async () => {
+    const headOf = (root: HTMLElement) => textOf(root.querySelector('header > span'));
+    const plain: HTMLElement = (await render({ camera: '100', rows: ROWS, part: 'elements/variant-cell@x' }))
+      .nativeElement;
+
+    expect(headOf(plain)).toBe('elements/variant-cell@x');
+
+    const titled: HTMLElement = (
+      await render({
+        camera: '100',
+        rows: ROWS,
+        part: 'pages/sketches@x',
+        heading: 'Ein langer Rundentitel für vier Teile',
+      })
+    ).nativeElement;
+
+    expect(headOf(titled)).toBe('Ein langer Rundentitel für vier Teile');
+  });
+
   it('names the sample pin after the design sample author', async () => {
     const rows = ROWS.map((row) => (row.key === 'x' ? { ...row, key: 'a' } : row));
     const root: HTMLElement = (await render({ camera: '100', rows, pins: SKETCH_PINS })).nativeElement;

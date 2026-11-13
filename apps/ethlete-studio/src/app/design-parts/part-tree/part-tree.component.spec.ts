@@ -128,6 +128,50 @@ describe('PartTreeComponent', () => {
     expect(activated).toEqual(['sketch:elements/part-tree@parts-only', 'Legacy/acme/home']);
   });
 
+  it('lists the targets of a sketch with several parts under it and emits the key of a picked target', async () => {
+    const fixture = await render([], {
+      sketches: {
+        open: true,
+        items: [
+          {
+            part: 'sketches',
+            name: 'multi-part-head',
+            status: 'ready',
+            key: 'sketch:pages/sketches@multi-part-head',
+            selected: true,
+            nested: [{ name: 'components/badge' }, { name: 'elements/a-rather-long-variant-cell', key: 'own-key' }],
+          },
+          { part: 'zoom-chip', status: 'in-progress' },
+        ],
+      },
+    });
+    const element = fixture.nativeElement as HTMLElement;
+    const activated: string[] = [];
+
+    fixture.componentInstance.activate.subscribe((key) => activated.push(key));
+
+    expect(labelsOf(element)).toEqual([
+      'Sketches',
+      'sketches@multi-part-head',
+      'components/badge',
+      'elements/a-rather-long-variant-cell',
+      'zoom-chip',
+    ]);
+    expect(rowsOf(element).map((row) => [row.dataset['kind'], row.style.getPropertyValue('--depth')])).toEqual([
+      ['group', '0'],
+      ['part', '1'],
+      ['leaf', '2'],
+      ['leaf', '2'],
+      ['leaf', '1'],
+    ]);
+    expect(rowsOf(element)[1]?.getAttribute('aria-current')).toBe('true');
+
+    rowsOf(element)[2]?.click();
+    rowsOf(element)[3]?.click();
+
+    expect(activated).toEqual(['sketch:pages/sketches@multi-part-head/components/badge', 'own-key']);
+  });
+
   it('opens a closed layer on click and emits the key of the activated row', async () => {
     const fixture = await render();
     const element = fixture.nativeElement as HTMLElement;

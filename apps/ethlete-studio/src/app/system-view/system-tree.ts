@@ -710,6 +710,14 @@ export const sketchRoundsOf = (
   }));
 };
 
+/** Every target part of a sketch with several, the first one first; none for a sketch with one part. */
+export const multiPartTargetsOf = (sketch: Pick<ListedSketch, 'targetParts'>): string[] =>
+  (sketch.targetParts?.length ?? 0) > 1 ? (sketch.targetParts ?? []) : [];
+
+/** The head of a sketch with several parts: the title of its shown round, `null` for the target as head. */
+export const sketchHeadTitleOf = (sketch: Pick<ListedSketch, 'targetParts' | 'rounds'>, round: string) =>
+  multiPartTargetsOf(sketch).length > 0 ? sketch.rounds?.find((entry) => entry.key === round)?.title || null : null;
+
 /** The variants whose agent withdrew them and nobody reopened. */
 export const withdrawnVariantsOf = (sketch: Pick<ListedSketch, 'variants' | 'rejections'>) =>
   sketch.variants.filter((variant) => rejectionOf(sketch, variant)?.status === 'withdrawn');

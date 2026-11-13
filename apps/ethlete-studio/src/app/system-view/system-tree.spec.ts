@@ -14,7 +14,9 @@ import {
   pickedPartKeyOf,
   sketchLabelOf,
   mergePreviewOf,
+  multiPartTargetsOf,
   PENDING_LABEL,
+  sketchHeadTitleOf,
   sketchMatrixOf,
   sketchRoundsOf,
   sketchRowsOf,
@@ -701,6 +703,40 @@ describe('sketches in the tree', () => {
 
     expect(badgesWith('2026-10-27T10:00:00.000Z')).toContain('comment open');
     expect(badgesWith('2026-10-26T10:00:00.000Z')).not.toContain('comment open');
+  });
+});
+
+describe('a sketch with several parts', () => {
+  const rounds = [
+    { key: 'r1', title: '', note: '' },
+    { key: 'r2', title: 'Teileliste außerhalb des Kopfs', note: '' },
+  ];
+  const several = sketch({
+    target: 'pages/sketches@multi-part-head',
+    targetParts: ['pages/sketches', 'components/badge', 'elements/variant-cell', 'components/chip'],
+    rounds,
+  });
+
+  it('heads it with the shown round title, and with the target while that round has none', () => {
+    expect(sketchHeadTitleOf(several, 'r2')).toBe('Teileliste außerhalb des Kopfs');
+    expect(sketchHeadTitleOf(several, 'r1')).toBeNull();
+  });
+
+  it('keeps the target as head and lists no targets for a sketch with one part', () => {
+    const single = sketch({ targetParts: ['components/button'], rounds });
+
+    expect(sketchHeadTitleOf(single, 'r2')).toBeNull();
+    expect(multiPartTargetsOf(single)).toEqual([]);
+    expect(multiPartTargetsOf(sketch())).toEqual([]);
+  });
+
+  it('lists every target part, the first one first', () => {
+    expect(multiPartTargetsOf(several)).toEqual([
+      'pages/sketches',
+      'components/badge',
+      'elements/variant-cell',
+      'components/chip',
+    ]);
   });
 });
 

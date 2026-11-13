@@ -178,6 +178,41 @@ export const SKETCH_NARROW_SAMPLE = {
   } satisfies PartTree,
 };
 
+const MULTI_TARGETS = ['components/badge', 'components/sketch-status-badge', 'elements/variant-cell'];
+
+const MANY_TARGETS = [
+  ...MULTI_TARGETS,
+  'components/chip',
+  'components/tree-row',
+  'elements/part-tree',
+  'pages/sketches',
+  'pages/merge',
+];
+
+/** A sketch with several parts on the narrow sample: its round title as head, its targets under it in the tree. */
+export const sketchMultiSampleOf = (count: 'three' | 'many') => ({
+  heading: 'Kopf-Tags in einem Stil',
+  tree: {
+    layers: [
+      {
+        title: 'Sketches',
+        open: true,
+        parts: [
+          {
+            name: 'kopf-tags',
+            selected: true,
+            nested: (count === 'many' ? MANY_TARGETS : MULTI_TARGETS).map((name) => ({ name })),
+          },
+        ],
+      },
+      ...SKETCH_NARROW_SAMPLE.tree.layers.map((layer) => ({
+        ...layer,
+        parts: layer.parts.map(({ name }) => ({ name })),
+      })),
+    ],
+  } satisfies PartTree,
+});
+
 export const SKETCH_POINTS_SAMPLE: OpenPointGroup[] = [
   { icon: 'grid', lines: [{ text: STUDIO_LABELS.system.sketchPicked, detail: 'sketch' }] },
   {

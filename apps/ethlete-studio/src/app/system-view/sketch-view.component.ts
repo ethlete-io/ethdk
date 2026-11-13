@@ -86,6 +86,7 @@ import {
   mergePreviewOf,
   partKeyOf,
   pickedVariantOf,
+  sketchHeadTitleOf,
   sketchMatrixOf,
   sketchRoundsOf,
   sketchRowsOf,
@@ -171,6 +172,7 @@ export const liveShotsOf = ({
         [(withdrawn)]="withdrawn"
         [(wholeScreens)]="wholeScreens"
         [part]="sketch().target"
+        [heading]="heading()"
         [rows]="rows()"
         [fresh]="!part()"
         [status]="sketchStatus()"
@@ -491,6 +493,8 @@ export class SketchViewComponent {
   );
 
   protected shownRoundKey = computed(() => this.shownRounds().find((round) => round.open)?.key ?? '');
+
+  protected heading = computed(() => sketchHeadTitleOf(this.sketch(), this.shownRoundKey()));
 
   private matrix = computed(() =>
     sketchMatrixOf({

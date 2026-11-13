@@ -15,7 +15,7 @@
     <header
       class="absolute top-space-5 right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] z-3 flex items-center gap-space-3"
     >
-      <span class="text-ui-lg font-ui-strong">{{ part() }}</span>
+      <span class="text-ui-lg font-ui-strong">{{ heading() ?? part() }}</span>
       @if (fresh()) {
         <div class="flex flex-wrap items-center">
           <et-badge variant="tonal" size="sm">{{ LABELS.fresh }}</et-badge>

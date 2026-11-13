@@ -57,6 +57,7 @@ import {
   holdersOf,
   isGroupOpen,
   isSectionOpen,
+  multiPartTargetsOf,
   partKeyOf,
   sketchKeyOf,
   isSketchKey,
@@ -931,6 +932,13 @@ export class SystemViewComponent {
     ]);
   });
 
+  private sketchTargets = computed(() => {
+    const sketch = this.sketch();
+    const key = sketch ? sketchKeyOf(sketch.target) : null;
+
+    return sketch ? multiPartTargetsOf(sketch).map((part) => ({ sketch: key, key: `${key}/${part}`, part })) : [];
+  });
+
   protected partTree = computed<PartTree>(() => {
     const open = new Set(this.expandedValues());
     const selected = this.selectedKey();
@@ -960,6 +968,9 @@ export class SystemViewComponent {
                 ...sketchLabelOf(entry.key),
                 ...marksOf(entry),
                 status: entry.badges.includes('ready') ? ('ready' as const) : ('in-progress' as const),
+                nested: this.sketchTargets()
+                  .filter(({ sketch }) => sketch === entry.key)
+                  .map(({ key, part }) => ({ name: part, key })),
               })),
             },
           }
@@ -1199,10 +1210,12 @@ export class SystemViewComponent {
     this.exceptions.approve(`${part}.${rule}`);
   }
 
-  protected activate(key: string) {
+  protected activate(key: string): void {
     const frame = this.nodes().frames.get(key);
+    const target = this.sketchTargets().find((entry) => entry.key === key);
 
     if (frame) return this.openFrame(frame);
+    if (target) return this.activate(target.part);
     if (!this.nodes().entries.has(key)) return;
 
     this.picked.set(key);
