@@ -4,6 +4,7 @@ import {
   mkdirSync,
   openSync,
   readFileSync,
+  realpathSync,
   renameSync,
   statSync,
   unlinkSync,
@@ -22,6 +23,14 @@ const heldLocks = new Map<string, number>();
 const sleeper = new Int32Array(new SharedArrayBuffer(4));
 
 const sleepSync = (ms: number) => Atomics.wait(sleeper, 0, 0, ms);
+
+const canonicalDirOf = (dir: string) => {
+  try {
+    return realpathSync(dir);
+  } catch {
+    return resolve(dir);
+  }
+};
 
 const lockFileOf = (productDir: string) => resolve(productCacheDirOf(resolve(productDir)), LOCK_FILE);
 
@@ -127,7 +136,7 @@ const acquire = (productDir: string, waitMs: number) => {
  */
 export const withProductLock = <T>(product: string | { dir: string; waitMs?: number }, run: () => T): T => {
   const { dir, waitMs = WAIT_MS } = typeof product === 'string' ? { dir: product } : product;
-  const key = resolve(dir);
+  const key = canonicalDirOf(dir);
   const depth = heldLocks.get(key) ?? 0;
   const lockFile = depth === 0 ? acquire(key, waitMs) : null;
 

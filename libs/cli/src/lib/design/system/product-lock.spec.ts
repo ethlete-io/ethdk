@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from 'child_process';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -120,5 +120,19 @@ describe('withProductLock and writeDecisionFile', () => {
 
     expect(() => withProductLock({ dir, waitMs: 100 }, () => 'ran')).toThrow(`locked by pid ${process.pid}`);
     expect(readFileSync(lock, 'utf8')).toBe(`${process.pid}\n`);
+  });
+
+  it('is re-entrant when the nested call names the product through a symlink', () => {
+    const dir = productDirOf();
+    const root = join(dir, '..', '..', '..');
+    const link = `${root}-link`;
+
+    symlinkSync(root, link);
+
+    withProductLock({ dir: join(link, '.ethlete', 'design', 'p'), waitMs: 100 }, () =>
+      writeDecisionFile(join(dir, 'ready.json'), '{}\n'),
+    );
+
+    expect(readFileSync(join(dir, 'ready.json'), 'utf8')).toBe('{}\n');
   });
 });
