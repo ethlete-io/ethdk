@@ -12,6 +12,14 @@ export const TAB_BAR_FITS = {
 
 export type TabBarFit = (typeof TAB_BAR_FITS)[keyof typeof TAB_BAR_FITS];
 
+export const TAB_BAR_ALIGNS = {
+  START: 'start',
+  CENTER: 'center',
+  END: 'end',
+} as const;
+
+export type TabBarAlign = (typeof TAB_BAR_ALIGNS)[keyof typeof TAB_BAR_ALIGNS];
+
 export const TAB_BAR_VARIANTS = {
   PRIMARY: 'primary',
   SECONDARY: 'secondary',

@@ -20,6 +20,10 @@
     padding-block: var(--et-nav-tab-link-padding-block);
     text-decoration: none;
     font-size: var(--et-nav-tabs-font-size, inherit);
+    font-weight: var(--et-tab-font-weight, inherit);
+    line-height: var(--et-tab-line-height, inherit);
+    letter-spacing: var(--et-tab-letter-spacing, inherit);
+    text-transform: var(--et-tab-text-transform, inherit);
 
     .et-nav-tab-link__content {
       display: inline-flex;

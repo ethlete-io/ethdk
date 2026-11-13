@@ -86,6 +86,10 @@
     background: none;
     font: inherit;
     font-size: var(--et-tab-group-font-size);
+    font-weight: var(--et-tab-font-weight, inherit);
+    line-height: var(--et-tab-line-height, inherit);
+    letter-spacing: var(--et-tab-letter-spacing, normal);
+    text-transform: var(--et-tab-text-transform, none);
 
     .et-tab-group__trigger-content {
       display: flex;

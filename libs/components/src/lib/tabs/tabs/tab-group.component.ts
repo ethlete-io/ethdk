@@ -95,7 +95,7 @@ import { TabComponent } from './tab.component';
     },
     {
       directive: TabBarDirective,
-      inputs: ['orientation', 'fit', 'divider', 'variant'],
+      inputs: ['orientation', 'fit', 'align', 'divider', 'variant'],
     },
     {
       directive: TabGroupDirective,
@@ -108,6 +108,7 @@ import { TabComponent } from './tab.component';
     '[attr.data-orientation]': 'tabGroup.tabBar.orientation()',
     '[attr.data-size]': 'size()',
     '[attr.data-fit]': 'tabGroup.tabBar.fit()',
+    '[attr.data-align]': 'tabGroup.tabBar.align()',
     '[attr.data-divider]': 'tabGroup.tabBar.divider()',
     '[attr.data-variant]': 'tabGroup.tabBar.variant()',
   },

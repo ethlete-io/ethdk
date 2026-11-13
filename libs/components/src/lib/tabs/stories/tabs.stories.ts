@@ -11,6 +11,8 @@ export default {
     orientation: 'horizontal',
     variant: 'secondary',
     fit: 'content',
+    align: 'start',
+    tokens: null,
     divider: true,
     disabled: false,
     preserveContent: true,
@@ -21,6 +23,8 @@ export default {
     orientation: { control: 'radio', options: ['horizontal', 'vertical'] },
     variant: { control: 'radio', options: ['primary', 'secondary'] },
     fit: { control: 'radio', options: ['content', 'fill'] },
+    align: { control: 'radio', options: ['start', 'center', 'end'] },
+    tokens: { control: 'object' },
     divider: { control: 'boolean' },
     disabled: { control: 'boolean' },
     preserveContent: { control: 'boolean' },
@@ -54,5 +58,26 @@ export const LazyRendering: Story = {
 export const SessionMemory: Story = {
   args: {
     sessionMemoryKey: 'storybook-tabs-session-memory',
+  },
+};
+
+export const Centered: Story = {
+  args: {
+    align: 'center',
+  },
+};
+
+export const RestyledWithTokens: Story = {
+  args: {
+    tokens: {
+      '--et-tab-font-weight': '700',
+      '--et-tab-text-transform': 'uppercase',
+      '--et-tab-letter-spacing': '0.12em',
+      '--et-tab-line-height': '1',
+      '--et-tab-underline-size': '4px',
+      '--et-tab-baseline-size': '1px',
+      '--et-tab-hover-color': 'var(--et-surface-color-solid)',
+      '--et-tab-hover-underline-opacity': '1',
+    },
   },
 };

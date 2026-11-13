@@ -17,6 +17,8 @@ const SIZES = Object.values(TAB_SIZES);
           <et-nav-tabs
             [orientation]="orientation()"
             [fit]="fit()"
+            [align]="align()"
+            [style]="tokens()"
             [divider]="divider()"
             [size]="size"
             [color]="color()"
@@ -40,6 +42,8 @@ export class NavTabsStorybookComponent {
   public orientation = input<'horizontal' | 'vertical'>('horizontal');
   public variant = input<'primary' | 'secondary'>('secondary');
   public fit = input<'content' | 'fill'>('content');
+  public align = input<'start' | 'center' | 'end'>('start');
+  public tokens = input<Record<string, string> | null>(null);
   public divider = input(true);
   public disabled = input(false);
   public color = input<string | null>('brand');

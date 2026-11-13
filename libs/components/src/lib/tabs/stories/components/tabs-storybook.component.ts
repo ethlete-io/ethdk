@@ -17,6 +17,8 @@ const SIZES = Object.values(TAB_SIZES);
           <et-tab-group
             [orientation]="orientation()"
             [fit]="fit()"
+            [align]="align()"
+            [style]="tokens()"
             [divider]="divider()"
             [variant]="variant()"
             [preserveContent]="preserveContent()"
@@ -64,6 +66,8 @@ export class TabsStorybookComponent {
   public orientation = input<'horizontal' | 'vertical'>('horizontal');
   public variant = input<'primary' | 'secondary'>('secondary');
   public fit = input<'content' | 'fill'>('content');
+  public align = input<'start' | 'center' | 'end'>('start');
+  public tokens = input<Record<string, string> | null>(null);
   public divider = input(true);
   public disabled = input(false);
   public preserveContent = input(true);

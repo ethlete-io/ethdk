@@ -87,14 +87,15 @@ It is a `button` rather than an anchor - an overlay route is not an address unle
 
 Both flavors accept the shared tab-bar inputs:
 
-| Input               | Default        | Values                       |
-| ------------------- | -------------- | ---------------------------- |
-| `variant`           | `'secondary'`  | `'primary' \| 'secondary'`   |
-| `orientation`       | `'horizontal'` | `'horizontal' \| 'vertical'` |
-| `fit`               | `'content'`    | `'content' \| 'fill'`        |
-| `divider`           | `true`         | Divider line under the bar   |
-| `size`              | `'md'`         | `'sm' \| 'md' \| 'lg'`       |
-| `color` / `surface` | -              | App-registered theme names   |
+| Input               | Default        | Values                                           |
+| ------------------- | -------------- | ------------------------------------------------ |
+| `variant`           | `'secondary'`  | `'primary' \| 'secondary'`                       |
+| `orientation`       | `'horizontal'` | `'horizontal' \| 'vertical'`                     |
+| `fit`               | `'content'`    | `'content' \| 'fill'`                            |
+| `align`             | `'start'`      | `'start' \| 'center' \| 'end'` (horizontal bars) |
+| `divider`           | `true`         | Divider line under the bar                       |
+| `size`              | `'md'`         | `'sm' \| 'md' \| 'lg'`                           |
+| `color` / `surface` | -              | App-registered theme names                       |
 
 ## Accessibility
 
@@ -105,6 +106,18 @@ Standard tabs semantics out of the box: `role="tablist"` / `role="tab"` / `role=
 Content tabs: `--et-tab-group-gap` / `--et-tab-group-header-gap` (`0px`), `--et-tab-group-trigger-padding-inline` (`16px`), `--et-tab-group-trigger-padding-block` (`12px`), `--et-tab-group-underline-size` (`2px`), `--et-tab-group-underline-radius` (`1px`), `--et-tab-group-font-size` (`1.4rem`). Nav tabs mirror them as `--et-nav-tabs-gap` / `-underline-size` / `-underline-radius` / `-font-size` plus `--et-nav-tab-link-padding-inline` / `-padding-block`. Set any of them on the tab bar's host element. Colors come from the [surface/color theme systems](/core/theming).
 
 Underneath, all of those default from **one shared scale** that `size` drives - `--et-tab-padding-inline`, `--et-tab-padding-block`, `--et-tab-font-size`, `--et-tab-underline-size`, `--et-tab-underline-radius` and `--et-tab-baseline-opacity`. Retheming the scale moves content tabs, nav tabs and a [segmented button group in its tabs variant](/components/choice-inputs#segmented-tabs) together; the per-component tokens above still win where you want one of them to differ.
+
+Both flavors also read these optional tokens, unset by default:
+
+| Token                              | Default when unset   | What it changes                                         |
+| ---------------------------------- | -------------------- | ------------------------------------------------------- |
+| `--et-tab-font-weight`             | inherited            | Trigger label weight                                    |
+| `--et-tab-text-transform`          | none                 | Trigger label case, e.g. `uppercase`                    |
+| `--et-tab-letter-spacing`          | normal               | Trigger label tracking, e.g. `0.12em`                   |
+| `--et-tab-line-height`             | inherited            | Trigger label line height                               |
+| `--et-tab-baseline-size`           | the underline size   | Thickness of the divider line under the bar             |
+| `--et-tab-hover-color`             | the surface's colour | Text colour of a hovered inactive trigger               |
+| `--et-tab-hover-underline-opacity` | `0`                  | Shows the underline on a hovered inactive trigger (`1`) |
 
 ## Error codes
 

@@ -39,7 +39,7 @@ import { NavTabsDirective } from './headless/nav-tabs.directive';
     },
     {
       directive: TabBarDirective,
-      inputs: ['orientation', 'fit', 'divider', 'variant'],
+      inputs: ['orientation', 'fit', 'align', 'divider', 'variant'],
     },
     NavTabsDirective,
   ],
@@ -48,6 +48,7 @@ import { NavTabsDirective } from './headless/nav-tabs.directive';
     '[attr.data-orientation]': 'tabBar.orientation()',
     '[attr.data-size]': 'size()',
     '[attr.data-fit]': 'tabBar.fit()',
+    '[attr.data-align]': 'tabBar.align()',
     '[attr.data-divider]': 'tabBar.divider()',
     '[attr.data-variant]': 'tabBar.variant()',
   },

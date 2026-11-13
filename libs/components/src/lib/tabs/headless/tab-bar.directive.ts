@@ -16,9 +16,11 @@ import { sortByDomOrder } from '../../internals/dom-order';
 import { TabBarTriggerDirective } from './tab-bar-trigger.directive';
 import { TAB_BAR_TOKEN } from './tab-bar.tokens';
 import {
+  TAB_BAR_ALIGNS,
   TAB_BAR_FITS,
   TAB_BAR_ORIENTATIONS,
   TAB_BAR_VARIANTS,
+  TabBarAlign,
   TabBarFit,
   TabBarOrientation,
   TabBarVariant,
@@ -43,6 +45,8 @@ export class TabBarDirective {
 
   public orientation = input<TabBarOrientation>(TAB_BAR_ORIENTATIONS.HORIZONTAL);
   public fit = input<TabBarFit>(TAB_BAR_FITS.CONTENT);
+  /** Where a horizontal bar places its triggers when they do not fill it. */
+  public align = input<TabBarAlign>(TAB_BAR_ALIGNS.START);
   public variant = input<TabBarVariant>(TAB_BAR_VARIANTS.SECONDARY);
   public divider = input(true, { transform: booleanAttribute });
   /** @internal */
