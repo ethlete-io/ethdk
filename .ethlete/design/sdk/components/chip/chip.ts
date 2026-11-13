@@ -55,15 +55,6 @@ export default definePart({
   },
   grid,
   widths: [480],
-  contrast: {
-    exceptions: [
-      {
-        selector: '.et-chip.et-color--danger .et-chip-label',
-        reason:
-          "Hovered, the selected danger chip's 24% fill takes its ink label to 4.42:1 on light; the hover step is open in another round (Q101), not this round's question.",
-      },
-    ],
-  },
   controls: {
     chip: { kind: 'button', input: ['pointer', 'keyboard'], disabled: true },
     remove: { kind: 'button', input: ['pointer', 'keyboard'], disabled: true },

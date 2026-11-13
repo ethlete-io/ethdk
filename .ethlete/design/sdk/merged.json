@@ -5,7 +5,12 @@
   "components/avatar": "1252da777499aba9",
   "components/badge": "c5987a95f8f0899c",
   "components/banner": "304a4eca399be5df",
-  "components/bracket": "619e74fa7a872701",
+  "components/bracket": {
+    "hash": "2dcc2c1e45265aec",
+    "variant": "a",
+    "decidedBy": "auto: no visible change",
+    "at": "2026-11-13T07:12:09.301Z"
+  },
   "components/breadcrumb": "2dbb6a7bb9615c19",
   "components/button": {
     "hash": "74200761e047e309",
@@ -19,7 +24,12 @@
   "components/carousel": "9ffe4c38855ebd5e",
   "components/chart": "ac3f5741017eb4dc",
   "components/checkbox": "c1eb1c126ffeb175",
-  "components/chip": "33788c7f782dfa16",
+  "components/chip": {
+    "hash": "5540413702b08af7",
+    "variant": "a",
+    "decidedBy": "auto: no visible change",
+    "at": "2026-11-13T07:12:09.301Z"
+  },
   "components/copy-button": "11d4ec41b64ab055",
   "components/description-list": "7c0740660a1ef350",
   "components/dialog": "fae8a8006ea0d4d3",
@@ -34,8 +44,18 @@
   "components/masonry": "e966715c2172c6ec",
   "components/match": "7f8a33e5ad380ec5",
   "components/menu": "f220b05e404df291",
-  "components/notification": "5a05c3ef09a0a214",
-  "components/otp-input": "541080526b4c9356",
+  "components/notification": {
+    "hash": "acc450ee2ab7860e",
+    "variant": "a",
+    "decidedBy": "auto: no visible change",
+    "at": "2026-11-13T07:12:09.301Z"
+  },
+  "components/otp-input": {
+    "hash": "d603ad2a7910e8e5",
+    "variant": "a",
+    "decidedBy": "auto: no visible change",
+    "at": "2026-11-13T07:12:09.301Z"
+  },
   "components/pagination": "aae2006c76f4a069",
   "components/picture": "fd789db9d6ae6a88",
   "components/progress-steps": "0d136d12b1e1a3cd",
@@ -47,7 +67,12 @@
   "components/select": "a53eb640744cc23b",
   "components/select-panel": "1a6eb0c5be0f1040",
   "components/skeleton": "4540a543b4126962",
-  "components/slider": "a92b6bea21a6f5fd",
+  "components/slider": {
+    "hash": "1ed03cccbcbd8a0d",
+    "variant": "a",
+    "decidedBy": "auto: no visible change",
+    "at": "2026-11-13T07:12:09.301Z"
+  },
   "components/standings": "46256b5151c3d9d9",
   "components/stat-tile": "e9fae2c8fab9eab1",
   "components/stream": "17760abcf3d4d98c",

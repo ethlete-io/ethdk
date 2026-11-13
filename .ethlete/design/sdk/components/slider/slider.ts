@@ -63,20 +63,6 @@ export default definePart({
       field: { id: 'quality', label: 'Quality', value: 1, max: 2, marks: QUALITY, orientation: 'vertical' },
     },
   },
-  contrast: {
-    exceptions: [
-      {
-        selector: 'et-slider[data-error] .et-label-required-marker',
-        reason:
-          'The required marker takes the error theme primary: 3.71:1 in dark, under 4.5:1. Q113: not exempt, it needs 4.5:1; drawn as is in this round, so the check skips it until the fix is drawn.',
-      },
-      {
-        selector: '.et-slider-mark-label',
-        reason:
-          'The check reads the 4px tick as the backdrop of its label; the label sits on the page in the muted text colour. The vertical tick labels hung outside the host in a (lib bug S3, now fixed).',
-      },
-    ],
-  },
   widths: [320, 360, 640],
   frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>

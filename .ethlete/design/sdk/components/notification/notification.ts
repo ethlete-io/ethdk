@@ -84,15 +84,6 @@ export default definePart({
     stack: { status: 'stack' },
   },
   widths: [480],
-  contrast: {
-    exceptions: [
-      {
-        selector: '.et-notification-message',
-        reason:
-          "Today the message is the muted surface colour at 0.65 opacity; its contrast is an open point, not this round's question.",
-      },
-    ],
-  },
   controls: {
     close: { kind: 'button', input: ['pointer', 'keyboard'] },
     action: { kind: 'button', input: ['pointer', 'keyboard'] },

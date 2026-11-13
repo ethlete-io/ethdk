@@ -41,20 +41,6 @@ export default definePart({
     'pin-partial': pin({ value: '73' }),
     'pin-focus': pin({ value: '73', focused: true }),
   },
-  contrast: {
-    exceptions: [
-      {
-        selector: 'et-otp-input:has(.et-otp-input-native:disabled) .et-otp-input-segment-char',
-        reason:
-          'A disabled field is exempt under WCAG 1.4.3 (inactive component): opacity 0.4 draws the digits 2.55:1 / 3.72:1.',
-      },
-      {
-        selector: 'et-otp-input[data-error] .et-label-required-marker',
-        reason:
-          'The required marker takes the error theme primary: 3.71:1 in dark, under 4.5:1. An open point (checkbox r1 finding 3), not a decided rule.',
-      },
-    ],
-  },
   widths: [320, 360, 640],
   frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>

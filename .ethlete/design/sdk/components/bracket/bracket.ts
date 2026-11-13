@@ -120,20 +120,6 @@ export default definePart({
     continue: { stage: 'groups-done' },
     mirrored: { stage: 'decided', density: 'compact', mirrored: true },
   },
-  contrast: {
-    exceptions: [
-      {
-        selector: '.et-bracket-host--journey-hover .et-bracket-element--match:not(.et-bracket-journey-active)',
-        reason:
-          "The journey highlight fades every cell off the path to half opacity (a quarter when pinned) on purpose; its contrast is an open point, not this round's question.",
-      },
-      {
-        selector: '.et-bracket-journey-eliminated',
-        reason:
-          "The row that went out is struck through and faded to 0.55 on purpose; its contrast is an open point, not this round's question.",
-      },
-    ],
-  },
   widths: [1040, 1680],
   frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>
