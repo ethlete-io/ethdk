@@ -2616,6 +2616,7 @@ cold 19.3 -> 7.3 s, warm 7.0/6.9/6.9 -> 2.5/2.9/2.3 s; CI=1 cold 19.3 -> 7.8 s, 
 the numbers above. vitest related 143 files green, spec:stress 4/4. Not verified: the main checkout (30.4 s there
 before), CI, the Studio e2e, `sketch check` with no sketch named (it still runs every sketch), `TSC=` native (no
 incremental state). CI=1 warm has 0.5 s margin; the rest is render-check (2.3 s, a cold Vite per process).
+B499 S6 in progress (Linux builder, 2026-11-13): CI stability; measure 992 (ECONNRESET under load) and 986 (design server heap); guards for 417, 519, 598, 640; P5 local in `design-server-proof.mjs`.
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
 Bite: a spec stages a name and clears it in the working tree; red on the old script. Not verified: a real refused commit.
