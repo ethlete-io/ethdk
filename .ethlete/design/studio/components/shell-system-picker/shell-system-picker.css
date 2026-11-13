@@ -1,0 +1,6 @@
+@layer components {
+  .st-shell-system-menu {
+    box-shadow: 0 12px 32px var(--surface-shadow);
+    transform: translate3d(0, 0, 0);
+  }
+}
