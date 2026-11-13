@@ -2721,18 +2721,14 @@ keep DROPPED-PROP, UNBOUND-INPUT, CONTRAST, CUT-CONTROL only if their sample is 
 
 Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless marked Cause):
 
-- B499: harness-server, harness-watch and lib-build-lock register `process.once('exit')` cleanups that do nothing inside
-  a worker; only the slow-run worker has the exit handoff. Suspect: leaked harness or lock state when a worker ends.
-- B499: an in-process shot starts 2 Chromiums (the shooter has its own draw queue).
+- B499: harness-server, harness-watch, lib-build-lock exit cleanups do nothing in a worker; in-process shot starts 2 Chromiums.
 - B499: a worker must be owned by the serve lifecycle, not stopped by a spec env stub (Cause of the cb48a175e red:
   3 specs never stopped the slow-checks worker, 13.5 GB RSS).
 - B499: shot-store.spec flaky under spec:stress ('drawn' vs 'disk', 0-2 of 4), also before the fix.
-- B499: idle serve about 2.6 GB RSS without the variant pool; 986 not reproduced.
-- B499: 992 ECONNRESET Cause (d910f48dc): Playwright reuses keep-alive sockets the serve closes after 6 s.
+- B499: idle serve 2.6 GB RSS; 992 ECONNRESET Cause (d910f48dc): keep-alive sockets the serve closes after 6 s.
 - B499 (second time after 826): the contact sheet draws b-row cells near `b / unchanged-matrix-open` partly grey; the
   same data differs up to 18.6M px between takes. multi-part-head warns "ready will refuse" from the same cell.
-- B499 P6: the chip-wheel e2e went red with the variant pool (a10cda703) and green after its revert; not reproduced
-  locally. Suspect: the Chip frame width switches from the 1440 fallback to its measured size inside the case window.
+- B499 P6: chip-wheel e2e red with the variant pool (a10cda703), green after revert; not reproduced locally.
 - B500: `design complete` keeps its own ACTION-UNDECLARED, not reviewed.
 - B500: the serve start log at f0e2405f8 says the visible-change gate fails: title-bar 7 and update-dialog 4 states
   unjudged.
@@ -2741,9 +2737,8 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
   probe); its records said "by": "et design check".
 - B502: the pages/sketches harness sample drifts from the design (no `zoom-chip@edit` tree row, avatar H vs TB, stack
   edges, fold row width); compare change-crop 20188 px, change-crop-whole 18322 px.
-- B502: compare reported 140 missed actions in edit-sketch and all-unchanged (button names not found, click timeouts).
-- B503: a sketch of foundations/type cannot be shot: type.css `@import './faces.css'` does not resolve once the
-  variant stylesheet replaces it. data-et-skip keeps one named exception (its 2 OFF-CENTRE skips) until then.
+- B502: 140 missed actions in edit-sketch and all-unchanged (again 13.11. pm).
+- B503: a foundations/type sketch cannot be shot: `@import './faces.css'` does not resolve in the variant sheet.
 - Parked (once): detached `git maintenance run --auto` keeps spec temp repos alive (git-level probe 2/200 -> 0/400);
   spec-level bite 0/320; orphan `sh`/`sleep` at the CI job end unexplained.
 - B501: `sketch ready` 57 s and 70 s (target 10 s), phase "undeclared" 23 s and 37 s.
@@ -2756,6 +2751,12 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
 - B504 (day): title bar binds no [part]; change marks read as content (column frames, dimmed rows); a round went
   ready whose pictures never show its subject (focus-tooltip, ADR 0293); `withdraw` refuses non-twins, no --reason.
 - Machinery: Tom's colors feedback in a doc-agent chat was lost across a restart.
+- B504 (pm): Cause (bite, 06dfc78d5): `gate` left studio-code.mjs, the Rust PushState still required it, code-watch.ts
+  swallowed the error; no restart notice for 3 days. The JS/Rust host contract has only that parse test.
+- B502 (pm): `lookOf` read no ::before/::after (Cause, cca99d29e); shell-main drew no server-unanswered state (41de02711).
+- Machinery: resident serve runs stale cli code after a cli change; specs on untouched libs and one Studio e2e case
+  went red under load, green on rerun.
+- Parked: empty palette query without recents shows nothing; the design draws only recents.
 
 B500 P5 as built (Linux builder subagent, 2026-11-13, commit "fix(cli): Keep merged.json and ready.json unchanged in
 design check"): `checkSystemRendered` runs inside `withStampsInMemory` (`stamp-files.ts`); `merged.json` and
