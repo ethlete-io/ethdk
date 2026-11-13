@@ -171,18 +171,10 @@ Archived: Design to code decisions (2026-10-31), see [findings-2026-10](archive/
     `etMenu`. Compare now forces each `data-et-force` element, found in the app by its `aria-label`. Compare
     `elements/shell-main` 14 of 15 states 0 px (`project-picker` off by the font token, fixed in Impl Q12-Q14);
     `pages/inbox` 0 px in all 7. Not verified: the real Studio on :4402.
-  - In progress (builder ethlete-sdk-cf, 2026-11-01), in parallel: Impl Q6 items 1 and 2 (cli); Impl Q10 disabled
-    guards (sdk CSS); Impl Q8 picker font and the 29 px (shell-main); pilot slice 3 real route (Impl Q5).
   - Impl Q12-Q14 as built (`a136928b4`, `1302cdc3a`, `87562073c`, `43f647c10`, `f7fe9b71c`): `--et-font-family:
-var(--font-ui)` on `:root` in `sdk-token-map.css`; `translate3d(0, 0, 0)` on `.st-project-picker` and a new go
-    (recorded `--by tom`, from Impl Q13); `autoFocus="false"` removed. Compare opens a state that a control names in
-    `surfaces` by a real pointer click: it loads the nearest other state (fewest differing props; a tie stops with
-    an error), clicks the `[aria-expanded]` app element whose `aria-label` or text matches `[data-et-control=<id>]`,
-    moves the pointer off the page and waits for the open state. Verified: compare `elements/shell-main` 0 px in 15
-    of 15 states, `pages/inbox` 0 px in 7 of 7; `task --verify 43f647c10` recorded shell-main (hash
-    `4b64a4137ba97697`); `part-compare.spec.ts` 17 of 17, the new tests fail without the fix; tsc and eslint on the
-    cli files. Not verified: full cli and Studio suites, compare `pages/merge` (state `unchanged-open` now opens by
-    click). `task --verify` without a revision checks HEAD, so it fails while other agents commit; pass the revision.
+var(--font-ui)` on `:root`; `translate3d(0, 0, 0)` on `.st-project-picker`; compare opens a state a control names in
+    `surfaces` by a real pointer click on the matching `[aria-expanded]` element. Verified: compare shell-main 15 of 15
+    and inbox 7 of 7 at 0 px; `part-compare.spec.ts` bites. `task --verify` without a revision checks HEAD.
   - Pilot slice 3 as built (`c41236520`, `55f20e053`): `system-view` draws `ShellMainComponent` around every view;
     the tree sits in the side panel, the rail lists the design products, section Inbox draws `InboxComponent` with
     live comment-store rows (`system-view/inbox-comments.ts`). The old comment panel, product `et-select` and
@@ -3066,8 +3058,16 @@ S3 rest (90daee1e6): `discardSketch` and `journaledRebaseOf` (CLI rebase, rebase
 product lock; the port writes atomically. P3 cases discard (bite: step 1 half state) and rebase (bite: step 1). 416:
 `--ported <variant>`, refusal while an unnamed live variant conflicts, unless picked and not the pick (bite). Port
 Suspect: Cause: the port wrote what it computed from its first read; a file changed since is now a conflict (probe
-spec, bite). Open: sketch.json RMW (WIP failed 4 specs: base must be the normalized file, restore writers),
-no-visible-change merge, ready/pick, 574/434/889 unchecked, baseline ref on undo.
+spec, bite).
+S3 final as built: `writeSketchFile(sketch, { base } | { replace: true })`: under the product lock it re-reads the
+file normalized with the base's variant folders and writes only the fields that differ from the base (per variant in
+`variantInfo`/`rejections`/`readyContent`); a field both changed throws; `sets: ['decision']` lets a pick replace one.
+Replace only for create and the pick rollback in `merge-step`. Spec sketch.spec "writeSketchFile on a sketch read
+before another write" (bite: no merge, fails); check-sketches spec chains its second `editRound`. The no-visible-change
+merge runs `journaledMergeOf` with the pick written inside the journal and its commit marked; P3 case "auto" (bite:
+unjournaled, step 1 half state). 574 (`sketch pick`, sketch-command spec "records the pick the designer gave in
+chat"), 434 (merge.spec "clean copy of HEAD", "refuses before any write"), 889 (edit-sketch.spec "adds no author")
+green. Open beyond S3: ready/pick journal, baseline ref on undo.
 
 ci-red 1113d (finding 992) as built (2026-11-13): Studio e2e ETag fetch failed with ECONNRESET. Cause (probe): Playwright's
 API agent keeps idle keep-alive sockets forever, the design server closes them after 6 s; under event-loop lag a
