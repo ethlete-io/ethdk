@@ -3021,6 +3021,33 @@ DROPPED-PROP and CONTROL-HEIGHT have clean samples), P3 dropped, P4 met (studio 
 - 924 closed: the visible-change gate is removed (17375e4f3, 7a3b5f378).
 - 971 closed: ACTION-UNDECLARED and NESTED-SURFACE removed (8838cda38).
 
+B501 proof (ADR 0280, recorded 2026-11-13 by the doc agent from the builder's proposal). Baseline: the working tree holds
+36 uncommitted ready.json records (sdk 1 new + 11 rehashed, studio 5 new + 19 rehashed), all `cmd: ""`; a pid probe ties
+34 to the idle serve and its child. Suspect: `startSlowRunner` -> `recordSettledBuildReady` (record-settled.ts:39) writes
+on a stale slow cache, and the writer pid in each record changes the file on a same-hash rewrite; `upgradeLegacyMarksOf`
+(stale-parts.ts:194) bypasses the in-memory stamps, so `design check` can still write ready.json.
+
+- P1 an idle serve leaves tracked files alone: scratch checkout, slow cache deleted, `yarn design` for 3 min, then
+  `git status .ethlete/design` is empty.
+- P2 only a named user action writes ready.json, merged.json or a sketch.json decision: a spec runs serve, check (with
+  the legacy upgrade) and status, and every file stays byte-equal.
+- P3 atomic steps: a spec kills merge, ready or pick at each step boundary, and the tree holds either the old or the new
+  state.
+- P4 uncommitted state is visible: `design status` and Studio name uncommitted ready marks and leftover or untracked
+  sketch folders.
+- P5 no false withdrawal: regenerated or reformatted files and a shared-copy base change keep a ready mark; only a
+  variant edit takes it back, and the withdrawal is reported. A picked sketch refuses edits without `--reopen`.
+- P6 generated files: every generated tsconfig passes Prettier (today 4 of 51 fail: sdk, studio, studio-lab, root),
+  FORMAT skips gitignored files, and the tsconfigs point only at the installed CLI.
+- P7 `design task` works once the part record exists, or names the blocker; every record has `cmd` in {check, ready,
+  serve}.
+
+Slices: S1 serve writes nothing tracked (468 rest, 981, the idle-serve line, task refusal); S2 atomic writer and a
+per-product lock; S3 transactional merge, discard and rebase (416 434 469 590 574 889, the port Suspect); S4 ready-mark
+lifecycle (551, all-states a, edit without `--reopen`); S5 visibility (568 729 919); S6 generated files (707 755 756).
+Condition (ADR 0281): the S2 lock names what it removes. 755(b) (shot cache through the node_modules realpath, scratch
+isolation) moves to B503.
+
 ci-red 1113d (finding 992) as built (Linux builder subagent, 2026-11-13): CI runs 43372815104 and 43356130738, Studio e2e
 "a part edited on disk while away shows its new picture on return" failed in its shot ETag fetch with ECONNRESET / socket
 hang up. Cause (probe): Playwright's API request agent is `http.Agent({ keepAlive: true })` with no timeout, so Node
