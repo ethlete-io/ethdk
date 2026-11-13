@@ -95,8 +95,7 @@
       "emit:projectChange",
       "emit:restartServer",
       "emit:sectionChange",
-      "open",
-      "project-picker"
+      "open"
     ],
     "at": "2026-11-12T01:20:46.032Z"
   },
@@ -233,8 +232,7 @@
       "emit:zoomIn",
       "emit:zoomOut",
       "emit:zoomReset",
-      "open",
-      "project-picker"
+      "open"
     ],
     "at": "2026-11-12T01:35:33.380Z"
   },
@@ -256,8 +254,7 @@
       "emit:zoomIn",
       "emit:zoomOut",
       "emit:zoomReset",
-      "open",
-      "project-picker"
+      "open"
     ],
     "at": "2026-11-12T01:35:37.210Z"
   },
@@ -274,8 +271,7 @@
       "emit:reloadInventory",
       "emit:sectionChange",
       "emit:toggleInventory",
-      "open",
-      "project-picker"
+      "open"
     ],
     "at": "2026-11-12T01:35:32.066Z"
   },
@@ -291,8 +287,7 @@
       "emit:pick",
       "emit:productChange",
       "emit:sectionChange",
-      "open",
-      "project-picker"
+      "open"
     ],
     "at": "2026-11-12T01:35:35.118Z"
   },
