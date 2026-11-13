@@ -2726,6 +2726,38 @@ LOST-SURFACE 42, NESTED-SCROLL 5, CUT-CONTROL 3, SKIP-SCOPE 3).
 Builder's direction (applies the row rule, not a new decision): review ACTION-UNDECLARED and NESTED-SURFACE first;
 keep DROPPED-PROP, UNBOUND-INPUT, CONTRAST, CUT-CONTROL only if their sample is clean, and fix their true hits.
 
+Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless marked Cause):
+
+- B499: harness-server, harness-watch and lib-build-lock register `process.once('exit')` cleanups that do nothing inside
+  a worker; only the slow-run worker has the exit handoff. Suspect: leaked harness or lock state when a worker ends.
+- B499: an in-process shot starts 2 Chromiums (the shooter has its own draw queue).
+- B499: a worker must be owned by the serve lifecycle, not stopped by a spec env stub (Cause of the cb48a175e red:
+  3 specs never stopped the slow-checks worker, 13.5 GB RSS).
+- B499: shot-store.spec flaky under spec:stress ('drawn' vs 'disk', 0-2 of 4), also before the fix.
+- B499: an idle serve sits at about 2.6 GB RSS even without the variant pool; 986 (RSS 706 MB -> 4.2 GB over 200
+  shots outside the JS heap) not reproduced.
+- B499: 992 ECONNRESET Cause (probe, d910f48dc): Playwright's request client reuses keep-alive connections that the
+  serve closes after 6 s idle; test-only fix. P5 CI part met in 43379234143 and 43383106354.
+- B499 (second time after 826): the contact sheet draws b-row cells near `b / unchanged-matrix-open` partly grey; the
+  same data differs up to 18.6M px between takes. multi-part-head warns "ready will refuse" from the same cell.
+- B499 P6: the chip-wheel e2e went red with the variant pool (a10cda703) and green after its revert; not reproduced
+  locally. Suspect: the Chip frame width switches from the 1440 fallback to its measured size inside the case window.
+- B500: `design complete` keeps its own ACTION-UNDECLARED, not reviewed.
+- B500: the serve start log at f0e2405f8 says the visible-change gate fails: title-bar 7 and update-dialog 4 states
+  unjudged.
+- B500: removed rules and their closed findings: ACTION-UNDECLARED, NESTED-SURFACE (971), CONTRAST, LOST-SURFACE,
+  NESTED-SCROLL, CUT-CONTROL, SKIP-SCOPE (457, 740), UNBOUND-INPUT, OFF-CENTRE, DISABLED-INTERACTION (634, 691),
+  UNREACHABLE, COVERED. The human gets the dark-scheme contrast point as a question.
+- B501: an idle `yarn design` serve rewrites tracked `.ethlete/design/*/ready.json` within 2 minutes (Cause, pid
+  probe); its records said "by": "et design check".
+- B502: the pages/sketches harness sample drifts from the design (no `zoom-chip@edit` tree row, avatar H vs TB, stack
+  edges, fold row width); compare change-crop 20188 px, change-crop-whole 18322 px.
+- B502: compare reported 140 missed actions in edit-sketch and all-unchanged (button names not found, click timeouts).
+- B503: a sketch of foundations/type cannot be shot: type.css `@import './faces.css'` does not resolve once the
+  variant stylesheet replaces it. data-et-skip keeps one named exception (its 2 OFF-CENTRE skips) until then.
+- Parked (once): detached `git maintenance run --auto` keeps spec temp repos alive (git-level probe 2/200 -> 0/400);
+  spec-level bite 0/320; orphan `sh`/`sleep` at the CI job end unexplained.
+
 B500 P5 as built (Linux builder subagent, 2026-11-13, commit "fix(cli): Keep merged.json and ready.json unchanged in
 design check"): `checkSystemRendered` runs inside `withStampsInMemory` (`stamp-files.ts`); `merged.json` and
 `ready.json` reads and writes go through it, so the check sees its own record and merge stamps but the files stay as
@@ -2900,6 +2932,7 @@ code (server write during a check, run ending after an earlier one), 3 of 3 gree
 check through the serve with pid attribution, the fix live in the serve (its dist build predates it); the serve's
 records still read `"by": "et design check"`, which is why the probe looked like a check write (open point, serve
 scope).
+Follow-up (B500 writer label, `fix(cli): Name the real writer on a ready record`): the ready record names its writer, `et design serve` from the serve's slow runner and `et design check` from a check; `recordBuildReady` takes `by`.
 
 B500 change-crop sketches as built (Linux builder subagent, 2026-11-13): two sketches on `pages/sketches`. Sketch A
 `pages/sketches@framed-screens` marks the mock screen of `screenOf` (shared/change-crop.ts) with `slot('screen')`, so
