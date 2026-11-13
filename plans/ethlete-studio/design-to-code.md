@@ -372,6 +372,7 @@ desk, about 95 % server time. The page asks for `/__design/system` twice (4.0 s 
 them for attribution only. Why no tool caught it: no check counts the requests a page makes before its first content.
 Fix (B350): one `/__design/system` request until the first cell, at most 300 ms on a warm server, and the
 `/@vite/client` ping stays under 100 ms during the open.
+417 closed (Linux builder, 2026-11-13, B499 S6): guard e2e case "a sketch opens with one /__design/system request until its first cell".
 
 418\. Mac perf session (2026-11-04, B348, headless WebKit 27.2 on the Mac, built Studio, pages/sketches with 100 cells):
 zoom runs at about 20 fps in WebKit, the engine of the Mac app (frame interval p50 45-49 ms, p95 55-58 ms), and at
@@ -1133,6 +1134,7 @@ so "fast" was measured but "fresh" never was. Fix (14c491450): `forgetDrawn()` b
 sketch-stylesheets.spec (a variant edit stays stale until forget). Tool fix (B414): a resident end-to-end spec that
 starts the real resident, runs `compare`, edits the part, runs `compare` again and fails if the second run shows the
 old picture. Rule for every warm or cached path: its spec includes an edit between two runs.
+519 closed (Linux builder, 2026-11-13, B499 S6): guard `serve-host.spec.ts` "forgets what the serve drew before a hosted run" and `resident-process.spec.ts` "forgets what its warm design server drew before each request".
 
 521\. Tom (2026-11-06, screenshots of the builder's shells): "6 minuten hard blocking auf dem builder ist inakzeptabel.
 das tooling muss schneller werden". The builder ran nine `compare` runs one after another in the foreground for the
@@ -1345,6 +1347,7 @@ because the long-running server writes nothing to `.timings.jsonl` and nothing c
 listing, so it showed only as 60 s e2e timeouts. Tool fix (technical): the server logs each full listing (hits,
 misses, draws, fresh redraws, time) to the timings file; the e2e prints that line when a `FULL_COMPARE_MS` wait fails;
 a spec asserts that a listing after an unrelated edit draws nothing.
+598 closed (Linux builder, 2026-11-13, B499 S6): guard `unchanged-states.spec.ts` "keeps the pixel compare across a change to another part, and drops it for a change to its own".
 
 600\. Builder (2026-11-08, B434): the Chip panel-hide case broke through the fixture change 2bb8d3d58, not the app.
 With one changed state, Fit capped at scale 1, so "Auf 100 % zoomen" stayed in Fit, and `measure()` keeps the pan in
@@ -1498,6 +1501,7 @@ also still ran. Cause of the shot hang: not known (no output captured). Why no t
 deadline and writes no progress, and neither wait has a deadline. Tool fix (part of item 0, because it stops all work):
 `shot` and `design check` end with an error and a captured log after a hard deadline, and the builder waits on a
 background run or a subagent only with a deadline (Monitor until-loop with a timeout), then reads the log.
+640 closed (Linux builder, 2026-11-13, B499 S6): guard `run-deadline.spec.ts` (shot and check end with a log after their deadline).
 
 642\. Builder (2026-11-09, 48d1a7716): CI on `next` was red since 3aaa8364e, `real-open-points.spec.ts` timed out at
 5 s under full CI load (405 ms alone). Cause: `readOpenPoints` reached `committedLinkFieldsOf` in `link-free.ts`, which
@@ -2616,7 +2620,26 @@ cold 19.3 -> 7.3 s, warm 7.0/6.9/6.9 -> 2.5/2.9/2.3 s; CI=1 cold 19.3 -> 7.8 s, 
 the numbers above. vitest related 143 files green, spec:stress 4/4. Not verified: the main checkout (30.4 s there
 before), CI, the Studio e2e, `sketch check` with no sketch named (it still runs every sketch), `TSC=` native (no
 incremental state). CI=1 warm has 0.5 s margin; the rest is render-check (2.3 s, a cold Vite per process).
-B499 S6 in progress (Linux builder, 2026-11-13): CI stability; measure 992 (ECONNRESET under load) and 986 (design server heap); guards for 417, 519, 598, 640; P5 local in `design-server-proof.mjs`.
+B499 S6 as built (Linux builder, 2026-11-13): P5 local is built in `tools/scripts/design-server-proof.mjs --only P5
+[--load <n>]`: it builds Studio once, runs the "B498 R3" case 5 times through `runOnce` of `studio-e2e-repeat.mjs` (the
+last with `--hold-listings 14000`), and counts empty cell samples, empty columns and ECONNRESET (`p5RunOf`, `judgeP5`;
+spec on a captured run). P5 local: 5 of 5 green, 0 empty cells, 0 ECONNRESET, both idle and with `--load 32` (32 busy
+processes, load 36-52). P5's CI part (Studio e2e on CI green twice) is not run; P2, P3, P4, P6 and P7 still print "not
+built yet". 992: the two shot ETag cases ran 3 times under `--load 32` (load 36-52), 6 of 6 green, 0 ECONNRESET; with
+P5 that is 16 loaded case runs without a reset. Not reproduced on Linux, so no proof the cause is gone; `maxRetries`
+was not added (it would hide the next reset, and no bite could be made). 992 stays parked; the P5 ECONNRESET count is
+its guard. 986: a `design` serve in a scratch copy under `--inspect`, 200 shots in 10 rounds of 20, each round after a
+`styles.css` edit, heap read after two forced GCs: shots only 92 MB at start, 145.1 MB after round 1, 147.0 MB after
+round 10; with `/__design/system`, `/__design/sketches` and `/__design/open-points` per round 317.4 MB after round 1,
+327.2 MB after round 10 (+1.1 MB a round). RSS rose 706 MB to 4.2 GB (outside the main heap: worker isolates and
+native memory). The main-heap leak behind 941 is not reproduced in this load; 986 stays open (no guard added: the
+planned bound over 200 shots holds today and a spec of it needs a real serve). Guards: 417 by the e2e case "a sketch
+opens with one /__design/system request until its first cell" (red with a second fetch in `listedSystem$`: 2
+requests; green: 1, also with `--hold-listings 14000`); 519 by the new `serve-host.spec.ts` case "forgets what the serve
+drew before a hosted run" next to the `resident-process.spec.ts` one (both red with the forget taken out of `refresh`);
+598 by "keeps the pixel compare across a change to another part" in `unchanged-states.spec.ts` (red when a change drops
+every compare); 640 by `run-deadline.spec.ts` (red without the deadline). Not verified: CI, the full Studio e2e, the 986
+leak over hours of real Studio use, 992 on the Mac.
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
 Bite: a spec stages a name and clears it in the working tree; red on the old script. Not verified: a real refused commit.
@@ -3443,6 +3466,7 @@ states). Slow checks on :4402: components/title-bar (7 states) and components/up
 986\. Linux builder (2026-11-12 night, 941): the design server heap leak behind 941 is not hunted. Suspect: the resident or
 the shot browser pool. Tool fix (builder default, tool backlog): a heap snapshot diff over two hours of `design serve`
 names the retainer; then a fix with a spec that bounds the heap over 200 shots.
+986 update (Linux builder, 2026-11-13, B499 S6): not reproduced; main heap +1.1 MB a round over 200 shots with listings (see B499 S6 as built). Stays open.
 
 988\. Linux builder (2026-11-12 night, 951): `sketch check` stays at about 30 s against its 10 s target; aktuell (~11 s)
 and changes-shot (~7 s) take most of it. Cause (measured, 951). Tool fix (builder default, tool backlog): make the aktuell
