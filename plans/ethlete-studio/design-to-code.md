@@ -3048,6 +3048,15 @@ lifecycle (551, all-states a, edit without `--reopen`); S5 visibility (568 729 9
 Condition (ADR 0281): the S2 lock names what it removes. 755(b) (shot cache through the node_modules realpath, scratch
 isolation) moves to B503.
 
+B501 S1 as built (2026-11-13, 0a006a3c5): serve and `design check` write no tracked file. Cause (P2 spec): the serve's
+`recordSettledBuildReady` wrote `ready.json`, and stale-parts `rewrite` bypassed check's in-memory stamps. Built:
+`withStampsInCache` keeps a stamp write in `.ethlete/cache/<product>/stamps/` while the tracked text is unchanged; serve,
+check and the legacy rewrite use it; task, status and Studio read it (task refusal (d)). No pid churn; `cmd` is
+check/serve/ready (981). 468 rest: no writer left (b52ff697c, c7d88a573). Verified: P2 spec bites twice, vitest related,
+typecheck, spec:stress 4/4; P1 live (scratch, 3 min): tree clean, sdk settled, studio slow run failed every poll (`state
+"project-picker" of "elements/shell-main" failed`). Not verified: a live studio record, Studio UI. Changed: `design
+ready` 422 loses the "embedded X changed" hint. Suspect: `design ready` also writes other parts' cached records.
+
 ci-red 1113d (finding 992) as built (Linux builder subagent, 2026-11-13): CI runs 43372815104 and 43356130738, Studio e2e
 "a part edited on disk while away shows its new picture on return" failed in its shot ETag fetch with ECONNRESET / socket
 hang up. Cause (probe): Playwright's API request agent is `http.Agent({ keepAlive: true })` with no timeout, so Node
