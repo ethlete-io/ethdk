@@ -12,7 +12,7 @@ import {
 import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
-import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { assetRoot } from './package-root';
 import { DESIGN_DIR } from './design-config';
 import { workRootOf } from './work-root';
@@ -88,6 +88,8 @@ vi.mock('./browser', async (original) => ({
 }));
 
 const cwd = process.cwd();
+
+beforeEach(() => vi.stubEnv('ETHLETE_DESIGN_SLOW_CHECKS', 'off'));
 
 afterEach(() => {
   process.chdir(cwd);

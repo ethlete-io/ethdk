@@ -78,6 +78,8 @@ vi.mock('@tailwindcss/postcss', () => ({ default: () => ({}) }));
 
 const cwd = process.cwd();
 
+beforeEach(() => vi.stubEnv('ETHLETE_DESIGN_SLOW_CHECKS', 'off'));
+
 afterEach(async () => {
   process.chdir(cwd);
   created.length = 0;
@@ -114,8 +116,6 @@ describe('terminalPortLine', () => {
 });
 
 describe('serveDesign', () => {
-  beforeEach(() => vi.stubEnv('ETHLETE_DESIGN_SLOW_CHECKS', 'off'));
-
   it('exits 1 without a config', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 

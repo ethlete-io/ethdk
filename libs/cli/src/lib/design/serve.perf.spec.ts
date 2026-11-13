@@ -6,7 +6,7 @@ import { tmpdir } from 'os';
 import { setTimeout as delay } from 'timers/promises';
 import { join } from 'path';
 import { Readable } from 'stream';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { calibrationMs, recordPerf, watchLongestBlock } from '../perf.fixtures';
 import { readConfig } from './design-config';
 import { serveDesign } from './serve';
@@ -38,6 +38,8 @@ vi.mock('vite', () => ({
 }));
 
 vi.mock('@tailwindcss/postcss', () => ({ default: () => ({}) }));
+
+beforeEach(() => vi.stubEnv('ETHLETE_DESIGN_SLOW_CHECKS', 'off'));
 
 afterEach(async () => {
   created.length = 0;
