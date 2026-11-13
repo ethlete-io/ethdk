@@ -2758,6 +2758,9 @@ count jump). Counts, full sdk check: before 1353 findings (ACTION-UNDECLARED 111
 runs. Verified: typecheck, lint, `vitest related` (141 files), two live sdk runs. Not verified: a studio run (its base
 sdk part should lose the same two rules), CI.
 
+B500 S3 in progress (Linux builder subagent, 2026-11-13): review of CONTRAST, LOST-SURFACE, NESTED-SCROLL, CUT-CONTROL
+and SKIP-SCOPE.
+
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
 Bite: a spec stages a name and clears it in the working tree; red on the old script. Not verified: a real refused commit.
