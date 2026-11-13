@@ -101,7 +101,13 @@
     {
       "key": "r1",
       "title": "",
-      "note": "Raises the disabled labels so every disabled label clears a contrast floor."
+      "note": "Raises the disabled labels so every disabled label clears a contrast floor.",
+      "lost": "Der Mensch lehnt a und b ab: Die Textfarbe kippt nur für den Disabled-Zustand von dunkel auf hell, das wirkt komisch."
+    },
+    {
+      "key": "r2",
+      "title": "Gedimmte Disabled-Labels ohne Richtungswechsel",
+      "note": "Das Disabled-Label behält die Richtung des aktiven Labels (dunkel bleibt dunkel) und verliert nur an Stärke; die Disabled-Fläche wird so gedimmt, dass das dunkle Label lesbar bleibt. Jedes Bild zeigt aktiv und disabled nebeneinander, pro Theme."
     }
   ],
   "variantInfo": {
@@ -112,15 +118,33 @@
     "b": {
       "authors": ["claude-sonnet-5-5"],
       "round": "r1"
+    },
+    "c": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r2",
+      "note": "Disabled-Label bleibt dunkel wie das aktive Label und wird nur etwas heller (L 0.17 -> 0.24); die Disabled-Fläche wird heller und entsättigt (L ~0.55, wenig Farbton), Kontrast ab 3:1 (3.3-3.5). Kostet: unter 4.5:1 (WCAG nimmt Disabled aus), und die Disabled-Fläche ist heller als bisher, auf dark-elevated-2 hebt sie sich nur knapp ab. Neue Tokens --surface-disabled/--on-surface-disabled, die generate-studio-themes.mjs nach einer Wahl lesen muss."
+    },
+    "d": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r2",
+      "note": "Disabled-Label bleibt dunkel (L 0.24) wie das aktive Label; die Disabled-Fläche bleibt hell (L ~0.64) und verliert nur Sättigung, Kontrast ab 4.5:1 (4.8-5.0). Kostet: Disabled sieht dem aktiven Zustand recht ähnlich, der Unterschied liegt vor allem in der fehlenden Farbe. Neue Tokens --surface-disabled/--on-surface-disabled, die generate-studio-themes.mjs nach einer Wahl lesen muss."
+    },
+    "e": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r2",
+      "note": "Ein neutrales Grau für jede Disabled-Fläche (L 0.54, ohne Farbton) mit dunklem Label (L 0.23), Kontrast 3.3:1, gleich in allen Themes. Kostet: Disabled zeigt nicht mehr, ob es ein Akzent-, Warn- oder Fehler-Button ist, und liegt unter 4.5:1. Neue Tokens --surface-disabled/--on-surface-disabled, die generate-studio-themes.mjs nach einer Wahl lesen muss."
     }
   },
   "merge": "override",
   "readyContent": {
     "a": "4337d8769e50c075",
-    "b": "fdca44767a2a8d1b"
+    "b": "fdca44767a2a8d1b",
+    "c": "a457a41a20ca2732",
+    "d": "d8c7eb991a3b52b6",
+    "e": "87be94f0219278eb"
   },
   "mergeHold": {
-    "reason": "variant a changes surfaces, accent, warning, error; variant b changes surfaces, accent, warning, error",
-    "at": "2026-11-13T07:28:45.840Z"
+    "reason": "variant a changes surfaces, accent, warning, error; variant b changes surfaces, accent, warning, error; variant c changes surfaces, accent, warning, error; variant d changes surfaces, accent, warning, error; variant e changes surfaces, accent, warning, error",
+    "at": "2026-11-13T10:55:00.642Z"
   }
 }
