@@ -1,4 +1,5 @@
 import { Directive, computed, inject, input } from '@angular/core';
+import { BUTTON_SIZES, ButtonSize } from '../../button/button.types';
 import { ScrollableButtonsComponent } from './scrollable-buttons.component';
 import { ScrollableDirective } from './scrollable.directive';
 import { ScrollableButtonPosition } from './scrollable.types';
@@ -15,6 +16,8 @@ export type ScrollableButtonsConfig = {
    * off with it. Only meaningful with `position: 'inside'`. @default false
    */
   sticky?: boolean;
+  /** Size of the two icon buttons. @default 'xs' */
+  size?: ButtonSize;
   /** Turn the buttons off without removing the directive. @default true */
   enabled?: boolean;
 };
@@ -45,6 +48,7 @@ export class ScrollableButtonsDirective {
 
   public position = computed(() => this.resolved().position ?? 'inside');
   public sticky = computed(() => this.resolved().sticky ?? false);
+  public size = computed(() => this.resolved().size ?? BUTTON_SIZES.XS);
   public enabled = computed(() => this.resolved().enabled ?? true);
 
   constructor() {
@@ -53,7 +57,7 @@ export class ScrollableButtonsDirective {
       key: 'buttons',
       slot: computed(() => (this.position() === 'footer' ? 'footer' : 'overlay')),
       component: ScrollableButtonsComponent,
-      inputs: computed(() => ({ position: this.position() })),
+      inputs: computed(() => ({ position: this.position(), size: this.size() })),
       enabled: this.enabled,
       order: 0,
     });

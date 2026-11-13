@@ -6,6 +6,7 @@
 
     .et-scrollable-button {
       position: absolute;
+      --_et-scrollable-button-extent: calc(var(--et-icon-button-size) + 0.4rem);
       opacity: 0;
     }
   }
@@ -14,7 +15,7 @@
     &[direction='horizontal'],
     &:not([direction]) {
       & .et-scrollable-button--start {
-        inset-block-start: calc(50% - 1.4rem);
+        inset-block-start: calc(50% - var(--_et-scrollable-button-extent) / 2);
         inset-inline: 0 0;
         transform: translateX(-10px);
 
@@ -24,8 +25,8 @@
       }
 
       & .et-scrollable-button--end {
-        inset-block-start: calc(50% - 1.4rem);
-        inset-inline: calc(100% - 2.8rem) 0;
+        inset-block-start: calc(50% - var(--_et-scrollable-button-extent) / 2);
+        inset-inline: calc(100% - var(--_et-scrollable-button-extent)) 0;
         transform: translateX(10px);
 
         & .et-icon--et-chevron {
@@ -37,7 +38,7 @@
     &[direction='vertical'] {
       & .et-scrollable-button--start {
         inset-block-start: 0;
-        inset-inline-start: calc(50% - 1.4rem);
+        inset-inline-start: calc(50% - var(--_et-scrollable-button-extent) / 2);
         transform: translateY(-10px);
 
         & .et-icon--et-chevron {
@@ -47,7 +48,7 @@
 
       & .et-scrollable-button--end {
         inset-block-end: 0;
-        inset-inline-start: calc(50% - 1.4rem);
+        inset-inline-start: calc(50% - var(--_et-scrollable-button-extent) / 2);
         transform: translateY(10px);
 
         & .et-icon--et-chevron {

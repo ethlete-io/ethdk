@@ -1,4 +1,5 @@
 import { Component, inject, input, ViewEncapsulation } from '@angular/core';
+import { BUTTON_SIZES, ButtonSize } from '../../button/button.types';
 import { IconButtonComponent } from '../../button/icon-button.component';
 import { CHEVRON_ICON } from '../../icon/headless/chevron-icon';
 import { provideIcons } from '../../icon/headless/icon-provider';
@@ -12,10 +13,10 @@ import { ScrollableButtonPosition } from './scrollable.types';
   template: `
     <button
       [disabled]="scrollable.isAtStart()"
+      [size]="size()"
       (click)="scrollable.scrollToStartDirection()"
       class="et-scrollable-button et-scrollable-button--start"
       et-icon-button
-      size="xs"
       aria-hidden="true"
       type="button"
       tabindex="-1"
@@ -24,10 +25,10 @@ import { ScrollableButtonPosition } from './scrollable.types';
     </button>
     <button
       [disabled]="scrollable.isAtEnd()"
+      [size]="size()"
       (click)="scrollable.scrollToEndDirection()"
       class="et-scrollable-button et-scrollable-button--end"
       et-icon-button
-      size="xs"
       aria-hidden="true"
       type="button"
       tabindex="-1"
@@ -49,6 +50,7 @@ export class ScrollableButtonsComponent {
   protected scrollable = inject(ScrollableDirective);
 
   public position = input<ScrollableButtonPosition>('inside');
+  public size = input<ButtonSize>(BUTTON_SIZES.XS);
 
   constructor() {
     mountScrollableFooterStyles();

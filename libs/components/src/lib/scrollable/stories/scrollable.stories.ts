@@ -13,6 +13,10 @@ export default {
     stickyButtons: {
       control: { type: 'boolean' },
     },
+    buttonSize: {
+      control: { type: 'select' },
+      options: ['xs', 'sm', 'md', 'lg', 'xl'],
+    },
     direction: {
       control: { type: 'select' },
       options: ['horizontal', 'vertical'],
@@ -90,6 +94,7 @@ export default {
     scrollMargin: 0,
     renderNavigation: false,
     buttonPosition: 'inside',
+    buttonSize: 'xs',
     darkenNonIntersectingItems: false,
     card: 'none',
   },
@@ -117,6 +122,10 @@ export const FooterButtons: Story = {
 
 export const StickyButtons: Story = {
   args: { stickyButtons: true },
+};
+
+export const LargeButtons: Story = {
+  args: { buttonSize: 'lg' },
 };
 
 export const DarkenNonIntersecting: Story = {

@@ -1,5 +1,5 @@
 import { Component, ViewEncapsulation, input, signal, viewChild } from '@angular/core';
-import { BUTTON_IMPORTS } from '../../../button';
+import { BUTTON_IMPORTS, ButtonSize } from '../../../button';
 import {
   ScrollableButtonPosition,
   ScrollableDirection,
@@ -33,7 +33,12 @@ import { SCROLLABLE_ITEMS } from './scrollable-storybook.data';
 
       <div [attr.data-card]="card()" class="et-sb-scrollable-card">
         <et-scrollable
-          [etScrollableButtons]="{ position: buttonPosition(), sticky: stickyButtons(), enabled: renderButtons() }"
+          [etScrollableButtons]="{
+            position: buttonPosition(),
+            sticky: stickyButtons(),
+            size: buttonSize(),
+            enabled: renderButtons(),
+          }"
           [etScrollableNavigation]="{ enabled: renderNavigation() }"
           [etScrollableDarken]="darkenNonIntersectingItems()"
           [etScrollableDrag]="cursorDragScroll()"
@@ -153,6 +158,7 @@ export class ScrollableStorybookComponent {
   public snap = input(false);
   public renderNavigation = input(false);
   public buttonPosition = input<ScrollableButtonPosition>('inside');
+  public buttonSize = input<ButtonSize>('xs');
   public scrollOrigin = input<ScrollableScrollOrigin>('auto');
   public scrollMode = input<ScrollableScrollMode>('container');
   public scrollMargin = input(0);
