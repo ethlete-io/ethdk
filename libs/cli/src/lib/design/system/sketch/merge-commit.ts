@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, realpathSync } from 'fs';
 import { relative, resolve, sep } from 'path';
-import { writeDecisionFile } from '../product-lock';
+import { withProductLock, writeDecisionFile } from '../product-lock';
+import { openJournalOf } from '../write-journal';
 import { ResolvedProduct } from '../resolve-product';
 import { writeMergeChangeset } from './merge-changeset';
 import { Sketch, sketchesDirOf } from './sketch';
@@ -118,6 +119,7 @@ function* commitFlow(options: {
     if (own === null || own === text) continue;
 
     restore.push({ file, text });
+    openJournalOf()?.keepAfter(file, text);
     writeDecisionFile(file, own);
   }
 
@@ -133,19 +135,19 @@ function* commitFlow(options: {
 
   if (changeset) files.push(changeset);
 
+  const subject = `feat(repo): Merge ${sketch.target} variant ${options.variant} into ${product.name}`;
+  const head = yield { args: ['rev-parse', 'HEAD'] };
+
+  if (top.status === 0 && head.status === 0)
+    openJournalOf()?.markCommit({
+      top: realpathSync(top.stdout.trim()),
+      head: head.stdout.trim(),
+      subject,
+      paths: files,
+    });
+
   const added = yield { args: ['add', '--all', '--', ...files] };
-  const committed =
-    added.status === 0
-      ? yield {
-          args: [
-            'commit',
-            '-m',
-            `feat(repo): Merge ${sketch.target} variant ${options.variant} into ${product.name}`,
-            '--',
-            ...files,
-          ],
-        }
-      : added;
+  const committed = added.status === 0 ? yield { args: ['commit', '-m', subject, '--', ...files] } : added;
 
   for (const { file, text } of restore) writeDecisionFile(file, text);
 
@@ -172,4 +174,5 @@ export const dirtyFilesOfSync = (options: { target: string; product: ResolvedPro
  * and the merged sketch's own deletion, never another open sketch - as one commit, with a `none` changeset for each
  * workspace package they lie in when the checkout has a `.changeset` folder. A failed commit warns and leaves the files as they are.
  */
-export const commitMergeResultSync = (options: CommitOptions) => runSync(options.target, commitFlow(options));
+export const commitMergeResultSync = (options: CommitOptions) =>
+  withProductLock(options.product.dir, () => runSync(options.target, commitFlow(options)));

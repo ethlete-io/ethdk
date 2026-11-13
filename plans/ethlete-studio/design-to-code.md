@@ -733,14 +733,7 @@ there); it reset them and re-ran them with the CLI `sketch merge`. Why no tool c
 merge at a time, never two merges in a row, and no spec checks that a Studio merge completes. Tool fix (builder default): a merge commits its own result, or the guard ignores the files of earlier
 picks; a spec runs two merges in a row.
 Shas: 48fcbae1b (comment-draft, pick `raised`), 066f1514b (title-bar@notice-shape, pick `no-pill`), both through the
-CLI. Studio's half merge deleted `components/title-bar/shared/chrome.ts`; the CLI merge keeps it, so the :4402 server
-may run an older CLI copy (not verified). Cause lead (not verified): in `merge.ts` the swap runs at line 293 and only a
-check failure restores (line 327); an exception between the swap and `recordMerged` (line 361) leaves the files
-swapped, with no `merged.json` entry and the sketch folder still there. Next: the Studio server log of 15:36-15:38Z.
-State (builder, paused for CI): the :4402 server runs the old CLI copy `tmp/studio-cli/9d788d831` (without c465c3a75
-and 09953108c). Its stderr goes to a pipe of the Tauri app, and `serve.ts` turns a throw into a 500 and logs nothing,
-so no server log exists. Second tool gap: a Studio server error leaves no trace. In `/tmp/b469` the old copy restored
-correctly on a failed check; a throw after the swap stays the lead, repro not done.
+CLI. Cause lead: a throw between the file swap and `recordMerged` (`merge.ts`); closed by B501 S3.
 
 471\. Sessions in tmux do not clear and restart themselves. They ask Tom to run `/clear` or `/handoff`, though the
 `ethlete-agent-sessions` `restart` command clears the caller's own session and types a resume prompt. Tom: "viele
@@ -3060,8 +3053,16 @@ writer's temp file. `withProductLock` holds `.ethlete/cache/<product>/decisions.
 `forgetMerged`, `recordMergeReason`, the legacy ready rewrite and every stamp write; `writeDecisionFile` routes
 `writeSketchFile` and the merge commit's json rewrite and restore. Removes (spec): the lost update of two processes'
 read-modify-write of `ready.json` (bite, no lock: a 39/40, b 3/40) and torn reads (bite, plain write: 30 empty reads).
-None of the B501 findings is a torn write or interleave. Not covered: a `sketch.json` update whose read is in the caller
-(only the write is locked); the merge commit's restore after `git commit` (S3); a live serve + CLI run.
+None of the B501 findings is a torn write or interleave. Not covered: a `sketch.json` read in the caller.
+
+B501 S3 as built (2026-11-13, merge only): `write-journal.ts` keeps an undo journal in `.ethlete/cache/<product>/journal/`:
+before the first write of a path below the checkout it copies its old state; `journaledMergeOf` (CLI and Studio merge) spans the gate, the
+records, the harness map and the commit; a refusal or throw undoes it; the next lock holder undoes a dead pid's journal,
+or finishes it once its commit landed; `findSketch`/`listSketches`
+recover first. The apply runs under the product lock, the commit's rewrite and restore too (S2 gap). `removeSketchDir` throws if the folder
+stays (590 a). Proof P3 (merge-journal.spec): a child is killed at every fs write,
+recovery leaves the old or new state, a re-run merges or says "no sketch"; bite: no journal, step 6 half state. Open: discard, rebase, ready/pick, no-visible-change merge, 416,
+sketch.json RMW, port Suspect, baseline ref on undo.
 
 ci-red 1113d (finding 992) as built (Linux builder subagent, 2026-11-13): CI runs 43372815104 and 43356130738, Studio e2e
 "a part edited on disk while away shows its new picture on return" failed in its shot ETag fetch with ECONNRESET / socket

@@ -12,6 +12,7 @@ import {
 } from 'fs';
 import { basename, dirname, resolve } from 'path';
 import { formattedTextOf } from './design/system/prettier';
+import { noteWrite } from './design/system/write-journal';
 
 /** `text` (JSON) formatted as `file` by the target checkout's Prettier; unchanged without Prettier or when it fails. */
 export const formattedJsonTextOf = (options: { target: string; file: string; text: string }) => {
@@ -52,10 +53,13 @@ const dropDeadTmpFiles = (file: string) => {
 export const writeChangedFile = (file: string, text: string) => {
   if (existsSync(file) && readFileSync(file, 'utf8') === text) return;
 
+  noteWrite(file);
   mkdirSync(dirname(file), { recursive: true });
   dropDeadTmpFiles(file);
 
   const tmp = tmpFileOf(file);
+
+  noteWrite(tmp);
 
   try {
     const fd = openSync(tmp, 'wx');

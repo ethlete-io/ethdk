@@ -14,7 +14,8 @@ import {
 } from 'fs';
 import { dirname, isAbsolute, relative, resolve, sep } from 'path';
 import { setImmediate } from 'timers/promises';
-import { writeDecisionFile } from '../product-lock';
+import { recoverInterrupted, writeDecisionFile } from '../product-lock';
+import { noteWrite } from '../write-journal';
 import { jsonLayoutOf } from '../../json-layout';
 import { statusPath } from '../../status';
 import { ASSETS_FOLDER, filesBelow } from '../assets';
@@ -330,12 +331,18 @@ const isOpenSketchDir = (dir: string) => existsSync(dir) && holdsFiles(dir);
 
 /** Deletes a sketch folder and its baseline tree ref, then its `sketches/` folder when nothing else is left in it. */
 export const removeSketchDir = (dir: string) => {
+  noteWrite(dir);
   if (existsSync(dir)) dropBaselineTree(dir);
   rmSync(dir, { recursive: true, force: true });
 
+  if (existsSync(dir)) throw new Error(`${dir} is still there after its removal - delete it by hand`);
+
   const parent = resolve(dir, '..');
 
-  if (existsSync(parent) && readdirSync(parent).length === 0) rmSync(parent, { recursive: true, force: true });
+  if (existsSync(parent) && readdirSync(parent).length === 0) {
+    noteWrite(parent);
+    rmSync(parent, { recursive: true, force: true });
+  }
 };
 
 const isStatus = (value: unknown): value is SketchStatus => SKETCH_STATUSES.includes(value as SketchStatus);
@@ -569,10 +576,13 @@ export const readSketch = (options: { product: string; dir: string }): Sketch | 
 };
 
 /** Every sketch folder of a product, read; a folder that cannot be read answers with its problem. */
-export const listSketches = (options: { productDir: string; product: string }) =>
-  sketchFoldersOf(options.productDir).map((folder) =>
+export const listSketches = (options: { productDir: string; product: string }) => {
+  recoverInterrupted(options.productDir);
+
+  return sketchFoldersOf(options.productDir).map((folder) =>
     readSketch({ product: options.product, dir: resolve(sketchesDirOf(options.productDir), folder) }),
   );
+};
 
 /** `listSketches`, letting the server answer other requests before each sketch it reads. */
 export const listSketchesInTurns = async (options: { productDir: string; product: string }) => {
@@ -588,6 +598,8 @@ export const listSketchesInTurns = async (options: { productDir: string; product
 
 /** The open sketch that targets `sketch`, found by its first target or by any other it names; `null` when none does. */
 export const findSketch = (options: { productDir: string; product: string; sketch: SketchTarget }) => {
+  recoverInterrupted(options.productDir);
+
   const dir = sketchDirOf(options);
 
   if (isOpenSketchDir(dir)) return readSketch({ product: options.product, dir });
@@ -1062,8 +1074,10 @@ export const readSketchReport = (options: { checkout: string; sketch: Sketch }):
   }
 };
 
-export const clearSketchReport = (options: { checkout: string; sketch: Sketch }) =>
+export const clearSketchReport = (options: { checkout: string; sketch: Sketch }) => {
+  noteWrite(sketchReportPath(options));
   rmSync(sketchReportPath(options), { force: true });
+};
 
 /** Ends the live report on a sketch when it belongs to `variant`, and says whether there was one to end. */
 export const finishSketchReport = (options: { checkout: string; sketch: Sketch; variant: string }) => {

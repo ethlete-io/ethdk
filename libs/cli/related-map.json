@@ -43,5 +43,9 @@
   "src/lib/design/system/product-lock.spec.ts": [
     "libs/cli/src/lib/design/system/product-lock.ts",
     "libs/cli/src/lib/json-file.ts"
+  ],
+  "src/lib/design/system/sketch/merge-journal.spec.ts": [
+    "libs/cli/src/lib/design/system/sketch/merge-journal.child.ts",
+    "libs/cli/src/lib/design/system/sketch/merge-journal.kill.ts"
   ]
 }

@@ -12,6 +12,7 @@ import {
 import { basename, dirname, resolve } from 'path';
 import { writeChangedFile } from '../../json-file';
 import { productCacheDirOf } from './product';
+import { hasJournal, recoverJournal } from './write-journal';
 
 const LOCK_FILE = 'decisions.lock';
 const WAIT_MS = 10_000;
@@ -133,6 +134,12 @@ export const withProductLock = <T>(product: string | { dir: string; waitMs?: num
   heldLocks.set(key, depth + 1);
 
   try {
+    if (depth === 0) {
+      const recovered = recoverJournal(key);
+
+      if (recovered) console.warn(recovered);
+    }
+
     return run();
   } finally {
     if (depth === 0) {
@@ -140,6 +147,11 @@ export const withProductLock = <T>(product: string | { dir: string; waitMs?: num
       if (lockFile) unlinkSync(lockFile);
     } else heldLocks.set(key, depth);
   }
+};
+
+/** Finishes or undoes, under the product lock, a journaled write that a killed process left in `productDir`. */
+export const recoverInterrupted = (productDir: string) => {
+  if (hasJournal(productDir)) withProductLock(productDir, () => undefined);
 };
 
 const productDirOfSketch = (sketchDir: string) => resolve(sketchDir, '..', '..');

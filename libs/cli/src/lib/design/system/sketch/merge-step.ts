@@ -5,7 +5,8 @@ import { refreshHarnessMap } from '../harness-map';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { configOf, isModelId, oneProductOf } from './cli-args';
 import { commitMergeResultSync, dirtyFilesOfSync } from './merge-commit';
-import { mergeSketch } from './merge';
+import { mergeSketch, MergeRefusal, rebaseOthersAfterMerge } from './merge';
+import { openJournal } from '../write-journal';
 import { appGatedMergeOf } from './merge-app-gate';
 import { recordMergeReason } from './merged-parts';
 import { originOf } from '../write-origin';
@@ -55,9 +56,10 @@ export const mergeAndRecord = (options: {
 
   if (typeof decided === 'string') return decided;
 
-  const before = dirtyFilesOfSync({ target, product });
+  const variant = decided.decision?.kind === 'pick' ? decided.decision.variant : '';
+  const reason = note?.trim() || undefined;
   const result = timedPhase('merge-files', () =>
-    appGatedMergeOf({
+    journaledMergeOf({
       target,
       product,
       sketch: decided,
@@ -70,8 +72,20 @@ export const mergeAndRecord = (options: {
           note,
           replaceNote,
           author: by,
+          deferRebase: true,
           ...(allowed ? { decidedBy: `plan: ${allowed.planRef.trim()}` } : decidedBy ? { decidedBy } : {}),
         }),
+      finish: (before) => {
+        const refreshed = timedPhase('harness-map', () => refreshHarnessMap({ target, product }));
+
+        if (typeof refreshed === 'string') console.error(`merged, but the harness map is still stale: ${refreshed}`);
+
+        if (allowed || reason)
+          for (const part of sketch.targets)
+            recordMergeReason({ product, part, planRef: allowed?.planRef.trim(), reason });
+
+        commitMergeResultSync({ target, product, sketch, variant, before });
+      },
     }),
   );
 
@@ -81,20 +95,45 @@ export const mergeAndRecord = (options: {
     return result.reason;
   }
 
-  const refreshed = timedPhase('harness-map', () => refreshHarnessMap({ target, product }));
-
-  if (typeof refreshed === 'string') console.error(`merged, but the harness map is still stale: ${refreshed}`);
-
-  const reason = note?.trim() || undefined;
-
-  if (allowed || reason)
-    for (const part of sketch.targets) recordMergeReason({ product, part, planRef: allowed?.planRef.trim(), reason });
-
-  const variant = decided.decision?.kind === 'pick' ? decided.decision.variant : '';
-
-  commitMergeResultSync({ target, product, sketch, variant, before });
-
   return { variant, parts: result };
+};
+
+/**
+ * Runs `merge` behind the app gate and then `finish` (the writes that complete it, up to its commit) as one journaled
+ * step: a refusal or a throw undoes every file it wrote, and the next process that takes the product lock undoes a
+ * killed one, or finishes it once its commit landed. Then rebases the other sketches the merge made stale.
+ */
+export const journaledMergeOf = (options: {
+  target: string;
+  product: ResolvedProduct;
+  sketch: Sketch;
+  merge: () => string[] | MergeRefusal;
+  finish: (before: Map<string, string> | null) => void;
+}): string[] | MergeRefusal => {
+  const { target, product, sketch } = options;
+  const before = dirtyFilesOfSync({ target, product });
+  const journal = openJournal({ productDir: product.dir, root: target, label: `merge of ${sketch.target}` });
+
+  try {
+    const merged = appGatedMergeOf({ target, product, sketch, merge: options.merge });
+
+    if (!Array.isArray(merged)) {
+      journal.rollback();
+
+      return merged;
+    }
+
+    options.finish(before);
+    journal.close();
+
+    rebaseOthersAfterMerge({ target, product, sketch }).forEach((line) => console.log(line));
+
+    return merged;
+  } catch (error) {
+    journal.rollback();
+
+    throw error;
+  }
 };
 
 /** A merge of one ready sketch as a step, or why it may not run; checks everything a merge needs before anything is written. */

@@ -1,4 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { noteWrite } from './write-journal';
 import { dirname, relative, resolve, sep } from 'path';
 import { DesignHarness } from '../design-config';
 import { harnessProblemOf } from './harness-config';
@@ -114,6 +115,7 @@ export const harnessMapOf = (options: { target: string; product: ResolvedProduct
 
 export const writeHarnessMap = (map: HarnessMap) => {
   mkdirSync(dirname(map.file), { recursive: true });
+  noteWrite(map.file);
   writeFileSync(map.file, map.text);
 };
 

@@ -23,6 +23,8 @@ import { partKeyOf, ResolvedPart, ResolvedProduct, resolveProduct } from '../res
 import { rebaseAfterMerge } from './after-merge';
 import { conflictsOf, partHashHolds } from './baseline';
 import { prettierBinOf } from '../prettier';
+import { withProductLock } from '../product-lock';
+import { noteWrite } from '../write-journal';
 import { carryShared, productSharedChangesOf, sharedPlanOf } from './merge-shared';
 import { EDIT_OLD } from './edit-sketch';
 import {
@@ -216,6 +218,7 @@ type MergeOptions = {
   replaceNote?: boolean;
   author?: string;
   decidedBy?: string;
+  deferRebase?: boolean;
 };
 
 type CheckedMerge = {
@@ -384,6 +387,8 @@ const applyMerge = (options: { copy: CleanCopy; checked: CheckedMerge }) => {
   for (const [file, content] of checked.changes) {
     const into = copy.inCheckout(file);
 
+    noteWrite(into);
+
     if (content === null) {
       rmSync(into, { force: true });
       continue;
@@ -395,6 +400,8 @@ const applyMerge = (options: { copy: CleanCopy; checked: CheckedMerge }) => {
 
   for (const path of checked.replaced) {
     const into = copy.inCheckout(path);
+
+    noteWrite(into);
 
     if (existsSync(path)) pruneEmptyDirs(into);
     else rmSync(into, { recursive: true, force: true });
@@ -458,6 +465,15 @@ export const mergeRefusalOf = (options: { product: ResolvedProduct; sketch: Sket
 
   return rejectedProblemOf(sketch, pick.variant);
 };
+
+/** Ports and rebases the other open sketches the merge of `sketch` made stale; answers one line per sketch. */
+export const rebaseOthersAfterMerge = (options: { target: string; product: ResolvedProduct; sketch: Sketch }) =>
+  rebaseAfterMerge({
+    target: options.target,
+    product: resolveProduct({ target: options.target, name: options.product.name, config: options.product.config }),
+    merged: options.sketch.targets,
+    before: options.sketch.baseline ?? {},
+  });
 
 const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal => {
   const { target, product, sketch, note, author } = options;
@@ -530,36 +546,33 @@ const mergeOrReason = (options: MergeOptions): string[] | string | MergeRefusal 
     const { mergedKeys, baseKeys, removedKeys } = checked;
     const untouched = checked.touchesShared ? unchangedMergedOf({ product, except: mergedKeys }) : [];
 
-    applyMerge({ copy, checked });
+    withProductLock(product.dir, () => {
+      applyMerge({ copy, checked });
 
-    const productKeys = mergedKeys.filter((key) => !baseKeys.includes(key));
+      const productKeys = mergedKeys.filter((key) => !baseKeys.includes(key));
 
-    if (productKeys.length > 0) recordMerged({ product, parts: productKeys, decision });
+      if (productKeys.length > 0) recordMerged({ product, parts: productKeys, decision });
 
-    if (product.base && baseKeys.length > 0) {
-      recordMerged({ product: { dir: product.base.dir, base: null }, parts: baseKeys, decision });
-      forgetMerged({ productDir: product.dir, parts: removedKeys });
-    }
+      if (product.base && baseKeys.length > 0) {
+        recordMerged({ product: { dir: product.base.dir, base: null }, parts: baseKeys, decision });
+        forgetMerged({ productDir: product.dir, parts: removedKeys });
+      }
 
-    const alsoChanged = rerecordChangedMerged({ product, before: untouched });
+      const alsoChanged = rerecordChangedMerged({ product, before: untouched });
 
-    if (alsoChanged.length > 0) console.log(`Asset or shared/ change also updates: ${alsoChanged.join(', ')}`);
+      if (alsoChanged.length > 0) console.log(`Asset or shared/ change also updates: ${alsoChanged.join(', ')}`);
 
-    resolveSketchEndComments({
-      sketch,
-      parts: mergedKeys,
-      note: `resolved by the merge of ${sketch.target} variant ${variant}`,
+      resolveSketchEndComments({
+        sketch,
+        parts: mergedKeys,
+        note: `resolved by the merge of ${sketch.target} variant ${variant}`,
+      });
+      addressSketchComments({ sketch, reason: 'merge', author, note });
+      removeSketchDir(sketch.dir);
+      clearSketchReport({ checkout: target, sketch });
     });
-    addressSketchComments({ sketch, reason: 'merge', author, note });
-    removeSketchDir(sketch.dir);
-    clearSketchReport({ checkout: target, sketch });
 
-    rebaseAfterMerge({
-      target,
-      product: resolveProduct({ target, name: product.name, config: product.config }),
-      merged: sketch.targets,
-      before: sketch.baseline ?? {},
-    }).forEach((line) => console.log(line));
+    if (!options.deferRebase) rebaseOthersAfterMerge({ target, product, sketch }).forEach((line) => console.log(line));
 
     return checked.mergedParts;
   } finally {
@@ -588,6 +601,7 @@ export const mergeSketch = (options: {
   replaceNote?: boolean;
   author?: string;
   decidedBy?: string;
+  deferRebase?: boolean;
 }): string[] | MergeRefusal => {
   const merged = mergeOrReason(options);
 

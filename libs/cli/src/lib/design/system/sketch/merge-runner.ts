@@ -6,9 +6,9 @@ import { packageFileOf } from '../../package-root';
 import { readConfig } from '../../design-config';
 import { refreshHarnessMap } from '../harness-map';
 import { oneProductOf } from './cli-args';
-import { commitMergeResultSync, dirtyFilesOfSync } from './merge-commit';
+import { commitMergeResultSync } from './merge-commit';
 import { mergeSketch, MergeRefusal } from './merge';
-import { appGatedMergeOf } from './merge-app-gate';
+import { journaledMergeOf } from './merge-step';
 import { recordMergeReason } from './merged-parts';
 import { Sketch } from './sketch';
 
@@ -26,25 +26,21 @@ export const studioMergeOf = ({ target, product: name, sketch, note }: MergeRequ
 
   if (typeof product === 'string') return { reason: product };
 
-  const before = dirtyFilesOfSync({ target, product });
-  const merged = appGatedMergeOf({
+  const variant = sketch.decision?.kind === 'pick' ? sketch.decision.variant : '';
+
+  return journaledMergeOf({
     target,
     product,
     sketch,
-    merge: () => mergeSketch({ target, config, product, sketch, note }),
+    merge: () => mergeSketch({ target, config, product, sketch, note, deferRebase: true }),
+    finish: (before) => {
+      refreshHarnessMap({ target, product });
+
+      if (note?.trim()) for (const part of sketch.targets) recordMergeReason({ product, part, reason: note.trim() });
+
+      commitMergeResultSync({ target, product, sketch, variant, before });
+    },
   });
-
-  if (!Array.isArray(merged)) return merged;
-
-  refreshHarnessMap({ target, product });
-
-  if (note?.trim()) for (const part of sketch.targets) recordMergeReason({ product, part, reason: note.trim() });
-
-  const variant = sketch.decision?.kind === 'pick' ? sketch.decision.variant : '';
-
-  commitMergeResultSync({ target, product, sketch, variant, before });
-
-  return merged;
 };
 
 const startWorker = () => {
