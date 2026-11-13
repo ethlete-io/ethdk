@@ -11,6 +11,7 @@ import { createPartPictureCache } from './part-picture-cache';
 import { partKeyOf, resolveProduct } from './resolve-product';
 import { startSlowRunner } from './slow-run';
 import { partHashOf } from './sketch/baseline';
+import { HeldEdits } from './sketch/held-edits';
 import { openEditSketch } from './sketch/edit-sketch';
 import { changedOutsideSketchOf, readMerged, recordMerged } from './sketch/merged-parts';
 import { gitExec } from '../../git-test-env.fixtures';
@@ -265,11 +266,13 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
       gitExec(['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qam', 'direct edit'], { cwd: target });
 
     const lines: string[] = [];
+    const told: HeldEdits[] = [];
     const runner = startSlowRunner({
       target,
       configOf: () => bare,
       log: (line) => lines.push(line),
       intervalMs: 3_600_000,
+      onHeld: (held) => told.push(held),
     });
 
     for (let poll = 0; poll < 3; poll++) await runner.poll();
@@ -282,13 +285,14 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
     const here = openPointsOf({ product: product(), part: CHIP }) as PartOpenPointsAnswer;
     const kindsOf = ({ points }: PartOpenPointsAnswer) => points.map(({ kind }) => kind);
 
-    return { lines, tracked, answer, here, kindsOf, product, chip, target };
+    return { lines, told, tracked, answer, here, kindsOf, product, chip, target };
   };
 
   it('shows no open point for a direct edit that draws as before while it runs, and writes no tracked file', async () => {
-    const { lines, tracked, answer, here, kindsOf, product } = await directEdit({ default: 'a1' });
+    const { lines, told, tracked, answer, here, kindsOf, product } = await directEdit({ default: 'a1' });
 
     expect(lines).toEqual([`HELD acme ${CHIP}: changed outside a sketch, every state draws as before`]);
+    expect(told.map((held) => held[product().dir])).toEqual([{ [CHIP]: expect.any(String) }]);
     expect(tracked).toEqual([]);
     expect([here.directEdit, kindsOf(here)]).toEqual([false, expect.not.arrayContaining(['direct-edit'])]);
     expect([answer.directEdit, kindsOf(answer)]).toEqual([false, expect.not.arrayContaining(['direct-edit'])]);

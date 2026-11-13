@@ -1,4 +1,5 @@
 import { execFileSync } from 'child_process';
+import { createHash } from 'crypto';
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { dirname, join, relative, resolve } from 'path';
 import postcss from 'postcss';
@@ -7,7 +8,8 @@ import { ProductSource } from '../base';
 import { ownSharedFilesOf, SharedDirs } from '../imports';
 import { productStylesheetFilesOf } from '../product-stylesheets';
 import { ResolvedPart, ResolvedProduct } from '../resolve-product';
-import { inputsUnchanged, PrintedInput, readInputsOf, trackedRun } from '../tracked-reads';
+import { writeCacheEntry } from '../../cache-entry';
+import { inputsUnchanged, PrintedInput, readInputsOf, recordInputs, trackedRun, untrackedRun } from '../tracked-reads';
 import { perSource, sourceFileOf, textsOf } from '../ts-source';
 
 const CLASS_FACTS = `
@@ -271,7 +273,23 @@ export const stylesheetClassesOf = (product: ResolvedProduct) => {
 
 type Facts = { inputs: PrintedInput[]; rem: number; known: Map<string, ClassFacts> };
 
-const factsCache = new Map<string, Facts>();
+type StoredFacts = Omit<Facts, 'known'> & { slot: string; known: [string, ClassFacts][] };
+
+const factsDirOf = (target: string) => join(target, 'node_modules', '.cache', 'ethlete-design', 'class-facts');
+
+const factsNameOf = (slot: string) => `${createHash('sha1').update(slot).digest('hex')}.json`;
+
+const heldFactsOf = (target: string, slot: string): Facts | null =>
+  untrackedRun(() => {
+    try {
+      const held = JSON.parse(readFileSync(join(factsDirOf(target), factsNameOf(slot)), 'utf8')) as StoredFacts;
+
+      return held.slot === slot && inputsUnchanged(held.inputs) ? { ...held, known: new Map(held.known) } : null;
+      // eslint-disable-next-line ethlete/no-silent-catch-error -- a missing or unreadable entry is a cache miss
+    } catch {
+      return null;
+    }
+  });
 
 const freshFactsOf = (source: ProductSource | undefined): Facts => {
   const { value: rem, inputs } = trackedRun(() =>
@@ -283,20 +301,21 @@ const freshFactsOf = (source: ProductSource | undefined): Facts => {
 
 /**
  * Tailwind's facts on each candidate under the product's stylesheets; the root font size they set on `html` is the rem
- * base. Kept until a file this process or Tailwind read for them changes.
+ * base. Kept on disk under the checkout's `node_modules/.cache/ethlete-design/class-facts`, shared by every process and
+ * worker, until a file this process or Tailwind read for them changes.
  */
 export const classFactsOf = (options: { product: StyleHolder; classes: PartClasses }) => {
   const { target, stylesheets, files } = options.classes;
   const source = styleSourceOf(options.product);
   const css = stylesheets.map((file) => `@import ${JSON.stringify(file)};`).join('\n');
   const slot = JSON.stringify([target, css, source?.configFile ?? null, source?.config.styles ?? []]);
-  const held = factsCache.get(slot);
-  const facts = held && inputsUnchanged(held.inputs) ? held : freshFactsOf(source);
+  const held = heldFactsOf(target, slot);
+  const facts = held ?? freshFactsOf(source);
   const missing = [...new Set(files.flatMap((file) => [...file.candidates, ...file.classes]))].filter(
     (candidate) => !facts.known.has(candidate),
   );
 
-  factsCache.set(slot, facts);
+  if (held) recordInputs(held.inputs);
 
   if (missing.length > 0) {
     const tailwind = require.resolve('@tailwindcss/node', { paths: [target, __dirname] });
@@ -313,6 +332,14 @@ export const classFactsOf = (options: { product: StyleHolder; classes: PartClass
       facts.known.set(candidate, answer.facts[index] ?? { canonical: candidate, emitsNothing: false }),
     );
   }
+
+  if (!held || missing.length > 0)
+    untrackedRun(() =>
+      writeCacheEntry(factsDirOf(target), {
+        name: factsNameOf(slot),
+        text: JSON.stringify({ slot, ...facts, known: [...facts.known] } satisfies StoredFacts),
+      }),
+    );
 
   return facts.known;
 };

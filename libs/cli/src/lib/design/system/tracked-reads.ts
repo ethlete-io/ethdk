@@ -125,6 +125,19 @@ export const trackedRun = <T>(run: () => T): { value: T; inputs: PrintedInput[] 
   }
 };
 
+/** Runs the synchronous `run` with no read recorded by the tracked runs around the call. */
+export const untrackedRun = <T>(run: () => T): T => {
+  const outer = recording;
+
+  recording = null;
+
+  try {
+    return run();
+  } finally {
+    recording = outer;
+  }
+};
+
 /** Records the inputs of a held value in every tracked run around the call, as if the call had read them again. */
 export const recordInputs = (inputs: PrintedInput[]) => {
   for (const { input } of inputs) recording?.(input);

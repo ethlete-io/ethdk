@@ -2580,7 +2580,25 @@ red on HEAD (2 of 9), green after; spec:stress 4/4 each; vitest related 140 file
 after it 1 design process and 8 Chromium processes (1 root); 99 s after the run 0 and 0, log "exits: idle for 60 s".
 Not verified: abort through a real HTTP close on a running serve, a serve-hosted resident over 30 min, CI, the Studio
 e2e. Terminating a running rules worker drops its check cache (`cachedCheckOf`), so the next run is cold.
-B499 S4 in progress (Linux builder, 2026-11-13): slow checks and class facts move into the rules worker.
+B499 S4 as built (Linux builder, 2026-11-13): `design serve` runs its slow runner in a worker of the S3 pattern
+(`startSlowRunnerInWorker` in `system/slow-run-host.ts`, entry `slow-run-worker.ts`), not in the rules worker: a poll
+runs minutes (harness build, shots) and would queue every rules run behind it. The worker posts its log lines and the
+direct edits it holds (`onHeld` of `startSlowRunner`); the serve replaces its own held edits with them, so the
+open-points worker sees them as before. A worker's `exit` listeners (harness build kill, temp folder) never run on
+process exit or terminate, so on exit the serve asks the worker to run them and waits up to 3 s (`Atomics.wait`); the
+worker stops when the serve's HTTP server closes. `createDesignServer` skips `process.chdir` when the cwd already is the
+target (a worker cannot chdir). Class facts: a disk cache under `node_modules/.cache/ethlete-design/class-facts` (one
+entry per stylesheet slot, with the stat prints of every file read) replaces the per-process in-memory `factsCache`
+map in `rules/tailwind-classes.ts`, which each new rules, open-points or slow worker started empty and filled by
+running Tailwind again; the reads of the cache go untracked (`untrackedRun`), a hit records its inputs. Bite: the
+disk-cache case in `tailwind-facts-cache.spec.ts` and the `onHeld` case in `slow-run.spec.ts` red on HEAD, green after;
+`slow-run-host.spec.ts` (log, held edits, poll, stop, and a worker that blocks 1.5 s leaves the caller's max tick gap
+under 500 ms); spec:stress 4/4 each; vitest related 150 files green. P6 measured in a scratch copy (own git, slow cache
+removed, cold) with an event-loop probe around two slow-checks polls of sdk and studio: before worst main-thread block
+5021 ms (more blocks of 3096, 2801, 1469, 1389 ms), after 16 ms; same results (sdk 0, studio 30 problems). Not
+verified: warm `/__design/system` and cold open-points on a live serve (P6 targets 300 ms and 1.5 s), the exit
+handoff with a harness build running, CI, the Studio e2e. The class-facts entries put a `node_modules` into a target
+that had none; jiti in a worker then caches there, so `serve.spec.ts` cleanup now retries its `rm`.
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
 Bite: a spec stages a name and clears it in the working tree; red on the old script. Not verified: a real refused commit.

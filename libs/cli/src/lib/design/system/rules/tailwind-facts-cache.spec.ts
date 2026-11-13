@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -93,6 +93,28 @@ describe('classFactsOf', { timeout: 120_000 }, () => {
 
     write(target, 'node_modules/unrelated/index.css', '.x {}\n');
 
-    expect(factsIn(target, ['bg-brand'])).toBe(first);
+    expect(factsIn(target, ['bg-brand'])).toEqual(first);
+  });
+
+  it('answers from the disk cache, as a fresh process does, while no read file changes, and fresh once one does', () => {
+    const target = projectOf();
+
+    factsIn(target, ['bg-brand']);
+
+    const dir = join(target, 'node_modules/.cache/ethlete-design/class-facts');
+    const [name] = readdirSync(dir).filter((file) => file.endsWith('.json'));
+    const file = join(dir, name ?? '');
+    const stored = JSON.parse(readFileSync(file, 'utf8')) as { known: [string, unknown][] };
+
+    writeFileSync(
+      file,
+      JSON.stringify({ ...stored, known: [['bg-brand', { canonical: 'from-disk', emitsNothing: false }]] }),
+    );
+
+    expect(factsIn(target, ['bg-brand']).get('bg-brand')?.canonical).toBe('from-disk');
+
+    write(target, 'theme.css', '@theme { --color-accent: green; }\n');
+
+    expect(factsIn(target, ['bg-brand']).get('bg-brand')?.canonical).toBe('bg-brand');
   });
 });

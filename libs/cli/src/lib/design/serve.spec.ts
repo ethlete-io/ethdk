@@ -15,7 +15,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
 import { setTimeout as delay } from 'timers/promises';
 import { basename, dirname, join, resolve } from 'path';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from './design-config';
 import { installedAssetRoot } from './package-root';
 import {
@@ -83,7 +83,7 @@ afterEach(async () => {
   created.length = 0;
   listenFailure = null;
   vi.restoreAllMocks();
-  await Promise.all(targets.splice(0).map((target) => rm(target, { recursive: true, force: true })));
+  await Promise.all(targets.splice(0).map((target) => rm(target, { recursive: true, force: true, maxRetries: 5 })));
 });
 
 const makeTarget = (config?: unknown) => {
@@ -114,6 +114,8 @@ describe('terminalPortLine', () => {
 });
 
 describe('serveDesign', () => {
+  beforeEach(() => vi.stubEnv('ETHLETE_DESIGN_SLOW_CHECKS', 'off'));
+
   it('exits 1 without a config', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 

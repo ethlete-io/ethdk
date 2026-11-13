@@ -29,7 +29,7 @@ import { visibleChangeProblemsOf } from './rules/visible-change';
 import { sdkErrorLineOf } from './sdk-errors';
 import { autoAcceptOf, settleCommittedEdits } from './accepted-pictures';
 import { partHashOf } from './sketch/baseline';
-import { holdEdit } from './sketch/held-edits';
+import { allHeldEdits, HeldEdits, holdEdit } from './sketch/held-edits';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
 import {
   linkedComponentOf,
@@ -405,6 +405,7 @@ export const startSlowRunner = (options: {
   intervalMs?: number;
   runners?: Partial<SlowRunners>;
   record?: (request: RecordSettledRequest) => Promise<void>;
+  onHeld?: (held: HeldEdits) => void;
 }) => {
   const record = options.record ?? recordSettledBuildReady;
   const seen = new Map<string, string>();
@@ -426,6 +427,7 @@ export const startSlowRunner = (options: {
 
         settleCommittedEdits({ target: options.target, product: edited, writesTracked: false, held: settled });
         settled.forEach(({ part, hash }) => holdEdit({ product: edited, part, hash }));
+        if (settled.length > 0) options.onHeld?.(allHeldEdits());
 
         const edits = settledEditsOf({ product: edited, seen, resolved: resolvedEdits });
 
@@ -443,6 +445,7 @@ export const startSlowRunner = (options: {
             })
           ).forEach(options.log);
           held.forEach(({ part, hash }) => holdEdit({ product: edited, part, hash }));
+          if (held.length > 0) options.onHeld?.(allHeldEdits());
         }
       }
 

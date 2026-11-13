@@ -1,5 +1,6 @@
 import { mkdirSync, renameSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { threadId } from 'worker_threads';
 import { runSignal } from './run-abort';
 
 let temps = 0;
@@ -13,7 +14,7 @@ export const writeCacheEntry = (dir: string, entry: { name: string; text: string
 
   if (runSignal()?.aborted) return false;
 
-  const temp = join(dir, `.${name}.${process.pid}.${(temps += 1)}.tmp`);
+  const temp = join(dir, `.${name}.${process.pid}.${threadId}.${(temps += 1)}.tmp`);
 
   try {
     mkdirSync(dir, { recursive: true });

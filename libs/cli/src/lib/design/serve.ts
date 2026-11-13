@@ -135,7 +135,7 @@ import {
   portOf,
   readConfig,
 } from './design-config';
-import { startSlowRunner } from './system/slow-run';
+import { startSlowRunnerInWorker } from './system/slow-run-host';
 import { relaunch, RELOAD_EXIT_CODE, superviseReloads, SUPERVISED_ENV, watchBuild } from './build-watch';
 
 type ViteDevServer = import('vite', { with: { 'resolution-mode': 'import' } }).ViteDevServer;
@@ -1199,7 +1199,8 @@ export const createDesignServer = async (options: {
 
   // Vite reads a tsconfig out of the working directory to transpile a call, and the calls sit
   // outside its root. From a directory that holds none, every call compiles to an empty module.
-  process.chdir(target);
+  // A worker thread cannot chdir: the slow-run worker draws in the directory the serve already moved to.
+  if (process.cwd() !== resolve(target)) process.chdir(target);
 
   const { createServer, createLogger } = await import('vite');
   const { default: tailwind } = await import('@tailwindcss/postcss');
@@ -1453,12 +1454,11 @@ export const serveDesign = async (options: {
 
   watchHeap({ log: (line) => console.log(`design-explore: ${line}`) });
 
-  if (process.env['ETHLETE_DESIGN_SLOW_CHECKS'] !== 'off')
-    startSlowRunner({
-      target,
-      configOf: () => readConfig(target),
-      log: (line) => console.log(`design-explore: ${line}`),
-    });
+  if (process.env['ETHLETE_DESIGN_SLOW_CHECKS'] !== 'off') {
+    const slow = startSlowRunnerInWorker({ target, log: (line) => console.log(`design-explore: ${line}`) });
+
+    server.httpServer?.once('close', () => void slow.stop());
+  }
 
   if (ownedByStudio) {
     exitWhenStdinCloses(server);
