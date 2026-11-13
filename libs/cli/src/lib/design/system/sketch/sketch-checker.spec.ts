@@ -1,12 +1,14 @@
+import { EventEmitter } from 'events';
 import { cpSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import type { Worker } from 'worker_threads';
 import { afterAll, describe, expect, it } from 'vitest';
 import { readConfig } from '../../design-config';
 import { ruleProblemsOf } from '../check-system';
 import { resolveProduct } from '../resolve-product';
 import { createSketch, Sketch } from './sketch';
-import { createSketchChecker, openSketchListingAt } from './sketch-checker';
+import { createSketchChecker, openSketchListingAt, SketchCheckRequest, SketchCheckResponse } from './sketch-checker';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-sketch-checker-'));
@@ -60,4 +62,79 @@ describe('createSketchChecker', () => {
     expect(edited.map(({ rule }) => rule)).toContain('HARD-CODED-COLOUR');
     await expect(check.rules({ target, product: 'nope' })).rejects.toThrow(/nope/);
   }, 120_000);
+});
+
+const fakeWorkers = () => {
+  const started: {
+    posted: SketchCheckRequest[];
+    terminated: boolean;
+    answer: (response: SketchCheckResponse) => void;
+  }[] = [];
+  const startWorker = () => {
+    const events = new EventEmitter();
+    const fake = {
+      posted: [] as SketchCheckRequest[],
+      terminated: false,
+      answer: (response: SketchCheckResponse) => events.emit('message', response),
+    };
+
+    started.push(fake);
+
+    return {
+      postMessage: (request: SketchCheckRequest) => fake.posted.push(request),
+      terminate: async () => {
+        fake.terminated = true;
+
+        return 1;
+      },
+      unref: () => undefined,
+      on: (event: string, listener: (response: SketchCheckResponse) => void) => events.on(event, listener),
+    } as unknown as Worker;
+  };
+
+  return { started, startWorker };
+};
+
+describe('createSketchChecker rules', () => {
+  it('runs parallel rules of one product once, and ends the run when its last waiter aborts', async () => {
+    const { started, startWorker } = fakeWorkers();
+    const check = createSketchChecker({ startWorker });
+    const [first, last] = [new AbortController(), new AbortController()];
+    const asked = { target: '/checkout', product: 'acme' };
+    const one = check.rules({ ...asked, signal: first.signal });
+    const two = check.rules({ ...asked, signal: last.signal });
+
+    expect(started.map(({ posted }) => posted.length)).toEqual([1]);
+
+    first.abort();
+    await expect(one).rejects.toThrow(/abort/i);
+    expect(started[0]?.terminated).toBe(false);
+
+    last.abort();
+    await expect(two).rejects.toThrow(/abort/i);
+    expect(started[0]?.terminated).toBe(true);
+
+    const three = check.rules(asked);
+
+    expect(started.map(({ posted }) => posted.length)).toEqual([1, 1]);
+    started[1]?.answer({ id: started[1].posted[0]?.id ?? -1, result: [] });
+    expect(await three).toEqual([]);
+    await check.close();
+  });
+
+  it('drops a queued run whose last waiter aborts before the worker takes it', async () => {
+    const { started, startWorker } = fakeWorkers();
+    const check = createSketchChecker({ startWorker });
+    const queued = new AbortController();
+    const running = check.rules({ target: '/checkout', product: 'acme' });
+    const dropped = check.rules({ target: '/checkout', product: 'other', signal: queued.signal });
+
+    queued.abort();
+    await expect(dropped).rejects.toThrow(/abort/i);
+    started[0]?.answer({ id: started[0].posted[0]?.id ?? -1, result: [] });
+    expect(await running).toEqual([]);
+    expect(started.flatMap(({ posted }) => posted.map(({ product }) => product))).toEqual(['acme']);
+    expect(started[0]?.terminated).toBe(false);
+    await check.close();
+  });
 });

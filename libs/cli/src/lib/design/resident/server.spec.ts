@@ -1,6 +1,6 @@
 import { setTimeout as delay } from 'timers/promises';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { startResidentServer, TOKEN_HEADER } from './server';
+import { RESIDENT_IDLE_MS, residentIdleMsOf, startResidentServer, TOKEN_HEADER } from './server';
 
 const closers: (() => Promise<void>)[] = [];
 
@@ -53,6 +53,26 @@ describe('startResidentServer', () => {
     await delay(1000);
 
     expect(onExit).toHaveBeenCalledWith('idle');
+  });
+
+  it('never exits idle with idleMs null, so a serve-hosted resident ends only with its server', async () => {
+    vi.useFakeTimers();
+
+    try {
+      const { onExit } = await serverOf({ idleMs: null });
+
+      await vi.advanceTimersByTimeAsync(2 * RESIDENT_IDLE_MS);
+
+      expect(onExit).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('idles a self-started resident out after ETHLETE_DESIGN_IDLE_MS, else after 30 min', () => {
+    expect(residentIdleMsOf({ ETHLETE_DESIGN_IDLE_MS: '60000' })).toBe(60_000);
+    expect(residentIdleMsOf({ ETHLETE_DESIGN_IDLE_MS: 'soon' })).toBe(RESIDENT_IDLE_MS);
+    expect(residentIdleMsOf({})).toBe(30 * 60_000);
   });
 
   it('refuses a request without the token of its discovery file', async () => {

@@ -6,6 +6,14 @@ import { interval, Subscription, tap, timer } from 'rxjs';
 
 export const RESIDENT_IDLE_MS = 30 * 60_000;
 export const RESIDENT_BEAT_MS = 10_000;
+export const IDLE_MS_ENV = 'ETHLETE_DESIGN_IDLE_MS';
+
+/** The idle time of a self-started resident: `ETHLETE_DESIGN_IDLE_MS` when it is a positive number, else 30 min. */
+export const residentIdleMsOf = (env: NodeJS.ProcessEnv) => {
+  const asked = Number(env[IDLE_MS_ENV]);
+
+  return asked > 0 ? asked : RESIDENT_IDLE_MS;
+};
 export const TOKEN_HEADER = 'x-et-design-token';
 
 /** The environment variables of the calling CLI a request carries into the resident process. */
@@ -96,14 +104,15 @@ const messageOf = (error: unknown) => (error instanceof Error ? (error.stack ?? 
 /**
  * Serves run requests on 127.0.0.1, one at a time, streaming what each run writes back as `ResidentFrame` lines. A
  * waiting request that `jumps` accepts runs inside a running one when that one calls its `yieldTurn`.
- * Calls `onExit('idle')` after `idleMs` without a request and `onExit('stop')` on a stop request.
+ * Calls `onExit('idle')` after `idleMs` without a request (never with `idleMs: null`) and `onExit('stop')` on a stop
+ * request.
  */
 export const startResidentServer = async (options: {
   token: string;
   identity: Record<string, unknown>;
   run: ResidentRun;
   onExit: (reason: 'idle' | 'stop') => void;
-  idleMs?: number;
+  idleMs?: number | null;
   beatMs?: number;
   capture?: typeof captureOutput;
   jumps?: (request: ResidentRequest) => boolean;
@@ -117,6 +126,9 @@ export const startResidentServer = async (options: {
   let idle: Subscription | undefined;
   const arm = () => {
     idle?.unsubscribe();
+
+    if (idleMs === null) return;
+
     idle = timer(idleMs)
       .pipe(tap(() => onExit('idle')))
       .subscribe();

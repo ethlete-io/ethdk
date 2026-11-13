@@ -2565,7 +2565,21 @@ standalone one. Not verified: Studio's own serve (`ETHLETE_DESIGN_EXIT_ON_STDIN_
 agents' (calls then run in-process), the reload path after a CLI rebuild, CI, the Studio e2e. Suspect: a run in the
 serve also captures the serve's own log lines while it runs, and a design config change no longer restarts the design
 server for hosted runs (serve's own watcher has to cover it). `rebuildStaleDist` stays `spawnSync` (not taken).
-B499 S3 in progress (Linux builder, 2026-11-13): rules() shares an in-flight run with abort, and the design process gets one idle end.
+B499 S3 as built (Linux builder, 2026-11-13): `createSketchChecker` (`system/sketch/sketch-checker.ts`) queues its
+runs on the main thread and posts one at a time to the worker; a `rules()` or listing call for a product that is queued
+or running joins that run. `rules({ signal })` stops waiting on abort; when the last waiter aborts, a queued run leaves
+the queue and a running one ends with its worker (the next run starts a new one). `/__design/system` passes the request's
+close signal and no longer falls back to the main-thread rule run after an abort. Idle ends: before the slice there was
+one idle timer (`startResidentServer`, 30 min); Chromium, the design server, the harness watch and the worker had none
+and end through the resident's exit. The serve-hosted resident armed the same timer with a no-op exit; it now passes
+`idleMs: null`, so a serve (human or Studio started, ADR 0204) ends only with itself. A self-started resident reads
+`ETHLETE_DESIGN_IDLE_MS` (default 30 min). Bite (P7): two specs with a fake worker, red on HEAD and red with the cancel
+taken out (worker not terminated; queued `other` still posted), green after; idle specs in `resident/server.spec.ts`
+red on HEAD (2 of 9), green after; spec:stress 4/4 each; vitest related 140 files green. P4 measured in a scratch copy
+(marker moved aside), `ETHLETE_DESIGN_IDLE_MS=60000`, one `sketch check components/command-palette` (20.8 s, cold): right
+after it 1 design process and 8 Chromium processes (1 root); 99 s after the run 0 and 0, log "exits: idle for 60 s".
+Not verified: abort through a real HTTP close on a running serve, a serve-hosted resident over 30 min, CI, the Studio
+e2e. Terminating a running rules worker drops its check cache (`cachedCheckOf`), so the next run is cold.
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
 Bite: a spec stages a name and clears it in the working tree; red on the old script. Not verified: a real refused commit.

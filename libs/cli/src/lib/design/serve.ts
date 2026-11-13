@@ -977,7 +977,7 @@ const designExplore = ({
       );
       vite.middlewares.use(
         SYSTEM_PATH,
-        answer(async (url) => {
+        answer(async (url, { signal }) => {
           const asked = url.searchParams.get('product');
 
           if (asked && !config.products?.[asked]) return { status: 404, body: { error: `no product "${asked}"` } };
@@ -993,7 +993,9 @@ const designExplore = ({
             load: ({ file, product }) => vite.ssrLoadModule(productModuleIdOf({ file, product })),
             ...(ruleChecker && {
               problemsOf: (name: string, product: ResolvedProduct) =>
-                ruleChecker.rules({ target, product: name }).catch(() => ruleProblemsOf(product)),
+                ruleChecker
+                  .rules({ target, product: name, signal })
+                  .catch((error: unknown) => (signal.aborted ? Promise.reject(error) : ruleProblemsOf(product))),
             }),
           });
 

@@ -18,7 +18,7 @@ import { WarmDraw } from '../warm-draw';
 import { checkoutGoneOf, watchCheckout } from './checkout-gone';
 import { ResidentClient, runsInResident, takeResidentForServe } from './client';
 import { removeDiscovery, writeDiscovery } from './discovery';
-import { ABORTED_EXIT, ResidentRequest, ResidentRun, startResidentServer } from './server';
+import { ABORTED_EXIT, ResidentRequest, ResidentRun, residentIdleMsOf, startResidentServer } from './server';
 
 type DesignServer = Awaited<ReturnType<typeof createDesignServer>>;
 
@@ -193,6 +193,7 @@ export const serveResident = async (options: { target: string }) => {
   const build = buildStampOf().build;
   const token = randomUUID();
   const runs = createWarmRuns({ target });
+  const idleMs = residentIdleMsOf(process.env);
   let exiting = false;
   let close = async () => undefined as void;
   const exit = async (reason: string) => {
@@ -227,7 +228,8 @@ export const serveResident = async (options: { target: string }) => {
     identity: { pid: process.pid, build, checkout: target },
     run,
     jumps: runs.jumps,
-    onExit: (reason) => void exit(reason === 'idle' ? 'idle for 30 min' : 'stopped'),
+    idleMs,
+    onExit: (reason) => void exit(reason === 'idle' ? `idle for ${Math.round(idleMs / 1000)} s` : 'stopped'),
   });
 
   close = server.close;
@@ -278,6 +280,7 @@ export const hostResidentInServe = async (options: {
       identity: { pid: process.pid, build: client.build, checkout: target, owner: 'serve' },
       run: runs.run,
       jumps: runs.jumps,
+      idleMs: null,
       onExit: (reason) => {
         if (reason === 'stop') void close();
       },
