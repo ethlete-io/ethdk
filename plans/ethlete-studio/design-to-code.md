@@ -4129,8 +4129,9 @@ Verified: spec and e2e red without the confirm. Not verified: Tauri, a screen re
 A2 as built (2026-11-13, 30f13ee56): title search click or Ctrl+K opens the SDK command palette; no drawn "neu zeichnen"
 command; first Esc clears. Verified specs, typecheck, lint; no live shot.
 
-A7 as built (2026-11-13, commit "Drag the side panel width"): shell-main edge handle (core `etDragHandle`, role separator, arrows ±8 px, 200-400 px, `sideWidth` model persisted in the remembered view).
-Verified: specs, lint, typecheck, live shots (rest, hover, drag 312 px col-resize, min, max, focus, reload); DROPPED-PROP sideWidth gone. Not verified: Tauri window, touch, design compare.
+A7 as built (ebdc6e77e): shell-main edge handle (core `etDragHandle`, separator, arrows ±8 px, 200-400 px, `sideWidth` remembered).
+Verified: specs, lint, typecheck, live shots (rest, hover, drag 312 px, min, max, focus, reload); DROPPED-PROP sideWidth gone. Not verified: Tauri, touch, compare.
+Handle part: components/shell-resize-handle, embedded by shell-main; states draw as before, app unchanged.
 
 A36 as built (2026-11-13, part-tree@parts-only a): part-tree takes `layers`, `sketches`, `legacy`; no states, hosts nest `nested`; Sketches first (`part@name`, status mark), Legacy last, a section per project, calls by slug.
 Pencil gone (rail: System, Flows, Inbox); sample layers in app order. Not built: nested parts.

@@ -1,0 +1,9 @@
+@layer components {
+  .st-shell-resize {
+    left: calc(var(--space-3) + var(--st-side-width) - 4px);
+  }
+
+  .st-shell-resize-line {
+    transition: var(--transition-state);
+  }
+}

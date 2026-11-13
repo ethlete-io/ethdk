@@ -2,6 +2,7 @@ import { drawing, forceInteraction, html, interactionRows, slot, type Interactio
 import { button, buttonStyles } from '@ethlete/components/design/button';
 import { control } from '@ethlete/components/design/control';
 import { shellCollapseStyles } from '@system/components/shell-collapse';
+import { SIDE_WIDTH } from '@system/components/shell-resize-handle';
 import titleBar from '@system/components/title-bar';
 import { icon, type IconName } from '@system/foundations/icons';
 
@@ -100,14 +101,6 @@ const railItem = (
     ),
     RAIL_CONTROLS[kind],
   )}</div>`;
-
-const SIDE_WIDTH = { min: 200, rest: 248, dragging: 312, max: 400 };
-
-const resizeHandle = (line: string, width: number, force?: RailInteraction) => {
-  const markup = `<div class="st-shell-resize group absolute top-space-3 bottom-space-3 w-2 cursor-col-resize outline-none" role="separator" aria-orientation="vertical" aria-label="Breite der Seitenleiste" aria-valuemin="${SIDE_WIDTH.min}" aria-valuemax="${SIDE_WIDTH.max}" aria-valuenow="${width}" tabindex="0" data-et-action="emit:sideWidthChange">${line}</div>`;
-
-  return control(force ? forceInteraction(markup, force) : markup, 'resize');
-};
 
 const sep = '<div class="st-shell-sep my-space-2 bg-et-surface-border"></div>';
 
@@ -216,7 +209,7 @@ type SystemStates = Record<string, Pick<Props, 'systemPicker' | 'systemForce'>>;
 
 export const shellMain = <const TStates extends SystemStates, TControl>(
   styles: string,
-  resizeLine: string,
+  resizeHandle: (props: { width: number; interaction?: RailInteraction }) => string,
   choice: SystemChoice,
   system: { states: TStates; control: TControl },
 ) => ({
@@ -244,7 +237,7 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
   controls: {
     section: { kind: 'button' as const, input: ['pointer' as const, 'keyboard' as const] },
     product: { kind: 'button' as const, input: ['pointer' as const, 'keyboard' as const] },
-    resize: { kind: 'button' as const, input: ['pointer' as const, 'keyboard' as const] },
+    resize: { kind: 'button' as const, part: 'components/shell-resize-handle' as const },
     collapse: { kind: 'button' as const, part: 'components/shell-collapse' as const },
     restart: { kind: 'button' as const, part: 'components/button' as const },
     system: system.control,
@@ -290,7 +283,7 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
             ${server ? serverScreen(server, log) : content}
           </main>
           ${panel === 'hidden' ? '' : sidePanel(side, system.head, system.top)}
-          ${panel === 'hidden' ? '' : resizeHandle(resizeLine, sideWidth ?? SIDE_WIDTH.rest, resizeForce)}
+          ${panel === 'hidden' ? '' : resizeHandle({ width: sideWidth ?? SIDE_WIDTH.rest, interaction: resizeForce })}
           ${panel === 'hidden' ? '' : system.surface}
         </div>
       </div>`,
