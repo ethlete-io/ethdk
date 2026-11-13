@@ -47,8 +47,7 @@ import { coverPartProblemOf, editCovers } from './system/sketch/covered-diffs';
 import { unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots';
 import { addedUndeclaredControlsOf } from './system/complete';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
-import { editRefOf, humanPickOf, journaledMergeOf, mergeAndRecord } from './system/sketch/merge-step';
-import { openJournalOf } from './system/write-journal';
+import { editRefOf, humanPickOf, mergeAndRecord } from './system/sketch/merge-step';
 import { staleBaseOf, staleSketchBasesOf } from './system/sketch/stale-base';
 import { repoInvocation } from '../invocation';
 import { editDiscardRefusalOf } from './system/sketch/edit-sketch';
@@ -61,7 +60,7 @@ import { instantLinesOf, sketchOpenPointsOf } from './system/read-open-points';
 import { overlaySketch } from './system/sketch/overlay';
 import { productModuleIdOf, SketchVariant } from './system/system-modules';
 import { unchangedStatesOf } from './system/sketch/unchanged-states';
-import { conflictVariantOf, journaledRebaseOf, keptByPortedOf } from './system/sketch/rebase-port';
+import { portBaseChanges } from './system/sketch/rebase-port';
 import { THEMING_TEXT } from './system/theming-text';
 import { createRunDraw, loadingOn, WarmDraw } from './warm-draw';
 import {
@@ -83,6 +82,7 @@ import {
   reopenChangedReady,
   parseTarget,
   orphanedPickOf,
+  rebaseSketch,
   authorsOf,
   rejectionOf,
   releaseSketch,
@@ -118,7 +118,7 @@ export const SKETCH_USAGE = [
   'sketch release <layer>/<name> --by <model id> [--product <name>]',
   'sketch check [<layer>/<name>] [--fix] [--no-visible-change] [--product <name>]',
   'sketch preview <layer>/<name> <variant> [--product <name>] [--json]',
-  'sketch rebase <layer>/<name> [--ported <variant>] --by <model id> [--product <name>]',
+  'sketch rebase <layer>/<name> [--ported] --by <model id> [--product <name>]',
   'sketch pick <layer>/<name> --variant <key> --decided-by <the words and where they were said> --by <model id> [--product <name>]',
   'sketch merge <layer>/<name> [--note <reason> [--replace-note]] [--variant <key> --allowed-by <plan ref>] [--decided-by <role>] --by <model id> [--product <name>]',
   'sketch discard <layer>/<name> --by <model id> [--product <name>]',
@@ -141,8 +141,7 @@ const FLAG_HELP: Record<string, string> = {
     'on a part the product overrides: start from the product copy, merge into the base and remove the copy',
   '--ready':
     'on new: run sketch ready (its gates are the check) right after opening the sketch; it fails when either refuses and the sketch stays in progress',
-  '--ported':
-    'on rebase, repeatable: the conflicting files of this variant hold the product change already, ported by hand - keep them and rebase',
+  '--ported': 'on rebase: the conflicting files hold the product change already, ported by hand - keep them and rebase',
   '--round': 'the title of a new round; on note: the key of the round whose note to rewrite',
   '--round-note': 'what the new round shows',
   '--from': 'the variant to copy',
@@ -966,10 +965,7 @@ const targetsInProduct = ({ product, sketch }: { product: ResolvedProduct; sketc
   sketch.targets.every((key) => product.parts.some((part) => partKeyOf(part) === key));
 
 const stillReady = (options: { sketch: Sketch; again: boolean; reason: string }) => {
-  writeSketchFile(
-    { ...options.sketch, mergeHold: { reason: options.reason, at: new Date().toISOString() } },
-    { base: options.sketch },
-  );
+  writeSketchFile({ ...options.sketch, mergeHold: { reason: options.reason, at: new Date().toISOString() } });
 
   if (options.again) console.log(`${options.sketch.target} is still ready`);
 
@@ -1005,20 +1001,18 @@ const cleanBesideSketch = (options: { target: string; product: ResolvedProduct; 
 
 const committedMerge = (options: { target: string; product: ResolvedProduct; sketch: Sketch }) => {
   const dirs = mergeDirsOf(options.product);
-  const subject = `feat(repo): Merge ${options.sketch.target}, no visible change`;
-  const top = gitIn(options.target, 'rev-parse', '--show-toplevel');
-  const head = gitIn(options.target, 'rev-parse', 'HEAD');
-
-  if (top.status === 0 && head.status === 0)
-    openJournalOf()?.markCommit({
-      top: realpathSync(top.stdout.trim()),
-      head: head.stdout.trim(),
-      subject,
-      paths: dirs,
-    });
-
   const added = gitIn(options.target, 'add', '--all', '--', ...dirs);
-  const committed = added.status === 0 ? gitIn(options.target, 'commit', '-m', subject, '--', ...dirs) : added;
+  const committed =
+    added.status === 0
+      ? gitIn(
+          options.target,
+          'commit',
+          '-m',
+          `feat(repo): Merge ${options.sketch.target}, no visible change`,
+          '--',
+          ...dirs,
+        )
+      : added;
 
   if (committed.status !== 0)
     console.warn(`Could not commit the merge: ${(committed.stderr || committed.stdout).trim()}`);
@@ -1061,7 +1055,7 @@ const autoMerged = (options: {
   });
 };
 
-export const mergedUnchanged = (options: {
+const mergedUnchanged = (options: {
   target: string;
   config: DesignConfig;
   author?: string;
@@ -1071,53 +1065,30 @@ export const mergedUnchanged = (options: {
   const { target, config, author, product, sketch } = options;
   const variant = sketch.variants.find((candidate) => !rejectionOf(sketch, candidate)) ?? '';
   const commit = cleanBesideSketch({ target, product, sketch });
-  const decision = { kind: 'pick' as const, variant, ...originOf(author ?? '') };
+  const decided = decideSketch({ sketch, decision: { kind: 'pick', variant, ...originOf(author ?? '') } });
+
+  if (typeof decided === 'string') return fail(decided);
+
   const written = sharedFilesOf(product);
   const before = written.map((file) => contentOf(file));
-  let committed = false;
-  let undecided: string | null = null;
-  const result = journaledMergeOf({
+  const result = mergeSketch({
     target,
+    config,
     product,
-    sketch: { ...sketch, decision: { ...decision, decidedAt: new Date().toISOString() } },
-    merge: () => {
-      const decided = decideSketch({ sketch, decision });
-
-      if (typeof decided === 'string') {
-        undecided = decided;
-
-        return { reason: decided };
-      }
-
-      return mergeSketch({
-        target,
-        config,
-        product,
-        sketch: decided,
-        author,
-        decidedBy: 'auto: no visible change',
-        deferRebase: true,
-      });
-    },
-    finish: () => {
-      committed = commit && committedMerge({ target, product, sketch });
-    },
+    sketch: decided,
+    author,
+    decidedBy: 'auto: no visible change',
   });
 
-  if (undecided !== null) return fail(undecided);
-
   if (!Array.isArray(result)) {
-    writeSketchFile(
-      {
-        ...sketch,
-        mergeHold: {
-          reason: result.reason,
-          at: new Date().toISOString(),
-          ...(result.dirty ? { dirty: result.dirty } : {}),
-        },
+    writeSketchFile({
+      ...sketch,
+      mergeHold: {
+        reason: result.reason,
+        at: new Date().toISOString(),
+        ...(result.dirty ? { dirty: result.dirty } : {}),
       },
-      { base: sketch },
-    );
+    });
     console.warn(`${sketch.target} shows no visible change but did not merge: ${result.reason}`);
 
     return 0;
@@ -1125,7 +1096,7 @@ export const mergedUnchanged = (options: {
 
   console.log(`No visible change in any state: merged ${sketch.targets.join(', ')} automatically.`);
 
-  if (committed) {
+  if (commit && committedMerge({ target, product, sketch })) {
     console.log(`Committed: feat(repo): Merge ${sketch.target}, no visible change`);
 
     return 0;
@@ -1380,33 +1351,20 @@ const readyRefusalOf = (
 
 const rebased = (context: Context) =>
   withSketch(context, ({ product, sketch }) => {
-    const named = context.args.repeated['--ported'] ?? [];
-    const unknown = named.filter((variant) => !sketch.variants.includes(variant));
+    const kept = context.args.flags.has('--ported');
+    const { ported, conflicts } = portBaseChanges({ target: context.target, product, sketch, keepConflicts: kept });
 
-    if (unknown.length > 0) return fail(`${sketch.target} has no variant ${unknown.join(', ')}`);
+    if (kept) conflicts.forEach((line) => console.log(`KEPT ${line} (ported by hand)`));
+    else if (conflicts.length > 0)
+      return fail(
+        `${conflicts.join('\n')}\n${sketch.target} not rebased - port these by hand, then run ${context.invocation ?? repoInvocation({ root: context.target, subcommand: 'design' })} sketch rebase ${sketch.target} --ported --product ${product.name} --by <model id>`,
+      );
+
+    ported.forEach(({ variant, file, how }) => console.log(`PORTED ${variant}: ${file} (${how})`));
 
     const orphan = orphanedPickOf(sketch, product.name);
-    const keep = named.length > 0 ? keptByPortedOf(sketch, named) : undefined;
-    const { ported, conflicts, rebased } = journaledRebaseOf({
-      target: context.target,
-      product,
-      sketch,
-      keepConflicts: keep,
-    });
 
-    if (!rebased) {
-      const open = conflicts.filter((line) => !keep?.(conflictVariantOf(line)));
-      const variants = [...new Set(open.map(conflictVariantOf))];
-
-      return fail(
-        `${open.join('\n')}\n${sketch.target} not rebased - port these by hand, then run ${context.invocation ?? repoInvocation({ root: context.target, subcommand: 'design' })} sketch rebase ${sketch.target} ${[...new Set([...named, ...variants])].map((variant) => `--ported ${variant}`).join(' ')} --product ${product.name} --by <model id>`,
-      );
-    }
-
-    conflicts.forEach((line) =>
-      console.log(`KEPT ${line} (${named.includes(conflictVariantOf(line)) ? 'ported by hand' : 'not merged'})`),
-    );
-    ported.forEach(({ variant, file, how }) => console.log(`PORTED ${variant}: ${file} (${how})`));
+    rebaseSketch({ product, sketch });
 
     if (orphan)
       console.log(

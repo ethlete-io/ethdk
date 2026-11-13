@@ -14,7 +14,7 @@ import {
 } from 'fs';
 import { dirname, isAbsolute, relative, resolve, sep } from 'path';
 import { setImmediate } from 'timers/promises';
-import { productDirOfSketch, recoverInterrupted, withProductLock, writeDecisionFile } from '../product-lock';
+import { recoverInterrupted, writeDecisionFile } from '../product-lock';
 import { noteWrite } from '../write-journal';
 import { jsonLayoutOf } from '../../json-layout';
 import { statusPath } from '../../status';
@@ -495,9 +495,7 @@ export const authorsOf = (sketch: Pick<Sketch, 'variantInfo'>, variant: string) 
   sketch.variantInfo?.[variant]?.authors ?? [];
 
 /** The sketch in a sketch folder, or why it cannot be read. */
-export const readSketch = (options: { product: string; dir: string }): Sketch | string => sketchIn(options);
-
-const sketchIn = (options: { product: string; dir: string; variants?: string[] }): Sketch | string => {
+export const readSketch = (options: { product: string; dir: string }): Sketch | string => {
   const { product, dir } = options;
   const file = resolve(dir, SKETCH_FILE);
 
@@ -553,7 +551,7 @@ const sketchIn = (options: { product: string; dir: string; variants?: string[] }
 
   const rounds = parsed.rounds ?? [firstRoundOf()];
   const running = runningRoundOf({ rounds }).key;
-  const variants = options.variants ?? foldersOf(dir).filter((folder) => folder !== SHARED_FOLDER);
+  const variants = foldersOf(dir).filter((folder) => folder !== SHARED_FOLDER);
   const variantInfo = { ...parsed.variantInfo };
 
   for (const variant of variants)
@@ -630,97 +628,27 @@ const baselineTreeFieldOf = (options: { product: ResolvedProduct; sketchDir: str
   return { baselineTree: tree };
 };
 
-const sketchFileOf = (sketch: Sketch): SketchFile => ({
-  target: sketch.target,
-  ...(sketch.targets.length > 1 ? { targets: sketch.targets } : {}),
-  status: sketch.status,
-  createdAt: sketch.createdAt,
-  ...(sketch.baseline ? { baseline: sketch.baseline } : {}),
-  ...(sketch.baselineTree ? { baselineTree: sketch.baselineTree } : {}),
-  ...(sketch.decision ? { decision: sketch.decision } : {}),
-  rounds: sketch.rounds,
-  ...(Object.keys(sketch.variantInfo).length > 0 ? { variantInfo: sketch.variantInfo } : {}),
-  ...(sketch.rejections && Object.keys(sketch.rejections).length > 0 ? { rejections: sketch.rejections } : {}),
-  ...(sketch.merge ? { merge: sketch.merge } : {}),
-  ...(sketch.hold ? { hold: sketch.hold } : {}),
-  ...(sketch.readyContent && sketch.status === 'ready' ? { readyContent: sketch.readyContent } : {}),
-  ...(sketch.covers && sketch.covers.length > 0 ? { covers: sketch.covers } : {}),
-  ...(sketch.portAfterMerge ? { portAfterMerge: sketch.portAfterMerge } : {}),
-  ...(sketch.mergeHold && sketch.status === 'ready' ? { mergeHold: sketch.mergeHold } : {}),
-});
-
-type Fields = Record<string, unknown>;
-
-const PER_VARIANT_FIELDS = new Set(['variantInfo', 'rejections', 'readyContent']);
-
-const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
-
-const mergedFieldsOf = (options: { was: Fields; mine: Fields; disk: Fields; both: (key: string) => unknown }) => {
-  const { was, mine, disk } = options;
-  const merged: Fields = {};
-
-  for (const key of new Set([...Object.keys(was), ...Object.keys(mine), ...Object.keys(disk)])) {
-    const changed = !sameJson(mine[key], was[key]);
-    const value =
-      changed && !sameJson(disk[key], was[key]) && !sameJson(disk[key], mine[key])
-        ? options.both(key)
-        : changed
-          ? mine[key]
-          : disk[key];
-
-    if (value !== undefined) merged[key] = value;
-  }
-
-  return merged;
-};
-
-const mergedSketchFileOf = (options: { sketch: Sketch; base: Sketch; sets: string[] }): SketchFile => {
-  const { sketch, base, sets } = options;
-  const onDisk = sketchIn({ product: base.product, dir: base.dir, variants: base.variants });
-
-  if (typeof onDisk === 'string') throw new Error(onDisk);
-
-  const fieldsOf = (entry: Sketch) => sketchFileOf(entry) as Fields;
-  const [was, mine, disk] = [fieldsOf(base), fieldsOf(sketch), fieldsOf(onDisk)];
-  const conflict = (key: string) => {
-    throw new Error(
-      `${resolve(base.dir, SKETCH_FILE)}: "${key}" changed since this command read it - nothing was written, run the command again`,
-    );
+export const writeSketchFile = (sketch: Sketch) => {
+  const file: SketchFile = {
+    target: sketch.target,
+    ...(sketch.targets.length > 1 ? { targets: sketch.targets } : {}),
+    status: sketch.status,
+    createdAt: sketch.createdAt,
+    ...(sketch.baseline ? { baseline: sketch.baseline } : {}),
+    ...(sketch.baselineTree ? { baselineTree: sketch.baselineTree } : {}),
+    ...(sketch.decision ? { decision: sketch.decision } : {}),
+    rounds: sketch.rounds,
+    ...(Object.keys(sketch.variantInfo).length > 0 ? { variantInfo: sketch.variantInfo } : {}),
+    ...(sketch.rejections && Object.keys(sketch.rejections).length > 0 ? { rejections: sketch.rejections } : {}),
+    ...(sketch.merge ? { merge: sketch.merge } : {}),
+    ...(sketch.hold ? { hold: sketch.hold } : {}),
+    ...(sketch.readyContent && sketch.status === 'ready' ? { readyContent: sketch.readyContent } : {}),
+    ...(sketch.covers && sketch.covers.length > 0 ? { covers: sketch.covers } : {}),
+    ...(sketch.portAfterMerge ? { portAfterMerge: sketch.portAfterMerge } : {}),
+    ...(sketch.mergeHold && sketch.status === 'ready' ? { mergeHold: sketch.mergeHold } : {}),
   };
-  const recordOf = (fields: Fields, key: string) => (fields[key] ?? {}) as Fields;
 
-  return mergedFieldsOf({
-    was: { ...was, ...Object.fromEntries(sets.map((key) => [key, disk[key]])) },
-    mine,
-    disk,
-    both: (key) =>
-      PER_VARIANT_FIELDS.has(key)
-        ? mergedFieldsOf({
-            was: recordOf(was, key),
-            mine: recordOf(mine, key),
-            disk: recordOf(disk, key),
-            both: (variant) => conflict(`${key}.${variant}`),
-          })
-        : conflict(key),
-  }) as SketchFile;
-};
-
-/**
- * Writes a sketch's file. With `base`, the sketch the change was made on, it writes only the fields (per variant in
- * `variantInfo`, `rejections`, `readyContent`) that differ from `base` and keeps what another writer changed since;
- * both changing one field throws, except a field named in `sets`. `replace` writes the sketch as given.
- */
-export const writeSketchFile = (sketch: Sketch, options: { base: Sketch; sets?: string[] } | { replace: true }) => {
-  const path = resolve(sketch.dir, SKETCH_FILE);
-
-  withProductLock(productDirOfSketch(sketch.dir), () => {
-    const file =
-      'base' in options && existsSync(path)
-        ? mergedSketchFileOf({ sketch, base: options.base, sets: options.sets ?? [] })
-        : sketchFileOf(sketch);
-
-    writeDecisionFile(path, jsonLayoutOf(file));
-  });
+  writeDecisionFile(resolve(sketch.dir, SKETCH_FILE), jsonLayoutOf(file));
 };
 
 const stubOf = (name: string) =>
@@ -966,7 +894,7 @@ export const createSketch = (options: {
     ...(merge ? { merge } : {}),
   };
 
-  writeSketchFile(created, { replace: true });
+  writeSketchFile(created);
 
   return created;
 };
@@ -1010,7 +938,7 @@ export const addTarget = (options: {
 
   const added: Sketch = { ...sketch, targets: [...sketch.targets, key] };
 
-  writeSketchFile(added, { base: sketch });
+  writeSketchFile(added);
 
   return added;
 };
@@ -1047,7 +975,7 @@ export const removeTarget = (options: { sketch: Sketch; part: SketchTarget }): S
 
   const removed: Sketch = { ...sketch, targets: sketch.targets.filter((target) => target !== key) };
 
-  writeSketchFile(removed, { base: sketch });
+  writeSketchFile(removed);
 
   return removed;
 };
@@ -1104,7 +1032,7 @@ export const reportSketch = (options: {
   const open: Sketch = sketch.status === 'ready' ? { ...sketch, status: 'in progress' } : sketch;
   const reported = withAuthor({ sketch: open, variant, author });
 
-  if (reported !== sketch) writeSketchFile(reported, { base: sketch });
+  if (reported !== sketch) writeSketchFile(reported);
 
   const path = sketchReportPath({ checkout, sketch });
   const report: SketchReportFile = {
@@ -1183,7 +1111,7 @@ export const markSketchReady = (options: { checkout: string; sketch: Sketch; aut
     : sketch;
   const ready: Sketch = { ...authored, status: 'ready', readyContent: readyContentOf(sketch) };
 
-  writeSketchFile(ready, { base: sketch });
+  writeSketchFile(ready);
   clearSketchReport({ checkout, sketch });
 
   return ready;
@@ -1281,7 +1209,7 @@ export const reopenChangedReady = (sketch: Sketch): { sketch: Sketch; changed: s
   if (equalsReadyCommit(sketch)) {
     const rehashed: Sketch = { ...sketch, readyContent: readyContentOf(sketch) };
 
-    writeSketchFile(rehashed, { base: sketch });
+    writeSketchFile(rehashed);
 
     return { sketch: rehashed, changed: [] };
   }
@@ -1289,7 +1217,7 @@ export const reopenChangedReady = (sketch: Sketch): { sketch: Sketch; changed: s
   const { readyContent: _readyContent, mergeHold: _mergeHold, ...rest } = sketch;
   const reopened: Sketch = { ...rest, status: 'in progress' };
 
-  writeSketchFile(reopened, { base: sketch });
+  writeSketchFile(reopened);
 
   return { sketch: reopened, changed };
 };
@@ -1313,7 +1241,7 @@ export const holdSketch = (options: { sketch: Sketch; until: string; by: string;
   const { decision: _decision, ...undecided } = sketch;
   const held: Sketch = { ...undecided, status: 'in progress', hold: { until, by, heldAt: now.toISOString() } };
 
-  writeSketchFile(held, { base: sketch });
+  writeSketchFile(held);
 
   return held;
 };
@@ -1326,7 +1254,7 @@ export const releaseSketch = (options: { sketch: Sketch }): Sketch | string => {
 
   const { hold: _hold, ...released } = sketch;
 
-  writeSketchFile(released, { base: sketch });
+  writeSketchFile(released);
 
   return released;
 };
@@ -1410,7 +1338,7 @@ export const withdrawVariant = (options: {
     },
   };
 
-  writeSketchFile(marked, { base: sketch });
+  writeSketchFile(marked);
 
   return marked;
 };
@@ -1431,7 +1359,7 @@ export const decideSketch = (options: { sketch: Sketch; decision: SketchDecision
   if (decision.kind === 'reject' || decision.kind === 'reason' || decision.kind === 'reopen') {
     const judged = withVerdict(sketch, decision);
 
-    if (typeof judged !== 'string') writeSketchFile(judged, { base: sketch });
+    if (typeof judged !== 'string') writeSketchFile(judged);
 
     return judged;
   }
@@ -1450,7 +1378,7 @@ export const decideSketch = (options: { sketch: Sketch; decision: SketchDecision
 
   const decided: Sketch = { ...sketch, decision: { ...decision, decidedAt: new Date().toISOString() } };
 
-  writeSketchFile(decided, { base: sketch, sets: ['decision'] });
+  writeSketchFile(decided);
 
   return decided;
 };
@@ -1497,7 +1425,7 @@ export const rebaseSketch = (options: { product: ResolvedProduct; sketch: Sketch
     ...baselineTreeFieldOf({ product: options.product, sketchDir: options.sketch.dir }),
   };
 
-  writeSketchFile(rebased, { base: options.sketch });
+  writeSketchFile(rebased);
 
   return rebased;
 };
@@ -1546,7 +1474,7 @@ export const addVariant = (options: {
     variants: [...sketch.variants, variant].sort(),
   };
 
-  writeSketchFile(added, { base: sketch });
+  writeSketchFile(added);
 
   return added;
 };
@@ -1569,7 +1497,7 @@ export const editVariantNote = (options: { sketch: Sketch; variant: string; note
     variantInfo: { ...sketch.variantInfo, [variant]: { ...sketch.variantInfo[variant], note: note.trim() } },
   };
 
-  writeSketchFile(edited, { base: sketch });
+  writeSketchFile(edited);
 
   return edited;
 };
@@ -1601,7 +1529,7 @@ export const editRound = (options: {
     ),
   };
 
-  writeSketchFile(edited, { base: sketch });
+  writeSketchFile(edited);
 
   return edited;
 };

@@ -2,4 +2,4 @@
 '@ethlete/cli': patch
 ---
 
-A killed sketch discard or rebase is now undone by the next design command, and `sketch rebase --ported <variant>` names the variants ported by hand.
+Reverted for now: the journal of a killed sketch discard or rebase and `sketch rebase --ported` come back in a later release.
