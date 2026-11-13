@@ -204,6 +204,7 @@ export const STUDIO_LABELS = {
     appCode: 'App-Code',
     notUsedIn: (name: string) => `Nicht verwendet in ${name}`,
     legacy: 'Legacy',
+    sketches: 'Sketches',
     pending: 'Agent zeichnet noch',
     rejected: 'abgelehnt',
     withdrawn: 'vom Agent zurückgezogen',

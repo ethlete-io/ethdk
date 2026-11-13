@@ -60,7 +60,7 @@ const render = async (inventory: Inventory, post?: (body: unknown) => Promise<Re
   fixture.componentRef.setInput('product', 'studio');
   fixture.componentRef.setInput('part', 'pages/merge');
   fixture.componentRef.setInput('shell', {
-    tree: [],
+    tree: { layers: [] },
     product: 'studio',
     products: ['studio'],
     project: 'ethlete-sdk',

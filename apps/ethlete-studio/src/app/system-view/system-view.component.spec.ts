@@ -1620,7 +1620,7 @@ describe('SystemViewComponent on a tree pick', () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
     const element: HTMLElement = fixture.nativeElement;
 
-    await pick(fixture, 'Sketches', 'rating');
+    await pick(fixture, 'Sketches', 'rating@edit');
 
     expect(rememberedView().systemEntry).toBe('sketch:elements/rating@edit');
     expect(element.querySelector('ethlete-sketch-view')).not.toBeNull();
@@ -1639,7 +1639,11 @@ describe('SystemViewComponent on a tree pick', () => {
   });
 
   it('opens the call with its header on a call row', async () => {
-    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating', openGroups: { legacy: true } });
+    const fixture = await mount({
+      systemProduct: 'web',
+      systemEntry: 'elements/rating',
+      openGroups: { legacy: true, 'legacy/web': true },
+    });
     const element: HTMLElement = fixture.nativeElement;
 
     await pick(fixture, 'Legacy', 'start');

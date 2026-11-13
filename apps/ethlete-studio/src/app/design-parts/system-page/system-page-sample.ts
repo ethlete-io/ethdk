@@ -1,4 +1,4 @@
-import { PartTreeLayer } from '../part-tree/part-tree.component';
+import { PartTree, PartTreeLayer, PartTreeSketch } from '../part-tree/part-tree.component';
 import { AgentProgress, BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
 
 export type OpenPointIcon = 'grid' | 'warning' | 'comment' | 'error' | 'flow';
@@ -24,16 +24,44 @@ export const PART_EXCEPTIONS_SAMPLE: PartException[] = [
   },
 ];
 
-export const SYSTEM_LAYERS: PartTreeLayer[] = [
-  { title: 'Foundations', open: false, parts: [] },
-  { title: 'Elements', open: false, parts: [] },
-  {
-    title: 'Components',
-    open: true,
-    parts: [{ name: 'button', leaf: true, selected: true }, { name: 'form-field' }, { name: 'select', warns: true }],
-  },
-  { title: 'Pages', open: false, parts: [] },
+const OPEN_SKETCHES: PartTreeSketch[] = [
+  { part: 'command-palette', status: 'ready' },
+  { part: 'sketches', name: 'change-crop', status: 'ready' },
+  { part: 'shell-main', name: 'logo-menu', status: 'ready' },
+  { part: 'shell-main', name: 'sidebar-resize', status: 'ready' },
+  { part: 'part-tree', name: 'parts-only', status: 'in-progress' },
 ];
+
+export const SYSTEM_TREE: PartTree = {
+  sketches: { open: true, items: OPEN_SKETCHES },
+  layers: [
+    { title: 'Foundations', open: false, parts: [{ name: 'colors' }, { name: 'tokens' }] },
+    {
+      title: 'Components',
+      open: true,
+      parts: [
+        { name: 'button' },
+        { name: 'select', warns: true },
+        { name: 'title-bar', open: true, nested: [{ name: 'title-search' }] },
+        { name: 'tree-row', selected: true },
+      ],
+    },
+    {
+      title: 'Elements',
+      open: false,
+      parts: [{ name: 'part-tree' }, { name: 'shell-main' }, { name: 'studio-menu' }],
+    },
+    { title: 'Pages', open: false, parts: [{ name: 'inventory' }, { name: 'system' }] },
+  ],
+  legacy: {
+    open: false,
+    projects: [
+      { name: 'components', calls: ['bar-chart', 'form-mock', 'calendar-contrast'] },
+      { name: 'studio', calls: ['chat-surface', 'workbench', 'tile-controls', 'verdict-mark'] },
+      { name: 'timetrack', calls: [] },
+    ],
+  },
+};
 
 export const MANY_STATES_LAYERS: PartTreeLayer[] = [
   { title: 'Foundations', open: false, parts: [] },
@@ -41,10 +69,10 @@ export const MANY_STATES_LAYERS: PartTreeLayer[] = [
     title: 'Components',
     open: true,
     parts: [
-      { name: 'button', leaf: true },
+      { name: 'button' },
       { name: 'form-field' },
       { name: 'select', warns: true },
-      { name: 'tree-row', selected: true, states: [{ name: 'grid' }, { name: 'tree' }] },
+      { name: 'tree-row', selected: true },
     ],
   },
   { title: 'Elements', open: false, parts: [] },

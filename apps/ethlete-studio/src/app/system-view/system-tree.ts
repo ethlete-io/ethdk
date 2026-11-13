@@ -183,6 +183,13 @@ export const isSketchKey = (key: string | null) => !!key?.startsWith(SKETCH_KEY)
 export const pickedPartKeyOf = (picked: string | null) =>
   picked && isSketchKey(picked) ? picked.slice(SKETCH_KEY.length).split('@')[0] : picked;
 
+export const sketchLabelOf = (key: string): { part: string; name?: string } => {
+  const target = key.startsWith(SKETCH_KEY) ? key.slice(SKETCH_KEY.length) : key;
+  const [part = target, name] = target.slice(target.lastIndexOf('/') + 1).split('@');
+
+  return name ? { part, name } : { part };
+};
+
 const sketchEntryOf = (sketch: ListedSketch, marks: CommentMarks): TreeEntry => ({
   key: sketchKeyOf(sketch.target),
   name: sketch.name,
@@ -215,39 +222,25 @@ const callEntryOf = (call: ListedCall, name: string): TreeEntry => ({
   badges: callBadgesOf(call),
 });
 
-/** One Legacy group for all calls, or one per project once the calls span several. Calls sharing a stage (the first slug segment after the project) form a section. */
 export const legacyGroupsOf = (calls: ListedCall[]): TreeGroup[] => {
   const projects = [...new Set(calls.map((call) => call.project))];
-  const split = projects.length > 1;
 
-  return projects.map((project) => {
-    const groupKey = split ? `legacy/${project}` : 'legacy';
-    const entries: TreeEntry[] = [];
-    const sections = new Map<string, TreeSection>();
-
-    for (const call of calls.filter((listed) => listed.project === project)) {
-      const rest = call.slug.slice(project.length + 1) || call.slug;
-      const slash = rest.indexOf('/');
-
-      if (slash <= 0) {
-        entries.push(callEntryOf(call, rest));
-        continue;
-      }
-
-      const stage = rest.slice(0, slash);
-      const section = sections.get(stage) ?? { key: `${groupKey}/${stage}`, label: stage, entries: [] };
-
-      section.entries.push(callEntryOf(call, rest.slice(slash + 1)));
-      sections.set(stage, section);
-    }
-
-    return {
-      key: groupKey,
-      label: split ? `${STUDIO_LABELS.systemTree.legacy} · ${project}` : 'Legacy',
-      entries,
-      sections: [...sections.values()],
-    };
-  });
+  return projects.length === 0
+    ? []
+    : [
+        {
+          key: 'legacy',
+          label: STUDIO_LABELS.systemTree.legacy,
+          entries: [],
+          sections: projects.map((project) => ({
+            key: `legacy/${project}`,
+            label: project,
+            entries: calls
+              .filter((call) => call.project === project)
+              .map((call) => callEntryOf(call, call.slug.slice(project.length + 1) || call.slug)),
+          })),
+        },
+      ];
 };
 
 const UNUSED_KEY: SystemGroupKey = 'unused';
@@ -297,7 +290,8 @@ export const isSectionOpen = (section: TreeSection, { remembered }: OpenContext)
   remembered[section.key] ?? section.key.startsWith(`${UNUSED_KEY}/`);
 
 /**
- * The groups of the tree that hold a part, an open sketch or a call, each with its entries in listed order.
+ * The groups of the tree that hold a part, an open sketch or a call, each with its entries in listed order: the
+ * open sketches first, Legacy last.
  * A comment on a sketch variant marks the sketch, any other comment its part.
  */
 export const treeOf = (
@@ -372,7 +366,9 @@ export const treeOf = (
     return [{ key, label, entries: parts.filter(holds).map(entryOf) }];
   }).filter((group) => group.entries.length > 0 || (group.sections?.length ?? 0) > 0);
 
-  return [...productGroups, ...groups];
+  const sketchGroups = groups.filter((group) => group.key === 'sketches');
+
+  return [...sketchGroups, ...productGroups, ...groups.filter((group) => group.key !== 'sketches')];
 };
 
 export type FramesSource = {

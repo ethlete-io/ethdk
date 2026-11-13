@@ -1,28 +1,38 @@
 import { Component, computed, input, linkedSignal, output, viewChild, ViewEncapsulation } from '@angular/core';
 import { TREE_IMPORTS, TreeDataSource, TreeDirective, TreeNode } from '@ethlete/components';
-import { TreeRow, TreeRowItemComponent } from '../tree-row/tree-row-item.component';
+import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { TreeRow, TreeRowItemComponent, TreeRowStatus } from '../tree-row/tree-row-item.component';
 
-export type PartTreeState = { name: string; key?: string; inert?: boolean; selected?: boolean };
-
-export type PartTreePart = {
-  name: string;
+type Marks = {
   key?: string;
+  selected?: boolean;
   /** A string is the warning's own title instead of `warningTitle`. */
   warns?: boolean | string;
-  leaf?: boolean;
-  selected?: boolean;
-  /** Whether the part shows its states; without it, a part with `states` is open. */
-  open?: boolean;
-  states?: PartTreeState[];
 };
+
+/** A part; one with `nested` parts is their host and opens unless `open` is false. */
+export type PartTreePart = Marks & { name: string; open?: boolean; nested?: PartTreePart[] };
 
 export type PartTreeLayer = { title: string; key?: string; open: boolean; parts: PartTreePart[] };
 
-type RowMarks = Pick<TreeRow, 'kind' | 'selected' | 'inert' | 'warning'>;
+export type PartTreeSketch = Marks & { part: string; name?: string; status: TreeRowStatus };
+
+export type PartTreeSketches = { key?: string; open: boolean; items: PartTreeSketch[] };
+
+export type PartTreeCall = Marks & { name: string };
+
+/** A legacy project, closed unless `open` is true. */
+export type PartTreeLegacyProject = { name: string; key?: string; open?: boolean; calls: (string | PartTreeCall)[] };
+
+export type PartTreeLegacy = { key?: string; open: boolean; projects: PartTreeLegacyProject[] };
+
+export type PartTree = { layers: PartTreeLayer[]; sketches?: PartTreeSketches; legacy?: PartTreeLegacy };
+
+type RowMarks = Pick<TreeRow, 'kind' | 'selected' | 'warning' | 'status'>;
 
 const keyOf = (...names: string[]) => names.join('/');
 
-/** The Studio part tree: layers, then their parts, then the frames of an open part, drawn with tree rows. */
+/** The Studio part tree: open sketches on top, then the layers with their parts, then the Legacy projects, drawn with tree rows. */
 @Component({
   selector: 'ethlete-part-tree',
   template: `
@@ -47,8 +57,8 @@ const keyOf = (...names: string[]) => names.join('/');
             kind: marks?.kind ?? 'leaf',
             expanded: row.isExpanded,
             selected: marks?.selected,
-            inert: marks?.inert,
             warning: marks?.warning,
+            status: marks?.status,
           }"
           etTreeNode
           ethlete-tree-row-item
@@ -62,13 +72,15 @@ const keyOf = (...names: string[]) => names.join('/');
 })
 export class PartTreeComponent {
   public layers = input<PartTreeLayer[]>([]);
+  public sketches = input<PartTreeSketches>();
+  public legacy = input<PartTreeLegacy>();
   public label = input('Designsystem');
   public warningTitle = input('Render-Check: 1 Warnung');
 
-  /** The key of an activated row: its own `key`, else `layer`, `layer/part` or `layer/part/state`. */
+  /** The key of an activated row: its own `key`, else the path of labels from its group down, joined by `/`. */
   public activate = output<string>();
 
-  /** The keys of the open layers and parts after the user opened or closed one. */
+  /** The keys of the open groups, hosts and projects after the user opened or closed one. */
   public expandedChange = output<readonly string[]>();
 
   public tree = viewChild(TreeDirective<string>);
@@ -79,49 +91,103 @@ export class PartTreeComponent {
     const open: string[] = [];
     const warning = this.warningTitle();
 
-    const stateNode = (partKey: string, state: PartTreeState): TreeNode<string> => {
-      const value = state.key ?? keyOf(partKey, state.name);
+    const add = (node: {
+      value: string;
+      label: string;
+      mark: RowMarks;
+      open?: boolean;
+      nodes?: TreeNode<string>[];
+    }) => {
+      marks.set(node.value, node.mark);
+      if (!node.nodes) return { value: node.value, label: node.label, isLeaf: true };
+      if (node.open) open.push(node.value);
+      children.set(node.value, node.nodes);
 
-      marks.set(value, { kind: 'leaf', inert: state.inert, selected: state.selected });
-
-      return { value, label: state.name, isLeaf: true };
+      return { value: node.value, label: node.label };
     };
+    const markOf = (kind: RowMarks['kind'], own: Marks = {}): RowMarks => ({
+      kind,
+      selected: own.selected,
+      warning: typeof own.warns === 'string' ? own.warns : own.warns ? warning : undefined,
+    });
 
-    const partNode = (layerKey: string, part: PartTreePart): TreeNode<string> => {
-      const value = part.key ?? keyOf(layerKey, part.name);
+    const partNode = (parentKey: string, part: PartTreePart): TreeNode<string> => {
+      const value = part.key ?? keyOf(parentKey, part.name);
+      const host = !!part.nested?.length;
 
-      marks.set(value, {
-        kind: part.leaf ? 'leaf' : 'part',
-        selected: part.selected,
-        warning: typeof part.warns === 'string' ? part.warns : part.warns ? warning : undefined,
-      });
-
-      if (part.leaf) return { value, label: part.name, isLeaf: true };
-
-      if (part.open ?? part.states !== undefined) open.push(value);
-      children.set(
+      return add({
         value,
-        (part.states ?? []).map((state) => stateNode(value, state)),
-      );
-
-      return { value, label: part.name };
+        label: part.name,
+        mark: markOf(host ? 'part' : 'leaf', part),
+        open: part.open !== false,
+        nodes: host ? part.nested?.map((child) => partNode(value, child)) : undefined,
+      });
     };
 
-    children.set(
-      null,
-      this.layers().map((layer) => {
+    const sketchGroup = (group: PartTreeSketches) => {
+      const value = group.key ?? STUDIO_LABELS.systemTree.sketches;
+
+      return add({
+        value,
+        label: STUDIO_LABELS.systemTree.sketches,
+        mark: markOf('group'),
+        open: group.open,
+        nodes: group.items.map((item) => {
+          const label = item.name ? `${item.part}@${item.name}` : item.part;
+
+          return add({
+            value: item.key ?? keyOf(value, label),
+            label,
+            mark: { ...markOf('leaf', item), status: item.status },
+          });
+        }),
+      });
+    };
+
+    const legacyGroup = (group: PartTreeLegacy) => {
+      const value = group.key ?? STUDIO_LABELS.systemTree.legacy;
+
+      return add({
+        value,
+        label: STUDIO_LABELS.systemTree.legacy,
+        mark: markOf('group'),
+        open: group.open,
+        nodes: group.projects.map((project) => {
+          const projectKey = project.key ?? keyOf(value, project.name);
+
+          return add({
+            value: projectKey,
+            label: project.name,
+            mark: markOf('part'),
+            open: project.open === true,
+            nodes: project.calls.map((call) => {
+              const own = typeof call === 'string' ? { name: call } : call;
+
+              return add({ value: own.key ?? keyOf(projectKey, own.name), label: own.name, mark: markOf('leaf', own) });
+            }),
+          });
+        }),
+      });
+    };
+
+    const sketches = this.sketches();
+    const legacy = this.legacy();
+
+    children.set(null, [
+      ...(sketches ? [sketchGroup(sketches)] : []),
+      ...this.layers().map((layer) => {
         const value = layer.key ?? layer.title;
 
-        marks.set(value, { kind: 'group' });
-        if (layer.open) open.push(value);
-        children.set(
+        return add({
           value,
-          layer.parts.map((part) => partNode(value, part)),
-        );
-
-        return { value, label: layer.title };
+          label: layer.title,
+          mark: markOf('group'),
+          open: layer.open,
+          nodes: layer.parts.map((part) => partNode(value, part)),
+        });
       }),
-    );
+      ...(legacy ? [legacyGroup(legacy)] : []),
+    ]);
 
     return { children, marks, open };
   });

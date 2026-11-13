@@ -15,7 +15,7 @@ import {
   MANY_STATES_LAYERS,
   OPEN_POINTS_SAMPLE,
   PartException,
-  SYSTEM_LAYERS,
+  SYSTEM_TREE,
   ThemePick,
   ThemeSwitch,
 } from './system-page-sample';
@@ -33,7 +33,9 @@ export const FRAME_HEAD_CLASS =
         <p class="m-0 px-space-3 py-space-2 text-ui-sm text-et-surface-muted" shellMainSide>{{ LABELS.none }}</p>
       } @else if (listingError() === null) {
         <ethlete-part-tree
-          [layers]="manyStates() ? manyStatesLayers() : layers()"
+          [layers]="manyStates() ? manyStatesLayers() : tree().layers"
+          [sketches]="manyStates() ? undefined : tree().sketches"
+          [legacy]="manyStates() ? undefined : tree().legacy"
           (expandedChange)="expandedChange.emit($event)"
           (activate)="activate.emit($event)"
           shellMainSide
@@ -255,7 +257,7 @@ export class SystemPageComponent {
   public draft = model<string | null>(null);
   public send = input<CommentSendPhase | null>(null);
   public reason = input('');
-  public layers = input(SYSTEM_LAYERS);
+  public tree = input(SYSTEM_TREE);
   public manyStatesLayers = input(MANY_STATES_LAYERS);
   public frame = input('button');
   public shot = input<TemplateRef<{ $implicit: string }> | null>(null);

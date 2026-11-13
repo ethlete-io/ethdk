@@ -85,7 +85,7 @@ const settle = async (fixture: ComponentFixture<SketchViewComponent>) => {
 };
 
 const SHELL = {
-  tree: [],
+  tree: { layers: [] },
   product: 'web',
   products: ['web'],
   project: 'ethlete-sdk',

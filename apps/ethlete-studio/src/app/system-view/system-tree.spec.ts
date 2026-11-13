@@ -12,6 +12,7 @@ import {
   isSmallPart,
   pickedVariantOf,
   pickedPartKeyOf,
+  sketchLabelOf,
   mergePreviewOf,
   PENDING_LABEL,
   sketchMatrixOf,
@@ -214,48 +215,48 @@ describe('product problems in the tree', () => {
 });
 
 describe('treeOf with calls', () => {
-  it('lists calls of one project in a single Legacy group after the parts', () => {
+  it('lists the calls in one Legacy group after the parts, one section per project with the calls by slug', () => {
     const tree = treeOf([part()], {
       calls: [
         call(),
         call({ slug: 'acme/pages/home', transferred: true }),
         { slug: 'acme/x', project: 'acme', error: 'boom' },
+        call({ slug: 'other/a', project: 'other' }),
       ],
     });
 
     expect(tree.map((group) => group.label)).toEqual(['Components', 'Legacy']);
-    expect(tree[1]?.entries).toEqual([{ key: 'legacy:acme/x', name: 'x', title: 'boom', badges: ['error'] }]);
+    expect(tree[1]?.entries).toEqual([]);
     expect(tree[1]?.sections).toEqual([
       {
-        key: 'legacy/components',
-        label: 'components',
-        entries: [{ key: 'legacy:acme/components/button', name: 'button', title: 'Which button?', badges: [] }],
+        key: 'legacy/acme',
+        label: 'acme',
+        entries: [
+          { key: 'legacy:acme/components/button', name: 'components/button', title: 'Which button?', badges: [] },
+          { key: 'legacy:acme/pages/home', name: 'pages/home', title: 'Which button?', badges: ['transferred'] },
+          { key: 'legacy:acme/x', name: 'x', title: 'boom', badges: ['error'] },
+        ],
       },
       {
-        key: 'legacy/pages',
-        label: 'pages',
-        entries: [{ key: 'legacy:acme/pages/home', name: 'home', title: 'Which button?', badges: ['transferred'] }],
+        key: 'legacy/other',
+        label: 'other',
+        entries: [{ key: 'legacy:other/a', name: 'a', title: 'Which button?', badges: [] }],
       },
     ]);
   });
 
-  it('keys sections per project once calls span several', () => {
-    const tree = treeOf([], { calls: [call(), call({ slug: 'other/pages/a', project: 'other' })] });
+  it('puts the open sketches first and Legacy last, and hides Legacy without calls', () => {
+    const tree = treeOf([part()], { calls: [call()], sketches: [sketch()] });
 
-    expect(tree.map((group) => group.sections?.map((section) => section.key))).toEqual([
-      ['legacy/acme/components'],
-      ['legacy/other/pages'],
-    ]);
-  });
-
-  it('splits Legacy per project once calls span several, and hides it without calls', () => {
-    const tree = treeOf([], { calls: [call(), call({ slug: 'other/a', project: 'other' })] });
-
-    expect(tree.map((group) => [group.key, group.label])).toEqual([
-      ['legacy/acme', 'Legacy · acme'],
-      ['legacy/other', 'Legacy · other'],
-    ]);
+    expect(tree.map((group) => group.key)).toEqual(['sketches', 'components', 'legacy']);
     expect(treeOf([part()], { calls: [] })).toHaveLength(1);
+  });
+});
+
+describe('sketchLabelOf', () => {
+  it('names the part and the sketch of a sketch key', () => {
+    expect(sketchLabelOf('sketch:elements/part-tree@parts-only')).toEqual({ part: 'part-tree', name: 'parts-only' });
+    expect(sketchLabelOf('sketch:components/command-palette')).toEqual({ part: 'command-palette' });
   });
 });
 
@@ -263,13 +264,13 @@ describe('isGroupOpen and isSectionOpen', () => {
   const [legacy] = treeOf([], { calls: [call(), call({ slug: 'acme/pages/home' })] });
   const [parts] = treeOf([part()]);
   const context = { remembered: {}, hasProducts: true };
-  const components = legacy!.sections![0]!;
+  const acme = legacy!.sections![0]!;
 
   it('opens part groups and folds Legacy and its sections by default', () => {
     expect(isGroupOpen(parts!, context)).toBe(true);
     expect(isGroupOpen(legacy!, context)).toBe(false);
     expect(isGroupOpen(legacy!, { ...context, hasProducts: false })).toBe(true);
-    expect(isSectionOpen(components, context)).toBe(false);
+    expect(isSectionOpen(acme, context)).toBe(false);
   });
 
   it('moves the base parts no part of the product imports into a folded group with an open section per layer', () => {
@@ -301,13 +302,13 @@ describe('isGroupOpen and isSectionOpen', () => {
 
   it('follows a remembered choice', () => {
     expect(isGroupOpen(parts!, { ...context, remembered: { components: false } })).toBe(false);
-    expect(isSectionOpen(components, { ...context, remembered: { [components.key]: true } })).toBe(true);
+    expect(isSectionOpen(acme, { ...context, remembered: { [acme.key]: true } })).toBe(true);
   });
 
   it('names the group and the section that hold an entry', () => {
     const tree = treeOf([part()], { calls: [call(), call({ slug: 'acme/pages/home' })] });
 
-    expect(holdersOf(tree, components.entries[0]!.key)).toEqual([legacy!.key, components.key]);
+    expect(holdersOf(tree, acme.entries[0]!.key)).toEqual([legacy!.key, acme.key]);
     expect(holdersOf(tree, parts!.entries[0]!.key)).toEqual([parts!.key]);
     expect(holdersOf(tree, 'missing')).toEqual([]);
     expect(holdersOf(tree, null)).toEqual([]);
@@ -640,16 +641,16 @@ describe('sketches in the tree', () => {
       ],
     });
 
-    expect(tree.map((group) => group.key)).toEqual(['components', 'sketches']);
-    expect(tree[0]?.entries.map((entry) => entry.badges)).toEqual([['sketch open'], []]);
-    expect(tree[1]?.entries.map((entry) => [entry.key, entry.name, entry.title, entry.badges])).toEqual([
+    expect(tree.map((group) => group.key)).toEqual(['sketches', 'components']);
+    expect(tree[1]?.entries.map((entry) => entry.badges)).toEqual([['sketch open'], []]);
+    expect(tree[0]?.entries.map((entry) => [entry.key, entry.name, entry.title, entry.badges])).toEqual([
       ['sketch:components/button', 'button', 'components/button', ['in progress']],
       ['sketch:elements/header', 'header', 'a: LAYER: m', ['ready', 'error']],
     ]);
   });
 
   it('titles a sketch with one line per problem, naming its variant and rule', () => {
-    const [, sketches] = treeOf([part()], {
+    const [sketches] = treeOf([part()], {
       sketches: [
         sketch({
           problems: [
@@ -670,7 +671,7 @@ describe('sketches in the tree', () => {
   });
 
   it('marks a sketch with a variant that fails to render, and titles it with the reason', () => {
-    const [, sketches] = treeOf([part()], {
+    const [sketches] = treeOf([part()], {
       sketches: [
         sketch({
           problems: [],
@@ -695,7 +696,7 @@ describe('sketches in the tree', () => {
       threadState: 'agent' as const,
     });
     const badgesWith = (createdAt: string) =>
-      treeOf([part({ name: 'button' })], { sketches: [sketch()], comments: [onVariant(createdAt)] })[1]?.entries[0]
+      treeOf([part({ name: 'button' })], { sketches: [sketch()], comments: [onVariant(createdAt)] })[0]?.entries[0]
         ?.badges;
 
     expect(badgesWith('2026-10-27T10:00:00.000Z')).toContain('comment open');

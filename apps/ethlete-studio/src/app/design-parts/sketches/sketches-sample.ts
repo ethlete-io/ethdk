@@ -1,7 +1,7 @@
 import { SketchChange } from '../../../host/design';
 import { AgentLogoName } from '../../icons/agent-logos';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
-import { PartTreeLayer } from '../part-tree/part-tree.component';
+import { PartTree } from '../part-tree/part-tree.component';
 import { OpenPointGroup } from '../system-page/system-page-sample';
 
 export type SketchModel = { short: string; id: string; agent: AgentLogoName; when?: string };
@@ -111,17 +111,16 @@ export const SKETCH_ROUNDS: SketchRound[] = [{ value: 'round-1', label: 'Runde 1
 
 export const SKETCH_PINS: SketchPin[] = [{ variant: 'a', author: 'human', initials: 'H', count: 1 }];
 
-export const SKETCH_TREE: PartTreeLayer[] = [
-  {
-    title: 'Components',
-    open: true,
-    parts: [
-      { name: 'title-bar', leaf: true, selected: true },
-      { name: 'zoom-chip', leaf: true },
-    ],
-  },
-  { title: 'Pages', open: true, parts: [{ name: 'system', leaf: true }] },
-];
+export const SKETCH_TREE: PartTree = {
+  layers: [
+    {
+      title: 'Components',
+      open: true,
+      parts: [{ name: 'title-bar', selected: true }, { name: 'zoom-chip' }],
+    },
+    { title: 'Pages', open: true, parts: [{ name: 'system' }] },
+  ],
+};
 
 const CHIP_STATES = [
   'reset',
@@ -167,17 +166,16 @@ export const SKETCH_NARROW_SAMPLE = {
     string
   >,
   rounds: [{ value: 'round-1', label: 'Runde 1 · Reset control: SDK button or own part' }] satisfies SketchRound[],
-  tree: [
-    {
-      title: 'Components',
-      open: true,
-      parts: [
-        { name: 'title-bar', leaf: true },
-        { name: 'zoom-chip', leaf: true, selected: true },
-      ],
-    },
-    { title: 'Pages', open: true, parts: [{ name: 'system', leaf: true }] },
-  ] satisfies PartTreeLayer[],
+  tree: {
+    layers: [
+      {
+        title: 'Components',
+        open: true,
+        parts: [{ name: 'title-bar' }, { name: 'zoom-chip', selected: true }],
+      },
+      { title: 'Pages', open: true, parts: [{ name: 'system' }] },
+    ],
+  } satisfies PartTree,
 };
 
 export const SKETCH_POINTS_SAMPLE: OpenPointGroup[] = [
@@ -257,23 +255,19 @@ export const SKETCH_SCREEN_SAMPLE = {
   ] satisfies SketchRow[],
   rounds: [{ value: 'round-2', label: 'Runde 2 · Port nach dem Merge' }] satisfies SketchRound[],
   round: 'round-2',
-  tree: [
-    {
-      title: 'Components',
-      open: true,
-      parts: [
-        { name: 'title-bar', leaf: true },
-        { name: 'zoom-chip', leaf: true },
-      ],
-    },
-    {
-      title: 'Pages',
-      open: true,
-      parts: [
-        { name: 'system', leaf: true },
-        { name: 'sketches', leaf: true, selected: true },
-      ],
-    },
-  ] satisfies PartTreeLayer[],
+  tree: {
+    layers: [
+      {
+        title: 'Components',
+        open: true,
+        parts: [{ name: 'title-bar' }, { name: 'zoom-chip' }],
+      },
+      {
+        title: 'Pages',
+        open: true,
+        parts: [{ name: 'system' }, { name: 'sketches', selected: true }],
+      },
+    ],
+  } satisfies PartTree,
   wholeScreen: SCREEN_CHANGES[0]?.states[0] ?? '',
 };

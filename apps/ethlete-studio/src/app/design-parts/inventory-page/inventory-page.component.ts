@@ -3,21 +3,23 @@ import { Component, computed, input, output, TemplateRef, ViewEncapsulation } fr
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
-import { PartTreeComponent, PartTreeLayer } from '../part-tree/part-tree.component';
+import { PartTree, PartTreeComponent } from '../part-tree/part-tree.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 
 export type InventoryPageState = 'open' | 'approvable' | 'approved' | 'loading';
 
-export const INVENTORY_PAGE_TREE: PartTreeLayer[] = [
-  { title: 'Foundations', open: false, parts: [] },
-  { title: 'Elements', open: false, parts: [] },
-  { title: 'Components', open: false, parts: [] },
-  {
-    title: 'Pages',
-    open: true,
-    parts: [{ name: 'flows', leaf: true, selected: true }, { name: 'inbox' }, { name: 'system' }],
-  },
-];
+export const INVENTORY_PAGE_TREE: PartTree = {
+  layers: [
+    { title: 'Foundations', open: false, parts: [] },
+    { title: 'Elements', open: false, parts: [] },
+    { title: 'Components', open: false, parts: [] },
+    {
+      title: 'Pages',
+      open: true,
+      parts: [{ name: 'flows', selected: true }, { name: 'inbox' }, { name: 'system' }],
+    },
+  ],
+};
 
 export type InventoryPageStatus = 'declared' | 'owned' | 'undeclared' | 'unclassified';
 
@@ -97,7 +99,9 @@ const FRAME_SCALE = 0.5;
     <ethlete-shell-page [shell]="shell()" (action)="shellAction.emit($event)" section="System">
       <div class="-m-space-2 h-[calc(100%+var(--space-2)*2)] overflow-y-auto p-space-2" shellMainSide>
         <ethlete-part-tree
-          [layers]="tree()"
+          [layers]="tree().layers"
+          [sketches]="tree().sketches"
+          [legacy]="tree().legacy"
           (expandedChange)="expandedChange.emit($event)"
           (activate)="pick.emit($event)"
         />

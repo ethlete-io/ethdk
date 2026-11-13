@@ -18,7 +18,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS, TreeNode } from '@ethlete/components';
-import { PartTreeComponent, PartTreeLayer, PartTreePart } from '../design-parts/part-tree/part-tree.component';
+import { PartTree, PartTreeComponent, PartTreePart } from '../design-parts/part-tree/part-tree.component';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { EMPTY, catchError, debounceTime, finalize, from, map, of, scan, switchMap } from 'rxjs';
 import {
@@ -61,6 +61,7 @@ import {
   sketchKeyOf,
   isSketchKey,
   pickedPartKeyOf,
+  sketchLabelOf,
   treeOf,
 } from './system-tree';
 import { commentDraftOf, otherSizeFrameOf, pinsOf } from './comment-pins';
@@ -125,7 +126,9 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
   template: `
     <ng-template #sideTree>
       <ethlete-part-tree
-        [layers]="partTreeLayers()"
+        [layers]="partTree().layers"
+        [sketches]="partTree().sketches"
+        [legacy]="partTree().legacy"
         [label]="LABELS.designSystem"
         (expandedChange)="rememberOpen($event)"
         (activate)="activate($event)"
@@ -318,7 +321,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     } @else if (callPage(); as shown) {
       <ethlete-system-page
         [shell]="pageShell()"
-        [layers]="partTreeLayers()"
+        [tree]="partTree()"
         [call]="shown"
         [themeSwitches]="themeSwitches()"
         (markTransferred)="markTransferred($event)"
@@ -928,31 +931,62 @@ export class SystemViewComponent {
     ]);
   });
 
-  protected partTreeLayers = computed<PartTreeLayer[]>(() => {
+  protected partTree = computed<PartTree>(() => {
     const open = new Set(this.expandedValues());
     const selected = this.selectedKey();
-    const partOf = (entry: TreeEntry): PartTreePart => ({
-      name: entry.name,
+    const marksOf = (entry: TreeEntry) => ({
       key: entry.key,
       selected: entry.key === selected,
       ...(entry.badges.includes('error') ? { warns: entry.title ?? true } : {}),
-      ...(entry.frames
-        ? { open: open.has(entry.key), states: entry.frames.map(({ key, name }) => ({ key, name })) }
-        : { leaf: true }),
     });
+    const partOf = (entry: TreeEntry): PartTreePart => ({ name: entry.name, ...marksOf(entry) });
     const sectionOf = (section: TreeSection): PartTreePart => ({
       name: section.label,
       key: section.key,
       open: open.has(section.key),
-      states: section.entries.map(({ key, name }) => ({ key, name, selected: key === selected })),
+      nested: section.entries.map(partOf),
     });
+    const tree = this.tree();
+    const sketches = tree.find((group) => group.key === 'sketches');
+    const legacy = tree.find((group) => group.key === 'legacy');
 
-    return this.tree().map((group) => ({
-      title: group.label,
-      key: group.key,
-      open: open.has(group.key),
-      parts: [...group.entries.map(partOf), ...(group.sections ?? []).map(sectionOf)],
-    }));
+    return {
+      ...(sketches
+        ? {
+            sketches: {
+              key: sketches.key,
+              open: open.has(sketches.key),
+              items: sketches.entries.map((entry) => ({
+                ...sketchLabelOf(entry.key),
+                ...marksOf(entry),
+                status: entry.badges.includes('ready') ? ('ready' as const) : ('in-progress' as const),
+              })),
+            },
+          }
+        : {}),
+      layers: tree
+        .filter((group) => group !== sketches && group !== legacy)
+        .map((group) => ({
+          title: group.label,
+          key: group.key,
+          open: open.has(group.key),
+          parts: [...group.entries.map(partOf), ...(group.sections ?? []).map(sectionOf)],
+        })),
+      ...(legacy
+        ? {
+            legacy: {
+              key: legacy.key,
+              open: open.has(legacy.key),
+              projects: (legacy.sections ?? []).map((section) => ({
+                name: section.label,
+                key: section.key,
+                open: open.has(section.key),
+                calls: section.entries.map(partOf),
+              })),
+            },
+          }
+        : {}),
+    };
   });
 
   public placeableFrames = computed(() => placeableFramesOf(this.frames()));
@@ -964,7 +998,7 @@ export class SystemViewComponent {
   public panel = signal<'open' | 'hidden'>('open');
 
   protected pageShell = computed<PageShell>(() => ({
-    tree: this.partTreeLayers(),
+    tree: this.partTree(),
     product: this.product()?.name ?? '',
     products: this.productNames(),
     project: this.project(),

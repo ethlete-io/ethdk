@@ -4127,13 +4127,14 @@ Escape and Abbrechen keep the sketch; only Verwerfen in the confirm posts the di
 in design-parts/sketches). It is the only "Verwerfen" in the app; the comment draft's Abbrechen (system page, inbox) has
 no confirm: it is a cancel, not a Verwerfen, and Escape also runs it, so a confirm would sit in the way of every draft.
 No drawing changed: the confirm only opens on a click, `design check --part pages/sketches` reports no visible change.
-Verified: unit spec "discards only after the confirm, and Abbrechen keeps the sketch" red without the confirm; e2e case
-"a sketch discarded while its view is open opens the part view of the target" now opens the confirm, dismisses it with
-Escape and with Abbrechen (focus on Abbrechen each time), then confirms; red without the confirm. Not verified: the
-Tauri window (headless Chromium only), a screen reader.
+Verified: unit spec and e2e case red without the confirm (Escape, Abbrechen, then confirm). Not verified: Tauri, a
+screen reader.
 
 A2 as built (2026-11-13, 30f13ee56): title search click or Ctrl+K opens the SDK command palette; no drawn "neu zeichnen"
 command; first Esc clears. Verified specs, typecheck, lint; no live shot.
 
 A7 as built (2026-11-13, commit "Drag the side panel width"): shell-main edge handle (core `etDragHandle`, role separator, arrows ±8 px, 200-400 px, `sideWidth` model persisted in the remembered view).
 Verified: specs, lint, typecheck, live shots (rest, hover, drag 312 px col-resize, min, max, focus, reload); DROPPED-PROP sideWidth gone. Not verified: Tauri window, touch, design compare.
+
+A36 as built (2026-11-13, part-tree@parts-only a): part-tree takes `layers`, `sketches`, `legacy`; no states, hosts nest `nested` parts; Sketches first (`part@name`, status mark), Legacy last with one section per project, calls by slug.
+Not built: the pencil (shell-main follow-up), nested parts in the listing (no host relation yet).
