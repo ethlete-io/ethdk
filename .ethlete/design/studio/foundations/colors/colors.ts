@@ -6,7 +6,7 @@ type Group = 'surfaces' | 'accent' | 'warning' | 'error';
 const groups: Record<Group, { title: string; owns: (name: string) => boolean }> = {
   surfaces: {
     title: 'Surfaces and text',
-    owns: (name) => /^surface(-|$)/.test(name) || /^text(-muted|-subtle)?$/.test(name),
+    owns: (name) => /^(on-)?surface(-|$)/.test(name) || /^text(-muted|-subtle)?$/.test(name),
   },
   accent: { title: 'Accent', owns: (name) => /^(accent|on-accent|focus-ring)/.test(name) },
   warning: { title: 'Warning', owns: (name) => /^(on-)?warning/.test(name) },
@@ -22,8 +22,9 @@ const fillsOf = (kind: string) => [`--${kind}`, `--${kind}-hover`, `--${kind}-ac
 const ratiosOf = (name: string): { on: string[]; needs: number | null; ink: boolean } | null => {
   if (/^surface(-dark-elevated(-2)?|-shadow)?$/.test(name) || /^(accent|warning|danger)-subtle$/.test(name))
     return null;
+  if (name === 'on-surface-disabled') return { on: ['--surface-disabled'], needs: 3, ink: true };
   const onDisabled = /^on-(accent|warning|danger)-disabled$/.exec(name);
-  if (onDisabled) return { on: [`--${onDisabled[1]}-disabled`], needs: null, ink: true };
+  if (onDisabled) return { on: [`--${onDisabled[1]}-disabled`], needs: 3, ink: true };
   const onFill = /^on-(accent|warning|danger)$/.exec(name);
   if (onFill) return { on: fillsOf(onFill[1] ?? ''), needs: 4.5, ink: true };
   if (name === 'surface-border' || name.endsWith('-disabled')) return { on: surfaceTokens, needs: null, ink: false };
@@ -72,6 +73,8 @@ const fillRatios = (root: HTMLElement) => {
 const swatchOf = (name: string) => {
   if (name === 'surface-shadow') return html`<span class="co-shadow"></span>`;
   if (name === 'focus-ring') return html`<span class="co-ring">Focus</span>`;
+  if (name === 'on-surface-disabled')
+    return html`<span class="co-fill co-fill--surface co-fill--disabled" aria-disabled="true">Disabled</span>`;
   const stateFill = /^on-(accent|warning|danger)-disabled$/.exec(name);
   if (stateFill)
     return html`<span class="co-fill co-fill--${stateFill[1]} co-fill--disabled" aria-disabled="true">Disabled</span>`;
@@ -91,6 +94,10 @@ const surfaceCard = (surface: string) =>
     <span>Text on ${surface}</span>
     <span class="co-muted">Muted on ${surface}</span>
     <span class="co-subtle-text">Subtle on ${surface}</span>
+    <span class="co-cluster"
+      ><span class="co-fill co-fill--surface">Enabled</span
+      ><span class="co-fill co-fill--surface co-fill--disabled" aria-disabled="true">Disabled</span></span
+    >
   </div>`;
 
 const accentCard = (surface: string) =>
@@ -218,6 +225,8 @@ export default definePart<{ group: Group }>({
         .co-fill--disabled { background: var(--accent-disabled); color: var(--on-accent-disabled); }
         .co-fill--warning.co-fill--disabled { background: var(--warning-disabled); color: var(--on-warning-disabled); }
         .co-fill--danger.co-fill--disabled { background: var(--danger-disabled); color: var(--on-danger-disabled); }
+        .co-fill--surface { background: var(--text-muted); color: var(--surface); }
+        .co-fill--surface.co-fill--disabled { background: var(--surface-disabled); color: var(--on-surface-disabled); }
         .co-subtle-text { color: var(--text-subtle); }
         .co-trows { align-self: stretch; display: flex; flex-direction: column; }
         .co-trow { display: flex; align-items: center; gap: var(--space-2); height: var(--row); padding: 0 var(--space-2); }
