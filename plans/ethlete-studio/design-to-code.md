@@ -3824,10 +3824,8 @@ merge. After the pick: `sketch-view.component.ts:453` groups `compare.unchanged`
 of parts, with a biting spec.
 
 A24 app (Linux, 2026-11-12, as built): the merge page draws one disclosure per part (design b, 2014b27cd);
-`MergeUnchanged` is a list of `{ part, states }`, sketch-view groups `compare.unchanged` by part, the label says
-"1 Zustand" for one state. All groups share the `unchanged` toggle, as the design's one prop states. Verified: two
-biting specs (merge, sketch-view), compare open/unchanged-open/added/merging ok; merge-error DIFF 2 px at the Merge
-button corners also fails at HEAD (known). Not verified: the real merge page against a live compare.
+groups share one `unchanged` toggle. Verified: two biting specs; merge-error DIFF 2 px also at HEAD (known). Not
+verified: a live compare.
 
 921 update (Mac, b9802b4d6): the pages/sketches all-states sketch is ready, not merged. Variant a: no fold prop; the
 unchanged states fold from the rows in every state except while comparing (what the app already does); 18 narrow states
@@ -4139,3 +4137,6 @@ Verified: unit spec "discards only after the confirm, and Abbrechen keeps the sk
 "a sketch discarded while its view is open opens the part view of the target" now opens the confirm, dismisses it with
 Escape and with Abbrechen (focus on Abbrechen each time), then confirms; red without the confirm. Not verified: the
 Tauri window (headless Chromium only), a screen reader.
+
+A2 as built (2026-11-13, 30f13ee56): title search click or Ctrl+K opens the SDK command palette; no drawn "neu zeichnen"
+command; first Esc clears. Verified specs, typecheck, lint; no live shot.
