@@ -111,7 +111,14 @@
         </button>
       }
       @if (discardable()) {
-        <button [color]="errorTheme()" (click)="discard.emit()" et-button type="button" variant="transparent" size="sm">
+        <button
+          [color]="errorTheme()"
+          (click)="confirmDiscard($event)"
+          et-button
+          type="button"
+          variant="transparent"
+          size="sm"
+        >
           {{ LABELS.discard }}
         </button>
       }

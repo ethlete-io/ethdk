@@ -738,6 +738,57 @@ const goneSketchLeavesToThePart = async (page, { designPort }, target, decide) =
   };
 };
 
+const openDiscardConfirm = async (page) => {
+  await page.locator('ethlete-sketches button', { hasText: 'Verwerfen' }).first().click();
+
+  return page
+    .locator('[role="alertdialog"]')
+    .waitFor({ timeout: 5000 })
+    .then(
+      () => true,
+      () => false,
+    );
+};
+
+const discardAsksFirst = async (page) => {
+  const dismissals = [
+    ['Escape', () => page.keyboard.press('Escape')],
+    ['Abbrechen', () => page.locator('[role="alertdialog"] [data-sk-discard-cancel]').click()],
+  ];
+
+  for (const [how, dismiss] of dismissals) {
+    if (!(await openDiscardConfirm(page))) return { ok: false, detail: 'Verwerfen discarded without a confirm' };
+
+    const focused = await page
+      .waitForFunction(() => document.activeElement?.hasAttribute('data-sk-discard-cancel'), null, { timeout: 3000 })
+      .then(
+        () => true,
+        () => false,
+      );
+    const confirm = await page.evaluate(() => ({
+      text: [...document.querySelectorAll('[role="alertdialog"]')]
+        .map((dialog) => dialog.textContent.replace(/\s+/g, ' ').trim())
+        .join(' | '),
+      active: document.activeElement?.outerHTML.slice(0, 160) ?? 'none',
+    }));
+
+    if (!focused)
+      return {
+        ok: false,
+        detail: `the confirm does not focus Abbrechen: "${confirm.text}", focus on ${confirm.active}`,
+      };
+
+    await dismiss();
+    await page.locator('[role="alertdialog"]').waitFor({ state: 'detached', timeout: 5000 });
+    await page.waitForTimeout(1000);
+
+    if (!(await page.locator('ethlete-sketch-view').count()))
+      return { ok: false, detail: `${how} on the confirm ("${confirm.text}") discarded the sketch` };
+  }
+
+  return { ok: true };
+};
+
 const EDIT_PART = 'components/comment-row';
 const EDIT_LABEL = { before: 'font-ui-medium">${c.author}</span>', after: 'font-ui-medium">${c.author}:</span>' };
 const EDIT_WAIT_MS = 120000;
@@ -966,12 +1017,18 @@ const CASES = [
     listingMayPend:
       'the evidence is the view leaving to the part view after the discard, which does not wait for a listing',
     pages: ['Discard'],
-    run: (page, _state, target, context) =>
-      goneSketchLeavesToThePart(page, context, target, async () => {
-        await page.locator('ethlete-sketches button', { hasText: 'Verwerfen' }).first().click();
+    run: async (page, _state, target, context) => {
+      const kept = await discardAsksFirst(page);
+
+      if (!kept.ok) return kept;
+
+      return goneSketchLeavesToThePart(page, context, target, async () => {
+        await openDiscardConfirm(page);
+        await page.locator('[role="alertdialog"] [data-sk-discard-confirm]').click();
 
         return { ok: true };
-      }),
+      });
+    },
   },
   {
     name: 'wheel and ctrl-wheel over a frame centre move the camera',

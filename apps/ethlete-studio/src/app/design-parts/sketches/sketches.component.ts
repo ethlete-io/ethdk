@@ -9,9 +9,11 @@ import {
   inject,
   Injector,
   input,
+  inputBinding,
   linkedSignal,
   model,
   output,
+  outputBinding,
   signal,
   TemplateRef,
   untracked,
@@ -22,12 +24,14 @@ import {
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, filter, from, map, Subject, tap } from 'rxjs';
 import {
+  anchoredDialogOverlayStrategy,
   BADGE_IMPORTS,
   BUTTON_IMPORTS,
   CHOICE_FIELD_IMPORTS,
   FORM_FIELD_IMPORTS,
   SELECT_IMPORTS,
   SWITCH_IMPORTS,
+  injectOverlayManager,
   TOOLTIP_IMPORTS,
 } from '@ethlete/components';
 import {
@@ -42,6 +46,7 @@ import { FrameZoom, frameZoomCamera } from '../../components/design-canvas/frame
 import { mountFrameZoomViewport } from '../../components/design-canvas/frame-zoom-viewport';
 import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.component';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { SketchDiscardConfirmComponent } from './sketch-discard-confirm.component';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
 import { CommentPinComponent } from '../comment-pin/comment-pin.component';
 import { DisclosureComponent } from '../disclosure/disclosure.component';
@@ -185,6 +190,7 @@ export class SketchesComponent {
   private document = inject(DOCUMENT);
   private injector = inject(Injector);
   private renderer = injectRenderer();
+  private overlay = injectOverlayManager();
   public shell = input<ShellState>(SHELL_SAMPLE);
   public camera = input<'fit' | '100' | Camera>('fit');
   public restoredCamera = input<Camera | null>(null);
@@ -554,6 +560,23 @@ export class SketchesComponent {
 
   protected pinOf(key: string) {
     return this.pins().find((pin) => pin.variant === key);
+  }
+
+  protected confirmDiscard(event: MouseEvent) {
+    const ref = this.overlay.open(SketchDiscardConfirmComponent, {
+      origin: event,
+      role: 'alertdialog',
+      ariaLabel: this.LABELS.discardConfirm.label,
+      autoFocus: '[data-sk-discard-cancel]',
+      strategies: anchoredDialogOverlayStrategy(),
+      bindings: [
+        inputBinding('part', this.part),
+        outputBinding('confirm', () => {
+          ref.close();
+          this.discard.emit();
+        }),
+      ],
+    });
   }
 
   protected selectRound(value: unknown) {

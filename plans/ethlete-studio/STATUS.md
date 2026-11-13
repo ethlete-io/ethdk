@@ -253,7 +253,6 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 - **A19** Inbox: echte Benutzer statt „Du“, Zustand „unterbrochen“, echte Fehlermeldung (Q18, Q19, Q26).
 - **A20** Eigener Baum für Flows; Abschnitte im Teil-Baum (Q22, Q60).
 - **A22** Flows: Pins, Notizen (verschieben per Ziehen, Liste verwaister Notizen), Entwürfe, `jumpTo`; richtiges Seitenverhältnis je Preset; der eine Canvas (Q66, Q75, Q125).
-- **A23** „Verwerfen“ mit Rückfrage (Q70).
 - **A25** Chat, Notizen und Knöpfe oben rechts kommen zurück, je mit Entwurf (Q81). Chat zeigt den Zustand des Agenten
   (arbeitet, wartet, unterbrochen, fehlgeschlagen) mit Stopp und Fortsetzen, Anmeldung in Studio, Verweis auf Teil,
   Sketch oder Kommentar (designer-workflow.md, Abschnitt 1).

@@ -44,6 +44,13 @@ export const STUDIO_LABELS = {
   },
   sketches: {
     discard: 'Verwerfen',
+    discardConfirm: {
+      label: 'Skizze verwerfen',
+      question: (part: string) => `Skizze ${part} verwerfen?`,
+      note: 'Alle Varianten der Skizze gehen verloren.',
+      cancel: 'Abbrechen',
+      confirm: 'Verwerfen',
+    },
     merge: 'Übernehmen',
     mergeHold: ({ reason, dirty }: { reason: string; dirty?: string[] }) =>
       dirty?.length

@@ -326,6 +326,39 @@ describe('SketchesComponent', () => {
     expect(buttons((await render({ part: 'components/card@edit' })).nativeElement)).not.toContain(LABELS.discard);
   });
 
+  it('discards only after the confirm, and Abbrechen keeps the sketch', async () => {
+    const fixture = await render({ part: 'components/card' });
+    const discarded = vi.fn();
+    const discardButton = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('header button'),
+    ].find((button) => textOf(button) === LABELS.discard);
+    const open = async () => {
+      discardButton?.click();
+      await fixture.whenStable();
+
+      return [...document.querySelectorAll<HTMLElement>('[role="alertdialog"]')].at(-1);
+    };
+    const press = async (selector: string) => {
+      [...document.querySelectorAll<HTMLElement>(selector)].at(-1)?.click();
+      await fixture.whenStable();
+    };
+
+    fixture.componentInstance.discard.subscribe(discarded);
+
+    const dialog = await open();
+
+    expect(textOf(dialog)).toContain(LABELS.discardConfirm.question('components/card'));
+    expect(textOf(dialog)).toContain(LABELS.discardConfirm.note);
+    expect(discarded).not.toHaveBeenCalled();
+
+    await press('[data-sk-discard-cancel]');
+    expect(discarded).not.toHaveBeenCalled();
+
+    await open();
+    await press('[data-sk-discard-confirm]');
+    expect(discarded).toHaveBeenCalledTimes(1);
+  });
+
   it('shows In Arbeit and the drawing placeholder for the drawn variant', async () => {
     const root: HTMLElement = (await render({ status: 'drawing', drawn: 'x' })).nativeElement;
 

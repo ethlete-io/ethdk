@@ -142,6 +142,12 @@ const noComments = (url: string) =>
 const buttonNamed = (root: HTMLElement, name: string) =>
   [...root.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === name);
 
+const discardConfirmed = async (root: HTMLElement, fixture: ComponentFixture<unknown>) => {
+  buttonNamed(root, 'Verwerfen')?.click();
+  await fixture.whenStable();
+  [...document.querySelectorAll<HTMLElement>('[data-sk-discard-confirm]')].at(-1)?.click();
+};
+
 const LIST_WIDTH = 10000;
 
 const configure = () =>
@@ -755,7 +761,7 @@ describe('SketchViewComponent', () => {
       return url.includes('/__design/sketch-discard') ? json({}) : noComments(url);
     });
 
-    buttonNamed(root, 'Verwerfen')?.click();
+    await discardConfirmed(root, fixture);
     await settle(fixture);
 
     expect(asked.some((url) => url.includes('/__design/sketch-discard'))).toBe(true);
@@ -774,20 +780,20 @@ describe('SketchViewComponent', () => {
     });
     const errorText = () => root.querySelector('ethlete-sketches [role="alert"]')?.textContent?.trim();
 
-    buttonNamed(root, 'Verwerfen')?.click();
+    await discardConfirmed(root, fixture);
     await settle(fixture);
 
     expect(errorText()).toContain('is in progress - a variant is picked once it is ready');
     expect(fixture.componentInstance['busy']()).toBeNull();
 
     refuse = false;
-    buttonNamed(root, 'Verwerfen')?.click();
+    await discardConfirmed(root, fixture);
     await settle(fixture);
 
     expect(errorText()).toBeUndefined();
 
     refuse = true;
-    buttonNamed(root, 'Verwerfen')?.click();
+    await discardConfirmed(root, fixture);
     await settle(fixture);
 
     expect(errorText()).toContain('is in progress');
