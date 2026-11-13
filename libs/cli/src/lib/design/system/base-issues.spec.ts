@@ -30,8 +30,8 @@ const write = (root: string, files: Record<string, string>) => {
   }
 };
 
-const offCentre = (state: string, detail = 'the text sits 1.0px high in its box'): RenderIssue => ({
-  rule: 'OFF-CENTRE',
+const clipped = (state: string, detail = 'the text is cut 1.0px at the bottom'): RenderIssue => ({
+  rule: 'CLIPPED',
   product: 'studio',
   part: 'elements/canvas-frames',
   state,
@@ -58,7 +58,7 @@ describe('oldRenderIssuesOf', () => {
       'design/other/part.ts': 'a',
       '.gitignore': 'node_modules\n',
     });
-    const issues = [offCentre('rounds'), offCentre('round-folded')];
+    const issues = [clipped('rounds'), clipped('round-folded')];
 
     write(root, { 'design/other/part.ts': 'b' });
 
@@ -67,13 +67,13 @@ describe('oldRenderIssuesOf', () => {
 
   it('marks only the issues the stored base shows once the working tree changes the part', () => {
     const root = repoWith({ 'design/canvas-frames/part.ts': 'a', '.gitignore': 'node_modules\n' });
-    const shown = offCentre('rounds');
+    const shown = clipped('rounds');
 
     runOf(root, [shown]);
     write(root, { 'design/canvas-frames/part.ts': 'b' });
 
-    const again = offCentre('round-folded');
-    const added = offCentre('rounds', 'an icon sticks 1.0px out of the box');
+    const again = clipped('round-folded');
+    const added = clipped('rounds', 'the text is cut 2.0px at the bottom');
 
     expect([...runOf(root, [again, added])]).toEqual([again]);
   });
@@ -81,12 +81,12 @@ describe('oldRenderIssuesOf', () => {
   it('drops the stored base once a commit changes the part', () => {
     const root = repoWith({ 'design/canvas-frames/part.ts': 'a', '.gitignore': 'node_modules\n' });
 
-    runOf(root, [offCentre('rounds')]);
+    runOf(root, [clipped('rounds')]);
     write(root, { 'libs/components/button.css': 'b' });
     git(root, 'add', '.');
     git(root, 'commit', '-q', '-m', 'sdk');
     write(root, { 'design/canvas-frames/part.ts': 'b' });
 
-    expect(runOf(root, [offCentre('rounds')]).size).toBe(0);
+    expect(runOf(root, [clipped('rounds')]).size).toBe(0);
   });
 });

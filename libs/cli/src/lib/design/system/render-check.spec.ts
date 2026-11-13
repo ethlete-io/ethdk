@@ -192,45 +192,6 @@ describe('renderIssuesOf', () => {
     expect('hints' in complete && complete.hints?.some((hint) => hint.includes('OPTION-VALUE-MISSING'))).toBe(true);
   }, 120_000);
 
-  it('flags a disabled control whose hover or active look differs, and not one with the guard', async (context) => {
-    const button = '<button disabled style="border: 1px solid">Save</button>';
-    const target = checkout({
-      'components/open': { body: button, css: 'button { background: white; } button:hover { background: red; }' },
-      'components/guarded': {
-        body: button,
-        css: 'button { background: white; } button:not([disabled]):hover { background: red; }',
-      },
-      'components/active-open': {
-        body: '<button aria-disabled="true">Save</button>',
-        css: 'button:active { transform: scale(0.9); }',
-      },
-    });
-    const config = readConfig(target) ?? {};
-
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
-
-    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
-
-    expect(
-      rendered.issues
-        .filter((issue) => issue.rule === 'DISABLED-INTERACTION')
-        .map((issue) => [issue.part, issue.detail])
-        .sort(),
-    ).toEqual([
-      [
-        'components/active-open',
-        'hover/active styles apply while disabled - add a :not([disabled]) guard (changes transform)',
-      ],
-      [
-        'components/open',
-        'hover/active styles apply while disabled - add a :not([disabled]) guard (changes backgroundColor)',
-      ],
-    ]);
-  }, 120_000);
-
   it('aims an anchored arrow in the frame, reports a tip that cannot reach its anchor and a hand-moved arrow', async (context) => {
     const drawn = (attributes: string, arrow: string, buttonLeft = 100) =>
       `<div style="padding: 8px"><button id="go" style="display: block; margin-left: ${buttonLeft}px; box-sizing: border-box; width: 40px; height: 20px; padding: 0; border: 0">Go</button><div class="et-anchored-dialog-mock" data-overlay-placement="bottom-start" ${attributes} style="position: relative; width: 200px; height: 60px; margin-top: 10px"><div class="et-overlay-arrow" style="position: absolute; top: -10px; width: 20px; height: 20px; transform: var(--et-floating-arrow-translate); ${arrow}"></div></div></div>`;
@@ -259,46 +220,6 @@ describe('renderIssuesOf', () => {
       ['components/arrow-by-hand', expect.stringContaining('moved by hand')],
       ['components/arrow-lost', 'the arrow anchor "#gone" matches no drawn element'],
       ['components/arrow-out-of-reach', 'the arrow tip is 146px left of the centre of "#go"'],
-    ]);
-  }, 120_000);
-
-  it('flags a single line of text off the vertical centre of its pill, and an icon out of the pill', async (context) => {
-    const pill = (padding: string, inner = 'Ready') =>
-      `<div style="padding: 8px"><span style="display: inline-block; font: 12px/12px sans-serif; padding: ${padding}; background: rgb(20, 120, 60); color: white; border-radius: 99px">${inner}</span></div>`;
-    const target = checkout({
-      'components/pill-centred': { body: pill('4px 8px') },
-      'components/pill-high': { body: pill('1px 8px 7px') },
-      'components/pill-icon-out': {
-        body: `<div style="padding: 8px"><span style="display: inline-flex; align-items: center; gap: 4px; height: 20px; font: 12px/12px sans-serif; padding: 0 8px; background: rgb(20, 120, 60); color: white"><svg style="flex: none; width: 24px; height: 24px"></svg>Ready</span></div>`,
-      },
-      'components/pill-trimmed-inline-flex': {
-        body: `<div style="padding: 8px"><span style="display: inline-block; text-box: trim-both cap alphabetic; font: 12px/16px sans-serif; padding: 4px 8px; background: rgb(20, 120, 60); color: white"><span style="display: inline-flex; align-items: center; gap: 4px"><svg style="width: 12px; height: 12px"></svg>Ready</span></span></div>`,
-      },
-      'components/pill-trimmed-flex': {
-        body: `<div style="padding: 8px"><span style="display: inline-block; font: 12px/16px sans-serif; padding: 4px 8px; background: rgb(20, 120, 60); color: white"><span style="display: flex; align-items: center; gap: 4px"><svg style="flex: none; width: 12px; height: 12px"></svg><span style="text-box: trim-both cap alphabetic">Ready</span></span></span></div>`,
-      },
-      'components/pill-card': {
-        body: pill('1px 8px 40px', 'Title<div style="height: 30px; background: rgb(0, 0, 0)"></div>'),
-      },
-    });
-    const config = readConfig(target) ?? {};
-
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
-
-    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
-
-    expect(
-      rendered.issues
-        .filter((issue) => issue.rule === 'OFF-CENTRE')
-        .map((issue) => [issue.part, issue.detail.split(';')[0]])
-        .sort(),
-    ).toEqual([
-      ['components/pill-high', expect.stringMatching(/^the text sits [\d.]+px high in its box/u)],
-      ['components/pill-icon-out', expect.stringMatching(/^an icon sticks [\d.]+px out of the box$/u)],
-      ['components/pill-trimmed-inline-flex', expect.stringMatching(/^the text sits [\d.]+px high in its box/u)],
     ]);
   }, 120_000);
 
@@ -359,48 +280,6 @@ describe('renderIssuesOf', () => {
       ['components/xs-kbd', 'renders 25.25px high, its token --control-sm is 24px'],
       ['components/xs-kbd-thumb', 'renders 25.25px high, its token --control-sm is 24px'],
     ]);
-  }, 120_000);
-
-  it('does not flag text whose centre the box does not set', async (context) => {
-    const fill = 'background: rgb(20, 120, 60); color: white';
-    const target = checkout({
-      'components/high': {
-        body: `<div style="padding: 8px"><span style="display: inline-block; font: 12px/12px sans-serif; padding: 1px 8px 7px; ${fill}">Ready</span></div>`,
-      },
-      'components/scaled': {
-        body: `<div style="padding: 8px; transform: scale(0.25); transform-origin: 0 0"><span style="display: inline-block; font: 40px/40px sans-serif; padding: 16px 24px; ${fill}">Ready</span></div>`,
-      },
-      'components/underlined': {
-        body: `<div style="padding: 8px"><span style="display: block; font: 12px/12px sans-serif; padding: 0 0 12px; border-bottom: 1px solid rgb(0, 0, 0)">Section</span></div>`,
-      },
-      'components/line-filled': {
-        body: `<div style="padding: 8px"><span style="display: inline-block; font: 40px/40px sans-serif; ${fill}"><span style="position: relative; top: 6px">Ready</span></span></div>`,
-      },
-      'components/top-aligned': {
-        body: `<div style="padding: 8px"><span style="display: flex; align-items: flex-start; height: 48px; font: 12px/12px sans-serif; padding: 4px 8px; ${fill}">Daily sync</span></div>`,
-      },
-      'components/visually-hidden': {
-        body: `<div style="padding: 8px; transform: scale(0.2); transform-origin: 0 0"><span style="display: inline-block; position: relative; box-sizing: border-box; height: 120px; font: 60px/80px sans-serif; padding: 20px 40px; ${fill}">Search<span style="position: absolute; top: 45px; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap">Control K</span></span></div>`,
-      },
-      'components/with-input': {
-        body: `<div style="padding: 8px"><label style="display: block; position: relative; width: 200px; font: 12px/12px sans-serif; padding: 4px 8px 32px; ${fill}">Name<input value="Ada" style="position: absolute; left: 8px; top: 10px; height: 30px; margin: 0; border: 0; padding: 0; font: 16px/30px sans-serif" /></label></div>`,
-      },
-    });
-    const config = readConfig(target) ?? {};
-
-    vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
-
-    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
-
-    expect(
-      rendered.issues
-        .filter((issue) => issue.rule === 'OFF-CENTRE')
-        .map((issue) => issue.part)
-        .sort(),
-    ).toEqual(['components/high']);
   }, 120_000);
 
   it('does not flag a visually hidden span inside a button as clipped', async (context) => {

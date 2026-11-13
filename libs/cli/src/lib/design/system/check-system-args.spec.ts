@@ -52,9 +52,9 @@ describe('checkDesign', () => {
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
     expect(lines).toContain('HARD-CODED-COLOUR 1');
     expect(lines).toContain('CONTROL-STATE 0');
-    expect(lines).toContain('OFF-CENTRE 0');
+    expect(lines).toContain('CONTROL-HEIGHT 0');
     expect(lines.at(-1)).toBe('check complete: 4 parts, 1 finding');
-    expect(lines.indexOf('OFF-CENTRE 0')).toBeGreaterThan(lines.findIndex((line) => line.startsWith('PARTS ')));
+    expect(lines.indexOf('CONTROL-HEIGHT 0')).toBeGreaterThan(lines.findIndex((line) => line.startsWith('PARTS ')));
   });
 
   it('keeps only the findings of one part with --part', async () => {

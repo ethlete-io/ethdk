@@ -7,9 +7,7 @@ import { DesignConfig } from '../design-config';
 import { viteCacheOf } from '../vite-cache';
 import { ColorScheme, schemesOf } from './color-scheme';
 import { introducedControlStateGapsOf, PLAIN_CONTROL_SELECTOR, SDK_CONTROLS } from './complete';
-import { DISABLED_INTERACTION_STATEMENTS } from './disabled-interaction';
 import { ARROW_ANCHOR_STATEMENTS } from './arrow-anchor';
-import { OFF_CENTRE_RULE, OFF_CENTRE_STATEMENTS } from './off-centre';
 import { VISUALLY_HIDDEN_STATEMENTS } from './visually-hidden';
 import { CONTROL_HEIGHT_RULE, CONTROL_HEIGHT_STATEMENTS } from './control-height';
 import { classesOf, cssBlocksOf } from './css-source';
@@ -175,7 +173,7 @@ const ESCAPABLE = ESCAPABLE_RULES;
 export const WARNING_RULES: ReadonlySet<string> = new Set(['UNDEFINED-CLASS', 'EMBED-SCALE']);
 
 /** The render rules whose hits on merged parts the rule baseline of their product lists (ADR 0201). */
-export const BASELINED_RENDER_RULES: ReadonlySet<string> = new Set([OFF_CENTRE_RULE, CONTROL_HEIGHT_RULE]);
+export const BASELINED_RENDER_RULES: ReadonlySet<string> = new Set([CONTROL_HEIGHT_RULE]);
 
 const BUSY_SELECTOR = '[aria-busy="true"], [data-loading="true"]';
 
@@ -539,9 +537,7 @@ ${SEE_THROUGH_STATEMENTS}
       report('CONTROL-PART-INPUT', element, named + ' is a control without data-et-control, so no control check sees it - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls');
     }
 ${ARROW_ANCHOR_STATEMENTS}
-${OFF_CENTRE_STATEMENTS}
 ${CONTROL_HEIGHT_STATEMENTS}
-${DISABLED_INTERACTION_STATEMENTS}
   return found;
 })(${JSON.stringify({ ...options, escapable: ESCAPABLE, controlInputs: PLAIN_CONTROL_SELECTOR, sdkControls: SDK_CONTROLS.join(', ') })})`;
 

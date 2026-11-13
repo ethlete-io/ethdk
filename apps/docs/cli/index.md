@@ -423,7 +423,7 @@ than 0.5 px, for example `CONTROL-HEIGHT studio components/title-search default 
 (`--et-button-padding: calc((var(--control-sm) - …) / 2)`); a control whose padding another rule overrides (`p-0`), or
 that sets a fixed `height` of its own, is not judged. The height is read from the computed style, so a scaled
 thumbnail measures the same as the full size. A compare of design and app never sees this: both share the CSS, so
-both are off by the same amount. Like `OFF-CENTRE`, its hits on merged parts that predate it are listed in the
+both are off by the same amount. Its hits on merged parts that predate it are listed in the
 product's `rule-baseline.json` (ADR 0201), and `data-et-skip="CONTROL-HEIGHT"` marks one on purpose.
 
 The design server answers the same list as JSON: `GET /__design/open-points?product=` lists every part with
