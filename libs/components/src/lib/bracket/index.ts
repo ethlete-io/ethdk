@@ -98,6 +98,7 @@ export { resolveBracketLayoutSettings } from './bracket-grid';
 export type { BracketLayoutSettings } from './bracket-grid';
 export * from './bracket-labels';
 export * from './bracket-layout';
+export * from './bracket-match-inputs';
 export * from './bracket-participants.component';
 export * from './bracket-pick-card.component';
 export * from './bracket.imports';

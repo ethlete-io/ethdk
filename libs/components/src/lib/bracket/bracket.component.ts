@@ -44,6 +44,7 @@ import {
   optionalNumberAttribute,
 } from './bracket-input-transforms';
 import { BracketLayout } from './bracket-layout';
+import { BracketMatchInputs, createBracketMatchCardInputs } from './bracket-match-inputs';
 import {
   bracketHostWarningHandler,
   warnUnknownBracketRoundIds,
@@ -180,6 +181,7 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   public roundHeaderComponent = input<BracketRoundHeaderComponent<TRoundData, TMatchData> | undefined>();
   public matchComponent = input<BracketMatchComponent<TRoundData, TMatchData> | undefined>();
   public finalMatchComponent = input<BracketMatchComponent<TRoundData, TMatchData> | undefined>();
+  public matchInputs = input<BracketMatchInputs<TRoundData, TMatchData> | undefined>();
   public continueComponent = input<BracketContinueComponent<TRoundData, TMatchData> | undefined>();
 
   /**
@@ -297,6 +299,26 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
     return layout.createGrid(bracketData, options, components);
   });
+
+  protected matchCardInputs = computed(() =>
+    createBracketMatchCardInputs(
+      this.bracketGrid().columns.flatMap((column) =>
+        column.elements.flatMap((element) =>
+          element.type === 'match'
+            ? [
+                {
+                  round: element.round,
+                  match: element.match,
+                  swissGroup: element.roundSwissGroup,
+                  card: this.componentFor(element),
+                },
+              ]
+            : [],
+        ),
+      ),
+      this.matchInputs(),
+    ),
+  );
 
   /** The connectors, group borders and gradients the active layout draws for this grid. */
   public drawing = computed(() =>

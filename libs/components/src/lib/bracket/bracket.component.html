@@ -70,11 +70,7 @@
               ? { bracketRound: element.round, bracketRoundSwissGroup: element.roundSwissGroup }
               : element.type === 'continue'
                 ? { bracketMatches: element.matches }
-                : {
-                    bracketRound: element.round,
-                    bracketMatch: element.match,
-                    bracketRoundSwissGroup: element.roundSwissGroup,
-                  };
+                : matchCardInputs().get(element.match.id);
 
           @let highlightClass = element.type === 'match' ? element.classes : '';
 

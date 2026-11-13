@@ -18,12 +18,20 @@ class TestMatchComponent {
   public bracketRound = input.required<BracketRound<unknown, unknown>>();
   public bracketMatch = input.required<BracketMatch<unknown, unknown>>();
   public bracketRoundSwissGroup = input.required<BracketRoundSwissGroup<unknown, unknown> | null>();
+  public picked = input(false);
 }
+
+@Component({
+  selector: 'et-test-picked-match',
+  template: `<span [attr.data-picked]="picked()" class="test-picked-match">{{ bracketMatch().id }}</span>`,
+})
+class TestPickedMatchComponent extends TestMatchComponent {}
 
 describe('BracketRoundsListComponent', () => {
   let driver: ReturnType<typeof bracketTestDriver>;
 
   const roundNames = () => queryAll(driver.fixture, '.et-bracket-default-round-header-name').map(textOf);
+  const firstMatchId = () => driver.host.source().matches[0]?.id;
   const matchCount = () => queryAll(driver.fixture, '.et-bracket-rounds-list-match').length;
 
   beforeEach(() => {
@@ -84,6 +92,16 @@ describe('BracketRoundsListComponent', () => {
 
     // The final keeps its own card - only the ordinary cells were overridden.
     expect(queryAll(driver.fixture, '.test-match').length).toBe(6);
+  });
+
+  it('passes matchInputs to a matchComponent of your own', () => {
+    driver.host.matchComponent.set(TestPickedMatchComponent);
+    driver.host.matchInputs.set((match) => ({ picked: match.id === firstMatchId() }));
+    driver.detectChanges();
+
+    const picked = queryAll(driver.fixture, '.test-picked-match[data-picked="true"]');
+
+    expect(picked.map(textOf)).toEqual([firstMatchId()]);
   });
 
   it('localizes the section headings', () => {

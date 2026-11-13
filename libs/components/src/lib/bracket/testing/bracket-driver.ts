@@ -1,3 +1,4 @@
+import { BracketMatchInputs } from '../bracket-match-inputs';
 import { Component, inject, InjectionToken, Provider, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { mountControl } from '../../testing/control-driver';
@@ -48,6 +49,7 @@ export type BracketTestDriverOptions = {
   finalRoundHeaderGap?: number | null;
   alignRoundHeaders?: BracketRoundHeaderAlign;
   matchComponent?: BracketMatchComponent<unknown, unknown>;
+  matchInputs?: BracketMatchInputs<unknown, unknown>;
   previousMatchIds?: CreateBracketOptions<unknown>['previousMatchIds'];
   providers?: Provider[];
 };
@@ -71,6 +73,7 @@ const parseTranslate = (element: HTMLElement | null) => {
         [matchNormalizer]="matchNormalizer"
         [selectedRoundId]="selectedRoundId()"
         [matchComponent]="matchComponent()"
+        [matchInputs]="matchInputs()"
         [previousMatchIds]="previousMatchIds"
       />
     } @else {
@@ -107,6 +110,7 @@ class BracketTestHost {
   public readonly finalRoundHeaderGap = signal(this.options.finalRoundHeaderGap);
   public readonly alignRoundHeaders = signal(this.options.alignRoundHeaders);
   public readonly matchComponent = signal(this.options.matchComponent);
+  public readonly matchInputs = signal(this.options.matchInputs);
   public readonly matchNormalizer = this.options.matchNormalizer ?? testBracketMatchNormalizer;
   public readonly disableJourneyHighlight = this.options.disableJourneyHighlight ?? false;
   public readonly previousMatchIds = this.options.previousMatchIds;

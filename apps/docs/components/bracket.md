@@ -538,6 +538,28 @@ export class AppMatchCardComponent {
 <et-bracket [source]="source" [matchComponent]="AppMatchCardComponent" [finalMatchComponent]="AppFinalCardComponent" />
 ```
 
+### Passing your own data to a card
+
+`[matchInputs]` (on `et-bracket` and `et-bracket-rounds-list`) gives every match card extra inputs:
+a function from the match to an object of input values. It runs in a `computed`, so a signal it reads
+re-runs it. A key the drawn card does not declare as an input is dropped, which keeps the default final
+card next to a custom match card working. `bracketRound`, `bracketMatch` and `bracketRoundSwissGroup`
+always win over a key of the same name.
+
+```ts
+protected matchInputs = (match: BracketMatch<RoundData, MatchData>) => ({
+  pickedId: this.picks().get(match.id) ?? null,
+});
+```
+
+```html
+<et-bracket [source]="source" [matchComponent]="AppMatchCardComponent" [matchInputs]="matchInputs" />
+```
+
+A card is created inside the bracket's view, so it injects whatever the component that renders
+`<et-bracket>` provides, its `viewProviders` included. Send a card's events back the same way: inject
+a service the host provides and call it, since a card's outputs have no binding.
+
 ## Prediction brackets
 
 The bracket doubles as the thing a viewer picks the winners in: `resolveBracketSlot()` reads every

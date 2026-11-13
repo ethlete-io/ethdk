@@ -22,16 +22,7 @@
         <ul class="et-bracket-rounds-list-matches">
           @for (match of block.matches; track match.id) {
             <li class="et-bracket-rounds-list-match">
-              <ng-container
-                *ngComponentOutlet="
-                  matchComponentFor(block);
-                  inputs: {
-                    bracketRound: block.round,
-                    bracketMatch: match,
-                    bracketRoundSwissGroup: block.swissGroup,
-                  }
-                "
-              />
+              <ng-container *ngComponentOutlet="matchComponentFor(block); inputs: matchCardInputs().get(match.id)" />
             </li>
           }
         </ul>

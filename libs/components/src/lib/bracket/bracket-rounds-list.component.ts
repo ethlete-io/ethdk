@@ -22,6 +22,7 @@ import {
 } from '@ethlete/bracket';
 import { MATCH_CARD_SIZES, MatchCardSize } from '../match';
 import { BracketDataSource } from './integrations';
+import { BracketMatchInputs, createBracketMatchCardInputs } from './bracket-match-inputs';
 import { BRACKET_CARD_CONTEXT, BracketMatchNormalizer } from './bracket-card-context';
 import { resolveBracketComponents, usesBracketFinalCard } from './bracket-components';
 import { injectBracketLabels } from './bracket-labels';
@@ -122,6 +123,7 @@ export class BracketRoundsListComponent<TRoundData = unknown, TMatchData = unkno
   public roundHeaderComponent = input<BracketRoundHeaderComponent<TRoundData, TMatchData> | undefined>();
   public matchComponent = input<BracketMatchComponent<TRoundData, TMatchData> | undefined>();
   public finalMatchComponent = input<BracketMatchComponent<TRoundData, TMatchData> | undefined>();
+  public matchInputs = input<BracketMatchInputs<TRoundData, TMatchData> | undefined>();
 
   /** Unused here - the list draws no continue element - and accepted so the two hosts take the same bindings. */
   public continueComponent = input<BracketContinueComponent<TRoundData, TMatchData> | undefined>();
@@ -230,6 +232,22 @@ export class BracketRoundsListComponent<TRoundData = unknown, TMatchData = unkno
   });
 
   /** The section heading sits one level above the round headers it covers. */
+  protected matchCardInputs = computed(() =>
+    createBracketMatchCardInputs(
+      this.sections().flatMap((section) =>
+        section.blocks.flatMap((block) =>
+          block.matches.map((match) => ({
+            round: block.round,
+            match,
+            swissGroup: block.swissGroup,
+            card: this.matchComponentFor(block),
+          })),
+        ),
+      ),
+      this.matchInputs(),
+    ),
+  );
+
   protected sectionHeadingLevel = computed(() => this.resolvedRoundHeaderLevel() - 1);
 
   constructor() {
