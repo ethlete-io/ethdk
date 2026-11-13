@@ -395,8 +395,7 @@ const settledEditsOf = ({
  * inputs changed and then held still for one poll, one run at a time. Before them it settles each direct edit HEAD
  * already holds, and resolves each other direct edit of a merged part that held still for one poll: it holds, or it
  * opens the old/new edit sketch. It writes neither `merged.json` nor any other file git tracks for them: the server keeps
- * a held or settled edit in memory and shows it as no open point. After a run it writes or drops the check record of each run part and its hosts, as
- * `design check` does.
+ * a held or settled edit in memory and shows it as no open point. After a run it writes or drops the check record of each run part and its hosts.
  */
 export const startSlowRunner = (options: {
   target: string;

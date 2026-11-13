@@ -33,8 +33,8 @@ export const recordedPartsOf = ({ product, settled }: { product: ResolvedProduct
 };
 
 /**
- * Writes or drops the check record of each part a settled slow run decides, as `design check` does; the open points and
- * rule problems come from the open-points worker.
+ * Writes or drops the check record of each part a settled slow run decides; the open points and rule problems come from
+ * the open-points worker.
  */
 export const recordSettledBuildReady = async (
   request: RecordSettledRequest & {

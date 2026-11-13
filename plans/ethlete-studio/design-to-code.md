@@ -2883,6 +2883,24 @@ centred error card with "missing build: pages/system" and Erneut laden, empty tr
 change-crop-whole DIFF 35643 px: the design draws mock screens with zoom chips inside the crops, the harness a blank
 stand-in, and the reason reads "3 Zellen" in the design but "3 Stellen" in the app. Not verified: compare of
 pages/system listing-error, the per-part checks (--part pages/sketches, pages/system), CI.
+
+B500 P5 red, as built (Linux builder subagent, 2026-11-13): Cause (probe): no `design check` path wrote the files; the
+design server's own slow runner did. Each `ready.json` entry carries the writer's pid, and every entry the earlier
+probe and three new ones changed carries the pid of the `yarn design` serve (3659499) and `"by": "et design check"`,
+the label `recordBuildReady` gives every record. Probes on `studio`: the serve alone, no CLI call, rewrote 2 entries
+in 5 minutes; an in-process `--part pages/system` check (`ETHLETE_DESIGN_RESIDENT=0`) wrote nothing, the 8 entries
+changed in its window all carry the serve's pid and none is `pages/system`; the same check through the serve-hosted
+resident left `git status .ethlete/design` empty. The serve is out of P5's scope: the P5 note and the docs ("`et design
+ready` and the design server write the record") keep its writes, so its behaviour is unchanged. Fix (a defect P5
+caused, ADR 0280): `withStampsInMemory` held its map in a module global, so in the serve process a serve-hosted check
+swallowed the slow runner's writes and showed it the check's own records, and of two overlapping runs the later one
+wrote to disk once the earlier ended; the map now lives in an `AsyncLocalStorage` scoped to the run. The stale "as
+`design check` does" in slow-run.ts and record-settled.ts is gone. Bite: `stamp-files.spec.ts` 2 of 3 red on the old
+code (server write during a check, run ending after an earlier one), 3 of 3 green after. Not verified: a full-product
+check through the serve with pid attribution, the fix live in the serve (its dist build predates it); the serve's
+records still read `"by": "et design check"`, which is why the probe looked like a check write (open point, serve
+scope).
+
 ci-red 1113d (finding 992) as built (Linux builder subagent, 2026-11-13): CI runs 43372815104 and 43356130738, Studio e2e
 "a part edited on disk while away shows its new picture on return" failed in its shot ETag fetch with ECONNRESET / socket
 hang up. Cause (probe): Playwright's API request agent is `http.Agent({ keepAlive: true })` with no timeout, so Node
