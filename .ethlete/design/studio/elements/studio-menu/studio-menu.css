@@ -20,8 +20,12 @@
   }
 
   .st-studio-submenu {
-    top: 120px;
+    top: 251px;
     left: calc(100% + var(--space-1));
+  }
+
+  .st-studio-help {
+    top: 279px;
   }
 
   .st-studio-trigger path {

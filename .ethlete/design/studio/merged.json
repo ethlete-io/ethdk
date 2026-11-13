@@ -69,16 +69,16 @@
     "at": "2026-11-13T10:17:15.531Z"
   },
   "elements/shell-main": {
-    "hash": "6ec78ec36bc18075",
-    "variant": "a",
+    "hash": "640c4ee70c52834c",
+    "variant": "c",
     "decidedBy": "user",
-    "at": "2026-11-13T10:15:15.543Z"
+    "at": "2026-11-13T11:00:10.421Z"
   },
   "elements/studio-menu": {
-    "hash": "9ca3b2c07fbef55d",
-    "variant": "a",
+    "hash": "9733c6c843979882",
+    "variant": "c",
     "decidedBy": "user",
-    "at": "2026-11-13T10:20:39.857Z"
+    "at": "2026-11-13T11:00:10.421Z"
   },
   "elements/variant-cell": {
     "hash": "b5d9dccbef712939",

@@ -1,7 +1,7 @@
 export const setupStudioMenu = (root: HTMLElement) => {
   const trigger = root.querySelector<HTMLButtonElement>('[data-studio-trigger]');
   const surface = root.querySelector<HTMLElement>('[data-studio-menu]');
-  const items = [...(surface?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? [])];
+  const items = [...(surface?.querySelectorAll<HTMLButtonElement>('[role^="menuitem"]') ?? [])];
 
   if (!trigger || !surface || !items.length) return;
 

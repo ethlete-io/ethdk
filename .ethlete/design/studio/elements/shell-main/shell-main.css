@@ -80,8 +80,11 @@
     border-bottom: 1px solid var(--et-surface-border-solid);
   }
 
-  .st-shell-side-foot {
-    border-top: 1px solid var(--et-surface-border-solid);
+  .st-system-picker {
+    top: calc(var(--space-3) + 48px + var(--space-1));
+    left: calc(var(--space-3) + var(--space-2));
+    box-shadow: 0 12px 32px var(--surface-shadow);
+    transform: translate3d(0, 0, 0);
   }
 
   .st-shell-content {

@@ -35,15 +35,7 @@ const SERVER_ACTIONS: Record<Server, { name: string; label: string }[]> = {
   stopped: [{ name: 'start', label: 'Design-Server starten' }],
 };
 
-export const serverRows = (server: Server, option?: MenuInteraction): MenuMockRow[] => [
+export const serverRows = (server: Server): MenuMockRow[] => [
   { kind: 'label', label: 'Design-Server' },
-  ...SERVER_ACTIONS[server].map(({ name, label }, index) => ({
-    label,
-    active: index === 0 && !!option,
-    activeSource: index === 0 && option === 'focus-visible' ? ('keyboard' as const) : undefined,
-    attributes:
-      index === 0 && option
-        ? `${action(name, 'emit:serverAction')} data-et-force="${option}"`
-        : action(name, 'emit:serverAction'),
-  })),
+  ...SERVER_ACTIONS[server].map(({ name, label }) => ({ label, attributes: action(name, 'emit:serverAction') })),
 ];

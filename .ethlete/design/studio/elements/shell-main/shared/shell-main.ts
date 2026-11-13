@@ -1,15 +1,20 @@
-import pickerStyles from './picker.css?inline';
 import { drawing, forceInteraction, html, interactionRows, slot, type Interaction, withAction } from '@design-system';
 import { button, buttonStyles } from '@ethlete/components/design/button';
 import { control } from '@ethlete/components/design/control';
-import type { MenuMockRow } from '@ethlete/components/design/menu';
-import menu from '@system/components/menu';
-import { shellCollapse, shellCollapseStyles } from '@system/components/shell-collapse';
-import { shellProjectSwitch, shellProjectSwitchStyles } from '@system/components/shell-project-switch';
+import { shellCollapseStyles } from '@system/components/shell-collapse';
 import titleBar from '@system/components/title-bar';
 import { icon, type IconName } from '@system/foundations/icons';
 
 type Section = 'System' | 'Sketches' | 'Flows' | 'Inbox';
+
+export type SystemForce = string;
+
+export type SystemChoice = (props: {
+  product: string;
+  products: string[];
+  open: boolean;
+  force?: SystemForce;
+}) => Promise<{ head: string; top: string; surface: string; styles: string }>;
 
 type Chrome = Pick<Parameters<typeof titleBar.render>[0], 'os' | 'left' | 'right'>;
 
@@ -21,9 +26,8 @@ type Props = {
   side: string;
   content: string;
   panel?: 'hidden';
-  projectPicker?: 'open';
-  pickerKeyboard?: boolean;
-  switchFocus?: boolean;
+  systemPicker?: 'open';
+  systemForce?: SystemForce;
   studio?: string;
   force?: RailForce;
   server?: 'stopped' | 'starting' | 'unanswered';
@@ -117,50 +121,16 @@ const rail = (section: Section, product: string, panelHidden: boolean, studio: s
     ${RECENT_PRODUCTS.map((p) => railItem(p.charAt(0).toUpperCase(), p, p === product, 'product', false, force)).join('')}
   </nav>`;
 
-const sidePanel = (product: string, side: string, pickerOpen: boolean, switchFocus: boolean) =>
+const sidePanel = (side: string, head: string, top: string) =>
   html`<aside
     class="st-shell-side absolute top-space-3 bottom-space-3 left-space-3 flex flex-col min-h-0 overflow-hidden rounded-control-lg bg-et-surface-bg"
   >
-    <header class="st-shell-side-head flex items-center justify-between box-border pr-space-2 pl-space-4">
-      <span class="text-ui-lg font-ui-strong">${product}</span>
-      ${shellCollapse()}
+    <header class="st-shell-side-head flex items-center justify-between gap-space-1 box-border pr-space-2 pl-space-2">
+      ${head}
     </header>
+    ${top}
     <div class="flex-1 min-h-0 overflow-hidden p-space-2">${side}</div>
-    <footer class="st-shell-side-foot p-space-2">
-      ${shellProjectSwitch({ open: pickerOpen, ...(switchFocus ? { interaction: 'focus-visible' as const } : {}) }, { open: 'project-picker', closed: 'open' })}
-    </footer>
   </aside>`;
-
-const MENU_ITEM = 'data-et-control="item"';
-
-const projectRows = (keyboard: boolean): MenuMockRow[] => [
-  {
-    kind: 'radio-group',
-    items: [
-      {
-        kind: 'radio',
-        label: 'ethlete-sdk',
-        checked: true,
-        active: true,
-        ...(keyboard ? { activeSource: 'keyboard' as const } : {}),
-        attributes: `${MENU_ITEM} data-et-action="open"${keyboard ? ' data-et-force="focus-visible"' : ''}`,
-      },
-      { kind: 'radio', label: 'fut-frontend', attributes: `${MENU_ITEM} data-et-action="emit:projectChange"` },
-      { kind: 'radio', label: 'design-playground', attributes: `${MENU_ITEM} data-et-action="emit:projectChange"` },
-    ],
-  },
-  { kind: 'separator' },
-  { label: 'Projekt öffnen…', attributes: `${MENU_ITEM} data-et-action="emit:openProject"` },
-];
-
-const picker = (placement: 'above' | 'beside', projectMenu: string) =>
-  html`<div
-    class="st-project-picker absolute box-border w-62 shadow-none ${placement === 'above' ? 'left-space-3' : 'bottom-space-3'}"
-    data-placement="${placement}"
-    data-et-surface="project.open"
-  >
-    ${projectMenu}
-  </div>`;
 
 const SERVER_LOG = [
   'vite v7.1.4 dev server running at http://localhost:4402/',
@@ -240,22 +210,30 @@ const resizeRows = interactionRows<Props, 'resize', RailInteraction>(
   },
 );
 
-export const shellMain = (placement: 'above' | 'beside', styles: string, resizeLine: string) => ({
+type SystemStates = Record<string, Pick<Props, 'systemPicker' | 'systemForce'>>;
+
+export const shellMain = <const TStates extends SystemStates, TControl>(
+  styles: string,
+  resizeLine: string,
+  choice: SystemChoice,
+  system: { states: TStates; control: TControl },
+) => ({
   widths: [1440],
   states: {
-    'project-picker': { ...BASE, projectPicker: 'open' },
-    'project-picker-focus-visible': { ...BASE, projectPicker: 'open', pickerKeyboard: true },
     'server-stopped': { ...BASE, server: 'stopped', log: SERVER_LOG },
     'server-starting': { ...BASE, server: 'starting' },
     'server-unanswered': { ...BASE, server: 'unanswered' },
     open: BASE,
-    'open-focus-visible': { ...BASE, switchFocus: true },
+    'open-focus-visible': { ...BASE, systemForce: 'focus-visible' },
     hidden: { ...BASE, panel: 'hidden' },
     ...sectionRows.states,
     ...productRows.states,
     ...resizeRows.states,
     'resize-min': { ...BASE, sideWidth: SIDE_WIDTH.min },
     'resize-max': { ...BASE, sideWidth: SIDE_WIDTH.max },
+    ...(Object.fromEntries(Object.entries(system.states).map(([name, props]) => [name, { ...BASE, ...props }])) as {
+      [K in keyof TStates]: Props;
+    }),
   } satisfies Record<string, Props>,
   grid: {
     columns: sectionRows.grid.columns,
@@ -267,11 +245,7 @@ export const shellMain = (placement: 'above' | 'beside', styles: string, resizeL
     resize: { kind: 'button' as const, input: ['pointer' as const, 'keyboard' as const] },
     collapse: { kind: 'button' as const, part: 'components/shell-collapse' as const },
     restart: { kind: 'button' as const, part: 'components/button' as const },
-    project: {
-      kind: 'select' as const,
-      part: 'components/shell-project-switch' as const,
-      surfaces: { open: 'project-picker' as const },
-    },
+    system: system.control,
   },
   render: async ({
     product,
@@ -279,9 +253,8 @@ export const shellMain = (placement: 'above' | 'beside', styles: string, resizeL
     content,
     side,
     panel,
-    projectPicker,
-    pickerKeyboard = false,
-    switchFocus = false,
+    systemPicker,
+    systemForce,
     studio = '',
     force,
     server,
@@ -291,8 +264,13 @@ export const shellMain = (placement: 'above' | 'beside', styles: string, resizeL
     sideWidth,
     resizeForce,
   }: Props) => {
-    const projectMenu = await menu.render({ rows: projectRows(pickerKeyboard) });
     const bar = await titleBar.render({ ...chrome, update, product, part: '' });
+    const system = await choice({
+      product,
+      products: RECENT_PRODUCTS,
+      open: systemPicker === 'open',
+      force: systemForce,
+    });
 
     return drawing({
       body: html`<div
@@ -309,19 +287,12 @@ export const shellMain = (placement: 'above' | 'beside', styles: string, resizeL
           >
             ${server ? serverScreen(server, log) : content}
           </main>
-          ${panel === 'hidden' ? '' : sidePanel(product, side, projectPicker === 'open', switchFocus)}
+          ${panel === 'hidden' ? '' : sidePanel(side, system.head, system.top)}
           ${panel === 'hidden' ? '' : resizeHandle(resizeLine, sideWidth ?? SIDE_WIDTH.rest, resizeForce)}
-          ${panel !== 'hidden' && projectPicker === 'open' ? picker(placement, projectMenu.body) : ''}
+          ${panel === 'hidden' ? '' : system.surface}
         </div>
       </div>`,
-      styles:
-        styles +
-        pickerStyles +
-        buttonStyles +
-        shellCollapseStyles +
-        shellProjectSwitchStyles +
-        projectMenu.styles +
-        bar.styles,
+      styles: styles + buttonStyles + shellCollapseStyles + system.styles + bar.styles,
     });
   },
 });
