@@ -11,6 +11,7 @@ import {
   createSketch,
   decideSketch,
   editRound,
+  editVariantNote,
   findSketch,
   listSketches,
   markSketchReady,
@@ -24,6 +25,7 @@ import {
   reportSketch,
   Sketch,
   SketchMerge,
+  writeSketchFile,
   sketchReportPath,
   sketchSourceOf,
 } from './sketch';
@@ -662,6 +664,29 @@ describe('rebaseSketch', () => {
 
     expect(rebased.baseline?.['elements/hero']).not.toBe(before);
     expect(sketchJson(target, 'elements-hero')).toMatchObject({ baseline: rebased.baseline, status: 'in progress' });
+  });
+});
+
+describe('writeSketchFile on a sketch read before another write', () => {
+  it('keeps both changes to different fields, refuses two to one field, and replaces when asked', () => {
+    const target = acme();
+    const sketch = open(target, 'elements/hero');
+
+    editVariantNote({ sketch, variant: 'a', note: 'calm' });
+    editVariantNote({ sketch, variant: 'b', note: 'loud' });
+    editRound({ sketch, round: 'r1', title: 'First' });
+
+    expect(sketchJson(target, 'elements-hero')).toMatchObject({
+      variantInfo: { a: { note: 'calm' }, b: { note: 'loud' } },
+      rounds: [{ key: 'r1', title: 'First' }],
+    });
+    expect(() => editRound({ sketch, round: 'r1', title: 'Second' })).toThrow('"rounds" changed since');
+    expect(() => editVariantNote({ sketch, variant: 'a', note: 'quiet' })).toThrow('"variantInfo.a" changed since');
+
+    writeSketchFile(sketch, { replace: true });
+
+    expect(sketchJson(target, 'elements-hero')['variantInfo']).toEqual(sketch.variantInfo);
+    expect(sketchJson(target, 'elements-hero')['rounds']).toEqual(sketch.rounds);
   });
 });
 
