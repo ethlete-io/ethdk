@@ -238,7 +238,6 @@ pages/sketches, auf B34 aufgesetzt); Berichte unter `.claude/handoffs/agent-resu
   (Befund 483), ein echtes Windows-Fenster, Sketch `components/title-bar@notice-hint` (Befund 484). `check --part
 elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a sketch“ (vermutlich d961cb00d).
 - **A2** Nach A1: Suche in der Titelleiste; Klick oder Strg+K öffnet die Command Palette. Wartet auf die Skizze `components/command-palette` (B398: Skizze zuerst).
-- **A4** Arbeit (Rendern, Mergen) nur in der Ansicht zeigen, auf die man wartet.
 - **A5** Seitenleiste: Repo-Wechsel und „Projekt öffnen“ ins Logo-Menü; oben die Auswahl der Design-Systeme; die Auswahl
   unten entfällt. Skizze `elements/shell-main@logo-menu` gezeichnet (Teile elements/shell-main und elements/studio-menu; überlappt
   `elements/shell-main@sidebar-resize`, beide auf dem gemergten shell-main): Fuß mit dem Projekt-Schalter entfällt (Zustände

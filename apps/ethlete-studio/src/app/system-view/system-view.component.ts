@@ -580,7 +580,6 @@ export class SystemViewComponent {
         calls: this.calls(),
         sketches: this.sketches(),
         comments: this.commentStore.comments(),
-        merging: this.mergingSketch(),
       }),
       this.flowList() ?? [],
     ),

@@ -56,8 +56,7 @@ export type PartBadge =
   | 'question'
   | 'answered'
   | 'in progress'
-  | 'ready'
-  | 'merging';
+  | 'ready';
 
 /** Which parts and sketches hold an open comment, and which of those wait for the user. */
 type CommentMarks = {
@@ -184,10 +183,7 @@ export const isSketchKey = (key: string | null) => !!key?.startsWith(SKETCH_KEY)
 export const pickedPartKeyOf = (picked: string | null) =>
   picked && isSketchKey(picked) ? picked.slice(SKETCH_KEY.length).split('@')[0] : picked;
 
-const sketchEntryOf = (
-  sketch: ListedSketch,
-  { marks, merging }: { marks: CommentMarks; merging: boolean },
-): TreeEntry => ({
+const sketchEntryOf = (sketch: ListedSketch, marks: CommentMarks): TreeEntry => ({
   key: sketchKeyOf(sketch.target),
   name: sketch.name,
   title:
@@ -199,7 +195,7 @@ const sketchEntryOf = (
     ].join('\n') || sketch.target,
   ...commentsOf(sketch.target, marks),
   badges: [
-    merging ? 'merging' : sketch.status,
+    sketch.status,
     ...commentBadgesOf(sketch.target, marks),
     ...(sketch.problems?.some((entry) => entry.problems.length > 0) || sketch.targets?.some((entry) => entry.error)
       ? (['error'] as const)
@@ -310,7 +306,6 @@ export const treeOf = (
     calls = [],
     sketches = [],
     comments = [],
-    merging = null,
     product = null,
   }: {
     /** The product the parts belong to, to list each part's frames. */
@@ -318,8 +313,6 @@ export const treeOf = (
     calls?: ListedCall[];
     sketches?: ListedSketch[];
     comments?: (CommentPlace & Pick<ListedComment, 'threadState'>)[];
-    /** The target of the sketch whose merge runs. */
-    merging?: string | null;
   } = {},
 ): TreeGroup[] => {
   const sketched = new Set(sketches.flatMap((sketch) => sketch.targetParts ?? [sketch.target]));
@@ -355,9 +348,7 @@ export const treeOf = (
         {
           key,
           label,
-          entries: sketches.map((sketch) =>
-            sketchEntryOf(sketch, { marks: sketchMarks, merging: sketch.target === merging }),
-          ),
+          entries: sketches.map((sketch) => sketchEntryOf(sketch, sketchMarks)),
         },
       ];
 

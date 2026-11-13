@@ -1212,7 +1212,7 @@ describe('SystemViewComponent on a merge', () => {
       extra: { variants: ['new', 'old'], targetParts: ['elements/rating'] },
     },
   ])(
-    'marks the $kind sketch "merging" while the merge runs, then selects the target part',
+    'keeps the $kind sketch row status while the merge runs, then selects the target part',
     async ({ target, extra }) => {
       const sketch: ListedSketch = {
         target,
@@ -1266,6 +1266,14 @@ describe('SystemViewComponent on a merge', () => {
       await settle(fixture);
       clickMerge();
       await settle(fixture);
+
+      const sketchRow = () =>
+        fixture.componentInstance['tree']()
+          .flatMap((group) => group.entries)
+          .find((entry) => entry.key === `sketch:${target}`);
+
+      expect(root.querySelector('ethlete-merge button[aria-busy="true"]')).not.toBeNull();
+      expect(sketchRow()?.badges).toEqual(['ready']);
 
       finishMerge();
       await settle(fixture);
