@@ -115,6 +115,7 @@ describe('ACTION-LOST', () => {
 
     await recordBuildReady({
       product,
+      by: 'spec',
       parts: ['components/chip'],
       inputs: { pointsOf: () => [], problemsOf: () => [], slowOf: () => [] },
       actionsOf: async () => [],
@@ -142,6 +143,7 @@ describe('ACTION-LOST', () => {
 
       await recordBuildReady({
         product,
+        by: 'spec',
         parts: [part],
         inputs: { pointsOf: () => [], problemsOf: () => [], slowOf: () => lost },
         actionsOf: async () => [],

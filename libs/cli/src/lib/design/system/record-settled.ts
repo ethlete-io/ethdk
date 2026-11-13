@@ -48,6 +48,7 @@ export const recordSettledBuildReady = async (
 
   await recordBuildReady({
     product,
+    by: 'et design serve',
     parts: recordedPartsOf(request),
     inputs: { pointsOf: (part) => partPointsOf(points, part), problemsOf: (part) => problems[part] ?? [] },
     actionsOf: request.actionsOf ?? ((part) => partActionFailuresOf({ target, config, product, part })),

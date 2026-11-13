@@ -78,6 +78,7 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
 
     expect(buildReadyOf()).toEqual({ ready: true });
     expect(JSON.parse(readFileSync(join(dir, 'ready.json'), 'utf8'))['components/chip'].actions).toEqual(['open']);
+    expect(JSON.parse(readFileSync(join(dir, 'ready.json'), 'utf8'))['components/chip'].by).toBe('et design serve');
   });
 
   it('records an unlinked part with its declared actions through the default checks', async () => {

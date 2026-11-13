@@ -109,12 +109,13 @@ const noRecordLineOf = (options: { product: string; part: string; blockers: Bloc
  * fails; an embedded part that is not build-ready keeps its host from build-ready, not from its record. A part without
  * a holding record, or whose embedded parts changed since its actions ran, is written only after `actionsOf` passes. A
  * record is dropped only for a blocker that was checked: a pending slow result or actions that did not run (no
- * `actionsOf`) keep it. Embedded parts are decided before their hosts. `onNoRecord` gets one line for each part left
+ * `actionsOf`) keep it. `by` names the writer on each record. Embedded parts are decided before their hosts. `onNoRecord` gets one line for each part left
  * without a holding record, naming why; `onRecordDropped` gets one for each record dropped. A written record holds the keys `declaredActionsOf` answers, or keeps the ones it
  * held when it answers why not.
  */
 export const recordBuildReady = async (options: {
   product: ResolvedProduct;
+  by: string;
   parts: string[];
   inputs: BuildReadyInputs;
   actionsOf?: ActionsOf;
@@ -148,7 +149,7 @@ export const recordBuildReady = async (options: {
           writePartRecord({
             product,
             part,
-            origin: originOf('et design check'),
+            origin: originOf(options.by),
             ...(Array.isArray(declared) ? { actions: declared } : {}),
           });
         }
