@@ -39,5 +39,9 @@
   "src/lib/update/agent-rules-migrations.spec.ts": [
     "libs/agent-rules/migrations.json",
     "libs/agent-rules/generators/generators.json"
+  ],
+  "src/lib/design/system/product-lock.spec.ts": [
+    "libs/cli/src/lib/design/system/product-lock.ts",
+    "libs/cli/src/lib/json-file.ts"
   ]
 }
