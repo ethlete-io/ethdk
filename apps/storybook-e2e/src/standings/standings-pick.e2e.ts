@@ -10,7 +10,7 @@ function names(root: Locator): Locator {
 }
 
 function handles(root: Locator): Locator {
-  return root.locator('.et-standings-pick-handle');
+  return root.locator('.et-standings-pick-card[tabindex]');
 }
 
 /** `order` with the entries at `a` and `b` exchanged, trimmed for a `toHaveText` comparison. */

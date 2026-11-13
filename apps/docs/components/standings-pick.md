@@ -150,8 +150,8 @@ crests); the drawn `et-standings-pick` reads exactly the same state.
 The list is an `<ol>` named by the `pickCaption` label, one `<li>` per participant.
 
 A pointer drags the whole card: it follows the pointer, stops at the viewport edge instead of growing
-the page's scroll area, and on release lands in the slot it was dropped on before the order changes. Every row also carries **one** control, the grip button, which is
-the arrow-key target. It is named `Move <participant>. Drag it, or use the arrow keys.` (the `pickMoveRow` label),
+the page's scroll area, and on release lands in the slot it was dropped on before the order changes. The card is also the row's only control and its arrow-key target; a
+moved card keeps focus and slides into place. It is named `Move <participant>. Drag it, or use the arrow keys.` (the `pickMoveRow` label),
 so a screen-reader user is told both ways to sort from the control itself.
 
 | Key                  | Action                                                  |

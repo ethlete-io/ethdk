@@ -1,6 +1,8 @@
 import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
 import {
+  afterNextRender,
   Component,
+  Injector,
   DestroyRef,
   computed,
   ElementRef,
@@ -121,6 +123,8 @@ export class StandingsPickComponent {
   private prefersReducedMotion = injectObserveMediaQuery('(prefers-reduced-motion: reduce)');
 
   private document = inject(DOCUMENT);
+
+  private injector = inject(Injector);
 
   private rowElements = viewChildren<ElementRef<HTMLElement>>('rowElement');
 
@@ -246,11 +250,15 @@ export class StandingsPickComponent {
   protected moveByKey(event: Event, move: StandingsPickMove) {
     event.preventDefault();
 
+    const before = this.cardElements().map((ref) => ref.nativeElement.getBoundingClientRect().top);
+
     if (!this.pick.move(move)) return;
 
     const row = this.pick.rows()[move.to];
 
     if (!row) return;
+
+    afterNextRender({ write: () => this.settleKeyboardMove(move, before) }, { injector: this.injector });
 
     this.announcement.set(
       this.labels().pickMoved(
@@ -258,6 +266,36 @@ export class StandingsPickComponent {
         row.position,
       ),
     );
+  }
+
+  /**
+   * A row moved by key is re-inserted into the list, which drops its focus and lands it at once - focus it
+   * again and slide the two swapped cards from where they were.
+   */
+  private settleKeyboardMove(move: StandingsPickMove, before: readonly number[]) {
+    const cards = this.cardElements().map((ref) => ref.nativeElement);
+
+    cards[move.to]?.focus({ preventScroll: true });
+
+    if (this.prefersReducedMotion()) return;
+
+    const pairs: [card: HTMLElement | undefined, from: number | undefined][] = [
+      [cards[move.to], before[move.from]],
+      [cards[move.from], before[move.to]],
+    ];
+
+    for (const [card, from] of pairs) {
+      if (!card || from === undefined || typeof card.animate !== 'function') continue;
+
+      const style = getComputedStyle(card);
+      const duration = parseFloat(style.getPropertyValue('--et-standings-pick-drop-duration')) * 1000 || 300;
+      const easing = style.getPropertyValue('--et-standings-pick-drop-easing').trim() || 'ease-out';
+
+      card.animate([{ translate: `0 ${from - card.getBoundingClientRect().top}px` }, { translate: '0 0' }], {
+        duration,
+        easing,
+      });
+    }
   }
 
   /**

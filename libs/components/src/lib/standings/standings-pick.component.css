@@ -36,6 +36,7 @@
   }
 
   .et-standings-pick {
+    --et-standings-pick-drop-easing: var(--ease-spring-1, ease-out);
     display: block;
     box-sizing: border-box;
     font-size: var(--et-standings-pick-font-size);
@@ -76,6 +77,7 @@
     padding-inline: 8px;
     background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 8%, transparent);
     border-radius: var(--et-standings-pick-radius);
+    transition: background-color 120ms ease;
   }
 
   /* Only while a drag runs: on release the reordered list renders with the transforms already gone, and a
@@ -103,6 +105,15 @@
     user-select: none;
   }
 
+  .et-standings-pick:where(:not([data-locked])) .et-standings-pick-card:not([data-dragging]):hover {
+    background-color: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 12%, transparent);
+  }
+
+  .et-standings-pick:where(:not([data-locked])) .et-standings-pick-card:not([data-dragging]):active {
+    background-color: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 16%, transparent);
+    cursor: grabbing;
+  }
+
   .et-standings-pick-list:where([data-dragging]) .et-standings-pick-card:where([data-dragging]) {
     cursor: grabbing;
   }
@@ -115,8 +126,7 @@
     );
     box-shadow: 0 0 0 transparent;
     transition:
-      translate var(--et-standings-pick-drop-duration)
-        var(--et-standings-pick-drop-easing, var(--ease-spring-1, ease-out)),
+      translate var(--et-standings-pick-drop-duration) var(--et-standings-pick-drop-easing),
       box-shadow var(--et-standings-pick-drop-duration) ease-out,
       background-color var(--et-standings-pick-drop-duration) ease-out;
   }
@@ -145,31 +155,10 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .et-standings-pick-handle {
-    display: grid;
-    flex: none;
-    place-items: center;
-    inline-size: 24px;
-    block-size: 24px;
-    padding: 0;
-    color: var(--et-surface-color-muted-solid, currentColor);
-    background: transparent;
-    border: 0;
-    border-radius: 6px;
-    cursor: grab;
-  }
-
-  .et-standings-pick-handle:hover {
-    color: var(--et-surface-color-solid, currentColor);
-    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 16%, transparent);
-  }
-
-  .et-standings-pick-handle:active {
-    cursor: grabbing;
-    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 20%, transparent);
-  }
-
   .et-standings-pick-grip {
+    flex: none;
+    margin-inline-end: 6px;
+    color: var(--et-surface-color-muted-solid, currentColor);
     inline-size: 12px;
     block-size: 8px;
     background: repeating-linear-gradient(to bottom, currentColor 0 1.5px, transparent 1.5px 3.5px);

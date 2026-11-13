@@ -15,7 +15,7 @@ export const createStandingsPickDriver = <T>(fixture: ComponentFixture<T>) => {
     pick: () => base.directive(StandingsPickDirective),
     order: () => base.queryAll('.et-match-participant-name').map((element) => element.textContent?.trim()),
     positions: () => base.queryAll('.et-standings-pick-position').map((element) => element.textContent?.trim()),
-    handles: () => base.queryAll<HTMLButtonElement>('.et-standings-pick-handle'),
+    handles: () => base.queryAll<HTMLElement>('.et-standings-pick-card[tabindex]'),
     announcement: () => base.query('.et-standings-pick-announcement')?.textContent?.trim() ?? null,
     marks: () => base.queryAll('.et-standings-pick-mark').map((element) => element.textContent?.trim()),
 

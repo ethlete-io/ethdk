@@ -395,7 +395,7 @@ describe('standings scenarios', () => {
       queryAll('.et-standings-pick-item', host).findIndex((item) => item.querySelector('.et-standings-pick-cut')),
     ).toBe(1);
 
-    const handles = () => queryAll<HTMLButtonElement>('.et-standings-pick-handle', host);
+    const handles = () => queryAll<HTMLElement>('.et-standings-pick-card[tabindex]', host);
 
     expect(handles()[2]!.getAttribute('aria-label')).toBe('Move Team B. Drag it, or use the arrow keys.');
 

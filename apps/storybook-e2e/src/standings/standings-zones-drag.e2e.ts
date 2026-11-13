@@ -7,7 +7,7 @@ const PICK_ID = 'components-sports-standings-pick--default';
 const ROW = '.et-standings-row';
 
 const names = (root: Locator) => root.locator('.et-standings-pick-list .et-match-participant-name');
-const handles = (root: Locator) => root.locator('.et-standings-pick-handle');
+const handles = (root: Locator) => root.locator('.et-standings-pick-card[tabindex]');
 const rowSlots = (root: Locator) => root.locator('.et-standings-pick-row');
 
 const zoneBarColor = (row: Locator) =>
@@ -131,7 +131,7 @@ test.describe('standings pick / pointer drag', () => {
 
   test('the cards between slide aside while the drag is in flight', async ({ page }) => {
     const root = await openStory(page, PICK_ID);
-    const cards = root.locator('.et-standings-pick-card');
+    const cards = root.locator('.et-standings-pick-card[tabindex]');
     const restingY = (await boxOf(cards.nth(1))).y;
 
     await mouseDrag(page, await centerOf(handles(root).first()), await centerOf(rowSlots(root).nth(2)));
@@ -157,7 +157,7 @@ test.describe('standings pick / pointer drag', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     const root = await openStory(page, PICK_ID);
 
-    await expect(root.locator('.et-standings-pick-card').first()).toHaveCSS('transition-duration', '0s');
+    await expect(root.locator('.et-standings-pick-card[tabindex]').first()).toHaveCSS('transition-duration', '0s');
   });
 });
 
