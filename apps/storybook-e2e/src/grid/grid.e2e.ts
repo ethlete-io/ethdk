@@ -179,7 +179,7 @@ test.describe('grid / pointer', () => {
 test.describe('grid / touch', () => {
   test.skip(({ isMobile }) => !isMobile, 'touch-only: touchscreen drag and tap');
 
-  test('a touch drag moves an item past its neighbor', async ({ page }) => {
+  test('a touch drag after a hold moves an item past its neighbor', async ({ page }) => {
     const root = await openStory(page, DEFAULT_STORY_ID);
     const item = root.locator(ITEM).first();
     const content = item.locator(ITEM_CONTENT);
@@ -189,9 +189,27 @@ test.describe('grid / touch', () => {
     const startX = grabBox.x + grabBox.width / 2;
     const startY = grabBox.y + grabBox.height / 2;
 
-    await touchDrag(page, { x: startX, y: startY }, { x: startX, y: startY + 250 });
+    await touchDrag(page, { x: startX, y: startY }, { x: startX, y: startY + 250 }, { holdMs: 400 });
 
     await expect.poll(async () => (await boxOf(item)).y).toBeGreaterThan(before.y + 50);
+  });
+
+  test('a swipe over an item without a hold leaves it in place', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const item = root.locator(ITEM).first();
+    const content = item.locator(ITEM_CONTENT);
+
+    const translate = () => item.evaluate((element: HTMLElement) => element.style.translate);
+    const before = await translate();
+    const grabBox = await boxOf(content);
+    const startX = grabBox.x + grabBox.width / 2;
+    const startY = grabBox.y + grabBox.height / 2;
+
+    await touchDrag(page, { x: startX, y: startY }, { x: startX, y: startY + 250 });
+    await settle(page, 300);
+
+    expect(await translate()).toBe(before);
+    await expect(item).not.toHaveClass(/et-grid-drag--active/);
   });
 
   test('a tap on the remove action removes the item', async ({ page }) => {
@@ -352,6 +370,7 @@ async function holdFinger(page: Page, from: TouchPoint): Promise<HeldDrag> {
   let at = from;
 
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [from] });
+  await page.waitForTimeout(400);
 
   return {
     moveTo: async (to) => {

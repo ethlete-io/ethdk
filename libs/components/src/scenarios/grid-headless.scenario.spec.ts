@@ -228,7 +228,7 @@ describe('grid headless scenarios', () => {
     expect(cell(host, 'b').style.translate).toBe('220px 0px');
     expect(a.classList.contains('et-grid-drag')).toBe(true);
     expect(a.classList.contains('et-grid-resize')).toBe(true);
-    expect(a.style.touchAction).toBe('none');
+    expect(a.style.touchAction).toBe('manipulation');
     expect(a.hasAttribute('aria-grabbed')).toBe(false);
     expect(a.querySelector('.scenario-meta')?.textContent).toBe('wide:8');
 

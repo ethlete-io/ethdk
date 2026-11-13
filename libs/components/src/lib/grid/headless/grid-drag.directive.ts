@@ -1,7 +1,13 @@
 import { DOCUMENT } from '@angular/common';
 import { afterNextRender, DestroyRef, Directive, effect, ElementRef, inject, untracked } from '@angular/core';
 import { outputToObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DragHandleDirective, DragMoveEvent, DragStartEvent, RuntimeError } from '@ethlete/core';
+import {
+  DragHandleDirective,
+  DragMoveEvent,
+  DragStartEvent,
+  provideDragHandleDefaults,
+  RuntimeError,
+} from '@ethlete/core';
 import { filter, fromEvent, merge, Subscription, tap } from 'rxjs';
 import { GRID_ERROR_CODES } from '../grid-errors';
 import { GridItemDirective } from './grid-item.directive';
@@ -16,8 +22,11 @@ import {
   rowsToPixelHeight,
 } from './internals';
 
+const GRID_DRAG_TOUCH_HOLD_DELAY = 250;
+
 @Directive({
   selector: '[etGridDrag]',
+  providers: [provideDragHandleDefaults({ touchHoldDelay: GRID_DRAG_TOUCH_HOLD_DELAY })],
   hostDirectives: [
     {
       directive: DragHandleDirective,
@@ -29,7 +38,8 @@ import {
     '[class.et-grid-drag--active]': '!grid?.readOnly() && dragHandle.isDragging()',
     // Must bind a concrete value in both states - this binding outranks the host directive's, and a
     // null here clears the property instead of delegating.
-    '[style.touch-action]': "grid?.readOnly() ? 'auto' : 'none'",
+    '[style.touch-action]': "grid?.readOnly() ? 'auto' : 'manipulation'",
+    '[style.-webkit-touch-callout]': "grid?.readOnly() ? null : 'none'",
   },
 })
 export class GridDragDirective {

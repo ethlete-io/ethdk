@@ -125,9 +125,9 @@ describe('GridItemComponent', () => {
     expect(getItemDirective().isBeingDragged()).toBe(false);
   });
 
-  it('locks touch-action while editable so touch drags are not claimed for scrolling', () => {
+  it('lets a touch pan over an editable item until a hold picks it up', () => {
     fixture.detectChanges();
-    expect(getItemEl().style.touchAction).toBe('none');
+    expect(getItemEl().style.touchAction).toBe('manipulation');
   });
 
   it('releases the touch-action lock when the grid is read-only', () => {
