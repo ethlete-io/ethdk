@@ -6,6 +6,7 @@
   "PipCollapseOverlayDirective": "S8b stream: internal to et-pip-window, collapse is a drag gesture - e2e",
   "PipTitleBarDirective": "S8b stream: internal to et-pip-window, drag is a pointer gesture - e2e",
   "SELECTION_LIST_ERROR_CODES": "spec: libs/components/src/lib/forms/selection-list/selection-list-errors.spec.ts",
+  "TAB_BAR_ALIGNS": "constant: value set of the tab bar align input",
   "dateTimeRangeOrder": "spec: libs/components/src/lib/forms/date-time/date-time-range-validators.spec.ts",
   "injectFormFieldDefaults": "internal: read by et-form-field and the choice controls, apps set it through provideFormFieldDefaults",
   "injectKbdLabels": "internal: read by et-kbd, apps set it through provideKbdLabels",

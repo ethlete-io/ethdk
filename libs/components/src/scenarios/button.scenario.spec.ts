@@ -98,9 +98,11 @@ class SaveFormComponent {
       et-icon-button
       aria-label="Bold"
     >
-      B
+      <span etIcon>B</span>
     </button>
-    <button [pressed]="bold()" class="silent" emitAriaPressed="false" et-icon-button aria-label="Silent">S</button>
+    <button [pressed]="bold()" class="silent" emitAriaPressed="false" et-icon-button aria-label="Silent">
+      <span etIcon>S</span>
+    </button>
     <button [size]="size" class="more" type="button" et-text-button>More</button>
     <button [expanded]="expanded()" class="compose" type="button" et-fab>Compose</button>
     <button
@@ -135,7 +137,9 @@ class ToolbarComponent {
     <et-split-button>
       <button (click)="published.set(true)" type="button" et-button etSplitButtonAction>Publish</button>
       @if (withTrigger()) {
-        <button type="button" et-icon-button etSplitButtonTrigger aria-label="More publish options">v</button>
+        <button type="button" et-icon-button etSplitButtonTrigger aria-label="More publish options">
+          <span etIcon>v</span>
+        </button>
       }
     </et-split-button>
   `,

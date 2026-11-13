@@ -97,3 +97,4 @@ playwright-report
 .ethlete/design/*/pictures.json
 
 **/.vitest/
+__pycache__/

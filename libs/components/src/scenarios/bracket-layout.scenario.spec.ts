@@ -31,6 +31,7 @@ import {
   provideBracketConfig,
   provideBracketLabels,
   resolveBracketLayout,
+  resolveBracketLayoutSettings,
   SINGLE_ELIMINATION_BRACKET_ROUND_TYPE,
   singleEliminationBracketLayout,
   SWISS_BRACKET_ROUND_TYPE,
@@ -238,6 +239,12 @@ describe('bracket layout scenarios', () => {
     );
     expect(renderedWidth(host)).toBe(natural);
     expect(bracketNaturalWidth(EIGHT_TEAMS, { layouts: ALL_LAYOUTS, columnWidth: 200 })).toBe(natural - 100);
+
+    const narrow = resolveBracketLayoutSettings({ columnWidth: 200 });
+
+    expect(bracketNaturalWidth(EIGHT_TEAMS, { layouts: ALL_LAYOUTS, columnWidth: 200 })).toBe(
+      2 * narrow.columnWidth + 2 * narrow.columnGap + narrow.finalColumnWidth,
+    );
     expect(bracketFitsWidth(EIGHT_TEAMS, { layouts: ALL_LAYOUTS }, natural)).toBe(true);
     expect(bracketFitsWidth(EIGHT_TEAMS, { layouts: ALL_LAYOUTS }, natural - 1)).toBe(false);
     expect(() => bracketNaturalWidth(EIGHT_TEAMS)).toThrow(`ET${BRACKET_ERROR_CODES.LAYOUT_NOT_REGISTERED}`);
