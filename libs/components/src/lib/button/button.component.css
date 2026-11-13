@@ -4,6 +4,9 @@
     --_et-button-color: var(--et-theme-color-on-primary);
     --_et-button-border-color: transparent;
     --_et-button-gap: var(--et-button-gap);
+    --_et-button-padding: var(--et-button-padding);
+    --_et-button-border-radius: var(--et-button-border-radius);
+    --_et-button-shadow: var(--et-button-shadow, 0 0 #0000);
 
     display: inline-flex;
     position: relative;
@@ -12,14 +15,14 @@
     gap: var(--et-button-gap);
     background: var(--_et-button-background);
     color: var(--_et-button-color);
-    border-radius: var(--et-button-border-radius);
-    padding: var(--et-button-padding);
+    border-radius: var(--_et-button-border-radius);
+    padding: var(--_et-button-padding);
     font-size: var(--et-button-font-size);
     font-weight: var(--et-button-font-weight);
     letter-spacing: var(--et-button-letter-spacing, revert-layer);
     text-transform: var(--et-button-text-transform, revert-layer);
     border: var(--et-button-border-width, 0.1rem) solid var(--_et-button-border-color);
-    box-shadow: var(--et-button-shadow, 0 0 #0000);
+    box-shadow: var(--_et-button-shadow);
     cursor: var(--et-button-cursor);
     text-decoration: none;
     appearance: none;

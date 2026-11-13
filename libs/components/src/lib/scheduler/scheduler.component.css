@@ -25,7 +25,7 @@
 
   @container et-scheduler not (min-inline-size: 480px) {
     .et-scheduler .et-scheduler-today-button {
-      --et-button-padding: 0;
+      --_et-button-padding: 0;
       inline-size: 3.1rem;
       block-size: 3.1rem;
       border-radius: 9999px;

@@ -47,7 +47,7 @@
       scrollbar-width: none;
 
       .et-date-range-preset {
-        --et-button-border-radius: 999px;
+        --_et-button-border-radius: 999px;
 
         flex: none;
       }

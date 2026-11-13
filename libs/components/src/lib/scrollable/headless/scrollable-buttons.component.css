@@ -6,7 +6,7 @@
 
     .et-scrollable-button {
       position: absolute;
-      --_et-scrollable-button-extent: calc(var(--et-icon-button-size) + 0.4rem);
+      --_et-scrollable-button-extent: calc(var(--_et-icon-button-size) + 0.4rem);
       opacity: 0;
     }
   }

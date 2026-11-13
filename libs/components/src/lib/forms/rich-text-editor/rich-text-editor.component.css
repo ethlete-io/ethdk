@@ -40,7 +40,9 @@
       border-block-end: var(--et-form-field-control-border-width, 1px) solid
         color-mix(in srgb, currentColor 12%, transparent);
 
-      --et-icon-button-border-radius: var(--et-rich-text-editor-button-radius);
+      .et-icon-button {
+        --_et-icon-button-border-radius: var(--et-rich-text-editor-button-radius);
+      }
 
       /* dense toolbar: the default outward ring offset (3px) reaches past the toolbar padding (4px)
          and gap (2px), stacking the ring on the field border and neighboring buttons — pull it onto

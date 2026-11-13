@@ -330,8 +330,8 @@
      `:where()` here would tie with it and leave source order to decide. */
   .et-table-header-cell .et-table-filter-trigger,
   .et-table-header-cell .et-table-column-menu-trigger {
-    --et-icon-button-size: var(--_et-table-header-adornment-size);
-    --et-icon-button-icon-size: 1.6rem;
+    --_et-icon-button-size: var(--_et-table-header-adornment-size);
+    --_et-icon-button-icon-size: 1.6rem;
 
     min-width: 24px;
     min-height: 24px;

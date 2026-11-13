@@ -12,19 +12,23 @@
   }
 
   .et-icon-button {
+    --_et-icon-button-size: var(--et-icon-button-size);
+    --_et-icon-button-icon-size: var(--et-icon-button-icon-size);
+    --_et-icon-button-border-radius: var(--et-icon-button-border-radius, 9999px);
+
     display: inline-flex;
     position: relative;
     align-items: center;
     justify-content: center;
-    width: var(--et-icon-button-size);
-    height: var(--et-icon-button-size);
+    width: var(--_et-icon-button-size);
+    height: var(--_et-icon-button-size);
     background: var(
       --_et-icon-button-background,
       rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity))
     );
     color: var(--et-theme-color-ink-solid);
     border: none;
-    border-radius: var(--et-icon-button-border-radius, 9999px);
+    border-radius: var(--_et-icon-button-border-radius);
     padding: 0;
     font-size: var(--et-button-font-size);
     letter-spacing: var(--et-button-letter-spacing, revert-layer);
@@ -130,12 +134,12 @@
       transition: opacity 120ms ease;
 
       :is(.et-icon, [etIcon]) {
-        width: var(--et-icon-button-icon-size);
-        height: var(--et-icon-button-icon-size);
+        width: var(--_et-icon-button-icon-size);
+        height: var(--_et-icon-button-icon-size);
       }
 
       [etIcon]:not(.et-icon) {
-        font-size: var(--et-icon-button-icon-size);
+        font-size: var(--_et-icon-button-icon-size);
       }
     }
 

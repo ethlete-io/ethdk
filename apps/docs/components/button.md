@@ -232,6 +232,8 @@ Most of them are set **per size** by the component (`--et-button-padding`, the t
 }
 ```
 
+An app-wide button look can sit on `.et-button` and `.et-icon-button` directly, in any layer or none. It does not reach the buttons other SDK components render themselves (pagination cells, table header triggers, the breadcrumb overflow, the scheduler's today button, date range presets, the rich text toolbar): these keep their own padding, radius and size, and the owning component's tokens (`--et-pagination-radius`, `--et-rich-text-editor-button-radius`, …) style them. The shadow, font, colors and disabled opacity are not shielded and still follow the app's tokens.
+
 Full per-flavor design specs (anatomy, exact paddings per size, pressed-state variant maps, the complete CSS custom property override API) live in Storybook's docs pages: [Surface](https://next-ethlete-sdk.web.app/?path=/docs/components-actions-button-surface--docs), [Text](https://next-ethlete-sdk.web.app/?path=/docs/components-actions-button-text--docs), [Icon](https://next-ethlete-sdk.web.app/?path=/docs/components-actions-button-icon--docs), [FAB](https://next-ethlete-sdk.web.app/?path=/docs/components-actions-button-fab--docs), [Window Control](https://next-ethlete-sdk.web.app/?path=/docs/components-actions-button-window-control--docs), [Split](https://next-ethlete-sdk.web.app/?path=/docs/components-actions-button-split--docs).
 
 ## Error codes

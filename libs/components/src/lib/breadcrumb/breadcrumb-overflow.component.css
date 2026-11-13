@@ -3,8 +3,8 @@
     display: contents;
   }
 
-  .et-breadcrumb-overflow-trigger {
-    --et-icon-button-border-radius: var(--et-breadcrumb-radius);
+  .et-breadcrumb-overflow .et-breadcrumb-overflow-trigger {
+    --_et-icon-button-border-radius: var(--et-breadcrumb-radius);
 
     margin-inline: -4px;
   }
