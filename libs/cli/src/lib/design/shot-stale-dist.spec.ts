@@ -2,7 +2,7 @@ import { spawnSync } from 'child_process';
 import { mkdirSync, mkdtempSync, statSync, utimesSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { designCommand } from './design-command';
 import { designShot } from './shot-command';
 
@@ -33,7 +33,11 @@ const checkoutWithStaleDist = () => {
 };
 
 describe('et design shot on a stale SDK dist', () => {
-  afterEach(() => vi.clearAllMocks());
+  beforeEach(() => vi.stubEnv('ETHLETE_DESIGN_RESIDENT', '0'));
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.unstubAllEnvs();
+  });
 
   it('rebuilds the stale lib, then draws', async () => {
     const target = checkoutWithStaleDist();

@@ -104,11 +104,12 @@ const drawsSystem = (argv: string[]) =>
   !argv.some((argument) => CHECK_ELSEWHERE.includes(argument));
 
 /**
- * Whether `et design <argv>` runs in the resident design process: compare, check of a product or part (not its
- * source-only modes), sketch check and sketch ready.
+ * Whether `et design <argv>` runs in the resident design process: compare, shot (not an asset shot), check of a
+ * product or part (not its source-only modes), sketch check and sketch ready.
  */
 export const runsInResident = (argv: string[]) =>
   argv[0] === 'compare' ||
+  (argv[0] === 'shot' && !argv.includes('--asset')) ||
   (argv[0] === 'check' && drawsSystem(argv.slice(1))) ||
   (argv[0] === 'sketch' && RESIDENT_SKETCH_COMMANDS.has(argv[1] ?? ''));
 

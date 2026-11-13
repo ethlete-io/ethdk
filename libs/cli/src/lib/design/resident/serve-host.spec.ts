@@ -26,6 +26,7 @@ vi.mock('../system/stale-dist', () => ({
 vi.mock('../design-config', () => ({ readConfig: () => ({}) }));
 vi.mock('../serve', () => ({ createDesignServer }));
 vi.mock('../thumb', () => ({ createDrawQueue }));
+vi.mock('../shot-command', () => ({ designShot: vi.fn() }));
 
 const live = new Set<number>();
 let nextPid = 60_000;

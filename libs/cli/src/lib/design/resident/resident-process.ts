@@ -5,6 +5,7 @@ import { DesignConfig, readConfig } from '../design-config';
 import { buildStampOf } from '../stamp';
 import { createDesignServer } from '../serve';
 import { createDrawQueue } from '../thumb';
+import { designShot } from '../shot-command';
 import { designSketch } from '../sketch-command';
 import { designCompare, shootStatesWith } from '../system/compare-command';
 import { StartHarnessServer, startHarnessServer } from '../system/harness-server';
@@ -26,7 +27,7 @@ type DesignServer = Awaited<ReturnType<typeof createDesignServer>>;
 export type SharedDraw = { server: DesignServer; chromiumOf: typeof chromiumOf };
 
 /**
- * Runs `compare`, `check --product`/`--part`, `sketch check` and `sketch ready` with a design server, Chromium and a watch-built harness app that stay up
+ * Runs `compare`, `shot`, `check --product`/`--part`, `sketch check` and `sketch ready` with a design server, Chromium and a watch-built harness app that stay up
  * between requests. Each request reads the lib build under the lib-build lock only while it runs, a changed lib build or
  * design config restarts the design server and Chromium before it draws, and every request draws the design files as
  * they are when it starts.
@@ -114,7 +115,7 @@ export const createWarmRuns = (options: { target: string; shared?: SharedDraw })
   const runIn = async ({ argv, invocation }: { argv: string[]; invocation: string }) => {
     if (!runsInResident(argv)) {
       console.error(
-        `the resident design process runs compare, check --product/--part, sketch check and sketch ready only, not ${argv.join(' ')}`,
+        `the resident design process runs compare, shot, check --product/--part, sketch check and sketch ready only, not ${argv.join(' ')}`,
       );
 
       return 2;
@@ -138,6 +139,7 @@ export const createWarmRuns = (options: { target: string; shared?: SharedDraw })
 
       if (argv[0] === 'sketch') return await designSketch({ target, argv: rest, invocation, warm });
       if (argv[0] === 'check') return await checkDesign({ target, argv: rest, invocation, warm });
+      if (argv[0] === 'shot') return await designShot({ target, argv: rest, invocation, warm });
 
       return await designCompare({
         target,

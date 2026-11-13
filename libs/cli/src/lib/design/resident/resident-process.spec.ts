@@ -7,6 +7,7 @@ import { createWarmRuns } from './resident-process';
 
 const designSketch = vi.hoisted(() => vi.fn());
 const designCompare = vi.hoisted(() => vi.fn());
+const designShot = vi.hoisted(() => vi.fn());
 const forgetDrawn = vi.hoisted(() => vi.fn());
 const checkDesign = vi.hoisted(() => vi.fn());
 const readFreshDist = vi.hoisted(() => vi.fn());
@@ -14,6 +15,7 @@ const current = vi.hoisted(() => vi.fn());
 const startHarnessServer = vi.hoisted(() => vi.fn());
 
 vi.mock('../sketch-command', () => ({ designSketch }));
+vi.mock('../shot-command', () => ({ designShot }));
 vi.mock('../check', () => ({ checkDesign }));
 vi.mock('../system/compare-command', () => ({ designCompare, shootStatesWith: () => vi.fn() }));
 vi.mock('../system/harness-watch', () => ({ createHarnessWatch: () => ({ current, stop: vi.fn() }) }));
@@ -37,14 +39,17 @@ beforeEach(() => {
   designSketch.mockResolvedValue(0);
   checkDesign.mockResolvedValue(0);
   designCompare.mockResolvedValue(0);
+  designShot.mockResolvedValue(0);
   readFreshDist.mockResolvedValue({ ok: true, release: () => undefined });
 });
 
 const runsIn = () => createWarmRuns({ target: mkdtempSync(join(tmpdir(), 'cli-resident-runs-')) });
 
 describe('the resident design process', () => {
-  it('runs compare, sketch check and sketch ready, and nothing else', () => {
+  it('runs compare, shot, sketch check and sketch ready, and nothing else', () => {
     expect(runsInResident(['compare', 'pages/start'])).toBe(true);
+    expect(runsInResident(['shot', 'components/zoom-chip', '--state', 'out'])).toBe(true);
+    expect(runsInResident(['shot', 'icons/close', '--asset'])).toBe(false);
     expect(runsInResident(['sketch', 'check', 'pages/start'])).toBe(true);
     expect(runsInResident(['sketch', 'ready', 'pages/start'])).toBe(true);
     expect(runsInResident(['sketch', 'new', 'pages/start'])).toBe(false);
@@ -68,6 +73,18 @@ describe('the resident design process', () => {
       }),
     );
     expect(designCompare).not.toHaveBeenCalled();
+  });
+
+  it('runs a shot on its warm design server and Chromium', async () => {
+    const runs = runsIn();
+
+    expect(await runs.run({ argv: ['shot', 'components/zoom-chip'], invocation: 'et design', env: {} })).toBe(0);
+    expect(designShot).toHaveBeenCalledWith(
+      expect.objectContaining({
+        argv: ['components/zoom-chip'],
+        warm: expect.objectContaining({ server: expect.any(Function), queue: expect.any(Function) }),
+      }),
+    );
   });
 
   it('refuses a command it does not run', async () => {

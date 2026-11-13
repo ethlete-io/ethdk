@@ -136,6 +136,7 @@ import {
   readConfig,
 } from './design-config';
 import { startSlowRunnerInWorker } from './system/slow-run-host';
+import { timedPhase } from './phase-timing';
 import { relaunch, RELOAD_EXIT_CODE, superviseReloads, SUPERVISED_ENV, watchBuild } from './build-watch';
 
 type ViteDevServer = import('vite', { with: { 'resolution-mode': 'import' } }).ViteDevServer;
@@ -1247,70 +1248,77 @@ export const createDesignServer = async (options: {
           },
         })
       : null;
-  const server = await createServer({
-    configFile: false,
-    root: resolve(here, 'web'),
-    // Every drawing is ruled under Tailwind 4, whatever the checkout installs. The tool brings its
-    // own pipeline so no checkout's postcss config reaches a drawing.
-    css: {
-      postcss: {
-        plugins: [
-          sketchStylesheetsPlugin((id) => {
-            const drawn = { product: productOfModuleId(id) ?? '', sketch: sketchOfModuleId(id) };
+  const server: ViteDevServer = await timedPhase('server-start', () =>
+    createServer({
+      configFile: false,
+      root: resolve(here, 'web'),
+      // Every drawing is ruled under Tailwind 4, whatever the checkout installs. The tool brings its
+      // own pipeline so no checkout's postcss config reaches a drawing.
+      css: {
+        postcss: {
+          plugins: [
+            sketchStylesheetsPlugin((id) => {
+              const drawn = { product: productOfModuleId(id) ?? '', sketch: sketchOfModuleId(id) };
 
-            return generatedStylesheetsOf(drawn).then(
-              (generated) => new Map([...system.replacedStylesheetsOf(drawn), ...generated]),
-            );
-          }),
-          importedAssetUrlsPlugin(system.withAssetUrls),
-          tailwind(),
-          forceInteractionsPlugin(),
-          stylesheetImportsPlugin(stylesheetImports),
+              return generatedStylesheetsOf(drawn).then(
+                (generated) => new Map([...system.replacedStylesheetsOf(drawn), ...generated]),
+              );
+            }),
+            importedAssetUrlsPlugin(system.withAssetUrls),
+            tailwind(),
+            forceInteractionsPlugin(),
+            stylesheetImportsPlugin(stylesheetImports),
+          ],
+        },
+      },
+      cacheDir: cache?.dir ?? viteCacheOf(target, 'vite'),
+      resolve: {
+        alias: [
+          { find: /^@design-explore$/, replacement: resolve(here, 'define-call.ts') },
+          { find: new RegExp(`^${DESIGN_SYSTEM_SPECIFIER}$`), replacement: resolve(here, 'define-part.ts') },
+          { find: new RegExp(`^${KIT_SPECIFIER}$`), replacement: resolve(here, 'wireframe-kit.ts') },
+          ...workspaceAliases(target),
         ],
       },
-    },
-    cacheDir: cache?.dir ?? viteCacheOf(target, 'vite'),
-    resolve: {
-      alias: [
-        { find: /^@design-explore$/, replacement: resolve(here, 'define-call.ts') },
-        { find: new RegExp(`^${DESIGN_SYSTEM_SPECIFIER}$`), replacement: resolve(here, 'define-part.ts') },
-        { find: new RegExp(`^${KIT_SPECIFIER}$`), replacement: resolve(here, 'wireframe-kit.ts') },
-        ...workspaceAliases(target),
+      // A design mock ships as TS that imports CSS with `?inline`, which the dependency pre-bundler
+      // can not load. The tool's own modules sit in a snapshot under `node_modules`; pre-bundled, each
+      // late find of one reloads every frame.
+      optimizeDeps: {
+        exclude: ['@ethlete/components', '@ethlete/core', '@design-explore', DESIGN_SYSTEM_SPECIFIER, KIT_SPECIFIER],
+      },
+      plugins: [
+        designExplore({
+          target,
+          config,
+          system,
+          stylesheetImports,
+          shotCacheDir: listen && !own ? resolve(workRootOf(target), SHOT_STORE_DIR) : null,
+          checkSketches,
+          chromiumOf,
+          ...(own ? { beforeFrame: () => sourceChangedSince(loadedFilesOf(server), drawnSince) && forgetDrawn() } : {}),
+          ...(appShots ? { appShotOf: appShots.shotOf } : {}),
+        }),
       ],
-    },
-    // A design mock ships as TS that imports CSS with `?inline`, which the dependency pre-bundler
-    // can not load. The tool's own modules sit in a snapshot under `node_modules`; pre-bundled, each
-    // late find of one reloads every frame.
-    optimizeDeps: {
-      exclude: ['@ethlete/components', '@ethlete/core', '@design-explore', DESIGN_SYSTEM_SPECIFIER, KIT_SPECIFIER],
-    },
-    plugins: [
-      designExplore({
-        target,
-        config,
-        system,
-        stylesheetImports,
-        shotCacheDir: listen && !own ? resolve(workRootOf(target), SHOT_STORE_DIR) : null,
-        checkSketches,
-        chromiumOf,
-        ...(own ? { beforeFrame: () => sourceChangedSince(loadedFilesOf(server), drawnSince) && forgetDrawn() } : {}),
-        ...(appShots ? { appShotOf: appShots.shotOf } : {}),
-      }),
-    ],
-    ...(listen ? {} : { appType: 'custom' as const }),
-    ...(listen && !own ? {} : { logLevel: 'error' as const }),
-    customLogger: logger,
-    server: {
-      // Studio swaps a frame for a fresh one once it has painted; a Vite reload would blank every frame at once.
-      hmr: false,
-      ...(listen
-        ? { port: port ?? portOf(config), ...(host ? { host } : {}), strictPort: !own, ...(own ? { watch: null } : {}) }
-        : { middlewareMode: true, ws: false as const, watch: null }),
-      // The frame page lives inside this package, which is outside the checkout it draws. Vite
-      // serves neither root unless both are allowed.
-      fs: { allow: [target, here, ...baseDirs, ...installedRootsOf(target), ...linkedRootsOf(target)] },
-    },
-  });
+      ...(listen ? {} : { appType: 'custom' as const }),
+      ...(listen && !own ? {} : { logLevel: 'error' as const }),
+      customLogger: logger,
+      server: {
+        // Studio swaps a frame for a fresh one once it has painted; a Vite reload would blank every frame at once.
+        hmr: false,
+        ...(listen
+          ? {
+              port: port ?? portOf(config),
+              ...(host ? { host } : {}),
+              strictPort: !own,
+              ...(own ? { watch: null } : {}),
+            }
+          : { middlewareMode: true, ws: false as const, watch: null }),
+        // The frame page lives inside this package, which is outside the checkout it draws. Vite
+        // serves neither root unless both are allowed.
+        fs: { allow: [target, here, ...baseDirs, ...installedRootsOf(target), ...linkedRootsOf(target)] },
+      },
+    }),
+  );
   const forgetDrawn = () => {
     drawnSince = Date.now();
     system.forget();

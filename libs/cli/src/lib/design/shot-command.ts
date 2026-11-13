@@ -20,6 +20,7 @@ import { createSystemModules, productModuleIdOf, SketchVariant } from './system/
 import { createDrawQueue, ThumbUnavailableError } from './thumb';
 import { BoxOf } from './variant-diff';
 import { unstableCellsOf, unstableReportOf } from './unstable-cells';
+import { WarmDraw } from './warm-draw';
 
 export const SHOT_USAGE = `shot <layer>/<name>[@<sketch>] --states [--variants [--round <key>[,<key>...]] [--variant <name>[,<name>...]] [--all] [--at <commit>] [--diff-props] [--in <layer>/<name>]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--crop <x,y,width,height> | --crop changed] [--product <name>] [--surface <name>] [--color <name>] [--scheme <light|dark>] [--out <file>]`;
 
@@ -421,7 +422,12 @@ export const changedCropsIn = async (options: {
  * `et design shot <layer>/<name> --states [--variants]` draws every state of a part, and with `--variants`
  * every variant of its open sketch too, into one contact sheet PNG, and prints where it wrote it.
  */
-export const designShot = async (options: { target: string; argv: string[]; invocation: string }) => {
+export const designShot = async (options: {
+  target: string;
+  argv: string[];
+  invocation: string;
+  warm?: WarmDraw;
+}): Promise<number> => {
   const { target, argv, invocation } = options;
   const args = argsOf(argv, {
     values: [
@@ -604,11 +610,14 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     return 2;
   }
 
-  const queue = createDrawQueue({ target });
-  const server = await createDesignServer({ target, config, listen: true, port: 0, sketchesRoot });
+  const warm = sketchesRoot === undefined ? options.warm : undefined;
+  const queue = warm ? warm.queue() : createDrawQueue({ target });
+  const server = warm
+    ? await warm.server(config)
+    : await createDesignServer({ target, config, listen: true, port: 0, sketchesRoot });
 
   try {
-    await server.listen();
+    if (!warm) await server.listen();
 
     const { port } = server.httpServer?.address() as AddressInfo;
     const loaded = new Map<Axis, string[]>();
@@ -657,7 +666,12 @@ export const designShot = async (options: { target: string; argv: string[]; invo
       state: asked[0] ?? null,
       only: states && asked.length > 0 ? asked : undefined,
     });
-    const shooter = createPartShooter({ target, base: `http://localhost:${port}`, system });
+    const shooter = createPartShooter({
+      target,
+      base: `http://localhost:${port}`,
+      system,
+      ...(warm ? { queue } : {}),
+    });
 
     try {
       const shoot = ({ label, address, absent }: Plan, fresh = false): Promise<SheetCell> =>
@@ -788,7 +802,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
 
       return unstable.length > 0 ? 1 : 0;
     } finally {
-      await shooter.close();
+      if (!warm) await shooter.close();
     }
   } catch (error) {
     if (error instanceof ThumbUnavailableError) {
@@ -799,7 +813,9 @@ export const designShot = async (options: { target: string; argv: string[]; invo
 
     throw error;
   } finally {
-    await queue.close();
-    await server.close();
+    if (!warm) {
+      await queue.close();
+      await server.close();
+    }
   }
 };
