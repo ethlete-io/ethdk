@@ -62,7 +62,12 @@
     "decidedBy": "auto: no visible change",
     "at": "2026-11-05T14:07:16.480Z"
   },
-  "elements/part-tree": "4decbdf07174f4c8",
+  "elements/part-tree": {
+    "hash": "be7a34ab36d35028",
+    "variant": "a",
+    "decidedBy": "user",
+    "at": "2026-11-13T10:17:15.531Z"
+  },
   "elements/shell-main": {
     "hash": "6ec78ec36bc18075",
     "variant": "a",
