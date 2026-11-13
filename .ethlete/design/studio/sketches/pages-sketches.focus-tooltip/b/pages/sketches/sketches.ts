@@ -53,6 +53,7 @@ import {
 } from '@shared/sketch-rows';
 import { SKETCH_POINTS, openLabel } from '@shared/open-points';
 import { type Withdrawn, isWithdrawn, visibleRows, withdrawnCount, withdrawnMark } from '@shared/withdrawn';
+import { type MultiTargets, MULTI_PART, targetsOf } from '@shared/multi-part';
 import { type Camera } from 'ethlete-studio/canvas';
 import {
   type ChangeGroup,
@@ -91,6 +92,7 @@ type Props = {
   points?: boolean;
   pointsOpen?: boolean;
   screen?: ScreenMode;
+  multi?: MultiTargets;
 };
 
 type View = {
@@ -111,9 +113,23 @@ const QUESTION = 'Wo soll der Reset-Knopf der Zoom-Pille stehen?';
 const foldedLabel = (count: number) =>
   count === 1 ? '1 unveränderter Zustand eingeklappt' : `${count} unveränderte Zustände eingeklappt`;
 
-const treeOf = (key: string) =>
+const sketchLayer = (multi: MultiTargets) => ({
+  title: 'Sketches',
+  open: true,
+  parts: [
+    {
+      name: 'kopf-tags',
+      selected: true,
+      open: true,
+      nested: targetsOf(multi).map((target) => ({ name: target, leaf: true })),
+    },
+  ],
+});
+
+const treeOf = (key: string, multi?: MultiTargets) =>
   partTree.render({
     layers: [
+      ...(multi ? [sketchLayer(multi)] : []),
       {
         title: 'Components',
         open: true,
@@ -122,7 +138,7 @@ const treeOf = (key: string) =>
           .map((name) => ({
             name,
             leaf: true,
-            ...(`components/${name}` === key ? { selected: true } : {}),
+            ...(!multi && `components/${name}` === key ? { selected: true } : {}),
           })),
       },
       {
@@ -582,6 +598,8 @@ export default definePart<Props>({
     'edit-sketch': { camera: 'fit', part: 'edit' },
     'change-crop': { camera: 'fit', part: 'narrow', screen: 'crop' },
     'change-crop-whole': { camera: 'fit', part: 'narrow', screen: 'whole' },
+    'multi-part': { camera: 'fit', part: 'narrow', multi: 'three' },
+    'multi-part-many': { camera: 'fit', part: 'narrow', multi: 'many' },
   },
   render: async ({
     camera,
@@ -600,6 +618,7 @@ export default definePart<Props>({
     points = false,
     pointsOpen = false,
     screen,
+    multi,
   }) => {
     const { discard, chip, pickers, tags } = await controlsOf();
     const take = await takeButton();
@@ -608,7 +627,7 @@ export default definePart<Props>({
     const rowStyles = await prepareShots(full);
     const hidden = comparing ? [] : unchangedStates(full);
     const part = hidden.length > 0 ? { ...full, states: full.states.filter((state) => !hidden.includes(state)) } : full;
-    const side = await treeOf(screen ? SCREEN_KEY : part.key);
+    const side = await treeOf(screen ? SCREEN_KEY : part.key, multi);
     const all = rowsOf(part, fresh);
     const rows = visibleRows(all, withdrawn);
     const hiddenCount = withdrawnCount(all, withdrawn);
@@ -644,6 +663,8 @@ export default definePart<Props>({
     const folded = screen ? UNCHANGED_COUNT : hidden.length;
     const control = screen ? await screenControl() : { body: '', styles: '' };
     const toggle = await disclosurePart.render({ label: '', body: '', open: false });
+    const parts = { body: '', styles: '', lift: 0 };
+    const lifted = (top: number) => (parts.lift ? `style="top: calc(var(--spacing) * ${top + parts.lift})"` : '');
     const content = html`<div
       class="relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))]"
       data-sketches-page
@@ -651,7 +672,7 @@ export default definePart<Props>({
       <header
         class="absolute z-3 top-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] right-space-5 flex items-center gap-space-3"
       >
-        <span class="text-ui-lg font-ui-strong">${screen ? SCREEN_KEY : part.key}</span>
+        <span class="text-ui-lg font-ui-strong">${multi ? MULTI_PART.title : screen ? SCREEN_KEY : part.key}</span>
         ${fresh ? tags.fresh.body : ''} ${statusMarkup((run && !run.failed) || port ? 'drawing' : status, reason, tags)}
         <span class="flex-1"></span>
         <span class="w-56 flex-none" data-sk-view-toggle-room></span>
@@ -663,10 +684,12 @@ export default definePart<Props>({
             : withAction(discard.body, 'emit:discard')
         }
       </header>
+      ${parts.body}
       ${
         question
           ? html`<p
               class="absolute z-2 top-14 right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] m-0 truncate text-ui-md font-ui-medium text-et-surface"
+              ${lifted(14)}
               data-sk-question
             >
               ${question}
@@ -675,6 +698,7 @@ export default definePart<Props>({
       }
       <div
         class="zr-picker absolute z-2 ${question ? 'top-24' : 'top-14'} left-[calc(var(--st-shell-inset-left)+var(--space-5))] flex items-center gap-space-4"
+        ${lifted(question ? 24 : 14)}
       >
         ${pickers[screen ? 'screen' : kind].body} ${run ? agentLine(run) : ''} ${port ? portLine(port) : ''}
         ${control.body}
@@ -682,6 +706,7 @@ export default definePart<Props>({
       </div>
       <div
         class="absolute ${question ? 'top-37' : 'top-27'} right-0 bottom-space-5 left-0 box-border overflow-clip pr-space-5 pl-[calc(var(--st-shell-inset-left)+var(--space-5))]"
+        ${lifted(question ? 37 : 27)}
       >
         <div class="size-full" data-sk-rows>
           <div
@@ -735,6 +760,7 @@ export default definePart<Props>({
         take.styles +
         (pointsButton?.styles ?? '') +
         (popover?.styles ?? '') +
+        parts.styles +
         rowStyles +
         Object.values(tags)
           .map((entry) => entry.styles)

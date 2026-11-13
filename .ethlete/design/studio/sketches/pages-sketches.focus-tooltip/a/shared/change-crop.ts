@@ -33,13 +33,13 @@ export const GROUPS: ChangeGroup[] = [
     ],
     box: { x: 842, y: 371, width: 375, height: 45 },
     pixels: 905,
-    units: '2 Zellen',
+    units: '2 Stellen',
   },
   {
     states: ['port-after-merge'],
     box: { x: 300, y: 92, width: 420, height: 24 },
     pixels: 2140,
-    units: '1 Zeile',
+    units: '1 Stelle',
   },
 ];
 

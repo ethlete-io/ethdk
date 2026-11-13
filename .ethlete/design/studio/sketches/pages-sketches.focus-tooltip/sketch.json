@@ -92,17 +92,23 @@
     "pages/inbox": "0e0fc08e618a94a0",
     "pages/inventory": "a7e25b0248e81b20",
     "pages/merge": "0e69471347b333f1",
-    "pages/sketches": "0b46d786395d6a69",
+    "pages/sketches": "90142d1298ec9729",
     "pages/start": "1006a4fe547aab92",
     "pages/system": "77210c36b991a79f",
     "fixtures.ts": "909089fbef7b8f34"
   },
-  "baselineTree": "bcf873451b4dfea6b83c84b5fbd2f201b73ba860",
+  "baselineTree": "2a7ee33ebd779ed0c4b472aa6120d3335aecf82d",
   "rounds": [
     {
       "key": "r1",
       "title": "Zellen und offenes Tooltip",
-      "note": "Die Probezellen auf pages/sketches sind 176 px breit und 45 px hoch; das offene Tooltip aus components/zoom-chip@focus-tooltip ragt dort heraus. a lässt die focus-visible-Zustände weg, b vergrößert die Zellen."
+      "note": "Die Probezellen auf pages/sketches sind 176 px breit und 45 px hoch; das offene Tooltip aus components/zoom-chip@focus-tooltip ragt dort heraus. a lässt die focus-visible-Zustände weg, b vergrößert die Zellen.",
+      "lost": "Der Mensch hat beide verworfen: a nimmt die focus-visible-Zellen aus der Probe, b macht die Zellen 208 px breit."
+    },
+    {
+      "key": "r2",
+      "title": "Zellen bleiben 176 px",
+      "note": "Die Zellen bleiben 176 × 45 px. c lässt das offene Tooltip über die Zelle hinaus in die Lücke und die Nachbarzelle ragen; d nimmt die focus-visible-Zustände aus dem Raster und zeigt sie nur in der Großansicht des Teils."
     }
   ],
   "variantInfo": {
@@ -115,20 +121,44 @@
       "authors": ["claude-opus-5-5"],
       "round": "r1",
       "note": "Probezellen wachsen auf 208 px Breite, im Crop-Bild auf 208 × 80 px, damit das offene Tooltip hineinpasst. Kostet: jede Zelle ist breiter, auch ohne Tooltip; das Tooltip erscheint erst nach dem Merge von zoom-chip@focus-tooltip."
+    },
+    "c": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r2",
+      "note": "Zellen bleiben 176 × 45 px und schneiden nicht: in den focus-visible-Zellen sitzt der Chip unten rechts, das offene Tooltip ragt nach oben und links über die Lücke, das Zustandslabel und die Nachbarzelle. Gilt im Raster und in den Probezellen des Ausschnitts. Kostet: das Tooltip verdeckt einen Teil der Nachbarzelle und ihres Labels; die Zelle zeigt nicht mehr den ganzen Zustand in ihren Grenzen."
+    },
+    "d": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r2",
+      "note": "Raster und Probezellen bleiben 176 × 45 px ohne focus-visible-Zustände; unter dem Raster nennt eine Zeile fit-focus-visible und reset-focus-visible mit dem Hinweis, dass sie nur in der Großansicht im System-Canvas stehen, dort in voller Größe. Kostet: im Raster fehlt der Vergleich des Tastaturfokus zwischen den Varianten; dafür ein Wechsel in den System-Canvas."
     }
   },
-  "readyContent": {
-    "a": "e0a48b2cd0c1f9de",
-    "b": "629197979dcb652f"
+  "rejections": {
+    "a": [
+      {
+        "by": "agent",
+        "decidedAt": "2026-11-13T10:29:15.456Z",
+        "reason": "Im Grill vom Menschen verworfen: ohne focus-visible-Zellen fehlt der Tastaturfokus in der Probe.",
+        "reasonBy": "agent"
+      }
+    ],
+    "b": [
+      {
+        "by": "agent",
+        "decidedAt": "2026-11-13T10:29:15.698Z",
+        "reason": "Im Grill vom Menschen verworfen: 208 px breite Zellen; die Zellbreite bleibt 176 px.",
+        "reasonBy": "agent"
+      }
+    ]
   },
-  "portAfterMerge": {
-    "merged": ["pages/sketches"],
-    "parts": ["pages/sketches"],
-    "reasons": ["a: pages/sketches/shared/change-crop.ts - the variant and the product both changed it"],
-    "at": "2026-11-13T10:22:12.282Z"
+  "readyContent": {
+    "a": "82e578c3ddd6e39e",
+    "b": "ab7756346e38deef",
+    "c": "2f383e5ff9b6f5c4",
+    "d": "a537ec26e4e0015b"
   },
   "mergeHold": {
-    "reason": "variant a changes narrow-part, comparing-narrow, narrow-below-fit, narrow-far-out, unchanged, unchanged-open, all-unchanged, withdrawn-hidden, withdrawn-shown, agent-round, agent-variant, agent-failed, folded, question-only, port-after-merge, port-after-merge-long, picked, sketch-only-points, sketch-only-points-open, edit-sketch, change-crop, change-crop-whole; variant b changes narrow-part, comparing-narrow, narrow-below-fit, narrow-far-out, unchanged, unchanged-open, all-unchanged, withdrawn-hidden, withdrawn-shown, agent-round, agent-variant, agent-failed, folded, question-only, port-after-merge, port-after-merge-long, picked, sketch-only-points, sketch-only-points-open, edit-sketch, change-crop, change-crop-whole",
-    "at": "2026-11-13T09:11:36.915Z"
+    "reason": "variant c changes narrow-part, comparing-narrow, all-unchanged, withdrawn-hidden, withdrawn-shown, agent-round, agent-variant, agent-failed, folded, question-only, port-after-merge, port-after-merge-long, picked, sketch-only-points, sketch-only-points-open, edit-sketch, change-crop, change-crop-whole, multi-part, multi-part-many; variant d changes narrow-part, comparing-narrow, narrow-below-fit, narrow-far-out, unchanged, unchanged-open, all-unchanged, withdrawn-hidden, withdrawn-shown, agent-round, agent-variant, agent-failed, folded, question-only, port-after-merge, port-after-merge-long, picked, sketch-only-points, sketch-only-points-open, edit-sketch, change-crop, change-crop-whole, multi-part, multi-part-many",
+    "at": "2026-11-13T10:41:56.016Z"
   }
 }
