@@ -1,10 +1,19 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { tempDir } from './temp-dir.mjs';
 
+// `git commit` starts a detached `git maintenance run --auto` that can recreate a temp repo after the spec removes it.
+const NO_AUTO_MAINTENANCE = {
+  GIT_CONFIG_COUNT: '1',
+  GIT_CONFIG_KEY_0: 'maintenance.auto',
+  GIT_CONFIG_VALUE_0: 'false',
+};
+
 /** `process.env` plus `extra` without the `GIT_*` variables inherited from a hook, so git in a temp repo never reaches the hook's repo. */
 export const gitEnv = (extra = {}) => {
   const inherited = ([key, value]) => key.startsWith('GIT_') && process.env[key] === value;
-  return Object.fromEntries(Object.entries({ ...process.env, ...extra }).filter((entry) => !inherited(entry)));
+  const env = Object.fromEntries(Object.entries({ ...process.env, ...extra }).filter((entry) => !inherited(entry)));
+
+  return 'GIT_CONFIG_COUNT' in env ? env : { ...env, ...NO_AUTO_MAINTENANCE };
 };
 
 const withGitEnv = (options = {}) => ({ ...options, env: gitEnv(options.env) });

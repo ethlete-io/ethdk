@@ -23,10 +23,11 @@ test('git in a temp repo leaves the repo a hook points at untouched', () => {
 
     assert.equal(git(temp, 'log', '--format=%s'), 'one');
     assert.deepEqual(readFileSync(configPath), before);
-    assert.equal(
-      Object.keys(gitEnv()).some((key) => key.startsWith('GIT_')),
-      false,
+    assert.deepEqual(
+      Object.keys(gitEnv()).filter((key) => key.startsWith('GIT_')),
+      ['GIT_CONFIG_COUNT', 'GIT_CONFIG_KEY_0', 'GIT_CONFIG_VALUE_0'],
     );
+    assert.equal(git(temp, 'config', '--get', 'maintenance.auto'), 'false');
   } finally {
     for (const [key, value] of Object.entries(saved)) {
       if (value === undefined) delete process.env[key];
