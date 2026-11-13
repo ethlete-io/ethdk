@@ -130,6 +130,9 @@ const WIDE_SKETCH = {
 const EDITED_PART = 'components/disclosure';
 const WAIT_MS = 10000;
 const FULL_COMPARE_MS = 60000;
+// Playwright's API request agent ignores the server's `Keep-Alive: timeout=5` hint, so reusing an idle socket races the
+// design server's idle close and resets (ECONNRESET under load). Each API request opens its own connection.
+const OWN_CONNECTION = { connection: 'close' };
 const COLD_START_MS = 60000;
 const BUDGET_MS = 5 * 60 * 1000;
 
@@ -1330,7 +1333,9 @@ const CASES = [
             })),
         );
 
-      const primed = entryOf(await (await page.request.get(listing, { timeout: FULL_COMPARE_MS })).json());
+      const primed = entryOf(
+        await (await page.request.get(listing, { timeout: FULL_COMPARE_MS, headers: OWN_CONNECTION })).json(),
+      );
       let release;
       const held = new Promise((resolve) => (release = resolve));
       let answered;
@@ -1769,7 +1774,9 @@ const CASES = [
       const tagsOf = (shown) =>
         Promise.all(
           shown.map(({ src }) =>
-            page.request.get(src, { timeout: WAIT_MS }).then((answer) => answer.headers()['etag']),
+            page.request
+              .get(src, { timeout: WAIT_MS, headers: OWN_CONNECTION })
+              .then((answer) => answer.headers()['etag']),
           ),
         );
       const leaves = await rows.evaluateAll((all) =>
@@ -2217,7 +2224,8 @@ const CASES = [
 
         return null;
       };
-      const tagOf = async (src) => (await page.request.get(src, { timeout: WAIT_MS })).headers()['etag'];
+      const tagOf = async (src) =>
+        (await page.request.get(src, { timeout: WAIT_MS, headers: OWN_CONNECTION })).headers()['etag'];
 
       await showAllStates(page);
       await page.waitForTimeout(PAGE_SWITCH_SETTLE_MS);
