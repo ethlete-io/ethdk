@@ -138,7 +138,11 @@
       }
     },
     "pages/sketches": {
-      "click": ["Sketches"],
+      "storage": {
+        "ethlete-studio.call-view": {
+          "systemEntry": "sketch:pages/system"
+        }
+      },
       "answers": {
         "/__design/sketches": "design-live/sketches-page.json"
       },
