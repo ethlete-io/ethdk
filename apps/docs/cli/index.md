@@ -454,10 +454,12 @@ points when a mark holds.
 
 ## Build-ready
 
-A part is build-ready when `et design check` writes a current check record for it with no blockers. The record lives in
-`.ethlete/design/<product>/ready.json`, is written by the tool only and is committed. There is no go and no acceptance
-step: Studio computes the state and `design task` starts only for build-ready parts. Any edit of the part changes its
-hash, and the record then reads as stale until the next `design check`.
+A part is build-ready when a current check record with no blockers holds for it. `et design ready` and the design
+server write the record; it lives in `.ethlete/design/<product>/ready.json`, is written by the tool only and is
+committed. `et design check` reports the same verdict but leaves `ready.json` and `merged.json` as they are. There is no
+go and no acceptance step: Studio computes the state and `design task` starts only for build-ready parts. Any edit of
+the part changes its hash, and the record then reads as stale until `et design ready` or the design server writes it
+again.
 
 Studio shows the state on the part as "Baubereit", "Nicht baubereit (n)" with the reasons, or "Wird geprüft" while the
 slow checks run. A change to a merged part outside a sketch is not accepted by hand: `design check` opens an old/new
@@ -511,8 +513,9 @@ the part as `design compare` draws the design side and stores the hash of each p
 tool reads `.ethlete/design/<product>/pictures.json` of an older checkout once.
 `et design check` stores the `record` pictures of a merged part unchanged since its merge. When a merged part
 changed outside a sketch, `et design check` draws every state again and compares it with the pictures at the
-`merged.json` hash. With every state identical it records the new hash in `merged.json` and prints
-`HELD <product> <part>: changed outside a sketch, every state draws as before`. Otherwise it prints
+`merged.json` hash. With every state identical it prints
+`HELD <product> <part>: changed outside a sketch, every state draws as before`; `merged.json` keeps its hash until a
+sketch merge records the part. Otherwise it prints
 `PICTURES CHANGED <product> <part>: <states>` and opens an old/new edit sketch to pick from.
 `et design task components/chip --product app-a` prints what implementing a build-ready part takes: the part hash,
 the `implements` component, each state with its props, the states new or changed since the last implementation, the

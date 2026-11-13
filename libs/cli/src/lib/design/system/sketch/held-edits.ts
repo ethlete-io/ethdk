@@ -7,7 +7,7 @@ let held: HeldEdits = {};
 
 /**
  * Keeps in memory that the direct edit of `part` at part hash `hash` draws as before, so the design server does not
- * show it as an open point; `merged.json` still waits for `design check`.
+ * show it as an open point; `merged.json` keeps its hash until a sketch merge records it.
  */
 export const holdEdit = ({ product, part, hash }: { product: ResolvedProduct; part: string; hash: string }) => {
   held = { ...held, [product.dir]: { ...held[product.dir], [part]: hash } };

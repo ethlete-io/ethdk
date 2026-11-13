@@ -74,7 +74,7 @@ const ready = (target: string, failures: string[] = []) => {
 describe('an embedded part change asks for the actions of its embedders again', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it('drops the record of an embedding part with a rule problem in check, and clears after a passing ready', async () => {
+  it('reports the record of an embedding part with a rule problem as dropped in check, and clears after a passing ready', async () => {
     const target = checkout();
 
     expect(await ready(target)).not.toHaveProperty('status');
@@ -94,14 +94,16 @@ describe('an embedded part change asks for the actions of its embedders again', 
     await checkSystemRendered({ target, config: readConfig(target) ?? {}, products: ['app-a'] });
 
     expect(lines.some((line) => line.startsWith('ACTIONS RERUN'))).toBe(false);
-    expect(actionsRerunOf({ product: productOf(target), part: 'pages/inbox' })).toEqual([]);
+    expect(lines).toContainEqual(expect.stringMatching(/^RECORD DROPPED app-a pages\/inbox: /u));
+    expect(actionsRerunOf({ product: productOf(target), part: 'pages/inbox' })).toEqual(['components/canvas']);
     expect(lines.filter((line) => line.startsWith('PART app-a pages/inbox: '))).toEqual([
       expect.stringMatching(/IMPLEMENTS-SHAPE/u),
     ]);
 
     expect(await ready(target, ['default button "x" Enter FAILED'])).toEqual({
       status: 422,
-      error: 'pages/inbox fails 1 action check - fix them before ready',
+      error:
+        'pages/inbox fails 1 action check - fix them before ready (embedded components/canvas changed since its actions last ran)',
       actions: ['default button "x" Enter FAILED'],
     });
 

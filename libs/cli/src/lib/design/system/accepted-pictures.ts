@@ -321,7 +321,7 @@ export const settleCommittedEdits = (options: {
  * state as before holds at once (its new hash goes to `merged.json`, and the edit sketch closes); one that draws a state
  * differently leaves the edit sketch open. An `old` that does not draw, or a part HEAD does not hold, goes to
  * `problems`, else to the lines. With `writesTracked: false` (the design server) it writes no file git tracks: a held
- * or settled edit stays unrecorded for `design check`. `held` gets each held or settled part with its part hash.
+ * or settled edit stays unrecorded. `held` gets each held or settled part with its part hash.
  * Answers with one line per part it drew or decided.
  */
 export const autoAcceptOf = async (options: {

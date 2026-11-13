@@ -1,8 +1,8 @@
-import { existsSync, readFileSync } from 'fs';
-import { writeJsonFile } from '../../../json-file';
+import { existsSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
+import { readStampText, writeStampFile } from '../stamp-files';
 import { partHashesHold, partHashHolds, partHashOf } from './baseline';
 import { heldEditsOf } from './held-edits';
 import { listSketches, Sketch, variantDirOf } from './sketch';
@@ -38,12 +38,12 @@ const entryOf = (value: unknown): MergedEntry | null => {
 };
 
 const readEntries = (productDir: string): Record<string, MergedEntry> => {
-  const file = mergedFileOf(productDir);
+  const text = readStampText(mergedFileOf(productDir));
 
-  if (!existsSync(file)) return {};
+  if (text === null) return {};
 
   try {
-    const parsed: unknown = JSON.parse(readFileSync(file, 'utf8'));
+    const parsed: unknown = JSON.parse(text);
 
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
 
@@ -67,7 +67,7 @@ const writeEntries = (productDir: string, entries: Record<string, MergedEntry>) 
       decision || note ? { hash, ...decision, ...(note ? { note } : {}) } : hash,
     ]);
 
-  writeJsonFile({ file: mergedFileOf(productDir), value: Object.fromEntries(sorted) });
+  writeStampFile(mergedFileOf(productDir), Object.fromEntries(sorted));
 };
 
 /** The content hash of each part, its folder and the assets it imports, as its last sketch merge left it, under the part key. */

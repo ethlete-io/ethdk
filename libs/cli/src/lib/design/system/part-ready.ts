@@ -1,6 +1,4 @@
-import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
-import { writeJsonFile } from '../../json-file';
 import { DesignConfig } from '../design-config';
 import { Blocker } from './build-ready-contract';
 import { designHashOf, FileHashes, isOptionalFileHashes, recordHolds } from './design-hash';
@@ -10,6 +8,7 @@ import { partOwnerOf } from './inventory-approval';
 import { OpenPoint } from './open-points';
 import { partPointsOf, readOpenPoints } from './read-open-points';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
+import { readStampText, writeStampFile } from './stamp-files';
 import { hasActor, WriteOrigin } from './write-origin';
 
 export const READY_FILE = 'ready.json';
@@ -75,12 +74,12 @@ const isActionBaseline = (value: unknown): value is ActionBaseline => {
 
 /** Every entry of a ready.json: the check records, and the action baselines of parts whose record was dropped. */
 export const readReadyEntries = (dir: string): Record<string, PartReady | ActionBaseline> => {
-  const file = readyFileOf(dir);
+  const text = readStampText(readyFileOf(dir));
 
-  if (!existsSync(file)) return {};
+  if (text === null) return {};
 
   try {
-    const parsed: unknown = JSON.parse(readFileSync(file, 'utf8'));
+    const parsed: unknown = JSON.parse(text);
 
     return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
       ? Object.fromEntries(
@@ -165,10 +164,7 @@ export const readyPartsOf = (product: ResolvedProduct) =>
   product.parts.map(partKeyOf).filter((part) => readyMarkOf({ product, part }) !== null);
 
 const writeReady = (dir: string, records: Record<string, PartReady | ActionBaseline>) =>
-  writeJsonFile({
-    file: readyFileOf(dir),
-    value: Object.fromEntries(Object.entries(records).sort(([a], [b]) => a.localeCompare(b))),
-  });
+  writeStampFile(readyFileOf(dir), Object.fromEntries(Object.entries(records).sort(([a], [b]) => a.localeCompare(b))));
 
 /**
  * Writes the check record of a part at its current design hash, stamped with `origin`, with `actions` as the action

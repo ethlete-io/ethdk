@@ -2718,6 +2718,16 @@ LOST-SURFACE 42, NESTED-SCROLL 5, CUT-CONTROL 3, SKIP-SCOPE 3).
 Builder's direction (applies the row rule, not a new decision): review ACTION-UNDECLARED and NESTED-SURFACE first;
 keep DROPPED-PROP, UNBOUND-INPUT, CONTRAST, CUT-CONTROL only if their sample is clean, and fix their true hits.
 
+B500 P5 as built (Linux builder subagent, 2026-11-13, commit "fix(cli): Keep merged.json and ready.json unchanged in
+design check"): `checkSystemRendered` runs inside `withStampsInMemory` (`stamp-files.ts`); `merged.json` and
+`ready.json` reads and writes go through it, so the check sees its own record and merge stamps but the files stay as
+they are. `design ready`, the design server and sketch merges still write them. Bite: `check-system-tracked.spec.ts`
+(full and `--part`) red on the old code for both files, green after. Live: full sdk check with the old behaviour
+rewrote `sdk/merged.json` and `sdk/ready.json`; with the fix `git status .ethlete/design` stays empty, the same 1353
+findings, and the only report difference is the old run's own `UNCOMMITTED-DECISIONS sdk: merged.json` warning. Not
+verified: a live studio run and a live `--part` run; a committed direct edit now stays in `merged.json` at its old hash
+until a merge, so each check re-settles it (Suspect: no report change, the settle prints nothing).
+
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
 Bite: a spec stages a name and clears it in the working tree; red on the old script. Not verified: a real refused commit.

@@ -83,6 +83,7 @@ import { designCoverageOf } from './rules/design-coverage';
 import { badWidthsOf } from './rules/widths';
 import { typecheckVariant } from './sketch/check-sketches';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
+import { withStampsInMemory } from './stamp-files';
 import { staleSketchBasesOf } from './sketch/stale-base';
 import { listSketches, variantDirOf } from './sketch/sketch';
 import { typecheckProduct, writeEditorTsconfig } from './system-tsconfig';
@@ -991,7 +992,7 @@ export const checkSystemRendered = async (options: CheckOptions) => {
     : createRunDraw(options.target, { chromiumOf: options.chromiumOf });
 
   try {
-    return await checkSystemRenderedOn({ ...options, warm: run.warm });
+    return await withStampsInMemory(() => checkSystemRenderedOn({ ...options, warm: run.warm }));
   } finally {
     await run.close();
   }
