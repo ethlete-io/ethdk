@@ -6,7 +6,7 @@ type Props = {
   view: 'table' | 'pick';
   plain?: boolean;
   empty?: boolean;
-  handleForce?: { index: number; force: string };
+  cardForce?: { index: number; force: string };
   dragging?: boolean;
   locked?: boolean;
 };
@@ -100,11 +100,11 @@ const pick = (props: Props) =>
     rows: ROWS.map((row, index) => ({
       name: row.name,
       mark: `<span class="t-mark">${PICK_MARKS[index]}</span>`,
-      handleForce: props.handleForce?.index === index ? props.handleForce.force : undefined,
+      cardForce: props.cardForce?.index === index ? props.cardForce.force : undefined,
     })),
     advancingCount: 2,
     locked: props.locked,
-    dragging: props.dragging ? { index: 3, offset: -38 } : undefined,
+    dragging: props.dragging ? { index: 3, offset: -38, ghostOffset: -44 } : undefined,
     shifts: props.dragging ? [0, 0, 44] : undefined,
   });
 
@@ -116,8 +116,8 @@ export default definePart({
     'table-plain': { view: 'table', plain: true },
     'table-empty': { view: 'table', empty: true },
     pick: { view: 'pick' },
-    'pick-handle-hover': { view: 'pick', handleForce: { index: 1, force: 'hover' } },
-    'pick-handle-focus-visible': { view: 'pick', handleForce: { index: 1, force: 'focus-visible' } },
+    'pick-card-hover': { view: 'pick', cardForce: { index: 1, force: 'hover' } },
+    'pick-card-focus-visible': { view: 'pick', cardForce: { index: 1, force: 'focus-visible' } },
     'pick-dragging': { view: 'pick', dragging: true },
     'pick-locked': { view: 'pick', locked: true },
   },

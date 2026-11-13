@@ -157,6 +157,13 @@ export class StandingsPickComponent {
     }));
   });
 
+  protected ghostTranslate = computed(() => {
+    const state = this.dragState();
+    const landingY = state ? (state.offsets[state.from] ?? 0) : 0;
+
+    return landingY ? `0 ${landingY}px` : null;
+  });
+
   protected translates = computed<(string | null)[]>(() => {
     const state = this.dragState();
 

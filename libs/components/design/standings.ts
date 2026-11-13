@@ -41,16 +41,16 @@ export type StandingsPickMockRow = {
   name: string;
   /** The consumer's mark template content, as HTML, drawn only while locked. */
   mark?: string;
-  /** A design marker for the reorder handle, e.g. `hover` or `focus-visible`. */
-  handleForce?: string;
+  /** A design marker for the card, which is the reorder control, e.g. `hover` or `focus-visible`. */
+  cardForce?: string;
 };
 
 export type StandingsPickMockOptions = {
   rows: readonly StandingsPickMockRow[];
   advancingCount: number;
   locked?: boolean;
-  /** The index of the card being dragged, and its offset from the slot in px. */
-  dragging?: { index: number; offset: number };
+  /** The index of the card being dragged, its offset from the slot in px, and the drop ghost's offset from the slot in px. */
+  dragging?: { index: number; offset: number; ghostOffset?: number };
   /** Per index, the preview offset in px the other cards slide by while a drag runs. */
   shifts?: readonly number[];
   /** Extra attributes on the host, e.g. a style or design markers. */
@@ -137,9 +137,14 @@ export const standingsPick = (options: StandingsPickMockOptions) => {
       const offset = dragging ? options.dragging?.offset : options.shifts?.[index];
       const translate = offset ? ` style="translate: 0 ${offset}px"` : '';
       const mark = options.locked && row.mark ? `<span class="et-standings-pick-mark">${row.mark}</span>` : '';
-      const handle = options.locked
+      const control = options.locked
         ? ''
-        : `<button aria-label="Move ${row.name}, position ${index + 1}" class="et-standings-pick-handle et-focus-ring" type="button"${forced(row.handleForce)}><span class="et-standings-pick-grip" aria-hidden="true"></span></button>`;
+        : ` tabindex="0" role="group" aria-label="Move ${row.name}, position ${index + 1}"${forced(row.cardForce)}`;
+      const ghostOffset = options.dragging?.ghostOffset;
+      const ghost = dragging
+        ? `<span class="et-standings-pick-ghost" aria-hidden="true"${ghostOffset ? ` style="translate: 0 ${ghostOffset}px"` : ''}></span>`
+        : '';
+      const grip = options.locked ? '' : `<span class="et-standings-pick-grip" aria-hidden="true"></span>`;
       const cut =
         index === options.advancingCount - 1
           ? `<p class="et-standings-pick-cut" aria-hidden="true"><span class="et-standings-pick-cut-line"></span><span class="et-standings-pick-cut-label">Advancing</span><span class="et-standings-pick-cut-line"></span></p>`
@@ -147,11 +152,11 @@ export const standingsPick = (options: StandingsPickMockOptions) => {
 
       return [
         `<li class="et-standings-pick-item"${advancing ? ' data-advancing=""' : ''}>`,
-        `<div class="et-standings-pick-row"><span class="et-standings-pick-position">${index + 1}</span>`,
-        `<div class="et-standings-pick-card"${dragging ? ' data-dragging=""' : ''}${translate}>`,
+        `<div class="et-standings-pick-row"><span class="et-standings-pick-position">${index + 1}</span>${ghost}`,
+        `<div class="et-standings-pick-card et-focus-ring"${control}${dragging ? ' data-dragging=""' : ''}${translate}>`,
         participant(row.name, 'et-standings-pick-participant'),
         mark,
-        handle,
+        grip,
         `</div></div>${cut}</li>`,
       ].join('');
     })

@@ -149,8 +149,9 @@ crests); the drawn `et-standings-pick` reads exactly the same state.
 
 The list is an `<ol>` named by the `pickCaption` label, one `<li>` per participant.
 
-A pointer drags the whole card: it follows the pointer, stops at the viewport edge instead of growing
-the page's scroll area, and on release lands in the slot it was dropped on before the order changes. The card is also the row's only control and its arrow-key target; a
+A pointer drags the whole card: it lifts on press, follows the pointer from the first pixel, stops at
+the viewport edge instead of growing the page's scroll area, and on release lands in the slot it was
+dropped on before the order changes. A dashed ghost marks that slot while the drag runs and fades out on release. The card is also the row's only control and its arrow-key target; a
 moved card keeps focus and slides into place. It is named `Move <participant>. Drag it, or use the arrow keys.` (the `pickMoveRow` label),
 so a screen-reader user is told both ways to sort from the control itself.
 
@@ -173,7 +174,7 @@ colour- or position-only.
 ## Theming
 
 Every colour resolves from the app-registered [surface and colour theme](/core/theming) systems - the
-card fills and the handle states from `--et-surface-interaction-solid`, the text from
+card fills, the card states and the drop ghost from `--et-surface-interaction-solid`, the text from
 `--et-surface-color-*`, the cut line from `--et-theme-color-primary-solid`. Scope the list with
 `[etProvideColor]` to change what the cut is drawn in; no theme name is baked in.
 

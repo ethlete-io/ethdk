@@ -16,9 +16,9 @@ import { STANDINGS_PICK_IMPORTS } from '../standings.imports';
     <div [etProvideSurface]="surface()" class="text-medium flex flex-col gap-8 p-8 font-sans">
       <section class="flex flex-col gap-4">
         <p class="text-small m-0 opacity-60">
-          Grab a row and drag it, or Tab to its handle and press ArrowUp / ArrowDown. The line marks where the advancing
-          places end. Turn <code>locked</code> on for the scored state - the numbers on the right are the app's, worked
-          out from <code>standingPickOutcome</code>.
+          Grab a row and drag it, or Tab to it and press ArrowUp / ArrowDown. The line marks where the advancing places
+          end. Turn <code>locked</code> on for the scored state - the numbers on the right are the app's, worked out
+          from <code>standingPickOutcome</code>.
         </p>
 
         <div [style.inline-size]="boxWidth()">

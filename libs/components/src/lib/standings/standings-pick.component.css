@@ -53,31 +53,48 @@
   }
 
   .et-standings-pick-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr);
     align-items: center;
     gap: var(--et-standings-pick-gap);
     block-size: var(--et-standings-pick-row-height);
   }
 
   .et-standings-pick-position {
-    flex: none;
-    inline-size: 20px;
     color: var(--et-surface-color-muted-solid, currentColor);
     font-variant-numeric: tabular-nums;
     text-align: center;
   }
 
+  .et-standings-pick-card,
+  .et-standings-pick-ghost {
+    grid-row: 1;
+    grid-column: 2;
+    block-size: 100%;
+    border-radius: var(--et-standings-pick-radius);
+  }
+
+  .et-standings-pick-ghost {
+    box-sizing: border-box;
+    border: 1.5px dashed color-mix(in srgb, var(--et-surface-interaction-solid, gray) 45%, transparent);
+    transition: translate var(--et-standings-pick-preview-duration) ease;
+  }
+
+  .et-standings-pick-ghost:where([data-settling]) {
+    opacity: 0;
+    transition: opacity 100ms ease-out;
+  }
+
   .et-standings-pick-card {
     display: flex;
-    flex: 1;
     align-items: center;
     gap: var(--et-standings-pick-gap);
     min-inline-size: 0;
-    block-size: 100%;
     padding-inline: 8px;
     background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 8%, transparent);
-    border-radius: var(--et-standings-pick-radius);
-    transition: background-color 120ms ease;
+    transition:
+      background-color 120ms ease,
+      box-shadow 120ms ease-out;
   }
 
   /* Only while a drag runs: on release the reordered list renders with the transforms already gone, and a
@@ -86,6 +103,11 @@
     transition: translate var(--et-standings-pick-preview-duration) ease;
   }
 
+  .et-standings-pick:where(:not([data-locked])) .et-standings-pick-card:not([data-dragging]):hover {
+    background-color: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 12%, transparent);
+  }
+
+  .et-standings-pick:where(:not([data-locked])) .et-standings-pick-card:not([data-dragging]):active,
   .et-standings-pick-list:where([data-dragging]) .et-standings-pick-card:where([data-dragging]) {
     position: relative;
     z-index: 1;
@@ -105,12 +127,7 @@
     user-select: none;
   }
 
-  .et-standings-pick:where(:not([data-locked])) .et-standings-pick-card:not([data-dragging]):hover {
-    background-color: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 12%, transparent);
-  }
-
   .et-standings-pick:where(:not([data-locked])) .et-standings-pick-card:not([data-dragging]):active {
-    background-color: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 16%, transparent);
     cursor: grabbing;
   }
 
@@ -189,6 +206,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .et-standings-pick-card,
+    .et-standings-pick-ghost,
     .et-standings-pick-list:where([data-dragging]) .et-standings-pick-card {
       transition: none;
     }
