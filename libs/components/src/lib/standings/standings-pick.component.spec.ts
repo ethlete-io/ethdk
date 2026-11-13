@@ -215,11 +215,11 @@ describe('StandingsPickComponent', () => {
     const driver = create();
     const gesture = driver.directive(StandingsPickComponent) as unknown as {
       startDrag: (index: number) => void;
-      previewDrop: (event: Pick<DragMoveEvent, 'clientY' | 'totalDy'>) => void;
+      previewDrop: (event: Pick<DragMoveEvent, 'clientY' | 'totalDx' | 'totalDy'>) => void;
     };
 
     gesture.startDrag(0);
-    gesture.previewDrop({ clientY: 100, totalDy: 30 });
+    gesture.previewDrop({ clientY: 100, totalDx: 0, totalDy: 30 });
     driver.detectChanges();
 
     expect(driver.query('.et-standings-pick-list')?.hasAttribute('data-dragging')).toBe(true);
@@ -236,6 +236,39 @@ describe('StandingsPickComponent', () => {
       '',
       '',
     ]);
+  });
+
+  it('slides a dropped card into its slot before it commits the order', () => {
+    const root = document.documentElement;
+
+    Object.defineProperty(root, 'clientWidth', { configurable: true, value: 1000 });
+    Object.defineProperty(root, 'clientHeight', { configurable: true, value: 1000 });
+    onTestFinished(() => {
+      Reflect.deleteProperty(root, 'clientWidth');
+      Reflect.deleteProperty(root, 'clientHeight');
+    });
+
+    const driver = create();
+    const gesture = driver.directive(StandingsPickComponent) as unknown as {
+      startDrag: (index: number) => void;
+      previewDrop: (event: Pick<DragMoveEvent, 'clientY' | 'totalDx' | 'totalDy'>) => void;
+      settleDrop: () => void;
+    };
+    gesture.startDrag(0);
+    gesture.previewDrop({ clientY: 1, totalDx: 12, totalDy: 30 });
+    gesture.settleDrop();
+    driver.detectChanges();
+
+    const card = driver.query<HTMLElement>('.et-standings-pick-card[data-settling]');
+
+    expect(card?.style.translate).not.toContain('12px');
+    expect(driver.order()).toEqual(['Alpha', 'Bravo', 'Charlie', 'Delta']);
+
+    card?.dispatchEvent(Object.assign(new Event('transitionend'), { propertyName: 'translate' }));
+    driver.detectChanges();
+
+    expect(driver.query('.et-standings-pick-list')?.hasAttribute('data-dragging')).toBe(false);
+    expect(driver.order()).toEqual(['Bravo', 'Charlie', 'Delta', 'Alpha']);
   });
 
   it('refuses a move while locked', () => {

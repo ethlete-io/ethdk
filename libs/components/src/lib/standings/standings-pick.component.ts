@@ -1,6 +1,7 @@
-import { NgTemplateOutlet } from '@angular/common';
+import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
 import {
   Component,
+  DestroyRef,
   computed,
   ElementRef,
   inject,
@@ -9,7 +10,15 @@ import {
   ViewEncapsulation,
   viewChildren,
 } from '@angular/core';
-import { DragHandleDirective, DragMoveEvent, mountVisuallyHidden } from '@ethlete/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  DragHandleDirective,
+  DragMoveEvent,
+  injectObserveMediaQuery,
+  mountEasingTokens,
+  mountVisuallyHidden,
+} from '@ethlete/core';
+import { filter, tap, timer } from 'rxjs';
 import { FocusRingDirective } from '../focus-ring';
 import { injectMatchLabels, MATCH_PARTICIPANT_IMPORTS, matchParticipantDisplayName } from '../match';
 import { StandingsPickDirective, StandingsPickMarkContext, StandingsPickMove } from './headless';
@@ -22,6 +31,26 @@ type PickSlot = {
 
 const slotAt = (slots: readonly PickSlot[], clientY: number) =>
   Math.min(slots.filter((slot) => clientY > slot.mid).length, Math.max(slots.length - 1, 0));
+
+/** How far the lifted card may travel before it would leave the viewport and grow the page's scroll area. */
+type LiftBounds = {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+};
+
+type DragState = {
+  from: number;
+  to: number;
+  liftX: number;
+  liftY: number;
+  offsets: readonly number[];
+  bounds: LiftBounds;
+  settling: boolean;
+};
+
+const SETTLE_TIMEOUT_MS = 1000;
 
 /**
  * How far each row has to shift to sit where the move would leave it.
@@ -49,9 +78,9 @@ const previewOffsets = (slots: readonly PickSlot[], move: { from: number; to: nu
  * and by keyboard, with the advancing cut drawn where the qualifying places end. Driven by the headless
  * {@link StandingsPickDirective}.
  *
- * Every row carries **one** control, and it does both: it is the drag grip and the target for ArrowUp /
- * ArrowDown, so the order can be arranged without a pointer. Focus stays on the row it was on while the
- * row moves under it.
+ * The whole card is the drag target, and each row carries **one** control for ArrowUp / ArrowDown, so
+ * the order can be arranged without a pointer. Focus stays on the row it was on while the row moves
+ * under it.
  *
  * The row's trailing slot is the app's - fill it with `ng-template[etStandingsPickMark]` to show what a
  * pick scored. Whether a pick was right is the app's data, so this component models no points.
@@ -87,13 +116,18 @@ export class StandingsPickComponent {
 
   private matchLabels = injectMatchLabels();
 
+  private destroyRef = inject(DestroyRef);
+
+  private prefersReducedMotion = injectObserveMediaQuery('(prefers-reduced-motion: reduce)');
+
+  private document = inject(DOCUMENT);
+
   private rowElements = viewChildren<ElementRef<HTMLElement>>('rowElement');
 
+  private cardElements = viewChildren<ElementRef<HTMLElement>>('cardElement');
+
   /** Reset whenever `locked` changes: locking removes the handle mid-drag, and a removed handle never ends its drag. */
-  private dragState = linkedSignal<
-    boolean,
-    { from: number; to: number; liftY: number; offsets: readonly number[] } | null
-  >({
+  private dragState = linkedSignal<boolean, DragState | null>({
     source: this.pick.locked,
     computation: () => null,
   });
@@ -105,6 +139,8 @@ export class StandingsPickComponent {
   protected isDragging = computed(() => !!this.dragState());
 
   protected draggingIndex = computed(() => this.dragState()?.from ?? -1);
+
+  protected isSettling = computed(() => !!this.dragState()?.settling);
 
   protected renderRows = computed(() => {
     const labels = this.labels();
@@ -123,7 +159,7 @@ export class StandingsPickComponent {
     if (!state) return [];
 
     return this.pick.rows().map((_, index) => {
-      if (index === state.from) return `0 ${state.liftY}px`;
+      if (index === state.from) return `${state.liftX}px ${state.liftY}px`;
 
       const offset = state.offsets[index] ?? 0;
 
@@ -133,40 +169,73 @@ export class StandingsPickComponent {
 
   constructor() {
     mountVisuallyHidden();
+    mountEasingTokens();
   }
 
   protected startDrag(index: number) {
-    if (this.pick.locked()) return;
+    if (this.pick.locked() || this.dragState()) return;
 
-    this.dragState.set({ from: index, to: index, liftY: 0, offsets: [] });
+    this.dragState.set({
+      from: index,
+      to: index,
+      liftX: 0,
+      liftY: 0,
+      offsets: [],
+      bounds: this.liftBounds(index),
+      settling: false,
+    });
   }
 
-  protected previewDrop(event: DragMoveEvent) {
+  protected previewDrop(event: Pick<DragMoveEvent, 'clientY' | 'totalDx' | 'totalDy'>) {
     const state = this.dragState();
 
-    if (!state) return;
+    if (!state || state.settling) return;
 
     const slots = this.slots();
     const to = slotAt(slots, event.clientY);
 
     this.dragState.set({
-      from: state.from,
+      ...state,
       to,
-      liftY: event.totalDy,
+      liftX: Math.min(Math.max(event.totalDx, state.bounds.minX), state.bounds.maxX),
+      liftY: Math.min(Math.max(event.totalDy, state.bounds.minY), state.bounds.maxY),
       offsets: previewOffsets(slots, { from: state.from, to }),
     });
   }
 
-  /**
-   * Commit and drop the preview in one change, so the reordered list renders straight into the positions
-   * the preview already put the cards in - clearing them a tick later flashes the old order.
-   */
-  protected commitDrop() {
+  /** Slides the released card into the slot it was dropped on, then commits once it got there. */
+  protected settleDrop() {
     const state = this.dragState();
 
-    this.dragState.set(null);
+    if (!state || state.settling) return;
 
-    if (state) this.pick.move({ from: state.from, to: state.to });
+    const offsets = state.offsets.length ? state.offsets : previewOffsets(this.slots(), state);
+    const landingY = offsets[state.from] ?? 0;
+
+    if (this.prefersReducedMotion() || (Math.abs(state.liftX) < 0.5 && Math.abs(state.liftY - landingY) < 0.5)) {
+      this.commitDrop();
+
+      return;
+    }
+
+    const settling: DragState = { ...state, liftX: 0, liftY: landingY, offsets, settling: true };
+
+    this.dragState.set(settling);
+
+    timer(SETTLE_TIMEOUT_MS)
+      .pipe(
+        filter(() => this.dragState() === settling),
+        tap(() => this.commitDrop()),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  protected finishSettle(event: TransitionEvent, index: number) {
+    if (event.target !== event.currentTarget || event.propertyName !== 'translate') return;
+    if (index !== this.draggingIndex() || !this.isSettling()) return;
+
+    this.commitDrop();
   }
 
   /** The browser took the gesture away, so there is no position the user chose - slide back. */
@@ -189,6 +258,32 @@ export class StandingsPickComponent {
         row.position,
       ),
     );
+  }
+
+  /**
+   * Commit and drop the preview in one change, so the reordered list renders straight into the positions
+   * the preview already put the cards in - clearing them a tick later flashes the old order.
+   */
+  private commitDrop() {
+    const state = this.dragState();
+
+    this.dragState.set(null);
+
+    if (state) this.pick.move({ from: state.from, to: state.to });
+  }
+
+  private liftBounds(index: number): LiftBounds {
+    const rect = this.cardElements()[index]?.nativeElement.getBoundingClientRect();
+    const { clientWidth, clientHeight } = this.document.documentElement;
+
+    if (!rect) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+
+    return {
+      minX: Math.min(0, -rect.left),
+      maxX: Math.max(0, clientWidth - rect.right),
+      minY: Math.min(0, -rect.top),
+      maxY: Math.max(0, clientHeight - rect.bottom),
+    };
   }
 
   /**

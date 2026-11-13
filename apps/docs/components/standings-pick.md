@@ -149,8 +149,9 @@ crests); the drawn `et-standings-pick` reads exactly the same state.
 
 The list is an `<ol>` named by the `pickCaption` label, one `<li>` per participant.
 
-Every row carries **one** control and it does both jobs - it is the drag grip and the arrow-key
-target. It is named `Move <participant>. Drag it, or use the arrow keys.` (the `pickMoveRow` label),
+A pointer drags the whole card: it follows the pointer, stops at the viewport edge instead of growing
+the page's scroll area, and on release lands in the slot it was dropped on before the order changes. Every row also carries **one** control, the grip button, which is
+the arrow-key target. It is named `Move <participant>. Drag it, or use the arrow keys.` (the `pickMoveRow` label),
 so a screen-reader user is told both ways to sort from the control itself.
 
 | Key                  | Action                                                  |
@@ -176,15 +177,17 @@ card fills and the handle states from `--et-surface-interaction-solid`, the text
 `--et-surface-color-*`, the cut line from `--et-theme-color-primary-solid`. Scope the list with
 `[etProvideColor]` to change what the cut is drawn in; no theme name is baked in.
 
-| Token                                  | Default | What it sizes                         |
-| -------------------------------------- | ------- | ------------------------------------- |
-| `--et-standings-pick-row-height`       | `40px`  | One row's height.                     |
-| `--et-standings-pick-gap`              | `4px`   | Gap between rows and inside a card.   |
-| `--et-standings-pick-radius`           | `8px`   | Card corner radius.                   |
-| `--et-standings-pick-font-size`        | `13px`  | Row text size.                        |
-| `--et-standings-pick-preview-duration` | `180ms` | How long a card slides during a drag. |
+| Token                                  | Default                | What it sizes                                       |
+| -------------------------------------- | ---------------------- | --------------------------------------------------- |
+| `--et-standings-pick-row-height`       | `40px`                 | One row's height.                                   |
+| `--et-standings-pick-gap`              | `4px`                  | Gap between rows and inside a card.                 |
+| `--et-standings-pick-radius`           | `8px`                  | Card corner radius.                                 |
+| `--et-standings-pick-font-size`        | `13px`                 | Row text size.                                      |
+| `--et-standings-pick-preview-duration` | `180ms`                | How long a card slides during a drag.               |
+| `--et-standings-pick-drop-duration`    | `300ms`                | How long a released card takes to land in its slot. |
+| `--et-standings-pick-drop-easing`      | `var(--ease-spring-1)` | The curve a released card lands on.                 |
 
-The drag preview honours `prefers-reduced-motion: reduce` by not animating.
+The drag preview and the slide on release honour `prefers-reduced-motion: reduce` by not animating.
 
 ## Error codes
 

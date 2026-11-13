@@ -29,6 +29,12 @@
     initial-value: 180ms;
   }
 
+  @property --et-standings-pick-drop-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 300ms;
+  }
+
   .et-standings-pick {
     display: block;
     box-sizing: border-box;
@@ -81,9 +87,38 @@
   .et-standings-pick-list:where([data-dragging]) .et-standings-pick-card:where([data-dragging]) {
     position: relative;
     z-index: 1;
-    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 20%, transparent);
-    box-shadow: 0 8px 20px color-mix(in srgb, var(--et-surface-interaction-solid, black) 25%, transparent);
-    transition: none;
+    background-color: color-mix(
+      in srgb,
+      var(--et-surface-interaction-solid, gray) 20%,
+      var(--et-surface-background-solid, Canvas)
+    );
+    box-shadow: 0 4px 10px color-mix(in srgb, var(--et-surface-interaction-solid, black) 15%, transparent);
+    transition:
+      box-shadow var(--et-standings-pick-preview-duration) ease-out,
+      background-color var(--et-standings-pick-preview-duration) ease-out;
+  }
+
+  .et-standings-pick:where(:not([data-locked])) .et-standings-pick-card {
+    cursor: grab;
+    user-select: none;
+  }
+
+  .et-standings-pick-list:where([data-dragging]) .et-standings-pick-card:where([data-dragging]) {
+    cursor: grabbing;
+  }
+
+  .et-standings-pick-list:where([data-dragging]) .et-standings-pick-card:where([data-settling]) {
+    background-color: color-mix(
+      in srgb,
+      var(--et-surface-interaction-solid, gray) 8%,
+      var(--et-surface-background-solid, Canvas)
+    );
+    box-shadow: 0 0 0 transparent;
+    transition:
+      translate var(--et-standings-pick-drop-duration)
+        var(--et-standings-pick-drop-easing, var(--ease-spring-1, ease-out)),
+      box-shadow var(--et-standings-pick-drop-duration) ease-out,
+      background-color var(--et-standings-pick-drop-duration) ease-out;
   }
 
   .et-standings-pick:where([data-locked]) .et-standings-pick-card {
