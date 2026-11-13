@@ -30,6 +30,7 @@ export type ViewState = {
   inventoryShown: boolean;
   /** How far the part tree list was scrolled, in pixels. */
   treeScroll: number;
+  sideWidth: number;
 };
 
 /**
@@ -228,6 +229,7 @@ export const rememberedView = (): Partial<ViewState> => {
       flowPresets,
       inventoryShown,
       treeScroll,
+      sideWidth,
     } = stored as Partial<ViewState>;
 
     return {
@@ -245,6 +247,7 @@ export const rememberedView = (): Partial<ViewState> => {
       inventoryShown: typeof inventoryShown === 'boolean' ? inventoryShown : undefined,
       treeScroll:
         typeof treeScroll === 'number' && Number.isFinite(treeScroll) && treeScroll > 0 ? treeScroll : undefined,
+      sideWidth: isSize(sideWidth) ? sideWidth : undefined,
     };
     // eslint-disable-next-line ethlete/no-silent-catch-error -- unreadable or absent stored view means defaults
   } catch {

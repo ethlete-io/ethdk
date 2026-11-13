@@ -185,6 +185,7 @@ export const STUDIO_LABELS = {
     markTransferred: 'Als übertragen markieren',
     surfaceTheme: 'Oberflächen-Theme',
     colorTheme: 'Farb-Theme',
+    sideWidth: 'Breite der Seitenleiste',
   },
   exceptions: {
     toggle: 'Ausnahmen',

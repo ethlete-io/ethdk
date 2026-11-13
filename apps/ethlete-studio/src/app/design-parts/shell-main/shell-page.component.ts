@@ -18,8 +18,10 @@ import { restartForUpdate$ } from '../../../host/update';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { UpdateDialogComponent } from '../../components/update-dialog/update-dialog.component';
 import { injectUpdateCheck } from '../../update-check';
+import { rememberView, rememberedView } from '../../studio-view/remembered';
 import { DesignServerAction, StudioMenuComponent } from '../studio-menu/studio-menu.component';
 import { ShellMainComponent, ShellSection } from './shell-main.component';
+import { clampSideWidth, SIDE_WIDTH } from './side-width';
 
 export type ShellState = {
   product: string;
@@ -61,6 +63,8 @@ export const SHELL_SAMPLE: ShellState = {
       [log]="shell().serverLog ?? []"
       [chrome]="chrome()"
       [update]="!!updateCheck.version()"
+      [sideWidth]="sideWidth()"
+      (sideWidthChange)="setSideWidth($event)"
       (collapse)="action.emit({ kind: 'collapse' })"
       (sectionChange)="action.emit({ kind: 'section', section: $event })"
       (productChange)="action.emit({ kind: 'product', name: $event })"
@@ -105,11 +109,17 @@ export class ShellPageComponent {
   protected closeWindow$ = closeWindow$;
 
   protected menuOpen = signal(false);
+  protected sideWidth = signal(clampSideWidth(rememberedView().sideWidth ?? SIDE_WIDTH.rest));
   protected screen = computed(() => {
     const server = this.shell().server;
 
     return server === 'stopped' || server === 'starting' ? server : null;
   });
+
+  protected setSideWidth(width: number) {
+    this.sideWidth.set(width);
+    rememberView({ sideWidth: width });
+  }
 
   protected openUpdateDialog(event: MouseEvent) {
     const version = this.updateCheck.version();

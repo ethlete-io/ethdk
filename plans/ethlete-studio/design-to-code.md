@@ -167,17 +167,10 @@ Archived: Design to code decisions (2026-10-31), see [findings-2026-10](archive/
     compare and `task --verify`; then the inbox uses it and its shell copy is deleted, with the inbox compare still
     green (Impl Q3).
   - Pilot slice 2 as built (`9cda20519`, `cea751f51`, `85e3a6796`, `aa9c3fb57`, `c8776fe99`): `ShellMainComponent`
-    (`apps/ethlete-studio/src/app/design-parts/shell-main/`) with slots `[shellMainStudio]` (falls back to the Studio
-    mark), `[shellMainSide]` and the canvas; rail buttons are `et-button`s; the picker is the SDK `etMenu`. A
-    component-only link is a string literal (`implements: '<path>'`); the object form is refused. Tool gap fixed:
-    compare now hovers, presses or keyboard-focuses each `data-et-force` element of the design picture, found in the
-    app by its `aria-label`. Compare `elements/shell-main`: 14 of 15 states 0 px; `project-picker` 2923 px, so
-    `--verify` recorded nothing. Cause, a design defect: the frame loads the SDK `--et-font-family: system-ui`, so
-    the design menu draws in system-ui, the app in the Studio font (with the token copied in, 29 px of corner
-    antialiasing remain from the overlay pane). The inbox draws inside the shell; `pages/inbox` is 0 px in all 7 states
-    and re-recorded. Verified: both compares, `task --verify`, lint, tsc, the app-classes check, the cli compare spec.
-    Not verified: the real Studio on :4402, keyboard opening of the picker (`autoFocus="false"`). Open: the inline
-    SVGs (rail icons, Studio mark) have no shared app source; they moved over from the inbox copy.
+    with slots `[shellMainStudio]`, `[shellMainSide]` and the canvas; rail buttons are `et-button`s, the picker the SDK
+    `etMenu`. Compare now forces each `data-et-force` element, found in the app by its `aria-label`. Compare
+    `elements/shell-main` 14 of 15 states 0 px (`project-picker` off by the font token, fixed in Impl Q12-Q14);
+    `pages/inbox` 0 px in all 7. Not verified: the real Studio on :4402.
   - In progress (builder ethlete-sdk-cf, 2026-11-01), in parallel: Impl Q6 items 1 and 2 (cli); Impl Q10 disabled
     guards (sdk CSS); Impl Q8 picker font and the 29 px (shell-main); pilot slice 3 real route (Impl Q5).
   - Impl Q12-Q14 as built (`a136928b4`, `1302cdc3a`, `87562073c`, `43f647c10`, `f7fe9b71c`): `--et-font-family:
@@ -4140,3 +4133,6 @@ Tauri window (headless Chromium only), a screen reader.
 
 A2 as built (2026-11-13, 30f13ee56): title search click or Ctrl+K opens the SDK command palette; no drawn "neu zeichnen"
 command; first Esc clears. Verified specs, typecheck, lint; no live shot.
+
+A7 as built (2026-11-13, commit "Drag the side panel width"): shell-main edge handle (core `etDragHandle`, role separator, arrows ±8 px, 200-400 px, `sideWidth` model persisted in the remembered view).
+Verified: specs, lint, typecheck, live shots (rest, hover, drag 312 px col-resize, min, max, focus, reload); DROPPED-PROP sideWidth gone. Not verified: Tauri window, touch, design compare.

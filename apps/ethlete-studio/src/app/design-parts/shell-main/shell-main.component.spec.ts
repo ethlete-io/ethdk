@@ -39,7 +39,7 @@ const setup = async (panel: 'open' | 'hidden') => {
   const click = (label: string) =>
     (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(`nav button[aria-label="${label}"]`)?.click();
 
-  return { events, click, host: fixture.nativeElement as HTMLElement };
+  return { events, click, fixture, host: fixture.nativeElement as HTMLElement };
 };
 
 describe('ShellMainComponent', () => {
@@ -52,6 +52,75 @@ describe('ShellMainComponent', () => {
     expect(aside?.classList).toContain('z-1');
     expect(aside?.classList).toContain('will-change-transform');
     expect(main?.nextElementSibling).toBe(aside);
+  });
+
+  describe('side panel width', () => {
+    const pointer = (type: string, target: EventTarget, x: number) =>
+      target.dispatchEvent(new PointerEvent(type, { clientX: x, clientY: 10, pointerId: 1, button: 0, bubbles: true }));
+
+    const resizeSetup = async (width?: number) => {
+      const { host, fixture } = await setup('open');
+      const widths: number[] = [];
+
+      if (width !== undefined) fixture.componentRef.setInput('sideWidth', width);
+      fixture.componentInstance.sideWidth.subscribe((next: number) => widths.push(next));
+      await fixture.whenStable();
+
+      const handle = host.querySelector<HTMLElement>('[role="separator"]');
+      const root = host.firstElementChild as HTMLElement;
+
+      return { fixture, handle, root, widths };
+    };
+
+    it('labels the handle with its range and current width', async () => {
+      const { handle, root } = await resizeSetup(276);
+
+      expect(handle?.getAttribute('aria-label')).toBe('Breite der Seitenleiste');
+      expect(handle?.getAttribute('aria-valuemin')).toBe('200');
+      expect(handle?.getAttribute('aria-valuemax')).toBe('400');
+      expect(handle?.getAttribute('aria-valuenow')).toBe('276');
+      expect(root.style.getPropertyValue('--st-side-width')).toBe('276px');
+    });
+
+    it('follows a drag inside the range and emits the width on release', async () => {
+      const { fixture, handle, root, widths } = await resizeSetup();
+
+      pointer('pointerdown', handle as HTMLElement, 500);
+      pointer('pointermove', document, 564);
+      await fixture.whenStable();
+
+      expect(root.style.getPropertyValue('--st-side-width')).toBe('312px');
+      expect(widths).toEqual([]);
+
+      pointer('pointermove', document, 900);
+      pointer('pointerup', document, 900);
+      await fixture.whenStable();
+
+      expect(widths).toEqual([400]);
+      expect(root.style.getPropertyValue('--st-side-width')).toBe('400px');
+    });
+
+    it('goes back to the start width when the browser cancels the drag', async () => {
+      const { fixture, handle, root, widths } = await resizeSetup();
+
+      pointer('pointerdown', handle as HTMLElement, 500);
+      pointer('pointermove', document, 300);
+      pointer('pointercancel', document, 300);
+      await fixture.whenStable();
+
+      expect(widths).toEqual([]);
+      expect(root.style.getPropertyValue('--st-side-width')).toBe('248px');
+    });
+
+    it('steps the width with the arrow keys', async () => {
+      const { handle, widths } = await resizeSetup(204);
+
+      handle?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+      handle?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+      handle?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+
+      expect(widths).toEqual([200, 208]);
+    });
   });
 
   it('hides the open panel when the active section is clicked', async () => {

@@ -1,12 +1,13 @@
-import { booleanAttribute, Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, computed, input, model, output, signal, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
-import { AutoSurfaceDirective } from '@ethlete/core';
+import { AutoSurfaceDirective, DragHandleDirective, DragMoveEvent } from '@ethlete/core';
 import { WindowChrome } from '../../../host/window';
 import { injectCodeWatch } from '../../code-watch';
 import { TitleBarComponent } from '../../components/title-bar/title-bar.component';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { ShellCollapseComponent } from '../shell-collapse/shell-collapse.component';
 import { ShellProjectSwitchComponent } from '../shell-project-switch/shell-project-switch.component';
+import { clampSideWidth, SIDE_WIDTH, sideWidthForKey } from './side-width';
 
 export type ShellSection = 'System' | 'Sketches' | 'Flows' | 'Inbox';
 
@@ -29,6 +30,7 @@ const HOVER_PRESS_RAISED =
   imports: [
     BUTTON_IMPORTS,
     AutoSurfaceDirective,
+    DragHandleDirective,
     ShellCollapseComponent,
     ShellProjectSwitchComponent,
     TitleBarComponent,
@@ -50,6 +52,7 @@ export class ShellMainComponent {
   public chrome = input<Pick<WindowChrome, 'os' | 'left' | 'right'> | null>(null);
 
   public update = input(false);
+  public sideWidth = model<number>(SIDE_WIDTH.rest);
   public sectionChange = output<ShellSection>();
   public productChange = output<string>();
   public collapse = output();
@@ -64,6 +67,11 @@ export class ShellMainComponent {
   protected readonly SECTIONS = SECTIONS;
 
   protected readonly LABELS = STUDIO_LABELS.designServer;
+  protected readonly SHELL_LABELS = STUDIO_LABELS.shell;
+  protected readonly SIDE_WIDTH = SIDE_WIDTH;
+  protected dragWidth = signal<number | null>(null);
+  protected shownWidth = computed(() => this.dragWidth() ?? clampSideWidth(this.sideWidth()));
+  private dragFrom: number = SIDE_WIDTH.rest;
   protected codeNoticeText = computed(() => this.codeWatch.notice()?.text ?? null);
   protected codeNoticeAction = computed(() => this.codeWatch.notice()?.action ?? null);
 
@@ -87,6 +95,31 @@ export class ShellMainComponent {
   protected pickSection(section: ShellSection, active: boolean) {
     if (active && this.panel() !== 'hidden') this.collapse.emit();
     else this.sectionChange.emit(section);
+  }
+
+  protected startResize() {
+    this.dragFrom = this.shownWidth();
+  }
+
+  protected moveResize(event: DragMoveEvent) {
+    this.dragWidth.set(clampSideWidth(this.dragFrom + event.totalDx));
+  }
+
+  protected endResize() {
+    const width = this.dragWidth();
+
+    this.dragWidth.set(null);
+
+    if (width !== null) this.sideWidth.set(width);
+  }
+
+  protected resizeByKey(event: KeyboardEvent) {
+    const width = sideWidthForKey(this.shownWidth(), event.key);
+
+    if (width === null) return;
+
+    event.preventDefault();
+    this.sideWidth.set(width);
   }
 
   protected setProjectPicker(open: boolean) {

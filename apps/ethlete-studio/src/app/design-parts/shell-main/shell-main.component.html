@@ -1,5 +1,6 @@
 <div
-  class="relative grid size-full grid-cols-[64px_1fr] grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-et-surface-bg font-ui text-ui-md text-et-surface"
+  [style.--st-side-width.px]="shownWidth()"
+  class="relative grid size-full grid-cols-[64px_1fr] grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-et-surface-bg font-ui text-ui-md text-et-surface has-[[data-side-resize]:active]:cursor-col-resize has-[[data-side-resize]:active]:select-none"
 >
   @if (chrome(); as chrome) {
     <ethlete-title-bar
@@ -133,7 +134,9 @@
   <div class="relative row-start-2 min-w-0">
     <main
       [class]="
-        panel() === 'hidden' ? '[--st-shell-inset-left:0px]' : '[--st-shell-inset-left:calc(248px+var(--space-3))]'
+        panel() === 'hidden'
+          ? '[--st-shell-inset-left:0px]'
+          : '[--st-shell-inset-left:calc(var(--st-side-width)+var(--space-3))]'
       "
       class="absolute inset-0 isolate min-w-0 overflow-hidden bg-et-surface-bg bg-[radial-gradient(circle,var(--et-surface-border-solid)_1px,transparent_1.2px)] bg-size-[16px_16px] bg-position-[8px_8px]"
     >
@@ -175,7 +178,7 @@
       <!-- WebKit composites the canvas iframes and only lifts the panel above them through overlap testing, which
            lags while the WebContent process hangs; its own layer and z-index keep it on top (findings 367, 375). -->
       <aside
-        class="absolute top-space-3 bottom-space-3 left-space-3 z-1 flex will-change-transform min-h-0 w-62 flex-col overflow-hidden rounded-control-lg bg-et-surface-bg shadow-[inset_0_0_0_1px_var(--et-surface-border-solid),0_12px_32px_var(--surface-shadow)]"
+        class="absolute top-space-3 bottom-space-3 left-space-3 z-1 flex w-(--st-side-width) will-change-transform min-h-0 flex-col overflow-hidden rounded-control-lg bg-et-surface-bg shadow-[inset_0_0_0_1px_var(--et-surface-border-solid),0_12px_32px_var(--surface-shadow)]"
       >
         <header class="box-border flex h-12 items-center justify-between border-b border-et-surface-border pl-space-4">
           <span class="font-ui-strong text-ui-lg">{{ product() }}</span>
@@ -196,6 +199,28 @@
           />
         </footer>
       </aside>
+      <div
+        [attr.aria-label]="SHELL_LABELS.sideWidth"
+        [attr.aria-valuemin]="SIDE_WIDTH.min"
+        [attr.aria-valuemax]="SIDE_WIDTH.max"
+        [attr.aria-valuenow]="shownWidth()"
+        [commitThreshold]="0"
+        (dragStarted)="startResize()"
+        (dragMoved)="moveResize($event)"
+        (dragEnded)="endResize()"
+        (dragCancelled)="dragWidth.set(null)"
+        (keydown)="resizeByKey($event)"
+        class="group absolute top-space-3 bottom-space-3 left-[calc(var(--space-3)+var(--st-side-width)-4px)] z-2 w-2 cursor-col-resize outline-none"
+        role="separator"
+        aria-orientation="vertical"
+        tabindex="0"
+        etDragHandle
+        data-side-resize
+      >
+        <span
+          class="absolute top-2.5 bottom-2.5 left-0.75 w-0.5 rounded-full [transition:var(--transition-state)] group-hover:bg-et-theme/50 group-focus-visible:bg-focus-ring group-active:bg-et-theme"
+        ></span>
+      </div>
     }
   </div>
 </div>
