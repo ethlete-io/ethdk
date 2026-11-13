@@ -154,9 +154,10 @@ const LINK_STORE_DEF = /* @__PURE__ */ defineRootProvider(
       }
     };
 
-    const addLink = (id: symbol, linkConfig: LinkConfig) => {
+    const claimPriority = () => priorityCounter++;
+
+    const addLink = (id: symbol, linkConfig: LinkConfig, priority = claimPriority()) => {
       const key = getLinkKey(linkConfig);
-      const priority = priorityCounter++;
       const element = createLinkElement(linkConfig);
 
       linksByKey.update((linkMap) => {
@@ -222,7 +223,7 @@ const LINK_STORE_DEF = /* @__PURE__ */ defineRootProvider(
       });
     };
 
-    return { addLink, removeLink, getLinkKey };
+    return { addLink, removeLink, getLinkKey, claimPriority };
   },
   { name: 'Link Store' },
 );
@@ -236,6 +237,7 @@ export const injectLinkStore = /* @__PURE__ */ toInjectFn(LINK_STORE_DEF);
 export const applyLinkBinding = (binding: MaybeSignal<LinkConfig | null | undefined>) => {
   const linkStore = injectLinkStore();
   const linkId = Symbol('link-tag');
+  const priority = linkStore.claimPriority();
   let currentKey: string | undefined;
 
   applyHeadBinding(
@@ -246,7 +248,7 @@ export const applyLinkBinding = (binding: MaybeSignal<LinkConfig | null | undefi
       if (currentKey !== undefined && currentKey !== key) linkStore.removeLink(linkId, currentKey);
 
       currentKey = key;
-      linkStore.addLink(linkId, config);
+      linkStore.addLink(linkId, config, priority);
     },
     () => linkStore.removeLink(linkId, currentKey),
   );

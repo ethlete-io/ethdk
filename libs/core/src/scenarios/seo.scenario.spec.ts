@@ -124,6 +124,55 @@ describe('seo scenarios', () => {
     c.destroy();
   });
 
+  it('keeps the last bound meta and link ahead when an earlier binding updates', async () => {
+    const s = scenario();
+    const parent = s.consumer();
+    const child = s.consumer();
+    const parentDescription = signal('parent');
+    const childDescription = signal<string | null>('child');
+    const parentCanonical = signal('https://a.example/parent');
+    const childCanonical = signal<string | null>('https://a.example/child');
+
+    parent.run(() => {
+      applyDescriptionBinding(parentDescription);
+      applyCanonicalBinding(parentCanonical);
+    });
+    child.run(() => {
+      applyDescriptionBinding(childDescription);
+      applyCanonicalBinding(childCanonical);
+    });
+    await settle(s);
+
+    expect(metaContent('name="description"')).toEqual(['child']);
+    expect(linkHrefs('canonical')).toEqual(['https://a.example/child']);
+
+    parentDescription.set('parent updated');
+    parentCanonical.set('https://a.example/parent-updated');
+    await settle(s);
+
+    expect(metaContent('name="description"')).toEqual(['child']);
+    expect(linkHrefs('canonical')).toEqual(['https://a.example/child']);
+
+    childDescription.set(null);
+    childCanonical.set(null);
+    await settle(s);
+
+    expect(metaContent('name="description"')).toEqual(['parent updated']);
+    expect(linkHrefs('canonical')).toEqual(['https://a.example/parent-updated']);
+
+    childDescription.set('child again');
+    childCanonical.set('https://a.example/child-again');
+    parentDescription.set('parent last');
+    parentCanonical.set('https://a.example/parent-last');
+    await settle(s);
+
+    expect(metaContent('name="description"')).toEqual(['child again']);
+    expect(linkHrefs('canonical')).toEqual(['https://a.example/child-again']);
+
+    child.destroy();
+    parent.destroy();
+  });
+
   it('removes every tag a binding owns when its owner is destroyed', async () => {
     const s = scenario();
     const c = s.consumer();

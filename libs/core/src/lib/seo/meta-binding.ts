@@ -187,9 +187,10 @@ const META_STORE_DEF = /* @__PURE__ */ defineRootProvider(
       }
     };
 
-    const addTag = (id: symbol, rawConfig: MetaTagConfig) => {
+    const claimPriority = () => priorityCounter++;
+
+    const addTag = (id: symbol, rawConfig: MetaTagConfig, priority = claimPriority()) => {
       const selector = getSelector(rawConfig);
-      const priority = priorityCounter++;
 
       metaTagsBySelector.update((tagsBySelector) => {
         const newTagsBySelector = new Map(tagsBySelector);
@@ -263,7 +264,7 @@ const META_STORE_DEF = /* @__PURE__ */ defineRootProvider(
       });
     });
 
-    return { addTag, removeTag, getSelector };
+    return { addTag, removeTag, getSelector, claimPriority };
   },
   { name: 'Meta Store' },
 );
@@ -277,6 +278,7 @@ export const injectMetaStore = /* @__PURE__ */ toInjectFn(META_STORE_DEF);
 export const applyMetaBinding = (binding: MaybeSignal<MetaTagConfig | null | undefined>) => {
   const metaStore = injectMetaStore();
   const tagId = Symbol('meta-tag');
+  const priority = metaStore.claimPriority();
   let currentSelector: string | undefined;
 
   applyHeadBinding(
@@ -287,7 +289,7 @@ export const applyMetaBinding = (binding: MaybeSignal<MetaTagConfig | null | und
       if (currentSelector !== undefined && currentSelector !== selector) metaStore.removeTag(tagId, currentSelector);
 
       currentSelector = selector;
-      metaStore.addTag(tagId, config);
+      metaStore.addTag(tagId, config, priority);
     },
     () => metaStore.removeTag(tagId, currentSelector),
   );
