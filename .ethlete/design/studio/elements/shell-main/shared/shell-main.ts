@@ -148,7 +148,9 @@ const serverScreen = (server: 'stopped' | 'starting' | 'unanswered', log: string
     ${
       server === 'starting' || server === 'unanswered'
         ? html`<div class="mx-auto mt-15 w-full max-w-6xl box-border px-space-5">
-            <h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">Design-Server startet</h3>
+            <h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">
+              ${server === 'unanswered' ? 'Design-Server gestoppt' : 'Design-Server startet'}
+            </h3>
             ${
               server === 'unanswered'
                 ? html`<p class="m-0 mt-space-2 text-ui-sm text-et-surface-muted">
