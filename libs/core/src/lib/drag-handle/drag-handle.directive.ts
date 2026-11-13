@@ -9,20 +9,29 @@ import { applyHostListener } from '../utils/angular/host-listener';
   host: {
     // Without this the browser claims touch pointermoves for scrolling and fires pointercancel,
     // so a touch drag never gets past the commit threshold. Scrolling stays available while the
-    // handle is disabled.
-    '[style.touch-action]': "disabled() ? null : 'none'",
+    // handle is disabled, and before a touch hold commits.
+    '[style.touch-action]': "disabled() ? null : touchHoldDelay() > 0 ? 'manipulation' : 'none'",
+    '[style.-webkit-touch-callout]': "touchHoldDelay() > 0 && !disabled() ? 'none' : null",
   },
 })
 export class DragHandleDirective {
   private el = inject<ElementRef<HTMLElement>>(ElementRef);
 
   commitThreshold = input(8, { transform: numberAttribute });
+
+  /** Ms a touch must hold still before it drags; a touch that moves first scrolls the page. `0` drags at once. */
+  touchHoldDelay = input(0, { transform: numberAttribute });
   disabled = input(false, { transform: booleanAttribute });
 
   private gestureStart$ = new Subject<PointerEvent>();
 
   private gesture$ = this.gestureStart$.pipe(
-    exhaustMap((event) => dragGestureFrom(event, this.el.nativeElement, { commitThreshold: this.commitThreshold() })),
+    exhaustMap((event) =>
+      dragGestureFrom(event, this.el.nativeElement, {
+        commitThreshold: this.commitThreshold(),
+        touchHoldDelay: this.touchHoldDelay(),
+      }),
+    ),
     share(),
     takeUntilDestroyed(),
   );

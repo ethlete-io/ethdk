@@ -7,11 +7,15 @@ import {
   filter,
   finalize,
   fromEvent,
+  ignoreElements,
   merge,
   of,
+  share,
+  Subject,
   take,
   takeUntil,
   tap,
+  timer,
 } from 'rxjs';
 import { suppressTextSelection } from '../utils/text-selection';
 
@@ -57,39 +61,78 @@ const capturePointer = (el: HTMLElement, pointerId: number) => {
   }
 };
 
+const HOLD_SLOP_PX = 8;
+
 const setupDragObservable = (
   startEvent: PointerEvent,
   el: HTMLElement,
   commitThreshold: number,
+  touchHoldDelay: number,
 ): Observable<DragGestureEvent> => {
   const { pointerId, clientX: startX, clientY: startY } = startEvent;
   const document = el.ownerDocument;
+  const holds = touchHoldDelay > 0 && startEvent.pointerType === 'touch';
 
   let cancelled = false;
   let endX = startX;
   let endY = startY;
 
+  const abandon$ = new Subject<void>();
+
   const end$ = merge(
-    fromEvent<PointerEvent>(document, 'pointerup'),
-    fromEvent<PointerEvent>(document, 'pointercancel'),
+    merge(fromEvent<PointerEvent>(document, 'pointerup'), fromEvent<PointerEvent>(document, 'pointercancel')).pipe(
+      filter((e) => e.pointerId === pointerId),
+    ),
+    abandon$,
   ).pipe(
-    filter((e) => e.pointerId === pointerId),
     take(1),
     // Read below by the terminating `defer`, which only runs once this has completed the moves.
     tap((e) => {
-      cancelled = e.type === 'pointercancel';
-      endX = e.clientX;
-      endY = e.clientY;
+      cancelled = !e || e.type === 'pointercancel';
+      endX = e?.clientX ?? startX;
+      endY = e?.clientY ?? startY;
     }),
+    share(),
   );
 
   let lastX = startX;
   let lastY = startY;
   let committed = false;
 
+  const holdPastSlop = (e: PointerEvent) =>
+    Math.abs(e.clientX - startX) >= HOLD_SLOP_PX || Math.abs(e.clientY - startY) >= HOLD_SLOP_PX;
+
+  // The host allows panning while a touch holds, so once the hold commits, each touchmove must be cancelled or
+  // the browser starts scrolling and takes the pointer away with a pointercancel.
+  const hold$: Observable<DragGestureEvent> = holds
+    ? timer(touchHoldDelay).pipe(
+        concatMap(() => {
+          committed = true;
+          capturePointer(el, pointerId);
+
+          return concat(
+            of<DragGestureEvent>({ type: 'start', data: { clientX: startX, clientY: startY } }),
+            merge(
+              fromEvent<TouchEvent>(document, 'touchmove', { passive: false }),
+              fromEvent<Event>(el, 'contextmenu'),
+            ).pipe(
+              tap((e) => e.preventDefault()),
+              ignoreElements(),
+            ),
+          );
+        }),
+      )
+    : EMPTY;
+
   const moves$ = fromEvent<PointerEvent>(document, 'pointermove').pipe(
     filter((e) => e.pointerId === pointerId),
     concatMap((e): Observable<DragGestureEvent> => {
+      if (!committed && holds) {
+        if (holdPastSlop(e)) abandon$.next();
+
+        return EMPTY;
+      }
+
       if (!committed) {
         if (Math.abs(e.clientX - startX) < commitThreshold && Math.abs(e.clientY - startY) < commitThreshold) {
           return EMPTY;
@@ -132,14 +175,13 @@ const setupDragObservable = (
         },
       });
     }),
-    takeUntil(end$),
   );
 
   return defer(() => {
     const releaseSelection = suppressTextSelection(el.ownerDocument);
 
     return concat(
-      moves$,
+      merge(hold$, moves$).pipe(takeUntil(end$)),
       defer((): Observable<DragGestureEvent> => {
         if (cancelled) return of({ type: 'cancelled' as const });
         if (!committed) return of({ type: 'tapped' as const });
@@ -169,6 +211,10 @@ const setupDragObservable = (
  * tab going to the background - ends on `cancelled` rather than `end` or `tapped`. Treat it as
  * "revert", not "drop here": the user never let go, so there is no position they chose.
  *
+ * With `touchHoldDelay`, a touch must hold still that many ms before the drag starts; a touch that moves
+ * first ends on `cancelled` and is left to the browser, so the page can scroll. The host then needs a
+ * `touch-action` that allows panning. Mouse and pen are unaffected.
+ *
  * This is the primitive behind {@link DragHandleDirective}. Prefer the directive; reach for this when
  * the draggable element belongs to someone else's template (e.g. a table feature attaching a drag to
  * header cells the table itself renders) and you can only work from a delegated `pointerdown`.
@@ -176,5 +222,6 @@ const setupDragObservable = (
 export const dragGestureFrom = (
   event: PointerEvent,
   element: HTMLElement,
-  options?: { commitThreshold?: number },
-): Observable<DragGestureEvent> => setupDragObservable(event, element, options?.commitThreshold ?? 8);
+  options?: { commitThreshold?: number; touchHoldDelay?: number },
+): Observable<DragGestureEvent> =>
+  setupDragObservable(event, element, options?.commitThreshold ?? 8, options?.touchHoldDelay ?? 0);

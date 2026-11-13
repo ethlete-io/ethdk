@@ -21,10 +21,11 @@ Pointer-gesture primitives: a drag handle directive and a resize handles compone
 import { DragHandleDirective } from '@ethlete/core';
 ```
 
-| Input             | Default | Description                                               |
-| ----------------- | ------- | --------------------------------------------------------- |
-| `commitThreshold` | `8`     | Pixels of movement (either axis) before the drag commits. |
-| `disabled`        | `false` | Ignore pointer input.                                     |
+| Input             | Default | Description                                                                                                        |
+| ----------------- | ------- | ------------------------------------------------------------------------------------------------------------------ |
+| `commitThreshold` | `8`     | Pixels of movement (either axis) before the drag commits.                                                          |
+| `touchHoldDelay`  | `0`     | Ms a touch must hold still before it drags. A touch that moves first scrolls the page. Mouse and pen drag at once. |
+| `disabled`        | `false` | Ignore pointer input.                                                                                              |
 
 | Output          | Payload                                                | Emitted                                                 |
 | --------------- | ------------------------------------------------------ | ------------------------------------------------------- |
@@ -39,6 +40,8 @@ import { DragHandleDirective } from '@ethlete/core';
 `isDragging` is exposed as a signal. On commit, the directive captures the pointer and emits a catch-up move in the same tick so the dragged element snaps to the pointer instead of trailing by the threshold. Only the primary button starts a gesture, and a new gesture is ignored while one is active. There is no built-in keyboard support - provide a keyboard path yourself where dragging changes state (the grid does).
 
 While enabled, the handle sets `touch-action: none` on its host so touch drags work - otherwise the browser would claim the pointermoves for scrolling and cancel the gesture. The flip side: touches on the handle can't scroll the page, so keep handles reasonably sized (or `disabled` when inactive - a disabled handle scrolls normally).
+
+A handle that covers content people scroll over - a whole card or row - sets `touchHoldDelay` (e.g. `250`) instead. The host then gets `touch-action: manipulation`, so a quick swipe scrolls, and a touch that held still drags while scrolling stays blocked until it ends. A touch that moved before the hold emits `dragCancelled`.
 
 ## Resize handles
 
