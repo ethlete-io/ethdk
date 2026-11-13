@@ -66,13 +66,34 @@ describe('CommandPaletteComponent', () => {
     expect(selected()).toEqual([]);
   });
 
-  it('shows no list and no message while the field is empty and nothing was opened yet', async () => {
+  it('shows the start hint instead of a list while the field is empty and nothing was opened yet', async () => {
     const { rows, element, fixture } = render();
 
     await fixture.whenStable();
 
+    const start = element.querySelector('[data-palette-start]');
+
     expect(rows()).toEqual([]);
     expect(element.querySelector('[data-palette-none]')).toBeNull();
+    expect(start?.textContent).toContain('Noch nichts zuletzt geöffnet. Tippe einen Namen oder Befehl.');
+    expect(start?.textContent).toContain('öffnet die Suche von überall.');
+    expect(start?.querySelector('et-kbd')?.getAttribute('keys')).toBe('mod+k');
+  });
+
+  it('hides the start hint once something was opened or a query is typed', async () => {
+    const withRecents = render([ENTRIES[0] as PaletteEntry]);
+
+    await withRecents.fixture.whenStable();
+
+    expect(withRecents.element.querySelector('[data-palette-start]')).toBeNull();
+
+    TestBed.resetTestingModule();
+
+    const typed = render();
+
+    await typed.type('xyz');
+
+    expect(typed.element.querySelector('[data-palette-start]')).toBeNull();
   });
 
   it('filters every entry by the query and groups the hits with their hint', async () => {

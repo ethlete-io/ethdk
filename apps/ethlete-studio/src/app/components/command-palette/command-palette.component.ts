@@ -93,6 +93,17 @@ const LABELS = STUDIO_LABELS.commandPalette;
               <span class="font-ui-strong text-et-surface">{{ LABELS.none }}</span>
               <span class="text-et-surface-muted">{{ LABELS.noneFor(query()) }}</span>
             </div>
+          } @else {
+            <div
+              class="flex flex-col items-center gap-space-2 px-space-3 py-space-6 text-ui-sm text-et-surface-muted"
+              data-palette-start
+            >
+              <span>{{ LABELS.start }}</span>
+              <span class="flex items-center gap-space-1 text-(length:--text-xs)">
+                <et-kbd class="[--et-kbd-color:currentColor]" keys="mod+k" />
+                {{ LABELS.startShortcut }}
+              </span>
+            </div>
           }
         }
       </div>

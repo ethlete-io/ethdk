@@ -59,6 +59,8 @@ export const STUDIO_LABELS = {
     hints: { part: 'Part', page: 'Seite', sketch: 'Skizze', command: 'Befehl' },
     none: 'Nichts gefunden',
     noneFor: (query: string) => `Für „${query}“ gibt es keinen Part, keine Seite und keine Skizze.`,
+    start: 'Noch nichts zuletzt geöffnet. Tippe einen Namen oder Befehl.',
+    startShortcut: 'öffnet die Suche von überall.',
     select: '↑↓ wählen',
     open: '↵ öffnen',
     close: 'Esc schließen',
