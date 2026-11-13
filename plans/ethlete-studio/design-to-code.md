@@ -2864,6 +2864,25 @@ hold reason); multi-part-head prints `ready will refuse: variant c first changes
 same pixels as variant b` (a warning; not checked whether it predates this slice).
 Verified: cli and ethlete-studio typecheck, cli lint, `vitest related` (cli 144 files), spec:stress skips.spec 4/4.
 Not verified: CI.
+B500 DROPPED-PROP as built (Linux builder subagent, 2026-11-13): the 3 true hits fixed as app work, design unchanged.
+(1, 2) `pages/sketches` change-crop and change-crop-whole (prop `screen`, finding 872): `screen` stays a design-only knob;
+the harness sample consumes it and feeds `SKETCH_SCREEN_SAMPLE` (sketches-sample.ts: a 1440x900 pages/sketches sketch,
+row a carries the change boxes of the two design groups, 16 unchanged states, round 2, tree with sketches selected). The
+whole/crop toggle moved from a private signal to `wholeScreens = model<readonly string[]>([])`, bound two-way by
+sketch-view, so the harness reaches change-crop-whole. The harness shot of a screen state is a blank 1440x900 stand-in.
+(3) `pages/system` listing-error: `SystemPageComponent` gets `listingError` (reason) and `reload`; it draws the design's
+error card (error icon, Auflistung fehlgeschlagen, the reason, Erneut laden) with an empty tree; system-view shows it on
+the System section when the products listing read fails, and Erneut laden re-reads the listing. Specs:
+design-harness-samples.spec (new), system-page.component.spec (new), a wholeScreens case in sketches.component.spec;
+red on the old source (samples spec fails to load, 3 cases red), green on the new; spec:stress 4/4 each; vitest related 29
+files green; typecheck, lint clean. Checks: studio exit 0, 0 findings; sdk exit 0, 0 findings. The change-crop states
+are drivable now (app shot 200, before 422 "16 elements with the aria-label Einpassen"). Live shots (serve :43467,
+source=app): change-crop shows the two groups cropped (2,3x and 3,1x) with locator, Ganzer Screen and the mark on
+variant a, 16 states folded; change-crop-whole shows the first group whole with Ausschnitt; listing-error shows the
+centred error card with "missing build: pages/system" and Erneut laden, empty tree. Compare change-crop DIFF 39581 px,
+change-crop-whole DIFF 35643 px: the design draws mock screens with zoom chips inside the crops, the harness a blank
+stand-in, and the reason reads "3 Zellen" in the design but "3 Stellen" in the app. Not verified: compare of
+pages/system listing-error, the per-part checks (--part pages/sketches, pages/system), CI.
 ci-red 1113d (finding 992) as built (Linux builder subagent, 2026-11-13): CI runs 43372815104 and 43356130738, Studio e2e
 "a part edited on disk while away shows its new picture on return" failed in its shot ETag fetch with ECONNRESET / socket
 hang up. Cause (probe): Playwright's API request agent is `http.Agent({ keepAlive: true })` with no timeout, so Node

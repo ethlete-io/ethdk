@@ -1,0 +1,42 @@
+import { cropGroupsOf } from '../design-parts/sketches/sketch-crops';
+import { SketchRow } from '../design-parts/sketches/sketches-sample';
+import { LISTING_ERROR_SAMPLE } from '../design-parts/system-page/system-page-sample';
+import { DESIGN_HARNESS_SAMPLES } from './design-harness-samples';
+
+const sketchesOf = (props: Record<string, unknown>) => {
+  const sample = DESIGN_HARNESS_SAMPLES['pages/sketches'];
+
+  if (!sample) throw new Error('no pages/sketches sample');
+
+  return sample(props);
+};
+
+describe('DESIGN_HARNESS_SAMPLES', () => {
+  it('feeds the change-crop states a screen sketch whose variant carries the crop data', () => {
+    const props = sketchesOf({ camera: 'fit', part: 'narrow', screen: 'crop' });
+    const groups = cropGroupsOf(props['rows'] as SketchRow[]);
+
+    expect(props['part']).toBe('pages/sketches');
+    expect(props['screen']).toBeUndefined();
+    expect(props['wholeScreens']).toEqual([]);
+    expect(groups.map((group) => group.states.length)).toEqual([12, 1]);
+    expect(groups[0]?.crop).toEqual({ x: 818, y: 347, width: 622, height: 93 });
+  });
+
+  it('draws the first crop group whole in change-crop-whole', () => {
+    const props = sketchesOf({ camera: 'fit', part: 'narrow', screen: 'whole' });
+
+    expect(props['wholeScreens']).toEqual(['comparing-narrow']);
+  });
+
+  it('keeps the narrow chip sample when no screen is set', () => {
+    expect(sketchesOf({ part: 'narrow' })['part']).toBe('components/zoom-chip');
+  });
+
+  it('turns the listing-error flag into the server reason', () => {
+    const sample = DESIGN_HARNESS_SAMPLES['pages/system'];
+
+    expect(sample?.({ listingError: true })['listingError']).toBe(LISTING_ERROR_SAMPLE);
+    expect(sample?.({})['listingError']).toBeNull();
+  });
+});

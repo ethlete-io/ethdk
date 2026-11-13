@@ -213,6 +213,7 @@ export class SketchesComponent {
   public sameOpen = model(false);
   public statesOpen = model(false);
   public withdrawn = model<SketchWithdrawn>('hidden');
+  public wholeScreens = model<readonly string[]>([]);
 
   public shot = input<TemplateRef<SketchShotContext> | null>(null);
   public tree = input(SKETCH_TREE);
@@ -298,7 +299,6 @@ export class SketchesComponent {
   protected groupOfState = computed(
     () => new Map(this.cropGroups().flatMap((group) => group.states.map((state) => [state, group] as const))),
   );
-  public wholeStates = signal<ReadonlySet<string>>(new Set());
   protected matrixStates = computed(() => {
     const groups = this.groupOfState();
 
@@ -481,17 +481,13 @@ export class SketchesComponent {
   protected croppedOf(state: string) {
     const group = this.groupOfState().get(state);
 
-    return group && !this.wholeStates().has(group.states[0] ?? state) ? group : undefined;
+    return group && !this.wholeScreens().includes(group.states[0] ?? state) ? group : undefined;
   }
 
   protected toggleScreen(state: string) {
-    this.wholeStates.update((whole) => {
-      const next = new Set(whole);
-
-      if (!next.delete(state)) next.add(state);
-
-      return next;
-    });
+    this.wholeScreens.update((whole) =>
+      whole.includes(state) ? whole.filter((shown) => shown !== state) : [...whole, state],
+    );
   }
 
   protected shownHeightOf(row: SketchRow, item: SketchShot) {

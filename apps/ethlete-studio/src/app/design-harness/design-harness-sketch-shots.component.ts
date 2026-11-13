@@ -4,11 +4,14 @@ import {
   SKETCH_LOOKS,
   SKETCH_NARROW_SAMPLE,
   SKETCH_ROWS,
+  SKETCH_SCREEN_SAMPLE,
   SKETCH_TITLE_BARS,
   SketchRow,
 } from '../design-parts/sketches/sketches-sample';
 import { SketchShotContext } from '../design-parts/sketches/sketches.component';
 import { ZoomChipComponent, ZoomControl, ZoomInteraction } from '../design-parts/zoom-chip/zoom-chip.component';
+
+const SCREEN_STATES = new Set(SKETCH_SCREEN_SAMPLE.rows.flatMap((row) => row.shots.map((shot) => shot.state)));
 
 const changedIn = (rows: SketchRow[], { key, state }: { key: string; state: string }) =>
   rows.find((row) => row.key === key)?.shots.find((shot) => shot.state === state)?.changed === true;
@@ -26,6 +29,8 @@ const changedIn = (rows: SketchRow[], { key, state }: { key: string; state: stri
             product="studio"
             part="Title bar"
           />
+        } @else if (screenHeightOf(row, state); as height) {
+          <div [style.width.px]="row.width" [style.height.px]="height" class="bg-et-surface-bg"></div>
         } @else {
           @let force = chipForceOf(state);
           <ethlete-zoom-chip
@@ -46,6 +51,10 @@ export class DesignHarnessSketchShotsComponent {
 
   public templates() {
     return { shot: this.shot() };
+  }
+
+  protected screenHeightOf(row: SketchRow, state: string) {
+    return SCREEN_STATES.has(state) ? row.shots.find((shot) => shot.state === state)?.height : null;
   }
 
   protected chipForceOf(state: string) {

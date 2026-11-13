@@ -301,6 +301,13 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
           (shellAction)="runShellAction($event)"
         />
       }
+    } @else if (listingError(); as message) {
+      <ethlete-system-page
+        [shell]="pageShell()"
+        [listingError]="message"
+        (reload)="reloadListing()"
+        (shellAction)="runShellAction($event)"
+      />
     } @else if (callPage(); as shown) {
       <ethlete-system-page
         [shell]="pageShell()"
@@ -408,12 +415,15 @@ export class SystemViewComponent {
   protected readonly START_LABELS = STUDIO_LABELS.start;
   protected readonly EMPTY_LABELS = STUDIO_LABELS.system;
 
+  private listingReloads = signal(0);
+
   protected reading = toSignal(
     toObservable(
       computed(() => ({
         port: this.port(),
         epoch: this.epoch(),
         revision: this.productsRevision(),
+        reloads: this.listingReloads(),
       })),
     ).pipe(
       switchMap(({ port }) =>
@@ -960,6 +970,10 @@ export class SystemViewComponent {
 
   protected section = computed<ShellSection>(() => (this.commentStore.panelOpen() ? 'Inbox' : this.railSection()));
 
+  protected listingError = computed(() =>
+    this.port() && this.section() === 'System' && !this.call() ? (this.reading()?.error ?? null) : null,
+  );
+
   private pickedResolved = computed(() =>
     this.commentStore.resolved().filter((comment) => comment.id === this.pickedCommentId()),
   );
@@ -1214,6 +1228,10 @@ export class SystemViewComponent {
 
   protected reloadSketches() {
     this.sketchReloads.update((value) => value + 1);
+  }
+
+  protected reloadListing() {
+    this.listingReloads.update((value) => value + 1);
   }
 
   protected markTransferred(slug: string) {

@@ -124,6 +124,8 @@ export type ThemeSwitch = { kind: 'surface' | 'color'; names: string[]; current:
 
 export type ThemePick = { kind: ThemeSwitch['kind']; name: string };
 
+export const LISTING_ERROR_SAMPLE = 'missing build: pages/system';
+
 export const LEGACY_CALL_SAMPLE: LegacyCall = {
   slug: 'timetrack/kerbe/03-narrow-lane',
   headline: 'Schmale Spur für die Wochenansicht',

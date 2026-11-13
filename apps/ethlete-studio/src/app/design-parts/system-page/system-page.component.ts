@@ -1,6 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, model, output, TemplateRef, ViewEncapsulation } from '@angular/core';
 import { BADGE_IMPORTS, BUTTON_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
+import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component';
 import { PartTreeComponent } from '../part-tree/part-tree.component';
@@ -30,7 +31,7 @@ export const FRAME_HEAD_CLASS =
     <ethlete-shell-page [shell]="shell()" (action)="shellAction.emit($event)" section="System">
       @if (empty()) {
         <p class="m-0 px-space-3 py-space-2 text-ui-sm text-et-surface-muted" shellMainSide>{{ LABELS.none }}</p>
-      } @else {
+      } @else if (listingError() === null) {
         <ethlete-part-tree
           [layers]="manyStates() ? manyStatesLayers() : layers()"
           (expandedChange)="expandedChange.emit($event)"
@@ -38,7 +39,34 @@ export const FRAME_HEAD_CLASS =
           shellMainSide
         />
       }
-      @if (call(); as shown) {
+      @if (listingError(); as message) {
+        <div class="flex h-full items-center justify-center ps-(--st-shell-inset-left)" data-listing-error>
+          <div class="flex w-2xl flex-col items-center gap-space-4 text-center text-ui-sm">
+            <span [etProvideColor]="errorTheme()" class="contents">
+              <svg
+                class="text-et-theme"
+                width="24"
+                height="24"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="8" cy="8" r="5.5" />
+                <path d="m6 6 4 4m0-4-4 4" />
+              </svg>
+            </span>
+            <p class="m-0 text-ui-md font-ui-strong text-et-surface">{{ LABELS.listingFailed }}</p>
+            <p class="m-0 text-et-surface-muted">{{ message }}</p>
+            <button (click)="reload.emit()" et-button type="button" variant="outline" size="sm">
+              {{ LABELS.reload }}
+            </button>
+          </div>
+        </div>
+      } @else if (call(); as shown) {
         <ng-content select="[systemCallCanvas]">
           <ethlete-canvas-frames
             (zoomOut)="zoomOut.emit()"
@@ -207,15 +235,18 @@ export const FRAME_HEAD_CLASS =
     NgTemplateOutlet,
     OpenPointsChipComponent,
     PartTreeComponent,
+    ProvideColorDirective,
     ShellPageComponent,
     SystemEmptyComponent,
   ],
   host: { class: 'block h-screen w-full' },
 })
 export class SystemPageComponent {
+  protected errorTheme = injectSemanticColorTheme('error');
   public shell = input<ShellState>(SHELL_SAMPLE);
 
   public empty = input(false);
+  public listingError = input<string | null>(null);
   public manyStates = input(false);
   public nothingOpen = input(false);
   public fit = input(false);
@@ -241,6 +272,7 @@ export class SystemPageComponent {
   public activate = output<string>();
   public expandedChange = output<readonly string[]>();
   public copyPrompt = output();
+  public reload = output();
   public zoomOut = output();
   public zoomReset = output();
   public zoomIn = output();

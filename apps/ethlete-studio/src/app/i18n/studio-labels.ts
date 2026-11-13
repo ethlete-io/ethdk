@@ -104,6 +104,8 @@ export const STUDIO_LABELS = {
   system: {
     none: 'Noch keine Teile.',
     sketchMissing: 'Sketch nicht gefunden',
+    listingFailed: 'Auflistung fehlgeschlagen',
+    reload: 'Erneut laden',
     emptyTitle: 'Noch keine Teile',
     emptyExplainer:
       'Das Design-System eines Produkts wächst in Schichten: Foundations, Components, Elements und Pages. Dein Agent zeichnet jeden Teil als Sketch, du wählst unter Sketches. Bitte ihn zum Beispiel so:',

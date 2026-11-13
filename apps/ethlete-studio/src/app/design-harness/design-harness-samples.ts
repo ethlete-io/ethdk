@@ -5,6 +5,7 @@ import {
   buildReadySampleOf,
   BuildReadySample,
   LEGACY_CALL_SAMPLE,
+  LISTING_ERROR_SAMPLE,
   OPEN_POINTS_SAMPLE,
   PART_EXCEPTIONS_SAMPLE,
   THEME_SWITCHES_SAMPLE,
@@ -15,6 +16,7 @@ import {
   SKETCH_NARROW_SAMPLE,
   SKETCH_POINTS_SAMPLE,
   SKETCH_ROWS,
+  SKETCH_SCREEN_SAMPLE,
   SKETCH_WITHDRAWN,
   SketchRow,
 } from '../design-parts/sketches/sketches-sample';
@@ -47,8 +49,13 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     cameraKey: 'elements/canvas-frames',
     restoredCamera: { x: 0, y: 0, zoom: parseFloat(String(zoom ?? '100%')) / 100 },
   }),
-  'pages/sketches': ({ part, same, comparing, withdrawn, points, pointsOpen, ...props }) => {
-    const { looks: _looks, ...sample } = part === 'narrow' ? SKETCH_NARROW_SAMPLE : { rows: SKETCH_ROWS, looks: {} };
+  'pages/sketches': ({ part, same, comparing, withdrawn, points, pointsOpen, screen, ...props }) => {
+    const { wholeScreen, ...screenSample } = SKETCH_SCREEN_SAMPLE;
+    const { looks: _looks, ...sample } = screen
+      ? { ...screenSample, looks: {}, wholeScreens: screen === 'whole' ? [wholeScreen] : [] }
+      : part === 'narrow'
+        ? SKETCH_NARROW_SAMPLE
+        : { rows: SKETCH_ROWS, looks: {} };
     const rows = sketchRowsOf(sample.rows, { same: same as string[] | undefined, comparing: comparing === true }).map(
       (row) => (withdrawn && row.key === SKETCH_WITHDRAWN.key ? { ...row, withdrawn: SKETCH_WITHDRAWN.reason } : row),
     );
@@ -61,7 +68,7 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
       ...(points ? { openPoints: SKETCH_POINTS_SAMPLE, pointsClosed: pointsOpen !== true } : {}),
     };
   },
-  'pages/system': ({ build, agent, call, ...props }) => {
+  'pages/system': ({ build, agent, call, listingError, ...props }) => {
     const exceptions = PART_EXCEPTIONS_SAMPLE;
     const openCount = OPEN_POINTS_SAMPLE.reduce((sum, group) => sum + group.lines.length, exceptions.length);
     const agentState = agent as keyof typeof AGENT_SAMPLES | undefined;
@@ -74,6 +81,7 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
           ? AGENT_ON_READY_PART_SAMPLE
           : AGENT_SAMPLES[agentState]
         : null,
+      listingError: listingError ? LISTING_ERROR_SAMPLE : null,
       call: call ? { ...LEGACY_CALL_SAMPLE, transferred: call === 'transferred' } : null,
       themeSwitches: call ? THEME_SWITCHES_SAMPLE : [],
       buildReady: buildReadySampleOf(

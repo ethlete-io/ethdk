@@ -190,3 +190,90 @@ export const SKETCH_POINTS_SAMPLE: OpenPointGroup[] = [
     ],
   },
 ];
+
+const SCREEN = { width: 1440, height: 900 };
+
+const SCREEN_CHANGES: { states: string[]; change: SketchChange }[] = [
+  {
+    states: [
+      'comparing-narrow',
+      'narrow-part',
+      'narrow-below-fit',
+      'narrow-far-out',
+      'unchanged-open',
+      'all-unchanged',
+      'withdrawn-hidden',
+      'withdrawn-shown',
+      'agent-round',
+      'agent-variant',
+      'agent-failed',
+      'question-only',
+    ],
+    change: { ...SCREEN, box: { x: 842, y: 371, width: 575, height: 45 }, pixels: 1358, regions: 3 },
+  },
+  {
+    states: ['port-after-merge'],
+    change: { ...SCREEN, box: { x: 300, y: 92, width: 420, height: 24 }, pixels: 2140, regions: 1 },
+  },
+];
+
+const SCREEN_UNCHANGED = [
+  'page-sketch',
+  'page-100',
+  'zoomed-page',
+  'drawing',
+  'paused',
+  'paused-reason',
+  'idle',
+  'new-part',
+  'sticky-names',
+  'comparing',
+  'below-fit',
+  'far-out',
+  'unchanged',
+  'unchanged-matrix',
+  'unchanged-matrix-open',
+  'folded',
+];
+
+const screenShotsOf = (changed: boolean): SketchShot[] => [
+  ...SCREEN_CHANGES.flatMap(({ states, change }) =>
+    states.map((state) => ({ state, changed, height: SCREEN.height, ...(changed ? { change } : {}) })),
+  ),
+  ...SCREEN_UNCHANGED.map((state) => ({ state, changed: false, height: SCREEN.height })),
+];
+
+export const SKETCH_SCREEN_SAMPLE = {
+  part: 'pages/sketches',
+  rows: [
+    { key: SKETCH_CURRENT, note: 'Gemergter Stand', width: SCREEN.width, shots: screenShotsOf(false) },
+    {
+      key: 'a',
+      note: 'Port nach dem Merge als Zeile unter dem Kopf; die Zellen der Probe tragen die Pillenform.',
+      model: { ...OPUS, when: '04.11. 09:12' },
+      width: SCREEN.width,
+      shots: screenShotsOf(true),
+    },
+  ] satisfies SketchRow[],
+  rounds: [{ value: 'round-2', label: 'Runde 2 · Port nach dem Merge' }] satisfies SketchRound[],
+  round: 'round-2',
+  tree: [
+    {
+      title: 'Components',
+      open: true,
+      parts: [
+        { name: 'title-bar', leaf: true },
+        { name: 'zoom-chip', leaf: true },
+      ],
+    },
+    {
+      title: 'Pages',
+      open: true,
+      parts: [
+        { name: 'system', leaf: true },
+        { name: 'sketches', leaf: true, selected: true },
+      ],
+    },
+  ] satisfies PartTreeLayer[],
+  wholeScreen: SCREEN_CHANGES[0]?.states[0] ?? '',
+};

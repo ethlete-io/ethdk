@@ -792,6 +792,24 @@ describe('SketchesComponent', () => {
       expect(root.querySelector('[data-sk-frame="x open"]')?.hasAttribute('data-sk-cropped')).toBe(true);
     });
 
+    it('draws the crop groups named in wholeScreens whole and reports a toggle back', async () => {
+      const fixture = await render({ rows: cropRows, camera: '100', wholeScreens: ['moved'] });
+      const root: HTMLElement = fixture.nativeElement;
+      const reported: (readonly string[])[] = [];
+
+      fixture.componentInstance.wholeScreens.subscribe((whole) => reported.push(whole));
+
+      expect(root.querySelector('[data-sk-frame="x moved"]')?.hasAttribute('data-sk-cropped')).toBe(false);
+      expect(root.querySelector('[data-sk-frame="x open"]')?.hasAttribute('data-sk-cropped')).toBe(true);
+      expect(textOf(root.querySelectorAll('[data-sk-screen-toggle]')[1])).toBe(LABELS.cropScreen);
+
+      root.querySelectorAll<HTMLButtonElement>('[data-sk-screen-toggle]')[0]?.click();
+      await fixture.whenStable();
+
+      expect(reported).toEqual([['moved', 'open']]);
+      expect(root.querySelector('[data-sk-frame="x open"]')?.hasAttribute('data-sk-cropped')).toBe(false);
+    });
+
     it('shows no crop for a part narrow enough for the list', async () => {
       const narrow = cropRows.map((row) => ({ ...row, width: 300 }));
       const root: HTMLElement = (await render({ rows: narrow, camera: '100' })).nativeElement;

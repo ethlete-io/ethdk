@@ -169,6 +169,7 @@ export const liveShotsOf = ({
         [(sameOpen)]="sameOpen"
         [(statesOpen)]="statesOpen"
         [(withdrawn)]="withdrawn"
+        [(wholeScreens)]="wholeScreens"
         [part]="sketch().target"
         [rows]="rows()"
         [fresh]="!part()"
@@ -707,6 +708,8 @@ export class SketchViewComponent {
   protected statesOpen = signal(false);
 
   protected withdrawn = signal<SketchWithdrawn>('hidden');
+
+  protected wholeScreens = signal<readonly string[]>([]);
 
   protected drawnVariant = computed(() => this.matrix().columns.find((column) => column.drawing)?.key ?? null);
 
