@@ -2640,7 +2640,13 @@ drew before a hosted run" next to the `resident-process.spec.ts` one (both red w
 598 by "keeps the pixel compare across a change to another part" in `unchanged-states.spec.ts` (red when a change drops
 every compare); 640 by `run-deadline.spec.ts` (red without the deadline). Not verified: CI, the full Studio e2e, the 986
 leak over hours of real Studio use, 992 on the Mac.
-B499 close-out in progress (Linux builder, 2026-11-13): P2, P3, P4, P6, P7 in `design-server-proof.mjs`, one full run on a scratch copy; CI Studio e2e job with `ETHLETE_DESIGN_SHARED_SERVE=1`.
+B499 close-out in progress (Linux builder, 2026-11-13): done: P2-P7 in `design-server-proof.mjs` (2b24b5b9e), CI
+`studio-e2e` step sets `ETHLETE_DESIGN_SHARED_SERVE=1` (bd89a09e9). Uncommitted in the working tree: `et design shot`
+runs in the resident (`runsInResident`, `createWarmRuns`, `designShot({ warm })`), a `server-start` phase around Vite's
+`createServer`, changeset `b499-shot-in-resident.md`. Single runs on a scratch copy: P2 pass (0.6-0.7 s from run 2;
+before the fix every run started 2 browsers in-process), P3 pass, P4 pass. Remaining: vitest related and spec:stress
+for the cli change, commit it; the full proof run; the as-built paragraph.
+
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
 Bite: a spec stages a name and clears it in the working tree; red on the old script. Not verified: a real refused commit.
