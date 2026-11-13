@@ -3061,21 +3061,18 @@ records, the harness map and the commit; a refusal or throw undoes it; the next 
 or finishes it once its commit landed; `findSketch`/`listSketches`
 recover first. The apply runs under the product lock, the commit's rewrite and restore too (S2 gap). `removeSketchDir` throws if the folder
 stays (590 a). Proof P3 (merge-journal.spec): a child is killed at every fs write,
-recovery leaves the old or new state, a re-run merges or says "no sketch"; bite: no journal, step 6 half state. Open: discard, rebase, ready/pick, no-visible-change merge, 416,
-sketch.json RMW, port Suspect, baseline ref on undo.
+recovery leaves the old or new state, a re-run merges or says "no sketch"; bite: no journal, step 6 half state.
+S3 rest (90daee1e6): `discardSketch` and `journaledRebaseOf` (CLI rebase, rebase after merge) run journaled under the
+product lock; the port writes atomically. P3 cases discard (bite: step 1 half state) and rebase (bite: step 1). 416:
+`--ported <variant>`, refusal while an unnamed live variant conflicts, unless picked and not the pick (bite). Port
+Suspect: Cause: the port wrote what it computed from its first read; a file changed since is now a conflict (probe
+spec, bite). Open: sketch.json RMW (WIP failed 4 specs: base must be the normalized file, restore writers),
+no-visible-change merge, ready/pick, 574/434/889 unchecked, baseline ref on undo.
 
-ci-red 1113d (finding 992) as built (Linux builder subagent, 2026-11-13): CI runs 43372815104 and 43356130738, Studio e2e
-"a part edited on disk while away shows its new picture on return" failed in its shot ETag fetch with ECONNRESET / socket
-hang up. Cause (probe): Playwright's API request agent is `http.Agent({ keepAlive: true })` with no timeout, so Node
-ignores the design server's `Keep-Alive: timeout=5` hint and keeps idle sockets forever; the server closes them after
-5 s + 1 s buffer. In the case the two ETag batches (12 sockets) are 5-12 s apart; when the design server's event loop
-lags under load at that edge, its idle timer destroys a socket whose new request already sits unread, and the kernel
-answers RST. Probe: the case with a second ETag batch 6 s after a warm one and the design server SIGSTOPped from 5.7 s to
-6.3 s: 2 of 2 red with the CI message `apiRequestContext.get: read ECONNRESET`; control with a 3 s gap and the same stall
-green. Fix (case, not product: Chromium retries such a reset, the Studio app is unaffected): every `page.request.get` in
-`canvas.e2e.mjs` sends `connection: close`, so no request reuses an idle socket; assertions unchanged. Bite: the same
-probe after the fix 3 of 3 green. Verified: related e2e helper specs (61 pass), the clean case under `--load 8`. Not
-verified: CI; the server-side 5 s idle close itself is unchanged.
+ci-red 1113d (finding 992) as built (2026-11-13): Studio e2e ETag fetch failed with ECONNRESET. Cause (probe): Playwright's
+API agent keeps idle keep-alive sockets forever, the design server closes them after 6 s; under event-loop lag a
+request lands on a socket being destroyed. Probe (server SIGSTOPped across the edge) 2/2 red. Fix: every
+`page.request.get` in `canvas.e2e.mjs` sends `connection: close`. Bite: probe 3/3 green after. Not verified: CI.
 
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
