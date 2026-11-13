@@ -75,7 +75,6 @@ import { unusedSharedExportsOf } from './rules/unused-shared-export';
 import { utilityCssOf } from './rules/utility-css';
 import { orphanEndpointProblemsOf, orphanEndpointWarningsOf } from './rules/orphan-endpoint';
 import { sampleDefaultProblemsOf, sampleDefaultWarningsOf } from './rules/sample-default';
-import { unboundInputProblemsOf, unboundInputWarningsOf } from './rules/unbound-input';
 import { pendingStateWarningsOf } from './rules/pending-state';
 import { uncoveredViewsOf, uncoveredViewsText } from './rules/view-coverage';
 import { designCoverageOf } from './rules/design-coverage';
@@ -124,7 +123,6 @@ const RULES = [
   utilityCssOf,
   orphanEndpointProblemsOf,
   sampleDefaultProblemsOf,
-  unboundInputProblemsOf,
   gluedInterpolationsOf,
   sdkAttributeValuesOf,
   sdkPrivateVarsOf,
@@ -136,7 +134,6 @@ export const warningProblemsOf = (product: ResolvedProduct): Problem[] => [
   ...tokenSelectorsOf(product),
   ...orphanEndpointWarningsOf(product),
   ...sampleDefaultWarningsOf(product),
-  ...unboundInputWarningsOf(product),
   ...inlineUiInPageWarningsOf(product),
   ...pendingStateWarningsOf(product),
 ];

@@ -343,11 +343,10 @@ named `phase` or `state`) but is not named after that value: `sending: { phase: 
 `implemented.json` record, and names the part. CI passes the pushed range. `et design compare --affected` (or
 `et design task <part> --verify <rev>`) compares and records the part again, which clears it.
 
-`et design check` fails with `UNBOUND-INPUT` when an `input()` or `model()` of an app component that implements a part is
-bound by no template of the app (a consumer binds it with `[x]`, `[(x)]` or a plain attribute), and with `SAMPLE-DEFAULT`
-when such an input defaults to sample data, an `…_SAMPLE` or `…_ROWS` identifier. Known hits sit on lists in
-`libs/cli/src/lib/design/system/rules/*-known.ts` and print as `(known)` warnings; a listed input that is bound or fixed
-again fails until it comes off the list.
+`et design check` fails with `SAMPLE-DEFAULT` when an `input()` or `model()` of an app component that implements a part
+defaults to sample data, an `…_SAMPLE` or `…_ROWS` identifier. Known hits sit on lists in
+`libs/cli/src/lib/design/system/rules/*-known.ts` and print as `(known)` warnings; a listed input that is fixed again fails
+until it comes off the list.
 
 `et design check` fails with `ORPHAN-ENDPOINT` when the design server answers an endpoint that no app code calls. An
 endpoint built from a bare segment, `productUrl(address, 'comment')`, counts as called only when an app file calls the

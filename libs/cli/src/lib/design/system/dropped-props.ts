@@ -9,12 +9,22 @@ import { designOnlyPropsOf } from './part-compare';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { appSourcesOf, selectorOf } from './rules/implemented-components';
-import { isBound, tagsOf } from './rules/unbound-input';
 import { KNOWN_UNBOUND_INPUTS } from './rules/unbound-input-known';
 import { partLinkOf } from './sketch/part-definition';
 import { productModuleIdOf } from './system-modules';
 import { sourceFileOf } from './ts-source';
 import { loadingOn, WarmDraw } from '../warm-draw';
+
+const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+
+const tagsOf = (selector: string, texts: string[]): string[] => {
+  const tag = new RegExp(`<${escaped(selector)}(?=[\\s/>])((?:[^>"']|"[^"]*"|'[^']*')*)>`, 'gu');
+
+  return texts.flatMap((text) => [...text.matchAll(tag)].map((match) => match[1] as string));
+};
+
+const isBound = (name: string, tags: string[]) =>
+  tags.some((attributes) => new RegExp(`(?:\\[\\(?${name}\\)?\\]|(?<![\\w\\[(-])${name}\\s*=)`, 'u').test(attributes));
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);

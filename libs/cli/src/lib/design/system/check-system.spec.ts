@@ -137,13 +137,16 @@ describe('summaryText', () => {
       [
         'acme',
         new Map([
-          ['app code:apps/acme/src/shell.ts', { problems: ['UNBOUND-INPUT', 'SAMPLE-DEFAULT'], warnings: 1, open: 0 }],
+          [
+            'app code:apps/acme/src/shell.ts',
+            { problems: ['ORPHAN-ENDPOINT', 'SAMPLE-DEFAULT'], warnings: 1, open: 0 },
+          ],
         ]),
       ],
     ]);
 
     expect(summaryText({ product: 'acme', parts: ['a/x'], tally })).toEqual([
-      'APP CODE acme apps/acme/src/shell.ts: 2 problems (UNBOUND-INPUT, SAMPLE-DEFAULT), 1 warning',
+      'APP CODE acme apps/acme/src/shell.ts: 2 problems (ORPHAN-ENDPOINT, SAMPLE-DEFAULT), 1 warning',
       'PARTS acme: 1 of 1 clean',
     ]);
   });
