@@ -62,16 +62,25 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
   const resolvedOptions = resolveBracketGridRowSpan(bracketData, options);
   const thirdPlaceTopOffset = resolveThirdPlaceTopOffset(options);
   const foldedThirdPlaceRound = resolveFoldedThirdPlaceRound(rounds, thirdPlaceTopOffset);
-  const columnRounds = rounds.filter((round) => round !== foldedThirdPlaceRound);
+  const ownColumnThirdPlaceRound = foldedThirdPlaceRound
+    ? null
+    : (rounds.find((round) => round.type === COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE) ?? null);
+  const chainRounds = rounds.filter((round) => round !== foldedThirdPlaceRound && round !== ownColumnThirdPlaceRound);
 
   let pushSectionToFinal: ((...sections: BracketMasterColumnSection<TRoundData, TMatchData>[]) => void) | null = null;
   let finalSubColumn: BracketSubColumn<TRoundData, TMatchData> | null = null;
 
-  for (const [roundIndex, round] of columnRounds.entries()) {
-    const isLastRound = roundIndex === columnRounds.length - 1;
-    const isFinalRound = round.type === COMMON_BRACKET_ROUND_TYPE.FINAL;
+  const pushGapColumn = () =>
+    grid.pushMasterColumn(
+      createBracketGapMasterColumn({
+        existingMasterColumns: grid.grid.masterColumns,
+        columnGap: options.columnGap,
+      }),
+    );
+
+  const pushRoundColumn = (round: BracketRound<TRoundData, TMatchData>) => {
     const { masterColumn, ...mutableMasterColumn } = createBracketMasterColumn<TRoundData, TMatchData>({
-      columnWidth: isFinalRound ? options.finalColumnWidth : options.columnWidth,
+      columnWidth: round.type === COMMON_BRACKET_ROUND_TYPE.FINAL ? options.finalColumnWidth : options.columnWidth,
       padding: {
         bottom: 0,
         left: 0,
@@ -101,18 +110,17 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
 
     grid.pushMasterColumn(masterColumn);
 
-    if (isFinalRound) {
-      pushSectionToFinal = mutableMasterColumn.pushSection;
-      finalSubColumn = sub;
-    }
+    return { pushSection: mutableMasterColumn.pushSection, sub };
+  };
 
-    if (!isLastRound) {
-      grid.pushMasterColumn(
-        createBracketGapMasterColumn({
-          existingMasterColumns: grid.grid.masterColumns,
-          columnGap: options.columnGap,
-        }),
-      );
+  for (const [roundIndex, round] of chainRounds.entries()) {
+    if (roundIndex > 0) pushGapColumn();
+
+    const { pushSection, sub } = pushRoundColumn(round);
+
+    if (round.type === COMMON_BRACKET_ROUND_TYPE.FINAL) {
+      pushSectionToFinal = pushSection;
+      finalSubColumn = sub;
     }
   }
 
@@ -152,6 +160,13 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
         }),
       );
     }
+  }
+
+  // After the continue column, so the line from the final to the continue element does not cross it.
+  if (ownColumnThirdPlaceRound) {
+    if (chainRounds.length) pushGapColumn();
+
+    pushRoundColumn(ownColumnThirdPlaceRound);
   }
 
   grid.calculateDimensions();

@@ -226,6 +226,31 @@ describe('createSingleEliminationGrid, a folded third place', () => {
     ).toHaveLength(1);
   });
 
+  it('keeps the third place column out of the line from the final to the continue element', () => {
+    const grid = createSingleEliminationGrid(
+      createBracket(source(), { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT }),
+      {
+        ...CONFIG,
+        layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT,
+        continueElement: { columnWidth: 100, elementHeight: 50 },
+      },
+      { ...COMPONENTS, continue: class {} } as unknown as BracketComponents<null, null>,
+    );
+
+    const final = grid.matchElementMap.getOrThrow('r2m0').dimensions;
+    const thirdPlace = grid.matchElementMap.getOrThrow('thirdm0').dimensions;
+    const continueElement = grid.columns
+      .flatMap((column) => column.elements)
+      .find((element) => element.type === 'continue');
+
+    if (!continueElement) throw new Error('No continue element');
+
+    const lineStart = final.left + final.width;
+    const lineEnd = continueElement.dimensions.left;
+
+    expect(thirdPlace.left + thirdPlace.width <= lineStart || thirdPlace.left >= lineEnd).toBe(true);
+  });
+
   it('folds the third place under the final in a mirrored layout while the offset is unset', () => {
     const grid = createSingleEliminationGrid(
       createBracket(withThirdPlace(singleElimination([4, 2, 1])), { layout: BRACKET_DATA_LAYOUT.MIRRORED }),

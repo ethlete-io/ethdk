@@ -343,7 +343,8 @@ the whole bracket sliding. A value at or below `roundHeaderGap` changes nothing.
 `thirdPlaceTopOffset` moves the third place match out of its own column and into the final's, that
 many px below the top of the final's card, with its round header above its own card. It takes the
 final's column width, and the grid gets narrower by the column and gap it saves - so
-`bracketNaturalWidth()` answers a smaller number with it set.
+`bracketNaturalWidth()` answers a smaller number with it set. Unset, the third place column comes after the
+continue element's column, so the line from the final to the continue element passes no card.
 
 Only a single elimination layout has a column to fold: a double elimination grid already hangs the
 third place under its grand final, and ignores the setting.
