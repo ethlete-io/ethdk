@@ -2813,6 +2813,8 @@ P4 met (≤ 180 s, ≤ 90 s). `.ethlete/design` unchanged by all runs. VISIBLE-C
 `change-crop` and `change-crop-whole` need a `screen` input plus harness crop data (finding 872); `pages/system`
 `listing-error` needs a listing-error view. Until then studio P1 (exit 0) is not met. Verified: typecheck, lint,
 `vitest related` (139 files), spec:stress 4/4. Not verified: CI, the COVERED verdict in a live shot.
+B500 S5 in progress (Linux builder subagent, 2026-11-13): remove the inputs of the removed rules - `definePart({ contrast })`,
+the `contrast` open-point kind, skip/exemption entries; `data-et-skip` refuses removed ids except foundations-colors.
 ci-red 1113d (finding 992) as built (Linux builder subagent, 2026-11-13): CI runs 43372815104 and 43356130738, Studio e2e
 "a part edited on disk while away shows its new picture on return" failed in its shot ETag fetch with ECONNRESET / socket
 hang up. Cause (probe): Playwright's API request agent is `http.Agent({ keepAlive: true })` with no timeout, so Node
