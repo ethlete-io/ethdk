@@ -2736,6 +2736,8 @@ the 1440 fallback to the measured size inside the case window, and the variant p
 there. No cause in the time box, so a10cda703 is reverted (B499 P6 reopens, ADR 0280). A green Studio e2e after the
 revert supports the suspect commit; P6 then needs a way that keeps that case green.
 
+B500 S2 in progress (Linux builder subagent, 2026-11-13): review of ACTION-UNDECLARED and NESTED-SURFACE.
+
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
 Bite: a spec stages a name and clears it in the working tree; red on the old script. Not verified: a real refused commit.
