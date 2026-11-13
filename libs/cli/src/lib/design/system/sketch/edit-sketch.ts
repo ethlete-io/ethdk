@@ -221,7 +221,7 @@ export const rewordEditNotes = (sketch: Sketch) => {
   );
   const reworded = { ...sketch, rounds, variantInfo };
 
-  if (JSON.stringify(reworded) !== JSON.stringify(sketch)) writeSketchFile(reworded);
+  if (JSON.stringify(reworded) !== JSON.stringify(sketch)) writeSketchFile(reworded, { base: sketch });
 };
 
 const writeOld = ({ sketch, resolved }: { sketch: Sketch; resolved: ResolvedPart }, files: Map<string, Buffer>) => {

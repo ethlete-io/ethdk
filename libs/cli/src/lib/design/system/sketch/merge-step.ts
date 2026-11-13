@@ -90,7 +90,7 @@ export const mergeAndRecord = (options: {
   );
 
   if (!Array.isArray(result)) {
-    if (allowed) writeSketchFile(sketch);
+    if (allowed) writeSketchFile(sketch, { replace: true });
 
     return result.reason;
   }
@@ -184,7 +184,7 @@ export const mergeStepOf = (options: {
 
     if (typeof decided === 'string') return decided;
 
-    writeSketchFile(sketch);
+    writeSketchFile(sketch, { replace: true });
   } else if (picked === undefined)
     return `${sketch.target} has no pick - name the variant in the entry, or the user picks in Studio`;
 

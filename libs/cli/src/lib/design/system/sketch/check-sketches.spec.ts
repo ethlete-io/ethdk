@@ -258,11 +258,11 @@ describe('openSketchProblemsOf', () => {
 
     expect(messageOf()).toContain('drops the states empty, long');
 
-    editRound({ sketch, round: 'r1', drops: ['empty'] });
+    const dropped = editRound({ sketch, round: 'r1', drops: ['empty'] }) as Sketch;
 
     expect(messageOf()).toContain('drops the state long that');
 
-    editRound({ sketch, round: 'r1', drops: ['empty', 'long'] });
+    editRound({ sketch: dropped, round: 'r1', drops: ['empty', 'long'] });
 
     expect(messageOf()).toBeUndefined();
   });
