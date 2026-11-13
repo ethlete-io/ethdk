@@ -2,7 +2,7 @@ import { definePart, drawing, html, ng } from '@design-system';
 import { icon, type IconName } from '@system/foundations/icons';
 import titleBar from '@system/components/title-bar';
 
-type State = 'empty' | 'results' | 'none';
+type State = 'start' | 'empty' | 'results' | 'none';
 type Props = { state: State };
 
 type Item = { icon: IconName; label: string; hint: string; group: string };
@@ -25,6 +25,8 @@ const SELECTED = 1;
 
 const itemsOf = (state: State) => (state === 'empty' ? RECENT : state === 'results' ? RESULTS : []);
 
+const start = `<div class="flex flex-col items-center gap-space-2 px-space-3 py-space-6 text-ui-sm text-et-surface-muted"><span>Noch nichts zuletzt geöffnet. Tippe einen Namen oder Befehl.</span><span class="flex items-center gap-space-1 text-(length:--text-xs)"><et-kbd class="[--et-kbd-color:currentColor]" keys="mod+k" platform="other" /> öffnet die Suche von überall.</span></div>`;
+
 const row = (item: Item, selected: boolean) =>
   `<div class="flex items-center gap-space-2 rounded-control-sm px-space-2 py-space-1 text-ui-sm ${selected ? 'bg-et-theme/20 text-et-surface' : 'text-et-surface'}" data-et-control="row" ${selected ? 'data-selected' : ''}>
     <span class="text-et-surface-muted">${icon(item.icon, { size: 14 })}</span>
@@ -35,7 +37,7 @@ const row = (item: Item, selected: boolean) =>
 const field = (state: State) =>
   `<div class="flex items-center gap-space-2 border-b border-et-surface-border px-space-3 py-space-2 text-ui-sm">
     <span class="text-et-surface-muted">${icon('search', { size: 14 })}</span>
-    ${state === 'empty' ? '<span class="flex-1 text-et-surface-muted">Parts, Seiten, Skizzen und Befehle suchen</span>' : `<span class="flex-1 text-et-surface">${state === 'none' ? 'xyz' : QUERY}<span class="inline-block h-4 w-px translate-y-0.5 bg-et-surface"></span></span>`}
+    ${state === 'empty' || state === 'start' ? '<span class="flex-1 text-et-surface-muted">Parts, Seiten, Skizzen und Befehle suchen</span>' : `<span class="flex-1 text-et-surface">${state === 'none' ? 'xyz' : QUERY}<span class="inline-block h-4 w-px translate-y-0.5 bg-et-surface"></span></span>`}
     <et-kbd keys="esc" />
   </div>`;
 
@@ -68,27 +70,31 @@ const body = (state: State) => {
   const list =
     state === 'none'
       ? empty
-      : groups(items)
-          .map(
-            (g) =>
-              `<div class="flex flex-col gap-0.5 p-space-1"><div class="px-space-2 pt-space-1 text-et-surface-muted text-(length:--text-xs)">${g}</div>${items
-                .filter((i) => i.group === g)
-                .map((i) => row(i, state === 'results' && ++n === SELECTED))
-                .join('')}</div>`,
-          )
-          .join('');
+      : state === 'start'
+        ? start
+        : groups(items)
+            .map(
+              (g) =>
+                `<div class="flex flex-col gap-0.5 p-space-1"><div class="px-space-2 pt-space-1 text-et-surface-muted text-(length:--text-xs)">${g}</div>${items
+                  .filter((i) => i.group === g)
+                  .map((i) => row(i, state === 'results' && ++n === SELECTED))
+                  .join('')}</div>`,
+            )
+            .join('');
   return `<div class="absolute top-16 left-1/2 w-3xl -translate-x-1/2 overflow-hidden rounded-control-lg bg-et-surface-bg shadow-lg" data-et-auto-surface role="dialog" aria-modal="true" aria-label="Befehlsrahmen">${field(state)}<div class="max-h-64 overflow-auto">${list}</div><div class="flex gap-space-3 border-t border-et-surface-border px-space-3 py-space-2 text-et-surface-muted text-(length:--text-xs)"><span>↑↓ wählen</span><span>↵ öffnen</span><span class="flex-1"></span><span>Esc schließen</span></div></div>`;
 };
 
 export default definePart({
-  note: 'Befehlsrahmen als zentriertes modales Fenster mit Scrim: breiter als das Titelfeld, Treffer nach Gruppen (Parts, Seiten, Skizzen, Befehle) mit Gruppenkopf, unten eine Tastenleiste.',
-  madeBy: ['claude-sonnet-5-5'],
+  note: 'Befehlsrahmen als zentriertes modales Fenster mit Scrim: breiter als das Titelfeld, Treffer nach Gruppen (Parts, Seiten, Skizzen, Befehle) mit Gruppenkopf, unten eine Tastenleiste. Ohne Eingabe und ohne zuletzt Geöffnetes steht ein gedämpfter Hinweis, was man suchen kann, und dass Ctrl K die Suche überall öffnet.',
+  madeBy: ['claude-sonnet-5-5', 'claude-opus-5-5'],
   widths: [1440],
   controls: { row: { kind: 'row', input: ['pointer', 'keyboard'] } },
-  states: { empty: { state: 'empty' }, results: { state: 'results' }, none: { state: 'none' } } satisfies Record<
-    string,
-    Props
-  >,
+  states: {
+    start: { state: 'start' },
+    empty: { state: 'empty' },
+    results: { state: 'results' },
+    none: { state: 'none' },
+  } satisfies Record<string, Props>,
   render: async (props: Props) => {
     const w = await window(await ng(body(props.state), { imports: ['KBD_IMPORTS'] }), true);
     return drawing({ body: w.body, styles: w.styles });
