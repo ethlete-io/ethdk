@@ -4132,8 +4132,8 @@ command; first Esc clears. Verified specs, typecheck, lint; no live shot.
 A7 as built (2026-11-13, commit "Drag the side panel width"): shell-main edge handle (core `etDragHandle`, role separator, arrows ±8 px, 200-400 px, `sideWidth` model persisted in the remembered view).
 Verified: specs, lint, typecheck, live shots (rest, hover, drag 312 px col-resize, min, max, focus, reload); DROPPED-PROP sideWidth gone. Not verified: Tauri window, touch, design compare.
 
-A36 as built (2026-11-13, part-tree@parts-only a): part-tree takes `layers`, `sketches`, `legacy`; no states, hosts nest `nested` parts; Sketches first (`part@name`, status mark), Legacy last with one section per project, calls by slug.
-Pencil gone (rail: System, Flows, Inbox). Not built: nested parts in the listing.
+A36 as built (2026-11-13, part-tree@parts-only a): part-tree takes `layers`, `sketches`, `legacy`; no states, hosts nest `nested`; Sketches first (`part@name`, status mark), Legacy last, a section per project, calls by slug.
+Pencil gone (rail: System, Flows, Inbox); sample layers in app order. Not built: nested parts.
 
 A26 as built (2026-11-13, studio-menu@entries a + shell-main@logo-menu c): logo menu has Projekt (radio) + Projekt öffnen…, Design-Server group, Erscheinungsbild and Hilfe & Einstellungen submenus; sidebar head is the system picker, the foot is gone.
 Not built: Hell/Wie System (chrome has dark surface themes only), Einstellungen…, Tastenkürzel…, Hilfe, Über Studio… (no dialog, no docs URL or opener) - drawn disabled; Ctrl , and Ctrl / unbound.

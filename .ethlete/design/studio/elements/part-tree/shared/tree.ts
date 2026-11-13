@@ -108,16 +108,16 @@ const componentParts = (interaction?: RowInteraction, hostOpen = true): TreePart
 ];
 
 const layers = (
-  open: Partial<Record<'Foundations' | 'Components' | 'Elements' | 'Pages', boolean>>,
+  open: Partial<Record<'Foundations' | 'Elements' | 'Components' | 'Pages', boolean>>,
   parts: TreePart[],
 ) => [
   { title: 'Foundations', open: open.Foundations === true, parts: [{ name: 'colors' }, { name: 'tokens' }] },
-  { title: 'Components', open: open.Components === true, parts },
   {
     title: 'Elements',
     open: open.Elements === true,
     parts: [{ name: 'part-tree' }, { name: 'shell-main' }, { name: 'studio-menu' }],
   },
+  { title: 'Components', open: open.Components === true, parts },
   { title: 'Pages', open: open.Pages === true, parts: [{ name: 'inventory' }, { name: 'system' }] },
 ];
 

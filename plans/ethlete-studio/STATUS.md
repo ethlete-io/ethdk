@@ -283,11 +283,10 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
   Figma: einzelne Komponenten anklicken und ihren Zustand sehen, in verschachtelte Komponenten hineinklicken. Großes
   Thema, eigene Grill-Runde vor dem Start (Tom, 29.10. und 02.11.; designer-workflow.md, Abschnitt 2: Herkunft eines
   Werts aus Token, geerbtem Teil oder eigenem Wert, Rückgängig, Zusammenspiel mit Agenten).
-- **A36** Explorer, Rest nach `part-tree@parts-only` a (gebaut 13.11.: nur Teile, Sketches oben, Legacy zugeklappt
-  unten, Gruppen merken auf/zu): der Stift-Eintrag in `elements/shell-main` entfällt (`@sidebar-resize` und
-  `@logo-menu` sind gemergt); verschachtelte Parts (`components/title-bar/title-search`): die Auflistung kennt noch
-  keinen Host, der Check verweigert einen Part außerhalb seines Hosts nicht; `part-tree` zeichnet `nested` schon,
-  `system-tree.ts` füllt es noch nicht.
+- **A36** Explorer, Rest (Stift weg 3a89a94d5, Beispiel-Ebenen in App-Reihenfolge): verschachtelte Parts
+  (`components/title-bar/title-search`): die CLI findet keinen Part unter einem Host-Ordner, Schlüssel sind
+  `<layer>/<name>`; der Check verweigert einen Part außerhalb seines Hosts nicht; `system-tree.ts` füllt `nested`
+  noch nicht. Offen: Schlüssel- und Ordnerform verschachtelter Parts (Builder-Bericht 13.11.).
 - **A38** Git in Studio: Repo holen, Branch anlegen und wechseln, Commit, Push, eingehende Änderungen und Konflikte, ohne
   eigenes Git-Setup; Chat, Editor und Git arbeiten auf demselben Stand (designer-workflow.md, Abschnitte 3 und 4).
 - **A39** Bestehenden Frontend-Code importieren: eine Ansicht mit ihren Abhängigkeiten und Fixtures
