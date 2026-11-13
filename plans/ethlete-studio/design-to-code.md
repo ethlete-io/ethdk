@@ -2640,12 +2640,31 @@ drew before a hosted run" next to the `resident-process.spec.ts` one (both red w
 598 by "keeps the pixel compare across a change to another part" in `unchanged-states.spec.ts` (red when a change drops
 every compare); 640 by `run-deadline.spec.ts` (red without the deadline). Not verified: CI, the full Studio e2e, the 986
 leak over hours of real Studio use, 992 on the Mac.
-B499 close-out in progress (Linux builder, 2026-11-13): done: P2-P7 in `design-server-proof.mjs` (2b24b5b9e), CI
-`studio-e2e` step sets `ETHLETE_DESIGN_SHARED_SERVE=1` (bd89a09e9). Uncommitted in the working tree: `et design shot`
-runs in the resident (`runsInResident`, `createWarmRuns`, `designShot({ warm })`), a `server-start` phase around Vite's
-`createServer`, changeset `b499-shot-in-resident.md`. Single runs on a scratch copy: P2 pass (0.6-0.7 s from run 2;
-before the fix every run started 2 browsers in-process), P3 pass, P4 pass. Remaining: vitest related and spec:stress
-for the cli change, commit it; the full proof run; the as-built paragraph.
+B499 close-out as built (Linux builder, 2026-11-13): commits bd89a09e9 (CI `studio-e2e` sets
+`ETHLETE_DESIGN_SHARED_SERVE=1`), 2b24b5b9e (P2-P7 in `design-server-proof.mjs`), 58ad5f0ef (close-out note),
+d71e3fcb3 (`et design shot` runs in the resident: `runsInResident`, `createWarmRuns`, a `server-start` phase),
+cb48a175e (the slow-checks worker kept out of the design server specs). One full run of
+`node tools/scripts/design-server-proof.mjs --target <scratch copy>` (own git, scratch marker moved aside, CLI built in
+the copy at cb48a175e, other `dist/libs` linked from the main checkout), exit 0:
+
+| Proof | Result | Measured in this run                                                                                               |
+| ----- | ------ | ------------------------------------------------------------------------------------------------------------------ |
+| P1    | pass   | local cold 8.3 s, warm 3.0/2.3/2.4 s; CI=1 cold 7.8 s, warm 4.5/4.4/4.4 s                                          |
+| P2    | pass   | shot runs 1.4 (resident start), 0.7, 0.7, 0.7, 0.6 s; one design process and one Chrome root in all 5              |
+| P3    | pass   | serve up, sketch check 4.3 s, shot 0.7 s, compare 15.8 s; after them 1 design process, 1 Chrome root               |
+| P4    | pass   | `ETHLETE_DESIGN_IDLE_MS=60000`: right after 1 process, 9 Chromium; 90 s later 0 and 0                              |
+| P5    | pass   | "B498 R3" 5 of 5 green (43.6-43.7 s, the `--hold-listings 14000` run 71.9 s), 0 empty cells, 0 ECONNRESET          |
+| P6    | pass\* | slow-checks poll 19.7 s, worst main-thread block 0 ms; warm `/__design/system` 47 ms (200); open-points 1 ms (400) |
+| P7    | pass   | `sketch-checker.spec.ts` and `resident/server.spec.ts`: 13 passed, 0 failed                                        |
+
+Earlier single runs agree: P1 local cold 7.3 s, warm 2.3-3.0 s; P2 0.6-0.7 s from run 2; P3 1/1; P4 0/0 at 90 s.
+\*P6 cold open-points is not measured: the script asks `/__design/open-points` with no `product`, and the answer was
+400 in 1 ms. Suspect: `openPointsAnswer` is a `withProduct` route, so the request is refused before any work; the
+script needs a `?product=` and has to judge a non-200 answer as a failure. Not fixed in this slice. Verified: P1-P7
+locally on Linux in one run, P1 also with CI=1, P5 idle only (the `--load 32` P5 run is from S6). Not verified: P5's CI
+part (Studio e2e on CI green twice with `ETHLETE_DESIGN_SHARED_SERVE=1`, so the flag stays), cold open-points (above),
+the Mac, the main checkout. `apps/docs/cli/index.md` now names every call that runs in the resident and the
+serve-hosted resident (S2).
 
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.

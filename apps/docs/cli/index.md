@@ -566,12 +566,21 @@ visible-change gate does, and compares each part there too, against HEAD's desig
 `FIXED <part> <state>` line per state that failed at `<rev>` only. The exit code stays that of HEAD. A checkout with a
 missing lib build folder (`dist/libs/<name>`) refuses every compare with one line naming the build command.
 
-Compare runs in a resident design process of the checkout. The first compare starts it detached and prints
-`starting the resident design process (cold start, ~N s)`; later ones send it their request, get its output and exit
-code back, and reuse its design server, Chromium and harness app, which it rebuilds only when an input of the build
-changed. It exits after 30 minutes without a request, and `et design stop` ends it at once. Its discovery file and log
-are in `tmp/design-resident/` of the checkout. When it does not answer, compare prints one line and runs in its own
-process; in CI (`CI` set) or with `ETHLETE_DESIGN_RESIDENT=0` it always does.
+`compare`, `shot` (but `--asset`), `check --product`/`--part` (but `--rules`, `--live`, `--visible-change`, `--slow`
+and the other checks that draw nothing), `sketch check` and `sketch ready` run in a resident design process of the
+checkout. The first such call starts it detached and prints `starting the resident design process (cold start, ~N s)`;
+later ones send it their request, get its output and exit code back, and reuse its design server, Chromium and harness
+app, which it rebuilds only when an input of the build changed. It exits after 30 minutes without a request
+(`ETHLETE_DESIGN_IDLE_MS` sets another time), and `et design stop` ends it at once. Its discovery file and log are in
+`tmp/design-resident/` of the checkout. When it does not answer, the call prints one line and runs in its own process;
+in CI (`CI` set) or with `ETHLETE_DESIGN_RESIDENT=0` it always does.
+
+While `et design serve` runs, it hosts the resident itself: it stops a standalone resident of the checkout, and the
+calls above draw with the serve's design server and one Chromium it shares with its own shots. That resident ends only
+with the serve; `et design stop` says so and leaves it running. When the serve exits, the next call starts a standalone
+resident again. A second serve of the same checkout leaves the resident to the first. `ETHLETE_DESIGN_SHARED_SERVE=0`
+turns the hosting off; it is off in CI unless set to `1`, and a CI call then uses a serve-hosted resident but never
+starts one.
 
 `et design actions components/chip --product app-a [--url …] [--state <name>]` checks what each control does. Every
 interactive element of a design (button, link, field, an element with an interactive role or `tabindex` 0 or more)
