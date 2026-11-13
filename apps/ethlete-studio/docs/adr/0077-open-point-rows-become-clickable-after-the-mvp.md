@@ -1,6 +1,6 @@
 ---
 status: accepted
-open: none
+built: f41f6be36
 decided: 2026-10-31
 source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Surfaces follow the elevation system, not picked names" (Q203-Q206), after the MVP
 ---
