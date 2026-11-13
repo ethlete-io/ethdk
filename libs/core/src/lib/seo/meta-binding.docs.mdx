@@ -12,7 +12,8 @@ The meta binding utilities provide a comprehensive signal-based approach to mana
 
 - **Reactive Updates**: Automatically updates when signal values change
 - **Multi-Instance Support**: Some tags (like og:image) can have multiple instances
-- **Priority System**: Child routes override parent meta tags
+- **Priority System**: The binding bound last wins, so a child route overrides its parent. A binding keeps its place when its value updates
+- **Pre-existing Tags**: Tags from `index.html` are hidden while a binding owns their selector and come back once it is released
 
 ## Basic Usage
 
@@ -295,6 +296,16 @@ bootstrapApplication(AppComponent, {
 });
 ```
 
+### A Single Fallback Image
+
+`og:image` is multi-instance by default, so a fallback image bound in the app shell and a page image both render. Either bind the fallback only where a page has no image, or drop `og:image` from the set so the last bound image wins:
+
+```typescript
+provideMetaConfig({
+  multiInstanceTags: new Set([...DEFAULT_MULTI_INSTANCE_TAGS].filter((tag) => tag !== 'property="og:image"')),
+});
+```
+
 ### Content Transformer
 
 Transform meta tag content based on locale or other factors:
@@ -345,7 +356,7 @@ applyMetaBinding({
 
 #### `applyMetaBinding(binding: MaybeSignal<MetaTagConfig | null | undefined>)`
 
-Low-level function for applying any meta tag.
+Low-level function for applying any meta tag. While bound, it hides pre-existing tags with the same selector; they come back once the last binding for that selector is released.
 
 #### `applyDescriptionBinding(binding: MaybeSignal<string | null | undefined>)`
 

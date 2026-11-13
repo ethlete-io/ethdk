@@ -12,7 +12,7 @@ The link binding utilities provide signal-based link tag management with feature
 
 - **Reactive Updates**: Automatically updates when signal values change
 - **Multi-Instance Support**: Multiple links with the same rel (e.g., alternate languages)
-- **Priority System**: Child routes override parent links
+- **Priority System**: The binding bound last wins, so a child route overrides its parent. A binding keeps its place when its value updates
 - **SEO Ready**: Canonical URLs, hreflang, pagination
 - **Performance**: Resource hints for preconnect, prefetch, preload
 

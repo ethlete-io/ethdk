@@ -25,12 +25,15 @@ export class HomeComponent {
 provideTitleConfig({ suffixPart: { text: 'Ethlete SDK' } }),
 ```
 
-| `TitleConfig` option        | Default  | Description                                                                   |
-| --------------------------- | -------- | ----------------------------------------------------------------------------- |
-| `divider`                   | `'\|'`   | Joins the title parts.                                                        |
-| `defaultTitle`              | `''`     | Fallback when no parts are active (falls back to the initial document title). |
-| `transformer`               | identity | Runs over the final title, e.g. for translation.                              |
-| `prefixPart` / `suffixPart` | -        | Static parts around the composed title.                                       |
+| `TitleConfig` option        | Default          | Description                                                                                                |
+| --------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------- |
+| `divider`                   | `'\|'`           | Joins the title parts.                                                                                     |
+| `defaultTitle`              | `''`             | Fallback when no parts are active (falls back to the initial document title).                              |
+| `transformer`               | identity         | Runs over the final title, e.g. for translation.                                                           |
+| `prefixPart` / `suffixPart` | -                | Static parts around the composed title.                                                                    |
+| `order`                     | `'parent-first'` | `'child-first'` reverses the bound parts: `Child \| Parent \| Suffix`. Prefix and suffix keep their place. |
+
+Parts are ordered by when they were bound, so a parent binding comes before its child's. A part keeps that place when its value changes or empties and comes back.
 
 Pass `{ useAsStart: true }` to make a part the leftmost segment, discarding parts registered before it. Until the router has completed its first navigation, only the default title is shown, and with no parts registered `prefixPart`/`suffixPart` are not applied either.
 
@@ -84,9 +87,17 @@ This is the only real answer to "show progress on the tab": no browser exposes t
 | `applyArticleBindings`     | `article:*` (published_time, authors, tags, …)                                                                                                                                                              |
 | `applySocialMediaBindings` | The convenience wrapper: from `title`/`description`/`image`/`url` it fans out to title, description, Open Graph **and** Twitter (plus `openGraph`/`twitter`/`article` overrides) - the usual one-stop call. |
 
-Duplicate tags are deduplicated by selector with the highest-priority binding winning, except for multi-instance tags (`og:image`, `twitter:image`, `article:tag`, …) which all render. Extend the set via `provideMetaConfig({ multiInstanceTags })`.
+Duplicate tags are deduplicated by selector, and the binding that was bound **last** wins - usually the child route's over its parent's. A binding keeps its place when its value updates, so a parent whose signal changes does not jump ahead of its child. Multi-instance tags (`og:image`, `twitter:image`, `article:tag`, …) are the exception: every binding renders its own tag. Extend the set via `provideMetaConfig({ multiInstanceTags })`.
 
-A meta binding replaces tags already in the document: the first binding for a selector removes every existing `<meta>` matching it (for example one from `index.html` or server-rendered HTML), and so does the last binding going away.
+For one fallback `og:image` that a page image replaces, either bind the fallback only where a page has no image, or drop `og:image` from the multi-instance set so the last bound image wins:
+
+```ts
+provideMetaConfig({
+  multiInstanceTags: new Set([...DEFAULT_MULTI_INSTANCE_TAGS].filter((tag) => tag !== 'property="og:image"')),
+}),
+```
+
+A meta binding hides the tags already in the document while it is bound: the first binding for a selector removes every existing `<meta>` matching it (for example one from `index.html` or server-rendered HTML). Once the last binding for that selector is released, those tags come back.
 
 ## Links
 
@@ -98,7 +109,7 @@ A meta binding replaces tags already in the document: the first binding for a se
 | `applyPrevBinding` / `applyNextBinding`                     | `rel="prev"` / `rel="next"` pagination links.                                                       |
 | `applyResourceHintsBindings`                                | `preconnect` / `dns-prefetch` / `prefetch` / `prerender` from arrays of URLs.                       |
 
-Link bindings only ever touch the `<link>` elements they created (marked with `data-link-key`); a `<link>` already in the document is left in place and can end up alongside the bound one.
+Two bindings for a single-instance link such as `canonical` resolve like meta tags: the one bound last wins, and keeps its place when the other updates. Link bindings only ever touch the `<link>` elements they created (marked with `data-link-key`); a `<link>` already in the document is left in place and can end up alongside the bound one.
 
 ## Structured data (JSON-LD)
 

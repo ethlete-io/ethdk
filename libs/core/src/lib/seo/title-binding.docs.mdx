@@ -159,6 +159,18 @@ export class ProductDetailComponent {
 // (assuming suffixPart: { text: 'My App' } in config)
 ```
 
+Parts are ordered by when they were bound. A part keeps that place when its value changes, or empties and comes back.
+
+### Child-First Order
+
+Set `order: 'child-first'` to put the most specific part first. Prefix and suffix keep their place:
+
+```typescript
+provideTitleConfig({ suffixPart: { text: 'My App' }, order: 'child-first' });
+
+// Final title: "Product XYZ | Products | My App"
+```
+
 ### Use As Start
 
 Stop title construction at a specific part using `useAsStart`:
@@ -208,6 +220,7 @@ type TitleConfig = {
   transformer: (title: string, locale: string) => string; // Default: (title) => title
   suffixPart?: TitlePart; // Optional suffix for all titles
   prefixPart?: TitlePart; // Optional prefix for all titles
+  order?: 'parent-first' | 'child-first'; // Default: 'parent-first'
 };
 
 type TitlePart = {
@@ -261,6 +274,7 @@ type TitleConfig = {
   transformer: (title: string, locale: string) => string;
   suffixPart?: TitlePart;
   prefixPart?: TitlePart;
+  order?: 'parent-first' | 'child-first';
 };
 ```
 
