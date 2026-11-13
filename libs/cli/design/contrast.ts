@@ -47,3 +47,23 @@ export const contrastRatioOf = (options: { text: string; on: string; within?: El
     probe.remove();
   }
 };
+
+/**
+ * Measures each element under `root` marked `data-et-contrast="<text token> <background token>"`, with its need in
+ * `data-et-contrast-needs` (left empty when exempt), and writes the ratio it shows to `data-et-contrast-ratio` and
+ * `data-et-contrast-low` when it is below the need; the ratio is rounded down, so a low one never shows its need. `design check` reports each low mark as `CONTRAST-PAIR`, so draw the
+ * returned `ratio` and `low` instead of measuring again.
+ */
+export const measureContrastPairs = (root: HTMLElement) =>
+  [...root.querySelectorAll<HTMLElement>('[data-et-contrast]')].map((element) => {
+    const [text = '', on = ''] = (element.dataset['etContrast'] ?? '').split(' ');
+    const needs = Number(element.dataset['etContrastNeeds']) || null;
+    const measured = contrastRatioOf({ text: `var(${text})`, on: `var(${on})`, within: root });
+    const ratio = (Math.floor(measured * 10) / 10).toFixed(1);
+    const low = needs !== null && measured < needs;
+
+    element.dataset['etContrastRatio'] = ratio;
+    if (low) element.dataset['etContrastLow'] = '';
+
+    return { element, text, on, needs, ratio, low };
+  });

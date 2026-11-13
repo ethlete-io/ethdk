@@ -521,7 +521,7 @@ old view code, so they do not bite. Only the new vitest spec fails without the f
 stops the overlay, and the e2e always runs the current CLI. Why no tool caught it: the bite rule covers specs, and the e2e
 harness has no way to run a case against an old build. Tool fix (B378, builder default): for a bite run the harness takes
 `STUDIO_CLI_ENTRY` from a CLI copy built before the fix, so a new e2e case must fail there first.
-As built (B378): `yarn studio:e2e:bite <ref-before-the-fix> [--case Name]` (`tools/scripts/studio-e2e-bite.mjs`) builds the CLI of that ref in a temporary git worktree, runs `canvas.e2e.mjs` with `STUDIO_CLI_ENTRY` pointing at it, and exits 0 only if the e2e fails (the case bites). `canvas.e2e.mjs` and the headless harness already read `STUDIO_CLI_ENTRY`. Only the arg parsing and verdict are specced; the build and e2e run were not executed (load).
+As built (B378): `yarn studio:e2e:bite <ref-before-the-fix> [--case Name]` (`tools/scripts/studio-e2e-bite.mjs`) builds the CLI of that ref in a temporary git worktree, runs `canvas.e2e.mjs` with `STUDIO_CLI_ENTRY` pointing at it, and exits 0 only if the e2e fails (the case bites). `canvas.e2e.mjs` and the headless harness already read `STUDIO_CLI_ENTRY`.
 
 448\. The pre-commit gate passed c874d9dd2, but its `color-theme-variants` entry broke the guard spec
 `generator-requirements.spec.ts` (the generator imports `ts-morph` and the entry had no `requires`). Fixed in e02da0aaa;
@@ -556,7 +556,7 @@ through one helper that sets `NO_COLOR` and `--pretty false` and strips ANSI, wi
 Fixed in 9d788d831: design typecheck runs tsc with `--pretty false`; a spec under `FORCE_COLOR=1` fails without the
 fix, and the full `nx test cli` passed (2553). B373 is closed.
 
-As built (B390, 2026-11-07): `libs/cli/src/lib/plain-output.ts` holds `stripAnsi`, `plainEnv` (`NO_COLOR=1`, `FORCE_COLOR=0`), `spawnPlain([cmd, ...args])` and `execPlain([cmd, ...args])` (utf8 capture, plain `stdout`/`stderr`, also on the thrown error). Migrated: design typecheck and `--lint` eslint, prettier (stdin format, which now also reports empty output as a failure; `sketch/check-format` and `sketch/merge`), the git wrappers (`api/git`, push-status, hooks-problem, sketch-command, merge-commit, update commits/packages), compose output and `ps`, API setup, migration scan, release capture and both harness build spawns. `--pretty false` stays at the tsc call. Spec `plain-output.spec.ts` runs under `FORCE_COLOR=1` and bites. Not migrated: inherit/ignore stdio spawns (nothing is captured), `sketch/rebase-port`, `edit-sketch`, `go-guard`, `slow-checks`, `part-task` and other `execFileSync('git', ...)` binary or buffer captures, and the doctor streamed check; no lint rule yet forbids a new raw capture.
+As built (B390, 2026-11-07): `libs/cli/src/lib/plain-output.ts` holds `stripAnsi`, `plainEnv` (`NO_COLOR=1`, `FORCE_COLOR=0`), `spawnPlain([cmd, ...args])` and `execPlain([cmd, ...args])` (utf8 capture, plain `stdout`/`stderr`, also on the thrown error). Migrated: design typecheck and `--lint` eslint, prettier (stdin format, which now also reports empty output as a failure; `sketch/check-format` and `sketch/merge`), the git wrappers (`api/git`, push-status, hooks-problem, sketch-command, merge-commit, update commits/packages), compose output and `ps`, API setup, migration scan, release capture and both harness build spawns. `--pretty false` stays at the tsc call. Spec `plain-output.spec.ts` runs under `FORCE_COLOR=1` and bites. Not migrated: non-capturing spawns and git binary/buffer captures; no lint rule forbids a new raw capture.
 
 452\. Two Studio e2e cases fail only in the full `yarn studio:e2e` run (112/114) and pass alone, also after other pages:
 (1) Sketches "pan beyond every edge": the content grew taller while it panned. Likely cause, not verified: far frames
@@ -4149,3 +4149,5 @@ pages/sketches live open as built (2026-11-13): design-live.json opens the sketc
 sketches multi-part tree as built (2026-11-13, design only): the open sketch is the part-tree sketch row `badge@kopf-tags` with status mark, its targets nested; the harness sample `sketchMultiSampleOf` draws the same row.
 
 B509 as built (2026-11-13): the part tree nests a part of the product's own under its one same-layer user, from the listing's new `usedBy` (`nestingHostOf`); today only title-search under title-bar.
+
+B508 slice 1 as built: slow draw rule `CONTRAST-PAIR` reads the ratio and low mark `measureContrastPairs` (`@design-system`) writes on each chip of studio `foundations/colors`, which draw the same values. Replaces B500's per-picture CONTRAST.

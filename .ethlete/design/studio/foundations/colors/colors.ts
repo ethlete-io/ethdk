@@ -1,4 +1,4 @@
-import { contrastRatioOf, definePart, html, tokenSheet } from '@design-system';
+import { definePart, html, measureContrastPairs, tokenSheet } from '@design-system';
 import tokens from './colors.css?inline';
 
 type Group = 'surfaces' | 'accent' | 'warning' | 'error';
@@ -44,8 +44,8 @@ const ratioChips = (name: string) => {
             class="co-ratio"
             style="background: var(${surface})${ink ? `; color: var(--${name})` : ''}"
             title="--${name} on ${surface}"
-            data-co-ratio="--${name} ${surface}"
-            data-co-needs="${needs ?? ''}"
+            data-et-contrast="--${name} ${surface}"
+            data-et-contrast-needs="${needs ?? ''}"
             ${needs === null ? 'aria-disabled="true"' : ''}
             >${ink ? '' : html`<span class="co-dot" style="background: var(--${name})"></span>`}<span
               class="co-ratio-value"
@@ -57,15 +57,12 @@ const ratioChips = (name: string) => {
 };
 
 const fillRatios = (root: HTMLElement) => {
-  for (const chip of root.querySelectorAll<HTMLElement>('[data-co-ratio]')) {
-    const [text = '', on = ''] = (chip.dataset['coRatio'] ?? '').split(' ');
-    const ratio = contrastRatioOf({ text: `var(${text})`, on: `var(${on})`, within: root });
-    const needs = Number(chip.dataset['coNeeds']);
-    const value = chip.querySelector('.co-ratio-value');
-    if (value) value.textContent = ratio.toFixed(1);
-    if (needs && ratio < needs) {
-      chip.classList.add('co-ratio--low');
-      chip.insertAdjacentHTML('beforeend', `<span class="co-low">${marks.error}</span>`);
+  for (const { element, ratio, low } of measureContrastPairs(root)) {
+    const value = element.querySelector('.co-ratio-value');
+    if (value) value.textContent = ratio;
+    if (low) {
+      element.classList.add('co-ratio--low');
+      element.insertAdjacentHTML('beforeend', `<span class="co-low">${marks.error}</span>`);
     }
   }
 };

@@ -1,7 +1,7 @@
 import { Drawing, withNgStyles } from './define-call';
 import { forceBody } from './mark-part';
 
-export { contrastRatioOf } from './contrast';
+export { contrastRatioOf, measureContrastPairs } from './contrast';
 export { css, drawing, html, ng } from './define-call';
 export type { Drawing } from './define-call';
 export { embedPage } from './embed-page';

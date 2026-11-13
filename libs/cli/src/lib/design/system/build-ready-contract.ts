@@ -36,6 +36,8 @@ export const STATE_NO_SOURCE_RULE = 'STATE-NO-SOURCE';
 
 export const ACTION_LOST_RULE = 'ACTION-LOST';
 
+export const CONTRAST_PAIR_RULE = 'CONTRAST-PAIR';
+
 export const blockerKindOfRule = (rule: string): BlockerKind =>
   rule === COMPARE_RULE ? 'compare' : rule === SDK_ERROR_RULE ? 'sdk-error' : 'problem';
 

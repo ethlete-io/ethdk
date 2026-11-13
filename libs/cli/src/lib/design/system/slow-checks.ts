@@ -4,6 +4,7 @@ import { appFilesOf } from './app-files';
 import {
   ACTION_LOST_RULE,
   COMPARE_RULE,
+  CONTRAST_PAIR_RULE,
   CONTROL_STATE_RULE,
   DROPPED_PROP_RULE,
   SDK_ERROR_RULE,
@@ -26,7 +27,7 @@ import { partLinkOf } from './sketch/part-definition';
 export const PRODUCT_PART = '(product)';
 
 export const isDrawRule = (rule: string) =>
-  [CONTROL_STATE_RULE, DROPPED_PROP_RULE, STATE_NO_SOURCE_RULE, ACTION_LOST_RULE].includes(rule);
+  [CONTROL_STATE_RULE, DROPPED_PROP_RULE, STATE_NO_SOURCE_RULE, ACTION_LOST_RULE, CONTRAST_PAIR_RULE].includes(rule);
 
 /** Whether the `--slow` set runs `rule`, so `check --rules` does not. */
 export const isSlowRule = (rule: string) =>
@@ -34,6 +35,10 @@ export const isSlowRule = (rule: string) =>
   [APP_SPEC_RULE, UNCOVERED_REGION_RULE, IMPLEMENTS_UNRENDERED_RULE, COMPARE_RULE, SDK_ERROR_RULE].includes(rule);
 
 const DECLARES_CONTROLS = /\bcontrols\s*:/u;
+
+/** Whether a part measures theme token pairs with `measureContrastPairs`, so `CONTRAST-PAIR` draws it. */
+export const measuresContrastPairs = (part: ResolvedPart) =>
+  part.origin !== 'base' && /\bmeasureContrastPairs\b/u.test(part.source);
 
 /** A state of a part whose app picture a slow run could not take, and why. */
 export type UnjudgedState = { state: string; why: string };
@@ -175,6 +180,7 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
   const app = linked === null ? {} : appFilesOf({ root, component: linked });
   const rules = [
     ...(own && !key.startsWith('pages/') && DECLARES_CONTROLS.test(part.source) ? [CONTROL_STATE_RULE] : []),
+    ...(measuresContrastPairs(part) ? [CONTRAST_PAIR_RULE] : []),
     ...(own && linked !== null && existsSync(resolve(root, linked)) ? [DROPPED_PROP_RULE, STATE_NO_SOURCE_RULE] : []),
     ...(component !== null && harness?.specs ? [APP_SPEC_RULE] : []),
     ...(pages?.has(key) ? [UNCOVERED_REGION_RULE, IMPLEMENTS_UNRENDERED_RULE] : []),

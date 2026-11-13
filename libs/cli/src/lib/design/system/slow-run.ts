@@ -3,9 +3,11 @@ import { relative, resolve } from 'path';
 import { DesignConfig } from '../design-config';
 import { actionLostProblemsOf } from './action-lost';
 import { bespokeControlProblemsOf } from './bespoke-controls';
+import { contrastPairProblemsOf } from './contrast-pairs';
 import {
   ACTION_LOST_RULE,
   COMPARE_RULE,
+  CONTRAST_PAIR_RULE,
   CONTROL_STATE_RULE,
   DROPPED_PROP_RULE,
   SDK_ERROR_RULE,
@@ -55,6 +57,7 @@ export type SlowRunners = {
     pages: string[] | undefined;
   }) => Promise<UncoveredState[] | string>;
   controlState: typeof bespokeControlProblemsOf;
+  contrastPairs: typeof contrastPairProblemsOf;
   droppedProps: typeof droppedPropProblemsOf;
   actionLost: typeof actionLostProblemsOf;
 };
@@ -69,6 +72,7 @@ const defaultRunners: SlowRunners = {
     return typeof checked === 'string' ? checked : checked.states;
   },
   controlState: bespokeControlProblemsOf,
+  contrastPairs: contrastPairProblemsOf,
   droppedProps: droppedPropProblemsOf,
   actionLost: actionLostProblemsOf,
 };
@@ -180,6 +184,9 @@ export const runSlowChecks = async (options: {
 
   if (ruled(CONTROL_STATE_RULE).length > 0)
     merge(results, byPart(await runners.controlState({ target, config, product, parts: ruled(CONTROL_STATE_RULE) })));
+
+  if (ruled(CONTRAST_PAIR_RULE).length > 0)
+    merge(results, byPart(await runners.contrastPairs({ target, config, product, parts: ruled(CONTRAST_PAIR_RULE) })));
 
   if (ruled(DROPPED_PROP_RULE).length > 0)
     merge(results, byPart(await runners.droppedProps({ target, config, product, parts: ruled(DROPPED_PROP_RULE) })));

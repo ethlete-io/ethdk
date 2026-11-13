@@ -13,6 +13,7 @@ import { refreshHarnessMap } from './harness-map';
 import { runningCliStaleWarning } from '../stale-cli-dist';
 import { capabilityPlaceOf } from './rules/capability-place';
 import { bespokeControlProblemsOf } from './bespoke-controls';
+import { contrastPairProblemsOf } from './contrast-pairs';
 import { droppedPropProblemsOf } from './dropped-props';
 import { DrawnFindings, drawnFindingsFrom, isPartUndrawn, isStateUndrawn, statefulPartsOf } from './drawn-open-points';
 import { openPointsText, PartOpenPoints } from './open-points';
@@ -939,6 +940,7 @@ const checkProductTail = async (
     problems: [
       ...(await droppedPropProblemsOf({ ...options, product: resolved })),
       ...(await bespokeControlProblemsOf({ ...options, product: resolved })),
+      ...(await contrastPairProblemsOf({ ...options, product: resolved })),
       ...(await actionLostProblemsOf({
         ...options,
         product: resolved,
