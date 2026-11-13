@@ -2830,6 +2830,25 @@ sketches for the 7 parts and the 3 skip carriers (auto-merge, changes merged.jso
 `filled/UNBOUND-INPUT` in `pages/system/shared/capabilities.ts` and its app mirror is sample text, not an exemption; left.
 Result: sdk exit 0, 0 findings; studio exit 1, DROPPED-PROP 3 only; merged/ready.json unchanged. Verified: typecheck cli
 and ethlete-studio, lint, `vitest related` (cli 139 files, studio 27), spec:stress 4/4. Not verified: CI.
+B500 S5 as built, part 2 (Linux builder subagent, 2026-11-13, in progress): decision A applied to the design data.
+Auto-merged one-variant "no visible change" sketches (`sketch ready --no-visible-change`): 6d4e49a61 sdk components/chip,
+slider, bracket, otp-input, notification (contrast field); 361976bea studio foundations/colors (contrast field, its dead
+`pairs` const, which the sketch lint refused as unused, LOST-SURFACE 4), elements/variant-cell (contrast), pages/sketches
+(COVERED OFF-CENTRE 2), pages/inbox (NESTED-SCROLL 1). That merge rebased the ready sketches pages-sketches.focus-tooltip
+and multi-part-head itself (skip ids out of every variant); foundations-colors a and b were ported by hand (contrast,
+`pairs`, LOST-SURFACE 4) and rebased; all three are ready again with no READY-STALE. Shot compares (contact sheets, all
+states, before vs after, ImageMagick AE): chip, slider, bracket, otp-input, notification, variant-cell, colors, inbox,
+pages/sketches 0 px; foundations-colors sketch a+b 0 px; focus-tooltip 0 px (one after-take drew a partial b row,
+8674180 px, a retake matched the before sheet: flaky sheet). Open: multi-part-head sheet before vs after 8497280 px in two
+after-takes that match each other, while every per-state "vs merged" count is identical before and after; not decided
+(flaky before-take or a real change), `shot --at e30915427` fails to load `canvas-math` from the at-copy. Stopped:
+foundations/type (OFF-CENTRE 2) can not be sketched: a sketch target foundations/type fails every shot with "Can't resolve
+'./faces.css' in .ethlete/design/studio" (its type.css `@import './faces.css'` is resolved from the product dir once the
+variant stylesheet replaces it); removed from the sketch, still carries OFF-CENTRE. Step 3 not committed: refusing every
+removed id would turn those two skips into SKIP-CLASS findings. Its patch (definePart without `contrast`, SKIP_CLASSES =
+CLIPPED WRAP CONTROL-HEIGHT, skips.spec) is in ~/.cache/ethlete-scratch/b500s5-step3-cli.patch; the spec was red on the old
+code (LOST-SURFACE, NESTED-SCROLL, OFF-CENTRE, COVERED: 4 of 14 failed) and green on the new; cli typecheck green.
+Not verified: design check runs, lint, spec:stress, CI.
 ci-red 1113d (finding 992) as built (Linux builder subagent, 2026-11-13): CI runs 43372815104 and 43356130738, Studio e2e
 "a part edited on disk while away shows its new picture on return" failed in its shot ETag fetch with ECONNRESET / socket
 hang up. Cause (probe): Playwright's API request agent is `http.Agent({ keepAlive: true })` with no timeout, so Node
