@@ -44,7 +44,7 @@
     </div>
     <div class="my-space-2 h-px w-6 bg-et-surface-border"></div>
     @for (item of SECTIONS; track item.label) {
-      @let active = item.label === section();
+      @let active = item.label === railSection();
       <div
         [class]="
           active
@@ -57,7 +57,7 @@
           [class]="sectionClass(active)"
           [attr.aria-label]="item.label"
           [attr.aria-current]="active ? 'page' : null"
-          (click)="pickSection(item.label, active)"
+          (click)="pickSection(item.label, item.label === section())"
           class="flex size-10 items-center justify-center border-0 p-0 font-ui-strong text-ui-sm outline-none [--et-surface-interaction-rgb:var(--et-surface-interaction)] [transition:var(--transition-state)] focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]"
           et-button
           type="button"
@@ -81,10 +81,6 @@
                 <rect x="9" y="2.5" width="4.5" height="4.5" rx="1" />
                 <rect x="2.5" y="9" width="4.5" height="4.5" rx="1" />
                 <rect x="9" y="9" width="4.5" height="4.5" rx="1" />
-              }
-              @case ('pencil') {
-                <path d="M10.5 3 13 5.5 6 12.5H3.5V10z" />
-                <path d="m9 4.5 2.5 2.5" />
               }
               @case ('flow') {
                 <circle cx="4" cy="4" r="1.75" />

@@ -38,13 +38,12 @@ type Props = {
   resizeForce?: RailInteraction;
 };
 
-const SECTIONS: Section[] = ['System', 'Sketches', 'Flows', 'Inbox'];
+const SECTIONS: Exclude<Section, 'Sketches'>[] = ['System', 'Flows', 'Inbox'];
 
 const RECENT_PRODUCTS = ['studio', 'timetrack', 'docs'];
 
-const ICONS: Record<Section, IconName> = {
+const ICONS: Record<(typeof SECTIONS)[number], IconName> = {
   System: 'grid',
-  Sketches: 'pencil',
   Flows: 'flow',
   Inbox: 'inbox',
 };
@@ -91,10 +90,11 @@ const railItem = (
   kind: RailKind,
   panelHidden = false,
   force?: RailForce,
+  current = active,
 ) =>
   `<div class="st-shell-slot relative flex justify-center w-full ${active ? `before:absolute before:left-0 ${kind === 'section' ? 'before:bg-et-theme' : 'before:bg-text'}` : ''}" data-kind="${kind}"${active ? ' data-active' : ''}>${control(
     railButton(
-      `<button type="button"${kind === 'product' ? ' data-et-auto-surface' : ''} class="st-shell-bubble flex items-center justify-center p-0 text-ui-sm font-ui-strong ${bubbleClass(kind, active, panelHidden)}" aria-label="${label}" data-et-action="${kind === 'section' && active && !panelHidden ? 'emit:collapse' : RAIL_ACTIONS[kind]}"${active ? ` aria-current="${kind === 'section' ? 'page' : 'true'}"` : ''}>${inner}</button>`,
+      `<button type="button"${kind === 'product' ? ' data-et-auto-surface' : ''} class="st-shell-bubble flex items-center justify-center p-0 text-ui-sm font-ui-strong ${bubbleClass(kind, active, panelHidden)}" aria-label="${label}" data-et-action="${kind === 'section' && current && !panelHidden ? 'emit:collapse' : RAIL_ACTIONS[kind]}"${active ? ` aria-current="${kind === 'section' ? 'page' : 'true'}"` : ''}>${inner}</button>`,
       label,
       force,
     ),
@@ -111,11 +111,13 @@ const resizeHandle = (line: string, width: number, force?: RailInteraction) => {
 
 const sep = '<div class="st-shell-sep my-space-2 bg-et-surface-border"></div>';
 
+const railSection = (section: Section) => (section === 'Sketches' ? 'System' : section);
+
 const rail = (section: Section, product: string, panelHidden: boolean, studio: string, force?: RailForce) =>
   html`<nav class="st-shell-rail row-start-2 flex flex-col items-center gap-space-1 py-space-3 bg-et-surface-bg">
     <div class="st-shell-slot relative flex justify-center w-full min-h-10" data-kind="logo">${studio}</div>
     ${sep}
-    ${SECTIONS.map((s) => railItem(icon(ICONS[s], { size: 20 }), s, s === section, 'section', panelHidden, force)).join('')}
+    ${SECTIONS.map((s) => railItem(icon(ICONS[s], { size: 20 }), s, s === railSection(section), 'section', panelHidden, force, s === section)).join('')}
     <div class="flex-1"></div>
     ${sep}
     ${RECENT_PRODUCTS.map((p) => railItem(p.charAt(0).toUpperCase(), p, p === product, 'product', false, force)).join('')}
@@ -195,7 +197,7 @@ const railRowsOf = <const TRow extends string>(row: TRow, label: string) =>
     force: (props, interaction) => ({ ...props, force: { label, interaction } }),
   });
 
-const sectionRows = railRowsOf('section', 'Sketches');
+const sectionRows = railRowsOf('section', 'Flows');
 const productRows = railRowsOf('product', 'timetrack');
 
 const resizeRows = interactionRows<Props, 'resize', RailInteraction>(

@@ -12,7 +12,6 @@ export type ShellSection = 'System' | 'Sketches' | 'Flows' | 'Inbox';
 
 const SECTIONS: { label: ShellSection; icon: string }[] = [
   { label: 'System', icon: 'grid' },
-  { label: 'Sketches', icon: 'pencil' },
   { label: 'Flows', icon: 'flow' },
   { label: 'Inbox', icon: 'inbox' },
 ];
@@ -60,6 +59,7 @@ export class ShellMainComponent {
 
   public closeRequest = output();
   protected readonly SECTIONS = SECTIONS;
+  protected railSection = computed(() => (this.section() === 'Sketches' ? 'System' : this.section()));
 
   protected readonly LABELS = STUDIO_LABELS.designServer;
   protected readonly SHELL_LABELS = STUDIO_LABELS.shell;

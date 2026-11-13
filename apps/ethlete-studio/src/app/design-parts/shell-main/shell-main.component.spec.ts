@@ -147,6 +147,30 @@ describe('ShellMainComponent', () => {
     expect(events).toEqual(['section:Flows']);
   });
 
+  it('draws no Sketches rail item and marks System while a sketch is open', async () => {
+    const { host, fixture } = await setup('open');
+
+    fixture.componentRef.setInput('section', 'Sketches');
+    await fixture.whenStable();
+
+    const labels = [...host.querySelectorAll('nav button[aria-label]')].map((button) =>
+      button.getAttribute('aria-label'),
+    );
+
+    expect(labels).not.toContain('Sketches');
+    expect(host.querySelector('nav button[aria-current="page"]')?.getAttribute('aria-label')).toBe('System');
+  });
+
+  it('leaves an open sketch on a System click instead of hiding the panel', async () => {
+    const { events, click, fixture } = await setup('open');
+
+    fixture.componentRef.setInput('section', 'Sketches');
+    await fixture.whenStable();
+    click('System');
+
+    expect(events).toEqual(['section:System']);
+  });
+
   describe('system picker', () => {
     const openPicker = async (product: string, products: string[]) => {
       TestBed.configureTestingModule({

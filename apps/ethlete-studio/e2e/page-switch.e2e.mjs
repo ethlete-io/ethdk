@@ -11,7 +11,7 @@ process.env['DE_PORT'] ??= '4475';
 const CHROME = { os: 'linux', left: [], right: ['minimize', 'maximize', 'close'], preferNoCsd: false };
 const CHROME_DELAY_MS = 80;
 const WATCH_MS = 1200;
-const STEPS = ['Sketches', 'Inbox', 'System'];
+const STEPS = ['Flows', 'Inbox', 'System'];
 const CONTENT = 'ethlete-shell-main nav';
 
 const contentTop = (page) =>

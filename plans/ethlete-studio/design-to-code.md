@@ -4133,7 +4133,7 @@ A7 as built (2026-11-13, commit "Drag the side panel width"): shell-main edge ha
 Verified: specs, lint, typecheck, live shots (rest, hover, drag 312 px col-resize, min, max, focus, reload); DROPPED-PROP sideWidth gone. Not verified: Tauri window, touch, design compare.
 
 A36 as built (2026-11-13, part-tree@parts-only a): part-tree takes `layers`, `sketches`, `legacy`; no states, hosts nest `nested` parts; Sketches first (`part@name`, status mark), Legacy last with one section per project, calls by slug.
-Not built: the pencil (shell-main follow-up), nested parts in the listing (no host relation yet).
+Pencil gone (rail: System, Flows, Inbox). Not built: nested parts in the listing.
 
 A26 as built (2026-11-13, studio-menu@entries a + shell-main@logo-menu c): logo menu has Projekt (radio) + Projekt öffnen…, Design-Server group, Erscheinungsbild and Hilfe & Einstellungen submenus; sidebar head is the system picker, the foot is gone.
 Not built: Hell/Wie System (chrome has dark surface themes only), Einstellungen…, Tastenkürzel…, Hilfe, Über Studio… (no dialog, no docs URL or opener) - drawn disabled; Ctrl , and Ctrl / unbound.
