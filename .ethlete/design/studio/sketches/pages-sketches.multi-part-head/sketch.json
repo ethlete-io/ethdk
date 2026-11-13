@@ -102,7 +102,14 @@
     {
       "key": "r1",
       "title": "",
-      "note": "Kopf eines Sketches mit mehreren Teilen: Rundentitel, darunter „n Teile“ zum Aufklappen der Zielliste; ein Sketch mit einem Teil behält den Teilnamen (A15, ADR 0099)"
+      "note": "Kopf eines Sketches mit mehreren Teilen: Rundentitel, darunter „n Teile“ zum Aufklappen der Zielliste; ein Sketch mit einem Teil behält den Teilnamen (A15, ADR 0099)",
+      "lost": "r1 zeigte die Zielliste als Aufklapper „3 Teile“ mitten im Kopf (a: Liste darunter, b: Dialog, c: Badges daneben); alle drei verworfen: „so ein accordion mitten im head sieht komisch aus“"
+    },
+    {
+      "key": "r2",
+      "title": "Teileliste außerhalb des Kopfs",
+      "note": "Der Kopf zeigt nur den Sketchtitel; die Zielliste steht außerhalb: d als feste Zeile unter dem Kopf, e im Seitenbaum unter dem Sketch, f als Spalte „Teile“ rechts neben den Zeilen. Jede Variante mit 3 Teilen (multi-part) und mit 8 Teilen (multi-part-many).",
+      "drops": ["multi-part-open"]
     }
   ],
   "variantInfo": {
@@ -120,15 +127,33 @@
       "authors": ["claude-opus-5-5"],
       "round": "r1",
       "note": "„3 Teile“ als Aufklapper unter dem Titel; offen stehen die Ziele als Badges in derselben Zeile rechts daneben, nichts verschiebt sich. Kosten: viele Teile passen nicht in eine Zeile; ab dem fünften Teil steht „+n“."
+    },
+    "d": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r2",
+      "note": "Der Kopf zeigt nur den Titel; darunter steht fest die Zeile „Ändert n Teile:“ mit allen Zielen, ohne Aufklappen. Kosten: eine Zeile mehr Höhe über den Zeilen bei jedem Sketch mit mehreren Teilen; ab etwa zehn Teilen bricht die Zeile um."
+    },
+    "e": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r2",
+      "note": "Der Kopf zeigt nur den Titel; die Ziele stehen im Seitenbaum unter dem gewählten Sketch in der Gruppe Sketches, jedes Ziel ein Eintrag. Kosten: bei eingeklappter Seitenleiste ist die Liste weg, und lange Namen werden im schmalen Baum gekürzt."
+    },
+    "f": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r2",
+      "note": "Der Kopf zeigt nur den Titel; rechts neben den Zeilen steht eine Spalte „Teile“ mit Name und Ebene je Ziel. Kosten: die Zeilen verlieren rund 200 px Breite, Einpassen zoomt kleiner, und die Spalte ist ein neues Element der Seite."
     }
   },
   "readyContent": {
-    "a": "f471712517247a39",
-    "b": "8abb4d5d617218cc",
-    "c": "2e65d8fc15b8b937"
+    "a": "3a3346deffed05fb",
+    "b": "f9e6c84489096d9f",
+    "c": "36a89481b490349a",
+    "d": "151a1c281a7df3a8",
+    "e": "c13118edea751bf3",
+    "f": "61847f890e0d8595"
   },
   "mergeHold": {
-    "reason": "variant a changes multi-part-open, multi-part; variant b changes multi-part-open, multi-part; variant c changes multi-part-open, multi-part",
-    "at": "2026-11-13T09:12:48.395Z"
+    "reason": "variant a changes multi-part-open, multi-part; variant b changes multi-part-open, multi-part; variant c changes multi-part-open, multi-part; variant d changes multi-part, multi-part-many; variant e changes multi-part, multi-part-many; variant f changes multi-part, multi-part-many",
+    "at": "2026-11-13T10:35:56.077Z"
   }
 }
