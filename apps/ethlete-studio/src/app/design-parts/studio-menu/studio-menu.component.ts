@@ -7,10 +7,18 @@ export type DesignServerAction = 'start' | 'restart' | 'stop';
 
 export type DesignServerStatus = 'running' | 'stopped';
 
+type Appearance = 'light' | 'dark' | 'system';
+
 const SERVER_ACTIONS: Record<DesignServerStatus, DesignServerAction[]> = {
   running: ['restart', 'stop'],
   stopped: ['start'],
 };
+
+const APPEARANCES: { value: Appearance; enabled: boolean }[] = [
+  { value: 'light', enabled: false },
+  { value: 'dark', enabled: true },
+  { value: 'system', enabled: false },
+];
 
 @Component({
   selector: 'ethlete-studio-menu',
@@ -24,11 +32,24 @@ const SERVER_ACTIONS: Record<DesignServerStatus, DesignServerAction[]> = {
 export class StudioMenuComponent {
   public bare = input(false, { transform: booleanAttribute });
   public open = model(false);
+  public appearance = model(false);
+  public help = model(false);
   public server = input<DesignServerStatus>('running');
+  public project = input('');
+  public projects = input<readonly string[]>([]);
 
   public serverAction = output<DesignServerAction>();
+  public projectChange = output<string>();
+  public openProject = output();
+
+  protected readonly LABELS = STUDIO_LABELS.studioMenu;
+  protected readonly APPEARANCES = APPEARANCES;
 
   protected items = computed(() =>
     SERVER_ACTIONS[this.server()].map((action) => ({ action, label: STUDIO_LABELS.designServer[action] })),
   );
+
+  protected selectProject(value: unknown) {
+    if (typeof value === 'string' && value !== this.project()) this.projectChange.emit(value);
+  }
 }

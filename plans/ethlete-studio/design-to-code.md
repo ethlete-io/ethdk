@@ -4120,15 +4120,9 @@ keeps its `title` on the ratio chips: it is the chip's only label. B11 stays ope
 
 A17 as built (Linux builder, 2026-11-13): the part tree list scroll position is stored as `treeScroll` in the remembered ViewState (one tree for all views) and written 150 ms after the last scroll. `RememberedTreeScrollDirective` on the tree scroller restores it after the first render whose content is tall enough (afterEveryRender, no timer), so a slow listing does not break it. Verified: unit spec (store and `canRestoreScroll`), e2e case "the part tree keeps its scroll position after a reload" red without the directive (0 after the reload, target 300), green with it, also with `--hold-listings 14000`. Not verified: other platforms, a tree shorter than the stored position (stays at the clamp until rows grow).
 
-A23 as built (Linux builder, 2026-11-13): Verwerfen in the sketch header (`pages/sketches`) opens a confirm in the drawn
-update-dialog pattern: the SDK anchored dialog under the button, `role="alertdialog"`, "Skizze <part> verwerfen?" and
-"Alle Varianten der Skizze gehen verloren.", Abbrechen (outline, initial focus) and Verwerfen (filled, error theme).
-Escape and Abbrechen keep the sketch; only Verwerfen in the confirm posts the discard (`SketchDiscardConfirmComponent`
-in design-parts/sketches). It is the only "Verwerfen" in the app; the comment draft's Abbrechen (system page, inbox) has
-no confirm: it is a cancel, not a Verwerfen, and Escape also runs it, so a confirm would sit in the way of every draft.
-No drawing changed: the confirm only opens on a click, `design check --part pages/sketches` reports no visible change.
-Verified: unit spec and e2e case red without the confirm (Escape, Abbrechen, then confirm). Not verified: Tauri, a
-screen reader.
+A23 as built (2026-11-13): Verwerfen in the sketch header opens an SDK anchored alertdialog (Abbrechen focused,
+Verwerfen in the error theme); only that Verwerfen posts the discard. The comment draft's Abbrechen gets no confirm.
+Verified: spec and e2e red without the confirm. Not verified: Tauri, a screen reader.
 
 A2 as built (2026-11-13, 30f13ee56): title search click or Ctrl+K opens the SDK command palette; no drawn "neu zeichnen"
 command; first Esc clears. Verified specs, typecheck, lint; no live shot.
@@ -4138,3 +4132,6 @@ Verified: specs, lint, typecheck, live shots (rest, hover, drag 312 px col-resiz
 
 A36 as built (2026-11-13, part-tree@parts-only a): part-tree takes `layers`, `sketches`, `legacy`; no states, hosts nest `nested` parts; Sketches first (`part@name`, status mark), Legacy last with one section per project, calls by slug.
 Not built: the pencil (shell-main follow-up), nested parts in the listing (no host relation yet).
+
+A26 as built (2026-11-13, studio-menu@entries a + shell-main@logo-menu c): logo menu has Projekt (radio) + Projekt öffnen…, Design-Server group, Erscheinungsbild and Hilfe & Einstellungen submenus; sidebar head is the system picker, the foot is gone.
+Not built: Hell/Wie System (chrome has dark surface themes only), Einstellungen…, Tastenkürzel…, Hilfe, Über Studio… (no dialog, no docs URL or opener) - drawn disabled; Ctrl , and Ctrl / unbound.

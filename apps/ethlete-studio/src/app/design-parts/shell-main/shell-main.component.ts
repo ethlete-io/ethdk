@@ -1,12 +1,11 @@
 import { booleanAttribute, Component, computed, input, model, output, signal, ViewEncapsulation } from '@angular/core';
-import { BUTTON_IMPORTS } from '@ethlete/components';
+import { BUTTON_IMPORTS, MENU_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective, DragHandleDirective, DragMoveEvent } from '@ethlete/core';
 import { WindowChrome } from '../../../host/window';
 import { injectCodeWatch } from '../../code-watch';
 import { TitleBarComponent } from '../../components/title-bar/title-bar.component';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { ShellCollapseComponent } from '../shell-collapse/shell-collapse.component';
-import { ShellProjectSwitchComponent } from '../shell-project-switch/shell-project-switch.component';
 import { clampSideWidth, SIDE_WIDTH, sideWidthForKey } from './side-width';
 
 export type ShellSection = 'System' | 'Sketches' | 'Flows' | 'Inbox';
@@ -29,10 +28,10 @@ const HOVER_PRESS_RAISED =
   encapsulation: ViewEncapsulation.None,
   imports: [
     BUTTON_IMPORTS,
+    MENU_IMPORTS,
     AutoSurfaceDirective,
     DragHandleDirective,
     ShellCollapseComponent,
-    ShellProjectSwitchComponent,
     TitleBarComponent,
   ],
   host: { '[class]': "fill() ? 'block size-full' : 'block h-225 w-360'" },
@@ -43,10 +42,8 @@ export class ShellMainComponent {
   public section = input<ShellSection>('System');
   public product = input('studio');
   public products = input(['studio', 'timetrack', 'docs']);
-  public project = input('ethlete-sdk');
-  public projects = input(['ethlete-sdk', 'fut-frontend', 'design-playground']);
   public panel = input<'open' | 'hidden'>('open');
-  public projectPicker = model<'open' | 'closed'>('closed');
+  public systemPicker = model<'open' | 'closed'>('closed');
   public server = input<'stopped' | 'starting' | null>(null);
   public log = input<readonly string[]>([]);
   public chrome = input<Pick<WindowChrome, 'os' | 'left' | 'right'> | null>(null);
@@ -56,8 +53,6 @@ export class ShellMainComponent {
   public sectionChange = output<ShellSection>();
   public productChange = output<string>();
   public collapse = output();
-  public projectChange = output<string>();
-  public openProject = output();
   public restartServer = output();
   public updateRequest = output<MouseEvent>();
   public minimizeRequest = output();
@@ -122,7 +117,11 @@ export class ShellMainComponent {
     this.sideWidth.set(width);
   }
 
-  protected setProjectPicker(open: boolean) {
-    this.projectPicker.set(open ? 'open' : 'closed');
+  protected setSystemPicker(open: boolean) {
+    this.systemPicker.set(open ? 'open' : 'closed');
+  }
+
+  protected selectProduct(value: unknown) {
+    if (typeof value === 'string' && value !== this.product()) this.productChange.emit(value);
   }
 }

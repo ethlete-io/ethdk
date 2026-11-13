@@ -147,20 +147,64 @@ describe('ShellMainComponent', () => {
     expect(events).toEqual(['section:Flows']);
   });
 
-  it('closes the project picker when the current project is chosen again', async () => {
-    TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), provideColorThemesWithTailwind4(THEMES)],
+  describe('system picker', () => {
+    const openPicker = async (product: string, products: string[]) => {
+      TestBed.configureTestingModule({
+        providers: [provideZonelessChangeDetection(), provideColorThemesWithTailwind4(THEMES)],
+      });
+
+      const fixture = TestBed.createComponent(ShellMainComponent);
+      const picked: string[] = [];
+
+      fixture.componentRef.setInput('product', product);
+      fixture.componentRef.setInput('products', products);
+      fixture.componentInstance.productChange.subscribe((name: string) => picked.push(name));
+      fixture.componentRef.setInput('systemPicker', 'open');
+      await fixture.whenStable();
+
+      const options = () => [...document.querySelectorAll<HTMLElement>('[role="menuitemradio"]')];
+
+      return { fixture, picked, options };
+    };
+
+    it('names the open design system in the sidebar head and draws no project switch', async () => {
+      const { fixture } = await openPicker('a-very-long-design-system', ['a-very-long-design-system']);
+      const head = (fixture.nativeElement as HTMLElement).querySelector('aside header');
+
+      expect(head?.querySelector('button[aria-haspopup="menu"]')?.textContent).toContain('a-very-long-design-system');
+      expect((fixture.nativeElement as HTMLElement).querySelector('aside footer')).toBeNull();
     });
 
-    const fixture = TestBed.createComponent(ShellMainComponent);
+    it('lists every design system with the open one checked', async () => {
+      const { options } = await openPicker('docs', ['studio', 'docs', 'timetrack', 'bracket']);
 
-    fixture.componentRef.setInput('projectPicker', 'open');
-    await fixture.whenStable();
+      expect(options().map((option) => option.textContent?.trim())).toEqual(['studio', 'docs', 'timetrack', 'bracket']);
+      expect(
+        options()
+          .find((option) => option.getAttribute('aria-checked') === 'true')
+          ?.textContent?.trim(),
+      ).toBe('docs');
+    });
 
-    document.querySelector<HTMLElement>('[role="menuitemradio"][aria-checked="true"]')?.click();
-    await fixture.whenStable();
+    it('emits another design system and closes', async () => {
+      const { fixture, picked, options } = await openPicker('studio', ['studio', 'docs']);
 
-    expect(fixture.componentInstance.projectPicker()).toBe('closed');
+      options()[1]?.click();
+      await fixture.whenStable();
+
+      expect(picked).toEqual(['docs']);
+      expect(fixture.componentInstance.systemPicker()).toBe('closed');
+    });
+
+    it('closes without an event when the open design system is chosen again', async () => {
+      const { fixture, picked, options } = await openPicker('studio', ['studio', 'docs']);
+
+      options()[0]?.click();
+      await fixture.whenStable();
+
+      expect(picked).toEqual([]);
+      expect(fixture.componentInstance.systemPicker()).toBe('closed');
+    });
   });
 
   it('draws the title bar across the full width with the shell product and the update button', async () => {

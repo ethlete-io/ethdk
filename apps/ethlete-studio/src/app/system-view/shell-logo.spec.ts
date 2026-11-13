@@ -184,7 +184,7 @@ describe('the rail logo on every live page', () => {
 
     navButton(root, other ? 'Inbox' : 'Flows')?.click();
     navButton(root, 'timetrack')?.click();
-    root.querySelector<HTMLButtonElement>('ethlete-shell-main aside header button')?.click();
+    root.querySelector<HTMLButtonElement>('ethlete-shell-main aside header ethlete-shell-collapse button')?.click();
 
     expect(actions).toEqual([
       { kind: 'section', section: other ? 'Inbox' : 'Flows' },

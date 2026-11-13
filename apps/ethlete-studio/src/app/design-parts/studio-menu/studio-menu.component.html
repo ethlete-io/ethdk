@@ -8,6 +8,7 @@
   placement="right-start"
 >
   <button
+    [attr.aria-label]="LABELS.trigger"
     class="group size-10 p-0 [--et-button-border-radius:var(--radius-control-lg)] [--et-button-border-width:0] [&_path]:origin-center [&_path]:scale-[0.72] [&_path]:transform-view"
     etMenuTrigger
     et-button
@@ -15,7 +16,6 @@
     variant="transparent"
     color="surface"
     size="sm"
-    aria-label="Studio-Menü"
   >
     <svg
       class="[--accent:var(--et-surface-background-solid)] [--on-accent:var(--et-surface-color-solid)] group-hover:[--accent:color-mix(in_srgb,var(--et-surface-interaction-hover-solid)_5%,var(--et-surface-background-solid))] group-active:[--accent:color-mix(in_oklch,var(--et-surface-interaction-active-solid)_10%,transparent)] group-aria-expanded:[--accent:color-mix(in_srgb,var(--et-surface-interaction-hover-solid)_5%,var(--et-surface-background-solid))]"
@@ -36,11 +36,49 @@
     </svg>
   </button>
   <ng-template etMenuSurface>
-    <et-menu class="box-border w-62 text-ui-md" aria-label="Studio">
-      <et-menu-group-label>Studio</et-menu-group-label>
+    <et-menu [attr.aria-label]="LABELS.panel" class="box-border w-62 text-ui-md [--et-menu-max-height:85vh]">
+      <et-menu-radio-group [value]="project()" (valueChange)="selectProject($event)">
+        <et-menu-group-label>{{ LABELS.project }}</et-menu-group-label>
+        @for (name of projects(); track name) {
+          <et-menu-radio-item [value]="name" closeOnActivate>{{ name }}</et-menu-radio-item>
+        }
+      </et-menu-radio-group>
+      <button (click)="openProject.emit()" et-menu-item type="button">{{ LABELS.openProject }}</button>
+      <et-menu-separator />
+      <et-menu-group-label>{{ LABELS.designServer }}</et-menu-group-label>
       @for (item of items(); track item.action) {
         <button (click)="serverAction.emit(item.action)" et-menu-item type="button">{{ item.label }}</button>
       }
+      <et-menu-separator />
+      <div [(open)]="appearance" etMenu>
+        <button et-menu-item etMenuTrigger type="button">{{ LABELS.appearance }}</button>
+        <ng-template etMenuSurface>
+          <et-menu class="box-border w-44 text-ui-md">
+            <et-menu-radio-group value="dark">
+              @for (appearance of APPEARANCES; track appearance.value) {
+                <et-menu-radio-item [value]="appearance.value" [disabled]="!appearance.enabled">{{
+                  LABELS.appearances[appearance.value]
+                }}</et-menu-radio-item>
+              }
+            </et-menu-radio-group>
+          </et-menu>
+        </ng-template>
+      </div>
+      <div [(open)]="help" etMenu>
+        <button et-menu-item etMenuTrigger type="button">{{ LABELS.help }}</button>
+        <ng-template etMenuSurface>
+          <et-menu class="box-border w-56 text-ui-md">
+            <button disabled et-menu-item type="button">
+              {{ LABELS.settings }}<et-menu-item-shortcut>{{ LABELS.settingsKeys }}</et-menu-item-shortcut>
+            </button>
+            <button disabled et-menu-item type="button">
+              {{ LABELS.shortcuts }}<et-menu-item-shortcut>{{ LABELS.shortcutsKeys }}</et-menu-item-shortcut>
+            </button>
+            <button disabled et-menu-item type="button">{{ LABELS.docs }}</button>
+            <button disabled et-menu-item type="button">{{ LABELS.about }}</button>
+          </et-menu>
+        </ng-template>
+      </div>
     </et-menu>
   </ng-template>
 </div>

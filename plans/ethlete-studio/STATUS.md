@@ -267,19 +267,10 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 - **A25** Chat, Notizen und Knöpfe oben rechts kommen zurück, je mit Entwurf (Q81). Chat zeigt den Zustand des Agenten
   (arbeitet, wartet, unterbrochen, fehlgeschlagen) mit Stopp und Fortsetzen, Anmeldung in Studio, Verweis auf Teil,
   Sketch oder Kommentar (designer-workflow.md, Abschnitt 1).
-- **A26** Studio-Menü: Einstellungen, Erscheinungsbild, Tastenkürzel, Hilfe, Über Studio (Q83).
-  Skizze `elements/studio-menu@entries` (Nacht 13.11.), wartet auf Toms Merge; die fünf Einträge stehen unter einem
-  Trenner unter den Design-Server-Aktionen, deren Gruppe heißt „Design-Server“ (wie in `@logo-menu`); Einstellungen
-  mit „Ctrl ,“ und Tastenkürzel mit „Ctrl /“: a) Erscheinungsbild ist ein Untermenü (Hell, Dunkel, Wie System; neuer
-  Zustand `studio-menu.appearance`), Einträge mit „…“ öffnen je einen Dialog, Hilfe die Doku im Browser; b)
-  Erscheinungsbild als Radio-Gruppe direkt im Menü, ein Klick wechselt das Thema, Menü drei Zeilen länger (hebt die
-  40vh-Grenze des SDK-Menüs auf); c) alle fünf öffnen eine Seite „Einstellungen“ an ihrem Abschnitt, Thema wechseln
-  braucht zwei Klicks und eine neue Seite. Empfehlung a: das Menü bleibt kurz, auch mit den Projekt-Einträgen aus
-  `@logo-menu`, das Thema ist einen Hover entfernt, und das SDK-Menü zeichnet Untermenüs schon. Folgen (ADR 0121),
-  je eine Skizze: Dialog Einstellungen, Dialog Tastenkürzel, Ziel von Hilfe (Doku-URL), Dialog Über Studio
-  (Version, Lizenz), bei c die Seite `pages/settings`. Überschneidung: `elements/shell-main@logo-menu` (A5, offen)
-  ändert dasselbe `studio-menu.ts` (Projekt und „Projekt öffnen…“ über den Server-Aktionen); wer zuerst gemergt
-  wird, der andere braucht `sketch rebase`, die Einträge beider passen untereinander.
+- **A26** Studio-Menü, Rest (Q83): Menü und System-Picker gebaut (as built in design-to-code.md). Offen, je eine
+  Skizze (ADR 0121): Dialog Einstellungen (Ctrl ,), Dialog Tastenkürzel (Ctrl /), Ziel von Hilfe (Doku-URL, Opener im
+  Host), Dialog Über Studio (Version, Lizenz); Hell und Wie System brauchen ein helles Oberflächen-Theme. Bis dahin
+  stehen die Einträge deaktiviert im Menü.
 - **A27** Server-Status: Neu laden, „veraltet“, Neustart, Stopp (Q88); „Scan“ für Checkouts (Q89).
 - **A28** Popup „Ausnahmen N“ und alte Ansicht für Calls neu gestalten (Q91, Q92).
 - **A29** Inventar überarbeiten: als Canvas, Assets, offene Overlays, Einstieg, Knopf „Alle Produkte“ (Q100, Q101, Q233,

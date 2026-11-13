@@ -53,11 +53,10 @@ export const SHELL_SAMPLE: ShellState = {
   selector: 'ethlete-shell-page',
   template: `
     <ethlete-shell-main
+      [(systemPicker)]="systemPicker"
       [section]="section()"
       [product]="shell().product"
       [products]="shell().products"
-      [project]="shell().project"
-      [projects]="shell().projects"
       [panel]="shell().panel"
       [server]="screen()"
       [log]="shell().serverLog ?? []"
@@ -68,8 +67,6 @@ export const SHELL_SAMPLE: ShellState = {
       (collapse)="action.emit({ kind: 'collapse' })"
       (sectionChange)="action.emit({ kind: 'section', section: $event })"
       (productChange)="action.emit({ kind: 'product', name: $event })"
-      (projectChange)="action.emit({ kind: 'project', name: $event })"
-      (openProject)="action.emit({ kind: 'openProject' })"
       (restartServer)="action.emit({ kind: 'server', action: 'restart' })"
       (updateRequest)="openUpdateDialog($event)"
       (minimizeRequest)="run(minimizeWindow$())"
@@ -79,7 +76,13 @@ export const SHELL_SAMPLE: ShellState = {
     >
       <ethlete-studio-menu
         [(open)]="menuOpen"
+        [(appearance)]="appearanceOpen"
+        [(help)]="helpOpen"
         [server]="shell().server === 'stopped' ? 'stopped' : 'running'"
+        [project]="shell().project"
+        [projects]="shell().projects"
+        (projectChange)="action.emit({ kind: 'project', name: $event })"
+        (openProject)="action.emit({ kind: 'openProject' })"
         (serverAction)="action.emit({ kind: 'server', action: $event })"
         shellMainStudio
         bare
@@ -109,6 +112,9 @@ export class ShellPageComponent {
   protected closeWindow$ = closeWindow$;
 
   protected menuOpen = signal(false);
+  protected appearanceOpen = signal(false);
+  protected helpOpen = signal(false);
+  protected systemPicker = signal<'open' | 'closed'>('closed');
   protected sideWidth = signal(clampSideWidth(rememberedView().sideWidth ?? SIDE_WIDTH.rest));
   protected screen = computed(() => {
     const server = this.shell().server;
