@@ -7,4 +7,8 @@ export const BRACKET_PREDICTION_EXAMPLES = {
     ),
   'bracket-prediction/bracket-prediction-slot-sources': () =>
     import('./bracket-prediction-slot-sources.example').then((m) => m.BracketPredictionSlotSourcesExampleComponent),
+  'bracket-prediction/bracket-prediction-one-round-panel': () =>
+    import('./bracket-prediction-one-round-panel.example').then(
+      (m) => m.BracketPredictionOneRoundPanelExampleComponent,
+    ),
 };

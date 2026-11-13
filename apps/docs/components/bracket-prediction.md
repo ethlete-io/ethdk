@@ -63,6 +63,24 @@ well - the highlight reads the real source, and a predicted run is not in it.
 
 @example bracket-prediction/bracket-prediction-interactive 640px
 
+## Your own card in a one-round panel
+
+The pick card is optional. To keep a look of your own, draw the match with your own card and show one
+round at a time on a narrow screen. Four pieces make that up:
+
+- **The card** declares the inputs it needs next to the three the bracket sets, and
+  [`[matchInputs]`](/components/bracket#passing-your-own-data-to-a-card) fills them from your picks:
+  each side resolved with `resolveBracketSlot()`, and the id the viewer picked. It runs in a
+  `computed`, so a new pick redraws every card that depends on it.
+- **The pick goes back** through a token the host provides. A card's outputs have no binding.
+- **`focusRoundId`** moves the round on show to the inline start, and **`rowSpanRoundId`** set to the
+  same round packs its matches at the top. Both change as one CSS transition.
+- **The panel** is `focusInset + columnWidth + focusInset` wide and clips the rest. Read those values
+  with `resolveBracketLayoutSettings()` from the same config you give `provideBracketConfig()`, so the
+  chevrons stand in the gutter `focusInset` keeps free.
+
+@example bracket-prediction/bracket-prediction-one-round-panel 640px
+
 ## Resolving a slot
 
 `resolveBracketSlot({ bracket, picks, matchId, side })` follows slot provenance through the viewer's
