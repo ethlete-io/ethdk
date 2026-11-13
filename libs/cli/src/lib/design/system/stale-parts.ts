@@ -4,6 +4,7 @@ import { appFilesOf } from './app-files';
 import { changedDesignFilesOf, designHashOf, DesignHash, HashRecord, legacyHolds, recordHolds } from './design-hash';
 import { partOwnerOf } from './inventory-approval';
 import { READY_FILE, readReady, readReadyEntries } from './part-ready';
+import { withProductLock } from './product-lock';
 import { changedAppFilesOf, IMPLEMENTED_FILE, linkedComponentOf, readImplemented } from './part-task';
 import {
   addedBaselineEntriesOf,
@@ -191,10 +192,12 @@ const upgradeOf = (product: ResolvedProduct, resolved: ResolvedPart) => {
   const implementedEntry = implemented[part];
 
   if (holds(readyEntry)) {
-    rewrite(resolve(dir, READY_FILE), {
-      ...readReadyEntries(dir),
-      [part]: { ...readyEntry, hash: now.hash, files: now.files },
-    });
+    withProductLock(dir, () =>
+      rewrite(resolve(dir, READY_FILE), {
+        ...readReadyEntries(dir),
+        [part]: { ...readyEntry, hash: now.hash, files: now.files },
+      }),
+    );
     upgraded.push('ready');
   }
 

@@ -8,6 +8,7 @@ import { partOwnerOf } from './inventory-approval';
 import { OpenPoint } from './open-points';
 import { partPointsOf, readOpenPoints } from './read-open-points';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
+import { withProductLock } from './product-lock';
 import { readStampText, writeStampFile } from './stamp-files';
 import { hasActor, WriteOrigin } from './write-origin';
 
@@ -189,6 +190,18 @@ export const writePartRecord = (options: {
 
   if (typeof found === 'string' || !hasActor(options.origin)) return null;
 
+  return withProductLock(found.dir, () => writeRecordOf({ ...options, found }));
+};
+
+const writeRecordOf = (options: {
+  product: ResolvedProduct;
+  part: string;
+  origin: WriteOrigin;
+  actions?: string[];
+  at?: string;
+  found: Exclude<ReturnType<typeof readyPartOf>, string>;
+}): PartReady => {
+  const { found } = options;
   const existing = readReadyEntries(found.dir);
   const previous = existing[options.part];
   const embedded = embeddedHashesOf({ product: options.product, part: found.resolved });
@@ -223,17 +236,18 @@ export const dropPartRecord = (options: { product: ResolvedProduct; part: string
 
   if (typeof found === 'string') return false;
 
-  const existing = readReadyEntries(found.dir);
-  const record = existing[options.part];
+  return withProductLock(found.dir, () => dropRecordIn(found.dir, options.part));
+};
+
+const dropRecordIn = (dir: string, part: string) => {
+  const existing = readReadyEntries(dir);
+  const record = existing[part];
 
   if (!record || !isReady(record)) return false;
 
-  const rest = Object.fromEntries(Object.entries(existing).filter(([key]) => key !== options.part));
+  const rest = Object.fromEntries(Object.entries(existing).filter(([key]) => key !== part));
 
-  writeReady(
-    found.dir,
-    record.actions ? { ...rest, [options.part]: { actions: record.actions, at: record.at } } : rest,
-  );
+  writeReady(dir, record.actions ? { ...rest, [part]: { actions: record.actions, at: record.at } } : rest);
 
   return true;
 };

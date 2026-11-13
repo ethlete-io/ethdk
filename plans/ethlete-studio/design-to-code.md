@@ -2329,14 +2329,10 @@ exactly this case. Lesson: a new push-suite step is proven only by a real `yarn 
 pushed. Fix: `runStep` takes an env, the `tools` step passes `ETHLETE_REPO_ROOT` (the live repo, used only for git
 history), and the spec runs the export's own `e2e-check.mjs` (`import.meta.dirname`), not the live tree's. Bite: in a
 HEAD export with the fixed spec, the case passes with `ETHLETE_REPO_ROOT` and fails without it.
-803 tool fix (asked by the doc agent; the rule alone is no fix): `commit-export.mjs` (from 653) exports
-`toolsStepEnv(repo)`, which push-suite passes to the `tools` step, and `commit-export.spec.mjs` builds a real HEAD export
-(`git archive`, no `.git`) and runs `yarn test:tools` in it with that env (nested run skips the case). A tools spec that
-needs a git repo now fails in `yarn test:tools` itself. Bite: with `toolsStepEnv` returning `{}`, the case fails and
-names the e2e-check case. Cost: about 4 s more per `yarn test:tools`. Not covered: the other steps (lint, typecheck, cli,
-studio, e2e) in an export; they are too slow for a spec and ran green in the export before 802.
+803 tool fix: `toolsStepEnv(repo)` feeds the `tools` step; `commit-export.spec.mjs` runs `yarn test:tools` in a real
+HEAD export. Bitten.
 805\. Linux builder (2026-11-11 morning): after a successful push of `next`, the push slot (`refs/push-slot/next`) stayed held until its 1 h expiry. `push:suite` claims it and keeps it on `ok`, pre-push only checks it, nothing released it, so the Mac builder was blocked for up to an hour.
-805 as built: `yarn push` (`tools/scripts/push-next.mjs`, `pushNext`; no yarn builtin of that name) refuses without a push-suite ok verdict for HEAD, runs `git push origin <sha>:next` with inherited stdio (pre-push runs), then releases the slot; on a failed push it keeps the slot and exits non-zero. `hasOkVerdict` is now exported from `push-slot.mjs`. `slotState` already treated a slot whose sha `origin/next` contains as free; claim, `check` and `status` now also print `push slot of <holder> for <sha12> treated as released: origin/next contains it`. The builder-agent skill names `yarn push`. Bites (each fails the named case): no release call, no verdict check, no released line, `pushed` ignored in `slotState` (the claim over a pushed slot is blocked). Verified: `node --test` on `push-slot.spec.mjs` and `push-next.spec.mjs` (fake bare origin). Not verified: a real `yarn push` through the pre-push hook against the real origin.
+805 as built: `yarn push` (`push-next.mjs`) refuses without a push-suite ok verdict for HEAD, pushes `<sha>:next`, then releases the slot; a failed push keeps it. Bitten 4 ways.
 806\. Linux builder (2026-11-11, 653 live proof): `yarn studio:e2e:bite --revert 1b41de840 --case sketches` printed "the e2e fails on HEAD with 1b41de840 reverted: the new case bites" and exited 0, but the `--case` matched no case: the e2e exited 1 for the no-match refusal, the same code as a failed case, and `biteVerdict` read every non-zero exit as a bite. A typo in a case name gave a false bite proof. Why no tool caught it: the bite spec covered only exits 0 and 1, and the no-match exit was chosen to fail a run, not to be told apart from a failure.
 806 as built: the e2e exits 2 on a `--case`/`--page` filter that matches no case, like its other argument refusals; `biteVerdict(2)` is `refused` and the bite prints "the e2e refused its arguments on <subject>: no proof" and exits 2. Verified: `studio-e2e-bite.spec.mjs` (fails when the refused branch is broken), `case-filter.spec.mjs` (real run), `studio-e2e-perf.spec.mjs` green; a live `yarn studio:e2e --case zzz-nothing` exits 2. Not verified: a live bite with a no-match case (the export takes HEAD).
 806 follow-up (Linux builder): 0c2451802 and 7ffbf56ce cut the plan tail (a hand script); this commit restores it from 261b8c80e. Lesson: a scripted insert checks the line count first.
@@ -3056,6 +3052,16 @@ check/serve/ready (981). 468 rest: no writer left (b52ff697c, c7d88a573). Verifi
 typecheck, spec:stress 4/4; P1 live (scratch, 3 min): tree clean, sdk settled, studio slow run failed every poll (`state
 "project-picker" of "elements/shell-main" failed`). Not verified: a live studio record, Studio UI. Changed: `design
 ready` 422 loses the "embedded X changed" hint. Suspect: `design ready` also writes other parts' cached records.
+
+B501 S2 as built (2026-11-13): one atomic writer and a per-product lock for `ready.json`, `merged.json` and
+`sketch.json`. `writeChangedFile` writes a temp file in the same folder, fsyncs, renames; the next write drops a dead
+writer's temp file. `withProductLock` holds `.ethlete/cache/<product>/decisions.lock` (O_EXCL + pid, dead pid taken over,
+10 s wait, error names the holder) across the read-modify-write of `writePartRecord`, `dropPartRecord`, `recordMerged`,
+`forgetMerged`, `recordMergeReason`, the legacy ready rewrite and every stamp write; `writeDecisionFile` routes
+`writeSketchFile` and the merge commit's json rewrite and restore. Removes (spec): the lost update of two processes'
+read-modify-write of `ready.json` (bite, no lock: a 39/40, b 3/40) and torn reads (bite, plain write: 30 empty reads).
+None of the B501 findings is a torn write or interleave. Not covered: a `sketch.json` update whose read is in the caller
+(only the write is locked); the merge commit's restore after `git commit` (S3); a live serve + CLI run.
 
 ci-red 1113d (finding 992) as built (Linux builder subagent, 2026-11-13): CI runs 43372815104 and 43356130738, Studio e2e
 "a part edited on disk while away shows its new picture on return" failed in its shot ETag fetch with ECONNRESET / socket

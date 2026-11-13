@@ -2,6 +2,7 @@ import { existsSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
+import { withProductLock } from '../product-lock';
 import { readStampText, writeStampFile } from '../stamp-files';
 import { partHashesHold, partHashHolds, partHashOf } from './baseline';
 import { heldEditsOf } from './held-edits';
@@ -91,31 +92,37 @@ export const readMergeNote = (productDir: string, part: string): string | null =
 export const recordMerged = (options: { product: HashedProduct; parts: string[]; decision?: MergeDecision }) => {
   const { product, parts, decision } = options;
   const productDir = product.dir;
-  const entries = readEntries(productDir);
 
-  for (const part of parts) {
-    const note = decision ? undefined : entries[part]?.note;
+  withProductLock(productDir, () => {
+    const entries = readEntries(productDir);
 
-    entries[part] = {
-      hash: partHashOf({ product, dir: resolve(productDir, part) }),
-      decision: decision ?? entries[part]?.decision ?? null,
-      ...(note ? { note } : {}),
-    };
-  }
+    for (const part of parts) {
+      const note = decision ? undefined : entries[part]?.note;
 
-  writeEntries(productDir, entries);
+      entries[part] = {
+        hash: partHashOf({ product, dir: resolve(productDir, part) }),
+        decision: decision ?? entries[part]?.decision ?? null,
+        ...(note ? { note } : {}),
+      };
+    }
+
+    writeEntries(productDir, entries);
+  });
 };
 
 /** Drops the named parts from the product's `merged.json`. */
 export const forgetMerged = (options: { productDir: string; parts: string[] }) => {
   const { productDir, parts } = options;
-  const entries = readEntries(productDir);
 
-  if (!parts.some((part) => part in entries)) return;
+  withProductLock(productDir, () => {
+    const entries = readEntries(productDir);
 
-  for (const part of parts) delete entries[part];
+    if (!parts.some((part) => part in entries)) return;
 
-  writeEntries(productDir, entries);
+    for (const part of parts) delete entries[part];
+
+    writeEntries(productDir, entries);
+  });
 };
 
 /** The product folder that holds the part now: the product's own, else its base's. */
@@ -234,15 +241,17 @@ export const recordMergeReason = (options: {
   const note = [planRef ? `merged without a pick: allowed by ${planRef}` : '', reason ? `merged: ${reason}` : '']
     .filter(Boolean)
     .join(' - ');
-  const entries = readEntries(product.dir);
-
   if (note === '') return;
 
-  entries[part] = {
-    hash: entries[part]?.hash ?? partHashOf({ product, dir: resolve(product.dir, part) }),
-    decision: entries[part]?.decision ?? null,
-    note,
-  };
+  withProductLock(product.dir, () => {
+    const entries = readEntries(product.dir);
 
-  writeEntries(product.dir, entries);
+    entries[part] = {
+      hash: entries[part]?.hash ?? partHashOf({ product, dir: resolve(product.dir, part) }),
+      decision: entries[part]?.decision ?? null,
+      note,
+    };
+
+    writeEntries(product.dir, entries);
+  });
 };

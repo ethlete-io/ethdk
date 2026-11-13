@@ -1,8 +1,9 @@
 import { AsyncLocalStorage } from 'async_hooks';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, rmSync } from 'fs';
 import { basename, dirname, resolve } from 'path';
-import { writeJsonFile } from '../../json-file';
+import { writeChangedFile, writeJsonFile } from '../../json-file';
 import { productCacheDirOf } from './product';
+import { withProductLock } from './product-lock';
 
 const inMemory = new AsyncLocalStorage<Map<string, string>>();
 const inCache = new AsyncLocalStorage<true>();
@@ -69,14 +70,13 @@ const writeCachedStamp = (file: string, value: unknown) => {
     return;
   }
 
-  mkdirSync(dirname(cacheFile), { recursive: true });
-  writeFileSync(cacheFile, JSON.stringify({ base: tracked, text: `${JSON.stringify(value, null, 2)}\n` }));
+  writeChangedFile(cacheFile, JSON.stringify({ base: tracked, text: `${JSON.stringify(value, null, 2)}\n` }));
 };
 
 /** Moves each stamp file named `name` that the current `withStampsInMemory` run holds into the cache. */
 export const keepHeldStampsInCache = (name: string) => {
   for (const [file, text] of inMemory.getStore() ?? [])
-    if (basename(file) === name) writeCachedStamp(file, JSON.parse(text));
+    if (basename(file) === name) withProductLock(dirname(file), () => writeCachedStamp(file, JSON.parse(text)));
 };
 
 /**
@@ -87,6 +87,6 @@ export const writeStampFile = (file: string, value: unknown) => {
   const held = inMemory.getStore();
 
   if (held) held.set(resolve(file), JSON.stringify(value));
-  else if (inCache.getStore()) writeCachedStamp(resolve(file), value);
-  else writeJsonFile({ file, value });
+  else if (inCache.getStore()) withProductLock(dirname(file), () => writeCachedStamp(resolve(file), value));
+  else withProductLock(dirname(file), () => writeJsonFile({ file, value }));
 };

@@ -1,5 +1,16 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { dirname, resolve } from 'path';
+import {
+  closeSync,
+  existsSync,
+  fsyncSync,
+  mkdirSync,
+  openSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeSync,
+} from 'fs';
+import { basename, dirname, resolve } from 'path';
 import { formattedTextOf } from './design/system/prettier';
 
 /** `text` (JSON) formatted as `file` by the target checkout's Prettier; unchanged without Prettier or when it fails. */
@@ -9,12 +20,60 @@ export const formattedJsonTextOf = (options: { target: string; file: string; tex
   return typeof formatted === 'string' ? formatted : options.text;
 };
 
-/** Writes `text` to `file` unless the file already holds exactly that text, so an equal file keeps its mtime. */
+const tmpFileOf = (file: string) =>
+  resolve(dirname(file), `.${basename(file)}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`);
+
+const isAlive = (pid: number) => {
+  try {
+    process.kill(pid, 0);
+
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === 'EPERM';
+  }
+};
+
+const dropDeadTmpFiles = (file: string) => {
+  const prefix = `.${basename(file)}.`;
+
+  for (const name of readdirSync(dirname(file))) {
+    if (!name.startsWith(prefix) || !name.endsWith('.tmp')) continue;
+
+    const pid = Number.parseInt(name.slice(prefix.length), 10);
+
+    if (Number.isInteger(pid) && !isAlive(pid)) rmSync(resolve(dirname(file), name), { force: true });
+  }
+};
+
+/**
+ * Writes `text` to `file` through a temporary file in the same folder and a rename, so a reader or a killed writer
+ * sees either the old or the new text, never a part of it; the next write drops a dead writer's temporary file. An equal file is left untouched and keeps its mtime.
+ */
 export const writeChangedFile = (file: string, text: string) => {
   if (existsSync(file) && readFileSync(file, 'utf8') === text) return;
 
   mkdirSync(dirname(file), { recursive: true });
-  writeFileSync(file, text, 'utf8');
+  dropDeadTmpFiles(file);
+
+  const tmp = tmpFileOf(file);
+
+  try {
+    const fd = openSync(tmp, 'wx');
+
+    try {
+      writeSync(fd, text, null, 'utf8');
+      // fsync before the rename: a crash after it must not leave an empty file under the real name.
+      fsyncSync(fd);
+    } finally {
+      closeSync(fd);
+    }
+
+    renameSync(tmp, file);
+  } catch (error) {
+    rmSync(tmp, { force: true });
+
+    throw error;
+  }
 };
 
 /** `value` serialized as JSON and written to `file`, formatted like {@link formattedJsonTextOf}; an equal file stays untouched. */

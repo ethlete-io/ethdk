@@ -1,5 +1,6 @@
-import { existsSync, readFileSync, realpathSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, realpathSync } from 'fs';
 import { relative, resolve, sep } from 'path';
+import { writeDecisionFile } from '../product-lock';
 import { ResolvedProduct } from '../resolve-product';
 import { writeMergeChangeset } from './merge-changeset';
 import { Sketch, sketchesDirOf } from './sketch';
@@ -117,7 +118,7 @@ function* commitFlow(options: {
     if (own === null || own === text) continue;
 
     restore.push({ file, text });
-    writeFileSync(file, own);
+    writeDecisionFile(file, own);
   }
 
   const top = yield { args: ['rev-parse', '--show-toplevel'] };
@@ -146,7 +147,7 @@ function* commitFlow(options: {
         }
       : added;
 
-  for (const { file, text } of restore) writeFileSync(file, text);
+  for (const { file, text } of restore) writeDecisionFile(file, text);
 
   if (committed.status !== 0)
     console.warn(`Could not commit the merge: ${(committed.stderr || committed.stdout).trim()}`);
