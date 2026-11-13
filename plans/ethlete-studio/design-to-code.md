@@ -2719,7 +2719,7 @@ LOST-SURFACE 42, NESTED-SCROLL 5, CUT-CONTROL 3, SKIP-SCOPE 3).
 - P2 every kept rule has a planted-defect spec that turns it red, and 0 hits on the committed parts that a review
   calls false. A rule with one false hit in a review sample (20 hits, or all if fewer) is removed (B500 row: "eine
   Regel ohne null Fehlalarme fällt weg"); its removal names the findings it closes.
-- P3 the full check runs as a CI gate for both products and is green twice on CI.
+- P3 the full check runs as a CI gate for both products and is green twice on CI. (dropped under ADR 0226 (grill 2026-11-13))
 - P4 wall time studio ≤ 180 s, sdk ≤ 90 s.
 - P5 a full check leaves the tracked `.ethlete/design/*/{merged,ready}.json` unchanged (today it rewrites them).
 
@@ -2992,6 +2992,34 @@ feature and stay. Findings closed: 924, the gate line of 981. Verified: cli and 
 changed files, `vitest related` (cli 212 files, 1955 tests; agent-rules 40 tests), `node --test` of tmp-sweep and
 check-person-names, the person-names check. Not verified: CI; a live `compare --base`
 run after the `baseCommitOf` change; the running serve (old build). Open: P3 CI gate.
+
+B500 closed (Linux builder subagent, 2026-11-13, grill decision: P3 dropped under ADR 0226, which keeps every Studio and
+design check out of git hooks and CI, and ADR 0281, which says a new gate is never the default fix). Proof: P1 met
+(studio and sdk full check exit 0, 0 findings, two runs the same), P2 met (every removed rule failed its sample, the kept
+DROPPED-PROP and CONTROL-HEIGHT have clean samples), P3 dropped, P4 met (studio 136 s cold, sdk 77 s), P5 met
+(`.ethlete/design` unchanged). Commits: 7c87d6951 (P5), 8838cda38, 0035ddced, 243c8aa21, 4610c2a8c, cc3b26d5f,
+392f10606, 1b020194f, fa79e1408, 3700677b6, 8e26db5a6, 17375e4f3, 7a3b5f378. Findings of the row:
+
+- 424 parked: a sketch-check rule (same sample marks per variant state across page states, B363), not a full-check
+  rule; no B500 removal or fix touches it.
+- 449 closed: the full check exits 0 locally; its LOST-SURFACE, SKIP-SCOPE and COVERED rules are removed and the
+  DROPPED-PROP hits fixed; the CI-gate half is dropped with P3 (ADR 0226).
+- 456 closed: the per-scheme de-duplication was built in 8134c8d50; the render rules it counted are removed.
+- 457 closed: LOST-SURFACE and SKIP-SCOPE removed (0035ddced).
+- 489 parked: no removed rule or built fix touches it; the full check shows no CONTROL-STATE hit, and the picture fix
+  (control part `components/rail-bubble`) is a separate sketch; its gate half is moot under ADR 0226.
+- 490 parked: it asks for a `check --rules` rule on content props per OS layout that no B500 slice built or removed.
+- 501 closed: its DROPPED-PROP hits are gone, the check lists 0 findings (see the DROPPED-PROP as built block).
+- 502 closed: as 501; the 3 true hits left were fixed as app work (3700677b6).
+- 503 closed: as 501; `pages/system` `listing-error` got its view (3700677b6).
+- 634 and 691 closed: OFF-CENTRE removed (4610c2a8c).
+- 718 parked: a whole-product check leaves pending slow rules to the serve (grill decision, unchanged); the removal of
+  VISIBLE-CHANGE only left one fewer slow rule it concerns.
+- 740 closed: SKIP-SCOPE removed (0035ddced).
+- 872 closed for the change-crop states: they are drivable now (`SKETCH_SCREEN_SAMPLE`, 3700677b6); the general
+  "list every undrivable state" tool fix is parked, no rule is left that could report it.
+- 924 closed: the visible-change gate is removed (17375e4f3, 7a3b5f378).
+- 971 closed: ACTION-UNDECLARED and NESTED-SURFACE removed (8838cda38).
 
 ci-red 1113d (finding 992) as built (Linux builder subagent, 2026-11-13): CI runs 43372815104 and 43356130738, Studio e2e
 "a part edited on disk while away shows its new picture on return" failed in its shot ETag fetch with ECONNRESET / socket
