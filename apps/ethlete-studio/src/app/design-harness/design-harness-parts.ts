@@ -12,10 +12,6 @@ export const DESIGN_HARNESS_PARTS: Record<string, () => Promise<Type<unknown>>> 
     import('../design-parts/error-toast/error-toast.component').then((m) => m.ErrorToastComponent),
   'components/shell-collapse': () =>
     import('../design-parts/shell-collapse/shell-collapse.component').then((m) => m.ShellCollapseComponent),
-  'components/shell-project-switch': () =>
-    import('../design-parts/shell-project-switch/shell-project-switch.component').then(
-      (m) => m.ShellProjectSwitchComponent,
-    ),
   'components/title-bar': () => import('../components/title-bar/title-bar.component').then((m) => m.TitleBarComponent),
   'components/title-search': () =>
     import('../components/title-search/title-search.component').then((m) => m.TitleSearchComponent),

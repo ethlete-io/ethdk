@@ -33,7 +33,6 @@
   },
   "components/disclosure": "a6186544ac32f22a",
   "components/shell-collapse": "fd8adc8a7443f113",
-  "components/shell-project-switch": "9306921f2b0a9db8",
   "components/sketch-status-badge": {
     "hash": "1f05f263d2e08ada",
     "variant": "c",
