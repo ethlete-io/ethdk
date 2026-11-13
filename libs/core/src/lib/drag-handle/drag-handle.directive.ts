@@ -1,4 +1,4 @@
-import { Directive, ElementRef, booleanAttribute, inject, input } from '@angular/core';
+import { Directive, ElementRef, booleanAttribute, inject, input, numberAttribute } from '@angular/core';
 import { outputFromObservable, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Subject, distinctUntilChanged, exhaustMap, filter, map, share } from 'rxjs';
 import { DragEndEvent, DragGestureEvent, DragMoveEvent, DragStartEvent, dragGestureFrom } from './drag-gesture';
@@ -16,7 +16,7 @@ import { applyHostListener } from '../utils/angular/host-listener';
 export class DragHandleDirective {
   private el = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  commitThreshold = input(8);
+  commitThreshold = input(8, { transform: numberAttribute });
   disabled = input(false, { transform: booleanAttribute });
 
   private gestureStart$ = new Subject<PointerEvent>();
