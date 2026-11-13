@@ -19,6 +19,11 @@
     transform: translate3d(0, 0, 0);
   }
 
+  .st-studio-submenu {
+    top: 272px;
+    left: calc(100% + var(--space-1));
+  }
+
   .st-studio-trigger path {
     transform: scale(0.72);
     transform-origin: center;

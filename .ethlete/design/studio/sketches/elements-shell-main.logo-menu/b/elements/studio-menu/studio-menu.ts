@@ -1,62 +1,30 @@
-import {
-  definePart,
-  drawing,
-  forceInteraction,
-  html,
-  interactionRows,
-  type Interaction,
-  withAction,
-} from '@design-system';
-import { button, buttonStyles } from '@ethlete/components/design/button';
+import { definePart, drawing, html, interactionRows } from '@design-system';
+import { buttonStyles } from '@ethlete/components/design/button';
 import type { MenuMockRow } from '@ethlete/components/design/menu';
+import { action, type MenuInteraction, type Server, serverRows, studioTrigger } from '@shared/studio-menu-rows';
 import menu from '@system/components/menu';
-import { studioMark } from '@system/foundations/logo';
 import { setupStudioMenu } from './setup';
 import styles from './studio-menu.css?inline';
-
-type MenuInteraction = Exclude<Interaction, 'disabled'>;
-
-type Server = 'running' | 'stopped';
 
 type Props = {
   open: boolean;
   server?: Server;
   projects?: boolean;
+  appearance?: boolean;
   interaction?: MenuInteraction;
   option?: MenuInteraction;
 };
 
-const studioTrigger = (open: boolean, interaction?: Exclude<Interaction, 'disabled'>) => {
-  const markup = withAction(
-    button({
-      label: studioMark(40),
-      variant: 'transparent',
-      color: 'surface',
-      size: 'sm',
-      class: 'st-studio-trigger p-0 [--et-button-border-radius:var(--radius-control-lg)] [--et-button-border-width:0]',
-    }).replace(
-      /^<button /,
-      `<button data-et-control="studio-menu" data-studio-trigger data-et-auto-surface aria-label="Studio-Menü" aria-haspopup="menu" aria-expanded="${open}" aria-controls="studio-menu-surface" `,
-    ),
-    open ? 'closed' : 'open',
-  );
-  return interaction ? forceInteraction(markup, interaction) : markup;
-};
-
-const action = (name: string, emit: string) =>
-  `data-studio-action="${name}" data-et-action="${emit}" data-et-slot="components/menu"`;
-
-const SERVER_ACTIONS: Record<Server, { name: string; label: string }[]> = {
-  running: [
-    { name: 'restart', label: 'Design-Server neu starten' },
-    { name: 'stop', label: 'Design-Server stoppen' },
-  ],
-  stopped: [{ name: 'start', label: 'Design-Server starten' }],
-};
+const APPEARANCES = ['Hell', 'Dunkel', 'Wie System'];
 
 const REPOS = ['ethlete-sdk', 'fut-frontend', 'design-playground'];
 
-const studioRows = (server: Server, projects: boolean, option?: MenuInteraction): MenuMockRow[] => [
+const studioRows = (
+  server: Server,
+  projects: boolean,
+  appearance: boolean,
+  option?: MenuInteraction,
+): MenuMockRow[] => [
   { kind: 'label', label: 'Projekt' },
   {
     label: REPOS[0] ?? '',
@@ -67,8 +35,30 @@ const studioRows = (server: Server, projects: boolean, option?: MenuInteraction)
   },
   { label: 'Projekt öffnen…', attributes: action('open-project', 'emit:openProject') },
   { kind: 'separator' },
-  { kind: 'label', label: 'Design-Server' },
-  ...SERVER_ACTIONS[server].map(({ name, label }) => ({ label, attributes: action(name, 'emit:serverAction') })),
+  ...serverRows(server),
+  { kind: 'separator' },
+  { label: 'Einstellungen…', shortcut: 'Ctrl ,', attributes: action('settings', 'emit:openSettings') },
+  {
+    label: 'Erscheinungsbild',
+    submenu: appearance ? 'open' : true,
+    active: appearance,
+    attributes: 'data-et-slot="components/menu" data-et-action="studio-menu.appearance"',
+  },
+  { label: 'Tastenkürzel…', shortcut: 'Ctrl /', attributes: action('shortcuts', 'emit:openShortcuts') },
+  { label: 'Hilfe', attributes: action('help', 'emit:openHelp') },
+  { label: 'Über Studio…', attributes: action('about', 'emit:openAbout') },
+];
+
+const appearanceRows: MenuMockRow[] = [
+  {
+    kind: 'radio-group',
+    items: APPEARANCES.map((label, index) => ({
+      kind: 'radio' as const,
+      label,
+      checked: index === 1,
+      attributes: action('appearance', 'emit:appearanceChange'),
+    })),
+  },
 ];
 
 const projectRows: MenuMockRow[] = [
@@ -83,15 +73,36 @@ const projectRows: MenuMockRow[] = [
   },
 ];
 
-const studioPanel = (server: Server, projects: boolean, interaction?: MenuInteraction, option?: MenuInteraction) =>
-  menu.render({ rows: studioRows(server, projects, option), forced: interaction });
+const studioPanel = (
+  server: Server,
+  projects: boolean,
+  appearance: boolean,
+  interaction?: MenuInteraction,
+  option?: MenuInteraction,
+) => menu.render({ rows: studioRows(server, projects, appearance, option), forced: interaction });
 
-export const studioMenu = async ({ open, server = 'running', projects = false, interaction, option }: Props) => {
+export const studioMenu = async ({
+  open,
+  server = 'running',
+  projects = false,
+  appearance = false,
+  interaction,
+  option,
+}: Props) => {
   const panel =
     typeof location === 'undefined'
       ? { body: '', styles: '' }
-      : await studioPanel(server, open && projects, open ? interaction : undefined, open ? option : undefined);
-  const submenu = open && projects && typeof location !== 'undefined' ? await menu.render({ rows: projectRows }) : null;
+      : await studioPanel(
+          server,
+          open && projects,
+          open && appearance,
+          open ? interaction : undefined,
+          open ? option : undefined,
+        );
+  const submenu =
+    open && appearance && typeof location !== 'undefined' ? await menu.render({ rows: appearanceRows }) : null;
+  const projectMenu =
+    open && projects && typeof location !== 'undefined' ? await menu.render({ rows: projectRows }) : null;
   return {
     body: html`<div class="relative size-10" data-studio-menu-root>
       ${studioTrigger(open, open ? undefined : interaction)}
@@ -105,14 +116,21 @@ export const studioMenu = async ({ open, server = 'running', projects = false, i
         ${panel.body}
         ${
           submenu
-            ? html`<div class="st-studio-submenu absolute top-0 w-52" data-et-surface="studio-menu.projects">
+            ? html`<div class="st-studio-submenu absolute w-44" data-et-surface="studio-menu.appearance">
                 ${submenu.body}
+              </div>`
+            : ''
+        }
+        ${
+          projectMenu
+            ? html`<div class="st-studio-submenu absolute top-0 w-52" data-et-surface="studio-menu.projects">
+                ${projectMenu.body}
               </div>`
             : ''
         }
       </div>
     </div>`,
-    styles: styles + buttonStyles + panel.styles + (submenu?.styles ?? ''),
+    styles: styles + buttonStyles + panel.styles + (submenu?.styles ?? '') + (projectMenu?.styles ?? ''),
     setup: setupStudioMenu,
   };
 };
@@ -123,12 +141,13 @@ const menuRows = interactionRows<Props, 'closed' | 'open', MenuInteraction>(
 );
 
 export default definePart({
-  note: 'Studio-wide actions behind the neutral logo tile: the open project (repository) as a submenu trigger whose submenu lists the projects with the open one checked (studio-menu.projects), Projekt öffnen…, and the design server actions the server state allows (restart and stop while it runs, start while it is stopped). The option states draw the project submenu trigger. The element owns its trigger, SDK panel, styles, interaction states and prototype setup. Pages place its 40-px root in the shell rail slot.',
+  note: 'Studio-wide actions behind the neutral logo tile: the open project (repository) as a submenu trigger whose submenu lists the projects with the open one checked (studio-menu.projects), Projekt öffnen…, the design server actions the server state allows (restart and stop while it runs, start while it is stopped), then Einstellungen…, Erscheinungsbild as a submenu with Hell, Dunkel and Wie System (studio-menu.appearance), Tastenkürzel…, Hilfe and Über Studio…. An entry ending in … opens a dialog; Hilfe opens the documentation in the browser. The option states draw the project submenu trigger. The element owns its trigger, SDK panel, styles, interaction states and prototype setup. Pages place its 40-px root in the shell rail slot.',
   madeBy: ['gpt-6', 'claude-opus-5-5'],
   states: {
     ...menuRows.states,
     'studio-menu.stopped': { open: true, server: 'stopped' },
     'studio-menu.projects': { open: true, projects: true },
+    'studio-menu.appearance': { open: true, appearance: true },
     'studio-menu.option-hover': { open: true, option: 'hover' },
     'studio-menu.option-focus-visible': { open: true, option: 'focus-visible' },
     'studio-menu.option-active': { open: true, option: 'active' },

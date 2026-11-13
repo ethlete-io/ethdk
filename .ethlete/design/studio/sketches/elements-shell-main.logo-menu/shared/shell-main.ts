@@ -34,6 +34,8 @@ type Props = {
   log?: string[];
   chrome?: Chrome;
   update?: boolean;
+  sideWidth?: number;
+  resizeForce?: RailInteraction;
 };
 
 const SECTIONS: Section[] = ['System', 'Sketches', 'Flows', 'Inbox'];
@@ -98,6 +100,14 @@ const railItem = (
     ),
     RAIL_CONTROLS[kind],
   )}</div>`;
+
+const SIDE_WIDTH = { min: 200, rest: 248, dragging: 312, max: 400 };
+
+const resizeHandle = (line: string, width: number, force?: RailInteraction) => {
+  const markup = `<div class="st-shell-resize group absolute top-space-3 bottom-space-3 w-2 cursor-col-resize outline-none" role="separator" aria-orientation="vertical" aria-label="Breite der Seitenleiste" aria-valuemin="${SIDE_WIDTH.min}" aria-valuemax="${SIDE_WIDTH.max}" aria-valuenow="${width}" tabindex="0" data-et-action="emit:sideWidthChange">${line}</div>`;
+
+  return control(force ? forceInteraction(markup, force) : markup, 'resize');
+};
 
 const sep = '<div class="st-shell-sep my-space-2 bg-et-surface-border"></div>';
 
@@ -188,10 +198,23 @@ const railRowsOf = <const TRow extends string>(row: TRow, label: string) =>
 const sectionRows = railRowsOf('section', 'Sketches');
 const productRows = railRowsOf('product', 'timetrack');
 
+const resizeRows = interactionRows<Props, 'resize', RailInteraction>(
+  { resize: BASE },
+  {
+    interactions: ['hover', 'active', 'focus-visible'],
+    force: (props, interaction) => ({
+      ...props,
+      resizeForce: interaction,
+      ...(interaction === 'active' ? { sideWidth: SIDE_WIDTH.dragging } : {}),
+    }),
+  },
+);
+
 type SystemStates = Record<string, Pick<Props, 'systemPicker' | 'systemForce'>>;
 
 export const shellMain = <const TStates extends SystemStates, TControl>(
   styles: string,
+  resizeLine: string,
   choice: SystemChoice,
   system: { states: TStates; control: TControl },
 ) => ({
@@ -205,14 +228,21 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
     hidden: { ...BASE, panel: 'hidden' },
     ...sectionRows.states,
     ...productRows.states,
+    ...resizeRows.states,
+    'resize-min': { ...BASE, sideWidth: SIDE_WIDTH.min },
+    'resize-max': { ...BASE, sideWidth: SIDE_WIDTH.max },
     ...(Object.fromEntries(Object.entries(system.states).map(([name, props]) => [name, { ...BASE, ...props }])) as {
       [K in keyof TStates]: Props;
     }),
   } satisfies Record<string, Props>,
-  grid: { columns: sectionRows.grid.columns, rows: { ...sectionRows.grid.rows, ...productRows.grid.rows } },
+  grid: {
+    columns: sectionRows.grid.columns,
+    rows: { ...sectionRows.grid.rows, ...productRows.grid.rows, ...resizeRows.grid.rows },
+  },
   controls: {
     section: { kind: 'button' as const, input: ['pointer' as const, 'keyboard' as const] },
     product: { kind: 'button' as const, input: ['pointer' as const, 'keyboard' as const] },
+    resize: { kind: 'button' as const, input: ['pointer' as const, 'keyboard' as const] },
     collapse: { kind: 'button' as const, part: 'components/shell-collapse' as const },
     restart: { kind: 'button' as const, part: 'components/button' as const },
     system: system.control,
@@ -231,6 +261,8 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
     log = [],
     chrome = LINUX_CHROME,
     update = false,
+    sideWidth,
+    resizeForce,
   }: Props) => {
     const bar = await titleBar.render({ ...chrome, update, product, part: '' });
     const system = await choice({
@@ -242,9 +274,9 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
 
     return drawing({
       body: html`<div
-        class="st-shell relative grid overflow-hidden bg-et-surface-bg text-et-surface font-ui text-ui-md"
+        class="st-shell relative grid overflow-hidden bg-et-surface-bg text-et-surface font-ui text-ui-md${resizeForce === 'active' ? ' cursor-col-resize select-none' : ''}"
         data-et-surface
-        data-floating${panel === 'hidden' ? ' data-panel="hidden"' : ''}
+        data-floating${panel === 'hidden' ? ' data-panel="hidden"' : ''}${sideWidth ? ` style="--st-side-width: ${sideWidth}px"` : ''}
       >
         <div class="col-span-full">${bar.body}</div>
         ${rail(section, product, panel === 'hidden', studio, force)}
@@ -256,6 +288,7 @@ export const shellMain = <const TStates extends SystemStates, TControl>(
             ${server ? serverScreen(server, log) : content}
           </main>
           ${panel === 'hidden' ? '' : sidePanel(side, system.head, system.top)}
+          ${panel === 'hidden' ? '' : resizeHandle(resizeLine, sideWidth ?? SIDE_WIDTH.rest, resizeForce)}
           ${panel === 'hidden' ? '' : system.surface}
         </div>
       </div>`,

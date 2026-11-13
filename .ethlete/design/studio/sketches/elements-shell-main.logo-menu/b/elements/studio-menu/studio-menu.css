@@ -20,6 +20,7 @@
   }
 
   .st-studio-submenu {
+    top: 216px;
     left: calc(100% + var(--space-1));
   }
 

@@ -1,5 +1,7 @@
 @layer components {
   .st-shell {
+    --st-side-width: 248px;
+
     grid-template-columns: 64px 248px 1fr;
     grid-template-rows: auto minmax(0, 1fr);
     width: 1440px;
@@ -11,11 +13,11 @@
   }
 
   .st-shell-stage .st-shell-content {
-    --st-shell-inset-left: calc(248px + var(--space-3));
+    --st-shell-inset-left: calc(var(--st-side-width) + var(--space-3));
   }
 
   .st-shell-stage .st-shell-side {
-    width: 248px;
+    width: var(--st-side-width);
     border: 0;
     box-shadow:
       inset 0 0 0 1px var(--et-surface-border-solid),
@@ -86,5 +88,13 @@
 
   .st-shell[data-panel='hidden'] .st-shell-stage .st-shell-content {
     --st-shell-inset-left: 0px;
+  }
+
+  .st-shell-resize {
+    left: calc(var(--space-3) + var(--st-side-width) - 4px);
+  }
+
+  .st-shell-resize-line {
+    transition: var(--transition-state);
   }
 }
