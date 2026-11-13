@@ -82,6 +82,16 @@
     min-inline-size: var(--et-pagination-item-size);
     min-block-size: var(--et-pagination-item-size);
     font-variant-numeric: tabular-nums;
+    --_et-button-border-color: var(--et-pagination-item-border-color, transparent);
+
+    @media (hover: hover) {
+      &:not([disabled], [aria-disabled='true']):hover {
+        --_et-button-border-color: var(
+          --et-pagination-item-border-color-hover,
+          var(--et-pagination-item-border-color, transparent)
+        );
+      }
+    }
   }
 
   /* Icon-only controls (first/previous/next/last) hold an exact square: there is no text to grow them,
