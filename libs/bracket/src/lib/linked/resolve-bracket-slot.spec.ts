@@ -57,6 +57,30 @@ describe('resolveBracketSlot', () => {
     expect(resolveBracketSlot({ bracket, picks: picks({ m1: 'a' }), matchId: 'm3', side: 'home' })).toBe('b');
   });
 
+  it('reads a match outcome without a role as its winner', () => {
+    const predictionSource = source();
+    predictionSource.matches[2] = {
+      ...predictionSource.matches[2]!,
+      homeSource: bracketSlot.matchOutcome('m1', null),
+    };
+    const bracket = createBracket(predictionSource, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT });
+
+    expect(resolveBracketSlot({ bracket, picks: picks({ m1: 'b' }), matchId: 'm3', side: 'home' })).toBe('b');
+    expect(bracket.matches.getOrThrow('m1' as BracketMatchId).relation).toMatchObject({ nextMatch: { id: 'm3' } });
+  });
+
+  it('answers a slot of unknown provenance with the participant standing on it', () => {
+    const predictionSource = source();
+    predictionSource.matches[2] = {
+      ...predictionSource.matches[2]!,
+      home: 'x',
+      homeSource: bracketSlot.unknown('Winner of the play-off'),
+    };
+    const bracket = createBracket(predictionSource, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT });
+
+    expect(resolveBracketSlot({ bracket, picks: picks({ m1: 'b' }), matchId: 'm3', side: 'home' })).toBe('x');
+  });
+
   it('advances the occupied side of a bye without requiring a pick', () => {
     const predictionSource = source();
     predictionSource.matches[0] = {

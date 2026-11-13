@@ -5,6 +5,7 @@ import {
   BracketSeedSlotSource,
   BracketStandingRankSlotSource,
   BracketSwissBucketSlotSource,
+  BracketUnknownSlotSource,
 } from './base';
 
 /**
@@ -18,7 +19,7 @@ export const bracketSlot = {
   // eslint-disable-next-line max-params -- positional slot constructors read like the slot they build
   matchOutcome: (
     matchId: string,
-    role: 'winner' | 'loser',
+    role: 'winner' | 'loser' | null,
     label: string | null = null,
   ): BracketMatchOutcomeSlotSource => ({ kind: 'match-outcome', matchId, role, label }),
   // eslint-disable-next-line max-params -- positional slot constructors read like the slot they build
@@ -32,4 +33,5 @@ export const bracketSlot = {
   swissBucket: (label: string | null = null): BracketSwissBucketSlotSource => ({ kind: 'swiss-bucket', label }),
   bye: (label: string | null = null): BracketByeSlotSource => ({ kind: 'bye', label }),
   external: (label: string): BracketExternalSlotSource => ({ kind: 'external', label }),
+  unknown: (label: string | null = null): BracketUnknownSlotSource => ({ kind: 'unknown', label }),
 } as const;

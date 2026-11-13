@@ -69,22 +69,22 @@ const resolveMatchOutcome = (options: { walk: ResolveWalk; source: BracketMatchO
   const away = resolveSlot({ walk, match: feeder, side: 'away' });
 
   if (homeSource?.kind === 'bye' && awaySource?.kind !== 'bye') {
-    return source.role === 'winner' ? away : null;
+    return source.role !== 'loser' ? away : null;
   }
 
   if (awaySource?.kind === 'bye' && homeSource?.kind !== 'bye') {
-    return source.role === 'winner' ? home : null;
+    return source.role !== 'loser' ? home : null;
   }
 
   if (!home || !away) {
-    return walk.keepPickWhileFeederSideIsOpen && source.role === 'winner' ? walk.picks.matchWinner(feeder.id) : null;
+    return walk.keepPickWhileFeederSideIsOpen && source.role !== 'loser' ? walk.picks.matchWinner(feeder.id) : null;
   }
 
   const pickedWinner = walk.picks.matchWinner(feeder.id);
 
   if (pickedWinner !== home && pickedWinner !== away) return null;
 
-  return source.role === 'winner' ? pickedWinner : pickedWinner === home ? away : home;
+  return source.role !== 'loser' ? pickedWinner : pickedWinner === home ? away : home;
 };
 
 const resolveSource = (options: {
@@ -103,6 +103,7 @@ const resolveSource = (options: {
     case 'seed':
     case 'swiss-bucket':
     case 'external':
+    case 'unknown':
       return participantIdFor(match, side);
     case 'bye':
       return null;

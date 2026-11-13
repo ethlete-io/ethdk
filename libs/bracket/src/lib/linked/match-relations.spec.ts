@@ -210,6 +210,36 @@ describe('generateMatchRelations, declared graph warnings', () => {
     ]);
   });
 
+  it('does not count a match whose slots are of unknown provenance as unlinked', () => {
+    const unknownQuarters: BracketDataSource<null, null> = {
+      ...partial,
+      matches: partial.matches.map((match) =>
+        match.roundId === 'q'
+          ? { ...match, homeSource: bracketSlot.unknown('TBD'), awaySource: bracketSlot.unknown() }
+          : match,
+      ),
+    };
+
+    expect(warningsFor(unknownQuarters)).toEqual([]);
+  });
+
+  it('keeps a source with only unknown slots on the positional graph', () => {
+    const unknownOnly: BracketDataSource<null, null> = {
+      ...partial,
+      matches: partial.matches.map((match) => ({
+        ...match,
+        homeSource: bracketSlot.unknown(),
+        awaySource: bracketSlot.unknown(),
+      })),
+    };
+    const bracket = createBracket(unknownOnly, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT });
+    const { relation } = bracket.matches.getOrThrow('f1' as BracketMatchId);
+
+    expect(
+      'previousUpperMatch' in relation && [relation.previousUpperMatch.id, relation.previousLowerMatch.id],
+    ).toEqual(['s1', 's2']);
+  });
+
   it('stays quiet for a third place match a custom previousMatchIds leaves without feeders', () => {
     const warnings: BracketWarning[] = [];
     const previousMatchIds = (match: BracketDataSource<null, null>['matches'][number]) =>

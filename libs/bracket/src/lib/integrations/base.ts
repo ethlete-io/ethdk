@@ -9,11 +9,11 @@ type BracketSlotSourceShared = {
   seed?: number | null;
 };
 
-/** The winner or loser of an earlier match. */
+/** The winner or loser of an earlier match. A `null` role is the winner. */
 export type BracketMatchOutcomeSlotSource = BracketSlotSourceShared & {
   kind: 'match-outcome';
   matchId: string;
-  role: 'winner' | 'loser';
+  role: 'winner' | 'loser' | null;
 };
 
 /** A position in a standing, such as "group A, 2nd". */
@@ -33,6 +33,9 @@ export type BracketByeSlotSource = BracketSlotSourceShared & { kind: 'bye' };
 
 export type BracketExternalSlotSource = BracketSlotSourceShared & { kind: 'external' };
 
+/** A slot whose provenance the data does not describe. It keeps its `label` and links no feeder. */
+export type BracketUnknownSlotSource = BracketSlotSourceShared & { kind: 'unknown' };
+
 /** Where the participant of a match side comes from, discriminated by `kind`. Build one with {@link bracketSlot}. */
 export type BracketSlotSource =
   | BracketMatchOutcomeSlotSource
@@ -40,7 +43,8 @@ export type BracketSlotSource =
   | BracketSeedSlotSource
   | BracketSwissBucketSlotSource
   | BracketByeSlotSource
-  | BracketExternalSlotSource;
+  | BracketExternalSlotSource
+  | BracketUnknownSlotSource;
 
 export type BracketMatchSlot = {
   participantId: string | null;

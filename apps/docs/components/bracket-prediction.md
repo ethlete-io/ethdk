@@ -117,7 +117,7 @@ is unknown. Set it to `true` to keep the pick until both sides are known and it 
 until then nothing contradicts it. A predicted _loser_ still needs both sides either way, since it is
 defined as whoever the viewer did not pick.
 
-Slots that no prediction can reach (`seed`, `swiss-bucket`, `external`, a slot with no provenance)
+Slots that no prediction can reach (`seed`, `swiss-bucket`, `external`, `unknown`, a slot with no provenance)
 still answer with whoever really stands there; a `bye` still advances its occupied side without a pick.
 
 ## The pick card
@@ -195,10 +195,12 @@ inventing one. Only in its absence does the kind decide.
 | `swiss-bucket`  | Drawn once the round is scheduled  | `slotSwissBucket`                   |
 | `bye`           | Bye                                | `slotBye`                           |
 | `external`      | Arrives from another competition   | `slotExternal`                      |
+| `unknown`       | Not known yet                      | `slotUnknown`                       |
 | `source: null`  | Not known yet                      | `slotUnknown`                       |
 
-A slot nothing is known about is `source: null` - there is no `'undescribed'` kind, so an exhaustive
-switch over `BracketSlotSourceKind` keeps compiling.
+A slot the data describes without saying where it comes from is `kind: 'unknown'`: it keeps its
+`label`. A legacy source without provenance stays `source: null`. **Breaking change:** an exhaustive
+switch over `BracketSlotSourceKind` needs a case for `'unknown'`.
 
 @example bracket-prediction/bracket-prediction-slot-sources 360px
 

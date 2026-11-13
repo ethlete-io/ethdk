@@ -151,6 +151,7 @@ export const CASES: PickCardCase[] = [
   sourceCase({ title: 'swiss-bucket', source: bracketSlot.swissBucket() }),
   sourceCase({ title: 'bye', source: bracketSlot.bye() }),
   sourceCase({ title: 'external', source: { kind: 'external' } }),
+  sourceCase({ title: 'unknown', source: bracketSlot.unknown() }),
   sourceCase({ title: 'no source at all', source: null }),
   sourceCase({
     title: "the competition's own wording, which always wins",

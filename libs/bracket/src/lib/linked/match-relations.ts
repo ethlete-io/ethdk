@@ -556,7 +556,10 @@ const reportDeclaredGraphWarnings = <TRoundData, TMatchData>(options: {
   if (sourceMatches.length < 2) return;
 
   for (const match of sourceMatches) {
-    const declaresFeeders = (previousByMatchId.get(match.id)?.length ?? 0) > 0 || matchOutcomeSlots(match).length > 0;
+    const declaresFeeders =
+      (previousByMatchId.get(match.id)?.length ?? 0) > 0 ||
+      matchOutcomeSlots(match).length > 0 ||
+      [match.homeSource, match.awaySource].some((slot) => slot?.kind === 'unknown');
 
     if (declaresFeeders || feederIds.has(match.id)) continue;
     if (bracket.matches.get(match.id as BracketMatchId)?.round.type === COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE) continue;
@@ -588,7 +591,7 @@ const generateDeclaredMatchRelations = <TRoundData, TMatchData>(options: {
 
   for (const match of sourceMatches) {
     for (const slot of [match.homeSource, match.awaySource]) {
-      if (slot?.kind !== 'match-outcome' || slot.role !== 'winner' || !slot.matchId) continue;
+      if (slot?.kind !== 'match-outcome' || slot.role === 'loser' || !slot.matchId) continue;
       if (!winnerConsumerByFeederId.has(slot.matchId)) winnerConsumerByFeederId.set(slot.matchId, match.id);
     }
   }

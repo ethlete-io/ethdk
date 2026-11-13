@@ -233,18 +233,21 @@ names no match (`createBracket`'s `onWarning` option reports the same as a `Brac
 
 `BracketSlotSource` is a union discriminated by `kind`, so a slot carries only the fields of its kind:
 
-| Constructor                                                         | `kind`          | Fields                                 |
-| ------------------------------------------------------------------- | --------------- | -------------------------------------- |
-| `bracketSlot.matchOutcome(matchId, role, label?)`                   | `match-outcome` | `matchId`, `role: 'winner' \| 'loser'` |
-| `bracketSlot.standingRank(standingId, rank, standingName?, label?)` | `standing-rank` | `standingId`, `rank`, `standingName?`  |
-| `bracketSlot.seed(seed, label?)`                                    | `seed`          | `seed`                                 |
-| `bracketSlot.swissBucket(label?)`                                   | `swiss-bucket`  | -                                      |
-| `bracketSlot.bye(label?)`                                           | `bye`           | -                                      |
-| `bracketSlot.external(label)`                                       | `external`      | -                                      |
+| Constructor                                                         | `kind`          | Fields                                         |
+| ------------------------------------------------------------------- | --------------- | ---------------------------------------------- |
+| `bracketSlot.matchOutcome(matchId, role, label?)`                   | `match-outcome` | `matchId`, `role: 'winner' \| 'loser' \| null` |
+| `bracketSlot.standingRank(standingId, rank, standingName?, label?)` | `standing-rank` | `standingId`, `rank`, `standingName?`          |
+| `bracketSlot.seed(seed, label?)`                                    | `seed`          | `seed`                                         |
+| `bracketSlot.swissBucket(label?)`                                   | `swiss-bucket`  | -                                              |
+| `bracketSlot.bye(label?)`                                           | `bye`           | -                                              |
+| `bracketSlot.external(label)`                                       | `external`      | -                                              |
+| `bracketSlot.unknown(label?)`                                       | `unknown`       | -                                              |
 
 Every kind also takes `label`, optional competition wording for the empty slot (the library never
 invents one), and `seed`, the seeding position. A `bye` is never selectable and automatically advances
-the other resolved side.
+the other resolved side. A `match-outcome` with `role: null` is the winner. An `unknown` slot is one the
+data does not describe: it keeps its label, links no feeder, and does not count as unlinked, so a bracket
+with some undescribed slots stays on its declared graph.
 
 A round whose matches are not drawn yet is not an error: it renders as an empty column and the rounds
 either side of it relate to each other, so a stage can be published before its later rounds are seeded.

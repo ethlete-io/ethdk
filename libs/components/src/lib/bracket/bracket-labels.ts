@@ -158,5 +158,7 @@ export const describeBracketSlot = (source: BracketSlotSource | null | undefined
       return labels.slotBye;
     case 'external':
       return labels.slotExternal;
+    case 'unknown':
+      return labels.slotUnknown;
   }
 };
