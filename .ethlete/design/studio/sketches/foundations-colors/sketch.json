@@ -118,6 +118,12 @@
     "a": "322600fd4cbdde4a",
     "b": "069fe3f3c4cd626d"
   },
+  "portAfterMerge": {
+    "merged": ["foundations/colors", "elements/variant-cell", "pages/sketches", "pages/inbox"],
+    "parts": ["foundations/colors"],
+    "reasons": ["a: foundations/colors/colors.ts - the variant and the product both changed it"],
+    "at": "2026-11-13T07:17:57.724Z"
+  },
   "mergeHold": {
     "reason": "variant a changes surfaces, accent, warning, error; variant b changes surfaces, accent, warning, error",
     "at": "2026-11-12T01:20:56.538Z"

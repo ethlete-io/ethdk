@@ -65,10 +65,10 @@
   },
   "elements/studio-menu": "3e69133852294818",
   "elements/variant-cell": {
-    "hash": "fb0b925497ff1069",
-    "variant": "b",
-    "decidedBy": "user",
-    "at": "2026-11-03T17:00:29.098Z"
+    "hash": "b5d9dccbef712939",
+    "variant": "a",
+    "decidedBy": "auto: no visible change",
+    "at": "2026-11-13T07:17:52.594Z"
   },
   "foundations/agent-logos": {
     "hash": "d8ad620ff101ae06",
@@ -77,10 +77,10 @@
     "at": "2026-11-05T22:45:06.717Z"
   },
   "foundations/colors": {
-    "hash": "97f8b2eb627962a4",
+    "hash": "d6c3a76b71e46f29",
     "variant": "a",
     "decidedBy": "auto: no visible change",
-    "at": "2026-11-05T22:45:06.717Z"
+    "at": "2026-11-13T07:17:52.594Z"
   },
   "foundations/icons": "9ed1f1902cc38349",
   "foundations/logo": {
@@ -99,11 +99,10 @@
   },
   "pages/flows": "c822cd70efbfbabe",
   "pages/inbox": {
-    "hash": "43ddb718c7d133f1",
+    "hash": "0e0fc08e618a94a0",
     "variant": "a",
-    "decidedBy": "plan: finding 911 option A (doc agent): sample author is the role human, plans/ethlete-studio/design-to-code.md",
-    "at": "2026-11-12T00:13:38.669Z",
-    "note": "merged without a pick: allowed by finding 911 option A (doc agent): sample author is the role human, plans/ethlete-studio/design-to-code.md - merged: 911: sample author human, initials H; only author text and initials change"
+    "decidedBy": "auto: no visible change",
+    "at": "2026-11-13T07:17:52.594Z"
   },
   "pages/inventory": {
     "hash": "641695c7b8cf30f9",
@@ -119,10 +118,10 @@
     "at": "2026-11-12T10:01:35.873Z"
   },
   "pages/sketches": {
-    "hash": "e6417edc8b3fbcc1",
+    "hash": "0b8fa38862b0c1af",
     "variant": "a",
-    "decidedBy": "user",
-    "at": "2026-11-12T20:37:07.747Z"
+    "decidedBy": "auto: no visible change",
+    "at": "2026-11-13T07:17:52.594Z"
   },
   "pages/start": {
     "hash": "692644df2034dcd1",

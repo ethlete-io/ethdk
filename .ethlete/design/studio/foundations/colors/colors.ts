@@ -16,15 +16,6 @@ const groups: Record<Group, { title: string; owns: (name: string) => boolean }> 
 const surfaces = ['surface', 'surface-dark-elevated', 'surface-dark-elevated-2'];
 
 const surfaceTokens = surfaces.map((name) => `--${name}`);
-const pairs = [
-  {
-    text: ['--text', '--text-muted', '--text-subtle', '--accent-text', '--warning-text', '--danger-text'],
-    on: surfaceTokens,
-  },
-  { text: ['--on-accent'], on: ['--accent', '--accent-hover', '--accent-active'] },
-  { text: ['--on-warning'], on: ['--warning', '--warning-hover', '--warning-active'] },
-  { text: ['--on-danger'], on: ['--danger', '--danger-hover', '--danger-active'] },
-];
 
 const fillsOf = (kind: string) => [`--${kind}`, `--${kind}-hover`, `--${kind}-active`];
 
@@ -95,7 +86,7 @@ const swatchOf = (name: string) => {
 };
 
 const surfaceCard = (surface: string) =>
-  html`<div class="co-surface" data-et-skip="LOST-SURFACE" style="background: var(--${surface})">
+  html`<div class="co-surface" style="background: var(--${surface})">
     <span class="co-surface-name">${surface}</span>
     <span>Text on ${surface}</span>
     <span class="co-muted">Muted on ${surface}</span>
@@ -103,7 +94,7 @@ const surfaceCard = (surface: string) =>
   </div>`;
 
 const accentCard = (surface: string) =>
-  html`<div class="co-surface" data-et-skip="LOST-SURFACE" style="background: var(--${surface})">
+  html`<div class="co-surface" style="background: var(--${surface})">
     <span class="co-surface-name">${surface}</span>
     <span class="co-cluster"
       ><span class="co-fill">Merge</span><span class="co-fill co-fill--hover">Hover</span
@@ -146,7 +137,7 @@ const markRows = html`<span class="co-trows">
 </span>`;
 
 const warningCard = (surface: string) =>
-  html`<div class="co-surface" data-et-skip="LOST-SURFACE" style="background: var(--${surface})">
+  html`<div class="co-surface" style="background: var(--${surface})">
     <span class="co-surface-name">${surface}</span>
     ${markRows}
     <span class="co-cluster"
@@ -162,7 +153,7 @@ const warningCard = (surface: string) =>
   </div>`;
 
 const errorCard = (surface: string) =>
-  html`<div class="co-surface" data-et-skip="LOST-SURFACE" style="background: var(--${surface})">
+  html`<div class="co-surface" style="background: var(--${surface})">
     <span class="co-surface-name">${surface}</span>
     ${markRows}
     <span class="co-cluster"
@@ -188,7 +179,6 @@ const cards: Record<Group, (surface: string) => string> = {
 export default definePart<{ group: Group }>({
   note: 'The Studio surfaces, accent, warning and error colours. The source of the Studio SDK themes: `yarn studio:themes` generates them from this part.',
   madeBy: ['claude-opus-5-5', 'gpt-6.1-terra', 'claude-sonnet-5-5'],
-  contrast: { pairs },
   states: {
     surfaces: { group: 'surfaces' },
     accent: { group: 'accent' },

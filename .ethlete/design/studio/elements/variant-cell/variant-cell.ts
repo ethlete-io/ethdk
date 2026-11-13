@@ -74,15 +74,6 @@ export default definePart({
     unchanged: { ...base, same: true },
     loading: { ...base, loading: true },
   },
-  contrast: {
-    exceptions: [
-      {
-        selector: '.opacity-50[data-sk-state] [data-sk-label] span',
-        reason:
-          'An unchanged state is dimmed on purpose so the changed states stand out; its name stays readable on hover in the full view.',
-      },
-    ],
-  },
   motions: { loading: { from: 'loading', to: 'loading' } },
   controls: {},
   sample: { id: 'sample', marks: ['look', 'same', 'first'] },

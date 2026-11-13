@@ -327,7 +327,7 @@ export const inbox = (commentEditor: CommentEditor) =>
           <span class="text-et-surface-muted">${load ? '' : `${unresolved} offen`}</span>
           <div class="flex items-center gap-space-2 text-et-surface">Erledigte zeigen ${controls}${editor}</div>
         </div>
-        <div class="flex flex-col gap-px min-h-0 overflow-auto p-space-2" data-et-skip="NESTED-SCROLL">
+        <div class="flex flex-col gap-px min-h-0 overflow-auto p-space-2">
           ${load === 'loading' ? loadingNote : load === 'error' ? loadError(retry) : visible.length === 0 ? empty : activeGroup(visible.filter((c) => c.part === ACTIVE_PART))}${group(
             'Andere',
             visible.filter((c) => c.part !== ACTIVE_PART),
