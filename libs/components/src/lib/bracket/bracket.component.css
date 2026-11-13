@@ -1,7 +1,7 @@
 @layer components.sdk {
   .et-bracket {
     position: relative;
-    transition: transform var(--et-bracket-move-duration, 0.2s) ease;
+    transition: transform var(--et-bracket-move-duration, 0.2s) var(--et-bracket-move-easing, ease);
   }
 
   .et-bracket-round {
@@ -11,7 +11,7 @@
     list-style: none;
     margin: 0;
     padding: 0;
-    transition: transform var(--et-bracket-move-duration, 0.2s) ease;
+    transition: transform var(--et-bracket-move-duration, 0.2s) var(--et-bracket-move-easing, ease);
   }
 
   .et-bracket-element {
@@ -22,7 +22,7 @@
     margin: 0;
     padding: 0;
     transition:
-      transform var(--et-bracket-move-duration, 0.2s) ease,
+      transform var(--et-bracket-move-duration, 0.2s) var(--et-bracket-move-easing, ease),
       opacity 0.2s;
   }
 
@@ -47,7 +47,7 @@
     path {
       color: var(--et-bracket-line-color, var(--et-surface-border-solid, rgb(255 255 255 / 0.1)));
       transition:
-        d var(--et-bracket-move-duration, 0.2s) ease,
+        d var(--et-bracket-move-duration, 0.2s) var(--et-bracket-move-easing, ease),
         opacity 0.2s;
     }
 

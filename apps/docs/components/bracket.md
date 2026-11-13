@@ -697,7 +697,8 @@ with `focusRoundId`.
 Every cell is positioned with a `transform` and every connector carries its path in the CSS `d`
 property as well as in the attribute, so changing either input moves the whole drawing - cards,
 headers and lines together - as one CSS transition, with no layout per frame.
-`--et-bracket-move-duration` (default `0.2s`) sets its pace; under `prefers-reduced-motion` there is
+`--et-bracket-move-duration` (default `0.2s`) sets its pace and `--et-bracket-move-easing` (default
+`ease`) its curve; under `prefers-reduced-motion` there is
 no transition and the new layout appears at once. Vertical scrolling remains available for tall
 rounds.
 
@@ -719,6 +720,15 @@ const naturalWidth = bracketNaturalWidth(source, {
   layouts: [singleEliminationBracketLayout()],
   columnWidth: 220,
 });
+```
+
+To place your own UI next to the grid before it renders - a chevron rail, a scroll step of one
+column - read the settings the bracket will use with `resolveBracketLayoutSettings(config)`. It applies
+the same order the bracket does: what you set, then the density preset, then `BRACKET_DEFAULTS`.
+
+```ts
+const { columnWidth, columnGap } = resolveBracketLayoutSettings({ density: 'compact' });
+const scrollStep = columnWidth + columnGap;
 ```
 
 ## Loading skeleton
@@ -881,6 +891,7 @@ it sits on - set them to override:
 | `--et-bracket-line-color`               | `--et-surface-border-solid`    | Connector line color.                                                   |
 | `--et-bracket-swiss-group-border-color` | `var(--et-bracket-line-color)` | Swiss group border color (per-group overrides come from `swissColors`). |
 | `--et-bracket-move-duration`            | `0.2s`                         | How long a relayout takes - see [Narrow screens](#narrow-screens).      |
+| `--et-bracket-move-easing`              | `ease`                         | The timing function of a relayout.                                      |
 
 These are not declared via `@property`: an `@property` `initial-value` can't contain a
 `var()`, and the defaults intentionally resolve to a theme token. The bracket doesn't

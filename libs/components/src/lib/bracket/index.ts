@@ -94,6 +94,8 @@ export * from './bracket-card-context';
 export * from './bracket-density';
 export * from './bracket-errors';
 export * from './bracket-fits-width';
+export { resolveBracketLayoutSettings } from './bracket-grid';
+export type { BracketLayoutSettings } from './bracket-grid';
 export * from './bracket-labels';
 export * from './bracket-layout';
 export * from './bracket-participants.component';

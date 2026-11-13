@@ -12,9 +12,7 @@ const LAYOUT_KEYS = /* @__PURE__ */ Object.keys(BRACKET_DEFAULTS) as (keyof Brac
 
 /**
  * Resolves a partial config in the order the bracket documents: what you set, then the density preset,
- * then {@link BRACKET_DEFAULTS}.
- *
- * @internal
+ * then {@link BRACKET_DEFAULTS}. Use it to position your own UI around a bracket before the grid renders.
  */
 export const resolveBracketLayoutSettings = (config: BracketLayoutConfig): BracketLayoutSettings => {
   const settings: BracketLayoutSettings = {
