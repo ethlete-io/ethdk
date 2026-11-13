@@ -279,7 +279,14 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
   „Sketches“ (nur offene) ganz oben, „Legacy“ zugeklappt ganz unten mit Projekten darunter. Zuerst Sketch (dl 02.11.).
   Verschachtelte Parts: ein Part, der zu einem Host gehört, liegt fest im Pfad darunter
   (`components/title-bar/title-search`) und im Explorer unter dem Host; der Check verweigert ihn außerhalb seines
-  Hosts; allgemein genutzte Parts (Button, kbd) bleiben auf ihrer Ebene (Tom, 02.11.).
+  Hosts; allgemein genutzte Parts (Button, kbd) bleiben auf ihrer Ebene (Tom, 02.11.). Skizze
+  `elements/part-tree@parts-only` (Nacht 13.11.), wartet auf Toms Merge: a) Sketches als flache Gruppe oben, eine
+  Zeile `part@name` je offener Skizze; b) Sketches nach Part gruppiert, Skizzen eine Ebene darunter (eine Ebene mehr,
+  App gruppiert nach Ziel); c) wie a, plus Trennlinien unter Sketches und über Legacy (neues Trenner-Markup).
+  Empfehlung a: billigster Baum, nur Zeilen-Daten, tree-row bleibt. Verschachtelt in allen gleich (`title-bar` mit
+  `title-search` darunter). Folge: Stift-Eintrag in `elements/shell-main` entfernen, erst nach Merge von
+  `@sidebar-resize` und `@logo-menu` (beide ändern shell-main); der Check für verschachtelte Parts ist nicht Teil der
+  Skizze.
 - **A38** Git in Studio: Repo holen, Branch anlegen und wechseln, Commit, Push, eingehende Änderungen und Konflikte, ohne
   eigenes Git-Setup; Chat, Editor und Git arbeiten auf demselben Stand (designer-workflow.md, Abschnitte 3 und 4).
 - **A39** Bestehenden Frontend-Code importieren: eine Ansicht mit ihren Abhängigkeiten und Fixtures
