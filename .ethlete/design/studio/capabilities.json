@@ -297,7 +297,7 @@
       "id": "project-switch",
       "label": "Projekt wechseln",
       "place": {
-        "part": "components/shell-project-switch",
+        "part": "elements/studio-menu",
         "action": "emit:projectChange"
       },
       "confirmed": true
@@ -306,7 +306,7 @@
       "id": "project-open",
       "label": "Projekt öffnen",
       "place": {
-        "part": "components/shell-project-switch",
+        "part": "elements/studio-menu",
         "action": "emit:openProject"
       },
       "confirmed": true

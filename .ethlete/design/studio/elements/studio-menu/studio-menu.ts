@@ -1,7 +1,7 @@
 import { definePart, drawing, html, interactionRows } from '@design-system';
 import { buttonStyles } from '@ethlete/components/design/button';
 import type { MenuMockRow } from '@ethlete/components/design/menu';
-import { action, type MenuInteraction, type Server, serverRows, studioTrigger } from './shared/studio-menu-rows';
+import { action, type MenuInteraction, studioTrigger } from './shared/studio-menu-rows';
 import menu from '@system/components/menu';
 import { setupStudioMenu } from './setup';
 import styles from './studio-menu.css?inline';
@@ -14,6 +14,24 @@ type Props = {
   interaction?: MenuInteraction;
   option?: MenuInteraction;
 };
+
+type Server = 'running' | 'stopped';
+
+const SERVER_ACTIONS: Record<Server, { name: string; label: string }[]> = {
+  running: [
+    { name: 'restart', label: 'Design-Server neu starten' },
+    { name: 'stop', label: 'Design-Server stoppen' },
+  ],
+  stopped: [{ name: 'start', label: 'Design-Server starten' }],
+};
+
+const serverRows = (server: Server): MenuMockRow[] => [
+  { kind: 'label', label: 'Design-Server' },
+  ...SERVER_ACTIONS[server].map(({ name, label }) => ({
+    label,
+    attributes: `${action(name)} data-et-action="emit:serverAction"`,
+  })),
+];
 
 const APPEARANCES = ['Hell', 'Dunkel', 'Wie System'];
 
@@ -33,12 +51,14 @@ const studioRows = (server: Server, appearance: boolean, help: boolean, option?:
       active: index === 1 && !!option,
       activeSource: index === 1 && option === 'focus-visible' ? ('keyboard' as const) : undefined,
       attributes: optionAttributes(
-        index === 0 ? action('project', 'closed') : action('project', 'emit:projectChange'),
+        index === 0
+          ? `${action('project')} data-et-action="closed"`
+          : `${action('project')} data-et-action="emit:projectChange"`,
         index === 1 ? option : undefined,
       ),
     })),
   },
-  { label: 'Projekt öffnen…', attributes: action('open-project', 'emit:openProject') },
+  { label: 'Projekt öffnen…', attributes: `${action('open-project')} data-et-action="emit:openProject"` },
   { kind: 'separator' },
   ...serverRows(server),
   { kind: 'separator' },
@@ -57,10 +77,18 @@ const studioRows = (server: Server, appearance: boolean, help: boolean, option?:
 ];
 
 const helpRows: MenuMockRow[] = [
-  { label: 'Einstellungen…', shortcut: 'Ctrl ,', attributes: action('settings', 'emit:openSettings') },
-  { label: 'Tastenkürzel…', shortcut: 'Ctrl /', attributes: action('shortcuts', 'emit:openShortcuts') },
-  { label: 'Hilfe', attributes: action('help', 'emit:openHelp') },
-  { label: 'Über Studio…', attributes: action('about', 'emit:openAbout') },
+  {
+    label: 'Einstellungen…',
+    shortcut: 'Ctrl ,',
+    attributes: `${action('settings')} data-et-action="emit:openSettings"`,
+  },
+  {
+    label: 'Tastenkürzel…',
+    shortcut: 'Ctrl /',
+    attributes: `${action('shortcuts')} data-et-action="emit:openShortcuts"`,
+  },
+  { label: 'Hilfe', attributes: `${action('help')} data-et-action="emit:openHelp"` },
+  { label: 'Über Studio…', attributes: `${action('about')} data-et-action="emit:openAbout"` },
 ];
 
 const appearanceRows: MenuMockRow[] = [
@@ -70,7 +98,7 @@ const appearanceRows: MenuMockRow[] = [
       kind: 'radio' as const,
       label,
       checked: index === 1,
-      attributes: action('appearance', 'emit:appearanceChange'),
+      attributes: `${action('appearance')} data-et-action="emit:appearanceChange"`,
     })),
   },
 ];

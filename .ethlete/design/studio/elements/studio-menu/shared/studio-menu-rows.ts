@@ -1,11 +1,8 @@
 import { forceInteraction, type Interaction, withAction } from '@design-system';
 import { button } from '@ethlete/components/design/button';
-import type { MenuMockRow } from '@ethlete/components/design/menu';
 import { studioMark } from '@system/foundations/logo';
 
 export type MenuInteraction = Exclude<Interaction, 'disabled'>;
-
-export type Server = 'running' | 'stopped';
 
 export const studioTrigger = (open: boolean, interaction?: MenuInteraction) => {
   const markup = withAction(
@@ -24,18 +21,4 @@ export const studioTrigger = (open: boolean, interaction?: MenuInteraction) => {
   return interaction ? forceInteraction(markup, interaction) : markup;
 };
 
-export const action = (name: string, emit: string) =>
-  `data-studio-action="${name}" data-et-action="${emit}" data-et-slot="components/menu"`;
-
-const SERVER_ACTIONS: Record<Server, { name: string; label: string }[]> = {
-  running: [
-    { name: 'restart', label: 'Design-Server neu starten' },
-    { name: 'stop', label: 'Design-Server stoppen' },
-  ],
-  stopped: [{ name: 'start', label: 'Design-Server starten' }],
-};
-
-export const serverRows = (server: Server): MenuMockRow[] => [
-  { kind: 'label', label: 'Design-Server' },
-  ...SERVER_ACTIONS[server].map(({ name, label }) => ({ label, attributes: action(name, 'emit:serverAction') })),
-];
+export const action = (name: string) => `data-studio-action="${name}" data-et-slot="components/menu"`;
