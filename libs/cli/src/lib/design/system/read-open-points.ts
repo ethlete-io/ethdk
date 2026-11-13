@@ -1,4 +1,9 @@
 import { createHash } from 'crypto';
+import { existsSync } from 'fs';
+import { resolve } from 'path';
+import { pathToFileURL } from 'url';
+import { MessagePort, Worker } from 'worker_threads';
+import { packageFileOf } from '../package-root';
 import { listComments } from './comments/comment';
 import { CompletenessGap, isMissingStateGap } from './complete';
 import {
@@ -22,9 +27,13 @@ import {
 } from './sketch/part-definition';
 import { directEditsOf } from './sketch/merged-parts';
 import { variantProblemsOf } from './sketch/check-sketches';
+import { overlaySketch } from './sketch/overlay';
+import { prefetchClassFactsOf } from './rules/tailwind-classes';
 import { listSketches, Sketch } from './sketch/sketch';
 import { ruleProblemsOf } from './check-system';
 import { Problem } from './problem';
+import { allHeldEdits, HeldEdits } from './sketch/held-edits';
+import { PoolWorkerData, startSyncPool } from './sync-pool';
 import { inputsUnchanged, PrintedInput, recordInputs, trackedRun } from './tracked-reads';
 
 const isPair = <T extends { from: string | null; to: string | null }>(
@@ -72,41 +81,106 @@ type HeldVariantProblems = { print: string; inputs: PrintedInput[]; problems: Pr
 
 const heldVariantProblems = new Map<string, HeldVariantProblems>();
 
-const heldVariantProblemsOf = ({
+type VariantRun = { sketch: Sketch; variant: string; slot: string; print: string; held: HeldVariantProblems | null };
+
+const variantRunOf = ({
   product,
   productPrint,
-  productRules,
   sketch,
   variant,
 }: {
   product: ResolvedProduct;
   productPrint: string;
-  productRules: ProductRuleRun;
   sketch: Sketch;
   variant: string;
-}): Problem[] => {
+}): VariantRun => {
   const slot = JSON.stringify([product.dir, sketch.target, sketch.name, variant]);
   const print = createHash('sha1').update(productPrint).update(JSON.stringify(sketch)).digest('base64url');
   const held = heldVariantProblems.get(slot);
 
-  if (held && held.print === print && inputsUnchanged(held.inputs)) {
-    recordInputs(held.inputs);
+  return {
+    sketch,
+    variant,
+    slot,
+    print,
+    held: held && held.print === print && inputsUnchanged(held.inputs) ? held : null,
+  };
+};
 
-    return held.problems;
-  }
+/** One variant of a ready sketch to lay over the product and run the rules on, as data a pool worker can take. */
+export type VariantJob = {
+  product: ResolvedProduct;
+  sketch: Sketch;
+  variant: string;
+  productProblems: Problem[];
+  held: HeldEdits;
+};
 
-  const { value, inputs } = trackedRun(
+/** The rule problems a variant adds over the product, with the files the run read. */
+export const variantAnswerOf = ({ product, sketch, variant, productProblems }: VariantJob) =>
+  trackedRun(
     () =>
-      variantProblemsOf({
-        product,
-        sketch: { ...sketch, variants: [variant] },
-        productProblems: productRules().value,
-      })[0]?.problems ?? [],
+      variantProblemsOf({ product, sketch: { ...sketch, variants: [variant] }, productProblems })[0]?.problems ?? [],
   );
 
-  heldVariantProblems.set(slot, { print, inputs: [...inputs, ...productRules().inputs], problems: value });
+type VariantAnswer = ReturnType<typeof variantAnswerOf>;
 
-  return value;
+let variantPoolSize = 0;
+
+/** Runs the fresh variants of the ready sketches in up to `size` workers; 0 runs them on the calling thread. */
+export const useVariantPool = (size: number) => {
+  variantPoolSize = size;
+};
+
+const startVariantWorker = (workerData: PoolWorkerData, transferList: MessagePort[]) => {
+  const built = packageFileOf(resolve(__dirname, 'variant-pool-worker.js'));
+
+  return existsSync(built)
+    ? new Worker(built, { workerData, transferList })
+    : new Worker(resolve(__dirname, 'variant-pool-worker.ts'), {
+        workerData,
+        transferList,
+        execArgv: [
+          '--import',
+          pathToFileURL(resolve(require.resolve('jiti/package.json'), '../lib/jiti-register.mjs')).href,
+        ],
+      });
+};
+
+const freshVariantAnswersOf = ({
+  product,
+  productRules,
+  fresh,
+}: {
+  product: ResolvedProduct;
+  productRules: ProductRuleRun;
+  fresh: VariantRun[];
+}): VariantAnswer[] => {
+  const size = Math.min(variantPoolSize, fresh.length);
+  const pool = size > 1 ? startSyncPool<VariantJob, VariantAnswer>({ size, start: startVariantWorker }) : null;
+
+  try {
+    prefetchClassFactsOf([product, ...fresh.map(({ sketch, variant }) => overlaySketch({ product, sketch, variant }))]);
+
+    const productProblems = productRules().value;
+    const jobs = fresh.map(({ sketch, variant }) => ({
+      product,
+      sketch,
+      variant,
+      productProblems,
+      held: allHeldEdits(),
+    }));
+
+    try {
+      if (pool) return pool.run(jobs);
+    } catch {
+      return jobs.map(variantAnswerOf);
+    }
+
+    return jobs.map(variantAnswerOf);
+  } finally {
+    pool?.stop();
+  }
 };
 
 const sketchProblemsOf = ({
@@ -123,21 +197,38 @@ const sketchProblemsOf = ({
   if (ready.length === 0) return [];
 
   const productPrint = productPrintOf(product);
+  const runs = ready.flatMap((sketch) =>
+    sketch.variants.map((variant) => variantRunOf({ product, productPrint, sketch, variant })),
+  );
+  const fresh = runs.filter((run) => !run.held);
+
+  if (fresh.length > 0) {
+    const answers = freshVariantAnswersOf({ product, productRules, fresh });
+    const productInputs = productRules().inputs;
+
+    fresh.forEach((run, index) => {
+      const answer = answers[index] ?? { value: [], inputs: [] };
+
+      run.held = { print: run.print, inputs: [...answer.inputs, ...productInputs], problems: answer.value };
+      heldVariantProblems.set(run.slot, run.held);
+    });
+  }
+
   const seen = new Set<string>();
 
-  return ready.flatMap((sketch) =>
-    sketch.variants.flatMap((variant) =>
-      heldVariantProblemsOf({ product, productPrint, productRules, sketch, variant }).flatMap(({ rule, message }) => {
-        const key = `${sketch.target}\n${variant}\n${rule}\n${message}`;
+  return runs.flatMap((run) => {
+    recordInputs(run.held?.inputs ?? []);
 
-        if (seen.has(key)) return [];
+    return (run.held?.problems ?? []).flatMap(({ rule, message }) => {
+      const key = `${run.sketch.target}\n${run.variant}\n${rule}\n${message}`;
 
-        seen.add(key);
+      if (seen.has(key)) return [];
 
-        return [{ part: sketch.target, sketch: sketch.name, variant, rule, message }];
-      }),
-    ),
-  );
+      seen.add(key);
+
+      return [{ part: run.sketch.target, sketch: run.sketch.name, variant: run.variant, rule, message }];
+    });
+  });
 };
 
 /**

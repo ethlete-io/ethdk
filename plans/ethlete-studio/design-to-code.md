@@ -2668,6 +2668,27 @@ part (Studio e2e on CI green twice with `ETHLETE_DESIGN_SHARED_SERVE=1`, so the 
 the Mac, the main checkout. `apps/docs/cli/index.md` now names every call that runs in the resident and the
 serve-hosted resident (S2).
 
+B499 P6 as built (Linux builder, 2026-11-13): Cause (measured): cold `/__design/open-points?product=studio` took
+11.4 s = 0.5 s product rules + 10.9 s rule runs over 18 variants of 8 ready Studio sketches (`sketchProblemsOf`), 8.5 s
+of it CANONICAL-CLASS with a Tailwind child per variant. Fix: `prefetchClassFactsOf` puts the class facts of the product
+and every fresh variant on disk in one Tailwind run (1.33 s); a class-facts cache write merges with the stored entry
+(concurrent writers dropped each other's facts); one open-points worker per product, warmed at serve start
+(`warmOpenPointsOf`, behind `ETHLETE_DESIGN_SLOW_CHECKS`) and ended when the serve's HTTP server closes
+(`stopOpenPointsWorkers`); the fresh variants run in a sync worker pool (`system/sync-pool.ts`, min(4, cpus - 1)
+workers, the open-points worker blocks on `Atomics.wait`; a failed pool falls back to the calling thread). The pool
+starts before the prefetch, so its workers load meanwhile, and ends after each batch: an idle serve holds no pool
+worker. P6 (`--only P6`, scratch copy, CLI built in it): before FAIL, open-points 11720 ms; after PASS twice,
+open-points 506 / 556 ms, warm system 50 / 50 ms, worst main-thread block 0 / 0 ms (poll 19.8 / 6.7 s). RSS of the
+serve process (all its worker threads; Chromium not counted) on the scratch copy, sampled every 10 s for 150 s: with the
+pool peak 4.45 GB, idle after the poll 2.83-2.89 GB; same build with the pool off (`useVariantPool(0)`) peak 3.54 GB,
+idle 2.59-2.66 GB, open-points 1782 ms. The pool's own peak (3 workers) is about 1.1 GB during the warm-up; the idle
+gap of about 0.25 GB is heap the ended workers left to the allocator. Same thread count idle (106) with and without
+the pool. The open-points answer with the pool is byte-identical to the one without (51 parts, fresh cache each).
+Bite: `tailwind-facts-merge.spec.ts` red on HEAD (`p-other` lost), `sync-pool.spec.ts` red with a one-worker pool
+(1616 ms > 1200 ms), `serve-workers.spec.ts` red without the close hook (2 live workers, not 0); vitest related
+144 files green; spec:stress 4/4 each (the three new specs and `slow-run.spec.ts`, `--load 2`). Verified: P6 on Linux on a scratch copy, twice. Not verified: P6 in CI, the
+Mac, the main checkout, a pool worker that dies mid-batch (only the stall timeout, 60 s, catches it).
+
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
 Bite: a spec stages a name and clears it in the working tree; red on the old script. Not verified: a real refused commit.
