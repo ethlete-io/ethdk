@@ -2727,10 +2727,8 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
 - B499: a worker must be owned by the serve lifecycle, not stopped by a spec env stub (Cause of the cb48a175e red:
   3 specs never stopped the slow-checks worker, 13.5 GB RSS).
 - B499: shot-store.spec flaky under spec:stress ('drawn' vs 'disk', 0-2 of 4), also before the fix.
-- B499: an idle serve sits at about 2.6 GB RSS even without the variant pool; 986 (RSS 706 MB -> 4.2 GB over 200
-  shots outside the JS heap) not reproduced.
-- B499: 992 ECONNRESET Cause (probe, d910f48dc): Playwright's request client reuses keep-alive connections that the
-  serve closes after 6 s idle; test-only fix. P5 CI part met in 43379234143 and 43383106354.
+- B499: idle serve about 2.6 GB RSS without the variant pool; 986 not reproduced.
+- B499: 992 ECONNRESET Cause (d910f48dc): Playwright reuses keep-alive sockets the serve closes after 6 s.
 - B499 (second time after 826): the contact sheet draws b-row cells near `b / unchanged-matrix-open` partly grey; the
   same data differs up to 18.6M px between takes. multi-part-head warns "ready will refuse" from the same cell.
 - B499 P6: the chip-wheel e2e went red with the variant pool (a10cda703) and green after its revert; not reproduced
@@ -2738,9 +2736,7 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
 - B500: `design complete` keeps its own ACTION-UNDECLARED, not reviewed.
 - B500: the serve start log at f0e2405f8 says the visible-change gate fails: title-bar 7 and update-dialog 4 states
   unjudged.
-- B500: removed rules and their closed findings: ACTION-UNDECLARED, NESTED-SURFACE (971), CONTRAST, LOST-SURFACE,
-  NESTED-SCROLL, CUT-CONTROL, SKIP-SCOPE (457, 740), UNBOUND-INPUT, OFF-CENTRE, DISABLED-INTERACTION (634, 691),
-  UNREACHABLE, COVERED. The human gets the dark-scheme contrast point as a question.
+- B500: 12 rules removed with their findings (list in ee5000b5d); contrast decided in ADR 0292.
 - B501: an idle `yarn design` serve rewrites tracked `.ethlete/design/*/ready.json` within 2 minutes (Cause, pid
   probe); its records said "by": "et design check".
 - B502: the pages/sketches harness sample drifts from the design (no `zoom-chip@edit` tree row, avatar H vs TB, stack
@@ -2754,6 +2750,12 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
 - B501: S1 dropped the "embedded X changed" hint of the `design ready` 422 (S4); `design ready` writes other parts'
   cached records (S2).
 - B504: slow run fails every poll: `state "project-picker" of "elements/shell-main" failed`.
+- B502 (day 13.11.): command-palette has no `implements` link; head drawn over another part's rows; Cause (measured):
+  `sketch merge` does not run the product's `generated` command, so a colors merge fails the themes --check spec.
+- B502: a merge that drops an action leaves ACTION-LOST in ready.json, clearable only by a hand edit.
+- B504 (day): title bar binds no [part]; change marks read as content (column frames, dimmed rows); a round went
+  ready whose pictures never show its subject (focus-tooltip, ADR 0293); `withdraw` refuses non-twins, no --reason.
+- Machinery: Tom's colors feedback in a doc-agent chat was lost across a restart.
 
 B500 P5 as built (Linux builder subagent, 2026-11-13, commit "fix(cli): Keep merged.json and ready.json unchanged in
 design check"): `checkSystemRendered` runs inside `withStampsInMemory` (`stamp-files.ts`); `merged.json` and
