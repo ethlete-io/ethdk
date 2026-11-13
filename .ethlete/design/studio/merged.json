@@ -5,6 +5,12 @@
     "decidedBy": "auto: no visible change",
     "at": "2026-11-07T17:19:30.454Z"
   },
+  "components/command-palette": {
+    "hash": "d4fcb7a7892674ce",
+    "variant": "b",
+    "decidedBy": "user",
+    "at": "2026-11-13T10:10:22.592Z"
+  },
   "components/comment-draft": {
     "hash": "ad14ceb6f41d913d",
     "variant": "raised",
