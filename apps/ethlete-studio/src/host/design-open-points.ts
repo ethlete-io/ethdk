@@ -6,7 +6,7 @@ export type OpenPoint =
   | { kind: 'missing-state'; control: string | null }
   | { kind: 'contrast'; state: string; path: string }
   | { kind: 'open-comment'; comment: string; state: string; answered: boolean }
-  | { kind: 'unmerged-sketch'; status: 'in progress' | 'ready'; decision: 'pick' | 'discard' | null }
+  | { kind: 'unmerged-sketch'; sketch: string; status: 'in progress' | 'ready'; decision: 'pick' | 'discard' | null }
   | { kind: 'sketch-problem'; sketch: string; variant: string; rule: string; message: string }
   | { kind: 'missing-motion'; from: string; to: string }
   | { kind: 'direct-edit'; sketch: string | null };

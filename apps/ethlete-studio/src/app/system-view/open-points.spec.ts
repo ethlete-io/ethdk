@@ -7,7 +7,7 @@ describe('openPointGroupsOf', () => {
         points: [
           { kind: 'missing-motion', from: 'rest', to: 'hover' },
           { kind: 'open-comment', comment: 'a', state: 'outline', answered: false },
-          { kind: 'unmerged-sketch', status: 'ready', decision: 'pick' },
+          { kind: 'unmerged-sketch', sketch: 'rating', status: 'ready', decision: 'pick' },
           { kind: 'contrast', state: 'tonal', path: 'label' },
           { kind: 'missing-state', control: null },
           { kind: 'missing-state', control: 'size' },
@@ -26,17 +26,30 @@ describe('openPointGroupsOf', () => {
       {
         icon: 'grid',
         lines: [
-          { text: 'Sketch gewählt, noch nicht gemergt', detail: 'sketch' },
+          {
+            text: 'Sketch gewählt, noch nicht gemergt',
+            detail: 'sketch',
+            target: { kind: 'sketch', sketch: 'rating' },
+          },
           { text: 'Keine Controls deklariert', detail: 'controls' },
           { text: 'size hat keinen gezeichneten Zustand', detail: 'size' },
         ],
       },
-      { icon: 'warning', lines: [{ text: 'label liegt unter der Kontrastregel', detail: 'tonal' }] },
+      {
+        icon: 'warning',
+        lines: [
+          {
+            text: 'label liegt unter der Kontrastregel',
+            detail: 'tonal',
+            target: { kind: 'state', state: 'tonal' },
+          },
+        ],
+      },
       {
         icon: 'comment',
         lines: [
-          { text: 'Wartet auf den Agenten', detail: 'outline' },
-          { text: 'Beantwortet, wartet auf dich', detail: 'filled' },
+          { text: 'Wartet auf den Agenten', detail: 'outline', target: { kind: 'comment', comment: 'a' } },
+          { text: 'Beantwortet, wartet auf dich', detail: 'filled', target: { kind: 'comment', comment: 'b' } },
         ],
       },
       {
@@ -67,7 +80,18 @@ describe('openPointGroupsOf', () => {
         ],
         buildReady: { ready: true },
       }),
-    ).toEqual([{ icon: 'error', lines: [{ text: 'Sketch-Regel verletzt: UTILITY-CSS', detail: 'c' }] }]);
+    ).toEqual([
+      {
+        icon: 'error',
+        lines: [
+          {
+            text: 'Sketch-Regel verletzt: UTILITY-CSS',
+            detail: 'c',
+            target: { kind: 'sketch', sketch: 'rating', variant: 'c' },
+          },
+        ],
+      },
+    ]);
   });
 
   it('lists a direct edit with the blockers, with its edit sketch or without one', () => {
@@ -90,11 +114,30 @@ describe('openPointGroupsOf', () => {
         icon: 'error',
         lines: [
           { text: 'Bild ohne Sketch geändert', detail: 'direct-edit' },
-          { text: 'Bild ohne Sketch geändert', detail: 'components/tree-row@edit' },
+          {
+            text: 'Bild ohne Sketch geändert',
+            detail: 'components/tree-row@edit',
+            target: { kind: 'edit-sketch', target: 'components/tree-row@edit' },
+          },
           { text: 'Die langsamen Prüfungen sind für den aktuellen Stand noch nicht gelaufen', detail: 'pending' },
         ],
       },
     ]);
+  });
+
+  it('leaves the points without a place to open as plain lines', () => {
+    const lines = openPointGroupsOf({
+      points: [
+        { kind: 'missing-state', control: null },
+        { kind: 'missing-state', control: 'size' },
+        { kind: 'missing-motion', from: 'rest', to: 'hover' },
+        { kind: 'direct-edit', sketch: null },
+      ],
+      buildReady: { ready: false, blockers: [{ kind: 'embedded', text: 'x', part: 'elements/icon' }] },
+    }).flatMap((group) => group.lines);
+
+    expect(lines).toHaveLength(5);
+    expect(lines.filter((line) => line.target)).toEqual([]);
   });
 
   it('has no group without a point on a build-ready part', () => {

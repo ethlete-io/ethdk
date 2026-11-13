@@ -3,7 +3,15 @@ import { AgentProgress, BuildBlocker, BuildReadyStatus } from './build-ready-foo
 
 export type OpenPointIcon = 'grid' | 'warning' | 'comment' | 'error' | 'flow';
 
-export type OpenPointGroup = { icon: OpenPointIcon; lines: { text: string; detail: string }[] };
+export type OpenPointTarget =
+  | { kind: 'state'; state: string }
+  | { kind: 'comment'; comment: string }
+  | { kind: 'sketch'; sketch: string; variant?: string }
+  | { kind: 'edit-sketch'; target: string };
+
+export type OpenPointLine = { text: string; detail: string; target?: OpenPointTarget };
+
+export type OpenPointGroup = { icon: OpenPointIcon; lines: OpenPointLine[] };
 
 export type PartException = { rule: string; reason: string; reopened: boolean };
 

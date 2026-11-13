@@ -54,7 +54,7 @@ import { PartTreeComponent } from '../part-tree/part-tree.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { ZoomChipComponent } from '../zoom-chip/zoom-chip.component';
 import { OpenPointsChipComponent } from '../system-page/open-points-chip.component';
-import { OpenPointGroup } from '../system-page/system-page-sample';
+import { OpenPointGroup, OpenPointTarget } from '../system-page/system-page-sample';
 import { cropGroupsOf, magnifyTextOf, SketchCropGroup } from './sketch-crops';
 import {
   SKETCH_CURRENT,
@@ -229,6 +229,7 @@ export class SketchesComponent {
   public expandedChange = output<readonly string[]>();
   public cameraChange = output<Camera | null>();
   public listWidthChange = output<number>();
+  public openPoint = output<OpenPointTarget>();
   private list = viewChild.required('list', { read: ElementRef<HTMLElement> });
   private world = viewChild.required('world', { read: ElementRef<HTMLElement> });
   private matrix = viewChild('matrix', { read: ElementRef<HTMLElement> });

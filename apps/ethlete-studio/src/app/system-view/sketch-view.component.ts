@@ -95,7 +95,7 @@ import {
 import { partOpenPoints$ } from '../../host/design-open-points';
 import { keptRead$ } from './kept-read';
 import { sketchPointGroupsOf } from './open-points';
-import { OpenPointGroup } from '../design-parts/system-page/system-page-sample';
+import { OpenPointGroup, OpenPointTarget } from '../design-parts/system-page/system-page-sample';
 
 type Busy = 'merge' | 'discard';
 
@@ -198,6 +198,7 @@ export const liveShotsOf = ({
         (pinToggle)="shellAction.emit({ kind: 'section', section: 'Inbox' })"
         (expandedChange)="expandedChange.emit($event)"
         (pick)="shellAction.emit({ kind: 'pick', key: $event })"
+        (openPoint)="openPoint.emit($event)"
         (shellAction)="shellAction.emit($event)"
         class="h-full!"
       />
@@ -290,6 +291,7 @@ export class SketchViewComponent {
   public listError = input<string | null>(null);
   public retry = output();
   public shellAction = output<PageShellAction>();
+  public openPoint = output<OpenPointTarget>();
   public cameraChange = output<Camera | null>();
 
   public expandedChange = output<readonly string[]>();
@@ -791,7 +793,12 @@ export class SketchViewComponent {
   /** Shows the round of the comment's variant. */
   public jumpTo(comment: ListedComment) {
     const variant = comment.sketch?.variant;
-    const other = this.shownRounds().find((round) => !round.open && variant && round.variants.includes(variant));
+
+    if (variant) this.showVariant(variant);
+  }
+
+  public showVariant(variant: string) {
+    const other = this.shownRounds().find((round) => !round.open && round.variants.includes(variant));
 
     if (other) this.pickRound(other.key);
   }

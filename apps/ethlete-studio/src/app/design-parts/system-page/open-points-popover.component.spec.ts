@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
 import { OpenPointsPopoverComponent } from './open-points-popover.component';
-import { PartException } from './system-page-sample';
+import { OpenPointTarget, PartException } from './system-page-sample';
 
 const render = async (exceptions: PartException[], missingShots = 0) => {
   TestBed.configureTestingModule({
@@ -88,5 +88,33 @@ describe('OpenPointsPopoverComponent', () => {
     buttons[1]?.click();
 
     expect(approved).toEqual(['ghost/CONTRAST']);
+  });
+  it('opens the place of a line with a target and keeps a line without one a plain row', async () => {
+    const { fixture, element } = await render([]);
+    const opened: OpenPointTarget[] = [];
+
+    fixture.componentInstance.openPoint.subscribe((target) => opened.push(target));
+    fixture.componentRef.setInput('groups', [
+      {
+        icon: 'comment',
+        lines: [
+          { text: 'Wartet auf den Agenten', detail: 'outline', target: { kind: 'comment', comment: 'c1' } },
+          { text: 'Keine Controls deklariert', detail: 'controls' },
+        ],
+      },
+    ]);
+    await fixture.whenStable();
+
+    const rows = [...element.querySelectorAll('ul ul > li')];
+    const button = rows[0]?.querySelector<HTMLButtonElement>('button[type="button"]');
+
+    expect(rows.length).toBe(2);
+    expect(button?.textContent).toContain('Wartet auf den Agenten');
+    expect(rows[1]?.querySelector('button')).toBeNull();
+    expect(rows[1]?.textContent).toContain('Keine Controls deklariert');
+
+    button?.click();
+
+    expect(opened).toEqual([{ kind: 'comment', comment: 'c1' }]);
   });
 });

@@ -4,7 +4,7 @@ import {
   BuildBlockerKind,
   BuildReadyStatus,
 } from '../design-parts/system-page/build-ready-footer.component';
-import { OpenPointGroup, OpenPointIcon } from '../design-parts/system-page/system-page-sample';
+import { OpenPointGroup, OpenPointIcon, OpenPointLine } from '../design-parts/system-page/system-page-sample';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 
 const LABELS = STUDIO_LABELS.system;
@@ -29,20 +29,36 @@ const iconOf = (point: ListedPoint): OpenPointIcon => {
   }
 };
 
-const lineOf = (point: ListedPoint): OpenPointGroup['lines'][number] => {
+const lineOf = (point: ListedPoint): OpenPointLine => {
   switch (point.kind) {
     case 'missing-state':
       return point.control
         ? { text: LABELS.controlUndrawn(point.control), detail: point.control }
         : { text: LABELS.noControls, detail: 'controls' };
     case 'contrast':
-      return { text: LABELS.belowContrast(point.path), detail: point.state };
+      return {
+        text: LABELS.belowContrast(point.path),
+        detail: point.state,
+        target: { kind: 'state', state: point.state },
+      };
     case 'open-comment':
-      return { text: point.answered ? LABELS.commentAnswered : LABELS.commentWaiting, detail: point.state };
+      return {
+        text: point.answered ? LABELS.commentAnswered : LABELS.commentWaiting,
+        detail: point.state,
+        target: { kind: 'comment', comment: point.comment },
+      };
     case 'unmerged-sketch':
-      return { text: point.decision === 'pick' ? LABELS.sketchPicked : LABELS.sketchOpen, detail: 'sketch' };
+      return {
+        text: point.decision === 'pick' ? LABELS.sketchPicked : LABELS.sketchOpen,
+        detail: 'sketch',
+        target: { kind: 'sketch', sketch: point.sketch },
+      };
     case 'sketch-problem':
-      return { text: LABELS.sketchProblem(point.rule), detail: point.variant };
+      return {
+        text: LABELS.sketchProblem(point.rule),
+        detail: point.variant,
+        target: { kind: 'sketch', sketch: point.sketch, variant: point.variant },
+      };
     case 'missing-motion':
       return { text: `${point.from} → ${point.to}`, detail: 'motion' };
   }
@@ -63,12 +79,16 @@ const blockerTextOf = (blocker: BuildReadyBlocker) => {
   }
 };
 
-const directEditLinesOf = ({ points }: PartOpenPoints): OpenPointGroup['lines'] =>
-  points.flatMap((point) =>
-    point.kind === 'direct-edit' ? [{ text: LABELS.directEdit, detail: point.sketch ?? point.kind }] : [],
+const directEditLinesOf = ({ points }: PartOpenPoints): OpenPointLine[] =>
+  points.flatMap((point): OpenPointLine[] =>
+    point.kind !== 'direct-edit'
+      ? []
+      : point.sketch
+        ? [{ text: LABELS.directEdit, detail: point.sketch, target: { kind: 'edit-sketch', target: point.sketch } }]
+        : [{ text: LABELS.directEdit, detail: point.kind }],
   );
 
-const blockerLinesOf = ({ buildReady }: PartOpenPoints): OpenPointGroup['lines'] =>
+const blockerLinesOf = ({ buildReady }: PartOpenPoints): OpenPointLine[] =>
   buildReady.ready
     ? []
     : buildReady.blockers

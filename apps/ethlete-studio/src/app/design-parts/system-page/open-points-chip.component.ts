@@ -24,7 +24,7 @@ import { defer, EMPTY, finalize, switchMap, tap } from 'rxjs';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { AgentProgress, BuildBlocker, BuildReadyStatus } from './build-ready-footer.component';
 import { OpenPointsPopoverComponent } from './open-points-popover.component';
-import { OpenPointGroup, PartException } from './system-page-sample';
+import { OpenPointGroup, OpenPointTarget, PartException } from './system-page-sample';
 
 @Component({
   selector: 'ethlete-open-points-chip',
@@ -98,6 +98,7 @@ export class OpenPointsChipComponent {
   public blockersOpen = model(false);
   public openEditSketch = output<BuildBlocker>();
   public approveException = output<string>();
+  public openPoint = output<OpenPointTarget>();
 
   private chip = viewChild.required('chip', { read: ElementRef<HTMLElement> });
   public readonly LABELS = STUDIO_LABELS.system;
@@ -142,6 +143,10 @@ export class OpenPointsChipComponent {
                     twoWayBinding('blockersOpen', this.blockersOpen),
                     outputBinding<BuildBlocker>('openEditSketch', (blocker) => this.openEditSketch.emit(blocker)),
                     outputBinding<string>('approveException', (rule) => this.approveException.emit(rule)),
+                    outputBinding<OpenPointTarget>('openPoint', (target) => {
+                      this.closed.set(true);
+                      this.openPoint.emit(target);
+                    }),
                   ],
                 });
 

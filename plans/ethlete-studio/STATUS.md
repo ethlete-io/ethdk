@@ -261,7 +261,6 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 - **A28** Popup „Ausnahmen N“ und alte Ansicht für Calls neu gestalten (Q91, Q92).
 - **A29** Inventar überarbeiten: als Canvas, Assets, offene Overlays, Einstieg, Knopf „Alle Produkte“ (Q100, Q101, Q233,
   Q239).
-- **A30** Zeilen im Popup „Offene Punkte“ anklickbar.
 - **A31** Gleiche Darstellung aller Zellen im Raster mit Live-iframes; vorher Kosten messen.
 - **A32** Sketch zeigt bei einer Änderung auch die Nachbarschaft (ganze Zeile, Zelle markiert).
 - **A34** Übersetzung (i18n); die deutsche Label-Liste ist der Anfang (Q42).

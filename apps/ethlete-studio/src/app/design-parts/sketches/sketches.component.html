@@ -380,6 +380,7 @@
             [part]="part()"
             [groups]="openPoints()"
             [popoverOrigin]="pointsHead"
+            (openPoint)="openPoint.emit($event)"
             dividers="false"
             popoverPlacement="bottom-start"
           />

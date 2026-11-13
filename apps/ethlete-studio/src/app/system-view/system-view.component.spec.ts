@@ -267,6 +267,16 @@ describe('SystemViewComponent on a reload', () => {
       ['Kein Prüfergebnis zum aktuellen Design - Design-Check oder Design-Ready ausführen', 'stale-record'],
       ['rest → hover', 'motion'],
     ]);
+
+    const rows = document.querySelectorAll<HTMLButtonElement>('ethlete-open-points-popover [data-open-point-target]');
+
+    expect([...rows].map((row) => row.textContent?.trim())).toEqual(['label liegt unter der Kontrastregelhover']);
+
+    rows[0]?.click();
+    await settle(fixture);
+
+    expect(document.querySelector('ethlete-open-points-popover')).toBeNull();
+    expect(chip?.isConnected).toBe(true);
   });
 
   it('passes a design server action of the studio menu on a system page to the host', async () => {
@@ -1565,6 +1575,35 @@ describe('SystemViewComponent on a tree pick', () => {
     chip.componentInstance.openEditSketch.emit({ kind: 'direct-edit', text: 'Bild ohne Sketch geändert' });
     await settle(fixture);
 
+    expect(rememberedView().systemEntry).toBe('sketch:elements/rating@edit');
+    expect(element.querySelector('ethlete-sketch-view')).not.toBeNull();
+  });
+
+  it('closes the popover and opens the edit sketch from the row of a direct edit', async () => {
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/open-points'))
+        return json({
+          points: [{ kind: 'direct-edit', sketch: 'elements/rating@edit' }],
+          buildReady: { ready: false, blockers: [{ kind: 'open-point', text: 'changed outside a sketch' }] },
+        });
+      if (url.includes('/__design/sketches')) return json({ sketches: [EDIT], unreadable: [] });
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([CALL]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
+    const element: HTMLElement = fixture.nativeElement;
+
+    element.querySelector<HTMLButtonElement>('[data-open-points-chip]')?.click();
+    await settle(fixture);
+
+    document.querySelector<HTMLButtonElement>('ethlete-open-points-popover [data-open-point-target]')?.click();
+    await settle(fixture);
+
+    expect(document.querySelector('ethlete-open-points-popover')).toBeNull();
     expect(rememberedView().systemEntry).toBe('sketch:elements/rating@edit');
     expect(element.querySelector('ethlete-sketch-view')).not.toBeNull();
   });

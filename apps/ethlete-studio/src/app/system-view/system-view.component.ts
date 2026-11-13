@@ -85,7 +85,7 @@ import { createExceptionStore } from './exception-store';
 import { SystemPageComponent } from '../design-parts/system-page/system-page.component';
 import { buildReadyStatusOf, openPointGroupsOf } from './open-points';
 import { BuildReadyStatus } from '../design-parts/system-page/build-ready-footer.component';
-import { OpenPointGroup } from '../design-parts/system-page/system-page-sample';
+import { OpenPointGroup, OpenPointTarget } from '../design-parts/system-page/system-page-sample';
 import { partOpenPoints$ } from '../../host/design-open-points';
 import { openExceptionsOf } from '../../host/design-exceptions';
 import { OpenPointsChipComponent } from '../design-parts/system-page/open-points-chip.component';
@@ -183,6 +183,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
                 [buildReady]="buildReady()"
                 (openEditSketch)="openEditSketch(partShown.key)"
                 (approveException)="approveException(partShown.key, $event)"
+                (openPoint)="openPoint(partShown.key, $event)"
               />
             </div>
             <ethlete-design-canvas
@@ -286,6 +287,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         (expandedChange)="rememberOpen($event)"
         (cameraChange)="rememberCamera($event)"
         (shellAction)="runShellAction($event)"
+        (openPoint)="openPoint(shown.sketch.target, $event)"
       />
     } @else if (inventoryPage(); as page) {
       @defer {
@@ -1241,6 +1243,41 @@ export class SystemViewComponent {
 
   protected openEditSketch(part: string) {
     this.activate(sketchKeyOf(`${part}@edit`));
+  }
+
+  protected openPoint(part: string, target: OpenPointTarget) {
+    switch (target.kind) {
+      case 'state':
+        return this.focusState(part, target.state);
+      case 'comment':
+        return this.jumpToComment(target.comment);
+      case 'edit-sketch':
+        return this.activate(sketchKeyOf(target.target));
+      case 'sketch':
+        return this.openSketch(part, target);
+    }
+  }
+
+  private focusState(part: string, state: string) {
+    const frame = otherSizeFrameOf(this.placeableFrames(), { part, state, size: '' });
+
+    if (frame) this.partCanvas()?.focusFrame(frame);
+  }
+
+  private openSketch(part: string, { sketch: name, variant }: Extract<OpenPointTarget, { kind: 'sketch' }>) {
+    const listed = this.sketches().find(
+      (sketch) => sketch.name === name && (sketch.targetParts ?? [sketch.target]).includes(part),
+    );
+
+    if (!listed) return;
+
+    const key = sketchKeyOf(listed.target);
+    const showVariant = () => variant && this.sketchView()?.showVariant(variant);
+
+    if (key === this.selectedKey()) return showVariant();
+
+    this.activate(key);
+    afterNextRender(showVariant, { injector: this.injector });
   }
 
   private openFirstSketch() {
