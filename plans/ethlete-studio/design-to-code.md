@@ -2599,6 +2599,7 @@ removed, cold) with an event-loop probe around two slow-checks polls of sdk and 
 verified: warm `/__design/system` and cold open-points on a live serve (P6 targets 300 ms and 1.5 s), the exit
 handoff with a harness build running, CI, the Studio e2e. The class-facts entries put a `node_modules` into a target
 that had none; jiti in a worker then caches there, so `serve.spec.ts` cleanup now retries its `rm`.
+B499 S5 in progress (Linux builder, 2026-11-13): profile and cut the cold path of sketch check and ready; start `tools/scripts/design-server-proof.mjs` with P1.
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
 Bite: a spec stages a name and clears it in the working tree; red on the old script. Not verified: a real refused commit.
