@@ -242,7 +242,7 @@ elements/shell-main` zeigt schon vorher 2 CONTROL-STATE und „changed outside a
 - **A5** Seitenleiste: Repo-Wechsel und „Projekt öffnen“ ins Logo-Menü; oben die Auswahl der Design-Systeme; die Auswahl
   unten entfällt.
 - **A6** Schnellwahl in der Leiste zeigt Logo oder zwei eindeutige Buchstaben, mit Tooltip (Q21).
-- **A7** Breite der Seitenleiste mit der Maus ziehen (Q133).
+- **A7** Breite der Seitenleiste mit der Maus ziehen (Q133). Skizze `elements/shell-main@sidebar-resize` gezeichnet: Griff auf der rechten Kante, 248 px Standard, min 200, max 400 px; Zustände Ruhe, Hover, Ziehen (312 px, col-resize), focus-visible, min, max. a: unsichtbare Kante, Akzentlinie erst bei Hover/Ziehen; b: sichtbare kurze Griffleiste, wird beim Ziehen zur Akzentlinie. Empfehlung a. Wartet auf Toms Merge.
 - **A8** Rest: Skizze `components/zoom-chip@focus-tooltip` (studio, auch shell-collapse) zeichnet das offene SDK-Tooltip in den focus-visible-Zuständen; App und gemergte Teile behalten `title`. Gehalten: `sketch ready` verweigert, weil pages/sketches zoom-chip-Zustände in 176-px-Zellen zeigt und das Tooltip dort herausragt (CLIPPED, CUT-CONTROL, SEE-THROUGH, CANVAS-UNDER-PANEL); Dafür Skizze `pages/sketches@focus-tooltip` (a: Probezellen ohne focus-visible-Zustände; b: Zellen wachsen auf 208 px, im Crop-Bild 208 × 80 px); beide warten auf Toms Merge, zuerst pages/sketches, dann `sketch release` und `sketch ready` auf zoom-chip@focus-tooltip (Befund 116).
 - **A9** Merge-Ansicht mit dem einen Canvas (Zoom, Verschieben) und einem E2E-Test dafür (Befund 117; dl 02.11.).
 - **A10** Baubereit (ADR 0048): der Kern ist gebaut, offen sind B250 und B251.
