@@ -6,6 +6,11 @@ export type CurveOptions = {
   lineEndingCurveAmount: number;
   path: PathOptions;
   inverted?: boolean;
+  /**
+   * Where the vertical part of the connector sits, in px from the feeding card. `null` or omitted turns
+   * it at the middle of the gap.
+   */
+  turnOffset?: number | null;
 };
 
 export const curvePath = (
@@ -33,10 +38,14 @@ export const curvePath = (
 
   const startCurve = options.lineStartingCurveAmount * curveScale;
   const endCurve = options.lineEndingCurveAmount * curveScale;
-  const straightLength = (totalInline - startCurve - endCurve) / 2;
+  const straightTotal = totalInline - startCurve - endCurve;
+  const turnOffset = options.turnOffset ?? null;
+  const leadingStraight =
+    turnOffset === null ? straightTotal / 2 : Math.max(0, Math.min(turnOffset - startCurve, straightTotal));
+  const trailingStraight = straightTotal - leadingStraight;
 
-  const straightEnd = inverted ? fromInline - straightLength : fromInline + straightLength;
-  const straightStart = inverted ? toInline + straightLength : toInline - straightLength;
+  const straightEnd = inverted ? fromInline - leadingStraight : fromInline + leadingStraight;
+  const straightStart = inverted ? toInline + trailingStraight : toInline - trailingStraight;
 
   const firstCurveEndX = inverted ? straightEnd - startCurve : straightEnd + startCurve;
   const firstCurveEndY = direction === 'down' ? fromBlock + startCurve : fromBlock - startCurve;

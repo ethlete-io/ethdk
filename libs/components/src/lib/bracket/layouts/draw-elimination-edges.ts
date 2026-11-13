@@ -23,6 +23,7 @@ export const drawEliminationEdges = <TRoundData, TMatchData>(
     curve: {
       lineEndingCurveAmount: settings.lineEndingCurveAmount,
       lineStartingCurveAmount: settings.lineStartingCurveAmount,
+      turnOffset: settings.lineTurnOffset,
     },
     path: {
       dashArray: settings.lineDashArray,

@@ -319,6 +319,7 @@ shipped default listed below. The resolved set is on the component as `settings(
 | `lineWidth`               | `2`          | Connector stroke width.                                                                                                    |
 | `lineStartingCurveAmount` | `10`         | Curve radius where a connector leaves a match.                                                                             |
 | `lineEndingCurveAmount`   | `0`          | Curve radius where a connector meets the next match.                                                                       |
+| `lineTurnOffset`          | `null`       | Where a connector turns, in px from the feeding match (`null` = middle of the column gap).                                 |
 | `lineDashArray`           | `0`          | Connector dash length (`0` = solid).                                                                                       |
 | `lineDashOffset`          | `0`          | Connector dash offset.                                                                                                     |
 | `disableJourneyHighlight` | `false`      | Turn off journey highlighting and pinning entirely.                                                                        |

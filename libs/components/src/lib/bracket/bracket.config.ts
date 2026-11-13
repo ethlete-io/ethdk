@@ -70,6 +70,11 @@ export type BracketConfig<TRoundData = any, TMatchData = any> = {
   focusInset?: number;
   lineStartingCurveAmount?: number;
   lineEndingCurveAmount?: number;
+  /**
+   * Where a connector turns, in px from the card that feeds it. `null` turns it at the middle of the
+   * column gap.
+   */
+  lineTurnOffset?: number | null;
   lineWidth?: number;
   lineDashArray?: number;
   lineDashOffset?: number;
@@ -147,6 +152,7 @@ export const BRACKET_DEFAULTS: Required<BracketLayoutConfig> = {
   focusInset: 0,
   lineStartingCurveAmount: 10,
   lineEndingCurveAmount: 0,
+  lineTurnOffset: null,
   lineWidth: 2,
   lineDashArray: 0,
   lineDashOffset: 0,

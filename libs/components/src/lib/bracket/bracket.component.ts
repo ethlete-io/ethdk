@@ -122,6 +122,9 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   public lineEndingCurveAmount = input<number | undefined, OptionalNumberInput>(undefined, {
     transform: optionalNumberAttribute,
   });
+  public lineTurnOffset = input<number | null | undefined, OptionalNumberInput>(undefined, {
+    transform: nullableNumberAttribute,
+  });
   public lineWidth = input<number | undefined, OptionalNumberInput>(undefined, { transform: optionalNumberAttribute });
   public lineDashArray = input<number | undefined, OptionalNumberInput>(undefined, {
     transform: optionalNumberAttribute,
@@ -247,6 +250,7 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
       focusInset: this.focusInset() ?? this.config.focusInset,
       lineStartingCurveAmount: this.lineStartingCurveAmount() ?? this.config.lineStartingCurveAmount,
       lineEndingCurveAmount: this.lineEndingCurveAmount() ?? this.config.lineEndingCurveAmount,
+      lineTurnOffset: this.lineTurnOffset() === undefined ? this.config.lineTurnOffset : this.lineTurnOffset(),
       lineWidth: this.lineWidth() ?? this.config.lineWidth,
       lineDashArray: this.lineDashArray() ?? this.config.lineDashArray,
       lineDashOffset: this.lineDashOffset() ?? this.config.lineDashOffset,

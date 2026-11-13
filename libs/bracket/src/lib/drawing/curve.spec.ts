@@ -25,4 +25,29 @@ describe('curvePath', () => {
   it('keeps the same six commands for two cards on the same row', () => {
     expect(curve(position(0, 0), position(50, 0)).match(/[MHQV]/g)).toEqual(['M', 'H', 'Q', 'V', 'Q', 'H']);
   });
+
+  it('turns at the given offset from the feeding card', () => {
+    const d = curvePath(position(0, 0), position(60, 100), 'down', {
+      lineStartingCurveAmount: 10,
+      lineEndingCurveAmount: 0,
+      turnOffset: 20,
+      path: { id: 'edge', width: 1, dashArray: 0, dashOffset: 0, className: '' },
+    }).d;
+
+    expect(d).toContain('V ');
+    expect(horizontalRuns(d)).toEqual([10, 60]);
+    expect(d).toMatch(/Q 20 0, 20 10/);
+  });
+
+  it('turns mirrored offsets from the feeding card on its inline start', () => {
+    const d = curvePath(position(60, 0), position(0, 100), 'down', {
+      lineStartingCurveAmount: 10,
+      lineEndingCurveAmount: 0,
+      turnOffset: 20,
+      inverted: true,
+      path: { id: 'edge', width: 1, dashArray: 0, dashOffset: 0, className: '' },
+    }).d;
+
+    expect(horizontalRuns(d)[0]).toBe(50);
+  });
 });
