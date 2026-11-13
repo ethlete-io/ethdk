@@ -1,9 +1,9 @@
 import { cpSync, mkdtempSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { afterAll, beforeAll } from 'vitest';
+import { beforeAll } from 'vitest';
 import { readConfig } from '../design-config';
-import { openPointsInWorker, stopOpenPointsWorkers } from './open-points-runner';
+import { openPointsInWorker } from './open-points-runner';
 import { resolveProduct } from './resolve-product';
 
 export { openPointsAnswer } from '../studio-api';
@@ -21,5 +21,3 @@ beforeAll(async () => {
 
   await openPointsInWorker({ product, part: null });
 }, WARM_TIMEOUT);
-
-afterAll(() => stopOpenPointsWorkers());

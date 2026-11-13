@@ -299,22 +299,16 @@ const freshFactsOf = (source: ProductSource | undefined): Facts => {
   return { inputs, rem, known: new Map() };
 };
 
-const factsSlotOf = (options: { product: StyleHolder; classes: PartClasses }) => {
-  const { target, stylesheets } = options.classes;
-  const source = styleSourceOf(options.product);
-  const css = stylesheets.map((file) => `@import ${JSON.stringify(file)};`).join('\n');
-
-  return { source, css, slot: JSON.stringify([target, css, source?.configFile ?? null, source?.config.styles ?? []]) };
-};
-
 /**
  * Tailwind's facts on each candidate under the product's stylesheets; the root font size they set on `html` is the rem
  * base. Kept on disk under the checkout's `node_modules/.cache/ethlete-design/class-facts`, shared by every process and
  * worker, until a file this process or Tailwind read for them changes.
  */
 export const classFactsOf = (options: { product: StyleHolder; classes: PartClasses }) => {
-  const { target, files } = options.classes;
-  const { source, css, slot } = factsSlotOf(options);
+  const { target, stylesheets, files } = options.classes;
+  const source = styleSourceOf(options.product);
+  const css = stylesheets.map((file) => `@import ${JSON.stringify(file)};`).join('\n');
+  const slot = JSON.stringify([target, css, source?.configFile ?? null, source?.config.styles ?? []]);
   const held = heldFactsOf(target, slot);
   const facts = held ?? freshFactsOf(source);
   const missing = [...new Set(files.flatMap((file) => [...file.candidates, ...file.classes]))].filter(
@@ -340,20 +334,12 @@ export const classFactsOf = (options: { product: StyleHolder; classes: PartClass
   }
 
   if (!held || missing.length > 0)
-    untrackedRun(() => {
-      const stored = heldFactsOf(target, slot);
-      const inputs = [
-        ...new Map(
-          [...(stored?.inputs ?? []), ...facts.inputs].map((input) => [JSON.stringify(input), input]),
-        ).values(),
-      ];
-      const known = [...new Map([...(stored?.known ?? []), ...facts.known])];
-
+    untrackedRun(() =>
       writeCacheEntry(factsDirOf(target), {
         name: factsNameOf(slot),
-        text: JSON.stringify({ slot, rem: facts.rem, inputs, known } satisfies StoredFacts),
-      });
-    });
+        text: JSON.stringify({ slot, ...facts, known: [...facts.known] } satisfies StoredFacts),
+      }),
+    );
 
   return facts.known;
 };
@@ -361,32 +347,3 @@ export const classFactsOf = (options: { product: StyleHolder; classes: PartClass
 /** Why Tailwind could not load the product's design system. */
 export const tailwindFailureOf = (error: unknown) =>
   (error as { stderr?: string }).stderr?.trim() || (error as Error).message;
-
-/**
- * Puts the class facts of every candidate of `products` on disk with one Tailwind run per stylesheet set, so the rule
- * runs over them that follow start no Tailwind of their own. A Tailwind failure is left to those rule runs to report.
- */
-export const prefetchClassFactsOf = (products: (ResolvedProduct & SharedDirs)[]) =>
-  untrackedRun(() => {
-    const groups = new Map<string, { product: ResolvedProduct & SharedDirs; classes: PartClasses }>();
-
-    for (const product of products) {
-      const classes = partClassesOf(product);
-
-      if (!classes) continue;
-
-      const { slot } = factsSlotOf({ product, classes });
-      const group = groups.get(slot);
-
-      if (group) group.classes.files.push(...classes.files);
-      else groups.set(slot, { product, classes: { ...classes, files: [...classes.files] } });
-    }
-
-    for (const group of groups.values()) {
-      try {
-        classFactsOf(group);
-      } catch {
-        continue;
-      }
-    }
-  });

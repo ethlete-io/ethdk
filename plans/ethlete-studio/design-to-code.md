@@ -2728,6 +2728,14 @@ findings, and the only report difference is the old run's own `UNCOMMITTED-DECIS
 verified: a live studio run and a live `--part` run; a committed direct edit now stays in `merged.json` at its old hash
 until a merge, so each check re-settles it (Suspect: no report change, the settle prints nothing).
 
+ci-red 1113c (Linux builder, 2026-11-13): CI 43367125488 (a10cda703) and 43368509158 (a63679c1f) fail Studio e2e
+shard 6/7 with the same numbers, "[Chip] wheel and ctrl-wheel over a frame centre move the camera iframe=true top 128
+-> 248 width 802 -> 145"; 43361375340 at cb48a175e was green. Not reproduced locally in 10+ runs (hold-listings, load
+12, cpu-rate 4, 4 cores by taskset, shared serve, open-points delayed 6 s). Suspect: the Chip frame width switches from
+the 1440 fallback to the measured size inside the case window, and the variant pool's CPU in CI moves the size report
+there. No cause in the time box, so a10cda703 is reverted (B499 P6 reopens, ADR 0280). A green Studio e2e after the
+revert supports the suspect commit; P6 then needs a way that keeps that case green.
+
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
 Bite: a spec stages a name and clears it in the working tree; red on the old script. Not verified: a real refused commit.
