@@ -374,6 +374,8 @@ export const judgeP6 = (measured, targets = P6_TARGETS) => {
     ...(measured.systemWarmMs > targets.systemWarmMs
       ? [`warm /__design/system ${measured.systemWarmMs} ms > ${targets.systemWarmMs} ms`]
       : []),
+    ...(measured.systemStatus === 200 ? [] : [`warm /__design/system answered ${measured.systemStatus}`]),
+    ...(measured.openPointsStatus === 200 ? [] : [`cold /__design/open-points answered ${measured.openPointsStatus}`]),
     ...(measured.openPointsColdMs > targets.openPointsColdMs
       ? [`cold /__design/open-points ${measured.openPointsColdMs} ms > ${targets.openPointsColdMs} ms`]
       : []),
@@ -574,7 +576,7 @@ const proveP6 = async (options) => {
   try {
     await untilServed(serve);
 
-    const openPoints = await timedGet(`${serve.base}/__design/open-points`);
+    const openPoints = await timedGet(`${serve.base}/__design/open-points?product=studio`);
     const system = await timedGet(`${serve.base}/__design/system`);
     const end = Date.now() + 15 * 60_000;
     let window = null;
@@ -592,7 +594,9 @@ const proveP6 = async (options) => {
       window,
       blockMs: window ? worstBlockOf(blocks, window) : 0,
       systemWarmMs: system.ms,
+      systemStatus: system.status,
       openPointsColdMs: openPoints.ms,
+      openPointsStatus: openPoints.status,
     };
     const verdict = judgeP6(measured);
 

@@ -274,13 +274,26 @@ describe('judgeP6', () => {
   const window = { from: 0, to: 1 };
 
   it('passes within the targets and names each miss', () => {
-    assert.equal(judgeP6({ window, blockMs: 16, systemWarmMs: 40, openPointsColdMs: 900 }).pass, true);
-    assert.deepEqual(judgeP6({ window: null, blockMs: 5021, systemWarmMs: 400, openPointsColdMs: 2600 }).failures, [
-      'no slow-checks poll ran to its end',
-      'main-thread block 5021 ms > 1000 ms',
-      'warm /__design/system 400 ms > 300 ms',
-      'cold /__design/open-points 2600 ms > 1500 ms',
-    ]);
+    const ok = { systemStatus: 200, openPointsStatus: 200 };
+
+    assert.equal(judgeP6({ window, blockMs: 16, systemWarmMs: 40, openPointsColdMs: 900, ...ok }).pass, true);
+    assert.deepEqual(
+      judgeP6({ window: null, blockMs: 5021, systemWarmMs: 400, openPointsColdMs: 2600, ...ok }).failures,
+      [
+        'no slow-checks poll ran to its end',
+        'main-thread block 5021 ms > 1000 ms',
+        'warm /__design/system 400 ms > 300 ms',
+        'cold /__design/open-points 2600 ms > 1500 ms',
+      ],
+    );
+  });
+
+  it('fails a refused request, however fast it answered', () => {
+    assert.deepEqual(
+      judgeP6({ window, blockMs: 0, systemWarmMs: 47, systemStatus: 200, openPointsColdMs: 1, openPointsStatus: 400 })
+        .failures,
+      ['cold /__design/open-points answered 400'],
+    );
   });
 });
 

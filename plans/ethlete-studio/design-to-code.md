@@ -2654,13 +2654,15 @@ the copy at cb48a175e, other `dist/libs` linked from the main checkout), exit 0:
 | P3    | pass   | serve up, sketch check 4.3 s, shot 0.7 s, compare 15.8 s; after them 1 design process, 1 Chrome root               |
 | P4    | pass   | `ETHLETE_DESIGN_IDLE_MS=60000`: right after 1 process, 9 Chromium; 90 s later 0 and 0                              |
 | P5    | pass   | "B498 R3" 5 of 5 green (43.6-43.7 s, the `--hold-listings 14000` run 71.9 s), 0 empty cells, 0 ECONNRESET          |
-| P6    | pass\* | slow-checks poll 19.7 s, worst main-thread block 0 ms; warm `/__design/system` 47 ms (200); open-points 1 ms (400) |
+| P6    | fail\* | slow-checks poll 19.7 s, worst main-thread block 0 ms; warm `/__design/system` 47 ms (200); open-points 1 ms (400) |
 | P7    | pass   | `sketch-checker.spec.ts` and `resident/server.spec.ts`: 13 passed, 0 failed                                        |
 
 Earlier single runs agree: P1 local cold 7.3 s, warm 2.3-3.0 s; P2 0.6-0.7 s from run 2; P3 1/1; P4 0/0 at 90 s.
-\*P6 cold open-points is not measured: the script asks `/__design/open-points` with no `product`, and the answer was
-400 in 1 ms. Suspect: `openPointsAnswer` is a `withProduct` route, so the request is refused before any work; the
-script needs a `?product=` and has to judge a non-200 answer as a failure. Not fixed in this slice. Verified: P1-P7
+\*P6 cold open-points was not measured in this run: the script asked `/__design/open-points` with no `product`, and
+the 400 in 1 ms counted as a pass. Fixed in the P6 commit after this note: the script asks `?product=studio` and judges a
+non-200 answer of either request a failure (bite: the old `judgeP6` passes a 400). Rerun `--only P6` on a fresh scratch
+copy at cb48a175e: FAIL, cold `/__design/open-points?product=studio` 11720 ms (200) > 1.5 s; poll 19.7 s, worst block
+0 ms, warm system 61 ms (200). P6 is open: the B499 row stays until cold open-points meets 1.5 s. Verified: P1-P7
 locally on Linux in one run, P1 also with CI=1, P5 idle only (the `--load 32` P5 run is from S6). Not verified: P5's CI
 part (Studio e2e on CI green twice with `ETHLETE_DESIGN_SHARED_SERVE=1`, so the flag stays), cold open-points (above),
 the Mac, the main checkout. `apps/docs/cli/index.md` now names every call that runs in the resident and the
