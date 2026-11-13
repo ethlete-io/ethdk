@@ -2,7 +2,24 @@ import { Directive, ElementRef, booleanAttribute, inject, input, numberAttribute
 import { outputFromObservable, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Subject, distinctUntilChanged, exhaustMap, filter, map, share } from 'rxjs';
 import { DragEndEvent, DragGestureEvent, DragMoveEvent, DragStartEvent, dragGestureFrom } from './drag-gesture';
+import { defineStaticProvider, toInjectFn, toProvideFn } from '../utils/angular/di';
 import { applyHostListener } from '../utils/angular/host-listener';
+
+export type DragHandleDefaults = {
+  touchHoldDelay: number;
+};
+
+const DRAG_HANDLE_DEFAULTS_DEF = /* @__PURE__ */ defineStaticProvider<DragHandleDefaults>(
+  { touchHoldDelay: 0 },
+  { name: 'Drag Handle Defaults' },
+);
+
+/**
+ * Sets the input defaults of an `etDragHandle` on the same element only, so a directive that uses it as a
+ * host directive can change them without reaching drag handles inside its content.
+ */
+export const provideDragHandleDefaults = /* @__PURE__ */ toProvideFn(DRAG_HANDLE_DEFAULTS_DEF);
+const injectDragHandleDefaults = /* @__PURE__ */ toInjectFn(DRAG_HANDLE_DEFAULTS_DEF);
 
 @Directive({
   selector: '[etDragHandle]',
@@ -20,7 +37,9 @@ export class DragHandleDirective {
   commitThreshold = input(8, { transform: numberAttribute });
 
   /** Ms a touch must hold still before it drags; a touch that moves first scrolls the page. `0` drags at once. */
-  touchHoldDelay = input(0, { transform: numberAttribute });
+  touchHoldDelay = input(injectDragHandleDefaults({ self: true, optional: true })?.touchHoldDelay ?? 0, {
+    transform: numberAttribute,
+  });
   disabled = input(false, { transform: booleanAttribute });
 
   private gestureStart$ = new Subject<PointerEvent>();

@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, Directive } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { DragHandleDirective } from '../index';
+import { DragHandleDirective, provideDragHandleDefaults } from '../index';
 import { useScenario } from './harness';
 
 @Component({
@@ -30,6 +30,20 @@ class HoldTileComponent {
   ended = 0;
   cancelled = 0;
 }
+
+@Directive({
+  selector: '[etScenarioHoldingTile]',
+  hostDirectives: [DragHandleDirective],
+  providers: [provideDragHandleDefaults({ touchHoldDelay: 250 })],
+})
+class HoldingTileDirective {}
+
+@Component({
+  selector: 'et-scenario-holding-tile',
+  imports: [HoldingTileDirective, DragHandleDirective],
+  template: `<div class="tile" etScenarioHoldingTile><span class="inner" etDragHandle>Grip</span></div>`,
+})
+class HoldingTileComponent {}
 
 const pointer = (type: string, target: EventTarget, x: number, pointerType = 'mouse') =>
   target.dispatchEvent(
@@ -78,6 +92,19 @@ describe('drag handle scenarios', () => {
       style.userSelect = '';
       style.webkitUserSelect = '';
     }
+  });
+
+  it('applies a host default only to the drag handle on its own element', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(HoldingTileComponent);
+    s.tick();
+
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect((host.querySelector('.tile') as HTMLElement).style.touchAction).toBe('manipulation');
+    expect((host.querySelector('.inner') as HTMLElement).style.touchAction).toBe('none');
+
+    fixture.destroy();
   });
 
   describe('with a touch hold delay', () => {

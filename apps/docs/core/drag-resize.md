@@ -43,6 +43,10 @@ While enabled, the handle sets `touch-action: none` on its host so touch drags w
 
 A handle that covers content people scroll over - a whole card or row - sets `touchHoldDelay` (e.g. `250`) instead. The host then gets `touch-action: manipulation`, so a quick swipe scrolls, and a touch that held still drags while scrolling stays blocked until it ends. A touch that moved before the hold emits `dragCancelled`.
 
+A directive that puts `etDragHandle` on its host through `hostDirectives` sets these defaults with
+`provideDragHandleDefaults({ touchHoldDelay: 250 })` in its `providers`. They apply only to the drag
+handle on that same element, not to drag handles inside its content (a slider in a card keeps dragging at once).
+
 ## Resize handles
 
 `ResizeHandlesComponent` (`<et-resize-handles>`) renders edge and corner grab handles over its **positioned parent** and emits resize gestures:
