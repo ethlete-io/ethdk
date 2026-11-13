@@ -37,7 +37,6 @@ struct Areas {
 pub struct PushState {
     unpushed: u32,
     oldest_age_hours: Option<f64>,
-    gate: String,
 }
 
 #[derive(Deserialize)]
@@ -214,4 +213,18 @@ pub fn studio_quit_for_rebuild(app: AppHandle) -> StudioResult<()> {
     app.exit(0);
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_the_state_script_answer() {
+        let answer = r#"{"cli":{"latest":"cca99d29edc41999519067b02a4e7a2d546921bc","dirty":false},"frontend":{"latest":"e22ea7f6022fd40c6a153481548fe5383e502cc0"},"host":{"latest":"74d532e3d1fc831a93f4c16b11fe30897145ae19"},"push":{"unpushed":0,"oldestAgeHours":null}}"#;
+
+        let areas: Areas = parsed(answer).expect("the state answer parses");
+
+        assert_eq!(areas.push.map(|push| push.unpushed), Some(0));
+    }
 }
