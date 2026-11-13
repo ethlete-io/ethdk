@@ -4,7 +4,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { setTimeout as delay } from 'timers/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ResidentClient, runThroughResident, SHARED_SERVE_ENV, sharedServeWanted, stopResident } from './client';
+import { ResidentClient, runThroughResident, sharedServeWanted, stopResident } from './client';
 import { readDiscovery, writeDiscovery } from './discovery';
 import { hostResidentInServe, SharedDraw } from './resident-process';
 import { startResidentServer } from './server';
@@ -212,9 +212,9 @@ describe('the client of a serve-hosted resident', () => {
     expect(client.start).not.toHaveBeenCalled();
   });
 
-  it('in CI uses a serve-hosted resident only with the flag set to 1, and never starts one', async () => {
+  it('in CI uses a serve-hosted resident and never starts one', async () => {
     const target = checkoutOf();
-    const ci = clientOf({ env: { CI: '1', [SHARED_SERVE_ENV]: '1' } }).client;
+    const ci = clientOf({ env: { CI: '1' } }).client;
     const call = () => runThroughResident({ target, argv: ['compare', 'pages/start'], invocation: 'et', client: ci });
 
     expect(await call()).toBeNull();
@@ -226,11 +226,9 @@ describe('the client of a serve-hosted resident', () => {
     expect(served.ran).toHaveBeenCalled();
   });
 
-  it('turns the shared serve on locally and off in CI or with the flag at 0', () => {
+  it('hosts the resident in serve everywhere except with ETHLETE_DESIGN_RESIDENT=0', () => {
     expect(sharedServeWanted({})).toBe(true);
-    expect(sharedServeWanted({ CI: '1' })).toBe(false);
-    expect(sharedServeWanted({ [SHARED_SERVE_ENV]: '0' })).toBe(false);
+    expect(sharedServeWanted({ CI: '1' })).toBe(true);
     expect(sharedServeWanted({ ETHLETE_DESIGN_RESIDENT: '0' })).toBe(false);
-    expect(sharedServeWanted({ CI: '1', [SHARED_SERVE_ENV]: '1' })).toBe(true);
   });
 });

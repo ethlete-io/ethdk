@@ -11,12 +11,6 @@ import { FORWARDED_ENV, ResidentFrame, ResidentRequest, TOKEN_HEADER } from './s
 /** `ETHLETE_DESIGN_RESIDENT=0` keeps every design call in its own process, as `CI` does. */
 export const RESIDENT_ENV = 'ETHLETE_DESIGN_RESIDENT';
 
-/**
- * `ETHLETE_DESIGN_SHARED_SERVE=0` keeps the resident out of `design serve`, and `1` lets a CI run use the one a serve
- * hosts; unset, it follows `ETHLETE_DESIGN_RESIDENT` and `CI`. It goes once P5 of B499 holds with it on in CI.
- */
-export const SHARED_SERVE_ENV = 'ETHLETE_DESIGN_SHARED_SERVE';
-
 /** The hidden `et design` subcommand that runs the resident process. */
 export const RESIDENT_SERVE = '__resident';
 
@@ -116,8 +110,7 @@ export const runsInResident = (argv: string[]) =>
 export const residentWanted = (env: NodeJS.ProcessEnv) => !env['CI'] && env[RESIDENT_ENV] !== '0';
 
 /** Whether `design serve` hosts the resident of its checkout, so both share one design server and one Chromium. */
-export const sharedServeWanted = (env: NodeJS.ProcessEnv) =>
-  env[SHARED_SERVE_ENV] === '1' || (env[SHARED_SERVE_ENV] !== '0' && residentWanted(env));
+export const sharedServeWanted = (env: NodeJS.ProcessEnv) => env[RESIDENT_ENV] !== '0';
 
 const servedBy = (found: Discovery) => found.owner === 'serve';
 

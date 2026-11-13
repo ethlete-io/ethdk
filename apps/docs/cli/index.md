@@ -558,9 +558,7 @@ in CI (`CI` set) or with `ETHLETE_DESIGN_RESIDENT=0` it always does.
 While `et design serve` runs, it hosts the resident itself: it stops a standalone resident of the checkout, and the
 calls above draw with the serve's design server and one Chromium it shares with its own shots. That resident ends only
 with the serve; `et design stop` says so and leaves it running. When the serve exits, the next call starts a standalone
-resident again. A second serve of the same checkout leaves the resident to the first. `ETHLETE_DESIGN_SHARED_SERVE=0`
-turns the hosting off; it is off in CI unless set to `1`, and a CI call then uses a serve-hosted resident but never
-starts one.
+resident again. A second serve of the same checkout leaves the resident to the first. `ETHLETE_DESIGN_RESIDENT=0` turns the hosting off too. In CI a call uses a serve-hosted resident but never starts one.
 
 `et design actions components/chip --product app-a [--url …] [--state <name>]` checks what each control does. Every
 interactive element of a design (button, link, field, an element with an interactive role or `tabindex` 0 or more)

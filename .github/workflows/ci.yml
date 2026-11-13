@@ -344,7 +344,6 @@ jobs:
           STUDIO_E2E_WORKERS: 2
           STUDIO_E2E_BUDGET_ENFORCE: 1
           STUDIO_E2E_SHARD: ${{ matrix.shard }}/7
-          ETHLETE_DESIGN_SHARED_SERVE: 1
 
   rust:
     name: Rust host

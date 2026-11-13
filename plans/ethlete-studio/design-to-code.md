@@ -2667,6 +2667,14 @@ locally on Linux in one run, P1 also with CI=1, P5 idle only (the `--load 32` P5
 part (Studio e2e on CI green twice with `ETHLETE_DESIGN_SHARED_SERVE=1`, so the flag stays), cold open-points (above),
 the Mac, the main checkout. `apps/docs/cli/index.md` now names every call that runs in the resident and the
 serve-hosted resident (S2).
+B499 flag removal as built (Linux builder, 2026-11-13): P5's CI part met (Studio e2e green on CI twice with the flag,
+runs 43379234143 and 43383106354), so `ETHLETE_DESIGN_SHARED_SERVE`, `SHARED_SERVE_ENV` and the flag branches of
+`sharedServeWanted` are deleted; `sharedServeWanted` is now `ETHLETE_DESIGN_RESIDENT !== '0'`, so `design serve` hosts the
+resident everywhere (CI too) and `design-command.ts` needs no change. CI rule kept: a CI call uses a serve-hosted
+resident but never starts one, because that comes from `residentWanted` (`!CI`), not from the flag. The old
+flag-off paths had no code of their own. `ci.yml` lost the env line, the docs and `serve-host.spec.ts` drop the flag
+cases. P6 stays open, so the B499 row stays and no ADR is `built:`. Verified: cli lint (no warnings), cli:typecheck, vitest related (11 files, 79 tests),
+spec:stress serve-host 4/4. Not verified: Studio e2e on CI without the flag.
 
 B499 P6 as built (Linux builder, 2026-11-13): Cause (measured): cold `/__design/open-points?product=studio` took
 11.4 s = 0.5 s product rules + 10.9 s rule runs over 18 variants of 8 ready Studio sketches (`sketchProblemsOf`), 8.5 s
