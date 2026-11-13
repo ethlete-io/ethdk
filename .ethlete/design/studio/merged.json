@@ -74,7 +74,12 @@
     "decidedBy": "user",
     "at": "2026-11-13T10:15:15.543Z"
   },
-  "elements/studio-menu": "3e69133852294818",
+  "elements/studio-menu": {
+    "hash": "9ca3b2c07fbef55d",
+    "variant": "a",
+    "decidedBy": "user",
+    "at": "2026-11-13T10:20:39.857Z"
+  },
   "elements/variant-cell": {
     "hash": "b5d9dccbef712939",
     "variant": "a",
