@@ -7,4 +7,6 @@ source: plans/ethlete-studio/backlog-parallel/decisions-latest.md, "Surfaces fol
 
 # A multi-part sketch head shows the round title
 
-With "<n> parts" below it that expands to the target list; a one-part sketch keeps the part name.
+When a sketch has more than one target, its head shows the title of the shown round; a one-part sketch keeps the
+part name. The targets sit nested under the selected sketch in the part tree, and a click opens the part (the human
+merged variant e of pages/sketches@multi-part-head; it replaces the earlier "<n> parts" expander).
