@@ -13,7 +13,6 @@ One line per Suspect without proof (ADR 0276). A second time makes it a finding 
 - e2e --load timing (Mac, 962): `studio:e2e --load` starts the busy loops before the Studio build, so load reaches 100-135 instead of 28-30. Parked (ADR 0276).
 - stale-CLI untracked files (Mac, 964): the stale-CLI diff misses untracked libs/cli files, and the copy `et:design` picked is not probed. Parked (ADR 0276).
 - baselined warnings drown (Linux, 970): baselined DROPPED-PROP hits print as warnings on every check and drown the real ones. Parked (ADR 0276).
-- ACTION-UNDECLARED count jump (Linux, 971): the sdk ACTION-UNDECLARED count moved from 852 to 1041 between two runs minutes apart. Parked (ADR 0276).
 - token map sizes (Linux, 972): Studio `sdk-token-map.css` ties only md and xs `et-button` to `--control-*` tokens. Parked (ADR 0276).
 - compare --base long list (Linux, 975): `compare --base` over a wide range prints one line per changed state. Parked (ADR 0276).
 - reopened picked sketch (Linux, 978): a picked sketch that `sketch ready` reopens may show a mixed state in Studio. Parked (ADR 0276).

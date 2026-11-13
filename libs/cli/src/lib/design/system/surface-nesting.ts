@@ -1,6 +1,3 @@
-/** The rule a card breaks when it is the only content of a pane that draws the same fill, with a padding band around it. */
-export const NESTED_SURFACE_RULE = 'NESTED-SURFACE';
-
 /** The rule a card breaks when its fill equals the surface around it, so only its edge shows where it is. */
 export const LOST_SURFACE_RULE = 'LOST-SURFACE';
 
@@ -79,10 +76,7 @@ export const SURFACE_STATEMENTS = `
       if (surface.pane && onlyContentOf(surface.pane, card)) {
         const outer = surface.pane.getBoundingClientRect();
         const band = [rect.left - outer.left, rect.top - outer.top, outer.right - rect.right, outer.bottom - rect.bottom].map(Math.round);
-        if (Math.min(...band) >= 0 && Math.max(...band) >= 1) {
-          report(${JSON.stringify(NESTED_SURFACE_RULE)}, card, 'is the only content of ' + pathOf(surface.pane) + ', which draws the same fill ' + fill + ' with a band of ' + band.join('/') + 'px around it, so two surfaces draw as one - drop the card or the pane');
-          continue;
-        }
+        if (Math.min(...band) >= 0 && Math.max(...band) >= 1) continue;
       }
       if (patternedBackdrop(card, rect)) continue;
       report(${JSON.stringify(LOST_SURFACE_RULE)}, card, 'fills with ' + fill + ', the fill of ' + (surface.pane ? pathOf(surface.pane) : 'the canvas') + ' around it, so only its edge shows the card - give it the surface it is placed on (data-et-auto-surface) or drop the fill');

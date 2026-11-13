@@ -2736,7 +2736,27 @@ the 1440 fallback to the measured size inside the case window, and the variant p
 there. No cause in the time box, so a10cda703 is reverted (B499 P6 reopens, ADR 0280). A green Studio e2e after the
 revert supports the suspect commit; P6 then needs a way that keeps that case green.
 
-B500 S2 in progress (Linux builder subagent, 2026-11-13): review of ACTION-UNDECLARED and NESTED-SURFACE.
+B500 S2 as built (Linux builder subagent, 2026-11-13): both rules fail the P2 sample and are removed from `design
+check`. ACTION-UNDECLARED, one hit from each of 20 parts, 10 false: scheduler "Today" true (emit), input native
+input false (the part is the field), slider thumb false (the part is the control), textarea native false, checkbox
+et-checkbox false (the part is the control), calendar "Previous" true, form-field native input false, radio-group
+et-radio true, otp-input native false, carousel "Previous slide" true, table sort header true, scrollable "Item 0"
+false (demo filler), notification "Dismiss" true (emit), banner "View fixtures" false (consumer content), tabs trigger
+true, breadcrumb link false (navigation, no state), stream "Allow and play" true, chart bar `g` false (focus for the
+tooltip, no click), menu item true (emit), select trigger true. NESTED-SURFACE, all 130 hits are 5 elements (12
+distinct lines), all false: card, stat-tile and toolbar on their `*-frame` stage, match card on `t-frame`, the
+checkbox card variant on its part root; each stage paints `--et-surface-background-solid`, the page the component
+sits on, not a second pane. Removed: `action-undeclared.ts` and its spec, the click-listener init script, the
+"under go" warning branch in `check-system.ts`, both ids in `CHECK_RULES`, NESTED-SURFACE in `ESCAPABLE_RULES`; a sole
+card in a same-fill pane is still skipped by LOST-SURFACE, so its count does not move (42 before and after). Specs:
+the action and under-go cases are deleted, the surface case keeps `doubled` as a non-hit, the render-past-static case
+plants a contrast instead. `design complete` keeps its own ACTION-UNDECLARED gap (not reviewed here). No apps/docs
+change (docs name only the `design complete` gap). Findings closed: none of the B500 list (424 449 456 457 489 490
+501-503 634 691 718 740 872) is about these two rules; the removal closes the parked suspect 971 (ACTION-UNDECLARED
+count jump). Counts, full sdk check: before 1353 findings (ACTION-UNDECLARED 1111, NESTED-SURFACE 130), 81 s; after
+112 findings, 79 s, exit 1 (CONTRAST 59, LOST-SURFACE 42 and every other count unchanged); `.ethlete/design` unchanged by both
+runs. Verified: typecheck, lint, `vitest related` (141 files), two live sdk runs. Not verified: a studio run (its base
+sdk part should lose the same two rules), CI.
 
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.

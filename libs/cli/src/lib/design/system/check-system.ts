@@ -12,13 +12,12 @@ import { actionLostProblemsOf, declaredPartActionsOf } from './action-lost';
 import { refreshHarnessMap } from './harness-map';
 import { runningCliStaleWarning } from '../stale-cli-dist';
 import { capabilityPlaceOf } from './rules/capability-place';
-import { actionUndeclaredUnderGoOf } from './action-undeclared';
 import { bespokeControlProblemsOf } from './bespoke-controls';
 import { droppedPropProblemsOf } from './dropped-props';
 import { DrawnFindings, drawnFindingsFrom, isPartUndrawn, isStateUndrawn, statefulPartsOf } from './drawn-open-points';
 import { openPointsText, PartOpenPoints } from './open-points';
 import { doneParts, gitDiffFilesOf } from './part-task';
-import { actionsRerunOf, readyMarkOf, readyPartsOf } from './part-ready';
+import { actionsRerunOf, readyPartsOf } from './part-ready';
 import { BuildReadyInputs } from './part-build-ready';
 import { recordCheckedBuildReady, slowWaitingLineOf } from './check-record';
 import { partActionFailuresOf } from './actions-command';
@@ -835,24 +834,17 @@ const renderSystem = async (
   }
   const isInBase = (issue: RenderIssue) =>
     resolved.some((product) => product.name === issue.product && isBasePartKey(product, ownerPartOf(issue)));
-  const underGo = actionUndeclaredUnderGoOf({
-    issues: rendered.issues.filter((issue) => !isInBase(issue)),
-    isGo: ({ product, part }) => {
-      const found = resolved.find((candidate) => candidate.name === product);
-
-      return found !== undefined && readyMarkOf({ product: found, part }) !== null;
-    },
-  });
+  const own = rendered.issues.filter((issue) => !isInBase(issue));
   const baselined = resolved.map((product) => {
-    const own = underGo.issues.filter(
+    const baselinedOwn = own.filter(
       (issue) => issue.product === product.name && BASELINED_RENDER_RULES.has(issue.rule),
     );
     const undrawn = new Set(
-      underGo.issues
+      own
         .filter((issue) => issue.product === product.name && (isPartUndrawn(issue) || isStateUndrawn(issue)))
         .map((issue) => issue.part),
     );
-    const problemOf = new Map(own.map((issue) => [renderProblemOf(product, issue), issue]));
+    const problemOf = new Map(baselinedOwn.map((issue) => [renderProblemOf(product, issue), issue]));
     const result = ruleBaselineOf({
       product,
       problems: [...problemOf.keys()],
@@ -862,14 +854,14 @@ const renderSystem = async (
 
     return {
       product,
-      own,
+      own: baselinedOwn,
       lines: result.lines,
       failing: result.problems.flatMap((problem) => problemOf.get(problem) ?? []),
       problems: result.problems.filter((problem) => !problemOf.has(problem)),
     };
   });
   const passed = new Set(baselined.flatMap(({ own, failing }) => own.filter((issue) => !failing.includes(issue))));
-  const issues = underGo.issues.filter((issue) => !passed.has(issue));
+  const issues = own.filter((issue) => !passed.has(issue));
   const baselineProblems = baselined.flatMap(({ product, problems }) =>
     problems.map((problem) => ({ product, problem })),
   );
@@ -883,12 +875,6 @@ const renderSystem = async (
     })?.problems.push(problem.rule);
   });
 
-  underGo.warnings.forEach(({ product, part, line }) => {
-    console.warn(line);
-    const counted = tallyOf(options.tally, { product, part });
-
-    if (counted) counted.warnings += 1;
-  });
   rendered.warnings
     .filter((issue) => !isInBase(issue))
     .forEach((issue) => {

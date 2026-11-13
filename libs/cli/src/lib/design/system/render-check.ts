@@ -14,7 +14,6 @@ import {
   contrastPairsOf,
 } from './contrast-check';
 import { introducedControlStateGapsOf, PLAIN_CONTROL_SELECTOR, SDK_CONTROLS } from './complete';
-import { ACTION_UNDECLARED_STATEMENTS, CLICK_LISTENER_INIT_SCRIPT } from './action-undeclared';
 import { DISABLED_INTERACTION_STATEMENTS } from './disabled-interaction';
 import { ARROW_ANCHOR_STATEMENTS } from './arrow-anchor';
 import { OFF_CENTRE_RULE, OFF_CENTRE_STATEMENTS } from './off-centre';
@@ -581,7 +580,6 @@ ${SURFACE_STATEMENTS}
       const named = element.tagName.toLowerCase() + (cls ? '.' + cls : '') + (text ? ' "' + (text.length > 32 ? text.slice(0, 31) + '…' : text) + '"' : '');
       report('CONTROL-PART-INPUT', element, named + ' is a control without data-et-control, so no control check sees it - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls');
     }
-${ACTION_UNDECLARED_STATEMENTS}
 ${ARROW_ANCHOR_STATEMENTS}
 ${OFF_CENTRE_STATEMENTS}
 ${CONTROL_HEIGHT_STATEMENTS}
@@ -799,8 +797,6 @@ const inspect = async (options: {
   const timeoutMs = options.timeoutMs ?? PART_TIMEOUT_MS;
   const context = await browser.newContext();
   let requested: ServedRequest[] = [];
-
-  await context.addInitScript(CLICK_LISTENER_INIT_SCRIPT);
 
   if (cache) recordRequests(context, () => requested);
 

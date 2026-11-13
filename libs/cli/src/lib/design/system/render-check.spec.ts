@@ -687,7 +687,7 @@ export default definePart({
     ]);
   }, 120_000);
 
-  it('flags a card that doubles the pane it fills and a card whose fill equals the surface around it', async (context) => {
+  it('flags a card whose fill equals the surface around it, but not the only card of a pane with the same fill', async (context) => {
     const card = (fill: string, edge = 'border: 1px solid rgb(90 90 90)') =>
       `<div class="card" style="background: ${fill}; ${edge}; padding: 8px"><p style="margin: 0">Kommentar</p></div>`;
     const pane = (inner: string) =>
@@ -702,7 +702,6 @@ export default definePart({
       'components/field': {
         body: '<div style="width: 300px"><textarea style="width: 200px; height: 60px; background: white; border: 1px solid gray"></textarea></div>',
       },
-      'components/declared': { body: pane(card('rgb(30 30 30)')), extra: "checks: { skip: ['NESTED-SURFACE'] }," },
     });
     const config = readConfig(target) ?? {};
 
@@ -715,7 +714,7 @@ export default definePart({
 
     expect(
       rendered.issues
-        .filter((issue) => issue.rule === 'NESTED-SURFACE' || issue.rule === 'LOST-SURFACE')
+        .filter((issue) => issue.rule === 'LOST-SURFACE')
         .map((issue) => [issue.rule, issue.part, issue.path, issue.detail.split(';')[0]])
         .sort(),
     ).toEqual([
@@ -730,12 +729,6 @@ export default definePart({
         'components/on-canvas',
         'div[data-et-part=components/on-canvas] > div.card',
         'fills with rgb(255, 255, 255), the fill of the canvas around it, so only its edge shows the card - give it the surface it is placed on (data-et-auto-surface) or drop the fill',
-      ],
-      [
-        'NESTED-SURFACE',
-        'components/doubled',
-        'div[data-et-part=components/doubled] > div.card',
-        'is the only content of div[data-et-part=components/doubled], which draws the same fill rgb(30, 30, 30) with a band of 12/12/12/12px around it, so two surfaces draw as one - drop the card or the pane',
       ],
     ]);
   }, 120_000);
@@ -1511,54 +1504,6 @@ describe('groupedIssueLinesOf', () => {
     detail,
     sketch: { target: 'elements/shell', variant },
   });
-
-  it('flags an interactive element that declares no action while drawing', async (context) => {
-    const target = checkout({});
-    const dir = join(target, DESIGN_DIR, 'shop/components/hold');
-
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(
-      join(dir, 'hold.ts'),
-      `import { definePart, drawing, html } from '@design-system';
-
-export default definePart({
-  note: 'A fixture.',
-  states: { default: {} },
-  controls: { hold: { kind: 'button', input: ['pointer'] }, canvas: { kind: 'field', part: 'components/canvas' } },
-  render: () =>
-    drawing({
-      body: html\`<div class="hold-row">
-        <span data-et-control="hold"><button type="button" aria-expanded="false" data-sk-hold>Paused</button></span>
-        <button type="button" data-et-action="emit:save">Save</button>
-        <span role="button" tabindex="0" data-et-skip="ACTION-UNDECLARED">Skipped</span>
-        <button type="button" disabled>Off</button>
-        <div data-et-control="canvas"><button type="button">Zoom</button></div>
-        <div class="hold-pick">Pick</div>
-        <p data-sk-hold-reason hidden>Why</p>
-      </div>\`,
-      setup: (root) => {
-        root.querySelector('.hold-row').addEventListener('click', () => undefined);
-        root.querySelector('.hold-pick').addEventListener('click', () => undefined);
-      },
-    }),
-});
-`,
-    );
-
-    const rendered = await renderIssuesOf({
-      target,
-      config: readConfig(target) ?? {},
-      jobs: [{ product: 'shop', sketch: null, parts: null }],
-    });
-
-    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
-
-    expect(
-      rendered.issues
-        .filter((issue) => issue.rule === 'ACTION-UNDECLARED')
-        .map((issue) => `${issue.part}: ${issue.detail.split(' is interactive')[0]}`),
-    ).toEqual(['components/hold: button "Paused"', 'components/hold: div.hold-pick "Pick"']);
-  }, 120_000);
 
   it('prints a finding that repeats across states, schemes and variants once, with where it was found', () => {
     const light = 'border 1.63:1 in the light scheme, needs 3.00:1';
