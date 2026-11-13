@@ -2565,6 +2565,7 @@ standalone one. Not verified: Studio's own serve (`ETHLETE_DESIGN_EXIT_ON_STDIN_
 agents' (calls then run in-process), the reload path after a CLI rebuild, CI, the Studio e2e. Suspect: a run in the
 serve also captures the serve's own log lines while it runs, and a design config change no longer restarts the design
 server for hosted runs (serve's own watcher has to cover it). `rebuildStaleDist` stays `spawnSync` (not taken).
+B499 S3 in progress (Linux builder, 2026-11-13): rules() shares an in-flight run with abort, and the design process gets one idle end.
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
 Bite: a spec stages a name and clears it in the working tree; red on the old script. Not verified: a real refused commit.
