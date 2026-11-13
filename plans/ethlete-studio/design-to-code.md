@@ -2599,7 +2599,23 @@ removed, cold) with an event-loop probe around two slow-checks polls of sdk and 
 verified: warm `/__design/system` and cold open-points on a live serve (P6 targets 300 ms and 1.5 s), the exit
 handoff with a harness build running, CI, the Studio e2e. The class-facts entries put a `node_modules` into a target
 that had none; jiti in a worker then caches there, so `serve.spec.ts` cleanup now retries its `rm`.
-B499 S5 in progress (Linux builder, 2026-11-13): profile and cut the cold path of sketch check and ready; start `tools/scripts/design-server-proof.mjs` with P1.
+B499 S5 as built (Linux builder, 2026-11-13): Cause (sub-phase timings in a scratch copy, CI=1, cold): of the 12.9 s
+`gates` of `sketch check components/command-palette`, 1.65 s were the product rules, 1.6 s the asked sketch and about
+9.7 s the rule runs of the 8 other open sketches, which `checked` computed and then filtered away; `openSketchProblemsOf`
+now takes `{ target }`. The two variant `tsc` runs (1 s each) ran one after the other after the gates; they now start
+before the gates in child processes (`startVariantTypechecks`, at most 4 at once) and keep `--incremental` state next to
+their tsconfig in `node_modules/.design-explore` (warm run 0.38 s instead of 0.98 s). Cause (CPU profile, CI=1 warm):
+`optionValuesChecker` built a TypeScript program over every part with mock options, 443 ms on the main thread per run;
+it now covers only the parts the render check inspects. The in-process run starts its design server right after the
+typechecks (0.24 s `aktuell` gone). `sketch ready` already gated one sketch. P1 (`tools/scripts/design-server-proof.mjs
+--only P1`; cold = no design process, no `node_modules/.cache/ethlete-design`, no tsbuildinfo), before -> after: local
+cold 19.3 -> 7.3 s, warm 7.0/6.9/6.9 -> 2.5/2.9/2.3 s; CI=1 cold 19.3 -> 7.8 s, warm 9.1/9.1/9.2 -> 4.3/4.4/4.5 s.
+`sketch ready` cold with CI=1 9.1 -> 8.7 s. The proof script runs P1 and lists P2-P7 as not built. Bite: new specs
+`variant-typechecks.spec.ts` (start before return, limit, a throwing run) and the async incremental case in
+`typecheck.spec.ts` (red on HEAD: the functions are new); `design-server-proof.spec.mjs` on a captured cold run; for speed
+the numbers above. vitest related 143 files green, spec:stress 4/4. Not verified: the main checkout (30.4 s there
+before), CI, the Studio e2e, `sketch check` with no sketch named (it still runs every sketch), `TSC=` native (no
+incremental state). CI=1 warm has 0.5 s margin; the rest is render-check (2.3 s, a cold Vite per process).
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
 Bite: a spec stages a name and clears it in the working tree; red on the old script. Not verified: a real refused commit.

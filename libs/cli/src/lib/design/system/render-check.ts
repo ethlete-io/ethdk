@@ -34,7 +34,7 @@ import {
 } from '../thumb';
 import { gridReportOf } from './grid-report';
 import { watchSdkErrorLines } from './sdk-errors';
-import { partKeyOf } from './resolve-product';
+import { partKeyOf, ResolvedPart } from './resolve-product';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
 import { optionValuesChecker } from './rules/option-values';
 import { SEE_THROUGH_STATEMENTS } from './see-through';
@@ -989,9 +989,11 @@ export const renderIssuesOf = async (options: {
 
       if (!drawn) continue;
 
-      const optionValuesOf = optionValuesChecker({ target, config, parts: drawn.parts });
+      const inspected = (candidates: ResolvedPart[]) =>
+        parts ? candidates.filter((part) => parts.includes(partKeyOf(part))) : candidates;
+      const optionValuesOf = optionValuesChecker({ target, config, parts: inspected(drawn.parts) });
       const merged = sketch ? system.productOf(product) : null;
-      const mergedOptionValuesOf = optionValuesChecker({ target, config, parts: merged?.parts ?? [] });
+      const mergedOptionValuesOf = optionValuesChecker({ target, config, parts: inspected(merged?.parts ?? []) });
 
       const namespaces = namespacesOf(drawn.parts.map((part) => part.cssSource));
       const schemes = schemesOf(drawn.parts.map((part) => part.cssSource));

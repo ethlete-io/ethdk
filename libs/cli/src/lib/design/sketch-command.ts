@@ -17,7 +17,9 @@ import { frameBudgetWarningsOf } from './system/sketch/frame-budget';
 import { NOTE_LANGUAGE_NAMES, noteLanguageWarningsOf } from './system/sketch/note-language';
 import {
   openSketchProblemsOf,
-  typecheckVariant,
+  startVariantTypechecks,
+  typecheckVariantAsync,
+  variantKeyOf,
   variantProblemsOf,
   variantWarningsOf,
 } from './system/sketch/check-sketches';
@@ -97,6 +99,7 @@ import {
   SKETCH_FILE,
 } from './system/sketch/sketch';
 import { spawnPlain } from '../plain-output';
+import { TypecheckResult } from './typecheck';
 import { hasPersonName, PERSON_NAME_REFUSAL } from '../person-names';
 import { lintGateLinesOf, variantLintFilesOf } from './design-lint';
 
@@ -1559,19 +1562,57 @@ const noChangedStateLines = async (options: {
     : [];
 };
 
+const TYPECHECKS_AT_ONCE = 4;
+
 const checked = async (context: Context) => {
-  const { target, args } = context;
   const product = sketchProductOf(context);
 
   if (typeof product === 'string') return fail(product);
 
+  const run = context.warm
+    ? { warm: { ...context.warm, perRun: true }, close: async () => undefined }
+    : createRunDraw(context.target);
+
+  const startServer = () => {
+    if (!context.warm && !context.args.flags.has('--fix')) run.warm.server(context.config).catch(() => undefined);
+  };
+
+  try {
+    return await checkedVariants({ ...context, product, shots: run.warm, startServer });
+  } finally {
+    await run.close();
+  }
+};
+
+const checkedVariants = async (
+  context: Context & { product: ResolvedProduct; shots: WarmDraw; startServer: () => void },
+) => {
+  const { target, args, product, startServer } = context;
   const asked = args.positional[0];
-  const { unreadable, variants, leftovers } = timedPhase('gates', () => openSketchProblemsOf(product));
-  const named = asked === undefined ? variants : variants.filter((entry) => entry.sketch.target === asked);
+  const isSkipped = ({ sketch, variant }: { sketch: Sketch; variant: string }) => Boolean(rejectionOf(sketch, variant));
+  const typechecks = args.flags.has('--fix')
+    ? new Map<string, Promise<TypecheckResult>>()
+    : startVariantTypechecks({
+        entries: listSketches({ productDir: product.dir, product: product.name })
+          .flatMap((sketch) =>
+            typeof sketch === 'string' || (asked !== undefined && sketch.target !== asked)
+              ? []
+              : sketch.variants.map((variant) => ({ sketch, variant })),
+          )
+          .filter((entry) => !isSkipped(entry)),
+        limit: TYPECHECKS_AT_ONCE,
+        run: ({ sketch, variant }) => typecheckVariantAsync({ target, product, sketch, variant }),
+      });
+
+  startServer();
+  const {
+    unreadable,
+    variants: named,
+    leftovers,
+  } = timedPhase('gates', () => openSketchProblemsOf(product, { target: asked }));
 
   if (asked !== undefined && named.length === 0) return fail(`NO SKETCH on ${asked} in ${product.name}`);
 
-  const isSkipped = ({ sketch, variant }: { sketch: Sketch; variant: string }) => Boolean(rejectionOf(sketch, variant));
   const chosen = named.filter((entry) => !isSkipped(entry));
 
   named
@@ -1617,7 +1658,12 @@ const checked = async (context: Context) => {
   failed ||= stale.length > 0;
 
   for (const { sketch, variant, problems, before } of chosen) {
-    const typed = timedPhase(`tsc ${variant}`, () => typecheckVariant({ target, product, sketch, variant }));
+    const typed = await timedPhase(
+      `tsc ${variant}`,
+      () =>
+        typechecks.get(variantKeyOf(sketch.target, variant)) ??
+        typecheckVariantAsync({ target, product, sketch, variant }),
+    );
 
     noteProblemsBefore({ target, sketch, variant, before });
 
@@ -1640,15 +1686,7 @@ const checked = async (context: Context) => {
     failed ||= all.length > 0;
   }
 
-  const run = context.warm
-    ? { warm: { ...context.warm, perRun: true }, close: async () => undefined }
-    : createRunDraw(target);
-
-  try {
-    return await checkedShots({ ...context, product, chosen, failed, stale, shots: run.warm });
-  } finally {
-    await run.close();
-  }
+  return checkedShots({ ...context, chosen, failed, stale });
 };
 
 const checkedShots = async (

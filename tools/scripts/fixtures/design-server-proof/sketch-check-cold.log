@@ -1,0 +1,65 @@
+NOTE components/command-palette: live states not checked: spread states
+NOTE components/command-palette: live states not checked: spread states
+NOTE components/shell-collapse: live states not checked: spread states
+NOTE components/zoom-chip: live states not checked: spread states
+NOTE elements/part-tree: live states not checked: spread states
+NOTE elements/part-tree: live states not checked: spread states
+NOTE elements/part-tree: live states not checked: spread states
+NOTE elements/shell-main: live states not checked: spread states
+NOTE elements/studio-menu: live states not checked: spread states
+NOTE elements/shell-main: live states not checked: spread states
+NOTE elements/studio-menu: live states not checked: spread states
+NOTE elements/shell-main: live states not checked: spread states
+NOTE elements/shell-main: live states not checked: spread states
+NOTE elements/studio-menu: live states not checked: spread states
+NOTE elements/studio-menu: live states not checked: spread states
+NOTE elements/studio-menu: live states not checked: spread states
+PHASE gates 12.90s
+PHASE tsc a 0.98s
+NOTE components/command-palette a: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: arrangement: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette a: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: columns: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette a: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: rowHeads: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette a: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: sections: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette a: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: zoomChip: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette a: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: align: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette a: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: fitPadding: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette a: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: frameOutline: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette a: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: opening: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette a: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: coveredByShell: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette a: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: smoothCamera: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette a: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: clip: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette a: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: outlines: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette a: UNBOUND-INPUT apps/ethlete-studio/src/app/design-parts/sketches/sketches.component.ts: pointsClosed: input of ethlete-sketches that no template in apps/ethlete-studio/src binds (there before)
+PHASE tsc b 0.97s
+NOTE components/command-palette b: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: arrangement: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette b: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: columns: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette b: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: rowHeads: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette b: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: sections: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette b: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: zoomChip: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette b: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: align: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette b: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: fitPadding: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette b: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: frameOutline: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette b: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: opening: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette b: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: coveredByShell: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette b: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: smoothCamera: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette b: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: clip: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette b: UNBOUND-INPUT apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts: outlines: input of ethlete-design-canvas that no template in apps/ethlete-studio/src binds (there before)
+NOTE components/command-palette b: UNBOUND-INPUT apps/ethlete-studio/src/app/design-parts/sketches/sketches.component.ts: pointsClosed: input of ethlete-sketches that no template in apps/ethlete-studio/src binds (there before)
+PHASE aktuell 0.25s
+PHASE browser-start 0.02s
+[1/2] components/command-palette 2s
+[2/2] components/command-palette 0s
+components/command-palette a: components/command-palette empty at 1440px ok
+components/command-palette a: components/command-palette results at 1440px ok
+components/command-palette a: components/command-palette none at 1440px ok
+components/command-palette b: components/command-palette empty at 1440px ok
+components/command-palette b: components/command-palette results at 1440px ok
+components/command-palette b: components/command-palette none at 1440px ok
+PHASE render-check 3.75s
+PHASE load 0.00s
+PHASE mark-drift 0.00s
+PHASE identical 0.69s
+PHASE changes-shot 0.00s
+ok
+over target: sketch check took 19.9 s > 10.0 s - slowest phase gates 12.9 s
+WALL 20.12 s

@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
-import { execPlain } from '../plain-output';
+import { execPlain, spawnPlainAsync } from '../plain-output';
 
 /**
  * A tool the checker shells out to, taken from the checkout first and from this package second, so
@@ -46,9 +46,17 @@ export const processFailureOf = (error: unknown) => {
 export type TypecheckResult =
   { kind: 'ok' } | { kind: 'unavailable'; message: string } | { kind: 'failed'; output: string };
 
-/** Runs `tsc --noEmit --pretty false -p <tsconfig>` from the checkout. */
-export const typecheck = (options: { target: string; tsconfig: string }): TypecheckResult => {
-  const { target, tsconfig } = options;
+type TscCommand = { file: string; args: string[] };
+
+type TypecheckOptions = {
+  target: string;
+  tsconfig: string;
+  /** Where `tsc --incremental` keeps its state between runs; without it every run checks from scratch. */
+  buildInfo?: string;
+};
+
+const tscCommandOf = (options: TypecheckOptions): TscCommand | TypecheckResult => {
+  const { target, tsconfig, buildInfo } = options;
   /**
    * `TSC=@typescript/native-preview` runs the Go port, which is about a third faster - but it
    * rejects a `baseUrl` in the config, so a repository that still uses one cannot run it.
@@ -62,22 +70,56 @@ export const typecheck = (options: { target: string; tsconfig: string }): Typech
       message: 'NO TYPE CHECKER - neither the checkout nor this package resolves typescript.',
     };
 
-  const command = native
+  const incremental = buildInfo ? ['--incremental', '--tsBuildInfoFile', buildInfo] : [];
+
+  return native
     ? { file: 'npx', args: ['-y', native, '--noEmit', '--pretty', 'false', '-p', tsconfig] }
-    : { file: process.execPath, args: [tsc as string, '--noEmit', '--pretty', 'false', '-p', tsconfig] };
+    : {
+        file: process.execPath,
+        args: [tsc as string, '--noEmit', '--pretty', 'false', ...incremental, '-p', tsconfig],
+      };
+};
+
+const failureOf = (command: TscCommand, error: unknown): TypecheckResult => {
+  const output = outputOf(error);
+
+  if (output) return { kind: 'failed', output };
+
+  return {
+    kind: 'unavailable',
+    message: `TYPE CHECKER DID NOT RUN - ${[command.file, ...command.args].join(' ')} printed nothing (${processFailureOf(error)}).`,
+  };
+};
+
+/** Runs `tsc --noEmit --pretty false -p <tsconfig>` from the checkout. */
+export const typecheck = (options: TypecheckOptions): TypecheckResult => {
+  const command = tscCommandOf(options);
+
+  if ('kind' in command) return command;
 
   try {
-    execPlain([command.file, ...command.args], { cwd: target });
+    execPlain([command.file, ...command.args], { cwd: options.target });
   } catch (error) {
-    const output = outputOf(error);
-
-    if (output) return { kind: 'failed', output };
-
-    return {
-      kind: 'unavailable',
-      message: `TYPE CHECKER DID NOT RUN - ${[command.file, ...command.args].join(' ')} printed nothing (${processFailureOf(error)}).`,
-    };
+    return failureOf(command, error);
   }
+
+  return { kind: 'ok' };
+};
+
+/** `typecheck` in a child process that does not block the event loop. */
+export const typecheckAsync = async (options: TypecheckOptions): Promise<TypecheckResult> => {
+  const command = tscCommandOf(options);
+
+  if ('kind' in command) return command;
+
+  const result = await spawnPlainAsync([command.file, ...command.args], { cwd: options.target });
+
+  if (result.error || result.status !== 0)
+    return failureOf(command, {
+      ...result,
+      message: result.error?.message,
+      code: (result.error as NodeJS.ErrnoException | undefined)?.code,
+    });
 
   return { kind: 'ok' };
 };

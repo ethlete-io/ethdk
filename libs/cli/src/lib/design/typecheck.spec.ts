@@ -1,8 +1,8 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { processFailureOf, typecheck } from './typecheck';
+import { processFailureOf, typecheck, typecheckAsync } from './typecheck';
 
 const silentFailure = vi.hoisted(() => ({ active: false }));
 
@@ -59,6 +59,28 @@ describe('typecheck', { timeout: 60_000 }, () => {
 
     expect(result.kind).toBe('failed');
     expect(result.kind === 'failed' && result.output).toContain('TS2322');
+  });
+
+  it('runs without blocking, keeps incremental state in buildInfo, and finds the error again on the next run', async () => {
+    const target = checkout();
+    const buildInfo = join(target, 'state', 'check.tsbuildinfo');
+
+    writeFileSync(join(target, 'broken.ts'), 'export const value: number = "text";\n');
+    writeFileSync(
+      join(target, 'tsconfig.json'),
+      JSON.stringify({ compilerOptions: { strict: true, noEmit: true }, files: ['broken.ts'] }),
+    );
+
+    const first = await typecheckAsync({ target, tsconfig: 'tsconfig.json', buildInfo });
+    const again = await typecheckAsync({ target, tsconfig: 'tsconfig.json', buildInfo });
+
+    expect(first.kind === 'failed' && first.output).toContain('TS2322');
+    expect(again.kind === 'failed' && again.output).toContain('TS2322');
+    expect(existsSync(buildInfo)).toBe(true);
+
+    writeFileSync(join(target, 'broken.ts'), 'export const value: number = 1;\n');
+
+    expect(await typecheckAsync({ target, tsconfig: 'tsconfig.json', buildInfo })).toEqual({ kind: 'ok' });
   });
 
   it('prints a diagnostic as plain file(line,col) text even when colour is forced', () => {

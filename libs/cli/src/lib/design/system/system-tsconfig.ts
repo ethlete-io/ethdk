@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { isAbsolute, relative, resolve, sep } from 'path';
-import { typecheck, TypecheckResult } from '../typecheck';
+import { typecheck, typecheckAsync, TypecheckResult } from '../typecheck';
 import { DRAWING_COMPILER_OPTIONS, writeTsconfigText } from '../calls-tsconfig';
 import { editorAssetRootOf, installedAssetRoot } from '../package-root';
 import { readConfig } from '../design-config';
@@ -40,9 +40,19 @@ export const writeSystemTsconfig = (options: { target: string; product: Resolved
   return path;
 };
 
+const productTypecheckOf = (options: { target: string; product: ResolvedProduct & SharedDirs }) => {
+  const tsconfig = writeSystemTsconfig(options);
+
+  return { target: options.target, tsconfig, buildInfo: `${tsconfig}.tsbuildinfo` };
+};
+
 /** The one typecheck of a product, shared by `design check` and every sketch variant. */
 export const typecheckProduct = (options: { target: string; product: ResolvedProduct & SharedDirs }): TypecheckResult =>
-  typecheck({ target: options.target, tsconfig: writeSystemTsconfig(options) });
+  typecheck(productTypecheckOf(options));
+
+/** `typecheckProduct` that does not block the event loop. */
+export const typecheckProductAsync = (options: { target: string; product: ResolvedProduct & SharedDirs }) =>
+  typecheckAsync(productTypecheckOf(options));
 
 /**
  * Writes `tsconfig.json` into the product's own folder, the nearest tsconfig an editor finds for

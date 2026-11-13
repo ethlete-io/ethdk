@@ -4,7 +4,7 @@ import { Problem } from '../problem';
 import { relative } from 'path';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { goneSketchCommentWarningsOf } from '../rules/stale-comment';
-import { typecheckProduct } from '../system-tsconfig';
+import { typecheckProduct, typecheckProductAsync } from '../system-tsconfig';
 import { duplicateClassWarningsOf } from './duplicate-class';
 import { liveSpecOf } from '../live-compare';
 import { mergedLayoutProblemsOf } from './merged-layout';
@@ -154,10 +154,10 @@ export const variantWarningsOf = (options: {
 };
 
 /**
- * The rule problems of every variant of every open sketch of a product. A sketch folder that
- * cannot be read is a `SKETCH` problem of its own; `leftovers` names the folders that hold no sketch at all.
+ * The rule problems of every variant of every open sketch of a product, or only of the sketch on `target`. A sketch
+ * folder that cannot be read is a `SKETCH` problem of its own; `leftovers` names the folders that hold no sketch at all.
  */
-export const openSketchProblemsOf = (product: ResolvedProduct) => {
+export const openSketchProblemsOf = (product: ResolvedProduct, { target }: { target?: string } = {}) => {
   const sketches = listSketches({ productDir: product.dir, product: product.name });
   const productProblems = ruleProblemsOf(product);
 
@@ -166,7 +166,9 @@ export const openSketchProblemsOf = (product: ResolvedProduct) => {
       typeof sketch === 'string' ? [{ rule: 'SKETCH', file: product.dir, message: sketch }] : [],
     ),
     variants: sketches.flatMap((sketch) =>
-      typeof sketch === 'string' ? [] : variantProblemsOf({ product, sketch, productProblems }),
+      typeof sketch === 'string' || (target !== undefined && sketch.target !== target)
+        ? []
+        : variantProblemsOf({ product, sketch, productProblems }),
     ),
     leftovers: leftoverSketchFoldersOf(product.dir),
   };
@@ -187,18 +189,69 @@ export const openSketchListingOf = (product: ResolvedProduct): OpenSketchListing
   };
 };
 
-/** Runs `tsc` over one variant laid over the product, with a tsconfig of its own. */
-export const typecheckVariant = (options: {
-  target: string;
-  product: ResolvedProduct;
-  sketch: Sketch;
-  variant: string;
-}): TypecheckResult => {
-  const { target, product, sketch, variant } = options;
-  const overlaid = overlaySketch({ product, sketch, variant });
+type VariantOptions = { target: string; product: ResolvedProduct; sketch: Sketch; variant: string };
 
-  return typecheckProduct({
-    target,
-    product: { ...overlaid, name: `${product.name}.sketch.${sketchFolderOf(sketch)}.${variant}` },
-  });
+const variantTypecheckOf = ({ target, product, sketch, variant }: VariantOptions) => ({
+  target,
+  product: {
+    ...overlaySketch({ product, sketch, variant }),
+    name: `${product.name}.sketch.${sketchFolderOf(sketch)}.${variant}`,
+  },
+});
+
+/** Runs `tsc` over one variant laid over the product, with a tsconfig of its own. */
+export const typecheckVariant = (options: VariantOptions): TypecheckResult =>
+  typecheckProduct(variantTypecheckOf(options));
+
+/** `typecheckVariant` in a child process that does not block the event loop. */
+export const typecheckVariantAsync = (options: VariantOptions): Promise<TypecheckResult> =>
+  typecheckProductAsync(variantTypecheckOf(options));
+
+/**
+ * Starts a `tsc` run for each variant, at most `limit` at a time, so they run on other cores while the caller keeps
+ * working. The first `limit` runs start before it returns, so synchronous work right after it does not hold them back.
+ * The map is keyed by `variantKeyOf`.
+ */
+export const startVariantTypechecks = (options: {
+  entries: readonly { sketch: Sketch; variant: string }[];
+  limit: number;
+  run: (entry: { sketch: Sketch; variant: string }) => Promise<TypecheckResult>;
+}): Map<string, Promise<TypecheckResult>> => {
+  const { entries, limit, run } = options;
+  const waiting: (() => void)[] = [];
+  let running = 0;
+  const release = () => {
+    const next = waiting.shift();
+
+    if (next) next();
+    else running -= 1;
+  };
+  const go = (entry: { sketch: Sketch; variant: string }) => {
+    try {
+      return run(entry).finally(release);
+    } catch (error) {
+      release();
+
+      return Promise.reject(error);
+    }
+  };
+  const started = (entry: { sketch: Sketch; variant: string }) => {
+    if (running >= limit) return new Promise<void>((resolve) => waiting.push(resolve)).then(() => go(entry));
+
+    running += 1;
+
+    return go(entry);
+  };
+
+  return new Map(
+    entries.map((entry) => {
+      const result = started(entry);
+
+      result.catch(() => undefined);
+
+      return [variantKeyOf(entry.sketch.target, entry.variant), result];
+    }),
+  );
 };
+
+export const variantKeyOf = (target: string, variant: string) => `${target}\0${variant}`;
