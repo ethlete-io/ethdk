@@ -2709,19 +2709,20 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
 - B499: idle serve 2.6 GB RSS; 992 ECONNRESET Cause (d910f48dc): serve closes keep-alive sockets after 6 s.
 - B499 (second time after 826): the contact sheet draws b-row cells near `b / unchanged-matrix-open` partly grey; the
   same data differs up to 18.6M px between takes. multi-part-head warns "ready will refuse" from the same cell.
-- B499 P6: chip-wheel e2e red with the variant pool (a10cda703), green after revert; not reproduced.
+- B499 P6 (twice): chip-wheel e2e red with the variant pool (a10cda703) and on aca2c7f6d (load 7.8); not reproduced.
 - B500: `design complete` keeps its own ACTION-UNDECLARED, not reviewed.
 - B500: serve start log (f0e2405f8): visible-change gate fails, title-bar 7 and update-dialog 4 states unjudged.
 - B500: 12 rules removed with their findings (list in ee5000b5d); contrast decided in ADR 0292.
 - B501: an idle `yarn design` serve rewrites tracked `.ethlete/design/*/ready.json` within 2 min (Cause, pid probe).
-- B502: the pages/sketches harness sample drifts from the design (no `zoom-chip@edit` tree row, avatar H vs TB, stack
-  edges, fold row width).
+- B502: pages/sketches harness sample drifts from the design (zoom-chip@edit row, avatar, stack edges, fold width).
 - B502: 140 missed actions in edit-sketch and all-unchanged (again 13.11. pm).
 - B503 (twice): a foundation sketch copy loses its relative `@import` (type `./faces.css`; colors@edit old variant
   EDIT-OLD-NOT-DRAWN, Cause); a copy that rewrites relative imports makes it impossible.
 - Parked (once): detached `git maintenance run --auto` keeps spec temp repos alive (git-level probe 2/200 -> 0/400);
   orphan `sh`/`sleep` at the CI job end unexplained.
-- B501: `sketch ready` 57 s and 70 s (target 10 s), phase "undeclared" 23 s and 37 s.
+- B501: `sketch ready` 57/70 s (target 10 s), phase "undeclared" 23/37 s.
+- B501 S3 (pm): 90daee1e6+dbe9f9efe make e2e "pick new: sketch view closed" time out 3 of 4 (reverted twice);
+  Suspect: pick-old journal open ~11 s races the next edit. Cause: lock keyed resolve() vs realpath (997abce1b).
 - B501: S1 dropped the "embedded X changed" hint of the `design ready` 422 (S4); `design ready` writes other parts'
   cached records (S2).
 - B504: slow run fails every poll: `state "project-picker" of "elements/shell-main" failed`.
@@ -2736,7 +2737,7 @@ Group lines 2026-11-13 (doc agent, folded from the night shift; Suspect unless m
   swallowed the error; no restart notice for 3 days (live check ok). The JS/Rust host contract has only that test.
 - B502 (pm): `lookOf` read no ::before/::after (Cause, cca99d29e); shell-main drew no server-unanswered state (41de02711).
 - Machinery: serve and `yarn et:design` run stale cli code after a cli change (8 false CONTRAST-PAIR); specs on
-  untouched libs and one Studio e2e case red under load, green on rerun; commitlint has no bracket scope.
+  untouched libs red under load; no commitlint bracket scope; output-style.spec red under CLAUDE_CONFIG_DIR.
 - B504: empty palette query without recents shows nothing (sketch queued after B501 S2).
 
 B500 P5 as built (Linux builder subagent, 2026-11-13, commit "fix(cli): Keep merged.json and ready.json unchanged in
