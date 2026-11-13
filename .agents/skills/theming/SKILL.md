@@ -117,6 +117,11 @@ full-strength neutral tint, so in dark mode it gives a light row with near-white
   `@ethlete/cdk` overlays with a backdrop always resolve elevation 1 (without a backdrop, `parent + 1`), and the
   overlay scope class goes from `et-surface--inherited` to `et-surface--<theme>`. `@ethlete/cdk` CSS reads no
   `--et-surface-*` token, so `etProvideSurface` on a cdk host does nothing.
+- Elevation lookup is an exact match; with no theme at a level, the scope stays inherited. Registering a
+  new level (e.g. the first elevation-1 theme of a type) re-themes existing UI with no template edit:
+  backdrop overlays (components and cdk), toasts, and under elevation 0 also filled form fields, table
+  card rows, grid items, `etAutoSurface` panels and backdrop-less overlays. Tell an app adding a level to
+  copy every token but the background from the level below.
 - `@property` `initial-value` cannot contain `var()`, so a public `--et-*`
   token declared via `@property` can never default to a theme token. If the
   default should come from the theme, don't declare an `@property` - consume the
