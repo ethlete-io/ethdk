@@ -40,7 +40,7 @@ const acme = () => {
       name: 'acme',
       config: {
         ...readConfig(target)?.products?.['acme'],
-        harness: { app: 'apps/acme', map: 'apps/acme/src/map.ts', specs: 'apps/acme/vite.config.mts', baseBranch: 'x' },
+        harness: { app: 'apps/acme', map: 'apps/acme/src/map.ts', specs: 'apps/acme/vite.config.mts' },
       },
     });
 

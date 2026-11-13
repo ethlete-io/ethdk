@@ -26,7 +26,7 @@ const checkout = () => {
   return { target, dir: join(design, 'app-a') };
 };
 
-const harness = { app: 'apps/app-a', map: 'apps/app-a/src/map.ts', baseBranch: 'x' };
+const harness = { app: 'apps/app-a', map: 'apps/app-a/src/map.ts' };
 
 const productOf = (target: string) => resolveProduct({ target, name: 'app-a', config: { harness } });
 

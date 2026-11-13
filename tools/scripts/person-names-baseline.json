@@ -141,7 +141,6 @@
   "libs/cli/src/lib/design/system/sketch/merge-step.ts": 1,
   "libs/cli/src/lib/design/system/stale-parts.spec.ts": 4,
   "libs/cli/src/lib/design/system/uncommitted-decisions.ts": 1,
-  "libs/cli/src/lib/design/system/visible-change.spec.ts": 4,
   "libs/timetrack/docs/adr/0006-a-day-nothing-observed-is-rebuilt-from-keystrokes.md": 1,
   "libs/timetrack/docs/adr/0009-the-branch-slug-names-the-epic.md": 3,
   "libs/timetrack/docs/adr/0010-a-call-is-the-fact-the-calendar-is-a-candidate-list.md": 3,

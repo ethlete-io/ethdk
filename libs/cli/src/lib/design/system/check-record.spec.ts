@@ -8,7 +8,7 @@ import { openPointsOf, PartOpenPointsAnswer } from './open-points-runner';
 import { resolveProduct } from './resolve-product';
 import { SlowRunners } from './slow-run';
 
-const harness = { app: 'apps/app-a', map: 'apps/app-a/src/map.ts', baseBranch: 'x' };
+const harness = { app: 'apps/app-a', map: 'apps/app-a/src/map.ts' };
 
 const runners: Partial<SlowRunners> = {
   specs: async () => [],

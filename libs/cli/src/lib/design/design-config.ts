@@ -55,8 +55,6 @@ export type DesignHarness = {
   hosts?: string[];
   /** The vitest config of the app's specs; `APP-SPEC` runs the specs related to each part's app files with it. */
   specs?: string;
-  /** The branch `check --visible-change` compares with at its merge base; the branch `origin/HEAD` names when left out. */
-  baseBranch?: string;
 };
 
 /**

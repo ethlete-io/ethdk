@@ -18,7 +18,7 @@ import { gitExec } from '../../git-test-env.fixtures';
 
 const CHIP = 'components/chip';
 
-const harness = { app: 'apps/acme', map: 'apps/acme/src/map.ts', baseBranch: 'x' };
+const harness = { app: 'apps/acme', map: 'apps/acme/src/map.ts' };
 
 const staleChip = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-slow-run-'));

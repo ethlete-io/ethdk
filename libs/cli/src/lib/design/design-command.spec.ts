@@ -105,7 +105,7 @@ describe('designCommand', () => {
 describe('drawsWithSdkLibs', () => {
   it('names the commands that draw, so they rebuild a stale dist first', () => {
     expect(drawsWithSdkLibs(['shot', 'x/y'])).toBe(true);
-    expect(drawsWithSdkLibs(['check', '--product', 'p', '--visible-change'])).toBe(true);
+    expect(drawsWithSdkLibs(['check', '--product', 'p', '--slow'])).toBe(true);
     expect(drawsWithSdkLibs(['compare', 'x/y'])).toBe(true);
     expect(drawsWithSdkLibs(['ready', 'x/y'])).toBe(true);
     expect(drawsWithSdkLibs(['harness', '--product', 'p'])).toBe(true);

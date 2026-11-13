@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """PreToolUse hook: long design commands must run in the background.
 
-`design check`, `design compare`, `design ready`, `design sketch ready`, `design harness`,
-the `studio:e2e` target and the `--visible-change` gate each take minutes. A `--help` or `-h`
+`design check`, `design compare`, `design ready`, `design sketch ready`, `design harness`
+and the `studio:e2e` target each take minutes. A `--help` or `-h`
 call of a `design` command only prints usage and passes; `studio:e2e --help` runs the suite. In the foreground
 they block the whole session, so a Bash call that runs one without `run_in_background: true`
 is denied and the agent repeats it in the background.
@@ -33,7 +33,6 @@ LONG_COMMANDS = (
     ("design sketch ready", re.compile(r"\bdesign\s+sketch\s+ready(?=\s|$)")),
     ("design harness", re.compile(r"\bdesign\s+harness(?=\s|$)")),
     ("studio:e2e", re.compile(r"studio:e2e(?=\s|$|:)")),
-    ("--visible-change", re.compile(r"(?:^|\s)--visible-change(?=\s|=|$)")),
 )
 
 LAUNCHERS = frozenset(

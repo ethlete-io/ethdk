@@ -2977,6 +2977,22 @@ old build); title-bar and update-dialog overlay states are now judged by no slow
 Open: remove `check --visible-change` too (recommended: it gives the same 2 false hits and 924's flaky shots), or keep
 it opt-in; P3 CI gate.
 
+B500 check --visible-change as built (Linux builder subagent, 2026-11-13, commit "fix(cli): Remove the check
+--visible-change command"): the grill removed the opt-in command too, by the row rule (ADR 0279); ADR 0036 only moved
+the gate into the check system and does not keep it. Removed: `check --visible-change` with its help block, mode flags
+and argv handling in `check.ts`; `system/visible-change.ts`, `visible-change-command.ts`, `visible-change-parts.ts` and
+their three specs; `picturesDirOf` and its spec in `base-checkout.ts`; `harness.baseBranch` (type, validation, and the
+two `origin/next` entries in `.ethlete/design/config.json`); the `--visible-change` entry of the resident client's
+draw-elsewhere list; the `--visible-change` entry of the `background-design-commands` hook (content, spec, synced
+`.claude` copy); the gate's mentions in `apps/docs/cli/index.md`; the deleted spec's person-names baseline entry. Kept:
+`baseCheckoutOf` and `baseCommitOf` serve `compare --base <rev>`; `baseCommitOf` now only resolves the given rev (the
+merge-base and `origin/HEAD` fallback served only the gate). The temp folder keeps its `et-design-visible-change` name
+so the existing reused clone is not orphaned. `sketch/no-visible-change.ts` and `--no-visible-change` are the sketch
+feature and stay. Findings closed: 924, the gate line of 981. Verified: cli and agent-rules typecheck, eslint on the
+changed files, `vitest related` (cli 212 files, 1955 tests; agent-rules 40 tests), `node --test` of tmp-sweep and
+check-person-names, the person-names check. Not verified: CI; a live `compare --base`
+run after the `baseCommitOf` change; the running serve (old build). Open: P3 CI gate.
+
 ci-red 1113d (finding 992) as built (Linux builder subagent, 2026-11-13): CI runs 43372815104 and 43356130738, Studio e2e
 "a part edited on disk while away shows its new picture on return" failed in its shot ETag fetch with ECONNRESET / socket
 hang up. Cause (probe): Playwright's API request agent is `http.Agent({ keepAlive: true })` with no timeout, so Node
@@ -3624,6 +3640,8 @@ line moves the rows about 16 px. Suspect (not traced): the note column width set
 fit-zoom race in `design-parts/sketches`). Lesson: the gate judged one shot of a layout that had not settled. Tool fix
 (builder default, tool backlog): shoot each state twice or after layout is stable, and report a state with two
 different shots as unsettled, not judged.
+924 closed (Linux builder, 2026-11-13, B500): no fix; the visible-change gate that shot pages/sketches is removed
+(`check --visible-change` gone, its slow rule gone in 17375e4f3). See B500 check --visible-change as built.
 
 911 update (Mac): design copy built in e1557311c (sketch merge, variant a, agent accept citing the doc agent's option A:
 the existing no-real-name rule applied to the design copy of the same sample) + 08c6de8a3 (checker). The sketch also
@@ -3812,6 +3830,9 @@ server read only "design". Cause (measured). Tool fix (builder default, tool bac
 Ready records committed (Linux, da1ed6296) after a fresh `design check` (946 decision): studio 26 hits, sdk 1283; the check
 dropped the records of studio foundations/colors and of comment-target, hold-trigger, list-row and comment-row (missing
 states). Slow checks on :4402: components/title-bar (7 states) and components/update-dialog (4) fail the visible-change gate.
+981 gate line closed (Linux builder, 2026-11-13, B500): the visible-change gate is removed from check, serve and the
+CLI; title-bar and update-dialog no longer reach it. See B500 check --visible-change as built. 981 itself (`cmd`) stays
+open.
 
 986\. Linux builder (2026-11-12 night, 941): the design server heap leak behind 941 is not hunted. Suspect: the resident or
 the shot browser pool. Tool fix (builder default, tool backlog): a heap snapshot diff over two hours of `design serve`

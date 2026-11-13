@@ -59,8 +59,7 @@
       "generatedFiles": ["foundations/colors/colors.css"],
       "harness": {
         "app": "apps/docs-examples",
-        "map": "apps/docs-examples/src/app/design-harness/design-harness-parts.ts",
-        "baseBranch": "origin/next"
+        "map": "apps/docs-examples/src/app/design-harness/design-harness-parts.ts"
       }
     },
     "studio": {
@@ -85,7 +84,6 @@
         "map": "apps/ethlete-studio/src/app/design-harness/design-harness-parts.ts",
         "live": "apps/ethlete-studio/design-live.json",
         "shared": ["apps/ethlete-studio/src/app/i18n/**", "apps/ethlete-studio/src/app/icons/agent-logos.ts"],
-        "baseBranch": "origin/next",
         "specs": "apps/ethlete-studio/vite.config.mts"
       },
       "tokens": ["foundations/colors", "foundations/type", "foundations/spacing"],

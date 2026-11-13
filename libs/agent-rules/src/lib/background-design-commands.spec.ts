@@ -48,7 +48,6 @@ describe('background-design-commands', () => {
     ['design sketch ready', 'yarn design sketch ready studio components-card'],
     ['design harness', 'yarn design harness studio'],
     ['studio:e2e', 'npx nx run ethlete-studio:studio:e2e'],
-    ['--visible-change', 'yarn design accept x --visible-change'],
   ])('denies %s in the foreground and names the background form', (name, command) => {
     const result = runHook({ command });
 

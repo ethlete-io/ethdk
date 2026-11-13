@@ -26,25 +26,9 @@ export const gitOrNull = (cwd: string, args: string[]) => {
   }
 };
 
-/**
- * The commit the gate compares HEAD with: `base`, else the merge base of HEAD and `branch` (a product's
- * `harness.baseBranch`), else of HEAD and the branch `origin/HEAD` names.
- */
-export const baseCommitOf = (options: { root: string; base: string | undefined; branch?: string }) => {
-  const branch =
-    options.branch ??
-    gitOrNull(options.root, ['symbolic-ref', '--quiet', '--short', 'refs/remotes/origin/HEAD'])?.trim();
-
-  if (!options.base && !branch) return 'no origin/HEAD to compare with - pass --base <rev> or set harness.baseBranch';
-
-  const rev = options.base ?? gitOrNull(options.root, ['merge-base', 'HEAD', branch ?? ''])?.trim();
-
-  if (!rev) return `no merge base of HEAD and ${branch} - pass --base <rev>`;
-
-  return (
-    gitOrNull(options.root, ['rev-parse', '--verify', '--quiet', `${rev}^{commit}`])?.trim() || `no commit "${rev}"`
-  );
-};
+export const baseCommitOf = (options: { root: string; base: string }) =>
+  gitOrNull(options.root, ['rev-parse', '--verify', '--quiet', `${options.base}^{commit}`])?.trim() ||
+  `no commit "${options.base}"`;
 
 const linkNodeModules = (options: { root: string; clone: string }) => {
   const { root, clone } = options;
@@ -93,16 +77,6 @@ const alive = (pid: number) => {
 };
 
 const checkoutKeyOf = (root: string) => createHash('sha256').update(root).digest('hex').slice(0, 16);
-
-/** The diff picture folder of one product in this checkout: the same path on every run, emptied when it is taken. */
-export const picturesDirOf = (options: { root: string; product: string }) => {
-  const dir = join(tmpdir(), 'et-design-visible-change', `${checkoutKeyOf(options.root)}.${options.product}.pictures`);
-
-  rmSync(dir, { recursive: true, force: true });
-  mkdirSync(dir, { recursive: true });
-
-  return dir;
-};
 
 /**
  * A shared clone of the checkout at `commit`, with the checkout's node_modules linked in. It reuses one folder per

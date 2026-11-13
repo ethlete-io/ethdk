@@ -537,13 +537,12 @@ is not recorded: that needs `task --verify`. It exits 1 unless every affected pa
 it shows in the app and `compare --affected` is green (ADR 0203); `check --rules --base` and the design rules gate
 refuse a change that leaves an implemented part uncompared and name the parts.
 
-`--base <rev>` adds a baseline to any compare but `--live`: it builds the harness app of `<rev>` from a clone, as the
-visible-change gate does, and compares each part there too, against HEAD's design. After the parts it prints
+`--base <rev>` adds a baseline to any compare but `--live`: it builds the harness app of `<rev>` from a clone and compares each part there too, against HEAD's design. After the parts it prints
 `vs <sha>: <n> new failure(s), <m> fixed`, then a `NEW <part> <state>` line per state that fails at HEAD only and a
 `FIXED <part> <state>` line per state that failed at `<rev>` only. The exit code stays that of HEAD. A checkout with a
 missing lib build folder (`dist/libs/<name>`) refuses every compare with one line naming the build command.
 
-`compare`, `shot` (but `--asset`), `check --product`/`--part` (but `--rules`, `--live`, `--visible-change`, `--slow`
+`compare`, `shot` (but `--asset`), `check --product`/`--part` (but `--rules`, `--live`, `--slow`
 and the other checks that draw nothing), `sketch check` and `sketch ready` run in a resident design process of the
 checkout. The first such call starts it detached and prints `starting the resident design process (cold start, ~N s)`;
 later ones send it their request, get its output and exit code back, and reuse its design server, Chromium and harness
@@ -845,8 +844,7 @@ needs a state in each of those columns, so the open row is drawn hovered too. In
 column and none in another leaves an empty cell: the shot sheet draws it as "not drawn", and `sketch check` prints it
 on the grid line (`draws no selected active`). A row whose forced elements are only SDK components rendered through
 `ng()` with no class, inline style or styled content of the part's own, no rule of the part's stylesheet that selects
-it, and no wrapper that sets `--et-*` vars or `data-et-semantic-color` is drawn at rest only: Studio, `shot`, `compare`
-and the visible-change gate skip its interaction states, and `compare` names them (`skipped 3 interaction states
+it, and no wrapper that sets `--et-*` vars or `data-et-semantic-color` is drawn at rest only: Studio, `shot` and `compare` skip its interaction states, and `compare` names them (`skipped 3 interaction states
 (unchanged SDK controls): ...`), though `shot --state <name>` alone, without `--states` or `--variants`, still draws one you name. A shot refused for its flags prints which flag is missing or conflicts (for example `--at needs --variants`) before the usage line. Flat states such as
 `hovered` and `pressed` fail with `CONTROL-GRID-MISSING`. Each forced state must force the
 interaction on the control, for example with `forceInteraction`, and draw different pixels in

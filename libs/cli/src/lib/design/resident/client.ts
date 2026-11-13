@@ -84,7 +84,6 @@ const CHECK_ELSEWHERE = [
   '--app-classes',
   '--rules',
   '--live',
-  '--visible-change',
   '--slow',
   '--receipt',
   '--call',
