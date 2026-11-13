@@ -2700,6 +2700,24 @@ bite did not bite; the git-level probe is the bite. Verified: the spec green wit
 the orphan `sh`/`sleep` processes in the job end are not from this spec. Other specs that commit in a temp repo through
 `gitEnv` may leak the same way.
 
+B500 proof (ADR 0280, recorded 2026-11-13 by the doc agent from the builder's proposal). Baseline at a63679c1f, full
+`design check`: studio exit 1, 162 s, 25 findings (UNBOUND-INPUT 14, OFF-CENTRE 5, DROPPED-PROP 3, LOST-SURFACE 2,
+DISABLED-INTERACTION 1); sdk exit 1, 79 s, 1283 findings (ACTION-UNDECLARED 1041, NESTED-SURFACE 130, CONTRAST 59,
+LOST-SURFACE 42, NESTED-SCROLL 5, CUT-CONTROL 3, SKIP-SCOPE 3).
+
+- P1 full check exit 0 for studio and sdk, two runs in a row with the same finding list (VISIBLE-CHANGE included);
+  the "base sdk" counts of the studio run equal the own sdk run (today ACTION-UNDECLARED 1111 vs 1041, NESTED-SURFACE
+  65 vs 130, OFF-CENTRE 55 vs 0, CONTRAST 6 vs 59).
+- P2 every kept rule has a planted-defect spec that turns it red, and 0 hits on the committed parts that a review
+  calls false. A rule with one false hit in a review sample (20 hits, or all if fewer) is removed (B500 row: "eine
+  Regel ohne null Fehlalarme fällt weg"); its removal names the findings it closes.
+- P3 the full check runs as a CI gate for both products and is green twice on CI.
+- P4 wall time studio ≤ 180 s, sdk ≤ 90 s.
+- P5 a full check leaves the tracked `.ethlete/design/*/{merged,ready}.json` unchanged (today it rewrites them).
+
+Builder's direction (applies the row rule, not a new decision): review ACTION-UNDECLARED and NESTED-SURFACE first;
+keep DROPPED-PROP, UNBOUND-INPUT, CONTRAST, CUT-CONTROL only if their sample is clean, and fix their true hits.
+
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
 Bite: a spec stages a name and clears it in the working tree; red on the old script. Not verified: a real refused commit.
