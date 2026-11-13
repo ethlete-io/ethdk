@@ -152,8 +152,9 @@ const serverScreen = (server: 'stopped' | 'starting' | 'unanswered', log: string
             ${
               server === 'unanswered'
                 ? html`<p class="m-0 mt-space-2 text-ui-sm text-et-surface-muted">
-                    Design-Server antwortet nicht: http://localhost:4402
-                  </p>`
+                      Design-Server antwortet nicht: http://localhost:4402
+                    </p>
+                    <div class="mt-space-3">${restartButton}</div>`
                 : ''
             }
           </div>`
