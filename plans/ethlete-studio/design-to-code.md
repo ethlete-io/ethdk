@@ -3784,6 +3784,7 @@ starts the full suite.
 933 update 3 (Linux, 63d53b7b6): the sketch `foundations/colors` (studio) is ready, variants a (4 disabled-label chips
 with a contrast exception, WCAG 1.4.3, ratios 3.1-3.4) and b (no exception, 4.7-5.1). It waits for the human's pick by
 merge. After a pick, `generate-studio-themes.mjs` must read the new `--on-surface-disabled` token (DARK_INTERACTION onColor).
+933 update 4 (Linux): landed. Variant c merged in ecd17055e; f8786104a makes `generate-studio-themes.mjs` read `--surface-disabled` and `--on-surface-disabled` (DARK_INTERACTION color.disabled and onColor). Live Studio, disabled filled buttons: brand 3.28, warning 3.48, danger 3.28, surface 3.28:1 on every elevation. Tool gap: `sketch merge` does not run the product's `generated` command, so a foundations/colors merge is red until the generated files match the variant.
 
 894 update (Linux, 7e, measured in Chromium, table `.claude/handoffs/agent-results/7e.md`): the conflict exists only for
 an app rule in `@layer components` or for tokens; an app rule in `@layer utilities` or unlayered beats every SDK rule,
