@@ -2813,8 +2813,23 @@ P4 met (≤ 180 s, ≤ 90 s). `.ethlete/design` unchanged by all runs. VISIBLE-C
 `change-crop` and `change-crop-whole` need a `screen` input plus harness crop data (finding 872); `pages/system`
 `listing-error` needs a listing-error view. Until then studio P1 (exit 0) is not met. Verified: typecheck, lint,
 `vitest related` (139 files), spec:stress 4/4. Not verified: CI, the COVERED verdict in a live shot.
-B500 S5 in progress (Linux builder subagent, 2026-11-13): remove the inputs of the removed rules - `definePart({ contrast })`,
-the `contrast` open-point kind, skip/exemption entries; `data-et-skip` refuses removed ids except foundations-colors.
+B500 S5 as built, part 1 (Linux builder subagent, 2026-11-13): the `contrast` open-point kind is removed from the cli
+(`open-points.ts`, `read-open-points.ts`, `studio-api.ts` doc, docs `cli/index.md`) and the Studio app (`design-open-points.ts`,
+`system-view/open-points.ts`, label `belowContrast`); nothing produced it since CONTRAST left `design check`. The `state`
+target and the `warning` icon stay: they come from the System page design (`system-page-sample.ts`). Not built, stopped at
+a gate: the other two inputs need edits to merged parts, and `design check` says every change to a merged part goes through
+a sketch (WARNING "changed outside a sketch", Studio `direct-edit` point). (a) `definePart({ contrast })`: chip, slider,
+bracket, otp-input, notification (sdk), variant-cell, foundations/colors (studio), plus both variants of the ready sketch
+foundations-colors, whose baseline pins foundations/colors (97f8b2eb627962a4); dropping the type field fails the sketch's
+TYPE-ERROR check unless its variants change too. (b) `data-et-skip` with removed ids is carried not only by
+foundations-colors (8 LOST-SURFACE) but by merged parts: foundations/colors LOST-SURFACE 4, pages/sketches COVERED
+OFF-CENTRE 2, foundations/type OFF-CENTRE 2, pages/inbox NESTED-SCROLL 1, and by the ready sketches
+pages-sketches.focus-tooltip and pages-sketches.multi-part-head (COVERED OFF-CENTRE 2 per variant). Refusing the ids with
+only the foundations-colors exception breaks these. Open: decide whether the builder opens one-variant "no visible change"
+sketches for the 7 parts and the 3 skip carriers (auto-merge, changes merged.json), or widens the exception.
+`filled/UNBOUND-INPUT` in `pages/system/shared/capabilities.ts` and its app mirror is sample text, not an exemption; left.
+Result: sdk exit 0, 0 findings; studio exit 1, DROPPED-PROP 3 only; merged/ready.json unchanged. Verified: typecheck cli
+and ethlete-studio, lint, `vitest related` (cli 139 files, studio 27), spec:stress 4/4. Not verified: CI.
 ci-red 1113d (finding 992) as built (Linux builder subagent, 2026-11-13): CI runs 43372815104 and 43356130738, Studio e2e
 "a part edited on disk while away shows its new picture on return" failed in its shot ETag fetch with ECONNRESET / socket
 hang up. Cause (probe): Playwright's API request agent is `http.Agent({ keepAlive: true })` with no timeout, so Node
