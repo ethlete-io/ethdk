@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 4.74.0
+
+### Minor Changes
+
+- [`770e26b`](https://github.com/ethlete-io/ethdk/commit/770e26ba1cb2042a573e48cc529d8edf3e0e9dc0) Thanks [@TomTomB](https://github.com/TomTomB)! - New bracket: support a third place match in single elimination. The final stays the last match of the bracket, so the continue element is drawn again. A mirrored layout folds the third place match below the final, and the new `thirdPlaceTopOffset` input (also in `provideNewBracketConfig`) folds it below the final in a left to right layout. Semi final losers are no longer marked `isEliminated` when a third place match follows.
+
+### Patch Changes
+
+- [`88a6896`](https://github.com/ethlete-io/ethdk/commit/88a6896692e166a9f4b0222346e29e33e2d76636) Thanks [@TomTomB](https://github.com/TomTomB)! - Place a third place match that keeps its own column after the continue element, so the line from the final to the continue element no longer crosses it.
+
 ## 4.73.0
 
 ### Minor Changes
