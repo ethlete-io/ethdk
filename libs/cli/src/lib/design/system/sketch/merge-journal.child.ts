@@ -1,4 +1,5 @@
 import { readConfig } from '../../design-config';
+import { mergedUnchanged } from '../../sketch-command';
 import { resolveProduct } from '../resolve-product';
 import { discardSketch } from './merge';
 import { mergeAndRecord } from './merge-step';
@@ -26,6 +27,12 @@ const run = () => {
     const { ported, conflicts, rebased } = journaledRebaseOf({ target, product, sketch });
 
     console.log(rebased ? `rebased ${part} ${ported.length}` : `conflicts ${conflicts.join('; ')}`);
+
+    return;
+  }
+
+  if (action === 'auto') {
+    mergedUnchanged({ target, config, author: 'claude-opus-5-5', product, sketch });
 
     return;
   }

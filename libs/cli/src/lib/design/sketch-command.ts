@@ -47,7 +47,8 @@ import { coverPartProblemOf, editCovers } from './system/sketch/covered-diffs';
 import { unviewedShotLinesOf, VariantChange } from './system/sketch/viewed-shots';
 import { addedUndeclaredControlsOf } from './system/complete';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
-import { editRefOf, humanPickOf, mergeAndRecord } from './system/sketch/merge-step';
+import { editRefOf, humanPickOf, journaledMergeOf, mergeAndRecord } from './system/sketch/merge-step';
+import { openJournalOf } from './system/write-journal';
 import { staleBaseOf, staleSketchBasesOf } from './system/sketch/stale-base';
 import { repoInvocation } from '../invocation';
 import { editDiscardRefusalOf } from './system/sketch/edit-sketch';
@@ -965,7 +966,10 @@ const targetsInProduct = ({ product, sketch }: { product: ResolvedProduct; sketc
   sketch.targets.every((key) => product.parts.some((part) => partKeyOf(part) === key));
 
 const stillReady = (options: { sketch: Sketch; again: boolean; reason: string }) => {
-  writeSketchFile({ ...options.sketch, mergeHold: { reason: options.reason, at: new Date().toISOString() } });
+  writeSketchFile(
+    { ...options.sketch, mergeHold: { reason: options.reason, at: new Date().toISOString() } },
+    { base: options.sketch },
+  );
 
   if (options.again) console.log(`${options.sketch.target} is still ready`);
 
@@ -1001,18 +1005,20 @@ const cleanBesideSketch = (options: { target: string; product: ResolvedProduct; 
 
 const committedMerge = (options: { target: string; product: ResolvedProduct; sketch: Sketch }) => {
   const dirs = mergeDirsOf(options.product);
+  const subject = `feat(repo): Merge ${options.sketch.target}, no visible change`;
+  const top = gitIn(options.target, 'rev-parse', '--show-toplevel');
+  const head = gitIn(options.target, 'rev-parse', 'HEAD');
+
+  if (top.status === 0 && head.status === 0)
+    openJournalOf()?.markCommit({
+      top: realpathSync(top.stdout.trim()),
+      head: head.stdout.trim(),
+      subject,
+      paths: dirs,
+    });
+
   const added = gitIn(options.target, 'add', '--all', '--', ...dirs);
-  const committed =
-    added.status === 0
-      ? gitIn(
-          options.target,
-          'commit',
-          '-m',
-          `feat(repo): Merge ${options.sketch.target}, no visible change`,
-          '--',
-          ...dirs,
-        )
-      : added;
+  const committed = added.status === 0 ? gitIn(options.target, 'commit', '-m', subject, '--', ...dirs) : added;
 
   if (committed.status !== 0)
     console.warn(`Could not commit the merge: ${(committed.stderr || committed.stdout).trim()}`);
@@ -1055,7 +1061,7 @@ const autoMerged = (options: {
   });
 };
 
-const mergedUnchanged = (options: {
+export const mergedUnchanged = (options: {
   target: string;
   config: DesignConfig;
   author?: string;
@@ -1065,30 +1071,53 @@ const mergedUnchanged = (options: {
   const { target, config, author, product, sketch } = options;
   const variant = sketch.variants.find((candidate) => !rejectionOf(sketch, candidate)) ?? '';
   const commit = cleanBesideSketch({ target, product, sketch });
-  const decided = decideSketch({ sketch, decision: { kind: 'pick', variant, ...originOf(author ?? '') } });
-
-  if (typeof decided === 'string') return fail(decided);
-
+  const decision = { kind: 'pick' as const, variant, ...originOf(author ?? '') };
   const written = sharedFilesOf(product);
   const before = written.map((file) => contentOf(file));
-  const result = mergeSketch({
+  let committed = false;
+  let undecided: string | null = null;
+  const result = journaledMergeOf({
     target,
-    config,
     product,
-    sketch: decided,
-    author,
-    decidedBy: 'auto: no visible change',
+    sketch: { ...sketch, decision: { ...decision, decidedAt: new Date().toISOString() } },
+    merge: () => {
+      const decided = decideSketch({ sketch, decision });
+
+      if (typeof decided === 'string') {
+        undecided = decided;
+
+        return { reason: decided };
+      }
+
+      return mergeSketch({
+        target,
+        config,
+        product,
+        sketch: decided,
+        author,
+        decidedBy: 'auto: no visible change',
+        deferRebase: true,
+      });
+    },
+    finish: () => {
+      committed = commit && committedMerge({ target, product, sketch });
+    },
   });
 
+  if (undecided !== null) return fail(undecided);
+
   if (!Array.isArray(result)) {
-    writeSketchFile({
-      ...sketch,
-      mergeHold: {
-        reason: result.reason,
-        at: new Date().toISOString(),
-        ...(result.dirty ? { dirty: result.dirty } : {}),
+    writeSketchFile(
+      {
+        ...sketch,
+        mergeHold: {
+          reason: result.reason,
+          at: new Date().toISOString(),
+          ...(result.dirty ? { dirty: result.dirty } : {}),
+        },
       },
-    });
+      { base: sketch },
+    );
     console.warn(`${sketch.target} shows no visible change but did not merge: ${result.reason}`);
 
     return 0;
@@ -1096,7 +1125,7 @@ const mergedUnchanged = (options: {
 
   console.log(`No visible change in any state: merged ${sketch.targets.join(', ')} automatically.`);
 
-  if (commit && committedMerge({ target, product, sketch })) {
+  if (committed) {
     console.log(`Committed: feat(repo): Merge ${sketch.target}, no visible change`);
 
     return 0;

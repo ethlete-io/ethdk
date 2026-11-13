@@ -19,7 +19,7 @@ const JITI = pathToFileURL(resolve(require.resolve('jiti/package.json'), '../lib
 const productOf = (target: string) =>
   resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
 
-const pickedCase = (comments = false) => {
+const checkoutCase = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-merge-journal-'));
   const git = (...args: string[]) => gitResult(target, ...args);
 
@@ -28,6 +28,26 @@ const pickedCase = (comments = false) => {
   git('init', '-q');
   git('add', '.');
   git('commit', '-qm', 'base');
+
+  return target;
+};
+
+const readyCase = () => {
+  const target = checkoutCase();
+  markSketchReady({
+    checkout: target,
+    sketch: createSketch({
+      product: productOf(target),
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a'],
+    }) as Sketch,
+  });
+
+  return target;
+};
+
+const pickedCase = (comments = false) => {
+  const target = checkoutCase();
 
   const created = createSketch({
     product: productOf(target),
@@ -173,6 +193,15 @@ describe('a merge killed at any write leaves the old or the new state', { timeou
       gone: `no sketch ${PART}`,
       minSteps: 5,
       caseOf: () => pickedCase(),
+    }));
+
+  it('a merge of a sketch with no visible change is undone or finished, and a re-run merges', () =>
+    killEveryWrite({
+      action: 'auto',
+      done: `merged ${PART} automatically`,
+      gone: `no sketch ${PART}`,
+      minSteps: 3,
+      caseOf: readyCase,
     }));
 
   it('a discard is undone by the next process, and a re-run discards or reports the sketch gone', () =>

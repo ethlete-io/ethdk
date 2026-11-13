@@ -43,10 +43,13 @@ export const rebaseAfterMerge = (options: {
     const id = `${product.name} ${sketch.target}`;
     const rebase = `sketch rebase ${sketch.target} --product ${product.name} --by <model id>`;
     const mark = (marked: Sketch, reasons: string[]) =>
-      writeSketchFile({
-        ...marked,
-        portAfterMerge: { merged, parts, reasons, at: new Date().toISOString() },
-      });
+      writeSketchFile(
+        {
+          ...marked,
+          portAfterMerge: { merged, parts, reasons, at: new Date().toISOString() },
+        },
+        { base: marked },
+      );
     const { ported, conflicts, rebased } = journaledRebaseOf({ target, product, sketch });
 
     if (!rebased) {

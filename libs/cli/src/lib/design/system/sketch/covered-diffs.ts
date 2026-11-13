@@ -128,7 +128,7 @@ export const editCovers = (options: { sketch: Sketch; covers: readonly string[] 
 
   const edited: Sketch = { ...sketch, covers: [...new Set(options.covers.map((cover) => cover.trim()))] };
 
-  writeSketchFile(edited);
+  writeSketchFile(edited, { base: sketch });
 
   return edited;
 };
