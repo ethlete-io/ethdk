@@ -45,7 +45,6 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  * `checks.skip` names the render checks of `design check` the part breaks on purpose, such as
  * `CLIPPED` for a part that cuts its content. To skip a check for one element only, put
  * `data-et-skip="CLIPPED"` on it; the check then ignores that element and everything inside it.
- * `contrast` records known contrast exceptions and token pairs, see `PartContrast`.
  * `implements` links the part to the code that builds it, see `PartLink`.
  * `sample` makes an embedded instance of the part comparable across the states of its host, see `PartSample`.
  * `coverage` names the real input range and the view states the design must draw, see `PartCoverage`.
@@ -61,7 +60,6 @@ export type Part<TProps, TState extends string = string> = {
   grid?: StateGrid<TState>;
   controls?: Record<string, Control<TState>>;
   checks?: { skip?: RenderCheck[] };
-  contrast?: PartContrast;
   motions?: Record<string, Motion<TState>>;
   unreachable?: { from: TState; to: TState; reason: string }[];
   instant?: string;
@@ -179,15 +177,6 @@ export type Control<TState extends string = string> = (
 
 /** A rule of the render check: content larger than its frame, cut off, wrapped onto a second line, or drawn at zero size. */
 export type RenderCheck = 'OVERFLOW' | 'CLIPPED' | 'WRAP' | 'ZERO-SIZE';
-
-/**
- * Known contrast debt of a part: `exceptions` names each `selector` whose text may stay below WCAG 2 AA and the
- * `reason`; `pairs` names text tokens and the `on` tokens they are drawn on. `design check` does not measure them.
- */
-export type PartContrast = {
-  pairs?: { text: string[]; on: string[] }[];
-  exceptions?: { selector: string; reason: string }[];
-};
 
 /** How a composing part draws another one: `interaction` forces it on the root, as a frame does. */
 export type RenderOptions = { interaction?: Interaction };
