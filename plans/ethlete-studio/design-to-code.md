@@ -2782,6 +2782,7 @@ check: before 112 findings, exit 1 (this run 9 s; Suspect: render cache hit, S2 
 exit 0, 86 s and 80 s in two runs (P4 ≤ 90 s, over the 60 s target line, render-inspect 42-44 s); `.ethlete/design` unchanged. Verified:
 typecheck, lint, `vitest related` (145 files), two live sdk runs. Not verified: a studio run, CI; the `contrast` open
 point kind stays in `open-points.ts` and the Studio app with no producer.
+B500 open (doc agent, 2026-11-13): `design complete` keeps its own ACTION-UNDECLARED check (not reviewed).
 
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
