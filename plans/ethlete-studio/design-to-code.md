@@ -2783,8 +2783,29 @@ exit 0, 86 s and 80 s in two runs (P4 ≤ 90 s, over the 60 s target line, rende
 typecheck, lint, `vitest related` (145 files), two live sdk runs. Not verified: a studio run, CI; the `contrast` open
 point kind stays in `open-points.ts` and the Studio app with no producer.
 B500 open (doc agent, 2026-11-13): `design complete` keeps its own ACTION-UNDECLARED check (not reviewed).
-B500 S4 in progress (Linux builder subagent, 2026-11-13): studio product rules (UNBOUND-INPUT, OFF-CENTRE, DROPPED-PROP,
-DISABLED-INTERACTION, VISIBLE-CHANGE) under P2 review; base-sdk part vs own sdk run (P1).
+B500 S4 part 1 (Linux builder subagent, 2026-11-13, 243c8aa21): studio full check at c09b7b368, two runs, the same
+23 findings, exit 1, 163 s and 26 s (render cache): UNBOUND-INPUT 14, OFF-CENTRE 5, DROPPED-PROP 3,
+DISABLED-INTERACTION 1; VISIBLE-CHANGE 0 (a slow rule: plain `design check` does not run it, finding 718).
+UNBOUND-INPUT, all 14 reviewed, removed: `sketches` `pointsClosed` false (a `model()` the open-points chip toggles inside
+the component, the state is reachable); the 13 `design-canvas` inputs keep their defaults in the app. `tagsOf`/`isBound`
+moved into `dropped-props.ts`; `KNOWN_UNBOUND_INPUTS` stays for STATE-NO-SOURCE. Verdicts, not yet built:
+OFF-CENTRE 5/5 false (one element, `div.st-title-bar` in the `*-cli-dirty` states: the box is the 32 px title bar
+with search field and buttons, the dirty label sits on the row line like its neighbours; the rule takes it for a one-line
+text box) - remove; it is entangled with `sdk/rule-baseline.json` (18 baselined sdk hits), `BASELINED_RENDER_RULES`,
+`ESCAPABLE_RULES` and `data-et-skip="... OFF-CENTRE"` in ready and merged studio files (keep the skip name like S3).
+DISABLED-INTERACTION 4/4 false (title-bar `linux-full-notice-pending`, base: comment-draft `busy`, merge `merging`,
+system `send-busy`): each is a loading SDK button (`aria-disabled` + `data-loading`), which keeps its normal colours on
+purpose since 6700dfd3d - remove. DROPPED-PROP 3/3 true, keep (spec exists): `pages/sketches` `change-crop` and
+`change-crop-whole` set `screen`, the app toggles crop/whole per group with no input (finding 872); `pages/system`
+`listing-error` sets `listingError`, the app has no listing-error view (merged 514dbc881). Their fix is app work
+(a `screen` input plus harness crop data; the listing-error view) and is left for the human to schedule.
+P1 base sdk: Cause (probe of the base issue lines): the studio run's "base sdk" count is not the sdk product's run. It
+holds (a) sdk parts drawn with studio styles (OFF-CENTRE 55: pagination 15, sketches 36 select frames, chart, table,
+skeleton, flows), which the sdk run baselines in `sdk/rule-baseline.json`, and (b) studio page issues whose innermost
+`data-et-part` is an sdk component (`isBasePartKey(ownerPartOf(issue))` in `check-system.ts`): DISABLED-INTERACTION 3,
+UNREACHABLE 4 (inventory open/approved/loading, merge merging: loading buttons), COVERED 1 (sketches sticky-names
+"Übernehmen" under the shell side). After OFF-CENTRE and DISABLED-INTERACTION go, (b) stays: attribute by the drawn part
+instead, then review UNREACHABLE and COVERED under P2.
 
 819 as built (Linux builder, 2026-11-11, ffaf42f02): `check-person-names.mjs --staged` reads the staged blobs under
 libs, apps and `.ethlete/design` (pre-push baseline and message); `.husky/pre-commit` runs it when such a file is staged.
