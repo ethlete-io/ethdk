@@ -1,7 +1,7 @@
 {
   "target": "elements/shell-main@logo-menu",
   "targets": ["elements/shell-main", "elements/studio-menu"],
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-11-13T00:35:26.580Z",
   "baseline": {
     "foundations/agent-logos": "d8ad620ff101ae06",
@@ -132,5 +132,33 @@
       "authors": ["claude-opus-5-5"],
       "round": "r2"
     }
+  },
+  "rejections": {
+    "a": [
+      {
+        "by": "agent",
+        "decidedAt": "2026-11-13T10:56:35.552Z",
+        "reason": "menu cut off at the SDK max height; removal approved by the human 2026-11-13 (q1ok)",
+        "reasonBy": "agent"
+      }
+    ],
+    "b": [
+      {
+        "by": "agent",
+        "decidedAt": "2026-11-13T10:56:36.051Z",
+        "reason": "menu cut off at the SDK max height; removal approved by the human 2026-11-13 (q1ok)",
+        "reasonBy": "agent"
+      }
+    ]
+  },
+  "readyContent": {
+    "a": "766048170e50feac",
+    "b": "4d13e5ce5af5cb1a",
+    "c": "81c600c89f7b5a58",
+    "d": "dcadad9d84438f87"
+  },
+  "mergeHold": {
+    "reason": "variant c changes elements/shell-main server-stopped, server-starting, server-unanswered, open, open-focus-visible, section, section-hover, section-active, section-focus-visible, product, product-hover, product-active, product-focus-visible, resize, resize-hover, resize-active, resize-focus-visible, resize-min, resize-max, system.hover, system.active, system-picker, system-picker-focus-visible, system-picker.option-hover, system-picker.option-focus-visible; variant d changes elements/shell-main server-stopped, server-starting, server-unanswered, open, open-focus-visible, section, section-hover, section-active, section-focus-visible, product, product-hover, product-active, product-focus-visible, resize, resize-hover, resize-active, resize-focus-visible, resize-min, resize-max, system.hover, system.active, system.selected-hover",
+    "at": "2026-11-13T10:57:50.450Z"
   }
 }
