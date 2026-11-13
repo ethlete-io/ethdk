@@ -36,7 +36,7 @@
     </svg>
   </button>
   <ng-template etMenuSurface>
-    <et-menu [attr.aria-label]="LABELS.panel" class="box-border w-62 text-ui-md [--et-menu-max-height:85vh]">
+    <et-menu [attr.aria-label]="LABELS.panel" class="box-border w-62 text-ui-md">
       <et-menu-radio-group [value]="project()" (valueChange)="selectProject($event)">
         <et-menu-group-label>{{ LABELS.project }}</et-menu-group-label>
         @for (name of projects(); track name) {
