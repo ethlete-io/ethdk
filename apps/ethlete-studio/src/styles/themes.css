@@ -13,13 +13,13 @@
   --color-et-brand-hover: rgb(65 193 186);
   --color-et-brand-focus: rgb(73 199 192);
   --color-et-brand-active: rgb(0 145 140);
-  --color-et-brand-disabled: rgb(34 72 70);
+  --color-et-brand-disabled: rgb(79 119 116);
 
   --color-et-on-brand: rgb(5 18 17);
   --color-et-on-brand-hover: rgb(5 18 17);
   --color-et-on-brand-focus: rgb(5 18 17);
   --color-et-on-brand-active: rgb(5 18 17);
-  --color-et-on-brand-disabled: rgb(9 17 17);
+  --color-et-on-brand-disabled: rgb(23 34 33);
 
   --color-et-brand-ink: rgb(103 210 204);
   --color-et-brand-ink-hover: rgb(103 210 204);
@@ -32,13 +32,13 @@
   --color-et-danger-hover: rgb(252 122 115);
   --color-et-danger-focus: rgb(252 122 115);
   --color-et-danger-active: rgb(222 69 68);
-  --color-et-danger-disabled: rgb(99 47 44);
+  --color-et-danger-disabled: rgb(150 97 93);
 
   --color-et-on-danger: rgb(32 10 8);
   --color-et-on-danger-hover: rgb(32 10 8);
   --color-et-on-danger-focus: rgb(32 10 8);
   --color-et-on-danger-active: rgb(32 10 8);
-  --color-et-on-danger-disabled: rgb(26 12 11);
+  --color-et-on-danger-disabled: rgb(42 27 25);
 
   --color-et-danger-ink: rgb(249 158 155);
   --color-et-danger-ink-hover: rgb(249 158 155);
@@ -51,13 +51,13 @@
   --color-et-warning-hover: rgb(255 184 70);
   --color-et-warning-focus: rgb(255 184 70);
   --color-et-warning-active: rgb(208 139 0);
-  --color-et-warning-disabled: rgb(95 71 36);
+  --color-et-warning-disabled: rgb(140 115 79);
 
   --color-et-on-warning: rgb(32 19 1);
   --color-et-on-warning-hover: rgb(32 19 1);
   --color-et-on-warning-focus: rgb(32 19 1);
   --color-et-on-warning-active: rgb(32 19 1);
-  --color-et-on-warning-disabled: rgb(26 18 7);
+  --color-et-on-warning-disabled: rgb(43 34 22);
 
   --color-et-warning-ink: rgb(245 198 109);
   --color-et-warning-ink-hover: rgb(245 198 109);
@@ -93,13 +93,13 @@
     --et-color-primary-hover: 65 193 186;
     --et-color-primary-focus: 73 199 192;
     --et-color-primary-active: 0 145 140;
-    --et-color-primary-disabled: 34 72 70;
+    --et-color-primary-disabled: 79 119 116;
 
     --et-color-on-primary: 5 18 17;
     --et-color-on-primary-hover: 5 18 17;
     --et-color-on-primary-focus: 5 18 17;
     --et-color-on-primary-active: 5 18 17;
-    --et-color-on-primary-disabled: 9 17 17;
+    --et-color-on-primary-disabled: 23 34 33;
 
     --et-color-primary-ink: 103 210 204;
     --et-color-primary-ink-hover: 103 210 204;
@@ -114,13 +114,13 @@
     --et-color-primary-hover: 252 122 115;
     --et-color-primary-focus: 252 122 115;
     --et-color-primary-active: 222 69 68;
-    --et-color-primary-disabled: 99 47 44;
+    --et-color-primary-disabled: 150 97 93;
 
     --et-color-on-primary: 32 10 8;
     --et-color-on-primary-hover: 32 10 8;
     --et-color-on-primary-focus: 32 10 8;
     --et-color-on-primary-active: 32 10 8;
-    --et-color-on-primary-disabled: 26 12 11;
+    --et-color-on-primary-disabled: 42 27 25;
 
     --et-color-primary-ink: 249 158 155;
     --et-color-primary-ink-hover: 249 158 155;
@@ -135,13 +135,13 @@
     --et-color-primary-hover: 255 184 70;
     --et-color-primary-focus: 255 184 70;
     --et-color-primary-active: 208 139 0;
-    --et-color-primary-disabled: 95 71 36;
+    --et-color-primary-disabled: 140 115 79;
 
     --et-color-on-primary: 32 19 1;
     --et-color-on-primary-hover: 32 19 1;
     --et-color-on-primary-focus: 32 19 1;
     --et-color-on-primary-active: 32 19 1;
-    --et-color-on-primary-disabled: 26 18 7;
+    --et-color-on-primary-disabled: 43 34 22;
 
     --et-color-primary-ink: 245 198 109;
     --et-color-primary-ink-hover: 245 198 109;

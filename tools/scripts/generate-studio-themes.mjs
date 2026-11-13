@@ -121,8 +121,9 @@ const DARK_INTERACTION: SurfaceInteractionColor = ${literal({
       hover: rgb('text'),
       focus: rgb('text'),
       active: rgb('text'),
-      disabled: rgb('surface-border'),
+      disabled: rgb('surface-disabled'),
     },
+    onColor: { default: rgb('surface'), disabled: rgb('on-surface-disabled') },
   })};
 
 ${Object.entries(surfaceThemes)

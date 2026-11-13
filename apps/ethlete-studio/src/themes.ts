@@ -10,11 +10,11 @@ export const BRAND_THEME: ColorTheme = {
       hover: '65 193 186',
       focus: '73 199 192',
       active: '0 145 140',
-      disabled: '34 72 70',
+      disabled: '79 119 116',
     },
     onColor: {
       default: '5 18 17',
-      disabled: '9 17 17',
+      disabled: '23 34 33',
     },
     inkColor: {
       default: '103 210 204',
@@ -35,11 +35,11 @@ export const DANGER_THEME: ColorTheme = {
       hover: '252 122 115',
       focus: '252 122 115',
       active: '222 69 68',
-      disabled: '99 47 44',
+      disabled: '150 97 93',
     },
     onColor: {
       default: '32 10 8',
-      disabled: '26 12 11',
+      disabled: '42 27 25',
     },
     inkColor: {
       default: '249 158 155',
@@ -60,11 +60,11 @@ export const WARNING_THEME: ColorTheme = {
       hover: '255 184 70',
       focus: '255 184 70',
       active: '208 139 0',
-      disabled: '95 71 36',
+      disabled: '140 115 79',
     },
     onColor: {
       default: '32 19 1',
-      disabled: '26 18 7',
+      disabled: '43 34 22',
     },
     inkColor: {
       default: '245 198 109',

@@ -18,7 +18,12 @@
   --color-et-surface-dark-interaction-hover: rgb(235 235 235);
   --color-et-surface-dark-interaction-focus: rgb(235 235 235);
   --color-et-surface-dark-interaction-active: rgb(235 235 235);
-  --color-et-surface-dark-interaction-disabled: rgb(56 56 56);
+  --color-et-surface-dark-interaction-disabled: rgb(111 111 111);
+  --color-et-surface-dark-on-interaction: rgb(15 15 15);
+  --color-et-surface-dark-on-interaction-hover: rgb(15 15 15);
+  --color-et-surface-dark-on-interaction-focus: rgb(15 15 15);
+  --color-et-surface-dark-on-interaction-active: rgb(15 15 15);
+  --color-et-surface-dark-on-interaction-disabled: rgb(31 31 31);
 
   /* dark-elevated surface */
   --color-et-surface-dark-elevated-bg: rgb(32 32 32);
@@ -30,7 +35,12 @@
   --color-et-surface-dark-elevated-interaction-hover: rgb(235 235 235);
   --color-et-surface-dark-elevated-interaction-focus: rgb(235 235 235);
   --color-et-surface-dark-elevated-interaction-active: rgb(235 235 235);
-  --color-et-surface-dark-elevated-interaction-disabled: rgb(56 56 56);
+  --color-et-surface-dark-elevated-interaction-disabled: rgb(111 111 111);
+  --color-et-surface-dark-elevated-on-interaction: rgb(15 15 15);
+  --color-et-surface-dark-elevated-on-interaction-hover: rgb(15 15 15);
+  --color-et-surface-dark-elevated-on-interaction-focus: rgb(15 15 15);
+  --color-et-surface-dark-elevated-on-interaction-active: rgb(15 15 15);
+  --color-et-surface-dark-elevated-on-interaction-disabled: rgb(31 31 31);
 
   /* dark-elevated-2 surface */
   --color-et-surface-dark-elevated-2-bg: rgb(43 43 43);
@@ -42,7 +52,12 @@
   --color-et-surface-dark-elevated-2-interaction-hover: rgb(235 235 235);
   --color-et-surface-dark-elevated-2-interaction-focus: rgb(235 235 235);
   --color-et-surface-dark-elevated-2-interaction-active: rgb(235 235 235);
-  --color-et-surface-dark-elevated-2-interaction-disabled: rgb(56 56 56);
+  --color-et-surface-dark-elevated-2-interaction-disabled: rgb(111 111 111);
+  --color-et-surface-dark-elevated-2-on-interaction: rgb(15 15 15);
+  --color-et-surface-dark-elevated-2-on-interaction-hover: rgb(15 15 15);
+  --color-et-surface-dark-elevated-2-on-interaction-focus: rgb(15 15 15);
+  --color-et-surface-dark-elevated-2-on-interaction-active: rgb(15 15 15);
+  --color-et-surface-dark-elevated-2-on-interaction-disabled: rgb(31 31 31);
 
   /* Dynamic surface colors (references runtime CSS variables) */
   --color-et-surface-bg: rgb(var(--et-surface-background));
@@ -83,7 +98,12 @@
     --et-surface-interaction-hover: 235 235 235;
     --et-surface-interaction-focus: 235 235 235;
     --et-surface-interaction-active: 235 235 235;
-    --et-surface-interaction-disabled: 56 56 56;
+    --et-surface-interaction-disabled: 111 111 111;
+    --et-surface-on-interaction: 15 15 15;
+    --et-surface-on-interaction-hover: 15 15 15;
+    --et-surface-on-interaction-focus: 15 15 15;
+    --et-surface-on-interaction-active: 15 15 15;
+    --et-surface-on-interaction-disabled: 31 31 31;
   }
 
   .et-surface--dark-elevated {
@@ -98,7 +118,12 @@
     --et-surface-interaction-hover: 235 235 235;
     --et-surface-interaction-focus: 235 235 235;
     --et-surface-interaction-active: 235 235 235;
-    --et-surface-interaction-disabled: 56 56 56;
+    --et-surface-interaction-disabled: 111 111 111;
+    --et-surface-on-interaction: 15 15 15;
+    --et-surface-on-interaction-hover: 15 15 15;
+    --et-surface-on-interaction-focus: 15 15 15;
+    --et-surface-on-interaction-active: 15 15 15;
+    --et-surface-on-interaction-disabled: 31 31 31;
   }
 
   .et-surface--dark-elevated-2 {
@@ -113,7 +138,12 @@
     --et-surface-interaction-hover: 235 235 235;
     --et-surface-interaction-focus: 235 235 235;
     --et-surface-interaction-active: 235 235 235;
-    --et-surface-interaction-disabled: 56 56 56;
+    --et-surface-interaction-disabled: 111 111 111;
+    --et-surface-on-interaction: 15 15 15;
+    --et-surface-on-interaction-hover: 15 15 15;
+    --et-surface-on-interaction-focus: 15 15 15;
+    --et-surface-on-interaction-active: 15 15 15;
+    --et-surface-on-interaction-disabled: 31 31 31;
   }
 
   :root {
@@ -128,7 +158,12 @@
     --et-surface-interaction-hover: 235 235 235;
     --et-surface-interaction-focus: 235 235 235;
     --et-surface-interaction-active: 235 235 235;
-    --et-surface-interaction-disabled: 56 56 56;
+    --et-surface-interaction-disabled: 111 111 111;
+    --et-surface-on-interaction: 15 15 15;
+    --et-surface-on-interaction-hover: 15 15 15;
+    --et-surface-on-interaction-focus: 15 15 15;
+    --et-surface-on-interaction-active: 15 15 15;
+    --et-surface-on-interaction-disabled: 31 31 31;
     color-scheme: dark;
   }
 }

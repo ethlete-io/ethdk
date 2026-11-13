@@ -7,7 +7,11 @@ const DARK_INTERACTION: SurfaceInteractionColor = {
     hover: '235 235 235',
     focus: '235 235 235',
     active: '235 235 235',
-    disabled: '56 56 56',
+    disabled: '111 111 111',
+  },
+  onColor: {
+    default: '15 15 15',
+    disabled: '31 31 31',
   },
 };
 
