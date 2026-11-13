@@ -380,4 +380,61 @@ describe('seo title config scenarios', () => {
     document.title = '';
     if (!hadTitleElement) document.head.querySelector('title')?.remove();
   });
+
+  it('keeps a part in its bound place when it empties and comes back', async () => {
+    const s = scenario();
+    const c = s.consumer();
+    const hadTitleElement = !!document.head.querySelector('title');
+    const parent = signal<string | null>('Teams');
+
+    await s.run(() => inject(Router)).navigateByUrl('/');
+    c.run(() => {
+      applyHeadTitleBinding(parent);
+      applyHeadTitleBinding('Details');
+    });
+    await settle(s);
+
+    parent.set(null);
+    await settle(s);
+
+    expect(document.title).toBe('Details | Partner Hub');
+
+    parent.set('Clubs');
+    await settle(s);
+
+    expect(document.title).toBe('Clubs | Details | Partner Hub');
+
+    c.destroy();
+    document.title = '';
+    if (!hadTitleElement) document.head.querySelector('title')?.remove();
+  });
+});
+
+describe('seo child-first title scenarios', () => {
+  const scenario = useScenario({
+    providers: [
+      provideRouter([{ path: '', children: [] }]),
+      provideLocationMocks(),
+      provideTitleConfig({ suffixPart: { text: 'Partner Hub' }, order: 'child-first' }),
+    ],
+  });
+
+  it('puts the child part first and keeps the suffix last', async () => {
+    const s = scenario();
+    const c = s.consumer();
+    const hadTitleElement = !!document.head.querySelector('title');
+
+    await s.run(() => inject(Router)).navigateByUrl('/');
+    c.run(() => {
+      applyHeadTitleBinding('Teams');
+      applyHeadTitleBinding('Details');
+    });
+    await settle(s);
+
+    expect(document.title).toBe('Details | Teams | Partner Hub');
+
+    c.destroy();
+    document.title = '';
+    if (!hadTitleElement) document.head.querySelector('title')?.remove();
+  });
 });

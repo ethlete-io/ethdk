@@ -38,6 +38,13 @@ export type TitleConfig = {
    * A title part to be prefixed to all titles
    */
   prefixPart?: TitlePart;
+
+  /**
+   * The order of the bound parts. `'parent-first'` gives `Parent | Child`, `'child-first'` gives `Child | Parent`.
+   * The prefix and suffix parts keep their place either way.
+   * @default 'parent-first'
+   */
+  order?: 'parent-first' | 'child-first';
 };
 
 const TITLE_CONFIG_DEF = /* @__PURE__ */ defineStaticRootProvider<TitleConfig>(
@@ -55,7 +62,7 @@ export const injectTitleConfig = /* @__PURE__ */ toInjectFn(TITLE_CONFIG_DEF);
 const TITLE_STORE_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const config = injectTitleConfig();
-    const titleParts = signal<Map<symbol, TitlePart>>(new Map());
+    const titleParts = signal<Map<symbol, { part: TitlePart; priority: number }>>(new Map());
     const titleMarkers = signal<Map<symbol, string>>(new Map());
     const { currentLocale } = injectLocale();
     const titleService = inject(Title);
@@ -72,7 +79,9 @@ const TITLE_STORE_DEF = /* @__PURE__ */ defineRootProvider(
         return config.transformer(defaultTitle, currentLocale());
       }
 
-      const parts = Array.from(partsMap.values());
+      const parts = Array.from(partsMap.values())
+        .sort((a, b) => a.priority - b.priority)
+        .map((entry) => entry.part);
       const finalTextParts: string[] = [];
 
       for (let index = parts.length - 1; index > -1; index--) {
@@ -84,6 +93,8 @@ const TITLE_STORE_DEF = /* @__PURE__ */ defineRootProvider(
 
         if (part.useAsStart) break;
       }
+
+      if (config.order === 'child-first') finalTextParts.reverse();
 
       if (config.prefixPart?.text) {
         finalTextParts.unshift(config.transformer(config.prefixPart.text, currentLocale()));
@@ -112,8 +123,12 @@ const TITLE_STORE_DEF = /* @__PURE__ */ defineRootProvider(
       return `${markers.join(' ')} ${composed}`.trim();
     });
 
-    const addPart = (id: symbol, part: TitlePart) => {
-      titleParts.update((parts) => new Map(parts).set(id, part));
+    let priorityCounter = 0;
+
+    const claimPriority = () => priorityCounter++;
+
+    const addPart = (id: symbol, part: TitlePart, priority = claimPriority()) => {
+      titleParts.update((parts) => new Map(parts).set(id, { part, priority }));
     };
 
     const removePart = (id: symbol) => {
@@ -141,7 +156,7 @@ const TITLE_STORE_DEF = /* @__PURE__ */ defineRootProvider(
       titleService.setTitle(titleText);
     });
 
-    return { title, addPart, removePart, addMarker, removeMarker };
+    return { title, addPart, removePart, addMarker, removeMarker, claimPriority };
   },
   { name: 'Title Store' },
 );
@@ -155,10 +170,11 @@ export const applyHeadTitleBinding = (
 ) => {
   const titleStore = injectTitleStore();
   const partId = Symbol('title-part');
+  const priority = titleStore.claimPriority();
 
   applyHeadBinding(
     binding,
-    (value) => titleStore.addPart(partId, { text: `${value}`, ...options }),
+    (value) => titleStore.addPart(partId, { text: `${value}`, ...options }, priority),
     () => titleStore.removePart(partId),
     (value): value is string | number => value !== null && value !== undefined && value !== '',
   );
