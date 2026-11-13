@@ -1,4 +1,3 @@
-import { execFileSync } from 'child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join, resolve } from 'path';
 import { appFilesOf } from './app-files';
@@ -10,7 +9,6 @@ import {
   SDK_ERROR_RULE,
   SlowProblemsOf,
   STATE_NO_SOURCE_RULE,
-  VISIBLE_CHANGE_RULE,
 } from './build-ready-contract';
 import { DesignHash, designHashOf, designHolds, FileHashes, fileHashesOf, hashOfFiles, sha16 } from './design-hash';
 import { harnessOf } from './harness-map';
@@ -33,14 +31,7 @@ export const isDrawRule = (rule: string) =>
 /** Whether the `--slow` set runs `rule`, so `check --rules` does not. */
 export const isSlowRule = (rule: string) =>
   isDrawRule(rule) ||
-  [
-    APP_SPEC_RULE,
-    UNCOVERED_REGION_RULE,
-    IMPLEMENTS_UNRENDERED_RULE,
-    VISIBLE_CHANGE_RULE,
-    COMPARE_RULE,
-    SDK_ERROR_RULE,
-  ].includes(rule);
+  [APP_SPEC_RULE, UNCOVERED_REGION_RULE, IMPLEMENTS_UNRENDERED_RULE, COMPARE_RULE, SDK_ERROR_RULE].includes(rule);
 
 const DECLARES_CONTROLS = /\bcontrols\s*:/u;
 
@@ -121,35 +112,6 @@ const implementedHashOf = (product: ResolvedProduct, part: string) => {
   }
 };
 
-const BASE_TTL_MS = 5_000;
-const bases = new Map<string, { at: number; commit: string }>();
-
-/** The merge base `VISIBLE-CHANGE` compares with by default, `''` without one; a few seconds' answer is reused. */
-export const defaultBaseOf = (options: { root: string; branch: string | undefined }) => {
-  const key = `${options.root}\0${options.branch ?? ''}`;
-  const known = bases.get(key);
-
-  if (known && Date.now() - known.at < BASE_TTL_MS) return known.commit;
-
-  const git = (args: string[]) => {
-    try {
-      return execFileSync('git', args, {
-        cwd: options.root,
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'ignore'],
-      }).trim();
-    } catch {
-      return '';
-    }
-  };
-  const branch = options.branch ?? git(['symbolic-ref', '--quiet', '--short', 'refs/remotes/origin/HEAD']);
-  const commit = branch ? git(['merge-base', 'HEAD', branch]) : '';
-
-  bases.set(key, { at: Date.now(), commit });
-
-  return commit;
-};
-
 /** What a part's slow result depends on, and the rules that check it; no rules means it has no slow result. */
 export type SlowInputs = { rules: string[]; hash: string; designOnly?: true };
 
@@ -158,7 +120,6 @@ type PartContext = {
   root: string;
   harness: Exclude<ReturnType<typeof harnessOf>, string>;
   pages: Set<string> | null;
-  base: string;
   designs: Map<string, DesignHash>;
 };
 
@@ -175,7 +136,7 @@ const designOf = (context: PartContext, part: ResolvedPart) => {
   return design;
 };
 
-const contextOf = (product: ResolvedProduct, base?: string): PartContext => {
+const contextOf = (product: ResolvedProduct): PartContext => {
   const root = repoRootOf(product);
   const found = harnessOf(product);
   const harness = typeof found === 'string' ? null : found;
@@ -185,7 +146,6 @@ const contextOf = (product: ResolvedProduct, base?: string): PartContext => {
     root,
     harness,
     pages: livePagesOf(root, harness?.live),
-    base: base ?? (harness ? defaultBaseOf({ root, branch: harness.baseBranch }) : ''),
     designs: new Map(),
   };
 };
@@ -203,7 +163,7 @@ const consumersOf = (root: string, component: string | null): FileHashes => {
 };
 
 const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
-  const { product, root, harness, pages, base } = context;
+  const { product, root, harness, pages } = context;
   const key = partKeyOf(part);
   const own = part.origin !== 'base';
   const linked = linkedComponentOf(part);
@@ -218,7 +178,6 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
     ...(own && linked !== null && existsSync(resolve(root, linked)) ? [DROPPED_PROP_RULE, STATE_NO_SOURCE_RULE] : []),
     ...(component !== null && harness?.specs ? [APP_SPEC_RULE] : []),
     ...(pages?.has(key) ? [UNCOVERED_REGION_RULE, IMPLEMENTS_UNRENDERED_RULE] : []),
-    ...(component !== null ? [VISIBLE_CHANGE_RULE] : []),
     ...(component !== null && current ? [COMPARE_RULE, SDK_ERROR_RULE] : []),
     ...(designOnly ? [COMPARE_RULE] : []),
   ];
@@ -245,7 +204,6 @@ const partInputsOf = (context: PartContext, part: ResolvedPart): SlowInputs => {
         hashOfFiles(specs),
         hashOfFiles(live),
         rules.includes(STATE_NO_SOURCE_RULE) ? hashOfFiles(consumersOf(root, linked)) : '',
-        rules.includes(VISIBLE_CHANGE_RULE) ? base : '',
       ].join('\0'),
     ),
     ...(designOnly ? { designOnly: true as const } : {}),
@@ -256,12 +214,11 @@ const actionsRecordedIn = (product: ResolvedProduct) =>
   Object.values(readRecordedActions(product.dir)).some((record) => record.actions.length > 0);
 
 const productInputsOf = (context: PartContext, parts: Record<string, SlowInputs>): SlowInputs => {
-  const { product, root, harness, base } = context;
+  const { product, root, harness } = context;
   const actions = actionsRecordedIn(product);
   const rules = [
     ...(harness?.specs ? [APP_SPEC_RULE] : []),
     ...(harness?.live ? [UNCOVERED_REGION_RULE] : []),
-    ...(harness ? [VISIBLE_CHANGE_RULE] : []),
     ...(actions ? [ACTION_LOST_RULE] : []),
   ];
 
@@ -283,7 +240,6 @@ const productInputsOf = (context: PartContext, parts: Record<string, SlowInputs>
       [
         rules.join(','),
         hashOfFiles(files),
-        harness ? base : '',
         ...Object.entries(parts).map(([part, { hash }]) => `${part}=${hash}`),
         ...designs,
       ].join('\0'),
@@ -291,9 +247,9 @@ const productInputsOf = (context: PartContext, parts: Record<string, SlowInputs>
   };
 };
 
-/** The slow inputs of every part of the product that has a slow rule, and of `(product)`, at `base` if given. */
-export const slowInputsOf = (options: { product: ResolvedProduct; base?: string }): Record<string, SlowInputs> => {
-  const context = contextOf(options.product, options.base);
+/** The slow inputs of every part of the product that has a slow rule, and of `(product)`. */
+export const slowInputsOf = (options: { product: ResolvedProduct }): Record<string, SlowInputs> => {
+  const context = contextOf(options.product);
   const parts: Record<string, SlowInputs> = {};
 
   for (const part of options.product.parts) {

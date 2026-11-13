@@ -514,7 +514,7 @@ const MODE_FLAGS: Record<string, string[]> = {
   '--app-classes': ['--product', '--fix'],
   '--rules': ['--product', '--base'],
   '--live': ['--product'],
-  '--slow': ['--product', '--part', '--base'],
+  '--slow': ['--product', '--part'],
 };
 
 const CALL_FLAGS = ['--lint', '--tsconfig', '--call', '--variant'];
@@ -597,7 +597,7 @@ const checkWithStatus = async (options: {
   const parts = positionals.length === 1 ? positionals : flags['--part'];
 
   if (slow && products && products.length > 0)
-    return checkSlow({ target, config: readConfig(target) ?? {}, products, parts, base });
+    return checkSlow({ target, config: readConfig(target) ?? {}, products, parts });
 
   if (visibleChange && products && products.length > 0)
     return checkVisibleChange({ target, config: readConfig(target) ?? {}, products, base, parts });

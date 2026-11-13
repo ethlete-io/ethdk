@@ -5,7 +5,6 @@ import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../design-config';
 import { StateShot } from './compare-command';
 import { designHashOf } from './design-hash';
-import { Problem } from './problem';
 import { partKeyOf, resolveProduct } from './resolve-product';
 import { RULE_BASELINE_FILE } from './rule-baseline';
 import {
@@ -161,7 +160,6 @@ describe('a design-only change in the slow set', { timeout: 30_000 }, () => {
     controlState: async () => [],
     start: async () => ({ url: 'http://app', stop: async () => undefined }),
     shoot: async () => ({ states: {}, shots }),
-    visibleChange: async () => new Map<string, Problem[]>(),
   });
 
   it('starts the compare for a part whose design moved on after it was implemented', () => {
@@ -237,43 +235,6 @@ describe('a design-only change in the slow set', { timeout: 30_000 }, () => {
       'WARNING acme components/chip: state open cannot be judged - the app opens no overlay pane',
     ]);
     expect(warnings()).toEqual(warnings());
-  });
-
-  it('warns of a state the visible-change gate cannot drive at HEAD, not of one only the base cannot', async () => {
-    const { target, product } = acme();
-
-    await runSlowChecks({
-      target,
-      config: readConfig(target) ?? {},
-      product: product(),
-      parts: ['components/chip'],
-      runners: {
-        ...runners([]),
-        visibleChange: async (options) => {
-          const asked = { target, config: options.config, product: product(), part: 'components/chip', only: null };
-
-          await options.shoot?.({ ...asked, url: 'http://base' });
-          await options
-            .start?.({ target, product: product() })
-            .then((server) =>
-              typeof server === 'string' ? undefined : options.shoot?.({ ...asked, url: server.url }),
-            );
-
-          return new Map<string, Problem[]>();
-        },
-        shoot: async ({ url }) => ({
-          states: {},
-          shots:
-            url === 'http://app'
-              ? [{ state: 'change-crop', problem: '16 elements to force hover on', undrivable: true as const }]
-              : [{ state: 'base-only', problem: 'no pane' }],
-        }),
-      },
-    });
-
-    expect(unjudgedStateWarningsOf({ product: product(), parts: ['components/chip'] })).toEqual([
-      'WARNING acme components/chip: state change-crop cannot be judged - 16 elements to force hover on',
-    ]);
   });
 
   it('passes a design-only change whose states are all drivable', async () => {

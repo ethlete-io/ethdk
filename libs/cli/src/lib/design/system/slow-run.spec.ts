@@ -63,7 +63,6 @@ describe('the slow runner of the design server', { timeout: 60_000 }, () => {
         specs: async () => [],
         start: async () => ({ url: 'http://app', stop: async () => undefined }),
         live: async () => [],
-        visibleChange: async () => new Map(),
         controlState: async () => [],
         droppedProps: async () => [],
         actionLost: async () => [],

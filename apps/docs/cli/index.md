@@ -360,7 +360,7 @@ outputs, service subjects and the branch an emitted `kind` literal picks; it sto
 ### Slow rules
 
 Some rules need the app running in a browser, so they do not run with the static checks.
-`et design check --product <name> --slow [--part <layer>/<name>…] [--base <rev>]` runs them on a product with a
+`et design check --product <name> --slow [--part <layer>/<name>…]` runs them on a product with a
 `harness`, prints each problem as `<product> <part>: <RULE> <file>: <message>`, and exits 1 on a problem:
 
 - `APP-SPEC` runs the specs related to each part's app files with the vitest config in `harness.specs`. A failing
@@ -371,14 +371,11 @@ Some rules need the app running in a browser, so they do not run with the static
 - `IMPLEMENTS-UNRENDERED` runs in the same pass: for each part the page's design embeds, it checks that the app
   renders the part's `implements` component at the spot the design draws the part. A part whose component appears at
   none of its spots on that page is reported on the page part, naming the embedded part's file.
-- `VISIBLE-CHANGE` draws each harness part in the app at the base and at HEAD and fails a part that looks different
-  without a picked or merged sketch in between. The base is `--base`, else the merge base of HEAD and
-  `harness.baseBranch`, else of the branch `origin/HEAD` names. CI passes the pull request's base.
 - `COMPARE` and `SDK-ERROR` compare a part implemented at its current design with its design, and report an SDK error
   the harness page logs.
 
 Each part's result is stored in `node_modules/.cache/ethlete-design/<product>/slow-checks.json` with the hash of its
-inputs: its design, its app files and their specs, the live spec, and the base. A part whose stored result is missing
+inputs: its design, its app files and their specs, and the live spec. A part whose stored result is missing
 or has other inputs is pending, so it is not build-ready yet. `et design serve` keeps the results fresh: every 15
 seconds it reruns the parts whose inputs changed and then held still, one run at a time. Set
 `ETHLETE_DESIGN_SLOW_CHECKS=off` to turn that off.

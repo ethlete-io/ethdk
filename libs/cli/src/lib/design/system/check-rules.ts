@@ -83,7 +83,6 @@ export const CHECK_RULES = [
   'UNUSED-EXPORT',
   'UPWARD-DEPENDENCY',
   'UTILITY-CSS',
-  'VISIBLE-CHANGE',
   'WIREFRAME-KIT',
   'ZERO-SIZE',
 ] as const;

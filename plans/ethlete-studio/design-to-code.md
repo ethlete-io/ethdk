@@ -2953,6 +2953,30 @@ READY-STALE after A's rebase. Re-running their `sketch ready` refused (SHOT-NOT-
 restored to the committed ready state. Open: re-judge those two sketches after viewing their shots. Not verified: the
 compare's 140 missed actions (edit-sketch, all-unchanged) predate this slice or not; CI.
 
+B500 VISIBLE-CHANGE as built (Linux builder subagent, 2026-11-13, commit "fix(cli): Drop the VISIBLE-CHANGE slow rule"):
+measured with the full check and slow rules on (`design check --product <p> --slow`, dist built at 08ded3827). Before:
+studio exit 1 twice (124 s, 143 s), the same 2 VISIBLE-CHANGE hits both runs; sdk exit 0 twice (6 s, 7 s; no harness,
+the rule never runs there). Range 08ded3827..HEAD: `harness.baseBranch` is `origin/next`, which equals HEAD, so base and
+head are the same commit and no part can have changed. P2 sample (all 2 hits), 2/2 false: `components/title-bar` 7
+states and `components/update-dialog` 4 states "unjudged: the design draws 1 overlay pane, the app opened 0". Design
+shots on the serve (:43467) draw the hover tooltip "CLI geändert - neu starten" under "Neu starten" and the update
+dialog anchored under "Update"; the harness renders the bare component, which opens neither pane (the tooltip needs a
+hover, the dialog is opened by the title bar), and `design compare` of `update-dialog@open` and
+`title-bar@linux-full-notice` fails the same way. The hits report a harness limit, not a visible change. Decision by
+the row rule: VISIBLE-CHANGE is removed from `check --slow` and from the serve's slow runner (`rules/visible-change.ts`
+and its spec deleted, the id dropped from check-rules and build-ready-contract, the base/merge-base input dropped from
+the slow-input hashes, `--slow` no longer takes `--base`; a harness that does not start now reports on `(product)` as
+COMPARE). The serve start "visible-change gate fails" line came from that runner and goes with it. The opt-in command
+`check --visible-change` and `harness.baseBranch` stay. After: studio exit 0 twice (69 s, 73 s), 0 slow-rule problems,
+the two outputs equal apart from the timing lines; sdk exit 0 twice (7 s each). P1 holds for VISIBLE-CHANGE; P4 met.
+Findings closed: none in full. 924 (the gate judged pages/sketches shots that had not settled) and the title-bar /
+update-dialog gate line of 981 no longer reach check or serve; they stay open for `check --visible-change`.
+Verified: typecheck, eslint on the changed files, `vitest related` (211 files, 1937 tests), the four runs above,
+`.ethlete/design` writes only by the running serve. Not verified: CI; the serve with the new dist (it still runs the
+old build); title-bar and update-dialog overlay states are now judged by no slow rule (compare does not run them).
+Open: remove `check --visible-change` too (recommended: it gives the same 2 false hits and 924's flaky shots), or keep
+it opt-in; P3 CI gate.
+
 ci-red 1113d (finding 992) as built (Linux builder subagent, 2026-11-13): CI runs 43372815104 and 43356130738, Studio e2e
 "a part edited on disk while away shows its new picture on return" failed in its shot ETag fetch with ECONNRESET / socket
 hang up. Cause (probe): Playwright's API request agent is `http.Agent({ keepAlive: true })` with no timeout, so Node

@@ -34,8 +34,6 @@ export const DROPPED_PROP_RULE = 'DROPPED-PROP';
 
 export const STATE_NO_SOURCE_RULE = 'STATE-NO-SOURCE';
 
-export const VISIBLE_CHANGE_RULE = 'VISIBLE-CHANGE';
-
 export const ACTION_LOST_RULE = 'ACTION-LOST';
 
 export const blockerKindOfRule = (rule: string): BlockerKind =>

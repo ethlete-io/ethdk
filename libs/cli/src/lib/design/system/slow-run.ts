@@ -9,7 +9,6 @@ import {
   CONTROL_STATE_RULE,
   DROPPED_PROP_RULE,
   SDK_ERROR_RULE,
-  VISIBLE_CHANGE_RULE,
 } from './build-ready-contract';
 import { shootStates, ShootStates } from './compare-command';
 import { appFilesOf } from './app-files';
@@ -25,7 +24,6 @@ import { ruleBaselineOf } from './rule-baseline';
 import { APP_SPEC_RULE, appSpecProblemsOf, RunRelatedSpecs, runRelatedSpecs } from './rules/app-spec';
 import { implementsUnrenderedProblemsOf } from './rules/implements-unrendered';
 import { UNCOVERED_REGION_RULE, uncoveredRegionProblemsOf } from './rules/uncovered-region';
-import { visibleChangeProblemsOf } from './rules/visible-change';
 import { sdkErrorLineOf } from './sdk-errors';
 import { autoAcceptOf, settleCommittedEdits } from './accepted-pictures';
 import { partHashOf } from './sketch/baseline';
@@ -55,7 +53,6 @@ export type SlowRunners = {
     url: string;
     pages: string[] | undefined;
   }) => Promise<UncoveredState[] | string>;
-  visibleChange: typeof visibleChangeProblemsOf;
   controlState: typeof bespokeControlProblemsOf;
   droppedProps: typeof droppedPropProblemsOf;
   actionLost: typeof actionLostProblemsOf;
@@ -70,7 +67,6 @@ const defaultRunners: SlowRunners = {
 
     return typeof checked === 'string' ? checked : checked.states;
   },
-  visibleChange: visibleChangeProblemsOf,
   controlState: bespokeControlProblemsOf,
   droppedProps: droppedPropProblemsOf,
   actionLost: actionLostProblemsOf,
@@ -121,7 +117,7 @@ const comparedProblemsOf = async (options: {
 };
 
 /**
- * Runs the slow rules - the draw rules, then `APP-SPEC`, `UNCOVERED-REGION` with `IMPLEMENTS-UNRENDERED`, `VISIBLE-CHANGE`,
+ * Runs the slow rules - the draw rules, then `APP-SPEC`, `UNCOVERED-REGION` with `IMPLEMENTS-UNRENDERED`,
  * compare and the SDK-error watch against one harness app - on the product's parts that have one, or on `parts`, one browser at a time, and
  * stores each part's problems at the inputs it had when the run started.
  */
@@ -130,16 +126,13 @@ export const runSlowChecks = async (options: {
   config: DesignConfig;
   product: ResolvedProduct;
   parts?: string[];
-  base?: string;
   runners?: Partial<SlowRunners>;
 }): Promise<Map<string, Problem[]>> => {
   const { target, config, product } = options;
   const runners = { ...defaultRunners, ...options.runners };
   const root = repoRootOf(product);
   const inputs = Object.fromEntries(
-    Object.entries(slowInputsOf({ product, base: options.base })).filter(
-      ([part]) => !options.parts || options.parts.includes(part),
-    ),
+    Object.entries(slowInputsOf({ product })).filter(([part]) => !options.parts || options.parts.includes(part)),
   );
   const keys = Object.keys(inputs).filter((part) => part !== PRODUCT_PART);
   const whole = !options.parts;
@@ -147,11 +140,10 @@ export const runSlowChecks = async (options: {
   const results = new Map<string, Problem[]>();
   const unjudged = new Map<string, UnjudgedState[]>();
   const harness = product.config.harness;
-  let headUrl: string | null = null;
   const shoot: ShootStates = async (asked) => {
     const shot = await runners.shoot(asked);
 
-    if (typeof shot !== 'string' && asked.url === headUrl) {
+    if (typeof shot !== 'string') {
       const known = unjudged.get(asked.part) ?? [];
 
       for (const state of shot.shots)
@@ -234,7 +226,7 @@ export const runSlowChecks = async (options: {
             PRODUCT_PART,
             [
               {
-                rule: VISIBLE_CHANGE_RULE,
+                rule: COMPARE_RULE,
                 file: harness.map,
                 message: `the harness app did not start: ${server}`,
               },
@@ -243,8 +235,6 @@ export const runSlowChecks = async (options: {
         ]),
       );
     } else {
-      headUrl = server.url;
-
       try {
         if (harness.live && (ruled(UNCOVERED_REGION_RULE).length > 0 || whole)) {
           const states = await runners.live({
@@ -280,24 +270,6 @@ export const runSlowChecks = async (options: {
 
           if (problems.length > 0) results.set(part, [...(results.get(part) ?? []), ...problems]);
         }
-
-        if (ruled(VISIBLE_CHANGE_RULE).length > 0)
-          merge(
-            results,
-            await runners.visibleChange({
-              target,
-              config,
-              product: product.name,
-              harnessMap: harness.map,
-              base: options.base,
-              parts: ruled(VISIBLE_CHANGE_RULE),
-              shoot,
-              start: (asked) =>
-                asked.target === target
-                  ? Promise.resolve({ url: server.url, stop: async () => undefined })
-                  : runners.start(asked),
-            }),
-          );
       } finally {
         await server.stop();
       }
@@ -322,7 +294,6 @@ export const checkSlow = async (options: {
   config: DesignConfig;
   products: string[];
   parts: string[] | undefined;
-  base: string | undefined;
 }): Promise<number> => {
   const started = Date.now();
   let failed = 0;

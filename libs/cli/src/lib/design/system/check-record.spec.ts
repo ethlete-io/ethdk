@@ -14,7 +14,6 @@ const runners: Partial<SlowRunners> = {
   specs: async () => [],
   start: async () => ({ url: 'http://app', stop: async () => undefined }),
   live: async () => [],
-  visibleChange: async () => new Map(),
   controlState: async () => [],
   droppedProps: async () => [],
   actionLost: async () => [],
