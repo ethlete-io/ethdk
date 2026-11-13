@@ -2901,6 +2901,25 @@ check through the serve with pid attribution, the fix live in the serve (its dis
 records still read `"by": "et design check"`, which is why the probe looked like a check write (open point, serve
 scope).
 
+B500 change-crop sketches as built (Linux builder subagent, 2026-11-13): two sketches on `pages/sketches`. Sketch A
+`pages/sketches@framed-screens` marks the mock screen of `screenOf` (shared/change-crop.ts) with `slot('screen')`, so
+compare empties it like any framed region; before/after design shots of change-crop and change-crop-whole (serve
+:43467, fit viewport 1472x932) differ by 0 px each (`compare -metric AE`). `sketch ready --no-visible-change` merged it
+by itself (merged.json `auto: no visible change`) and rebased @focus-tooltip and @multi-part-head; commit 80b0447ab.
+Sketch B `pages/sketches@stellen` (ADR 0271) changes the reason line to "1358 px in 3 Stellen" and, on the same line of
+the second group, "2140 px in 1 Stelle" (the app prints `Stelle` for one place); ready, auto-merge skipped (variant a
+changes change-crop, change-crop-whole), waits for the human pick. Compare after A: change-crop DIFF 39581 -> 20188 px,
+change-crop-whole 35643 -> 18322 px. The rest is not only the Stellen text: the harness sample tree lists title-bar,
+zoom-chip, system, sketches while the design also lists zoom-chip@edit (the tree rows below shift); the variant head
+avatar reads H in the app, TB in the design; the stack edges under the first crop differ in shape; the fold row of the
+16 unchanged states wraps in the design and runs on one line, 8 px wider, in the app. Design left unchanged. Checks:
+`design check --part pages/sketches` exit 0, 0 findings; `design check --product studio` exit 0, 36 parts, 0 findings.
+`sketch check --product studio` exit 1: @stellen ready, no pending change; @focus-tooltip and @multi-part-head are
+READY-STALE after A's rebase. Re-running their `sketch ready` refused (SHOT-NOT-VIEWED, and `sketch check` warns that
+@multi-part-head b and c draw like a at their first change) and set both to in progress; both sketch.json files were
+restored to the committed ready state. Open: re-judge those two sketches after viewing their shots. Not verified: the
+compare's 140 missed actions (edit-sketch, all-unchanged) predate this slice or not; CI.
+
 ci-red 1113d (finding 992) as built (Linux builder subagent, 2026-11-13): CI runs 43372815104 and 43356130738, Studio e2e
 "a part edited on disk while away shows its new picture on return" failed in its shot ETag fetch with ECONNRESET / socket
 hang up. Cause (probe): Playwright's API request agent is `http.Agent({ keepAlive: true })` with no timeout, so Node
